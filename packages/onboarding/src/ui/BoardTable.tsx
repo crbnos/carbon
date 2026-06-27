@@ -1,4 +1,5 @@
 import { Button, cn, IconButton } from "@carbon/react";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { LuPlus, LuTrash } from "react-icons/lu";
 import { COLLECTIONS, PAGE_COPY } from "../content";
 import { BOARD_TASKS } from "../content/board";
@@ -49,6 +50,7 @@ const NEXT_OWNER: Record<Owner, Owner> = {
 // is the shared source of truth the Plan page derives from. Carbon staff can add
 // deal-specific tasks below.
 export function BoardTable() {
+  const { t, i18n } = useLingui();
   const map = useCheckMap();
   const tier = useTier();
   const canEdit = useCanEdit();
@@ -66,13 +68,13 @@ export function BoardTable() {
   return (
     <div className="w-full max-w-4xl mx-auto flex flex-col gap-6">
       <PageHeader
-        title={PAGE_COPY.board.title}
-        lead={PAGE_COPY.board.lead}
+        title={i18n._(PAGE_COPY.board.title)}
+        lead={i18n._(PAGE_COPY.board.lead)}
         aside={
           <ProgressPill
             done={tasksDone}
             total={orderedTasks.length}
-            label="tasks"
+            label={t`tasks`}
           />
         }
       />
@@ -80,9 +82,9 @@ export function BoardTable() {
       {nextTask ? (
         <div className="rounded-xl border border-primary/30 bg-primary/5 px-4 py-2.5 text-sm flex items-center gap-2 flex-wrap">
           <span className="text-xxs uppercase tracking-wide font-medium text-primary">
-            Next task
+            <Trans>Next task</Trans>
           </span>
-          <span className="font-medium">{nextTask.label}</span>
+          <span className="font-medium">{i18n._(nextTask.label)}</span>
         </div>
       ) : null}
 
@@ -94,7 +96,7 @@ export function BoardTable() {
             <section key={step.key}>
               <div className="px-5 py-2 border-y first:border-t-0">
                 <span className="text-xxs uppercase tracking-wide font-medium text-muted-foreground">
-                  {step.n} · {step.title}
+                  {step.n} · {i18n._(step.title)}
                 </span>
               </div>
               <ul>
@@ -113,16 +115,18 @@ export function BoardTable() {
                             "line-through text-muted-foreground"
                         )}
                       >
-                        {task.label}
+                        {i18n._(task.label)}
                       </span>
                       {tier !== "self_serve" ? (
                         <span className="text-xxs uppercase tracking-wide rounded px-1.5 py-0.5 border text-muted-foreground font-medium shrink-0">
-                          {OWNER_TOKENS[ownerForTier(task.owner, tier)].label}
+                          {i18n._(
+                            OWNER_TOKENS[ownerForTier(task.owner, tier)].label
+                          )}
                         </span>
                       ) : null}
                       <button
                         type="button"
-                        title="Click to change status"
+                        title={t`Click to change status`}
                         onClick={() =>
                           setCheck(taskKey(task.key), "task", NEXT_TASK[status])
                         }
@@ -134,7 +138,7 @@ export function BoardTable() {
                         <span
                           className={cn("size-1.5 rounded-full", pill.dot)}
                         />
-                        {pill.label}
+                        {i18n._(pill.label)}
                       </button>
                     </li>
                   );
@@ -149,11 +153,11 @@ export function BoardTable() {
         <div className="rounded-2xl border bg-card shadow-button-base overflow-hidden">
           <div className="px-5 py-2 border-b flex items-center justify-between">
             <span className="text-xxs uppercase tracking-wide font-medium text-muted-foreground">
-              Added for this customer
+              <Trans>Added for this customer</Trans>
             </span>
             {canEdit ? (
               <span className="text-xxs text-muted-foreground">
-                Carbon-only
+                <Trans>Carbon-only</Trans>
               </span>
             ) : null}
           </div>
@@ -165,7 +169,7 @@ export function BoardTable() {
             </ul>
           ) : (
             <div className="px-5 py-4 text-sm text-muted-foreground">
-              {COLLECTIONS.board.emptyText}
+              {i18n._(COLLECTIONS.board.emptyText)}
             </div>
           )}
           {canEdit ? (
@@ -176,7 +180,7 @@ export function BoardTable() {
                 leftIcon={<LuPlus />}
                 onClick={() => addRow("board", COLLECTIONS.board.newPayload())}
               >
-                {COLLECTIONS.board.addLabel}
+                {i18n._(COLLECTIONS.board.addLabel)}
               </Button>
             </div>
           ) : null}
@@ -187,6 +191,7 @@ export function BoardTable() {
 }
 
 function CustomTaskRow({ row }: { row: ImplementationRowData }) {
+  const { t, i18n } = useLingui();
   const canEdit = useCanEdit();
   const { updateRow, deleteRow } = useHubActions();
 
@@ -202,7 +207,7 @@ function CustomTaskRow({ row }: { row: ImplementationRowData }) {
       {canEdit ? (
         <EditableInput
           value={payload.label}
-          placeholder="Task"
+          placeholder={t`Task`}
           className="flex-1 min-w-0"
           onCommit={(label) => updateRow(row.id, { ...payload, label })}
         />
@@ -227,11 +232,11 @@ function CustomTaskRow({ row }: { row: ImplementationRowData }) {
           canEdit && "hover:bg-accent"
         )}
       >
-        {OWNER_TOKENS[payload.owner].label}
+        {i18n._(OWNER_TOKENS[payload.owner].label)}
       </button>
       <button
         type="button"
-        title="Click to change status"
+        title={t`Click to change status`}
         onClick={() =>
           updateRow(row.id, { ...payload, status: NEXT_TASK[payload.status] })
         }
@@ -241,11 +246,11 @@ function CustomTaskRow({ row }: { row: ImplementationRowData }) {
         )}
       >
         <span className={cn("size-1.5 rounded-full", pill.dot)} />
-        {pill.label}
+        {i18n._(pill.label)}
       </button>
       {canEdit ? (
         <IconButton
-          aria-label="Delete task"
+          aria-label={t`Delete task`}
           icon={<LuTrash />}
           variant="ghost"
           size="sm"

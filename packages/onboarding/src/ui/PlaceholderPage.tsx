@@ -1,3 +1,4 @@
+import { Trans } from "@lingui/react/macro";
 import { LuHardHat } from "react-icons/lu";
 
 // Stub content for hub pages not yet built (everything beyond Start Here in P1).
@@ -11,8 +12,10 @@ export function PlaceholderPage({ title }: { title: string }) {
       </div>
       <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
       <p className="text-sm text-muted-foreground max-w-sm text-pretty">
-        This page of your Implementation Hub is being built. Start from the
-        command center while we finish it.
+        <Trans>
+          This page of your Implementation Hub is being built. Start from the
+          command center while we finish it.
+        </Trans>
       </p>
     </div>
   );

@@ -1,4 +1,7 @@
 import { cn } from "@carbon/react";
+import type { MessageDescriptor } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
+import { Plural, useLingui } from "@lingui/react/macro";
 import { LuArrowUpRight } from "react-icons/lu";
 import { PAGE_COPY } from "../content";
 import { TRAINING_TRACKS } from "../content/training";
@@ -16,7 +19,13 @@ import {
 type Format = "Self-paced" | "Hands-on";
 const FORMATS: Format[] = ["Self-paced", "Hands-on"];
 
+const FORMAT_LABEL: Record<Format, MessageDescriptor> = {
+  "Self-paced": msg`Self-paced`,
+  "Hands-on": msg`Hands-on`
+};
+
 export function TrainingView() {
+  const { t, i18n } = useLingui();
   const exclusions = useExclusions();
   const map = useCheckMap();
   const fields = useFieldMap();
@@ -30,18 +39,18 @@ export function TrainingView() {
   return (
     <div className="w-full max-w-3xl mx-auto flex flex-col gap-6">
       <PageHeader
-        title={PAGE_COPY.training.title}
-        lead={PAGE_COPY.training.lead}
+        title={i18n._(PAGE_COPY.training.title)}
+        lead={i18n._(PAGE_COPY.training.lead)}
       />
 
       {visibleTracks.map((track, i) => {
         const count = track.courses.length;
         return (
           <Section
-            key={track.title}
+            key={i}
             number={i + 1}
-            title={track.title}
-            subtitle={`${count} course${count === 1 ? "" : "s"}`}
+            title={i18n._(track.title)}
+            subtitle={<Plural value={count} one="# course" other="# courses" />}
           >
             <SectionList>
               {track.courses.map((course) => {
@@ -63,21 +72,23 @@ export function TrainingView() {
                           rel="noopener noreferrer"
                           className="group inline-flex items-center gap-1 text-sm font-medium hover:text-primary transition-colors"
                         >
-                          {course.course}
+                          {i18n._(course.course)}
                           <LuArrowUpRight className="size-3.5 shrink-0 text-muted-foreground/50 transition group-hover:text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                         </a>
                       ) : (
                         <div className="text-sm font-medium">
-                          {course.course}
+                          {i18n._(course.course)}
                         </div>
                       )}
                       <div className="text-xs text-muted-foreground flex items-center gap-1">
-                        <span className="shrink-0">{course.audience} ·</span>
+                        <span className="shrink-0">
+                          {i18n._(course.audience)} ·
+                        </span>
                         <EditableField
                           fieldKey={`training.${course.key}.length`}
                           value={fields.get(`training.${course.key}.length`)}
                           defaultValue={course.length}
-                          placeholder="e.g. 2h"
+                          placeholder={t`e.g. 2h`}
                           className="text-xs max-w-[90px]"
                         />
                       </div>
@@ -96,7 +107,7 @@ export function TrainingView() {
                               : "text-muted-foreground hover:text-foreground"
                           )}
                         >
-                          {f}
+                          {i18n._(FORMAT_LABEL[f])}
                         </button>
                       ))}
                     </div>

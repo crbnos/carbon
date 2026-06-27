@@ -1,3 +1,5 @@
+import type { I18n } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
 import type { StepDef } from "../types";
 
 // Resolves the Plan Gantt's geometry from per-company config. The template gives
@@ -8,6 +10,7 @@ import type { StepDef } from "../types";
 // mode (no calendar), so the chart still renders before anyone tailors it.
 
 const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000;
+// TODO(i18n): localize month/week tick labels
 const MONTHS = [
   "Jan",
   "Feb",
@@ -93,7 +96,8 @@ export interface Timeline {
 // Pure: (tier-filtered steps, field overrides) -> render-ready geometry.
 export function resolveTimeline(
   steps: StepDef[],
-  fields: Map<string, string>
+  fields: Map<string, string>,
+  i18n: I18n
 ): Timeline {
   const geo = steps.filter((s) => s.gantt);
 
@@ -145,8 +149,8 @@ export function resolveTimeline(
       return {
         key: s.key,
         n: s.n,
-        title: s.title,
-        gate: s.gate,
+        title: i18n._(s.title),
+        gate: i18n._(s.gate),
         color: s.gantt!.color,
         startPct,
         widthPct: Math.max(gatePct - startPct, 1.5),
@@ -157,8 +161,10 @@ export function resolveTimeline(
           start && startDate && gateDate
             ? `${formatDate(startDate)} – ${formatDate(gateDate)}`
             : weeksOverridden
-              ? `Weeks ${Math.round(startWeek) + 1} to ${Math.round(endWeek)}`
-              : s.timing,
+              ? i18n._(
+                  msg`Weeks ${Math.round(startWeek) + 1} to ${Math.round(endWeek)}`
+                )
+              : i18n._(s.timing),
         gateDate,
         gateDateKey: gateDateKey(s.key),
         gateDateValue: overrideValue

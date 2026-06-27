@@ -1,4 +1,7 @@
 import { Button, cn, DatePicker, Input } from "@carbon/react";
+import type { MessageDescriptor } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import { OPTIONAL_SECTIONS, REGISTRY, SPINE } from "../content";
 import {
@@ -20,19 +23,32 @@ import {
 
 const GOLIVE_DATE_KEY = gateDateKey("gate:golive");
 
-const TIERS: { value: Tier; label: string; hint: string }[] = [
+const TIERS: {
+  value: Tier;
+  label: MessageDescriptor;
+  hint: MessageDescriptor;
+}[] = [
   {
     value: "self_serve",
-    label: "Self-serve",
-    hint: "Customer follows it alone"
+    label: msg`Self-serve`,
+    hint: msg`Customer follows it alone`
   },
-  { value: "guided", label: "Guided", hint: "Activation fee · we advise" },
-  { value: "enterprise", label: "Enterprise", hint: "Custom SOW · we manage" }
+  {
+    value: "guided",
+    label: msg`Guided`,
+    hint: msg`Activation fee · we advise`
+  },
+  {
+    value: "enterprise",
+    label: msg`Enterprise`,
+    hint: msg`Custom SOW · we manage`
+  }
 ];
 
 // Carbon-only: tailor a customer's hub. Module/page/section toggles drive the
 // server-side visibility filter; tier relabels the hub; contacts fill across it.
 export function SetupControls() {
+  const { t, i18n } = useLingui();
   const tier = useTier();
   const exclusions = useExclusions();
   const contacts = useContacts();
@@ -52,38 +68,42 @@ export function SetupControls() {
       <header className="flex flex-col gap-2">
         <div className="flex items-center gap-2">
           <h1 className="text-2xl font-semibold tracking-tight">
-            Setup & Controls
+            <Trans>Setup & Controls</Trans>
           </h1>
           <span className="text-xxs uppercase tracking-wide rounded px-1.5 py-0.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 font-medium">
-            Carbon only
+            <Trans>Carbon only</Trans>
           </span>
         </div>
         <p className="text-sm text-muted-foreground max-w-xl text-pretty">
-          Tailor this hub for the customer. Changes apply live for everyone
-          viewing it. Never shown to the customer here.
+          <Trans>
+            Tailor this hub for the customer. Changes apply live for everyone
+            viewing it. Never shown to the customer here.
+          </Trans>
         </p>
       </header>
 
       <Card
-        title="Engagement tier"
-        subtitle="Relabels the hub and frames the deal."
+        title={t`Engagement tier`}
+        subtitle={t`Relabels the hub and frames the deal.`}
       >
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-          {TIERS.map((t) => (
+          {TIERS.map((tierOpt) => (
             <button
-              key={t.value}
+              key={tierOpt.value}
               type="button"
-              onClick={() => setTier(t.value)}
+              onClick={() => setTier(tierOpt.value)}
               className={cn(
                 "rounded-xl border p-3 text-left transition-colors active:scale-[0.98]",
-                tier === t.value
+                tier === tierOpt.value
                   ? "border-primary bg-primary/5 ring-1 ring-primary"
                   : "hover:bg-muted/50"
               )}
             >
-              <div className="text-sm font-semibold">{t.label}</div>
+              <div className="text-sm font-semibold">
+                {i18n._(tierOpt.label)}
+              </div>
               <div className="text-xs text-muted-foreground mt-0.5">
-                {t.hint}
+                {i18n._(tierOpt.hint)}
               </div>
             </button>
           ))}
@@ -91,17 +111,17 @@ export function SetupControls() {
       </Card>
 
       <Card
-        title="Schedule"
-        subtitle="Anchors the Plan timeline to real dates. Leave blank for a relative, week-numbered timeline. Setting either one fills in the rest."
+        title={t`Schedule`}
+        subtitle={t`Anchors the Plan timeline to real dates. Leave blank for a relative, week-numbered timeline. Setting either one fills in the rest.`}
       >
         <div className="flex flex-col sm:flex-row gap-3 sm:gap-6">
           <DateRow
-            label="Project start"
+            label={t`Project start`}
             value={fields.get(PLAN_START_KEY)}
             onChange={(v) => setField(PLAN_START_KEY, v)}
           />
           <DateRow
-            label="Target go-live"
+            label={t`Target go-live`}
             value={fields.get(GOLIVE_DATE_KEY)}
             onChange={(v) => setField(GOLIVE_DATE_KEY, v)}
           />
@@ -109,8 +129,8 @@ export function SetupControls() {
       </Card>
 
       <Card
-        title="Phase durations"
-        subtitle="How long each phase runs, in weeks. Drives the Plan timeline; leave blank to use the default."
+        title={t`Phase durations`}
+        subtitle={t`How long each phase runs, in weeks. Drives the Plan timeline; leave blank to use the default.`}
       >
         <div className="flex flex-col gap-2">
           {spineForTier(SPINE, tier).map((step) => (
@@ -125,8 +145,8 @@ export function SetupControls() {
       </Card>
 
       <Card
-        title="Modules in scope"
-        subtitle="Switch a module off to remove it everywhere: Requirements, Data, Training, Scope."
+        title={t`Modules in scope`}
+        subtitle={t`Switch a module off to remove it everywhere: Requirements, Data, Training, Scope.`}
       >
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {MODULES.map((m: Mod) => {
@@ -134,7 +154,7 @@ export function SetupControls() {
             return (
               <ToggleRow
                 key={m}
-                label={MODULE_NAME[m]}
+                label={i18n._(MODULE_NAME[m])}
                 on={included}
                 onToggle={() =>
                   setExclusions({
@@ -150,15 +170,15 @@ export function SetupControls() {
 
       {optionalPages.length || OPTIONAL_SECTIONS.length ? (
         <Card
-          title="Optional pages & sections"
-          subtitle="Drop whole pages or sections a customer doesn't need."
+          title={t`Optional pages & sections`}
+          subtitle={t`Drop whole pages or sections a customer doesn't need.`}
         >
           <div className="flex flex-col gap-2">
             {optionalPages.map((p) => (
               <ToggleRow
                 key={p.slug}
-                label={p.navLabel}
-                badge="Page"
+                label={i18n._(p.navLabel)}
+                badge={t`Page`}
                 on={!exclusions.pages.includes(p.slug)}
                 onToggle={() =>
                   setExclusions({
@@ -171,8 +191,8 @@ export function SetupControls() {
             {OPTIONAL_SECTIONS.map((s) => (
               <ToggleRow
                 key={s.key}
-                label={s.label}
-                badge="Section"
+                label={i18n._(s.label)}
+                badge={t`Section`}
                 on={!exclusions.sections.includes(s.key)}
                 onToggle={() =>
                   setExclusions({
@@ -188,27 +208,27 @@ export function SetupControls() {
 
       {tier !== "self_serve" ? (
         <Card
-          title="Customer contacts"
-          subtitle="Names fill in wherever those roles are referenced across the hub."
+          title={t`Customer contacts`}
+          subtitle={t`Names fill in wherever those roles are referenced across the hub.`}
         >
           <div className="flex flex-col gap-3">
             <Field
-              label="Project owner"
+              label={t`Project owner`}
               value={owner}
               onChange={setOwner}
-              placeholder="e.g. Jane Smith"
+              placeholder={t`e.g. Jane Smith`}
             />
             <Field
-              label="Champion(s)"
+              label={t`Champion(s)`}
               value={champion}
               onChange={setChampion}
-              placeholder="e.g. Marco + the area leads"
+              placeholder={t`e.g. Marco + the area leads`}
             />
             <div>
               <Button
                 onClick={() => setContacts({ ...contacts, owner, champion })}
               >
-                Save contacts
+                <Trans>Save contacts</Trans>
               </Button>
             </div>
           </div>
@@ -251,6 +271,7 @@ function PhaseDurationRow({
   value: string | undefined;
   onCommit: (weeks: string) => void;
 }) {
+  const { i18n } = useLingui();
   const [weeks, setWeeks] = useState(value ?? "");
   // Re-sync if the server value changes underneath (realtime / revalidate).
   useEffect(() => setWeeks(value ?? ""), [value]);
@@ -261,9 +282,9 @@ function PhaseDurationRow({
         {step.n}
       </span>
       <div className="flex-1 min-w-0">
-        <div className="text-sm font-medium">{step.title}</div>
+        <div className="text-sm font-medium">{i18n._(step.title)}</div>
         <div className="text-xs text-muted-foreground truncate">
-          {step.gate}
+          {i18n._(step.gate)}
         </div>
       </div>
       <div className="flex items-center gap-1.5 shrink-0">
@@ -279,7 +300,9 @@ function PhaseDurationRow({
           }}
           className="w-16 tabular-nums text-right"
         />
-        <span className="text-xs text-muted-foreground">wks</span>
+        <span className="text-xs text-muted-foreground">
+          <Trans>wks</Trans>
+        </span>
       </div>
     </div>
   );
@@ -296,6 +319,7 @@ function ToggleRow({
   on: boolean;
   onToggle: () => void;
 }) {
+  const { t } = useLingui();
   return (
     <div
       className={cn(
@@ -310,7 +334,7 @@ function ToggleRow({
         </span>
       ) : null}
       <Button variant={on ? "secondary" : "ghost"} size="sm" onClick={onToggle}>
-        {on ? "Included" : "Excluded"}
+        {on ? t`Included` : t`Excluded`}
       </Button>
     </div>
   );

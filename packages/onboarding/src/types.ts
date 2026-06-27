@@ -1,6 +1,9 @@
 // Shared types for the Implementation Hub. App-agnostic: no Supabase/React
 // Router imports here so the content templates + pure logic stay portable.
 
+import type { MessageDescriptor } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
+
 // The seven functional areas == Carbon's real modules (see RESTRUCTURE_SPEC).
 export type Mod = "sal" | "pur" | "inv" | "itm" | "prd" | "qms" | "acc";
 
@@ -14,14 +17,14 @@ export const MODULES: readonly Mod[] = [
   "acc"
 ];
 
-export const MODULE_NAME: Record<Mod, string> = {
-  sal: "Sales",
-  pur: "Purchasing",
-  inv: "Inventory",
-  itm: "Items",
-  prd: "Production",
-  qms: "Quality",
-  acc: "Accounting"
+export const MODULE_NAME: Record<Mod, MessageDescriptor> = {
+  sal: msg`Sales`,
+  pur: msg`Purchasing`,
+  inv: msg`Inventory`,
+  itm: msg`Items`,
+  prd: msg`Production`,
+  qms: msg`Quality`,
+  acc: msg`Accounting`
 };
 
 export type Owner = "carbon" | "you" | "shared";
@@ -67,13 +70,13 @@ export type Detect = DetectSignal | null;
 // A product "do-this-in-Carbon" action nested inside a services step.
 export interface NestedProductStep {
   key: string; // stable, e.g. "prod:import-bom"
-  label: string;
-  detail?: string;
+  label: MessageDescriptor;
+  detail?: MessageDescriptor;
   docsUrl?: string;
   videoKey?: string; // resolved against the ERP trainingConfig
   // CTA label on the "Next step" card. Defaults to "Open in Carbon"; override
   // when the step opens a hub page rather than an app screen.
-  cta?: string;
+  cta?: MessageDescriptor;
   detect: Detect;
   // Tiers this step applies to. Omitted => all tiers. Self-serve customers
   // don't do net-new work or stand up their own hosting, so those steps are
@@ -95,12 +98,12 @@ export interface GanttBar {
 export interface StepDef {
   key: string; // stable, e.g. "gate:discovery"
   n: number; // 1-based position; renumbered per tier by spineForTier
-  title: string;
-  gate: string; // "Scope signed"
+  title: MessageDescriptor;
+  gate: MessageDescriptor; // "Scope signed"
   owner: Owner;
-  timing: string;
+  timing: MessageDescriptor;
   refSlug: string; // page slug the gate references
-  desc?: string;
+  desc?: MessageDescriptor;
   nested?: NestedProductStep[];
   gantt?: GanttBar; // bar position on the timeline gantt
   // Tiers this gate applies to. Omitted => all tiers. e.g. the Acceptance gate
@@ -111,8 +114,8 @@ export interface StepDef {
 // A hub page (sidebar entry + content surface).
 export interface PageDef {
   slug: string; // matches the route filename, e.g. "how-we-work"
-  navLabel: string;
-  title: string;
+  navLabel: MessageDescriptor;
+  title: MessageDescriptor;
   group: PageGroup;
   order: number;
   optional?: boolean; // excludable whole page (e.g. Value Snapshot)
@@ -129,9 +132,12 @@ export interface PageDef {
 // A fill-in field; ownership drives who may write it (enforced server-side).
 export interface FieldDef {
   key: string; // stable, e.g. "scope.goal"
-  label: string;
+  label: MessageDescriptor;
   ownership: Owner;
   dataType: "text" | "date" | "money" | "number" | "email";
+  // DB-stored default written/read as a plain string — NOT translated. (Content
+  // defaults that flow through EditableField's `defaultValue` prop are a separate
+  // concern and DO become MessageDescriptor; this interface field is not one.)
   defaultValue: string;
 }
 
@@ -170,6 +176,11 @@ export interface ImplementationRowData {
   sortOrder: number;
 }
 
+// Payload shapes for custom (staff-added) rows. These fields are DB-stored,
+// user-editable row DATA — read back from the persisted payload as plain strings
+// and round-tripped via updateRow — so they stay `string` and are never
+// translated (same rule as collections.ts `newPayload()` seeds).
+
 // Payload shape for a custom Board task.
 export interface CustomTaskPayload {
   label: string;
@@ -204,7 +215,7 @@ export interface CustomGoLivePayload {
 // in either place updates the same `task` check state — no drift).
 export interface BoardTask {
   key: string; // stable board key (taskKey(key) => itemKey)
-  label: string;
+  label: MessageDescriptor;
   stepKey: string; // a SPINE step key, e.g. "gate:configure"
   owner: Owner;
   // Tiers this task applies to. Omitted => all tiers. e.g. hypercare is paid-tier

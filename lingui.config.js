@@ -19,7 +19,8 @@ export default defineConfig({
         "packages/react/src",
         "packages/form/src",
         "packages/printing/src/ui",
-        "packages/glossary/src"
+        "packages/glossary/src",
+        "packages/onboarding/src"
       ],
       exclude: ["**/*.server.*", "**/*.test.*", "**/*.spec.*"]
     },

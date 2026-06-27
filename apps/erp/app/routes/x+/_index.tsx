@@ -20,6 +20,7 @@ import { OnboardingHubSummary } from "@carbon/onboarding/ui";
 import { Button, cn, useRouteData } from "@carbon/react";
 import { isInternalEmail } from "@carbon/utils";
 import { getLocalTimeZone } from "@internationalized/date";
+import { useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import type { ComponentProps } from "react";
 import { useMemo } from "react";
@@ -62,6 +63,7 @@ const NO_SIGNALS: Signals = {
 };
 
 function useImplementationSummary() {
+  const { i18n } = useLingui();
   const data = useRouteData<{
     implementationHub: { tier: Tier; status: HubStatus } | null;
     implementationCheckStates: CheckStateRow[];
@@ -85,10 +87,10 @@ function useImplementationSummary() {
 
   const next = nextAction(spine, map, signals);
   return {
-    label: labelForTier(hub.tier),
+    label: i18n._(labelForTier(hub.tier)),
     done,
     total,
-    nextLabel: next?.title,
+    nextLabel: next?.title ? i18n._(next.title) : undefined,
     dismiss
   };
 }

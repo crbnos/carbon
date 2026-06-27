@@ -1,47 +1,50 @@
+import type { MessageDescriptor } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
+
 export interface CadenceItem {
   key: string; // stable key for the per-company `what` override
-  cadence: string;
-  what: string; // default; overridable per company via `howWeWork.cadence.<key>`
+  cadence: MessageDescriptor;
+  what: MessageDescriptor; // default; overridable per company via `howWeWork.cadence.<key>`
 }
 
 export const CADENCE: CadenceItem[] = [
   {
     key: "weekly",
-    cadence: "Weekly",
-    what: "Status call: progress, blockers, what's next"
+    cadence: msg`Weekly`,
+    what: msg`Status call: progress, blockers, what's next`
   },
   {
     key: "as-needed",
-    cadence: "As needed",
-    what: "Working sessions on configuration and data"
+    cadence: msg`As needed`,
+    what: msg`Working sessions on configuration and data`
   },
   {
     key: "gate",
-    cadence: "At each gate",
-    what: "Sign-off review before moving to the next step"
+    cadence: msg`At each gate`,
+    what: msg`Sign-off review before moving to the next step`
   }
 ];
 
 export interface EscalationStep {
   n: number;
-  title: string;
-  body: string;
+  title: MessageDescriptor;
+  body: MessageDescriptor;
 }
 
 export const ESCALATION: EscalationStep[] = [
   {
     n: 1,
-    title: "Raise it at the weekly status call",
-    body: "Most things get caught and resolved here. Name it plainly."
+    title: msg`Raise it at the weekly status call`,
+    body: msg`Most things get caught and resolved here. Name it plainly.`
   },
   {
     n: 2,
-    title: "Owner + date on the Project Board",
-    body: "If it's blocking or a date is at risk, it gets an owner and is tracked."
+    title: msg`Owner + date on the Project Board`,
+    body: msg`If it's blocking or a date is at risk, it gets an owner and is tracked.`
   },
   {
     n: 3,
-    title: "Escalate to the project leads",
-    body: "If it can't wait for the next call, the leads on both sides decide."
+    title: msg`Escalate to the project leads`,
+    body: msg`If it can't wait for the next call, the leads on both sides decide.`
   }
 ];

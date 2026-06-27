@@ -1,4 +1,5 @@
 import { cn } from "@carbon/react";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { formatDate, resolveTimeline, type TimelineBar } from "../logic";
 import type { StepDef } from "../types";
 import { useCanEdit, useFieldMap } from "./state";
@@ -13,7 +14,8 @@ const LABEL_COL = "w-44"; // 176px — matches the grid overlay's left offset
 export function GanttChart({ steps }: { steps: StepDef[] }) {
   const fields = useFieldMap();
   const canEdit = useCanEdit();
-  const timeline = resolveTimeline(steps, fields);
+  const { i18n } = useLingui();
+  const timeline = resolveTimeline(steps, fields, i18n);
 
   if (timeline.bars.length === 0) return null;
 
@@ -23,9 +25,11 @@ export function GanttChart({ steps }: { steps: StepDef[] }) {
         {!timeline.hasDates ? (
           <div className="flex items-center justify-end mb-3">
             <span className="text-xxs text-muted-foreground">
-              {canEdit
-                ? "Relative timeline · dates set in Setup & Controls"
-                : "Relative timeline · dates to be confirmed"}
+              {canEdit ? (
+                <Trans>Relative timeline · dates set in Setup & Controls</Trans>
+              ) : (
+                <Trans>Relative timeline · dates to be confirmed</Trans>
+              )}
             </span>
           </div>
         ) : null}
@@ -69,7 +73,7 @@ export function GanttChart({ steps }: { steps: StepDef[] }) {
                 LABEL_COL
               )}
             >
-              Checkpoints
+              <Trans>Checkpoints</Trans>
             </div>
             <div className="relative flex-1 h-full">
               {timeline.bars.map((b) => (

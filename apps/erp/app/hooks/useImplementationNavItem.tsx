@@ -10,6 +10,7 @@ import {
   type Tier
 } from "@carbon/onboarding";
 import { useRouteData } from "@carbon/react";
+import { useLingui } from "@lingui/react/macro";
 import { LuRocket } from "react-icons/lu";
 import type { Authenticated, NavItem } from "~/types";
 import { path } from "~/utils/path";
@@ -43,6 +44,7 @@ function useHub() {
 // The pinned "Get Started" primary-nav entry with a remaining-gates badge. Shown
 // while a hub is still in progress; gone once it's finished (see reopen entry).
 export function useImplementationNavItem(): Authenticated<NavItem> | null {
+  const { i18n } = useLingui();
   const data = useRouteData<AppLayoutData>(path.to.authenticatedRoot);
   const hub = data?.implementationHub;
   if (!hub || isFinished(hub.status)) return null;
@@ -56,7 +58,7 @@ export function useImplementationNavItem(): Authenticated<NavItem> | null {
   const remaining = spine.length - done;
 
   return {
-    name: labelForTier(hub.tier),
+    name: i18n._(labelForTier(hub.tier)),
     to: path.to.getStarted,
     icon: LuRocket,
     tag: remaining > 0 ? remaining : undefined
@@ -67,11 +69,12 @@ export function useImplementationNavItem(): Authenticated<NavItem> | null {
 // pinned item is gone, so this keeps the hub reachable (Settings → Company).
 // Null for unenrolled or still-in-progress hubs.
 export function useImplementationReopenItem(): Authenticated<NavItem> | null {
+  const { i18n } = useLingui();
   const hub = useHub();
   if (!hub || !isFinished(hub.status)) return null;
 
   return {
-    name: labelForTier(hub.tier),
+    name: i18n._(labelForTier(hub.tier)),
     to: path.to.getStarted,
     icon: LuRocket
   };

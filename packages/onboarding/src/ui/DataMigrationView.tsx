@@ -1,4 +1,5 @@
 import { IconButton } from "@carbon/react";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import { LuTrash } from "react-icons/lu";
 import { COLLECTIONS, PAGE_COPY } from "../content";
@@ -24,6 +25,7 @@ const FLAG = DEF.flag!;
 const validatedKey = (id: string) => flagKey(`data.${id}`);
 
 export function DataMigrationView() {
+  const { t, i18n } = useLingui();
   const exclusions = useExclusions();
   const map = useCheckMap();
   const { toggleFlag } = useHubActions();
@@ -38,13 +40,13 @@ export function DataMigrationView() {
   return (
     <div className="w-full max-w-3xl mx-auto flex flex-col gap-6">
       <PageHeader
-        title={PAGE_COPY.data.title}
-        lead={PAGE_COPY.data.lead}
+        title={i18n._(PAGE_COPY.data.title)}
+        lead={i18n._(PAGE_COPY.data.lead)}
         aside={
           <ProgressPill
             done={validated}
             total={visibleRows.length}
-            label="validated"
+            label={t`validated`}
           />
         }
       />
@@ -56,8 +58,8 @@ export function DataMigrationView() {
           <Section
             key={group.n}
             number={group.n}
-            title={group.title}
-            subtitle={group.desc}
+            title={i18n._(group.title)}
+            subtitle={i18n._(group.desc)}
           >
             <SectionList>
               {rows.map((row) => {
@@ -68,15 +70,17 @@ export function DataMigrationView() {
                     className="flex items-center gap-4 px-5 py-3"
                   >
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium">{row.object}</div>
+                      <div className="text-sm font-medium">
+                        {i18n._(row.object)}
+                      </div>
                       <div className="text-xs text-muted-foreground">
-                        Today: {row.today}
+                        <Trans>Today:</Trans> {i18n._(row.today)}
                       </div>
                     </div>
                     <StatusToggle
                       active={map.get(key) === "1"}
-                      activeLabel={FLAG.active}
-                      inactiveLabel={FLAG.inactive}
+                      activeLabel={i18n._(FLAG.active)}
+                      inactiveLabel={i18n._(FLAG.inactive)}
                       onToggle={() =>
                         toggleFlag(key, "scopeFlag", map.get(key) !== "1")
                       }
@@ -97,6 +101,7 @@ export function DataMigrationView() {
 }
 
 function CustomDataRow({ row }: { row: ImplementationRowData }) {
+  const { t, i18n } = useLingui();
   const canEdit = useCanEdit();
   const map = useCheckMap();
   const { toggleFlag, updateRow, deleteRow } = useHubActions();
@@ -122,7 +127,7 @@ function CustomDataRow({ row }: { row: ImplementationRowData }) {
           <>
             <EditableInput
               value={object}
-              placeholder="What data"
+              placeholder={t`What data`}
               onCommit={(next) => {
                 setObject(next);
                 updateRow(row.id, { object: next, today });
@@ -130,7 +135,7 @@ function CustomDataRow({ row }: { row: ImplementationRowData }) {
             />
             <EditableInput
               value={today}
-              placeholder="Where it lives today"
+              placeholder={t`Where it lives today`}
               variant="muted"
               onCommit={(next) => {
                 setToday(next);
@@ -142,20 +147,20 @@ function CustomDataRow({ row }: { row: ImplementationRowData }) {
           <>
             <div className="text-sm font-medium">{payload.object}</div>
             <div className="text-xs text-muted-foreground">
-              Today: {payload.today}
+              <Trans>Today:</Trans> {payload.today}
             </div>
           </>
         )}
       </div>
       <StatusToggle
         active={validated}
-        activeLabel={FLAG.active}
-        inactiveLabel={FLAG.inactive}
+        activeLabel={i18n._(FLAG.active)}
+        inactiveLabel={i18n._(FLAG.inactive)}
         onToggle={() => toggleFlag(key, "scopeFlag", !validated)}
       />
       {canEdit ? (
         <IconButton
-          aria-label="Delete row"
+          aria-label={t`Delete row`}
           icon={<LuTrash />}
           variant="ghost"
           size="sm"

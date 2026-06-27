@@ -1,3 +1,4 @@
+import { Trans, useLingui } from "@lingui/react/macro";
 import { LuArrowRight } from "react-icons/lu";
 import { PAGE_COPY, UI_TEXT } from "../content";
 import {
@@ -11,6 +12,7 @@ import { PageHeader, Panel } from "./primitives";
 import { useCanEdit, useFieldMap } from "./state";
 
 export function ValueView() {
+  const { t, i18n } = useLingui();
   const canEdit = useCanEdit();
   const fields = useFieldMap();
 
@@ -19,15 +21,15 @@ export function ValueView() {
       <PageHeader
         title={
           <span className="flex items-center gap-2">
-            {PAGE_COPY.value.title}
+            {i18n._(PAGE_COPY.value.title)}
             {canEdit ? (
               <span className="text-xxs uppercase tracking-wide rounded px-1.5 py-0.5 border text-muted-foreground font-medium">
-                Optional
+                <Trans>Optional</Trans>
               </span>
             ) : null}
           </span>
         }
-        lead={PAGE_COPY.value.lead}
+        lead={i18n._(PAGE_COPY.value.lead)}
       />
 
       <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -40,14 +42,14 @@ export function ValueView() {
               fieldKey={`${metric.key}.value`}
               value={fields.get(`${metric.key}.value`)}
               defaultValue={metric.value}
-              placeholder="Target"
+              placeholder={t`Target`}
               className="text-xl font-semibold tracking-tight"
             />
             <EditableField
               fieldKey={`${metric.key}.label`}
               value={fields.get(`${metric.key}.label`)}
               defaultValue={metric.label}
-              placeholder="Metric"
+              placeholder={t`Metric`}
               className="text-xs text-muted-foreground"
             />
           </div>
@@ -55,42 +57,42 @@ export function ValueView() {
       </section>
       {canEdit ? (
         <p className="text-xxs text-muted-foreground -mt-3">
-          {UI_TEXT.carbonOnlyValueNote}
+          {i18n._(UI_TEXT.carbonOnlyValueNote)}
         </p>
       ) : null}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Panel title="Where you are today">
+        <Panel title={t`Where you are today`}>
           <ul className="flex flex-col gap-2">
-            {VALUE_PROBLEMS.map((p) => (
-              <li key={p} className="flex items-start gap-2.5 text-sm">
+            {VALUE_PROBLEMS.map((p, i) => (
+              <li key={i} className="flex items-start gap-2.5 text-sm">
                 <span className="shrink-0 mt-1.5 size-1.5 rounded-full bg-red-500/70" />
-                {p}
+                {i18n._(p)}
               </li>
             ))}
           </ul>
         </Panel>
-        <Panel title="Where you want to grow">
+        <Panel title={t`Where you want to grow`}>
           <ul className="flex flex-col gap-2">
-            {VALUE_GOALS.map((g) => (
-              <li key={g} className="flex items-start gap-2.5 text-sm">
+            {VALUE_GOALS.map((g, i) => (
+              <li key={i} className="flex items-start gap-2.5 text-sm">
                 <span className="shrink-0 mt-1.5 size-1.5 rounded-full bg-emerald-500" />
-                {g}
+                {i18n._(g)}
               </li>
             ))}
           </ul>
         </Panel>
       </div>
 
-      <Panel title="What changes day to day">
+      <Panel title={t`What changes day to day`}>
         <div className="flex flex-col gap-4">
-          {VALUE_POINTS.map((v) => (
-            <div key={v.title} className="flex items-start gap-3">
+          {VALUE_POINTS.map((v, i) => (
+            <div key={i} className="flex items-start gap-3">
               <LuArrowRight className="shrink-0 mt-0.5 text-primary" />
               <div>
-                <div className="text-sm font-medium">{v.title}</div>
+                <div className="text-sm font-medium">{i18n._(v.title)}</div>
                 <div className="text-sm text-muted-foreground mt-0.5">
-                  {v.body}
+                  {i18n._(v.body)}
                 </div>
               </div>
             </div>

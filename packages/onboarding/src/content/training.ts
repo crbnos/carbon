@@ -1,18 +1,20 @@
+import type { MessageDescriptor } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
 import type { Mod } from "../types";
 
 export interface TrainingCourse {
   key: string; // stable, for the format toggle state
-  course: string;
-  audience: string;
+  course: MessageDescriptor;
+  audience: MessageDescriptor;
   format: "Self-paced" | "Hands-on";
-  length: string;
+  length: MessageDescriptor;
   // trainingConfig key (ERP) → resolved to an Academy course / video URL via
   // useResolveVideoUrl. Omitted when no matching Academy content exists yet.
   videoKey?: string;
 }
 
 export interface TrainingTrack {
-  title: string;
+  title: MessageDescriptor;
   moduleTags?: Mod[];
   courses: TrainingCourse[];
 }
@@ -20,135 +22,135 @@ export interface TrainingTrack {
 // Train-the-trainer plan by module. Module-tagged tracks drop out when excluded.
 export const TRAINING_TRACKS: TrainingTrack[] = [
   {
-    title: "Foundation (everyone)",
+    title: msg`Foundation (everyone)`,
     courses: [
       {
         key: "found-1",
-        course: "Getting around Carbon",
-        audience: "All users",
+        course: msg`Getting around Carbon`,
+        audience: msg`All users`,
         format: "Self-paced",
-        length: "2h"
+        length: msg`2h`
       },
       {
         key: "found-2",
-        course: "How your company's process maps to Carbon",
-        audience: "Champions",
+        course: msg`How your company's process maps to Carbon`,
+        audience: msg`Champions`,
         format: "Hands-on",
-        length: "2h"
+        length: msg`2h`
       }
     ]
   },
   {
-    title: "Sales & Quoting",
+    title: msg`Sales & Quoting`,
     moduleTags: ["sal"],
     courses: [
       {
         key: "sal-1",
-        course: "Quoting and sales orders",
-        audience: "Sales, Estimator",
+        course: msg`Quoting and sales orders`,
+        audience: msg`Sales, Estimator`,
         format: "Hands-on",
-        length: "3h",
+        length: msg`3h`,
         videoKey: "quotes"
       },
       {
         key: "sal-2",
-        course: "Configure-to-order",
-        audience: "Sales",
+        course: msg`Configure-to-order`,
+        audience: msg`Sales`,
         format: "Hands-on",
-        length: "2h",
+        length: msg`2h`,
         videoKey: "quotes"
       }
     ]
   },
   {
-    title: "Purchasing & Inventory",
+    title: msg`Purchasing & Inventory`,
     moduleTags: ["pur", "inv"],
     courses: [
       {
         key: "pur-1",
-        course: "Purchasing and auto-planning",
-        audience: "Buyer, Planner",
+        course: msg`Purchasing and auto-planning`,
+        audience: msg`Buyer, Planner`,
         format: "Hands-on",
-        length: "3h",
+        length: msg`3h`,
         videoKey: "purchaseOrders"
       },
       {
         key: "inv-1",
-        course: "Inventory control and counts",
-        audience: "Warehouse, Ops",
+        course: msg`Inventory control and counts`,
+        audience: msg`Warehouse, Ops`,
         format: "Hands-on",
-        length: "3h",
+        length: msg`3h`,
         videoKey: "inventory"
       }
     ]
   },
   {
-    title: "Items & Production",
+    title: msg`Items & Production`,
     moduleTags: ["itm", "prd"],
     courses: [
       {
         key: "itm-1",
-        course: "Item master, BOMs and Bill of Process",
-        audience: "Engineering",
+        course: msg`Item master, BOMs and Bill of Process`,
+        audience: msg`Engineering`,
         format: "Hands-on",
-        length: "4h",
+        length: msg`4h`,
         videoKey: "bom"
       },
       {
         key: "itm-2",
-        course: "Engineering changes and CAD",
-        audience: "Engineering",
+        course: msg`Engineering changes and CAD`,
+        audience: msg`Engineering`,
         format: "Hands-on",
-        length: "3h"
+        length: msg`3h`
       },
       {
         key: "prd-1",
-        course: "Shop-floor app and scheduling",
-        audience: "Shop Floor leads, Planner",
+        course: msg`Shop-floor app and scheduling`,
+        audience: msg`Shop Floor leads, Planner`,
         format: "Hands-on",
-        length: "3h",
+        length: msg`3h`,
         videoKey: "jobs"
       }
     ]
   },
   {
-    title: "Quality",
+    title: msg`Quality`,
     moduleTags: ["qms"],
     courses: [
       {
         key: "qms-1",
-        course: "Inspections, nonconformance, and CAPA",
-        audience: "Quality",
+        course: msg`Inspections, nonconformance, and CAPA`,
+        audience: msg`Quality`,
         format: "Hands-on",
-        length: "3h",
+        length: msg`3h`,
         videoKey: "quality"
       }
     ]
   },
   {
-    title: "Accounting",
+    title: msg`Accounting`,
     moduleTags: ["acc"],
     courses: [
       {
         key: "acc-1",
-        course: "General Ledger and month-end close",
-        audience: "Controller, Accountant",
+        course: msg`General Ledger and month-end close`,
+        audience: msg`Controller, Accountant`,
         format: "Hands-on",
-        length: "4h"
+        length: msg`4h`
       },
       {
         key: "acc-2",
-        course: "Accounts Receivable",
-        audience: "AR Clerk",
+        course: msg`Accounts Receivable`,
+        audience: msg`AR Clerk`,
         format: "Hands-on",
-        length: "3h"
+        length: msg`3h`
       },
       {
         key: "acc-3",
-        course: "Accounts Payable",
-        audience: "AP Clerk",
+        course: msg`Accounts Payable`,
+        audience: msg`AP Clerk`,
         format: "Hands-on",
-        length: "3h"
+        length: msg`3h`
       }
     ]
   }

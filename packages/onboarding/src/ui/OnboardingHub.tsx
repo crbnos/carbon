@@ -1,4 +1,5 @@
 import { Button, cn } from "@carbon/react";
+import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useRef } from "react";
 import {
   LuArrowRight,
@@ -78,11 +79,13 @@ export function OnboardingHub({
   }, [isComplete, onComplete]);
 
   const stateText =
-    done === total
-      ? "Live on Carbon"
-      : done === 0
-        ? `${total} phases to go live`
-        : `${remaining} ${remaining === 1 ? "phase" : "phases"} left`;
+    done === total ? (
+      <Trans>Live on Carbon</Trans>
+    ) : done === 0 ? (
+      <Trans>{total} phases to go live</Trans>
+    ) : (
+      <Plural value={remaining} one="# phase left" other="# phases left" />
+    );
 
   return (
     <div className="w-full max-w-3xl mx-auto flex flex-col gap-6">
@@ -91,11 +94,17 @@ export function OnboardingHub({
           <LuRocket className="text-2xl text-primary" />
         </div>
         <h1 className="text-3xl font-semibold tracking-tight text-balance">
-          {companyName ? `Welcome, ${companyName}` : "Getting set up"}
+          {companyName ? (
+            <Trans>Welcome, {companyName}</Trans>
+          ) : (
+            <Trans>Getting set up</Trans>
+          )}
         </h1>
         <p className="text-base text-muted-foreground max-w-xl text-pretty">
-          {total} phases to get your company live on Carbon. Each one ends at a
-          checkpoint. You and the Carbon team work from the same view.
+          <Trans>
+            {total} phases to get your company live on Carbon. Each one ends at
+            a checkpoint. You and the Carbon team work from the same view.
+          </Trans>
         </p>
       </header>
 
@@ -115,16 +124,18 @@ export function OnboardingHub({
           </div>
           <div className="flex-1 min-w-0">
             <div className="text-lg font-semibold tracking-tight">
-              You're live on Carbon
+              <Trans>You're live on Carbon</Trans>
             </div>
             <p className="text-sm text-muted-foreground mt-0.5">
-              All {total} phases are done. Nice work — your team is up and
-              running.
+              <Trans>
+                All {total} phases are done. Nice work — your team is up and
+                running.
+              </Trans>
             </p>
           </div>
           {onExit ? (
             <Button variant="primary" className="shrink-0" onClick={onExit}>
-              Finish onboarding
+              <Trans>Finish onboarding</Trans>
             </Button>
           ) : null}
         </div>
@@ -133,8 +144,8 @@ export function OnboardingHub({
       <div className="rounded-2xl border bg-card shadow-button-base overflow-hidden">
         <div className="flex items-end justify-between gap-4 flex-wrap p-6 pb-4 border-b">
           <div className="text-2xl font-semibold tracking-tight">
-            <span className="text-primary tabular-nums">{done}</span> of {total}{" "}
-            phases complete
+            <span className="text-primary tabular-nums">{done}</span>{" "}
+            <Trans>of {total} phases complete</Trans>
           </div>
           <span className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground">
             <span
@@ -201,6 +212,7 @@ function NextStepCard({
   onOpenPage: (slug: string) => void;
   resolveVideoUrl?: (videoKey: string) => string | undefined;
 }) {
+  const { t, i18n } = useLingui();
   const product = action.productStep;
   const videoUrl = product?.videoKey
     ? resolveVideoUrl?.(product.videoKey)
@@ -213,13 +225,15 @@ function NextStepCard({
       </div>
       <div className="flex-1 min-w-0">
         <div className="text-xxs uppercase tracking-wide font-medium text-primary">
-          Next step
+          <Trans>Next step</Trans>
         </div>
         <div className="text-base font-semibold tracking-tight mt-0.5">
-          {action.title}
+          {i18n._(action.title)}
         </div>
         {action.detail ? (
-          <p className="text-sm text-muted-foreground mt-1">{action.detail}</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            {i18n._(action.detail)}
+          </p>
         ) : null}
         <div className="flex items-center gap-2 mt-3 flex-wrap">
           {product ? (
@@ -227,14 +241,14 @@ function NextStepCard({
               leftIcon={<LuArrowRight />}
               onClick={() => onOpenProduct(product.key)}
             >
-              {product.cta ?? "Open in Carbon"}
+              {product.cta ? i18n._(product.cta) : t`Open in Carbon`}
             </Button>
           ) : (
             <Button
               leftIcon={<LuArrowRight />}
               onClick={() => onOpenPage(action.refSlug)}
             >
-              {`Go to ${action.refTitle}`}
+              <Trans>Go to {i18n._(action.refTitle)}</Trans>
             </Button>
           )}
           {videoUrl ? (
@@ -244,7 +258,7 @@ function NextStepCard({
               leftIcon={<LuPlay />}
               onClick={() => window.open(videoUrl, "_blank", "noopener")}
             >
-              Watch
+              <Trans>Watch</Trans>
             </Button>
           ) : null}
           {product?.docsUrl ? (
@@ -256,7 +270,7 @@ function NextStepCard({
                 window.open(product.docsUrl, "_blank", "noopener,noreferrer")
               }
             >
-              Docs
+              <Trans>Docs</Trans>
             </Button>
           ) : null}
         </div>
@@ -284,6 +298,7 @@ function GateRow({
   signals: Signals;
   onOpenInPlan: (stepKey: string) => void;
 }) {
+  const { t, i18n } = useLingui();
   const nested = step.nested ?? [];
   const nestedDone = nested.filter(
     (n) => effectiveProductStatus(n, map, signals) === "done"
@@ -295,8 +310,8 @@ function GateRow({
         <button
           type="button"
           onClick={() => onOpenInPlan(step.key)}
-          aria-label={`${step.title} · ${status}. Update this in the project plan.`}
-          title="Update this in the project plan"
+          aria-label={`${i18n._(step.title)} · ${status}. ${t`Update this in the project plan.`}`}
+          title={t`Update this in the project plan`}
           className="shrink-0 rounded-md"
         >
           <StatusBox status={status} interactive={false} ariaLabel="" />
@@ -313,19 +328,19 @@ function GateRow({
                 status === "done" && "text-muted-foreground"
               )}
             >
-              {step.n} · {step.title}
+              {step.n} · {i18n._(step.title)}
             </span>
             <span className="text-xxs uppercase tracking-wide rounded px-1.5 py-0.5 border text-muted-foreground font-medium">
-              Checkpoint: {step.gate}
+              <Trans>Checkpoint:</Trans> {i18n._(step.gate)}
             </span>
             {nested.length ? (
               <span className="text-xxs text-muted-foreground tabular-nums">
-                {nestedDone}/{nested.length} done
+                {nestedDone}/{nested.length} <Trans>done</Trans>
               </span>
             ) : null}
             {tier !== "self_serve" ? (
               <span className="text-xxs uppercase tracking-wide rounded px-1.5 py-0.5 border text-muted-foreground font-medium ml-auto">
-                {OWNER_TOKENS[ownerForStep(step, tier)].label}
+                {i18n._(OWNER_TOKENS[ownerForStep(step, tier)].label)}
               </span>
             ) : null}
             <LuArrowRight
@@ -336,10 +351,12 @@ function GateRow({
             />
           </div>
           {step.desc ? (
-            <p className="text-sm text-muted-foreground mt-1">{step.desc}</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              {i18n._(step.desc)}
+            </p>
           ) : null}
           <span className="text-xxs font-medium text-muted-foreground/80 mt-2 inline-block transition-colors group-hover:text-primary">
-            View in project plan
+            <Trans>View in project plan</Trans>
           </span>
         </button>
       </div>

@@ -1,4 +1,5 @@
 import { IconButton } from "@carbon/react";
+import { useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import { LuArrowUpRight, LuTrash } from "react-icons/lu";
 import { COLLECTIONS, PAGE_COPY } from "../content";
@@ -28,6 +29,7 @@ const FLAG = DEF.flag!;
 const configuredKey = (id: string) => flagKey(`setup.${id}`);
 
 export function SetupMapView() {
+  const { t, i18n } = useLingui();
   const exclusions = useExclusions();
   const map = useCheckMap();
   const { toggleFlag } = useHubActions();
@@ -43,13 +45,13 @@ export function SetupMapView() {
   return (
     <div className="w-full max-w-3xl mx-auto flex flex-col gap-6">
       <PageHeader
-        title={PAGE_COPY.setup.title}
-        lead={PAGE_COPY.setup.lead}
+        title={i18n._(PAGE_COPY.setup.title)}
+        lead={i18n._(PAGE_COPY.setup.lead)}
         aside={
           <ProgressPill
             done={configured}
             total={visibleRows.length}
-            label="configured"
+            label={t`configured`}
           />
         }
       />
@@ -61,8 +63,8 @@ export function SetupMapView() {
           <Section
             key={group.n}
             number={group.n}
-            title={group.title}
-            subtitle={group.desc}
+            title={i18n._(group.title)}
+            subtitle={i18n._(group.desc)}
           >
             <SectionList>
               {rows.map((row) => {
@@ -79,20 +81,22 @@ export function SetupMapView() {
                           href={url}
                           className="group inline-flex items-center gap-1 text-sm font-medium hover:text-primary transition-colors"
                         >
-                          {row.object}
+                          {i18n._(row.object)}
                           <LuArrowUpRight className="size-3.5 shrink-0 text-muted-foreground/50 transition group-hover:text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                         </a>
                       ) : (
-                        <div className="text-sm font-medium">{row.object}</div>
+                        <div className="text-sm font-medium">
+                          {i18n._(row.object)}
+                        </div>
                       )}
                       <div className="text-xs text-muted-foreground">
-                        {row.detail}
+                        {i18n._(row.detail)}
                       </div>
                     </div>
                     <StatusToggle
                       active={map.get(key) === "1"}
-                      activeLabel={FLAG.active}
-                      inactiveLabel={FLAG.inactive}
+                      activeLabel={i18n._(FLAG.active)}
+                      inactiveLabel={i18n._(FLAG.inactive)}
                       onToggle={() =>
                         toggleFlag(key, "scopeFlag", map.get(key) !== "1")
                       }
@@ -113,6 +117,7 @@ export function SetupMapView() {
 }
 
 function CustomSetupRow({ row }: { row: ImplementationRowData }) {
+  const { t, i18n } = useLingui();
   const canEdit = useCanEdit();
   const map = useCheckMap();
   const { toggleFlag, updateRow, deleteRow } = useHubActions();
@@ -147,7 +152,7 @@ function CustomSetupRow({ row }: { row: ImplementationRowData }) {
           <>
             <EditableInput
               value={object}
-              placeholder="What to set up"
+              placeholder={t`What to set up`}
               onCommit={(next) => {
                 setObject(next);
                 commit({ object: next });
@@ -155,7 +160,7 @@ function CustomSetupRow({ row }: { row: ImplementationRowData }) {
             />
             <EditableInput
               value={today}
-              placeholder="What it is"
+              placeholder={t`What it is`}
               variant="muted"
               onCommit={(next) => {
                 setToday(next);
@@ -164,7 +169,7 @@ function CustomSetupRow({ row }: { row: ImplementationRowData }) {
             />
             <EditableInput
               value={url}
-              placeholder="Link (optional) — e.g. /x/settings/…"
+              placeholder={t`Link (optional) — e.g. /x/settings/…`}
               variant="muted"
               onCommit={(next) => {
                 setUrl(next);
@@ -191,13 +196,13 @@ function CustomSetupRow({ row }: { row: ImplementationRowData }) {
       </div>
       <StatusToggle
         active={configured}
-        activeLabel={FLAG.active}
-        inactiveLabel={FLAG.inactive}
+        activeLabel={i18n._(FLAG.active)}
+        inactiveLabel={i18n._(FLAG.inactive)}
         onToggle={() => toggleFlag(key, "scopeFlag", !configured)}
       />
       {canEdit ? (
         <IconButton
-          aria-label="Delete row"
+          aria-label={t`Delete row`}
           icon={<LuTrash />}
           variant="ghost"
           size="sm"

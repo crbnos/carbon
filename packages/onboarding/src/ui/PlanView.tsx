@@ -1,4 +1,5 @@
 import { cn } from "@carbon/react";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { type ReactNode, useEffect, useRef } from "react";
 import {
   LuArrowUpRight,
@@ -41,6 +42,7 @@ import {
 // ticking one here writes the same task state the board reads (no drift).
 // Read-only re: dates — the timeline is configured in Setup & Controls.
 export function PlanView() {
+  const { t, i18n } = useLingui();
   const map = useCheckMap();
   const fields = useFieldMap();
   const tier = useTier();
@@ -52,17 +54,26 @@ export function PlanView() {
 
   // Target go-live = the resolved Go-Live checkpoint date (from the schedule set
   // in Setup & Controls). Display only; null until a project start/go-live is set.
-  const timeline = resolveTimeline(steps, fields);
+  const timeline = resolveTimeline(steps, fields, i18n);
   const goLiveDate =
     timeline.bars.find((b) => b.key === "gate:golive")?.gateDate ?? null;
 
   return (
     <div className="w-full max-w-3xl mx-auto flex flex-col gap-6">
       <PageHeader
-        title={PAGE_COPY.plan.title}
-        lead={`The ${steps.length} phases to go live, each ending at a checkpoint. Tick a task here and it updates on the Project Board too.`}
+        title={i18n._(PAGE_COPY.plan.title)}
+        lead={
+          <Trans>
+            The {steps.length} phases to go live, each ending at a checkpoint.
+            Tick a task here and it updates on the Project Board too.
+          </Trans>
+        }
         aside={
-          <ProgressPill done={tasksDone} total={tasks.length} label="tasks" />
+          <ProgressPill
+            done={tasksDone}
+            total={tasks.length}
+            label={t`tasks`}
+          />
         }
       />
 
@@ -70,7 +81,7 @@ export function PlanView() {
         <div className="rounded-xl border bg-card shadow-button-base px-4 py-3 flex items-center gap-3">
           <LuCalendarClock className="shrink-0 text-primary" />
           <span className="text-xxs uppercase tracking-wide font-medium text-muted-foreground shrink-0">
-            Target go-live
+            <Trans>Target go-live</Trans>
           </span>
           <span className="text-sm font-medium">{formatDate(goLiveDate)}</span>
         </div>
@@ -116,6 +127,7 @@ function PhaseCard({
   onToggleTask: (itemKey: string, kind: StateKind, value: string) => void;
   onToggleGate: (key: string, next: GateValue) => void;
 }) {
+  const { t, i18n } = useLingui();
   const { done, total } = progress;
   const allDone = total > 0 && done === total;
   const gatePassed = gateStatus === "done";
@@ -145,16 +157,16 @@ function PhaseCard({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-base font-semibold tracking-tight">
-                {step.title}
+                {i18n._(step.title)}
               </span>
               <span className="text-xxs uppercase tracking-wide rounded px-1.5 py-0.5 border text-muted-foreground font-medium">
-                Checkpoint: {step.gate}
+                <Trans>Checkpoint:</Trans> {i18n._(step.gate)}
               </span>
             </div>
             <div className="text-xs text-muted-foreground mt-1">
-              {step.timing}
+              {i18n._(step.timing)}
               {tier !== "self_serve"
-                ? ` · ${ownerLeadLabel(ownerForStep(step, tier))}`
+                ? ` · ${i18n._(ownerLeadLabel(ownerForStep(step, tier)))}`
                 : null}
             </div>
           </div>
@@ -167,13 +179,15 @@ function PhaseCard({
                   : "border text-muted-foreground"
               )}
             >
-              {done} / {total} done
+              {done} / {total} <Trans>done</Trans>
             </span>
           ) : null}
         </div>
 
         {step.desc ? (
-          <p className="text-sm text-muted-foreground mt-3">{step.desc}</p>
+          <p className="text-sm text-muted-foreground mt-3">
+            {i18n._(step.desc)}
+          </p>
         ) : null}
 
         <PhaseResources step={step} />
@@ -211,7 +225,7 @@ function PhaseCard({
                         isDone && "line-through text-muted-foreground"
                       )}
                     >
-                      {task.label}
+                      {i18n._(task.label)}
                     </span>
                   </button>
                 </li>
@@ -228,8 +242,10 @@ function PhaseCard({
         )}
       >
         <div className="min-w-0 flex-1">
-          <span className="text-muted-foreground">Checkpoint · </span>
-          <span className="font-medium">{step.gate}</span>
+          <span className="text-muted-foreground">
+            <Trans>Checkpoint ·</Trans>{" "}
+          </span>
+          <span className="font-medium">{i18n._(step.gate)}</span>
         </div>
         <button
           type="button"
@@ -244,10 +260,10 @@ function PhaseCard({
           {gatePassed ? (
             <>
               <LuCheck className="size-3" />
-              Passed · reopen
+              <Trans>Passed · reopen</Trans>
             </>
           ) : (
-            "Mark checkpoint passed"
+            t`Mark checkpoint passed`
           )}
         </button>
       </div>
@@ -259,6 +275,7 @@ function PhaseCard({
 // resolve through the ERP-injected trainingConfig (useResolveVideoUrl); a step
 // with neither a doc nor a resolvable video is dropped.
 function PhaseResources({ step }: { step: StepDef }) {
+  const { i18n } = useLingui();
   const resolveVideoUrl = useResolveVideoUrl();
   const items = (step.nested ?? [])
     .map((n) => ({
@@ -274,19 +291,19 @@ function PhaseResources({ step }: { step: StepDef }) {
   return (
     <div className="mt-4 flex flex-col gap-1.5">
       <div className="text-xxs uppercase tracking-wide font-medium text-muted-foreground">
-        Learn
+        <Trans>Learn</Trans>
       </div>
       {items.map((r) => (
         <div key={r.key} className="flex items-center gap-2 text-xs">
           <span className="flex-1 min-w-0 truncate text-muted-foreground">
-            {r.label}
+            {i18n._(r.label)}
           </span>
           {r.docsUrl ? (
             <ResourceLink
               href={r.docsUrl}
               icon={<LuFileText className="size-3" />}
             >
-              Docs
+              <Trans>Docs</Trans>
             </ResourceLink>
           ) : null}
           {r.videoUrl ? (
@@ -294,7 +311,7 @@ function PhaseResources({ step }: { step: StepDef }) {
               href={r.videoUrl}
               icon={<LuPlay className="size-3" />}
             >
-              Video
+              <Trans>Video</Trans>
             </ResourceLink>
           ) : null}
         </div>

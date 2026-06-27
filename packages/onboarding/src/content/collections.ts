@@ -6,55 +6,55 @@
 // string, so adding a surface is: add an entry here + render it with
 // <CustomRowSection collection="…"> + a render-prop row body.
 
+import type { MessageDescriptor } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
+
 export interface CollectionDef {
   collection: string;
-  addLabel: string;
-  emptyText: string;
+  addLabel: MessageDescriptor;
+  emptyText: MessageDescriptor;
   // Binary status-toggle labels for surfaces whose rows flip a single flag
   // (validated / configured / in-scope). Multi-status surfaces (board) and
   // checkbox surfaces (golive) leave this unset.
-  flag?: { active: string; inactive: string };
+  flag?: { active: MessageDescriptor; inactive: MessageDescriptor };
   // Default cells for a freshly added row. A function so each call is a fresh
-  // object (no shared-reference surprises).
+  // object (no shared-reference surprises). These seed values are persisted to
+  // the DB as user-editable row DATA, so they stay plain strings — NOT translated.
   newPayload: () => Record<string, unknown>;
 }
 
 export const COLLECTIONS = {
   board: {
     collection: "board",
-    addLabel: "Add a task",
-    emptyText: "No custom tasks yet. Add deal-specific work here.",
+    addLabel: msg`Add a task`,
+    emptyText: msg`No custom tasks yet. Add deal-specific work here.`,
     newPayload: () => ({ label: "New task", owner: "shared", status: "todo" })
   },
   data: {
     collection: "data",
-    addLabel: "Add a row",
-    emptyText:
-      "No extra data sets yet. Add anything specific to this customer.",
-    flag: { active: "Validated", inactive: "Not yet" },
+    addLabel: msg`Add a row`,
+    emptyText: msg`No extra data sets yet. Add anything specific to this customer.`,
+    flag: { active: msg`Validated`, inactive: msg`Not yet` },
     newPayload: () => ({ object: "New data set", today: "" })
   },
   setup: {
     collection: "setup",
-    addLabel: "Add a row",
-    emptyText:
-      "No extra setup items yet. Add anything specific to this customer.",
-    flag: { active: "Configured", inactive: "Not yet" },
+    addLabel: msg`Add a row`,
+    emptyText: msg`No extra setup items yet. Add anything specific to this customer.`,
+    flag: { active: msg`Configured`, inactive: msg`Not yet` },
     newPayload: () => ({ object: "New setup item", today: "" })
   },
   requirement: {
     collection: "requirement",
-    addLabel: "Add a requirement",
-    emptyText:
-      "No extra requirements yet. Add anything specific to this customer.",
-    flag: { active: "In scope", inactive: "Out" },
+    addLabel: msg`Add a requirement`,
+    emptyText: msg`No extra requirements yet. Add anything specific to this customer.`,
+    flag: { active: msg`In scope`, inactive: msg`Out` },
     newPayload: () => ({ requirement: "New requirement" })
   },
   golive: {
     collection: "golive",
-    addLabel: "Add a step",
-    emptyText:
-      "No extra cutover steps yet. Add anything specific to this customer.",
+    addLabel: msg`Add a step`,
+    emptyText: msg`No extra cutover steps yet. Add anything specific to this customer.`,
     newPayload: () => ({ label: "New cutover step" })
   }
 } satisfies Record<string, CollectionDef>;
