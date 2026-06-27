@@ -35,10 +35,9 @@ export function useDebouncedRealtime(
       return channel.on(
         "postgres_changes",
         { event: "*", schema: "public", table, filter },
-        (payload) => {
-          if ("companyId" in payload && payload.companyId !== company.id) {
-            return;
-          }
+        () => {
+          // Inserts are already scoped to this company by the `filter` arg, so
+          // every event here is relevant — just coalesce the burst.
           if (timeout.current) clearTimeout(timeout.current);
           timeout.current = setTimeout(() => {
             revalidator.revalidate();

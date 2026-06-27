@@ -1,3 +1,4 @@
+import { memo } from "react";
 import {
   LuArrowRightLeft,
   LuExternalLink,
@@ -273,17 +274,21 @@ type InventoryActivityProps = {
   highlightId?: string;
 };
 
-const InventoryActivity = ({ item, highlightId }: InventoryActivityProps) => {
-  return (
-    <Activity
-      employeeId={item.createdBy}
-      activityMessage={getActivityText(item)}
-      activityTime={item.createdAt}
-      activityIcon={getActivityIcon(item)}
-      comment={item.comment}
-      highlighted={highlightId === item.id}
-    />
-  );
-};
+const InventoryActivity = memo(
+  ({ item, highlightId }: InventoryActivityProps) => {
+    return (
+      <Activity
+        employeeId={item.createdBy}
+        activityMessage={getActivityText(item)}
+        activityTime={item.createdAt}
+        activityIcon={getActivityIcon(item)}
+        comment={item.comment}
+        highlighted={highlightId === item.id}
+      />
+    );
+  }
+);
+
+InventoryActivity.displayName = "InventoryActivity";
 
 export default InventoryActivity;

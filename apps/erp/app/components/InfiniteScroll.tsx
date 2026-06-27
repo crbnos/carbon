@@ -20,27 +20,19 @@ export function LoadingSkeleton({
 }) {
   return (
     <>
-      <div ref={ref} className="flex items-center space-x-4 p-4">
-        <Skeleton className="h-8 w-8 rounded-full" />
-        <div className="space-y-2">
-          <Skeleton className="h-4 w-[250px]" />
-          <Skeleton className="h-4 w-[200px]" />
+      {[0, 1, 2].map((i) => (
+        <div
+          key={i}
+          ref={i === 0 ? ref : undefined}
+          className="flex items-center space-x-4 p-4"
+        >
+          <Skeleton className="h-8 w-8 rounded-full" />
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-[250px]" />
+            <Skeleton className="h-4 w-[200px]" />
+          </div>
         </div>
-      </div>
-      <div className="flex items-center space-x-4 p-4">
-        <Skeleton className="h-8 w-8 rounded-full" />
-        <div className="space-y-2">
-          <Skeleton className="h-4 w-[250px]" />
-          <Skeleton className="h-4 w-[200px]" />
-        </div>
-      </div>
-      <div className="flex items-center space-x-4 p-4">
-        <Skeleton className="h-8 w-8 rounded-full" />
-        <div className="space-y-2">
-          <Skeleton className="h-4 w-[250px]" />
-          <Skeleton className="h-4 w-[200px]" />
-        </div>
-      </div>
+      ))}
     </>
   );
 }

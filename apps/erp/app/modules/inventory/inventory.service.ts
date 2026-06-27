@@ -985,8 +985,12 @@ export async function getStockMovements(
     .eq("companyId", companyId);
 
   if (args.search) {
+    // Strip characters that are structural in a PostgREST `.or(...)` filter
+    // (comma separates conditions, parens group them) so the search value can't
+    // alter the filter shape.
+    const search = args.search.replace(/[,()\\]/g, " ");
     query = query.or(
-      `itemReadableId.ilike.%${args.search}%,itemDescription.ilike.%${args.search}%,locationName.ilike.%${args.search}%,storageUnitName.ilike.%${args.search}%,trackedEntityReadableId.ilike.%${args.search}%`
+      `itemReadableId.ilike.%${search}%,itemDescription.ilike.%${search}%,locationName.ilike.%${search}%,storageUnitName.ilike.%${search}%,trackedEntityReadableId.ilike.%${search}%`
     );
   }
 

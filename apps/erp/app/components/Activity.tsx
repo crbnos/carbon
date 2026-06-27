@@ -4,6 +4,21 @@ import { useDateFormatter, useHighlightFlash } from "~/hooks";
 import { usePeople } from "~/stores";
 import Avatar from "./Avatar";
 
+type Person = { id: string; name: string; avatarUrl: string | null };
+
+// Build (and cache) an id→person Map keyed on the people array's identity. The
+// nanostore hands back a stable reference until the roster changes, so every
+// Activity row shares one O(1) lookup instead of each doing an O(n) `find`.
+const peopleByIdCache = new WeakMap<object, Map<string, Person>>();
+function peopleById(people: readonly Person[]) {
+  let map = peopleByIdCache.get(people);
+  if (!map) {
+    map = new Map(people.map((person) => [person.id, person]));
+    peopleByIdCache.set(people, map);
+  }
+  return map;
+}
+
 type ActivityProps = {
   employeeId: string;
   activityMessage: ReactNode;
@@ -27,7 +42,7 @@ const Activity = ({
 
   if (!employeeId) return null;
 
-  const person = people.find((p) => p.id === employeeId);
+  const person = peopleById(people).get(employeeId);
 
   return (
     <li

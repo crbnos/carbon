@@ -41,9 +41,14 @@ const StockMovementsTable = memo(
     const { company } = useUser();
     const [people] = usePeople();
     const locations = useLocations();
+    const locationsById = useMemo(
+      () => new Map(locations.map((l) => [l.value, l.label])),
+      [locations]
+    );
 
-    // Company-wide realtime (no debounce): every itemLedger change revalidates
-    // the route immediately. A single posting can fire many events at once.
+    // Company-wide realtime: a single posting can insert many itemLedger rows
+    // at once, so coalesce the burst into one route revalidation (1.5s debounce
+    // inside useDebouncedRealtime) rather than revalidating per event.
     useDebouncedRealtime("itemLedger", `companyId=eq.${company.id}`);
 
     const columns = useMemo<ColumnDef<StockMovement>[]>(() => {
@@ -141,8 +146,9 @@ const StockMovementsTable = memo(
           cell: ({ row }) => (
             <Enumerable
               value={
-                locations.find((l) => l.value === row.original.locationId)
-                  ?.label ?? null
+                row.original.locationId
+                  ? (locationsById.get(row.original.locationId) ?? null)
+                  : null
               }
             />
           ),
@@ -209,7 +215,7 @@ const StockMovementsTable = memo(
           }
         }
       ];
-    }, [people, locations, t, formatDate]);
+    }, [people, locations, locationsById, t, formatDate]);
 
     return (
       <Table<(typeof data)[number]>

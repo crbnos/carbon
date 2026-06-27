@@ -3,7 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { Button } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { LuChevronUp } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData } from "react-router";
@@ -70,14 +70,29 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     anchorEntryNumber = anchor.data?.entryNumber ?? null;
   }
 
-  const itemLedgerRecords = await getItemLedgerActivity(client, {
-    itemId,
-    companyId,
-    locationId,
-    entryNumber: anchorEntryNumber ?? undefined,
-    direction: "older",
-    inclusive: anchorEntryNumber !== null
-  });
+  // The activity page and the "is there anything newer than the anchor?"
+  // existence check both depend only on `anchorEntryNumber`, not on each other —
+  // run them in parallel to save a roundtrip on highlight navigations.
+  const [itemLedgerRecords, newer] = await Promise.all([
+    getItemLedgerActivity(client, {
+      itemId,
+      companyId,
+      locationId,
+      entryNumber: anchorEntryNumber ?? undefined,
+      direction: "older",
+      inclusive: anchorEntryNumber !== null
+    }),
+    anchorEntryNumber !== null
+      ? client
+          .from("itemLedger")
+          .select("id")
+          .eq("itemId", itemId)
+          .eq("companyId", companyId)
+          .eq("locationId", locationId)
+          .gt("entryNumber", anchorEntryNumber)
+          .limit(1)
+      : Promise.resolve({ data: [] as { id: string }[] })
+  ]);
   if (itemLedgerRecords.error) {
     throw redirect(
       path.to.inventory,
@@ -88,20 +103,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  // Only offer "Load newer" when entries actually exist above the anchor — a
-  // cheap existence check (indexed entryNumber, capped at one row).
-  let hasNewer = false;
-  if (anchorEntryNumber !== null) {
-    const newer = await client
-      .from("itemLedger")
-      .select("id")
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .eq("locationId", locationId)
-      .gt("entryNumber", anchorEntryNumber)
-      .limit(1);
-    hasNewer = (newer.data?.length ?? 0) > 0;
-  }
+  // Only offer "Load newer" when entries actually exist above the anchor.
+  const hasNewer = (newer.data?.length ?? 0) > 0;
 
   return {
     initialItemLedgers: itemLedgerRecords.data,
@@ -131,64 +134,68 @@ export default function ItemInventoryActivityRoute() {
     useState<ItemLedger[]>(initialItemLedgers);
   const [hasOlder, setHasOlder] = useState(initialHasOlder);
   const [hasNewer, setHasNewer] = useState(initialHasNewer);
-  const [isLoadingOlder, setIsLoadingOlder] = useState(false);
   const [isLoadingNewer, setIsLoadingNewer] = useState(false);
 
-  const loadOlder = useCallback(async () => {
-    if (isLoadingOlder || !hasOlder || itemLedgers.length === 0) return;
-    setIsLoadingOlder(true);
+  // Mirror the values the paging callbacks read into refs so the callbacks stay
+  // referentially stable across appends — otherwise InfiniteScroll's
+  // IntersectionObserver effect re-subscribes on every loaded page.
+  const oldestEntryNumber = useRef<number | null>(
+    initialItemLedgers[initialItemLedgers.length - 1]?.entryNumber ?? null
+  );
+  const newestEntryNumber = useRef<number | null>(
+    initialItemLedgers[0]?.entryNumber ?? null
+  );
+  const loadingOlder = useRef(false);
+  const loadingNewer = useRef(false);
+  const hasOlderRef = useRef(initialHasOlder);
+  const hasNewerRef = useRef(initialHasNewer);
 
-    const oldest = itemLedgers[itemLedgers.length - 1];
+  const loadOlder = useCallback(async () => {
+    const cursor = oldestEntryNumber.current;
+    if (loadingOlder.current || !hasOlderRef.current || cursor === null) return;
+    loadingOlder.current = true;
+
     const result = await getItemLedgerActivity(carbon!, {
       itemId,
       companyId,
       locationId,
-      entryNumber: oldest.entryNumber,
+      entryNumber: cursor,
       direction: "older"
     });
 
     if (result.data.length > 0) {
+      oldestEntryNumber.current =
+        result.data[result.data.length - 1].entryNumber;
       setItemLedgers((prev) => [...prev, ...result.data]);
     }
+    hasOlderRef.current = result.hasMore;
     setHasOlder(result.hasMore);
-    setIsLoadingOlder(false);
-  }, [
-    carbon,
-    itemId,
-    companyId,
-    locationId,
-    itemLedgers,
-    isLoadingOlder,
-    hasOlder
-  ]);
+    loadingOlder.current = false;
+  }, [carbon, itemId, companyId, locationId]);
 
   const loadNewer = useCallback(async () => {
-    if (isLoadingNewer || !hasNewer || itemLedgers.length === 0) return;
+    const cursor = newestEntryNumber.current;
+    if (loadingNewer.current || !hasNewerRef.current || cursor === null) return;
+    loadingNewer.current = true;
     setIsLoadingNewer(true);
 
-    const newest = itemLedgers[0];
     const result = await getItemLedgerActivity(carbon!, {
       itemId,
       companyId,
       locationId,
-      entryNumber: newest.entryNumber,
+      entryNumber: cursor,
       direction: "newer"
     });
 
     if (result.data.length > 0) {
+      newestEntryNumber.current = result.data[0].entryNumber;
       setItemLedgers((prev) => [...result.data, ...prev]);
     }
+    hasNewerRef.current = result.hasMore;
     setHasNewer(result.hasMore);
+    loadingNewer.current = false;
     setIsLoadingNewer(false);
-  }, [
-    carbon,
-    itemId,
-    companyId,
-    locationId,
-    itemLedgers,
-    isLoadingNewer,
-    hasNewer
-  ]);
+  }, [carbon, itemId, companyId, locationId]);
 
   return (
     <div className="w-full space-y-4 pt-6 px-4">
