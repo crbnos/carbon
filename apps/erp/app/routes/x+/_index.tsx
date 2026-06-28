@@ -24,9 +24,11 @@ import { useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import type { ComponentProps } from "react";
 import { useMemo } from "react";
+import { LuRocket } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { Link, redirect, useFetcher } from "react-router";
 import { Greeting } from "~/components/Greeting";
+import { MeshGradientBackground } from "~/components/MeshGradientBackground";
 import { useModules, useUser } from "~/hooks";
 import { useFlags } from "~/hooks/useFlags";
 import { useHubDismissed } from "~/hooks/useHubDismissed";
@@ -117,58 +119,67 @@ export default function AppIndexRoute() {
   const canEnroll = isInternal && !layout?.implementationHub;
 
   return (
-    <div className="p-8 w-full h-full bg-muted">
-      <Greeting size="h3" />
-      <Subheading>{formatter.format(date)}</Subheading>
-      <Hr />
-      {implementation ? (
-        <OnboardingHubSummary
-          label={implementation.label}
-          done={implementation.done}
-          total={implementation.total}
-          nextLabel={implementation.nextLabel}
-          onDismiss={implementation.dismiss}
-          action={
-            <Button asChild>
-              <Link to={path.to.getStarted} prefetch="intent">
-                Open
-              </Link>
-            </Button>
-          }
-        />
-      ) : null}
-      {canEnroll ? (
-        <enrollFetcher.Form
-          method="post"
-          action={path.to.getStartedEnroll}
-          className="mb-6"
-        >
-          <div className="rounded-2xl border border-dashed bg-card shadow-button-base p-6 flex items-center gap-5">
-            <div className="flex-1 min-w-0">
-              <h3 className="text-base font-semibold tracking-tight">
-                Enroll this company in the Implementation Hub
-              </h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                Carbon-only · creates the hub for the current company so you can
-                preview it.
-              </p>
+    <div className="relative w-full h-full overflow-hidden">
+      <MeshGradientBackground />
+      <div className="relative z-10 p-8 w-full h-full overflow-y-auto">
+        <Greeting size="h3" />
+        <Subheading>{formatter.format(date)}</Subheading>
+        <Hr />
+        {implementation ? (
+          <OnboardingHubSummary
+            label={implementation.label}
+            done={implementation.done}
+            total={implementation.total}
+            nextLabel={implementation.nextLabel}
+            onDismiss={implementation.dismiss}
+            action={
+              <Button asChild>
+                <Link to={path.to.getStarted} prefetch="intent">
+                  Open
+                </Link>
+              </Button>
+            }
+          />
+        ) : null}
+        {canEnroll ? (
+          <enrollFetcher.Form
+            method="post"
+            action={path.to.getStartedEnroll}
+            className="mb-6"
+          >
+            <div className="rounded-2xl border border-primary/30 bg-primary/5 shadow-button-base p-6 flex items-start gap-4">
+              <div className="shrink-0 size-11 rounded-2xl bg-primary/15 flex items-center justify-center text-primary">
+                <LuRocket className="text-xl" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-xxs uppercase tracking-wide font-medium text-primary">
+                  Carbon-only
+                </div>
+                <div className="text-base font-semibold tracking-tight mt-0.5 text-balance">
+                  Enroll this company in the Implementation Hub
+                </div>
+                <p className="text-sm text-muted-foreground mt-1 text-pretty">
+                  Creates the hub for the current company so you can preview it.
+                </p>
+                <Button
+                  className="mt-4"
+                  type="submit"
+                  isLoading={enrollFetcher.state !== "idle"}
+                  isDisabled={enrollFetcher.state !== "idle"}
+                >
+                  Enroll
+                </Button>
+              </div>
             </div>
-            <Button
-              type="submit"
-              isLoading={enrollFetcher.state !== "idle"}
-              isDisabled={enrollFetcher.state !== "idle"}
-            >
-              Enroll
-            </Button>
-          </div>
-        </enrollFetcher.Form>
-      ) : null}
-      <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,300px),1fr))] gap-6 mb-8">
-        {modules
-          .filter((mod) => mod.key !== "settings")
-          .map((module) => (
-            <ModuleCard key={module.key} module={module} />
-          ))}
+          </enrollFetcher.Form>
+        ) : null}
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,300px),1fr))] gap-6 mb-8">
+          {modules
+            .filter((mod) => mod.key !== "settings")
+            .map((module) => (
+              <ModuleCard key={module.key} module={module} />
+            ))}
+        </div>
       </div>
     </div>
   );
@@ -188,7 +199,7 @@ const ModuleCard = ({ module }: { module: Authenticated<NavItem> }) => (
   <Link
     to={module.to}
     prefetch="intent"
-    className="aspect-video flex flex-col gap-3 items-center justify-center py-8  shadow-button-base bg-gradient-to-bl from-card from-50% to-background rounded-lg text-center group ring-2 ring-transparent hover:ring-white/10 cursor-pointer hover:scale-105 transition-all duration-300"
+    className="aspect-video flex flex-col gap-3 items-center justify-center py-8  shadow-button-base bg-gradient-to-bl from-card/70 from-50% to-background/70 backdrop-blur-md rounded-lg text-center group ring-2 ring-transparent hover:ring-white/10 cursor-pointer hover:scale-105 transition-all duration-300"
   >
     <div className="p-4 rounded-lg border">
       <module.icon className="text-2xl" />

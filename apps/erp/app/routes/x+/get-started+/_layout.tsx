@@ -230,7 +230,7 @@ export default function GetStartedLayout() {
       <div className="grid grid-cols-[auto_1fr] grid-rows-[minmax(0,1fr)] w-full h-full overflow-hidden">
         <GroupedContentSidebar groups={groups} exactMatch />
         <div className="relative min-w-0 overflow-hidden">
-          <MeshGradientBackground theme="blue" />
+          <MeshGradientBackground />
           <div className="relative z-10 h-full overflow-y-auto">
             {isInternal ? (
               <PreviewBar previewing={previewingAsCustomer} />

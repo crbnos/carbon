@@ -7,8 +7,7 @@ import {
   LuCheck,
   LuCircleHelp,
   LuPartyPopper,
-  LuPlay,
-  LuRocket
+  LuPlay
 } from "react-icons/lu";
 import { SPINE } from "../content/spine";
 import {
@@ -91,7 +90,16 @@ export function OnboardingHub({
     <div className="w-full max-w-3xl mx-auto flex flex-col gap-6">
       <header className="flex flex-col items-center text-center gap-3 pt-2">
         <div className="size-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-1">
-          <LuRocket className="text-2xl text-primary" />
+          <img
+            src="/carbon-mark-light.svg"
+            alt="Carbon"
+            className="size-7 dark:hidden"
+          />
+          <img
+            src="/carbon-mark-dark.svg"
+            alt="Carbon"
+            className="size-7 hidden dark:block"
+          />
         </div>
         <h1 className="text-3xl font-semibold tracking-tight text-balance">
           {companyName ? (
@@ -103,7 +111,7 @@ export function OnboardingHub({
         <p className="text-base text-muted-foreground max-w-xl text-pretty">
           <Trans>
             {total} phases to get your company live on Carbon. Each one ends at
-            a checkpoint. You and the Carbon team work from the same view.
+            a checkpoint.
           </Trans>
         </p>
       </header>
@@ -144,7 +152,7 @@ export function OnboardingHub({
       <div className="rounded-2xl border bg-card shadow-button-base overflow-hidden">
         <div className="flex items-end justify-between gap-4 flex-wrap p-6 pb-4 border-b">
           <div className="text-2xl font-semibold tracking-tight">
-            <span className="text-primary tabular-nums">{done}</span>{" "}
+            <span className="tabular-nums">{done}</span>{" "}
             <Trans>of {total} phases complete</Trans>
           </div>
           <span className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground">

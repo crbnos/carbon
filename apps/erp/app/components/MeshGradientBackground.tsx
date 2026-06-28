@@ -63,9 +63,9 @@ export function MeshGradientBackground({
   theme: themeOverride
 }: {
   className?: string;
-  // Force a fixed palette (e.g. "blue") instead of the company theme. The
-  // Implementation Hub uses this so it always shows the same blue/white mesh as
-  // the signup onboarding flow, regardless of the company's chosen theme.
+  // Force a fixed palette (e.g. "blue") instead of the company theme. By default
+  // the mesh follows the company's chosen theme — both the signup onboarding flow
+  // and the Implementation Hub leave this unset so they match the company theme.
   theme?: string;
 }) {
   const mode = useMode();

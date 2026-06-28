@@ -1,7 +1,7 @@
 import { cn, IconButton } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
-import { LuRocket, LuX } from "react-icons/lu";
+import { LuX } from "react-icons/lu";
 
 type OnboardingHubSummaryProps = {
   label: string;
@@ -30,7 +30,16 @@ export function OnboardingHubSummary({
   return (
     <div className="relative rounded-2xl border bg-gradient-to-bl from-card from-50% to-background shadow-button-base p-6 pr-12 flex items-center gap-5 mb-6">
       <div className="shrink-0 size-12 rounded-xl border flex items-center justify-center">
-        <LuRocket className="text-xl text-primary" />
+        <img
+          src="/carbon-mark-light.svg"
+          alt="Carbon"
+          className="size-6 dark:hidden"
+        />
+        <img
+          src="/carbon-mark-dark.svg"
+          alt="Carbon"
+          className="size-6 hidden dark:block"
+        />
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">

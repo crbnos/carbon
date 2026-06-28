@@ -13,12 +13,12 @@ export function GuidedUpsellCard({
 }) {
   const { i18n } = useLingui();
   return (
-    <section className="rounded-2xl border border-blue-500/30 bg-blue-500/[0.04] shadow-button-base p-6 flex items-start gap-4">
-      <div className="shrink-0 size-11 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-600 dark:text-blue-400">
+    <section className="rounded-2xl border border-primary/30 bg-primary/5 shadow-button-base p-6 flex items-start gap-4">
+      <div className="shrink-0 size-11 rounded-2xl bg-primary/15 flex items-center justify-center text-primary">
         <LuSparkles className="text-xl" />
       </div>
       <div className="flex-1 min-w-0">
-        <div className="text-xxs uppercase tracking-wide font-medium text-blue-600 dark:text-blue-400">
+        <div className="text-xxs uppercase tracking-wide font-medium text-primary">
           {i18n._(GUIDED_UPSELL.eyebrow)}
         </div>
         <div className="text-base font-semibold tracking-tight mt-0.5 text-balance">
@@ -33,7 +33,7 @@ export function GuidedUpsellCard({
               key={index}
               className="flex items-center gap-1.5 text-xs text-muted-foreground"
             >
-              <LuCheck className="size-3.5 shrink-0 text-blue-600 dark:text-blue-400" />
+              <LuCheck className="size-3.5 shrink-0 text-primary" />
               {i18n._(point)}
             </li>
           ))}

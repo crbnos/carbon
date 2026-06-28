@@ -83,8 +83,8 @@ msgstr "{remaining, plural, one {# phase left} other {# phases left}}"
 msgid "{scopeCount} permissions"
 msgstr "{scopeCount} permissions"
 
-msgid "{total} phases to get your company live on Carbon. Each one ends at a checkpoint. You and the Carbon team work from the same view."
-msgstr "{total} phases to get your company live on Carbon. Each one ends at a checkpoint. You and the Carbon team work from the same view."
+msgid "{total} phases to get your company live on Carbon. Each one ends at a checkpoint."
+msgstr "{total} phases to get your company live on Carbon. Each one ends at a checkpoint."
 
 msgid "{total} phases to go live"
 msgstr "{total} phases to go live"
