@@ -89,6 +89,12 @@ msgstr "{total} phases to get your company live on Carbon. Each one ends at a ch
 msgid "{total} phases to go live"
 msgstr "{total} phases to go live"
 
+msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
+msgstr "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
+
+msgid "{variances, plural, one {# line has a variance to post.} other {# lines have a variance to post.}}"
+msgstr "{variances, plural, one {# line has a variance to post.} other {# lines have a variance to post.}}"
+
 msgid "/month/user"
 msgstr "/month/user"
 
@@ -700,6 +706,9 @@ msgstr "All Customers"
 
 msgid "All Documents"
 msgstr "All Documents"
+
+msgid "All item types"
+msgstr "All item types"
 
 msgid "All Items"
 msgstr "All Items"
@@ -1488,6 +1497,9 @@ msgstr "Basic Information"
 msgid "Batch"
 msgstr "Batch"
 
+msgid "Batch / Serial"
+msgstr "Batch / Serial"
+
 msgid "Batch items require a sales order"
 msgstr "Batch items require a sales order"
 
@@ -1542,6 +1554,9 @@ msgstr "Billing Address"
 
 msgid "Bills of material"
 msgstr "Bills of material"
+
+msgid "Blind Count"
+msgstr "Blind Count"
 
 msgid "Block with an error"
 msgstr "Block with an error"
@@ -2191,6 +2206,9 @@ msgstr "Confirm {0}"
 msgid "Confirm and sign the scope"
 msgstr "Confirm and sign the scope"
 
+msgid "Confirm Count"
+msgstr "Confirm Count"
+
 msgid "Confirm how your company runs and lock the scope."
 msgstr "Confirm how your company runs and lock the scope."
 
@@ -2200,6 +2218,9 @@ msgstr "Confirm ID Change"
 msgid "Confirm Import"
 msgstr "Confirm Import"
 
+msgid "Confirm Inventory Count"
+msgstr "Confirm Inventory Count"
+
 msgid "Confirm Password"
 msgstr "Confirm Password"
 
@@ -2208,6 +2229,9 @@ msgstr "Confirmed incoming stock — purchase & production orders (bars above ze
 
 msgid "Confirmed outgoing stock — sales orders & job materials (bars below zero)."
 msgstr "Confirmed outgoing stock — sales orders & job materials (bars below zero)."
+
+msgid "Confirming locks the counted quantities. Review the warnings below, then post the count to apply the adjustments."
+msgstr "Confirming locks the counted quantities. Review the warnings below, then post the count to apply the adjustments."
 
 msgid "Connect Carbon to your accounting, project management, and CAD tools and much more."
 msgstr "Connect Carbon to your accounting, project management, and CAD tools and much more."
@@ -2552,6 +2576,12 @@ msgstr "Couldn't load documents"
 msgid "Count"
 msgstr "Count"
 
+msgid "Count ID"
+msgstr "Count ID"
+
+msgid "Counted Qty"
+msgstr "Counted Qty"
+
 msgid "Country"
 msgstr "Country"
 
@@ -2566,6 +2596,9 @@ msgstr "Create {0}"
 #. placeholder {0}: unmatchedValues.length
 msgid "Create {0} values"
 msgstr "Create {0} values"
+
+msgid "Create & Snapshot"
+msgstr "Create & Snapshot"
 
 msgid "Create a new kanban card for scan-based replenishment."
 msgstr "Create a new kanban card for scan-based replenishment."
@@ -3251,6 +3284,9 @@ msgstr "Delete Contact"
 msgid "Delete Contractor"
 msgstr "Delete Contractor"
 
+msgid "Delete Count"
+msgstr "Delete Count"
+
 msgid "Delete Custom Field"
 msgstr "Delete Custom Field"
 
@@ -3855,6 +3891,9 @@ msgstr "Edit Contact"
 
 msgid "Edit Contractor"
 msgstr "Edit Contractor"
+
+msgid "Edit Count"
+msgstr "Edit Count"
 
 msgid "Edit Currency"
 msgstr "Edit Currency"
@@ -4775,6 +4814,9 @@ msgstr "Failed to update category markups"
 msgid "Failed to update configuration parameter"
 msgstr "Failed to update configuration parameter"
 
+msgid "Failed to update count"
+msgstr "Failed to update count"
+
 msgid "Failed to update item cost"
 msgstr "Failed to update item cost"
 
@@ -5341,6 +5383,9 @@ msgstr "Help"
 msgid "Hide"
 msgstr "Hide"
 
+msgid "Hide system quantities until the review step"
+msgstr "Hide system quantities until the review step"
+
 msgid "Hide, pin and reorder columns"
 msgstr "Hide, pin and reorder columns"
 
@@ -5809,6 +5854,9 @@ msgstr "Inventory Control"
 msgid "Inventory control and counts"
 msgstr "Inventory control and counts"
 
+msgid "Inventory Count"
+msgstr "Inventory Count"
+
 msgid "Inventory History"
 msgstr "Inventory History"
 
@@ -5994,6 +6042,9 @@ msgstr "Item Scope"
 
 msgid "Item Type"
 msgstr "Item Type"
+
+msgid "Item Type (optional)"
+msgstr "Item Type (optional)"
 
 msgid "Item types"
 msgstr "Item types"
@@ -6237,6 +6288,9 @@ msgstr "Line Status"
 
 msgid "Linear Team"
 msgstr "Linear Team"
+
+msgid "Lines"
+msgstr "Lines"
 
 msgid "Lines need internal part numbers"
 msgstr "Lines need internal part numbers"
@@ -7003,6 +7057,9 @@ msgstr "New IC Transaction"
 
 msgid "New Inspection Document"
 msgstr "New Inspection Document"
+
+msgid "New Inventory Count"
+msgstr "New Inventory Count"
 
 msgid "New Invoice"
 msgstr "New Invoice"
@@ -8269,6 +8326,9 @@ msgstr "Postal Code"
 msgid "Posted"
 msgstr "Posted"
 
+msgid "Posted At"
+msgstr "Posted At"
+
 msgid "Posted By"
 msgstr "Posted By"
 
@@ -8878,6 +8938,9 @@ msgstr "Recalculate"
 msgid "Recalculate Unit Cost"
 msgstr "Recalculate Unit Cost"
 
+msgid "Recalculating…"
+msgstr "Recalculating…"
+
 msgid "Receipt"
 msgstr "Receipt"
 
@@ -9367,6 +9430,9 @@ msgstr "Roles and Responsibilities"
 
 msgid "Roles that set default permissions for new employees"
 msgstr "Roles that set default permissions for new employees"
+
+msgid "Roll Back"
+msgstr "Roll Back"
 
 msgid "Room to grow without bolting on more tools"
 msgstr "Room to grow without bolting on more tools"
@@ -10533,6 +10599,9 @@ msgstr "storage unit"
 msgid "Storage Unit"
 msgstr "Storage Unit"
 
+msgid "Storage Unit (optional)"
+msgstr "Storage Unit (optional)"
+
 msgid "storage units"
 msgstr "storage units"
 
@@ -10803,6 +10872,9 @@ msgstr "System"
 
 msgid "System configured"
 msgstr "System configured"
+
+msgid "System Qty"
+msgstr "System Qty"
 
 msgid "Table"
 msgstr "Table"
@@ -12014,6 +12086,9 @@ msgstr "Unassigned"
 msgid "Unballoon"
 msgstr "Unballoon"
 
+msgid "Uncounted lines are left unchanged at post — they are not zeroed."
+msgstr "Uncounted lines are left unchanged at post — they are not zeroed."
+
 msgid "Under Demand-Based Reorder, planning sums demand inside this rolling window when computing a replenishment quantity."
 msgstr "Under Demand-Based Reorder, planning sums demand inside this rolling window when computing a replenishment quantity."
 
@@ -12345,6 +12420,9 @@ msgstr "Value-added-tax registration number; required on EU invoices for reverse
 msgid "Values"
 msgstr "Values"
 
+msgid "Variance"
+msgstr "Variance"
+
 msgid "Variance between actual and standard BOM component consumption"
 msgstr "Variance between actual and standard BOM component consumption"
 
@@ -12417,6 +12495,9 @@ msgstr "View Certificate"
 msgid "View Contact"
 msgstr "View Contact"
 
+msgid "View Count"
+msgstr "View Count"
+
 msgid "View Custom Fields"
 msgstr "View Custom Fields"
 
@@ -12449,6 +12530,9 @@ msgstr "View maintenance dispatch"
 
 msgid "View missing values"
 msgstr "View missing values"
+
+msgid "View notes"
+msgstr "View notes"
 
 msgid "View Open"
 msgstr "View Open"

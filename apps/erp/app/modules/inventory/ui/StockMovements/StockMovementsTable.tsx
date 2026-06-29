@@ -15,6 +15,7 @@ import {
   LuUser,
   LuWarehouse
 } from "react-icons/lu";
+import { Link } from "react-router";
 import { EmployeeAvatar, Hyperlink, ItemThumbnail, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
@@ -174,9 +175,21 @@ const StockMovementsTable = memo(
         {
           accessorKey: "trackedEntityReadableId",
           header: t`Tracked Entity`,
-          cell: ({ row }) =>
-            row.original.trackedEntityReadableId ||
-            row.original.trackedEntityId,
+          cell: ({ row }) => {
+            const trackedEntityId = row.original.trackedEntityId;
+            const label =
+              row.original.trackedEntityReadableId || trackedEntityId;
+            if (!trackedEntityId) return label ?? "";
+            return (
+              <Link
+                prefetch="intent"
+                to={`${path.to.traceabilityGraph}?trackedEntityId=${trackedEntityId}`}
+                className="text-foreground hover:underline"
+              >
+                {label}
+              </Link>
+            );
+          },
           meta: {
             icon: <LuQrCode />
           }

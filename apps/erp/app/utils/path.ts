@@ -1561,6 +1561,20 @@ export const path = {
     receiptPost: (id: string) => generatePath(`${x}/receipt/${id}/post`),
     receiptRoot: `${x}/receipt`,
     receiptVoid: (id: string) => generatePath(`${x}/receipt/${id}/void`),
+    inventoryCounts: `${x}/inventory/inventory-count`,
+    newInventoryCount: `${x}/inventory/inventory-count/new`,
+    inventoryCount: (id: string) => generatePath(`${x}/inventory-count/${id}`),
+    inventoryCountConfirm: (id: string) =>
+      generatePath(`${x}/inventory-count/${id}/confirm`),
+    inventoryCountReopen: (id: string) =>
+      generatePath(`${x}/inventory-count/${id}/reopen`),
+    inventoryCountPost: (id: string) =>
+      generatePath(`${x}/inventory-count/${id}/post`),
+    inventoryCountVoid: (id: string) =>
+      generatePath(`${x}/inventory-count/${id}/void`),
+    inventoryCountDelete: (id: string) =>
+      generatePath(`${x}/inventory-count/${id}/delete`),
+    inventoryCountLineUpdate: `${x}/inventory-count/lines/update`,
     refreshSession: "/refresh-session",
     requiredAction: (id: string) =>
       generatePath(`${x}/quality/required-actions/${id}`),

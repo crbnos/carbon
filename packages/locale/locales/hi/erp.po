@@ -89,6 +89,12 @@ msgstr "{total} phases to get your company live on Carbon. Each one ends at a ch
 msgid "{total} phases to go live"
 msgstr "{total} चरण लाइव होने के लिए"
 
+msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
+msgstr ""
+
+msgid "{variances, plural, one {# line has a variance to post.} other {# lines have a variance to post.}}"
+msgstr ""
+
 msgid "/month/user"
 msgstr "/माह/उपयोगकर्ता"
 
@@ -700,6 +706,9 @@ msgstr "सभी ग्राहक"
 
 msgid "All Documents"
 msgstr "सभी दस्तावेज़"
+
+msgid "All item types"
+msgstr ""
 
 msgid "All Items"
 msgstr "सभी आइटम"
@@ -1488,6 +1497,9 @@ msgstr "बुनियादी जानकारी"
 msgid "Batch"
 msgstr "बैच"
 
+msgid "Batch / Serial"
+msgstr ""
+
 msgid "Batch items require a sales order"
 msgstr "बैच आइटम के लिए बिक्री आदेश आवश्यक है"
 
@@ -1542,6 +1554,9 @@ msgstr "बिलिंग पता"
 
 msgid "Bills of material"
 msgstr "सामग्री के बिल"
+
+msgid "Blind Count"
+msgstr ""
 
 msgid "Block with an error"
 msgstr "त्रुटि के साथ ब्लॉक करें"
@@ -2191,6 +2206,9 @@ msgstr "की पुष्टि करें {0}"
 msgid "Confirm and sign the scope"
 msgstr "स्कोप की पुष्टि करें और हस्ताक्षर करें"
 
+msgid "Confirm Count"
+msgstr ""
+
 msgid "Confirm how your company runs and lock the scope."
 msgstr "अपनी कंपनी कैसे चलती है यह पुष्टि करें और स्कोप को लॉक करें।"
 
@@ -2200,6 +2218,9 @@ msgstr "आईडी परिवर्तन की पुष्टि कर�
 msgid "Confirm Import"
 msgstr "आयात की पुष्टि करें"
 
+msgid "Confirm Inventory Count"
+msgstr ""
+
 msgid "Confirm Password"
 msgstr "पासवर्ड की पुष्टि करें"
 
@@ -2208,6 +2229,9 @@ msgstr "पुष्टि की गई आने वाली स्टॉक 
 
 msgid "Confirmed outgoing stock — sales orders & job materials (bars below zero)."
 msgstr "पुष्टि की गई आने वाली स्टॉक — बिक्री आदेश और नौकरी सामग्री (बार शून्य से नीचे)।"
+
+msgid "Confirming locks the counted quantities. Review the warnings below, then post the count to apply the adjustments."
+msgstr ""
 
 msgid "Connect Carbon to your accounting, project management, and CAD tools and much more."
 msgstr "Carbon को अपने लेखांकन, परियोजना प्रबंधन, और CAD उपकरणों और बहुत कुछ से जोड़ें।"
@@ -2552,6 +2576,12 @@ msgstr "दस्तावेज़ लोड नहीं हो सके"
 msgid "Count"
 msgstr "गिनती"
 
+msgid "Count ID"
+msgstr ""
+
+msgid "Counted Qty"
+msgstr ""
+
 msgid "Country"
 msgstr "देश"
 
@@ -2566,6 +2596,9 @@ msgstr "{0} बनाएं"
 #. placeholder {0}: unmatchedValues.length
 msgid "Create {0} values"
 msgstr "{0} मान बनाएं"
+
+msgid "Create & Snapshot"
+msgstr ""
 
 msgid "Create a new kanban card for scan-based replenishment."
 msgstr "स्कैन-आधारित पुनःपूर्ति के लिए एक नया कानबन कार्ड बनाएं।"
@@ -3251,6 +3284,9 @@ msgstr "संपर्क हटाएं"
 msgid "Delete Contractor"
 msgstr "ठेकेदार हटाएं"
 
+msgid "Delete Count"
+msgstr ""
+
 msgid "Delete Custom Field"
 msgstr "कस्टम फील्ड हटाएं"
 
@@ -3855,6 +3891,9 @@ msgstr "संपर्क संपादित करें"
 
 msgid "Edit Contractor"
 msgstr "ठेकेदार संपादित करें"
+
+msgid "Edit Count"
+msgstr ""
 
 msgid "Edit Currency"
 msgstr "मुद्रा संपादित करें"
@@ -4775,6 +4814,9 @@ msgstr "श्रेणी मार्कअप अपडेट करने �
 msgid "Failed to update configuration parameter"
 msgstr "कॉन्फ़िगरेशन पैरामीटर को अपडेट करने में विफल"
 
+msgid "Failed to update count"
+msgstr ""
+
 msgid "Failed to update item cost"
 msgstr "आइटम लागत अपडेट करने में विफल"
 
@@ -5341,6 +5383,9 @@ msgstr "मदद"
 msgid "Hide"
 msgstr "छिपाएं"
 
+msgid "Hide system quantities until the review step"
+msgstr ""
+
 msgid "Hide, pin and reorder columns"
 msgstr "कॉलम को छिपाएं, पिन करें और पुनः क्रमित करें"
 
@@ -5809,6 +5854,9 @@ msgstr "इन्वेंटरी नियंत्रण"
 msgid "Inventory control and counts"
 msgstr "इन्वेंटरी नियंत्रण और गणना"
 
+msgid "Inventory Count"
+msgstr ""
+
 msgid "Inventory History"
 msgstr "इन्वेंटरी इतिहास"
 
@@ -5994,6 +6042,9 @@ msgstr "आइटम स्कोप"
 
 msgid "Item Type"
 msgstr "आइटम प्रकार"
+
+msgid "Item Type (optional)"
+msgstr ""
 
 msgid "Item types"
 msgstr "आइटम प्रकार"
@@ -6237,6 +6288,9 @@ msgstr "लाइन स्थिति"
 
 msgid "Linear Team"
 msgstr "Linear Team"
+
+msgid "Lines"
+msgstr ""
 
 msgid "Lines need internal part numbers"
 msgstr "लाइनों को आंतरिक भाग संख्याओं की आवश्यकता है"
@@ -7003,6 +7057,9 @@ msgstr "नया IC लेनदेन"
 
 msgid "New Inspection Document"
 msgstr "नया निरीक्षण दस्तावेज़"
+
+msgid "New Inventory Count"
+msgstr ""
 
 msgid "New Invoice"
 msgstr "नया चालान"
@@ -8269,6 +8326,9 @@ msgstr "पिन कोड"
 msgid "Posted"
 msgstr "पोस्ट किया गया"
 
+msgid "Posted At"
+msgstr ""
+
 msgid "Posted By"
 msgstr "द्वारा पोस्ट किया गया"
 
@@ -8878,6 +8938,9 @@ msgstr "पुनः गणना करें"
 msgid "Recalculate Unit Cost"
 msgstr "यूनिट कॉस्ट की पुनः गणना करें"
 
+msgid "Recalculating…"
+msgstr ""
+
 msgid "Receipt"
 msgstr "रसीद"
 
@@ -9367,6 +9430,9 @@ msgstr "भूमिकाएं और जिम्मेदारियां"
 
 msgid "Roles that set default permissions for new employees"
 msgstr "नई कर्मचारियों के लिए डिफ़ॉल्ट अनुमतियां सेट करने वाली भूमिकाएं"
+
+msgid "Roll Back"
+msgstr ""
 
 msgid "Room to grow without bolting on more tools"
 msgstr "बिना अतिरिक्त उपकरण जोड़े बढ़ने की गुंजाइश"
@@ -10533,6 +10599,9 @@ msgstr "भंडारण इकाई"
 msgid "Storage Unit"
 msgstr "भंडारण इकाई"
 
+msgid "Storage Unit (optional)"
+msgstr ""
+
 msgid "storage units"
 msgstr "भंडारण इकाइयां"
 
@@ -10803,6 +10872,9 @@ msgstr "सिस्टम"
 
 msgid "System configured"
 msgstr "सिस्टम कॉन्फ़िगर किया गया"
+
+msgid "System Qty"
+msgstr ""
 
 msgid "Table"
 msgstr "तालिका"
@@ -12014,6 +12086,9 @@ msgstr "अनुत्तरित"
 msgid "Unballoon"
 msgstr "गुब्बारा हटाएं"
 
+msgid "Uncounted lines are left unchanged at post — they are not zeroed."
+msgstr ""
+
 msgid "Under Demand-Based Reorder, planning sums demand inside this rolling window when computing a replenishment quantity."
 msgstr "Demand-आधारित पुनः आदेश के तहत, योजना एक पुनः भरण मात्रा की गणना करते समय इस रोलिंग विंडो के भीतर मांग को जोड़ता है।"
 
@@ -12345,6 +12420,9 @@ msgstr "मूल्य वर्धित कर पंजीकरण सं�
 msgid "Values"
 msgstr "मूल्य"
 
+msgid "Variance"
+msgstr ""
+
 msgid "Variance between actual and standard BOM component consumption"
 msgstr "वास्तविक और मानक बीओएम घटक खपत के बीच विचरण"
 
@@ -12417,6 +12495,9 @@ msgstr "प्रमाणपत्र देखें"
 msgid "View Contact"
 msgstr "संपर्क देखें"
 
+msgid "View Count"
+msgstr ""
+
 msgid "View Custom Fields"
 msgstr "कस्टम फील्ड्स देखें"
 
@@ -12449,6 +12530,9 @@ msgstr "रखरखाव डिस्पैच देखें"
 
 msgid "View missing values"
 msgstr "लापता मानों को देखें"
+
+msgid "View notes"
+msgstr ""
 
 msgid "View Open"
 msgstr "खुला देखें"

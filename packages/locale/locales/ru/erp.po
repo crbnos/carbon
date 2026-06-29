@@ -89,6 +89,12 @@ msgstr "{total} этапов, чтобы ваша компания начала 
 msgid "{total} phases to go live"
 msgstr "{total} этапов до запуска"
 
+msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
+msgstr ""
+
+msgid "{variances, plural, one {# line has a variance to post.} other {# lines have a variance to post.}}"
+msgstr ""
+
 msgid "/month/user"
 msgstr "/месяц/пользователь"
 
@@ -700,6 +706,9 @@ msgstr "Все клиенты"
 
 msgid "All Documents"
 msgstr "Все документы"
+
+msgid "All item types"
+msgstr ""
 
 msgid "All Items"
 msgstr "Все элементы"
@@ -1488,6 +1497,9 @@ msgstr "Основная информация"
 msgid "Batch"
 msgstr "Партия"
 
+msgid "Batch / Serial"
+msgstr ""
+
 msgid "Batch items require a sales order"
 msgstr "Товары партии требуют заказ на продажу"
 
@@ -1542,6 +1554,9 @@ msgstr "Адрес выставления счета"
 
 msgid "Bills of material"
 msgstr "Спецификации материалов"
+
+msgid "Blind Count"
+msgstr ""
 
 msgid "Block with an error"
 msgstr "Заблокировать с ошибкой"
@@ -2191,6 +2206,9 @@ msgstr "Подтвердить {0}"
 msgid "Confirm and sign the scope"
 msgstr "Подтвердите и подпишите объем работ"
 
+msgid "Confirm Count"
+msgstr ""
+
 msgid "Confirm how your company runs and lock the scope."
 msgstr "Подтвердите, как работает ваша компания, и зафиксируйте область охвата."
 
@@ -2200,6 +2218,9 @@ msgstr "Подтвердить изменение ID"
 msgid "Confirm Import"
 msgstr "Подтвердить импорт"
 
+msgid "Confirm Inventory Count"
+msgstr ""
+
 msgid "Confirm Password"
 msgstr "Подтвердить пароль"
 
@@ -2208,6 +2229,9 @@ msgstr "Подтвержденный входящий запас — заказ�
 
 msgid "Confirmed outgoing stock — sales orders & job materials (bars below zero)."
 msgstr "Подтвержденный исходящий запас — заказы на продажу и материалы работ (столбцы ниже нуля)."
+
+msgid "Confirming locks the counted quantities. Review the warnings below, then post the count to apply the adjustments."
+msgstr ""
 
 msgid "Connect Carbon to your accounting, project management, and CAD tools and much more."
 msgstr "Подключите Carbon к своим инструментам бухгалтерского учета, управления проектами, CAD и многому другому."
@@ -2552,6 +2576,12 @@ msgstr "Не удалось загрузить документы"
 msgid "Count"
 msgstr "Количество"
 
+msgid "Count ID"
+msgstr ""
+
+msgid "Counted Qty"
+msgstr ""
+
 msgid "Country"
 msgstr "Страна"
 
@@ -2566,6 +2596,9 @@ msgstr "Создать {0}"
 #. placeholder {0}: unmatchedValues.length
 msgid "Create {0} values"
 msgstr "Создать {0} значений"
+
+msgid "Create & Snapshot"
+msgstr ""
 
 msgid "Create a new kanban card for scan-based replenishment."
 msgstr "Создайте новую карточку канбана для пополнения на основе сканирования."
@@ -3251,6 +3284,9 @@ msgstr "Удалить контакт"
 msgid "Delete Contractor"
 msgstr "Удалить подрядчика"
 
+msgid "Delete Count"
+msgstr ""
+
 msgid "Delete Custom Field"
 msgstr "Удалить пользовательское поле"
 
@@ -3855,6 +3891,9 @@ msgstr "Редактировать контакт"
 
 msgid "Edit Contractor"
 msgstr "Редактировать подрядчика"
+
+msgid "Edit Count"
+msgstr ""
 
 msgid "Edit Currency"
 msgstr "Редактировать валюту"
@@ -4775,6 +4814,9 @@ msgstr "Не удалось обновить наценки по категор�
 msgid "Failed to update configuration parameter"
 msgstr "Ошибка при обновлении параметра конфигурации"
 
+msgid "Failed to update count"
+msgstr ""
+
 msgid "Failed to update item cost"
 msgstr "Не удалось обновить стоимость товара"
 
@@ -5341,6 +5383,9 @@ msgstr "Справка"
 msgid "Hide"
 msgstr "Скрыть"
 
+msgid "Hide system quantities until the review step"
+msgstr ""
+
 msgid "Hide, pin and reorder columns"
 msgstr "Скрывать, закреплять и переупорядочивать столбцы"
 
@@ -5809,6 +5854,9 @@ msgstr "Контроль запасов"
 msgid "Inventory control and counts"
 msgstr "Контроль и учет запасов"
 
+msgid "Inventory Count"
+msgstr ""
+
 msgid "Inventory History"
 msgstr "История инвентаря"
 
@@ -5994,6 +6042,9 @@ msgstr "Область применения товара"
 
 msgid "Item Type"
 msgstr "Тип товара"
+
+msgid "Item Type (optional)"
+msgstr ""
 
 msgid "Item types"
 msgstr "Типы товаров"
@@ -6237,6 +6288,9 @@ msgstr "Статус строки"
 
 msgid "Linear Team"
 msgstr "Команда Linear"
+
+msgid "Lines"
+msgstr ""
 
 msgid "Lines need internal part numbers"
 msgstr "Строки требуют внутренние номера деталей"
@@ -7003,6 +7057,9 @@ msgstr "Новая транзакция IC"
 
 msgid "New Inspection Document"
 msgstr "Новый документ проверки"
+
+msgid "New Inventory Count"
+msgstr ""
 
 msgid "New Invoice"
 msgstr "Новый счет"
@@ -8269,6 +8326,9 @@ msgstr "Почтовый индекс"
 msgid "Posted"
 msgstr "Опубликовано"
 
+msgid "Posted At"
+msgstr ""
+
 msgid "Posted By"
 msgstr "Опубликовано"
 
@@ -8878,6 +8938,9 @@ msgstr "Пересчитать"
 msgid "Recalculate Unit Cost"
 msgstr "Пересчитать себестоимость единицы"
 
+msgid "Recalculating…"
+msgstr ""
+
 msgid "Receipt"
 msgstr "Квитанция"
 
@@ -9367,6 +9430,9 @@ msgstr "Роли и ответственность"
 
 msgid "Roles that set default permissions for new employees"
 msgstr "Роли, которые устанавливают разрешения по умолчанию для новых сотрудников"
+
+msgid "Roll Back"
+msgstr ""
 
 msgid "Room to grow without bolting on more tools"
 msgstr "Место для роста без добавления новых инструментов"
@@ -10533,6 +10599,9 @@ msgstr "единица хранения"
 msgid "Storage Unit"
 msgstr "Единица хранения"
 
+msgid "Storage Unit (optional)"
+msgstr ""
+
 msgid "storage units"
 msgstr "единицы хранения"
 
@@ -10803,6 +10872,9 @@ msgstr "Система"
 
 msgid "System configured"
 msgstr "Система настроена"
+
+msgid "System Qty"
+msgstr ""
 
 msgid "Table"
 msgstr "Таблица"
@@ -12014,6 +12086,9 @@ msgstr "Не назначено"
 msgid "Unballoon"
 msgstr "Удалить выноску"
 
+msgid "Uncounted lines are left unchanged at post — they are not zeroed."
+msgstr ""
+
 msgid "Under Demand-Based Reorder, planning sums demand inside this rolling window when computing a replenishment quantity."
 msgstr "При переупорядочении на основе спроса планирование суммирует спрос в пределах этого скользящего окна при расчете количества пополнения."
 
@@ -12345,6 +12420,9 @@ msgstr "Номер регистрации налога на добавленну
 msgid "Values"
 msgstr "Значения"
 
+msgid "Variance"
+msgstr ""
+
 msgid "Variance between actual and standard BOM component consumption"
 msgstr "Расхождение между фактическим и стандартным потреблением компонентов спецификации"
 
@@ -12417,6 +12495,9 @@ msgstr "Просмотр сертификата"
 msgid "View Contact"
 msgstr "Просмотр контакта"
 
+msgid "View Count"
+msgstr ""
+
 msgid "View Custom Fields"
 msgstr "Просмотр пользовательских полей"
 
@@ -12449,6 +12530,9 @@ msgstr "Просмотр заказа на техническое обслужи
 
 msgid "View missing values"
 msgstr "Просмотреть отсутствующие значения"
+
+msgid "View notes"
+msgstr ""
 
 msgid "View Open"
 msgstr "Просмотреть открытые"

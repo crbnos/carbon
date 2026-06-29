@@ -89,6 +89,12 @@ msgstr "{total} phases pour mettre votre entreprise en ligne sur Carbon. Chacune
 msgid "{total} phases to go live"
 msgstr "{total} phases pour être en direct"
 
+msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
+msgstr ""
+
+msgid "{variances, plural, one {# line has a variance to post.} other {# lines have a variance to post.}}"
+msgstr ""
+
 msgid "/month/user"
 msgstr "/mois/utilisateur"
 
@@ -700,6 +706,9 @@ msgstr "Tous les clients"
 
 msgid "All Documents"
 msgstr "Tous les documents"
+
+msgid "All item types"
+msgstr ""
 
 msgid "All Items"
 msgstr "Tous les articles"
@@ -1488,6 +1497,9 @@ msgstr "Informations de base"
 msgid "Batch"
 msgstr "Lot"
 
+msgid "Batch / Serial"
+msgstr ""
+
 msgid "Batch items require a sales order"
 msgstr "Les articles en lot nécessitent une commande client"
 
@@ -1542,6 +1554,9 @@ msgstr "Adresse de facturation"
 
 msgid "Bills of material"
 msgstr "Nomenclatures de produits"
+
+msgid "Blind Count"
+msgstr ""
 
 msgid "Block with an error"
 msgstr "Bloquer avec une erreur"
@@ -2191,6 +2206,9 @@ msgstr "Confirmer {0}"
 msgid "Confirm and sign the scope"
 msgstr "Confirmer et signer l'étendue"
 
+msgid "Confirm Count"
+msgstr ""
+
 msgid "Confirm how your company runs and lock the scope."
 msgstr "Confirmez le fonctionnement de votre entreprise et verrouillez la portée."
 
@@ -2200,6 +2218,9 @@ msgstr "Confirmer le changement d'ID"
 msgid "Confirm Import"
 msgstr "Confirmer l'importation"
 
+msgid "Confirm Inventory Count"
+msgstr ""
+
 msgid "Confirm Password"
 msgstr "Confirmer le mot de passe"
 
@@ -2208,6 +2229,9 @@ msgstr "Stock entrant confirmé — commandes d'achat et de production (barres a
 
 msgid "Confirmed outgoing stock — sales orders & job materials (bars below zero)."
 msgstr "Stock sortant confirmé — commandes de vente et matériaux de travail (barres en dessous de zéro)."
+
+msgid "Confirming locks the counted quantities. Review the warnings below, then post the count to apply the adjustments."
+msgstr ""
 
 msgid "Connect Carbon to your accounting, project management, and CAD tools and much more."
 msgstr "Connectez Carbon à vos outils de comptabilité, de gestion de projet, de CAO et bien d'autres."
@@ -2552,6 +2576,12 @@ msgstr "Impossible de charger les documents"
 msgid "Count"
 msgstr "Nombre"
 
+msgid "Count ID"
+msgstr ""
+
+msgid "Counted Qty"
+msgstr ""
+
 msgid "Country"
 msgstr "Pays"
 
@@ -2566,6 +2596,9 @@ msgstr "Créer {0}"
 #. placeholder {0}: unmatchedValues.length
 msgid "Create {0} values"
 msgstr "Créer {0} valeurs"
+
+msgid "Create & Snapshot"
+msgstr ""
 
 msgid "Create a new kanban card for scan-based replenishment."
 msgstr "Créer une nouvelle carte kanban pour le réapprovisionnement basé sur la numérisation."
@@ -3251,6 +3284,9 @@ msgstr "Supprimer le contact"
 msgid "Delete Contractor"
 msgstr "Supprimer l'entrepreneur"
 
+msgid "Delete Count"
+msgstr ""
+
 msgid "Delete Custom Field"
 msgstr "Supprimer le champ personnalisé"
 
@@ -3855,6 +3891,9 @@ msgstr "Modifier le contact"
 
 msgid "Edit Contractor"
 msgstr "Modifier le Contractant"
+
+msgid "Edit Count"
+msgstr ""
 
 msgid "Edit Currency"
 msgstr "Modifier la devise"
@@ -4775,6 +4814,9 @@ msgstr "Échec de la mise à jour des majorations par catégorie"
 msgid "Failed to update configuration parameter"
 msgstr "Échec de la mise à jour du paramètre de configuration"
 
+msgid "Failed to update count"
+msgstr ""
+
 msgid "Failed to update item cost"
 msgstr "Échec de la mise à jour du coût de l'article"
 
@@ -5341,6 +5383,9 @@ msgstr "Aide"
 msgid "Hide"
 msgstr "Masquer"
 
+msgid "Hide system quantities until the review step"
+msgstr ""
+
 msgid "Hide, pin and reorder columns"
 msgstr "Masquer, épingler et réorganiser les colonnes"
 
@@ -5809,6 +5854,9 @@ msgstr "Contrôle des stocks"
 msgid "Inventory control and counts"
 msgstr "Contrôle des stocks et inventaires"
 
+msgid "Inventory Count"
+msgstr ""
+
 msgid "Inventory History"
 msgstr "Historique d'inventaire"
 
@@ -5994,6 +6042,9 @@ msgstr "Portée des articles"
 
 msgid "Item Type"
 msgstr "Type d'article"
+
+msgid "Item Type (optional)"
+msgstr ""
 
 msgid "Item types"
 msgstr "Types d'articles"
@@ -6237,6 +6288,9 @@ msgstr "Statut de la ligne"
 
 msgid "Linear Team"
 msgstr "Équipe Linear"
+
+msgid "Lines"
+msgstr ""
 
 msgid "Lines need internal part numbers"
 msgstr "Les lignes ont besoin de numéros de pièces internes"
@@ -7003,6 +7057,9 @@ msgstr "Nouvelle Transaction IC"
 
 msgid "New Inspection Document"
 msgstr "Nouveau Document d'Inspection"
+
+msgid "New Inventory Count"
+msgstr ""
 
 msgid "New Invoice"
 msgstr "Nouvelle facture"
@@ -8269,6 +8326,9 @@ msgstr "Code postal"
 msgid "Posted"
 msgstr "Publié"
 
+msgid "Posted At"
+msgstr ""
+
 msgid "Posted By"
 msgstr "Publié par"
 
@@ -8878,6 +8938,9 @@ msgstr "Recalculer"
 msgid "Recalculate Unit Cost"
 msgstr "Recalculer le coût unitaire"
 
+msgid "Recalculating…"
+msgstr ""
+
 msgid "Receipt"
 msgstr "Reçu"
 
@@ -9367,6 +9430,9 @@ msgstr "Rôles et responsabilités"
 
 msgid "Roles that set default permissions for new employees"
 msgstr "Les rôles qui définissent les permissions par défaut pour les nouveaux employés"
+
+msgid "Roll Back"
+msgstr ""
 
 msgid "Room to grow without bolting on more tools"
 msgstr "Espace pour croître sans ajouter d'autres outils"
@@ -10533,6 +10599,9 @@ msgstr "unité de stockage"
 msgid "Storage Unit"
 msgstr "Unité de stockage"
 
+msgid "Storage Unit (optional)"
+msgstr ""
+
 msgid "storage units"
 msgstr "unités de stockage"
 
@@ -10803,6 +10872,9 @@ msgstr "Système"
 
 msgid "System configured"
 msgstr "Système configuré"
+
+msgid "System Qty"
+msgstr ""
 
 msgid "Table"
 msgstr "Tableau"
@@ -12014,6 +12086,9 @@ msgstr "Non assigné"
 msgid "Unballoon"
 msgstr "Retirer le ballon"
 
+msgid "Uncounted lines are left unchanged at post — they are not zeroed."
+msgstr ""
+
 msgid "Under Demand-Based Reorder, planning sums demand inside this rolling window when computing a replenishment quantity."
 msgstr "Sous Réapprovisionnement Basé sur la Demande, la planification additionne la demande dans cette fenêtre glissante lors du calcul d'une quantité de réapprovisionnement."
 
@@ -12345,6 +12420,9 @@ msgstr "Numéro d'enregistrement de la taxe sur la valeur ajoutée ; requis sur 
 msgid "Values"
 msgstr "Valeurs"
 
+msgid "Variance"
+msgstr ""
+
 msgid "Variance between actual and standard BOM component consumption"
 msgstr "Écart entre la consommation réelle et standard des composants de nomenclature"
 
@@ -12417,6 +12495,9 @@ msgstr "Afficher le Certificat"
 msgid "View Contact"
 msgstr "Afficher le contact"
 
+msgid "View Count"
+msgstr ""
+
 msgid "View Custom Fields"
 msgstr "Afficher les champs personnalisés"
 
@@ -12449,6 +12530,9 @@ msgstr "Afficher la dépêche de maintenance"
 
 msgid "View missing values"
 msgstr "Afficher les valeurs manquantes"
+
+msgid "View notes"
+msgstr ""
 
 msgid "View Open"
 msgstr "Afficher les ouvertes"

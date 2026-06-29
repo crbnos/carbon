@@ -1,6 +1,6 @@
 {
-  "generated": "2026-06-27T00:36:56.346Z",
-  "totalTools": 1221,
+  "generated": "2026-06-29T23:00:17.176Z",
+  "totalTools": 1230,
   "modules": 15,
   "tools": [
     {
@@ -5363,6 +5363,293 @@
           "itemId",
           "locationId",
           "adjustmentType"
+        ]
+      }
+    },
+    {
+      "name": "inventory_getInventoryCounts",
+      "module": "inventory",
+      "classification": "READ",
+      "description": "get inventory counts",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "args": {
+            "type": "object",
+            "properties": {
+              "limit": {
+                "type": "integer",
+                "default": 100
+              },
+              "offset": {
+                "type": "integer",
+                "default": 0
+              },
+              "search": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "inventory_getInventoryCount",
+      "module": "inventory",
+      "classification": "READ",
+      "description": "get inventory count",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "inventory_getInventoryCountLines",
+      "module": "inventory",
+      "classification": "READ",
+      "description": "get inventory count lines",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "inventoryCountId",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "inventoryCountId": {
+            "type": "string"
+          },
+          "args": {
+            "type": "object",
+            "properties": {
+              "limit": {
+                "type": "integer",
+                "default": 100
+              },
+              "offset": {
+                "type": "integer",
+                "default": 0
+              },
+              "search": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        },
+        "required": [
+          "inventoryCountId",
+          "args"
+        ]
+      }
+    },
+    {
+      "name": "inventory_getInventoryCountLineSummary",
+      "module": "inventory",
+      "classification": "READ",
+      "description": "get inventory count line summary",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "inventoryCountId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "inventoryCountId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "inventoryCountId"
+        ]
+      }
+    },
+    {
+      "name": "inventory_upsertInventoryCount",
+      "module": "inventory",
+      "classification": "WRITE",
+      "description": "upsert inventory count",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "inventoryCount"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "inventoryCount": {}
+        },
+        "required": [
+          "inventoryCount"
+        ]
+      }
+    },
+    {
+      "name": "inventory_deleteInventoryCount",
+      "module": "inventory",
+      "classification": "DESTRUCTIVE",
+      "description": "delete inventory count",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "inventory_generateInventoryCountLines",
+      "module": "inventory",
+      "classification": "WRITE",
+      "description": "generate inventory count lines",
+      "paramCount": 4,
+      "serviceParams": [
+        "db",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "inventoryCountId": {
+            "type": "string"
+          },
+          "locationId": {
+            "type": "string"
+          },
+          "storageUnitIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "itemType": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "inventoryCountId",
+          "locationId"
+        ]
+      }
+    },
+    {
+      "name": "inventory_updateInventoryCountLine",
+      "module": "inventory",
+      "classification": "WRITE",
+      "description": "update inventory count line",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "countedQuantity": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "inventory_updateInventoryCountStatus",
+      "module": "inventory",
+      "classification": "WRITE",
+      "description": "update inventory count status",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {},
+          "// When set, the transition only applies if the row is still in this status.\n    // The `.eq(\"status\", expectedStatus)` makes the read-then-write atomic, so a\n    // concurrent transition can't be clobbered (0 rows matched → `.single()`\n    // errors and the caller surfaces a failure).\n    expectedStatus": {}
+        },
+        "required": [
+          "id",
+          "status"
         ]
       }
     },
