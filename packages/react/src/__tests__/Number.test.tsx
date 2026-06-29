@@ -9,9 +9,26 @@
  * We check for the HTML attribute form `disabled=""` to avoid false positives.
  */
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { NumberInput } from "../Number";
+
+/**
+ * The `onFocus` behavior ([4] focus-select) is an inline closure on the real
+ * NumberInput. The vitest env is `node` (no jsdom), so we exercise the actual
+ * component's render output via forwardRef's `.render` — no reimplementation —
+ * and invoke the handler it wires onto the underlying Input with a stub event.
+ */
+type FocusableElement = { props: { onFocus?: (e: unknown) => void } };
+function getRenderedOnFocus(props: Record<string, unknown>) {
+  // forwardRef components expose the render fn; call it to get the element tree.
+  const rendered = (
+    NumberInput as unknown as {
+      render: (p: Record<string, unknown>, ref: unknown) => FocusableElement;
+    }
+  ).render(props, null);
+  return rendered.props.onFocus;
+}
 
 /** Returns the first <input> element's attribute string from rendered HTML */
 function getInputAttrs(html: string): string {
@@ -61,5 +78,29 @@ describe("NumberInput", () => {
     );
     // A disabled input carries disabled="" — not editable regardless
     expect(attrs).toMatch(/\bdisabled=""/i);
+  });
+
+  describe("focus behavior ([4] field selects on focus for quick overwrite)", () => {
+    it("selects the input's contents on focus", () => {
+      const select = vi.fn();
+      getRenderedOnFocus({})?.({ target: { select } });
+      expect(select).toHaveBeenCalledTimes(1);
+    });
+
+    it("forwards the focus event to a caller-supplied onFocus (tab/focus unbroken)", () => {
+      const onFocus = vi.fn();
+      const select = vi.fn();
+      const event = { target: { select } };
+      getRenderedOnFocus({ onFocus })?.(event);
+      expect(select).toHaveBeenCalledTimes(1);
+      expect(onFocus).toHaveBeenCalledTimes(1);
+      expect(onFocus).toHaveBeenCalledWith(event);
+    });
+
+    it("does not throw when no onFocus is provided", () => {
+      expect(() =>
+        getRenderedOnFocus({})?.({ target: { select: vi.fn() } })
+      ).not.toThrow();
+    });
   });
 });
