@@ -216,10 +216,25 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const passed = score >= PASSING_THRESHOLD;
 
   if (passed) {
+    const assignment = await getTrainingAssignmentForCompletion(client, id);
+
+    if (assignment.error || !assignment.data) {
+      return data({ error: "Training assignment not found" }, { status: 404 });
+    }
+
+    const training = assignment.data.training;
+    if (!training || Array.isArray(training)) {
+      return data({ error: "Training not found" }, { status: 404 });
+    }
+
+    const { data: period } = await client.rpc("get_current_training_period", {
+      frequency: training.frequency
+    });
+
     await insertTrainingCompletion(client, {
       trainingAssignmentId: id,
       employeeId: userId,
-      period: null,
+      period: period ?? null,
       companyId,
       completedBy: userId,
       createdBy: userId

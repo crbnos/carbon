@@ -73,8 +73,16 @@ const TimecardsTable = memo(({ data, count }: TimecardsTableProps) => {
   // Re-render every minute to update duration for active timecards
   useInterval(() => setTick((t) => t + 1), 60000);
 
-  const columns = useMemo<ColumnDef<TimeCardEntry>[]>(
-    () => [
+  const columns = useMemo<ColumnDef<TimeCardEntry>[]>(() => {
+    // Shared by the cell and the CSV export so the two never drift.
+    const timeLabel = (value: string | null | undefined) =>
+      value ? formatTime(value, locale) : "—";
+    const durationLabel = (
+      clockIn: string | null | undefined,
+      clockOut: string | null | undefined
+    ) => (clockIn ? formatDuration(clockIn, clockOut ?? null) : "—");
+
+    return [
       {
         header: t`Employee`,
         cell: ({ row }) => (
@@ -109,32 +117,29 @@ const TimecardsTable = memo(({ data, count }: TimecardsTableProps) => {
       {
         id: "clockInTime",
         header: t`Clock In`,
-        cell: ({ row }) =>
-          row.original.clockIn ? formatTime(row.original.clockIn, locale) : "—",
+        cell: ({ row }) => timeLabel(row.original.clockIn),
         meta: {
-          icon: <LuClock />
+          icon: <LuClock />,
+          exportValue: (row) => timeLabel(row.clockIn)
         }
       },
       {
         id: "clockOutTime",
         header: t`Clock Out`,
-        cell: ({ row }) =>
-          row.original.clockOut
-            ? formatTime(row.original.clockOut, locale)
-            : "—",
+        cell: ({ row }) => timeLabel(row.original.clockOut),
         meta: {
-          icon: <LuClock />
+          icon: <LuClock />,
+          exportValue: (row) => timeLabel(row.clockOut)
         }
       },
       {
         id: "duration",
         header: t`Duration`,
-        cell: ({ row }) => {
-          if (!row.original.clockIn) return "—";
-          return formatDuration(row.original.clockIn, row.original.clockOut);
-        },
+        cell: ({ row }) =>
+          durationLabel(row.original.clockIn, row.original.clockOut),
         meta: {
-          icon: <LuClock />
+          icon: <LuClock />,
+          exportValue: (row) => durationLabel(row.clockIn, row.clockOut)
         }
       },
       {
@@ -183,9 +188,8 @@ const TimecardsTable = memo(({ data, count }: TimecardsTableProps) => {
           }
         }
       }
-    ],
-    [locations, t, formatDate, locale]
-  );
+    ];
+  }, [locations, t, formatDate, locale]);
 
   const renderContextMenu = useCallback(
     (row: TimeCardEntry) => {

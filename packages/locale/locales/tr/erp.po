@@ -7643,6 +7643,9 @@ msgstr "Üretimde"
 msgid "On order"
 msgstr "Siparişte"
 
+msgid "On Production Demand"
+msgstr "Üretim Talebinde"
+
 msgid "On Purchase Order"
 msgstr "Satın Alma Siparişinde"
 
@@ -8358,6 +8361,9 @@ msgstr "Ön Ödemeler (varsayılan)"
 
 msgid "Prepayments (default)"
 msgstr "Önleyici İşlem"
+
+msgid "Present Week"
+msgstr "Mevcut Hafta"
 
 msgid "Prev"
 msgstr "Önceki"
@@ -12714,6 +12720,9 @@ msgstr "Çarşamba"
 #. placeholder {0}: i + 1
 msgid "Week {0} ({formattedDate})"
 msgstr "Hafta {0} ({formattedDate})"
+
+msgid "Week {weekNumber}"
+msgstr "Hafta {weekNumber}"
 
 msgid "Week 8 cutover"
 msgstr "8. Hafta geçişi"

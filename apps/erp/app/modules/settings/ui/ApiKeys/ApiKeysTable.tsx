@@ -25,6 +25,15 @@ type ApiKeysTableProps = {
   count: number;
 };
 
+// `apiKey.scopes` is a `Json` column; narrow it to the scope map shape once so
+// the cell and the CSV export read it the same way without an `as any` cast.
+function getScopes(apiKey: ApiKey): Record<string, string[]> | null {
+  const { scopes } = apiKey;
+  return scopes && typeof scopes === "object" && !Array.isArray(scopes)
+    ? (scopes as Record<string, string[]>)
+    : null;
+}
+
 function getScopeCount(scopes: Record<string, string[]> | null): number {
   if (!scopes) return 0;
   return Object.keys(scopes).length;
@@ -78,11 +87,7 @@ const ApiKeysTable = memo(({ data, count }: ApiKeysTableProps) => {
         id: "scopes",
         header: t`Scopes`,
         cell: ({ row }) => {
-          const scopes = (row.original as any).scopes as Record<
-            string,
-            string[]
-          > | null;
-          const scopeCount = getScopeCount(scopes);
+          const scopeCount = getScopeCount(getScopes(row.original));
           return (
             <Badge variant="secondary">
               {scopeCount === 0 ? t`No Access` : t`${scopeCount} permissions`}
@@ -90,7 +95,13 @@ const ApiKeysTable = memo(({ data, count }: ApiKeysTableProps) => {
           );
         },
         meta: {
-          icon: <LuShield />
+          icon: <LuShield />,
+          exportValue: (row) => {
+            const scopeCount = getScopeCount(getScopes(row));
+            return scopeCount === 0
+              ? t`No Access`
+              : t`${scopeCount} permissions`;
+          }
         }
       },
       {

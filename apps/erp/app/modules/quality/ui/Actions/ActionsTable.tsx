@@ -191,14 +191,6 @@ const ActionsTable = memo(
         },
 
         {
-          accessorKey: "dueDate",
-          header: t`Due Date`,
-          cell: ({ row }) => formatDate(row.original.dueDate),
-          meta: {
-            icon: <LuCalendar />
-          }
-        },
-        {
           accessorKey: "completedDate",
           header: t`Completed Date`,
           cell: ({ row }) => formatDate(row.original.completedDate),

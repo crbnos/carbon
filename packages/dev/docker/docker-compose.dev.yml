@@ -157,6 +157,7 @@ services:
   meta:
     image: supabase/postgres-meta:v0.96.5
     restart: unless-stopped
+    profiles: ["full"]
     depends_on:
       postgres:
         condition: service_healthy
@@ -171,6 +172,7 @@ services:
   studio:
     image: supabase/studio:2026.04.28-sha-89d08a2
     restart: unless-stopped
+    profiles: ["full"]
     depends_on:
       meta:
         condition: service_started
@@ -189,6 +191,7 @@ services:
   inbucket:
     image: inbucket/inbucket:3.1.1
     restart: unless-stopped
+    profiles: ["full"]
     ports:
       - "${PORT_INBUCKET}:9000"
 

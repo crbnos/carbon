@@ -72,6 +72,17 @@ const PricingRulesTable = memo(({ data, count }: PricingRulesTableProps) => {
   const [items] = useItems();
 
   const columns = useMemo<ColumnDef<(typeof data)[number]>[]>(() => {
+    // Shared by the Dates cell and its CSV export so the two never drift.
+    const formatValidRange = (
+      validFrom: string | null | undefined,
+      validTo: string | null | undefined
+    ) => {
+      if (!validFrom && !validTo) return t`Always`;
+      const from = validFrom ? formatDate(validFrom) : "…";
+      const to = validTo ? formatDate(validTo) : "…";
+      return `${from} – ${to}`;
+    };
+
     const defaultColumns: ColumnDef<(typeof data)[number]>[] = [
       {
         accessorKey: "name",
@@ -151,7 +162,8 @@ const PricingRulesTable = memo(({ data, count }: PricingRulesTableProps) => {
             <div className="flex flex-col items-start gap-1">
               {row.original.customerTypeIds.map((id) => {
                 const label =
-                  customerTypes?.find((ct) => ct.value === id)?.label ?? "Type";
+                  customerTypes?.find((ct) => ct.value === id)?.label ??
+                  t`Type`;
                 return <Enumerable key={id} value={label} />;
               })}
             </div>
@@ -208,7 +220,7 @@ const PricingRulesTable = memo(({ data, count }: PricingRulesTableProps) => {
           const label =
             itemPostingGroups?.find(
               (g) => g.value === row.original.itemPostingGroupId
-            )?.label ?? "Item Group";
+            )?.label ?? t`Item Group`;
           return <Enumerable value={label} />;
         },
         meta: {
@@ -237,7 +249,7 @@ const PricingRulesTable = memo(({ data, count }: PricingRulesTableProps) => {
           if (rule.customerTypeIds?.length) {
             rule.customerTypeIds.forEach((id) => {
               const label =
-                customerTypes?.find((ct) => ct.value === id)?.label ?? "Type";
+                customerTypes?.find((ct) => ct.value === id)?.label ?? t`Type`;
               parts.push(<Enumerable key={`ct-${id}`} value={label} />);
             });
           }
@@ -250,7 +262,23 @@ const PricingRulesTable = memo(({ data, count }: PricingRulesTableProps) => {
           return <div className="flex flex-col items-start gap-1">{parts}</div>;
         },
         meta: {
-          icon: <LuSquareUser />
+          icon: <LuSquareUser />,
+          exportValue: (row) => {
+            const labels: string[] = [];
+            if (row.customerIds?.length) {
+              row.customerIds.forEach((id) => {
+                labels.push(customers?.find((c) => c.id === id)?.name ?? id);
+              });
+            }
+            if (row.customerTypeIds?.length) {
+              row.customerTypeIds.forEach((id) => {
+                labels.push(
+                  customerTypes?.find((ct) => ct.value === id)?.label ?? t`Type`
+                );
+              });
+            }
+            return labels.length === 0 ? t`All` : labels.join(", ");
+          }
         }
       },
       {
@@ -261,7 +289,7 @@ const PricingRulesTable = memo(({ data, count }: PricingRulesTableProps) => {
           const groupLabel = rule.itemPostingGroupId
             ? (itemPostingGroups?.find(
                 (g) => g.value === rule.itemPostingGroupId
-              )?.label ?? "Item Group")
+              )?.label ?? t`Item Group`)
             : null;
           const itemIds = rule.itemIds ?? [];
           const firstItem = itemIds[0]
@@ -308,7 +336,23 @@ const PricingRulesTable = memo(({ data, count }: PricingRulesTableProps) => {
           );
         },
         meta: {
-          icon: <LuPackage />
+          icon: <LuPackage />,
+          exportValue: (row) => {
+            const labels: string[] = [];
+            if (row.itemPostingGroupId) {
+              labels.push(
+                itemPostingGroups?.find(
+                  (g) => g.value === row.itemPostingGroupId
+                )?.label ?? t`Item Group`
+              );
+            }
+            (row.itemIds ?? []).forEach((id) => {
+              labels.push(
+                items?.find((i) => i.id === id)?.readableIdWithRevision ?? id
+              );
+            });
+            return labels.length === 0 ? t`All` : labels.join(", ");
+          }
         }
       },
       {
@@ -321,12 +365,15 @@ const PricingRulesTable = memo(({ data, count }: PricingRulesTableProps) => {
               <span className="text-muted-foreground text-sm">{t`Always`}</span>
             );
           }
-          const from = validFrom ? formatDate(validFrom) : "…";
-          const to = validTo ? formatDate(validTo) : "…";
-          return <span className="text-sm">{`${from} – ${to}`}</span>;
+          return (
+            <span className="text-sm">
+              {formatValidRange(validFrom, validTo)}
+            </span>
+          );
         },
         meta: {
-          icon: <LuCalendar />
+          icon: <LuCalendar />,
+          exportValue: (row) => formatValidRange(row.validFrom, row.validTo)
         }
       },
       {

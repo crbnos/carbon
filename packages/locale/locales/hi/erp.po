@@ -7643,6 +7643,9 @@ msgstr "नौकरियों पर"
 msgid "On order"
 msgstr "ऑर्डर पर"
 
+msgid "On Production Demand"
+msgstr "उत्पादन मांग पर"
+
 msgid "On Purchase Order"
 msgstr "खरीद आदेश पर"
 
@@ -8358,6 +8361,9 @@ msgstr "अग्रिम भुगतान (डिफ़ॉल्ट)"
 
 msgid "Prepayments (default)"
 msgstr "निवारक कार्रवाई"
+
+msgid "Present Week"
+msgstr "वर्तमान सप्ताह"
 
 msgid "Prev"
 msgstr "पिछला"
@@ -12714,6 +12720,9 @@ msgstr "बुधवार"
 #. placeholder {0}: i + 1
 msgid "Week {0} ({formattedDate})"
 msgstr "सप्ताह {0} ({formattedDate})"
+
+msgid "Week {weekNumber}"
+msgstr "सप्ताह {weekNumber}"
 
 msgid "Week 8 cutover"
 msgstr "सप्ताह 8 कटओवर"

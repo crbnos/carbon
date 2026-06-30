@@ -79,7 +79,7 @@ import {
 import type { ColumnFilter } from "./components/Filter/types";
 import { useFilters } from "./components/Filter/useFilters";
 import type { ColumnSizeMap } from "./types";
-import { getAccessorKey, updateNestedProperty } from "./utils";
+import { buildColumnMaps, getAccessorKey, updateNestedProperty } from "./utils";
 
 interface TableProps<T extends object> {
   columns: ColumnDef<T>[];
@@ -393,22 +393,12 @@ const Table = <T extends object>({
   /* Sorting */
   const { isSorted, toggleSortByAscending, toggleSortByDescending } = useSort();
 
-  const columnAccessors = useMemo(
-    () =>
-      columns.reduce<Record<string, string>>((acc, column) => {
-        const accessorKey: string | undefined = getAccessorKey(column);
-        if (accessorKey?.includes("_"))
-          throw new Error(
-            `Invalid accessorKey ${accessorKey}. Cannot contain '_'`
-          );
-        if (accessorKey && column.header && typeof column.header === "string") {
-          return {
-            ...acc,
-            [accessorKey]: translateLabel(column.header)
-          };
-        }
-        return acc;
-      }, {}),
+  const {
+    accessors: columnAccessors,
+    exportValues,
+    sortKeyToLabel
+  } = useMemo(
+    () => buildColumnMaps(columns, translateLabel),
     [columns, translateLabel]
   );
 
@@ -866,6 +856,8 @@ const Table = <T extends object>({
     >
       <TableHeader
         columnAccessors={columnAccessors}
+        exportValues={exportValues}
+        sortKeyToLabel={sortKeyToLabel}
         columnOrder={columnOrder}
         columnPinning={columnPinning}
         columnVisibility={columnVisibility}
@@ -981,7 +973,9 @@ const Table = <T extends object>({
                         accessorKey &&
                         !accessorKey.endsWith(".id") &&
                         header.column.columnDef.enableSorting !== false;
-                      const sorted = isSorted(accessorKey ?? "");
+                      const sortKey =
+                        header.column.columnDef.meta?.sortBy ?? accessorKey;
+                      const sorted = isSorted(sortKey ?? "");
 
                       return (
                         <Th
@@ -1042,7 +1036,7 @@ const Table = <T extends object>({
                                   >
                                     <DropdownMenuRadioItem
                                       onClick={() =>
-                                        toggleSortByAscending(accessorKey!)
+                                        toggleSortByAscending(sortKey!)
                                       }
                                       value="1"
                                     >
@@ -1051,7 +1045,7 @@ const Table = <T extends object>({
                                     </DropdownMenuRadioItem>
                                     <DropdownMenuRadioItem
                                       onClick={() =>
-                                        toggleSortByDescending(accessorKey!)
+                                        toggleSortByDescending(sortKey!)
                                       }
                                       value="-1"
                                     >

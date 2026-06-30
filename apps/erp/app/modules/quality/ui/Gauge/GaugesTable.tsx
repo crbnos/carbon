@@ -52,12 +52,9 @@ type GaugesTableProps = {
 };
 
 const defaultColumnVisibility = {
-  type: false,
-  extension: false,
   createdAt: false,
   updatedAt: false,
-  updatedBy: false,
-  description: false
+  updatedBy: false
 };
 
 const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {

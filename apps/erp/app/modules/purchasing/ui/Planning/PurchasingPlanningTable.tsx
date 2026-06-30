@@ -339,6 +339,15 @@ const PlanningTable = memo(
                   {numberFormatter.format(value)}
                 </span>
               );
+            },
+            meta: {
+              filterHeader: isCurrentWeek
+                ? t`Present Week`
+                : t`Week ${weekNumber}`,
+              exportValue: (row: PurchasingPlanningItem) => {
+                const value = row[weekKey] as number | undefined;
+                return value === undefined ? null : value;
+              }
             }
           };
         }
@@ -384,7 +393,13 @@ const PlanningTable = memo(
                 )?.label ?? null
               }
             />
-          )
+          ),
+          meta: {
+            filterHeader: t`Unit of Measure`,
+            exportValue: (row: PurchasingPlanningItem) =>
+              unitOfMeasures.find((uom) => uom.value === row.unitOfMeasureCode)
+                ?.label ?? null
+          }
         },
         {
           accessorKey: "preferredSupplierId",

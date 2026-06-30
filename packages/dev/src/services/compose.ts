@@ -53,12 +53,15 @@ export type Container = {
 // Lifecycle
 // ---------------------------------------------------------------------------
 
-export async function bootStack(root: string, slug: string) {
-  await execStrict(
-    "docker",
-    devArgs(root, slug, "--env-file", ".env.local", "up", "-d"),
-    root
-  );
+export async function bootStack(
+  root: string,
+  slug: string,
+  opts?: { minimal?: boolean }
+) {
+  const args = devArgs(root, slug, "--env-file", ".env.local");
+  if (!opts?.minimal) args.push("--profile", "full");
+  args.push("up", "-d");
+  await execStrict("docker", args, root);
 }
 
 // `docker compose restart` a subset of services. Used by the storage-stuck
@@ -84,21 +87,13 @@ export async function restartServices(
 export async function pullStack(
   root: string,
   slug: string,
-  onLine: (line: string) => void
+  onLine: (line: string) => void,
+  opts?: { minimal?: boolean }
 ) {
-  const proc = execa(
-    "docker",
-    devArgs(
-      root,
-      slug,
-      "--env-file",
-      ".env.local",
-      "--progress",
-      "plain",
-      "pull"
-    ),
-    { cwd: root, reject: false, all: true }
-  );
+  const args = devArgs(root, slug, "--env-file", ".env.local");
+  if (!opts?.minimal) args.push("--profile", "full");
+  args.push("--progress", "plain", "pull");
+  const proc = execa("docker", args, { cwd: root, reject: false, all: true });
 
   if (proc.all) {
     readLines(proc.all, (line) => {
@@ -117,13 +112,13 @@ export async function pullStack(
 /** Resolved image refs for the dev compose file (tags as pinned in compose). */
 export async function devComposeImageRefs(
   root: string,
-  slug: string
+  slug: string,
+  opts?: { minimal?: boolean }
 ): Promise<string[] | null> {
-  const r = await execa(
-    "docker",
-    devArgs(root, slug, "--env-file", ".env.local", "config", "--images"),
-    { cwd: root, reject: false }
-  );
+  const args = devArgs(root, slug, "--env-file", ".env.local");
+  if (!opts?.minimal) args.push("--profile", "full");
+  args.push("config", "--images");
+  const r = await execa("docker", args, { cwd: root, reject: false });
   if (r.exitCode !== 0) return null;
   const refs = (r.stdout ?? "")
     .split("\n")
@@ -306,13 +301,13 @@ function parsePublishers(raw: unknown): Publisher[] {
 // `docker compose config --services` so we don't drift if services are added.
 export async function listComposeServices(
   root: string,
-  slug: string
+  slug: string,
+  opts?: { minimal?: boolean }
 ): Promise<string[]> {
-  const r = await execa(
-    "docker",
-    devArgs(root, slug, "--env-file", ".env.local", "config", "--services"),
-    { cwd: root, reject: false }
-  );
+  const args = devArgs(root, slug, "--env-file", ".env.local");
+  if (!opts?.minimal) args.push("--profile", "full");
+  args.push("config", "--services");
+  const r = await execa("docker", args, { cwd: root, reject: false });
   if (r.exitCode !== 0) return [];
   return (r.stdout ?? "")
     .split("\n")

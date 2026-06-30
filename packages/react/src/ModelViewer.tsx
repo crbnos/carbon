@@ -4,7 +4,6 @@ import { useLocale } from "react-aria-components";
 import { LuTrash2 } from "react-icons/lu";
 // @ts-ignore -- three has no declaration file in this context
 import * as THREE from "three";
-import { useMount } from "./hooks";
 import { IconButton } from "./IconButton";
 import { Spinner } from "./Spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./Tabs";
@@ -38,6 +37,9 @@ export function ModelViewer({
 }) {
   const parentDiv = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<OV.EmbeddedViewer | null>(null);
+  // Lights added to the scene, tracked so teardown can remove them
+  // (Viewer.Clear() only disposes model objects, not scene-level lights).
+  const addedLightsRef = useRef<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isActive, setIsActive] = useState(false);
   const [unitSystem, setUnitSystem] = useState<UnitSystem>("metric");
@@ -47,7 +49,10 @@ export function ModelViewer({
     dimensions: { x: number; y: number; z: number };
   } | null>(null);
 
-  useMount(() => {
+  // Mount/unmount the viewer. Must be useEffect (not useMount) so the returned
+  // teardown is actually registered as the cleanup — useMount discards it.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: mount-once lifecycle
+  useEffect(() => {
     if (file || url) {
       setIsLoading(true);
 
@@ -90,23 +95,28 @@ export function ModelViewer({
                 camera.up = new OV.Coord3D(0, 1, 0);
                 viewer3D.SetCamera(camera);
 
-                // Add ambient light for overall illumination
-                const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-                scene.add(ambientLight);
+                // onModelLoaded fires on every (re)load; guard so lights are
+                // added once per viewer instead of stacking on each reload.
+                if (addedLightsRef.current.length === 0) {
+                  const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
 
-                // Add directional lights for isometric highlights
-                const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.8);
-                dirLight1.position.set(1, 1, 1);
-                scene.add(dirLight1);
+                  const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.8);
+                  dirLight1.position.set(1, 1, 1);
 
-                const dirLight2 = new THREE.DirectionalLight(0xffffff, 0.4);
-                dirLight2.position.set(-1, 0.5, -1);
-                scene.add(dirLight2);
+                  const dirLight2 = new THREE.DirectionalLight(0xffffff, 0.4);
+                  dirLight2.position.set(-1, 0.5, -1);
 
-                // Add subtle point light for depth
-                const pointLight = new THREE.PointLight(0xffffff, 0.3);
-                pointLight.position.set(0, radius * 2, 0);
-                scene.add(pointLight);
+                  const pointLight = new THREE.PointLight(0xffffff, 0.3);
+                  pointLight.position.set(0, radius * 2, 0);
+
+                  addedLightsRef.current = [
+                    ambientLight,
+                    dirLight1,
+                    dirLight2,
+                    pointLight
+                  ];
+                  addedLightsRef.current.forEach((light) => scene.add(light));
+                }
 
                 viewer3D.Render();
               }
@@ -150,24 +160,63 @@ export function ModelViewer({
       }
     }
 
+    // Teardown must be self-contained: by the time this passive cleanup runs,
+    // React has already nulled `parentDiv.current`, so derive everything from
+    // the viewer ref instead.
     return () => {
-      if (viewerRef.current !== null && parentDiv.current !== null) {
-        (viewerRef.current as any).model = undefined;
-        viewerRef.current.viewer.renderer.resetState();
-        viewerRef.current.viewer.Clear();
-        (viewerRef.current as any).viewer = undefined;
-        const gl = viewerRef.current.canvas.getContext("webgl2");
-        gl?.getExtension("WEBGL_lose_context")?.loseContext();
-        const tempClone = viewerRef.current.canvas.cloneNode(true);
-        viewerRef.current.canvas.parentNode?.replaceChild(
-          tempClone,
-          viewerRef.current.canvas
-        );
-        parentDiv.current.removeChild(parentDiv.current.children[0]!);
-        viewerRef.current = null;
+      const embeddedViewer = viewerRef.current;
+      if (embeddedViewer === null) return;
+      const viewer3D = (embeddedViewer as any).viewer;
+
+      // Clear() disposes model objects but not these scene lights.
+      addedLightsRef.current.forEach((light) => {
+        viewer3D?.scene?.remove(light);
+        light.dispose?.();
+      });
+      addedLightsRef.current = [];
+
+      (embeddedViewer as any).model = undefined;
+      viewer3D?.renderer?.resetState();
+      viewer3D?.Clear();
+      viewer3D?.renderer?.dispose();
+
+      // online-3d-viewer leaks two listeners it never removes, and each pins
+      // the whole model graph (scene, geometry, renderer, WebGL context) so GC
+      // never reclaims it. The library exposes no teardown and the bound
+      // listener refs aren't accessible, so we break the retention by nulling
+      // every heavy field the leaked closures reach.
+
+      // 1) Navigation attaches mousemove/mouseup/mouseleave on `document`; its
+      //    `callbacks.onUpdate` closure references the Viewer.
+      const navigation = viewer3D?.navigation;
+      if (navigation) {
+        navigation.camera = null;
+        navigation.canvas = null;
+        navigation.callbacks = null;
+        navigation.mouse = null;
+        navigation.touch = null;
+        navigation.clickDetector = null;
       }
+
+      // 2) EmbeddedViewer attaches a `resize` listener on `window` whose closure
+      //    captures the EmbeddedViewer itself. Neutralize the handler so it
+      //    can't fire after teardown, then null its references.
+      const canvas = embeddedViewer.canvas;
+      (embeddedViewer as any).Resize = () => {};
+      (embeddedViewer as any).viewer = undefined;
+      (embeddedViewer as any).modelLoader = undefined;
+      (embeddedViewer as any).parameters = undefined;
+      (embeddedViewer as any).parentElement = null;
+
+      canvas
+        ?.getContext("webgl2")
+        ?.getExtension("WEBGL_lose_context")
+        ?.loseContext();
+      canvas?.parentNode?.removeChild(canvas);
+      (embeddedViewer as any).canvas = null;
+      viewerRef.current = null;
     };
-  });
+  }, []);
 
   function resetZoom() {
     if (!viewerRef.current) return;

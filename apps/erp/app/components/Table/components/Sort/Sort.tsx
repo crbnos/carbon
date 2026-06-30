@@ -26,10 +26,10 @@ import { LuArrowUpDown, LuGripVertical } from "react-icons/lu";
 import { useSort } from "./useSort";
 
 type SortProps = {
-  columnAccessors: Record<string, string>;
+  sortKeyToLabel: Record<string, string>;
 };
 
-const Sort = ({ columnAccessors }: SortProps) => {
+const Sort = ({ sortKeyToLabel }: SortProps) => {
   const { t } = useLingui();
   const {
     sorts,
@@ -90,7 +90,7 @@ const Sort = ({ columnAccessors }: SortProps) => {
                       variant="ghost"
                     />
                     <span className="text-sm flex-grow">
-                      <>{columnAccessors[column] ?? ""}</>
+                      <>{sortKeyToLabel[column] ?? ""}</>
                     </span>
                     <Switch
                       checked={direction === "asc"}
@@ -120,20 +120,20 @@ const Sort = ({ columnAccessors }: SortProps) => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-48">
-              {Object.keys(columnAccessors)
-                .filter((columnAccessor) => {
+              {Object.keys(sortKeyToLabel)
+                .filter((sortKey) => {
                   return !sorts
                     .map((sort) => sort.split(":")[0])
-                    .includes(columnAccessor);
+                    .includes(sortKey);
                 })
-                .map((columnAccessor) => {
+                .map((sortKey) => {
                   return (
                     <DropdownMenuItem
-                      key={columnAccessor}
-                      onClick={() => toggleSortBy(columnAccessor)}
+                      key={sortKey}
+                      onClick={() => toggleSortBy(sortKey)}
                     >
                       <DropdownMenuIcon icon={<BsSortUp />} />
-                      {columnAccessors[columnAccessor]}
+                      {sortKeyToLabel[sortKey]}
                     </DropdownMenuItem>
                   );
                 })}

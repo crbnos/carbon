@@ -81,6 +81,12 @@ type UpOpts = {
   /** With --run, also remove Docker volumes on teardown (headless: don't leak
    *  data volumes across dispatches on a long-lived box). */
   volumes?: boolean;
+  /**
+   * Skip non-essential services (Studio, Postgres-Meta, Inbucket) to reduce
+   * memory footprint. Useful for headless/CI builds on memory-constrained
+   * hosts where the Supabase dashboard and email testing UI aren't needed.
+   */
+  minimal?: boolean;
 };
 
 type Ctx = {
@@ -98,6 +104,7 @@ export async function up(opts: UpOpts = {}) {
   // were skipped, schema is unchanged — skip regen too.
   const shouldRegen = shouldMigrate && (opts.regen ?? true);
   const shouldBorrow = opts.borrow === true;
+  const minimal = opts.minimal ?? false;
   // Services-only mode: boot compose stack + portless aliases (api/studio/
   // mail/inngest URLs still useful), skip spawnApps + auto-`down` on Ctrl+C.
   // Triggered by --no-apps OR by deselecting everything in the picker.
@@ -117,7 +124,7 @@ export async function up(opts: UpOpts = {}) {
       ? opts.portless
       : process.env.CARBON_PORTLESS !== "0";
 
-  intro("Carbon · dev up");
+  intro(minimal ? "Carbon · dev up (minimal)" : "Carbon · dev up");
   // Fail fast with a clear message instead of a cryptic daemon error deep in
   // the boot (after prompts + sudo).
   await ensureDockerRunning();
@@ -173,8 +180,8 @@ export async function up(opts: UpOpts = {}) {
   if (borrowedEntry) {
     await waitForServices(ctx);
   } else {
-    await pullImages(ctx, { force: opts.pull === true });
-    await bootDockerStack(ctx);
+    await pullImages(ctx, { force: opts.pull === true, minimal });
+    await bootDockerStack(ctx, { minimal });
     await waitForServices(ctx);
   }
   await runDatabaseMigrations(ctx, { shouldMigrate, shouldRegen });
@@ -348,24 +355,38 @@ async function provisionSlot(
 // Pull images outside `tasks()` so we can use clack's progress bar (one
 // tick per `<service> Pulled` event). Spinner subtitle inside `tasks()`
 // can't render a bar, only a single line of text.
-async function pullImages(ctx: Ctx, opts: { force: boolean }) {
+async function pullImages(
+  ctx: Ctx,
+  opts: { force: boolean; minimal: boolean }
+) {
   if (!opts.force) {
-    const refs = await devComposeImageRefs(ctx.root, ctx.slug);
+    const refs = await devComposeImageRefs(ctx.root, ctx.slug, {
+      minimal: opts.minimal
+    });
     if (refs && (await allImagesPresentLocally(refs))) {
       log.info("docker images already present — skipping compose pull");
       return;
     }
   }
 
-  const services = await listComposeServices(ctx.root, ctx.slug);
+  const services = await listComposeServices(ctx.root, ctx.slug, {
+    minimal: opts.minimal
+  });
   const max = Math.max(services.length, 1);
   const bar = progress({ style: "heavy", max });
-  bar.start("Pulling docker images");
+  bar.start(
+    opts.minimal ? "Pulling docker images (minimal)" : "Pulling docker images"
+  );
   try {
-    await pullStack(ctx.root, ctx.slug, (line) => {
-      bar.message(line.slice(0, 80));
-      if (/ Pulled$/.test(line)) bar.advance(1);
-    });
+    await pullStack(
+      ctx.root,
+      ctx.slug,
+      (line) => {
+        bar.message(line.slice(0, 80));
+        if (/ Pulled$/.test(line)) bar.advance(1);
+      },
+      { minimal: opts.minimal }
+    );
     bar.stop("images up to date");
   } catch (err) {
     bar.stop("pull failed");
@@ -373,13 +394,17 @@ async function pullImages(ctx: Ctx, opts: { force: boolean }) {
   }
 }
 
-async function bootDockerStack(ctx: Ctx) {
+async function bootDockerStack(ctx: Ctx, opts: { minimal: boolean }) {
+  const serviceCount = opts.minimal ? 8 : 11;
+  const label = opts.minimal
+    ? "Boot docker compose stack (minimal — no studio/meta/inbucket)"
+    : "Boot docker compose stack";
   await tasks([
     {
-      title: "Boot docker compose stack",
+      title: label,
       task: async (msg) => {
-        msg("starting 12 services");
-        await bootStack(ctx.root, ctx.slug);
+        msg(`starting ${serviceCount} services`);
+        await bootStack(ctx.root, ctx.slug, { minimal: opts.minimal });
         return "containers up";
       }
     }

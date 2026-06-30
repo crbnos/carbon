@@ -7643,6 +7643,9 @@ msgstr "ジョブ上"
 msgid "On order"
 msgstr "発注済み"
 
+msgid "On Production Demand"
+msgstr "生産需要中"
+
 msgid "On Purchase Order"
 msgstr "購買注文中"
 
@@ -8358,6 +8361,9 @@ msgstr "前払金（デフォルト）"
 
 msgid "Prepayments (default)"
 msgstr "予防措置"
+
+msgid "Present Week"
+msgstr "今週"
 
 msgid "Prev"
 msgstr "前へ"
@@ -12714,6 +12720,9 @@ msgstr "水曜日"
 #. placeholder {0}: i + 1
 msgid "Week {0} ({formattedDate})"
 msgstr "週 {0} ({formattedDate})"
+
+msgid "Week {weekNumber}"
+msgstr "週 {weekNumber}"
 
 msgid "Week 8 cutover"
 msgstr "第8週のカットオーバー"

@@ -103,7 +103,10 @@ const InboundInspectionsTable = memo(
               </span>
             </div>
           ),
-          meta: { icon: <LuTruck /> }
+          meta: {
+            icon: <LuTruck />,
+            exportValue: (row) => (row as any).receipt?.receiptId ?? null
+          }
         },
         {
           accessorKey: "lotSize",

@@ -20,6 +20,15 @@ declare module "@tanstack/react-table" {
         | "-Infinity"
         | "+Infinity"
     ) => string;
+    // CSV value for this column, given the full row. Overrides the raw-accessor
+    // read in Download.tsx. Use when the displayed value is derived/composite, or
+    // when the accessorKey is an id whose name lives in another row field.
+    exportValue?: (row: TData) => string | number | boolean | null | undefined;
+    // Server-sort column override. When set, the sort UI writes `?sort=<sortBy>:dir`
+    // instead of using the accessorKey. Use when a column must sort by a different
+    // field than its accessor (e.g. accessor `supplierTypeId`, sort by `type`).
+    // Must name a real column on the view.
+    sortBy?: string;
   }
 }
 

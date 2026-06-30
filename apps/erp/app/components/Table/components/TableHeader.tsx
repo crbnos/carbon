@@ -60,6 +60,8 @@ import Sort from "./Sort";
 type HeaderProps<T> = {
   renderActions?: (selectedRows: T[]) => ReactNode;
   columnAccessors: Record<string, string>;
+  exportValues: Record<string, (row: T) => unknown>;
+  sortKeyToLabel: Record<string, string>;
   columnOrder: ColumnOrderState;
   columnPinning: ColumnPinningState;
   columnVisibility: Record<string, boolean>;
@@ -90,6 +92,8 @@ type HeaderProps<T> = {
 const TableHeader = <T extends object>({
   compact,
   columnAccessors,
+  exportValues,
+  sortKeyToLabel,
   columnOrder,
   columnPinning,
   columnVisibility,
@@ -301,11 +305,7 @@ const TableHeader = <T extends object>({
           {!!filters?.length && <Filter filters={filters} />}
         </HStack>
         <HStack>
-          {sort === undefined ? (
-            <Sort columnAccessors={columnAccessors} />
-          ) : (
-            sort
-          )}
+          {sort === undefined ? <Sort sortKeyToLabel={sortKeyToLabel} /> : sort}
 
           <Columns
             columnOrder={columnOrder}
@@ -341,6 +341,7 @@ const TableHeader = <T extends object>({
           <Download
             data={data}
             columnAccessors={columnAccessors}
+            exportValues={exportValues}
             columnOrder={columnOrder}
             columnVisibility={columnVisibility}
           />

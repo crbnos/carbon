@@ -86,6 +86,17 @@ const DemandProjectionsTable = memo(
               if (value === undefined || value === null || value === 0)
                 return "-";
               return <span>{numberFormatter.format(value)}</span>;
+            },
+            meta: {
+              filterHeader: isCurrentWeek
+                ? t`Present Week`
+                : t`Week ${weekNumber}`,
+              exportValue: (row: DemandProjection) => {
+                const value = row[weekKey] as number | undefined | null;
+                return value === undefined || value === null || value === 0
+                  ? null
+                  : value;
+              }
             }
           };
         }

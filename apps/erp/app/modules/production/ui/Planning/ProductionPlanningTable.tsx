@@ -242,6 +242,15 @@ const ProductionPlanningTable = ({
                 {numberFormatter.format(value)}
               </span>
             );
+          },
+          meta: {
+            filterHeader: isCurrentWeek
+              ? t`Present Week`
+              : t`Week ${weekNumber}`,
+            exportValue: (row: ProductionPlanningItem) => {
+              const value = row[weekKey] as number | undefined;
+              return value === undefined ? null : value;
+            }
           }
         };
       }
@@ -288,7 +297,13 @@ const ProductionPlanningTable = ({
               )?.label ?? null
             }
           />
-        )
+        ),
+        meta: {
+          filterHeader: t`Unit of Measure`,
+          exportValue: (row: ProductionPlanningItem) =>
+            unitOfMeasures.find((uom) => uom.value === row.unitOfMeasureCode)
+              ?.label ?? null
+        }
       },
       {
         accessorKey: "reorderingPolicy",
@@ -444,7 +459,6 @@ const ProductionPlanningTable = ({
   );
 
   const defaultColumnVisibility = {
-    active: false,
     type: false
   };
 

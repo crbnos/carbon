@@ -72,6 +72,7 @@ const SuggestionsTable = memo(
           ),
           meta: {
             icon: <LuUser />,
+            exportValue: (row) => row.employeeName,
             filter: {
               type: "static",
               options: people.map((employee) => ({

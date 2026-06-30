@@ -269,7 +269,7 @@ const InventoryTable = memo(
         },
         {
           accessorKey: "quantityOnProductionDemand",
-          header: t`On Jobs`,
+          header: t`On Production Demand`,
           cell: ({ row }) =>
             formatNumber(row.original.quantityOnProductionDemand),
           meta: {

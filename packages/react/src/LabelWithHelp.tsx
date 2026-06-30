@@ -50,6 +50,7 @@ export function LabelWithHelp({
         <TooltipTrigger asChild>
           <button
             type="button"
+            tabIndex={-1}
             aria-label={t`What is ${translatedTerm}?`}
             className={cn(
               "inline-flex items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",

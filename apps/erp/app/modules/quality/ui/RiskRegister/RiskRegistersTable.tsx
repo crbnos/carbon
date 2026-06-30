@@ -188,6 +188,7 @@ const RiskRegistersTable = memo(({ data, count }: RiskRegistersTableProps) => {
         cell: ({ row }) => <Enumerable value={row.original.workCenterName} />,
         meta: {
           icon: <LuWrench />,
+          exportValue: (row) => row.workCenterName,
           filter: {
             type: "static",
             options: workCenters.options.map((wc) => ({

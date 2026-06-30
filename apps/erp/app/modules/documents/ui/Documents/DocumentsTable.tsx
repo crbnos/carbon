@@ -282,6 +282,7 @@ const DocumentsTable = memo(
           ),
           meta: {
             icon: <LuTag />,
+            exportValue: (row) => row.labels?.join(", "),
             filter: {
               type: "static",
               options: labelOptions,
@@ -400,8 +401,7 @@ const DocumentsTable = memo(
       extension: false,
       createdAt: false,
       updatedAt: false,
-      updatedBy: false,
-      description: false
+      updatedBy: false
     };
 
     const renderContextMenu = useMemo(() => {
