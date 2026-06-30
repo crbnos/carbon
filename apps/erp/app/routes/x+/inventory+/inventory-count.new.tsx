@@ -9,8 +9,8 @@ import {
   deleteInventoryCount,
   generateInventoryCountLines,
   InventoryCountForm,
-  inventoryCountValidator,
-  upsertInventoryCount
+  insertInventoryCount,
+  inventoryCountValidator
 } from "~/modules/inventory";
 import { getNextSequence } from "~/modules/settings";
 import { getDatabaseClient } from "~/services/database.server";
@@ -50,12 +50,15 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
+  // Persisted for a future "regenerate from current stock while Draft" action:
+  // it records the filter this count was generated with so the snapshot can be
+  // rebuilt with the same scope. Written now, not yet read back.
   const scope = {
     ...(storageUnitIds && storageUnitIds.length > 0 ? { storageUnitIds } : {}),
     ...(itemType ? { itemFilter: { type: itemType } } : {})
   };
 
-  const created = await upsertInventoryCount(client, {
+  const created = await insertInventoryCount(client, {
     inventoryCountId: sequence.data as string,
     locationId,
     isBlind,

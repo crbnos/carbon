@@ -1862,42 +1862,24 @@ export async function getInventoryCountLineSummary(
   };
 }
 
-export async function upsertInventoryCount(
+// Counts are created once and never edited as a header (only their lines and
+// status change), so this is insert-only — no upsert/update branch.
+export async function insertInventoryCount(
   client: SupabaseClient<Database>,
-  inventoryCount:
-    | {
-        inventoryCountId: string;
-        locationId: string;
-        isBlind: boolean;
-        notes?: string | null;
-        scope?: Json;
-        companyId: string;
-        createdBy: string;
-        customFields?: Json;
-      }
-    | {
-        id: string;
-        locationId: string;
-        isBlind: boolean;
-        notes?: string | null;
-        updatedBy: string;
-        customFields?: Json;
-      }
-) {
-  if ("createdBy" in inventoryCount) {
-    return client
-      .from("inventoryCount")
-      .insert([inventoryCount])
-      .select("id")
-      .single();
+  inventoryCount: {
+    inventoryCountId: string;
+    locationId: string;
+    isBlind: boolean;
+    notes?: string | null;
+    scope?: Json;
+    companyId: string;
+    createdBy: string;
+    customFields?: Json;
   }
+) {
   return client
     .from("inventoryCount")
-    .update({
-      ...sanitize(inventoryCount),
-      updatedAt: today(getLocalTimeZone()).toString()
-    })
-    .eq("id", inventoryCount.id)
+    .insert([inventoryCount])
     .select("id")
     .single();
 }
@@ -1915,9 +1897,11 @@ export async function deleteInventoryCount(
 }
 
 // Snapshot the current on-hand into count lines: one line per
-// (item, storage unit, tracked entity) bucket with positive on-hand in scope.
-// On-hand is summed from `itemLedger` (the source of truth that
-// `get_inventory_quantities` aggregates). Regenerable while the count is Draft.
+// (item, storage unit, tracked entity) bucket that has any ledger history in
+// scope — positive, negative, or net-zero — so the counter can verify expected-
+// empty bins and correct discrepancies. On-hand is summed from `itemLedger`
+// (status-aware: excludes Rejected, matching `get_inventory_quantities`).
+// Idempotent: safe to re-run to re-snapshot while the count is Draft.
 export async function generateInventoryCountLines(
   db: Kysely<KyselyDatabase>,
   args: {
@@ -2043,8 +2027,14 @@ export async function generateInventoryCountLines(
   });
 }
 
+// Persist a single line's counted quantity. Uses Kysely so the Draft-only guard
+// is part of the same statement: the EXISTS subquery checks the parent count is
+// still Draft *atomically* with the write, closing the TOCTOU window a separate
+// read-then-update would leave open (a concurrent Confirm can't slip in between).
+// Returns the updated row id, or undefined when the line doesn't exist or the
+// count is no longer Draft. Kysely bypasses RLS — authorize at the route first.
 export async function updateInventoryCountLine(
-  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: z.infer<typeof inventoryCountLineValidator> & {
     companyId: string;
     countedBy: string;
@@ -2055,19 +2045,33 @@ export async function updateInventoryCountLine(
   // Clearing a count (null) un-counts the line, so the count audit fields are
   // cleared too; only an actual count stamps countedBy/countedAt.
   const isCounted = countedQuantity !== undefined && countedQuantity !== null;
-  return client
-    .from("inventoryCountLine")
-    .update({
+  return db
+    .updateTable("inventoryCountLine")
+    .set({
       countedQuantity: countedQuantity ?? null,
       countedBy: isCounted ? countedBy : null,
       countedAt: isCounted ? now : null,
       updatedBy: countedBy,
       updatedAt: now
     })
-    .eq("id", id)
-    .eq("companyId", companyId)
-    .select("id")
-    .single();
+    .where("id", "=", id)
+    .where("companyId", "=", companyId)
+    .where((eb) =>
+      eb.exists(
+        eb
+          .selectFrom("inventoryCount")
+          .select("inventoryCount.id")
+          .whereRef(
+            "inventoryCount.id",
+            "=",
+            "inventoryCountLine.inventoryCountId"
+          )
+          .where("inventoryCount.companyId", "=", companyId)
+          .where("inventoryCount.status", "=", "Draft")
+      )
+    )
+    .returning("id")
+    .executeTakeFirst();
 }
 
 export async function updateInventoryCountStatus(

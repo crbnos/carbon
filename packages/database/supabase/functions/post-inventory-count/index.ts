@@ -45,9 +45,14 @@ serve(async (req: Request) => {
     const { type, inventoryCountId, userId, companyId } =
       payloadValidator.parse(payload);
 
-    const client = await requirePermissions(req, companyId, userId, {
-      update: "inventory"
-    });
+    // Match the route gates for defense-in-depth: voiding (roll back) requires
+    // delete; posting requires update.
+    const client = await requirePermissions(
+      req,
+      companyId,
+      userId,
+      type === "void" ? { delete: "inventory" } : { update: "inventory" }
+    );
 
     const today = format(new Date(), "yyyy-MM-dd");
     const nowIso = new Date().toISOString();
@@ -168,13 +173,20 @@ serve(async (req: Request) => {
         if (line.countedQuantity === null) continue;
 
         // Live on-hand for this exact bucket (item / location / storage unit /
-        // tracked entity). On-hand is the sum of item ledger entries — the same
-        // source `get_inventory_quantities` aggregates from.
+        // tracked entity). Mirror the snapshot's status-aware definition (and
+        // `get_inventory_quantities`): exclude Rejected stock so the delta is
+        // measured against the same on-hand the count was built from.
         let onHandQuery = trx
           .selectFrom("itemLedger")
           .select((eb) => eb.fn.sum<number>("quantity").as("quantity"))
           .where("companyId", "=", companyId)
-          .where("itemId", "=", line.itemId);
+          .where("itemId", "=", line.itemId)
+          .where((eb) =>
+            eb.or([
+              eb("trackedEntityStatus", "is", null),
+              eb("trackedEntityStatus", "!=", "Rejected")
+            ])
+          );
 
         onHandQuery = line.locationId
           ? onHandQuery.where("locationId", "=", line.locationId)

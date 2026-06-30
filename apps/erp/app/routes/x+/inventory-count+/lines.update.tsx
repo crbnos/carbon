@@ -4,16 +4,18 @@ import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import {
-  getInventoryCount,
   inventoryCountLineValidator,
   updateInventoryCountLine
 } from "~/modules/inventory";
+import { getDatabaseClient } from "~/services/database.server";
 
-// Inline count entry persists one line at a time via a fetcher. Counts are only
-// editable while the document is Draft.
+// Inline count entry persists one line at a time via a fetcher. The Draft-only
+// guard is enforced atomically inside `updateInventoryCountLine` (a single
+// conditional UPDATE), so there's no read-then-write race with a concurrent
+// Confirm.
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     update: "inventory"
   });
 
@@ -28,41 +30,26 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { id, countedQuantity } = validation.data;
 
-  // Guard: lines can only be edited while the parent count is Draft.
-  const line = await client
-    .from("inventoryCountLine")
-    .select("inventoryCountId")
-    .eq("id", id)
-    .eq("companyId", companyId)
-    .single();
-
-  if (line.error || !line.data) {
-    return data({ error: "Line not found" }, { status: 404 });
-  }
-
-  const header = await getInventoryCount(
-    client,
-    line.data.inventoryCountId,
-    companyId
-  );
-  if (header.data?.status !== "Draft") {
+  let updated: { id: string } | undefined;
+  try {
+    updated = await updateInventoryCountLine(getDatabaseClient(), {
+      id,
+      countedQuantity,
+      companyId,
+      countedBy: userId
+    });
+  } catch (err) {
     return data(
-      { error: "Counts can only be edited while the document is Draft" },
-      { status: 409 }
+      { error: error(err, "Failed to update count") },
+      { status: 500 }
     );
   }
 
-  const update = await updateInventoryCountLine(client, {
-    id,
-    countedQuantity,
-    companyId,
-    countedBy: userId
-  });
-
-  if (update.error) {
+  // No row matched: the line doesn't exist or the count is no longer Draft.
+  if (!updated) {
     return data(
-      { error: error(update.error, "Failed to update count") },
-      { status: 500 }
+      { error: "Counts can only be edited while the document is Draft" },
+      { status: 409 }
     );
   }
 

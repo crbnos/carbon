@@ -1,5 +1,5 @@
 {
-  "generated": "2026-06-29T23:00:17.176Z",
+  "generated": "2026-06-30T09:05:12.320Z",
   "totalTools": 1230,
   "modules": 15,
   "tools": [
@@ -5505,11 +5505,11 @@
       }
     },
     {
-      "name": "inventory_upsertInventoryCount",
+      "name": "inventory_insertInventoryCount",
       "module": "inventory",
       "classification": "WRITE",
-      "description": "upsert inventory count",
-      "paramCount": 1,
+      "description": "insert inventory count",
+      "paramCount": 6,
       "serviceParams": [
         "client",
         "inventoryCount"
@@ -5522,10 +5522,28 @@
       "schema": {
         "type": "object",
         "properties": {
-          "inventoryCount": {}
+          "inventoryCountId": {
+            "type": "string"
+          },
+          "locationId": {
+            "type": "string"
+          },
+          "isBlind": {
+            "type": "boolean"
+          },
+          "notes": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "scope": {},
+          "customFields": {}
         },
         "required": [
-          "inventoryCount"
+          "inventoryCountId",
+          "locationId",
+          "isBlind"
         ]
       }
     },
@@ -5602,7 +5620,7 @@
       "description": "update inventory count line",
       "paramCount": 2,
       "serviceParams": [
-        "client",
+        "db",
         "args"
       ],
       "injectAuth": [

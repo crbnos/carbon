@@ -101,8 +101,8 @@ const InventoryCountConfirmModal = ({
                   <p className="text-sm text-muted-foreground">
                     <Plural
                       value={variances}
-                      one="# line has a variance to post."
-                      other="# lines have a variance to post."
+                      one="# line differs from the expected quantity"
+                      other="# lines differ from the expected quantity"
                     />
                   </p>
                 )}

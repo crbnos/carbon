@@ -92,8 +92,8 @@ msgstr "{total} phases to go live"
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 
-msgid "{variances, plural, one {# line has a variance to post.} other {# lines have a variance to post.}}"
-msgstr "{variances, plural, one {# line has a variance to post.} other {# lines have a variance to post.}}"
+msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
+msgstr "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 
 msgid "/month/user"
 msgstr "/month/user"

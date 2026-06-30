@@ -55,9 +55,25 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getInventoryCountLineSummary(client, id, companyId)
   ]);
 
+  // True blind counting: the system quantity (and the variance it can be derived
+  // from) must not reach the client while the count is still being entered
+  // (Draft). Hiding the columns client-side isn't enough — the values would ship
+  // in the loader payload and CSV export. Strip them server-side; they are
+  // revealed once the count is locked (Pending and later).
+  const isBlindEntry =
+    inventoryCount.data.isBlind && inventoryCount.data.status === "Draft";
+  const lineData = (lines.data ?? []).map((line) =>
+    isBlindEntry
+      ? // Withhold System Qty (and the variance it can be derived from). Use null,
+        // not 0, so it reads as "not available" (blank / "—" in the UI and CSV)
+        // rather than a misleading real value.
+        { ...line, systemQuantity: null as unknown as number, variance: null }
+      : line
+  );
+
   return {
     inventoryCount: inventoryCount.data,
-    lines: lines.data ?? [],
+    lines: lineData,
     count: lines.count ?? 0,
     summary
   };
