@@ -61,6 +61,12 @@ ALTER TABLE "documentTemplate" ADD CONSTRAINT "documentTemplate_companyId_docume
 - **Composite PK `("id", "companyId")`** + `companyId` FK to `company` with `ON DELETE CASCADE`.
 - **Audit columns** reference `user` **inline** (`TEXT NOT NULL REFERENCES "user"("id")`) — no
   separate named FK constraints.
+- **MANDATORY: every table with `createdBy` MUST also have `updatedBy`** — a nullable
+  `"updatedBy" TEXT REFERENCES "user"("id")`. The shared audit-injection path (MCP
+  `direct-executor`, service writes) stamps `updatedBy` on every write, so a table that has
+  `createdBy` but omits `updatedBy` fails those callers with `column "updatedBy" does not exist`.
+  Include it even on append-only ledger tables (it just stays NULL there). When authoring a
+  migration that adds `createdBy`, add `updatedBy` in the same statement.
 - **`updatedAt` is set by the app on write, not by a DB trigger.** Don't add a generic
   timestamp trigger.
 - Index `companyId` and every FK (e.g. `createdBy`).

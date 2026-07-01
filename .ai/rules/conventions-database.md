@@ -80,7 +80,7 @@ ALTER TABLE "entityName" ADD CONSTRAINT "entityName_companyId_name_key"
 | Primary key value | `id TEXT NOT NULL DEFAULT id()` — bare `id()` or prefixed `id('pr')`, `id('sh')`, `id('je')`… both are current. Never a raw UUID. |
 | Composite PK | `PRIMARY KEY ("id", "companyId")` |
 | Multi-tenancy | `companyId TEXT NOT NULL` + FK to `company` `ON DELETE CASCADE` |
-| Audit columns | `createdBy` (NOT NULL), `createdAt`, `updatedBy`, `updatedAt` — `*By` reference `"user"("id")` **inline** |
+| Audit columns | `createdBy` (NOT NULL), `createdAt`, `updatedBy`, `updatedAt` — `*By` reference `"user"("id")` **inline**. **MANDATORY: any table with `createdBy` MUST also have `updatedBy`** (nullable `TEXT REFERENCES "user"("id")`). The shared audit-injection path stamps `updatedBy` on every write; a table with `createdBy` but no `updatedBy` breaks those callers with `column "updatedBy" does not exist`. This holds even for append-only ledger tables — the column stays NULL there, but it must exist. |
 | `updatedAt` | Set by the **app** on write, not a DB trigger. Don't add a generic timestamp trigger. |
 | Indexes | Index `companyId` and **every** FK (e.g. `createdBy`) |
 | Never | An `itemReadableId` column; decimal places in a `NUMERIC` (use bare `NUMERIC`) |
