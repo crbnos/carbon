@@ -1,4 +1,10 @@
-import { closeSync, copyFileSync, openSync } from "node:fs";
+import {
+  closeSync,
+  copyFileSync,
+  openSync,
+  readFileSync,
+  writeFileSync
+} from "node:fs";
 import { spawnSync } from "node:child_process";
 import { join } from "node:path";
 import * as dotenv from "dotenv";
@@ -58,5 +64,37 @@ if (r.status !== 0) {
   process.exit(r.status ?? 1);
 }
 
+// Strip per-company `searchIndex_<id>` tables. They have random, environment-
+// specific names, so they add thousands of lines of churn and produce merge
+// conflicts on every branch. Nothing references them by static name.
+const removed = stripSearchIndexTables(typesPath);
+console.log(`stripped ${removed} searchIndex_ table(s)`);
+
 copyFileSync(typesPath, fnTypesPath);
 console.log(`wrote ${typesPath}\nwrote ${fnTypesPath}`);
+
+function stripSearchIndexTables(path: string): number {
+  const lines = readFileSync(path, "utf8").split("\n");
+  const open = /^(\s*)searchIndex_[A-Za-z0-9]+: \{$/;
+  const out: string[] = [];
+  let removed = 0;
+  for (let i = 0; i < lines.length; i++) {
+    const m = lines[i].match(open);
+    if (!m) {
+      out.push(lines[i]);
+      continue;
+    }
+    // Skip the whole table object by tracking brace depth from the opening line.
+    let depth =
+      (lines[i].match(/\{/g)?.length ?? 0) - (lines[i].match(/\}/g)?.length ?? 0);
+    while (depth > 0 && i + 1 < lines.length) {
+      i++;
+      depth +=
+        (lines[i].match(/\{/g)?.length ?? 0) -
+        (lines[i].match(/\}/g)?.length ?? 0);
+    }
+    removed++;
+  }
+  writeFileSync(path, out.join("\n"));
+  return removed;
+}
