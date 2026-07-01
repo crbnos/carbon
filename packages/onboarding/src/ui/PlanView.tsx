@@ -6,7 +6,8 @@ import {
   LuCalendarClock,
   LuCheck,
   LuFileText,
-  LuPlay
+  LuPlay,
+  LuRotateCcw
 } from "react-icons/lu";
 import { PAGE_COPY } from "../content";
 import { BOARD_TASKS } from "../content/board";
@@ -26,7 +27,6 @@ import {
   tasksForStep
 } from "../logic";
 import type { BoardTask, GateValue, StateKind, StepDef, Tier } from "../types";
-import { GanttChart } from "./GanttChart";
 import { ProgressPill } from "./ProgressPill";
 import { PageHeader } from "./primitives";
 import {
@@ -41,7 +41,13 @@ import {
 // The phases as cards. Each card's checklist is the phase's Project Board tasks;
 // ticking one here writes the same task state the board reads (no drift).
 // Read-only re: dates — the timeline is configured in Setup & Controls.
-export function PlanView() {
+export function PlanView({
+  onOpenSetupMap
+}: {
+  // Jump to the Setup Map — Configure's checklist derives its status from
+  // there, so its tasks aren't manually tickable here.
+  onOpenSetupMap?: () => void;
+} = {}) {
   const { t, i18n } = useLingui();
   const map = useCheckMap();
   const fields = useFieldMap();
@@ -65,7 +71,7 @@ export function PlanView() {
         lead={
           <Trans>
             The {steps.length} phases to go live, each ending at a checkpoint.
-            Tick a task here and it updates on the Project Board too.
+            Tick off each task as you complete it.
           </Trans>
         }
         aside={
@@ -87,22 +93,24 @@ export function PlanView() {
         </div>
       ) : null}
 
-      <GanttChart steps={steps} />
-
       <div className="flex flex-col gap-4">
-        {steps.map((step) => (
-          <PhaseCard
-            key={step.key}
-            step={step}
-            tier={tier}
-            stepTasks={tasksForStep(tasks, step.key)}
-            map={map}
-            gateStatus={effectiveGateStatus(step, map, signals)}
-            progress={stepTaskProgress(tasks, step.key, map)}
-            onToggleTask={setCheck}
-            onToggleGate={setGate}
-          />
-        ))}
+        {steps.map((step) => {
+          const progress = stepTaskProgress(tasks, step.key, map);
+          return (
+            <PhaseCard
+              key={step.key}
+              step={step}
+              tier={tier}
+              stepTasks={tasksForStep(tasks, step.key)}
+              map={map}
+              gateStatus={effectiveGateStatus(step, map, signals, progress)}
+              progress={progress}
+              onToggleTask={setCheck}
+              onToggleGate={setGate}
+              onOpenSetupMap={onOpenSetupMap}
+            />
+          );
+        })}
       </div>
     </div>
   );
@@ -116,7 +124,8 @@ function PhaseCard({
   gateStatus,
   progress,
   onToggleTask,
-  onToggleGate
+  onToggleGate,
+  onOpenSetupMap
 }: {
   step: StepDef;
   tier: Tier;
@@ -126,11 +135,13 @@ function PhaseCard({
   progress: { done: number; total: number };
   onToggleTask: (itemKey: string, kind: StateKind, value: string) => void;
   onToggleGate: (key: string, next: GateValue) => void;
+  onOpenSetupMap?: () => void;
 }) {
   const { t, i18n } = useLingui();
   const { done, total } = progress;
   const allDone = total > 0 && done === total;
   const gatePassed = gateStatus === "done";
+  const gateInProgress = gateStatus === "prog";
 
   // Auto-pass the checkpoint when its tasks all complete — one-way, on the
   // incomplete→complete transition (and on mount if already complete, so the
@@ -151,16 +162,22 @@ function PhaseCard({
     >
       <div className="p-5 pb-4">
         <div className="flex items-start gap-4">
-          <span className="shrink-0 size-9 rounded-xl border bg-background flex items-center justify-center text-sm font-semibold tabular-nums">
+          <span
+            className={cn(
+              "shrink-0 size-9 rounded-xl border flex items-center justify-center text-sm font-semibold tabular-nums",
+              gatePassed
+                ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
+                : gateInProgress
+                  ? "bg-primary/10 border-primary/30 text-primary"
+                  : "bg-background"
+            )}
+          >
             {step.n}
           </span>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-base font-semibold tracking-tight">
                 {i18n._(step.title)}
-              </span>
-              <span className="text-xxs uppercase tracking-wide rounded px-1.5 py-0.5 border text-muted-foreground font-medium">
-                <Trans>Checkpoint:</Trans> {i18n._(step.gate)}
               </span>
             </div>
             <div className="text-xs text-muted-foreground mt-1">
@@ -190,12 +207,93 @@ function PhaseCard({
           </p>
         ) : null}
 
-        <PhaseResources step={step} />
+        {/* The separate "Learn" block would duplicate the per-task Docs/Video
+            badges when the phase's own tasks already carry links (Configure). */}
+        {stepTasks.some((t) => t.docsUrl || t.academyUrl) ? null : (
+          <PhaseResources step={step} />
+        )}
 
         {stepTasks.length ? (
           <ul className="mt-4 flex flex-col gap-1">
             {stepTasks.map((task) => {
-              const isDone = taskStatus(task, map) === "done";
+              const status = taskStatus(task, map);
+              const isDone = status === "done";
+              const isProg = status === "prog";
+              // Setup-Map-derived tasks have no manual tick of their own — the
+              // Setup Map is where the work actually happens.
+              const fromSetupMap = !!task.setupKeys?.length;
+              const checkbox = (
+                <span
+                  className={cn(
+                    "shrink-0 mt-0.5 size-4 rounded border flex items-center justify-center transition-colors",
+                    isDone
+                      ? "bg-emerald-500 border-emerald-500 text-white"
+                      : isProg
+                        ? "bg-primary/15 border-primary"
+                        : "bg-card border-input"
+                  )}
+                >
+                  {isDone ? <LuCheck className="size-3" /> : null}
+                </span>
+              );
+              const label = (
+                <span className="min-w-0 flex flex-col">
+                  <span
+                    className={cn(
+                      "text-sm truncate",
+                      isDone && "line-through text-muted-foreground"
+                    )}
+                  >
+                    {i18n._(task.label)}
+                  </span>
+                  {task.hint ? (
+                    <span className="text-xs text-muted-foreground truncate">
+                      {i18n._(task.hint)}
+                    </span>
+                  ) : null}
+                </span>
+              );
+
+              // Setup rows aren't tickable here — the row opens the Setup Map,
+              // with the module's Docs/Video links inline. An <a> can't nest in
+              // a <button>, so these use a flex row of separate controls.
+              if (fromSetupMap) {
+                return (
+                  <li
+                    key={task.key}
+                    className="group flex items-start gap-3 rounded-lg px-2 py-1.5 hover:bg-muted/50 transition-colors"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => onOpenSetupMap?.()}
+                      title={t`Tracked from the Setup Map — open it`}
+                      className="flex items-start gap-3 min-w-0 flex-1 text-left"
+                    >
+                      {checkbox}
+                      {label}
+                    </button>
+                    <div className="shrink-0 flex items-center gap-2 text-xs mt-0.5">
+                      {task.docsUrl ? (
+                        <ResourceLink
+                          href={task.docsUrl}
+                          icon={<LuFileText className="size-3" />}
+                        >
+                          <Trans>Docs</Trans>
+                        </ResourceLink>
+                      ) : null}
+                      {task.academyUrl ? (
+                        <ResourceLink
+                          href={task.academyUrl}
+                          icon={<LuPlay className="size-3" />}
+                        >
+                          <Trans>Video</Trans>
+                        </ResourceLink>
+                      ) : null}
+                    </div>
+                  </li>
+                );
+              }
+
               return (
                 <li key={task.key}>
                   <button
@@ -207,26 +305,10 @@ function PhaseCard({
                         isDone ? "todo" : "done"
                       )
                     }
-                    className="w-full flex items-start gap-3 rounded-lg px-2 py-1.5 text-left hover:bg-muted/50 transition-colors"
+                    className="group w-full flex items-start gap-3 rounded-lg px-2 py-1.5 text-left hover:bg-muted/50 transition-colors"
                   >
-                    <span
-                      className={cn(
-                        "shrink-0 mt-0.5 size-4 rounded border flex items-center justify-center transition-colors",
-                        isDone
-                          ? "bg-emerald-500 border-emerald-500 text-white"
-                          : "bg-card border-input"
-                      )}
-                    >
-                      {isDone ? <LuCheck className="size-3" /> : null}
-                    </span>
-                    <span
-                      className={cn(
-                        "text-sm",
-                        isDone && "line-through text-muted-foreground"
-                      )}
-                    >
-                      {i18n._(task.label)}
-                    </span>
+                    {checkbox}
+                    {label}
                   </button>
                 </li>
               );
@@ -238,7 +320,11 @@ function PhaseCard({
       <div
         className={cn(
           "px-5 py-3 border-t text-xs flex items-center gap-3 transition-colors",
-          gatePassed ? "bg-emerald-500/5" : "bg-card"
+          gatePassed
+            ? "bg-emerald-500/5"
+            : gateInProgress
+              ? "bg-primary/5"
+              : "bg-card"
         )}
       >
         <div className="min-w-0 flex-1">
@@ -246,21 +332,29 @@ function PhaseCard({
             <Trans>Checkpoint ·</Trans>{" "}
           </span>
           <span className="font-medium">{i18n._(step.gate)}</span>
+          {gateInProgress ? (
+            <span className="ml-2 text-xxs uppercase tracking-wide rounded px-1.5 py-0.5 border border-primary/30 bg-primary/10 text-primary font-medium">
+              <Trans>In progress</Trans>
+            </span>
+          ) : null}
         </div>
         <button
           type="button"
           onClick={() => onToggleGate(step.key, gatePassed ? "todo" : "done")}
           className={cn(
-            "shrink-0 inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xxs font-medium transition-colors active:scale-[0.97]",
+            "shrink-0 inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xxs font-medium transition-colors active:scale-[0.97]",
             gatePassed
-              ? "text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10"
-              : "border bg-card hover:border-primary hover:text-primary"
+              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20"
+              : "bg-card hover:border-primary hover:text-primary"
           )}
         >
           {gatePassed ? (
             <>
               <LuCheck className="size-3" />
-              <Trans>Passed · reopen</Trans>
+              <Trans>Passed</Trans>
+              <span className="opacity-60">·</span>
+              <LuRotateCcw className="size-3" />
+              <Trans>Reopen</Trans>
             </>
           ) : (
             t`Mark checkpoint passed`

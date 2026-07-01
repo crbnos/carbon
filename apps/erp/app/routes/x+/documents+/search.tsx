@@ -1,5 +1,6 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { generateDownloadToken } from "@carbon/auth/download-token.server";
 import { flash } from "@carbon/auth/session.server";
 import { ResizablePanel, ResizablePanelGroup, VStack } from "@carbon/react";
 import type { LoaderFunctionArgs } from "react-router";
@@ -55,9 +56,25 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
   }
 
+  // Mint a signed download token per file-backed row. Signing is a server-only
+  // HS256 op over the current result set (the same set the CSV exports).
+  const documentsWithDownloadTokens: Document[] = await Promise.all(
+    (documents.data ?? []).map(async (document) => ({
+      ...document,
+      downloadToken:
+        document.id && document.path
+          ? await generateDownloadToken({
+              userId,
+              companyId,
+              documentId: document.id
+            })
+          : undefined
+    }))
+  );
+
   return {
     count: documents.count ?? 0,
-    documents: (documents.data ?? []) as Document[],
+    documents: documentsWithDownloadTokens,
     labels: labels.data ?? [],
     extensions: extensions.data?.map(({ extension }) => extension) ?? []
   };

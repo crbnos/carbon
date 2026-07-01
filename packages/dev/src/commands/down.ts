@@ -2,10 +2,12 @@ import { intro, outro, tasks } from "@clack/prompts";
 import pc from "picocolors";
 import { syncAppPortlessConfigs } from "../env.js";
 import { currentBranch } from "../git.js";
+import { killOrphanedApps, killOrphanedStripe } from "../services/apps.js";
 import { stopStack } from "../services/compose.js";
 import { branchToPrefix, unregisterAliases } from "../services/portless.js";
 import {
   ensureSlugAvailable,
+  getSlot,
   getWorktreeRoot,
   projectName,
   resolveSlug
@@ -34,9 +36,18 @@ export async function down(opts: { silent?: boolean; volumes?: boolean } = {}) {
     {
       title: `Stopping ${project} (${withVolumes ? "removing volumes" : "volumes preserved"})`,
       task: async (msg) => {
-        msg(withVolumes ? "docker compose down -v" : "docker compose stop");
+        msg(withVolumes ? "docker compose down -v" : "docker compose down");
         await stopStack(root, slug, withVolumes);
         return withVolumes ? "stack stopped, volumes removed" : "stack stopped";
+      }
+    },
+    {
+      title: "Kill orphaned dev servers & stripe listener",
+      task: async () => {
+        const slot = getSlot(slug);
+        if (slot) await killOrphanedApps(slot.ports);
+        await killOrphanedStripe(root);
+        return "orphaned processes killed";
       }
     },
     {
@@ -75,6 +86,12 @@ async function runPlain(
   );
   await stopStack(root, slug, withVolumes);
   done(withVolumes ? "stack stopped, volumes removed" : "stack stopped");
+
+  step("killing orphaned dev servers & stripe listener");
+  const slot = getSlot(slug);
+  if (slot) await killOrphanedApps(slot.ports);
+  await killOrphanedStripe(root);
+  done("orphaned processes killed");
 
   step("unregistering portless aliases");
   const branch = await currentBranch(root);

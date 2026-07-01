@@ -81,8 +81,34 @@ serve(async (req: Request) => {
       const job = await trx
         .selectFrom("job")
         .where("id", "=", jobId)
-        .select(["jobId"])
+        .select(["jobId", "itemId", "locationId"])
         .executeTakeFirstOrThrow();
+
+      // Resolve the item dimensions so the WIP variance lines are attributable
+      // to the finished good (mirrors the WIP lines posted during completion).
+      const companyGroupId = companyRecord.data.companyGroupId;
+      const dimensionMap = new Map<string, string>();
+      if (companyGroupId) {
+        const dimensions = await trx
+          .selectFrom("dimension")
+          .select(["id", "entityType"])
+          .where("companyGroupId", "=", companyGroupId)
+          .where("active", "=", true)
+          .where("entityType", "in", ["ItemPostingGroup", "Item", "Location"])
+          .execute();
+        for (const dim of dimensions) {
+          if (dim.entityType) dimensionMap.set(dim.entityType, dim.id);
+        }
+      }
+
+      const finishedItemCost = job.itemId
+        ? await trx
+            .selectFrom("itemCost")
+            .select(["itemPostingGroupId"])
+            .where("itemId", "=", job.itemId)
+            .where("companyId", "=", companyId)
+            .executeTakeFirst()
+        : null;
 
       const journalLineReference = nanoid();
 
@@ -140,7 +166,7 @@ serve(async (req: Request) => {
         .returning(["id"])
         .executeTakeFirstOrThrow();
 
-      await trx
+      const journalLineResults = await trx
         .insertInto("journalLine")
         .values(
           journalLineInserts.map((line) => ({
@@ -148,7 +174,54 @@ serve(async (req: Request) => {
             journalId: journalResult.id,
           }))
         )
+        .returning(["id"])
         .execute();
+
+      if (dimensionMap.size > 0) {
+        const dimensionInserts: {
+          journalLineId: string;
+          dimensionId: string;
+          valueId: string;
+          companyId: string;
+        }[] = [];
+
+        journalLineResults.forEach((jl) => {
+          if (job.itemId && dimensionMap.has("Item")) {
+            dimensionInserts.push({
+              journalLineId: jl.id,
+              dimensionId: dimensionMap.get("Item")!,
+              valueId: job.itemId,
+              companyId,
+            });
+          }
+          if (
+            finishedItemCost?.itemPostingGroupId &&
+            dimensionMap.has("ItemPostingGroup")
+          ) {
+            dimensionInserts.push({
+              journalLineId: jl.id,
+              dimensionId: dimensionMap.get("ItemPostingGroup")!,
+              valueId: finishedItemCost.itemPostingGroupId,
+              companyId,
+            });
+          }
+          if (job.locationId && dimensionMap.has("Location")) {
+            dimensionInserts.push({
+              journalLineId: jl.id,
+              dimensionId: dimensionMap.get("Location")!,
+              valueId: job.locationId,
+              companyId,
+            });
+          }
+        });
+
+        if (dimensionInserts.length > 0) {
+          await trx
+            .insertInto("journalLineDimension")
+            .values(dimensionInserts)
+            .execute();
+        }
+      }
     });
 
     return new Response(JSON.stringify({ success: true }), {

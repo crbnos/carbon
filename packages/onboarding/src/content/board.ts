@@ -1,10 +1,42 @@
 import { msg } from "@lingui/core/macro";
 import type { BoardTask } from "../types";
+import { SETUP_GROUPS } from "./setup";
+
+// Configure's checklist is one task per Setup Map module group (Settings,
+// Resources, People, ...) rather than a hand-picked bundle of rows — the two
+// pages were listing different things for the same work, which read as
+// disconnected. Generated from SETUP_GROUPS so the two can't drift apart in
+// shape, only `key` is hand-assigned (stable across a group's `n`/title
+// changing).
+const CONFIGURE_GROUP_KEYS: Record<number, string> = {
+  1: "setup-settings",
+  2: "setup-resources",
+  3: "setup-people",
+  4: "setup-items",
+  5: "setup-sales",
+  6: "setup-purchasing",
+  7: "setup-inventory",
+  8: "setup-accounting",
+  9: "setup-production"
+};
+
+const CONFIGURE_GROUP_TASKS: BoardTask[] = SETUP_GROUPS.map((group) => ({
+  key: CONFIGURE_GROUP_KEYS[group.n] ?? `setup-group-${group.n}`,
+  label: group.title,
+  stepKey: "gate:configure",
+  owner: "carbon",
+  setupKeys: group.rows.map((row) => row.key),
+  docsUrl: group.docsUrl,
+  academyUrl: group.academyUrl,
+  hint: group.desc
+}));
 
 // Starter Project Board tasks, grouped under the six spine steps. Keys match the
 // prototype's boardKeys. Each task's status lives in implementationCheckState
 // (kind "task", itemKey = taskKey(key)); the Plan page derives its checklist
-// from the same rows.
+// from the same rows. A task with `setupKeys` instead derives its status from
+// those Setup Map rows' "configured" flags (see logic/board.ts taskStatus) —
+// it has no manual tick of its own.
 export const BOARD_TASKS: BoardTask[] = [
   {
     key: "kickoff",
@@ -24,36 +56,7 @@ export const BOARD_TASKS: BoardTask[] = [
     stepKey: "gate:discovery",
     owner: "shared"
   },
-  {
-    key: "sites-users",
-    label: msg`Set up sites, users, and roles`,
-    stepKey: "gate:configure",
-    owner: "carbon"
-  },
-  {
-    key: "parts-boms",
-    label: msg`Load parts, BOMs, Bill of Process, and costing`,
-    stepKey: "gate:configure",
-    owner: "carbon"
-  },
-  {
-    key: "cto-options",
-    label: msg`Configure-to-order options and pricing`,
-    stepKey: "gate:configure",
-    owner: "carbon"
-  },
-  {
-    key: "purchase-planning",
-    label: msg`Turn on automated purchase planning`,
-    stepKey: "gate:configure",
-    owner: "carbon"
-  },
-  {
-    key: "shopfloor-stations",
-    label: msg`Set up the shop-floor app and stations`,
-    stepKey: "gate:configure",
-    owner: "carbon"
-  },
+  ...CONFIGURE_GROUP_TASKS,
   {
     key: "integrations",
     label: msg`Build any net-new integrations or customizations`,

@@ -28,7 +28,13 @@ import {
   LuTruck
 } from "react-icons/lu";
 import { RiProgress8Line } from "react-icons/ri";
-import { Await, Link, useNavigate, useParams } from "react-router";
+import {
+  Await,
+  Link,
+  useNavigate,
+  useNavigation,
+  useParams
+} from "react-router";
 import type { z } from "zod";
 import { DocumentHeader, PrintButton } from "~/components";
 import { useAuditLog } from "~/components/AuditLog";
@@ -388,6 +394,11 @@ function InvoiceButtons({
   isVoided: boolean;
   onCreateInvoice: (shipment?: Shipment) => void;
 }) {
+  const navigation = useNavigation();
+  const isInvoicing =
+    navigation.state !== "idle" &&
+    navigation.location?.pathname === path.to.newSalesInvoice;
+
   if (!shipment) return null;
 
   if (shipment.sourceDocument === "Sales Order") {
@@ -427,7 +438,7 @@ function InvoiceButtons({
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem
-                      disabled={!isPosted}
+                      disabled={!isPosted || isInvoicing}
                       onClick={() => onCreateInvoice(shipment)}
                     >
                       <DropdownMenuIcon icon={<LuCirclePlus />} />
@@ -452,7 +463,8 @@ function InvoiceButtons({
               <Button
                 leftIcon={<LuCreditCard />}
                 variant={isPosted && !isVoided ? "primary" : "secondary"}
-                isDisabled={!isPosted}
+                isDisabled={!isPosted || isInvoicing}
+                isLoading={isInvoicing}
                 onClick={() => onCreateInvoice(shipment)}
               >
                 <Trans>Invoice</Trans>

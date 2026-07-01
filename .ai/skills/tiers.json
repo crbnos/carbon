@@ -1,0 +1,49 @@
+{
+  "default": ["core"],
+  "tiers": {
+    "core": {
+      "description": "Daily-driver skills installed by default.",
+      "skills": [
+        "self-review",
+        "conductor",
+        "root-cause",
+        "fix",
+        "check-and-commit",
+        "create-agents-md",
+        "spec-writing",
+        "test",
+        "plan",
+        "execute",
+        "feature",
+        "improve",
+        "research"
+      ]
+    },
+    "building-blocks": {
+      "description": "Helper skills called by other skills but not loaded by default.",
+      "skills": ["login", "error"]
+    },
+    "automation": {
+      "description": "PR/issue automation, code review, and debugging skills.",
+      "skills": [
+        "pr-explainer",
+        "pr-splitter",
+        "systematic-debugging",
+        "debugging-difficult-bugs",
+        "smoke-test",
+        "test-driven-development"
+      ]
+    },
+    "creative": {
+      "description": "UI, docs, writing, and brainstorming skills.",
+      "skills": [
+        "ui",
+        "make-interfaces-feel-better",
+        "brainstorm",
+        "carbon-docs",
+        "writing-skills",
+        "agent-browser"
+      ]
+    }
+  }
+}

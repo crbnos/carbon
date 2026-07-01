@@ -425,10 +425,13 @@ async function seedDev() {
           "bankLocalCurrencyAccount", "bankForeignCurrencyAccount", "prepaymentAccount",
           "payablesAccount", "goodsReceivedNotInvoicedAccount", "inventoryShippedNotInvoicedAccount",
           "salesTaxPayableAccount", "purchaseTaxPayableAccount", "reverseChargeSalesTaxPayableAccount",
-          "retainedEarningsAccount", "currencyTranslationAccount", "companyId"
+          "retainedEarningsAccount", "currencyTranslationAccount",
+          "customerWriteOffAccount", "supplierWriteOffAccount",
+          "realizedExchangeGainAccount", "realizedExchangeLossAccount", "companyId"
         ) VALUES (
           $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19,
-          $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40
+          $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40,
+          $41, $42, $43, $44
         )`,
         [
           resolveAccountId(accountDefaults.salesAccount),
@@ -474,6 +477,10 @@ async function seedDev() {
           resolveAccountId(accountDefaults.reverseChargeSalesTaxPayableAccount),
           resolveAccountId(accountDefaults.retainedEarningsAccount),
           resolveAccountId(accountDefaults.currencyTranslationAccount),
+          resolveAccountId(accountDefaults.customerWriteOffAccount),
+          resolveAccountId(accountDefaults.supplierWriteOffAccount),
+          resolveAccountId(accountDefaults.realizedExchangeGainAccount),
+          resolveAccountId(accountDefaults.realizedExchangeLossAccount),
           companyId
         ]
       );

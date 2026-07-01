@@ -1,4 +1,3 @@
-export { BoardTable } from "./BoardTable";
 export { DataMigrationView } from "./DataMigrationView";
 export { EditableField } from "./EditableField";
 export { GanttChart } from "./GanttChart";

@@ -1464,7 +1464,8 @@ export async function getCustomerIdAndContactId(
         .from("customerContact")
         .insert({
           customerId,
-          contactId
+          contactId,
+          companyId: company.id
         })
         .select()
         .single();
@@ -1598,7 +1599,8 @@ export async function getCustomerLocationIds(
                 ? `${billingInfo.city}, ${billingInfo.state}`
                 : billingInfo.city || billingInfo.state || "",
             customerId,
-            addressId
+            addressId,
+            companyId: company.id
           })
           .select()
           .single();
@@ -1721,7 +1723,8 @@ export async function getCustomerLocationIds(
           .insert({
             name,
             customerId,
-            addressId
+            addressId,
+            companyId: company.id
           })
           .select()
           .single();
@@ -3022,6 +3025,7 @@ export async function insertQuoteLines(
             component.quantities.map((qp) => ({
               quoteId,
               quoteLineId,
+              companyId,
               quantity: qp.quantity ?? 1,
               unitPrice: qp.unit_price ?? 0,
               leadTime: qp.lead_time ?? 0,

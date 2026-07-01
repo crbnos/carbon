@@ -23,10 +23,6 @@ export const PAGE_COPY = {
     title: msg`Roles & Responsibilities`,
     lead: msg`Who does what, across the six steps. Your side is highlighted up top. Own it well and the project moves.`
   },
-  board: {
-    title: msg`Project Board`,
-    lead: msg`Every task for the project, grouped by step. If it isn't on the board, it isn't happening. Click a status to cycle it.`
-  },
   setup: {
     title: msg`Setup Map`,
     lead: msg`The master data to set up when first configuring Carbon, grouped by module. Mark each one configured as you go.`
@@ -48,7 +44,7 @@ export const PAGE_COPY = {
     lead: msg`What changes when you move to Carbon, and roughly what it's worth. Estimates, not a forecast.`
   },
   plan: {
-    title: msg`Project Plan & Timeline`
+    title: msg`Project Plan`
     // lead composed in the view (includes the dynamic step count).
   },
   training: {

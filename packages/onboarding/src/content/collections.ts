@@ -14,8 +14,8 @@ export interface CollectionDef {
   addLabel: MessageDescriptor;
   emptyText: MessageDescriptor;
   // Binary status-toggle labels for surfaces whose rows flip a single flag
-  // (validated / configured / in-scope). Multi-status surfaces (board) and
-  // checkbox surfaces (golive) leave this unset.
+  // (validated / configured / in-scope). Checkbox surfaces (golive) leave this
+  // unset.
   flag?: { active: MessageDescriptor; inactive: MessageDescriptor };
   // Default cells for a freshly added row. A function so each call is a fresh
   // object (no shared-reference surprises). These seed values are persisted to
@@ -24,12 +24,6 @@ export interface CollectionDef {
 }
 
 export const COLLECTIONS = {
-  board: {
-    collection: "board",
-    addLabel: msg`Add a task`,
-    emptyText: msg`No custom tasks yet. Add deal-specific work here.`,
-    newPayload: () => ({ label: "New task", owner: "shared", status: "todo" })
-  },
   data: {
     collection: "data",
     addLabel: msg`Add a row`,

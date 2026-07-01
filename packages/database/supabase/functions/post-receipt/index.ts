@@ -81,7 +81,7 @@ serve(async (req: Request) => {
           .select("id, entityType")
           .eq("companyGroupId", companyGroupId)
           .eq("active", true)
-          .in("entityType", ["SupplierType", "ItemPostingGroup", "Location", "Process", "FixedAssetClass"]),
+          .in("entityType", ["SupplierType", "Supplier", "ItemPostingGroup", "Item", "Location", "Process", "FixedAssetClass"]),
       ]);
 
     if (receipt.error) throw new Error("Failed to fetch receipt");
@@ -591,6 +591,7 @@ serve(async (req: Request) => {
         const journalLineDimensionsMeta: {
           supplierTypeId: string | null;
           itemPostingGroupId: string | null;
+          itemId: string | null;
           locationId: string | null;
           processId: string | null;
           fixedAssetClassId: string | null;
@@ -1173,6 +1174,7 @@ serve(async (req: Request) => {
               journalLineDimensionsMeta.push({
                 supplierTypeId: supplier.data.supplierTypeId ?? null,
                 itemPostingGroupId: lineItemPostingGroupId,
+                itemId: receiptLine.itemId ?? null,
                 locationId: receiptLine.locationId ?? null,
                 processId: lineProcessId,
                 fixedAssetClassId: null,
@@ -1256,6 +1258,7 @@ serve(async (req: Request) => {
               journalLineDimensionsMeta.push({
                 supplierTypeId: supplier.data.supplierTypeId ?? null,
                 itemPostingGroupId: null,
+                itemId: null,
                 locationId: faPoLine.locationId ?? receipt.data.locationId ?? assetRecord.data.locationId ?? null,
                 processId: null,
                 fixedAssetClassId: assetRecord.data.fixedAssetClassId ?? null,
@@ -1445,6 +1448,25 @@ serve(async (req: Request) => {
                     companyId,
                   });
                 }
+                if (meta.itemId && dimensionMap.has("Item")) {
+                  journalLineDimensionInserts.push({
+                    journalLineId: jl.id,
+                    dimensionId: dimensionMap.get("Item")!,
+                    valueId: meta.itemId,
+                    companyId,
+                  });
+                }
+                if (
+                  purchaseOrder.data.supplierId &&
+                  dimensionMap.has("Supplier")
+                ) {
+                  journalLineDimensionInserts.push({
+                    journalLineId: jl.id,
+                    dimensionId: dimensionMap.get("Supplier")!,
+                    valueId: purchaseOrder.data.supplierId,
+                    companyId,
+                  });
+                }
                 if (meta.locationId && dimensionMap.has("Location")) {
                   journalLineDimensionInserts.push({
                     journalLineId: jl.id,
@@ -1603,6 +1625,7 @@ serve(async (req: Request) => {
         >[] = [];
         const journalLineDimensionsMeta: {
           itemPostingGroupId: string | null;
+          itemId: string | null;
           locationId: string | null;
           fixedAssetClassId: string | null;
         }[] = [];
@@ -1703,6 +1726,7 @@ serve(async (req: Request) => {
             for (let i = 0; i < jlCount; i++) {
               journalLineDimensionsMeta.push({
                 itemPostingGroupId: itemCost?.itemPostingGroupId ?? null,
+                itemId: receiptLine.itemId ?? null,
                 locationId: receiptLine.locationId ?? null,
                 fixedAssetClassId: null,
               });
@@ -1823,6 +1847,14 @@ serve(async (req: Request) => {
                     journalLineId: jl.id,
                     dimensionId: dimensionMap.get("ItemPostingGroup")!,
                     valueId: meta.itemPostingGroupId,
+                    companyId,
+                  });
+                }
+                if (meta.itemId && dimensionMap.has("Item")) {
+                  journalLineDimensionInserts.push({
+                    journalLineId: jl.id,
+                    dimensionId: dimensionMap.get("Item")!,
+                    valueId: meta.itemId,
                     companyId,
                   });
                 }

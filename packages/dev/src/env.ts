@@ -44,7 +44,7 @@ export function renderEnv(opts: {
   lines.push(
     `VERCEL_URL=${portless ? `https://${host("erp")}` : local(ports.PORT_ERP)}`
   );
-  if (portless) lines.push(`GTM_URL=https://${host("starter")}`);
+  if (portless) lines.push(`GTM_URL=https://${host("erp")}`);
   lines.push("");
   lines.push(
     "# Supabase (per-worktree dev keys, minted from random JWT_SECRET)"

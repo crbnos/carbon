@@ -39,7 +39,7 @@ export const ESCALATION: EscalationStep[] = [
   },
   {
     n: 2,
-    title: msg`Owner + date on the Project Board`,
+    title: msg`Give it an owner and a date`,
     body: msg`If it's blocking or a date is at risk, it gets an owner and is tracked.`
   },
   {

@@ -6,8 +6,6 @@ import {
   DropdownMenuContent,
   DropdownMenuIcon,
   DropdownMenuItem,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   Heading,
@@ -40,9 +38,12 @@ import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { ShipmentStatus } from "~/modules/inventory/ui/Shipments";
 import type { SalesInvoice, SalesInvoiceLine } from "~/modules/invoicing";
-import { salesInvoiceStatusType } from "~/modules/invoicing";
+import { isInvoicePayable } from "~/modules/invoicing";
+import { getPayInvoiceHref } from "~/modules/invoicing/ui/Payment/PaymentForm";
+// status mutation route still exists for the manual Draft -> Pending ->
+// Submitted transitions, but the dropdown in this header no longer
+// drives it.
 import type { action } from "~/routes/x+/sales-invoice+/$invoiceId.post";
-import type { action as statusAction } from "~/routes/x+/sales-invoice+/$invoiceId.status";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import SalesInvoicePostModal from "./SalesInvoicePostModal";
@@ -66,7 +67,6 @@ const SalesInvoiceHeader = () => {
   });
 
   const postFetcher = useFetcher<typeof action>();
-  const statusFetcher = useFetcher<typeof statusAction>();
 
   const { carbon } = useCarbon();
   const [linesNotAssociatedWithSO, setLinesNotAssociatedWithSO] = useState<
@@ -85,6 +85,7 @@ const SalesInvoiceHeader = () => {
     salesInvoice: SalesInvoice;
     salesInvoiceLines: SalesInvoiceLine[];
     defaultCc: string[];
+    orgHasCredits: boolean;
   }>(path.to.salesInvoice(invoiceId));
 
   if (!routeData?.salesInvoice) throw new Error("salesInvoice not found");
@@ -171,17 +172,20 @@ const SalesInvoiceHeader = () => {
     postingModal.onOpen();
   };
 
-  const handleStatusChange = (status: string) => {
-    statusFetcher.submit(
-      { status },
-      { method: "post", action: path.to.salesInvoiceStatus(invoiceId) }
-    );
-  };
-
-  const IS_PAYMENT_DROPDOWN_DISABLED =
-    ["Voided", "Draft", "Pending"].includes(salesInvoice.status ?? "") ||
-    !permissions.can("update", "invoicing");
-
+  // Status is now derived from invoiceSettlement rows (see migration
+  // 20260519130000); manual status mutation has been removed.
+  // "Receive Payment" launches the payment form pre-filled for this
+  // invoice — NetSuite's Accept Payment pattern. Hidden once the
+  // invoice is fully settled, voided, or pre-posting.
+  const canReceivePayment =
+    isInvoicePayable(salesInvoice.status, salesInvoice.balance) &&
+    permissions.can("create", "invoicing");
+  const receivePaymentHref = getPayInvoiceHref({
+    side: "ar",
+    partyId: salesInvoice.customerId,
+    invoiceId,
+    balance: salesInvoice.balance
+  });
   return (
     <>
       <div className="flex flex-shrink-0 items-center justify-between p-2 bg-background border-b h-[50px] overflow-x-auto scrollbar-hide">
@@ -353,38 +357,13 @@ const SalesInvoiceHeader = () => {
             >
               <Trans>Post</Trans>
             </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                asChild
-                disabled={IS_PAYMENT_DROPDOWN_DISABLED}
-              >
-                <Button
-                  variant="secondary"
-                  isDisabled={IS_PAYMENT_DROPDOWN_DISABLED}
-                  leftIcon={<LuDollarSign />}
-                  rightIcon={<LuChevronDown />}
-                >
+            {canReceivePayment && (
+              <Button variant="primary" leftIcon={<LuDollarSign />} asChild>
+                <Link to={receivePaymentHref}>
                   <Trans>Payment</Trans>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuRadioGroup
-                  value={salesInvoice.status ?? "Draft"}
-                  onValueChange={handleStatusChange}
-                >
-                  {salesInvoiceStatusType
-                    .filter(
-                      (status) =>
-                        !["Draft", "Pending", "Voided"].includes(status)
-                    )
-                    .map((status) => (
-                      <DropdownMenuRadioItem key={status} value={status}>
-                        <SalesInvoiceStatus status={status} />
-                      </DropdownMenuRadioItem>
-                    ))}
-                </DropdownMenuRadioGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                </Link>
+              </Button>
+            )}
             <IconButton
               aria-label={t`Toggle Properties`}
               icon={<LuPanelRight />}

@@ -418,7 +418,7 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
       },
       {
         accessorKey: "paymentTermId",
-        header: t`Payment Method`,
+        header: t`Payment Terms`,
         cell: (item) => (
           <Enumerable
             value={

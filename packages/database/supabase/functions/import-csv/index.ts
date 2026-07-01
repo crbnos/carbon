@@ -1386,6 +1386,7 @@ serve(async (req: Request) => {
             revision: z.string().optional(),
             name: z.string().min(1, { message: "Description is required" }),
             description: z.string().optional(),
+            mpn: z.string().optional(),
             active: z.string().optional(),
             unitOfMeasureCode: z.string().optional(),
             replenishmentSystem: z
@@ -1621,6 +1622,7 @@ serve(async (req: Request) => {
                   updatedBy: userId,
                   name: sql`EXCLUDED."name"`,
                   description: sql`EXCLUDED."description"`,
+                  mpn: sql`EXCLUDED."mpn"`,
                   active: sql`EXCLUDED."active"`,
                   unitOfMeasureCode: sql`EXCLUDED."unitOfMeasureCode"`,
                   replenishmentSystem: sql`EXCLUDED."replenishmentSystem"`,

@@ -417,7 +417,9 @@ serve(async (req: Request) => {
           .eq("active", true)
           .in("entityType", [
             "SupplierType",
+            "Supplier",
             "ItemPostingGroup",
+            "Item",
             "Location",
             "CostCenter",
             "Process",
@@ -534,6 +536,7 @@ serve(async (req: Request) => {
     const journalLineDimensionsMeta: {
       supplierTypeId: string | null;
       itemPostingGroupId: string | null;
+      itemId: string | null;
       locationId: string | null;
       costCenterId: string | null;
       processId: string | null;
@@ -660,6 +663,12 @@ serve(async (req: Request) => {
       throw new Error("Error getting account defaults");
     }
 
+    // Invoice exchange rate (defaults to 1 for base-currency invoices).
+    // shippingCost (line 445) is already multiplied by the rate; per-line
+    // unitPrice / shippingCost / taxAmount on purchaseInvoiceLine are in
+    // invoice currency and need conversion before they reach a journal line.
+    const invoiceExchangeRate = purchaseInvoice.data?.exchangeRate ?? 1;
+
     for await (const invoiceLine of purchaseInvoiceLines.data) {
       const invoiceLineQuantityInInventoryUnit =
         invoiceLine.quantity * (invoiceLine.conversionFactor ?? 1);
@@ -673,8 +682,10 @@ serve(async (req: Request) => {
         totalLinesCost === 0 ? 0 : totalLineCost / totalLinesCost;
       const lineWeightedShippingCost =
         shippingCost * lineCostPercentageOfTotalCost;
+      // Convert line cost to base currency before combining with the
+      // already-converted shipping cost.
       const totalLineCostWithWeightedShipping =
-        totalLineCost + lineWeightedShippingCost;
+        totalLineCost * invoiceExchangeRate + lineWeightedShippingCost;
 
       const invoiceLineUnitCostInInventoryUnit =
         totalLineCostWithWeightedShipping /
@@ -810,6 +821,7 @@ serve(async (req: Request) => {
                 const itemDimMeta = {
                   supplierTypeId: supplier.data.supplierTypeId ?? null,
                   itemPostingGroupId: lineItemPostingGroupId,
+                  itemId: invoiceLine.itemId ?? null,
                   locationId: invoiceLine.locationId ?? null,
                   costCenterId: null,
                   processId: null,
@@ -1000,6 +1012,7 @@ serve(async (req: Request) => {
                 const reverseDimMeta = {
                   supplierTypeId: supplier.data.supplierTypeId ?? null,
                   itemPostingGroupId: reverseLineItemPostingGroupId,
+                  itemId: invoiceLine.itemId ?? null,
                   locationId: invoiceLine.locationId ?? null,
                   costCenterId: null,
                   processId: lineProcessId,
@@ -1069,6 +1082,7 @@ serve(async (req: Request) => {
                 const accrualDimMeta = {
                   supplierTypeId: supplier.data.supplierTypeId ?? null,
                   itemPostingGroupId: accrualLineItemPostingGroupId,
+                  itemId: invoiceLine.itemId ?? null,
                   locationId: invoiceLine.locationId ?? null,
                   costCenterId: null,
                   processId: accrualProcessId,
@@ -1284,6 +1298,7 @@ serve(async (req: Request) => {
             const assetDimMeta = {
               supplierTypeId: supplier.data.supplierTypeId ?? null,
               itemPostingGroupId: null,
+              itemId: null,
               locationId: invoiceLine.locationId ?? purchaseOrderLine?.locationId ?? faLocationId,
               costCenterId: null,
               processId: null,
@@ -1349,6 +1364,7 @@ serve(async (req: Request) => {
             const glDimMeta = {
               supplierTypeId: null,
               itemPostingGroupId: null,
+              itemId: null,
               locationId: invoiceLine.locationId ?? null,
               costCenterId: invoiceLine.costCenterId ?? null,
               processId: null,
@@ -1562,6 +1578,25 @@ serve(async (req: Request) => {
                 journalLineId: jl.id,
                 dimensionId: dimensionMap.get("ItemPostingGroup")!,
                 valueId: meta.itemPostingGroupId,
+                companyId,
+              });
+            }
+            if (meta.itemId && dimensionMap.has("Item")) {
+              journalLineDimensionInserts.push({
+                journalLineId: jl.id,
+                dimensionId: dimensionMap.get("Item")!,
+                valueId: meta.itemId,
+                companyId,
+              });
+            }
+            if (
+              purchaseInvoice.data?.supplierId &&
+              dimensionMap.has("Supplier")
+            ) {
+              journalLineDimensionInserts.push({
+                journalLineId: jl.id,
+                dimensionId: dimensionMap.get("Supplier")!,
+                valueId: purchaseInvoice.data.supplierId,
                 companyId,
               });
             }

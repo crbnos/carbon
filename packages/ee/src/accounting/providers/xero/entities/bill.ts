@@ -138,28 +138,31 @@ export class BillSyncer extends BaseEntitySyncer<
     // Fetch bills
     const billRows = await this.database
       .selectFrom("purchaseInvoice")
+      // `balance` is derived (totalAmount - posted payment applications) and
+      // lives only on the `purchaseInvoices` view now, not the base table.
+      .leftJoin("purchaseInvoices", "purchaseInvoices.id", "purchaseInvoice.id")
       .select([
-        "id",
-        "companyId",
-        "invoiceId",
-        "supplierId",
-        "status",
-        "dateIssued",
-        "dateDue",
-        "datePaid",
-        "currencyCode",
-        "exchangeRate",
-        "subtotal",
-        "totalTax",
-        "totalDiscount",
-        "totalAmount",
-        "balance",
-        "supplierReference",
-        "updatedAt",
-        "customFields"
+        "purchaseInvoice.id",
+        "purchaseInvoice.companyId",
+        "purchaseInvoice.invoiceId",
+        "purchaseInvoice.supplierId",
+        "purchaseInvoice.status",
+        "purchaseInvoice.dateIssued",
+        "purchaseInvoice.dateDue",
+        "purchaseInvoice.datePaid",
+        "purchaseInvoice.currencyCode",
+        "purchaseInvoice.exchangeRate",
+        "purchaseInvoice.subtotal",
+        "purchaseInvoice.totalTax",
+        "purchaseInvoice.totalDiscount",
+        "purchaseInvoice.totalAmount",
+        "purchaseInvoices.balance",
+        "purchaseInvoice.supplierReference",
+        "purchaseInvoice.updatedAt",
+        "purchaseInvoice.customFields"
       ])
-      .where("id", "in", ids)
-      .where("companyId", "=", this.companyId)
+      .where("purchaseInvoice.id", "in", ids)
+      .where("purchaseInvoice.companyId", "=", this.companyId)
       .execute();
 
     if (billRows.length === 0) return new Map();
@@ -524,7 +527,6 @@ export class BillSyncer extends BaseEntitySyncer<
           totalTax: data.totalTax,
           totalDiscount: data.totalDiscount,
           totalAmount: data.totalAmount,
-          balance: data.balance,
           supplierReference: data.supplierReference,
           updatedAt: new Date().toISOString()
         })
@@ -594,7 +596,6 @@ export class BillSyncer extends BaseEntitySyncer<
         totalTax: data.totalTax ?? 0,
         totalDiscount: data.totalDiscount ?? 0,
         totalAmount: data.totalAmount ?? 0,
-        balance: data.balance ?? 0,
         supplierReference: data.supplierReference ?? null
       })
       .returning("id")

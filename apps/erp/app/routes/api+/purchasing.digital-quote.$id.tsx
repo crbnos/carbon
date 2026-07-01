@@ -204,6 +204,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
           priceInserts.push({
             supplierQuoteId: quote.data.id,
             supplierQuoteLineId: lineId,
+            companyId: quote.data.companyId,
             quantity: quantity,
             supplierUnitPrice: selectedLine.supplierUnitPrice ?? 0,
             leadTime: selectedLine.leadTime ?? 0,

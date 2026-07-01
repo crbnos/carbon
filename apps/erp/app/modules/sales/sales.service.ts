@@ -1863,6 +1863,7 @@ export async function insertCustomerContact(
         customerId: customerContact.customerId,
         contactId,
         customerLocationId: customerContact.customerLocationId,
+        companyId: customerContact.companyId,
         customFields: customerContact.customFields
       }
     ])
@@ -1910,6 +1911,7 @@ export async function insertCustomerLocation(
         customerId: customerLocation.customerId,
         addressId,
         name: customerLocation.name,
+        companyId: customerLocation.companyId,
         customFields: customerLocation.customFields
       }
     ])
@@ -4241,6 +4243,7 @@ export async function calculatePricesForQuantities(
     priceRows.push({
       quoteId,
       quoteLineId,
+      companyId,
       quantity: qty,
       unitPrice: Number(finalPrice.toFixed(precision)),
       categoryMarkups: defaultMarkups,
@@ -4306,6 +4309,7 @@ export async function resolveQuoteLinePrices(
     priceRows.push({
       quoteId,
       quoteLineId,
+      companyId,
       quantity: qty,
       unitPrice: Number(resolved.finalPrice.toFixed(precision)),
       exchangeRate,
@@ -4373,6 +4377,7 @@ export async function resolvePurchaseToOrderPrices(
     priceRows.push({
       quoteId,
       quoteLineId,
+      companyId,
       quantity: qty,
       unitPrice: Number(resolved.finalPrice.toFixed(precision)),
       exchangeRate,
@@ -4486,6 +4491,7 @@ export async function recalculateQuoteLinePrices(
     updatedRows.push({
       quoteId: row.quoteId,
       quoteLineId: row.quoteLineId,
+      companyId: row.companyId,
       quantity: row.quantity,
       unitPrice: Number(finalPrice.toFixed(precision)),
       categoryMarkups: markups,

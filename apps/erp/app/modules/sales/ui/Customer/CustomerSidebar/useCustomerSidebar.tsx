@@ -98,7 +98,7 @@ export function useCustomerSidebar({ contacts, locations }: Props) {
     },
     {
       name: t`Invoices`,
-      to: `${path.to.salesInvoices}?filter=customerId:eq:${customerId}`,
+      to: `${path.to.invoicingSales}?filter=customerId:eq:${customerId}`,
       icon: <LuCreditCard />
     }
     // {

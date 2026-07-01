@@ -249,7 +249,7 @@ const PurchaseOrdersTable = memo(
         },
         {
           accessorKey: "paymentTermId",
-          header: t`Payment Method`,
+          header: t`Payment Terms`,
           cell: (item) => (
             <Enumerable
               value={

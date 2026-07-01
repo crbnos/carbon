@@ -111,6 +111,7 @@ export const path = {
       materialTypes: (substanceId: string, formId: string) =>
         generatePath(`${api}/items/types/${substanceId}/${formId}`),
       materialSubstances: `${api}/items/substances`,
+      itemMpns: `${api}/items/mpns`,
       messagingNotify: `${api}/messaging/notify`,
       mrp: (locationId?: string) =>
         generatePath(
@@ -986,6 +987,8 @@ export const path = {
     stockMovements: `${x}/inventory/stock-movements`,
     inventorySettings: `${x}/settings/inventory`,
     invoicing: `${x}/invoicing`,
+    invoicingPurchasing: `${x}/invoicing/purchasing`,
+    invoicingSales: `${x}/invoicing/sales`,
     issues: `${x}/quality/issues`,
     issue: (id: string) => generatePath(`${x}/issue/${id}`),
     issueDetails: (id: string) => generatePath(`${x}/issue/${id}/details`),
@@ -1071,6 +1074,8 @@ export const path = {
     locations: `${x}/resources/locations`,
     login: "/login",
     logout: "/logout",
+    download: (token: string) => `/download/${token}`,
+    downloadError: (reason: string) => `/download/error?reason=${reason}`,
     logos: `${x}/settings/logos`,
     maintenanceDispatch: (id: string) => generatePath(`${x}/maintenance/${id}`),
     maintenanceDispatchComments: (id: string) =>
@@ -1377,6 +1382,20 @@ export const path = {
     partner: (id: string, abilityId: string) =>
       generatePath(`${x}/resources/partners/${id}/${abilityId}`),
     partners: `${x}/resources/partners`,
+    payment: (id: string) => generatePath(`${x}/payments/${id}`),
+    paymentApplicationsSet: (id: string) =>
+      generatePath(`${x}/payments/${id}/applications/set`),
+    paymentCreditsSet: (id: string) =>
+      generatePath(`${x}/payments/${id}/credits/set`),
+    paymentDelete: (id: string) => generatePath(`${x}/payments/${id}/delete`),
+    paymentNew: `${x}/payments/new`,
+    paymentPost: (id: string) => generatePath(`${x}/payments/${id}/post`),
+    paymentVoid: (id: string) => generatePath(`${x}/payments/${id}/void`),
+    payments: `${x}/invoicing/payments`,
+    receivables: `${x}/invoicing/receivables`,
+    receivablesAdjust: `${x}/invoicing/receivables/adjust`,
+    payables: `${x}/invoicing/payables`,
+    payablesAdjust: `${x}/invoicing/payables/adjust`,
     paymentTerm: (id: string) =>
       generatePath(`${x}/accounting/payment-terms/${id}`),
     paymentTerms: `${x}/accounting/payment-terms`,
@@ -1450,7 +1469,6 @@ export const path = {
       generatePath(`${x}/purchase-invoice/${id}/status`),
     purchaseInvoiceVoid: (id: string) =>
       generatePath(`${x}/purchase-invoice/${id}/void`),
-    purchaseInvoices: `${x}/purchasing/invoices`,
     purchaseOrder: (id: string) => generatePath(`${x}/purchase-order/${id}`),
     purchaseOrderDuplicate: (id: string) =>
       generatePath(`${x}/purchase-order/${id}/duplicate`),
@@ -1606,7 +1624,14 @@ export const path = {
       generatePath(`${x}/sales-invoice/${id}/status`),
     salesInvoiceVoid: (id: string) =>
       generatePath(`${x}/sales-invoice/${id}/void`),
-    salesInvoices: `${x}/sales/invoices`,
+    // Credit / Debit memos — payment-shaped documents (the `memo` table). The
+    // list lives in the invoicing nav beside Payments; details mirror payments.
+    memo: (id: string) => generatePath(`${x}/credits/${id}`),
+    memoDelete: (id: string) => generatePath(`${x}/credits/${id}/delete`),
+    memoNew: `${x}/credits/new`,
+    memoPost: (id: string) => generatePath(`${x}/credits/${id}/post`),
+    memoVoid: (id: string) => generatePath(`${x}/credits/${id}/void`),
+    memos: `${x}/invoicing/credits`,
     salesOrder: (id: string) => generatePath(`${x}/sales-order/${id}`),
     salesOrderConfirm: (id: string) =>
       generatePath(`${x}/sales-order/${id}/confirm`),

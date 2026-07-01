@@ -27,11 +27,11 @@ import {
   useTransition
 } from "react";
 import {
+  LuBlocks,
   LuBookMarked,
   LuBox,
   LuCircleCheck,
   LuCirclePlay,
-  LuPackage,
   LuSquareChartGantt
 } from "react-icons/lu";
 import { useFetcher } from "react-router";
@@ -340,7 +340,7 @@ const ProductionPlanningTable = ({
         header: t`On Hand`,
         cell: ({ row }) => numberFormatter.format(row.original.quantityOnHand),
         meta: {
-          icon: <LuPackage />,
+          icon: <LuBlocks />,
           renderTotal: true
         }
       },

@@ -13,35 +13,35 @@ const meshColorsByTheme: Record<
   }
 > = {
   zinc: {
-    light: ["#c2c2c9", "#e4e4e9", "#fafafb", "#d2d2d9"],
+    light: ["#edecef", "#f4f4f6", "#fafafb", "#f0eff2"],
     dark: ["#18181b", "#000000", "#0D0D0D", "#050505"]
   },
   neutral: {
-    light: ["#c7c3bf", "#e6e3df", "#faf9f8", "#d6d2cd"],
+    light: ["#eeece9", "#f4f3f1", "#faf9f8", "#f1efed"],
     dark: ["#1c1917", "#000000", "#0D0D0D", "#050505"]
   },
   red: {
-    light: ["#fda4af", "#ffdce0", "#fff5f6", "#fec5cb"],
+    light: ["#fdf0f1", "#fdf6f6", "#fffafa", "#fdf3f3"],
     dark: ["#2d0a0a", "#000000", "#0D0D0D", "#050505"]
   },
   orange: {
-    light: ["#fdba74", "#ffe2c2", "#fff7ee", "#ffd2a3"],
+    light: ["#fdf4e9", "#fdf8f1", "#fffbf6", "#fdf6ed"],
     dark: ["#2d1a0a", "#000000", "#0D0D0D", "#050505"]
   },
   yellow: {
-    light: ["#fcd34d", "#fdeba8", "#fffbe6", "#fde17f"],
+    light: ["#fdf8e2", "#fdfaec", "#fffdf4", "#fdf9e7"],
     dark: ["#2d2a0a", "#000000", "#0D0D0D", "#050505"]
   },
   green: {
-    light: ["#6ee7b7", "#b9efd3", "#ecfdf4", "#9eeecb"],
+    light: ["#e9fbf2", "#f0fcf6", "#f6fdf9", "#edfcf4"],
     dark: ["#023225", "#000000", "#0D0D0D", "#050505"]
   },
   blue: {
-    light: ["#dfe9fc", "#f2f6fd", "#fdfdfe", "#eaf0fb"],
+    light: ["#eef3fd", "#f5f8fe", "#fcfdfe", "#f1f5fd"],
     dark: ["#0a1a2d", "#000000", "#0D0D0D", "#050505"]
   },
   violet: {
-    light: ["#a78bfa", "#d8ccfe", "#f1edfe", "#c6b4fd"],
+    light: ["#f3f0fe", "#f7f5fe", "#fbfaff", "#f5f2fe"],
     dark: ["#1e0a2d", "#000000", "#0D0D0D", "#050505"]
   }
 };
@@ -93,10 +93,10 @@ export function MeshGradientBackground({
       style={{ background: getMeshBackgroundGradient(activeTheme, mode) }}
     >
       <MeshGradient
-        speed={1}
+        speed={0.3}
         colors={getMeshColors(activeTheme, mode)}
-        distortion={0.8}
-        swirl={0.1}
+        distortion={0.4}
+        swirl={0.05}
         grainMixer={0}
         grainOverlay={0}
         className="absolute inset-0 w-full h-full"

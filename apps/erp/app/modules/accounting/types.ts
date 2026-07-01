@@ -32,6 +32,11 @@ export type AccountType = Database["public"]["Enums"]["accountType"];
 
 export type Chart = Account & Transaction;
 
+// Synthetic id for the computed "Net Income" equity line on the balance sheet
+// (undistributed current earnings rolled into equity — never a posted account).
+// Shared so the report tree can recognize and order/decorate the row.
+export const NET_INCOME_ACCOUNT_ID = "net-income";
+
 export type CostCenter = NonNullable<
   Awaited<ReturnType<typeof getCostCenters>>["data"]
 >[number];

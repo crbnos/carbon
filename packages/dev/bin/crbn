@@ -75,7 +75,7 @@ repo_root() {
 }
 
 slugify_branch() {
-  # Mirrors packages/dev/src/lib/slug.ts:slugify — lowercase, replace
+  # Mirrors packages/dev/src/worktree.ts:slugify — lowercase, replace
   # non-[a-z0-9-] runs with `-`, trim/collapse `-`.
   printf '%s' "$1" \
     | tr '[:upper:]' '[:lower:]' \
@@ -438,6 +438,7 @@ crbn — Carbon dev CLI
 
   Stack:
     crbn up                         Boot compose stack + apps.
+    crbn up --all                   Launch all apps without the picker.
     crbn up --no-portless           Localhost mode (API:54321 ERP:3000 MES:3001).
     crbn up --borrow                Reuse another worktree's containers.
     crbn up --no-apps               Services only, no dev servers.

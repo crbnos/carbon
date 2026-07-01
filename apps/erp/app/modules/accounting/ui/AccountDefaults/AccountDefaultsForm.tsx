@@ -20,7 +20,7 @@ type AccountDefaultField = {
   description: string;
   accountType: AccountType;
   badgeType: BadgeType;
-  termId: TermId;
+  termId?: TermId;
 };
 
 type CategoryGroup = {
@@ -115,6 +115,13 @@ const AccountDefaultsForm = ({
             accountType: "balance",
             badgeType: "Asset",
             termId: "account-default-prepayments"
+          },
+          {
+            name: "customerWriteOffAccount",
+            label: t`Customer Write-Off (Bad Debt)`,
+            description: t`Expense account for customer balances written off as uncollectable on AR settlement`,
+            accountType: "income",
+            badgeType: "Expense"
           }
         ]
       },
@@ -208,6 +215,13 @@ const AccountDefaultsForm = ({
             accountType: "balance",
             badgeType: "Liability",
             termId: "account-default-gr-ir"
+          },
+          {
+            name: "supplierWriteOffAccount",
+            label: t`Vendor Write-Off Income`,
+            description: t`Other Income account for vendor balances cleared without full payment on AP settlement`,
+            accountType: "income",
+            badgeType: "Revenue"
           }
         ]
       },
@@ -293,6 +307,13 @@ const AccountDefaultsForm = ({
             accountType: "income",
             badgeType: "Revenue",
             termId: "account-default-sales-discounts"
+          },
+          {
+            name: "realizedExchangeGainAccount",
+            label: t`Realized Exchange Gain`,
+            description: t`Other Income account for FX gains when a payment settles a foreign-currency invoice at a more favorable rate`,
+            accountType: "income",
+            badgeType: "Revenue"
           }
         ]
       },
@@ -459,6 +480,13 @@ const AccountDefaultsForm = ({
             accountType: "income",
             badgeType: "Expense",
             termId: "account-default-deferred-tax-expense"
+          },
+          {
+            name: "realizedExchangeLossAccount",
+            label: t`Realized Exchange Loss`,
+            description: t`Expense account for FX losses when a payment settles a foreign-currency invoice at a less favorable rate`,
+            accountType: "income",
+            badgeType: "Expense"
           }
         ]
       }
@@ -549,12 +577,16 @@ const AccountDefaultsForm = ({
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <h3 className="text-sm font-medium text-foreground">
-                            <LabelWithHelp
-                              variant="inline"
-                              termId={field.termId}
-                            >
-                              {field.label}
-                            </LabelWithHelp>
+                            {field.termId ? (
+                              <LabelWithHelp
+                                variant="inline"
+                                termId={field.termId}
+                              >
+                                {field.label}
+                              </LabelWithHelp>
+                            ) : (
+                              field.label
+                            )}
                           </h3>
                           <Badge variant={badgeColors[field.badgeType]}>
                             {field.badgeType}

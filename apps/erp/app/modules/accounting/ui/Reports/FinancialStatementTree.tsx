@@ -1,6 +1,7 @@
 import { cn, ScrollArea } from "@carbon/react";
 import { memo, useMemo, useRef } from "react";
 import {
+  LuCalculator,
   LuChevronDown,
   LuChevronRight,
   LuFolder,
@@ -10,6 +11,7 @@ import type { FlatTree, FlatTreeItem } from "~/components/TreeView";
 import { LevelLine, TreeView, useTree } from "~/components/TreeView";
 import { useRealtime } from "~/hooks";
 import type { Chart } from "../../types";
+import { NET_INCOME_ACCOUNT_ID } from "../../types";
 
 type TranslatedChart = Chart & {
   translatedBalance?: number;
@@ -41,6 +43,9 @@ function accountsToFlatTree(
         const aIsGroup = a.isGroup ? 1 : 0;
         const bIsGroup = b.isGroup ? 1 : 0;
         if (aIsGroup !== bIsGroup) return aIsGroup - bIsGroup;
+        // The computed Net Income line always sorts to the end of its group.
+        if (a.id === NET_INCOME_ACCOUNT_ID) return 1;
+        if (b.id === NET_INCOME_ACCOUNT_ID) return -1;
         return (a.name ?? "").localeCompare(b.name ?? "");
       }
     );
@@ -216,6 +221,9 @@ const FinancialStatementTree = memo(
                     </span>
                   )}
                   <span className="truncate">{account.name}</span>
+                  {account.id === NET_INCOME_ACCOUNT_ID && (
+                    <LuCalculator className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  )}
                 </div>
 
                 {/* Balance */}

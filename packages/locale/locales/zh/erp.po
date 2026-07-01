@@ -31,6 +31,10 @@ msgstr "\"没有人因为购买它而被解雇。\"一个现任者的舒适因�
 msgid "(excluded for this customer)"
 msgstr "(已为此客户排除)"
 
+#. placeholder {0}: ar.count
+msgid "{0} customers with a balance"
+msgstr "{0}个有余额的客户"
+
 #. placeholder {0}: rule.escalationDays
 msgid "{0} days"
 msgstr "{0} 天"
@@ -48,6 +52,10 @@ msgstr "{0} 个订单"
 msgid "{0} Processes"
 msgstr "{0} 个流程"
 
+#. placeholder {0}: ap.count
+msgid "{0} suppliers with a balance"
+msgstr "{0}个有余额的供应商"
+
 #. placeholder {0}: lotEntities.length - inspected
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 msgstr "{0} 个未采样的实体将被释放到可用状态。已采样的合格品保持可用状态，已采样的不合格品保持被拒绝状态。"
@@ -59,6 +67,12 @@ msgstr "{0} 上传成功"
 #. placeholder {0}: unmatchedValues.length
 msgid "{0} values missing"
 msgstr "{0} 个值缺失"
+
+msgid "{apOverduePct}% of payables"
+msgstr "{apOverduePct}% 的应付账款"
+
+msgid "{arOverduePct}% of receivables"
+msgstr "{arOverduePct}% 的应收账款"
 
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}。考虑将此零件直接指向最终后继产品。"
@@ -514,9 +528,6 @@ msgstr "添加一行"
 msgid "Add a step"
 msgstr "添加步骤"
 
-msgid "Add a task"
-msgstr "添加任务"
-
 msgid "Add Actions"
 msgstr "添加操作"
 
@@ -752,6 +763,10 @@ msgstr "在该行增加资产/费用或减少负债/权益/收入的金额。"
 msgid "Amount that increases liabilities/equity/revenue or decreases assets/expenses on this line."
 msgstr "在该行增加负债/权益/收入或减少资产/费用的金额。"
 
+#. placeholder {0}: r.memoId
+msgid "Amount to apply for {0}"
+msgstr "应用于 {0} 的金额"
+
 msgid "Amount Type"
 msgstr "金额类型"
 
@@ -815,6 +830,12 @@ msgstr "未在上述范围内明确列出的任何内容"
 msgid "AP Clerk"
 msgstr "应付账款文员"
 
+msgid "AP Outstanding"
+msgstr "应付账款未结"
+
+msgid "AP Overdue"
+msgstr "应付账款逾期"
+
 msgid "API and Webhooks"
 msgstr "API 和 Webhooks"
 
@@ -833,6 +854,19 @@ msgstr "API 密钥"
 msgid "API keys for programmatic access to your Carbon data."
 msgstr "用于以编程方式访问您的 Carbon 数据的 API 密钥。"
 
+msgid "Applied"
+msgstr "已应用"
+
+#. placeholder {0}: r.invoiceId
+msgid "Applied amount for {0}"
+msgstr "已应用金额 {0}"
+
+msgid "Applied Date"
+msgstr "应用日期"
+
+msgid "Applied To"
+msgstr "应用于"
+
 msgid "Applies to"
 msgstr "适用于"
 
@@ -841,6 +875,12 @@ msgstr "适用于全部"
 
 msgid "Applies to all work centers"
 msgstr "适用于所有工作中心"
+
+msgid "Apply available credits"
+msgstr "应用可用额度"
+
+msgid "Apply credits"
+msgstr "应用额度"
 
 msgid "Apply payments and track aging"
 msgstr "应用付款并跟踪账龄"
@@ -853,6 +893,12 @@ msgstr "在顶部应用规则"
 
 msgid "Apply To"
 msgstr "应用于"
+
+msgid "Apply to invoice"
+msgstr "应用到发票"
+
+msgid "Apply to invoices"
+msgstr "应用于发票"
 
 msgid "Approaching {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB cap."
 msgstr "接近 {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB 上限。"
@@ -883,6 +929,12 @@ msgstr "AQL (Z1.4 / ISO 2859-1)"
 
 msgid "AR Clerk"
 msgstr "应收账款文员"
+
+msgid "AR Outstanding"
+msgstr "应收账款未结"
+
+msgid "AR Overdue"
+msgstr "应收账款逾期"
 
 msgid "Archive"
 msgstr "存档"
@@ -964,9 +1016,9 @@ msgstr "你确定要从此操作中删除 {0} 吗？此操作无法撤销。"
 msgid "Are you sure you want to delete {0}?"
 msgstr "你确定要删除 {0} 吗？"
 
+#. placeholder {0}: initialValues.memoId
+#. placeholder {0}: initialValues.paymentId
 #. placeholder {0}: pickingList.pickingListId
-#. placeholder {0}: routeData?.consumableSummary?.readableIdWithRevision
-#. placeholder {0}: routeData?.customer?.name!
 msgid "Are you sure you want to delete {0}? This cannot be undone."
 msgstr "您确定要删除 {0} 吗？此操作无法撤销。"
 
@@ -1252,6 +1304,9 @@ msgstr "你确定吗？"
 msgid "As needed"
 msgstr "按需"
 
+msgid "As of:"
+msgstr "截至："
+
 msgid "As the company owner, you can transfer ownership to another employee. This will give them full access to billing and administrative settings."
 msgstr "作为公司所有者，您可以将所有权转移给另一名员工。这将授予他们对账单和管理设置的完全访问权限。"
 
@@ -1380,6 +1435,9 @@ msgstr "审计日志"
 msgid "Authentication Error"
 msgstr "身份验证错误"
 
+msgid "Auto apply"
+msgstr "自动应用"
+
 msgid "Auto Release"
 msgstr "自动发放"
 
@@ -1449,8 +1507,14 @@ msgstr "反冲"
 msgid "Backups"
 msgstr "备份"
 
+msgid "Balance"
+msgstr "余额"
+
 msgid "Balance Sheet"
 msgstr "资产负债表"
+
+msgid "Balanced"
+msgstr "平衡"
 
 msgid "Balloon"
 msgstr "气球"
@@ -1472,6 +1536,9 @@ msgstr "银行—外币（默认）"
 
 msgid "Bank — Local Currency (default)"
 msgstr "银行—本地货币（默认）"
+
+msgid "Bank / Cash Account"
+msgstr "银行/现金账户"
 
 msgid "Bank account denominated in a foreign currency"
 msgstr "以外币计价的银行账户。"
@@ -1658,6 +1725,12 @@ msgstr "由 {byUser}"
 msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "通过接受邀请，您同意<0>服务条款</0>和<1>隐私政策</1>。"
 
+msgid "By Document Date"
+msgstr "按单据日期"
+
+msgid "By Due Date"
+msgstr "按到期日期"
+
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "通过登录，您同意<0>服务条款</0>和<1>隐私政策。</1>"
 
@@ -1702,6 +1775,9 @@ msgstr "在Carbon中称为方法—生成零件的组件和操作。"
 
 msgid "Can't disable the only active break. Add another break or toggle the override's Active instead."
 msgstr "无法禁用唯一的活跃价格段。请添加另一个价格段或改为切换覆盖的\"活跃\"状态。"
+
+msgid "Can't download this file"
+msgstr ""
 
 msgid "Cancel"
 msgstr "取消"
@@ -1895,9 +1971,6 @@ msgstr "检查您的电子邮件"
 msgid "Checkpoint ·"
 msgstr "检查点 ·"
 
-msgid "Checkpoint:"
-msgstr "检查点："
-
 msgid "Checkpoints"
 msgstr "检查点"
 
@@ -1946,14 +2019,14 @@ msgstr "清除搜索"
 msgid "Clear search query"
 msgstr "清除搜索查询"
 
+msgid "Clear this invoice with the party's posted credits as well as cash. Credits apply directly — no posting needed."
+msgstr "用该方的已过账贷项和现金清算此发票。贷项直接应用——无需过账。"
+
 msgid "Clearing account between goods receipt and supplier invoice; balances when both have posted."
 msgstr "商品收据和供应商发票之间的清算账户; 当两者都已过帐时余额。"
 
 msgid "Clearing account for goods received / invoice received matching"
 msgstr "商品收据/发票收据匹配的清算账户"
-
-msgid "Click to change status"
-msgstr "点击以更改状态"
 
 msgid "Click to upload a PDF drawing"
 msgstr "点击上传 PDF 图纸"
@@ -1991,6 +2064,9 @@ msgstr "云端或您自托管的环境。"
 
 msgid "Code"
 msgstr "代码"
+
+msgid "Collapse"
+msgstr "折叠"
 
 msgid "Collapse all"
 msgstr "全部折叠"
@@ -2180,9 +2256,6 @@ msgstr "配置供应商提交报价时谁应该收到通知。"
 
 msgid "Configure-to-order"
 msgstr "按订单配置"
-
-msgid "Configure-to-order options and pricing"
-msgstr "按订单配置选项和定价"
 
 msgid "Configure-to-order, automated purchase planning, the shop-floor app."
 msgstr "按订单配置、自动采购计划、车间应用。"
@@ -2582,6 +2655,12 @@ msgstr ""
 msgid "Counted Qty"
 msgstr ""
 
+msgid "Counterparties"
+msgstr "交易对手"
+
+msgid "Counterparty"
+msgstr "交易对手"
+
 msgid "Country"
 msgstr "国家"
 
@@ -2614,6 +2693,9 @@ msgstr "使用新报价ID创建报价"
 
 msgid "Create Account"
 msgstr "创建账户"
+
+msgid "Create adjusting entry"
+msgstr "创建调整分录"
 
 msgid "Create an account"
 msgstr "创建账户"
@@ -2788,11 +2870,20 @@ msgstr "正在创建零件..."
 msgid "Credit"
 msgstr "信用"
 
+msgid "Credit / Debit Memos"
+msgstr "贷项/借项备忘录"
+
 msgid "Credit Account"
 msgstr "信用账户"
 
 msgid "Credit account when labor/machine time is absorbed into WIP"
 msgstr "当劳动力/机器时间被吸收到WIP中时的信用账户"
+
+msgid "Credits & Debits"
+msgstr "贷项和借项"
+
+msgid "Credits applied"
+msgstr "已应用的额度"
 
 msgid "Critical"
 msgstr "关键"
@@ -2967,6 +3058,9 @@ msgstr "客户类型"
 
 msgid "Customer Types"
 msgstr "客户类型"
+
+msgid "Customer Write-Off (Bad Debt)"
+msgstr "客户核销（坏账）"
 
 msgid "customers"
 msgstr "客户"
@@ -3350,11 +3444,17 @@ msgstr "删除材料形状"
 msgid "Delete Material Type"
 msgstr "删除材料类型"
 
+msgid "Delete Memo"
+msgstr "删除备忘录"
+
 msgid "Delete Part"
 msgstr "删除零件"
 
 msgid "Delete Partner"
 msgstr "删除合作伙伴"
+
+msgid "Delete Payment"
+msgstr "删除付款"
 
 msgid "Delete Payment Term"
 msgstr "删除付款条款"
@@ -3466,9 +3566,6 @@ msgstr "删除供应商报价"
 
 msgid "Delete Supplier Type"
 msgstr "删除供应商类型"
-
-msgid "Delete task"
-msgstr "删除任务"
 
 msgid "Delete Timecard"
 msgstr "删除时间卡"
@@ -3602,6 +3699,12 @@ msgstr "尺寸"
 msgid "Direct"
 msgstr "直接"
 
+msgid "Direction"
+msgstr "方向"
+
+msgid "Directions"
+msgstr "方向"
+
 msgid "Disabled"
 msgstr "已禁用"
 
@@ -3619,6 +3722,10 @@ msgstr "折扣天数"
 
 msgid "Discount Days after {selectedCalculationMethod}"
 msgstr "折扣天数（{selectedCalculationMethod}之后）"
+
+#. placeholder {0}: r.invoiceId
+msgid "Discount for {0}"
+msgstr "{0}的折扣"
 
 msgid "Discount Percent"
 msgstr "折扣百分比"
@@ -3723,6 +3830,9 @@ msgstr "下载 CSV"
 msgid "Download Labels"
 msgstr "下载标签"
 
+msgid "Download Link"
+msgstr ""
+
 msgid "Download PDF"
 msgstr "下载 PDF"
 
@@ -3752,6 +3862,9 @@ msgstr "拖动以调整图表和功能的大小"
 
 msgid "Drag to zoom"
 msgstr "拖动以缩放"
+
+msgid "Drawing"
+msgstr "提取"
 
 msgid "Drawing Number"
 msgstr "图纸编号"
@@ -3991,6 +4104,9 @@ msgstr "编辑物质材料"
 msgid "Edit Material Type"
 msgstr "编辑材料类型"
 
+msgid "Edit Memo"
+msgstr "编辑备忘录"
+
 msgid "Edit Non Conformance Type"
 msgstr "编辑不符合项类型"
 
@@ -3999,6 +4115,9 @@ msgstr "编辑零件"
 
 msgid "Edit Partner"
 msgstr "编辑合作伙伴"
+
+msgid "Edit Payment"
+msgstr "编辑付款"
 
 msgid "Edit Payment Term"
 msgstr "编辑付款条款"
@@ -4420,9 +4539,6 @@ msgstr "您配置的系统中的每项范围内测试都通过了，使用您的
 msgid "Every row was imported successfully."
 msgstr "每一行都已成功导入。"
 
-msgid "Every task for the project, grouped by step. If it isn't on the board, it isn't happening. Click a status to cycle it."
-msgstr "项目的每项任务，按步骤分组。如果任务不在看板上，就不会发生。点击状态来循环切换。"
-
 msgid "Everything from Starter"
 msgstr "Starter 中的所有功能"
 
@@ -4481,11 +4597,17 @@ msgstr "预期收货"
 msgid "Expected Receipt Date"
 msgstr "预期收货日期"
 
+msgid "Expense account for customer balances written off as uncollectable on AR settlement"
+msgstr "应收账款结算时作为无法收回的客户余额的费用账户"
+
 msgid "Expense account for deferred tax adjustments on depreciation"
 msgstr "折旧延期税调整的费用账户"
 
 msgid "Expense account for equipment and facility maintenance"
 msgstr "设备和设施维护的费用账户"
+
+msgid "Expense account for FX losses when a payment settles a foreign-currency invoice at a less favorable rate"
+msgstr "支付结算外币发票时汇率不利而产生的外汇损失的费用账户"
 
 msgid "Expense account for non-inventory purchases (services, supplies)"
 msgstr "非库存采购（服务、物资）的费用账户"
@@ -5070,8 +5192,14 @@ msgstr "星期五"
 msgid "From {0}"
 msgstr "从 {0}"
 
+msgid "From customer"
+msgstr "来自客户"
+
 msgid "From Location"
 msgstr "从位置"
+
+msgid "from on-account credit"
+msgstr "从应收账款信用额度"
 
 msgid "From Storage Unit"
 msgstr "从存储单位"
@@ -5081,6 +5209,9 @@ msgstr "履行地点"
 
 msgid "Fully trained for"
 msgstr "完全培训"
+
+msgid "FX G/L"
+msgstr "外汇损益"
 
 msgid "Gains and Losses"
 msgstr "收益和损失（默认）"
@@ -5168,6 +5299,12 @@ msgstr "在 Carbon 中导航"
 
 msgid "Getting set up"
 msgstr "正在设置"
+
+msgid "Give it an owner and a date"
+msgstr ""
+
+msgid "GL"
+msgstr "GL"
 
 msgid "GL Account"
 msgstr "总账账户"
@@ -5282,6 +5419,12 @@ msgstr "非库存购买（用品、服务）的GL支出账户。"
 
 msgid "GL liability account credited for sales tax collected from customers."
 msgstr "从客户征收的销售税的GL负债账户。"
+
+msgid "GL tie-out"
+msgstr "总账对账"
+
+msgid "GL Tie-Out"
+msgstr "总账对账"
 
 msgid "Go live right the first time — with our team alongside you"
 msgstr "立即上线，一次就做对——我们的团队与您同行"
@@ -5818,6 +5961,9 @@ msgstr "内部参考，用于了解每个工具的优势所在。使用它来诚
 msgid "inv"
 msgstr "库存"
 
+msgid "Inv Rate"
+msgstr "发票汇率"
+
 msgid "Invalid Invite"
 msgstr "无效邀请"
 
@@ -5931,6 +6077,12 @@ msgstr "已开票状态"
 
 msgid "Invoices"
 msgstr "发票"
+
+msgid "Invoices this memo has been applied to. Click a row to open the document."
+msgstr "此备忘录已应用到的发票。单击一行以打开文档。"
+
+msgid "Invoicing"
+msgstr "开票"
 
 msgid "is"
 msgstr "是"
@@ -6339,9 +6491,6 @@ msgstr "加载更新"
 msgid "Load open transactions (orders, POs, inventory, balances)"
 msgstr "加载未结交易（订单、采购单、库存、余额）"
 
-msgid "Load parts, BOMs, Bill of Process, and costing"
-msgstr "加载零件、物料清单、工艺流程和成本"
-
 msgid "Load Templates"
 msgstr "加载模板"
 
@@ -6505,6 +6654,13 @@ msgstr "制造项目无法直接开票。请将方法更改为\"拣选\"以继�
 msgid "Make Method Version"
 msgstr "制造方法版本"
 
+msgid "Make Payment"
+msgstr "付款"
+
+#. placeholder {0}: selectedInvoices.length
+msgid "Make Payment · {0} invoices"
+msgstr "付款 · {0} 张发票"
+
 #. placeholder {0}: selectedRevision.revision
 msgid "Make revision {0} default?"
 msgstr "将修订版本 {0} 设为默认？"
@@ -6554,6 +6710,9 @@ msgstr "手动"
 
 msgid "Manufacturer"
 msgstr "制造商"
+
+msgid "Manufacturer Part Number"
+msgstr ""
 
 msgid "Manufacturing"
 msgstr "制造"
@@ -6746,6 +6905,15 @@ msgstr "会议节奏"
 
 msgid "Members"
 msgstr "成员"
+
+msgid "Memo"
+msgstr "备忘录"
+
+msgid "Memo Date"
+msgstr "备忘录日期"
+
+msgid "Memo ID"
+msgstr "备忘录 ID"
 
 msgid "MES"
 msgstr "MES"
@@ -7007,6 +7175,9 @@ msgstr "新消耗品"
 msgid "New Contractor"
 msgstr "新承包商"
 
+msgid "New Credit / Debit Memo"
+msgstr "新的贷项/借项备忘录"
+
 msgid "New Custom Field"
 msgstr "新建自定义字段"
 
@@ -7117,6 +7288,9 @@ msgstr "新零件"
 
 msgid "New Password"
 msgstr "新密码"
+
+msgid "New Payment"
+msgstr "新付款"
 
 msgid "New Payment Term"
 msgstr "新付款条款"
@@ -7268,9 +7442,6 @@ msgstr "下一个序列"
 msgid "Next step"
 msgstr "下一步"
 
-msgid "Next task"
-msgstr "下一个任务"
-
 msgid "Next:"
 msgstr "下一步："
 
@@ -7309,6 +7480,9 @@ msgstr "没有活跃报价"
 msgid "No addresses found"
 msgstr "未找到地址"
 
+msgid "No applications. Payment will be on-account."
+msgstr "无应用。付款将按账户处理。"
+
 #. placeholder {0}: auditConfig.retentionDays
 msgid "No archived logs yet. Logs older than {0} days will be automatically archived and available for download here."
 msgstr "还没有存档日志。超过 {0} 天的日志将自动存档，并可在此处下载。"
@@ -7345,9 +7519,6 @@ msgstr "不需要转换"
 
 msgid "No cost history found"
 msgstr "未找到成本历史记录"
-
-msgid "No custom tasks yet. Add deal-specific work here."
-msgstr "还没有自定义任务。在此添加交易特定的工作。"
 
 msgid "No Data"
 msgstr "无数据"
@@ -7427,6 +7598,9 @@ msgstr "没有新通知"
 msgid "No notes"
 msgstr "没有备注"
 
+msgid "No open invoices"
+msgstr "没有未结发票"
+
 msgid "No operations require picking at this location"
 msgstr "此位置不需要进行任何操作拣选"
 
@@ -7454,6 +7628,12 @@ msgstr "尚未记录任何父源。点击计划页面上的\"重新计算\"以�
 msgid "No part ID"
 msgstr "无零件ID"
 
+msgid "No payables"
+msgstr "无应付款"
+
+msgid "No payments yet."
+msgstr "还没有付款。"
+
 msgid "No planning data"
 msgstr "没有规划数据"
 
@@ -7477,6 +7657,9 @@ msgstr "无报价原因"
 
 msgid "No Quote Reasons"
 msgstr "无报价原因"
+
+msgid "No receivables"
+msgstr "无应收账款"
 
 msgid "No remaining entities to inspect."
 msgstr "没有剩余的实体可检查。"
@@ -7654,6 +7837,9 @@ msgstr "在销售订单上"
 
 msgid "On Storage Unit"
 msgstr "在存储单元上"
+
+msgid "On-account credit available"
+msgstr "账户信用额度可用"
 
 msgid "On-hand counts"
 msgstr "现有库存数量"
@@ -7875,6 +8061,12 @@ msgstr "订单已提交"
 msgid "Origin"
 msgstr "来源"
 
+msgid "Other Income account for FX gains when a payment settles a foreign-currency invoice at a more favorable rate"
+msgstr "当付款以更优惠的汇率结清外币发票时，外汇收益的其他收入账户"
+
+msgid "Other Income account for vendor balances cleared without full payment on AP settlement"
+msgstr "其他收入账户，用于在应付账款结算时清除未全额支付的供应商余额"
+
 msgid "Other Type"
 msgstr "其他类型"
 
@@ -7895,6 +8087,9 @@ msgstr "输出永远不会超过其原材料的保质期。当没有输入具有
 
 msgid "Outside operation"
 msgstr "间接费用差异"
+
+msgid "Over-applied by"
+msgstr "超额应用"
 
 msgid "Overdue"
 msgstr "逾期"
@@ -7943,9 +8138,6 @@ msgstr "用报价方法覆盖目标制造方法"
 
 msgid "Owner (cost center)"
 msgstr "主成本中心"
-
-msgid "Owner + date on the Project Board"
-msgstr "所有者 + 项目板上的日期"
 
 msgid "Ownership"
 msgstr "所有权"
@@ -8032,14 +8224,20 @@ msgstr "零件和物品"
 msgid "Parts, materials, and how you classify them."
 msgstr "零件、材料及其分类方式。"
 
+msgid "Party Type"
+msgstr "方当事人类型"
+
 msgid "Pass"
 msgstr "通过"
 
-msgid "Passed · reopen"
-msgstr "已通过 · 重新打开"
+msgid "Passed"
+msgstr ""
 
 msgid "Path"
 msgstr "路径"
+
+msgid "Pay Rate"
+msgstr "支付汇率"
 
 msgid "Payables"
 msgstr "应付账款（默认）"
@@ -8047,11 +8245,20 @@ msgstr "应付账款（默认）"
 msgid "Payables (default)"
 msgstr "付款条件"
 
+msgid "Payables aging"
+msgstr "应付账款账龄"
+
 msgid "Payment"
 msgstr "付款"
 
-msgid "Payment Method"
-msgstr "支付方式"
+msgid "Payment Applications"
+msgstr "付款应用"
+
+msgid "Payment Date"
+msgstr "付款日期"
+
+msgid "Payment ID"
+msgstr "付款ID"
 
 msgid "payment term"
 msgstr "付款条件"
@@ -8067,6 +8274,12 @@ msgstr "付款条款"
 
 msgid "Payment terms like Net 30 or due on receipt"
 msgstr "像 Net 30 或到期时支付这样的付款条款"
+
+msgid "Payments"
+msgstr "付款"
+
+msgid "Payments and credits applied to this invoice. Click a row to open the source document."
+msgstr "已应用于此发票的付款和贷项。点击一行以打开源文档。"
 
 msgid "PDF"
 msgstr "PDF"
@@ -8202,9 +8415,6 @@ msgstr "已固定"
 
 msgid "Plan"
 msgstr "计划"
-
-msgid "Plan & Board"
-msgstr "计划与看板"
 
 msgid "Plan the work"
 msgstr "规划工作"
@@ -8550,17 +8760,11 @@ msgstr "进度"
 msgid "Project"
 msgstr "项目"
 
-msgid "Project Board"
-msgstr "项目看板"
-
 msgid "Project owner"
 msgstr "项目所有者"
 
-msgid "Project Plan & Board"
-msgstr "项目计划和看板"
-
-msgid "Project Plan & Timeline"
-msgstr "项目计划与时间表"
+msgid "Project Plan"
+msgstr ""
 
 msgid "Project start"
 msgstr "项目开始"
@@ -8731,6 +8935,9 @@ msgstr "采购和自动规划"
 
 msgid "Purchasing Contact"
 msgstr "采购联系人"
+
+msgid "Purchasing Invoices"
+msgstr "采购发票"
 
 msgid "Purchasing Unit of Measure"
 msgstr "采购计量单位"
@@ -8926,8 +9133,17 @@ msgstr "实时库存和车间可见性"
 msgid "Real-time questions during hypercare"
 msgstr "超护期间的实时问题"
 
+msgid "Realized Exchange Gain"
+msgstr "已实现汇兑收益"
+
+msgid "Realized Exchange Loss"
+msgstr "已实现汇兑损失"
+
 msgid "Reason"
 msgstr "原因"
+
+msgid "Reason Account"
+msgstr "原因账户"
 
 msgid "Reason for declining (Optional)"
 msgstr "拒绝原因（可选）"
@@ -8974,6 +9190,9 @@ msgstr "应收账款（默认）"
 msgid "Receivables (default)"
 msgstr "将采购订单与所收货物和发票进行对账——在Carbon中隐含进行，通过行数量和GR/IR余额。"
 
+msgid "Receivables aging"
+msgstr "应收账款账龄"
+
 msgid "Receive"
 msgstr "接收"
 
@@ -8983,6 +9202,13 @@ msgstr "将 {0} 接收到库存"
 
 msgid "Receive against a PO and update inventory"
 msgstr "根据采购订单收货并更新库存"
+
+msgid "Receive Payment"
+msgstr "收款"
+
+#. placeholder {0}: selectedInvoices.length
+msgid "Receive Payment · {0} invoices"
+msgstr "收款 · {0} 张发票"
 
 msgid "Receive to Inventory"
 msgstr "接收到库存"
@@ -9007,6 +9233,9 @@ msgstr "收货地点"
 msgid "Recent"
 msgstr "最近"
 
+msgid "Recent payments"
+msgstr "最近的付款"
+
 msgid "Recently Created"
 msgstr "最近创建"
 
@@ -9015,6 +9244,12 @@ msgstr "回收期"
 
 msgid "Record"
 msgstr "录音"
+
+msgid "Record a credit or debit memo against a customer or supplier. Applications to specific invoices are added after the memo is created."
+msgstr "记录针对客户或供应商的贷项或借项备忘录。针对特定发票的应用在备忘录创建后添加。"
+
+msgid "Record cash received from a customer (Receipt) or paid to a supplier (Disbursement). Applications to specific invoices are added after the payment is created."
+msgstr "记录从客户收到的现金（收据）或支付给供应商的现金（支付）。对特定发票的应用在创建付款后添加。"
 
 msgid "Record deleted"
 msgstr "记录已删除"
@@ -9099,6 +9334,9 @@ msgstr "发布工作"
 
 msgid "Released"
 msgstr "已发布"
+
+msgid "Remaining"
+msgstr "剩余"
 
 msgid "Remaining after split stays on the original row."
 msgstr "分割后的剩余部分保留在原始行上。"
@@ -9416,9 +9654,6 @@ msgstr "风险"
 msgid "Risks"
 msgstr "风险"
 
-msgid "Risks (on the Project Board)"
-msgstr "风险（在项目看板上）"
-
 msgid "Role"
 msgstr "角色"
 
@@ -9648,6 +9883,9 @@ msgstr "保存并关闭"
 
 msgid "Save and Overwrite"
 msgstr "保存并覆盖"
+
+msgid "Save applications"
+msgstr "保存应用"
 
 msgid "Save contacts"
 msgstr "保存联系人"
@@ -9890,6 +10128,15 @@ msgstr "选择量具"
 msgid "Select groups or individuals"
 msgstr "选择群组或个人"
 
+msgid "Select invoice"
+msgstr "选择发票"
+
+msgid "Select invoices from a single counterparty"
+msgstr "从单个交易对手选择发票"
+
+msgid "Select invoices in a single currency"
+msgstr "选择单一货币中的发票"
+
 msgid "Select Item Type"
 msgstr "选择项目类型"
 
@@ -9925,6 +10172,9 @@ msgstr "选择表面"
 
 msgid "Select the groups that should complete this training"
 msgstr "选择应该完成此培训的组"
+
+msgid "Select the invoices this payment settles. Discount and write-off are in invoice currency."
+msgstr "选择此付款结算的发票。折扣和核销以发票货币计。"
 
 msgid "Select value"
 msgstr "选择值"
@@ -10062,14 +10312,8 @@ msgstr "设置定价"
 msgid "Set Quantity"
 msgstr "设置数量"
 
-msgid "Set up sites, users, and roles"
-msgstr "设置站点、用户和角色"
-
 msgid "Set up the right way"
 msgstr "以正确的方式设置"
-
-msgid "Set up the shop-floor app and stations"
-msgstr "设置车间应用和工作站"
 
 msgid "Set up your own data with import tools and LLM help"
 msgstr "使用导入工具和LLM帮助设置您自己的数据"
@@ -10644,6 +10888,9 @@ msgstr "外包差异"
 msgid "Subcontracting Variance (default)"
 msgstr "外包差异（默认）"
 
+msgid "Subledger"
+msgstr "子分类账"
+
 msgid "Submit anonymously"
 msgstr "匿名提交"
 
@@ -10763,6 +11010,9 @@ msgstr "供应商零件ID"
 
 msgid "Supplier Part Number"
 msgstr "供应商零件号"
+
+msgid "Supplier Part Numbers"
+msgstr ""
 
 msgid "Supplier Parts"
 msgstr "供应商零件"
@@ -10936,9 +11186,6 @@ msgstr "目标版本"
 msgid "Target Version"
 msgstr "目标版本"
 
-msgid "Task"
-msgstr "任务"
-
 msgid "tasks"
 msgstr "任务"
 
@@ -11036,8 +11283,8 @@ msgid "Text size"
 msgstr "文本大小"
 
 #. placeholder {0}: steps.length
-msgid "The {0} phases to go live, each ending at a checkpoint. Tick a task here and it updates on the Project Board too."
-msgstr "The {0} phases to go live, each ending at a checkpoint. Tick a task here and it updates on the Project Board too."
+msgid "The {0} phases to go live, each ending at a checkpoint. Tick off each task as you complete it."
+msgstr ""
 
 msgid "The accounting dimension that categorizes items for reporting and analysis."
 msgstr "将项目分类以进行报告和分析的会计维度。"
@@ -11669,6 +11916,9 @@ msgstr "此RFQ没有有效的供应商报价可比较。"
 msgid "There are outside operations associated with this job that have no suppliers. Please assign a supplier to each outside operation before releasing it."
 msgstr "此工作有无供应商的外部操作。请在发布前为每个外部操作分配一个供应商。"
 
+msgid "There's nothing outstanding to apply these credits to."
+msgstr "没有未结清的发票可以应用这些信用额。"
+
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "这些自定义字段仅适用于具有相同标签的实体"
 
@@ -11683,6 +11933,15 @@ msgstr "这些工作有分配给此工作中心的操作："
 
 msgid "This completes the Discovery step."
 msgstr "这完成了发现步骤。"
+
+msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
+msgstr "该交易对手没有未结余额——该付款将记录为应收账款。"
+
+msgid "This download link is invalid or has been tampered with."
+msgstr ""
+
+msgid "This file is no longer available, or you don't have permission to download it."
+msgstr ""
 
 msgid "This information will be used on document headers"
 msgstr "此信息将用于文档标题"
@@ -11792,6 +12051,9 @@ msgstr "星期四"
 msgid "Tie shipments through to an invoice with no re-keying"
 msgstr "将发货与发票关联，无需重新输入"
 
+msgid "Tie-Out"
+msgstr "对账"
+
 msgid "Tightened"
 msgstr "紧张"
 
@@ -11827,6 +12089,9 @@ msgstr "待发货和待收货"
 
 msgid "To Storage Unit"
 msgstr "至存储单位"
+
+msgid "To supplier"
+msgstr "给供应商"
 
 msgid "Today"
 msgstr "今天"
@@ -11897,6 +12162,9 @@ msgstr "顶级分类（资产/负债/权益/收益/费用）；仅在根组上�
 msgid "Total"
 msgstr "总计"
 
+msgid "Total Amount"
+msgstr "总金额"
+
 msgid "Total capitalized cost of the asset (purchase price plus freight, install, and other costs that become part of book value)."
 msgstr "资产的总资本化成本（购买价格加运输、安装和其他成为账面价值一部分的成本）。"
 
@@ -11923,6 +12191,9 @@ msgstr "此地点所有活动作业和销售订单所需的总数量——而不
 
 msgid "Total:"
 msgstr "总计："
+
+msgid "Totals"
+msgstr "合计"
 
 msgid "Traceability"
 msgstr "可追溯性"
@@ -11971,6 +12242,9 @@ msgstr "已追踪实体已被拣选"
 
 msgid "Tracked entity ID is required but none was found"
 msgstr "已跟踪实体ID是必需的，但未找到"
+
+msgid "Tracked from the Setup Map — open it"
+msgstr ""
 
 msgid "Tracking"
 msgstr "追踪"
@@ -12050,9 +12324,6 @@ msgstr "触发器"
 msgid "Tuesday"
 msgstr "星期二"
 
-msgid "Turn on automated purchase planning"
-msgstr "启用自动采购计划"
-
 msgid "Turn on the built-in pieces"
 msgstr "启用内置功能"
 
@@ -12079,6 +12350,12 @@ msgstr "类型"
 
 msgid "Un-sampled entities will remain On Hold so you can keep inspecting and disposition later. Sampled outcomes are preserved."
 msgstr "未采样的实体将保持\"待处理\"状态，以便您可以继续检验并稍后进行处置。已采样的结果将被保留。"
+
+msgid "Unapplied"
+msgstr "未应用"
+
+msgid "Unapplied:"
+msgstr "未应用："
 
 msgid "Unapproved Supplier"
 msgstr "未批准的供应商"
@@ -12427,7 +12704,7 @@ msgid "Values"
 msgstr "值"
 
 msgid "Variance"
-msgstr ""
+msgstr "差异"
 
 msgid "Variance between actual and standard BOM component consumption"
 msgstr "实际与标准物料清单成分消耗之间的差异"
@@ -12449,6 +12726,9 @@ msgstr "外部加工成本的差异"
 
 msgid "VAT Number"
 msgstr "增值税号"
+
+msgid "Vendor Write-Off Income"
+msgstr "供应商核销收入"
 
 msgid "Verification Error"
 msgstr "验证错误"
@@ -12534,6 +12814,9 @@ msgstr "查看列表"
 msgid "View maintenance dispatch"
 msgstr "查看维护派遣"
 
+msgid "View Memo"
+msgstr "查看备忘录"
+
 msgid "View missing values"
 msgstr "查看缺失值"
 
@@ -12557,6 +12840,9 @@ msgstr "查看未结报价"
 
 msgid "View Open RFQs"
 msgstr "查看未结束的询价单"
+
+msgid "View Payment"
+msgstr "查看付款"
 
 msgid "View permissions"
 msgstr "查看权限"
@@ -13126,8 +13412,18 @@ msgstr "性能最差的机器"
 msgid "Write-Down Account"
 msgstr "评估减少账户"
 
+msgid "Write-off"
+msgstr "核销"
+
+msgid "Write-Off"
+msgstr "核销"
+
 msgid "Write-Off Account"
 msgstr "核销账户"
+
+#. placeholder {0}: r.invoiceId
+msgid "Write-off for {0}"
+msgstr "{0}的核销"
 
 msgid "Writing an asset's value down over its life — a monthly batch you create, review as a draft, then post."
 msgstr "在资产的使用寿命期间降低其价值 — 您创建、作为草稿审阅然后过账的月度批次。"

@@ -396,11 +396,24 @@ const Table = <T extends object>({
   const {
     accessors: columnAccessors,
     exportValues,
-    sortKeyToLabel
+    sortKeyToLabel,
+    exportOnlyColumns
   } = useMemo(
     () => buildColumnMaps(columns, translateLabel),
     [columns, translateLabel]
   );
+
+  // Export-only columns must never render in the grid. Force them hidden in the
+  // table state without mutating the stored columnVisibility (so saved-view
+  // state stays correct). The CSV side reads the same `exportOnlyColumns` list
+  // (passed to Download) to include them regardless of visibility — both halves
+  // are driven by the one `meta.exportOnly` flag, not by visibility coincidence.
+  const effectiveColumnVisibility = useMemo(() => {
+    if (!exportOnlyColumns.length) return columnVisibility;
+    const next = { ...columnVisibility };
+    for (const id of exportOnlyColumns) next[id] = false;
+    return next;
+  }, [columnVisibility, exportOnlyColumns]);
 
   const internalColumns = useMemo(() => {
     let result: ColumnDef<T>[] = [];
@@ -431,7 +444,7 @@ const Table = <T extends object>({
     data: internalData,
     columns: internalColumns,
     state: {
-      columnVisibility,
+      columnVisibility: effectiveColumnVisibility,
       columnOrder,
       columnPinning,
       rowSelection
@@ -857,6 +870,7 @@ const Table = <T extends object>({
       <TableHeader
         columnAccessors={columnAccessors}
         exportValues={exportValues}
+        exportOnlyColumns={exportOnlyColumns}
         sortKeyToLabel={sortKeyToLabel}
         columnOrder={columnOrder}
         columnPinning={columnPinning}

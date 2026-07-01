@@ -13,6 +13,9 @@ export interface ColumnMaps<T> {
   exportValues: Record<string, (row: T) => unknown>;
   // server sort key (`meta.sortBy ?? accessorKey`) -> translated header label
   sortKeyToLabel: Record<string, string>;
+  // export keys flagged `meta.exportOnly` — rendered nowhere in the grid but
+  // still emitted to CSV. Table.tsx force-hides these columns.
+  exportOnlyColumns: string[];
 }
 
 // Derives every column-driven map the table header needs: CSV column headings,
@@ -26,6 +29,7 @@ export function buildColumnMaps<T>(
   const accessors: Record<string, string> = {};
   const exportValues: Record<string, (row: T) => unknown> = {};
   const sortKeyToLabel: Record<string, string> = {};
+  const exportOnlyColumns: string[] = [];
 
   for (const column of columns) {
     const accessorKey = getAccessorKey(column);
@@ -59,6 +63,10 @@ export function buildColumnMaps<T>(
       exportValues[exportKey] = exportValue;
     }
 
+    if (column.meta?.exportOnly && exportKey) {
+      exportOnlyColumns.push(exportKey);
+    }
+
     // Sort picker stays keyed on string-header columns only, so JSX-header
     // columns (e.g. MRP week columns with a filterHeader) never flood it.
     if (accessorKey && stringHeader !== undefined) {
@@ -67,7 +75,7 @@ export function buildColumnMaps<T>(
     }
   }
 
-  return { accessors, exportValues, sortKeyToLabel };
+  return { accessors, exportValues, sortKeyToLabel, exportOnlyColumns };
 }
 
 export function updateNestedProperty(

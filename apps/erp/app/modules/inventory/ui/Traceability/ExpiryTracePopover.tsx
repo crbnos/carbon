@@ -8,10 +8,10 @@ import {
 import { Trans } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import {
+  LuBlocks,
   LuCalendarCheck,
   LuExternalLink,
   LuLayers,
-  LuPackage,
   LuPencil,
   LuShieldCheck
 } from "react-icons/lu";
@@ -46,7 +46,7 @@ type ExpiryTraceStep = {
 };
 
 const STEP_ICON: Record<ExpiryTraceStep["step"], ReactNode> = {
-  Source: <LuPackage className="size-3.5" />,
+  Source: <LuBlocks className="size-3.5" />,
   Policy: <LuShieldCheck className="size-3.5" />,
   Inputs: <LuLayers className="size-3.5" />,
   Override: <LuPencil className="size-3.5" />,

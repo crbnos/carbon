@@ -17,7 +17,9 @@ import { FaCodePullRequest } from "react-icons/fa6";
 import {
   LuArrowLeftRight,
   LuAtom,
+  LuBanknote,
   LuBarcode,
+  LuBlocks,
   LuBookOpen,
   LuBox,
   LuBuilding,
@@ -46,7 +48,6 @@ import {
   LuLandmark,
   LuList,
   LuMapPin,
-  LuPackage,
   LuPizza,
   LuQrCode,
   LuRotateCcw,
@@ -581,7 +582,7 @@ export const JournalEntrySourceTypeIcon = ({
     case "Transfer Receipt":
       return <LuArrowLeftRight className={className} />;
     case "Inventory Adjustment":
-      return <LuPackage className={className} />;
+      return <LuBlocks className={className} />;
     case "Production Order":
       return <LuCirclePlay className={className} />;
     case "Job Consumption":
@@ -596,6 +597,12 @@ export const JournalEntrySourceTypeIcon = ({
       return <LuClock className={className} />;
     case "Asset Disposal":
       return <LuBuilding2 className={className} />;
+    case "Payment":
+      return <LuBanknote className={className} />;
+    case "Credit Memo":
+      return <LuCreditCard className={className} />;
+    case "Debit Memo":
+      return <LuCreditCard className={className} />;
   }
 
   return <LuSquare className={cn("text-muted-foreground", className)} />;
@@ -619,6 +626,12 @@ export const DimensionEntityTypeIcon = ({
       return <LuContainer className={className} />;
     case "CustomerType":
       return <LuUsers className={className} />;
+    case "Customer":
+      return <LuUser className={className} />;
+    case "Supplier":
+      return <LuContainer className={className} />;
+    case "Item":
+      return <LuBlocks className={className} />;
     case "Department":
       return <LuBuilding className={className} />;
     case "Employee":

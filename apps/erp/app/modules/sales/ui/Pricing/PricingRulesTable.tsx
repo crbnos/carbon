@@ -13,10 +13,10 @@ import { memo, useCallback, useMemo } from "react";
 import {
   LuArrowDown,
   LuArrowUp,
+  LuBlocks,
   LuBoxes,
   LuCalendar,
   LuCopy,
-  LuPackage,
   LuPencil,
   LuSquareUser,
   LuTag,
@@ -209,7 +209,7 @@ const PricingRulesTable = memo(({ data, count }: PricingRulesTableProps) => {
             isArray: true
           },
           pluralHeader: t`Items`,
-          icon: <LuPackage />
+          icon: <LuBlocks />
         }
       },
       {
@@ -336,7 +336,7 @@ const PricingRulesTable = memo(({ data, count }: PricingRulesTableProps) => {
           );
         },
         meta: {
-          icon: <LuPackage />,
+          icon: <LuBlocks />,
           exportValue: (row) => {
             const labels: string[] = [];
             if (row.itemPostingGroupId) {

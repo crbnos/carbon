@@ -16,6 +16,9 @@ type DownloadProps = {
   exportValues: Record<string, (row: any) => unknown>;
   columnOrder: string[];
   columnVisibility: Record<string, boolean>;
+  // Export-only columns (meta.exportOnly): hidden in the grid but always
+  // included in the CSV, regardless of visibility.
+  exportOnlyColumns: string[];
 };
 
 // Last-resort guardrail so an export never ships `[object Object]` or explodes a
@@ -39,7 +42,8 @@ const Download = ({
   columnAccessors,
   exportValues,
   columnOrder,
-  columnVisibility
+  columnVisibility,
+  exportOnlyColumns
 }: DownloadProps) => {
   const { t } = useLingui();
 
@@ -68,9 +72,13 @@ const Download = ({
       ? columnOrder
       : Object.keys(columnAccessors);
     return order.filter(
-      (id) => id in columnAccessors && columnVisibility[id] !== false
+      (id) =>
+        id in columnAccessors &&
+        // Export-only columns export regardless of grid visibility; everything
+        // else follows the visible-in-the-current-view rule.
+        (exportOnlyColumns.includes(id) || columnVisibility[id] !== false)
     );
-  }, [columnOrder, columnVisibility, columnAccessors]);
+  }, [columnOrder, columnVisibility, columnAccessors, exportOnlyColumns]);
 
   const onClick = useCallback(() => {
     if (!data?.length) {

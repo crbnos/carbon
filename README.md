@@ -56,7 +56,7 @@ Features:
 - [x] MCP Client/Server
 - [x] API
 - [x] Webhooks
-- [ ] Accounting
+- [x] Accounting
 - [ ] Capacity Planning
 - [ ] Simulation
 - [ ] [Full Roadmap](https://github.com/orgs/crbnos/projects/1/views/1)

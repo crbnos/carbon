@@ -1,6 +1,7 @@
 import { useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
 import {
+  LuBlocks,
   LuBox,
   LuCircleCheck,
   LuClipboardCheck,
@@ -18,7 +19,6 @@ import {
   LuPrinter,
   LuSheet,
   LuShoppingCart,
-  LuSquareStack,
   LuUsers,
   LuWebhook,
   LuWorkflow,
@@ -112,7 +112,7 @@ export default function useSettingsSubmodules() {
             name: t`Items`,
             to: path.to.itemsSettings,
             role: "employee",
-            icon: <LuSquareStack />
+            icon: <LuBlocks />
           },
           {
             name: t`People`,

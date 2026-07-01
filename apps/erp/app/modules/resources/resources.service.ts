@@ -1161,6 +1161,7 @@ export async function upsertContractor(
         id: string;
         hoursPerWeek?: number;
         abilities: string[];
+        companyId: string;
         updatedBy: string;
         customFields?: Json;
       }
@@ -1194,6 +1195,7 @@ export async function upsertContractor(
     return {
       contractorId: contractor.id,
       abilityId: ability,
+      companyId: contractor.companyId,
       createdBy:
         "createdBy" in contractor ? contractor.createdBy : contractor.updatedBy
     };

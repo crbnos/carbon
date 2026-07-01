@@ -140,6 +140,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
     case "name":
     case "description":
+    case "mpn":
     case "unitOfMeasureCode":
       return await client
         .from("item")

@@ -14,6 +14,13 @@ export interface SetupGroup {
   title: MessageDescriptor; // a Carbon module
   desc: MessageDescriptor;
   rows: SetupRow[];
+  // Learn links for the whole module, shown as Docs/Video badges on the group
+  // header. Grounded to real pages: `docsUrl` → docs.carbon.ms, `academyUrl` →
+  // learn.carbon.ms course. Carbon's docs/academy are organised per module, not
+  // per config entity, so these live at the group level. Omitted where no
+  // relevant page exists (e.g. Accounting has no academy course yet).
+  docsUrl?: string;
+  academyUrl?: string;
 }
 
 // The first-run configuration map, grouped by Carbon module. Every master /
@@ -27,6 +34,9 @@ export const SETUP_GROUPS: SetupGroup[] = [
     n: 1,
     title: msg`Settings`,
     desc: msg`Company identity, documents, and system defaults.`,
+    docsUrl: "https://docs.carbon.ms/docs",
+    academyUrl:
+      "https://learn.carbon.ms/course/getting-started/setting-up-company",
     rows: [
       {
         key: "company",
@@ -74,6 +84,9 @@ export const SETUP_GROUPS: SetupGroup[] = [
     n: 2,
     title: msg`Resources`,
     desc: msg`Where and how you make things.`,
+    docsUrl: "https://docs.carbon.ms/guides/floor",
+    academyUrl:
+      "https://learn.carbon.ms/course/manufacturing/managing-production",
     rows: [
       {
         key: "locations",
@@ -115,6 +128,9 @@ export const SETUP_GROUPS: SetupGroup[] = [
     n: 3,
     title: msg`People`,
     desc: msg`Your team, structure, and access.`,
+    docsUrl: "https://docs.carbon.ms/docs",
+    academyUrl:
+      "https://learn.carbon.ms/course/getting-started/setting-up-company",
     rows: [
       {
         key: "employees",
@@ -157,6 +173,8 @@ export const SETUP_GROUPS: SetupGroup[] = [
     n: 4,
     title: msg`Items`,
     desc: msg`Parts, materials, and how you classify them.`,
+    docsUrl: "https://docs.carbon.ms/guides/build",
+    academyUrl: "https://learn.carbon.ms/course/parts-materials/defining-item",
     rows: [
       {
         key: "units",
@@ -236,6 +254,8 @@ export const SETUP_GROUPS: SetupGroup[] = [
     n: 5,
     title: msg`Sales`,
     desc: msg`Who you sell to and at what price.`,
+    docsUrl: "https://docs.carbon.ms/guides/order-to-cash",
+    academyUrl: "https://learn.carbon.ms/course/selling/quoting-estimating",
     rows: [
       {
         key: "customers",
@@ -279,6 +299,8 @@ export const SETUP_GROUPS: SetupGroup[] = [
     n: 6,
     title: msg`Purchasing`,
     desc: msg`Who you buy from.`,
+    docsUrl: "https://docs.carbon.ms/guides/rfq-to-po",
+    academyUrl: "https://learn.carbon.ms/course/buying/purchasing-basics",
     rows: [
       {
         key: "suppliers",
@@ -298,6 +320,8 @@ export const SETUP_GROUPS: SetupGroup[] = [
     n: 7,
     title: msg`Inventory`,
     desc: msg`Where stock lives and how it ships.`,
+    // No dedicated academy course for inventory yet — docs only.
+    docsUrl: "https://docs.carbon.ms/guides/ship",
     rows: [
       {
         key: "storage-units",
@@ -329,6 +353,8 @@ export const SETUP_GROUPS: SetupGroup[] = [
     n: 8,
     title: msg`Accounting`,
     desc: msg`Your books and how money flows.`,
+    // No dedicated academy course for accounting yet — docs only.
+    docsUrl: "https://docs.carbon.ms/docs/integrations/accounting",
     rows: [
       {
         key: "chart-of-accounts",
@@ -384,6 +410,8 @@ export const SETUP_GROUPS: SetupGroup[] = [
     n: 9,
     title: msg`Production`,
     desc: msg`Shop-floor configuration.`,
+    docsUrl: "https://docs.carbon.ms/guides/floor",
+    academyUrl: "https://learn.carbon.ms/course/manufacturing/shop-floor",
     rows: [
       {
         key: "scrap-reasons",

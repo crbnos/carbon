@@ -34,7 +34,9 @@ export const REGISTRY: PageDef[] = [
     navLabel: msg`Scope Summary`,
     title: msg`Scope Summary`,
     group: "align",
-    order: 3
+    order: 3,
+    // Paid-tier only — self-serve has no commercial scope/acceptance agreement.
+    tiers: ["guided", "enterprise"]
   },
   {
     slug: "roles",
@@ -55,10 +57,9 @@ export const REGISTRY: PageDef[] = [
     optional: true
   },
   {
-    // Plan + Board are one page now, switched via a view toggle (?view=board).
     slug: "plan",
-    navLabel: msg`Plan & Board`,
-    title: msg`Project Plan & Board`,
+    navLabel: msg`Plan`,
+    title: msg`Project Plan`,
     group: "plan",
     order: 6,
     key: true
@@ -145,9 +146,10 @@ export function pageBySlug(slug: string): PageDef | undefined {
 
 // Optional sections (sub-page blocks a customer may not need). Canonical list —
 // the Setup & Controls toggles and the default-exclusions seed both read it.
-export const OPTIONAL_SECTIONS: { key: string; label: MessageDescriptor }[] = [
-  { key: "risks", label: msg`Risks (on the Project Board)` }
-];
+// Empty since the Project Board (and its Risks section) was removed; keep the
+// list + wiring so a future optional section is a one-line add.
+export const OPTIONAL_SECTIONS: { key: string; label: MessageDescriptor }[] =
+  [];
 
 // New hubs start with every optional page and section excluded — a Carbon admin
 // opts them back in per customer from Setup & Controls. Modules stay all-in.

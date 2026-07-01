@@ -163,6 +163,9 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
     // Fetch invoice headers
     const invoiceRows = await this.database
       .selectFrom("salesInvoice")
+      // `balance` is derived (totalAmount - posted payment applications) and
+      // lives only on the `salesInvoices` view now, not the base table.
+      .leftJoin("salesInvoices", "salesInvoices.id", "salesInvoice.id")
       .select([
         "salesInvoice.id",
         "salesInvoice.invoiceId",
@@ -179,7 +182,7 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
         "salesInvoice.totalTax",
         "salesInvoice.totalDiscount",
         "salesInvoice.totalAmount",
-        "salesInvoice.balance",
+        "salesInvoices.balance",
         "salesInvoice.updatedAt"
       ])
       .where("salesInvoice.id", "in", ids)
@@ -463,7 +466,6 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
         subtotal: data.subtotal,
         totalTax: data.totalTax,
         totalAmount: data.totalAmount,
-        balance: data.balance,
         currencyCode: data.currencyCode,
         exchangeRate: data.exchangeRate,
         updatedAt: new Date().toISOString()

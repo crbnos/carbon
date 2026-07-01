@@ -338,8 +338,8 @@ export const auditFunction = inngest.createFunction(
               } else if (isIndirectTable(tableConfig)) {
                 const { junction, fk, entityIdColumn } = tableConfig.resolve;
 
-                const { data: junctionRow } = await client
-                  .from(junction as any)
+                const { data: junctionRow } = await (client as any)
+                  .from(junction)
                   .select(entityIdColumn)
                   .eq(fk, record.event.recordId)
                   .limit(1)

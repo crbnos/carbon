@@ -221,4 +221,15 @@ export interface BoardTask {
   // Tiers this task applies to. Omitted => all tiers. e.g. hypercare is paid-tier
   // only — self-serve has no Carbon team providing post-launch support.
   tiers?: Tier[];
+  // Setup Map row keys (content/setup.ts `SetupRow.key`) this task rolls up.
+  // When set, the task auto-derives done/in-progress from those rows'
+  // "configured" scopeFlags instead of needing its own manual tick — so Plan
+  // and the Setup Map can never drift apart for the same work.
+  setupKeys?: string[];
+  // Learn links for the task, shown as Docs/Video badges on the Plan row. For
+  // Configure's group tasks these come straight from the Setup Map group.
+  docsUrl?: string;
+  academyUrl?: string;
+  // Optional one-line description shown under the task label on the Plan row.
+  hint?: MessageDescriptor;
 }

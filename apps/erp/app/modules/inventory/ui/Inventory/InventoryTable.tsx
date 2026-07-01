@@ -14,6 +14,7 @@ import { useNumberFormatter } from "@react-aria/i18n";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import {
+  LuBlocks,
   LuBookMarked,
   LuBox,
   LuBoxes,
@@ -27,7 +28,6 @@ import {
   LuLoaderCircle,
   LuMoveDown,
   LuMoveUp,
-  LuPackage,
   LuPaintBucket,
   LuPuzzle,
   LuRuler,
@@ -150,7 +150,7 @@ const InventoryTable = memo(
               formatNumber(row.original.quantityOnHand)
             ),
           meta: {
-            icon: <LuPackage />,
+            icon: <LuBlocks />,
             renderTotal: true,
             formatter: formatNumber
           }

@@ -89,6 +89,9 @@ export const itemValidator = z.object({
     .min(1, { message: "Short description is required" })
     .max(255),
   description: zfd.text(z.string().optional()),
+  // Manufacturer Part Number — the manufacturer's catalog number for a
+  // purchased item. Only surfaced/edited for Buy items in the Properties panel.
+  mpn: zfd.text(z.string().optional()),
   replenishmentSystem: z.enum(itemReplenishmentSystems, {
     errorMap: (issue, ctx) => ({
       message: "Replenishment system is required"

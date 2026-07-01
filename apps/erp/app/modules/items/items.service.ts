@@ -427,7 +427,7 @@ export async function getConsumables(
 
   if (args.search) {
     query = query.or(
-      `readableIdWithRevision.ilike.%${args.search}%,name.ilike.%${args.search}%,description.ilike.%${args.search}%,supplierIds.ilike.%${args.search}%`
+      `readableIdWithRevision.ilike.%${args.search}%,name.ilike.%${args.search}%,description.ilike.%${args.search}%,supplierIds.ilike.%${args.search}%,mpn.ilike.%${args.search}%`
     );
   }
 
@@ -1106,7 +1106,7 @@ export async function getMaterials(
 
   if (args.search) {
     query = query.or(
-      `readableIdWithRevision.ilike.%${args.search}%,name.ilike.%${args.search}%,description.ilike.%${args.search}%,supplierIds.ilike.%${args.search}%`
+      `readableIdWithRevision.ilike.%${args.search}%,name.ilike.%${args.search}%,description.ilike.%${args.search}%,supplierIds.ilike.%${args.search}%,mpn.ilike.%${args.search}%`
     );
   }
 
@@ -1627,7 +1627,7 @@ export async function getParts(
 
   if (args.search) {
     query = query.or(
-      `readableIdWithRevision.ilike.%${args.search}%,name.ilike.%${args.search}%,description.ilike.%${args.search}%,supplierIds.ilike.%${args.search}%`
+      `readableIdWithRevision.ilike.%${args.search}%,name.ilike.%${args.search}%,description.ilike.%${args.search}%,supplierIds.ilike.%${args.search}%,mpn.ilike.%${args.search}%`
     );
   }
 
@@ -1639,6 +1639,21 @@ export async function getParts(
     { column: "readableIdWithRevision", ascending: true }
   ]);
   return query;
+}
+
+// Distinct manufacturer part numbers for the company, used to populate the MPN
+// column filter in the item list tables. Deduping happens in the route loader.
+export async function getItemMpnsList(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return fetchAllFromTable<{ mpn: string }>(client, "item", "mpn", (query) =>
+    query
+      .eq("companyId", companyId)
+      .not("mpn", "is", null)
+      .neq("mpn", "")
+      .order("mpn")
+  );
 }
 
 export async function getPartsList(
@@ -1939,7 +1954,7 @@ export async function getTools(
 
   if (args.search) {
     query = query.or(
-      `readableIdWithRevision.ilike.%${args.search}%,name.ilike.%${args.search}%,description.ilike.%${args.search}%,supplierIds.ilike.%${args.search}%`
+      `readableIdWithRevision.ilike.%${args.search}%,name.ilike.%${args.search}%,description.ilike.%${args.search}%,supplierIds.ilike.%${args.search}%,mpn.ilike.%${args.search}%`
     );
   }
 

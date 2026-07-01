@@ -130,6 +130,7 @@ const ConsumableProperties = ({ data }: ConsumablePropertiesProps) => {
         | "itemPostingGroupId"
         | "consumableId"
         | "active"
+        | "mpn"
         | "requiresInspection",
       value: string | null
     ) => {
@@ -481,6 +482,28 @@ const ConsumableProperties = ({ data }: ConsumablePropertiesProps) => {
             variant="small"
             onChange={(value) => {
               onUpdate("requiresInspection", value ? "on" : "off");
+            }}
+          />
+        </ValidatedForm>
+      )}
+      {routeData?.consumableSummary?.replenishmentSystem?.includes("Buy") && (
+        <ValidatedForm
+          defaultValues={{
+            mpn: (routeData?.consumableSummary as any)?.mpn ?? undefined
+          }}
+          validator={z.object({
+            mpn: z.string().optional()
+          })}
+          className="w-full"
+        >
+          <InputControlled
+            label={t`Manufacturer Part Number`}
+            name="mpn"
+            inline
+            size="sm"
+            value={(routeData?.consumableSummary as any)?.mpn ?? ""}
+            onBlur={(e) => {
+              onUpdate("mpn", e.target.value ?? null);
             }}
           />
         </ValidatedForm>

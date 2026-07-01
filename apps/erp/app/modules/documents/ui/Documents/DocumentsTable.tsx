@@ -1,3 +1,4 @@
+import { getBrowserEnv } from "@carbon/auth";
 import {
   Badge,
   BadgeCloseButton,
@@ -85,6 +86,9 @@ const DocumentsTable = memo(
     } = useDocument();
 
     const [people] = usePeople();
+    // Client-safe origin for building absolute download URLs in the CSV export.
+    // ERP_URL is in the getBrowserEnv() allowlist (unlike server-only getAppUrl).
+    const { ERP_URL } = getBrowserEnv();
     const moveDocumentModal = useDisclosure();
     const deleteDocumentModal = useDisclosure();
 
@@ -341,6 +345,9 @@ const DocumentsTable = memo(
           ),
           meta: {
             icon: <LuUser />,
+            exportValue: (row) =>
+              people.find((employee) => employee.id === row.createdBy)?.name ??
+              row.createdBy,
             filter: {
               type: "static",
               options: people.map((employee) => ({
@@ -382,10 +389,24 @@ const DocumentsTable = memo(
           meta: {
             icon: <LuFileText />
           }
+        },
+        {
+          id: "downloadLink",
+          header: "",
+          cell: () => null,
+          meta: {
+            exportOnly: true,
+            filterHeader: t`Download Link`,
+            exportValue: (row) =>
+              row.downloadToken
+                ? `${ERP_URL}${path.to.download(row.downloadToken)}`
+                : ""
+          }
         }
       ];
       // Don't put the revalidator in the deps array
     }, [
+      ERP_URL,
       extensions,
       labelOptions,
       onDeleteLabel,

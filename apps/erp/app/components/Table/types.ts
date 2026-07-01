@@ -24,6 +24,12 @@ declare module "@tanstack/react-table" {
     // read in Download.tsx. Use when the displayed value is derived/composite, or
     // when the accessorKey is an id whose name lives in another row field.
     exportValue?: (row: TData) => string | number | boolean | null | undefined;
+    // Export-only column: never rendered in the grid (Table force-hides it), but
+    // still emitted to the CSV via `exportValue`. Use for values that belong in
+    // the export but not the on-screen table (e.g. a tokenized download link).
+    // Pair with `filterHeader` to supply the CSV heading, since `header` is
+    // typically left blank to keep the column out of the column-visibility menu.
+    exportOnly?: boolean;
     // Server-sort column override. When set, the sort UI writes `?sort=<sortBy>:dir`
     // instead of using the accessorKey. Use when a column must sort by a different
     // field than its accessor (e.g. accessor `supplierTypeId`, sort by `type`).

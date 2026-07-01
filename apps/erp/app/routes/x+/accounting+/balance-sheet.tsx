@@ -93,7 +93,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     client,
     companyGroupId,
     selectedCompanyId,
-    { startDate: null, endDate }
+    { startDate: null, endDate, includeCurrentYearEarnings: true }
   );
 
   if (balances.error) {

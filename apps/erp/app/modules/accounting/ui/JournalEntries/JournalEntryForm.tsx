@@ -24,6 +24,7 @@ import { useCallback, useMemo, useState } from "react";
 import {
   LuCheckCheck,
   LuEllipsisVertical,
+  LuExternalLink,
   LuPlus,
   LuRotateCcw,
   LuSave,
@@ -52,6 +53,7 @@ type JournalEntryFormProps = {
   displayId: string;
   status: string;
   sourceType: string;
+  sourceDocument?: { readableId: string; to: string } | null;
   reversedById?: string | null;
   initialValues: {
     id: string;
@@ -87,6 +89,7 @@ const JournalEntryForm = ({
   displayId,
   status,
   sourceType,
+  sourceDocument,
   reversedById,
   initialValues,
   initialLines,
@@ -228,6 +231,17 @@ const JournalEntryForm = ({
               <JournalEntryStatus status={status as any} />
             </HStack>
             <HStack>
+              {sourceDocument && (
+                <Button
+                  variant="secondary"
+                  leftIcon={<LuExternalLink />}
+                  asChild
+                >
+                  <Link to={sourceDocument.to}>
+                    {sourceDocument.readableId}
+                  </Link>
+                </Button>
+              )}
               {isReversed && reversedById && (
                 <Button variant="secondary" asChild>
                   <Link to={path.to.journalEntryDetails(reversedById)}>

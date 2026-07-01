@@ -9,18 +9,20 @@ import {
   LuPartyPopper,
   LuPlay
 } from "react-icons/lu";
+import { BOARD_TASKS } from "../content/board";
 import { SPINE } from "../content/spine";
 import {
+  boardTasksForTier,
   effectiveGateStatus,
-  effectiveProductStatus,
   gatesDone,
   type NextAction,
   nextAction,
   ownerForStep,
-  type Signals,
-  spineForTier
+  spineForTier,
+  stepTaskProgress
 } from "../logic";
 import type { GateValue, StepDef, Tier } from "../types";
+import { GanttChart } from "./GanttChart";
 import { GuidedUpsellCard } from "./GuidedUpsellCard";
 import { OWNER_TOKENS } from "./primitives";
 import { useCheckMap, useSignals, useTier } from "./state";
@@ -60,6 +62,7 @@ export function OnboardingHub({
   const map = useCheckMap();
   const signals = useSignals();
   const spine = spineForTier(SPINE, tier);
+  const tasks = boardTasksForTier(BOARD_TASKS, tier);
 
   const done = gatesDone(spine, map, signals);
   const total = spine.length;
@@ -168,7 +171,12 @@ export function OnboardingHub({
 
         <div className="flex gap-1.5 px-6 py-4">
           {spine.map((step) => {
-            const st = effectiveGateStatus(step, map, signals);
+            const st = effectiveGateStatus(
+              step,
+              map,
+              signals,
+              stepTaskProgress(tasks, step.key, map)
+            );
             return (
               <div
                 key={step.key}
@@ -191,9 +199,13 @@ export function OnboardingHub({
               key={step.key}
               step={step}
               tier={tier}
-              status={effectiveGateStatus(step, map, signals)}
-              map={map}
-              signals={signals}
+              status={effectiveGateStatus(
+                step,
+                map,
+                signals,
+                stepTaskProgress(tasks, step.key, map)
+              )}
+              progress={stepTaskProgress(tasks, step.key, map)}
               onOpenInPlan={onOpenInPlan}
             />
           ))}
@@ -203,6 +215,8 @@ export function OnboardingHub({
       {tier === "self_serve" && onContactExpert ? (
         <GuidedUpsellCard onContactExpert={onContactExpert} />
       ) : null}
+
+      <GanttChart steps={spine} />
     </div>
   );
 }
@@ -295,22 +309,16 @@ function GateRow({
   step,
   tier,
   status,
-  map,
-  signals,
+  progress,
   onOpenInPlan
 }: {
   step: StepDef;
   tier: Tier;
   status: GateValue;
-  map: Map<string, string>;
-  signals: Signals;
+  progress: { done: number; total: number };
   onOpenInPlan: (stepKey: string) => void;
 }) {
   const { t, i18n } = useLingui();
-  const nested = step.nested ?? [];
-  const nestedDone = nested.filter(
-    (n) => effectiveProductStatus(n, map, signals) === "done"
-  ).length;
 
   return (
     <li className="p-5 pl-6 transition-colors hover:bg-primary/[0.02]">
@@ -338,12 +346,9 @@ function GateRow({
             >
               {step.n} · {i18n._(step.title)}
             </span>
-            <span className="text-xxs uppercase tracking-wide rounded px-1.5 py-0.5 border text-muted-foreground font-medium">
-              <Trans>Checkpoint:</Trans> {i18n._(step.gate)}
-            </span>
-            {nested.length ? (
+            {progress.total > 0 ? (
               <span className="text-xxs text-muted-foreground tabular-nums">
-                {nestedDone}/{nested.length} <Trans>done</Trans>
+                {progress.done}/{progress.total} <Trans>done</Trans>
               </span>
             ) : null}
             {tier !== "self_serve" ? (

@@ -9,6 +9,11 @@ services:
   postgres:
     image: supabase/postgres:15.14.1.112
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: ${MEM_POSTGRES:-384m}
+          cpus: ${CPU_POSTGRES:-1.0}
     networks:
       default:
         aliases:
@@ -35,6 +40,26 @@ services:
       - config_file=/etc/postgresql/postgresql.conf
       - -c
       - log_min_messages=fatal
+      - -c
+      - shared_buffers=${PG_SHARED_BUFFERS:-128MB}
+      - -c
+      - effective_cache_size=${PG_EFFECTIVE_CACHE_SIZE:-256MB}
+      - -c
+      - work_mem=${PG_WORK_MEM:-4MB}
+      - -c
+      - maintenance_work_mem=${PG_MAINTENANCE_WORK_MEM:-64MB}
+      - -c
+      - max_connections=${PG_MAX_CONNECTIONS:-25}
+      - -c
+      - fsync=off
+      - -c
+      - synchronous_commit=off
+      - -c
+      - full_page_writes=off
+      - -c
+      - max_wal_size=256MB
+      - -c
+      - jit=off
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "postgres", "-h", "localhost"]
       interval: 5s
@@ -44,6 +69,11 @@ services:
   gotrue:
     image: supabase/gotrue:v2.189.0
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: ${MEM_GOTRUE:-48m}
+          cpus: ${CPU_GOTRUE:-0.25}
     environment:
       GOTRUE_API_HOST: 0.0.0.0
       GOTRUE_API_PORT: 9999
@@ -90,6 +120,11 @@ services:
   postgrest:
     image: postgrest/postgrest:v13.0.8
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: ${MEM_POSTGREST:-160m}
+          cpus: ${CPU_POSTGREST:-0.25}
     depends_on:
       postgres:
         condition: service_healthy
@@ -105,6 +140,11 @@ services:
   realtime:
     image: supabase/realtime:v2.89.0
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: ${MEM_REALTIME:-256m}
+          cpus: ${CPU_REALTIME:-0.25}
     depends_on:
       postgres:
         condition: service_healthy
@@ -135,6 +175,11 @@ services:
   storage:
     image: supabase/storage-api:v1.58.4
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: ${MEM_STORAGE:-192m}
+          cpus: ${CPU_STORAGE:-0.25}
     depends_on:
       postgres:
         condition: service_healthy
@@ -157,6 +202,11 @@ services:
   meta:
     image: supabase/postgres-meta:v0.96.5
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: ${MEM_META:-96m}
+          cpus: ${CPU_META:-0.25}
     profiles: ["full"]
     depends_on:
       postgres:
@@ -172,6 +222,11 @@ services:
   studio:
     image: supabase/studio:2026.04.28-sha-89d08a2
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: ${MEM_STUDIO:-256m}
+          cpus: ${CPU_STUDIO:-0.25}
     profiles: ["full"]
     depends_on:
       meta:
@@ -191,6 +246,11 @@ services:
   inbucket:
     image: inbucket/inbucket:3.1.1
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: ${MEM_INBUCKET:-32m}
+          cpus: ${CPU_INBUCKET:-0.25}
     profiles: ["full"]
     ports:
       - "${PORT_INBUCKET}:9000"
@@ -198,6 +258,11 @@ services:
   edge-runtime:
     image: supabase/edge-runtime:v1.74.0
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: ${MEM_EDGE:-512m}
+          cpus: ${CPU_EDGE:-0.5}
     depends_on:
       postgres:
         condition: service_healthy
@@ -229,13 +294,25 @@ services:
   kong:
     image: kong:2.8.1
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: ${MEM_KONG:-192m}
+          cpus: ${CPU_KONG:-0.5}
     depends_on:
-      - gotrue
-      - postgrest
-      - realtime
-      - storage
-      - meta
-      - edge-runtime
+      gotrue:
+        condition: service_started
+      postgrest:
+        condition: service_started
+      realtime:
+        condition: service_started
+      storage:
+        condition: service_started
+      meta:
+        condition: service_started
+        required: false
+      edge-runtime:
+        condition: service_started
     ports:
       - "${PORT_API}:8000"
     environment:
@@ -243,6 +320,7 @@ services:
       KONG_DECLARATIVE_CONFIG: /home/kong/kong.yml
       KONG_DNS_ORDER: LAST,A,CNAME
       KONG_PLUGINS: request-transformer,cors,key-auth,acl,basic-auth
+      KONG_NGINX_WORKER_PROCESSES: ${KONG_WORKERS:-1}
     volumes:
       - ./packages/dev/docker/kong.yml:/home/kong/kong.yml:ro
 
@@ -253,6 +331,11 @@ services:
   inngest:
     image: inngest/inngest:v1.19.4
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: ${MEM_INNGEST:-128m}
+          cpus: ${CPU_INNGEST:-0.25}
     ports:
       - "${PORT_INNGEST}:8288"
     command:

@@ -8,10 +8,11 @@ import { useFlags } from "~/hooks/useFlags";
 
 export function usePlanGate(spec: GateSpec) {
   const currentPlan = usePlan();
-  const { isCloud } = useFlags();
+  const { isCloud, isCommunity } = useFlags();
 
   const requirement = resolveRequirement(spec);
-  const isGated = isCloud && !planMeetsRequirement(currentPlan, requirement);
+  const isGated =
+    isCommunity || (isCloud && !planMeetsRequirement(currentPlan, requirement));
 
   return { isGated, plan: currentPlan, allowedPlans: requirement };
 }

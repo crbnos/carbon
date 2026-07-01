@@ -135,6 +135,7 @@ const PartProperties = ({ data }: PartPropertiesProps) => {
         | "partId"
         | "name"
         | "description"
+        | "mpn"
         | "replenishmentSystem"
         | "unitOfMeasureCode"
         | "requiresInspection",
@@ -622,6 +623,28 @@ const PartProperties = ({ data }: PartPropertiesProps) => {
             variant="small"
             onChange={(value) => {
               onUpdate("requiresInspection", value ? "on" : "off");
+            }}
+          />
+        </ValidatedForm>
+      )}
+      {routeData?.partSummary?.replenishmentSystem?.includes("Buy") && (
+        <ValidatedForm
+          defaultValues={{
+            mpn: routeData?.partSummary?.mpn ?? undefined
+          }}
+          validator={z.object({
+            mpn: z.string().optional()
+          })}
+          className="w-full"
+        >
+          <InputControlled
+            label={t`Manufacturer Part Number`}
+            name="mpn"
+            inline
+            size="sm"
+            value={routeData?.partSummary?.mpn ?? ""}
+            onBlur={(e) => {
+              onUpdate("mpn", e.target.value ?? null);
             }}
           />
         </ValidatedForm>

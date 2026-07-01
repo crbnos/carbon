@@ -1,4 +1,5 @@
 import {
+  LuBlocks,
   LuBox,
   LuCalculator,
   LuCirclePlay,
@@ -8,7 +9,6 @@ import {
   LuHexagon,
   LuShapes,
   LuShoppingCart,
-  LuSquareStack,
   LuTruck,
   LuTvMinimalPlay,
   LuUpload
@@ -362,7 +362,7 @@ export const modules: Config = [
         id: "defining-item",
         description:
           "Learn how to define and manage different types of items in Carbon.",
-        icon: <LuSquareStack />,
+        icon: <LuBlocks />,
         topics: [
           {
             name: "Item Types",

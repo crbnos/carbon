@@ -4,11 +4,11 @@ import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
 import {
+  LuBlocks,
   LuDice5,
   LuDna,
   LuPencil,
   LuShapes,
-  LuSquareStack,
   LuStar,
   LuTrash,
   LuTriangleAlert,
@@ -110,7 +110,7 @@ const RiskRegistersTable = memo(({ data, count }: RiskRegistersTableProps) => {
         header: t`Item`,
         cell: ({ row }) => getItemReadableId(items, row.original.itemId),
         meta: {
-          icon: <LuSquareStack />,
+          icon: <LuBlocks />,
           filter: {
             type: "static",
             options: items.map((item) => ({

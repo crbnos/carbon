@@ -9,9 +9,9 @@ export const meta: MetaFunction = () => {
 };
 
 export const handle: Handle = {
-  breadcrumb: msg`Purchasing`,
-  to: path.to.purchasing,
-  module: "purchasing"
+  breadcrumb: msg`Invoicing`,
+  to: path.to.invoicing,
+  module: "invoicing"
 };
 
 export default function PurchaseInvoiceRoute() {

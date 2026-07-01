@@ -469,7 +469,7 @@ export default function PurchaseDashboard() {
               >
                 <Link
                   to={`${
-                    path.to.purchaseInvoices
+                    path.to.invoicingPurchasing
                   }?filter=status:in:${OPEN_INVOICE_STATUSES.join(",")}`}
                 >
                   <Trans>View Open Invoices</Trans>

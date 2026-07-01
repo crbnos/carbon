@@ -31,6 +31,10 @@ msgstr "\"Никто не был уволен за его покупку.\" Фа
 msgid "(excluded for this customer)"
 msgstr "(исключено для этого клиента)"
 
+#. placeholder {0}: ar.count
+msgid "{0} customers with a balance"
+msgstr "{0} клиентов с остатком"
+
 #. placeholder {0}: rule.escalationDays
 msgid "{0} days"
 msgstr "{0} дней"
@@ -48,6 +52,10 @@ msgstr "{0} заказов"
 msgid "{0} Processes"
 msgstr "{0} Процессов"
 
+#. placeholder {0}: ap.count
+msgid "{0} suppliers with a balance"
+msgstr "{0} поставщиков с остатком"
+
 #. placeholder {0}: lotEntities.length - inspected
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 msgstr "{0} необследованных объектов будут отпущены в статус Available. Проверенные успешные остаются Available, а проверенные отказы остаются Rejected."
@@ -59,6 +67,12 @@ msgstr "{0} успешно загружен"
 #. placeholder {0}: unmatchedValues.length
 msgid "{0} values missing"
 msgstr "{0} значений отсутствует"
+
+msgid "{apOverduePct}% of payables"
+msgstr "{apOverduePct}% кредиторской задолженности"
+
+msgid "{arOverduePct}% of receivables"
+msgstr "{arOverduePct}% дебиторской задолженности"
 
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Рассмотрите возможность указания этой детали непосредственно на финального преемника."
@@ -514,9 +528,6 @@ msgstr "Добавить строку"
 msgid "Add a step"
 msgstr "Добавить этап"
 
-msgid "Add a task"
-msgstr "Добавить задачу"
-
 msgid "Add Actions"
 msgstr "Добавить действия"
 
@@ -752,6 +763,10 @@ msgstr "Сумма, которая увеличивает активы/расх�
 msgid "Amount that increases liabilities/equity/revenue or decreases assets/expenses on this line."
 msgstr "Сумма, которая увеличивает пассивы/собственный капитал/доходы или уменьшает активы/расходы на этой строке."
 
+#. placeholder {0}: r.memoId
+msgid "Amount to apply for {0}"
+msgstr "Сумма для применения для {0}"
+
 msgid "Amount Type"
 msgstr "Тип суммы"
 
@@ -815,6 +830,12 @@ msgstr "Все, что не указано явно в области дейст
 msgid "AP Clerk"
 msgstr "Специалист по учету кредиторской задолженности"
 
+msgid "AP Outstanding"
+msgstr "Задолженность перед поставщиками"
+
+msgid "AP Overdue"
+msgstr "Просроченные кредиторские задолженности"
+
 msgid "API and Webhooks"
 msgstr "API и Webhooks"
 
@@ -833,6 +854,19 @@ msgstr "API ключи"
 msgid "API keys for programmatic access to your Carbon data."
 msgstr "API ключи для программного доступа к вашим данным Carbon."
 
+msgid "Applied"
+msgstr "Применено"
+
+#. placeholder {0}: r.invoiceId
+msgid "Applied amount for {0}"
+msgstr "Примененная сумма для {0}"
+
+msgid "Applied Date"
+msgstr "Дата применения"
+
+msgid "Applied To"
+msgstr "Применено к"
+
 msgid "Applies to"
 msgstr "Применяется к"
 
@@ -841,6 +875,12 @@ msgstr "Применяется ко всем"
 
 msgid "Applies to all work centers"
 msgstr "Применяется ко всем рабочим центрам"
+
+msgid "Apply available credits"
+msgstr "Применить доступные кредиты"
+
+msgid "Apply credits"
+msgstr "Применить кредиты"
 
 msgid "Apply payments and track aging"
 msgstr "Применять платежи и отслеживать просрочку"
@@ -853,6 +893,12 @@ msgstr "Применить правила выше"
 
 msgid "Apply To"
 msgstr "Применить к"
+
+msgid "Apply to invoice"
+msgstr "Применить к счету"
+
+msgid "Apply to invoices"
+msgstr "Применить к счетам"
 
 msgid "Approaching {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB cap."
 msgstr "Приближение к лимиту {PO_EMAIL_ATTACHMENT_LIMIT_MB} МБ."
@@ -883,6 +929,12 @@ msgstr "АПК (Z1.4 / ISO 2859-1)"
 
 msgid "AR Clerk"
 msgstr "Специалист по расчетам с дебиторами"
+
+msgid "AR Outstanding"
+msgstr "Дебиторская задолженность"
+
+msgid "AR Overdue"
+msgstr "Просроченная дебиторская задолженность"
 
 msgid "Archive"
 msgstr "Архив"
@@ -964,9 +1016,9 @@ msgstr "Вы уверены, что хотите удалить {0} из это�
 msgid "Are you sure you want to delete {0}?"
 msgstr "Вы уверены, что хотите удалить {0}?"
 
+#. placeholder {0}: initialValues.memoId
+#. placeholder {0}: initialValues.paymentId
 #. placeholder {0}: pickingList.pickingListId
-#. placeholder {0}: routeData?.consumableSummary?.readableIdWithRevision
-#. placeholder {0}: routeData?.customer?.name!
 msgid "Are you sure you want to delete {0}? This cannot be undone."
 msgstr "Вы уверены, что хотите удалить {0}? Это действие невозможно отменить."
 
@@ -1252,6 +1304,9 @@ msgstr "Вы уверены?"
 msgid "As needed"
 msgstr "По мере необходимости"
 
+msgid "As of:"
+msgstr "По состоянию на:"
+
 msgid "As the company owner, you can transfer ownership to another employee. This will give them full access to billing and administrative settings."
 msgstr "Как владелец компании, вы можете передать право собственности другому сотруднику. Это даст им полный доступ к биллингу и административным параметрам."
 
@@ -1380,6 +1435,9 @@ msgstr "Журналы аудита"
 msgid "Authentication Error"
 msgstr "Ошибка аутентификации"
 
+msgid "Auto apply"
+msgstr "Автоматически применить"
+
 msgid "Auto Release"
 msgstr "Автоматический выпуск"
 
@@ -1449,8 +1507,14 @@ msgstr "Обратный отвод"
 msgid "Backups"
 msgstr "Резервные копии"
 
+msgid "Balance"
+msgstr "Баланс"
+
 msgid "Balance Sheet"
 msgstr "Баланс"
+
+msgid "Balanced"
+msgstr "Сбалансировано"
 
 msgid "Balloon"
 msgstr "Выноска"
@@ -1472,6 +1536,9 @@ msgstr "Банк — Иностранная валюта (по умолчани�
 
 msgid "Bank — Local Currency (default)"
 msgstr "Банк — Местная валюта (по умолчанию)"
+
+msgid "Bank / Cash Account"
+msgstr "Банковский / Кассовый счет"
 
 msgid "Bank account denominated in a foreign currency"
 msgstr "Банковский счет в иностранной валюте."
@@ -1658,6 +1725,12 @@ msgstr "от {byUser}"
 msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "Принимая приглашение, вы соглашаетесь с <0>Условиями обслуживания</0> и <1>Политикой конфиденциальности</1>."
 
+msgid "By Document Date"
+msgstr "По дате документа"
+
+msgid "By Due Date"
+msgstr "По дате платежа"
+
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "Подписываясь, вы соглашаетесь с <0>Условиями обслуживания</0> и <1>Политикой конфиденциальности.</1>"
 
@@ -1702,6 +1775,9 @@ msgstr "Называется метод в Carbon — компоненты пл�
 
 msgid "Can't disable the only active break. Add another break or toggle the override's Active instead."
 msgstr "Невозможно отключить единственный активный разрыв. Добавьте еще один разрыв или переключите активность переопределения."
+
+msgid "Can't download this file"
+msgstr ""
 
 msgid "Cancel"
 msgstr "Отмена"
@@ -1895,9 +1971,6 @@ msgstr "Проверьте вашу почту"
 msgid "Checkpoint ·"
 msgstr "Контрольная точка ·"
 
-msgid "Checkpoint:"
-msgstr "Контрольная точка:"
-
 msgid "Checkpoints"
 msgstr "Контрольные точки"
 
@@ -1946,14 +2019,14 @@ msgstr "Очистить поиск"
 msgid "Clear search query"
 msgstr "Очистить поисковый запрос"
 
+msgid "Clear this invoice with the party's posted credits as well as cash. Credits apply directly — no posting needed."
+msgstr "Погасите этот счет с помощью опубликованных кредитов стороны, а также наличных средств. Кредиты применяются напрямую — публикация не требуется."
+
 msgid "Clearing account between goods receipt and supplier invoice; balances when both have posted."
 msgstr "Транзитный счет между поступлением товаров и счетом поставщика; уравновешивается, когда оба были выполнены."
 
 msgid "Clearing account for goods received / invoice received matching"
 msgstr "Счет взаимного зачета для поступления товаров / сопоставления поступления счета"
-
-msgid "Click to change status"
-msgstr "Нажмите, чтобы изменить статус"
 
 msgid "Click to upload a PDF drawing"
 msgstr "Нажмите, чтобы загрузить чертеж PDF"
@@ -1991,6 +2064,9 @@ msgstr "Облако или ваша собственная размещённа
 
 msgid "Code"
 msgstr "Код"
+
+msgid "Collapse"
+msgstr "Свернуть"
 
 msgid "Collapse all"
 msgstr "Свернуть все"
@@ -2180,9 +2256,6 @@ msgstr "Настройте, кто должен получать уведомл�
 
 msgid "Configure-to-order"
 msgstr "Конфигурирование на заказ"
-
-msgid "Configure-to-order options and pricing"
-msgstr "Настройка параметров конфигурирования на заказ и ценообразования"
 
 msgid "Configure-to-order, automated purchase planning, the shop-floor app."
 msgstr "Настройка под заказ, автоматизированное планирование закупок, приложение для цеха."
@@ -2582,6 +2655,12 @@ msgstr ""
 msgid "Counted Qty"
 msgstr ""
 
+msgid "Counterparties"
+msgstr "Контрагенты"
+
+msgid "Counterparty"
+msgstr "Контрагент"
+
 msgid "Country"
 msgstr "Страна"
 
@@ -2614,6 +2693,9 @@ msgstr "Создать предложение с новым ID предложе�
 
 msgid "Create Account"
 msgstr "Создать учетную запись"
+
+msgid "Create adjusting entry"
+msgstr "Создать корректирующую запись"
 
 msgid "Create an account"
 msgstr "Создать учетную запись"
@@ -2788,11 +2870,20 @@ msgstr "Создание детали..."
 msgid "Credit"
 msgstr "Кредит"
 
+msgid "Credit / Debit Memos"
+msgstr "Кредит-ноты / Дебет-ноты"
+
 msgid "Credit Account"
 msgstr "Счет кредита"
 
 msgid "Credit account when labor/machine time is absorbed into WIP"
 msgstr "Счет кредита при поглощении времени труда/машины в WIP"
+
+msgid "Credits & Debits"
+msgstr "Кредиты и дебеты"
+
+msgid "Credits applied"
+msgstr "Применённые кредиты"
 
 msgid "Critical"
 msgstr "Критический"
@@ -2967,6 +3058,9 @@ msgstr "типы клиентов"
 
 msgid "Customer Types"
 msgstr "Типы клиентов"
+
+msgid "Customer Write-Off (Bad Debt)"
+msgstr "Списание задолженности клиента (безнадежный долг)"
 
 msgid "customers"
 msgstr "клиенты"
@@ -3350,11 +3444,17 @@ msgstr "Удалить форму материала"
 msgid "Delete Material Type"
 msgstr "Удалить тип материала"
 
+msgid "Delete Memo"
+msgstr "Удалить Memo"
+
 msgid "Delete Part"
 msgstr "Удалить деталь"
 
 msgid "Delete Partner"
 msgstr "Удалить партнера"
+
+msgid "Delete Payment"
+msgstr "Удалить платеж"
 
 msgid "Delete Payment Term"
 msgstr "Удалить условие платежа"
@@ -3466,9 +3566,6 @@ msgstr "Удалить предложение поставщика"
 
 msgid "Delete Supplier Type"
 msgstr "Удалить тип поставщика"
-
-msgid "Delete task"
-msgstr "Удалить задачу"
 
 msgid "Delete Timecard"
 msgstr "Удалить табель учета рабочего времени"
@@ -3602,6 +3699,12 @@ msgstr "Размеры"
 msgid "Direct"
 msgstr "Прямой"
 
+msgid "Direction"
+msgstr "Направление"
+
+msgid "Directions"
+msgstr "Направления"
+
 msgid "Disabled"
 msgstr "Отключено"
 
@@ -3619,6 +3722,10 @@ msgstr "Дни скидки"
 
 msgid "Discount Days after {selectedCalculationMethod}"
 msgstr "Дни скидки после {selectedCalculationMethod}"
+
+#. placeholder {0}: r.invoiceId
+msgid "Discount for {0}"
+msgstr "Скидка для {0}"
 
 msgid "Discount Percent"
 msgstr "Процент скидки"
@@ -3723,6 +3830,9 @@ msgstr "Загрузить CSV"
 msgid "Download Labels"
 msgstr "Загрузить этикетки"
 
+msgid "Download Link"
+msgstr ""
+
 msgid "Download PDF"
 msgstr "Скачать PDF"
 
@@ -3752,6 +3862,9 @@ msgstr "Перетащите, чтобы изменить размер диаг�
 
 msgid "Drag to zoom"
 msgstr "Перетащите для масштабирования"
+
+msgid "Drawing"
+msgstr "Снятие"
 
 msgid "Drawing Number"
 msgstr "Номер чертежа"
@@ -3991,6 +4104,9 @@ msgstr "Редактировать материальное вещество"
 msgid "Edit Material Type"
 msgstr "Редактировать тип материала"
 
+msgid "Edit Memo"
+msgstr "Редактировать Memo"
+
 msgid "Edit Non Conformance Type"
 msgstr "Редактировать тип несоответствия"
 
@@ -3999,6 +4115,9 @@ msgstr "Редактировать деталь"
 
 msgid "Edit Partner"
 msgstr "Редактировать партнера"
+
+msgid "Edit Payment"
+msgstr "Редактировать платеж"
 
 msgid "Edit Payment Term"
 msgstr "Редактировать условие платежа"
@@ -4420,9 +4539,6 @@ msgstr "Все тесты в области действия проходят в
 msgid "Every row was imported successfully."
 msgstr "Каждая строка была успешно импортирована."
 
-msgid "Every task for the project, grouped by step. If it isn't on the board, it isn't happening. Click a status to cycle it."
-msgstr "Каждая задача проекта, сгруппированная по этапам. Если её нет на доске, она не выполняется. Нажмите на статус, чтобы изменить его."
-
 msgid "Everything from Starter"
 msgstr "Всё из Starter"
 
@@ -4481,11 +4597,17 @@ msgstr "Ожидаемое получение"
 msgid "Expected Receipt Date"
 msgstr "Ожидаемая дата получения"
 
+msgid "Expense account for customer balances written off as uncollectable on AR settlement"
+msgstr "Счет расходов для остатков клиентов, списанных как невзыскиваемые при расчете по дебиторской задолженности"
+
 msgid "Expense account for deferred tax adjustments on depreciation"
 msgstr "Счет расходов для корректировок отложенного налога на амортизацию"
 
 msgid "Expense account for equipment and facility maintenance"
 msgstr "Счет расходов на содержание оборудования и объектов"
+
+msgid "Expense account for FX losses when a payment settles a foreign-currency invoice at a less favorable rate"
+msgstr "Счет расходов для убытков от валютных операций, когда платеж погашает счет в иностранной валюте по менее выгодному курсу"
 
 msgid "Expense account for non-inventory purchases (services, supplies)"
 msgstr "Счет расходов на закупки не из запасов (услуги, расходники)"
@@ -5070,8 +5192,14 @@ msgstr "Пятница"
 msgid "From {0}"
 msgstr "С {0}"
 
+msgid "From customer"
+msgstr "От клиента"
+
 msgid "From Location"
 msgstr "Из местоположения"
+
+msgid "from on-account credit"
+msgstr "со счета авансовых платежей"
 
 msgid "From Storage Unit"
 msgstr "Из хранилища"
@@ -5081,6 +5209,9 @@ msgstr "Местоположение исполнения"
 
 msgid "Fully trained for"
 msgstr "Полностью обучен для"
+
+msgid "FX G/L"
+msgstr "Прибыль/убыток по курсу"
 
 msgid "Gains and Losses"
 msgstr "Прибыли и Убытки (по умолчанию)"
@@ -5168,6 +5299,12 @@ msgstr "Навигация в Carbon"
 
 msgid "Getting set up"
 msgstr "Начало работы"
+
+msgid "Give it an owner and a date"
+msgstr ""
+
+msgid "GL"
+msgstr "ГЛ"
 
 msgid "GL Account"
 msgstr "Счет ГЛ"
@@ -5282,6 +5419,12 @@ msgstr "Счет GL расходов для покупок, не входящи�
 
 msgid "GL liability account credited for sales tax collected from customers."
 msgstr "Счет GL обязательств, кредитуемый по налогу с продаж, собранному у клиентов."
+
+msgid "GL tie-out"
+msgstr "Сверка ГЛ"
+
+msgid "GL Tie-Out"
+msgstr "Сверка ГЛ"
 
 msgid "Go live right the first time — with our team alongside you"
 msgstr "Запустите систему с первой попытки — с нашей командой рядом с вами"
@@ -5818,6 +5961,9 @@ msgstr "Внутренний справочник о том, где каждый
 msgid "inv"
 msgstr "инв"
 
+msgid "Inv Rate"
+msgstr "Курс счета"
+
 msgid "Invalid Invite"
 msgstr "Недействительное приглашение"
 
@@ -5931,6 +6077,12 @@ msgstr "Статусы счетов"
 
 msgid "Invoices"
 msgstr "Счета"
+
+msgid "Invoices this memo has been applied to. Click a row to open the document."
+msgstr "Счета, к которым применена эта справка. Нажмите на строку, чтобы открыть документ."
+
+msgid "Invoicing"
+msgstr "Выставление счетов"
 
 msgid "is"
 msgstr "это"
@@ -6339,9 +6491,6 @@ msgstr "Загрузить новые"
 msgid "Load open transactions (orders, POs, inventory, balances)"
 msgstr "Загрузить открытые транзакции (заказы, ПО, инвентарь, остатки)"
 
-msgid "Load parts, BOMs, Bill of Process, and costing"
-msgstr "Загрузить детали, спецификации материалов, технологический процесс и расчет стоимости"
-
 msgid "Load Templates"
 msgstr "Загрузить шаблоны"
 
@@ -6505,6 +6654,13 @@ msgstr "Товары типа \"Make\" не могут быть выставле
 msgid "Make Method Version"
 msgstr "Версия метода производства"
 
+msgid "Make Payment"
+msgstr "Произвести платеж"
+
+#. placeholder {0}: selectedInvoices.length
+msgid "Make Payment · {0} invoices"
+msgstr "Произвести платеж · {0} счетов"
+
 #. placeholder {0}: selectedRevision.revision
 msgid "Make revision {0} default?"
 msgstr "Сделать редакцию {0} по умолчанию?"
@@ -6554,6 +6710,9 @@ msgstr "Ручной"
 
 msgid "Manufacturer"
 msgstr "Производитель"
+
+msgid "Manufacturer Part Number"
+msgstr ""
 
 msgid "Manufacturing"
 msgstr "Производство"
@@ -6746,6 +6905,15 @@ msgstr "Периодичность встреч"
 
 msgid "Members"
 msgstr "Участники"
+
+msgid "Memo"
+msgstr "Памятка"
+
+msgid "Memo Date"
+msgstr "Дата меморандума"
+
+msgid "Memo ID"
+msgstr "ID Памятки"
 
 msgid "MES"
 msgstr "MES"
@@ -7007,6 +7175,9 @@ msgstr "Новый расходный материал"
 msgid "New Contractor"
 msgstr "Новый подрядчик"
 
+msgid "New Credit / Debit Memo"
+msgstr "Новый кредит-нота / дебет-нота"
+
 msgid "New Custom Field"
 msgstr "Новое пользовательское поле"
 
@@ -7117,6 +7288,9 @@ msgstr "Новая деталь"
 
 msgid "New Password"
 msgstr "Новый пароль"
+
+msgid "New Payment"
+msgstr "Новый платеж"
 
 msgid "New Payment Term"
 msgstr "Новый платежный срок"
@@ -7268,9 +7442,6 @@ msgstr "Следующая последовательность"
 msgid "Next step"
 msgstr "Следующий шаг"
 
-msgid "Next task"
-msgstr "Следующая задача"
-
 msgid "Next:"
 msgstr "Далее:"
 
@@ -7309,6 +7480,9 @@ msgstr "Нет активных предложений"
 msgid "No addresses found"
 msgstr "Адреса не найдены"
 
+msgid "No applications. Payment will be on-account."
+msgstr "Нет приложений. Платеж будет на счет."
+
 #. placeholder {0}: auditConfig.retentionDays
 msgid "No archived logs yet. Logs older than {0} days will be automatically archived and available for download here."
 msgstr "Нет архивированных логов. Логи старше {0} дней будут автоматически архивированы и доступны для скачивания здесь."
@@ -7345,9 +7519,6 @@ msgstr "Преобразование не требуется"
 
 msgid "No cost history found"
 msgstr "История стоимости не найдена"
-
-msgid "No custom tasks yet. Add deal-specific work here."
-msgstr "Нет пользовательских задач. Добавьте работу, специфичную для этой сделки."
 
 msgid "No Data"
 msgstr "Нет данных"
@@ -7427,6 +7598,9 @@ msgstr "Нет новых уведомлений"
 msgid "No notes"
 msgstr "Нет заметок"
 
+msgid "No open invoices"
+msgstr "Нет открытых счетов"
+
 msgid "No operations require picking at this location"
 msgstr "На этом месте нет операций, требующих комплектации"
 
@@ -7454,6 +7628,12 @@ msgstr "Родительские источники еще не записаны
 msgid "No part ID"
 msgstr "Нет ID детали"
 
+msgid "No payables"
+msgstr "Нет кредиторской задолженности"
+
+msgid "No payments yet."
+msgstr "Платежей пока нет."
+
 msgid "No planning data"
 msgstr "Нет данных планирования"
 
@@ -7477,6 +7657,9 @@ msgstr "Причина отсутствия предложения"
 
 msgid "No Quote Reasons"
 msgstr "Причины отсутствия предложения"
+
+msgid "No receivables"
+msgstr "Нет дебиторской задолженности"
 
 msgid "No remaining entities to inspect."
 msgstr "Нет оставшихся объектов для проверки."
@@ -7654,6 +7837,9 @@ msgstr "На заказе продажи"
 
 msgid "On Storage Unit"
 msgstr "На складском отделении"
+
+msgid "On-account credit available"
+msgstr "Доступный кредит на счете"
 
 msgid "On-hand counts"
 msgstr "Наличные остатки"
@@ -7875,6 +8061,12 @@ msgstr "Заказы отправлены"
 msgid "Origin"
 msgstr "Источник"
 
+msgid "Other Income account for FX gains when a payment settles a foreign-currency invoice at a more favorable rate"
+msgstr "Счет прочих доходов для прибыли от валютных операций при расчете по иностранной валюте по более выгодному курсу"
+
+msgid "Other Income account for vendor balances cleared without full payment on AP settlement"
+msgstr "Счет прочих доходов для остатков поставщиков, погашенных без полной оплаты при расчете по кредиторской задолженности"
+
 msgid "Other Type"
 msgstr "Другой тип"
 
@@ -7895,6 +8087,9 @@ msgstr "Выпуск никогда не превышает срок дейст�
 
 msgid "Outside operation"
 msgstr "Отклонение косвенных затрат"
+
+msgid "Over-applied by"
+msgstr "Переприменено на"
 
 msgid "Overdue"
 msgstr "Просрочено"
@@ -7943,9 +8138,6 @@ msgstr "Перезаписать целевой производственный
 
 msgid "Owner (cost center)"
 msgstr "Главный центр затрат"
-
-msgid "Owner + date on the Project Board"
-msgstr "Владелец + дата на доске проекта"
 
 msgid "Ownership"
 msgstr "Владение"
@@ -8032,14 +8224,20 @@ msgstr "Детали и товары"
 msgid "Parts, materials, and how you classify them."
 msgstr "Детали, материалы и способы их классификации."
 
+msgid "Party Type"
+msgstr "Тип контрагента"
+
 msgid "Pass"
 msgstr "Пройти"
 
-msgid "Passed · reopen"
-msgstr "Пройдено · повторно открыть"
+msgid "Passed"
+msgstr ""
 
 msgid "Path"
 msgstr "Путь"
+
+msgid "Pay Rate"
+msgstr "Курс платежа"
 
 msgid "Payables"
 msgstr "Кредиторская задолженность (по умолчанию)"
@@ -8047,11 +8245,20 @@ msgstr "Кредиторская задолженность (по умолчан
 msgid "Payables (default)"
 msgstr "условие платежа"
 
+msgid "Payables aging"
+msgstr "Старение кредиторской задолженности"
+
 msgid "Payment"
 msgstr "Платеж"
 
-msgid "Payment Method"
-msgstr "Способ оплаты"
+msgid "Payment Applications"
+msgstr "Применение платежей"
+
+msgid "Payment Date"
+msgstr "Дата платежа"
+
+msgid "Payment ID"
+msgstr "ID платежа"
 
 msgid "payment term"
 msgstr "условия платежа"
@@ -8067,6 +8274,12 @@ msgstr "Условия платежа"
 
 msgid "Payment terms like Net 30 or due on receipt"
 msgstr "Условия оплаты, такие как Net 30 или оплата при получении"
+
+msgid "Payments"
+msgstr "Платежи"
+
+msgid "Payments and credits applied to this invoice. Click a row to open the source document."
+msgstr "Платежи и кредиты, применённые к этому счёту. Нажмите на строку, чтобы открыть исходный документ."
 
 msgid "PDF"
 msgstr "PDF"
@@ -8202,9 +8415,6 @@ msgstr "Закреплено"
 
 msgid "Plan"
 msgstr "План"
-
-msgid "Plan & Board"
-msgstr "План и доска"
 
 msgid "Plan the work"
 msgstr "Спланируйте работу"
@@ -8550,17 +8760,11 @@ msgstr "Прогресс"
 msgid "Project"
 msgstr "Проект"
 
-msgid "Project Board"
-msgstr "Доска проекта"
-
 msgid "Project owner"
 msgstr "Владелец проекта"
 
-msgid "Project Plan & Board"
-msgstr "План проекта и доска"
-
-msgid "Project Plan & Timeline"
-msgstr "План проекта и сроки"
+msgid "Project Plan"
+msgstr ""
 
 msgid "Project start"
 msgstr "Начало проекта"
@@ -8731,6 +8935,9 @@ msgstr "Закупки и автоматическое планирование"
 
 msgid "Purchasing Contact"
 msgstr "Контакт по закупкам"
+
+msgid "Purchasing Invoices"
+msgstr "Счета на покупку"
 
 msgid "Purchasing Unit of Measure"
 msgstr "Единица измерения закупки"
@@ -8926,8 +9133,17 @@ msgstr "Видимость запасов и производства в реа�
 msgid "Real-time questions during hypercare"
 msgstr "Вопросы в реальном времени во время гиперухода"
 
+msgid "Realized Exchange Gain"
+msgstr "Реализованный валютный доход"
+
+msgid "Realized Exchange Loss"
+msgstr "Реализованный убыток от обмена валют"
+
 msgid "Reason"
 msgstr "Причина"
+
+msgid "Reason Account"
+msgstr "Счет причины"
 
 msgid "Reason for declining (Optional)"
 msgstr "Причина отказа (Необязательно)"
@@ -8974,6 +9190,9 @@ msgstr "Дебиторская задолженность (по умолчани
 msgid "Receivables (default)"
 msgstr "Сверка заказа на покупку с полученным и выставленным счетом — неявно в Carbon через количество строк и остаток GR/IR."
 
+msgid "Receivables aging"
+msgstr "Старение дебиторской задолженности"
+
 msgid "Receive"
 msgstr "Получить"
 
@@ -8983,6 +9202,13 @@ msgstr "Получить {0} в инвентарь"
 
 msgid "Receive against a PO and update inventory"
 msgstr "Получить товар по заказу и обновить инвентарь"
+
+msgid "Receive Payment"
+msgstr "Получить платеж"
+
+#. placeholder {0}: selectedInvoices.length
+msgid "Receive Payment · {0} invoices"
+msgstr "Получить платеж · {0} счетов"
 
 msgid "Receive to Inventory"
 msgstr "Получить в инвентарь"
@@ -9007,6 +9233,9 @@ msgstr "Место получения"
 msgid "Recent"
 msgstr "Недавние"
 
+msgid "Recent payments"
+msgstr "Недавние платежи"
+
 msgid "Recently Created"
 msgstr "Недавно созданные"
 
@@ -9015,6 +9244,12 @@ msgstr "Период восстановления"
 
 msgid "Record"
 msgstr "Записать"
+
+msgid "Record a credit or debit memo against a customer or supplier. Applications to specific invoices are added after the memo is created."
+msgstr "Запишите кредит-ноту или дебет-ноту для клиента или поставщика. Применение к конкретным счетам добавляется после создания ноты."
+
+msgid "Record cash received from a customer (Receipt) or paid to a supplier (Disbursement). Applications to specific invoices are added after the payment is created."
+msgstr "Записывайте денежные средства, полученные от клиента (Поступление) или выплаченные поставщику (Выплата). Применение к конкретным счетам добавляется после создания платежа."
 
 msgid "Record deleted"
 msgstr "Запись удалена"
@@ -9099,6 +9334,9 @@ msgstr "Выпустить задание"
 
 msgid "Released"
 msgstr "Выпущено"
+
+msgid "Remaining"
+msgstr "Остаток"
 
 msgid "Remaining after split stays on the original row."
 msgstr "Остаток после разделения остается в исходной строке."
@@ -9416,9 +9654,6 @@ msgstr "Риск"
 msgid "Risks"
 msgstr "Риски"
 
-msgid "Risks (on the Project Board)"
-msgstr "Риски (на доске проекта)"
-
 msgid "Role"
 msgstr "Роль"
 
@@ -9648,6 +9883,9 @@ msgstr "Сохранить и закрыть"
 
 msgid "Save and Overwrite"
 msgstr "Сохранить и перезаписать"
+
+msgid "Save applications"
+msgstr "Сохранить применения"
 
 msgid "Save contacts"
 msgstr "Сохранить контакты"
@@ -9890,6 +10128,15 @@ msgstr "Выбрать датчик"
 msgid "Select groups or individuals"
 msgstr "Выберите группы или отдельных лиц"
 
+msgid "Select invoice"
+msgstr "Выберите счет"
+
+msgid "Select invoices from a single counterparty"
+msgstr "Выберите счета-фактуры от одного контрагента"
+
+msgid "Select invoices in a single currency"
+msgstr "Выберите счета в одной валюте"
+
 msgid "Select Item Type"
 msgstr "Выберите тип элемента"
 
@@ -9925,6 +10172,9 @@ msgstr "Выберите поверхности"
 
 msgid "Select the groups that should complete this training"
 msgstr "Выберите группы, которые должны пройти это обучение"
+
+msgid "Select the invoices this payment settles. Discount and write-off are in invoice currency."
+msgstr "Выберите счета, которые погашает этот платеж. Скидка и списание указаны в валюте счета."
 
 msgid "Select value"
 msgstr "Выберите значение"
@@ -10062,14 +10312,8 @@ msgstr "Установить цену"
 msgid "Set Quantity"
 msgstr "Установить количество"
 
-msgid "Set up sites, users, and roles"
-msgstr "Настройте сайты, пользователей и роли"
-
 msgid "Set up the right way"
 msgstr "Правильная настройка"
-
-msgid "Set up the shop-floor app and stations"
-msgstr "Настройте приложение для цеха и станции"
 
 msgid "Set up your own data with import tools and LLM help"
 msgstr "Настройте свои данные с помощью инструментов импорта и LLM"
@@ -10644,6 +10888,9 @@ msgstr "Отклонение по субподряду"
 msgid "Subcontracting Variance (default)"
 msgstr "Отклонение по субподряду (по умолчанию)"
 
+msgid "Subledger"
+msgstr "Вспомогательная книга"
+
 msgid "Submit anonymously"
 msgstr "Отправить анонимно"
 
@@ -10763,6 +11010,9 @@ msgstr "ID поставщика детали"
 
 msgid "Supplier Part Number"
 msgstr "Номер детали поставщика"
+
+msgid "Supplier Part Numbers"
+msgstr ""
 
 msgid "Supplier Parts"
 msgstr "Детали поставщика"
@@ -10936,9 +11186,6 @@ msgstr "Целевая версия"
 msgid "Target Version"
 msgstr "Целевая версия"
 
-msgid "Task"
-msgstr "Задача"
-
 msgid "tasks"
 msgstr "задачи"
 
@@ -11036,8 +11283,8 @@ msgid "Text size"
 msgstr "Размер текста"
 
 #. placeholder {0}: steps.length
-msgid "The {0} phases to go live, each ending at a checkpoint. Tick a task here and it updates on the Project Board too."
-msgstr "Фазы {0} до запуска, каждая заканчивается контрольной точкой. Отметьте задачу здесь, и она также обновится на доске проекта."
+msgid "The {0} phases to go live, each ending at a checkpoint. Tick off each task as you complete it."
+msgstr ""
 
 msgid "The accounting dimension that categorizes items for reporting and analysis."
 msgstr "Учетное измерение, которое классифицирует элементы для отчетности и анализа."
@@ -11669,6 +11916,9 @@ msgstr "Нет активных предложений поставщиков д
 msgid "There are outside operations associated with this job that have no suppliers. Please assign a supplier to each outside operation before releasing it."
 msgstr "В этой работе есть внешние операции, которым не назначены поставщики. Пожалуйста, назначьте поставщика для каждой внешней операции перед выпуском."
 
+msgid "There's nothing outstanding to apply these credits to."
+msgstr "Нечего применять эти кредиты."
+
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "Эти пользовательские поля будут доступны только для сущностей с одинаковыми тегами"
 
@@ -11683,6 +11933,15 @@ msgstr "Эти задания имеют операции, назначенны�
 
 msgid "This completes the Discovery step."
 msgstr "Это завершает этап Discovery."
+
+msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
+msgstr "Эта контрагент не имеет задолженности — платеж будет записан на счет."
+
+msgid "This download link is invalid or has been tampered with."
+msgstr ""
+
+msgid "This file is no longer available, or you don't have permission to download it."
+msgstr ""
 
 msgid "This information will be used on document headers"
 msgstr "Эта информация будет использована в заголовках документов"
@@ -11792,6 +12051,9 @@ msgstr "Четверг"
 msgid "Tie shipments through to an invoice with no re-keying"
 msgstr "Связать отправки с счетом без повторного ввода данных"
 
+msgid "Tie-Out"
+msgstr "Сверка"
+
 msgid "Tightened"
 msgstr "Ужесточенный"
 
@@ -11827,6 +12089,9 @@ msgstr "К отправке и получению"
 
 msgid "To Storage Unit"
 msgstr "На хранилище"
+
+msgid "To supplier"
+msgstr "Поставщику"
 
 msgid "Today"
 msgstr "Сегодня"
@@ -11897,6 +12162,9 @@ msgstr "Классификация верхнего уровня (активы/�
 msgid "Total"
 msgstr "Итого"
 
+msgid "Total Amount"
+msgstr "Общая сумма"
+
 msgid "Total capitalized cost of the asset (purchase price plus freight, install, and other costs that become part of book value)."
 msgstr "Общая капитализированная стоимость актива (цена покупки плюс доставка, установка и другие затраты, которые становятся частью чистой балансовой стоимости)."
 
@@ -11923,6 +12191,9 @@ msgstr "Общее требуемое количество по всем акт�
 
 msgid "Total:"
 msgstr "Итого:"
+
+msgid "Totals"
+msgstr "Итоги"
 
 msgid "Traceability"
 msgstr "Отслеживаемость"
@@ -11971,6 +12242,9 @@ msgstr "Отслеживаемая сущность уже выбрана"
 
 msgid "Tracked entity ID is required but none was found"
 msgstr "ID отслеживаемой сущности требуется, но ничего не найдено"
+
+msgid "Tracked from the Setup Map — open it"
+msgstr ""
 
 msgid "Tracking"
 msgstr "Отслеживание"
@@ -12050,9 +12324,6 @@ msgstr "Триггеры"
 msgid "Tuesday"
 msgstr "Вторник"
 
-msgid "Turn on automated purchase planning"
-msgstr "Включить автоматизированное планирование закупок"
-
 msgid "Turn on the built-in pieces"
 msgstr "Включите встроенные компоненты"
 
@@ -12079,6 +12350,12 @@ msgstr "Типы"
 
 msgid "Un-sampled entities will remain On Hold so you can keep inspecting and disposition later. Sampled outcomes are preserved."
 msgstr "Необработанные сущности останутся в статусе \"На удержании\", чтобы вы могли продолжить проверку и принять решение позже. Результаты проверенных образцов сохраняются."
+
+msgid "Unapplied"
+msgstr "Неприменённые"
+
+msgid "Unapplied:"
+msgstr "Неприменено:"
 
 msgid "Unapproved Supplier"
 msgstr "Неодобренный поставщик"
@@ -12427,7 +12704,7 @@ msgid "Values"
 msgstr "Значения"
 
 msgid "Variance"
-msgstr ""
+msgstr "Расхождение"
 
 msgid "Variance between actual and standard BOM component consumption"
 msgstr "Расхождение между фактическим и стандартным потреблением компонентов спецификации"
@@ -12449,6 +12726,9 @@ msgstr "Расхождение в затратах на внешнюю обра�
 
 msgid "VAT Number"
 msgstr "Номер НДС"
+
+msgid "Vendor Write-Off Income"
+msgstr "Доход от списания задолженности перед поставщиком"
 
 msgid "Verification Error"
 msgstr "Ошибка проверки"
@@ -12534,6 +12814,9 @@ msgstr "Просмотр списков"
 msgid "View maintenance dispatch"
 msgstr "Просмотр заказа на техническое обслуживание"
 
+msgid "View Memo"
+msgstr "Просмотр Memo"
+
 msgid "View missing values"
 msgstr "Просмотреть отсутствующие значения"
 
@@ -12557,6 +12840,9 @@ msgstr "Просмотреть открытые предложения"
 
 msgid "View Open RFQs"
 msgstr "Просмотреть открытые РФП"
+
+msgid "View Payment"
+msgstr "Просмотр платежа"
 
 msgid "View permissions"
 msgstr "Права просмотра"
@@ -13126,8 +13412,18 @@ msgstr "Машины с наихудшей производительность�
 msgid "Write-Down Account"
 msgstr "Счет уменьшения стоимости"
 
+msgid "Write-off"
+msgstr "Списание"
+
+msgid "Write-Off"
+msgstr "Списание"
+
 msgid "Write-Off Account"
 msgstr "Счет списания"
+
+#. placeholder {0}: r.invoiceId
+msgid "Write-off for {0}"
+msgstr "Списание для {0}"
 
 msgid "Writing an asset's value down over its life — a monthly batch you create, review as a draft, then post."
 msgstr "Снижение стоимости актива в течение его полезного использования — ежемесячный пакет, который вы создаете, проверяете как черновик, затем контируете."

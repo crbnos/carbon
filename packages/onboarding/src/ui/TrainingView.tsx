@@ -13,7 +13,8 @@ import {
   useExclusions,
   useFieldMap,
   useHubActions,
-  useResolveVideoUrl
+  useResolveVideoUrl,
+  useTier
 } from "./state";
 
 type Format = "Self-paced" | "Hands-on";
@@ -31,6 +32,9 @@ export function TrainingView() {
   const fields = useFieldMap();
   const { setCheck } = useHubActions();
   const resolveVideoUrl = useResolveVideoUrl();
+  const tier = useTier();
+  const isSelfServe = tier === "self_serve";
+  const formats = isSelfServe ? (["Self-paced"] as Format[]) : FORMATS;
 
   const visibleTracks = TRAINING_TRACKS.filter(
     (track) => !isModuleExcluded(track.moduleTags, exclusions.modules)
@@ -55,7 +59,9 @@ export function TrainingView() {
             <SectionList>
               {track.courses.map((course) => {
                 const key = fmtKey(course.key);
-                const format = (map.get(key) as Format) ?? course.format;
+                const format = isSelfServe
+                  ? "Self-paced"
+                  : ((map.get(key) as Format) ?? course.format);
                 const videoUrl = course.videoKey
                   ? resolveVideoUrl(course.videoKey)
                   : undefined;
@@ -94,10 +100,11 @@ export function TrainingView() {
                       </div>
                     </div>
                     <div className="shrink-0 inline-flex items-center gap-0.5 rounded-full border bg-background p-0.5">
-                      {FORMATS.map((f) => (
+                      {formats.map((f) => (
                         <button
                           key={f}
                           type="button"
+                          disabled={isSelfServe}
                           onClick={() => setCheck(key, "fmt", f)}
                           aria-pressed={format === f}
                           className={cn(

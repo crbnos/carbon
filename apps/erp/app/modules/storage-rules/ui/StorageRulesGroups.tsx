@@ -26,8 +26,8 @@ import {
 import type { TargetType, TransactionSurface } from "@carbon/utils";
 import { memo, useCallback, useMemo } from "react";
 import {
+  LuBlocks,
   LuEllipsisVertical,
-  LuPackage,
   LuPencil,
   LuPlus,
   LuTrash
@@ -174,7 +174,7 @@ const StorageRulesGroups = memo(({ rules }: StorageRulesGroupsProps) => {
         <RuleSectionCard
           title="Storage rules"
           description="Fire on receipts, shipments, transfers, inventory adjustments and bin moves (place/pick)."
-          icon={<LuPackage className="size-4 text-muted-foreground" />}
+          icon={<LuBlocks className="size-4 text-muted-foreground" />}
           newRuleHref={`${path.to.newStorageRule}?targetType=item`}
           newRuleLabel="Storage Rule"
           canCreate={canCreate}

@@ -29,13 +29,13 @@ import {
   useTransition
 } from "react";
 import {
+  LuBlocks,
   LuBookMarked,
   LuBox,
   LuCircleCheck,
   LuCirclePlay,
   LuClock,
   LuContainer,
-  LuPackage,
   LuSquareChartGantt
 } from "react-icons/lu";
 import { Link, useFetcher } from "react-router";
@@ -473,7 +473,7 @@ const PlanningTable = memo(
           cell: ({ row }) =>
             numberFormatter.format(row.original.quantityOnHand),
           meta: {
-            icon: <LuPackage />,
+            icon: <LuBlocks />,
             renderTotal: true
           }
         },

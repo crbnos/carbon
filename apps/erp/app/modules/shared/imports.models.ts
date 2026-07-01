@@ -473,6 +473,11 @@ const partImportFields = {
     required: true,
     type: "string"
   },
+  mpn: {
+    label: "MPN",
+    required: false,
+    type: "string"
+  },
   active: {
     label: "Active",
     required: false,
@@ -963,6 +968,11 @@ export const fieldMappings = {
       required: true,
       type: "string"
     },
+    mpn: {
+      label: "MPN",
+      required: false,
+      type: "string"
+    },
     active: {
       label: "Active",
       required: false,
@@ -1053,6 +1063,11 @@ export const fieldMappings = {
     name: {
       label: "Description",
       required: true,
+      type: "string"
+    },
+    mpn: {
+      label: "MPN",
+      required: false,
       type: "string"
     },
     active: {
@@ -1147,6 +1162,11 @@ export const fieldMappings = {
       required: true,
       type: "string"
     },
+    mpn: {
+      label: "MPN",
+      required: false,
+      type: "string"
+    },
     active: {
       label: "Active",
       required: false,
@@ -1237,6 +1257,11 @@ export const fieldMappings = {
     name: {
       label: "Description",
       required: true,
+      type: "string"
+    },
+    mpn: {
+      label: "MPN",
+      required: false,
       type: "string"
     },
     active: {
@@ -1828,6 +1853,7 @@ export const importSchemas: Record<
       .string()
       .min(1, { message: "Name is required" })
       .describe("The description of the part"),
+    mpn: z.string().optional().describe("The manufacturer part number"),
     active: z.string().optional().describe("Whether the part is active"),
     unitOfMeasureCode: z
       .string()
@@ -1872,6 +1898,10 @@ export const importSchemas: Record<
       .string()
       .min(1, { message: "Name is required" })
       .describe("The description of the tool"),
+    mpn: z
+      .string()
+      .optional()
+      .describe("The manufacturer part number of the tool"),
     active: z.string().optional().describe("Whether the tool is active"),
     unitOfMeasureCode: z
       .string()
@@ -1916,6 +1946,10 @@ export const importSchemas: Record<
       .string()
       .min(1, { message: "Name is required" })
       .describe("The description of the fixture"),
+    mpn: z
+      .string()
+      .optional()
+      .describe("The manufacturer part number of the fixture"),
     active: z.string().optional().describe("Whether the fixture is active"),
     unitOfMeasureCode: z
       .string()
@@ -1960,6 +1994,7 @@ export const importSchemas: Record<
       .string()
       .min(1, { message: "Name is required" })
       .describe("The description of the part"),
+    mpn: z.string().optional().describe("The manufacturer part number"),
     active: z.string().optional().describe("Whether the part is active"),
     unitOfMeasureCode: z
       .string()
@@ -2004,6 +2039,10 @@ export const importSchemas: Record<
       .string()
       .min(1, { message: "Name is required" })
       .describe("The description of the material"),
+    mpn: z
+      .string()
+      .optional()
+      .describe("The manufacturer part number of the material"),
     active: z.string().optional().describe("Whether the material is active"),
     materialSubstanceId: z
       .string()

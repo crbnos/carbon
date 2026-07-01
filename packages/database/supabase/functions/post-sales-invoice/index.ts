@@ -252,6 +252,8 @@ serve(async (req: Request) => {
                 "Location",
                 "CostCenter",
                 "FixedAssetClass",
+                "Customer",
+                "Item",
               ])
           : null;
 
@@ -265,6 +267,7 @@ serve(async (req: Request) => {
         const journalLineDimensionsMeta: {
           customerTypeId: string | null;
           itemPostingGroupId: string | null;
+          itemId: string | null;
           locationId: string | null;
           costCenterId: string | null;
           fixedAssetClassId: string | null;
@@ -287,6 +290,12 @@ serve(async (req: Request) => {
           receivablesAccountId = accountDefaults?.data?.receivablesAccount;
         }
 
+        // Invoice exchange rate (defaults to 1 for base-currency invoices).
+        // journalLine.amount is denominated in base currency, so all monetary
+        // amounts derived from the invoice's foreign-currency unitPrice etc.
+        // must be multiplied by this rate before they reach a journal line.
+        const invoiceExchangeRate = salesInvoice.data?.exchangeRate ?? 1;
+
         for await (const invoiceLine of salesInvoiceLines.data) {
           const invoiceLineQuantityInInventoryUnit = invoiceLine.quantity;
 
@@ -300,8 +309,9 @@ serve(async (req: Request) => {
             totalLinesCost === 0 ? 0 : totalLineCost / totalLinesCost;
           const lineWeightedShippingCost =
             shippingCost * lineCostPercentageOfTotalCost;
+          // Convert to base currency for the GL.
           const totalLineCostWithWeightedShipping =
-            totalLineCost + lineWeightedShippingCost;
+            (totalLineCost + lineWeightedShippingCost) * invoiceExchangeRate;
 
           const invoiceLineUnitCostInInventoryUnit =
             totalLineCostWithWeightedShipping / invoiceLine.quantity;
@@ -410,6 +420,7 @@ serve(async (req: Request) => {
                       journalLineDimensionsMeta.push({
                         customerTypeId: customer.data.customerTypeId ?? null,
                         itemPostingGroupId: lineItemPostingGroupId,
+                        itemId: invoiceLine.itemId ?? null,
                         locationId: invoiceLine.locationId ?? null,
                         costCenterId: null,
                         fixedAssetClassId: null,
@@ -447,6 +458,7 @@ serve(async (req: Request) => {
                         journalLineDimensionsMeta.push({
                           customerTypeId: customer.data.customerTypeId ?? null,
                           itemPostingGroupId: lineItemPostingGroupId,
+                          itemId: invoiceLine.itemId ?? null,
                           locationId: invoiceLine.locationId ?? null,
                           costCenterId: null,
                           fixedAssetClassId: null,
@@ -511,6 +523,7 @@ serve(async (req: Request) => {
                       journalLineDimensionsMeta.push({
                         customerTypeId: customer.data.customerTypeId ?? null,
                         itemPostingGroupId,
+                        itemId: invoiceLine.itemId ?? null,
                         locationId: invoiceLine.locationId ?? null,
                         costCenterId: null,
                         fixedAssetClassId: null,
@@ -586,6 +599,7 @@ serve(async (req: Request) => {
                     journalLineDimensionsMeta.push({
                       customerTypeId: customer.data.customerTypeId ?? null,
                       itemPostingGroupId: null,
+                      itemId: null,
                       locationId: invoiceLine.locationId ?? salesOrderLine?.locationId ?? assetRecord.data.locationId ?? null,
                       costCenterId: null,
                       fixedAssetClassId: (assetRecord.data.fixedAssetClass as any)?.id ?? null,
@@ -667,6 +681,7 @@ serve(async (req: Request) => {
                       customerTypeId:
                         customer.data.customerTypeId ?? null,
                       itemPostingGroupId: null,
+                      itemId: null,
                       locationId: invoiceLine.locationId ?? salesOrderLine?.locationId ?? assetRecord.data.locationId ?? null,
                       costCenterId: null,
                       fixedAssetClassId: (assetRecord.data.fixedAssetClass as any)?.id ?? null,
@@ -697,6 +712,7 @@ serve(async (req: Request) => {
                       customerTypeId:
                         customer.data.customerTypeId ?? null,
                       itemPostingGroupId: null,
+                      itemId: null,
                       locationId: invoiceLine.locationId ?? salesOrderLine?.locationId ?? assetRecord.data.locationId ?? null,
                       costCenterId: null,
                       fixedAssetClassId: (assetRecord.data.fixedAssetClass as any)?.id ?? null,
@@ -726,6 +742,7 @@ serve(async (req: Request) => {
                     customerTypeId:
                       customer.data.customerTypeId ?? null,
                     itemPostingGroupId: null,
+                    itemId: null,
                     locationId: invoiceLine.locationId ?? salesOrderLine?.locationId ?? null,
                     costCenterId: null,
                     fixedAssetClassId: (assetRecord.data.fixedAssetClass as any)?.id ?? null,
@@ -775,6 +792,7 @@ serve(async (req: Request) => {
                       customerTypeId:
                         customer.data.customerTypeId ?? null,
                       itemPostingGroupId: null,
+                      itemId: null,
                       locationId: invoiceLine.locationId ?? salesOrderLine?.locationId ?? assetRecord.data.locationId ?? null,
                       costCenterId: null,
                       fixedAssetClassId: (assetRecord.data.fixedAssetClass as any)?.id ?? null,
@@ -1086,6 +1104,22 @@ serve(async (req: Request) => {
                     journalLineId: jl.id,
                     dimensionId: dimensionMap.get("FixedAssetClass")!,
                     valueId: meta.fixedAssetClassId,
+                    companyId,
+                  });
+                }
+                if (meta.itemId && dimensionMap.has("Item")) {
+                  journalLineDimensionInserts.push({
+                    journalLineId: jl.id,
+                    dimensionId: dimensionMap.get("Item")!,
+                    valueId: meta.itemId,
+                    companyId,
+                  });
+                }
+                if (salesInvoice.data?.customerId && dimensionMap.has("Customer")) {
+                  journalLineDimensionInserts.push({
+                    journalLineId: jl.id,
+                    dimensionId: dimensionMap.get("Customer")!,
+                    valueId: salesInvoice.data.customerId,
                     companyId,
                   });
                 }

@@ -35,6 +35,12 @@ const main = defineCommand({
           description:
             "Spawn ERP/MES dev servers (use --no-apps for services-only boot)"
         },
+        all: {
+          type: "boolean",
+          default: false,
+          description:
+            "Launch all apps without the interactive picker (implies erp+mes)"
+        },
         pull: {
           type: "boolean",
           default: false,
@@ -76,6 +82,7 @@ const main = defineCommand({
           migrate: args.migrate !== false,
           regen: args.regen !== false,
           apps: args.apps !== false,
+          all: args.all === true,
           pull: args.pull === true,
           borrow: args.borrow === true,
           portless: args.portless !== false,

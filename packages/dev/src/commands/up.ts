@@ -2,7 +2,7 @@ import { box, intro, log, outro, progress, tasks } from "@clack/prompts";
 import { config as loadDotenv } from "dotenv";
 import { type ExecaChildProcess, execa } from "execa";
 import { join } from "pathe";
-import type { AppId } from "../constants.js";
+import { APP_CHOICES, type AppId } from "../constants.js";
 import { renderEnv, syncAppPortlessConfigs, writeEnv } from "../env.js";
 import { currentBranch } from "../git.js";
 import { onShutdown } from "../helpers.js";
@@ -66,6 +66,8 @@ type UpOpts = {
   migrate?: boolean;
   regen?: boolean;
   apps?: boolean;
+  /** When true, launch all apps without the interactive picker. */
+  all?: boolean;
   /** When true, always `docker compose pull` even if images exist locally. */
   pull?: boolean;
   /** When true, show a picker to borrow another worktree's running containers. */
@@ -149,7 +151,12 @@ export async function up(opts: UpOpts = {}) {
     log.info("portless disabled (CARBON_PORTLESS=0) — using localhost URLs");
   }
 
-  const selectedApps = appsRequested ? await pickApps() : [];
+  const allApps = opts.all === true;
+  const selectedApps = appsRequested
+    ? allApps
+      ? APP_CHOICES.map((c) => c.value)
+      : await pickApps()
+    : [];
   const slug = resolveSlug(root);
 
   // Resolve borrowed slot before ensureSlugAvailable (borrowing doesn't start
@@ -606,28 +613,30 @@ async function appResponds(port: number): Promise<boolean> {
   }
 }
 
-/** Poll each selected app's port until it serves (or the deadline passes). */
+/** Poll each selected app's port concurrently until all serve (or deadline). */
 async function waitForApps(
   selectedApps: AppId[],
   ports: PortMap,
   timeoutMs = 180_000
 ): Promise<void> {
   const deadline = Date.now() + timeoutMs;
-  for (const id of selectedApps) {
-    const key = APP_PORT_KEY[id];
-    const port = key ? ports[key] : undefined;
-    if (port === undefined) continue;
-    let up = false;
-    while (Date.now() < deadline) {
-      if (await appResponds(port)) {
-        up = true;
-        break;
+  await Promise.all(
+    selectedApps.map(async (id) => {
+      const key = APP_PORT_KEY[id];
+      const port = key ? ports[key] : undefined;
+      if (port === undefined) return;
+      let up = false;
+      while (Date.now() < deadline) {
+        if (await appResponds(port)) {
+          up = true;
+          break;
+        }
+        await new Promise((r) => setTimeout(r, 1500));
       }
-      await new Promise((r) => setTimeout(r, 1500));
-    }
-    if (up) log.info(`${id} reachable on :${port}`);
-    else log.warn(`${id} not reachable on :${port} — running command anyway`);
-  }
+      if (up) log.info(`${id} reachable on :${port}`);
+      else log.warn(`${id} not reachable on :${port} — running command anyway`);
+    })
+  );
 }
 
 /**

@@ -19,7 +19,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (remove.error) {
     throw redirect(
-      path.to.salesInvoices,
+      path.to.invoicingSales,
       await flash(
         request,
         error(remove.error, "Failed to delete sales invoice")
@@ -27,5 +27,5 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  throw redirect(path.to.salesInvoices);
+  throw redirect(path.to.invoicingSales);
 }

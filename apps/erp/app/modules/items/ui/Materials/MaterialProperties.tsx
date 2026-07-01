@@ -175,6 +175,7 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
         | "finishId"
         | "materialTypeId"
         | "materialId"
+        | "mpn"
         | "requiresInspection",
       value: string | null
     ) => {
@@ -743,6 +744,28 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
               variant="small"
               onChange={(value) => {
                 onUpdate("requiresInspection", value ? "on" : "off");
+              }}
+            />
+          </ValidatedForm>
+        )}
+        {routeData?.materialSummary?.replenishmentSystem?.includes("Buy") && (
+          <ValidatedForm
+            defaultValues={{
+              mpn: routeData?.materialSummary?.mpn ?? undefined
+            }}
+            validator={z.object({
+              mpn: z.string().optional()
+            })}
+            className="w-full"
+          >
+            <InputControlled
+              label={t`Manufacturer Part Number`}
+              name="mpn"
+              inline
+              size="sm"
+              value={routeData?.materialSummary?.mpn ?? ""}
+              onBlur={(e) => {
+                onUpdate("mpn", e.target.value ?? null);
               }}
             />
           </ValidatedForm>

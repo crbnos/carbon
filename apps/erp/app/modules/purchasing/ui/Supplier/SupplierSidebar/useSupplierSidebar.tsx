@@ -104,7 +104,7 @@ export function useSupplierSidebar({ contacts, locations }: Props) {
     },
     {
       name: t`Invoices`,
-      to: `${path.to.purchaseInvoices}?filter=supplierId:eq:${supplierId}`,
+      to: `${path.to.invoicingPurchasing}?filter=supplierId:eq:${supplierId}`,
       icon: <LuCreditCard />
     }
     // {

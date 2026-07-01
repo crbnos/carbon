@@ -61,6 +61,7 @@ type HeaderProps<T> = {
   renderActions?: (selectedRows: T[]) => ReactNode;
   columnAccessors: Record<string, string>;
   exportValues: Record<string, (row: T) => unknown>;
+  exportOnlyColumns: string[];
   sortKeyToLabel: Record<string, string>;
   columnOrder: ColumnOrderState;
   columnPinning: ColumnPinningState;
@@ -93,6 +94,7 @@ const TableHeader = <T extends object>({
   compact,
   columnAccessors,
   exportValues,
+  exportOnlyColumns,
   sortKeyToLabel,
   columnOrder,
   columnPinning,
@@ -342,6 +344,7 @@ const TableHeader = <T extends object>({
             data={data}
             columnAccessors={columnAccessors}
             exportValues={exportValues}
+            exportOnlyColumns={exportOnlyColumns}
             columnOrder={columnOrder}
             columnVisibility={columnVisibility}
           />

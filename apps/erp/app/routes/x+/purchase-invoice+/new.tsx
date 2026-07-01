@@ -93,7 +93,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (result.error || !result.data) {
     throw redirect(
-      path.to.purchaseInvoices,
+      path.to.invoicingPurchasing,
       await flash(
         request,
         error(result.error, "Failed to insert purchase invoice")

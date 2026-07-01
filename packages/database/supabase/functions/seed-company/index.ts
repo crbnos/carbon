@@ -352,6 +352,24 @@ serve(async (req: Request) => {
         resolvedDefaults[key] = accountIdByKey[number] ?? null;
       }
 
+      // The four AR/AP defaults are NOT NULL in the schema. If a customized COA
+      // on an existing group is missing one of their accounts
+      // (6050/4130/4120/7060), the lookup yields null and the insert below would
+      // violate the not-null constraint. Fall back to an existing default of the
+      // same nature so the insert can't fail — mirrors the COALESCE backfill in
+      // 20260630093809_ar-ap-payments.sql.
+      const arApDefaultFallbacks: Record<string, string> = {
+        customerWriteOffAccount: "salesDiscountAccount",
+        supplierWriteOffAccount: "salesAccount",
+        realizedExchangeGainAccount: "salesAccount",
+        realizedExchangeLossAccount: "interestAccount",
+      };
+      for (const [key, fallbackKey] of Object.entries(arApDefaultFallbacks)) {
+        if (!resolvedDefaults[key]) {
+          resolvedDefaults[key] = resolvedDefaults[fallbackKey] ?? null;
+        }
+      }
+
       // Company-specific accounting defaults and posting groups
       await trx
         .insertInto("accountDefault")

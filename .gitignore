@@ -68,12 +68,15 @@ apps/*/portless.json
 packages/database/supabase/snippets/**
 .pr-review
 
-# Loop run artifacts (bindings, ledgers, outcomes, screenshots) — runtime, not source.
-# All per-run output lives under llm/loops/runs/; everything else in llm/ is docs.
-# The ledger summary goes in the PR body; screenshots are hosted on the PR.
-llm/loops/runs/
+# .claude/ and .codex/ rules+skills are symlinks created by .ai/scripts/install-skills.sh
+# Source of truth is .ai/rules/ and .ai/skills/ — never edit under .claude/ or .codex/ directly
+.claude/rules/
+.claude/skills/
+.claude/notes/
+.codex/
 
-# Outer-loop scratch (design plans, the box's operating prompt) — kept out of the
-# product tree; the design lives in PR history and the prompt lives on the OpenClaw box.
-llm/outer-loop/*
-!llm/outer-loop/README.md
+# .ai/ scratch — runtime, not source
+.ai/scratch/
+
+# Legacy llm/ — consolidated into .ai/ (docs, specs, runs)
+llm/
