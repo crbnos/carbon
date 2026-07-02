@@ -31,48 +31,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { jobId } = params;
   if (!jobId) throw new Error("Could not find jobId");
 
-  const {
-    quantityComplete,
-    salesOrderId,
-    salesOrderLineId,
-    locationId,
-    storageUnitId,
-    leftoverAction,
-    leftoverShipQuantity
-  } = validation.data;
+  const { quantityComplete, locationId, storageUnitId } = validation.data;
 
-  const makeToOrder = !!salesOrderId || !!salesOrderLineId;
-
-  // Get job data to calculate leftovers
-  const job = await client
-    .from("job")
-    .select("quantity")
-    .eq("id", jobId)
-    .single();
-  if (job.error) {
-    throw redirect(
-      requestReferrer(request) ?? path.to.job(jobId),
-      await flash(request, error(job.error, "Failed to get job data"))
-    );
-  }
-
-  const originalQuantity = job.data?.quantity ?? 0;
-  const leftoverQuantity = Math.max(0, quantityComplete - originalQuantity);
-  const hasLeftover = leftoverQuantity > 0;
-
-  let quantityToShip = originalQuantity;
-
-  if (hasLeftover && leftoverAction) {
-    switch (leftoverAction) {
-      case "ship":
-        quantityToShip = quantityComplete;
-        break;
-      case "split":
-        quantityToShip = originalQuantity + (leftoverShipQuantity ?? 0);
-        break;
-    }
-  }
-
+  // Complete the job to inventory: sets job.quantityComplete and receives the
+  // finished goods. It must NOT write job.quantityShipped — that column tracks
+  // units actually shipped and is advanced only by post-shipment. The shipment
+  // builder computes quantityToShip = quantityComplete - quantityShipped, so
+  // pre-setting quantityShipped here zeroes out the shippable quantity and the
+  // sales order can no longer be shipped (empty shipment lines).
   const rpc = await client.rpc("complete_job_to_inventory", {
     p_job_id: jobId,
     p_quantity_complete: quantityComplete,
@@ -87,27 +53,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
       requestReferrer(request) ?? path.to.job(jobId),
       await flash(request, error(rpc.error, "Failed to complete job"))
     );
-  }
-
-  if (makeToOrder) {
-    const quantityShippedUpdate = await client
-      .from("job")
-      .update({
-        quantityShipped: quantityToShip,
-        updatedAt: new Date().toISOString(),
-        updatedBy: userId
-      })
-      .eq("id", jobId);
-
-    if (quantityShippedUpdate.error) {
-      throw redirect(
-        requestReferrer(request) ?? path.to.job(jobId),
-        await flash(
-          request,
-          error(quantityShippedUpdate.error, "Failed to update job")
-        )
-      );
-    }
   }
 
   throw redirect(
