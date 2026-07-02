@@ -5,6 +5,7 @@ import type { DocumentTemplate, ResolvedSection } from "../template";
 import {
   DEFAULT_HEADER_OPTIONS,
   interpolateContent,
+  interpolateString,
   resolveTemplate
 } from "../template";
 import type { AccountsReceivableBillingAddress, PDF } from "../types";
@@ -61,12 +62,6 @@ const QuotePDF = ({
     style: "decimal",
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
-  });
-
-  const registrationLine = composeRegistrationLine({
-    companyName: company.name,
-    country: company.countryCode,
-    eori: company.eori
   });
 
   const pricesByLine = quoteLinePrices.reduce<Record<string, QuoteLinePrice[]>>(
@@ -163,6 +158,12 @@ const QuotePDF = ({
     quoteCustomerDetails,
     company,
     currencyCode
+  });
+
+  const registrationLine = composeRegistrationLine({
+    companyName: company.name,
+    country: company.countryCode,
+    registrationNumber: interpolateString(settings.registrationNumber, vars)
   });
 
   const headerOptions = {

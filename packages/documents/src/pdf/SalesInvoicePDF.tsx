@@ -5,6 +5,7 @@ import type { DocumentTemplate, ResolvedSection } from "../template";
 import {
   DEFAULT_HEADER_OPTIONS,
   interpolateContent,
+  interpolateString,
   resolveTemplate
 } from "../template";
 import type { AccountsReceivableBillingAddress, PDF } from "../types";
@@ -59,12 +60,6 @@ const SalesInvoicePDF = ({
     maximumFractionDigits: 2
   });
 
-  const registrationLine = composeRegistrationLine({
-    companyName: company.name,
-    country: company.countryCode,
-    eori: company.eori
-  });
-
   const { blocks, theme, settings, headerSectionId, footerSectionId } =
     resolveTemplate("salesInvoice", template);
 
@@ -73,6 +68,12 @@ const SalesInvoicePDF = ({
     salesInvoiceLocations,
     company,
     currencyCode
+  });
+
+  const registrationLine = composeRegistrationLine({
+    companyName: company.name,
+    country: company.countryCode,
+    registrationNumber: interpolateString(settings.registrationNumber, vars)
   });
 
   // Header layout now lives on the global header section's config (not the

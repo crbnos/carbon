@@ -326,7 +326,8 @@ export const DEFAULT_DOCUMENT_SETTINGS = {
   fontFamily: "Inter",
   showPageNumbers: true,
   pageNumberFormat: "pageOfTotal",
-  showRegistrationLine: true
+  showRegistrationLine: true,
+  registrationNumber: "{company.taxId}"
 } as const;
 
 export const documentSettingsSchema = z.object({
@@ -348,7 +349,12 @@ export const documentSettingsSchema = z.object({
   showPageNumbers: z.boolean().default(true),
   /** "pageOfTotal" → "Page 1 of 3"; "page" → "Page 1". */
   pageNumberFormat: z.enum(["pageOfTotal", "page"]).default("pageOfTotal"),
-  showRegistrationLine: z.boolean().default(true)
+  showRegistrationLine: z.boolean().default(true),
+  /**
+   * Free-text registration number shown in the footer's "Company Registration
+   * Number" line. Supports `{token}` merge fields (e.g. `{company.taxId}`).
+   */
+  registrationNumber: z.string().default("{company.taxId}")
 });
 
 /** Document types that support a customizable template. Widen as docs ship. */

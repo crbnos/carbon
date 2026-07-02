@@ -5,6 +5,7 @@ import type { DocumentTemplate, ResolvedSection } from "../template";
 import {
   DEFAULT_HEADER_OPTIONS,
   interpolateContent,
+  interpolateString,
   resolveTemplate
 } from "../template";
 import type { AccountsReceivableBillingAddress, PDF } from "../types";
@@ -58,12 +59,6 @@ const SalesOrderPDF = ({
     maximumFractionDigits: 2
   });
 
-  const registrationLine = composeRegistrationLine({
-    companyName: company.name,
-    country: company.countryCode,
-    eori: company.eori
-  });
-
   const { blocks, theme, settings, headerSectionId, footerSectionId } =
     resolveTemplate("salesOrder", template);
 
@@ -72,6 +67,12 @@ const SalesOrderPDF = ({
     salesOrderLocations,
     company,
     currencyCode
+  });
+
+  const registrationLine = composeRegistrationLine({
+    companyName: company.name,
+    country: company.countryCode,
+    registrationNumber: interpolateString(settings.registrationNumber, vars)
   });
 
   const headerOptions = {

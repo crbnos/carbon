@@ -5,6 +5,7 @@ import type { DocumentTemplate, ResolvedSection } from "../template";
 import {
   DEFAULT_HEADER_OPTIONS,
   interpolateContent,
+  interpolateString,
   resolveTemplate
 } from "../template";
 import type { AccountsPayableBillingAddress, PDF } from "../types";
@@ -57,12 +58,6 @@ const PurchaseOrderPDF = ({
     maximumFractionDigits: 2
   });
 
-  const registrationLine = composeRegistrationLine({
-    companyName: company.name,
-    country: purchaseOrderLocations.companyCountryName ?? company.countryCode,
-    eori: company.eori
-  });
-
   const headerTitle = purchaseOrder?.purchaseOrderId
     ? `${title}: ${purchaseOrder.purchaseOrderId}`
     : title;
@@ -75,6 +70,12 @@ const PurchaseOrderPDF = ({
     purchaseOrderLocations,
     company,
     currencyCode
+  });
+
+  const registrationLine = composeRegistrationLine({
+    companyName: company.name,
+    country: purchaseOrderLocations.companyCountryName ?? company.countryCode,
+    registrationNumber: interpolateString(settings.registrationNumber, vars)
   });
 
   const headerOptions = {

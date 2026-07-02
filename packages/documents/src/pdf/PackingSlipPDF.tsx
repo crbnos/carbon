@@ -5,6 +5,7 @@ import type { DocumentTemplate, ResolvedSection } from "../template";
 import {
   DEFAULT_HEADER_OPTIONS,
   interpolateContent,
+  interpolateString,
   resolveTemplate
 } from "../template";
 import type { PDF } from "../types";
@@ -122,7 +123,7 @@ const PackingSlipPDF = ({
       footerLabel={getRegistrationFooter(
         company.name,
         company.countryCode,
-        company.taxId
+        interpolateString(settings.registrationNumber, vars)
       )}
       footerDocumentId={shipment?.shipmentId}
       showFooter={showFooter}

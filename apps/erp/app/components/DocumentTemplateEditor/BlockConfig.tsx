@@ -335,6 +335,26 @@ function FooterSettings() {
           checked={settings.showRegistrationLine}
           onChange={(v) => setSetting("showRegistrationLine", v)}
         />
+        {settings.showRegistrationLine && (
+          <div className="mt-3 flex flex-col gap-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-sm">Registration number</span>
+              <MergeFieldMenu
+                label="Insert field"
+                onInsert={(snippet) =>
+                  setSetting(
+                    "registrationNumber",
+                    (settings.registrationNumber ?? "") + snippet
+                  )
+                }
+              />
+            </div>
+            <Input
+              value={settings.registrationNumber ?? ""}
+              onChange={(e) => setSetting("registrationNumber", e.target.value)}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

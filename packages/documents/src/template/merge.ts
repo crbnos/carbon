@@ -66,7 +66,10 @@ const SALES_INVOICE_MERGE_FIELDS: MergeField[] = [
   { token: "customer.country", label: "Country", group: "Customer" },
   { token: "company.name", label: "Company Name", group: "Company" },
   { token: "company.city", label: "Company City", group: "Company" },
-  { token: "company.country", label: "Company Country", group: "Company" }
+  { token: "company.country", label: "Company Country", group: "Company" },
+  { token: "company.taxId", label: "Company Tax ID", group: "Company" },
+  { token: "company.eori", label: "Company EORI", group: "Company" },
+  { token: "company.vatNumber", label: "Company VAT Number", group: "Company" }
 ];
 
 const SALES_ORDER_MERGE_FIELDS: MergeField[] = [
@@ -84,7 +87,10 @@ const SALES_ORDER_MERGE_FIELDS: MergeField[] = [
   { token: "customer.country", label: "Country", group: "Customer" },
   { token: "company.name", label: "Company Name", group: "Company" },
   { token: "company.city", label: "Company City", group: "Company" },
-  { token: "company.country", label: "Company Country", group: "Company" }
+  { token: "company.country", label: "Company Country", group: "Company" },
+  { token: "company.taxId", label: "Company Tax ID", group: "Company" },
+  { token: "company.eori", label: "Company EORI", group: "Company" },
+  { token: "company.vatNumber", label: "Company VAT Number", group: "Company" }
 ];
 
 const PURCHASE_ORDER_MERGE_FIELDS: MergeField[] = [
@@ -102,7 +108,10 @@ const PURCHASE_ORDER_MERGE_FIELDS: MergeField[] = [
   { token: "supplier.country", label: "Country", group: "Supplier" },
   { token: "company.name", label: "Company Name", group: "Company" },
   { token: "company.city", label: "Company City", group: "Company" },
-  { token: "company.country", label: "Company Country", group: "Company" }
+  { token: "company.country", label: "Company Country", group: "Company" },
+  { token: "company.taxId", label: "Company Tax ID", group: "Company" },
+  { token: "company.eori", label: "Company EORI", group: "Company" },
+  { token: "company.vatNumber", label: "Company VAT Number", group: "Company" }
 ];
 
 const QUOTE_MERGE_FIELDS: MergeField[] = [
@@ -120,7 +129,10 @@ const QUOTE_MERGE_FIELDS: MergeField[] = [
   { token: "customer.country", label: "Country", group: "Customer" },
   { token: "company.name", label: "Company Name", group: "Company" },
   { token: "company.city", label: "Company City", group: "Company" },
-  { token: "company.country", label: "Company Country", group: "Company" }
+  { token: "company.country", label: "Company Country", group: "Company" },
+  { token: "company.taxId", label: "Company Tax ID", group: "Company" },
+  { token: "company.eori", label: "Company EORI", group: "Company" },
+  { token: "company.vatNumber", label: "Company VAT Number", group: "Company" }
 ];
 
 const PACKING_SLIP_MERGE_FIELDS: MergeField[] = [
@@ -136,7 +148,10 @@ const PACKING_SLIP_MERGE_FIELDS: MergeField[] = [
   { token: "customer.country", label: "Country", group: "Customer" },
   { token: "company.name", label: "Company Name", group: "Company" },
   { token: "company.city", label: "Company City", group: "Company" },
-  { token: "company.country", label: "Company Country", group: "Company" }
+  { token: "company.country", label: "Company Country", group: "Company" },
+  { token: "company.taxId", label: "Company Tax ID", group: "Company" },
+  { token: "company.eori", label: "Company EORI", group: "Company" },
+  { token: "company.vatNumber", label: "Company VAT Number", group: "Company" }
 ];
 
 const STOCK_TRANSFER_MERGE_FIELDS: MergeField[] = [
