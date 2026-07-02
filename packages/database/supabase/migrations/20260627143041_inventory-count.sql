@@ -1,13 +1,13 @@
 -- Inventory Count / Cycle Count
 -- Warehouse staff count real stock against a frozen system-quantity snapshot, review
 -- variances, and post the differences as inventory adjustments. The document follows
--- the Draft -> Pending -> Posted -> Voided lifecycle (same as receipts/shipments);
--- posting/void are atomic and handled by the `post-inventory-count` edge function.
+-- the Draft -> Pending -> Posted lifecycle; posting is atomic and handled by the
+-- `post-inventory-count` edge function.
 
 -- ============================================================================
 -- inventoryCount (header)
 -- ============================================================================
-CREATE TYPE "inventoryCountStatus" AS ENUM ('Draft', 'Pending', 'Posted', 'Voided');
+CREATE TYPE "inventoryCountStatus" AS ENUM ('Draft', 'Pending', 'Posted');
 
 CREATE TABLE "inventoryCount" (
     "id" TEXT NOT NULL DEFAULT id('ic'),

@@ -1588,8 +1588,6 @@ export const path = {
       generatePath(`${x}/inventory-count/${id}/reopen`),
     inventoryCountPost: (id: string) =>
       generatePath(`${x}/inventory-count/${id}/post`),
-    inventoryCountVoid: (id: string) =>
-      generatePath(`${x}/inventory-count/${id}/void`),
     inventoryCountDelete: (id: string) =>
       generatePath(`${x}/inventory-count/${id}/delete`),
     inventoryCountLineUpdate: `${x}/inventory-count/lines/update`,

@@ -123,12 +123,7 @@ export const trackedEntityExpiryValidator = z.object({
     .max(500)
 });
 
-export const inventoryCountStatusType = [
-  "Draft",
-  "Pending",
-  "Posted",
-  "Voided"
-] as const;
+export const inventoryCountStatusType = ["Draft", "Pending", "Posted"] as const;
 
 // Header create/update. `storageUnitIds` and `itemType` are the optional scope
 // used at creation to generate the count lines; they are not stored columns of

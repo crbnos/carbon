@@ -10,7 +10,7 @@ import {
   useDisclosure
 } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
-import { LuCheck, LuInfo, LuRotateCcw, LuSend, LuUndo2 } from "react-icons/lu";
+import { LuCheck, LuInfo, LuRotateCcw, LuSend } from "react-icons/lu";
 import { useFetcher, useRevalidator } from "react-router";
 import { usePermissions } from "~/hooks";
 import type {
@@ -19,7 +19,8 @@ import type {
 } from "~/modules/inventory";
 import {
   InventoryCountConfirmModal,
-  InventoryCountLines
+  InventoryCountLines,
+  InventoryCountStatus
 } from "~/modules/inventory";
 import { path } from "~/utils/path";
 
@@ -39,14 +40,12 @@ const InventoryCountDetails = ({
   const { t } = useLingui();
   const permissions = usePermissions();
   const canUpdate = permissions.can("update", "inventory");
-  const canDelete = permissions.can("delete", "inventory");
 
   const confirmModal = useDisclosure();
   const notesModal = useDisclosure();
   const revalidator = useRevalidator();
   const reopenFetcher = useFetcher();
   const postFetcher = useFetcher();
-  const voidFetcher = useFetcher();
 
   const status = inventoryCount.status;
   const isReadOnly = status !== "Draft";
@@ -108,22 +107,6 @@ const InventoryCountDetails = ({
           </postFetcher.Form>
         </>
       )}
-      {status === "Posted" && (
-        <voidFetcher.Form
-          method="post"
-          action={path.to.inventoryCountVoid(inventoryCount.id!)}
-        >
-          <Button
-            type="submit"
-            variant="destructive"
-            isDisabled={!canDelete}
-            isLoading={voidFetcher.state !== "idle"}
-            leftIcon={<LuUndo2 />}
-          >
-            {t`Roll Back`}
-          </Button>
-        </voidFetcher.Form>
-      )}
     </HStack>
   );
 
@@ -137,6 +120,7 @@ const InventoryCountDetails = ({
           isReadOnly={isReadOnly}
           locationId={inventoryCount.locationId}
           title={inventoryCount.inventoryCountId}
+          titleBadge={<InventoryCountStatus status={status} />}
           primaryAction={actions}
         />
       </div>

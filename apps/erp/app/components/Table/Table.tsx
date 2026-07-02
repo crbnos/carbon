@@ -97,6 +97,8 @@ interface TableProps<T extends object> {
   primaryAction?: ReactNode;
   table?: string;
   title?: string;
+  // Optional node rendered immediately after the title (e.g. a status badge).
+  titleBadge?: ReactNode;
   withInlineEditing?: boolean;
   withPagination?: boolean;
   withSavedView?: boolean;
@@ -236,6 +238,7 @@ const Table = <T extends object>({
   primaryAction,
   table: tableName,
   title,
+  titleBadge,
   withInlineEditing = false,
   withPagination = true,
   withSavedView = false,
@@ -889,6 +892,7 @@ const Table = <T extends object>({
         setEditMode={setEditMode}
         table={tableName}
         title={title}
+        titleBadge={titleBadge}
         withInlineEditing={withInlineEditing}
         withPagination={withPagination}
         withSavedView={withSavedView}

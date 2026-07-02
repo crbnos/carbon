@@ -18,6 +18,7 @@ type InventoryCountLinesProps = {
   isReadOnly: boolean;
   locationId: string;
   title?: string;
+  titleBadge?: ReactNode;
   primaryAction?: ReactNode;
 };
 
@@ -28,6 +29,7 @@ const InventoryCountLines = ({
   isReadOnly,
   locationId,
   title,
+  titleBadge,
   primaryAction
 }: InventoryCountLinesProps) => {
   const { t } = useLingui();
@@ -41,7 +43,7 @@ const InventoryCountLines = ({
   }, []);
 
   // Blind mode hides System Qty + Variance while the count is editable; the
-  // figures reappear once the document is locked (Pending/Posted/Voided).
+  // figures reappear once the document is locked (Pending/Posted).
   const hideSystem = isBlind && !isReadOnly;
 
   const storageUnits = useStorageUnits(locationId);
@@ -194,9 +196,11 @@ const InventoryCountLines = ({
 
   const editableComponents = useMemo(
     () => ({
-      countedQuantity: EditableNumber<InventoryCountLine>(onCellEdit, {
-        minValue: 0
-      })
+      countedQuantity: EditableNumber<InventoryCountLine>(
+        onCellEdit,
+        { minValue: 0 },
+        { clearable: true }
+      )
     }),
     [onCellEdit]
   );
@@ -210,6 +214,7 @@ const InventoryCountLines = ({
       editableComponents={editableComponents}
       primaryAction={primaryAction}
       title={title ?? t`Lines`}
+      titleBadge={titleBadge}
       withInlineEditing={!isReadOnly}
     />
   );

@@ -9672,9 +9672,6 @@ msgstr "Role i odpowiedzialności"
 msgid "Roles that set default permissions for new employees"
 msgstr "Role, które ustawiają domyślne uprawnienia dla nowych pracowników"
 
-msgid "Roll Back"
-msgstr ""
-
 msgid "Room to grow without bolting on more tools"
 msgstr "Miejsce do wzrostu bez dodawania kolejnych narzędzi"
 

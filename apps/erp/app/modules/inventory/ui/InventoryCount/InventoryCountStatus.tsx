@@ -7,8 +7,8 @@ type InventoryCountStatusProps = {
   status?: (typeof inventoryCountStatusType)[number] | null;
 };
 
-// Inventory Count shares the Draft / Pending / Posted / Voided lifecycle (and
-// therefore the colors) with receipts and shipments.
+// Inventory Count shares the Draft / Pending / Posted lifecycle (and therefore
+// the colors) with receipts and shipments.
 const InventoryCountStatus = ({ status }: InventoryCountStatusProps) => {
   if (!status) return null;
   const color = RECEIPT_STATUS_COLOR_MAP[status];
@@ -29,12 +29,6 @@ const InventoryCountStatus = ({ status }: InventoryCountStatusProps) => {
       return (
         <Status color={color}>
           <Trans>Posted</Trans>
-        </Status>
-      );
-    case "Voided":
-      return (
-        <Status color={color}>
-          <Trans>Voided</Trans>
         </Status>
       );
     default:

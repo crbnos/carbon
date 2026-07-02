@@ -18,21 +18,13 @@ type ItemLedgerInsert = Database["public"]["Tables"]["itemLedger"]["Insert"];
 // always >= 0, on-hand can never go negative. Like the manual inventory
 // adjustment path (`insertManualInventoryAdjustment`), this writes to the item
 // ledger only (on-hand is derived from `itemLedger`); it does not post GL
-// journal lines. Void reverses every produced ledger entry atomically.
-const payloadValidator = z.discriminatedUnion("type", [
-  z.object({
-    type: z.literal("post"),
-    inventoryCountId: z.string(),
-    userId: z.string(),
-    companyId: z.string()
-  }),
-  z.object({
-    type: z.literal("void"),
-    inventoryCountId: z.string(),
-    userId: z.string(),
-    companyId: z.string()
-  })
-]);
+// journal lines.
+const payloadValidator = z.object({
+  type: z.literal("post"),
+  inventoryCountId: z.string(),
+  userId: z.string(),
+  companyId: z.string()
+});
 
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -42,17 +34,12 @@ serve(async (req: Request) => {
   const payload = await req.json();
 
   try {
-    const { type, inventoryCountId, userId, companyId } =
+    const { inventoryCountId, userId, companyId } =
       payloadValidator.parse(payload);
 
-    // Match the route gates for defense-in-depth: voiding (roll back) requires
-    // delete; posting requires update.
-    const client = await requirePermissions(
-      req,
-      companyId,
-      userId,
-      type === "void" ? { delete: "inventory" } : { update: "inventory" }
-    );
+    const client = await requirePermissions(req, companyId, userId, {
+      update: "inventory"
+    });
 
     const today = format(new Date(), "yyyy-MM-dd");
     const nowIso = new Date().toISOString();
@@ -66,97 +53,6 @@ serve(async (req: Request) => {
 
     if (inventoryCount.error) throw new Error("Inventory count not found");
 
-    if (type === "void") {
-      if (inventoryCount.data.status !== "Posted") {
-        throw new Error("Can only roll back a posted inventory count");
-      }
-
-      const lines = await client
-        .from("inventoryCountLine")
-        .select("*")
-        .eq("inventoryCountId", inventoryCountId)
-        .eq("companyId", companyId)
-        .not("postedItemLedgerId", "is", null);
-
-      if (lines.error) throw new Error(lines.error.message);
-
-      await db.transaction().execute(async (trx) => {
-        for (const line of lines.data ?? []) {
-          if (!line.postedItemLedgerId) continue;
-
-          const original = await trx
-            .selectFrom("itemLedger")
-            .selectAll()
-            .where("id", "=", line.postedItemLedgerId)
-            .where("companyId", "=", companyId)
-            .executeTakeFirst();
-
-          if (!original) continue;
-
-          // Reverse the ledger movement (swap the adjustment sign).
-          await trx
-            .insertInto("itemLedger")
-            .values({
-              postingDate: today,
-              itemId: original.itemId,
-              quantity: -original.quantity,
-              locationId: original.locationId,
-              storageUnitId: original.storageUnitId,
-              trackedEntityId: original.trackedEntityId,
-              entryType:
-                original.entryType === "Positive Adjmt."
-                  ? "Negative Adjmt."
-                  : "Positive Adjmt.",
-              documentType: "Inventory Count",
-              documentId: inventoryCountId,
-              comment: "VOID: Inventory Count",
-              companyId,
-              createdBy: userId
-            })
-            .execute();
-
-          // Restore the tracked entity to its pre-count quantity. The post set
-          // it to the counted value, so the original entry's quantity is the
-          // delta we added; subtracting it returns the prior on-hand.
-          if (line.trackedEntityId && line.countedQuantity !== null) {
-            await trx
-              .updateTable("trackedEntity")
-              .set({ quantity: line.countedQuantity - original.quantity })
-              .where("id", "=", line.trackedEntityId)
-              .where("companyId", "=", companyId)
-              .execute();
-          }
-
-          await trx
-            .updateTable("inventoryCountLine")
-            .set({ postedItemLedgerId: null })
-            .where("id", "=", line.id)
-            .where("companyId", "=", companyId)
-            .execute();
-        }
-
-        // Guard the transition: only a still-Posted count can be voided. A
-        // concurrent void matches 0 rows here and we roll back the reversal.
-        const voided = await trx
-          .updateTable("inventoryCount")
-          .set({ status: "Voided", updatedBy: userId, updatedAt: nowIso })
-          .where("id", "=", inventoryCountId)
-          .where("companyId", "=", companyId)
-          .where("status", "=", "Posted")
-          .returning(["id"])
-          .executeTakeFirst();
-
-        if (!voided) {
-          throw new Error("Inventory count is no longer posted");
-        }
-      });
-
-      return new Response(JSON.stringify({ success: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
-      });
-    }
-
-    // type === "post"
     const lines = await client
       .from("inventoryCountLine")
       .select("*")
@@ -272,11 +168,11 @@ serve(async (req: Request) => {
     });
   } catch (err) {
     console.error("Error in post-inventory-count:", err);
-    // The post/void work is a single atomic transaction, so a failure has
-    // already rolled back any ledger writes and the status change — the document
-    // is left exactly as it was (Pending for a post, Posted for a void). We do
-    // NOT touch the status here: reverting a failed post to Draft would silently
-    // discard the user's confirmation. Pending is the correct retryable state.
+    // The post is a single atomic transaction, so a failure has already rolled
+    // back any ledger writes and the status change — the count is left exactly
+    // as it was (Pending). We do NOT touch the status here: reverting a failed
+    // post to Draft would silently discard the user's confirmation. Pending is
+    // the correct retryable state.
     return new Response(JSON.stringify({ error: (err as Error).message }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500

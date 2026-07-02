@@ -9672,9 +9672,6 @@ msgstr "भूमिकाएं और जिम्मेदारियां"
 msgid "Roles that set default permissions for new employees"
 msgstr "नई कर्मचारियों के लिए डिफ़ॉल्ट अनुमतियां सेट करने वाली भूमिकाएं"
 
-msgid "Roll Back"
-msgstr ""
-
 msgid "Room to grow without bolting on more tools"
 msgstr "बिना अतिरिक्त उपकरण जोड़े बढ़ने की गुंजाइश"
 
