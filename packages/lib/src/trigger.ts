@@ -32,7 +32,8 @@ const taskToEvent = {
   "sync-issue-from-jira": "carbon/jira-sync",
   "sync-issue-from-linear": "carbon/linear-sync",
   "update-permissions": "carbon/update-permissions",
-  "user-admin": "carbon/user-admin"
+  "user-admin": "carbon/user-admin",
+  "extract-document": "carbon/extract-document"
 } as const;
 
 type TaskMap = typeof taskToEvent;

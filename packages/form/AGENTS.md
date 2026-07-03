@@ -61,6 +61,5 @@ if (validation.error) return validationError(validation.error);
 ## Cross-References
 
 - `.ai/rules/conventions-forms.md` — full forms conventions, validator rules, action patterns, checklist
-- `.ai/skills/forms/SKILL.md` — step-by-step form creation skill
 - `@carbon/react` — layout and overlay components (`ModalDrawer`, `VStack`, `Button`)
 - `apps/erp/app/components/Form/` — domain selectors (Customer, Employee, Item, Location, etc.)

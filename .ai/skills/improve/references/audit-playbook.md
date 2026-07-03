@@ -4,7 +4,7 @@ What to look for, per category. Each subagent (or direct audit pass) gets the re
 
 A finding is only a finding with evidence. "Probably has N+1 queries somewhere" is not a finding; `inventory/services/picking.ts:142 issues one query per line inside a loop` is.
 
-**Before flagging anything, cross-check Carbon's settled decisions:** `.ai/scratch/tasks/lessons.md` and `.ai/rules/conventions-*.md` record by-design choices. A pattern documented there is not a finding. Generated files (`packages/database` db-types / swagger schema, Lingui `*.mjs` catalogs, `.react-router/`) are not findings.
+**Before flagging anything, cross-check Carbon's settled decisions:** `.ai/lessons.md` and `.ai/rules/conventions-*.md` record by-design choices. A pattern documented there is not a finding. Generated files (`packages/database` db-types / swagger schema, Lingui `*.mjs` catalogs, `.react-router/`) are not findings.
 
 ---
 
@@ -27,7 +27,7 @@ Review only what is directly supported by code evidence. Frame findings as defen
 
 **Handling rule:** never copy a secret value into a finding or plan — those files may be committed. Reference `file:line` and credential type only ("Supabase service key at `config.ts:12`"), and always recommend rotation, not just removal.
 
-**By-design is not a finding:** a tradeoff recorded in `.ai/scratch/tasks/lessons.md` or a convention in `.ai/rules/conventions-*` is settled. Flag only where the *implementation* adds risk beyond the documented decision.
+**By-design is not a finding:** a tradeoff recorded in `.ai/lessons.md` or a convention in `.ai/rules/conventions-*` is settled. Flag only where the *implementation* adds risk beyond the documented decision.
 
 - Credential hygiene: hardcoded keys/tokens, credentials in committed `.env`, secrets logged or persisted in event/audit/history stores. Name only type and location; recommend rotation + a safer config path (`packages/env`).
 - **Row-Level Security (Supabase/Postgres):** the most important Carbon security surface. See Carbon checks — tables exposed without RLS, or using the **deprecated** `has_role(...) AND has_company_permission(...)` pattern, or missing tenant (`companyId`) scoping.
@@ -57,7 +57,7 @@ The goal is not a percentage — it's *which untested code is dangerous*.
 - Map the critical paths (inventory moves, costing, traceability, RLS-guarded mutations, the feature a package exists for) and check which have zero/trivial coverage.
 - High-churn (git log) + no tests = top refactor risk; flag as "characterization tests first."
 - Test quality: tests asserting nothing meaningful, heavy mocking that tests the mocks, snapshot tests nobody reads, flaky patterns (real timers/network, order dependence).
-- Test infrastructure reality: most `packages/*` have vitest; **`apps/erp` has a `vitest.config.ts` but verify whether a `test` script and real suites exist** before assuming coverage is possible there. Pure functions often belong in a `packages/*` that already has vitest rather than in the app. (See `.ai/scratch/tasks/lessons.md` on this.)
+- Test infrastructure reality: most `packages/*` have vitest; **`apps/erp` has a `vitest.config.ts` but verify whether a `test` script and real suites exist** before assuming coverage is possible there. Pure functions often belong in a `packages/*` that already has vitest rather than in the app. (See `.ai/lessons.md` on this.)
 - Verification baseline: is there a one-command way to know a package works? If not for the target package, that's finding #1 and a prerequisite plan.
 
 ## 5. Tech Debt & Architecture
@@ -97,10 +97,10 @@ Lowest default priority — only flag where absence has a concrete cost:
 
 ## 9. Direction — features & where to take this next
 
-Forward-looking: what this codebase wants to become. **Grounding rule:** every suggestion must cite evidence from the repo — a suggestion that could apply to any ERP ("add AI", "add dark mode") is noise. **Check `.ai/scratch/recommendations/` first** and never re-propose what's on file. Sources of grounded signal:
+Forward-looking: what this codebase wants to become. **Grounding rule:** every suggestion must cite evidence from the repo — a suggestion that could apply to any ERP ("add AI", "add dark mode") is noise. **Check `.ai/specs/` and `.ai/plans/improve/` first** and never re-propose what's on file. Sources of grounded signal:
 
 - **Unfinished intent**: TODO/FIXME clusters around one theme, feature flags never rolled out, stubbed modules, abandoned mid-feature work in git history.
-- **Stated-but-undelivered**: items in `.ai/scratch/recommendations/`, `.ai/scratch/tasks/*.md`, or rule docs describing intended direction the code hasn't caught up to.
+- **Stated-but-undelivered**: unimplemented specs in `.ai/specs/`, open items in `.ai/plans/improve/`, or rule docs describing intended direction the code hasn't caught up to.
 - **Surface asymmetries**: one-directional pairs (export without import, create without bulk-create, a module with CRUD-minus-one), a capability one app has that the parallel app lacks (erp ↔ mes).
 - **The adjacent possible**: capabilities the existing architecture makes disproportionately cheap — an MCP tool one service-function away (Carbon already exposes ~1187 MCP tools), a report one query from the existing service layer, an integration the data model already supports.
 - **Friction worth productizing**: things users evidently do by hand around Carbon.
@@ -111,7 +111,7 @@ Direction findings use the standard format with two adaptations: **Impact** is p
 
 ## Carbon-specific checks
 
-High-value patterns unique to this repo. Most are codified in `.ai/scratch/tasks/lessons.md` and `.ai/rules/conventions-*` — read those for the authoritative version; a violation is a finding, conformance is not.
+High-value patterns unique to this repo. Most are codified in `.ai/lessons.md` and `.ai/rules/conventions-*` — read those for the authoritative version; a violation is a finding, conformance is not.
 
 - **RLS policies** (`packages/database/supabase/migrations/`): every company-scoped table needs RLS using the **new** pattern — `get_companies_with_employee_permission('<perm>')::text[]` with standardized policy names (`"SELECT"`, `"INSERT"`, `"UPDATE"`, `"DELETE"`). Flag the **deprecated** `has_role('employee', "companyId") AND has_company_permission(...)` pattern and any company-scoped table with no RLS at all.
 - **Migrations** must follow `.ai/rules/workflow-database-migration.md`: forward-only, fork functions from their latest version with `DROP ... IF EXISTS` then recreate preserving every attribute, randomize the `HHMMSS` in the timestamp (never `000000`), and **redefine views with `SELECT *` after adding columns** to a base table. Flag deviations.

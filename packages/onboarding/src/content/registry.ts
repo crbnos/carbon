@@ -111,14 +111,6 @@ export const REGISTRY: PageDef[] = [
     group: "carbon-only",
     order: 12,
     carbonOnly: true
-  },
-  {
-    slug: "positioning",
-    navLabel: msg`Others vs Carbon`,
-    title: msg`Others vs Carbon`,
-    group: "carbon-only",
-    order: 13,
-    carbonOnly: true
   }
 ];
 

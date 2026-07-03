@@ -6,7 +6,7 @@ Route: `/x/settings/backups` (internal-gated — needs an `@carbon.ms` / `@carbo
 > NOT covered by the own round-trip: the FOREIGN restore (`remap=true`) path — that's where the unified `buildRowTransforms` substrate pass-through + reseed/template logic actually run. And the `20260625163000_add-companyid-to-backup-tables` migration (singletons + audit tables) must be applied before its new coverage shows up.
 
 ## Prerequisites
-- Logged in (see `/login`). Dev server up.
+- Logged in (see `/auth`). Dev server up.
 - `networkidle` wait times out on this app (persistent dev connections) — snapshot directly after a short `sleep` instead of `agent-browser wait --load networkidle`.
 
 ## Steps (own-company round-trip — all PASS)

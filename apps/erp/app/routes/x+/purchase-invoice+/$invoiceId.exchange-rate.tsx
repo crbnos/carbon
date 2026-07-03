@@ -14,7 +14,7 @@ import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyGroupId } = await requirePermissions(request, {
+  const { client, companyGroupId, userId } = await requirePermissions(request, {
     update: "invoicing"
   });
 
@@ -58,7 +58,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const update = await updatePurchaseInvoiceExchangeRate(client, {
     id: invoiceId,
-    exchangeRate: currency.data.exchangeRate
+    exchangeRate: currency.data.exchangeRate,
+    updatedBy: userId
   });
 
   if (update.error) {

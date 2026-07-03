@@ -120,6 +120,26 @@ export const terms = {
     definition: msg`One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates.`,
     href: "/docs/reference/routings"
   },
+  "job-operation": {
+    term: msg`Job operation`,
+    definition: msg`A routing step on a released job, the job's own copy of an operation, carrying a status the floor drives from Todo through Done.`,
+    href: "/docs/reference/jobs#operations"
+  },
+  "production-event": {
+    term: msg`Production event`,
+    definition: msg`A timed record of Setup, Labor, or Machine work logged against a job operation, whose duration rolls up into the operation's actual cost.`,
+    href: "/docs/reference/jobs#operations"
+  },
+  procedure: {
+    term: msg`Procedure`,
+    definition: msg`A reusable, versioned set of work instructions attached to a process, giving an operation its ordered steps to record and check plus the parameters it runs at.`,
+    href: "/docs/reference/jobs#procedures"
+  },
+  "standard-factor": {
+    term: msg`Standard factor`,
+    definition: msg`The unit a routing time is expressed in, such as Hours/Piece or Total Hours, telling Carbon whether the time scales with quantity or is fixed per run.`,
+    href: "/docs/reference/routings"
+  },
   "work-center": {
     term: msg`Work center`,
     definition: msg`Where an operation runs; carries labor and quoting rates, with overhead the difference between them.`,

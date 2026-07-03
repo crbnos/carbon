@@ -742,6 +742,7 @@ export const accountDefaults = {
   inventoryAccount: "1210",
   workInProgressAccount: "1230",
   receivablesAccount: "1110",
+  intercompanyReceivablesAccount: "1130",
   bankCashAccount: "1010",
   bankLocalCurrencyAccount: "1020",
   bankForeignCurrencyAccount: "1030",

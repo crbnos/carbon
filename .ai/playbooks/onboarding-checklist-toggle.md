@@ -11,7 +11,7 @@ Route: /x/get-started/plan (Plan & Board, "Plan" tab)
 ## Steps
 
 ### 1. Login
-- /login skill (DEV_BYPASS_EMAIL=test@carbon.ms). networkidle times out on this
+- /auth skill (DEV_BYPASS_EMAIL=test@carbon.ms). networkidle times out on this
   app — use `agent-browser snapshot -i` directly after open instead of waiting.
 
 ### 2. Enroll (one-time)

@@ -1,0 +1,37 @@
+#!/bin/sh
+# Fresh git worktrees / clones lack .husky/_/ until `pnpm install` runs its
+# prepare script. Without this guard the hook crashes with a cryptic
+# ".husky/_/husky.sh: No such file or directory". Skip hooks gracefully instead.
+if [ ! -f "$(dirname "$0")/_/husky.sh" ]; then
+    echo "⚠ husky not initialized — run 'pnpm install'. Skipping git hooks."
+    exit 0
+fi
+. "$(dirname "$0")/_/husky.sh"
+
+# Runs after a successful `git merge` / `git pull` (NOT after a rebase, and NOT
+# when the merge stopped on conflicts you resolved by hand). ORIG_HEAD is the
+# pre-merge tip, so this is the exact set of files the merge brought in.
+changed=$(git diff-tree -r --name-only --no-commit-id ORIG_HEAD HEAD 2>/dev/null)
+[ -z "$changed" ] && exit 0
+
+# Lingui catalogs union-merge (see .gitattributes), which can leave duplicate or
+# out-of-order msgids. Re-extract from source + clean to canonicalize.
+if echo "$changed" | grep -qE 'packages/locale/locales/.*\.po$'; then
+    echo "🌐 Merge touched .po catalogs — normalizing (lingui extract + clean)..."
+    pnpm lingui:extract && pnpm lingui:clean
+fi
+
+# MCP tool metadata is generated from *.service.ts. If the merge changed any
+# service file, regenerate so the header/tool list matches the merged source.
+if echo "$changed" | grep -q '\.service\.ts$'; then
+    echo "🔧 Merge touched *.service.ts — regenerating MCP tool metadata..."
+    npx tsx scripts/generate-mcp.ts
+fi
+
+# The merge commit is already made, so any normalization above is unstaged.
+# Leave it for review rather than silently amending the merge.
+if ! git diff --quiet; then
+    echo ""
+    echo "✅ Post-merge normalization produced changes. Review and commit them:"
+    echo "     git add -A && git commit -m 'chore: normalize catalogs after merge'"
+fi

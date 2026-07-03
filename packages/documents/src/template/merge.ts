@@ -50,6 +50,20 @@ export function mergeToken(token: string): string {
   return `{${token}}`;
 }
 
+/**
+ * Company detail fields shared by the customer/supplier-facing documents
+ * (invoice, order, PO, quote, packing slip). Also the field list offered for
+ * the footer registration number, which is company data by definition.
+ */
+export const COMPANY_MERGE_FIELDS: MergeField[] = [
+  { token: "company.name", label: "Company Name", group: "Company" },
+  { token: "company.city", label: "Company City", group: "Company" },
+  { token: "company.country", label: "Company Country", group: "Company" },
+  { token: "company.taxId", label: "Company Tax ID", group: "Company" },
+  { token: "company.eori", label: "Company EORI", group: "Company" },
+  { token: "company.vatNumber", label: "Company VAT Number", group: "Company" }
+];
+
 const SALES_INVOICE_MERGE_FIELDS: MergeField[] = [
   { token: "invoice.number", label: "Invoice Number", group: "Invoice" },
   { token: "invoice.dateIssued", label: "Issue Date", group: "Invoice" },
@@ -64,9 +78,7 @@ const SALES_INVOICE_MERGE_FIELDS: MergeField[] = [
   { token: "customer.addressLine1", label: "Address", group: "Customer" },
   { token: "customer.city", label: "City", group: "Customer" },
   { token: "customer.country", label: "Country", group: "Customer" },
-  { token: "company.name", label: "Company Name", group: "Company" },
-  { token: "company.city", label: "Company City", group: "Company" },
-  { token: "company.country", label: "Company Country", group: "Company" }
+  ...COMPANY_MERGE_FIELDS
 ];
 
 const SALES_ORDER_MERGE_FIELDS: MergeField[] = [
@@ -82,9 +94,7 @@ const SALES_ORDER_MERGE_FIELDS: MergeField[] = [
   { token: "customer.addressLine1", label: "Address", group: "Customer" },
   { token: "customer.city", label: "City", group: "Customer" },
   { token: "customer.country", label: "Country", group: "Customer" },
-  { token: "company.name", label: "Company Name", group: "Company" },
-  { token: "company.city", label: "Company City", group: "Company" },
-  { token: "company.country", label: "Company Country", group: "Company" }
+  ...COMPANY_MERGE_FIELDS
 ];
 
 const PURCHASE_ORDER_MERGE_FIELDS: MergeField[] = [
@@ -100,9 +110,7 @@ const PURCHASE_ORDER_MERGE_FIELDS: MergeField[] = [
   { token: "supplier.addressLine1", label: "Address", group: "Supplier" },
   { token: "supplier.city", label: "City", group: "Supplier" },
   { token: "supplier.country", label: "Country", group: "Supplier" },
-  { token: "company.name", label: "Company Name", group: "Company" },
-  { token: "company.city", label: "Company City", group: "Company" },
-  { token: "company.country", label: "Company Country", group: "Company" }
+  ...COMPANY_MERGE_FIELDS
 ];
 
 const QUOTE_MERGE_FIELDS: MergeField[] = [
@@ -118,9 +126,7 @@ const QUOTE_MERGE_FIELDS: MergeField[] = [
   { token: "customer.addressLine1", label: "Address", group: "Customer" },
   { token: "customer.city", label: "City", group: "Customer" },
   { token: "customer.country", label: "Country", group: "Customer" },
-  { token: "company.name", label: "Company Name", group: "Company" },
-  { token: "company.city", label: "Company City", group: "Company" },
-  { token: "company.country", label: "Company Country", group: "Company" }
+  ...COMPANY_MERGE_FIELDS
 ];
 
 const PACKING_SLIP_MERGE_FIELDS: MergeField[] = [
@@ -134,9 +140,7 @@ const PACKING_SLIP_MERGE_FIELDS: MergeField[] = [
   { token: "customer.addressLine1", label: "Address", group: "Customer" },
   { token: "customer.city", label: "City", group: "Customer" },
   { token: "customer.country", label: "Country", group: "Customer" },
-  { token: "company.name", label: "Company Name", group: "Company" },
-  { token: "company.city", label: "Company City", group: "Company" },
-  { token: "company.country", label: "Company Country", group: "Company" }
+  ...COMPANY_MERGE_FIELDS
 ];
 
 const STOCK_TRANSFER_MERGE_FIELDS: MergeField[] = [

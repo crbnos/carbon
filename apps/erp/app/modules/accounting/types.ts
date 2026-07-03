@@ -1,4 +1,4 @@
-import type { Database } from "@carbon/database";
+import type { Database, Json } from "@carbon/database";
 import type {
   getAccount,
   getAccountsList,
@@ -403,6 +403,45 @@ export type JournalEntryListItem = NonNullable<
 >[number];
 
 export type JournalEntryLine = JournalEntry["journalLine"][number];
+
+/**
+ * Row shape of the journalLines view (journalLine joined to its journal
+ * header). Maintained by hand until the cloud-generated DB types include
+ * the view — keep in sync with 20260702122210_journal-lines-view.sql.
+ */
+export type AccountLedgerLine = {
+  id: string;
+  journalId: string;
+  accountId: string | null;
+  amount: number;
+  quantity: number;
+  accrual: boolean;
+  description: string | null;
+  documentType: Database["public"]["Enums"]["journalLineDocumentType"] | null;
+  documentId: string | null;
+  documentLineReference: string | null;
+  externalDocumentId: string | null;
+  intercompanyPartnerId: string | null;
+  journalLineReference: string;
+  companyId: string;
+  customFields: Json | null;
+  tags: string[] | null;
+  createdAt: string;
+  updatedAt: string | null;
+  updatedBy: string | null;
+  // journal header columns
+  postingDate: string;
+  journalEntryId: string;
+  status: Database["public"]["Enums"]["journalEntryStatus"];
+  sourceType: Database["public"]["Enums"]["journalEntrySourceType"];
+  journalDescription: string | null;
+};
+
+export type AccountLedgerSummary = {
+  opening: number;
+  netChange: number;
+  closing: number;
+};
 
 // -- Fixed Asset types --
 

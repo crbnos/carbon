@@ -1843,7 +1843,7 @@ export async function upsertSupplier(
     return client
       .from("supplier")
       .insert([supplier])
-      .select("id, name")
+      .select("id, name, website, supplierStatus, readableId")
       .single();
   }
   return client

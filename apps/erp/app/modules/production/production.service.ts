@@ -520,9 +520,55 @@ export async function deleteProcedureParameter(
 
 export async function deleteProductionEvent(
   client: SupabaseClient<Database>,
-  productionEventId: string
+  productionEventId: string,
+  companyId: string,
+  userId: string
 ) {
-  return client.from("productionEvent").delete().eq("id", productionEventId);
+  const event = await client
+    .from("productionEvent")
+    .select("id, postedToGL")
+    .eq("id", productionEventId)
+    .eq("companyId", companyId)
+    .single();
+  if (event.error) return event;
+
+  // A posted event's journal entry must be reversed before the row goes
+  // away, otherwise WIP keeps the orphaned absorption.
+  if (event.data.postedToGL) {
+    const reversal = await client.functions.invoke<{
+      success: boolean;
+      reason?: string;
+    }>("post-production-event", {
+      body: { productionEventId, companyId, userId, reverse: true }
+    });
+    if (reversal.error) {
+      return {
+        data: null,
+        error: {
+          message: `Failed to reverse the event's journal entry: ${reversal.error.message}`
+        }
+      };
+    }
+    if (reversal.data && reversal.data.success === false) {
+      return {
+        data: null,
+        error: {
+          message: `Cannot delete a posted production event: ${
+            reversal.data.reason ?? "unknown reason"
+          }`
+        }
+      };
+    }
+  }
+
+  // Recorded output quantities reference this event via ON DELETE SET NULL FKs
+  // (migration below), so they survive with their link cleared — the quantities
+  // are real output and outlive an individual time card.
+  return client
+    .from("productionEvent")
+    .delete()
+    .eq("id", productionEventId)
+    .eq("companyId", companyId);
 }
 
 export async function deleteProductionQuantity(

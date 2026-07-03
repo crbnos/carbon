@@ -16,6 +16,8 @@ description: >-
 warm-paper aesthetic. It is no longer scaffolded; it exists and ships content. This skill is how to add
 or change docs **in that system, in its house style, grounded in real Carbon code.**
 
+**Announce at start:** "Using the carbon-docs skill — authoring docs for {topic}."
+
 > The single biggest mistake is writing plausible ERP-generic prose. Carbon's behavior is specific and
 > often counterintuitive (WIP is a GL balance not a table; payment is a field not an entity; overhead is
 > not absorbed; fixed-asset disposal is scrapping-only). **Every claim is grounded in source.** See the
@@ -300,4 +302,4 @@ Never declare docs done without: the new content rendering (in the user's runnin
 `pnpm --filter docs build`), every internal link resolving, any new `<Term>` glossary entries grounded in
 source + their popovers rendering, names matching real code, **no generic repeated
 headings**, and a re-read that confirms each page says what matters / names the mistake / points onward. Then
-record progress (`.ai/scratch/tasks/` + memory). **Don't kill or rebuild under the user's running dev server.**
+record progress (the `.ai/plans/` plan file if one exists, + memory). **Don't kill or rebuild under the user's running dev server.**

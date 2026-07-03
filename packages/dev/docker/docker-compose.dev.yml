@@ -49,7 +49,7 @@ services:
       - -c
       - maintenance_work_mem=${PG_MAINTENANCE_WORK_MEM:-64MB}
       - -c
-      - max_connections=${PG_MAX_CONNECTIONS:-25}
+      - max_connections=${PG_MAX_CONNECTIONS:-100}
       - -c
       - fsync=off
       - -c

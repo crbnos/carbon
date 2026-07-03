@@ -9,7 +9,6 @@ export {
 export {
   bindingPath,
   hostedScreenshotPath,
-  LOOPS_DIR,
   ledgerPath,
   logPath,
   outcomePath,

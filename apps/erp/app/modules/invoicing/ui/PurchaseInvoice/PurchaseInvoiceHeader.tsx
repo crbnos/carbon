@@ -20,6 +20,8 @@ import { useEffect, useMemo, useState } from "react";
 import { flushSync } from "react-dom";
 import {
   LuCheckCheck,
+  LuCircleCheck,
+  LuCircleX,
   LuEllipsisVertical,
   LuHandCoins,
   LuPanelLeft,
@@ -28,13 +30,14 @@ import {
   LuTicketX,
   LuTrash
 } from "react-icons/lu";
-import { Link, useParams } from "react-router";
+import { Link, useFetcher, useParams } from "react-router";
 import { useAuditLog } from "~/components/AuditLog";
 import { usePanels } from "~/components/Layout/Panels";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import {
   usePermissions,
   useRouteData,
+  useSettings,
   useSupplierApprovalRequired,
   useUser
 } from "~/hooks";
@@ -106,6 +109,21 @@ const PurchaseInvoiceHeader = () => {
     purchaseInvoice.status === "Paid" ||
     purchaseInvoice.status === "Partially Paid";
   const canVoid = isPosted && !isVoided && !hasPayment;
+
+  // Manual Mark as Paid is the settled signal for companies without
+  // accounting; with accounting enabled invoices settle only via payments.
+  // baseStatus is the stored purchaseInvoice.status (the view's status column
+  // is derived from settlements, so a settlement-paid invoice stays untouched).
+  const settings = useSettings();
+  const accountingEnabled =
+    (settings as { accountingEnabled?: boolean }).accountingEnabled ?? false;
+  const baseStatus = (purchaseInvoice as { baseStatus?: string | null })
+    .baseStatus;
+  const statusFetcher = useFetcher<{}>();
+  const canToggleManualPaid =
+    !accountingEnabled && isPosted && permissions.can("update", "invoicing");
+  const canMarkPaid = canToggleManualPaid && baseStatus === "Open";
+  const canMarkUnpaid = canToggleManualPaid && baseStatus === "Paid";
 
   const [relatedDocs, setRelatedDocs] = useState<{
     purchaseOrders: { id: string; readableId: string }[];
@@ -183,8 +201,10 @@ const PurchaseInvoiceHeader = () => {
     postingModal.onOpen();
   };
 
-  // Status is derived from invoiceSettlement rows (migration
-  // 20260519130000); manual mutation removed.
+  // Status is derived from invoiceSettlement rows, except base-status 'Paid',
+  // which is the manual/legacy/Xero "settled" signal. Companies without
+  // accounting can toggle it via Mark as Paid / Mark as Unpaid; the status
+  // route rejects manual 'Paid' when accounting is enabled.
   const canMakePayment =
     isInvoicePayable(purchaseInvoice.status, purchaseInvoice.balance) &&
     permissions.can("create", "invoicing");
@@ -222,6 +242,46 @@ const PurchaseInvoiceHeader = () => {
               </DropdownMenuTrigger>
               <DropdownMenuContent>
                 {auditLogTrigger}
+                {canMarkPaid && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      disabled={statusFetcher.state !== "idle"}
+                      onClick={() =>
+                        statusFetcher.submit(
+                          { status: "Paid" },
+                          {
+                            method: "post",
+                            action: path.to.purchaseInvoiceStatus(invoiceId)
+                          }
+                        )
+                      }
+                    >
+                      <DropdownMenuIcon icon={<LuCircleCheck />} />
+                      <Trans>Mark as Paid</Trans>
+                    </DropdownMenuItem>
+                  </>
+                )}
+                {canMarkUnpaid && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      disabled={statusFetcher.state !== "idle"}
+                      onClick={() =>
+                        statusFetcher.submit(
+                          { status: "Open" },
+                          {
+                            method: "post",
+                            action: path.to.purchaseInvoiceStatus(invoiceId)
+                          }
+                        )
+                      }
+                    >
+                      <DropdownMenuIcon icon={<LuCircleX />} />
+                      <Trans>Mark as Unpaid</Trans>
+                    </DropdownMenuItem>
+                  </>
+                )}
                 {isPosted && (
                   <>
                     <DropdownMenuSeparator />

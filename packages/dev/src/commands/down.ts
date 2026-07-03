@@ -1,4 +1,4 @@
-import { intro, outro, tasks } from "@clack/prompts";
+import { intro, log, outro, tasks } from "@clack/prompts";
 import pc from "picocolors";
 import { syncAppPortlessConfigs } from "../env.js";
 import { currentBranch } from "../git.js";
@@ -6,7 +6,6 @@ import { killOrphanedApps, killOrphanedStripe } from "../services/apps.js";
 import { stopStack } from "../services/compose.js";
 import { branchToPrefix, unregisterAliases } from "../services/portless.js";
 import {
-  ensureSlugAvailable,
   getSlot,
   getWorktreeRoot,
   projectName,
@@ -23,9 +22,9 @@ export async function down(opts: { silent?: boolean; volumes?: boolean } = {}) {
   const project = projectName(slug);
   const withVolumes = opts.volumes ?? false;
 
-  // Refuse to tear down a stack that another worktree owns (same slug, different
-  // path). Passes for our own stack and when nothing is running.
-  await ensureSlugAvailable(slug, root);
+  // No ensureSlugAvailable guard here — `down` is the user explicitly asking
+  // to stop their own stack. The guard (meant for `up`) would block teardown
+  // of moved/borrowed/stale worktrees, leaving containers orphaned.
 
   if (opts.silent) {
     return runPlain(root, slug, project, withVolumes);
@@ -37,7 +36,11 @@ export async function down(opts: { silent?: boolean; volumes?: boolean } = {}) {
       title: `Stopping ${project} (${withVolumes ? "removing volumes" : "volumes preserved"})`,
       task: async (msg) => {
         msg(withVolumes ? "docker compose down -v" : "docker compose down");
-        await stopStack(root, slug, withVolumes);
+        const code = await stopStack(root, slug, withVolumes);
+        if (code !== 0) {
+          log.warn("stack stop failed — containers may still be running");
+          return "partial — check `crbn status`";
+        }
         return withVolumes ? "stack stopped, volumes removed" : "stack stopped";
       }
     },
@@ -84,7 +87,12 @@ async function runPlain(
   step(
     `stopping ${project} (${withVolumes ? "removing volumes" : "volumes preserved"})`
   );
-  await stopStack(root, slug, withVolumes);
+  const code = await stopStack(root, slug, withVolumes);
+  if (code !== 0) {
+    process.stderr.write(
+      `${pc.yellow("!")} stack stop failed — containers may still be running\n`
+    );
+  }
   done(withVolumes ? "stack stopped, volumes removed" : "stack stopped");
 
   step("killing orphaned dev servers & stripe listener");

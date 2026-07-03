@@ -310,6 +310,11 @@ serve(async (req: Request) => {
       const ad = accountDefaults.data;
       const journalLineReference = nanoid();
 
+      // Intercompany invoices are booked to the IC receivables account
+      // (1130) at posting, so the payment must relieve the same control
+      // account — otherwise 1130 stays debited and regular AR goes negative.
+      let controlAccountId = isAR ? ad.receivablesAccount : ad.payablesAccount;
+
       // Resolve the counterparty type + entity dimensions for this payment.
       const companyRecord = await client
         .from("company")
@@ -327,7 +332,7 @@ serve(async (req: Request) => {
           isAR
             ? client
                 .from("customer")
-                .select("customerTypeId")
+                .select("customerTypeId, intercompanyCompanyId")
                 .eq("id", partyId)
                 .maybeSingle()
             : client
@@ -365,6 +370,20 @@ serve(async (req: Request) => {
             valueId: partyId,
           });
         }
+
+        if (isAR && party?.intercompanyCompanyId) {
+          // Relieve the same control account the invoice was booked to. Resolve
+          // it from accountDefault (stable id), not by account number — numbers
+          // are user-editable. Fall back to regular receivables if unset.
+          const icReceivablesAccount = (
+            ad as unknown as {
+              intercompanyReceivablesAccount?: string | null;
+            }
+          ).intercompanyReceivablesAccount;
+          if (icReceivablesAccount) {
+            controlAccountId = icReceivablesAccount;
+          }
+        }
       }
 
       // Build the balanced double-entry. Account-id resolution, the per-
@@ -390,9 +409,7 @@ serve(async (req: Request) => {
           sourceExchangeRate: Number(a.sourceExchangeRate),
         })),
         accounts: {
-          controlAccountId: isAR
-            ? ad.receivablesAccount
-            : ad.payablesAccount,
+          controlAccountId,
           discountAccountId: isAR
             ? ad.customerPaymentDiscountAccount
             : ad.supplierPaymentDiscountAccount,
@@ -569,17 +586,93 @@ serve(async (req: Request) => {
         }
       }
 
+      // The memos behind the staged credits must still be Posted with enough
+      // remaining when the payment posts — a memo voided (or drawn down by
+      // another payment) after staging must fail the post, not go live
+      // silently. FOR UPDATE serializes concurrent posts drawing on the same
+      // memo.
+      const stagedByMemo = new Map<string, number>();
+      for (const c of credits.data ?? []) {
+        if (!c.memoId) continue;
+        stagedByMemo.set(
+          c.memoId,
+          (stagedByMemo.get(c.memoId) ?? 0) + Number(c.appliedAmount)
+        );
+      }
+      if (stagedByMemo.size > 0) {
+        const memoIds = [...stagedByMemo.keys()];
+        const memos = await trx
+          .selectFrom("memo")
+          .select(["id", "status", "amount"])
+          .where("id", "in", memoIds)
+          .where("companyId", "=", companyId)
+          .forUpdate()
+          .execute();
+        const memoById = new Map(memos.map((m) => [m.id, m]));
+
+        // Live consumption of these memos: memo-sourced settlement rows that
+        // are not staged on a non-Posted payment. This payment's own staged
+        // rows are excluded (its via-payment is still Draft here).
+        const memoApps = await trx
+          .selectFrom("invoiceSettlement")
+          .leftJoin(
+            "payment as vp",
+            "vp.id",
+            "invoiceSettlement.appliedViaPaymentId"
+          )
+          .select(["invoiceSettlement.memoId", "invoiceSettlement.appliedAmount"])
+          .where("invoiceSettlement.memoId", "in", memoIds)
+          .where((eb) =>
+            eb.or([
+              eb("invoiceSettlement.appliedViaPaymentId", "is", null),
+              eb("vp.status", "=", "Posted"),
+            ])
+          )
+          .execute();
+        const appliedByMemo = new Map<string, number>();
+        for (const a of memoApps) {
+          if (!a.memoId) continue;
+          appliedByMemo.set(
+            a.memoId,
+            (appliedByMemo.get(a.memoId) ?? 0) + Number(a.appliedAmount)
+          );
+        }
+
+        for (const [memoId, staged] of stagedByMemo) {
+          const memo = memoById.get(memoId);
+          if (!memo) throw new Error(`Memo ${memoId} not found`);
+          if (memo.status !== "Posted") {
+            throw new Error(
+              `Cannot post payment: memo ${memoId} is ${memo.status} (must be Posted)`
+            );
+          }
+          const remaining =
+            Number(memo.amount) - (appliedByMemo.get(memoId) ?? 0);
+          if (staged > remaining + 0.0001) {
+            throw new Error(
+              `Staged credit (${staged}) exceeds remaining amount (${remaining}) on memo ${memoId}`
+            );
+          }
+        }
+      }
+
       // When this payment applies more than its cash, the excess draws down the
       // party's available on-account credit — the net unapplied cash left on
       // their OTHER posted payments. Lock those payments FOR UPDATE so two
       // concurrent credit-consuming posts can't both spend the same credit.
       if (overAppliedBase > 0.0001) {
+        // Only same-direction payments contribute credit: a Receipt from a
+        // customer leaves on-account credit; a Disbursement to the same
+        // customer is a refund that CONSUMES credit, not a source of it.
+        // Mirrors getAvailableOnAccountCredit in invoicing.service.ts.
+        const creditPaymentType = isAR ? "Receipt" : "Disbursement";
         const postedPayments = await (isAR
           ? trx
               .selectFrom("payment")
               .select(["id", "totalAmount", "exchangeRate"])
               .where("companyId", "=", companyId)
               .where("status", "=", "Posted")
+              .where("paymentType", "=", creditPaymentType)
               .where("customerId", "=", paymentPartyId)
               .forUpdate()
               .execute()
@@ -588,6 +681,7 @@ serve(async (req: Request) => {
               .select(["id", "totalAmount", "exchangeRate"])
               .where("companyId", "=", companyId)
               .where("status", "=", "Posted")
+              .where("paymentType", "=", creditPaymentType)
               .where("supplierId", "=", paymentPartyId)
               .forUpdate()
               .execute());

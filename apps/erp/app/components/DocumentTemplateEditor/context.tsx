@@ -317,6 +317,14 @@ export function DocumentTemplateProvider({
   if (!storeRef.current) storeRef.current = createEditorStore(props);
   const store = storeRef.current;
 
+  // Sections are reference data, not draft state: the section modal saves them
+  // through its own action and the route loader revalidates. Resync them into
+  // the store so a reopened modal seeds from the fresh row (e.g. the footer's
+  // registration-line config), leaving the user's draft untouched.
+  useEffect(() => {
+    store.setState({ sections: props.sections });
+  }, [store, props.sections]);
+
   const fetcher = useFetcher<{ success?: boolean }>();
   const isSaving = fetcher.state !== "idle";
   const savedRef = useRef(false);

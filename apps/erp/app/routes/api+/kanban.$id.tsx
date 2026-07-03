@@ -283,7 +283,7 @@ async function handleKanban({
 
     const createPurchaseOrderLine = await upsertPurchaseOrderLine(client, {
       purchaseOrderId: purchaseOrderId!,
-      purchaseOrderLineType: item.data?.type,
+      purchaseOrderLineType: item.data?.type as any,
       itemId: kanban.data.itemId!,
       purchaseQuantity: kanban.data.quantity!,
       supplierUnitPrice:

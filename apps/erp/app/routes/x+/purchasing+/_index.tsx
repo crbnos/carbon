@@ -45,7 +45,6 @@ import { useDateFormatter, useNumberFormatter } from "@react-aria/i18n";
 import type { DateRange } from "@react-types/datepicker";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import {
-  LuArrowUpRight,
   LuChevronDown,
   LuClock,
   LuCreditCard,
@@ -56,9 +55,15 @@ import {
   LuPackageSearch
 } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
-import { Await, Link, useFetcher, useLoaderData } from "react-router";
+import { Await, useFetcher, useLoaderData } from "react-router";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
-import { DateSelect, Empty, Hyperlink, SupplierAvatar } from "~/components";
+import {
+  DateSelect,
+  Empty,
+  Hyperlink,
+  MetricCard,
+  SupplierAvatar
+} from "~/components";
 import { CSVLink } from "~/components/CSVLink";
 import { useUser } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
@@ -392,92 +397,35 @@ export default function PurchaseDashboard() {
   return (
     <div className="flex flex-col gap-4 w-full p-4 h-[calc(100dvh-var(--header-height))] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground">
       <div className="grid w-full gap-4 grid-cols-1 lg:grid-cols-3">
-        <Card>
-          <CardHeader className="flex-row gap-2">
-            <LuPackageSearch className="text-muted-foreground" />
-            <CardTitle>
-              <Trans>Active Supplier Quotes</Trans>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <HStack className="justify-between w-full items-center">
-              <h3 className="text-5xl font-medium tracking-tighter">
-                {openSupplierQuotes.count ?? 0}
-              </h3>
-              <Button
-                rightIcon={<LuArrowUpRight />}
-                variant="secondary"
-                asChild
-              >
-                <Link
-                  to={`${
-                    path.to.supplierQuotes
-                  }?filter=status:in:${OPEN_SUPPLIER_QUOTE_STATUSES.join(",")}`}
-                >
-                  <Trans>View Active Quotes</Trans>
-                </Link>
-              </Button>
-            </HStack>
-          </CardContent>
-        </Card>
+        <MetricCard
+          icon={<LuPackageSearch />}
+          title={<Trans>Active Supplier Quotes</Trans>}
+          value={openSupplierQuotes.count ?? 0}
+          to={`${
+            path.to.supplierQuotes
+          }?filter=status:in:${OPEN_SUPPLIER_QUOTE_STATUSES.join(",")}`}
+          linkLabel={t`View Active Quotes`}
+        />
 
-        <Card>
-          <CardHeader className="flex-row gap-2">
-            <LuLayoutList className="text-muted-foreground" />
-            <CardTitle>
-              <Trans>Open Purchase Orders</Trans>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <HStack className="justify-between w-full items-center">
-              <h3 className="text-5xl font-medium tracking-tighter">
-                {openPurchaseOrders.count ?? 0}
-              </h3>
-              <Button
-                rightIcon={<LuArrowUpRight />}
-                variant="secondary"
-                asChild
-              >
-                <Link
-                  to={`${
-                    path.to.purchaseOrders
-                  }?filter=status:in:${OPEN_PURCHASE_ORDER_STATUSES.join(",")}`}
-                >
-                  <Trans>View Open POs</Trans>
-                </Link>
-              </Button>
-            </HStack>
-          </CardContent>
-        </Card>
+        <MetricCard
+          icon={<LuLayoutList />}
+          title={<Trans>Open Purchase Orders</Trans>}
+          value={openPurchaseOrders.count ?? 0}
+          to={`${
+            path.to.purchaseOrders
+          }?filter=status:in:${OPEN_PURCHASE_ORDER_STATUSES.join(",")}`}
+          linkLabel={t`View Open POs`}
+        />
 
-        <Card>
-          <CardHeader className="flex-row gap-2">
-            <LuCreditCard className="text-muted-foreground" />
-            <CardTitle>
-              <Trans>Open Purchase Invoices</Trans>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <HStack className="justify-between w-full items-center">
-              <h3 className="text-5xl font-medium tracking-tighter">
-                {openPurchaseInvoices.count ?? 0}
-              </h3>
-              <Button
-                rightIcon={<LuArrowUpRight />}
-                variant="secondary"
-                asChild
-              >
-                <Link
-                  to={`${
-                    path.to.invoicingPurchasing
-                  }?filter=status:in:${OPEN_INVOICE_STATUSES.join(",")}`}
-                >
-                  <Trans>View Open Invoices</Trans>
-                </Link>
-              </Button>
-            </HStack>
-          </CardContent>
-        </Card>
+        <MetricCard
+          icon={<LuCreditCard />}
+          title={<Trans>Open Purchase Invoices</Trans>}
+          value={openPurchaseInvoices.count ?? 0}
+          to={`${
+            path.to.invoicingPurchasing
+          }?filter=status:in:${OPEN_INVOICE_STATUSES.join(",")}`}
+          linkLabel={t`View Open Invoices`}
+        />
       </div>
 
       <Card>

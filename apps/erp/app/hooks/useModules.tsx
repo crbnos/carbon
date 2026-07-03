@@ -6,6 +6,7 @@ import {
   LuCreditCard,
   LuCrown,
   LuFactory,
+  LuFiles,
   LuFolderCheck,
   LuLandmark,
   LuSettings,
@@ -52,14 +53,13 @@ function useModuleDefinitions(): ModuleDefinition[] {
       to: path.to.chartOfAccounts,
       icon: LuLandmark
     },
-    // Documents module hidden for now.
-    // {
-    //   key: "documents",
-    //   permission: "documents",
-    //   name: t`Documents`,
-    //   to: path.to.documents,
-    //   icon: LuFiles
-    // },
+    {
+      key: "documents",
+      permission: "documents",
+      name: t`Documents`,
+      to: path.to.documents,
+      icon: LuFiles
+    },
     {
       key: "inventory",
       permission: "inventory",

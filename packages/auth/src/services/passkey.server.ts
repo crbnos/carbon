@@ -135,7 +135,9 @@ export async function getPasskeyRegistrationOptions(
     rpID: RP_ID,
     userName: userEmail,
     userDisplayName: userDisplayName || userEmail,
-    userID: new TextEncoder().encode(userId),
+    userID: new Uint8Array(
+      new TextEncoder().encode(userId)
+    ) as unknown as Uint8Array<ArrayBuffer>,
     attestationType: "none",
     excludeCredentials: existingCredentialIds.map((id) => ({
       id,

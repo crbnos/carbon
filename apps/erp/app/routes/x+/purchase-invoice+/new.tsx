@@ -9,15 +9,20 @@ import type { FunctionsResponse } from "@supabase/functions-js";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { useUrlParams, useUser } from "~/hooks";
+import { upsertDocument } from "~/modules/documents";
 import {
   createPurchaseInvoiceFromPurchaseOrder,
+  getPurchaseInvoice,
   insertPurchaseInvoice,
   PurchaseInvoiceForm,
-  purchaseInvoiceValidator
+  purchaseInvoiceValidator,
+  upsertPurchaseInvoiceLine
 } from "~/modules/invoicing";
+import { resolveItemIdFromExtractedText } from "~/modules/items";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+import { stripSpecialCharacters } from "~/utils/string";
 
 export const handle: Handle = {
   breadcrumb: msg`Purchasing`,
@@ -99,6 +104,107 @@ export async function action({ request }: ActionFunctionArgs) {
         error(result.error, "Failed to insert purchase invoice")
       )
     );
+  }
+
+  const extractedLineItemsStr = formData.get("extractedLineItems") as string;
+  let extractedLineItems: any[] = [];
+  if (extractedLineItemsStr) {
+    try {
+      extractedLineItems = JSON.parse(extractedLineItemsStr);
+    } catch {
+      // ignore
+    }
+  }
+
+  const extractedTaxAmountStr = formData.get("extractedTaxAmount") as string;
+  const extractedTaxAmount = Number.parseFloat(extractedTaxAmountStr) || 0;
+
+  const promises: Promise<any>[] = [];
+
+  if (extractedLineItems.length > 0) {
+    let taxApplied = false;
+
+    for (const item of extractedLineItems) {
+      if (!item.description && !item.partNumber) continue;
+
+      const lineTax = !taxApplied ? extractedTaxAmount : 0;
+      taxApplied = true;
+
+      // Map the line up front when the extracted text directly matches an
+      // existing record — only lines with no direct match are left as
+      // comments for the review modal.
+      const itemId = await resolveItemIdFromExtractedText(
+        client,
+        companyId,
+        { type: "supplier", id: d.supplierId },
+        [item.partNumber, item.description]
+      );
+
+      promises.push(
+        upsertPurchaseInvoiceLine(client, {
+          invoiceId: result.data.id,
+          invoiceLineType: itemId ? "Part" : "Comment",
+          itemId: itemId ?? undefined,
+          description: item.partNumber || item.description || "Line Item",
+          quantity: item.quantity || 1,
+          supplierUnitPrice: item.unitPrice || 0,
+          supplierShippingCost: 0,
+          supplierTaxAmount: lineTax,
+          locationId: d.locationId,
+          companyId,
+          createdBy: userId,
+          customFields: {}
+        })
+      );
+    }
+  }
+
+  const extractedStoragePath = formData.get("extractedStoragePath") as
+    | string
+    | undefined;
+
+  const resultDataId = result.data.id;
+
+  if (extractedStoragePath) {
+    promises.push(
+      (async () => {
+        const fetchedInvoice = await getPurchaseInvoice(client, resultDataId);
+        const interactionId = fetchedInvoice.data?.supplierInteractionId;
+
+        if (interactionId) {
+          const filenameParts = extractedStoragePath.split("/");
+          const basename =
+            filenameParts[filenameParts.length - 1] || "Extracted_Invoice.pdf";
+          const originalFilename = basename.includes("_")
+            ? basename.split("_").slice(1).join("_")
+            : basename;
+          const safeFilename = stripSpecialCharacters(originalFilename);
+          const newStoragePath = `${companyId}/supplier-interaction/${interactionId}/${safeFilename}`;
+
+          const copyResult = await client.storage
+            .from("private")
+            .copy(extractedStoragePath, newStoragePath);
+
+          if (!copyResult.error) {
+            await upsertDocument(client, {
+              path: newStoragePath,
+              name: originalFilename,
+              size: 0,
+              sourceDocument: "Purchase Invoice",
+              sourceDocumentId: resultDataId,
+              readGroups: [userId],
+              writeGroups: [userId],
+              createdBy: userId,
+              companyId
+            });
+          }
+        }
+      })()
+    );
+  }
+
+  if (promises.length > 0) {
+    await Promise.all(promises);
   }
 
   throw redirect(path.to.purchaseInvoice(result.data.id));

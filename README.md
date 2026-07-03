@@ -356,9 +356,9 @@ To restore a production database snapshot locally:
 4. Pipe the backup into the local DB as the superuser (`supabase_admin` for plain-text dumps, or use `pg_restore` for `.dump` archives):
    ```bash
    $ source .env.local
-   $ PGPASSWORD=postgres psql -h localhost -p "$PORT_DB" -U supabase_admin -d postgres --no-owner < /path/to/backup.sql
+   $ PGPASSWORD=postgres psql -h localhost -p "$PORT_DB" -U supabase_admin -d postgres < /path/to/backup.sql
    # …or for .dump archives:
-   $ PGPASSWORD=postgres pg_restore -h localhost -p "$PORT_DB" -U supabase_admin -d postgres --no-owner /path/to/backup.dump
+   $ PGPASSWORD=postgres pg_restore -h localhost -p "$PORT_DB" -U supabase_admin -d postgres /path/to/backup.dump
    ```
 5. Regenerate types so app code reflects the restored schema:
    ```bash

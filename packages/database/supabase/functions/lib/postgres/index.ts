@@ -30,7 +30,25 @@ export function getRuntime() {
   return "node";
 }
 
+// Reuse one long-lived pool per connection size instead of minting a fresh
+// pool on every call. A pg.Pool is designed to be a long-lived singleton;
+// creating one per invocation (e.g. per inngest event handler / cron tick)
+// and never ending it leaks connections and exhausts `max_connections`.
+// In Node this Map lives for the process; in Deno it's per-isolate (edge
+// functions already create their pool once at module scope, so this is a
+// no-op for them).
+const poolCache = new Map<number, Pool>();
+
 export function getPostgresConnectionPool(connections: number): Pool {
+  const cached = poolCache.get(connections);
+  if (cached) return cached;
+
+  const pool = createPostgresConnectionPool(connections);
+  poolCache.set(connections, pool);
+  return pool;
+}
+
+function createPostgresConnectionPool(connections: number): Pool {
   const runtime = getRuntime();
 
   switch (runtime) {

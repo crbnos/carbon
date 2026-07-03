@@ -416,8 +416,8 @@ const PurchaseInvoiceSummary = ({
     }, 0) ?? 0;
 
   const shippingCost =
-    (routeData?.purchaseInvoiceDelivery?.supplierShippingCost ?? 0) *
-    (routeData?.purchaseInvoice?.exchangeRate ?? 1);
+    (routeData?.purchaseInvoiceDelivery?.supplierShippingCost ?? 0) /
+    (routeData?.purchaseInvoice?.exchangeRate || 1);
 
   const supplierShippingCost =
     routeData?.purchaseInvoiceDelivery?.supplierShippingCost ?? 0;

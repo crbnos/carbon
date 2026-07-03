@@ -29,6 +29,13 @@ export function renderEnv(opts: {
   lines.push("# Internal compose ports (apps do not read these directly)");
   for (const [k, v] of Object.entries(ports)) lines.push(`${k}=${v}`);
   lines.push("");
+  lines.push("# Postgres tuning (consumed by docker-compose.dev.yml)");
+  // Supabase's own services (PostgREST, realtime, storage, cron, ...) hold
+  // ~20 connections at idle, so the previous default of 25 left no room for
+  // GoTrue/the app and caused "remaining connection slots are reserved..."
+  // (53300) errors that surfaced as random logouts. Match the prod default.
+  lines.push(`PG_MAX_CONNECTIONS=${process.env.PG_MAX_CONNECTIONS ?? "100"}`);
+  lines.push("");
   lines.push(
     portless
       ? "# App-facing URLs (portless hostnames)"

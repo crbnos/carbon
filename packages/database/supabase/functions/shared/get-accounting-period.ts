@@ -24,10 +24,26 @@ const daysInMonths: Record<number, number> = {
   12: 31,
 };
 
+// Run `fn` inside a transaction, reusing `db` when it is already one.
+// The edge-function connection pool is size 1, so opening a nested
+// `db.transaction()` while the caller already holds the pool's only connection
+// would wait forever for a second connection and the isolate would be killed
+// (wall-clock timeout). Callers already inside a transaction must therefore pass
+// their `trx` so we reuse it; callers that resolve the period before starting a
+// transaction pass the pool and we open one (the pre-existing behavior).
+async function runInTransaction<R>(
+  db: Kysely<DB>,
+  fn: (trx: Kysely<DB>) => Promise<R>
+): Promise<R> {
+  return db.isTransaction ? fn(db) : db.transaction().execute(fn);
+}
+
 // tries to get the current accounting period
 // and if not found, creates a fiscal year and accounting periods
 // and updates the active accounting period/fiscal year
-
+//
+// Pass the caller's transaction (`trx`) as `db` when calling from inside a
+// transaction — see runInTransaction above.
 export async function getCurrentAccountingPeriod<T>(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -37,7 +53,7 @@ export async function getCurrentAccountingPeriod<T>(
   const d = format(new Date(), "yyyy-MM-dd");
 
   // get the current accounting period
-  let currentAccountingPeriod = await client
+  const currentAccountingPeriod = await client
     .from("accountingPeriod")
     .select("*")
     // .gte("endDate", d.toString())
@@ -58,7 +74,8 @@ export async function getCurrentAccountingPeriod<T>(
     currentAccountingPeriod.data &&
     currentAccountingPeriod.data.status === "Inactive"
   ) {
-    await db.transaction().execute(async (trx) => {
+    const periodId = currentAccountingPeriod.data.id;
+    await runInTransaction(db, async (trx) => {
       await trx
         .updateTable("accountingPeriod")
         .set({ status: "Inactive" })
@@ -69,12 +86,12 @@ export async function getCurrentAccountingPeriod<T>(
       await trx
         .updateTable("accountingPeriod")
         .set({ status: "Active" })
-        .where("id", "=", currentAccountingPeriod.data!.id)
+        .where("id", "=", periodId)
         .where("companyId", "=", companyId)
         .execute();
     });
 
-    return currentAccountingPeriod.data.id;
+    return periodId;
   }
 
   const year = new Date().getFullYear();
@@ -88,7 +105,7 @@ export async function getCurrentAccountingPeriod<T>(
     endDate = `${year}-${month.toString().padStart(2, "0")}-29`;
   }
 
-  const newPeriod = await db.transaction().execute(async (trx) => {
+  const newPeriod = await runInTransaction(db, async (trx) => {
     await trx
       .updateTable("accountingPeriod")
       .set({ status: "Inactive" })
@@ -96,7 +113,7 @@ export async function getCurrentAccountingPeriod<T>(
       .where("companyId", "=", companyId)
       .execute();
 
-    const result = await trx
+    return await trx
       .insertInto("accountingPeriod")
       .values({
         startDate,
@@ -107,8 +124,6 @@ export async function getCurrentAccountingPeriod<T>(
       })
       .returning("id")
       .executeTakeFirstOrThrow();
-
-    return result;
   });
 
   return newPeriod.id;

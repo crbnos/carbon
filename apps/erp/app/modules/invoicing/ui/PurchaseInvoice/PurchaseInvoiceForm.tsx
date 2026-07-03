@@ -1,4 +1,3 @@
-import { useCarbon } from "@carbon/auth";
 import { ValidatedForm } from "@carbon/form";
 import {
   Card,
@@ -8,12 +7,9 @@ import {
   CardHeader,
   CardTitle,
   cn,
-  toast,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useState } from "react";
-import { flushSync } from "react-dom";
 import { useParams } from "react-router";
 import type { z } from "zod";
 import {
@@ -30,6 +26,7 @@ import {
   SupplierLocation
 } from "~/components/Form";
 import PaymentTerm from "~/components/Form/PaymentTerm";
+import { PdfExtractor } from "~/components/Form/PdfExtractor";
 import {
   usePermissions,
   useRouteData,
@@ -38,6 +35,7 @@ import {
 import { purchaseInvoiceValidator } from "~/modules/invoicing";
 import { path } from "~/utils/path";
 import { isPurchaseInvoiceLocked } from "../../invoicing.models";
+import { usePurchaseInvoiceAutoFill } from "./usePurchaseInvoiceAutoFill";
 
 type PurchaseInvoiceFormValues = z.infer<typeof purchaseInvoiceValidator>;
 
@@ -49,7 +47,6 @@ const PurchaseInvoiceForm = ({ initialValues }: PurchaseInvoiceFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
   const supplierApprovalRequired = useSupplierApprovalRequired();
-  const { carbon } = useCarbon();
   const isEditing = initialValues.id !== undefined;
 
   const { invoiceId } = useParams();
@@ -58,108 +55,26 @@ const PurchaseInvoiceForm = ({ initialValues }: PurchaseInvoiceFormProps) => {
   );
   const isLocked = isPurchaseInvoiceLocked(routeData?.purchaseInvoice?.status);
 
-  const [invoiceSupplier, setInvoiceSupplier] = useState<{
-    id: string | undefined;
-    invoiceSupplierContactId: string | undefined;
-    invoiceSupplierLocationId: string | undefined;
-    currencyCode: string | undefined;
-    paymentTermId: string | undefined;
-  }>({
-    id: initialValues.invoiceSupplierId,
-    invoiceSupplierContactId: initialValues.invoiceSupplierContactId,
-    invoiceSupplierLocationId: initialValues.invoiceSupplierLocationId,
-    currencyCode: initialValues.currencyCode,
-    paymentTermId: initialValues.paymentTermId
-  });
-
-  const [supplier, setSupplier] = useState<{
-    id: string | undefined;
-  }>({
-    id: initialValues.supplierId
-  });
-
-  const onSupplierChange = async (
-    newValue: {
-      value: string | undefined;
-    } | null
-  ) => {
-    setSupplier({ id: newValue?.value });
-    if (newValue?.value !== invoiceSupplier.id) {
-      onInvoiceSupplierChange(newValue);
-    }
-  };
-
-  const onInvoiceSupplierChange = async (
-    newValue: {
-      value: string | undefined;
-    } | null
-  ) => {
-    if (!carbon) {
-      toast.error(t`Carbon client not found`);
-      return;
-    }
-
-    if (newValue?.value) {
-      flushSync(() => {
-        // update the supplier immediately
-        setInvoiceSupplier({
-          id: newValue?.value,
-          currencyCode: undefined,
-          paymentTermId: undefined,
-          invoiceSupplierContactId: undefined,
-          invoiceSupplierLocationId: undefined
-        });
-      });
-
-      const [supplierData, paymentTermData] = await Promise.all([
-        carbon
-          ?.from("supplier")
-          .select(
-            "currencyCode, purchasingContactId, supplierShipping!supplierId(shippingSupplierLocationId)"
-          )
-          .eq("id", newValue.value)
-          .single(),
-        carbon
-          ?.from("supplierPayment")
-          .select("*")
-          .eq("supplierId", newValue.value)
-          .single()
-      ]);
-
-      if (supplierData.error || paymentTermData.error) {
-        toast.error(t`Error fetching supplier data`);
-      } else {
-        setInvoiceSupplier((prev) => ({
-          ...prev,
-          id: newValue.value,
-          invoiceSupplierContactId:
-            paymentTermData.data.invoiceSupplierContactId ??
-            supplierData.data.purchasingContactId ??
-            undefined,
-          invoiceSupplierLocationId:
-            paymentTermData.data.invoiceSupplierLocationId ??
-            supplierData.data.supplierShipping?.shippingSupplierLocationId ??
-            undefined,
-          currencyCode: supplierData.data.currencyCode ?? undefined,
-          paymentTermId: paymentTermData.data.paymentTermId ?? undefined
-        }));
-      }
-    } else {
-      setInvoiceSupplier({
-        id: undefined,
-        currencyCode: undefined,
-        paymentTermId: undefined,
-        invoiceSupplierContactId: undefined,
-        invoiceSupplierLocationId: undefined
-      });
-    }
-  };
+  const {
+    supplier,
+    invoiceSupplier,
+    setInvoiceSupplier,
+    currentValues,
+    formKey,
+    extractedLineItems,
+    extractedTaxAmount,
+    extractedStoragePath,
+    handleExtractionComplete,
+    onSupplierChange,
+    onInvoiceSupplierChange
+  } = usePurchaseInvoiceAutoFill(initialValues);
 
   return (
     <ValidatedForm
+      key={formKey}
       method="post"
       validator={purchaseInvoiceValidator}
-      defaultValues={initialValues}
+      defaultValues={currentValues}
       isDisabled={isEditing && isLocked}
     >
       <Card>
@@ -178,6 +93,30 @@ const PurchaseInvoiceForm = ({ initialValues }: PurchaseInvoiceFormProps) => {
         </CardHeader>
         <CardContent>
           <Hidden name="id" />
+          <input
+            type="hidden"
+            name="extractedLineItems"
+            value={JSON.stringify(extractedLineItems)}
+          />
+          <input
+            type="hidden"
+            name="extractedTaxAmount"
+            value={extractedTaxAmount}
+          />
+          {extractedStoragePath && (
+            <input
+              type="hidden"
+              name="extractedStoragePath"
+              value={extractedStoragePath}
+            />
+          )}
+          {currentValues.supplierShippingCost !== undefined && (
+            <input
+              type="hidden"
+              name="supplierShippingCost"
+              value={currentValues.supplierShippingCost}
+            />
+          )}
           {isEditing && <Hidden name="invoiceId" />}
           <VStack>
             <div
@@ -198,6 +137,7 @@ const PurchaseInvoiceForm = ({ initialValues }: PurchaseInvoiceFormProps) => {
               <Supplier
                 name="supplierId"
                 label={t`Supplier`}
+                defaultCurrencyCode={invoiceSupplier.currencyCode}
                 onChange={onSupplierChange}
                 onlyApproved={supplierApprovalRequired}
               />
@@ -210,6 +150,7 @@ const PurchaseInvoiceForm = ({ initialValues }: PurchaseInvoiceFormProps) => {
                 name="invoiceSupplierId"
                 label={t`Invoice Supplier`}
                 value={invoiceSupplier.id}
+                defaultCurrencyCode={invoiceSupplier.currencyCode}
                 onChange={onInvoiceSupplierChange}
                 onlyApproved={supplierApprovalRequired}
               />
@@ -275,6 +216,13 @@ const PurchaseInvoiceForm = ({ initialValues }: PurchaseInvoiceFormProps) => {
               <CustomFormFields table="purchaseInvoice" />
             </div>
           </VStack>
+          <PdfExtractor
+            documentType="purchaseInvoice"
+            sourceDocument="Purchase Invoice"
+            sourceDocumentId={initialValues.id}
+            label={t`Invoice`}
+            onExtractionComplete={handleExtractionComplete}
+          />
         </CardContent>
         <CardFooter>
           <Submit

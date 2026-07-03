@@ -10,6 +10,7 @@ import {
   webhookFunction,
   workflowFunction
 } from "./functions/events";
+import { extractDocumentFunction } from "./functions/extraction";
 import {
   accountingBackfillFunction,
   jiraSyncFunction,
@@ -103,5 +104,7 @@ export const functions = [
   slackDocumentStatusUpdateFunction,
   slackDocumentTaskUpdateFunction,
   slackDocumentAssignmentUpdateFunction,
-  timeCardAutoCloseFunction
+  timeCardAutoCloseFunction,
+  // Document extraction
+  extractDocumentFunction
 ];

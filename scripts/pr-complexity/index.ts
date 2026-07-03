@@ -135,28 +135,36 @@ async function ensureLabel(name: string, color: string, description: string) {
 }
 
 async function replaceComplexityLabel(nextLabel: string) {
-  const { data: issue } = await octokit.rest.issues.get({
-    owner: OWNER,
-    repo: REPO,
-    issue_number: PR_NUMBER,
-  });
-  const labels = issue.labels
-    .map((label) => (typeof label === "string" ? label : label.name))
-    .filter((name): name is string => Boolean(name));
-
-  await Promise.all(
-    labels
-      .filter((label) => label.startsWith("complexity:") && label !== nextLabel)
-      .map((label) => removeLabelIfPresent(label))
-  );
-
-  if (!labels.includes(nextLabel)) {
-    await octokit.rest.issues.addLabels({
+  try {
+    const { data: issue } = await octokit.rest.issues.get({
       owner: OWNER,
       repo: REPO,
       issue_number: PR_NUMBER,
-      labels: [nextLabel],
     });
+    const labels = issue.labels
+      .map((label) => (typeof label === "string" ? label : label.name))
+      .filter((name): name is string => Boolean(name));
+
+    await Promise.all(
+      labels
+        .filter((label) => label.startsWith("complexity:") && label !== nextLabel)
+        .map((label) => removeLabelIfPresent(label))
+    );
+
+    if (!labels.includes(nextLabel)) {
+      await octokit.rest.issues.addLabels({
+        owner: OWNER,
+        repo: REPO,
+        issue_number: PR_NUMBER,
+        labels: [nextLabel],
+      });
+    }
+  } catch (error) {
+    if (isOctokitError(error, 403)) {
+      console.warn("Skipping label replacement: GITHUB_TOKEN has insufficient permissions (403).");
+      return;
+    }
+    throw error;
   }
 }
 
@@ -169,6 +177,10 @@ async function removeLabelIfPresent(label: string) {
       name: label,
     });
   } catch (error) {
+    if (isOctokitError(error, 403)) {
+      console.warn(`Skipping label removal for '${label}': GITHUB_TOKEN has insufficient permissions (403).`);
+      return;
+    }
     if (!isOctokitError(error, 404)) {
       throw error;
     }

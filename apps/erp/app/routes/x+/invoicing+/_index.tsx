@@ -10,6 +10,7 @@ import {
   getPayments,
   InvoicingDashboard
 } from "~/modules/invoicing";
+import { getCompanySettings } from "~/modules/settings";
 import { getGenericQueryFilters } from "~/utils/query";
 
 export const meta: MetaFunction = () => {
@@ -63,11 +64,22 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const asOfDate = new Date().toISOString().slice(0, 10);
   const { sorts, filters } = getGenericQueryFilters(new URLSearchParams());
 
+  // GL tie-outs only mean something when journals are being posted — skip
+  // them entirely when accounting is disabled.
+  const companySettings = await getCompanySettings(client, companyId);
+  const accountingEnabled =
+    (companySettings.data as { accountingEnabled?: boolean } | null)
+      ?.accountingEnabled ?? false;
+
   const [arAging, apAging, arTieOut, apTieOut, payments] = await Promise.all([
     getArAging(client, companyId, asOfDate, { bucketDays: BUCKET_DAYS }),
     getApAging(client, companyId, asOfDate, { bucketDays: BUCKET_DAYS }),
-    getArTieOut(client, companyId, asOfDate),
-    getApTieOut(client, companyId, asOfDate),
+    accountingEnabled
+      ? getArTieOut(client, companyId, asOfDate)
+      : Promise.resolve({ data: null }),
+    accountingEnabled
+      ? getApTieOut(client, companyId, asOfDate)
+      : Promise.resolve({ data: null }),
     getPayments(client, companyId, {
       search: null,
       paymentType: null,
@@ -84,6 +96,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return {
     asOfDate,
     bucketDays: BUCKET_DAYS,
+    accountingEnabled,
     ar: sumAging((arAging.data ?? []) as AgingRow[]),
     ap: sumAging((apAging.data ?? []) as AgingRow[]),
     arTieOut: arTieOut.data ?? null,
@@ -98,6 +111,7 @@ export default function InvoicingIndexRoute() {
     <InvoicingDashboard
       asOfDate={data.asOfDate}
       bucketDays={data.bucketDays}
+      accountingEnabled={data.accountingEnabled}
       ar={data.ar}
       ap={data.ap}
       arTieOut={data.arTieOut}

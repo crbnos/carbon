@@ -7,7 +7,6 @@ export { OnboardingHub } from "./OnboardingHub";
 export { OnboardingHubSummary } from "./OnboardingHubSummary";
 export { PlaceholderPage } from "./PlaceholderPage";
 export { PlanView } from "./PlanView";
-export { PositioningView } from "./PositioningView";
 export { ProgressPill } from "./ProgressPill";
 export * from "./primitives";
 export { RequirementsView } from "./RequirementsView";

@@ -116,7 +116,9 @@ serve(async (req: Request) => {
         {
           accountId: accountDefaults.data!.materialVarianceAccount,
           description: "Production Variance",
-          amount: debit("expense", Math.abs(remainingWip)),
+          // Signed: a positive residual debits variance / credits WIP; a
+          // negative (over-credited) residual reverses — always zeroing WIP.
+          amount: debit("expense", remainingWip),
           quantity: 0,
           documentType: "Job Close",
           documentId: jobId,
@@ -127,7 +129,7 @@ serve(async (req: Request) => {
         {
           accountId: accountDefaults.data!.workInProgressAccount,
           description: "WIP Account",
-          amount: credit("asset", Math.abs(remainingWip)),
+          amount: credit("asset", remainingWip),
           quantity: 0,
           documentType: "Job Close",
           documentId: jobId,
@@ -140,7 +142,7 @@ serve(async (req: Request) => {
       const accountingPeriodId = await getCurrentAccountingPeriod(
         client,
         companyId,
-        db
+        trx
       );
 
       const journalEntryId = await getNextSequence(

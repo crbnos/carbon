@@ -3,7 +3,7 @@ import { pruneRuns } from "../runs";
 
 // Usage: tsx src/scripts/prune-runs.ts [--cwd <dir>] [--keep-last <n>] [--max-age-days <n>]
 //
-// GC finished loop runs under llm/loops/runs/. Unfinished runs (no outcome.json)
+// GC finished loop runs under .ai/runs/. Unfinished runs (no outcome.json)
 // are never touched. The OpenClaw janitor calls this each heartbeat to keep the
 // box's disk from filling with stale loop artifacts. Prints the result as JSON.
 const argv = process.argv.slice(2);

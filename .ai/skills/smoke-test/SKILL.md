@@ -1,74 +1,61 @@
 ---
 name: smoke-test
-description: Run an e2e smoke test against the local Carbon ERP dev server using agent-browser. Logs in via /login, then navigates through core modules to verify they load without errors.
+description: Quick e2e smoke test of the local Carbon ERP dev server — logs in via /auth, then loads each core module and verifies it renders without errors. Use after booting a stack, after wide-reaching changes, or when asked to "smoke test" the app. For feature-specific testing use /test instead.
 ---
 
-# E2E Smoke Test
+# smoke-test — do the core modules load?
 
-Run a quick end-to-end smoke test against the local Carbon ERP dev environment.
+Verify every core module renders. This is breadth, not depth — it catches
+broken routes and crashed loaders, not logic bugs.
+
+**Announce at start:** "Using the smoke-test skill — sweeping the core modules."
 
 ## Prerequisites
 
-- Dev server running (`pnpm dev` or `crbn up`)
-- `crbn up` seeds the smoke-test user and sets `DEV_BYPASS_EMAIL` automatically
+- Dev server running (`crbn up` — seeds the test user and `DEV_BYPASS_EMAIL`)
 
-## Procedure
+## Steps
 
-### Step 1: Login
+### 1. Login
 
-Invoke the `/login` skill to authenticate the browser session. If login fails, stop and report — all other steps depend on auth.
+Invoke `/auth`. If it fails, STOP and report — everything below needs auth.
 
-### Step 2: Navigate Core Modules
+### 2. Visit each module
 
-Read `ERP_URL` from `.env.local` in the project root.
+Read `ERP_URL` from `.env.local`. For each route below:
 
-Visit each module and verify the page loads without errors. For each module:
-
-1. Navigate to the module URL
-2. Wait for network idle
-3. Take a snapshot
-4. Verify the page rendered content (table, cards, or expected UI elements)
-5. Check for error messages or blank pages
-
-**Module routes to test (append to ERP_URL):**
-
-| Module      | Path                  |
-|-------------|-----------------------|
-| Dashboard   | `/x`                  |
-| Sales       | `/x/sales/orders`     |
-| Purchasing  | `/x/purchasing/orders`|
-| Inventory   | `/x/inventory`        |
-| Items       | `/x/items/parts`      |
-| Accounting  | `/x/accounting/charts`|
-| People      | `/x/people/employee ` |
-| Resources   | `/x/resources`        |
-| Production  | `/x/production`       |
-| Settings    | `/x/settings/company` |
-
-For each module:
 ```bash
-agent-browser open ${ERP_URL}/x/sales/orders && agent-browser wait --load networkidle && agent-browser snapshot -i
+agent-browser open ${ERP_URL}<path> && agent-browser wait --load networkidle && agent-browser snapshot -i
 ```
 
-### Step 3: Report Results
+| Module | Path |
+|------------|------------------------|
+| Dashboard | `/x` |
+| Sales | `/x/sales/orders` |
+| Purchasing | `/x/purchasing/orders` |
+| Inventory | `/x/inventory` |
+| Items | `/x/items/parts` |
+| Accounting | `/x/accounting/charts` |
+| People | `/x/people/employee` |
+| Resources | `/x/resources` |
+| Production | `/x/production` |
+| Settings | `/x/settings/company` |
 
-After visiting all modules, report a summary table:
+A module **passes** if the snapshot shows real content (table, cards, headings)
+and no error text. It **fails** on a blank page, an error message, or a failed
+load. On failure: invoke `/error` to capture diagnostics, then continue to the
+next module — never abort the sweep for one failure.
+
+### 3. Report
 
 | Module | Status | Notes |
 |--------|--------|-------|
-| Login  | PASS/FAIL | ... |
-| Sales  | PASS/FAIL | ... |
-| ...    | ...    | ... |
+| Login | PASS/FAIL | |
+| Sales | PASS/FAIL | {error capture paths if failed} |
+| …      |        | |
 
-A module **passes** if the snapshot shows expected content (tables, headings, cards) and no error messages. A module **fails** if the page is blank, shows an error, or fails to load.
+### 4. Cleanup
 
-## Failure Handling
-
-- If a module fails, invoke the `/error` skill to capture a screenshot and snapshot, then continue to the next module.
-
-## Cleanup
-
-Close the browser session when done:
 ```bash
 agent-browser close
 ```

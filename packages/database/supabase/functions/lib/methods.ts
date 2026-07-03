@@ -1,5 +1,5 @@
 import { SupabaseClient } from "@supabase/supabase-js";
-import { Database } from "./types.ts";
+import type { Database } from "./types.ts";
 
 export type JobMethod = NonNullable<
   Awaited<ReturnType<typeof getJobMethodTreeArray>>["data"]

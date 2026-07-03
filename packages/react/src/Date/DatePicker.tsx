@@ -27,6 +27,7 @@ const DatePicker = (
     isPreviewInline?: boolean;
     helperText?: string;
     closeOnSelect?: boolean;
+    size?: "sm" | "md" | "lg";
   }
 ) => {
   const state = useDatePickerState({
@@ -94,11 +95,18 @@ const DatePicker = (
               <InputGroup
                 {...groupProps}
                 ref={ref}
+                size={props.size}
                 className="w-full inline-flex"
                 isDisabled={props.isDisabled || props.isReadOnly}
               >
-                <div className="flex w-full px-4 py-2">
-                  <DateField {...fieldProps} />
+                <div
+                  className={
+                    props.size === "sm"
+                      ? "flex w-full items-center px-3 py-1"
+                      : "flex w-full px-4 py-2"
+                  }
+                >
+                  <DateField {...fieldProps} size={props.size} />
                   {state.isInvalid && (
                     <LuBan className="!text-destructive-foreground absolute right-[12px] top-[12px]" />
                   )}
@@ -108,7 +116,11 @@ const DatePicker = (
                     react-aria's buttonProps on FieldButton. */}
                 <PopoverAnchor asChild>
                   <div className="flex-shrink-0 -mt-px">
-                    <FieldButton {...buttonProps} isPressed={state.isOpen} />
+                    <FieldButton
+                      {...buttonProps}
+                      size={props.size}
+                      isPressed={state.isOpen}
+                    />
                   </div>
                 </PopoverAnchor>
               </InputGroup>

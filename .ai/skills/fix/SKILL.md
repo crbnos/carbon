@@ -1,140 +1,123 @@
+---
+name: fix
+description: Implement the minimal code change from a root-cause brief, with a mandatory red→green regression test and scoped validation gates. Use after /root-cause (or when the cause is already proven) to write the fix. No commit, no push, no PR from this skill — /check-and-commit handles committing. Do not use without a root-cause brief, and do not use for features (use /plan + /execute).
+---
 <!-- Workflow pattern inspired by Open Mercato (MIT License)
      https://github.com/open-mercato/open-mercato
      Copyright (c) 2025-2026 Open Mercato contributors -->
 
----
-name: fix
-description: Implement the minimal code change from a root-cause brief. Writes code, adds regression tests, validates gates. No commit, no push, no PR — the conductor or open-pr handles that.
----
+# fix — minimal change from a root-cause brief
 
-# fix — minimal code change from a root-cause brief
+Input: a root-cause brief (from `/root-cause` or equivalent proof). Output: the
+smallest correct fix plus a regression test, all gates green, ready for
+`/check-and-commit`. Your job is to execute the brief, prove it, and stop.
 
-You are implementing the **smallest correct fix** for a bug that has already been analyzed. You have a root-cause brief (from `/root-cause` or equivalent) that tells you exactly what to change and why. Your job is to execute that change, prove it works, and stop.
+**Announce at start:** "Using the fix skill — implementing the change from the
+root-cause brief."
 
-**Announce at start:** "I'm using the fix skill to implement the change from the root-cause brief."
+## Step 0: Prerequisites
 
-## 0. Prerequisites
+1. **Read the brief.** No brief → STOP and run `/root-cause` first.
+2. Read `.ai/lessons.md` for the affected area.
+3. Read the affected module/package `AGENTS.md`.
+4. Read `BACKWARD_COMPATIBILITY.md` if the brief lists any BC impact.
+5. If working a GitHub issue: `gh issue edit <number> --add-assignee carbon-agent --add-label "agent:working"`.
 
-Before writing any code:
+## Step 1: Plan the change
 
-1. **Read the root-cause brief.** If none exists, stop and run `/root-cause` first.
-2. **Read `.ai/lessons.md`** — check for pitfalls in the affected area.
-3. **Read the module AGENTS.md** for the affected package/module.
-4. **Read `BACKWARD_COMPATIBILITY.md`** — know which surfaces are FROZEN, STABLE, or ADDITIVE-ONLY.
-5. **Check issue assignment.** If working from a GitHub issue, ensure it's assigned to `carbon-agent` with the `agent:working` label:
-   ```bash
-   gh issue edit <number> --add-assignee carbon-agent --add-label "agent:working"
-   ```
+List before touching code: files to modify (from the brief), files to create
+(tests, migrations), callers to update (if a signature changes — grep for every
+call site). If the brief says 2 files and your list says 8 → STOP and re-scope
+with the human.
 
-## 1. Plan the change
+## Step 2: Write the failing test FIRST
 
-Before touching code, list:
-- **Files to modify** (from the brief's "Files to change")
-- **Files to create** (new test files, migrations)
-- **Callers to update** (if changing a service function signature)
-
-Verify the plan against the brief. If the brief says change 2 files and you're planning to change 8, stop and re-scope.
-
-## 2. Implement
-
-### Rules
-
-- **One concern per change.** Fix the bug. Don't refactor, don't clean up, don't "improve while here."
-- **Follow existing patterns.** Read the surrounding code and match its style. Use `grep` to find similar patterns in the codebase.
-- **companyId scoping.** Every new or modified query that touches tenant data MUST include `companyId` filtering. This is Carbon's equivalent of a security gate — never skip it.
-- **Service file discipline.** One `{module}.service.ts` and one `{module}.models.ts` per module. Never scatter new service/models files.
-- **Import conventions.** `~/*` for app code, `@carbon/*` for workspace packages.
-- **Schema changes.** If the fix requires a migration:
-  - Read `.ai/rules/workflow-database-migration.md` first
-  - Use `id('prefix')` for primary keys
-  - Include `companyId` with composite PK `("id", "companyId")`
-  - Add standard audit columns
-  - Run `pnpm run generate:types` after applying the migration, BEFORE typechecking
-
-## 3. Write regression tests
-
-**Mandatory.** Every fix MUST include at least one test that:
-
-1. **Would have failed** before the fix (red → green pattern)
-2. **Passes** after the fix
-3. **Guards against regression** — if someone reverts the fix, this test catches it
-
-Place tests adjacent to the code following Carbon conventions:
-- Module tests: `apps/erp/app/modules/{module}/__tests__/`
-- Package tests: `packages/{package}/src/__tests__/`
-- Use existing test utilities and patterns from sibling test files
-
-## 4. Validate
-
-Run the validation gates **in this order**. Every applicable gate must pass:
+Mandatory for every fix. Write a regression test that reproduces the bug, then
+run it and **watch it fail** before changing any production code:
 
 ```bash
-# 1. Regenerate types (only if schema changed)
-pnpm run generate:types
-
-# 2. Lint
-pnpm run lint
-
-# 3. Typecheck
-pnpm run typecheck
-
-# 4. Tests
-pnpm run test
+pnpm --filter <pkg> exec vitest run <path/to/test> 
+# Expected: FAIL, for the reason the brief describes (not a typo/import error)
 ```
 
-**If a gate fails:**
-- Read the error carefully
-- Fix it if the failure is caused by your change
-- Re-run the failed gate
-- If the failure is pre-existing (unrelated to your change), note it in the output but don't fix it
+A test that passes immediately proves nothing — it isn't testing the bug. Test
+locations: `apps/erp/app/modules/{module}/__tests__/` or
+`packages/{pkg}/src/__tests__/` (or next to the source, matching siblings). Copy
+setup patterns from a sibling test file.
 
-## 5. Self-review
+If the bug is only provable in the browser (layout, visual state), the failing
+proof is a `/test` run + BEFORE screenshot instead — say so explicitly.
 
-Before declaring ready, check:
+## Step 3: Implement
+
+- **One concern.** Fix the bug. No refactoring, no cleanup, no "while I'm here".
+- **Match surrounding patterns** — grep for similar code and copy its idiom.
+- **companyId scoping** on every new or modified tenant-data query. Never skip.
+- **Module discipline**: one `{module}.service.ts`, one `{module}.models.ts`.
+- **Imports**: `~/*` app code, `@carbon/*` workspace packages.
+- **Schema changes**: follow `.ai/rules/workflow-database-migration.md`; then
+  `pnpm run generate:types` BEFORE typechecking.
+- **Minimal blast radius**: fewest files, fewest lines, still complete.
+
+## Step 4: Validate (scoped gates, in order)
+
+```bash
+# 1. Types (only if schema changed)
+pnpm run generate:types
+
+# 2. Format + lint the files you touched
+pnpm exec biome check --write <changed paths>
+
+# 3. Typecheck each touched package — NEVER whole-repo (it OOMs)
+pnpm exec turbo run typecheck --filter=<pkg>
+
+# 4. Tests for each touched package — your new test must now PASS
+pnpm --filter <pkg> test
+```
+
+Gate failed? Read the error. Caused by your change → fix and re-run. Clearly
+pre-existing and unrelated → note it in the output, don't chase it. Two failed
+fix attempts on the same gate → STOP, report BLOCKED.
+
+## Step 5: Self-review
 
 | Check | Question |
 |-------|----------|
-| **Scope** | Did I change only what the brief called for? |
-| **companyId** | Does every new/modified query scope by `companyId` where needed? |
-| **BC contract** | Does the change touch any FROZEN surface? Any STABLE surface without deprecation? |
-| **Callers** | Did I update all callers of any changed signature? |
-| **Tests** | Does my test actually fail without the fix? |
-| **Imports** | Am I using `~/*` and `@carbon/*` correctly? |
-| **Patterns** | Does my code match the style of surrounding code? |
+| Scope | Did I change only what the brief called for? |
+| Red→green | Did I watch the test fail before the fix and pass after? |
+| companyId | Every new/modified query scoped? |
+| Callers | Every caller of a changed signature updated? |
+| BC | Any FROZEN surface touched? STABLE without deprecation? |
+| Patterns | Does the code read like its neighbors? |
+| Leftovers | No debug logging, commented-out code, or stray files in the diff? |
 
-## 6. Output
-
-Produce exactly this structure:
+## Step 6: Output
 
 ```markdown
 ## Fix Summary
-
-**Status:** READY | BLOCKED
-<if BLOCKED: explain what's blocking and what's needed>
-
-**Root-cause brief:** <link or path to the brief>
-
-**Files changed:**
-- `path/to/file.ts` — <what changed>
-- `path/to/other.ts` — <what changed>
-
-**Tests added:**
-- `path/to/test.ts` — <what it verifies>
-
-**Validation gates:**
-- generate:types — PASS | SKIP (no schema change)
-- lint — PASS
-- typecheck — PASS
-- test — PASS
-
-**BC assessment:** NONE | <list touched surfaces and how they comply>
-
-**Summary:** <2-3 sentences on what was fixed and how>
+**Status:** READY | BLOCKED <if BLOCKED: what and why>
+**Root-cause brief:** <path/link>
+**Files changed:** <path — what>
+**Regression test:** <path — failed before fix (output), passes after (output)>
+**Gates:** generate:types PASS|SKIP · biome PASS · typecheck(<pkgs>) PASS · test(<pkgs>) PASS
+**BC assessment:** NONE | <surfaces and how they comply>
+**Summary:** <2–3 sentences>
 ```
+
+Then hand off to `/check-and-commit`.
 
 ## Guardrails
 
-- **No commit, no push, no PR.** The conductor or `/open-pr` handles that. Your job ends at "code is ready, gates pass."
-- **No scope creep.** If you discover a related bug, note it in the output — don't fix it.
-- **No guessing.** If the root-cause brief is unclear or you disagree with it, stop and say so. Don't implement a fix you don't believe in.
-- **Minimal blast radius.** Prefer the fix that touches the fewest files and changes the fewest lines while being correct and complete.
+- **No commit, no push, no PR** from this skill.
+- **No scope creep** — related bugs get one line in the output, not a fix.
+- **No guessing** — if the brief is unclear or you disagree with it, STOP and
+  say so. Don't implement a fix you don't believe in.
+
+Red flags — thinking any of these means the process is off the rails; STOP:
+
+- "the fix is obvious, I'll write the test after" (a test written after passes
+  immediately and proves nothing — Step 2 comes first)
+- "while I'm here, I'll clean this up too"
+- "the test is hard to write, I'll just verify manually" (report BLOCKED instead)
+- "the brief is probably right" (if the code you read doesn't confirm the cause,
+  go back to /root-cause)

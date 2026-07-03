@@ -59566,208 +59566,208 @@ export default {
       get: {
         parameters: [
           {
-            $ref: "#/parameters/rowFilter.passkeyCredential.id",
+            $ref: "#/parameters/rowFilter.passkeyCredential.id"
           },
           {
-            $ref: "#/parameters/rowFilter.passkeyCredential.userId",
+            $ref: "#/parameters/rowFilter.passkeyCredential.userId"
           },
           {
-            $ref: "#/parameters/rowFilter.passkeyCredential.publicKey",
+            $ref: "#/parameters/rowFilter.passkeyCredential.publicKey"
           },
           {
-            $ref: "#/parameters/rowFilter.passkeyCredential.counter",
+            $ref: "#/parameters/rowFilter.passkeyCredential.counter"
           },
           {
-            $ref: "#/parameters/rowFilter.passkeyCredential.deviceType",
+            $ref: "#/parameters/rowFilter.passkeyCredential.deviceType"
           },
           {
-            $ref: "#/parameters/rowFilter.passkeyCredential.backedUp",
+            $ref: "#/parameters/rowFilter.passkeyCredential.backedUp"
           },
           {
-            $ref: "#/parameters/rowFilter.passkeyCredential.transports",
+            $ref: "#/parameters/rowFilter.passkeyCredential.transports"
           },
           {
-            $ref: "#/parameters/rowFilter.passkeyCredential.aaguid",
+            $ref: "#/parameters/rowFilter.passkeyCredential.aaguid"
           },
           {
-            $ref: "#/parameters/rowFilter.passkeyCredential.rpId",
+            $ref: "#/parameters/rowFilter.passkeyCredential.rpId"
           },
           {
-            $ref: "#/parameters/rowFilter.passkeyCredential.userHandle",
+            $ref: "#/parameters/rowFilter.passkeyCredential.userHandle"
           },
           {
-            $ref: "#/parameters/rowFilter.passkeyCredential.credentialName",
+            $ref: "#/parameters/rowFilter.passkeyCredential.credentialName"
           },
           {
-            $ref: "#/parameters/rowFilter.passkeyCredential.createdAt",
+            $ref: "#/parameters/rowFilter.passkeyCredential.createdAt"
           },
           {
-            $ref: "#/parameters/rowFilter.passkeyCredential.lastUsedAt",
+            $ref: "#/parameters/rowFilter.passkeyCredential.lastUsedAt"
           },
           {
-            $ref: "#/parameters/select",
+            $ref: "#/parameters/select"
           },
           {
-            $ref: "#/parameters/order",
+            $ref: "#/parameters/order"
           },
           {
-            $ref: "#/parameters/range",
+            $ref: "#/parameters/range"
           },
           {
-            $ref: "#/parameters/rangeUnit",
+            $ref: "#/parameters/rangeUnit"
           },
           {
-            $ref: "#/parameters/offset",
+            $ref: "#/parameters/offset"
           },
           {
-            $ref: "#/parameters/limit",
+            $ref: "#/parameters/limit"
           },
           {
-            $ref: "#/parameters/preferCount",
-          },
+            $ref: "#/parameters/preferCount"
+          }
         ],
         responses: {
           "200": {
             description: "OK",
             schema: {
               items: {
-                $ref: "#/definitions/passkeyCredential",
+                $ref: "#/definitions/passkeyCredential"
               },
-              type: "array",
-            },
+              type: "array"
+            }
           },
           "206": {
-            description: "Partial Content",
-          },
+            description: "Partial Content"
+          }
         },
-        tags: ["passkeyCredential"],
+        tags: ["passkeyCredential"]
       },
       post: {
         parameters: [
           {
-            $ref: "#/parameters/body.passkeyCredential",
+            $ref: "#/parameters/body.passkeyCredential"
           },
           {
-            $ref: "#/parameters/select",
+            $ref: "#/parameters/select"
           },
           {
-            $ref: "#/parameters/preferPost",
-          },
+            $ref: "#/parameters/preferPost"
+          }
         ],
         responses: {
           "201": {
-            description: "Created",
-          },
+            description: "Created"
+          }
         },
-        tags: ["passkeyCredential"],
+        tags: ["passkeyCredential"]
       },
       delete: {
         parameters: [
           {
-            $ref: "#/parameters/rowFilter.passkeyCredential.id",
+            $ref: "#/parameters/rowFilter.passkeyCredential.id"
           },
           {
-            $ref: "#/parameters/rowFilter.passkeyCredential.userId",
+            $ref: "#/parameters/rowFilter.passkeyCredential.userId"
           },
           {
-            $ref: "#/parameters/rowFilter.passkeyCredential.publicKey",
+            $ref: "#/parameters/rowFilter.passkeyCredential.publicKey"
           },
           {
-            $ref: "#/parameters/rowFilter.passkeyCredential.counter",
+            $ref: "#/parameters/rowFilter.passkeyCredential.counter"
           },
           {
-            $ref: "#/parameters/rowFilter.passkeyCredential.deviceType",
+            $ref: "#/parameters/rowFilter.passkeyCredential.deviceType"
           },
           {
-            $ref: "#/parameters/rowFilter.passkeyCredential.backedUp",
+            $ref: "#/parameters/rowFilter.passkeyCredential.backedUp"
           },
           {
-            $ref: "#/parameters/rowFilter.passkeyCredential.transports",
+            $ref: "#/parameters/rowFilter.passkeyCredential.transports"
           },
           {
-            $ref: "#/parameters/rowFilter.passkeyCredential.aaguid",
+            $ref: "#/parameters/rowFilter.passkeyCredential.aaguid"
           },
           {
-            $ref: "#/parameters/rowFilter.passkeyCredential.rpId",
+            $ref: "#/parameters/rowFilter.passkeyCredential.rpId"
           },
           {
-            $ref: "#/parameters/rowFilter.passkeyCredential.userHandle",
+            $ref: "#/parameters/rowFilter.passkeyCredential.userHandle"
           },
           {
-            $ref: "#/parameters/rowFilter.passkeyCredential.credentialName",
+            $ref: "#/parameters/rowFilter.passkeyCredential.credentialName"
           },
           {
-            $ref: "#/parameters/rowFilter.passkeyCredential.createdAt",
+            $ref: "#/parameters/rowFilter.passkeyCredential.createdAt"
           },
           {
-            $ref: "#/parameters/rowFilter.passkeyCredential.lastUsedAt",
+            $ref: "#/parameters/rowFilter.passkeyCredential.lastUsedAt"
           },
           {
-            $ref: "#/parameters/preferReturn",
-          },
+            $ref: "#/parameters/preferReturn"
+          }
         ],
         responses: {
           "204": {
-            description: "No Content",
-          },
+            description: "No Content"
+          }
         },
-        tags: ["passkeyCredential"],
+        tags: ["passkeyCredential"]
       },
       patch: {
         parameters: [
           {
-            $ref: "#/parameters/rowFilter.passkeyCredential.id",
+            $ref: "#/parameters/rowFilter.passkeyCredential.id"
           },
           {
-            $ref: "#/parameters/rowFilter.passkeyCredential.userId",
+            $ref: "#/parameters/rowFilter.passkeyCredential.userId"
           },
           {
-            $ref: "#/parameters/rowFilter.passkeyCredential.publicKey",
+            $ref: "#/parameters/rowFilter.passkeyCredential.publicKey"
           },
           {
-            $ref: "#/parameters/rowFilter.passkeyCredential.counter",
+            $ref: "#/parameters/rowFilter.passkeyCredential.counter"
           },
           {
-            $ref: "#/parameters/rowFilter.passkeyCredential.deviceType",
+            $ref: "#/parameters/rowFilter.passkeyCredential.deviceType"
           },
           {
-            $ref: "#/parameters/rowFilter.passkeyCredential.backedUp",
+            $ref: "#/parameters/rowFilter.passkeyCredential.backedUp"
           },
           {
-            $ref: "#/parameters/rowFilter.passkeyCredential.transports",
+            $ref: "#/parameters/rowFilter.passkeyCredential.transports"
           },
           {
-            $ref: "#/parameters/rowFilter.passkeyCredential.aaguid",
+            $ref: "#/parameters/rowFilter.passkeyCredential.aaguid"
           },
           {
-            $ref: "#/parameters/rowFilter.passkeyCredential.rpId",
+            $ref: "#/parameters/rowFilter.passkeyCredential.rpId"
           },
           {
-            $ref: "#/parameters/rowFilter.passkeyCredential.userHandle",
+            $ref: "#/parameters/rowFilter.passkeyCredential.userHandle"
           },
           {
-            $ref: "#/parameters/rowFilter.passkeyCredential.credentialName",
+            $ref: "#/parameters/rowFilter.passkeyCredential.credentialName"
           },
           {
-            $ref: "#/parameters/rowFilter.passkeyCredential.createdAt",
+            $ref: "#/parameters/rowFilter.passkeyCredential.createdAt"
           },
           {
-            $ref: "#/parameters/rowFilter.passkeyCredential.lastUsedAt",
+            $ref: "#/parameters/rowFilter.passkeyCredential.lastUsedAt"
           },
           {
-            $ref: "#/parameters/body.passkeyCredential",
+            $ref: "#/parameters/body.passkeyCredential"
           },
           {
-            $ref: "#/parameters/preferReturn",
-          },
+            $ref: "#/parameters/preferReturn"
+          }
         ],
         responses: {
           "204": {
-            description: "No Content",
-          },
+            description: "No Content"
+          }
         },
-        tags: ["passkeyCredential"],
-      },
+        tags: ["passkeyCredential"]
+      }
     },
     "/materialSubstance": {
       get: {
@@ -68359,195 +68359,6 @@ export default {
           }
         },
         tags: ["approvalRule"]
-      }
-    },
-    "/searchIndex_9CZDcGFyZNHH9vEMuFVaDH": {
-      get: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.searchIndex_9CZDcGFyZNHH9vEMuFVaDH.id"
-          },
-          {
-            $ref: "#/parameters/rowFilter.searchIndex_9CZDcGFyZNHH9vEMuFVaDH.entityType"
-          },
-          {
-            $ref: "#/parameters/rowFilter.searchIndex_9CZDcGFyZNHH9vEMuFVaDH.entityId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.searchIndex_9CZDcGFyZNHH9vEMuFVaDH.title"
-          },
-          {
-            $ref: "#/parameters/rowFilter.searchIndex_9CZDcGFyZNHH9vEMuFVaDH.description"
-          },
-          {
-            $ref: "#/parameters/rowFilter.searchIndex_9CZDcGFyZNHH9vEMuFVaDH.link"
-          },
-          {
-            $ref: "#/parameters/rowFilter.searchIndex_9CZDcGFyZNHH9vEMuFVaDH.tags"
-          },
-          {
-            $ref: "#/parameters/rowFilter.searchIndex_9CZDcGFyZNHH9vEMuFVaDH.metadata"
-          },
-          {
-            $ref: "#/parameters/rowFilter.searchIndex_9CZDcGFyZNHH9vEMuFVaDH.searchVector"
-          },
-          {
-            $ref: "#/parameters/rowFilter.searchIndex_9CZDcGFyZNHH9vEMuFVaDH.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.searchIndex_9CZDcGFyZNHH9vEMuFVaDH.updatedAt"
-          },
-          {
-            $ref: "#/parameters/select"
-          },
-          {
-            $ref: "#/parameters/order"
-          },
-          {
-            $ref: "#/parameters/range"
-          },
-          {
-            $ref: "#/parameters/rangeUnit"
-          },
-          {
-            $ref: "#/parameters/offset"
-          },
-          {
-            $ref: "#/parameters/limit"
-          },
-          {
-            $ref: "#/parameters/preferCount"
-          }
-        ],
-        responses: {
-          "200": {
-            description: "OK",
-            schema: {
-              items: {
-                $ref: "#/definitions/searchIndex_9CZDcGFyZNHH9vEMuFVaDH"
-              },
-              type: "array"
-            }
-          },
-          "206": {
-            description: "Partial Content"
-          }
-        },
-        tags: ["searchIndex_9CZDcGFyZNHH9vEMuFVaDH"]
-      },
-      post: {
-        parameters: [
-          {
-            $ref: "#/parameters/body.searchIndex_9CZDcGFyZNHH9vEMuFVaDH"
-          },
-          {
-            $ref: "#/parameters/select"
-          },
-          {
-            $ref: "#/parameters/preferPost"
-          }
-        ],
-        responses: {
-          "201": {
-            description: "Created"
-          }
-        },
-        tags: ["searchIndex_9CZDcGFyZNHH9vEMuFVaDH"]
-      },
-      delete: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.searchIndex_9CZDcGFyZNHH9vEMuFVaDH.id"
-          },
-          {
-            $ref: "#/parameters/rowFilter.searchIndex_9CZDcGFyZNHH9vEMuFVaDH.entityType"
-          },
-          {
-            $ref: "#/parameters/rowFilter.searchIndex_9CZDcGFyZNHH9vEMuFVaDH.entityId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.searchIndex_9CZDcGFyZNHH9vEMuFVaDH.title"
-          },
-          {
-            $ref: "#/parameters/rowFilter.searchIndex_9CZDcGFyZNHH9vEMuFVaDH.description"
-          },
-          {
-            $ref: "#/parameters/rowFilter.searchIndex_9CZDcGFyZNHH9vEMuFVaDH.link"
-          },
-          {
-            $ref: "#/parameters/rowFilter.searchIndex_9CZDcGFyZNHH9vEMuFVaDH.tags"
-          },
-          {
-            $ref: "#/parameters/rowFilter.searchIndex_9CZDcGFyZNHH9vEMuFVaDH.metadata"
-          },
-          {
-            $ref: "#/parameters/rowFilter.searchIndex_9CZDcGFyZNHH9vEMuFVaDH.searchVector"
-          },
-          {
-            $ref: "#/parameters/rowFilter.searchIndex_9CZDcGFyZNHH9vEMuFVaDH.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.searchIndex_9CZDcGFyZNHH9vEMuFVaDH.updatedAt"
-          },
-          {
-            $ref: "#/parameters/preferReturn"
-          }
-        ],
-        responses: {
-          "204": {
-            description: "No Content"
-          }
-        },
-        tags: ["searchIndex_9CZDcGFyZNHH9vEMuFVaDH"]
-      },
-      patch: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.searchIndex_9CZDcGFyZNHH9vEMuFVaDH.id"
-          },
-          {
-            $ref: "#/parameters/rowFilter.searchIndex_9CZDcGFyZNHH9vEMuFVaDH.entityType"
-          },
-          {
-            $ref: "#/parameters/rowFilter.searchIndex_9CZDcGFyZNHH9vEMuFVaDH.entityId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.searchIndex_9CZDcGFyZNHH9vEMuFVaDH.title"
-          },
-          {
-            $ref: "#/parameters/rowFilter.searchIndex_9CZDcGFyZNHH9vEMuFVaDH.description"
-          },
-          {
-            $ref: "#/parameters/rowFilter.searchIndex_9CZDcGFyZNHH9vEMuFVaDH.link"
-          },
-          {
-            $ref: "#/parameters/rowFilter.searchIndex_9CZDcGFyZNHH9vEMuFVaDH.tags"
-          },
-          {
-            $ref: "#/parameters/rowFilter.searchIndex_9CZDcGFyZNHH9vEMuFVaDH.metadata"
-          },
-          {
-            $ref: "#/parameters/rowFilter.searchIndex_9CZDcGFyZNHH9vEMuFVaDH.searchVector"
-          },
-          {
-            $ref: "#/parameters/rowFilter.searchIndex_9CZDcGFyZNHH9vEMuFVaDH.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.searchIndex_9CZDcGFyZNHH9vEMuFVaDH.updatedAt"
-          },
-          {
-            $ref: "#/parameters/body.searchIndex_9CZDcGFyZNHH9vEMuFVaDH"
-          },
-          {
-            $ref: "#/parameters/preferReturn"
-          }
-        ],
-        responses: {
-          "204": {
-            description: "No Content"
-          }
-        },
-        tags: ["searchIndex_9CZDcGFyZNHH9vEMuFVaDH"]
       }
     },
     "/employeeTypePermission": {
@@ -106558,74 +106369,74 @@ export default {
         "aaguid",
         "rpId",
         "credentialName",
-        "createdAt",
+        "createdAt"
       ],
       properties: {
         id: {
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
-          type: "string",
+          type: "string"
         },
         userId: {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
-          type: "string",
+          type: "string"
         },
         publicKey: {
           format: "text",
-          type: "string",
+          type: "string"
         },
         counter: {
           default: 0,
           format: "bigint",
-          type: "integer",
+          type: "integer"
         },
         deviceType: {
           format: "text",
-          type: "string",
+          type: "string"
         },
         backedUp: {
           default: false,
           format: "boolean",
-          type: "boolean",
+          type: "boolean"
         },
         transports: {
           format: "text[]",
           items: {
-            type: "string",
+            type: "string"
           },
-          type: "array",
+          type: "array"
         },
         aaguid: {
           default: "",
           format: "text",
-          type: "string",
+          type: "string"
         },
         rpId: {
           format: "text",
-          type: "string",
+          type: "string"
         },
         userHandle: {
           format: "text",
-          type: "string",
+          type: "string"
         },
         credentialName: {
           default: "Passkey",
           format: "text",
-          type: "string",
+          type: "string"
         },
         createdAt: {
           default: "now()",
           format: "timestamp with time zone",
-          type: "string",
+          type: "string"
         },
         lastUsedAt: {
           format: "timestamp with time zone",
-          type: "string",
-        },
+          type: "string"
+        }
       },
-      type: "object",
+      type: "object"
     },
     materialSubstance: {
       required: ["id", "name", "createdBy", "createdAt", "code"],
@@ -110959,61 +110770,6 @@ export default {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
-          type: "string"
-        },
-        updatedAt: {
-          format: "timestamp with time zone",
-          type: "string"
-        }
-      },
-      type: "object"
-    },
-    searchIndex_9CZDcGFyZNHH9vEMuFVaDH: {
-      required: ["id", "entityType", "entityId", "title", "link", "createdAt"],
-      properties: {
-        id: {
-          description: "Note:\nThis is a Primary Key.<pk/>",
-          format: "bigint",
-          type: "integer"
-        },
-        entityType: {
-          format: "text",
-          type: "string"
-        },
-        entityId: {
-          format: "text",
-          type: "string"
-        },
-        title: {
-          format: "text",
-          type: "string"
-        },
-        description: {
-          default: "",
-          format: "text",
-          type: "string"
-        },
-        link: {
-          format: "text",
-          type: "string"
-        },
-        tags: {
-          format: "text[]",
-          items: {
-            type: "string"
-          },
-          type: "array"
-        },
-        metadata: {
-          format: "jsonb"
-        },
-        searchVector: {
-          format: "tsvector",
-          type: "string"
-        },
-        createdAt: {
-          default: "now()",
-          format: "timestamp with time zone",
           type: "string"
         },
         updatedAt: {
@@ -143240,86 +142996,86 @@ export default {
       required: false,
       in: "body",
       schema: {
-        $ref: "#/definitions/passkeyCredential",
-      },
+        $ref: "#/definitions/passkeyCredential"
+      }
     },
     "rowFilter.passkeyCredential.id": {
       name: "id",
       required: false,
       in: "query",
-      type: "string",
+      type: "string"
     },
     "rowFilter.passkeyCredential.userId": {
       name: "userId",
       required: false,
       in: "query",
-      type: "string",
+      type: "string"
     },
     "rowFilter.passkeyCredential.publicKey": {
       name: "publicKey",
       required: false,
       in: "query",
-      type: "string",
+      type: "string"
     },
     "rowFilter.passkeyCredential.counter": {
       name: "counter",
       required: false,
       in: "query",
-      type: "string",
+      type: "string"
     },
     "rowFilter.passkeyCredential.deviceType": {
       name: "deviceType",
       required: false,
       in: "query",
-      type: "string",
+      type: "string"
     },
     "rowFilter.passkeyCredential.backedUp": {
       name: "backedUp",
       required: false,
       in: "query",
-      type: "string",
+      type: "string"
     },
     "rowFilter.passkeyCredential.transports": {
       name: "transports",
       required: false,
       in: "query",
-      type: "string",
+      type: "string"
     },
     "rowFilter.passkeyCredential.aaguid": {
       name: "aaguid",
       required: false,
       in: "query",
-      type: "string",
+      type: "string"
     },
     "rowFilter.passkeyCredential.rpId": {
       name: "rpId",
       required: false,
       in: "query",
-      type: "string",
+      type: "string"
     },
     "rowFilter.passkeyCredential.userHandle": {
       name: "userHandle",
       required: false,
       in: "query",
-      type: "string",
+      type: "string"
     },
     "rowFilter.passkeyCredential.credentialName": {
       name: "credentialName",
       required: false,
       in: "query",
-      type: "string",
+      type: "string"
     },
     "rowFilter.passkeyCredential.createdAt": {
       name: "createdAt",
       required: false,
       in: "query",
-      type: "string",
+      type: "string"
     },
     "rowFilter.passkeyCredential.lastUsedAt": {
       name: "lastUsedAt",
       required: false,
       in: "query",
-      type: "string",
+      type: "string"
     },
     "body.materialSubstance": {
       name: "materialSubstance",
@@ -148071,81 +147827,6 @@ export default {
       type: "string"
     },
     "rowFilter.approvalRule.updatedAt": {
-      name: "updatedAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "body.searchIndex_9CZDcGFyZNHH9vEMuFVaDH": {
-      name: "searchIndex_9CZDcGFyZNHH9vEMuFVaDH",
-      description: "searchIndex_9CZDcGFyZNHH9vEMuFVaDH",
-      required: false,
-      in: "body",
-      schema: {
-        $ref: "#/definitions/searchIndex_9CZDcGFyZNHH9vEMuFVaDH"
-      }
-    },
-    "rowFilter.searchIndex_9CZDcGFyZNHH9vEMuFVaDH.id": {
-      name: "id",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.searchIndex_9CZDcGFyZNHH9vEMuFVaDH.entityType": {
-      name: "entityType",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.searchIndex_9CZDcGFyZNHH9vEMuFVaDH.entityId": {
-      name: "entityId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.searchIndex_9CZDcGFyZNHH9vEMuFVaDH.title": {
-      name: "title",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.searchIndex_9CZDcGFyZNHH9vEMuFVaDH.description": {
-      name: "description",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.searchIndex_9CZDcGFyZNHH9vEMuFVaDH.link": {
-      name: "link",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.searchIndex_9CZDcGFyZNHH9vEMuFVaDH.tags": {
-      name: "tags",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.searchIndex_9CZDcGFyZNHH9vEMuFVaDH.metadata": {
-      name: "metadata",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.searchIndex_9CZDcGFyZNHH9vEMuFVaDH.searchVector": {
-      name: "searchVector",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.searchIndex_9CZDcGFyZNHH9vEMuFVaDH.createdAt": {
-      name: "createdAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.searchIndex_9CZDcGFyZNHH9vEMuFVaDH.updatedAt": {
       name: "updatedAt",
       required: false,
       in: "query",

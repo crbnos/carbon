@@ -78,5 +78,9 @@ packages/database/supabase/snippets/**
 # .ai/ scratch — runtime, not source
 .ai/scratch/
 
+# Loop run artifacts (@carbon/harness RUNS_DIR) — directories only, so
+# committed markdown run logs (.ai/runs/*.md) stay tracked
+.ai/runs/*/
+
 # Legacy llm/ — consolidated into .ai/ (docs, specs, runs)
 llm/

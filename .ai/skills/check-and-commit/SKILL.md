@@ -1,129 +1,121 @@
+---
+name: check-and-commit
+description: Pre-commit verification gate — runs Carbon's validation gates in order (generate:types if schema changed, biome, scoped typecheck, scoped tests, build if needed), fixes straightforward failures, then commits the specific files with a conventional message. Use after /fix, after an /execute task, or after manual changes when the work should be committed. Commits only when every gate is green; pushes only if the branch already tracks a remote or the user asked.
+---
 <!-- Workflow pattern inspired by Open Mercato (MIT License)
      https://github.com/open-mercato/open-mercato
      Copyright (c) 2025-2026 Open Mercato contributors -->
 
----
-name: check-and-commit
-description: Pre-commit verification gate. Runs Carbon's validation suite in order, fixes straightforward failures, and commits+pushes only when all gates pass. Use after /fix or manual changes.
----
+# check-and-commit — verification gate, then commit
 
-# check-and-commit — pre-commit verification gate
+Run the gates in order, fix what's mechanically fixable, and commit only when
+everything is green. This skill is the only place in the workflow that commits.
 
-Run all validation gates, fix what's auto-fixable, and commit only when everything is green.
+**Announce at start:** "Using the check-and-commit skill — running the gates,
+then committing."
 
-**Announce at start:** "I'm using the check-and-commit skill to verify and commit."
-
-## 1. Detect schema changes
+## Step 1: Identify what changed
 
 ```bash
-git diff --cached --name-only -- 'packages/database/supabase/migrations/' | head -1
+git status --porcelain
+git diff --name-only
 ```
 
-If any migration files are staged or modified, set `SCHEMA_CHANGED=true`.
+From the changed paths, derive:
 
-## 2. Run gates in order
+- `SCHEMA_CHANGED` — any file under `packages/database/supabase/migrations/`
+- the set of **touched packages** — run this to map changed files to workspace
+  package names (these are the `--filter` values for the gates):
 
-Run each gate sequentially. Stop on failure, fix if straightforward, re-run.
+  ```bash
+  git diff --name-only HEAD | while read -r f; do
+    d=$(dirname "$f")
+    while [ "$d" != "." ] && [ ! -f "$d/package.json" ]; do d=$(dirname "$d"); done
+    [ -f "$d/package.json" ] && sed -n 's/.*"name": *"\([^"]*\)".*/\1/p' "$d/package.json" | head -1
+  done | sort -u
+  ```
 
-### Gate 1: Generate types (if schema changed)
+- whether any file is **outside** the intended change (leftover debug file,
+  unrelated edit). If yes → exclude it from staging and mention it in the report.
+
+## Step 2: Run the gates in order
+
+Stop on failure, apply the fix policy (Step 3), re-run the failed gate.
 
 ```bash
-# Only if SCHEMA_CHANGED
+# Gate 1 — types (only if SCHEMA_CHANGED)
 pnpm run generate:types
+# then include the regenerated files in the commit
+
+# Gate 2 — format + lint (auto-fixes in place)
+pnpm exec biome check --write --no-errors-on-unmatched <changed paths>
+
+# Gate 3 — typecheck, one package at a time. NEVER whole-repo (`pnpm typecheck`
+# runs every package at once and OOMs the machine).
+pnpm exec turbo run typecheck --filter=<pkg>   # repeat per touched package
+
+# Gate 4 — tests per touched package
+pnpm --filter <pkg> test
+
+# Gate 5 — build, ONLY if the change affects build outputs
+# (package exports, config files, SST infra)
+pnpm exec turbo run build --filter=<pkg>
 ```
 
-If types changed, stage them: `git add packages/database/src/`.
+## Step 3: Fix policy
 
-### Gate 2: Lint
+| Failure | Action |
+|---------|--------|
+| Biome formatting/import order | Already fixed by `--write`; re-run to confirm clean |
+| Type error from stale generated types | Run Gate 1, re-run typecheck |
+| Type/test error caused by this change | Fix the code, re-run |
+| Pre-existing failure, unrelated to this change | Note in report; don't block, don't fix |
+| Anything unclear or still failing after **2** fix attempts | STOP — report BLOCKED |
 
-```bash
-pnpm run lint
-```
+"Pre-existing" must be proven, not assumed: the failing file/test is untouched
+by this diff, or the same failure reproduces on the merge-base. If you can't
+show one of those, treat it as caused by this change.
 
-**Auto-fixable?** Run `pnpm run lint --fix`, stage fixed files, re-run lint to confirm.
+Red flags — thinking any of these means the gate is being weakened; STOP:
 
-### Gate 3: Typecheck
+- "I'll run the gates once at the end instead of in order"
+- "`git add -A` is faster"
+- "that failure is probably pre-existing" (prove it — see above)
+- "the gate is flaky, I'll just retry until it passes"
 
-```bash
-pnpm run typecheck
-```
+## Step 4: Commit
 
-**Stale types?** If errors reference missing columns/types from a new migration and Gate 1 was skipped, run `pnpm run generate:types` now, then re-run typecheck.
-
-**Other type errors from your changes?** Fix them directly, re-run.
-
-### Gate 4: Test
-
-```bash
-pnpm run test
-```
-
-**Failures from your changes?** Fix the code or test, re-run.
-
-**Pre-existing failures?** Note them in the report but don't block the commit.
-
-### Gate 5: Build (if needed)
-
-Only run if the change affects build outputs (package exports, config, SST):
+Only when all applicable gates pass:
 
 ```bash
-pnpm run build
-```
-
-## 3. Fix policy
-
-| Failure type | Action |
-|-------------|--------|
-| Lint auto-fixable (formatting, import order) | Fix automatically, re-run |
-| Type error from stale generated types | Run `generate:types`, re-run |
-| Type error from your change | Fix the code, re-run |
-| Test failure from your change | Fix the code or test, re-run |
-| Pre-existing / unrelated failure | Note in report, don't block |
-| Build failure from your change | Fix, re-run |
-| Unclear or complex failure | **Stop. Report as blocked.** |
-
-**Limit: 2 fix-and-retry cycles per gate.** If a gate still fails after 2 attempts, stop and report as blocked.
-
-## 4. Commit and push
-
-Only when **all gates pass**:
-
-```bash
-git add -A
+git add <each changed file, listed explicitly>   # NEVER `git add -A` or `git add .`
 git commit -m "<type>(<scope>): <description>"
-git push
 ```
 
-Use conventional commits: `fix`, `feat`, `chore`, `refactor`, `test`, `docs`.
+- Types: `fix`, `feat`, `chore`, `refactor`, `test`, `docs`. Scope = module or
+  package (`fix(inventory): …`).
+- Staging is explicit because worktrees accumulate runtime files (env files,
+  screenshots, `.jsonl` debug logs) that must never be committed.
+- **Push only if** the branch already tracks a remote (`git rev-parse
+  --abbrev-ref @{upstream}` succeeds) **or** the user asked to push. Otherwise
+  leave the commit local and say so.
 
-## 5. Report
+## Step 5: Report
 
 ```markdown
 ## Check & Commit Report
-
 **Result:** COMMITTED | BLOCKED
 
-**Gates:**
 | Gate | Result | Notes |
 |------|--------|-------|
-| generate:types | PASS / SKIP | <if run, note what changed> |
-| lint | PASS | <if auto-fixed, list files> |
-| typecheck | PASS | |
-| test | PASS | <note any pre-existing failures> |
+| generate:types | PASS / SKIP | |
+| biome | PASS | <files auto-fixed> |
+| typecheck (<pkgs>) | PASS | |
+| test (<pkgs>) | PASS | <pre-existing failures noted> |
 | build | PASS / SKIP | |
 
-**Auto-fixed:** <list files fixed during gate runs, or "none">
-
-**Commit:** `<sha>` — `<commit message>`
-**Branch:** `<branch-name>`
+**Commit:** `<sha>` — `<message>`  ·  **Pushed:** yes/no
+**Excluded from staging:** <files left uncommitted and why, or "none">
 ```
 
-If blocked:
-
-```markdown
-**Result:** BLOCKED
-
-**Blocking gate:** <gate name>
-**Error:** <concise error summary>
-**Attempts:** <what was tried>
-```
+If BLOCKED: name the gate, the concise error, and what was attempted.

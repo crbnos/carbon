@@ -6,9 +6,10 @@ import {
   LuFolder,
   LuFolderOpen
 } from "react-icons/lu";
+import { useNavigate } from "react-router";
 import type { FlatTree, FlatTreeItem } from "~/components/TreeView";
 import { LevelLine, TreeView, useTree } from "~/components/TreeView";
-import { useRealtime } from "~/hooks";
+import { useRealtime, useUrlParams } from "~/hooks";
 import type { Chart } from "../../types";
 
 type TrialBalanceChart = Chart & {
@@ -21,6 +22,8 @@ type TrialBalanceTreeProps = {
   showTranslated?: boolean;
   parentCurrency?: string | null;
   search: string;
+  /** When provided, clicking a leaf account opens its ledger drill-down */
+  ledgerPath?: (accountId: string) => string;
 };
 
 function accountsToFlatTree(
@@ -135,10 +138,21 @@ const TrialBalanceTree = memo(
     data,
     showTranslated = false,
     parentCurrency,
-    search
+    search,
+    ledgerPath
   }: TrialBalanceTreeProps) => {
     useRealtime("journal");
+    const navigate = useNavigate();
+    const [params] = useUrlParams();
     const parentRef = useRef<HTMLDivElement>(null);
+
+    const openLedger = (accountId: string) => {
+      if (!ledgerPath) return;
+      const nextParams = new URLSearchParams(params);
+      nextParams.delete("offset");
+      const qs = nextParams.toString();
+      navigate(qs ? `${ledgerPath(accountId)}?${qs}` : ledgerPath(accountId));
+    };
 
     const filtered = useMemo(
       () => filterAccounts(data, search),
@@ -211,6 +225,8 @@ const TrialBalanceTree = memo(
                 ? (Math.abs(endingBalance) / Math.abs(parentBalance)) * 100
                 : 0;
 
+            const isDrillable = !isGroup && !!ledgerPath;
+
             return (
               <div
                 className={cn(
@@ -224,6 +240,8 @@ const TrialBalanceTree = memo(
                   selectNode(node.id, false);
                   if (isGroup) {
                     toggleExpandNode(node.id);
+                  } else if (isDrillable) {
+                    openLedger(account.id);
                   }
                 }}
               >
@@ -291,7 +309,13 @@ const TrialBalanceTree = memo(
                 </span>
 
                 {/* Ending Balance */}
-                <span className="w-28 text-right tabular-nums shrink-0 text-muted-foreground">
+                <span
+                  className={cn(
+                    "w-28 text-right tabular-nums shrink-0 text-muted-foreground",
+                    isDrillable &&
+                      "group-hover/row:text-foreground group-hover/row:underline underline-offset-2 decoration-border"
+                  )}
+                >
                   {formatCurrency(endingBalance)}
                 </span>
 

@@ -291,6 +291,7 @@ const JobMakeMethodTools = ({ makeMethod }: { makeMethod?: JobMakeMethod }) => {
                       sourceDocumentId={makeMethod.id}
                       locationId={routeData?.job?.locationId ?? undefined}
                       context="workCenter"
+                      variant="ghost"
                       fileRoutes={{
                         pdf: path.to.file.operationLabelsPdf,
                         zpl: path.to.file.operationLabelsZpl

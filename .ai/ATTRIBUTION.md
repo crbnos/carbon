@@ -13,8 +13,7 @@ AI-Engineering Foundation Framework.
 
 - **`.ai/` directory structure** — centralized AI knowledge base with specs, skills,
   rules, lessons, and scripts
-- **Tiered skill installation** (`install-skills.sh`) — multi-harness symlink
-  installer with tier-based skill selection
+- **Skill installation** (`install-skills.sh`) — multi-harness symlink installer
 - **`root-cause` skill** — read-only bug analysis with structured brief output
 - **`fix` skill** — minimal change implementation with mandatory regression tests
 - **`check-and-commit` skill** — pre-commit verification gate

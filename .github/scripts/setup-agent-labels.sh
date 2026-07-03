@@ -2,7 +2,7 @@
 #
 # Create/update the agent:* labels the outer loop (the OpenClaw orchestrator,
 # acting as the `carbon-agent` machine user) drives. These are the GitHub-side
-# state machine for autonomous work — see llm/outer-loop/01-openclaw-plan.md §4.
+# state machine for autonomous work — see .ai/docs/outer-loop.md.
 #
 # Idempotent: `gh label create --force` updates an existing label's color and
 # description instead of erroring, so this is safe to re-run.

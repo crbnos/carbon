@@ -19,6 +19,8 @@ import {
 import { useCallback, useMemo, useState } from "react";
 import { LuPlus } from "react-icons/lu";
 import { useFetcher } from "react-router";
+import { useProcesses } from "~/components/Form/Process";
+import { useWorkCenters } from "~/components/Form/WorkCenter";
 import { DimensionEntityTypeIcon } from "~/components/Icons";
 import { useCustomers, useItems, useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
@@ -83,6 +85,22 @@ const DimensionSelector = ({
   const [customers] = useCustomers();
   const [suppliers] = useSuppliers();
   const [items] = useItems();
+
+  // WorkCenter and Process dimension values are stored as raw ids, so resolve
+  // their human labels from the same client-side lists their pickers use.
+  const processes = useProcesses();
+  const { options: workCenters } = useWorkCenters({});
+  const labelByEntityValue = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const wc of workCenters) map.set(`WorkCenter:${wc.value}`, wc.label);
+    for (const p of processes) map.set(`Process:${p.value}`, p.label);
+    return map;
+  }, [workCenters, processes]);
+  const resolveValueLabel = useCallback(
+    (entityType: string, valueId: string, fallback: string) =>
+      labelByEntityValue.get(`${entityType}:${valueId}`) ?? fallback,
+    [labelByEntityValue]
+  );
 
   // High-cardinality dimensions the user has chosen to add from the dropdown
   // but not yet given a value — these render their searchable Combobox inline.
@@ -284,7 +302,7 @@ const DimensionSelector = ({
                     >
                       {dim.values.map((val) => (
                         <DropdownMenuRadioItem key={val.id} value={val.id}>
-                          {val.name}
+                          {resolveValueLabel(dim.entityType, val.id, val.name)}
                         </DropdownMenuRadioItem>
                       ))}
                     </DropdownMenuRadioGroup>
@@ -311,29 +329,33 @@ const DimensionSelector = ({
           onChange={(valueId) => handleComboboxChange(dim, valueId)}
         />
       ))}
-      {currentDimensions.map((dim) => (
-        <Badge
-          key={dim.dimensionId}
-          role="group"
-          tabIndex={0}
-          variant="outline"
-          className={cn(
-            getColor(dimensionEntityTypeMap.get(dim.dimensionId) ?? ""),
-            "inline-flex items-center gap-1"
-          )}
-        >
-          <DimensionEntityTypeIcon
-            entityType={dimensionEntityTypeMap.get(dim.dimensionId) as any}
-            className="size-3"
-          />
-          <span>{dim.valueName}</span>
-          <BadgeCloseButton
+      {currentDimensions.map((dim) => {
+        const entityType = dimensionEntityTypeMap.get(dim.dimensionId) ?? "";
+        const label = resolveValueLabel(entityType, dim.valueId, dim.valueName);
+        return (
+          <Badge
+            key={dim.dimensionId}
+            role="group"
             tabIndex={0}
-            onClick={() => handleRemove(dim.dimensionId)}
-            aria-label={`Remove ${dim.valueName}`}
-          />
-        </Badge>
-      ))}
+            variant="outline"
+            className={cn(
+              getColor(entityType),
+              "inline-flex items-center gap-1"
+            )}
+          >
+            <DimensionEntityTypeIcon
+              entityType={entityType as any}
+              className="size-3"
+            />
+            <span>{label}</span>
+            <BadgeCloseButton
+              tabIndex={0}
+              onClick={() => handleRemove(dim.dimensionId)}
+              aria-label={`Remove ${label}`}
+            />
+          </Badge>
+        );
+      })}
     </div>
   );
 };

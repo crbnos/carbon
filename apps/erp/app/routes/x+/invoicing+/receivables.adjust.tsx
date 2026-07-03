@@ -10,6 +10,7 @@ import {
   saveJournalEntryWithLines
 } from "~/modules/accounting";
 import { getArTieOut } from "~/modules/invoicing";
+import { getCompanySettings } from "~/modules/settings";
 import { path } from "~/utils/path";
 
 // Turns a non-zero AR tie-out variance into a balanced Draft journal entry — the
@@ -21,6 +22,20 @@ export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, companyGroupId, userId } =
     await requirePermissions(request, { create: "accounting" });
+
+  // Adjusting entries only make sense when journals are being posted.
+  const companySettings = await getCompanySettings(client, companyId);
+  if (
+    !(
+      (companySettings.data as { accountingEnabled?: boolean } | null)
+        ?.accountingEnabled ?? false
+    )
+  ) {
+    throw redirect(
+      path.to.receivables,
+      await flash(request, error(null, "Accounting is not enabled"))
+    );
+  }
 
   const formData = await request.formData();
   const asOfDate =

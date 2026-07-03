@@ -8361,6 +8361,156 @@ export type Database = {
           },
         ]
       }
+      documentExtraction: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          documentType: Database["public"]["Enums"]["documentExtractionType"]
+          error: string | null
+          extractedData: Json | null
+          filteredData: Json | null
+          id: string
+          sourceDocument: string
+          sourceDocumentId: string | null
+          status: Database["public"]["Enums"]["documentExtractionStatus"]
+          storagePath: string
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          documentType: Database["public"]["Enums"]["documentExtractionType"]
+          error?: string | null
+          extractedData?: Json | null
+          filteredData?: Json | null
+          id?: string
+          sourceDocument: string
+          sourceDocumentId?: string | null
+          status?: Database["public"]["Enums"]["documentExtractionStatus"]
+          storagePath: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          documentType?: Database["public"]["Enums"]["documentExtractionType"]
+          error?: string | null
+          extractedData?: Json | null
+          filteredData?: Json | null
+          id?: string
+          sourceDocument?: string
+          sourceDocumentId?: string | null
+          status?: Database["public"]["Enums"]["documentExtractionStatus"]
+          storagePath?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documentExtraction_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documentExtraction_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documentExtraction_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "documentExtraction_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "documentExtraction_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documentExtraction_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documentExtraction_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documentExtraction_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documentExtraction_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "documentExtraction_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documentExtraction_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documentExtraction_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documentExtraction_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documentExtraction_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
       documentFavorite: {
         Row: {
           documentId: string
@@ -60155,14 +60305,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -63588,13 +63738,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
-            isOneToOne: false
-            referencedRelation: "country"
-            referencedColumns: ["alpha2"]
-          },
-          {
-            foreignKeyName: "address_countryCode_fkey"
             columns: ["invoiceCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
@@ -63602,7 +63745,7 @@ export type Database = {
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["shipmentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -63645,7 +63788,6 @@ export type Database = {
           locationId: string | null
           opportunityId: string | null
           paymentTermId: string | null
-          paymentTermName: string | null
           postingDate: string | null
           shipmentId: string | null
           status: string | null
@@ -64177,14 +64319,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -69922,6 +70064,12 @@ export type Database = {
         | "Rework"
         | "Scrap"
         | "Use As Is"
+      documentExtractionStatus:
+        | "pending"
+        | "processing"
+        | "completed"
+        | "failed"
+      documentExtractionType: "purchaseInvoice" | "salesRfq"
       documentSourceType:
         | "Job"
         | "Part"
@@ -71236,6 +71384,13 @@ export const Constants = {
         "Scrap",
         "Use As Is",
       ],
+      documentExtractionStatus: [
+        "pending",
+        "processing",
+        "completed",
+        "failed",
+      ],
+      documentExtractionType: ["purchaseInvoice", "salesRfq"],
       documentSourceType: [
         "Job",
         "Part",

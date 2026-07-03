@@ -3094,6 +3094,149 @@ export async function upsertConsumable(
   return updateConsumable;
 }
 
+/**
+ * Best-effort match of extracted text to an existing item. Tries every
+ * candidate string (e.g. an extracted part number AND description — the
+ * classification doesn't matter) against the item's `readableId` then `name`,
+ * case-insensitively; when nothing matches exactly, retries word-boundary
+ * prefixes of each candidate against `readableId`. Returns the first item id
+ * found, or null.
+ *
+ * Callers that also have a customer/supplier part mapping should try that
+ * first; this covers the readableId/name half of the match.
+ */
+export async function matchItemIdByText(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  candidates: Array<string | null | undefined>
+): Promise<string | null> {
+  const seen = new Set<string>();
+  const dedupe = (raw: string | null | undefined) => {
+    const value = raw?.trim();
+    if (!value) return null;
+    const key = value.toLowerCase();
+    if (seen.has(key)) return null;
+    seen.add(key);
+    return value;
+  };
+
+  // 1. Exact match against readableId or name.
+  for (const raw of candidates) {
+    const value = dedupe(raw);
+    if (!value) continue;
+
+    const byReadableId = await client
+      .from("item")
+      .select("id")
+      .eq("companyId", companyId)
+      .ilike("readableId", value)
+      .limit(1);
+    if (byReadableId.data?.[0]) return byReadableId.data[0].id;
+
+    const byName = await client
+      .from("item")
+      .select("id")
+      .eq("companyId", companyId)
+      .ilike("name", value)
+      .limit(1);
+    if (byName.data?.[0]) return byName.data[0].id;
+  }
+
+  // 2. Extracted part numbers often carry suffixes the item id doesn't (file
+  // extensions, revision notes) — e.g. "LAT pole cut 1 - take 2.ai" for item
+  // "LAT POLE CUT 1". Retry progressively shorter word-boundary prefixes,
+  // longest first so the most specific item wins, against readableId only
+  // (names are free text and too likely to collide with a description
+  // fragment).
+  const prefixes: string[] = [];
+  for (const raw of candidates) {
+    const value = raw?.trim();
+    if (!value) continue;
+
+    const withoutExtension = dedupe(value.replace(/\.[a-z]{1,5}$/i, ""));
+    if (withoutExtension) prefixes.push(withoutExtension);
+
+    // Only phrase-like text also treats dashes as word boundaries
+    // ("cut 2-take 2"); a compact part number ("ABC-100-02") stays whole so
+    // we never map it to a shorter dashed sibling.
+    const variants = [value];
+    if (/\s/.test(value) && value.includes("-")) {
+      variants.push(value.replace(/-/g, " - "));
+    }
+
+    const candidatePrefixes: string[] = [];
+    for (const variant of variants) {
+      const words = variant.split(/\s+/);
+      for (let end = words.length - 1; end > 0; end--) {
+        const prefix = dedupe(
+          words
+            .slice(0, end)
+            .join(" ")
+            .replace(/[\s\-–—_:;,.]+$/, "")
+        );
+        if (prefix && prefix.length >= 4) candidatePrefixes.push(prefix);
+      }
+    }
+    candidatePrefixes.sort((a, b) => b.length - a.length);
+    prefixes.push(...candidatePrefixes);
+  }
+
+  for (const value of prefixes) {
+    const byReadableId = await client
+      .from("item")
+      .select("id")
+      .eq("companyId", companyId)
+      .ilike("readableId", value)
+      .limit(1);
+    if (byReadableId.data?.[0]) return byReadableId.data[0].id;
+  }
+
+  return null;
+}
+
+/**
+ * Resolve extracted document line text to an item id: first through the
+ * party's part mapping (customerPartToItem / supplierPart), then by exact
+ * readableId/name match. Returns null when nothing matches directly.
+ */
+export async function resolveItemIdFromExtractedText(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  party:
+    | { type: "customer"; id: string | null | undefined }
+    | { type: "supplier"; id: string | null | undefined },
+  candidates: Array<string | null | undefined>
+): Promise<string | null> {
+  if (party.id) {
+    for (const raw of candidates) {
+      const candidate = raw?.trim();
+      if (!candidate) continue;
+
+      if (party.type === "customer") {
+        const { data: mapping } = await client
+          .from("customerPartToItem")
+          .select("itemId")
+          .eq("companyId", companyId)
+          .eq("customerId", party.id)
+          .eq("customerPartId", candidate)
+          .maybeSingle();
+        if (mapping) return mapping.itemId;
+      } else {
+        const { data: supplierPart } = await client
+          .from("supplierPart")
+          .select("itemId")
+          .eq("companyId", companyId)
+          .eq("supplierId", party.id)
+          .ilike("supplierPartId", candidate)
+          .limit(1);
+        if (supplierPart?.[0]) return supplierPart[0].itemId;
+      }
+    }
+  }
+
+  return matchItemIdByText(client, companyId, candidates);
+}
+
 export async function upsertPart(
   client: SupabaseClient<Database>,
   part:

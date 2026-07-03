@@ -406,6 +406,14 @@ do_post_create() {
   if ! ( cd "$target" && delegate_ts env sync >&2 ); then
     warn "env sync step failed (worktree was still created)"
   fi
+  # Link .ai skills/rules into .claude/.codex for this worktree. They're
+  # gitignored, so a fresh worktree has none until this runs. Output to stderr
+  # so the checkout stdout (the eval'd `cd`) stays clean.
+  if [[ -f "$target/.ai/scripts/install-skills.sh" ]]; then
+    if ! ( cd "$target" && bash .ai/scripts/install-skills.sh >&2 ); then
+      warn "install-skills step failed (worktree was still created)"
+    fi
+  fi
 }
 
 # Replace process with `crbn up` cd'd into the new worktree. Caller's shell

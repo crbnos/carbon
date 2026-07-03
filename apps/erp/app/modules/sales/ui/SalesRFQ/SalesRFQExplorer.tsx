@@ -1,4 +1,7 @@
 import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
   Button,
   cn,
   DropdownMenu,
@@ -43,9 +46,9 @@ import { path } from "~/utils/path";
 import { isSalesRfqLocked, salesRfqDragValidator } from "../../sales.models";
 import type { SalesRFQ, SalesRFQLine } from "../../types";
 import DeleteSalesRFQLine from "./DeleteSalesRFQLine";
+import MapExtractedLinesModal from "./MapExtractedLinesModal";
 import SalesRFQLineForm from "./SalesRFQLineForm";
 import { useOptimisticDocumentDrag } from "./useOptimiticDocumentDrag";
-
 export default function SalesRFQExplorer() {
   const prettifyShortcut = usePrettifyShortcut();
   const { rfqId } = useParams();
@@ -63,7 +66,11 @@ export default function SalesRFQExplorer() {
 
   const newSalesRFQLineDisclosure = useDisclosure();
   const deleteLineDisclosure = useDisclosure();
+  const mapLinesDisclosure = useDisclosure();
   const [deleteLine, setDeleteLine] = useState<SalesRFQLine | null>(null);
+
+  const realLines = (salesRfqData?.lines ?? []) as SalesRFQLine[];
+  const unmappedLines = realLines.filter((line) => !line.itemId);
 
   const onDeleteLine = (line: SalesRFQLine) => {
     setDeleteLine(line);
@@ -116,7 +123,6 @@ export default function SalesRFQExplorer() {
   }
 
   const lines = Array.from(linesByCustomerPartId.values());
-  const realLines = (salesRfqData?.lines ?? []) as SalesRFQLine[];
 
   const canReorder =
     !isDisabled && permissions.can("update", "sales") && realLines.length > 1;
@@ -141,6 +147,30 @@ export default function SalesRFQExplorer() {
           className="flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
           spacing={0}
         >
+          {unmappedLines.length > 0 && !editMode.isEditing && (
+            <div className="p-2 border-b">
+              <Alert variant="warning">
+                <AlertTitle>
+                  <Trans>Unmapped Extracted Lines</Trans>
+                </AlertTitle>
+                <AlertDescription className="mt-1">
+                  <Trans>
+                    You have {unmappedLines.length} lines extracted from a PDF
+                    that are not mapped to any inventory items.
+                  </Trans>
+                  <div className="mt-2">
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={mapLinesDisclosure.onOpen}
+                    >
+                      <Trans>Map Lines Now</Trans>
+                    </Button>
+                  </div>
+                </AlertDescription>
+              </Alert>
+            </div>
+          )}
           {(salesRfqData?.lines && salesRfqData?.lines?.length > 0) ||
           lines.length > 0 ? (
             editMode.isEditing ? (
@@ -244,6 +274,13 @@ export default function SalesRFQExplorer() {
       )}
       {deleteLineDisclosure.isOpen && (
         <DeleteSalesRFQLine line={deleteLine!} onCancel={onDeleteCancel} />
+      )}
+      {mapLinesDisclosure.isOpen && (
+        <MapExtractedLinesModal
+          rfqId={rfqId}
+          customerId={salesRfqData?.rfqSummary?.customerId ?? undefined}
+          onClose={mapLinesDisclosure.onClose}
+        />
       )}
     </div>
   );

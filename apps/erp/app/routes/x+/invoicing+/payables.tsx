@@ -7,6 +7,7 @@ import {
   getApOpenBySupplier,
   getApTieOut
 } from "~/modules/invoicing";
+import { getCompanySettings } from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -38,8 +39,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
       : "dueDate";
   const bucketDays = parseBuckets(url.searchParams.get("bucketDays"));
 
+  // GL tie-outs only mean something when journals are being posted — skip
+  // them entirely when accounting is disabled (result: null hides the
+  // tie-out panel and the adjusting-entry form in ARAPWorkbench).
+  const companySettings = await getCompanySettings(client, companyId);
+  const accountingEnabled =
+    (companySettings.data as { accountingEnabled?: boolean } | null)
+      ?.accountingEnabled ?? false;
+
   const [tieOut, aging, open] = await Promise.all([
-    getApTieOut(client, companyId, asOfDate),
+    accountingEnabled
+      ? getApTieOut(client, companyId, asOfDate)
+      : Promise.resolve({ data: null }),
     getApAging(client, companyId, asOfDate, { agingMethod, bucketDays }),
     getApOpenBySupplier(client, companyId, asOfDate)
   ]);

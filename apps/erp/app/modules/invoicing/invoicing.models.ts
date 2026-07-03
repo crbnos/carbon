@@ -106,7 +106,15 @@ export const purchaseInvoiceLineValidator = z
     id: zfd.text(z.string().optional()),
     invoiceId: z.string().min(1, { message: "Invoice is required" }),
     invoiceLineType: z.enum(
-      [...methodItemType, "Service", "Fixture", "G/L Account", "Fixed Asset"],
+      [
+        ...methodItemType,
+        "Service",
+        "Fixture",
+        "G/L Account",
+        "Fixed Asset",
+        "Comment"
+      ],
+
       {
         errorMap: (issue, ctx) => ({
           message: "Type is required"

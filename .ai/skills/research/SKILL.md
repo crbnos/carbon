@@ -1,119 +1,105 @@
 ---
 name: research
-description: Survey best practices from competitor ERPs and point solutions for a given feature. Use when designing new features, evaluating approaches, or understanding industry patterns. Triggers on "research best practices", "how do competitors do X", "survey the market for Y", "what's the industry standard for", or any request to understand how other systems handle a feature.
+description: Survey how best-in-class ERPs and point solutions implement a feature, and produce a findings file at .ai/research/{slug}.md. Use when designing a new feature, evaluating approaches, or answering "how do competitors / SAP / the industry do X". Required before designing any ERP-domain feature (accounting, costing, tax, inventory valuation, RMA, MRP, etc.). Do not use for UI styling questions (copy an existing Carbon screen instead) or for bugs (use root-cause).
 ---
 
-# Research: Competitor Best Practices
+# research — competitor best-practice survey
 
-Survey how best-in-class ERPs and point solutions implement a feature. Carbon spans accounting, manufacturing, MES, quality, and more — this skill ensures we research the **right** competitors for each domain, not just any ERP.
+Input: a feature or domain question. Output: `.ai/research/{feature-slug}.md` with
+consensus patterns and a recommendation for Carbon. This skill only researches and
+writes the findings file — it does not design, plan, or write code.
 
-## Domain-to-Competitor Mapping
+**Announce at start:** "Using the research skill — surveying how competitors
+handle {feature}."
 
-| Domain | Always | Primary Competitors | Keywords |
-|--------|--------|---------------------|----------|
-| **Accounting** | SAP | NetSuite | GL, AP, AR, invoicing, payments, accruals, journal entries, financial reports |
-| **Discrete Manufacturing** | SAP | Epicor | Job shops, work orders, BOMs, routing, shop floor, job costing |
-| **MES / Production Tracking** | SAP | Manufacturo, First Resonance | Real-time tracking, IoT, machine monitoring, production scheduling, dispatch |
-| **CNC Parts / Sheet Metal** | SAP | Fulcrum, Paperless Parts | Quoting, estimating, nesting, machine-specific routing, RFQ |
-| **Quality** | SAP | 1factory, HighQA | Inspection, SPC, compliance, FAI, PPAP, measurement, GD&T |
-| **Inventory** | SAP | NetSuite, Fishbowl | Valuation, lot tracking, cycle counting, warehouse, locations |
-| **Sales / CRM** | SAP | NetSuite, Salesforce | Quotes, orders, customers, pricing, commissions |
-| **Purchasing** | SAP | NetSuite, Coupa | POs, suppliers, receiving, vendor management, procurement |
-| **Unknown** | SAP | *(discover first)* | First search for "best [domain] software" to identify leaders |
+## Step 1: Classify the domain
 
-**SAP is always included** — it's the gold standard for enterprise patterns, even when point solutions are more innovative.
+Match the request against this table. A feature may match multiple rows (e.g.
+"shop floor inspections" → MES + Quality). Research every matching row.
 
-## Workflow
+| Domain | Always | Also research | Keywords |
+|--------|--------|---------------|----------|
+| Accounting | SAP | NetSuite | GL, AP, AR, invoicing, payments, accruals, journal entries, period close, financial reports |
+| Discrete manufacturing | SAP | Epicor | job shops, work orders, BOMs, routing, job costing |
+| MES / production tracking | SAP | Manufacturo, First Resonance | real-time tracking, dispatch, machine monitoring, scheduling |
+| CNC parts / sheet metal | SAP | Fulcrum, Paperless Parts | quoting, estimating, nesting, RFQ |
+| Quality | SAP | 1factory, HighQA | inspection, SPC, FAI, PPAP, GD&T, NCR |
+| Inventory | SAP | NetSuite, Fishbowl | valuation, lots, cycle counting, warehouses |
+| Sales / CRM | SAP | NetSuite, Salesforce | quotes, orders, pricing, commissions |
+| Purchasing | SAP | NetSuite, Coupa | POs, suppliers, receiving, procurement |
+| Anything else | SAP | discover first | search `best <domain> software` and pick the top 2 leaders before deep research |
 
-### Step 1: Classify the Domain
+SAP is always included — it is the reference for enterprise patterns even when
+point solutions are more innovative.
 
-Read the feature request and match it to domains above using keywords. A feature may span multiple domains (e.g., "shop floor quality inspections" → MES + Quality).
+## Step 2: Write the research questions
 
-### Step 2: Identify Competitors to Research
+Before searching, list 3–6 concrete questions the design will need answered.
+Prefer data-model and workflow questions over UI questions:
 
-1. **Always include SAP** for any feature
-2. **Add domain-specific competitors** from the mapping table
-3. **For unknown domains**: First search `best [domain] software 2025` to identify 2-3 leaders before deep research
+- What entities and status lifecycles does the competitor use?
+- What edge cases do they handle that we might miss?
+- Is there an industry-standard term we should adopt instead of inventing one?
 
-### Step 3: Execute Targeted Searches
+## Step 3: Search
 
-For each competitor, search for:
-- `[Competitor] [feature] documentation`
-- `[Competitor] [feature] how it works`
-- `[Competitor] [feature] best practices`
+For each competitor, run searches shaped like:
 
-Example for "inventory valuation":
-- `SAP S/4HANA inventory valuation methods`
-- `NetSuite inventory costing FIFO LIFO average`
-- `SAP inventory valuation configuration`
+- `<Competitor> <feature> documentation`
+- `<Competitor> <feature> how it works`
+- `<Competitor> <feature> best practices`
 
-### Step 4: Synthesize Findings
+Rules:
 
-Structure research as actionable patterns:
+- Be specific: `SAP S/4HANA inventory valuation methods`, not `SAP inventory`.
+- Fan searches out to subagents (one competitor or one question per subagent) to
+  keep the main context clean. Each subagent returns findings + source URLs only.
+- Focus on data models, workflows, and terminology — not screenshots or UI copy.
 
-1. **Key Consensus** — What all/most competitors agree on (these are likely industry requirements)
-2. **Competitor-Specific Details** — Unique approaches worth noting
-3. **Recommended Approach** — What Carbon should do, citing which competitor patterns to follow
+## Step 4: Write the findings file
 
-### Step 5: Save Output
-
-Save the research to `.ai/scratch/research/[feature-slug].md` using the output format below.
-
-## Output Format
+Save to `.ai/research/{feature-slug}.md` (kebab-case slug). Use exactly this
+structure:
 
 ```markdown
-# [Feature] Research: Best Practices Survey
+# {Feature} Research: Best Practices Survey
 
 ## Summary
-One paragraph describing what was researched and key findings.
+One paragraph: what was researched, key findings.
 
 ## Competitors Surveyed
-- **SAP S/4HANA** — [why relevant]
-- **[Competitor]** — [why relevant]
+- **SAP S/4HANA** — {why relevant}
+- **{Competitor}** — {why relevant}
 
 ## Key Consensus Patterns
+### 1. {Pattern name}
+- **SAP**: {how SAP does it}
+- **{Competitor}**: {how they do it}
+- **Rationale**: {why this is the standard}
 
-### 1. [Pattern Name]
-- **SAP**: [how SAP does it]
-- **[Competitor]**: [how they do it]
-- **Rationale**: [why this is the standard]
-
-### 2. [Pattern Name]
-...
+## Answers to Research Questions
+1. {Question} — {answer, citing which competitor}
 
 ## Competitor-Specific Details
-
-### SAP
-[Notable implementation details, configuration options, terminology]
-
-### [Competitor]
-[Notable implementation details, unique approaches]
+### {Competitor}
+{notable configuration options, terminology, unique approaches}
 
 ## Recommended Approach for Carbon
-
-Based on the research:
-1. [Recommendation with rationale]
-2. [Recommendation with rationale]
+1. {Recommendation with rationale, naming the competitor pattern it follows}
 
 ## Sources
-- [Link 1]
-- [Link 2]
+- {URL}
 ```
 
-## Example Research
+## Done when
 
-See `.ai/scratch/tasks/accrual-accounting-research.md` for an example of well-structured competitor research covering NetSuite and SAP accounting patterns.
+- [ ] Every matching domain row was researched, SAP included
+- [ ] Every research question from Step 2 has an answer (or is explicitly marked
+      unanswered — carry it into the spec's Open Questions)
+- [ ] The findings file exists at `.ai/research/{slug}.md` with all sections filled
+- [ ] Every claim has a source URL in the Sources section
 
-## When to Use
+## Next step
 
-- Designing a new feature and want to understand industry patterns
-- Evaluating multiple approaches and want to see what competitors chose
-- Building domain knowledge before implementation
-- Validating that a proposed design matches industry standards
-
-## Tips
-
-- **Be specific**: "inventory valuation for job costing" yields better results than just "inventory"
-- **Cross-domain features**: Research all relevant domains (e.g., "shop floor inspections" → MES + Quality)
-- **Unknown domains**: Don't guess competitors — search for "best [domain] software" first
-- **Focus on patterns, not UI**: We want to understand the underlying data model and workflows, not copy screens
+Hand the findings file to `/spec-writing` (design + spec) or cite it from an
+existing spec. Do not start implementation from research alone.

@@ -1,19 +1,20 @@
-import type { ComboboxProps } from "@carbon/form";
+import type { CreatableComboboxProps } from "@carbon/form";
 import { CreatableCombobox } from "@carbon/form";
 import { useDisclosure } from "@carbon/react";
 import { formatAddress } from "@carbon/utils";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useFetcher } from "react-router";
 import type {
   getSupplierLocations,
   SupplierLocation as SupplierLocationType
 } from "~/modules/purchasing";
 import { SupplierLocationForm } from "~/modules/purchasing/ui/Supplier";
+import { useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
 import { useEmptyState } from "./emptyStates";
 
 type SupplierLocationSelectProps = Omit<
-  ComboboxProps,
+  CreatableComboboxProps,
   "options" | "onChange" | "inline"
 > & {
   supplier?: string;
@@ -30,21 +31,27 @@ const SupplierLocationPreview = (
   return <span>{location.label}</span>;
 };
 
-const SupplierLocation = (props: SupplierLocationSelectProps) => {
+const SupplierLocation = ({
+  onChange: propsOnChange,
+  inline,
+  supplier,
+  ...props
+}: SupplierLocationSelectProps) => {
   const newLocationModal = useDisclosure();
-  // const [created, setCreated] = useState<string>("");
+  const [created, setCreated] = useState<string>("");
   const triggerRef = useRef<HTMLButtonElement>(null);
   const supplierLocationsFetcher =
     useFetcher<Awaited<ReturnType<typeof getSupplierLocations>>>();
+  const [suppliers] = useSuppliers();
+  const supplierName =
+    suppliers.find((s) => s.id === supplier)?.name ?? "Main Location";
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
-    if (props?.supplier) {
-      supplierLocationsFetcher.load(
-        path.to.api.supplierLocations(props.supplier)
-      );
+    if (supplier) {
+      supplierLocationsFetcher.load(path.to.api.supplierLocations(supplier));
     }
-  }, [props.supplier]);
+  }, [supplier]);
 
   const options = useMemo(
     () =>
@@ -69,12 +76,12 @@ const SupplierLocation = (props: SupplierLocationSelectProps) => {
         (location) => location.id === newValue?.value
       ) ?? null;
 
-    props.onChange?.(location as SupplierLocationType | null);
+    propsOnChange?.(location as SupplierLocationType | null);
   };
 
   const emptyMessage = useEmptyState(
     "supplierLocation",
-    props.supplier ? { onCreate: () => newLocationModal.onOpen() } : undefined
+    supplier ? { onCreate: () => newLocationModal.onOpen() } : undefined
   );
 
   return (
@@ -83,25 +90,39 @@ const SupplierLocation = (props: SupplierLocationSelectProps) => {
         ref={triggerRef}
         options={options}
         {...props}
-        inline={props?.inline ? SupplierLocationPreview : undefined}
+        inline={inline ? SupplierLocationPreview : undefined}
         label={props?.label ?? "Supplier Location"}
         emptyMessage={emptyMessage}
         onChange={onChange}
         onCreateOption={(option) => {
           newLocationModal.onOpen();
-          // setCreated(option);
+          setCreated(option);
         }}
       />
       {newLocationModal.isOpen && (
         <SupplierLocationForm
-          supplierId={props.supplier!}
+          supplierId={supplier!}
           type="modal"
           onClose={() => {
-            // setCreated("");
+            setCreated("");
             newLocationModal.onClose();
+            // Reload the per-supplier fetcher so a just-created location appears.
+            if (supplier) {
+              supplierLocationsFetcher.load(
+                path.to.api.supplierLocations(supplier)
+              );
+            }
             triggerRef.current?.click();
           }}
-          initialValues={{ name: "" }}
+          initialValues={{
+            name: supplierName,
+            addressLine1: created || "",
+            addressLine2: "",
+            city: "",
+            stateProvince: "",
+            postalCode: "",
+            countryCode: ""
+          }}
         />
       )}
     </>

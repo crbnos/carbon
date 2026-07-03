@@ -98,7 +98,7 @@ export type RunnerDeps = {
 export type RunnerConfig = {
   /** Absolute path to the worktree the loop runs in. */
   cwd: string;
-  /** Where to append the ledger (e.g. llm/loops/<id>/ledger.jsonl). */
+  /** Where to append the ledger (e.g. .ai/runs/<id>/ledger.jsonl). */
   ledgerPath: string;
   /** Stop after this many consecutive iterations with no kept change. */
   plateauAfter: number;

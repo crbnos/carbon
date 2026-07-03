@@ -16,6 +16,7 @@ import {
   removeWorktree
 } from "../git.js";
 import { confirmRemove } from "../prompts.js";
+import { killOrphanedApps, killOrphanedStripe } from "../services/apps.js";
 import { destroyProjectVolumes, flushDb } from "../services/compose.js";
 import {
   branchToPrefix,
@@ -132,20 +133,31 @@ export async function removeWorktreeCmd(opts?: { prune?: boolean }) {
         progress(`${label}: tearing down stack`);
         await destroyProjectVolumes(target.path, projectLabel);
       }
+      // Kill host dev servers + stripe listener that outlive `crbn up`.
+      // Without this, their cwd holds the worktree dir open and
+      // `git worktree remove` fails on macOS (busy directory).
+      if (slotInfo) {
+        progress(`${label}: killing dev servers`);
+        await killOrphanedApps(slotInfo.ports);
+      }
+      await killOrphanedStripe(target.path);
       if (slotInfo && typeof slotInfo.redisDb === "number") {
         progress(`${label}: flushing redis db ${slotInfo.redisDb}`);
         await flushDb(slotInfo.redisDb);
       }
 
-      progress(`${label}: removing worktree`);
-      await removeWorktree(target.path, dirty);
+      try {
+        progress(`${label}: removing worktree`);
+        await removeWorktree(target.path, dirty);
 
-      if (pruneBranches && target.branch) {
-        progress(`${label}: deleting branch`);
-        await deleteBranch(target.branch);
+        if (pruneBranches && target.branch) {
+          progress(`${label}: deleting branch`);
+          await deleteBranch(target.branch);
+        }
+      } finally {
+        // Always release the port slot — a failed dir removal must not leak it.
+        if (slug) removeSlot(slug);
       }
-
-      if (slug) removeSlot(slug);
 
       done++;
       progress(pc.green(label));

@@ -8,7 +8,7 @@ import {
   resolveTemplate
 } from "../template";
 import type { PDF } from "../types";
-import { getRegistrationFooter } from "../utils/shared";
+import { resolveRegistrationLine } from "../utils/shared";
 import type { PackingSlipData } from "./blocks/packingSlip";
 import {
   buildPackingSlipVars,
@@ -70,6 +70,14 @@ const PackingSlipPDF = ({
     ...(headerSectionId ? (sections[headerSectionId]?.config ?? {}) : {})
   };
 
+  const registration = resolveRegistrationLine({
+    company,
+    footerSectionId,
+    sections,
+    settings,
+    vars
+  });
+
   const data: PackingSlipData = {
     company,
     locale,
@@ -119,16 +127,12 @@ const PackingSlipPDF = ({
         keywords: meta?.keywords ?? "packing slip",
         subject: meta?.subject ?? "Packing Slip"
       }}
-      footerLabel={getRegistrationFooter(
-        company.name,
-        company.countryCode,
-        company.taxId
-      )}
+      footerLabel={registration.label}
       footerDocumentId={shipment?.shipmentId}
       showFooter={showFooter}
       showPageNumbers={settings.showPageNumbers}
       pageNumberFormat={settings.pageNumberFormat}
-      showRegistrationLine={settings.showRegistrationLine}
+      showRegistrationLine={registration.show}
       fontFamily={settings.fontFamily}
       headerContent={headerContent}
       footerContent={footerContent}

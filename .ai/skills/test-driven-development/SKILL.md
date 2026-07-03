@@ -1,371 +1,94 @@
 ---
 name: test-driven-development
-description: Use when implementing any feature or bugfix, before writing implementation code
+description: Red→green→refactor discipline for Carbon (vitest) — write the failing test first, watch it fail for the right reason, write minimal code to pass. Use when implementing any feature or bug fix, before writing implementation code. Exceptions (throwaway prototypes, generated code, config) require the user's explicit OK. For browser-only proofs use /test instead.
 ---
 
-# Test-Driven Development (TDD)
+# test-driven-development — red, green, refactor
 
-## Overview
+The rule: **no production code without a failing test first.** A test written
+after the code passes immediately — and a test you never saw fail proves
+nothing: it may test the wrong thing, test the implementation instead of the
+behavior, or miss the exact case you got wrong.
 
-Write the test first. Watch it fail. Write minimal code to pass.
+Already wrote code before the test? Stash or delete it, write the test, watch
+it fail, then re-implement. Don't keep it open "as reference" — that is
+writing tests after, with extra steps.
 
-**Core principle:** If you didn't watch the test fail, you don't know if it tests the right thing.
+## The cycle
 
-**Violating the letter of the rules is violating the spirit of the rules.**
+### 1. RED — write one failing test
 
-## When to Use
+One behavior per test, named for the behavior
+(`"rejects a receipt line with zero quantity"`, not `"test1"`). Test real code;
+mock only what you cannot run (network, clock). Copy setup from a sibling test
+file in the same package.
 
-**Always:**
-- New features
-- Bug fixes
-- Refactoring
-- Behavior changes
+Where tests live: `packages/{pkg}/src/**/*.test.ts` or
+`apps/erp/app/modules/{module}/__tests__/` (match the neighbors). Runner is
+vitest via the `@carbon/config` preset.
 
-**Exceptions (ask your human partner):**
-- Throwaway prototypes
-- Generated code
-- Configuration files
-
-Thinking "skip TDD just this once"? Stop. That's rationalization.
-
-## The Iron Law
-
-```
-NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST
-```
-
-Write code before the test? Delete it. Start over.
-
-**No exceptions:**
-- Don't keep it as "reference"
-- Don't "adapt" it while writing tests
-- Don't look at it
-- Delete means delete
-
-Implement fresh from tests. Period.
-
-## Red-Green-Refactor
-
-```dot
-digraph tdd_cycle {
-    rankdir=LR;
-    red [label="RED\nWrite failing test", shape=box, style=filled, fillcolor="#ffcccc"];
-    verify_red [label="Verify fails\ncorrectly", shape=diamond];
-    green [label="GREEN\nMinimal code", shape=box, style=filled, fillcolor="#ccffcc"];
-    verify_green [label="Verify passes\nAll green", shape=diamond];
-    refactor [label="REFACTOR\nClean up", shape=box, style=filled, fillcolor="#ccccff"];
-    next [label="Next", shape=ellipse];
-
-    red -> verify_red;
-    verify_red -> green [label="yes"];
-    verify_red -> red [label="wrong\nfailure"];
-    green -> verify_green;
-    verify_green -> refactor [label="yes"];
-    verify_green -> green [label="no"];
-    refactor -> verify_green [label="stay\ngreen"];
-    verify_green -> next;
-    next -> red;
-}
-```
-
-### RED - Write Failing Test
-
-Write one minimal test showing what should happen.
-
-<Good>
-```typescript
-test('retries failed operations 3 times', async () => {
-  let attempts = 0;
-  const operation = () => {
-    attempts++;
-    if (attempts < 3) throw new Error('fail');
-    return 'success';
-  };
-
-  const result = await retryOperation(operation);
-
-  expect(result).toBe('success');
-  expect(attempts).toBe(3);
-});
-```
-Clear name, tests real behavior, one thing
-</Good>
-
-<Bad>
-```typescript
-test('retry works', async () => {
-  const mock = jest.fn()
-    .mockRejectedValueOnce(new Error())
-    .mockRejectedValueOnce(new Error())
-    .mockResolvedValueOnce('success');
-  await retryOperation(mock);
-  expect(mock).toHaveBeenCalledTimes(3);
-});
-```
-Vague name, tests mock not code
-</Bad>
-
-**Requirements:**
-- One behavior
-- Clear name
-- Real code (no mocks unless unavoidable)
-
-### Verify RED - Watch It Fail
-
-**MANDATORY. Never skip.**
+### 2. Verify RED — watch it fail (mandatory, never skip)
 
 ```bash
-npm test path/to/test.test.ts
+pnpm --filter <pkg> exec vitest run <path/to/file.test.ts>
+# Expected: FAIL — assertion failure for the missing behavior
 ```
 
-Confirm:
-- Test fails (not errors)
-- Failure message is expected
-- Fails because feature missing (not typos)
+- Fails with an assertion about the missing behavior → proceed.
+- **Passes** → it tests existing behavior; rewrite the test.
+- **Errors** (import/type/syntax) → fix the error, re-run until it *fails
+  correctly*.
+- Carbon gotcha: vitest runs with `passWithNoTests: true` — a green run that
+  collected **0 tests** proves nothing. Check the test count in the output.
 
-**Test passes?** You're testing existing behavior. Fix test.
+### 3. GREEN — minimal code to pass
 
-**Test errors?** Fix error, re-run until it fails correctly.
-
-### GREEN - Minimal Code
-
-Write simplest code to pass the test.
-
-<Good>
-```typescript
-async function retryOperation<T>(fn: () => Promise<T>): Promise<T> {
-  for (let i = 0; i < 3; i++) {
-    try {
-      return await fn();
-    } catch (e) {
-      if (i === 2) throw e;
-    }
-  }
-  throw new Error('unreachable');
-}
-```
-Just enough to pass
-</Good>
-
-<Bad>
-```typescript
-async function retryOperation<T>(
-  fn: () => Promise<T>,
-  options?: {
-    maxRetries?: number;
-    backoff?: 'linear' | 'exponential';
-    onRetry?: (attempt: number) => void;
-  }
-): Promise<T> {
-  // YAGNI
-}
-```
-Over-engineered
-</Bad>
-
-Don't add features, refactor other code, or "improve" beyond the test.
-
-### Verify GREEN - Watch It Pass
-
-**MANDATORY.**
+Write the simplest code that makes the test pass. No extra options, no
+speculative parameters, no refactoring of neighboring code, nothing the test
+doesn't demand.
 
 ```bash
-npm test path/to/test.test.ts
+pnpm --filter <pkg> exec vitest run <path/to/file.test.ts>   # your test passes
+pnpm --filter <pkg> test                                     # the package still passes
 ```
 
-Confirm:
-- Test passes
-- Other tests still pass
-- Output pristine (no errors, warnings)
+Test fails → fix the code, not the test. Other tests fail → fix now, not later.
 
-**Test fails?** Fix code, not test.
+### 4. REFACTOR — only while green
 
-**Other tests fail?** Fix now.
+Remove duplication, improve names, extract helpers. No new behavior. Re-run the
+package tests after. Then loop to the next failing test.
 
-### REFACTOR - Clean Up
+After editing tests, also typecheck the package —
+`pnpm exec turbo run typecheck --filter=<pkg>` (never whole-repo). The repo uses
+`noUncheckedIndexedAccess`: indexed access in assertions needs optional chaining
+(`rows[0]?.id`), and that only surfaces in typecheck, not in the test run.
 
-After green only:
-- Remove duplication
-- Improve names
-- Extract helpers
+## Bug fixes
 
-Keep tests green. Don't add behavior.
+A bug fix is TDD with the test written from the bug report: the failing test
+reproduces the bug, the fix turns it green, and the test stays as the
+regression guard. Never fix a bug without one (see `/fix`, which enforces this).
 
-### Repeat
-
-Next failing test for next feature.
-
-## Good Tests
-
-| Quality | Good | Bad |
-|---------|------|-----|
-| **Minimal** | One thing. "and" in name? Split it. | `test('validates email and domain and whitespace')` |
-| **Clear** | Name describes behavior | `test('test1')` |
-| **Shows intent** | Demonstrates desired API | Obscures what code should do |
-
-## Why Order Matters
-
-**"I'll write tests after to verify it works"**
-
-Tests written after code pass immediately. Passing immediately proves nothing:
-- Might test wrong thing
-- Might test implementation, not behavior
-- Might miss edge cases you forgot
-- You never saw it catch the bug
-
-Test-first forces you to see the test fail, proving it actually tests something.
-
-**"I already manually tested all the edge cases"**
-
-Manual testing is ad-hoc. You think you tested everything but:
-- No record of what you tested
-- Can't re-run when code changes
-- Easy to forget cases under pressure
-- "It worked when I tried it" ≠ comprehensive
-
-Automated tests are systematic. They run the same way every time.
-
-**"Deleting X hours of work is wasteful"**
-
-Sunk cost fallacy. The time is already gone. Your choice now:
-- Delete and rewrite with TDD (X more hours, high confidence)
-- Keep it and add tests after (30 min, low confidence, likely bugs)
-
-The "waste" is keeping code you can't trust. Working code without real tests is technical debt.
-
-**"TDD is dogmatic, being pragmatic means adapting"**
-
-TDD IS pragmatic:
-- Finds bugs before commit (faster than debugging after)
-- Prevents regressions (tests catch breaks immediately)
-- Documents behavior (tests show how to use code)
-- Enables refactoring (change freely, tests catch breaks)
-
-"Pragmatic" shortcuts = debugging in production = slower.
-
-**"Tests after achieve the same goals - it's spirit not ritual"**
-
-No. Tests-after answer "What does this do?" Tests-first answer "What should this do?"
-
-Tests-after are biased by your implementation. You test what you built, not what's required. You verify remembered edge cases, not discovered ones.
-
-Tests-first force edge case discovery before implementing. Tests-after verify you remembered everything (you didn't).
-
-30 minutes of tests after ≠ TDD. You get coverage, lose proof tests work.
-
-## Common Rationalizations
+## Rationalizations — all of them mean "write the test first"
 
 | Excuse | Reality |
 |--------|---------|
-| "Too simple to test" | Simple code breaks. Test takes 30 seconds. |
-| "I'll test after" | Tests passing immediately prove nothing. |
-| "Tests after achieve same goals" | Tests-after = "what does this do?" Tests-first = "what should this do?" |
-| "Already manually tested" | Ad-hoc ≠ systematic. No record, can't re-run. |
-| "Deleting X hours is wasteful" | Sunk cost fallacy. Keeping unverified code is technical debt. |
-| "Keep as reference, write tests first" | You'll adapt it. That's testing after. Delete means delete. |
-| "Need to explore first" | Fine. Throw away exploration, start with TDD. |
-| "Test hard = design unclear" | Listen to test. Hard to test = hard to use. |
-| "TDD will slow me down" | TDD faster than debugging. Pragmatic = test-first. |
-| "Manual test faster" | Manual doesn't prove edge cases. You'll re-test every change. |
-| "Existing code has no tests" | You're improving it. Add tests for existing code. |
+| "Too simple to test" | Simple code breaks; the test costs 30 seconds |
+| "I'll test after" | Passing-immediately proves nothing |
+| "I manually tested it" | Not repeatable, no record, gone on the next change |
+| "Deleting X hours of work is wasteful" | Sunk cost; unverified code is the actual debt |
+| "Just this once / this is different" | The exception becomes the habit |
+| "Test is hard to write" | Hard to test = hard to use; simplify the interface |
 
-## Red Flags - STOP and Start Over
+## Done when
 
-- Code before test
-- Test after implementation
-- Test passes immediately
-- Can't explain why test failed
-- Tests added "later"
-- Rationalizing "just this once"
-- "I already manually tested it"
-- "Tests after achieve the same purpose"
-- "It's about spirit not ritual"
-- "Keep as reference" or "adapt existing code"
-- "Already spent X hours, deleting is wasteful"
-- "TDD is dogmatic, I'm being pragmatic"
-- "This is different because..."
+- [ ] Every new behavior has a test you watched fail, for the right reason
+- [ ] `pnpm --filter <pkg> test` green, with a non-zero collected-test count
+- [ ] `pnpm exec turbo run typecheck --filter=<pkg>` green
+- [ ] Output pristine — no stray warnings/errors you introduced
 
-**All of these mean: Delete code. Start over with TDD.**
-
-## Example: Bug Fix
-
-**Bug:** Empty email accepted
-
-**RED**
-```typescript
-test('rejects empty email', async () => {
-  const result = await submitForm({ email: '' });
-  expect(result.error).toBe('Email required');
-});
-```
-
-**Verify RED**
-```bash
-$ npm test
-FAIL: expected 'Email required', got undefined
-```
-
-**GREEN**
-```typescript
-function submitForm(data: FormData) {
-  if (!data.email?.trim()) {
-    return { error: 'Email required' };
-  }
-  // ...
-}
-```
-
-**Verify GREEN**
-```bash
-$ npm test
-PASS
-```
-
-**REFACTOR**
-Extract validation for multiple fields if needed.
-
-## Verification Checklist
-
-Before marking work complete:
-
-- [ ] Every new function/method has a test
-- [ ] Watched each test fail before implementing
-- [ ] Each test failed for expected reason (feature missing, not typo)
-- [ ] Wrote minimal code to pass each test
-- [ ] All tests pass
-- [ ] Output pristine (no errors, warnings)
-- [ ] Tests use real code (mocks only if unavoidable)
-- [ ] Edge cases and errors covered
-
-Can't check all boxes? You skipped TDD. Start over.
-
-## When Stuck
-
-| Problem | Solution |
-|---------|----------|
-| Don't know how to test | Write wished-for API. Write assertion first. Ask your human partner. |
-| Test too complicated | Design too complicated. Simplify interface. |
-| Must mock everything | Code too coupled. Use dependency injection. |
-| Test setup huge | Extract helpers. Still complex? Simplify design. |
-
-## Debugging Integration
-
-Bug found? Write failing test reproducing it. Follow TDD cycle. Test proves fix and prevents regression.
-
-Never fix bugs without a test.
-
-## Testing Anti-Patterns
-
-When adding mocks or test utilities, read @testing-anti-patterns.md to avoid common pitfalls:
-- Testing mock behavior instead of real behavior
-- Adding test-only methods to production classes
-- Mocking without understanding dependencies
-
-## Final Rule
-
-```
-Production code → test exists and failed first
-Otherwise → not TDD
-```
-
-No exceptions without your human partner's permission.
+When adding mocks or test utilities, read
+[testing-anti-patterns.md](testing-anti-patterns.md) first — it covers testing
+mock behavior instead of real behavior, test-only methods on production
+classes, and mocking without understanding the dependency.

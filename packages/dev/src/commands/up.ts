@@ -9,6 +9,7 @@ import { onShutdown } from "../helpers.js";
 import { pickApps, pickBorrowSlug } from "../prompts.js";
 import {
   installDeps,
+  installSkills,
   spawnApps,
   spawnStripeListener,
   syncEnvSymlinks
@@ -182,6 +183,7 @@ export async function up(opts: UpOpts = {}) {
 
   await refreshStaleCopyFiles(root);
   await ensureDepsInstalled(root);
+  await ensureSkillsInstalled(root);
 
   const ctx = await provisionSlot(root, slug, portless, borrowedEntry);
   if (borrowedEntry) {
@@ -285,6 +287,15 @@ async function ensureDepsInstalled(root: string) {
   const ran = await installDeps(root);
   if (ran) log.step("pnpm install");
   else log.info("pnpm install skipped (lockfile in sync)");
+}
+
+// Keep the .claude/.codex skill+rule symlinks in sync on every boot. They're
+// gitignored (absent in fresh worktrees) and `prepare` only runs when pnpm
+// install runs, so this is the reliable place to guarantee they exist.
+async function ensureSkillsInstalled(root: string) {
+  const ok = await installSkills(root);
+  if (ok) log.step("skills + rules linked");
+  else log.info("install-skills skipped");
 }
 
 async function provisionSlot(

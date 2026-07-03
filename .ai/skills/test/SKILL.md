@@ -1,239 +1,169 @@
 ---
 name: test
-description: Agentically test a specific feature by analyzing the branch diff, building a test plan, and driving the app through agent-browser. Builds on /login and /error skills. Caches successful playbooks to .ai/playbooks/ for reuse.
+description: Agentically test a specific feature end-to-end in the running Carbon dev server — analyze the branch diff (or a given feature/issue), build a test plan, drive the app with agent-browser, and cache successful playbooks to .ai/playbooks/ for reuse. Use to verify a feature or fix actually works in the browser ("test this", "verify in the browser", after /execute or /fix for user-facing changes). Builds on /auth and /error. For a broad does-everything-load sweep use /smoke-test.
 ---
 
-# Feature Test
+# test — feature test through the real browser
 
-Agentically test a specific feature or workflow in the running Carbon ERP dev server. Analyzes the current branch to understand what changed, then drives the browser through the relevant create/update/delete flows to verify they work end-to-end.
+Drive the running app through the changed flows like a user would, verify
+results, and cache what worked as a playbook. A user-facing change that hasn't
+passed this (or an equivalent unit-test proof) is not done.
+
+**Announce at start:** "Using the test skill — browser-testing {feature/flows}."
 
 ## Arguments
 
-The user may provide:
-- A feature description: `/test creating a purchase order`
-- A GitHub issue: `/test #1234`
-- Nothing (infer from the branch diff): `/test`
+- Feature description: `/test creating a purchase order`
+- GitHub issue: `/test #1234`
+- Nothing: infer targets from the branch diff
 
-## Procedure
-
-### Step 1: Check for existing playbooks
-
-Before doing anything else, check if there are cached playbooks for the feature being tested:
+## Step 1: Check for a cached playbook FIRST
 
 ```bash
 ls .ai/playbooks/
 ```
 
-If a matching playbook exists (e.g., `create-purchase-order.md` when testing purchase order creation), read it and use the cached navigation steps, selectors, and field mappings. This saves significant time — skip to Step 4 (Login) and use the playbook's steps directly.
+If a playbook matches the feature (e.g. `create-purchase-order.md`), read it and
+use its steps, selector notes, and field values directly — skip to Step 4. Only
+build a plan from scratch when no playbook fits.
 
-If no playbook exists, continue to Step 2 to build one from scratch.
+## Step 2: Decide what to test
 
-### Step 2: Understand what to test
-
-**If a feature description was provided**, use it directly as the test target.
-
-**If a GitHub issue was provided**, fetch it:
-```bash
-gh issue view <number> --json title,body
-```
-
-**If nothing was provided**, analyze the branch diff to identify testable features:
-```bash
-git diff main --stat
-git log --oneline main..HEAD
-```
-
-Focus on:
-- New or modified route files under `routes/x+/` (these are user-facing pages)
-- Changes to service files under `modules/` (business logic changes)
-- New migrations (schema changes that affect forms)
-
-From this analysis, identify 1-3 concrete user workflows to test (e.g., "create a new purchase order", "update a job's details", "create a stock transfer").
-
-### Step 3: Build the test plan
-
-For each workflow, plan the steps as a user would perform them:
-
-1. **Navigate** to the relevant page (list view or "new" form)
-2. **Fill** required form fields with realistic test data
-3. **Submit** the form
-4. **Verify** the result (redirect to detail page, success toast, record appears in list)
-
-Write the plan out before executing so the user can see what you intend to do.
-
-### Step 4: Login
-
-Invoke the `/login` skill to authenticate the browser session. If login fails, stop and report.
-
-### Step 5: Read ERP_URL
+- Feature given → that's the target.
+- Issue given → `gh issue view <number> --json title,body`.
+- Nothing given → read the diff:
 
 ```bash
-grep ERP_URL .env.local
+git diff $(git merge-base origin/main HEAD) --stat
+git log --oneline $(git merge-base origin/main HEAD)..HEAD
 ```
 
-### Step 6: Execute each test
+Testable signals: new/changed routes under `routes/x+/` (user-facing pages),
+service changes under `modules/` (business logic), new migrations (schema →
+forms). Pick 1–3 concrete user workflows ("create a purchase order", "update a
+job's details").
 
-For each planned workflow:
+## Step 3: Write the test plan
 
-#### 6a. Navigate to the page
+For each workflow, list the steps a user performs: **navigate → fill → submit →
+verify** (redirect, toast, record in list). Print the plan before executing so
+the user sees what you intend to do.
+
+## Step 4: Login
+
+Invoke `/auth`. If it fails, STOP and report.
+
+## Step 5: Execute each test
+
+Read `ERP_URL` from `.env.local`, then per workflow:
+
+### 5a. Navigate
 
 ```bash
 agent-browser open ${ERP_URL}/<route> && agent-browser wait --load networkidle && agent-browser snapshot -i
 ```
 
-#### 6b. Interact with the form
-
-Use snapshot refs to fill fields and click buttons. General patterns:
+### 5b. Interact — Carbon form rules (these are load-bearing)
 
 **Text inputs:**
+
 ```bash
 agent-browser fill @eN "value"
 ```
 
-**Select/combobox fields (Carbon uses custom comboboxes):**
-```bash
-agent-browser click @eN          # open the dropdown
-agent-browser snapshot -i        # find the option refs
-agent-browser click @eM          # select the option
-```
-Clicking an option updates the field's React state correctly (it persists across
-re-renders), so comboboxes are reliable.
+**Combobox/select fields** (Carbon uses custom comboboxes):
 
-**Number / currency / date fields (react-aria — IMPORTANT):**
-These render a *visible* formatted input plus a *hidden* input that actually carries
-the form value (e.g. `<input type=hidden name="amount">`). react-aria only commits
-the hidden input **on blur**, not on each keystroke. So you MUST fill, then blur:
 ```bash
-agent-browser fill @eN "300"     # the visible field
-agent-browser click @eM          # click ANY other field to blur → commits hidden input
-# verify it committed:
-agent-browser eval "document.querySelector('input[name=amount]').value"   # => "300"
+agent-browser click @eN     # open the dropdown
+agent-browser snapshot -i   # find option refs
+agent-browser click @eM     # pick the option — this updates React state reliably
 ```
-`agent-browser type` often does NOT reach these fields — use `fill` + blur.
 
-**Submit (CRITICAL — do NOT click the submit button):**
-Carbon forms are `@carbon/form` `ValidatedForm` (vendored remix-validated-form). Its
-submit handler only runs on a **native `submit` event that carries a `submitter`**
-(`if (submitter?.form !== target) return;` — it bails silently otherwise). An
-agent-browser `click` on the Save button does **not** trigger that native submit, so
-nothing happens (no error, no navigation). Submit programmatically instead, passing
-the button as the submitter:
+**Number / currency / date fields (react-aria) — fill, then BLUR.** These render
+a visible formatted input plus a hidden input that carries the form value; the
+hidden input commits **on blur**, not per keystroke:
+
+```bash
+agent-browser fill @eN "300"   # visible field
+agent-browser click @eM        # click any other field to blur → commits the hidden input
+agent-browser eval "document.querySelector('input[name=amount]').value"   # verify => "300"
+```
+
+`agent-browser type` often does NOT reach these fields — always `fill` + blur.
+
+**Submit — `requestSubmit`, never a click.** Carbon forms are `@carbon/form`
+`ValidatedForm`; the submit handler only runs on a native `submit` event carrying
+a `submitter` — a plain click on Save does nothing (silently):
+
 ```bash
 agent-browser eval "(()=>{const b=[...document.querySelectorAll('button')].find(x=>x.type==='submit'&&x.textContent.trim()==='Save');const f=b.closest('form');f.requestSubmit(b);return 'submitted'})()"
 agent-browser wait --load networkidle
-agent-browser snapshot -i        # verify the result (redirect / toast)
+agent-browser snapshot -i
 ```
-Adjust the button text (`'Save'`/`'Create'`/`'Submit'`) to match the form. The
-handler validates `new FormData(form)` (the real DOM) synchronously, so as long as
-every field's value/hidden-input is set (see number-field note above), this submits
-exactly as a real user click would — exercising the real client validation + action.
 
-> If a submit "does nothing", it's almost always one of: (a) you clicked the button
-> instead of `requestSubmit`-ing, or (b) a react-aria number/date field's hidden input
-> never committed (you didn't blur it). Verify the hidden inputs before blaming the form.
+Adjust the button text (`Save`/`Create`/`Submit`) to the form. For **drawer
+forms** (child routes as overlays), `requestSubmit` the drawer's own form, not
+the parent page's.
 
-#### 6c. Verify the result
+> A submit that "does nothing" is almost always: (a) you clicked instead of
+> `requestSubmit`-ing, or (b) a react-aria field's hidden input never committed
+> (you didn't blur). Verify hidden inputs before blaming the form.
 
-After submission, check the snapshot for:
-- **Success indicators**: redirect to a detail page, URL changed, "created" or "updated" text, success toast
-- **Failure indicators**: validation errors (red text, "is required"), error toasts, "Something went wrong", page didn't change
+### 5c. Verify the result
 
-If verification shows an error, invoke the `/error` skill to capture diagnostics, then continue to the next test.
+Success: redirect to a detail page / URL change, success toast, record visible
+in the list. Failure: validation errors, error toast, "Something went wrong", no
+change. On failure → invoke `/error` to capture diagnostics, then continue with
+the remaining tests.
 
-#### 6d. Record the result
+### 5d. Record
 
-Track each test with its status:
-- **PASS**: Form submitted, redirected to expected page, record created/updated
-- **FAIL**: Error encountered, validation failed, unexpected behavior
-- **SKIP**: Could not test (prerequisite missing, page not found)
+**PASS** (submitted, expected result verified) · **FAIL** (error/unexpected) ·
+**SKIP** (prerequisite missing — e.g. no suppliers seeded; say what's missing).
 
-### Step 7: Cache successful playbooks
+## Step 6: Cache the playbook (after every PASS)
 
-After each **PASS** test, write or update a playbook file at `.ai/playbooks/<feature-slug>.md`. This is critical for future efficiency.
-
-**Playbook format:**
+Write/update `.ai/playbooks/<feature-slug>.md` (kebab-case). This is what makes
+future runs fast — do not skip it.
 
 ```markdown
 # <Feature Name>
 
-Last tested: <date>
-Route: <URL path>
+Last tested: <YYYY-MM-DD>
+Route: /x/<route>
 
 ## Prerequisites
-- <any required data, e.g., "at least one supplier must exist">
+- <required data, e.g. "at least one supplier exists">
 
 ## Steps
-
-### 1. Navigate
-- URL: `/x/<route>/new`
-- Expected: form with fields [list fields seen]
-
-### 2. Fill form
-- Field "<label>" (<selector hint, e.g., "first combobox">): "<value>"
-- Field "<label>" (<selector hint>): "<value>"
-- ...
-
-### 3. Submit
-- `requestSubmit` the form whose submit button reads "<button label>" (NOT a click)
-
-### 4. Verify
-- Expected redirect: `/x/<route>/<id>`
-- Success indicator: <what to look for>
+### 1. Navigate — URL, expected form fields
+### 2. Fill — Field "<label>" (<hint: "first combobox">): "<value>"
+### 3. Submit — requestSubmit the form whose button reads "<label>" (NOT a click)
+### 4. Verify — expected redirect/toast
 
 ## Selector Notes
-- The supplier combobox is the first combobox on the page, labeled "Supplier"
-- The location field auto-populates from user defaults
-- The submit button is labeled "Save" in the form footer
-- After submit, a toast appears briefly with "Purchase order created"
+- <how to find tricky fields: by label, position, role>
 
 ## Common Failures
-- "Supplier is required" — no suppliers seeded in the database
-- "Location is required" — user has no default location assigned
+- <validation errors hit on the way to PASS and their causes>
 ```
 
-**Rules for playbook caching:**
-- Use kebab-case filenames: `create-purchase-order.md`, `create-job.md`, `update-quote.md`
-- Only cache after a PASS — never cache failed or partial runs
-- Include selector hints (not exact refs like `@e5`, since those change between sessions), describe them by label, position, or role (e.g., "the first combobox labeled Supplier")
-- Record common failures you encountered before getting to PASS — this helps future runs avoid dead ends
-- Update existing playbooks rather than creating duplicates
-- Include prerequisite data observations (e.g., "needs at least one supplier")
+Rules: describe selectors by label/position/role, never cached refs like `@e5`
+(they change per session); only cache PASSes; update existing playbooks instead
+of duplicating; record prerequisite-data observations.
 
-### Step 8: Report
-
-Print a summary table:
+## Step 7: Report, then cleanup
 
 | # | Test | Status | Notes |
 |---|------|--------|-------|
-| 1 | Create purchase order | PASS | Created PO-000123, redirected to detail page |
-| 2 | Create job for part | FAIL | "Location is required" validation error |
-| 3 | Update quote details | PASS | Updated customer name successfully |
+| 1 | Create purchase order | PASS | PO-000123 created, redirected to detail |
+| 2 | Create job | FAIL | "Location is required" — capture: .ai/scratch/e2e/… |
 
-If any tests failed, include the screenshot paths from `/error`.
+Include `/error` capture paths for failures. Then `agent-browser close`.
 
-### Step 9: Cleanup
+## Failure handling
 
-```bash
-agent-browser close
-```
-
-## Tips for Carbon ERP forms
-
-- **Required fields** are marked with asterisks or show validation errors on submit
-- **Combobox/select fields** need a click to open, then a search or click on an option
-- **Number / currency / date fields** are react-aria: `fill` the visible input then
-  **blur** (click another field) so the hidden `name=...` input commits. `type` often
-  doesn't reach them. Verify with `eval "document.querySelector('input[name=X]').value"`.
-- **Submit with `requestSubmit`, never a click** — see step 6b. A plain agent-browser
-  click on the Save button does NOT fire the native submit that `ValidatedForm`
-  requires, so the form silently does nothing.
-- **After creating a record**, the app typically redirects to the detail page with the new record's ID in the URL
-- **Drawer forms** (child routes) appear as overlays — `requestSubmit` the drawer's own form (the one containing the drawer's submit button), not the parent page's
-- **Toast notifications** appear briefly — check the snapshot immediately after submission
-
-## Failure Handling
-
-- If a page fails to load, invoke `/error` and move to the next test
-- If a form field can't be found, take a snapshot, log the issue, and move on
-- If prerequisite data is missing (e.g., no suppliers exist to create a PO), note it as SKIP with an explanation
-- Never stop the entire test run for a single failure — complete all planned tests
+- Page won't load → `/error`, move on.
+- Field not findable → snapshot, note it, move on.
+- Missing prerequisite data → SKIP with explanation.
+- Never abort the whole run for one failure — finish all planned tests.

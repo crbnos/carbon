@@ -15,7 +15,13 @@ import {
   SectionList,
   StatusToggle
 } from "./primitives";
-import { useCanEdit, useCheckMap, useExclusions, useHubActions } from "./state";
+import {
+  useCanEdit,
+  useCheckMap,
+  useExclusions,
+  useHubActions,
+  useResolveScreenUrl
+} from "./state";
 
 // Docs/Video badges for a whole module, shown on the group header — the same
 // two-button pattern the Plan page uses for its phase resources. Carbon's docs
@@ -77,6 +83,7 @@ export function SetupMapView() {
   const exclusions = useExclusions();
   const map = useCheckMap();
   const { toggleFlag } = useHubActions();
+  const resolveScreenUrl = useResolveScreenUrl();
 
   const visibleRows = SETUP_GROUPS.flatMap((g) =>
     filterByModule(g.rows, exclusions.modules)
@@ -118,15 +125,26 @@ export function SetupMapView() {
             <SectionList>
               {rows.map((row) => {
                 const key = configuredKey(row.key);
+                const url = resolveScreenUrl(row.key);
                 return (
                   <li
                     key={row.key}
                     className="flex items-center gap-4 px-5 py-3"
                   >
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium">
-                        {i18n._(row.object)}
-                      </div>
+                      {url ? (
+                        <a
+                          href={url}
+                          className="group inline-flex items-center gap-1 text-sm font-medium hover:text-primary transition-colors"
+                        >
+                          {i18n._(row.object)}
+                          <LuArrowUpRight className="size-3.5 shrink-0 text-muted-foreground/50 transition group-hover:text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                        </a>
+                      ) : (
+                        <div className="text-sm font-medium">
+                          {i18n._(row.object)}
+                        </div>
+                      )}
                       <div className="text-xs text-muted-foreground">
                         {i18n._(row.detail)}
                       </div>

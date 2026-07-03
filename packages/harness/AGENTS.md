@@ -43,5 +43,5 @@ pnpm --filter @carbon/harness gc       # prune old run directories
 
 - `packages/checks/` — `@carbon/checks test` and `clobbers` are floor gates
 - `.ai/skills/conductor/SKILL.md` — the conductor skill that this harness implements
-- `llm/outer-loop/` — outer-loop design docs
+- `.ai/docs/outer-loop.md` — outer-loop design docs
 - `packages/dev/` — `crbn up --run` for booting stacks in CI/headless

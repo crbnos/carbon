@@ -82,6 +82,16 @@ const titleize = (s) =>
     .replace(/[_-]+/g, " ")
     .replace(/\b\w/g, (c) => c.toUpperCase())
     .trim();
+
+// Pluralize an entity title for list-endpoint copy. Tuned to our table names:
+// many are already plural (currencies, customers, jobs) → leave them; the rest
+// follow standard English rules. Operates on the last word's ending.
+const pluralize = (word) => {
+  if (/(?:ss|us|ch|sh|x|z)$/i.test(word)) return `${word}es`; // process→es, address→es, status→es, tax→es
+  if (/[^aeiou]y$/i.test(word)) return `${word.slice(0, -1)}ies`; // currency→currencies, company→companies
+  if (/s$/i.test(word)) return word; // already plural: currencies, customers, jobs
+  return `${word}s`;
+};
 const cleanDesc = (d = "") =>
   d
     .replace(/<pk\/>/g, "")
@@ -218,7 +228,7 @@ for (const path of tablePaths) {
   const attrs = attributesFrom(def);
   const pk = (attrs.find((a) => a.pk) || attrs.find((a) => a.name === "id") || attrs[0])?.name || "id";
   const single = titleize(table);
-  const plural = `${single}s`;
+  const plural = pluralize(single);
   const row = sampleRow(attrs);
   const writable = attrs.filter((a) => !a.pk && !AUDIT.has(a.name));
   const endpoints = [];

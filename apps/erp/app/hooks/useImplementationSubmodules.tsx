@@ -22,7 +22,6 @@ import {
   LuListChecks,
   LuRocket,
   LuSettings,
-  LuSwords,
   LuUsers
 } from "react-icons/lu";
 import { useCustomerPreview } from "~/hooks/useCustomerPreview";
@@ -44,8 +43,7 @@ const ICON: Record<string, ReactNode> = {
   requirements: <LuFileText />,
   "go-live": <LuFlagTriangleRight />,
   training: <LuGraduationCap />,
-  controls: <LuSettings />,
-  positioning: <LuSwords />
+  controls: <LuSettings />
 };
 
 // Grouped secondary sidebar for /x/get-started, built from the package's page

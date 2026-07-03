@@ -37,7 +37,7 @@ Carbon is a manufacturing ERP/MES/QMS. It contains apps for ERP, MES, academy, a
 Choose the smallest relevant set for the change:
 
 ```bash
-pnpm run typecheck           # TypeScript checks
+pnpm exec turbo run typecheck --filter=<pkg>   # TypeScript (scoped — whole-repo typecheck OOMs)
 pnpm run lint                # Biome linting
 pnpm run test                # Unit tests
 pnpm run build               # Full build
@@ -113,10 +113,20 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Check existing specs before building | `.ai/specs/` + `.ai/specs/implemented/` |
 | Writing a new spec | `.ai/skills/spec-writing/SKILL.md` |
 | **Workflows** | |
+| Skills index — pipelines + all skills | `.ai/skills/README.md` |
+| Competitor research for a feature | `.ai/skills/research/SKILL.md` |
+| Feature pipeline (research→spec→plan→execute) | `.ai/skills/feature/SKILL.md` |
+| Stress-test a plan or design (grill interview) | `.ai/skills/grill/SKILL.md` |
+| Implementation plan from a spec | `.ai/skills/plan/SKILL.md` |
+| Execute an approved plan | `.ai/skills/execute/SKILL.md` |
 | Bug fix: root-cause analysis (read-only) | `.ai/skills/root-cause/SKILL.md` |
+| Bug fix: runtime instrumentation | `.ai/skills/debugging-difficult-bugs/SKILL.md` |
 | Bug fix: implement the fix | `.ai/skills/fix/SKILL.md` |
 | Pre-commit verification gate | `.ai/skills/check-and-commit/SKILL.md` |
 | Feature build (doer→gate→judge loop) | `.ai/skills/conductor/SKILL.md` |
+| Browser-verify a feature | `.ai/skills/test/SKILL.md` |
+| Repo audit → handoff plans | `.ai/skills/improve/SKILL.md` |
+| Review your own branch before PR | `.ai/skills/self-review/SKILL.md` |
 
 ## Core Principles
 
@@ -131,7 +141,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 
 - Enter plan mode for any non-trivial task (3+ steps or architectural decisions).
 - If something goes wrong, stop and re-plan immediately.
-- Write plans to `.ai/runs/{date}-{slug}.md` with checkable progress items.
+- Write implementation plans to `.ai/plans/{date}-{slug}.md` with checkable progress items (run logs go in `.ai/runs/`).
 
 ### Subagent Strategy
 
@@ -182,4 +192,4 @@ Internal technical context for each subsystem lives in `.ai/rules/`, symlinked t
 
 ## Browser Automation
 
-With the user's permission, use the `/login` and `/test` skill to verify fixes.
+With the user's permission, use the `/auth` and `/test` skill to verify fixes.

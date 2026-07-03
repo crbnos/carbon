@@ -1,4 +1,4 @@
-import type { ComboboxProps } from "@carbon/form";
+import type { CreatableComboboxProps } from "@carbon/form";
 import { CreatableCombobox } from "@carbon/form";
 import { Avatar, HStack, useDisclosure } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
@@ -13,7 +13,7 @@ import { path } from "~/utils/path";
 import { useEmptyState } from "./emptyStates";
 
 type SupplierContactSelectProps = Omit<
-  ComboboxProps,
+  CreatableComboboxProps,
   "options" | "onChange" | "inline"
 > & {
   supplier?: string;
@@ -40,7 +40,12 @@ const SupplierContactPreview = (
   );
 };
 
-const SupplierContact = (props: SupplierContactSelectProps) => {
+const SupplierContact = ({
+  onChange: propsOnChange,
+  inline,
+  supplier,
+  ...props
+}: SupplierContactSelectProps) => {
   const { t } = useLingui();
   const supplierContactsFetcher =
     useFetcher<Awaited<ReturnType<typeof getSupplierContacts>>>();
@@ -49,16 +54,18 @@ const SupplierContact = (props: SupplierContactSelectProps) => {
   const [created, setCreated] = useState<string>("");
   const triggerRef = useRef<HTMLButtonElement>(null);
 
-  const [firstName, ...lastName] = created.split(" ");
+  const [namePart, ...titleParts] = created.split(" - ");
+  const initialTitle = titleParts.join(" - ").trim();
+  const nameTokens = namePart.trim().split(" ");
+  const initialFirstName = nameTokens[0] || "";
+  const initialLastName = nameTokens.slice(1).join(" ");
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
-    if (props?.supplier) {
-      supplierContactsFetcher.load(
-        path.to.api.supplierContacts(props.supplier)
-      );
+    if (supplier) {
+      supplierContactsFetcher.load(path.to.api.supplierContacts(supplier));
     }
-  }, [props.supplier]);
+  }, [supplier]);
 
   const options = useMemo(
     () =>
@@ -78,12 +85,12 @@ const SupplierContact = (props: SupplierContactSelectProps) => {
         (contact) => contact.id === newValue?.value
       ) ?? null;
 
-    props.onChange?.(contact ?? null);
+    propsOnChange?.(contact ?? null);
   };
 
   const emptyMessage = useEmptyState(
     "supplierContact",
-    props.supplier ? { onCreate: () => newContactModal.onOpen() } : undefined
+    supplier ? { onCreate: () => newContactModal.onOpen() } : undefined
   );
 
   return (
@@ -93,7 +100,7 @@ const SupplierContact = (props: SupplierContactSelectProps) => {
         options={options}
         {...props}
         placeholder={t`Select Contact`}
-        inline={props.inline ? SupplierContactPreview : undefined}
+        inline={inline ? SupplierContactPreview : undefined}
         label={props?.label ?? t`Supplier Contact`}
         emptyMessage={emptyMessage}
         onChange={onChange}
@@ -104,17 +111,25 @@ const SupplierContact = (props: SupplierContactSelectProps) => {
       />
       {newContactModal.isOpen && (
         <SupplierContactForm
-          supplierId={props.supplier!}
+          supplierId={supplier!}
           type="modal"
           onClose={() => {
             setCreated("");
             newContactModal.onClose();
+            // Reload the per-supplier fetcher so a just-created contact appears.
+            if (supplier) {
+              supplierContactsFetcher.load(
+                path.to.api.supplierContacts(supplier)
+              );
+            }
             triggerRef.current?.click();
           }}
           initialValues={{
             email: "",
-            firstName: firstName,
-            lastName: lastName.join(" ")
+            firstName: initialFirstName,
+            lastName: initialLastName,
+            title: initialTitle,
+            mobilePhone: ""
           }}
         />
       )}

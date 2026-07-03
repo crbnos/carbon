@@ -442,12 +442,21 @@ serve(async (req: Request) => {
       if (dim.entityType) dimensionMap.set(dim.entityType, dim.id);
     }
 
+    // supplierShippingCost is a supplier-currency amount; currency.exchangeRate
+    // stores foreign-units-per-base, so supplier→base is DIVIDE (matching the
+    // purchaseInvoices view and the line-level generated columns). It is then
+    // folded into the per-line totals BEFORE the payment-chain exchange-rate
+    // multiplier so AP is credited exactly what post-payment will debit.
     const shippingCost =
-      (purchaseInvoiceDelivery.data?.supplierShippingCost ?? 0) *
-      (purchaseInvoice.data?.exchangeRate ?? 1);
+      (purchaseInvoiceDelivery.data?.supplierShippingCost ?? 0) /
+      (purchaseInvoice.data?.exchangeRate || 1);
 
+    // Pre-allocation denominator for the header shipping cost. Comment lines
+    // post no journal entries, so they must not absorb a share of the
+    // shipping (it would never reach the GL).
     const totalLinesCost = purchaseInvoiceLines.data.reduce(
       (acc, invoiceLine) => {
+        if (invoiceLine.invoiceLineType === "Comment") return acc;
         const lineCost =
           (invoiceLine.quantity ?? 0) * (invoiceLine.unitPrice ?? 0) +
           (invoiceLine.shippingCost ?? 0) +
@@ -456,6 +465,10 @@ serve(async (req: Request) => {
       },
       0
     );
+
+    const postableLineCount = purchaseInvoiceLines.data.filter(
+      (invoiceLine) => invoiceLine.invoiceLineType !== "Comment"
+    ).length;
 
     const itemIds = purchaseInvoiceLines.data.reduce<string[]>(
       (acc, invoiceLine) => {
@@ -664,9 +677,11 @@ serve(async (req: Request) => {
     }
 
     // Invoice exchange rate (defaults to 1 for base-currency invoices).
-    // shippingCost (line 445) is already multiplied by the rate; per-line
-    // unitPrice / shippingCost / taxAmount on purchaseInvoiceLine are in
-    // invoice currency and need conversion before they reach a journal line.
+    // The payment chain (post-payment/build-payment-journal) relieves AP at
+    // `applied × exchangeRate`, so posting applies the same multiplier to the
+    // line totals (header shipping included, already divided to base above)
+    // to keep AP credit == what payments will debit. See the FX-convention
+    // spec for the planned normalization of this multiplier.
     const invoiceExchangeRate = purchaseInvoice.data?.exchangeRate ?? 1;
 
     for await (const invoiceLine of purchaseInvoiceLines.data) {
@@ -678,14 +693,22 @@ serve(async (req: Request) => {
         (invoiceLine.shippingCost ?? 0) +
         (invoiceLine.taxAmount ?? 0);
 
+      // When every line has a zero basis (e.g. a freight-only invoice), fall
+      // back to equal weights so the header shipping still reaches AP.
       const lineCostPercentageOfTotalCost =
-        totalLinesCost === 0 ? 0 : totalLineCost / totalLinesCost;
+        invoiceLine.invoiceLineType === "Comment"
+          ? 0
+          : totalLinesCost === 0
+          ? postableLineCount === 0
+            ? 0
+            : 1 / postableLineCount
+          : totalLineCost / totalLinesCost;
       const lineWeightedShippingCost =
         shippingCost * lineCostPercentageOfTotalCost;
-      // Convert line cost to base currency before combining with the
-      // already-converted shipping cost.
+      // Line cost and weighted shipping are both base currency here; the
+      // exchange-rate multiplier matches the payment chain's AP relief.
       const totalLineCostWithWeightedShipping =
-        totalLineCost * invoiceExchangeRate + lineWeightedShippingCost;
+        (totalLineCost + lineWeightedShippingCost) * invoiceExchangeRate;
 
       const invoiceLineUnitCostInInventoryUnit =
         totalLineCostWithWeightedShipping /
@@ -1095,6 +1118,13 @@ serve(async (req: Request) => {
 
           break;
         case "Fixed Asset": {
+          // Silently skipping would credit less to AP than the invoice total
+          // the payment flow is allowed to apply against.
+          if (accountingEnabled && !invoiceLine.assetId) {
+            throw new Error(
+              `Fixed Asset invoice line ${invoiceLine.id} has no asset selected`
+            );
+          }
           if (accountingEnabled && accountDefaults?.data && invoiceLine.assetId) {
             const purchaseOrderLine = purchaseOrderLines.data.find(
               (line) => line.id === invoiceLine.purchaseOrderLineId

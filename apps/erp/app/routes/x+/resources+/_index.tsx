@@ -40,7 +40,6 @@ import { useDateFormatter, useNumberFormatter } from "@react-aria/i18n";
 import type { DateRange } from "@react-types/datepicker";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import {
-  LuArrowUpRight,
   LuCalendarClock,
   LuChevronDown,
   LuClock,
@@ -51,9 +50,9 @@ import {
   LuWrench
 } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
-import { Await, Link, useFetcher, useLoaderData } from "react-router";
+import { Await, useFetcher, useLoaderData } from "react-router";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
-import { DateSelect, Empty, Hyperlink } from "~/components";
+import { DateSelect, Empty, Hyperlink, MetricCard } from "~/components";
 import { CSVLink } from "~/components/CSVLink";
 import { useWorkCenters } from "~/components/Form/WorkCenters";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
@@ -355,92 +354,35 @@ export default function MaintenanceDashboard() {
   return (
     <div className="flex flex-col gap-4 w-full p-4 h-[calc(100dvh-var(--header-height))] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground">
       <div className="grid w-full gap-4 grid-cols-1 lg:grid-cols-3">
-        <Card>
-          <CardHeader className="flex-row gap-2">
-            <LuWrench className="text-muted-foreground" />
-            <CardTitle>
-              <Trans>Open Dispatches</Trans>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <HStack className="justify-between w-full items-center">
-              <h3 className="text-5xl font-medium tracking-tighter">
-                {openDispatches}
-              </h3>
-              <Button
-                rightIcon={<LuArrowUpRight />}
-                variant="secondary"
-                asChild
-              >
-                <Link
-                  to={`${
-                    path.to.maintenanceDispatches
-                  }?filter=status:in:${OPEN_STATUSES.join(",")}`}
-                >
-                  <Trans>View Open</Trans>
-                </Link>
-              </Button>
-            </HStack>
-          </CardContent>
-        </Card>
+        <MetricCard
+          icon={<LuWrench />}
+          title={<Trans>Open Dispatches</Trans>}
+          value={openDispatches}
+          to={`${
+            path.to.maintenanceDispatches
+          }?filter=status:in:${OPEN_STATUSES.join(",")}`}
+          linkLabel={t`View Open`}
+        />
 
-        <Card>
-          <CardHeader className="flex-row gap-2">
-            <LuCalendarClock className="text-muted-foreground" />
-            <CardTitle>
-              <Trans>Open Scheduled</Trans>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <HStack className="justify-between w-full items-center">
-              <h3 className="text-5xl font-medium tracking-tighter">
-                {openScheduled}
-              </h3>
-              <Button
-                rightIcon={<LuArrowUpRight />}
-                variant="secondary"
-                asChild
-              >
-                <Link
-                  to={`${
-                    path.to.maintenanceDispatches
-                  }?filter=status:in:${OPEN_STATUSES.join(",")}&filter=source:eq:Scheduled`}
-                >
-                  <Trans>View Scheduled</Trans>
-                </Link>
-              </Button>
-            </HStack>
-          </CardContent>
-        </Card>
+        <MetricCard
+          icon={<LuCalendarClock />}
+          title={<Trans>Open Scheduled</Trans>}
+          value={openScheduled}
+          to={`${
+            path.to.maintenanceDispatches
+          }?filter=status:in:${OPEN_STATUSES.join(",")}&filter=source:eq:Scheduled`}
+          linkLabel={t`View Scheduled`}
+        />
 
-        <Card>
-          <CardHeader className="flex-row gap-2">
-            <LuTriangleAlert className="text-muted-foreground" />
-            <CardTitle>
-              <Trans>Open Reactive</Trans>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <HStack className="justify-between w-full items-center">
-              <h3 className="text-5xl font-medium tracking-tighter">
-                {openReactive}
-              </h3>
-              <Button
-                rightIcon={<LuArrowUpRight />}
-                variant="secondary"
-                asChild
-              >
-                <Link
-                  to={`${
-                    path.to.maintenanceDispatches
-                  }?filter=status:in:${OPEN_STATUSES.join(",")}&filter=source:eq:Reactive`}
-                >
-                  <Trans>View Reactive</Trans>
-                </Link>
-              </Button>
-            </HStack>
-          </CardContent>
-        </Card>
+        <MetricCard
+          icon={<LuTriangleAlert />}
+          title={<Trans>Open Reactive</Trans>}
+          value={openReactive}
+          to={`${
+            path.to.maintenanceDispatches
+          }?filter=status:in:${OPEN_STATUSES.join(",")}&filter=source:eq:Reactive`}
+          linkLabel={t`View Reactive`}
+        />
       </div>
 
       <Card>

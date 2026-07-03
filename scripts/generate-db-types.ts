@@ -64,37 +64,39 @@ if (r.status !== 0) {
   process.exit(r.status ?? 1);
 }
 
-// Strip per-company `searchIndex_<id>` tables. They have random, environment-
-// specific names, so they add thousands of lines of churn and produce merge
-// conflicts on every branch. Nothing references them by static name.
-const removed = stripSearchIndexTables(typesPath);
-console.log(`stripped ${removed} searchIndex_ table(s)`);
+// Strip per-tenant `searchIndex_<companyId>` / `auditLog_<companyId>` tables.
+// They are created at runtime per company (rebuild_search_index and the audit
+// log setup in the migrations), so which ones exist depends on the local DB's
+// seeded companies — committing them makes types.ts machine-dependent and
+// churns on every regen. The static `searchIndexRegistry` / `auditLogArchive`
+// tables (no underscore) are unaffected.
+const stripPerTenantTables = (source: string): string => {
+  const lines = source.split("\n");
+  const result: string[] = [];
+  let skipping = false;
+  let stripped = 0;
+  for (const line of lines) {
+    if (
+      !skipping &&
+      /^      (searchIndex|auditLog)_[A-Za-z0-9]+: \{$/.test(line)
+    ) {
+      skipping = true;
+      stripped++;
+      continue;
+    }
+    if (skipping) {
+      if (line === "      }") skipping = false;
+      continue;
+    }
+    result.push(line);
+  }
+  if (stripped > 0) {
+    console.log(`stripped ${stripped} per-tenant table(s)`);
+  }
+  return result.join("\n");
+};
+
+writeFileSync(typesPath, stripPerTenantTables(readFileSync(typesPath, "utf8")));
 
 copyFileSync(typesPath, fnTypesPath);
 console.log(`wrote ${typesPath}\nwrote ${fnTypesPath}`);
-
-function stripSearchIndexTables(path: string): number {
-  const lines = readFileSync(path, "utf8").split("\n");
-  const open = /^(\s*)searchIndex_[A-Za-z0-9]+: \{$/;
-  const out: string[] = [];
-  let removed = 0;
-  for (let i = 0; i < lines.length; i++) {
-    const m = lines[i].match(open);
-    if (!m) {
-      out.push(lines[i]);
-      continue;
-    }
-    // Skip the whole table object by tracking brace depth from the opening line.
-    let depth =
-      (lines[i].match(/\{/g)?.length ?? 0) - (lines[i].match(/\}/g)?.length ?? 0);
-    while (depth > 0 && i + 1 < lines.length) {
-      i++;
-      depth +=
-        (lines[i].match(/\{/g)?.length ?? 0) -
-        (lines[i].match(/\}/g)?.length ?? 0);
-    }
-    removed++;
-  }
-  writeFileSync(path, out.join("\n"));
-  return removed;
-}

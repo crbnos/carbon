@@ -1,11 +1,9 @@
 import {
-  Button,
   Card,
   CardContent,
   CardFooter,
   CardHeader,
   CardTitle,
-  HStack,
   Status,
   Table,
   Tbody,
@@ -16,13 +14,9 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
-import {
-  LuArrowUpRight,
-  LuBanknote,
-  LuClock,
-  LuHandCoins
-} from "react-icons/lu";
+import { LuBanknote, LuClock, LuHandCoins } from "react-icons/lu";
 import { Link } from "react-router";
+import { MetricCard } from "~/components";
 import { useCurrencyFormatter, useDateFormatter } from "~/hooks";
 import { useCustomers, useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
@@ -59,6 +53,7 @@ export type RecentPayment = {
 
 type InvoicingDashboardProps = {
   asOfDate: string;
+  accountingEnabled: boolean;
   ar: AgingTotals;
   ap: AgingTotals;
   arTieOut: TieOut;
@@ -79,6 +74,7 @@ const AgingCard = ({
   icon,
   totals,
   tieOut,
+  showTieOut,
   bucketLabels,
   format
 }: {
@@ -86,6 +82,7 @@ const AgingCard = ({
   icon: React.ReactNode;
   totals: AgingTotals;
   tieOut: TieOut;
+  showTieOut: boolean;
   bucketLabels: string[];
   format: (n: number) => string;
 }) => {
@@ -144,29 +141,32 @@ const AgingCard = ({
           </Tbody>
         </Table>
       </CardContent>
-      <CardFooter className="justify-between text-xs">
-        <span className="text-muted-foreground">
-          <Trans>GL tie-out</Trans>
-        </span>
-        {tieOut ? (
-          tied ? (
-            <Status color="green">
-              <Trans>Balanced</Trans>
-            </Status>
+      {showTieOut && (
+        <CardFooter className="justify-between text-xs">
+          <span className="text-muted-foreground">
+            <Trans>GL tie-out</Trans>
+          </span>
+          {tieOut ? (
+            tied ? (
+              <Status color="green">
+                <Trans>Balanced</Trans>
+              </Status>
+            ) : (
+              <Status color="red">
+                <span className="tabular-nums">{format(tieOut.variance)}</span>
+              </Status>
+            )
           ) : (
-            <Status color="red">
-              <span className="tabular-nums">{format(tieOut.variance)}</span>
-            </Status>
-          )
-        ) : (
-          <span className="text-muted-foreground">—</span>
-        )}
-      </CardFooter>
+            <span className="text-muted-foreground">—</span>
+          )}
+        </CardFooter>
+      )}
     </Card>
   );
 };
 
 const InvoicingDashboard = ({
+  accountingEnabled,
   ar,
   ap,
   arTieOut,
@@ -209,97 +209,43 @@ const InvoicingDashboard = ({
     <div className="flex flex-col gap-4 w-full p-4 h-[calc(100dvh-var(--header-height))] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground">
       {/* KPI Cards */}
       <div className="grid w-full gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex-row gap-2">
-            <LuHandCoins className="text-muted-foreground" />
-            <CardTitle>
-              <Trans>AR Outstanding</Trans>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <HStack className="justify-between w-full items-center">
-              <h3 className="text-4xl font-medium tracking-tighter tabular-nums">
-                {format(ar.total)}
-              </h3>
-              <Button
-                rightIcon={<LuArrowUpRight />}
-                variant="secondary"
-                asChild
-              >
-                <Link to={path.to.receivables}>
-                  <Trans>View</Trans>
-                </Link>
-              </Button>
-            </HStack>
-            <span className="text-xs text-muted-foreground">
-              {t`${ar.count} customers with a balance`}
-            </span>
-          </CardContent>
-        </Card>
+        <MetricCard
+          icon={<LuHandCoins />}
+          title={<Trans>AR Outstanding</Trans>}
+          value={format(ar.total)}
+          to={path.to.receivables}
+          linkLabel={t`View Receivables`}
+          description={t`${ar.count} customers with a balance`}
+        />
 
-        <Card>
-          <CardHeader className="flex-row gap-2">
-            <LuClock className="text-muted-foreground" />
-            <CardTitle>
-              <Trans>AR Overdue</Trans>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <h3 className="text-4xl font-medium tracking-tighter tabular-nums">
-              {format(arOverdue)}
-            </h3>
-            <span className="text-xs text-muted-foreground">
-              {ar.total > 0
-                ? t`${arOverduePct}% of receivables`
-                : t`No receivables`}
-            </span>
-          </CardContent>
-        </Card>
+        <MetricCard
+          icon={<LuClock />}
+          title={<Trans>AR Overdue</Trans>}
+          value={format(arOverdue)}
+          description={
+            ar.total > 0
+              ? t`${arOverduePct}% of receivables`
+              : t`No receivables`
+          }
+        />
 
-        <Card>
-          <CardHeader className="flex-row gap-2">
-            <LuHandCoins className="text-muted-foreground" />
-            <CardTitle>
-              <Trans>AP Outstanding</Trans>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <HStack className="justify-between w-full items-center">
-              <h3 className="text-4xl font-medium tracking-tighter tabular-nums">
-                {format(ap.total)}
-              </h3>
-              <Button
-                rightIcon={<LuArrowUpRight />}
-                variant="secondary"
-                asChild
-              >
-                <Link to={path.to.payables}>
-                  <Trans>View</Trans>
-                </Link>
-              </Button>
-            </HStack>
-            <span className="text-xs text-muted-foreground">
-              {t`${ap.count} suppliers with a balance`}
-            </span>
-          </CardContent>
-        </Card>
+        <MetricCard
+          icon={<LuHandCoins />}
+          title={<Trans>AP Outstanding</Trans>}
+          value={format(ap.total)}
+          to={path.to.payables}
+          linkLabel={t`View Payables`}
+          description={t`${ap.count} suppliers with a balance`}
+        />
 
-        <Card>
-          <CardHeader className="flex-row gap-2">
-            <LuClock className="text-muted-foreground" />
-            <CardTitle>
-              <Trans>AP Overdue</Trans>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <h3 className="text-4xl font-medium tracking-tighter tabular-nums">
-              {format(apOverdue)}
-            </h3>
-            <span className="text-xs text-muted-foreground">
-              {ap.total > 0 ? t`${apOverduePct}% of payables` : t`No payables`}
-            </span>
-          </CardContent>
-        </Card>
+        <MetricCard
+          icon={<LuClock />}
+          title={<Trans>AP Overdue</Trans>}
+          value={format(apOverdue)}
+          description={
+            ap.total > 0 ? t`${apOverduePct}% of payables` : t`No payables`
+          }
+        />
       </div>
 
       {/* Aging breakdown */}
@@ -309,6 +255,7 @@ const InvoicingDashboard = ({
           icon={<LuClock />}
           totals={ar}
           tieOut={arTieOut}
+          showTieOut={accountingEnabled}
           bucketLabels={bucketLabels}
           format={format}
         />
@@ -317,6 +264,7 @@ const InvoicingDashboard = ({
           icon={<LuClock />}
           totals={ap}
           tieOut={apTieOut}
+          showTieOut={accountingEnabled}
           bucketLabels={bucketLabels}
           format={format}
         />

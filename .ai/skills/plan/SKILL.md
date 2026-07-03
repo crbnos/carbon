@@ -1,252 +1,134 @@
 ---
 name: plan
-description: Create detailed implementation plans from design specs. Use after brainstorming to create step-by-step implementation plans. Each task is 2-5 minutes of work with exact code and commands. Triggers on "plan the implementation", "create a plan for", "write the implementation plan", or after /brainstorm approval.
+description: Turn a finalized spec into a step-by-step implementation plan at .ai/plans/{YYYY-MM-DD}-{slug}.md, where every task has exact file paths, exact commands, and a verification with expected output. Use when asked to "plan the implementation", "create a plan", or after a spec's open questions are resolved. Do not use while the spec still has unresolved open questions, and do not use it to design — design happens in /spec-writing.
 ---
 
-# Plan: Implementation Planning
+# plan — implementation plan from a spec
 
-Transform design specifications into detailed, executable implementation plans. Each task is bite-sized (2-5 minutes) with complete code — no pseudocode, no "fill in details."
+Input: a finalized spec (`.ai/specs/{date}-{slug}.md` with zero unresolved open
+questions) or, for small changes, an explicit user description. Output: a plan at
+`.ai/plans/{YYYY-MM-DD}-{slug}.md` that `/execute` can follow mechanically.
 
-**Announce at start:** "I'm using the plan skill to create the implementation plan."
+Write the plan for the **weakest plausible executor**: an agent with no memory of
+this session. Every task must be executable from the plan text alone.
 
-## Prerequisites
+**Announce at start:** "Using the plan skill — turning the spec into an
+implementation plan."
 
-Before planning:
-1. A design spec exists (from `/brainstorm` or provided by user)
-2. The design has been approved
-3. Key decisions are documented
+## Step 1: Check prerequisites
 
-If no spec exists, suggest running `/brainstorm` first.
+1. Read the spec. If any Open Question is unchecked → **STOP** and return to
+   `/spec-writing` Step 7. Do not plan around an open question.
+2. Read `.ai/lessons.md` and the module `AGENTS.md` for every module the spec
+   touches.
+3. Read the matching guides for the work in the plan (from the root `AGENTS.md`
+   Task Router). At minimum:
+   - migrations → `.ai/rules/workflow-database-migration.md`
+   - services → `.ai/rules/conventions-services.md`
+   - forms/UI → `.ai/rules/conventions-forms.md` + `packages/form/AGENTS.md`
+   - database access → `.ai/rules/database-patterns.md`
 
-## Workflow
+## Step 2: Decompose into tasks
 
-```
-┌──────────────┐    ┌──────────────┐    ┌──────────────┐    ┌──────────────┐
-│ 1. Load Spec │───▶│ 2. Decompose │───▶│ 3. Write     │───▶│ 4. Review    │
-│              │    │ Into Tasks   │    │ Each Task    │    │ & Approve    │
-└──────────────┘    └──────────────┘    └──────────────┘    └──────────────┘
-```
+- One task = one verifiable unit of work (a migration, a service function + its
+  test, a route + form, a UI component). If a task can't be verified by a single
+  command or a single browser check, split it.
+- Default order: migration → `pnpm run generate:types` → models (zod) → service
+  functions (+ unit tests) → routes/actions → UI → browser verification.
+- For every UI task, name the **precedent**: the existing Carbon screen or
+  component to copy from (file path). Do not design UI from concepts — grep
+  `packages/react/src/` and `apps/erp/app/components/` first.
+- Mark tasks that are independent of each other — `/execute` may run them as
+  parallel subagents.
 
-## Step 1: Load the Design Spec
+## Step 3: Write each task
 
-Read the design spec from `.ai/scratch/research/[feature-name]-design.md`.
+Every task uses exactly this shape:
 
-Extract:
-- Data model changes
-- Workflows to implement
-- Edge cases to handle
-- Integration points
+````markdown
+## Task N: {imperative title}
 
-## Carbon-Specific References
-
-**IMPORTANT:** Before writing tasks, load these Carbon-specific resources:
-
-| Task Type | Reference | What It Covers |
-|-----------|-----------|----------------|
-| Database migrations | `.ai/rules/workflow-database-migration.md` | Multi-tenancy, RLS, id(), audit columns, indexes |
-| Forms & UI | `/forms` skill | ValidatedForm, zod validators, form components |
-| Database writes | `/database-transactions` skill | Kysely transactions, atomic operations |
-
-### Migration Tasks Must Follow
-
-From `.ai/rules/workflow-database-migration.md`:
-- Use `id()` for primary keys, not UUID
-- Include `companyId` with composite primary key `("id", "companyId")`
-- Add standard audit columns (createdBy, createdAt, updatedBy, updatedAt)
-- Use standardized RLS policy names (SELECT, INSERT, UPDATE, DELETE)
-- Never use `000000` as HHMMSS in migration filename (use random digits)
-- Update corresponding `.models.ts` with zod validators
-
-### Form Tasks Must Follow
-
-Invoke `/forms` skill to get:
-- ValidatedForm patterns
-- Zod validator conventions
-- Form component usage
-- Action handler patterns
-
-## Step 2: Decompose Into Tasks
-
-### 2.1 Task Granularity
-
-Each task should be **2-5 minutes of work** representing **one discrete action**:
-
-Good task:
-```
-Task 1: Create lot table migration
-- Write migration file
-- Run migration
-- Verify table exists
-```
-
-Bad task:
-```
-Task 1: Implement lot tracking
-- Create tables, services, routes, UI...
-```
-
-### 2.2 Task Ordering
-
-Order tasks for TDD:
-1. Database migrations
-2. Types and interfaces
-3. Service layer (with tests)
-4. Route handlers (with tests)
-5. UI components
-6. Integration tests
-
-### 2.3 Dependencies
-
-Identify which tasks depend on others. Independent tasks can be parallelized with subagents.
-
-## Step 3: Write Each Task
-
-For each task, provide:
-
-### 3.1 Files Section
-
-```markdown
+**Depends on:** {task numbers, or "none"}
 **Files:**
-- Create: `packages/database/supabase/migrations/NNNN_add_lots.sql`
-- Modify: `packages/database/src/types.ts`
-- Test: `apps/erp/app/modules/inventory/__tests__/lots.test.ts`
-```
-
-### 3.2 Numbered Steps
-
-```markdown
-**Steps:**
-
-1. Create migration file at `packages/database/supabase/migrations/20240115120000_add_lot_table.sql`:
-   ```sql
-   CREATE TABLE lot (
-     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-     ...
-   );
-   ```
-
-2. Run migration:
-   ```bash
-   pnpm db:migrate
-   ```
-
-3. Verify:
-   ```bash
-   psql -c "SELECT * FROM lot LIMIT 1;"
-   # Expected: empty result, no error
-   ```
-
-4. Commit:
-   ```bash
-   git add -A && git commit -m "feat(inventory): add lot table migration"
-   ```
-```
-
-### 3.3 Requirements
-
-- **Exact file paths** — No "in the appropriate directory"
-- **Complete code** — No pseudocode or "add appropriate logic"
-- **Exact commands** — With expected output
-- **No placeholders** — No TBD, "similar to Task N", or "fill in"
-
-## Step 4: Review & Approve
-
-### 4.1 Save the Plan
-
-Save to `.ai/scratch/plans/[feature-name]-plan.md`:
-
-```markdown
-# [Feature] Implementation Plan
-
-## Overview
-- **Design Spec:** `.ai/scratch/research/[feature-name]-design.md`
-- **Tasks:** N tasks, estimated M minutes
-- **Dependencies:** [diagram or list]
-
-## Task 1: [Title]
-**Files:**
-- ...
+- Create: `{exact path}`
+- Modify: `{exact path}` — {what changes}
+- Copy from (precedent): `{exact path of the exemplar}`
 
 **Steps:**
-1. ...
+1. {exact instruction; include full SQL for migrations, function signatures for
+   services, and the exemplar to copy for UI}
+2. ...
 
-## Task 2: [Title]
-...
+**Verify:**
+```bash
+{exact command}
+# Expected: {what the output must contain}
 ```
 
-### 4.2 Self-Review Checklist
+**Out of scope:** {things that look related but must NOT be touched}
+````
 
-Before presenting:
-- [ ] Every task is 2-5 minutes
-- [ ] No pseudocode or placeholders
-- [ ] All file paths are exact
-- [ ] All commands include expected output
-- [ ] Tasks follow TDD order
-- [ ] Dependencies are clear
-- [ ] Migration tasks follow `.ai/rules/workflow-database-migration.md`
-- [ ] Form tasks reference `/forms` skill patterns
+Hard rules for task content:
 
-### 4.3 Get Approval
+- **Migrations**: create with `pnpm db:migrate:new <name>` (never hand-pick a
+  timestamp; never `000000` as HHMMSS). SQL must use `id('prefix')` defaults,
+  `companyId` + composite PK `("id", "companyId")`, audit columns
+  (`createdBy/createdAt/updatedBy/updatedAt`), RLS policies per
+  `.ai/rules/conventions-database.md`, and be idempotent (`IF NOT EXISTS` /
+  `DROP ... IF EXISTS` guards). Never backdate a timestamp older than the newest
+  migration on `main`. The task after any migration is always
+  `pnpm run generate:types`.
+- **Verification is scoped.** Typecheck a package with
+  `pnpm exec turbo run typecheck --filter=<pkg>` (e.g. `--filter=erp`,
+  `--filter=@carbon/react`). Never plan a whole-repo `pnpm typecheck` — it OOMs.
+  Tests: `pnpm --filter <pkg> test`.
+- **No placeholders.** No "TBD", no "similar to Task 3", no "add appropriate
+  logic". If you can't specify it, the spec is incomplete — go back.
+- **Escape hatches.** Where a task rests on an assumption, add: "If {assumption}
+  turns out false, STOP and report — do not improvise."
 
-Present the plan and wait for explicit approval.
+Red flags — if you catch yourself writing any of these, the task is
+under-specified; fix it before moving on:
 
-## Output
+- "similar to the previous task" / "as appropriate" / "etc."
+- a Verify block with no expected output
+- a UI task with no precedent file path
+- a migration task without a `generate:types` follow-up
 
-| Artifact | Location |
-|----------|----------|
-| Implementation plan | `.ai/scratch/plans/[feature-name]-plan.md` |
+## Step 4: Write the plan file
 
-## Next Step
-
-After approval, hand off to `/execute` to run the plan.
-
-## Plan Format Reference
+Save to `.ai/plans/{YYYY-MM-DD}-{slug}.md` (today's date, same slug as the spec):
 
 ```markdown
-# [Feature] Implementation Plan
+# {Feature} — implementation plan
 
-## Overview
-- **Design Spec:** [path]
-- **Research:** [path]
-- **Estimated Time:** N tasks × 3 min avg = ~M minutes
-- **Branch:** feature/[feature-name]
+**Spec:** .ai/specs/{date}-{slug}.md
+**Research:** .ai/research/{slug}.md
+**Branch:** {branch name}
+
+## Progress
+- [ ] Task 1: {title}
+- [ ] Task 2: {title}
 
 ## Dependencies
-Task 2 depends on Task 1 (migration must exist)
-Tasks 3-5 are independent (can parallelize)
+{`Task 2 needs Task 1 (types)`, `Tasks 4–5 independent`}
 
 ---
-
-## Task 1: Create database migration
-
-**Files:**
-- Create: `packages/database/supabase/migrations/20240115120000_add_X.sql`
-
-**Steps:**
-
-1. Create migration:
-   ```sql
-   -- Full SQL here
-   ```
-
-2. Run:
-   ```bash
-   pnpm db:migrate
-   ```
-
-3. Verify:
-   ```bash
-   command
-   # Expected output
-   ```
-
-4. Commit:
-   ```bash
-   git add -A && git commit -m "feat(module): add X table"
-   ```
-
----
-
-## Task 2: Add TypeScript types
-...
+{tasks}
 ```
+
+The Progress checklist is the live tracker — `/execute` checks items off in this
+file. Do not create a separate todo file.
+
+## Step 5: Self-check, then present
+
+- [ ] Every task has exact paths, exact commands, expected output
+- [ ] Every migration task follows the hard rules above and is followed by a
+      `generate:types` step
+- [ ] Every UI task names its precedent file
+- [ ] No whole-repo typecheck anywhere in the plan
+- [ ] Every acceptance criterion in the spec is covered by at least one task,
+      and the final task is browser verification via `/test` for user-facing work
+
+Present the plan path and a one-paragraph summary. Wait for approval, then hand
+off to `/execute`.

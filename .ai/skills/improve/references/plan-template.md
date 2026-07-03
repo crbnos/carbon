@@ -8,7 +8,7 @@ Three properties make a plan executable by a weaker model:
 2. **Verification gates** — every step ends with a command and its expected result. The executor never has to *judge* whether it succeeded.
 3. **Hard boundaries and escape hatches** — explicit out-of-scope list, and "STOP and report" conditions instead of letting the model improvise when reality doesn't match the plan.
 
-File naming: `.ai/scratch/plans/improve/NNN-short-slug.md`, numbered in recommended execution order.
+File naming: `.ai/plans/improve/NNN-short-slug.md`, numbered in recommended execution order.
 
 **Carbon command rules the plan must respect** (bake into every plan):
 - Typecheck is **scoped to one package**: `turbo run typecheck --filter=<pkg>`. NEVER a whole-repo typecheck (it OOMs).
@@ -27,7 +27,7 @@ File naming: `.ai/scratch/plans/improve/NNN-short-slug.md`, numbered in recommen
 > verification command and confirm the expected result before moving to the
 > next step. If anything in the "STOP conditions" section occurs, stop and
 > report — do not improvise. When done, update the status row for this plan
-> in `.ai/scratch/plans/improve/README.md` — unless a reviewer dispatched you and told
+> in `.ai/plans/improve/README.md` — unless a reviewer dispatched you and told
 > you they maintain the index.
 >
 > **Drift check (run first)**: `git diff --stat <planned-at SHA>..HEAD -- <in-scope paths>`
@@ -40,7 +40,7 @@ File naming: `.ai/scratch/plans/improve/NNN-short-slug.md`, numbered in recommen
 - **Priority**: P1 | P2 | P3
 - **Effort**: S | M | L
 - **Risk**: LOW | MED | HIGH
-- **Depends on**: .ai/scratch/plans/improve/NNN-*.md (or "none")
+- **Depends on**: .ai/plans/improve/NNN-*.md (or "none")
 - **Category**: bug | security | perf | tests | tech-debt | migration | dx | docs | direction
 - **Planned at**: commit `<short SHA>`, <YYYY-MM-DD>
 - **Issue**: <GitHub issue URL — only when published via `--issues`; omit otherwise>
@@ -85,10 +85,11 @@ NEVER run DB migrate/seed/rebuild commands.)
 executor's environment. Skip the section otherwise.)
 
 - Carbon skills the executor should invoke if available, and for what:
-  "use the `forms` skill when adding the validator in step 2";
-  "use the `database-transactions` skill for the atomic write in step 3".
+  "use the `test-driven-development` skill for the regression test in step 2";
+  "use the `check-and-commit` skill to gate the final commit".
 - Workflow docs worth reading first by path:
-  "`.ai/rules/workflow-database-migration.md` before writing the migration in step 4".
+  "`.ai/rules/workflow-database-migration.md` before writing the migration in step 4";
+  "`.ai/rules/conventions-forms.md` before adding the validator in step 2".
 
 ## Scope
 
@@ -141,7 +142,7 @@ Machine-checkable. ALL must hold:
 - [ ] `pnpm exec biome lint <in-scope paths>` reports no diagnostics
 - [ ] `grep -rn "<old pattern>" <in-scope dir>` returns no matches
 - [ ] No files outside the in-scope list are modified (`git status`)
-- [ ] `.ai/scratch/plans/improve/README.md` status row updated
+- [ ] `.ai/plans/improve/README.md` status row updated
 
 ## STOP conditions
 
@@ -166,7 +167,7 @@ For the human/agent who owns this code after the change lands:
 
 ---
 
-## Index file: `.ai/scratch/plans/improve/README.md`
+## Index file: `.ai/plans/improve/README.md`
 
 Written once by the advisor after all plans, updated by executors:
 

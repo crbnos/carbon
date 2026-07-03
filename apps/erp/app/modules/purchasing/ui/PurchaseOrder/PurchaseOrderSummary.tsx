@@ -410,8 +410,8 @@ const PurchaseOrderSummary = ({
     }, 0) ?? 0;
 
   const shippingCost =
-    (routeData?.purchaseOrderDelivery?.supplierShippingCost ?? 0) *
-    (routeData?.purchaseOrder?.exchangeRate ?? 1);
+    (routeData?.purchaseOrderDelivery?.supplierShippingCost ?? 0) /
+    (routeData?.purchaseOrder?.exchangeRate || 1);
 
   const supplierShippingCost =
     routeData?.purchaseOrderDelivery?.supplierShippingCost ?? 0;

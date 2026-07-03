@@ -29,7 +29,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const operationOptions =
     jobOperations.data?.map((operation) => ({
       label: operation.description ?? "",
-      value: operation.id
+      value: operation.id,
+      processId: operation.processId
     })) ?? [];
 
   return { operationOptions };
@@ -86,22 +87,40 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  let postingError: string | null = null;
   if (d.endTime) {
     const serviceRole = await getCarbonServiceRole();
-    await serviceRole.functions.invoke("post-production-event", {
+    const posting = await serviceRole.functions.invoke<{
+      success: boolean;
+      reason?: string;
+      error?: string;
+    }>("post-production-event", {
       body: {
         productionEventId: insert.data.id,
         userId,
         companyId
       }
     });
+    if (posting.error) {
+      postingError = posting.error.message;
+    } else if (posting.data && posting.data.success === false) {
+      postingError = posting.data.reason ?? "unknown reason";
+    }
   }
 
   return modal
     ? data(insert, { status: 201 })
     : redirect(
         `${path.to.jobProductionEvents(jobId)}?${getParams(request)}`,
-        await flash(request, success("Production event created"))
+        await flash(
+          request,
+          postingError
+            ? error(
+                postingError,
+                `Production event created, but no journal entry was posted: ${postingError}`
+              )
+            : success("Production event created")
+        )
       );
 }
 

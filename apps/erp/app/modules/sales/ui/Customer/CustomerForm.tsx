@@ -14,7 +14,7 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useFetcher } from "react-router";
 import type { z } from "zod";
 import {
@@ -31,6 +31,7 @@ import {
   Submit
 } from "~/components/Form";
 import { useCompanySettings, usePermissions } from "~/hooks";
+import { upsertIntoListStore, useCustomers } from "~/stores";
 import { path } from "~/utils/path";
 import { customerValidator } from "../../sales.models";
 import type { Customer } from "../../types";
@@ -52,22 +53,49 @@ const CustomerForm = ({
   const showCustomerReadableId =
     companySettings?.showCustomerReadableId ?? false;
   const fetcher = useFetcher<PostgrestResponse<Customer>>();
+  const [, setCustomers] = useCustomers();
+  // Appending to the store below re-renders the parent, changing the inline
+  // `onClose` identity and re-running this effect. Guard so the success
+  // side-effects run exactly once — otherwise `onClose`'s trigger.click() fires
+  // twice and toggles the reopened dropdown shut.
+  const handledSuccessRef = useRef(false);
 
   useEffect(() => {
     if (type !== "modal") return;
 
     if (fetcher.state === "loading" && fetcher.data?.data) {
-      onClose?.();
-      const createdCustomer = Array.isArray(fetcher.data.data)
+      if (handledSuccessRef.current) return;
+      handledSuccessRef.current = true;
+      const createdCustomer = (Array.isArray(fetcher.data.data)
         ? fetcher.data.data[0]
-        : fetcher.data.data;
+        : fetcher.data.data) as unknown as {
+        id: string;
+        name: string;
+        website?: string | null;
+        readableId?: string | null;
+      } | null;
+      // Add the new customer to the store immediately rather than waiting for the
+      // Supabase Realtime INSERT event, which is best-effort and can be missed —
+      // leaving the just-created customer absent from the select. Dedupe by id so
+      // a late realtime event doesn't double-add it.
+      if (createdCustomer?.id) {
+        setCustomers((prev) =>
+          upsertIntoListStore(prev, {
+            id: createdCustomer.id,
+            name: createdCustomer.name,
+            website: createdCustomer.website ?? undefined,
+            readableId: createdCustomer.readableId ?? undefined
+          })
+        );
+      }
+      onClose?.();
       toast.success(
         t`Created customer: ${createdCustomer?.name ?? t`Customer`}`
       );
     } else if (fetcher.state === "idle" && fetcher.data?.error) {
       toast.error(t`Failed to create customer: ${fetcher.data.error.message}`);
     }
-  }, [fetcher.data, fetcher.state, onClose, t, type]);
+  }, [fetcher.data, fetcher.state, onClose, t, type, setCustomers]);
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing

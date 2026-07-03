@@ -1,58 +1,56 @@
 ---
 name: error
-description: Capture a screenshot and snapshot of the current browser page when an error is encountered during e2e testing. Saves to docs/e2e/<slug>/screenshots/.
+description: Capture a screenshot plus element snapshot of the current browser page when an error appears during e2e testing, saved to gitignored .ai/scratch/e2e/. Use whenever an agent-browser snapshot shows "Something went wrong", an auth error, a blank page, or an unexpected redirect. Building block — it captures and returns; the caller decides whether to continue.
 ---
 
-# Error Capture
+# error — capture browser failure diagnostics
 
-Capture diagnostic artifacts when the browser shows an error during e2e testing. This skill is a building block — other skills (e.g. `/smoke-test`) invoke it when they detect a failure.
+Capture artifacts when the browser shows a failure, then hand control back to
+the calling skill. Never stops the calling run by itself.
 
-## When to Use
+## When to invoke
 
-Call this whenever an `agent-browser snapshot` reveals:
-- "Something went wrong" heading
-- "Authentication Error" or similar error message
-- A blank page or unexpected redirect
-- Any content that indicates the page failed to render
+Any `agent-browser snapshot` that reveals:
 
-## Procedure
+- a "Something went wrong" heading
+- "Authentication Error" or similar
+- a blank page or unexpected redirect
+- any content indicating the page failed to render
 
-### 1. Determine the worktree slug
+## Steps
 
-Read `.env.local` in the project root and extract the `CARBON_WORKTREE` value.
+### 1. Resolve the slug
 
-### 2. Ensure the output directory exists
-
-```bash
-mkdir -p docs/e2e/${CARBON_WORKTREE}/screenshots
-```
-
-### 3. Capture the screenshot
-
-Use a descriptive filename with the module/route name and a timestamp:
+Use `CARBON_WORKTREE` from `.env.local` if present; otherwise the current
+branch name:
 
 ```bash
-agent-browser screenshot docs/e2e/${CARBON_WORKTREE}/screenshots/${module}-$(date +%Y%m%d-%H%M%S).png
+SLUG=$(grep '^CARBON_WORKTREE' .env.local | cut -d= -f2)
+[ -z "$SLUG" ] && SLUG=$(git branch --show-current | tr '/' '-')
 ```
 
-For example: `docs/e2e/my-worktree/screenshots/accounting-20260606-143022.png`
+### 2. Capture both artifacts
 
-### 4. Capture the snapshot text
-
-Save the element snapshot alongside the screenshot for debugging without a browser:
+Save to `.ai/scratch/e2e/` — it is gitignored (`.ai/scratch/` in `.gitignore`).
+Never save captures under `docs/` (that's the documentation app, and it is
+tracked).
 
 ```bash
-agent-browser snapshot -i > docs/e2e/${CARBON_WORKTREE}/screenshots/${module}-$(date +%Y%m%d-%H%M%S).txt
+mkdir -p .ai/scratch/e2e/${SLUG}
+STAMP=$(date +%Y%m%d-%H%M%S)
+agent-browser screenshot .ai/scratch/e2e/${SLUG}/${module}-${STAMP}.png
+agent-browser snapshot -i > .ai/scratch/e2e/${SLUG}/${module}-${STAMP}.txt
 ```
 
-### 5. Report
+`${module}` = a short name for the route/feature under test (e.g. `accounting`).
+The `.txt` snapshot lets you debug element structure without reopening a browser.
 
-After capturing, log the file paths and continue — do **not** stop the calling skill. The caller decides whether to abort or continue.
+### 3. Report and return
+
+Log both file paths and **continue** — the caller decides whether to abort.
+Include the paths in the caller's final report so a human can open them.
 
 ## Output
 
-Two files saved to `docs/e2e/<slug>/screenshots/`:
-- `{module}-{timestamp}.png` — visual screenshot
-- `{module}-{timestamp}.txt` — element snapshot text
-
-These paths are gitignored (`docs/e2e` in `.gitignore`).
+- `.ai/scratch/e2e/{slug}/{module}-{timestamp}.png` — screenshot
+- `.ai/scratch/e2e/{slug}/{module}-{timestamp}.txt` — element snapshot

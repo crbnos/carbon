@@ -2607,7 +2607,7 @@ export async function upsertCustomer(
     return client
       .from("customer")
       .insert([customer])
-      .select("id, name")
+      .select("id, name, website, readableId")
       .single();
   }
   return client

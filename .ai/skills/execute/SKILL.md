@@ -1,201 +1,96 @@
 ---
 name: execute
-description: Execute implementation plans task by task with verification. Use after /plan to implement the feature. Follows each task exactly, runs verifications, commits frequently. Triggers on "execute the plan", "implement the plan", "run the plan", or after /plan approval.
+description: Execute an approved implementation plan from .ai/plans/ task by task, running each task's verification and committing per task via the check-and-commit gate. Use when asked to "execute the plan", "implement the plan", or after /plan approval. Do not use without an approved plan file — run /plan first — and do not use it to redesign; a plan gap means stop and re-plan.
 ---
 
-# Execute: Plan Implementation
+# execute — run an implementation plan
 
-Execute implementation plans task by task. Follow each step exactly, run all verifications, commit after each task.
+Input: an approved plan at `.ai/plans/{date}-{slug}.md`. Output: working,
+verified, committed code on the feature branch, with the plan's Progress
+checklist fully checked off.
 
-**Announce at start:** "I'm using the execute skill to implement this plan."
+Your job is to follow the plan exactly — not to improve it. Deviations are
+blockers, not judgment calls.
 
-## Prerequisites
+**Announce at start:** "Using the execute skill — implementing the plan at
+{path}."
 
-Before executing:
-1. An implementation plan exists (from `/plan`)
-2. The plan has been approved
-3. You're on the correct branch
+## Step 1: Load and sanity-check
 
-If no plan exists, suggest running `/plan` first.
+1. Read the whole plan file. Confirm: you are on the branch it names, the spec
+   it references exists, and its task dependencies are consistent.
+2. If anything is missing or contradictory → **STOP** and report before touching
+   code.
 
-## Workflow
+## Step 2: Per-task loop
 
-```
-┌──────────────┐    ┌──────────────┐    ┌──────────────┐    ┌──────────────┐
-│ 1. Load Plan │───▶│ 2. Execute   │───▶│ 3. Verify    │───▶│ 4. Complete  │
-│ & Review     │    │ Each Task    │    │ & Commit     │    │ & Review     │
-└──────────────┘    └──────────────┘    └──────────────┘    └──────────────┘
-```
+For each unchecked task, in dependency order:
 
-## Step 1: Load Plan & Review
+1. **Read the task** and every file it lists (including the precedent file for
+   UI tasks).
+2. **Do exactly the steps.** Exact paths, exact code, exact commands. If the
+   task says "copy from precedent X", open X and match its structure and idiom.
+3. **Run the task's Verify block** and compare against the expected output. A
+   verification you didn't run counts as failed.
+4. **Commit via `/check-and-commit`** (it runs the gates, stages the task's
+   files specifically, and writes a conventional commit). One commit per task.
+5. **Check the task off** in the plan file's Progress list.
 
-### 1.1 Load the Plan
+Reminders that override anything the plan forgot:
 
-Read `.ai/scratch/plans/[feature-name]-plan.md`.
+- After any migration is applied: `pnpm run generate:types` BEFORE typechecking.
+- Typecheck only per package: `pnpm exec turbo run typecheck --filter=<pkg>`.
+  Never run a whole-repo typecheck.
+- Never rebuild or reset the database to make a task pass — stop and report.
 
-### 1.2 Critical Review
+## Step 3: Blockers — when to STOP
 
-Before starting, check:
-- [ ] Plan makes sense
-- [ ] No obvious gaps
-- [ ] Dependencies are clear
-- [ ] On correct branch
+Stop immediately and report (do not guess, do not improvise) when:
 
-If concerns exist, raise them before proceeding.
+- A verification fails and one focused fix attempt doesn't make it pass.
+- The plan has a gap: missing step, wrong path, unstated decision.
+- An escape hatch condition in the plan triggers.
+- You are about to touch a file the task lists as out of scope.
 
-### 1.3 Create Progress Tracker
+Report format: what happened, exact command + output, what you tried, 1–2
+options if you have them. After the human resolves it, resume the loop. If the
+plan itself is wrong, go back to `/plan` and update the plan file first — never
+push through with an unplanned design change.
 
-Track progress in `.ai/scratch/tasks/todo.md`:
+Red flags — thinking any of these means you are improvising; STOP instead:
 
-```markdown
-## [Feature] Implementation
+- "the plan is close enough, I'll adapt this step"
+- "I'll run all the verifications together at the end"
+- "this extra fix is obviously needed" (out-of-scope is a blocker, not a favor)
+- "the verification failed but the code looks right"
 
-- [ ] Task 1: [Title]
-- [ ] Task 2: [Title]
-...
-```
+## Step 4: Parallel tasks (optional)
 
-## Carbon-Specific Skills to Load
+Tasks marked independent may be dispatched to subagents — one task per subagent,
+each given the full task text verbatim plus the branch name. Never let two
+subagents touch the same file. Verify and commit each result through the same
+per-task loop; you (the main agent) run the gates, not the subagent.
 
-When executing tasks, load the appropriate Carbon skill for guidance:
+## Step 5: Finish
 
-| Task Type | Skill/Workflow | Load When |
-|-----------|----------------|-----------|
-| Database migrations | `.ai/rules/workflow-database-migration.md` | Creating tables, columns, RLS |
-| Forms & validators | `/forms` skill | Building UI forms |
-| Multi-row writes | `/database-transactions` skill | Bulk updates, atomic operations |
-| UI polish | `/make-interfaces-feel-better` skill | Animations, shadows, typography |
+After the last task:
 
-**For migrations:** Read `.ai/rules/workflow-database-migration.md` before writing SQL to ensure:
-- `id()` function for primary keys
-- `companyId` with composite primary key
-- Standardized RLS policies (SELECT, INSERT, UPDATE, DELETE)
-- Audit columns (createdBy, createdAt, updatedBy, updatedAt)
-
-**For forms:** Invoke `/forms` to get ValidatedForm patterns, zod conventions, and action handlers.
-
-## Step 2: Execute Each Task
-
-For each task:
-
-### 2.1 Mark In Progress
-
-Update `.ai/scratch/tasks/todo.md`:
-```markdown
-- [x] Task 1: Create migration ✓
-- [ ] Task 2: Add types (in progress)
-- [ ] Task 3: Service layer
-```
-
-### 2.2 Follow Steps Exactly
-
-The plan has bite-sized steps. Follow them exactly:
-- Use the exact file paths
-- Use the exact code
-- Run the exact commands
-
-### 2.3 Run Verifications
-
-Every task has verification steps. Run them all:
-- Tests must pass
-- Commands must produce expected output
-- TypeScript must compile
-
-### 2.4 Commit
-
-After task passes verification:
-```bash
-git add [specific files] && git commit -m "[type](module): [description]"
-```
-
-### 2.5 Mark Complete
-
-Update tracker and move to next task.
-
-## Step 3: Handle Blockers
-
-### When to Stop
-
-**Stop immediately when:**
-- Test fails and you can't quickly fix it
-- Plan has a gap (missing step or unclear instruction)
-- Verification produces unexpected output
-- You need to make a decision not covered by the plan
-
-### What to Do
-
-1. **Don't guess** — Stop and ask
-2. **Document the blocker** — What happened, what you tried
-3. **Propose options** — If you have ideas, share them
-
-### After Blocker Resolution
-
-Return to the task and continue.
-
-## Step 4: Complete & Review
-
-### 4.1 Final Verification
-
-After all tasks:
-- [ ] All tests pass: `pnpm test`
-- [ ] TypeScript compiles: `pnpm typecheck`
-- [ ] Lint passes: `pnpm lint`
-
-### 4.2 Feature Verification
-
-Use `/verify` to test the feature in the browser:
-- Happy path works
-- Edge cases handled
-- No regressions
-
-### 4.3 Self-Review
-
-Use `/self-review` to check your work before declaring done.
-
-### 4.4 Report Completion
+1. Full test pass: `pnpm test` (turbo scopes caching; this one is safe repo-wide).
+2. For anything user-facing: browser-verify with `/test` (boots on the running
+   `crbn up` stack, logs in, drives the changed flows). A UI change without a
+   passing browser check is **not done** — if the stack can't boot, the work is
+   BLOCKED, not complete.
+3. Review your own diff with `/self-review`.
+4. Report:
 
 ```markdown
-## Implementation Complete
-
-**Branch:** feature/[name]
-**Commits:** N commits
-**Tests:** X new tests, all passing
-
-**Summary:**
-- [What was built]
-- [Key decisions made during implementation]
-- [Any deviations from plan and why]
-
-**Ready for:** PR creation / further review
+## Implementation complete
+**Plan:** .ai/plans/{date}-{slug}.md (all tasks checked)
+**Branch / commits:** {branch}, {N} commits
+**Tests:** {X added, all passing — command + result}
+**Browser verification:** {flows verified via /test, or explicit N/A for non-UI}
+**Deviations from plan:** {none, or list with reasons}
+**Ready for:** PR
 ```
 
-## Subagent Strategy
-
-For plans with independent tasks, consider dispatching subagents:
-
-```markdown
-## Parallelizable Tasks
-
-Tasks 3, 4, 5 are independent (all depend only on Task 2).
-Dispatch 3 subagents in parallel:
-- Subagent A: Task 3
-- Subagent B: Task 4  
-- Subagent C: Task 5
-```
-
-Use the Agent tool with clear context for each subagent.
-
-## Output
-
-| Artifact | Location |
-|----------|----------|
-| Working code | Feature branch |
-| Progress tracker | `.ai/scratch/tasks/todo.md` |
-| Commits | Git history |
-
-## Next Steps
-
-After execution:
-- Create PR (if ready)
-- Run `/self-review`
-- Use `/verify` for browser testing
+Open a PR only if the user asked for one.

@@ -300,6 +300,28 @@ serve(async (req: Request) => {
           return acc;
         }, 0);
 
+        // Flat header/line amounts (shipping, tax) must not be duplicated
+        // when a PO is invoiced in multiple partial invoices: the header
+        // shipping goes on the first (non-voided) invoice only, and flat
+        // line amounts are prorated by the fraction being invoiced.
+        const priorInvoiceLines = await client
+          .from("purchaseInvoiceLine")
+          .select("id, purchaseInvoice!inner(status)")
+          .eq("purchaseOrderId", purchaseOrderId)
+          .eq("companyId", companyId)
+          .neq("purchaseInvoice.status", "Voided")
+          .limit(1);
+        const hasPriorInvoice = (priorInvoiceLines.data?.length ?? 0) > 0;
+
+        const uninvoicedFraction = (line: {
+          purchaseQuantity: number | null;
+          quantityToInvoice: number | null;
+        }) => {
+          const ordered = line.purchaseQuantity ?? 0;
+          if (ordered <= 0) return 1;
+          return Math.min((line.quantityToInvoice ?? 0) / ordered, 1);
+        };
+
         let purchaseInvoiceId = "";
 
         await db.transaction().execute(async (trx) => {
@@ -346,8 +368,9 @@ serve(async (req: Request) => {
             .values({
               id: purchaseInvoiceId,
               locationId: purchaseOrderDelivery.data.locationId,
-              supplierShippingCost:
-                purchaseOrderDelivery.data.supplierShippingCost ?? 0,
+              supplierShippingCost: hasPriorInvoice
+                ? 0
+                : purchaseOrderDelivery.data.supplierShippingCost ?? 0,
               shippingMethodId: purchaseOrderDelivery.data.shippingMethodId,
               shippingTermId: purchaseOrderDelivery.data.shippingTermId,
               incoterm: purchaseOrderDelivery.data.incoterm,
@@ -372,8 +395,10 @@ serve(async (req: Request) => {
               description: line.description,
               quantity: line.quantityToInvoice,
               supplierUnitPrice: line.supplierUnitPrice ?? 0,
-              supplierShippingCost: line.supplierShippingCost ?? 0,
-              supplierTaxAmount: line.supplierTaxAmount ?? 0,
+              supplierShippingCost:
+                (line.supplierShippingCost ?? 0) * uninvoicedFraction(line),
+              supplierTaxAmount:
+                (line.supplierTaxAmount ?? 0) * uninvoicedFraction(line),
               purchaseUnitOfMeasureCode: line.purchaseUnitOfMeasureCode,
               inventoryUnitOfMeasureCode: line.inventoryUnitOfMeasureCode,
               conversionFactor: line.conversionFactor,

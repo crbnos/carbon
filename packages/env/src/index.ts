@@ -77,6 +77,7 @@ declare global {
       XERO_CLIENT_SECRET: string;
       XERO_WEBHOOK_SECRET: string;
       DEFAULT_LANGUAGE: string;
+      EXTRACTION_CONFIDENCE_THRESHOLD: string;
     }
   }
 }
@@ -165,6 +166,13 @@ export const EXCHANGE_RATES_API_KEY = getEnv("EXCHANGE_RATES_API_KEY", {
   isRequired: false,
   isSecret: true
 });
+
+export const EXTRACTION_CONFIDENCE_THRESHOLD = Number.parseFloat(
+  getEnv("EXTRACTION_CONFIDENCE_THRESHOLD", {
+    isRequired: false,
+    isSecret: false
+  }) ?? "0.85"
+);
 
 const INNGEST_DEV = getEnv("INNGEST_DEV", { isRequired: false });
 

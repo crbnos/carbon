@@ -4,25 +4,30 @@ import { flash } from "@carbon/auth/session.server";
 import { VStack } from "@carbon/react";
 import { useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData } from "react-router";
+import { Outlet, redirect, useLoaderData } from "react-router";
 import type { Chart } from "~/modules/accounting";
 import {
   getCompaniesInGroup,
   getConsolidatedBalances,
   getFinancialStatementBalances,
+  getFiscalYearSettings,
   translateCompanyBalances
 } from "~/modules/accounting";
 import {
   FinancialStatementTree,
   ReportFilters
 } from "~/modules/accounting/ui/Reports";
+import { months } from "~/modules/shared";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+import { revalidateIgnoringOffset } from "~/utils/revalidate";
 
 export const handle: Handle = {
   breadcrumb: "Balance Sheet",
   to: path.to.balanceSheet
 };
+
+export const shouldRevalidate = revalidateIgnoringOffset;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, companyGroupId } = await requirePermissions(
@@ -39,7 +44,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const endDate = searchParams.get("endDate") || null;
   const showTranslated = searchParams.get("showTranslated") === "true";
 
-  const companies = await getCompaniesInGroup(client, companyGroupId);
+  const [companies, fiscalYearSettings] = await Promise.all([
+    getCompaniesInGroup(client, companyGroupId),
+    getFiscalYearSettings(client, companyId)
+  ]);
+  const fiscalStartMonth =
+    months.indexOf(fiscalYearSettings.data?.startMonth ?? "January") + 1;
   const companiesList = companies.data ?? [];
   const parentCompany = companiesList.find((c) => !c.parentCompanyId);
   const parentCurrency = parentCompany?.baseCurrencyCode ?? null;
@@ -83,7 +93,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       showTranslated: true,
       isMultiCompany: true,
       isForeignCurrency: false,
-      parentCurrency
+      parentCurrency,
+      fiscalStartMonth
     };
   }
 
@@ -161,7 +172,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     showTranslated: showTranslated && isForeignCurrency,
     isMultiCompany: false,
     isForeignCurrency,
-    parentCurrency
+    parentCurrency,
+    fiscalStartMonth
   };
 }
 
@@ -173,7 +185,8 @@ export default function BalanceSheetRoute() {
     showTranslated,
     isMultiCompany,
     isForeignCurrency,
-    parentCurrency
+    parentCurrency,
+    fiscalStartMonth
   } = useLoaderData<typeof loader>();
   const [search, setSearch] = useState("");
 
@@ -185,15 +198,20 @@ export default function BalanceSheetRoute() {
         isMultiCompany={isMultiCompany}
         isForeignCurrency={isForeignCurrency}
         parentCurrency={parentCurrency}
+        periodVariant="asOf"
+        fiscalStartMonth={fiscalStartMonth}
         search={search}
         onSearchChange={setSearch}
       />
       <FinancialStatementTree
         data={balanceSheet}
+        measure="balanceAtDate"
         showTranslated={showTranslated}
         parentCurrency={parentCurrency}
         search={search}
+        ledgerPath={path.to.balanceSheetLedger}
       />
+      <Outlet />
     </VStack>
   );
 }

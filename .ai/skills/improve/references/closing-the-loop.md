@@ -11,7 +11,7 @@ The founding rule survives unchanged: **the advisor never edits source code.** I
 ### Preconditions (check all before dispatching)
 
 - The repo is a git repository (worktree isolation requires it). If not: stop and say so.
-- The plan file exists in `.ai/scratch/plans/improve/` and its dependencies show DONE in the README. If not: stop, name the missing dependency.
+- The plan file exists in `.ai/plans/improve/` and its dependencies show DONE in the README. If not: stop, name the missing dependency.
 - Run the plan's drift check yourself. If in-scope files changed since `Planned at`, reconcile the plan first (see below) — don't hand a stale plan to an executor.
 - **If the plan creates or depends on a database migration, do not dispatch for full verification** — the executor cannot apply migrations (the user does). Either scope the executor to the non-DB steps and flag the migration as a user step, or hand the whole plan to the user. Say which.
 
@@ -21,7 +21,7 @@ Spawn **one** `general-purpose` subagent with `isolation: "worktree"`. Executor 
 
 The subagent prompt must contain:
 
-1. **The full plan file text, inlined.** The worktree contains only committed files — if `.ai/scratch/plans/improve/` is uncommitted, the executor can't read it. Never assume; always inline.
+1. **The full plan file text, inlined.** The worktree contains only committed files — if `.ai/plans/improve/` is uncommitted, the executor can't read it. Never assume; always inline.
 2. The executor preamble:
 
 > You are the executor for the implementation plan below. Follow it step by
@@ -33,7 +33,7 @@ The subagent prompt must contain:
 > condition occurs, stop immediately and report. Do not improvise around
 > obstacles. Commit your work in the worktree following the plan's git workflow
 > section. One override: SKIP the plan's instruction to update
-> `.ai/scratch/plans/improve/README.md` — your reviewer maintains the index. Before
+> `.ai/plans/improve/README.md` — your reviewer maintains the index. Before
 > reporting, audit every claim in your report against an actual tool result from
 > this session — only report what you can point to evidence for; if a
 > verification failed or was skipped, say so plainly. When finished, reply with
@@ -74,7 +74,7 @@ Running verification commands inside the executor's worktree is fine — it's is
 
 ---
 
-## `reconcile` — keep `.ai/scratch/plans/improve/` alive
+## `reconcile` — keep `.ai/plans/improve/` alive
 
 Process what happened since the last session. Read the README and every plan file, then per status:
 

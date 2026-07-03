@@ -7,12 +7,10 @@
 # Runs automatically via `pnpm prepare` or manually: `pnpm install-skills`
 #
 # Usage:
-#   install-skills.sh                     # default tiers + all rules
-#   install-skills.sh --with <tiers>      # default + extra tiers (comma-separated)
-#   install-skills.sh --all               # all tiers + all rules
+#   install-skills.sh                     # install all rules + all skills
 #   install-skills.sh --skills-only       # skills only (no rules)
 #   install-skills.sh --rules-only        # rules only (no skills)
-#   install-skills.sh --list              # show tier catalog
+#   install-skills.sh --list              # show available skills
 #   install-skills.sh --clean             # remove all symlinks
 #   install-skills.sh --help              # show usage
 
@@ -20,12 +18,9 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 AI_DIR="$REPO_ROOT/.ai"
-TIERS_JSON="$AI_DIR/skills/tiers.json"
 
 INSTALL_RULES=true
 INSTALL_SKILLS=true
-MODE=""        # "" = default tiers, "with" = default + extra, "all" = everything
-EXTRA_TIERS=""
 CLEAN=false
 LIST=false
 
@@ -35,16 +30,8 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --skills-only)  INSTALL_RULES=false;  shift ;;
     --rules-only)   INSTALL_SKILLS=false; shift ;;
-    --all)          MODE="all";           shift ;;
     --clean)        CLEAN=true;           shift ;;
     --list)         LIST=true;            shift ;;
-    --with)
-      MODE="with"
-      shift
-      EXTRA_TIERS="${1:-}"
-      [ -n "$EXTRA_TIERS" ] || { echo "error: --with requires tier names" >&2; exit 1; }
-      shift
-      ;;
     --help|-h)
       sed -n '2,/^$/{ s/^# //; s/^#//; p; }' "$0"
       exit 0
@@ -85,7 +72,6 @@ link_rules() {
 
 link_skills() {
   local harness_dir="$1/skills"
-  local skills_list="$2"  # newline-separated skill names, or "ALL"
   prepare_harness "$harness_dir"
 
   local count=0
@@ -98,9 +84,16 @@ link_skills() {
     name=$(basename "$skill_dir")
     [ -f "$skill_dir/SKILL.md" ] || continue
 
-    # Filter by tier if not ALL
-    if [ "$skills_list" != "ALL" ]; then
-      echo "$skills_list" | grep -qx "$name" || continue
+    # Guard: frontmatter must start on line 1 and its name must match the dir.
+    # (A comment above the frontmatter breaks description parsing in harnesses.)
+    if [ "$(head -n 1 "$skill_dir/SKILL.md")" != "---" ]; then
+      echo "  ⚠ $name: SKILL.md does not start with '---' frontmatter on line 1" >&2
+    else
+      local fm_name
+      fm_name=$(sed -n '2,10s/^name:[[:space:]]*//p' "$skill_dir/SKILL.md" | head -n 1)
+      if [ -n "$fm_name" ] && [ "$fm_name" != "$name" ]; then
+        echo "  ⚠ $name: frontmatter name '$fm_name' does not match directory name" >&2
+      fi
     fi
 
     ln -sfn "$rel_prefix/$name" "$harness_dir/$name"
@@ -112,97 +105,14 @@ link_skills() {
   echo "  ✓ $count skills → .$harness_name/skills/"
 }
 
-# ── Tier resolution ──────────────────────────────────────────────────────────
-
-resolve_skills() {
-  # If no tiers.json, install all skills
-  if [ ! -f "$TIERS_JSON" ]; then
-    echo "ALL"
-    return
-  fi
-
-  local selected_tiers=""
-
-  case "$MODE" in
-    "all")
-      # All tiers
-      selected_tiers=$(python3 -c "
-import json, sys
-d = json.load(open('$TIERS_JSON'))
-for t in d.get('tiers', {}):
-    print(t)
-" 2>/dev/null) || { echo "ALL"; return; }
-      ;;
-    "with")
-      # Default + extra
-      selected_tiers=$(python3 -c "
-import json, sys
-d = json.load(open('$TIERS_JSON'))
-defaults = d.get('default', [])
-extras = '$EXTRA_TIERS'.split(',')
-for t in set(defaults + extras):
-    if t in d.get('tiers', {}):
-        print(t)
-    else:
-        print(f'warning: unknown tier \"{t}\"', file=sys.stderr)
-" 2>/dev/null) || { echo "ALL"; return; }
-      ;;
-    *)
-      # Default tiers only
-      selected_tiers=$(python3 -c "
-import json
-d = json.load(open('$TIERS_JSON'))
-for t in d.get('default', []):
-    print(t)
-" 2>/dev/null) || { echo "ALL"; return; }
-      ;;
-  esac
-
-  # Collect skill names from selected tiers
-  local skills=""
-  skills=$(python3 -c "
-import json, sys
-d = json.load(open('$TIERS_JSON'))
-tiers = sys.stdin.read().strip().split('\n')
-seen = set()
-for t in tiers:
-    for s in d.get('tiers', {}).get(t, {}).get('skills', []):
-        if s not in seen:
-            seen.add(s)
-            print(s)
-" <<< "$selected_tiers" 2>/dev/null) || { echo "ALL"; return; }
-
-  if [ -z "$skills" ]; then
-    echo "ALL"
-  else
-    echo "$skills"
-  fi
-}
-
 # ── List mode ────────────────────────────────────────────────────────────────
 
 if $LIST; then
-  if [ ! -f "$TIERS_JSON" ]; then
-    echo "No tiers.json found — all skills install by default."
-    echo ""
-    echo "Skills:"
-    for s in "$AI_DIR"/skills/*/; do
-      [ -f "$s/SKILL.md" ] || continue
-      echo "  $(basename "$s")"
-    done
-  else
-    python3 -c "
-import json
-d = json.load(open('$TIERS_JSON'))
-defaults = set(d.get('default', []))
-for tier, info in d.get('tiers', {}).items():
-    marker = ' (default)' if tier in defaults else ''
-    desc = info.get('description', '')
-    print(f'\n{tier}{marker}: {desc}')
-    for s in info.get('skills', []):
-        print(f'  {s}')
-" 2>/dev/null || echo "error: could not parse tiers.json" >&2
-  fi
+  echo "Skills:"
+  for s in "$AI_DIR"/skills/*/; do
+    [ -f "$s/SKILL.md" ] || continue
+    echo "  $(basename "$s")"
+  done
   exit 0
 fi
 
@@ -226,20 +136,13 @@ fi
 
 echo "Installing from .ai/ →"
 
-SKILLS_LIST=""
-if $INSTALL_SKILLS; then
-  SKILLS_LIST=$(resolve_skills)
-fi
-
 for harness in "$REPO_ROOT/.claude" "$REPO_ROOT/.codex"; do
-  harness_name=$(basename "$harness")
-
   if $INSTALL_RULES; then
     link_rules "$harness"
   fi
 
   if $INSTALL_SKILLS; then
-    link_skills "$harness" "$SKILLS_LIST"
+    link_skills "$harness"
   fi
 done
 

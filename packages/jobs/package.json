@@ -24,6 +24,7 @@
     "kysely": "catalog:",
     "nanoid": "catalog:",
     "nodemailer": "6.10.1",
+    "pdfjs-dist": "5.4.296",
     "react": "catalog:",
     "react-dom": "catalog:",
     "react-pdf": "catalog:",

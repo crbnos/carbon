@@ -277,6 +277,23 @@ export async function syncEnvSymlinks(root: string) {
   }
 }
 
+// Re-link .ai/ rules and skills into the .claude/ and .codex/ harness dirs.
+// Those symlinks are gitignored, so a fresh worktree has none until this runs;
+// and `pnpm install`'s `prepare` hook only fires when the lockfile changes, so
+// `crbn up` can't lean on it to keep them fresh. The script is idempotent and
+// fast (just recreates symlinks) — safe to run on every boot. Non-fatal: skills
+// are dev tooling, so a failure warns rather than aborting the stack boot.
+export async function installSkills(root: string): Promise<boolean> {
+  const script = join(root, ".ai", "scripts", "install-skills.sh");
+  if (!existsSync(script)) return false;
+  const r = await execa("bash", [script], { cwd: root, reject: false });
+  if (r.exitCode !== 0) {
+    process.stderr.write(r.stderr?.toString() ?? "");
+    return false;
+  }
+  return true;
+}
+
 // ---------------------------------------------------------------------------
 // Orphan cleanup — used by `crbn down` to kill host processes that survived
 // a crashed `crbn up`. Dev servers and the stripe listener are spawned

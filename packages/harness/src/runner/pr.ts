@@ -25,7 +25,7 @@ const ARTIFACTS_BRANCH = "loop-artifacts";
  * Host the loop's screenshots so they render inline in the PR. Loop artifacts
  * must not pollute the product tree (the conductor guardrail), so they live on
  * ONE shared, non-merging `loop-artifacts` branch (gh-pages style) under
- * `llm/loops/runs/<id>/screenshots/` — appended via a temp index on the branch tip so
+ * `.ai/runs/<id>/screenshots/` — appended via a temp index on the branch tip so
  * earlier loops' artifacts survive. All git plumbing, no checkout / working-tree
  * change. Returns raw URLs GitHub renders, or null on any failure so the caller
  * falls back to listing paths rather than failing the PR.

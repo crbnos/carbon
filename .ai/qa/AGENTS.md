@@ -80,7 +80,7 @@ pnpm run lint                    # Linting
 
 ## Browser Automation
 
-For UI verification, use the `/login` and `/test` skills with the user's permission. This allows testing route behavior, form submission, and visual correctness.
+For UI verification, use the `/auth` and `/test` skills with the user's permission. This allows testing route behavior, form submission, and visual correctness.
 
 ## Cross-References
 

@@ -336,8 +336,10 @@ const PurchaseInvoiceLineForm = ({
         const exchangeRate = routeData?.purchaseInvoice?.exchangeRate ?? 1;
         const initialQty = supplierPart?.data?.minimumOrderQuantity ?? 1;
         const baseFallback =
-          (supplierPart?.data?.unitPrice ?? itemCost?.unitCost ?? 0) /
-          exchangeRate;
+          supplierPart?.data?.unitPrice !== null &&
+          supplierPart?.data?.unitPrice !== undefined
+            ? supplierPart.data.unitPrice / exchangeRate
+            : (itemCost?.unitCost ?? 0);
 
         const breaks = supplierPart?.data?.id
           ? await getSupplierPartPriceBreaks(carbon, supplierPart.data.id)

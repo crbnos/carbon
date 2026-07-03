@@ -166,6 +166,16 @@ export default function GetStartedLayout() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // The hub scrolls inside this container (not the window), so client-side
+  // navigations keep the previous page's scroll position. Smooth-scroll back
+  // to the top on each page change — unless the target has a hash, in which
+  // case the destination page owns the scroll (e.g. the Plan's deep links).
+  const scrollRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (location.hash) return;
+    scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  }, [location.pathname, location.hash]);
+
   // When the customer clears the final checkpoint anywhere (typically the Plan),
   // send them to the command center so they land on the confetti + the exit
   // dialog. Session-only: the ref seeds from the current value so a reload while
@@ -231,7 +241,7 @@ export default function GetStartedLayout() {
         <GroupedContentSidebar groups={groups} exactMatch />
         <div className="relative min-w-0 overflow-hidden">
           <MeshGradientBackground />
-          <div className="relative z-10 h-full overflow-y-auto">
+          <div ref={scrollRef} className="relative z-10 h-full overflow-y-auto">
             {isInternal ? (
               <PreviewBar previewing={previewingAsCustomer} />
             ) : null}

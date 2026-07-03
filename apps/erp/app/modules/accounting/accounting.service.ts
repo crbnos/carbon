@@ -5,7 +5,7 @@ import {
   toDisplayDebit,
   toStoredAmount
 } from "@carbon/utils";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import { getNextSequence } from "~/modules/settings";
 import type { GenericQueryFilters } from "~/utils/query";
@@ -28,7 +28,11 @@ import type {
   paymentTermValidator,
   taxDepreciationMethods
 } from "./accounting.models";
-import type { Transaction, TranslatedBalance } from "./types";
+import type {
+  AccountLedgerLine,
+  Transaction,
+  TranslatedBalance
+} from "./types";
 import { NET_INCOME_ACCOUNT_ID } from "./types";
 
 /**
@@ -131,6 +135,85 @@ export async function getTrialBalance(
       args.startDate ?? getDateNYearsAgo(50).toISOString().split("T")[0],
     to_date: args.endDate ?? new Date().toISOString().split("T")[0]
   });
+}
+
+export async function getAccountLedger(
+  client: SupabaseClient<Database>,
+  args: {
+    accountId: string;
+    companyId: string | null;
+    startDate: string | null;
+    endDate: string | null;
+    limit: number;
+    offset: number;
+  }
+) {
+  // The journalLines view intentionally has no journal-status filter so that
+  // the lines shown always sum to the balances from accountTreeBalancesByCompany
+  // (which also includes Draft journals).
+  // TODO: remove the cast once cloud-generated DB types include the view.
+  let query = client
+    .from("journalLines" as any)
+    .select("*", { count: "exact" })
+    .eq("accountId", args.accountId)
+    .gte(
+      "postingDate",
+      args.startDate ?? getDateNYearsAgo(50).toISOString().split("T")[0]
+    )
+    .lte("postingDate", args.endDate ?? new Date().toISOString().split("T")[0]);
+
+  if (args.companyId) {
+    query = query.eq("companyId", args.companyId);
+  }
+
+  const result = await query
+    .order("postingDate", { ascending: false })
+    .order("journalEntryId", { ascending: false })
+    .order("id", { ascending: false })
+    .range(args.offset, args.offset + args.limit - 1);
+
+  return result as unknown as {
+    data: AccountLedgerLine[] | null;
+    count: number | null;
+    error: PostgrestError | null;
+  };
+}
+
+export async function getAccountLedgerSummary(
+  client: SupabaseClient<Database>,
+  companyGroupId: string,
+  companyId: string | null,
+  args: {
+    accountId: string;
+    startDate: string | null;
+    endDate: string | null;
+  }
+) {
+  // Same RPC the report pages use, so the drawer ties out by construction
+  const balances = await client.rpc("accountTreeBalancesByCompany", {
+    p_company_group_id: companyGroupId,
+    p_company_id: companyId ?? undefined,
+    from_date:
+      args.startDate ?? getDateNYearsAgo(50).toISOString().split("T")[0],
+    to_date: args.endDate ?? new Date().toISOString().split("T")[0]
+  });
+
+  if (balances.error) {
+    return { data: null, error: balances.error };
+  }
+
+  const row = balances.data?.find((b) => b.accountId === args.accountId);
+  const closing = row?.balanceAtDate ?? 0;
+  const netChange = row?.netChange ?? 0;
+
+  return {
+    data: {
+      opening: closing - netChange,
+      netChange,
+      closing
+    },
+    error: null
+  };
 }
 
 export async function getFinancialStatementBalances(

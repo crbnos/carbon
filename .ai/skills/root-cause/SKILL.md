@@ -1,104 +1,133 @@
+---
+name: root-cause
+description: Read-only root-cause analysis for any bug, test failure, or unexpected behavior — before proposing or writing any fix. Produces a brief with the root cause, files to change, approach, and risks. No edits, no commits, no state-changing commands. Use before /fix or /conductor whenever the cause isn't already proven. If static reading can't reach a confident cause, it hands off to /debugging-difficult-bugs for runtime instrumentation.
+---
 <!-- Workflow pattern inspired by Open Mercato (MIT License)
      https://github.com/open-mercato/open-mercato
      Copyright (c) 2025-2026 Open Mercato contributors -->
 
----
-name: root-cause
-description: Read-only root-cause analysis for bugs. Produces a brief with root cause, files to change, approach, and risks. No edits, no commits. Use before /fix or conductor.
----
-
 # root-cause — read-only bug analysis
 
-You are performing a **read-only** root-cause analysis. You will not edit any files, create branches, or run commands that mutate state. Your output is a brief that a human or the `/fix` skill will act on.
+You are performing **read-only** analysis: no file edits, no branches, no
+commands that mutate state. Output is a brief that a human or `/fix` acts on.
 
-**Announce at start:** "I'm using the root-cause skill to analyze this bug."
+The iron rule: **no fix without a root cause.** A fix proposed before the cause
+is understood is a guess, and guesses create new bugs. Symptom patches are
+failure even when they make the error disappear.
 
-## 0. Load context
+**Announce at start:** "Using the root-cause skill — read-only analysis of this
+bug."
 
-Before investigating, load these in order:
+## Step 0: Load context
 
-1. **Issue / bug report** — read the full description, repro steps, and any linked threads.
-2. **`.ai/lessons.md`** — check for known pitfalls related to the affected area.
-3. **AGENTS.md Task Router** — match the bug's domain to the relevant guides in `.ai/rules/` and module `AGENTS.md` files.
-4. **Module AGENTS.md** — read the `AGENTS.md` in the affected module/package directory for local architecture, imports, and conventions.
+1. The bug report — full description, repro steps, linked threads/issues.
+2. `.ai/lessons.md` — known pitfalls in the affected area.
+3. Root `AGENTS.md` Task Router → the matching `.ai/rules/` guides.
+4. The affected module/package `AGENTS.md`.
 
-## 1. Reproduce mentally
+## Step 1: Establish the facts
 
-Trace the bug from symptom to origin without running code:
+1. **Read the error completely** — full stack trace, message, HTTP status, file
+   and line numbers. The error text often contains the answer.
+2. **Reproduce or trace.** State the exact repro steps. If you cannot reproduce
+   even mentally, gather more data — do not guess.
+3. **Check recent changes**: `git log --oneline -20 -- <affected paths>` and the
+   branch diff. Most bugs live in what changed last.
+4. **Trace the data flow** from entry point to origin: route → loader/action →
+   service function → query → response. Note every transformation. Follow the
+   bad value **backward** to where it is first wrong — fix at the source, not
+   where the symptom surfaces (see `references/root-cause-tracing.md`).
+5. **Check the schema**: read the *newest* relevant migrations (order by
+   timestamp) and generated types. Column names and constraints must match what
+   the code assumes.
 
-1. **Read the error** — full stack trace, error message, HTTP status. Note file paths and line numbers.
-2. **Identify the entry point** — which route, loader, action, or event handler is involved?
-3. **Trace the data flow** — follow the call chain: route → service function → database query → response. Note every transformation.
-4. **Check the schema** — read the relevant migration(s) and types. Verify column names, types, and constraints match what the code expects.
+## Step 2: Carbon-specific failure modes
 
-## 2. Carbon-specific checks
-
-Run through these common Carbon failure modes:
+Check each of these before inventing exotic theories:
 
 | Check | What to look for |
-|-------|-----------------|
-| **companyId scoping** | Every query that reads or writes tenant data MUST filter by `companyId`. Missing scoping = cross-tenant data leak or empty results. |
-| **RLS policy gaps** | New tables or columns without corresponding RLS policies. Check `packages/database/supabase/migrations/` for the table's policies. |
-| **Stale generated types** | Code referencing columns/tables added in a recent migration but `pnpm run generate:types` was not run afterward. |
-| **Permission scope mismatch** | `requirePermissions()` or `permissions.can()` using a string that doesn't match the DB scope. See `BACKWARD_COMPATIBILITY.md` — scopes are FROZEN. |
-| **Service function signature drift** | Caller passing args that don't match the service function's current signature (params added/removed/reordered). |
-| **Multi-tenancy in new code** | New tables missing `companyId` column, composite PK `("id", "companyId")`, or `id('prefix')` default. |
-| **Import path staleness** | Code importing from a path that was moved without a re-export bridge. |
+|-------|------------------|
+| companyId scoping | A query missing `companyId` filtering → cross-tenant leak or empty results |
+| Stale generated types | Code references columns from a new migration but `pnpm run generate:types` wasn't run — typecheck greens lie |
+| RLS policy gaps | New table/column without policies; check the table's migrations |
+| Permission strings | `requirePermissions()` / `permissions.can()` scopes are string literals — invisible to typecheck; grep the whole repo after any scope rename |
+| Service signature drift | Caller args don't match the service function's current signature |
+| Migration ordering | A migration backdated older than deployed ones applies out of order on remotes (see `.ai/lessons.md`) |
+| Form submission | `ValidatedForm` only submits on a native submit with a `submitter`; react-aria number/date fields commit hidden inputs on **blur** (see `/test` for details) |
+| Import staleness | Import from a moved path with no re-export bridge |
 
-## 3. Narrow the root cause
+## Step 3: One hypothesis at a time
 
-- **Single hypothesis.** Form one specific theory: "The bug is caused by X in file Y because Z."
-- **Verify against the code.** Read the suspected file(s) and confirm the theory holds. If it doesn't, form a new hypothesis — don't force-fit.
-- **Distinguish root cause from symptom.** A `TypeError` in the UI might be caused by a missing RLS policy three layers down. Keep tracing until you reach the origin.
+1. Form a **single** specific hypothesis: "X in file Y causes the bug because Z."
+2. Verify it against the code you can read. If the code contradicts it, discard
+   it — don't force-fit.
+3. Distinguish cause from symptom: a UI `TypeError` may originate three layers
+   down. Keep tracing until you reach the origin.
+4. **Three-strikes rule:** if 3 hypotheses have failed, the problem is likely
+   architectural (shared state, coupling, a wrong pattern) — STOP, write up what
+   you ruled out, and surface the architectural question to the human instead of
+   producing hypothesis #4.
 
-## 4. Assess confidence
-
-Rate your confidence:
+## Step 4: Confidence
 
 | Level | Meaning |
 |-------|---------|
-| **HIGH** | Root cause identified with clear evidence in the code. The fix path is obvious. |
-| **MEDIUM** | Strong hypothesis supported by code reading, but runtime confirmation would help. |
-| **LOW** | Multiple plausible causes, insufficient code evidence, or the bug may be environmental. |
+| HIGH | Cause identified with code evidence; fix path obvious |
+| MEDIUM | Strong code-supported hypothesis; runtime confirmation would help |
+| LOW | Multiple plausible causes or the bug appears runtime/environment-dependent |
 
-**If LOW_CONFIDENCE, say so explicitly.** Do not present a guess as a finding.
+If MEDIUM or LOW **and** the bug involves runtime state, ordering, caching,
+concurrency, or manual reproduction → recommend `/debugging-difficult-bugs`
+(temporary JSONL instrumentation) as the next step instead of guessing. Never
+present a guess as a finding.
 
-## 5. Output the brief
+## Step 5: Output the brief
 
 Produce exactly this structure (~400 words max):
 
 ```markdown
 ## Root-Cause Brief
 
-**Bug:** <one-line summary>
-
-**Summary:** <2-3 sentences explaining the symptom and its observable impact>
-
-**Root cause:** <precise explanation of why the bug occurs, referencing specific
-files and line numbers>
-
+**Bug:** <one line>
+**Summary:** <2–3 sentences: symptom and observable impact>
+**Root cause:** <why it happens, citing file:line>
 **Confidence:** HIGH | MEDIUM | LOW
-<if LOW: explain what's uncertain and what would resolve it>
+<if not HIGH: what is uncertain and what would resolve it — e.g. "instrument via /debugging-difficult-bugs">
 
 **Files to change:**
-- `path/to/file.ts` — <what needs to change and why>
-- `path/to/other.ts` — <what needs to change and why>
+- `path/to/file.ts` — <what and why>
 
 **Approach:**
-1. <step 1>
-2. <step 2>
-3. <step 3>
+1. <step>
 
 **Risks:**
-- <risk 1 — e.g., "changing this service signature affects 3 callers">
-- <risk 2 — e.g., "migration touches a production-critical table">
+- <e.g. "signature change affects 3 callers">
 
-**BC impact:** <NONE | list any FROZEN/STABLE surfaces touched, per BACKWARD_COMPATIBILITY.md>
+**BC impact:** <NONE | FROZEN/STABLE surfaces touched, per BACKWARD_COMPATIBILITY.md>
 ```
 
 ## Guardrails
 
-- **Read-only.** No file edits, no `git` writes, no branch creation, no commits, no pushes.
-- **No speculative fixes.** Don't suggest "try this and see if it works." Identify the cause or say you can't.
-- **Stay scoped.** Analyze the reported bug. Don't expand into unrelated issues you notice.
-- **Cite evidence.** Every claim in the brief must reference a specific file, line, migration, or policy.
+- **Read-only.** No edits, no `git` writes, no migrations, no DB commands.
+- **No speculative fixes.** "Try this and see" is not a finding.
+- **Stay scoped.** Analyze the reported bug only; note unrelated discoveries in
+  one line at the end, don't chase them.
+- **Cite evidence.** Every claim references a file, line, migration, or policy.
+
+Red flags — thinking any of these means you're guessing, not analyzing; STOP:
+
+- "it's probably X, let me suggest the fix" (no verified cause → no fix)
+- "I'll propose two possible fixes and let them pick" (that's two guesses)
+- "one more hypothesis" after three have failed (that's an architecture
+  question now — surface it)
+- "the error message is misleading, ignore it" (read it again; it usually isn't)
+
+## References (read when the situation matches)
+
+- `references/root-cause-tracing.md` — tracing a bad value backward through the
+  call stack to its origin
+- `references/defense-in-depth.md` — layering validation after the cause is found
+- `references/condition-based-waiting.md` (+ `condition-based-waiting-example.ts`)
+  — replacing arbitrary timeouts with condition polling in flaky async tests
+- `references/find-polluter.sh` — bisecting which earlier test pollutes a
+  failing test

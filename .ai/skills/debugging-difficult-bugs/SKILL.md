@@ -1,179 +1,94 @@
 ---
 name: debugging-difficult-bugs
-description: Use early when debugging a medium or hard bug, especially when tests alone may not reveal the real runtime failure. Trigger this before extended TDD iteration when a bug involves runtime state, ordering, persistence, streaming, concurrency, UI/manual reproduction, external services, or when a red or newly passing test may not model the real issue. Skip only when the root cause is already directly proven by a stack trace or deterministic test that exercises the real runtime path.
+description: Runtime-instrumentation debugging for bugs that static reading can't pin down — add temporary unconditional JSONL logging to the real code path, reproduce, read the log, then fix. Use when /root-cause lands at MEDIUM/LOW confidence, when a bug involves runtime state, ordering, caching, streaming, concurrency, or manual/UI reproduction, or before a second speculative fix. Skip when a stack trace or a deterministic failing test already proves the cause.
 ---
 
-# Debugging Difficult Bugs
+# debugging-difficult-bugs — instrument, reproduce, read, then fix
 
-Use this skill early for medium or hard bugs where normal TDD may give false confidence because the test does not fully capture the real bug.
+Core idea: when you can't see the failure by reading code, **make the runtime
+tell you**. Add temporary append-only JSONL logging along the real code path,
+reproduce the real issue once, read the log chronologically, and only then fix.
+Never make a second speculative fix without new runtime evidence.
 
-Core idea: **instrument the actual runtime path, reproduce the real issue, then inspect append-only JSONL logs before deciding on a fix.**
+**Announce at start:** "Using the debugging-difficult-bugs skill — instrumenting
+the runtime path to observe the failure."
 
-## When to Use
+## Step 1: State the uncertainty
 
-Use this workflow near the start of debugging when any of these are true:
+Write down: what you believe, what you can't verify statically, and the exact
+runtime path that must be observed (route → service → query, edge function, job).
 
-- The bug is medium or hard complexity, especially if it spans multiple functions, packages, processes, or UI/runtime boundaries.
-- A test is red, but the failing test might be an incomplete model of the real bug.
-- You are tempted to make a second speculative fix without new runtime evidence.
-- The bug depends on runtime ordering, state, caching, streaming, concurrency, persistence, UI interaction, or external services.
-- The user says they can reproduce the issue manually.
-- The test passes after a change, but you are not confident it proves the actual reported bug is fixed.
+## Step 2: Add temporary unconditional instrumentation
 
-Do **not** keep iterating only on tests if you do not understand the runtime behavior.
+Rules:
 
-Skip this workflow only when the root cause is already directly proven by a stack trace or by a deterministic failing test that exercises the real runtime path. If you are tempted to make a second speculative fix, use this workflow.
-
-## Required Approach
-
-1. **State the uncertainty**
-   - Acknowledge that the current test may not capture the actual bug.
-   - Identify the real code path that must be observed.
-
-2. **Add temporary unconditional instrumentation**
-   - Add minimal but sufficient logs through the suspected code flow.
-   - Log boundaries, meaningful branch decisions, state transitions, async ordering points, return values, and caught errors; do not log every line.
-   - Logs must be unconditional: do **not** gate them behind an env var, debug flag, or log level.
-   - Each log point must append one JSON object per line to a `.jsonl` file in the current working directory.
-   - Include enough context to reconstruct the path: event name, timestamp, relevant ids, input shape, state transitions, branch decisions, return values, and caught errors.
-
-3. **Reproduce the real issue**
-   - Prefer to run the reproduction yourself if possible.
-   - If the issue requires the user's environment or manual interaction, ask the user to reproduce it after instrumentation is added.
-   - Tell the user exactly which `.jsonl` file to send or ask them to tell you when reproduction is complete so you can inspect it.
-
-4. **Analyze the log before fixing**
-   - Read the JSONL log chronologically.
-   - Compare expected flow vs actual flow.
-   - Identify the first point where state or behavior diverges.
-   - Only then implement the fix.
-
-5. **Clean up instrumentation**
-   - Remove all temporary unconditional logs after root cause is understood and the fix is verified.
-   - Remove debug imports, helper functions, generated `.jsonl` files, and any other temporary artifacts.
-   - Check the final diff for instrumentation remnants.
-   - Do not leave debug files, log helpers, or noisy runtime logging in the final diff unless the user explicitly asks.
-
-6. **Keep or improve tests**
-   - Add or adjust a focused regression test once the real bug is understood.
-   - Make the test assert the actual broken behavior discovered from logs, not the earlier incorrect assumption.
-
-## JSONL Logging Pattern
-
-Use append-only JSONL in `cwd` so it works across CLIs, dev servers, tests, and manual reproduction.
-
-### Node / TypeScript
+- **Unconditional** — never gated behind an env var, debug flag, or log level.
+  If reproduction requires remembering to set a flag, it will silently not fire.
+- **Append-only JSONL**, one JSON object per line, to a file in the process's
+  working directory.
+- Log **boundaries and decisions**, not every line: function entry/exit, branch
+  decisions with the data that caused them, state before/after mutation, async
+  ordering markers, caught errors, return-value shapes.
+- Log **shapes, not payloads**: ids, keys, counts, statuses. Never log tokens,
+  auth headers, cookies, or full user content.
 
 ```ts
-import { appendFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { appendFileSync } from "node:fs";
+import { join } from "node:path";
 
 function debugBug(event: string, data: Record<string, unknown> = {}) {
   appendFileSync(
-    join(process.cwd(), 'debug-difficult-bug.jsonl'),
-    `${JSON.stringify({
-      ts: new Date().toISOString(),
-      event,
-      ...data,
-    })}\n`,
+    join(process.cwd(), "debug-difficult-bug.jsonl"),
+    `${JSON.stringify({ ts: new Date().toISOString(), event, ...data })}\n`
   );
 }
+
+debugBug("service.beforeUpdate", { id, companyId, status: row.status });
 ```
 
-Call it at every meaningful branch or state transition:
+**Carbon multi-process note.** The ERP/MES dev servers, edge functions (Docker
+`edge-runtime` container), and Inngest handlers run as separate processes with
+different working directories. Log `process.cwd()` + a process role once at
+startup, or use distinct filenames (`debug-erp.jsonl`, `debug-edge.jsonl`). For
+edge functions, `console.error` JSON lines (visible in container logs) can stand
+in when the container filesystem is awkward to reach.
 
-```ts
-debugBug('workflow.start', { runId, stepId, inputKeys: Object.keys(input ?? {}) });
+## Step 3: Reproduce the real issue once
 
-debugBug('workflow.beforeStep', {
-  runId,
-  stepId,
-  status: step.status,
-  hasResumeData: Boolean(resumeData),
-});
+- Prefer reproducing yourself: boot the stack (`crbn up` if not already
+  running), authenticate with `/auth`, and drive the exact failing flow with
+  `agent-browser` (the `/test` skill documents Carbon's form gotchas —
+  `requestSubmit`, react-aria blur).
+- If only the user can reproduce (their data, their environment), tell them
+  exactly: "I added temporary logging. Reproduce the issue once, then point me
+  at `<cwd>/debug-difficult-bug.jsonl`."
 
-try {
-  const result = await executeStep();
-  debugBug('workflow.afterStep', { runId, stepId, resultShape: Object.keys(result ?? {}) });
-  return result;
-} catch (error) {
-  debugBug('workflow.stepError', {
-    runId,
-    stepId,
-    errorName: error instanceof Error ? error.name : typeof error,
-    errorMessage: error instanceof Error ? error.message : String(error),
-  });
-  throw error;
-}
-```
+## Step 4: Read the log BEFORE fixing
 
-## What to Log
+Read chronologically and answer, in writing:
 
-Prefer compact, structured data over huge dumps.
+1. Did the instrumented path actually run?
+2. What was the expected sequence of events?
+3. What was the actual sequence?
+4. What is the **first** point where state/order/branch diverges from expectation?
 
-Log:
+That first divergence is the root cause candidate. Feed it back into the
+root-cause brief (or write one now) — then implement via `/fix`, whose failing
+regression test must assert the *actual* divergence you observed, not your
+earlier assumption.
 
-- Function or phase name.
-- Stable ids: request id, run id, thread id, resource id, step id, tool call id.
-- Input/output **shape**: keys, counts, lengths, statuses.
-- Branch decisions and the data that caused them.
-- State before and after mutation.
-- Error names/messages and relevant metadata.
-- Ordering markers for async, streaming, or concurrent flows.
+## Step 5: Clean up — mandatory
 
-Avoid logging:
+- Remove every temporary log call, helper, and import.
+- Delete generated `.jsonl` files.
+- Check the final diff explicitly for leftovers:
+  `git diff | grep -n "debugBug\|debug-difficult\|\.jsonl"` → expect no hits.
 
-- API keys, auth headers, tokens, cookies, credentials.
-- Full user content unless necessary and safe.
-- Large payloads that make the log unreadable.
-- Binary data or full model responses unless the bug requires it.
+The final diff contains only the fix and its tests.
 
-Treat debug logs as potentially sensitive. Do not ask the user to paste them into public issues, PRs, or shared channels unless they have reviewed/redacted them first.
+## Done when
 
-If sensitive data might appear, log redacted summaries:
-
-```ts
-debugBug('request.received', {
-  hasAuthHeader: Boolean(headers.authorization),
-  bodyKeys: Object.keys(body ?? {}),
-  messageCount: body?.messages?.length,
-});
-```
-
-## Reproduction Handoff to User
-
-When the user needs to reproduce manually, say exactly this shape:
-
-```text
-I added temporary unconditional JSONL instrumentation. Please reproduce the issue once, then send me or point me at:
-
-<cwd>/debug-difficult-bug.jsonl
-
-After I inspect that log, I’ll remove the instrumentation and make the actual fix.
-```
-
-If multiple processes have different working directories, either:
-
-- log the absolute `process.cwd()`, process role, and pid at startup, or
-- write distinct files like `debug-server-flow.jsonl`, `debug-worker-flow.jsonl`, and `debug-client-flow.jsonl`.
-
-## Analysis Checklist
-
-Before writing the fix, answer:
-
-- Did the instrumented code path actually run?
-- What was the expected sequence of events?
-- What was the actual sequence?
-- What is the first incorrect state, missing value, duplicate event, or wrong branch?
-- Does the original red test capture that exact divergence?
-- If not, how should the regression test change?
-
-## Final Verification
-
-A difficult bug is not done until:
-
-- The real reproduction path passes.
-- The regression test fails before the fix and passes after the fix, when feasible.
-- Temporary unconditional instrumentation is removed.
-- The final diff contains only the fix and intentional tests.
-- You can explain the root cause using evidence from the JSONL log.
+- [ ] The first divergence point is identified from log evidence (quote the lines)
+- [ ] The fix landed via `/fix` with a red→green regression test asserting that behavior
+- [ ] Reproduction of the original flow now passes
+- [ ] Zero instrumentation remnants in the diff

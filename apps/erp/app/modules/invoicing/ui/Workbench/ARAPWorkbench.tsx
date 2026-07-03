@@ -28,7 +28,7 @@ import {
   LuTriangleAlert,
   LuUser
 } from "react-icons/lu";
-import { useFetcher, useNavigate } from "react-router";
+import { Link, useFetcher, useNavigate } from "react-router";
 import { CustomerAvatar, SupplierAvatar, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { IndeterminateCheckbox } from "~/components/Table/components";
@@ -62,6 +62,8 @@ type AgingRow = {
 type OpenInvoiceRow = {
   invoiceId: string;
   invoiceNumber: string;
+  // 'Invoice' | 'Credit Memo' | 'Debit Memo' — from the open-by drill-down
+  documentType?: string;
   dateDue: string | null;
   currencyCode: string;
   exchangeRate: number;
@@ -300,6 +302,12 @@ export function ARAPWorkbench({
               </div>
             );
           }
+          const documentHref =
+            r.documentType === "Invoice"
+              ? side === "ar"
+                ? path.to.salesInvoiceDetails(r.invoiceId)
+                : path.to.purchaseInvoiceDetails(r.invoiceId)
+              : path.to.memo(r.invoiceId);
           return (
             <div className="flex items-center">
               <div
@@ -307,7 +315,12 @@ export function ARAPWorkbench({
                 className="w-5 shrink-0 border-l border-border -my-2"
               />
               <div className="flex items-center gap-2 pl-2 py-1">
-                <span className="text-foreground/90">{r.invoiceNumber}</span>
+                <Link
+                  to={documentHref}
+                  className="text-foreground/90 hover:underline"
+                >
+                  {r.invoiceNumber}
+                </Link>
                 <span className="text-xs text-muted-foreground">
                   {r.dateDue ? formatDate(r.dateDue) : "—"}
                 </span>
@@ -493,7 +506,7 @@ export function ARAPWorkbench({
         value={agingMethod}
         onValueChange={(value) => setParams({ agingMethod: value })}
       >
-        <SelectTrigger className="w-[180px]">
+        <SelectTrigger size="sm" className="w-[180px]">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -509,6 +522,7 @@ export function ARAPWorkbench({
         <Trans>As of:</Trans>
       </span>
       <DatePicker
+        size="sm"
         value={parseDate(asOfDate)}
         onChange={(value) =>
           setParams({ asOfDate: value?.toString() ?? asOfDate })

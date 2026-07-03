@@ -123,7 +123,7 @@ const ChartOfAccountForm = ({
               <VStack spacing={4}>
                 <Combobox
                   name="parentId"
-                  label={t`Group`}
+                  label={t`Parent Group`}
                   termId="chart-of-account-group"
                   options={groupAccounts
                     .filter((a) => a.class !== null)

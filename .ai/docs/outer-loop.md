@@ -36,8 +36,8 @@ OpenClaw runtime (heartbeat · webhooks · cron · sandbox · SQLite)
 crbn up --minimal --run 'pnpm --filter @carbon/harness loop <binding-path> --cwd <worktree-path>' --volumes
 ```
 
-- Drives a `Binding` (in `llm/loops/runs/<id>/binding.loop.md`) to a gated PR
-- Writes `llm/loops/runs/<id>/outcome.json` → `{ state, prUrl, reason }`
+- Drives a `Binding` (in `.ai/runs/<id>/binding.loop.md`) to a gated PR
+- Writes `.ai/runs/<id>/outcome.json` → `{ state, prUrl, reason }`
 - `openPr` is idempotent (PR-feedback re-entry reuses the same branch/PR)
 - GC: `pnpm --filter @carbon/harness run gc`
 
@@ -60,7 +60,7 @@ crbn up --minimal --run 'pnpm --filter @carbon/harness loop <binding-path> --cwd
 
 ## Related Files
 
-- **Conductor skill:** `.claude/skills/conductor/SKILL.md`
+- **Conductor skill:** `.ai/skills/conductor/SKILL.md`
 - **Harness:** `packages/harness/`
 - **Agent labels workflow:** `.github/scripts/setup-agent-labels.sh`
 - **Operating prompt:** lives on the OpenClaw box (not in this repo)

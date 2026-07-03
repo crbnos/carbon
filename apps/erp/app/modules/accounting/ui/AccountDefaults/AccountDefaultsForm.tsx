@@ -10,15 +10,12 @@ import { path } from "~/utils/path";
 import { defaultAccountValidator } from "../../accounting.models";
 import type { AccountListItem } from "../../types";
 
-type AccountType = "income" | "balance";
-
 type BadgeType = "Asset" | "Liability" | "Equity" | "Revenue" | "Expense";
 
 type AccountDefaultField = {
   name: string;
   label: string;
   description: string;
-  accountType: AccountType;
   badgeType: BadgeType;
   termId?: TermId;
 };
@@ -73,7 +70,6 @@ const AccountDefaultsForm = ({
             name: "bankCashAccount",
             label: t`Bank - Cash`,
             description: t`Primary cash account for bank transactions`,
-            accountType: "balance",
             badgeType: "Asset",
             termId: "account-default-bank-cash"
           },
@@ -81,7 +77,6 @@ const AccountDefaultsForm = ({
             name: "bankLocalCurrencyAccount",
             label: t`Bank - Local Currency`,
             description: t`Bank account denominated in the local currency`,
-            accountType: "balance",
             badgeType: "Asset",
             termId: "account-default-bank-local-currency"
           },
@@ -89,7 +84,6 @@ const AccountDefaultsForm = ({
             name: "bankForeignCurrencyAccount",
             label: t`Bank - Foreign Currency`,
             description: t`Bank account denominated in a foreign currency`,
-            accountType: "balance",
             badgeType: "Asset",
             termId: "account-default-bank-foreign-currency"
           }
@@ -104,7 +98,6 @@ const AccountDefaultsForm = ({
             name: "receivablesAccount",
             label: t`Receivables`,
             description: t`Accounts receivable for amounts owed by customers`,
-            accountType: "balance",
             badgeType: "Asset",
             termId: "account-default-receivables"
           },
@@ -112,7 +105,6 @@ const AccountDefaultsForm = ({
             name: "prepaymentAccount",
             label: t`Prepayments`,
             description: t`Account for advance payments made before goods or services are received`,
-            accountType: "balance",
             badgeType: "Asset",
             termId: "account-default-prepayments"
           },
@@ -120,7 +112,6 @@ const AccountDefaultsForm = ({
             name: "customerWriteOffAccount",
             label: t`Customer Write-Off (Bad Debt)`,
             description: t`Expense account for customer balances written off as uncollectable on AR settlement`,
-            accountType: "income",
             badgeType: "Expense"
           }
         ]
@@ -134,7 +125,6 @@ const AccountDefaultsForm = ({
             name: "inventoryAccount",
             label: t`Inventory`,
             description: t`Primary account for on-hand inventory valuation`,
-            accountType: "balance",
             badgeType: "Asset",
             termId: "account-default-inventory"
           },
@@ -142,7 +132,6 @@ const AccountDefaultsForm = ({
             name: "workInProgressAccount",
             label: t`Work in Progress (WIP)`,
             description: t`Account for production orders not yet completed`,
-            accountType: "balance",
             badgeType: "Asset",
             termId: "account-default-wip"
           },
@@ -150,7 +139,6 @@ const AccountDefaultsForm = ({
             name: "inventoryShippedNotInvoicedAccount",
             label: t`Inventory Shipped Not Invoiced`,
             description: t`Accrual for inventory shipped but not yet invoiced to customer`,
-            accountType: "balance",
             badgeType: "Asset",
             termId: "account-default-inventory-shipped-not-invoiced"
           }
@@ -165,7 +153,6 @@ const AccountDefaultsForm = ({
             name: "assetAquisitionCostAccount",
             label: t`Asset Acquisition Cost`,
             description: t`Account for the purchase cost of fixed assets`,
-            accountType: "balance",
             badgeType: "Asset",
             termId: "account-default-asset-acquisition-cost"
           },
@@ -173,7 +160,6 @@ const AccountDefaultsForm = ({
             name: "assetAquisitionCostOnDisposalAccount",
             label: t`Asset Cost on Disposal`,
             description: t`Account for the cost of fixed assets when disposed`,
-            accountType: "balance",
             badgeType: "Asset",
             termId: "account-default-asset-cost-on-disposal"
           },
@@ -181,7 +167,6 @@ const AccountDefaultsForm = ({
             name: "accumulatedDepreciationAccount",
             label: t`Accumulated Depreciation`,
             description: t`Contra-asset account for total depreciation of fixed assets`,
-            accountType: "balance",
             badgeType: "Asset",
             termId: "account-default-accumulated-depreciation"
           },
@@ -189,7 +174,6 @@ const AccountDefaultsForm = ({
             name: "accumulatedDepreciationOnDisposalAccount",
             label: t`Accumulated Depreciation on Disposal`,
             description: t`Depreciation reversal when a fixed asset is disposed`,
-            accountType: "balance",
             badgeType: "Asset",
             termId: "account-default-accumulated-depreciation-on-disposal"
           }
@@ -204,7 +188,6 @@ const AccountDefaultsForm = ({
             name: "payablesAccount",
             label: t`Payables`,
             description: t`Accounts payable for amounts owed to suppliers`,
-            accountType: "balance",
             badgeType: "Liability",
             termId: "account-default-payables"
           },
@@ -212,7 +195,6 @@ const AccountDefaultsForm = ({
             name: "goodsReceivedNotInvoicedAccount",
             label: t`GR/IR Clearing`,
             description: t`Clearing account for goods received / invoice received matching`,
-            accountType: "balance",
             badgeType: "Liability",
             termId: "account-default-gr-ir"
           },
@@ -220,7 +202,6 @@ const AccountDefaultsForm = ({
             name: "supplierWriteOffAccount",
             label: t`Vendor Write-Off Income`,
             description: t`Other Income account for vendor balances cleared without full payment on AP settlement`,
-            accountType: "income",
             badgeType: "Revenue"
           }
         ]
@@ -234,7 +215,6 @@ const AccountDefaultsForm = ({
             name: "salesTaxPayableAccount",
             label: t`Sales Tax Payable`,
             description: t`Liability account for sales tax collected from customers`,
-            accountType: "balance",
             badgeType: "Liability",
             termId: "account-default-sales-tax-payable"
           },
@@ -242,7 +222,6 @@ const AccountDefaultsForm = ({
             name: "purchaseTaxPayableAccount",
             label: t`Purchase Tax Payable`,
             description: t`Liability account for tax paid on purchases`,
-            accountType: "balance",
             badgeType: "Liability",
             termId: "account-default-purchase-tax-payable"
           },
@@ -250,7 +229,6 @@ const AccountDefaultsForm = ({
             name: "reverseChargeSalesTaxPayableAccount",
             label: t`Reverse Charge Sales Tax`,
             description: t`Tax liability for reverse-charge transactions`,
-            accountType: "balance",
             badgeType: "Liability",
             termId: "account-default-reverse-charge-sales-tax"
           },
@@ -258,7 +236,6 @@ const AccountDefaultsForm = ({
             name: "deferredTaxLiabilityAccountId",
             label: t`Deferred Tax Liability`,
             description: t`Liability account for deferred taxes from accelerated depreciation`,
-            accountType: "balance",
             badgeType: "Liability",
             termId: "account-default-deferred-tax-liability"
           }
@@ -273,7 +250,6 @@ const AccountDefaultsForm = ({
             name: "retainedEarningsAccount",
             label: t`Retained Earnings`,
             description: t`Equity account for accumulated profits or losses`,
-            accountType: "balance",
             badgeType: "Equity",
             termId: "account-default-retained-earnings"
           },
@@ -281,7 +257,6 @@ const AccountDefaultsForm = ({
             name: "currencyTranslationAccount",
             label: t`Currency Translation`,
             description: t`Equity account for currency translation adjustments (CTA)`,
-            accountType: "balance",
             badgeType: "Equity",
             termId: "account-default-currency-translation"
           }
@@ -296,7 +271,6 @@ const AccountDefaultsForm = ({
             name: "salesAccount",
             label: t`Sales`,
             description: t`Default account for posting sales revenue from invoices`,
-            accountType: "income",
             badgeType: "Revenue",
             termId: "account-default-sales"
           },
@@ -304,7 +278,6 @@ const AccountDefaultsForm = ({
             name: "salesDiscountAccount",
             label: t`Sales Discounts`,
             description: t`Contra-revenue account for discounts given on sales`,
-            accountType: "income",
             badgeType: "Revenue",
             termId: "account-default-sales-discounts"
           },
@@ -312,7 +285,6 @@ const AccountDefaultsForm = ({
             name: "realizedExchangeGainAccount",
             label: t`Realized Exchange Gain`,
             description: t`Other Income account for FX gains when a payment settles a foreign-currency invoice at a more favorable rate`,
-            accountType: "income",
             badgeType: "Revenue"
           }
         ]
@@ -326,7 +298,6 @@ const AccountDefaultsForm = ({
             name: "costOfGoodsSoldAccount",
             label: t`Cost of Goods Sold`,
             description: t`Expense account for the cost of items sold`,
-            accountType: "income",
             badgeType: "Expense",
             termId: "account-default-cogs"
           },
@@ -334,7 +305,6 @@ const AccountDefaultsForm = ({
             name: "indirectCostAccount",
             label: t`Indirect Materials & Services`,
             description: t`Expense account for non-inventory purchases (services, supplies)`,
-            accountType: "income",
             badgeType: "Expense",
             termId: "account-default-indirect-materials-services"
           },
@@ -342,7 +312,6 @@ const AccountDefaultsForm = ({
             name: "laborAbsorptionAccount",
             label: t`Labor & Machine Absorption`,
             description: t`Credit account when labor/machine time is absorbed into WIP`,
-            accountType: "income",
             badgeType: "Expense",
             termId: "account-default-labor-machine-absorption"
           },
@@ -350,7 +319,6 @@ const AccountDefaultsForm = ({
             name: "purchaseVarianceAccount",
             label: t`Purchase Price Variance`,
             description: t`Variance between actual purchase price and standard cost`,
-            accountType: "income",
             badgeType: "Expense",
             termId: "account-default-purchase-price-variance"
           },
@@ -358,7 +326,6 @@ const AccountDefaultsForm = ({
             name: "inventoryAdjustmentVarianceAccount",
             label: t`Inventory Adjustment`,
             description: t`Variance from physical inventory count adjustments`,
-            accountType: "income",
             badgeType: "Expense",
             termId: "account-default-inventory-adjustment"
           },
@@ -366,7 +333,6 @@ const AccountDefaultsForm = ({
             name: "materialVarianceAccount",
             label: t`Material Usage Variance`,
             description: t`Variance between actual and standard BOM component consumption`,
-            accountType: "income",
             badgeType: "Expense",
             termId: "account-default-material-usage-variance"
           },
@@ -374,7 +340,6 @@ const AccountDefaultsForm = ({
             name: "laborAndMachineVarianceAccount",
             label: t`Labor & Machine Variance`,
             description: t`Variance between actual and standard routing hours and rates`,
-            accountType: "income",
             badgeType: "Expense",
             termId: "account-default-labor-machine-variance"
           },
@@ -382,7 +347,6 @@ const AccountDefaultsForm = ({
             name: "overheadVarianceAccount",
             label: t`Overhead Variance`,
             description: t`Variance between applied and actual manufacturing overhead`,
-            accountType: "income",
             badgeType: "Expense",
             termId: "account-default-overhead-variance"
           },
@@ -390,7 +354,6 @@ const AccountDefaultsForm = ({
             name: "lotSizeVarianceAccount",
             label: t`Lot Size Variance`,
             description: t`Fixed cost amortization variance when batch size differs from standard`,
-            accountType: "income",
             badgeType: "Expense",
             termId: "account-default-lot-size-variance"
           },
@@ -398,7 +361,6 @@ const AccountDefaultsForm = ({
             name: "subcontractingVarianceAccount",
             label: t`Subcontracting Variance`,
             description: t`Variance in outside processing costs`,
-            accountType: "income",
             badgeType: "Expense",
             termId: "account-default-subcontracting-variance"
           }
@@ -413,7 +375,6 @@ const AccountDefaultsForm = ({
             name: "maintenanceAccount",
             label: t`Maintenance Expense`,
             description: t`Expense account for equipment and facility maintenance`,
-            accountType: "income",
             badgeType: "Expense",
             termId: "account-default-maintenance-expense"
           },
@@ -421,7 +382,6 @@ const AccountDefaultsForm = ({
             name: "assetDepreciationExpenseAccount",
             label: t`Depreciation Expense`,
             description: t`Periodic depreciation expense for fixed assets`,
-            accountType: "income",
             badgeType: "Expense",
             termId: "account-default-depreciation-expense"
           },
@@ -429,7 +389,6 @@ const AccountDefaultsForm = ({
             name: "assetGainsAndLossesAccount",
             label: t`Gains and Losses`,
             description: t`Gains or losses recognized on disposal of fixed assets`,
-            accountType: "income",
             badgeType: "Expense",
             termId: "account-default-gains-and-losses"
           },
@@ -437,7 +396,6 @@ const AccountDefaultsForm = ({
             name: "serviceChargeAccount",
             label: t`Service Charges`,
             description: t`Bank and financial service charge expenses`,
-            accountType: "income",
             badgeType: "Expense",
             termId: "account-default-service-charges"
           },
@@ -445,7 +403,6 @@ const AccountDefaultsForm = ({
             name: "interestAccount",
             label: t`Interest`,
             description: t`Interest income or expense from banking activities`,
-            accountType: "income",
             badgeType: "Expense",
             termId: "account-default-interest"
           },
@@ -453,7 +410,6 @@ const AccountDefaultsForm = ({
             name: "supplierPaymentDiscountAccount",
             label: t`Supplier Payment Discounts`,
             description: t`Discounts earned for early payment to suppliers`,
-            accountType: "income",
             badgeType: "Expense",
             termId: "account-default-supplier-payment-discounts"
           },
@@ -461,7 +417,6 @@ const AccountDefaultsForm = ({
             name: "customerPaymentDiscountAccount",
             label: t`Customer Payment Discounts`,
             description: t`Discounts given to customers for early payment`,
-            accountType: "income",
             badgeType: "Expense",
             termId: "account-default-customer-payment-discounts"
           },
@@ -469,7 +424,6 @@ const AccountDefaultsForm = ({
             name: "roundingAccount",
             label: t`Rounding Account`,
             description: t`Account for small rounding differences in transactions`,
-            accountType: "income",
             badgeType: "Expense",
             termId: "account-default-rounding-account"
           },
@@ -477,7 +431,6 @@ const AccountDefaultsForm = ({
             name: "deferredTaxExpenseAccountId",
             label: t`Deferred Tax Expense`,
             description: t`Expense account for deferred tax adjustments on depreciation`,
-            accountType: "income",
             badgeType: "Expense",
             termId: "account-default-deferred-tax-expense"
           },
@@ -485,7 +438,6 @@ const AccountDefaultsForm = ({
             name: "realizedExchangeLossAccount",
             label: t`Realized Exchange Loss`,
             description: t`Expense account for FX losses when a payment settles a foreign-currency invoice at a less favorable rate`,
-            accountType: "income",
             badgeType: "Expense"
           }
         ]
@@ -495,35 +447,31 @@ const AccountDefaultsForm = ({
   );
 
   const accountOptions: Record<
-    AccountType,
+    BadgeType,
     { value: string; label: string | JSX.Element }[]
-  > = useMemo(
-    () => ({
-      income: incomeStatementAccounts.map((c) => ({
-        value: c.id,
-        label: (
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-mono text-muted-foreground">
-              {c.number}
-            </span>
-            <span className="text-xs text-foreground truncate">{c.name}</span>
-          </div>
-        )
-      })),
-      balance: balanceSheetAccounts.map((c) => ({
-        value: c.id,
-        label: (
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-mono text-muted-foreground">
-              {c.number}
-            </span>
-            <span className="text-xs text-foreground truncate">{c.name}</span>
-          </div>
-        )
-      }))
-    }),
-    [incomeStatementAccounts, balanceSheetAccounts]
-  );
+  > = useMemo(() => {
+    const toOption = (c: AccountListItem) => ({
+      value: c.id,
+      label: (
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-mono text-muted-foreground">
+            {c.number}
+          </span>
+          <span className="text-xs text-foreground truncate">{c.name}</span>
+        </div>
+      )
+    });
+    const byClass = (accounts: AccountListItem[], accountClass: BadgeType) =>
+      accounts.filter((c) => c.class === accountClass).map(toOption);
+
+    return {
+      Asset: byClass(balanceSheetAccounts, "Asset"),
+      Liability: byClass(balanceSheetAccounts, "Liability"),
+      Equity: byClass(balanceSheetAccounts, "Equity"),
+      Revenue: byClass(incomeStatementAccounts, "Revenue"),
+      Expense: byClass(incomeStatementAccounts, "Expense")
+    };
+  }, [incomeStatementAccounts, balanceSheetAccounts]);
 
   return (
     <ValidatedForm
@@ -599,7 +547,7 @@ const AccountDefaultsForm = ({
                       <div className="flex-shrink-0 w-64">
                         <Combobox
                           name={field.name}
-                          options={accountOptions[field.accountType]}
+                          options={accountOptions[field.badgeType]}
                           size="sm"
                         />
                       </div>
