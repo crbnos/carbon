@@ -5,11 +5,10 @@ import type { DocumentTemplate, ResolvedSection } from "../template";
 import {
   DEFAULT_HEADER_OPTIONS,
   interpolateContent,
-  interpolateString,
   resolveTemplate
 } from "../template";
 import type { AccountsPayableBillingAddress, PDF } from "../types";
-import { getRegistrationFooter } from "../utils/shared";
+import { resolveRegistrationLine } from "../utils/shared";
 import type { PurchaseOrderData } from "./blocks/purchaseOrder";
 import {
   buildPurchaseOrderVars,
@@ -72,11 +71,13 @@ const PurchaseOrderPDF = ({
     currencyCode
   });
 
-  const registrationLine = getRegistrationFooter(
-    company.name,
-    company.countryCode,
-    interpolateString(settings.registrationNumber, vars)
-  );
+  const registration = resolveRegistrationLine({
+    company,
+    footerSectionId,
+    sections,
+    settings,
+    vars
+  });
 
   const headerOptions = {
     ...DEFAULT_HEADER_OPTIONS,
@@ -131,11 +132,11 @@ const PurchaseOrderPDF = ({
         subject: meta?.subject ?? "Purchase Order"
       }}
       footerDocumentId={purchaseOrder?.purchaseOrderId}
-      footerLabel={registrationLine}
+      footerLabel={registration.label}
       showFooter={showFooter}
       showPageNumbers={settings.showPageNumbers}
       pageNumberFormat={settings.pageNumberFormat}
-      showRegistrationLine={settings.showRegistrationLine}
+      showRegistrationLine={registration.show}
       fontFamily={settings.fontFamily}
       headerContent={headerContent}
       footerContent={footerContent}

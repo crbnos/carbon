@@ -231,9 +231,9 @@ function TypeBadge({ category }: { category: BlockCategory }) {
 }
 
 /**
- * Header & footer are global shared sections — their fields (logo, which
- * company details show) and banner content are edited in a dialog opened right
- * here. The footer also owns its page-number + registration-line settings.
+ * Header & footer are global shared sections — their config (header: logo +
+ * which company details show; footer: registration line) and content are
+ * edited in a dialog opened right here. Page numbers stay per-template below.
  */
 function ChromeConfig({ kind }: { kind: "header" | "footer" }) {
   const { sections } = useDocumentTemplate();
@@ -287,23 +287,10 @@ function ChromeConfig({ kind }: { kind: "header" | "footer" }) {
   );
 }
 
-/**
- * Doc types whose PDFs render `settings.registrationNumber` in the footer
- * (via getRegistrationFooter). The other types either pass no footer label
- * or use their own (e.g. issue number).
- */
-const REGISTRATION_NUMBER_DOC_TYPES = new Set<string>([
-  "salesInvoice",
-  "salesOrder",
-  "purchaseOrder",
-  "quote",
-  "packingSlip"
-]);
-
-/** Footer page-number + registration-line settings. */
+/** Footer page-number settings. The registration line is configured on the
+ * shared footer section itself (edit the footer section to change it). */
 function FooterSettings() {
-  const { documentType, footerSectionId, settings, setSetting } =
-    useDocumentTemplate();
+  const { footerSectionId, settings, setSetting } = useDocumentTemplate();
   const hidden = footerSectionId === null;
   const pageNumbersValue = settings.showPageNumbers
     ? settings.pageNumberFormat
@@ -343,37 +330,6 @@ function FooterSettings() {
           </SelectContent>
         </Select>
       </div>
-      {REGISTRATION_NUMBER_DOC_TYPES.has(documentType) && (
-        <div className={hidden ? "pointer-events-none opacity-60" : undefined}>
-          <ToggleRow
-            label="Registration line"
-            checked={settings.showRegistrationLine}
-            onChange={(v) => setSetting("showRegistrationLine", v)}
-          />
-          {settings.showRegistrationLine && (
-            <div className="mt-3 flex flex-col gap-1.5">
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Registration number</span>
-                <MergeFieldMenu
-                  label="Insert field"
-                  onInsert={(snippet) =>
-                    setSetting(
-                      "registrationNumber",
-                      (settings.registrationNumber ?? "") + snippet
-                    )
-                  }
-                />
-              </div>
-              <Input
-                value={settings.registrationNumber ?? ""}
-                onChange={(e) =>
-                  setSetting("registrationNumber", e.target.value)
-                }
-              />
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 }

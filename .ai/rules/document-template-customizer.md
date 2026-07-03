@@ -27,9 +27,10 @@ Created by `packages/database/supabase/migrations/20260609143732_document-templa
   render), plus audit cols. Realtime-enabled. RLS gated on the **settings** module
   (`settings_create/update/delete`).
 - **`documentSection`** — company-global reusable rich-text sections. `placement`
-  (`body|header|footer`, plain TEXT), `content JSONB`, `config JSONB` (header
-  layout: logo, visible company fields). Editing a built-in section **forks** it
-  into a row (`upsertDocumentSection`).
+  (`body|header|footer`, plain TEXT), `content JSONB`, `config JSONB` (header:
+  logo + visible company fields; footer: registration line
+  `showRegistrationLine`/`registrationNumber`, merge-field capable). Editing a
+  built-in section **forks** it into a row (`upsertDocumentSection`).
 
 JSON columns are untyped in generated DB types. `toDocumentTemplate(row, type)`
 (`template/schema.ts`) is the **one** cast point — callers use it instead of

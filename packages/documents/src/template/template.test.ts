@@ -102,8 +102,7 @@ describe("document settings", () => {
       fontFamily: "Inter",
       showPageNumbers: true,
       pageNumberFormat: "pageOfTotal",
-      showRegistrationLine: true,
-      registrationNumber: "{company.taxId}"
+      showRegistrationLine: true
     });
   });
 
@@ -116,8 +115,7 @@ describe("document settings", () => {
       fontFamily: "Inter",
       showPageNumbers: false,
       pageNumberFormat: "pageOfTotal",
-      showRegistrationLine: true,
-      registrationNumber: "{company.taxId}"
+      showRegistrationLine: true
     });
   });
 });

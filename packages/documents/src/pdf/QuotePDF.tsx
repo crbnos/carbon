@@ -5,11 +5,10 @@ import type { DocumentTemplate, ResolvedSection } from "../template";
 import {
   DEFAULT_HEADER_OPTIONS,
   interpolateContent,
-  interpolateString,
   resolveTemplate
 } from "../template";
 import type { AccountsReceivableBillingAddress, PDF } from "../types";
-import { getRegistrationFooter } from "../utils/shared";
+import { resolveRegistrationLine } from "../utils/shared";
 import type { QuoteCustomerDetails, QuoteData } from "./blocks/quote";
 import { buildQuoteVars, quoteBlockRegistry } from "./blocks/quote";
 import { Template } from "./components";
@@ -160,11 +159,13 @@ const QuotePDF = ({
     currencyCode
   });
 
-  const registrationLine = getRegistrationFooter(
-    company.name,
-    company.countryCode,
-    interpolateString(settings.registrationNumber, vars)
-  );
+  const registration = resolveRegistrationLine({
+    company,
+    footerSectionId,
+    sections,
+    settings,
+    vars
+  });
 
   const headerOptions = {
     ...DEFAULT_HEADER_OPTIONS,
@@ -229,11 +230,11 @@ const QuotePDF = ({
         subject: meta?.subject ?? "Quote"
       }}
       footerDocumentId={quote?.quoteId}
-      footerLabel={registrationLine}
+      footerLabel={registration.label}
       showFooter={showFooter}
       showPageNumbers={settings.showPageNumbers}
       pageNumberFormat={settings.pageNumberFormat}
-      showRegistrationLine={settings.showRegistrationLine}
+      showRegistrationLine={registration.show}
       fontFamily={settings.fontFamily}
       headerContent={headerContent}
       footerContent={footerContent}
