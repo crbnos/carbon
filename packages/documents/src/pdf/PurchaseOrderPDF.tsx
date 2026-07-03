@@ -9,7 +9,7 @@ import {
   resolveTemplate
 } from "../template";
 import type { AccountsPayableBillingAddress, PDF } from "../types";
-import { composeRegistrationLine } from "../utils/footer";
+import { getRegistrationFooter } from "../utils/shared";
 import type { PurchaseOrderData } from "./blocks/purchaseOrder";
 import {
   buildPurchaseOrderVars,
@@ -72,11 +72,11 @@ const PurchaseOrderPDF = ({
     currencyCode
   });
 
-  const registrationLine = composeRegistrationLine({
-    companyName: company.name,
-    country: purchaseOrderLocations.companyCountryName ?? company.countryCode,
-    registrationNumber: interpolateString(settings.registrationNumber, vars)
-  });
+  const registrationLine = getRegistrationFooter(
+    company.name,
+    company.countryCode,
+    interpolateString(settings.registrationNumber, vars)
+  );
 
   const headerOptions = {
     ...DEFAULT_HEADER_OPTIONS,
@@ -131,7 +131,7 @@ const PurchaseOrderPDF = ({
         subject: meta?.subject ?? "Purchase Order"
       }}
       footerDocumentId={purchaseOrder?.purchaseOrderId}
-      footerLabel={registrationLine ?? undefined}
+      footerLabel={registrationLine}
       showFooter={showFooter}
       showPageNumbers={settings.showPageNumbers}
       pageNumberFormat={settings.pageNumberFormat}

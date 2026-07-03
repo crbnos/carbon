@@ -9,7 +9,7 @@ import {
   resolveTemplate
 } from "../template";
 import type { AccountsReceivableBillingAddress, PDF } from "../types";
-import { composeRegistrationLine } from "../utils/footer";
+import { getRegistrationFooter } from "../utils/shared";
 import type { QuoteCustomerDetails, QuoteData } from "./blocks/quote";
 import { buildQuoteVars, quoteBlockRegistry } from "./blocks/quote";
 import { Template } from "./components";
@@ -160,11 +160,11 @@ const QuotePDF = ({
     currencyCode
   });
 
-  const registrationLine = composeRegistrationLine({
-    companyName: company.name,
-    country: company.countryCode,
-    registrationNumber: interpolateString(settings.registrationNumber, vars)
-  });
+  const registrationLine = getRegistrationFooter(
+    company.name,
+    company.countryCode,
+    interpolateString(settings.registrationNumber, vars)
+  );
 
   const headerOptions = {
     ...DEFAULT_HEADER_OPTIONS,
@@ -229,7 +229,7 @@ const QuotePDF = ({
         subject: meta?.subject ?? "Quote"
       }}
       footerDocumentId={quote?.quoteId}
-      footerLabel={registrationLine ?? undefined}
+      footerLabel={registrationLine}
       showFooter={showFooter}
       showPageNumbers={settings.showPageNumbers}
       pageNumberFormat={settings.pageNumberFormat}

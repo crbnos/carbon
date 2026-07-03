@@ -11,15 +11,26 @@ export const getCountryName = (
   }
 };
 
+/**
+ * Compose the per-page registration line shown on the left side of the PDF
+ * footer: "{name} is registered in {country}, Company Registration Number
+ * {registrationNumber}". Callers pass the template's free-text
+ * `settings.registrationNumber` already resolved through `interpolateString`
+ * (so `{company.taxId}` etc. are filled in); the suffix is dropped when it
+ * resolves empty. The country code is mapped to a display name ("GB" →
+ * "United Kingdom").
+ */
 export const getRegistrationFooter = (
   name: string | null | undefined,
   countryCode: string | null | undefined,
-  taxId: string | null | undefined
+  registrationNumber: string | null | undefined
 ): string | undefined => {
   if (!name) return undefined;
   const country = getCountryName(countryCode);
   const base = country ? `${name} is registered in ${country}` : name;
-  return taxId ? `${base}, Company Registration Number ${taxId}` : base;
+  return registrationNumber
+    ? `${base}, Company Registration Number ${registrationNumber}`
+    : base;
 };
 
 export const formatTaxPercent = (

@@ -9,7 +9,7 @@ import {
   resolveTemplate
 } from "../template";
 import type { AccountsReceivableBillingAddress, PDF } from "../types";
-import { composeRegistrationLine } from "../utils/footer";
+import { getRegistrationFooter } from "../utils/shared";
 import type { SalesInvoiceData, SalesInvoiceLocations } from "./blocks";
 import { buildSalesInvoiceVars, salesInvoiceBlockRegistry } from "./blocks";
 import { Template } from "./components";
@@ -70,11 +70,11 @@ const SalesInvoicePDF = ({
     currencyCode
   });
 
-  const registrationLine = composeRegistrationLine({
-    companyName: company.name,
-    country: company.countryCode,
-    registrationNumber: interpolateString(settings.registrationNumber, vars)
-  });
+  const registrationLine = getRegistrationFooter(
+    company.name,
+    company.countryCode,
+    interpolateString(settings.registrationNumber, vars)
+  );
 
   // Header layout now lives on the global header section's config (not the
   // block), so every document shares one header configuration.
@@ -138,7 +138,7 @@ const SalesInvoicePDF = ({
         subject: meta?.subject ?? "Invoice"
       }}
       footerDocumentId={salesInvoice?.invoiceId}
-      footerLabel={registrationLine ?? undefined}
+      footerLabel={registrationLine}
       showFooter={showFooter}
       showPageNumbers={settings.showPageNumbers}
       pageNumberFormat={settings.pageNumberFormat}
