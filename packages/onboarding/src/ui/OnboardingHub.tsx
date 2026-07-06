@@ -1,11 +1,9 @@
-import { Button, cn } from "@carbon/react";
+import { Badge, Button, cn } from "@carbon/react";
 import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useRef } from "react";
 import {
   LuArrowRight,
   LuArrowUpRight,
-  LuCheck,
-  LuCircleHelp,
   LuPartyPopper,
   LuPlay
 } from "react-icons/lu";
@@ -24,7 +22,7 @@ import {
 import type { GateValue, StepDef, Tier } from "../types";
 import { GanttChart } from "./GanttChart";
 import { GuidedUpsellCard } from "./GuidedUpsellCard";
-import { OWNER_TOKENS } from "./primitives";
+import { DerivedStatus, OWNER_TOKENS } from "./primitives";
 import { useCheckMap, useSignals, useTier } from "./state";
 
 // Carbon-app routing + video resolution are injected by the ERP route (they use
@@ -303,8 +301,9 @@ function NextStepCard({
 
 // A flat gate row. No inline accordion — the per-step breakdown lives in the
 // Project Plan, so clicking the row jumps to that step's plan card. The status
-// box is display-only here: gates are completed in the plan (by ticking tasks or
-// the gate itself), and this command center reflects that state.
+// indicator is display-only (and deliberately not a checkbox): phases complete
+// on their own as their plan tasks finish, and this command center reflects
+// that state.
 function GateRow({
   step,
   tier,
@@ -323,15 +322,18 @@ function GateRow({
   return (
     <li className="p-5 pl-6 transition-colors hover:bg-primary/[0.02]">
       <div className="flex items-start gap-4">
-        <button
-          type="button"
-          onClick={() => onOpenInPlan(step.key)}
-          aria-label={`${i18n._(step.title)} · ${status}. ${t`Update this in the project plan.`}`}
-          title={t`Update this in the project plan`}
-          className="shrink-0 rounded-md"
-        >
-          <StatusBox status={status} interactive={false} ariaLabel="" />
-        </button>
+        <DerivedStatus
+          status={status}
+          fraction={
+            progress.total > 0 ? progress.done / progress.total : undefined
+          }
+          tooltip={
+            status === "done"
+              ? t`The "${i18n._(step.title)}" phase is done — its "${i18n._(step.gate)}" checkpoint has been passed.`
+              : t`The "${i18n._(step.title)}" phase checks itself off once all of its tasks in the project plan are done.`
+          }
+          className="size-5 mt-1"
+        />
         <button
           type="button"
           onClick={() => onOpenInPlan(step.key)}
@@ -341,7 +343,7 @@ function GateRow({
             <span
               className={cn(
                 "text-sm font-semibold transition-colors group-hover:text-primary",
-                status === "done" && "text-muted-foreground"
+                status === "done" && "line-through text-muted-foreground"
               )}
             >
               {step.n} · {i18n._(step.title)}
@@ -352,9 +354,9 @@ function GateRow({
               </span>
             ) : null}
             {tier !== "self_serve" ? (
-              <span className="text-xxs uppercase tracking-wide rounded px-1.5 py-0.5 border text-muted-foreground font-medium ml-auto">
+              <Badge variant="outline" className="ml-auto">
                 {i18n._(OWNER_TOKENS[ownerForStep(step, tier)].label)}
-              </span>
+              </Badge>
             ) : null}
             <LuArrowRight
               className={cn(
@@ -374,65 +376,5 @@ function GateRow({
         </button>
       </div>
     </li>
-  );
-}
-
-function StatusBox({
-  status,
-  small,
-  ariaLabel,
-  onClick,
-  interactive = true
-}: {
-  status: GateValue;
-  small?: boolean;
-  ariaLabel: string;
-  onClick?: () => void;
-  interactive?: boolean;
-}) {
-  const boxClass = cn(
-    "shrink-0 flex items-center justify-center rounded-md border transition-colors",
-    small ? "size-5 mt-0.5" : "size-6 mt-0.5",
-    interactive && "active:scale-[0.96]",
-    status === "done"
-      ? "bg-emerald-500 border-emerald-500 text-white"
-      : status === "prog"
-        ? "border-primary text-primary bg-primary/10"
-        : cn(
-            "bg-card border-input text-transparent",
-            interactive && "hover:border-primary"
-          )
-  );
-
-  const content =
-    status === "done" ? (
-      <LuCheck className={small ? "size-3" : "size-3.5"} />
-    ) : status === "prog" ? (
-      <span
-        className={cn("rounded-full bg-primary", small ? "size-1.5" : "size-2")}
-      />
-    ) : (
-      <LuCircleHelp className="size-0" />
-    );
-
-  // Derived gates (those with nested steps) are not manual checkboxes — they
-  // reflect their steps, so render a non-interactive indicator instead.
-  if (!interactive) {
-    return (
-      <span aria-label={ariaLabel} title={ariaLabel} className={boxClass}>
-        {content}
-      </span>
-    );
-  }
-
-  return (
-    <button
-      type="button"
-      aria-label={ariaLabel}
-      onClick={onClick}
-      className={boxClass}
-    >
-      {content}
-    </button>
   );
 }

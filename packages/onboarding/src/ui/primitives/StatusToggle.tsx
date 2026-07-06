@@ -25,11 +25,11 @@ export function StatusToggle({
       type="button"
       onClick={onToggle}
       className={cn(
-        "shrink-0 inline-flex items-center gap-1.5 rounded-full text-xs font-medium active:scale-[0.96] transition-transform",
+        "shrink-0 inline-flex items-center gap-1.5 rounded-full text-xs font-medium cursor-pointer active:scale-[0.96] transition-[transform,background-color,border-color,color]",
         withIcon ? "pl-2 pr-2.5 py-1" : "px-2.5 py-0.5",
         active
-          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-          : "border text-muted-foreground",
+          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20"
+          : "border bg-background text-muted-foreground hover:bg-muted hover:text-foreground",
         className
       )}
     >

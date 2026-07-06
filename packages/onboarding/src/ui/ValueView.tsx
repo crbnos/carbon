@@ -1,3 +1,4 @@
+import { Badge } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { LuArrowRight } from "react-icons/lu";
 import { PAGE_COPY, UI_TEXT } from "../content";
@@ -20,14 +21,14 @@ export function ValueView() {
     <div className="w-full max-w-3xl mx-auto flex flex-col gap-6">
       <PageHeader
         title={
-          <span className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
             {i18n._(PAGE_COPY.value.title)}
             {canEdit ? (
-              <span className="text-xxs uppercase tracking-wide rounded px-1.5 py-0.5 border text-muted-foreground font-medium">
+              <Badge variant="outline">
                 <Trans>Optional</Trans>
-              </span>
+              </Badge>
             ) : null}
-          </span>
+          </div>
         }
         lead={i18n._(PAGE_COPY.value.lead)}
       />

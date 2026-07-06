@@ -25,11 +25,19 @@ export {
 } from "./runner/behavior";
 export { runLoop } from "./runner/loop";
 export {
+  buildPlan,
+  buildPlannerPrompt,
+  parsePlanResult,
+  type ResolvedPlan,
+  resolvePlan
+} from "./runner/plan";
+export {
   buildDoerPrompt,
   buildJudgePrompt,
   extractJson,
   parseDoerResult,
-  parseJudgeResult
+  parseJudgeResult,
+  type TaskContext
 } from "./runner/prompts";
 export {
   type BehaviorResult,
@@ -39,9 +47,11 @@ export {
   type DoerResult,
   type JudgeResult,
   type LoopOutcome,
+  type PlanTask,
   type RunnerConfig,
   type RunnerDeps,
   type Shell,
+  type TaskStatus,
   type TerminalState
 } from "./runner/types";
 export {

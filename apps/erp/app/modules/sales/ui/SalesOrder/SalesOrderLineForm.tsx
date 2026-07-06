@@ -34,6 +34,7 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
+  toast,
   useDebounce,
   useDisclosure,
   useMount,
@@ -281,8 +282,10 @@ const SalesOrderLineForm = ({
             trace: result.trace ?? null
           };
         }
+        toast.error("Couldn't apply pricing rules — using base price");
       } catch {
         // Fall back to itemUnitSalePrice on any error
+        toast.error("Couldn't apply pricing rules — using base price");
       }
       return null;
     },

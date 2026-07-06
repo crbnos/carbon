@@ -208,7 +208,7 @@ export const useSupplierInteractionDocuments = ({
   const revalidator = useRevalidator();
   const submit = useSubmit();
 
-  const canDelete = permissions.can("delete", "sales"); // TODO: or is document owner
+  const canDelete = permissions.can("delete", "purchasing"); // TODO: or is document owner
 
   const getPath = useCallback(
     (attachment: { name: string }) => {
@@ -347,7 +347,7 @@ const SupplierInteractionDocumentForm = (
 
   return (
     <File
-      isDisabled={!permissions.can("update", "sales")}
+      isDisabled={!permissions.can("update", "purchasing")}
       leftIcon={<LuUpload />}
       onChange={uploadFiles}
       multiple

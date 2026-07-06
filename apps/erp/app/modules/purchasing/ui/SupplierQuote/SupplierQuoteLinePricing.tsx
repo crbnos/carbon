@@ -119,7 +119,8 @@ const SupplierQuoteLinePricing = ({
           .update({
             [key]: value,
             supplierQuoteLineId: lineId,
-            quantity
+            quantity,
+            updatedBy: userId
           })
           .eq("supplierQuoteLineId", lineId)
           .eq("quantity", quantity);
@@ -127,6 +128,7 @@ const SupplierQuoteLinePricing = ({
         if (update?.error) {
           console.error(update.error);
           toast.error(t`Failed to update supplier quote line`);
+          setEditableFields((prev) => ({ ...prev, prices: oldPrices }));
         }
       } else {
         const insert = await carbon?.from("supplierQuoteLinePrice").insert({
@@ -138,6 +140,7 @@ const SupplierQuoteLinePricing = ({
         if (insert?.error) {
           console.error(insert.error);
           toast.error(t`Failed to insert supplier quote line`);
+          setEditableFields((prev) => ({ ...prev, prices: oldPrices }));
         }
       }
     },

@@ -25,6 +25,16 @@ msgstr "「{storageUnitName}」には{childCount}個の直下の階層化され�
 msgid "\"{storageUnitName}\" has 1 direct nested storage unit. Deleting it will also delete that unit and anything underneath it. This cannot be undone."
 msgstr "「${storageUnitName}」には1つの直接ネストされたストレージユニットがあります。これを削除すると、そのユニットとその下にあるすべてのものも削除されます。これは元に戻すことはできません。"
 
+#. placeholder {0}: setupProgress.total
+#. placeholder {1}: setupProgress.done
+#. placeholder {2}: setupProgress.total
+msgid "\"{taskName}\" checks itself off once its {0} Setup Map items are marked \"Configured\" — {1} of {2} so far."
+msgstr "「{0}」{taskName}」は、そのセットアップマップアイテムが「構成済み」とマークされると自動的にチェックされます — 現在{1}個中{2}個が完了しています。"
+
+#. placeholder {0}: setupProgress.total
+msgid "\"{taskName}\" is done — all {0} of its Setup Map items are configured."
+msgstr "「{taskName}」は完了しました — セットアップマップのすべての {0} 項目が設定されています。"
+
 msgid "(excluded for this customer)"
 msgstr "(このお客様では除外されています)"
 
@@ -272,10 +282,10 @@ msgid "A quote line contains pricing and lead times for a particular part"
 msgstr "見積行には、特定の部品の価格とリードタイムが含まれています"
 
 msgid "A reusable, versioned set of work instructions attached to a process, giving an operation its ordered steps to record and check plus the parameters it runs at."
-msgstr ""
+msgstr "プロセスに添付された再利用可能でバージョン管理された作業指示のセット。操作に記録・確認するための順序付きステップと実行パラメータを提供します。"
 
 msgid "A routing step on a released job, the job's own copy of an operation, carrying a status the floor drives from Todo through Done."
-msgstr ""
+msgstr "リリースされたジョブ上のルーティングステップで、ジョブ独自のオペレーションのコピーであり、フロアがTodoからDoneまで駆動するステータスを持ちます。"
 
 msgid "A sales invoice (you bill a customer) or purchase invoice (a supplier bills you); payment is a field, not a separate record."
 msgstr "販売請求書（顧客に請求）または購入請求書（仕入先が請求）。支払いはフィールド、別個のレコードではありません。"
@@ -314,7 +324,7 @@ msgid "A taxable surcharge (handling, setup, fuel) added to the line; rolls into
 msgstr "課税対象の追加料金（取扱、セットアップ、燃料）を行に追加し、課税ベースに含めます。"
 
 msgid "A timed record of Setup, Labor, or Machine work logged against a job operation, whose duration rolls up into the operation's actual cost."
-msgstr ""
+msgstr "ジョブ操作に対して記録されたセットアップ、労務、または機械作業の時間記録。その期間は操作の実際のコストに集計されます。"
 
 msgid "A tool is a physical item used to make a part that can be used across multiple jobs"
 msgstr "ツールは、複数のジョブで使用できるパーツを作成するために使用される物理的なアイテムです"
@@ -333,6 +343,9 @@ msgstr "能力"
 
 msgid "About"
 msgstr "について"
+
+msgid "Academy"
+msgstr "アカデミー"
 
 msgid "Accept Lot"
 msgstr "ロットを受け入れる"
@@ -1267,6 +1280,10 @@ msgstr "サプライヤー見積もりを確定してもよろしいですか？
 msgid "Are you sure you want to leave this page?"
 msgstr "このページを離れてもよろしいですか？"
 
+#. placeholder {0}: i18n._(step.title)
+msgid "Are you sure you want to pass this checkpoint? The {0} phase still has unfinished tasks."
+msgstr "このチェックポイントをパスしてもよろしいですか？{0}フェーズにはまだ未完了のタスクがあります。"
+
 #. placeholder {0}: selectedPurchaseInvoice.invoiceId!
 #. placeholder {0}: selectedSalesInvoice.invoiceId!
 msgid "Are you sure you want to permanently delete {0}?"
@@ -1678,6 +1695,9 @@ msgstr "BOM"
 
 msgid "Bonus Depreciation %"
 msgstr "ボーナス減価償却 %"
+
+msgid "Book a call to discuss guided implementation"
+msgstr "ガイド付き実装について相談する通話を予約する"
 
 msgid "Book a call with Carbon"
 msgstr "Carbonとの通話を予約する"
@@ -6266,7 +6286,7 @@ msgid "Job Materials"
 msgstr "ジョブ材料"
 
 msgid "Job operation"
-msgstr ""
+msgstr "ジョブ操作"
 
 msgid "Job Operation"
 msgstr "作業操作"
@@ -6771,6 +6791,13 @@ msgstr "今すぐラインをマップ"
 
 msgid "Map your current process, systems, and data"
 msgstr "現在のプロセス、システム、データをマップする"
+
+#. placeholder {0}: i18n._(step.gate)
+msgid "Mark \"{0}\" as passed?"
+msgstr "\"{0}\"をパスしたとしてマークしますか？"
+
+msgid "Mark all as configured"
+msgstr "すべてを設定済みとしてマーク"
 
 msgid "Mark as Paid"
 msgstr "支払い済みとしてマーク"
@@ -8783,7 +8810,7 @@ msgid "Production"
 msgstr "生産"
 
 msgid "Production event"
-msgstr ""
+msgstr "生産イベント"
 
 msgid "Production Event"
 msgstr "生産イベント"
@@ -10762,7 +10789,7 @@ msgid "Standard cloud Carbon fits how your company runs"
 msgstr "標準クラウドCarbonはあなたの会社の運営方法に適合します"
 
 msgid "Standard factor"
-msgstr ""
+msgstr "標準係数"
 
 msgid "Standard Lead Time"
 msgstr "標準リードタイム"
@@ -11247,6 +11274,9 @@ msgstr "タスク"
 msgid "Tasks"
 msgstr "タスク"
 
+msgid "Tasks still open"
+msgstr "タスクがまだ開いています"
+
 msgid "Tasks that must be completed before this issue can be closed; selecting actions here adds them on top of whatever the workflow specifies."
 msgstr "この問題を閉じる前に完了する必要があるタスク。ここでアクションを選択すると、ワークフローが指定するもの以外に追加されます。"
 
@@ -11336,6 +11366,15 @@ msgstr "テスト値"
 
 msgid "Text size"
 msgstr "テキストサイズ"
+
+#. placeholder {0}: i18n._(step.title)
+msgid "The \"{0}\" phase checks itself off once all of its tasks in the project plan are done."
+msgstr "「{0}」フェーズは、プロジェクトプランのすべてのタスクが完了すると自動的にチェックオフされます。"
+
+#. placeholder {0}: i18n._(step.title)
+#. placeholder {1}: i18n._(step.gate)
+msgid "The \"{0}\" phase is done — its \"{1}\" checkpoint has been passed."
+msgstr "「{0}」フェーズが完了しました — 「{1}」チェックポイントに到達しました。"
 
 #. placeholder {0}: steps.length
 msgid "The {0} phases to go live, each ending at a checkpoint. Tick off each task as you complete it."
@@ -11544,6 +11583,9 @@ msgstr "以下のアセンブリには操作がありません。リリースす
 
 msgid "The following line items are missing prices or lead times:"
 msgstr "以下の行項目は価格またはリードタイムが不足しています:"
+
+msgid "The following tasks are not done yet:"
+msgstr "以下のタスクはまだ完了していません:"
 
 msgid "The forms and shapes your raw materials come in"
 msgstr "あなたの原材料が来る形態と形状"
@@ -11918,7 +11960,7 @@ msgid "The unique identifier on this physical unit; one row per serial, quantity
 msgstr "この物理ユニットの一意の識別子。シリアル番号ごとに1行、数量は常に1です。"
 
 msgid "The unit a routing time is expressed in, such as Hours/Piece or Total Hours, telling Carbon whether the time scales with quantity or is fixed per run."
-msgstr ""
+msgstr "ルーティング時間が表現される単位（時間/個またはトータル時間など）で、Carbonが時間が数量に応じてスケーリングするか、実行ごとに固定されるかを判断します。"
 
 msgid "The unit price of the item at the time of the purchase"
 msgstr "購入時のアイテムの単価"
@@ -12317,9 +12359,6 @@ msgstr "既に追跡対象が選択されています"
 msgid "Tracked entity ID is required but none was found"
 msgstr "追跡対象エンティティIDが必要ですが、見つかりませんでした"
 
-msgid "Tracked from the Setup Map — open it"
-msgstr "セットアップマップから追跡されています — 開く"
-
 msgid "Tracking"
 msgstr "追跡"
 
@@ -12461,8 +12500,8 @@ msgstr "元に戻す"
 msgid "Uninstall"
 msgstr "アンインストール"
 
-msgid "Unique, uppercase, without spaces"
-msgstr "ユニーク、大文字、スペースなし"
+msgid "Unique, uppercase, without spaces (max 10 characters)"
+msgstr "一意、大文字、スペースなし（最大10文字）"
 
 msgid "Unit"
 msgstr "単位"
@@ -12593,12 +12632,6 @@ msgstr "スキャンベースの補充のためのカンバン情報を更新し
 
 msgid "Update the purchase order quantities"
 msgstr "購買注文数量を更新"
-
-msgid "Update this in the project plan"
-msgstr "プロジェクトプランでこれを更新してください"
-
-msgid "Update this in the project plan."
-msgstr "プロジェクトプランでこれを更新してください。"
 
 msgid "Updated"
 msgstr "更新済み"
@@ -13034,6 +13067,9 @@ msgstr "各エリアをチャンピオンと一緒に確認し、スコープ外
 
 msgid "Walk your current process, systems, and data"
 msgstr "現在のプロセス、システム、データを確認する"
+
+msgid "Want our team alongside you? Expert eyes on your setup, data, and go-live."
+msgstr "あなたのチームをサポートしてほしいですか？セットアップ、データ、本番稼働に関する専門家の目を入れます。"
 
 msgid "Warehouse Transfer"
 msgstr "倉庫移動"

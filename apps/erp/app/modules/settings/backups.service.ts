@@ -180,20 +180,25 @@ export async function getCompanyRestoreRuns(
   return { data: runs, error: null };
 }
 
+export type CompanyExportRun = {
+  status: "running" | "failed";
+  progress: { phase: string; done: number; total: number } | null;
+  startedAt: string | null;
+  error: string | null;
+};
+
 /**
- * The in-flight export's live progress, or null when none is running. One marker
- * per company (integration = 'company-export'), written by the export job and
- * cleared when it finishes — so its absence means "not running" (the new backup
- * appearing in the list is what signals completion).
+ * The current export marker, or null when none. One marker per company
+ * (integration = 'company-export'), written by the export job: absent = not
+ * running (the new backup appearing in the list is what signals completion),
+ * "running" = in flight, "failed" = the last export died and the user hasn't
+ * dismissed it yet.
  */
 export async function getCompanyExportRun(
   client: SupabaseClient<Database>,
   companyId: string
 ): Promise<{
-  data: {
-    progress: { phase: string; done: number; total: number } | null;
-    startedAt: string | null;
-  } | null;
+  data: CompanyExportRun | null;
   error: Error | null;
 }> {
   const marker = await client
@@ -207,13 +212,17 @@ export async function getCompanyExportRun(
   if (!marker.data) return { data: null, error: null };
 
   const meta = (marker.data.metadata ?? {}) as {
+    status?: "running" | "failed";
     startedAt?: string;
     progress?: { phase: string; done: number; total: number };
+    error?: string;
   };
   return {
     data: {
+      status: meta.status ?? "running",
       progress: meta.progress ?? null,
-      startedAt: meta.startedAt ?? marker.data.createdAt
+      startedAt: meta.startedAt ?? marker.data.createdAt,
+      error: meta.error ?? null
     },
     error: null
   };

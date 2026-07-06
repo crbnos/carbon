@@ -1,0 +1,26 @@
+{
+  "state": "error",
+  "iterations": 3,
+  "reason": "claude exited 143 with no JSON result: ",
+  "plan": [
+    {
+      "title": "Verify/finalize structured Redis logging in resilient.ts",
+      "detail": "In packages/kv/src/resilient.ts confirm logUnavailable emits console.error(JSON.stringify({ event: 'redis.degraded', ... })) on transition to unavailable and logReconnected emits console.info(JSON.stringify({ event: 'redis.recovered', ... })) on recovery, both preserving the one-log-per-transition throttle (unavailable flag + LOG_THROTTLE_MS). Adjust only if the shape/throttle drifts from spec; otherwise leave as-is. Run pnpm --filter @carbon/kv tsc --noEmit and biome.",
+      "criteria": [3, 4, 6, 7],
+      "status": "pending"
+    },
+    {
+      "title": "Add unauthenticated /health resource route in apps/erp",
+      "detail": "Create apps/erp/app/routes/health.ts as a resource route (loader only, no default export). Import { redis } from '@carbon/kv', await redis.ping(), and return Response.json({ status: pong ? 'healthy' : 'degraded', redis: pong ? 'up' : 'down' }, { status: 200 }) — no requirePermissions/auth. Verify with pnpm --filter @carbon/erp tsc --noEmit and biome.",
+      "criteria": [0, 1, 2, 6, 7],
+      "status": "pending"
+    },
+    {
+      "title": "Add health route unit test",
+      "detail": "Create apps/erp/app/routes/health.test.ts (vitest). Mock '@carbon/kv' so redis.ping resolves null → loader returns { status: 'degraded', redis: 'down' }; and 'PONG' → { status: 'healthy', redis: 'up' }, both HTTP 200. Run the vitest file, then pnpm --filter @carbon/erp tsc --noEmit and biome to close out the gates.",
+      "criteria": [1, 5, 6, 7],
+      "status": "pending"
+    }
+  ],
+  "prUrl": "https://github.com/crbnos/carbon/pull/1086"
+}

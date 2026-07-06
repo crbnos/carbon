@@ -1,6 +1,6 @@
 import { Button, cn, IconButton } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { LuCheck, LuPlus, LuTrash } from "react-icons/lu";
+import { LuArrowUpRight, LuCheck, LuPlus, LuTrash } from "react-icons/lu";
 import { COLLECTIONS, PAGE_COPY } from "../content";
 import {
   CUTOVER_STEPS,
@@ -8,6 +8,7 @@ import {
   HYPERCARE_WEEKS_DEFAULT,
   SUPPORT_CHANNELS
 } from "../content/golive";
+import { GUIDED_CONTACT, SUPPORT_BOOKING_URL } from "../content/support";
 import { checkKey } from "../logic";
 import type { ImplementationRowData } from "../types";
 import { EditableField } from "./EditableField";
@@ -143,6 +144,34 @@ export function GoLiveView() {
               />
             </li>
           ))}
+          {/* Self-serve only — paid tiers already run the guided motion, so
+              pitching a call to discuss it would read as noise there. */}
+          {tier === "self_serve" ? (
+            <li className="flex items-start gap-3 py-2.5">
+              <span className="text-sm font-medium w-36 shrink-0">
+                {i18n._(GUIDED_CONTACT.channel)}
+              </span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-muted-foreground">
+                  {i18n._(GUIDED_CONTACT.detail)}
+                </p>
+                <Button
+                  size="sm"
+                  className="mt-2"
+                  rightIcon={<LuArrowUpRight />}
+                  onClick={() =>
+                    window.open(
+                      SUPPORT_BOOKING_URL,
+                      "_blank",
+                      "noopener,noreferrer"
+                    )
+                  }
+                >
+                  {i18n._(GUIDED_CONTACT.cta)}
+                </Button>
+              </div>
+            </li>
+          ) : null}
         </ul>
       </Panel>
     </div>

@@ -28,6 +28,19 @@ export function taskStatus(
   return (states.get(taskKey(task.key)) as TaskValue) ?? "todo";
 }
 
+// How many of a Setup-Map-derived task's rows are configured (0/0 for manual
+// tasks) — drives the proportional in-progress pie on its derived indicator.
+export function taskSetupProgress(
+  task: BoardTask,
+  states: Map<string, string>
+): { done: number; total: number } {
+  const keys = task.setupKeys ?? [];
+  const done = keys.filter(
+    (k) => states.get(flagKey(`setup.${k}`)) === "1"
+  ).length;
+  return { done, total: keys.length };
+}
+
 export function tasksForStep(tasks: BoardTask[], stepKey: string): BoardTask[] {
   return tasks.filter((t) => t.stepKey === stepKey);
 }

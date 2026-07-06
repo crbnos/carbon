@@ -77,27 +77,33 @@ export function buildBehaviorPrompt(
   email: string,
   shotDir: string
 ): string {
-  return `You are the BEHAVIOR GATE in an unattended conductor loop. The code change is already applied in this worktree. Your job: prove — in the RUNNING app — that the fix works. There is NO human; never ask a question.
+  return `You are the BEHAVIOR GATE in an unattended conductor loop. The code change is already applied in this worktree. Your job: prove — in the RUNNING app — whether the fix works. There is NO human; never ask a question.
 
 Work item (${binding.kind}): ${binding.title}
 
 Acceptance criteria:
 ${binding.acceptance.map((c, i) => `  [${i}] ${c}`).join("\n")}
-
+${binding.notes ? `\nGrooming context (may include repro steps / test-data hints):\n${binding.notes}\n` : ""}
 The app is reachable at ${baseUrl}. Use the \`agent-browser\` CLI (open / wait --load networkidle / snapshot -i / fill / click / screenshot).
 
 Steps:
-1. Log in via the dev bypass: open ${baseUrl}/login, fill the email field with "${email}", submit, and wait until you land on /x (the authenticated app). If login fails, that's a FAIL.
+1. Log in via the dev bypass: open ${baseUrl}/login, fill the email field with "${email}", submit, and wait until you land on /x (the authenticated app). If login itself fails, that is UNVERIFIED (environmental), not a fail.
 2. Navigate to the screen the work item affects and REPRODUCE the exact condition it describes (e.g. the specific record/state). Do not test a happy path that sidesteps the bug.
-3. Verify the fix actually works on that screen.
-4. Capture screenshots PROVING it to: ${shotDir} (use explicit file paths like ${shotDir}/after-<label>.png). At least one screenshot is required for a pass.
+3. If the needed records/state don't exist, spend a MODEST effort creating the minimal data through the UI or existing seed data. If the condition needs extensive data generation you cannot complete reliably (long transaction chains, many linked entities), STOP EARLY and return verdict "unverified" — do not burn the whole budget trying.
+4. Verify whether the change actually works on that screen.
+5. Capture screenshots to: ${shotDir} (use explicit file paths like ${shotDir}/after-<label>.png). At least one screenshot is required for a "passed" verdict.
+
+Your verdict must distinguish DISPROOF from ABSENCE OF PROOF:
+- "passed": you reproduced the relevant condition and SAW the acceptance behavior work, with screenshots.
+- "failed": you REACHED the relevant condition and the behavior is still wrong — the change is disproven. Screenshot the wrong behavior.
+- "unverified": you could NOT reach the condition either way (login/environment failure, test data you could not construct, state unreachable). Say exactly what proof is missing and what a human would need to do to verify. NEVER report "failed" when the truth is "could not test".
 
 End your reply with EXACTLY one fenced json block, no prose after it:
 \`\`\`json
 {
-  "passed": <true only if you SAW the fix work in the running app, with screenshots>,
+  "verdict": "passed" | "failed" | "unverified",
   "screenshots": ["${shotDir}/after-...png", "..."],
-  "notes": "<what you reproduced and observed>"
+  "notes": "<what you reproduced and observed, or exactly what proof is missing>"
 }
 \`\`\``;
 }
@@ -156,19 +162,33 @@ function captureBefore(
 }
 
 export function parseBehaviorResult(text: string): BehaviorResult {
-  const raw = tryExtractJson<Partial<BehaviorResult>>(text);
+  const raw = tryExtractJson<Partial<BehaviorResult> & { verdict?: string }>(
+    text
+  );
+  // No verdict at all ⇒ the gate was cut off or misbehaved — that is absence
+  // of proof, not disproof. Unverified, never a silent revert of the fix.
   if (!raw) {
     return {
       passed: false,
       screenshots: [],
-      notes: "behavior gate returned no JSON verdict"
+      notes: "behavior gate returned no JSON verdict",
+      unverified: "behavior gate returned no JSON verdict"
     };
   }
-  return {
-    passed: raw.passed === true,
-    screenshots: Array.isArray(raw.screenshots) ? raw.screenshots : [],
-    notes: raw.notes ?? ""
-  };
+  const screenshots = Array.isArray(raw.screenshots) ? raw.screenshots : [];
+  const notes = raw.notes ?? "";
+  // Three-way verdict; tolerate the legacy `passed` boolean shape.
+  const verdict = raw.verdict ?? (raw.passed === true ? "passed" : "failed");
+  if (verdict === "passed") return { passed: true, screenshots, notes };
+  if (verdict === "unverified") {
+    return {
+      passed: false,
+      screenshots,
+      notes,
+      unverified: notes || "behavior gate could not verify either way"
+    };
+  }
+  return { passed: false, screenshots, notes };
 }
 
 /**
@@ -183,11 +203,14 @@ export function behaviorGate(
 ): BehaviorResult {
   const stack = ensureStack(cfg.cwd, deps.shell, deps.log);
   if ("blocked" in stack) {
+    // Environmental — the gate can't even attempt verification. Absence of
+    // proof, not disproof: the loop keeps judge-approved work and ships it
+    // flagged for human verification instead of discarding it.
     return {
       passed: false,
       screenshots: [],
       notes: stack.blocked,
-      blocked: stack.blocked
+      unverified: stack.blocked
     };
   }
 
@@ -206,14 +229,12 @@ export function behaviorGate(
     maxBudgetUsd: cfg.behaviorMaxBudgetUsd
   });
   const result = parseBehaviorResult(res.text);
-  // A capped/errored run never counts as verified, even if it emitted a verdict.
+  // A capped/errored run never counts as verified — but it never counts as
+  // DISPROOF either: the session ran out, the truth is "could not test".
   if (res.incomplete) {
-    return {
-      ...result,
-      passed: false,
-      notes:
-        `${result.notes} [claude stopped: ${res.stopReason ?? "incomplete"}]`.trim()
-    };
+    const notes =
+      `${result.notes} [claude stopped: ${res.stopReason ?? "incomplete"}]`.trim();
+    return { ...result, passed: false, notes, unverified: notes };
   }
   return result;
 }

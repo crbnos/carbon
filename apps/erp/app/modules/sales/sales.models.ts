@@ -741,8 +741,8 @@ export const salesOrderShipmentValidator = z
       return true;
     },
     {
-      message: "Drop shipment requires supplier and location",
-      path: ["dropShipment"] // path of error
+      message: "Drop shipment requires customer and location",
+      path: ["customerLocationId"]
     }
   );
 
@@ -904,6 +904,10 @@ export const salesRfqLineValidator = z.object({
   modelUploadId: zfd.text(z.string().optional())
 });
 
+// The `convert` edge function derives every financial field (net unit price,
+// shipping, add-ons) from the canonical quoteLinePrice rows server-side. These
+// money fields are UI/display only and are NOT trusted as an input to quote
+// conversion — only `quantity` (the selected quantity break) is authoritative.
 export const selectedLineSchema = z.object({
   addOn: z.number().optional(),
   convertedAddOn: z.number().optional(),
@@ -913,7 +917,7 @@ export const selectedLineSchema = z.object({
   convertedShippingCost: z.number(),
   leadTime: z.number(),
   netUnitPrice: z.number(),
-  quantity: z.number(),
+  quantity: z.number().min(0),
   shippingCost: z.number()
 });
 

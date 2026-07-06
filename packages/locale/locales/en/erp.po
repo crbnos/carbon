@@ -25,6 +25,16 @@ msgstr "\"{storageUnitName}\" has {childCount} direct nested storage units. Dele
 msgid "\"{storageUnitName}\" has 1 direct nested storage unit. Deleting it will also delete that unit and anything underneath it. This cannot be undone."
 msgstr "\"{storageUnitName}\" has 1 direct nested storage unit. Deleting it will also delete that unit and anything underneath it. This cannot be undone."
 
+#. placeholder {0}: setupProgress.total
+#. placeholder {1}: setupProgress.done
+#. placeholder {2}: setupProgress.total
+msgid "\"{taskName}\" checks itself off once its {0} Setup Map items are marked \"Configured\" — {1} of {2} so far."
+msgstr "\"{taskName}\" checks itself off once its {0} Setup Map items are marked \"Configured\" — {1} of {2} so far."
+
+#. placeholder {0}: setupProgress.total
+msgid "\"{taskName}\" is done — all {0} of its Setup Map items are configured."
+msgstr "\"{taskName}\" is done — all {0} of its Setup Map items are configured."
+
 msgid "(excluded for this customer)"
 msgstr "(excluded for this customer)"
 
@@ -333,6 +343,9 @@ msgstr "ability"
 
 msgid "About"
 msgstr "About"
+
+msgid "Academy"
+msgstr "Academy"
 
 msgid "Accept Lot"
 msgstr "Accept Lot"
@@ -1267,6 +1280,10 @@ msgstr "Are you sure you want to finalize the supplier quote?"
 msgid "Are you sure you want to leave this page?"
 msgstr "Are you sure you want to leave this page?"
 
+#. placeholder {0}: i18n._(step.title)
+msgid "Are you sure you want to pass this checkpoint? The {0} phase still has unfinished tasks."
+msgstr "Are you sure you want to pass this checkpoint? The {0} phase still has unfinished tasks."
+
 #. placeholder {0}: selectedPurchaseInvoice.invoiceId!
 #. placeholder {0}: selectedSalesInvoice.invoiceId!
 msgid "Are you sure you want to permanently delete {0}?"
@@ -1678,6 +1695,9 @@ msgstr "BOMs"
 
 msgid "Bonus Depreciation %"
 msgstr "Bonus Depreciation %"
+
+msgid "Book a call to discuss guided implementation"
+msgstr "Book a call to discuss guided implementation"
 
 msgid "Book a call with Carbon"
 msgstr "Book a call with Carbon"
@@ -6772,6 +6792,13 @@ msgstr "Map Lines Now"
 msgid "Map your current process, systems, and data"
 msgstr "Map your current process, systems, and data"
 
+#. placeholder {0}: i18n._(step.gate)
+msgid "Mark \"{0}\" as passed?"
+msgstr "Mark \"{0}\" as passed?"
+
+msgid "Mark all as configured"
+msgstr "Mark all as configured"
+
 msgid "Mark as Paid"
 msgstr "Mark as Paid"
 
@@ -11247,6 +11274,9 @@ msgstr "tasks"
 msgid "Tasks"
 msgstr "Tasks"
 
+msgid "Tasks still open"
+msgstr "Tasks still open"
+
 msgid "Tasks that must be completed before this issue can be closed; selecting actions here adds them on top of whatever the workflow specifies."
 msgstr "Tasks that must be completed before this issue can be closed; selecting actions here adds them on top of whatever the workflow specifies."
 
@@ -11336,6 +11366,15 @@ msgstr "Test Value"
 
 msgid "Text size"
 msgstr "Text size"
+
+#. placeholder {0}: i18n._(step.title)
+msgid "The \"{0}\" phase checks itself off once all of its tasks in the project plan are done."
+msgstr "The \"{0}\" phase checks itself off once all of its tasks in the project plan are done."
+
+#. placeholder {0}: i18n._(step.title)
+#. placeholder {1}: i18n._(step.gate)
+msgid "The \"{0}\" phase is done — its \"{1}\" checkpoint has been passed."
+msgstr "The \"{0}\" phase is done — its \"{1}\" checkpoint has been passed."
 
 #. placeholder {0}: steps.length
 msgid "The {0} phases to go live, each ending at a checkpoint. Tick off each task as you complete it."
@@ -11544,6 +11583,9 @@ msgstr "The following assemblies have no operations. Please assign an operation 
 
 msgid "The following line items are missing prices or lead times:"
 msgstr "The following line items are missing prices or lead times:"
+
+msgid "The following tasks are not done yet:"
+msgstr "The following tasks are not done yet:"
 
 msgid "The forms and shapes your raw materials come in"
 msgstr "The forms and shapes your raw materials come in"
@@ -12317,9 +12359,6 @@ msgstr "Tracked entity already picked"
 msgid "Tracked entity ID is required but none was found"
 msgstr "Tracked entity ID is required but none was found"
 
-msgid "Tracked from the Setup Map — open it"
-msgstr "Tracked from the Setup Map — open it"
-
 msgid "Tracking"
 msgstr "Tracking"
 
@@ -12461,8 +12500,8 @@ msgstr "Undo"
 msgid "Uninstall"
 msgstr "Uninstall"
 
-msgid "Unique, uppercase, without spaces"
-msgstr "Unique, uppercase, without spaces"
+msgid "Unique, uppercase, without spaces (max 10 characters)"
+msgstr "Unique, uppercase, without spaces (max 10 characters)"
 
 msgid "Unit"
 msgstr "Unit"
@@ -12593,12 +12632,6 @@ msgstr "Update the kanban information for scan-based replenishment."
 
 msgid "Update the purchase order quantities"
 msgstr "Update the purchase order quantities"
-
-msgid "Update this in the project plan"
-msgstr "Update this in the project plan"
-
-msgid "Update this in the project plan."
-msgstr "Update this in the project plan."
 
 msgid "Updated"
 msgstr "Updated"
@@ -13034,6 +13067,9 @@ msgstr "Walk each area with your champion and toggle anything out of scope. Code
 
 msgid "Walk your current process, systems, and data"
 msgstr "Walk your current process, systems, and data"
+
+msgid "Want our team alongside you? Expert eyes on your setup, data, and go-live."
+msgstr "Want our team alongside you? Expert eyes on your setup, data, and go-live."
 
 msgid "Warehouse Transfer"
 msgstr "Warehouse Transfer"

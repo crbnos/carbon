@@ -120,6 +120,16 @@ export function useHubActions() {
       // Boolean flag toggles (scopeFlag / check) persist as "1" | "0".
       toggleFlag: (itemKey: string, kind: StateKind, on: boolean) =>
         dispatch({ intent: "setCheck", itemKey, kind, value: on ? "1" : "0" }),
+      // Batch flag toggle (e.g. a Setup Map group's "mark all as configured").
+      // One round-trip: rapid sequential dispatches on the shared fetcher would
+      // cancel each other in flight.
+      toggleFlags: (itemKeys: string[], kind: StateKind, on: boolean) =>
+        dispatch({
+          intent: "setChecks",
+          itemKeys,
+          kind,
+          value: on ? "1" : "0"
+        }),
       setGate: (itemKey: string, value: GateValue) =>
         dispatch({ intent: "setCheck", itemKey, kind: "gate", value }),
       setField: (fieldKey: string, value: string) =>

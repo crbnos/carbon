@@ -9,9 +9,9 @@
 // only the provider calls it, and it always rebuilds from the server snapshot.
 //
 // One exception, for responsiveness: `dispatch` records an OPTIMISTIC override
-// for `setCheck` toggles (checkboxes/gates) in `optimisticChecks` before the
-// round-trip, so a tick reflects instantly instead of after the full
-// submit→revalidate cycle. `checkMap` is always the server state with these
+// for `setCheck` / `setChecks` toggles (checkboxes/gates, single or batched) in
+// `optimisticChecks` before the round-trip, so a tick reflects instantly
+// instead of after the full submit→revalidate cycle. `checkMap` is always the server state with these
 // overrides layered on top. Each override is held until the loader actually
 // reports the value we wrote, then released — so it survives stale/early
 // revalidations (whose snapshot doesn't yet reflect the write, and which would
@@ -85,7 +85,7 @@ export interface HubState extends HubData, HubFlags {
   // so an in-flight toggle never flashes back when a stale/early revalidation
   // lands before the write does. Internal; views read checkMap.
   optimisticChecks: Map<string, string>;
-  // Public write path: optimistic check override (setCheck only) + round-trip.
+  // Public write path: optimistic check override (setCheck/setChecks) + round-trip.
   dispatch: (m: HubMutation) => void;
   // The raw server round-trip the route injects; `dispatch` wraps it.
   serverDispatch: (m: HubMutation) => void;
@@ -139,9 +139,18 @@ export function createHubStore(initial: Partial<HubData & HubFlags> = {}) {
     // override is layered over the server checkMap and released by setData once
     // the loader confirms the written value (see below).
     dispatch: (m) => {
-      if (m.intent === "setCheck") {
+      // Batched setChecks overrides every key it writes — this also replaces
+      // any in-flight single-toggle override for those keys, so a toggle whose
+      // POST the batch cancels (shared fetcher) can't strand a stale value.
+      if (m.intent === "setCheck" || m.intent === "setChecks") {
         const optimisticChecks = new Map(get().optimisticChecks);
-        optimisticChecks.set(m.itemKey, m.value);
+        if (m.intent === "setCheck") {
+          optimisticChecks.set(m.itemKey, m.value);
+        } else {
+          for (const itemKey of m.itemKeys) {
+            optimisticChecks.set(itemKey, m.value);
+          }
+        }
         set({
           optimisticChecks,
           checkMap: mergeChecks(get().checkStates, optimisticChecks)

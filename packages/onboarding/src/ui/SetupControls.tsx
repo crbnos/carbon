@@ -1,4 +1,4 @@
-import { Button, cn, DatePicker, Input } from "@carbon/react";
+import { Badge, Button, cn, DatePicker, Input } from "@carbon/react";
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -70,9 +70,9 @@ export function SetupControls() {
           <h1 className="text-2xl font-semibold tracking-tight">
             <Trans>Setup & Controls</Trans>
           </h1>
-          <span className="text-xxs uppercase tracking-wide rounded px-1.5 py-0.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 font-medium">
+          <Badge variant="blue">
             <Trans>Carbon only</Trans>
-          </span>
+          </Badge>
         </div>
         <p className="text-sm text-muted-foreground max-w-xl text-pretty">
           <Trans>
@@ -328,11 +328,7 @@ function ToggleRow({
       )}
     >
       <span className="flex-1 text-sm font-medium">{label}</span>
-      {badge ? (
-        <span className="text-xxs uppercase tracking-wide rounded px-1.5 py-0.5 border text-muted-foreground font-medium">
-          {badge}
-        </span>
-      ) : null}
+      {badge ? <Badge variant="outline">{badge}</Badge> : null}
       <Button variant={on ? "secondary" : "ghost"} size="sm" onClick={onToggle}>
         {on ? t`Included` : t`Excluded`}
       </Button>

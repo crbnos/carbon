@@ -50,9 +50,14 @@ export let loader = async ({ request, params }: LoaderFunctionArgs) => {
   }
   const contentType = supportedFileTypes[fileType];
 
-  // Check if the decoded path includes companyId for security
+  // Authorize against the companyId as a full path segment (prefix or
+  // slash-bounded), not a loose substring — `.includes(companyId)` lets
+  // `<otherCo>/.../<yourCompanyId>.pdf` serve another company's private file.
   const decodedPath = decodeURIComponent(path);
-  if (!decodedPath.includes(companyId)) {
+  const ownsPath =
+    decodedPath.startsWith(`${companyId}/`) ||
+    decodedPath.includes(`/${companyId}/`);
+  if (!ownsPath) {
     return new Response(null, { status: 403 });
   }
 

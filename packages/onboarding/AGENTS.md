@@ -31,7 +31,7 @@ pnpm --filter @carbon/onboarding typecheck   # tsgo --noEmit
 
 - **Content-driven**: `src/content.ts` defines the template blueprint (steps, sections, exclusions)
 - **Logic layer**: `src/logic/` — pure functions for visibility, timeline, board layout, guide flow
-- **UI primitives**: `src/ui/primitives/` — `PageHeader`, `Section`, `StatusToggle`, `EditableInput`
+- **UI primitives**: `src/ui/primitives/` — `PageHeader`, `Section`, `StatusToggle`, `EditableInput`, `DerivedStatus` (display-only ring for auto-derived items)
 - **Views**: `ScopeView`, `RolesView`, `DataMigrationView`, `TrainingView`, `GoLiveView`, etc.
 
 ## Cross-References

@@ -109,6 +109,16 @@ postings simply has no `journalLine`/`costLedger` rows; that is data-absence, no
 coverage gap. With `includeStorage: "all"`, `buildCompanyBackup` records the
 in-scope asset paths in `manifest.storage` and returns them; the job then
 `copyAssetsToBackup` them server-side into the backup's `.assets/` folder.
+- **Progress/failure marker**: one `externalIntegrationMapping` row per company
+  (`integration = "company-export"`, no run id — exports are one-at-a-time per
+  company). The job writes `{ status: "running", startedAt, progress }` heartbeats
+  (throttled 250ms), **clears the marker on success** (the new backup appearing in
+  the list is the completion signal), and **flips it to
+  `{ status: "failed", error }` on error** — it is NOT cleared on failure; a
+  cleared marker made a broken export indistinguishable from one that never ran.
+  The failed marker is dismissed from the UI via the `dismissExportFailure`
+  intent → `dismissCompanyExportFailure` (service role — the table has no DELETE
+  policy), and the next export's `upsertExportMarker` reuses the row.
 - **Asset cap** (`company-export.ts`): no per-file cap (the bucket already bounds
   uploads — 120MB CAD, 50MB docs; the `private` bucket's own limit is the dev
   `50MiB` global in `config.toml`), only a `MAX_STORAGE_TOTAL_BYTES = 1GiB` guard on
@@ -192,17 +202,30 @@ snapshotPath, foreign, includeGroup }`. `revert` reads the marker and reloads
 ## ERP layer
 
 - `backups.service.ts` — per-company bucket ops: `exportCompanyBackup`,
-  `listCompanyBackupExports` (`from(companyId).list("exports")` — folder entries
-  like `.assets/` have `id === null` and the loader filters them out, so only gz
-  files show as backups), `getCompanyBackupSignedUrl`, `deleteCompanyBackupExport`
-  (removes the gz **and** recursively its `.assets/` folder so the bucket space is
-  released), `getCompanyRestoreRuns` (reads the markers).
+  `listCompanyBackups` (`from(companyId).list("exports")` folders; a folder is
+  "ready" once `manifest.json` exists, else "pending"), `deleteCompanyBackup`
+  (removes the whole `exports/<name>/` folder), `getCompanyRestoreRuns` (restore
+  markers), `getCompanyExportRun` (the export marker: `status:
+  "running" | "failed"`, `progress`, `startedAt`, `error`).
 - `backups.server.ts` — server-only trigger wrappers (`startCompanyRestore`,
-  `finalizeCompanyRestore`, `revertCompanyRestore`) — kept off the client to avoid
-  `Buffer`-in-client.
+  `finalizeCompanyRestore`, `revertCompanyRestore`) plus
+  `dismissCompanyExportFailure` (service-role delete of the failed export
+  marker) — kept off the client to avoid `Buffer`-in-client.
 - `routes/x+/settings+/backups.tsx` — **internal-gated** (`requireInternal`)
-  loader/action (export / restore / keep / dismiss / revert / delete intents).
-  `filePath` is forced under `exports/`.
+  loader/action (export / restore / keep / dismiss / revert / delete /
+  dismissExportFailure intents). `filePath` is forced under `exports/`. Export is
+  **non-blocking, row-first** (Supabase-style): clicking "Create backup" does NOT
+  open a modal — it drops a synthetic "Creating backup…" spinner row into the
+  Backups list **immediately** (optimistic client state `runningExport`, set the
+  instant the action returns `started: "export"`, before the job writes its first
+  marker), and clicking that row opens the detail progress modal. `runningExport`
+  is also **adopted from the marker** on mount for a run started elsewhere
+  (reload / another tab); its `baseline` = ready backups when tracking began, and
+  completion = a ready backup outside the baseline appearing in the revalidated
+  list (page revalidates every 2.5s while the modal is closed). A "failed" marker
+  renders a banner ("The system created an invalid backup — please contact Carbon
+  support." + error) with a Dismiss button; "pending" folders with no tracked
+  export are labeled "Incomplete backup — not restorable" (never "Preparing…").
 - `routes/api+/settings.backup-summary.ts` — lazy "what's in a backup" counts,
   grouped, per-entity `scope: company|group`.
 - `routes/api+/settings.backup-restore-status.$restoreRunId.ts` — poll; `companyId`

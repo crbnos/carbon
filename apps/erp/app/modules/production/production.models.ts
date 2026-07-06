@@ -890,17 +890,22 @@ export const productionOrderValidator = z.object({
 
 export type ProductionOrder = z.infer<typeof productionOrderValidator>;
 
-export const productionQuantityValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  jobOperationId: z.string().min(1, { message: "Operation is required" }),
-  type: z.enum(["Rework", "Scrap", "Production"], {
-    errorMap: () => ({ message: "Quantity type is required" })
-  }),
-  scrapReasonId: zfd.text(z.string().optional()),
-  notes: zfd.text(z.string().optional()),
-  createdBy: zfd.text(z.string().optional()),
-  quantity: zfd.numeric(z.number().min(0))
-});
+export const productionQuantityValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    jobOperationId: z.string().min(1, { message: "Operation is required" }),
+    type: z.enum(["Rework", "Scrap", "Production"], {
+      errorMap: () => ({ message: "Quantity type is required" })
+    }),
+    scrapReasonId: zfd.text(z.string().optional()),
+    notes: zfd.text(z.string().optional()),
+    createdBy: zfd.text(z.string().optional()),
+    quantity: zfd.numeric(z.number().min(0))
+  })
+  .refine((data) => data.type !== "Scrap" || !!data.scrapReasonId, {
+    message: "Scrap reason is required",
+    path: ["scrapReasonId"]
+  });
 
 export const scheduleOperationUpdateValidator = z.object({
   id: z.string().min(1, { message: "ID is required" }),

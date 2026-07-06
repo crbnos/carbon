@@ -53,6 +53,12 @@ export const stateActionValidator = z.discriminatedUnion("intent", [
     value: z.string().min(1)
   }),
   z.object({
+    intent: z.literal("setChecks"),
+    itemKeys: z.string(), // JSON-encoded string[]
+    kind: stateKindValidator,
+    value: z.string().min(1)
+  }),
+  z.object({
     intent: z.literal("setField"),
     fieldKey: z.string().min(1),
     value: z.string()

@@ -234,8 +234,10 @@ export async function buildCompanyBackup(
 }
 
 // One company-scoped progress marker (exports run one-at-a-time, so no run id).
-// The UI polls it for live phase/done/total; it's cleared when the run ends, and
-// the backup appearing in the list is what signals completion.
+// The UI polls it for live phase/done/total; it's cleared when the run succeeds
+// (the backup appearing in the list is what signals completion) and kept with
+// status "failed" when it doesn't — a cleared marker on failure made a broken
+// export indistinguishable from one that never ran.
 const EXPORT_INTEGRATION = "company-export";
 type ExportProgress = { phase: string; done: number; total: number };
 
@@ -243,7 +245,12 @@ async function upsertExportMarker(
   client: ServiceRole,
   companyId: string,
   userId: string,
-  metadata: { status: "running"; startedAt: string; progress?: ExportProgress }
+  metadata: {
+    status: "running" | "failed";
+    startedAt: string;
+    progress?: ExportProgress;
+    error?: string;
+  }
 ): Promise<void> {
   const existing = await client
     .from("externalIntegrationMapping")
@@ -295,8 +302,8 @@ export const companyExportFunction = inngest.createFunction(
       const client = getCarbonServiceRole();
       const db = getJobDatabaseClient(TABLE_CONCURRENCY);
 
-      // Live-progress marker (cleared in `finally`, success or failure). Throttled
-      // so a fast parallel dump doesn't hammer the row.
+      // Live-progress marker (cleared on success, flipped to "failed" on error).
+      // Throttled so a fast parallel dump doesn't hammer the row.
       const startedAt = new Date().toISOString();
       await upsertExportMarker(client, companyId, userId, {
         status: "running",
@@ -360,9 +367,20 @@ export const companyExportFunction = inngest.createFunction(
           assetsFailed: assets.failed
         });
 
-        return { name, tables: manifest.tables.length, rows };
-      } finally {
         await clearExportMarker(client, companyId);
+        return { name, tables: manifest.tables.length, rows };
+      } catch (err) {
+        // Keep the marker with the failure so the UI can tell the user the
+        // backup is invalid instead of showing "preparing" forever. A retry
+        // (retries: 1) overwrites it back to "running"; the user dismisses it
+        // from the Backups page, and the next export reuses the row.
+        const message = err instanceof Error ? err.message : String(err);
+        await upsertExportMarker(client, companyId, userId, {
+          status: "failed",
+          startedAt,
+          error: message.slice(0, 2000)
+        });
+        throw err;
       }
     });
   }

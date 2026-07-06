@@ -27,9 +27,10 @@ export const usePurchaseOrder = () => {
 
   const receive = useCallback(
     (purchaseOrder: PurchaseOrder) => {
+      if (!purchaseOrder.id) return;
       const formData = new FormData();
       formData.set("sourceDocument", "Purchase Order");
-      formData.set("sourceDocumentId", purchaseOrder.id!);
+      formData.set("sourceDocumentId", purchaseOrder.id);
       submit(formData, { method: "post", action: path.to.newReceipt });
     },
     [submit]
@@ -37,9 +38,10 @@ export const usePurchaseOrder = () => {
 
   const ship = useCallback(
     (purchaseOrder: PurchaseOrder) => {
+      if (!purchaseOrder.id) return;
       const formData = new FormData();
       formData.set("sourceDocument", "Purchase Order");
-      formData.set("sourceDocumentId", purchaseOrder.id!);
+      formData.set("sourceDocumentId", purchaseOrder.id);
       submit(formData, { method: "post", action: path.to.newShipment });
     },
     [submit]

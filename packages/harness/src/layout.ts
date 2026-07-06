@@ -4,16 +4,20 @@ import { join, resolve } from "node:path";
  * The single owner of the loop artifact layout. Every loop path is constructed
  * here — nothing else in the harness should hardcode `.ai/runs/...`.
  *
- *   .ai/runs/<id>/        one loop run's ephemeral artifacts     — GITIGNORED (dirs only)
- *     binding.loop.md     the binding the run was driven from
- *     ledger.jsonl        append-only per-iteration record
- *     run.log.jsonl       full event log
- *     outcome.json        the final LoopOutcome (machine-readable result)
- *     screenshots/        behavior-gate captures
+ *   .ai/runs/<id>/        one loop run's artifacts
+ *     binding.loop.md     the binding the run was driven from          — COMMITTED
+ *     ledger.jsonl        append-only per-iteration record             — COMMITTED
+ *     outcome.json        the final LoopOutcome (machine-readable)     — COMMITTED
+ *     run.log.jsonl       full event log (verbose, ephemeral)          — GITIGNORED
+ *     screenshots/        behavior-gate captures (ephemeral)           — GITIGNORED
+ *
+ * Durable files (binding, ledger, outcome) are committed back to main after
+ * each build so any agent can inspect history and resume partial work without
+ * needing the original worktree. Volatile files (run.log, screenshots) are
+ * gitignored to keep the product tree clean.
  *
  * `.ai/runs/` also holds committed markdown run logs from the plan/execute
- * skills — only the per-run *directories* are ignored, so runtime can't leak
- * into git and `pruneRuns` (see runs.ts) has one place to GC.
+ * skills — `pruneRuns` (see runs.ts) has one place to GC.
  */
 
 /** Repo-relative root for ephemeral per-run artifacts (directories gitignored). */

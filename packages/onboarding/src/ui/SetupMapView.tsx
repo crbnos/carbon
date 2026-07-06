@@ -1,15 +1,23 @@
-import { IconButton } from "@carbon/react";
+import { Button, IconButton } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { type ReactNode, useEffect, useState } from "react";
-import { LuArrowUpRight, LuFileText, LuPlay, LuTrash } from "react-icons/lu";
+import { useEffect, useState } from "react";
+import {
+  LuArrowUpRight,
+  LuCheckCheck,
+  LuFileText,
+  LuPlay,
+  LuTrash
+} from "react-icons/lu";
 import { COLLECTIONS, PAGE_COPY } from "../content";
+import { setupGroupKey } from "../content/board";
 import { SETUP_GROUPS } from "../content/setup";
-import { filterByModule, flagKey } from "../logic";
+import { filterByModule, flagKey, setupAnchorId } from "../logic";
 import type { CustomDataPayload, ImplementationRowData } from "../types";
 import { ProgressPill } from "./ProgressPill";
 import {
   CustomRowSection,
   EditableInput,
+  LearnLink,
   PageHeader,
   Section,
   SectionList,
@@ -50,29 +58,6 @@ function GroupLearnLinks({
   );
 }
 
-function LearnLink({
-  href,
-  icon,
-  children
-}: {
-  href: string;
-  icon: ReactNode;
-  children: ReactNode;
-}) {
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noreferrer"
-      className="shrink-0 inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 font-medium text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors"
-    >
-      {icon}
-      {children}
-      <LuArrowUpRight className="size-3 opacity-60" />
-    </a>
-  );
-}
-
 const DEF = COLLECTIONS.setup;
 const FLAG = DEF.flag!;
 
@@ -82,7 +67,7 @@ export function SetupMapView() {
   const { t, i18n } = useLingui();
   const exclusions = useExclusions();
   const map = useCheckMap();
-  const { toggleFlag } = useHubActions();
+  const { toggleFlag, toggleFlags } = useHubActions();
   const resolveScreenUrl = useResolveScreenUrl();
 
   const visibleRows = SETUP_GROUPS.flatMap((g) =>
@@ -109,17 +94,42 @@ export function SetupMapView() {
       {SETUP_GROUPS.map((group) => {
         const rows = filterByModule(group.rows, exclusions.modules);
         if (rows.length === 0) return null;
+        const allConfigured = rows.every(
+          (r) => map.get(configuredKey(r.key)) === "1"
+        );
         return (
           <Section
             key={group.n}
+            id={setupAnchorId(setupGroupKey(group.n))}
+            className="scroll-mt-6"
             number={group.n}
             title={i18n._(group.title)}
             subtitle={i18n._(group.desc)}
             aside={
-              <GroupLearnLinks
-                docsUrl={group.docsUrl}
-                academyUrl={group.academyUrl}
-              />
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                <GroupLearnLinks
+                  docsUrl={group.docsUrl}
+                  academyUrl={group.academyUrl}
+                />
+                {/* Speed lane: one click configures the whole group (one
+                    batched write). Hidden once there's nothing left to mark. */}
+                {allConfigured ? null : (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    leftIcon={<LuCheckCheck />}
+                    onClick={() =>
+                      toggleFlags(
+                        rows.map((r) => configuredKey(r.key)),
+                        "scopeFlag",
+                        true
+                      )
+                    }
+                  >
+                    <Trans>Mark all as configured</Trans>
+                  </Button>
+                )}
+              </div>
             }
           >
             <SectionList>
@@ -133,8 +143,12 @@ export function SetupMapView() {
                   >
                     <div className="flex-1 min-w-0">
                       {url ? (
+                        // New tab (the ↗ arrow signals it): the ERP screen opens
+                        // alongside the map so the user keeps their place here.
                         <a
                           href={url}
+                          target="_blank"
+                          rel="noreferrer"
                           className="group inline-flex items-center gap-1 text-sm font-medium hover:text-primary transition-colors"
                         >
                           {i18n._(row.object)}
@@ -238,6 +252,8 @@ function CustomSetupRow({ row }: { row: ImplementationRowData }) {
             {payload.url ? (
               <a
                 href={payload.url}
+                target="_blank"
+                rel="noreferrer"
                 className="group inline-flex items-center gap-1 text-sm font-medium hover:text-primary transition-colors"
               >
                 {payload.object}

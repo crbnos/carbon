@@ -421,12 +421,22 @@ const JobBillOfProcess = ({
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { carbon, accessToken } = useCarbon();
   const sortOrderFetcher = useFetcher<{}>();
-  const deleteOperationFetcher = useFetcher<{ success: boolean }>();
+  const deleteOperationFetcher = useFetcher<{
+    success: boolean;
+    error?: string;
+  }>();
   const permissions = usePermissions();
   const {
     id: userId,
     company: { id: companyId }
   } = useUser();
+
+  useEffect(() => {
+    const result = deleteOperationFetcher.data;
+    if (result && !result.success && result.error) {
+      toast.error(result.error);
+    }
+  }, [deleteOperationFetcher.data]);
 
   const [params] = useUrlParams();
   const selected = params.get("selectedOperation");

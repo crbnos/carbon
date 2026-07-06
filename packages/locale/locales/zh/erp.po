@@ -25,6 +25,16 @@ msgstr "\"{storageUnitName}\"有{childCount}个直接嵌套的存储单元。删
 msgid "\"{storageUnitName}\" has 1 direct nested storage unit. Deleting it will also delete that unit and anything underneath it. This cannot be undone."
 msgstr "\"${storageUnitName}\"有1个直接嵌套的存储单元。删除它也会删除该单元及其下的所有内容。此操作无法撤销。"
 
+#. placeholder {0}: setupProgress.total
+#. placeholder {1}: setupProgress.done
+#. placeholder {2}: setupProgress.total
+msgid "\"{taskName}\" checks itself off once its {0} Setup Map items are marked \"Configured\" — {1} of {2} so far."
+msgstr "\"{taskName}\"在其{0}个设置地图项目被标记为\"已配置\"后会自动勾选——目前已完成{1}个，共{2}个。"
+
+#. placeholder {0}: setupProgress.total
+msgid "\"{taskName}\" is done — all {0} of its Setup Map items are configured."
+msgstr "\"{taskName}\"已完成——其所有{0}个设置地图项目都已配置。"
+
 msgid "(excluded for this customer)"
 msgstr "(已为此客户排除)"
 
@@ -272,10 +282,10 @@ msgid "A quote line contains pricing and lead times for a particular part"
 msgstr "报价行包含特定零件的定价和交货期"
 
 msgid "A reusable, versioned set of work instructions attached to a process, giving an operation its ordered steps to record and check plus the parameters it runs at."
-msgstr ""
+msgstr "一套可重复使用的、版本化的工作说明，附加到流程中，为操作提供有序的步骤以记录和检查，以及它运行的参数。"
 
 msgid "A routing step on a released job, the job's own copy of an operation, carrying a status the floor drives from Todo through Done."
-msgstr ""
+msgstr "一个已发布工作的路由步骤，该工作自己的操作副本，携带一个状态，该状态由车间从待办事项驱动到完成。"
 
 msgid "A sales invoice (you bill a customer) or purchase invoice (a supplier bills you); payment is a field, not a separate record."
 msgstr "销售发票（您向客户开票）或采购发票（供应商向您开票）；付款是一个字段，不是单独的记录。"
@@ -314,7 +324,7 @@ msgid "A taxable surcharge (handling, setup, fuel) added to the line; rolls into
 msgstr "应税附加费（搬运、设置、燃料），添加到行中并包含在税基中。"
 
 msgid "A timed record of Setup, Labor, or Machine work logged against a job operation, whose duration rolls up into the operation's actual cost."
-msgstr ""
+msgstr "针对工作操作记录的设置、劳动力或机器工作的定时记录，其持续时间汇总到该操作的实际成本中。"
 
 msgid "A tool is a physical item used to make a part that can be used across multiple jobs"
 msgstr "工具是用于制造零件的物理项目，可以在多个工作中使用"
@@ -333,6 +343,9 @@ msgstr "功能"
 
 msgid "About"
 msgstr "关于"
+
+msgid "Academy"
+msgstr "学院"
 
 msgid "Accept Lot"
 msgstr "接受批次"
@@ -1267,6 +1280,10 @@ msgstr "您确定要完成供应商报价吗？"
 msgid "Are you sure you want to leave this page?"
 msgstr "您确定要离开此页面吗？"
 
+#. placeholder {0}: i18n._(step.title)
+msgid "Are you sure you want to pass this checkpoint? The {0} phase still has unfinished tasks."
+msgstr "你确定要通过此检查点吗？{0}阶段仍有未完成的任务。"
+
 #. placeholder {0}: selectedPurchaseInvoice.invoiceId!
 #. placeholder {0}: selectedSalesInvoice.invoiceId!
 msgid "Are you sure you want to permanently delete {0}?"
@@ -1678,6 +1695,9 @@ msgstr "物料清单"
 
 msgid "Bonus Depreciation %"
 msgstr "奖金折旧%"
+
+msgid "Book a call to discuss guided implementation"
+msgstr "预约通话讨论引导式实施"
 
 msgid "Book a call with Carbon"
 msgstr "与 Carbon 预约通话"
@@ -6266,7 +6286,7 @@ msgid "Job Materials"
 msgstr "工作物料"
 
 msgid "Job operation"
-msgstr ""
+msgstr "工作操作"
 
 msgid "Job Operation"
 msgstr "工作操作"
@@ -6771,6 +6791,13 @@ msgstr "立即映射行"
 
 msgid "Map your current process, systems, and data"
 msgstr "映射您当前的流程、系统和数据"
+
+#. placeholder {0}: i18n._(step.gate)
+msgid "Mark \"{0}\" as passed?"
+msgstr "将\"{0}\"标记为已通过？"
+
+msgid "Mark all as configured"
+msgstr "全部标记为已配置"
 
 msgid "Mark as Paid"
 msgstr "标记为已支付"
@@ -8783,7 +8810,7 @@ msgid "Production"
 msgstr "生产"
 
 msgid "Production event"
-msgstr ""
+msgstr "生产事件"
 
 msgid "Production Event"
 msgstr "生产事件"
@@ -10762,7 +10789,7 @@ msgid "Standard cloud Carbon fits how your company runs"
 msgstr "标准云 Carbon 适合您公司的运营方式"
 
 msgid "Standard factor"
-msgstr ""
+msgstr "标准系数"
 
 msgid "Standard Lead Time"
 msgstr "标准交货期"
@@ -11247,6 +11274,9 @@ msgstr "任务"
 msgid "Tasks"
 msgstr "任务"
 
+msgid "Tasks still open"
+msgstr "任务仍未完成"
+
 msgid "Tasks that must be completed before this issue can be closed; selecting actions here adds them on top of whatever the workflow specifies."
 msgstr "在关闭此问题之前必须完成的任务；在此处选择操作会将其添加到工作流程指定的内容之外。"
 
@@ -11336,6 +11366,15 @@ msgstr "测试值"
 
 msgid "Text size"
 msgstr "文本大小"
+
+#. placeholder {0}: i18n._(step.title)
+msgid "The \"{0}\" phase checks itself off once all of its tasks in the project plan are done."
+msgstr "\"{0}\"阶段在项目计划中的所有任务完成后会自动标记为完成。"
+
+#. placeholder {0}: i18n._(step.title)
+#. placeholder {1}: i18n._(step.gate)
+msgid "The \"{0}\" phase is done — its \"{1}\" checkpoint has been passed."
+msgstr "\"{0}\"阶段已完成——其\"{1}\"检查点已通过。"
 
 #. placeholder {0}: steps.length
 msgid "The {0} phases to go live, each ending at a checkpoint. Tick off each task as you complete it."
@@ -11544,6 +11583,9 @@ msgstr "以下装配体没有操作。请在发布前为每个装配体分配一
 
 msgid "The following line items are missing prices or lead times:"
 msgstr "以下行项目缺少价格或交货期："
+
+msgid "The following tasks are not done yet:"
+msgstr "以下任务尚未完成："
 
 msgid "The forms and shapes your raw materials come in"
 msgstr "您的原材料所采用的形式和形状"
@@ -11918,7 +11960,7 @@ msgid "The unique identifier on this physical unit; one row per serial, quantity
 msgstr "此物理单元的唯一标识符；每个序列号一行，数量始终为1。"
 
 msgid "The unit a routing time is expressed in, such as Hours/Piece or Total Hours, telling Carbon whether the time scales with quantity or is fixed per run."
-msgstr ""
+msgstr "路由时间表示的单位，例如小时/件或总小时数，告诉 Carbon 时间是否随数量变化或每次运行固定。"
 
 msgid "The unit price of the item at the time of the purchase"
 msgstr "购买时该商品的单价"
@@ -12317,9 +12359,6 @@ msgstr "已追踪实体已被拣选"
 msgid "Tracked entity ID is required but none was found"
 msgstr "已跟踪实体ID是必需的，但未找到"
 
-msgid "Tracked from the Setup Map — open it"
-msgstr "从设置地图跟踪 — 打开它"
-
 msgid "Tracking"
 msgstr "追踪"
 
@@ -12461,8 +12500,8 @@ msgstr "撤销"
 msgid "Uninstall"
 msgstr "卸载"
 
-msgid "Unique, uppercase, without spaces"
-msgstr "唯一、大写、无空格"
+msgid "Unique, uppercase, without spaces (max 10 characters)"
+msgstr "唯一、大写、无空格（最多 10 个字符）"
 
 msgid "Unit"
 msgstr "单位"
@@ -12593,12 +12632,6 @@ msgstr "更新看板信息以进行扫描式补货。"
 
 msgid "Update the purchase order quantities"
 msgstr "更新采购订单数量"
-
-msgid "Update this in the project plan"
-msgstr "在项目计划中更新此项"
-
-msgid "Update this in the project plan."
-msgstr "在项目计划中更新此项。"
 
 msgid "Updated"
 msgstr "已更新"
@@ -13034,6 +13067,9 @@ msgstr "与您的项目冠军一起逐个领域进行审查，并切换任何超
 
 msgid "Walk your current process, systems, and data"
 msgstr "浏览您当前的流程、系统和数据"
+
+msgid "Want our team alongside you? Expert eyes on your setup, data, and go-live."
+msgstr "想要我们的团队与您并肩同行？专家为您的设置、数据和上线把关。"
 
 msgid "Warehouse Transfer"
 msgstr "仓库转移"

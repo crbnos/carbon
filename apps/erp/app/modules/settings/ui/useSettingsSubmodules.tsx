@@ -80,12 +80,6 @@ export default function useSettingsSubmodules() {
             icon: <LuImage />
           },
           {
-            name: t`Backups`,
-            to: path.to.backups,
-            role: "employee",
-            icon: <LuDatabase />
-          },
-          {
             name: t`Printing`,
             to: path.to.printingSettings,
             role: "employee",
@@ -172,6 +166,12 @@ export default function useSettingsSubmodules() {
             to: path.to.auditLog,
             role: "employee",
             icon: <LuHistory />
+          },
+          {
+            name: t`Backups`,
+            to: path.to.backups,
+            role: "employee",
+            icon: <LuDatabase />
           },
           {
             name: t`Custom Fields`,

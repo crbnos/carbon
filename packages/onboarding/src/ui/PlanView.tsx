@@ -1,13 +1,27 @@
-import { cn } from "@carbon/react";
-import { Trans, useLingui } from "@lingui/react/macro";
-import { type ReactNode, useEffect, useRef } from "react";
 import {
-  LuArrowUpRight,
+  Alert,
+  AlertDescription,
+  AlertTitle,
+  Badge,
+  Button,
+  cn,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalDescription,
+  ModalFooter,
+  ModalHeader,
+  ModalTitle
+} from "@carbon/react";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { useEffect, useRef, useState } from "react";
+import {
   LuCalendarClock,
   LuCheck,
   LuFileText,
   LuPlay,
-  LuRotateCcw
+  LuRotateCcw,
+  LuTriangleAlert
 } from "react-icons/lu";
 import { PAGE_COPY } from "../content";
 import { BOARD_TASKS } from "../content/board";
@@ -20,15 +34,17 @@ import {
   ownerLeadLabel,
   planAnchorId,
   resolveTimeline,
+  setupAnchorId,
   spineForTier,
   stepTaskProgress,
   taskKey,
+  taskSetupProgress,
   taskStatus,
   tasksForStep
 } from "../logic";
 import type { BoardTask, GateValue, StateKind, StepDef, Tier } from "../types";
 import { ProgressPill } from "./ProgressPill";
-import { PageHeader } from "./primitives";
+import { DerivedStatus, LearnLink, PageHeader } from "./primitives";
 import {
   useCheckMap,
   useFieldMap,
@@ -45,8 +61,9 @@ export function PlanView({
   onOpenSetupMap
 }: {
   // Jump to the Setup Map — Configure's checklist derives its status from
-  // there, so its tasks aren't manually tickable here.
-  onOpenSetupMap?: () => void;
+  // there, so its tasks aren't manually tickable here. An optional anchor id
+  // deep-links straight to the matching group's section.
+  onOpenSetupMap?: (anchorId?: string) => void;
 } = {}) {
   const { t, i18n } = useLingui();
   const map = useCheckMap();
@@ -135,13 +152,21 @@ function PhaseCard({
   progress: { done: number; total: number };
   onToggleTask: (itemKey: string, kind: StateKind, value: string) => void;
   onToggleGate: (key: string, next: GateValue) => void;
-  onOpenSetupMap?: () => void;
+  onOpenSetupMap?: (anchorId?: string) => void;
 }) {
   const { t, i18n } = useLingui();
   const { done, total } = progress;
   const allDone = total > 0 && done === total;
   const gatePassed = gateStatus === "done";
   const gateInProgress = gateStatus === "prog";
+
+  // Passing a checkpoint with tasks still open is allowed, but warned first —
+  // the same confirm-with-warning pattern as finalizing a quote without
+  // shipping costs.
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const openTasks = stepTasks.filter(
+    (task) => taskStatus(task, map) !== "done"
+  );
 
   // Auto-pass the checkpoint when its tasks all complete — one-way, on the
   // incomplete→complete transition (and on mount if already complete, so the
@@ -188,16 +213,12 @@ function PhaseCard({
             </div>
           </div>
           {total > 0 ? (
-            <span
-              className={cn(
-                "shrink-0 text-xxs font-medium rounded px-1.5 py-0.5 tabular-nums",
-                allDone
-                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                  : "border text-muted-foreground"
-              )}
+            <Badge
+              variant={allDone ? "green" : "outline"}
+              className="shrink-0 tabular-nums"
             >
               {done} / {total} <Trans>done</Trans>
-            </span>
+            </Badge>
           ) : null}
         </div>
 
@@ -254,40 +275,57 @@ function PhaseCard({
                 </span>
               );
 
-              // Setup rows aren't tickable here — the row opens the Setup Map,
-              // with the module's Docs/Video links inline. An <a> can't nest in
-              // a <button>, so these use a flex row of separate controls.
+              // Setup rows aren't tickable here — they check themselves off as
+              // their Setup Map rows are configured, so they get the derived
+              // ring (never a checkbox) and the row opens the Setup Map, with
+              // the module's Docs/Video links inline. An <a> can't nest in a
+              // <button>, so these use a flex row of separate controls.
               if (fromSetupMap) {
+                const setupProgress = taskSetupProgress(task, map);
+                const taskName = i18n._(task.label);
                 return (
                   <li
                     key={task.key}
                     className="group flex items-start gap-3 rounded-lg px-2 py-1.5 hover:bg-muted/50 transition-colors"
                   >
+                    <DerivedStatus
+                      status={isDone ? "done" : isProg ? "prog" : "todo"}
+                      fraction={
+                        setupProgress.total > 0
+                          ? setupProgress.done / setupProgress.total
+                          : undefined
+                      }
+                      tooltip={
+                        isDone
+                          ? t`"${taskName}" is done — all ${setupProgress.total} of its Setup Map items are configured.`
+                          : t`"${taskName}" checks itself off once its ${setupProgress.total} Setup Map items are marked "Configured" — ${setupProgress.done} of ${setupProgress.total} so far.`
+                      }
+                      className="size-4 mt-0.5"
+                    />
                     <button
                       type="button"
-                      onClick={() => onOpenSetupMap?.()}
-                      title={t`Tracked from the Setup Map — open it`}
+                      onClick={() => onOpenSetupMap?.(setupAnchorId(task.key))}
+                      title={t`Open the Setup Map`}
                       className="flex items-start gap-3 min-w-0 flex-1 text-left"
                     >
-                      {checkbox}
                       {label}
                     </button>
                     <div className="shrink-0 flex items-center gap-2 text-xs mt-0.5">
                       {task.docsUrl ? (
-                        <ResourceLink
+                        <LearnLink
                           href={task.docsUrl}
                           icon={<LuFileText className="size-3" />}
                         >
                           <Trans>Docs</Trans>
-                        </ResourceLink>
+                        </LearnLink>
                       ) : null}
                       {task.academyUrl ? (
-                        <ResourceLink
+                        <LearnLink
                           href={task.academyUrl}
                           icon={<LuPlay className="size-3" />}
                         >
                           <Trans>Video</Trans>
-                        </ResourceLink>
+                        </LearnLink>
                       ) : null}
                     </div>
                   </li>
@@ -333,14 +371,24 @@ function PhaseCard({
           </span>
           <span className="font-medium">{i18n._(step.gate)}</span>
           {gateInProgress ? (
-            <span className="ml-2 text-xxs uppercase tracking-wide rounded px-1.5 py-0.5 border border-primary/30 bg-primary/10 text-primary font-medium">
+            // In-progress blue app-wide (BoP status language), not theme
+            // primary — primary is near-black on neutral themes.
+            <Badge variant="blue" className="ml-2">
               <Trans>In progress</Trans>
-            </span>
+            </Badge>
           ) : null}
         </div>
         <button
           type="button"
-          onClick={() => onToggleGate(step.key, gatePassed ? "todo" : "done")}
+          onClick={() => {
+            if (gatePassed) {
+              onToggleGate(step.key, "todo");
+            } else if (openTasks.length > 0) {
+              setConfirmOpen(true);
+            } else {
+              onToggleGate(step.key, "done");
+            }
+          }}
           className={cn(
             "shrink-0 inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xxs font-medium transition-colors active:scale-[0.97]",
             gatePassed
@@ -361,6 +409,49 @@ function PhaseCard({
           )}
         </button>
       </div>
+
+      <Modal open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <ModalContent>
+          <ModalHeader>
+            <ModalTitle>{t`Mark "${i18n._(step.gate)}" as passed?`}</ModalTitle>
+            <ModalDescription>
+              <Trans>
+                Are you sure you want to pass this checkpoint? The{" "}
+                {i18n._(step.title)} phase still has unfinished tasks.
+              </Trans>
+            </ModalDescription>
+          </ModalHeader>
+          <ModalBody>
+            <Alert variant="destructive">
+              <LuTriangleAlert className="h-4 w-4" />
+              <AlertTitle>
+                <Trans>Tasks still open</Trans>
+              </AlertTitle>
+              <AlertDescription>
+                <Trans>The following tasks are not done yet:</Trans>
+                <ul className="list-disc py-2 pl-4">
+                  {openTasks.map((task) => (
+                    <li key={task.key}>{i18n._(task.label)}</li>
+                  ))}
+                </ul>
+              </AlertDescription>
+            </Alert>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="secondary" onClick={() => setConfirmOpen(false)}>
+              <Trans>Cancel</Trans>
+            </Button>
+            <Button
+              onClick={() => {
+                setConfirmOpen(false);
+                onToggleGate(step.key, "done");
+              }}
+            >
+              <Trans>Mark checkpoint passed</Trans>
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </div>
   );
 }
@@ -393,46 +484,20 @@ function PhaseResources({ step }: { step: StepDef }) {
             {i18n._(r.label)}
           </span>
           {r.docsUrl ? (
-            <ResourceLink
+            <LearnLink
               href={r.docsUrl}
               icon={<LuFileText className="size-3" />}
             >
               <Trans>Docs</Trans>
-            </ResourceLink>
+            </LearnLink>
           ) : null}
           {r.videoUrl ? (
-            <ResourceLink
-              href={r.videoUrl}
-              icon={<LuPlay className="size-3" />}
-            >
+            <LearnLink href={r.videoUrl} icon={<LuPlay className="size-3" />}>
               <Trans>Video</Trans>
-            </ResourceLink>
+            </LearnLink>
           ) : null}
         </div>
       ))}
     </div>
-  );
-}
-
-function ResourceLink({
-  href,
-  icon,
-  children
-}: {
-  href: string;
-  icon: ReactNode;
-  children: ReactNode;
-}) {
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noreferrer"
-      className="shrink-0 inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 font-medium text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors"
-    >
-      {icon}
-      {children}
-      <LuArrowUpRight className="size-3 opacity-60" />
-    </a>
   );
 }

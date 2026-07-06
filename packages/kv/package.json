@@ -9,6 +9,7 @@
   },
   "devDependencies": {
     "@carbon/config": "workspace:*",
+    "@types/ioredis-mock": "8.2.7",
     "@types/node": "20.19.39",
     "dotenv": "16.3.1",
     "ioredis-mock": "8.13.1",

@@ -37,6 +37,7 @@ import {
   useLoaderData,
   useRouteLoaderData
 } from "react-router";
+import { crossOriginIsolationMiddleware } from "~/middleware/cross-origin-isolation";
 import { loadLinguiCatalogForRequest } from "~/services/lingui.server";
 import { getMode, setMode } from "~/services/mode.server";
 import Background from "~/styles/background.css?url";
@@ -45,7 +46,7 @@ import Tailwind from "~/styles/tailwind.css?url";
 import type { Route } from "./+types/root";
 import { getTheme } from "./services/theme.server";
 
-export const middleware = [flashMiddleware];
+export const middleware = [crossOriginIsolationMiddleware, flashMiddleware];
 export const clientMiddleware = [flashClientMiddleware];
 
 export const links: Route.LinksFunction = () => [

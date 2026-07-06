@@ -25,6 +25,16 @@ msgstr "\"{storageUnitName}\" tiene {childCount} unidades de almacenamiento anid
 msgid "\"{storageUnitName}\" has 1 direct nested storage unit. Deleting it will also delete that unit and anything underneath it. This cannot be undone."
 msgstr "\"{storageUnitName}\" tiene 1 unidad de almacenamiento anidada directa. Eliminarlo también eliminará esa unidad y todo lo que hay debajo. Esto no se puede deshacer."
 
+#. placeholder {0}: setupProgress.total
+#. placeholder {1}: setupProgress.done
+#. placeholder {2}: setupProgress.total
+msgid "\"{taskName}\" checks itself off once its {0} Setup Map items are marked \"Configured\" — {1} of {2} so far."
+msgstr "\"{taskName}\" se marca como completada una vez que sus {0} elementos del Mapa de Configuración estén marcados como \"Configurado\" — {1} de {2} hasta ahora."
+
+#. placeholder {0}: setupProgress.total
+msgid "\"{taskName}\" is done — all {0} of its Setup Map items are configured."
+msgstr "\"{taskName}\" está hecho — todos los {0} elementos de su Mapa de Configuración están configurados."
+
 msgid "(excluded for this customer)"
 msgstr "(excluido para este cliente)"
 
@@ -272,10 +282,10 @@ msgid "A quote line contains pricing and lead times for a particular part"
 msgstr "Una línea de cotización contiene precios y tiempos de entrega para una parte específica"
 
 msgid "A reusable, versioned set of work instructions attached to a process, giving an operation its ordered steps to record and check plus the parameters it runs at."
-msgstr ""
+msgstr "Un conjunto reutilizable y versionado de instrucciones de trabajo adjunto a un proceso, que proporciona a una operación sus pasos ordenados para registrar y verificar, además de los parámetros en los que se ejecuta."
 
 msgid "A routing step on a released job, the job's own copy of an operation, carrying a status the floor drives from Todo through Done."
-msgstr ""
+msgstr "Un paso de enrutamiento en un trabajo liberado, la copia propia del trabajo de una operación, que lleva un estado que el piso impulsa de Pendiente a Completado."
 
 msgid "A sales invoice (you bill a customer) or purchase invoice (a supplier bills you); payment is a field, not a separate record."
 msgstr "Una factura de venta (usted factura a un cliente) o una factura de compra (un proveedor le factura); el pago es un campo, no un registro separado."
@@ -314,7 +324,7 @@ msgid "A taxable surcharge (handling, setup, fuel) added to the line; rolls into
 msgstr "Un recargo tributable (manipulación, configuración, combustible) que se suma a la línea e incluye en la base imponible."
 
 msgid "A timed record of Setup, Labor, or Machine work logged against a job operation, whose duration rolls up into the operation's actual cost."
-msgstr ""
+msgstr "Un registro cronometrado de trabajo de Configuración, Mano de Obra o Máquina registrado contra una operación de trabajo, cuya duración se acumula en el costo real de la operación."
 
 msgid "A tool is a physical item used to make a part that can be used across multiple jobs"
 msgstr "Una herramienta es un artículo físico utilizado para fabricar una pieza que se puede usar en múltiples trabajos"
@@ -333,6 +343,9 @@ msgstr "capacidad"
 
 msgid "About"
 msgstr "Acerca de"
+
+msgid "Academy"
+msgstr "Academia"
 
 msgid "Accept Lot"
 msgstr "Aceptar Lote"
@@ -1267,6 +1280,10 @@ msgstr "¿Está seguro de que desea finalizar la cotización del proveedor?"
 msgid "Are you sure you want to leave this page?"
 msgstr "¿Estás seguro de que quieres salir de esta página?"
 
+#. placeholder {0}: i18n._(step.title)
+msgid "Are you sure you want to pass this checkpoint? The {0} phase still has unfinished tasks."
+msgstr "¿Estás seguro de que deseas pasar este checkpoint? La fase {0} aún tiene tareas sin terminar."
+
 #. placeholder {0}: selectedPurchaseInvoice.invoiceId!
 #. placeholder {0}: selectedSalesInvoice.invoiceId!
 msgid "Are you sure you want to permanently delete {0}?"
@@ -1678,6 +1695,9 @@ msgstr "Listas de materiales"
 
 msgid "Bonus Depreciation %"
 msgstr "Depreciación de bonificación %"
+
+msgid "Book a call to discuss guided implementation"
+msgstr "Reserva una llamada para discutir la implementación guiada"
 
 msgid "Book a call with Carbon"
 msgstr "Reserva una llamada con Carbon"
@@ -6266,7 +6286,7 @@ msgid "Job Materials"
 msgstr "Materiales de Trabajo"
 
 msgid "Job operation"
-msgstr ""
+msgstr "Operación de trabajo"
 
 msgid "Job Operation"
 msgstr "Operación de Trabajo"
@@ -6771,6 +6791,13 @@ msgstr "Mapear líneas ahora"
 
 msgid "Map your current process, systems, and data"
 msgstr "Mapea tu proceso actual, sistemas y datos"
+
+#. placeholder {0}: i18n._(step.gate)
+msgid "Mark \"{0}\" as passed?"
+msgstr "¿Marcar \"{0}\" como aprobado?"
+
+msgid "Mark all as configured"
+msgstr "Marcar todo como configurado"
 
 msgid "Mark as Paid"
 msgstr "Marcar como Pagado"
@@ -8783,7 +8810,7 @@ msgid "Production"
 msgstr "Producción"
 
 msgid "Production event"
-msgstr ""
+msgstr "Evento de producción"
 
 msgid "Production Event"
 msgstr "Evento de Producción"
@@ -10762,7 +10789,7 @@ msgid "Standard cloud Carbon fits how your company runs"
 msgstr "Carbon en la nube estándar se adapta a cómo funciona tu empresa"
 
 msgid "Standard factor"
-msgstr ""
+msgstr "Factor estándar"
 
 msgid "Standard Lead Time"
 msgstr "Tiempo de Entrega Estándar"
@@ -11247,6 +11274,9 @@ msgstr "tareas"
 msgid "Tasks"
 msgstr "Tareas"
 
+msgid "Tasks still open"
+msgstr "Tareas aún abiertas"
+
 msgid "Tasks that must be completed before this issue can be closed; selecting actions here adds them on top of whatever the workflow specifies."
 msgstr "Tareas que deben completarse antes de que se pueda cerrar este problema; seleccionar acciones aquí las agrega además de lo que especifica el flujo de trabajo."
 
@@ -11336,6 +11366,15 @@ msgstr "Valor de Prueba"
 
 msgid "Text size"
 msgstr "Tamaño de texto"
+
+#. placeholder {0}: i18n._(step.title)
+msgid "The \"{0}\" phase checks itself off once all of its tasks in the project plan are done."
+msgstr "La fase \"{0}\" se marca como completada una vez que todas sus tareas en el plan del proyecto estén hechas."
+
+#. placeholder {0}: i18n._(step.title)
+#. placeholder {1}: i18n._(step.gate)
+msgid "The \"{0}\" phase is done — its \"{1}\" checkpoint has been passed."
+msgstr "La fase \"{0}\" está completa — su punto de control \"{1}\" ha sido superado."
 
 #. placeholder {0}: steps.length
 msgid "The {0} phases to go live, each ending at a checkpoint. Tick off each task as you complete it."
@@ -11544,6 +11583,9 @@ msgstr "Los siguientes conjuntos no tienen operaciones. Por favor, asigne una op
 
 msgid "The following line items are missing prices or lead times:"
 msgstr "Los siguientes artículos de línea no tienen precios ni tiempos de entrega:"
+
+msgid "The following tasks are not done yet:"
+msgstr "Las siguientes tareas aún no están completadas:"
 
 msgid "The forms and shapes your raw materials come in"
 msgstr "Las formas y figuras en que vienen tus materias primas"
@@ -11918,7 +11960,7 @@ msgid "The unique identifier on this physical unit; one row per serial, quantity
 msgstr "El identificador único en esta unidad física; una fila por número de serie, la cantidad siempre es 1."
 
 msgid "The unit a routing time is expressed in, such as Hours/Piece or Total Hours, telling Carbon whether the time scales with quantity or is fixed per run."
-msgstr ""
+msgstr "La unidad en la que se expresa un tiempo de enrutamiento, como Horas/Pieza u Horas Totales, que indica a Carbon si el tiempo se escala con la cantidad o es fijo por ejecución."
 
 msgid "The unit price of the item at the time of the purchase"
 msgstr "El precio unitario del artículo en el momento de la compra"
@@ -12317,9 +12359,6 @@ msgstr "Entidad rastreada ya seleccionada"
 msgid "Tracked entity ID is required but none was found"
 msgstr "El ID de entidad rastreada es obligatorio pero no se encontró ninguno"
 
-msgid "Tracked from the Setup Map — open it"
-msgstr "Rastreado desde el Mapa de Configuración — ábrelo"
-
 msgid "Tracking"
 msgstr "Seguimiento"
 
@@ -12461,8 +12500,8 @@ msgstr "Deshacer"
 msgid "Uninstall"
 msgstr "Desinstalar"
 
-msgid "Unique, uppercase, without spaces"
-msgstr "Único, mayúsculas, sin espacios"
+msgid "Unique, uppercase, without spaces (max 10 characters)"
+msgstr "Único, en mayúsculas, sin espacios (máx. 10 caracteres)"
 
 msgid "Unit"
 msgstr "Unidad"
@@ -12593,12 +12632,6 @@ msgstr "Actualizar la información del kanban para reabastecimiento basado en es
 
 msgid "Update the purchase order quantities"
 msgstr "Actualizar las cantidades de la orden de compra"
-
-msgid "Update this in the project plan"
-msgstr "Actualiza esto en el plan del proyecto"
-
-msgid "Update this in the project plan."
-msgstr "Actualiza esto en el plan del proyecto."
 
 msgid "Updated"
 msgstr "Actualizado"
@@ -13034,6 +13067,9 @@ msgstr "Recorre cada área con tu campeón y desactiva cualquier cosa fuera del 
 
 msgid "Walk your current process, systems, and data"
 msgstr "Recorre tu proceso actual, sistemas y datos"
+
+msgid "Want our team alongside you? Expert eyes on your setup, data, and go-live."
+msgstr "¿Quieres que nuestro equipo te acompañe? Ojos expertos en tu configuración, datos y lanzamiento."
 
 msgid "Warehouse Transfer"
 msgstr "Transferencia de Almacén"

@@ -5,7 +5,8 @@ Redis client (ioredis) and rate limiting library. Used for permission caching, l
 ## Always
 
 - Import the singleton Redis client via `import { redis } from "@carbon/kv"` — it's a global singleton with lazy connect and retry logic.
-- Use `Ratelimit` class with static factory methods: `Ratelimit.fixedWindow()`, `Ratelimit.slidingWindow()`, or `Ratelimit.tokenBucket()`.
+- The singleton is **resilience-wrapped** (`src/resilient.ts`): Redis is a cache, never the source of truth, so when it's unreachable commands **fail soft instead of throwing** — a read resolves `null` (a collection resolves `[]`), a write resolves `null`, and a pipeline `.exec()` resolves `[]`. Just `await redis.get(...)` normally; treat `null` as a cache miss and read through to the DB. Do **not** wrap call sites in try/catch for connectivity — that's already handled. Each command also has a `REDIS_TIMEOUT_MS` cap so a hung Redis can't stall a request.
+- Use `Ratelimit` class with static factory methods: `Ratelimit.fixedWindow()`, `Ratelimit.slidingWindow()`, or `Ratelimit.tokenBucket()`. When Redis is down `Ratelimit.limit()` **fails open** (returns `success: true`) — a cache outage never blocks auth.
 - Handle rate limit responses: check `response.success` — caller is responsible for returning 429 when `!success`.
 - Requires `REDIS_URL` env var — throws at import if not set.
 
@@ -30,7 +31,7 @@ pnpm --filter @carbon/kv typecheck
 
 | Export | Provides |
 |--------|----------|
-| `redis` | Global ioredis singleton (lazy connect, 3 retries, offline queue) |
+| `redis` | Global ioredis singleton (lazy connect, 3 retries, offline queue), resilience-wrapped to fail soft when Redis is unreachable |
 | `Ratelimit` | Rate limiter class with `limit()`, `blockUntilReady()`, `getRemaining()`, `resetUsedTokens()` |
 | `Ratelimit.fixedWindow(tokens, window)` | Fixed window algorithm (simple, low memory) |
 | `Ratelimit.slidingWindow(tokens, window)` | Sliding window (smoother, prevents boundary bursts) |

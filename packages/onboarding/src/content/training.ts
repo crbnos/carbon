@@ -11,6 +11,9 @@ export interface TrainingCourse {
   // trainingConfig key (ERP) → resolved to an Academy course / video URL via
   // useResolveVideoUrl. Omitted when no matching Academy content exists yet.
   videoKey?: string;
+  // docs.carbon.ms fallback for courses with no Academy content — every course
+  // should carry one or the other so its title always links somewhere useful.
+  docsUrl?: string;
 }
 
 export interface TrainingTrack {
@@ -29,14 +32,18 @@ export const TRAINING_TRACKS: TrainingTrack[] = [
         course: msg`Getting around Carbon`,
         audience: msg`All users`,
         format: "Self-paced",
-        length: msg`2h`
+        length: msg`2h`,
+        docsUrl: "https://docs.carbon.ms/docs"
       },
       {
         key: "found-2",
         course: msg`How your company's process maps to Carbon`,
         audience: msg`Champions`,
         format: "Hands-on",
-        length: msg`2h`
+        length: msg`2h`,
+        // The narrated Guide walks one order end to end — the closest doc to
+        // "how your process maps onto Carbon".
+        docsUrl: "https://docs.carbon.ms/guides/order"
       }
     ]
   },
@@ -101,7 +108,8 @@ export const TRAINING_TRACKS: TrainingTrack[] = [
         course: msg`Engineering changes and CAD`,
         audience: msg`Engineering`,
         format: "Hands-on",
-        length: msg`3h`
+        length: msg`3h`,
+        docsUrl: "https://docs.carbon.ms/docs/reference/items"
       },
       {
         key: "prd-1",
@@ -136,21 +144,24 @@ export const TRAINING_TRACKS: TrainingTrack[] = [
         course: msg`General Ledger and month-end close`,
         audience: msg`Controller, Accountant`,
         format: "Hands-on",
-        length: msg`4h`
+        length: msg`4h`,
+        docsUrl: "https://docs.carbon.ms/docs/reference/accounting"
       },
       {
         key: "acc-2",
         course: msg`Accounts Receivable`,
         audience: msg`AR Clerk`,
         format: "Hands-on",
-        length: msg`3h`
+        length: msg`3h`,
+        docsUrl: "https://docs.carbon.ms/docs/reference/invoices"
       },
       {
         key: "acc-3",
         course: msg`Accounts Payable`,
         audience: msg`AP Clerk`,
         format: "Hands-on",
-        length: msg`3h`
+        length: msg`3h`,
+        docsUrl: "https://docs.carbon.ms/docs/reference/invoices"
       }
     ]
   }

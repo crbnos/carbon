@@ -58,8 +58,8 @@ const useSupplierInteractionLineDocuments = ({
   const { company } = useUser();
   const submit = useSubmit();
 
-  const canDelete = permissions.can("delete", "sales");
-  const canUpdate = permissions.can("update", "sales");
+  const canDelete = permissions.can("delete", "purchasing");
+  const canUpdate = permissions.can("update", "purchasing");
 
   const getPath = useCallback(
     (file: { name: string }) => {
@@ -372,7 +372,7 @@ const SupplierInteractionLineDocumentForm = ({
 
   return (
     <File
-      isDisabled={!permissions.can("update", "sales")}
+      isDisabled={!permissions.can("update", "purchasing")}
       leftIcon={<LuUpload />}
       onChange={uploadFiles}
       multiple

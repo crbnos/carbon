@@ -20,8 +20,13 @@ const CONFIGURE_GROUP_KEYS: Record<number, string> = {
   9: "setup-production"
 };
 
+// Stable key for a Setup Map group, shared by the Configure task (its `key`) and
+// the Setup Map section's DOM anchor so the Plan → Setup Map deep link lines up.
+export const setupGroupKey = (n: number): string =>
+  CONFIGURE_GROUP_KEYS[n] ?? `setup-group-${n}`;
+
 const CONFIGURE_GROUP_TASKS: BoardTask[] = SETUP_GROUPS.map((group) => ({
-  key: CONFIGURE_GROUP_KEYS[group.n] ?? `setup-group-${group.n}`,
+  key: setupGroupKey(group.n),
   label: group.title,
   stepKey: "gate:configure",
   owner: "carbon",

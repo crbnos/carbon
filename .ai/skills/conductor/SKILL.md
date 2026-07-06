@@ -38,11 +38,28 @@ pnpm --filter @carbon/harness exec tsx -e "import {parseBinding} from '@carbon/h
 **Each acceptance criterion is the definition of done** — you are not finished
 until every one is satisfied and provable.
 
-## Step 2: The cycle (repeat until acceptance met or the human stops)
+The binding's **markdown body is grooming context** and is fed to the doer,
+judge, and behavior gate: resolved questions, repro steps, test-data hints,
+precedent pointers. Ambiguities should be settled there — at grooming time,
+on the issue — before the loop ever starts, not asked mid-loop.
 
-### 2.1 Doer
+## Step 2: Plan — chunk the work before building
 
-Make the **smallest change toward the weakest-covered acceptance criterion**.
+If the binding has more than a couple of criteria, decompose it into **2–6
+small, ordered, independently-committable tasks** (schema first, then services,
+then UI), each mapped to the criteria it advances. Each task must be small
+enough for one focused session to build and one short review to verify. Record
+the plan; every commit and ledger entry names its task. (Headless, the harness
+does this itself — `runner/plan.ts`.)
+
+## Step 3: The cycle (per task, repeat until its criteria are met or the human stops)
+
+### 3.1 Doer
+
+Make the **smallest change that completes the current task** — other tasks are
+not this session's job. If the task won't fit in one focused session, stop at a
+**coherent, committable slice** (compiles, lint-clean) and record what remains
+— a clean partial slice is progress; a broken "complete" sprint is failure.
 Never batch unrelated changes. Domain rules:
 
 - **UI work**: FIRST find the nearest existing screen/component and copy its
@@ -53,7 +70,12 @@ Never batch unrelated changes. Domain rules:
   typechecking (stale types make typecheck a false green).
 - **Module code**: one `{module}.service.ts` + one `{module}.models.ts`.
 
-### 2.2 Gate
+### 3.2 Checkpoint, then gate
+
+**Commit the doer's work immediately** — `wip`-style checkpoint commits, pushed
+to the loop branch before any gate runs. Commit early, commit often: a failed
+gate is feedback for the next attempt, never a reason to discard work with
+`git checkout -- .`.
 
 Run in order; every applicable gate must be green:
 
@@ -80,17 +102,30 @@ b. **Behavior gate — mandatory for ANY user-facing change.** Choose the
    3. **CLI/script proof** — for non-UI changes (migrations, endpoints): a
       command demonstrating correct output.
 
-   Never pick a heavier method when a lighter one gives the same confidence —
-   but at least one proof must pass. **If visual proof is needed and the stack
-   cannot boot, the loop is BLOCKED** — surface to the human; do not open a
-   "done" PR with verification pending.
+   Never pick a heavier method when a lighter one gives the same confidence.
+   The proof attempt has **three outcomes**, and the distinction matters:
+
+   - **Proved** — you saw the behavior work. The gate is green.
+   - **Disproved** — you reached the relevant state and the behavior is still
+     wrong. The gate is red: fix forward on the next attempt.
+   - **Unverifiable** — you could not reach the state either way (test data you
+     can't construct at reasonable cost, stack won't boot, login/environment
+     failure). This is **absence of proof, not disproof** — do NOT revert
+     working, judge-approved code over it. Record exactly what proof is missing
+     and what a human would need to do, keep going, and ship the PR **flagged
+     for human verification** (draft + `agent:needs-verification`, see Step 5).
+     Never spend the whole behavior budget grinding on test-data generation —
+     stop early and mark it unverifiable.
 
 c. **Correctness (bug fixes)** — reproduce→fix→same-path: the test (or recorded
    browser playbook) that failed on the bug must pass after the fix.
 
-Any gate fails → fix it or revert this iteration's change.
+Any gate fails → the checkpoint STAYS; record why in the ledger and fix forward
+on the next attempt. After ~3 failed attempts on the same task, park the
+attempts on a rescue branch (`loop-rescue/<id>/t<k>`), reset to the last green
+checkpoint, and surface it — never delete the attempts.
 
-### 2.3 Judge — a separate subagent, never yourself
+### 3.3 Judge — a separate subagent, never yourself
 
 Dispatch a review subagent to check the diff against the acceptance criteria
 and design rules. Do not grade your own homework, and do not accept a holistic
@@ -108,24 +143,38 @@ and design rules. Do not grade your own homework, and do not accept a holistic
   next iteration's weakest-covered target.
 - Keep genuinely subjective criteria (copy clarity, polish) holistic — don't
   force atomic checks onto matters of taste.
+- **Disputed criteria are questions, not targets.** If a criterion rests on a
+  premise the code contradicts (the described mechanism doesn't exist) or
+  hinges on a product decision no agent can make, don't iterate against its
+  literal text — record it as *disputed* with a one-line question, exclude it
+  from the unmet set, and surface the question on the PR/issue. Iterating
+  cannot answer a product question; grooming can.
 
-### 2.4 Decide + ledger
+### 3.4 Decide + ledger
 
-Keep the change iff **every gate is green (including the behavior proof) AND
-the judge approves**; otherwise revert it. Append one entry per iteration:
+The task is **done** iff every gate is green AND the judge approves AND none of
+the task's criteria remain unmet; otherwise the checkpoint stays and the next
+attempt fixes forward. An *unverifiable* behavior proof does not make the gate
+red — the change is kept and the proof gap travels with it to the PR as a
+needs-verification flag. A judge that produces no verdict (after one retry) is
+absence of review, not rejection: conclude the task *flagged* for human review.
+Append one entry per iteration:
 
 ```bash
-pnpm --filter @carbon/harness exec tsx -e "import {appendLedger} from '@carbon/harness'; appendLedger('.ai/runs/<id>/ledger.jsonl', {iteration: <n>, change: '<summary>', gates: {<gate>: <bool>}, decision: '<keep|revert>', reason: '<why>', at: new Date().toISOString()})"
+pnpm --filter @carbon/harness exec tsx -e "import {appendLedger} from '@carbon/harness'; appendLedger('.ai/runs/<id>/ledger.jsonl', {iteration: <n>, change: '<summary>', gates: {<gate>: <bool>}, decision: '<keep|checkpoint|revert>', reason: '<why>', task: '<k/N: title>', at: new Date().toISOString()})"
 ```
 
 (The harness has no clock — you supply `at`.)
 
-### 2.5 Terminate?
+### 3.5 Terminate?
 
-All criteria met and provable → Step 3. No progress across iterations
-(plateau) or the human stops → stop and report honestly.
+All tasks concluded (disputed criteria excluded, unverifiable proofs and
+judge-less tasks flagged) → Step 4. A task exhausts its attempts or the human
+stops → stop and report honestly — **but never discard committed work**: the
+checkpoints are already on the pushed branch; open the PR per Step 5, marked
+*partial*, and name any rescue branches.
 
-## Step 3: Post-build freshness audit
+## Step 4: Post-build freshness audit
 
 Before opening the PR:
 
@@ -137,7 +186,7 @@ Before opening the PR:
 3. New pitfall discovered? Append it to `.ai/lessons.md`
    (`Context → Problem → Rule → Applies to`).
 
-## Step 4: Finish — land a gated PR
+## Step 5: Finish — land a gated PR
 
 1. Final pass: run `/check-and-commit` on the branch state (biome + gates), so
    the PR goes up clean.
@@ -145,19 +194,44 @@ Before opening the PR:
    - the design rationale (precedent copied; research cited),
    - per acceptance criterion: **which gate proves it and how** (test name,
      before/after screenshots, or CLI output),
-   - a ledger summary (iterations, kept/reverted and why).
-3. Loop artifacts (`.ai/runs/<id>/` — binding, ledger, screenshots) are
+   - a ledger summary (iterations, kept/reverted and why),
+   - **open questions** (disputed criteria, assumptions made instead of asking).
+3. **Ready-vs-draft is decided by the exit state** — create the PR as a draft only for unverified or partial runs, then promote shipped PRs to ready for review:
+   - **All criteria proved, verification gate green (`state=shipped`):** mark
+     the PR *ready for review* (`gh pr ready <url>`) and request a review from
+     Brad Barbin (`gh pr edit <url> --add-reviewer bradbarbin`).
+   - **Any proof unverifiable, or the loop ended partial/blocked:** leave it a
+     **draft** with the `agent:needs-verification` label and a warning section
+     stating exactly what a human must verify (and how) before merge. Do **not**
+     mark it ready; do **not** request a review. Flagged, never silently
+     dropped, never presented as fully proven.
+4. Loop artifacts (`.ai/runs/<id>/` — binding, ledger, screenshots) are
    gitignored runtime and never committed to the product tree; the harness's
    `openPr` hosts screenshots for embedding.
-4. Surface every design decision for the human to approve or improve — design
+5. Surface every design decision for the human to approve or improve — design
    is never shipped silently.
 
 ## Guardrails — non-negotiable
 
-- A user-facing change without sufficient proof is never done.
+- A user-facing change without sufficient proof is never presented as *done* —
+  it ships as a **draft PR flagged `agent:needs-verification`** naming the
+  missing proof. Absence of proof is not disproof; discarding gate-green,
+  judge-approved work because verification was impossible is a bug, not rigor.
+- A fully-proven `state=shipped` PR must be marked ready-for-review and have
+  a review requested from `bradbarbin` before closing the loop — do not leave
+  a complete, green PR as a draft.
+- Questions belong to grooming, not the loop. Never stop mid-loop to ask about
+  preference or ambiguity — choose the precedent-matching interpretation,
+  record the assumption, surface it on the PR. Reserve BLOCKED for hard
+  impossibilities (missing credentials, destructive/production actions,
+  a premise the code flatly contradicts).
+- Commit early, push often. Never discard uncommitted work with
+  `git checkout -- .` / `git clean` / `git reset --hard` without first parking
+  it on a commit that is pushed somewhere (the loop branch or a rescue branch).
 - Never auto-merge; never run on `main`; never background or fan out — this is
   the supervised loop.
-- If blocked, say BLOCKED and why. Never report "done, verification pending".
+- If blocked, say BLOCKED and why — and still salvage kept iterations as a
+  partial draft PR.
 
 ## Growing this
 

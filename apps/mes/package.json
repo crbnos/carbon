@@ -95,6 +95,7 @@
     "typescript": "catalog:",
     "vite": "catalog:",
     "vite-plugin-babel-macros": "catalog:",
+    "vitest": "catalog:",
     "wait-on": "catalog:"
   },
   "private": true,

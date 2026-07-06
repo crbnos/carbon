@@ -78,9 +78,13 @@ packages/database/supabase/snippets/**
 # .ai/ scratch — runtime, not source
 .ai/scratch/
 
-# Loop run artifacts (@carbon/harness RUNS_DIR) — directories only, so
-# committed markdown run logs (.ai/runs/*.md) stay tracked
-.ai/runs/*/
+# Loop run artifacts (@carbon/harness RUNS_DIR).
+# Volatile files (screenshots, raw event log) are excluded; durable run records
+# (binding, ledger, outcome) are committed back to main after each build so any
+# agent can inspect history and resume partial work without the worktree.
+.ai/runs/*/screenshots/
+.ai/runs/*/run.log.jsonl
+.ai/runs/*/.tmp/
 
 # Legacy llm/ — consolidated into .ai/ (docs, specs, runs)
 llm/

@@ -10,6 +10,11 @@ import {
   makePermissionsFromClaims
 } from "./users";
 
+// TTL for the cached permission claims. Bounds staleness if an invalidation
+// (company switch / deactivation) fails to delete the key — the cache heals
+// itself on expiry. 1 hour, matching the auth package's other short-lived keys.
+const PERMISSION_CACHE_TTL_SECONDS = 3600;
+
 export async function getUserByEmail(email: string) {
   return getCarbonServiceRole()
     .from("user")
@@ -51,8 +56,19 @@ export async function getUserClaims(userId: string, companyId: string) {
       // convert rawClaims to permissions
       claims = makePermissionsFromClaims(rawClaims.data as Json[]);
 
-      // store claims in redis
-      await redis.set(getPermissionCacheKey(userId), JSON.stringify(claims));
+      // store claims in redis — best-effort. A null/failed write (Redis down,
+      // fail-soft via @carbon/kv withResilience) must not abort the in-flight
+      // request; we already have the claims from the DB.
+      try {
+        await redis.set(
+          getPermissionCacheKey(userId),
+          JSON.stringify(claims),
+          "EX",
+          PERMISSION_CACHE_TTL_SECONDS
+        );
+      } catch (e) {
+        console.error("Failed to cache claims in redis", e);
+      }
 
       if (!claims) {
         throw new Error("Failed to get claims");

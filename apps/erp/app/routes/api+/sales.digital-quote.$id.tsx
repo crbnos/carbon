@@ -39,6 +39,20 @@ export async function action(args: ActionFunctionArgs) {
     quote.data.companyId
   );
 
+  // A quote can only be accepted or rejected while it is awaiting a response.
+  // Without this guard the unauthenticated share link can be replayed to create
+  // duplicate sales orders, or to act on an already ordered / rejected / expired
+  // quote (e.g. flipping an ordered quote back to "Lost").
+  if (
+    (type === "accept" || type === "reject") &&
+    quote.data.status !== "Sent"
+  ) {
+    return {
+      success: false,
+      message: "This quote is no longer available for a response."
+    };
+  }
+
   switch (type) {
     case "accept":
       const digitalQuoteAcceptedBy = String(

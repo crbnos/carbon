@@ -40,7 +40,12 @@ import {
   getCoreRowModel,
   useReactTable
 } from "@tanstack/react-table";
-import type { CSSProperties, ReactElement, ReactNode } from "react";
+import type {
+  CSSProperties,
+  MutableRefObject,
+  ReactElement,
+  ReactNode
+} from "react";
 import {
   Fragment,
   useCallback,
@@ -286,6 +291,9 @@ const Table = <T extends object>({
     : internalRowSelection;
   const setRowSelection = onRowSelectionChange ?? setInternalRowSelection;
 
+  // Anchor row (by id) for shift-click range selection.
+  const selectionAnchorRef = useRef<string | null>(null);
+
   /* Clear row selection when data changes. Skip when rows have stable ids
      (getRowId) or selection is controlled — the selection survives data
      reshapes like tree expansion in those cases. */
@@ -426,7 +434,7 @@ const Table = <T extends object>({
       );
     }
     if (withSelectableRows) {
-      result.push(...getRowSelectionColumn<T>());
+      result.push(...getRowSelectionColumn<T>(selectionAnchorRef));
     }
     result.push(...columns);
     if (renderContextMenu) {
@@ -1226,7 +1234,9 @@ const Table = <T extends object>({
   );
 };
 
-function getRowSelectionColumn<T>(): ColumnDef<T>[] {
+function getRowSelectionColumn<T>(
+  anchorRef: MutableRefObject<string | null>
+): ColumnDef<T>[] {
   return [
     {
       id: "Select",
@@ -1241,16 +1251,45 @@ function getRowSelectionColumn<T>(): ColumnDef<T>[] {
           {...{
             checked: table.getIsAllRowsSelected(),
             indeterminate: table.getIsSomeRowsSelected(),
-            onChange: table.getToggleAllRowsSelectedHandler()
+            onChange: (checked: boolean) => {
+              table.toggleAllRowsSelected(checked);
+              anchorRef.current = null;
+            }
           }}
         />
       ),
-      cell: ({ row }) => (
+      cell: ({ row, table }) => (
         <IndeterminateCheckbox
           {...{
             checked: row.getIsSelected(),
             indeterminate: row.getIsSomeSelected(),
-            onChange: row.getToggleSelectedHandler()
+            onChange: (checked: boolean, shiftKey: boolean) => {
+              const rows = table.getRowModel().rows;
+              const clickedIndex = rows.findIndex((r) => r.id === row.id);
+              const anchorIndex =
+                anchorRef.current == null
+                  ? -1
+                  : rows.findIndex((r) => r.id === anchorRef.current);
+
+              if (shiftKey && anchorIndex !== -1 && clickedIndex !== -1) {
+                const start = Math.min(anchorIndex, clickedIndex);
+                const end = Math.max(anchorIndex, clickedIndex);
+                table.setRowSelection((prev) => {
+                  const next = { ...prev };
+                  for (let i = start; i <= end; i++) {
+                    const id = rows[i].id;
+                    if (checked) next[id] = true;
+                    else delete next[id];
+                  }
+                  return next;
+                });
+                // Keep the anchor fixed so the range can be re-dragged.
+                return;
+              }
+
+              row.toggleSelected(checked);
+              anchorRef.current = row.id;
+            }
           }}
         />
       )

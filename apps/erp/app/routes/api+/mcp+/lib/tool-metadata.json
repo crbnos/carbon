@@ -1,5 +1,5 @@
 {
-  "generated": "2026-07-03T10:27:59.256Z",
+  "generated": "2026-07-06T11:43:44.070Z",
   "totalTools": 1263,
   "modules": 15,
   "tools": [
@@ -13347,7 +13347,7 @@
       "module": "items",
       "classification": "WRITE",
       "description": "upsert method material",
-      "paramCount": 4,
+      "paramCount": 1,
       "serviceParams": [
         "client",
         "methodMaterial"
@@ -13360,22 +13360,10 @@
       "schema": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string"
-          },
-          "makeMethodId": {
-            "type": "string"
-          },
-          "order": {
-            "type": "number"
-          },
-          "itemType": {
-            "type": "string"
-          }
+          "methodMaterial": {}
         },
         "required": [
-          "id",
-          "makeMethodId"
+          "methodMaterial"
         ]
       }
     },
@@ -18520,7 +18508,7 @@
       "module": "production",
       "classification": "WRITE",
       "description": "update production quantity",
-      "paramCount": 3,
+      "paramCount": 1,
       "serviceParams": [
         "client",
         "productionQuantity"
@@ -18532,18 +18520,10 @@
       "schema": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string"
-          },
-          "jobOperationId": {
-            "type": "string"
-          },
-          "type": {
-            "type": "number"
-          }
+          "productionQuantity": {}
         },
         "required": [
-          "jobOperationId"
+          "productionQuantity"
         ]
       }
     },
@@ -18552,7 +18532,7 @@
       "module": "production",
       "classification": "WRITE",
       "description": "upsert production quantity",
-      "paramCount": 3,
+      "paramCount": 1,
       "serviceParams": [
         "client",
         "productionQuantity"
@@ -18565,18 +18545,10 @@
       "schema": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string"
-          },
-          "jobOperationId": {
-            "type": "string"
-          },
-          "type": {
-            "type": "number"
-          }
+          "productionQuantity": {}
         },
         "required": [
-          "jobOperationId"
+          "productionQuantity"
         ]
       }
     },

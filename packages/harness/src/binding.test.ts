@@ -29,6 +29,14 @@ describe("parseBinding", () => {
     expect(() => parseBinding("---\nkind: bug\n---")).toThrow(/id/);
   });
 
+  it("captures the markdown body as grooming notes, omits when empty", () => {
+    expect(parseBinding(MD).notes).toBe("Some freeform notes.");
+    expect(parseBinding("---\nid: x\nkind: bug\n---").notes).toBeUndefined();
+    expect(
+      parseBinding("---\nid: x\nkind: bug\n---\n\n  \n").notes
+    ).toBeUndefined();
+  });
+
   it("parses an optional numeric issue, omits it when absent or non-numeric", () => {
     expect(parseBinding(`${MD}`).issue).toBeUndefined();
     expect(parseBinding("---\nid: x\nkind: bug\nissue: 450\n---").issue).toBe(

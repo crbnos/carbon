@@ -105,7 +105,7 @@ const JobForm = ({ initialValues }: JobFormProps) => {
     scrapPercentage:
       (initialValues.quantity ?? 0) === 0
         ? 0
-        : (initialValues.scrapQuantity ?? 0) / initialValues.scrapQuantity,
+        : (initialValues.scrapQuantity ?? 0) / initialValues.quantity,
     uom: initialValues.unitOfMeasureCode ?? "",
     modelUploadId: initialValues.modelUploadId ?? null
   });

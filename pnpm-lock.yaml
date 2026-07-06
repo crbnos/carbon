@@ -1288,6 +1288,9 @@ importers:
       vite-plugin-babel-macros:
         specifier: 'catalog:'
         version: 1.0.6(vite@8.0.10(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.7.0)(tsx@4.21.0)(yaml@2.8.3))
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.6(@opentelemetry/api@1.9.0)(@types/node@24.12.2)(vite@8.0.10(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.7.0)(tsx@4.21.0)(yaml@2.8.3))
       wait-on:
         specifier: 'catalog:'
         version: 7.2.0
@@ -2504,6 +2507,9 @@ importers:
       '@carbon/config':
         specifier: workspace:*
         version: link:../config
+      '@types/ioredis-mock':
+        specifier: 8.2.7
+        version: 8.2.7(ioredis@5.10.1)
       '@types/node':
         specifier: 20.19.39
         version: 20.19.39

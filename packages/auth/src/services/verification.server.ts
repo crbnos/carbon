@@ -11,13 +11,21 @@ export async function sendVerificationCode(email: string) {
       100000 + Math.random() * 900000
     ).toString();
 
-    // Store in Redis with 10-minute expiration
-    await redis.set(
+    // Store in Redis with 10-minute expiration. @carbon/kv (withResilience) fails
+    // soft: on a Redis-down condition `set` resolves null instead of "OK". If we
+    // can't persist the code we must NOT send an unverifiable email — fail closed.
+    const stored = await redis.set(
       `verification:${email.toLowerCase()}`,
       verificationCode,
       "EX",
       600
     );
+    if (!stored) {
+      console.error(
+        "Failed to store verification code (Redis unavailable); not sending email"
+      );
+      return false;
+    }
 
     // Send email with verification code using React template
     const html = await render(
@@ -46,6 +54,9 @@ export async function verifyEmailCode(email: string, code: string) {
   try {
     const storedCode = await redis.get(`verification:${email.toLowerCase()}`);
 
+    // If Redis is down, @carbon/kv fails soft and `storedCode` is null, so we
+    // return false. Blocking verification when the code store is unreachable is
+    // the expected/acceptable fail-closed behavior — we cannot confirm the code.
     if (!storedCode || String(storedCode).trim() !== String(code).trim()) {
       return false;
     }

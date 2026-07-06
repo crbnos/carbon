@@ -5,7 +5,7 @@ import type { Binding } from "../binding";
 import { hostedScreenshotPath, screenshotsDir } from "../layout";
 import { readLedger } from "../ledger";
 import { sq } from "./shell";
-import type { Shell } from "./types";
+import type { Shell, TaskStatus } from "./types";
 
 /** Screenshot files the behavior gate captured for this loop, if any. */
 function screenshots(dir: string): string[] {
@@ -127,40 +127,107 @@ function behaviorSection(
   return [];
 }
 
+/** Label a reviewer can filter on when a PR ships without full proof. */
+const NEEDS_VERIFICATION_LABEL = "agent:needs-verification";
+
+export type PrFlags = {
+  /** PR base branch. Defaults to the repo default (main); pass the loop's base
+   *  branch to show only the loop's commit when it wasn't branched off main. */
+  base?: string;
+  /** Proof gaps on kept work — renders a "Needs human verification" section,
+   *  opens the PR as a draft, and applies the needs-verification label. */
+  unverified?: string[];
+  /** Product questions for the reviewer (disputed criteria, doer assumptions). */
+  questions?: string[];
+  /** The task plan and per-task outcome — rendered as a checklist. */
+  plan?: { title: string; status: TaskStatus }[];
+  /** Set when the loop ended WITHOUT meeting all criteria (plateau/blocked) but
+   *  committed work exists — salvage it as a draft PR rather than losing the
+   *  work with the worktree. */
+  partial?: { state: string; reason: string };
+};
+
+const TASK_MARK: Record<TaskStatus, string> = {
+  done: "- [x]",
+  flagged: "- [x] ⚠️",
+  failed: "- [ ] ✗",
+  pending: "- [ ]"
+};
+
 /**
  * Push the loop branch and open a **gated** PR (never merged). The body carries
  * the design rationale surface: acceptance checklist, embedded behavior-gate
  * screenshots, and the full ledger, so a human reviewer sees every kept/reverted
- * iteration and why. Returns the PR URL.
+ * iteration and why. Unproven or partial work ships as a DRAFT with an explicit
+ * warning section — flagged, never silently dropped. Returns the PR URL.
  */
 export function openPr(
   binding: Binding,
   ledgerPath: string,
   shell: Shell,
   cwd: string,
-  /** PR base branch. Defaults to the repo default (main); pass the loop's base
-   *  branch to show only the loop's commit when it wasn't branched off main. */
-  base?: string
+  flags: PrFlags = {}
 ): string {
   const ledger = readLedger(ledgerPath);
   const kept = ledger.filter((e) => e.decision === "keep").length;
   const shots = screenshots(screenshotsDir(cwd, binding.id));
   const hosted =
     shots.length > 0 ? hostScreenshots(binding.id, shots, shell, cwd) : null;
+  const unverified = flags.unverified ?? [];
+  const questions = flags.questions ?? [];
+  const needsReview = unverified.length > 0 || Boolean(flags.partial);
 
   const body = [
     `## ${binding.title}`,
     "",
     `**Kind:** ${binding.kind} · **Risk:** ${binding.risk}`,
     "",
-    ...(binding.issue ? [`Closes #${binding.issue}`, ""] : []),
+    // A partial PR must not auto-close its issue on merge — the criteria are
+    // not all met. Reference it without the `Closes` keyword instead.
+    ...(binding.issue
+      ? [
+          flags.partial
+            ? `Related to #${binding.issue}`
+            : `Closes #${binding.issue}`,
+          ""
+        ]
+      : []),
+    ...(flags.partial
+      ? [
+          `> [!WARNING]`,
+          `> **Partial work — the loop ended \`${flags.partial.state}\`:** ${flags.partial.reason}`,
+          `> The ledger below records which commits passed gates and review. Remaining criteria are unfinished, not failing.`,
+          ""
+        ]
+      : []),
+    ...(unverified.length > 0
+      ? [
+          `> [!WARNING]`,
+          `> **Needs human verification.** The behavior gate could not prove the change either way — absence of proof, not disproof. A human must verify before merge:`,
+          ...unverified.map((u) => `> - ${u}`),
+          ""
+        ]
+      : []),
     "### Acceptance",
-    ...binding.acceptance.map((c) => `- [x] ${c}`),
+    ...binding.acceptance.map((c) => `- [${flags.partial ? " " : "x"}] ${c}`),
     "",
+    ...(flags.plan && flags.plan.length > 0
+      ? [
+          "### Tasks",
+          ...flags.plan.map(
+            (t) =>
+              `${TASK_MARK[t.status]} ${t.title}${t.status === "flagged" ? " _(kept without judge review)_" : t.status === "failed" ? " _(attempts on rescue branch)_" : ""}`
+          ),
+          ""
+        ]
+      : []),
+    ...(questions.length > 0
+      ? ["### Open questions", ...questions.map((q) => `- ${q}`), ""]
+      : []),
     ...behaviorSection(hosted, shots),
     "### Ledger",
     ...ledger.map(
-      (e) => `- #${e.iteration} **${e.decision}** — ${e.change} _(${e.reason})_`
+      (e) => `- ${e.iteration}. **${e.decision}** — ${e.change} _(${e.reason})_`
     ),
     "",
     `_Conducted headless: ${kept} kept / ${ledger.length} iterations. ` +
@@ -173,22 +240,34 @@ export function openPr(
   const push = shell("git push -u origin HEAD", { cwd });
   if (!push.ok) throw new Error(`git push failed: ${push.output}`);
 
+  // Best-effort: label may not exist in the repo — never fail the PR over it.
+  const label = (): void => {
+    if (needsReview) {
+      shell(`gh pr edit --add-label ${sq(NEEDS_VERIFICATION_LABEL)}`, { cwd });
+    }
+  };
+
   // Idempotent: a PR may already exist for this branch (re-entry — addressing
   // review feedback in the same worktree). Update its body and return it rather
   // than failing on `gh pr create`. `gh pr view` errors (ok:false) when none.
   const existing = shell("gh pr view --json url --jq .url", { cwd });
   if (existing.ok && existing.output.trim().startsWith("http")) {
     shell(`gh pr edit --body-file ${sq(bodyFile)}`, { cwd });
+    label();
     return firstHttpUrl(existing.output);
   }
 
-  const title = `loop(${binding.id}): ${binding.title}`;
-  const baseArg = base ? ` --base ${sq(base)}` : "";
+  const title = `loop(${binding.id}): ${binding.title}${flags.partial ? " [partial]" : ""}`;
+  const baseArg = flags.base ? ` --base ${sq(flags.base)}` : "";
+  // Unproven/partial work goes up as a draft — visible, reviewable, unmergeable
+  // by accident.
+  const draftArg = needsReview ? " --draft" : "";
   const r = shell(
-    `gh pr create --title ${sq(title)} --body-file ${sq(bodyFile)}${baseArg}`,
+    `gh pr create --title ${sq(title)} --body-file ${sq(bodyFile)}${baseArg}${draftArg}`,
     { cwd }
   );
   if (!r.ok) throw new Error(`gh pr create failed: ${r.output}`);
+  label();
 
   return firstHttpUrl(r.output);
 }

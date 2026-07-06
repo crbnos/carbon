@@ -10,8 +10,14 @@ import { useUser } from "~/hooks";
 import { useItems, usePeople } from "~/stores";
 import type { Item } from "~/stores/items";
 
-let hydratedFromIdb = false;
+// IndexedDB entries are keyed per company (`items:<companyId>`) — a global key
+// let one company's cached list hydrate the pickers after switching to another
+// company. `activeCompanyId` also guards async callbacks racing a mid-flight
+// company switch.
+let activeCompanyId: string | null = null;
 let hydratedFromServer = false;
+
+const LEGACY_IDB_KEYS = ["items", "people"];
 
 const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
@@ -32,15 +38,24 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
   const channelRef = useRef<RealtimeChannel | null>(null);
 
   const hydrate = async () => {
-    if (!hydratedFromIdb) {
-      hydratedFromIdb = true;
+    const requestedCompanyId = companyId;
+    if (activeCompanyId !== requestedCompanyId) {
+      activeCompanyId = requestedCompanyId;
 
-      idb.getItem("items").then((data) => {
-        if (data && !hydratedFromServer) setItems(data as Item[], true);
+      // pre-keying entries were global; purge so they can never hydrate again
+      for (const key of LEGACY_IDB_KEYS) {
+        void idb.removeItem(key);
+      }
+
+      const fresh = () =>
+        !hydratedFromServer && activeCompanyId === requestedCompanyId;
+
+      idb.getItem(`items:${requestedCompanyId}`).then((data) => {
+        if (data && fresh()) setItems(data as Item[], true);
       });
-      idb.getItem("people").then((data) => {
+      idb.getItem(`people:${requestedCompanyId}`).then((data) => {
         // @ts-ignore
-        if (data && !hydratedFromServer) setPeople(data, true);
+        if (data && fresh()) setPeople(data, true);
       });
     }
 
@@ -71,6 +86,9 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
     if (people.error) {
       throw new Error("Failed to fetch people");
     }
+
+    // company switched while fetching — these results belong to the old company
+    if (activeCompanyId !== requestedCompanyId) return;
 
     hydratedFromServer = true;
 

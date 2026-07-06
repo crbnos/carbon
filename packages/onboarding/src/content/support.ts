@@ -26,3 +26,12 @@ export const GUIDED_UPSELL: GuidedUpsell = {
   ],
   cta: msg`Book a call with Carbon`
 };
+
+// The guided-implementation row in "How to reach us" (Go-Live page), shown to
+// self-serve hubs only — paid tiers already have the guided motion. Mirrors the
+// command-center upsell card; the CTA spells out what the call is about.
+export const GUIDED_CONTACT = {
+  channel: msg`Guided implementation`,
+  detail: msg`Want our team alongside you? Expert eyes on your setup, data, and go-live.`,
+  cta: msg`Book a call to discuss guided implementation`
+};

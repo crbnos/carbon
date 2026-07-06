@@ -595,8 +595,8 @@ function DeleteProcedureStep({
   return (
     <ConfirmDelete
       action={path.to.deleteProcedureStep(id, attribute.id)}
-      name={attribute.name ?? "this attribute"}
-      text={`Are you sure you want to delete the attribute: ${attribute.name}? This cannot be undone.`}
+      name={attribute.name ?? "this step"}
+      text={`Are you sure you want to delete the step: ${attribute.name}? This cannot be undone.`}
       onCancel={onCancel}
       onSubmit={onCancel}
     />
