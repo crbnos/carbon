@@ -1,3 +1,5 @@
+import type { Database } from "@carbon/database";
+import { Constants } from "@carbon/database";
 import { MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -21,10 +23,7 @@ import {
   useUrlParams
 } from "~/hooks";
 import type { InventoryCount } from "~/modules/inventory";
-import {
-  InventoryCountStatus,
-  inventoryCountStatusType
-} from "~/modules/inventory";
+import { InventoryCountStatus } from "~/modules/inventory";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 
@@ -80,16 +79,20 @@ const InventoryCountsTable = memo(
           header: t`Status`,
           cell: (item) => {
             const status =
-              item.getValue<(typeof inventoryCountStatusType)[number]>();
+              item.getValue<
+                Database["public"]["Enums"]["inventoryCountStatus"]
+              >();
             return <InventoryCountStatus status={status} />;
           },
           meta: {
             filter: {
               type: "static",
-              options: inventoryCountStatusType.map((type) => ({
-                value: type,
-                label: <InventoryCountStatus status={type} />
-              }))
+              options: Constants.public.Enums.inventoryCountStatus.map(
+                (type) => ({
+                  value: type,
+                  label: <InventoryCountStatus status={type} />
+                })
+              )
             },
             pluralHeader: t`Statuses`,
             icon: <LuClock />

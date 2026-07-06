@@ -1,10 +1,10 @@
+import type { Database } from "@carbon/database";
 import { Status } from "@carbon/react";
 import { RECEIPT_STATUS_COLOR_MAP } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
-import type { inventoryCountStatusType } from "~/modules/inventory";
 
 type InventoryCountStatusProps = {
-  status?: (typeof inventoryCountStatusType)[number] | null;
+  status?: Database["public"]["Enums"]["inventoryCountStatus"];
 };
 
 // Inventory Count shares the Draft / Pending / Posted lifecycle (and therefore
