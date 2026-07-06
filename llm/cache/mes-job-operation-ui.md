@@ -90,7 +90,7 @@ Displays job-related files with:
 
 Only visible when `parentIsSerial` is true:
 - Lists tracked entities
-- Print label button
+- `PrintButton` (shared component from `~/components`) with sourceDocument="Operation" and context="workCenter" — sends to a configured printer via `/x/print`, or falls back to a label download modal when no printers are configured (see `llm/cache/printing-system.md`)
 - Select button for each serial
 
 ## Modals

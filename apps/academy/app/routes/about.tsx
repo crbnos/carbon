@@ -13,7 +13,7 @@ export default function AboutRoute() {
       <Hero>
         <Heading
           size="display"
-          className="font-display text-[#212578] dark:text-white max-w-2xl"
+          className="font-display text-[#121212] dark:text-white max-w-2xl"
         >
           Carbon Academy
         </Heading>
@@ -58,7 +58,7 @@ export default function AboutRoute() {
             </h3>
             <Heading
               size="h1"
-              className="font-display text-[#212578] dark:text-white max-w-2xl"
+              className="font-display text-[#121212] dark:text-white max-w-2xl"
             >
               Register and Track Your Progress
             </Heading>
@@ -80,7 +80,7 @@ export default function AboutRoute() {
             </h3>
             <Heading
               size="h1"
-              className="font-display text-[#212578] dark:text-white max-w-2xl"
+              className="font-display text-[#121212] dark:text-white max-w-2xl"
             >
               Take Challenges
             </Heading>

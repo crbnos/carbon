@@ -16,9 +16,14 @@ export default function RequestAccessRoute() {
     <>
       <div className="flex flex-col items-center justify-center">
         <img
-          src="/carbon-logo-mark.svg"
+          src="/carbon-mark-light.svg"
           alt="Carbon Logo"
-          className="w-36 mb-3"
+          className="w-24 mb-3 dark:hidden"
+        />
+        <img
+          src="/carbon-mark-dark.svg"
+          alt="Carbon Logo"
+          className="w-24 mb-3"
         />
 
         <h3 className="font-mono font-bold leading-loose uppercase text-xl">

@@ -1,7 +1,11 @@
 import { ValidatedForm } from "@carbon/form";
 import {
   Button,
+  FormControl,
+  FormHelperText,
+  FormLabel,
   HStack,
+  Input as InputBase,
   ModalDrawer,
   ModalDrawerBody,
   ModalDrawerContent,
@@ -14,17 +18,19 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useFetcher } from "react-router";
 import type { z } from "zod";
+import { PrintButton } from "~/components";
 import {
   Hidden,
   Input,
   Location,
   StorageTypes,
-  StorageUnit,
-  Submit
+  Submit,
+  WorkCenter
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import { storageUnitValidator } from "~/modules/inventory";
 import { path } from "~/utils/path";
+import { StorageUnitParentSelect } from "./StorageUnitParentSelect";
 
 type StorageUnitFormProps = {
   locationId: string;
@@ -32,6 +38,10 @@ type StorageUnitFormProps = {
   type?: "modal" | "drawer";
   open?: boolean;
   onClose: () => void;
+  inheritedWorkCenter?: {
+    workCenterId: string;
+    workCenterName: string | null;
+  } | null;
 };
 
 const StorageUnitForm = ({
@@ -39,7 +49,8 @@ const StorageUnitForm = ({
   initialValues,
   open = true,
   type = "drawer",
-  onClose
+  onClose,
+  inheritedWorkCenter
 }: StorageUnitFormProps) => {
   const fetcher = useFetcher<{}>();
   const { t } = useLingui();
@@ -92,7 +103,7 @@ const StorageUnitForm = ({
                   name="locationId"
                   label={t`Location`}
                 />
-                <StorageUnit
+                <StorageUnitParentSelect
                   name="parentId"
                   label={t`Parent Storage Unit`}
                   locationId={locationId}
@@ -105,6 +116,28 @@ const StorageUnitForm = ({
                   label={t`Storage Types`}
                   isOptional
                 />
+                {inheritedWorkCenter ? (
+                  <FormControl>
+                    <FormLabel htmlFor="workCenterId-inherited">
+                      {t`Work Center`}
+                    </FormLabel>
+                    <InputBase
+                      id="workCenterId-inherited"
+                      value={inheritedWorkCenter.workCenterName ?? t`Unknown`}
+                      isReadOnly
+                      className="text-muted-foreground"
+                    />
+                    <FormHelperText>{t`Inherited from parent`}</FormHelperText>
+                  </FormControl>
+                ) : (
+                  <WorkCenter
+                    name="workCenterId"
+                    label={t`Work Center`}
+                    locationId={locationId}
+                    isOptional
+                    helperText={t`Assigns this storage unit to a work center (lineside)`}
+                  />
+                )}
               </VStack>
             </ModalDrawerBody>
             <ModalDrawerFooter>
@@ -115,6 +148,20 @@ const StorageUnitForm = ({
                 <Button size="md" variant="solid" onClick={onClose}>
                   <Trans>Cancel</Trans>
                 </Button>
+                {isEditing && initialValues.id && (
+                  <PrintButton
+                    sourceDocument="StorageUnit"
+                    sourceDocumentId={initialValues.id}
+                    locationId={locationId || undefined}
+                    context="inventory"
+                    fileRoutes={{
+                      pdf: (id: string, opts?: { labelSize?: string }) =>
+                        path.to.file.storageUnitLabelsPdf(id, opts),
+                      zpl: (id: string, opts?: { labelSize?: string }) =>
+                        path.to.file.storageUnitLabelsZpl(id, opts)
+                    }}
+                  />
+                )}
               </HStack>
             </ModalDrawerFooter>
           </ValidatedForm>

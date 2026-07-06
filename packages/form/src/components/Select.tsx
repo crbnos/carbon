@@ -15,7 +15,7 @@ import {
   Spinner
 } from "@carbon/react";
 
-import type { ComponentPropsWithoutRef } from "react";
+import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import { forwardRef } from "react";
 import { LuPlus, LuSettings2, LuX } from "react-icons/lu";
 import { useControlField, useField } from "../hooks";
@@ -32,6 +32,7 @@ export type SelectProps = Omit<SelectBaseProps, "onChange"> & {
     newValue: { value: string; label: string | JSX.Element } | null
   ) => void;
   onConfigure?: () => void;
+  emptyMessage?: ReactNode;
   inline?: (
     value: string,
     options: { value: string; label: string | JSX.Element }[]
@@ -138,6 +139,7 @@ export type SelectBaseProps = Omit<
   isLoading?: boolean;
   isReadOnly?: boolean;
   placeholder?: string;
+  emptyMessage?: ReactNode;
   inline?: (
     value: string,
     options: { value: string; label: string | JSX.Element }[]
@@ -156,6 +158,7 @@ export const SelectBase = forwardRef<HTMLButtonElement, SelectBaseProps>(
       isLoading,
       isReadOnly,
       placeholder,
+      emptyMessage,
       inline,
       onChange,
       ...props
@@ -217,11 +220,17 @@ export const SelectBase = forwardRef<HTMLButtonElement, SelectBaseProps>(
             )}
           </SelectTrigger>
           <SelectContent>
-            {options.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
+            {options.length === 0
+              ? (emptyMessage ?? (
+                  <div className="py-6 text-center text-sm text-muted-foreground">
+                    No options available
+                  </div>
+                ))
+              : options.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
           </SelectContent>
         </CarbonSelect>
         {isClearable && !isNonInteractive && value && (

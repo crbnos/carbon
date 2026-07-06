@@ -1,7 +1,7 @@
 import { intro, outro, tasks } from "@clack/prompts";
 import pc from "picocolors";
 import { syncAppPortlessConfigs } from "../env.js";
-import { currentBranch, isLinkedWorktree } from "../git.js";
+import { currentBranch } from "../git.js";
 import { stopStack } from "../services/compose.js";
 import { branchToPrefix, unregisterAliases } from "../services/portless.js";
 import { getWorktreeRoot, projectName, resolveSlug } from "../worktree.js";
@@ -37,14 +37,9 @@ export async function down(opts: { silent?: boolean } = {}) {
       }
     },
     {
-      title: "Reset app portless.json",
+      title: "Clean up portless.json",
       task: async () => {
-        const linked = await isLinkedWorktree();
-        syncAppPortlessConfigs({
-          worktreeRoot: root,
-          branchPrefix: null,
-          linked
-        });
+        syncAppPortlessConfigs(root);
         return "configs reset";
       }
     }
@@ -68,8 +63,7 @@ async function runPlain(root: string, slug: string, project: string) {
   await unregisterAliases(root, branchPrefix);
   done("aliases removed");
 
-  step("resetting app portless.json");
-  const linked = await isLinkedWorktree();
-  syncAppPortlessConfigs({ worktreeRoot: root, branchPrefix: null, linked });
+  step("cleaning up portless.json");
+  syncAppPortlessConfigs(root);
   done("configs reset");
 }

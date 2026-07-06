@@ -186,7 +186,7 @@ const MultiSelect = forwardRef<HTMLButtonElement, MultiSelectProps>(
           </PopoverTrigger>
           <PopoverContent
             align="end"
-            className="min-w-[--radix-popover-trigger-width] p-1"
+            className="min-w-[var(--radix-popover-trigger-width)] p-1"
           >
             <VirtualizedCommand
               options={options}

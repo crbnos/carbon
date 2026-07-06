@@ -1,4 +1,4 @@
-import { getTableLabel } from "@carbon/database/audit.config";
+import { auditConfig, getTableLabel } from "@carbon/database/audit.config";
 import type { AuditLogEntry } from "@carbon/database/audit.types";
 import {
   Badge,
@@ -241,7 +241,12 @@ const AuditLogEntryCard = memo(({ entry }: AuditLogEntryCardProps) => {
     icon: null
   };
 
-  const diffKeys = entry.diff ? Object.keys(entry.diff) : [];
+  // Belt-and-suspenders filter — backend strips skipFields too, but if a
+  // legacy entry slipped through (or a new skipField was added since the
+  // entry was written), keep the noise out of the rendered diff.
+  const diffKeys = entry.diff
+    ? Object.keys(entry.diff).filter((k) => !isSkippedDiffKey(k))
+    : [];
 
   return (
     <div className="border bg-muted/40 rounded-lg p-4 w-full">
@@ -282,32 +287,9 @@ const AuditLogEntryCard = memo(({ entry }: AuditLogEntryCardProps) => {
         </p>
         {diffKeys.length > 0 ? (
           <div className="space-y-1">
-            {diffKeys.map((key) => {
-              const change = entry.diff![key];
-              return (
-                <div
-                  key={key}
-                  className="flex items-center gap-2 font-mono text-sm py-1"
-                >
-                  <span className="text-muted-foreground font-medium min-w-[120px]">
-                    {key}:
-                  </span>
-                  {change.old !== undefined && (
-                    <span className="px-2 py-0.5 rounded bg-red-500/10 text-red-500">
-                      {formatValue(change.old)}
-                    </span>
-                  )}
-                  {change.old !== undefined && change.new !== undefined && (
-                    <span className="text-muted-foreground">→</span>
-                  )}
-                  {change.new !== undefined && (
-                    <span className="px-2 py-0.5 rounded bg-green-500/10 text-green-500">
-                      {formatValue(change.new)}
-                    </span>
-                  )}
-                </div>
-              );
-            })}
+            {diffKeys.map((key) => (
+              <ChangeRow key={key} columnKey={key} change={entry.diff![key]} />
+            ))}
           </div>
         ) : (
           <p className="text-sm text-muted-foreground italic">
@@ -328,6 +310,18 @@ const AuditLogEntryCard = memo(({ entry }: AuditLogEntryCardProps) => {
 AuditLogEntryCard.displayName = "AuditLogEntryCard";
 export { AuditLogEntryCard };
 
+// Hide globally-skipped columns (and any nested suffix path) from the
+// rendered diff. Mirrors the writer/reader filter so vector / metadata
+// noise stays out of the UI even if it sneaks past the API layer.
+function isSkippedDiffKey(key: string): boolean {
+  const skip = auditConfig.skipFields as readonly string[];
+  for (let i = 0; i < skip.length; i++) {
+    const s = skip[i]!;
+    if (key === s || key.endsWith(`.${s}`)) return true;
+  }
+  return false;
+}
+
 function formatValue(value: unknown): string {
   if (value === null) return "null";
   if (value === undefined) return "undefined";
@@ -335,4 +329,172 @@ function formatValue(value: unknown): string {
   if (typeof value === "number" || typeof value === "boolean")
     return String(value);
   return JSON.stringify(value);
+}
+
+// Convert a column name into a Linear-style human label. When a snapshot
+// exists, strip the trailing `Id` so a FK column reads as its referenced
+// entity (e.g. `triggerProcessId` → `Trigger Process`). Without a
+// snapshot, preserve the column name as-is so the raw column is still
+// recognizable for forensic queries.
+function humanizeColumnKey(key: string, hasSnapshot: boolean): string {
+  const normalized = hasSnapshot && key.endsWith("Id") ? key.slice(0, -2) : key;
+  return normalized
+    .replace(/([A-Z])/g, " $1")
+    .replace(/^./, (c) => c.toUpperCase())
+    .trim();
+}
+
+// Pick the snapshot value for a given snapshot column from old or new sides.
+function snapshotValue(
+  snapshot: Record<string, unknown> | undefined,
+  col: string
+): unknown {
+  return snapshot && col in snapshot ? snapshot[col] : undefined;
+}
+
+// Linear-style pill: when a display value is present, show that as primary
+// sans-serif text and stash the underlying raw value on the title attribute
+// (hover to inspect). When no display value is supplied, fall back to
+// mono-rendering the raw value — appropriate for IDs, booleans, numbers.
+function ChangePill({
+  value,
+  display,
+  variant
+}: {
+  value: unknown;
+  display?: unknown;
+  variant: "old" | "new";
+}) {
+  const hasDisplay = display !== undefined && display !== null;
+  const text = hasDisplay ? formatValue(display) : formatValue(value);
+  const className = cn(
+    "px-2 py-0.5 rounded",
+    !hasDisplay && "font-mono",
+    variant === "old"
+      ? "bg-red-500/10 text-red-500"
+      : "bg-green-500/10 text-green-500"
+  );
+  const tooltip = hasDisplay && typeof value === "string" ? value : undefined;
+  return (
+    <span className={className} title={tooltip}>
+      {text}
+    </span>
+  );
+}
+
+// One labeled side-by-side row: "label  [old]  →  [new]". Used for both
+// the top-level column rows and the indented sub-rows under a multi-field
+// snapshot header.
+function ChangeLine({
+  label,
+  oldValue,
+  newValue,
+  oldDisplay,
+  newDisplay,
+  indent
+}: {
+  label: string;
+  oldValue: unknown;
+  newValue: unknown;
+  oldDisplay?: unknown;
+  newDisplay?: unknown;
+  indent?: boolean;
+}) {
+  return (
+    <div
+      className={cn("flex items-center gap-2 text-sm py-1", indent && "pl-4")}
+    >
+      <span className="text-muted-foreground font-medium min-w-[120px]">
+        {label}
+      </span>
+      {oldValue !== undefined && (
+        <ChangePill value={oldValue} display={oldDisplay} variant="old" />
+      )}
+      {oldValue !== undefined && newValue !== undefined && (
+        <span className="text-muted-foreground">→</span>
+      )}
+      {newValue !== undefined && (
+        <ChangePill value={newValue} display={newDisplay} variant="new" />
+      )}
+    </div>
+  );
+}
+
+// Renders one row of the diff. Branches on snapshot key count:
+//   • no snapshot       → raw column name + mono pill (numbers, booleans, ids)
+//   • single-key snap   → humanized FK label + Linear pill (name primary,
+//                         id on hover)
+//   • multi-key snap    → humanized FK header + indented sub-rows per
+//                         snapshot column, with the raw id shown last as a
+//                         muted forensic anchor
+function ChangeRow({
+  columnKey,
+  change
+}: {
+  columnKey: string;
+  change: import("@carbon/database/audit.types").AuditDiffEntry;
+}) {
+  const oldSnap = change.snapshot?.old;
+  const newSnap = change.snapshot?.new;
+  const snapKeys = new Set<string>([
+    ...Object.keys(oldSnap ?? {}),
+    ...Object.keys(newSnap ?? {})
+  ]);
+  const hasSnapshot = snapKeys.size > 0;
+  const label = humanizeColumnKey(columnKey, hasSnapshot);
+
+  // Path 1 — no snapshot. Same as before: one row, raw value pill.
+  if (!hasSnapshot) {
+    return (
+      <ChangeLine label={label} oldValue={change.old} newValue={change.new} />
+    );
+  }
+
+  // Path 2 — single snapshot column. Inline Linear pill, id on hover.
+  if (snapKeys.size === 1) {
+    const [col] = Array.from(snapKeys);
+    return (
+      <ChangeLine
+        label={label}
+        oldValue={change.old}
+        newValue={change.new}
+        oldDisplay={snapshotValue(oldSnap, col)}
+        newDisplay={snapshotValue(newSnap, col)}
+      />
+    );
+  }
+
+  // Path 3 — multi-column snapshot. The snapshot fields disambiguate, so
+  // the raw FK id is demoted to a hover tooltip on the section header —
+  // Linear-style. Power users still see the id transition without crowding
+  // the visual flow.
+  const idTooltip = ((): string | undefined => {
+    if (typeof change.old !== "string" && typeof change.new !== "string") {
+      return undefined;
+    }
+    const oldId = typeof change.old === "string" ? change.old : "—";
+    const newId = typeof change.new === "string" ? change.new : "—";
+    return `${oldId} → ${newId}`;
+  })();
+  return (
+    <div className="py-1">
+      <div
+        className="text-sm text-muted-foreground font-medium"
+        title={idTooltip}
+      >
+        {label}
+      </div>
+      <div className="space-y-1 mt-1">
+        {Array.from(snapKeys).map((col) => (
+          <ChangeLine
+            key={col}
+            label={humanizeColumnKey(col, false)}
+            oldValue={snapshotValue(oldSnap, col)}
+            newValue={snapshotValue(newSnap, col)}
+            indent
+          />
+        ))}
+      </div>
+    </div>
+  );
 }

@@ -6,6 +6,9 @@
   "bin": {
     "crbn": "./bin/crbn"
   },
+  "exports": {
+    "./vite": "./vite.js"
+  },
   "scripts": {
     "clean": "rimraf node_modules .turbo",
     "lint": "biome lint --write",
@@ -23,6 +26,9 @@
     "pathe": "^2.0.3",
     "pg": "8.20.0",
     "picocolors": "^1.1.1"
+  },
+  "peerDependencies": {
+    "vite": "*"
   },
   "devDependencies": {
     "@carbon/config": "*",

@@ -3,17 +3,23 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import {
+  Button,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
   Heading,
+  HStack,
   ScrollArea,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   VStack
 } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { LuKeySquare } from "react-icons/lu";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { useRouteData } from "~/hooks";
@@ -25,6 +31,7 @@ import {
 } from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+import { copyToClipboard } from "~/utils/string";
 
 export const handle: Handle = {
   breadcrumb: msg`Company`,
@@ -58,6 +65,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function Company() {
+  const { t } = useLingui();
   const routeData = useRouteData<{ company: CompanyType }>(
     path.to.authenticatedRoot
   );
@@ -88,9 +96,29 @@ export default function Company() {
         spacing={4}
         className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-4"
       >
-        <Heading size="h3">
-          <Trans>Company</Trans>
-        </Heading>
+        <HStack spacing={1} className="items-center">
+          <Heading size="h3">
+            <Trans>Company</Trans>
+          </Heading>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                aria-label={t`Copy`}
+                size="sm"
+                className="p-1"
+                onClick={() => copyToClipboard(company.id ?? "")}
+              >
+                <LuKeySquare className="w-3 h-3" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <span>
+                <Trans>Copy company unique identifier</Trans>
+              </span>
+            </TooltipContent>
+          </Tooltip>
+        </HStack>
         <Card>
           <CardHeader>
             <CardTitle>

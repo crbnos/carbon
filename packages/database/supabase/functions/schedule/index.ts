@@ -8,7 +8,7 @@ import type {
   SchedulingDirection,
   SchedulingMode,
 } from "../lib/scheduling/types.ts";
-import { getSupabaseServiceRole } from "../lib/supabase.ts";
+import { requirePermissions } from "../lib/supabase.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
@@ -34,11 +34,7 @@ serve(async (req: Request) => {
     console.info(`🔰 Starting ${mode} scheduling for job ${jobId}`);
     console.info(`📋 Direction: ${direction}`);
 
-    const client = await getSupabaseServiceRole(
-      req.headers.get("Authorization"),
-      req.headers.get("carbon-key") ?? "",
-      companyId
-    );
+    const client = await requirePermissions(req, companyId, userId, { update: "production" });
 
     const engine = new SchedulingEngine({
       client,

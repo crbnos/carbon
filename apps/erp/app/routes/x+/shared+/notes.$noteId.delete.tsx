@@ -14,10 +14,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const result = await deleteNote(client, noteId);
   if (result.error) {
     throw redirect(
-      request.headers.get("Referer") ?? request.url,
+      request.headers.get("Referer") ?? new URL(request.url).pathname,
       await flash(request, error(result.error, "Error deleting note"))
     );
   }
 
-  throw redirect(request.headers.get("Referer") ?? request.url);
+  throw redirect(
+    request.headers.get("Referer") ?? new URL(request.url).pathname
+  );
 }

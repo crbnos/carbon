@@ -1197,38 +1197,38 @@ export const modules: Config = [
               {
                 id: "purchase-invoices",
                 loomUrl:
-                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                  "https://www.loom.com/share/063ab0d221054103881ec5a8d94bf007",
                 name: "Purchase Invoices",
                 description:
                   "Learn how to process and manage purchase invoices for payment.",
-                duration: 0
+                duration: 226
               },
               {
                 id: "purchasing-planning",
                 loomUrl:
-                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                  "https://www.loom.com/share/4cb4e6cdbea54a5daa24f0aac0d65ebc",
                 name: "Purchasing Planning",
                 description:
                   "Learn how to plan purchasing activities based on demand and inventory levels.",
-                duration: 0
+                duration: 267
               },
               {
                 id: "historical-costs",
                 loomUrl:
-                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                  "https://www.loom.com/share/8885fc3734eb45b9beb8202fcf3d52c8",
                 name: "Historical Costs",
                 description:
                   "Learn how to analyze historical costs for better purchasing decisions.",
-                duration: 0
+                duration: 112
               },
               {
                 id: "supplier-pricing",
                 loomUrl:
-                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                  "https://www.loom.com/share/9d33ed8af8a14c7e9373c9f48278c4ea",
                 name: "Supplier Pricing",
                 description:
                   "Learn how to analyze supplier pricing and develop negotiation strategies.",
-                duration: 0
+                duration: 94
               }
             ]
           }

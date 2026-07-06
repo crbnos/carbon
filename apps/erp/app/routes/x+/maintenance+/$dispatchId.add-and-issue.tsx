@@ -1,6 +1,7 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { trigger } from "@carbon/jobs";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
@@ -96,6 +97,22 @@ export async function action({ request, params }: ActionFunctionArgs) {
         { success: false, message: "Failed to issue tracked items" },
         { status: 400 }
       );
+    }
+
+    const splitEntities = issue.data?.splitEntities || [];
+    if (splitEntities.length > 0) {
+      try {
+        for (const split of splitEntities) {
+          await trigger("print-job", {
+            sourceDocument: "Split",
+            sourceDocumentId: split.newId,
+            companyId,
+            userId
+          });
+        }
+      } catch (e) {
+        console.error("Auto-print for split entities failed:", e);
+      }
     }
   } else {
     // Inventory item

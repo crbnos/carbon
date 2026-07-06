@@ -54,8 +54,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
     };
   }
 
+  const data = (importResult.data ?? {}) as {
+    inserted?: number;
+    updated?: number;
+    skipped?: number;
+    errors?: Array<{ row: number; reason: string }>;
+  };
+
   return {
     success: true,
-    message: "Import successful"
+    message: "Import successful",
+    inserted: data.inserted ?? 0,
+    updated: data.updated ?? 0,
+    skipped: data.skipped ?? 0,
+    errors: data.errors ?? []
   };
 }

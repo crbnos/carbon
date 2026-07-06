@@ -15,7 +15,7 @@ import type { AnchorHTMLAttributes } from "react";
 import { forwardRef, memo, useEffect } from "react";
 import { LuSettings2 } from "react-icons/lu";
 import { Link, useMatches } from "react-router";
-import { useModules, useOptimisticLocation } from "~/hooks";
+import { useModules, useOptimisticLocation, useSettingsModule } from "~/hooks";
 import type { Authenticated, NavItem } from "~/types";
 import { HiddenModulesPopover } from "./HiddenModulesPopover";
 import { NavigationEditBar } from "./NavigationEditBar";
@@ -27,6 +27,7 @@ const PrimaryNavigation = () => {
   const location = useOptimisticLocation();
   const currentModule = getModule(location.pathname);
   const links = useModules();
+  const settingsModule = useSettingsModule();
   const matchedModules = useMatches().reduce((acc, match) => {
     const handle = match.handle as { module?: string } | undefined;
 
@@ -118,44 +119,62 @@ const PrimaryNavigation = () => {
             )}
           </VStack>
 
-          {editMode.isEditing ? (
-            <NavigationEditBar
-              isSaving={editMode.isSaving}
-              isDirty={editMode.isDirty}
-              onSave={editMode.save}
-              onCancel={editMode.cancelEditMode}
-            />
-          ) : (
-            <button
-              type="button"
-              onClick={editMode.enterEditMode}
-              className={cn(
-                "relative",
-                "h-10 w-10 group-data-[state=expanded]:w-full",
-                "flex items-center rounded-md",
-                "group-data-[state=collapsed]:justify-center",
-                "group-data-[state=expanded]:-space-x-2",
-                "font-medium shrink-0 inline-flex select-none",
-                "text-muted-foreground",
-                "hover:bg-accent hover:text-accent-foreground",
-                "transition-[background-color,color,width] duration-100 ease-out",
-                "focus:!outline-none focus:!ring-0 active:!outline-none active:!ring-0",
-                "after:pointer-events-none after:absolute after:-inset-[3px] after:rounded-lg after:border after:border-blue-500 after:opacity-0 after:ring-2 after:ring-blue-500/20 after:transition-opacity focus-visible:after:opacity-100 active:after:opacity-0",
-                "group/item"
-              )}
-            >
-              <LuSettings2 className="absolute left-3 top-3 flex items-center justify-center" />
-              <span
+          <VStack spacing={1}>
+            {settingsModule &&
+              !editMode.isEditing &&
+              (() => {
+                const m = getModule(settingsModule.to);
+                const moduleMatches = matchedModules.has(m);
+                const isActive = currentModule === m || moduleMatches;
+                return (
+                  <NavigationIconLink
+                    link={settingsModule}
+                    isActive={isActive}
+                    isOpen={isOpen}
+                    onClick={navigationPanel.onClose}
+                  />
+                );
+              })()}
+
+            {editMode.isEditing ? (
+              <NavigationEditBar
+                isSaving={editMode.isSaving}
+                isDirty={editMode.isDirty}
+                onSave={editMode.save}
+                onCancel={editMode.cancelEditMode}
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={editMode.enterEditMode}
                 className={cn(
-                  "min-w-[128px] text-sm text-left",
-                  "absolute left-7 group-data-[state=expanded]:left-12",
-                  "opacity-0 group-data-[state=expanded]:opacity-100"
+                  "relative",
+                  "h-10 w-10 group-data-[state=expanded]:w-full",
+                  "flex items-center rounded-md",
+                  "group-data-[state=collapsed]:justify-center",
+                  "group-data-[state=expanded]:-space-x-2",
+                  "font-medium shrink-0 inline-flex select-none",
+                  "text-muted-foreground",
+                  "hover:bg-accent hover:text-accent-foreground",
+                  "transition-[background-color,color,width] duration-100 ease-out",
+                  "focus:!outline-none focus:!ring-0 active:!outline-none active:!ring-0",
+                  "after:pointer-events-none after:absolute after:-inset-[3px] after:rounded-lg after:border after:border-blue-500 after:opacity-0 after:ring-2 after:ring-blue-500/20 after:transition-opacity focus-visible:after:opacity-100 active:after:opacity-0",
+                  "group/item"
                 )}
               >
-                Customize
-              </span>
-            </button>
-          )}
+                <LuSettings2 className="absolute left-3 top-3 flex items-center justify-center" />
+                <span
+                  className={cn(
+                    "min-w-[128px] text-sm text-left",
+                    "absolute left-7 group-data-[state=expanded]:left-12",
+                    "opacity-0 group-data-[state=expanded]:opacity-100"
+                  )}
+                >
+                  Customize
+                </span>
+              </button>
+            )}
+          </VStack>
         </VStack>
       </nav>
     </div>

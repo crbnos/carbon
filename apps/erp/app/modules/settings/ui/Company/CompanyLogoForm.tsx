@@ -53,7 +53,11 @@ const CompanyLogoForm = ({ company, target }: CompanyLogoFormProps) => {
 
   const isIcon = target === "logoLightIcon" || target === "logoDarkIcon";
   const isDark = target === "logoDark" || target === "logoDarkIcon";
-  const shouldResize = target !== "logoWatermark";
+  // The watermark is drawn at ~50% page width, so keep it large; everything
+  // else is a small inline logo. Either way the resizer re-encodes to PNG,
+  // which is the only raster format @react-pdf/renderer can decode (a raw
+  // webp/gif upload renders blank in the PDF).
+  const resizeHeight = target === "logoWatermark" ? 512 : 128;
 
   const getLogoPath = (file: File) => {
     return `${company.id}/logos/${ROLE_BY_TARGET[target]}/${nanoid()}/${
@@ -90,10 +94,10 @@ const CompanyLogoForm = ({ company, target }: CompanyLogoFormProps) => {
         return;
       }
 
-      if (shouldResize) {
+      {
         const formData = new FormData();
         formData.append("file", logo);
-        formData.append("height", "128");
+        formData.append("height", String(resizeHeight));
         formData.append("contained", "true");
 
         try {

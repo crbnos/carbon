@@ -144,7 +144,14 @@ const SalesInvoiceHeader = () => {
       .from("salesInvoiceLine")
       .select("itemId, description, quantity")
       .eq("invoiceId", invoiceId)
-      .in("invoiceLineType", ["Part", "Material", "Tool", "Consumable"])
+      .in("invoiceLineType", [
+        "Part",
+        "Material",
+        "Tool",
+        "Consumable",
+        "Service",
+        "Fixture"
+      ])
       .is("salesOrderLineId", null);
 
     if (error) throw new Error(error.message);

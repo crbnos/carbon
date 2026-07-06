@@ -3,6 +3,7 @@ import { error, success, useCarbon } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { Hidden, ValidatedForm } from "@carbon/form";
+import { trigger } from "@carbon/jobs";
 import {
   Alert,
   AlertTitle,
@@ -130,12 +131,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     companyId
   };
 
-  const { error: functionError } = await client.functions.invoke(
-    "post-stock-transfer",
-    {
+  const { data: transferResult, error: functionError } =
+    await client.functions.invoke("post-stock-transfer", {
       body: JSON.stringify(functionPayload)
-    }
-  );
+    });
 
   if (functionError) {
     return data(
@@ -148,6 +147,30 @@ export async function action({ request, params }: ActionFunctionArgs) {
         )
       )
     );
+  }
+
+  if (transferResult?.splitEntityId) {
+    try {
+      await trigger("print-job", {
+        sourceDocument: "Split",
+        sourceDocumentId: transferResult.splitEntityId,
+        companyId,
+        userId,
+        locationId: locationId || undefined
+      });
+      // Reprint the original batch too — its quantity changed in the split
+      if (trackedEntityId) {
+        await trigger("print-job", {
+          sourceDocument: "Entity",
+          sourceDocumentId: trackedEntityId,
+          companyId,
+          userId,
+          locationId: locationId || undefined
+        });
+      }
+    } catch (e) {
+      console.error("Auto-print for split entity failed:", e);
+    }
   }
 
   throw redirect(

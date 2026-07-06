@@ -12,7 +12,6 @@
     "husky": "8.0.3",
     "lint-staged": "16.4.0",
     "npm-run-all": "catalog:",
-    "postcss-nesting": "12.1.5",
     "rimraf": "catalog:",
     "supabase": "catalog:",
     "ts-morph": "22.0.0",
@@ -44,7 +43,7 @@
     "db:seed:dev": "pnpm --filter @carbon/database db:seed:dev --",
     "db:types": "tsx scripts/generate-db-types.ts",
     "deploy": "turbo run deploy",
-    "dev": "crbn up",
+    "dev": "crbn up --no-portless",
     "dev:academy": "turbo run dev --filter=./apps/academy --filter=./packages/",
     "dev:packages": "turbo run dev --filter=./packages/*",
     "dev:starter": "turbo run dev --filter=./apps/starter --filter=./packages/",
@@ -57,7 +56,6 @@
     "lingui:compile": "lingui compile --namespace es",
     "lingui:extract": "lingui extract --clean",
     "lingui:clean": "node ./scripts/strip-po-headers.mjs",
-    "novu:sync": "pnpm dlx novu@latest sync --bridge-url https://app.carbon.ms/api/novu --secret-key $NOVU_SECRET_KEY --api-url https://api.novu.co",
     "prepare": "pnpm exec husky install",
     "test": "turbo run test",
     "tool:new": "tsx scripts/create-tool.ts",
@@ -106,7 +104,7 @@
     ],
     "patchedDependencies": {
       "@ai-sdk-tools/store@1.2.0": "patches/@ai-sdk-tools__store@1.2.0.patch",
-      "@react-router/dev@7.12.0": "patches/@react-router__dev@7.12.0.patch"
+      "@react-router/dev@7.15.1": "patches/@react-router__dev@7.15.1.patch"
     }
   }
 }

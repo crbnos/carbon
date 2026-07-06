@@ -3,7 +3,7 @@ import pc from "picocolors";
 import { listWorktrees as gitListWorktrees } from "../git.js";
 import { dockerProjectStates } from "../services/compose.js";
 import { worktreesTable } from "../ui.js";
-import { listSlugs } from "../worktree.js";
+import { listSlugs, projectName } from "../worktree.js";
 
 export async function listWorktrees() {
   intro("Carbon · worktrees");
@@ -18,7 +18,7 @@ export async function listWorktrees() {
   const rows = wts.map((w) => {
     const slug = slugForPath(w.path, registry);
     const dockerState = slug
-      ? (dockerStates.get(`carbon-${slug}`) ?? null)
+      ? (dockerStates.get(projectName(slug)) ?? null)
       : null;
     return {
       path: w.path,

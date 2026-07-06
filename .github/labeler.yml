@@ -1,0 +1,47 @@
+erp:
+  - changed-files:
+      - any-glob-to-any-file: 'apps/erp/**'
+
+mes:
+  - changed-files:
+      - any-glob-to-any-file: 'apps/mes/**'
+
+academy:
+  - changed-files:
+      - any-glob-to-any-file: 'apps/academy/**'
+
+database:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'packages/database/**'
+
+migrations:
+  - changed-files:
+      - any-glob-to-any-file: 'packages/database/supabase/migrations/**'
+
+functions:
+  - changed-files:
+      - any-glob-to-any-file: 'packages/database/supabase/functions/**'
+
+design-system:
+  - changed-files:
+      - any-glob-to-any-file: 'packages/react/**'
+
+auth:
+  - changed-files:
+      - any-glob-to-any-file: 'packages/auth/**'
+
+jobs:
+  - changed-files:
+      - any-glob-to-any-file: 'packages/jobs/**'
+
+ci:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '.github/**'
+
+dependencies:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '**/package.json'
+          - 'pnpm-lock.yaml'

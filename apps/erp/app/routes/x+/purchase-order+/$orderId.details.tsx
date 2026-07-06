@@ -20,7 +20,7 @@ import {
   getPurchaseOrderPayment,
   isPurchaseOrderLocked,
   purchaseOrderValidator,
-  upsertPurchaseOrder
+  updatePurchaseOrder
 } from "~/modules/purchasing";
 import {
   PurchaseOrderDeliveryForm,
@@ -96,7 +96,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const isLocked = isPurchaseOrderLocked(purchaseOrder.data?.status);
 
   // If locked, require delete permission; otherwise require update permission
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyGroupId, userId } = await requirePermissions(request, {
     ...(isLocked ? { delete: "purchasing" } : { update: "purchasing" })
   });
 
@@ -116,22 +116,30 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const { purchaseOrderId, ...d } = validation.data;
-  if (!purchaseOrderId) throw new Error("Could not find purchaseOrderId");
-
-  const updatePurchaseOrder = await upsertPurchaseOrder(client, {
-    id: orderId,
-    purchaseOrderId,
-    ...d,
-    updatedBy: userId,
-    customFields: setCustomFields(formData)
-  });
-  if (updatePurchaseOrder.error) {
+  const result = await updatePurchaseOrder(
+    client,
+    {
+      id: orderId,
+      status: validation.data.status,
+      supplierId: validation.data.supplierId,
+      currencyCode: validation.data.currencyCode,
+      orderDate: validation.data.orderDate,
+      supplierContactId: validation.data.supplierContactId || null,
+      supplierLocationId: validation.data.supplierLocationId || null,
+      supplierReference: validation.data.supplierReference,
+      purchaseOrderType: validation.data.purchaseOrderType,
+      notes: validation.data.notes,
+      customFields: setCustomFields(formData),
+      updatedBy: userId
+    },
+    companyGroupId
+  );
+  if (result.error) {
     throw redirect(
       path.to.purchaseOrder(orderId),
       await flash(
         request,
-        error(updatePurchaseOrder.error, "Failed to update purchase order")
+        error(result.error, "Failed to update purchase order")
       )
     );
   }

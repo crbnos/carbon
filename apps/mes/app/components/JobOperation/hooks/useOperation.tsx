@@ -52,6 +52,7 @@ export function useOperation({
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const channelRef = useRef<RealtimeChannel | null>(null);
 
+  const actionsSheet = useDisclosure();
   const scrapModal = useDisclosure();
   const reworkModal = useDisclosure();
   const completeModal = useDisclosure();
@@ -62,6 +63,7 @@ export function useOperation({
   // we do this to avoid re-rendering when the modal is open
   const isAnyModalOpen =
     pauseInterval ||
+    actionsSheet.isOpen ||
     scrapModal.isOpen ||
     reworkModal.isOpen ||
     completeModal.isOpen ||
@@ -279,6 +281,7 @@ export function useOperation({
     progress,
     operation: operationState,
 
+    actionsSheet,
     activeTab,
     eventType,
     scrapModal,

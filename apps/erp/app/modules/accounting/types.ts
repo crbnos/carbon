@@ -398,3 +398,53 @@ export type JournalEntryListItem = NonNullable<
 >[number];
 
 export type JournalEntryLine = JournalEntry["journalLine"][number];
+
+// -- Fixed Asset types --
+
+import type {
+  getAssetDepreciationHistory,
+  getDepreciationRun,
+  getDepreciationRunLines,
+  getDepreciationRuns,
+  getFixedAsset,
+  getFixedAssetClass,
+  getFixedAssetClasses,
+  getFixedAssetDisposal,
+  getFixedAssets
+} from "./accounting.service";
+
+export type FixedAssetClass = NonNullable<
+  Awaited<ReturnType<typeof getFixedAssetClass>>["data"]
+>;
+
+export type FixedAssetClassListItem = NonNullable<
+  NonNullable<Awaited<ReturnType<typeof getFixedAssetClasses>>>["data"]
+>[number];
+
+export type FixedAsset = NonNullable<
+  Awaited<ReturnType<typeof getFixedAsset>>["data"]
+>;
+
+export type FixedAssetListItem = NonNullable<
+  NonNullable<Awaited<ReturnType<typeof getFixedAssets>>>["data"]
+>[number];
+
+export type DepreciationRun = NonNullable<
+  Awaited<ReturnType<typeof getDepreciationRun>>["data"]
+>;
+
+export type DepreciationRunListItem = NonNullable<
+  NonNullable<Awaited<ReturnType<typeof getDepreciationRuns>>>["data"]
+>[number];
+
+export type DepreciationRunLineItem = NonNullable<
+  NonNullable<Awaited<ReturnType<typeof getDepreciationRunLines>>>["data"]
+>[number];
+
+export type AssetDepreciationHistoryItem = NonNullable<
+  NonNullable<Awaited<ReturnType<typeof getAssetDepreciationHistory>>>["data"]
+>[number];
+
+export type FixedAssetDisposal = NonNullable<
+  Awaited<ReturnType<typeof getFixedAssetDisposal>>["data"]
+>;

@@ -4,7 +4,7 @@ import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
 import { z } from "https://deno.land/x/zod@v3.21.4/mod.ts";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { corsHeaders } from "../lib/headers.ts";
-import { getSupabaseServiceRole } from "../lib/supabase.ts";
+import { requirePermissions } from "../lib/supabase.ts";
 import type { Database } from "../lib/types.ts";
 import {
   credit,
@@ -50,11 +50,7 @@ serve(async (req: Request) => {
       companyId,
     });
 
-    const client = await getSupabaseServiceRole(
-      req.headers.get("Authorization"),
-      req.headers.get("carbon-key") ?? "",
-      companyId
-    );
+    const client = await requirePermissions(req, companyId, userId, { update: "inventory" });
 
     const [companyRecord, accountingSettings] = await Promise.all([
       client
@@ -85,7 +81,7 @@ serve(async (req: Request) => {
           .select("id, entityType")
           .eq("companyGroupId", companyGroupId)
           .eq("active", true)
-          .in("entityType", ["SupplierType", "ItemPostingGroup", "Location"]),
+          .in("entityType", ["SupplierType", "ItemPostingGroup", "Location", "Process", "FixedAssetClass"]),
       ]);
 
     if (receipt.error) throw new Error("Failed to fetch receipt");
@@ -282,6 +278,67 @@ serve(async (req: Request) => {
         }
         return acc;
       }, {});
+
+      // Reverse FA PO line received status on void
+      const faPoLinesForVoid = purchaseOrderLinesVoid.data.filter(
+        (pol) =>
+          pol.purchaseOrderLineType === "Fixed Asset" &&
+          pol.assetId &&
+          pol.receivedComplete
+      );
+
+      for (const faPoLine of faPoLinesForVoid) {
+        const hasReceiptEntries = originalJournalLines.data.some(
+          (jl) =>
+            jl.documentLineReference ===
+            journalReference.to.receipt(faPoLine.id)
+        );
+
+        if (hasReceiptEntries) {
+          purchaseOrderLineUpdatesVoid[faPoLine.id] = {
+            quantityReceived: 0,
+            receivedComplete: false,
+          };
+
+          const receiptCost = originalJournalLines.data
+            .filter(
+              (jl) =>
+                jl.documentLineReference ===
+                  journalReference.to.receipt(faPoLine.id) &&
+                (jl.amount ?? 0) > 0
+            )
+            .reduce((sum, jl) => sum + Math.abs(jl.amount ?? 0), 0);
+
+          const assetRecord = await client
+            .from("fixedAsset")
+            .select("id, acquisitionCost, status")
+            .eq("id", faPoLine.assetId!)
+            .single();
+
+          if (!assetRecord.error && assetRecord.data) {
+            const newAcquisitionCost = Math.max(
+              0,
+              Number(assetRecord.data.acquisitionCost) - receiptCost
+            );
+            const faUpdate: Record<string, any> = {
+              acquisitionCost: newAcquisitionCost,
+              updatedBy: userId,
+            };
+            if (
+              newAcquisitionCost === 0 &&
+              assetRecord.data.status === "Active"
+            ) {
+              faUpdate.status = "Draft";
+              faUpdate.acquisitionDate = null;
+              faUpdate.depreciationStartDate = null;
+            }
+            await client
+              .from("fixedAsset")
+              .update(faUpdate)
+              .eq("id", faPoLine.assetId!);
+          }
+        }
+      }
 
       const projectedPurchaseOrderLines = purchaseOrderLinesVoid.data.map(
         (line) => {
@@ -535,10 +592,28 @@ serve(async (req: Request) => {
           supplierTypeId: string | null;
           itemPostingGroupId: string | null;
           locationId: string | null;
+          processId: string | null;
+          fixedAssetClassId: string | null;
         }[] = [];
 
         const isOutsideProcessing =
           purchaseOrder.data.purchaseOrderType === "Outside Processing";
+
+        const processIdByJobOperationId = new Map<string, string>();
+        if (isOutsideProcessing) {
+          const jobOpIds = purchaseOrderLines.data
+            .map((pol) => pol.jobOperationId)
+            .filter((id): id is string => !!id);
+          if (jobOpIds.length > 0) {
+            const jobOps = await client
+              .from("jobOperation")
+              .select("id, processId")
+              .in("id", jobOpIds);
+            for (const op of jobOps.data ?? []) {
+              if (op.processId) processIdByJobOperationId.set(op.id, op.processId);
+            }
+          }
+        }
 
         const receiptLinesByPurchaseOrderLineId = receiptLines.data.reduce<
           Record<string, Database["public"]["Tables"]["receiptLine"]["Row"][]>
@@ -841,6 +916,11 @@ serve(async (req: Request) => {
 
             const journalLineReference = nanoid();
 
+            // Find the PO line for this receipt line
+            const poLine = purchaseOrderLines.data.find(
+              (pol) => pol.id === receiptLine.lineId
+            );
+
             // Determine the debit account based on item type
             let debitAccount: string;
             let debitDescription: string;
@@ -1083,14 +1163,141 @@ serve(async (req: Request) => {
               itemCosts.data.find(
                 (cost) => cost.itemId === receiptLine.itemId
               )?.itemPostingGroupId ?? null;
+            const poLine = purchaseOrderLines.data.find(
+              (pol) => pol.id === receiptLine.lineId
+            );
+            const lineProcessId = poLine?.jobOperationId
+              ? processIdByJobOperationId.get(poLine.jobOperationId) ?? null
+              : null;
             for (let i = 0; i < jlCount; i++) {
               journalLineDimensionsMeta.push({
                 supplierTypeId: supplier.data.supplierTypeId ?? null,
                 itemPostingGroupId: lineItemPostingGroupId,
                 locationId: receiptLine.locationId ?? null,
+                processId: lineProcessId,
+                fixedAssetClassId: null,
               });
             }
           }
+        }
+
+        // Process Fixed Asset PO lines (no receipt lines — handled directly from PO)
+        const { data: receiptFaLines } = await client
+          .from("receiptFixedAssetLine")
+          .select("purchaseOrderLineId, serialNumber")
+          .eq("receiptId", receiptId)
+          .eq("received", true);
+        const receivedFaPoLineIds = new Set(
+          (receiptFaLines ?? []).map((r) => r.purchaseOrderLineId)
+        );
+        const faSerialNumbers = new Map(
+          (receiptFaLines ?? []).map((r) => [r.purchaseOrderLineId, r.serialNumber])
+        );
+
+        const faPurchaseOrderLines = purchaseOrderLines.data.filter(
+          (pol) =>
+            pol.purchaseOrderLineType === "Fixed Asset" &&
+            pol.assetId &&
+            !pol.receivedComplete &&
+            pol.purchaseQuantity &&
+            pol.purchaseQuantity > 0 &&
+            receivedFaPoLineIds.has(pol.id)
+        );
+
+        for (const faPoLine of faPurchaseOrderLines) {
+          if (accountingEnabled && accountDefaults?.data) {
+            const quantity = faPoLine.purchaseQuantity ?? 1;
+            const unitPrice = faPoLine.unitPrice ?? 0;
+            const cost = quantity * unitPrice;
+
+            const assetRecord = await client
+              .from("fixedAsset")
+              .select(
+                "id, status, acquisitionDate, depreciationStartDate, acquisitionCost, locationId, fixedAssetClassId, fixedAssetClass:fixedAssetClassId(assetAccountId)"
+              )
+              .eq("id", faPoLine.assetId!)
+              .single();
+
+            if (assetRecord.error)
+              throw new Error("Failed to fetch fixed asset");
+
+            const journalLineRef = nanoid();
+
+            journalLineInserts.push({
+              accountId: (assetRecord.data.fixedAssetClass as any)
+                .assetAccountId,
+              description: "Fixed Asset Acquisition",
+              amount: debit("asset", cost),
+              quantity,
+              documentType: "Receipt",
+              documentId: receipt.data?.id ?? undefined,
+              externalDocumentId:
+                purchaseOrder.data?.supplierReference ?? undefined,
+              documentLineReference: journalReference.to.receipt(faPoLine.id!),
+              journalLineReference: journalLineRef,
+              companyId,
+            });
+
+            journalLineInserts.push({
+              accountId: accountDefaults.data.goodsReceivedNotInvoicedAccount,
+              description: "Goods Received Not Invoiced",
+              amount: credit("liability", cost),
+              quantity,
+              documentType: "Receipt",
+              documentId: receipt.data?.id ?? undefined,
+              externalDocumentId:
+                purchaseOrder.data?.supplierReference ?? undefined,
+              documentLineReference: journalReference.to.receipt(faPoLine.id!),
+              journalLineReference: journalLineRef,
+              companyId,
+            });
+
+            for (let i = 0; i < 2; i++) {
+              journalLineDimensionsMeta.push({
+                supplierTypeId: supplier.data.supplierTypeId ?? null,
+                itemPostingGroupId: null,
+                locationId: faPoLine.locationId ?? receipt.data.locationId ?? assetRecord.data.locationId ?? null,
+                processId: null,
+                fixedAssetClassId: assetRecord.data.fixedAssetClassId ?? null,
+              });
+            }
+
+            const updateData: Record<string, any> = {
+              acquisitionCost:
+                (Number(assetRecord.data.acquisitionCost) ?? 0) + cost,
+              updatedBy: userId,
+            };
+            if (!assetRecord.data.acquisitionDate) {
+              updateData.acquisitionDate = today;
+            }
+            if (!assetRecord.data.depreciationStartDate) {
+              updateData.depreciationStartDate = today;
+            }
+            if (assetRecord.data.status === "Draft") {
+              updateData.status = "Active";
+            }
+
+            const serialNumber = faSerialNumbers.get(faPoLine.id!);
+            if (serialNumber) {
+              updateData.serialNumber = serialNumber;
+            }
+
+            const faLineLocationId = faPoLine.locationId ?? receipt.data.locationId;
+            if (faLineLocationId) {
+              updateData.locationId = faLineLocationId;
+            }
+
+            await client
+              .from("fixedAsset")
+              .update(updateData)
+              .eq("id", faPoLine.assetId!);
+          }
+
+          purchaseOrderLineUpdates[faPoLine.id!] = {
+            quantityReceived: faPoLine.purchaseQuantity,
+            receivedComplete: true,
+            receivedDate: today,
+          };
         }
 
         const accountingPeriodId = accountingEnabled
@@ -1246,6 +1453,22 @@ serve(async (req: Request) => {
                     companyId,
                   });
                 }
+                if (meta.processId && dimensionMap.has("Process")) {
+                  journalLineDimensionInserts.push({
+                    journalLineId: jl.id,
+                    dimensionId: dimensionMap.get("Process")!,
+                    valueId: meta.processId,
+                    companyId,
+                  });
+                }
+                if (meta.fixedAssetClassId && dimensionMap.has("FixedAssetClass")) {
+                  journalLineDimensionInserts.push({
+                    journalLineId: jl.id,
+                    dimensionId: dimensionMap.get("FixedAssetClass")!,
+                    valueId: meta.fixedAssetClassId,
+                    companyId,
+                  });
+                }
               });
 
               if (journalLineDimensionInserts.length > 0) {
@@ -1381,6 +1604,7 @@ serve(async (req: Request) => {
         const journalLineDimensionsMeta: {
           itemPostingGroupId: string | null;
           locationId: string | null;
+          fixedAssetClassId: string | null;
         }[] = [];
         const warehouseTransferLineUpdates: Record<
           string,
@@ -1480,6 +1704,7 @@ serve(async (req: Request) => {
               journalLineDimensionsMeta.push({
                 itemPostingGroupId: itemCost?.itemPostingGroupId ?? null,
                 locationId: receiptLine.locationId ?? null,
+                fixedAssetClassId: null,
               });
             }
           }
@@ -1609,6 +1834,14 @@ serve(async (req: Request) => {
                     companyId,
                   });
                 }
+                if (meta.fixedAssetClassId && dimensionMap.has("FixedAssetClass")) {
+                  journalLineDimensionInserts.push({
+                    journalLineId: jl.id,
+                    dimensionId: dimensionMap.get("FixedAssetClass")!,
+                    valueId: meta.fixedAssetClassId,
+                    companyId,
+                  });
+                }
               });
 
               if (journalLineDimensionInserts.length > 0) {
@@ -1659,11 +1892,7 @@ serve(async (req: Request) => {
   } catch (err) {
     console.error(err);
     if (payload.type !== "void" && "receiptId" in payload) {
-      const client = await getSupabaseServiceRole(
-        req.headers.get("Authorization"),
-        req.headers.get("carbon-key") ?? "",
-        payload.companyId
-      );
+      const client = await requirePermissions(req, payload.companyId, payload.userId, { update: "inventory" });
       await client
         .from("receipt")
         .update({ status: "Draft" })

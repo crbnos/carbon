@@ -1,6 +1,21 @@
-import type { ComboboxProps } from "@carbon/form";
+// `<StorageUnit>` — the storage-unit (bin) picker. One component, two modes:
+// - with `name`    -> form-bound (`@carbon/form` CreatableCombobox)
+// - without `name` -> controlled (`value` + `onChange`) for table cells
+//
+// Options are the *leaf* storage units (the storable bins), each with a helper
+// showing on-hand quantity (when `itemId` is given) or its hierarchy path.
+// Built on the canonical `CreatableCombobox`, like every other entity picker.
+//
+// Choosing where a unit sits in the tree (a non-leaf target) is a different,
+// single-purpose interaction handled by `StorageUnitParentSelect`, local to the
+// Storage Unit form.
+
 import { CreatableCombobox } from "@carbon/form";
-import { useDisclosure } from "@carbon/react";
+import {
+  CreatableCombobox as CreatableComboboxBase,
+  useDisclosure
+} from "@carbon/react";
+import type { MouseEventHandler } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFetcher } from "react-router";
 import type { getStorageUnitsList } from "~/modules/inventory";
@@ -8,95 +23,41 @@ import StorageUnitForm from "~/modules/inventory/ui/StorageUnits/StorageUnitForm
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 
-type StorageUnitSelectProps = Omit<
-  ComboboxProps,
-  "options" | "onChange" | "inline"
-> & {
-  locationId?: string;
-  itemId?: string;
-  inline?: boolean;
-  onChange?: (storageUnit: ListItem | null) => void;
-  /**
-   * When set, the option list excludes the given storage unit and every one
-   * of its descendants. Used by StorageUnitForm's Parent select so a user
-   * cannot pick themselves or a child as the parent (which would create a
-   * cycle). The DB enforces the same invariant via
-   * storage_unit_enforce_no_cycle; this just keeps the UI honest.
-   */
-  excludeDescendantsOf?: string;
+// ---------------------------------------------------------------------------
+// Data hooks (shared)
+// ---------------------------------------------------------------------------
+
+export type StorageUnitTreeRow = {
+  id: string;
+  name: string;
+  parentId: string | null;
+  depth: number;
+  ancestorPath: string[];
 };
 
-const StorageUnitPreview = (
-  value: string,
-  options: { value: string; label: string | JSX.Element }[]
-) => {
-  const storageUnit = options.find((o) => o.value === value);
-  if (!storageUnit) return "Inventory";
-  return storageUnit.label;
-};
+/**
+ * Recursive storage-unit tree for a single location. One round-trip per
+ * locationId change; consumers cache by reference identity. Also used by the
+ * parent picker and storage-rule value inputs.
+ */
+export function useStorageUnitsTree(locationId?: string | null) {
+  const fetcher = useFetcher<{
+    data: StorageUnitTreeRow[] | null;
+    error: unknown;
+  }>();
 
-const StorageUnit = (props: StorageUnitSelectProps) => {
-  const newStorageUnitModal = useDisclosure();
-  const [created, setCreated] = useState<string>("");
-  const triggerRef = useRef<HTMLButtonElement>(null);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher identity changes every render
+  useEffect(() => {
+    if (locationId) fetcher.load(path.to.api.storageUnitsTree(locationId));
+  }, [locationId]);
 
-  const { options: rawOptions, data } = useStorageUnits(
-    props.locationId,
-    props.itemId
-  );
+  return fetcher.data?.data ?? [];
+}
 
-  const excludedIds = useExcludedDescendantIds(props.excludeDescendantsOf);
-
-  const options = useMemo(() => {
-    if (excludedIds.size === 0) return rawOptions;
-    return rawOptions.filter((option) => !excludedIds.has(option.value));
-  }, [rawOptions, excludedIds]);
-
-  const onChange = (
-    newValue: { label: string | JSX.Element; value: string } | null
-  ) => {
-    const storageUnit =
-      data?.data?.find((s) => s.id === newValue?.value) ?? null;
-    props.onChange?.(storageUnit as ListItem | null);
-  };
-
-  return (
-    <>
-      <CreatableCombobox
-        ref={triggerRef}
-        options={options}
-        {...props}
-        label={props?.label ?? "Storage Unit"}
-        inline={props.inline ? StorageUnitPreview : undefined}
-        onChange={onChange}
-        onCreateOption={(option) => {
-          newStorageUnitModal.onOpen();
-          setCreated(option);
-        }}
-      />
-
-      {newStorageUnitModal.isOpen && (
-        <StorageUnitForm
-          locationId={props.locationId!}
-          type="modal"
-          onClose={() => {
-            setCreated("");
-            newStorageUnitModal.onClose();
-            triggerRef.current?.click();
-          }}
-          initialValues={{
-            name: created,
-            locationId: props?.locationId ?? "",
-            storageTypeIds: []
-          }}
-        />
-      )}
-    </>
-  );
-};
-
-export default StorageUnit;
-
+/**
+ * Flat storage-unit list for a location, optionally with per-item quantity
+ * helpers. Kept for non-leaf-aware callsites that pull their own options.
+ */
 export function useStorageUnits(locationId?: string, itemId?: string) {
   const storageUnitsFetcher =
     useFetcher<Awaited<ReturnType<typeof getStorageUnitsList>>>();
@@ -107,7 +68,6 @@ export function useStorageUnits(locationId?: string, itemId?: string) {
   useEffect(() => {
     if (locationId) {
       if (itemId) {
-        // Load both storage units with quantities and all storage units
         storageUnitsWithQuantitiesFetcher.load(
           path.to.api.storageUnitsWithQuantities(locationId, itemId)
         );
@@ -118,23 +78,19 @@ export function useStorageUnits(locationId?: string, itemId?: string) {
 
   const options = useMemo(() => {
     if (itemId && storageUnitsWithQuantitiesFetcher.data?.data) {
-      // Create a map of storage units with quantities
       const storageUnitsWithQuantities =
         storageUnitsWithQuantitiesFetcher.data.data;
       const allStorageUnits = storageUnitsFetcher.data?.data ?? [];
 
-      // Create a set of storage unit IDs that have quantities
       const storageUnitIdsWithQuantities = new Set(
         storageUnitsWithQuantities.map((s: any) => s.id)
       );
 
-      // Filter out storage units that already have quantities from the all list
       const storageUnitsWithoutQuantities = allStorageUnits.filter(
         (storageUnit: any) => !storageUnitIdsWithQuantities.has(storageUnit.id)
       );
 
-      // Combine the lists: storage units with quantities first, then others
-      const combinedStorageUnits = [
+      return [
         ...storageUnitsWithQuantities.map((c: any) => ({
           value: c.id,
           label: c.name,
@@ -145,11 +101,8 @@ export function useStorageUnits(locationId?: string, itemId?: string) {
           label: c.name
         }))
       ];
-
-      return combinedStorageUnits;
     }
 
-    // Fallback to original behavior
     return (
       storageUnitsFetcher.data?.data?.map((c) => ({
         value: c.id,
@@ -168,27 +121,220 @@ export function useStorageUnits(locationId?: string, itemId?: string) {
   return { options, data: storageUnitsFetcher.data };
 }
 
-/**
- * Fetches the set of storage-unit ids in the subtree rooted at `rootId`
- * (rootId itself + all descendants). Returns an empty Set when rootId is
- * undefined so the caller can always do `excludedIds.has(x)` safely.
- */
-function useExcludedDescendantIds(rootId?: string): Set<string> {
-  const descendantsFetcher = useFetcher<{ data: { id: string }[] }>();
+type StorageUnitOption = { value: string; label: string; helper?: string };
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
+/**
+ * Per-unit on-hand quantities for `itemId`, keyed by storage-unit id. Only
+ * fetches when both ids are present, so item-less pickers don't pay for it.
+ */
+function useStorageUnitQuantities(locationId?: string | null, itemId?: string) {
+  const fetcher = useFetcher<{ data: { id: string; quantity: number }[] }>();
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher identity changes every render
   useEffect(() => {
-    if (rootId) {
-      descendantsFetcher.load(path.to.api.storageUnitDescendants(rootId));
+    if (locationId && itemId) {
+      fetcher.load(path.to.api.storageUnitsWithQuantities(locationId, itemId));
     }
-  }, [rootId]);
+  }, [locationId, itemId]);
 
   return useMemo(() => {
-    if (!rootId) return new Set<string>();
-    const ids = new Set<string>([rootId]);
-    for (const row of descendantsFetcher.data?.data ?? []) {
-      if (row.id) ids.add(row.id);
-    }
-    return ids;
-  }, [rootId, descendantsFetcher.data]);
+    const m = new Map<string, number>();
+    for (const s of fetcher.data?.data ?? []) m.set(s.id, s.quantity);
+    return m;
+  }, [fetcher.data]);
 }
+
+/**
+ * Options for the leaf bins in a location (nodes with no children — the
+ * storable locations). `helper` shows the on-hand quantity when `itemId` is
+ * given, otherwise the hierarchy path to disambiguate same-named bins.
+ */
+export function useStorageUnitLeafOptions(
+  locationId?: string | null,
+  itemId?: string
+): StorageUnitOption[] {
+  const rows = useStorageUnitsTree(locationId);
+  const quantities = useStorageUnitQuantities(locationId, itemId);
+
+  return useMemo(() => {
+    const byId = new Map(rows.map((r) => [r.id, r]));
+    const parentIds = new Set(
+      rows.map((r) => r.parentId).filter((id): id is string => Boolean(id))
+    );
+
+    return rows
+      .filter((r) => !parentIds.has(r.id))
+      .map((r) => {
+        const ancestorPath = (r.ancestorPath ?? [])
+          .slice(0, -1)
+          .map((id) => byId.get(id)?.name)
+          .filter(Boolean)
+          .join(" / ");
+        return {
+          value: r.id,
+          label: r.name,
+          helper: itemId
+            ? `Qty: ${quantities.get(r.id) ?? 0}`
+            : ancestorPath || undefined
+        };
+      })
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }, [rows, quantities, itemId]);
+}
+
+// ---------------------------------------------------------------------------
+// Create-new-unit flow
+// ---------------------------------------------------------------------------
+
+/**
+ * Shared "+ New storage unit" flow. `onCreateOption` seeds the form with the
+ * typed text; closing the modal re-clicks the trigger so the combobox reopens
+ * with the freshly created unit selectable.
+ */
+function useNewStorageUnitModal(locationId?: string | null) {
+  const modal = useDisclosure();
+  const [created, setCreated] = useState("");
+  const triggerRef = useRef<HTMLButtonElement>(null);
+
+  const node =
+    modal.isOpen && locationId ? (
+      <StorageUnitForm
+        type="modal"
+        locationId={locationId}
+        onClose={() => {
+          setCreated("");
+          modal.onClose();
+          triggerRef.current?.click();
+        }}
+        initialValues={{ name: created, locationId, storageTypeIds: [] }}
+      />
+    ) : null;
+
+  const onCreateOption = (value: string) => {
+    setCreated(value);
+    modal.onOpen();
+  };
+
+  return { triggerRef, onCreateOption, node };
+}
+
+const storageUnitPreview = (
+  value: string,
+  options: { value: string; label: string | JSX.Element }[]
+) => {
+  const match = options.find((o) => o.value === value);
+  return <span className="text-sm">{match?.label ?? ""}</span>;
+};
+
+const labelToString = (label: string | JSX.Element) =>
+  typeof label === "string" ? label : "";
+
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
+
+type StorageUnitProps = {
+  /** Provide `name` for form-bound usage; omit it for controlled usage. */
+  name?: string;
+  /** Form-mode seed value, or the controlled value when `name` is absent. */
+  value?: string | null;
+  label?: string;
+  helperText?: string;
+  placeholder?: string;
+  isReadOnly?: boolean;
+  isOptional?: boolean;
+  disabled?: boolean;
+  className?: string;
+  onClick?: MouseEventHandler<HTMLButtonElement>;
+  locationId?: string | null;
+  itemId?: string;
+  /** Render a compact inline preview (table cells) once a value is set. */
+  inline?: boolean;
+  /** Show the "+ New storage unit" create option. Defaults to `true`. */
+  allowCreate?: boolean;
+  onChange?: (storageUnit: ListItem | null) => void;
+};
+
+const toListItem = (id: string, options: StorageUnitOption[]): ListItem => ({
+  id,
+  name: labelToString(options.find((o) => o.value === id)?.label ?? "")
+});
+
+function StorageUnit({
+  name,
+  value,
+  label,
+  helperText,
+  placeholder = "Select storage unit",
+  isReadOnly,
+  isOptional,
+  disabled,
+  className,
+  onClick,
+  locationId,
+  itemId,
+  inline,
+  allowCreate = true,
+  onChange
+}: StorageUnitProps) {
+  const options = useStorageUnitLeafOptions(locationId, itemId);
+  const { triggerRef, onCreateOption, node } =
+    useNewStorageUnitModal(locationId);
+  const readOnly = isReadOnly || disabled;
+
+  if (name) {
+    return (
+      <>
+        <CreatableCombobox
+          ref={triggerRef}
+          name={name}
+          value={value ?? undefined}
+          options={options}
+          label={label ?? "Storage Unit"}
+          helperText={helperText}
+          placeholder={placeholder}
+          isReadOnly={readOnly}
+          isOptional={isOptional}
+          className={className}
+          onClick={onClick}
+          inline={inline ? storageUnitPreview : undefined}
+          onCreateOption={allowCreate ? onCreateOption : undefined}
+          onChange={(option) =>
+            onChange?.(
+              option
+                ? { id: option.value, name: labelToString(option.label) }
+                : null
+            )
+          }
+        />
+        {node}
+      </>
+    );
+  }
+
+  if (!locationId) return null;
+
+  return (
+    <>
+      <CreatableComboboxBase
+        ref={triggerRef}
+        options={options}
+        value={value ?? undefined}
+        isReadOnly={readOnly}
+        isClearable
+        placeholder={placeholder}
+        className={className}
+        onClick={onClick}
+        onCreateOption={allowCreate ? onCreateOption : undefined}
+        onChange={(selected) =>
+          onChange?.(selected ? toListItem(selected, options) : null)
+        }
+      />
+      {node}
+    </>
+  );
+}
+
+StorageUnit.displayName = "StorageUnit";
+
+export default StorageUnit;

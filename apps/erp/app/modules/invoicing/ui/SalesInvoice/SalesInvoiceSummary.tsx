@@ -73,7 +73,10 @@ const LineItems = ({
       {salesInvoiceLines.map((line) => {
         if (!line.id) return null;
 
-        const itemReadableId = getItemReadableId(items, line.itemId);
+        const itemReadableId =
+          line.invoiceLineType === "Fixed Asset"
+            ? (line as any).assetReadableId || "Fixed Asset"
+            : getItemReadableId(items, line.itemId);
         const lineSubtotal = (line.unitPrice ?? 0) * (line.quantity ?? 0);
         const customerSubtotal =
           (line.convertedUnitPrice ?? 0) * (line.quantity ?? 0);
@@ -183,9 +186,11 @@ const LineItems = ({
                           className="flex items-center gap-2"
                         >
                           {line.quantity}
-                          <MethodIcon
-                            type={line.methodType ?? "Pull from Inventory"}
-                          />
+                          {line.invoiceLineType !== "Fixed Asset" && (
+                            <MethodIcon
+                              type={line.methodType ?? "Pull from Inventory"}
+                            />
+                          )}
                         </Badge>
                         <Badge variant="green">
                           {formatter.format(line.unitPrice ?? 0)}{" "}

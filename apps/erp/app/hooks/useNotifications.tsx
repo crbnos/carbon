@@ -1,17 +1,25 @@
-import { NOVU_API_URL, NOVU_APPLICATION_ID } from "@carbon/auth";
-import { useMount } from "@carbon/react";
-import type { IMessage } from "@novu/headless";
-import { HeadlessService } from "@novu/headless";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCarbon, useRealtimeChannel } from "@carbon/react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { Notification } from "~/types";
 
-export function getSubscriberId({
-  companyId,
-  userId
-}: {
-  companyId: string;
+type NotificationRow = {
+  id: string;
   userId: string;
-}) {
-  return `${companyId}:${userId}`;
+  companyId: string;
+  readAt: string | null;
+  seenAt: string | null;
+  createdAt: string;
+  payload: Notification["payload"] | null;
+};
+
+function rowToNotification(row: NotificationRow): Notification {
+  return {
+    _id: row.id,
+    createdAt: row.createdAt,
+    payload: row.payload ?? {},
+    read: row.readAt !== null,
+    seen: row.seenAt !== null
+  };
 }
 
 export function useNotifications({
@@ -21,143 +29,171 @@ export function useNotifications({
   userId: string;
   companyId: string;
 }) {
+  const { carbon } = useCarbon();
   const [isLoading, setLoading] = useState(true);
-  const [notifications, setNotifications] = useState<IMessage[]>([]);
-  const [subscriberId, setSubscriberId] = useState<string>();
-  const headlessServiceRef = useRef<HeadlessService>();
+  const [notifications, setNotifications] = useState<Notification[]>([]);
 
-  const markAllMessagesAsRead = () => {
-    const headlessService = headlessServiceRef.current;
+  // Initial fetch — runs once per (carbon/user/company) tuple.
+  useEffect(() => {
+    if (!carbon) return;
+    let cancelled = false;
 
-    if (headlessService) {
-      setNotifications((prevNotifications) =>
-        prevNotifications.map((notification) => {
-          return {
-            ...notification,
-            read: true
-          };
-        })
+    (async () => {
+      const { data, error } = await carbon
+        .from("notification")
+        .select("id, userId, companyId, readAt, seenAt, createdAt, payload")
+        .eq("userId", userId)
+        .eq("companyId", companyId)
+        .is("digestedInto", null)
+        .order("createdAt", { ascending: false })
+        .limit(100);
+
+      if (cancelled) return;
+      if (error) {
+        console.error("Failed to load notifications", error);
+        setLoading(false);
+        return;
+      }
+      setNotifications(
+        ((data ?? []) as NotificationRow[]).map(rowToNotification)
       );
+      setLoading(false);
+    })();
 
-      headlessService.markAllMessagesAsRead({
-        // biome-ignore lint/suspicious/noEmptyBlockStatements: suppressed due to migration
-        listener: () => {},
-        // biome-ignore lint/suspicious/noEmptyBlockStatements: suppressed due to migration
-        onError: () => {}
-      });
-    }
-  };
+    return () => {
+      cancelled = true;
+    };
+  }, [carbon, userId, companyId]);
 
-  const markMessageAsRead = (messageId: string) => {
-    const headlessService = headlessServiceRef.current;
-
-    if (headlessService) {
-      setNotifications((prevNotifications) =>
-        prevNotifications.map((notification) => {
-          if (notification._id === messageId) {
-            return {
-              ...notification,
-              read: true
+  // Realtime stream — useRealtimeChannel waits for isRealtimeAuthSet so RLS
+  // policies on `notification` resolve via the user's JWT.
+  useRealtimeChannel({
+    dependencies: [userId, companyId],
+    setup(channel) {
+      return channel.on(
+        "postgres_changes" as any,
+        {
+          event: "*",
+          filter: `userId=eq.${userId}`,
+          schema: "public",
+          table: "notification"
+        },
+        (payload: {
+          eventType: string;
+          new: NotificationRow;
+          old: NotificationRow;
+        }) => {
+          if (payload.new && payload.new.companyId !== companyId) return;
+          if (payload.eventType === "INSERT") {
+            setNotifications((prev) => [
+              rowToNotification(payload.new),
+              ...prev
+            ]);
+          } else if (payload.eventType === "UPDATE") {
+            // A row that just got attached to a digest disappears from the
+            // topbar — it's now represented by its digest parent.
+            const newRow = payload.new as NotificationRow & {
+              digestedInto?: string | null;
             };
+            if (newRow.digestedInto) {
+              setNotifications((prev) =>
+                prev.filter((n) => n._id !== newRow.id)
+              );
+            } else {
+              setNotifications((prev) =>
+                prev.map((n) =>
+                  n._id === newRow.id ? rowToNotification(newRow) : n
+                )
+              );
+            }
+          } else if (payload.eventType === "DELETE") {
+            setNotifications((prev) =>
+              prev.filter((n) => n._id !== (payload.old as NotificationRow).id)
+            );
           }
-
-          return notification;
-        })
-      );
-
-      headlessService.markNotificationsAsRead({
-        messageId: [messageId],
-        // biome-ignore lint/suspicious/noEmptyBlockStatements: suppressed due to migration
-        listener: (result) => {},
-        // biome-ignore lint/suspicious/noEmptyBlockStatements: suppressed due to migration
-        onError: (error) => {}
-      });
-    }
-  };
-
-  const fetchNotifications = useCallback(() => {
-    const headlessService = headlessServiceRef.current;
-
-    if (headlessService) {
-      headlessService.fetchNotifications({
-        // biome-ignore lint/correctness/noEmptyPattern: suppressed due to migration
-        // biome-ignore lint/suspicious/noEmptyBlockStatements: suppressed due to migration
-        listener: ({}) => {},
-        onSuccess: (response) => {
-          setLoading(false);
-          setNotifications(response.data);
         }
-      });
-    }
-  }, []);
-
-  const markAllMessagesAsSeen = () => {
-    const headlessService = headlessServiceRef.current;
-
-    if (headlessService) {
-      setNotifications((prevNotifications) =>
-        prevNotifications.map((notification) => ({
-          ...notification,
-          seen: true
-        }))
       );
-      headlessService.markAllMessagesAsSeen({
-        // biome-ignore lint/suspicious/noEmptyBlockStatements: suppressed due to migration
-        listener: () => {},
-        // biome-ignore lint/suspicious/noEmptyBlockStatements: suppressed due to migration
-        onError: () => {}
-      });
-    }
-  };
-
-  useMount(() => {
-    setSubscriberId(getSubscriberId({ companyId, userId }));
+    },
+    topic: `notification:${companyId}:${userId}`
   });
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    const headlessService = headlessServiceRef.current;
+  const markMessageAsRead = useCallback(
+    async (messageId: string) => {
+      setNotifications((prev) =>
+        prev.map((n) => (n._id === messageId ? { ...n, read: true } : n))
+      );
+      if (!carbon) return;
+      const now = new Date().toISOString();
+      await carbon
+        .from("notification")
+        .update({ readAt: now })
+        .eq("id", messageId);
+      // If this is a digest row, sweep its children read too. RLS scopes
+      // both updates to auth.uid()::text = userId, so a malicious id won't
+      // affect anyone else.
+      await carbon
+        .from("notification")
+        .update({ readAt: now })
+        .eq("digestedInto", messageId)
+        .is("readAt", null);
+    },
+    [carbon]
+  );
 
-    if (headlessService) {
-      headlessService.listenNotificationReceive({
-        listener: () => {
-          fetchNotifications();
-        }
-      });
-    }
-  }, [headlessServiceRef.current]);
+  // Lazily loads child rows for a digest parent. The topbar query filters out
+  // anything with `digestedInto` set, so children aren't in `notifications` —
+  // we fetch them on demand when the user expands a digest.
+  const fetchDigestChildren = useCallback(
+    async (digestId: string): Promise<Notification[]> => {
+      if (!carbon) return [];
+      const { data, error } = await carbon
+        .from("notification")
+        .select("id, userId, companyId, readAt, seenAt, createdAt, payload")
+        .eq("digestedInto", digestId)
+        .order("createdAt", { ascending: false });
+      if (error) {
+        console.error("Failed to load digest children", error);
+        return [];
+      }
+      return ((data ?? []) as NotificationRow[]).map(rowToNotification);
+    },
+    [carbon]
+  );
 
-  useEffect(() => {
-    if (subscriberId && !headlessServiceRef.current) {
-      const isEu = NOVU_API_URL.includes("eu.");
-      const headlessService = new HeadlessService({
-        applicationIdentifier: NOVU_APPLICATION_ID!,
-        backendUrl: isEu ? "https://eu.api.novu.co" : "https://api.novu.co",
-        socketUrl: isEu ? "wss://eu.ws.novu.co" : undefined, // ← base only, no /socket.io
-        subscriberId
-      });
+  const markAllMessagesAsRead = useCallback(async () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    if (!carbon) return;
+    await carbon
+      .from("notification")
+      .update({ readAt: new Date().toISOString() })
+      .eq("userId", userId)
+      .eq("companyId", companyId)
+      .is("readAt", null);
+  }, [carbon, userId, companyId]);
 
-      headlessService.initializeSession({
-        // biome-ignore lint/suspicious/noEmptyBlockStatements: suppressed due to migration
-        listener: () => {},
-        onSuccess: () => {
-          headlessServiceRef.current = headlessService;
-          fetchNotifications();
-        },
-        // biome-ignore lint/suspicious/noEmptyBlockStatements: suppressed due to migration
-        onError: () => {}
-      });
-    }
-  }, [fetchNotifications, subscriberId]);
+  const markAllMessagesAsSeen = useCallback(async () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, seen: true })));
+    if (!carbon) return;
+    await carbon
+      .from("notification")
+      .update({ seenAt: new Date().toISOString() })
+      .eq("userId", userId)
+      .eq("companyId", companyId)
+      .is("seenAt", null);
+  }, [carbon, userId, companyId]);
+
+  const hasUnseenNotifications = useMemo(
+    () => notifications.some((n) => !n.seen),
+    [notifications]
+  );
 
   return {
+    fetchDigestChildren,
+    hasUnseenNotifications,
     isLoading,
     markAllMessagesAsRead,
-    markMessageAsRead,
     markAllMessagesAsSeen,
-    hasUnseenNotifications: notifications.some(
-      (notification) => !notification.seen
-    ),
+    markMessageAsRead,
     notifications
   };
 }

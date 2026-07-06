@@ -2,13 +2,16 @@ import {
   Button,
   DatePicker,
   HStack,
+  Input,
+  InputGroup,
+  InputLeftElement,
   Popover,
   PopoverContent,
   PopoverHeader,
   PopoverTrigger
 } from "@carbon/react";
 import { parseDate } from "@internationalized/date";
-import { LuCalendarDays, LuLanguages, LuX } from "react-icons/lu";
+import { LuCalendarDays, LuLanguages, LuSearch, LuX } from "react-icons/lu";
 import { useUrlParams } from "~/hooks";
 import CompanySelector from "./CompanySelector";
 
@@ -23,6 +26,8 @@ type ReportFiltersProps = {
   isMultiCompany: boolean;
   isForeignCurrency?: boolean;
   parentCurrency?: string | null;
+  search: string;
+  onSearchChange: (value: string) => void;
 };
 
 const ReportFilters = ({
@@ -30,7 +35,9 @@ const ReportFilters = ({
   selectedCompanyIds,
   isMultiCompany,
   isForeignCurrency = false,
-  parentCurrency
+  parentCurrency,
+  search,
+  onSearchChange
 }: ReportFiltersProps) => {
   const [params, setParams] = useUrlParams();
 
@@ -41,6 +48,16 @@ const ReportFilters = ({
   return (
     <div className="flex px-4 py-3 items-center space-x-4 justify-between bg-card border-b border-border w-full">
       <HStack>
+        <InputGroup size="sm" className="w-64">
+          <InputLeftElement>
+            <LuSearch className="h-4 w-4 text-muted-foreground" />
+          </InputLeftElement>
+          <Input
+            placeholder="Search accounts..."
+            value={search}
+            onChange={(e) => onSearchChange(e.target.value)}
+          />
+        </InputGroup>
         <CompanySelector
           companies={companies}
           selectedCompanyIds={selectedCompanyIds}

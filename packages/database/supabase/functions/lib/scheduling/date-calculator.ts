@@ -97,6 +97,32 @@ export class BackwardSchedulingStrategy implements SchedulingStrategy {
       const durationDays = calculateDurationDays(op);
       const durationHours = calculateDurationHours(op);
 
+      // If manually scheduled, preserve the existing dueDate and derive startDate
+      if (op.manuallyScheduled && op.dueDate) {
+        const dueDateObj = new Date(op.dueDate);
+        const startDateObj = subtractBusinessDays(dueDateObj, durationDays);
+        const startDate = formatDate(startDateObj);
+
+        const hasConflict = startDate < today;
+        const conflictReason = hasConflict
+          ? `Operation must start on ${startDate} but current date is ${today}`
+          : null;
+
+        const scheduledOp: ScheduledOperation = {
+          ...op,
+          id: op.id,
+          startDate,
+          dueDate: op.dueDate,
+          priority: op.priority ?? 99,
+          durationHours,
+          durationDays,
+          hasConflict,
+          conflictReason,
+        };
+        scheduled.set(opId, scheduledOp);
+        continue;
+      }
+
       // Calculate due date
       let dueDate: string;
       const dependents = graph.getDependents(opId);
@@ -213,6 +239,27 @@ export class ForwardSchedulingStrategy implements SchedulingStrategy {
 
       const durationDays = calculateDurationDays(op);
       const durationHours = calculateDurationHours(op);
+
+      // If manually scheduled, preserve the existing dueDate and derive startDate
+      if (op.manuallyScheduled && op.dueDate) {
+        const dueDateObj = new Date(op.dueDate);
+        const startDateObj = subtractBusinessDays(dueDateObj, durationDays);
+        const opStartDate = formatDate(startDateObj);
+
+        const scheduledOp: ScheduledOperation = {
+          ...op,
+          id: op.id,
+          startDate: opStartDate,
+          dueDate: op.dueDate,
+          priority: op.priority ?? 1,
+          durationHours,
+          durationDays,
+          hasConflict: false,
+          conflictReason: null,
+        };
+        scheduled.set(opId, scheduledOp);
+        continue;
+      }
 
       // Calculate start date
       let opStartDate: string;

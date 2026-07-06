@@ -58,7 +58,7 @@ const useEmailOptions = (type: "employee" | "supplier" | "customer") => {
   const groupsFetcher = useFetcher<{ groups: Group[] }>();
 
   useMount(() => {
-    groupsFetcher.load(path.to.api.groupsByType(type));
+    groupsFetcher.load(path.to.api.groupsByTypeWithUsers(type));
   });
 
   const options = useMemo<Option[]>(() => {
@@ -294,7 +294,7 @@ export default function EmailRecipients({
           </div>
         </PopoverTrigger>
         <PopoverContent
-          className="w-[--radix-popover-trigger-width] p-0"
+          className="w-[var(--radix-popover-trigger-width)] p-0"
           align="start"
           onOpenAutoFocus={(e) => e.preventDefault()}
           onCloseAutoFocus={(e) => e.preventDefault()}

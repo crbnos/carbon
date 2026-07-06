@@ -2,16 +2,16 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import {
+  evaluateLinesForSurface,
+  isBlocked
+} from "@carbon/ee/storage-rules.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import {
   updateWarehouseTransferStatus,
   warehouseTransferStatusType
 } from "~/modules/inventory";
-import {
-  evaluateLinesForSurface,
-  isBlocked
-} from "~/modules/items/itemRules.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -56,19 +56,22 @@ export async function action({ request, params }: ActionFunctionArgs) {
       .eq("transferId", id)
       .eq("companyId", companyId);
 
+    const evalLines = (lines ?? []).map((l) => ({
+      lineId: l.id as string,
+      itemId: l.itemId as string | null,
+      storageUnitId: l.toStorageUnitId as string | null,
+      quantity: Number(l.quantity ?? 0),
+      locationId: l.toLocationId as string | null
+    }));
+
     const { violations, ruleNames } = await evaluateLinesForSurface({
       client: serviceRole,
       companyId,
       userId,
+      targetType: "item",
       surface: "warehouseTransfer",
       // Evaluate against the destination side — that's where stock is landing.
-      lines: (lines ?? []).map((l) => ({
-        lineId: l.id as string,
-        itemId: l.itemId as string | null,
-        storageUnitId: l.toStorageUnitId as string | null,
-        quantity: Number(l.quantity ?? 0),
-        locationId: l.toLocationId as string | null
-      }))
+      lines: evalLines
     });
 
     if (violations.length > 0 && isBlocked(violations, acknowledged)) {

@@ -7,24 +7,27 @@ import { inngest } from "./inngest/client.ts";
  * to `trigger("notify", payload)` with minimal changes.
  */
 const taskToEvent = {
-  notify: "carbon/notify",
-  "send-email": "carbon/send-email",
-  "model-thumbnail": "carbon/model-thumbnail",
-  "update-permissions": "carbon/update-permissions",
-  recalculate: "carbon/recalculate",
-  "user-admin": "carbon/user-admin",
-  "schedule-job": "carbon/reschedule-job",
-  "post-transactions": "carbon/post-transaction",
-  onboard: "carbon/onboard",
   "accounting-backfill": "carbon/accounting-backfill",
-  "sync-external-accounting": "carbon/sync-external-accounting",
-  "sync-issue-from-jira": "carbon/jira-sync",
-  "sync-issue-from-linear": "carbon/linear-sync",
+  "model-thumbnail": "carbon/model-thumbnail",
+  notify: "carbon/notify",
+  onboard: "carbon/onboard",
   "paperless-parts": "carbon/paperless-parts",
+  "post-transactions": "carbon/post-transaction",
+  "print-job-deliver": "carbon/print-job-deliver",
+  "print-job": "carbon/print-job",
+  recalculate: "carbon/recalculate",
+  "schedule-job": "carbon/reschedule-job",
+  "send-email": "carbon/send-email",
+  "send-slack": "carbon/send-slack",
+  "slack-document-assignment-update": "carbon/slack-document-assignment-update",
   "slack-document-created": "carbon/slack-document-created",
   "slack-document-status-update": "carbon/slack-document-status-update",
   "slack-document-task-update": "carbon/slack-document-task-update",
-  "slack-document-assignment-update": "carbon/slack-document-assignment-update"
+  "sync-external-accounting": "carbon/sync-external-accounting",
+  "sync-issue-from-jira": "carbon/jira-sync",
+  "sync-issue-from-linear": "carbon/linear-sync",
+  "update-permissions": "carbon/update-permissions",
+  "user-admin": "carbon/user-admin"
 } as const;
 
 type TaskMap = typeof taskToEvent;
@@ -50,7 +53,7 @@ export async function trigger<T extends keyof TaskPayloads>(
 ) {
   const eventName = taskToEvent[taskId];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return inngest.send({ name: eventName, data: payload } as any);
+  return inngest.send({ data: payload, name: eventName } as any);
 }
 
 /**
@@ -69,6 +72,6 @@ export async function batchTrigger<T extends keyof TaskPayloads>(
   const eventName = taskToEvent[taskId];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return inngest.send(
-    items.map((i) => ({ name: eventName, data: i.payload })) as any
+    items.map((i) => ({ data: i.payload, name: eventName })) as any
   );
 }

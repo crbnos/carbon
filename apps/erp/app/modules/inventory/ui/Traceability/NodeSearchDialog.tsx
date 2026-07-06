@@ -91,8 +91,11 @@ export function NodeSearchDialog({
       onSelect?.(id);
       return;
     }
+
+    const params = new URLSearchParams();
     const param = kind === "entity" ? "trackedEntityId" : "trackedActivityId";
-    navigate(`/x/traceability/graph?${param}=${encodeURIComponent(id)}`);
+    params.set(param, id);
+    navigate(`/x/traceability/graph?${params.toString()}`);
   }
 
   const isLoading = fetcher.state !== "idle";
@@ -100,7 +103,7 @@ export function NodeSearchDialog({
   return (
     <CommandDialog open={open} onOpenChange={onOpenChange}>
       <CommandInput
-        placeholder="Search entities, activities, status, source doc..."
+        placeholder="Search entities, activities, status, source doc, tracking ID..."
         value={query}
         onValueChange={setQuery}
       />

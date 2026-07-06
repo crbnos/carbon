@@ -4,7 +4,8 @@ import { labelSizes } from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { getCompany } from "~/modules/settings";
+import { getCompany, getDocumentTemplateConfig } from "~/modules/settings";
+import { resolveLabelLogo } from "~/modules/settings/labelLogo.server";
 import { path } from "~/utils/path";
 import { getEntityLabelData } from "./labels.server";
 
@@ -31,7 +32,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const labelParam = url.searchParams.get("labelSize");
   const labelSizeId =
-    labelParam || companySettings?.data?.productLabelSize || "avery5160";
+    labelParam || companySettings?.data?.productLabelSize || "avery5163";
 
   const labelSize = labelSizes.find((size) => size.id === labelSizeId);
 
@@ -45,8 +46,21 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  const template = await getDocumentTemplateConfig(
+    client,
+    companyId,
+    "trackingLabel"
+  );
+  const logo = await resolveLabelLogo(company.data, template, labelSize);
+
   const stream = await renderToStream(
-    <ProductLabelPDF items={[labelItem!]} labelSize={labelSize} />
+    <ProductLabelPDF
+      items={[labelItem!]}
+      labelSize={labelSize}
+      template={template}
+      company={company.data as any}
+      logo={logo}
+    />
   );
 
   const body: Buffer = await new Promise((resolve, reject) => {

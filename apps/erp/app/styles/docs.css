@@ -4,10 +4,12 @@
 
 .Code pre {
   margin: 0;
-  padding: 0.5rem 0rem !important;
-  background-color: transparent!important;
+  padding: 0.75rem 1rem !important;
+  border-radius: 0.5rem;
   font-size: 0.875rem;
-  line-height: 1.25rem;
+  line-height: 1.4;
+  background-color: #011627 !important;
+  color: #d6deeb;
 }
 
 .Code .codeBlock {
@@ -40,9 +42,9 @@
   border-radius: 0.25rem;
   font-size: 0.75rem;
   line-height: 1rem;
-  background: #011627;
-  border: 1px solid #d6deeb;
-  color: #d6deeb;
+  background: hsl(var(--background));
+  border: 1px solid hsl(var(--border));
+  color: hsl(var(--foreground));
   cursor: pointer;
   line-height: 12px;
   outline: none;

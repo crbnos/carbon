@@ -51,17 +51,33 @@ import type {
   PickMethod,
   SupplierPart
 } from "../../types";
-import { FileBadge } from "../Item";
+import { FileBadge, ItemDescription, SourcingTypeProperty } from "../Item";
 
-const PartProperties = () => {
+type PartPropertiesProps = {
+  data?: {
+    itemId: string;
+    locations: ListItem[];
+    partSummary: PartSummary;
+    files: Promise<ItemFile[]>;
+    supplierParts: SupplierPart[];
+    pickMethods: PickMethod[];
+    makeMethods: Promise<PostgrestResponse<MakeMethod>>;
+    tags: { name: string }[];
+  };
+};
+
+const PartProperties = ({ data }: PartPropertiesProps) => {
   const { t } = useLingui();
-  const { itemId } = useParams();
+  const params = useParams();
+  const itemId = data?.itemId ?? params.itemId;
   if (!itemId) throw new Error("itemId not found");
 
   const sharedPartsData = useRouteData<{ locations: ListItem[] }>(
     path.to.partRoot
   );
-  const routeData = useRouteData<{
+  // When `data` is injected (subassembly context), this hook won't match a
+  // route and returns undefined — harmless, hooks must be called unconditionally.
+  const routeDataFromRoute = useRouteData<{
     partSummary: PartSummary;
     files: Promise<ItemFile[]>;
     supplierParts: SupplierPart[];
@@ -69,8 +85,9 @@ const PartProperties = () => {
     makeMethods: Promise<PostgrestResponse<MakeMethod>>;
     tags: { name: string }[];
   }>(path.to.part(itemId));
+  const routeData = data ?? routeDataFromRoute;
 
-  const locations = sharedPartsData?.locations ?? [];
+  const locations = data?.locations ?? sharedPartsData?.locations ?? [];
   const supplierParts = routeData?.supplierParts ?? [];
   const pickMethods = routeData?.pickMethods ?? [];
 
@@ -96,10 +113,12 @@ const PartProperties = () => {
       field:
         | "active"
         | "defaultMethodType"
+        | "sourcingType"
         | "itemTrackingType"
         | "itemPostingGroupId"
         | "partId"
         | "name"
+        | "description"
         | "replenishmentSystem"
         | "unitOfMeasureCode"
         | "requiresInspection",
@@ -275,6 +294,7 @@ const PartProperties = () => {
                 name="name"
                 inline
                 size="sm"
+                characterLimit={40}
                 value={routeData?.partSummary?.name ?? ""}
                 onBlur={(e) => {
                   onUpdate("name", e.target.value ?? null);
@@ -465,6 +485,12 @@ const PartProperties = () => {
         />
       </ValidatedForm>
 
+      <SourcingTypeProperty
+        replenishmentSystem={routeData?.partSummary?.replenishmentSystem}
+        value={routeData?.partSummary?.sourcingType}
+        onChange={(value) => onUpdate("sourcingType", value)}
+      />
+
       <ValidatedForm
         defaultValues={{
           unitOfMeasureCode:
@@ -486,6 +512,11 @@ const PartProperties = () => {
           }}
         />
       </ValidatedForm>
+
+      <ItemDescription
+        value={routeData?.partSummary?.description ?? ""}
+        onChange={(value) => onUpdate("description", value)}
+      />
 
       <VStack spacing={2}>
         <HStack className="w-full justify-between">

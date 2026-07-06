@@ -1,11 +1,13 @@
 import { useLingui } from "@lingui/react/macro";
 import {
   LuArrowRightLeft,
+  LuClipboardList,
   LuHandCoins,
   LuListChecks,
   LuNetwork,
   LuQrCode,
   LuScanQrCode,
+  LuShieldCheck,
   LuTag,
   LuTally5,
   LuTruck,
@@ -25,6 +27,11 @@ export default function useInventorySubmodules() {
     {
       name: t`Manage`,
       routes: [
+        {
+          name: t`Picking Lists`,
+          to: path.to.pickingLists,
+          icon: <LuClipboardList />
+        },
         {
           name: t`Receipts`,
           to: path.to.receipts,
@@ -97,6 +104,12 @@ export default function useInventorySubmodules() {
           role: "employee",
           icon: <LuTag />,
           table: "storageType"
+        },
+        {
+          name: t`Storage Rules`,
+          to: path.to.storageRules,
+          role: "employee",
+          icon: <LuShieldCheck />
         },
         {
           name: t`Shipping Methods`,

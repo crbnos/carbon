@@ -9,8 +9,8 @@ import {
   InputLeftAddon,
   InputRightAddon
 } from "@carbon/react";
-import type { ReactNode } from "react";
-import { forwardRef } from "react";
+import type { ChangeEvent, ReactNode } from "react";
+import { forwardRef, useState } from "react";
 import { useField } from "../hooks";
 import { useFormStateContext } from "../internal/formStateContext";
 import type { ValidationBehaviorOptions } from "../internal/getInputProps";
@@ -22,6 +22,7 @@ type FormInputProps = InputProps & {
   isOptional?: boolean;
   isRequired?: boolean;
   helperText?: string;
+  characterLimit?: number;
   prefix?: string;
   suffix?: string;
   validationBehavior?: ValidationBehaviorOptions;
@@ -37,9 +38,11 @@ const Input = forwardRef<HTMLInputElement, FormInputProps>(
       isOptional,
       isRequired,
       helperText,
+      characterLimit,
       prefix,
       suffix,
       onConfigure,
+      maxLength,
       isDisabled: isDisabledProp,
       isReadOnly: isReadOnlyProp,
       ...rest
@@ -49,11 +52,18 @@ const Input = forwardRef<HTMLInputElement, FormInputProps>(
     const {
       getInputProps,
       error,
+      defaultValue,
       isOptional: fieldIsOptional
     } = useField(name);
     const formState = useFormStateContext();
     const isDisabled = formState.isDisabled || isDisabledProp;
     const isReadOnly = formState.isReadOnly || isReadOnlyProp;
+    const [characterCount, setCharacterCount] = useState(
+      defaultValue?.length ?? 0
+    );
+    const onChange = (e: ChangeEvent<HTMLInputElement>) => {
+      if (characterLimit) setCharacterCount(e.target.value.length);
+    };
     const resolvedIsOptional =
       isOptional ?? (isRequired ? false : (fieldIsOptional ?? false));
 
@@ -87,6 +97,8 @@ const Input = forwardRef<HTMLInputElement, FormInputProps>(
                 id: name,
                 ...rest
               })}
+              maxLength={characterLimit ?? maxLength}
+              {...(characterLimit ? { onChange } : {})}
               isDisabled={isDisabled}
               isReadOnly={isReadOnly}
             />
@@ -99,11 +111,18 @@ const Input = forwardRef<HTMLInputElement, FormInputProps>(
               id: name,
               ...rest
             })}
+            maxLength={characterLimit ?? maxLength}
+            {...(characterLimit ? { onChange } : {})}
             isDisabled={isDisabled}
             isReadOnly={isReadOnly}
           />
         )}
 
+        {characterLimit && (
+          <FormHelperText>
+            {characterCount}/{characterLimit}
+          </FormHelperText>
+        )}
         {helperText && <FormHelperText>{helperText}</FormHelperText>}
         {error && <FormErrorMessage>{error}</FormErrorMessage>}
       </FormControl>

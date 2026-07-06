@@ -44,12 +44,14 @@ import {
   LuBuilding,
   LuCalendarDays,
   LuChevronDown,
+  LuCirclePlay,
   LuClipboardList,
   LuHistory,
   LuLogOut,
   LuMapPin,
   LuMonitor,
   LuMoon,
+  LuPackageCheck,
   LuShieldCheck,
   LuSun,
   LuUser,
@@ -157,7 +159,7 @@ export function TeamSwitcher({ company }: { company: Company }) {
           asChild
         >
           <a href={ERP_URL}>
-            <div className="flex aspect-square size-8 items-center justify-center rounded-lg text-foreground">
+            <div className="flex aspect-square size-10 items-center justify-center rounded-lg text-foreground">
               {companyLogo ? (
                 <img
                   src={companyLogo}
@@ -165,7 +167,7 @@ export function TeamSwitcher({ company }: { company: Company }) {
                   className="h-full w-full rounded object-contain"
                 />
               ) : (
-                <BsFillHexagonFill />
+                <BsFillHexagonFill className="size-6" />
               )}
             </div>
             <div className="grid flex-1 text-left text-sm leading-tight">
@@ -209,14 +211,25 @@ export function OperationsNav({
       to: path.to.recent
     },
     {
+      title: t`Jobs`,
+      icon: LuCirclePlay,
+      to: path.to.jobs
+    },
+    {
       title: t`Maintenance`,
       icon: LuWrench,
       label: (activeMaintenanceCount ?? 0).toString(),
       to: path.to.maintenance
+    },
+    {
+      title: t`Picking`,
+      icon: LuPackageCheck,
+      to: path.to.picking
     }
   ];
 
-  const { pathname } = useLocation();
+  const location = useLocation();
+  const { pathname } = location;
   const { isMobile, setOpenMobile } = useSidebar();
 
   return (
@@ -376,7 +389,7 @@ export function UserNav({
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
-            className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
+            className="w-[var(--radix-dropdown-menu-trigger-width)] min-w-56 rounded-lg"
             side={isMobile ? "bottom" : "right"}
             align="end"
             sideOffset={4}

@@ -41,7 +41,7 @@ import {
   isJobLocked,
   jobValidator,
   recalculateJobRequirements,
-  upsertJob
+  updateJob
 } from "~/modules/production";
 import {
   JobBillOfMaterial,
@@ -167,20 +167,25 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const { jobId, ...d } = validation.data;
-  if (!jobId) throw new Error("Could not find jobId in payload");
-
-  const updateJob = await upsertJob(client, {
-    ...d,
-    id: id,
-    jobId,
+  const result = await updateJob(client, {
+    id,
+    quantity: validation.data.quantity,
+    scrapQuantity: validation.data.scrapQuantity,
+    itemId: validation.data.itemId,
+    dueDate: validation.data.dueDate || null,
+    startDate: validation.data.startDate || null,
+    deadlineType: validation.data.deadlineType,
+    locationId: validation.data.locationId,
+    unitOfMeasureCode: validation.data.unitOfMeasureCode,
+    customerId: validation.data.customerId || null,
+    modelUploadId: validation.data.modelUploadId || null,
     customFields: setCustomFields(formData),
     updatedBy: userId
   });
-  if (updateJob.error) {
+  if (result.error) {
     throw redirect(
       path.to.job(id),
-      await flash(request, error(updateJob.error, "Failed to update job"))
+      await flash(request, error(result.error, "Failed to update job"))
     );
   }
 
@@ -237,7 +242,7 @@ export default function JobDetailsRoute() {
   const methodId = makeMethod?.id;
 
   return (
-    <div className="h-[calc(100dvh-49px)] w-full items-start overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
+    <div className="h-full w-full items-start overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
       <VStack spacing={2} className="p-2">
         <JobMakeMethodTools makeMethod={makeMethod ?? undefined} />
 

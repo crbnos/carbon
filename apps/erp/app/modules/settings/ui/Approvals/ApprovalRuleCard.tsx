@@ -33,10 +33,11 @@ import ApprovalRuleDetails from "./ApprovalRuleDetails";
 type ApprovalRuleCardProps = {
   rule: ApprovalRule & { approverGroupNames?: string[] };
   documentType: ApprovalDocumentType;
+  upperBound?: number | null;
 };
 
 const ApprovalRuleCard = memo(
-  ({ rule, documentType }: ApprovalRuleCardProps) => {
+  ({ rule, documentType, upperBound = null }: ApprovalRuleCardProps) => {
     const { t } = useLingui();
     const [params] = useUrlParams();
     const navigate = useNavigate();
@@ -78,7 +79,9 @@ const ApprovalRuleCard = memo(
                       {approvalDocumentTypesWithAmounts.includes(
                         documentType
                       ) &&
-                        ` over ${currencyFormatter.format(rule.lowerBoundAmount ?? 0)}`}
+                        (upperBound != null
+                          ? ` ${currencyFormatter.format(rule.lowerBoundAmount ?? 0)} – ${currencyFormatter.format(upperBound)}`
+                          : ` over ${currencyFormatter.format(rule.lowerBoundAmount ?? 0)}`)}
                     </Heading>
                     <Status
                       color={rule.enabled ? "green" : "gray"}

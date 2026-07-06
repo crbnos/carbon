@@ -27,7 +27,7 @@ export type Workspace = {
   access_token: string | null;
   anon_key: string | null;
   database_password: string | null;
-  jwt_key: string | null;
+  jwt_secret: string | null;
   service_role_key: string | null;
 
   // App Configuration
@@ -45,9 +45,6 @@ export type Workspace = {
   jira_client_secret: string | null;
   jira_oauth_redirect_url: string | null;
   jira_state_secret: string | null;
-  novu_api_url: string | null;
-  novu_application_id: string | null;
-  novu_secret_key: string | null;
   openai_api_key: string | null;
   posthog_api_host: string | null;
   posthog_project_public_key: string | null;
@@ -126,9 +123,7 @@ async function deploy(): Promise<void> {
         jira_client_secret,
         jira_oauth_redirect_url,
         jira_state_secret,
-        novu_api_url,
-        novu_application_id,
-        novu_secret_key,
+        jwt_secret,
         openai_api_key,
         posthog_api_host,
         posthog_project_public_key,
@@ -277,9 +272,6 @@ async function deploy(): Promise<void> {
           JIRA_CLIENT_SECRET: jira_client_secret ?? undefined,
           JIRA_OAUTH_REDIRECT_URL: jira_oauth_redirect_url ?? undefined,
           JIRA_STATE_SECRET: jira_state_secret ?? undefined,
-          NOVU_APPLICATION_ID: novu_application_id ?? undefined,
-          NOVU_API_URL: novu_api_url ?? undefined,
-          NOVU_SECRET_KEY: novu_secret_key ?? undefined,
           OPENAI_API_KEY: openai_api_key,
           POSTHOG_API_HOST: posthog_api_host ?? undefined,
           POSTHOG_PROJECT_PUBLIC_KEY: posthog_project_public_key ?? undefined,
@@ -301,6 +293,7 @@ async function deploy(): Promise<void> {
           STRIPE_WEBHOOK_SECRET: stripe_webhook_secret ?? undefined,
           SUPABASE_ANON_KEY: anon_key,
           SUPABASE_DB_URL: database_connection_pooler_url,
+          SUPABASE_JWT_SECRET: jwt_secret ?? undefined,
           SUPABASE_SERVICE_ROLE_KEY: service_role_key,
           SUPABASE_URL: database_url,
           URL_ERP: url_erp,

@@ -17,7 +17,7 @@ import {
   getIssueReviewers,
   isIssueLocked,
   issueValidator,
-  upsertIssue
+  updateIssue
 } from "~/modules/quality";
 import {
   ActionTasksList,
@@ -92,17 +92,29 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw new Error("Could not find issue id");
   }
 
-  const updateIssue = await upsertIssue(client, {
-    ...validation.data,
-    id: id,
-    nonConformanceId: nonConformanceId,
+  const result = await updateIssue(client, {
+    id,
+    nonConformanceId,
+    name: validation.data.name,
+    priority: validation.data.priority,
+    source: validation.data.source,
+    locationId: validation.data.locationId,
+    nonConformanceTypeId: validation.data.nonConformanceTypeId,
+    nonConformanceWorkflowId: validation.data.nonConformanceWorkflowId || null,
+    openDate: validation.data.openDate,
+    dueDate: validation.data.dueDate || null,
+    closeDate: validation.data.closeDate || null,
+    description: validation.data.description || null,
+    quantity: validation.data.quantity ?? undefined,
+    requiredActionIds: validation.data.requiredActionIds,
+    approvalRequirements: validation.data.approvalRequirements,
     customFields: setCustomFields(formData),
     updatedBy: userId
   });
-  if (updateIssue.error) {
+  if (result.error) {
     throw redirect(
       path.to.issue(id),
-      await flash(request, error(updateIssue.error, "Failed to update issue"))
+      await flash(request, error(result.error, "Failed to update issue"))
     );
   }
 
@@ -131,6 +143,7 @@ export default function IssueDetailsRoute() {
   return (
     <VStack spacing={2}>
       <IssueContent
+        key={id}
         id={id}
         title={t`Description of Issue`}
         subTitle={nonConformance?.name}

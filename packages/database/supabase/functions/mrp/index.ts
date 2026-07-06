@@ -7,11 +7,19 @@ import {
   type CalendarDate,
 } from "npm:@internationalized/date";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
+import {
+  explodeBom,
+  splitKey,
+  type BomChild,
+  type DemandContributor,
+  type MethodType,
+  type ReplenishmentSystem,
+} from "../lib/mrp-engine.ts";
 
 import { Kysely, sql } from "npm:kysely";
 import z from "npm:zod@^3.24.1";
 import { corsHeaders } from "../lib/headers.ts";
-import { getSupabaseServiceRole } from "../lib/supabase.ts";
+import { requirePermissions } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";
 
 const pool = getConnectionPool(1);
@@ -23,15 +31,6 @@ type DemandPeriod = Omit<
   Database["public"]["Tables"]["period"]["Row"],
   "createdAt"
 >;
-
-type MethodType = Database["public"]["Enums"]["methodType"];
-type ReplenishmentSystem = Database["public"]["Enums"]["itemReplenishmentSystem"];
-
-type BomChild = {
-  itemId: string;
-  quantity: number;
-  methodType: MethodType;
-};
 
 const payloadValidator = z.discriminatedUnion("type", [
   z.object({
@@ -86,11 +85,7 @@ serve(async (req: Request) => {
   const ranges = getStartAndEndDates(today, "Week");
   const periods = await getOrCreateDemandPeriods(db, ranges, "Week");
 
-  const client = await getSupabaseServiceRole(
-    req.headers.get("Authorization"),
-    req.headers.get("carbon-key") ?? "",
-    companyId
-  );
+  const client = await requirePermissions(req, companyId, userId, { update: "production" });
 
   const locations = await client
     .from("location")
@@ -253,13 +248,6 @@ serve(async (req: Request) => {
     }
 
     // ──────────────────────────────────────────────────────────────
-    // PHASE 2: Compute Low Level Codes
-    // ──────────────────────────────────────────────────────────────
-
-    const llc = computeLowLevelCodes(bomByItem, replenishmentSystemByItem);
-    const maxLevel = llc.size > 0 ? Math.max(...llc.values()) : 0;
-
-    // ──────────────────────────────────────────────────────────────
     // PHASE 3: Collect supply from open orders
     // ──────────────────────────────────────────────────────────────
 
@@ -317,6 +305,14 @@ serve(async (req: Request) => {
     const salesDemandByKey = new Map<string, number>();
     const jobMaterialDemandByKey = new Map<string, number>();
 
+    // Top-level contributors (from sales orders and job materials) — keyed by
+    // grossDemand key. Used as the starting contributor set when BOM explosion
+    // first reaches a level-0 Make item.
+    const topLevelContributors = new Map<string, DemandContributor[]>();
+
+    type DemandForecastSourceInsert =
+      Database["public"]["Tables"]["demandForecastSource"]["Insert"];
+
     // Demand projections (netted against production supply)
     for (const projection of demandProjections.data) {
       if (!projection.itemId || !projection.forecastQuantity) continue;
@@ -329,6 +325,20 @@ serve(async (req: Request) => {
       if (netDemand > 0) {
         const key = `${projection.locationId ?? ""}-${projection.periodId}-${projection.itemId}`;
         grossDemand.set(key, (grossDemand.get(key) ?? 0) + netDemand);
+
+        // Seed top-level contributor for this projection. Use the projection's
+        // surrogate id (added in 20260527115843_demand-projection-source.sql).
+        const projectionId = projection.id;
+        if (projectionId && projection.itemId) {
+          const contributors = topLevelContributors.get(key) ?? [];
+          contributors.push({
+            sourceType: "Demand Projection",
+            demandProjectionId: projectionId,
+            parentItemId: projection.itemId,
+            quantity: netDemand,
+          });
+          topLevelContributors.set(key, contributors);
+        }
       }
     }
 
@@ -350,6 +360,17 @@ serve(async (req: Request) => {
         actualKey,
         (salesDemandByKey.get(actualKey) ?? 0) + line.quantityToSend
       );
+
+      if (line.id && line.itemId) {
+        const contributors = topLevelContributors.get(key) ?? [];
+        contributors.push({
+          sourceType: "Sales Order",
+          salesOrderLineId: line.id,
+          parentItemId: line.itemId,
+          quantity: line.quantityToSend,
+        });
+        topLevelContributors.set(key, contributors);
+      }
     }
 
     // Job material lines
@@ -369,22 +390,47 @@ serve(async (req: Request) => {
         actualKey,
         (jobMaterialDemandByKey.get(actualKey) ?? 0) + line.quantityToIssue
       );
+
+      if (line.jobId && line.itemId) {
+        const contributors = topLevelContributors.get(key) ?? [];
+        contributors.push({
+          sourceType: "Job Material",
+          jobId: line.jobId,
+          parentItemId: line.itemId,
+          quantity: line.quantityToIssue,
+        });
+        topLevelContributors.set(key, contributors);
+      }
     }
 
     // ──────────────────────────────────────────────────────────────
-    // PHASE 5: Level-by-level processing with inventory netting
+    // PHASE 5: Level-by-level BOM explosion with inventory netting
     // ──────────────────────────────────────────────────────────────
 
-    // On-hand inventory only (no scheduled supply — planning views
-    // handle time-phased supply/demand projection). Mutable: consumed
-    // as demands are netted to prevent the same stock from covering
-    // multiple items.
-    const onHandByLocationItem = new Map(baseInventoryByLocationItem);
+    // Merge open-PO supply into the job-supply map for BOM netting. POs
+    // offset gross demand the same way production does, but they're tracked
+    // separately above because Phase 4's projection netting and the
+    // supplyActual output (later in this function) consume them differently.
+    const jobAndPoSupplyByLocationPeriodItem = new Map(
+      jobSupplyByLocationPeriodItem
+    );
+    for (const [key, qty] of poSupplyByLocationPeriodItem) {
+      jobAndPoSupplyByLocationPeriodItem.set(
+        key,
+        (jobAndPoSupplyByLocationPeriodItem.get(key) ?? 0) + qty
+      );
+    }
 
-    // BOM-derived demand only — this is what gets written to demandForecast.
-    // Independent demand (sales orders, job materials) is already in demandActual
-    // and must NOT be duplicated here.
-    const bomDerivedDemand = new Map<string, number>();
+    const { bomDerivedDemand, demandContributors } = explodeBom({
+      grossDemand,
+      bomByItem,
+      replenishmentSystemByItem,
+      leadTimeByItem,
+      periods: periods.map((p) => ({ id: p.id ?? "" })),
+      onHandByLocationItem: new Map(baseInventoryByLocationItem),
+      jobSupplyByLocationPeriodItem: jobAndPoSupplyByLocationPeriodItem,
+      topLevelContributors,
+    });
 
     // demandForecast output: Map<"itemId-locationId-periodId", record>
     const demandForecastMap = new Map<
@@ -392,88 +438,10 @@ serve(async (req: Request) => {
       Database["public"]["Tables"]["demandForecast"]["Insert"]
     >();
 
-    for (let level = 0; level <= maxLevel; level++) {
-      // Collect all demand keys at this level
-      const keysAtLevel: string[] = [];
-      for (const [key, qty] of grossDemand) {
-        if (qty <= 0) continue;
-        const [, , itemId] = splitKey(key);
-        if ((llc.get(itemId) ?? 0) === level) {
-          keysAtLevel.push(key);
-        }
-      }
-
-      for (const key of keysAtLevel) {
-        const grossQty = grossDemand.get(key) ?? 0;
-        if (grossQty <= 0) continue;
-
-        const [locationId, periodId, itemId] = splitKey(key);
-        const repSys = replenishmentSystemByItem.get(itemId);
-        const effectiveRepSys =
-          repSys === "Buy and Make" ? "Buy" : (repSys as "Buy" | "Make" | undefined);
-
-        // ── Inventory Netting ──
-        const invKey = `${locationId}-${itemId}`;
-        const onHand = onHandByLocationItem.get(invKey) ?? 0;
-        const netRequirement = Math.max(0, grossQty - Math.max(0, onHand));
-
-        // Consume on-hand inventory
-        if (onHand > 0) {
-          onHandByLocationItem.set(invKey, Math.max(0, onHand - grossQty));
-        }
-
-        // ── Dependent Demand Propagation ──
-        // Only explode BOM if there's a net requirement AND item is Make type
-        if (netRequirement > 0 && effectiveRepSys === "Make") {
-          const children = bomByItem.get(itemId) ?? [];
-          for (const child of children) {
-            const childRepSys = replenishmentSystemByItem.get(child.itemId);
-            const childEffRepSys =
-              childRepSys === "Buy and Make"
-                ? "Buy"
-                : (childRepSys as "Buy" | "Make" | undefined);
-
-            // Skip Make+Make (produced in-line, not independently planned)
-            if (
-              child.methodType === "Make to Order" &&
-              childEffRepSys === "Make"
-            ) {
-              continue;
-            }
-
-            const childQty = child.quantity * netRequirement;
-            const childLeadTimeDays = leadTimeByItem.get(child.itemId) ?? 7;
-            const childLeadTimeWeeks = Math.ceil(childLeadTimeDays / 7);
-
-            // Offset to earlier period based on child's lead time
-            const currentPeriodIndex = periods.findIndex(
-              (p: DemandPeriod) => p.id ?? "" === periodId
-            );
-            const targetPeriodIndex = Math.max(
-              0,
-              currentPeriodIndex - childLeadTimeWeeks
-            );
-            const targetPeriod = periods[targetPeriodIndex];
-
-            if (targetPeriod) {
-              const childKey = `${locationId}-${targetPeriod.id}-${child.itemId}`;
-              grossDemand.set(
-                childKey,
-                (grossDemand.get(childKey) ?? 0) + childQty
-              );
-              bomDerivedDemand.set(
-                childKey,
-                (bomDerivedDemand.get(childKey) ?? 0) + childQty
-              );
-            }
-          }
-        }
-      }
-    }
-
     // Write BOM-derived demand to demandForecast.
     // The demand is already at the correct period (lead-time-offset
     // was applied during propagation), so no further offset needed.
+    const demandForecastSourceInserts: DemandForecastSourceInsert[] = [];
     for (const [key, qty] of bomDerivedDemand) {
       if (qty <= 0) continue;
       const [locationId, periodId, itemId] = splitKey(key);
@@ -493,6 +461,52 @@ serve(async (req: Request) => {
           createdBy: userId,
           updatedBy: userId,
         });
+      }
+
+      const contributors = demandContributors.get(key) ?? [];
+      for (const c of contributors) {
+        if (c.quantity <= 0) continue;
+        if (c.sourceType === "Job Material") {
+          demandForecastSourceInserts.push({
+            itemId,
+            locationId,
+            periodId,
+            sourceType: "Job Material",
+            jobId: c.jobId,
+            salesOrderLineId: null,
+            demandProjectionId: null,
+            parentItemId: c.parentItemId,
+            quantity: c.quantity,
+            companyId,
+          });
+        } else if (c.sourceType === "Sales Order") {
+          demandForecastSourceInserts.push({
+            itemId,
+            locationId,
+            periodId,
+            sourceType: "Sales Order",
+            jobId: null,
+            salesOrderLineId: c.salesOrderLineId,
+            demandProjectionId: null,
+            parentItemId: c.parentItemId,
+            quantity: c.quantity,
+            companyId,
+          });
+        } else {
+          // sourceType === "Demand Projection"
+          demandForecastSourceInserts.push({
+            itemId,
+            locationId,
+            periodId,
+            sourceType: "Demand Projection",
+            jobId: null,
+            salesOrderLineId: null,
+            demandProjectionId: c.demandProjectionId,
+            parentItemId: c.parentItemId,
+            quantity: c.quantity,
+            companyId,
+          });
+        }
       }
     }
 
@@ -654,6 +668,14 @@ serve(async (req: Request) => {
         .where("forecastMethod", "=", "mrp")
         .execute();
 
+      // Delete existing MRP forecast source rows. The demandForecast delete
+      // above removes the parent rows; this removes their attribution rows.
+      // demandForecastSource only ever holds MRP-derived rows.
+      await db
+        .deleteFrom("demandForecastSource")
+        .where("companyId", "=", companyId)
+        .execute();
+
       await db
         .deleteFrom("supplyForecast")
         .where(
@@ -678,6 +700,16 @@ serve(async (req: Request) => {
               updatedBy: userId,
             })
           )
+          .execute();
+      }
+
+      // Insert demand forecast source rows in batches. No onConflict — the
+      // upstream delete guarantees no key collisions.
+      for (let i = 0; i < demandForecastSourceInserts.length; i += BATCH_SIZE) {
+        const batch = demandForecastSourceInserts.slice(i, i + BATCH_SIZE);
+        await db
+          .insertInto("demandForecastSource")
+          .values(batch)
           .execute();
       }
 
@@ -741,12 +773,6 @@ serve(async (req: Request) => {
 // Helper functions
 // ──────────────────────────────────────────────────────────────
 
-function splitKey(key: string): [string, string, string] {
-  const parts = key.split("-");
-  // Keys are "locationId-periodId-itemId" where each ID contains no hyphens (xid format)
-  return [parts[0], parts[1], parts.slice(2).join("-")];
-}
-
 function findPeriod(
   date: CalendarDate,
   today: CalendarDate,
@@ -758,47 +784,6 @@ function findPeriod(
   return periods.find(
     (p) => p.startDate?.compare(date) <= 0 && p.endDate?.compare(date) >= 0
   );
-}
-
-function computeLowLevelCodes(
-  bomByItem: Map<string, BomChild[]>,
-  replenishmentSystemByItem: Map<string, ReplenishmentSystem>
-): Map<string, number> {
-  const llc = new Map<string, number>();
-
-  function assignLevel(
-    itemId: string,
-    level: number,
-    visited: Set<string>
-  ): void {
-    if (visited.has(itemId)) return;
-    visited.add(itemId);
-
-    const currentLLC = llc.get(itemId) ?? -1;
-    if (level > currentLLC) {
-      llc.set(itemId, level);
-    }
-
-    const children = bomByItem.get(itemId) ?? [];
-    for (const child of children) {
-      const childRepSys = replenishmentSystemByItem.get(child.itemId);
-      const childEffRepSys =
-        childRepSys === "Buy and Make" ? "Buy" : childRepSys;
-
-      // Skip Make+Make (produced in-line)
-      if (child.methodType === "Make to Order" && childEffRepSys === "Make") {
-        continue;
-      }
-
-      assignLevel(child.itemId, level + 1, new Set(visited));
-    }
-  }
-
-  for (const itemId of bomByItem.keys()) {
-    assignLevel(itemId, 0, new Set());
-  }
-
-  return llc;
 }
 
 function getStartAndEndDates(

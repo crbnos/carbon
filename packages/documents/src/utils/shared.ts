@@ -19,7 +19,7 @@ export const getRegistrationFooter = (
   if (!name) return undefined;
   const country = getCountryName(countryCode);
   const base = country ? `${name} is registered in ${country}` : name;
-  return taxId ? `${base}, Company Number ${taxId}` : base;
+  return taxId ? `${base}, Company Registration Number ${taxId}` : base;
 };
 
 export const formatTaxPercent = (

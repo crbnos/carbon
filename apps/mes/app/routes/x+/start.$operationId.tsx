@@ -2,6 +2,10 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import {
+  evaluateLinesForSurface,
+  isBlocked
+} from "@carbon/ee/storage-rules.server";
 import { getLocalTimeZone, now } from "@internationalized/date";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect } from "react-router";
@@ -97,6 +101,51 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       // Use the last tracked entity if available
       trackedEntityId =
         trackedEntities.data[trackedEntities.data.length - 1].id;
+    }
+  }
+
+  // Business-rule pre-flight (workCenter target, operationStart surface).
+  // Hard errors abort; warnings flash but allow (loader-only flow has no
+  // modal to ack against).
+  if (jobOperation.data.workCenterId) {
+    const acknowledged = url.searchParams.get("acknowledged") === "true";
+    const ruleEval = await evaluateLinesForSurface({
+      client: serviceRole,
+      companyId,
+      userId,
+      targetType: "workCenter",
+      surface: "operationStart",
+      lines: [
+        {
+          lineId: operationId,
+          itemId: null,
+          workCenterId: jobOperation.data.workCenterId,
+          operation: {
+            id: operationId,
+            itemId: null,
+            quantity: jobOperation.data.operationQuantity ?? null,
+            workInstructionId:
+              (jobOperation.data as { workInstructionId?: string | null })
+                .workInstructionId ?? null
+          },
+          quantity: jobOperation.data.operationQuantity ?? 0
+        }
+      ]
+    });
+    if (
+      ruleEval.violations.length > 0 &&
+      isBlocked(ruleEval.violations, acknowledged)
+    ) {
+      throw redirect(
+        path.to.operation(operationId),
+        await flash(
+          request,
+          error(
+            ruleEval.violations[0]?.message ?? "Rule violation",
+            "Cannot start operation"
+          )
+        )
+      );
     }
   }
 

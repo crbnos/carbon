@@ -11,6 +11,7 @@ export {
   dimensions,
   failureModes,
   fiscalYearSettings,
+  fixedAssetClasses,
   gaugeTypes,
   nonConformanceRequiredActions,
   nonConformanceTypes,

@@ -10,7 +10,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
-import { memo } from "react";
+import { memo, useMemo } from "react";
 import { LuPlus } from "react-icons/lu";
 import { Link } from "react-router";
 import { Empty } from "~/components";
@@ -32,6 +32,15 @@ const ApprovalRules = memo(
   ({ poRules, qdRules, supplierRules }: ApprovalRulesProps) => {
     const permissions = usePermissions();
     const canCreate = permissions.can("update", "settings");
+
+    // A rule's ceiling is the next-higher tier's minimum (null for the top tier).
+    const nextTierFloor = useMemo(() => {
+      const floors = Array.from(
+        new Set(poRules.map((r) => r.lowerBoundAmount ?? 0))
+      ).sort((a, b) => a - b);
+      return (lowerBoundAmount: number): number | null =>
+        floors.find((f) => f > lowerBoundAmount) ?? null;
+    }, [poRules]);
 
     return (
       <ScrollArea className="h-full w-full">
@@ -78,6 +87,7 @@ const ApprovalRules = memo(
                           key={rule.id}
                           rule={rule}
                           documentType="purchaseOrder"
+                          upperBound={nextTierFloor(rule.lowerBoundAmount ?? 0)}
                         />
                       ))}
                   </VStack>

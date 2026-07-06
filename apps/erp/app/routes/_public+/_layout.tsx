@@ -12,7 +12,7 @@ export default function PublicRoute() {
             src="/carbon-word-light.svg"
             alt="Carbon Logo"
             className={cn(
-              "max-w-[240px] mb-3 dark:hidden z-50",
+              "max-w-[200px] mb-3 dark:hidden z-50",
               CONTROLLED_ENVIRONMENT && "grayscale"
             )}
           />
@@ -20,7 +20,7 @@ export default function PublicRoute() {
             src="/carbon-word-dark.svg"
             alt="Carbon Logo"
             className={cn(
-              "max-w-[240px] mb-3 dark:block hidden z-50",
+              "max-w-[200px] mb-3 dark:block hidden z-50",
               CONTROLLED_ENVIRONMENT && "grayscale"
             )}
           />

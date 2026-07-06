@@ -16,7 +16,7 @@ export type KyselyDatabase = KyselifyDatabase<SupabaseDatabase>;
 export type KyselyTx = Transaction<KyselyDatabase>;
 export type KyselyDbTx = KyselyDatabase | KyselyTx;
 
-export type { Kysely } from "kysely";
+export type { ExpressionBuilder, Kysely } from "kysely";
 
 export function getRuntime() {
   if (typeof (globalThis as Record<string, unknown>).Deno !== "undefined") {

@@ -1,0 +1,8 @@
+{
+  "extends": "@carbon/config/tsconfig/base.json",
+  "compilerOptions": {
+    "types": ["node"]
+  },
+  "include": ["src"],
+  "exclude": ["dist", "build", "node_modules"]
+}

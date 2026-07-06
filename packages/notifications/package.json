@@ -1,14 +1,6 @@
 {
-  "name": "@carbon/notifications",
-  "type": "module",
-  "dependencies": {
-    "@novu/node": "2.6.6",
-    "cookie": "catalog:",
-    "nanoid": "catalog:"
-  },
   "devDependencies": {
     "@carbon/config": "workspace:*",
-    "@carbon/database": "workspace:*",
     "@types/node": "20.19.39",
     "sst": "catalog:",
     "typescript": "catalog:"
@@ -16,6 +8,7 @@
   "exports": {
     ".": "./src/index.ts"
   },
+  "name": "@carbon/notifications",
   "private": true,
   "scripts": {
     "clean": "rimraf .turbo node_modules dist",
@@ -24,5 +17,6 @@
     "typecheck": "tsgo --noEmit"
   },
   "sideEffects": false,
+  "type": "module",
   "version": "0.0.0"
 }

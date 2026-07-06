@@ -20,6 +20,7 @@ import type { z } from "zod";
 import {
   // Ability,
   CustomFormFields,
+  Department,
   Hidden,
   Input,
   Location,
@@ -113,6 +114,7 @@ const WorkCenterForm = ({
                 )}
                 <TextArea name="description" label={t`Description`} />
                 <Location name="locationId" label={t`Location`} />
+                <Department name="departmentId" label={t`Department`} />
 
                 <Number
                   name="laborRate"

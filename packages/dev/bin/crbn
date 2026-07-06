@@ -19,6 +19,20 @@ case "$(uname -s)" in
     ;;
 esac
 
+# Node 22+ required (import.meta, native fetch, fs.glob, etc).
+if command -v node >/dev/null 2>&1; then
+  node_ver="$(node -v)"
+  node_major="${node_ver#v}"
+  node_major="${node_major%%.*}"
+  if [[ "$node_major" -lt 22 ]]; then
+    printf '\033[1;31m✗\033[0m crbn requires Node.js 22+ (found %s)\n' "$node_ver" >&2
+    exit 1
+  fi
+else
+  printf '\033[1;31m✗\033[0m crbn requires Node.js 22+ but node is not in PATH\n' >&2
+  exit 1
+fi
+
 # ---------------------------------------------------------------------------
 # Output helpers (colors when stderr is a TTY).
 # All listings/errors go to stderr so they never get eval'd by the `crbn()`
@@ -205,7 +219,7 @@ cmd_checkout() {
     target="$parent/${base}-$(slugify_branch "$name")"
   fi
 
-  local local_exists=0 origin_exists=0 existing_worktree=""
+  local local_exists=0 existing_worktree=""
   if git -C "$root" show-ref --verify --quiet "refs/heads/$name"; then
     local_exists=1
   fi
@@ -238,6 +252,18 @@ cmd_checkout() {
     return 0
   fi
 
+  # Never create a separate worktree for the main checkout's branch — just cd
+  # into the repo root. `git worktree add main` would detach and confuse.
+  local main_branch
+  main_branch="$(git -C "$root" symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null || echo "origin/main")"
+  main_branch="${main_branch#origin/}"
+  if [[ "$name" == "$main_branch" ]]; then
+    info "main checkout at ${C_DIM}${root}${C_RESET}"
+    printf "cd %q\n" "$root"
+    maybe_up "$root" "$do_up"
+    return 0
+  fi
+
   # Need to materialize a worktree. Resolve the ref locally or via origin.
   local resolved=""
   if (( local_exists )); then
@@ -248,13 +274,11 @@ cmd_checkout() {
        && git -C "$root" show-ref --verify --quiet "refs/remotes/origin/$name"; then
       git -C "$root" branch --track "$name" "origin/$name" >&2
       resolved="$name"
-      origin_exists=1
     else
       fail "branch '$name' not found locally or on origin (use -b to create)"
       exit 1
     fi
   fi
-  : "$origin_exists"  # tracked for clarity; not used after this
 
   if [[ -e "$target" ]]; then
     fail "target path already exists: $target"
@@ -330,13 +354,13 @@ _checkout_pr() {
   maybe_up "$target" "$do_up"
 }
 
-# crbn copy inside the new worktree (so it reads package.json#crbn.copy from
-# the main checkout via --git-common-dir). All output goes to stderr to keep
-# stdout reserved for the eval'd `cd` line.
+# crbn env sync inside the new worktree (so it reads package.json#crbn.copy
+# from the main checkout via --git-common-dir). All output goes to stderr to
+# keep stdout reserved for the eval'd `cd` line.
 do_post_create() {
   local target="$1"
-  if ! ( cd "$target" && delegate_ts copy >&2 ); then
-    warn "copy step failed (worktree was still created)"
+  if ! ( cd "$target" && delegate_ts env sync >&2 ); then
+    warn "env sync step failed (worktree was still created)"
   fi
 }
 
@@ -360,28 +384,27 @@ print_help() {
 crbn — Carbon dev CLI
 
   Worktrees:
-    crbn checkout <branch>          Switch into worktree for <branch>.
-                                    Creates one if missing (auto-fetches
-                                    from origin if not local).
-    crbn checkout -b <branch>       Create new branch + worktree from
-                                    --base (default HEAD).
-    crbn checkout <pr-number>       Fetch the PR head from GitHub into a
-                                    new `pr-<num>` branch + worktree.
-    crbn new                        Interactive: pick branch + base ref,
-                                    create worktree, optionally copy .env.
+    crbn checkout <branch>          Switch into worktree (creates if missing).
+    crbn checkout -b <branch>       New branch + worktree (--base REF).
+    crbn checkout <pr-number>       Fetch PR head into pr-<num> worktree.
+    crbn new [branch]               Interactive worktree creation.
     crbn list                       Show all worktrees with stack status.
-    crbn remove                     Pick a worktree to delete (with stack
-                                    teardown).
-    crbn copy                       Sync files (package.json#crbn.copy)
-                                    from main checkout into cwd.
+    crbn remove [--prune]           Multi-select worktrees to delete.
+                                    --prune also deletes the git branch.
 
   Stack:
     crbn up                         Boot compose stack + apps.
+    crbn up --no-portless           Localhost mode (API:54321 ERP:3000 MES:3001).
+    crbn up --borrow                Reuse another worktree's containers.
+    crbn up --no-apps               Services only, no dev servers.
     crbn down                       Stop stack (volumes preserved).
-    crbn reset                      Wipe volumes + redis, then `up`.
+    crbn reset                      Wipe volumes + redis, then up.
     crbn status                     Port assignment + container health.
-    crbn migrate                    Apply DB migrations against the running
-                                    worktree stack (loads .env.local).
+    crbn migrate                    Apply DB migrations (loads .env.local).
+
+  Files:
+    crbn copy <file...>             Copy file(s) from main checkout.
+    crbn env sync                   Sync package.json#crbn.copy from main.
 
 USAGE
 }
@@ -400,7 +423,7 @@ case "$cmd" in
   checkout)
     cmd_checkout "$@"
     ;;
-  copy|up|down|reset|status|migrate|new|list|remove|complete)
+  copy|env|up|down|reset|status|migrate|new|list|remove|complete)
     delegate_ts "$cmd" "$@"
     ;;
   *)

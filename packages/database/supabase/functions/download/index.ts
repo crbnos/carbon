@@ -2,12 +2,13 @@ import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import { z } from "npm:zod@^3.24.1";
 
 import { corsHeaders } from "../lib/headers.ts";
-import { getSupabaseServiceRole } from "../lib/supabase.ts";
+import { requirePermissions } from "../lib/supabase.ts";
 
 const downloadValidator = z.object({
   bucket: z.string(),
   path: z.string(),
   companyId: z.string(),
+  userId: z.string(),
 });
 
 serve(async (req: Request) => {
@@ -18,21 +19,18 @@ serve(async (req: Request) => {
 
   try {
     const validatedPayload = downloadValidator.parse(payload);
-    const { bucket, path, companyId } = validatedPayload;
+    const { bucket, path, companyId, userId } = validatedPayload;
 
     console.log({
       function: "download",
       bucket,
       path,
       companyId,
+      userId,
     });
 
     // verify that the request is authorized by an API key or service role
-    const serviceRole = await getSupabaseServiceRole(
-      req.headers.get("Authorization"),
-      req.headers.get("carbon-key") ?? "",
-      companyId
-    );
+    const serviceRole = await requirePermissions(req, companyId, userId, { view: "documents" });
 
     const signedUrl = await serviceRole.storage
       .from(bucket)

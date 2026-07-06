@@ -26,7 +26,7 @@ function postgrestServiceKey(authorizationHeader: string | null): string {
   return envKey;
 }
 
-function isTrustedServiceBearer(authorizationHeader: string | null): boolean {
+function isTrustedBearer(authorizationHeader: string | null): boolean {
   const envKey = (Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "").trim();
   const token =
     authorizationHeader?.replace(/^Bearer\s+/i, "").trim() ?? "";
@@ -35,8 +35,8 @@ function isTrustedServiceBearer(authorizationHeader: string | null): boolean {
   const parts = token.split(".");
   if (parts.length !== 3) return false;
   try {
-    return (JSON.parse(atob(parts[1]!)) as { role?: string }).role ===
-      "service_role";
+    const role = (JSON.parse(atob(parts[1]!)) as { role?: string }).role;
+    return role === "service_role";
   } catch {
     return false;
   }
@@ -183,8 +183,8 @@ export const getSupabaseServiceRole = async (
   }
 
   if (authorizationHeader) {
-    if (!isTrustedServiceBearer(authorizationHeader)) {
-      throw new Error("Service role is required");
+    if (!isTrustedBearer(authorizationHeader)) {
+      throw new Error("Valid authorization is required");
     }
 
     return serviceRole;
@@ -192,3 +192,177 @@ export const getSupabaseServiceRole = async (
 
   throw new Error("Authorization header or API key header is required");
 };
+
+type RequiredPermissions = {
+  view?: string | string[];
+  create?: string | string[];
+  update?: string | string[];
+  delete?: string | string[];
+};
+
+type Permission = {
+  view: string[];
+  create: string[];
+  update: string[];
+  delete: string[];
+};
+
+function parseClaimsPermissions(
+  claims: Record<string, unknown>
+): { permissions: Record<string, Permission>; role: string | null } {
+  const permissions: Record<string, Permission> = {};
+  let role: string | null = null;
+
+  for (const [key, value] of Object.entries(claims)) {
+    if (key === "role") {
+      role = value as string;
+      continue;
+    }
+    const parts = key.split("_");
+    if (parts.length !== 2) continue;
+    const [mod, action] = parts;
+    if (
+      !["view", "create", "update", "delete"].includes(action!) ||
+      !Array.isArray(value)
+    )
+      continue;
+
+    if (!(mod! in permissions)) {
+      permissions[mod!] = { view: [], create: [], update: [], delete: [] };
+    }
+    permissions[mod!][action as keyof Permission] = value as string[];
+  }
+
+  return { permissions, role };
+}
+
+function checkPermissions(
+  claims: Record<string, Permission>,
+  companyId: string,
+  required: RequiredPermissions
+): boolean {
+  for (const [action, modules] of Object.entries(required)) {
+    const moduleList =
+      typeof modules === "string" ? [modules] : (modules as string[]);
+    for (const mod of moduleList) {
+      const perm = claims[mod]?.[action as keyof Permission];
+      if (!perm || !perm.includes(companyId)) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+export async function requirePermissions(
+  req: Request,
+  companyId: string,
+  userId: string,
+  permissions: RequiredPermissions
+): Promise<ReturnType<typeof createClient<Database>>> {
+  const authorizationHeader = req.headers.get("Authorization");
+  const apiKeyHeader = req.headers.get("carbon-key");
+
+  const serviceRole = createClient<Database>(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    postgrestServiceKey(authorizationHeader),
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    }
+  );
+
+  // API key path
+  if (apiKeyHeader && companyId) {
+    const keyHash = hashApiKey(apiKeyHeader);
+    const { data, error } = await serviceRole
+      .from("apiKey")
+      .select("id, companyId, scopes, rateLimit, rateLimitWindow, expiresAt")
+      .eq("keyHash" as any, keyHash)
+      .eq("companyId", companyId)
+      .single();
+
+    if (error || !data) {
+      throw new Error("API key not found");
+    }
+
+    const row = data as any;
+
+    if (row.expiresAt && new Date(row.expiresAt) < new Date()) {
+      throw new Error("API key has expired");
+    }
+
+    const rl = await checkApiKeyRateLimit(
+      serviceRole,
+      row.id,
+      row.rateLimit ?? 60,
+      row.rateLimitWindow ?? "1m"
+    );
+    if (!rl.success) {
+      throw new Error("Rate limit exceeded");
+    }
+
+    // Check API key scopes against required permissions
+    const scopes: Record<string, string[]> = row.scopes ?? {};
+    for (const [action, modules] of Object.entries(permissions)) {
+      const moduleList =
+        typeof modules === "string" ? [modules] : (modules as string[]);
+      for (const mod of moduleList) {
+        const scopeKey = `${mod}_${action}`;
+        if (!(scopeKey in scopes) || !scopes[scopeKey]?.includes(companyId)) {
+          throw new Error("API key lacks required permissions");
+        }
+      }
+    }
+
+    return serviceRole;
+  }
+
+  // JWT path
+  if (!authorizationHeader) {
+    throw new Error("Authorization header or API key header is required");
+  }
+
+  const token =
+    authorizationHeader.replace(/^Bearer\s+/i, "").trim();
+  const parts = token.split(".");
+  if (parts.length !== 3) {
+    throw new Error("Invalid authorization token");
+  }
+
+  let role: string | undefined;
+  try {
+    role = (JSON.parse(atob(parts[1]!)) as { role?: string }).role;
+  } catch {
+    throw new Error("Invalid authorization token");
+  }
+
+  if (role === "service_role") {
+    return serviceRole;
+  }
+
+  if (role === "authenticated") {
+    const claimsResult = await serviceRole.rpc("get_claims", {
+      uid: userId,
+      company: companyId,
+    });
+
+    if (claimsResult.error || !claimsResult.data) {
+      throw new Error("Failed to get user permissions");
+    }
+
+    const parsed = parseClaimsPermissions(
+      claimsResult.data as unknown as Record<string, unknown>
+    );
+
+    if (!checkPermissions(parsed.permissions, companyId, permissions)) {
+      throw new Error("Insufficient permissions");
+    }
+
+    return serviceRole;
+  }
+
+  throw new Error("Valid authorization is required");
+}

@@ -89,6 +89,7 @@ async function migrate(): Promise<void> {
 
       console.log(`✅ 🐣 Starting migrations for ${workspace.id}`);
 
+
       if (connection_string && connection_string.startsWith("postgresql://")) {
         await $$`supabase db push --db-url ${connection_string} --include-all`;
       } else {

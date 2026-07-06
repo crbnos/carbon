@@ -17,12 +17,8 @@ export function calculatePromisedDate(
 
   const holidayDates = new Set(
     holidays.map((holiday) => {
-      const holidayDate = new Date(holiday.date);
-      return new CalendarDate(
-        holidayDate.getFullYear(),
-        holidayDate.getMonth() + 1,
-        holidayDate.getDate()
-      ).toString();
+      const parts = holiday.date.split("-").map(Number);
+      return new CalendarDate(parts[0]!, parts[1]!, parts[2]!).toString();
     })
   );
 

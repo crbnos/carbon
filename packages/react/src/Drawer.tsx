@@ -195,7 +195,7 @@ const DrawerContent = forwardRef<
             {children}
             <DialogPrimitive.Close
               type="button"
-              className="absolute right-4 top-3 rounded-full p-2 opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary"
+              className="absolute right-4 top-3 rounded-full p-2 opacity-70 transition-opacity hover:opacity-100 outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none data-[state=open]:bg-secondary"
             >
               <LuX className="h-5 w-5" />
               <span className="sr-only">Close</span>

@@ -47,8 +47,7 @@ import {
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
-import { useStorageUnits } from "~/components/Form/StorageUnit";
-import { StorageUnitDrillSelect } from "~/components/Form/StorageUnitDrillSelect";
+import StorageUnit from "~/components/Form/StorageUnit";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { useFilters } from "~/components/Table/components/Filter/useFilters";
 import { useUrlParams } from "~/hooks";
@@ -74,6 +73,7 @@ type InventoryTableProps = {
   substances: ListItem[];
   tags: string[];
   storageTypes: { id: string; name: string }[];
+  storageUnits: { id: string; name: string }[];
 };
 
 const InventoryTable = memo(
@@ -84,7 +84,8 @@ const InventoryTable = memo(
     forms,
     substances,
     tags,
-    storageTypes
+    storageTypes,
+    storageUnits
   }: InventoryTableProps) => {
     const [params] = useUrlParams();
     const { t } = useLingui();
@@ -97,7 +98,10 @@ const InventoryTable = memo(
 
     const locations = useLocations();
     const unitOfMeasures = useUnitOfMeasure();
-    const { options: storageUnitOptions } = useStorageUnits(locationId);
+    const storageUnitNameById = useMemo(
+      () => new Map(storageUnits.map((s) => [s.id, s.name])),
+      [storageUnits]
+    );
 
     const filters = useFilters();
     const materialSubstanceId = filters.getFilter("materialSubstanceId")?.[0];
@@ -517,11 +521,12 @@ const InventoryTable = memo(
               ).storageUnitIds ?? [];
             return (
               <HStack spacing={0} className="gap-1">
-                {ids.map((id) => {
-                  const opt = storageUnitOptions.find((o) => o.value === id);
-                  const label = typeof opt?.label === "string" ? opt.label : id;
-                  return <Enumerable key={id} value={label} />;
-                })}
+                {ids.map((id) => (
+                  <Enumerable
+                    key={id}
+                    value={storageUnitNameById.get(id) ?? id}
+                  />
+                ))}
               </HStack>
             );
           },
@@ -529,44 +534,47 @@ const InventoryTable = memo(
             filter: {
               type: "custom",
               isArray: true,
-              getLabel: (v: string) => {
-                const opt = storageUnitOptions.find((o) => o.value === v);
-                return typeof opt?.label === "string" ? opt.label : v;
-              },
-              render: ({ values, toggle }) => (
-                <div className="flex flex-col gap-2">
-                  {values.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      {values.map((v) => {
-                        const opt = storageUnitOptions.find(
-                          (o) => o.value === v
-                        );
-                        const label =
-                          typeof opt?.label === "string" ? opt.label : v;
-                        return (
-                          <Badge
-                            key={v}
-                            variant="secondary"
-                            className="cursor-pointer gap-1 max-w-full"
-                            onClick={() => toggle(v)}
-                          >
-                            <span className="truncate">{label}</span>
-                            <LuX className="h-3 w-3 shrink-0" />
+              getLabel: (v: string) => storageUnitNameById.get(v) ?? v,
+              render: ({ values, toggle }) => {
+                const VISIBLE = 3;
+                const visible = values.slice(0, VISIBLE);
+                const overflow = values.length - visible.length;
+                return (
+                  <div className="flex flex-col gap-2">
+                    {values.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {visible.map((v) => {
+                          const label = storageUnitNameById.get(v) ?? v;
+                          return (
+                            <Badge
+                              key={v}
+                              variant="secondary"
+                              className="cursor-pointer gap-1 max-w-[160px]"
+                              onClick={() => toggle(v)}
+                            >
+                              <span className="truncate">{label}</span>
+                              <LuX className="h-3 w-3 shrink-0" />
+                            </Badge>
+                          );
+                        })}
+                        {overflow > 0 && (
+                          <Badge variant="secondary" className="gap-1">
+                            +{overflow} more
                           </Badge>
-                        );
-                      })}
-                    </div>
-                  )}
-                  <StorageUnitDrillSelect
-                    locationId={locationId}
-                    value={null}
-                    onChange={(id) => {
-                      if (id) toggle(id);
-                    }}
-                    allowCreate={false}
-                  />
-                </div>
-              )
+                        )}
+                      </div>
+                    )}
+                    <StorageUnit
+                      locationId={locationId}
+                      value={null}
+                      onChange={(storageUnit) => {
+                        if (storageUnit) toggle(storageUnit.id);
+                      }}
+                      allowCreate={false}
+                    />
+                  </div>
+                );
+              }
             },
             pluralHeader: t`Storage Units`,
             icon: <LuBoxes />
@@ -599,7 +607,7 @@ const InventoryTable = memo(
       substances,
       tags,
       storageTypes,
-      storageUnitOptions,
+      storageUnitNameById,
       unitOfMeasures,
       t,
       translateReplenishment

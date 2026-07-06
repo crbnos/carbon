@@ -147,15 +147,16 @@ const ConsumableForm = ({
                   />
                 )}
 
-                <Input name="name" label={t`Short Description`} />
+                <Input
+                  name="name"
+                  label={t`Short Description`}
+                  characterLimit={40}
+                />
                 <Select
                   name="itemTrackingType"
                   label={t`Tracking Type`}
                   options={itemTrackingTypeOptions}
                 />
-                {isEditing && (
-                  <TextArea name="description" label={t`Long Description`} />
-                )}
 
                 <DefaultMethodType
                   name="defaultMethodType"
@@ -195,6 +196,9 @@ const ConsumableForm = ({
                   table="consumable"
                   tags={initialValues.tags}
                 />
+              </div>
+              <div className="mt-4 w-full">
+                <TextArea name="description" label={t`Long Description`} />
               </div>
             </ModalCardBody>
             <ModalCardFooter>

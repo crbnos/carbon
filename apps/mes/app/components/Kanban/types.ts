@@ -56,10 +56,12 @@ const itemValidator = z.object({
   progress: z.number().optional(), // miliseconds
   quantity: z.number().optional(),
   quantityCompleted: z.number().optional(),
+  quantityReworked: z.number().optional(),
   quantityScrapped: z.number().optional(),
   setupDuration: z.number().optional(), // milliseconds
   laborDuration: z.number().optional(), // milliseconds
   machineDuration: z.number().optional(), // milliseconds
+  reworkId: z.string().nullable().optional(),
   status: z.enum(jobOperationStatus).optional(),
   salesOrderReadableId: z.string().optional(),
   salesOrderId: z.string().optional(),

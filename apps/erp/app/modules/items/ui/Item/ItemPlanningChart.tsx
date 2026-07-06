@@ -50,9 +50,12 @@ import {
 } from "recharts";
 import { Empty, Hyperlink } from "~/components";
 import { useDateFormatter as useDateFormat } from "~/hooks";
+import type { DemandForecastSourceRow } from "~/modules/items/items.service";
 import type { loader as forecastLoader } from "~/routes/api+/items.$id.$locationId.forecast";
 import { path } from "~/utils/path";
 import type { PlannedOrder } from "../../../purchasing/purchasing.models";
+import { DemandForecastSourcesPopover } from "./DemandForecastSourcesPopover";
+import { PlannedOrderDetailsPopover } from "./PlannedOrderDetailsPopover";
 
 const supplySourceTypes = ["Purchase Order", "Production Order"] as const;
 const demandSourceTypes = ["Sales Order", "Job Material"] as const;
@@ -260,13 +263,24 @@ export const ItemPlanningChart = ({
       })),
       ...(forecastFetcher.data?.demandForecast ?? []).map((forecast) => {
         const period = periods.find((p) => p.id === forecast.periodId);
+        const sources = (
+          (forecastFetcher.data?.demandForecastSources ??
+            []) as DemandForecastSourceRow[]
+        ).filter(
+          (s) =>
+            s.itemId === forecast.itemId &&
+            s.periodId === forecast.periodId &&
+            (s.locationId ?? null) === (forecast.locationId ?? null)
+        );
         return {
           id: null,
           sourceType: "Demand Forecast" as SourceType,
           quantity: forecast.forecastQuantity ?? 0,
           dueDate: period?.startDate ?? null,
           documentReadableId: "Demand Forecast",
-          documentId: null
+          documentId: null,
+          forecastMethod: forecast.forecastMethod ?? null,
+          forecastSources: sources
         };
       })
     ];
@@ -301,7 +315,8 @@ export const ItemPlanningChart = ({
         quantity: (order.quantity ?? 0) * conversionFactor,
         documentReadableId: "Planned",
         documentId: null,
-        id: null
+        id: null,
+        plannedOrder: order
       }))
     ]
       .sort((a, b) => (a.dueDate ?? "").localeCompare(b.dueDate ?? ""))
@@ -560,12 +575,18 @@ export const ItemPlanningChart = ({
             </div>
 
             <TabsContent value="all" className="border rounded-lg">
+              <SupplyDemandPlanningHeader />
               {combinedSupplyAndDemand.map((item, index) => (
-                <SupplyDemandPlanningItem key={index} item={item} />
+                <SupplyDemandPlanningItem
+                  key={index}
+                  item={item}
+                  conversionFactor={conversionFactor}
+                />
               ))}
             </TabsContent>
 
             <TabsContent value="supply" className="border rounded-lg">
+              <SupplyDemandPlanningHeader />
               {combinedSupplyAndDemand
                 .filter((item) =>
                   supplySourceTypes.includes(
@@ -573,11 +594,16 @@ export const ItemPlanningChart = ({
                   )
                 )
                 .map((item, index) => (
-                  <SupplyDemandPlanningItem key={index} item={item} />
+                  <SupplyDemandPlanningItem
+                    key={index}
+                    item={item}
+                    conversionFactor={conversionFactor}
+                  />
                 ))}
             </TabsContent>
 
             <TabsContent value="demand" className="border rounded-lg">
+              <SupplyDemandPlanningHeader />
               {combinedSupplyAndDemand
                 .filter(
                   (item) =>
@@ -586,7 +612,11 @@ export const ItemPlanningChart = ({
                     ) || item.sourceType === "Demand Forecast"
                 )
                 .map((item, index) => (
-                  <SupplyDemandPlanningItem key={index} item={item} />
+                  <SupplyDemandPlanningItem
+                    key={index}
+                    item={item}
+                    conversionFactor={conversionFactor}
+                  />
                 ))}
             </TabsContent>
           </CardContent>
@@ -608,6 +638,12 @@ interface PlanningItem {
   jobId?: string | null;
   jobMakeMethodId?: string | null;
   existingOrderReadableId?: string | null;
+  forecastMethod?: string | null;
+  forecastSources?: DemandForecastSourceRow[];
+  // Planned-row metadata (only set on rows with sourceType === "Planned").
+  // Carries enough info for PlannedOrderDetailsPopover to render order facts,
+  // policy reasoning, and the linked PO section.
+  plannedOrder?: PlannedOrder;
 }
 
 const sourceTypeIcons: Record<SourceType, JSX.Element> = {
@@ -619,7 +655,32 @@ const sourceTypeIcons: Record<SourceType, JSX.Element> = {
   "Demand Forecast": <LuChartLine className="size-4 text-cyan-500" />
 };
 
-function SupplyDemandPlanningItem({ item }: { item: PlanningItem }) {
+function SupplyDemandPlanningHeader() {
+  return (
+    <div className="flex flex-1 justify-between items-center w-full px-4 py-2 border-b bg-muted/40 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+      <HStack spacing={4} className="w-1/2">
+        <HStack spacing={4} className="flex-1">
+          <div className="size-8 shrink-0" aria-hidden />
+          <VStack spacing={0} className="flex-1">
+            <Trans>Source</Trans>
+          </VStack>
+          <div className="text-right">
+            <Trans>Quantity</Trans>
+          </div>
+        </HStack>
+      </HStack>
+      <Trans>On Hand</Trans>
+    </div>
+  );
+}
+
+function SupplyDemandPlanningItem({
+  item,
+  conversionFactor
+}: {
+  item: PlanningItem;
+  conversionFactor: number;
+}) {
   const { t } = useLingui();
   const numberFormatter = useNumberFormatter();
   const { formatDate } = useDateFormat();
@@ -632,12 +693,39 @@ function SupplyDemandPlanningItem({ item }: { item: PlanningItem }) {
             {sourceTypeIcons[item.sourceType]}
           </div>
           <VStack spacing={0}>
-            <Hyperlink
-              to={getPathToDocument(item)}
-              className="text-sm font-medium"
-            >
-              {item.documentReadableId}
-            </Hyperlink>
+            {item.sourceType === "Demand Forecast" ? (
+              <DemandForecastSourcesPopover
+                sources={item.forecastSources ?? []}
+                forecastQuantity={item.quantity}
+                forecastMethod={item.forecastMethod ?? null}
+              >
+                <button
+                  type="button"
+                  className="text-sm font-medium text-left hover:underline"
+                >
+                  {item.documentReadableId}
+                </button>
+              </DemandForecastSourcesPopover>
+            ) : item.sourceType === "Planned" && item.plannedOrder ? (
+              <PlannedOrderDetailsPopover
+                order={item.plannedOrder}
+                conversionFactor={conversionFactor}
+              >
+                <button
+                  type="button"
+                  className="text-sm font-medium text-left hover:underline"
+                >
+                  {item.documentReadableId}
+                </button>
+              </PlannedOrderDetailsPopover>
+            ) : (
+              <Hyperlink
+                to={getPathToDocument(item)}
+                className="text-sm font-medium"
+              >
+                {item.documentReadableId}
+              </Hyperlink>
+            )}
             <span className="text-xs text-muted-foreground">
               {item.dueDate ? formatDate(item.dueDate) : t`No due date`}
             </span>

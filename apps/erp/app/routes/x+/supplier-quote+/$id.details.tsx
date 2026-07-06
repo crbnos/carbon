@@ -12,7 +12,7 @@ import {
   getSupplierQuote,
   isSupplierQuoteLocked,
   supplierQuoteValidator,
-  upsertSupplierQuote
+  updateSupplierQuote
 } from "~/modules/purchasing";
 import type {
   SupplierInteraction,
@@ -77,21 +77,25 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const { supplierQuoteId, ...d } = validation.data;
-  if (!supplierQuoteId) throw new Error("Could not find supplierQuoteId");
-
-  const update = await upsertSupplierQuote(client, {
-    id,
-    supplierQuoteId,
-    ...d,
-    companyGroupId,
-    customFields: setCustomFields(formData),
-    updatedBy: userId
-  });
-  if (update.error) {
+  const result = await updateSupplierQuote(
+    client,
+    {
+      id,
+      status: validation.data.status,
+      currencyCode: validation.data.currencyCode,
+      expirationDate: validation.data.expirationDate || null,
+      supplierContactId: validation.data.supplierContactId || null,
+      supplierLocationId: validation.data.supplierLocationId || null,
+      notes: validation.data.notes,
+      customFields: setCustomFields(formData),
+      updatedBy: userId
+    },
+    companyGroupId
+  );
+  if (result.error) {
     throw redirect(
       path.to.supplierQuote(id),
-      await flash(request, error(update.error, "Failed to update quote"))
+      await flash(request, error(result.error, "Failed to update quote"))
     );
   }
 

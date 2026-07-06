@@ -1,4 +1,5 @@
 import {
+  auditConfig,
   getEntityLabel,
   getEntityTypes,
   getTableLabel
@@ -108,8 +109,30 @@ const InlineDiff = memo(
 );
 InlineDiff.displayName = "InlineDiff";
 
+// Hide globally-skipped columns (and any nested suffix) from the rendered
+// diff. Defense-in-depth — backend strips skipFields too, but legacy entries
+// or newly-added skipFields can slip through.
+function isSkippedDiffKey(key: string): boolean {
+  console.log(key, "KEY");
+  const skip = auditConfig.skipFields as readonly string[];
+  for (let i = 0; i < skip.length; i++) {
+    const s = skip[i]!;
+    if (key === s || key.endsWith(`.${s}`)) return true;
+  }
+  return false;
+}
+
+function visibleDiffEntries(
+  diff: AuditDiff | null | undefined
+): [string, AuditDiff[string]][] {
+  console.log(diff);
+  if (!diff) return [];
+  return Object.entries(diff).filter(([k]) => !isSkippedDiffKey(k));
+}
+
 const ExpandedRowContent = memo(({ entry }: { entry: AuditLogEntry }) => {
-  const hasDiff = entry.diff && Object.keys(entry.diff).length > 0;
+  const visibleEntries = visibleDiffEntries(entry.diff);
+  const hasDiff = visibleEntries.length > 0;
 
   return (
     <div className="px-6 py-4">
@@ -138,16 +161,14 @@ const ExpandedRowContent = memo(({ entry }: { entry: AuditLogEntry }) => {
         <h4 className="text-sm font-medium mb-2">Changes</h4>
         {hasDiff ? (
           <div className="space-y-1">
-            {Object.entries(entry.diff as AuditDiff).map(
-              ([fieldName, change]) => (
-                <InlineDiff
-                  key={fieldName}
-                  fieldName={fieldName}
-                  oldValue={change.old}
-                  newValue={change.new}
-                />
-              )
-            )}
+            {visibleEntries.map(([fieldName, change]) => (
+              <InlineDiff
+                key={fieldName}
+                fieldName={fieldName}
+                oldValue={change.old}
+                newValue={change.new}
+              />
+            ))}
           </div>
         ) : (
           <p className="text-sm text-muted-foreground italic">
@@ -258,13 +279,11 @@ const AuditLogTable = memo(({ entries, count }: AuditLogTableProps) => {
         header: t`Changes`,
         cell: ({ row }) => {
           const entry = row.original;
-          const hasDiff = entry.diff && Object.keys(entry.diff).length > 0;
+          const visibleCount = visibleDiffEntries(entry.diff).length;
           return (
             <span className="text-sm text-muted-foreground">
-              {hasDiff
-                ? `${Object.keys(entry.diff!).length} change${
-                    Object.keys(entry.diff!).length !== 1 ? "s" : ""
-                  }`
+              {visibleCount > 0
+                ? `${visibleCount} change${visibleCount !== 1 ? "s" : ""}`
                 : "-"}
             </span>
           );

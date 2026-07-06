@@ -162,23 +162,35 @@ const EmployeesTable = memo(
           }
         },
         {
-          accessorKey: "active",
-          header: t`Active`,
-          cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
+          accessorKey: "status",
+          header: t`Status`,
+          cell: (item) => {
+            const status = item.getValue<
+              "Active" | "Invited" | "Inactive" | null
+            >();
+            if (status === "Active")
+              return <Badge variant="green">{t`Active`}</Badge>;
+            if (status === "Invited")
+              return <Badge variant="yellow">{t`Invited`}</Badge>;
+            return <Badge variant="secondary">{t`Inactive`}</Badge>;
+          },
           meta: {
             filter: {
               type: "static",
               options: [
-                {
-                  value: "true",
-                  label: t`Active`
-                },
-                {
-                  value: "false",
-                  label: t`Inactive`
-                }
+                { value: "Active", label: t`Active` },
+                { value: "Invited", label: t`Invited` },
+                { value: "Inactive", label: t`Inactive` }
               ]
             },
+            icon: <LuUserCheck />
+          }
+        },
+        {
+          accessorKey: "active",
+          header: t`Active`,
+          cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
+          meta: {
             icon: <LuToggleRight />
           }
         }

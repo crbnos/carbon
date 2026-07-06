@@ -10,7 +10,6 @@ import type { JSONContent } from "@carbon/react";
 import {
   Button,
   HStack,
-  IconButton,
   Label,
   Modal,
   ModalBody,
@@ -18,11 +17,7 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
   toast,
-  useDisclosure,
   VStack
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
@@ -34,8 +29,7 @@ import type { PostgrestResponse } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import { useEffect, useState } from "react";
 import { BsExclamationSquareFill } from "react-icons/bs";
-import { LuWrench } from "react-icons/lu";
-import { Link, useFetcher } from "react-router";
+import { useFetcher } from "react-router";
 import { HighPriorityIcon } from "~/assets/icons/HighPriorityIcon";
 import { LowPriorityIcon } from "~/assets/icons/LowPriorityIcon";
 import { MediumPriorityIcon } from "~/assets/icons/MediumPriorityIcon";
@@ -77,7 +71,9 @@ function getSeverityLabel(severity: (typeof maintenanceSeverity)[number]) {
 }
 
 export function MaintenanceDispatch({
-  workCenter
+  workCenter,
+  isOpen,
+  onClose
 }: {
   workCenter: {
     id: string;
@@ -85,10 +81,9 @@ export function MaintenanceDispatch({
     isBlocked: boolean | null;
     blockingDispatchId: string | null;
   };
+  isOpen: boolean;
+  onClose: () => void;
 }) {
-  const hasActiveDispatch =
-    workCenter.isBlocked && workCenter.blockingDispatchId;
-  const disclosure = useDisclosure();
   const fetcher = useFetcher<{ id?: string }>();
   const failureModeFetcher =
     useFetcher<
@@ -110,25 +105,26 @@ export function MaintenanceDispatch({
 
   const failureModes = failureModeFetcher.data?.data ?? [];
 
-  const onOpen = () => {
-    failureModeFetcher.load(path.to.api.failureModes);
-    disclosure.onOpen();
-  };
+  useEffect(() => {
+    if (isOpen) {
+      failureModeFetcher.load(path.to.api.failureModes);
+    }
+  }, [isOpen, failureModeFetcher.load]);
 
-  const onClose = () => {
+  const handleClose = () => {
     setContent({});
     setSeverity("Operator Performed");
     setOeeImpactValue("No Impact");
-    disclosure.onClose();
+    onClose();
   };
 
   useEffect(() => {
     if (fetcher.state === "idle" && fetcher.data?.id) {
       toast.success("Maintenance dispatch created");
-      onClose();
+      handleClose();
     }
     // biome-ignore lint/correctness/useExhaustiveDependencies: ignore
-  }, [fetcher.state, fetcher.data, onClose]);
+  }, [fetcher.state, fetcher.data, handleClose]);
 
   const onUploadImage = async (file: File) => {
     const target = buildCompanyPrivateStorageTarget({
@@ -154,172 +150,148 @@ export function MaintenanceDispatch({
     return getPrivateUrl(companyPrivateBucket, result.data.path);
   };
 
+  if (!isOpen) return null;
+
   return (
-    <>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          {hasActiveDispatch ? (
-            <Link
-              to={path.to.maintenanceDetail(workCenter.blockingDispatchId!)}
-            >
-              <IconButton
-                aria-label="View Active Maintenance"
-                variant="destructive"
-                icon={<LuWrench />}
-              />
-            </Link>
-          ) : (
-            <IconButton
-              aria-label="Maintenance"
-              variant="secondary"
-              icon={<LuWrench />}
-              onClick={onOpen}
-            />
-          )}
-        </TooltipTrigger>
-        <TooltipContent align="end">
-          <span>
-            {hasActiveDispatch
-              ? "View Active Maintenance"
-              : "Maintenance Dispatch"}
-          </span>
-        </TooltipContent>
-      </Tooltip>
-      {disclosure.isOpen && (
-        <Modal
-          open={disclosure.isOpen}
-          onOpenChange={(open) => {
-            if (!open) {
-              onClose();
-            }
+    <Modal
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) handleClose();
+      }}
+    >
+      <ModalContent size="xlarge">
+        <ValidatedForm
+          method="post"
+          action={path.to.newMaintenanceDispatch}
+          validator={maintenanceDispatchValidator}
+          defaultValues={{
+            workCenterId: workCenter.id,
+            priority: "Medium",
+            severity: "Operator Performed",
+            oeeImpact: "No Impact",
+            suspectedFailureModeId: undefined,
+            actualStartTime: new Date().toISOString(),
+            actualEndTime: undefined
           }}
+          fetcher={fetcher}
         >
-          <ModalContent size="xlarge">
-            <ValidatedForm
-              method="post"
-              action={path.to.newMaintenanceDispatch}
-              validator={maintenanceDispatchValidator}
-              defaultValues={{
-                workCenterId: workCenter.id,
-                priority: "Medium",
-                severity: "Operator Performed",
-                oeeImpact: "No Impact",
-                suspectedFailureModeId: undefined,
-                actualStartTime: new Date().toISOString(),
-                actualEndTime: undefined
-              }}
-              fetcher={fetcher}
-            >
-              <ModalHeader>
-                <ModalTitle>Maintenance for {workCenter.name}</ModalTitle>
-              </ModalHeader>
-              <ModalBody>
-                <Hidden name="workCenterId" value={workCenter.id} />
-                <Hidden name="content" value={JSON.stringify(content)} />
-                <VStack spacing={4}>
-                  <div className="flex flex-col gap-2 w-full">
-                    <Label>Description</Label>
-                    <Editor
-                      initialValue={content}
-                      onUpload={onUploadImage}
-                      onChange={(value) => {
-                        setContent(value);
-                      }}
-                      className="[&_.is-empty]:text-muted-foreground min-h-[120px] py-3 px-4 border rounded-md w-full"
+          <ModalHeader>
+            <ModalTitle>Maintenance for {workCenter.name}</ModalTitle>
+          </ModalHeader>
+          <ModalBody>
+            <Hidden name="workCenterId" value={workCenter.id} />
+            <Hidden name="content" value={JSON.stringify(content)} />
+            <VStack spacing={4}>
+              <div className="flex flex-col gap-2 w-full">
+                <Label>Description</Label>
+                <Editor
+                  initialValue={content}
+                  onUpload={onUploadImage}
+                  onChange={(value) => {
+                    setContent(value);
+                  }}
+                  className="[&_.is-empty]:text-muted-foreground min-h-[120px] py-3 px-4 border rounded-md w-full"
+                />
+              </div>
+              <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 md:grid-cols-2">
+                <Select
+                  name="priority"
+                  label="Priority"
+                  size="lg"
+                  options={maintenanceDispatchPriority.map((priority) => ({
+                    value: priority,
+                    label: (
+                      <div className="flex gap-1 items-center">
+                        {getPriorityIcon(priority)}
+                        <span>{priority}</span>
+                      </div>
+                    )
+                  }))}
+                />
+                <Select
+                  name="severity"
+                  label="Severity"
+                  size="lg"
+                  options={maintenanceSeverity.map((s) => ({
+                    value: s,
+                    label: getSeverityLabel(s)
+                  }))}
+                  onChange={(option) => {
+                    if (option?.value) {
+                      setSeverity(
+                        option.value as (typeof maintenanceSeverity)[number]
+                      );
+                    }
+                  }}
+                />
+                {severity === "Operator Performed" && (
+                  <>
+                    <DateTimePicker
+                      name="actualStartTime"
+                      label="Start Time"
+                      size="lg"
                     />
-                  </div>
-                  <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 md:grid-cols-2">
+                    <DateTimePicker
+                      name="actualEndTime"
+                      label="End Time"
+                      size="lg"
+                    />
+                  </>
+                )}
+                <Select
+                  name="oeeImpact"
+                  label="OEE Impact"
+                  size="lg"
+                  options={oeeImpact.map((impact) => ({
+                    value: impact,
+                    label: impact
+                  }))}
+                  onChange={(option) => {
+                    if (option?.value) {
+                      setOeeImpactValue(
+                        option.value as (typeof oeeImpact)[number]
+                      );
+                    }
+                  }}
+                />
+                {(oeeImpactValue === "Down" || oeeImpactValue === "Impact") &&
+                  failureModes.length > 0 &&
+                  (severity === "Operator Performed" ? (
                     <Select
-                      name="priority"
-                      label="Priority"
-                      options={maintenanceDispatchPriority.map((priority) => ({
-                        value: priority,
-                        label: (
-                          <div className="flex gap-1 items-center">
-                            {getPriorityIcon(priority)}
-                            <span>{priority}</span>
-                          </div>
-                        )
+                      name="actualFailureModeId"
+                      label="Actual Failure Mode"
+                      size="lg"
+                      options={failureModes.map((mode) => ({
+                        value: mode.id,
+                        label: mode.name
                       }))}
+                      isClearable
                     />
+                  ) : (
                     <Select
-                      name="severity"
-                      label="Severity"
-                      options={maintenanceSeverity.map((s) => ({
-                        value: s,
-                        label: getSeverityLabel(s)
+                      name="suspectedFailureModeId"
+                      label="Suspected Failure Mode"
+                      size="lg"
+                      options={failureModes.map((mode) => ({
+                        value: mode.id,
+                        label: mode.name
                       }))}
-                      onChange={(option) => {
-                        if (option?.value) {
-                          setSeverity(
-                            option.value as (typeof maintenanceSeverity)[number]
-                          );
-                        }
-                      }}
+                      isClearable
                     />
-                    {severity === "Operator Performed" && (
-                      <>
-                        <DateTimePicker
-                          name="actualStartTime"
-                          label="Start Time"
-                        />
-                        <DateTimePicker name="actualEndTime" label="End Time" />
-                      </>
-                    )}
-                    <Select
-                      name="oeeImpact"
-                      label="OEE Impact"
-                      options={oeeImpact.map((impact) => ({
-                        value: impact,
-                        label: impact
-                      }))}
-                      onChange={(option) => {
-                        if (option?.value) {
-                          setOeeImpactValue(
-                            option.value as (typeof oeeImpact)[number]
-                          );
-                        }
-                      }}
-                    />
-                    {(oeeImpactValue === "Down" ||
-                      oeeImpactValue === "Impact") &&
-                      failureModes.length > 0 &&
-                      (severity === "Operator Performed" ? (
-                        <Select
-                          name="actualFailureModeId"
-                          label="Actual Failure Mode"
-                          options={failureModes.map((mode) => ({
-                            value: mode.id,
-                            label: mode.name
-                          }))}
-                          isClearable
-                        />
-                      ) : (
-                        <Select
-                          name="suspectedFailureModeId"
-                          label="Suspected Failure Mode"
-                          options={failureModes.map((mode) => ({
-                            value: mode.id,
-                            label: mode.name
-                          }))}
-                          isClearable
-                        />
-                      ))}
-                  </div>
-                </VStack>
-              </ModalBody>
-              <ModalFooter>
-                <HStack>
-                  <Button variant="secondary" onClick={onClose}>
-                    Cancel
-                  </Button>
-                  <Submit>Create Dispatch</Submit>
-                </HStack>
-              </ModalFooter>
-            </ValidatedForm>
-          </ModalContent>
-        </Modal>
-      )}
-    </>
+                  ))}
+              </div>
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
+            <HStack>
+              <Button variant="secondary" size="lg" onClick={handleClose}>
+                Cancel
+              </Button>
+              <Submit size="lg">Create Dispatch</Submit>
+            </HStack>
+          </ModalFooter>
+        </ValidatedForm>
+      </ModalContent>
+    </Modal>
   );
 }

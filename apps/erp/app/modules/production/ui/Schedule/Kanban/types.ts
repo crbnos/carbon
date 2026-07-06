@@ -24,6 +24,7 @@ export interface ColumnDragData {
 }
 
 export type DisplaySettings = {
+  emptyWorkCenters?: boolean;
   showCustomer: boolean;
   showDescription: boolean;
   showDueDate: boolean;
@@ -61,9 +62,11 @@ const baseItemValidator = z.object({
   link: z.string().optional(),
   priority: z.number(),
   progress: z.number().optional(), // miliseconds
+  reworkId: z.string().nullable().optional(),
   targetQuantity: z.number().optional(),
   quantity: z.number().optional(),
   quantityCompleted: z.number().optional(),
+  quantityReworked: z.number().optional(),
   quantityScrapped: z.number().optional(),
   salesOrderId: z.string().optional(),
   salesOrderLineId: z.string().optional(),

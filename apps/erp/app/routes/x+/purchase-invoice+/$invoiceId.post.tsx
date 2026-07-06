@@ -71,6 +71,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
           body: {
             invoiceId: invoiceId,
             companyId: companyId,
+            userId: userId,
             source: "purchaseInvoice",
             updatePrices: true,
             updateLeadTimes: false

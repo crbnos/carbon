@@ -77,7 +77,7 @@ const Array = forwardRef<HTMLInputElement, FormArrayProps>(
             onClick={onAdd}
             isDisabled={isDisabled || isReadOnly}
           >
-            New Option
+            {items.length > 0 ? "Add another option" : "Add option"}
           </Button>
         </VStack>
         {error && <FormErrorMessage>{error}</FormErrorMessage>}

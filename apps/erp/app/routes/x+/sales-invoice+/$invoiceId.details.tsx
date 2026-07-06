@@ -20,7 +20,7 @@ import {
   getSalesInvoice,
   isSalesInvoiceLocked,
   salesInvoiceValidator,
-  upsertSalesInvoice
+  updateSalesInvoice
 } from "~/modules/invoicing";
 import type { SalesInvoiceShipmentFormRef } from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceShipmentForm";
 import SalesInvoiceShipmentForm from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceShipmentForm";
@@ -95,19 +95,30 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { invoiceId, ...d } = validation.data;
   if (!invoiceId) throw new Error("Could not find invoiceId");
 
-  const updateSalesInvoice = await upsertSalesInvoice(client, {
+  const result = await updateSalesInvoice(client, {
     id,
     invoiceId,
-    ...d,
-    updatedBy: userId,
-    customFields: setCustomFields(formData)
+    customerId: d.customerId,
+    customerReference: d.customerReference || null,
+    paymentTermId: d.paymentTermId || null,
+    currencyCode: d.currencyCode,
+    locationId: d.locationId,
+    invoiceCustomerId: d.invoiceCustomerId || null,
+    invoiceCustomerContactId: d.invoiceCustomerContactId || null,
+    invoiceCustomerLocationId: d.invoiceCustomerLocationId || null,
+    dateIssued: d.dateIssued || null,
+    dateDue: d.dateDue || null,
+    exchangeRate: d.exchangeRate,
+    exchangeRateUpdatedAt: d.exchangeRateUpdatedAt,
+    customFields: setCustomFields(formData),
+    updatedBy: userId
   });
-  if (updateSalesInvoice.error) {
+  if (result.error) {
     throw redirect(
       path.to.salesInvoice(id),
       await flash(
         request,
-        error(updateSalesInvoice.error, "Failed to update sales invoice")
+        error(result.error, "Failed to update sales invoice")
       )
     );
   }

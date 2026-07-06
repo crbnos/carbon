@@ -154,38 +154,9 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
         }
       },
       {
-        accessorKey: "status",
+        accessorKey: "displayStatus",
         header: t`Status`,
-        cell: ({ row }) => {
-          const status =
-            row.getValue<(typeof salesOrderStatusType)[number]>("status");
-          const jobs = (row.original.jobs ?? []) as SalesOrderJob[];
-          const lines =
-            (row.original.lines as {
-              id: string;
-              saleQuantity: number;
-              methodType:
-                | "Purchase to Order"
-                | "Make to Order"
-                | "Pull from Inventory";
-            }[]) ?? [];
-          return (
-            <SalesStatus
-              status={status}
-              jobs={jobs.map((job) => ({
-                salesOrderLineId: job.salesOrderLineId,
-                productionQuantity: job.quantity,
-                quantityComplete: job.quantityComplete,
-                status: job.status
-              }))}
-              lines={lines.map((line) => ({
-                id: line.id,
-                methodType: line.methodType,
-                saleQuantity: line.saleQuantity
-              }))}
-            />
-          );
-        },
+        cell: ({ row }) => <SalesStatus status={row.original.displayStatus} />,
         meta: {
           filter: {
             type: "static",

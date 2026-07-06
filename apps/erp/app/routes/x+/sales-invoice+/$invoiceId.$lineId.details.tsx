@@ -89,21 +89,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...d } = validation.data;
 
-  // if (d.invoiceLineType === "G/L Account") {
-  //   d.assetId = undefined;
-  //   d.itemId = undefined;
-  // } else if (d.invoiceLineType === "Fixed Asset") {
-  //   d.accountId = undefined;
-  //   d.itemId = undefined;
-  // } else
-  // if (d.invoiceLineType === "Comment") {
-  //   d.accountId = undefined;
-  //   d.assetId = undefined;
-  //   d.itemId = undefined;
-  // } else {
-  //   d.accountId = undefined;
-  //   d.assetId = undefined;
-  // }
+  if (d.invoiceLineType === "Fixed Asset") {
+    d.accountId = undefined;
+    d.itemId = undefined;
+  } else {
+    d.accountId = undefined;
+    d.assetId = undefined;
+  }
 
   const updateSalesInvoiceLine = await upsertSalesInvoiceLine(client, {
     id: lineId,
@@ -155,6 +147,8 @@ export default function EditSalesInvoiceLineRoute() {
     exchangeRate: salesInvoiceLine?.exchangeRate ?? 1,
     unitOfMeasureCode: salesInvoiceLine?.unitOfMeasureCode ?? "",
     storageUnitId: salesInvoiceLine?.storageUnitId ?? "",
+    assetReadableId: (salesInvoiceLine as any)?.assetReadableId ?? undefined,
+    assetName: (salesInvoiceLine as any)?.assetName ?? undefined,
     ...getCustomFields(salesInvoiceLine?.customFields)
   };
 

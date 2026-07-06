@@ -43,6 +43,7 @@ const functionRegistry = {
 export interface ExecutorContext {
   client: SupabaseClient<Database>;
   companyId: string;
+  companyGroupId: string;
   userId: string;
 }
 
@@ -69,6 +70,9 @@ function enrichWithAuthContext(
   }
   if (fields.includes("companyId")) {
     enriched.companyId = context.companyId;
+  }
+  if (fields.includes("companyGroupId")) {
+    enriched.companyGroupId = context.companyGroupId;
   }
 
   return enriched;
@@ -151,11 +155,11 @@ export async function executeFunction(
       if (paramName === "client") {
         functionArgs.push(context.client);
       } else if (paramName === "userId") {
-        const userIdValue = normalizedArgs?.userId || context.userId;
-        functionArgs.push(userIdValue);
+        functionArgs.push(context.userId);
       } else if (paramName === "companyId") {
-        const companyIdValue = normalizedArgs?.companyId || context.companyId;
-        functionArgs.push(companyIdValue);
+        functionArgs.push(context.companyId);
+      } else if (paramName === "companyGroupId") {
+        functionArgs.push(context.companyGroupId);
       } else if (paramName === "args") {
         // For 'args' parameter, pass the entire args object or a default
         // This is the parameter that most service functions expect
@@ -168,13 +172,22 @@ export async function executeFunction(
       } else if (
         normalizedArgs &&
         Object.keys(normalizedArgs).length === 1 &&
-        !paramNames.some((p: string) => p in normalizedArgs)
+        !paramNames.some((p: string) => p in normalizedArgs) &&
+        typeof Object.values(normalizedArgs)[0] === "object" &&
+        Object.values(normalizedArgs)[0] !== null
       ) {
         // Single-key payload whose name doesn't match any parameter — unwrap
         // and use as positional. Hits the documented `{ args: {...} }` wrapper
         // and any LLM that guesses a key name (e.g. `{ item: {...} }`).
         const value = Object.values(normalizedArgs)[0];
         functionArgs.push(enrichWithAuthContext(value, context, injectAuth));
+      } else if (normalizedArgs && Object.keys(normalizedArgs).length > 0) {
+        // No key matched — pass the entire args object as a positional param.
+        // Handles functions like upsertPart(client, part) where the caller
+        // passes flat fields instead of nesting under the param name.
+        functionArgs.push(
+          enrichWithAuthContext({ ...normalizedArgs }, context, injectAuth)
+        );
       } else {
         // Skip optional parameters
         continue;

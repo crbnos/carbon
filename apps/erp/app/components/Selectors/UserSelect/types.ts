@@ -93,7 +93,7 @@ export type SelectionItemsById = Record<string, IndividualOrGroup>;
 
 export interface SelectInputProps {
   aria?: Omit<InputHTMLAttributes<HTMLInputElement>, "size">;
-  errors?: unknown; // TODO
+  errors?: import("@supabase/supabase-js").PostgrestError;
   inputValue: string;
   innerProps: UserSelectProps;
   loading: boolean;

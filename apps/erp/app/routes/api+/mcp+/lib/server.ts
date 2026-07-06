@@ -1,5 +1,4 @@
 // @ts-nocheck
-// MCP server with single search tool that dynamically registers others
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { McpContext } from "./types";
 import { z } from "zod";
@@ -7,8 +6,6 @@ import { withErrorHandling, READ_ONLY_ANNOTATIONS, WRITE_ANNOTATIONS } from "./t
 import toolMetadata from "./tool-metadata.json";
 import { isMcpBlockedTool } from "./mcp-blocked-tools";
 import { executeFunction } from "./direct-executor";
-
-// Tool modules are no longer imported - using direct execution instead
 
 function getServerInstructions(): string {
   const today = new Date().toISOString().split("T")[0];

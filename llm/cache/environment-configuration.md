@@ -32,7 +32,6 @@
 #### External Services
 
 - `RESEND_API_KEY` - Email service API key
-- `NOVU_APPLICATION_ID` & `NOVU_SECRET_KEY` - Notification service
 - `POSTHOG_API_HOST` & `POSTHOG_PROJECT_PUBLIC_KEY` - Analytics
 - `SLACK_BOT_TOKEN` - Slack integration
 - `TRIGGER_ID`, `TRIGGER_API_KEY`, `TRIGGER_API_URL`, `TRIGGER_SECRET_KEY` - Trigger.dev job queue

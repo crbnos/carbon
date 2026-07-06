@@ -16,6 +16,7 @@ import { Trans } from "@lingui/react/macro";
 import { useParams } from "react-router";
 import { Avatar } from "~/components";
 import { AuditLogDrawer } from "~/components/AuditLog";
+import { Enumerable } from "~/components/Enumerable";
 import { useRouteData, useUser } from "~/hooks";
 import { path } from "~/utils/path";
 import type { EmployeeSummary } from "../../types";
@@ -63,7 +64,9 @@ const PersonHeader = () => {
                 <Trans>Location</Trans>
               </CardAttributeLabel>
               <CardAttributeValue>
-                {routeData?.employeeSummary?.locationName}
+                <Enumerable
+                  value={routeData?.employeeSummary?.locationName ?? null}
+                />
               </CardAttributeValue>
             </CardAttribute>
             <CardAttribute>

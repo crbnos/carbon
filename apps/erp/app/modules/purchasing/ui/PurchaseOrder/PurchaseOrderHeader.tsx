@@ -35,6 +35,7 @@ import {
   LuX
 } from "react-icons/lu";
 import { Link, useFetcher, useNavigation, useParams } from "react-router";
+import type { ResolvedAttachmentItem } from "~/components/AttachmentsList";
 import { useAuditLog } from "~/components/AuditLog";
 import { usePanels } from "~/components/Layout";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
@@ -78,6 +79,7 @@ const PurchaseOrderHeader = () => {
     canDelete: boolean;
     defaultCc: string[];
     supplier: { status: string | null } | null;
+    resolvedAttachments: ResolvedAttachmentItem[];
   }>(path.to.purchaseOrder(orderId));
 
   const [suppliers] = useSuppliers();
@@ -569,6 +571,7 @@ const PurchaseOrderHeader = () => {
           purchaseOrder={routeData?.purchaseOrder}
           onClose={finalizeDisclosure.onClose}
           defaultCc={routeData?.defaultCc ?? []}
+          resolvedAttachments={routeData?.resolvedAttachments ?? []}
         />
       )}
       {deleteModal.isOpen && (

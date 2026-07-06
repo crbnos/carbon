@@ -20,6 +20,8 @@ import ProductionEventsTable from "./ProductionEventsTable";
 import ProductionQuantitiesTable from "./ProductionQuantitiesTable";
 import ProductionQuantityForm from "./ProductionQuantityForm";
 
+export { JobDag } from "./JobDag";
+
 export {
   getDeadlineIcon,
   JobBillOfMaterial,

@@ -156,7 +156,7 @@ const ActiveFilter = ({ filter, operator, value }: ActiveFilterProps) => {
           </Button>
         </PopoverTrigger>
         <PopoverContent
-          className="min-w-[200px] w-[--radix-popover-trigger-width] p-0"
+          className="min-w-[200px] w-[var(--radix-popover-trigger-width)] p-0"
           sticky="always"
         >
           <Command>

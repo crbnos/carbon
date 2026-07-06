@@ -77,18 +77,18 @@ export async function getCurrentAccountingPeriod<T>(
     return currentAccountingPeriod.data.id;
   }
 
-  await db.transaction().execute(async (trx) => {
-    const year = new Date().getFullYear();
-    const month = new Date().getMonth() + 1;
-    const startDate = `${year}-${month.toString().padStart(2, "0")}-01`;
-    let endDate = `${year}-${month.toString().padStart(2, "0")}-${
-      daysInMonths[month]
-    }`;
+  const year = new Date().getFullYear();
+  const month = new Date().getMonth() + 1;
+  const startDate = `${year}-${month.toString().padStart(2, "0")}-01`;
+  let endDate = `${year}-${month.toString().padStart(2, "0")}-${
+    daysInMonths[month]
+  }`;
 
-    if (month === 2 && isLeapYear(year)) {
-      endDate = `${year}-${month.toString().padStart(2, "0")}-29`;
-    }
+  if (month === 2 && isLeapYear(year)) {
+    endDate = `${year}-${month.toString().padStart(2, "0")}-29`;
+  }
 
+  const newPeriod = await db.transaction().execute(async (trx) => {
     await trx
       .updateTable("accountingPeriod")
       .set({ status: "Inactive" })
@@ -96,7 +96,7 @@ export async function getCurrentAccountingPeriod<T>(
       .where("companyId", "=", companyId)
       .execute();
 
-    await trx
+    const result = await trx
       .insertInto("accountingPeriod")
       .values({
         startDate,
@@ -105,23 +105,11 @@ export async function getCurrentAccountingPeriod<T>(
         status: "Active",
         createdBy: "system",
       })
-      .execute();
+      .returning("id")
+      .executeTakeFirstOrThrow();
+
+    return result;
   });
 
-  // get the current accounting period now that we've inserted them
-  currentAccountingPeriod = await client
-    .from("accountingPeriod")
-    .select("*")
-    // .gte("startDate", d.toString())
-    // .lte("endDate", d.toString())
-    .gte("endDate", d)
-    .lte("startDate", d)
-    .eq("companyId", companyId)
-    .single();
-
-  if (currentAccountingPeriod.error || !currentAccountingPeriod.data) {
-    throw new Error("Current accounting period not found");
-  }
-
-  return currentAccountingPeriod.data.id;
+  return newPeriod.id;
 }

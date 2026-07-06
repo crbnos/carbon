@@ -295,13 +295,17 @@ function PurchaseInvoiceLineItem({
             <VStack spacing={0} className="min-w-0">
               <span className="font-semibold line-clamp-1">
                 {line.invoiceLineType === "G/L Account"
-                  ? line.description || "Indirect Expense"
-                  : getItemReadableId(items, line.itemId)}
+                  ? line.description || "G/L Account"
+                  : line.invoiceLineType === "Fixed Asset"
+                    ? (line as any).assetReadableId || "Fixed Asset"
+                    : getItemReadableId(items, line.itemId)}
               </span>
               <span className="text-muted-foreground text-xs truncate line-clamp-1">
                 {line.invoiceLineType === "G/L Account"
                   ? "G/L Account"
-                  : line.description}
+                  : line.invoiceLineType === "Fixed Asset"
+                    ? line.assetName || line.description
+                    : line.description}
               </span>
             </VStack>
           </HStack>

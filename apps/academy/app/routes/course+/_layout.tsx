@@ -14,7 +14,7 @@ export default function CourseLayout() {
         <Hero>
           <Heading
             size="h1"
-            className="font-display text-[#212578] dark:text-white max-w-xl"
+            className="font-display text-[#121212] dark:text-white max-w-xl"
           >
             Your Journey Starts Here
           </Heading>

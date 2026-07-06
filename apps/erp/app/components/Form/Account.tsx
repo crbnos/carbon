@@ -69,11 +69,12 @@ function useAccountOptions(classes?: AccountClass[]) {
         value: c.id,
         label: (
           <div className="flex items-center justify-between w-full gap-2">
-            <span className="truncate">{c.name}</span>
+            <span className="truncate">
+              <span className="text-muted-foreground">{c.number}</span> {c.name}
+            </span>
             {c.class && <Badge variant={badgeColors[c.class]}>{c.class}</Badge>}
           </div>
-        ),
-        helper: c.number
+        )
       })),
     [accounts]
   );

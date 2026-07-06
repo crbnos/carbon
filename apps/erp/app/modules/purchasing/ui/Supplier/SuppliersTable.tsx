@@ -14,6 +14,7 @@ import {
   LuCalendar,
   LuEuro,
   LuGlobe,
+  LuHash,
   LuPencil,
   LuPhone,
   LuPrinter,
@@ -34,7 +35,7 @@ import {
 import { Enumerable } from "~/components/Enumerable";
 import { useSupplierTypes } from "~/components/Form/SupplierType";
 import { ConfirmDelete } from "~/components/Modals";
-import { useDateFormatter, usePermissions } from "~/hooks";
+import { useCompanySettings, useDateFormatter, usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { Supplier } from "~/modules/purchasing";
 import { supplierStatusType } from "~/modules/purchasing";
@@ -59,10 +60,26 @@ const SuppliersTable = memo(({ data, count, tags }: SuppliersTableProps) => {
     null
   );
   const supplierTypes = useSupplierTypes();
+  const companySettings = useCompanySettings();
+  const showSupplierReadableId =
+    companySettings?.showSupplierReadableId ?? false;
 
   const customColumns = useCustomColumns<Supplier>("supplier");
   const columns = useMemo<ColumnDef<Supplier>[]>(() => {
+    const idColumn: ColumnDef<Supplier> = {
+      accessorKey: "readableId",
+      header: t`ID`,
+      cell: ({ row }) => (
+        <span className="font-mono text-xs text-muted-foreground">
+          {row.original.readableId ?? ""}
+        </span>
+      ),
+      meta: {
+        icon: <LuHash />
+      }
+    };
     const defaultColumns: ColumnDef<Supplier>[] = [
+      ...(showSupplierReadableId ? [idColumn] : []),
       {
         accessorKey: "name",
         header: t`Name`,
@@ -242,7 +259,15 @@ const SuppliersTable = memo(({ data, count, tags }: SuppliersTableProps) => {
     ];
 
     return [...defaultColumns, ...customColumns];
-  }, [supplierTypes, people, tags, customColumns, t, formatDate]);
+  }, [
+    supplierTypes,
+    people,
+    tags,
+    customColumns,
+    t,
+    formatDate,
+    showSupplierReadableId
+  ]);
 
   const renderContextMenu = useMemo(
     () => (row: Supplier) => (

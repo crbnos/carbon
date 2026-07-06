@@ -13,6 +13,7 @@ import { useFormStateContext } from "../internal/formStateContext";
 type FormTextArea = TextareaProps & {
   name: string;
   label?: string;
+  size?: "sm" | "md" | "lg";
   characterLimit?: number;
   isRequired?: boolean;
   isDisabled?: boolean;
@@ -23,6 +24,7 @@ const TextArea = forwardRef<HTMLTextAreaElement, FormTextArea>(
     {
       name,
       label,
+      size,
       characterLimit,
       isRequired,
       isDisabled: isDisabledProp,
@@ -61,6 +63,7 @@ const TextArea = forwardRef<HTMLTextAreaElement, FormTextArea>(
             id: name,
             ...rest
           })}
+          size={size}
           maxLength={characterLimit}
           onChange={onChange}
           disabled={disabled}

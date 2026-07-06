@@ -409,7 +409,9 @@ function LineItems({
                         className="flex min-w-0 flex-shrink-0"
                       >
                         <Heading className="truncate">
-                          {line.itemReadableId}
+                          {line.salesOrderLineType === "Fixed Asset"
+                            ? (line as any).assetReadableId || "Fixed Asset"
+                            : line.itemReadableId}
                         </Heading>
                         <Button
                           asChild
@@ -462,9 +464,11 @@ function LineItems({
                           className="flex items-center gap-2"
                         >
                           {line.saleQuantity}
-                          <MethodIcon
-                            type={line.methodType ?? "Pull from Inventory"}
-                          />
+                          {line.salesOrderLineType !== "Fixed Asset" && (
+                            <MethodIcon
+                              type={line.methodType ?? "Pull from Inventory"}
+                            />
+                          )}
                         </Badge>
                         <Badge variant="green">
                           {formatter.format(line.unitPrice ?? 0)}{" "}

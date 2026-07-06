@@ -118,6 +118,46 @@ async function expandActivitySiblings(
   }
 }
 
+/**
+ * Surface "event" activities (e.g. Pick, Transfer) that reference entities
+ * already in the graph. The genealogy BFS only follows input→output
+ * transformations (consume/produce/split), so input-only or output-only events
+ * — a pick relocating a lot, say — would otherwise be invisible. These render as
+ * activity nodes attached to their entity (no new genealogy edges).
+ */
+async function expandEntityActivities(
+  client: SupabaseClient<Database>,
+  state: LineageState
+): Promise<void> {
+  const entityIds = Array.from(state.entities.keys());
+  if (entityIds.length === 0) return;
+
+  const [ins, outs] = await Promise.all([
+    client
+      .from("trackedActivityInput")
+      .select("trackedActivityId")
+      .in("trackedEntityId", entityIds),
+    client
+      .from("trackedActivityOutput")
+      .select("trackedActivityId")
+      .in("trackedEntityId", entityIds)
+  ]);
+
+  const activityIds = new Set<string>();
+  for (const row of ins.data ?? []) {
+    if (!state.activities.has(row.trackedActivityId))
+      activityIds.add(row.trackedActivityId);
+  }
+  for (const row of outs.data ?? []) {
+    if (!state.activities.has(row.trackedActivityId))
+      activityIds.add(row.trackedActivityId);
+  }
+
+  if (activityIds.size > 0) {
+    await expandActivitySiblings(client, state, Array.from(activityIds));
+  }
+}
+
 async function runLineageBfs(
   client: SupabaseClient<Database>,
   state: LineageState,
@@ -269,6 +309,10 @@ export async function fetchLineageSubgraph(
     state.entities.set(rootEntity.data.id, rootEntity.data as TrackedEntity);
 
   await runLineageBfs(client, state, [rootEntityId], direction, safeDepth);
+
+  // Attach event activities (Pick/Transfer/etc.) for the entities in the graph
+  // so location moves like picking show up, not just genealogy transformations.
+  await expandEntityActivities(client, state);
 
   return {
     entities: Array.from(state.entities.values()),

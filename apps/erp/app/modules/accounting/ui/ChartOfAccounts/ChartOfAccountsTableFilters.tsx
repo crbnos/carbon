@@ -2,21 +2,29 @@ import {
   Button,
   DatePicker,
   HStack,
+  Input,
+  InputGroup,
+  InputLeftElement,
   Popover,
   PopoverContent,
   PopoverHeader,
-  PopoverTrigger,
-  ToggleGroup,
-  ToggleGroupItem
+  PopoverTrigger
 } from "@carbon/react";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { LuCalendarDays, LuX } from "react-icons/lu";
+import { LuCalendarDays, LuSearch, LuX } from "react-icons/lu";
 import { New } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
-import { incomeBalanceTypes } from "../../accounting.models";
 
-const ChartOfAccountsTableFilters = () => {
+type ChartOfAccountsTableFiltersProps = {
+  search: string;
+  onSearchChange: (value: string) => void;
+};
+
+const ChartOfAccountsTableFilters = ({
+  search,
+  onSearchChange
+}: ChartOfAccountsTableFiltersProps) => {
   const { t } = useLingui();
   const [params, setParams] = useUrlParams();
   const permissions = usePermissions();
@@ -27,23 +35,16 @@ const ChartOfAccountsTableFilters = () => {
   return (
     <div className="flex px-4 py-3 items-center space-x-4 justify-between bg-card border-b border-border w-full">
       <HStack>
-        <ToggleGroup
-          type="single"
-          size="sm"
-          variant="outline"
-          value={params.get("incomeBalance") ?? ""}
-          onValueChange={(value) =>
-            setParams({ incomeBalance: value || undefined })
-          }
-        >
-          {incomeBalanceTypes.map((type) => (
-            <ToggleGroupItem key={type} value={type}>
-              {type === "Balance Sheet"
-                ? t`Balance Sheet`
-                : t`Income Statement`}
-            </ToggleGroupItem>
-          ))}
-        </ToggleGroup>
+        <InputGroup size="sm" className="w-64">
+          <InputLeftElement>
+            <LuSearch className="h-4 w-4 text-muted-foreground" />
+          </InputLeftElement>
+          <Input
+            placeholder={t`Search accounts...`}
+            value={search}
+            onChange={(e) => onSearchChange(e.target.value)}
+          />
+        </InputGroup>
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="secondary" leftIcon={<LuCalendarDays />}>
@@ -88,7 +89,6 @@ const ChartOfAccountsTableFilters = () => {
             rightIcon={<LuX />}
             onClick={() =>
               setParams({
-                incomeBalance: undefined,
                 startDate: undefined,
                 endDate: undefined
               })

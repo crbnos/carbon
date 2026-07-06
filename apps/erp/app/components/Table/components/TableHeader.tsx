@@ -332,7 +332,12 @@ const TableHeader = <T extends object>({
             </Tooltip>
           )}
 
-          <Download data={data} />
+          <Download
+            data={data}
+            columnAccessors={columnAccessors}
+            columnOrder={columnOrder}
+            columnVisibility={columnVisibility}
+          />
 
           {withPagination &&
             (pagination.canNextPage || pagination.canPreviousPage) && (

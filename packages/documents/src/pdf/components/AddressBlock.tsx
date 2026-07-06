@@ -1,4 +1,3 @@
-import { formatCityStatePostalCode } from "@carbon/utils";
 import { Text } from "@react-pdf/renderer";
 import { createTw } from "react-pdf-tailwind";
 
@@ -9,7 +8,7 @@ type AddressBlockProps = {
   city?: string | null;
   stateProvince?: string | null;
   postalCode?: string | null;
-  countryCode?: string | null;
+  country?: string | null;
 };
 
 const tw = createTw({
@@ -33,24 +32,17 @@ const AddressBlock = ({
   city,
   stateProvince,
   postalCode,
-  countryCode
+  country
 }: AddressBlockProps) => {
-  const hasCityRow = city || stateProvince || postalCode || countryCode;
+  const stateAndPostal = [stateProvince, postalCode].filter(Boolean).join(" ");
   return (
     <>
       {name && <Text style={tw("font-bold")}>{name}</Text>}
       {addressLine1 && <Text>{addressLine1}</Text>}
       {addressLine2 && <Text>{addressLine2}</Text>}
-      {hasCityRow && (
-        <Text>
-          {[
-            formatCityStatePostalCode(city, stateProvince, postalCode),
-            countryCode
-          ]
-            .filter(Boolean)
-            .join(" ")}
-        </Text>
-      )}
+      {city && <Text>{city}</Text>}
+      {stateAndPostal && <Text>{stateAndPostal}</Text>}
+      {country && <Text>{country}</Text>}
     </>
   );
 };

@@ -1,6 +1,7 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { trigger } from "@carbon/jobs";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { issueTrackedEntityValidator } from "~/services/models";
@@ -69,6 +70,43 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const splitEntities = issue.data?.splitEntities || [];
   const warning = issue.data?.warning as string | undefined;
+
+  // Auto-print labels for split entities
+  if (splitEntities.length > 0) {
+    try {
+      let locationId: string | undefined;
+      let workCenterId: string | undefined;
+      if (jobOperationId) {
+        const { data: op } = await serviceRole
+          .from("jobOperation")
+          .select("workCenterId")
+          .eq("id", jobOperationId)
+          .single();
+        workCenterId = op?.workCenterId ?? undefined;
+      }
+      if (workCenterId) {
+        const { data: wc } = await serviceRole
+          .from("workCenter")
+          .select("locationId")
+          .eq("id", workCenterId)
+          .single();
+        locationId = wc?.locationId ?? undefined;
+      }
+
+      for (const split of splitEntities) {
+        await trigger("print-job", {
+          sourceDocument: "Split",
+          sourceDocumentId: split.newId,
+          companyId,
+          userId,
+          locationId,
+          workCenterId
+        });
+      }
+    } catch (e) {
+      console.error("Auto-print for split entities failed:", e);
+    }
+  }
 
   return {
     success: true,

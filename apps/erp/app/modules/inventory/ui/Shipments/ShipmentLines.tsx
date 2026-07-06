@@ -6,6 +6,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  Checkbox,
   Combobox,
   cn,
   DropdownMenu,
@@ -28,7 +29,6 @@ import {
   ModalTitle,
   NumberField,
   NumberInput,
-  SplitButton,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -36,7 +36,7 @@ import {
   VStack
 } from "@carbon/react";
 import type { TrackedEntityAttributes } from "@carbon/utils";
-import { getItemReadableId, labelSizes } from "@carbon/utils";
+import { getItemReadableId } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -56,7 +56,7 @@ import {
   useParams,
   useSubmit
 } from "react-router";
-import { Empty, ItemThumbnail } from "~/components";
+import { Empty, ItemThumbnail, PrintButton } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useStorageUnits } from "~/components/Form/StorageUnit";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
@@ -86,6 +86,16 @@ const ShipmentLines = () => {
     shipment: Shipment;
     shipmentLines: ShipmentLine[];
     shipmentLineTracking: ShipmentLineTracking[];
+    fixedAssetLines: {
+      id: string;
+      salesOrderLineId: string;
+      assetId: string;
+      assetName: string | null;
+      assetReadableId: string | null;
+      description: string | null;
+      shipped: boolean;
+      serialNumber: string | null;
+    }[];
   }>(path.to.shipment(shipmentId));
 
   const shipmentsById = new Map<string, ShipmentLine>(
@@ -258,10 +268,7 @@ const ShipmentLines = () => {
                         routeData?.shipmentLineTracking?.some((t) => {
                           const attributes =
                             t.attributes as TrackedEntityAttributes;
-                          return (
-                            attributes["Shipment Line"] === line.id &&
-                            attributes["Split Entity ID"]
-                          );
+                          return attributes["Shipment Line"] === line.id;
                         }) ?? false
                       }
                       isReadOnly={isReadOnly}
@@ -284,10 +291,102 @@ const ShipmentLines = () => {
           </div>
         </CardContent>
       </Card>
+      {routeData?.fixedAssetLines && routeData.fixedAssetLines.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <Trans>Fixed Assets</Trans>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="border rounded-lg">
+              {routeData.fixedAssetLines.map((line, index) => (
+                <ShipmentFixedAssetLineItem
+                  key={line.id}
+                  line={line}
+                  isReadOnly={isReadOnly}
+                  className={
+                    index < routeData.fixedAssetLines.length - 1
+                      ? "border-b"
+                      : ""
+                  }
+                />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
       <Outlet />
     </>
   );
 };
+
+function ShipmentFixedAssetLineItem({
+  line,
+  isReadOnly,
+  className
+}: {
+  line: {
+    id: string;
+    salesOrderLineId: string;
+    assetId: string;
+    assetName: string | null;
+    assetReadableId: string | null;
+    description: string | null;
+    shipped: boolean;
+    serialNumber: string | null;
+  };
+  isReadOnly: boolean;
+  className?: string;
+}) {
+  const fetcher = useFetcher();
+  const [serialNumber, setSerialNumber] = useState(line.serialNumber ?? "");
+
+  const updateField = (field: string, value: string) => {
+    const formData = new FormData();
+    formData.append("id", line.id);
+    formData.append("field", field);
+    formData.append("value", value);
+    fetcher.submit(formData, {
+      method: "post",
+      action: path.to.shipmentFixedAssetLineUpdate
+    });
+  };
+
+  return (
+    <div className={cn("flex items-center gap-4 p-6", className)}>
+      <Checkbox
+        isChecked={line.shipped}
+        disabled={isReadOnly}
+        onCheckedChange={(checked) =>
+          updateField("shipped", String(checked === true))
+        }
+      />
+      <VStack spacing={0} className="flex-1 min-w-0">
+        <span className="text-sm font-medium">
+          {line.assetName ?? line.description ?? "Fixed Asset"}
+        </span>
+        {line.assetReadableId && (
+          <span className="text-xs text-muted-foreground">
+            {line.assetReadableId}
+          </span>
+        )}
+      </VStack>
+      <Input
+        placeholder="Serial Number"
+        value={serialNumber}
+        isDisabled={isReadOnly}
+        className="w-48"
+        onChange={(e) => setSerialNumber(e.target.value)}
+        onBlur={() => {
+          if (serialNumber !== (line.serialNumber ?? "")) {
+            updateField("serialNumber", serialNumber);
+          }
+        }}
+      />
+    </div>
+  );
+}
 
 function ShipmentLineItem({
   line,
@@ -355,7 +454,7 @@ function ShipmentLineItem({
                 aria-label={t`Line options`}
                 variant="secondary"
                 icon={<LuEllipsisVertical />}
-                size="sm"
+                size="md"
               />
             </DropdownMenuTrigger>
             <DropdownMenuContent>
@@ -526,6 +625,7 @@ function ShipmentLineItem({
         <SerialForm
           shipment={shipment}
           line={line}
+          hasTrackingLabel={hasTrackingLabel}
           serialNumbers={serialNumbers}
           isReadOnly={isReadOnly}
           onSerialNumbersChange={onSerialNumbersChange}
@@ -767,46 +867,29 @@ function BatchForm({
     });
   };
 
-  const navigateToLineTrackingLabels = (zpl?: boolean, labelSize?: string) => {
-    if (!window) return;
-    if (zpl) {
-      window.open(
-        window.location.origin +
-          path.to.file.shipmentLabelsZpl(shipment?.id ?? "", {
-            lineId: line.id!,
-            labelSize
-          }),
-        "_blank"
-      );
-    } else {
-      window.open(
-        window.location.origin +
-          path.to.file.shipmentLabelsPdf(shipment?.id ?? "", {
-            lineId: line.id!,
-            labelSize
-          }),
-        "_blank"
-      );
-    }
-  };
-
   return (
     <div className="flex flex-col gap-6 w-full p-6 border rounded-lg">
       <div className="flex justify-between items-center gap-4">
         <Heading size="h4">Tracking Number</Heading>
         {hasTrackingLabel && (
-          <SplitButton
-            size="sm"
-            leftIcon={<LuQrCode />}
-            dropdownItems={labelSizes.map((size) => ({
-              label: size.name,
-              onClick: () => navigateToLineTrackingLabels(!!size.zpl, size.id)
-            }))}
-            onClick={() => navigateToLineTrackingLabels(false)}
-            variant="primary"
-          >
-            Tracking Labels
-          </SplitButton>
+          <PrintButton
+            sourceDocument="Shipment"
+            sourceDocumentId={shipment?.id ?? ""}
+            locationId={shipment?.locationId ?? undefined}
+            context="shipping"
+            fileRoutes={{
+              pdf: (id, opts) =>
+                path.to.file.shipmentLabelsPdf(id, {
+                  ...opts,
+                  lineId: line.id!
+                }),
+              zpl: (id, opts) =>
+                path.to.file.shipmentLabelsZpl(id, {
+                  ...opts,
+                  lineId: line.id!
+                })
+            }}
+          />
         )}
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 ">
@@ -870,12 +953,14 @@ function BatchForm({
 function SerialForm({
   line,
   shipment,
+  hasTrackingLabel,
   serialNumbers,
   isReadOnly,
   onSerialNumbersChange
 }: {
   line: ShipmentLine;
   shipment?: Shipment;
+  hasTrackingLabel: boolean;
   serialNumbers: { index: number; id: string }[];
   isReadOnly: boolean;
   onSerialNumbersChange: (
@@ -1036,7 +1121,29 @@ function SerialForm({
 
   return (
     <div className="flex flex-col gap-6 p-6 border rounded-lg">
-      <Heading size="h4">Tracking Numbers</Heading>
+      <div className="flex justify-between items-center gap-4">
+        <Heading size="h4">Tracking Numbers</Heading>
+        {hasTrackingLabel && (
+          <PrintButton
+            sourceDocument="Shipment"
+            sourceDocumentId={shipment?.id ?? ""}
+            locationId={shipment?.locationId ?? undefined}
+            context="shipping"
+            fileRoutes={{
+              pdf: (id, opts) =>
+                path.to.file.shipmentLabelsPdf(id, {
+                  ...opts,
+                  lineId: line.id!
+                }),
+              zpl: (id, opts) =>
+                path.to.file.shipmentLabelsZpl(id, {
+                  ...opts,
+                  lineId: line.id!
+                })
+            }}
+          />
+        )}
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-4 gap-y-3">
         {serialNumbers.map((serialNumber, index) => {

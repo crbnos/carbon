@@ -165,7 +165,7 @@ const AvatarMenu = () => {
                     }
                   >
                     <div className="flex items-center">
-                      <div className="w-4 h-4 rounded-full mr-2 bg-[--theme-primary]" />
+                      <div className="w-4 h-4 rounded-full mr-2 bg-[var(--theme-primary)]" />
                       {t.label}
                     </div>
                   </DropdownMenuRadioItem>

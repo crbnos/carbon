@@ -1,6 +1,7 @@
 import type { Database } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
+import { incoterms } from "./shared.models";
 
 // to avoid a circular dependency
 const methodType = [
@@ -15,6 +16,233 @@ const itemTrackingTypes = [
   "Serial",
   "Batch"
 ] as const;
+const supplierStatusTypes = [
+  "Active",
+  "Inactive",
+  "Pending",
+  "Rejected"
+] as const;
+
+// Name-only lookups that may be created inline during a CSV import. The value
+// doubles as the lookup's table name; the create-lookup route's zod enum, its
+// permission map, and the import modal's types all derive from this list.
+export const creatableLookups = [
+  "supplierType",
+  "customerType",
+  "customerStatus"
+] as const;
+export type CreatableLookup = (typeof creatableLookups)[number];
+
+// Rich lookups need more than a name (Net days, carrier, ...), so during a CSV
+// import they are created through their existing form modal, pre-filled with
+// the typed value. Client-only: maps a field to the form it opens.
+export type CreatableForm = "paymentTerm" | "shippingMethod";
+
+// Shared supplier-part import fields. Spread into every item-type entry
+// (part / material / tool / fixture / consumable) so a single CSV row can
+// optionally create a supplierPart link alongside the item itself. All
+// optional — rows without a Supplier column import as items only.
+const supplierPartImportFields = {
+  supplierId: {
+    label: "Supplier",
+    required: false,
+    type: "enum",
+    enumData: {
+      description:
+        "Optional — link this item to a supplier (match by Supplier ID or name)",
+      fetcher: async (client: SupabaseClient<Database>, companyId: string) => {
+        const { data, error } = await client
+          .from("supplier")
+          .select("id, name, readableId")
+          .eq("companyId", companyId)
+          .order("name");
+        if (error) return { data: null, error };
+        // Return name and readableId as separate fields. FieldMappings chooses
+        // the display label per the showSupplierReadableId company setting and
+        // auto-matches on BOTH name and readableId — so a CSV that references
+        // suppliers by name still resolves when readable IDs are hidden.
+        return {
+          data: data.map((s) => ({
+            id: s.id,
+            name: s.name,
+            readableId: s.readableId ?? undefined
+          }))
+        };
+      }
+    }
+  },
+  supplierPartId: {
+    label: "Supplier Part Number",
+    required: false,
+    type: "string"
+  },
+  supplierUnitOfMeasureCode: {
+    label: "Supplier Unit of Measure",
+    required: false,
+    type: "enum",
+    enumData: {
+      description: "How the supplier sells this part (e.g., BOX)",
+      fetcher: async (client: SupabaseClient<Database>, companyId: string) => {
+        const { data, error } = await client
+          .from("unitOfMeasure")
+          .select("name, code")
+          .eq("companyId", companyId);
+        if (error) return { data: null, error };
+        return {
+          data: data.map((u) => ({ id: u.code, name: u.name }))
+        };
+      }
+    }
+  },
+  minimumOrderQuantity: {
+    label: "Minimum Order Quantity",
+    required: false,
+    type: "string"
+  },
+  orderMultiple: {
+    label: "Order Multiple",
+    required: false,
+    type: "string"
+  },
+  conversionFactor: {
+    label: "Conversion Factor",
+    required: false,
+    type: "string"
+  },
+  unitPrice: {
+    label: "Supplier Unit Price",
+    required: false,
+    type: "string"
+  }
+} as const;
+
+// Item-level purchasing fields. Spread into every real item-type entry
+// (part / material / tool / fixture / consumable). These write to the
+// item's "itemReplenishment" row (auto-created by the create_item_related_records
+// trigger) in the edge function's post-pass — the same fields the in-app
+// "Purchasing" tab edits.
+const itemPurchasingImportFields = {
+  leadTime: {
+    label: "Lead Time (Days)",
+    required: false,
+    type: "string"
+  }
+} as const;
+
+// Shared address + payment + incoterm fields. Spread into supplier and
+// customer entries — they write to side-tables (supplierLocation/address +
+// supplierPayment + supplierShipping; same for customer) in the edge
+// function's post-pass.
+const partnerLocationImportFields = {
+  locationName: {
+    label: "Location Name",
+    required: false,
+    type: "string"
+  },
+  addressLine1: {
+    label: "Address Line 1",
+    required: false,
+    type: "string"
+  },
+  addressLine2: {
+    label: "Address Line 2",
+    required: false,
+    type: "string"
+  },
+  city: {
+    label: "City",
+    required: false,
+    type: "string"
+  },
+  state: {
+    label: "State / Region",
+    required: false,
+    type: "string"
+  },
+  postalCode: {
+    label: "Postal Code",
+    required: false,
+    type: "string"
+  },
+  countryCode: {
+    label: "Country",
+    required: false,
+    type: "enum",
+    enumData: {
+      description: "Country — match by full name (e.g., United States)",
+      fetcher: async (client: SupabaseClient<Database>, _companyId: string) => {
+        const { data, error } = await client
+          .from("country")
+          .select("alpha2, name");
+        if (error) return { data: null, error };
+        // address.countryCode is TEXT storing the ISO 3166-1 alpha-2 code
+        // (e.g., "US"). The country table's PK is alpha2 since migration
+        // 20240928155702_country-codes.sql.
+        return {
+          data: data.map((c) => ({ id: c.alpha2, name: c.name }))
+        };
+      }
+    }
+  }
+} as const;
+
+const partnerPaymentImportFields = {
+  paymentTermId: {
+    label: "Payment Term",
+    required: false,
+    type: "enum",
+    enumData: {
+      description: "Payment term (e.g., Net 30)",
+      creatableForm: "paymentTerm",
+      fetcher: async (client: SupabaseClient<Database>, companyId: string) => {
+        return client
+          .from("paymentTerm")
+          .select("id, name")
+          .eq("companyId", companyId)
+          .order("name");
+      }
+    }
+  }
+} as const;
+
+// Shipping/incoterm fields are supplier-only by design: businesses configure
+// these when receiving goods (purchasing/import) but rarely set them on the
+// outbound side. customerShipping.incoterm exists in the DB for completeness
+// but is set via the in-app form when needed.
+const supplierShippingImportFields = {
+  shippingMethodId: {
+    label: "Shipping Method",
+    required: false,
+    type: "enum",
+    enumData: {
+      description: "Carrier / shipping method (e.g., FedEx Ground)",
+      creatableForm: "shippingMethod",
+      fetcher: async (client: SupabaseClient<Database>, companyId: string) => {
+        return client
+          .from("shippingMethod")
+          .select("id, name")
+          .eq("companyId", companyId)
+          .order("name");
+      }
+    }
+  },
+  incoterm: {
+    label: "Incoterm",
+    required: false,
+    type: "enum",
+    enumData: {
+      default: "",
+      description:
+        "International Commercial Term — one of: EXW, FCA, FAS, FOB, CPT, CIP, CFR, CIF, DAP, DPU, DDP",
+      options: incoterms
+    }
+  },
+  incotermLocation: {
+    label: "Incoterm Location",
+    required: false,
+    type: "string"
+  }
+} as const;
 
 export const fieldMappings = {
   customer: {
@@ -33,14 +261,55 @@ export const fieldMappings = {
       required: false,
       type: "enum",
       enumData: {
-        description: "The account manager of the customer",
+        description:
+          "The account manager — match by employee email (e.g. jane@company.com)",
         fetcher: async (
           client: SupabaseClient<Database>,
           companyId: string
         ) => {
           return client
             .from("employees")
-            .select("id, name, avatarUrl")
+            .select("id, name, email, avatarUrl")
+            .eq("companyId", companyId)
+            .order("name");
+        }
+      }
+    },
+    customerStatusId: {
+      label: "Status",
+      required: false,
+      type: "enum",
+      enumData: {
+        description:
+          "The status of the customer (from your configured statuses)",
+        creatableLookup: "customerStatus",
+        fetcher: async (
+          client: SupabaseClient<Database>,
+          companyId: string
+        ) => {
+          return client
+            .from("customerStatus")
+            .select("id, name")
+            .eq("companyId", companyId)
+            .order("name");
+        }
+      }
+    },
+    customerTypeId: {
+      label: "Type",
+      required: false,
+      type: "enum",
+      enumData: {
+        description:
+          "The category/type of the customer (from your configured types)",
+        creatableLookup: "customerType",
+        fetcher: async (
+          client: SupabaseClient<Database>,
+          companyId: string
+        ) => {
+          return client
+            .from("customerType")
+            .select("id, name")
             .eq("companyId", companyId)
             .order("name");
         }
@@ -65,7 +334,9 @@ export const fieldMappings = {
       label: "Website",
       required: false,
       type: "string"
-    }
+    },
+    ...partnerLocationImportFields,
+    ...partnerPaymentImportFields
   },
   customerContact: {
     id: {
@@ -140,14 +411,46 @@ export const fieldMappings = {
       required: false,
       type: "enum",
       enumData: {
-        description: "The account manager of the customer",
+        description:
+          "The account manager — match by employee email (e.g. jane@company.com)",
         fetcher: async (
           client: SupabaseClient<Database>,
           companyId: string
         ) => {
           return client
             .from("employees")
-            .select("id, name, avatarUrl")
+            .select("id, name, email, avatarUrl")
+            .eq("companyId", companyId)
+            .order("name");
+        }
+      }
+    },
+    supplierStatus: {
+      label: "Status",
+      required: false,
+      type: "enum",
+      enumData: {
+        default: "",
+        description:
+          "The status of the supplier — one of: Active, Inactive, Pending, Rejected",
+        options: supplierStatusTypes
+      }
+    },
+    supplierTypeId: {
+      label: "Type",
+      required: false,
+      type: "enum",
+      enumData: {
+        description:
+          "The category/type of the supplier (from your configured types)",
+        creatableLookup: "supplierType",
+        fetcher: async (
+          client: SupabaseClient<Database>,
+          companyId: string
+        ) => {
+          return client
+            .from("supplierType")
+            .select("id, name")
             .eq("companyId", companyId)
             .order("name");
         }
@@ -177,7 +480,10 @@ export const fieldMappings = {
       label: "Website",
       required: false,
       type: "string"
-    }
+    },
+    ...partnerLocationImportFields,
+    ...partnerPaymentImportFields,
+    ...supplierShippingImportFields
   },
   supplierContact: {
     id: {
@@ -254,13 +560,8 @@ export const fieldMappings = {
       default: "0"
     },
     name: {
-      label: "Short Description",
+      label: "Description",
       required: true,
-      type: "string"
-    },
-    description: {
-      label: "Long Description",
-      required: false,
       type: "string"
     },
     active: {
@@ -328,7 +629,9 @@ export const fieldMappings = {
         },
         default: "EA"
       }
-    }
+    },
+    ...supplierPartImportFields,
+    ...itemPurchasingImportFields
   },
   tool: {
     id: {
@@ -348,13 +651,8 @@ export const fieldMappings = {
       default: "0"
     },
     name: {
-      label: "Short Description",
+      label: "Description",
       required: true,
-      type: "string"
-    },
-    description: {
-      label: "Long Description",
-      required: false,
       type: "string"
     },
     active: {
@@ -422,7 +720,9 @@ export const fieldMappings = {
         },
         default: "EA"
       }
-    }
+    },
+    ...supplierPartImportFields,
+    ...itemPurchasingImportFields
   },
   fixture: {
     id: {
@@ -442,13 +742,8 @@ export const fieldMappings = {
       default: "0"
     },
     name: {
-      label: "Short Description",
+      label: "Description",
       required: true,
-      type: "string"
-    },
-    description: {
-      label: "Long Description",
-      required: false,
       type: "string"
     },
     active: {
@@ -516,7 +811,9 @@ export const fieldMappings = {
         },
         default: "EA"
       }
-    }
+    },
+    ...supplierPartImportFields,
+    ...itemPurchasingImportFields
   },
   consumable: {
     id: {
@@ -536,13 +833,8 @@ export const fieldMappings = {
       default: "0"
     },
     name: {
-      label: "Short Description",
+      label: "Description",
       required: true,
-      type: "string"
-    },
-    description: {
-      label: "Long Description",
-      required: false,
       type: "string"
     },
     active: {
@@ -610,7 +902,9 @@ export const fieldMappings = {
         },
         default: "EA"
       }
-    }
+    },
+    ...supplierPartImportFields,
+    ...itemPurchasingImportFields
   },
   material: {
     id: {
@@ -630,13 +924,8 @@ export const fieldMappings = {
       default: "0"
     },
     name: {
-      label: "Short Description",
+      label: "Description",
       required: true,
-      type: "string"
-    },
-    description: {
-      label: "Long Description",
-      required: false,
       type: "string"
     },
     active: {
@@ -746,7 +1035,9 @@ export const fieldMappings = {
         },
         default: "EA"
       }
-    }
+    },
+    ...supplierPartImportFields,
+    ...itemPurchasingImportFields
   },
   methodMaterial: {
     level: {
@@ -808,7 +1099,8 @@ export const fieldMappings = {
         },
         default: "EA"
       }
-    }
+    },
+    ...supplierPartImportFields
   },
   workCenter: {
     id: {
@@ -938,6 +1230,63 @@ export const fieldMappings = {
         default: "false"
       }
     }
+  },
+  fixedAsset: {
+    name: {
+      label: "Name",
+      required: true,
+      type: "string"
+    },
+    fixedAssetClassId: {
+      label: "Asset Class ID",
+      required: true,
+      type: "string"
+    },
+    serialNumber: {
+      label: "Serial Number",
+      required: false,
+      type: "string"
+    },
+    acquisitionCost: {
+      label: "Acquisition Cost",
+      required: true,
+      type: "string"
+    },
+    acquisitionDate: {
+      label: "Acquisition Date",
+      required: true,
+      type: "string"
+    },
+    accumulatedDepreciation: {
+      label: "Accumulated Depreciation",
+      required: false,
+      type: "string"
+    },
+    depreciationMethod: {
+      label: "Depreciation Method",
+      required: false,
+      type: "enum",
+      enumData: {
+        description: "The depreciation method for this asset",
+        options: ["Straight Line", "Declining Balance", "Units of Production"],
+        default: "Straight Line"
+      }
+    },
+    usefulLifeMonths: {
+      label: "Useful Life (Months)",
+      required: false,
+      type: "string"
+    },
+    residualValuePercent: {
+      label: "Residual Value %",
+      required: false,
+      type: "string"
+    },
+    locationId: {
+      label: "Location ID",
+      required: false,
+      type: "string"
+    }
   }
 } as const;
 
@@ -953,7 +1302,8 @@ export const importPermissions: Record<keyof typeof fieldMappings, string> = {
   fixture: "parts",
   consumable: "parts",
   workCenter: "production",
-  process: "production"
+  process: "production",
+  fixedAsset: "accounting"
 };
 
 export const importSchemas: Record<
@@ -977,6 +1327,14 @@ export const importSchemas: Record<
       .string()
       .optional()
       .describe("The id of the account manager of the customer"),
+    customerStatusId: z
+      .string()
+      .optional()
+      .describe("The id of the customer's status"),
+    customerTypeId: z
+      .string()
+      .optional()
+      .describe("The id of the customer's type/category"),
     phone: z.string().optional().describe("The phone number of the customer"),
     fax: z.string().optional().describe("The fax number of the customer"),
     taxId: z
@@ -995,7 +1353,15 @@ export const importSchemas: Record<
       .string()
       .optional()
       .describe("The website url. Usually begins with http:// or https://")
-      .nullable()
+      .nullable(),
+    locationName: z.string().optional(),
+    addressLine1: z.string().optional(),
+    addressLine2: z.string().optional(),
+    city: z.string().optional(),
+    state: z.string().optional(),
+    postalCode: z.string().optional(),
+    countryCode: z.string().optional(),
+    paymentTermId: z.string().optional()
   }),
   customerContact: z.object({
     id: z
@@ -1047,6 +1413,14 @@ export const importSchemas: Record<
       .string()
       .optional()
       .describe("The id of the account manager of the supplier"),
+    supplierStatus: z
+      .string()
+      .optional()
+      .describe("The status of the supplier"),
+    supplierTypeId: z
+      .string()
+      .optional()
+      .describe("The id of the supplier's type/category"),
     phone: z.string().optional().describe("The phone number of the supplier"),
     fax: z.string().optional().describe("The fax number of the supplier"),
     taxId: z
@@ -1065,7 +1439,18 @@ export const importSchemas: Record<
       .string()
       .optional()
       .describe("The website url. Usually begins with http:// or https://")
-      .nullable()
+      .nullable(),
+    locationName: z.string().optional(),
+    addressLine1: z.string().optional(),
+    addressLine2: z.string().optional(),
+    city: z.string().optional(),
+    state: z.string().optional(),
+    postalCode: z.string().optional(),
+    countryCode: z.string().optional(),
+    paymentTermId: z.string().optional(),
+    shippingMethodId: z.string().optional(),
+    incoterm: z.string().optional(),
+    incotermLocation: z.string().optional()
   }),
   supplierContact: z.object({
     id: z
@@ -1122,11 +1507,7 @@ export const importSchemas: Record<
     name: z
       .string()
       .min(1, { message: "Name is required" })
-      .describe("The short description of the part"),
-    description: z
-      .string()
-      .optional()
-      .describe("The long description of the part"),
+      .describe("The description of the part"),
     active: z.string().optional().describe("Whether the part is active"),
     unitOfMeasureCode: z
       .string()
@@ -1143,7 +1524,15 @@ export const importSchemas: Record<
     itemTrackingType: z
       .string()
       .optional()
-      .describe("The item tracking type of the part")
+      .describe("The item tracking type of the part"),
+    supplierId: z.string().optional(),
+    supplierPartId: z.string().optional(),
+    supplierUnitOfMeasureCode: z.string().optional(),
+    minimumOrderQuantity: z.string().optional(),
+    orderMultiple: z.string().optional(),
+    conversionFactor: z.string().optional(),
+    unitPrice: z.string().optional(),
+    leadTime: z.string().optional()
   }),
   tool: z.object({
     id: z
@@ -1161,11 +1550,7 @@ export const importSchemas: Record<
     name: z
       .string()
       .min(1, { message: "Name is required" })
-      .describe("The short description of the tool"),
-    description: z
-      .string()
-      .optional()
-      .describe("The long description of the tool"),
+      .describe("The description of the tool"),
     active: z.string().optional().describe("Whether the tool is active"),
     unitOfMeasureCode: z
       .string()
@@ -1182,7 +1567,15 @@ export const importSchemas: Record<
     itemTrackingType: z
       .string()
       .optional()
-      .describe("The item tracking type of the tool")
+      .describe("The item tracking type of the tool"),
+    supplierId: z.string().optional(),
+    supplierPartId: z.string().optional(),
+    supplierUnitOfMeasureCode: z.string().optional(),
+    minimumOrderQuantity: z.string().optional(),
+    orderMultiple: z.string().optional(),
+    conversionFactor: z.string().optional(),
+    unitPrice: z.string().optional(),
+    leadTime: z.string().optional()
   }),
   fixture: z.object({
     id: z
@@ -1200,11 +1593,7 @@ export const importSchemas: Record<
     name: z
       .string()
       .min(1, { message: "Name is required" })
-      .describe("The short description of the fixture"),
-    description: z
-      .string()
-      .optional()
-      .describe("The long description of the fixture"),
+      .describe("The description of the fixture"),
     active: z.string().optional().describe("Whether the fixture is active"),
     unitOfMeasureCode: z
       .string()
@@ -1221,7 +1610,15 @@ export const importSchemas: Record<
     itemTrackingType: z
       .string()
       .optional()
-      .describe("The item tracking type of the fixture")
+      .describe("The item tracking type of the fixture"),
+    supplierId: z.string().optional(),
+    supplierPartId: z.string().optional(),
+    supplierUnitOfMeasureCode: z.string().optional(),
+    minimumOrderQuantity: z.string().optional(),
+    orderMultiple: z.string().optional(),
+    conversionFactor: z.string().optional(),
+    unitPrice: z.string().optional(),
+    leadTime: z.string().optional()
   }),
   consumable: z.object({
     id: z
@@ -1239,11 +1636,7 @@ export const importSchemas: Record<
     name: z
       .string()
       .min(1, { message: "Name is required" })
-      .describe("The short description of the part"),
-    description: z
-      .string()
-      .optional()
-      .describe("The long description of the part"),
+      .describe("The description of the part"),
     active: z.string().optional().describe("Whether the part is active"),
     unitOfMeasureCode: z
       .string()
@@ -1260,7 +1653,15 @@ export const importSchemas: Record<
     itemTrackingType: z
       .string()
       .optional()
-      .describe("The item tracking type of the part")
+      .describe("The item tracking type of the part"),
+    supplierId: z.string().optional(),
+    supplierPartId: z.string().optional(),
+    supplierUnitOfMeasureCode: z.string().optional(),
+    minimumOrderQuantity: z.string().optional(),
+    orderMultiple: z.string().optional(),
+    conversionFactor: z.string().optional(),
+    unitPrice: z.string().optional(),
+    leadTime: z.string().optional()
   }),
   material: z.object({
     id: z
@@ -1278,11 +1679,7 @@ export const importSchemas: Record<
     name: z
       .string()
       .min(1, { message: "Name is required" })
-      .describe("The short description of the material"),
-    description: z
-      .string()
-      .optional()
-      .describe("The long description of the material"),
+      .describe("The description of the material"),
     active: z.string().optional().describe("Whether the material is active"),
     materialSubstanceId: z
       .string()
@@ -1306,7 +1703,15 @@ export const importSchemas: Record<
     unitOfMeasureCode: z
       .string()
       .optional()
-      .describe("The unit of measure of the material")
+      .describe("The unit of measure of the material"),
+    supplierId: z.string().optional(),
+    supplierPartId: z.string().optional(),
+    supplierUnitOfMeasureCode: z.string().optional(),
+    minimumOrderQuantity: z.string().optional(),
+    orderMultiple: z.string().optional(),
+    conversionFactor: z.string().optional(),
+    unitPrice: z.string().optional(),
+    leadTime: z.string().optional()
   }),
   methodMaterial: z.object({
     level: z.string().optional().describe("The level of the material"),
@@ -1379,5 +1784,49 @@ export const importSchemas: Record<
       .describe(
         "Whether scanning a barcode should complete all operations for this process"
       )
+  }),
+  fixedAsset: z.object({
+    name: z
+      .string()
+      .min(1, { message: "Name is required" })
+      .describe("The name of the fixed asset"),
+    fixedAssetClassId: z
+      .string()
+      .min(1, { message: "Asset Class is required" })
+      .describe("The ID of the fixed asset class"),
+    serialNumber: z
+      .string()
+      .optional()
+      .describe("The serial number of the asset"),
+    acquisitionCost: z
+      .string()
+      .optional()
+      .describe("The acquisition cost of the asset"),
+    acquisitionDate: z
+      .string()
+      .optional()
+      .describe("The date the asset was acquired (YYYY-MM-DD)"),
+    accumulatedDepreciation: z
+      .string()
+      .optional()
+      .describe("The accumulated depreciation to date"),
+    depreciationMethod: z
+      .string()
+      .optional()
+      .describe(
+        "The depreciation method: Straight Line, Declining Balance, or Units of Production"
+      ),
+    usefulLifeMonths: z
+      .string()
+      .optional()
+      .describe("The useful life of the asset in months"),
+    residualValuePercent: z
+      .string()
+      .optional()
+      .describe("The residual value as a percentage of acquisition cost"),
+    locationId: z
+      .string()
+      .optional()
+      .describe("The location ID where the asset is located")
   })
 } as const;

@@ -56,7 +56,7 @@ const payloadSchema = z.discriminatedUnion("type", [
       supporting_files: z.array(z.string()),
       export_controlled: z.boolean(),
       send_from_facility: z.string(),
-      request_for_quote_id: z.coerce.string().nullable(),
+      request_for_quote_id: z.union([z.string(), z.number()]).nullable(),
       digital_last_viewed_on: z.string().nullable(),
       manual_rfq_received_date: z.string().nullable(),
       authenticated_pdf_quote_url: z.string().nullable()

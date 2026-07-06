@@ -10,24 +10,18 @@ import {
   CardHeader,
   CardTitle,
   Heading,
-  HStack,
   Label,
   ScrollArea,
-  Switch,
   toast,
   VStack
 } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useCallback, useEffect } from "react";
+import { useEffect } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useFetcher, useLoaderData } from "react-router";
 import { Users } from "~/components/Form";
-import {
-  getCompanySettings,
-  jobCompletedValidator,
-  updateJobTravelerWorkInstructions
-} from "~/modules/settings";
+import { getCompanySettings, jobCompletedValidator } from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -86,19 +80,6 @@ export async function action({ request }: ActionFunctionArgs) {
     return { success: true, message: "Job notification settings updated" };
   }
 
-  if (intent === "jobTraveler") {
-    const enabled = formData.get("enabled") === "true";
-    const update = await updateJobTravelerWorkInstructions(
-      client,
-      companyId,
-      enabled
-    );
-
-    if (update.error) return { success: false, message: update.error.message };
-
-    return { success: true, message: "Job traveler settings updated" };
-  }
-
   return { success: false, message: "Unknown intent" };
 }
 
@@ -106,7 +87,6 @@ export default function ProductionSettingsRoute() {
   const { t } = useLingui();
   const { companySettings } = useLoaderData<typeof loader>();
   const fetcher = useFetcher<typeof action>();
-  const toggleFetcher = useFetcher<typeof action>();
 
   useEffect(() => {
     if (fetcher.data?.success === true && fetcher?.data?.message) {
@@ -117,25 +97,6 @@ export default function ProductionSettingsRoute() {
       toast.error(fetcher.data.message);
     }
   }, [fetcher.data?.message, fetcher.data?.success]);
-
-  useEffect(() => {
-    if (toggleFetcher.data?.success === true && toggleFetcher?.data?.message) {
-      toast.success(toggleFetcher.data.message);
-    }
-    if (toggleFetcher.data?.success === false && toggleFetcher?.data?.message) {
-      toast.error(toggleFetcher.data.message);
-    }
-  }, [toggleFetcher.data?.message, toggleFetcher.data?.success]);
-
-  const handleJobTravelerToggle = useCallback(
-    (checked: boolean) => {
-      toggleFetcher.submit(
-        { intent: "jobTraveler", enabled: String(checked) },
-        { method: "POST" }
-      );
-    },
-    [toggleFetcher]
-  );
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-49px)]">
@@ -203,48 +164,6 @@ export default function ProductionSettingsRoute() {
               </Submit>
             </CardFooter>
           </ValidatedForm>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              <Trans>Job Traveler</Trans>
-            </CardTitle>
-            <CardDescription>
-              <Trans>
-                Configure the content displayed on job traveler PDFs.
-              </Trans>
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <HStack className="justify-between items-center">
-              <VStack className="items-start" spacing={1}>
-                <span className="font-medium">
-                  {companySettings.jobTravelerIncludeWorkInstructions ? (
-                    <Trans>Work instructions are included</Trans>
-                  ) : (
-                    <Trans>Work instructions are not included</Trans>
-                  )}
-                </span>
-                <span className="text-sm text-muted-foreground">
-                  {companySettings.jobTravelerIncludeWorkInstructions ? (
-                    <Trans>Job traveler PDFs include work instructions.</Trans>
-                  ) : (
-                    <Trans>
-                      Enable to include work instructions on job traveler PDFs.
-                    </Trans>
-                  )}
-                </span>
-              </VStack>
-              <Switch
-                checked={
-                  companySettings.jobTravelerIncludeWorkInstructions ?? false
-                }
-                onCheckedChange={handleJobTravelerToggle}
-                disabled={toggleFetcher.state !== "idle"}
-              />
-            </HStack>
-          </CardContent>
         </Card>
       </VStack>
     </ScrollArea>

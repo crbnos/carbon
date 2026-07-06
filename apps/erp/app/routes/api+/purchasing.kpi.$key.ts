@@ -1,5 +1,5 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getPreferenceHeaders } from "@carbon/react";
+import { getPreferenceHeaders } from "@carbon/utils";
 import { parseDateTime, toCalendarDateTime } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { LoaderFunctionArgs } from "react-router";

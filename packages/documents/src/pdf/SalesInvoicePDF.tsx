@@ -1,28 +1,22 @@
 import type { Database } from "@carbon/database";
 import type { JSONContent } from "@carbon/react";
-import { formatDate, isEoriCountry } from "@carbon/utils";
-import { Image, Text, View } from "@react-pdf/renderer";
-import { createTw } from "react-pdf-tailwind";
+import { Fragment } from "react";
+import type { DocumentTemplate, ResolvedSection } from "../template";
+import {
+  DEFAULT_HEADER_OPTIONS,
+  interpolateContent,
+  resolveTemplate
+} from "../template";
 import type { AccountsReceivableBillingAddress, PDF } from "../types";
 import { composeRegistrationLine } from "../utils/footer";
-import {
-  getLineDescription,
-  getLineDescriptionDetails,
-  getLineTaxableSubtotal,
-  getLineTotal,
-  getTotal
-} from "../utils/sales-invoice";
-import { AddressBlock, Header, Note, Template } from "./components";
-
-type SalesInvoiceLocations =
-  Database["public"]["Views"]["salesInvoiceLocations"]["Row"] & {
-    customerTaxId?: string | null;
-    customerVatNumber?: string | null;
-  };
+import type { SalesInvoiceData, SalesInvoiceLocations } from "./blocks";
+import { buildSalesInvoiceVars, salesInvoiceBlockRegistry } from "./blocks";
+import { Template } from "./components";
 
 interface SalesInvoicePDFProps extends PDF {
   salesInvoice: Database["public"]["Views"]["salesInvoices"]["Row"];
   salesInvoiceLines: Database["public"]["Views"]["salesInvoiceLines"]["Row"][];
+  salesOrderIds?: string[];
   salesInvoiceLocations: SalesInvoiceLocations;
   salesInvoiceShipment: Database["public"]["Tables"]["salesInvoiceShipment"]["Row"];
   accountsReceivableBillingAddress?: AccountsReceivableBillingAddress | null;
@@ -33,26 +27,11 @@ interface SalesInvoicePDFProps extends PDF {
   shippingMethods: { id: string; name: string }[];
   terms: JSONContent;
   thumbnails?: Record<string, string | null>;
+  /** Stored layout. When omitted, the default Sales Invoice layout is used. */
+  template?: DocumentTemplate | null;
+  /** Shared sections referenced by the template, keyed by id. */
+  sections?: Record<string, ResolvedSection>;
 }
-
-const tw = createTw({
-  theme: {
-    fontFamily: {
-      sans: ["Inter", "Helvetica", "Arial", "sans-serif"]
-    },
-    extend: {
-      colors: {
-        gray: {
-          50: "#f9fafb",
-          200: "#e5e7eb",
-          400: "#9ca3af",
-          600: "#4b5563",
-          800: "#1f2937"
-        }
-      }
-    }
-  }
-});
 
 const SalesInvoicePDF = ({
   accountsReceivableBillingAddress,
@@ -63,40 +42,16 @@ const SalesInvoicePDF = ({
   salesInvoiceShipment,
   salesInvoiceLines,
   salesInvoiceLocations,
+  salesOrderIds,
   terms,
   paymentTerms,
   shippingMethods,
   thumbnails,
   locale,
+  template,
+  sections = {},
   title = "Invoice"
 }: SalesInvoicePDFProps) => {
-  const {
-    customerName,
-    customerAddressLine1,
-    customerAddressLine2,
-    customerCity,
-    customerStateProvince,
-    customerPostalCode,
-    customerCountryName,
-    customerTaxId,
-    customerVatNumber,
-    customerEori,
-    invoiceCustomerName,
-    invoiceAddressLine1,
-    invoiceAddressLine2,
-    invoiceCity,
-    invoiceStateProvince,
-    invoicePostalCode,
-    invoiceCountryName,
-    shipmentCustomerName,
-    shipmentAddressLine1,
-    shipmentAddressLine2,
-    shipmentCity,
-    shipmentStateProvince,
-    shipmentPostalCode,
-    shipmentCountryName
-  } = salesInvoiceLocations;
-
   const currencyCode = salesInvoice.currencyCode ?? company.baseCurrencyCode;
   const numberFormatter = new Intl.NumberFormat(locale, {
     style: "decimal",
@@ -107,24 +62,74 @@ const SalesInvoicePDF = ({
   const registrationLine = composeRegistrationLine({
     companyName: company.name,
     country: company.countryCode,
-    eori: company.eori,
-    accountsReceivableEmail: companySettings?.accountsReceivableEmail
+    eori: company.eori
   });
 
-  const paymentTerm = paymentTerms?.find(
-    (term) => term.id === salesInvoice?.paymentTermId
+  const { blocks, theme, settings, headerSectionId, footerSectionId } =
+    resolveTemplate("salesInvoice", template);
+
+  const vars = buildSalesInvoiceVars({
+    salesInvoice,
+    salesInvoiceLocations,
+    company,
+    currencyCode
+  });
+
+  // Header layout now lives on the global header section's config (not the
+  // block), so every document shares one header configuration.
+  const headerOptions = {
+    ...DEFAULT_HEADER_OPTIONS,
+    ...(headerSectionId ? (sections[headerSectionId]?.config ?? {}) : {})
+  };
+
+  const data: SalesInvoiceData = {
+    company,
+    companySettings,
+    locale,
+    salesInvoice,
+    salesInvoiceLines,
+    salesInvoiceLocations,
+    salesInvoiceShipment,
+    salesOrderIds,
+    accountsReceivableBillingAddress,
+    paymentTerms,
+    shippingMethods,
+    terms,
+    thumbnails,
+    theme,
+    sections,
+    currencyCode,
+    numberFormatter,
+    vars,
+    headerOptions
+  };
+
+  const headerSection = headerSectionId
+    ? sections[headerSectionId]?.content
+    : undefined;
+  const footerSection = footerSectionId
+    ? sections[footerSectionId]?.content
+    : undefined;
+  const headerContent = headerSection
+    ? interpolateContent(headerSection, vars)
+    : undefined;
+  const footerContent = footerSection
+    ? interpolateContent(footerSection, vars)
+    : undefined;
+
+  // The header/footer selectors are the single control for the top header and
+  // the footer band. "None" (null id) removes them entirely; the built-in
+  // default id keeps them. This drives both the company Header block and the
+  // structural footer (registration line + page numbers).
+  const showHeader = headerSectionId !== null;
+  const showFooter = footerSectionId !== null;
+  const visibleBlocks = blocks.filter(
+    (block) => block.visible && !(block.type === "header" && !showHeader)
   );
-
-  const shippingMethod = shippingMethods?.find(
-    (method) => method.id === salesInvoiceShipment?.shippingMethodId
-  );
-
-  const watermarkSrc = company.logoWatermark;
-
-  let rowIndex = 0;
 
   return (
     <Template
+      theme={theme}
       title={title}
       meta={{
         author: meta?.author ?? "Carbon",
@@ -133,413 +138,19 @@ const SalesInvoicePDF = ({
       }}
       footerDocumentId={salesInvoice?.invoiceId}
       footerLabel={registrationLine ?? undefined}
+      showFooter={showFooter}
+      showPageNumbers={settings.showPageNumbers}
+      pageNumberFormat={settings.pageNumberFormat}
+      showRegistrationLine={settings.showRegistrationLine}
+      fontFamily={settings.fontFamily}
+      headerContent={headerContent}
+      footerContent={footerContent}
     >
-      {watermarkSrc && (
-        <View
-          fixed
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            alignItems: "center",
-            marginTop: 100,
-            opacity: 0.07
-          }}
-        >
-          <Image src={watermarkSrc} style={{ width: "50%" }} />
-        </View>
-      )}
-      <Header
-        company={company}
-        title="Invoice"
-        documentId={salesInvoice?.invoiceId}
-        currencyCode={salesInvoice?.currencyCode}
-        locale={locale}
-      />
-
-      {/* Body row — Bill To (left) | Invoice Details + Ship To stacked (right) */}
-      <View style={tw("border border-gray-200 mb-4")}>
-        <View style={tw("flex flex-row")}>
-          {/* LEFT — Bill To (the customer being invoiced) */}
-          <View style={tw("w-1/2 p-3 border-r border-gray-200")}>
-            <Text
-              style={tw("text-[9px] font-bold text-gray-600 mb-1 uppercase")}
-            >
-              Bill To
-            </Text>
-            <View style={tw("text-[9px] text-gray-800")}>
-              <AddressBlock
-                name={invoiceCustomerName ?? customerName}
-                addressLine1={invoiceAddressLine1 ?? customerAddressLine1}
-                addressLine2={invoiceAddressLine2 ?? customerAddressLine2}
-                city={invoiceCity ?? customerCity}
-                stateProvince={invoiceStateProvince ?? customerStateProvince}
-                postalCode={invoicePostalCode ?? customerPostalCode}
-                countryCode={invoiceCountryName ?? customerCountryName}
-              />
-              {customerTaxId &&
-                !isEoriCountry(invoiceCountryName ?? customerCountryName) && (
-                  <Text>Tax ID: {customerTaxId}</Text>
-                )}
-              {customerVatNumber && <Text>VAT: {customerVatNumber}</Text>}
-              {customerEori && <Text>EORI: {customerEori}</Text>}
-            </View>
-          </View>
-
-          {/* RIGHT — Invoice Details + Ship To stacked */}
-          <View style={tw("w-1/2 flex flex-col")}>
-            {/* Invoice Details — Due Date prominent */}
-            <View
-              style={tw(
-                shipmentCustomerName ? "p-3 border-b border-gray-200" : "p-3"
-              )}
-            >
-              <Text
-                style={tw("text-[9px] font-bold text-gray-600 mb-1 uppercase")}
-              >
-                Invoice Details
-              </Text>
-              <View style={tw("text-[9px] text-gray-800")}>
-                {salesInvoice?.dateIssued && (
-                  <Text>
-                    Date Issued:{" "}
-                    {formatDate(salesInvoice.dateIssued, undefined, locale)}
-                  </Text>
-                )}
-                {salesInvoice?.dateDue && (
-                  <Text style={tw("font-bold")}>
-                    Due Date:{" "}
-                    {formatDate(salesInvoice.dateDue, undefined, locale)}
-                  </Text>
-                )}
-                {salesInvoice?.customerReference && (
-                  <Text>Customer Ref: {salesInvoice.customerReference}</Text>
-                )}
-                {paymentTerm && <Text>Payment Terms: {paymentTerm.name}</Text>}
-                {shippingMethod && <Text>Shipping: {shippingMethod.name}</Text>}
-                {salesInvoiceShipment?.shippingTermId && (
-                  <Text>
-                    Shipping Terms: {salesInvoiceShipment.shippingTermId}
-                  </Text>
-                )}
-                {salesInvoiceShipment?.incoterm && (
-                  <Text>
-                    Incoterm: {salesInvoiceShipment.incoterm}
-                    {salesInvoiceShipment.incotermLocation
-                      ? ` — ${salesInvoiceShipment.incotermLocation}`
-                      : ""}
-                  </Text>
-                )}
-              </View>
-            </View>
-
-            {/* Ship To — only when shipment has a distinct address (not falling back to customer's main address) */}
-            {shipmentCustomerName && (
-              <View style={tw("p-3")}>
-                <Text
-                  style={tw(
-                    "text-[9px] font-bold text-gray-600 mb-1 uppercase"
-                  )}
-                >
-                  Ship To
-                </Text>
-                <View style={tw("text-[9px] text-gray-800")}>
-                  <AddressBlock
-                    name={shipmentCustomerName}
-                    addressLine1={shipmentAddressLine1}
-                    addressLine2={shipmentAddressLine2}
-                    city={shipmentCity}
-                    stateProvince={shipmentStateProvince}
-                    postalCode={shipmentPostalCode}
-                    countryCode={shipmentCountryName}
-                  />
-                </View>
-              </View>
-            )}
-          </View>
-        </View>
-      </View>
-
-      {/* Notes (full width) */}
-      <View style={tw("border border-gray-200 mb-4")}>
-        <View style={tw("p-3")}>
-          <Text style={tw("text-[9px] font-bold text-gray-600 mb-1 uppercase")}>
-            Notes
-          </Text>
-          <View style={tw("text-[9px] text-gray-800")}>
-            {Object.keys(salesInvoice?.externalNotes ?? {}).length > 0 ? (
-              <Note
-                content={(salesInvoice.externalNotes ?? {}) as JSONContent}
-              />
-            ) : (
-              <Text style={tw("text-gray-400")}>None</Text>
-            )}
-          </View>
-        </View>
-      </View>
-
-      {/* Line Items Table */}
-      <View style={tw("mb-4")}>
-        {/* Header */}
-        <View
-          fixed
-          style={tw(
-            "flex flex-row bg-gray-800 py-2 px-3 text-white text-[9px] font-bold items-center"
-          )}
-        >
-          <Text style={tw("w-1/2")}>Description</Text>
-          <Text style={tw("w-1/6 text-center")}>Qty</Text>
-          <View style={tw("w-1/6 items-center")}>
-            <Text>Unit Price</Text>
-            <Text style={[tw("text-[7px] font-normal"), { opacity: 0.7 }]}>
-              {currencyCode}
-            </Text>
-          </View>
-          <View style={tw("w-1/6 items-center")}>
-            <Text>Total</Text>
-            <Text style={[tw("text-[7px] font-normal"), { opacity: 0.7 }]}>
-              {currencyCode}
-            </Text>
-          </View>
-        </View>
-
-        {/* Rows */}
-        {salesInvoiceLines.map((line) => {
-          const isEven = rowIndex % 2 === 0;
-          rowIndex++;
-
-          const lineAddOnCost = line.convertedAddOnCost ?? 0;
-          const lineNonTaxableAddOnCost =
-            line.convertedNonTaxableAddOnCost ?? 0;
-          const lineShippingCost = line.convertedShippingCost ?? 0;
-          const lineTaxPercent = line.taxPercent ?? 0;
-          const lineTaxAmount = getLineTaxableSubtotal(line) * lineTaxPercent;
-          const totalTaxAndFees =
-            lineAddOnCost +
-            lineNonTaxableAddOnCost +
-            lineShippingCost +
-            lineTaxAmount;
-
-          return (
-            <View
-              key={line.id}
-              style={[
-                tw(
-                  "flex flex-row py-2 px-3 border-b border-gray-200 text-[10px]"
-                ),
-                {
-                  backgroundColor: isEven
-                    ? "transparent"
-                    : "rgba(249, 250, 251, 0.6)"
-                }
-              ]}
-              wrap={false}
-            >
-              <View style={tw("w-1/2 pr-2")}>
-                <Text style={tw("text-gray-800")}>
-                  {getLineDescription(line)}
-                </Text>
-                <Text style={tw("text-[8px] text-gray-400 mt-0.5")}>
-                  {getLineDescriptionDetails(line)}
-                </Text>
-                {thumbnails &&
-                  line.id &&
-                  line.id in thumbnails &&
-                  thumbnails[line.id] && (
-                    <View style={tw("mt-1 w-16")}>
-                      <Image
-                        src={thumbnails[line.id]!}
-                        style={tw("w-full h-auto")}
-                      />
-                    </View>
-                  )}
-                {Object.keys(line.externalNotes ?? {}).length > 0 && (
-                  <View style={tw("mt-1")}>
-                    <Note
-                      key={`${line.id}-notes`}
-                      content={line.externalNotes as JSONContent}
-                    />
-                  </View>
-                )}
-                {line.invoiceLineType !== "Comment" && totalTaxAndFees > 0 && (
-                  <View style={tw("mt-1")}>
-                    <Text style={tw("text-[8px] text-gray-400 font-bold")}>
-                      Tax & Fees
-                    </Text>
-                    {lineShippingCost > 0 && (
-                      <Text style={tw("text-[8px] text-gray-400")}>
-                        - Shipping
-                      </Text>
-                    )}
-                    {lineAddOnCost > 0 && (
-                      <Text style={tw("text-[8px] text-gray-400")}>
-                        - Add-On
-                      </Text>
-                    )}
-                    {lineNonTaxableAddOnCost > 0 && (
-                      <Text style={tw("text-[8px] text-gray-400")}>
-                        - Non-Taxable Add-On
-                      </Text>
-                    )}
-                    {lineTaxPercent > 0 && (
-                      <Text style={tw("text-[8px] text-gray-400")}>
-                        - Tax ({(lineTaxPercent * 100).toFixed(0)}%)
-                      </Text>
-                    )}
-                  </View>
-                )}
-              </View>
-              <Text style={tw("w-1/6 text-center text-gray-600")}>
-                {line.invoiceLineType === "Comment"
-                  ? ""
-                  : `${line.quantity} ${line.unitOfMeasureCode ?? "EA"}`}
-              </Text>
-              <Text style={tw("w-1/6 text-center text-gray-600")}>
-                {line.invoiceLineType === "Comment"
-                  ? ""
-                  : numberFormatter.format(line.convertedUnitPrice ?? 0)}
-              </Text>
-              <Text style={tw("w-1/6 text-center text-gray-800 font-medium")}>
-                {line.invoiceLineType === "Comment"
-                  ? ""
-                  : numberFormatter.format(getLineTotal(line))}
-              </Text>
-            </View>
-          );
-        })}
-
-        {/* Summary */}
-        <View>
-          {/* Subtotal - extended price only */}
-          <View
-            style={[
-              tw("flex flex-row py-1.5 px-3 text-[9px]"),
-              { backgroundColor: "rgba(249, 250, 251, 0.6)" }
-            ]}
-          >
-            <Text style={tw("w-[80%] text-right pr-3 text-gray-600")}>
-              Subtotal ({currencyCode})
-            </Text>
-            <Text style={tw("w-[20%] text-right text-gray-800")}>
-              {numberFormatter.format(
-                salesInvoiceLines.reduce(
-                  (sum, line) =>
-                    sum + (line.quantity ?? 0) * (line.convertedUnitPrice ?? 0),
-                  0
-                )
-              )}
-            </Text>
-          </View>
-
-          {/* Add-Ons */}
-          {salesInvoiceLines.some(
-            (line) =>
-              (line.convertedAddOnCost ?? 0) > 0 ||
-              (line.convertedNonTaxableAddOnCost ?? 0) > 0
-          ) && (
-            <View
-              style={[
-                tw("flex flex-row py-1.5 px-3 text-[9px]"),
-                { backgroundColor: "rgba(249, 250, 251, 0.6)" }
-              ]}
-            >
-              <Text style={tw("w-[80%] text-right pr-3 text-gray-600")}>
-                Add-Ons ({currencyCode})
-              </Text>
-              <Text style={tw("w-[20%] text-right text-gray-800")}>
-                {numberFormatter.format(
-                  salesInvoiceLines.reduce(
-                    (sum, line) =>
-                      sum +
-                      (line.convertedAddOnCost ?? 0) +
-                      (line.convertedNonTaxableAddOnCost ?? 0),
-                    0
-                  )
-                )}
-              </Text>
-            </View>
-          )}
-
-          {/* Shipping */}
-          {(() => {
-            const lineShipping = salesInvoiceLines.reduce(
-              (sum, line) => sum + (line.convertedShippingCost ?? 0),
-              0
-            );
-            const invoiceShipping =
-              (salesInvoiceShipment?.shippingCost ?? 0) *
-              (salesInvoice.exchangeRate ?? 1);
-            const totalShipping = lineShipping + invoiceShipping;
-            return totalShipping > 0 ? (
-              <View
-                style={[
-                  tw("flex flex-row py-1.5 px-3 text-[9px]"),
-                  { backgroundColor: "rgba(249, 250, 251, 0.6)" }
-                ]}
-              >
-                <Text style={tw("w-[80%] text-right pr-3 text-gray-600")}>
-                  Shipping ({currencyCode})
-                </Text>
-                <Text style={tw("w-[20%] text-right text-gray-800")}>
-                  {numberFormatter.format(totalShipping)}
-                </Text>
-              </View>
-            ) : null;
-          })()}
-
-          {/* Taxes */}
-          {salesInvoiceLines.some((line) => (line.taxPercent ?? 0) > 0) && (
-            <View
-              style={[
-                tw("flex flex-row py-1.5 px-3 text-[9px]"),
-                { backgroundColor: "rgba(249, 250, 251, 0.6)" }
-              ]}
-            >
-              <Text style={tw("w-[80%] text-right pr-3 text-gray-600")}>
-                Taxes ({currencyCode})
-              </Text>
-              <Text style={tw("w-[20%] text-right text-gray-800")}>
-                {numberFormatter.format(
-                  salesInvoiceLines.reduce((sum, line) => {
-                    const taxPercent = line.taxPercent ?? 0;
-                    return sum + getLineTaxableSubtotal(line) * taxPercent;
-                  }, 0)
-                )}
-              </Text>
-            </View>
-          )}
-
-          <View style={tw("h-[1px] bg-gray-200")} />
-          <View style={tw("flex flex-row py-2 px-3 text-[9px]")}>
-            <Text style={tw("w-[80%] text-right pr-3 text-gray-800 font-bold")}>
-              Total
-            </Text>
-            <Text style={tw("w-[20%] text-right text-gray-800 font-bold")}>
-              {currencyCode}{" "}
-              {numberFormatter.format(
-                getTotal(salesInvoiceLines, salesInvoice, salesInvoiceShipment)
-              )}
-            </Text>
-          </View>
-        </View>
-      </View>
-
-      {terms?.content && terms.content.length > 0 && (
-        <View break>
-          <View style={tw("border-b border-gray-400 mb-3 pb-2 mt-2")}>
-            <Text
-              style={tw(
-                "text-[14px] font-bold text-gray-800 uppercase tracking-wide"
-              )}
-            >
-              Terms & Conditions
-            </Text>
-          </View>
-          <Note content={terms} />
-        </View>
-      )}
+      {visibleBlocks.map((block) => {
+        const render = salesInvoiceBlockRegistry[block.type];
+        if (!render) return null;
+        return <Fragment key={block.id}>{render({ block, data })}</Fragment>;
+      })}
     </Template>
   );
 };

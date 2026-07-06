@@ -6,6 +6,7 @@ import {
   DropdownMenuContent,
   DropdownMenuIcon,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
@@ -28,6 +29,7 @@ import {
   LuBraces,
   LuChevronDown,
   LuChevronRight,
+  LuChevronsUpDown,
   LuDownload,
   LuEllipsisVertical,
   LuExternalLink,
@@ -112,6 +114,11 @@ const BoMExplorer = ({
     isEager: true
   });
 
+  const allExpanded = useMemo(
+    () => methods.every((m) => !m.hasChildren || nodes[m.id]?.expanded),
+    [methods, nodes]
+  );
+
   // Generate hierarchical BOM IDs (1, 1.1, 1.1.1, etc.)
   const bomIds = useMemo(() => generateBomIds(methods), [methods]);
   const bomIdMap = useMemo(
@@ -178,6 +185,23 @@ const BoMExplorer = ({
                 />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onClick={() => {
+                    if (allExpanded) {
+                      collapseAllBelowDepth(1);
+                    } else {
+                      expandAllBelowDepth(0);
+                    }
+                  }}
+                >
+                  <DropdownMenuIcon icon={<LuChevronsUpDown />} />
+                  {allExpanded ? (
+                    <Trans>Collapse all</Trans>
+                  ) : (
+                    <Trans>Expand all</Trans>
+                  )}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuSub>
                   <DropdownMenuSubTrigger>
                     <DropdownMenuIcon icon={<LuDownload />} />
@@ -281,7 +305,7 @@ const BoMExplorer = ({
             parentClassName="h-full"
             renderNode={({ node, state }) => {
               return (
-                <HoverCard openDelay={500}>
+                <HoverCard openDelay={500} closeDelay={150}>
                   <HoverCardTrigger asChild>
                     <div
                       key={node.id}

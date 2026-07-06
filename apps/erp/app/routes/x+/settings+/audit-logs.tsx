@@ -165,7 +165,7 @@ export default function AuditLogRoute() {
             <Trans>Audit Logs</Trans>
           </Heading>
           {enabled && (
-            <Button leftIcon={<LuHistory />} asChild>
+            <Button variant="secondary" leftIcon={<LuHistory />} asChild>
               <Link to={path.to.auditLogDetails}>
                 <Trans>View All</Trans>
               </Link>

@@ -30,6 +30,7 @@ import { useMemo, useRef, useState } from "react";
 import {
   LuBraces,
   LuChevronDown,
+  LuChevronsUpDown,
   LuCirclePlus,
   LuDownload,
   LuEllipsisVertical,
@@ -440,6 +441,7 @@ function QuoteLineItem({
 
   const disclosure = useDisclosure();
   const searchDisclosure = useDisclosure();
+  const expansionDisclosure = useDisclosure();
 
   useMount(() => {
     if (lineId === line.id) {
@@ -549,6 +551,14 @@ function QuoteLineItem({
                     <DropdownMenuItem onClick={searchDisclosure.onOpen}>
                       <DropdownMenuIcon icon={<LuSearch />} />
                       <Trans>Search</Trans>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={expansionDisclosure.onToggle}>
+                      <DropdownMenuIcon icon={<LuChevronsUpDown />} />
+                      {expansionDisclosure.isOpen ? (
+                        <Trans>Collapse all</Trans>
+                      ) : (
+                        <Trans>Expand all</Trans>
+                      )}
                     </DropdownMenuItem>
                     <DropdownMenuSub>
                       <DropdownMenuSubTrigger>
@@ -665,6 +675,7 @@ function QuoteLineItem({
             <QuoteBoMExplorer
               methods={flattenedMethods}
               isSearchExpanded={searchDisclosure.isOpen}
+              isAllExpanded={expansionDisclosure.isOpen}
             />
           </VStack>
         )}

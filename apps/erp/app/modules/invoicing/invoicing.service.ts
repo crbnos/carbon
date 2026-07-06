@@ -381,6 +381,178 @@ export async function updateSalesInvoiceStatus(
   return client.from("salesInvoice").update(updateData).eq("id", update.id);
 }
 
+export async function insertPurchaseInvoice(
+  client: SupabaseClient<Database>,
+  input: {
+    supplierId: string;
+    companyId: string;
+    companyGroupId: string;
+    createdBy: string;
+    invoiceId?: string;
+    supplierReference?: string;
+    paymentTermId?: string;
+    currencyCode?: string;
+    locationId?: string;
+    invoiceSupplierId?: string;
+    invoiceSupplierContactId?: string;
+    invoiceSupplierLocationId?: string;
+    dateIssued?: string;
+    dateDue?: string;
+    exchangeRate?: number;
+    exchangeRateUpdatedAt?: string;
+    customFields?: Json;
+  }
+): Promise<{
+  data: { id: string; invoiceId: string } | null;
+  error: import("@supabase/supabase-js").PostgrestError | null;
+}> {
+  let invoiceId: string;
+  if (input.invoiceId) {
+    invoiceId = input.invoiceId;
+  } else {
+    const seq = await client.rpc("get_next_sequence", {
+      sequence_name: "purchaseInvoice",
+      company_id: input.companyId
+    });
+    if (seq.error || !seq.data) {
+      return {
+        data: null,
+        error:
+          seq.error ??
+          ({
+            message: "Failed to generate purchaseInvoice sequence"
+          } as import("@supabase/supabase-js").PostgrestError)
+      };
+    }
+    invoiceId = seq.data;
+  }
+
+  const [supplierInteraction, supplierPayment, supplierShipping, purchaser] =
+    await Promise.all([
+      insertSupplierInteraction(client, input.companyId, input.supplierId),
+      getSupplierPayment(client, input.supplierId),
+      getSupplierShipping(client, input.supplierId),
+      getEmployeeJob(client, input.createdBy, input.companyId)
+    ]);
+
+  if (supplierInteraction.error)
+    return { data: null, error: supplierInteraction.error };
+  if (supplierPayment.error)
+    return { data: null, error: supplierPayment.error };
+  if (supplierShipping.error)
+    return { data: null, error: supplierShipping.error };
+
+  const { paymentTermId, invoiceSupplierId } = supplierPayment.data;
+  const { shippingMethodId, shippingTermId, incoterm, incotermLocation } =
+    supplierShipping.data;
+
+  let exchangeRate = input.exchangeRate ?? 1;
+  let exchangeRateUpdatedAt =
+    input.exchangeRateUpdatedAt ?? new Date().toISOString();
+
+  if (input.currencyCode) {
+    const currency = await getCurrencyByCode(
+      client,
+      input.companyGroupId,
+      input.currencyCode
+    );
+    if (currency.data) {
+      exchangeRate = currency.data.exchangeRate ?? 1;
+      exchangeRateUpdatedAt = new Date().toISOString();
+    }
+  }
+
+  const locationId = input.locationId ?? purchaser?.data?.locationId ?? null;
+
+  const invoice = await client
+    .from("purchaseInvoice")
+    .insert({
+      invoiceId,
+      supplierId: input.supplierId,
+      supplierReference: input.supplierReference ?? null,
+      invoiceSupplierId:
+        input.invoiceSupplierId ?? invoiceSupplierId ?? input.supplierId,
+      invoiceSupplierContactId: input.invoiceSupplierContactId ?? null,
+      invoiceSupplierLocationId: input.invoiceSupplierLocationId ?? null,
+      supplierInteractionId: supplierInteraction.data?.id,
+      currencyCode: input.currencyCode ?? "USD",
+      exchangeRate,
+      exchangeRateUpdatedAt,
+      paymentTermId: input.paymentTermId ?? paymentTermId,
+      dateIssued: input.dateIssued ?? today(getLocalTimeZone()).toString(),
+      dateDue: input.dateDue ?? null,
+      locationId,
+      customFields: input.customFields,
+      companyId: input.companyId,
+      createdBy: input.createdBy,
+      updatedBy: input.createdBy
+    })
+    .select("id, invoiceId")
+    .single();
+
+  if (invoice.error) return { data: null, error: invoice.error };
+
+  const delivery = await client.from("purchaseInvoiceDelivery").insert({
+    id: invoice.data.id,
+    locationId,
+    shippingMethodId,
+    shippingTermId,
+    incoterm,
+    incotermLocation,
+    companyId: input.companyId
+  });
+
+  if (delivery.error) {
+    await client.from("purchaseInvoice").delete().eq("id", invoice.data.id);
+    return { data: null, error: delivery.error };
+  }
+
+  return {
+    data: { id: invoice.data.id, invoiceId: invoice.data.invoiceId },
+    error: null
+  };
+}
+
+export async function updatePurchaseInvoice(
+  client: SupabaseClient<Database>,
+  input: {
+    id: string;
+    updatedBy: string;
+    invoiceId?: string;
+    supplierId?: string;
+    supplierReference?: string | null;
+    paymentTermId?: string | null;
+    currencyCode?: string;
+    locationId?: string;
+    invoiceSupplierId?: string | null;
+    invoiceSupplierContactId?: string | null;
+    invoiceSupplierLocationId?: string | null;
+    dateIssued?: string | null;
+    dateDue?: string | null;
+    exchangeRate?: number;
+    exchangeRateUpdatedAt?: string;
+    customFields?: Json;
+  }
+): Promise<{
+  data: { id: string } | null;
+  error: import("@supabase/supabase-js").PostgrestError | null;
+}> {
+  const { id, ...rest } = input;
+  const result = await client
+    .from("purchaseInvoice")
+    .update({
+      ...sanitize(rest),
+      updatedAt: today(getLocalTimeZone()).toString()
+    })
+    .eq("id", id)
+    .select("id")
+    .single();
+
+  if (result.error) return { data: null, error: result.error };
+  return { data: { id: result.data.id }, error: null };
+}
+
+/** @deprecated Use insertPurchaseInvoice for new invoices, updatePurchaseInvoice for existing invoices */
 export async function upsertPurchaseInvoice(
   client: SupabaseClient<Database>,
   purchaseInvoice:
@@ -576,6 +748,185 @@ export async function updatePurchaseInvoiceLineOrder(
   });
 }
 
+export async function insertSalesInvoice(
+  client: SupabaseClient<Database>,
+  input: {
+    customerId: string;
+    companyId: string;
+    companyGroupId: string;
+    createdBy: string;
+    invoiceId?: string;
+    customerReference?: string;
+    paymentTermId?: string;
+    currencyCode?: string;
+    locationId?: string;
+    invoiceCustomerId?: string;
+    invoiceCustomerContactId?: string;
+    invoiceCustomerLocationId?: string;
+    dateIssued?: string;
+    dateDue?: string;
+    exchangeRate?: number;
+    exchangeRateUpdatedAt?: string;
+    customFields?: Json;
+  }
+): Promise<{
+  data: { id: string; invoiceId: string } | null;
+  error: import("@supabase/supabase-js").PostgrestError | null;
+}> {
+  let invoiceId: string;
+  if (input.invoiceId) {
+    invoiceId = input.invoiceId;
+  } else {
+    const seq = await client.rpc("get_next_sequence", {
+      sequence_name: "salesInvoice",
+      company_id: input.companyId
+    });
+    if (seq.error || !seq.data) {
+      return {
+        data: null,
+        error:
+          seq.error ??
+          ({
+            message: "Failed to generate salesInvoice sequence"
+          } as import("@supabase/supabase-js").PostgrestError)
+      };
+    }
+    invoiceId = seq.data;
+  }
+
+  const [opportunity, customerPayment, customerShipping, salesPerson] =
+    await Promise.all([
+      client
+        .from("opportunity")
+        .insert({
+          companyId: input.companyId,
+          customerId: input.customerId
+        })
+        .select("id")
+        .single(),
+      getCustomerPayment(client, input.customerId),
+      getCustomerShipping(client, input.customerId),
+      getEmployeeJob(client, input.createdBy, input.companyId)
+    ]);
+
+  if (opportunity.error) return { data: null, error: opportunity.error };
+  if (customerPayment.error)
+    return { data: null, error: customerPayment.error };
+  if (customerShipping.error)
+    return { data: null, error: customerShipping.error };
+
+  const { paymentTermId, invoiceCustomerId } = customerPayment.data;
+  const { shippingMethodId, shippingTermId, incoterm, incotermLocation } =
+    customerShipping.data;
+
+  let exchangeRate = input.exchangeRate ?? 1;
+  let exchangeRateUpdatedAt =
+    input.exchangeRateUpdatedAt ?? new Date().toISOString();
+
+  if (input.currencyCode) {
+    const currency = await getCurrencyByCode(
+      client,
+      input.companyGroupId,
+      input.currencyCode
+    );
+    if (currency.data) {
+      exchangeRate = currency.data.exchangeRate ?? 1;
+      exchangeRateUpdatedAt = new Date().toISOString();
+    }
+  }
+
+  const locationId = input.locationId ?? salesPerson?.data?.locationId ?? null;
+
+  const invoice = await client
+    .from("salesInvoice")
+    .insert({
+      invoiceId,
+      customerId: input.customerId,
+      customerReference: input.customerReference ?? null,
+      invoiceCustomerId:
+        input.invoiceCustomerId ?? invoiceCustomerId ?? input.customerId,
+      invoiceCustomerContactId: input.invoiceCustomerContactId ?? null,
+      invoiceCustomerLocationId: input.invoiceCustomerLocationId ?? null,
+      opportunityId: opportunity.data?.id,
+      currencyCode: input.currencyCode ?? "USD",
+      exchangeRate,
+      exchangeRateUpdatedAt,
+      paymentTermId: input.paymentTermId ?? paymentTermId,
+      dateIssued: input.dateIssued ?? today(getLocalTimeZone()).toString(),
+      dateDue: input.dateDue ?? null,
+      locationId,
+      customFields: input.customFields,
+      companyId: input.companyId,
+      createdBy: input.createdBy,
+      updatedBy: input.createdBy
+    })
+    .select("id, invoiceId")
+    .single();
+
+  if (invoice.error) return { data: null, error: invoice.error };
+
+  const delivery = await client.from("salesInvoiceShipment").insert({
+    id: invoice.data.id,
+    locationId,
+    shippingMethodId,
+    shippingTermId,
+    incoterm,
+    incotermLocation,
+    companyId: input.companyId,
+    createdBy: input.createdBy
+  });
+
+  if (delivery.error) {
+    await client.from("salesInvoice").delete().eq("id", invoice.data.id);
+    return { data: null, error: delivery.error };
+  }
+
+  return {
+    data: { id: invoice.data.id, invoiceId: invoice.data.invoiceId },
+    error: null
+  };
+}
+
+export async function updateSalesInvoice(
+  client: SupabaseClient<Database>,
+  input: {
+    id: string;
+    updatedBy: string;
+    invoiceId?: string;
+    customerId?: string;
+    customerReference?: string | null;
+    paymentTermId?: string | null;
+    currencyCode?: string;
+    locationId?: string;
+    invoiceCustomerId?: string | null;
+    invoiceCustomerContactId?: string | null;
+    invoiceCustomerLocationId?: string | null;
+    dateIssued?: string | null;
+    dateDue?: string | null;
+    exchangeRate?: number;
+    exchangeRateUpdatedAt?: string;
+    customFields?: Json;
+  }
+): Promise<{
+  data: { id: string } | null;
+  error: import("@supabase/supabase-js").PostgrestError | null;
+}> {
+  const { id, ...rest } = input;
+  const result = await client
+    .from("salesInvoice")
+    .update({
+      ...sanitize(rest),
+      updatedAt: today(getLocalTimeZone()).toString()
+    })
+    .eq("id", id)
+    .select("id")
+    .single();
+
+  if (result.error) return { data: null, error: result.error };
+  return { data: { id: result.data.id }, error: null };
+}
+
+/** @deprecated Use insertSalesInvoice for new invoices, updateSalesInvoice for existing invoices */
 export async function upsertSalesInvoice(
   client: SupabaseClient<Database>,
   salesInvoice:

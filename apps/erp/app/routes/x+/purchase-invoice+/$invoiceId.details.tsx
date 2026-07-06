@@ -21,7 +21,7 @@ import {
   isPurchaseInvoiceLocked,
   PurchaseInvoiceSummary,
   purchaseInvoiceValidator,
-  upsertPurchaseInvoice
+  updatePurchaseInvoice
 } from "~/modules/invoicing";
 import { PurchaseInvoiceDeliveryForm } from "~/modules/invoicing/ui/PurchaseInvoice";
 import type { PurchaseInvoiceDeliveryFormRef } from "~/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceDeliveryForm";
@@ -103,19 +103,30 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { invoiceId, ...d } = validation.data;
   if (!invoiceId) throw new Error("Could not find invoiceId");
 
-  const updatePurchaseInvoice = await upsertPurchaseInvoice(client, {
+  const result = await updatePurchaseInvoice(client, {
     id,
     invoiceId,
-    ...d,
-    updatedBy: userId,
-    customFields: setCustomFields(formData)
+    supplierId: d.supplierId,
+    supplierReference: d.supplierReference || null,
+    paymentTermId: d.paymentTermId || null,
+    currencyCode: d.currencyCode,
+    locationId: d.locationId,
+    invoiceSupplierId: d.invoiceSupplierId || null,
+    invoiceSupplierContactId: d.invoiceSupplierContactId || null,
+    invoiceSupplierLocationId: d.invoiceSupplierLocationId || null,
+    dateIssued: d.dateIssued || null,
+    dateDue: d.dateDue || null,
+    exchangeRate: d.exchangeRate,
+    exchangeRateUpdatedAt: d.exchangeRateUpdatedAt,
+    customFields: setCustomFields(formData),
+    updatedBy: userId
   });
-  if (updatePurchaseInvoice.error) {
+  if (result.error) {
     throw redirect(
       path.to.purchaseInvoice(id),
       await flash(
         request,
-        error(updatePurchaseInvoice.error, "Failed to update purchase invoice")
+        error(result.error, "Failed to update purchase invoice")
       )
     );
   }

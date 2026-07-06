@@ -47,23 +47,53 @@ export type ColumnOf<T extends TableName> = Extract<
  * List columns here to surface their initial values. Only meaningful on
  * tables that log INSERTs (today: root tables).
  *
+ * `snapshotFields` declares FK columns whose target row's display values
+ * should be captured into the diff at write time. The audit handler resolves
+ * each listed column's id against the target table and stores the picked
+ * columns under `snapshot.old` / `snapshot.new` on the diff entry. The
+ * snapshot is frozen in the audit row forever — historical accuracy is
+ * preserved if the FK target is later renamed or deleted.
+ *
  * Each variant declares `createFields` directly (rather than sharing a base
  * via intersection) so TS can narrow `T` — and autocomplete column names —
  * inside object-literal config entries.
  */
+type SnapshotFields<T extends TableName> = {
+  [Col in ColumnOf<T>]?: {
+    [Target in TableName]: {
+      table: Target;
+      displayColumns: readonly ColumnOf<Target>[];
+    };
+  }[TableName];
+};
+
+/**
+ * Flattened view of one snapshot declaration, returned by
+ * `getSnapshotFields`. Lives at type-level so consumers (the audit handler)
+ * can iterate without re-parsing the typed config.
+ */
+export type SnapshotFieldEntry = {
+  column: string;
+  table: string;
+  displayColumns: readonly string[];
+};
+
 type RootTable<T extends TableName> = {
   role: "root";
   createFields?: readonly ColumnOf<T>[];
+  snapshotFields?: SnapshotFields<T>;
 };
 
 type ExtensionTable<T extends TableName> = {
   role: "extension";
   createFields?: readonly ColumnOf<T>[];
+  snapshotFields?: SnapshotFields<T>;
 };
 
 type ChildTable<T extends TableName> = {
   entityIdColumn: ColumnOf<T>;
   createFields?: readonly ColumnOf<T>[];
+  snapshotFields?: SnapshotFields<T>;
 };
 
 /**
@@ -84,6 +114,7 @@ type IndirectResolve = {
 type IndirectTable<T extends TableName> = {
   resolve: IndirectResolve;
   createFields?: readonly ColumnOf<T>[];
+  snapshotFields?: SnapshotFields<T>;
 };
 
 export type TableConfig<T extends TableName = TableName> =
@@ -180,7 +211,10 @@ export const auditConfig = {
             "triggerProcessId",
             "triggerTiming",
             "calculateFromBom"
-          ]
+          ],
+          snapshotFields: {
+            triggerProcessId: { table: "process", displayColumns: ["name"] }
+          }
         }
       }
     },
@@ -360,6 +394,13 @@ export const auditConfig = {
           createFields: ["quantity", "overridePrice", "active"]
         }
       }
+    },
+
+    fixedAsset: {
+      label: "Fixed Asset",
+      tables: {
+        fixedAsset: { role: "root" }
+      }
     }
   } satisfies Record<string, EntityConfig>,
 
@@ -433,7 +474,8 @@ export const auditConfig = {
     maintenanceDispatchComment: "Dispatch Comment",
     pricingRule: "Pricing Rule",
     customerItemPriceOverride: "Price Override",
-    customerItemPriceOverrideBreak: "Quantity Break"
+    customerItemPriceOverrideBreak: "Quantity Break",
+    fixedAsset: "Fixed Asset"
   } satisfies Partial<Record<TableName, string>>,
 
   /** Fields to skip in diff computation */
@@ -505,6 +547,33 @@ export function isAuditableTable(table: string): boolean {
  */
 export function getCreateFields(config: TableConfig): readonly string[] {
   return config.createFields ?? [];
+}
+
+/**
+ * FK columns on this table whose target row's display values should be
+ * snapshotted into the diff at write time. Each entry maps a column name
+ * to its target table and the columns on that table to read as the human
+ * display values. A single-column list yields a Linear-style inline pill
+ * in the audit drawer; a multi-column list renders as an expanded section.
+ */
+export function getSnapshotFields(
+  config: TableConfig
+): readonly SnapshotFieldEntry[] {
+  const snapshot = config.snapshotFields;
+  if (!snapshot) return [];
+  const entries: SnapshotFieldEntry[] = [];
+  for (const [column, spec] of Object.entries(snapshot) as [
+    string,
+    { table: string; displayColumns: readonly string[] } | undefined
+  ][]) {
+    if (!spec) continue;
+    entries.push({
+      column,
+      table: spec.table,
+      displayColumns: spec.displayColumns
+    });
+  }
+  return entries;
 }
 
 /** @deprecated Use isAuditableTable instead */

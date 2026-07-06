@@ -1,23 +1,22 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { NOVU_API_URL, NOVU_SECRET_KEY } from "@carbon/env";
-import type { TriggerPayload } from "@carbon/notifications";
-import {
-  getSubscriberId,
-  NotificationEvent,
-  NotificationWorkflow,
-  triggerBulk
-} from "@carbon/notifications";
-import { Novu } from "@novu/node";
+import { NotificationEvent } from "@carbon/notifications";
 import { inngest } from "../../client";
+
+type NotifyEvent = {
+  name: "carbon/notify";
+  data: {
+    event: NotificationEvent;
+    companyId: string;
+    documentId: string;
+    recipient: { type: "user"; userId: string };
+  };
+};
 
 export const cleanupFunction = inngest.createFunction(
   { id: "cleanup", retries: 2 },
   { cron: "0 7,12,17 * * *" },
   async ({ step }) => {
     const serviceRole = getCarbonServiceRole();
-    const novu = new Novu(NOVU_SECRET_KEY!, {
-      backendUrl: NOVU_API_URL
-    });
 
     await step.run("expire-quotes-and-rfqs", async () => {
       console.log(`Starting cleanup tasks: ${new Date().toISOString()}`);
@@ -132,32 +131,25 @@ export const cleanupFunction = inngest.createFunction(
           return;
         }
 
-        const notificationPayloads: TriggerPayload[] = expiredQuotes.data
+        const notificationEvents: NotifyEvent[] = expiredQuotes.data
           .filter((quote) => Boolean(quote.salesPersonId))
-          .map((quote) => {
-            return {
-              workflow: NotificationWorkflow.Expiration,
-              payload: {
-                documentId: quote.id,
-                event: NotificationEvent.QuoteExpired,
-                recordId: quote.id,
-                description: `Quote ${quote.quoteId} has expired`
-              },
-              user: {
-                subscriberId: getSubscriberId({
-                  companyId: quote.companyId,
-                  userId: quote.salesPersonId!
-                })
+          .map((quote) => ({
+            data: {
+              companyId: quote.companyId,
+              documentId: quote.id,
+              event: NotificationEvent.QuoteExpired,
+              recipient: {
+                type: "user" as const,
+                userId: quote.salesPersonId!
               }
-            };
-          });
+            },
+            name: "carbon/notify" as const
+          }));
 
-        if (notificationPayloads.length > 0) {
-          console.log(
-            `Triggering ${notificationPayloads.length} notifications`
-          );
+        if (notificationEvents.length > 0) {
+          console.log(`Triggering ${notificationEvents.length} notifications`);
           try {
-            await triggerBulk(novu, notificationPayloads.flat());
+            await inngest.send(notificationEvents);
           } catch (error) {
             console.error("Error triggering notifications");
             console.error(error);
@@ -218,9 +210,10 @@ export const cleanupFunction = inngest.createFunction(
             ])
           );
 
-          const gaugeNotificationPayloads: TriggerPayload[] = [];
+          const gaugeNotificationEvents: NotifyEvent[] = [];
+          const notifiedGaugeIds = new Set<string>();
 
-          // Create notification payloads for each gauge
+          // Create notify events for each gauge × recipient pair.
           for (const gauge of outOfCalibrationGauges.data) {
             if (!gauge.companyId || !gauge.id) continue;
 
@@ -234,41 +227,28 @@ export const cleanupFunction = inngest.createFunction(
               continue;
             }
 
-            // Create notification payloads for each user in the notification group
             for (const userId of notificationGroup) {
-              gaugeNotificationPayloads.push({
-                workflow: NotificationWorkflow.GaugeCalibration,
-                payload: {
+              gaugeNotificationEvents.push({
+                data: {
+                  companyId: gauge.companyId,
+                  documentId: gauge.id,
                   event: NotificationEvent.GaugeCalibrationExpired,
-                  recordId: gauge.id,
-                  description: `Gauge ${gauge.gaugeId} is out of calibration`
+                  recipient: { type: "user" as const, userId }
                 },
-                user: {
-                  subscriberId: getSubscriberId({
-                    companyId: gauge.companyId,
-                    userId
-                  })
-                }
+                name: "carbon/notify" as const
               });
+              notifiedGaugeIds.add(gauge.id);
             }
           }
 
-          if (gaugeNotificationPayloads.length > 0) {
+          if (gaugeNotificationEvents.length > 0) {
             console.log(
-              `Triggering ${gaugeNotificationPayloads.length} gauge calibration notifications`
+              `Triggering ${gaugeNotificationEvents.length} gauge calibration notifications`
             );
             try {
-              await triggerBulk(novu, gaugeNotificationPayloads);
+              await inngest.send(gaugeNotificationEvents);
 
-              // Update lastCalibrationStatus for gauges that had notifications sent
-              // Extract unique gauge IDs from the notification payloads
-              const gaugeIdsToUpdate = [
-                ...new Set(
-                  gaugeNotificationPayloads.map(
-                    (payload) => payload.payload.recordId
-                  )
-                )
-              ];
+              const gaugeIdsToUpdate = [...notifiedGaugeIds];
 
               const updateGauges = await serviceRole
                 .from("gauge")
@@ -298,7 +278,44 @@ export const cleanupFunction = inngest.createFunction(
         console.log("No gauges going out of calibration found");
       }
 
-      console.log(`Cleanup tasks completed: ${new Date().toISOString()}`);
+      // Clean up old print jobs:
+      // - Completed jobs older than 30 days (served their purpose)
+      // - Failed jobs older than 90 days (retained longer for diagnostics)
+      // - Jobs in generating, queued, or printing status are never cleaned up
+      console.log("Cleaning up old print jobs...");
+      const thirtyDaysAgo = new Date(
+        Date.now() - 30 * 24 * 60 * 60 * 1000
+      ).toISOString();
+      const ninetyDaysAgo = new Date(
+        Date.now() - 90 * 24 * 60 * 60 * 1000
+      ).toISOString();
+
+      const [completedCleanup, failedCleanup] = await Promise.all([
+        serviceRole
+          .from("printJob")
+          .delete()
+          .eq("status", "completed")
+          .lt("completedAt", thirtyDaysAgo),
+        serviceRole
+          .from("printJob")
+          .delete()
+          .eq("status", "failed")
+          .lt("createdAt", ninetyDaysAgo)
+      ]);
+
+      if (completedCleanup.error) {
+        console.error(
+          `Error cleaning up completed print jobs: ${JSON.stringify(completedCleanup.error)}`
+        );
+      }
+      if (failedCleanup.error) {
+        console.error(
+          `Error cleaning up failed print jobs: ${JSON.stringify(failedCleanup.error)}`
+        );
+      }
+      console.log("Print job cleanup completed");
+
+      console.log(`🧹 Cleanup tasks completed: ${new Date().toISOString()}`);
     });
   }
 );

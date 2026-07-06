@@ -7,8 +7,8 @@ import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
 import { NotificationEvent } from "@carbon/notifications";
 import {
-  createCompanyPrivateSignedUrl,
-  getCompanyPrivateBucket
+  getCompanyPrivateBucket,
+  PO_EMAIL_ATTACHMENT_LIMIT_MB
 } from "@carbon/utils";
 import { renderAsync } from "@react-email/components";
 import { parseAcceptLanguage } from "intl-parse-accept-language";
@@ -18,11 +18,13 @@ import { getPaymentTermsList } from "~/modules/accounting";
 import { upsertDocument } from "~/modules/documents";
 import {
   finalizePurchaseOrder,
+  getDefaultAttachmentsForPO,
   getPurchaseOrder,
   getPurchaseOrderLines,
   getPurchaseOrderLocations,
   getSupplier,
   getSupplierContact,
+  getSupplierInteractionDocuments,
   purchaseOrderFinalizeValidator,
   updatePurchaseOrderStatus
 } from "~/modules/purchasing";
@@ -189,6 +191,7 @@ export async function action(args: ActionFunctionArgs) {
         body: {
           purchaseOrderId: orderId,
           companyId,
+          userId,
           source: "purchaseOrder",
           updatePrices: true,
           updateLeadTimes: false
@@ -310,81 +313,126 @@ export async function action(args: ActionFunctionArgs) {
         if (!purchaseOrderLocations.data)
           throw new Error("Failed to get purchase order locations");
         if (!paymentTerms.data) throw new Error("Failed to get payment terms");
+        if (!supplier.data.contact.email) break;
 
-        if (supplier.data.contact.email) {
-          const emailTemplate = PurchaseOrderEmail({
-            // @ts-expect-error TS2739 - TODO: fix type
-            company: company.data,
-            locale: locales?.[0] ?? "en-US",
-            purchaseOrder: purchaseOrder.data,
-            purchaseOrderLines: purchaseOrderLines.data ?? [],
-            purchaseOrderLocations: purchaseOrderLocations.data,
-            recipient: {
-              email: supplier.data.contact.email,
-              firstName: supplier.data.contact.firstName ?? undefined,
-              lastName: supplier.data.contact.lastName ?? undefined
-            },
-            sender: {
-              email: buyer.data.email,
-              firstName: buyer.data.firstName,
-              lastName: buyer.data.lastName
-            },
-            paymentTerms: paymentTerms.data
-          });
+        const emailTemplate = PurchaseOrderEmail({
+          // @ts-expect-error TS2739 - TODO: fix type
+          company: company.data,
+          locale: locales?.[0] ?? "en-US",
+          purchaseOrder: purchaseOrder.data,
+          purchaseOrderLines: purchaseOrderLines.data ?? [],
+          purchaseOrderLocations: purchaseOrderLocations.data,
+          recipient: {
+            email: supplier.data.contact.email,
+            firstName: supplier.data.contact.firstName ?? undefined,
+            lastName: supplier.data.contact.lastName ?? undefined
+          },
+          sender: {
+            email: buyer.data.email,
+            firstName: buyer.data.firstName,
+            lastName: buyer.data.lastName
+          },
+          paymentTerms: paymentTerms.data
+        });
 
-          const html = await renderAsync(emailTemplate);
-          const text = await renderAsync(emailTemplate, { plainText: true });
+        const html = await renderAsync(emailTemplate);
+        const text = await renderAsync(emailTemplate, { plainText: true });
 
-          const signedUrlResult = await createCompanyPrivateSignedUrl({
-            companyId,
-            requestedBucket: getCompanyPrivateBucket(companyId),
-            objectPath: documentFilePath,
-            expiresIn: 3600,
-            createSignedUrl: async (physicalBucket, objectPath, expiresIn) => {
-              const { data, error } = await serviceRole.storage
-                .from(physicalBucket)
-                .createSignedUrl(objectPath, expiresIn);
+        const attachments: Array<{ filename: string; path: string }> = [];
 
-              return {
-                signedUrl: data?.signedUrl ?? null,
-                error: error ?? null
-              };
+        const companyPrivateBucket = getCompanyPrivateBucket(companyId);
+
+        const { data: pdfSignedUrl, error: pdfSignedUrlError } =
+          await serviceRole.storage
+            .from(companyPrivateBucket)
+            .createSignedUrl(documentFilePath, 3600);
+
+        if (pdfSignedUrlError) {
+          console.error(
+            "Failed to create purchase order finalize attachment signed URL",
+            {
+              companyId,
+              orderId,
+              documentFilePath,
+              physicalBucket: companyPrivateBucket,
+              error: pdfSignedUrlError
             }
-          });
-
-          for (const bucketError of signedUrlResult.errors) {
-            console.error(
-              "Failed to create purchase order finalize attachment signed URL",
-              {
-                companyId,
-                orderId,
-                documentFilePath,
-                physicalBucket: bucketError.physicalBucket,
-                error: bucketError.error
-              }
-            );
-          }
-
-          await Promise.all([
-            trigger("send-email", {
-              to: [buyer.data.email, supplier.data.contact.email],
-              cc: ccSelections?.length ? ccSelections : undefined,
-              from: buyer.data.email,
-              subject: `Purchase Order ${purchaseOrder.data.purchaseOrderId} from ${company.data.name}`,
-              html,
-              text,
-              attachments: signedUrlResult.signedUrl
-                ? [
-                    {
-                      path: signedUrlResult.signedUrl,
-                      filename: fileName
-                    }
-                  ]
-                : undefined,
-              companyId
-            })
-          ]);
+          );
         }
+
+        if (pdfSignedUrl?.signedUrl) {
+          attachments.push({
+            filename: fileName,
+            path: pdfSignedUrl.signedUrl
+          });
+        }
+
+        const interactionId = purchaseOrder.data.supplierInteractionId;
+        if (interactionId) {
+          const docs = await getSupplierInteractionDocuments(
+            serviceRole,
+            companyId,
+            interactionId
+          );
+          for (const doc of docs) {
+            const storagePath = `${companyId}/supplier-interaction/${interactionId}/${doc.name}`;
+            const { data: signedUrlData } = await serviceRole.storage
+              .from(companyPrivateBucket)
+              .createSignedUrl(storagePath, 3600);
+            if (signedUrlData?.signedUrl) {
+              attachments.push({
+                filename: doc.name,
+                path: signedUrlData.signedUrl
+              });
+            }
+          }
+        }
+
+        const itemIds = Array.from(
+          new Set(
+            (purchaseOrderLines.data ?? [])
+              .map((l) => l.itemId)
+              .filter((id): id is string => !!id)
+          )
+        );
+        const defaults = await getDefaultAttachmentsForPO(serviceRole, {
+          companyId,
+          supplierId: purchaseOrder.data.supplierId ?? null,
+          itemIds
+        });
+
+        for (const r of defaults) {
+          const { data: signedUrlData } = await serviceRole.storage
+            .from(companyPrivateBucket)
+            .createSignedUrl(r.path, 3600);
+          if (signedUrlData?.signedUrl) {
+            attachments.push({
+              filename: r.name,
+              path: signedUrlData.signedUrl
+            });
+          }
+        }
+
+        const totalKb = attachments.length
+          ? Math.round(file.byteLength / 1024) +
+            defaults.reduce((sum, r) => sum + (r.size ?? 0), 0)
+          : 0;
+        if (totalKb > PO_EMAIL_ATTACHMENT_LIMIT_MB * 1024) {
+          throw new Error(
+            `Total attachments exceed ${PO_EMAIL_ATTACHMENT_LIMIT_MB} MB limit`
+          );
+        }
+
+        await trigger("send-email", {
+          to: [buyer.data.email, supplier.data.contact.email],
+          cc: ccSelections?.length ? ccSelections : undefined,
+          from: buyer.data.email,
+          subject: `Purchase Order ${purchaseOrder.data.purchaseOrderId} from ${company.data.name}`,
+          html,
+          text,
+          attachments: attachments.length ? attachments : undefined,
+          companyId
+        });
       } catch (err) {
         throw redirect(
           path.to.purchaseOrder(orderId),

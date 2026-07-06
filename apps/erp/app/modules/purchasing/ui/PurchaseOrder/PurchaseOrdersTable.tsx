@@ -19,6 +19,7 @@ import {
   LuBookMarked,
   LuCalendar,
   LuContainer,
+  LuCopy,
   LuCreditCard,
   LuDollarSign,
   LuHandCoins,
@@ -404,6 +405,20 @@ const PurchaseOrdersTable = memo(
           </MenuItem>
 
           <MenuItem
+            disabled={!permissions.can("create", "purchasing") || !row.id}
+            onClick={() => {
+              if (!row.id) return;
+              fetcher.submit(null, {
+                method: "post",
+                action: path.to.purchaseOrderDuplicate(row.id)
+              });
+            }}
+          >
+            <MenuIcon icon={<LuCopy />} />
+            <Trans>Duplicate</Trans>
+          </MenuItem>
+
+          <MenuItem
             disabled={
               !["To Receive", "To Receive and Invoice"].includes(
                 row.status ?? ""
@@ -432,7 +447,7 @@ const PurchaseOrdersTable = memo(
           </MenuItem>
         </>
       ),
-      [deletePurchaseOrderModal, edit, permissions, receive]
+      [deletePurchaseOrderModal, edit, fetcher, permissions, receive]
     );
 
     return (

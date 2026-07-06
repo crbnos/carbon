@@ -2,7 +2,12 @@ import Table from "cli-table3";
 import pc from "picocolors";
 import { type AppId, TLD } from "./constants.js";
 import type { Container } from "./services/compose.js";
-import { PORT_NAMES, type PortMap, SHARED_REDIS_PORT } from "./worktree.js";
+import {
+  PORT_NAMES,
+  type PortMap,
+  projectName,
+  SHARED_REDIS_PORT
+} from "./worktree.js";
 
 // ---------------------------------------------------------------------------
 // Tables (status / list)
@@ -72,7 +77,7 @@ export function worktreesTable(
     ...BASE_STYLE
   });
   for (const r of rows) {
-    const project = r.slug ? `carbon-${r.slug}` : "—";
+    const project = r.slug ? projectName(r.slug) : "—";
     const stack = !r.slug
       ? pc.gray("not initialized")
       : r.dockerState === "running"

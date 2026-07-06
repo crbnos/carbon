@@ -21,6 +21,8 @@ npm run db:migrate <name-of-migration>
 
 This will create a new migration file in `packages/database/supabase/migrations/` with the timestamp prefix.
 
+> **WARNING:** Never use `000000` as the HHMMSS portion of a migration filename (e.g. `20260512000000_foo.sql`). The timestamp is the primary key for migrations and other branches may pick the same date. Always use randomized digits for the HHMMSS portion (e.g. `20260512041739_foo.sql`) to avoid cross-branch collisions.
+
 ### 2. Analyze the Migration Requirements
 
 - Identify what database changes are needed (new tables, columns, indexes, etc.)
@@ -104,53 +106,46 @@ ALTER TABLE "entityName" ADD CONSTRAINT "entityName_name_companyId_key"
 
 #### Row Level Security (RLS)
 
-**IMPORTANT**: Use the new standardized RLS pattern (2025+):
+**IMPORTANT**: Use the standardized RLS pattern from the rls-refactor migrations. Always qualify table names with `"public"."tableName"` and cast the helper function result with `::text[]`.
 
 ```sql
 -- Enable RLS
-ALTER TABLE "entityName" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."entityName" ENABLE ROW LEVEL SECURITY;
 
 -- Standardized policy names: SELECT, INSERT, UPDATE, DELETE
-CREATE POLICY "SELECT" ON "entityName"
-  FOR SELECT
-  TO authenticated
-  USING (
-    "companyId" IN (
-      SELECT "companyId"
-      FROM get_companies_with_employee_permission('module_view')
-    )
-  );
+-- For SELECT: use get_companies_with_employee_role() (any employee can view)
+-- For INSERT/UPDATE/DELETE: use get_companies_with_employee_permission('module_action')
 
-CREATE POLICY "INSERT" ON "entityName"
-  FOR INSERT
-  TO authenticated
-  WITH CHECK (
-    "companyId" IN (
-      SELECT "companyId"
-      FROM get_companies_with_employee_permission('module_create')
-    )
-  );
+CREATE POLICY "SELECT" ON "public"."entityName"
+FOR SELECT USING (
+  "companyId" = ANY (
+    (SELECT get_companies_with_employee_role())::text[]
+  )
+);
 
-CREATE POLICY "UPDATE" ON "entityName"
-  FOR UPDATE
-  TO authenticated
-  USING (
-    "companyId" IN (
-      SELECT "companyId"
-      FROM get_companies_with_employee_permission('module_update')
-    )
-  );
+CREATE POLICY "INSERT" ON "public"."entityName"
+FOR INSERT WITH CHECK (
+  "companyId" = ANY (
+    (SELECT get_companies_with_employee_permission('module_create'))::text[]
+  )
+);
 
-CREATE POLICY "DELETE" ON "entityName"
-  FOR DELETE
-  TO authenticated
-  USING (
-    "companyId" IN (
-      SELECT "companyId"
-      FROM get_companies_with_employee_permission('module_delete')
-    )
-  );
+CREATE POLICY "UPDATE" ON "public"."entityName"
+FOR UPDATE USING (
+  "companyId" = ANY (
+    (SELECT get_companies_with_employee_permission('module_update'))::text[]
+  )
+);
+
+CREATE POLICY "DELETE" ON "public"."entityName"
+FOR DELETE USING (
+  "companyId" = ANY (
+    (SELECT get_companies_with_employee_permission('module_delete'))::text[]
+  )
+);
 ```
+
+> **Reference migrations:** `20260228000000_rls-refactor-3.sql` (company-scoped) and `20260228024512_dimensions.sql` (group-scoped).
 
 #### Common Column Types
 

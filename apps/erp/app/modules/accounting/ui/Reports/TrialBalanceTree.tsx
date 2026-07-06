@@ -20,6 +20,7 @@ type TrialBalanceTreeProps = {
   data: TrialBalanceChart[];
   showTranslated?: boolean;
   parentCurrency?: string | null;
+  search: string;
 };
 
 function accountsToFlatTree(
@@ -60,6 +61,33 @@ function accountsToFlatTree(
 
   walk(null, 0);
   return result;
+}
+
+function filterAccounts(
+  accounts: TrialBalanceChart[],
+  search: string
+): TrialBalanceChart[] {
+  if (!search.trim()) return accounts;
+  const lower = search.toLowerCase();
+
+  const byId = new Map(accounts.map((a) => [a.id, a]));
+  const matched = new Set<string>();
+
+  for (const a of accounts) {
+    const nameMatch = a.name?.toLowerCase().includes(lower);
+    const numberMatch = a.number?.toLowerCase().includes(lower);
+    if (nameMatch || numberMatch) {
+      matched.add(a.id as string);
+      let parentId = a.parentId;
+      while (parentId) {
+        matched.add(parentId);
+        const parent = byId.get(parentId);
+        parentId = parent?.parentId ?? null;
+      }
+    }
+  }
+
+  return accounts.filter((a) => matched.has(a.id as string));
 }
 
 function formatCurrency(value: number): string {
@@ -103,11 +131,20 @@ function getDebitCredit(
 }
 
 const TrialBalanceTree = memo(
-  ({ data, showTranslated = false, parentCurrency }: TrialBalanceTreeProps) => {
+  ({
+    data,
+    showTranslated = false,
+    parentCurrency,
+    search
+  }: TrialBalanceTreeProps) => {
     useRealtime("journal");
     const parentRef = useRef<HTMLDivElement>(null);
 
-    const tree = useMemo(() => accountsToFlatTree(data), [data]);
+    const filtered = useMemo(
+      () => filterAccounts(data, search),
+      [data, search]
+    );
+    const tree = useMemo(() => accountsToFlatTree(filtered), [filtered]);
 
     // Build a lookup of balanceAtDate by account id for ratio calculation
     const balanceById = useMemo(() => {

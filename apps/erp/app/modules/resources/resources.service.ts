@@ -10,10 +10,13 @@ import type {
   maintenanceDispatchCommentValidator,
   maintenanceDispatchEventValidator,
   maintenanceDispatchItemValidator,
+  maintenanceDispatchPriority,
+  maintenanceDispatchStatus,
   maintenanceDispatchValidator,
   maintenanceDispatchWorkCenterValidator,
   maintenanceScheduleItemValidator,
   maintenanceScheduleValidator,
+  oeeImpact,
   partnerValidator,
   processValidator,
   trainingQuestionValidator,
@@ -1287,6 +1290,131 @@ export async function upsertLocation(
   return client.from("location").insert([location]).select("*").single();
 }
 
+export async function insertMaintenanceDispatch(
+  client: SupabaseClient<Database>,
+  input: {
+    companyId: string;
+    createdBy: string;
+    maintenanceDispatchId?: string;
+    status?: (typeof maintenanceDispatchStatus)[number];
+    priority?: (typeof maintenanceDispatchPriority)[number];
+    severity?:
+      | "Preventive"
+      | "Operator Performed"
+      | "Support Required"
+      | "OEM Required";
+    source?: "Scheduled" | "Reactive" | "Non-Conformance";
+    oeeImpact?: "Down" | "Planned" | "Impact" | "No Impact";
+    workCenterId?: string;
+    locationId: string;
+    assignee?: string;
+    suspectedFailureModeId?: string;
+    plannedStartTime?: string;
+    plannedEndTime?: string;
+    content?: Json;
+  }
+): Promise<{
+  data: { id: string; maintenanceDispatchId: string } | null;
+  error: import("@supabase/supabase-js").PostgrestError | null;
+}> {
+  let maintenanceDispatchId: string;
+  if (input.maintenanceDispatchId) {
+    maintenanceDispatchId = input.maintenanceDispatchId;
+  } else {
+    const seq = await client.rpc("get_next_sequence", {
+      sequence_name: "maintenanceDispatch",
+      company_id: input.companyId
+    });
+    if (seq.error || !seq.data) {
+      return {
+        data: null,
+        error:
+          seq.error ??
+          ({
+            message: "Failed to generate maintenanceDispatch sequence"
+          } as import("@supabase/supabase-js").PostgrestError)
+      };
+    }
+    maintenanceDispatchId = seq.data;
+  }
+
+  const dispatch = await client
+    .from("maintenanceDispatch")
+    .insert({
+      maintenanceDispatchId,
+      status: input.status ?? "Open",
+      priority: input.priority ?? "Medium",
+      severity: input.severity ?? "Support Required",
+      source: input.source ?? "Reactive",
+      oeeImpact: input.oeeImpact ?? "No Impact",
+      workCenterId: input.workCenterId ?? null,
+      locationId: input.locationId,
+      assignee: input.assignee ?? null,
+      suspectedFailureModeId: input.suspectedFailureModeId ?? null,
+      plannedStartTime: input.plannedStartTime ?? null,
+      plannedEndTime: input.plannedEndTime ?? null,
+      content: input.content,
+      companyId: input.companyId,
+      createdBy: input.createdBy,
+      updatedBy: input.createdBy
+    })
+    .select("id, maintenanceDispatchId")
+    .single();
+
+  if (dispatch.error) return { data: null, error: dispatch.error };
+
+  return {
+    data: {
+      id: dispatch.data.id,
+      maintenanceDispatchId: dispatch.data.maintenanceDispatchId
+    },
+    error: null
+  };
+}
+
+export async function updateMaintenanceDispatch(
+  client: SupabaseClient<Database>,
+  input: {
+    id: string;
+    updatedBy: string;
+    status?: (typeof maintenanceDispatchStatus)[number];
+    priority?: (typeof maintenanceDispatchPriority)[number];
+    severity?:
+      | "Preventive"
+      | "Operator Performed"
+      | "Support Required"
+      | "OEM Required";
+    source?: "Scheduled" | "Reactive" | "Non-Conformance";
+    oeeImpact?: (typeof oeeImpact)[number];
+    workCenterId?: string | null;
+    locationId?: string;
+    assignee?: string | null;
+    suspectedFailureModeId?: string | null;
+    actualFailureModeId?: string | null;
+    procedureId?: string | null;
+    plannedStartTime?: string | null;
+    plannedEndTime?: string | null;
+    actualStartTime?: string | null;
+    actualEndTime?: string | null;
+    content?: Json;
+  }
+): Promise<{
+  data: { id: string } | null;
+  error: import("@supabase/supabase-js").PostgrestError | null;
+}> {
+  const { id, ...rest } = input;
+  const result = await client
+    .from("maintenanceDispatch")
+    .update(sanitize(rest))
+    .eq("id", id)
+    .select("id")
+    .single();
+
+  if (result.error) return { data: null, error: result.error };
+  return { data: { id: result.data.id }, error: null };
+}
+
+/** @deprecated Use insertMaintenanceDispatch for new dispatches, updateMaintenanceDispatch for existing dispatches */
 export async function upsertMaintenanceDispatch(
   client: SupabaseClient<Database>,
   dispatch:

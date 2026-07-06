@@ -26,6 +26,7 @@ export type BaseOperation = {
   deadlineType?: DeadlineType;
   description?: string | null;
   dueDate?: string | null;
+  manuallyScheduled?: boolean;
   startDate?: string | null;
   laborTime?: number;
   laborUnit?: FactorUnit;
@@ -39,6 +40,7 @@ export type BaseOperation = {
   processId: string | null;
   setupTime?: number;
   setupUnit?: FactorUnit;
+  reworkId?: string | null;
   status?: JobOperationStatus;
   order?: number;
   workCenterId?: string | null;

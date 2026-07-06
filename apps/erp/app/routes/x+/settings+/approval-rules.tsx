@@ -30,7 +30,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
       .select("id, name")
       .eq("companyId", companyId)
       .eq("isCustomerOrgGroup", false)
+      .eq("isCustomerTypeGroup", false)
       .eq("isSupplierOrgGroup", false)
+      .eq("isSupplierTypeGroup", false)
   ]);
 
   if (rules.error) {

@@ -2,6 +2,11 @@ import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import {
+  dedupeViolations,
+  evaluateLinesForSurface,
+  isBlocked
+} from "@carbon/ee/storage-rules.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
@@ -9,10 +14,6 @@ import {
   insertManualInventoryAdjustment,
   inventoryAdjustmentValidator
 } from "~/modules/inventory";
-import {
-  evaluateLinesForSurface,
-  isBlocked
-} from "~/modules/items/itemRules.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -35,30 +36,62 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { ...d } = validation.data;
   const acknowledged = formData.get("acknowledged") === "true";
 
-  // Item Rule evaluation. Single synthetic line covering the adjustment.
+  // Business rule evaluation. Item rules fire on the `inventoryAdjustment`
+  // surface, and on `place` when the adjustment lands stock in a bin (positive
+  // delta) or `pick` when it removes from a bin (negative delta) — so bin-level
+  // rules tied to those surfaces also kick in for manual adjustments.
   const serviceRole = getCarbonServiceRole();
-  const { violations, ruleNames } = await evaluateLinesForSurface({
+  const qty = Number(d.quantity ?? 0);
+  const evalLine = [
+    {
+      lineId: itemId,
+      itemId,
+      storageUnitId: d.storageUnitId ?? null,
+      quantity: qty,
+      locationId: d.locationId
+    }
+  ];
+
+  const itemPass = await evaluateLinesForSurface({
     client: serviceRole,
     companyId,
     userId,
+    targetType: "item",
     surface: "inventoryAdjustment",
-    lines: [
-      {
-        lineId: itemId,
-        itemId,
-        storageUnitId: d.storageUnitId ?? null,
-        quantity: Number(d.quantity ?? 0),
-        locationId: d.locationId
-      }
-    ]
+    lines: evalLine
   });
 
-  if (violations.length > 0 && isBlocked(violations, acknowledged)) {
+  const allViolations = [...itemPass.violations];
+  const allRuleNames: Record<string, string> = { ...itemPass.ruleNames };
+
+  if (d.storageUnitId) {
+    // Pick the bin surface from `adjustmentType` only. `quantity` is a
+    // positive magnitude per `inventoryAdjustmentValidator` — sign-based
+    // direction detection would misclassify `Negative Adjmt.` as `place`.
+    // Item rules own the `place`/`pick` surfaces.
+    const isNegative = d.adjustmentType === "Negative Adjmt.";
+    const binSurface: "place" | "pick" = isNegative ? "pick" : "place";
+
+    const binPass = await evaluateLinesForSurface({
+      client: serviceRole,
+      companyId,
+      userId,
+      targetType: "item",
+      surface: binSurface,
+      lines: evalLine
+    });
+    allViolations.push(...binPass.violations);
+    Object.assign(allRuleNames, binPass.ruleNames);
+  }
+
+  const deduped = dedupeViolations(allViolations);
+
+  if (deduped.length > 0 && isBlocked(deduped, acknowledged)) {
     return {
       error: null,
       data: null,
-      violations,
-      ruleNames
+      violations: deduped,
+      ruleNames: allRuleNames
     };
   }
 
@@ -72,7 +105,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     const flashMessage =
       itemLedger.error === "Insufficient quantity for negative adjustment"
         ? "Insufficient quantity for negative adjustment"
-        : "Failed to create manual inventory adjustment";
+        : itemLedger.error === "Serial number not found"
+          ? "Serial number not found"
+          : "Failed to create manual inventory adjustment";
 
     throw redirect(
       path.to.inventoryItem(itemId),

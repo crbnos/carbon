@@ -28,6 +28,7 @@ import type {
   purchaseOrderLineValidator,
   purchaseOrderPaymentValidator,
   purchaseOrderStatusType,
+  purchaseOrderTypeType,
   purchaseOrderValidator,
   purchasingRfqStatusType,
   selectedLinesValidator,
@@ -94,6 +95,98 @@ export async function deletePurchaseOrderLine(
     .from("purchaseOrderLine")
     .delete()
     .eq("id", purchaseOrderLineId);
+}
+
+// Creates a new Draft PO header + delivery + payment via insertPurchaseOrder
+// and copies the source PO's lines into it. Receipt/invoice progress is
+// reset; only the order/line definition is duplicated.
+export async function duplicatePurchaseOrder(
+  client: SupabaseClient<Database>,
+  {
+    sourcePurchaseOrderId,
+    companyId,
+    companyGroupId,
+    userId
+  }: {
+    sourcePurchaseOrderId: string;
+    companyId: string;
+    companyGroupId: string;
+    userId: string;
+  }
+): Promise<{
+  data: { id: string; purchaseOrderId: string } | null;
+  error: import("@supabase/supabase-js").PostgrestError | null;
+}> {
+  const [source, sourceDelivery, sourceLines] = await Promise.all([
+    client
+      .from("purchaseOrder")
+      .select(
+        "id, supplierId, supplierContactId, supplierLocationId, supplierReference, currencyCode, purchaseOrderType, internalNotes, externalNotes"
+      )
+      .eq("id", sourcePurchaseOrderId)
+      .single(),
+    client
+      .from("purchaseOrderDelivery")
+      .select("locationId, receiptRequestedDate")
+      .eq("id", sourcePurchaseOrderId)
+      .maybeSingle(),
+    client
+      .from("purchaseOrderLine")
+      .select(
+        "purchaseOrderLineType, itemId, assetId, description, purchaseQuantity, supplierUnitPrice, inventoryUnitOfMeasureCode, purchaseUnitOfMeasureCode, locationId, storageUnitId, setupPrice, requiresInspection, customFields, conversionFactor, tags, internalNotes, externalNotes, exchangeRate, supplierShippingCost, modelUploadId, supplierTaxAmount, jobId, jobOperationId, promisedDate, requiredDate, accountId, costCenterId, ownerId, sortOrder, supplierPartId"
+      )
+      .eq("purchaseOrderId", sourcePurchaseOrderId)
+  ]);
+
+  if (source.error || !source.data) {
+    return { data: null, error: source.error };
+  }
+  if (sourceLines.error) {
+    return { data: null, error: sourceLines.error };
+  }
+
+  const insertResult = await insertPurchaseOrder(client, {
+    supplierId: source.data.supplierId,
+    supplierContactId: source.data.supplierContactId ?? undefined,
+    supplierLocationId: source.data.supplierLocationId ?? undefined,
+    supplierReference: source.data.supplierReference ?? undefined,
+    currencyCode: source.data.currencyCode ?? undefined,
+    purchaseOrderType: source.data.purchaseOrderType ?? undefined,
+    notes: source.data.internalNotes ?? undefined,
+    externalNotes: source.data.externalNotes ?? undefined,
+    locationId: sourceDelivery.data?.locationId ?? undefined,
+    receiptRequestedDate:
+      sourceDelivery.data?.receiptRequestedDate ?? undefined,
+    status: "Draft",
+    companyId,
+    companyGroupId,
+    createdBy: userId
+  });
+
+  if (insertResult.error || !insertResult.data) {
+    return insertResult;
+  }
+
+  const newId = insertResult.data.id;
+
+  if (sourceLines.data && sourceLines.data.length > 0) {
+    const lineRows = sourceLines.data.map((line) => ({
+      ...line,
+      purchaseOrderId: newId,
+      companyId,
+      createdBy: userId
+    }));
+    const lineInsert = await client
+      .from("purchaseOrderLine")
+      .insert(lineRows as never);
+    if (lineInsert.error) {
+      // Best-effort rollback so we don't leave an orphan header.
+      await deletePurchaseOrder(client, newId);
+      return { data: null, error: lineInsert.error };
+    }
+  }
+
+  return insertResult;
 }
 
 export async function deleteSupplier(
@@ -1052,7 +1145,8 @@ export async function sendSupplierQuote(
   return { data: null, error: null };
 }
 
-export async function updatePurchaseOrder(
+/** @deprecated Use updatePurchaseOrderStatus or the new updatePurchaseOrder instead */
+export async function updatePurchaseOrderStatusLegacy(
   client: SupabaseClient<Database>,
   purchaseOrder: {
     id: string;
@@ -1296,6 +1390,205 @@ export async function updateSupplierTax(
     .eq("supplierId", supplierTax.supplierId);
 }
 
+export async function insertPurchaseOrder(
+  client: SupabaseClient<Database>,
+  input: {
+    supplierId: string;
+    companyId: string;
+    companyGroupId: string;
+    createdBy: string;
+    purchaseOrderId?: string;
+    purchaseOrderType?: "Purchase" | "Return" | "Outside Processing";
+    locationId?: string;
+    status?: (typeof purchaseOrderStatusType)[number];
+    currencyCode?: string;
+    orderDate?: string;
+    supplierContactId?: string;
+    supplierLocationId?: string;
+    supplierQuoteId?: string;
+    receiptRequestedDate?: string;
+    supplierReference?: string;
+    notes?: Json;
+    externalNotes?: Json;
+    customFields?: Json;
+  }
+): Promise<{
+  data: { id: string; purchaseOrderId: string } | null;
+  error: import("@supabase/supabase-js").PostgrestError | null;
+}> {
+  let purchaseOrderId: string;
+  if (input.purchaseOrderId) {
+    purchaseOrderId = input.purchaseOrderId;
+  } else {
+    const seq = await client.rpc("get_next_sequence", {
+      sequence_name: "purchaseOrder",
+      company_id: input.companyId
+    });
+    if (seq.error || !seq.data) {
+      return {
+        data: null,
+        error:
+          seq.error ??
+          ({
+            message: "Failed to generate PO sequence"
+          } as import("@supabase/supabase-js").PostgrestError)
+      };
+    }
+    purchaseOrderId = seq.data;
+  }
+
+  const [supplierInteraction, supplierPayment, supplierShipping, purchaser] =
+    await Promise.all([
+      insertSupplierInteraction(client, input.companyId, input.supplierId),
+      getSupplierPayment(client, input.supplierId),
+      getSupplierShipping(client, input.supplierId),
+      getEmployeeJob(client, input.createdBy, input.companyId)
+    ]);
+
+  if (supplierInteraction.error)
+    return { data: null, error: supplierInteraction.error };
+  if (supplierPayment.error)
+    return { data: null, error: supplierPayment.error };
+  if (supplierShipping.error)
+    return { data: null, error: supplierShipping.error };
+
+  const {
+    paymentTermId,
+    invoiceSupplierId,
+    invoiceSupplierContactId,
+    invoiceSupplierLocationId
+  } = supplierPayment.data;
+
+  const { shippingMethodId, shippingTermId, incoterm, incotermLocation } =
+    supplierShipping.data;
+
+  let exchangeRate = 1;
+  let exchangeRateUpdatedAt = new Date().toISOString();
+  if (input.currencyCode) {
+    const currency = await getCurrencyByCode(
+      client,
+      input.companyGroupId,
+      input.currencyCode
+    );
+    if (currency.data) {
+      exchangeRate = currency.data.exchangeRate ?? 1;
+      exchangeRateUpdatedAt = new Date().toISOString();
+    }
+  }
+
+  const locationId = input.locationId ?? purchaser?.data?.locationId ?? null;
+
+  const order = await client
+    .from("purchaseOrder")
+    .insert({
+      purchaseOrderId,
+      purchaseOrderType: input.purchaseOrderType,
+      supplierId: input.supplierId,
+      supplierContactId: input.supplierContactId,
+      supplierLocationId: input.supplierLocationId,
+      supplierInteractionId: supplierInteraction.data?.id,
+      status: input.status ?? "Draft",
+      orderDate: input.orderDate ?? new Date().toISOString().split("T")[0],
+      currencyCode: input.currencyCode,
+      exchangeRate,
+      exchangeRateUpdatedAt,
+      supplierReference: input.supplierReference ?? null,
+      internalNotes: input.notes ?? null,
+      externalNotes: input.externalNotes ?? null,
+      customFields: input.customFields,
+      companyId: input.companyId,
+      createdBy: input.createdBy,
+      updatedBy: input.createdBy
+    })
+    .select("id, purchaseOrderId")
+    .single();
+
+  if (order.error) return { data: null, error: order.error };
+
+  const orderId = order.data.id;
+
+  const [delivery, payment] = await Promise.all([
+    client.from("purchaseOrderDelivery").insert({
+      id: orderId,
+      locationId,
+      receiptRequestedDate: input.receiptRequestedDate ?? null,
+      shippingMethodId,
+      shippingTermId,
+      incoterm,
+      incotermLocation,
+      companyId: input.companyId
+    }),
+    client.from("purchaseOrderPayment").insert({
+      id: orderId,
+      paymentTermId,
+      invoiceSupplierId: invoiceSupplierId ?? input.supplierId,
+      invoiceSupplierContactId,
+      invoiceSupplierLocationId,
+      companyId: input.companyId
+    })
+  ]);
+
+  if (delivery.error || payment.error) {
+    await deletePurchaseOrder(client, orderId);
+    return { data: null, error: delivery.error ?? payment.error };
+  }
+
+  return { data: { id: orderId, purchaseOrderId }, error: null };
+}
+
+export async function updatePurchaseOrder(
+  client: SupabaseClient<Database>,
+  input: {
+    id: string;
+    updatedBy: string;
+    status?: (typeof purchaseOrderStatusType)[number];
+    currencyCode?: string;
+    orderDate?: string;
+    supplierId?: string;
+    supplierContactId?: string | null;
+    supplierLocationId?: string | null;
+    supplierReference?: string;
+    purchaseOrderType?: (typeof purchaseOrderTypeType)[number];
+    notes?: string | null;
+    customFields?: Json;
+  },
+  companyGroupId?: string
+): Promise<{
+  data: { id: string } | null;
+  error: import("@supabase/supabase-js").PostgrestError | null;
+}> {
+  const { id, updatedBy, notes, ...updates } = input;
+
+  let exchangeRate: number | undefined;
+  let exchangeRateUpdatedAt: string | undefined;
+  if (updates.currencyCode && companyGroupId) {
+    const currency = await getCurrencyByCode(
+      client,
+      companyGroupId,
+      updates.currencyCode
+    );
+    if (currency.data) {
+      exchangeRate = currency.data.exchangeRate ?? 1;
+      exchangeRateUpdatedAt = new Date().toISOString();
+    }
+  }
+
+  return client
+    .from("purchaseOrder")
+    .update({
+      ...sanitize(updates),
+      ...(exchangeRate !== undefined && { exchangeRate }),
+      ...(exchangeRateUpdatedAt && { exchangeRateUpdatedAt }),
+      ...(notes !== undefined && { internalNotes: notes }),
+      updatedBy,
+      updatedAt: new Date().toISOString()
+    })
+    .eq("id", id)
+    .select("id")
+    .single();
+}
+
+/** @deprecated Use insertPurchaseOrder for new orders, updatePurchaseOrder for existing orders */
 export async function upsertPurchaseOrder(
   client: SupabaseClient<Database>,
   purchaseOrder:
@@ -1605,6 +1898,186 @@ export async function upsertSupplierProcess(
     .single();
 }
 
+export async function insertSupplierQuote(
+  client: SupabaseClient<Database>,
+  input: {
+    supplierId: string;
+    companyId: string;
+    companyGroupId: string;
+    createdBy: string;
+    supplierQuoteId?: string;
+    locationId?: string;
+    status?: (typeof supplierQuoteStatusType)[number];
+    currencyCode?: string;
+    expirationDate?: string;
+    supplierContactId?: string;
+    supplierLocationId?: string;
+    notes?: string;
+    customFields?: Json;
+    quotedDate?: string;
+    supplierReference?: string;
+    supplierQuoteType?: (typeof purchaseOrderTypeType)[number];
+  }
+): Promise<{
+  data: { id: string; supplierQuoteId: string } | null;
+  error: import("@supabase/supabase-js").PostgrestError | null;
+}> {
+  let supplierQuoteId: string;
+  if (input.supplierQuoteId) {
+    supplierQuoteId = input.supplierQuoteId;
+  } else {
+    const seq = await client.rpc("get_next_sequence", {
+      sequence_name: "supplierQuote",
+      company_id: input.companyId
+    });
+    if (seq.error || !seq.data) {
+      return {
+        data: null,
+        error:
+          seq.error ??
+          ({
+            message: "Failed to generate supplier quote sequence"
+          } as import("@supabase/supabase-js").PostgrestError)
+      };
+    }
+    supplierQuoteId = seq.data;
+  }
+
+  let exchangeRate = 1;
+  let exchangeRateUpdatedAt = new Date().toISOString();
+  if (input.currencyCode) {
+    const currency = await getCurrencyByCode(
+      client,
+      input.companyGroupId,
+      input.currencyCode
+    );
+    if (currency.data) {
+      exchangeRate = currency.data.exchangeRate ?? 1;
+      exchangeRateUpdatedAt = new Date().toISOString();
+    }
+  }
+
+  const supplierInteraction = await insertSupplierInteraction(
+    client,
+    input.companyId,
+    input.supplierId
+  );
+
+  if (supplierInteraction.error)
+    return { data: null, error: supplierInteraction.error };
+
+  const quote = await client
+    .from("supplierQuote")
+    .insert({
+      supplierQuoteId,
+      supplierId: input.supplierId,
+      supplierContactId: input.supplierContactId,
+      supplierLocationId: input.supplierLocationId,
+      supplierInteractionId: supplierInteraction.data?.id,
+      status: input.status ?? "Draft",
+      expirationDate: input.expirationDate,
+      currencyCode: input.currencyCode,
+      exchangeRate,
+      exchangeRateUpdatedAt,
+      internalNotes: input.notes,
+      customFields: input.customFields,
+      quotedDate: input.quotedDate ?? new Date().toISOString(),
+      supplierReference: input.supplierReference ?? null,
+      supplierQuoteType: input.supplierQuoteType ?? "Purchase",
+      companyId: input.companyId,
+      createdBy: input.createdBy,
+      updatedBy: input.createdBy
+    })
+    .select("id, supplierQuoteId, externalLinkId")
+    .single();
+
+  if (quote.error) return { data: null, error: quote.error };
+
+  const createdQuoteId = quote.data.id;
+
+  if (!quote.data.externalLinkId) {
+    const externalLink = await upsertExternalLink(client, {
+      documentType: "SupplierQuote",
+      documentId: createdQuoteId,
+      supplierId: input.supplierId,
+      expiresAt: input.expirationDate,
+      companyId: input.companyId
+    });
+
+    if (externalLink.data) {
+      await client
+        .from("supplierQuote")
+        .update({ externalLinkId: externalLink.data.id })
+        .eq("id", createdQuoteId);
+    }
+  }
+
+  return { data: { id: createdQuoteId, supplierQuoteId }, error: null };
+}
+
+export async function updateSupplierQuote(
+  client: SupabaseClient<Database>,
+  input: {
+    id: string;
+    updatedBy: string;
+    status?: (typeof supplierQuoteStatusType)[number];
+    currencyCode?: string;
+    expirationDate?: string | null;
+    supplierContactId?: string | null;
+    supplierLocationId?: string | null;
+    notes?: string | null;
+    customFields?: Json;
+  },
+  companyGroupId?: string
+): Promise<{
+  data: { id: string } | null;
+  error: import("@supabase/supabase-js").PostgrestError | null;
+}> {
+  const { id, updatedBy, notes, ...updates } = input;
+
+  let exchangeRate: number | undefined;
+  let exchangeRateUpdatedAt: string | undefined;
+
+  const existing = await client
+    .from("supplierQuote")
+    .select("currencyCode")
+    .eq("id", id)
+    .single();
+
+  if (existing.error) return { data: null, error: existing.error };
+
+  if (
+    updates.currencyCode &&
+    companyGroupId &&
+    existing.data.currencyCode !== updates.currencyCode
+  ) {
+    const currency = await getCurrencyByCode(
+      client,
+      companyGroupId,
+      updates.currencyCode
+    );
+    if (currency.data) {
+      exchangeRate = currency.data.exchangeRate ?? 1;
+      exchangeRateUpdatedAt = new Date().toISOString();
+    }
+  }
+
+  return client
+    .from("supplierQuote")
+    .update({
+      ...sanitize(updates),
+      ...(exchangeRate !== undefined && { exchangeRate }),
+      ...(exchangeRateUpdatedAt && { exchangeRateUpdatedAt }),
+      ...(notes !== undefined && { internalNotes: notes }),
+      updatedBy,
+      updatedAt: new Date().toISOString()
+    })
+    .eq("id", id)
+    .select("id")
+    .single();
+}
+
+/** @deprecated Use insertSupplierQuote for new quotes, updateSupplierQuote for existing quotes */
 export async function upsertSupplierQuote(
   client: SupabaseClient<Database>,
   supplierQuote:
@@ -1911,6 +2384,100 @@ export async function getPurchasingRFQSuppliers(
     .eq("purchasingRfqId", purchasingRfqId);
 }
 
+export async function insertPurchasingRFQ(
+  client: SupabaseClient<Database>,
+  input: {
+    companyId: string;
+    createdBy: string;
+    rfqId?: string;
+    rfqDate?: string;
+    expirationDate?: string;
+    locationId?: string;
+    employeeId?: string;
+    status?: (typeof purchasingRfqStatusType)[number];
+    notes?: string;
+    customFields?: Json;
+  }
+): Promise<{
+  data: { id: string; rfqId: string } | null;
+  error: import("@supabase/supabase-js").PostgrestError | null;
+}> {
+  let rfqId: string;
+  if (input.rfqId) {
+    rfqId = input.rfqId;
+  } else {
+    const seq = await client.rpc("get_next_sequence", {
+      sequence_name: "purchasingRfq",
+      company_id: input.companyId
+    });
+    if (seq.error || !seq.data) {
+      return {
+        data: null,
+        error:
+          seq.error ??
+          ({
+            message: "Failed to generate purchasingRfq sequence"
+          } as import("@supabase/supabase-js").PostgrestError)
+      };
+    }
+    rfqId = seq.data;
+  }
+
+  const rfq = await client
+    .from("purchasingRfq")
+    .insert({
+      rfqId,
+      rfqDate: input.rfqDate ?? today(getLocalTimeZone()).toString(),
+      expirationDate: input.expirationDate,
+      locationId: input.locationId,
+      employeeId: input.employeeId,
+      status: input.status ?? "Draft",
+      notes: input.notes,
+      customFields: input.customFields,
+      companyId: input.companyId,
+      createdBy: input.createdBy,
+      updatedBy: input.createdBy
+    })
+    .select("id, rfqId")
+    .single();
+
+  if (rfq.error) return { data: null, error: rfq.error };
+
+  return { data: { id: rfq.data.id, rfqId: rfq.data.rfqId }, error: null };
+}
+
+export async function updatePurchasingRFQ(
+  client: SupabaseClient<Database>,
+  input: {
+    id: string;
+    updatedBy: string;
+    rfqDate?: string;
+    expirationDate?: string | null;
+    locationId?: string;
+    employeeId?: string | null;
+    status?: (typeof purchasingRfqStatusType)[number];
+    notes?: string | null;
+    customFields?: Json;
+  }
+): Promise<{
+  data: { id: string } | null;
+  error: import("@supabase/supabase-js").PostgrestError | null;
+}> {
+  const { id, updatedBy, ...updates } = input;
+
+  return client
+    .from("purchasingRfq")
+    .update({
+      ...sanitize(updates),
+      updatedBy,
+      updatedAt: new Date().toISOString()
+    })
+    .eq("id", id)
+    .select("id")
+    .single();
+}
+
+/** @deprecated Use insertPurchasingRFQ for new RFQs, updatePurchasingRFQ for existing RFQs */
 export async function upsertPurchasingRFQ(
   client: SupabaseClient<Database>,
   purchasingRfq: {
@@ -2231,4 +2798,57 @@ export async function getPurchasingRFQSuppliersWithLinks(
     .from("purchasingRfqSupplier")
     .select("*, supplier:supplierId(id, name)")
     .eq("purchasingRfqId", purchasingRfqId);
+}
+
+export type PoDefaultAttachment = {
+  source: "company" | "supplier" | "item";
+  name: string;
+  size: number | null;
+  path: string;
+};
+
+export async function getDefaultAttachmentsForPO(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    supplierId: string | null;
+    itemIds: string[];
+  }
+): Promise<PoDefaultAttachment[]> {
+  const { companyId, supplierId, itemIds } = args;
+
+  const prefixes: { source: PoDefaultAttachment["source"]; path: string }[] = [
+    { source: "company", path: `${companyId}/default-attachments/company` }
+  ];
+  if (supplierId) {
+    prefixes.push({
+      source: "supplier",
+      path: `${companyId}/default-attachments/supplier/${supplierId}`
+    });
+  }
+  for (const id of itemIds ?? []) {
+    prefixes.push({
+      source: "item",
+      path: `${companyId}/default-attachments/item/${id}`
+    });
+  }
+
+  const results = await Promise.all(
+    prefixes.map(({ path }) => client.storage.from("private").list(path))
+  );
+
+  return results.flatMap((result, idx) => {
+    const { source, path: prefix } = prefixes[idx];
+    return (result.data ?? []).map((f) => ({
+      source,
+      name: f.name,
+      size:
+        (f.metadata as { size?: number } | null | undefined)?.size != null
+          ? Math.round(
+              ((f.metadata as { size?: number }).size as number) / 1024
+            )
+          : null,
+      path: `${prefix}/${f.name}`
+    }));
+  });
 }

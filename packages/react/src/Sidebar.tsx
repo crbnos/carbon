@@ -25,6 +25,7 @@ const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
 const SIDEBAR_WIDTH = "16rem";
 const SIDEBAR_WIDTH_MOBILE = "18rem";
 const SIDEBAR_WIDTH_ICON = "3rem";
+const SIDEBAR_WIDTH_ICON_TOUCH = "4rem";
 const SIDEBAR_KEYBOARD_SHORTCUT = "b";
 
 type SidebarContext = {
@@ -35,6 +36,8 @@ type SidebarContext = {
   setOpenMobile: (open: boolean) => void;
   isMobile: boolean;
   toggleSidebar: () => void;
+  /** When true, menu buttons render with larger touch targets (for touchscreen-first apps like the MES). */
+  touch: boolean;
 };
 
 const SidebarContext = React.createContext<SidebarContext | null>(null);
@@ -54,6 +57,7 @@ const SidebarProvider = React.forwardRef<
     defaultOpen?: boolean;
     open?: boolean;
     onOpenChange?: (open: boolean) => void;
+    touch?: boolean;
   }
 >(
   (
@@ -61,6 +65,7 @@ const SidebarProvider = React.forwardRef<
       defaultOpen = true,
       open: openProp,
       onOpenChange: setOpenProp,
+      touch = false,
       className,
       style,
       children,
@@ -127,9 +132,19 @@ const SidebarProvider = React.forwardRef<
         isMobile,
         openMobile,
         setOpenMobile,
-        toggleSidebar
+        toggleSidebar,
+        touch
       }),
-      [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar]
+      [
+        state,
+        open,
+        setOpen,
+        isMobile,
+        openMobile,
+        setOpenMobile,
+        toggleSidebar,
+        touch
+      ]
     );
 
     return (
@@ -139,7 +154,11 @@ const SidebarProvider = React.forwardRef<
             style={
               {
                 "--sidebar-width": SIDEBAR_WIDTH,
-                "--sidebar-width-icon": isMobile ? 0 : SIDEBAR_WIDTH_ICON,
+                "--sidebar-width-icon": isMobile
+                  ? 0
+                  : touch
+                    ? SIDEBAR_WIDTH_ICON_TOUCH
+                    : SIDEBAR_WIDTH_ICON,
                 ...style
               } as React.CSSProperties
             }
@@ -184,7 +203,7 @@ const Sidebar = React.forwardRef<
       return (
         <div
           className={cn(
-            "flex h-full w-[--sidebar-width] flex-col bg-sidebar text-sidebar-foreground",
+            "flex h-full w-[var(--sidebar-width)] flex-col bg-sidebar text-sidebar-foreground",
             className
           )}
           ref={ref}
@@ -201,7 +220,7 @@ const Sidebar = React.forwardRef<
           <DrawerContent
             data-sidebar="sidebar"
             data-mobile="true"
-            className="w-[--sidebar-width] bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
+            className="w-[var(--sidebar-width)] bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
             style={
               {
                 "--sidebar-width": SIDEBAR_WIDTH_MOBILE
@@ -227,25 +246,25 @@ const Sidebar = React.forwardRef<
         {/* ease-out-quint: fast start, smooth deceleration - feels snappy and responsive */}
         <div
           className={cn(
-            "relative h-svh w-[--sidebar-width] bg-transparent transition-[width] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none",
+            "relative h-svh w-[var(--sidebar-width)] bg-transparent transition-[width] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none",
             "group-data-[collapsible=offcanvas]:w-0",
             "group-data-[side=right]:rotate-180",
             variant === "floating" || variant === "inset"
               ? "group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4))]"
-              : "group-data-[collapsible=icon]:w-[--sidebar-width-icon]"
+              : "group-data-[collapsible=icon]:w-[var(--sidebar-width-icon)]"
           )}
         />
         <div
           className={cn(
             // ease-out-quint (0.23,1,0.32,1): strong deceleration curve for snappy, spring-like feel
-            "fixed inset-y-0 z-10 hidden h-svh w-[--sidebar-width] transition-[left,right,width] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none md:flex",
+            "fixed inset-y-0 z-10 hidden h-svh w-[var(--sidebar-width)] transition-[left,right,width] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none md:flex",
             side === "left"
               ? "left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]"
               : "right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
             // Adjust the padding for floating and inset variants.
             variant === "floating" || variant === "inset"
               ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4)_+2px)]"
-              : "group-data-[collapsible=icon]:w-[--sidebar-width-icon] group-data-[side=left]:border-r group-data-[side=right]:border-l",
+              : "group-data-[collapsible=icon]:w-[var(--sidebar-width-icon)] group-data-[side=left]:border-r group-data-[side=right]:border-l",
             className
           )}
           {...props}
@@ -534,8 +553,8 @@ const sidebarMenuButtonVariants = cva(
     "peer/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md px-2 py-1.5 text-left text-sm outline-none",
     // Default: muted text color (Vercel style - text is subdued until interaction)
     "text-sidebar-foreground/70",
-    // Icons inherit the muted color
-    "[&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:text-sidebar-foreground/70",
+    // Icons inherit the muted color (size is applied per touch/non-touch mode below)
+    "[&>svg]:shrink-0 [&>svg]:text-sidebar-foreground/70",
     // Focus ring
     "ring-sidebar-ring focus-visible:ring-2",
     // Transitions - fast and smooth
@@ -553,8 +572,6 @@ const sidebarMenuButtonVariants = cva(
     "[&[data-active=true]>svg]:text-sidebar-foreground",
     // Open state (for collapsible menus)
     "data-[state=open]:bg-sidebar-accent/50 data-[state=open]:text-sidebar-foreground",
-    // Collapsed icon mode
-    "group-data-[collapsible=icon]:!size-8 group-data-[collapsible=icon]:!p-2",
     // Text truncation
     "[&>span:last-child]:truncate"
   ].join(" "),
@@ -601,7 +618,23 @@ const SidebarMenuButton = React.forwardRef<
     ref
   ) => {
     const Comp = asChild ? Slot : "button";
-    const { isMobile, state } = useSidebar();
+    const { isMobile, state, touch } = useSidebar();
+
+    // Touch-first apps (MES) need larger hit areas: taller rows, bigger icons,
+    // and a roomier square in the collapsed icon rail. Kept out of the cva base
+    // so the !important collapsed sizing never conflicts between modes.
+    const sizing = touch
+      ? cn(
+          // Expanded / mobile sheet: taller rows + bigger icons
+          "min-h-11 [&>svg]:size-5",
+          // Collapsed icon rail: a roomy centered square showing only the
+          // leading icon/avatar (labels, counts, chevron clip away cleanly)
+          "group-data-[collapsible=icon]:!size-12 group-data-[collapsible=icon]:!p-0 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:[&>svg]:size-6 group-data-[collapsible=icon]:[&>:not(:first-child)]:hidden"
+        )
+      : cn(
+          "[&>svg]:size-4",
+          "group-data-[collapsible=icon]:!size-8 group-data-[collapsible=icon]:!p-2"
+        );
 
     const button = (
       <Comp
@@ -609,7 +642,11 @@ const SidebarMenuButton = React.forwardRef<
         data-sidebar="menu-button"
         data-size={size}
         data-active={isActive}
-        className={cn(sidebarMenuButtonVariants({ variant, size }), className)}
+        className={cn(
+          sidebarMenuButtonVariants({ variant, size }),
+          sizing,
+          className
+        )}
         {...props}
       />
     );
@@ -718,7 +755,7 @@ const SidebarMenuSkeleton = React.forwardRef<
         />
       )}
       <Skeleton
-        className="h-4 flex-1 max-w-[--skeleton-width]"
+        className="h-4 flex-1 max-w-[var(--skeleton-width)]"
         data-sidebar="menu-skeleton-text"
         style={
           {

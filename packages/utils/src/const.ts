@@ -5,6 +5,9 @@ export const FILE_SIZE_LIMIT_MB = {
   DOCUMENT_UPLOAD: 50
 } as const;
 
+export const PO_EMAIL_ATTACHMENT_LIMIT_MB = 25;
+export const PO_EMAIL_ATTACHMENT_WARN_MB = 20;
+
 export const getFileSizeLimit = (type: keyof typeof FILE_SIZE_LIMIT_MB) => {
   const valueMegaBytes = FILE_SIZE_LIMIT_MB[type];
   const valueBytes = valueMegaBytes * 1024 * 1024;

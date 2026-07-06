@@ -134,23 +134,20 @@ export default function TraceabilityRoute() {
   };
 
   const openEntity = (entity: EntityRow) => {
-    recordRecent(entity);
-    navigate(
-      `${path.to.traceabilityGraph}?trackedEntityId=${encodeURIComponent(entity.id)}`
-    );
-  };
+    const params = new URLSearchParams();
 
-  const openId = (id: string) => {
-    navigate(
-      `${path.to.traceabilityGraph}?trackedEntityId=${encodeURIComponent(id)}`
-    );
+    recordRecent(entity);
+
+    params.set("trackedEntityId", entity.id);
+
+    navigate(`${path.to.traceabilityGraph}?${params.toString()}`);
   };
 
   return (
     <SearchLandingPage
       icon={LuNetwork}
       heading={t`Traceability`}
-      description={t`Scan a label or search by ID, serial number, or batch number.`}
+      description={t`Scan a label or search by item ID or tracking ID.`}
     >
       <Command
         shouldFilter={false}
@@ -197,7 +194,7 @@ export default function TraceabilityRoute() {
                 <EntityRowItem
                   key={entity.id}
                   entity={entity}
-                  onSelect={() => openId(entity.id)}
+                  onSelect={() => openEntity(entity)}
                 />
               ))}
             </CommandGroup>
@@ -218,17 +215,15 @@ function EntityRowItem({
   const meta = entityStatusMeta(entity.status);
   const Icon = meta.icon;
   const headline = headlineFor(entity);
-  const batch = entity.attributes?.["Batch Number"] as string | undefined;
-  const serial = entity.attributes?.["Serial Number"] as string | undefined;
-  const trackingHint = serial
-    ? `Serial · ${serial}`
-    : batch
-      ? `Batch · ${batch}`
-      : (entity.sourceDocument ?? entity.id.slice(0, 12));
+  const trackingHint =
+    entity.sourceDocumentReadableId ??
+    entity.sourceDocument ??
+    entity.id.slice(0, 12);
+  const trackingIdHint = entity.readableId ?? entity.id;
 
   return (
     <CommandItem
-      value={`${headline} ${entity.id} ${serial ?? ""} ${batch ?? ""} ${entity.sourceDocumentReadableId ?? ""} ${entity.readableId ?? ""}`}
+      value={`${headline} ${entity.id} ${entity.sourceDocumentReadableId ?? ""} ${entity.readableId ?? ""}`}
       onSelect={onSelect}
       className="!py-2.5 !px-3 gap-3 cursor-pointer rounded-lg"
     >
@@ -239,10 +234,17 @@ function EntityRowItem({
         <Icon className="size-4 text-white drop-shadow-sm" />
       </span>
       <div className="flex flex-col flex-1 min-w-0 gap-0.5">
-        <p className="text-sm font-medium truncate leading-5">{headline}</p>
+        <span className="block text-sm font-medium truncate leading-5">
+          {headline}
+        </span>
         <p className="text-[11px] text-muted-foreground truncate leading-4">
           {trackingHint}
         </p>
+        <div className="flex items-center gap-1 text-[11px] text-muted-foreground leading-4 min-w-0">
+          <span className="block min-w-0 truncate">
+            {`Tracking ${trackingIdHint}`}
+          </span>
+        </div>
       </div>
       <HStack spacing={2} className="items-center shrink-0">
         {entity.status && (
@@ -263,8 +265,6 @@ function EntityRowItem({
 
 function headlineFor(entity: EntityRow): string {
   return (
-    (entity.attributes?.["Serial Number"] as string | undefined) ??
-    (entity.attributes?.["Batch Number"] as string | undefined) ??
     entity.sourceDocumentReadableId ??
     entity.readableId ??
     entity.id.slice(0, 12)

@@ -103,6 +103,273 @@ export const riskStatus = [
 
 export const riskRegisterType = ["Risk", "Opportunity"] as const;
 
+export const inspectionDocumentValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  name: zfd.text(z.string().optional()),
+  partId: z.string().min(1, { message: "Part is required" }),
+  drawingNumber: zfd.text(z.string().optional()),
+  pdfUrl: zfd.text(z.string().optional()),
+  annotations: zfd.text(z.string().optional()),
+  features: zfd.text(z.string().optional())
+});
+
+export const balloonFeatureValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  inspectionDocumentId: z.string().min(1, { message: "Diagram is required" }),
+  balloonNumber: zfd.numeric(z.number().min(1)),
+  description: z.string().min(1, { message: "Description is required" }),
+  nominalValue: zfd.numeric(z.number().optional()),
+  tolerancePlus: zfd.numeric(z.number().optional()),
+  toleranceMinus: zfd.numeric(z.number().optional()),
+  unitOfMeasureCode: zfd.text(z.string().optional())
+});
+
+export const balloonCreateFromPayloadItemValidator = z.object({
+  pageNumber: z.number(),
+  regionX: z.number(),
+  regionY: z.number(),
+  regionWidth: z.number(),
+  regionHeight: z.number(),
+  label: z.string().min(1),
+  xCoordinate: z.number(),
+  yCoordinate: z.number(),
+  nominalValue: z.string().nullable().optional(),
+  tolerancePlus: z.string().nullable().optional(),
+  toleranceMinus: z.string().nullable().optional(),
+  unit: z.string().nullable().optional(),
+  description: z.string().nullable().optional()
+});
+
+export const balloonUpdateItemValidator = z.object({
+  id: z.string().min(1),
+  pageNumber: z.number().optional(),
+  regionX: z.number().optional(),
+  regionY: z.number().optional(),
+  regionWidth: z.number().optional(),
+  regionHeight: z.number().optional(),
+  label: z.string().optional(),
+  xCoordinate: z.number().optional(),
+  yCoordinate: z.number().optional(),
+  nominalValue: z.string().nullable().optional(),
+  tolerancePlus: z.string().nullable().optional(),
+  toleranceMinus: z.string().nullable().optional(),
+  unit: z.string().nullable().optional(),
+  description: z.string().nullable().optional()
+});
+
+export const balloonDeleteValidator = z.object({
+  ids: z.array(z.string().min(1))
+});
+
+const normalizedCoordinateValidator = z.number().min(0).max(1);
+const normalizedSizeValidator = z.number().gt(0).max(1);
+const pageNumberValidator = z.number().int().min(1);
+
+export const balloonAnchorCreateItemValidator = z
+  .object({
+    pageNumber: pageNumberValidator,
+    regionX: normalizedCoordinateValidator,
+    regionY: normalizedCoordinateValidator,
+    regionWidth: normalizedSizeValidator,
+    regionHeight: normalizedSizeValidator
+  })
+  .strict();
+
+export const balloonCreateItemWithOverlayValidator = z
+  .object({
+    pageNumber: pageNumberValidator,
+    regionX: normalizedCoordinateValidator,
+    regionY: normalizedCoordinateValidator,
+    regionWidth: normalizedSizeValidator,
+    regionHeight: normalizedSizeValidator,
+    label: z.string().min(1),
+    xCoordinate: normalizedCoordinateValidator,
+    yCoordinate: normalizedCoordinateValidator,
+    nominalValue: z.string().nullable().optional(),
+    tolerancePlus: z.string().nullable().optional(),
+    toleranceMinus: z.string().nullable().optional(),
+    unit: z.string().nullable().optional(),
+    description: z.string().nullable().optional(),
+    type: z.enum(procedureStepType).optional(),
+    data: z.record(z.unknown()).optional()
+  })
+  .strict();
+
+export const balloonCreateItemsValidator = z.array(
+  z.union([
+    balloonCreateItemWithOverlayValidator,
+    balloonAnchorCreateItemValidator
+  ])
+);
+
+export const balloonUpdateItemsValidator = z.array(
+  balloonUpdateItemValidator.extend({
+    pageNumber: pageNumberValidator.optional(),
+    regionX: normalizedCoordinateValidator.optional(),
+    regionY: normalizedCoordinateValidator.optional(),
+    regionWidth: normalizedSizeValidator.optional(),
+    regionHeight: normalizedSizeValidator.optional(),
+    xCoordinate: normalizedCoordinateValidator.optional(),
+    yCoordinate: normalizedCoordinateValidator.optional(),
+    data: z.record(z.unknown()).optional()
+  })
+);
+
+export const balloonDeleteIdsValidator = z.array(z.string().min(1));
+
+export const inspectionSaveFeatureCreateItemValidator = z
+  .object({
+    tempId: z.string().min(1),
+    pageNumber: pageNumberValidator,
+    label: z.string().min(1),
+    description: z.string().nullable().optional(),
+    nominalValue: z.string().nullable().optional(),
+    tolerancePlus: z.string().nullable().optional(),
+    toleranceMinus: z.string().nullable().optional(),
+    unit: z.string().nullable().optional(),
+    type: z.enum(procedureStepType).optional()
+  })
+  .strict();
+
+export const inspectionSaveFeatureUpdateItemValidator = z
+  .object({
+    id: z.string().min(1),
+    pageNumber: pageNumberValidator.optional(),
+    label: z.string().min(1).optional(),
+    description: z.string().nullable().optional(),
+    nominalValue: z.string().nullable().optional(),
+    tolerancePlus: z.string().nullable().optional(),
+    toleranceMinus: z.string().nullable().optional(),
+    unit: z.string().nullable().optional(),
+    type: z.enum(procedureStepType).optional()
+  })
+  .strict();
+
+export const inspectionSaveFeaturesPayloadValidator = z
+  .object({
+    create: z.array(inspectionSaveFeatureCreateItemValidator).default([]),
+    update: z.array(inspectionSaveFeatureUpdateItemValidator).default([]),
+    delete: z.array(z.string().min(1)).default([])
+  })
+  .strict();
+
+export const inspectionSaveBalloonGeometryCreateItemValidator = z
+  .object({
+    tempInspectionFeatureId: z.string().min(1).optional(),
+    inspectionFeatureId: z.string().min(1).optional(),
+    tempBalloonAnchorId: z.string().min(1).optional(),
+    pageNumber: pageNumberValidator,
+    regionX: normalizedCoordinateValidator,
+    regionY: normalizedCoordinateValidator,
+    regionWidth: normalizedSizeValidator,
+    regionHeight: normalizedSizeValidator,
+    xCoordinate: normalizedCoordinateValidator,
+    yCoordinate: normalizedCoordinateValidator
+  })
+  .strict()
+  .refine(
+    (data) =>
+      Boolean(data.tempInspectionFeatureId) ||
+      Boolean(data.inspectionFeatureId),
+    { message: "tempInspectionFeatureId or inspectionFeatureId is required" }
+  );
+
+export const inspectionSaveBalloonGeometryUpdateItemValidator = z
+  .object({
+    id: z.string().min(1),
+    pageNumber: pageNumberValidator.optional(),
+    regionX: normalizedCoordinateValidator.optional(),
+    regionY: normalizedCoordinateValidator.optional(),
+    regionWidth: normalizedSizeValidator.optional(),
+    regionHeight: normalizedSizeValidator.optional(),
+    xCoordinate: normalizedCoordinateValidator.optional(),
+    yCoordinate: normalizedCoordinateValidator.optional()
+  })
+  .strict();
+
+export const inspectionSaveBalloonsGeometryPayloadValidator = z
+  .object({
+    create: z
+      .array(inspectionSaveBalloonGeometryCreateItemValidator)
+      .default([]),
+    update: z
+      .array(inspectionSaveBalloonGeometryUpdateItemValidator)
+      .default([]),
+    delete: z.array(z.string().min(1)).default([])
+  })
+  .strict();
+
+/** @deprecated Legacy combined payload; use features + balloons geometry split. */
+export const inspectionSaveBalloonCreateItemValidator = z
+  .object({
+    tempBalloonAnchorId: z.string().min(1),
+    label: z.string().min(1),
+    xCoordinate: normalizedCoordinateValidator,
+    yCoordinate: normalizedCoordinateValidator,
+    nominalValue: z.string().nullable().optional(),
+    tolerancePlus: z.string().nullable().optional(),
+    toleranceMinus: z.string().nullable().optional(),
+    unit: z.string().nullable().optional(),
+    description: z.string().nullable().optional(),
+    type: z.enum(procedureStepType).optional()
+  })
+  .strict();
+
+/** @deprecated Legacy combined payload. */
+export const inspectionSaveBalloonUpdateItemValidator = z
+  .object({
+    id: z.string().min(1),
+    label: z.string().min(1).optional(),
+    xCoordinate: normalizedCoordinateValidator.optional(),
+    yCoordinate: normalizedCoordinateValidator.optional(),
+    nominalValue: z.string().nullable().optional(),
+    tolerancePlus: z.string().nullable().optional(),
+    toleranceMinus: z.string().nullable().optional(),
+    unit: z.string().nullable().optional(),
+    description: z.string().nullable().optional(),
+    type: z.enum(procedureStepType).optional()
+  })
+  .strict();
+
+/** @deprecated Legacy combined payload. */
+export const inspectionSaveBalloonsPayloadValidator = z
+  .object({
+    create: z.array(inspectionSaveBalloonCreateItemValidator).default([]),
+    update: z.array(inspectionSaveBalloonUpdateItemValidator).default([]),
+    delete: z.array(z.string().min(1)).default([])
+  })
+  .strict();
+
+export const inspectionSaveAnchorCreateItemValidator = z
+  .object({
+    tempId: z.string().min(1),
+    pageNumber: pageNumberValidator,
+    xCoordinate: normalizedCoordinateValidator,
+    yCoordinate: normalizedCoordinateValidator,
+    width: normalizedSizeValidator,
+    height: normalizedSizeValidator
+  })
+  .strict();
+
+export const inspectionSaveAnchorUpdateItemValidator = z
+  .object({
+    id: z.string().min(1),
+    pageNumber: pageNumberValidator.optional(),
+    xCoordinate: normalizedCoordinateValidator.optional(),
+    yCoordinate: normalizedCoordinateValidator.optional(),
+    width: normalizedSizeValidator.optional(),
+    height: normalizedSizeValidator.optional()
+  })
+  .strict();
+
+export const inspectionSaveAnchorsPayloadValidator = z
+  .object({
+    create: z.array(inspectionSaveAnchorCreateItemValidator).default([]),
+    update: z.array(inspectionSaveAnchorUpdateItemValidator).default([]),
+    delete: z.array(z.string().min(1)).default([])
+  })
+  .strict();
+
 export const gaugeValidator = z.object({
   id: zfd.text(z.string().optional()),
   gaugeId: zfd.text(z.string().optional()),

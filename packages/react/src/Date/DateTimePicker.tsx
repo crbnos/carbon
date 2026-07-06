@@ -2,6 +2,7 @@ import type { DateValue } from "@internationalized/date";
 import { useDatePicker } from "@react-aria/datepicker";
 import { useDatePickerState } from "@react-stately/datepicker";
 import type { DatePickerProps } from "@react-types/datepicker";
+import { cva } from "class-variance-authority";
 import type { ReactNode } from "react";
 import { useRef } from "react";
 import { LuBan, LuCalendarClock, LuInfo } from "react-icons/lu";
@@ -22,9 +23,23 @@ import { Calendar } from "./components/Calendar";
 import DateField from "./components/DateField";
 import TimeField from "./TimePicker";
 
+const dateTimePickerFieldVariants = cva("flex w-full px-4", {
+  variants: {
+    size: {
+      sm: "py-1",
+      md: "py-2",
+      lg: "py-3"
+    }
+  },
+  defaultVariants: {
+    size: "md"
+  }
+});
+
 const DateTimePicker = (
   props: DatePickerProps<DateValue> & {
     className?: string;
+    size?: "sm" | "md" | "lg";
     withButton?: boolean;
     inline?: ReactNode;
     helperText?: string;
@@ -77,9 +92,12 @@ const DateTimePicker = (
                 {...groupProps}
                 ref={ref}
                 className={cn("w-full inline-flex", props.className)}
+                size={props.size}
               >
-                <div className="flex w-full px-4 py-2">
-                  <DateField {...fieldProps} />
+                <div
+                  className={dateTimePickerFieldVariants({ size: props.size })}
+                >
+                  <DateField {...fieldProps} size={props.size} />
                   {state.isInvalid && (
                     <LuBan className="!text-destructive-foreground absolute right-[12px] top-[12px]" />
                   )}
@@ -87,7 +105,11 @@ const DateTimePicker = (
                 {props.withButton !== false && (
                   <div className="flex-shrink-0 -mt-px">
                     <PopoverTrigger tabIndex={-1}>
-                      <FieldButton {...buttonProps} isPressed={state.isOpen} />
+                      <FieldButton
+                        {...buttonProps}
+                        isPressed={state.isOpen}
+                        size={props.size}
+                      />
                     </PopoverTrigger>
                   </div>
                 )}

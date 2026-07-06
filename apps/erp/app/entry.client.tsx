@@ -1,4 +1,9 @@
+import workerSrc from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import { Fragment, startTransition } from "react";
+import { pdfjs } from "react-pdf";
+
+pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
+
 import { hydrateRoot } from "react-dom/client";
 import { HydratedRouter } from "react-router/dom";
 

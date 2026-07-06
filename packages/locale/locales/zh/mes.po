@@ -21,10 +21,6 @@ msgstr "{0} - 组 {1}"
 msgid "{0} Active"
 msgstr "{0} 个活跃"
 
-#. placeholder {0}: batch.quantity
-msgid "{0} available"
-msgstr "{0} 可用"
-
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
 #. placeholder {1}: operation.operationQuantity
@@ -64,6 +60,9 @@ msgstr "添加"
 msgid "Add & Issue"
 msgstr "添加并发放"
 
+msgid "Add a printer in the printing settings to print labels directly."
+msgstr "在打印设置中添加打印机以直接打印标签。"
+
 msgid "Add Inventory"
 msgstr "添加库存"
 
@@ -73,9 +72,6 @@ msgstr "添加备件"
 msgid "All"
 msgstr "全部"
 
-msgid "Are you sure you want to close out this operation? This will end all active production events for this operation."
-msgstr "确定要结束此工序吗？这将终止此工序的所有活跃生产事件。"
-
 msgid "Are you sure you want to delete this step?"
 msgstr "确定要删除此步骤吗？"
 
@@ -84,6 +80,12 @@ msgstr "确定要删除此考勤记录吗？此操作无法撤销。"
 
 msgid "Are you sure you want to end all production events? This will end all active operations without completing or finishing them."
 msgstr "确定要结束所有生产事件吗？这将终止所有活跃工序，而不会完成它们。"
+
+msgid "Are you sure you want to finish this operation? This will end all active production events for this operation."
+msgstr "您确定要完成此操作吗？这将结束此操作的所有活跃生产事件。"
+
+msgid "Are you sure you want to leave this page?"
+msgstr "您确定要离开此页面吗？"
 
 msgid "Assigned"
 msgstr "已分配"
@@ -100,10 +102,11 @@ msgstr "附加文件"
 msgid "Authentication Error"
 msgstr "认证错误"
 
-#. placeholder {0}: batch.readableId
-#. placeholder {1}: batch.quantity
-msgid "Batch {0} ({1} available)"
-msgstr "批次 {0}（{1} 可用）"
+msgid "available"
+msgstr "可用"
+
+msgid "Batch"
+msgstr "批次"
 
 msgid "Batch is not available"
 msgstr "批次不可用"
@@ -130,6 +133,9 @@ msgstr "登录即表示您同意<0>服务条款</0>和<1>隐私政策。</1>"
 
 msgid "Cancel"
 msgstr "取消"
+
+msgid "Cancelled"
+msgstr "已取消"
 
 msgid "Carbon Logo"
 msgstr "Carbon 标志"
@@ -162,19 +168,6 @@ msgstr "下班打卡"
 msgid "Clocked in since {0}"
 msgstr "自 {0} 起已打卡上班"
 
-msgid "Close"
-msgstr "关闭"
-
-msgid "Close Anyways"
-msgstr "仍然关闭"
-
-msgid "Close Out"
-msgstr "结束"
-
-#. placeholder {0}: operation.itemReadableId
-msgid "Close out {0}"
-msgstr "结束 {0}"
-
 #. placeholder {0}: active.data.current.column.title
 #. placeholder {1}: overColumnPosition + 1
 #. placeholder {2}: columnOrder.length
@@ -201,6 +194,9 @@ msgstr "公司"
 msgid "Complete"
 msgstr "完成"
 
+msgid "Complete All"
+msgstr "全部完成"
+
 msgid "Completed"
 msgstr "已完成"
 
@@ -218,6 +214,15 @@ msgstr "已消耗过期"
 msgid "Create {0}"
 msgstr "创建 {0}"
 
+msgid "Create Issue"
+msgstr "创建问题"
+
+msgid "Create Quality Issue"
+msgstr "创建质量问题"
+
+msgid "Create Rework"
+msgstr "创建返工"
+
 msgid "Customer"
 msgstr "客户"
 
@@ -229,6 +234,9 @@ msgstr "日期"
 
 msgid "Deadline"
 msgstr "截止日期"
+
+msgid "Default"
+msgstr "默认"
 
 msgid "Default Storage Unit"
 msgstr "默认存储单位"
@@ -242,6 +250,12 @@ msgstr "删除步骤"
 #. placeholder {0}: new Date(deletingEntry.clockIn).toLocaleString(locale)
 msgid "Delete Timecard ({0})"
 msgstr "删除考勤记录 ({0})"
+
+msgid "Describe the problem..."
+msgstr "描述问题..."
+
+msgid "Describe what needs to be reworked..."
+msgstr "描述需要返工的内容..."
 
 msgid "Description"
 msgstr "描述"
@@ -260,6 +274,12 @@ msgstr "停机"
 
 msgid "Download"
 msgstr "下载"
+
+msgid "Download Labels"
+msgstr "下载标签"
+
+msgid "Draft"
+msgstr "草稿"
 
 msgid "Drag and drop a file here, or click to select a file"
 msgstr "拖放文件到此处，或点击选择文件"
@@ -308,6 +328,18 @@ msgstr "错误"
 msgid "Estimated"
 msgstr "估计"
 
+msgid "Expired"
+msgstr "已过期"
+
+msgid "Expired {date}"
+msgstr "已过期 {date}"
+
+msgid "Expires {date}"
+msgstr "过期时间 {date}"
+
+msgid "Expiring first"
+msgstr "即将过期优先"
+
 msgid "Failed to complete inventory adjustment"
 msgstr "库存调整失败"
 
@@ -342,11 +374,27 @@ msgstr "与工单和商机行相关的文件。"
 msgid "Filter"
 msgstr "筛选"
 
+msgid "Finish"
+msgstr "完成"
+
+#. placeholder {0}: operation.itemReadableId
+msgid "Finish {0}"
+msgstr "完成 {0}"
+
+msgid "Finish Anyways"
+msgstr "仍然完成"
+
 msgid "Forgot to Clock Out?"
 msgstr "忘记打卡下班了？"
 
+msgid "Go back to operation"
+msgstr "返回操作"
+
 msgid "Have a technical issue? Contact <0>Carbon Support.</0>"
 msgstr "遇到技术问题？联系<0>Carbon 支持。</0>"
+
+msgid "How many were actually picked?"
+msgstr "实际上捡了多少个？"
 
 msgid "I understand and want to complete without issuing"
 msgstr "我理解并希望在不发放物料的情况下完成"
@@ -362,6 +410,9 @@ msgstr "有想法、建议或问题？"
 
 msgid "Impact"
 msgstr "影响"
+
+msgid "Imperial"
+msgstr "英制"
 
 msgid "In Progress"
 msgstr "进行中"
@@ -387,6 +438,9 @@ msgstr "发放"
 msgid "Issue Material"
 msgstr "发放物料"
 
+msgid "Issue Type"
+msgstr "问题类型"
+
 msgid "Item"
 msgstr "物料"
 
@@ -402,14 +456,23 @@ msgstr "工单详情"
 msgid "Job Traveler"
 msgstr "工单流转卡"
 
+msgid "Jobs"
+msgstr "工作"
+
 msgid "Kit"
 msgstr "套件"
 
 msgid "Labor"
 msgstr "人工"
 
+msgid "Leave this page"
+msgstr "离开此页面"
+
 msgid "Let's build something"
 msgstr "让我们开始构建"
+
+msgid "lines"
+msgstr "行"
 
 msgid "Loading item details..."
 msgstr "正在加载物料详情..."
@@ -459,6 +522,9 @@ msgstr "手动添加物料到库存"
 msgid "Manually remove items from inventory"
 msgstr "手动从库存中移除物料"
 
+msgid "Mark Short"
+msgstr "标记短缺"
+
 msgid "matches"
 msgstr "匹配"
 
@@ -468,8 +534,14 @@ msgstr "物料"
 msgid "Maximum number of records reached"
 msgstr "已达到最大记录数"
 
+msgid "Metric"
+msgstr "公制"
+
 msgid "Model"
 msgstr "模型"
+
+msgid "More Actions"
+msgstr "更多操作"
 
 msgid "More options"
 msgstr "更多选项"
@@ -499,6 +571,9 @@ msgstr "新建"
 msgid "New Record"
 msgstr "新记录"
 
+msgid "Newest first"
+msgstr "最新优先"
+
 msgid "Next"
 msgstr "下一个"
 
@@ -517,6 +592,9 @@ msgstr "无可用筛选条件"
 msgid "No available serial numbers found"
 msgstr "未找到可用的序列号"
 
+msgid "No available tracked entities found"
+msgstr "未找到可用的追踪实体"
+
 msgid "No dispatches assigned to you"
 msgstr "没有分配给您的工单"
 
@@ -532,6 +610,9 @@ msgstr "今天没有计划的维护"
 msgid "No materials"
 msgstr "无物料"
 
+msgid "No open jobs"
+msgstr "没有开放的工作"
+
 msgid "No operators"
 msgstr "无操作员"
 
@@ -540,6 +621,12 @@ msgstr "未找到选项。"
 
 msgid "No options found."
 msgstr "未找到选项。"
+
+msgid "No picking lists assigned"
+msgstr "未分配拣货单"
+
+msgid "No printer configured"
+msgstr "未配置打印机"
 
 msgid "No recent operations"
 msgstr "无近期工序"
@@ -559,11 +646,20 @@ msgstr "无排定时间"
 msgid "No serial numbers"
 msgstr "无序列号"
 
+msgid "No serial numbers found"
+msgstr "未找到序列号"
+
 msgid "No spare parts added yet"
 msgstr "尚未添加备件"
 
+msgid "No stock"
+msgstr "无库存"
+
 msgid "No time entries for this week"
 msgstr "本周无考勤记录"
+
+msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
+msgstr "此项目没有仓库库存记录。您仍然可以领取它——现有库存将变为负数，直到库存被核对。"
 
 msgid "No work centers are blocked"
 msgstr "无工作中心被阻塞"
@@ -580,6 +676,9 @@ msgstr "OEE 影响"
 msgid "OEM Required"
 msgstr "需要 OEM"
 
+msgid "Oldest first"
+msgstr "最早优先"
+
 #. placeholder {0}: batch.quantity
 msgid "Only {0} available"
 msgstr "仅 {0} 可用"
@@ -589,6 +688,9 @@ msgstr "抱歉，您不应该看到此页面。此页面最终将成为首页。
 
 msgid "Open"
 msgstr "打开"
+
+msgid "Open Jobs"
+msgstr "开放工作"
 
 msgid "Operations"
 msgstr "工序"
@@ -614,11 +716,23 @@ msgstr "检验通过"
 msgid "Pause"
 msgstr "暂停"
 
+msgid "Pick"
+msgstr "拣选"
+
+msgid "Pick tracked item"
+msgstr "拣选追踪项目"
+
+msgid "Picked quantity"
+msgstr "已拣选数量"
+
 #. placeholder {0}: startColumn?.title
 #. placeholder {1}: startIndex + 1
 #. placeholder {2}: columnOrder.length
 msgid "Picked up Column {0} at position: {1} of {2}"
 msgstr "已拾取列 {0}，位于第 {1} 个位置（共 {2} 个）"
+
+msgid "Picking"
+msgstr "拣选"
 
 msgid "Pin Out"
 msgstr "退出登录"
@@ -638,6 +752,12 @@ msgstr "上一个"
 msgid "Preventive"
 msgstr "预防性"
 
+msgid "Print"
+msgstr "打印"
+
+msgid "Printer Settings"
+msgstr "打印机设置"
+
 msgid "Priority"
 msgstr "优先级"
 
@@ -656,11 +776,20 @@ msgstr "工艺"
 msgid "Progress"
 msgstr "进度"
 
+msgid "Quality Issue"
+msgstr "质量问题"
+
+msgid "Quality issue created"
+msgstr "质量问题已创建"
+
 msgid "Quantity"
 msgstr "数量"
 
 msgid "Quantity must be greater than 0"
 msgstr "数量必须大于 0"
+
+msgid "Reason for rework"
+msgstr "返工原因"
 
 msgid "Recent"
 msgstr "最近"
@@ -684,6 +813,12 @@ msgstr "移除库存"
 msgid "Remove part"
 msgstr "移除零件"
 
+msgid "Rework"
+msgstr "返工"
+
+msgid "Rework created successfully"
+msgstr "返工创建成功"
+
 msgid "Sales Order"
 msgstr "销售订单"
 
@@ -696,8 +831,17 @@ msgstr "扫描"
 msgid "Scan or enter serial number"
 msgstr "扫描或输入序列号"
 
+msgid "Scan or enter tracking number"
+msgstr "扫描或输入追踪号"
+
+msgid "Scan or search serial number..."
+msgstr "扫描或搜索序列号..."
+
 msgid "Schedule"
 msgstr "排程"
+
+msgid "Scrap"
+msgstr "报废"
 
 msgid "Scrap Reason"
 msgstr "报废原因"
@@ -707,6 +851,9 @@ msgstr "已报废"
 
 msgid "Search"
 msgstr "搜索"
+
+msgid "Search by job or item ID"
+msgstr "按工作或项目ID搜索"
 
 msgid "Search operators..."
 msgstr "搜索操作员..."
@@ -739,6 +886,9 @@ msgstr "选择物料..."
 msgid "Select Batch {0}"
 msgstr "选择批次 {0}"
 
+msgid "Select Printer"
+msgstr "选择打印机"
+
 #. placeholder {0}: index + 1
 msgid "Select Serial {0}"
 msgstr "选择序列号 {0}"
@@ -746,15 +896,14 @@ msgstr "选择序列号 {0}"
 msgid "Select Serial Number"
 msgstr "选择序列号"
 
+msgid "Select the operation to go back to. All operations from that point to the current operation will be redone."
+msgstr "选择要返回的操作。从该点到当前操作的所有操作都将重新进行。"
+
 msgid "Send"
 msgstr "发送"
 
 msgid "Serial"
 msgstr "序列号"
-
-#. placeholder {0}: sn.readableId
-msgid "Serial {0}"
-msgstr "序列号 {0}"
 
 #. placeholder {0}: index + 1
 msgid "Serial Number {0}"
@@ -765,6 +914,9 @@ msgstr "序列号不可用"
 
 msgid "Serial number is required"
 msgstr "序列号为必填项"
+
+msgid "Serial numbers"
+msgstr "序列号"
 
 msgid "Serial Numbers"
 msgstr "序列号"
@@ -778,6 +930,12 @@ msgstr "设置下班打卡时间"
 msgid "Setup"
 msgstr "设置"
 
+msgid "Short"
+msgstr "缺货"
+
+msgid "Short pick {itemName}"
+msgstr "短缺拣货 {itemName}"
+
 msgid "Sign in with Email"
 msgstr "使用邮箱登录"
 
@@ -786,6 +944,9 @@ msgstr "使用 Google 登录"
 
 msgid "Sign in with Outlook"
 msgstr "使用 Outlook 登录"
+
+msgid "Sign in with Passkey"
+msgstr "使用密钥登录"
 
 msgid "Sign Out"
 msgstr "退出登录"
@@ -820,6 +981,9 @@ msgstr "状态"
 msgid "Statuses"
 msgstr "状态"
 
+msgid "Stay on this page"
+msgstr "留在此页面"
+
 msgid "Steps"
 msgstr "步骤"
 
@@ -851,6 +1015,9 @@ msgstr "此工序的完成数量小于所需数量 {0}。"
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "物料清单中有序列号或批次追踪的物料尚未完全发放。不发放即完成可能导致追溯记录不正确。"
 
+msgid "This lot is expired and can't be picked."
+msgstr "此批次已过期，无法领取。"
+
 msgid "Thumbnail"
 msgstr "缩略图"
 
@@ -878,8 +1045,8 @@ msgstr "总时间：{0}"
 msgid "Total: {0}"
 msgstr "合计：{0}"
 
-msgid "Tracking Labels"
-msgstr "追踪标签"
+msgid "Tracking"
+msgstr "追踪"
 
 msgid "Type a message..."
 msgstr "输入消息..."
@@ -889,6 +1056,16 @@ msgstr "未发放的序列号/批次物料"
 
 msgid "Unknown"
 msgstr "未知"
+
+msgid "Unpick"
+msgstr "取消拣选"
+
+#. placeholder {0}: pickedLots[0].trackedEntity.readableId
+msgid "Unpick {0}"
+msgstr "取消拣选 {0}"
+
+msgid "Unsaved changes"
+msgstr "未保存的更改"
 
 msgid "Update"
 msgstr "更新"

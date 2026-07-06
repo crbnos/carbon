@@ -74,9 +74,7 @@ export const locationValidator = z
     addressLine1: z.string().min(1, { message: "Address is required" }),
     addressLine2: z.string().optional(),
     city: z.string().min(1, { message: "City is required" }),
-    stateProvince: z
-      .string()
-      .min(1, { message: "State / Province is required" }),
+    stateProvince: zfd.text(z.string().optional()),
     postalCode: z.string().min(1, { message: "Postal Code is required" }),
     countryCode: z.string().min(1, { message: "Country is required" }),
     timezone: z.string().min(1, { message: "Timezone is required" }),
@@ -485,6 +483,7 @@ export const workCenterValidator = z.object({
   defaultStandardFactor: z.enum(standardFactorType, {
     errorMap: () => ({ message: "Standard factor is required" })
   }),
+  departmentId: zfd.text(z.string().optional()),
   laborRate: zfd.numeric(z.number().min(0)),
   locationId: z.string().min(1, { message: "Location is required" }),
   machineRate: zfd.numeric(z.number().min(0)),

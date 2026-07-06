@@ -1,8 +1,14 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { PackingSlipPDF } from "@carbon/documents/pdf";
+import { ensureFont, PackingSlipPDF } from "@carbon/documents/pdf";
+import {
+  collectSectionIds,
+  resolveTemplate,
+  templateShowsThumbnails,
+  toDocumentTemplate
+} from "@carbon/documents/template";
 import type { JSONContent } from "@carbon/react";
-import { getPreferenceHeaders } from "@carbon/react";
+import { getPreferenceHeaders } from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
 import type { LoaderFunctionArgs } from "react-router";
 import { getPaymentTerm } from "~/modules/accounting";
@@ -10,7 +16,8 @@ import {
   getShipment,
   getShipmentLinesWithDetails,
   getShipmentTracking,
-  getShippingMethod
+  getShippingMethod,
+  getWarehouseTransfer
 } from "~/modules/inventory";
 import {
   getPurchaseOrder,
@@ -23,7 +30,11 @@ import {
   getSalesOrderShipment,
   getSalesTerms
 } from "~/modules/sales";
-import { getCompany, getCompanySettings } from "~/modules/settings";
+import {
+  getCompany,
+  getDocumentTemplate,
+  resolveSections
+} from "~/modules/settings";
 import { getBase64ImageFromSupabase } from "~/modules/shared";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -34,14 +45,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const [company, companySettings, shipment, shipmentLines] = await Promise.all(
-    [
-      getCompany(client, companyId),
-      getCompanySettings(client, companyId),
-      getShipment(client, id),
-      getShipmentLinesWithDetails(client, id)
-    ]
-  );
+  const [company, shipment, shipmentLines] = await Promise.all([
+    getCompany(client, companyId),
+    getShipment(client, id),
+    getShipmentLinesWithDetails(client, id)
+  ]);
 
   if (company.error) {
     console.error(company.error);
@@ -73,6 +81,24 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const { locale } = getPreferenceHeaders(request);
+
+  const documentTemplate = await getDocumentTemplate(
+    client,
+    companyId,
+    "packingSlip"
+  );
+  const templateConfig = toDocumentTemplate(
+    documentTemplate.data,
+    "packingSlip"
+  );
+  const resolvedTemplate = resolveTemplate("packingSlip", templateConfig);
+  const showThumbnails = templateShowsThumbnails(templateConfig, "packingSlip");
+  const templateSections = await resolveSections(
+    client,
+    companyId,
+    collectSectionIds(resolvedTemplate)
+  );
+  await ensureFont(resolvedTemplate.settings.fontFamily);
 
   switch (shipment.data.sourceDocument) {
     case "Sales Order": {
@@ -114,7 +140,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
       let thumbnails: Record<string, string | null> = {};
 
-      if (companySettings.data?.includeThumbnailsOnSalesPdfs ?? true) {
+      if (showThumbnails) {
         const thumbnailPaths = shipmentLines.data?.reduce<
           Record<string, string | null>
         >((acc, line) => {
@@ -171,6 +197,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           trackedEntities={shipmentTracking.data ?? []}
           title="Packing Slip"
           thumbnails={thumbnails}
+          template={templateConfig}
+          sections={templateSections}
         />
       );
 
@@ -233,7 +261,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
       let thumbnails: Record<string, string | null> = {};
 
-      if (companySettings.data?.includeThumbnailsOnSalesPdfs ?? true) {
+      if (showThumbnails) {
         const thumbnailPaths = shipmentLines.data?.reduce<
           Record<string, string | null>
         >((acc, line) => {
@@ -290,6 +318,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           trackedEntities={shipmentTracking.data ?? []}
           title="Packing Slip"
           thumbnails={thumbnails}
+          template={templateConfig}
+          sections={templateSections}
         />
       );
 
@@ -347,7 +377,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
       let poThumbnails: Record<string, string | null> = {};
 
-      if (companySettings.data?.includeThumbnailsOnPurchasingPdfs ?? true) {
+      if (showThumbnails) {
         const poThumbnailPaths = shipmentLines.data?.reduce<
           Record<string, string | null>
         >((acc, line) => {
@@ -404,6 +434,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           trackedEntities={poShipmentTracking.data ?? []}
           title="Packing Slip"
           thumbnails={poThumbnails}
+          template={templateConfig}
+          sections={templateSections}
         />
       );
 
@@ -425,6 +457,117 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       return new Response(new Uint8Array(poBody), {
         status: 200,
         headers: poHeaders
+      });
+    }
+    case "Outbound Transfer": {
+      const warehouseTransfer = await getWarehouseTransfer(
+        client,
+        shipment.data.sourceDocumentId
+      );
+
+      if (warehouseTransfer.error) {
+        console.error(warehouseTransfer.error);
+        throw new Error("Failed to load warehouse transfer");
+      }
+
+      const [shippingMethod, shipmentTracking] = await Promise.all([
+        getShippingMethod(client, shipment.data.shippingMethodId ?? ""),
+        getShipmentTracking(client, shipment.data.id, companyId)
+      ]);
+
+      const toLocation = warehouseTransfer.data.toLocation;
+      const shippingAddress = toLocation
+        ? {
+            addressLine1: toLocation.addressLine1,
+            addressLine2: toLocation.addressLine2,
+            city: toLocation.city,
+            stateProvince: toLocation.stateProvince,
+            postalCode: toLocation.postalCode,
+            countryCode: toLocation.countryCode
+          }
+        : null;
+
+      let transferThumbnails: Record<string, string | null> = {};
+
+      if (showThumbnails) {
+        const transferThumbnailPaths = shipmentLines.data?.reduce<
+          Record<string, string | null>
+        >((acc, line) => {
+          if (line.thumbnailPath) {
+            acc[line.id!] = line.thumbnailPath;
+          }
+          return acc;
+        }, {});
+
+        transferThumbnails =
+          (transferThumbnailPaths
+            ? await Promise.all(
+                Object.entries(transferThumbnailPaths).map(([id, path]) => {
+                  if (!path) {
+                    return null;
+                  }
+                  return getBase64ImageFromSupabase(client, path).then(
+                    (data) => ({
+                      id,
+                      data
+                    })
+                  );
+                })
+              )
+            : []
+          )?.reduce<Record<string, string | null>>((acc, thumbnail) => {
+            if (thumbnail) {
+              acc[thumbnail.id] = thumbnail.data;
+            }
+            return acc;
+          }, {}) ?? {};
+      }
+
+      const transferStream = await renderToStream(
+        <PackingSlipPDF
+          company={company.data as any}
+          customer={{ name: toLocation?.name ?? "" } as any}
+          locale={locale}
+          meta={{
+            author: "Carbon",
+            keywords: "packing slip",
+            subject: "Packing Slip"
+          }}
+          sourceDocument="Outbound Transfer"
+          sourceDocumentId={warehouseTransfer.data.transferId ?? undefined}
+          shipment={shipment.data}
+          shipmentLines={shipmentLines.data ?? []}
+          // @ts-expect-error
+          shippingAddress={shippingAddress}
+          terms={(terms?.data?.salesTerms ?? {}) as JSONContent}
+          paymentTerm={{ id: "", name: "" }}
+          shippingMethod={shippingMethod.data ?? { id: "", name: "" }}
+          trackedEntities={shipmentTracking.data ?? []}
+          title="Packing Slip"
+          thumbnails={transferThumbnails}
+          template={templateConfig}
+          sections={templateSections}
+        />
+      );
+
+      const transferBody: Buffer = await new Promise((resolve, reject) => {
+        const buffers: Uint8Array[] = [];
+        transferStream.on("data", (data) => {
+          buffers.push(data);
+        });
+        transferStream.on("end", () => {
+          resolve(Buffer.concat(buffers));
+        });
+        transferStream.on("error", reject);
+      });
+
+      const transferHeaders = new Headers({
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `inline; filename="${company.data.name} - ${shipment.data.shipmentId}.pdf"`
+      });
+      return new Response(new Uint8Array(transferBody), {
+        status: 200,
+        headers: transferHeaders
       });
     }
     default:

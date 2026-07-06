@@ -8,7 +8,7 @@ import type {
 } from "@supabase/supabase-js";
 
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
-import { getSupabaseServiceRole } from "../lib/supabase.ts";
+import { requirePermissions } from "../lib/supabase.ts";
 import type { Database } from "../lib/types.ts";
 
 import { Transaction } from "kysely";
@@ -32,6 +32,7 @@ import {
 import { KyselyDatabase } from "../lib/postgres/index.ts";
 import { importTypeScript } from "../lib/sandbox.ee.ts";
 import { getStorageUnitId } from "../lib/storage-units.ts";
+import { toTiptapDoc } from "../shared/tiptap.ts";
 import {
     getNextRevisionSequence,
     getNextSequence,
@@ -95,11 +96,7 @@ serve(async (req: Request) => {
       configuration,
     });
 
-    const client = await getSupabaseServiceRole(
-      req.headers.get("Authorization"),
-      req.headers.get("carbon-key") ?? "",
-      companyId
-    );
+    const client = await requirePermissions(req, companyId, userId, { update: "production" });
 
     switch (type) {
       case "itemToItem": {
@@ -289,6 +286,7 @@ serve(async (req: Request) => {
                     .values(
                       methodOperationStep.map(({ id: _id, ...attribute }) => ({
                         ...attribute,
+                        description: toTiptapDoc(attribute.description),
                         operationId: operationId!,
                         companyId,
                         createdBy: userId,
@@ -758,6 +756,7 @@ serve(async (req: Request) => {
                         methodOperationStep.map(
                           async ({ id: _id, ...attribute }) => ({
                             ...attribute,
+                            description: toTiptapDoc(attribute.description),
                             operationId,
                             minValue: await getConfiguredValue({
                               id: operation.id,
@@ -1351,6 +1350,7 @@ serve(async (req: Request) => {
                           methodOperationStep.map(
                             ({ id: _id, ...attribute }) => ({
                               ...attribute,
+                              description: toTiptapDoc(attribute.description),
                               operationId,
                               companyId,
                               createdBy: userId,
@@ -1967,6 +1967,7 @@ serve(async (req: Request) => {
                         methodOperationStep.map(
                           async ({ id, ...attribute }) => ({
                             ...attribute,
+                            description: toTiptapDoc(attribute.description),
                             operationId,
                             minValue: await getConfiguredValue({
                               id: operation.id,
@@ -2477,6 +2478,7 @@ serve(async (req: Request) => {
                           methodOperationStep.map(
                             ({ id: _id, ...attribute }) => ({
                               ...attribute,
+                              description: toTiptapDoc(attribute.description),
                               operationId,
                               companyId,
                               createdBy: userId,
@@ -2866,6 +2868,7 @@ serve(async (req: Request) => {
                       .values(
                         jobOperationStep.map(({ id: _id, ...attribute }) => ({
                           ...attribute,
+                          description: toTiptapDoc(attribute.description),
                           operationId,
                           companyId,
                           createdBy: userId,
@@ -3169,7 +3172,7 @@ serve(async (req: Request) => {
                           operationId,
                           name: step.name,
                           type: step.type,
-                          description: step.description,
+                          description: toTiptapDoc(step.description),
                           required: step.required,
                           sortOrder: step.sortOrder,
                           unitOfMeasureCode: step.unitOfMeasureCode,
@@ -3212,18 +3215,22 @@ serve(async (req: Request) => {
         }
 
         const [sourceMaterials, sourceOperations] = await Promise.all([
-          client
-            .from("methodMaterial")
-            .select("*")
-            .eq("makeMethodId", sourceMakeMethod.data.id)
-            .eq("companyId", companyId),
-          client
-            .from("methodOperation")
-            .select(
-              "*, methodOperationTool(*), methodOperationParameter(*), methodOperationStep(*)"
-            )
-            .eq("makeMethodId", sourceMakeMethod.data.id)
-            .eq("companyId", companyId),
+          parts.billOfMaterial
+            ? client
+                .from("methodMaterial")
+                .select("*")
+                .eq("makeMethodId", sourceMakeMethod.data.id)
+                .eq("companyId", companyId)
+            : Promise.resolve({ data: [], error: null }),
+          parts.billOfProcess
+            ? client
+                .from("methodOperation")
+                .select(
+                  "*, methodOperationTool(*), methodOperationParameter(*), methodOperationStep(*)"
+                )
+                .eq("makeMethodId", sourceMakeMethod.data.id)
+                .eq("companyId", companyId)
+            : Promise.resolve({ data: [], error: null }),
         ]);
 
         if (sourceMaterials.error || sourceOperations.error) {
@@ -3233,18 +3240,22 @@ serve(async (req: Request) => {
         await db.transaction().execute(async (trx) => {
           // Delete existing materials and operations from target method
           await Promise.all([
-            trx
-              .deleteFrom("methodMaterial")
-              .where("makeMethodId", "=", targetMakeMethod.data.id)
-              .execute(),
-            trx
-              .deleteFrom("methodOperation")
-              .where("makeMethodId", "=", targetMakeMethod.data.id)
-              .execute(),
+            parts.billOfMaterial
+              ? trx
+                  .deleteFrom("methodMaterial")
+                  .where("makeMethodId", "=", targetMakeMethod.data.id)
+                  .execute()
+              : Promise.resolve(),
+            parts.billOfProcess
+              ? trx
+                  .deleteFrom("methodOperation")
+                  .where("makeMethodId", "=", targetMakeMethod.data.id)
+                  .execute()
+              : Promise.resolve(),
           ]);
 
           // Copy materials from source to target
-          if (sourceMaterials.data && sourceMaterials.data.length > 0) {
+          if (parts.billOfMaterial && sourceMaterials.data && sourceMaterials.data.length > 0) {
             await trx
               .insertInto("methodMaterial")
               .values(
@@ -3260,7 +3271,7 @@ serve(async (req: Request) => {
           }
 
           // Copy operations from source to target
-          if (sourceOperations.data && sourceOperations.data.length > 0) {
+          if (parts.billOfProcess && sourceOperations.data && sourceOperations.data.length > 0) {
             const operationIds = await trx
               .insertInto("methodOperation")
               .values(
@@ -3270,12 +3281,18 @@ serve(async (req: Request) => {
                     methodOperationParameter: _parameters,
                     methodOperationStep: _attributes,
                     ...operation
-                  }) => ({
-                    ...operation,
-                    id: undefined, // Let the database generate a new ID
-                    makeMethodId: targetMakeMethod.data.id,
-                    createdBy: userId,
-                  })
+                  }) => {
+                    const insert = {
+                      ...operation,
+                      id: undefined, // Let the database generate a new ID
+                      makeMethodId: targetMakeMethod.data.id,
+                      createdBy: userId,
+                    };
+                    if (!parts.workInstructions) {
+                      insert.workInstruction = {};
+                    }
+                    return insert;
+                  }
                 )
               )
               .returning(["id"])
@@ -3294,6 +3311,7 @@ serve(async (req: Request) => {
               const operationId = operationIds[index].id;
 
               if (
+                parts.tools &&
                 operationId &&
                 Array.isArray(methodOperationTool) &&
                 methodOperationTool.length > 0
@@ -3314,6 +3332,7 @@ serve(async (req: Request) => {
 
               if (!procedureId) {
                 if (
+                  parts.parameters &&
                   Array.isArray(methodOperationParameter) &&
                   methodOperationParameter.length > 0
                 ) {
@@ -3332,6 +3351,7 @@ serve(async (req: Request) => {
                 }
 
                 if (
+                  parts.steps &&
                   Array.isArray(methodOperationStep) &&
                   methodOperationStep.length > 0
                 ) {
@@ -3340,6 +3360,7 @@ serve(async (req: Request) => {
                     .values(
                       methodOperationStep.map(({ id: _id, ...attribute }) => ({
                         ...attribute,
+                        description: toTiptapDoc(attribute.description),
                         operationId: operationId!,
                         companyId,
                         createdBy: userId,
@@ -3441,7 +3462,7 @@ serve(async (req: Request) => {
                   operationId: operationId,
                   name: attr.name,
                   type: attr.type,
-                  description: attr.description,
+                  description: toTiptapDoc(attr.description),
                   minValue: attr.minValue,
                   maxValue: attr.maxValue,
                   companyId,
@@ -3771,6 +3792,7 @@ serve(async (req: Request) => {
                       .values(
                         quoteOperationStep.map(({ id: _id, ...attribute }) => ({
                           ...attribute,
+                          description: toTiptapDoc(attribute.description),
                           operationId,
                           companyId,
                           createdBy: userId,
@@ -4070,6 +4092,7 @@ serve(async (req: Request) => {
                       .values(
                         quoteOperationStep.map(({ id: _id, ...attribute }) => ({
                           ...attribute,
+                          description: toTiptapDoc(attribute.description),
                           operationId,
                           companyId,
                           createdBy: userId,
@@ -4498,6 +4521,7 @@ serve(async (req: Request) => {
                       .values(
                         quoteOperationStep.map(({ id: _id, ...attribute }) => ({
                           ...attribute,
+                          description: toTiptapDoc(attribute.description),
                           operationId,
                           companyId,
                           createdBy: userId,
@@ -4799,6 +4823,7 @@ serve(async (req: Request) => {
                     .values(
                       quoteOperationStep.map(({ id: _id, ...attribute }) => ({
                         ...attribute,
+                        description: toTiptapDoc(attribute.description),
                         operationId,
                         companyId,
                         createdBy: userId,
@@ -5279,6 +5304,7 @@ serve(async (req: Request) => {
                       .values(
                         quoteOperationStep.map(({ id: _id, ...attribute }) => ({
                           ...attribute,
+                          description: toTiptapDoc(attribute.description),
                           operationId,
                           companyId,
                           createdBy: userId,
@@ -5439,6 +5465,7 @@ async function insertProcedureDataForJobOperation(
           } = attr;
           return {
             ...rest,
+            description: toTiptapDoc(rest.description),
             operationId,
             companyId,
             createdBy: userId,

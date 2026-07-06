@@ -15,16 +15,15 @@ import { getDefaultStorageUnitForJob, getKanban } from "~/modules/inventory";
 import { getItemReplenishment } from "~/modules/items";
 import {
   getActiveJobOperationByJobId,
+  insertJob,
   runMRP,
   updateKanbanJob,
-  upsertJob,
   upsertJobMethod
 } from "~/modules/production";
 import {
-  upsertPurchaseOrder,
+  insertPurchaseOrder,
   upsertPurchaseOrderLine
 } from "~/modules/purchasing";
-import { getNextSequence } from "~/modules/settings";
 import { path } from "~/utils/path";
 
 async function handleKanban({
@@ -73,61 +72,44 @@ async function handleKanban({
       };
     }
 
-    const [nextSequence, manufacturing, defaultStorageUnit] = await Promise.all(
-      [
-        getNextSequence(client, "job", companyId),
-        getItemReplenishment(client, kanban.data.itemId!, companyId),
-        getDefaultStorageUnitForJob(
-          client,
-          kanban.data.itemId!,
-          kanban.data.locationId!,
-          companyId
-        )
-      ]
-    );
+    const [manufacturing, defaultStorageUnit] = await Promise.all([
+      getItemReplenishment(client, kanban.data.itemId!, companyId),
+      getDefaultStorageUnitForJob(
+        client,
+        kanban.data.itemId!,
+        kanban.data.locationId!,
+        companyId
+      )
+    ]);
 
-    if (nextSequence.error) {
-      console.error(nextSequence.error);
-      return {
-        data: null,
-        error: "Failed to create job"
-      };
-    }
-
-    let jobReadableId = nextSequence.data;
-    let leadTime = manufacturing.data?.leadTime ?? 7;
-
+    const leadTime = manufacturing.data?.leadTime ?? 7;
     const startDate = today(getLocalTimeZone());
     const dueDate = startDate.add({ days: leadTime }).toString();
-
-    if (!jobReadableId) {
-      console.error("Failed to get next job id");
-      return {
-        data: null,
-        error: "Failed to create job"
-      };
-    }
 
     // Use storage unit from kanban if it exists, otherwise use default storage unit
     const storageUnitId =
       kanban.data.storageUnitId || defaultStorageUnit || undefined;
 
-    const createdJob = await upsertJob(client, {
-      jobId: jobReadableId,
-      itemId: kanban.data.itemId!,
-      quantity: kanban.data.quantity!,
-      locationId: kanban.data.locationId!,
-      storageUnitId,
-      unitOfMeasureCode: kanban.data.purchaseUnitOfMeasureCode!,
-      deadlineType: "Hard Deadline",
-      scrapQuantity: 0,
-      startDate: startDate.toString(),
-      dueDate,
-      companyId,
-      createdBy: userId
-    });
+    const serviceRole = getCarbonServiceRole();
 
-    const id = createdJob.data?.id!;
+    const createdJob = await insertJob(
+      serviceRole,
+      {
+        itemId: kanban.data.itemId!,
+        quantity: kanban.data.quantity!,
+        locationId: kanban.data.locationId!,
+        storageUnitId,
+        unitOfMeasureCode: kanban.data.purchaseUnitOfMeasureCode!,
+        deadlineType: "Hard Deadline",
+        startDate: startDate.toString(),
+        dueDate,
+        companyId,
+        createdBy: userId
+      },
+      { skipMethod: true, skipRecalculate: true }
+    );
+
+    const id = createdJob.data?.id;
     if (createdJob.error || !id) {
       console.error(createdJob.error);
       return {
@@ -135,8 +117,6 @@ async function handleKanban({
         error: "Failed to create job"
       };
     }
-
-    const serviceRole = getCarbonServiceRole();
 
     const [upsertMethod, associateKanban] = await Promise.all([
       upsertJobMethod(serviceRole, "itemToJob", {
@@ -190,7 +170,7 @@ async function handleKanban({
           .update({
             status: "Ready" as const
           })
-          .eq("id", jobReadableId)
+          .eq("id", id)
       ]);
     } else if (upsertMethod.error) {
       console.error(upsertMethod.error);
@@ -245,21 +225,7 @@ async function handleKanban({
     let purchaseOrderId = existingPurchaseOrder.data?.id;
 
     if (!purchaseOrderId) {
-      const nextSequence = await getNextSequence(
-        client,
-        "purchaseOrder",
-        companyId
-      );
-      if (nextSequence.error) {
-        console.error(nextSequence.error);
-        return {
-          data: null,
-          error: "Failed to get next purchase order sequence"
-        };
-      }
-
-      const newPurchaseOrder = await upsertPurchaseOrder(client, {
-        purchaseOrderId: nextSequence.data!,
+      const newPurchaseOrder = await insertPurchaseOrder(client, {
         supplierId: kanban.data.supplierId!,
         status: "Draft",
         purchaseOrderType: "Purchase",
@@ -268,7 +234,7 @@ async function handleKanban({
         createdBy: userId
       });
 
-      if (newPurchaseOrder.error || !newPurchaseOrder.data?.[0]) {
+      if (newPurchaseOrder.error || !newPurchaseOrder.data) {
         console.error(newPurchaseOrder.error);
         return {
           data: null,
@@ -276,7 +242,7 @@ async function handleKanban({
         };
       }
 
-      purchaseOrderId = newPurchaseOrder.data[0].id;
+      purchaseOrderId = newPurchaseOrder.data.id;
     }
 
     const [item, supplierPart, inventory] = await Promise.all([
@@ -317,7 +283,6 @@ async function handleKanban({
 
     const createPurchaseOrderLine = await upsertPurchaseOrderLine(client, {
       purchaseOrderId: purchaseOrderId!,
-      // @ts-expect-error
       purchaseOrderLineType: item.data?.type,
       itemId: kanban.data.itemId!,
       purchaseQuantity: kanban.data.quantity!,
@@ -326,7 +291,6 @@ async function handleKanban({
       supplierShippingCost: 0,
       supplierTaxAmount: 0,
       exchangeRate: 1,
-      setupPrice: 0,
       purchaseUnitOfMeasureCode: kanban.data.purchaseUnitOfMeasureCode!,
       inventoryUnitOfMeasureCode:
         item.data?.unitOfMeasureCode || kanban.data.purchaseUnitOfMeasureCode!,

@@ -1,40 +1,27 @@
-import bwipjs from "@bwip-js/node";
 import type { Database } from "@carbon/database";
-import { getAppUrl } from "@carbon/env";
-import { formatDate } from "@carbon/utils";
-import { Image, Text, View } from "@react-pdf/renderer";
-import { createTw } from "react-pdf-tailwind";
-import { generateQRCode } from "../qr/qr-code";
+import { Fragment } from "react";
+import type { DocumentTemplate, ResolvedSection } from "../template";
+import {
+  DEFAULT_HEADER_OPTIONS,
+  interpolateContent,
+  resolveTemplate
+} from "../template";
 import type { PDF } from "../types";
-import { Header, Summary, Template } from "./components";
+import type { StockTransferData } from "./blocks/stockTransfer";
+import {
+  buildStockTransferVars,
+  stockTransferBlockRegistry
+} from "./blocks/stockTransfer";
+import { Template } from "./components";
 
 interface StockTransferPDFProps extends PDF {
   stockTransfer: Database["public"]["Tables"]["stockTransfer"]["Row"];
   stockTransferLines: Database["public"]["Views"]["stockTransferLines"]["Row"][];
   location: Database["public"]["Tables"]["location"]["Row"];
   thumbnails?: Record<string, string | null>;
+  template?: DocumentTemplate | null;
+  sections?: Record<string, ResolvedSection>;
 }
-
-// Initialize tailwind-styled-components
-const tw = createTw({
-  theme: {
-    fontFamily: {
-      sans: ["Inter", "Helvetica", "Arial", "sans-serif"]
-    },
-    extend: {
-      colors: {
-        gray: {
-          50: "#f9fafb",
-          200: "#e5e7eb",
-          400: "#9ca3af",
-          500: "#7d7d7d",
-          600: "#4b5563",
-          800: "#1f2937"
-        }
-      }
-    }
-  }
-});
 
 const StockTransferPDF = ({
   company,
@@ -42,166 +29,78 @@ const StockTransferPDF = ({
   stockTransferLines,
   location,
   locale,
-  title = "Stock Transfer",
-  thumbnails
+  thumbnails,
+  template,
+  sections = {},
+  title = "Stock Transfer"
 }: StockTransferPDFProps) => {
-  const details = [
-    {
-      label: "Date",
-      value: stockTransfer?.createdAt
-        ? formatDate(stockTransfer.createdAt, undefined, locale)
-        : ""
-    },
-    {
-      label: "Stock Transfer",
-      value: stockTransfer?.stockTransferId
-    },
-    {
-      label: "Location",
-      value: location?.name
-    }
-  ];
+  const { blocks, theme, settings, headerSectionId, footerSectionId } =
+    resolveTemplate("stockTransfer", template);
 
-  if (stockTransfer?.assignee) {
-    details.push({
-      label: "Assignee",
-      value: stockTransfer.assignee
-    });
-  }
+  const vars = buildStockTransferVars({ stockTransfer, location, company });
+
+  const headerOptions = {
+    ...DEFAULT_HEADER_OPTIONS,
+    ...(headerSectionId ? (sections[headerSectionId]?.config ?? {}) : {})
+  };
+
+  const data: StockTransferData = {
+    company,
+    locale,
+    stockTransfer,
+    stockTransferLines,
+    location,
+    thumbnails,
+    theme,
+    sections,
+    vars,
+    headerOptions
+  };
+
+  const headerSection = headerSectionId
+    ? sections[headerSectionId]?.content
+    : undefined;
+  const footerSection = footerSectionId
+    ? sections[footerSectionId]?.content
+    : undefined;
+  const headerContent = headerSection
+    ? interpolateContent(headerSection, vars)
+    : undefined;
+  const footerContent = footerSection
+    ? interpolateContent(footerSection, vars)
+    : undefined;
+
+  const showHeader = headerSectionId !== null;
+  const showFooter = footerSectionId !== null;
+  const visibleBlocks = blocks.filter(
+    (block) => block.visible && !(block.type === "header" && !showHeader)
+  );
 
   return (
     <Template
+      theme={theme}
       title={title}
       meta={{
         author: "Carbon",
         keywords: "stock transfer",
         subject: "Stock Transfer"
       }}
+      footerDocumentId={stockTransfer?.stockTransferId}
+      showFooter={showFooter}
+      showPageNumbers={settings.showPageNumbers}
+      pageNumberFormat={settings.pageNumberFormat}
+      showRegistrationLine={settings.showRegistrationLine}
+      fontFamily={settings.fontFamily}
+      headerContent={headerContent}
+      footerContent={footerContent}
     >
-      <View style={tw("flex flex-col")}>
-        {/* Header Section - Always at the top */}
-        <View style={tw("mb-4")}>
-          <Header
-            company={company}
-            title={title}
-            documentId={stockTransfer?.stockTransferId}
-            date={stockTransfer?.createdAt}
-            locale={locale}
-          />
-          <Summary company={company} items={details} />
-        </View>
-
-        {/* Line Items Section */}
-        <View style={tw("mb-6 text-xs")}>
-          <View
-            style={tw(
-              "flex flex-row bg-gray-800 py-2 px-3 text-white text-[9px] font-bold"
-            )}
-          >
-            <Text style={tw("w-2/5 text-left")}>Description</Text>
-            <Text style={tw("w-1/4 text-center")}>Transfer</Text>
-            <Text style={tw("w-1/6 text-center")}>Qty</Text>
-            <Text style={tw("w-1/8 text-center")}>Pick</Text>
-          </View>
-
-          {stockTransferLines
-            .sort((a, b) => {
-              const storageUnitA = a.fromStorageUnitName || "Any";
-              const storageUnitB = b.fromStorageUnitName || "Any";
-              return storageUnitA.localeCompare(storageUnitB);
-            })
-            .map((line) => {
-              const barcodeDataUrl = generateBarcode(line.itemReadableId ?? "");
-              let pickUrl = `${getAppUrl()}/api/stock-transfer/${line.id}/pick`;
-              if (line.requiresSerialTracking) {
-                pickUrl += "?type=serial";
-              } else if (line.requiresBatchTracking) {
-                pickUrl += "?type=batch";
-              }
-              const pickQRCode = generateQRCode(pickUrl, 4);
-
-              return (
-                <View
-                  style={tw(
-                    "flex flex-row justify-between py-2 px-3 border-b border-gray-200 text-[10px]"
-                  )}
-                  key={line.id}
-                  wrap={false}
-                >
-                  <View style={tw("w-2/5")}>
-                    <Text style={tw("font-bold mb-1")}>
-                      {getLineDescription(line)}
-                    </Text>
-                    <Text style={tw("text-[9px] opacity-80 mb-2")}>
-                      {getLineDescriptionDetails(line)}
-                    </Text>
-
-                    {thumbnails &&
-                      line.id != null &&
-                      line.id in thumbnails &&
-                      thumbnails[line.id] && (
-                        <View style={tw("mt-2 mb-2")}>
-                          <Image
-                            src={thumbnails[line.id]!}
-                            style={tw("w-1/4 h-auto max-w-[25%]")}
-                          />
-                        </View>
-                      )}
-
-                    <Image src={barcodeDataUrl} style={tw("max-w-[50%]")} />
-                  </View>
-
-                  <View style={tw("w-1/4 text-center")}>
-                    <Text style={tw("text-xs")}>
-                      {line.fromStorageUnitName || "Any"} →{" "}
-                      {line.toStorageUnitName || "Any"}
-                    </Text>
-                  </View>
-
-                  <Text style={tw("w-1/6 text-center")}>
-                    {getLineQuantity(line)}
-                  </Text>
-
-                  <View style={tw("w-1/8 flex flex-col items-center")}>
-                    <Image src={pickQRCode} style={tw("h-16 w-16")} />
-                  </View>
-                </View>
-              );
-            })}
-        </View>
-      </View>
+      {visibleBlocks.map((block) => {
+        const render = stockTransferBlockRegistry[block.type];
+        if (!render) return null;
+        return <Fragment key={block.id}>{render({ block, data })}</Fragment>;
+      })}
     </Template>
   );
 };
-
-function getLineQuantity(
-  line: Database["public"]["Views"]["stockTransferLines"]["Row"]
-) {
-  return `${line.quantity} ${line.unitOfMeasure}`;
-}
-
-function getLineDescription(
-  line: Database["public"]["Views"]["stockTransferLines"]["Row"]
-) {
-  return line.itemDescription;
-}
-
-function getLineDescriptionDetails(
-  line: Database["public"]["Views"]["stockTransferLines"]["Row"]
-) {
-  return line.itemReadableId;
-}
-
-async function generateBarcode(text: string): Promise<string> {
-  const buffer = await bwipjs.toBuffer({
-    bcid: "code128", // Barcode type
-    text: text, // Text to encode
-    scale: 3, // 3x scaling factor
-    height: 5, // Bar height, in millimeters
-    includetext: true, // Show human-readable text
-    textxalign: "center" // Always good to set this
-  });
-  return `data:image/png;base64,${buffer.toString("base64")}`;
-}
 
 export default StockTransferPDF;

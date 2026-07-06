@@ -1,5 +1,6 @@
 import { ValidatedForm } from "@carbon/form";
 import {
+  Badge,
   BarProgress,
   Card,
   CardContent,
@@ -248,6 +249,18 @@ export function ItemCard({ item, isOverlay, progressByItemId }: ItemCardProps) {
           Number(item.targetQuantity ?? item.quantity) > 0 && (
             <HStack>
               <BarProgress
+                segments={[
+                  {
+                    value: item.quantityCompleted ?? 0,
+                    className: "bg-emerald-500"
+                  },
+                  {
+                    value: item.quantityReworked ?? 0,
+                    className: "bg-yellow-500"
+                  },
+                  { value: item.quantityScrapped ?? 0, className: "bg-red-500" }
+                ]}
+                max={(item.targetQuantity ?? item.quantity) || 1}
                 progress={
                   item.quantityCompleted &&
                   (item.targetQuantity ?? item.quantity)
@@ -275,6 +288,7 @@ export function ItemCard({ item, isOverlay, progressByItemId }: ItemCardProps) {
         <HStack className="justify-start space-x-2">
           <LuCirclePlay className="text-muted-foreground" />
           <span className="text-sm line-clamp-1">{item.title}</span>
+          {item.reworkId && <Badge variant="red">Rework</Badge>}
         </HStack>
         {displaySettings.showDescription && item.description && (
           <HStack className="justify-start space-x-2">

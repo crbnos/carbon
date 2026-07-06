@@ -1,4 +1,5 @@
 import type { Result } from "@carbon/auth";
+import { useStorageRuleViolations } from "@carbon/ee/storage-rules";
 import {
   Button,
   Copy,
@@ -23,11 +24,11 @@ import {
   LuTrash
 } from "react-icons/lu";
 import { useFetcher, useParams } from "react-router";
+import { PrintButton } from "~/components";
 import Assignee, { useOptimisticAssignment } from "~/components/Assignee";
 import { useAuditLog } from "~/components/AuditLog";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
-import { useItemRuleViolations } from "~/hooks/useItemRuleViolations";
 import {
   isStockTransferLocked,
   type StockTransfer,
@@ -59,11 +60,11 @@ const StockTransferHeader = () => {
   // Item rules fire on Release + Complete (the "go" transitions). Each gets
   // its own fetcher so Release's loading state doesn't disable Complete and
   // vice versa, and violations surface via a single shared modal.
-  const releaseRules = useItemRuleViolations({
+  const releaseRules = useStorageRuleViolations({
     action: path.to.stockTransferStatus(id)
   });
   const releaseFetcher = releaseRules.fetcher;
-  const completeRules = useItemRuleViolations({
+  const completeRules = useStorageRuleViolations({
     action: path.to.stockTransferStatus(id)
   });
   const completeFetcher = completeRules.fetcher;
@@ -97,6 +98,10 @@ const StockTransferHeader = () => {
     (line) => line.pickedQuantity && line.pickedQuantity > 0
   );
 
+  const hasTrackedLines = routeData?.stockTransferLines.some(
+    (line) => !!line.trackedEntityId
+  );
+
   return (
     <>
       <div className="flex flex-shrink-0 items-center justify-between px-4 py-2 bg-card border-b border-border h-[50px] overflow-x-auto scrollbar-hide dark:border-none dark:shadow-[inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1)]">
@@ -125,7 +130,7 @@ const StockTransferHeader = () => {
                       routeData?.stockTransfer?.status ?? ""
                     ) ||
                     statusFetcher.state !== "idle" ||
-                    !permissions.can("update", "purchasing")
+                    !permissions.can("delete", "inventory")
                   }
                   onClick={() => {
                     statusFetcher.submit(
@@ -167,6 +172,18 @@ const StockTransferHeader = () => {
               table="stockTransfer"
               isReadOnly={!permissions.can("update", "inventory")}
             />
+            {hasTrackedLines && (
+              <PrintButton
+                sourceDocument="StockTransfer"
+                sourceDocumentId={id}
+                locationId={routeData?.stockTransfer?.locationId ?? undefined}
+                context="inventory"
+                fileRoutes={{
+                  pdf: path.to.file.stockTransferLabelsPdf,
+                  zpl: path.to.file.stockTransferLabelsZpl
+                }}
+              />
+            )}
             <Button variant="secondary" leftIcon={<LuBarcode />} asChild>
               <a
                 target="_blank"

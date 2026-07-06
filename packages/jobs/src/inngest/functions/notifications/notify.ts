@@ -1,29 +1,37 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
+import { NotificationEmail } from "@carbon/documents/email";
 import {
   type CompanyIntegration,
   notifyTaskAssigned
 } from "@carbon/ee/notifications";
+import { companyHasPlan } from "@carbon/ee/plan.server";
+import { getSlackUserIdByCarbonId } from "@carbon/ee/slack.server";
+import { ERP_URL } from "@carbon/env";
+import type { Events } from "@carbon/lib/events";
 import {
-  ERP_URL,
-  NOVU_API_URL,
-  NOVU_SECRET_KEY,
-  VERCEL_URL
-} from "@carbon/env";
-import {
-  getSubscriberId,
-  NotificationEvent,
-  NotificationWorkflow,
-  type TriggerPayload,
-  trigger,
-  triggerBulk
+  getNotificationEmailCtaLabel,
+  getNotificationEmailHeading,
+  getNotificationTopic,
+  NotificationDestination,
+  NotificationEvent
 } from "@carbon/notifications";
-import { Novu } from "@novu/node";
+import { render } from "@react-email/components";
 import { inngest } from "../../client";
 
 type ApprovalDocumentType = Database["public"]["Enums"]["approvalDocumentType"];
 
-// Helper function to get company integrations
+function buildNotificationLink(
+  event: NotificationEvent,
+  documentId: string,
+  companyId: string,
+  documentType?: ApprovalDocumentType
+): string {
+  const params = new URLSearchParams({ event, documentId, companyId });
+  if (documentType) params.set("documentType", documentType);
+  return `${ERP_URL}/api/link?${params.toString()}`;
+}
+
 async function getCompanyIntegrations(
   client: ReturnType<typeof getCarbonServiceRole>,
   companyId: string
@@ -32,44 +40,6 @@ async function getCompanyIntegrations(
     .from("companyIntegration")
     .select("*")
     .eq("companyId", companyId);
-}
-
-function getWorkflow(type: NotificationEvent) {
-  switch (type) {
-    case NotificationEvent.JobAssignment:
-    case NotificationEvent.JobOperationAssignment:
-    case NotificationEvent.MaintenanceDispatchAssignment:
-    case NotificationEvent.MaintenanceDispatchCreated:
-    case NotificationEvent.NonConformanceAssignment:
-    case NotificationEvent.ProcedureAssignment:
-    case NotificationEvent.PurchaseInvoiceAssignment:
-    case NotificationEvent.PurchaseOrderAssignment:
-    case NotificationEvent.QuoteAssignment:
-    case NotificationEvent.RiskAssignment:
-    case NotificationEvent.SalesOrderAssignment:
-    case NotificationEvent.SalesRfqAssignment:
-    case NotificationEvent.SalesRfqReady:
-    case NotificationEvent.StockTransferAssignment:
-    case NotificationEvent.SupplierQuoteAssignment:
-    case NotificationEvent.TrainingAssignment:
-      return NotificationWorkflow.Assignment;
-    case NotificationEvent.JobCompleted:
-      return NotificationWorkflow.JobCompleted;
-    case NotificationEvent.DigitalQuoteResponse:
-      return NotificationWorkflow.DigitalQuoteResponse;
-    case NotificationEvent.SuggestionResponse:
-      return NotificationWorkflow.SuggestionResponse;
-    case NotificationEvent.SupplierQuoteResponse:
-      return NotificationWorkflow.SupplierQuoteResponse;
-    case NotificationEvent.JobOperationMessage:
-      return NotificationWorkflow.Message;
-    case NotificationEvent.ApprovalApproved:
-    case NotificationEvent.ApprovalRejected:
-    case NotificationEvent.ApprovalRequested:
-      return NotificationWorkflow.Approval;
-    default:
-      return null;
-  }
 }
 
 async function getDescription(
@@ -111,6 +81,19 @@ async function getDescription(
         throw quote.error;
       }
       return `Quote ${quote?.data?.quoteId} assigned to you`;
+    }
+
+    case NotificationEvent.QuoteExpired: {
+      const expiredQuote = await client
+        .from("quote")
+        .select("*")
+        .eq("id", documentId)
+        .single();
+      if (expiredQuote.error) {
+        console.error("Failed to get quote", expiredQuote.error);
+        throw expiredQuote.error;
+      }
+      return `Quote ${expiredQuote?.data?.quoteId} has expired`;
     }
 
     case NotificationEvent.SalesOrderAssignment: {
@@ -303,6 +286,21 @@ async function getDescription(
       return `Stock Transfer ${stockTransfer?.data?.stockTransferId} assigned to you`;
     }
 
+    case NotificationEvent.PickingListAssignment: {
+      const pickingList = await client
+        .from("pickingList")
+        .select("*")
+        .eq("id", documentId)
+        .single();
+
+      if (pickingList.error) {
+        console.error("Failed to get pickingList", pickingList.error);
+        throw pickingList.error;
+      }
+
+      return `Picking List ${pickingList?.data?.pickingListId} assigned to you`;
+    }
+
     case NotificationEvent.TrainingAssignment: {
       const trainingAssignment = await client
         .from("trainingAssignment")
@@ -319,6 +317,51 @@ async function getDescription(
       }
 
       return `Training "${trainingAssignment?.data?.training?.name}" assigned to you`;
+    }
+
+    case NotificationEvent.ResourceTrainingAssignment: {
+      const training = await client
+        .from("training")
+        .select("name")
+        .eq("id", documentId)
+        .single();
+
+      if (training.error) {
+        console.error("Failed to get training", training.error);
+        throw training.error;
+      }
+
+      return `Training "${training?.data?.name}" assigned to you`;
+    }
+
+    case NotificationEvent.PurchaseOrderAssignment: {
+      const purchaseOrder = await client
+        .from("purchaseOrder")
+        .select("*")
+        .eq("id", documentId)
+        .single();
+
+      if (purchaseOrder.error) {
+        console.error("Failed to get purchaseOrder", purchaseOrder.error);
+        throw purchaseOrder.error;
+      }
+
+      return `Purchase Order ${purchaseOrder?.data?.purchaseOrderId} assigned to you`;
+    }
+
+    case NotificationEvent.PurchaseInvoiceAssignment: {
+      const purchaseInvoice = await client
+        .from("purchaseInvoice")
+        .select("*")
+        .eq("id", documentId)
+        .single();
+
+      if (purchaseInvoice.error) {
+        console.error("Failed to get purchaseInvoice", purchaseInvoice.error);
+        throw purchaseInvoice.error;
+      }
+
+      return `Purchase Invoice ${purchaseInvoice?.data?.invoiceId} assigned to you`;
     }
 
     case NotificationEvent.SuggestionResponse: {
@@ -350,6 +393,24 @@ async function getDescription(
       }
 
       return `Risk "${risk?.data?.title}" assigned to you`;
+    }
+
+    case NotificationEvent.SupplierQuoteAssignment: {
+      const supplierQuoteAssignment = await client
+        .from("supplierQuote")
+        .select("*")
+        .eq("id", documentId)
+        .single();
+
+      if (supplierQuoteAssignment.error) {
+        console.error(
+          "Failed to get supplier quote",
+          supplierQuoteAssignment.error
+        );
+        throw supplierQuoteAssignment.error;
+      }
+
+      return `Supplier Quote ${supplierQuoteAssignment?.data?.supplierQuoteId} assigned to you`;
     }
 
     case NotificationEvent.SupplierQuoteResponse: {
@@ -471,6 +532,126 @@ async function getDescription(
   }
 }
 
+// Per-event default destinations. Callers can override by passing
+// `destinations` in the payload; otherwise these defaults apply.
+// InApp is always added separately and cannot be opted out of.
+const defaultDestinations: Partial<
+  Record<NotificationEvent, NotificationDestination[]>
+> = {
+  [NotificationEvent.ApprovalApproved]: [
+    NotificationDestination.Email,
+    NotificationDestination.Slack
+  ],
+  [NotificationEvent.ApprovalRejected]: [
+    NotificationDestination.Email,
+    NotificationDestination.Slack
+  ],
+  [NotificationEvent.ApprovalRequested]: [
+    NotificationDestination.Email,
+    NotificationDestination.Slack
+  ],
+  [NotificationEvent.DigitalQuoteResponse]: [
+    NotificationDestination.Email,
+    NotificationDestination.Slack
+  ],
+  [NotificationEvent.GaugeCalibrationExpired]: [
+    NotificationDestination.Email,
+    NotificationDestination.Slack
+  ],
+  [NotificationEvent.JobAssignment]: [
+    NotificationDestination.Email,
+    NotificationDestination.Slack
+  ],
+  [NotificationEvent.JobCompleted]: [
+    NotificationDestination.Email,
+    NotificationDestination.Slack
+  ],
+  [NotificationEvent.JobOperationAssignment]: [
+    NotificationDestination.Email,
+    NotificationDestination.Slack
+  ],
+  [NotificationEvent.JobOperationMessage]: [
+    NotificationDestination.Email,
+    NotificationDestination.Slack
+  ],
+  [NotificationEvent.MaintenanceDispatchAssignment]: [
+    NotificationDestination.Email,
+    NotificationDestination.Slack
+  ],
+  [NotificationEvent.MaintenanceDispatchCreated]: [
+    NotificationDestination.Email,
+    NotificationDestination.Slack
+  ],
+  [NotificationEvent.NonConformanceAssignment]: [
+    NotificationDestination.Email,
+    NotificationDestination.Slack
+  ],
+  [NotificationEvent.ProcedureAssignment]: [
+    NotificationDestination.Email,
+    NotificationDestination.Slack
+  ],
+  [NotificationEvent.PurchaseInvoiceAssignment]: [
+    NotificationDestination.Email,
+    NotificationDestination.Slack
+  ],
+  [NotificationEvent.PurchaseOrderAssignment]: [
+    NotificationDestination.Email,
+    NotificationDestination.Slack
+  ],
+  [NotificationEvent.QuoteAssignment]: [
+    NotificationDestination.Email,
+    NotificationDestination.Slack
+  ],
+  [NotificationEvent.QuoteExpired]: [
+    NotificationDestination.Email,
+    NotificationDestination.Slack
+  ],
+  [NotificationEvent.RiskAssignment]: [
+    NotificationDestination.Email,
+    NotificationDestination.Slack
+  ],
+  [NotificationEvent.SalesOrderAssignment]: [
+    NotificationDestination.Email,
+    NotificationDestination.Slack
+  ],
+  [NotificationEvent.SalesRfqAssignment]: [
+    NotificationDestination.Email,
+    NotificationDestination.Slack
+  ],
+  [NotificationEvent.SalesRfqReady]: [
+    NotificationDestination.Email,
+    NotificationDestination.Slack
+  ],
+  [NotificationEvent.StockTransferAssignment]: [
+    NotificationDestination.Email,
+    NotificationDestination.Slack
+  ],
+  [NotificationEvent.PickingListAssignment]: [
+    NotificationDestination.Email,
+    NotificationDestination.Slack
+  ],
+  [NotificationEvent.SuggestionResponse]: [
+    NotificationDestination.Email,
+    NotificationDestination.Slack
+  ],
+  [NotificationEvent.SupplierQuoteAssignment]: [
+    NotificationDestination.Email,
+    NotificationDestination.Slack
+  ],
+  [NotificationEvent.SupplierQuoteResponse]: [
+    NotificationDestination.Email,
+    NotificationDestination.Slack
+  ],
+  [NotificationEvent.TrainingAssignment]: [
+    NotificationDestination.Email,
+    NotificationDestination.Slack
+  ],
+  [NotificationEvent.ResourceTrainingAssignment]: [
+    NotificationDestination.Email,
+    NotificationDestination.Slack
+  ]
+};
+
 export const notifyFunction = inngest.createFunction(
   {
     id: "notify",
@@ -478,29 +659,18 @@ export const notifyFunction = inngest.createFunction(
   },
   { event: "carbon/notify" },
   async ({ event, step }) => {
-    const payload = event.data;
-
-    const novu = new Novu(NOVU_SECRET_KEY!, {
-      backendUrl: NOVU_API_URL
-    });
-    const isLocal =
-      VERCEL_URL === undefined || VERCEL_URL.includes("localhost");
-
-    if (isLocal) {
-      console.log("Skipping notify function on local", { payload });
-      return;
-    }
+    const payload = event.data as Events["carbon/notify"]["data"];
+    // inApp is always on so the topbar reflects every notification. Callers
+    // can request additional channels (email, slack) but cannot opt out of
+    // the in-app row.
+    const destinations: NotificationDestination[] = Array.from(
+      new Set<NotificationDestination>([
+        NotificationDestination.InApp,
+        ...(payload.destinations ?? defaultDestinations[payload.event] ?? [])
+      ])
+    );
 
     const client = getCarbonServiceRole();
-
-    const workflow = getWorkflow(payload.event);
-
-    if (!workflow) {
-      console.error(`No workflow found for notification type ${payload.event}`);
-      throw new Error(
-        `No workflow found for notification type ${payload.event}`
-      );
-    }
 
     const description = await step.run("get-description", async () => {
       return getDescription(
@@ -512,34 +682,45 @@ export const notifyFunction = inngest.createFunction(
     });
 
     if (!description) {
-      console.error(
-        `No description found for notification type ${payload.event} with documentId ${payload.documentId}`
-      );
       throw new Error(
         `No description found for notification type ${payload.event} with documentId ${payload.documentId}`
       );
     }
 
-    // Send integration notifications for non-conformance assignment events (e.g., Slack)
+    // Resolve recipient userIds and dedupe (group lookups can yield repeats).
+    const userIds = await step.run("resolve-recipients", async () => {
+      let ids: string[];
+      if (payload.recipient.type === "user") {
+        ids = [payload.recipient.userId];
+      } else if (payload.recipient.type === "users") {
+        ids = payload.recipient.userIds;
+      } else {
+        const result = await client.rpc("users_for_groups", {
+          groups: payload.recipient.groupIds
+        });
+        if (result.error) {
+          console.error("Failed to get userIds for groups", result.error);
+          throw result.error;
+        }
+        ids = (result.data ?? []) as string[];
+      }
+      // Don't notify the sender about their own action.
+      if (payload.from) ids = ids.filter((id) => id !== payload.from);
+      return [...new Set(ids)];
+    });
+
+    if (userIds.length === 0) {
+      return;
+    }
+
+    // Existing EE hook for non-conformance assignment — keep as a separate
+    // path because it handles cross-system task linking (Linear/Jira), not
+    // user-facing notification delivery.
     if (
       payload.event === NotificationEvent.NonConformanceAssignment &&
       payload.recipient.type === "user"
     ) {
       await step.run("send-integration-notification", async () => {
-        console.log(
-          "Processing non-conformance assignment notification for integrations",
-          {
-            event: payload.event,
-            companyId: payload.companyId,
-            documentId: payload.documentId,
-            recipientUserId:
-              payload.recipient.type === "user"
-                ? payload.recipient.userId
-                : undefined,
-            from: payload.from
-          }
-        );
-
         try {
           const integrationsResult = await getCompanyIntegrations(
             client,
@@ -551,18 +732,18 @@ export const notifyFunction = inngest.createFunction(
               { client },
               integrationsResult.data as CompanyIntegration[],
               {
-                companyId: payload.companyId,
-                userId: payload.from || "system",
                 carbonUrl: `${ERP_URL}/x/issue/${payload.documentId}`,
+                companyId: payload.companyId,
                 task: {
-                  id: payload.documentId,
-                  table: "nonConformance",
                   assignee:
                     payload.recipient.type === "user"
                       ? payload.recipient.userId
                       : "",
+                  id: payload.documentId,
+                  table: "nonConformance",
                   title: description
-                }
+                },
+                userId: payload.from || "system"
               }
             );
           }
@@ -571,153 +752,172 @@ export const notifyFunction = inngest.createFunction(
             "Failed to send integration assignment notification:",
             error
           );
-          // Continue without blocking the main operation
         }
       });
     }
 
-    const baseNotificationPayload = {
-      recordId: payload.documentId,
-      description,
-      event: payload.event,
-      from: payload.from,
-      ...(payload.documentType && { documentType: payload.documentType })
-    };
+    const topic = getNotificationTopic(payload.event);
 
-    if (payload.recipient.type === "user") {
-      await step.run("send-single-notification", async () => {
-        const novuPayload = {
-          workflow,
-          payload: baseNotificationPayload,
-          user: {
-            subscriberId: getSubscriberId({
-              companyId: payload.companyId,
-              userId:
-                payload.recipient.type === "user"
-                  ? payload.recipient.userId
-                  : ""
-            })
-          }
-        };
-
-        console.log("Sending single user notification to Novu", {
+    // ---- In-app fan-out ----
+    if (destinations.includes(NotificationDestination.InApp)) {
+      await step.run("write-in-app-notifications", async () => {
+        const rows = userIds.map((userId) => ({
+          companyId: payload.companyId,
+          documentType: payload.documentType ?? null,
           event: payload.event,
-          workflow,
-          subscriberId: novuPayload.user.subscriberId,
-          description,
-          documentId: payload.documentId,
-          from: payload.from
-        });
-
-        try {
-          await trigger(novu, novuPayload);
-          console.log("Successfully sent single user notification to Novu");
-        } catch (error) {
-          console.error("Error triggering single user notification");
-          console.error(error);
-        }
-      });
-    } else if (["group", "users"].includes(payload.recipient.type)) {
-      await step.run("send-bulk-notification", async () => {
-        console.log(
-          `triggering notification for group ${payload.recipient.type}`
-        );
-
-        const userIds =
-          payload.recipient.type === "group"
-            ? await client.rpc("users_for_groups", {
-                groups: payload.recipient.groupIds
-              })
-            : {
-                data:
-                  payload.recipient.type === "users"
-                    ? payload.recipient.userIds
-                    : [],
-                error: null
-              };
-
-        if (userIds.error) {
-          console.error("Failed to get userIds", userIds.error);
-          throw userIds.error;
-        }
-
-        if (
-          userIds.data === null ||
-          !Array.isArray(userIds.data) ||
-          userIds.data.length === 0
-        ) {
-          console.log(
-            `No userIds found for payload - skipping Novu notification`,
-            {
-              event: payload.event,
-              recipientType: payload.recipient.type,
-              recipient: payload.recipient,
-              reason: "No users found in group/users list"
-            }
-          );
-          return;
-        }
-
-        // Filter out the sender from recipients if they exist in the userIds
-        const filteredUserIds = payload.from
-          ? (userIds.data as string[]).filter((id) => id !== payload.from)
-          : (userIds.data as string[]);
-
-        if (filteredUserIds.length === 0) {
-          console.log(
-            `No recipients after filtering sender - skipping Novu notification`,
-            {
-              event: payload.event,
-              originalUserCount: userIds.data.length,
-              from: payload.from,
-              reason: "All users filtered out (sender was only recipient)"
-            }
-          );
-          return;
-        }
-
-        const notificationPayloads: TriggerPayload[] =
-          [...new Set(filteredUserIds)].map((userId) => ({
-            workflow,
-            payload: baseNotificationPayload,
-            user: {
-              subscriberId: getSubscriberId({
-                companyId: payload.companyId,
-                userId: userId
-              })
-            }
-          })) ?? [];
-
-        if (notificationPayloads.length > 0) {
-          console.log("Sending bulk notifications to Novu", {
-            event: payload.event,
-            workflow,
-            recipientCount: notificationPayloads.length,
+          from: payload.from ?? null,
+          payload: {
             description,
-            documentId: payload.documentId,
+            event: payload.event,
             from: payload.from,
-            subscriberIds: notificationPayloads.map((p) => p.user.subscriberId)
-          });
+            documentId: payload.documentId,
+            ...(payload.documentType && { documentType: payload.documentType })
+          },
+          documentId: payload.documentId,
+          title: description,
+          topic,
+          userId
+        }));
 
-          try {
-            await triggerBulk(novu, notificationPayloads.flat());
-            console.log(
-              `Successfully sent ${notificationPayloads.length} bulk notifications to Novu`
-            );
-          } catch (error) {
-            console.error("Error triggering bulk notifications");
-            console.error(error);
-          }
-        } else {
-          console.log(
-            `No notification payloads generated - skipping Novu notification`,
-            {
-              event: payload.event,
-              reason: "Empty notification payloads array"
-            }
-          );
+        const { data, error } = await client
+          .from("notification")
+          .insert(rows)
+          .select("id");
+        if (error) {
+          console.error("Failed to insert notification rows", error);
+          throw error;
         }
+        return { inserted: data?.length ?? 0, userIds };
       });
+    }
+
+    // ---- Email fan-out ----
+    if (destinations.includes(NotificationDestination.Email)) {
+      const emailAllowed = await step.run("check-email-plan", () =>
+        companyHasPlan(client, payload.companyId, {
+          feature: "EMAIL_NOTIFICATIONS"
+        })
+      );
+      if (!emailAllowed) {
+        console.warn("Email not allowed");
+        return;
+      }
+      const emailEvents = await step.run(
+        "resolve-email-recipients",
+        async () => {
+          const { data: users, error } = await client
+            .from("user")
+            .select("id, email, fullName")
+            .in("id", userIds);
+          if (error) {
+            console.error("Failed to resolve email recipients", error);
+            throw error;
+          }
+
+          const subject = description;
+          const heading = getNotificationEmailHeading(payload.event);
+          const ctaLabel = getNotificationEmailCtaLabel(payload.event);
+          const ctaUrl = buildNotificationLink(
+            payload.event,
+            payload.documentId,
+            payload.companyId,
+            payload.documentType
+          );
+
+          const recipients = (users ?? []).filter((u) => u.email);
+
+          // Render the template once per recipient because the greeting bakes
+          // in the user's name. The template itself is small so this is cheap;
+          // if it ever becomes hot we can split into a shared body + per-user
+          // greeting Section.
+          const events = await Promise.all(
+            recipients.map(async (u) => {
+              const html = await render(
+                NotificationEmail({
+                  ctaLabel,
+                  ctaUrl,
+                  heading,
+                  message: description,
+                  preview: heading,
+                  recipientName: u.fullName ?? undefined
+                })
+              );
+              return {
+                data: {
+                  companyId: payload.companyId,
+                  html,
+                  subject,
+                  text: `${description}\n\n${ctaLabel}: ${ctaUrl}`,
+                  to: u.email
+                },
+                name: "carbon/send-email" as const
+              };
+            })
+          );
+          return events;
+        }
+      );
+      if (emailEvents.length > 0) {
+        await step.sendEvent("fan-out-emails", emailEvents);
+      }
+    }
+
+    // ---- Slack DM fan-out ----
+    // Per-user DMs via the company's linked Slack workspace. Users without a
+    // matching Slack account in that workspace are silently skipped.
+    if (destinations.includes(NotificationDestination.Slack)) {
+      const slackEvents = await step.run(
+        "resolve-slack-recipients",
+        async () => {
+          const { data: integration, error } = await client
+            .from("companyIntegration")
+            .select("active, metadata")
+            .eq("companyId", payload.companyId)
+            .eq("id", "slack")
+            .maybeSingle();
+
+          if (error) {
+            console.error("Failed to resolve Slack integration", error);
+            return [];
+          }
+          if (!integration?.active) return [];
+
+          const metadata = integration.metadata as {
+            access_token?: string;
+          } | null;
+          const accessToken = metadata?.access_token;
+          if (!accessToken) return [];
+
+          const ctaUrl = buildNotificationLink(
+            payload.event,
+            payload.documentId,
+            payload.companyId,
+            payload.documentType
+          );
+          const text = `${description}\n<${ctaUrl}|View in Carbon>`;
+
+          const slackUserIds = await Promise.all(
+            userIds.map((userId) =>
+              getSlackUserIdByCarbonId(client, accessToken, userId)
+            )
+          );
+
+          return slackUserIds
+            .filter((id): id is string => !!id)
+            .map((slackUserId) => ({
+              data: {
+                channel: slackUserId,
+                companyId: payload.companyId,
+                text
+              },
+              name: "carbon/send-slack" as const
+            }));
+        }
+      );
+
+      if (slackEvents.length > 0) {
+        await step.sendEvent("fan-out-slack", slackEvents);
+      }
     }
   }
 );

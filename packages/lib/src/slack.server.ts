@@ -31,6 +31,8 @@ class SlackClient {
   }
 }
 
-export function getSlackClient(): SlackClient {
-  return new SlackClient(process.env.SLACK_BOT_TOKEN ?? SLACK_BOT_TOKEN ?? "");
+export function getSlackClient(token?: string): SlackClient {
+  return new SlackClient(
+    token ?? process.env.SLACK_BOT_TOKEN ?? SLACK_BOT_TOKEN ?? ""
+  );
 }

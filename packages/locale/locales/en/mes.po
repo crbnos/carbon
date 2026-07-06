@@ -21,10 +21,6 @@ msgstr "{0} - Set {1}"
 msgid "{0} Active"
 msgstr "{0} Active"
 
-#. placeholder {0}: batch.quantity
-msgid "{0} available"
-msgstr "{0} available"
-
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
 #. placeholder {1}: operation.operationQuantity
@@ -64,6 +60,9 @@ msgstr "Add"
 msgid "Add & Issue"
 msgstr "Add & Issue"
 
+msgid "Add a printer in the printing settings to print labels directly."
+msgstr "Add a printer in the printing settings to print labels directly."
+
 msgid "Add Inventory"
 msgstr "Add Inventory"
 
@@ -73,9 +72,6 @@ msgstr "Add Spare Part"
 msgid "All"
 msgstr "All"
 
-msgid "Are you sure you want to close out this operation? This will end all active production events for this operation."
-msgstr "Are you sure you want to close out this operation? This will end all active production events for this operation."
-
 msgid "Are you sure you want to delete this step?"
 msgstr "Are you sure you want to delete this step?"
 
@@ -84,6 +80,12 @@ msgstr "Are you sure you want to delete this timecard? This cannot be undone."
 
 msgid "Are you sure you want to end all production events? This will end all active operations without completing or finishing them."
 msgstr "Are you sure you want to end all production events? This will end all active operations without completing or finishing them."
+
+msgid "Are you sure you want to finish this operation? This will end all active production events for this operation."
+msgstr "Are you sure you want to finish this operation? This will end all active production events for this operation."
+
+msgid "Are you sure you want to leave this page?"
+msgstr "Are you sure you want to leave this page?"
 
 msgid "Assigned"
 msgstr "Assigned"
@@ -100,10 +102,11 @@ msgstr "Attach File"
 msgid "Authentication Error"
 msgstr "Authentication Error"
 
-#. placeholder {0}: batch.readableId
-#. placeholder {1}: batch.quantity
-msgid "Batch {0} ({1} available)"
-msgstr "Batch {0} ({1} available)"
+msgid "available"
+msgstr "available"
+
+msgid "Batch"
+msgstr "Batch"
 
 msgid "Batch is not available"
 msgstr "Batch is not available"
@@ -130,6 +133,9 @@ msgstr "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy P
 
 msgid "Cancel"
 msgstr "Cancel"
+
+msgid "Cancelled"
+msgstr "Cancelled"
 
 msgid "Carbon Logo"
 msgstr "Carbon Logo"
@@ -162,19 +168,6 @@ msgstr "Clock Out"
 msgid "Clocked in since {0}"
 msgstr "Clocked in since {0}"
 
-msgid "Close"
-msgstr "Close"
-
-msgid "Close Anyways"
-msgstr "Close Anyways"
-
-msgid "Close Out"
-msgstr "Close Out"
-
-#. placeholder {0}: operation.itemReadableId
-msgid "Close out {0}"
-msgstr "Close out {0}"
-
 #. placeholder {0}: active.data.current.column.title
 #. placeholder {1}: overColumnPosition + 1
 #. placeholder {2}: columnOrder.length
@@ -201,6 +194,9 @@ msgstr "Company"
 msgid "Complete"
 msgstr "Complete"
 
+msgid "Complete All"
+msgstr "Complete All"
+
 msgid "Completed"
 msgstr "Completed"
 
@@ -218,6 +214,15 @@ msgstr "Consumed expired"
 msgid "Create {0}"
 msgstr "Create {0}"
 
+msgid "Create Issue"
+msgstr "Create Issue"
+
+msgid "Create Quality Issue"
+msgstr "Create Quality Issue"
+
+msgid "Create Rework"
+msgstr "Create Rework"
+
 msgid "Customer"
 msgstr "Customer"
 
@@ -229,6 +234,9 @@ msgstr "Date"
 
 msgid "Deadline"
 msgstr "Deadline"
+
+msgid "Default"
+msgstr "Default"
 
 msgid "Default Storage Unit"
 msgstr "Default Storage Unit"
@@ -242,6 +250,12 @@ msgstr "Delete Step"
 #. placeholder {0}: new Date(deletingEntry.clockIn).toLocaleString(locale)
 msgid "Delete Timecard ({0})"
 msgstr "Delete Timecard ({0})"
+
+msgid "Describe the problem..."
+msgstr "Describe the problem..."
+
+msgid "Describe what needs to be reworked..."
+msgstr "Describe what needs to be reworked..."
 
 msgid "Description"
 msgstr "Description"
@@ -260,6 +274,12 @@ msgstr "Down"
 
 msgid "Download"
 msgstr "Download"
+
+msgid "Download Labels"
+msgstr "Download Labels"
+
+msgid "Draft"
+msgstr "Draft"
 
 msgid "Drag and drop a file here, or click to select a file"
 msgstr "Drag and drop a file here, or click to select a file"
@@ -308,6 +328,18 @@ msgstr "Error"
 msgid "Estimated"
 msgstr "Estimated"
 
+msgid "Expired"
+msgstr "Expired"
+
+msgid "Expired {date}"
+msgstr "Expired {date}"
+
+msgid "Expires {date}"
+msgstr "Expires {date}"
+
+msgid "Expiring first"
+msgstr "Expiring first"
+
 msgid "Failed to complete inventory adjustment"
 msgstr "Failed to complete inventory adjustment"
 
@@ -342,11 +374,27 @@ msgstr "Files related to the job and the opportunity line."
 msgid "Filter"
 msgstr "Filter"
 
+msgid "Finish"
+msgstr "Finish"
+
+#. placeholder {0}: operation.itemReadableId
+msgid "Finish {0}"
+msgstr "Finish {0}"
+
+msgid "Finish Anyways"
+msgstr "Finish Anyways"
+
 msgid "Forgot to Clock Out?"
 msgstr "Forgot to Clock Out?"
 
+msgid "Go back to operation"
+msgstr "Go back to operation"
+
 msgid "Have a technical issue? Contact <0>Carbon Support.</0>"
 msgstr "Have a technical issue? Contact <0>Carbon Support.</0>"
+
+msgid "How many were actually picked?"
+msgstr "How many were actually picked?"
 
 msgid "I understand and want to complete without issuing"
 msgstr "I understand and want to complete without issuing"
@@ -362,6 +410,9 @@ msgstr "Ideas, suggestions or problems?"
 
 msgid "Impact"
 msgstr "Impact"
+
+msgid "Imperial"
+msgstr "Imperial"
 
 msgid "In Progress"
 msgstr "In Progress"
@@ -387,6 +438,9 @@ msgstr "Issue"
 msgid "Issue Material"
 msgstr "Issue Material"
 
+msgid "Issue Type"
+msgstr "Issue Type"
+
 msgid "Item"
 msgstr "Item"
 
@@ -402,14 +456,23 @@ msgstr "Job Details"
 msgid "Job Traveler"
 msgstr "Job Traveler"
 
+msgid "Jobs"
+msgstr "Jobs"
+
 msgid "Kit"
 msgstr "Kit"
 
 msgid "Labor"
 msgstr "Labor"
 
+msgid "Leave this page"
+msgstr "Leave this page"
+
 msgid "Let's build something"
 msgstr "Let's build something"
+
+msgid "lines"
+msgstr "lines"
 
 msgid "Loading item details..."
 msgstr "Loading item details..."
@@ -459,6 +522,9 @@ msgstr "Manually add items to inventory"
 msgid "Manually remove items from inventory"
 msgstr "Manually remove items from inventory"
 
+msgid "Mark Short"
+msgstr "Mark Short"
+
 msgid "matches"
 msgstr "matches"
 
@@ -468,8 +534,14 @@ msgstr "Materials"
 msgid "Maximum number of records reached"
 msgstr "Maximum number of records reached"
 
+msgid "Metric"
+msgstr "Metric"
+
 msgid "Model"
 msgstr "Model"
+
+msgid "More Actions"
+msgstr "More Actions"
 
 msgid "More options"
 msgstr "More options"
@@ -499,6 +571,9 @@ msgstr "New"
 msgid "New Record"
 msgstr "New Record"
 
+msgid "Newest first"
+msgstr "Newest first"
+
 msgid "Next"
 msgstr "Next"
 
@@ -517,6 +592,9 @@ msgstr "No available filters"
 msgid "No available serial numbers found"
 msgstr "No available serial numbers found"
 
+msgid "No available tracked entities found"
+msgstr "No available tracked entities found"
+
 msgid "No dispatches assigned to you"
 msgstr "No dispatches assigned to you"
 
@@ -532,6 +610,9 @@ msgstr "No maintenance scheduled for today"
 msgid "No materials"
 msgstr "No materials"
 
+msgid "No open jobs"
+msgstr "No open jobs"
+
 msgid "No operators"
 msgstr "No operators"
 
@@ -540,6 +621,12 @@ msgstr "No option found."
 
 msgid "No options found."
 msgstr "No options found."
+
+msgid "No picking lists assigned"
+msgstr "No picking lists assigned"
+
+msgid "No printer configured"
+msgstr "No printer configured"
 
 msgid "No recent operations"
 msgstr "No recent operations"
@@ -559,11 +646,20 @@ msgstr "No scheduled time"
 msgid "No serial numbers"
 msgstr "No serial numbers"
 
+msgid "No serial numbers found"
+msgstr "No serial numbers found"
+
 msgid "No spare parts added yet"
 msgstr "No spare parts added yet"
 
+msgid "No stock"
+msgstr "No stock"
+
 msgid "No time entries for this week"
 msgstr "No time entries for this week"
+
+msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
+msgstr "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 
 msgid "No work centers are blocked"
 msgstr "No work centers are blocked"
@@ -580,6 +676,9 @@ msgstr "OEE Impact"
 msgid "OEM Required"
 msgstr "OEM Required"
 
+msgid "Oldest first"
+msgstr "Oldest first"
+
 #. placeholder {0}: batch.quantity
 msgid "Only {0} available"
 msgstr "Only {0} available"
@@ -589,6 +688,9 @@ msgstr "Oops. You shouldn't see this page. Eventually it will be a landing page.
 
 msgid "Open"
 msgstr "Open"
+
+msgid "Open Jobs"
+msgstr "Open Jobs"
 
 msgid "Operations"
 msgstr "Operations"
@@ -614,11 +716,23 @@ msgstr "Passed Inspection"
 msgid "Pause"
 msgstr "Pause"
 
+msgid "Pick"
+msgstr "Pick"
+
+msgid "Pick tracked item"
+msgstr "Pick tracked item"
+
+msgid "Picked quantity"
+msgstr "Picked quantity"
+
 #. placeholder {0}: startColumn?.title
 #. placeholder {1}: startIndex + 1
 #. placeholder {2}: columnOrder.length
 msgid "Picked up Column {0} at position: {1} of {2}"
 msgstr "Picked up Column {0} at position: {1} of {2}"
+
+msgid "Picking"
+msgstr "Picking"
 
 msgid "Pin Out"
 msgstr "Pin Out"
@@ -638,6 +752,12 @@ msgstr "Prev"
 msgid "Preventive"
 msgstr "Preventive"
 
+msgid "Print"
+msgstr "Print"
+
+msgid "Printer Settings"
+msgstr "Printer Settings"
+
 msgid "Priority"
 msgstr "Priority"
 
@@ -656,11 +776,20 @@ msgstr "Processes"
 msgid "Progress"
 msgstr "Progress"
 
+msgid "Quality Issue"
+msgstr "Quality Issue"
+
+msgid "Quality issue created"
+msgstr "Quality issue created"
+
 msgid "Quantity"
 msgstr "Quantity"
 
 msgid "Quantity must be greater than 0"
 msgstr "Quantity must be greater than 0"
+
+msgid "Reason for rework"
+msgstr "Reason for rework"
 
 msgid "Recent"
 msgstr "Recent"
@@ -684,6 +813,12 @@ msgstr "Remove Inventory"
 msgid "Remove part"
 msgstr "Remove part"
 
+msgid "Rework"
+msgstr "Rework"
+
+msgid "Rework created successfully"
+msgstr "Rework created successfully"
+
 msgid "Sales Order"
 msgstr "Sales Order"
 
@@ -696,8 +831,17 @@ msgstr "Scan"
 msgid "Scan or enter serial number"
 msgstr "Scan or enter serial number"
 
+msgid "Scan or enter tracking number"
+msgstr "Scan or enter tracking number"
+
+msgid "Scan or search serial number..."
+msgstr "Scan or search serial number..."
+
 msgid "Schedule"
 msgstr "Schedule"
+
+msgid "Scrap"
+msgstr "Scrap"
 
 msgid "Scrap Reason"
 msgstr "Scrap Reason"
@@ -707,6 +851,9 @@ msgstr "Scrapped"
 
 msgid "Search"
 msgstr "Search"
+
+msgid "Search by job or item ID"
+msgstr "Search by job or item ID"
 
 msgid "Search operators..."
 msgstr "Search operators..."
@@ -739,6 +886,9 @@ msgstr "Select an item..."
 msgid "Select Batch {0}"
 msgstr "Select Batch {0}"
 
+msgid "Select Printer"
+msgstr "Select Printer"
+
 #. placeholder {0}: index + 1
 msgid "Select Serial {0}"
 msgstr "Select Serial {0}"
@@ -746,15 +896,14 @@ msgstr "Select Serial {0}"
 msgid "Select Serial Number"
 msgstr "Select Serial Number"
 
+msgid "Select the operation to go back to. All operations from that point to the current operation will be redone."
+msgstr "Select the operation to go back to. All operations from that point to the current operation will be redone."
+
 msgid "Send"
 msgstr "Send"
 
 msgid "Serial"
 msgstr "Serial"
-
-#. placeholder {0}: sn.readableId
-msgid "Serial {0}"
-msgstr "Serial {0}"
 
 #. placeholder {0}: index + 1
 msgid "Serial Number {0}"
@@ -765,6 +914,9 @@ msgstr "Serial number is not available"
 
 msgid "Serial number is required"
 msgstr "Serial number is required"
+
+msgid "Serial numbers"
+msgstr "Serial numbers"
 
 msgid "Serial Numbers"
 msgstr "Serial Numbers"
@@ -778,6 +930,12 @@ msgstr "Set clock-out time"
 msgid "Setup"
 msgstr "Setup"
 
+msgid "Short"
+msgstr "Short"
+
+msgid "Short pick {itemName}"
+msgstr "Short pick {itemName}"
+
 msgid "Sign in with Email"
 msgstr "Sign in with Email"
 
@@ -786,6 +944,9 @@ msgstr "Sign in with Google"
 
 msgid "Sign in with Outlook"
 msgstr "Sign in with Outlook"
+
+msgid "Sign in with Passkey"
+msgstr "Sign in with Passkey"
 
 msgid "Sign Out"
 msgstr "Sign Out"
@@ -820,6 +981,9 @@ msgstr "Status"
 msgid "Statuses"
 msgstr "Statuses"
 
+msgid "Stay on this page"
+msgstr "Stay on this page"
+
 msgid "Steps"
 msgstr "Steps"
 
@@ -851,6 +1015,9 @@ msgstr "The completed quantity for this operation is less than the required quan
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 
+msgid "This lot is expired and can't be picked."
+msgstr "This lot is expired and can't be picked."
+
 msgid "Thumbnail"
 msgstr "Thumbnail"
 
@@ -878,8 +1045,8 @@ msgstr "Total time: {0}"
 msgid "Total: {0}"
 msgstr "Total: {0}"
 
-msgid "Tracking Labels"
-msgstr "Tracking Labels"
+msgid "Tracking"
+msgstr "Tracking"
 
 msgid "Type a message..."
 msgstr "Type a message..."
@@ -889,6 +1056,16 @@ msgstr "Unissued serial/batch materials"
 
 msgid "Unknown"
 msgstr "Unknown"
+
+msgid "Unpick"
+msgstr "Unpick"
+
+#. placeholder {0}: pickedLots[0].trackedEntity.readableId
+msgid "Unpick {0}"
+msgstr "Unpick {0}"
+
+msgid "Unsaved changes"
+msgstr "Unsaved changes"
 
 msgid "Update"
 msgstr "Update"

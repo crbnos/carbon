@@ -1,5 +1,6 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { setTimeout as sleep } from "node:timers/promises";
+import { log } from "@clack/prompts";
 import { execa } from "execa";
 import { join } from "pathe";
 import pg from "pg";
@@ -131,13 +132,8 @@ export async function applyMigrations(
   root: string,
   dbPort: number
 ): Promise<{ applied: boolean }> {
-  const args = [
-    "migration",
-    "up",
-    "--include-all",
-    "--db-url",
-    `postgresql://supabase_admin:postgres@localhost:${dbPort}/postgres`
-  ];
+  const dbUrl = `postgresql://supabase_admin:postgres@localhost:${dbPort}/postgres`;
+  const args = ["migration", "up", "--include-all", "--db-url", dbUrl];
   const cwd = join(root, "packages/database");
   const r = await execa("supabase", args, {
     cwd,
@@ -145,6 +141,29 @@ export async function applyMigrations(
     preferLocal: true
   });
   if (r.exitCode !== 0) {
+    const output = `${r.stderr ?? ""}\n${r.stdout ?? ""}`;
+    // Auto-repair: DB has migration versions not present locally (stale from
+    // another branch or incomplete volume wipe). Remove them and retry.
+    if (/remote migration versions not found in local/i.test(output)) {
+      const repaired = await repairStaleMigrations(root, dbPort);
+      if (repaired > 0) {
+        log.warn(`repaired ${repaired} stale migration(s) — retrying`);
+        const retry = await execa("supabase", args, {
+          cwd,
+          reject: false,
+          preferLocal: true
+        });
+        if (retry.exitCode === 0) {
+          const applied = /Applying migration/i.test(retry.stdout ?? "");
+          return { applied };
+        }
+        process.stderr.write(retry.stderr?.toString() ?? "");
+        process.stdout.write(retry.stdout?.toString() ?? "");
+        throw new Error(
+          `supabase ${args.join(" ")} failed after repair (exit ${retry.exitCode})`
+        );
+      }
+    }
     process.stderr.write(r.stderr?.toString() ?? "");
     process.stdout.write(r.stdout?.toString() ?? "");
     throw new Error(`supabase ${args.join(" ")} failed (exit ${r.exitCode})`);
@@ -153,6 +172,98 @@ export async function applyMigrations(
   // migration; absent that, the schema was already current.
   const applied = /Applying migration/i.test(r.stdout ?? "");
   return { applied };
+}
+
+// Find migration versions in DB that have no corresponding local file and
+// remove them from supabase_migrations.schema_migrations.
+async function repairStaleMigrations(
+  root: string,
+  dbPort: number
+): Promise<number> {
+  const migrationsDir = join(root, "packages/database/supabase/migrations");
+  const localVersions = new Set(
+    readdirSync(migrationsDir)
+      .filter((f) => f.endsWith(".sql"))
+      .map((f) => f.split("_")[0]!)
+  );
+
+  const remoteVersions = await withClient(
+    dbPort,
+    async (c) => {
+      const res = await c.query<{ version: string }>(
+        "SELECT version FROM supabase_migrations.schema_migrations ORDER BY version"
+      );
+      return res.rows.map((r) => r.version);
+    },
+    { user: "supabase_admin", password: "postgres" }
+  );
+
+  const stale = remoteVersions.filter((v) => !localVersions.has(v));
+  if (stale.length === 0) return 0;
+
+  await withClient(
+    dbPort,
+    async (c) => {
+      for (const version of stale) {
+        await c.query(
+          "DELETE FROM supabase_migrations.schema_migrations WHERE version = $1",
+          [version]
+        );
+      }
+    },
+    { user: "supabase_admin", password: "postgres" }
+  );
+
+  return stale.length;
+}
+
+// ---------------------------------------------------------------------------
+// Smoke-test user
+// ---------------------------------------------------------------------------
+
+const SMOKE_TEST_EMAIL = "test@carbon.ms";
+
+export async function ensureSmokeTestUser(
+  root: string,
+  dbPort: number,
+  apiPort: number
+): Promise<{ seeded: boolean }> {
+  const exists = await withClient(dbPort, async (c) => {
+    const r = await c.query<{ count: string }>(
+      `SELECT count(*)::text FROM "user" WHERE email = $1`,
+      [SMOKE_TEST_EMAIL]
+    );
+    return Number(r.rows[0]?.count) > 0;
+  });
+
+  if (exists) return { seeded: false };
+
+  const dbUrl = `postgresql://postgres:postgres@localhost:${dbPort}/postgres`;
+  const supabaseUrl = `http://localhost:${apiPort}`;
+  await execa(
+    "pnpm",
+    [
+      "--filter",
+      "@carbon/database",
+      "run",
+      "db:seed:dev",
+      "--",
+      "--email",
+      SMOKE_TEST_EMAIL
+    ],
+    {
+      cwd: root,
+      env: {
+        ...process.env,
+        SUPABASE_DB_URL: dbUrl,
+        SUPABASE_URL: supabaseUrl,
+        NODE_TLS_REJECT_UNAUTHORIZED: "0"
+      },
+      stdio: "pipe"
+    }
+  );
+
+  return { seeded: true };
 }
 
 // ---------------------------------------------------------------------------

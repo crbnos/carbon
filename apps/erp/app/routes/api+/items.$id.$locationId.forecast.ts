@@ -5,6 +5,7 @@ import { getLocalTimeZone, today } from "@internationalized/date";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import {
+  getDemandForecastSources,
   getItemDemand,
   getItemQuantities,
   getItemSupply,
@@ -18,6 +19,7 @@ import { getOrCreatePeriods } from "~/modules/shared/shared.server";
 const defaultResponse = {
   demand: [],
   demandForecast: [],
+  demandForecastSources: [],
   supply: [],
   periods: [],
   quantityOnHand: 0,
@@ -50,7 +52,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     openSalesOrderLines,
     openJobMaterials,
     openProductionOrders,
-    openPurchaseOrderLines
+    openPurchaseOrderLines,
+    demandForecastSources
   ] = await Promise.all([
     getItemDemand(client, {
       itemId,
@@ -68,7 +71,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getOpenSalesOrderLines(client, { itemId, companyId, locationId }),
     getOpenJobMaterials(client, { itemId, companyId, locationId }),
     getOpenProductionOrders(client, { itemId, companyId, locationId }),
-    getOpenPurchaseOrderLines(client, { itemId, companyId, locationId })
+    getOpenPurchaseOrderLines(client, { itemId, companyId, locationId }),
+    getDemandForecastSources(client, {
+      itemId,
+      locationId,
+      periods: periods.map((p) => p.id ?? ""),
+      companyId
+    })
   ]);
 
   if (demand.actuals.length === 0 && demand.forecasts.length === 0) {
@@ -81,6 +90,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return {
     demand: demand.actuals,
     demandForecast: demand.forecasts,
+    demandForecastSources: demandForecastSources.data ?? [],
     supply: [
       ...supply.actuals,
       ...supply.forecasts.map((f) => ({

@@ -184,6 +184,7 @@ export const storageUnitValidator = z.object({
   locationId: z.string().min(1, { message: "Location ID is required" }),
   warehouseId: zfd.text(z.string().optional()),
   parentId: zfd.text(z.string().optional()),
+  workCenterId: zfd.text(z.string().optional()),
   storageTypeIds: zfd.repeatableOfType(z.string()).default([])
 });
 
@@ -376,4 +377,68 @@ export const stockTransferLineScanValidator = z.object({
   trackedEntityId: z
     .string()
     .min(1, { message: "Tracked entity ID is required" })
+});
+
+export const pickingListStatusType = [
+  "Draft",
+  "In Progress",
+  "Completed",
+  "Cancelled"
+] as const;
+
+export const pickingListLineStatusType = [
+  "Pending",
+  "Picked",
+  "Short",
+  "Cancelled"
+] as const;
+
+// A picking list locks once it is Completed or Cancelled: no further picks or
+// unpicks are allowed until it is reopened (which requires the inventory
+// `delete` permission, ERP-only).
+export function isPickingListLocked(
+  status: string | null | undefined
+): boolean {
+  return status === "Completed" || status === "Cancelled";
+}
+
+export const pickingListValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  pickingListId: zfd.text(z.string().optional()),
+  locationId: z.string().min(1, { message: "Location is required" }),
+  assignee: zfd.text(z.string().optional()),
+  dueDate: zfd.text(z.string().optional()),
+  notes: zfd.text(z.string().optional())
+});
+
+export const pickingListLineValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  pickingListId: z.string().min(1),
+  jobId: z.string().min(1),
+  jobMaterialId: z.string().min(1),
+  jobOperationId: zfd.text(z.string().optional()),
+  itemId: z.string().min(1),
+  quantityToPick: zfd.numeric(z.number().min(0.0001)),
+  storageUnitId: zfd.text(z.string().optional())
+});
+
+export const pickingListLineTrackedEntityValidator = z.object({
+  pickingListLineId: z.string().min(1),
+  trackedEntityId: z.string().min(1),
+  quantity: zfd.numeric(z.number().min(0.0001))
+});
+
+export const generatePickingListValidator = z.object({
+  locationId: z.string().min(1, { message: "Location is required" }),
+  jobOperationIds: z.array(z.string().min(1)).min(1, {
+    message: "Select at least one operation"
+  }),
+  assignee: zfd.text(z.string().optional()),
+  dueDate: zfd.text(z.string().optional())
+});
+
+export const pickQuantityValidator = z.object({
+  pickingListLineId: z.string().min(1),
+  quantity: zfd.numeric(z.number().min(0)),
+  markShort: zfd.text(z.string().optional())
 });

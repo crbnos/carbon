@@ -1,4 +1,4 @@
-import { error } from "@carbon/auth";
+import { error, safeRedirect } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { setCompanyId } from "@carbon/auth/company.server";
 import {
@@ -11,8 +11,16 @@ import { redirect } from "react-router";
 import { getCompanies } from "~/modules/settings";
 import { path, requestReferrer } from "~/utils/path";
 
+export async function loader() {
+  throw redirect(path.to.authenticatedRoot);
+}
+
 export async function action({ request, params }: ActionFunctionArgs) {
   const { client, userId } = await requirePermissions(request, {});
+
+  const formData = await request.formData();
+  const redirectTo = formData.get("redirectTo");
+
   const companies = await getCompanies(client, userId);
 
   if (companies.error) {
@@ -44,10 +52,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
   );
   const companyIdCookie = setCompanyId(companyId!);
 
-  throw redirect(path.to.authenticatedRoot, {
-    headers: [
-      ["Set-Cookie", sessionCookie],
-      ["Set-Cookie", companyIdCookie]
-    ]
-  });
+  throw redirect(
+    safeRedirect(
+      typeof redirectTo === "string" ? redirectTo : null,
+      path.to.authenticatedRoot
+    ),
+    {
+      headers: [
+        ["Set-Cookie", sessionCookie],
+        ["Set-Cookie", companyIdCookie]
+      ]
+    }
+  );
 }

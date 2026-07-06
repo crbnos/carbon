@@ -1,24 +1,32 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
+import type { Database } from "@carbon/database";
 import { Button, Loading, useHydrated, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { ParentSize } from "@visx/responsive";
 import { ReactFlowProvider, useReactFlow, useStore } from "@xyflow/react";
+import XYFlowStyle from "@xyflow/react/dist/style.css?url";
 import { useCallback, useMemo, useState } from "react";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LinksFunction, LoaderFunctionArgs } from "react-router";
 import { Link, redirect, useLoaderData, useNavigation } from "react-router";
 import { Empty } from "~/components";
 import type { Activity, TrackedEntity } from "~/modules/inventory";
 import {
   fetchContainmentsForEntities,
   fetchJobScopedLineage,
-  fetchLineageSubgraph
+  fetchLineageSubgraph,
+  type LineagePayload
 } from "~/modules/inventory/lineage.server";
 import { clampDepth } from "~/modules/inventory/ui/Traceability/constants";
 import { TraceabilityGraph } from "~/modules/inventory/ui/Traceability/TraceabilityGraph";
 import { TraceabilitySidebar } from "~/modules/inventory/ui/Traceability/TraceabilitySidebar";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+export const links: LinksFunction = () => [
+  { rel: "stylesheet", href: XYFlowStyle }
+];
 
 export const handle: Handle = {
   breadcrumb: msg`Traceability`,
@@ -43,23 +51,29 @@ export async function loader({ request }: LoaderFunctionArgs) {
     throw redirect(path.to.traceability);
   }
 
-  if (jobId) {
-    const payload = await fetchJobScopedLineage(client, jobId, depth);
-    return {
-      ...payload,
-      rootId: jobId,
-      rootType: "job" as const,
-      depth
-    };
-  }
-
   if (trackedEntityId) {
-    const payload = await fetchLineageSubgraph(
+    let payload = await fetchLineageSubgraph(
       client,
       trackedEntityId,
       depth,
       "both"
     );
+    const rootEntity = payload.entities.find((e) => e.id === trackedEntityId);
+    const associatedJobId = jobId ?? getEntityJobId(rootEntity);
+
+    if (associatedJobId) {
+      const jobPayload = await fetchJobScopedLineage(
+        client,
+        associatedJobId,
+        depth
+      );
+      const jobReadableId = await getJobReadableId(client, associatedJobId);
+      payload = mergeLineagePayloads(
+        payload,
+        withJobNode(jobPayload, associatedJobId, jobReadableId)
+      );
+    }
+
     const containments = await fetchContainmentsForEntities(
       client,
       payload.entities.map((e) => e.id)
@@ -69,6 +83,21 @@ export async function loader({ request }: LoaderFunctionArgs) {
       containments,
       rootId: trackedEntityId,
       rootType: "entity" as const,
+      depth
+    };
+  }
+
+  if (jobId) {
+    const jobReadableId = await getJobReadableId(client, jobId);
+    const payload = withJobNode(
+      await fetchJobScopedLineage(client, jobId, depth),
+      jobId,
+      jobReadableId
+    );
+    return {
+      ...payload,
+      rootId: jobId,
+      rootType: "job" as const,
       depth
     };
   }
@@ -151,6 +180,121 @@ export async function loader({ request }: LoaderFunctionArgs) {
   };
 }
 
+function getEntityJobId(entity: TrackedEntity | undefined): string | null {
+  const attrs = entity?.attributes;
+  if (!attrs || typeof attrs !== "object" || Array.isArray(attrs)) return null;
+  const job = (attrs as Record<string, unknown>).Job;
+  return typeof job === "string" && job.length > 0 ? job : null;
+}
+
+async function getJobReadableId(
+  client: SupabaseClient<Database>,
+  jobId: string
+): Promise<string> {
+  const job = await client.from("job").select("jobId").eq("id", jobId).single();
+  return job.data?.jobId ?? jobId;
+}
+
+function withJobNode(
+  payload: LineagePayload,
+  jobId: string,
+  jobReadableId: string
+): LineagePayload {
+  const jobNodeId = `job:${jobId}`;
+  const existingActivityIds = new Set(payload.activities.map((a) => a.id));
+  const existingOutputKeys = new Set(
+    payload.outputs.map((o) => `${o.trackedActivityId}:${o.trackedEntityId}`)
+  );
+  const jobEntities = payload.entities.filter((entity) => {
+    if (getEntityJobId(entity) !== jobId) return false;
+    return entity.status === "Reserved" || entity.sourceDocument === "Item";
+  });
+
+  return {
+    ...payload,
+    activities: existingActivityIds.has(jobNodeId)
+      ? payload.activities
+      : [
+          {
+            id: jobNodeId,
+            type: "Job",
+            sourceDocument: "Job",
+            sourceDocumentId: jobId,
+            sourceDocumentReadableId: jobReadableId,
+            attributes: { Job: jobId }
+          },
+          ...payload.activities
+        ],
+    outputs: [
+      ...payload.outputs,
+      ...jobEntities
+        .map((entity) => ({
+          trackedActivityId: jobNodeId,
+          trackedEntityId: entity.id,
+          quantity: entity.quantity
+        }))
+        .filter(
+          (output) =>
+            !existingOutputKeys.has(
+              `${output.trackedActivityId}:${output.trackedEntityId}`
+            )
+        )
+    ]
+  };
+}
+
+function mergeLineagePayloads(
+  base: LineagePayload,
+  incoming: LineagePayload
+): LineagePayload {
+  const entityIds = new Set(base.entities.map((e) => e.id));
+  const activityIds = new Set(base.activities.map((a) => a.id));
+  const inputKeys = new Set(
+    base.inputs.map((i) => `${i.trackedActivityId}:${i.trackedEntityId}`)
+  );
+  const outputKeys = new Set(
+    base.outputs.map((o) => `${o.trackedActivityId}:${o.trackedEntityId}`)
+  );
+  const baseContainments = base.containments ?? [];
+  const incomingContainments = incoming.containments ?? [];
+  const containmentKeys = new Set(
+    baseContainments.map((c) => `${c.id}:${c.trackedEntityId}`)
+  );
+
+  return {
+    entities: [
+      ...base.entities,
+      ...incoming.entities.filter((e) => !entityIds.has(e.id))
+    ],
+    activities: [
+      ...base.activities,
+      ...incoming.activities.filter((a) => !activityIds.has(a.id))
+    ],
+    inputs: [
+      ...base.inputs,
+      ...incoming.inputs.filter(
+        (i) => !inputKeys.has(`${i.trackedActivityId}:${i.trackedEntityId}`)
+      )
+    ],
+    outputs: [
+      ...base.outputs,
+      ...incoming.outputs.filter(
+        (o) => !outputKeys.has(`${o.trackedActivityId}:${o.trackedEntityId}`)
+      )
+    ],
+    stepRecords: base.stepRecords ?? incoming.stepRecords,
+    containments:
+      incomingContainments.length === 0 && baseContainments.length === 0
+        ? undefined
+        : [
+            ...baseContainments,
+            ...incomingContainments.filter(
+              (c) => !containmentKeys.has(`${c.id}:${c.trackedEntityId}`)
+            )
+          ]
+  };
+}
+
 export default function TraceabilityRoute() {
   return (
     <ReactFlowProvider>
@@ -193,7 +337,13 @@ function TraceabilityRouteInner() {
   const safeIndex =
     selectedIds.length > 0 ? Math.min(focusedIndex, selectedIds.length - 1) : 0;
   const focusedSelectedId = selectedIds[safeIndex] ?? null;
-  const sidebarId = focusedSelectedId ?? rootId;
+  const rootHasNode =
+    entities.some((e) => e?.id === rootId) ||
+    activities.some((a) => a?.id === rootId);
+  const fallbackSidebarId = rootHasNode
+    ? rootId
+    : (entities[0]?.id ?? activities[0]?.id ?? rootId);
+  const sidebarId = focusedSelectedId ?? fallbackSidebarId;
 
   const { setNodes } = useReactFlow();
   const selectNode = useCallback(

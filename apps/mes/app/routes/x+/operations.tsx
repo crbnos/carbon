@@ -71,12 +71,12 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
       savedFiltersArray.forEach((filter) => {
         newUrl.searchParams.append("filter", filter);
       });
-      return redirect(newUrl.toString());
+      return redirect(`${newUrl.pathname}${newUrl.search}`);
     } else if (filterParam.length === 0) {
       // No saved filters and no current filters, just remove the saved param
       const newUrl = new URL(request.url);
       newUrl.searchParams.delete("saved");
-      return redirect(newUrl.toString());
+      return redirect(`${newUrl.pathname}${newUrl.search}`);
     }
   } else {
     // Save current filters if they differ from saved ones
@@ -264,7 +264,9 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
           thumbnailPath: op.thumbnailPath,
           quantity: op.operationQuantity,
           quantityCompleted: op.quantityComplete,
+          quantityReworked: op.quantityReworked,
           quantityScrapped: op.quantityScrapped,
+          reworkId: op.reworkId,
           setupDuration: operation.setupDuration,
           laborDuration: operation.laborDuration,
           machineDuration: operation.machineDuration

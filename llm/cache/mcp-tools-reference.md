@@ -4341,7 +4341,7 @@ get purchasing r f q suppliers with links
 
 ---
 
-## quality (68 tools)
+## quality (75 tools)
 
 ### quality_activateGauge (WRITE)
 activate gauge
@@ -4814,6 +4814,68 @@ upsert risk
         id: string;
         updatedBy: string; // This might be used for history/tracking if added
       })
+
+### quality_getInspectionDocuments (READ)
+get inspection documents
+**Parameters:**
+- `args`: { search: string | null } & GenericQueryFilters (optional)
+
+### quality_getInspectionDocument (READ)
+get inspection document
+**Parameters:**
+- `id`: string
+
+### quality_upsertInspectionDocument (WRITE)
+upsert inspection document
+**Parameters:**
+- `diagram`: | (Omit<z.infer<typeof inspectionDocumentValidator>, "id"> & {
+        id?: undefined;
+        companyId: string;
+        createdBy: string;
+        updatedBy?: string;
+        pageCount?: number;
+        defaultPageWidth?: number;
+        defaultPageHeight?: number;
+      })
+    | (Omit<z.infer<typeof inspectionDocumentValidator>, "id"> & {
+        id: string;
+        companyId: string;
+        createdBy: string;
+        updatedBy?: string;
+        pageCount?: number;
+        defaultPageWidth?: number;
+        defaultPageHeight?: number;
+      })
+
+### quality_deleteInspectionDocument (DESTRUCTIVE)
+delete inspection document
+**Parameters:**
+- `id`: string
+
+### quality_getBalloons (READ)
+get balloons
+**Parameters:**
+- `inspectionDocumentId`: string
+
+### quality_getInspectionPlan (READ)
+get inspection plan
+**Parameters:**
+- `inspectionDocumentId`: string
+
+### quality_saveInspectionDocumentAtomic (WRITE)
+save inspection document atomic
+**Parameters:**
+- `args`: {
+    inspectionDocumentId: string;
+    companyId: string;
+    userId: string;
+    pdfUrl?: string | null;
+    pageCount?: number;
+    defaultPageWidth?: number;
+    defaultPageHeight?: number;
+    anchors: unknown;
+    balloons: unknown;
+  }
 
 ---
 

@@ -12,12 +12,16 @@ import type {
   currencyValidator,
   defaultBalanceSheetAccountValidator,
   defaultIncomeAcountValidator,
+  depreciationMethods,
   dimensionValidator,
   fiscalYearSettingsValidator,
   intercompanyTransactionValidator,
   journalEntryLineValidator,
   journalEntryValidator,
-  paymentTermValidator
+  macrsConventions,
+  macrsPropertyClasses,
+  paymentTermValidator,
+  taxDepreciationMethods
 } from "./accounting.models";
 import type { Transaction, TranslatedBalance } from "./types";
 
@@ -441,6 +445,73 @@ export async function getCurrentAccountingPeriod(
     .lte("startDate", date)
     .gte("endDate", date)
     .single();
+}
+
+export async function getOrCreateAccountingPeriod(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  date: string
+): Promise<{ data: string | null; error: { message: string } | null }> {
+  const existing = await getCurrentAccountingPeriod(client, companyId, date);
+
+  if (existing.data) {
+    if (existing.data.closedAt) {
+      return {
+        data: null,
+        error: {
+          message: "Accounting period is closed. Reopen it before posting."
+        }
+      };
+    }
+
+    if (existing.data.status === "Inactive") {
+      await client
+        .from("accountingPeriod")
+        .update({ status: "Inactive" as const })
+        .eq("companyId", companyId)
+        .eq("status", "Active");
+
+      await client
+        .from("accountingPeriod")
+        .update({ status: "Active" as const })
+        .eq("id", existing.data.id);
+    }
+    return { data: existing.data.id, error: null };
+  }
+
+  // Create a new period for the month of the given date
+  const d = new Date(date);
+  const year = d.getFullYear();
+  const month = d.getMonth(); // 0-indexed
+  const startDate = new Date(year, month, 1).toISOString().split("T")[0];
+  const endDate = new Date(year, month + 1, 0).toISOString().split("T")[0];
+
+  await client
+    .from("accountingPeriod")
+    .update({ status: "Inactive" as const })
+    .eq("companyId", companyId)
+    .eq("status", "Active");
+
+  const result = await client
+    .from("accountingPeriod")
+    .insert({
+      startDate,
+      endDate,
+      companyId,
+      status: "Active" as const,
+      createdBy: "system"
+    })
+    .select("id")
+    .single();
+
+  if (result.error) {
+    return {
+      data: null,
+      error: { message: "Failed to create accounting period" }
+    };
+  }
+
+  return { data: result.data.id, error: null };
 }
 
 export async function getDefaultAccounts(
@@ -953,6 +1024,12 @@ function getEntityDimensionValues(
         .select("id, name")
         .eq("companyId", companyId)
         .order("name");
+    case "FixedAssetClass":
+      return client
+        .from("fixedAssetClass")
+        .select("id, name")
+        .eq("companyId", companyId)
+        .order("name");
     case "ItemPostingGroup":
       return client
         .from("itemPostingGroup")
@@ -1083,6 +1160,8 @@ function getEntityValuesByIds(
       return client.from("itemPostingGroup").select("id, name").in("id", ids);
     case "CostCenter":
       return client.from("costCenter").select("id, name").in("id", ids);
+    case "FixedAssetClass":
+      return client.from("fixedAssetClass").select("id, name").in("id", ids);
     default:
       return Promise.resolve({
         data: [] as { id: string; name: string }[],
@@ -1787,7 +1866,7 @@ export async function reverseJournalEntry(
   client: SupabaseClient<Database>,
   id: string,
   data: {
-    journalEntryId: string;
+    journalEntryId?: string;
     companyId: string;
     userId: string;
   }
@@ -1802,11 +1881,31 @@ export async function reverseJournalEntry(
     };
   }
 
-  // 2. Create reversing entry as Posted
+  // 2. Generate sequence if not provided
+  let journalEntryId: string;
+  if (data.journalEntryId) {
+    journalEntryId = data.journalEntryId;
+  } else {
+    const seq = await client.rpc("get_next_sequence", {
+      sequence_name: "journalEntry",
+      company_id: data.companyId
+    });
+    if (seq.error || !seq.data) {
+      return {
+        data: null,
+        error: seq.error ?? {
+          message: "Failed to generate journalEntry sequence"
+        }
+      };
+    }
+    journalEntryId = seq.data;
+  }
+
+  // 3. Create reversing entry as Posted
   const reversed = await client
     .from("journal")
     .insert({
-      journalEntryId: data.journalEntryId,
+      journalEntryId,
       companyId: data.companyId,
       description: `Reversal of ${original.data.journalEntryId}`,
       postingDate: new Date().toISOString().split("T")[0],
@@ -1850,4 +1949,489 @@ export async function reverseJournalEntry(
   if (updateResult.error) return updateResult;
 
   return reversed;
+}
+
+// -- Asset Classes --
+
+export async function getFixedAssetClasses(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("fixedAssetClass")
+    .select(
+      "id, name, description, depreciationMethod, usefulLifeMonths, residualValuePercent, taxDepreciationMethod, taxUsefulLifeMonths, macrsPropertyClass",
+      { count: "exact" }
+    )
+    .eq("companyId", companyId);
+
+  if (args.search) {
+    query = query.ilike("name", `%${args.search}%`);
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "name", ascending: true }
+  ]);
+  return query;
+}
+
+export async function getFixedAssetClass(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("fixedAssetClass").select("*").eq("id", id).single();
+}
+
+export async function getFixedAssetClassesList(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("fixedAssetClass")
+    .select(
+      "id, name, depreciationMethod, usefulLifeMonths, residualValuePercent, taxDepreciationMethod, taxUsefulLifeMonths, taxResidualValuePercent, macrsPropertyClass, macrsConvention, bonusDepreciationPercent"
+    )
+    .eq("companyId", companyId)
+    .order("name");
+}
+
+export async function upsertFixedAssetClass(
+  client: SupabaseClient<Database>,
+  data:
+    | (Record<string, any> & { companyId: string; createdBy: string })
+    | (Record<string, any> & { id: string; updatedBy: string })
+) {
+  if ("createdBy" in data) {
+    return client
+      .from("fixedAssetClass")
+      .insert([data as any])
+      .select("id")
+      .single();
+  }
+  const { id, ...rest } = data;
+  return client
+    .from("fixedAssetClass")
+    .update(sanitize(rest))
+    .eq("id", id)
+    .select("id")
+    .single();
+}
+
+export async function deleteFixedAssetClass(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("fixedAssetClass").delete().eq("id", id);
+}
+
+// -- Fixed Assets --
+
+export async function getFixedAssets(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & {
+    search: string | null;
+    status: Database["public"]["Enums"]["fixedAssetStatus"] | null;
+  }
+) {
+  let query = client
+    .from("fixedAsset")
+    .select(
+      "id, fixedAssetId, fixedAssetClassId, name, serialNumber, status, depreciationMethod, acquisitionCost, accumulatedDepreciation, fixedAssetClass:fixedAssetClassId(id, name), location:locationId(id, name)",
+      { count: "exact" }
+    )
+    .eq("companyId", companyId);
+
+  if (args.search) {
+    query = query.or(
+      `name.ilike.%${args.search}%,fixedAssetId.ilike.%${args.search}%,serialNumber.ilike.%${args.search}%`
+    );
+  }
+
+  if (args.status) {
+    query = query.eq("status", args.status);
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "fixedAssetId", ascending: true }
+  ]);
+  return query;
+}
+
+export async function getFixedAsset(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client
+    .from("fixedAsset")
+    .select(
+      "*, fixedAssetClass:fixedAssetClassId(*), location:locationId(id, name)"
+    )
+    .eq("id", id)
+    .single();
+}
+
+export async function getFixedAssetsList(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("fixedAsset")
+    .select("id, fixedAssetId, name")
+    .eq("companyId", companyId)
+    .eq("status", "Draft")
+    .order("fixedAssetId");
+}
+
+export async function getFixedAssetsListForSale(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("fixedAsset")
+    .select("id, fixedAssetId, name")
+    .eq("companyId", companyId)
+    .in("status", ["Active", "Fully Depreciated"])
+    .order("fixedAssetId");
+}
+
+export async function insertFixedAsset(
+  client: SupabaseClient<Database>,
+  input: {
+    companyId: string;
+    createdBy: string;
+    fixedAssetId?: string;
+    fixedAssetClassId: string;
+    name: string;
+    description?: string;
+    serialNumber?: string;
+    depreciationMethod: string;
+    usefulLifeMonths: number;
+    residualValuePercent: number;
+    assetLifetimeUsage?: number | null;
+    locationId?: string;
+    status?: string;
+    taxDepreciationMethod?: string | null;
+    taxUsefulLifeMonths?: number | null;
+    taxResidualValuePercent?: number | null;
+    macrsPropertyClass?: string | null;
+    macrsConvention?: string | null;
+    bonusDepreciationPercent?: number | null;
+  }
+): Promise<{
+  data: { id: string; fixedAssetId: string } | null;
+  error: import("@supabase/supabase-js").PostgrestError | null;
+}> {
+  let fixedAssetId: string;
+  if (input.fixedAssetId) {
+    fixedAssetId = input.fixedAssetId;
+  } else {
+    const seq = await client.rpc("get_next_sequence", {
+      sequence_name: "fixedAsset",
+      company_id: input.companyId
+    });
+    if (seq.error || !seq.data) {
+      return {
+        data: null,
+        error:
+          seq.error ??
+          ({
+            message: "Failed to generate fixedAsset sequence"
+          } as import("@supabase/supabase-js").PostgrestError)
+      };
+    }
+    fixedAssetId = seq.data;
+  }
+
+  const asset = await client
+    .from("fixedAsset")
+    .insert({
+      fixedAssetId,
+      fixedAssetClassId: input.fixedAssetClassId,
+      name: input.name,
+      description: input.description ?? null,
+      serialNumber: input.serialNumber ?? null,
+      depreciationMethod: input.depreciationMethod as any,
+      usefulLifeMonths: input.usefulLifeMonths,
+      residualValuePercent: input.residualValuePercent,
+      assetLifetimeUsage: input.assetLifetimeUsage ?? null,
+      locationId: input.locationId ?? null,
+      status: (input.status as any) ?? "Draft",
+      taxDepreciationMethod: (input.taxDepreciationMethod as any) ?? null,
+      taxUsefulLifeMonths: input.taxUsefulLifeMonths ?? null,
+      taxResidualValuePercent: input.taxResidualValuePercent ?? null,
+      macrsPropertyClass: (input.macrsPropertyClass as any) ?? null,
+      macrsConvention: (input.macrsConvention as any) ?? null,
+      bonusDepreciationPercent: input.bonusDepreciationPercent ?? null,
+      companyId: input.companyId,
+      createdBy: input.createdBy,
+      updatedBy: input.createdBy
+    })
+    .select("id, fixedAssetId")
+    .single();
+
+  if (asset.error) return { data: null, error: asset.error };
+
+  return {
+    data: { id: asset.data.id, fixedAssetId: asset.data.fixedAssetId },
+    error: null
+  };
+}
+
+export async function updateFixedAsset(
+  client: SupabaseClient<Database>,
+  input: {
+    id: string;
+    updatedBy: string;
+    fixedAssetClassId?: string;
+    name?: string;
+    description?: string | null;
+    serialNumber?: string | null;
+    depreciationMethod?: (typeof depreciationMethods)[number];
+    usefulLifeMonths?: number;
+    residualValuePercent?: number;
+    assetLifetimeUsage?: number | null;
+    locationId?: string | null;
+    taxDepreciationMethod?: (typeof taxDepreciationMethods)[number] | null;
+    taxUsefulLifeMonths?: number | null;
+    taxResidualValuePercent?: number | null;
+    macrsPropertyClass?: (typeof macrsPropertyClasses)[number] | null;
+    macrsConvention?: (typeof macrsConventions)[number] | null;
+    bonusDepreciationPercent?: number | null;
+  }
+): Promise<{
+  data: { id: string } | null;
+  error: import("@supabase/supabase-js").PostgrestError | null;
+}> {
+  const { id, ...rest } = input;
+  const result = await client
+    .from("fixedAsset")
+    .update(sanitize(rest))
+    .eq("id", id)
+    .select("id")
+    .single();
+
+  if (result.error) return { data: null, error: result.error };
+  return { data: { id: result.data.id }, error: null };
+}
+
+/** @deprecated Use insertFixedAsset for new assets, updateFixedAsset for existing assets */
+export async function upsertFixedAsset(
+  client: SupabaseClient<Database>,
+  data:
+    | (Record<string, any> & {
+        fixedAssetId: string;
+        companyId: string;
+        createdBy: string;
+      })
+    | (Record<string, any> & { id: string; updatedBy: string })
+) {
+  if ("createdBy" in data) {
+    return client
+      .from("fixedAsset")
+      .insert([data as any])
+      .select("id")
+      .single();
+  }
+  const { id, ...rest } = data;
+  return client
+    .from("fixedAsset")
+    .update(sanitize(rest))
+    .eq("id", id)
+    .select("id")
+    .single();
+}
+
+export async function deleteFixedAsset(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("fixedAsset").delete().eq("id", id).eq("status", "Draft");
+}
+
+export async function insertDepreciationRun(
+  client: SupabaseClient<Database>,
+  input: {
+    companyId: string;
+    createdBy: string;
+    depreciationRunId?: string;
+    periodEnd: string;
+    lines: Array<{
+      fixedAssetId: string;
+      amount: number;
+      taxAmount?: number | null;
+    }>;
+  }
+): Promise<{
+  data: { id: string; depreciationRunId: string } | null;
+  error: import("@supabase/supabase-js").PostgrestError | null;
+}> {
+  let depreciationRunId: string;
+  if (input.depreciationRunId) {
+    depreciationRunId = input.depreciationRunId;
+  } else {
+    const seq = await client.rpc("get_next_sequence", {
+      sequence_name: "depreciationRun",
+      company_id: input.companyId
+    });
+    if (seq.error || !seq.data) {
+      return {
+        data: null,
+        error:
+          seq.error ??
+          ({
+            message: "Failed to generate depreciationRun sequence"
+          } as import("@supabase/supabase-js").PostgrestError)
+      };
+    }
+    depreciationRunId = seq.data;
+  }
+
+  const run = await client
+    .from("depreciationRun")
+    .insert({
+      depreciationRunId,
+      periodEnd: input.periodEnd,
+      status: "Draft" as const,
+      companyId: input.companyId,
+      createdBy: input.createdBy
+    })
+    .select("id, depreciationRunId")
+    .single();
+
+  if (run.error) return { data: null, error: run.error };
+
+  if (input.lines.length > 0) {
+    const lineInserts = input.lines.map((line) => ({
+      depreciationRunId: run.data.id,
+      fixedAssetId: line.fixedAssetId,
+      amount: line.amount,
+      taxAmount: line.taxAmount,
+      companyId: input.companyId
+    }));
+
+    const lineResult = await client
+      .from("depreciationRunLine")
+      .insert(lineInserts);
+
+    if (lineResult.error) {
+      await client.from("depreciationRun").delete().eq("id", run.data.id);
+      return { data: null, error: lineResult.error };
+    }
+  }
+
+  return {
+    data: {
+      id: run.data.id,
+      depreciationRunId: run.data.depreciationRunId
+    },
+    error: null
+  };
+}
+
+export async function deleteDepreciationRun(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client
+    .from("depreciationRun")
+    .delete()
+    .eq("id", id)
+    .eq("status", "Draft");
+}
+
+// -- Depreciation --
+
+export async function getDepreciationRuns(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("depreciationRun")
+    .select("id, depreciationRunId, periodEnd, status, postedAt", {
+      count: "exact"
+    })
+    .eq("companyId", companyId);
+
+  if (args.search) {
+    query = query.ilike("depreciationRunId", `%${args.search}%`);
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "createdAt", ascending: false }
+  ]);
+  return query;
+}
+
+export async function getDepreciationRun(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("depreciationRun").select("*").eq("id", id).single();
+}
+
+export async function getDepreciationRunLines(
+  client: SupabaseClient<Database>,
+  depreciationRunId: string
+) {
+  return client
+    .from("depreciationRunLine")
+    .select(
+      "id, amount, taxAmount, journalId, fixedAsset:fixedAssetId(id, fixedAssetId, name, acquisitionCost, accumulatedDepreciation, accumulatedTaxDepreciation, residualValuePercent)"
+    )
+    .eq("depreciationRunId", depreciationRunId);
+}
+
+// -- Depreciation History for a single asset --
+
+export async function getAssetDepreciationHistory(
+  client: SupabaseClient<Database>,
+  fixedAssetId: string
+) {
+  return client
+    .from("depreciationRunLine")
+    .select(
+      "id, amount, taxAmount, journalId, depreciationRun:depreciationRunId(id, depreciationRunId, periodEnd, status)"
+    )
+    .eq("fixedAssetId", fixedAssetId)
+    .order("depreciationRun(periodEnd)", { ascending: false });
+}
+
+// -- Disposals --
+
+export async function getFixedAssetDisposal(
+  client: SupabaseClient<Database>,
+  fixedAssetId: string
+) {
+  return client
+    .from("fixedAssetDisposal")
+    .select("*")
+    .eq("fixedAssetId", fixedAssetId)
+    .maybeSingle();
+}
+
+// -- Usage Logs --
+
+export async function getFixedAssetUsageLogs(
+  client: SupabaseClient<Database>,
+  fixedAssetId: string
+) {
+  return client
+    .from("fixedAssetUsageLog")
+    .select("*")
+    .eq("fixedAssetId", fixedAssetId)
+    .order("periodEnd", { ascending: false });
+}
+
+export async function upsertFixedAssetUsageLog(
+  client: SupabaseClient<Database>,
+  data: Record<string, any> & { companyId: string; createdBy: string }
+) {
+  return client
+    .from("fixedAssetUsageLog")
+    .insert([data as any])
+    .select("id")
+    .single();
 }

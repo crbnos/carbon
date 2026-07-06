@@ -20,6 +20,7 @@ import {
   IconButton,
   Label,
   Switch,
+  usePickOrderOptions,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -40,11 +41,12 @@ import {
   CustomFormFields,
   Hidden,
   NumberControlled,
+  Select,
   ShelfLifeStartProcess,
   ShelfLifeStartTiming,
   Submit
 } from "~/components/Form";
-import { StorageUnitDrillSelectField } from "~/components/Form/StorageUnitDrillSelect";
+import StorageUnit from "~/components/Form/StorageUnit";
 import { usePermissions, useSettings, useUser } from "~/hooks";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
@@ -101,8 +103,12 @@ const PickMethodForm = ({
     value: location.id
   }));
 
-  const shelfLifeApplicable =
+  // Serial/Batch items have per-unit tracked entities, so both the pick-order
+  // default and the shelf-life policy only apply to them. Fungible tracking
+  // types have no lots to order or expire.
+  const isTracked =
     itemTrackingType === "Serial" || itemTrackingType === "Batch";
+  const pickOrderOptions = usePickOrderOptions();
   const { trigger: shelfLifeHistoryTrigger, drawer: shelfLifeHistoryDrawer } =
     useAuditLog({
       entityType: "itemShelfLife",
@@ -181,14 +187,22 @@ const PickMethodForm = ({
           <Hidden name="itemId" />
           <Hidden name="locationId" />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-4 w-full">
-            <StorageUnitDrillSelectField
+            <StorageUnit
               name="defaultStorageUnitId"
               label={t`Default Storage Unit`}
               locationId={initialValues.locationId}
-              className="w-full"
             />
 
-            {shelfLifeApplicable && (
+            {isTracked && (
+              <Select
+                name="sortMethod"
+                label={t`Pick Order`}
+                helperText={t`Default order when picking serial or batch lots of this item. Pickers can still override it.`}
+                options={pickOrderOptions}
+              />
+            )}
+
+            {isTracked && (
               <ShelfLifeFields
                 replenishmentSystem={replenishmentSystem}
                 itemId={initialValues.itemId}

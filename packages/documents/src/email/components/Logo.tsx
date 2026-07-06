@@ -8,7 +8,15 @@ export function Logo() {
         width="auto"
         height="45"
         alt="Carbon"
-        className="mb-4 mx-auto block"
+        className="mb-4 mx-auto block dark-mode-hide"
+      />
+      <Img
+        src="https://app.carbon.ms/carbon-word-dark.png"
+        width="auto"
+        height="45"
+        alt="Carbon"
+        className="mb-4 mx-auto block dark-mode-show"
+        style={{ display: "none" }}
       />
     </Section>
   );

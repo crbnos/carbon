@@ -21,10 +21,6 @@ msgstr "{0} - セット {1}"
 msgid "{0} Active"
 msgstr "{0} アクティブ"
 
-#. placeholder {0}: batch.quantity
-msgid "{0} available"
-msgstr "{0} 利用可能"
-
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
 #. placeholder {1}: operation.operationQuantity
@@ -64,6 +60,9 @@ msgstr "追加"
 msgid "Add & Issue"
 msgstr "追加して払出"
 
+msgid "Add a printer in the printing settings to print labels directly."
+msgstr "印刷設定でプリンターを追加して、ラベルを直接印刷します。"
+
 msgid "Add Inventory"
 msgstr "在庫追加"
 
@@ -73,9 +72,6 @@ msgstr "スペアパーツを追加"
 msgid "All"
 msgstr "すべて"
 
-msgid "Are you sure you want to close out this operation? This will end all active production events for this operation."
-msgstr "この工程をクローズしてもよろしいですか？この工程のすべてのアクティブな生産イベントが終了します。"
-
 msgid "Are you sure you want to delete this step?"
 msgstr "このステップを削除してもよろしいですか？"
 
@@ -84,6 +80,12 @@ msgstr "このタイムカードを削除してもよろしいですか？この
 
 msgid "Are you sure you want to end all production events? This will end all active operations without completing or finishing them."
 msgstr "すべての生産イベントを終了してもよろしいですか？すべてのアクティブな工程が完了せずに終了します。"
+
+msgid "Are you sure you want to finish this operation? This will end all active production events for this operation."
+msgstr "この操作を終了してもよろしいですか？これにより、この操作のすべてのアクティブな生産イベントが終了します。"
+
+msgid "Are you sure you want to leave this page?"
+msgstr "このページを離れてもよろしいですか？"
 
 msgid "Assigned"
 msgstr "割当済み"
@@ -100,10 +102,11 @@ msgstr "ファイルを添付"
 msgid "Authentication Error"
 msgstr "認証エラー"
 
-#. placeholder {0}: batch.readableId
-#. placeholder {1}: batch.quantity
-msgid "Batch {0} ({1} available)"
-msgstr "バッチ {0}（{1} 利用可能）"
+msgid "available"
+msgstr "利用可能"
+
+msgid "Batch"
+msgstr "バッチ"
 
 msgid "Batch is not available"
 msgstr "バッチは利用できません"
@@ -130,6 +133,9 @@ msgstr "サインインすることにより、<0>利用規約</0>および<1>�
 
 msgid "Cancel"
 msgstr "キャンセル"
+
+msgid "Cancelled"
+msgstr "キャンセル済み"
 
 msgid "Carbon Logo"
 msgstr "Carbonロゴ"
@@ -162,19 +168,6 @@ msgstr "退勤打刻"
 msgid "Clocked in since {0}"
 msgstr "{0} から出勤中"
 
-msgid "Close"
-msgstr "閉じる"
-
-msgid "Close Anyways"
-msgstr "強制的に閉じる"
-
-msgid "Close Out"
-msgstr "クローズ"
-
-#. placeholder {0}: operation.itemReadableId
-msgid "Close out {0}"
-msgstr "{0} をクローズ"
-
 #. placeholder {0}: active.data.current.column.title
 #. placeholder {1}: overColumnPosition + 1
 #. placeholder {2}: columnOrder.length
@@ -201,6 +194,9 @@ msgstr "会社"
 msgid "Complete"
 msgstr "完了"
 
+msgid "Complete All"
+msgstr "すべて完了"
+
 msgid "Completed"
 msgstr "完了済み"
 
@@ -218,6 +214,15 @@ msgstr "消費期限切れ"
 msgid "Create {0}"
 msgstr "{0}を作成"
 
+msgid "Create Issue"
+msgstr "問題を作成"
+
+msgid "Create Quality Issue"
+msgstr "品質問題を作成"
+
+msgid "Create Rework"
+msgstr "リワーク作成"
+
 msgid "Customer"
 msgstr "顧客"
 
@@ -229,6 +234,9 @@ msgstr "日付"
 
 msgid "Deadline"
 msgstr "期限"
+
+msgid "Default"
+msgstr "デフォルト"
 
 msgid "Default Storage Unit"
 msgstr "デフォルト保管ユニット"
@@ -242,6 +250,12 @@ msgstr "ステップを削除"
 #. placeholder {0}: new Date(deletingEntry.clockIn).toLocaleString(locale)
 msgid "Delete Timecard ({0})"
 msgstr "タイムカードを削除（{0}）"
+
+msgid "Describe the problem..."
+msgstr "問題を説明してください..."
+
+msgid "Describe what needs to be reworked..."
+msgstr "再加工が必要な内容を説明してください..."
 
 msgid "Description"
 msgstr "説明"
@@ -260,6 +274,12 @@ msgstr "停止"
 
 msgid "Download"
 msgstr "ダウンロード"
+
+msgid "Download Labels"
+msgstr "ラベルをダウンロード"
+
+msgid "Draft"
+msgstr "下書き"
 
 msgid "Drag and drop a file here, or click to select a file"
 msgstr "ファイルをここにドラッグ＆ドロップするか、クリックしてファイルを選択してください"
@@ -308,6 +328,18 @@ msgstr "エラー"
 msgid "Estimated"
 msgstr "見積"
 
+msgid "Expired"
+msgstr "期限切れ"
+
+msgid "Expired {date}"
+msgstr "期限切れ {date}"
+
+msgid "Expires {date}"
+msgstr "有効期限 {date}"
+
+msgid "Expiring first"
+msgstr "最初に期限切れ"
+
 msgid "Failed to complete inventory adjustment"
 msgstr "在庫調整の完了に失敗しました"
 
@@ -342,11 +374,27 @@ msgstr "ジョブおよび案件明細に関連するファイル。"
 msgid "Filter"
 msgstr "フィルター"
 
+msgid "Finish"
+msgstr "完了"
+
+#. placeholder {0}: operation.itemReadableId
+msgid "Finish {0}"
+msgstr "完了 {0}"
+
+msgid "Finish Anyways"
+msgstr "とにかく完了"
+
 msgid "Forgot to Clock Out?"
 msgstr "退勤打刻を忘れましたか？"
 
+msgid "Go back to operation"
+msgstr "操作に戻る"
+
 msgid "Have a technical issue? Contact <0>Carbon Support.</0>"
 msgstr "技術的な問題がありますか？<0>Carbonサポート</0>にお問い合わせください。"
+
+msgid "How many were actually picked?"
+msgstr "実際にはいくつ選ばれましたか？"
 
 msgid "I understand and want to complete without issuing"
 msgstr "理解した上で払出なしで完了します"
@@ -362,6 +410,9 @@ msgstr "アイデア、提案、または問題はありますか？"
 
 msgid "Impact"
 msgstr "影響"
+
+msgid "Imperial"
+msgstr "インペリアル"
 
 msgid "In Progress"
 msgstr "進行中"
@@ -387,6 +438,9 @@ msgstr "払出"
 msgid "Issue Material"
 msgstr "材料払出"
 
+msgid "Issue Type"
+msgstr "問題タイプ"
+
 msgid "Item"
 msgstr "品目"
 
@@ -402,14 +456,23 @@ msgstr "ジョブ詳細"
 msgid "Job Traveler"
 msgstr "ジョブトラベラー"
 
+msgid "Jobs"
+msgstr "ジョブ"
+
 msgid "Kit"
 msgstr "キット"
 
 msgid "Labor"
 msgstr "作業"
 
+msgid "Leave this page"
+msgstr "このページを離れる"
+
 msgid "Let's build something"
 msgstr "さあ、何かを作りましょう"
+
+msgid "lines"
+msgstr "行"
 
 msgid "Loading item details..."
 msgstr "品目詳細を読み込み中..."
@@ -459,6 +522,9 @@ msgstr "手動で在庫に品目を追加"
 msgid "Manually remove items from inventory"
 msgstr "手動で在庫から品目を削除"
 
+msgid "Mark Short"
+msgstr "短い数量をマーク"
+
 msgid "matches"
 msgstr "が一致"
 
@@ -468,8 +534,14 @@ msgstr "材料"
 msgid "Maximum number of records reached"
 msgstr "レコードの最大数に達しました"
 
+msgid "Metric"
+msgstr "メートル法"
+
 msgid "Model"
 msgstr "モデル"
+
+msgid "More Actions"
+msgstr "その他のアクション"
 
 msgid "More options"
 msgstr "その他のオプション"
@@ -499,6 +571,9 @@ msgstr "新規"
 msgid "New Record"
 msgstr "新規レコード"
 
+msgid "Newest first"
+msgstr "最新順"
+
 msgid "Next"
 msgstr "次へ"
 
@@ -517,6 +592,9 @@ msgstr "利用可能なフィルターはありません"
 msgid "No available serial numbers found"
 msgstr "利用可能なシリアル番号が見つかりません"
 
+msgid "No available tracked entities found"
+msgstr "利用可能な追跡対象エンティティが見つかりません"
+
 msgid "No dispatches assigned to you"
 msgstr "あなたに割り当てられたディスパッチはありません"
 
@@ -532,6 +610,9 @@ msgstr "本日のメンテナンス予定はありません"
 msgid "No materials"
 msgstr "材料なし"
 
+msgid "No open jobs"
+msgstr "オープンなジョブはありません"
+
 msgid "No operators"
 msgstr "オペレーターなし"
 
@@ -540,6 +621,12 @@ msgstr "オプションが見つかりません。"
 
 msgid "No options found."
 msgstr "オプションが見つかりません。"
+
+msgid "No picking lists assigned"
+msgstr "ピッキングリストが割り当てられていません"
+
+msgid "No printer configured"
+msgstr "プリンターが設定されていません"
 
 msgid "No recent operations"
 msgstr "最近の工程はありません"
@@ -559,11 +646,20 @@ msgstr "予定時間なし"
 msgid "No serial numbers"
 msgstr "シリアル番号なし"
 
+msgid "No serial numbers found"
+msgstr "シリアル番号が見つかりません"
+
 msgid "No spare parts added yet"
 msgstr "スペアパーツはまだ追加されていません"
 
+msgid "No stock"
+msgstr "在庫なし"
+
 msgid "No time entries for this week"
 msgstr "今週のタイムエントリーはありません"
+
+msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
+msgstr "このアイテムの倉庫在庫は記録されていません。それでも選択できます。在庫数が負になるまで、実在庫は負のままになります。"
 
 msgid "No work centers are blocked"
 msgstr "ブロックされているワークセンターはありません"
@@ -580,6 +676,9 @@ msgstr "OEE影響度"
 msgid "OEM Required"
 msgstr "OEM対応必要"
 
+msgid "Oldest first"
+msgstr "最も古い順"
+
 #. placeholder {0}: batch.quantity
 msgid "Only {0} available"
 msgstr "{0} のみ利用可能"
@@ -589,6 +688,9 @@ msgstr "このページは表示されないはずです。最終的にはラン
 
 msgid "Open"
 msgstr "未対応"
+
+msgid "Open Jobs"
+msgstr "オープンジョブ"
 
 msgid "Operations"
 msgstr "工程"
@@ -614,11 +716,23 @@ msgstr "検査合格"
 msgid "Pause"
 msgstr "一時停止"
 
+msgid "Pick"
+msgstr "ピック"
+
+msgid "Pick tracked item"
+msgstr "追跡品目をピック"
+
+msgid "Picked quantity"
+msgstr "ピック数量"
+
 #. placeholder {0}: startColumn?.title
 #. placeholder {1}: startIndex + 1
 #. placeholder {2}: columnOrder.length
 msgid "Picked up Column {0} at position: {1} of {2}"
 msgstr "カラム {0} を位置 {1}/{2} で選択しました"
+
+msgid "Picking"
+msgstr "ピッキング"
 
 msgid "Pin Out"
 msgstr "ピンアウト"
@@ -638,6 +752,12 @@ msgstr "前へ"
 msgid "Preventive"
 msgstr "予防保全"
 
+msgid "Print"
+msgstr "印刷"
+
+msgid "Printer Settings"
+msgstr "プリンター設定"
+
 msgid "Priority"
 msgstr "優先度"
 
@@ -656,11 +776,20 @@ msgstr "プロセス一覧"
 msgid "Progress"
 msgstr "進捗"
 
+msgid "Quality Issue"
+msgstr "品質問題"
+
+msgid "Quality issue created"
+msgstr "品質問題が作成されました"
+
 msgid "Quantity"
 msgstr "数量"
 
 msgid "Quantity must be greater than 0"
 msgstr "数量は0より大きい値を入力してください"
+
+msgid "Reason for rework"
+msgstr "リワークの理由"
 
 msgid "Recent"
 msgstr "最近"
@@ -684,6 +813,12 @@ msgstr "在庫削除"
 msgid "Remove part"
 msgstr "パーツを削除"
 
+msgid "Rework"
+msgstr "リワーク"
+
+msgid "Rework created successfully"
+msgstr "リワーク作成に成功しました"
+
 msgid "Sales Order"
 msgstr "受注"
 
@@ -696,8 +831,17 @@ msgstr "スキャン"
 msgid "Scan or enter serial number"
 msgstr "シリアル番号をスキャンまたは入力"
 
+msgid "Scan or enter tracking number"
+msgstr "スキャンまたは追跡番号を入力"
+
+msgid "Scan or search serial number..."
+msgstr "シリアル番号をスキャンまたは検索..."
+
 msgid "Schedule"
 msgstr "スケジュール"
+
+msgid "Scrap"
+msgstr "廃棄"
 
 msgid "Scrap Reason"
 msgstr "スクラップ理由"
@@ -707,6 +851,9 @@ msgstr "スクラップ済み"
 
 msgid "Search"
 msgstr "検索"
+
+msgid "Search by job or item ID"
+msgstr "ジョブまたはアイテムIDで検索"
 
 msgid "Search operators..."
 msgstr "オペレーターを検索..."
@@ -739,6 +886,9 @@ msgstr "品目を選択..."
 msgid "Select Batch {0}"
 msgstr "バッチ {0} を選択"
 
+msgid "Select Printer"
+msgstr "プリンターを選択"
+
 #. placeholder {0}: index + 1
 msgid "Select Serial {0}"
 msgstr "シリアル {0} を選択"
@@ -746,15 +896,14 @@ msgstr "シリアル {0} を選択"
 msgid "Select Serial Number"
 msgstr "シリアル番号を選択"
 
+msgid "Select the operation to go back to. All operations from that point to the current operation will be redone."
+msgstr "戻る操作を選択してください。その時点から現在の操作までのすべての操作が再度実行されます。"
+
 msgid "Send"
 msgstr "送信"
 
 msgid "Serial"
 msgstr "シリアル"
-
-#. placeholder {0}: sn.readableId
-msgid "Serial {0}"
-msgstr "シリアル {0}"
 
 #. placeholder {0}: index + 1
 msgid "Serial Number {0}"
@@ -765,6 +914,9 @@ msgstr "シリアル番号は利用できません"
 
 msgid "Serial number is required"
 msgstr "シリアル番号は必須です"
+
+msgid "Serial numbers"
+msgstr "シリアル番号"
 
 msgid "Serial Numbers"
 msgstr "シリアル番号"
@@ -778,6 +930,12 @@ msgstr "退勤時間を設定"
 msgid "Setup"
 msgstr "段取り"
 
+msgid "Short"
+msgstr "不足"
+
+msgid "Short pick {itemName}"
+msgstr "短いピック {itemName}"
+
 msgid "Sign in with Email"
 msgstr "メールでサインイン"
 
@@ -786,6 +944,9 @@ msgstr "Googleでサインイン"
 
 msgid "Sign in with Outlook"
 msgstr "Outlookでサインイン"
+
+msgid "Sign in with Passkey"
+msgstr "パスキーでサインイン"
 
 msgid "Sign Out"
 msgstr "サインアウト"
@@ -820,6 +981,9 @@ msgstr "ステータス"
 msgid "Statuses"
 msgstr "ステータス一覧"
 
+msgid "Stay on this page"
+msgstr "このページに留まる"
+
 msgid "Steps"
 msgstr "ステップ"
 
@@ -851,6 +1015,9 @@ msgstr "この工程の完了数量が必要数量 {0} を下回っています�
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "部品表にシリアルまたはバッチ追跡対象の材料が完全に払い出されていません。払出なしで完了すると、トレーサビリティ記録が不正確になる可能性があります。"
 
+msgid "This lot is expired and can't be picked."
+msgstr "このロットは期限切れであり、ピックできません。"
+
 msgid "Thumbnail"
 msgstr "サムネイル"
 
@@ -878,8 +1045,8 @@ msgstr "合計時間: {0}"
 msgid "Total: {0}"
 msgstr "合計: {0}"
 
-msgid "Tracking Labels"
-msgstr "追跡ラベル"
+msgid "Tracking"
+msgstr "追跡"
 
 msgid "Type a message..."
 msgstr "メッセージを入力..."
@@ -889,6 +1056,16 @@ msgstr "未払出のシリアル/バッチ材料"
 
 msgid "Unknown"
 msgstr "不明"
+
+msgid "Unpick"
+msgstr "ピッキング解除"
+
+#. placeholder {0}: pickedLots[0].trackedEntity.readableId
+msgid "Unpick {0}"
+msgstr "ピック解除 {0}"
+
+msgid "Unsaved changes"
+msgstr "未保存の変更"
 
 msgid "Update"
 msgstr "更新"

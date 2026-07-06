@@ -46,8 +46,10 @@ export const useRealtimeChannel = <TDeps extends any[]>(
   const channelRef = useRef<RealtimeChannel | null>(null);
   const isTearingDownRef = useRef(false);
   const lastErrorToastAtRef = useRef<number>(0);
+  const lastErrorToastIdRef = useRef<string | number | null>(null);
   const retryCountRef = useRef(0);
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isSilentReconnectRef = useRef(false);
   // Updated each effect run so the retry timer always calls the latest subscribe closure.
   const doSubscribeRef = useRef<() => Promise<void>>(() => Promise.resolve());
   const { carbon, isRealtimeAuthSet } = useCarbon();
@@ -111,6 +113,11 @@ export const useRealtimeChannel = <TDeps extends any[]>(
         configuredChannel.subscribe(async (status, err) => {
           if (status === REALTIME_SUBSCRIBE_STATES.SUBSCRIBED) {
             retryCountRef.current = 0;
+            // Dismiss any lingering disconnect toast — reconnect succeeded.
+            if (lastErrorToastIdRef.current != null) {
+              toast.dismiss(lastErrorToastIdRef.current);
+              lastErrorToastIdRef.current = null;
+            }
             return;
           }
 
@@ -118,21 +125,40 @@ export const useRealtimeChannel = <TDeps extends any[]>(
             status === REALTIME_SUBSCRIBE_STATES.CHANNEL_ERROR ||
             status === REALTIME_SUBSCRIBE_STATES.TIMED_OUT;
 
-          if (isRetriableError && notifyOnSubscribeError) {
-            const now = Date.now();
-            if (now - lastErrorToastAtRef.current > 12_000) {
-              lastErrorToastAtRef.current = now;
-              toast.error(`Realtime disconnected (${topic})`, {
-                description: `${status}: ${formatSubscribeErr(err)}`,
-                duration: 10_000
-              });
+          if (
+            isRetriableError &&
+            notifyOnSubscribeError &&
+            !isSilentReconnectRef.current
+          ) {
+            // Persistent loading toast — sticks with a spinner until reconnect
+            // succeeds. Reuses the same id so repeated CHANNEL_ERRORs don't
+            // stack. Underlying error stored in console only; users see a
+            // calm "reconnecting" indicator, not an alarming red toast.
+            if (err) {
+              console.warn(
+                `Realtime ${topic} ${status}: ${formatSubscribeErr(err)}`
+              );
             }
+            const opts = {
+              id: lastErrorToastIdRef.current ?? undefined,
+              description: "Trying to reconnect…",
+              duration: Number.POSITIVE_INFINITY,
+              dismissible: false
+            } as const;
+            lastErrorToastIdRef.current = toast.loading(
+              `Realtime disconnected`,
+              opts
+            );
+            lastErrorToastAtRef.current = Date.now();
           }
 
           if (isRetriableError) {
             await teardown();
-            // Exponential backoff: 5s, 10s, 20s, 40s, 60s max
-            const delay = Math.min(5_000 * 2 ** retryCountRef.current, 60_000);
+            // Exponential backoff: 1s, 2s, 5s, 10s, 30s, 60s max — faster
+            // recovery on transient blips, still polite at steady state.
+            const schedule = [1_000, 2_000, 5_000, 10_000, 30_000, 60_000];
+            const delay =
+              schedule[Math.min(retryCountRef.current, schedule.length - 1)]!;
             retryCountRef.current++;
             retryTimerRef.current = setTimeout(() => {
               retryTimerRef.current = null;
@@ -160,13 +186,39 @@ export const useRealtimeChannel = <TDeps extends any[]>(
     doSubscribeRef.current = doSubscribe;
     void doSubscribe();
 
-    // Cleanup on unmount or dependency change
-    return () => {
+    const forceReconnect = (silent: boolean) => {
       if (retryTimerRef.current) {
         clearTimeout(retryTimerRef.current);
         retryTimerRef.current = null;
       }
       retryCountRef.current = 0;
+      isSilentReconnectRef.current = silent;
+      void doSubscribeRef.current().finally(() => {
+        isSilentReconnectRef.current = false;
+      });
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") forceReconnect(true);
+    };
+    const handleOnline = () => forceReconnect(true);
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("online", handleOnline);
+
+    // Cleanup on unmount or dependency change
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("online", handleOnline);
+      if (retryTimerRef.current) {
+        clearTimeout(retryTimerRef.current);
+        retryTimerRef.current = null;
+      }
+      retryCountRef.current = 0;
+      if (lastErrorToastIdRef.current != null) {
+        toast.dismiss(lastErrorToastIdRef.current);
+        lastErrorToastIdRef.current = null;
+      }
       void teardown();
     };
   }, [

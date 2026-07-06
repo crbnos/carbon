@@ -165,28 +165,42 @@ export async function canApproveRequest(
     return false;
   }
 
+  // Authority flows upward only. Find the tier that matches this request's
+  // amount; a user may approve at that tier or any HIGHER tier, but never
+  // from a lower one (a $1k approver must not approve a $1M order).
+  // Amount-less document types (quality, supplier) match the base tier
+  // (lowerBoundAmount 0), so every rule qualifies and behavior is unchanged.
+  const matched = await getApprovalRuleByAmount(
+    client,
+    approvalRequest.documentType,
+    approvalRequest.companyId,
+    approvalRequest.amount ?? undefined
+  );
+  const tierFloor = matched.data?.lowerBoundAmount ?? 0;
+
   const userGroups = await client.rpc("groups_for_user", { uid: userId });
   const userGroupIds = userGroups.data || [];
 
-  // Check if user can approve via any rule (higher amount approvers can approve lower amounts)
-  return rules.data.some((rule) => {
-    if (rule.defaultApproverId === userId) {
-      return true;
-    }
+  return rules.data
+    .filter((rule) => (rule.lowerBoundAmount ?? 0) >= tierFloor)
+    .some((rule) => {
+      if (rule.defaultApproverId === userId) {
+        return true;
+      }
 
-    const approverGroupIds = rule.approverGroupIds;
-    if (!approverGroupIds || approverGroupIds.length === 0) {
-      return false;
-    }
+      const approverGroupIds = rule.approverGroupIds;
+      if (!approverGroupIds || approverGroupIds.length === 0) {
+        return false;
+      }
 
-    // Check if user ID is directly in approverGroupIds (for individual approvers)
-    if (approverGroupIds.includes(userId)) {
-      return true;
-    }
+      // Direct individual approver
+      if (approverGroupIds.includes(userId)) {
+        return true;
+      }
 
-    // Check if user belongs to any of the approver groups
-    return approverGroupIds.some((groupId) => userGroupIds.includes(groupId));
-  });
+      // Member of an approver group
+      return approverGroupIds.some((groupId) => userGroupIds.includes(groupId));
+    });
 }
 
 /**
@@ -427,6 +441,8 @@ export async function getApprovalRuleByAmount(
     .eq("enabled", true);
 
   if (amount !== undefined && amount !== null) {
+    // The matching tier is the highest one whose floor is at or below the
+    // amount; the next tier's floor is where its coverage ends.
     query = query.lte("lowerBoundAmount", amount);
   } else {
     query = query.eq("lowerBoundAmount", 0);
@@ -466,6 +482,44 @@ export async function getApproverUserIdsForRule(
     ? [...new Set([...ids, defaultId])]
     : [...new Set(ids)];
   return combined;
+}
+
+/**
+ * "Notified of spend" cascade resolver. When a tiered approval lands at
+ * a high tier, approvers of every enabled rule with a strictly lower
+ * `lowerBoundAmount` get pinged — visibility into spend that bypassed
+ * their tier. Returns deduped user IDs.
+ */
+export async function getLowerTierApproverUserIds(
+  client: SupabaseClient<Database>,
+  documentType: (typeof approvalDocumentType)[number],
+  companyId: string,
+  amount: number | null | undefined
+): Promise<string[]> {
+  if (amount == null) return [];
+
+  const matched = await getApprovalRuleByAmount(
+    client,
+    documentType,
+    companyId,
+    amount
+  );
+  if (!matched.data) return [];
+
+  const lowerRules = await client
+    .from("approvalRule")
+    .select("approverGroupIds, defaultApproverId")
+    .eq("documentType", documentType)
+    .eq("companyId", companyId)
+    .eq("enabled", true)
+    .lt("lowerBoundAmount", matched.data.lowerBoundAmount ?? 0);
+
+  if (lowerRules.error || !lowerRules.data?.length) return [];
+
+  const expanded = await Promise.all(
+    lowerRules.data.map((rule) => getApproverUserIdsForRule(client, rule))
+  );
+  return [...new Set(expanded.flat())];
 }
 
 export async function getApprovalRuleById(

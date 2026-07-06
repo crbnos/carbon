@@ -75,7 +75,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request }: ActionFunctionArgs) {
-  throw redirect(request.headers.get("Referer") ?? request.url);
+  throw redirect(
+    request.headers.get("Referer") ?? new URL(request.url).pathname
+  );
 }
 
 export default function PurchaseInvoiceRoute() {

@@ -1,4 +1,4 @@
-import { error, useCarbon } from "@carbon/auth";
+import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import {
@@ -10,45 +10,35 @@ import {
   ValidatedForm,
   validator
 } from "@carbon/form";
-import type { JSONContent } from "@carbon/react";
 import {
-  Badge,
   Card,
-  CardAction,
   CardContent,
   CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
   cn,
-  generateHTML,
   Heading,
   HStack,
   Label,
   ScrollArea,
   Switch,
   toast,
-  useDebounce,
   VStack
 } from "@carbon/react";
-import { Editor } from "@carbon/react/Editor";
-import { getLocalTimeZone, today } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useState } from "react";
-import { LuCircleCheck } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useFetcher, useLoaderData } from "react-router";
 import { EmailRecipients, Users } from "~/components/Form";
 import Country from "~/components/Form/Country";
-import { usePermissions, useUser } from "~/hooks";
 import {
   accountsReceivableBillingAddressValidator,
   defaultCustomerCcValidator,
   digitalQuoteValidator,
   getAccountsReceivableBillingAddress,
   getCompanySettings,
-  getTerms,
   quoteLineCategoryMarkupsSettingsValidator,
   rfqReadyValidator,
   updateAccountsReceivableAddressSetting,
@@ -57,7 +47,7 @@ import {
   updateDigitalQuoteSetting,
   updateQuoteLineCategoryMarkups,
   updateRfqReadySetting,
-  updateSalesPdfThumbnails
+  updateShowCustomerReadableIdSetting
 } from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -72,9 +62,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     view: "settings"
   });
 
-  const [companySettings, terms, arBillingAddress] = await Promise.all([
+  const [companySettings, arBillingAddress] = await Promise.all([
     getCompanySettings(client, companyId),
-    getTerms(client, companyId),
     getAccountsReceivableBillingAddress(client, companyId)
   ]);
   if (!companySettings.data)
@@ -87,7 +76,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
   return {
     companySettings: companySettings.data,
-    terms: terms.data,
     arBillingAddress: arBillingAddress.data
   };
 }
@@ -116,6 +104,25 @@ export async function action({ request }: ActionFunctionArgs) {
         message: `Accounts receivable billing address ${arToggleEnabled ? "enabled" : "disabled"}`
       };
 
+    case "showCustomerReadableIdToggle":
+      const showCustomerReadableId = formData.get("enabled") === "true";
+      const showCustomerReadableIdResult =
+        await updateShowCustomerReadableIdSetting(
+          client,
+          companyId,
+          showCustomerReadableId
+        );
+      if (showCustomerReadableIdResult.error) {
+        return {
+          success: false,
+          message: showCustomerReadableIdResult.error.message
+        };
+      }
+      return {
+        success: true,
+        message: `Customer IDs ${showCustomerReadableId ? "shown" : "hidden"}`
+      };
+
     case "digitalQuote":
       const validation = await validator(digitalQuoteValidator).validate(
         formData
@@ -136,20 +143,6 @@ export async function action({ request }: ActionFunctionArgs) {
         return { success: false, message: digitalQuote.error.message };
 
       return { success: true, message: "Digital quote setting updated" };
-
-    case "pdfs": {
-      const pdfEnabled = formData.get("enabled") === "true";
-      const thumbnailsResult = await updateSalesPdfThumbnails(
-        client,
-        companyId,
-        pdfEnabled
-      );
-
-      if (thumbnailsResult.error)
-        return { success: false, message: thumbnailsResult.error.message };
-
-      return { success: true, message: "PDF settings updated" };
-    }
 
     case "rfq":
       const rfqValidation =
@@ -254,8 +247,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function SalesSettingsRoute() {
   const { t } = useLingui();
-  const { companySettings, terms, arBillingAddress } =
-    useLoaderData<typeof loader>();
+  const { companySettings, arBillingAddress } = useLoaderData<typeof loader>();
   const fetcher = useFetcher<typeof action>();
   const toggleFetcher = useFetcher<typeof action>();
   const [arAddressEnabled, setArAddressEnabled] = useState(
@@ -270,6 +262,20 @@ export default function SalesSettingsRoute() {
           intent: "accountsReceivableAddressToggle",
           enabled: checked.toString()
         },
+        { method: "POST" }
+      );
+    },
+    [toggleFetcher]
+  );
+
+  const [showCustomerReadableIdEnabled, setShowCustomerReadableIdEnabled] =
+    useState(companySettings.showCustomerReadableId ?? false);
+
+  const handleShowCustomerReadableIdToggle = useCallback(
+    (checked: boolean) => {
+      setShowCustomerReadableIdEnabled(checked);
+      toggleFetcher.submit(
+        { intent: "showCustomerReadableIdToggle", enabled: checked.toString() },
         { method: "POST" }
       );
     },
@@ -299,46 +305,6 @@ export default function SalesSettingsRoute() {
     }
   }, [toggleFetcher.data?.message, toggleFetcher.data?.success]);
 
-  const permissions = usePermissions();
-  const { carbon } = useCarbon();
-  const {
-    id: userId,
-    company: { id: companyId }
-  } = useUser();
-
-  const [salesTermsStatus, setSalesTermsStatus] = useState<"saved" | "draft">(
-    "saved"
-  );
-
-  const handleUpdateSalesTerms = (content: JSONContent) => {
-    setSalesTermsStatus("draft");
-    onUpdateSalesTerms(content);
-  };
-
-  const onUpdateSalesTerms = useDebounce(
-    async (content: JSONContent) => {
-      setSalesTermsStatus("draft");
-      await carbon
-        ?.from("terms")
-        .update({
-          salesTerms: content,
-          updatedAt: today(getLocalTimeZone()).toString(),
-          updatedBy: userId
-        })
-        .eq("id", companyId);
-      setSalesTermsStatus("saved");
-    },
-    2500,
-    true
-  );
-
-  const onUploadImage = async (file: File) => {
-    // Implement image upload logic here
-    // This is a placeholder function
-    console.error("Image upload not implemented", file);
-    return "";
-  };
-
   return (
     <ScrollArea className="w-full h-[calc(100dvh-49px)]">
       <VStack
@@ -348,57 +314,64 @@ export default function SalesSettingsRoute() {
         <Heading size="h3">
           <Trans>Sales</Trans>
         </Heading>
+
+        <p className="mt-4 text-xxs text-foreground/70 uppercase font-light tracking-wide">
+          <Trans>Documents</Trans>
+        </p>
+
         <Card>
-          <HStack className="justify-between items-start">
+          <ValidatedForm
+            method="post"
+            validator={defaultCustomerCcValidator}
+            defaultValues={{
+              defaultCustomerCc: companySettings.defaultCustomerCc ?? []
+            }}
+            fetcher={fetcher}
+          >
+            <input type="hidden" name="intent" value="emails" />
             <CardHeader>
               <CardTitle>
-                <Trans>Sales Terms &amp; Conditions</Trans>
+                <Trans>Emails</Trans>
               </CardTitle>
               <CardDescription>
                 <Trans>
-                  Define the terms and conditions for quotes and sales orders
+                  These email addresses will be automatically CC'd on all quote
+                  emails sent to customers.
                 </Trans>
               </CardDescription>
             </CardHeader>
-            <CardAction className="py-6">
-              {salesTermsStatus === "draft" ? (
-                <Badge variant="secondary">
-                  <Trans>Draft</Trans>
-                </Badge>
-              ) : (
-                <LuCircleCheck className="w-4 h-4 text-emerald-500" />
-              )}
-            </CardAction>
-          </HStack>
-          <CardContent>
-            {permissions.can("update", "settings") ? (
-              <Editor
-                initialValue={(terms?.salesTerms ?? {}) as JSONContent}
-                onUpload={onUploadImage}
-                onChange={handleUpdateSalesTerms}
-              />
-            ) : (
-              <div
-                className="prose dark:prose-invert"
-                dangerouslySetInnerHTML={{
-                  __html: generateHTML(terms?.salesTerms as JSONContent)
-                }}
-              />
-            )}
-          </CardContent>
+            <CardContent>
+              <div className="flex flex-col gap-8 max-w-[400px]">
+                <EmailRecipients
+                  name="defaultCustomerCc"
+                  label={t`Default CC Recipients`}
+                />
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Submit
+                isDisabled={fetcher.state !== "idle"}
+                isLoading={
+                  fetcher.state !== "idle" &&
+                  fetcher.formData?.get("intent") === "defaultCustomerCc"
+                }
+              >
+                <Trans>Save</Trans>
+              </Submit>
+            </CardFooter>
+          </ValidatedForm>
         </Card>
-
         <Card>
           <CardHeader>
             <HStack className="justify-between items-center">
               <div>
                 <CardTitle>
-                  <Trans>Accounts Receivable Billing Address</Trans>
+                  <Trans>Centralized Billing Address</Trans>
                 </CardTitle>
                 <CardDescription>
                   <Trans>
-                    The billing address used on quotes, sales orders, invoices,
-                    and other sales documents.
+                    Route all AR invoices to one address (e.g. corporate
+                    headquarters) instead of individual locations.
                   </Trans>
                 </CardDescription>
               </div>
@@ -468,6 +441,38 @@ export default function SalesSettingsRoute() {
             </ValidatedForm>
           </Card>
         )}
+        <p className="mt-4 text-xxs text-foreground/70 uppercase font-light tracking-wide">
+          <Trans>Customers</Trans>
+        </p>
+
+        <Card>
+          <CardHeader>
+            <HStack className="justify-between items-center">
+              <div>
+                <CardTitle>
+                  <Trans>Show Customer IDs</Trans>
+                </CardTitle>
+                <CardDescription>
+                  <Trans>
+                    Show a readable Customer ID column on the customer list,
+                    customer forms, and dropdowns. Customers are still
+                    identified internally either way.
+                  </Trans>
+                </CardDescription>
+              </div>
+              <Switch
+                checked={showCustomerReadableIdEnabled}
+                onCheckedChange={handleShowCustomerReadableIdToggle}
+                disabled={toggleFetcher.state !== "idle"}
+              />
+            </HStack>
+          </CardHeader>
+        </Card>
+
+        <p className="mt-4 text-xxs text-foreground/70 uppercase font-light tracking-wide">
+          <Trans>Quoting</Trans>
+        </p>
+
         <Card>
           <ValidatedForm
             method="post"
@@ -536,6 +541,15 @@ export default function SalesSettingsRoute() {
             </CardFooter>
           </ValidatedForm>
         </Card>
+        <CategoryMarkupsCard
+          companySettings={companySettings}
+          fetcher={fetcher}
+        />
+
+        <p className="mt-4 text-xxs text-foreground/70 uppercase font-light tracking-wide">
+          <Trans>Notifications</Trans>
+        </p>
+
         <Card>
           <ValidatedForm
             method="post"
@@ -584,96 +598,6 @@ export default function SalesSettingsRoute() {
             </CardFooter>
           </ValidatedForm>
         </Card>
-        <Card>
-          <ValidatedForm
-            method="post"
-            validator={defaultCustomerCcValidator}
-            defaultValues={{
-              defaultCustomerCc: companySettings.defaultCustomerCc ?? []
-            }}
-            fetcher={fetcher}
-          >
-            <input type="hidden" name="intent" value="emails" />
-            <CardHeader>
-              <CardTitle>
-                <Trans>Emails</Trans>
-              </CardTitle>
-              <CardDescription>
-                <Trans>
-                  These email addresses will be automatically CC'd on all quote
-                  emails sent to customers.
-                </Trans>
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col gap-8 max-w-[400px]">
-                <EmailRecipients
-                  name="defaultCustomerCc"
-                  label={t`Default CC Recipients`}
-                />
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Submit
-                isDisabled={fetcher.state !== "idle"}
-                isLoading={
-                  fetcher.state !== "idle" &&
-                  fetcher.formData?.get("intent") === "defaultCustomerCc"
-                }
-              >
-                <Trans>Save</Trans>
-              </Submit>
-            </CardFooter>
-          </ValidatedForm>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              <Trans>PDFs</Trans>
-            </CardTitle>
-            <CardDescription>
-              <Trans>
-                Show part thumbnails on quotes, sales orders, sales invoices,
-                and shipments.
-              </Trans>
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <HStack className="justify-between items-center">
-              <VStack className="items-start" spacing={1}>
-                <span className="font-medium">
-                  {companySettings.includeThumbnailsOnSalesPdfs ? (
-                    <Trans>Thumbnails are included</Trans>
-                  ) : (
-                    <Trans>Thumbnails are not included</Trans>
-                  )}
-                </span>
-                <span className="text-sm text-muted-foreground">
-                  {companySettings.includeThumbnailsOnSalesPdfs ? (
-                    <Trans>Part thumbnails are shown on sales PDFs.</Trans>
-                  ) : (
-                    <Trans>Enable to show part thumbnails on sales PDFs.</Trans>
-                  )}
-                </span>
-              </VStack>
-              <Switch
-                checked={companySettings.includeThumbnailsOnSalesPdfs ?? true}
-                onCheckedChange={(checked) => {
-                  toggleFetcher.submit(
-                    { intent: "pdfs", enabled: String(checked) },
-                    { method: "POST" }
-                  );
-                }}
-                disabled={toggleFetcher.state !== "idle"}
-              />
-            </HStack>
-          </CardContent>
-        </Card>
-        <CategoryMarkupsCard
-          companySettings={companySettings}
-          fetcher={fetcher}
-        />
       </VStack>
     </ScrollArea>
   );

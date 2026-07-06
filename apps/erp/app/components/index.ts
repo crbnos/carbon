@@ -1,3 +1,4 @@
+import { PrintButton } from "@carbon/printing/ui";
 import Assignee, { useOptimisticAssignment } from "./Assignee";
 import Avatar from "./Avatar";
 import AvatarMenu from "./AvatarMenu";
@@ -8,6 +9,7 @@ import CustomerAvatar from "./CustomerAvatar";
 import { DateSelect } from "./DateSelect";
 import { DeferredFiles } from "./DeferredFiles";
 import { DirectionAwareTabs } from "./DirectionAwareTabs";
+import DocumentHeader from "./DocumentHeader";
 import DocumentPreview from "./DocumentPreview";
 import Documents from "./Documents";
 import EmployeeAvatar from "./EmployeeAvatar";
@@ -48,6 +50,7 @@ export {
   DateSelect,
   DeferredFiles,
   DirectionAwareTabs,
+  DocumentHeader,
   DocumentPreview,
   Documents,
   EmployeeAvatar,
@@ -63,6 +66,7 @@ export {
   ModuleIcon,
   New,
   OperationStatusIcon,
+  PrintButton,
   RealtimeDataProvider,
   SearchFilter,
   SearchLandingPage,

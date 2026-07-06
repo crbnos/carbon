@@ -10,10 +10,17 @@ import {
 } from "@carbon/react";
 import { getLocalTimeZone } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { AnimatePresence, motion } from "framer-motion";
 import type { ComponentProps, ReactNode } from "react";
-import { useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { FaPause, FaPlay } from "react-icons/fa6";
-import { LuHammer, LuHardHat, LuTimer } from "react-icons/lu";
+import {
+  LuEllipsisVertical,
+  LuHammer,
+  LuHardHat,
+  LuTimer,
+  LuX
+} from "react-icons/lu";
 import { useFetcher } from "react-router";
 import type { productionEventType } from "~/services/models";
 import { productionEventValidator } from "~/services/models";
@@ -34,7 +41,7 @@ export function Controls({
   return (
     <div
       className={cn(
-        "flex flex-col md:absolute p-2 top-[calc(var(--header-height)*2-2px)] right-0 w-full md:w-[var(--controls-width)] md:min-h-[180px] z-1 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:border-l border-y md:rounded-bl-lg",
+        "flex flex-col relative z-[40] md:absolute p-2 md:top-[calc(var(--header-height)*2-2px)] md:right-0 w-full md:w-[var(--controls-width)] md:min-h-[180px] bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:border-l border-y md:rounded-bl-lg",
         className
       )}
     >
@@ -334,5 +341,98 @@ export function PlayButton({ className, ...props }: ComponentProps<"button">) {
     >
       <FaPlay className="group-hover:scale-110" />
     </ButtonWithTooltip>
+  );
+}
+
+export type FABItem = {
+  icon: ReactNode;
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  variant?: "default" | "success" | "destructive";
+};
+
+export function FloatingActionMenu({ items }: { items: FABItem[] }) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const toggle = useCallback(() => setIsOpen((prev) => !prev), []);
+
+  return (
+    <div className="relative flex flex-col items-center">
+      <AnimatePresence initial={false}>
+        {isOpen && (
+          <motion.div
+            className="flex flex-row md:flex-col items-center gap-2 mb-2"
+            initial="closed"
+            animate="open"
+            exit="closed"
+            variants={{
+              open: { transition: { staggerChildren: 0.06 } },
+              closed: {
+                transition: { staggerChildren: 0.03, staggerDirection: -1 }
+              }
+            }}
+          >
+            {items.map((item) => (
+              <motion.div
+                key={item.label}
+                variants={{
+                  open: { opacity: 1, scale: 1, filter: "blur(0px)" },
+                  closed: { opacity: 0, scale: 0.25, filter: "blur(4px)" }
+                }}
+                transition={{ type: "spring", duration: 0.3, bounce: 0 }}
+              >
+                <IconButtonWithTooltip
+                  icon={item.icon}
+                  tooltip={item.label}
+                  disabled={item.disabled}
+                  variant={item.variant}
+                  onClick={() => {
+                    item.onClick();
+                    setIsOpen(false);
+                  }}
+                />
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <button
+        type="button"
+        onClick={toggle}
+        className={cn(
+          "size-16 text-xl md:text-lg md:size-[8dvh] flex items-center justify-center rounded-full shadow-lg transition-[transform,background-color] duration-200 active:scale-[0.96]",
+          isOpen
+            ? "bg-muted-foreground text-background"
+            : "bg-accent text-accent-foreground hover:bg-accent/80"
+        )}
+      >
+        <AnimatePresence mode="wait" initial={false}>
+          {isOpen ? (
+            <motion.span
+              key="close"
+              initial={{ opacity: 0, scale: 0.25, filter: "blur(4px)" }}
+              animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+              exit={{ opacity: 0, scale: 0.25, filter: "blur(4px)" }}
+              transition={{ type: "spring", duration: 0.3, bounce: 0 }}
+              className="flex items-center justify-center"
+            >
+              <LuX className="size-5" />
+            </motion.span>
+          ) : (
+            <motion.span
+              key="menu"
+              initial={{ opacity: 0, scale: 0.25, filter: "blur(4px)" }}
+              animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+              exit={{ opacity: 0, scale: 0.25, filter: "blur(4px)" }}
+              transition={{ type: "spring", duration: 0.3, bounce: 0 }}
+              className="flex items-center justify-center"
+            >
+              <LuEllipsisVertical className="size-5" />
+            </motion.span>
+          )}
+        </AnimatePresence>
+      </button>
+    </div>
   );
 }

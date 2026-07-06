@@ -1,12 +1,12 @@
 import { reactRouter } from "@react-router/dev/vite";
+import tailwindcss from "@tailwindcss/vite";
 import type { PluginOption } from "vite";
 import { defineConfig } from "vite";
-import tsconfigPaths from "vite-tsconfig-paths";
 
 export default defineConfig({
   build: {
     sourcemap: false,
-    rollupOptions: {
+    rolldownOptions: {
       onwarn(warning, defaultHandler) {
         if (warning.code === "SOURCEMAP_ERROR") {
           return;
@@ -26,7 +26,11 @@ export default defineConfig({
     noExternal: ["react-dropzone", "react-icons", "tailwind-merge"]
   },
   server: {
-    port: 5001
+    port: 5001,
+    strictPort: true
   },
-  plugins: [reactRouter(), tsconfigPaths()] as PluginOption[]
+  resolve: {
+    tsconfigPaths: true
+  },
+  plugins: [tailwindcss(), reactRouter()] as PluginOption[]
 });

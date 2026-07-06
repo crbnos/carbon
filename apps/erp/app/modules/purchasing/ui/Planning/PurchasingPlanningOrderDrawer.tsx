@@ -58,7 +58,7 @@ import { SupplierPartForm } from "~/modules/items/ui/Item";
 import { getLinkToItemPlanning } from "~/modules/items/ui/Item/ItemForm";
 import { ItemPlanningChart } from "~/modules/items/ui/Item/ItemPlanningChart";
 import { ItemReorderPolicy } from "~/modules/items/ui/Item/ItemReorderPolicy";
-import type { action as bulkUpdateAction } from "~/routes/x+/production+/planning.update";
+import type { action as bulkUpdateAction } from "~/routes/x+/purchasing+/planning.update";
 import { path } from "~/utils/path";
 import type { PlannedOrder } from "../../purchasing.models";
 import type { PurchasingPlanningItem } from "../../types";
@@ -106,13 +106,20 @@ export const PurchasingPlanningOrderDrawer = memo(
         ?.from("openPurchaseOrderLines")
         .select("*")
         .eq("itemId", selectedItem.id)
-        .in("status", ["Draft", "Planned"]);
+        .in("status", [
+          "To Review",
+          "Needs Approval",
+          "Planned",
+          "To Receive",
+          "To Receive and Invoice",
+          "To Invoice"
+        ]);
 
       if (existingOrderData) {
         const existingOrders: PlannedOrder[] = existingOrderData
           .filter(
             (order) =>
-              !orders.some((existing) => existing.existingId === order.id)
+              !orders.some((existing) => existing.existingLineId === order.id)
           )
           .map((order) => {
             const dueDate = order.dueDate;
@@ -228,7 +235,17 @@ export const PurchasingPlanningOrderDrawer = memo(
 
     const onSubmit = useCallback(
       (id: string, orders: PlannedOrder[]) => {
-        const ordersWithPeriods = orders.map((order) => {
+        // Skip existing PO lines that are past the Planned stage — their
+        // quantity/due-date inputs are disabled in the UI, so the user can't
+        // have edited them, and we don't want the action to issue UPDATEs
+        // against already-shipped lines.
+        const editableOrders = orders.filter(
+          (order) =>
+            !order.existingLineId ||
+            order.existingStatus === "Draft" ||
+            order.existingStatus === "Planned"
+        );
+        const ordersWithPeriods = editableOrders.map((order) => {
           if (
             !order.dueDate ||
             parseDate(order.dueDate) < parseDate(periods[0].startDate)
@@ -287,16 +304,48 @@ export const PurchasingPlanningOrderDrawer = memo(
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
     useEffect(() => {
+      if (fetcher.state !== "idle" || !fetcher.data) {
+        return;
+      }
+
       if (fetcher.data?.success === false && fetcher?.data?.message) {
         toast.error(fetcher.data.message);
       }
 
       if (fetcher.data?.success === true) {
-        toast.success(t`Orders submitted`);
+        const purchaseOrders =
+          (
+            fetcher.data as {
+              purchaseOrders?: { id: string; readableId: string }[];
+            }
+          )?.purchaseOrders ?? [];
+
+        if (purchaseOrders.length === 0) {
+          toast.success(t`Orders submitted`);
+        } else {
+          toast.success(
+            <div className="flex gap-1">
+              <span>{t`Orders submitted`}</span>
+              <span className="flex flex-wrap gap-2 text-xs">
+                {purchaseOrders.map((po) => (
+                  <Link
+                    key={po.id}
+                    to={path.to.purchaseOrder(po.id)}
+                    className="underline underline-offset-2 hover:opacity-80"
+                  >
+                    {po.readableId}
+                  </Link>
+                ))}
+              </span>
+            </div>,
+            { duration: 8000 }
+          );
+        }
+
         setOrders(selectedItem, []);
         onClose();
       }
-    }, [fetcher.data?.success]);
+    }, [fetcher.state, fetcher.data]);
 
     const supplierDisclosure = useDisclosure();
 
@@ -419,6 +468,7 @@ export const PurchasingPlanningOrderDrawer = memo(
                           unitPrice: 0,
                           supplierUnitOfMeasureCode: "EA",
                           minimumOrderQuantity: 1,
+                          orderMultiple: 1,
                           conversionFactor: 1
                         }}
                         unitOfMeasureCode={selectedItem.unitOfMeasureCode ?? ""}
@@ -643,9 +693,20 @@ export const PurchasingPlanningOrderDrawer = memo(
                     </Thead>
                     <Tbody>
                       {orders.map((order, index) => {
+                        // Lock the row when (a) the selected supplier differs
+                        // from the order's supplier, or (b) the existing PO
+                        // line is past the Planned stage (already shipped /
+                        // being received / being invoiced). Once committed
+                        // to the supplier, mutating quantity or due date
+                        // would desync the receiving workflow.
+                        const isPostPlannedExisting =
+                          !!order.existingLineId &&
+                          order.existingStatus !== "Draft" &&
+                          order.existingStatus !== "Planned";
                         const isDisabled =
-                          selectedSupplier !== order.supplierId &&
-                          !!order.existingId;
+                          (selectedSupplier !== order.supplierId &&
+                            !!order.existingId) ||
+                          isPostPlannedExisting;
 
                         return (
                           <Tr key={index}>
@@ -704,6 +765,7 @@ export const PurchasingPlanningOrderDrawer = memo(
                                       ? parseDate(order.dueDate)
                                       : null
                                   }
+                                  isDisabled={isDisabled}
                                   onChange={(date) => {
                                     onOrderUpdate(index, {
                                       dueDate: date ? date.toString() : null
@@ -770,6 +832,7 @@ export const PurchasingPlanningOrderDrawer = memo(
                   }
                   onSubmit(selectedItem.id, orders);
                 }}
+                disabled={fetcher.state !== "idle"}
                 isDisabled={fetcher.state !== "idle"}
                 isLoading={fetcher.state !== "idle"}
               >

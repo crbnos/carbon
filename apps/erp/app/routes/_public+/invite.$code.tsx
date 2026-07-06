@@ -112,17 +112,21 @@ const Heading = motion.create(_Heading);
 const Button = motion.create(_Button);
 
 export default function Invite() {
-  const { t } = useLingui();
   const { success, company } = useLoaderData<typeof loader>();
-
+  const { t } = useLingui();
   if (!success) {
     return (
       <VStack spacing={4} className="max-w-lg items-center text-center">
-        <div className="flex justify-center mb-4">
+        <div className="flex justify-center mb-8">
           <img
-            src="/carbon-logo-mark.svg"
+            src="/carbon-mark-light.svg"
             alt={t`Carbon Logo`}
-            className="w-36"
+            className="w-24 dark:hidden"
+          />
+          <img
+            src="/carbon-mark-dark.svg"
+            alt={t`Carbon Logo`}
+            className="w-24 hidden dark:block"
           />
         </div>
         <VStack spacing={2} className="text-center w-full">
@@ -152,16 +156,21 @@ export default function Invite() {
           initial={{ opacity: 0, scale: 0.4 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 2, ease: "easeInOut" }}
-          src="/carbon-logo-mark.svg"
-          alt={t`Carbon Logo`}
-          className="w-24 mb-3"
+          src="/carbon-mark-light.svg"
+          alt="Carbon Logo"
+          className="w-24 dark:hidden"
+        />
+        <img
+          src="/carbon-mark-dark.svg"
+          alt="Carbon Logo"
+          className="w-24 hidden dark:block"
         />
 
         <Heading
           {...fade}
           transition={{ duration: 1.2, ease: "easeInOut", delay: 1.5 }}
           size="h1"
-          className="m-0"
+          className="mb-4"
         >
           <Trans>Welcome to Carbon</Trans>
         </Heading>

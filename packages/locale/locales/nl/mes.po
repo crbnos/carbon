@@ -218,6 +218,12 @@ msgstr ""
 msgid "Create {0}"
 msgstr ""
 
+msgid "Create a quality issue for MRB review."
+msgstr ""
+
+msgid "Create Quality Issue"
+msgstr ""
+
 msgid "Customer"
 msgstr ""
 
@@ -247,6 +253,9 @@ msgid "Description"
 msgstr ""
 
 msgid "Details"
+msgstr ""
+
+msgid "Dismiss"
 msgstr ""
 
 msgid "Dispatch not found"
@@ -367,6 +376,9 @@ msgid "In Progress"
 msgstr ""
 
 msgid "Insufficient quantity"
+msgstr ""
+
+msgid "Inspection Failed"
 msgstr ""
 
 msgid "Inventory adjustment completed"
@@ -588,6 +600,9 @@ msgid "Oops. You shouldn't see this page. Eventually it will be a landing page."
 msgstr ""
 
 msgid "Open"
+msgstr ""
+
+msgid "Operation evidence will be attached as context."
 msgstr ""
 
 msgid "Operations"

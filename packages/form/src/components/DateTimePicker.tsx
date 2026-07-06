@@ -22,6 +22,7 @@ import { useFormStateContext } from "../internal/formStateContext";
 type DateTimePickerProps = {
   name: string;
   label?: string;
+  size?: "sm" | "md" | "lg";
   isDisabled?: boolean;
   minValue?: CalendarDateTime;
   maxValue?: CalendarDateTime;
@@ -33,6 +34,7 @@ type DateTimePickerProps = {
 const DateTimePicker = ({
   name,
   label,
+  size,
   isDisabled: isDisabledProp = false,
   minValue,
   maxValue,
@@ -97,6 +99,7 @@ const DateTimePicker = ({
         value={date}
         onChange={handleChange as any}
         isDisabled={isDisabled}
+        size={size}
         minValue={minValue}
         maxValue={maxValue}
         inline={inline ? DateTimePickerPreview : undefined}

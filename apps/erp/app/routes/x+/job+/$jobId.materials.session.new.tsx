@@ -11,13 +11,8 @@ import {
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
-import {
-  deleteStockTransfer,
-  upsertStockTransfer,
-  upsertStockTransferLines
-} from "~/modules/inventory";
+import { insertStockTransfer } from "~/modules/inventory";
 import { getJob } from "~/modules/production";
-import { getNextSequence } from "~/modules/settings";
 import { getOrCreatePeriods } from "~/modules/shared/shared.server";
 import { path } from "~/utils/path";
 
@@ -240,59 +235,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }, []);
 
     if (linesWithExpandedSerialTracking.length > 0) {
-      // Now that we have valid transfer lines, create the stock transfer
-      // Get next sequence for stock transfer
-      const nextSequence = await getNextSequence(
-        client,
-        "stockTransfer",
-        companyId
-      );
-      if (nextSequence.error) {
-        return data(
-          { success: false, message: "Failed to get next sequence" },
-          await flash(
-            request,
-            error(nextSequence.error, "Failed to get next sequence")
-          )
-        );
-      }
-
-      // Create stock transfer
-      const createStockTransfer = await upsertStockTransfer(client, {
-        stockTransferId: nextSequence.data,
+      const createStockTransfer = await insertStockTransfer(client, {
         locationId,
+        lines: linesWithExpandedSerialTracking,
         companyId,
         createdBy: userId
       });
 
-      if (createStockTransfer.error) {
+      if (createStockTransfer.error || !createStockTransfer.data) {
         return data(
           { success: false, message: "Failed to create stock transfer" },
           await flash(
             request,
             error(createStockTransfer.error, "Failed to create stock transfer")
-          )
-        );
-      }
-
-      // Create stock transfer lines
-      const createStockTransferLines = await upsertStockTransferLines(client, {
-        lines: linesWithExpandedSerialTracking,
-        stockTransferId: createStockTransfer.data.id,
-        companyId,
-        createdBy: userId
-      });
-
-      if (createStockTransferLines.error) {
-        await deleteStockTransfer(client, createStockTransfer.data.id);
-        return data(
-          { success: false, message: "Failed to create stock transfer lines" },
-          await flash(
-            request,
-            error(
-              createStockTransferLines.error,
-              "Failed to create stock transfer lines"
-            )
           )
         );
       }

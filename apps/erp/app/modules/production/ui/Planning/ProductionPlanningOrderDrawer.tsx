@@ -497,10 +497,11 @@ export const ProductionPlanningOrderDrawer = memo(
             <Button
               variant="primary"
               onClick={() => onSubmit(row.id, orders)}
+              disabled={fetcher.state !== "idle"}
               isDisabled={fetcher.state !== "idle"}
               isLoading={fetcher.state !== "idle"}
             >
-              Order
+              Make
             </Button>
           </DrawerFooter>
         </DrawerContent>

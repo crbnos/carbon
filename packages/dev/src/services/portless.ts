@@ -163,6 +163,8 @@ export async function ensureProxyPrivileges() {
   const issues = detectPrivilegeIssues();
   if (issues.length === 0) return;
 
+  const isWindows = process.platform === "win32";
+
   log.warn(
     [
       "portless needs a privileged proxy to serve `*.dev` cleanly:",
@@ -174,40 +176,42 @@ export async function ensureProxyPrivileges() {
     ].join("\n")
   );
 
+  const elevateHint = isWindows
+    ? "Will bind :443, install the local CA, and write hosts entries (requires Administrator terminal)."
+    : "Set it up now? Will run sudo to bind :443, install the local CA, and write /etc/hosts entries.";
+
   const proceed = await confirm({
-    message:
-      "Set it up now? Will run sudo to bind :443, install the local CA, and write /etc/hosts entries.",
+    message: elevateHint,
     initialValue: true
   });
   if (isCancel(proceed) || !proceed) {
-    throw new Error(
-      "Aborted. Run manually: `sudo portless proxy stop && sudo portless proxy start --tld dev && sudo portless trust`. Then re-run `crbn up`."
-    );
+    const manual = isWindows
+      ? "Aborted. Run in an Administrator terminal: `portless proxy stop && portless proxy start --tld dev && portless trust`. Then re-run `crbn up`."
+      : "Aborted. Run manually: `sudo portless proxy stop && sudo portless proxy start --tld dev && sudo portless trust`. Then re-run `crbn up`.";
+    throw new Error(manual);
   }
 
-  log.info("running sudo commands — you'll be prompted for your password");
+  if (isWindows) {
+    log.info(
+      "running privileged commands — ensure this terminal is running as Administrator"
+    );
+  } else {
+    log.info("running sudo commands — you'll be prompted for your password");
+  }
 
-  await execa("sudo", sudoPortless(["proxy", "stop"]), {
-    stdio: "inherit",
-    reject: false
-  });
+  const elevate = (args: string[]) =>
+    isWindows
+      ? execa("portless", args, { stdio: "inherit", reject: false })
+      : execa("sudo", sudoPortless(args), { stdio: "inherit", reject: false });
 
-  const start = await execa(
-    "sudo",
-    sudoPortless(["proxy", "start", "--tld", PORTLESS_TLD]),
-    {
-      stdio: "inherit",
-      reject: false
-    }
-  );
+  await elevate(["proxy", "stop"]);
+
+  const start = await elevate(["proxy", "start", "--tld", PORTLESS_TLD]);
   if (start.exitCode !== 0) {
     throw new Error(`portless proxy start failed (exit ${start.exitCode})`);
   }
 
-  const trust = await execa("sudo", sudoPortless(["trust"]), {
-    stdio: "inherit",
-    reject: false
-  });
+  const trust = await elevate(["trust"]);
   if (trust.exitCode !== 0) {
     log.warn(
       `portless trust failed (exit ${trust.exitCode}); browsers may show cert warnings until you run it manually.`
@@ -224,15 +228,22 @@ export async function ensureProxyPrivileges() {
   log.success("portless proxy on :443");
 }
 
-// Push registered routes into /etc/hosts. Needs sudo; idempotent.
+// Push registered routes into /etc/hosts. Needs elevated privileges; idempotent.
 export async function syncHostsFile() {
-  const r = await execa("sudo", sudoPortless(["hosts", "sync"]), {
+  const isWindows = process.platform === "win32";
+  const cmd = isWindows ? "portless" : "sudo";
+  const args = isWindows ? ["hosts", "sync"] : sudoPortless(["hosts", "sync"]);
+
+  const r = await execa(cmd, args, {
     stdio: "inherit",
     reject: false
   });
   if (r.exitCode !== 0) {
+    const hint = isWindows
+      ? "Run this command in an Administrator terminal to fix DNS."
+      : "Run it manually to fix DNS.";
     throw new Error(
-      `sudo portless hosts sync failed (exit ${r.exitCode}). Run it manually to fix DNS.`
+      `${isWindows ? "" : "sudo "}portless hosts sync failed (exit ${r.exitCode}). ${hint}`
     );
   }
 }

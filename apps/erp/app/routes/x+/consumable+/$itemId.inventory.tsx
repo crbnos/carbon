@@ -1,6 +1,7 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { getStorageRulesDataForTarget } from "@carbon/ee/storage-rules.server";
 import { validationError, validator } from "@carbon/form";
 import { VStack } from "@carbon/react";
 import { pluckUnique } from "@carbon/utils";
@@ -12,7 +13,6 @@ import {
   getTrackedEntityExpirations,
   InventoryDetails
 } from "~/modules/inventory";
-
 import type { Consumable, UnitOfMeasureListItem } from "~/modules/items";
 import {
   getBomHasShelfLifeManagedInput,
@@ -25,10 +25,9 @@ import {
   upsertPickMethod,
   upsertPickMethodWithShelfLife
 } from "~/modules/items";
-import { getItemRulesDataForItem } from "~/modules/items/itemRules.server";
 import { PickMethodForm } from "~/modules/items/ui/Item";
-import ItemRuleAssignments from "~/modules/items/ui/ItemRules/ItemRuleAssignments";
 import { getLocationsList } from "~/modules/resources";
+import RuleAssignmentsList from "~/modules/storageRules/ui/RuleAssignmentsList";
 import { getUserDefaults } from "~/modules/users/users.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { useItems } from "~/stores/items";
@@ -166,7 +165,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getItemShelfLife(client, itemId),
     getBomHasShelfLifeManagedInput(client, itemId, companyId),
     getTrackedEntityExpirations(client, trackedEntityIds),
-    getItemRulesDataForItem(client, itemId, companyId)
+    getStorageRulesDataForTarget(client, {
+      targetType: "item",
+      targetId: itemId,
+      companyId
+    })
   ]);
 
   return {
@@ -215,6 +218,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       itemId,
       locationId: pickMethodFields.locationId,
       defaultStorageUnitId: pickMethodFields.defaultStorageUnitId,
+      sortMethod: pickMethodFields.sortMethod,
       customFields: setCustomFields(formData),
       userId,
       shelfLife: {
@@ -305,8 +309,9 @@ export default function ConsumableInventoryRoute() {
         quantities={quantities}
         storageUnits={storageUnits.options}
       />
-      <ItemRuleAssignments
-        itemId={itemId}
+      <RuleAssignmentsList
+        targetType="item"
+        targetId={itemId}
         assignments={ruleAssignments as never}
         library={ruleLibrary as never}
       />

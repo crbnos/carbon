@@ -77,9 +77,13 @@ const LineItems = ({
         if (!line.id) return null;
 
         const isGlAccount = line.purchaseOrderLineType === "G/L Account";
+        const isFixedAsset = line.purchaseOrderLineType === "Fixed Asset";
+        const isIndirect = isGlAccount || isFixedAsset;
         const itemReadableId = isGlAccount
           ? line.description || "Indirect Expense"
-          : getItemReadableId(items, line.itemId);
+          : isFixedAsset
+            ? line.assetReadableId || "Fixed Asset"
+            : getItemReadableId(items, line.itemId);
         const lineTotal = (line.unitPrice ?? 0) * (line.purchaseQuantity ?? 0);
         const supplierLineTotal =
           (line.supplierUnitPrice ?? 0) * (line.purchaseQuantity ?? 0);
@@ -143,7 +147,9 @@ const LineItems = ({
                         {isGlAccount
                           ? (accounts.find((a) => a.id === line.accountId)
                               ?.name ?? "Indirect Expense")
-                          : line.description}
+                          : isFixedAsset
+                            ? line.description || "Fixed Asset"
+                            : line.description}
                       </span>
                     </VStack>
                     <VStack
@@ -173,7 +179,7 @@ const LineItems = ({
                         </motion.div>
                       </HStack>
                       <div className="flex items-center gap-2">
-                        {!isGlAccount && (
+                        {!isIndirect && (
                           <Badge
                             variant="outline"
                             className="flex items-center gap-2"

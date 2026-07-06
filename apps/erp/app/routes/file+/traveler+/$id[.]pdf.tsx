@@ -2,8 +2,11 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { JobTravelerPDF } from "@carbon/documents/pdf";
 import type { JSONContent } from "@carbon/react";
-import { getPreferenceHeaders } from "@carbon/react";
-import { flattenTree, generateBomIds } from "@carbon/utils";
+import {
+  flattenTree,
+  generateBomIds,
+  getPreferenceHeaders
+} from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
 import type { LoaderFunctionArgs } from "react-router";
 import {
@@ -13,7 +16,7 @@ import {
   getJobOperationsByMethodId,
   getTrackedEntityByJobId
 } from "~/modules/production/production.service";
-import { getCompany, getCompanySettings } from "~/modules/settings";
+import { getCompany } from "~/modules/settings";
 import { getBase64ImageFromSupabase } from "~/modules/shared";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -32,10 +35,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw new Error("Failed to load job make method");
   }
 
-  const [company, job, companySettings] = await Promise.all([
+  const [company, job] = await Promise.all([
     getCompany(serviceRole, jobMakeMethod.data?.companyId ?? ""),
-    getJob(serviceRole, jobMakeMethod.data?.jobId ?? ""),
-    getCompanySettings(serviceRole, jobMakeMethod.data?.companyId ?? "")
+    getJob(serviceRole, jobMakeMethod.data?.jobId ?? "")
   ]);
 
   if (company.error) {
@@ -46,11 +48,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (job.error || !job.data) {
     console.error(job.error);
     throw new Error("Failed to load job");
-  }
-
-  if (companySettings.error) {
-    console.error(companySettings.error);
-    throw new Error("Failed to load company settings");
   }
 
   const [jobOperations, customer, item] = await Promise.all([
@@ -138,9 +135,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       notes={jobNotes}
       thumbnail={thumbnail}
       title="Job Traveler"
-      includeWorkInstructions={
-        companySettings.data?.jobTravelerIncludeWorkInstructions ?? false
-      }
     />
   );
 

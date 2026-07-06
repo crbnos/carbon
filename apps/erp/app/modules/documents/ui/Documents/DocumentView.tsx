@@ -56,7 +56,7 @@ const DocumentPreview = ({ bucket, document }: DocumentPreviewProps) => {
     default:
       return (
         <div className="flex flex-1 border-t border-border flex-col items-center justify-start w-full h-full pt-24">
-          <DocumentIcon className="w-36 h-36 mb-2" type={document.type!} />
+          <DocumentIcon className="w-24 h-36 mb-2" type={document.type!} />
           <p className="text-xl mb-1">{document.name}</p>
           <p className="text-muted-foreground mb-4">
             {convertKbToString(document.size ?? 0)}

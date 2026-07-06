@@ -3,7 +3,11 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { salesOrderStatusType, updateSalesOrderStatus } from "~/modules/sales";
+import {
+  cancelSalesOrder,
+  salesOrderStatusType,
+  updateSalesOrderStatus
+} from "~/modules/sales";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -24,6 +28,36 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw redirect(
       path.to.salesOrderDetails(id),
       await flash(request, error(null, "Invalid status"))
+    );
+  }
+
+  // Cancel flow routes through the dedicated service function so MCP /
+  // scripts can call the same code path with the same semantics.
+  if (status === "Cancelled") {
+    // The modal sends "cancelJobIds" as a comma-separated string. The
+    // presence of the field (even when empty) signals "user explicitly
+    // chose which jobs". Absence signals "no preference — cancel all".
+    const cancelJobIdsRaw = formData.get("cancelJobIds") as string | null;
+    const jobs =
+      cancelJobIdsRaw === null
+        ? undefined
+        : cancelJobIdsRaw
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean);
+
+    const result = await cancelSalesOrder(client, { id, userId, jobs });
+
+    if (!result.success) {
+      throw redirect(
+        requestReferrer(request) ?? path.to.salesOrderDetails(id),
+        await flash(request, error(null, result.message))
+      );
+    }
+
+    throw redirect(
+      requestReferrer(request) ?? path.to.quote(id),
+      await flash(request, success(result.message))
     );
   }
 

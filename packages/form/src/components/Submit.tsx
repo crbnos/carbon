@@ -3,12 +3,13 @@ import type { ButtonProps } from "@carbon/react";
 import {
   Button,
   Modal,
-  ModalBody,
   ModalContent,
+  ModalDescription,
   ModalFooter,
   ModalHeader,
   ModalTitle
 } from "@carbon/react";
+import { Trans } from "@lingui/react/macro";
 import { forwardRef } from "react";
 import { useBlocker, useNavigation } from "react-router";
 import { useIsSubmitting } from "../hooks";
@@ -82,17 +83,19 @@ export const Submit = forwardRef<HTMLButtonElement, SubmitProps>(
           <Modal open onOpenChange={(open) => !open && blocker.reset()}>
             <ModalContent>
               <ModalHeader>
-                <ModalTitle>Unsaved changes</ModalTitle>
+                <ModalTitle>
+                  <Trans>Unsaved changes</Trans>
+                </ModalTitle>
+                <ModalDescription>
+                  <Trans>Are you sure you want to leave this page?</Trans>
+                </ModalDescription>
               </ModalHeader>
-              <ModalBody>
-                <p>Are you sure you want to leave this page?</p>
-              </ModalBody>
               <ModalFooter>
                 <Button variant="secondary" onClick={() => blocker.reset()}>
-                  Stay on this page
+                  <Trans>Stay on this page</Trans>
                 </Button>
                 <Button onClick={() => blocker.proceed()}>
-                  Leave this page
+                  <Trans>Leave this page</Trans>
                 </Button>
               </ModalFooter>
             </ModalContent>

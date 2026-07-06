@@ -134,9 +134,10 @@ export function MaintenanceAddPartModal({
 
             setSerialOptions(
               serials?.map((sn) => ({
-                label: sn.id ?? "",
-                value: sn.id,
-                helper: sn.readableId ? `Serial ${sn.readableId}` : undefined
+                label: sn.readableId
+                  ? `${sn.readableId} — ${sn.id}`
+                  : (sn.id ?? ""),
+                value: sn.id
               })) ?? []
             );
           }
@@ -151,11 +152,10 @@ export function MaintenanceAddPartModal({
 
             setBatchOptions(
               batches?.map((batch) => ({
-                label: batch.id ?? "",
+                label: batch.readableId
+                  ? `${batch.readableId} — ${batch.id.slice(0, 10)} — ${batch.quantity} available`
+                  : `${batch.id.slice(0, 10)} — ${batch.quantity} available`,
                 value: batch.id,
-                helper: batch.readableId
-                  ? `Batch ${batch.readableId} (${batch.quantity} available)`
-                  : `${batch.quantity} available`,
                 quantity: batch.quantity ?? 0
               })) ?? []
             );

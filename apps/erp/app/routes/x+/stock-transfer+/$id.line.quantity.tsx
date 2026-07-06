@@ -1,6 +1,7 @@
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { trigger } from "@carbon/jobs";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { getStockTransfer } from "~/modules/inventory";
@@ -89,9 +90,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   // Call the post-stock-transfer function for inventory items
-  const { error: functionError } = await client.functions.invoke(
-    "post-stock-transfer",
-    {
+  const { data: transferResult, error: functionError } =
+    await client.functions.invoke("post-stock-transfer", {
       body: JSON.stringify({
         type: type,
         stockTransferId: stockTransferLine.data.stockTransferId,
@@ -102,8 +102,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         userId,
         companyId
       })
-    }
-  );
+    });
 
   if (functionError) {
     return data(
@@ -118,6 +117,30 @@ export async function action({ request, params }: ActionFunctionArgs) {
         )
       )
     );
+  }
+
+  if (transferResult?.splitEntityId) {
+    try {
+      await trigger("print-job", {
+        sourceDocument: "Split",
+        sourceDocumentId: transferResult.splitEntityId,
+        companyId,
+        userId,
+        locationId: locationId || undefined
+      });
+      // Reprint the original batch too — its quantity changed in the split
+      if (trackedEntityId) {
+        await trigger("print-job", {
+          sourceDocument: "Entity",
+          sourceDocumentId: trackedEntityId,
+          companyId,
+          userId,
+          locationId: locationId || undefined
+        });
+      }
+    } catch (e) {
+      console.error("Auto-print for split entity failed:", e);
+    }
   }
 
   return data(

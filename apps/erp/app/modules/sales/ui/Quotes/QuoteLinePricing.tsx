@@ -105,6 +105,7 @@ const QuoteLinePricing = ({
   });
 
   const [showCategoryMarkups, setShowCategoryMarkups] = useState(false);
+  const [customMarkup, setCustomMarkup] = useState("");
 
   useEffect(() => {
     setEditableFields((prev) => ({
@@ -606,6 +607,51 @@ const QuoteLinePricing = ({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  <div
+                    className="flex items-center gap-1 px-2 py-1.5 border-b border-border mb-1"
+                    onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => e.stopPropagation()}
+                  >
+                    <NumberField
+                      value={
+                        customMarkup === "" ? undefined : Number(customMarkup)
+                      }
+                      minValue={0}
+                      formatOptions={{
+                        style: "decimal",
+                        maximumFractionDigits: 2
+                      }}
+                      onChange={(val) => {
+                        if (Number.isFinite(val)) setCustomMarkup(String(val));
+                      }}
+                    >
+                      <NumberInput
+                        size="sm"
+                        placeholder="Custom %"
+                        className="w-32 h-7"
+                      />
+                    </NumberField>
+                    <DropdownMenuItem
+                      asChild
+                      onSelect={(e) => {
+                        const val = parseFloat(customMarkup);
+                        if (!Number.isFinite(val) || val < 0) {
+                          e.preventDefault();
+                          return;
+                        }
+                        onRecalculate(val);
+                        setCustomMarkup("");
+                      }}
+                    >
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="h-7 px-2 text-xs"
+                      >
+                        Apply
+                      </Button>
+                    </DropdownMenuItem>
+                  </div>
                   <DropdownMenuItem onClick={() => onRecalculate(0)}>
                     0% Markup
                   </DropdownMenuItem>

@@ -1,0 +1,38 @@
+{
+  "name": "@carbon/printing",
+  "dependencies": {
+    "@carbon/kv": "workspace:*",
+    "@carbon/react": "workspace:*",
+    "@carbon/utils": "workspace:*",
+    "zod": "catalog:",
+    "zod-form-data": "catalog:"
+  },
+  "devDependencies": {
+    "@carbon/config": "workspace:*",
+    "@carbon/database": "workspace:*",
+    "@supabase/supabase-js": "catalog:",
+    "@types/node": "20.19.39",
+    "@types/react": "catalog:",
+    "typescript": "catalog:"
+  },
+  "peerDependencies": {
+    "@lingui/react": "catalog:",
+    "react": "catalog:",
+    "react-icons": "catalog:",
+    "react-router": "catalog:"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./printing.server": "./src/printing.server.ts",
+    "./ui": "./src/ui/index.ts"
+  },
+  "private": true,
+  "scripts": {
+    "clean": "rimraf .turbo node_modules dist",
+    "dev": "tsup --watch",
+    "lint": "biome lint --write ",
+    "typecheck": "tsgo --noEmit"
+  },
+  "sideEffects": false,
+  "version": "0.0.0"
+}

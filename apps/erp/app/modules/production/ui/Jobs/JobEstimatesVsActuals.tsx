@@ -1,6 +1,7 @@
 import { useCarbon } from "@carbon/auth";
 import type { Database } from "@carbon/database";
 import {
+  Badge,
   Card,
   CardAction,
   CardContent,
@@ -60,6 +61,7 @@ type Operation = z.infer<typeof jobOperationValidator> & {
   status: JobOperation["status"];
   operationQuantity: number | null;
   targetQuantity: number | null;
+  reworkId: string | null;
 };
 
 type JobMaterial = NonNullable<
@@ -300,7 +302,12 @@ const JobEstimatesVsActuals = ({
                       <Tr key={operation.id} className="border-b border-border">
                         <Td className="border-r border-border px-2">
                           <HStack className="w-full justify-between ">
-                            <span>{operation.description}</span>
+                            <HStack spacing={2}>
+                              <span>{operation.description}</span>
+                              {operation.reworkId && (
+                                <Badge variant="red">Rework</Badge>
+                              )}
+                            </HStack>
                             <JobOperationStatus operation={operation} />
                           </HStack>
                         </Td>

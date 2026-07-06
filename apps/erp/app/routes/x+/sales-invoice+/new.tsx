@@ -12,11 +12,10 @@ import { useUrlParams, useUser } from "~/hooks";
 import {
   createSalesInvoiceFromSalesOrder,
   createSalesInvoiceFromShipment,
-  salesInvoiceValidator,
-  upsertSalesInvoice
+  insertSalesInvoice,
+  salesInvoiceValidator
 } from "~/modules/invoicing";
 import SalesInvoiceForm from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceForm";
-import { getNextSequence } from "~/modules/settings";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -102,54 +101,28 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-  const { id, ...d } = validation.data;
-  let invoiceId = d.invoiceId;
-  const useNextSequence = !invoiceId;
+  const { id: _id, ...d } = validation.data;
 
-  if (useNextSequence) {
-    const nextSequence = await getNextSequence(
-      client,
-      "salesInvoice",
-      companyId
-    );
-    if (nextSequence.error) {
-      throw redirect(
-        path.to.newSalesInvoice,
-        await flash(
-          request,
-          error(nextSequence.error, "Failed to get next sequence")
-        )
-      );
-    }
-    invoiceId = nextSequence.data;
-  }
-
-  if (!invoiceId) throw new Error("invoiceId is not defined");
-
-  const createSalesInvoice = await upsertSalesInvoice(client, {
+  const result = await insertSalesInvoice(client, {
     ...d,
-    invoiceId,
+    invoiceId: d.invoiceId || undefined,
     companyId,
     companyGroupId,
     createdBy: userId,
     customFields: setCustomFields(formData)
   });
 
-  if (createSalesInvoice.error || !createSalesInvoice.data?.[0]) {
-    console.error(createSalesInvoice.error);
+  if (result.error || !result.data) {
     throw redirect(
       path.to.salesInvoices,
       await flash(
         request,
-        error(createSalesInvoice.error, "Failed to insert sales invoice")
+        error(result.error, "Failed to insert sales invoice")
       )
     );
   }
 
-  const invoice = createSalesInvoice.data?.[0];
-
-  throw redirect(path.to.salesInvoice(invoice?.id!));
+  throw redirect(path.to.salesInvoice(result.data.id));
 }
 
 export default function SalesInvoiceNewRoute() {

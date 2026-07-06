@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
+import { homedir } from "node:os";
 import { parse } from "dotenv";
 import { type ExecaChildProcess, execa } from "execa";
 import { join } from "pathe";
@@ -44,13 +45,24 @@ const APP_PORT_KEYS: Partial<Record<string, keyof PortMap>> = {
   mes: "PORT_MES"
 };
 
+const APP_URL_ENV_KEYS: Partial<Record<string, string>> = {
+  erp: "ERP_URL",
+  mes: "MES_URL"
+};
+
 export function spawnApps(opts: {
   root: string;
   apps: string[];
   ports: PortMap;
   portless: boolean;
 }): Promise<void> {
-  const { root, apps, ports } = opts;
+  const { root, apps, ports, portless } = opts;
+
+  // When portless is active, apps talk to Supabase over HTTPS using
+  // portless's self-signed CA. Tell Node to trust it.
+  const caPath = join(homedir(), ".portless", "ca.pem");
+  const extraCaEnv =
+    portless && existsSync(caPath) ? { NODE_EXTRA_CA_CERTS: caPath } : {};
 
   let shuttingDown = false;
 
@@ -61,17 +73,35 @@ export function spawnApps(opts: {
     // (`<app>.<prefix>.dev`) without portless auto-prefix mangling.
     const portKey = APP_PORT_KEYS[id];
     const port = portKey ? ports[portKey] : undefined;
-    const child = execa("pnpm", ["run", "dev:app"], {
-      cwd: join(root, "apps", id),
-      env: {
-        ...spawnAppEnv(root, id),
-        HOST: "127.0.0.1",
-        ...(port !== undefined ? { PORT: String(port) } : {})
-      },
-      reject: false,
-      stdin: "ignore",
-      detached: true
-    });
+    const appEnv = spawnAppEnv(root, id);
+    // Each app needs its own VERCEL_URL so auth redirects (magic link,
+    // OAuth callback) return to the correct app, not always ERP.
+    const urlKey = APP_URL_ENV_KEYS[id];
+    const vercelUrl = urlKey ? appEnv[urlKey] : undefined;
+    const child = execa(
+      "pnpm",
+      [
+        "exec",
+        "react-router",
+        "dev",
+        ...(port !== undefined ? ["--port", String(port)] : []),
+        "--host",
+        "127.0.0.1"
+      ],
+      {
+        cwd: join(root, "apps", id),
+        env: {
+          ...appEnv,
+          ...extraCaEnv,
+          HOST: "127.0.0.1",
+          ...(port !== undefined ? { PORT: String(port) } : {}),
+          ...(vercelUrl ? { VERCEL_URL: vercelUrl } : {})
+        },
+        reject: false,
+        stdin: "ignore",
+        detached: true
+      }
+    );
 
     const prefix = color(pc.bold(`${id.padEnd(3)} | `));
     const pipe = (

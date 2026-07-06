@@ -38,7 +38,7 @@ import {
   LuPackage,
   LuSquareChartGantt
 } from "react-icons/lu";
-import { useFetcher } from "react-router";
+import { Link, useFetcher } from "react-router";
 import {
   ItemThumbnail,
   MethodItemTypeIcon,
@@ -59,7 +59,7 @@ import {
   ItemReorderPolicy
 } from "~/modules/items/ui/Item/ItemReorderPolicy";
 import type { action as mrpAction } from "~/routes/api+/mrp";
-import type { action as bulkUpdateAction } from "~/routes/x+/production+/planning.update";
+import type { action as bulkUpdateAction } from "~/routes/x+/purchasing+/planning.update";
 import { useItems } from "~/stores";
 import { useSuppliers } from "~/stores/suppliers";
 import { path } from "~/utils/path";
@@ -91,6 +91,51 @@ const PlanningTable = memo(
 
     const mrpFetcher = useFetcher<typeof mrpAction>();
     const bulkUpdateFetcher = useFetcher<typeof bulkUpdateAction>();
+
+    // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
+    useEffect(() => {
+      if (bulkUpdateFetcher.state !== "idle" || !bulkUpdateFetcher.data) {
+        return;
+      }
+
+      if (
+        bulkUpdateFetcher.data?.success === false &&
+        bulkUpdateFetcher.data?.message
+      ) {
+        toast.error(bulkUpdateFetcher.data.message);
+      }
+
+      if (bulkUpdateFetcher.data?.success === true) {
+        const purchaseOrders =
+          (
+            bulkUpdateFetcher.data as {
+              purchaseOrders?: { id: string; readableId: string }[];
+            }
+          )?.purchaseOrders ?? [];
+
+        if (purchaseOrders.length === 0) {
+          toast.success(t`Orders submitted`);
+        } else {
+          toast.success(
+            <div className="flex gap-1">
+              <span>{t`Orders submitted`}</span>
+              <span className="flex flex-wrap gap-2 text-xs">
+                {purchaseOrders.map((po) => (
+                  <Link
+                    key={po.id}
+                    to={path.to.purchaseOrder(po.id)}
+                    className="underline underline-offset-2 hover:opacity-80"
+                  >
+                    {po.readableId}
+                  </Link>
+                ))}
+              </span>
+            </div>,
+            { duration: 8000 }
+          );
+        }
+      }
+    }, [bulkUpdateFetcher.state, bulkUpdateFetcher.data]);
 
     const [suppliersMap, setSuppliersMap] = useState<Record<string, string>>(
       () => {
@@ -125,6 +170,12 @@ const PlanningTable = memo(
     const [ordersMap, setOrdersMap] = useState<Record<string, PlannedOrder[]>>(
       {}
     );
+
+    // Auto-computed planned orders for every row, used as the fallback when
+    // bulk-submitting items the user never opened in the drawer.
+    const [ordersByItemId, setOrdersByItemId] = useState<
+      Map<string, PlannedOrder[]>
+    >(new Map());
 
     // Clear cache when MRP completes
     useEffect(() => {
@@ -166,32 +217,39 @@ const PlanningTable = memo(
           items: rowsWithSuppliers
             .filter((row) => row.id)
             .map((row) => {
-              const ordersWithPeriods = (ordersMap[row.id!] || []).map(
-                (order) => {
-                  if (
-                    !order.dueDate ||
-                    parseDate(order.dueDate) < parseDate(periods[0].startDate)
-                  ) {
-                    return {
-                      ...order,
-                      periodId: periods[0].id
-                    };
-                  }
-
-                  const period = periods.find((p) => {
-                    const dueDate = parseDate(order.dueDate!);
-                    const startDate = parseDate(p.startDate);
-                    const endDate = parseDate(p.endDate);
-                    return dueDate >= startDate && dueDate <= endDate;
-                  });
-
+              // Prefer user-edited orders (from the drawer) when present,
+              // otherwise fall back to the auto-computed planned orders so
+              // bulk submit works for items the user never opened.
+              const sourceOrders =
+                ordersMap[row.id!] && ordersMap[row.id!]!.length > 0
+                  ? ordersMap[row.id!]!
+                  : (ordersByItemId.get(row.id!) ?? []);
+              const ordersWithPeriods = sourceOrders.map((order) => {
+                const supplierId = suppliersMap[row.id!] ?? order.supplierId;
+                if (
+                  !order.dueDate ||
+                  parseDate(order.dueDate) < parseDate(periods[0].startDate)
+                ) {
                   return {
                     ...order,
-                    supplierId: suppliersMap[row.id!],
-                    periodId: period?.id ?? periods[periods.length - 1].id
+                    supplierId,
+                    periodId: periods[0].id
                   };
                 }
-              );
+
+                const period = periods.find((p) => {
+                  const dueDate = parseDate(order.dueDate!);
+                  const startDate = parseDate(p.startDate);
+                  const endDate = parseDate(p.endDate);
+                  return dueDate >= startDate && dueDate <= endDate;
+                });
+
+                return {
+                  ...order,
+                  supplierId,
+                  periodId: period?.id ?? periods[periods.length - 1].id
+                };
+              });
 
               return {
                 id: row.id,
@@ -207,7 +265,7 @@ const PlanningTable = memo(
         });
       },
 
-      [bulkUpdateFetcher, locationId, ordersMap, suppliersMap]
+      [bulkUpdateFetcher, locationId, ordersMap, ordersByItemId, suppliersMap]
     );
 
     const [selectedItem, setSelectedItem] =
@@ -225,9 +283,6 @@ const PlanningTable = memo(
       []
     );
 
-    const [ordersByItemId, setOrdersByItemId] = useState<
-      Map<string, PlannedOrder[]>
-    >(new Map());
     const [isPending, startTransition] = useTransition();
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration

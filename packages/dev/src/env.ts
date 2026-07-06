@@ -34,7 +34,7 @@ export function renderEnv(opts: {
       ? "# App-facing URLs (portless hostnames)"
       : "# App-facing URLs (localhost)"
   );
-  lines.push(`DOMAIN=${portless ? host("erp") : "localhost"}`);
+  lines.push(`DOMAIN=${portless ? `${branchPrefix}.dev` : "localhost"}`);
   lines.push(
     `ERP_URL=${portless ? `https://${host("erp")}` : local(ports.PORT_ERP)}`
   );
@@ -59,13 +59,17 @@ export function renderEnv(opts: {
   lines.push(`SUPABASE_JWT_SECRET=${jwt.secret}`);
   lines.push(`SUPABASE_ANON_KEY=${jwt.anonKey}`);
   lines.push(`SUPABASE_SERVICE_ROLE_KEY=${jwt.serviceKey}`);
-  const apiBase = portless ? `https://${host("api")}` : local(ports.PORT_API);
-  // OAuth callback must match the URL scheme apps actually use.
+  // OAuth callback: portless uses the shared api.carbon.dev alias; localhost
+  // mode uses the well-known Supabase default port so the redirect URI is
+  // predictable and can be registered in Google/Azure console once.
+  const oauthBase = portless
+    ? "https://api.carbon.dev"
+    : "http://localhost:54321";
   lines.push(
-    `SUPABASE_AUTH_EXTERNAL_GOOGLE_REDIRECT_URI=${portless ? "https://api.carbon.dev" : apiBase}/auth/v1/callback`
+    `SUPABASE_AUTH_EXTERNAL_GOOGLE_REDIRECT_URI=${oauthBase}/auth/v1/callback`
   );
   lines.push(
-    `SUPABASE_AUTH_EXTERNAL_AZURE_REDIRECT_URI=${portless ? "https://api.carbon.dev" : apiBase}/auth/v1/callback`
+    `SUPABASE_AUTH_EXTERNAL_AZURE_REDIRECT_URI=${oauthBase}/auth/v1/callback`
   );
   lines.push("");
   lines.push("# Aux services");
@@ -78,6 +82,15 @@ export function renderEnv(opts: {
   lines.push(
     `INNGEST_SERVE_HOST=${portless ? `https://${host("erp")}` : local(ports.PORT_ERP)}`
   );
+  // Hostname (no scheme) that docker-compose maps to host-gateway inside the
+  // inngest container, so the SDK URL above resolves to the dev server on the
+  // host. extra_hosts only accepts fully-qualified names — no wildcards —
+  // which is why we can't reuse ${DOMAIN} (e.g. `main.dev` won't match the
+  // `erp.main.dev` host the SDK URL points at).
+  lines.push(`INNGEST_TLS_HOST=${portless ? host("erp") : "localhost"}`);
+  lines.push("");
+  lines.push("# Dev auth bypass");
+  lines.push("DEV_BYPASS_EMAIL=test@carbon.ms");
   lines.push("");
   return lines.join("\n");
 }
@@ -86,15 +99,7 @@ export function writeEnv(worktreeRoot: string, content: string) {
   writeFileSync(join(worktreeRoot, ".env.local"), content);
 }
 
-// Remove leftover portless.json files — apps are no longer spawned via
-// `portless run` (which auto-prefixed linked worktrees in the wrong order).
-// Instead, apps are spawned directly and registered via `portless alias`.
-export function syncAppPortlessConfigs(opts: {
-  worktreeRoot: string;
-  branchPrefix: string | null;
-  linked: boolean;
-}) {
-  const { worktreeRoot } = opts;
+export function syncAppPortlessConfigs(worktreeRoot: string) {
   for (const { value: appId } of APP_CHOICES) {
     const path = join(worktreeRoot, "apps", appId, "portless.json");
     if (existsSync(path)) {

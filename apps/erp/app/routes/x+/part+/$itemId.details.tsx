@@ -57,7 +57,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const requestedMethodId = url.searchParams.get("methodId");
 
-  const makeMethods = await getMakeMethods(client, itemId, companyId);
+  const [makeMethods] = await Promise.all([
+    getMakeMethods(client, itemId, companyId)
+    // client.storage
+    //   .from("private")
+    //   .list(`${companyId}/default-attachments/item/${itemId}`)
+  ]);
+  // const defaultAttachments = defaultAttachmentsResult.data ?? [];
+
   const makeMethod = requestedMethodId
     ? (makeMethods.data?.find((m) => m.id === requestedMethodId) ??
       makeMethods.data?.find((m) => m.status === "Active") ??
@@ -326,6 +333,13 @@ export default function PartDetailsRoute() {
               />
             )}
           </DeferredFiles>
+
+          {/* <DefaultAttachmentsPanel
+            files={defaultAttachments ?? []}
+            storagePathPrefix={`default-attachments/item/${itemId}`}
+            title={t`Default Attachments on Purchase Orders`}
+            description={t`Files attached here ride along whenever this item appears on a purchase order email.`}
+          /> */}
 
           <CadModel
             isReadOnly={!permissions.can("update", "parts")}

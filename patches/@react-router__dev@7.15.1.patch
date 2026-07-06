@@ -1,0 +1,34 @@
+diff --git a/dist/cli/index.js b/dist/cli/index.js
+index da54c0d..e51d41f 100644
+--- a/dist/cli/index.js
++++ b/dist/cli/index.js
+@@ -1654,16 +1654,19 @@ async function cleanViteManifests(environmentsOptions, ctx) {
+   );
+   await Promise.all(
+     viteManifestPaths.map(async (viteManifestPath) => {
+-      let manifestExists = (0, import_node_fs3.existsSync)(viteManifestPath);
+-      if (!manifestExists) return;
+-      if (!ctx.viteManifestEnabled) {
+-        await (0, import_promises3.rm)(viteManifestPath, { force: true, recursive: true });
+-      }
+-      let viteDir = path8.dirname(viteManifestPath);
+-      let viteDirFiles = await (0, import_promises3.readdir)(viteDir, { recursive: true });
+-      if (viteDirFiles.length === 0) {
+-        await (0, import_promises3.rm)(viteDir, { force: true, recursive: true });
+-      }
++     try {
++        let manifestExists = (0, import_node_fs3.existsSync)(viteManifestPath);
++        if (!manifestExists) return;
++        if (!ctx.viteManifestEnabled) {
++          await (0, import_promises3.rm)(viteManifestPath, { force: true, recursive: true });
++        }
++        let viteDir = path8.dirname(viteManifestPath);
++        if (!(0, import_node_fs3.existsSync)(viteDir)) return;
++        let viteDirFiles = await (0, import_promises3.readdir)(viteDir, { recursive: true });
++        if (viteDirFiles.length === 0) {
++          await (0, import_promises3.rm)(viteDir, { force: true, recursive: true });
++        }
++     } catch {}
+     })
+   );
+ }

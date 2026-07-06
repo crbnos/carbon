@@ -239,7 +239,7 @@ services:
   # Each worktree gets its own logical DB index (0-15) via REDIS_URL.
 
   inngest:
-    image: inngest/inngest:v1.18.0
+    image: inngest/inngest:v1.19.4
     restart: unless-stopped
     ports:
       - "${PORT_INNGEST}:8288"
@@ -251,7 +251,7 @@ services:
       SSL_CERT_FILE: /etc/ssl/certs/portless-ca.pem
     extra_hosts:
       - "host.docker.internal:host-gateway"
-      - "${DOMAIN}:host-gateway"
+      - "${INNGEST_TLS_HOST}:host-gateway"
     volumes:
       - inngest:/data
       - ${HOME}/.portless/ca.pem:/etc/ssl/certs/portless-ca.pem:ro

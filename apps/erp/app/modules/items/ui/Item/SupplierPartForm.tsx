@@ -140,13 +140,15 @@ const SupplierPartForm = ({
   const action = getAction(isEditing, type, itemId, initialValues.id);
   const fetcher = useFetcher<{ success: boolean; message: string }>();
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: onClose must be excluded — it is a new ref each render in route components, which would cause an infinite re-fire loop
   useEffect(() => {
     if (fetcher.data?.success) {
+      if (fetcher.data?.message) toast.success(fetcher.data.message);
       onClose();
     } else if (fetcher.data?.message) {
       toast.error(fetcher.data.message);
     }
-  }, [fetcher.data?.success, fetcher.data?.message, onClose]);
+  }, [fetcher.data?.success, fetcher.data?.message]);
 
   return (
     <Drawer
@@ -204,6 +206,11 @@ const SupplierPartForm = ({
                   name="minimumOrderQuantity"
                   label={t`Minimum Order Quantity`}
                   minValue={0}
+                />
+                <Number
+                  name="orderMultiple"
+                  label={t`Order Multiple`}
+                  minValue={1}
                 />
                 <CustomFormFields table="partSupplier" />
               </div>

@@ -29,7 +29,7 @@ const inputGroupVariants = cva(
       },
       insetRing: {
         false:
-          "ring-offset-background focus-within:outline-none focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2",
+          "outline-none focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50",
         true: "focus-within:outline-none focus-within:box-shadow-[inset 0 0 0 2px var(--ring-color)]"
       }
     },
@@ -113,7 +113,7 @@ export const inputVariants = cva(
       isInputGroup: {
         true: "h-auto outline-none focus-within:outline-none",
         false:
-          "border border-input ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed file:border-0 file:bg-transparent file:text-sm file:font-medium"
+          "border border-input shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed file:border-0 file:bg-transparent file:text-sm file:font-medium"
       },
       isFirstChild: {
         true: "",

@@ -53,6 +53,11 @@ function getGradientColor(ratio: number, stops: GradientStop[]): string {
   return lerpColor(stops[0]!.color, stops[0]!.color, 0);
 }
 
+type Segment = {
+  value: number;
+  className: string;
+};
+
 interface BarProgressProps {
   /** Numeric progress value */
   progress: number;
@@ -66,6 +71,8 @@ interface BarProgressProps {
   gradient?: boolean;
   /** Invert the gradient to green-yellow-red */
   invertGradient?: boolean;
+  /** Multi-segment progress (renders segments in order, ignores progress/gradient/activeClassName) */
+  segments?: Segment[];
   /** Additional class names for the outer wrapper */
   className?: string;
   /** Class name for the active (filled) bars (ignored when gradient is true) */
@@ -81,6 +88,7 @@ export function BarProgress({
   value,
   gradient = false,
   invertGradient = false,
+  segments,
   className,
   activeClassName = "bg-emerald-500",
   inactiveClassName = "bg-muted"
@@ -91,10 +99,6 @@ export function BarProgress({
   const calculateBars = useCallback(() => {
     if (!containerRef.current) return;
     const width = containerRef.current.clientWidth;
-    // Total width per bar = BAR_WIDTH + BAR_GAP, minus one trailing gap
-    // width = bars * BAR_WIDTH + (bars - 1) * BAR_GAP
-    // width = bars * (BAR_WIDTH + BAR_GAP) - BAR_GAP
-    // bars = floor((width + BAR_GAP) / (BAR_WIDTH + BAR_GAP))
     const count = Math.floor((width + BAR_GAP) / (BAR_WIDTH + BAR_GAP));
     setBarCount(Math.max(count, 1));
   }, []);
@@ -115,6 +119,37 @@ export function BarProgress({
   const activeBars = Math.round((clampedProgress / max) * barCount);
 
   const hasHeader = label || value;
+
+  const getBarClassName = (i: number): string => {
+    if (segments && barCount > 0) {
+      let cumulative = 0;
+      for (const seg of segments) {
+        const segBars = Math.round((seg.value / max) * barCount);
+        cumulative += segBars;
+        if (i < cumulative) return seg.className;
+      }
+      return inactiveClassName;
+    }
+
+    const isActive = i < activeBars;
+    if (gradient && isActive) return "";
+    if (isActive) return activeClassName;
+    return inactiveClassName;
+  };
+
+  const getBarStyle = (i: number): React.CSSProperties | undefined => {
+    if (segments) return undefined;
+    const isActive = i < activeBars;
+    if (isActive && gradient && barCount > 0) {
+      return {
+        backgroundColor: getGradientColor(
+          i / (barCount - 1 || 1),
+          invertGradient ? GRADIENT_STOPS_INVERTED : GRADIENT_STOPS
+        )
+      };
+    }
+    return undefined;
+  };
 
   return (
     <div className={cn("w-full", className)}>
@@ -142,35 +177,21 @@ export function BarProgress({
         className="flex w-full items-center gap-[3px]"
       >
         {barCount > 0 &&
-          Array.from({ length: barCount }, (_, i) => {
-            const isActive = i < activeBars;
-            const gradientStyle =
-              isActive && gradient && barCount > 0
-                ? {
-                    backgroundColor: getGradientColor(
-                      i / (barCount - 1 || 1),
-                      invertGradient ? GRADIENT_STOPS_INVERTED : GRADIENT_STOPS
-                    )
-                  }
-                : undefined;
-
-            return (
-              <span
-                key={i}
-                aria-hidden="true"
-                className={cn(
-                  "shrink-0 rounded-[2px] transition-colors duration-200",
-                  !gradient && isActive && activeClassName,
-                  !isActive && inactiveClassName
-                )}
-                style={{
-                  width: BAR_WIDTH,
-                  height: BAR_HEIGHT,
-                  ...gradientStyle
-                }}
-              />
-            );
-          })}
+          Array.from({ length: barCount }, (_, i) => (
+            <span
+              key={i}
+              aria-hidden="true"
+              className={cn(
+                "shrink-0 rounded-[2px] transition-colors duration-200",
+                getBarClassName(i)
+              )}
+              style={{
+                width: BAR_WIDTH,
+                height: BAR_HEIGHT,
+                ...getBarStyle(i)
+              }}
+            />
+          ))}
         <span className="sr-only">{Math.round(percentage)}%</span>
       </div>
     </div>

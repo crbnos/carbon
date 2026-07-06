@@ -10,10 +10,18 @@ import {
   Badge,
   Button,
   HStack,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
+  ModalTitle,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
   toast,
+  useDisclosure,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -59,6 +67,8 @@ const JobProperties = () => {
     tags: { name: string }[];
     trackedEntities: Promise<PostgrestResponse<TrackedEntity>>;
   }>(path.to.job(jobId));
+
+  const unlinkDisclosure = useDisclosure();
 
   const fetcher = useFetcher<typeof action>();
   useEffect(() => {
@@ -273,14 +283,16 @@ const JobProperties = () => {
             }}
           </Await>
         </Suspense>
+      </VStack>
 
-        <span className="text-xs text-muted-foreground">
-          <Trans>Target</Trans>
-        </span>
-        {routeData?.job?.customerId &&
-        routeData?.job?.salesOrderId &&
-        routeData?.job?.salesOrderLineId ? (
-          <HStack className="group" spacing={1}>
+      {routeData?.job?.customerId &&
+      routeData?.job?.salesOrderId &&
+      routeData?.job?.salesOrderLineId ? (
+        <VStack spacing={0}>
+          <span className="text-xs text-muted-foreground">
+            <Trans>Target</Trans>
+          </span>
+          <HStack className="group w-full justify-between" spacing={0}>
             <Hyperlink
               to={path.to.salesOrderLine(
                 routeData.job.salesOrderId,
@@ -297,36 +309,34 @@ const JobProperties = () => {
               variant="ghost"
               size="sm"
               leftIcon={<LuUnlink2 className="w-3 h-3" />}
-              onClick={() => {
-                onUpdate("salesOrderLineId", null);
-              }}
+              onClick={unlinkDisclosure.onOpen}
             >
               Unlink
             </Button>
           </HStack>
-        ) : (
-          <ValidatedForm
-            defaultValues={{
-              storageUnitId: routeData?.job?.storageUnitId ?? undefined
+        </VStack>
+      ) : (
+        <ValidatedForm
+          defaultValues={{
+            storageUnitId: routeData?.job?.storageUnitId ?? undefined
+          }}
+          validator={z.object({
+            storageUnitId: zfd.text(z.string().optional())
+          })}
+          className="w-full"
+        >
+          <StorageUnit
+            label={t`Target`}
+            name="storageUnitId"
+            inline
+            locationId={routeData?.job?.locationId ?? undefined}
+            isReadOnly={isDisabled}
+            onChange={(value) => {
+              onUpdate("storageUnitId", value?.id ?? null);
             }}
-            validator={z.object({
-              storageUnitId: zfd.text(z.string().optional())
-            })}
-            className="w-full"
-          >
-            <StorageUnit
-              label=""
-              name="storageUnitId"
-              inline
-              locationId={routeData?.job?.locationId ?? undefined}
-              isReadOnly={isDisabled}
-              onChange={(value) => {
-                onUpdate("storageUnitId", value?.id ?? null);
-              }}
-            />
-          </ValidatedForm>
-        )}
-      </VStack>
+          />
+        </ValidatedForm>
+      )}
 
       <Assignee
         id={jobId}
@@ -569,6 +579,48 @@ const JobProperties = () => {
         tags={routeData?.job.tags ?? []}
         onUpdate={onUpdateCustomFields}
       />
+
+      {unlinkDisclosure.isOpen && (
+        <Modal
+          open={unlinkDisclosure.isOpen}
+          onOpenChange={(open) => {
+            if (!open) unlinkDisclosure.onClose();
+          }}
+        >
+          <ModalOverlay />
+          <ModalContent>
+            <ModalHeader>
+              <ModalTitle>
+                <Trans>Unlink job from sales order?</Trans>
+              </ModalTitle>
+            </ModalHeader>
+            <ModalBody>
+              <p className="text-sm text-muted-foreground">
+                <Trans>
+                  This will remove {routeData?.job?.jobId}'s link to{" "}
+                  {routeData?.job?.salesOrderReadableId}. The job will no longer
+                  appear under the sales order and shipments won't find it.
+                </Trans>
+              </p>
+            </ModalBody>
+            <ModalFooter>
+              <Button variant="secondary" onClick={unlinkDisclosure.onClose}>
+                <Trans>Cancel</Trans>
+              </Button>
+              <Button
+                variant="destructive"
+                leftIcon={<LuUnlink2 className="w-3 h-3" />}
+                onClick={() => {
+                  onUpdate("salesOrderLineId", null);
+                  unlinkDisclosure.onClose();
+                }}
+              >
+                <Trans>Unlink</Trans>
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+      )}
     </VStack>
   );
 };

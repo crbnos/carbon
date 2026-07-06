@@ -14,12 +14,22 @@ export default defineConfig({
   catalogs: [
     {
       path: "packages/locale/locales/{locale}/erp",
-      include: ["apps/erp/app", "packages/react/src"],
+      include: [
+        "apps/erp/app",
+        "packages/react/src",
+        "packages/form/src",
+        "packages/printing/src/ui"
+      ],
       exclude: ["**/*.server.*", "**/*.test.*", "**/*.spec.*"]
     },
     {
       path: "packages/locale/locales/{locale}/mes",
-      include: ["apps/mes/app", "packages/react/src"],
+      include: [
+        "apps/mes/app",
+        "packages/react/src",
+        "packages/form/src",
+        "packages/printing/src/ui"
+      ],
       exclude: ["**/*.server.*", "**/*.test.*", "**/*.spec.*"]
     }
   ]

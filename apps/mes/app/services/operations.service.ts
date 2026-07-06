@@ -23,6 +23,118 @@ import type {
 } from "./models";
 import type { BaseOperationWithDetails, Job, StorageItem } from "./types";
 
+export async function getOpenJobs(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; locationId: string }
+) {
+  return client
+    .from("jobs")
+    .select(
+      "id, jobId, status, itemReadableIdWithRevision, name, quantity, quantityComplete, dueDate, deadlineType, assignee, jobMakeMethodId"
+    )
+    .eq("companyId", args.companyId)
+    .eq("locationId", args.locationId)
+    .in("status", ["Ready", "In Progress", "Paused"])
+    .order("jobId", { ascending: true });
+}
+
+export async function getTrackedEntitiesByJobMakeMethodIds(
+  client: SupabaseClient<Database>,
+  jobMakeMethodIds: string[],
+  companyId: string
+) {
+  if (jobMakeMethodIds.length === 0) return {};
+  const result = await client
+    .from("trackedEntity")
+    .select("readableId, attributes")
+    .in("attributes->>Job Make Method", jobMakeMethodIds)
+    .eq("companyId", companyId);
+
+  if (!result.data) return {};
+
+  return result.data.reduce<Record<string, string>>((acc, curr) => {
+    if (
+      curr.attributes !== null &&
+      typeof curr.attributes === "object" &&
+      "Job Make Method" in curr.attributes &&
+      curr.readableId
+    ) {
+      acc[curr.attributes["Job Make Method"] as string] = curr.readableId;
+    }
+    return acc;
+  }, {});
+}
+
+export async function getJobOperations(
+  client: SupabaseClient<Database>,
+  jobId: string
+) {
+  return client
+    .from("jobOperation")
+    .select("*, jobMakeMethod(parentMaterialId, item(readableIdWithRevision))")
+    .eq("jobId", jobId);
+}
+
+export async function getJobOperationDependencies(
+  client: SupabaseClient<Database>,
+  jobId: string
+) {
+  return client
+    .from("jobOperationDependency")
+    .select("operationId, dependsOnId")
+    .eq("jobId", jobId);
+}
+
+export async function getUpstreamOperations(
+  client: SupabaseClient<Database>,
+  operationId: string
+) {
+  const operation = await client
+    .from("jobOperation")
+    .select("jobId")
+    .eq("id", operationId)
+    .single();
+
+  if (operation.error) return { data: [], error: operation.error };
+
+  const deps = await client
+    .from("jobOperationDependency")
+    .select("operationId, dependsOnId")
+    .eq("jobId", operation.data.jobId);
+
+  if (deps.error) return { data: [], error: deps.error };
+
+  // Build adjacency list: operationId → [operations it depends on]
+  const dependsOn = new Map<string, string[]>();
+  for (const dep of deps.data) {
+    const existing = dependsOn.get(dep.operationId) ?? [];
+    existing.push(dep.dependsOnId);
+    dependsOn.set(dep.operationId, existing);
+  }
+
+  // BFS backwards from operationId to find all ancestors
+  const ancestors = new Set<string>();
+  const queue: string[] = [...(dependsOn.get(operationId) ?? [])];
+  while (queue.length > 0) {
+    const current = queue.shift()!;
+    if (ancestors.has(current)) continue;
+    ancestors.add(current);
+    for (const predecessor of dependsOn.get(current) ?? []) {
+      queue.push(predecessor);
+    }
+  }
+
+  if (ancestors.size === 0) return { data: [], error: null };
+
+  return client
+    .from("jobOperation")
+    .select(
+      "id, processId, description, order, status, reworkId, jobMakeMethod(item(name))"
+    )
+    .in("id", Array.from(ancestors))
+    .order("order", { ascending: true });
+}
+
 export async function deleteAttributeRecord(
   client: SupabaseClient<Database>,
   args: { id: string; companyId: string; userId: string }
@@ -133,6 +245,17 @@ export async function getFailureModesList(
 ) {
   return client
     .from("maintenanceFailureMode")
+    .select("id, name")
+    .eq("companyId", companyId)
+    .order("name");
+}
+
+export async function getQualityIssueTypesList(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("nonConformanceType")
     .select("id, name")
     .eq("companyId", companyId)
     .order("name");
@@ -794,11 +917,17 @@ export async function insertReworkQuantity(
     createdBy: string;
   }
 ) {
+  const {
+    trackedEntityId: _trackedEntityId,
+    trackingType: _trackingType,
+    ...insert
+  } = data;
+
   return client
     .from("productionQuantity")
     .insert(
       sanitize({
-        ...data,
+        ...insert,
         type: "Rework"
       })
     )

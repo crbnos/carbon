@@ -1,12 +1,11 @@
 import { Hidden, ValidatedForm } from "@carbon/form";
-import { Button, Modal, ModalContent, ModalFooter, toast } from "@carbon/react";
-import Papa from "papaparse";
-import { useCallback, useEffect, useState } from "react";
+import { Button, Modal, ModalContent, toast } from "@carbon/react";
+import { useEffect, useState } from "react";
 import { flushSync } from "react-dom";
 import { useFetcher } from "react-router";
 import { z } from "zod";
 
-import { fieldMappings, importSchemas } from "~/modules/shared";
+import { type fieldMappings, importSchemas } from "~/modules/shared";
 import type { action } from "~/routes/x+/shared+/import.$tableId";
 import { path } from "~/utils/path";
 import { AnimatedSizeContainer } from "../AnimatedSizeContainer";
@@ -44,8 +43,18 @@ export const ImportCSVModal = ({ table, onClose }: ImportCSVModalProps) => {
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     if (fetcher.data?.success === true) {
-      toast.success("Import successful.");
-      onClose();
+      const inserted = fetcher.data.inserted ?? 0;
+      const updated = fetcher.data.updated ?? 0;
+      const skipped = fetcher.data.skipped ?? 0;
+      if (skipped > 0) {
+        // Leave the modal open so the user sees which rows were skipped.
+        toast.info(
+          `Imported ${inserted}, updated ${updated}, skipped ${skipped} row(s).`
+        );
+      } else {
+        toast.success(`Imported ${inserted}, updated ${updated}.`);
+        onClose();
+      }
     } else if (fetcher.data?.success === false) {
       toast.error(fetcher.data.message);
     }
@@ -58,19 +67,6 @@ export const ImportCSVModal = ({ table, onClose }: ImportCSVModalProps) => {
     }
   }, [file, fileColumns, page]);
 
-  const downloadTemplate = useCallback(() => {
-    const mapping = fieldMappings[table];
-    const headers = Object.values(mapping).map((field) => field.label);
-    const csv = Papa.unparse({ fields: headers, data: [] });
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `${table}-template.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
-  }, [table]);
-
   return (
     <Modal
       open
@@ -80,7 +76,7 @@ export const ImportCSVModal = ({ table, onClose }: ImportCSVModalProps) => {
         }
       }}
     >
-      <ModalContent>
+      <ModalContent onInteractOutside={(e) => e.preventDefault()}>
         <div className="relative">
           <AnimatedSizeContainer height>
             <ImportCsvContext.Provider
@@ -131,17 +127,34 @@ export const ImportCSVModal = ({ table, onClose }: ImportCSVModalProps) => {
                     />
                   )}
                 </ValidatedForm>
+                {fetcher.data?.success === true &&
+                  (fetcher.data.skipped ?? 0) > 0 && (
+                    <div className="mt-4 rounded-md border border-border p-3">
+                      <p className="text-sm font-medium">
+                        {fetcher.data.skipped} row(s) were skipped:
+                      </p>
+                      <ul className="mt-2 max-h-48 overflow-auto text-sm text-muted-foreground">
+                        {(fetcher.data.errors ?? []).map(
+                          (e: { row: number; reason: string }) => (
+                            <li key={e.row}>
+                              Row {e.row + 1}: {e.reason}
+                            </li>
+                          )
+                        )}
+                      </ul>
+                      <Button
+                        className="mt-3"
+                        variant="secondary"
+                        onClick={onClose}
+                      >
+                        Done
+                      </Button>
+                    </div>
+                  )}
               </div>
             </ImportCsvContext.Provider>
           </AnimatedSizeContainer>
         </div>
-        {page === ImportCSVPage.UploadCSV && (
-          <ModalFooter>
-            <Button variant="secondary" onClick={downloadTemplate}>
-              Download Template
-            </Button>
-          </ModalFooter>
-        )}
       </ModalContent>
     </Modal>
   );

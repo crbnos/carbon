@@ -11,7 +11,7 @@ import { LuX } from "react-icons/lu";
 import { cn } from "./utils/cn";
 
 const badgeVariants = cva(
-  "inline-flex items-center rounded-md px-2 min-h-[1.25rem] font-medium transition-colors border focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 font-bold text-[11px] uppercase truncate tracking-tight whitespace-nowrap",
+  "inline-flex items-center rounded-md px-2 min-h-[1.25rem] font-medium transition-[color,box-shadow] border focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 font-bold text-[11px] uppercase truncate tracking-tight whitespace-nowrap",
   {
     variants: {
       variant: {
@@ -32,7 +32,7 @@ const badgeVariants = cva(
         blue: "bg-blue-100 text-blue-800 dark:bg-blue-500/15 dark:text-blue-400 border-blue-500/20",
         gray: "bg-[#e3e2e080] text-[#32302c] dark:bg-[#373737] dark:text-white hover:bg-[#e3e2e0] dark:hover:bg-[#5a5a5a] ",
         purple:
-          "bg-violet-100 text-violet-800 dark:bg-violet-500/15 dark:text-violet-400"
+          "bg-violet-100 text-violet-800 dark:bg-violet-500/15 dark:text-violet-400 border-violet-500/20"
       }
     },
     defaultVariants: {
@@ -64,7 +64,7 @@ const BadgeCloseButton = forwardRef<
 >(({ className, ...props }, ref) => (
   <button
     className={cn(
-      "relative ml-1 ring-offset-background rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-muted-foreground hover:text-foreground flex-shrink-0 before:absolute before:-inset-2 before:content-['']",
+      "relative ml-1 rounded-full outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 text-muted-foreground hover:text-foreground flex-shrink-0 before:absolute before:-inset-2 before:content-['']",
       className
     )}
     {...props}

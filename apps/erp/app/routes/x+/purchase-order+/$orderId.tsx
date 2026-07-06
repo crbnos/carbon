@@ -20,6 +20,7 @@ import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import { getPaymentTermsList } from "~/modules/accounting";
 import { upsertDocument } from "~/modules/documents";
 import {
+  getDefaultAttachmentsForPO,
   getPurchaseOrder,
   getPurchaseOrderDelivery,
   getPurchaseOrderLines,
@@ -41,6 +42,7 @@ import {
   canApproveRequest,
   canCancelRequest,
   getLatestApprovalRequestForDocument,
+  getLowerTierApproverUserIds,
   rejectRequest
 } from "~/modules/shared";
 import { getUser } from "~/modules/users/users.server";
@@ -155,6 +157,41 @@ export async function action(args: ActionFunctionArgs) {
     } catch (e) {
       console.error("Failed to trigger approval decision notification", e);
     }
+  }
+
+  // Notified-of-spend cascade. Purchase orders use tiered amount rules,
+  // so when a decision is made at a high tier we ping the approvers of
+  // every enabled rule with a strictly lower threshold — they get
+  // visibility into spend that bypassed their tier. Filtered to exclude
+  // the requester (already notified above) and the current approver.
+  try {
+    const lowerTierIds = await getLowerTierApproverUserIds(
+      serviceRole,
+      "purchaseOrder",
+      companyId,
+      approvalRequest.data.amount ?? undefined
+    );
+    const recipients = lowerTierIds.filter(
+      (id) => id !== requestedBy && id !== userId
+    );
+    if (recipients.length > 0) {
+      await trigger("notify", {
+        event:
+          decision === "Approved"
+            ? NotificationEvent.ApprovalApproved
+            : NotificationEvent.ApprovalRejected,
+        companyId,
+        documentId: orderId,
+        documentType: "purchaseOrder",
+        recipient: { type: "users", userIds: recipients },
+        from: userId
+      });
+    }
+  } catch (e) {
+    console.error(
+      "Failed to trigger lower-tier spend notification for purchase order",
+      e
+    );
   }
 
   // If approved, handle post-approval tasks: PDF generation, document creation, email, price updates
@@ -334,6 +371,7 @@ export async function action(args: ActionFunctionArgs) {
             body: {
               purchaseOrderId: orderId,
               companyId,
+              userId,
               source: "purchaseOrder",
               updatePrices: true,
               updateLeadTimes: false
@@ -461,6 +499,37 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     canDelete = isRequester;
   }
 
+  const itemIds = Array.from(
+    new Set(
+      (lines.data ?? []).map((l) => l.itemId).filter((id): id is string => !!id)
+    )
+  );
+  const supplierInteractionId = purchaseOrder.data?.supplierInteractionId;
+  const [defaultAttachments, adHocDocs] = await Promise.all([
+    getDefaultAttachmentsForPO(serviceRole, {
+      companyId,
+      supplierId: purchaseOrder.data?.supplierId ?? null,
+      itemIds
+    }),
+    supplierInteractionId
+      ? getSupplierInteractionDocuments(
+          serviceRole,
+          companyId,
+          supplierInteractionId
+        )
+      : Promise.resolve([])
+  ]);
+  const adHocAttachments = adHocDocs.map((d) => ({
+    source: "po" as const,
+    name: d.name,
+    size:
+      (d.metadata as { size?: number } | null | undefined)?.size != null
+        ? Math.round(((d.metadata as { size?: number }).size as number) / 1024)
+        : null,
+    path: `${companyId}/supplier-interaction/${supplierInteractionId}/${d.name}`
+  }));
+  const resolvedAttachments = [...defaultAttachments, ...adHocAttachments];
+
   return {
     purchaseOrder: purchaseOrder.data,
     purchaseOrderDelivery: purchaseOrderDelivery.data,
@@ -476,7 +545,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     canApprove,
     canReopen,
     canDelete,
-    defaultCc
+    defaultCc,
+    resolvedAttachments
   };
 }
 

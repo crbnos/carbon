@@ -14,8 +14,14 @@ dist-ssr
 server/dist
 public/dist
 vite.config.ts.timestamp*
+.claude-flow
+.claude/settings.json
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
 .mcp.json
 opencode.json
+.windsurf
+llm/tasks/todo.md
 
 # Lingui compiled catalogs
 packages/locale/locales/**/*.mjs
@@ -52,11 +58,15 @@ packages/database/supabase/seed.sql
 # C++ (cad-engine)
 **/build/
 !**/build/.gitkeep
+.orcka
+**/supabase/snippets
 
 # Worktree-isolated dev environment
 .carbon-worktree
 .superpowers
 docs/superpowers
+docs/e2e
 llm/tasks
 apps/*/portless.json
 packages/database/supabase/snippets/**
+.pr-review

@@ -146,7 +146,7 @@ export default function OnboardingPlan() {
   return (
     <>
       <div className="flex flex-col max-w-2xl w-full min-h-screen md:min-h-0">
-        <div className="sticky top-0 bg-background z-10 pb-4">
+        <div className="sticky top-0 bg-background z-10 mb-4 rounded-2xl">
           <CardHeader>
             <CardTitle>
               <Trans>Select a plan</Trans>

@@ -61,6 +61,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...d } = validation.data;
 
+  if (d.invoiceLineType === "Fixed Asset") {
+    d.accountId = undefined;
+    d.itemId = undefined;
+  } else {
+    d.accountId = undefined;
+    d.assetId = undefined;
+  }
+
   const createSalesInvoiceLine = await upsertSalesInvoiceLine(client, {
     ...d,
     companyId,
@@ -109,6 +117,5 @@ export default function NewSalesInvoiceLineRoute() {
     exchangeRate: salesInvoiceData?.salesInvoice?.exchangeRate ?? 1
   };
 
-  // @ts-expect-error TS2322 - TODO: fix type
   return <SalesInvoiceLineForm initialValues={initialValues} />;
 }

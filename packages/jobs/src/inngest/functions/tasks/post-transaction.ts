@@ -78,6 +78,7 @@ export const postTransactionFunction = inngest.createFunction(
                   body: {
                     invoiceId: payload.documentId,
                     companyId: payload.companyId,
+                    userId: payload.userId,
                     source: "purchaseInvoice"
                   }
                 }

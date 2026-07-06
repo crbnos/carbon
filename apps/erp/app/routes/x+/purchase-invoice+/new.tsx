@@ -11,11 +11,10 @@ import { redirect } from "react-router";
 import { useUrlParams, useUser } from "~/hooks";
 import {
   createPurchaseInvoiceFromPurchaseOrder,
+  insertPurchaseInvoice,
   PurchaseInvoiceForm,
-  purchaseInvoiceValidator,
-  upsertPurchaseInvoice
+  purchaseInvoiceValidator
 } from "~/modules/invoicing";
-import { getNextSequence } from "~/modules/settings";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -81,53 +80,28 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-  const { id, ...d } = validation.data;
-  let invoiceId = d.invoiceId;
-  const useNextSequence = !invoiceId;
+  const { id: _id, ...d } = validation.data;
 
-  if (useNextSequence) {
-    const nextSequence = await getNextSequence(
-      client,
-      "purchaseInvoice",
-      companyId
-    );
-    if (nextSequence.error) {
-      throw redirect(
-        path.to.newPurchaseInvoice,
-        await flash(
-          request,
-          error(nextSequence.error, "Failed to get next sequence")
-        )
-      );
-    }
-    invoiceId = nextSequence.data;
-  }
-
-  if (!invoiceId) throw new Error("invoiceId is not defined");
-
-  const createPurchaseInvoice = await upsertPurchaseInvoice(client, {
+  const result = await insertPurchaseInvoice(client, {
     ...d,
-    invoiceId,
+    invoiceId: d.invoiceId || undefined,
     companyId,
     companyGroupId,
     createdBy: userId,
     customFields: setCustomFields(formData)
   });
 
-  if (createPurchaseInvoice.error || !createPurchaseInvoice.data?.[0]) {
+  if (result.error || !result.data) {
     throw redirect(
       path.to.purchaseInvoices,
       await flash(
         request,
-        error(createPurchaseInvoice.error, "Failed to insert purchase invoice")
+        error(result.error, "Failed to insert purchase invoice")
       )
     );
   }
 
-  const invoice = createPurchaseInvoice.data?.[0];
-
-  throw redirect(path.to.purchaseInvoice(invoice?.id!));
+  throw redirect(path.to.purchaseInvoice(result.data.id));
 }
 
 export default function PurchaseInvoiceNewRoute() {

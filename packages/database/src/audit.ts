@@ -74,6 +74,44 @@ type AuditRpcClient = {
 };
 
 /**
+ * Whether an audit-diff key should be hidden from consumers (top-level
+ * column or any nested suffix). Mirrors the writer-side filter so legacy
+ * rows written before the writer enforced `skipFields` still get scrubbed
+ * at read time.
+ */
+function isSkippedAuditKey(key: string): boolean {
+  const skip = auditConfig.skipFields as readonly string[];
+  for (let i = 0; i < skip.length; i++) {
+    const s = skip[i]!;
+    if (key === s || key.endsWith(`.${s}`)) return true;
+  }
+  return false;
+}
+
+/**
+ * Strip globally-skipped diff keys from each entry. Keeps the entry itself
+ * even when every change was filtered — the entry header (timestamp, actor,
+ * operation) is still meaningful history; only the noisy column rows
+ * (e.g. `embedding` vectors) get suppressed from the diff payload.
+ */
+function sanitizeAuditEntries(entries: AuditLogEntry[]): AuditLogEntry[] {
+  const out: AuditLogEntry[] = [];
+  for (const entry of entries) {
+    if (!entry.diff) {
+      out.push(entry);
+      continue;
+    }
+    const next: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(entry.diff)) {
+      if (isSkippedAuditKey(key)) continue;
+      next[key] = value;
+    }
+    out.push({ ...entry, diff: next as AuditLogEntry["diff"] });
+  }
+  return out;
+}
+
+/**
  * Get audit log entries for a specific entity.
  * Queries by entityType (semantic grouping) so that child table changes
  * (e.g., customerPayment, customerShipping) roll up into the parent entity view.
@@ -104,7 +142,7 @@ export async function getEntityAuditLog(
     throw new Error(`Failed to fetch audit log: ${error.message}`);
   }
 
-  return data ?? [];
+  return sanitizeAuditEntries(data ?? []);
 }
 
 /**
@@ -156,7 +194,7 @@ export async function getGlobalAuditLog(
   }
 
   return {
-    data: data ?? [],
+    data: sanitizeAuditEntries(data ?? []),
     count: count ?? 0
   };
 }

@@ -55,9 +55,21 @@ import type {
   PickMethod,
   SupplierPart
 } from "../../types";
-import { FileBadge } from "../Item";
+import { FileBadge, ItemDescription } from "../Item";
 
-const MaterialProperties = () => {
+type MaterialPropertiesProps = {
+  data?: {
+    itemId: string;
+    locations: ListItem[];
+    materialSummary: MaterialSummary;
+    files: Promise<ItemFile[]>;
+    supplierParts: SupplierPart[];
+    pickMethods: PickMethod[];
+    tags: { name: string }[];
+  };
+};
+
+const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
   const { t } = useLingui();
   const translateMethodType = (v: string) =>
     v === "Purchase to Order"
@@ -73,7 +85,8 @@ const MaterialProperties = () => {
         : v === "Serial"
           ? t`Serial`
           : t`Batch`;
-  const { itemId } = useParams();
+  const params = useParams();
+  const itemId = data?.itemId ?? params.itemId;
   if (!itemId) throw new Error("itemId not found");
 
   const [substanceId, setSubstanceId] = useState<string | undefined>();
@@ -82,15 +95,18 @@ const MaterialProperties = () => {
   const sharedMaterialsData = useRouteData<{ locations: ListItem[] }>(
     path.to.materialRoot
   );
-  const routeData = useRouteData<{
+  // When `data` is injected (subassembly context), this hook won't match a
+  // route and returns undefined — harmless, hooks must be called unconditionally.
+  const routeDataFromRoute = useRouteData<{
     materialSummary: MaterialSummary;
     files: Promise<ItemFile[]>;
     supplierParts: SupplierPart[];
     pickMethods: PickMethod[];
     tags: { name: string }[];
   }>(path.to.material(itemId));
+  const routeData = data ?? routeDataFromRoute;
 
-  const locations = sharedMaterialsData?.locations ?? [];
+  const locations = data?.locations ?? sharedMaterialsData?.locations ?? [];
   const supplierParts = routeData?.supplierParts ?? [];
   const pickMethods = routeData?.pickMethods ?? [];
 
@@ -129,6 +145,7 @@ const MaterialProperties = () => {
     (
       field:
         | "name"
+        | "description"
         | "replenishmentSystem"
         | "defaultMethodType"
         | "itemTrackingType"
@@ -638,6 +655,11 @@ const MaterialProperties = () => {
             }}
           />
         </ValidatedForm>
+
+        <ItemDescription
+          value={routeData?.materialSummary?.description ?? ""}
+          onChange={(value) => onUpdate("description", value)}
+        />
 
         <VStack spacing={2}>
           <HStack className="w-full justify-between">

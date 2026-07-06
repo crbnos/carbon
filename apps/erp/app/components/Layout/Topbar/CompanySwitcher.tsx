@@ -92,7 +92,7 @@ const CompanySwitcher = () => {
             <img
               src={logo}
               alt={`${user.company.name} logo`}
-              className="w-full h-auto rounded"
+              className="size-full object-contain rounded"
             />
           ) : (
             <BsFillHexagonFill />
@@ -119,7 +119,7 @@ const CompanySwitcher = () => {
               <img
                 src={logo}
                 alt={`${user.company.name} logo`}
-                className="w-full h-auto rounded"
+                className="h-7 w-auto max-w-[140px] object-contain rounded"
               />
             ) : (
               <BsFillHexagonFill />

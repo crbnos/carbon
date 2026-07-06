@@ -3,6 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
+import { useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
 import type { Chart } from "~/modules/accounting";
@@ -26,18 +27,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
-  const incomeBalanceParam = searchParams.get("incomeBalance");
-  const incomeBalance =
-    incomeBalanceParam === "Income Statement" ||
-    incomeBalanceParam === "Balance Sheet"
-      ? incomeBalanceParam
-      : null;
 
   const startDate = searchParams.get("startDate") || null;
   const endDate = searchParams.get("endDate") || null;
 
   const chartOfAccounts = await getChartOfAccounts(client, companyGroupId, {
-    incomeBalance: incomeBalance as "Income Statement" | "Balance Sheet" | null,
+    incomeBalance: null,
     startDate,
     endDate
   });
@@ -59,11 +54,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export default function ChartOfAccountsRoute() {
   const { chartOfAccounts } = useLoaderData<typeof loader>();
+  const [search, setSearch] = useState("");
 
   return (
     <VStack spacing={0} className="h-full">
-      <ChartOfAccountsTableFilters />
-      <ChartOfAccountsTree data={chartOfAccounts} />
+      <ChartOfAccountsTableFilters search={search} onSearchChange={setSearch} />
+      <ChartOfAccountsTree data={chartOfAccounts} search={search} />
       <Outlet />
     </VStack>
   );

@@ -10,11 +10,8 @@ declare global {
       CLOUDFLARE_TURNSTILE_SITE_KEY: string;
       CONTROLLED_ENVIRONMENT: string;
       ERP_URL: string;
-      NODE_ENV: string;
       JIRA_CLIENT_ID: string;
       MES_URL: string;
-      NOVU_APPLICATION_ID: string;
-      NOVU_API_URL: string;
       ONSHAPE_CLIENT_ID: string;
       POSTHOG_API_HOST: string;
       POSTHOG_PROJECT_PUBLIC_KEY: string;
@@ -43,9 +40,6 @@ declare global {
       JIRA_OAUTH_REDIRECT_URL: string;
       JIRA_STATE_SECRET: string;
       MES_URL: string;
-      NOVU_APPLICATION_ID: string;
-      NOVU_API_URL: string;
-      NOVU_SECRET_KEY: string;
       ONSHAPE_CLIENT_ID: string;
       ONSHAPE_CLIENT_SECRET: string;
       ONSHAPE_OAUTH_REDIRECT_URL: string;
@@ -94,7 +88,7 @@ type EnvOptions = {
 
 export function getEnv(
   name: string,
-  { isRequired, isSecret }: EnvOptions = { isSecret: true, isRequired: true }
+  { isRequired, isSecret }: EnvOptions = { isRequired: true, isSecret: true }
 ) {
   if (isBrowser && isSecret) return "";
 
@@ -113,11 +107,22 @@ export function getEnv(
  * Server env
  */
 
+export type AuthProvider = "email" | "google" | "azure" | "passkey";
+
 export const AUTH_PROVIDERS =
   getEnv("AUTH_PROVIDERS", {
     isRequired: false,
     isSecret: false
   }) ?? "email,google,azure";
+
+export function isAuthProviderEnabled(provider: AuthProvider) {
+  const AUTH_PROVIDERS_LIST = AUTH_PROVIDERS.split(",").map((p) => p.trim());
+  return AUTH_PROVIDERS_LIST.includes(provider);
+}
+export const BINDERY_PRESS_API_KEY = getEnv("BINDERY_PRESS_API_KEY", {
+  isRequired: false,
+  isSecret: true
+});
 
 const CARBON_EDITION = getEnv("CARBON_EDITION", {
   isRequired: false,
@@ -147,7 +152,7 @@ export const CARBON_API_URL =
 
 export const CLOUDFLARE_TURNSTILE_SITE_KEY = getEnv(
   "CLOUDFLARE_TURNSTILE_SITE_KEY",
-  { isSecret: false, isRequired: false }
+  { isRequired: false, isSecret: false }
 );
 export const CLOUDFLARE_TURNSTILE_SECRET_KEY = getEnv(
   "CLOUDFLARE_TURNSTILE_SECRET_KEY",
@@ -155,6 +160,7 @@ export const CLOUDFLARE_TURNSTILE_SECRET_KEY = getEnv(
 );
 
 export const DOMAIN = getEnv("DOMAIN", { isRequired: false }); // preview environments need no domain
+
 export const EXCHANGE_RATES_API_KEY = getEnv("EXCHANGE_RATES_API_KEY", {
   isRequired: false,
   isSecret: true
@@ -188,21 +194,6 @@ const itarEnvironment = getEnv("CONTROLLED_ENVIRONMENT", {
 });
 
 export const CONTROLLED_ENVIRONMENT = parseBoolean(itarEnvironment, false);
-
-export const NOVU_APPLICATION_ID = getEnv("NOVU_APPLICATION_ID", {
-  isRequired: false,
-  isSecret: false
-});
-export const NOVU_API_URL =
-  getEnv("NOVU_API_URL", {
-    isRequired: false,
-    isSecret: false
-  }) ?? "https://api.novu.co";
-
-export const NOVU_SECRET_KEY = getEnv("NOVU_SECRET_KEY", {
-  isRequired: false,
-  isSecret: true
-});
 
 export const ONSHAPE_CLIENT_ID = getEnv("ONSHAPE_CLIENT_ID", {
   isRequired: false
@@ -257,9 +248,13 @@ export const SLACK_STATE_SECRET = getEnv("SLACK_STATE_SECRET", {
 });
 
 export const SUPABASE_SERVICE_ROLE_KEY = getEnv("SUPABASE_SERVICE_ROLE_KEY");
-export const SUPABASE_DB_URL = getEnv("SUPABASE_DB_URL", {
+export const SUPABASE_JWT_SECRET = getEnv("SUPABASE_JWT_SECRET", {
   isSecret: true,
-  isRequired: true
+  isRequired: false
+});
+export const SUPABASE_DB_URL = getEnv("SUPABASE_DB_URL", {
+  isRequired: true,
+  isSecret: true
 });
 export const SUPABASE_AUTH_EXTERNAL_AZURE_CLIENT_ID = getEnv(
   "SUPABASE_AUTH_EXTERNAL_AZURE_CLIENT_ID",
@@ -339,14 +334,14 @@ export const JIRA_STATE_SECRET = getEnv("JIRA_STATE_SECRET", {
  */
 
 export const NODE_ENV = getEnv("NODE_ENV", {
-  isSecret: false,
-  isRequired: false
+  isRequired: false,
+  isSecret: false
 });
 
 export const VERCEL_ENV =
   getEnv("VERCEL_ENV", {
-    isSecret: false,
-    isRequired: false
+    isRequired: false,
+    isSecret: false
   }) ?? NODE_ENV;
 
 export const POSTHOG_API_HOST = getEnv("POSTHOG_API_HOST", {
@@ -362,8 +357,8 @@ export const SUPABASE_ANON_KEY = getEnv("SUPABASE_ANON_KEY", {
 
 export const DEFAULT_LANGUAGE =
   getEnv("DEFAULT_LANGUAGE", {
-    isSecret: false,
-    isRequired: false
+    isRequired: false,
+    isSecret: false
   }) ?? "en";
 
 export const RATE_LIMIT = parseInt(
@@ -411,17 +406,17 @@ export function getMESUrl() {
 
 export function getBrowserEnv() {
   return {
-    CARBON_EDITION,
+    AUTH_PROVIDERS,
     CARBON_API_URL,
+    CARBON_EDITION,
     CLOUDFLARE_TURNSTILE_SITE_KEY,
     CONTROLLED_ENVIRONMENT,
+    DEFAULT_LANGUAGE,
     ERP_URL,
     GOOGLE_PLACES_API_KEY,
     JIRA_CLIENT_ID,
     MES_URL,
     NODE_ENV,
-    NOVU_APPLICATION_ID,
-    NOVU_API_URL,
     ONSHAPE_CLIENT_ID,
     POSTHOG_API_HOST,
     POSTHOG_PROJECT_PUBLIC_KEY,
@@ -430,8 +425,7 @@ export function getBrowserEnv() {
     SUPABASE_URL,
     VERCEL_ENV,
     VERCEL_URL,
-    XERO_CLIENT_ID,
-    DEFAULT_LANGUAGE
+    XERO_CLIENT_ID
   };
 }
 

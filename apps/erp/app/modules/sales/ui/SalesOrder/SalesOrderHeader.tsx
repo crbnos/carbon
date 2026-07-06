@@ -61,6 +61,7 @@ import { useCustomers } from "~/stores/customers";
 import { path } from "~/utils/path";
 import { isSalesOrderLocked, salesConfirmValidator } from "../../sales.models";
 import type { Opportunity, SalesOrder, SalesOrderLine } from "../../types";
+import { CancelSalesOrderModal } from "./CancelSalesOrderModal";
 import SalesStatus from "./SalesStatus";
 import { useSalesOrder } from "./useSalesOrder";
 
@@ -211,6 +212,7 @@ const SalesOrderHeader = () => {
   const salesOrderToJobsModal = useDisclosure();
   const confirmDisclosure = useDisclosure();
   const deleteSalesOrderModal = useDisclosure();
+  const cancelDisclosure = useDisclosure();
   const [customers] = useCustomers();
 
   const { trigger: auditLogTrigger, drawer: auditLogDrawer } = useAuditLog({
@@ -407,30 +409,24 @@ const SalesOrderHeader = () => {
               <Trans>Confirm</Trans>
             </Button>
 
-            <statusFetcher.Form
-              method="post"
-              action={path.to.salesOrderStatus(orderId)}
+            <Button
+              variant="secondary"
+              leftIcon={<LuCircleStop />}
+              onClick={cancelDisclosure.onOpen}
+              isDisabled={
+                ["Cancelled", "Closed", "Completed", "Invoiced"].includes(
+                  routeData?.salesOrder?.status ?? ""
+                ) ||
+                statusFetcher.state !== "idle" ||
+                !permissions.can("update", "sales")
+              }
+              isLoading={
+                statusFetcher.state !== "idle" &&
+                statusFetcher.formData?.get("status") === "Cancelled"
+              }
             >
-              <input type="hidden" name="status" value="Cancelled" />
-              <Button
-                type="submit"
-                variant="secondary"
-                leftIcon={<LuCircleStop />}
-                isDisabled={
-                  ["Cancelled", "Closed", "Completed", "Invoiced"].includes(
-                    routeData?.salesOrder?.status ?? ""
-                  ) ||
-                  statusFetcher.state !== "idle" ||
-                  !permissions.can("update", "sales")
-                }
-                isLoading={
-                  statusFetcher.state !== "idle" &&
-                  statusFetcher.formData?.get("status") === "Cancelled"
-                }
-              >
-                <Trans>Cancel</Trans>
-              </Button>
-            </statusFetcher.Form>
+              <Trans>Cancel</Trans>
+            </Button>
 
             <Suspense
               fallback={
@@ -628,6 +624,19 @@ const SalesOrderHeader = () => {
           defaultCc={routeData?.defaultCc ?? []}
         />
       )}
+      <CancelSalesOrderModal
+        orderId={orderId}
+        isOpen={cancelDisclosure.isOpen}
+        onClose={cancelDisclosure.onClose}
+        isSubmitting={statusFetcher.state !== "idle"}
+        onSubmit={(formData) => {
+          statusFetcher.submit(formData, {
+            method: "post",
+            action: path.to.salesOrderStatus(orderId)
+          });
+          cancelDisclosure.onClose();
+        }}
+      />
       {deleteSalesOrderModal.isOpen && (
         <ConfirmDelete
           action={path.to.deleteSalesOrder(orderId)}

@@ -12,7 +12,7 @@ import type {
 import {
   getWarehouseTransfer,
   isWarehouseTransferLocked,
-  upsertWarehouseTransfer,
+  updateWarehouseTransfer,
   warehouseTransferValidator
 } from "~/modules/inventory";
 import {
@@ -54,11 +54,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { id, transferId: validatedTransferId, ...d } = validation.data;
   if (!id) throw new Error("id not found");
-  if (!validatedTransferId) throw new Error("transferId not found");
 
-  const updateTransfer = await upsertWarehouseTransfer(client, {
+  const updateTransfer = await updateWarehouseTransfer(client, {
     id,
-    transferId: validatedTransferId,
+    transferId: validatedTransferId || undefined,
     ...d,
     updatedBy: userId,
     customFields: setCustomFields(formData)

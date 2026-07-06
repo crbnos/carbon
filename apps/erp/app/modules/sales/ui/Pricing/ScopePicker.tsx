@@ -97,7 +97,7 @@ export function ScopePicker({
       </PopoverTrigger>
       <PopoverContent
         align="start"
-        className="min-w-[--radix-popover-trigger-width] w-[280px] p-0"
+        className="min-w-[var(--radix-popover-trigger-width)] w-[280px] p-0"
       >
         <Command>
           <CommandInput

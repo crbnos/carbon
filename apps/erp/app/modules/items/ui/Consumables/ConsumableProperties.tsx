@@ -35,9 +35,21 @@ import type {
   PickMethod,
   SupplierPart
 } from "../../types";
-import { FileBadge } from "../Item";
+import { FileBadge, ItemDescription } from "../Item";
 
-const ConsumableProperties = () => {
+type ConsumablePropertiesProps = {
+  data?: {
+    itemId: string;
+    locations: ListItem[];
+    consumableSummary: Consumable;
+    files: Promise<ItemFile[]>;
+    supplierParts: SupplierPart[];
+    pickMethods: PickMethod[];
+    tags: { name: string }[];
+  };
+};
+
+const ConsumableProperties = ({ data }: ConsumablePropertiesProps) => {
   const { t } = useLingui();
   const translateMethodType = (v: string) =>
     v === "Purchase to Order"
@@ -53,21 +65,25 @@ const ConsumableProperties = () => {
         : v === "Serial"
           ? t`Serial`
           : t`Batch`;
-  const { itemId } = useParams();
+  const params = useParams();
+  const itemId = data?.itemId ?? params.itemId;
   if (!itemId) throw new Error("itemId not found");
 
   const sharedConsumablesData = useRouteData<{ locations: ListItem[] }>(
     path.to.consumableRoot
   );
-  const routeData = useRouteData<{
+  // When `data` is injected (subassembly context), this hook won't match a
+  // route and returns undefined — harmless, hooks must be called unconditionally.
+  const routeDataFromRoute = useRouteData<{
     consumableSummary: Consumable;
     files: Promise<ItemFile[]>;
     supplierParts: SupplierPart[];
     pickMethods: PickMethod[];
     tags: { name: string }[];
   }>(path.to.consumable(itemId));
+  const routeData = data ?? routeDataFromRoute;
 
-  const locations = sharedConsumablesData?.locations ?? [];
+  const locations = data?.locations ?? sharedConsumablesData?.locations ?? [];
   const supplierParts = routeData?.supplierParts ?? [];
   const pickMethods = routeData?.pickMethods ?? [];
 
@@ -91,6 +107,7 @@ const ConsumableProperties = () => {
     (
       field:
         | "name"
+        | "description"
         | "replenishmentSystem"
         | "defaultMethodType"
         | "itemTrackingType"
@@ -254,6 +271,7 @@ const ConsumableProperties = () => {
                 name="name"
                 inline
                 size="sm"
+                characterLimit={40}
                 value={routeData?.consumableSummary?.name ?? ""}
                 onBlur={(e) => {
                   onUpdate("name", e.target.value ?? null);
@@ -377,6 +395,11 @@ const ConsumableProperties = () => {
           value={routeData?.consumableSummary?.unitOfMeasure ?? null}
         />
       </VStack>
+
+      <ItemDescription
+        value={routeData?.consumableSummary?.description ?? ""}
+        onChange={(value) => onUpdate("description", value)}
+      />
 
       <VStack spacing={2}>
         <HStack className="w-full justify-between">

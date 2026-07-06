@@ -46,13 +46,13 @@ const Switch = forwardRef<
     >
       <div
         className={cn(
-          "inline-flex shrink-0 cursor-pointer items-center rounded-full transition-colors group-focus-visible:ring-2 group-focus-visible:ring-ring group-focus-visible:ring-offset-2 group-focus-visible:ring-offset-background group-disabled:cursor-not-allowed group-disabled:opacity-50 group-data-[state=checked]:bg-primary group-data-[state=unchecked]:bg-input",
+          "inline-flex shrink-0 cursor-pointer items-center rounded-full border border-transparent shadow-xs transition-all outline-none group-focus-visible:border-ring group-focus-visible:ring-[3px] group-focus-visible:ring-ring/50 group-disabled:cursor-not-allowed group-disabled:opacity-50 group-data-[state=checked]:bg-primary group-data-[state=unchecked]:bg-input dark:group-data-[state=unchecked]:bg-input/80",
           root
         )}
       >
         <SwitchPrimitives.Thumb
           className={cn(
-            "pointer-events-none block rounded-full bg-background shadow-sm ring-1 ring-black/5 transition-transform duration-200 ease-out",
+            "pointer-events-none block rounded-full bg-background shadow-sm ring-1 ring-black/5 transition-transform duration-200 ease-out dark:data-[state=checked]:bg-primary-foreground dark:data-[state=unchecked]:bg-foreground",
             thumb
           )}
         />

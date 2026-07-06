@@ -131,6 +131,7 @@ serve(async (req: Request) => {
   try {
     const validatedPayload = payloadValidator.parse(payload);
     let expiredWarning: string | undefined;
+    let splitEntityId: string | undefined;
 
     console.log({
       function: "post-stock-transfer",
@@ -454,6 +455,7 @@ serve(async (req: Request) => {
             // Need to split the batch
             const remainingQuantity = entityQuantity - transferQuantity;
             const newTrackedEntityId = nanoid();
+            splitEntityId = newTrackedEntityId;
 
             // Create split activity
             const splitActivityId = nanoid();
@@ -492,6 +494,7 @@ serve(async (req: Request) => {
               .insertInto("trackedEntity")
               .values({
                 id: newTrackedEntityId,
+                readableId: trackedEntity.readableId,
                 sourceDocument: trackedEntity.sourceDocument,
                 sourceDocumentId: trackedEntity.sourceDocumentId,
                 sourceDocumentReadableId:
@@ -1062,6 +1065,7 @@ serve(async (req: Request) => {
       JSON.stringify({
         success: true,
         warning: expiredWarning,
+        splitEntityId,
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

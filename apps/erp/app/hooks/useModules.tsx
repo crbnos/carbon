@@ -139,6 +139,8 @@ function useModuleDefinitions(): ModuleDefinition[] {
   ];
 }
 
+const PINNED_MODULES = new Set(["settings"]);
+
 export function useModules() {
   const permissions = usePermissions();
   const modules = useModuleDefinitions();
@@ -148,7 +150,9 @@ export function useModules() {
   }>(path.to.authenticatedRoot);
 
   const modulePreferences = routeData?.modulePreferences ?? [];
-  const permitted = filterByPermissions(modules, permissions);
+  const permitted = filterByPermissions(modules, permissions).filter(
+    (m) => !PINNED_MODULES.has(m.key)
+  );
 
   const alphabetical = permitted.sort((a, b) => a.name.localeCompare(b.name));
 
@@ -170,6 +174,17 @@ export function useModules() {
   });
 }
 
+export function useSettingsModule() {
+  const permissions = usePermissions();
+  const modules = useModuleDefinitions();
+  const settings = modules.find((m) => m.key === "settings");
+  if (!settings) return null;
+  if (settings.permission && !permissions.can("view", settings.permission)) {
+    return null;
+  }
+  return settings;
+}
+
 export function useAllModules() {
   const permissions = usePermissions();
   const modules = useModuleDefinitions();
@@ -179,9 +194,9 @@ export function useAllModules() {
   }>(path.to.authenticatedRoot);
 
   const modulePreferences = routeData?.modulePreferences ?? [];
-  const permitted = filterByPermissions(modules, permissions).sort((a, b) =>
-    a.name.localeCompare(b.name)
-  );
+  const permitted = filterByPermissions(modules, permissions)
+    .filter((m) => !PINNED_MODULES.has(m.key))
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   const prefMap = new Map(modulePreferences.map((p) => [p.module, p]));
 

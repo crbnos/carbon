@@ -38,7 +38,7 @@ export async function generateQRCode(
 
 #### In-Component QR/Barcode Generation
 
-- **JobTravelerPDF**: Has its own `generateQRCode` function that creates QR codes for operation tracking URLs
+- **JobTravelerPDF**: operation-tracking QR codes are generated in `blocks/jobTraveler/OperationsBlock.tsx` (uses the imported `generateQRCode` + `getMESUrl` start/end paths)
 - **PackingSlipPDF**: Has `generateBarcode` function for Code128 barcodes and uses imported `generateQRCode` for tracked entities
 - **ProductLabelPDF**: Uses `await generateQRCode(item.trackedEntityId, qrCodeSize / 72)` directly in JSX
 

@@ -62,6 +62,7 @@ const Horizontal = HorizontalRule.extend({
 
 export * from "./ai-highlight";
 export * from "./mention";
+export * from "./merge-token-highlight";
 export * from "./slash-command";
 export {
   CharacterCount,

@@ -9,12 +9,11 @@ import { redirect } from "react-router";
 import { useUser } from "~/hooks";
 import type { PurchasingRFQStatusType } from "~/modules/purchasing";
 import {
+  insertPurchasingRFQ,
   purchasingRfqValidator,
-  upsertPurchasingRFQ,
   upsertPurchasingRFQSuppliers
 } from "~/modules/purchasing";
 import { PurchasingRFQForm } from "~/modules/purchasing/ui/PurchasingRfq";
-import { getNextSequence } from "~/modules/settings";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -37,51 +36,24 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  let rfqId = validation.data.rfqId;
-  const useNextSequence = !rfqId;
-
-  if (useNextSequence) {
-    const nextSequence = await getNextSequence(
-      client,
-      "purchasingRfq",
-      companyId
-    );
-    if (nextSequence.error) {
-      throw redirect(
-        path.to.newPurchasingRFQ,
-        await flash(
-          request,
-          error(nextSequence.error, "Failed to get next sequence")
-        )
-      );
-    }
-    rfqId = nextSequence.data;
-  }
-
-  if (!rfqId) throw new Error("rfqId is not defined");
-
-  // Extract supplier IDs
   const { supplierIds, ...rfqData } = validation.data;
 
-  const createPurchasingRFQ = await upsertPurchasingRFQ(client, {
+  const result = await insertPurchasingRFQ(client, {
     ...rfqData,
-    rfqId,
+    rfqId: rfqData.rfqId || undefined,
     companyId,
     createdBy: userId,
     customFields: setCustomFields(formData)
   });
 
-  if (createPurchasingRFQ.error || !createPurchasingRFQ.data) {
+  if (result.error || !result.data) {
     throw redirect(
       path.to.purchasingRfqs,
-      await flash(
-        request,
-        error(createPurchasingRFQ.error, "Failed to insert RFQ")
-      )
+      await flash(request, error(result.error, "Failed to insert RFQ"))
     );
   }
 
-  const rfq = createPurchasingRFQ.data;
+  const rfq = result.data;
 
   // Create supplier associations
   if (supplierIds && supplierIds.length > 0) {

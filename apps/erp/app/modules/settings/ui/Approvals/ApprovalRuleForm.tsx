@@ -106,6 +106,7 @@ const ApprovalRuleForm = ({
                   <FormNumber
                     name="lowerBoundAmount"
                     label={t`Minimum Amount`}
+                    helperText={t`Approval is required at or above this amount, up to the next rule's minimum`}
                     formatOptions={{
                       style: "currency",
                       currency: baseCurrencyCode

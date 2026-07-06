@@ -4,7 +4,7 @@ import { format } from "https://deno.land/std@0.160.0/datetime/mod.ts";
 import z from "npm:zod@^3.24.1";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { corsHeaders } from "../lib/headers.ts";
-import { getSupabaseServiceRole } from "../lib/supabase.ts";
+import { requirePermissions } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";
 
 const pool = getConnectionPool(1);
@@ -15,6 +15,7 @@ const payloadValidator = z.discriminatedUnion("source", [
     source: z.literal("purchaseOrder"),
     purchaseOrderId: z.string(),
     companyId: z.string(),
+    userId: z.string(),
     updatePrices: z.boolean().optional(),
     updateLeadTimes: z.boolean().optional(),
   }),
@@ -22,6 +23,7 @@ const payloadValidator = z.discriminatedUnion("source", [
     source: z.literal("purchaseInvoice"),
     invoiceId: z.string(),
     companyId: z.string(),
+    userId: z.string(),
     updatePrices: z.boolean().optional(),
     updateLeadTimes: z.boolean().optional(),
   }),
@@ -57,7 +59,7 @@ serve(async (req: Request) => {
 
   const payload = await req.json();
   const parsedPayload = payloadValidator.parse(payload);
-  const { source, companyId } = parsedPayload;
+  const { source, companyId, userId } = parsedPayload;
   const shouldUpdatePrices = parsedPayload.updatePrices ?? true;
   const shouldUpdateLeadTimes = parsedPayload.updateLeadTimes ?? false;
 
@@ -70,11 +72,7 @@ serve(async (req: Request) => {
   });
 
   try {
-    const client = await getSupabaseServiceRole(
-      req.headers.get("Authorization"),
-      req.headers.get("carbon-key"),
-      companyId
-    );
+    const client = await requirePermissions(req, companyId, userId, { update: "purchasing" });
 
     let supplierId: string;
     let lines: PurchaseLineData[];

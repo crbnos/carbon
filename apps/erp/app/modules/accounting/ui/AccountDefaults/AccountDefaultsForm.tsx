@@ -205,6 +205,14 @@ const categoryGroups: CategoryGroup[] = [
         description: "Tax liability for reverse-charge transactions",
         accountType: "balance",
         badgeType: "Liability"
+      },
+      {
+        name: "deferredTaxLiabilityAccountId",
+        label: "Deferred Tax Liability",
+        description:
+          "Liability account for deferred taxes from accelerated depreciation",
+        accountType: "balance",
+        badgeType: "Liability"
       }
     ]
   },
@@ -395,6 +403,14 @@ const categoryGroups: CategoryGroup[] = [
         name: "roundingAccount",
         label: "Rounding Account",
         description: "Account for small rounding differences in transactions",
+        accountType: "income",
+        badgeType: "Expense"
+      },
+      {
+        name: "deferredTaxExpenseAccountId",
+        label: "Deferred Tax Expense",
+        description:
+          "Expense account for deferred tax adjustments on depreciation",
         accountType: "income",
         badgeType: "Expense"
       }

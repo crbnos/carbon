@@ -11,7 +11,7 @@ import {
   getStorageUnitWithHighestQuantity,
   updatePickMethodDefaultStorageUnitIfNeeded,
 } from "../lib/storage-units.ts";
-import { getSupabaseServiceRole } from "../lib/supabase.ts";
+import { requirePermissions } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";
 import { TrackedEntityAttributes, credit, debit, journalReference } from "../lib/utils.ts";
 
@@ -875,11 +875,7 @@ serve(async (req: Request) => {
       case "jobOperation": {
         const { id, companyId, quantity, userId } = validatedPayload;
 
-        const client = await getSupabaseServiceRole(
-          req.headers.get("Authorization"),
-          req.headers.get("carbon-key") ?? "",
-          companyId
-        );
+        const client = await requirePermissions(req, companyId, userId, { update: "production" });
 
         const [accountingSettings, companyRecord] = await Promise.all([
           client
@@ -933,11 +929,7 @@ serve(async (req: Request) => {
       }
       case "jobOperationBatchComplete": {
         const { trackedEntityId, companyId, userId, ...row } = validatedPayload;
-        const client = await getSupabaseServiceRole(
-          req.headers.get("Authorization"),
-          req.headers.get("carbon-key") ?? "",
-          companyId
-        );
+        const client = await requirePermissions(req, companyId, userId, { update: "production" });
 
         const [jobOperation, productionQuantities] = await Promise.all([
           client
@@ -1083,11 +1075,7 @@ serve(async (req: Request) => {
       }
       case "jobOperationSerialComplete": {
         const { trackedEntityId, companyId, userId, ...row } = validatedPayload;
-        const client = await getSupabaseServiceRole(
-          req.headers.get("Authorization"),
-          req.headers.get("carbon-key") ?? "",
-          companyId
-        );
+        const client = await requirePermissions(req, companyId, userId, { update: "production" });
 
         const jobOperation = await client
           .from("jobOperation")
@@ -1171,34 +1159,33 @@ serve(async (req: Request) => {
           }
 
           if (trackedEntity.status !== "Consumed") {
-            // const activityId = nanoid();
-            // await trx
-            //   .insertInto("trackedActivity")
-            //   .values({
-            //     id: activityId,
-            //     type: "Complete",
-            //     sourceDocument: "Job Operation",
-            //     sourceDocumentId: row.jobOperationId,
-            //     attributes: {
-            //       "Job Operation": row.jobOperationId,
-            //       Employee: userId,
-            //     },
-            //     companyId,
-            //     createdBy: userId,
-            //   })
-            //   .execute();
+            const activityId = nanoid();
+            await trx
+              .insertInto("trackedActivity")
+              .values({
+                id: activityId,
+                type: "Complete",
+                sourceDocument: "Job Operation",
+                sourceDocumentId: row.jobOperationId,
+                attributes: {
+                  "Job Operation": row.jobOperationId,
+                  Employee: userId,
+                },
+                companyId,
+                createdBy: userId,
+              })
+              .execute();
 
-            // await trx
-            //   .insertInto("trackedActivityOutput")
-            //   .values({
-            //     trackedActivityId: activityId,
-            //     trackedEntityId: trackedEntityId,
-            //     quantity: 1,
-            //     companyId,
-            //     createdBy: userId,
-            //   })
-            //   .execute();
-            // Update the current trackedEntity to Complete
+            await trx
+              .insertInto("trackedActivityOutput")
+              .values({
+                trackedActivityId: activityId,
+                trackedEntityId: trackedEntityId,
+                quantity: 1,
+                companyId,
+                createdBy: userId,
+              })
+              .execute();
             await trx
               .updateTable("trackedEntity")
               .set({
@@ -1275,11 +1262,7 @@ serve(async (req: Request) => {
           adjustmentType,
         } = validatedPayload;
 
-        const client = await getSupabaseServiceRole(
-          req.headers.get("Authorization"),
-          req.headers.get("carbon-key") ?? "",
-          companyId
-        );
+        const client = await requirePermissions(req, companyId, userId, { update: "production" });
 
         const [accountingSettings, companyRecord] = await Promise.all([
           client
@@ -1481,7 +1464,7 @@ serve(async (req: Request) => {
                 methodType: "Pull from Inventory",
                 quantity: 0,
                 quantityIssued: Number(quantity ?? 0),
-                unitCost: itemCost?.unitCost,
+                unitCost: itemCost?.unitCost ?? 0,
               })
               .executeTakeFirst();
 
@@ -1550,11 +1533,7 @@ serve(async (req: Request) => {
           companyId,
           userId,
         } = validatedPayload;
-        const client = await getSupabaseServiceRole(
-          req.headers.get("Authorization"),
-          req.headers.get("carbon-key") ?? "",
-          companyId
-        );
+        const client = await requirePermissions(req, companyId, userId, { update: "production" });
 
         const [trackedEntity, jobMaterial] = await Promise.all([
           client
@@ -1770,11 +1749,7 @@ serve(async (req: Request) => {
           );
         }
 
-        const client = await getSupabaseServiceRole(
-          req.headers.get("Authorization"),
-          req.headers.get("carbon-key") ?? "",
-          companyId
-        );
+        const client = await requirePermissions(req, companyId, userId, { update: "production" });
 
         const [accountingSettingsTracked, companyRecordTracked] = await Promise.all([
           client
@@ -1907,7 +1882,7 @@ serve(async (req: Request) => {
                   quantityIssued: totalChildQuantity,
                   requiresBatchTracking: jobMaterial.requiresBatchTracking,
                   requiresSerialTracking: jobMaterial.requiresSerialTracking,
-                  unitCost: itemCost?.unitCost,
+                  unitCost: itemCost?.unitCost ?? 0,
                 })
                 .returning("id")
                 .executeTakeFirstOrThrow();
@@ -1970,7 +1945,7 @@ serve(async (req: Request) => {
                 quantityIssued: totalChildQuantity,
                 requiresBatchTracking: item.itemTrackingType === "Batch",
                 requiresSerialTracking: item.itemTrackingType === "Serial",
-                unitCost: itemCost?.unitCost,
+                unitCost: itemCost?.unitCost ?? 0,
               })
               .returning("id")
               .executeTakeFirstOrThrow();
@@ -2131,6 +2106,7 @@ serve(async (req: Request) => {
                 .insertInto("trackedEntity")
                 .values({
                   id: newTrackedEntityId,
+                  readableId: trackedEntity.readableId,
                   sourceDocumentId: trackedEntity.sourceDocumentId,
                   sourceDocument: "Item",
                   sourceDocumentReadableId:
@@ -2380,11 +2356,7 @@ serve(async (req: Request) => {
           throw new Error("Children are required");
         }
 
-        const clientUnconsume = await getSupabaseServiceRole(
-          req.headers.get("Authorization"),
-          req.headers.get("carbon-key") ?? "",
-          companyId
-        );
+        const clientUnconsume = await requirePermissions(req, companyId, userId, { update: "production" });
 
         const [accountingSettingsUnconsume, companyRecordUnconsume] = await Promise.all([
           clientUnconsume
@@ -3180,6 +3152,7 @@ serve(async (req: Request) => {
                 .insertInto("trackedEntity")
                 .values({
                   id: newTrackedEntityId,
+                  readableId: trackedEntity.readableId,
                   sourceDocumentId: trackedEntity.sourceDocumentId,
                   sourceDocument: "Item",
                   sourceDocumentReadableId:

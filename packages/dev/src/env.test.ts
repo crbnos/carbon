@@ -98,9 +98,9 @@ describe("renderEnv (portless enabled)", () => {
       branchPrefix: "feat-x"
     });
     expect(out).toContain("CARBON_WORKTREE=feat-x");
-    expect(out).toContain("ERP_URL=https://feat-x.erp.dev");
-    expect(out).toContain("MES_URL=https://feat-x.mes.dev");
-    expect(out).toContain("SUPABASE_URL=https://feat-x.api.dev");
+    expect(out).toContain("ERP_URL=https://erp.feat-x.dev");
+    expect(out).toContain("MES_URL=https://mes.feat-x.dev");
+    expect(out).toContain("SUPABASE_URL=https://api.feat-x.dev");
     expect(out).toContain("PORTLESS_TLD=dev");
   });
 

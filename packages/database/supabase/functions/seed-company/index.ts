@@ -10,6 +10,7 @@ import {
   dimensions,
   failureModes,
   fiscalYearSettings,
+  fixedAssetClasses,
   gaugeTypes,
   groupCompanyTemplate,
   groups,
@@ -116,6 +117,7 @@ serve(async (req: Request) => {
           name: companyId,
           public: false,
         })
+        .onConflict((oc) => oc.column("id").doNothing())
         .execute();
 
       await trx
@@ -332,6 +334,28 @@ serve(async (req: Request) => {
       await trx
         .insertInto("fiscalYearSettings")
         .values([{ ...fiscalYearSettings, companyId }])
+        .execute();
+
+      await trx
+        .insertInto("fixedAssetClass")
+        .values(
+          fixedAssetClasses.map((fac) => ({
+            name: fac.name,
+            depreciationMethod: fac.depreciationMethod,
+            usefulLifeMonths: fac.usefulLifeMonths,
+            residualValuePercent: fac.residualValuePercent,
+            assetAccountId: accountIdByKey[fac.assetAccount]!,
+            accumulatedDepreciationAccountId:
+              accountIdByKey[fac.accumulatedDepreciationAccount]!,
+            depreciationExpenseAccountId:
+              accountIdByKey[fac.depreciationExpenseAccount]!,
+            writeOffAccountId: accountIdByKey[fac.writeOffAccount]!,
+            writeDownAccountId: accountIdByKey[fac.writeDownAccount]!,
+            disposalAccountId: accountIdByKey[fac.disposalAccount]!,
+            companyId,
+            createdBy: userId,
+          }))
+        )
         .execute();
 
       const user = await client

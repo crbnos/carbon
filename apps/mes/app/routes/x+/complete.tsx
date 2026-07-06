@@ -3,6 +3,8 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { trigger } from "@carbon/jobs";
+import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
 import { nonScrapQuantityValidator } from "~/services/models";
@@ -11,6 +13,68 @@ import {
   insertProductionQuantity
 } from "~/services/operations.service";
 import { path } from "~/utils/path";
+
+/**
+ * Triggers an auto-print of the entity's label when this is its first
+ * operation (i.e. the entity was just minted) and the work center's
+ * printer assignment has auto-print enabled.
+ */
+async function autoPrintFirstOperationLabel({
+  serviceRole,
+  trackedEntityId,
+  workCenterId,
+  companyId,
+  userId
+}: {
+  serviceRole: ReturnType<typeof getCarbonServiceRole>;
+  trackedEntityId: string;
+  workCenterId: string | undefined;
+  companyId: string;
+  userId: string;
+}) {
+  try {
+    const { data: entity } = await serviceRole
+      .from("trackedEntity")
+      .select("attributes")
+      .eq("id", trackedEntityId)
+      .single();
+
+    const attributes = (entity?.attributes ?? {}) as Record<string, unknown>;
+    const operationCount = Object.keys(attributes).filter((k) =>
+      k.startsWith("Operation ")
+    ).length;
+    if (operationCount > 1) return;
+
+    if (!workCenterId) return;
+    const { data: workCenter } = await serviceRole
+      .from("workCenter")
+      .select("locationId")
+      .eq("id", workCenterId)
+      .single();
+    const locationId = workCenter?.locationId ?? undefined;
+    if (!locationId) return;
+
+    const config = await getCachedPrinterConfig(
+      serviceRole,
+      companyId,
+      locationId,
+      "workCenter",
+      workCenterId
+    );
+    if (config?.autoPrint ?? true) {
+      await trigger("print-job", {
+        sourceDocument: "Job",
+        sourceDocumentId: trackedEntityId,
+        companyId,
+        userId,
+        locationId,
+        workCenterId
+      });
+    }
+  } catch (e) {
+    console.error("Auto-print failed:", e);
+  }
+}
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -28,18 +92,11 @@ export async function action({ request }: ActionFunctionArgs) {
   const serviceRole = await getCarbonServiceRole();
 
   // Get current job operation and production quantities to check if operation will be finished
-  const [jobOperation, productionQuantities] = await Promise.all([
-    serviceRole
-      .from("jobOperation")
-      .select("*")
-      .eq("id", validation.data.jobOperationId)
-      .maybeSingle(),
-    serviceRole
-      .from("productionQuantity")
-      .select("*")
-      .eq("type", "Production")
-      .eq("jobOperationId", validation.data.jobOperationId)
-  ]);
+  const jobOperation = await serviceRole
+    .from("jobOperation")
+    .select("*")
+    .eq("id", validation.data.jobOperationId)
+    .maybeSingle();
 
   if (jobOperation.error || !jobOperation.data) {
     return data(
@@ -51,12 +108,14 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const currentQuantity =
-    productionQuantities.data?.reduce((acc, curr) => acc + curr.quantity, 0) ??
-    0;
+  const totalAccountedQuantity =
+    (jobOperation.data.quantityComplete ?? 0) +
+    (jobOperation.data.quantityReworked ?? 0) +
+    (jobOperation.data.quantityScrapped ?? 0) +
+    validation.data.quantity;
 
   const willBeFinished =
-    validation.data.quantity + currentQuantity >=
+    totalAccountedQuantity >=
     (jobOperation.data.targetQuantity ??
       jobOperation.data.operationQuantity ??
       0);
@@ -71,7 +130,32 @@ export async function action({ request }: ActionFunctionArgs) {
       }
     });
 
-    const trackedEntityId = response.data?.newTrackedEntityId;
+    const newTrackedEntityId = response.data?.newTrackedEntityId;
+    // Print the entity that was just completed (from form), not the new reserved one
+    const completedEntityId = validation.data.trackedEntityId;
+
+    // Auto-print label on first operation only (entity was just minted)
+    const printEntityId = completedEntityId || newTrackedEntityId;
+    if (printEntityId) {
+      await autoPrintFirstOperationLabel({
+        serviceRole,
+        trackedEntityId: printEntityId,
+        workCenterId: jobOperation.data.workCenterId ?? undefined,
+        companyId,
+        userId
+      });
+    }
+
+    const trackedEntityId = newTrackedEntityId;
+    if (response.error) {
+      return data(
+        {},
+        await flash(request, {
+          ...error(response.error, "Failed to complete job operation"),
+          flash: "error"
+        })
+      );
+    }
 
     if (willBeFinished) {
       const finishOperation = await finishJobOperation(serviceRole, {
@@ -109,7 +193,6 @@ export async function action({ request }: ActionFunctionArgs) {
 
     return redirect(`${path.to.operation(validation.data.jobOperationId)}`);
   } else if (validation.data.trackingType === "Batch") {
-    const serviceRole = await getCarbonServiceRole();
     const response = await serviceRole.functions.invoke("issue", {
       body: {
         type: "jobOperationBatchComplete",
@@ -127,6 +210,17 @@ export async function action({ request }: ActionFunctionArgs) {
           flash: "error"
         })
       );
+    }
+
+    // Auto-print label on first operation only (batch entity was just minted)
+    if (validation.data.trackedEntityId) {
+      await autoPrintFirstOperationLabel({
+        serviceRole,
+        trackedEntityId: validation.data.trackedEntityId,
+        workCenterId: jobOperation.data.workCenterId ?? undefined,
+        companyId,
+        userId
+      });
     }
 
     if (willBeFinished) {

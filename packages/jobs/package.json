@@ -1,19 +1,4 @@
 {
-  "name": "@carbon/jobs",
-  "version": "0.0.1",
-  "private": true,
-  "type": "module",
-  "main": "./src/index.ts",
-  "exports": {
-    ".": "./src/index.ts",
-    "./inngest": "./src/inngest/index.ts",
-    "./events": "./src/events.ts",
-    "./worker": "./src/inngest/worker.ts"
-  },
-  "scripts": {
-    "dev:jobs": "pnpm dlx inngest-cli@latest dev --no-discovery -u http://localhost:3000/api/inngest",
-    "typecheck": "tsc --noEmit"
-  },
   "dependencies": {
     "@ai-sdk/openai": "catalog:",
     "@carbon/auth": "workspace:*",
@@ -24,11 +9,12 @@
     "@carbon/kv": "workspace:*",
     "@carbon/lib": "workspace:*",
     "@carbon/notifications": "workspace:*",
+    "@carbon/printing": "workspace:*",
     "@carbon/stripe": "workspace:*",
     "@carbon/utils": "workspace:*",
     "@internationalized/date": "catalog:",
-    "@novu/node": "2.6.6",
     "@react-email/components": "catalog:",
+    "@react-pdf/renderer": "catalog:",
     "@slack/web-api": "catalog:",
     "@supabase/functions-js": "catalog:",
     "@supabase/supabase-js": "catalog:",
@@ -38,6 +24,7 @@
     "kysely": "catalog:",
     "nanoid": "catalog:",
     "nodemailer": "6.10.1",
+    "react": "catalog:",
     "react-pdf": "catalog:",
     "resend": "3.5.0",
     "sst": "catalog:",
@@ -48,7 +35,23 @@
   "devDependencies": {
     "@carbon/config": "workspace:*",
     "@types/nodemailer": "6.4.23",
+    "@types/react": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:"
-  }
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./events": "./src/events.ts",
+    "./inngest": "./src/inngest/index.ts",
+    "./worker": "./src/inngest/worker.ts"
+  },
+  "main": "./src/index.ts",
+  "name": "@carbon/jobs",
+  "private": true,
+  "scripts": {
+    "dev:jobs": "pnpm dlx inngest-cli@latest dev --no-discovery -u http://localhost:3000/api/inngest",
+    "typecheck": "tsc --noEmit"
+  },
+  "type": "module",
+  "version": "0.0.1"
 }

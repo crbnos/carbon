@@ -1,7 +1,29 @@
+import type { Database } from "@carbon/database";
 // @ts-ignore -- type declarations only visible within this package, not cross-package consumers
 import type { Unit } from "humanize-duration";
 // @ts-ignore -- type declarations only visible within this package, not cross-package consumers
 import humanizeDuration from "humanize-duration";
+
+type Factor = Database["public"]["Enums"]["factor"];
+
+const factorAbbreviations: Record<Factor, string> = {
+  "Total Hours": "hr",
+  "Total Minutes": "min",
+  "Hours/Piece": "hr/pc",
+  "Hours/100 Pieces": "hr/100 pcs",
+  "Hours/1000 Pieces": "hr/1000 pcs",
+  "Minutes/Piece": "min/pc",
+  "Minutes/100 Pieces": "min/100 pcs",
+  "Minutes/1000 Pieces": "min/1000 pcs",
+  "Pieces/Hour": "pcs/hr",
+  "Pieces/Minute": "pcs/min",
+  "Seconds/Piece": "sec/pc"
+};
+
+export function formatFactor(value: number, unit: Factor): string {
+  if (value === 0) return "";
+  return `${value} ${factorAbbreviations[unit]}`;
+}
 
 function dateDifference(date1: Date, date2: Date) {
   return Math.abs(date1.getTime() - date2.getTime());

@@ -10,11 +10,10 @@ import { z } from "zod";
 import { useUrlParams, useUser } from "~/hooks";
 import type { PurchaseOrderStatus } from "~/modules/purchasing";
 import {
-  purchaseOrderValidator,
-  upsertPurchaseOrder
+  insertPurchaseOrder,
+  purchaseOrderValidator
 } from "~/modules/purchasing";
 import { PurchaseOrderForm } from "~/modules/purchasing/ui/PurchaseOrder";
-import { getNextSequence } from "~/modules/settings";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -45,51 +44,26 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  let purchaseOrderId = validation.data.purchaseOrderId;
-  const useNextSequence = !purchaseOrderId;
-
-  if (useNextSequence) {
-    const nextSequence = await getNextSequence(
-      client,
-      "purchaseOrder",
-      companyId
-    );
-    if (nextSequence.error) {
-      throw redirect(
-        path.to.newPurchaseOrder,
-        await flash(
-          request,
-          error(nextSequence.error, "Failed to get next sequence")
-        )
-      );
-    }
-    purchaseOrderId = nextSequence.data;
-  }
-
-  if (!purchaseOrderId) throw new Error("purchaseOrderId is not defined");
-
-  const createPurchaseOrder = await upsertPurchaseOrder(client, {
+  const result = await insertPurchaseOrder(client, {
     ...validation.data,
-    purchaseOrderId,
+    purchaseOrderId: validation.data.purchaseOrderId || undefined,
     companyId,
     companyGroupId,
     createdBy: userId,
     customFields: setCustomFields(formData)
   });
 
-  if (createPurchaseOrder.error || !createPurchaseOrder.data?.[0]) {
+  if (result.error || !result.data) {
     throw redirect(
       path.to.purchaseOrders,
       await flash(
         request,
-        error(createPurchaseOrder.error, "Failed to insert purchase order")
+        error(result.error, "Failed to insert purchase order")
       )
     );
   }
 
-  const order = createPurchaseOrder.data?.[0];
-
-  throw redirect(path.to.purchaseOrder(order.id!));
+  throw redirect(path.to.purchaseOrder(result.data.id));
 }
 
 export default function PurchaseOrderNewRoute() {

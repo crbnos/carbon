@@ -54,14 +54,19 @@ const Group = ({ group }: { group: OptionGroup }) => {
     innerProps: { alwaysSelected },
     onGroupCollapse,
     onGroupExpand,
+    prefetchGroup,
     focusedId,
     onSelect,
     onDeselect,
-    selectionItemsById
+    selectionItemsById,
+    loadingGroups
   } = useUserSelectContext();
 
   const isFocused = group.uid === focusedId;
   const isExpanded = group.expanded && group.items.length > 0;
+
+  const groupId = group.uid.split("_")[1];
+  const isLoading = groupId ? loadingGroups?.[groupId] : false;
 
   return (
     // biome-ignore lint/a11y/useAriaPropsSupportedByRole: suppressed due to migration
@@ -78,6 +83,9 @@ const Group = ({ group }: { group: OptionGroup }) => {
         onClick={() =>
           group.expanded ? onGroupCollapse(group.uid) : onGroupExpand(group.uid)
         }
+        onMouseEnter={() => {
+          if (!group.expanded) prefetchGroup(group.uid);
+        }}
         className={cn(
           "flex cursor-pointer select-none items-center gap-2 rounded-md px-2 py-2 hover:bg-muted/50 text-sm",
           isFocused && "bg-muted/50"
@@ -85,14 +93,18 @@ const Group = ({ group }: { group: OptionGroup }) => {
       >
         <ExpandIcon isExpanded={isExpanded} />
         <span className="flex-1 truncate">{group.name}</span>
-        <span className="text-[10px] font-normal">{group.items.length}</span>
+        {isLoading ? (
+          <Spinner className="h-3 w-3" />
+        ) : (
+          <span className="text-[10px] font-normal">{group.items.length}</span>
+        )}
       </div>
 
       {/* Group Items */}
       {isExpanded && (
         <ul role="group" className="flex flex-col gap-0.5 py-1 pl-2">
           {group.items.map((item) => {
-            const isDisabled = item.id in []; // TODO
+            const isDisabled = alwaysSelected?.includes(item.id) ?? false;
             const isFocused = item.uid === focusedId;
             const isSelected = item.id in selectionItemsById;
 

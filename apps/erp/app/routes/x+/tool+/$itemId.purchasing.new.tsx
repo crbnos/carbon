@@ -1,10 +1,9 @@
-import { assertIsPost, success } from "@carbon/auth";
+import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { useRouteData } from "@carbon/react";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect, useNavigate, useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import type { ToolSummary } from "~/modules/items";
 import { supplierPartValidator, upsertSupplierPart } from "~/modules/items";
 import { SupplierPartForm } from "~/modules/items/ui/Item";
@@ -71,10 +70,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   }
 
-  throw redirect(
-    path.to.toolPurchasing(itemId),
-    await flash(request, success("Tool supplier created"))
-  );
+  return { success: true, message: "Tool supplier created" };
 }
 
 export default function NewToolSupplierRoute() {
@@ -96,6 +92,7 @@ export default function NewToolSupplierRoute() {
     unitPrice: 0,
     supplierUnitOfMeasureCode: "EA",
     minimumOrderQuantity: 1,
+    orderMultiple: 1,
     conversionFactor: 1
   };
 

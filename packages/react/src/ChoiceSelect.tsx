@@ -134,9 +134,19 @@ function ChoiceSelectSingle<V extends string>({
             disabled={opt.disabled}
             className="py-2 pr-8"
           >
-            <span className="flex items-start gap-3">
+            <span
+              className={cn(
+                "flex gap-3",
+                opt.description ? "items-start" : "items-center"
+              )}
+            >
               {opt.icon && (
-                <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground mt-0.5">
+                <span
+                  className={cn(
+                    "flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground",
+                    opt.description && "mt-0.5"
+                  )}
+                >
                   {opt.icon}
                 </span>
               )}
@@ -193,8 +203,8 @@ function ChoiceSelectMulti<V extends string>({
           disabled={disabled}
           className={cn(
             "flex h-10 w-full items-center justify-between gap-2 rounded-md border border-input bg-transparent px-3 text-sm",
-            "ring-offset-background hover:bg-accent/40",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+            "hover:bg-accent/40",
+            "outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
             "disabled:cursor-not-allowed disabled:opacity-50",
             selected.length === 0 && "text-muted-foreground",
             className
@@ -237,13 +247,19 @@ function ChoiceSelectMulti<V extends string>({
                   disabled={opt.disabled}
                   onClick={() => toggle(opt.value)}
                   className={cn(
-                    "flex w-full items-start gap-3 rounded-md px-2 py-2 text-left",
+                    "flex w-full gap-3 rounded-md px-2 py-2 text-left",
+                    opt.description ? "items-start" : "items-center",
                     "hover:bg-accent focus-visible:bg-accent focus-visible:outline-none",
                     opt.disabled && "cursor-not-allowed opacity-50"
                   )}
                 >
                   {opt.icon && (
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground mt-0.5">
+                    <span
+                      className={cn(
+                        "flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground",
+                        opt.description && "mt-0.5"
+                      )}
+                    >
                       {opt.icon}
                     </span>
                   )}
@@ -258,7 +274,10 @@ function ChoiceSelectMulti<V extends string>({
                   <Checkbox
                     isChecked={isSelected}
                     disabled={opt.disabled}
-                    className="mt-1 shrink-0 pointer-events-none"
+                    className={cn(
+                      "shrink-0 pointer-events-none",
+                      opt.description && "mt-1"
+                    )}
                     tabIndex={-1}
                   />
                   <LuCheck className="hidden" aria-hidden />

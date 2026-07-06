@@ -14,6 +14,7 @@ import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import { getDefaultStorageUnitForJob } from "../inventory";
+import { getEmployeeJob } from "../people";
 import type {
   operationParameterValidator,
   operationStepValidator,
@@ -1182,6 +1183,16 @@ export async function getJobOperations(
   return query;
 }
 
+export async function getJobOperationDependencies(
+  client: SupabaseClient<Database>,
+  jobId: string
+) {
+  return client
+    .from("jobOperationDependency")
+    .select("operationId, dependsOnId")
+    .eq("jobId", jobId);
+}
+
 export async function getJobOperationsAssignedToEmployee(
   client: SupabaseClient<Database>,
   employeeId: string,
@@ -2132,6 +2143,7 @@ export async function updateJobOperationDueDate(
     .from("jobOperation")
     .update({
       dueDate,
+      manuallyScheduled: dueDate !== null,
       updatedBy,
       updatedAt: new Date().toISOString()
     })
@@ -2251,6 +2263,279 @@ export async function upsertProductionQuantity(
   }
 }
 
+export async function insertJob(
+  client: SupabaseClient<Database>,
+  input: {
+    itemId: string;
+    quantity: number;
+    companyId: string;
+    createdBy: string;
+    jobId?: string;
+    locationId?: string;
+    dueDate?: string;
+    startDate?: string;
+    priority?: number;
+    status?: (typeof jobStatus)[number];
+    deadlineType?: (typeof deadlineTypes)[number];
+    storageUnitId?: string;
+    unitOfMeasureCode?: string;
+    customerId?: string;
+    salesOrderId?: string;
+    salesOrderLineId?: string;
+    quoteId?: string;
+    quoteLineId?: string;
+    parentJobId?: string;
+    modelUploadId?: string;
+    notes?: string;
+    customFields?: Json;
+    configuration?: Record<string, unknown>;
+  },
+  options?: {
+    skipMethod?: boolean;
+    skipRecalculate?: boolean;
+    methodSource?: "item" | "quoteLine";
+  }
+): Promise<{
+  data: { id: string; jobId: string } | null;
+  error: PostgrestError | null;
+}> {
+  let jobId: string;
+  if (input.jobId) {
+    jobId = input.jobId;
+  } else {
+    const seq = await client.rpc("get_next_sequence", {
+      sequence_name: "job",
+      company_id: input.companyId
+    });
+    if (seq.error || !seq.data) {
+      return {
+        data: null,
+        error:
+          seq.error ??
+          ({ message: "Failed to generate job sequence" } as PostgrestError)
+      };
+    }
+    jobId = seq.data;
+  }
+
+  let locationId = input.locationId;
+  if (!locationId) {
+    const employeeJob = await getEmployeeJob(
+      client,
+      input.createdBy,
+      input.companyId
+    );
+    locationId = employeeJob.data?.locationId ?? undefined;
+
+    if (!locationId) {
+      const defaultLocation = await client
+        .from("location")
+        .select("id")
+        .eq("companyId", input.companyId)
+        .limit(1)
+        .single();
+      locationId = defaultLocation.data?.id ?? undefined;
+    }
+
+    if (!locationId) {
+      return {
+        data: null,
+        error: { message: "No location found for job" } as PostgrestError
+      };
+    }
+  }
+
+  const replenishment = await client
+    .from("itemReplenishment")
+    .select("leadTime, scrapPercentage, lotSize")
+    .eq("itemId", input.itemId)
+    .eq("companyId", input.companyId)
+    .maybeSingle();
+
+  const leadTime = replenishment.data?.leadTime ?? 7;
+  const scrapPercentage = replenishment.data?.scrapPercentage ?? 0;
+
+  const dueDate = input.dueDate ?? null;
+  const startDate =
+    input.startDate ??
+    (dueDate
+      ? parseDate(dueDate).subtract({ days: leadTime }).toString()
+      : null);
+
+  const deadlineType =
+    input.deadlineType ?? (dueDate ? "Hard Deadline" : "No Deadline");
+
+  const priority =
+    input.priority ??
+    (await calculateJobPriority(client, {
+      dueDate,
+      deadlineType,
+      companyId: input.companyId,
+      locationId
+    }));
+
+  const storageUnitId =
+    input.storageUnitId ??
+    (await getDefaultStorageUnitForJob(
+      client,
+      input.itemId,
+      locationId,
+      input.companyId
+    ));
+
+  const scrapQuantity =
+    scrapPercentage > 0 ? Math.ceil(input.quantity * scrapPercentage) : 0;
+
+  const job = await client
+    .from("job")
+    .insert({
+      jobId,
+      itemId: input.itemId,
+      quantity: input.quantity,
+      scrapQuantity,
+      locationId,
+      dueDate,
+      startDate,
+      deadlineType,
+      priority,
+      status: input.status ?? "Draft",
+      storageUnitId,
+      unitOfMeasureCode: input.unitOfMeasureCode ?? "EA",
+      customerId: input.customerId,
+      salesOrderId: input.salesOrderId,
+      salesOrderLineId: input.salesOrderLineId,
+      quoteId: input.quoteId,
+      quoteLineId: input.quoteLineId,
+      parentJobId: input.parentJobId,
+      modelUploadId: input.modelUploadId,
+      notes: input.notes,
+      customFields: input.customFields,
+      companyId: input.companyId,
+      createdBy: input.createdBy,
+      updatedBy: input.createdBy
+    })
+    .select("id")
+    .single();
+
+  if (job.error) {
+    return { data: null, error: job.error };
+  }
+
+  const createdJobId = job.data.id;
+
+  if (!options?.skipMethod) {
+    const methodSource =
+      options?.methodSource ??
+      (input.quoteId && input.quoteLineId ? "quoteLine" : "item");
+
+    if (methodSource === "quoteLine" && input.quoteId && input.quoteLineId) {
+      const body: Record<string, unknown> = {
+        type: "quoteLineToJob",
+        sourceId: `${input.quoteId}:${input.quoteLineId}`,
+        targetId: createdJobId,
+        companyId: input.companyId,
+        userId: input.createdBy
+      };
+      if (input.configuration) body.configuration = input.configuration;
+      const { error } = await client.functions.invoke("get-method", { body });
+      if (error) {
+        console.error("Failed to copy method from quote line:", error);
+      }
+    } else {
+      const body: Record<string, unknown> = {
+        type: "itemToJob",
+        sourceId: input.itemId,
+        targetId: createdJobId,
+        companyId: input.companyId,
+        userId: input.createdBy
+      };
+      if (input.configuration) body.configuration = input.configuration;
+      const { error } = await client.functions.invoke("get-method", { body });
+      if (error) {
+        console.error("Failed to copy method from item:", error);
+      }
+    }
+  }
+
+  if (!options?.skipRecalculate) {
+    await client.functions.invoke("recalculate", {
+      body: {
+        type: "jobRequirements",
+        id: createdJobId,
+        companyId: input.companyId,
+        userId: input.createdBy
+      }
+    });
+  }
+
+  return { data: { id: createdJobId, jobId }, error: null };
+}
+
+export async function updateJob(
+  client: SupabaseClient<Database>,
+  input: {
+    id: string;
+    updatedBy: string;
+    quantity?: number;
+    dueDate?: string | null;
+    startDate?: string | null;
+    status?: (typeof jobStatus)[number];
+    priority?: number;
+    deadlineType?: (typeof deadlineTypes)[number];
+    locationId?: string;
+    storageUnitId?: string;
+    unitOfMeasureCode?: string;
+    customerId?: string | null;
+    salesOrderId?: string | null;
+    salesOrderLineId?: string | null;
+    quoteId?: string | null;
+    quoteLineId?: string | null;
+    parentJobId?: string | null;
+    modelUploadId?: string | null;
+    notes?: string | null;
+    customFields?: Json;
+    scrapQuantity?: number;
+    itemId?: string;
+  }
+): Promise<{ data: { id: string } | null; error: PostgrestError | null }> {
+  const { id, updatedBy, ...updates } = input;
+
+  let priority = updates.priority;
+  if (
+    (updates.dueDate !== undefined || updates.deadlineType !== undefined) &&
+    priority === undefined
+  ) {
+    const existing = await client
+      .from("job")
+      .select("dueDate, deadlineType, companyId, locationId")
+      .eq("id", id)
+      .single();
+
+    if (existing.data) {
+      priority = await calculateJobPriority(client, {
+        jobId: id,
+        dueDate: updates.dueDate ?? existing.data.dueDate,
+        deadlineType: updates.deadlineType ?? existing.data.deadlineType,
+        companyId: existing.data.companyId,
+        locationId: existing.data.locationId
+      });
+    }
+  }
+
+  return client
+    .from("job")
+    .update({
+      ...sanitize(updates),
+      ...(priority !== undefined && { priority }),
+      updatedBy,
+      updatedAt: new Date().toISOString()
+    })
+    .eq("id", id)
+    .select("id")
+    .single();
+}
+
+/** @deprecated Use insertJob for new jobs, updateJob for existing jobs */
 export async function upsertJob(
   client: SupabaseClient<Database>,
   job:

@@ -230,7 +230,7 @@ const IssueProperties = () => {
             </Tooltip>
           </HStack>
         </HStack>
-        <VStack spacing={0}>
+        <VStack spacing={1}>
           <span className="text-sm tracking-tight">
             {routeData?.nonConformance?.nonConformanceId}
           </span>
@@ -241,7 +241,7 @@ const IssueProperties = () => {
             validator={z.object({
               name: z.string()
             })}
-            className="w-full -mt-2"
+            className="w-full"
           >
             <span className="text-xs text-muted-foreground">
               <InputControlled

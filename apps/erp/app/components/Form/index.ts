@@ -29,6 +29,7 @@ import Abilities from "./Abilities";
 import Ability from "./Ability";
 import Account, { AccountControlled } from "./Account";
 import AddressAutocomplete from "./AddressAutocomplete";
+import AssetClass, { useAssetClasses } from "./AssetClass";
 import Color from "./Color";
 import ConversionFactor from "./ConversionFactor";
 import CostCenter from "./CostCenter";
@@ -90,6 +91,8 @@ export {
   Ability,
   Account,
   AccountControlled,
+  AssetClass,
+  useAssetClasses,
   AddressAutocomplete,
   Array,
   ArrayNumeric,

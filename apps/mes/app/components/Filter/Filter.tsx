@@ -154,7 +154,7 @@ const Filter = forwardRef<HTMLButtonElement, FilterProps>(
         </PopoverTrigger>
         <PopoverContent
           align="start"
-          className="min-w-[--radix-popover-trigger-width] p-0"
+          className="min-w-[var(--radix-popover-trigger-width)] p-0"
         >
           <Command>
             <CommandInput

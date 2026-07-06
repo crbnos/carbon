@@ -37,7 +37,12 @@ export type EditorContentProps = Omit<EditorProviderProps, "content"> & {
 export const EditorContent = forwardRef<HTMLDivElement, EditorContentProps>(
   ({ className, children, initialContent, ...rest }, ref) => (
     <div ref={ref} className={className}>
-      <EditorProvider {...rest} content={initialContent}>
+      {/* immediatelyRender false: avoid SSR hydration mismatch (overridable). */}
+      <EditorProvider
+        immediatelyRender={false}
+        {...rest}
+        content={initialContent}
+      >
         {children}
       </EditorProvider>
     </div>

@@ -43,7 +43,6 @@ import {
   toast,
   useDisclosure
 } from "@carbon/react";
-
 import { getItemReadableId } from "@carbon/utils";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import { useNumberFormatter } from "@react-aria/i18n";
@@ -56,7 +55,6 @@ import {
   LuCirclePlus,
   LuGitBranch,
   LuList,
-  LuPrinter,
   LuQrCode,
   LuScale,
   LuTrash,
@@ -64,6 +62,7 @@ import {
   LuX
 } from "react-icons/lu";
 import { useFetcher } from "react-router";
+import { PrintButton } from "~/components";
 import type {
   getBatchNumbersForItem,
   getSerialNumbersForItem
@@ -87,6 +86,8 @@ type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
 export function IssueMaterialModal({
   operationId,
   expiredEntityPolicy = "Block",
+  locationId,
+  workCenterId,
   material,
   parentId,
   parentIdIsSerialized,
@@ -95,6 +96,8 @@ export function IssueMaterialModal({
 }: {
   operationId: string;
   expiredEntityPolicy?: ExpiredEntityPolicy;
+  locationId?: string;
+  workCenterId?: string;
   material?: JobMaterial;
   parentId?: string;
   parentIdIsSerialized?: boolean;
@@ -181,29 +184,24 @@ export function IssueMaterialModal({
         )
         .map((sn) => {
           const expired = isExpiryPast(sn.expirationDate);
-          const labelText = sn.id ?? "";
-          // ComboboxBase.label accepts JSX, so render the readableId next to a
-          // small destructive Badge for expired stock — pops in the dropdown
-          // far better than a plain "EXPIRED" prefix in the helper line.
-          const label = expired ? (
+          const label = (
             <span key={sn.id} className="flex items-center gap-2">
-              <span className="truncate">{labelText}</span>
-              <Badge variant="red">Expired</Badge>
+              {sn.readableId && (
+                <span className="font-medium">{sn.readableId}</span>
+              )}
+              <span className="text-xs text-muted-foreground font-mono truncate">
+                {sn.id}
+              </span>
+              {expired && <Badge variant="red">Expired</Badge>}
             </span>
-          ) : (
-            labelText
           );
-          const helperParts = [
-            sn.readableId ? `Serial ${sn.readableId}` : null,
-            sn.expirationDate
-              ? `${expired ? "Expired" : "Expires"} ${formatExpiry(sn.expirationDate)}`
-              : null
-          ].filter(Boolean) as string[];
+          const helper = sn.expirationDate
+            ? `${expired ? "Expired" : "Expires"} ${formatExpiry(sn.expirationDate)}`
+            : undefined;
           return {
             label,
             value: sn.id,
-            helper:
-              helperParts.length > 0 ? helperParts.join(" · ") : undefined,
+            helper,
             expirationDate: sn.expirationDate ?? null,
             isExpired: expired
           };
@@ -226,18 +224,27 @@ export function IssueMaterialModal({
         )
         .map((bn) => {
           const expired = isExpiryPast(bn.expirationDate);
-          const expiryNote = bn.expirationDate
-            ? expired
-              ? `EXPIRED ${formatExpiry(bn.expirationDate)}`
-              : `Expires ${formatExpiry(bn.expirationDate)}`
-            : null;
-          const stockHelper = bn.readableId
-            ? `${bn.id.slice(0, 10)} - ${bn.quantity} Available of Batch ${bn.readableId}`
-            : `${bn.id.slice(0, 10)} - ${bn.quantity} Available`;
+          const label = (
+            <span key={bn.id} className="flex items-center gap-2">
+              {bn.readableId && (
+                <span className="font-medium">{bn.readableId}</span>
+              )}
+              <span className="text-xs text-muted-foreground font-mono truncate">
+                {bn.id.slice(0, 10)}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {bn.quantity} available
+              </span>
+              {expired && <Badge variant="red">Expired</Badge>}
+            </span>
+          );
+          const helper = bn.expirationDate
+            ? `${expired ? "Expired" : "Expires"} ${formatExpiry(bn.expirationDate)}`
+            : undefined;
           return {
-            label: bn.sourceDocumentReadableId ?? "",
+            label,
             value: bn.id,
-            helper: [expiryNote, stockHelper].filter(Boolean).join(" · "),
+            helper,
             availableQuantity: bn.quantity,
             expirationDate: bn.expirationDate ?? null,
             isExpired: expired
@@ -249,9 +256,20 @@ export function IssueMaterialModal({
   // Unconsume options for batch
   const unconsumeOptions = useMemo(() => {
     return trackedInputs.map((input) => ({
-      label: input.id,
-      value: input.id,
-      helper: `${input.quantity} ${input.readableId ? `of Batch ${input.readableId}` : ""}`
+      label: (
+        <span className="flex items-center gap-2">
+          {input.readableId && (
+            <span className="font-medium">{input.readableId}</span>
+          )}
+          <span className="text-xs text-muted-foreground font-mono truncate">
+            {input.id.slice(0, 10)}
+          </span>
+          <span className="text-xs text-muted-foreground">
+            qty {input.quantity}
+          </span>
+        </span>
+      ),
+      value: input.id
     }));
   }, [trackedInputs]);
 
@@ -874,21 +892,17 @@ export function IssueMaterialModal({
                             </span>
                           </div>
                           <div className="flex gap-2 mt-4">
-                            <Button
-                              variant="primary"
-                              leftIcon={<LuPrinter />}
-                              onClick={() => {
-                                window.open(
-                                  window.location.origin +
-                                    path.to.file.trackedEntityLabelPdf(
-                                      split.newId
-                                    ),
-                                  "_blank"
-                                );
+                            <PrintButton
+                              sourceDocument="Split"
+                              sourceDocumentId={split.newId}
+                              locationId={locationId}
+                              context="workCenter"
+                              workCenterId={workCenterId}
+                              fileRoutes={{
+                                pdf: path.to.file.trackedEntityLabelPdf,
+                                zpl: path.to.file.trackedEntityLabelZpl
                               }}
-                            >
-                              Print Label
-                            </Button>
+                            />
                             <Button
                               variant="secondary"
                               leftIcon={<LuArrowRightLeft />}
@@ -1023,12 +1037,13 @@ export function IssueMaterialModal({
                 </div>
               </ModalBody>
               <ModalFooter>
-                <Button variant="secondary" onClick={onClose}>
+                <Button variant="secondary" size="lg" onClick={onClose}>
                   Cancel
                 </Button>
                 <Button
                   type="submit"
                   variant="primary"
+                  size="lg"
                   isLoading={inventoryFetcher.state !== "idle"}
                   isDisabled={
                     inventoryFetcher.state !== "idle" ||
@@ -1590,17 +1605,18 @@ export function IssueMaterialModal({
               </ModalBody>
               <ModalFooter>
                 {splitEntitiesResult.length > 0 ? (
-                  <Button variant="primary" onClick={onClose}>
+                  <Button variant="primary" size="lg" onClick={onClose}>
                     Close
                   </Button>
                 ) : (
                   <>
-                    <Button variant="secondary" onClick={onClose}>
+                    <Button variant="secondary" size="lg" onClick={onClose}>
                       Cancel
                     </Button>
                     {activeTab === "unconsume" ? (
                       <Button
                         variant="destructive"
+                        size="lg"
                         onClick={
                           trackingType === "Serial"
                             ? handleUnconsumeSerial
@@ -1619,6 +1635,7 @@ export function IssueMaterialModal({
                     ) : (
                       <Button
                         variant="primary"
+                        size="lg"
                         onClick={
                           trackingType === "Serial"
                             ? handleSubmitSerial
@@ -1643,7 +1660,7 @@ export function IssueMaterialModal({
           {/* Footer for split entities result */}
           {splitEntitiesResult.length > 0 && (
             <ModalFooter>
-              <Button variant="primary" onClick={onClose}>
+              <Button variant="primary" size="lg" onClick={onClose}>
                 Close
               </Button>
             </ModalFooter>
@@ -1772,13 +1789,14 @@ function ConvertSplitModal({
             </div>
           </ModalBody>
           <ModalFooter>
-            <Button variant="secondary" onClick={onCancel}>
+            <Button variant="secondary" size="lg" onClick={onCancel}>
               Cancel
             </Button>
             <Button
               isLoading={fetcher.state !== "idle"}
               isDisabled={fetcher.state !== "idle"}
               type="submit"
+              size="lg"
               variant="primary"
             >
               Convert
@@ -1825,7 +1843,7 @@ function ScrapSplitModal({
           </ModalDescription>
         </ModalHeader>
         <ModalFooter>
-          <Button variant="secondary" onClick={onCancel}>
+          <Button variant="secondary" size="lg" onClick={onCancel}>
             Cancel
           </Button>
           <fetcher.Form
@@ -1840,6 +1858,7 @@ function ScrapSplitModal({
               isLoading={fetcher.state !== "idle"}
               isDisabled={fetcher.state !== "idle"}
               type="submit"
+              size="lg"
               variant="destructive"
             >
               Scrap

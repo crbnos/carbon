@@ -1,6 +1,5 @@
 import {
   assertIsPost,
-  CONTROLLED_ENVIRONMENT,
   callbackValidator,
   carbonClient,
   error
@@ -21,7 +20,7 @@ import {
   AlertDescription,
   AlertTitle,
   Button,
-  cn,
+  LoadingBars,
   VStack
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
@@ -172,18 +171,7 @@ export default function AuthCallback() {
           </VStack>
         </div>
       ) : (
-        <div
-          className={cn(
-            "hexagon-loader-container",
-            CONTROLLED_ENVIRONMENT && "grayscale"
-          )}
-        >
-          <div className="hexagon-loader">
-            <div className="hexagon" />
-            <div className="hexagon" />
-            <div className="hexagon" />
-          </div>
-        </div>
+        <LoadingBars />
       )}
     </div>
   );

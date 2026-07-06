@@ -30,6 +30,7 @@ import type {
   ColumnDef,
   ColumnOrderState,
   ColumnPinningState,
+  OnChangeFn,
   Table as ReactTable,
   RowData,
   RowSelectionState
@@ -102,6 +103,9 @@ interface TableProps<T extends object> {
   withSearch?: boolean;
   withSelectableRows?: boolean;
   withSimpleSorting?: boolean;
+  getRowId?: (originalRow: T, index: number) => string;
+  rowSelection?: RowSelectionState;
+  onRowSelectionChange?: OnChangeFn<RowSelectionState>;
   onSelectedRowsChange?: (selectedRows: T[]) => void;
   renderActions?: (selectedRows: T[]) => ReactNode;
   renderContextMenu?: (row: T) => JSX.Element | null;
@@ -237,6 +241,9 @@ const Table = <T extends object>({
   withSearch = true,
   withSelectableRows = false,
   withSimpleSorting = true,
+  getRowId,
+  rowSelection: controlledRowSelection,
+  onRowSelectionChange,
   onSelectedRowsChange,
   renderActions,
   renderContextMenu,
@@ -265,16 +272,24 @@ const Table = <T extends object>({
     setInternalData(data);
   }, [data]);
 
-  /* Clear row selection when data changes */
+  /* Selectable Rows */
+  const [internalRowSelection, setInternalRowSelection] =
+    useState<RowSelectionState>({});
+  const isSelectionControlled = controlledRowSelection !== undefined;
+  const rowSelection = isSelectionControlled
+    ? controlledRowSelection
+    : internalRowSelection;
+  const setRowSelection = onRowSelectionChange ?? setInternalRowSelection;
+
+  /* Clear row selection when data changes. Skip when rows have stable ids
+     (getRowId) or selection is controlled — the selection survives data
+     reshapes like tree expansion in those cases. */
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
-    if (withSelectableRows) {
+    if (withSelectableRows && !getRowId && !isSelectionControlled) {
       setRowSelection({});
     }
   }, [data.length, withSelectableRows]);
-
-  /* Selectable Rows */
-  const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 
   /* Pagination */
   const pagination = usePagination(count, setRowSelection);
@@ -433,6 +448,7 @@ const Table = <T extends object>({
     onColumnOrderChange: setColumnOrder,
     onColumnPinningChange: setColumnPinning,
     onRowSelectionChange: setRowSelection,
+    getRowId,
     getCoreRowModel: getCoreRowModel(),
     meta: {
       // These are not part of the standard API, but are accessible via table.options.meta
@@ -793,6 +809,12 @@ const Table = <T extends object>({
         calculateColumnWidths();
       });
       resizeObserver.observe(tableWrapper);
+      // Also observe the table itself: internal layout changes (e.g. tree
+      // expansion adding rows/widening columns) resize the table without
+      // resizing the wrapper, which would leave pinned offsets stale.
+      if (tableRef.current) {
+        resizeObserver.observe(tableRef.current);
+      }
       return () => resizeObserver.disconnect();
     }
   }, [
@@ -966,7 +988,8 @@ const Table = <T extends object>({
                           colSpan={header.colSpan}
                           id={`header-${header.id}`}
                           className={cn(
-                            "px-4 py-3 whitespace-nowrap bg-card",
+                            "py-3 whitespace-nowrap bg-card",
+                            header.column.id === "Select" ? "px-2" : "px-4",
                             editMode && "border-r-1 border-border",
                             sortable && "cursor-pointer"
                           )}
@@ -1189,7 +1212,11 @@ function getRowSelectionColumn<T>(): ColumnDef<T>[] {
   return [
     {
       id: "Select",
-      size: 50,
+      // width:1 + whitespace-nowrap = shrink-to-fit. A fixed pixel width
+      // inflates on w-full auto-layout tables because leftover space is
+      // distributed proportionally to specified column widths.
+      size: 1,
+      minSize: 1,
       enablePinning: true,
       header: ({ table }) => (
         <IndeterminateCheckbox

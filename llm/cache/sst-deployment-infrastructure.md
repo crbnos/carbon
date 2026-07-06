@@ -55,7 +55,6 @@ Both ERP and MES services receive identical environment variable configurations 
 #### External Services
 - `CLOUDFLARE_TURNSTILE_*` - Bot protection
 - `EXCHANGE_RATES_API_KEY` - Currency exchange
-- `NOVU_*` - Notifications
 - `OPENAI_API_KEY` - AI features
 - `POSTHOG_*` - Analytics
 - `RESEND_API_KEY` - Email service

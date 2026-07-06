@@ -5,6 +5,7 @@ import { forwardRef, useMemo, useRef, useState } from "react";
 import { LuCheck, LuPlus, LuSettings2, LuX } from "react-icons/lu";
 import {
   Command,
+  CommandEmpty,
   CommandGroup,
   CommandInput,
   CommandItem,
@@ -153,7 +154,7 @@ const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
           </PopoverTrigger>
           <PopoverContent
             align="start"
-            className="min-w-[--radix-popover-trigger-width] max-w-[min(560px,calc(100vw-2rem))] p-1"
+            className="min-w-[var(--radix-popover-trigger-width)] max-w-[min(560px,calc(100vw-2rem))] p-1"
             style={{
               width: dropdownContentWidthCh
                 ? `min(560px, max(var(--radix-popover-trigger-width), ${dropdownContentWidthCh}ch))`
@@ -235,6 +236,7 @@ function VirtualizedCommand({
         placeholder={t`Search...`}
         className="h-9"
       />
+      <CommandEmpty>{t`No option found.`}</CommandEmpty>
       <div
         ref={parentRef}
         className="overflow-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent pt-1"

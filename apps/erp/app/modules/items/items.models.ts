@@ -1,4 +1,3 @@
-import { TRANSACTION_SURFACES } from "@carbon/utils";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import {
@@ -642,10 +641,21 @@ export const partValidator = applyStorageAndShelfLifeRefines(
   )
 );
 
+// Tracked-entity pick order surfaced on the item's per-location Inventory
+// card. 'Default' = the picker's smart order (expiring soonest, then oldest).
+// Mirrors "pickMethodSortMethod" Postgres enum.
+export const pickMethodSortMethods = [
+  "Default",
+  "FEFO",
+  "FIFO",
+  "LIFO"
+] as const;
+
 export const pickMethodValidator = z.object({
   itemId: z.string().min(1, { message: "Item ID is required" }),
   locationId: z.string().min(1, { message: "Location is required" }),
-  defaultStorageUnitId: zfd.text(z.string().optional())
+  defaultStorageUnitId: zfd.text(z.string().optional()),
+  sortMethod: z.enum(pickMethodSortMethods).optional()
 });
 
 // pickMethod form + shelf-life policy in one submit. Shelf-life itself is
@@ -749,6 +759,7 @@ export const supplierPartValidator = z.object({
   supplierPartId: z.string().optional(),
   supplierUnitOfMeasureCode: zfd.text(z.string().optional()),
   minimumOrderQuantity: zfd.numeric(z.number().min(0)),
+  orderMultiple: zfd.numeric(z.number().min(1)).optional(),
   conversionFactor: zfd.numeric(z.number().min(0)),
   unitPrice: zfd.numeric(z.number().min(0).optional())
 });
@@ -772,71 +783,3 @@ export const unitOfMeasureValidator = z.object({
   code: z.string().min(1, { message: "Code is required" }).max(10),
   name: z.string().min(1, { message: "Name is required" }).max(50)
 });
-
-export const itemRuleSeverities = ["error", "warn"] as const;
-
-export const itemRuleOperators = [
-  "eq",
-  "neq",
-  "in",
-  "notIn",
-  "isSet",
-  "isNotSet",
-  "gt",
-  "lt"
-] as const;
-
-const itemRuleConditionValueSchema = z.union([
-  z.string(),
-  z.number(),
-  z.boolean(),
-  z.array(z.union([z.string(), z.number(), z.boolean()])),
-  z.null()
-]);
-
-const itemRuleConditionSchema = z.object({
-  field: z.string().min(1, { message: "Field is required" }),
-  op: z.enum(itemRuleOperators),
-  value: itemRuleConditionValueSchema.optional()
-});
-
-export const itemRuleMatchKinds = ["all", "any", "none"] as const;
-
-export const itemRuleConditionAstSchema = z.object({
-  kind: z.enum(itemRuleMatchKinds),
-  conditions: z
-    .array(itemRuleConditionSchema)
-    .min(1, { message: "At least one condition is required" })
-});
-
-// conditionAst arrives as a JSON-encoded string in form data; pre-parse before validating.
-const itemRuleConditionAstFormField = z.preprocess((raw) => {
-  if (typeof raw !== "string") return raw;
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return raw;
-  }
-}, itemRuleConditionAstSchema);
-
-export const itemRuleValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" }).max(120),
-  description: zfd.text(z.string().optional()),
-  message: z.string().min(1, { message: "Message is required" }).max(500),
-  severity: z.enum(itemRuleSeverities),
-  active: zfd.checkbox(),
-  surfaces: zfd
-    .repeatableOfType(z.enum(TRANSACTION_SURFACES))
-    .refine((arr) => arr.length >= 1, {
-      message: "Pick at least one surface"
-    }),
-  conditionAst: itemRuleConditionAstFormField
-});
-
-export const itemRuleAssignmentValidator = z.object({
-  itemId: z.string().min(1, { message: "Item ID is required" }),
-  ruleId: z.string().min(1, { message: "Rule ID is required" })
-});
-
-export const itemRuleAcknowledgeValidator = zfd.checkbox();

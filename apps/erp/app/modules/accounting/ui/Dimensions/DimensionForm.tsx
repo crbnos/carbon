@@ -33,6 +33,7 @@ const entityTypeLabels: Record<string, string> = {
   CustomerType: "Customer Type",
   Department: "Department",
   Employee: "Employee",
+  FixedAssetClass: "Asset Class",
   CostCenter: "Cost Center"
 };
 

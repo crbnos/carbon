@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { useStorageRuleViolations } from "@carbon/ee/storage-rules";
 import {
   Alert,
   AlertDescription,
@@ -25,7 +26,6 @@ import { useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
 import { useNavigation, useParams } from "react-router";
 import { useSettings, useUser } from "~/hooks";
-import { useItemRuleViolations } from "~/hooks/useItemRuleViolations";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import type { ShipmentLine } from "../..";
@@ -41,6 +41,10 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
   const [items] = useItems();
   const routeData = useRouteData<{
     shipmentLines: ShipmentLine[];
+    fixedAssetLines: {
+      id: string;
+      shipped: boolean;
+    }[];
   }>(path.to.shipment(shipmentId));
 
   const navigation = useNavigation();
@@ -99,10 +103,14 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
       companyId
     );
 
-    if (
-      routeData?.shipmentLines.length === 0 ||
-      routeData?.shipmentLines.every((line) => line.shippedQuantity === 0)
-    ) {
+    const hasShipmentLines = routeData?.shipmentLines.some(
+      (line) => (line.shippedQuantity ?? 0) > 0
+    );
+    const hasFaLines = (routeData?.fixedAssetLines ?? []).some(
+      (line) => line.shipped
+    );
+
+    if (!hasShipmentLines && !hasFaLines) {
       setValidationErrors([
         {
           itemReadableId: null,
@@ -219,16 +227,11 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
     validateShipmentTracking();
   });
 
-  const ruleViolations = useItemRuleViolations({
+  const ruleViolations = useStorageRuleViolations({
     action: path.to.shipmentPost(shipmentId),
     onSuccess: onClose
   });
   const { fetcher } = ruleViolations;
-
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    ruleViolations.submit(new FormData());
-  };
 
   return (
     <Modal
@@ -326,7 +329,12 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
             <Button variant="solid" onClick={onClose}>
               <Trans>Cancel</Trans>
             </Button>
-            <form onSubmit={handleSubmit}>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                ruleViolations.submit(new FormData());
+              }}
+            >
               <Button
                 isLoading={fetcher.state !== "idle"}
                 isDisabled={

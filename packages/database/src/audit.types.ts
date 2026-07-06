@@ -21,10 +21,23 @@ export interface AuditMetadata {
  * Both `old` and `new` are optional: INSERT entries populated via a table's
  * `createFields` config only include `new`, and the UI hides the "old" pill
  * when the key is absent.
+ *
+ * `snapshot` carries frozen values from the FK target row for columns
+ * declared in `snapshotFields`. Captured at write time so the row is
+ * self-contained — renaming or deleting the FK target later does not
+ * rewrite history. The nested `old` / `new` mirrors the parent's old/new
+ * pair, recursively. Each key inside `snapshot.old` / `snapshot.new`
+ * corresponds to one column listed in `displayColumns`. The renderer
+ * switches presentation based on key count: a single key renders inline;
+ * multiple keys render as an expanded section.
  */
 export interface AuditDiffEntry {
   old?: unknown;
   new?: unknown;
+  snapshot?: {
+    old?: Record<string, unknown>;
+    new?: Record<string, unknown>;
+  };
 }
 
 /**

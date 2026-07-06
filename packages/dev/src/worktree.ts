@@ -137,13 +137,18 @@ export async function resolveSlot(
   const registry = readRegistry();
   const existing = registry[slug];
 
-  // Fast path: registry entry is valid and points at this worktree.
+  // Fast path: registry entry is valid, points at this worktree, and all
+  // ports are still available (no stale processes holding them).
   if (existing && sameWorktreePath(existing.worktreeRoot, worktreeRoot)) {
-    return {
-      ports: existing.ports,
-      redisDb: existing.redisDb,
-      jwt: existing.jwt
-    };
+    const allFree = await portsAvailable(Object.values(existing.ports));
+    if (allFree) {
+      return {
+        ports: existing.ports,
+        redisDb: existing.redisDb,
+        jwt: existing.jwt
+      };
+    }
+    // Some cached ports are taken — fall through to re-allocate.
   }
 
   // Slug collision (different path) or no entry — allocate fresh.
@@ -265,6 +270,22 @@ function pickRedisDb(taken: Set<number>): number {
   throw new Error(
     `Redis DB pool exhausted (max ${REDIS_DB_MAX}). Free a slot via \`crbn remove\`.`
   );
+}
+
+function isPortAvailable(port: number): Promise<boolean> {
+  return new Promise((resolve) => {
+    const server = net.createServer();
+    server.unref();
+    server.once("error", () => resolve(false));
+    server.listen(port, "127.0.0.1", () => {
+      server.close(() => resolve(true));
+    });
+  });
+}
+
+async function portsAvailable(ports: number[]): Promise<boolean> {
+  const results = await Promise.all(ports.map(isPortAvailable));
+  return results.every(Boolean);
 }
 
 async function pickPorts(claimed: Set<number>): Promise<PortMap> {

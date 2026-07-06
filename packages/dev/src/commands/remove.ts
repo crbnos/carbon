@@ -9,6 +9,7 @@ import {
 } from "@clack/prompts";
 import pc from "picocolors";
 import {
+  deleteBranch,
   listWorktrees as gitListWorktrees,
   isDirty,
   mainCheckoutRoot,
@@ -21,9 +22,10 @@ import {
   pruneStaleRoutes,
   unregisterAliases
 } from "../services/portless.js";
-import { getSlot, listSlugs, removeSlot } from "../worktree.js";
+import { getSlot, listSlugs, projectName, removeSlot } from "../worktree.js";
 
-export async function removeWorktreeCmd() {
+export async function removeWorktreeCmd(opts?: { prune?: boolean }) {
+  const pruneBranches = opts?.prune === true;
   intro("Carbon · remove worktree");
 
   const wtsAll = await gitListWorktrees();
@@ -62,7 +64,7 @@ export async function removeWorktreeCmd() {
         target,
         dirty: await isDirty(target.path),
         slug,
-        projectLabel: slug ? `carbon-${slug}` : null,
+        projectLabel: slug ? projectName(slug) : null,
         slotInfo: slug ? getSlot(slug) : null,
         branchPrefix: slug ? branchToPrefix(target.branch, slug) : null
       };
@@ -125,6 +127,11 @@ export async function removeWorktreeCmd() {
 
       progress(`${label}: removing worktree`);
       await removeWorktree(target.path, dirty);
+
+      if (pruneBranches && target.branch) {
+        progress(`${label}: deleting branch`);
+        await deleteBranch(target.branch);
+      }
 
       if (slug) removeSlot(slug);
 

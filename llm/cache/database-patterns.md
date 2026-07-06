@@ -156,3 +156,9 @@ return data;
 - Applied automatically via Supabase CLI
 
 
+
+## Generated DB Types
+
+- `packages/database/src/types.ts` and `packages/database/supabase/functions/lib/types.ts` are generated — never hand-edit.
+- Regenerate with `pnpm run db:types` (root script, `scripts/generate-db-types.ts`). Requires the local Supabase DB running (`SUPABASE_DB_URL` in `.env`/`.env.local`, localhost only) with all migrations applied.
+- After merging branches that add migrations, regenerate types or typecheck will fail with `SelectQueryError` / "excessively deep" errors in packages that query the new tables.

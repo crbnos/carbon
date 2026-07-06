@@ -17,7 +17,7 @@ import {
   getSalesOrderShipment,
   isSalesOrderLocked,
   salesOrderValidator,
-  upsertSalesOrder
+  updateSalesOrder
 } from "~/modules/sales";
 import {
   OpportunityDocuments,
@@ -118,21 +118,26 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const { salesOrderId, ...d } = validation.data;
-  if (!salesOrderId) throw new Error("Could not find salesOrderId");
-
-  const update = await upsertSalesOrder(client, {
-    id,
-    salesOrderId,
-    ...d,
-    companyGroupId,
-    customFields: setCustomFields(formData),
-    updatedBy: userId
-  });
-  if (update.error) {
+  const result = await updateSalesOrder(
+    client,
+    {
+      id,
+      status: validation.data.status,
+      currencyCode: validation.data.currencyCode,
+      orderDate: validation.data.orderDate,
+      customerId: validation.data.customerId,
+      customerContactId: validation.data.customerContactId || null,
+      customerLocationId: validation.data.customerLocationId || null,
+      notes: validation.data.notes,
+      customFields: setCustomFields(formData),
+      updatedBy: userId
+    },
+    companyGroupId
+  );
+  if (result.error) {
     throw redirect(
       path.to.salesOrder(id),
-      await flash(request, error(update.error, "Failed to update order"))
+      await flash(request, error(result.error, "Failed to update order"))
     );
   }
 

@@ -4,7 +4,6 @@ import { redirect } from "react-router";
 import { userContext } from "~/context";
 import { getConsolePinIn } from "~/services/console.server";
 import { getLocation, setLocation } from "~/services/location.server";
-import { path } from "~/utils/path";
 
 export const userMiddleware: MiddlewareFunction = async ({
   context,
@@ -33,7 +32,10 @@ export const userMiddleware: MiddlewareFunction = async ({
   });
 
   if (updated) {
-    return redirect(path.to.authenticatedRoot, {
+    // Redirect back to the originally-requested URL (not the root) so deep
+    // links survive the one-time location-cookie bootstrap. The re-run finds
+    // the cookie set, so `updated` is false the second time through.
+    return redirect(request.url, {
       headers: {
         "Set-Cookie": setLocation(companyId, location)
       }

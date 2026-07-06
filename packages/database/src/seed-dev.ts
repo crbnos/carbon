@@ -21,6 +21,7 @@ import {
   dimensions,
   failureModes,
   fiscalYearSettings,
+  fixedAssetClasses,
   gaugeTypes,
   getGroupId,
   groups,
@@ -32,6 +33,7 @@ import {
   unitOfMeasures
 } from "../supabase/functions/lib/seed.data.ts";
 import { getPostgresConnectionPool } from "./client.ts";
+import { seedPrinting } from "./seed-printing.ts";
 import type { Database } from "./types.ts";
 
 // Load environment variables
@@ -60,6 +62,10 @@ const { values } = parseArgs({
     email: {
       type: "string",
       short: "e"
+    },
+    printing: {
+      type: "boolean",
+      default: false
     }
   },
   strict: true
@@ -67,13 +73,15 @@ const { values } = parseArgs({
 
 function printUsage() {
   console.log(`
-Usage: pnpm run db:seed:dev -- --email <email>
+Usage: pnpm run db:seed:dev -- --email <email> [--printing]
 
 Arguments:
   --email, -e    Required. The email address for the dev user.
+  --printing     Optional. Seed printing test data (printer routes, receipts, etc.).
 
 Example:
   pnpm run db:seed:dev -- --email developer@example.com
+  pnpm run db:seed:dev -- --email developer@example.com --printing
   `);
 }
 
@@ -481,6 +489,32 @@ async function seedDev() {
         ]
       );
 
+      // Seed fixed asset classes
+      for (const fac of fixedAssetClasses) {
+        await client.query(
+          `INSERT INTO "fixedAssetClass" (
+            "name", "depreciationMethod", "usefulLifeMonths", "residualValuePercent",
+            "assetAccountId", "accumulatedDepreciationAccountId",
+            "depreciationExpenseAccountId", "writeOffAccountId",
+            "writeDownAccountId", "disposalAccountId",
+            "companyId", "createdBy"
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'system')`,
+          [
+            fac.name,
+            fac.depreciationMethod,
+            fac.usefulLifeMonths,
+            fac.residualValuePercent,
+            accountIdByKey[fac.assetAccount],
+            accountIdByKey[fac.accumulatedDepreciationAccount],
+            accountIdByKey[fac.depreciationExpenseAccount],
+            accountIdByKey[fac.writeOffAccount],
+            accountIdByKey[fac.writeDownAccount],
+            accountIdByKey[fac.disposalAccount],
+            companyId
+          ]
+        );
+      }
+
       // Seed default location (required for inventory, jobs, etc.)
       // Must be after accountDefaults since location trigger copies from accountDefaults
       const locationResult = await client.query(
@@ -554,6 +588,12 @@ async function seedDev() {
       );
 
       console.log("   User permissions updated.");
+
+      // Seed printing test data (opt-in via --printing flag)
+      if (values.printing) {
+        console.log("8. Seeding printing test data...");
+        await seedPrinting(client, { companyId, userId, locationId });
+      }
 
       // Commit the transaction
       await client.query("COMMIT");

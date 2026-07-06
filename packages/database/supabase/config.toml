@@ -137,6 +137,10 @@ backend = "postgres"
 enabled = true
 verify_jwt = false
 
+[functions.logo-resizer]
+enabled = true
+verify_jwt = false
+
 [functions.sync]
 enabled = true
 verify_jwt = true
@@ -177,6 +181,11 @@ entrypoint = "./functions/post-stock-transfer/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/post-stock-transfer/*.html" ]
+
+[functions.post-picking]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/post-picking/index.ts"
 
 
 [functions.transcription]

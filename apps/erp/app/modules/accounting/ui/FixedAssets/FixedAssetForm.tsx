@@ -1,0 +1,315 @@
+import { ValidatedForm } from "@carbon/form";
+import {
+  Button,
+  HStack,
+  ModalDrawer,
+  ModalDrawerBody,
+  ModalDrawerContent,
+  ModalDrawerFooter,
+  ModalDrawerHeader,
+  ModalDrawerProvider,
+  ModalDrawerTitle,
+  VStack
+} from "@carbon/react";
+import { useState } from "react";
+import { useFetcher } from "react-router";
+import type { z } from "zod";
+import {
+  AssetClass,
+  Hidden,
+  Input,
+  Location,
+  NumberControlled,
+  SelectControlled,
+  Submit,
+  useAssetClasses
+} from "~/components/Form";
+import { usePermissions, useSettings } from "~/hooks";
+import { path } from "~/utils/path";
+import {
+  depreciationMethods,
+  fixedAssetValidator,
+  macrsConventions,
+  macrsPropertyClasses,
+  taxDepreciationMethods
+} from "../../accounting.models";
+
+type FixedAssetFormProps = {
+  initialValues: z.infer<typeof fixedAssetValidator>;
+  onClose: () => void;
+};
+
+const FixedAssetForm = ({ initialValues, onClose }: FixedAssetFormProps) => {
+  const permissions = usePermissions();
+  const settings = useSettings();
+  const taxDepreciationEnabled =
+    (settings as any).assetTaxDepreciationEnabled ?? false;
+  const fetcher = useFetcher();
+
+  const isEditing = initialValues.id !== undefined;
+  const isDisabled = isEditing
+    ? !permissions.can("update", "accounting")
+    : !permissions.can("create", "accounting");
+
+  const { assetClasses } = useAssetClasses();
+
+  const [assetData, setAssetData] = useState<{
+    fixedAssetClassId: string;
+    depreciationMethod: string;
+    usefulLifeMonths: number;
+    residualValuePercent: number;
+    assetLifetimeUsage: number;
+    taxDepreciationMethod: string;
+    taxUsefulLifeMonths: number;
+    taxResidualValuePercent: number;
+    macrsPropertyClass: string;
+    macrsConvention: string;
+    bonusDepreciationPercent: number;
+  }>({
+    fixedAssetClassId: initialValues.fixedAssetClassId ?? "",
+    depreciationMethod: initialValues.depreciationMethod ?? "",
+    usefulLifeMonths: initialValues.usefulLifeMonths ?? 60,
+    residualValuePercent: initialValues.residualValuePercent ?? 0,
+    assetLifetimeUsage: initialValues.assetLifetimeUsage ?? 0,
+    taxDepreciationMethod: initialValues.taxDepreciationMethod ?? "",
+    taxUsefulLifeMonths: initialValues.taxUsefulLifeMonths ?? 60,
+    taxResidualValuePercent: initialValues.taxResidualValuePercent ?? 0,
+    macrsPropertyClass: initialValues.macrsPropertyClass ?? "",
+    macrsConvention: initialValues.macrsConvention ?? "Half-Year",
+    bonusDepreciationPercent: initialValues.bonusDepreciationPercent ?? 0
+  });
+
+  const onAssetClassChange = (
+    selected: { value: string; label: string | JSX.Element } | null
+  ) => {
+    if (!selected) return;
+    const assetClass = assetClasses.find((c) => c.id === selected.value);
+    if (!assetClass) return;
+
+    setAssetData({
+      fixedAssetClassId: assetClass.id,
+      depreciationMethod: assetClass.depreciationMethod,
+      usefulLifeMonths: assetClass.usefulLifeMonths,
+      residualValuePercent: assetClass.residualValuePercent,
+      assetLifetimeUsage: 0,
+      taxDepreciationMethod: assetClass.taxDepreciationMethod ?? "",
+      taxUsefulLifeMonths: assetClass.taxUsefulLifeMonths ?? 60,
+      taxResidualValuePercent: assetClass.taxResidualValuePercent ?? 0,
+      macrsPropertyClass: assetClass.macrsPropertyClass ?? "",
+      macrsConvention: assetClass.macrsConvention ?? "Half-Year",
+      bonusDepreciationPercent: assetClass.bonusDepreciationPercent ?? 0
+    });
+  };
+
+  return (
+    <ModalDrawerProvider type="drawer">
+      <ModalDrawer
+        open
+        onOpenChange={(open) => {
+          if (!open) onClose?.();
+        }}
+      >
+        <ModalDrawerContent>
+          <ValidatedForm
+            validator={fixedAssetValidator}
+            method="post"
+            action={
+              isEditing
+                ? path.to.fixedAssetDetails(initialValues.id!)
+                : path.to.newFixedAsset
+            }
+            defaultValues={initialValues}
+            fetcher={fetcher}
+            className="flex flex-col h-full"
+          >
+            <ModalDrawerHeader>
+              <ModalDrawerTitle>
+                {isEditing ? "Edit" : "New"} Fixed Asset
+              </ModalDrawerTitle>
+            </ModalDrawerHeader>
+            <ModalDrawerBody>
+              <Hidden name="id" />
+              <VStack spacing={4}>
+                <Input name="name" label="Name" />
+                <AssetClass
+                  name="fixedAssetClassId"
+                  label="Asset Class"
+                  value={assetData.fixedAssetClassId}
+                  onChange={onAssetClassChange}
+                />
+                <Input name="description" label="Description" />
+                <Input name="serialNumber" label="Serial Number" />
+                <SelectControlled
+                  name="depreciationMethod"
+                  label="Depreciation Method"
+                  options={depreciationMethods.map((m) => ({
+                    label: m,
+                    value: m
+                  }))}
+                  value={assetData.depreciationMethod}
+                  onChange={(v) => {
+                    if (v)
+                      setAssetData((d) => ({
+                        ...d,
+                        depreciationMethod: v.value
+                      }));
+                  }}
+                />
+                <NumberControlled
+                  name="usefulLifeMonths"
+                  label="Useful Life (Months)"
+                  minValue={1}
+                  value={assetData.usefulLifeMonths}
+                  onChange={(value) =>
+                    setAssetData((d) => ({ ...d, usefulLifeMonths: value }))
+                  }
+                />
+                <NumberControlled
+                  name="residualValuePercent"
+                  label="Residual Value %"
+                  minValue={0}
+                  maxValue={100}
+                  value={assetData.residualValuePercent}
+                  onChange={(value) =>
+                    setAssetData((d) => ({ ...d, residualValuePercent: value }))
+                  }
+                />
+                {assetData.depreciationMethod === "Units of Production" && (
+                  <NumberControlled
+                    name="assetLifetimeUsage"
+                    label="Lifetime Usage (Units)"
+                    minValue={0}
+                    value={assetData.assetLifetimeUsage}
+                    onChange={(value) =>
+                      setAssetData((d) => ({ ...d, assetLifetimeUsage: value }))
+                    }
+                  />
+                )}
+                <Location name="locationId" label="Location" />
+                {taxDepreciationEnabled && (
+                  <>
+                    <SelectControlled
+                      name="taxDepreciationMethod"
+                      label="Tax Depreciation Method"
+                      placeholder="None"
+                      options={taxDepreciationMethods.map((m) => ({
+                        label: m,
+                        value: m
+                      }))}
+                      value={assetData.taxDepreciationMethod}
+                      onChange={(v) => {
+                        setAssetData((d) => ({
+                          ...d,
+                          taxDepreciationMethod: v?.value ?? ""
+                        }));
+                      }}
+                    />
+                    <div
+                      className={
+                        assetData.taxDepreciationMethod === "MACRS"
+                          ? "flex flex-col gap-4 w-full"
+                          : "hidden"
+                      }
+                    >
+                      <SelectControlled
+                        name="macrsPropertyClass"
+                        label="MACRS Property Class"
+                        isOptional={false}
+                        options={macrsPropertyClasses.map((c) => ({
+                          label: `${c}-Year`,
+                          value: c
+                        }))}
+                        value={assetData.macrsPropertyClass}
+                        onChange={(v) => {
+                          if (v)
+                            setAssetData((d) => ({
+                              ...d,
+                              macrsPropertyClass: v.value
+                            }));
+                        }}
+                      />
+                      <SelectControlled
+                        name="macrsConvention"
+                        label="MACRS Convention"
+                        isOptional={false}
+                        options={macrsConventions.map((c) => ({
+                          label: c,
+                          value: c
+                        }))}
+                        value={assetData.macrsConvention}
+                        onChange={(v) => {
+                          if (v)
+                            setAssetData((d) => ({
+                              ...d,
+                              macrsConvention: v.value
+                            }));
+                        }}
+                      />
+                      <NumberControlled
+                        name="bonusDepreciationPercent"
+                        label="Bonus Depreciation %"
+                        minValue={0}
+                        maxValue={100}
+                        value={assetData.bonusDepreciationPercent}
+                        onChange={(value) =>
+                          setAssetData((d) => ({
+                            ...d,
+                            bonusDepreciationPercent: value
+                          }))
+                        }
+                      />
+                    </div>
+                    <div
+                      className={
+                        assetData.taxDepreciationMethod === "Straight Line" ||
+                        assetData.taxDepreciationMethod === "Declining Balance"
+                          ? "flex flex-col gap-4 w-full"
+                          : "hidden"
+                      }
+                    >
+                      <NumberControlled
+                        name="taxUsefulLifeMonths"
+                        label="Tax Useful Life (Months)"
+                        minValue={1}
+                        value={assetData.taxUsefulLifeMonths}
+                        onChange={(value) =>
+                          setAssetData((d) => ({
+                            ...d,
+                            taxUsefulLifeMonths: value
+                          }))
+                        }
+                      />
+                      <NumberControlled
+                        name="taxResidualValuePercent"
+                        label="Tax Residual Value %"
+                        minValue={0}
+                        maxValue={100}
+                        value={assetData.taxResidualValuePercent}
+                        onChange={(value) =>
+                          setAssetData((d) => ({
+                            ...d,
+                            taxResidualValuePercent: value
+                          }))
+                        }
+                      />
+                    </div>
+                  </>
+                )}
+              </VStack>
+            </ModalDrawerBody>
+            <ModalDrawerFooter>
+              <HStack>
+                <Submit isDisabled={isDisabled}>Save</Submit>
+                <Button size="md" variant="solid" onClick={() => onClose?.()}>
+                  Cancel
+                </Button>
+              </HStack>
+            </ModalDrawerFooter>
+          </ValidatedForm>
+        </ModalDrawerContent>
+      </ModalDrawer>
+    </ModalDrawerProvider>
+  );
+};
+
+export default FixedAssetForm;

@@ -1,6 +1,5 @@
 import {
   assertIsPost,
-  CONTROLLED_ENVIRONMENT,
   callbackValidator,
   carbonClient,
   error,
@@ -17,7 +16,13 @@ import {
 } from "@carbon/auth/session.server";
 import { getUserByEmail } from "@carbon/auth/users.server";
 import { validator } from "@carbon/form";
-import { Alert, AlertDescription, AlertTitle, cn, VStack } from "@carbon/react";
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+  LoadingBars,
+  VStack
+} from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import { useEffect, useRef, useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
@@ -29,6 +34,7 @@ import {
   useLocation,
   useSearchParams
 } from "react-router";
+import { getCompanies, getEmployeeCompanies } from "~/modules/settings";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -55,17 +61,19 @@ export async function action({ request }: ActionFunctionArgs) {
   const { refreshToken, userId, redirectTo } = validation.data;
   const serviceRole = getCarbonServiceRole();
 
-  const companies = await serviceRole
-    .from("userToCompany")
-    .select("companyId, ...company(companyGroupId)")
-    .eq("userId", userId);
+  // Pre-session: no user-authed client yet, so query memberships with the
+  // service role. Prefer an employee company as the active one; fall back to
+  // any membership so auth/RLS can deny a pure portal user later.
+  const employeeCompanies =
+    (await getEmployeeCompanies(serviceRole, userId)).data ?? [];
+  const pickable = employeeCompanies.length
+    ? employeeCompanies
+    : ((await getCompanies(serviceRole, userId)).data ?? []);
 
   const cookieCompanyId = getCompanyId(request);
-  const match = (companies.data?.find((c) => c.companyId === cookieCompanyId) ??
-    companies.data?.[0]) as
-    | { companyId: string; companyGroupId: string | null }
-    | undefined;
-  const companyId = match?.companyId;
+  const match =
+    pickable.find((c) => c.companyId === cookieCompanyId) ?? pickable[0];
+  const companyId = match?.companyId ?? undefined;
   const companyGroupId = match?.companyGroupId ?? "";
 
   const authSession = await refreshAccessToken(
@@ -87,12 +95,19 @@ export async function action({ request }: ActionFunctionArgs) {
     const sessionCookie = await setAuthSession(request, {
       authSession
     });
-    const companyIdCookie = setCompanyId(authSession.companyId);
+    const headers: [string, string][] = [["Set-Cookie", sessionCookie]];
+
+    // Only finalize the active company for single-company (and portal-only)
+    // users. Multi-company users must actively choose: we leave the companyId
+    // cookie unset and let x+/_layout bounce them to the picker — its presence
+    // is the "has chosen this session" marker. This keeps all picker/enforcement
+    // logic in one place instead of duplicating the redirect here.
+    if (employeeCompanies.length <= 1) {
+      headers.push(["Set-Cookie", setCompanyId(authSession.companyId)]);
+    }
+
     return redirect(safeRedirect(redirectTo, path.to.authenticatedRoot), {
-      headers: [
-        ["Set-Cookie", sessionCookie],
-        ["Set-Cookie", companyIdCookie]
-      ]
+      headers
     });
   } else {
     return redirect(
@@ -170,18 +185,7 @@ export default function AuthCallback() {
           </VStack>
         </div>
       ) : (
-        <div
-          className={cn(
-            "hexagon-loader-container",
-            CONTROLLED_ENVIRONMENT && "grayscale"
-          )}
-        >
-          <div className="hexagon-loader">
-            <div className="hexagon" />
-            <div className="hexagon" />
-            <div className="hexagon" />
-          </div>
-        </div>
+        <LoadingBars />
       )}
     </div>
   );

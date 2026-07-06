@@ -40,6 +40,8 @@ export {
   MarkdownExtension,
   Mention,
   type MentionSuggestion,
+  MergeTokenHighlight,
+  type MergeTokenHighlightOptions,
   Placeholder,
   removeAIHighlight,
   renderItems,

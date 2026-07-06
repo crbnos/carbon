@@ -8,8 +8,7 @@
     "./tsconfig/react-library.json": "./tsconfig/react-library.json",
     "./tsconfig/vite.json": "./tsconfig/vite.json",
     "./tsconfig/nextjs.json": "./tsconfig/nextjs.json",
-    "./tailwind/tailwind.config": "./tailwind/tailwind.config.js",
-    "./tailwind/postcss.config": "./tailwind/postcss.config.js"
+    "./tailwind/theme.css": "./tailwind/theme.css"
   },
   "scripts": {
     "build": "tsup",
@@ -23,13 +22,7 @@
     "vitest": "catalog:"
   },
   "peerDependencies": {
-    "@tailwindcss/container-queries": "catalog:",
-    "@tailwindcss/forms": "catalog:",
-    "@tailwindcss/line-clamp": "catalog:",
     "@tailwindcss/typography": "catalog:",
-    "autoprefixer": "catalog:",
-    "postcss": "catalog:",
-    "postcss-nesting": "12.1.5",
     "tailwind-merge": "catalog:",
     "tailwind-scrollbar": "catalog:",
     "tailwind-scrollbar-hide": "catalog:",

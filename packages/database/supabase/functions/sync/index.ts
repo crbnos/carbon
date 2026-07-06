@@ -4,7 +4,7 @@ import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 
 import z from "npm:zod@^3.24.1";
 import { corsHeaders } from "../lib/headers.ts";
-import { getSupabaseServiceRole } from "../lib/supabase.ts";
+import { requirePermissions } from "../lib/supabase.ts";
 import { getReadableIdWithRevision } from "../lib/utils.ts";
 
 const pool = getConnectionPool(1);
@@ -185,10 +185,7 @@ serve(async (req: Request) => {
         userId,
       });
 
-      const client = await getSupabaseServiceRole(
-        req.headers.get("Authorization"),
-        req.headers.get("carbon-key") ?? ""
-      );
+      const client = await requirePermissions(req, companyId, userId, { update: "resources" });
 
       // Check if top-level make method is Active and find or create a Draft
       const topLevelMakeMethod = await client

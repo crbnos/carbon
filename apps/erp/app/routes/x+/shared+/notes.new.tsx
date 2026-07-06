@@ -27,10 +27,12 @@ export async function action({ request }: ActionFunctionArgs) {
   });
   if (createNote.error) {
     throw redirect(
-      request.headers.get("Referer") ?? request.url,
+      request.headers.get("Referer") ?? new URL(request.url).pathname,
       await flash(request, error(createNote.error, "Error creating note"))
     );
   }
 
-  throw redirect(request.headers.get("Referer") ?? request.url);
+  throw redirect(
+    request.headers.get("Referer") ?? new URL(request.url).pathname
+  );
 }

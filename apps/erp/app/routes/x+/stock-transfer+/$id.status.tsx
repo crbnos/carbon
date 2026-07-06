@@ -2,16 +2,16 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import {
+  evaluateLinesForSurface,
+  isBlocked
+} from "@carbon/ee/storage-rules.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import {
   stockTransferStatusType,
   updateStockTransferStatus
 } from "~/modules/inventory";
-import {
-  evaluateLinesForSurface,
-  isBlocked
-} from "~/modules/items/itemRules.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -36,6 +36,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  // Reopening a Completed stock transfer requires the stronger inventory
+  // `delete` permission — it unlocks completed inventory moves.
+  if (status !== "Completed") {
+    const current = await client
+      .from("stockTransfer")
+      .select("status")
+      .eq("id", id)
+      .single();
+    if (current.data?.status === "Completed") {
+      await requirePermissions(request, { delete: "inventory" });
+    }
+  }
+
   // Item Rule evaluation at "go" transitions — Released is the user's
   // commitment to the transfer plan; pre-flight here so violations surface
   // before any picking happens. Completed kept as a defense-in-depth gate.
@@ -50,19 +63,22 @@ export async function action({ request, params }: ActionFunctionArgs) {
       .eq("stockTransferId", id)
       .eq("companyId", companyId);
 
+    const evalLines = (lines ?? []).map((l) => ({
+      lineId: l.id as string,
+      itemId: l.itemId as string | null,
+      storageUnitId: l.toStorageUnitId as string | null,
+      quantity: Number(l.quantity ?? 0),
+      locationId: null
+    }));
+
     const { violations, ruleNames } = await evaluateLinesForSurface({
       client: serviceRole,
       companyId,
       userId,
+      targetType: "item",
       surface: "stockTransfer",
       // Evaluate against the destination side — that's where stock is landing.
-      lines: (lines ?? []).map((l) => ({
-        lineId: l.id as string,
-        itemId: l.itemId as string | null,
-        storageUnitId: l.toStorageUnitId as string | null,
-        quantity: Number(l.quantity ?? 0),
-        locationId: null
-      }))
+      lines: evalLines
     });
 
     if (violations.length > 0 && isBlocked(violations, acknowledged)) {

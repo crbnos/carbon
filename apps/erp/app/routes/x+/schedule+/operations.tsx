@@ -268,7 +268,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
         targetQuantity: op.targetQuantity,
         quantity: op.operationQuantity,
         quantityCompleted: op.quantityComplete,
+        quantityReworked: op.quantityReworked,
         quantityScrapped: op.quantityScrapped,
+        reworkId: op.reworkId,
         salesOrderReadableId: op.salesOrderReadableId,
         salesOrderId: op.salesOrderId,
         salesOrderLineId: op.salesOrderLineId,
@@ -308,7 +310,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
   };
 }
 
-const defaultDisplaySettings: DisplaySettings = {
+type ScheduleDisplaySettings = DisplaySettings & {
+  emptyWorkCenters: boolean;
+};
+
+const defaultDisplaySettings: ScheduleDisplaySettings = {
+  emptyWorkCenters: true,
   showDuration: true,
   showCustomer: true,
   showDescription: true,
@@ -341,6 +348,10 @@ function KanbanSchedule() {
     DISPLAY_SETTINGS_KEY,
     defaultDisplaySettings
   );
+  const mergedDisplaySettings = useMemo(
+    () => ({ ...defaultDisplaySettings, ...displaySettings }),
+    [displaySettings]
+  );
 
   useEffect(() => {
     setItems(initialItems);
@@ -353,6 +364,19 @@ function KanbanSchedule() {
   useEffect(() => {
     setItems((prevItems) => sortItems(prevItems));
   }, [sortItems]);
+
+  const visibleColumns = useMemo(() => {
+    if (mergedDisplaySettings.emptyWorkCenters) {
+      return columns;
+    }
+
+    const workCenterIdsWithOperations = new Set(
+      items.map((item) => item.columnId)
+    );
+    return columns.filter((column) =>
+      workCenterIdsWithOperations.has(column.id)
+    );
+  }, [columns, items, mergedDisplaySettings.emptyWorkCenters]);
 
   const { progressByOperation } = useProgressByOperation(
     items,
@@ -464,7 +488,35 @@ function KanbanSchedule() {
                 </div>
                 <Separator />
                 <span className="text-xs font-medium text-muted-foreground">
-                  <Trans>Display Settings</Trans>
+                  <Trans>Columns</Trans>
+                </span>
+                <VStack>
+                  {(
+                    [
+                      {
+                        key: "emptyWorkCenters",
+                        label: t`Empty work centers`
+                      }
+                    ] as const
+                  ).map(({ key, label }) => (
+                    <Switch
+                      key={key}
+                      variant="small"
+                      label={label}
+                      checked={mergedDisplaySettings[key]}
+                      onCheckedChange={(checked) =>
+                        setDisplaySettings((prev) => ({
+                          ...defaultDisplaySettings,
+                          ...prev,
+                          [key]: checked
+                        }))
+                      }
+                    />
+                  ))}
+                </VStack>
+                <Separator />
+                <span className="text-xs font-medium text-muted-foreground">
+                  <Trans>Cards</Trans>
                 </span>
                 <VStack>
                   {[
@@ -482,10 +534,13 @@ function KanbanSchedule() {
                       variant="small"
                       label={label}
                       checked={
-                        displaySettings[key as keyof typeof displaySettings]
+                        mergedDisplaySettings[
+                          key as keyof typeof mergedDisplaySettings
+                        ]
                       }
                       onCheckedChange={(checked) =>
                         setDisplaySettings((prev) => ({
+                          ...defaultDisplaySettings,
                           ...prev,
                           [key]: checked
                         }))
@@ -509,20 +564,11 @@ function KanbanSchedule() {
         <div className="flex flex-1 min-h-0 w-full relative">
           {columns.length > 0 ? (
             <Kanban
-              columns={columns}
+              columns={visibleColumns}
               items={items}
               progressByItemId={progressByOperation}
               tags={tags}
-              showCustomer={displaySettings.showCustomer}
-              showDescription={displaySettings.showDescription}
-              showDueDate={displaySettings.showDueDate}
-              showDuration={displaySettings.showDuration}
-              showEmployee={displaySettings.showEmployee}
-              showProgress={displaySettings.showProgress}
-              showQuantity={displaySettings.showQuantity}
-              showStatus={displaySettings.showStatus}
-              showSalesOrder={displaySettings.showSalesOrder}
-              showThumbnail={displaySettings.showThumbnail}
+              {...mergedDisplaySettings}
             />
           ) : hasFilters ? (
             <div className="flex flex-col w-full h-full items-center justify-center gap-4">

@@ -176,7 +176,7 @@ const ActiveFilter = ({ filter, operator, value }: ActiveFilterProps) => {
           className={
             filter.filter.type === "custom"
               ? "w-auto p-0"
-              : "min-w-[200px] w-[--radix-popover-trigger-width] p-0"
+              : "min-w-[200px] w-[var(--radix-popover-trigger-width)] p-0"
           }
           sticky="always"
         >

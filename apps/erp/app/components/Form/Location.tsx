@@ -22,8 +22,8 @@ const LocationPreview = (
   options: { value: string; label: string | JSX.Element }[]
 ) => {
   const location = options.find((o) => o.value === value);
-  // @ts-expect-error TS2322 - TODO: fix type
-  return <Enumerable value={location?.label ?? null} />;
+  if (!location) return null;
+  return location?.label ?? null;
 };
 
 const Location = ({ inline = false, ...props }: LocationSelectProps) => {
@@ -39,7 +39,10 @@ const Location = ({ inline = false, ...props }: LocationSelectProps) => {
     <>
       <CreatableCombobox
         ref={triggerRef}
-        options={options}
+        options={options.map((o) => ({
+          value: o.value,
+          label: <Enumerable value={o.label} />
+        }))}
         {...props}
         label={props?.label ?? "Location"}
         inline={inline ? LocationPreview : undefined}

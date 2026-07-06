@@ -4,6 +4,7 @@ import {
   LuCog,
   LuContact,
   LuCreditCard,
+  LuFiles,
   LuLayoutList,
   LuMapPin,
   LuPackageSearch,
@@ -77,6 +78,12 @@ export function useSupplierSidebar({ contacts, locations }: Props) {
       role: ["employee"],
       icon: <LuCog />,
       shortcut: "Command+Shift+r"
+    },
+    {
+      name: t`Default Attachments`,
+      to: path.to.supplierDefaultAttachments(supplierId),
+      role: ["employee"],
+      icon: <LuFiles />
     },
     {
       name: t`Risks`,

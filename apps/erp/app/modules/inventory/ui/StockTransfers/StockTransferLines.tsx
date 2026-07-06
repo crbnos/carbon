@@ -36,7 +36,7 @@ import {
   useParams,
   useSubmit
 } from "react-router";
-import { Empty, ItemThumbnail } from "~/components";
+import { Empty, ItemThumbnail, PrintButton } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
@@ -54,6 +54,7 @@ interface StockTransferLineProps {
   line: StockTransferLine;
   index: number;
   totalLines: number;
+  locationId?: string;
   pickedQuantity: number;
   isPickable: boolean;
   isEditable: boolean;
@@ -68,6 +69,7 @@ function StockTransferLineComponent({
   line,
   index,
   totalLines,
+  locationId,
   pickedQuantity,
   isPickable,
   isEditable,
@@ -152,6 +154,18 @@ function StockTransferLineComponent({
             )}
           </HStack>
           <HStack spacing={1}>
+            {line.trackedEntityId && (
+              <PrintButton
+                sourceDocument="Entity"
+                sourceDocumentId={line.trackedEntityId}
+                locationId={locationId}
+                context="inventory"
+                fileRoutes={{
+                  pdf: path.to.file.trackedEntityLabelPdf,
+                  zpl: path.to.file.trackedEntityLabelZpl
+                }}
+              />
+            )}
             {pickedQuantity === line.quantity ? (
               <Button
                 variant="secondary"
@@ -367,6 +381,7 @@ export default function StockTransferLines() {
                   line={line}
                   index={index}
                   totalLines={lines.length}
+                  locationId={routeData?.stockTransfer?.locationId ?? undefined}
                   pickedQuantity={pickedQuantitiesById.get(line.id ?? "") ?? 0}
                   isPickable={isPickable}
                   isEditable={isEditable}

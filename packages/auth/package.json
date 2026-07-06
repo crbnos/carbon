@@ -3,6 +3,7 @@
   "devDependencies": {
     "@carbon/config": "workspace:*",
     "@carbon/utils": "workspace:*",
+    "@simplewebauthn/types": "^12.0.0",
     "@types/react": "catalog:",
     "sst": "catalog:",
     "tsup": "catalog:",
@@ -16,6 +17,7 @@
     "./company.server": "./src/services/company.server.ts",
     "./session.server": "./src/services/session.server.ts",
     "./users.server": "./src/services/users.server.ts",
+    "./passkey.server": "./src/services/passkey.server.ts",
     "./verification.server": "./src/services/verification.server.ts",
     "./middleware/flash.server": "./src/middleware/flash.server.ts",
     "./middleware/flash.client": "./src/middleware/flash.client.ts"
@@ -51,8 +53,10 @@
     "@carbon/kv": "workspace:*",
     "@carbon/lib": "workspace:*",
     "@react-email/components": "catalog:",
+    "@simplewebauthn/server": "^13.1.0",
     "cookie": "catalog:",
     "dompurify": "catalog:",
+    "jose": "catalog:",
     "nanoid": "catalog:",
     "zustand": "catalog:"
   }

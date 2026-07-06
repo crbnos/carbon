@@ -1,12 +1,11 @@
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable } from "@carbon/database";
-import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import type {
-  ConditionAst,
-  ItemRuleRow,
-  Severity,
-  TransactionSurface
-} from "@carbon/utils";
+  ExpressionBuilder,
+  Kysely,
+  KyselyDatabase,
+  KyselyTx
+} from "@carbon/database/client";
 import {
   getCompanyPrivateBucket,
   listCompanyPrivateObjects
@@ -25,7 +24,9 @@ import type {
 } from "../shared";
 import {
   lookupBuyPriceFromMap,
+  type MethodType,
   type PriceBreak,
+  type SourcingType,
   type SupplierPriceMap
 } from "../shared";
 import {
@@ -56,6 +57,7 @@ import {
   type methodMaterialValidator,
   type methodOperationValidator,
   type partValidator,
+  type pickMethodSortMethods,
   type pickMethodValidator,
   type serviceValidator,
   type shelfLifeModes,
@@ -121,7 +123,15 @@ export async function copyMakeMethod(
       sourceId: args.sourceId,
       targetId: args.targetId,
       companyId: args.companyId,
-      userId: args.userId
+      userId: args.userId,
+      parts: {
+        billOfMaterial: args.billOfMaterial,
+        billOfProcess: args.billOfProcess,
+        parameters: args.parameters,
+        tools: args.tools,
+        steps: args.steps,
+        workInstructions: args.workInstructions
+      }
     }
   });
 }
@@ -306,6 +316,13 @@ export async function assertMethodOperationIsDraft(
       `Cannot modify steps on a method version with status "${status}". Only Draft versions can be modified.`
     );
   }
+}
+
+export async function deleteMethodOperation(
+  client: SupabaseClient<Database>,
+  methodOperationId: string
+) {
+  return client.from("methodOperation").delete().eq("id", methodOperationId);
 }
 
 export async function deleteMethodOperationStep(
@@ -541,6 +558,99 @@ export async function getItemDemand(
   };
 }
 
+export type DemandForecastSourceRow = {
+  itemId: string;
+  locationId: string | null;
+  periodId: string;
+  sourceType: "Job Material" | "Sales Order" | "Demand Projection";
+  quantity: number;
+  jobId: string | null;
+  salesOrderLineId: string | null;
+  demandProjectionId: string | null;
+  parentItemId: string;
+  parentItem: { id: string; readableId: string; name: string } | null;
+  job: {
+    id: string;
+    jobId: string;
+    dueDate: string | null;
+    status: string | null;
+  } | null;
+  salesOrderLine: {
+    id: string;
+    salesOrderId: string;
+    promisedDate: string | null;
+    salesOrder: { id: string; salesOrderId: string } | null;
+  } | null;
+  demandProjection: {
+    id: string;
+    forecastQuantity: number;
+    forecastMethod: string | null;
+    confidence: number | null;
+    notes: string | null;
+    createdBy: string;
+    createdAt: string;
+    period: { startDate: string } | null;
+  } | null;
+};
+
+export async function getDemandForecastSources(
+  client: SupabaseClient<Database>,
+  {
+    itemId,
+    locationId,
+    periods,
+    companyId
+  }: {
+    itemId: string;
+    locationId: string;
+    periods: string[];
+    companyId: string;
+  }
+) {
+  const result = await client
+    .from("demandForecastSource")
+    .select(
+      `
+        itemId,
+        locationId,
+        periodId,
+        sourceType,
+        quantity,
+        jobId,
+        salesOrderLineId,
+        demandProjectionId,
+        parentItemId,
+        parentItem:item!demandForecastSource_parentItemId_fkey(id, readableId, name),
+        job:job!demandForecastSource_jobId_fkey(id, jobId, dueDate, status),
+        salesOrderLine:salesOrderLine!demandForecastSource_salesOrderLineId_fkey(
+          id,
+          salesOrderId,
+          promisedDate,
+          salesOrder:salesOrder(id, salesOrderId)
+        ),
+        demandProjection:demandProjection!demandForecastSource_demandProjectionId_fkey(
+          id,
+          forecastQuantity,
+          forecastMethod,
+          confidence,
+          notes,
+          period(startDate),
+          createdBy,
+          createdAt
+        )
+      `
+    )
+    .eq("itemId", itemId)
+    .eq("locationId", locationId)
+    .eq("companyId", companyId)
+    .in("periodId", periods);
+
+  return {
+    data: result.data ?? [],
+    error: result.error
+  };
+}
+
 export async function getItemFiles(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -732,6 +842,39 @@ export async function getItemUnitSalePrice(
     .single();
 }
 
+export async function getJobMaterialUsageForItem(
+  client: SupabaseClient<Database>,
+  { itemId, companyId }: { itemId: string; companyId: string }
+): Promise<{
+  byMaterialId: Record<string, number>;
+  byJobId: Record<string, number>;
+}> {
+  const [materials, jobs] = await Promise.all([
+    client
+      .from("jobMaterial")
+      .select("id, estimatedQuantity")
+      .eq("itemId", itemId)
+      .eq("companyId", companyId),
+    client
+      .from("job")
+      .select("id, quantity")
+      .eq("itemId", itemId)
+      .eq("companyId", companyId)
+  ]);
+
+  const byMaterialId: Record<string, number> = {};
+  for (const row of materials.data ?? []) {
+    if (row.id) byMaterialId[row.id] = row.estimatedQuantity ?? 0;
+  }
+
+  const byJobId: Record<string, number> = {};
+  for (const row of jobs.data ?? []) {
+    if (row.id) byJobId[row.id] = row.quantity ?? 0;
+  }
+
+  return { byMaterialId, byJobId };
+}
+
 export async function getMaterialUsedIn(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -747,7 +890,8 @@ export async function getMaterialUsedIn(
     quoteMaterials,
     salesOrderLines,
     shipmentLines,
-    supplierQuotes
+    supplierQuotes,
+    jobMaterialUsage
   ] = await Promise.all([
     client
       .from("nonConformanceItem")
@@ -829,7 +973,8 @@ export async function getMaterialUsedIn(
       )
       .eq("itemId", itemId)
       .eq("companyId", companyId)
-      .limit(100)
+      .limit(100),
+    getJobMaterialUsageForItem(client, { itemId, companyId })
   ]);
 
   return {
@@ -842,7 +987,8 @@ export async function getMaterialUsedIn(
     quoteMaterials: quoteMaterials.data ?? [],
     salesOrderLines: salesOrderLines.data ?? [],
     shipmentLines: shipmentLines.data ?? [],
-    supplierQuotes: supplierQuotes.data ?? []
+    supplierQuotes: supplierQuotes.data ?? [],
+    jobMaterialUsage
   };
 }
 
@@ -1198,7 +1344,9 @@ export async function getMethodMaterialsByMakeMethod(
 ) {
   return client
     .from("methodMaterial")
-    .select("*, item(name, itemTrackingType, replenishmentSystem)")
+    .select(
+      "*, item(name, itemTrackingType, replenishmentSystem, defaultMethodType, sourcingType)"
+    )
     .eq("makeMethodId", makeMethodId)
     .order("order", { ascending: true });
 }
@@ -1467,7 +1615,8 @@ export async function getPartUsedIn(
     quoteMaterials,
     salesOrderLines,
     shipmentLines,
-    supplierQuotes
+    supplierQuotes,
+    jobMaterialUsage
   ] = await Promise.all([
     client
       .from("nonConformanceItem")
@@ -1567,7 +1716,8 @@ export async function getPartUsedIn(
       )
       .eq("itemId", itemId)
       .eq("companyId", companyId)
-      .limit(100)
+      .limit(100),
+    getJobMaterialUsageForItem(client, { itemId, companyId })
   ]);
 
   return {
@@ -1582,7 +1732,8 @@ export async function getPartUsedIn(
     quoteMaterials: quoteMaterials.data ?? [],
     salesOrderLines: salesOrderLines.data ?? [],
     shipmentLines: shipmentLines.data ?? [],
-    supplierQuotes: supplierQuotes.data ?? []
+    supplierQuotes: supplierQuotes.data ?? [],
+    jobMaterialUsage
   };
 }
 
@@ -2334,6 +2485,7 @@ export async function upsertPickMethodWithShelfLife(
     itemId: string;
     locationId: string;
     defaultStorageUnitId?: string | null;
+    sortMethod?: (typeof pickMethodSortMethods)[number];
     customFields?: Json;
     userId: string;
     shelfLife: {
@@ -2352,6 +2504,9 @@ export async function upsertPickMethodWithShelfLife(
       .updateTable("pickMethod")
       .set({
         defaultStorageUnitId: args.defaultStorageUnitId ?? null,
+        // Only overwrite when the caller surfaced the field; the column is
+        // NOT NULL DEFAULT 'Default' so we never set it null.
+        ...(args.sortMethod ? { sortMethod: args.sortMethod } : {}),
         customFields: args.customFields ?? null,
         updatedBy: args.userId,
         updatedAt
@@ -2598,6 +2753,131 @@ export async function cascadeItemTrackingType(
   });
 }
 
+/**
+ * Updates item-level method/sourcing columns and mirrors the change down to
+ * every methodMaterial that references the item — in a single transaction, so
+ * the item and its mirrors can never be left half-applied.
+ *
+ * sourcingType and defaultMethodType are item-level properties; method
+ * materials are read-only mirrors. Only mirrors on Draft make methods are
+ * touched — Active and Archived methods are frozen.
+ */
+export async function updateItemMethodAndSourcing(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    itemIds: string[];
+    companyId: string;
+    userId: string;
+    itemUpdate: {
+      replenishmentSystem?: Database["public"]["Enums"]["itemReplenishmentSystem"];
+      defaultMethodType?: MethodType;
+      sourcingType?: SourcingType;
+    };
+    cascade: {
+      sourcingType?: SourcingType;
+      methodType?: MethodType;
+    };
+  }
+) {
+  if (args.itemIds.length === 0) return;
+
+  const updatedAt = now(getLocalTimeZone()).toAbsoluteString();
+
+  return db.transaction().execute(async (trx) => {
+    await trx
+      .updateTable("item")
+      .set({ ...args.itemUpdate, updatedBy: args.userId, updatedAt })
+      .where("id", "in", args.itemIds)
+      .where("companyId", "=", args.companyId)
+      .execute();
+
+    await cascadeSourcingAndMethodTypeToMethodMaterials(trx, {
+      itemIds: args.itemIds,
+      companyId: args.companyId,
+      userId: args.userId,
+      newSourcingType: args.cascade.sourcingType,
+      newMethodType: args.cascade.methodType
+    });
+  });
+}
+
+/**
+ * Mirrors an item's sourcingType/methodType onto every methodMaterial that
+ * references it. Operates on a caller-supplied transaction so it composes with
+ * the item update above. Only method materials on Draft make methods are
+ * touched.
+ */
+async function cascadeSourcingAndMethodTypeToMethodMaterials(
+  trx: KyselyTx,
+  args: {
+    itemIds: string[];
+    companyId: string;
+    userId: string;
+    newSourcingType?: SourcingType;
+    newMethodType?: MethodType;
+  }
+) {
+  if (args.itemIds.length === 0) return;
+  if (!args.newSourcingType && !args.newMethodType) return;
+
+  const updatedAt = now(getLocalTimeZone()).toAbsoluteString();
+
+  // Restrict to method materials whose make method is still Draft.
+  const onDraftMakeMethod = (
+    eb: ExpressionBuilder<KyselyDatabase, "methodMaterial">
+  ) =>
+    eb(
+      "makeMethodId",
+      "in",
+      eb
+        .selectFrom("makeMethod")
+        .select("id")
+        .where("companyId", "=", args.companyId)
+        .where("status", "=", "Draft")
+    );
+
+  const baseSet: {
+    updatedBy: string;
+    updatedAt: string;
+    sourcingType?: SourcingType;
+  } = {
+    updatedBy: args.userId,
+    updatedAt
+  };
+  if (args.newSourcingType) baseSet.sourcingType = args.newSourcingType;
+
+  await trx
+    .updateTable("methodMaterial")
+    .set((eb) => ({
+      ...baseSet,
+      ...(args.newMethodType === "Make to Order"
+        ? {
+            methodType: "Make to Order" as const,
+            // materialMakeMethodId points at the component item's active make
+            // method (mirrors upsertMethodMaterial). Resolved with a correlated
+            // subquery so a single statement covers every item; null when the
+            // component has no active make method.
+            materialMakeMethodId: eb
+              .selectFrom("activeMakeMethods")
+              .select("id")
+              .whereRef(
+                "activeMakeMethods.itemId",
+                "=",
+                "methodMaterial.itemId"
+              )
+              .where("activeMakeMethods.companyId", "=", args.companyId)
+              .limit(1)
+          }
+        : args.newMethodType
+          ? { methodType: args.newMethodType, materialMakeMethodId: null }
+          : {})
+    }))
+    .where("itemId", "in", args.itemIds)
+    .where("companyId", "=", args.companyId)
+    .where(onDraftMakeMethod)
+    .execute();
+}
+
 export async function upsertConsumable(
   client: SupabaseClient<Database>,
   consumable:
@@ -2617,6 +2897,7 @@ export async function upsertConsumable(
       .insert({
         readableId: consumable.id,
         name: consumable.name,
+        description: consumable.description,
         type: "Consumable",
         replenishmentSystem: consumable.replenishmentSystem,
         defaultMethodType: consumable.defaultMethodType,
@@ -2758,6 +3039,7 @@ export async function upsertPart(
         readableId: part.id,
         revision: part.revision ?? "0",
         name: part.name,
+        description: part.description,
         type: "Part",
         replenishmentSystem: part.replenishmentSystem,
         defaultMethodType: part.defaultMethodType,
@@ -3189,6 +3471,23 @@ export async function upsertMethodMaterial(
         customFields?: Json;
       })
 ) {
+  // sourcingType and methodType are item-level properties (edited in the
+  // item's Properties sidebar). A methodMaterial is a read-only mirror of its
+  // component item, so derive both from the item rather than trusting the
+  // submitted form values.
+  if (methodMaterial.itemId) {
+    const item = await client
+      .from("item")
+      .select("defaultMethodType, sourcingType")
+      .eq("id", methodMaterial.itemId)
+      .single();
+
+    if (item.error) return item;
+    methodMaterial.methodType =
+      item.data.defaultMethodType ?? methodMaterial.methodType;
+    methodMaterial.sourcingType = item.data.sourcingType;
+  }
+
   let materialMakeMethodId: string | null = null;
   if (methodMaterial.methodType === "Make to Order") {
     const makeMethod = await client
@@ -3389,6 +3688,7 @@ export async function upsertMaterial(
             .insert({
               readableId: material.id,
               name: material.name,
+              description: material.description,
               type: "Material",
               replenishmentSystem: material.replenishmentSystem,
               defaultMethodType: material.defaultMethodType,
@@ -3434,6 +3734,7 @@ export async function upsertMaterial(
         .insert({
           readableId: material.id,
           name: material.name,
+          description: material.description,
           type: "Material",
           replenishmentSystem: material.replenishmentSystem,
           defaultMethodType: material.defaultMethodType,
@@ -3954,6 +4255,7 @@ export async function upsertTool(
         readableId: tool.id,
         revision: tool.revision ?? "0",
         name: tool.name,
+        description: tool.description,
         type: "Tool",
         replenishmentSystem: tool.replenishmentSystem,
         defaultMethodType: tool.defaultMethodType,
@@ -4171,219 +4473,4 @@ export async function getSupplierPartPriceBreaks(
     quantity: pb.quantity,
     unitPrice: pb.unitPrice
   }));
-}
-
-// ---------------------------------------------------------------------------
-// Item Rules
-// ---------------------------------------------------------------------------
-
-type ItemRuleInsert = {
-  name: string;
-  description?: string | null;
-  message: string;
-  severity: Severity;
-  conditionAst: ConditionAst;
-  active: boolean;
-  companyId: string;
-  createdBy: string;
-  customFields?: Json;
-};
-
-type ItemRuleUpdate = {
-  id: string;
-  name: string;
-  description?: string | null;
-  message: string;
-  severity: Severity;
-  conditionAst: ConditionAst;
-  active: boolean;
-  updatedBy: string;
-  customFields?: Json;
-};
-
-export async function getItemRules(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  args?: GenericQueryFilters & { search: string | null }
-) {
-  let query = client
-    .from("itemRule")
-    .select("*", { count: "exact" })
-    .eq("companyId", companyId);
-
-  if (args?.search) {
-    query = query.ilike("name", `%${args.search}%`);
-  }
-
-  query = setGenericQueryFilters(query, args ?? {}, [
-    { column: "name", ascending: true }
-  ]);
-  return query;
-}
-
-export async function getItemRule(
-  client: SupabaseClient<Database>,
-  id: string
-) {
-  return client.from("itemRule").select("*").eq("id", id).single();
-}
-
-export async function getItemRulesList(
-  client: SupabaseClient<Database>,
-  companyId: string
-) {
-  return fetchAllFromTable<{
-    id: string;
-    name: string;
-    severity: Severity;
-    active: boolean;
-    surfaces: TransactionSurface[];
-  }>(client, "itemRule", "id, name, severity, active, surfaces", (query) =>
-    query.eq("companyId", companyId).order("name")
-  );
-}
-
-export async function upsertItemRule(
-  client: SupabaseClient<Database>,
-  rule: ItemRuleInsert | ItemRuleUpdate
-) {
-  if ("createdBy" in rule) {
-    return client
-      .from("itemRule")
-      .insert({ ...rule, conditionAst: rule.conditionAst as unknown as Json })
-      .select("id")
-      .single();
-  }
-  return client
-    .from("itemRule")
-    .update({
-      ...sanitize(rule),
-      conditionAst: rule.conditionAst as unknown as Json,
-      // Full timestamp (not date-only) so the LRU cache in
-      // `compileWithCache` invalidates on every edit, not once per day.
-      updatedAt: now(getLocalTimeZone()).toAbsoluteString()
-    })
-    .eq("id", rule.id)
-    .select("id")
-    .single();
-}
-
-export async function deleteItemRule(
-  client: SupabaseClient<Database>,
-  id: string
-) {
-  return client.from("itemRule").delete().eq("id", id);
-}
-
-/**
- * Returns active rules assigned to a specific item.
- * Single JOIN — never per-row lookups.
- */
-export async function getActiveRulesForItem(
-  client: SupabaseClient<Database>,
-  itemId: string,
-  companyId: string
-): Promise<{ data: ItemRuleRow[]; error: unknown }> {
-  const batched = await getActiveRulesForItems(client, [itemId], companyId);
-  return { data: batched.data.get(itemId) ?? [], error: batched.error };
-}
-
-/**
- * Batched variant — single round-trip + JOIN for N items. Use this when
- * iterating over multiple items in one request (e.g. evaluating every line
- * on a receipt) to avoid the N+1 round-trips you'd get from calling
- * `getActiveRulesForItem` per item.
- */
-export async function getActiveRulesForItems(
-  client: SupabaseClient<Database>,
-  itemIds: string[],
-  companyId: string
-): Promise<{ data: Map<string, ItemRuleRow[]>; error: unknown }> {
-  const out = new Map<string, ItemRuleRow[]>();
-  if (itemIds.length === 0) return { data: out, error: null };
-
-  const { data, error } = await client
-    .from("itemRuleAssignment")
-    .select(
-      `itemId, itemRule:ruleId(id, severity, message, conditionAst, surfaces, updatedAt, active)`
-    )
-    .in("itemId", itemIds)
-    .eq("companyId", companyId);
-
-  if (error) return { data: out, error };
-
-  for (const r of data ?? []) {
-    // supabase returns the joined row either as object or array depending on FK shape.
-    // Cast through `unknown` because the generated `Database` types don't yet
-    // know about the `surfaces` column (run `bun run db:types` after the
-    // migration applies to refresh).
-    const row = r as unknown as {
-      itemId: string;
-      itemRule: ItemRuleRow | ItemRuleRow[] | null;
-    };
-    const node = Array.isArray(row.itemRule) ? row.itemRule[0] : row.itemRule;
-    if (!node || node.active === false) continue;
-    const bucket = out.get(row.itemId);
-    if (bucket) bucket.push(node);
-    else out.set(row.itemId, [node]);
-  }
-  return { data: out, error: null };
-}
-
-export async function getRuleAssignmentsForItem(
-  client: SupabaseClient<Database>,
-  itemId: string,
-  companyId: string
-) {
-  return client
-    .from("itemRuleAssignment")
-    .select(
-      `itemId, ruleId, createdAt, itemRule:ruleId(id, name, severity, message, active, surfaces)`
-    )
-    .eq("itemId", itemId)
-    .eq("companyId", companyId);
-}
-
-export async function getRuleAssignmentCounts(
-  client: SupabaseClient<Database>,
-  ruleIds: string[]
-) {
-  if (ruleIds.length === 0) return { data: {}, error: null };
-  const { data, error } = await client
-    .from("itemRuleAssignment")
-    .select("ruleId")
-    .in("ruleId", ruleIds);
-  if (error) return { data: {}, error };
-  const counts: Record<string, number> = {};
-  for (const row of data ?? []) {
-    counts[row.ruleId] = (counts[row.ruleId] ?? 0) + 1;
-  }
-  return { data: counts, error: null };
-}
-
-export async function assignItemRule(
-  client: SupabaseClient<Database>,
-  args: { itemId: string; ruleId: string; companyId: string; userId: string }
-) {
-  return client
-    .from("itemRuleAssignment")
-    .insert({
-      itemId: args.itemId,
-      ruleId: args.ruleId,
-      companyId: args.companyId,
-      createdBy: args.userId
-    })
-    .select("itemId, ruleId")
-    .single();
-}
-
-export async function unassignItemRule(
-  client: SupabaseClient<Database>,
-  args: { itemId: string; ruleId: string }
-) {
-  return client
-    .from("itemRuleAssignment")
-    .delete()
-    .eq("itemId", args.itemId)
-    .eq("ruleId", args.ruleId);
 }

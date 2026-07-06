@@ -32,10 +32,12 @@ export function parseMentionsFromDocument(content: JSONContent): string[] {
 
 export const textToTiptap = (text: string) => {
   const lines = text.split("\n");
-  const content = lines.map((line) => ({
-    type: "paragraph",
-    content: [{ type: "text", text: line }]
-  }));
+  const content = lines.map((line) =>
+    // ProseMirror text nodes cannot be empty, so blank lines become a bare paragraph
+    line === ""
+      ? { type: "paragraph" }
+      : { type: "paragraph", content: [{ type: "text", text: line }] }
+  );
   return { type: "doc", content };
 };
 

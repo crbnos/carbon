@@ -377,3 +377,118 @@ Environment variables in `packages/auth/src/config/env.ts`:
 
 2. **Existing Company Update**:
    - Updates company and location details if they already exist
+
+## OAuth 2.0 for MCP Remote Servers (Claude Connector)
+
+Carbon's MCP server supports OAuth 2.0 authentication to enable use as a remote Claude connector.
+
+### OAuth Endpoints
+
+- `/.well-known/oauth-authorization-server` - OAuth metadata discovery
+- `/oauth/authorize` - Authorization endpoint (user consent)
+- `/oauth/token` - Token endpoint (code exchange, refresh)
+- `/oauth/register` - Dynamic client registration
+
+### Key Files
+
+- `apps/erp/app/routes/[.]well-known.oauth-authorization-server.ts` - Metadata endpoint
+- `apps/erp/app/routes/oauth+/authorize.tsx` - Authorization with PKCE support
+- `apps/erp/app/routes/oauth+/token.tsx` - Token exchange with PKCE verification
+- `apps/erp/app/routes/oauth+/register.ts` - Dynamic client registration
+
+### Database Tables
+
+**oauthClient** (static clients):
+```typescript
+{
+  clientId: string
+  clientSecret: string                 // SHA-256 hash, not plaintext
+  name: string
+  redirectUris: string[]
+  companyId: string
+}
+```
+
+**oauthDynamicClient** (dynamically registered clients):
+```typescript
+{
+  clientId: string
+  clientSecret: string | null          // SHA-256 hash, not plaintext
+  clientName: string
+  redirectUris: string[]
+  grantTypes: string[]
+  responseTypes: string[]
+  tokenEndpointAuthMethod: "client_secret_post" | "client_secret_basic" | "none"
+  clientUri: string | null
+  logoUri: string | null
+  scope: string | null
+}
+```
+
+**oauthCode** (authorization codes):
+```typescript
+{
+  code: string
+  clientId: string
+  userId: string
+  companyId: string
+  redirectUri: string
+  scope: string | null
+  codeChallenge: string | null     // PKCE
+  codeChallengeMethod: "S256" | "plain" | null
+  expiresAt: string
+}
+```
+
+**oauthToken** (access/refresh tokens):
+```typescript
+{
+  accessToken: string                  // SHA-256 hash, not plaintext
+  refreshToken: string                 // SHA-256 hash, not plaintext
+  clientId: string
+  userId: string
+  companyId: string
+  scope: string | null
+  expiresAt: string
+}
+```
+
+### PKCE Support
+
+OAuth flow supports PKCE (Proof Key for Code Exchange) which is required for public clients:
+- `code_challenge` and `code_challenge_method` parameters on authorize
+- `code_verifier` parameter on token exchange
+- Supports both S256 (recommended) and plain methods
+
+### MCP OAuth Authentication
+
+The MCP endpoint (`/api/mcp`) accepts OAuth Bearer tokens:
+1. Checks if Bearer token hash exists in `oauthToken` table (tokens are stored as SHA-256 hashes and looked up by hash)
+2. Validates token hasn't expired
+3. Uses userId/companyId from token for authorization
+4. Falls back to carbon-key API key auth if not an OAuth token
+5. `companyId` and `userId` always come from the authenticated token context and cannot be overridden by caller arguments
+
+**Token Hashing**: Access tokens and refresh tokens are stored as SHA-256 hashes in the database. The `hashOAuthSecret` function in `@carbon/auth/auth.server` is the canonical hashing function used for all OAuth secret storage (access tokens, refresh tokens, and client secrets).
+
+### Dynamic Client Registration
+
+Clients like Claude can register themselves via POST to `/oauth/register`:
+```json
+{
+  "client_name": "My MCP Client",
+  "redirect_uris": ["https://example.com/callback"],
+  "token_endpoint_auth_method": "none",
+  "grant_types": ["authorization_code", "refresh_token"]
+}
+```
+
+Returns:
+```json
+{
+  "client_id": "mcp_abc123...",
+  "client_name": "My MCP Client",
+  "redirect_uris": ["https://example.com/callback"],
+  "token_endpoint_auth_method": "none"
+}
+```

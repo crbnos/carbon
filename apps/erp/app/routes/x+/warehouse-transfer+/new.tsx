@@ -7,11 +7,10 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { useUser } from "~/hooks";
 import {
-  upsertWarehouseTransfer,
+  insertWarehouseTransfer,
   warehouseTransferValidator
 } from "~/modules/inventory";
 import { WarehouseTransferForm } from "~/modules/inventory/ui/WarehouseTransfers";
-import { getNextSequence } from "~/modules/settings";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -44,34 +43,12 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  let transferId = validation.data.transferId;
-  const useNextSequence = !transferId;
-
-  if (useNextSequence) {
-    const nextSequence = await getNextSequence(
-      client,
-      "warehouseTransfer",
-      companyId
-    );
-    if (nextSequence.error) {
-      throw redirect(
-        path.to.newWarehouseTransfer,
-        await flash(
-          request,
-          error(nextSequence.error, "Failed to get next sequence")
-        )
-      );
-    }
-    transferId = nextSequence.data;
-  }
-
-  if (!transferId) throw new Error("transferId is not defined");
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-  const { id, ...d } = validation.data;
+  const { id, transferId: providedTransferId, ...d } = validation.data;
 
-  const createTransfer = await upsertWarehouseTransfer(client, {
+  const createTransfer = await insertWarehouseTransfer(client, {
     ...d,
-    transferId,
+    transferId: providedTransferId || undefined,
     companyId,
     createdBy: userId,
     customFields: setCustomFields(formData)

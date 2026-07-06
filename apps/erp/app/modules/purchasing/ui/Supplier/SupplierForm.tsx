@@ -23,12 +23,17 @@ import {
   Employee,
   Hidden,
   Input,
+  SequenceOrCustomId,
   Submit,
   SupplierContact,
   SupplierStatus,
   SupplierType
 } from "~/components/Form";
-import { usePermissions, useSupplierApprovalRequired } from "~/hooks";
+import {
+  useCompanySettings,
+  usePermissions,
+  useSupplierApprovalRequired
+} from "~/hooks";
 import type { Supplier } from "~/modules/purchasing";
 import {
   supplierApprovalValidator,
@@ -49,6 +54,9 @@ const SupplierForm = ({
 }: SupplierFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
+  const companySettings = useCompanySettings();
+  const showSupplierReadableId =
+    companySettings?.showSupplierReadableId ?? false;
   const fetcher = useFetcher<PostgrestResponse<Supplier>>();
   const supplierApprovalRequired = useSupplierApprovalRequired();
 
@@ -117,6 +125,21 @@ const SupplierForm = ({
                         : "grid-cols-1 md:grid-cols-2"
                   )}
                 >
+                  {showSupplierReadableId &&
+                    (isEditing ? (
+                      <Input
+                        name="readableId"
+                        label={t`Supplier ID`}
+                        isReadOnly
+                        helperText={t`Supplier ID cannot be changed after creation`}
+                      />
+                    ) : (
+                      <SequenceOrCustomId
+                        name="readableId"
+                        label={t`Supplier ID`}
+                        table="supplier"
+                      />
+                    ))}
                   <Input autoFocus={!isEditing} name="name" label={t`Name`} />
                   <SupplierStatus
                     name="supplierStatus"

@@ -164,13 +164,17 @@ export class SchedulingEngine {
   }
 
   /**
-   * Create operation dependencies based on assembly structure
-   * Only called in initial scheduling mode
+   * Create operation dependencies based on assembly structure.
+   * Loads ALL operations (including Done) to build the complete DAG.
    */
   async createDependencies(): Promise<void> {
-    if (this.mode !== "initial") {
-      return;
-    }
+    // Load all operations for dependency building (not just active ones)
+    const allOperations = (await this.db
+      .selectFrom("jobOperation")
+      .selectAll()
+      .where("jobId", "=", this.jobId)
+      .orderBy("order")
+      .execute()) as BaseOperation[];
 
     // Build assembly tree
     const assemblyTree = await this.assemblyHandler.buildAssemblyTree(
@@ -201,10 +205,10 @@ export class SchedulingEngine {
       }
     }
 
-    // Group operations by jobMakeMethodId
+    // Group non-rework operations by jobMakeMethodId
     const operationsByMethod = new Map<string, BaseOperation[]>();
-    for (const op of this.operations) {
-      if (op.jobMakeMethodId) {
+    for (const op of allOperations) {
+      if (op.jobMakeMethodId && !op.reworkId) {
         if (!operationsByMethod.has(op.jobMakeMethodId)) {
           operationsByMethod.set(op.jobMakeMethodId, []);
         }
@@ -218,9 +222,9 @@ export class SchedulingEngine {
     // Build operation dependencies
     const allDependencies = new Map<string, Set<string>>();
 
-    // Initialize all operations
-    for (const op of this.operations) {
-      if (op.id) {
+    // Initialize all non-rework operations
+    for (const op of allOperations) {
+      if (op.id && !op.reworkId) {
         allDependencies.set(op.id, new Set());
       }
     }
@@ -237,7 +241,17 @@ export class SchedulingEngine {
 
       // If this method has a parent, link last op to parent's consuming operation
       if (methodDep.id && methodDep.parentId !== null) {
-        const parentOperation = jobMakeMethodToOperationId[methodDep.id];
+        let parentOperation = jobMakeMethodToOperationId[methodDep.id];
+
+        // If no specific operation was set, default to the first operation of the parent
+        if (!parentOperation && methodDep.parentId) {
+          const parentOps = operationsByMethod.get(methodDep.parentId) ?? [];
+          const sortedParentOps = [...parentOps].sort(
+            (a, b) => (a.order ?? 0) - (b.order ?? 0)
+          );
+          parentOperation = sortedParentOps[0]?.id ?? null;
+        }
+
         if (parentOperation && lastOperation?.id) {
           const deps = allDependencies.get(parentOperation);
           if (deps) {
@@ -258,11 +272,22 @@ export class SchedulingEngine {
       }
     }
 
-    // Delete existing dependencies
-    await this.db
+    // Delete existing dependencies, preserving rework operation dependencies
+    const reworkOpIds = allOperations
+      .filter((op) => op.reworkId)
+      .map((op) => op.id!);
+
+    let deleteQuery = this.db
       .deleteFrom("jobOperationDependency")
-      .where("jobId", "=", this.jobId)
-      .execute();
+      .where("jobId", "=", this.jobId);
+
+    if (reworkOpIds.length > 0) {
+      deleteQuery = deleteQuery
+        .where("operationId", "not in", reworkOpIds)
+        .where("dependsOnId", "not in", reworkOpIds);
+    }
+
+    await deleteQuery.execute();
 
     // Insert new dependencies
     const records = dependenciesToRecords(
@@ -291,12 +316,35 @@ export class SchedulingEngine {
       }
     }
 
-    // Store dependencies for date calculation
+    // Store dependencies for date calculation (non-rework edges rebuilt above)
     this.dependencies = records.map((r) => ({
       operationId: r.operationId,
       dependsOnId: r.dependsOnId,
       jobId: r.jobId,
     }));
+
+    // Append rework dependency edges so rework ops are correctly scheduled
+    if (reworkOpIds.length > 0) {
+      const reworkDeps = await this.db
+        .selectFrom("jobOperationDependency")
+        .selectAll()
+        .where("jobId", "=", this.jobId)
+        .where((eb) =>
+          eb.or([
+            eb("operationId", "in", reworkOpIds),
+            eb("dependsOnId", "in", reworkOpIds),
+          ])
+        )
+        .execute();
+
+      for (const d of reworkDeps) {
+        this.dependencies.push({
+          operationId: d.operationId,
+          dependsOnId: d.dependsOnId,
+          jobId: d.jobId,
+        });
+      }
+    }
   }
 
   /**
@@ -460,12 +508,16 @@ export class SchedulingEngine {
   }
 
   /**
-   * Assign materials to operations (initial scheduling only)
+   * Assign unlinked materials to the first operation of their make method
    */
   async assignMaterials(): Promise<void> {
-    if (this.mode !== "initial") {
-      return;
-    }
+    // Load all operations (including Done) to find first ops correctly
+    const allOperations = (await this.db
+      .selectFrom("jobOperation")
+      .selectAll()
+      .where("jobId", "=", this.jobId)
+      .orderBy("order")
+      .execute()) as BaseOperation[];
 
     // Build assembly tree
     const assemblyTree = await this.assemblyHandler.buildAssemblyTree(
@@ -488,10 +540,10 @@ export class SchedulingEngine {
       .where("jobOperationId", "is", null)
       .execute();
 
-    // Group operations by jobMakeMethodId
+    // Group non-rework operations by jobMakeMethodId
     const operationsByMethod = new Map<string, BaseOperation[]>();
-    for (const op of this.operations) {
-      if (op.jobMakeMethodId) {
+    for (const op of allOperations) {
+      if (op.jobMakeMethodId && !op.reworkId) {
         if (!operationsByMethod.has(op.jobMakeMethodId)) {
           operationsByMethod.set(op.jobMakeMethodId, []);
         }
@@ -524,20 +576,39 @@ export class SchedulingEngine {
    */
   async persistChanges(): Promise<void> {
     for (const op of this.scheduledOperations.values()) {
-      await this.db
-        .updateTable("jobOperation")
-        .set({
-          startDate: op.startDate,
-          dueDate: op.dueDate,
-          priority: op.priority ?? undefined,
-          workCenterId: op.workCenterId,
-          hasConflict: op.hasConflict,
-          conflictReason: op.conflictReason,
-          updatedAt: new Date().toISOString(),
-          updatedBy: this.userId,
-        })
-        .where("id", "=", op.id)
-        .execute();
+      const originalOp = this.operations.find((o) => o.id === op.id);
+      const isManuallyScheduled = originalOp?.manuallyScheduled ?? false;
+
+      if (isManuallyScheduled) {
+        await this.db
+          .updateTable("jobOperation")
+          .set({
+            startDate: op.startDate,
+            priority: op.priority ?? undefined,
+            workCenterId: op.workCenterId,
+            hasConflict: op.hasConflict,
+            conflictReason: op.conflictReason,
+            updatedAt: new Date().toISOString(),
+            updatedBy: this.userId,
+          })
+          .where("id", "=", op.id)
+          .execute();
+      } else {
+        await this.db
+          .updateTable("jobOperation")
+          .set({
+            startDate: op.startDate,
+            dueDate: op.dueDate,
+            priority: op.priority ?? undefined,
+            workCenterId: op.workCenterId,
+            hasConflict: op.hasConflict,
+            conflictReason: op.conflictReason,
+            updatedAt: new Date().toISOString(),
+            updatedBy: this.userId,
+          })
+          .where("id", "=", op.id)
+          .execute();
+      }
     }
 
     // Update job status if initial scheduling
@@ -569,13 +640,11 @@ export class SchedulingEngine {
   async run(): Promise<SchedulingResult> {
     await this.initialize();
 
-    if (this.mode === "initial") {
-      // Assign materials BEFORE creating dependencies
-      // Dependencies require jobMaterial.jobOperationId to be set
-      // to link subassembly operations to parent operations
-      await this.assignMaterials();
-      await this.createDependencies();
-    }
+    // Assign materials BEFORE creating dependencies
+    // Dependencies require jobMaterial.jobOperationId to be set
+    // to link subassembly operations to parent operations
+    await this.assignMaterials();
+    await this.createDependencies();
 
     await this.calculateDates();
     await this.selectWorkCenters();

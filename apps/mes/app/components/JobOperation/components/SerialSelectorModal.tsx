@@ -83,11 +83,24 @@ export function SerialSelectorModal({
                           key={entity.id}
                           className="w-full justify-between p-4 border rounded-md"
                         >
-                          <VStack spacing={1} className="w-full items-start">
-                            <p className="text-sm">{entity.id}</p>
+                          <VStack spacing={0} className="w-full items-start">
+                            {entity.readableId ? (
+                              <>
+                                <p className="text-sm font-medium">
+                                  {entity.readableId}
+                                </p>
+                                <p className="text-xs text-muted-foreground font-mono">
+                                  {entity.id}
+                                </p>
+                              </>
+                            ) : (
+                              <p className="text-xs text-muted-foreground font-mono">
+                                {entity.id}
+                              </p>
+                            )}
                           </VStack>
                           <Button
-                            size="sm"
+                            size="lg"
                             variant="secondary"
                             onClick={() => onSelect(entity)}
                           >
@@ -105,11 +118,14 @@ export function SerialSelectorModal({
                 <InputGroup>
                   <Input
                     autoFocus
+                    size="lg"
                     placeholder={t`Scan or enter serial number`}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
+                        const val = e.currentTarget.value;
                         const entity = availableEntities.find(
-                          (entity) => entity.id === e.currentTarget.value
+                          (entity) =>
+                            entity.id === val || entity.readableId === val
                         );
                         if (entity) {
                           onSelect(entity);
@@ -122,7 +138,8 @@ export function SerialSelectorModal({
                   <InputRightElement>
                     {serial &&
                       (availableEntities.some(
-                        (entity) => entity.id === serial
+                        (entity) =>
+                          entity.id === serial || entity.readableId === serial
                       ) ? (
                         <LuCheck className="text-green-500" />
                       ) : (
@@ -135,7 +152,7 @@ export function SerialSelectorModal({
           </Tabs>
         </ModalBody>
         <ModalFooter>
-          <Button variant="secondary" onClick={onCancel}>
+          <Button variant="secondary" size="lg" onClick={onCancel}>
             <Trans>Cancel</Trans>
           </Button>
         </ModalFooter>

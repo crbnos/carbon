@@ -4,23 +4,16 @@ import {
   Card,
   CardContent,
   CardFooter,
-  CardHeader,
-  Copy,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuIcon,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  Heading,
   HStack,
-  IconButton,
-  SplitButton,
   useDisclosure,
   VStack
 } from "@carbon/react";
-import type { TrackedEntityAttributes } from "@carbon/utils";
-import { labelSizes } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Suspense } from "react";
 import {
@@ -29,8 +22,6 @@ import {
   LuChevronDown,
   LuCirclePlus,
   LuCreditCard,
-  LuEllipsisVertical,
-  LuQrCode,
   LuShoppingCart,
   LuTicketX,
   LuTrash,
@@ -39,6 +30,7 @@ import {
 import { RiProgress8Line } from "react-icons/ri";
 import { Await, Link, useNavigate, useParams } from "react-router";
 import type { z } from "zod";
+import { DocumentHeader, PrintButton } from "~/components";
 import { useAuditLog } from "~/components/AuditLog";
 import {
   Combobox,
@@ -90,6 +82,7 @@ const ShipmentForm = ({
   const routeData = useRouteData<{
     shipment: Shipment;
     shipmentLineTracking: ItemTracking[];
+    fixedAssetLines: { id: string; shipped: boolean }[];
     relatedItems?: Promise<{ invoices: SalesInvoice[] }>;
   }>(path.to.shipment(shipmentId));
 
@@ -119,31 +112,16 @@ const ShipmentForm = ({
   const isVoided = status === "Voided";
   const isEditing = initialValues.id !== undefined;
 
+  const hasShippableFaLines = (routeData?.fixedAssetLines ?? []).some(
+    (line) => line.shipped
+  );
   const canPost =
-    shipmentLines.length > 0 &&
-    shipmentLines.some((line) => (line.shippedQuantity ?? 0) !== 0);
+    (shipmentLines.length > 0 &&
+      shipmentLines.some((line) => (line.shippedQuantity ?? 0) !== 0)) ||
+    hasShippableFaLines;
 
   const shipmentLineTracking = routeData?.shipmentLineTracking ?? [];
-  const hasTrackingLabels = shipmentLineTracking.some(
-    (line) => "Split Entity ID" in (line.attributes as TrackedEntityAttributes)
-  );
-
-  const navigateToTrackingLabels = (zpl?: boolean, labelSize?: string) => {
-    if (!window) return;
-    if (zpl) {
-      window.open(
-        window.location.origin +
-          path.to.file.shipmentLabelsZpl(shipmentId, { labelSize }),
-        "_blank"
-      );
-    } else {
-      window.open(
-        window.location.origin +
-          path.to.file.shipmentLabelsPdf(shipmentId, { labelSize }),
-        "_blank"
-      );
-    }
-  };
+  const hasTrackingLabels = shipmentLineTracking.length > 0;
 
   const createInvoice = (shipment?: Shipment) => {
     if (!shipment) return;
@@ -163,118 +141,104 @@ const ShipmentForm = ({
           defaultValues={initialValues}
           style={{ width: "100%" }}
         >
-          <CardHeader className="flex-row items-center justify-between">
-            <HStack>
-              <Heading as="h1" size="h3">
-                {routeData?.shipment?.shipmentId}
-              </Heading>
-              <Copy text={routeData?.shipment?.shipmentId ?? ""} />
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <IconButton
-                    aria-label={t`More options`}
-                    icon={<LuEllipsisVertical />}
-                    variant="secondary"
-                    size="sm"
-                  />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  {auditLogTrigger}
-                  {(isPosted || isVoided) && (
-                    <>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        disabled={isVoided || !permissions.is("employee")}
-                        destructive
-                        onClick={voidModal.onOpen}
-                      >
-                        <DropdownMenuIcon icon={<LuTicketX />} />
-                        <Trans>Void</Trans>
-                      </DropdownMenuItem>
-                    </>
-                  )}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    disabled={
-                      !permissions.can("delete", "inventory") ||
-                      !permissions.is("employee")
-                    }
-                    destructive
-                    onClick={deleteDisclosure.onOpen}
-                  >
-                    <DropdownMenuIcon icon={<LuTrash />} />
-                    <Trans>Delete Shipment</Trans>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+          <DocumentHeader
+            title={routeData?.shipment?.shipmentId ?? ""}
+            status={
               <ShipmentStatus
                 status={status}
                 invoiced={routeData?.shipment?.invoiced}
               />
-            </HStack>
-            <HStack>
-              {hasTrackingLabels && (
-                <SplitButton
-                  leftIcon={<LuQrCode />}
-                  dropdownItems={labelSizes.map((size) => ({
-                    label: size.name,
-                    onClick: () => navigateToTrackingLabels(!!size.zpl, size.id)
-                  }))}
-                  onClick={() => navigateToTrackingLabels(false)}
-                  variant="primary"
+            }
+            menuItems={
+              <>
+                {auditLogTrigger}
+                {(isPosted || isVoided) && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      disabled={isVoided || !permissions.is("employee")}
+                      destructive
+                      onClick={voidModal.onOpen}
+                    >
+                      <DropdownMenuIcon icon={<LuTicketX />} />
+                      <Trans>Void</Trans>
+                    </DropdownMenuItem>
+                  </>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  disabled={
+                    !permissions.can("delete", "inventory") ||
+                    !permissions.is("employee")
+                  }
+                  destructive
+                  onClick={deleteDisclosure.onOpen}
                 >
-                  <Trans>Tracking Labels</Trans>
-                </SplitButton>
-              )}
-
-              <Button variant="secondary" leftIcon={<LuBarcode />} asChild>
-                <a
-                  target="_blank"
-                  href={path.to.file.shipment(shipmentId)}
-                  rel="noreferrer"
-                >
-                  <Trans>Packing Slip</Trans>
-                </a>
-              </Button>
-
-              <SourceDocumentLink
-                sourceDocument={
-                  routeData?.shipment?.sourceDocument ?? undefined
-                }
-                sourceDocumentId={
-                  routeData?.shipment?.sourceDocumentId ?? undefined
-                }
-                sourceDocumentReadableId={
-                  routeData?.shipment?.sourceDocumentReadableId ?? undefined
-                }
-              />
-
-              {permissions.can("view", "invoicing") && (
-                <InvoiceButtons
-                  shipment={routeData?.shipment}
-                  relatedItems={routeData?.relatedItems}
-                  shipmentId={shipmentId}
-                  isPosted={isPosted}
-                  isVoided={isVoided}
-                  onCreateInvoice={createInvoice}
+                  <DropdownMenuIcon icon={<LuTrash />} />
+                  <Trans>Delete Shipment</Trans>
+                </DropdownMenuItem>
+              </>
+            }
+            actions={
+              <>
+                {hasTrackingLabels && (
+                  <PrintButton
+                    sourceDocument="Shipment"
+                    sourceDocumentId={shipmentId}
+                    locationId={locationId ?? undefined}
+                    context="shipping"
+                    fileRoutes={{
+                      pdf: path.to.file.shipmentLabelsPdf,
+                      zpl: path.to.file.shipmentLabelsZpl
+                    }}
+                  />
+                )}
+                <Button variant="secondary" leftIcon={<LuBarcode />} asChild>
+                  <a
+                    target="_blank"
+                    href={path.to.file.shipment(shipmentId)}
+                    rel="noreferrer"
+                  >
+                    <Trans>Packing Slip</Trans>
+                  </a>
+                </Button>
+                <SourceDocumentLink
+                  sourceDocument={
+                    routeData?.shipment?.sourceDocument ?? undefined
+                  }
+                  sourceDocumentId={
+                    routeData?.shipment?.sourceDocumentId ?? undefined
+                  }
+                  sourceDocumentReadableId={
+                    routeData?.shipment?.sourceDocumentReadableId ?? undefined
+                  }
                 />
-              )}
-
-              <Button
-                variant={!isPosted && !isVoided ? "primary" : "secondary"}
-                onClick={postModal.onOpen}
-                isDisabled={
-                  !canPost ||
-                  isPosted ||
-                  isVoided ||
-                  !permissions.is("employee")
-                }
-                leftIcon={<LuCheckCheck />}
-              >
-                <Trans>Post</Trans>
-              </Button>
-            </HStack>
-          </CardHeader>
+                {permissions.can("view", "invoicing") && (
+                  <InvoiceButtons
+                    shipment={routeData?.shipment}
+                    relatedItems={routeData?.relatedItems}
+                    shipmentId={shipmentId}
+                    isPosted={isPosted}
+                    isVoided={isVoided}
+                    onCreateInvoice={createInvoice}
+                  />
+                )}
+                <Button
+                  variant={!isPosted && !isVoided ? "primary" : "secondary"}
+                  onClick={postModal.onOpen}
+                  isDisabled={
+                    !canPost ||
+                    isPosted ||
+                    isVoided ||
+                    !permissions.is("employee")
+                  }
+                  leftIcon={<LuCheckCheck />}
+                >
+                  <Trans>Post</Trans>
+                </Button>
+              </>
+            }
+          />
 
           <CardContent>
             <Hidden name="id" />

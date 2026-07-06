@@ -8,10 +8,10 @@ import {
   REFRESH_ACCESS_TOKEN_THRESHOLD,
   SESSION_KEY,
   SESSION_MAX_AGE,
-  SESSION_SECRET,
-  VERCEL_ENV
+  SESSION_SECRET
 } from "../config/env";
 import type { AuthSession, Result } from "../types";
+import { getCookieDomain } from "../utils/cookie";
 import { getCurrentPath, isGet, makeRedirectToFromHere } from "../utils/http";
 import { path } from "../utils/path";
 import { refreshAccessToken, verifyAuthSession } from "./auth.server";
@@ -35,15 +35,17 @@ async function assertAuthSession(
 
 export const isTestEdition = CarbonEdition === Edition.Test;
 
+const cookieDomain = isTestEdition ? undefined : getCookieDomain(DOMAIN);
+
 const sessionStorage = createCookieSessionStorage({
   cookie: {
     name: "carbon",
-    httpOnly: VERCEL_ENV === "production",
+    httpOnly: true,
     path: "/",
     sameSite: isTestEdition ? "none" : "lax",
     secrets: [SESSION_SECRET!],
-    secure: VERCEL_ENV === "production",
-    domain: VERCEL_ENV === "production" ? DOMAIN : undefined // eg. carbon.ms
+    secure: !!cookieDomain,
+    domain: cookieDomain
   }
 });
 

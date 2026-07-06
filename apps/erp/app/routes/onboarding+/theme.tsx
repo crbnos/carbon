@@ -204,7 +204,7 @@ export default function OnboardingTheme() {
                 >
                   <span
                     className={cn(
-                      "mr-1 flex h-5 w-5 shrink-0 -translate-x-1 items-center justify-center rounded-full bg-[--theme-primary]"
+                      "mr-1 flex h-5 w-5 shrink-0 -translate-x-1 items-center justify-center rounded-full bg-[var(--theme-primary)]"
                     )}
                   >
                     {isActive && <RxCheck className="h-4 w-4 text-white" />}

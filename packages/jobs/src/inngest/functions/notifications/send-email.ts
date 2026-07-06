@@ -140,17 +140,22 @@ export const sendEmailFunction = inngest.createFunction(
     }
 
     const result = await step.run("send-email", async () => {
-      const resend = new Resend(data.apiKey!);
+      if (process.env.DISABLE_RESEND) {
+        console.info(`Resend disabled — skipping send to`, toRecipients);
+        return null;
+      }
+
+      const resend = new Resend(process.env.RESEND_API_KEY!);
 
       const email = {
-        from: fromAddress,
-        to: toRecipients,
+        attachments: payload.attachments,
         cc: ccRecipients,
+        from: fromAddress,
+        html: payload.html,
         reply_to: payload.from,
         subject: payload.subject,
-        html: payload.html,
         text: payload.text,
-        attachments: payload.attachments
+        to: toRecipients
       };
 
       console.info(`Resend Email Job`);
@@ -166,6 +171,6 @@ export const sendEmailFunction = inngest.createFunction(
       return response.data;
     });
 
-    return { success: true, result };
+    return { result, success: true };
   }
 );

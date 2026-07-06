@@ -243,12 +243,16 @@ function PurchaseOrderLineBody({
           <span className="font-semibold line-clamp-1">
             {line.purchaseOrderLineType === "G/L Account"
               ? line.description || "Indirect Expense"
-              : getItemReadableId(items, line.itemId)}
+              : line.purchaseOrderLineType === "Fixed Asset"
+                ? (line as any).assetReadableId || "Fixed Asset"
+                : getItemReadableId(items, line.itemId)}
           </span>
           <span className="text-muted-foreground text-xs truncate line-clamp-1">
             {line.purchaseOrderLineType === "G/L Account"
               ? "G/L Account"
-              : line.description}
+              : line.purchaseOrderLineType === "Fixed Asset"
+                ? (line as any).assetName || line.description
+                : line.description}
           </span>
         </VStack>
       </HStack>
@@ -306,13 +310,17 @@ function PurchaseOrderLineItem({
             <VStack spacing={0} className="min-w-0">
               <span className="font-semibold line-clamp-1">
                 {line.purchaseOrderLineType === "G/L Account"
-                  ? line.description || "Indirect Expense"
-                  : getItemReadableId(items, line.itemId)}
+                  ? line.description || "G/L Account"
+                  : line.purchaseOrderLineType === "Fixed Asset"
+                    ? (line as any).assetReadableId || "Fixed Asset"
+                    : getItemReadableId(items, line.itemId)}
               </span>
               <span className="text-muted-foreground text-xs truncate line-clamp-1">
                 {line.purchaseOrderLineType === "G/L Account"
                   ? "G/L Account"
-                  : line.description}
+                  : line.purchaseOrderLineType === "Fixed Asset"
+                    ? line.assetName || line.description
+                    : line.description}
               </span>
             </VStack>
           </HStack>

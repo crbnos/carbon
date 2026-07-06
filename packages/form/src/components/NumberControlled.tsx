@@ -29,6 +29,7 @@ import { useFormStateContext } from "../internal/formStateContext";
 type FormNumberProps = NumberFieldProps & {
   name: string;
   label?: ReactNode;
+  size?: "sm" | "md" | "lg";
   isOptional?: boolean;
   isRequired?: boolean;
   helperText?: string;
@@ -44,6 +45,7 @@ const Number = forwardRef<HTMLInputElement, FormNumberProps>(
     {
       name,
       label,
+      size,
       isConfigured,
       isOptional,
       isRequired,
@@ -154,7 +156,11 @@ const Number = forwardRef<HTMLInputElement, FormNumberProps>(
           }}
         >
           <NumberInputGroup className="relative">
-            <NumberInput isReadOnly={isReadOnly} isDisabled={isDisabled} />
+            <NumberInput
+              isReadOnly={isReadOnly}
+              isDisabled={isDisabled}
+              size={size}
+            />
             {!isReadOnly && (
               <NumberInputStepper>
                 <NumberIncrementStepper>

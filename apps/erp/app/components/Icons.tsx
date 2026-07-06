@@ -21,31 +21,34 @@ import {
   LuBookOpen,
   LuBox,
   LuBuilding,
+  LuBuilding2,
   LuCircle,
   LuCircleCheck,
   LuCircleDashed,
   LuCircleDollarSign,
+  LuCirclePlay,
   LuCircleX,
   LuClipboardCheck,
   LuClock,
   LuClock3,
+  LuCog,
   LuContainer,
+  LuCreditCard,
   LuExternalLink,
   LuEye,
-  LuFactory,
-  LuFileText,
   LuFlaskConical,
   LuGroup,
   LuHammer,
+  LuHandCoins,
   LuHardHat,
   LuHeadphones,
   LuImage,
+  LuLandmark,
   LuList,
   LuMapPin,
   LuPackage,
   LuPizza,
   LuQrCode,
-  LuReceipt,
   LuRotateCcw,
   LuShoppingCart,
   LuSquare,
@@ -55,7 +58,8 @@ import {
   LuToggleLeft,
   LuTruck,
   LuUser,
-  LuUsers
+  LuUsers,
+  LuWrench
 } from "react-icons/lu";
 import { RxCodesandboxLogo } from "react-icons/rx";
 import { TbTargetOff } from "react-icons/tb";
@@ -563,13 +567,13 @@ export const JournalEntrySourceTypeIcon = ({
     case "Manual":
       return <LuBookOpen className={className} />;
     case "Purchase Receipt":
-      return <LuReceipt className={className} />;
+      return <LuHandCoins className={className} />;
     case "Purchase Invoice":
-      return <LuFileText className={className} />;
+      return <LuCreditCard className={className} />;
     case "Purchase Return":
       return <LuRotateCcw className={className} />;
     case "Sales Invoice":
-      return <LuFileText className={className} />;
+      return <LuCreditCard className={className} />;
     case "Sales Shipment":
       return <LuTruck className={className} />;
     case "Sales Return":
@@ -579,7 +583,7 @@ export const JournalEntrySourceTypeIcon = ({
     case "Inventory Adjustment":
       return <LuPackage className={className} />;
     case "Production Order":
-      return <LuFactory className={className} />;
+      return <LuCirclePlay className={className} />;
     case "Job Consumption":
       return <LuHammer className={className} />;
     case "Job Receipt":
@@ -588,6 +592,10 @@ export const JournalEntrySourceTypeIcon = ({
       return <LuHardHat className={className} />;
     case "Job Close":
       return <LuCircleCheck className={className} />;
+    case "Asset Depreciation":
+      return <LuClock className={className} />;
+    case "Asset Disposal":
+      return <LuBuilding2 className={className} />;
   }
 
   return <LuSquare className={cn("text-muted-foreground", className)} />;
@@ -615,8 +623,14 @@ export const DimensionEntityTypeIcon = ({
       return <LuBuilding className={className} />;
     case "Employee":
       return <LuUser className={className} />;
+    case "FixedAssetClass":
+      return <LuLandmark className={className} />;
     case "CostCenter":
       return <LuCircleDollarSign className={className} />;
+    case "WorkCenter":
+      return <LuWrench className={className} />;
+    case "Process":
+      return <LuCog className={className} />;
   }
 };
 

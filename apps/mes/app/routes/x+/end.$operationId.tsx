@@ -2,6 +2,10 @@ import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import {
+  evaluateLinesForSurface,
+  isBlocked
+} from "@carbon/ee/storage-rules.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import {
@@ -85,7 +89,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     0;
 
   const quantityToComplete = completeAll
-    ? Math.max(0, (jobOperation.data.operationQuantity ?? 0) - currentQuantity)
+    ? Math.max(
+        0,
+        (jobOperation.data.operationQuantity ?? 0) -
+          currentQuantity -
+          (jobOperation.data.quantityReworked ?? 0)
+      )
     : 1;
 
   const willBeFinished =
@@ -97,6 +106,51 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const isTrackedEntity =
     jobMakeMethod.data.requiresSerialTracking ||
     jobMakeMethod.data.requiresBatchTracking;
+
+  // Business-rule pre-flight on operationFinish. Only fires when this scan
+  // actually closes the operation (`willBeFinished`); transient quantity
+  // events don't trigger finish rules.
+  if (willBeFinished && jobOperation.data.workCenterId) {
+    const acknowledged = url.searchParams.get("acknowledged") === "true";
+    const ruleEval = await evaluateLinesForSurface({
+      client: serviceRole,
+      companyId,
+      userId,
+      targetType: "workCenter",
+      surface: "operationFinish",
+      lines: [
+        {
+          lineId: operationId,
+          itemId: jobMakeMethod.data.itemId as string | null,
+          workCenterId: jobOperation.data.workCenterId,
+          operation: {
+            id: operationId,
+            itemId: jobMakeMethod.data.itemId as string | null,
+            quantity: jobOperation.data.operationQuantity ?? null,
+            workInstructionId:
+              (jobOperation.data as { workInstructionId?: string | null })
+                .workInstructionId ?? null
+          },
+          quantity: quantityToComplete
+        }
+      ]
+    });
+    if (
+      ruleEval.violations.length > 0 &&
+      isBlocked(ruleEval.violations, acknowledged)
+    ) {
+      return redirect(
+        path.to.operation(operationId),
+        await flash(
+          request,
+          error(
+            ruleEval.violations[0]?.message ?? "Rule violation",
+            "Cannot finish operation"
+          )
+        )
+      );
+    }
+  }
 
   if (quantityToComplete > 0) {
     if (isTrackedEntity) {

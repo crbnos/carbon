@@ -3,7 +3,12 @@ import { generateProductLabelZPL } from "@carbon/documents/zpl";
 import { labelSizes } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { getCompanySettings } from "~/services/inventory.service";
+import {
+  getCompany,
+  getCompanySettings,
+  getDocumentTemplateConfig
+} from "~/services/inventory.service";
+import { resolveLabelLogo } from "~/services/labelLogo.server";
 import { getTrackedEntity } from "~/services/operations.service";
 import { path } from "~/utils/path";
 
@@ -18,12 +23,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getTrackedEntity(client, id)
   ]);
 
-  // Get the label size from query params or default to zebra2x1
+  // Get the label size from query params or default to label2x1
   const url = new URL(request.url);
   const labelParam = url.searchParams.get("labelSize");
 
   const labelSizeId =
-    labelParam || companySettings.data?.productLabelSize || "zebra2x1";
+    labelParam || companySettings.data?.productLabelSize || "label2x1";
 
   // Find the label size configuration
   let labelSize = labelSizes.find((size) => size.id === labelSizeId);
@@ -60,9 +65,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     }
   ];
 
+  const template = await getDocumentTemplateConfig(
+    client,
+    companyId,
+    "trackingLabel"
+  );
+
+  const company = await getCompany(client, companyId);
+  const logo = await resolveLabelLogo(company.data, template, labelSize);
+
   // Generate ZPL for each item
   const zplCommands = items.map((item) =>
-    generateProductLabelZPL(item, labelSize)
+    generateProductLabelZPL(item, labelSize, template, logo)
   );
   const zplOutput = zplCommands.join("\n");
 

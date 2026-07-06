@@ -380,10 +380,14 @@ function SalesOrderLineItem({
 
           <VStack spacing={0} className="min-w-0">
             <span className="font-semibold line-clamp-1">
-              {getItemReadableId(items, line.itemId)}
+              {line.salesOrderLineType === "Fixed Asset"
+                ? (line as any).assetReadableId || "Fixed Asset"
+                : getItemReadableId(items, line.itemId)}
             </span>
             <span className="text-muted-foreground text-xs truncate line-clamp-1">
-              {line.description}
+              {line.salesOrderLineType === "Fixed Asset"
+                ? (line as any).assetName || line.description
+                : line.description}
             </span>
           </VStack>
         </HStack>

@@ -76,22 +76,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const rulesForType =
-    rules.data?.filter(
-      (r) => r.documentType === validation.data.documentType && r.id !== id
-    ) || [];
-  const duplicateRule = rulesForType.find(
-    (r) => r.lowerBoundAmount === (validation.data.lowerBoundAmount ?? 0)
-  );
-
-  if (duplicateRule) {
-    return validationError({
-      fieldErrors: {
-        lowerBoundAmount: `A rule with this minimum amount already exists. The maximum for this rule would be set by the next higher rule.`
-      }
-    });
-  }
-
   const result = await upsertApprovalRule(serviceRole, {
     id,
     updatedBy: userId,

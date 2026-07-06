@@ -191,6 +191,8 @@ export default function EditSalesOrderLineRoute() {
     unitPrice: line?.unitPrice ?? 0,
     taxPercent: line?.taxPercent ?? 0,
     shippingCost: line?.shippingCost ?? 0,
+    assetReadableId: (line as any)?.assetReadableId ?? undefined,
+    assetName: (line as any)?.assetName ?? undefined,
     ...getCustomFields(line?.customFields)
   };
 

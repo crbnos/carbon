@@ -15,7 +15,6 @@ import { validator } from "@carbon/form";
 import {
   Button,
   cn,
-  getPreferenceHeaders,
   Heading,
   IconButton,
   OperatingSystemContextProvider,
@@ -25,7 +24,7 @@ import {
   useDisclosure,
   useMode
 } from "@carbon/react";
-import { modeValidator } from "@carbon/utils";
+import { getPreferenceHeaders, modeValidator } from "@carbon/utils";
 import { I18nProvider } from "@react-aria/i18n";
 import { Analytics } from "@vercel/analytics/react";
 import { motion } from "framer-motion";
@@ -33,6 +32,7 @@ import type React from "react";
 import { LuChevronDown, LuFingerprint, LuMoon, LuSun } from "react-icons/lu";
 import type {
   ActionFunctionArgs,
+  LinksFunction,
   LoaderFunctionArgs,
   MetaFunction
 } from "react-router";
@@ -60,12 +60,40 @@ import { path } from "./utils/path";
 export const middleware = [flashMiddleware];
 export const clientMiddleware = [flashClientMiddleware];
 
-export function links() {
-  return [
-    { rel: "stylesheet", href: Tailwind },
-    { rel: "stylesheet", href: NProgress }
-  ];
-}
+export const links: LinksFunction = () => [
+  { rel: "stylesheet", href: Tailwind },
+  { rel: "stylesheet", href: NProgress },
+  {
+    rel: "icon",
+    type: "image/svg+xml",
+    href: "/carbon-mark-light.svg",
+    media: "(prefers-color-scheme: light)"
+  },
+  {
+    rel: "icon",
+    type: "image/svg+xml",
+    href: "/carbon-mark-dark.svg",
+    media: "(prefers-color-scheme: dark)"
+  },
+  {
+    rel: "icon",
+    type: "image/png",
+    sizes: "32x32",
+    href: "/favicon-32x32.png"
+  },
+  {
+    rel: "icon",
+    type: "image/png",
+    sizes: "16x16",
+    href: "/favicon-16x16.png"
+  },
+  {
+    rel: "apple-touch-icon",
+    sizes: "180x180",
+    href: "/apple-touch-icon.png"
+  },
+  { rel: "manifest", href: "/site.webmanifest" }
+];
 
 export const meta: MetaFunction = () => {
   return [
@@ -146,6 +174,14 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
 }
 
 export async function action({ request }: ActionFunctionArgs) {
+  const contentType = request.headers.get("content-type") ?? "";
+  if (
+    !contentType.includes("multipart/form-data") &&
+    !contentType.includes("application/x-www-form-urlencoded")
+  ) {
+    return data({ error: "Invalid content type" }, { status: 400 });
+  }
+
   const validation = await validator(modeValidator).validate(
     await request.formData()
   );
@@ -436,9 +472,14 @@ export function ErrorBoundary({ error }: { error: unknown }) {
       <div className="light">
         <div className="flex flex-col w-full h-screen  items-center justify-center space-y-4 ">
           <img
-            src="/carbon-logo-mark.svg"
+            src="/carbon-mark-light.svg"
             alt="Carbon Logo"
-            className="block max-w-[60px]"
+            className="block max-w-[60px] dark:hidden"
+          />
+          <img
+            src="/carbon-mark-dark.svg"
+            alt="Carbon Logo"
+            className="max-w-[60px] hidden dark:block"
           />
           <Heading size="h1">Something went wrong</Heading>
           <p className="text-muted-foreground max-w-2xl">{message}</p>

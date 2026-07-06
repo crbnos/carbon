@@ -7,19 +7,27 @@ import type {
   ClientActionFunctionArgs,
   LoaderFunctionArgs
 } from "react-router";
-import { data, redirect, useLoaderData, useNavigate } from "react-router";
 import {
+  data,
+  Outlet,
+  redirect,
+  useLoaderData,
+  useNavigate
+} from "react-router";
+import {
+  getEffectiveWorkCenterId,
   getStorageUnit,
   StorageUnitForm,
   storageUnitValidator,
   upsertStorageUnit
 } from "~/modules/inventory";
+import { getWorkCentersList } from "~/modules/resources";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
 import { getCompanyId, storageUnitsQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "inventory",
     role: "employee"
   });
@@ -27,10 +35,31 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { storageUnitId } = params;
   if (!storageUnitId) throw notFound("storageUnitId not found");
 
-  const storageUnit = await getStorageUnit(client, storageUnitId);
+  const [storageUnit, effectiveWorkCenter, workCenters] = await Promise.all([
+    getStorageUnit(client, storageUnitId),
+    getEffectiveWorkCenterId(client, storageUnitId),
+    getWorkCentersList(client, companyId)
+  ]);
+
+  const ownWorkCenterId = storageUnit?.data?.workCenterId ?? null;
+  const effectiveWorkCenterId = effectiveWorkCenter?.data ?? null;
+  const isInherited = !ownWorkCenterId && !!effectiveWorkCenterId;
+
+  // Find the name of the inherited work center for display
+  let inheritedWorkCenterName: string | null = null;
+  if (isInherited && effectiveWorkCenterId) {
+    const wc = workCenters?.data?.find((w) => w.id === effectiveWorkCenterId);
+    inheritedWorkCenterName = wc?.name ?? null;
+  }
 
   return {
-    storageUnit: storageUnit?.data ?? null
+    storageUnit: storageUnit?.data ?? null,
+    inheritedWorkCenter: isInherited
+      ? {
+          workCenterId: effectiveWorkCenterId,
+          workCenterName: inheritedWorkCenterName
+        }
+      : null
   };
 }
 
@@ -96,7 +125,7 @@ export async function clientAction({
 }
 
 export default function EditStorageUnitRoute() {
-  const { storageUnit } = useLoaderData<typeof loader>();
+  const { storageUnit, inheritedWorkCenter } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
 
   const initialValues = {
@@ -105,16 +134,21 @@ export default function EditStorageUnitRoute() {
     locationId: storageUnit?.locationId ?? "",
     warehouseId: storageUnit?.warehouseId ?? undefined,
     parentId: storageUnit?.parentId ?? undefined,
+    workCenterId: storageUnit?.workCenterId ?? undefined,
     storageTypeIds: storageUnit?.storageTypeIds ?? [],
     ...getCustomFields(storageUnit?.customFields)
   };
 
   return (
-    <StorageUnitForm
-      key={initialValues.id}
-      initialValues={initialValues}
-      locationId={initialValues.locationId}
-      onClose={() => navigate(-1)}
-    />
+    <>
+      <StorageUnitForm
+        key={initialValues.id}
+        initialValues={initialValues}
+        locationId={initialValues.locationId}
+        inheritedWorkCenter={inheritedWorkCenter}
+        onClose={() => navigate(-1)}
+      />
+      <Outlet />
+    </>
   );
 }

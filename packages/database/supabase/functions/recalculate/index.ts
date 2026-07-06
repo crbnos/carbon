@@ -6,7 +6,7 @@ import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { Transaction } from "kysely";
 import { corsHeaders } from "../lib/headers.ts";
 import { getJobMethodTree, JobMethodTreeItem } from "../lib/methods.ts";
-import { getSupabaseServiceRole } from "../lib/supabase.ts";
+import { requirePermissions } from "../lib/supabase.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
@@ -35,11 +35,7 @@ serve(async (req: Request) => {
       userId,
     });
 
-    const client = await getSupabaseServiceRole(
-      req.headers.get("Authorization"),
-      req.headers.get("carbon-key") ?? "",
-      companyId
-    );
+    const client = await requirePermissions(req, companyId, userId, { update: "production" });
 
     switch (type) {
       case "jobMakeMethodRequirements": {
@@ -279,6 +275,7 @@ const updateJobQuantities = async (
           operationQuantity: totalWithScrap,
         })
         .where("jobMakeMethodId", "=", tree.data.jobMaterialMakeMethodId)
+        .where("reworkId", "is", null)
         .execute(),
     ]);
 

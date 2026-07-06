@@ -5,16 +5,20 @@ export function getLineDescription(
 ) {
   switch (line?.purchaseOrderLineType) {
     case "Fixed Asset":
-      return line?.assetId;
+      return line?.assetName ?? "Fixed Asset";
     case "G/L Account":
       return line?.description;
     case "Comment":
       return line?.description;
     default:
-      const supplierPartNumber = line.supplierPartId
-        ? ` (${line.supplierPartId})`
-        : "";
-      return line?.itemReadableId + supplierPartNumber;
+      // Use `||` (not `??`) so an empty-string supplier part number falls
+      // through to the item id. Supplier parts with no part number get
+      // backfilled onto the line as "", and `??` would render a blank line.
+      return (
+        line?.supplierPartId ||
+        line?.supplierPartIdFromSupplier ||
+        line?.itemReadableId
+      );
   }
 }
 

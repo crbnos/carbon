@@ -1,15 +1,24 @@
+import { LabelDownloadModal } from "@carbon/printing/ui";
 import {
+  Button,
   Checkbox,
   Combobox,
   HStack,
-  IconButton,
   MenuIcon,
   MenuItem,
-  Spinner
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalTitle,
+  Spinner,
+  toast,
+  useDisclosure
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
-import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   LuBookMarked,
   LuCheck,
@@ -19,6 +28,7 @@ import {
   LuMapPin,
   LuPencil,
   LuPlus,
+  LuPrinter,
   LuTrash
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
@@ -26,7 +36,8 @@ import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
 import { useStorageTypes } from "~/components/Form/StorageTypes";
-import { usePermissions, useUrlParams } from "~/hooks";
+import { IndeterminateCheckbox } from "~/components/Table/components";
+import { usePermissions, usePrinting, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
 
 type StorageUnit = {
@@ -115,14 +126,44 @@ const StorageUnitsTable = memo(
       () => new Set(initialExpanded)
     );
     const [loadingIds, setLoadingIds] = useState<Set<string>>(new Set());
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-    // Reset state when the loader payload changes (location switch, search,
-    // pagination) so stale expand state doesn't leak across navigations.
+    // Reset tree state only when the loader payload MEANINGFULLY changes
+    // (location switch, search, pagination). Keying on object identity would
+    // also fire on every revalidation (e.g. after a fetcher POST or opening
+    // a drawer route), collapsing the tree and wiping the selection.
+    const dataSignature = useMemo(
+      () =>
+        `${locationId}::${data.map((r) => r.id).join(",")}::${initialExpanded.join(",")}`,
+      [locationId, data, initialExpanded]
+    );
+    const prevSignature = useRef(dataSignature);
     useEffect(() => {
+      if (prevSignature.current === dataSignature) return;
+      prevSignature.current = dataSignature;
       setChildrenCache(initialChildrenCache);
       setExpandedIds(new Set(initialExpanded));
       setLoadingIds(new Set());
-    }, [initialChildrenCache, initialExpanded]);
+      setSelectedIds(new Set());
+    }, [dataSignature, initialChildrenCache, initialExpanded]);
+
+    // Keep a ref to the cache so the recursive descendant walk always sees
+    // the latest children without stale-closure issues.
+    const childrenCacheRef = useRef(childrenCache);
+    childrenCacheRef.current = childrenCache;
+
+    const collectDescendantIds = useCallback((id: string): string[] => {
+      const cache = childrenCacheRef.current;
+      const out: string[] = [];
+      const walk = (parentId: string) => {
+        for (const kid of cache[parentId] ?? []) {
+          out.push(kid.id);
+          walk(kid.id);
+        }
+      };
+      walk(id);
+      return out;
+    }, []);
 
     const toggleExpand = useCallback(
       async (id: string) => {
@@ -142,7 +183,15 @@ const StorageUnitsTable = memo(
         try {
           const res = await fetch(path.to.api.storageUnitChildren(id));
           const body = (await res.json()) as { data: StorageUnit[] };
-          setChildrenCache((prev) => ({ ...prev, [id]: body.data ?? [] }));
+          const kids = body.data ?? [];
+          setChildrenCache((prev) => ({ ...prev, [id]: kids }));
+          // Newly loaded children inherit a selected parent's selection
+          setSelectedIds((prev) => {
+            if (!prev.has(id)) return prev;
+            const next = new Set(prev);
+            for (const kid of kids) next.add(kid.id);
+            return next;
+          });
         } finally {
           setLoadingIds((prev) => {
             const next = new Set(prev);
@@ -152,6 +201,27 @@ const StorageUnitsTable = memo(
         }
       },
       [expandedIds, childrenCache]
+    );
+
+    // Checking a unit cascades to all loaded descendants; unchecking removes
+    // them. A parent with some (but not all of) its subtree selected renders
+    // as indeterminate.
+    const toggleSelected = useCallback(
+      (id: string) => {
+        setSelectedIds((prev) => {
+          const next = new Set(prev);
+          const isSelecting = !next.has(id);
+          if (isSelecting) {
+            next.add(id);
+            for (const descId of collectDescendantIds(id)) next.add(descId);
+          } else {
+            next.delete(id);
+            for (const descId of collectDescendantIds(id)) next.delete(descId);
+          }
+          return next;
+        });
+      },
+      [collectDescendantIds]
     );
 
     // Build the displayed flat-row list by walking roots and recursing into
@@ -173,8 +243,51 @@ const StorageUnitsTable = memo(
       return out;
     }, [data, expandedIds, childrenCache]);
 
+    const allSelected =
+      displayRows.length > 0 && displayRows.every((r) => selectedIds.has(r.id));
+    const someSelected = selectedIds.size > 0 && !allSelected;
+
+    const toggleAllSelected = useCallback(() => {
+      setSelectedIds((prev) => {
+        const visible = displayRows.map((r) => r.id);
+        const everyVisibleSelected =
+          visible.length > 0 && visible.every((id) => prev.has(id));
+        return everyVisibleSelected ? new Set() : new Set(visible);
+      });
+    }, [displayRows]);
+
     const columns = useMemo<ColumnDef<StorageUnit>[]>(() => {
       return [
+        {
+          // The id "Select" opts into the Table's compact checkbox-column
+          // styling (px-2, shrink-to-fit width).
+          id: "Select",
+          size: 50,
+          minSize: 1,
+          header: () => (
+            <IndeterminateCheckbox
+              checked={allSelected}
+              indeterminate={someSelected}
+              onChange={toggleAllSelected}
+            />
+          ),
+          cell: ({ row }) => {
+            const id = row.original.id;
+            const isChecked = selectedIds.has(id);
+            const isIndeterminate =
+              !isChecked &&
+              collectDescendantIds(id).some((descId) =>
+                selectedIds.has(descId)
+              );
+            return (
+              <IndeterminateCheckbox
+                checked={isChecked}
+                indeterminate={isIndeterminate}
+                onChange={() => toggleSelected(id)}
+              />
+            );
+          }
+        },
         {
           accessorKey: "name",
           header: t`Name`,
@@ -185,32 +298,7 @@ const StorageUnitsTable = memo(
             const hasChildren = hasChildrenSet.has(row.original.id);
 
             return (
-              <div className="flex items-stretch self-stretch gap-1">
-                <div className="size-7 shrink-0 flex items-center justify-center self-center">
-                  {hasChildren ? (
-                    <IconButton
-                      aria-label={
-                        isExpanded ? t`Collapse subtree` : t`Expand subtree`
-                      }
-                      icon={
-                        isLoading ? (
-                          <Spinner className="size-3" />
-                        ) : isExpanded ? (
-                          <LuChevronDown />
-                        ) : (
-                          <LuChevronRight />
-                        )
-                      }
-                      size="sm"
-                      variant="ghost"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        toggleExpand(row.original.id);
-                      }}
-                    />
-                  ) : null}
-                </div>
+              <div className="flex flex-1">
                 {Array.from({ length: depth }).map((_, i) => (
                   <div
                     key={i}
@@ -218,6 +306,32 @@ const StorageUnitsTable = memo(
                     className="w-5 shrink-0 border-l border-border -my-2"
                   />
                 ))}
+                <div className="w-5 shrink-0 flex items-center justify-center self-center">
+                  {hasChildren ? (
+                    isLoading ? (
+                      <Spinner className="size-3" />
+                    ) : (
+                      <button
+                        type="button"
+                        aria-label={
+                          isExpanded ? t`Collapse subtree` : t`Expand subtree`
+                        }
+                        className="text-muted-foreground hover:text-foreground shrink-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          toggleExpand(row.original.id);
+                        }}
+                      >
+                        {isExpanded ? (
+                          <LuChevronDown className="size-4" />
+                        ) : (
+                          <LuChevronRight className="size-4" />
+                        )}
+                      </button>
+                    )
+                  ) : null}
+                </div>
                 <div className="flex items-center py-1">
                   <Hyperlink
                     to={`${path.to.storageUnit(row.original.id)}?${params}`}
@@ -307,20 +421,94 @@ const StorageUnitsTable = memo(
       expandedIds,
       loadingIds,
       hasChildrenSet,
-      toggleExpand
+      toggleExpand,
+      selectedIds,
+      allSelected,
+      someSelected,
+      toggleAllSelected,
+      toggleSelected,
+      collectDescendantIds
     ]);
+
+    /* Bulk printing */
+    const { printerRoutes, resolvePrinterRoute } = usePrinting();
+    const printerModal = useDisclosure();
+    const downloadModal = useDisclosure();
+    const defaultPrinter = resolvePrinterRoute(locationId, "inventory");
+    const [selectedPrinterId, setSelectedPrinterId] = useState<string>("");
+    const [isPrinting, setIsPrinting] = useState(false);
+
+    const handlePrintLabels = useCallback(() => {
+      if (printerRoutes.length > 0) {
+        setSelectedPrinterId(defaultPrinter?.id ?? printerRoutes[0]?.id ?? "");
+        printerModal.onOpen();
+      } else {
+        downloadModal.onOpen();
+      }
+    }, [printerRoutes, defaultPrinter?.id, printerModal, downloadModal]);
+
+    // Raw fetch (not a fetcher): parallel submissions don't abort each other
+    // and nothing revalidates, so the tree and selection stay intact.
+    const handleConfirmPrint = useCallback(async () => {
+      const ids = Array.from(selectedIds);
+      if (ids.length === 0 || !selectedPrinterId) return;
+
+      setIsPrinting(true);
+      try {
+        const results = await Promise.allSettled(
+          ids.map((id) =>
+            fetch(path.to.manualPrint, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                sourceDocument: "StorageUnit",
+                sourceDocumentId: id,
+                locationId,
+                printerRouteId: selectedPrinterId
+              })
+            })
+          )
+        );
+
+        const failed = results.filter(
+          (r) => r.status === "rejected" || !r.value.ok
+        ).length;
+
+        if (failed > 0) {
+          toast.error(
+            `${failed} of ${ids.length} print job${ids.length === 1 ? "" : "s"} failed`
+          );
+        } else {
+          toast.success(
+            `Queued ${ids.length} label${ids.length === 1 ? "" : "s"} for printing`
+          );
+        }
+      } finally {
+        setIsPrinting(false);
+        printerModal.onClose();
+      }
+    }, [selectedIds, selectedPrinterId, locationId, printerModal]);
 
     const defaultColumnVisibility = {
       active: false
     };
 
     const defaultColumnPinning = {
-      left: ["name"]
+      left: ["Select", "name"]
     };
 
     const actions = useMemo(() => {
       return (
         <div className="flex items-center gap-2">
+          {selectedIds.size > 0 && (
+            <Button
+              variant="secondary"
+              leftIcon={<LuPrinter />}
+              onClick={handlePrintLabels}
+            >
+              <Trans>Print {selectedIds.size} Labels</Trans>
+            </Button>
+          )}
           <Combobox
             asButton
             size="sm"
@@ -337,7 +525,7 @@ const StorageUnitsTable = memo(
           />
         </div>
       );
-    }, [locationId, locations, t]);
+    }, [locationId, locations, t, selectedIds.size, handlePrintLabels]);
 
     const renderContextMenu = useCallback(
       (row: StorageUnit) => {
@@ -383,18 +571,92 @@ const StorageUnitsTable = memo(
     );
 
     return (
-      <Table<StorageUnit>
-        count={count}
-        columns={columns}
-        data={displayRows}
-        defaultColumnVisibility={defaultColumnVisibility}
-        defaultColumnPinning={defaultColumnPinning}
-        primaryAction={actions}
-        renderContextMenu={renderContextMenu}
-        title={t`Storage Units`}
-        table="storageUnit"
-        withSavedView
-      />
+      <>
+        <Table<StorageUnit>
+          count={count}
+          columns={columns}
+          data={displayRows}
+          defaultColumnVisibility={defaultColumnVisibility}
+          defaultColumnPinning={defaultColumnPinning}
+          primaryAction={actions}
+          renderContextMenu={renderContextMenu}
+          title={t`Storage Units`}
+          table="storageUnit"
+          withSavedView
+        />
+        {printerModal.isOpen && (
+          <Modal
+            open
+            onOpenChange={(open) => {
+              if (!open) printerModal.onClose();
+            }}
+          >
+            <ModalContent>
+              <ModalHeader>
+                <ModalTitle>
+                  <Trans>Select Printer</Trans>
+                </ModalTitle>
+              </ModalHeader>
+              <ModalBody>
+                <div className="flex flex-col gap-1">
+                  {printerRoutes.map((route) => (
+                    <button
+                      type="button"
+                      key={route.id}
+                      className={`flex items-center gap-3 rounded-lg border p-3 text-left transition-colors ${
+                        selectedPrinterId === route.id
+                          ? "border-primary bg-primary/5"
+                          : "border-border hover:bg-muted"
+                      }`}
+                      onClick={() => setSelectedPrinterId(route.id)}
+                    >
+                      <LuPrinter className="size-4 text-muted-foreground shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm font-medium">
+                          {route.name}
+                        </span>
+                        <span className="text-xs text-muted-foreground ml-2 uppercase">
+                          {route.format}
+                        </span>
+                        {route.mediaSizeId && (
+                          <span className="text-xs text-muted-foreground ml-2">
+                            {route.mediaSizeId}
+                          </span>
+                        )}
+                      </div>
+                      {selectedPrinterId === route.id && (
+                        <LuCheck className="size-4 text-primary shrink-0" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </ModalBody>
+              <ModalFooter>
+                <div className="flex gap-2">
+                  <Button
+                    variant="primary"
+                    leftIcon={<LuPrinter />}
+                    disabled={!selectedPrinterId || isPrinting}
+                    onClick={handleConfirmPrint}
+                  >
+                    <Trans>Print {selectedIds.size} Labels</Trans>
+                  </Button>
+                  <Button variant="solid" onClick={printerModal.onClose}>
+                    <Trans>Cancel</Trans>
+                  </Button>
+                </div>
+              </ModalFooter>
+            </ModalContent>
+          </Modal>
+        )}
+        {downloadModal.isOpen && selectedIds.size > 0 && (
+          <StorageUnitDownloadModal
+            ids={Array.from(selectedIds)}
+            isOpen={downloadModal.isOpen}
+            onClose={downloadModal.onClose}
+          />
+        )}
+      </>
     );
   }
 );
@@ -402,6 +664,30 @@ const StorageUnitsTable = memo(
 StorageUnitsTable.displayName = "StorageUnitsTable";
 
 export default StorageUnitsTable;
+
+function StorageUnitDownloadModal({
+  ids,
+  isOpen,
+  onClose
+}: {
+  ids: string[];
+  isOpen: boolean;
+  onClose: () => void;
+}) {
+  return (
+    <LabelDownloadModal
+      sourceDocumentId=""
+      fileRoutes={{
+        pdf: (_id: string, opts?: { labelSize?: string }) =>
+          path.to.file.storageUnitLabelsPdf(ids, opts),
+        zpl: (_id: string, opts?: { labelSize?: string }) =>
+          path.to.file.storageUnitLabelsZpl(ids, opts)
+      }}
+      isOpen={isOpen}
+      onClose={onClose}
+    />
+  );
+}
 
 function getLocationPath(locationId: string) {
   return `${path.to.storageUnits}?location=${locationId}`;

@@ -5,6 +5,8 @@ export type ProductLabelItem = {
   number: string;
   trackedEntityId: string;
   trackingType: string;
+  /** Custom-field values for the tracked entity, keyed by field id. */
+  customFields?: Record<string, unknown>;
 };
 
 export type LabelSize = {
@@ -12,7 +14,8 @@ export type LabelSize = {
   name: string;
   width: number;
   height: number;
-  description: string;
+  metric?: boolean;
+  /** Multi-up sheet layout (e.g. Avery). Omitted = a single label per page. */
   rows?: number;
   columns?: number;
   rotated?: boolean;
@@ -23,34 +26,34 @@ export type LabelSize = {
   };
 };
 
+/** Dimensions as `2" x 1"` or `100mm x 50mm` (width x height). */
+export function getLabelSizeDimensions(size: LabelSize): string {
+  if (size.metric) {
+    const widthMm = Math.round(size.width * 25.4);
+    const heightMm = Math.round(size.height * 25.4);
+    return `${widthMm}mm x ${heightMm}mm`;
+  }
+  return `${size.width}" x ${size.height}"`;
+}
+
+/** Display label as `2" x 1"` for thermal sizes or `Avery 5163 4" x 2"` for sheets. */
+export function getLabelSizeLabel(size: LabelSize): string {
+  const dimensions = getLabelSizeDimensions(size);
+  return size.zpl ? dimensions : `${size.name} ${dimensions}`;
+}
+
 export const labelSizes: LabelSize[] = [
-  {
-    id: "avery5160",
-    name: "Avery 5160",
-    width: 2.625, // inches to points (72 points per inch)
-    height: 1,
-    description: 'Address Labels (1" x 2.625")',
-    rows: 10,
-    columns: 3,
-    rotated: false
-  },
   {
     id: "avery5163",
     name: "Avery 5163",
     width: 4,
-    height: 2,
-    description: 'Shipping Labels (2" x 4")',
-    rows: 5,
-    columns: 2,
-    rotated: false
+    height: 2
   },
   {
-    id: "zebra2x1",
-    name: "Zebra 2x1",
+    id: "label2x1",
+    name: "Label 2x1",
     width: 2,
     height: 1,
-    description: 'Thermal Transfer Labels (1" x 2")',
-    rotated: false,
     zpl: {
       dpi: 203,
       width: 2,
@@ -58,16 +61,38 @@ export const labelSizes: LabelSize[] = [
     }
   },
   {
-    id: "zebra4x2",
-    name: "Zebra 4x2",
+    id: "label4x2",
+    name: "Label 4x2",
     width: 4,
     height: 2,
-    description: 'Thermal Transfer Labels (2" x 4")',
-    rotated: false,
     zpl: {
       dpi: 203,
       width: 4,
       height: 2
+    }
+  },
+  {
+    id: "label100x50mm",
+    name: "Label 100x50mm",
+    width: 3.937,
+    height: 1.969,
+    metric: true,
+    zpl: {
+      dpi: 203,
+      width: 3.937,
+      height: 1.969
+    }
+  },
+  {
+    id: "label50x25mm",
+    name: "Label 50x25mm",
+    width: 1.969,
+    height: 0.984,
+    metric: true,
+    zpl: {
+      dpi: 203,
+      width: 1.969,
+      height: 0.984
     }
   }
 ];

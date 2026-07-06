@@ -111,7 +111,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       trackedEntities.data[trackedEntities.data.length - 1];
     const redirectUrl = new URL(request.url);
     redirectUrl.searchParams.set("trackedEntityId", lastTrackedEntity.id);
-    throw redirect(redirectUrl.toString());
+    throw redirect(`${redirectUrl.pathname}${redirectUrl.search}`);
   }
 
   return {

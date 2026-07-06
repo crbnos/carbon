@@ -64,6 +64,7 @@ export const customerLocationValidator = z.object({
 
 export const customerValidator = z.object({
   id: zfd.text(z.string().optional()),
+  readableId: zfd.text(z.string().optional()),
   name: z.string().min(1, { message: "Name is required" }),
   customerStatusId: zfd.text(z.string().optional()),
   customerTypeId: zfd.text(z.string().optional()),
@@ -288,6 +289,7 @@ export const quoteStatusType = [
 export const quoteValidator = z.object({
   id: zfd.text(z.string().optional()),
   quoteId: zfd.text(z.string().optional()),
+  name: zfd.text(z.string().optional()),
   salesPersonId: zfd.text(z.string().optional()),
   estimatorId: zfd.text(z.string().optional()),
   customerId: z.string().min(1, { message: "Customer is required" }),
@@ -676,7 +678,7 @@ export const salesOrderLineType = [
 
 export const salesOrderStatusType = [
   "Draft",
-  // "In Progress",
+  "In Progress",
   "Needs Approval",
   // "Confirmed",
   "To Ship and Invoice",
@@ -705,6 +707,7 @@ export const salesConfirmValidator = z
 export const salesOrderValidator = z.object({
   id: zfd.text(z.string().optional()),
   salesOrderId: zfd.text(z.string().optional()),
+  orderDate: zfd.text(z.string().optional()),
   requestedDate: zfd.text(z.string().optional()),
   promisedDate: zfd.text(z.string().optional()),
   status: z.enum(salesOrderStatusType).optional(),
@@ -821,8 +824,11 @@ export const salesOrderLineValidator = z
   )
   .refine(
     (data) => {
-      // If sales order line type is not "Comment", we require a method type
-      if (data.salesOrderLineType !== "Comment" && !data.methodType) {
+      if (
+        data.salesOrderLineType !== "Comment" &&
+        data.salesOrderLineType !== "Fixed Asset" &&
+        !data.methodType
+      ) {
         return false;
       }
       return true;
@@ -830,6 +836,16 @@ export const salesOrderLineValidator = z
     {
       message: "Method type is required",
       path: ["methodType"]
+    }
+  )
+  .refine(
+    (data) =>
+      data.salesOrderLineType === "Fixed Asset"
+        ? (data.saleQuantity ?? 1) === 1
+        : true,
+    {
+      message: "Fixed Asset quantity must be 1",
+      path: ["saleQuantity"]
     }
   );
 

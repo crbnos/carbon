@@ -1,9 +1,7 @@
-@import url("non.geist");
-@import url("non.geist/mono");
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@import "non.geist";
+@import "non.geist/mono";
+@import "../../../../packages/config/tailwind/theme.css";
 
 @layer base {
   *::-webkit-scrollbar {
@@ -25,7 +23,10 @@
   }
 
   :root {
-    --header-height: 52px;
+    --header-height: 50px;
+    --filters-height: 38px;
+    --controls-width: 240px;
+    --sidebar-width: 240px;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -35,12 +36,6 @@
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
-
-    --header-height: 50px;
-    --filters-height: 38px;
-    --controls-width: 240px;
-    --sidebar-width: 240px;
-    --base-shadow-color: rgb(0 0 0 / 0.16);
 
     --base-shadow-color: rgb(0 0 0 / 0.05);
 
@@ -141,88 +136,4 @@ p.is-editor-empty:first-child:before {
 
 .mention {
   @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-400;
-}
-
-.hexagon-loader-container {
-  @apply relative w-full py-4;
-}
-
-.hexagon-loader {
-  position: relative;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-  height: 40px;
-}
-
-/* Three hexagon loading animation */
-.hexagon {
-  display: inline-block;
-  position: relative;
-  width: 18px;
-  height: 10px;
-  background-color: #5fe4d3;
-  position: relative;
-  animation: hexloader 1.4s infinite ease-in-out;
-}
-
-.hexagon:before,
-.hexagon:after {
-  content: "";
-  position: absolute;
-  width: 0;
-  border-left: 9px solid transparent;
-  border-right: 9px solid transparent;
-}
-
-.hexagon:before {
-  bottom: 100%;
-  border-bottom: 5px solid #5fe4d3;
-}
-
-.hexagon:after {
-  top: 100%;
-  border-top: 5px solid #5fe4d3;
-}
-
-.hexagon + .hexagon {
-  margin-left: 8px;
-  animation: hexloader 1.4s 0.2s infinite ease-in-out;
-  background-color: #4faade;
-}
-
-.hexagon + .hexagon:before {
-  border-bottom-color: #4faade;
-}
-
-.hexagon + .hexagon:after {
-  border-top-color: #4faade;
-}
-
-.hexagon + .hexagon + .hexagon {
-  margin-left: 8px;
-  animation: hexloader 1.4s 0.4s infinite ease-in-out;
-  background-color: #6041d0;
-}
-
-.hexagon + .hexagon + .hexagon:before {
-  border-bottom-color: #6041d0;
-}
-
-.hexagon + .hexagon + .hexagon:after {
-  border-top-color: #6041d0;
-}
-
-@keyframes hexloader {
-  0%,
-  80%,
-  100% {
-    transform: scale(0.5);
-    opacity: 0;
-  }
-  40% {
-    transform: scale(1);
-    opacity: 1;
-  }
 }

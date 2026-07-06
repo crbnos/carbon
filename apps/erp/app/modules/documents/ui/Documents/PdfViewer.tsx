@@ -1,8 +1,9 @@
 import { Skeleton } from "@carbon/react";
+import workerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import { useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
+pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
 
 function SkeletonDocument() {
   return (

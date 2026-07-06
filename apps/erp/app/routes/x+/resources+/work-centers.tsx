@@ -5,6 +5,7 @@ import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
+import { getDepartmentsList } from "~/modules/people";
 import {
   getLocationsList,
   getWorkCenters,
@@ -32,7 +33,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const [workCenters, locations] = await Promise.all([
+  const [workCenters, departments, locations] = await Promise.all([
     getWorkCenters(client, companyId, {
       search,
       limit,
@@ -40,6 +41,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       sorts,
       filters
     }),
+    getDepartmentsList(client, companyId),
     getLocationsList(client, companyId)
   ]);
 
@@ -55,19 +57,22 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   return {
     count: workCenters.count ?? 0,
+    departments: departments.data ?? [],
     workCenters: workCenters.data ?? [],
     locations: locations.data ?? []
   };
 }
 
 export default function WorkCentersRoute() {
-  const { count, locations, workCenters } = useLoaderData<typeof loader>();
+  const { count, departments, locations, workCenters } =
+    useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
       <WorkCentersTable
         data={workCenters}
         count={count}
+        departments={departments}
         locations={locations}
       />
       <Outlet />

@@ -1,9 +1,22 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { Footer, JobTravelerPageContent } from "@carbon/documents/pdf";
+import {
+  ensureFont,
+  Footer,
+  JobTravelerPageContent
+} from "@carbon/documents/pdf";
+import {
+  collectSectionIds,
+  interpolateContent,
+  resolveTemplate,
+  toDocumentTemplate
+} from "@carbon/documents/template";
 import type { JSONContent } from "@carbon/react";
-import { getPreferenceHeaders } from "@carbon/react";
-import { flattenTree, generateBomIds } from "@carbon/utils";
+import {
+  flattenTree,
+  generateBomIds,
+  getPreferenceHeaders
+} from "@carbon/utils";
 import {
   Document,
   Font,
@@ -18,7 +31,11 @@ import {
   getJobOperationsByMethodId,
   getTrackedEntityByJobId
 } from "~/modules/production/production.service";
-import { getCompany, getCompanySettings } from "~/modules/settings";
+import {
+  getCompany,
+  getDocumentTemplate,
+  resolveSections
+} from "~/modules/settings";
 import { getBase64ImageFromSupabase } from "~/modules/shared";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -54,17 +71,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw new Error("Failed to load job make methods");
   }
 
-  const [company, companySettings] = await Promise.all([
-    getCompany(serviceRole, job.data.companyId ?? ""),
-    getCompanySettings(serviceRole, job.data.companyId ?? "")
-  ]);
+  const company = await getCompany(serviceRole, job.data.companyId ?? "");
   if (company.error) {
     console.error(company.error);
     throw new Error("Failed to load company");
-  }
-  if (companySettings.error) {
-    console.error(companySettings.error);
-    throw new Error("Failed to load company settings");
   }
 
   const customer = await serviceRole
@@ -146,6 +156,36 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     })
   );
 
+  // Resolve the customizable template (block order / visibility / font /
+  // footer) and the shared header/footer sections.
+  const documentTemplate = await getDocumentTemplate(
+    serviceRole,
+    companyId,
+    "jobTraveler"
+  );
+  const templateConfig = toDocumentTemplate(
+    documentTemplate.data,
+    "jobTraveler"
+  );
+  const resolved = resolveTemplate("jobTraveler", templateConfig);
+  const sections = await resolveSections(
+    serviceRole,
+    companyId,
+    collectSectionIds(resolved)
+  );
+  await ensureFont(resolved.settings.fontFamily);
+
+  const footerSectionContent = resolved.footerSectionId
+    ? sections[resolved.footerSectionId]?.content
+    : undefined;
+  const footerContent = footerSectionContent
+    ? interpolateContent(footerSectionContent, {
+        "job.number": job.data.jobId ?? "",
+        "company.name": company.data.name ?? ""
+      })
+    : undefined;
+  const showFooter = resolved.footerSectionId !== null;
+
   // Register fonts (same as Template component)
   Font.register({
     family: "Inter",
@@ -174,7 +214,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const styles = StyleSheet.create({
     body: {
-      fontFamily: "Inter",
+      fontFamily: resolved.settings.fontFamily,
       padding: "20px 40px 50px 40px",
       color: "#000000",
       backgroundColor: "#FFFFFF"
@@ -203,11 +243,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             notes={index === 0 ? jobNotes : undefined}
             thumbnail={data.thumbnail}
             methodRevision={data.makeMethod.version?.toString()}
-            includeWorkInstructions={
-              companySettings.data?.jobTravelerIncludeWorkInstructions ?? false
-            }
+            template={templateConfig}
+            sections={sections}
           />
-          <Footer />
+          {showFooter && (
+            <Footer
+              documentId={job.data.jobId}
+              content={footerContent}
+              showPageNumbers={resolved.settings.showPageNumbers}
+              pageNumberFormat={resolved.settings.pageNumberFormat}
+              showRegistrationLine={resolved.settings.showRegistrationLine}
+            />
+          )}
         </Page>
       ))}
     </Document>

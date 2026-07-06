@@ -42,9 +42,9 @@ const Sort = ({ columnAccessors }: SortProps) => {
 
   return (
     <Popover>
-      <PopoverTrigger>
-        <Tooltip>
-          <TooltipTrigger asChild>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <PopoverTrigger asChild>
             <IconButton
               aria-label={t`Sort`}
               title={t`Sort`}
@@ -52,14 +52,14 @@ const Sort = ({ columnAccessors }: SortProps) => {
               icon={<LuArrowUpDown />}
               className={cn(hasNoSorts && "!border-dashed border-border")}
             />
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>
-              <Trans>Sort by</Trans>
-            </p>
-          </TooltipContent>
-        </Tooltip>
-      </PopoverTrigger>
+          </PopoverTrigger>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>
+            <Trans>Sort by</Trans>
+          </p>
+        </TooltipContent>
+      </Tooltip>
       <PopoverContent className="w-[420px]">
         {hasNoSorts && (
           <PopoverHeader>
