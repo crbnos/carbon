@@ -8,7 +8,11 @@ import {
   ProviderID,
   type XeroProvider
 } from "@carbon/ee/accounting";
-import { getIntegrationServerHooks } from "@carbon/ee/hooks.server";
+import {
+  ensureOnshapeReleaseWebhook,
+  getIntegrationServerHooks,
+  onshapeConnectionHasWriteScope
+} from "@carbon/ee/hooks.server";
 import { isIntegrationWhitelisted } from "@carbon/ee/plan";
 import { requirePlan } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
@@ -265,6 +269,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // Build metadata, transforming owner settings into syncConfig structure
   const metadata = buildIntegrationMetadata(existingMetadata, d);
 
+  // Onshape asset sync needs the OAuth2Write scope (export jobs + webhook). A
+  // connection authorized read-only can't run it, and a refresh can't widen the
+  // scope — only a reconnect can. If a read-only user is turning the feature ON,
+  // don't persist an on-but-non-functional toggle: force it back off here and
+  // tell them to reconnect first (below). Leaving it off imposes nothing.
+  const onshapeActivatingWithoutWrite =
+    integrationId === "onshape" &&
+    (metadata as Record<string, unknown>).assetSyncEnabled === true &&
+    !onshapeConnectionHasWriteScope(existingMetadata);
+  if (onshapeActivatingWithoutWrite) {
+    (metadata as Record<string, unknown>).assetSyncEnabled = false;
+  }
+
   const wasInstalled = existing.data?.active === true;
 
   const update = await upsertCompanyIntegration(client, {
@@ -312,6 +329,52 @@ export async function action({ request, params }: ActionFunctionArgs) {
           )
         );
       }
+    }
+  }
+
+  // Onshape: keep the release-webhook subscription in lockstep with the
+  // asset-sync toggle. Registering here (not just on connect) also covers
+  // already-connected installs when they enable the feature — but connections
+  // authorized before the OAuth2Write scope was requested hold Read-only tokens
+  // and need a reconnect, so surface a registration failure instead of flashing
+  // success while the sync silently never fires. The settings themselves are
+  // already saved either way.
+  if (integrationId === "onshape") {
+    // Read-only connection trying to turn asset sync on: we already forced the
+    // toggle back off above, so just tell them exactly what to do. Explicit and
+    // scope-accurate — not inferred from a downstream webhook failure.
+    if (onshapeActivatingWithoutWrite) {
+      await invalidateIntegrationHealthCache(integrationId, companyId);
+      throw redirect(
+        path.to.integrations,
+        await flash(
+          request,
+          error(
+            "onshape connection is read-only",
+            "Onshape is connected with read-only access. Reconnect Onshape to grant write access, then enable asset sync."
+          )
+        )
+      );
+    }
+
+    const assetSyncEnabled =
+      (metadata as Record<string, unknown>).assetSyncEnabled === true;
+    const webhookResult = await ensureOnshapeReleaseWebhook(
+      companyId,
+      assetSyncEnabled
+    );
+    if (assetSyncEnabled && !webhookResult.ok) {
+      await invalidateIntegrationHealthCache(integrationId, companyId);
+      throw redirect(
+        path.to.integrations,
+        await flash(
+          request,
+          error(
+            webhookResult.error,
+            "Saved Onshape settings, but couldn't register the release webhook. Reconnect Onshape to grant write access, then save again."
+          )
+        )
+      );
     }
   }
 

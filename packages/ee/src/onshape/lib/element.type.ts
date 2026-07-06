@@ -9,5 +9,6 @@ export interface OnshapeElement extends OnshapeDocument {
 
 export enum OnshapeElementType {
   ASSEMBLY = "ASSEMBLY",
-  PART_STUDIO = "PARTSTUDIO"
+  PART_STUDIO = "PARTSTUDIO",
+  DRAWING = "DRAWING"
 }

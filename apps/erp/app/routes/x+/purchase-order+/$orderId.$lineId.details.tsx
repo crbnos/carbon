@@ -213,6 +213,7 @@ export default function EditPurchaseOrderLineRoute() {
           itemId: line?.itemId ?? undefined
         }}
         modelPath={line?.modelPath ?? null}
+        thumbnailPath={line?.thumbnailPath ?? null}
         title="CAD Model"
         uploadClassName="aspect-square min-h-[420px] max-h-[70vh]"
         viewerClassName="aspect-square min-h-[420px] max-h-[70vh]"

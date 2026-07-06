@@ -19,6 +19,8 @@ const taskToEvent = {
   "model-optimize": "carbon/model-optimize",
   notify: "carbon/notify",
   onboard: "carbon/onboard",
+  "onshape-backfill": "carbon/onshape-backfill",
+  "onshape-revision-sync": "carbon/onshape-revision-sync",
   "paperless-parts": "carbon/paperless-parts",
   "post-transactions": "carbon/post-transaction",
   "print-job-deliver": "carbon/print-job-deliver",

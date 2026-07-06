@@ -388,6 +388,7 @@ export default function PartDetailsRoute() {
             isReadOnly={!permissions.can("update", "parts")}
             metadata={{ itemId }}
             modelPath={partData?.partSummary?.modelPath ?? null}
+            thumbnailPath={partData?.partSummary?.thumbnailPath ?? null}
             title={t`CAD Model`}
           />
           <ItemRiskRegister itemId={itemId} />

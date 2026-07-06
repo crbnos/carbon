@@ -808,7 +808,8 @@ export async function getModelByItemId(
     return {
       itemId: item.data?.id ?? null,
       type: item.data?.type ?? null,
-      modelPath: null
+      modelPath: null,
+      thumbnailPath: null
     };
   }
 
@@ -822,7 +823,8 @@ export async function getModelByItemId(
     return {
       itemId: item.data?.id ?? null,
       type: item.data?.type ?? null,
-      modelSize: null
+      modelSize: null,
+      thumbnailPath: null
     };
   }
 

@@ -16,7 +16,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     client_id: ONSHAPE_CLIENT_ID,
     redirect_uri: ONSHAPE_OAUTH_REDIRECT_URL,
     response_type: "code",
-    scope: "OAuth2Read",
+    // Read for models/revisions/documents; Write to create translation (STEP/PDF
+    // export) jobs and manage the release webhook subscription.
+    scope: "OAuth2Read OAuth2Write",
     state
   });
 

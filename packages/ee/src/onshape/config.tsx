@@ -13,8 +13,41 @@ export const Onshape = defineIntegration({
     "Onshape is a browser-based CAD/PLM software for modern engineering teams. This integration will sync data from Onshape to Carbon.",
   shortDescription: "Sync data from Onshape to Carbon.",
   images: [],
-  settings: [],
-  schema: z.object({}),
+  settings: [
+    {
+      name: "assetSyncEnabled",
+      label: "Sync released assets",
+      description:
+        "Automatically pull released Onshape drawings and CAD models onto matching Carbon items (matched by part number). Off by default.",
+      type: "switch",
+      required: false,
+      value: false
+    }
+  ],
+  schema: z.object({
+    // SwitchField posts a literal "true"/"false" string; preprocess explicitly so
+    // unchecking sticks (z.coerce.boolean would treat "false" as truthy).
+    assetSyncEnabled: z
+      .preprocess((value) => {
+        if (typeof value === "boolean") return value;
+        if (value === "true") return true;
+        if (value === "false") return false;
+        return value;
+      }, z.boolean())
+      .default(false)
+  }),
+  actions: [
+    {
+      id: "backfill",
+      label: "Backfill released assets",
+      description:
+        "Pull released Onshape assets onto all matching Carbon items now (link-only). Requires asset sync enabled.",
+      endpoint: "/api/integrations/onshape/backfill",
+      // Only shown once asset sync is enabled (the backfill route is gated on it
+      // too, so hide the button rather than show one that errors).
+      enabledWhenSetting: "assetSyncEnabled"
+    }
+  ],
   onClientInstall: async () => {
     const response = await fetch("/api/integrations/onshape/install").then(
       (res) => res.json()
