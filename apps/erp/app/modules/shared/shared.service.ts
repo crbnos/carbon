@@ -1,7 +1,10 @@
-import type { Database } from "@carbon/database";
+import type { Database, Tables } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { getPurchaseOrderStatus, supportedModelTypes } from "@carbon/utils";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type {
+  PostgrestSingleResponse,
+  SupabaseClient
+} from "@supabase/supabase-js";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
@@ -1064,7 +1067,14 @@ export async function getCustomerPortals(
 export async function getCustomerPortal(
   client: SupabaseClient<Database>,
   id: string
-) {
+): Promise<
+  PostgrestSingleResponse<
+    Tables<"externalLink"> & {
+      customer: Pick<Tables<"customer">, "id" | "name">;
+    }
+  >
+> {
+  // @ts-expect-error Supabase composite key issue
   return client
     .from("externalLink")
     .select("*, customer:customerId(id, name)")
