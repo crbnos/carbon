@@ -1,3 +1,4 @@
+import { ClaudeMCP } from "./claude-mcp/config";
 import { Email } from "./email/config";
 import { ExchangeRates } from "./exchange-rates/config";
 import { Jira } from "./jira/config";
@@ -29,6 +30,7 @@ export type {
 
 export const integrations = [
   // Radan,
+  ClaudeMCP,
   Email,
   ExchangeRates,
   Jira,
