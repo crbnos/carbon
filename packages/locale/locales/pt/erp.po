@@ -416,6 +416,9 @@ msgstr "Contabilidade está ativada"
 msgid "Accounting period"
 msgstr "Período contábil"
 
+msgid "Accounting Periods"
+msgstr ""
+
 msgid "Accounting: GL, AR, AP, and month-end close"
 msgstr "Contabilidade: GL, AR, AP e encerramento mensal"
 
@@ -1855,6 +1858,9 @@ msgstr "Não é possível adicionar etapas a uma operação não salva"
 msgid "Cannot add tools to unsaved operation"
 msgstr "Não é possível adicionar ferramentas a uma operação não salva"
 
+msgid "Cannot close yet"
+msgstr ""
+
 msgid "Cannot convert RFQ to quote"
 msgstr "Não é possível converter RFQ para cotação"
 
@@ -2081,8 +2087,17 @@ msgstr "Registado desde {0}"
 msgid "Close"
 msgstr "Fechar"
 
+msgid "Close {periodLabel}"
+msgstr ""
+
 msgid "Close Date"
 msgstr "Data de Encerramento"
+
+msgid "Close Period"
+msgstr ""
+
+msgid "Close Status"
+msgstr ""
 
 msgid "Closed"
 msgstr "Fechado"
@@ -2339,6 +2354,9 @@ msgstr "Confirmar Mapeamento"
 
 msgid "Confirm Password"
 msgstr "Confirmar Senha"
+
+msgid "Confirm Skip"
+msgstr ""
 
 msgid "Confirmed incoming stock — purchase & production orders (bars above zero)."
 msgstr "Estoque de entrada confirmado — pedidos de compra e produção (barras acima de zero)."
@@ -3198,6 +3216,9 @@ msgstr "Data de Emissão"
 
 msgid "Date Paid"
 msgstr "Data de Pagamento"
+
+msgid "Date Range"
+msgstr ""
 
 msgid "Dates"
 msgstr "Datas"
@@ -4594,6 +4615,9 @@ msgstr "Todas as condições devem corresponder"
 
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "Todos os testes no escopo passam no seu sistema configurado, com seus dados."
+
+msgid "Every required task must be Done or Skipped before the period can be closed."
+msgstr ""
 
 msgid "Every row was imported successfully."
 msgstr "Cada linha foi importada com sucesso."
@@ -6829,6 +6853,9 @@ msgstr "Marca Modo Escuro"
 msgid "Mark done"
 msgstr "Marcar como concluído"
 
+msgid "Mark Done"
+msgstr ""
+
 msgid "Mark Light Mode"
 msgstr "Marca Modo Claro"
 
@@ -7552,6 +7579,9 @@ msgstr "Nenhuma habilidade adicionada"
 
 msgid "No Access"
 msgstr "Sem Acesso"
+
+msgid "No accounting periods yet"
+msgstr ""
 
 msgid "No action needed"
 msgstr "Nenhuma ação necessária"
@@ -9242,6 +9272,9 @@ msgstr "Conta de Motivo"
 msgid "Reason for declining (Optional)"
 msgstr "Motivo da recusa (Opcional)"
 
+msgid "Reason for skipping (required)"
+msgstr ""
+
 msgid "Reasons"
 msgstr "Razões"
 
@@ -10671,6 +10704,9 @@ msgstr "Tamanho"
 msgid "Sizes"
 msgstr "Tamanhos"
 
+msgid "Skip"
+msgstr ""
+
 msgid "Skip Existing"
 msgstr "Ignorar Existentes"
 
@@ -11276,6 +11312,9 @@ msgstr "Versão de Destino"
 
 msgid "Target Version"
 msgstr "Versão de Destino"
+
+msgid "Task"
+msgstr ""
 
 msgid "tasks"
 msgstr "tarefas"

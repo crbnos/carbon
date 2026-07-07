@@ -416,6 +416,9 @@ msgstr "会计已启用"
 msgid "Accounting period"
 msgstr "会计期间"
 
+msgid "Accounting Periods"
+msgstr ""
+
 msgid "Accounting: GL, AR, AP, and month-end close"
 msgstr "会计：总账、应收账款、应付账款和月末结账"
 
@@ -1855,6 +1858,9 @@ msgstr "无法向未保存的操作添加步骤"
 msgid "Cannot add tools to unsaved operation"
 msgstr "无法向未保存的操作添加工具"
 
+msgid "Cannot close yet"
+msgstr ""
+
 msgid "Cannot convert RFQ to quote"
 msgstr "无法将RFQ转换为报价"
 
@@ -2081,8 +2087,17 @@ msgstr "自 {0} 起已打卡"
 msgid "Close"
 msgstr "关闭"
 
+msgid "Close {periodLabel}"
+msgstr ""
+
 msgid "Close Date"
 msgstr "关闭日期"
+
+msgid "Close Period"
+msgstr ""
+
+msgid "Close Status"
+msgstr ""
 
 msgid "Closed"
 msgstr "已关闭"
@@ -2339,6 +2354,9 @@ msgstr "确认映射"
 
 msgid "Confirm Password"
 msgstr "确认密码"
+
+msgid "Confirm Skip"
+msgstr ""
 
 msgid "Confirmed incoming stock — purchase & production orders (bars above zero)."
 msgstr "确认的入库存货 — 采购和生产订单（零以上的条形图）。"
@@ -3198,6 +3216,9 @@ msgstr "签发日期"
 
 msgid "Date Paid"
 msgstr "支付日期"
+
+msgid "Date Range"
+msgstr ""
 
 msgid "Dates"
 msgstr "日期"
@@ -4594,6 +4615,9 @@ msgstr "每个条件都必须匹配"
 
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "您配置的系统中的每项范围内测试都通过了，使用您的数据。"
+
+msgid "Every required task must be Done or Skipped before the period can be closed."
+msgstr ""
 
 msgid "Every row was imported successfully."
 msgstr "每一行都已成功导入。"
@@ -6829,6 +6853,9 @@ msgstr "标记深色模式"
 msgid "Mark done"
 msgstr "标记为完成"
 
+msgid "Mark Done"
+msgstr ""
+
 msgid "Mark Light Mode"
 msgstr "标记浅色模式"
 
@@ -7552,6 +7579,9 @@ msgstr "未添加任何能力"
 
 msgid "No Access"
 msgstr "无权限"
+
+msgid "No accounting periods yet"
+msgstr ""
 
 msgid "No action needed"
 msgstr "无需操作"
@@ -9242,6 +9272,9 @@ msgstr "原因账户"
 msgid "Reason for declining (Optional)"
 msgstr "拒绝原因（可选）"
 
+msgid "Reason for skipping (required)"
+msgstr ""
+
 msgid "Reasons"
 msgstr "原因"
 
@@ -10671,6 +10704,9 @@ msgstr "大小"
 msgid "Sizes"
 msgstr "尺寸"
 
+msgid "Skip"
+msgstr ""
+
 msgid "Skip Existing"
 msgstr "跳过现有"
 
@@ -11276,6 +11312,9 @@ msgstr "目标版本"
 
 msgid "Target Version"
 msgstr "目标版本"
+
+msgid "Task"
+msgstr ""
 
 msgid "tasks"
 msgstr "任务"

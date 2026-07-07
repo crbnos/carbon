@@ -416,6 +416,9 @@ msgstr "Muhasebe etkinleştirilmiş"
 msgid "Accounting period"
 msgstr "Muhasebe dönemi"
 
+msgid "Accounting Periods"
+msgstr ""
+
 msgid "Accounting: GL, AR, AP, and month-end close"
 msgstr "Muhasebe: GL, AR, AP ve ay sonu kapanışı"
 
@@ -1855,6 +1858,9 @@ msgstr "Kaydedilmemiş işleme adım eklenemez"
 msgid "Cannot add tools to unsaved operation"
 msgstr "Kaydedilmemiş işleme araç eklenemez"
 
+msgid "Cannot close yet"
+msgstr ""
+
 msgid "Cannot convert RFQ to quote"
 msgstr "RFQ teklifine dönüştürülemiyor"
 
@@ -2081,8 +2087,17 @@ msgstr "Saat giriş yapıldı: {0}"
 msgid "Close"
 msgstr "Kapat"
 
+msgid "Close {periodLabel}"
+msgstr ""
+
 msgid "Close Date"
 msgstr "Kapatma Tarihi"
+
+msgid "Close Period"
+msgstr ""
+
+msgid "Close Status"
+msgstr ""
 
 msgid "Closed"
 msgstr "Kapalı"
@@ -2339,6 +2354,9 @@ msgstr "Eşleştirmeyi Onayla"
 
 msgid "Confirm Password"
 msgstr "Şifreyi Onayla"
+
+msgid "Confirm Skip"
+msgstr ""
 
 msgid "Confirmed incoming stock — purchase & production orders (bars above zero)."
 msgstr "Onaylanan gelen stok — satın alma ve üretim siparişleri (sıfırın üzerindeki çubuklar)."
@@ -3198,6 +3216,9 @@ msgstr "Düzenleme Tarihi"
 
 msgid "Date Paid"
 msgstr "Ödeme Tarihi"
+
+msgid "Date Range"
+msgstr ""
 
 msgid "Dates"
 msgstr "Tarihler"
@@ -4594,6 +4615,9 @@ msgstr "Her koşul eşleşmelidir"
 
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "Kapsamdaki her test, yapılandırılmış sisteminizde, verilerinizle geçer."
+
+msgid "Every required task must be Done or Skipped before the period can be closed."
+msgstr ""
 
 msgid "Every row was imported successfully."
 msgstr "Her satır başarıyla içe aktarıldı."
@@ -6829,6 +6853,9 @@ msgstr "Koyu Mod Mark"
 msgid "Mark done"
 msgstr "Tamamlandı olarak işaretle"
 
+msgid "Mark Done"
+msgstr ""
+
 msgid "Mark Light Mode"
 msgstr "Aydınlık Mod Markası"
 
@@ -7552,6 +7579,9 @@ msgstr "Ek yetenek eklenmedi"
 
 msgid "No Access"
 msgstr "Erişim Yok"
+
+msgid "No accounting periods yet"
+msgstr ""
 
 msgid "No action needed"
 msgstr "Yapılacak işlem yok"
@@ -9242,6 +9272,9 @@ msgstr "Neden Hesabı"
 msgid "Reason for declining (Optional)"
 msgstr "Reddetme nedeni (İsteğe bağlı)"
 
+msgid "Reason for skipping (required)"
+msgstr ""
+
 msgid "Reasons"
 msgstr "Nedenler"
 
@@ -10671,6 +10704,9 @@ msgstr "Boyut"
 msgid "Sizes"
 msgstr "Boyutlar"
 
+msgid "Skip"
+msgstr ""
+
 msgid "Skip Existing"
 msgstr "Mevcut Olanı Atla"
 
@@ -11276,6 +11312,9 @@ msgstr "Bir veya daha fazla öğeyi hedefleyin."
 
 msgid "Target Version"
 msgstr "Hedef Sürüm"
+
+msgid "Task"
+msgstr ""
 
 msgid "tasks"
 msgstr "görevler"

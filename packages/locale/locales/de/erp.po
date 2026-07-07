@@ -416,6 +416,9 @@ msgstr "Buchhaltung ist aktiviert"
 msgid "Accounting period"
 msgstr "Abrechnungsperiode"
 
+msgid "Accounting Periods"
+msgstr ""
+
 msgid "Accounting: GL, AR, AP, and month-end close"
 msgstr "Buchhaltung: Hauptbuch, Debitorenbuchhaltung, Kreditorenbuchhaltung und Monatsabschluss"
 
@@ -1855,6 +1858,9 @@ msgstr "Schritte können nicht zu nicht gespeichertem Vorgang hinzugefügt werde
 msgid "Cannot add tools to unsaved operation"
 msgstr "Werkzeuge können nicht zu nicht gespeicherten Vorgängen hinzugefügt werden"
 
+msgid "Cannot close yet"
+msgstr ""
+
 msgid "Cannot convert RFQ to quote"
 msgstr "RFQ kann nicht in Angebot umgewandelt werden"
 
@@ -2081,8 +2087,17 @@ msgstr "Angemeldet seit {0}"
 msgid "Close"
 msgstr "Schließen"
 
+msgid "Close {periodLabel}"
+msgstr ""
+
 msgid "Close Date"
 msgstr "Schließungsdatum"
+
+msgid "Close Period"
+msgstr ""
+
+msgid "Close Status"
+msgstr ""
 
 msgid "Closed"
 msgstr "Geschlossen"
@@ -2339,6 +2354,9 @@ msgstr "Zuordnung bestätigen"
 
 msgid "Confirm Password"
 msgstr "Passwort bestätigen"
+
+msgid "Confirm Skip"
+msgstr ""
 
 msgid "Confirmed incoming stock — purchase & production orders (bars above zero)."
 msgstr "Bestätigter eingehender Bestand — Kauf- und Produktionsaufträge (Balken über Null)."
@@ -3198,6 +3216,9 @@ msgstr "Ausstellungsdatum"
 
 msgid "Date Paid"
 msgstr "Zahlungsdatum"
+
+msgid "Date Range"
+msgstr ""
 
 msgid "Dates"
 msgstr "Daten"
@@ -4594,6 +4615,9 @@ msgstr "Jede Bedingung muss erfüllt sein"
 
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "Jeder Test im Umfang wird in Ihrem konfigurierten System mit Ihren Daten bestanden."
+
+msgid "Every required task must be Done or Skipped before the period can be closed."
+msgstr ""
 
 msgid "Every row was imported successfully."
 msgstr "Jede Zeile wurde erfolgreich importiert."
@@ -6829,6 +6853,9 @@ msgstr "Marke Dunkelmodus"
 msgid "Mark done"
 msgstr "Als erledigt markieren"
 
+msgid "Mark Done"
+msgstr ""
+
 msgid "Mark Light Mode"
 msgstr "Marke Hellmodus"
 
@@ -7552,6 +7579,9 @@ msgstr "Keine Fähigkeiten hinzugefügt"
 
 msgid "No Access"
 msgstr "Kein Zugriff"
+
+msgid "No accounting periods yet"
+msgstr ""
 
 msgid "No action needed"
 msgstr "Keine Aktion erforderlich"
@@ -9242,6 +9272,9 @@ msgstr "Grund-Konto"
 msgid "Reason for declining (Optional)"
 msgstr "Grund für Ablehnung (Optional)"
 
+msgid "Reason for skipping (required)"
+msgstr ""
+
 msgid "Reasons"
 msgstr "Gründe"
 
@@ -10671,6 +10704,9 @@ msgstr "Größe"
 msgid "Sizes"
 msgstr "Größen"
 
+msgid "Skip"
+msgstr ""
+
 msgid "Skip Existing"
 msgstr "Vorhandene überspringen"
 
@@ -11276,6 +11312,9 @@ msgstr "Zielversion"
 
 msgid "Target Version"
 msgstr "Zielversion"
+
+msgid "Task"
+msgstr ""
 
 msgid "tasks"
 msgstr "Aufgaben"
