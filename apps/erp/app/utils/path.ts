@@ -1737,6 +1737,8 @@ export const path = {
     saveViewOrder: `${x}/shared/view/order`,
     scheduleOperation: `${x}/schedule/operations`,
     scheduleOperationUpdate: `${x}/schedule/operations/update`,
+    scheduleBatching: `${x}/schedule/batching`,
+    scheduleBatchingUpdate: `${x}/schedule/batching/update`,
     scheduleDates: `${x}/schedule/dates`,
     scheduleDatesUpdate: `${x}/schedule/dates/update`,
     scrapReason: (id: string) =>

@@ -157,6 +157,11 @@ const ProcessForm = ({
                   label={t`Complete all quantities on barcode scan`}
                   termId="process-complete-all-on-scan"
                 />
+                <Boolean
+                  name="batchable"
+                  label={t`Batchable`}
+                  description={t`Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath`}
+                />
                 <CustomFormFields table="process" />
               </VStack>
             </ModalDrawerBody>

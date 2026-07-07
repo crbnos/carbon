@@ -131,6 +131,8 @@ export const path = {
     printingSettings: `${ERP_URL}/x/settings/printing`,
     operation: (id: string) => generatePath(`${x}/operation/${id}`),
     operations: `${x}/operations?saved=1`,
+    batch: (id: string) => generatePath(`${x}/batch/${id}`),
+    batchComplete: (id: string) => generatePath(`${x}/batch/${id}/complete`),
     productionEvent: `${x}/event`,
     recent: `${x}/recent`,
     record: `${x}/record`,

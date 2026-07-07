@@ -1616,6 +1616,9 @@ msgstr "Número de lote"
 msgid "Batch Number"
 msgstr "Número de Lote"
 
+msgid "Batch planning"
+msgstr ""
+
 msgid "Batch Properties"
 msgstr "Propiedades de Lote"
 
@@ -1627,6 +1630,12 @@ msgstr "Seguimiento de lotes"
 
 msgid "Batch Tracking"
 msgstr "Seguimiento de Lotes"
+
+msgid "Batchable"
+msgstr ""
+
+msgid "Batched"
+msgstr ""
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
@@ -3822,6 +3831,9 @@ msgstr "Disposición"
 msgid "Dispositions"
 msgstr "Disposiciones"
 
+msgid "Dissolve batch"
+msgstr ""
+
 msgid "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
 msgstr "¿Deseas sobrescribir los permisos actuales del usuario con los permisos predeterminados para este tipo de empleado?"
 
@@ -3894,6 +3906,9 @@ msgstr "Arrastra y suelta un PDF de Orden de Compra aquí, o haz clic para selec
 
 msgid "Drag handle"
 msgstr "Controlador de arrastre"
+
+msgid "Drag here to start a new batch"
+msgstr ""
 
 msgid "Drag to place on drawing"
 msgstr "Arrastra para colocar en el dibujo"
@@ -7179,6 +7194,9 @@ msgstr "MRP (planificación)"
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP se ejecuta automáticamente cada 3 horas, pero puedes ejecutarlo manualmente aquí."
 
+msgid "Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath"
+msgstr ""
+
 msgid "Must be in the same location"
 msgstr "Debe estar en la misma ubicación"
 
@@ -7793,6 +7811,9 @@ msgstr "No hay entradas de tiempo para esta semana"
 
 msgid "No transactions in this period"
 msgstr "No hay transacciones en este período"
+
+msgid "No unbatched operations match"
+msgstr ""
 
 msgid "No value needed"
 msgstr "No se necesita valor"
@@ -8452,6 +8473,9 @@ msgstr "Impresoras físicas disponibles para asignación."
 
 msgid "Pick"
 msgstr "Seleccionar"
+
+msgid "Pick a batchable process to plan batches"
+msgstr ""
 
 msgid "Pick a column to sort by"
 msgstr "Elige una columna para ordenar"
@@ -9457,6 +9481,9 @@ msgstr "Eliminar filtro"
 msgid "Remove Filters"
 msgstr "Eliminar filtros"
 
+msgid "Remove from batch"
+msgstr ""
+
 msgid "Remove from Price List"
 msgstr "Eliminar de la Lista de Precios"
 
@@ -10133,6 +10160,9 @@ msgstr "Seleccionar"
 
 msgid "Select a assignee"
 msgstr "Seleccionar un asignado"
+
+msgid "Select a batchable process"
+msgstr ""
 
 msgid "Select a default approver"
 msgstr "Selecciona un aprobador predeterminado"

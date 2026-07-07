@@ -6,7 +6,7 @@ Locations, work centers, processes, abilities (skills), partners, contractors, e
 
 - **Location** — physical site/facility. Every inventory record, job, and employee is scoped to a location. Has address, timezone, and GPS coordinates. Company-scoped.
 - **Work Center** — production station within a location. Operations schedule onto work centers. Have capacity, rates, and active/inactive status. MUST soft-delete via `active: false`.
-- **Process** — type of work (e.g., "CNC Milling", "Welding"). Operations reference a process. Linked to work centers via `workCenterProcess`. MUST soft-delete via `active: false`.
+- **Process** — type of work (e.g., "CNC Milling", "Welding"). Operations reference a process. Linked to work centers via `workCenterProcess`. MUST soft-delete via `active: false`. The `batchable` flag marks a process where multiple jobs can run at once (laser table, furnace, plating) — job operations derive batchability from it (see the production module's Operation Batch concept).
 - **Ability** — employee skill/certification with a learning curve. Tracked per employee via `employeeAbility` with training status, shadow weeks, and completion tracking.
 - **Partner** — external supplier location with ability mappings for outsourced work.
 - **Contractor** — supplier contact working as contract labor, with hours-per-week and ability assignments via `contractorAbility`.

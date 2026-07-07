@@ -1616,6 +1616,9 @@ msgstr "Batch number"
 msgid "Batch Number"
 msgstr "Batch Number"
 
+msgid "Batch planning"
+msgstr "Batch planning"
+
 msgid "Batch Properties"
 msgstr "Batch Properties"
 
@@ -1627,6 +1630,12 @@ msgstr "Batch tracking"
 
 msgid "Batch Tracking"
 msgstr "Batch Tracking"
+
+msgid "Batchable"
+msgstr "Batchable"
+
+msgid "Batched"
+msgstr "Batched"
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
@@ -3822,6 +3831,9 @@ msgstr "Disposition"
 msgid "Dispositions"
 msgstr "Dispositions"
 
+msgid "Dissolve batch"
+msgstr "Dissolve batch"
+
 msgid "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
 msgstr "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
 
@@ -3894,6 +3906,9 @@ msgstr "Drag and drop a Purchase Order PDF here, or click to select a file"
 
 msgid "Drag handle"
 msgstr "Drag handle"
+
+msgid "Drag here to start a new batch"
+msgstr "Drag here to start a new batch"
 
 msgid "Drag to place on drawing"
 msgstr "Drag to place on drawing"
@@ -7179,6 +7194,9 @@ msgstr "MRP (planning)"
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP runs automatically every 3 hours, but you can run it manually here."
 
+msgid "Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath"
+msgstr "Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath"
+
 msgid "Must be in the same location"
 msgstr "Must be in the same location"
 
@@ -7793,6 +7811,9 @@ msgstr "No time entries for this week"
 
 msgid "No transactions in this period"
 msgstr "No transactions in this period"
+
+msgid "No unbatched operations match"
+msgstr "No unbatched operations match"
 
 msgid "No value needed"
 msgstr "No value needed"
@@ -8452,6 +8473,9 @@ msgstr "Physical printers available for assignment."
 
 msgid "Pick"
 msgstr "Pick"
+
+msgid "Pick a batchable process to plan batches"
+msgstr "Pick a batchable process to plan batches"
 
 msgid "Pick a column to sort by"
 msgstr "Pick a column to sort by"
@@ -9457,6 +9481,9 @@ msgstr "Remove filter"
 msgid "Remove Filters"
 msgstr "Remove Filters"
 
+msgid "Remove from batch"
+msgstr "Remove from batch"
+
 msgid "Remove from Price List"
 msgstr "Remove from Price List"
 
@@ -10133,6 +10160,9 @@ msgstr "Select"
 
 msgid "Select a assignee"
 msgstr "Select a assignee"
+
+msgid "Select a batchable process"
+msgstr "Select a batchable process"
 
 msgid "Select a default approver"
 msgstr "Select a default approver"

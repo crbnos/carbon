@@ -1616,6 +1616,9 @@ msgstr "Numer partii"
 msgid "Batch Number"
 msgstr "Numer partii"
 
+msgid "Batch planning"
+msgstr ""
+
 msgid "Batch Properties"
 msgstr "Właściwości partii"
 
@@ -1627,6 +1630,12 @@ msgstr "Śledzenie partii"
 
 msgid "Batch Tracking"
 msgstr "Śledzenie partii"
+
+msgid "Batchable"
+msgstr ""
+
+msgid "Batched"
+msgstr ""
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
@@ -3822,6 +3831,9 @@ msgstr "Dyspozycja"
 msgid "Dispositions"
 msgstr "Dyspozycje"
 
+msgid "Dissolve batch"
+msgstr ""
+
 msgid "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
 msgstr "Czy chcesz zastąpić bieżące uprawnienia użytkownika domyślnymi uprawnieniami dla tego typu pracownika?"
 
@@ -3894,6 +3906,9 @@ msgstr "Przeciągnij i upuść plik PDF zamówienia zakupu tutaj lub kliknij, ab
 
 msgid "Drag handle"
 msgstr "Uchwyt do przeciągania"
+
+msgid "Drag here to start a new batch"
+msgstr ""
 
 msgid "Drag to place on drawing"
 msgstr "Przeciągnij, aby umieścić na rysunku"
@@ -7179,6 +7194,9 @@ msgstr "MRP (planowanie)"
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP uruchamia się automatycznie co 3 godziny, ale możesz uruchomić go ręcznie tutaj."
 
+msgid "Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath"
+msgstr ""
+
 msgid "Must be in the same location"
 msgstr "Musi być w tej samej lokalizacji"
 
@@ -7793,6 +7811,9 @@ msgstr "Brak wpisów czasu pracy w tym tygodniu"
 
 msgid "No transactions in this period"
 msgstr "Brak transakcji w tym okresie"
+
+msgid "No unbatched operations match"
+msgstr ""
 
 msgid "No value needed"
 msgstr "Wartość nie jest wymagana"
@@ -8452,6 +8473,9 @@ msgstr "Drukarki fizyczne dostępne do przypisania."
 
 msgid "Pick"
 msgstr "Wybierz"
+
+msgid "Pick a batchable process to plan batches"
+msgstr ""
 
 msgid "Pick a column to sort by"
 msgstr "Wybierz kolumnę do sortowania"
@@ -9457,6 +9481,9 @@ msgstr "Usuń filtr"
 msgid "Remove Filters"
 msgstr "Usuń filtry"
 
+msgid "Remove from batch"
+msgstr ""
+
 msgid "Remove from Price List"
 msgstr "Usuń z listy cen"
 
@@ -10133,6 +10160,9 @@ msgstr "Wybierz"
 
 msgid "Select a assignee"
 msgstr "Wybierz osobę przydzieloną"
+
+msgid "Select a batchable process"
+msgstr ""
 
 msgid "Select a default approver"
 msgstr "Wybierz domyślnego zatwierdzającego"

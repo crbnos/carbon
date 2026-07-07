@@ -383,3 +383,12 @@ through; `ProcessForm` gains the Boolean field (clone `completeAllOnScan`).
   (SAP order combination/process lots, APS batchable resources, sheet-metal
   nesting workflow); all open questions resolved with recommendations pending
   Brad's veto; status → in-progress, ready for `/plan`.
+- 2026-07-07: Implemented on branch `feat/job-operation-batching` (migration
+  `20260707135312_job-operation-batching.sql`, `batch-operations` edge fn, ERP
+  services + batch planning board + schedule badge/menu, MES batch collapse +
+  batch view + complete flow). ERP+MES typecheck green. One grounded correction
+  to the plan: `productionEvent.duration` is a GENERATED column
+  (`EXTRACT(EPOCH FROM endTime-startTime)` seconds) and `post-production-event`
+  costs from it and skips if null — so completion slices contiguous start/end
+  windows (∝ operationQuantity) and never writes `duration`; the proportional
+  cost falls out automatically. Browser e2e verification pending.

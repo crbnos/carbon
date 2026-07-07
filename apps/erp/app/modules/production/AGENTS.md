@@ -10,6 +10,7 @@ Work orders (jobs), scheduling, routings (operations), bill of materials, proced
 - **Job Material** — BOM line within a make method. Each has a `methodType` (Pull from Inventory, Purchase to Order, Make to Order) that drives procurement.
 - **Production Event** — time tracking (Labor/Machine/Setup) against an operation.
 - **Production Quantity** — output recording (Production/Scrap/Rework) against an operation with optional `scrapReason`.
+- **Operation Batch** (`jobOperationBatch`) — N job operations sharing one run on a **batchable process** (`process.batchable`: laser table, furnace, plating). Jobs are never merged and the BOM is never modified; each member stays a first-class `jobOperation`. Time/cost split **proportional to `operationQuantity`**, materialized at completion as per-member `productionEvent` slices, so job costing/GL post per job with no special-casing. Distinct from lot/batch tracking (`trackedEntity`/`batchNumber`). Mutations go through the `batch-operations` edge function (create/add/remove/update/dissolve/complete).
 - **Procedure** — versioned work instructions linked to operations via `processId`. Statuses: Draft/Active/Archived.
 - **Maintenance Dispatch** — reactive/scheduled repair for work centers with comments, events, items, and linked work centers.
 - **Scheduling** — infinite-capacity backward scheduling via `schedule` edge function. MUST use `triggerJobSchedule` to reschedule, never direct date writes.
@@ -50,8 +51,9 @@ pnpm --filter @carbon/erp test
 | `jobMaterial` | BOM line: item, quantity, methodType, unitCost |
 | `jobOperationStep` / `jobOperationParameter` / `jobOperationTool` | Work instruction details on operations |
 | `jobOperationDependency` | Operation sequencing dependencies |
-| `productionEvent` | Time tracking: type (Labor/Machine/Setup), start/end, employee |
+| `productionEvent` | Time tracking: type (Labor/Machine/Setup), start/end, employee; nullable `jobOperationBatchId` tags batch-run timers |
 | `productionQuantity` | Output: type (Production/Scrap/Rework), quantity, scrapReason |
+| `jobOperationBatch` | Operation batch header (`BAT` sequence): process, work center, location, status. Members are `jobOperation` rows via nullable `jobOperationBatchId` |
 | `procedure` / `procedureStep` / `procedureParameter` | Versioned work instructions |
 | `maintenanceDispatch` / `maintenanceSchedule` | Equipment maintenance tracking |
 | `demandForecast` / `demandProjection` | Demand planning data |
@@ -68,7 +70,9 @@ pnpm --filter @carbon/erp test
 - `triggerJobSchedule` — fires the scheduling engine via Inngest
 - `runMRP` — triggers Material Requirements Planning via `mrp` edge function
 - `calculateJobPriority` — computes priority from deadline type and due date
-- `getActiveJobOperationsByLocation` — schedule board data (RPC `get_active_job_operations_by_location`)
+- `getActiveJobOperationsByLocation` — schedule board data (RPC `get_active_job_operations_by_location`, now also returns `processBatchable`/`jobOperationBatchId`/`batchReadableId`)
+- `getBatchableOperations` / `getBatchableProcesses` — batch planning board data (RPC `get_batchable_operations` with per-op BOM material properties)
+- `createJobOperationBatch` / `updateJobOperationBatch` — operation batch mutations (invoke the `batch-operations` edge function: create/add/remove/update/dissolve)
 - `getProductionPlanning` — MRP-driven production planning (RPC `get_production_planning`)
 - `upsertMaintenanceDispatch` / `upsertMaintenanceSchedule` — maintenance management
 

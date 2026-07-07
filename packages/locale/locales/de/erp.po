@@ -1616,6 +1616,9 @@ msgstr "Chargennummer"
 msgid "Batch Number"
 msgstr "Chargennummer"
 
+msgid "Batch planning"
+msgstr ""
+
 msgid "Batch Properties"
 msgstr "Batch-Eigenschaften"
 
@@ -1627,6 +1630,12 @@ msgstr "Chargenverfolgung"
 
 msgid "Batch Tracking"
 msgstr "Chargenverfolgung"
+
+msgid "Batchable"
+msgstr ""
+
+msgid "Batched"
+msgstr ""
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
@@ -3822,6 +3831,9 @@ msgstr "Disposition"
 msgid "Dispositions"
 msgstr "Dispositionen"
 
+msgid "Dissolve batch"
+msgstr ""
+
 msgid "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
 msgstr "Möchten Sie die aktuellen Berechtigungen des Benutzers mit den Standardberechtigungen für diesen Mitarbeitertyp überschreiben?"
 
@@ -3894,6 +3906,9 @@ msgstr "Ziehen Sie eine Bestellungs-PDF hierher, oder klicken Sie, um eine Datei
 
 msgid "Drag handle"
 msgstr "Ziehgriff"
+
+msgid "Drag here to start a new batch"
+msgstr ""
 
 msgid "Drag to place on drawing"
 msgstr "Auf Zeichnung platzieren durch Ziehen"
@@ -7179,6 +7194,9 @@ msgstr "MRP (Planung)"
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP wird automatisch alle 3 Stunden ausgeführt, aber Sie können es hier manuell ausführen."
 
+msgid "Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath"
+msgstr ""
+
 msgid "Must be in the same location"
 msgstr "Muss sich am selben Ort befinden"
 
@@ -7793,6 +7811,9 @@ msgstr "Keine Zeiteinträge für diese Woche"
 
 msgid "No transactions in this period"
 msgstr "Keine Transaktionen in diesem Zeitraum"
+
+msgid "No unbatched operations match"
+msgstr ""
 
 msgid "No value needed"
 msgstr "Kein Wert erforderlich"
@@ -8452,6 +8473,9 @@ msgstr "Physische Drucker verfügbar zur Zuweisung."
 
 msgid "Pick"
 msgstr "Auswählen"
+
+msgid "Pick a batchable process to plan batches"
+msgstr ""
 
 msgid "Pick a column to sort by"
 msgstr "Wählen Sie eine Spalte zum Sortieren"
@@ -9457,6 +9481,9 @@ msgstr "Filter entfernen"
 msgid "Remove Filters"
 msgstr "Filter entfernen"
 
+msgid "Remove from batch"
+msgstr ""
+
 msgid "Remove from Price List"
 msgstr "Aus Preisliste entfernen"
 
@@ -10133,6 +10160,9 @@ msgstr "Auswählen"
 
 msgid "Select a assignee"
 msgstr "Wählen Sie einen Bevollmächtigten"
+
+msgid "Select a batchable process"
+msgstr ""
 
 msgid "Select a default approver"
 msgstr "Wählen Sie einen Standard-Genehmiger"
