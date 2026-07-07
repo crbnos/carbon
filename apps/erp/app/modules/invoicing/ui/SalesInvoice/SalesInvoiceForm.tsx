@@ -106,6 +106,7 @@ const SalesInvoiceForm = ({ initialValues }: SalesInvoiceFormProps) => {
       });
 
       const [customerData, paymentTermData] = await Promise.all([
+        // @ts-expect-error TS2589: type instantiation depth - tsgo flakiness on composite relation
         carbon
           ?.from("customer")
           .select(
