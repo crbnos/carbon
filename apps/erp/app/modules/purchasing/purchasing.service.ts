@@ -2362,6 +2362,7 @@ export async function getPurchasingRFQSuppliers(
   client: SupabaseClient<Database>,
   purchasingRfqId: string
 ) {
+  // @ts-expect-error TS2589 - Supabase relational select type instantiation depth; safe cast
   return client
     .from("purchasingRfqSupplier")
     .select("*, supplier:supplierId(id, name)")
