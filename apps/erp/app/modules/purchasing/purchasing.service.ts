@@ -2362,6 +2362,8 @@ export async function getPurchasingRFQSuppliers(
   client: SupabaseClient<Database>,
   purchasingRfqId: string
 ) {
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-expect-error TS2589 tsgo type-depth false positive
   return client
     .from("purchasingRfqSupplier")
     .select("*, supplier:supplierId(id, name)")
