@@ -30,7 +30,7 @@ import {
 import { msg } from "@lingui/core/macro";
 import { startRegistration } from "@simplewebauthn/browser";
 import { useState } from "react";
-import { LuFingerprint, LuTrash2 } from "react-icons/lu";
+import { LuExternalLink, LuFingerprint, LuTrash2 } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import {
   data,
@@ -289,9 +289,42 @@ export default function AccountProfile() {
     closePasskeyDrawer();
   };
 
+  const handleConnectClaude = () => {
+    window.open(
+      "https://claude.ai/settings/connectors?action=add_custom&name=Carbon&url=https%3A%2F%2Fapp.carbon.ms%2Fapi%2Fmcp",
+      "_blank",
+      "noopener,noreferrer"
+    );
+  };
+
   return (
     <VStack spacing={4} className="pb-6">
       <ProfileForm user={user} />
+
+      <Card>
+        <CardHeader>
+          <HStack className="justify-between">
+            <HStack spacing={3}>
+              <ClaudeLogo className="size-7 shrink-0" />
+              <div>
+                <CardTitle>Claude</CardTitle>
+                <CardDescription>
+                  Connect Carbon to Claude so you can use your data directly
+                  from any conversation.
+                </CardDescription>
+              </div>
+            </HStack>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={handleConnectClaude}
+              leftIcon={<LuExternalLink className="size-4" />}
+            >
+              Connect
+            </Button>
+          </HStack>
+        </CardHeader>
+      </Card>
 
       {passkeysEnabled && (
         <Card>
@@ -484,5 +517,24 @@ export default function AccountProfile() {
         </ModalContent>
       </Modal>
     </VStack>
+  );
+}
+
+function ClaudeLogo(props: React.ComponentProps<"svg">) {
+  return (
+    <svg
+      {...props}
+      viewBox="0 0 46 46"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      {/* Anthropic's official Claude logomark */}
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M22.735 3.578c-1.91 0-3.674.447-5.178 1.222L5.75 17.557A11.137 11.137 0 0 0 4 23.002c0 2.07.566 3.997 1.55 5.637l.2.32 11.734 12.686a11.09 11.09 0 0 0 5.25 1.777l.001.001h.002l.215.004c.063.001.125.002.188.002h.003a10.984 10.984 0 0 0 5.178-1.222l11.807-12.757A11.138 11.138 0 0 0 42 23.003c0-2.07-.566-3.998-1.55-5.637l-.2-.32L28.516 4.36a11.09 11.09 0 0 0-5.25-1.778l-.001-.001h-.002l-.215-.003A5.77 5.77 0 0 0 22.86 2.5h-.003c-.042 0-.082.077-.122.078Zm0 1.5c.04 0 .08-.001.121-.001h.002c.062 0 .123.001.184.003l.205.003a9.59 9.59 0 0 1 4.544 1.537L39.097 19.05A9.635 9.635 0 0 1 40.5 23c0 1.793-.49 3.468-1.343 4.9L27.35 40.38a9.486 9.486 0 0 1-4.394 1.619l-.221.003a9.49 9.49 0 0 1-4.544-1.537L6.885 27.95A9.635 9.635 0 0 1 5.5 24c0-1.793.49-3.468 1.343-4.9L18.65 6.62A9.486 9.486 0 0 1 23.048 5h-.313ZM23 14a9 9 0 1 0 0 18 9 9 0 0 0 0-18Zm0 1.5a7.5 7.5 0 1 1 0 15 7.5 7.5 0 0 1 0-15Z"
+        fill="currentColor"
+      />
+    </svg>
   );
 }
