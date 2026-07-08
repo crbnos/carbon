@@ -1167,3 +1167,103 @@ No dispatchable work this pass. All PRs clean, no active builds, no unresolved h
 - Disk: 76% (8.7G avail of 38G) — within bounds.
 - RAM: 1.8Gi used / 15Gi total — healthy.
 - No live claude processes.
+
+## 04:24 UTC — Heartbeat (Jul 8)
+
+### Reconcile
+- No mutex. No `agent:working` issues. No live builds. Clean state.
+- PRs #1101 (Claude MCP card) and #1098 (procedure modal) were **merged** since last note. ✅
+
+### PR Feedback
+- **PR #1096** (feat/approvals — #1032): Last review was CodeRabbit at 2026-07-07T00:28 UTC (already processed in prior run). No new human comments. Awaiting barbinbrad.
+- **PR #1090** (feat/avalara — #1061): Last review CodeRabbit at 2026-07-06T15:59 UTC (already processed). No new human comments. Awaiting barbinbrad.
+- **PR #1068** (feat/period-close — #1031): Last human review barbinbrad at 2026-07-05T00:34 UTC (already processed). No new comments. Awaiting barbinbrad.
+
+### Issues Queue
+- **#1097**: `agent:needs-verification`, PR #1098 → **MERGED** (PR #1098 merged). Issue needs label cleanup by human.
+- **#1061**: `agent:needs-verification`, PR #1090 open — awaiting barbinbrad.
+- **#1031**: `agent:needs-verification`, PR #1068 open — awaiting barbinbrad.
+- **#1032**: `agent:needs-verification`, PR #1096 open — awaiting barbinbrad.
+- **#1047**: `agent:blocked` — deps #1031 + #1032 unmerged.
+- **#942**: `agent:blocked` — no action.
+- **#1059, #1057**: `agent:groomed` (not assigned) — awaiting human assignment.
+- No dispatchable work — queue idle, all pending human review/merge.
+
+### System Health
+- Disk: 76% (8.7G avail of 38G) — within bounds.
+- RAM: 2.0Gi used / 15Gi total — healthy.
+- No live claude processes.
+
+## 11:22 UTC — Heartbeat (Jul 8)
+
+### Reconcile
+- No mutex. No `agent:working` issues. No live builds. Clean state.
+
+### PR Feedback
+- **PR #1096** (feat/approvals — #1032): No new comments since Jul 7 reply. 0 unresolved threads. CI: 9/9 green. Awaiting barbinbrad.
+- **PR #1090** (feat/avalara — #1061): No new comments since Jul 6 reply. 0 unresolved threads. CI: 9/9 green. Awaiting barbinbrad.
+- **PR #1068** (feat/period-close — #1031): No new comments since Jul 6 last reply. 0 unresolved threads. CI: 9/9 green. Awaiting barbinbrad.
+
+### Issues Queue
+- **#1097**: `agent:needs-verification` — PR #1098 merged. Awaiting label cleanup by human.
+- **#1061**: `agent:needs-verification`, PR #1090 open — awaiting barbinbrad.
+- **#1031**: `agent:needs-verification`, PR #1068 open — awaiting barbinbrad.
+- **#1032**: `agent:needs-verification`+`agent:groomed`, PR #1096 open — awaiting barbinbrad.
+- **#1047**: `agent:blocked` — deps #1031 + #1032 unmerged.
+- **#942**: `agent:blocked` — no action.
+- **#1059, #1057**: `agent:groomed` (unassigned) — awaiting human assignment.
+- No dispatchable work — queue idle, all pending human review/merge.
+
+### System Health
+- Disk: 76% (8.6G avail of 38G) — within bounds.
+- RAM: 2.0Gi used / 15Gi total — healthy.
+- No live claude processes.
+
+## 09:04 UTC — Heartbeat (Jul 8)
+
+### Reconcile
+- No mutex. No `agent:working` issues. No live builds. Clean state.
+
+### PR Feedback
+- **PR #1096** (feat/approvals — #1032): No new comments since carbon-agent's Jul 7 reply. 0 unresolved threads. CI: 9 passing, 5 pending. Awaiting barbinbrad.
+- **PR #1090** (feat/avalara — #1061): No new comments since Jul 6 reply. 0 unresolved threads. CI: 9 passing, 5 pending. Awaiting barbinbrad.
+- **PR #1068** (feat/period-close — #1031): No new comments since Jul 7 typecheck fix commit. 0 unresolved threads. CI: 9 passing, 5 pending. Awaiting barbinbrad.
+
+### Issues Queue
+- **#1097**: `agent:needs-verification` — PR #1098 merged. Awaiting label cleanup by human.
+- **#1061**: `agent:needs-verification`, PR #1090 open — awaiting barbinbrad.
+- **#1031**: `agent:needs-verification`, PR #1068 open — awaiting barbinbrad.
+- **#1032**: `agent:needs-verification`+`agent:groomed`, PR #1096 open — awaiting barbinbrad.
+- **#1047**: `agent:blocked` — deps #1031 + #1032 unmerged.
+- **#942**: `agent:blocked` — no action.
+- No dispatchable work — queue idle, all pending human review/merge.
+
+### System Health
+- Disk: 76% (8.7G avail of 38G) — within bounds.
+- RAM: 2.0Gi used / 15Gi total — healthy.
+- No live claude processes.
+
+## 11:52 UTC — Heartbeat (Jul 8)
+
+### Reconcile
+- No mutex. No `agent:working` issues. No live builds. Clean state.
+
+### PR Feedback
+- **PR #1096** (feat/approvals — #1032): No new comments since last check. 14/14 checks green. Awaiting barbinbrad.
+- **PR #1090** (feat/avalara — #1061): No new comments since Jul 6. 14/14 checks green. Awaiting barbinbrad.
+- **PR #1068** (feat/period-close — #1031): No new comments since Jul 6. 14/14 checks green. Awaiting barbinbrad.
+
+### Issues Queue
+- **#1097**: `agent:needs-verification` — PR #1098 merged. Awaiting label cleanup by human.
+- **#1061**: `agent:needs-verification`, PR #1090 open — awaiting barbinbrad.
+- **#1031**: `agent:needs-verification`, PR #1068 open — awaiting barbinbrad.
+- **#1032**: `agent:needs-verification`+`agent:groomed`, PR #1096 open — awaiting barbinbrad.
+- **#1047**: `agent:blocked` — deps #1031 + #1032 unmerged.
+- **#942**: `agent:blocked` — no action.
+- **#1059, #1057**: `agent:groomed` (unassigned) — awaiting human assignment.
+- No dispatchable work — queue idle, all pending human review/merge.
+
+### System Health
+- Disk: 76% (8.6G avail of 38G) — within bounds.
+- RAM: 2.0Gi used / 15Gi total — healthy.
+- No live claude processes.
