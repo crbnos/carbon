@@ -1,0 +1,1119 @@
+msgid ""
+msgstr ""
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: ko\n"
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Plural-Forms: \n"
+
+#. placeholder {0}: attribute.name
+#. placeholder {1}: activeStep + 1
+msgid "{0} - Set {1}"
+msgstr "{0} - {1} 설정"
+
+#. placeholder {0}: employeeIds.length
+msgid "{0} Active"
+msgstr "{0} 활성"
+
+#. placeholder {0}: operation.quantityComplete
+#. placeholder {0}: serialIndex + 1
+#. placeholder {1}: operation.operationQuantity
+#. placeholder {1}: operation.targetQuantity
+msgid "{0} of {1}"
+msgstr "{1} 중 {0}"
+
+#. placeholder {0}: attributes.filter((a) => a.jobOperationStepRecord.some( (r) => r.index === activeStep ) ).length
+#. placeholder {1}: attributes.length
+msgid "{0} of {1} complete"
+msgstr "{1} 중 {0} 완료"
+
+#. placeholder {0}: attributes.filter((a) => a.jobOperationStepRecord.some( (r) => r.index === activeStep ) ).length
+#. placeholder {1}: attributes.length
+msgid "{0} of {1} completed"
+msgstr "{1} 중 {0} 완료됨"
+
+#. placeholder {0}: item.quantityScrapped
+msgid "{0} Scrapped"
+msgstr "{0} 스크랩됨"
+
+msgid "About"
+msgstr "정보"
+
+msgid "Account Settings"
+msgstr "계정 설정"
+
+msgid "Active"
+msgstr "활성"
+
+msgid "Actual"
+msgstr "실제"
+
+msgid "Add"
+msgstr "추가"
+
+msgid "Add & Issue"
+msgstr "추가 및 출고"
+
+msgid "Add a printer in the printing settings to print labels directly."
+msgstr "라벨을 직접 출력하려면 인쇄 설정에서 프린터를 추가하세요."
+
+msgid "Add Inventory"
+msgstr "재고 추가"
+
+msgid "Add Spare Part"
+msgstr "예비 부품 추가"
+
+msgid "All"
+msgstr "전체"
+
+msgid "Are you sure you want to delete this step?"
+msgstr "이 단계를 삭제하시겠습니까?"
+
+msgid "Are you sure you want to delete this timecard? This cannot be undone."
+msgstr "이 근무기록을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
+
+msgid "Are you sure you want to end all production events? This will end all active operations without completing or finishing them."
+msgstr "모든 생산 이벤트를 종료하시겠습니까? 이 작업은 완료 처리 없이 모든 진행 중인 공정작업을 종료합니다."
+
+msgid "Are you sure you want to finish this operation? This will end all active production events for this operation."
+msgstr "이 공정작업을 완료하시겠습니까? 이 작업은 해당 공정작업의 모든 진행 중인 생산 이벤트를 종료합니다."
+
+msgid "Are you sure you want to leave this page?"
+msgstr "이 페이지를 나가시겠습니까?"
+
+msgid "Assigned"
+msgstr "배정됨"
+
+msgid "Assigned to Me"
+msgstr "나에게 배정됨"
+
+msgid "Assignee"
+msgstr "담당자"
+
+msgid "Attach File"
+msgstr "파일 첨부"
+
+msgid "Authentication Error"
+msgstr "인증 오류"
+
+msgid "available"
+msgstr "사용 가능"
+
+msgid "Back Home"
+msgstr "홈으로"
+
+msgid "Batch"
+msgstr "배치"
+
+msgid "Batch is not available"
+msgstr "배치를 사용할 수 없습니다"
+
+#. placeholder {0}: index + 1
+msgid "Batch Number {0}"
+msgstr "배치 번호 {0}"
+
+msgid "Batch number is required"
+msgstr "배치 번호가 필요합니다"
+
+#. placeholder {0}: column.blockingDispatchReadableId
+msgid "Blocked by {0}"
+msgstr "{0}에 의해 차단됨"
+
+msgid "Blocking"
+msgstr "차단"
+
+msgid "But don't worry. You can use the forgot password flow to request a new magic link."
+msgstr "걱정하지 마세요. 비밀번호 찾기를 통해 새 매직 링크를 요청할 수 있습니다."
+
+msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
+msgstr "로그인하면 <0>서비스 약관</0> 및 <1>개인정보 처리방침</1>에 동의하는 것으로 간주됩니다."
+
+msgid "Cancel"
+msgstr "취소"
+
+msgid "Cancelled"
+msgstr "취소됨"
+
+msgid "Carbon Logo"
+msgstr "Carbon 로고"
+
+msgid "Cards"
+msgstr "카드"
+
+msgid "Chat"
+msgstr "채팅"
+
+msgid "Check your email"
+msgstr "이메일을 확인하세요"
+
+msgid "Clear"
+msgstr "지우기"
+
+msgid "Clear Filters"
+msgstr "필터 지우기"
+
+msgid "Clear Search"
+msgstr "검색 지우기"
+
+msgid "Clock In"
+msgstr "출근"
+
+msgid "Clock Out"
+msgstr "퇴근"
+
+#. placeholder {0}: formatTime(openEntry.clockIn, locale)
+msgid "Clocked in since {0}"
+msgstr "{0}부터 출근 중"
+
+#. placeholder {0}: active.data.current.column.title
+#. placeholder {1}: overColumnPosition + 1
+#. placeholder {2}: columnOrder.length
+msgid "Column {0} was dropped into position {1} of {2}"
+msgstr "열 {0}이(가) {2} 중 {1} 위치에 배치되었습니다"
+
+#. placeholder {0}: active.data.current.column.title
+#. placeholder {1}: over.data.current.column.title
+#. placeholder {2}: overIndex + 1
+#. placeholder {3}: columnOrder.length
+msgid "Column {0} was moved over {1} at position {2} of {3}"
+msgstr "열 {0}이(가) {3} 중 {2} 위치에서 {1} 위로 이동되었습니다"
+
+#. placeholder {0}: column.title
+msgid "Column: {0}"
+msgstr "열: {0}"
+
+msgid "Columns"
+msgstr "열"
+
+msgid "Company"
+msgstr "회사"
+
+msgid "Complete"
+msgstr "완료"
+
+msgid "Complete All"
+msgstr "모두 완료"
+
+msgid "Completed"
+msgstr "완료됨"
+
+msgid "Console"
+msgstr "콘솔"
+
+msgid "Console Mode"
+msgstr "콘솔 모드"
+
+msgid "Consumed expired"
+msgstr "만료 후 소모됨"
+
+#. placeholder {0}: search.trim() === "" ? (createLabel ?? label) : search
+#. placeholder {0}: search.trim() === "" ? label : search
+msgid "Create {0}"
+msgstr "{0} 생성"
+
+msgid "Create Issue"
+msgstr "이슈 생성"
+
+msgid "Create Quality Issue"
+msgstr "품질 이슈 생성"
+
+msgid "Create Rework"
+msgstr "재작업 생성"
+
+msgid "Customer"
+msgstr "고객"
+
+msgid "Dark Mode"
+msgstr "다크 모드"
+
+msgid "Date"
+msgstr "날짜"
+
+msgid "Deadline"
+msgstr "마감일"
+
+msgid "Default"
+msgstr "기본값"
+
+msgid "Default Storage Unit"
+msgstr "기본 저장 단위"
+
+msgid "Delete"
+msgstr "삭제"
+
+msgid "Delete Step"
+msgstr "단계 삭제"
+
+#. placeholder {0}: new Date(deletingEntry.clockIn).toLocaleString(locale)
+msgid "Delete Timecard ({0})"
+msgstr "근무기록 삭제 ({0})"
+
+msgid "Describe the problem..."
+msgstr "문제를 설명하세요..."
+
+msgid "Describe what needs to be reworked..."
+msgstr "재작업이 필요한 내용을 설명하세요..."
+
+msgid "Description"
+msgstr "설명"
+
+msgid "Details"
+msgstr "상세 정보"
+
+msgid "Dispatch not found"
+msgstr "작업지시를 찾을 수 없습니다"
+
+msgid "Display"
+msgstr "표시"
+
+msgid "Down"
+msgstr "가동중단"
+
+msgid "Download"
+msgstr "다운로드"
+
+msgid "Download Labels"
+msgstr "라벨 다운로드"
+
+msgid "Draft"
+msgstr "초안"
+
+msgid "Drag and drop a file here, or click to select a file"
+msgstr "파일을 여기로 끌어다 놓거나 클릭하여 선택하세요"
+
+#. placeholder {0}: active.data.current?.type
+msgid "Dragging {0} cancelled."
+msgstr "{0} 끌기가 취소되었습니다."
+
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(item.dueDate) )
+msgid "Due {0}"
+msgstr "기한 {0}"
+
+msgid "Due Date"
+msgstr "기한일"
+
+msgid "Duplicate batch number"
+msgstr "중복된 배치 번호"
+
+msgid "Duplicate serial number"
+msgstr "중복된 일련번호"
+
+msgid "Duration"
+msgstr "기간"
+
+msgid "Edit"
+msgstr "수정"
+
+msgid "Email Address"
+msgstr "이메일 주소"
+
+msgid "Empty work centers"
+msgstr "빈 작업장"
+
+msgid "End Operations"
+msgstr "공정작업 종료"
+
+#. placeholder {0}: selectedPerson.name
+msgid "Enter PIN for {0}"
+msgstr "{0}의 PIN 입력"
+
+msgid "Error"
+msgstr "오류"
+
+msgid "Error!"
+msgstr "오류!"
+
+msgid "Estimated"
+msgstr "예상"
+
+msgid "Expired"
+msgstr "만료됨"
+
+msgid "Expired {date}"
+msgstr "{date}에 만료됨"
+
+msgid "Expires {date}"
+msgstr "{date}에 만료"
+
+msgid "Expiring first"
+msgstr "먼저 만료되는 순"
+
+msgid "Failed to complete inventory adjustment"
+msgstr "재고 조정을 완료하지 못했습니다"
+
+msgid "Failed to end operations"
+msgstr "공정작업을 종료하지 못했습니다"
+
+msgid "Failed to fetch active operations"
+msgstr "진행 중인 공정작업을 불러오지 못했습니다"
+
+msgid "Failed to fetch storageUnits"
+msgstr "저장 단위를 불러오지 못했습니다"
+
+#. placeholder {0}: fileUpload.name
+msgid "Failed to upload file: {0}"
+msgstr "파일을 업로드하지 못했습니다: {0}"
+
+msgid "Failed to upload image"
+msgstr "이미지를 업로드하지 못했습니다"
+
+msgid "Feedback"
+msgstr "피드백"
+
+msgid "File size exceeds 10MB limit"
+msgstr "파일 크기가 10MB 제한을 초과했습니다"
+
+msgid "Files"
+msgstr "파일"
+
+msgid "Files related to the job and the opportunity line."
+msgstr "작업 및 기회 라인과 관련된 파일입니다."
+
+msgid "Filter"
+msgstr "필터"
+
+msgid "Finish"
+msgstr "마감"
+
+#. placeholder {0}: operation.itemReadableId
+msgid "Finish {0}"
+msgstr "{0} 완료"
+
+msgid "Finish Anyways"
+msgstr "그래도 완료"
+
+msgid "Forgot to Clock Out?"
+msgstr "퇴근 체크를 잊으셨나요?"
+
+msgid "Go back to operation"
+msgstr "공정작업으로 돌아가기"
+
+msgid "Have a technical issue? Contact <0>Carbon Support.</0>"
+msgstr "기술적인 문제가 있으신가요? <0>Carbon 지원팀</0>에 문의하세요."
+
+msgid "How many were actually picked?"
+msgstr "실제로 몇 개를 피킹했습니까?"
+
+msgid "I understand and want to complete without issuing"
+msgstr "이해했으며 출고 없이 완료하겠습니다"
+
+msgid "I'm Still Working"
+msgstr "아직 작업 중입니다"
+
+msgid "Ideas, suggestions or problems with this page?"
+msgstr "이 페이지에 대한 아이디어, 제안, 또는 문제가 있으신가요?"
+
+msgid "Ideas, suggestions or problems?"
+msgstr "아이디어, 제안, 또는 문제가 있으신가요?"
+
+msgid "Impact"
+msgstr "영향"
+
+msgid "Imperial"
+msgstr "야드파운드법"
+
+msgid "In Progress"
+msgstr "진행 중"
+
+msgid "Insufficient quantity"
+msgstr "수량 부족"
+
+msgid "Inventory adjustment completed"
+msgstr "재고 조정이 완료되었습니다"
+
+msgid "Inventory Adjustments"
+msgstr "재고 조정"
+
+msgid "is"
+msgstr "같음"
+
+msgid "is any of"
+msgstr "다음 중 하나임"
+
+msgid "Issue"
+msgstr "이슈"
+
+msgid "Issue Material"
+msgstr "자재 출고"
+
+msgid "Issue Type"
+msgstr "이슈 유형"
+
+msgid "Item"
+msgstr "품목"
+
+msgid "Item Master"
+msgstr "품목 마스터"
+
+msgid "Job"
+msgstr "작업"
+
+msgid "Job Details"
+msgstr "작업 상세정보"
+
+msgid "Job Traveler"
+msgstr "작업 트래블러"
+
+msgid "Jobs"
+msgstr "작업"
+
+msgid "Kit"
+msgstr "키트"
+
+msgid "Labor"
+msgstr "노무"
+
+msgid "Learn more"
+msgstr "자세히 알아보기"
+
+msgid "Leave this page"
+msgstr "이 페이지 나가기"
+
+msgid "Let's build something"
+msgstr "무언가를 만들어봅시다"
+
+msgid "lines"
+msgstr "라인"
+
+msgid "Loading item details..."
+msgstr "품목 세부정보를 불러오는 중..."
+
+msgid "Loading..."
+msgstr "불러오는 중..."
+
+msgid "Location"
+msgstr "위치"
+
+msgid "Log Completed"
+msgstr "완료 기록"
+
+#. placeholder {0}: operation.itemReadableId
+msgid "Log completed for {0}"
+msgstr "{0} 완료 기록"
+
+msgid "Log Rework"
+msgstr "재작업 기록"
+
+#. placeholder {0}: operation.itemReadableId
+msgid "Log rework for {0}"
+msgstr "{0} 재작업 기록"
+
+msgid "Log Scrap"
+msgstr "스크랩 기록"
+
+#. placeholder {0}: operation.itemReadableId
+msgid "Log scrap for {0}"
+msgstr "{0} 스크랩 기록"
+
+msgid "Login"
+msgstr "로그인"
+
+msgid "Machine"
+msgstr "기계"
+
+msgid "Maintenance"
+msgstr "유지보수"
+
+msgid "Maintenance Completed"
+msgstr "유지보수 완료"
+
+msgid "Manually add items to inventory"
+msgstr "재고에 품목을 수동으로 추가"
+
+msgid "Manually remove items from inventory"
+msgstr "재고에서 품목을 수동으로 제거"
+
+msgid "Mark Short"
+msgstr "부족으로 표시"
+
+msgid "matches"
+msgstr "일치"
+
+msgid "Materials"
+msgstr "자재"
+
+msgid "Maximum number of records reached"
+msgstr "최대 레코드 수에 도달했습니다"
+
+msgid "Metric"
+msgstr "미터법"
+
+msgid "Model"
+msgstr "모델"
+
+msgid "More Actions"
+msgstr "추가 작업"
+
+msgid "More options"
+msgstr "추가 옵션"
+
+#. placeholder {0}: column.title
+msgid "Move column: {0}"
+msgstr "열 이동: {0}"
+
+msgid "Must be < {maxValue} {unitOfMeasureCode}"
+msgstr "{maxValue} {unitOfMeasureCode} 미만이어야 합니다"
+
+msgid "Must be > {minValue} {unitOfMeasureCode}"
+msgstr "{minValue} {unitOfMeasureCode} 초과여야 합니다"
+
+msgid "Must be between {minValue} and {maxValue} {unitOfMeasureCode}"
+msgstr "{minValue}에서 {maxValue} {unitOfMeasureCode} 사이여야 합니다"
+
+msgid "My Hours"
+msgstr "내 근무 시간"
+
+msgid "Name"
+msgstr "이름"
+
+msgid "New"
+msgstr "신규"
+
+msgid "New Record"
+msgstr "새 레코드"
+
+msgid "Newest first"
+msgstr "최신순"
+
+msgid "Next"
+msgstr "다음"
+
+msgid "No active maintenance dispatches"
+msgstr "진행 중인 유지보수 작업지시가 없습니다"
+
+msgid "No active operations"
+msgstr "진행 중인 공정작업이 없습니다"
+
+msgid "No assigned operations"
+msgstr "배정된 공정작업이 없습니다"
+
+msgid "No available filters"
+msgstr "사용 가능한 필터가 없습니다"
+
+msgid "No available serial numbers found"
+msgstr "사용 가능한 일련번호를 찾을 수 없습니다"
+
+msgid "No available tracked entities found"
+msgstr "사용 가능한 추적 개체가 없습니다"
+
+msgid "No dispatches assigned to you"
+msgstr "배정된 작업지시가 없습니다"
+
+msgid "No files"
+msgstr "파일 없음"
+
+msgid "No Impact"
+msgstr "영향 없음"
+
+msgid "No maintenance scheduled for today"
+msgstr "오늘 예정된 유지보수가 없습니다"
+
+msgid "No materials"
+msgstr "자재 없음"
+
+msgid "No open jobs"
+msgstr "진행 중인 작업이 없습니다"
+
+msgid "No operators"
+msgstr "작업자 없음"
+
+msgid "No option found."
+msgstr "옵션이 없습니다."
+
+msgid "No options found."
+msgstr "옵션이 없습니다."
+
+msgid "No picking lists assigned"
+msgstr "배정된 피킹 목록이 없습니다"
+
+msgid "No printer configured"
+msgstr "설정된 프린터가 없습니다"
+
+msgid "No recent operations"
+msgstr "최근 공정작업이 없습니다"
+
+msgid "No results"
+msgstr "결과 없음"
+
+msgid "No results exist"
+msgstr "결과가 없습니다"
+
+msgid "No results found"
+msgstr "결과가 없습니다"
+
+msgid "No scheduled time"
+msgstr "예정된 시간 없음"
+
+msgid "No serial numbers"
+msgstr "일련번호 없음"
+
+msgid "No serial numbers found"
+msgstr "일련번호를 찾을 수 없습니다"
+
+msgid "No spare parts added yet"
+msgstr "아직 추가된 예비 부품이 없습니다"
+
+msgid "No stock"
+msgstr "재고 없음"
+
+msgid "No time entries for this week"
+msgstr "이번 주 시간 기록이 없습니다"
+
+msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
+msgstr "이 품목에 대한 창고 재고 기록이 없습니다. 그래도 피킹할 수 있으며, 실사로 수량이 조정될 때까지 보유수량이 음수로 표시됩니다."
+
+msgid "No work centers are blocked"
+msgstr "차단된 작업장이 없습니다"
+
+msgid "No work centers exist"
+msgstr "존재하는 작업장이 없습니다"
+
+msgid "Notes"
+msgstr "메모"
+
+msgid "OEE Impact"
+msgstr "OEE 영향"
+
+msgid "OEM Required"
+msgstr "OEM 필요"
+
+msgid "Oldest first"
+msgstr "오래된순"
+
+#. placeholder {0}: batch.quantity
+msgid "Only {0} available"
+msgstr "{0}만 사용 가능"
+
+msgid "Oops. You shouldn't see this page. Eventually it will be a landing page."
+msgstr "이런. 이 페이지가 보이면 안 됩니다. 나중에 랜딩 페이지가 될 예정입니다."
+
+msgid "Open"
+msgstr "열림"
+
+msgid "Open Jobs"
+msgstr "진행 중인 작업"
+
+msgid "Operations"
+msgstr "공정작업"
+
+msgid "Operations ended"
+msgstr "공정작업 종료됨"
+
+msgid "Operator Performed"
+msgstr "작업자 수행"
+
+msgid "Optional"
+msgstr "선택 사항"
+
+msgid "Parameters"
+msgstr "파라미터"
+
+msgid "Part"
+msgstr "품목"
+
+msgid "Passed Inspection"
+msgstr "검사 합격"
+
+msgid "Pause"
+msgstr "일시정지"
+
+msgid "Pick"
+msgstr "피킹"
+
+msgid "Pick tracked item"
+msgstr "추적 품목 선택"
+
+msgid "Picked"
+msgstr "피킹됨"
+
+msgid "Picked quantity"
+msgstr "피킹 수량"
+
+#. placeholder {0}: startColumn?.title
+#. placeholder {1}: startIndex + 1
+#. placeholder {2}: columnOrder.length
+msgid "Picked up Column {0} at position: {1} of {2}"
+msgstr "열 {0}을(를) 집었습니다 — 위치: {2}개 중 {1}번째"
+
+msgid "Picking"
+msgstr "피킹"
+
+msgid "Pin Out"
+msgstr "PIN 로그아웃"
+
+msgid "Planned"
+msgstr "계획됨"
+
+msgid "Please record all steps for this operation before closing."
+msgstr "이 공정작업을 마감하기 전에 모든 단계를 기록하세요."
+
+msgid "Please select an item"
+msgstr "품목을 선택하세요"
+
+msgid "Prev"
+msgstr "이전"
+
+msgid "Preventive"
+msgstr "예방"
+
+msgid "Print"
+msgstr "인쇄"
+
+msgid "Printer Settings"
+msgstr "프린터 설정"
+
+msgid "Priority"
+msgstr "우선순위"
+
+msgid "Procedure"
+msgstr "절차"
+
+msgid "Process"
+msgstr "공정"
+
+msgid "Process Parameters"
+msgstr "공정 파라미터"
+
+msgid "Processes"
+msgstr "공정"
+
+msgid "Progress"
+msgstr "진행 상황"
+
+msgid "Quality Issue"
+msgstr "품질 이슈"
+
+msgid "Quality issue created"
+msgstr "품질 이슈가 생성되었습니다"
+
+msgid "Quantity"
+msgstr "수량"
+
+msgid "Quantity must be greater than 0"
+msgstr "수량은 0보다 커야 합니다"
+
+msgid "Reason for rework"
+msgstr "재작업 사유"
+
+msgid "Recent"
+msgstr "최근"
+
+msgid "Record"
+msgstr "기록"
+
+#. placeholder {0}: activeStep + 1
+msgid "Record {0}"
+msgstr "{0} 기록"
+
+msgid "Remove"
+msgstr "제거"
+
+msgid "Remove filter"
+msgstr "필터 제거"
+
+msgid "Remove Inventory"
+msgstr "재고 제거"
+
+msgid "Remove part"
+msgstr "품목 제거"
+
+msgid "Rework"
+msgstr "재작업"
+
+msgid "Rework created successfully"
+msgstr "재작업이 생성되었습니다"
+
+msgid "Sales Order"
+msgstr "판매주문"
+
+msgid "Save"
+msgstr "저장"
+
+msgid "Scan"
+msgstr "스캔"
+
+msgid "Scan or enter serial number"
+msgstr "일련번호를 스캔하거나 입력하세요"
+
+msgid "Scan or enter tracking number"
+msgstr "추적 번호를 스캔하거나 입력하세요"
+
+msgid "Scan or search serial number..."
+msgstr "일련번호를 스캔하거나 검색하세요..."
+
+msgid "Schedule"
+msgstr "일정"
+
+msgid "Scrap"
+msgstr "스크랩"
+
+msgid "Scrap Reason"
+msgstr "스크랩 사유"
+
+msgid "Scrapped"
+msgstr "스크랩됨"
+
+msgid "Search"
+msgstr "검색"
+
+msgid "Search by job or item ID"
+msgstr "작업 또는 품목 ID로 검색"
+
+msgid "Search operators..."
+msgstr "작업자 검색..."
+
+msgid "Search..."
+msgstr "검색..."
+
+msgid "Select"
+msgstr "선택"
+
+msgid "Select a completion quantity"
+msgstr "완료 수량을 선택하세요"
+
+msgid "Select a rework quantity"
+msgstr "재작업 수량을 선택하세요"
+
+msgid "Select a scrap quantity and reason"
+msgstr "스크랩 수량과 사유를 선택하세요"
+
+msgid "Select a serial number to continue with this operation"
+msgstr "이 공정작업을 계속하려면 일련번호를 선택하세요"
+
+msgid "Select an item and specify the quantity to issue"
+msgstr "품목을 선택하고 출고할 수량을 지정하세요"
+
+msgid "Select an item..."
+msgstr "품목을 선택하세요..."
+
+#. placeholder {0}: index + 1
+msgid "Select Batch {0}"
+msgstr "배치 {0} 선택"
+
+msgid "Select Printer"
+msgstr "프린터 선택"
+
+#. placeholder {0}: index + 1
+msgid "Select Serial {0}"
+msgstr "일련번호 {0} 선택"
+
+msgid "Select Serial Number"
+msgstr "일련번호 선택"
+
+msgid "Select the operation to go back to. All operations from that point to the current operation will be redone."
+msgstr "되돌아갈 공정작업을 선택하세요. 해당 시점부터 현재 공정작업까지 모두 다시 진행됩니다."
+
+msgid "Send"
+msgstr "전송"
+
+msgid "Serial"
+msgstr "일련번호"
+
+#. placeholder {0}: index + 1
+msgid "Serial Number {0}"
+msgstr "일련번호 {0}"
+
+msgid "Serial number is not available"
+msgstr "일련번호를 사용할 수 없습니다"
+
+msgid "Serial number is required"
+msgstr "일련번호가 필요합니다"
+
+msgid "Serial numbers"
+msgstr "일련번호"
+
+msgid "Serial Numbers"
+msgstr "일련번호"
+
+msgid "Set Clock Out"
+msgstr "퇴근 처리"
+
+msgid "Set clock-out time"
+msgstr "퇴근 시간 설정"
+
+msgid "Setup"
+msgstr "설정"
+
+msgid "Short"
+msgstr "짧게"
+
+msgid "Short pick {itemName}"
+msgstr "{itemName} 부족 피킹"
+
+msgid "Sign in with Email"
+msgstr "이메일로 로그인"
+
+msgid "Sign in with Google"
+msgstr "Google로 로그인"
+
+msgid "Sign in with Outlook"
+msgstr "Outlook으로 로그인"
+
+msgid "Sign in with Passkey"
+msgstr "패스키로 로그인"
+
+msgid "Sign Out"
+msgstr "로그아웃"
+
+msgid "Signed in as {stationName}"
+msgstr "{stationName}(으)로 로그인됨"
+
+msgid "Size"
+msgstr "사이즈"
+
+msgid "Something went wrong"
+msgstr "문제가 발생했습니다"
+
+msgid "Source"
+msgstr "소스"
+
+msgid "Spare Parts"
+msgstr "예비 부품"
+
+msgid "Spare Parts Used"
+msgstr "사용된 예비 부품"
+
+msgid "Start"
+msgstr "시작"
+
+msgid "Station User"
+msgstr "스테이션 사용자"
+
+msgid "Station: {stationName}"
+msgstr "스테이션: {stationName}"
+
+msgid "Status"
+msgstr "상태"
+
+msgid "Statuses"
+msgstr "상태"
+
+msgid "Stay on this page"
+msgstr "이 페이지에 머무르기"
+
+msgid "Steps"
+msgstr "단계"
+
+msgid "Steps are missing"
+msgstr "단계가 누락되었습니다"
+
+msgid "Storage Unit"
+msgstr "저장 단위"
+
+msgid "Submit anonymously"
+msgstr "익명으로 제출"
+
+msgid "Suggestion"
+msgstr "제안"
+
+msgid "Support Required"
+msgstr "지원 필요"
+
+msgid "Switch Operator"
+msgstr "작업자 전환"
+
+msgid "Tag"
+msgstr "태그"
+
+#. placeholder {0}: operation.operationQuantity
+msgid "The completed quantity for this operation is less than the required quantity of {0}."
+msgstr "이 공정작업의 완료 수량이 필요 수량 {0}보다 적습니다."
+
+msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
+msgstr "자재명세서(BOM)에 아직 완전히 출고되지 않은 일련번호 또는 배치 추적 자재가 있습니다. 출고하지 않고 완료하면 이력추적 기록이 부정확해질 수 있습니다."
+
+msgid "This lot is expired and can't be picked."
+msgstr "이 로트는 만료되어 피킹할 수 없습니다."
+
+msgid "Thumbnail"
+msgstr "썸네일"
+
+msgid "Time Entries"
+msgstr "시간 기록"
+
+#. placeholder {0}: formatDuration(totalDuration)
+msgid "Time Worked: {0}"
+msgstr "작업 시간: {0}"
+
+msgid "Today"
+msgstr "오늘"
+
+msgid "Tools"
+msgstr "공구"
+
+msgid "Total Quantity"
+msgstr "총 수량"
+
+#. placeholder {0}: formatDuration(totalDuration)
+msgid "Total time: {0}"
+msgstr "총 시간: {0}"
+
+#. placeholder {0}: formatTotalHours(entries)
+msgid "Total: {0}"
+msgstr "합계: {0}"
+
+msgid "Tracking"
+msgstr "추적"
+
+msgid "Type a message..."
+msgstr "메시지를 입력하세요..."
+
+msgid "Unissued serial/batch materials"
+msgstr "출고되지 않은 일련번호/배치 자재"
+
+msgid "Unknown"
+msgstr "알 수 없음"
+
+msgid "Unpick"
+msgstr "피킹 취소"
+
+#. placeholder {0}: pickedLots[0].trackedEntity.readableId
+msgid "Unpick {0}"
+msgstr "{0} 피킹 취소"
+
+msgid "Unsaved changes"
+msgstr "저장되지 않은 변경 사항"
+
+msgid "Update"
+msgstr "업데이트"
+
+msgid "Updated successfully"
+msgstr "성공적으로 업데이트되었습니다"
+
+#. placeholder {0}: fileUpload.name
+msgid "Uploaded: {0}"
+msgstr "업로드됨: {0}"
+
+#. placeholder {0}: fileUpload.name
+msgid "Uploading {0}"
+msgstr "{0} 업로드 중"
+
+msgid "View maintenance dispatch"
+msgstr "유지보수 작업지시 보기"
+
+msgid "We've sent you a magic link to sign in to your account."
+msgstr "계정에 로그인할 수 있는 매직 링크를 보내드렸습니다."
+
+msgid "What is {translatedTerm}?"
+msgstr "{translatedTerm}란 무엇인가요?"
+
+msgid "WIP"
+msgstr "재공품"
+
+msgid "Work Center"
+msgstr "작업장"
+
+#. placeholder {0}: new Date(openClockEntry.clockIn).toLocaleString(locale)
+msgid "You clocked in at {0}. You can edit your clock-out time below or acknowledge that you're still working."
+msgstr "{0}에 출근했습니다. 아래에서 퇴근 시간을 수정하거나 계속 근무 중임을 확인할 수 있습니다."
+
+msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
+msgstr "{hoursElapsed}시간 동안 출근 상태입니다. 퇴근 처리를 잊으셨나요?"
