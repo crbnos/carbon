@@ -1267,3 +1267,53 @@ No dispatchable work this pass. All PRs clean, no active builds, no unresolved h
 - Disk: 76% (8.6G avail of 38G) — within bounds.
 - RAM: 2.0Gi used / 15Gi total — healthy.
 - No live claude processes.
+
+## 12:02 UTC — Heartbeat (Jul 8)
+
+### Reconcile
+- No mutex. No `agent:working` issues. No live builds. Clean state.
+
+### PR Feedback
+- **PR #1096** (feat/approvals — #1032): No new reviews since Jul 7 CodeRabbit. 0 unresolved threads. 14/14 checks green. Awaiting barbinbrad.
+- **PR #1090** (feat/avalara — #1061): No new reviews since Jul 6. 0 unresolved threads. 14/14 checks green. Awaiting barbinbrad.
+- **PR #1068** (feat/period-close — #1031): No new reviews since Jul 6. 0 unresolved threads. 14/14 checks green. Awaiting barbinbrad.
+
+### Issues Queue
+- **#1097**: `agent:needs-verification` — PR #1098 merged. Awaiting label cleanup by human.
+- **#1061**: `agent:needs-verification`, PR #1090 open — awaiting barbinbrad.
+- **#1031**: `agent:needs-verification`, PR #1068 open — awaiting barbinbrad.
+- **#1032**: `agent:needs-verification`+`agent:groomed`, PR #1096 open — awaiting barbinbrad.
+- **#1047**: `agent:blocked` — deps #1031 + #1032 unmerged.
+- **#942**: `agent:blocked` — no action.
+- **#1059, #1057**: `agent:groomed` (unassigned) — awaiting human assignment.
+- No dispatchable work — queue idle, all pending human review/merge.
+
+### System Health
+- Disk: 76% (8.7G avail of 38G) — within bounds.
+- RAM: 2.0Gi used / 15Gi total — healthy.
+- No live claude processes.
+
+## 13:02 UTC — Heartbeat (Jul 8)
+
+### Reconcile
+- No mutex. No `agent:working` issues. No live builds. Clean state.
+
+### PR Feedback
+- **PR #1096** (feat/approvals — #1032): Last review: CodeRabbit Jul 7, last agent reply Jul 7. 0 unresolved threads. Awaiting barbinbrad.
+- **PR #1090** (feat/avalara — #1061): Last review: CodeRabbit Jul 6, last agent reply Jul 6. 0 unresolved threads. Awaiting barbinbrad.
+- **PR #1068** (feat/period-close — #1031): Last review: CodeRabbit Jul 6, agent Jul 6 + typecheck note Jul 7. 0 unresolved threads. Awaiting barbinbrad.
+
+### Issues Queue
+- **#1097**: `agent:needs-verification` — PR #1098 merged. Awaiting label cleanup by human.
+- **#1061**: `agent:needs-verification`, PR #1090 open — awaiting barbinbrad.
+- **#1031**: `agent:needs-verification`, PR #1068 open — awaiting barbinbrad.
+- **#1032**: `agent:needs-verification`+`agent:groomed`, PR #1096 open — awaiting barbinbrad.
+- **#1047**: `agent:blocked` — deps #1031 + #1032 unmerged.
+- **#942**: `agent:blocked` — no action.
+- **#1059, #1057**: `agent:groomed` (unassigned) — awaiting human assignment.
+- No dispatchable work — queue idle, all pending human review/merge.
+
+### System Health
+- Disk: 76% (8.7G avail of 38G) — within bounds.
+- RAM: 3.6Gi used / 15Gi total — healthy.
+- No live claude processes.
