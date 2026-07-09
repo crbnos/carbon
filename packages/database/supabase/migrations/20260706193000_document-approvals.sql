@@ -44,7 +44,9 @@ CREATE INDEX IF NOT EXISTS "journal_approvedBy_idx" ON "journal" ("approvedBy");
 DO $$
 BEGIN
   IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint WHERE conname = 'journal_approvalRequestId_fkey'
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'journal_approvalRequestId_fkey'
+      AND conrelid = 'journal'::regclass
   ) THEN
     ALTER TABLE "journal"
       ADD CONSTRAINT "journal_approvalRequestId_fkey"
