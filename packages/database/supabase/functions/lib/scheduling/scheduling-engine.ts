@@ -117,6 +117,10 @@ export class SchedulingEngine {
       .orderBy("order")
       .execute()) as BaseOperation[];
 
+    // Enrich each operation with its make method item's manufacturing lead time
+    // so the date calculator can pull subassemblies earlier at assembly edges.
+    await this.assignAssemblyLeadTimes();
+
     // Load existing dependencies (for reschedule mode)
     if (this.mode === "reschedule") {
       const deps = await this.db
@@ -160,6 +164,63 @@ export class SchedulingEngine {
     );
     if (assemblyTree) {
       this.assemblyDepth = this.assemblyHandler.getAssemblyDepth(assemblyTree);
+    }
+  }
+
+  /**
+   * Populate `assemblyLeadTime` on each loaded operation from the manufacturing
+   * lead time (itemReplenishment.leadTime) of the item its make method builds.
+   * Used at assembly boundaries in date calculation so a subassembly finishes
+   * its lead time (in business days) before the parent operation that consumes it.
+   */
+  private async assignAssemblyLeadTimes(): Promise<void> {
+    const makeMethodIds = [
+      ...new Set(
+        this.operations
+          .map((op) => op.jobMakeMethodId)
+          .filter((id): id is string => Boolean(id))
+      ),
+    ];
+    if (makeMethodIds.length === 0) return;
+
+    const makeMethods = await this.db
+      .selectFrom("jobMakeMethod")
+      .select(["id", "itemId"])
+      .where("id", "in", makeMethodIds)
+      .execute();
+
+    const itemIds = [
+      ...new Set(
+        makeMethods
+          .map((m) => m.itemId)
+          .filter((id): id is string => Boolean(id))
+      ),
+    ];
+    if (itemIds.length === 0) return;
+
+    const replenishments = await this.db
+      .selectFrom("itemReplenishment")
+      .select(["itemId", "leadTime"])
+      .where("itemId", "in", itemIds)
+      .execute();
+
+    // NUMERIC columns can come back from pg as strings — coerce to a number.
+    const toLeadTimeDays = (value: unknown): number => {
+      const n = Number(value ?? 0);
+      return Number.isFinite(n) && n > 0 ? n : 0;
+    };
+    const leadTimeByItemId = new Map(
+      replenishments.map((r) => [r.itemId, toLeadTimeDays(r.leadTime)])
+    );
+    const leadTimeByMakeMethodId = new Map(
+      makeMethods.map((m) => [m.id, leadTimeByItemId.get(m.itemId ?? "") ?? 0])
+    );
+
+    for (const op of this.operations) {
+      if (op.jobMakeMethodId) {
+        op.assemblyLeadTime =
+          leadTimeByMakeMethodId.get(op.jobMakeMethodId) ?? 0;
+      }
     }
   }
 
