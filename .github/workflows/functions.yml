@@ -44,6 +44,7 @@ jobs:
         if: ${{ github.event_name == 'workflow_run' }}
         uses: dorny/paths-filter@v3
         with:
+          base: ${{ github.event.workflow_run.head_sha }}~1
           ref: ${{ github.event.workflow_run.head_sha }}
           filters: |
             functions:
