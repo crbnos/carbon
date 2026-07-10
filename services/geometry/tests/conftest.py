@@ -1,9 +1,19 @@
+import os
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Iterator
 
 import pytest
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    """Optional shadow-corpus capture (env GEOMETRY_CAPTURE_DIR). No-op otherwise."""
+    capture_dir = os.environ.get("GEOMETRY_CAPTURE_DIR")
+    if capture_dir:
+        from capture_corpus import install
+
+        install(Path(capture_dir))
 
 
 @pytest.fixture(scope="session")
