@@ -31,10 +31,12 @@ export {
   type AssemblyPlan,
   type AssemblyPlanComponent,
   type AssemblyStepGroup,
+  assignStepPhases,
   buildAssemblyStepGroups,
   CURRENT_PLAN_VERSION,
   type PlannedMotion,
-  planMotionForComponents
+  planMotionForComponents,
+  type StepPhase
 } from "./plan";
 export type {
   AssemblyGraph,

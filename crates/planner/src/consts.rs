@@ -22,6 +22,34 @@ pub const MATE_DEPTH_MARGIN_MM: f64 = 0.3;
 pub const ORDERING_CONTACT_MM: f64 = 0.5;
 pub const MAX_ADJACENCY_DISTANCE_PAIRS: usize = 20000;
 
+/// Proximity (mm) at which two parts are treated as "related" — connected for
+/// sequencing-connectivity and the emitted viewer contact graph, even when they
+/// don't touch. Real assemblies hold parts together across mm-scale clearance
+/// gaps (fasteners in clearance holes, snug slip-fits) that strict
+/// `ORDERING_CONTACT_MM` contact can't see, which otherwise splits one physical
+/// assembly into phantom-disconnected islands. Scaled to assembly size and
+/// clamped; collision correctness still uses strict contact, so a generous value
+/// here only softens the connectivity *preference* — it never permits a
+/// colliding sequence.
+pub fn relatedness_mm(assembly_diagonal: f64) -> f64 {
+    (0.025 * assembly_diagonal).clamp(3.0, 25.0)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::relatedness_mm;
+
+    #[test]
+    fn relatedness_scales_and_clamps() {
+        // Floor for tiny assemblies, ceiling for huge ones, ~2.5% between.
+        assert_eq!(relatedness_mm(40.0), 3.0);
+        assert!((relatedness_mm(644.0) - 16.1).abs() < 0.05);
+        assert_eq!(relatedness_mm(4000.0), 25.0);
+        // Strictly exceeds strict contact so clearance-fit neighbors connect.
+        assert!(relatedness_mm(644.0) > super::ORDERING_CONTACT_MM);
+    }
+}
+
 pub const SANDWICH_MAX_THICKNESS_RATIO: f64 = 0.3;
 pub const SANDWICH_MAX_THICKNESS_MM: f64 = 6.0;
 pub const SANDWICH_AXIS_ALIGNMENT: f64 = 0.9;

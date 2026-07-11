@@ -268,15 +268,23 @@ pub fn plan_step(
     if !groups.is_empty() {
         plan["groups"] = Value::Object(groups);
     }
-    // Diagnostics: unit adjacency for sequencing analysis (not part of the
-    // plan contract; consumers must not rely on it).
-    if std::env::var("ASSEMBLER_EMIT_ADJACENCY").is_ok() {
-        plan["debugAdjacency"] = json!(outcome
-            .adjacency
-            .iter()
-            .map(|(k, v)| (k.clone(), v.iter().cloned().collect::<Vec<_>>()))
-            .collect::<std::collections::BTreeMap<_, _>>());
-    }
+    // Body-level relatedness graph (planned-body node_id -> related bodies): the
+    // strict contact graph augmented with clearance-fit neighbors (fasteners and
+    // slip-fits that hold parts together across a gap strict contact can't see),
+    // so the viewer relates a placed part to the assembly instead of rendering it
+    // as a floating island. Used by the step grouping's floater fold + phase
+    // partition. Keys are in the pre-expansion body space, matching a member's
+    // `components[member].groupId ?? member`. Deterministic ordering. Falls back
+    // to strict adjacency when relatedness is unavailable (fixed-sequence mode).
+    let contact_graph = if outcome.relatedness.is_empty() {
+        &outcome.adjacency
+    } else {
+        &outcome.relatedness
+    };
+    plan["contacts"] = json!(contact_graph
+        .iter()
+        .map(|(k, v)| (k.clone(), v.iter().cloned().collect::<Vec<_>>()))
+        .collect::<std::collections::BTreeMap<_, _>>());
 
     let planned_count = outcome
         .planned

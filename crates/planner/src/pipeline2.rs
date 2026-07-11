@@ -32,6 +32,11 @@ pub struct PlanOutcome {
     pub verified_count: i64,
     pub edges: Edges,
     pub adjacency: Edges,
+    /// Proximity-based "related parts" graph (strict `adjacency` augmented with
+    /// clearance-fit neighbors, see `relatedness_mm`). Drives the sequencing
+    /// connectivity preference and the emitted viewer contact graph. Strict
+    /// `adjacency` still governs base selection and collision correctness.
+    pub relatedness: Edges,
 }
 
 /// `_removal_segments`: a stored INSERTION motion as removal segments.
@@ -1278,6 +1283,18 @@ pub fn plan_parts(
 
     let unit_adjacency =
         rollup_adjacency(&leaf_adjacency, &merged_into, &group_units, &units_by_id);
+    // Relatedness: strict contact plus clearance-fit neighbors, so parts a
+    // fastener/slip-fit holds together across a gap are sequenced adjacently
+    // instead of appearing as detached floating islands. Collision correctness
+    // stays on `unit_adjacency`/hard edges; this only softens the connectivity
+    // preference and feeds the emitted viewer contact graph.
+    let relatedness = {
+        let refs: Vec<&Component> = parts.iter().collect();
+        let (amin, amax) = bounds(&refs);
+        let mm = crate::consts::relatedness_mm((amax - amin).norm());
+        let leaf = ordering_adjacency(&parts, &pair_depths, mm);
+        rollup_adjacency(&leaf, &merged_into, &group_units, &units_by_id)
+    };
     reselect_base(
         &mut planned,
         &units_by_id,
@@ -1371,7 +1388,7 @@ pub fn plan_parts(
         &group_members,
         &fastened,
         &contact_count,
-        Some(&unit_adjacency),
+        Some(&relatedness),
         &soft_edges,
     );
 
@@ -1499,6 +1516,7 @@ pub fn plan_parts(
         verified_count,
         edges,
         adjacency: unit_adjacency,
+        relatedness,
     }
 }
 
@@ -1557,6 +1575,7 @@ pub fn plan_fixed_sequence(
             verified_count: 0,
             edges: HashMap::new(),
             adjacency: HashMap::new(),
+            relatedness: HashMap::new(),
         };
     }
 
@@ -1747,5 +1766,6 @@ pub fn plan_fixed_sequence(
         verified_count,
         edges: HashMap::new(),
         adjacency: HashMap::new(),
+        relatedness: HashMap::new(),
     }
 }

@@ -12,7 +12,8 @@ fn plan_step_plates() {
         }
     };
     let step = format!("{dir}/plates.step");
-    let result = plan_step(&step, 0.1, 0.5, 0.5, 60, Some(5000), None, None).expect("plan_step");
+    let result =
+        plan_step(&step, 0.1, 0.5, 0.5, 60, Some(5000), None, None, None).expect("plan_step");
     let plan = &result.plan;
     assert_eq!(plan["version"], 3);
     assert_eq!(plan["unit"], "mm");

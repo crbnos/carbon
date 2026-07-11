@@ -96,6 +96,13 @@ export type AssemblyStep = {
    * motion — a fabricated path would animate straight through geometry.
    */
   flagged?: boolean;
+  /**
+   * Subassembly phase this step belongs to (baked at step generation from the
+   * plan's contact graph). `null`/absent = the main phase, built seated. A
+   * non-null phase builds staged off to the side and flies into the main body
+   * at its `join` step. See `@carbon/viewer` staging.
+   */
+  phase?: { id: string; name: string; join: boolean } | null;
 };
 
 /** One node of the assembly tree in graph.json. */
