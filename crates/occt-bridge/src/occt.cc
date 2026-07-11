@@ -50,11 +50,22 @@ namespace carbon_occt {
 static const std::vector<double> IDENTITY_4X4 = {
     1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
 
+// UTF-8, not TCollection_AsciiString: the ASCII conversion replaces every
+// non-Latin character with '?', which mangles e.g. CJK part names.
+static std::string to_utf8(const TCollection_ExtendedString &ext) {
+  const int len = ext.LengthOfCString();
+  if (len <= 0) return "";
+  std::string out(static_cast<size_t>(len) + 1, '\0');
+  Standard_PCharacter p = out.data();
+  ext.ToUTF8CString(p);
+  out.resize(static_cast<size_t>(len));
+  return out;
+}
+
 static std::string label_name(const TDF_Label &label) {
   Handle(TDataStd_Name) attr;
   if (label.FindAttribute(TDataStd_Name::GetID(), attr)) {
-    TCollection_AsciiString s(attr->Get());
-    return std::string(s.ToCString());
+    return to_utf8(attr->Get());
   }
   return "";
 }
