@@ -100,6 +100,15 @@ export function distinctComponentNames(
 // --- Unit derivation -----------------------------------------------------
 
 /**
+ * A BOM line collapses into one rigid unit only when its leaves outnumber their
+ * DISTINCT geometries by at least this factor — the "detail swarm" shape of a
+ * populated PCB (many repeated footprints share a content-based geometryHash). A
+ * mechanical subassembly, ~one distinct geometry per leaf, falls below it and
+ * stays as separate components rather than one giant fade-in step.
+ */
+const COLLAPSE_LEAF_RATIO = 3;
+
+/**
  * A planned unit: the set of leaf components the planner should treat as one rigid
  * body (and that becomes one assembly step). A purchased PCB whose CAD model
  * carries hundreds of tiny child solids collapses to a single unit.
@@ -204,7 +213,19 @@ export function deriveAssemblyUnits(args: {
   for (const [itemId, leaves] of byItem) {
     const quantity = bomByItem.get(itemId)?.quantity ?? 1;
     const name = bomName(itemId, bomByItem);
-    if (leaves.length >= 2 && quantity <= 1) {
+    // Distinct geometry tells a populated PCB (a swarm of REPEATED footprints —
+    // identical solids share a content-based geometryHash, so hundreds of
+    // resistors are a handful of distinct geometries) from a mechanical
+    // subassembly (each leaf a distinct part). Only the swarm collapses into a
+    // single rigid body; a subassembly where every leaf is its own geometry must
+    // stay separate, or it becomes one 50-part fade-in step.
+    const distinctGeometry = new Set(
+      leaves.map((l) => l.geometryHash ?? `name:${l.name}`)
+    ).size;
+    const isDetailSwarm =
+      distinctGeometry <= 2 ||
+      leaves.length >= COLLAPSE_LEAF_RATIO * distinctGeometry;
+    if (leaves.length >= 2 && quantity <= 1 && isDetailSwarm) {
       // A single physical subassembly shown in full detail → one rigid body.
       units.push({
         id: `unit:${itemId}`,
