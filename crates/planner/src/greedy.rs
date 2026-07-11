@@ -853,6 +853,67 @@ fn removal_priority(
     keyed.into_iter().map(|(_, _, _, id)| id.clone()).collect()
 }
 
+/// Conservative "who could unblock this part" set for the blocked memo: every
+/// remaining part whose bbox intersects any of the part's possible sweep
+/// regions — the bbox inflated by the search's wander reach, extruded along
+/// every direction the search can try (candidate directions, the fastener axis,
+/// world axes) out to the assembly diagonal (≥ any exit travel). Fastener
+/// mates/sliders are added unconditionally: exemptions and head-direction
+/// heuristics read the mate set, so a mate's removal can change the verdict
+/// without ever being geometrically in the way.
+fn blocked_watch_set(
+    part: &Component,
+    remaining: &HashMap<String, Component>,
+    fasteners: &HashMap<String, FastenerInfo>,
+    reach: f64,
+    travel: f64,
+) -> HashSet<String> {
+    let mut dirs = candidate_directions(part);
+    if let Some(info) = fasteners.get(&part.node_id) {
+        dirs.push(info.axis);
+        dirs.push(-info.axis);
+    }
+    for w in world_axes() {
+        if dirs.iter().all(|c| c.dot(&w) < 0.999) {
+            dirs.push(w);
+        }
+    }
+    let bmin = part.bbox_min.add_scalar(-reach);
+    let bmax = part.bbox_max.add_scalar(reach);
+    let mut watch: HashSet<String> = HashSet::new();
+    for q in remaining.values() {
+        if q.node_id == part.node_id {
+            continue;
+        }
+        let hit = dirs.iter().any(|d| {
+            let end_min = bmin + d * travel;
+            let end_max = bmax + d * travel;
+            let smin = bmin.inf(&end_min);
+            let smax = bmax.sup(&end_max);
+            (0..3).all(|k| smin[k] <= q.bbox_max[k] && q.bbox_min[k] <= smax[k])
+        });
+        if hit {
+            watch.insert(q.node_id.clone());
+        }
+    }
+    if let Some(info) = fasteners.get(&part.node_id) {
+        watch.extend(info.mates.keys().cloned());
+        watch.extend(info.sliding.keys().cloned());
+    }
+    for (fid, info) in fasteners {
+        if info.mates.contains_key(&part.node_id) || info.sliding.contains_key(&part.node_id) {
+            watch.insert(fid.clone());
+        }
+    }
+    watch
+}
+
+/// Drop the removed part's own memo and every memo watching it.
+fn blocked_memo_invalidate(memo: &mut HashMap<String, HashSet<String>>, removed: &str) {
+    memo.remove(removed);
+    memo.retain(|_, watch| !watch.contains(removed));
+}
+
 /// `_greedy_disassembly`: the full greedy loop over world-space parts.
 #[allow(clippy::too_many_arguments)]
 pub fn greedy_disassembly(
@@ -940,14 +1001,47 @@ pub fn greedy_disassembly(
 
     let _timing = std::env::var("ASSEMBLER_TIMING").is_ok();
     let (mut t_p1, mut t_p2, mut t_p3, mut t_p4, mut t_p5) = (0.0f64, 0.0, 0.0, 0.0, 0.0);
+
+    // Wilson-style blocked memo (the NDBG insight as exact memoization): a part
+    // that failed its removal search stays failed until something that could
+    // possibly unblock it leaves the world — a watched neighbor is removed, or
+    // the assembly bounds shrink (which shortens exit travels and can clear a
+    // path all by itself). Skipping re-tests of still-blocked parts turns the
+    // O(rounds x remaining) re-search into near O(remaining) without changing a
+    // single verdict. Keyed per phase: a phase-1 failure says nothing about
+    // escape, so each memoizes independently (escape's wander reach is larger).
+    let mut blocked_p1: HashMap<String, HashSet<String>> = HashMap::new();
+    let mut blocked_p2: HashMap<String, HashSet<String>> = HashMap::new();
+    let mut bounds_epoch: Option<(Vector3<f64>, Vector3<f64>)> = None;
+    let (mut memo_skips_p1, mut memo_skips_p2) = (0usize, 0usize);
+    let watch_margin = tolerance + 2.0 * MAX_SAMPLE_SPACING_MM;
+
     let mut progressed = true;
     while !remaining.is_empty() && progressed {
         progressed = false;
         let _ts = std::time::Instant::now();
 
+        // Bounds shrink when an extremal part leaves; exit_travel shrinks with
+        // them, which can clear a previously-blocked path without any watched
+        // part being removed — the memo cannot survive that.
+        {
+            let refs: Vec<&Component> = remaining.values().collect();
+            let bounds = bounds_over(&refs);
+            let changed = bounds_epoch
+                .map(|(lo, hi)| lo != bounds.0 || hi != bounds.1)
+                .unwrap_or(true);
+            if changed {
+                blocked_p1.clear();
+                blocked_p2.clear();
+                bounds_epoch = Some(bounds);
+            }
+        }
+
         // Phase 1: straight-line / L removal. Candidates are evaluated in
         // parallel; the first-in-priority success is taken (identical to the
         // sequential break-on-first — each eval is a pure read-only sweep).
+        // Memoized-blocked parts are skipped: their verdict provably cannot
+        // have changed, so the filtered first-success is the same first-success.
         let order = removal_priority(&remaining, fasteners, &centroid, assembly_diagonal);
         if remaining.len() == 1 {
             let id = order.into_iter().next().unwrap();
@@ -955,36 +1049,57 @@ pub fn greedy_disassembly(
             world.set_active(&id, false);
             removal_order.push(base_entry(&id));
             progressed = true;
-        } else if let Some((i, p)) = par_first_success(
-            &order,
-            &remaining,
-            &world,
-            Some(&full_world),
-            |part, others, w, fw| {
-                plan_removal(
-                    part,
-                    &remaining,
-                    others,
-                    w,
-                    fw,
-                    _clearance,
-                    path_samples,
-                    fasteners,
-                    tolerance,
-                )
-            },
-        ) {
-            let id = order[i].clone();
-            let key = if p.tier.as_deref() == Some("linear") {
-                "linear"
-            } else {
-                "l"
-            };
-            *tiers.get_mut(key).unwrap() += 1;
-            removal_order.push(p);
-            remaining.remove(&id);
-            world.set_active(&id, false);
-            progressed = true;
+        } else {
+            memo_skips_p1 += order.iter().filter(|id| blocked_p1.contains_key(*id)).count();
+            let tryable: Vec<String> = order
+                .into_iter()
+                .filter(|id| !blocked_p1.contains_key(id))
+                .collect();
+            let result = par_first_success(
+                &tryable,
+                &remaining,
+                &world,
+                Some(&full_world),
+                |part, others, w, fw| {
+                    plan_removal(
+                        part,
+                        &remaining,
+                        others,
+                        w,
+                        fw,
+                        _clearance,
+                        path_samples,
+                        fasteners,
+                        tolerance,
+                    )
+                },
+            );
+            // Everything before the first success (or everything, on a full
+            // fail) was evaluated and failed — memoize those verdicts.
+            let failed_upto = result.as_ref().map(|(i, _)| *i).unwrap_or(tryable.len());
+            for id in &tryable[..failed_upto] {
+                let part = &remaining[id];
+                let reach = (part.bbox_max - part.bbox_min).norm().max(1.0) + watch_margin;
+                blocked_p1.insert(
+                    id.clone(),
+                    blocked_watch_set(part, &remaining, fasteners, reach, assembly_diagonal),
+                );
+            }
+            if let Some((i, p)) = result {
+                let id = tryable[i].clone();
+                let key = if p.tier.as_deref() == Some("linear") {
+                    "linear"
+                } else {
+                    "l"
+                };
+                *tiers.get_mut(key).unwrap() += 1;
+                removal_order.push(p);
+                remaining.remove(&id);
+                world.set_active(&id, false);
+                blocked_memo_invalidate(&mut blocked_p1, &id);
+                blocked_memo_invalidate(&mut blocked_p2, &id);
+                progressed = true;
+            }
         }
 
         t_p1 += _ts.elapsed().as_secs_f64();
@@ -992,16 +1107,38 @@ pub fn greedy_disassembly(
         // Phase 2: tier-3 escape (parallel candidate evaluation, first success).
         if !progressed && remaining.len() > 1 {
             let order = removal_priority(&remaining, fasteners, &centroid, assembly_diagonal);
-            if let Some((i, p)) =
-                par_first_success(&order, &remaining, &world, None, |part, others, w, _fw| {
+            memo_skips_p2 += order.iter().filter(|id| blocked_p2.contains_key(*id)).count();
+            let tryable: Vec<String> = order
+                .into_iter()
+                .filter(|id| !blocked_p2.contains_key(id))
+                .collect();
+            let result =
+                par_first_success(&tryable, &remaining, &world, None, |part, others, w, _fw| {
                     plan_escape(part, others, w, path_samples, fasteners, tolerance)
-                })
-            {
-                let id = order[i].clone();
+                });
+            let failed_upto = result.as_ref().map(|(i, _)| *i).unwrap_or(tryable.len());
+            for id in &tryable[..failed_upto] {
+                let part = &remaining[id];
+                // Escape wanders up to MAX_ESCAPE_SEGMENTS hops of 1.5x the part
+                // diagonal before its exit sweep — the watch region reaches that
+                // much further than phase 1's single hop.
+                let reach = (MAX_ESCAPE_SEGMENTS as f64)
+                    * 1.5
+                    * (part.bbox_max - part.bbox_min).norm().max(1.0)
+                    + watch_margin;
+                blocked_p2.insert(
+                    id.clone(),
+                    blocked_watch_set(part, &remaining, fasteners, reach, assembly_diagonal),
+                );
+            }
+            if let Some((i, p)) = result {
+                let id = tryable[i].clone();
                 *tiers.get_mut("escape").unwrap() += 1;
                 removal_order.push(p);
                 remaining.remove(&id);
                 world.set_active(&id, false);
+                blocked_memo_invalidate(&mut blocked_p1, &id);
+                blocked_memo_invalidate(&mut blocked_p2, &id);
                 progressed = true;
             }
         }
@@ -1115,6 +1252,13 @@ pub fn greedy_disassembly(
                 world.add(&host_id, &combined);
                 remaining.insert(host_id.clone(), combined);
                 late_merges.insert(id.clone(), host_id.clone());
+                // The member left and the host's geometry changed — both must
+                // fall out of the blocked memos (the grown host can only add
+                // blockage, but its own cached verdict is stale).
+                for memo in [&mut blocked_p1, &mut blocked_p2] {
+                    blocked_memo_invalidate(memo, &id);
+                    blocked_memo_invalidate(memo, &host_id);
+                }
                 progressed = true;
                 break;
             }
@@ -1146,6 +1290,9 @@ pub fn greedy_disassembly(
                 for member_id in &members {
                     remaining.remove(member_id);
                     world.set_active(member_id, false);
+                    for memo in [&mut blocked_p1, &mut blocked_p2] {
+                        blocked_memo_invalidate(memo, member_id);
+                    }
                 }
                 let rep = entry.node_id.clone();
                 removal_order.push(entry);
@@ -1268,12 +1415,15 @@ pub fn greedy_disassembly(
             *tiers.get_mut("flagged").unwrap() += 1;
             remaining.remove(&id);
             world.set_active(&id, false);
+            for memo in [&mut blocked_p1, &mut blocked_p2] {
+                blocked_memo_invalidate(memo, &id);
+            }
             progressed = true;
         }
         t_p5 += _ts.elapsed().as_secs_f64();
     }
     if _timing {
-        eprintln!("    greedy phases: p1_removal={:.1}s p2_escape={:.1}s p3_merge={:.1}s p4_group={:.1}s p5_flag={:.1}s", t_p1, t_p2, t_p3, t_p4, t_p5);
+        eprintln!("    greedy phases: p1_removal={:.1}s p2_escape={:.1}s p3_merge={:.1}s p4_group={:.1}s p5_flag={:.1}s memo_skips p1={memo_skips_p1} p2={memo_skips_p2}", t_p1, t_p2, t_p3, t_p4, t_p5);
     }
 
     let sequence: Vec<String> = removal_order

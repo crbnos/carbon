@@ -283,7 +283,11 @@ pub fn plan_step(
     };
     plan["contacts"] = json!(contact_graph
         .iter()
-        .map(|(k, v)| (k.clone(), v.iter().cloned().collect::<Vec<_>>()))
+        .map(|(k, v)| {
+            let mut neighbors: Vec<_> = v.iter().cloned().collect();
+            neighbors.sort(); // HashSet order is run-nondeterministic
+            (k.clone(), neighbors)
+        })
         .collect::<std::collections::BTreeMap<_, _>>());
 
     let planned_count = outcome
