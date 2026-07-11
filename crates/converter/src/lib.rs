@@ -1,5 +1,5 @@
-//! STEP → GLB + graph.json converter (Rust port of `services/geometry/app/convert.py`
-//! + `glb.py`). Deterministic pieces here; OCCT ingestion via the occt-bridge crate.
+//! STEP → GLB + graph.json converter (ported from the former Python geometry
+//! service). Deterministic pieces here; OCCT ingestion via the occt-bridge crate.
 
 pub mod convert;
 pub mod glb;

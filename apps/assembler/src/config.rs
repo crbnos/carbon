@@ -17,13 +17,6 @@ pub fn max_parts() -> usize {
     int_env("ASSEMBLER_MAX_PARTS", 5000)
 }
 
-/// Redis URL for the shared job store / progress mirror. Unset => in-memory
-/// single-instance mode (dev). Set-but-unreachable is a boot error, never a
-/// silent in-memory fallback — two replicas with split stores strand jobs.
-pub fn redis_url() -> Option<String> {
-    std::env::var("REDIS_URL").ok().filter(|s| !s.is_empty())
-}
-
 /// How long shutdown waits for running plan tasks after the HTTP listener
 /// drains. Match the orchestrator's termination grace period.
 pub fn shutdown_grace() -> std::time::Duration {

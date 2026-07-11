@@ -245,7 +245,7 @@ mod tests {
 
     #[test]
     fn source_unit_detection() {
-        // Cases from services/geometry/tests/test_convert.py::test_source_unit_detection.
+        // Cases from the former Python service's test_source_unit_detection.
         assert_eq!(
             detect_source_unit("DATA;\n#41=( CONVERSION_BASED_UNIT('INCH',#38) LENGTH_UNIT() NAMED_UNIT(#40) );\nENDSEC;"),
             "inch"

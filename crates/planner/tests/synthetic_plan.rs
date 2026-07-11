@@ -1,5 +1,5 @@
 //! Planner core tests over synthetic geometry — no STEP/OCCT/fixtures, meshes
-//! built in code. Mirrors the spirit of `services/geometry/tests/test_plan.py`:
+//! built in code. Mirrors the spirit of the former Python planner's test_plan:
 //! assert plan behavior (sequencing, tiers, ordering invariants), not byte
 //! output. Kept to robust invariants that any correct plan must satisfy, so
 //! they don't wobble on exact float geometry.

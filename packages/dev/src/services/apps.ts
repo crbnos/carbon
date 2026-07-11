@@ -237,77 +237,29 @@ export function spawnAssembler(opts: {
   const port = ports.PORT_ASSEMBLER;
   const prefix = pc.yellow(pc.bold("asm | "));
 
-  // The Rust `assembler` app is the service. USE_PYTHON_GEOMETRY=1 runs the
-  // legacy Python baseline (services/geometry) instead — same port, alias,
-  // and wire contract; only the spawned process changes.
-  const useRust = !["1", "true"].includes(
-    process.env.USE_PYTHON_GEOMETRY ?? ""
-  );
-
-  let file: string;
-  let args: string[];
-  let cwd: string;
-  let extraEnv: NodeJS.ProcessEnv;
-
-  if (useRust) {
-    // Binary lives in the root Cargo workspace target (crates/* + apps/assembler).
-    const bin = join(root, "target", "release", "assembler");
-    if (!existsSync(bin)) {
-      process.stderr.write(
-        `${prefix}${pc.dim("skipped — no release binary (run: cargo build --release -p assembler), or set USE_PYTHON_GEOMETRY=1 for the Python baseline)")}\n`
-      );
-      return null;
-    }
-    file = bin;
-    args = [];
-    cwd = join(root, "apps", "assembler");
-    // ASSEMBLER_DEV_MODE=true also disables TLS verification in the service,
-    // so portless's self-signed CA needs no extra trust wiring. The service is
-    // pure compute — the assembly-plan Inngest function polls GET /plan for
-    // completion, so no Inngest event wiring is needed here.
-    extraEnv = {
-      ASSEMBLER_BIND: `127.0.0.1:${port}`,
-      ASSEMBLER_SERVICE_API_KEY: "dev-local-key",
-      ASSEMBLER_DEV_MODE: "true"
-    };
-    process.stderr.write(`${prefix}${pc.dim("using rust assembler")}\n`);
-  } else {
-    const serviceDir = join(root, "services", "geometry");
-    const venvPython = join(serviceDir, ".venv", "bin", "python");
-
-    if (!existsSync(venvPython)) {
-      process.stderr.write(
-        `${prefix}${pc.dim("skipped — no .venv (run: cd services/geometry && python3 -m venv .venv && .venv/bin/pip install -e .)")}\n`
-      );
-      return null;
-    }
-
-    // Trust portless's self-signed CA so the service can fetch signed URLs
-    // from the local Supabase storage (served over HTTPS via portless).
-    const caPath = join(homedir(), ".portless", "ca.pem");
-    const caEnv = existsSync(caPath)
-      ? { SSL_CERT_FILE: caPath, REQUESTS_CA_BUNDLE: caPath }
-      : {};
-
-    file = venvPython;
-    args = [
-      "-m",
-      "uvicorn",
-      "app.main:app",
-      "--port",
-      String(port),
-      "--host",
-      "127.0.0.1",
-      "--reload"
-    ];
-    cwd = serviceDir;
-    // The legacy Python service keeps its own GEOMETRY_* env names.
-    extraEnv = {
-      ...caEnv,
-      GEOMETRY_SERVICE_API_KEY: "dev-local-key",
-      GEOMETRY_DEV_MODE: "true"
-    };
+  // The Rust `assembler` app is the geometry service (STEP → GLB + assembly
+  // graph, and motion planning). Its release binary lives in the root Cargo
+  // workspace target (crates/* + apps/assembler).
+  const bin = join(root, "target", "release", "assembler");
+  if (!existsSync(bin)) {
+    process.stderr.write(
+      `${prefix}${pc.dim("skipped — no release binary (run: cargo build --release -p assembler)")}\n`
+    );
+    return null;
   }
+  const file = bin;
+  const args: string[] = [];
+  const cwd = join(root, "apps", "assembler");
+  // ASSEMBLER_DEV_MODE=true also disables TLS verification in the service, so
+  // portless's self-signed CA needs no extra trust wiring. The service is pure
+  // compute — the assembly-plan Inngest function polls GET /plan for completion,
+  // so no Inngest event wiring is needed here.
+  const extraEnv: NodeJS.ProcessEnv = {
+    ASSEMBLER_BIND: `127.0.0.1:${port}`,
+    ASSEMBLER_SERVICE_API_KEY: "dev-local-key",
+    ASSEMBLER_DEV_MODE: "true"
+  };
+  process.stderr.write(`${prefix}${pc.dim("using rust assembler")}\n`);
 
   const child = execa(file, args, {
     cwd,

@@ -56,12 +56,14 @@ async fn serve() {
     // runs each request single-threaded on its own worker (N concurrent requests
     // = N cores, no oversubscription). The defaults keep each request all-core
     // for lowest single-request latency (CLI / low-concurrency use).
+    let max = config::max_concurrency();
     let state = AppState {
-        slots: Arc::new(Semaphore::new(config::max_concurrency())),
+        slots: Arc::new(Semaphore::new(max)),
         jobs: plan_jobs::JobStore::default(),
         cache: Arc::new(cache::ResultCache::new(config::cache_bytes())),
         progress: progress::ProgressStore::default(),
     };
+    let slots = Arc::clone(&state.slots);
     let app = Router::new()
         .route("/health", get(health))
         .route("/convert", post(convert))
@@ -73,7 +75,53 @@ async fn serve() {
     let addr = std::env::var("ASSEMBLER_BIND").unwrap_or_else(|_| "0.0.0.0:8000".into());
     let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
     eprintln!("assembler (rust) listening on {addr}");
-    axum::serve(listener, app).await.unwrap();
+
+    axum::serve(listener, app)
+        .with_graceful_shutdown(shutdown_signal())
+        .await
+        .unwrap();
+
+    // The listener has stopped and in-flight HTTP requests have drained (convert
+    // is request-bound). Plan jobs run detached (POST /plan returns 202) and
+    // each holds a slot, so wait for every slot to free — no permits held means
+    // no plan is still running — before exiting, so a deploy/scale-down doesn't
+    // kill a plan mid-flight. The grace deadline armed in shutdown_signal
+    // force-exits if a wedged job overruns, so shutdown can't hang forever.
+    eprintln!("assembler draining in-flight plan jobs");
+    let _ = slots.acquire_many(max as u32).await;
+    eprintln!("assembler drained cleanly; exiting");
+}
+
+/// Resolves on SIGTERM (container stop) or SIGINT (Ctrl-C), then arms a hard
+/// deadline: if the graceful drain isn't done within ASSEMBLER_SHUTDOWN_GRACE_S,
+/// the process force-exits — we stop on our own terms rather than waiting for
+/// the orchestrator's SIGKILL.
+async fn shutdown_signal() {
+    let ctrl_c = async {
+        tokio::signal::ctrl_c().await.ok();
+    };
+    #[cfg(unix)]
+    let terminate = async {
+        tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
+            .expect("install SIGTERM handler")
+            .recv()
+            .await;
+    };
+    #[cfg(not(unix))]
+    let terminate = std::future::pending::<()>();
+
+    tokio::select! {
+        _ = ctrl_c => {}
+        _ = terminate => {}
+    }
+
+    let grace = config::shutdown_grace();
+    eprintln!("assembler received shutdown signal; draining (grace {grace:?})");
+    tokio::spawn(async move {
+        tokio::time::sleep(grace).await;
+        eprintln!("assembler shutdown grace elapsed; forcing exit");
+        std::process::exit(0);
+    });
 }
 
 async fn health() -> Json<Value> {
