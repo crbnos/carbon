@@ -7,8 +7,9 @@
 # occt.Dockerfile). Build that base ONCE and keep it:
 #   docker build -f apps/assembler/occt.Dockerfile -t carbon-occt:8.0.0-p1 apps/assembler
 # Then this image builds in ~minutes (cargo cache mounts make code-only
-# rebuilds seconds), and the runtime stage is a slim image with just the FCL
-# collision libs + the stripped binary — no OCCT shared objects, no X11.
+# rebuilds seconds), and the runtime stage is a slim image with just the
+# stripped binary — OCCT and FCL/ccd are static-linked in, so no collision or
+# OCCT shared objects and no X11; only OpenBLAS + the C++/Fortran runtimes.
 #
 # Build from the REPO ROOT (the cargo workspace spans crates/* + apps/assembler):
 #   docker build -f apps/assembler/Dockerfile -t carbon-assembler .
@@ -19,21 +20,49 @@ ARG OCCT_IMAGE=carbon-occt:8.0.0-p1
 # ---- prebuilt static OCCT (kept base image; no source compile) ----
 FROM ${OCCT_IMAGE} AS occt
 
+# ---- static FCL + libccd (built from source; Debian ships only .so) ----
+# The collision shim uses BVH mesh collision only — no octree — so FCL is built
+# minimal (FCL_WITH_OCTOMAP=OFF) and STATIC, so it links into the binary and the
+# runtime image carries no fcl/ccd/octomap shared objects. Fast (~minutes) and
+# Docker-layer cached; only rebuilt when the pinned versions below change.
+FROM debian:bookworm-slim AS fcl
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      git cmake ninja-build g++ libeigen3-dev ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+# libccd — double precision (FCL requires it), static.
+RUN git clone --depth 1 --branch v2.1 https://github.com/danfis/libccd.git /ccd \
+    && cmake -S /ccd -B /ccd/b -G Ninja -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/opt/fcl -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+        -DBUILD_SHARED_LIBS=OFF -DENABLE_DOUBLE_PRECISION=ON \
+    && cmake --build /ccd/b --target install
+# FCL 0.7.0 — static, no octomap; finds ccd + Eigen under the same prefix.
+# FCL ignores BUILD_SHARED_LIBS; its own FCL_STATIC_LIBRARY flag is what selects
+# a static archive (verified: without it FCL builds libfcl.so regardless).
+RUN git clone --depth 1 --branch 0.7.0 https://github.com/flexible-collision-library/fcl.git /fcl \
+    && cmake -S /fcl -B /fcl/b -G Ninja -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/opt/fcl -DCMAKE_PREFIX_PATH=/opt/fcl \
+        -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+        -DFCL_STATIC_LIBRARY=ON -DFCL_WITH_OCTOMAP=OFF -DFCL_BUILD_TESTS=OFF \
+    && cmake --build /fcl/b --target install
+
 # ---- Rust builder ----
 FROM rust:1.90-bookworm AS build
+# Eigen headers for the cxx shim; OpenBLAS/gfortran for the planner's BLAS.
+# FCL/ccd come from the static build above (no libfcl-dev/libccd-dev).
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      libfcl-dev libccd-dev libeigen3-dev liboctomap-dev \
-      libopenblas-dev gfortran \
+      libeigen3-dev libopenblas-dev gfortran \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=occt /opt/occt /opt/occt
+COPY --from=fcl /opt/fcl /opt/fcl
 WORKDIR /app
 # Only the Rust workspace — not the whole monorepo (see Dockerfile.dockerignore).
 COPY Cargo.toml Cargo.lock ./
 COPY crates ./crates
 COPY apps/assembler ./apps/assembler
-# Point the cxx bridges at the static OCCT + Debian/apt layout (see build.rs).
+# Point the cxx bridges at the static OCCT + static FCL/ccd (build.rs picks
+# `static=` when it finds a .a at the prefix). Eigen headers from apt.
 ENV OCCT_PREFIX=/opt/occt \
-    FCL_PREFIX=/usr LIBCCD_PREFIX=/usr EIGEN_PREFIX=/usr OCTOMAP_PREFIX=/usr
+    FCL_PREFIX=/opt/fcl LIBCCD_PREFIX=/opt/fcl EIGEN_PREFIX=/usr OCTOMAP_PREFIX=/usr
 # Cache mounts: the cargo registry and the target dir survive across builds,
 # so a code-only change relinks instead of recompiling every dependency.
 # The binary is copied out because cache mounts vanish after the RUN.
@@ -44,12 +73,12 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
     && strip /usr/local/bin/assembler
 
 # ---- runtime ----
-# OCCT is inside the binary; only the FCL collision stack is dynamic. Exact
-# runtime .so packages (no -dev headers/toolchain), non-root user, healthcheck
-# against the service's own /health.
+# OCCT and FCL/ccd are inside the binary; the only dynamic native deps left are
+# OpenBLAS (planner linear algebra) + the C++/Fortran runtimes. No -dev headers
+# or toolchain, non-root user, healthcheck against the service's own /health.
 FROM debian:bookworm-slim AS runtime
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      libfcl0.7 libccd2 liboctomap1.9 libopenblas0-pthread \
+      libopenblas0-pthread libgfortran5 libstdc++6 \
       curl ca-certificates \
     && rm -rf /var/lib/apt/lists/* \
     && useradd --system --uid 1001 --create-home assembler
