@@ -603,8 +603,10 @@ fn bbox_volume(part: &Component) -> f64 {
 }
 
 /// `_plan_group_removal`: find a connected subassembly that removes as one unit.
+#[allow(clippy::too_many_arguments)]
 pub fn plan_group_removal(
     remaining: &HashMap<String, Component>,
+    world: &mut CollisionWorld,
     path_samples: usize,
     fasteners: &HashMap<String, FastenerInfo>,
     combined_cache: &mut HashMap<BTreeSet<String>, Component>,
@@ -697,7 +699,6 @@ pub fn plan_group_removal(
                 .copied()
                 .collect();
             let (static_min, static_max) = bounds_over(&others);
-            let world = CollisionWorld::new(&others);
 
             let cache_key: BTreeSet<String> = member_ids.iter().cloned().collect();
             let combined = combined_cache.entry(cache_key).or_insert_with(|| {
@@ -757,6 +758,12 @@ pub fn plan_group_removal(
             }
 
             let member_id_list: Vec<&str> = member_ids.iter().map(|s| s.as_str()).collect();
+            // Test the group against the OTHERS by hiding its members in the
+            // persistent world, instead of rebuilding a fresh manager over ~n
+            // parts every growth step. Restored before returning either way.
+            for id in &member_id_list {
+                world.set_active(id, false);
+            }
             let mut winner: Option<(Vector3<f64>, f64, f64)> = None;
             for direction in &directions {
                 tests += 1;
@@ -802,6 +809,9 @@ pub fn plan_group_removal(
                 if tests >= MAX_GROUP_TESTS {
                     break;
                 }
+            }
+            for id in &member_id_list {
+                world.set_active(id, true);
             }
             if let Some((direction, travel, touch)) = winner {
                 let entry = PlannedComponent {
@@ -1273,6 +1283,7 @@ pub fn greedy_disassembly(
         if !progressed && remaining.len() > 2 {
             let mut group = plan_group_removal(
                 &remaining,
+                &mut world,
                 path_samples,
                 fasteners,
                 &mut group_mesh_cache,
