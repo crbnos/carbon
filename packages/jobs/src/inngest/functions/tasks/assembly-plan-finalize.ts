@@ -30,30 +30,48 @@ export const assemblyPlanFinalizeFunction = inngest.createFunction(
   { event: "carbon/assembly-plan-done" },
   async ({ event, step, logger }) => {
     const { jobId, status, error, stats } = event.data;
-    const meta = event.data.meta as PlanDoneMeta | undefined;
+    const eventMeta = event.data.meta as PlanDoneMeta | undefined;
 
-    if (!meta?.companyId || !meta.planPath) {
-      // A service that doesn't echo meta can't be finalized from the event
-      // alone; the reconciler will fail the row if it stays Processing.
-      throw new NonRetriableError(
-        `assembly-plan-done for ${jobId} carries no meta; cannot finalize`
-      );
-    }
+    // Claim + context in one lookup. `meta` (echoed from the submit) is the
+    // fast path; a meta-less event — the legacy Python service via the
+    // reconciler — reconstructs everything except reMotionFor from the job
+    // row (planPath is deterministic, userId = the row's creator). Without
+    // this fallback a meta-less completion loops forever: reconcile re-emits,
+    // finalize rejects, the row never leaves Processing.
+    const meta = await step.run(
+      "claim-job",
+      async (): Promise<PlanDoneMeta | null> => {
+        const client = getCarbonServiceRole();
+        const row = await client
+          .from("assemblyPlanJob")
+          .select(
+            "id, companyId, modelUploadId, createdBy, modelUpload(graphPath)"
+          )
+          .eq("id", jobId)
+          .eq("kind", "plan")
+          .eq("status", "Processing")
+          .maybeSingle();
+        if (!row.data?.id) return null;
+        if (eventMeta?.companyId && eventMeta.planPath) {
+          if (eventMeta.companyId !== row.data.companyId) return null;
+          return eventMeta;
+        }
+        logger.warn(
+          "plan-done event carries no meta (legacy service); reconstructed from the job row — re-motion unavailable for this run",
+          { jobId }
+        );
+        return {
+          companyId: row.data.companyId,
+          userId: row.data.createdBy,
+          modelUploadId: row.data.modelUploadId,
+          reMotionFor: null,
+          graphPath: row.data.modelUpload?.graphPath ?? null,
+          planPath: `${row.data.companyId}/models/${row.data.modelUploadId}/${jobId}/plan.json`
+        };
+      }
+    );
 
-    const claimed = await step.run("claim-job", async () => {
-      const client = getCarbonServiceRole();
-      const row = await client
-        .from("assemblyPlanJob")
-        .select("id")
-        .eq("id", jobId)
-        .eq("companyId", meta.companyId)
-        .eq("kind", "plan")
-        .eq("status", "Processing")
-        .maybeSingle();
-      return Boolean(row.data?.id);
-    });
-
-    if (!claimed) {
+    if (!meta) {
       logger.info("plan-done event skipped (job not Processing)", { jobId });
       return { finalized: false };
     }

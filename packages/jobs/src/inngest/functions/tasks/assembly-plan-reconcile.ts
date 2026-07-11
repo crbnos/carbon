@@ -29,7 +29,7 @@ export const assemblyPlanReconcileFunction = inngest.createFunction(
       const cutoff = new Date(Date.now() - STALE_AFTER_MS).toISOString();
       const rows = await client
         .from("assemblyPlanJob")
-        .select("id, companyId")
+        .select("id, companyId, modelUploadId")
         .eq("kind", "plan")
         .eq("status", "Processing")
         .lt("updatedAt", cutoff)
@@ -52,6 +52,7 @@ export const assemblyPlanReconcileFunction = inngest.createFunction(
           planUploaded?: boolean;
           componentCount?: number;
           plannedCount?: number;
+          plan?: unknown;
           meta?: Record<string, unknown>;
         } | null = null;
         let httpStatus = 0;
@@ -91,6 +92,25 @@ export const assemblyPlanReconcileFunction = inngest.createFunction(
         }
 
         if (body?.status === "done" || body?.status === "error") {
+          // Legacy Python service: it never uploads plan.json — the plan rides
+          // the status body. Upload it to the deterministic path here so
+          // finalize can treat every completion uniformly.
+          let planUploaded = body.planUploaded === true;
+          if (body.status === "done" && !planUploaded && body.plan != null) {
+            const planPath = `${row.companyId}/models/${row.modelUploadId}/${row.id}/plan.json`;
+            const upload = await client.storage
+              .from("private")
+              .upload(planPath, JSON.stringify(body.plan), {
+                contentType: "application/json",
+                upsert: true
+              });
+            if (upload.error) {
+              settled.push({ jobId: row.id, outcome: "plan-upload-failed" });
+              continue;
+            }
+            planUploaded = true;
+          }
+
           // Re-emit the completion event the push should have delivered;
           // finalize handles it exactly like a service push (meta included in
           // the status body).
@@ -102,7 +122,7 @@ export const assemblyPlanReconcileFunction = inngest.createFunction(
               ...(body.error ? { error: body.error } : {}),
               stats: {
                 ...(body.stats ?? {}),
-                planUploaded: body.planUploaded === true,
+                planUploaded,
                 componentCount: body.componentCount,
                 plannedCount: body.plannedCount
               },
