@@ -83,18 +83,23 @@ export function isJobLocked(status: string | null | undefined): boolean {
  * them to Failed.
  */
 const ASSEMBLY_PLAN_QUEUED_STALE_MS = 2 * 60 * 1000;
+// A Processing row with no live worker behind it (worker crash, or the dev
+// Inngest server — which keeps runs in memory — restarting mid-run) would
+// otherwise read as "running" forever: the UI spins and the re-run guard
+// blocks recovery. The worker's own budget is ~30 min of waiting plus
+// retries, so anything past this is an orphan.
+const ASSEMBLY_PLAN_PROCESSING_STALE_MS = 45 * 60 * 1000;
 
 /** Whether a motion-planning run is live (drives badges, polling, re-run guards). */
 export function isAssemblyPlanRunning(
   job: { status: string; createdAt: string } | null | undefined
 ): boolean {
   if (!job) return false;
-  if (job.status === "Processing") return true;
-  return (
-    job.status === "Queued" &&
-    Date.now() - new Date(job.createdAt).getTime() <
-      ASSEMBLY_PLAN_QUEUED_STALE_MS
-  );
+  const age = Date.now() - new Date(job.createdAt).getTime();
+  if (job.status === "Processing") {
+    return age < ASSEMBLY_PLAN_PROCESSING_STALE_MS;
+  }
+  return job.status === "Queued" && age < ASSEMBLY_PLAN_QUEUED_STALE_MS;
 }
 
 export const jobOperationStatus = [

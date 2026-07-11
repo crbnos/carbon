@@ -86,6 +86,24 @@ export type Events = {
     };
   };
 
+  // Plan-completion callback PUSHED BY THE GEOMETRY SERVICE (not app code) to
+  // Inngest's ingest endpoint when an async /plan job reaches a terminal state.
+  // The assembly-plan function step.waitForEvent()s on it (matched by
+  // data.jobId) instead of polling GET /plan/{jobId} every 15s. Best-effort on
+  // the service side — the waiter keeps a timeout + one fallback poll.
+  "carbon/assembly-plan-done": {
+    data: {
+      // The assemblyPlanJob id the app submitted as jobId.
+      jobId: string;
+      status: "done" | "error";
+      error?: string;
+      // Present when status=done: planMs, tiers, warnings, verifiedCount,
+      // componentCount, plannedCount, planUploaded (true when the service PUT
+      // plan.json to outputs.plan.url).
+      stats?: Record<string, unknown>;
+    };
+  };
+
   // Model thumbnail generation
   "carbon/model-thumbnail": {
     data: {

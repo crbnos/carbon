@@ -120,6 +120,34 @@ pub mod ffi {
             num_max_contacts: usize,
         ) -> Vec<SingleContact>;
 
+        /// Threshold-classified variant of `manager_collide_single_multi`. The
+        /// planner's sweep consumers only test three predicates per neighbor —
+        /// blocked (depth > threshold), near (> tol/2), touching (any contact) —
+        /// so a backend may EARLY-STOP a neighbor's traversal at the first pair
+        /// past the relevant threshold instead of enumerating its full contact
+        /// set, as long as the returned depth lands in the same predicate
+        /// bracket. Per-neighbor thresholds: `ov_idx[i]` gets blocking threshold
+        /// `max(tol, ov_am[i])` (mate/seated allowance + margin); +INF means
+        /// "never reports". `want_touch_near=false` lets a backend skip the
+        /// touch/near probes (free_travel / path_blockers only test blocking).
+        ///
+        /// The FCL backend IGNORES all hints and full-enumerates (byte-parity
+        /// with python-fcl); the coal backend brackets with GJK early-stop.
+        #[allow(clippy::too_many_arguments)]
+        fn manager_classify_multi(
+            m: &Manager,
+            moving: &Bvh,
+            skip_indices: &[i64],
+            ov_idx: &[i64],
+            ov_am: &[f64],
+            tx: f64,
+            ty: f64,
+            tz: f64,
+            tol: f64,
+            want_touch_near: bool,
+            num_max_contacts: usize,
+        ) -> Vec<SingleContact>;
+
         /// Build a BVH from flat world-space vertices (n*3 f64) and triangles
         /// (m*3 u32), in the same vertex/triangle order the mesh stores them.
         fn new_bvh(verts: &[f64], tris: &[u32]) -> UniquePtr<Bvh>;
@@ -149,7 +177,7 @@ pub mod ffi {
 }
 
 pub use ffi::{
-    collide_pair, distance_pair, manager_add, manager_collide_single,
+    collide_pair, distance_pair, manager_add, manager_classify_multi, manager_collide_single,
     manager_collide_single_multi, manager_internal_contacts, manager_new, manager_set_active,
     manager_setup, narrow_pairs_run, new_bvh, raw_contacts_enumerated, Bvh, Contact,
     InternalContact, Manager, SingleContact,

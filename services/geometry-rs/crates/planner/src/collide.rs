@@ -11,7 +11,13 @@
 use crate::consts::*;
 use crate::types::{Component, FastenerInfo};
 use nalgebra::Vector3;
+use smallvec::SmallVec;
 use std::collections::HashMap;
+
+/// Per-query contact list. Almost every sample touches ≤8 others, so the list
+/// lives inline on the stack — millions of `contacts_at` calls (2.9M on the
+/// 431-part BCU) stop paying a heap alloc each.
+pub type Contacts = SmallVec<[(String, f64); 8]>;
 
 /// Global count of `contacts_at` calls (perf diagnostic; read via `contacts_at_calls`).
 pub static CONTACTS_AT_CALLS: std::sync::atomic::AtomicUsize =
@@ -20,6 +26,33 @@ pub static CONTACTS_AT_CALLS: std::sync::atomic::AtomicUsize =
 /// Snapshot the current `contacts_at` call count.
 pub fn contacts_at_calls() -> usize {
     CONTACTS_AT_CALLS.load(std::sync::atomic::Ordering::Relaxed)
+}
+
+/// Per-query FCL contact budget. Python's planner uses 100000; every consumer
+/// only needs max-depth-per-other vs the 0.15mm tolerance, so a deep overlap's
+/// full triangle-contact set is wasted enumeration. Lowering this caps that work
+/// — but can only change the reported MAX depth if the deepest pair is truncated,
+/// which would break parity, so the value is validated against the corpus + the
+/// real assemblies (GEOMETRY_NUM_MAX sweep) before any default below 100000.
+fn num_max_contacts() -> usize {
+    static N: std::sync::OnceLock<usize> = std::sync::OnceLock::new();
+    *N.get_or_init(|| {
+        std::env::var("GEOMETRY_NUM_MAX")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(100_000)
+    })
+}
+
+/// Optional pair to trace: GEOMETRY_DEBUG_PAIR="movingId:otherId".
+fn debug_pair() -> Option<&'static (String, String)> {
+    static P: std::sync::OnceLock<Option<(String, String)>> = std::sync::OnceLock::new();
+    P.get_or_init(|| {
+        std::env::var("GEOMETRY_DEBUG_PAIR").ok().and_then(|v| {
+            v.split_once(':').map(|(a, b)| (a.to_string(), b.to_string()))
+        })
+    })
+    .as_ref()
 }
 
 /// An allowance map: partner nodeId -> allowed seated interference (mm).
@@ -51,7 +84,7 @@ impl Broadphase {
 
     /// `_contacts_at`: (otherName, max_depth) for `part` translated by
     /// `translation` against the registered others. One broadphase query.
-    pub fn contacts_at(&self, part: &Component, translation: &Vector3<f64>) -> Vec<(String, f64)> {
+    pub fn contacts_at(&self, part: &Component, translation: &Vector3<f64>) -> Contacts {
         CONTACTS_AT_CALLS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         let bvh = part.bvh();
         let cs = collision::manager_collide_single(
@@ -61,7 +94,7 @@ impl Broadphase {
             translation[0],
             translation[1],
             translation[2],
-            100_000,
+            num_max_contacts(),
         );
         cs.into_iter()
             .map(|c| (self.index_to_node[c.other].clone(), c.depth))
@@ -75,7 +108,7 @@ pub fn contacts_at(
     part: &Component,
     others: &[&Component],
     translation: &Vector3<f64>,
-) -> Vec<(String, f64)> {
+) -> Contacts {
     Broadphase::new(others).contacts_at(part, translation)
 }
 
@@ -89,6 +122,17 @@ pub struct CollisionWorld {
     node_to_index: HashMap<String, usize>,
     index_to_node: Vec<String>,
 }
+
+// SAFETY: the parallel greedy sweeps share ONE `&CollisionWorld` across rayon
+// workers, each issuing read-only `contacts_at*` queries. Those bottom out in
+// FCL's `DynamicAABBTreeCollisionManager::collide(obj, cdata, cb) const` — a pure
+// read (BV overlap + callback; the manager has no `mutable` members and the
+// narrowphase result/contact state is call-local), over BVHModels frozen after
+// `endModel` (see `SharedBvh`). The only structural mutations (`add`,
+// `set_active`) take `&mut self`, so Rust statically forbids them from
+// overlapping the shared `&self` queries. `manager_new`/`manager_add`/etc. are
+// never called concurrently on one instance.
+unsafe impl Sync for CollisionWorld {}
 
 impl CollisionWorld {
     pub fn new(parts: &[&Component]) -> Self {
@@ -133,7 +177,7 @@ impl CollisionWorld {
     /// `_contacts_at`: (otherName, max_depth) for `part` (moving) translated by
     /// `translation`, against the active bodies — one broadphase query, self
     /// excluded by index.
-    pub fn contacts_at(&self, part: &Component, translation: &Vector3<f64>) -> Vec<(String, f64)> {
+    pub fn contacts_at(&self, part: &Component, translation: &Vector3<f64>) -> Contacts {
         CONTACTS_AT_CALLS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         let bvh = part.bvh();
         let mi = self.index_of(&part.node_id);
@@ -144,11 +188,100 @@ impl CollisionWorld {
             translation[0],
             translation[1],
             translation[2],
-            100_000,
+            num_max_contacts(),
         );
         cs.into_iter()
             .map(|c| (self.index_to_node[c.other].clone(), c.depth))
             .collect()
+    }
+
+    /// Resolve an exempt map (name → allowance) into index-space blocking
+    /// thresholds for `classify`: each finite allowance becomes
+    /// `allowance + MATE_DEPTH_MARGIN_MM` (the exact skip predicate the Rust
+    /// consumers apply); infinite allowances pass through as +INF (the backend
+    /// drops those neighbors entirely — they can never block, near, or touch).
+    pub fn resolve_exempt(&self, exempt: Option<&Exempt>) -> (Vec<i64>, Vec<f64>) {
+        let mut idx = Vec::new();
+        let mut am = Vec::new();
+        if let Some(ex) = exempt {
+            for (name, &allow) in ex {
+                if let Some(&i) = self.node_to_index.get(name) {
+                    idx.push(i as i64);
+                    am.push(if allow == f64::INFINITY {
+                        f64::INFINITY
+                    } else {
+                        allow + MATE_DEPTH_MARGIN_MM
+                    });
+                }
+            }
+        }
+        (idx, am)
+    }
+
+    /// Threshold-classified `_contacts_at` for the sweep consumers: same
+    /// (other, depth) shape, but the backend may early-stop each neighbor at
+    /// the first pair past its predicate threshold (see the bridge doc). On
+    /// the FCL backend this is EXACTLY `contacts_at` (hints ignored) — parity
+    /// holds by construction. `want_touch_near=false` when the caller only
+    /// tests blocking (free_travel / path_blockers).
+    #[allow(clippy::too_many_arguments)]
+    pub fn classify(
+        &self,
+        part: &Component,
+        translation: &Vector3<f64>,
+        skip_nodes: &std::collections::BTreeSet<String>,
+        ov: &(Vec<i64>, Vec<f64>),
+        tol: f64,
+        want_touch_near: bool,
+    ) -> Contacts {
+        CONTACTS_AT_CALLS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        let bvh = part.bvh();
+        let mut skip: SmallVec<[i64; 16]> = SmallVec::with_capacity(skip_nodes.len() + 1);
+        skip.push(self.index_of(&part.node_id));
+        for n in skip_nodes {
+            if let Some(&i) = self.node_to_index.get(n) {
+                skip.push(i as i64);
+            }
+        }
+        let cs = collision::manager_classify_multi(
+            &self.manager,
+            &bvh,
+            &skip,
+            &ov.0,
+            &ov.1,
+            translation[0],
+            translation[1],
+            translation[2],
+            tol,
+            want_touch_near,
+            num_max_contacts(),
+        );
+        let out: Contacts = cs
+            .into_iter()
+            .map(|c| (self.index_to_node[c.other].clone(), c.depth))
+            .collect();
+        // GEOMETRY_DEBUG_PAIR="movingId:otherId" — dump this pair's per-sample
+        // depth under the active backend (diagnosing FCL-vs-coal divergence).
+        if let Some((m, o)) = debug_pair() {
+            if part.node_id == *m {
+                if o == "*" {
+                    if !out.is_empty() {
+                        eprintln!(
+                            "DBGPAIR t=[{:.4},{:.4},{:.4}] tol={tol:.3} contacts={:?}",
+                            translation[0], translation[1], translation[2],
+                            out.iter().map(|(n, d)| (&n[..8], *d)).collect::<Vec<_>>()
+                        );
+                    }
+                } else {
+                    let d = out.iter().find(|(n, _)| n == o).map(|(_, d)| *d);
+                    eprintln!(
+                        "DBGPAIR t=[{:.4},{:.4},{:.4}] tol={tol:.3} depth={d:?}",
+                        translation[0], translation[1], translation[2]
+                    );
+                }
+            }
+        }
+        out
     }
 
     /// `_contacts_at` with extra bodies culled at the broadphase — the moving
@@ -159,10 +292,10 @@ impl CollisionWorld {
         part: &Component,
         translation: &Vector3<f64>,
         skip_nodes: &std::collections::BTreeSet<String>,
-    ) -> Vec<(String, f64)> {
+    ) -> Contacts {
         CONTACTS_AT_CALLS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         let bvh = part.bvh();
-        let mut skip: Vec<i64> = Vec::with_capacity(skip_nodes.len() + 1);
+        let mut skip: SmallVec<[i64; 16]> = SmallVec::with_capacity(skip_nodes.len() + 1);
         skip.push(self.index_of(&part.node_id));
         for n in skip_nodes {
             if let Some(&i) = self.node_to_index.get(n) {
@@ -176,7 +309,7 @@ impl CollisionWorld {
             translation[0],
             translation[1],
             translation[2],
-            100_000,
+            num_max_contacts(),
         );
         cs.into_iter()
             .map(|c| (self.index_to_node[c.other].clone(), c.depth))
@@ -301,12 +434,14 @@ pub fn path_is_clear(
     let offsets = linspace_tail(start, end, n);
     let spacing = (end - start) / (n.max(2) as f64 - 1.0);
 
+    let no_skip = std::collections::BTreeSet::new();
+    let ov = world.resolve_exempt(exempt.as_ref());
     let blocked_at = |distance: f64| -> (bool, bool, bool) {
         let mut translation = direction * distance;
         if let Some(off) = base_offset {
             translation += off;
         }
-        let contacts = world.contacts_at(part, &translation);
+        let contacts = world.classify(part, &translation, &no_skip, &ov, tolerance, true);
         if contacts.is_empty() {
             return (false, false, false);
         }
@@ -363,10 +498,12 @@ pub fn free_travel(
     }
     let n = sample_count(samples, cap);
     let offsets = linspace_tail(0.0, cap, n);
+    let no_skip = std::collections::BTreeSet::new();
+    let ov = world.resolve_exempt(exempt);
     let mut clear = 0.0;
     for s in offsets {
         let translation = direction * s + base_offset;
-        let contacts = world.contacts_at(part, &translation);
+        let contacts = world.classify(part, &translation, &no_skip, &ov, tolerance, false);
         if !contacts.is_empty() {
             let depth = blocking_depth(&contacts, exempt);
             if depth > tolerance {
@@ -416,9 +553,10 @@ pub fn path_blockers(
             exempt = Some(merged);
         }
         let count = sample_count(samples, *distance);
+        let ov = world.resolve_exempt(exempt.as_ref());
         for s in linspace_tail(0.0, *distance, count) {
             let translation = offset + direction * s;
-            for (other, depth) in world.contacts_at_excluding(part, &translation, &blockers) {
+            for (other, depth) in world.classify(part, &translation, &blockers, &ov, tolerance, false) {
                 if let Some(ex) = &exempt {
                     if let Some(&allow) = ex.get(&other) {
                         if depth <= allow + MATE_DEPTH_MARGIN_MM {

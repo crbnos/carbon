@@ -3,8 +3,24 @@
 use crate::corpus::RawComponent;
 use cxx::UniquePtr;
 use nalgebra::Vector3;
-use std::cell::OnceCell;
-use std::rc::Rc;
+use std::sync::{Arc, OnceLock};
+
+/// A built FCL BVH, safe to share read-only across threads. `BVHModel` is
+/// immutable after `endModel` (the only builder), and every FCL query
+/// (`collide`/`distance`) reads it without mutation — cxx `UniquePtr` is a plain
+/// owning pointer, so concurrent `&`-access for read-only collision is sound.
+/// This is what lets the greedy candidate sweeps run on multiple threads (each
+/// thread builds its own `Manager` over these shared BVHs).
+pub struct SharedBvh(UniquePtr<collision::Bvh>);
+// SAFETY: read-only shared access to an immutable BVHModel; see the type doc.
+unsafe impl Send for SharedBvh {}
+unsafe impl Sync for SharedBvh {}
+impl std::ops::Deref for SharedBvh {
+    type Target = collision::Bvh;
+    fn deref(&self) -> &collision::Bvh {
+        &self.0
+    }
+}
 
 /// A triangle mesh in world space.
 #[derive(Debug, Clone)]
@@ -91,10 +107,14 @@ pub struct Component {
     /// and memoizes into `vol_cache`.
     pub cached_volume: Option<f64>,
     /// Lazily-built FCL BVH, shared across clones (mirrors `mesh._carbon_bvh`).
-    bvh: OnceCell<Rc<UniquePtr<collision::Bvh>>>,
+    bvh: OnceLock<Arc<SharedBvh>>,
     /// Memoized `part_volume` result (the watertight test builds a full-mesh
     /// edge map — costly, and called repeatedly during greedy sorting).
-    pub(crate) vol_cache: OnceCell<f64>,
+    pub(crate) vol_cache: OnceLock<f64>,
+    /// Memoized `symmetry_axis_kind` result — a LAPACK SVD of the vertex cloud,
+    /// pure in the mesh, recomputed once per candidate per greedy iteration
+    /// without this cache. `None`-vs-cached distinguished by the outer Option.
+    pub(crate) sym_axis_cache: OnceLock<Option<(Vector3<f64>, FastenerKind)>>,
 }
 
 impl Component {
@@ -117,8 +137,9 @@ impl Component {
             seated_allowance: Default::default(),
             seated_allowance_axes: Default::default(),
             cached_volume: None,
-            bvh: OnceCell::new(),
-            vol_cache: OnceCell::new(),
+            bvh: OnceLock::new(),
+            vol_cache: OnceLock::new(),
+            sym_axis_cache: OnceLock::new(),
         }
     }
 
@@ -128,13 +149,15 @@ impl Component {
         Component::new(raw.node_id.clone(), raw.name.clone(), mesh, lo, hi, raw.is_proxy)
     }
 
-    /// The part's FCL BVH, built once and cached (mirrors `_mesh_bvh`).
-    pub fn bvh(&self) -> Rc<UniquePtr<collision::Bvh>> {
+    /// The part's FCL BVH, built once and cached (mirrors `_mesh_bvh`). The
+    /// handle is `Arc<SharedBvh>` so it can be shared read-only across the
+    /// parallel greedy sweeps.
+    pub fn bvh(&self) -> Arc<SharedBvh> {
         self.bvh
             .get_or_init(|| {
                 let verts = self.mesh.flat_vertices();
                 let faces = self.mesh.flat_faces();
-                Rc::new(collision::new_bvh(&verts, &faces))
+                Arc::new(SharedBvh(collision::new_bvh(&verts, &faces)))
             })
             .clone()
     }

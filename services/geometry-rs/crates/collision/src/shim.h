@@ -37,6 +37,12 @@ rust::Vec<SingleContact> manager_collide_single_multi(const Manager &m, const Bv
                                                       rust::Slice<const int64_t> skip_indices,
                                                       double tx, double ty, double tz,
                                                       size_t num_max_contacts);
+rust::Vec<SingleContact> manager_classify_multi(const Manager &m, const Bvh &moving,
+                                                rust::Slice<const int64_t> skip_indices,
+                                                rust::Slice<const int64_t> ov_idx,
+                                                rust::Slice<const double> ov_am, double tx,
+                                                double ty, double tz, double tol,
+                                                bool want_touch_near, size_t num_max_contacts);
 
 std::unique_ptr<Bvh> new_bvh(rust::Slice<const double> verts,
                              rust::Slice<const uint32_t> tris);

@@ -152,8 +152,13 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
+  // A model-backed instruction auto-generates its steps: the explorer sees
+  // ?autogen=1 and submits Generate once — if the plan is ready it lands
+  // instantly, otherwise the submit kicks planning and the awaiting machinery
+  // finishes the chain when the plan completes.
+  const autogen = modelState !== "none" ? "?autogen=1" : "";
   throw redirect(
-    path.to.assemblyInstruction(create.data.id),
+    `${path.to.assemblyInstruction(create.data.id)}${autogen}`,
     await flash(request, success("Assembly instruction created"))
   );
 }

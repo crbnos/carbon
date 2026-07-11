@@ -63,14 +63,22 @@ export async function action({ request, params }: ActionFunctionArgs) {
       await flash(request, error(null, "Motion planning is already running"))
     );
   }
-  if (planJob.data?.status === "Queued") {
-    // Stale Queued row: the event was never picked up (worker pickup takes
-    // seconds). Fail it so it can't shadow the run we're about to start.
+  if (
+    planJob.data?.status === "Queued" ||
+    planJob.data?.status === "Processing"
+  ) {
+    // Stale row the guard above already ruled non-live: a Queued event that
+    // was never picked up, or a Processing run whose worker is gone (crash,
+    // or the in-memory dev Inngest server restarting mid-run). Fail it so it
+    // can't shadow the run we're about to start.
     await client
       .from("assemblyPlanJob")
       .update({
         status: "Failed",
-        error: "Planning never started — the job event was lost",
+        error:
+          planJob.data.status === "Queued"
+            ? "Planning never started — the job event was lost"
+            : "Planning run was lost (worker restarted mid-run)",
         updatedAt: new Date().toISOString()
       })
       .eq("id", planJob.data.id)

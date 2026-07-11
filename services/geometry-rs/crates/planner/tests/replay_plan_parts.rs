@@ -195,6 +195,9 @@ fn check_case(case: &RawCase) -> Result<(), String> {
 
 #[test]
 fn replay_plan_parts_corpus() {
+    // The corpus captures the PYTHON planner's outcomes — replay in compat mode
+    // (the improved default algorithm intentionally diverges from Python).
+    std::env::set_var("GEOMETRY_COMPAT", "python");
     let dir = match std::env::var("GEOMETRY_CORPUS") {
         Ok(d) => d,
         Err(_) => {

@@ -426,7 +426,31 @@ fn reselect_base(
 }
 
 /// `_connectivity_repair`.
-fn connectivity_repair(order: &[String], adjacency: &Edges) -> Vec<String> {
+/// Reorder for island-connectivity. `hard_edges` (improved mode) constrains the
+/// repair to never hoist a part above one of its collision predecessors — the
+/// Python version reorders on adjacency alone, and every hard-edge violation it
+/// introduces surfaces later as a "failed forward verification" demotion (the
+/// flag autopsy traced ALL of Packing Arm's demotions to exactly this).
+fn connectivity_repair(
+    order: &[String],
+    adjacency: &Edges,
+    hard_edges: Option<&Edges>,
+) -> Vec<String> {
+    // For each node in `order`, the set of in-order nodes that must precede it.
+    let in_order: HashSet<&String> = order.iter().collect();
+    let mut preds: HashMap<&String, Vec<&String>> = HashMap::new();
+    if let Some(edges) = hard_edges {
+        for (before, afters) in edges {
+            if !in_order.contains(before) {
+                continue;
+            }
+            for after in afters {
+                if in_order.contains(after) {
+                    preds.entry(after).or_default().push(before);
+                }
+            }
+        }
+    }
     let mut result: Vec<String> = Vec::new();
     let mut placed: HashSet<String> = HashSet::new();
     let mut deferred: Vec<String> = Vec::new();
@@ -436,21 +460,34 @@ fn connectivity_repair(order: &[String], adjacency: &Edges) -> Vec<String> {
         placed.is_empty()
             || adjacency.get(node).unwrap_or(&empty).intersection(placed).next().is_some()
     };
+    let preds_ok = |node: &String, placed: &HashSet<String>| -> bool {
+        preds.get(node).map(|ps| ps.iter().all(|p| placed.contains(*p))).unwrap_or(true)
+    };
     while !remaining.is_empty() || !deferred.is_empty() {
         let mut pick: Option<String> = None;
-        if let Some(pos) = deferred.iter().position(|n| touches(n, &placed)) {
+        if let Some(pos) = deferred.iter().position(|n| touches(n, &placed) && preds_ok(n, &placed)) {
             pick = Some(deferred.remove(pos));
         }
         if pick.is_none() {
             while let Some(node) = remaining.pop_front() {
-                if touches(&node, &placed) {
+                if touches(&node, &placed) && preds_ok(&node, &placed) {
                     pick = Some(node);
                     break;
                 }
                 deferred.push(node);
             }
         }
-        let pick = pick.unwrap_or_else(|| deferred.remove(0));
+        // Nothing both touches and is precedence-ready: prefer precedence-ready
+        // (drop the connectivity preference — a detached island beats a
+        // collision), then fall back to the old head-of-deferred (cycle valve).
+        let pick = pick
+            .or_else(|| {
+                deferred
+                    .iter()
+                    .position(|n| preds_ok(n, &placed))
+                    .map(|pos| deferred.remove(pos))
+            })
+            .unwrap_or_else(|| deferred.remove(0));
         placed.insert(pick.clone());
         result.push(pick);
     }
@@ -510,6 +547,42 @@ fn verify_sequence(
                     path_blockers(part, &world, &segs, samples_segment, fasteners, None, tolerance);
                 if !blockers.is_empty() {
                     let name = if part.name.is_empty() { node_id.clone() } else { part.name.clone() };
+                    // GEOMETRY_EXPLAIN=1: demotion autopsy — who blocks the forward
+                    // replay, how deep, and which exemptions the part carried.
+                    if std::env::var("GEOMETRY_EXPLAIN").is_ok() {
+                        eprintln!(
+                            "EXPLAIN verify-demote {name} ({node_id}) tier={:?} group={:?} segs={:?}",
+                            planned[i].tier, planned[i].group_id,
+                            segs.iter().map(|(d, l)| format!("[{:+.2},{:+.2},{:+.2}]x{l:.1}", d[0], d[1], d[2])).collect::<Vec<_>>()
+                        );
+                        let mut offset = Vector3::zeros();
+                        for (dir, dist) in &segs {
+                            let me = crate::collide::mate_exempt(part, dir, fasteners);
+                            let se = crate::collide::seated_exempt(part, dir);
+                            eprintln!(
+                                "  dir=[{:+.2},{:+.2},{:+.2}] mate_exempt={:?} seated_exempt={:?}",
+                                dir[0], dir[1], dir[2],
+                                me.map(|m| m.into_iter().collect::<Vec<_>>()),
+                                se.map(|m| m.into_iter().collect::<Vec<_>>()),
+                            );
+                            let n = ((samples_segment).max(2)).min(40);
+                            let mut worst: HashMap<String, f64> = HashMap::new();
+                            for k in 1..=n {
+                                let s = *dist * (k as f64) / (n as f64);
+                                for (o, d) in world.contacts_at(part, &(offset + dir * s)) {
+                                    let e = worst.entry(o).or_insert(0.0);
+                                    if d > *e { *e = d; }
+                                }
+                            }
+                            let mut w: Vec<_> = worst.into_iter().collect();
+                            w.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
+                            for (o, d) in w.iter().take(5) {
+                                let on = units_by_id.get(o).map(|p| p.name.clone()).filter(|s| !s.is_empty()).unwrap_or_else(|| o.clone());
+                                eprintln!("    blocker {on}: max_depth={d:.3} (tol={tolerance:.3})");
+                            }
+                            offset += dir * *dist;
+                        }
+                    }
                     warnings.push(format!(
                         "'{name}' failed forward verification; flagged for review — it fades in during playback"
                     ));
@@ -796,7 +869,10 @@ pub fn preference_topo_sort(
     }
 
     if let Some(adj) = adjacency {
-        placed = connectivity_repair(&placed, adj);
+        // Improved mode: repair may not violate collision precedence (Python's
+        // repair does, manufacturing forward-verify failures).
+        let hard = if crate::greedy::python_compat() { None } else { Some(edges) };
+        placed = connectivity_repair(&placed, adj, hard);
     }
     placed
 }
@@ -1076,6 +1152,45 @@ pub fn plan_parts(
         Some(&unit_adjacency),
         &soft_edges,
     );
+
+    // GEOMETRY_EXPLAIN=1: sanity-check the GREEDY order first — greedy's own
+    // sequence is supposed to be collision-consistent by construction, so any
+    // demotion here means greedy emitted a colliding motion (validation bug),
+    // while a clean pass pins the blame on the reordering machinery.
+    if std::env::var("GEOMETRY_EXPLAIN").is_ok() {
+        let mut probe = planned.clone();
+        let mut w2: Vec<String> = Vec::new();
+        verify_sequence(&greedy_sequence, &mut probe, &units_by_id, &fasteners, path_samples, &mut w2, tolerance);
+        let demoted = w2.iter().filter(|w| w.contains("forward verification")).count();
+        eprintln!("EXPLAIN greedy-order verify: {demoted} demotions (final-order comes below)");
+    }
+
+    // GEOMETRY_EXPLAIN=1: report hard precedence edges the FINAL sequence
+    // violates (the collision-consistency contract the topo sort + repair are
+    // supposed to preserve; each violation is a forward-verify failure waiting).
+    if std::env::var("GEOMETRY_EXPLAIN").is_ok() {
+        let pos: HashMap<&String, usize> =
+            sequence.iter().enumerate().map(|(i, s)| (s, i)).collect();
+        for (before, afters) in &edges {
+            for after in afters {
+                if let (Some(&pb), Some(&pa)) = (pos.get(before), pos.get(after)) {
+                    if pb > pa {
+                        let nm = |id: &String| {
+                            units_by_id
+                                .get(id)
+                                .map(|p| p.name.clone())
+                                .filter(|s| !s.is_empty())
+                                .unwrap_or_else(|| id.clone())
+                        };
+                        eprintln!(
+                            "EXPLAIN edge-violated: '{}'({}) must precede '{}'({}) but seq has {} > {}",
+                            nm(before), &before[..8], nm(after), &after[..8], pb, pa
+                        );
+                    }
+                }
+            }
+        }
+    }
 
     verify_sequence(&sequence, &mut planned, &units_by_id, &fasteners, path_samples, warnings, tolerance);
     lap!("verify_sequence");

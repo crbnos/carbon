@@ -12,6 +12,85 @@ use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 
 pub type Tiers = BTreeMap<String, i64>;
 
+/// GEOMETRY_COMPAT=python pins the planner to Python-parity behavior (the
+/// migration baseline the shadow corpus captures). The domain owner rates that
+/// planner "just ok — required manual intervention on all of them", so the
+/// DEFAULT is the improved algorithm; compat mode exists for port-regression
+/// testing only (corpus replays set it).
+pub fn python_compat() -> bool {
+    static C: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+    *C.get_or_init(|| std::env::var("GEOMETRY_COMPAT").as_deref() == Ok("python"))
+}
+
+/// Evaluate greedy candidates (`order`, in priority order) in parallel and return
+/// the first-in-priority that yields a plan — byte-identical to the sequential
+/// "try each in order, take the first success" because each `eval` is a pure,
+/// read-only sweep (no shared mutation). Each worker thread builds its OWN FCL
+/// managers once (`map_init`) over the shared immutable BVHs — the managers are
+/// `!Send` but never leave their thread. `world` = the active set (`remaining`);
+/// `full` (only when `build_full`) = every part. The moving part is excluded
+/// per-query by index, and all `contacts_at` consumers are order-independent
+/// (max-depth / set-membership), so the worker-local index order is irrelevant.
+/// How many leading candidates to try sequentially before fanning the rest out.
+/// Since 2.1 made worker fan-out share ONE `CollisionWorld` (no per-candidate
+/// rebuild), fan-out is nearly free, so 1 is best overall: a stuck pass on a large
+/// assembly parallelizes immediately (BCU 47→36s, Packing Arm →10.5s) at the cost
+/// of a little speculation on Seat Rail's cheap early-success iterations (+0.8s).
+/// The value never affects output — only speculation-vs-latency. Override with
+/// GEOMETRY_SEQ_PROBE; GEOMETRY_SEQUENTIAL forces a fully sequential parity oracle.
+const SEQ_PROBE: usize = 1;
+
+#[allow(clippy::type_complexity, clippy::too_many_arguments)]
+fn par_first_success<F>(
+    order: &[String],
+    remaining: &HashMap<String, Component>,
+    seq_world: &CollisionWorld,
+    seq_full: Option<&CollisionWorld>,
+    eval: F,
+) -> Option<(usize, PlannedComponent)>
+where
+    F: Fn(&Component, &[&Component], &CollisionWorld, Option<&CollisionWorld>) -> Option<PlannedComponent>
+        + Sync,
+{
+    use rayon::prelude::*;
+    if order.is_empty() {
+        return None;
+    }
+    let others_of = |id: &str| -> Vec<&Component> {
+        remaining.values().filter(|c| c.node_id != id).collect()
+    };
+    // Fast path: probe the top candidate(s) sequentially. Greedy takes the
+    // first-in-priority success, so an early hit ends here with no thread fan-out
+    // and no speculative sweeps — the Seat Rail / BCU case. GEOMETRY_SEQUENTIAL
+    // forces every candidate down this path (parity oracle: parallel must equal it).
+    let seq_probe = std::env::var("GEOMETRY_SEQ_PROBE")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(SEQ_PROBE);
+    let probe = if std::env::var("GEOMETRY_SEQUENTIAL").is_ok() {
+        order.len()
+    } else {
+        seq_probe.min(order.len())
+    };
+    for (i, id) in order.iter().enumerate().take(probe) {
+        if let Some(p) = eval(&remaining[id], &others_of(id), seq_world, seq_full) {
+            return Some((i, p));
+        }
+    }
+    if order.len() <= probe {
+        return None;
+    }
+    // The top candidate(s) are stuck — fan the remainder across cores against the
+    // SAME shared managers (CollisionWorld is Sync; queries are read-only). No
+    // per-candidate world rebuild — the win that lets a stuck pass parallelize for
+    // free. `find_map_first` returns the lowest surviving index and cancels the
+    // rest, so the result is still the first-in-priority success.
+    (probe..order.len()).into_par_iter().find_map_first(|i| {
+        let id = &order[i];
+        eval(&remaining[id], &others_of(id), seq_world, seq_full).map(|p| (i, p))
+    })
+}
+
 pub fn new_tiers() -> Tiers {
     let mut t = BTreeMap::new();
     for k in ["linear", "l", "escape", "group", "flagged", "forced", "unplanned"] {
@@ -337,6 +416,57 @@ pub fn plan_escape(
     None
 }
 
+/// Per-direction escape blockers: for each candidate direction with positive
+/// exit travel, the exact set of parts blocking that sweep. The union form
+/// (`escape_blockers`, the Python-parity behavior) over-counts — a part whose
+/// BEST direction is blocked by exactly one neighbor is a valid single-blocker
+/// merge even when other directions add more blockers to the union. The flag
+/// autopsy on the real assemblies showed this exact pattern behind most
+/// manually-authored parts (panel pairs, servo/mount clusters).
+pub fn escape_blockers_by_direction(
+    part: &Component,
+    remaining_map: &HashMap<String, Component>,
+    others: &[&Component],
+    world: &CollisionWorld,
+    fasteners: &HashMap<String, FastenerInfo>,
+    tolerance: f64,
+    path_samples: usize,
+) -> Vec<(Vector3<f64>, f64, BTreeSet<String>)> {
+    if others.is_empty() {
+        return Vec::new();
+    }
+    let (static_min, static_max) = bounds_over(others);
+    let samples_segment = (path_samples / 3).max(12);
+    let info = fasteners.get(&part.node_id);
+    let directions: Vec<Vector3<f64>> = if is_fastener(part) && info.is_some() {
+        let head = head_direction(part, info.unwrap(), Some(remaining_map));
+        vec![head, -head]
+    } else {
+        candidate_directions(part)
+    };
+    let mut extra: Exempt = HashMap::new();
+    extra.insert(part.node_id.clone(), f64::INFINITY);
+    let mut out = Vec::new();
+    for direction in directions {
+        let travel = exit_travel(part, &static_min, &static_max, &direction, None);
+        if travel <= 0.0 {
+            continue;
+        }
+        let mut blockers = path_blockers(
+            part,
+            world,
+            &[(direction, travel)],
+            samples_segment,
+            fasteners,
+            Some(&extra),
+            tolerance,
+        );
+        blockers.remove(&part.node_id);
+        out.push((direction, travel, blockers));
+    }
+    out
+}
+
 /// `_escape_blockers`: union of sweep blockers over the part's candidate directions.
 pub fn escape_blockers(
     part: &Component,
@@ -649,25 +779,25 @@ fn removal_priority(
     centroid: &Vector3<f64>,
     diagonal: f64,
 ) -> Vec<String> {
-    let mut ids: Vec<String> = remaining.keys().cloned().collect();
-    ids.sort_by(|a, b| {
-        let pa = &remaining[a];
-        let pb = &remaining[b];
-        let (va, ba) = structural_key(pa, centroid, diagonal);
-        let (vb, bb) = structural_key(pb, centroid, diagonal);
-        // Fasteners first (0), then negate each structural-key component
-        // (Python: `0 if fastener else 1`, then `tuple(-c for c in key)`).
-        let fa = if fasteners.contains_key(a) { 0 } else { 1 };
-        let fb = if fasteners.contains_key(b) { 0 } else { 1 };
-        let ka = (fa, -va, -ba);
-        let kb = (fb, -vb, -bb);
-        ka.0
-            .cmp(&kb.0)
-            .then(ka.1.partial_cmp(&kb.1).unwrap())
-            .then(ka.2.partial_cmp(&kb.2).unwrap())
-            .then(a.cmp(b))
+    // Precompute each part's sort key once (the comparator would otherwise
+    // recompute structural_key — hypot/round/part_volume — O(n log n) times per
+    // call). Fasteners first (0), then negate each structural-key component
+    // (Python: `0 if fastener else 1`, then `tuple(-c for c in key)`).
+    let mut keyed: Vec<(i32, f64, f64, &String)> = remaining
+        .keys()
+        .map(|id| {
+            let (v, b) = structural_key(&remaining[id], centroid, diagonal);
+            let f = if fasteners.contains_key(id) { 0 } else { 1 };
+            (f, -v, -b, id)
+        })
+        .collect();
+    keyed.sort_by(|a, b| {
+        a.0.cmp(&b.0)
+            .then(a.1.partial_cmp(&b.1).unwrap())
+            .then(a.2.partial_cmp(&b.2).unwrap())
+            .then(a.3.cmp(b.3))
     });
-    ids
+    keyed.into_iter().map(|(_, _, _, id)| id.clone()).collect()
 }
 
 /// `_greedy_disassembly`: the full greedy loop over world-space parts.
@@ -702,6 +832,16 @@ pub fn greedy_disassembly(
         }
     };
 
+    // Build every part's BVH up front, in parallel — `bvh()` is a thread-safe
+    // OnceLock, and the two world builds below (plus every per-thread world) hit
+    // them serially otherwise. Biggest on large assemblies (431 BVHs on BCU).
+    {
+        use rayon::prelude::*;
+        parts.par_iter().for_each(|p| {
+            p.bvh();
+        });
+    }
+
     // Persistent broadphase managers reused across the whole greedy loop
     // (Python keeps one). `world` mirrors `remaining` (parts set inactive on
     // removal); `full_world` holds every part always. The moving part is
@@ -732,61 +872,44 @@ pub fn greedy_disassembly(
         progressed = false;
         let _ts = std::time::Instant::now();
 
-        // Phase 1: straight-line / L removal.
-        for id in removal_priority(&remaining, fasteners, &centroid, assembly_diagonal) {
-            if remaining.len() == 1 {
-                remaining.remove(&id);
-                world.set_active(&id, false);
-                removal_order.push(base_entry(&id));
-                progressed = true;
-                break;
-            }
-            let planned = {
-                let part = &remaining[&id];
-                let others: Vec<&Component> =
-                    remaining.values().filter(|c| c.node_id != id).collect();
-                plan_removal(
-                    part,
-                    &remaining,
-                    &others,
-                    &world,
-                    Some(&full_world),
-                    _clearance,
-                    path_samples,
-                    fasteners,
-                    tolerance,
-                )
-            };
-            if let Some(p) = planned {
-                let key = if p.tier.as_deref() == Some("linear") { "linear" } else { "l" };
-                *tiers.get_mut(key).unwrap() += 1;
-                removal_order.push(p);
-                remaining.remove(&id);
-                world.set_active(&id, false);
-                progressed = true;
-                break;
-            }
+        // Phase 1: straight-line / L removal. Candidates are evaluated in
+        // parallel; the first-in-priority success is taken (identical to the
+        // sequential break-on-first — each eval is a pure read-only sweep).
+        let order = removal_priority(&remaining, fasteners, &centroid, assembly_diagonal);
+        if remaining.len() == 1 {
+            let id = order.into_iter().next().unwrap();
+            remaining.remove(&id);
+            world.set_active(&id, false);
+            removal_order.push(base_entry(&id));
+            progressed = true;
+        } else if let Some((i, p)) = par_first_success(&order, &remaining, &world, Some(&full_world), |part, others, w, fw| {
+            plan_removal(
+                part, &remaining, others, w, fw, _clearance, path_samples, fasteners, tolerance,
+            )
+        }) {
+            let id = order[i].clone();
+            let key = if p.tier.as_deref() == Some("linear") { "linear" } else { "l" };
+            *tiers.get_mut(key).unwrap() += 1;
+            removal_order.push(p);
+            remaining.remove(&id);
+            world.set_active(&id, false);
+            progressed = true;
         }
 
         t_p1 += _ts.elapsed().as_secs_f64();
         let _ts = std::time::Instant::now();
-        // Phase 2: tier-3 escape.
+        // Phase 2: tier-3 escape (parallel candidate evaluation, first success).
         if !progressed && remaining.len() > 1 {
-            for id in removal_priority(&remaining, fasteners, &centroid, assembly_diagonal) {
-                let planned = {
-                    let part = &remaining[&id];
-                    let others: Vec<&Component> =
-                        remaining.values().filter(|c| c.node_id != id).collect();
-                    plan_escape(part, &others, &world, path_samples, fasteners, tolerance)
-                };
-                if let Some(p) = planned {
-                    *tiers.get_mut("escape").unwrap() += 1;
-                    removal_order.push(p);
-                    remaining.remove(&id);
-                    world.set_active(&id, false);
-                    progressed = true;
-                    break;
-                }
+            let order = removal_priority(&remaining, fasteners, &centroid, assembly_diagonal);
+            if let Some((i, p)) = par_first_success(&order, &remaining, &world, None, |part, others, w, _fw| {
+                plan_escape(part, others, w, path_samples, fasteners, tolerance)
+            }) {
+                let id = order[i].clone();
+                *tiers.get_mut("escape").unwrap() += 1;
+                removal_order.push(p);
+                remaining.remove(&id);
+                world.set_active(&id, false);
+                progressed = true;
             }
         }
 
@@ -813,7 +936,24 @@ pub fn greedy_disassembly(
                         let part = &remaining[&id];
                         let others: Vec<&Component> =
                             remaining.values().filter(|c| c.node_id != id).collect();
-                        escape_blockers(part, &remaining, &others, &world, fasteners, tolerance, path_samples)
+                        if python_compat() {
+                            // Python-parity: union of blockers over ALL directions.
+                            escape_blockers(part, &remaining, &others, &world, fasteners, tolerance, path_samples)
+                        } else {
+                            // Improved: the BEST single direction decides. A part whose
+                            // least-blocked escape has exactly one blocker merges with
+                            // it even when other directions add more to the union —
+                            // the pattern behind most manually-authored parts in the
+                            // flag autopsy (panel pairs, servo/mount clusters).
+                            let per = escape_blockers_by_direction(
+                                part, &remaining, &others, &world, fasteners, tolerance, path_samples,
+                            );
+                            per.into_iter()
+                                .filter(|(_, _, b)| !b.is_empty())
+                                .min_by_key(|(_, _, b)| b.len())
+                                .map(|(_, _, b)| b.into_iter().take(8).collect())
+                                .unwrap_or_default()
+                        }
                     };
                     stuck_blockers_cache.insert(id.clone(), b.clone());
                     b
@@ -929,6 +1069,55 @@ pub fn greedy_disassembly(
             warnings.push(format!(
                 "'{name}' has no collision-free escape; flagged for review — it fades in during playback"
             ));
+            // GEOMETRY_EXPLAIN=1: autopsy every flag — per candidate direction,
+            // how far it could exit and exactly who blocks it. Quality work is
+            // aimed at this output ("minimize manual intervention"), so the
+            // failure reasons must be inspectable, not inferred.
+            if std::env::var("GEOMETRY_EXPLAIN").is_ok() {
+                let part = &remaining[&id];
+                let others: Vec<&Component> =
+                    remaining.values().filter(|c| c.node_id != id).collect();
+                let (smin, smax) = bounds_over(&others);
+                let info = fasteners.get(&id);
+                let dirs = if is_fastener(part) && info.is_some() {
+                    let h = head_direction(part, info.unwrap(), Some(&remaining));
+                    vec![h, -h]
+                } else {
+                    candidate_directions(part)
+                };
+                eprintln!(
+                    "EXPLAIN flag {name} ({id}) remaining={} fastener={} dirs={}",
+                    remaining.len(),
+                    info.is_some(),
+                    dirs.len()
+                );
+                let mut extra: Exempt = HashMap::new();
+                extra.insert(id.clone(), f64::INFINITY);
+                for d in &dirs {
+                    let travel = exit_travel(part, &smin, &smax, d, None);
+                    if travel <= 0.0 {
+                        eprintln!("  dir=[{:+.2},{:+.2},{:+.2}] travel=0 (inside bounds)", d[0], d[1], d[2]);
+                        continue;
+                    }
+                    let blockers = path_blockers(
+                        part, &world, &[(*d, travel)], (path_samples / 3).max(12),
+                        fasteners, Some(&extra), tolerance,
+                    );
+                    let names: Vec<String> = blockers
+                        .iter()
+                        .map(|b| {
+                            remaining
+                                .get(b)
+                                .map(|p| if p.name.is_empty() { b.clone() } else { p.name.clone() })
+                                .unwrap_or_else(|| b.clone())
+                        })
+                        .collect();
+                    eprintln!(
+                        "  dir=[{:+.2},{:+.2},{:+.2}] travel={travel:.1} blockers={names:?}",
+                        d[0], d[1], d[2]
+                    );
+                }
+            }
             removal_order.push(PlannedComponent {
                 node_id: id.clone(),
                 motion: Motion::None,

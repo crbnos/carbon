@@ -139,6 +139,11 @@ pub fn plan_step(
     max_parts: Option<usize>,
     units: Option<Vec<PlanUnit>>,
     sequence: Option<Vec<Vec<String>>>,
+    // Penetration tolerance override (mm). None => inferred from the meshing
+    // deflection via `mesh_tolerance` (max(0.15, 2.5 * linear_deflection)) --
+    // the tolerance must scale with tessellation error or clean seated
+    // contacts read as collisions. Explicit values are honored as-is.
+    tolerance: Option<f64>,
 ) -> Result<PlanResult, ConvertError> {
     let root = build_tree(step_path, linear_deflection, angular_deflection)?;
     let mut parts = collect_world_parts(&root);
@@ -169,7 +174,7 @@ pub fn plan_step(
         warnings.push("some parts use bounding-box proxy meshes; their motions are low confidence".into());
     }
 
-    let tolerance = mesh_tolerance(linear_deflection);
+    let tolerance = tolerance.unwrap_or_else(|| mesh_tolerance(linear_deflection));
     let outcome: PlanOutcome = if let Some(seq) = &sequence {
         plan_fixed_sequence(parts, seq, clearance, path_samples, tolerance, &mut warnings)
     } else {

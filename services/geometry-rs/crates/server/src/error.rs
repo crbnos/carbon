@@ -43,6 +43,15 @@ impl From<converter::convert::ConvertError> for ApiError {
 impl IntoResponse for ApiError {
     fn into_response(self) -> axum::response::Response {
         let status = StatusCode::from_u16(self.status).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-        (status, Json(json!({"ok": false, "error": self.message, "code": self.code}))).into_response()
+        let mut resp =
+            (status, Json(json!({"ok": false, "error": self.message, "code": self.code})))
+                .into_response();
+        // 429s tell callers when to come back so their retries don't hammer
+        // the concurrency semaphore (the app honors this with backoff).
+        if self.status == 429 {
+            resp.headers_mut()
+                .insert("Retry-After", axum::http::HeaderValue::from_static("15"));
+        }
+        resp
     }
 }

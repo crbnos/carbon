@@ -6,6 +6,9 @@
 
 #include <BRepBndLib.hxx>
 #include <BRepGProp.hxx>
+#include <chrono>
+#include <cstdio>
+#include <cstdlib>
 #include <BRepMesh_IncrementalMesh.hxx>
 #include <BRep_Tool.hxx>
 #include <Bnd_Box.hxx>
@@ -268,7 +271,13 @@ Tree read_step(rust::Str path, double linear_deflection, double angular_deflecti
   Tree t;
   t.ok = false;
   t.root_index = 0;
+  const bool prof = std::getenv("OCCT_PROFILE") != nullptr;
+  auto now = [] { return std::chrono::steady_clock::now(); };
+  auto ms = [](auto a, auto b) {
+    return std::chrono::duration_cast<std::chrono::milliseconds>(b - a).count();
+  };
   try {
+    auto t0 = now();
     Interface_Static::SetCVal("xstep.cascade.unit", "MM");
     STEPCAFControl_Reader reader;
     reader.SetColorMode(true);
@@ -280,11 +289,13 @@ Tree read_step(rust::Str path, double linear_deflection, double angular_deflecti
       t.error = "could not read STEP file";
       return t;
     }
+    auto t1 = now();
     Handle(TDocStd_Document) doc = new TDocStd_Document(TCollection_ExtendedString("BinXCAF"));
     if (!reader.Transfer(doc)) {
       t.error = "STEP transfer to XCAF failed";
       return t;
     }
+    auto t2 = now();
     Handle(XCAFDoc_ShapeTool) shapeTool = XCAFDoc_DocumentTool::ShapeTool(doc->Main());
     TDF_LabelSequence freeShapes;
     shapeTool->GetFreeShapes(freeShapes);
@@ -297,6 +308,11 @@ Tree read_step(rust::Str path, double linear_deflection, double angular_deflecti
     std::vector<uint64_t> roots;
     for (int i = 1; i <= freeShapes.Length(); ++i) {
       roots.push_back(b.build(freeShapes.Value(i), TDF_Label(), false, TopLoc_Location(), false));
+    }
+    if (prof) {
+      auto t3 = now();
+      fprintf(stderr, "OCCT read=%lldms transfer=%lldms walk+mesh=%lldms\n",
+              (long long)ms(t0, t1), (long long)ms(t1, t2), (long long)ms(t2, t3));
     }
     uint64_t root_index;
     if (roots.size() == 1) {

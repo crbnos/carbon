@@ -234,30 +234,66 @@ export function spawnGeometry(opts: {
   ports: PortMap;
 }): ExecaChildProcess | null {
   const { root, ports } = opts;
-  const serviceDir = join(root, "services", "geometry");
-  const venvPython = join(serviceDir, ".venv", "bin", "python");
-
-  if (!existsSync(venvPython)) {
-    const prefix = pc.yellow(pc.bold("geo | "));
-    process.stderr.write(
-      `${prefix}${pc.dim("skipped — no .venv (run: cd services/geometry && python3 -m venv .venv && .venv/bin/pip install -e .)")}\n`
-    );
-    return null;
-  }
-
-  const color = pc.yellow;
   const port = ports.PORT_GEOMETRY;
+  const prefix = pc.yellow(pc.bold("geo | "));
 
-  // Trust portless's self-signed CA so the service can fetch signed URLs
-  // from the local Supabase storage (served over HTTPS via portless).
-  const caPath = join(homedir(), ".portless", "ca.pem");
-  const caEnv = existsSync(caPath)
-    ? { SSL_CERT_FILE: caPath, REQUESTS_CA_BUNDLE: caPath }
-    : {};
+  // GEOMETRY_RS=1 routes the `geometry.<prefix>.dev` alias to the Rust service
+  // (services/geometry-rs) instead of the Python one. Same port, same alias,
+  // same wire contract — only the spawned process changes.
+  const useRust = ["1", "true"].includes(process.env.GEOMETRY_RS ?? "");
 
-  const child = execa(
-    venvPython,
-    [
+  let file: string;
+  let args: string[];
+  let cwd: string;
+  let extraEnv: NodeJS.ProcessEnv;
+
+  if (useRust) {
+    const serviceDir = join(root, "services", "geometry-rs");
+    const bin = join(serviceDir, "target", "release", "carbon-geometry");
+    if (!existsSync(bin)) {
+      process.stderr.write(
+        `${prefix}${pc.dim("skipped — GEOMETRY_RS=1 but no release binary (run: cd services/geometry-rs && cargo build --release -p server), or unset GEOMETRY_RS for the Python service")}\n`
+      );
+      return null;
+    }
+    file = bin;
+    args = [];
+    cwd = serviceDir;
+    // GEOMETRY_DEV_MODE=true also disables TLS verification in the Rust
+    // service, so portless's self-signed CA needs no extra trust wiring.
+    // The Inngest vars point plan-completion events at the local Inngest dev
+    // server (it accepts any event key), so the assembly-plan function's
+    // waitForEvent resolves instantly in dev — the same path as prod.
+    extraEnv = {
+      GEOMETRY_BIND: `127.0.0.1:${port}`,
+      GEOMETRY_SERVICE_API_KEY: "dev-local-key",
+      GEOMETRY_DEV_MODE: "true",
+      INNGEST_EVENT_KEY: "dev-local",
+      INNGEST_EVENT_URL: process.env.INNGEST_BASE_URL ?? ""
+    };
+    process.stderr.write(
+      `${prefix}${pc.dim("using rust service (GEOMETRY_RS=1)")}\n`
+    );
+  } else {
+    const serviceDir = join(root, "services", "geometry");
+    const venvPython = join(serviceDir, ".venv", "bin", "python");
+
+    if (!existsSync(venvPython)) {
+      process.stderr.write(
+        `${prefix}${pc.dim("skipped — no .venv (run: cd services/geometry && python3 -m venv .venv && .venv/bin/pip install -e .)")}\n`
+      );
+      return null;
+    }
+
+    // Trust portless's self-signed CA so the service can fetch signed URLs
+    // from the local Supabase storage (served over HTTPS via portless).
+    const caPath = join(homedir(), ".portless", "ca.pem");
+    const caEnv = existsSync(caPath)
+      ? { SSL_CERT_FILE: caPath, REQUESTS_CA_BUNDLE: caPath }
+      : {};
+
+    file = venvPython;
+    args = [
       "-m",
       "uvicorn",
       "app.main:app",
@@ -266,22 +302,26 @@ export function spawnGeometry(opts: {
       "--host",
       "127.0.0.1",
       "--reload"
-    ],
-    {
-      cwd: serviceDir,
-      env: {
-        ...process.env,
-        ...caEnv,
-        GEOMETRY_SERVICE_API_KEY: "dev-local-key",
-        GEOMETRY_DEV_MODE: "true"
-      },
-      reject: false,
-      stdin: "ignore",
-      detached: true
-    }
-  );
+    ];
+    cwd = serviceDir;
+    extraEnv = {
+      ...caEnv,
+      GEOMETRY_SERVICE_API_KEY: "dev-local-key",
+      GEOMETRY_DEV_MODE: "true"
+    };
+  }
 
-  const prefix = color(pc.bold("geo | "));
+  const child = execa(file, args, {
+    cwd,
+    env: {
+      ...process.env,
+      ...extraEnv
+    },
+    reject: false,
+    stdin: "ignore",
+    detached: true
+  });
+
   const pipe = (
     stream: NodeJS.ReadableStream | null,
     sink: NodeJS.WriteStream

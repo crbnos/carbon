@@ -13,6 +13,11 @@
 #include <fcl/narrowphase/distance_request.h>
 #include <fcl/narrowphase/distance_result.h>
 
+#include <cmath>
+#include <limits>
+#include <fcl/narrowphase/detail/traversal/collision/mesh_collision_traversal_node.h>
+#include <fcl/narrowphase/detail/traversal/collision_node.h>
+
 #include "collision/src/lib.rs.h"
 
 #include <atomic>
@@ -276,6 +281,140 @@ rust::Vec<SingleContact> manager_collide_single_multi(const Manager &m, const Bv
 
   rust::Vec<SingleContact> out;
   for (const auto &kv : per_other) {
+    SingleContact sc;
+    sc.other = kv.first;
+    sc.depth = kv.second;
+    out.push_back(sc);
+  }
+  return out;
+}
+
+// FCL-native early-stop classify — the avoid-work core, with FCL's exact math.
+//
+// The planner's sweep consumers only test PREDICATES per neighbor: blocked
+// (∃ exempt-filtered pair deeper than t_block = max(tol, allowance+margin)),
+// near (> tol/2), touching (any contact). "∃ pair > t_block" ⟺
+// "max > t_block", so the deep-overlap case — the one that enumerates
+// thousands of triangle contacts today — may STOP at the first such pair with
+// a byte-identical verdict (no plan field serializes the depth value; every
+// consumer thresholds it). On a miss, the traversal has ALREADY enumerated the
+// neighbor's full exact contact set, so near/touch/exempt behavior is
+// byte-identical to full enumeration.
+//
+// Implemented by subclassing FCL's own OBBRSS mesh-mesh traversal node and
+// tripping its built-in `canStop()` hook (the mechanism num_max already uses)
+// when a contact exceeds the threshold — FCL's traversal order and Intersect
+// depths are untouched.
+struct ThresholdMeshNode : fcl::detail::MeshCollisionTraversalNodeOBBRSS<double> {
+  double threshold = std::numeric_limits<double>::infinity();
+  mutable size_t seen = 0;
+  mutable bool hit = false;
+  mutable double hit_depth = 0.0;
+
+  bool canStop() const override {
+    const size_t n = this->result->numContacts();
+    for (; seen < n; ++seen) {
+      double d = this->result->getContact(seen).penetration_depth;
+      if (d > threshold) {
+        hit = true;
+        hit_depth = d;
+        return true;
+      }
+    }
+    return fcl::detail::MeshCollisionTraversalNodeOBBRSS<double>::canStop();
+  }
+};
+
+struct AccumClassify {
+  ManagerImpl *impl;
+  const fcl::CollisionObject<double> *moving;
+  const std::set<const fcl::CollisionObject<double> *> *skip;
+  rust::Slice<const int64_t> ov_idx;
+  rust::Slice<const double> ov_am;
+  double tol;
+  size_t budget_left;  // shared num_max budget across neighbors, as python-fcl
+  std::vector<std::pair<size_t, double>> out;
+};
+
+static bool classify_callback(fcl::CollisionObject<double> *o1,
+                              fcl::CollisionObject<double> *o2, void *cdata) {
+  AccumClassify *d = static_cast<AccumClassify *>(cdata);
+  if (d->skip->count(o1) || d->skip->count(o2)) {
+    return false;
+  }
+  if (d->budget_left == 0) {
+    return true;
+  }
+  fcl::CollisionObject<double> *reg = (o1 == d->moving) ? o2 : o1;
+  auto it = d->impl->index.find(reg->collisionGeometry().get());
+  if (it == d->impl->index.end()) {
+    return false;
+  }
+  size_t idx = it->second;
+  double am = -1.0;
+  for (size_t i = 0; i < d->ov_idx.size(); ++i) {
+    if (d->ov_idx[i] == (int64_t)idx) {
+      am = d->ov_am[i];
+      break;
+    }
+  }
+  if (std::isinf(am)) {
+    return false;  // infinite allowance: can never block, near, or touch
+  }
+  double t_block = am > d->tol ? am : d->tol;
+
+  const Model *m1 = static_cast<const Model *>(o1->collisionGeometry().get());
+  const Model *m2 = static_cast<const Model *>(o2->collisionGeometry().get());
+  fcl::CollisionRequest<double> request(d->budget_left, true);
+  fcl::CollisionResult<double> result;
+  ThresholdMeshNode node;
+  node.threshold = t_block;
+  if (!fcl::detail::initialize(node, *m1, o1->getTransform(), *m2, o2->getTransform(), request,
+                               result)) {
+    return false;
+  }
+  fcl::detail::collide(&node);
+  g_narrow_pairs.fetch_add(1, std::memory_order_relaxed);
+  g_raw_contacts.fetch_add(result.numContacts(), std::memory_order_relaxed);
+  size_t n = result.numContacts();
+  d->budget_left = d->budget_left > n ? d->budget_left - n : 0;
+
+  if (node.hit) {
+    d->out.emplace_back(idx, node.hit_depth);
+  } else if (n > 0) {
+    double max_depth = 0.0;
+    for (size_t i = 0; i < n; ++i) {
+      double dep = result.getContact(i).penetration_depth;
+      if (dep > max_depth) max_depth = dep;
+    }
+    d->out.emplace_back(idx, max_depth);
+  }
+  return d->budget_left == 0;
+}
+
+rust::Vec<SingleContact> manager_classify_multi(const Manager &m, const Bvh &moving,
+                                                rust::Slice<const int64_t> skip_indices,
+                                                rust::Slice<const int64_t> ov_idx,
+                                                rust::Slice<const double> ov_am, double tx,
+                                                double ty, double tz, double tol,
+                                                bool /*want_touch_near*/, size_t num_max_contacts) {
+  ManagerImpl *impl = as_impl(m);
+  auto model = std::static_pointer_cast<Model>(moving.model);
+  fcl::Transform3<double> tf = fcl::Transform3<double>::Identity();
+  tf.translation() = fcl::Vector3<double>(tx, ty, tz);
+  fcl::CollisionObject<double> moving_obj(model, tf);
+
+  std::set<const fcl::CollisionObject<double> *> skip;
+  for (int64_t idx : skip_indices) {
+    if (idx >= 0 && (size_t)idx < impl->objs.size()) {
+      skip.insert(impl->objs[idx].get());
+    }
+  }
+  AccumClassify accum{impl, &moving_obj, &skip, ov_idx, ov_am, tol, num_max_contacts, {}};
+  impl->mgr.collide(&moving_obj, &accum, classify_callback);
+
+  rust::Vec<SingleContact> out;
+  for (const auto &kv : accum.out) {
     SingleContact sc;
     sc.other = kv.first;
     sc.depth = kv.second;

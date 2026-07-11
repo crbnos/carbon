@@ -6,6 +6,13 @@ license.workspace = true
 
 # Rust bridge over the same C++ FCL 0.7.0 that python-fcl wraps, for byte-exact
 # penetration-depth parity. See build.rs for the (Homebrew) FCL/libccd/eigen paths.
+#
+# The `coal` feature swaps the backend to coal (hpp-fcl successor) — same bridge
+# surface, GJK/EPA narrowphase. NOT byte-parity with python-fcl; used for the
+# faster-than-FCL experiment. Default stays FCL.
+
+[features]
+coal = []
 
 [dependencies]
 cxx = "1"

@@ -194,7 +194,15 @@ pub fn structural_key(part: &Component, centroid: &Vector3<f64>, diagonal: f64) 
 /// `_symmetry_axis_kind`: rod/disc insertion axis via SVD of the vertex cloud.
 /// numpy-matching: mean via numpy's pairwise summation, SVD via LAPACK dgesdd —
 /// so the axis SIGN matches Python's (no canonicalization).
+///
+/// Memoized per Component: the SVD is pure in the mesh vertices, and the greedy
+/// loop re-asks the same part every iteration. `Component::new` gives each part
+/// (and merged unit) a fresh cell, so clones never carry a stale axis.
 pub fn symmetry_axis_kind(part: &Component) -> Option<(Vector3<f64>, FastenerKind)> {
+    *part.sym_axis_cache.get_or_init(|| symmetry_axis_kind_uncached(part))
+}
+
+fn symmetry_axis_kind_uncached(part: &Component) -> Option<(Vector3<f64>, FastenerKind)> {
     let verts = &part.mesh.vertices;
     if verts.len() < 3 {
         return None;

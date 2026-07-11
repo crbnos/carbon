@@ -20,6 +20,13 @@ use tokio::sync::Semaphore;
 
 const VERSION: &str = "0.1.0";
 
+// jemalloc on the Linux deploy target: the planner's blocking tasks allocate
+// heavily from many threads (rayon sweeps + tokio workers); glibc malloc is the
+// case it beats. Measured on macOS it LOSES (~+6% wall), so it stays Linux-only.
+#[cfg(target_os = "linux")]
+#[global_allocator]
+static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
+
 #[derive(Clone)]
 struct AppState {
     slots: Arc<Semaphore>,
@@ -146,6 +153,15 @@ async fn plan(
     let Json(req) = body.map_err(|_| ApiError::invalid("invalid JSON body"))?;
     let source_url = req["source"]["url"].as_str().ok_or_else(|| ApiError::invalid("missing source.url"))?;
     config::validate_url(source_url)?;
+    // Optional signed PUT for plan.json (mirrors /convert's outputs) — when
+    // present the service uploads the plan instead of returning it by value.
+    let plan_url = match req["outputs"]["plan"]["url"].as_str() {
+        Some(u) => {
+            config::validate_url(u)?;
+            Some(u.to_string())
+        }
+        None => None,
+    };
     let job_id = req["jobId"].as_str().unwrap_or("unknown").to_string();
 
     // Idempotent: attach to an in-flight run rather than starting a second.
@@ -153,7 +169,7 @@ async fn plan(
         return Ok((axum::http::StatusCode::ACCEPTED, Json(json!({"ok": true, "jobId": job_id, "status": status}))));
     }
     state.jobs.set_pending(&job_id);
-    state.jobs.spawn(&state, &job_id, source_url.to_string(), req["options"].clone());
+    state.jobs.spawn(&state, &job_id, source_url.to_string(), plan_url, req["options"].clone());
 
     Ok((axum::http::StatusCode::ACCEPTED, Json(json!({"ok": true, "jobId": job_id, "status": "pending"}))))
 }

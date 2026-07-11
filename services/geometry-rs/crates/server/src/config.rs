@@ -18,6 +18,19 @@ pub fn max_concurrency() -> usize {
     int_env("GEOMETRY_MAX_CONCURRENCY", 2).max(1)
 }
 
+/// Inngest event-ingest endpoint for plan-completion events, or None when the
+/// integration is off (no INNGEST_EVENT_KEY). Prod default base is Inngest's
+/// ingest host; local dev points INNGEST_EVENT_URL at the Inngest dev server
+/// (e.g. http://localhost:8288).
+pub fn inngest_event_url() -> Option<String> {
+    let key = std::env::var("INNGEST_EVENT_KEY").ok().filter(|s| !s.is_empty())?;
+    let base = std::env::var("INNGEST_EVENT_URL")
+        .ok()
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| "https://inn.gs".to_string());
+    Some(format!("{}/e/{key}", base.trim_end_matches('/')))
+}
+
 pub fn allowed_url_hosts() -> Vec<String> {
     std::env::var("GEOMETRY_ALLOWED_URL_HOSTS")
         .unwrap_or_default()

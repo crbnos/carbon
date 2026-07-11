@@ -34,7 +34,7 @@ import {
 import type { DragControls } from "framer-motion";
 import { Reorder, useDragControls } from "framer-motion";
 import type { ReactNode } from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   LuChevronDown,
   LuCirclePlus,
@@ -45,11 +45,16 @@ import {
   LuTrash,
   LuWaypoints
 } from "react-icons/lu";
-import { useFetcher, useParams, useRevalidator } from "react-router";
+import {
+  useFetcher,
+  useParams,
+  useRevalidator,
+  useSearchParams
+} from "react-router";
 import { Empty } from "~/components";
 import { ProcedureStepTypeIcon } from "~/components/Icons";
 import { ConfirmDelete } from "~/components/Modals";
-import { usePermissions } from "~/hooks";
+import { usePermissions, useRealtime } from "~/hooks";
 import { path } from "~/utils/path";
 import { isAssemblyPlanRunning } from "../../production.models";
 import type { FlattenedBomMaterial } from "../../production.service";
@@ -121,18 +126,78 @@ export default function AssemblyInstructionExplorer({
   // Generate Steps needs a motion plan. Planning is lazy (nothing runs until
   // the user asks), so the first click usually lands before plan.json exists —
   // the action then (idempotently) kicks the planner and returns
-  // planning:true. We hold the button in a pending state, poll until the plan
-  // lands, then generate the steps automatically — the click already
-  // expressed the intent.
-  const [isAwaitingPlan, setIsAwaitingPlan] = useState(false);
+  // planning:true. We hold the button in a pending state until the plan lands,
+  // then generate the steps automatically — the click already expressed the
+  // intent. The intent persists per-instruction in sessionStorage so it
+  // survives a remount or navigating away and back mid-plan (first-time plans
+  // run for tens of seconds); without it the auto-generate effect never fires
+  // and the plan lands Success with zero steps and no path forward except a
+  // second manual click.
+  const awaitingPlanKey = `assembly-awaiting-plan:${id}`;
+  const [isAwaitingPlan, setIsAwaitingPlanState] = useState(() => {
+    try {
+      return sessionStorage.getItem(awaitingPlanKey) === "1";
+    } catch {
+      return false;
+    }
+  });
+  const setIsAwaitingPlan = useCallback(
+    (value: boolean) => {
+      setIsAwaitingPlanState(value);
+      try {
+        if (value) {
+          sessionStorage.setItem(awaitingPlanKey, "1");
+        } else {
+          sessionStorage.removeItem(awaitingPlanKey);
+        }
+      } catch {
+        // sessionStorage unavailable — fall back to ephemeral state only
+      }
+    },
+    [awaitingPlanKey]
+  );
+
+  // Plan completion is pushed: the worker flips assemblyPlanJob to
+  // Success/Failed, realtime revalidates the loader, and the awaiting effect
+  // below generates the steps — the 5s poll stays only as a fallback.
+  useRealtime(
+    "assemblyPlanJob",
+    `modelUploadId=eq.${modelUploadId ?? "__none__"}`
+  );
 
   // Controlled so the Components tab knows when it becomes active — it scrolls the
   // current selection into view on activation
   const [tab, setTab] = useState<"steps" | "components">("steps");
   // A pre-existing Failed job stays the latest row until the freshly
   // triggered run inserts its own — remember it so it doesn't read as the
-  // outcome of the run we're waiting on.
-  const ignoredFailedJobId = useRef<string | null>(null);
+  // outcome of the run we're waiting on. Persisted next to the awaiting flag:
+  // after a remount mid-plan the flag survives, so this must too, or the stale
+  // failure reads as ours.
+  const ignoredFailedKey = `assembly-ignored-failed:${id}`;
+  const ignoredFailedJobId = useRef<string | null>(
+    (() => {
+      try {
+        return sessionStorage.getItem(ignoredFailedKey);
+      } catch {
+        return null;
+      }
+    })()
+  );
+  const setIgnoredFailedJobId = useCallback(
+    (value: string | null) => {
+      ignoredFailedJobId.current = value;
+      try {
+        if (value) {
+          sessionStorage.setItem(ignoredFailedKey, value);
+        } else {
+          sessionStorage.removeItem(ignoredFailedKey);
+        }
+      } catch {
+        // sessionStorage unavailable — ref only
+      }
+    },
+    [ignoredFailedKey]
+  );
   const planFailed =
     isAwaitingPlan &&
     planJob?.status === "Failed" &&
@@ -192,6 +257,33 @@ export default function AssemblyInstructionExplorer({
   ).padStart(2, "0")}`;
 
   const rerunPlanFetcher = useFetcher<{ success: boolean }>();
+
+  // ?autogen=1 (set by the create-assembly redirect): a model-backed
+  // instruction generates its steps without a click. One Generate submit —
+  // if the plan is already there the steps land instantly; otherwise the
+  // action kicks planning and returns planning:true, which arms the same
+  // persisted awaiting machinery a manual click would. The param is stripped
+  // immediately so reloads and shared links don't re-fire it.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const autogenFired = useRef(false);
+  useEffect(() => {
+    if (searchParams.get("autogen") !== "1" || autogenFired.current) return;
+    autogenFired.current = true;
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.delete("autogen");
+        return next;
+      },
+      { replace: true }
+    );
+    if (steps.length > 0 || !permissions.can("update", "production")) return;
+    generateFetcher.submit(new FormData(), {
+      method: "post",
+      action: path.to.generateAssemblyInstructionSteps(id)
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   // The user's click is waiting on a plan. When it lands, generate the steps —
   // no second click. If the wait stalls with nothing running (the click raced
@@ -436,8 +528,9 @@ export default function AssemblyInstructionExplorer({
                         // The action starts a fresh planner run when the
                         // latest one failed — don't read that stale failure
                         // as this run's outcome
-                        ignoredFailedJobId.current =
-                          planJob?.status === "Failed" ? planJob.id : null;
+                        setIgnoredFailedJobId(
+                          planJob?.status === "Failed" ? planJob.id : null
+                        );
                         setIsAwaitingPlan(false);
                         generateFetcher.submit(new FormData(), {
                           method: "post",

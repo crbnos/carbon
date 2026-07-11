@@ -4,6 +4,10 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 
+[features]
+# Swap the collision backend to coal (hpp-fcl successor). Not byte-parity.
+coal = ["collision/coal"]
+
 [dependencies]
 collision = { path = "../collision" }
 converter = { path = "../converter" }
@@ -12,7 +16,12 @@ hex = "0.4.3"
 nalgebra.workspace = true
 ndarray = "0.16"
 ndarray-linalg = { version = "0.17", features = ["openblas-system"] }
+rayon = "1.10"
 regex = "1"
 serde.workspace = true
 serde_json.workspace = true
 sha1.workspace = true
+smallvec = "1.13"
+
+[target.'cfg(target_os = "linux")'.dev-dependencies]
+tikv-jemallocator = "0.6"

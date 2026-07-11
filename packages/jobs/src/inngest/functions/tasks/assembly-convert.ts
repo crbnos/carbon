@@ -4,6 +4,12 @@ import { GEOMETRY_SERVICE_API_KEY, GEOMETRY_SERVICE_URL } from "@carbon/env";
 import { inngest } from "../../client";
 
 const SIGNED_URL_EXPIRY = 60 * 60; // seconds
+// Conversion is synchronous on the service — the request stays open for the
+// whole run. A generous cap turns a wedged convert into a fast Inngest retry
+// instead of a hung step.
+const CONVERT_TIMEOUT_MS = 5 * 60 * 1000;
+// Bounded backoff when the service 429s (all slots busy), honoring Retry-After.
+const BUSY_RETRIES = 4;
 
 /**
  * Converts an uploaded CAD model (STEP) into web artifacts via the geometry
@@ -42,7 +48,7 @@ export const assemblyConvertFunction = inngest.createFunction(
     }
   },
   { event: "carbon/assembly-convert" },
-  async ({ event, step }) => {
+  async ({ event, step, logger }) => {
     const { modelUploadId, companyId, userId } = event.data;
 
     const job = await step.run("queue", async () => {
@@ -118,26 +124,46 @@ export const assemblyConvertFunction = inngest.createFunction(
         throw new Error("Failed to sign artifact upload URLs");
       }
 
-      const response = await fetch(`${GEOMETRY_SERVICE_URL}/convert`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(GEOMETRY_SERVICE_API_KEY
-            ? { Authorization: `Bearer ${GEOMETRY_SERVICE_API_KEY}` }
-            : {})
+      const requestBody = JSON.stringify({
+        jobId: job.id,
+        source: {
+          url: source.data.signedUrl,
+          format: "step"
         },
-        body: JSON.stringify({
-          jobId: job.id,
-          source: {
-            url: source.data.signedUrl,
-            format: "step"
-          },
-          outputs: {
-            glb: { url: glbUpload.data.signedUrl },
-            graph: { url: graphUpload.data.signedUrl }
-          }
-        })
+        outputs: {
+          glb: { url: glbUpload.data.signedUrl },
+          graph: { url: graphUpload.data.signedUrl }
+        }
       });
+
+      let response: Response;
+      // Bounded 429 backoff honoring Retry-After — the service sheds load with
+      // BUSY when its conversion slots are full.
+      for (let attempt = 0; ; attempt++) {
+        response = await fetch(`${GEOMETRY_SERVICE_URL}/convert`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(GEOMETRY_SERVICE_API_KEY
+              ? { Authorization: `Bearer ${GEOMETRY_SERVICE_API_KEY}` }
+              : {})
+          },
+          body: requestBody,
+          signal: AbortSignal.timeout(CONVERT_TIMEOUT_MS)
+        });
+        if (response.status === 429 && attempt < BUSY_RETRIES) {
+          const retryAfter = Number(response.headers.get("retry-after")) || 15;
+          const waitMs = Math.min(retryAfter * 1000 * (attempt + 1), 120_000);
+          logger.warn("geometry /convert busy (429); backing off", {
+            modelUploadId,
+            attempt,
+            waitMs
+          });
+          await new Promise((resolve) => setTimeout(resolve, waitMs));
+          continue;
+        }
+        break;
+      }
 
       const result = (await response.json().catch(() => null)) as {
         ok: boolean;

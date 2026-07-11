@@ -74,12 +74,13 @@ fn main() {
             for other in &parts {
                 if &other.node_id == fid { continue; }
                 let os = [other];
+                let ow = planner::collide::CollisionWorld::new(&os);
                 let (smin, smax) = (other.bbox_min, other.bbox_max);
                 for dir in [head, -head] {
                     let tv = exit_travel(part, &smin, &smax, &dir, None);
                     let sep = separation_distance(&part.bbox_min, &part.bbox_max, &smin, &smax, &dir);
                     let ex = self_exempt(mate_exempt(part, &dir, &f), &[fid]);
-                    let lt = path_is_clear(part, &os, &dir, 0.0, tv, case.params.path_samples.unwrap_or(60), case.tolerance(), None, Some(ex), Some(sep+4.0));
+                    let lt = path_is_clear(part, &ow, &dir, 0.0, tv, case.params.path_samples.unwrap_or(60), case.tolerance(), None, Some(ex), Some(sep+4.0));
                     println!("   vs {} dir[{:.1},{:.1},{:.1}] travel={:.1} clear={:?}", other.node_id, dir[0],dir[1],dir[2], tv, lt);
                 }
             }

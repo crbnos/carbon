@@ -354,3 +354,222 @@ Per-sample parallelism (samples within a sweep are independent; set-union/max ar
 order-independent so parallel-safe). Blocked on `Rc<UniquePtr<Bvh>>`/`Manager` being
 `!Send`; needs Arc + per-thread managers or a Send wrapper. Only worth it if a bigger
 speedup is required — current build already beats Python 1.4–2.05×.
+
+## Perf round 2: rayon parallel sweeps + crate experiments + coal backend (2026-07-11)
+
+### Rayon parallel candidate evaluation (KEPT — big win)
+Greedy Phase 1/2 candidates (`plan_removal`/`plan_escape`) are independent read-only
+sweeps → `par_first_success` in greedy.rs: sequential probe of the top SEQ_PROBE=4
+candidates on the caller's maintained managers (zero overhead for the common
+early-success iteration), then rayon `find_map_first` over the tail (lowest-index
+success, cancels the rest). Each worker builds its own `!Send` FCL managers over
+shared `Arc<SharedBvh>` (unsafe Send+Sync on the immutable BVH — sound: read-only
+queries on a BVHModel frozen after endModel). `Component.bvh` moved `Rc/OnceCell` →
+`Arc/OnceLock`. PROVEN: output == forced-sequential (GEOMETRY_SEQUENTIAL oracle) on
+all 3 assemblies; deterministic across repeated runs (hash-identical); corpus 35/35.
+
+| Assembly | Python | Rust single-thread | Rust + rayon | vs Python |
+|----------|--------|--------------------|--------------|-----------|
+| SA Seat Rail (31) | 22.8s | 16.4s | **16.6s** (early-success, no fan-out) | 1.4× |
+| Packing Arm (64)  | 59.1s | 28.8s | **12.1s** | 4.9× |
+| SA BCU (431)      | 89.2s | ~40s  | **~47s** (K=4; K=1 was 38s but 6× speculative contacts) | 1.9× |
+
+SEQ_PROBE tunable via GEOMETRY_SEQ_PROBE; GEOMETRY_SEQUENTIAL=1 forces the sequential
+oracle. K only trades speculation for latency — output is K-invariant (proven).
+
+### Crate experiments (user-requested, all measured)
+- **tikv-jemallocator**: macOS = LOSS (~+6% wall, consistent) → gated
+  `cfg(target_os="linux")` in server bin + plan_file example (Linux/glibc is its win
+  case; unverified until a Docker bench).
+- **SmallVec**: `Contacts = SmallVec<[(String,f64);8]>` return type + skip list in
+  collide.rs. Noise-level on wall (FCL = 99% of profile); kept as harmless.
+- **DashMap**: server JobStore `Arc<Mutex<HashMap>>` → `Arc<DashMap>` (real
+  concurrency site: status polls vs worker updates). Not planner-perf.
+- **simd-json**: NO use site (planner parses STEP, not JSON; request bodies tiny) —
+  honestly skipped, no dep added.
+
+### Coal backend experiment (REJECTED on evidence — flag kept for reproduction)
+`collision/coal` cargo feature: shim_coal.cc ports the whole bridge to coal 3.0.4
+(brew; needs boost headers; C++17). Depth sign flipped (coal penetration_depth is
+negative-overlap signed distance) — verified by `examples/depth_probe.rs` under both
+backends. Result: SLOWER AND WORSE — SR 23.6s (+42%), PA 36.2s (3× slower), BCU >120s
+timeout; plan quality degrades (PA linear tier 21→12, escape 1→9, flagged 23→26).
+Root cause: planner tolerances (0.15mm, mate margins, seated allowances) are
+calibrated to FCL's per-triangle-pair Intersect depth semantics; coal's GJK/EPA depth
+distribution misclassifies clear paths as blocked → tier degradation + 2× contact
+volume. A proper coal port = full tolerance re-tune + plan-quality revalidation
+(research project, not a swap). Default backend stays FCL.
+
+## Coal early-stop experiment — CLOSED (2026-07-11): substrate disqualified, with proof
+
+User relaxed byte-parity for a coal (hpp-fcl successor) backend to chase avoid-work.
+Three iterations, each measured:
+
+1. **Crude global margin** (`security_margin=-tol`, num_max=1 per pair): contacts
+   230M→285k (808×) on BCU, plans 3-4× faster — but plan quality shifted ±2-3 parts
+   (greedy cascade) and depths later proved untrustworthy (below).
+2. **Bracket-classify (3-probe, exempt-aware per-neighbor thresholds)**: WORSE
+   (PA planned 33; 3 traversals/neighbor). Reverted to
+3. **Single-traversal + distance_lower_bound depth recovery**: BCU matched FCL
+   quality at 16s vs 27.6s; PA/SR still trailed.
+
+**Kill shot (pose-matched probe, probe_pose example, same translation both
+backends, part 034beb3c vs neighbors on Packing Arm):**
+- coal full-enumerate reported **20.0mm penetration** for a pair FCL proves has
+  **zero intersecting triangles** (tri-pair depth cannot exceed ~triangle scale).
+  Coal's TriangleP GJK/EPA is unreliable on OCCT-tessellated thin triangles.
+- coal's `distance_lower_bound` under margin queries is polluted by BV-level
+  bounds from culled subtrees → my depth recovery reported phantom contacts
+  (0.19mm for a separated pair). Unsound.
+
+**Verdict:** the early-stop CONCEPT is validated (the planner only needs
+blocked/near/touch per neighbor — 150-800× contact reduction is real), but coal's
+primitive math is garbage on this mesh class → all coal plan output is built on
+wrong depths. Backend stays behind the `coal` feature flag, marked EXPERIMENTAL —
+DO NOT SHIP (banner in shim_coal.cc). FCL remains default: byte-parity + the
+Round-2/3 wins. parry3d re-checked from source: has NO TriMesh-vs-TriMesh contact
+arm at all (only composite-vs-convex) — would mean writing our own narrowphase.
+
+**Kept from the experiment (backend-agnostic, FCL-parity-proven):**
+- `manager_classify_multi` bridge fn — FCL impl delegates to full enumeration
+  (byte-parity by construction, gate re-verified 35/35 + 3 assemblies).
+- Sweep consumers (`path_is_clear`/`free_travel`/`path_blockers`) now route
+  through `CollisionWorld::classify` with resolved exempt thresholds — ready for
+  any future backend that CAN early-stop trustworthily.
+- `GEOMETRY_DEBUG_PAIR` pair-tracing + `probe_pose` example (pose-matched
+  backend comparison) + `bench_plan` statistical harness (load-once, plan-only,
+  min/median/stddev — exposed that wall-clock "timings" were ~half OCCT load).
+- `GEOMETRY_NUM_MAX` swept: parity breaks at 2000 AND barely reduces contacts —
+  FCL budget-capping is a dead end; 100000 stays.
+- **Tolerance is now an API parameter**: `options.tolerance` (mm) on POST /plan →
+  `plan_step(..., tolerance: Option<f64>)`; None ⇒ inferred `mesh_tolerance` =
+  max(0.15, 2.5×linearDeflection) (unchanged default behavior).
+
+Planner-only baselines (bench_plan, this machine): SR 7.69s / PA 8.39s / BCU 27.58s
+(+ OCCT load 8.3/1.6/7.1s). Python same-machine plans: 22.8 / 59.1 / 89.2s wall.
+
+## FCL-native early-stop classify — LANDED with byte-parity (2026-07-11)
+
+User's push to "tune for coal" led to the calibration sweep (`calib_pairs` example,
+3.5k shared poses, FCL vs coal CSVs joined): coal detection is a strict superset of
+FCL (0 FCL-only contacts; +286 tangency ghosts, filterable) but the DEPTH relation
+is uncalibratable — coal/FCL ratio median 2.55x, p90 24.9x, max 2194x; 11.4% of
+blocking verdicts flip at tol=0.25. No threshold remap survives a 3-orders-of-
+magnitude pose-wise spread. Coal calibration disproven BY DATA (not vibes; my
+earlier "20mm is impossible" kill-shot was WRONG — FCL itself reports ~20mm sliver
+depths; the real classes were (a) tangency contacts (verified distance=0.000000 at
+the divergent pose via probe_pose) and (b) my unsound distance_lower_bound
+recovery (verified: 0.19mm "contact" on a pair 4.9mm apart — BV-polluted bound)).
+
+**The synthesis that landed:** keep FCL's math, steal coal's early-stop. FCL's
+mesh-mesh traversal is header-template code with a virtual `canStop()` hook (the
+same mechanism num_max uses). `ThresholdMeshNode` (shim.cc) subclasses
+`MeshCollisionTraversalNodeOBBRSS<double>`, trips canStop at the first contact
+deeper than the neighbor's blocking threshold `t_block = max(tol, allowance +
+MATE_DEPTH_MARGIN)`; `manager_classify_multi` runs it per broadphase candidate
+with per-neighbor thresholds resolved from the exempt maps (INF allowance =>
+neighbor dropped). Parity argument: `∃ pair > t_block ⟺ max > t_block` (verdict
+identical; no plan field serializes depth), and a MISS has already enumerated the
+full exact contact set (near/touch/exempt byte-identical). Contacts also no longer
+copy through the bridge on the classify path (max extracted in C++) — that copy
+elimination, not the early-stop, is most of the BCU win (its contacts are mostly
+sub-threshold seated crossings that still must be enumerated for the verdict).
+
+**Measured (bench_plan, plan-only, parity gate green: corpus 35/35 + 3 assemblies
+byte-identical + determinism):**
+- PA 8.39 → 5.08s (−39%), raw contacts 25M → 10.6M
+- BCU 27.58 → 22.05s (−20%), contacts ~unchanged (copy elimination)
+- SR 7.69 → 7.91s (+3% — per-neighbor node setup on a small assembly; accepted)
+
+Also landed: `options.tolerance` API override (inferred `mesh_tolerance` default),
+`GEOMETRY_DEBUG_PAIR` tracing, `probe_pose` + `calib_pairs` diagnostic examples.
+Coal shim: EXPERIMENTAL banner, do not ship.
+
+## Quality era begins: Python demoted to baseline (2026-07-11)
+
+Domain owner (Brad, Slack): Python planner was "just ok — definitely required
+manual intervention on all of them"; the 3 test assemblies ARE his pain files.
+New bar: MINIMIZE MANUAL INTERVENTION (flagged/escape tiers), verify-valid,
+deterministic. Python parity demoted to a port-regression tool behind
+GEOMETRY_COMPAT=python (corpus replay tests pin it; default = improved planner).
+
+Tooling: `stress` example (quality table + JSON artifact per planner version;
+flagged-part list = the manual-work list), GEOMETRY_EXPLAIN=1 flag autopsy
+(per candidate direction: exit travel + exact blockers).
+
+**Improvement #1 (landed): best-direction single-blocker merge.** Python's
+phase-3 merge tests the UNION of escape blockers across all directions; the
+autopsy showed parts whose best direction has exactly ONE blocker (panel pairs
+1604/1652, servo_disc/Mount_Disc, nut/bolt clusters) never merged. Improved
+mode picks the least-blocked direction's set (`escape_blockers_by_direction`).
+
+| flagged | Python-parity | improved |
+|---|---|---|
+| Seat Rail | 3 | 0 |
+| Packing Arm | 23 | 11 |
+| BCU | 5 | 0 |
+
+Corpus 35/35 in compat; compat still byte-identical to Python; improved mode
+deterministic; verify ratios intact. PA's remaining 11 are ALL "failed forward
+verification" demotions (14 under compat — class predates the change): greedy
+removal motions that collide on forward insertion replay. That class is the
+next quality target (suspect exempt/merge-order handling differences between
+greedy's removal validation and verify_sequence's forward replay).
+
+## Improvement #2: precedence-aware connectivity repair → ZERO flagged (2026-07-11)
+
+Forward-verify autopsy chain: (1) demoted parts showed 5-38mm REAL collisions on
+forward replay — not exemption issues; (2) verifying the GREEDY order directly
+gave 0 demotions → all failures manufactured by the reordering machinery;
+(3) edge-violation dump (ids, not names — name collisions faked "cycles") showed
+the final sequence violating 15 hard precedence edges; (4) culprit:
+`connectivity_repair` reorders for island-connectivity with NO knowledge of the
+precedence DAG — deferred nodes hoist above their collision predecessors.
+
+Fix: repair picks are gated on `preds_ok` (all hard-edge predecessors already
+placed); when connectivity and precedence conflict, precedence wins (a detached
+island beats a collision); old behavior preserved under GEOMETRY_COMPAT=python.
+
+**Scoreboard (stress, all deterministic, verify-clean, 0 edge violations):**
+| flagged | Python-parity | improved |
+|---|---|---|
+| Seat Rail | 3 | **0** |
+| Packing Arm | 23 | **0** |
+| BCU | 5 | **0** |
+
+Brad's "required manual intervention on all of them" → zero manual-intervention
+parts on all three of his files, from two root-cause fixes (best-direction merge
++ precedence-aware repair). Corpus 35/35 in compat; compat byte-parity intact.
+
+## Part 4: Inngest path — event-driven completion + offload (2026-07-11)
+
+Landed (Rust + app, additive wire-contract change; old poll path still works):
+- **4.1 completion event**: geometry-rs POSTs `carbon/assembly-plan-done`
+  {jobId, status, stats{...planUploaded}, error?} to Inngest ingest on every
+  plan terminal state (config: INNGEST_EVENT_KEY + INNGEST_EVENT_URL, prod base
+  https://inn.gs, local = Inngest dev server). Best-effort: send failure only
+  logs. App (`assembly-plan.ts`): the 120× step.sleep/step.run poll loop (~250
+  step transitions, 15s latency floor) is now ONE `step.waitForEvent` (30m
+  timeout, matched on data.jobId) + one fallback status poll on timeout;
+  "missing" after restart → throw → Inngest function retry re-submits (the old
+  3× resubmit dance deleted; Redis job store 3.3 later removes even that).
+- **4.2 plan.json offload**: POST /plan accepts outputs.plan.url (signed PUT,
+  validated); service uploads plan.json itself (http::upload) and marks
+  planUploaded in status + event; upload failure fails the job loud. App mints
+  the signed PUT at submit (same storage path as before), persist-plan now only
+  updates the DB row; app-side upload remains solely for the fallback-poll path.
+  Re-motion mode downloads plan.json from storage (was in-memory pass-through).
+- **4.3 429 hygiene**: ApiError 429s carry Retry-After: 15; both submit paths
+  (plan + convert) honor it with bounded backoff (4 retries, linear scaling,
+  2min cap).
+- **4.4 convert timeout**: AbortSignal.timeout(5min) on the synchronous convert
+  fetch (was unbounded — a wedged convert hung the Inngest step).
+- New event type `carbon/assembly-plan-done` in packages/lib/src/events.ts
+  (service-pushed; no trigger.ts mapping — app never emits it).
+
+Verified: cargo build (server), tsgo/tsc typecheck (@carbon/lib, @carbon/jobs),
+34/34 jobs tests, and a live stub E2E (box.step): plan PUT received at the
+signed URL, completion event received with correct payload, status body
+back-compat. NOT yet exercised: full-stack manual gate (real Inngest dev server
++ Supabase storage + ERP trigger) and a live 429/Retry-After roundtrip — the
+header/backoff code is in place but untested under real contention.
