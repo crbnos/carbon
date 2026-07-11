@@ -268,6 +268,15 @@ pub fn plan_step(
     if !groups.is_empty() {
         plan["groups"] = Value::Object(groups);
     }
+    // Diagnostics: unit adjacency for sequencing analysis (not part of the
+    // plan contract; consumers must not rely on it).
+    if std::env::var("ASSEMBLER_EMIT_ADJACENCY").is_ok() {
+        plan["debugAdjacency"] = json!(outcome
+            .adjacency
+            .iter()
+            .map(|(k, v)| (k.clone(), v.iter().cloned().collect::<Vec<_>>()))
+            .collect::<std::collections::BTreeMap<_, _>>());
+    }
 
     let planned_count = outcome
         .planned
