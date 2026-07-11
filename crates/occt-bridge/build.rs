@@ -80,22 +80,14 @@ fn main() {
 
     // Link every OpenCASCADE toolkit found — the STEP+XCAF+Mesh path pulls in a
     // broad transitive set; linking all TK* avoids hand-maintaining the list.
+    // NOTE: must be rustc-link-lib (rustc-link-arg from a lib crate's build
+    // script is dropped by cargo and never reaches the final binary link).
+    // rustc wraps the native/crate library section in a --start-group on GNU
+    // targets, so alphabetical order is fine for the inter-archive references.
     let (libs, is_static) = toolkits(&lib_dir);
-    let target_os = std::env::var("CARGO_CFG_TARGET_OS").unwrap_or_default();
-
-    if is_static && target_os == "linux" {
-        // GNU ld resolves archives in one pass, so inter-toolkit dependency
-        // order matters; a link group re-scans until fixed point.
-        println!("cargo:rustc-link-arg=-Wl,--start-group");
-        for lib in &libs {
-            println!("cargo:rustc-link-arg=-l{lib}");
-        }
-        println!("cargo:rustc-link-arg=-Wl,--end-group");
-    } else {
-        let kind = if is_static { "static" } else { "dylib" };
-        for lib in &libs {
-            println!("cargo:rustc-link-lib={kind}={lib}");
-        }
+    let kind = if is_static { "static" } else { "dylib" };
+    for lib in &libs {
+        println!("cargo:rustc-link-lib={kind}={lib}");
     }
 
     println!("cargo:rerun-if-changed=src/lib.rs");

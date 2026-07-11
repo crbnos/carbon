@@ -21,6 +21,7 @@ FROM ${OCCT_IMAGE} AS occt
 FROM rust:1.90-bookworm AS build
 RUN apt-get update && apt-get install -y --no-install-recommends \
       libfcl-dev libccd-dev libeigen3-dev liboctomap-dev \
+      libopenblas-dev gfortran \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=occt /opt/occt /opt/occt
 WORKDIR /app
@@ -39,7 +40,7 @@ RUN cargo build --release -p assembler
 # bookworm (they pull the actual runtime libs; a few MB of headers ride along).
 FROM debian:bookworm-slim AS runtime
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      libfcl-dev libccd-dev liboctomap-dev ca-certificates \
+      libfcl-dev libccd-dev liboctomap-dev libopenblas-dev ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=build /app/target/release/assembler /usr/local/bin/assembler
 EXPOSE 8000
