@@ -32,14 +32,21 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
 
   if (result.ok) {
+    const base =
+      mode === "regenerate"
+        ? `Regenerated ${result.created} steps from the motion plan`
+        : `Generated ${result.created} steps from the motion plan`;
+    // Some geometry has no BOM match, so those parts got no material — point the
+    // user at Match BOM rather than leaving a silent gap.
+    const unmapped = result.unmappedComponentCount ?? 0;
     return data(
       { success: true },
       await flash(
         request,
         success(
-          mode === "regenerate"
-            ? `Regenerated ${result.created} steps from the motion plan`
-            : `Generated ${result.created} steps from the motion plan`
+          unmapped > 0
+            ? `${base}. ${unmapped} component${unmapped === 1 ? "" : "s"} have no BOM match — use Match BOM to link their materials.`
+            : base
         )
       )
     );

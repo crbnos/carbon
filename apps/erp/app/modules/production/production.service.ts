@@ -14,6 +14,7 @@ import {
   buildAssemblyStepGroups,
   CURRENT_PLAN_VERSION,
   computeStepCameras,
+  describeStep,
   groupComponentNodeIds,
   indexAssemblyGraph
 } from "@carbon/viewer";
@@ -5220,7 +5221,7 @@ export async function autoMatchAssemblyComponents(
 }
 
 type GenerateStepsResult =
-  | { ok: true; created: number }
+  | { ok: true; created: number; unmappedComponentCount: number }
   | {
       ok: false;
       reason: "no-model" | "no-plan" | "steps-exist" | "steps-locked" | "error";
@@ -5321,6 +5322,15 @@ export async function generateAssemblyStepsFromPlan(
   // when the graph is unavailable.
   const cameras = graphIndex ? computeStepCameras(groups, graphIndex) : [];
 
+  // Authored subassembly units name their steps; the rest derive a human title
+  // from the components (same `describeStep` the viewer/explorer render), so the
+  // title is real editable data instead of a render-time fallback.
+  const units = await getAssemblyUnits(client, modelUploadId);
+  const namedUnits = (units.data ?? []).map((unit) => ({
+    name: unit.name,
+    componentNodeIds: unit.componentNodeIds ?? []
+  }));
+
   const rows = groups.map((group, index) => {
     const motion = motionSchema.safeParse(group.motion);
     return {
@@ -5328,7 +5338,18 @@ export async function generateAssemblyStepsFromPlan(
       sortOrder: index + 1,
       // A pre-grouped unit (e.g. a purchased PCB) titles its step with the
       // unit name; ungrouped steps derive their title from their parts.
-      title: group.name ?? null,
+      title:
+        group.name ??
+        describeStep(
+          {
+            title: null,
+            componentNodeIds: group.componentNodeIds,
+            fastener: null
+          },
+          graphIndex,
+          namedUnits
+        ) ??
+        null,
       componentNodeIds: group.componentNodeIds,
       motion: (motion.success ? motion.data : { type: "none" }) as Json,
       camera: (cameras[index] ?? null) as Json | null,
@@ -5353,8 +5374,21 @@ export async function generateAssemblyStepsFromPlan(
 
   // Seed each step's materials from the model's component→BOM mappings —
   // best-effort; generation succeeds regardless.
+  let unmappedComponentCount = 0;
   if (graphIndex && insert.data?.length) {
-    const mappings = await getAssemblyComponentMappings(client, modelUploadId);
+    let mappings = await getAssemblyComponentMappings(client, modelUploadId);
+    // First generation usually has no mappings yet. Rather than silently seed
+    // nothing (and leave the user to discover "Match BOM"), auto-match once so
+    // steps come out with their materials populated. Best-effort: a missing BOM
+    // or a match failure just leaves mappings empty and the warning below fires.
+    if ((mappings.data ?? []).length === 0) {
+      await autoMatchAssemblyComponents(client, {
+        assemblyInstructionId: args.assemblyInstructionId,
+        companyId: args.companyId,
+        userId: args.userId
+      });
+      mappings = await getAssemblyComponentMappings(client, modelUploadId);
+    }
     const itemIdByGeometryHash = new Map(
       (mappings.data ?? []).map((mapping) => [
         mapping.geometryHash,
@@ -5371,9 +5405,18 @@ export async function generateAssemblyStepsFromPlan(
         await insertAssemblyStepMaterialSeeds(client, seeds, args);
       }
     }
+    // Surface how many distinct geometry groups still have no BOM item, so the
+    // route can nudge the user to Match BOM instead of a silent gap.
+    const allNodeIds = insert.data.flatMap(
+      (step) => step.componentNodeIds ?? []
+    );
+    unmappedComponentCount = groupComponentNodeIds(
+      allNodeIds,
+      graphIndex
+    ).filter((group) => !itemIdByGeometryHash.has(group.key)).length;
   }
 
-  return { ok: true, created: rows.length };
+  return { ok: true, created: rows.length, unmappedComponentCount };
 }
 
 /**
