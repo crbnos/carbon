@@ -4055,6 +4055,60 @@ async function invalidateAssemblyPlanCache(
     .eq("kind", "plan");
 }
 
+/**
+ * Explicitly invalidates EVERY cached artifact for a model — plan rows +
+ * plan.json files (for all instructions on the model) and the conversion
+ * output (glb/graph files + paths) — and resets processingStatus so a fresh
+ * convert can run. This is the user-facing escape hatch for stale caches
+ * (e.g. after a geometry-service upgrade that changes nodeIds); routine
+ * instruction deletion uses the narrower invalidateAssemblyPlanCache instead.
+ */
+export async function invalidateAssemblyModelCache(
+  client: SupabaseClient<Database>,
+  modelUploadId: string
+) {
+  const planJobs = await client
+    .from("assemblyPlanJob")
+    .select("id, companyId, planPath")
+    .eq("modelUploadId", modelUploadId)
+    .eq("kind", "plan");
+
+  const paths = new Set<string>();
+  for (const job of planJobs.data ?? []) {
+    if (job.planPath) paths.add(job.planPath);
+    paths.add(`${job.companyId}/models/${modelUploadId}/${job.id}/plan.json`);
+  }
+
+  const model = await client
+    .from("modelUpload")
+    .select("glbPath, graphPath")
+    .eq("id", modelUploadId)
+    .maybeSingle();
+  if (model.data?.glbPath) paths.add(model.data.glbPath);
+  if (model.data?.graphPath) paths.add(model.data.graphPath);
+
+  if (paths.size > 0) {
+    // Best-effort file cleanup; the row updates below are what invalidate.
+    await client.storage.from("private").remove([...paths]);
+  }
+
+  await client
+    .from("assemblyPlanJob")
+    .delete()
+    .eq("modelUploadId", modelUploadId)
+    .eq("kind", "plan");
+
+  return client
+    .from("modelUpload")
+    .update({
+      processingStatus: "Idle",
+      processingError: null,
+      glbPath: null,
+      graphPath: null
+    })
+    .eq("id", modelUploadId);
+}
+
 export async function upsertAssemblyInstructionStep(
   client: SupabaseClient<Database>,
   data: {

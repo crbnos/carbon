@@ -17,6 +17,7 @@ import {
   LuEllipsisVertical,
   LuPanelLeft,
   LuPanelRight,
+  LuRefreshCw,
   LuTrash
 } from "react-icons/lu";
 import { Link, useFetcher, useParams } from "react-router";
@@ -55,6 +56,7 @@ const AssemblyInstructionHeader = () => {
 
   const nameFetcher = useFetcher<{}>();
   const statusFetcher = useFetcher<{}>();
+  const invalidateFetcher = useFetcher<{ success: boolean }>();
 
   const [name, setName] = useState(instruction?.name ?? "");
 
@@ -135,6 +137,21 @@ const AssemblyInstructionHeader = () => {
                 </Link>
               </DropdownMenuItem>
             )}
+            <DropdownMenuItem
+              disabled={
+                !permissions.can("update", "production") ||
+                invalidateFetcher.state !== "idle"
+              }
+              onClick={() =>
+                invalidateFetcher.submit(null, {
+                  method: "post",
+                  action: path.to.assemblyModelInvalidate(id)
+                })
+              }
+            >
+              <DropdownMenuIcon icon={<LuRefreshCw />} />
+              Re-convert Model
+            </DropdownMenuItem>
             <DropdownMenuItem
               disabled={
                 !permissions.can("delete", "production") ||

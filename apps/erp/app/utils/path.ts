@@ -532,6 +532,8 @@ export const path = {
       generatePath(`${x}/assembly/${id}/jobs/cancel`),
     assemblyModelConvert: (id: string) =>
       generatePath(`${x}/assembly/${id}/model/convert`),
+    assemblyModelInvalidate: (id: string) =>
+      generatePath(`${x}/assembly/${id}/model/invalidate`),
     assemblyPlanRerun: (id: string) =>
       generatePath(`${x}/assembly/${id}/plan/rerun`),
     deleteAssemblyInstruction: (id: string) =>

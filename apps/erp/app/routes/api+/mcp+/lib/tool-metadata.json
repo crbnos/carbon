@@ -1,6 +1,6 @@
 {
-  "generated": "2026-07-11T10:15:40.497Z",
-  "totalTools": 1303,
+  "generated": "2026-07-11T10:21:06.121Z",
+  "totalTools": 1304,
   "modules": 15,
   "tools": [
     {
@@ -19947,6 +19947,31 @@
         },
         "required": [
           "id"
+        ]
+      }
+    },
+    {
+      "name": "production_invalidateAssemblyModelCache",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "invalidate assembly model cache",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "modelUploadId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "modelUploadId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "modelUploadId"
         ]
       }
     },
