@@ -1,6 +1,7 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Json } from "@carbon/database";
-import { GEOMETRY_SERVICE_API_KEY, GEOMETRY_SERVICE_URL } from "@carbon/env";
+import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
+import { NonRetriableError } from "inngest";
 import { inngest } from "../../client";
 
 const SIGNED_URL_EXPIRY = 60 * 60; // seconds
@@ -96,8 +97,8 @@ export const assemblyConvertFunction = inngest.createFunction(
     await step.run("convert", async () => {
       const client = getCarbonServiceRole();
 
-      if (!GEOMETRY_SERVICE_URL) {
-        throw new Error("GEOMETRY_SERVICE_URL is not configured");
+      if (!ASSEMBLER_SERVICE_URL) {
+        throw new Error("ASSEMBLER_SERVICE_URL is not configured");
       }
 
       const glbPath = `${companyId}/models/${modelUploadId}/${job.id}/model.glb`;
@@ -108,6 +109,21 @@ export const assemblyConvertFunction = inngest.createFunction(
         .createSignedUrl(job.modelPath, SIGNED_URL_EXPIRY);
       if (source.error) {
         throw new Error(`Failed to sign source URL: ${source.error.message}`);
+      }
+
+      // Content identity for the geometry service's result cache: with a
+      // contentHash a repeat convert of unchanged bytes is served without
+      // re-downloading the source. etag is content-derived; size disambiguates
+      // multipart etags. Best-effort — omitted on any failure.
+      let contentHash: string | undefined;
+      try {
+        const info = await client.storage.from("private").info(job.modelPath);
+        const etag = info.data?.etag?.replaceAll('"', "");
+        if (!info.error && etag) {
+          contentHash = `${etag}-${info.data?.size ?? 0}`;
+        }
+      } catch {
+        // optimization only
       }
 
       // upsert: Inngest retries re-upload to the same paths; without it the
@@ -128,7 +144,8 @@ export const assemblyConvertFunction = inngest.createFunction(
         jobId: job.id,
         source: {
           url: source.data.signedUrl,
-          format: "step"
+          format: "step",
+          ...(contentHash ? { contentHash } : {})
         },
         outputs: {
           glb: { url: glbUpload.data.signedUrl },
@@ -140,17 +157,25 @@ export const assemblyConvertFunction = inngest.createFunction(
       // Bounded 429 backoff honoring Retry-After — the service sheds load with
       // BUSY when its conversion slots are full.
       for (let attempt = 0; ; attempt++) {
-        response = await fetch(`${GEOMETRY_SERVICE_URL}/convert`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...(GEOMETRY_SERVICE_API_KEY
-              ? { Authorization: `Bearer ${GEOMETRY_SERVICE_API_KEY}` }
-              : {})
-          },
-          body: requestBody,
-          signal: AbortSignal.timeout(CONVERT_TIMEOUT_MS)
-        });
+        try {
+          response = await fetch(`${ASSEMBLER_SERVICE_URL}/convert`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...(ASSEMBLER_SERVICE_API_KEY
+                ? { Authorization: `Bearer ${ASSEMBLER_SERVICE_API_KEY}` }
+                : {})
+            },
+            body: requestBody,
+            signal: AbortSignal.timeout(CONVERT_TIMEOUT_MS)
+          });
+        } catch (e) {
+          // Service unreachable (down, DNS, TLS): fail fast so onFailure
+          // releases the model + job rows now instead of after retry backoff.
+          throw new NonRetriableError(
+            `Geometry service unreachable: ${(e as Error).message}`
+          );
+        }
         if (response.status === 429 && attempt < BUSY_RETRIES) {
           const retryAfter = Number(response.headers.get("retry-after")) || 15;
           const waitMs = Math.min(retryAfter * 1000 * (attempt + 1), 120_000);
@@ -173,7 +198,9 @@ export const assemblyConvertFunction = inngest.createFunction(
       } | null;
 
       if (!response.ok || !result?.ok) {
-        throw new Error(
+        // Non-429 errors are an outage (5xx) or a permanent rejection (4xx):
+        // retrying holds the job in Processing for nothing — fail fast.
+        throw new NonRetriableError(
           result?.error ?? `Geometry service returned ${response.status}`
         );
       }

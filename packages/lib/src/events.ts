@@ -101,6 +101,10 @@ export type Events = {
       // componentCount, plannedCount, planUploaded (true when the service PUT
       // plan.json to outputs.plan.url).
       stats?: Record<string, unknown>;
+      // Opaque submit context echoed verbatim by the service (companyId,
+      // userId, modelUploadId, reMotionFor, graphPath, planPath) — everything
+      // assembly-plan-finalize needs, so completion is self-contained.
+      meta?: Record<string, unknown>;
     };
   };
 

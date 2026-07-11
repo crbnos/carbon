@@ -41,7 +41,9 @@ import {
 } from "./functions/scheduled";
 import {
   assemblyConvertFunction,
+  assemblyPlanFinalizeFunction,
   assemblyPlanFunction,
+  assemblyPlanReconcileFunction,
   companyExportFunction,
   companyImportFunction,
   companyRestoreFinalizeFunction,
@@ -75,6 +77,8 @@ export const functions = [
   // Tasks
   assemblyConvertFunction,
   assemblyPlanFunction,
+  assemblyPlanFinalizeFunction,
+  assemblyPlanReconcileFunction,
   companyExportFunction,
   companyImportFunction,
   companyRestoreFunction,

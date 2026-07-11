@@ -11,7 +11,7 @@ import {
   installDeps,
   installSkills,
   spawnApps,
-  spawnGeometry,
+  spawnAssembler,
   spawnStripeListener,
   syncEnvSymlinks
 } from "../services/apps.js";
@@ -208,8 +208,8 @@ export async function up(opts: UpOpts = {}) {
     log.info("stripe listener spawned (CARBON_EDITION=cloud)");
   }
 
-  if (selectedApps.includes("geometry")) {
-    spawnGeometry({ root, ports: ctx.ports });
+  if (selectedApps.includes("assembler")) {
+    spawnAssembler({ root, ports: ctx.ports });
   }
 
   box(
@@ -595,7 +595,7 @@ async function runAppsThenTeardown(
   portless: boolean,
   stripeChild?: ExecaChildProcess
 ) {
-  const reactRouterApps = selectedApps.filter((id) => id !== "geometry");
+  const reactRouterApps = selectedApps.filter((id) => id !== "assembler");
   await spawnApps({ root, apps: reactRouterApps, ports, portless });
 
   // Apps exit on Ctrl+C; auto-`down` so compose stack isn't orphaned.

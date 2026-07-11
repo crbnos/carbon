@@ -1,0 +1,103 @@
+//! Operational limits + URL policy — port of `app/config.py` + `_validate_url`.
+
+use crate::error::ApiError;
+
+fn int_env(name: &str, default: usize) -> usize {
+    std::env::var(name)
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(default)
+}
+
+pub fn max_source_bytes() -> usize {
+    int_env("ASSEMBLER_MAX_SOURCE_MB", 250) * 1024 * 1024
+}
+
+pub fn max_parts() -> usize {
+    int_env("ASSEMBLER_MAX_PARTS", 5000)
+}
+
+/// Redis URL for the shared job store / progress mirror. Unset => in-memory
+/// single-instance mode (dev). Set-but-unreachable is a boot error, never a
+/// silent in-memory fallback — two replicas with split stores strand jobs.
+pub fn redis_url() -> Option<String> {
+    std::env::var("REDIS_URL").ok().filter(|s| !s.is_empty())
+}
+
+/// How long shutdown waits for running plan tasks after the HTTP listener
+/// drains. Match the orchestrator's termination grace period.
+pub fn shutdown_grace() -> std::time::Duration {
+    std::time::Duration::from_secs(int_env("ASSEMBLER_SHUTDOWN_GRACE_S", 600) as u64)
+}
+
+/// Result-cache budget (bytes). 0 disables the cache.
+pub fn cache_bytes() -> usize {
+    int_env("ASSEMBLER_CACHE_MB", 512) * 1024 * 1024
+}
+
+pub fn max_concurrency() -> usize {
+    int_env("ASSEMBLER_MAX_CONCURRENCY", 2).max(1)
+}
+
+/// Cap on tokio's blocking pool — the implicit convert queue. OCCT scales to
+/// ~core count; beyond that extra blocking threads just oversubscribe (c=64
+/// measured: p99 7.2s uncapped). Excess spawn_blocking tasks queue inside the
+/// pool, so overload degrades to waiting, never to 429s. +2 headroom keeps
+/// tokio::fs ops from starving behind long converts.
+pub fn blocking_threads() -> usize {
+    let cores = std::thread::available_parallelism().map_or(8, |n| n.get());
+    int_env("ASSEMBLER_BLOCKING_THREADS", cores + 2).max(2)
+}
+
+/// Inngest event-ingest endpoint for plan-completion events, or None when the
+/// integration is off (no INNGEST_EVENT_KEY). Prod default base is Inngest's
+/// ingest host; local dev points INNGEST_EVENT_URL at the Inngest dev server
+/// (e.g. http://localhost:8288).
+pub fn inngest_event_url() -> Option<String> {
+    let key = std::env::var("INNGEST_EVENT_KEY")
+        .ok()
+        .filter(|s| !s.is_empty())?;
+    let base = std::env::var("INNGEST_EVENT_URL")
+        .ok()
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| "https://inn.gs".to_string());
+    Some(format!("{}/e/{key}", base.trim_end_matches('/')))
+}
+
+pub fn allowed_url_hosts() -> Vec<String> {
+    std::env::var("ASSEMBLER_ALLOWED_URL_HOSTS")
+        .unwrap_or_default()
+        .split(',')
+        .map(|s| s.trim().to_lowercase())
+        .filter(|s| !s.is_empty())
+        .collect()
+}
+
+pub fn require_https() -> bool {
+    std::env::var("ASSEMBLER_DEV_MODE").as_deref() != Ok("true")
+}
+
+pub fn verify_tls() -> bool {
+    std::env::var("ASSEMBLER_DEV_MODE").as_deref() != Ok("true")
+}
+
+pub fn validate_url(url: &str) -> Result<(), ApiError> {
+    let parsed = reqwest::Url::parse(url).map_err(|_| ApiError::invalid("invalid URL"))?;
+    let scheme = parsed.scheme();
+    if require_https() && scheme != "https" {
+        return Err(ApiError::invalid("URLs must use https"));
+    }
+    if scheme != "http" && scheme != "https" {
+        return Err(ApiError::invalid(format!(
+            "unsupported URL scheme: {scheme}"
+        )));
+    }
+    let allowed = allowed_url_hosts();
+    if !allowed.is_empty() {
+        let host = parsed.host_str().unwrap_or("").to_lowercase();
+        if !allowed.contains(&host) {
+            return Err(ApiError::invalid("URL host is not allowed"));
+        }
+    }
+    Ok(())
+}

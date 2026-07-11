@@ -96,11 +96,11 @@ export function renderEnv(opts: {
   // `erp.main.dev` host the SDK URL points at).
   lines.push(`INNGEST_TLS_HOST=${portless ? host("erp") : "localhost"}`);
   lines.push("");
-  lines.push("# Geometry service (assembly model conversion)");
+  lines.push("# Assembler service (CAD conversion + motion planning)");
   lines.push(
-    `GEOMETRY_SERVICE_URL=${portless ? `https://${host("geometry")}` : local(ports.PORT_GEOMETRY)}`
+    `ASSEMBLER_SERVICE_URL=${portless ? `https://${host("assembler")}` : local(ports.PORT_ASSEMBLER)}`
   );
-  lines.push("GEOMETRY_SERVICE_API_KEY=dev-local-key");
+  lines.push("ASSEMBLER_SERVICE_API_KEY=dev-local-key");
   lines.push("");
   lines.push("# Dev auth bypass");
   lines.push("DEV_BYPASS_EMAIL=test@carbon.ms");

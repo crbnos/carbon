@@ -50,6 +50,7 @@ import {
 import AssemblyInstructionExplorer from "~/modules/production/ui/Assemblies/AssemblyInstructionExplorer";
 import AssemblyInstructionHeader from "~/modules/production/ui/Assemblies/AssemblyInstructionHeader";
 import AssemblyInstructionProperties from "~/modules/production/ui/Assemblies/AssemblyInstructionProperties";
+import { ModelConvertProgress } from "~/modules/production/ui/Assemblies/ModelConvertProgress";
 import type { Handle } from "~/utils/handle";
 import { getPrivateUrl, path } from "~/utils/path";
 
@@ -336,15 +337,22 @@ export default function AssemblyInstructionRoute() {
   const graphPath = modelUpload?.graphPath;
 
   // Conversion is lazy (kicked off when the instruction was created), so the
-  // artifacts may still be in flight — poll until they land. "Idle" without
-  // artifacts covers the window before the queued event is picked up.
-  const isConverting =
+  // artifacts may still be in flight. A job that is actually running gets a
+  // fast poll + live progress; "Idle" without artifacts (pre-pickup window, or
+  // nothing triggered yet) polls gently — an eternal fast loop on the heavy
+  // route loader makes the whole page feel sluggish.
+  const isActivelyConverting =
     !glbPath &&
     (modelUpload?.processingStatus === "Queued" ||
-      modelUpload?.processingStatus === "Processing" ||
-      modelUpload?.processingStatus === "Idle");
+      modelUpload?.processingStatus === "Processing");
+  const isAwaitingPickup = !glbPath && modelUpload?.processingStatus === "Idle";
+  const isConverting = isActivelyConverting || isAwaitingPickup;
   const revalidator = useRevalidator();
-  useInterval(() => revalidator.revalidate(), isConverting ? 5000 : null);
+  useInterval(
+    () => revalidator.revalidate(),
+    isActivelyConverting ? 2000 : isAwaitingPickup ? 5000 : null
+  );
+  const cancelPlanFetcher = useFetcher<{ success: boolean }>();
   const retryFetcher = useFetcher<{}>();
 
   // --- Motion path + camera editing (viewer-driven) ------------------------
@@ -448,11 +456,24 @@ export default function AssemblyInstructionRoute() {
               content={
                 <div className="relative bg-background h-[calc(100dvh-99px)] w-full">
                   {glbPath && graphPath && isPlanning && (
-                    <div className="pointer-events-none absolute left-1/2 top-3 z-10 flex -translate-x-1/2 items-center gap-2 rounded-full border border-border bg-background/90 px-3 py-1.5 shadow-sm">
+                    <div className="absolute left-1/2 top-3 z-10 flex -translate-x-1/2 items-center gap-2 rounded-full border border-border bg-background/90 px-3 py-1.5 shadow-sm">
                       <Spinner className="h-3.5 w-3.5" />
                       <span className="whitespace-nowrap text-xs text-muted-foreground">
                         Planning motion
                       </span>
+                      <cancelPlanFetcher.Form
+                        method="post"
+                        action={path.to.assemblyJobsCancel(id!)}
+                      >
+                        <input type="hidden" name="kind" value="plan" />
+                        <button
+                          type="submit"
+                          disabled={cancelPlanFetcher.state !== "idle"}
+                          className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline disabled:opacity-50"
+                        >
+                          Cancel
+                        </button>
+                      </cancelPlanFetcher.Form>
                     </div>
                   )}
                   {glbPath && graphPath ? (
@@ -498,12 +519,16 @@ export default function AssemblyInstructionRoute() {
                         />
                       )}
                     </ClientOnly>
-                  ) : isConverting ? (
+                  ) : isActivelyConverting && modelUpload?.id ? (
+                    <ModelConvertProgress
+                      modelUploadId={modelUpload.id}
+                      instructionId={id!}
+                    />
+                  ) : isAwaitingPickup ? (
                     <div className="flex flex-col h-full w-full items-center justify-center gap-4">
                       <Spinner className="h-10 w-10" />
                       <p className="text-sm text-muted-foreground max-w-[320px] text-center">
-                        Converting the model for assembly instructions… this can
-                        take a minute.
+                        Waiting for the conversion to start…
                       </p>
                     </div>
                   ) : modelUpload?.processingStatus === "Failed" ? (

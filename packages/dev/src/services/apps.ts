@@ -229,18 +229,20 @@ export function spawnApps(opts: {
     });
 }
 
-export function spawnGeometry(opts: {
+export function spawnAssembler(opts: {
   root: string;
   ports: PortMap;
 }): ExecaChildProcess | null {
   const { root, ports } = opts;
-  const port = ports.PORT_GEOMETRY;
-  const prefix = pc.yellow(pc.bold("geo | "));
+  const port = ports.PORT_ASSEMBLER;
+  const prefix = pc.yellow(pc.bold("asm | "));
 
-  // GEOMETRY_RS=1 routes the `geometry.<prefix>.dev` alias to the Rust service
-  // (services/geometry-rs) instead of the Python one. Same port, same alias,
-  // same wire contract — only the spawned process changes.
-  const useRust = ["1", "true"].includes(process.env.GEOMETRY_RS ?? "");
+  // The Rust `assembler` app is the service. USE_PYTHON_GEOMETRY=1 runs the
+  // legacy Python baseline (services/geometry) instead — same port, alias,
+  // and wire contract; only the spawned process changes.
+  const useRust = !["1", "true"].includes(
+    process.env.USE_PYTHON_GEOMETRY ?? ""
+  );
 
   let file: string;
   let args: string[];
@@ -248,32 +250,30 @@ export function spawnGeometry(opts: {
   let extraEnv: NodeJS.ProcessEnv;
 
   if (useRust) {
-    const serviceDir = join(root, "services", "geometry-rs");
-    const bin = join(serviceDir, "target", "release", "carbon-geometry");
+    // Binary lives in the root Cargo workspace target (crates/* + apps/assembler).
+    const bin = join(root, "target", "release", "assembler");
     if (!existsSync(bin)) {
       process.stderr.write(
-        `${prefix}${pc.dim("skipped — GEOMETRY_RS=1 but no release binary (run: cd services/geometry-rs && cargo build --release -p server), or unset GEOMETRY_RS for the Python service")}\n`
+        `${prefix}${pc.dim("skipped — no release binary (run: cargo build --release -p assembler), or set USE_PYTHON_GEOMETRY=1 for the Python baseline)")}\n`
       );
       return null;
     }
     file = bin;
     args = [];
-    cwd = serviceDir;
-    // GEOMETRY_DEV_MODE=true also disables TLS verification in the Rust
-    // service, so portless's self-signed CA needs no extra trust wiring.
-    // The Inngest vars point plan-completion events at the local Inngest dev
-    // server (it accepts any event key), so the assembly-plan function's
-    // waitForEvent resolves instantly in dev — the same path as prod.
+    cwd = join(root, "apps", "assembler");
+    // ASSEMBLER_DEV_MODE=true also disables TLS verification in the service,
+    // so portless's self-signed CA needs no extra trust wiring. The Inngest
+    // vars point plan-completion events at the local Inngest dev server (it
+    // accepts any event key), so assembly-plan-finalize resolves instantly in
+    // dev — the same event path as prod.
     extraEnv = {
-      GEOMETRY_BIND: `127.0.0.1:${port}`,
-      GEOMETRY_SERVICE_API_KEY: "dev-local-key",
-      GEOMETRY_DEV_MODE: "true",
+      ASSEMBLER_BIND: `127.0.0.1:${port}`,
+      ASSEMBLER_SERVICE_API_KEY: "dev-local-key",
+      ASSEMBLER_DEV_MODE: "true",
       INNGEST_EVENT_KEY: "dev-local",
       INNGEST_EVENT_URL: process.env.INNGEST_BASE_URL ?? ""
     };
-    process.stderr.write(
-      `${prefix}${pc.dim("using rust service (GEOMETRY_RS=1)")}\n`
-    );
+    process.stderr.write(`${prefix}${pc.dim("using rust assembler")}\n`);
   } else {
     const serviceDir = join(root, "services", "geometry");
     const venvPython = join(serviceDir, ".venv", "bin", "python");
@@ -306,8 +306,8 @@ export function spawnGeometry(opts: {
     cwd = serviceDir;
     extraEnv = {
       ...caEnv,
-      GEOMETRY_SERVICE_API_KEY: "dev-local-key",
-      GEOMETRY_DEV_MODE: "true"
+      ASSEMBLER_SERVICE_API_KEY: "dev-local-key",
+      ASSEMBLER_DEV_MODE: "true"
     };
   }
 

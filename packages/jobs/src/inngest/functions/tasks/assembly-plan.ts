@@ -1,28 +1,19 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import type { Json } from "@carbon/database";
-import { GEOMETRY_SERVICE_API_KEY, GEOMETRY_SERVICE_URL } from "@carbon/env";
-import type { AssemblyPlan } from "@carbon/viewer/steps";
+import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
+import { NonRetriableError } from "inngest";
 import { inngest } from "../../client";
 import { loadPlanUnits } from "./plan-units";
-import { updateAssemblyStepMotionsFromPlan } from "./update-step-motions";
 
 const SIGNED_URL_EXPIRY = 60 * 60; // seconds
 // Every geometry HTTP call is short (submit or a status check), so a tight
 // per-request timeout is safe and catches a genuinely unreachable service.
 const REQUEST_TIMEOUT_MS = 60 * 1000;
-// The geometry service pushes `carbon/assembly-plan-done` when the job
-// finishes. We interleave waitForEvent with a status poll: an event-capable
-// service resolves the wait instantly; a service that doesn't push (Python,
-// or Rust without INNGEST_EVENT_KEY) degrades to a ~60s poll cadence instead
-// of stalling a full event-timeout. 30 rounds x 60s = 30 min budget.
-const PLAN_WAIT_ROUNDS = 30;
-const PLAN_WAIT_INTERVAL = "60s";
 // Bounded backoff when the service 429s a submit (all slots busy) — honors
 // Retry-After so Inngest's own retries don't hammer the semaphore.
 const BUSY_RETRIES = 4;
 
-const authHeaders: Record<string, string> = GEOMETRY_SERVICE_API_KEY
-  ? { Authorization: `Bearer ${GEOMETRY_SERVICE_API_KEY}` }
+const authHeaders: Record<string, string> = ASSEMBLER_SERVICE_API_KEY
+  ? { Authorization: `Bearer ${ASSEMBLER_SERVICE_API_KEY}` }
   : {};
 
 /**
@@ -121,10 +112,10 @@ export const assemblyPlanFunction = inngest.createFunction(
       };
     });
 
-    if (!GEOMETRY_SERVICE_URL) {
-      throw new Error("GEOMETRY_SERVICE_URL is not configured");
+    if (!ASSEMBLER_SERVICE_URL) {
+      throw new Error("ASSEMBLER_SERVICE_URL is not configured");
     }
-    const geometryUrl = GEOMETRY_SERVICE_URL;
+    const geometryUrl = ASSEMBLER_SERVICE_URL;
 
     // Re-motion mode (order-preserving): take the existing step order as the
     // fixed assembly sequence and let the planner only recompute each step's
@@ -188,6 +179,17 @@ export const assemblyPlanFunction = inngest.createFunction(
         jobId: job.id,
         source: { url: source.data.signedUrl, format: "step" },
         outputs: { plan: { url: planUpload.data.signedUrl } },
+        // Echoed verbatim in carbon/assembly-plan-done and GET /plan/{id}:
+        // everything assembly-plan-finalize needs, so completion handling is
+        // fully event-driven with no held run and no extra lookups.
+        meta: {
+          companyId,
+          userId,
+          modelUploadId,
+          reMotionFor: reMotionFor ?? null,
+          graphPath: job.graphPath ?? null,
+          planPath
+        },
         ...(sequence != null
           ? { options: { sequence } }
           : units.length > 0
@@ -199,12 +201,21 @@ export const assemblyPlanFunction = inngest.createFunction(
       // BUSY when its slots are full; hammering it via instant retries only
       // extends the outage.
       for (let attempt = 0; ; attempt++) {
-        const response = await fetch(`${geometryUrl}/plan`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", ...authHeaders },
-          body,
-          signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
-        });
+        let response: Response;
+        try {
+          response = await fetch(`${geometryUrl}/plan`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", ...authHeaders },
+            body,
+            signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
+          });
+        } catch (e) {
+          // Service unreachable (down, DNS, TLS): fail fast so onFailure
+          // releases the job row now instead of after the retry backoff.
+          throw new NonRetriableError(
+            `Geometry service unreachable: ${(e as Error).message}`
+          );
+        }
 
         if (response.status === 429 && attempt < BUSY_RETRIES) {
           const retryAfter = Number(response.headers.get("retry-after")) || 15;
@@ -223,7 +234,9 @@ export const assemblyPlanFunction = inngest.createFunction(
           error?: string;
         } | null;
         if (!response.ok || !result?.ok) {
-          throw new Error(
+          // Non-429 errors are an outage (5xx) or a permanent rejection (4xx):
+          // retrying holds the job in Processing for nothing — fail fast.
+          throw new NonRetriableError(
             result?.error ?? `Geometry service returned ${response.status}`
           );
         }
@@ -234,146 +247,14 @@ export const assemblyPlanFunction = inngest.createFunction(
 
     await step.run("start-plan", submitPlan);
 
-    // Interleaved wait: each round arms waitForEvent for one interval, then
-    // (if no event) polls the status endpoint once. An event-capable service
-    // resolves round 0 the moment the plan finishes; a legacy service that
-    // never pushes completes via the poll at a ~60s cadence. Either way the
-    // step count stays tiny next to the old 15s busy-poll.
-    let stats: Json = null;
-    let planUploaded = false;
-    let planFromPoll: Json | null = null;
-    let finished = false;
-
-    for (let round = 0; round < PLAN_WAIT_ROUNDS && !finished; round++) {
-      const done = await step.waitForEvent(`await-plan-${round}`, {
-        event: "carbon/assembly-plan-done",
-        if: `async.data.jobId == "${job.id}"`,
-        timeout: PLAN_WAIT_INTERVAL
-      });
-
-      if (done != null) {
-        logger.info("plan completion event received", {
-          jobId: job.id,
-          round,
-          status: done.data.status
-        });
-        if (done.data.status === "error") {
-          throw new Error(done.data.error ?? "Motion planning failed");
-        }
-        const s = (done.data.stats ?? {}) as Record<string, unknown>;
-        planUploaded = s.planUploaded === true;
-        stats = {
-          planMs: s.planMs,
-          tiers: s.tiers,
-          warnings: s.warnings,
-          verifiedCount: s.verifiedCount
-        } as Json;
-        finished = true;
-        break;
-      }
-
-      const status = await step.run(`plan-poll-${round}`, async () => {
-        const response = await fetch(`${geometryUrl}/plan/${job.id}`, {
-          headers: authHeaders,
-          signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
-        });
-        if (response.status === 404) return { status: "missing" as const };
-        const body = (await response.json().catch(() => null)) as {
-          ok?: boolean;
-          status?: string;
-          plan?: Json;
-          planUploaded?: boolean;
-          stats?: Record<string, unknown>;
-          error?: string;
-        } | null;
-        if (!response.ok || !body?.ok) {
-          throw new Error(
-            body?.error ?? `Geometry status check returned ${response.status}`
-          );
-        }
-        return body;
-      });
-      logger.info("plan status poll", {
-        jobId: job.id,
-        round,
-        status: status.status
-      });
-      if (status.status === "missing") {
-        // Service restarted and lost the job (in-process registry). Failing
-        // here hands recovery to Inngest's function retry, which re-submits.
-        throw new Error("The geometry service lost the plan job (restarted?)");
-      }
-      if (status.status === "error") {
-        throw new Error(status.error ?? "Motion planning failed");
-      }
-      if (status.status === "done") {
-        planUploaded = status.planUploaded === true;
-        planFromPoll = (status.plan ?? null) as Json;
-        stats = (status.stats ?? null) as Json;
-        finished = true;
-      }
-    }
-
-    if (!finished) {
-      throw new Error("Motion planning did not finish in time");
-    }
-
-    logger.info("persisting plan", { jobId: job.id, planUploaded });
-    await step.run("persist-plan", async () => {
-      const client = getCarbonServiceRole();
-
-      // The service normally uploads plan.json to the signed URL itself; the
-      // app upload only remains for the fallback-poll path against a service
-      // that returned the plan by value without uploading.
-      if (!planUploaded) {
-        if (planFromPoll == null) {
-          throw new Error("Planner reported done but no plan was uploaded");
-        }
-        const upload = await client.storage
-          .from("private")
-          .upload(planPath, JSON.stringify(planFromPoll), {
-            contentType: "application/json",
-            upsert: true
-          });
-        if (upload.error) {
-          throw new Error(`Failed to upload plan: ${upload.error.message}`);
-        }
-      }
-
-      await client
-        .from("assemblyPlanJob")
-        .update({
-          status: "Success",
-          planPath,
-          stats,
-          updatedAt: new Date().toISOString()
-        })
-        .eq("id", job.id);
+    // Done: the run ends at submission. Completion is fully event-driven —
+    // the service pushes `carbon/assembly-plan-done` (handled by
+    // assembly-plan-finalize), and assembly-plan-reconcile sweeps up jobs
+    // whose event was lost or whose service restarted. No held run, no
+    // wait-loop steps.
+    logger.info("plan submitted; completion is event-driven", {
+      jobId: job.id
     });
-
-    // Re-motion: the plan preserved the step order — update each step's motion
-    // in place (Done steps kept, order/titles/typed fields untouched). The plan
-    // lives in storage (uploaded by the service, or by persist-plan above).
-    if (reMotionFor) {
-      await step.run("update-step-motions", async () => {
-        const client = getCarbonServiceRole();
-        const planFile = await client.storage
-          .from("private")
-          .download(planPath);
-        if (planFile.error || !planFile.data) {
-          throw new Error(
-            `Failed to download plan for re-motion: ${planFile.error?.message ?? "no data"}`
-          );
-        }
-        const plan = JSON.parse(await planFile.data.text()) as AssemblyPlan;
-        await updateAssemblyStepMotionsFromPlan(client, {
-          assemblyInstructionId: reMotionFor,
-          plan,
-          graphPath: job.graphPath,
-          companyId,
-          userId
-        });
-      });
-    }
+    return { submitted: true, jobId: job.id };
   }
 );
