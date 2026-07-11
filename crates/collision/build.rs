@@ -1,21 +1,23 @@
-use std::process::Command;
-
-/// Resolve a library prefix: `<ENV_KEY>_PREFIX` env (Docker/Linux) → `brew
-/// --prefix <pkg>` (macOS) → `/opt/homebrew/opt/<pkg>`.
+/// Resolve a library prefix deterministically: `<ENV_KEY>_PREFIX` when set,
+/// else a fixed per-target default. No `brew` shell-out, so the build never
+/// depends on Homebrew being installed or on PATH. Docker/CI set the `*_PREFIX`
+/// envs explicitly (see apps/assembler/Dockerfile); local macOS falls back to
+/// the standard Homebrew `opt` layout, Linux to the distro `/usr` layout.
 fn prefix(pkg: &str, env_key: &str) -> String {
     if let Ok(p) = std::env::var(format!("{env_key}_PREFIX")) {
         if !p.is_empty() {
             return p;
         }
     }
-    Command::new("brew")
-        .args(["--prefix", pkg])
-        .output()
-        .ok()
-        .filter(|o| o.status.success())
-        .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
-        .filter(|s| !s.is_empty())
-        .unwrap_or_else(|| format!("/opt/homebrew/opt/{pkg}"))
+    // CARGO_CFG_TARGET_* are always set for build scripts — the target we build
+    // for, so the default matches where its headers/libs live.
+    let os = std::env::var("CARGO_CFG_TARGET_OS").unwrap_or_default();
+    let arch = std::env::var("CARGO_CFG_TARGET_ARCH").unwrap_or_default();
+    match os.as_str() {
+        "macos" if arch == "aarch64" => format!("/opt/homebrew/opt/{pkg}"),
+        "macos" => format!("/usr/local/opt/{pkg}"),
+        _ => "/usr".to_string(),
+    }
 }
 
 /// Link `lib` from `prefix`, statically when a `.a` is present there, else
@@ -58,4 +60,8 @@ fn main() {
     println!("cargo:rerun-if-changed=src/lib.rs");
     println!("cargo:rerun-if-changed=src/shim.cc");
     println!("cargo:rerun-if-changed=src/shim.h");
+    // Rebuild when a prefix override changes (dynamic ↔ static, moved libs).
+    for k in ["FCL_PREFIX", "LIBCCD_PREFIX", "EIGEN_PREFIX", "OCTOMAP_PREFIX"] {
+        println!("cargo:rerun-if-env-changed={k}");
+    }
 }
