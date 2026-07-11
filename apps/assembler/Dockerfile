@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.7
 # Carbon assembler service (Rust): STEP -> GLB + assembly graph, and
 # collision-free disassembly motion planning.
 #
@@ -5,8 +6,9 @@
 # image (OCCT V8_0_0_p1 + the CommonBaseAllocator thread_local patch — see
 # occt.Dockerfile). Build that base ONCE and keep it:
 #   docker build -f apps/assembler/occt.Dockerfile -t carbon-occt:8.0.0-p1 apps/assembler
-# Then this image builds in ~minutes, and the runtime stage is just the binary
-# plus the FCL collision libs — no OCCT shared objects, no X11/fontconfig.
+# Then this image builds in ~minutes (cargo cache mounts make code-only
+# rebuilds seconds), and the runtime stage is a slim image with just the FCL
+# collision libs + the stripped binary — no OCCT shared objects, no X11.
 #
 # Build from the REPO ROOT (the cargo workspace spans crates/* + apps/assembler):
 #   docker build -f apps/assembler/Dockerfile -t carbon-assembler .
@@ -32,16 +34,28 @@ COPY apps/assembler ./apps/assembler
 # Point the cxx bridges at the static OCCT + Debian/apt layout (see build.rs).
 ENV OCCT_PREFIX=/opt/occt \
     FCL_PREFIX=/usr LIBCCD_PREFIX=/usr EIGEN_PREFIX=/usr OCTOMAP_PREFIX=/usr
-RUN cargo build --release -p assembler
+# Cache mounts: the cargo registry and the target dir survive across builds,
+# so a code-only change relinks instead of recompiling every dependency.
+# The binary is copied out because cache mounts vanish after the RUN.
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/app/target \
+    cargo build --release -p assembler \
+    && cp target/release/assembler /usr/local/bin/assembler \
+    && strip /usr/local/bin/assembler
 
 # ---- runtime ----
-# OCCT is inside the binary; only the dynamically-linked FCL stack remains.
-# The -dev packages are used because their runtime .so names are known-good on
-# bookworm (they pull the actual runtime libs; a few MB of headers ride along).
+# OCCT is inside the binary; only the FCL collision stack is dynamic. Exact
+# runtime .so packages (no -dev headers/toolchain), non-root user, healthcheck
+# against the service's own /health.
 FROM debian:bookworm-slim AS runtime
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      libfcl-dev libccd-dev liboctomap-dev libopenblas-dev ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
-COPY --from=build /app/target/release/assembler /usr/local/bin/assembler
+      libfcl0.7 libccd2 liboctomap1.9 libopenblas0-pthread \
+      curl ca-certificates \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd --system --uid 1001 --create-home assembler
+COPY --from=build /usr/local/bin/assembler /usr/local/bin/assembler
+USER assembler
 EXPOSE 8000
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -fsS http://127.0.0.1:8000/health || exit 1
 CMD ["assembler"]
