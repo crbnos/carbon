@@ -7,7 +7,6 @@ use dashmap::DashMap;
 use planner::steps::PlanUnit;
 use serde_json::{json, Value};
 use std::sync::Arc;
-use tokio::sync::Semaphore;
 
 struct Job {
     status: String, // pending | running | done | error
@@ -33,7 +32,11 @@ impl JobStore {
     pub fn set_pending(&self, id: &str) {
         self.inner.insert(
             id.to_string(),
-            Job { status: "pending".into(), done: None, error: None },
+            Job {
+                status: "pending".into(),
+                done: None,
+                error: None,
+            },
         );
     }
 
@@ -60,7 +63,10 @@ impl JobStore {
     pub fn status(&self, id: &str) -> Option<Value> {
         let job = self.inner.get(id)?;
         Some(match job.status.as_str() {
-            "done" => job.done.clone().unwrap_or_else(|| json!({"ok": true, "status": "done"})),
+            "done" => job
+                .done
+                .clone()
+                .unwrap_or_else(|| json!({"ok": true, "status": "done"})),
             "error" => json!({"ok": true, "status": "error", "error": job.error}),
             s => json!({"ok": true, "status": s}),
         })
@@ -95,11 +101,22 @@ impl JobStore {
                 return;
             }
             let tmp_str = tmp.to_string_lossy().to_string();
-            let (lin, ang, clearance, path_samples, units, sequence, tolerance) = parse_options(&options);
+            let (lin, ang, clearance, path_samples, units, sequence, tolerance) =
+                parse_options(&options);
             let mp = config::max_parts();
 
             let res = tokio::task::spawn_blocking(move || {
-                planner::steps::plan_step(&tmp_str, lin, ang, clearance, path_samples, Some(mp), units, sequence, tolerance)
+                planner::steps::plan_step(
+                    &tmp_str,
+                    lin,
+                    ang,
+                    clearance,
+                    path_samples,
+                    Some(mp),
+                    units,
+                    sequence,
+                    tolerance,
+                )
             })
             .await;
             let _ = tokio::fs::remove_file(&tmp).await;
@@ -131,15 +148,18 @@ impl JobStore {
                         "warnings": r.warnings,
                         "verifiedCount": r.verified_count,
                     });
-                    jobs.set_done(&job_id, json!({
-                        "ok": true,
-                        "status": "done",
-                        "plan": r.plan,
-                        "planUploaded": plan_uploaded,
-                        "componentCount": r.component_count,
-                        "plannedCount": r.planned_count,
-                        "stats": stats,
-                    }));
+                    jobs.set_done(
+                        &job_id,
+                        json!({
+                            "ok": true,
+                            "status": "done",
+                            "plan": r.plan,
+                            "planUploaded": plan_uploaded,
+                            "componentCount": r.component_count,
+                            "plannedCount": r.planned_count,
+                            "stats": stats,
+                        }),
+                    );
                     let event_stats = json!({
                         "planMs": plan_ms,
                         "tiers": r.tiers,
@@ -175,7 +195,12 @@ impl JobStore {
 /// Replaces the app's 120× status-poll loop with `step.waitForEvent`; a send
 /// failure only logs — the app keeps a timeout + one fallback poll as the
 /// safety net, so the plan must never fail because the callback didn't land.
-async fn send_completion_event(job_id: &str, status: &str, stats: Option<Value>, error: Option<&str>) {
+async fn send_completion_event(
+    job_id: &str,
+    status: &str,
+    stats: Option<Value>,
+    error: Option<&str>,
+) {
     let Some(url) = config::inngest_event_url() else {
         eprintln!(
             "[{job_id}] inngest completion event skipped (INNGEST_EVENT_KEY unset; app polls)"
@@ -211,7 +236,15 @@ async fn send_completion_event(job_id: &str, status: &str, stats: Option<Value>,
     }
 }
 
-type Opts = (f64, f64, f64, usize, Option<Vec<PlanUnit>>, Option<Vec<Vec<String>>>, Option<f64>);
+type Opts = (
+    f64,
+    f64,
+    f64,
+    usize,
+    Option<Vec<PlanUnit>>,
+    Option<Vec<Vec<String>>>,
+    Option<f64>,
+);
 
 fn parse_options(options: &Value) -> Opts {
     let lin = options["linearDeflection"].as_f64().unwrap_or(0.1);
@@ -227,18 +260,37 @@ fn parse_options(options: &Value) -> Opts {
             .map(|u| PlanUnit {
                 id: u["id"].as_str().unwrap_or("").to_string(),
                 name: u["name"].as_str().map(|s| s.to_string()),
-                node_ids: u["nodeIds"].as_array().map(|a| {
-                    a.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect()
-                }).unwrap_or_default(),
+                node_ids: u["nodeIds"]
+                    .as_array()
+                    .map(|a| {
+                        a.iter()
+                            .filter_map(|v| v.as_str().map(|s| s.to_string()))
+                            .collect()
+                    })
+                    .unwrap_or_default(),
             })
             .collect()
     });
     let sequence = options["sequence"].as_array().map(|arr| {
         arr.iter()
-            .map(|g| g.as_array().map(|a| {
-                a.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect()
-            }).unwrap_or_default())
+            .map(|g| {
+                g.as_array()
+                    .map(|a| {
+                        a.iter()
+                            .filter_map(|v| v.as_str().map(|s| s.to_string()))
+                            .collect()
+                    })
+                    .unwrap_or_default()
+            })
             .collect()
     });
-    (lin, ang, clearance, path_samples, units, sequence, tolerance)
+    (
+        lin,
+        ang,
+        clearance,
+        path_samples,
+        units,
+        sequence,
+        tolerance,
+    )
 }

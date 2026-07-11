@@ -78,7 +78,12 @@ pub fn exit_travel(
 }
 
 /// `_recorded_travel`: the travel to record for the animation.
-pub fn recorded_travel(part: &Component, direction: &Vector3<f64>, full_travel: f64, last_touch: f64) -> f64 {
+pub fn recorded_travel(
+    part: &Component,
+    direction: &Vector3<f64>,
+    full_travel: f64,
+    last_touch: f64,
+) -> f64 {
     let extent = vabs(direction).dot(&(part.bbox_max - part.bbox_min));
     round_py(full_travel.min(last_touch + extent + EXIT_MARGIN_MM), 3)
 }
@@ -199,7 +204,9 @@ pub fn structural_key(part: &Component, centroid: &Vector3<f64>, diagonal: f64) 
 /// loop re-asks the same part every iteration. `Component::new` gives each part
 /// (and merged unit) a fresh cell, so clones never carry a stale axis.
 pub fn symmetry_axis_kind(part: &Component) -> Option<(Vector3<f64>, FastenerKind)> {
-    *part.sym_axis_cache.get_or_init(|| symmetry_axis_kind_uncached(part))
+    *part
+        .sym_axis_cache
+        .get_or_init(|| symmetry_axis_kind_uncached(part))
 }
 
 fn symmetry_axis_kind_uncached(part: &Component) -> Option<(Vector3<f64>, FastenerKind)> {

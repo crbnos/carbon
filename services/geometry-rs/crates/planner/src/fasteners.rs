@@ -98,9 +98,21 @@ pub fn axis_span(part: &Component, axis: &Vector3<f64>, origin: &Vector3<f64>) -
         for yi in 0..2 {
             for zi in 0..2 {
                 let corner = Vector3::new(
-                    if xi == 0 { part.bbox_min[0] } else { part.bbox_max[0] },
-                    if yi == 0 { part.bbox_min[1] } else { part.bbox_max[1] },
-                    if zi == 0 { part.bbox_min[2] } else { part.bbox_max[2] },
+                    if xi == 0 {
+                        part.bbox_min[0]
+                    } else {
+                        part.bbox_max[0]
+                    },
+                    if yi == 0 {
+                        part.bbox_min[1]
+                    } else {
+                        part.bbox_max[1]
+                    },
+                    if zi == 0 {
+                        part.bbox_min[2]
+                    } else {
+                        part.bbox_max[2]
+                    },
                 );
                 let p = (corner - origin).dot(axis);
                 lo = lo.min(p);

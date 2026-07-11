@@ -75,7 +75,7 @@ impl Mesh {
     }
 }
 
-/// A leaf part (or merged unit) in world space — mirrors `_Component`.
+/// A leaf part (or merged unit) in world space.
 #[derive(Clone)]
 pub struct Component {
     pub node_id: String,
@@ -84,16 +84,15 @@ pub struct Component {
     pub bbox_min: Vector3<f64>,
     pub bbox_max: Vector3<f64>,
     pub is_proxy: bool,
-    /// Seated contact normals with neighbors (filled by `_plan_parts`).
+    /// Seated contact normals with neighbors (filled during planning).
     pub contact_normals: Vec<Vector3<f64>>,
     /// Sandwich seated-interference allowances (nodeId -> mm) and their axes.
     pub seated_allowance: std::collections::HashMap<String, f64>,
     pub seated_allowance_axes: std::collections::HashMap<String, Vector3<f64>>,
     /// Explicit material-volume override (merged units set this to the member
-    /// sum; mirrors `mesh._carbon_volume`). When `None`, `part_volume` computes
-    /// and memoizes into `vol_cache`.
+    /// sum). When `None`, `part_volume` computes and memoizes into `vol_cache`.
     pub cached_volume: Option<f64>,
-    /// Lazily-built FCL BVH, shared across clones (mirrors `mesh._carbon_bvh`).
+    /// Lazily-built FCL BVH, shared across clones.
     bvh: OnceLock<Arc<SharedBvh>>,
     /// Memoized `part_volume` result (the watertight test builds a full-mesh
     /// edge map — costly, and called repeatedly during greedy sorting).
@@ -144,7 +143,7 @@ impl Component {
     }
 }
 
-/// Classified fastener — mirrors `_FastenerInfo`.
+/// Classified fastener (axis, mates, kind, shank radius, sliding allowances).
 #[derive(Debug, Clone)]
 pub struct FastenerInfo {
     pub axis: Vector3<f64>,
@@ -160,7 +159,7 @@ pub enum FastenerKind {
     Disc,
 }
 
-/// A planned removal/insertion — mirrors `PlannedComponent`.
+/// A planned removal/insertion in the plan.json contract.
 #[derive(Debug, Clone)]
 pub struct PlannedComponent {
     pub node_id: String,
@@ -177,13 +176,8 @@ pub struct PlannedComponent {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Motion {
     None,
-    Linear {
-        direction: [f64; 3],
-        distance: f64,
-    },
-    L {
-        segments: Vec<MotionSegment>,
-    },
+    Linear { direction: [f64; 3], distance: f64 },
+    L { segments: Vec<MotionSegment> },
 }
 
 #[derive(Debug, Clone, PartialEq)]

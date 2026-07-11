@@ -58,14 +58,16 @@ fn main() {
         let name = f.file_stem().unwrap().to_string_lossy().to_string();
         let path = f.to_string_lossy().to_string();
         let t = std::time::Instant::now();
-        let r1 = match planner::steps::plan_step(&path, 0.1, 0.5, 0.5, 60, Some(5000), None, None, None) {
-            Ok(r) => r,
-            Err(e) => {
-                println!("{name:<24} ERROR: {}", e.message);
-                reports.push(json!({"file": name, "error": e.message}));
-                continue;
-            }
-        };
+        let r1 =
+            match planner::steps::plan_step(&path, 0.1, 0.5, 0.5, 60, Some(5000), None, None, None)
+            {
+                Ok(r) => r,
+                Err(e) => {
+                    println!("{name:<24} ERROR: {}", e.message);
+                    reports.push(json!({"file": name, "error": e.message}));
+                    continue;
+                }
+            };
         let plan_s = t.elapsed().as_secs_f64();
         let r2 = planner::steps::plan_step(&path, 0.1, 0.5, 0.5, 60, Some(5000), None, None, None)
             .expect("second run");
@@ -75,11 +77,20 @@ fn main() {
             r1.tiers.iter().map(|(k, v)| (k.clone(), *v)).collect();
         let g = |k: &str| tiers.get(k).copied().unwrap_or(0);
         // The manual-work list: flagged parts by name (falls back to nodeId).
-        let comps = r1.plan["components"].as_object().cloned().unwrap_or_default();
+        let comps = r1.plan["components"]
+            .as_object()
+            .cloned()
+            .unwrap_or_default();
         let flagged: Vec<String> = comps
             .iter()
             .filter(|(_, v)| v["tier"].as_str() == Some("flagged"))
-            .map(|(k, v)| v["name"].as_str().filter(|s| !s.is_empty()).unwrap_or(k).to_string())
+            .map(|(k, v)| {
+                v["name"]
+                    .as_str()
+                    .filter(|s| !s.is_empty())
+                    .unwrap_or(k)
+                    .to_string()
+            })
             .collect();
 
         println!(

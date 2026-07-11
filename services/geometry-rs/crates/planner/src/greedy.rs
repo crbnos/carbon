@@ -38,16 +38,20 @@ fn par_first_success<F>(
     eval: F,
 ) -> Option<(usize, PlannedComponent)>
 where
-    F: Fn(&Component, &[&Component], &CollisionWorld, Option<&CollisionWorld>) -> Option<PlannedComponent>
+    F: Fn(
+            &Component,
+            &[&Component],
+            &CollisionWorld,
+            Option<&CollisionWorld>,
+        ) -> Option<PlannedComponent>
         + Sync,
 {
     use rayon::prelude::*;
     if order.is_empty() {
         return None;
     }
-    let others_of = |id: &str| -> Vec<&Component> {
-        remaining.values().filter(|c| c.node_id != id).collect()
-    };
+    let others_of =
+        |id: &str| -> Vec<&Component> { remaining.values().filter(|c| c.node_id != id).collect() };
     // Fast path: probe the top candidate(s) sequentially. Greedy takes the
     // first-in-priority success, so an early hit ends here with no thread fan-out
     // and no speculative sweeps — the Seat Rail / BCU case. GEOMETRY_SEQUENTIAL
@@ -82,7 +86,15 @@ where
 
 pub fn new_tiers() -> Tiers {
     let mut t = BTreeMap::new();
-    for k in ["linear", "l", "escape", "group", "flagged", "forced", "unplanned"] {
+    for k in [
+        "linear",
+        "l",
+        "escape",
+        "group",
+        "flagged",
+        "forced",
+        "unplanned",
+    ] {
         t.insert(k.to_string(), 0);
     }
     t
@@ -138,8 +150,13 @@ pub fn plan_removal(
         if travel <= 0.0 {
             continue;
         }
-        let separation =
-            separation_distance(&part.bbox_min, &part.bbox_max, &static_min, &static_max, direction);
+        let separation = separation_distance(
+            &part.bbox_min,
+            &part.bbox_max,
+            &static_min,
+            &static_max,
+            direction,
+        );
         let exempt = self_exempt(mate_exempt(part, direction, fasteners), &[&part.node_id]);
         let last_touch = path_is_clear(
             part,
@@ -154,7 +171,11 @@ pub fn plan_removal(
             Some(separation + 2.0 * MAX_SAMPLE_SPACING_MM),
         );
         if let Some(lt) = last_touch {
-            clear.push((index, *direction, recorded_travel(part, direction, travel, lt)));
+            clear.push((
+                index,
+                *direction,
+                recorded_travel(part, direction, travel, lt),
+            ));
         }
     }
 
@@ -185,7 +206,10 @@ pub fn plan_removal(
         let confidence = if part.is_proxy { "low" } else { "high" };
         return Some(PlannedComponent {
             node_id: part.node_id.clone(),
-            motion: Motion::Linear { direction: neg(&direction), distance: recorded },
+            motion: Motion::Linear {
+                direction: neg(&direction),
+                distance: recorded,
+            },
             confidence: Some(confidence.to_string()),
             removal_direction: Some(arr(&direction)),
             blocked_by: Vec::new(),
@@ -208,8 +232,19 @@ pub fn plan_removal(
     let samples_segment = (path_samples / 3).max(12);
     for first in world_axes() {
         let exempt = self_exempt(mate_exempt(part, &first, fasteners), &[&part.node_id]);
-        if path_is_clear(part, world, &first, 0.0, hop, samples_segment, tolerance, None, Some(exempt), None)
-            .is_none()
+        if path_is_clear(
+            part,
+            world,
+            &first,
+            0.0,
+            hop,
+            samples_segment,
+            tolerance,
+            None,
+            Some(exempt),
+            None,
+        )
+        .is_none()
         {
             continue;
         }
@@ -251,7 +286,10 @@ pub fn plan_removal(
                                 direction: neg(&second),
                                 distance: recorded_travel(part, &second, travel, st),
                             },
-                            MotionSegment { direction: neg(&first), distance: round_py(hop, 3) },
+                            MotionSegment {
+                                direction: neg(&first),
+                                distance: round_py(hop, 3),
+                            },
                         ],
                     },
                     confidence: Some("low".to_string()),
@@ -268,11 +306,17 @@ pub fn plan_removal(
 }
 
 /// `_removal_segments_to_planned`: reverse a removal chain into an insertion motion.
-fn removal_segments_to_planned(part: &Component, removal: &[(Vector3<f64>, f64)]) -> PlannedComponent {
+fn removal_segments_to_planned(
+    part: &Component,
+    removal: &[(Vector3<f64>, f64)],
+) -> PlannedComponent {
     let first_direction = removal[0].0;
     let motion = if removal.len() == 1 {
         let (direction, distance) = removal[0];
-        Motion::Linear { direction: neg(&direction), distance: round_py(distance, 3) }
+        Motion::Linear {
+            direction: neg(&direction),
+            distance: round_py(distance, 3),
+        }
     } else {
         let segments = removal
             .iter()
@@ -573,8 +617,10 @@ pub fn plan_group_removal(
     }
 
     // Proximity adjacency (inflated bboxes).
-    let mut adjacency: HashMap<String, HashSet<String>> =
-        parts.iter().map(|p| (p.node_id.clone(), HashSet::new())).collect();
+    let mut adjacency: HashMap<String, HashSet<String>> = parts
+        .iter()
+        .map(|p| (p.node_id.clone(), HashSet::new()))
+        .collect();
     for i in 0..parts.len() {
         for j in (i + 1)..parts.len() {
             let a = parts[i];
@@ -582,8 +628,14 @@ pub fn plan_group_removal(
             let close = (0..3).all(|k| a.bbox_min[k] - GROUP_PROXIMITY_MM <= b.bbox_max[k])
                 && (0..3).all(|k| b.bbox_min[k] - GROUP_PROXIMITY_MM <= a.bbox_max[k]);
             if close {
-                adjacency.get_mut(&a.node_id).unwrap().insert(b.node_id.clone());
-                adjacency.get_mut(&b.node_id).unwrap().insert(a.node_id.clone());
+                adjacency
+                    .get_mut(&a.node_id)
+                    .unwrap()
+                    .insert(b.node_id.clone());
+                adjacency
+                    .get_mut(&b.node_id)
+                    .unwrap()
+                    .insert(a.node_id.clone());
             }
         }
     }
@@ -628,8 +680,7 @@ pub fn plan_group_removal(
                 let pb = &remaining[b];
                 let ka = (deep_bitten.contains(a) as i32, diagonal(pa), a.clone());
                 let kb = (deep_bitten.contains(b) as i32, diagonal(pb), b.clone());
-                ka.0
-                    .cmp(&kb.0)
+                ka.0.cmp(&kb.0)
                     .then(ka.1.partial_cmp(&kb.1).unwrap())
                     .then(ka.2.cmp(&kb.2))
             });
@@ -640,14 +691,18 @@ pub fn plan_group_removal(
                 break;
             }
 
-            let others: Vec<&Component> =
-                parts.iter().filter(|p| !member_ids.contains(&p.node_id)).copied().collect();
+            let others: Vec<&Component> = parts
+                .iter()
+                .filter(|p| !member_ids.contains(&p.node_id))
+                .copied()
+                .collect();
             let (static_min, static_max) = bounds_over(&others);
             let world = CollisionWorld::new(&others);
 
             let cache_key: BTreeSet<String> = member_ids.iter().cloned().collect();
             let combined = combined_cache.entry(cache_key).or_insert_with(|| {
-                let member_refs: Vec<&crate::types::Mesh> = members.iter().map(|m| &m.mesh).collect();
+                let member_refs: Vec<&crate::types::Mesh> =
+                    members.iter().map(|m| &m.mesh).collect();
                 let combined_mesh = crate::types::Mesh::concatenate(&member_refs);
                 let rep = members
                     .iter()
@@ -659,7 +714,11 @@ pub fn plan_group_removal(
                     lo = lo.inf(&m.bbox_min);
                     hi = hi.sup(&m.bbox_max);
                 }
-                let name = members.iter().map(|m| m.name.clone()).collect::<Vec<_>>().join(" + ");
+                let name = members
+                    .iter()
+                    .map(|m| m.name.clone())
+                    .collect::<Vec<_>>()
+                    .join(" + ");
                 let mut c = Component::new(
                     rep.node_id.clone(),
                     name,
@@ -716,7 +775,12 @@ pub fn plan_group_removal(
                     direction,
                 );
                 let exempt = self_exempt(
-                    group_exempt(&members.iter().collect::<Vec<_>>(), direction, fasteners, &member_ids),
+                    group_exempt(
+                        &members.iter().collect::<Vec<_>>(),
+                        direction,
+                        fasteners,
+                        &member_ids,
+                    ),
                     &member_id_list,
                 );
                 let touch = path_is_clear(
@@ -804,8 +868,10 @@ pub fn greedy_disassembly(
     late_merges: &mut HashMap<String, String>,
     warnings: &mut Vec<String>,
 ) -> (Vec<PlannedComponent>, Vec<String>, Tiers) {
-    let mut remaining: HashMap<String, Component> =
-        parts.iter().map(|p| (p.node_id.clone(), p.clone())).collect();
+    let mut remaining: HashMap<String, Component> = parts
+        .iter()
+        .map(|p| (p.node_id.clone(), p.clone()))
+        .collect();
 
     let centroid = assembly_centroid(parts);
     let (amin, amax) = {
@@ -871,13 +937,31 @@ pub fn greedy_disassembly(
             world.set_active(&id, false);
             removal_order.push(base_entry(&id));
             progressed = true;
-        } else if let Some((i, p)) = par_first_success(&order, &remaining, &world, Some(&full_world), |part, others, w, fw| {
-            plan_removal(
-                part, &remaining, others, w, fw, _clearance, path_samples, fasteners, tolerance,
-            )
-        }) {
+        } else if let Some((i, p)) = par_first_success(
+            &order,
+            &remaining,
+            &world,
+            Some(&full_world),
+            |part, others, w, fw| {
+                plan_removal(
+                    part,
+                    &remaining,
+                    others,
+                    w,
+                    fw,
+                    _clearance,
+                    path_samples,
+                    fasteners,
+                    tolerance,
+                )
+            },
+        ) {
             let id = order[i].clone();
-            let key = if p.tier.as_deref() == Some("linear") { "linear" } else { "l" };
+            let key = if p.tier.as_deref() == Some("linear") {
+                "linear"
+            } else {
+                "l"
+            };
             *tiers.get_mut(key).unwrap() += 1;
             removal_order.push(p);
             remaining.remove(&id);
@@ -890,9 +974,11 @@ pub fn greedy_disassembly(
         // Phase 2: tier-3 escape (parallel candidate evaluation, first success).
         if !progressed && remaining.len() > 1 {
             let order = removal_priority(&remaining, fasteners, &centroid, assembly_diagonal);
-            if let Some((i, p)) = par_first_success(&order, &remaining, &world, None, |part, others, w, _fw| {
-                plan_escape(part, others, w, path_samples, fasteners, tolerance)
-            }) {
+            if let Some((i, p)) =
+                par_first_success(&order, &remaining, &world, None, |part, others, w, _fw| {
+                    plan_escape(part, others, w, path_samples, fasteners, tolerance)
+                })
+            {
                 let id = order[i].clone();
                 *tiers.get_mut("escape").unwrap() += 1;
                 removal_order.push(p);
@@ -930,7 +1016,13 @@ pub fn greedy_disassembly(
                         let others: Vec<&Component> =
                             remaining.values().filter(|c| c.node_id != id).collect();
                         escape_blockers_by_direction(
-                            part, &remaining, &others, &world, fasteners, tolerance, path_samples,
+                            part,
+                            &remaining,
+                            &others,
+                            &world,
+                            fasteners,
+                            tolerance,
+                            path_samples,
                         )
                         .into_iter()
                         .filter(|(_, _, b)| !b.is_empty())
@@ -979,8 +1071,16 @@ pub fn greedy_disassembly(
                 combined.seated_allowance_axes = merged_axes;
                 warnings.push(format!(
                     "'{}' cannot separate from '{}'; planned as one rigid unit",
-                    if part.name.is_empty() { &part.node_id } else { &part.name },
-                    if host.name.is_empty() { &host_id } else { &host.name },
+                    if part.name.is_empty() {
+                        &part.node_id
+                    } else {
+                        &part.name
+                    },
+                    if host.name.is_empty() {
+                        &host_id
+                    } else {
+                        &host.name
+                    },
                 ));
                 world.set_active(&id, false);
                 world.set_active(&host_id, false);
@@ -1033,12 +1133,21 @@ pub fn greedy_disassembly(
         let _ts = std::time::Instant::now();
         // Phase 5: flag.
         if !progressed && remaining.len() > 1 {
-            let id = removal_priority(&remaining, fasteners, &centroid, assembly_diagonal)[0].clone();
+            let id =
+                removal_priority(&remaining, fasteners, &centroid, assembly_diagonal)[0].clone();
             let blocked_by = {
                 let part = &remaining[&id];
                 let others: Vec<&Component> =
                     remaining.values().filter(|c| c.node_id != id).collect();
-                let eb = escape_blockers(part, &remaining, &others, &world, fasteners, tolerance, path_samples);
+                let eb = escape_blockers(
+                    part,
+                    &remaining,
+                    &others,
+                    &world,
+                    fasteners,
+                    tolerance,
+                    path_samples,
+                );
                 if eb.is_empty() {
                     bbox_blockers(part, &remaining)
                 } else {
@@ -1047,7 +1156,11 @@ pub fn greedy_disassembly(
             };
             let name = {
                 let part = &remaining[&id];
-                if part.name.is_empty() { id.clone() } else { part.name.clone() }
+                if part.name.is_empty() {
+                    id.clone()
+                } else {
+                    part.name.clone()
+                }
             };
             warnings.push(format!(
                 "'{name}' has no collision-free escape; flagged for review — it fades in during playback"
@@ -1079,19 +1192,33 @@ pub fn greedy_disassembly(
                 for d in &dirs {
                     let travel = exit_travel(part, &smin, &smax, d, None);
                     if travel <= 0.0 {
-                        eprintln!("  dir=[{:+.2},{:+.2},{:+.2}] travel=0 (inside bounds)", d[0], d[1], d[2]);
+                        eprintln!(
+                            "  dir=[{:+.2},{:+.2},{:+.2}] travel=0 (inside bounds)",
+                            d[0], d[1], d[2]
+                        );
                         continue;
                     }
                     let blockers = path_blockers(
-                        part, &world, &[(*d, travel)], (path_samples / 3).max(12),
-                        fasteners, Some(&extra), tolerance,
+                        part,
+                        &world,
+                        &[(*d, travel)],
+                        (path_samples / 3).max(12),
+                        fasteners,
+                        Some(&extra),
+                        tolerance,
                     );
                     let names: Vec<String> = blockers
                         .iter()
                         .map(|b| {
                             remaining
                                 .get(b)
-                                .map(|p| if p.name.is_empty() { b.clone() } else { p.name.clone() })
+                                .map(|p| {
+                                    if p.name.is_empty() {
+                                        b.clone()
+                                    } else {
+                                        p.name.clone()
+                                    }
+                                })
                                 .unwrap_or_else(|| b.clone())
                         })
                         .collect();
@@ -1122,6 +1249,10 @@ pub fn greedy_disassembly(
         eprintln!("    greedy phases: p1_removal={:.1}s p2_escape={:.1}s p3_merge={:.1}s p4_group={:.1}s p5_flag={:.1}s", t_p1, t_p2, t_p3, t_p4, t_p5);
     }
 
-    let sequence: Vec<String> = removal_order.iter().rev().map(|e| e.node_id.clone()).collect();
+    let sequence: Vec<String> = removal_order
+        .iter()
+        .rev()
+        .map(|e| e.node_id.clone())
+        .collect();
     (removal_order, sequence, tiers)
 }

@@ -79,10 +79,12 @@ fn golden_plans_match() {
         // Round-trip through a string so the comparison matches the serialized
         // golden exactly (canonical number formatting, no in-memory -0.0/Number
         // representation quirks).
-        let got: Value = serde_json::from_str(&serde_json::to_string(&result.plan).unwrap()).unwrap();
-        let want: Value =
-            serde_json::from_str(&std::fs::read_to_string(format!("{golden_dir}/{golden}")).unwrap())
-                .unwrap();
+        let got: Value =
+            serde_json::from_str(&serde_json::to_string(&result.plan).unwrap()).unwrap();
+        let want: Value = serde_json::from_str(
+            &std::fs::read_to_string(format!("{golden_dir}/{golden}")).unwrap(),
+        )
+        .unwrap();
         if got != want {
             if let Some(p) = first_diff(&got, &want, String::new()) {
                 failures.push(format!("{step}: differs at {p}"));

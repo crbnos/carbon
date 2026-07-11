@@ -3,7 +3,10 @@
 use crate::error::ApiError;
 
 fn int_env(name: &str, default: usize) -> usize {
-    std::env::var(name).ok().and_then(|s| s.parse().ok()).unwrap_or(default)
+    std::env::var(name)
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(default)
 }
 
 pub fn max_source_bytes() -> usize {
@@ -23,7 +26,9 @@ pub fn max_concurrency() -> usize {
 /// ingest host; local dev points INNGEST_EVENT_URL at the Inngest dev server
 /// (e.g. http://localhost:8288).
 pub fn inngest_event_url() -> Option<String> {
-    let key = std::env::var("INNGEST_EVENT_KEY").ok().filter(|s| !s.is_empty())?;
+    let key = std::env::var("INNGEST_EVENT_KEY")
+        .ok()
+        .filter(|s| !s.is_empty())?;
     let base = std::env::var("INNGEST_EVENT_URL")
         .ok()
         .filter(|s| !s.is_empty())
@@ -55,7 +60,9 @@ pub fn validate_url(url: &str) -> Result<(), ApiError> {
         return Err(ApiError::invalid("URLs must use https"));
     }
     if scheme != "http" && scheme != "https" {
-        return Err(ApiError::invalid(format!("unsupported URL scheme: {scheme}")));
+        return Err(ApiError::invalid(format!(
+            "unsupported URL scheme: {scheme}"
+        )));
     }
     let allowed = allowed_url_hosts();
     if !allowed.is_empty() {

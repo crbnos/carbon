@@ -26,7 +26,12 @@ pub struct PartMesh {
 impl PartMesh {
     pub fn new(positions: Vec<[f32; 3]>, indices: Vec<[u32; 3]>, is_proxy: bool) -> Self {
         let geometry_hash = geometry_hash(&positions, &indices);
-        PartMesh { positions, indices, geometry_hash, is_proxy }
+        PartMesh {
+            positions,
+            indices,
+            geometry_hash,
+            is_proxy,
+        }
     }
 }
 
@@ -47,7 +52,10 @@ pub struct AssemblyNode {
 
 impl AssemblyNode {
     fn hash_key(&self) -> &str {
-        self.mesh.as_ref().map(|m| m.geometry_hash.as_str()).unwrap_or("")
+        self.mesh
+            .as_ref()
+            .map(|m| m.geometry_hash.as_str())
+            .unwrap_or("")
     }
 }
 
@@ -79,9 +87,11 @@ pub fn detect_source_unit(text: &str) -> String {
     static STMT: OnceLock<Regex> = OnceLock::new();
     static CONV: OnceLock<Regex> = OnceLock::new();
     static SI: OnceLock<Regex> = OnceLock::new();
-    let stmt = STMT.get_or_init(|| Regex::new(r"(?s)\(([^;]*?LENGTH_UNIT\(\)[^;]*?)\)\s*;").unwrap());
+    let stmt =
+        STMT.get_or_init(|| Regex::new(r"(?s)\(([^;]*?LENGTH_UNIT\(\)[^;]*?)\)\s*;").unwrap());
     let conv = CONV.get_or_init(|| Regex::new(r"CONVERSION_BASED_UNIT\s*\(\s*'([^']+)'").unwrap());
-    let si = SI.get_or_init(|| Regex::new(r"SI_UNIT\s*\(\s*(?:\.(\w+)\.|\$)\s*,\s*\.METRE\.").unwrap());
+    let si =
+        SI.get_or_init(|| Regex::new(r"SI_UNIT\s*\(\s*(?:\.(\w+)\.|\$)\s*,\s*\.METRE\.").unwrap());
 
     let cap = 32 * 1024 * 1024;
     let text = if text.len() > cap { &text[..cap] } else { text };
@@ -90,7 +100,9 @@ pub fn detect_source_unit(text: &str) -> String {
         let body = &m[1];
         if let Some(c) = conv.captures(body) {
             let name = c[1].to_uppercase();
-            return unit_names(&name).map(|s| s.to_string()).unwrap_or_else(|| c[1].to_lowercase());
+            return unit_names(&name)
+                .map(|s| s.to_string())
+                .unwrap_or_else(|| c[1].to_lowercase());
         }
         if let Some(c) = si.captures(body) {
             let prefix = c.get(1).map(|g| g.as_str()).unwrap_or("");
@@ -163,10 +175,22 @@ pub fn compute_world_bboxes(node: &mut AssemblyNode, parent_world: &Matrix4<f64>
             lo = lo.inf(&Vector3::new(c.bbox_min[0], c.bbox_min[1], c.bbox_min[2]));
             hi = hi.sup(&Vector3::new(c.bbox_max[0], c.bbox_max[1], c.bbox_max[2]));
         }
-        let has_mesh = node.mesh.as_ref().map(|m| !m.positions.is_empty()).unwrap_or(false);
+        let has_mesh = node
+            .mesh
+            .as_ref()
+            .map(|m| !m.positions.is_empty())
+            .unwrap_or(false);
         if has_mesh {
-            lo = lo.inf(&Vector3::new(node.bbox_min[0], node.bbox_min[1], node.bbox_min[2]));
-            hi = hi.sup(&Vector3::new(node.bbox_max[0], node.bbox_max[1], node.bbox_max[2]));
+            lo = lo.inf(&Vector3::new(
+                node.bbox_min[0],
+                node.bbox_min[1],
+                node.bbox_min[2],
+            ));
+            hi = hi.sup(&Vector3::new(
+                node.bbox_max[0],
+                node.bbox_max[1],
+                node.bbox_max[2],
+            ));
         }
         node.bbox_min = [lo[0], lo[1], lo[2]];
         node.bbox_max = [hi[0], hi[1], hi[2]];
@@ -183,7 +207,11 @@ pub fn count_leaves(node: &AssemblyNode) -> i64 {
 }
 
 pub fn count_triangles(node: &AssemblyNode) -> i64 {
-    let own = node.mesh.as_ref().map(|m| m.indices.len() as i64).unwrap_or(0);
+    let own = node
+        .mesh
+        .as_ref()
+        .map(|m| m.indices.len() as i64)
+        .unwrap_or(0);
     own + node.children.iter().map(count_triangles).sum::<i64>()
 }
 
@@ -223,7 +251,9 @@ mod tests {
             "inch"
         );
         assert_eq!(
-            detect_source_unit("DATA;\n#41=( LENGTH_UNIT() NAMED_UNIT(*) SI_UNIT($,.METRE.) );\nENDSEC;"),
+            detect_source_unit(
+                "DATA;\n#41=( LENGTH_UNIT() NAMED_UNIT(*) SI_UNIT($,.METRE.) );\nENDSEC;"
+            ),
             "m"
         );
         assert_eq!(detect_source_unit("DATA;\nENDSEC;"), "mm");

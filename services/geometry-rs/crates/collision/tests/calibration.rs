@@ -61,13 +61,27 @@ fn rust_fcl_matches_python_fcl() {
 
             let mut got_keys: Vec<String> = got
                 .iter()
-                .map(|c| key(c.depth, [c.nx, c.ny, c.nz], [c.px, c.py, c.pz], c.b1 as i64, c.b2 as i64))
+                .map(|c| {
+                    key(
+                        c.depth,
+                        [c.nx, c.ny, c.nz],
+                        [c.px, c.py, c.pz],
+                        c.b1 as i64,
+                        c.b2 as i64,
+                    )
+                })
                 .collect();
             let mut exp_keys: Vec<String> = expected
                 .iter()
                 .map(|c| {
                     let a = f64s(c);
-                    key(a[0], [a[1], a[2], a[3]], [a[4], a[5], a[6]], a[7] as i64, a[8] as i64)
+                    key(
+                        a[0],
+                        [a[1], a[2], a[3]],
+                        [a[4], a[5], a[6]],
+                        a[7] as i64,
+                        a[8] as i64,
+                    )
                 })
                 .collect();
             got_keys.sort();

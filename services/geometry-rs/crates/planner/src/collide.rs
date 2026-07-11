@@ -51,7 +51,10 @@ impl Broadphase {
             index_to_node.push(o.node_id.clone());
         }
         collision::manager_setup(manager.pin_mut());
-        Broadphase { manager, index_to_node }
+        Broadphase {
+            manager,
+            index_to_node,
+        }
     }
 
     /// `_contacts_at`: (otherName, max_depth) for `part` translated by
@@ -117,7 +120,11 @@ impl CollisionWorld {
             index_to_node.push(p.node_id.clone());
         }
         collision::manager_setup(manager.pin_mut());
-        CollisionWorld { manager, node_to_index, index_to_node }
+        CollisionWorld {
+            manager,
+            node_to_index,
+            index_to_node,
+        }
     }
 
     pub fn from_components(parts: &[Component]) -> Self {
@@ -126,7 +133,10 @@ impl CollisionWorld {
     }
 
     pub fn index_of(&self, node_id: &str) -> i64 {
-        self.node_to_index.get(node_id).map(|&i| i as i64).unwrap_or(-1)
+        self.node_to_index
+            .get(node_id)
+            .map(|&i| i as i64)
+            .unwrap_or(-1)
     }
 
     /// Register a new body (a merged/combined mesh) mid-plan. Returns its index.
@@ -345,7 +355,9 @@ fn linspace_tail(start: f64, end: f64, n: usize) -> Vec<f64> {
 /// Python `int(x)` truncation toward zero, used for the sample-count formula.
 fn sample_count(samples: usize, span: f64) -> usize {
     let by_spacing = (span / MAX_SAMPLE_SPACING_MM).trunc() as i64 + 1;
-    samples.max(by_spacing.max(0) as usize).min(MAX_PATH_SAMPLES)
+    samples
+        .max(by_spacing.max(0) as usize)
+        .min(MAX_PATH_SAMPLES)
 }
 
 /// `_path_is_clear`: dense sampling; None if blocked, else the last touching
@@ -505,7 +517,9 @@ pub fn path_blockers(
         let ov = world.resolve_exempt(exempt.as_ref());
         for s in linspace_tail(0.0, *distance, count) {
             let translation = offset + direction * s;
-            for (other, depth) in world.classify(part, &translation, &blockers, &ov, tolerance, false) {
+            for (other, depth) in
+                world.classify(part, &translation, &blockers, &ov, tolerance, false)
+            {
                 if let Some(ex) = &exempt {
                     if let Some(&allow) = ex.get(&other) {
                         if depth <= allow + MATE_DEPTH_MARGIN_MM {

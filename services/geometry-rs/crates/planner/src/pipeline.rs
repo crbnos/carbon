@@ -56,15 +56,21 @@ pub fn seated_pair_depths(parts: &[Component]) -> PairDepths {
     for c in &contacts {
         let pa = &parts[c.a];
         let pb = &parts[c.b];
-        let (lo, hi) = if pa.node_id <= pb.node_id { (pa, pb) } else { (pb, pa) };
-        let entry = pairs.entry(pair_key(&lo.node_id, &hi.node_id)).or_insert_with(|| PairData {
-            a: lo.node_id.clone(),
-            b: hi.node_id.clone(),
-            depth: 0.0,
-            points: Vec::new(),
-            normals: Vec::new(),
-            tensor: Matrix3::zeros(),
-        });
+        let (lo, hi) = if pa.node_id <= pb.node_id {
+            (pa, pb)
+        } else {
+            (pb, pa)
+        };
+        let entry = pairs
+            .entry(pair_key(&lo.node_id, &hi.node_id))
+            .or_insert_with(|| PairData {
+                a: lo.node_id.clone(),
+                b: hi.node_id.clone(),
+                depth: 0.0,
+                points: Vec::new(),
+                normals: Vec::new(),
+                tensor: Matrix3::zeros(),
+            });
         entry.depth = entry.depth.max(c.depth);
         if entry.points.len() < 64 {
             entry.points.push(Vector3::new(c.px, c.py, c.pz));
@@ -85,7 +91,11 @@ fn center(part: &Component) -> Vector3<f64> {
 }
 
 /// `_shank_radius`.
-fn shank_radius(part: &Component, axis: &Vector3<f64>, mate_points: &[Vector3<f64>]) -> Option<f64> {
+fn shank_radius(
+    part: &Component,
+    axis: &Vector3<f64>,
+    mate_points: &[Vector3<f64>],
+) -> Option<f64> {
     let c = center(part);
     let radial = |p: &Vector3<f64>| {
         let rel = p - c;
@@ -162,7 +172,13 @@ pub fn classify_fasteners(
         let sr = shank_radius(part, &axis, &mate_points);
         fasteners.insert(
             part.node_id.clone(),
-            FastenerInfo { axis, mates, kind, shank_radius: sr, sliding: HashMap::new() },
+            FastenerInfo {
+                axis,
+                mates,
+                kind,
+                shank_radius: sr,
+                sliding: HashMap::new(),
+            },
         );
     }
     fasteners
@@ -215,8 +231,10 @@ pub fn merge_rigid_groups(
     fasteners: &HashMap<String, FastenerInfo>,
     warnings: &mut Vec<String>,
 ) -> (Vec<Component>, HashMap<String, String>) {
-    let mut parent: HashMap<String, String> =
-        parts.iter().map(|p| (p.node_id.clone(), p.node_id.clone())).collect();
+    let mut parent: HashMap<String, String> = parts
+        .iter()
+        .map(|p| (p.node_id.clone(), p.node_id.clone()))
+        .collect();
     fn find(parent: &mut HashMap<String, String>, x: &str) -> String {
         let mut cur = x.to_string();
         while parent[&cur] != cur {
@@ -292,9 +310,21 @@ pub fn merge_rigid_groups(
         }
         let names: Vec<String> = members
             .iter()
-            .map(|m| format!("'{}'", if m.name.is_empty() { &m.node_id } else { &m.name }))
+            .map(|m| {
+                format!(
+                    "'{}'",
+                    if m.name.is_empty() {
+                        &m.node_id
+                    } else {
+                        &m.name
+                    }
+                )
+            })
             .collect();
-        warnings.push(format!("{} interpenetrate when seated; planned as one rigid unit", names.join(", ")));
+        warnings.push(format!(
+            "{} interpenetrate when seated; planned as one rigid unit",
+            names.join(", ")
+        ));
     }
     (units, merged_into)
 }
@@ -318,7 +348,7 @@ pub fn dominant_eigenvector(m: &Matrix3<f64>) -> Vector3<f64> {
     }
 }
 
-/// A sandwiched compliant part and its two sides — mirrors `_SandwichInfo`.
+/// A sandwiched compliant part and its two sides.
 pub struct SandwichInfo {
     pub axis: Vector3<f64>,
     pub side_a: HashSet<String>,
@@ -394,8 +424,11 @@ pub fn fastener_joints(
                     continue;
                 }
                 let mut probe_radii = ring_radii.to_vec();
-                let mut probe_heights =
-                    vec![lo + (hi - lo) * 0.5, lo + (hi - lo) * 0.25, lo + (hi - lo) * 0.75];
+                let mut probe_heights = vec![
+                    lo + (hi - lo) * 0.5,
+                    lo + (hi - lo) * 0.25,
+                    lo + (hi - lo) * 0.75,
+                ];
                 let in_span: Vec<(&Vector3<f64>, f64)> = other
                     .mesh
                     .vertices
@@ -431,11 +464,14 @@ pub fn fastener_joints(
                 let mut surround_t = 0.0;
                 'outer: for t in &probe_heights {
                     for rr in &probe_radii {
-                        let ring: Vec<Vector3<f64>> =
-                            ring_offsets.iter().map(|o| c + axis * *t + o * *rr).collect();
+                        let ring: Vec<Vector3<f64>> = ring_offsets
+                            .iter()
+                            .map(|o| c + axis * *t + o * *rr)
+                            .collect();
                         let inside = mesh_contains(&other.mesh, &ring);
                         if !inside.is_empty() {
-                            let frac = inside.iter().filter(|&&b| b).count() as f64 / inside.len() as f64;
+                            let frac =
+                                inside.iter().filter(|&&b| b).count() as f64 / inside.len() as f64;
                             if frac >= 0.75 {
                                 surrounded = true;
                                 surround_t = *t;
@@ -470,8 +506,14 @@ pub fn sandwiched_parts(
     keys.sort();
     for k in keys {
         let data = &pair_depths[k];
-        let unit_a = merged_into.get(&data.a).cloned().unwrap_or_else(|| data.a.clone());
-        let unit_b = merged_into.get(&data.b).cloned().unwrap_or_else(|| data.b.clone());
+        let unit_a = merged_into
+            .get(&data.a)
+            .cloned()
+            .unwrap_or_else(|| data.a.clone());
+        let unit_b = merged_into
+            .get(&data.b)
+            .cloned()
+            .unwrap_or_else(|| data.b.clone());
         if unit_a == unit_b || !unit_ids.contains(&unit_a) || !unit_ids.contains(&unit_b) {
             continue;
         }
@@ -487,8 +529,10 @@ pub fn sandwiched_parts(
         }
     }
 
-    let unit_by_id: HashMap<String, (Vector3<f64>, Vector3<f64>, bool)> =
-        units.iter().map(|u| (u.node_id.clone(), (u.bbox_min, u.bbox_max, u.is_proxy))).collect();
+    let unit_by_id: HashMap<String, (Vector3<f64>, Vector3<f64>, bool)> = units
+        .iter()
+        .map(|u| (u.node_id.clone(), (u.bbox_min, u.bbox_max, u.is_proxy)))
+        .collect();
 
     let mut result: HashMap<String, SandwichInfo> = HashMap::new();
     // (unit_id, partner_id, allowance, axis)
@@ -509,10 +553,15 @@ pub fn sandwiched_parts(
         if partner_ids.len() < 2 {
             continue;
         }
-        let axes: Vec<Vector3<f64>> =
-            partner_ids.iter().map(|p| dominant_eigenvector(&all[*p].0)).collect();
+        let axes: Vec<Vector3<f64>> = partner_ids
+            .iter()
+            .map(|p| dominant_eigenvector(&all[*p].0))
+            .collect();
         let axis = axes[0];
-        if axes[1..].iter().any(|a| axis.dot(a).abs() < SANDWICH_AXIS_ALIGNMENT) {
+        if axes[1..]
+            .iter()
+            .any(|a| axis.dot(a).abs() < SANDWICH_AXIS_ALIGNMENT)
+        {
             continue;
         }
         let extents = unit.bbox_max - unit.bbox_min;
@@ -524,7 +573,10 @@ pub fn sandwiched_parts(
         if thickness > SANDWICH_MAX_THICKNESS_MM {
             continue;
         }
-        if partner_ids.iter().any(|p| all[*p].2 > SANDWICH_MAX_SQUISH_MM) {
+        if partner_ids
+            .iter()
+            .any(|p| all[*p].2 > SANDWICH_MAX_SQUISH_MM)
+        {
             continue;
         }
         let center_axis = axis.dot(&((unit.bbox_min + unit.bbox_max) / 2.0));
@@ -548,16 +600,30 @@ pub fn sandwiched_parts(
             updates.push((unit.node_id.clone(), (*p).clone(), allowance, axis));
             updates.push(((*p).clone(), unit.node_id.clone(), allowance, axis));
         }
-        result.insert(unit.node_id.clone(), SandwichInfo { axis, side_a, side_b });
+        result.insert(
+            unit.node_id.clone(),
+            SandwichInfo {
+                axis,
+                side_a,
+                side_b,
+            },
+        );
     }
     let _ = unit_by_id;
 
     // Apply allowance updates (max wins).
-    let mut idx: HashMap<String, usize> =
-        units.iter().enumerate().map(|(i, u)| (u.node_id.clone(), i)).collect();
+    let mut idx: HashMap<String, usize> = units
+        .iter()
+        .enumerate()
+        .map(|(i, u)| (u.node_id.clone(), i))
+        .collect();
     for (unit_id, partner, allowance, axis) in updates {
         if let Some(&i) = idx.get(&unit_id) {
-            let cur = units[i].seated_allowance.get(&partner).cloned().unwrap_or(0.0);
+            let cur = units[i]
+                .seated_allowance
+                .get(&partner)
+                .cloned()
+                .unwrap_or(0.0);
             if allowance > cur {
                 units[i].seated_allowance.insert(partner.clone(), allowance);
                 units[i].seated_allowance_axes.insert(partner, axis);
@@ -574,8 +640,10 @@ pub fn ordering_adjacency(
     pair_depths: &PairDepths,
     contact_mm: f64,
 ) -> HashMap<String, HashSet<String>> {
-    let mut adjacency: HashMap<String, HashSet<String>> =
-        parts.iter().map(|p| (p.node_id.clone(), HashSet::new())).collect();
+    let mut adjacency: HashMap<String, HashSet<String>> = parts
+        .iter()
+        .map(|p| (p.node_id.clone(), HashSet::new()))
+        .collect();
     for data in pair_depths.values() {
         adjacency.get_mut(&data.a).unwrap().insert(data.b.clone());
         adjacency.get_mut(&data.b).unwrap().insert(data.a.clone());
@@ -584,8 +652,14 @@ pub fn ordering_adjacency(
     if count < 2 {
         return adjacency;
     }
-    let mins: Vec<Vector3<f64>> = parts.iter().map(|p| p.bbox_min.add_scalar(-contact_mm)).collect();
-    let maxs: Vec<Vector3<f64>> = parts.iter().map(|p| p.bbox_max.add_scalar(contact_mm)).collect();
+    let mins: Vec<Vector3<f64>> = parts
+        .iter()
+        .map(|p| p.bbox_min.add_scalar(-contact_mm))
+        .collect();
+    let maxs: Vec<Vector3<f64>> = parts
+        .iter()
+        .map(|p| p.bbox_max.add_scalar(contact_mm))
+        .collect();
     let mut candidates: Vec<(usize, usize)> = Vec::new();
     for i in 0..(count - 1) {
         for j in (i + 1)..count {
@@ -607,8 +681,14 @@ pub fn ordering_adjacency(
                 continue;
             }
         }
-        adjacency.get_mut(&parts[i].node_id).unwrap().insert(parts[j].node_id.clone());
-        adjacency.get_mut(&parts[j].node_id).unwrap().insert(parts[i].node_id.clone());
+        adjacency
+            .get_mut(&parts[i].node_id)
+            .unwrap()
+            .insert(parts[j].node_id.clone());
+        adjacency
+            .get_mut(&parts[j].node_id)
+            .unwrap()
+            .insert(parts[i].node_id.clone());
     }
     adjacency
 }

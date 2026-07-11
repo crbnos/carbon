@@ -67,14 +67,29 @@ mod tests {
     fn unit_box() -> Mesh {
         // 2x2x2 box centered at origin.
         let v = [
-            [-1., -1., -1.], [1., -1., -1.], [1., 1., -1.], [-1., 1., -1.],
-            [-1., -1., 1.], [1., -1., 1.], [1., 1., 1.], [-1., 1., 1.],
+            [-1., -1., -1.],
+            [1., -1., -1.],
+            [1., 1., -1.],
+            [-1., 1., -1.],
+            [-1., -1., 1.],
+            [1., -1., 1.],
+            [1., 1., 1.],
+            [-1., 1., 1.],
         ];
         let vertices = v.iter().map(|c| Vector3::new(c[0], c[1], c[2])).collect();
         let faces = vec![
-            [0, 2, 1], [0, 3, 2], [4, 5, 6], [4, 6, 7],
-            [0, 1, 5], [0, 5, 4], [1, 2, 6], [1, 6, 5],
-            [2, 3, 7], [2, 7, 6], [3, 0, 4], [3, 4, 7],
+            [0, 2, 1],
+            [0, 3, 2],
+            [4, 5, 6],
+            [4, 6, 7],
+            [0, 1, 5],
+            [0, 5, 4],
+            [1, 2, 6],
+            [1, 6, 5],
+            [2, 3, 7],
+            [2, 7, 6],
+            [3, 0, 4],
+            [3, 4, 7],
         ];
         Mesh { vertices, faces }
     }
@@ -83,10 +98,10 @@ mod tests {
     fn inside_outside() {
         let m = unit_box();
         let pts = vec![
-            Vector3::new(0.0, 0.0, 0.0),   // inside
-            Vector3::new(5.0, 0.0, 0.0),   // outside
-            Vector3::new(0.5, 0.5, 0.5),   // inside
-            Vector3::new(-3.0, 0.0, 0.0),  // outside
+            Vector3::new(0.0, 0.0, 0.0),  // inside
+            Vector3::new(5.0, 0.0, 0.0),  // outside
+            Vector3::new(0.5, 0.5, 0.5),  // inside
+            Vector3::new(-3.0, 0.0, 0.0), // outside
         ];
         assert_eq!(mesh_contains(&m, &pts), vec![true, false, true, false]);
     }

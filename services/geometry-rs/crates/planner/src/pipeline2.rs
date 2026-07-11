@@ -2,9 +2,9 @@
 //! base reselection, preference topo sort, connectivity repair, forward
 //! verification, and the `plan_parts` / `plan_fixed_sequence` drivers.
 
-use crate::collide::{CollisionWorld, Exempt};
 #[allow(unused_imports)]
 use crate::collide::*;
+use crate::collide::{CollisionWorld, Exempt};
 use crate::consts::*;
 use crate::fasteners::head_direction;
 use crate::geom::*;
@@ -37,7 +37,10 @@ pub struct PlanOutcome {
 /// `_removal_segments`: a stored INSERTION motion as removal segments.
 fn removal_segments(motion: &Motion) -> Option<Vec<(Vector3<f64>, f64)>> {
     match motion {
-        Motion::Linear { direction, distance } => {
+        Motion::Linear {
+            direction,
+            distance,
+        } => {
             let d = Vector3::new(-direction[0], -direction[1], -direction[2]);
             let n = d.norm();
             let n = if n == 0.0 { 1.0 } else { n };
@@ -75,7 +78,10 @@ fn derive_precedence(
     let samples_segment = (path_samples / 3).max(12);
     let units: Vec<&Component> = units_by_id.values().collect();
     let world = CollisionWorld::new(&units);
-    let mut edges: Edges = planned.iter().map(|e| (e.node_id.clone(), HashSet::new())).collect();
+    let mut edges: Edges = planned
+        .iter()
+        .map(|e| (e.node_id.clone(), HashSet::new()))
+        .collect();
     for entry in planned {
         let segments = match removal_segments(&entry.motion) {
             Some(s) => s,
@@ -84,8 +90,15 @@ fn derive_precedence(
         let part = &units_by_id[&entry.node_id];
         let mut extra: Exempt = HashMap::new();
         extra.insert(part.node_id.clone(), f64::INFINITY);
-        let blockers =
-            path_blockers(part, &world, &segments, samples_segment, fasteners, Some(&extra), tolerance);
+        let blockers = path_blockers(
+            part,
+            &world,
+            &segments,
+            samples_segment,
+            fasteners,
+            Some(&extra),
+            tolerance,
+        );
         edges.get_mut(&entry.node_id).unwrap().extend(blockers);
     }
     edges
@@ -116,8 +129,16 @@ fn add_joint_edges(
     edges: &mut Edges,
     warnings: &mut Vec<String>,
 ) {
-    let add_edge = |edges: &mut Edges, warnings: &mut Vec<String>, before: &str, after: &str, label: &str| {
-        if edges.get(before).map(|s| s.contains(after)).unwrap_or(false) {
+    let add_edge = |edges: &mut Edges,
+                    warnings: &mut Vec<String>,
+                    before: &str,
+                    after: &str,
+                    label: &str| {
+        if edges
+            .get(before)
+            .map(|s| s.contains(after))
+            .unwrap_or(false)
+        {
             return;
         }
         if reaches(edges, after, before) {
@@ -148,7 +169,9 @@ fn add_joint_edges(
             }
             let member_info = fasteners.get(member);
             let is_rod_disc_mate = info.mates.contains_key(member)
-                && member_info.map(|mi| mi.kind == Some(FastenerKind::Disc)).unwrap_or(false)
+                && member_info
+                    .map(|mi| mi.kind == Some(FastenerKind::Disc))
+                    .unwrap_or(false)
                 && info.kind == Some(FastenerKind::Rod);
             if is_rod_disc_mate {
                 add_edge(edges, warnings, fastener_id, member, "joint-order");
@@ -166,9 +189,12 @@ fn add_joint_edges(
             continue;
         }
         let head_dir = head_direction(fastener_part, info, Some(units_by_id));
-        let sign = if head_dir.dot(&info.axis) >= 0.0 { 1.0 } else { -1.0 };
-        let head_projection =
-            |member: &str| sign * joint.get(member).cloned().unwrap_or(0.0);
+        let sign = if head_dir.dot(&info.axis) >= 0.0 {
+            1.0
+        } else {
+            -1.0
+        };
+        let head_projection = |member: &str| sign * joint.get(member).cloned().unwrap_or(0.0);
         chain.sort_by(|a, b| {
             head_projection(a)
                 .partial_cmp(&head_projection(b))
@@ -194,7 +220,11 @@ fn add_sandwich_edges(
     warnings: &mut Vec<String>,
 ) {
     let add_edge = |edges: &mut Edges, warnings: &mut Vec<String>, before: &str, after: &str| {
-        if edges.get(before).map(|s| s.contains(after)).unwrap_or(false) {
+        if edges
+            .get(before)
+            .map(|s| s.contains(after))
+            .unwrap_or(false)
+        {
             return;
         }
         if reaches(edges, after, before) {
@@ -237,7 +267,11 @@ fn add_sandwich_edges(
             ));
             continue;
         }
-        let (first, second) = if va > vb { (&side_a, &side_b) } else { (&side_b, &side_a) };
+        let (first, second) = if va > vb {
+            (&side_a, &side_b)
+        } else {
+            (&side_b, &side_a)
+        };
         for o in first {
             add_edge(edges, warnings, o, node_id);
         }
@@ -301,7 +335,11 @@ fn add_support_edges(
         if (ca - cb).abs() < 1e-6 {
             continue;
         }
-        let (lower, upper) = if ca < cb { (&unit_a, &unit_b) } else { (&unit_b, &unit_a) };
+        let (lower, upper) = if ca < cb {
+            (&unit_a, &unit_b)
+        } else {
+            (&unit_b, &unit_a)
+        };
         if edges[lower].contains(upper) {
             continue;
         }
@@ -329,10 +367,16 @@ fn rollup_adjacency(
         }
     }
     let final_unit = |leaf: &str| -> String {
-        let unit = merged_into.get(leaf).cloned().unwrap_or_else(|| leaf.to_string());
+        let unit = merged_into
+            .get(leaf)
+            .cloned()
+            .unwrap_or_else(|| leaf.to_string());
         member_to_rep.get(&unit).cloned().unwrap_or(unit)
     };
-    let mut adjacency: Edges = units_by_id.keys().map(|u| (u.clone(), HashSet::new())).collect();
+    let mut adjacency: Edges = units_by_id
+        .keys()
+        .map(|u| (u.clone(), HashSet::new()))
+        .collect();
     for (leaf, neighbors) in leaf_adjacency {
         let unit_a = final_unit(leaf);
         if !adjacency.contains_key(&unit_a) {
@@ -358,7 +402,10 @@ fn reselect_base(
     fasteners: &HashMap<String, FastenerInfo>,
     warnings: &mut Vec<String>,
 ) {
-    let base_idx = match planned.iter().position(|e| e.tier.as_deref() == Some("base")) {
+    let base_idx = match planned
+        .iter()
+        .position(|e| e.tier.as_deref() == Some("base"))
+    {
         Some(i) => i,
         None => return,
     };
@@ -400,11 +447,19 @@ fn reselect_base(
     }
     let winner_name = {
         let u = &units_by_id[&planned[winner_idx].node_id];
-        if u.name.is_empty() { planned[winner_idx].node_id.clone() } else { u.name.clone() }
+        if u.name.is_empty() {
+            planned[winner_idx].node_id.clone()
+        } else {
+            u.name.clone()
+        }
     };
     let base_name = {
         let u = &units_by_id[&base_id];
-        if u.name.is_empty() { base_id.clone() } else { u.name.clone() }
+        if u.name.is_empty() {
+            base_id.clone()
+        } else {
+            u.name.clone()
+        }
     };
     warnings.push(format!(
         "base re-anchored to '{winner_name}' ({win_degree} mates) — '{base_name}' was the last removable part, not the part the assembly mounts into; it fades in at its ordered position instead"
@@ -414,8 +469,10 @@ fn reselect_base(
     planned[winner_idx].confidence = Some("high".to_string());
     planned[winner_idx].removal_direction = None;
     planned[winner_idx].blocked_by = Vec::new();
-    let mut base_blockers: Vec<String> =
-        unit_adjacency.get(&base_id).map(|s| s.iter().cloned().collect()).unwrap_or_default();
+    let mut base_blockers: Vec<String> = unit_adjacency
+        .get(&base_id)
+        .map(|s| s.iter().cloned().collect())
+        .unwrap_or_default();
     base_blockers.sort();
     base_blockers.truncate(8);
     planned[base_idx].tier = Some("flagged".to_string());
@@ -458,14 +515,25 @@ fn connectivity_repair(
     let empty = HashSet::new();
     let touches = |node: &str, placed: &HashSet<String>| -> bool {
         placed.is_empty()
-            || adjacency.get(node).unwrap_or(&empty).intersection(placed).next().is_some()
+            || adjacency
+                .get(node)
+                .unwrap_or(&empty)
+                .intersection(placed)
+                .next()
+                .is_some()
     };
     let preds_ok = |node: &String, placed: &HashSet<String>| -> bool {
-        preds.get(node).map(|ps| ps.iter().all(|p| placed.contains(*p))).unwrap_or(true)
+        preds
+            .get(node)
+            .map(|ps| ps.iter().all(|p| placed.contains(*p)))
+            .unwrap_or(true)
     };
     while !remaining.is_empty() || !deferred.is_empty() {
         let mut pick: Option<String> = None;
-        if let Some(pos) = deferred.iter().position(|n| touches(n, &placed) && preds_ok(n, &placed)) {
+        if let Some(pos) = deferred
+            .iter()
+            .position(|n| touches(n, &placed) && preds_ok(n, &placed))
+        {
             pick = Some(deferred.remove(pos));
         }
         if pick.is_none() {
@@ -528,8 +596,11 @@ fn verify_sequence(
     tolerance: f64,
 ) {
     let samples_segment = (path_samples / 3).max(12);
-    let idx: HashMap<String, usize> =
-        planned.iter().enumerate().map(|(i, e)| (e.node_id.clone(), i)).collect();
+    let idx: HashMap<String, usize> = planned
+        .iter()
+        .enumerate()
+        .map(|(i, e)| (e.node_id.clone(), i))
+        .collect();
     let mut world = CollisionWorld::new(&[]);
     for node_id in sequence {
         let i = match idx.get(node_id) {
@@ -543,10 +614,21 @@ fn verify_sequence(
                 planned[i].verified = planned[i].tier.as_deref() == Some("base");
             }
             Some(segs) => {
-                let blockers =
-                    path_blockers(part, &world, &segs, samples_segment, fasteners, None, tolerance);
+                let blockers = path_blockers(
+                    part,
+                    &world,
+                    &segs,
+                    samples_segment,
+                    fasteners,
+                    None,
+                    tolerance,
+                );
                 if !blockers.is_empty() {
-                    let name = if part.name.is_empty() { node_id.clone() } else { part.name.clone() };
+                    let name = if part.name.is_empty() {
+                        node_id.clone()
+                    } else {
+                        part.name.clone()
+                    };
                     // GEOMETRY_EXPLAIN=1: demotion autopsy — who blocks the forward
                     // replay, how deep, and which exemptions the part carried.
                     if std::env::var("GEOMETRY_EXPLAIN").is_ok() {
@@ -561,7 +643,9 @@ fn verify_sequence(
                             let se = crate::collide::seated_exempt(part, dir);
                             eprintln!(
                                 "  dir=[{:+.2},{:+.2},{:+.2}] mate_exempt={:?} seated_exempt={:?}",
-                                dir[0], dir[1], dir[2],
+                                dir[0],
+                                dir[1],
+                                dir[2],
                                 me.map(|m| m.into_iter().collect::<Vec<_>>()),
                                 se.map(|m| m.into_iter().collect::<Vec<_>>()),
                             );
@@ -571,14 +655,22 @@ fn verify_sequence(
                                 let s = *dist * (k as f64) / (n as f64);
                                 for (o, d) in world.contacts_at(part, &(offset + dir * s)) {
                                     let e = worst.entry(o).or_insert(0.0);
-                                    if d > *e { *e = d; }
+                                    if d > *e {
+                                        *e = d;
+                                    }
                                 }
                             }
                             let mut w: Vec<_> = worst.into_iter().collect();
                             w.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
                             for (o, d) in w.iter().take(5) {
-                                let on = units_by_id.get(o).map(|p| p.name.clone()).filter(|s| !s.is_empty()).unwrap_or_else(|| o.clone());
-                                eprintln!("    blocker {on}: max_depth={d:.3} (tol={tolerance:.3})");
+                                let on = units_by_id
+                                    .get(o)
+                                    .map(|p| p.name.clone())
+                                    .filter(|s| !s.is_empty())
+                                    .unwrap_or_else(|| o.clone());
+                                eprintln!(
+                                    "    blocker {on}: max_depth={d:.3} (tol={tolerance:.3})"
+                                );
                             }
                             offset += dir * *dist;
                         }
@@ -675,12 +767,20 @@ pub fn preference_topo_sort(
 
     let by_id: HashMap<&str, &PlannedComponent> =
         planned.iter().map(|e| (e.node_id.as_str(), e)).collect();
-    let base_id = planned.iter().find(|e| e.tier.as_deref() == Some("base")).map(|e| e.node_id.clone());
+    let base_id = planned
+        .iter()
+        .find(|e| e.tier.as_deref() == Some("base"))
+        .map(|e| e.node_id.clone());
 
     let empty_members: Vec<String> = Vec::new();
     let is_securing = |node_id: &str| -> bool {
-        let candidates = std::iter::once(node_id.to_string())
-            .chain(group_members.get(node_id).unwrap_or(&empty_members).iter().cloned());
+        let candidates = std::iter::once(node_id.to_string()).chain(
+            group_members
+                .get(node_id)
+                .unwrap_or(&empty_members)
+                .iter()
+                .cloned(),
+        );
         for candidate in candidates {
             if let Some(info) = fasteners.get(&candidate) {
                 let empty = HashMap::new();
@@ -714,7 +814,10 @@ pub fn preference_topo_sort(
     }
     let outgoing = |node_id: &str| -> bool {
         edges.get(node_id).map(|s| !s.is_empty()).unwrap_or(false)
-            || soft_edges.get(node_id).map(|s| !s.is_empty()).unwrap_or(false)
+            || soft_edges
+                .get(node_id)
+                .map(|s| !s.is_empty())
+                .unwrap_or(false)
     };
 
     let is_weakly_secured = |node_id: &str, placed_set: &HashSet<String>| -> bool {
@@ -733,12 +836,23 @@ pub fn preference_topo_sort(
             return false;
         }
         let members: Vec<String> = std::iter::once(node_id.to_string())
-            .chain(group_members.get(node_id).unwrap_or(&empty_members).iter().cloned())
+            .chain(
+                group_members
+                    .get(node_id)
+                    .unwrap_or(&empty_members)
+                    .iter()
+                    .cloned(),
+            )
             .collect();
         if members.iter().any(|m| fastened.contains(m)) {
             return false;
         }
-        members.iter().map(|m| contact_count.get(m).cloned().unwrap_or(0)).max().unwrap_or(0) == 1
+        members
+            .iter()
+            .map(|m| contact_count.get(m).cloned().unwrap_or(0))
+            .max()
+            .unwrap_or(0)
+            == 1
     };
 
     let empty_set: HashSet<String> = HashSet::new();
@@ -755,7 +869,8 @@ pub fn preference_topo_sort(
             .collect();
         if available.is_empty() {
             warnings.push(
-                "precedence cycle detected; keeping the greedy order for the remaining parts".to_string(),
+                "precedence cycle detected; keeping the greedy order for the remaining parts"
+                    .to_string(),
             );
             for n in fallback_order {
                 if pending.contains(n) {
@@ -769,7 +884,13 @@ pub fn preference_topo_sort(
             if !placed_set.is_empty() {
                 let touching: Vec<String> = available
                     .iter()
-                    .filter(|n| adj.get(*n).unwrap_or(&empty_set).intersection(&placed_set).next().is_some())
+                    .filter(|n| {
+                        adj.get(*n)
+                            .unwrap_or(&empty_set)
+                            .intersection(&placed_set)
+                            .next()
+                            .is_some()
+                    })
                     .cloned()
                     .collect();
                 if !touching.is_empty() {
@@ -777,7 +898,13 @@ pub fn preference_topo_sort(
                 } else {
                     let pending_touchers: Vec<String> = pending
                         .iter()
-                        .filter(|n| adj.get(*n).unwrap_or(&empty_set).intersection(&placed_set).next().is_some())
+                        .filter(|n| {
+                            adj.get(*n)
+                                .unwrap_or(&empty_set)
+                                .intersection(&placed_set)
+                                .next()
+                                .is_some()
+                        })
                         .cloned()
                         .collect();
                     if !pending_touchers.is_empty() {
@@ -790,8 +917,11 @@ pub fn preference_topo_sort(
                                 }
                             }
                         }
-                        let gated: Vec<String> =
-                            available.iter().filter(|n| need.contains(*n)).cloned().collect();
+                        let gated: Vec<String> = available
+                            .iter()
+                            .filter(|n| need.contains(*n))
+                            .cloned()
+                            .collect();
                         if !gated.is_empty() {
                             available = gated;
                         }
@@ -799,8 +929,16 @@ pub fn preference_topo_sort(
                         let anchor = available
                             .iter()
                             .max_by(|a, b| {
-                                let ka = (adj.get(*a).map(|s| s.len()).unwrap_or(0), part_volume(&units_by_id[*a]), (*a).clone());
-                                let kb = (adj.get(*b).map(|s| s.len()).unwrap_or(0), part_volume(&units_by_id[*b]), (*b).clone());
+                                let ka = (
+                                    adj.get(*a).map(|s| s.len()).unwrap_or(0),
+                                    part_volume(&units_by_id[*a]),
+                                    (*a).clone(),
+                                );
+                                let kb = (
+                                    adj.get(*b).map(|s| s.len()).unwrap_or(0),
+                                    part_volume(&units_by_id[*b]),
+                                    (*b).clone(),
+                                );
                                 ka.0.cmp(&kb.0)
                                     .then(ka.1.partial_cmp(&kb.1).unwrap())
                                     .then(ka.2.cmp(&kb.2))
@@ -809,7 +947,11 @@ pub fn preference_topo_sort(
                             .clone();
                         let name = {
                             let u = &units_by_id[&anchor];
-                            if u.name.is_empty() { anchor.clone() } else { u.name.clone() }
+                            if u.name.is_empty() {
+                                anchor.clone()
+                            } else {
+                                u.name.clone()
+                            }
                         };
                         warnings.push(format!(
                             "'{name}' starts a detached island — nothing already placed touches it"
@@ -833,13 +975,25 @@ pub fn preference_topo_sort(
                 .unwrap_or(&empty_set)
                 .is_subset(&placed_set);
             let key = vec![
-                if entry.tier.as_deref() == Some("base") { 0.0 } else { 1.0 },
-                if previous_identity.as_deref() == Some(ident.as_str()) { 0.0 } else { 1.0 },
+                if entry.tier.as_deref() == Some("base") {
+                    0.0
+                } else {
+                    1.0
+                },
+                if previous_identity.as_deref() == Some(ident.as_str()) {
+                    0.0
+                } else {
+                    1.0
+                },
                 if is_securing(node_id) { 0.0 } else { 1.0 },
                 if flagged_pref { 0.0 } else { 1.0 },
                 if soft_present { 1.0 } else { 0.0 },
                 if outgoing(node_id) { 0.0 } else { 1.0 },
-                if is_weakly_secured(node_id, &placed_set) { 1.0 } else { 0.0 },
+                if is_weakly_secured(node_id, &placed_set) {
+                    1.0
+                } else {
+                    0.0
+                },
                 sv,
                 sb,
                 unit.bbox_min[2],
@@ -862,7 +1016,10 @@ pub fn preference_topo_sort(
             })
             .unwrap()
             .clone();
-        previous_identity = Some(motion_identity(&units_by_id[&chosen], &by_id[chosen.as_str()].motion));
+        previous_identity = Some(motion_identity(
+            &units_by_id[&chosen],
+            &by_id[chosen.as_str()].motion,
+        ));
         placed.push(chosen.clone());
         placed_set.insert(chosen.clone());
         pending.remove(&chosen);
@@ -880,7 +1037,10 @@ pub fn preference_topo_sort(
 pub fn merge_units(
     parts: &[Component],
     units_spec: &[(String, Option<String>, Vec<String>)],
-) -> (Vec<Component>, HashMap<String, (Vec<String>, Option<String>)>) {
+) -> (
+    Vec<Component>,
+    HashMap<String, (Vec<String>, Option<String>)>,
+) {
     let by_id: HashMap<&str, &Component> = parts.iter().map(|p| (p.node_id.as_str(), p)).collect();
     let mut expansion: HashMap<String, (Vec<String>, Option<String>)> = HashMap::new();
     let mut consumed: HashSet<String> = HashSet::new();
@@ -898,7 +1058,9 @@ pub fn merge_units(
         let meshes: Vec<&crate::types::Mesh> = member_refs.iter().map(|m| &m.mesh).collect();
         let combined_mesh = crate::types::Mesh::concatenate(&meshes);
         let (lo, hi) = bounds(&member_refs);
-        let cname = name.clone().unwrap_or_else(|| by_id[members[0].as_str()].name.clone());
+        let cname = name
+            .clone()
+            .unwrap_or_else(|| by_id[members[0].as_str()].name.clone());
         let combined = Component::new(
             uid.clone(),
             cname,
@@ -911,15 +1073,21 @@ pub fn merge_units(
         expansion.insert(uid.clone(), (members.clone(), name.clone()));
         consumed.extend(members);
     }
-    let mut remaining: Vec<Component> =
-        parts.iter().filter(|p| !consumed.contains(&p.node_id)).cloned().collect();
+    let mut remaining: Vec<Component> = parts
+        .iter()
+        .filter(|p| !consumed.contains(&p.node_id))
+        .cloned()
+        .collect();
     remaining.extend(merged);
     (remaining, expansion)
 }
 
 fn fill_contact_normals(parts: &mut [Component], pair_depths: &PairDepths) {
-    let idx: HashMap<String, usize> =
-        parts.iter().enumerate().map(|(i, p)| (p.node_id.clone(), i)).collect();
+    let idx: HashMap<String, usize> = parts
+        .iter()
+        .enumerate()
+        .map(|(i, p)| (p.node_id.clone(), i))
+        .collect();
     let mut keys: Vec<&(String, String)> = pair_depths.keys().collect();
     keys.sort();
     for k in keys {
@@ -927,7 +1095,9 @@ fn fill_contact_normals(parts: &mut [Component], pair_depths: &PairDepths) {
         for node in [&data.a, &data.b] {
             if let Some(&i) = idx.get(node) {
                 if parts[i].contact_normals.len() < 128 {
-                    parts[i].contact_normals.extend(data.normals.iter().cloned());
+                    parts[i]
+                        .contact_normals
+                        .extend(data.normals.iter().cloned());
                 }
             }
         }
@@ -945,7 +1115,14 @@ pub fn plan_parts(
 ) -> PlanOutcome {
     let _timing = std::env::var("GEOMETRY_TIMING").is_ok();
     let mut _t = std::time::Instant::now();
-    macro_rules! lap { ($n:expr) => { if _timing { eprintln!("  [{}] {:.2}s", $n, _t.elapsed().as_secs_f64()); _t = std::time::Instant::now(); } } }
+    macro_rules! lap {
+        ($n:expr) => {
+            if _timing {
+                eprintln!("  [{}] {:.2}s", $n, _t.elapsed().as_secs_f64());
+                _t = std::time::Instant::now();
+            }
+        };
+    }
     let pair_depths = seated_pair_depths(&parts);
     lap!("seated_pair_depths");
     let leaf_adjacency = ordering_adjacency(&parts, &pair_depths, ORDERING_CONTACT_MM);
@@ -953,7 +1130,8 @@ pub fn plan_parts(
 
     let mut fasteners = classify_fasteners(&parts, &pair_depths);
     lap!("classify");
-    let (mut units, mut merged_into) = merge_rigid_groups(&parts, &pair_depths, &fasteners, warnings);
+    let (mut units, mut merged_into) =
+        merge_rigid_groups(&parts, &pair_depths, &fasteners, warnings);
     lap!("merge_rigid");
 
     // Joints over original parts, then remap through merges.
@@ -967,7 +1145,10 @@ pub fn plan_parts(
             }
             let mut entry: HashMap<String, f64> = HashMap::new();
             for (member, projection) in members {
-                let unit = merged_into.get(member).cloned().unwrap_or_else(|| member.clone());
+                let unit = merged_into
+                    .get(member)
+                    .cloned()
+                    .unwrap_or_else(|| member.clone());
                 if &unit == fid {
                     continue;
                 }
@@ -994,15 +1175,20 @@ pub fn plan_parts(
     lap!("sandwiched");
 
     // fastened set
-    let fastened: HashSet<String> =
-        joints.values().flat_map(|m| m.keys().cloned()).collect();
+    let fastened: HashSet<String> = joints.values().flat_map(|m| m.keys().cloned()).collect();
 
     // contact_count (unit-level, fastener-excluded, deduped)
     let mut contact_count: HashMap<String, i64> = HashMap::new();
     let mut counted_pairs: HashSet<(String, String)> = HashSet::new();
     for data in pair_depths.values() {
-        let unit_a = merged_into.get(&data.a).cloned().unwrap_or_else(|| data.a.clone());
-        let unit_b = merged_into.get(&data.b).cloned().unwrap_or_else(|| data.b.clone());
+        let unit_a = merged_into
+            .get(&data.a)
+            .cloned()
+            .unwrap_or_else(|| data.a.clone());
+        let unit_b = merged_into
+            .get(&data.b)
+            .cloned()
+            .unwrap_or_else(|| data.b.clone());
         if unit_a == unit_b {
             continue;
         }
@@ -1030,7 +1216,10 @@ pub fn plan_parts(
                         continue;
                     }
                 }
-                let unit = merged_into.get(node).cloned().unwrap_or_else(|| node.clone());
+                let unit = merged_into
+                    .get(node)
+                    .cloned()
+                    .unwrap_or_else(|| node.clone());
                 if sandwiches.contains_key(&unit) {
                     continue;
                 }
@@ -1087,8 +1276,15 @@ pub fn plan_parts(
         }
     }
 
-    let unit_adjacency = rollup_adjacency(&leaf_adjacency, &merged_into, &group_units, &units_by_id);
-    reselect_base(&mut planned, &units_by_id, &unit_adjacency, &fasteners, warnings);
+    let unit_adjacency =
+        rollup_adjacency(&leaf_adjacency, &merged_into, &group_units, &units_by_id);
+    reselect_base(
+        &mut planned,
+        &units_by_id,
+        &unit_adjacency,
+        &fasteners,
+        warnings,
+    );
 
     // Recompute flagged-structural blockers against the full seated assembly.
     let flagged_ids: Vec<String> = planned
@@ -1107,7 +1303,13 @@ pub fn plan_parts(
             let part = &units_by_id[id];
             let others = others_excluding(&units_by_id, id);
             let blockers = crate::greedy::escape_blockers(
-                part, &units_by_id, &others, &seated_world, &fasteners, tolerance, path_samples,
+                part,
+                &units_by_id,
+                &others,
+                &seated_world,
+                &fasteners,
+                tolerance,
+                path_samples,
             );
             if !blockers.is_empty() {
                 let i = planned.iter().position(|e| &e.node_id == id).unwrap();
@@ -1120,11 +1322,30 @@ pub fn plan_parts(
     lap!("derive_precedence");
     add_joint_edges(&fasteners, &joints, &units_by_id, &mut edges, warnings);
 
-    let mut soft_edges: Edges = units_by_id.keys().map(|k| (k.clone(), HashSet::new())).collect();
-    add_sandwich_edges(&sandwiches, &units_by_id, &merged_into, &mut soft_edges, warnings);
-    add_support_edges(&parts, &pair_depths, &fasteners, &merged_into, &mut soft_edges, warnings);
+    let mut soft_edges: Edges = units_by_id
+        .keys()
+        .map(|k| (k.clone(), HashSet::new()))
+        .collect();
+    add_sandwich_edges(
+        &sandwiches,
+        &units_by_id,
+        &merged_into,
+        &mut soft_edges,
+        warnings,
+    );
+    add_support_edges(
+        &parts,
+        &pair_depths,
+        &fasteners,
+        &merged_into,
+        &mut soft_edges,
+        warnings,
+    );
 
-    let base_id = planned.iter().find(|e| e.tier.as_deref() == Some("base")).map(|e| e.node_id.clone());
+    let base_id = planned
+        .iter()
+        .find(|e| e.tier.as_deref() == Some("base"))
+        .map(|e| e.node_id.clone());
     if let Some(bid) = &base_id {
         for afters in edges.values_mut() {
             afters.remove(bid);
@@ -1134,8 +1355,10 @@ pub fn plan_parts(
         }
     }
 
-    let group_members: HashMap<String, Vec<String>> =
-        group_units.iter().map(|(rep, (_c, members))| (rep.clone(), members.clone())).collect();
+    let group_members: HashMap<String, Vec<String>> = group_units
+        .iter()
+        .map(|(rep, (_c, members))| (rep.clone(), members.clone()))
+        .collect();
 
     let mut sequence = preference_topo_sort(
         &planned,
@@ -1159,8 +1382,19 @@ pub fn plan_parts(
     if std::env::var("GEOMETRY_EXPLAIN").is_ok() {
         let mut probe = planned.clone();
         let mut w2: Vec<String> = Vec::new();
-        verify_sequence(&greedy_sequence, &mut probe, &units_by_id, &fasteners, path_samples, &mut w2, tolerance);
-        let demoted = w2.iter().filter(|w| w.contains("forward verification")).count();
+        verify_sequence(
+            &greedy_sequence,
+            &mut probe,
+            &units_by_id,
+            &fasteners,
+            path_samples,
+            &mut w2,
+            tolerance,
+        );
+        let demoted = w2
+            .iter()
+            .filter(|w| w.contains("forward verification"))
+            .count();
         eprintln!("EXPLAIN greedy-order verify: {demoted} demotions (final-order comes below)");
     }
 
@@ -1191,7 +1425,15 @@ pub fn plan_parts(
         }
     }
 
-    verify_sequence(&sequence, &mut planned, &units_by_id, &fasteners, path_samples, warnings, tolerance);
+    verify_sequence(
+        &sequence,
+        &mut planned,
+        &units_by_id,
+        &fasteners,
+        path_samples,
+        warnings,
+        tolerance,
+    );
     lap!("verify_sequence");
 
     // Expand subassembly units into their members.
@@ -1222,7 +1464,11 @@ pub fn plan_parts(
             let rep = planned[rep_i].clone();
             groups_payload.insert(
                 gid.clone(),
-                GroupPayload { component_node_ids: members.clone(), motion: rep.motion.clone(), name: None },
+                GroupPayload {
+                    component_node_ids: members.clone(),
+                    motion: rep.motion.clone(),
+                    name: None,
+                },
             );
             for member_id in members {
                 if member_id == rep_id {
@@ -1275,18 +1521,27 @@ pub fn plan_fixed_sequence(
         let mut members: Vec<String> = Vec::new();
         for node_id in group {
             if !by_id.contains(node_id) {
-                warnings.push(format!("group {}: nodeId '{node_id}' is not in the model; dropped", index + 1));
+                warnings.push(format!(
+                    "group {}: nodeId '{node_id}' is not in the model; dropped",
+                    index + 1
+                ));
                 continue;
             }
             if consumed.contains(node_id) {
-                warnings.push(format!("group {}: nodeId '{node_id}' already belongs to an earlier group; dropped", index + 1));
+                warnings.push(format!(
+                    "group {}: nodeId '{node_id}' already belongs to an earlier group; dropped",
+                    index + 1
+                ));
                 continue;
             }
             members.push(node_id.clone());
             consumed.insert(node_id.clone());
         }
         if members.is_empty() {
-            warnings.push(format!("group {} has no parts present in the model; skipped", index + 1));
+            warnings.push(format!(
+                "group {} has no parts present in the model; skipped",
+                index + 1
+            ));
             continue;
         }
         cleaned_groups.push(members);
@@ -1306,22 +1561,40 @@ pub fn plan_fixed_sequence(
     }
 
     // Classification over the sequence parts only.
-    let seq_unfilled: Vec<Component> = parts.iter().filter(|p| consumed.contains(&p.node_id)).cloned().collect();
+    let seq_unfilled: Vec<Component> = parts
+        .iter()
+        .filter(|p| consumed.contains(&p.node_id))
+        .cloned()
+        .collect();
     let pair_depths = seated_pair_depths(&seq_unfilled);
     fill_contact_normals(&mut parts, &pair_depths);
-    let seq_parts: Vec<Component> = parts.iter().filter(|p| consumed.contains(&p.node_id)).cloned().collect();
+    let seq_parts: Vec<Component> = parts
+        .iter()
+        .filter(|p| consumed.contains(&p.node_id))
+        .cloned()
+        .collect();
     let fasteners = classify_fasteners(&seq_parts, &pair_depths);
 
     // Each group → one rigid body (single-member groups stay as the leaf).
-    let units_spec: Vec<(String, Option<String>, Vec<String>)> =
-        cleaned_groups.iter().map(|m| (m[0].clone(), None, m.clone())).collect();
+    let units_spec: Vec<(String, Option<String>, Vec<String>)> = cleaned_groups
+        .iter()
+        .map(|m| (m[0].clone(), None, m.clone()))
+        .collect();
     let (merged_parts, _expansion) = merge_units(&parts, &units_spec);
-    let merged_by_id: HashMap<String, Component> =
-        merged_parts.into_iter().map(|p| (p.node_id.clone(), p)).collect();
+    let merged_by_id: HashMap<String, Component> = merged_parts
+        .into_iter()
+        .map(|p| (p.node_id.clone(), p))
+        .collect();
     let groups_ordered: Vec<(String, Component, Vec<String>)> = cleaned_groups
         .iter()
         .enumerate()
-        .map(|(i, m)| (format!("g{}", i + 1), merged_by_id[&m[0]].clone(), m.clone()))
+        .map(|(i, m)| {
+            (
+                format!("g{}", i + 1),
+                merged_by_id[&m[0]].clone(),
+                m.clone(),
+            )
+        })
         .collect();
 
     let all_bodies: Vec<&Component> = groups_ordered.iter().map(|(_, b, _)| b).collect();
@@ -1364,17 +1637,34 @@ pub fn plan_fixed_sequence(
                 tolerance,
             );
             if e.is_none() {
-                e = plan_escape(body, &others, &placed_world, path_samples, &fasteners, tolerance);
+                e = plan_escape(
+                    body,
+                    &others,
+                    &placed_world,
+                    path_samples,
+                    &fasteners,
+                    tolerance,
+                );
             }
             match e {
                 Some(e) => e,
                 None => {
-                    let name = if body.name.is_empty() { body.node_id.clone() } else { body.name.clone() };
+                    let name = if body.name.is_empty() {
+                        body.node_id.clone()
+                    } else {
+                        body.name.clone()
+                    };
                     warnings.push(format!(
                         "'{name}' has no collision-free insertion after the earlier groups; flagged for review — it fades in during playback"
                     ));
                     let blocked_by = crate::greedy::escape_blockers(
-                        body, &remaining_map, &others, &placed_world, &fasteners, tolerance, path_samples,
+                        body,
+                        &remaining_map,
+                        &others,
+                        &placed_world,
+                        &fasteners,
+                        tolerance,
+                        path_samples,
                     );
                     PlannedComponent {
                         node_id: body.node_id.clone(),
@@ -1394,8 +1684,19 @@ pub fn plan_fixed_sequence(
         placed.insert(body.node_id.clone(), body.clone());
     }
 
-    let sequence_bodies: Vec<String> = groups_ordered.iter().map(|(_, b, _)| b.node_id.clone()).collect();
-    verify_sequence(&sequence_bodies, &mut planned, &units_by_id, &fasteners, path_samples, warnings, tolerance);
+    let sequence_bodies: Vec<String> = groups_ordered
+        .iter()
+        .map(|(_, b, _)| b.node_id.clone())
+        .collect();
+    verify_sequence(
+        &sequence_bodies,
+        &mut planned,
+        &units_by_id,
+        &fasteners,
+        path_samples,
+        warnings,
+        tolerance,
+    );
     let tiers = tally_tiers(&planned);
 
     // Expand each group body back to its member leaves.
@@ -1403,12 +1704,19 @@ pub fn plan_fixed_sequence(
     let mut expanded: Vec<PlannedComponent> = Vec::new();
     let mut sequence: Vec<String> = Vec::new();
     for (label, body, members) in &groups_ordered {
-        let rep_i = planned.iter().position(|e| e.node_id == body.node_id).unwrap();
+        let rep_i = planned
+            .iter()
+            .position(|e| e.node_id == body.node_id)
+            .unwrap();
         planned[rep_i].group_id = Some(label.clone());
         let rep = planned[rep_i].clone();
         groups_payload.insert(
             label.clone(),
-            GroupPayload { component_node_ids: members.clone(), motion: rep.motion.clone(), name: None },
+            GroupPayload {
+                component_node_ids: members.clone(),
+                motion: rep.motion.clone(),
+                name: None,
+            },
         );
         sequence.extend(members.iter().cloned());
         for member_id in members {

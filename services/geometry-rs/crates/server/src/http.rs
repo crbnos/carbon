@@ -25,29 +25,50 @@ fn client() -> reqwest::Client {
 
 pub async fn download(url: &str, dest: &std::path::Path) -> Result<(), ApiError> {
     let limit = config::max_source_bytes();
-    let resp = client()
-        .get(url)
-        .send()
-        .await
-        .map_err(|e| ApiError::new(422, "READ_FAILED", format!("could not download source: {e}")))?;
+    let resp = client().get(url).send().await.map_err(|e| {
+        ApiError::new(
+            422,
+            "READ_FAILED",
+            format!("could not download source: {e}"),
+        )
+    })?;
     if !resp.status().is_success() {
-        return Err(ApiError::new(422, "READ_FAILED", format!("could not download source: {}", resp.status())));
+        return Err(ApiError::new(
+            422,
+            "READ_FAILED",
+            format!("could not download source: {}", resp.status()),
+        ));
     }
     if let Some(len) = resp.content_length() {
         if len as usize > limit {
-            return Err(ApiError::new(413, "LIMIT_EXCEEDED", "source file exceeds the size limit"));
+            return Err(ApiError::new(
+                413,
+                "LIMIT_EXCEEDED",
+                "source file exceeds the size limit",
+            ));
         }
     }
-    let body = resp
-        .bytes()
-        .await
-        .map_err(|e| ApiError::new(422, "READ_FAILED", format!("could not download source: {e}")))?;
+    let body = resp.bytes().await.map_err(|e| {
+        ApiError::new(
+            422,
+            "READ_FAILED",
+            format!("could not download source: {e}"),
+        )
+    })?;
     if body.len() > limit {
-        return Err(ApiError::new(413, "LIMIT_EXCEEDED", "source file exceeds the size limit"));
+        return Err(ApiError::new(
+            413,
+            "LIMIT_EXCEEDED",
+            "source file exceeds the size limit",
+        ));
     }
-    tokio::fs::write(dest, &body)
-        .await
-        .map_err(|e| ApiError::new(500, "READ_FAILED", format!("could not write temp file: {e}")))?;
+    tokio::fs::write(dest, &body).await.map_err(|e| {
+        ApiError::new(
+            500,
+            "READ_FAILED",
+            format!("could not write temp file: {e}"),
+        )
+    })?;
     Ok(())
 }
 
@@ -59,12 +80,22 @@ pub async fn upload(url: &str, body: Vec<u8>, content_type: &str) -> Result<(), 
         .body(body)
         .send()
         .await
-        .map_err(|e| ApiError::new(502, "UPLOAD_FAILED", format!("could not upload artifact: {e}")))?;
+        .map_err(|e| {
+            ApiError::new(
+                502,
+                "UPLOAD_FAILED",
+                format!("could not upload artifact: {e}"),
+            )
+        })?;
     if !resp.status().is_success() {
         let status = resp.status();
         let detail = resp.text().await.unwrap_or_default();
         let detail: String = detail.chars().take(200).collect();
-        return Err(ApiError::new(502, "UPLOAD_FAILED", format!("could not upload artifact: {status} {detail}")));
+        return Err(ApiError::new(
+            502,
+            "UPLOAD_FAILED",
+            format!("could not upload artifact: {status} {detail}"),
+        ));
     }
     Ok(())
 }

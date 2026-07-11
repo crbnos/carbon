@@ -58,12 +58,21 @@ fn visit(node: &AssemblyNode, parent_world: &[f64; 16], parts: &mut Vec<Componen
                 .flat_map(|p| [p[0] as f64, p[1] as f64, p[2] as f64])
                 .collect();
             let out = crate::npy::transform_points(&flat, &r, &t);
-            let vertices: Vec<Vector3<f64>> =
-                out.chunks_exact(3).map(|c| Vector3::new(c[0], c[1], c[2])).collect();
+            let vertices: Vec<Vector3<f64>> = out
+                .chunks_exact(3)
+                .map(|c| Vector3::new(c[0], c[1], c[2]))
+                .collect();
             let faces = mesh.indices.clone();
             let m = Mesh { vertices, faces };
             let (lo, hi) = m.bbox();
-            parts.push(Component::new(node.node_id.clone(), node.name.clone(), m, lo, hi, mesh.is_proxy));
+            parts.push(Component::new(
+                node.node_id.clone(),
+                node.name.clone(),
+                m,
+                lo,
+                hi,
+                mesh.is_proxy,
+            ));
         }
     }
     for child in &node.children {
@@ -74,7 +83,10 @@ fn visit(node: &AssemblyNode, parent_world: &[f64; 16], parts: &mut Vec<Componen
 fn motion_to_json(m: &Motion) -> Value {
     match m {
         Motion::None => json!({"type": "none"}),
-        Motion::Linear { direction, distance } => {
+        Motion::Linear {
+            direction,
+            distance,
+        } => {
             json!({"type": "linear", "direction": direction.to_vec(), "distance": distance})
         }
         Motion::L { segments } => {
@@ -150,8 +162,10 @@ pub fn plan_step(
     // Caller units → merged bodies (expansion maps unit id → members).
     let mut expansion: HashMap<String, (Vec<String>, Option<String>)> = HashMap::new();
     if let (Some(units), None) = (&units, &sequence) {
-        let spec: Vec<(String, Option<String>, Vec<String>)> =
-            units.iter().map(|u| (u.id.clone(), u.name.clone(), u.node_ids.clone())).collect();
+        let spec: Vec<(String, Option<String>, Vec<String>)> = units
+            .iter()
+            .map(|u| (u.id.clone(), u.name.clone(), u.node_ids.clone()))
+            .collect();
         let (merged, exp) = merge_units(&parts, &spec);
         parts = merged;
         expansion = exp;
@@ -169,21 +183,44 @@ pub fn plan_step(
 
     let mut warnings: Vec<String> = Vec::new();
     if parts.iter().any(|p| p.is_proxy) {
-        warnings.push("some parts use bounding-box proxy meshes; their motions are low confidence".into());
+        warnings.push(
+            "some parts use bounding-box proxy meshes; their motions are low confidence".into(),
+        );
     }
 
     let tolerance = tolerance.unwrap_or_else(|| mesh_tolerance(linear_deflection));
     let outcome: PlanOutcome = if let Some(seq) = &sequence {
-        plan_fixed_sequence(parts, seq, clearance, path_samples, tolerance, &mut warnings)
+        plan_fixed_sequence(
+            parts,
+            seq,
+            clearance,
+            path_samples,
+            tolerance,
+            &mut warnings,
+        )
     } else {
         let protected: HashSet<String> = expansion.keys().cloned().collect();
-        let prot = if protected.is_empty() { None } else { Some(&protected) };
-        plan_parts(parts, clearance, path_samples, tolerance, prot, &mut warnings)
+        let prot = if protected.is_empty() {
+            None
+        } else {
+            Some(&protected)
+        };
+        plan_parts(
+            parts,
+            clearance,
+            path_samples,
+            tolerance,
+            prot,
+            &mut warnings,
+        )
     };
 
     // Expand merged units back to member leaves.
-    let mut groups: Map<String, Value> =
-        outcome.groups.iter().map(|(k, v)| (k.clone(), group_to_json(v))).collect();
+    let mut groups: Map<String, Value> = outcome
+        .groups
+        .iter()
+        .map(|(k, v)| (k.clone(), group_to_json(v)))
+        .collect();
     let mut components: Map<String, Value> = Map::new();
     for entry in &outcome.planned {
         match expansion.get(&entry.node_id) {
@@ -207,7 +244,10 @@ pub fn plan_step(
         }
     }
     for (member, rep) in &outcome.merged_into {
-        components.insert(member.clone(), json!({"motion": {"type": "none"}, "mergedInto": rep}));
+        components.insert(
+            member.clone(),
+            json!({"motion": {"type": "none"}, "mergedInto": rep}),
+        );
     }
 
     let mut sequence_out: Vec<String> = Vec::new();
@@ -229,7 +269,11 @@ pub fn plan_step(
         plan["groups"] = Value::Object(groups);
     }
 
-    let planned_count = outcome.planned.iter().filter(|e| !matches!(e.motion, Motion::None)).count() as i64;
+    let planned_count = outcome
+        .planned
+        .iter()
+        .filter(|e| !matches!(e.motion, Motion::None))
+        .count() as i64;
 
     Ok(PlanResult {
         plan,

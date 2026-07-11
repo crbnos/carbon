@@ -13,7 +13,8 @@ fn main() {
     let step = &args[1];
     let out = &args[2];
     let t = std::time::Instant::now();
-    let r = planner::steps::plan_step(step, 0.1, 0.5, 0.5, 60, Some(5000), None, None, None).expect("plan");
+    let r = planner::steps::plan_step(step, 0.1, 0.5, 0.5, 60, Some(5000), None, None, None)
+        .expect("plan");
     std::fs::write(out, serde_json::to_vec(&r.plan).unwrap()).unwrap();
     eprintln!(
         "comps={} planned={} verified={} {:.1}s tiers={:?} contacts_at_calls={} narrow_pairs={} raw_contacts={}",

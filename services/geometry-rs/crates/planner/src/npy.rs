@@ -6,7 +6,7 @@ use nalgebra::{DMatrix, Matrix3, Vector3};
 #[cfg(not(target_os = "macos"))]
 use ndarray::{Array1, Array2};
 #[cfg(not(target_os = "macos"))]
-use ndarray_linalg::{Eigh, JobSvd, UPLO, SVDDC};
+use ndarray_linalg::{Eigh, JobSvd, SVDDC, UPLO};
 
 // --- numpy pairwise summation (exact algorithm) ----------------------------
 
@@ -62,10 +62,13 @@ pub fn mean(a: &[f64]) -> f64 {
 /// `np.std(a)`: sqrt(mean(|x - mean|^2)), numpy summation.
 pub fn std(a: &[f64]) -> f64 {
     let m = mean(a);
-    let sq: Vec<f64> = a.iter().map(|&x| {
-        let d = x - m;
-        d * d
-    }).collect();
+    let sq: Vec<f64> = a
+        .iter()
+        .map(|&x| {
+            let d = x - m;
+            d * d
+        })
+        .collect();
     mean(&sq).sqrt()
 }
 
@@ -146,7 +149,6 @@ pub fn eigh3(m: &Matrix3<f64>) -> Option<(Vector3<f64>, Matrix3<f64>)> {
     Some((Vector3::new(w[0], w[1], w[2]), vecs))
 }
 
-
 // --- macOS: Accelerate new-LAPACK (the exact library numpy >=2.0 mac wheels link) ---
 
 #[cfg(target_os = "macos")]
@@ -155,21 +157,51 @@ mod accelerate {
     extern "C" {
         #[link_name = "dgesdd$NEWLAPACK"]
         pub fn dgesdd(
-            jobz: *const u8, m: *const i32, n: *const i32, a: *mut f64, lda: *const i32,
-            s: *mut f64, u: *mut f64, ldu: *const i32, vt: *mut f64, ldvt: *const i32,
-            work: *mut f64, lwork: *const i32, iwork: *mut i32, info: *mut i32,
+            jobz: *const u8,
+            m: *const i32,
+            n: *const i32,
+            a: *mut f64,
+            lda: *const i32,
+            s: *mut f64,
+            u: *mut f64,
+            ldu: *const i32,
+            vt: *mut f64,
+            ldvt: *const i32,
+            work: *mut f64,
+            lwork: *const i32,
+            iwork: *mut i32,
+            info: *mut i32,
         );
         #[link_name = "dsyevd$NEWLAPACK"]
         pub fn dsyevd(
-            jobz: *const u8, uplo: *const u8, n: *const i32, a: *mut f64, lda: *const i32,
-            w: *mut f64, work: *mut f64, lwork: *const i32, iwork: *mut i32,
-            liwork: *const i32, info: *mut i32,
+            jobz: *const u8,
+            uplo: *const u8,
+            n: *const i32,
+            a: *mut f64,
+            lda: *const i32,
+            w: *mut f64,
+            work: *mut f64,
+            lwork: *const i32,
+            iwork: *mut i32,
+            liwork: *const i32,
+            info: *mut i32,
         );
         #[link_name = "cblas_dgemm$NEWLAPACK"]
         pub fn cblas_dgemm(
-            layout: i32, transa: i32, transb: i32, m: i32, n: i32, k: i32,
-            alpha: f64, a: *const f64, lda: i32, b: *const f64, ldb: i32,
-            beta: f64, c: *mut f64, ldc: i32,
+            layout: i32,
+            transa: i32,
+            transb: i32,
+            m: i32,
+            n: i32,
+            k: i32,
+            alpha: f64,
+            a: *const f64,
+            lda: i32,
+            b: *const f64,
+            ldb: i32,
+            beta: f64,
+            c: *mut f64,
+            ldc: i32,
         );
     }
 }
@@ -179,9 +211,20 @@ mod openblas_cblas {
     #[link(name = "openblas")]
     extern "C" {
         pub fn cblas_dgemm(
-            layout: i32, transa: i32, transb: i32, m: i32, n: i32, k: i32,
-            alpha: f64, a: *const f64, lda: i32, b: *const f64, ldb: i32,
-            beta: f64, c: *mut f64, ldc: i32,
+            layout: i32,
+            transa: i32,
+            transb: i32,
+            m: i32,
+            n: i32,
+            k: i32,
+            alpha: f64,
+            a: *const f64,
+            lda: i32,
+            b: *const f64,
+            ldb: i32,
+            beta: f64,
+            c: *mut f64,
+            ldc: i32,
         );
     }
 }
@@ -191,13 +234,52 @@ const CBLAS_NO_TRANS: i32 = 111;
 const CBLAS_TRANS: i32 = 112;
 
 unsafe fn dgemm(
-    transa: i32, transb: i32, m: i32, n: i32, k: i32,
-    a: *const f64, lda: i32, b: *const f64, ldb: i32, c: *mut f64, ldc: i32,
+    transa: i32,
+    transb: i32,
+    m: i32,
+    n: i32,
+    k: i32,
+    a: *const f64,
+    lda: i32,
+    b: *const f64,
+    ldb: i32,
+    c: *mut f64,
+    ldc: i32,
 ) {
     #[cfg(target_os = "macos")]
-    accelerate::cblas_dgemm(CBLAS_ROW_MAJOR, transa, transb, m, n, k, 1.0, a, lda, b, ldb, 0.0, c, ldc);
+    accelerate::cblas_dgemm(
+        CBLAS_ROW_MAJOR,
+        transa,
+        transb,
+        m,
+        n,
+        k,
+        1.0,
+        a,
+        lda,
+        b,
+        ldb,
+        0.0,
+        c,
+        ldc,
+    );
     #[cfg(not(target_os = "macos"))]
-    openblas_cblas::cblas_dgemm(CBLAS_ROW_MAJOR, transa, transb, m, n, k, 1.0, a, lda, b, ldb, 0.0, c, ldc);
+    openblas_cblas::cblas_dgemm(
+        CBLAS_ROW_MAJOR,
+        transa,
+        transb,
+        m,
+        n,
+        k,
+        1.0,
+        a,
+        lda,
+        b,
+        ldb,
+        0.0,
+        c,
+        ldc,
+    );
 }
 
 /// numpy `a @ b` for row-major 4x4 f64 matrices (BLAS dgemm, matching
@@ -205,7 +287,19 @@ unsafe fn dgemm(
 pub fn mat4_matmul(a: &[f64; 16], b: &[f64; 16]) -> [f64; 16] {
     let mut c = [0.0f64; 16];
     unsafe {
-        dgemm(CBLAS_NO_TRANS, CBLAS_NO_TRANS, 4, 4, 4, a.as_ptr(), 4, b.as_ptr(), 4, c.as_mut_ptr(), 4);
+        dgemm(
+            CBLAS_NO_TRANS,
+            CBLAS_NO_TRANS,
+            4,
+            4,
+            4,
+            a.as_ptr(),
+            4,
+            b.as_ptr(),
+            4,
+            c.as_mut_ptr(),
+            4,
+        );
     }
     c
 }
@@ -217,7 +311,19 @@ pub fn transform_points(positions: &[f64], r: &[f64; 9], t: &[f64; 3]) -> Vec<f6
     let mut out = vec![0.0f64; positions.len()];
     unsafe {
         // positions @ r.T == dgemm(NoTrans, Trans)
-        dgemm(CBLAS_NO_TRANS, CBLAS_TRANS, n, 3, 3, positions.as_ptr(), 3, r.as_ptr(), 3, out.as_mut_ptr(), 3);
+        dgemm(
+            CBLAS_NO_TRANS,
+            CBLAS_TRANS,
+            n,
+            3,
+            3,
+            positions.as_ptr(),
+            3,
+            r.as_ptr(),
+            3,
+            out.as_mut_ptr(),
+            3,
+        );
     }
     for chunk in out.chunks_exact_mut(3) {
         chunk[0] += t[0];
@@ -252,8 +358,22 @@ pub fn svd_rows(m: &DMatrix<f64>) -> Option<(Vector3<f64>, Matrix3<f64>)> {
     let mut wq = [0.0f64; 1];
     let lq = -1i32;
     unsafe {
-        accelerate::dgesdd(&jobz, &n, &k, a.as_mut_ptr(), &n, s.as_mut_ptr(), u.as_mut_ptr(), &n,
-            vt.as_mut_ptr(), &min_mn, wq.as_mut_ptr(), &lq, iwork.as_mut_ptr(), &mut info);
+        accelerate::dgesdd(
+            &jobz,
+            &n,
+            &k,
+            a.as_mut_ptr(),
+            &n,
+            s.as_mut_ptr(),
+            u.as_mut_ptr(),
+            &n,
+            vt.as_mut_ptr(),
+            &min_mn,
+            wq.as_mut_ptr(),
+            &lq,
+            iwork.as_mut_ptr(),
+            &mut info,
+        );
     }
     if info != 0 {
         return None;
@@ -261,8 +381,22 @@ pub fn svd_rows(m: &DMatrix<f64>) -> Option<(Vector3<f64>, Matrix3<f64>)> {
     let lwork = wq[0] as i32;
     let mut work = vec![0.0f64; lwork as usize];
     unsafe {
-        accelerate::dgesdd(&jobz, &n, &k, a.as_mut_ptr(), &n, s.as_mut_ptr(), u.as_mut_ptr(), &n,
-            vt.as_mut_ptr(), &min_mn, work.as_mut_ptr(), &lwork, iwork.as_mut_ptr(), &mut info);
+        accelerate::dgesdd(
+            &jobz,
+            &n,
+            &k,
+            a.as_mut_ptr(),
+            &n,
+            s.as_mut_ptr(),
+            u.as_mut_ptr(),
+            &n,
+            vt.as_mut_ptr(),
+            &min_mn,
+            work.as_mut_ptr(),
+            &lwork,
+            iwork.as_mut_ptr(),
+            &mut info,
+        );
     }
     if info != 0 {
         return None;
@@ -293,8 +427,19 @@ pub fn eigh3(m: &Matrix3<f64>) -> Option<(Vector3<f64>, Matrix3<f64>)> {
     let mut iq = [0i32; 1];
     let m1 = -1i32;
     unsafe {
-        accelerate::dsyevd(&jobz, &uplo, &n, a.as_mut_ptr(), &n, w.as_mut_ptr(),
-            wq.as_mut_ptr(), &m1, iq.as_mut_ptr(), &m1, &mut info);
+        accelerate::dsyevd(
+            &jobz,
+            &uplo,
+            &n,
+            a.as_mut_ptr(),
+            &n,
+            w.as_mut_ptr(),
+            wq.as_mut_ptr(),
+            &m1,
+            iq.as_mut_ptr(),
+            &m1,
+            &mut info,
+        );
     }
     if info != 0 {
         return None;
@@ -304,8 +449,19 @@ pub fn eigh3(m: &Matrix3<f64>) -> Option<(Vector3<f64>, Matrix3<f64>)> {
     let mut work = vec![0.0f64; lwork as usize];
     let mut iwork = vec![0i32; liwork as usize];
     unsafe {
-        accelerate::dsyevd(&jobz, &uplo, &n, a.as_mut_ptr(), &n, w.as_mut_ptr(),
-            work.as_mut_ptr(), &lwork, iwork.as_mut_ptr(), &liwork, &mut info);
+        accelerate::dsyevd(
+            &jobz,
+            &uplo,
+            &n,
+            a.as_mut_ptr(),
+            &n,
+            w.as_mut_ptr(),
+            work.as_mut_ptr(),
+            &lwork,
+            iwork.as_mut_ptr(),
+            &liwork,
+            &mut info,
+        );
     }
     if info != 0 {
         return None;

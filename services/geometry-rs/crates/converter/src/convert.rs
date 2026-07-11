@@ -25,7 +25,10 @@ pub struct ConvertError {
 
 impl ConvertError {
     pub fn new(code: &str, message: impl Into<String>) -> Self {
-        ConvertError { code: code.to_string(), message: message.into() }
+        ConvertError {
+            code: code.to_string(),
+            message: message.into(),
+        }
     }
 }
 
@@ -36,10 +39,16 @@ fn to_node(tree: &occt_bridge::Tree, index: u64) -> AssemblyNode {
         transform[i] = *v;
     }
     let mesh = if raw.has_mesh {
-        let positions: Vec<[f32; 3]> =
-            raw.vertices.chunks_exact(3).map(|c| [c[0], c[1], c[2]]).collect();
-        let indices: Vec<[u32; 3]> =
-            raw.indices.chunks_exact(3).map(|c| [c[0], c[1], c[2]]).collect();
+        let positions: Vec<[f32; 3]> = raw
+            .vertices
+            .chunks_exact(3)
+            .map(|c| [c[0], c[1], c[2]])
+            .collect();
+        let indices: Vec<[u32; 3]> = raw
+            .indices
+            .chunks_exact(3)
+            .map(|c| [c[0], c[1], c[2]])
+            .collect();
         Some(PartMesh::new(positions, indices, raw.is_proxy))
     } else {
         None
@@ -49,7 +58,11 @@ fn to_node(tree: &occt_bridge::Tree, index: u64) -> AssemblyNode {
     } else {
         None
     };
-    let volume = if raw.has_volume { Some(raw.volume) } else { None };
+    let volume = if raw.has_volume {
+        Some(raw.volume)
+    } else {
+        None
+    };
     let children = raw.children.iter().map(|&c| to_node(tree, c)).collect();
     AssemblyNode {
         name: raw.name.clone(),
@@ -95,5 +108,11 @@ pub fn convert_step(
     let triangles = count_triangles(&root);
     let graph = build_graph(&root, &source_unit);
     let glb = crate::glb::write_glb(&root);
-    Ok(Conversion { graph, glb, root, component_count, triangles })
+    Ok(Conversion {
+        graph,
+        glb,
+        root,
+        component_count,
+        triangles,
+    })
 }

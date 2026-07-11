@@ -46,15 +46,26 @@ mod tests {
     #[test]
     fn geometry_hash_matches_python() {
         // Reference values captured from app.convert._geometry_hash.
-        let pos = [[0.0f32, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [1.0, 1.0, 1.0]];
+        let pos = [
+            [0.0f32, 0.0, 0.0],
+            [1.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0],
+            [1.0, 1.0, 1.0],
+        ];
         let idx = [[0u32, 1, 2], [1, 3, 2]];
-        assert_eq!(geometry_hash(&pos, &idx), "9e21fed301a9b2683e3e381282e35ac1bb0576fb");
+        assert_eq!(
+            geometry_hash(&pos, &idx),
+            "9e21fed301a9b2683e3e381282e35ac1bb0576fb"
+        );
     }
 
     #[test]
     fn node_id_matches_python() {
         // Reference values captured from app.convert._node_id.
-        assert_eq!(node_id("9e21fed301a9b2683e3e381282e35ac1bb0576fb", "A/B", 2), "e7e90bb71c31f2f8");
+        assert_eq!(
+            node_id("9e21fed301a9b2683e3e381282e35ac1bb0576fb", "A/B", 2),
+            "e7e90bb71c31f2f8"
+        );
         assert_eq!(node_id("", "", 0), "df6bf0c022b56e83");
         assert_eq!(node_id("abc123", "PLATE", 0), "d5dc7338a9bc0158");
         assert_eq!(node_id("abc123", "STACK-ASSY/PLATE", 1), "cfb23fd2f838d9a5");

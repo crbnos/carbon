@@ -31,6 +31,10 @@ fn plan_step_plates() {
         seq.iter().map(|v| v.as_str().unwrap()).collect::<Vec<_>>(),
         result.planned_count,
         result.verified_count,
-        result.tiers.iter().filter(|(_, v)| **v > 0).collect::<Vec<_>>(),
+        result
+            .tiers
+            .iter()
+            .filter(|(_, v)| **v > 0)
+            .collect::<Vec<_>>(),
     );
 }
