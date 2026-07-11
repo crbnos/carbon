@@ -104,7 +104,20 @@ entities for picking. These return **`storageUnitId` / `storageUnitName`** (`sto
 table) — the modern naming after the `shelf` → `storageUnit` rename. They net out
 `pickingListLineTrackedEntity` allocations, drop lineside (work-center) bins, and order by
 FEFO (`expirationDate ASC NULLS LAST`) then FIFO (`createdAt ASC`). Powers the shared
-`packages/react/src/TrackedEntityPicker.tsx`.
+`packages/react/src/TrackedEntityPicker.tsx`. `get_available_tracked_entities` also
+takes `p_sort_method` (`Default|FEFO|FIFO|LIFO`) — but its internal `ORDER BY` is not
+guaranteed through PostgREST (SQL-function inlining), so callers that need a specific
+order sort in the app (MES `sortLotsByPickMethod` in `apps/mes/app/services/allocation.ts`).
+
+**Pick → consume → return lifecycle (batch/serial):** a **pick** (`post-picking`) is an
+`itemLedger` Transfer warehouse→lineside; **consumption** (`issue` `trackedEntitiesToOperation`)
+posts a negative Consumption row and, on partial use, **splits** the entity — the un-consumed
+remainder becomes a NEW `trackedEntity` (a Split descendant), NOT the originally-picked one, and
+`pickingListLineTrackedEntity` is not updated. Consumption/split rows are booked against the
+entity's actual on-hand bin (`resolveTrackedEntityBin`), not an arbitrary ledger row. At job
+complete, `post-picking` `returnPickedRemainder` walks the picked entity's split lineage and
+transfers each lineage entity's remaining lineside on-hand back to source (decrementing
+`pickingListLineTrackedEntity`/`pickingListLine.quantityPicked`).
 
 **Gotcha:** the older `get_item_quantities_by_tracking_id` (`20260101163400`) still emits
 legacy `shelfId` / `shelfName` and joins the `shelf` table — both column sets exist; check

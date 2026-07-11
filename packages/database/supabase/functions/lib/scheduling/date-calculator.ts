@@ -135,18 +135,38 @@ export class BackwardSchedulingStrategy implements SchedulingStrategy {
         const dependentConstraints = dependents
           .map((depId) => {
             const scheduledOp = scheduled.get(depId);
-            const baseOp = operationMap.get(depId);
+            const depOp = operationMap.get(depId);
             if (!scheduledOp?.startDate) return null;
 
-            // Subtract lead time from dependent's start date
-            // Lead time represents how early the subassembly needs to be ready
-            // before the parent operation starts
-            const leadTimeDays = baseOp?.operationLeadTime ?? 0;
-            if (leadTimeDays > 0) {
-              const startDate = new Date(scheduledOp.startDate);
-              return subtractBusinessDays(startDate, leadTimeDays);
+            let constraintDate = new Date(scheduledOp.startDate);
+
+            // Operation-level lead time on the consuming (dependent) operation:
+            // how early this input must be ready before that operation starts.
+            const operationLeadTime = depOp?.operationLeadTime ?? 0;
+            if (operationLeadTime > 0) {
+              constraintDate = subtractBusinessDays(
+                constraintDate,
+                operationLeadTime
+              );
             }
-            return new Date(scheduledOp.startDate);
+
+            // Assembly boundary: this op is a subassembly's last operation
+            // feeding a parent make method's operation. Pull its due date back
+            // by the subassembly item's manufacturing lead time so the whole
+            // subassembly is scheduled to finish that many days early.
+            const isAssemblyEdge =
+              !!op.jobMakeMethodId &&
+              !!depOp?.jobMakeMethodId &&
+              op.jobMakeMethodId !== depOp.jobMakeMethodId;
+            const assemblyLeadTime = op.assemblyLeadTime ?? 0;
+            if (isAssemblyEdge && assemblyLeadTime > 0) {
+              constraintDate = subtractBusinessDays(
+                constraintDate,
+                assemblyLeadTime
+              );
+            }
+
+            return constraintDate;
           })
           .filter((date): date is Date => date !== null);
 

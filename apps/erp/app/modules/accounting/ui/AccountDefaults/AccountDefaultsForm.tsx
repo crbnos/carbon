@@ -105,7 +105,7 @@ const AccountDefaultsForm = ({
             name: "prepaymentAccount",
             label: t`Prepayments`,
             description: t`Account for advance payments made before goods or services are received`,
-            badgeType: "Asset",
+            badgeType: "Liability",
             termId: "account-default-prepayments"
           },
           {
@@ -190,6 +190,12 @@ const AccountDefaultsForm = ({
             description: t`Accounts payable for amounts owed to suppliers`,
             badgeType: "Liability",
             termId: "account-default-payables"
+          },
+          {
+            name: "supplierPrepaymentAccount",
+            label: t`Supplier Prepayments`,
+            description: t`Asset account for advance payments made to suppliers before goods or services are received`,
+            badgeType: "Asset"
           },
           {
             name: "goodsReceivedNotInvoicedAccount",
@@ -291,8 +297,8 @@ const AccountDefaultsForm = ({
       },
       {
         id: "cogs",
-        title: t`Purchasing & Cost of Goods`,
-        description: t`Configure default accounts for purchasing and COGS`,
+        title: t`Cost of Goods Sold`,
+        description: t`Default accounts for the cost of goods sold and indirect purchases`,
         fields: [
           {
             name: "costOfGoodsSoldAccount",
@@ -307,7 +313,14 @@ const AccountDefaultsForm = ({
             description: t`Expense account for non-inventory purchases (services, supplies)`,
             badgeType: "Expense",
             termId: "account-default-indirect-materials-services"
-          },
+          }
+        ]
+      },
+      {
+        id: "absorption",
+        title: t`Absorption`,
+        description: t`Credit accounts used when manufacturing costs are absorbed into WIP`,
+        fields: [
           {
             name: "laborAbsorptionAccount",
             label: t`Labor & Machine Absorption`,
@@ -315,6 +328,20 @@ const AccountDefaultsForm = ({
             badgeType: "Expense",
             termId: "account-default-labor-machine-absorption"
           },
+          {
+            name: "overheadAbsorptionAccount",
+            label: t`Overhead Absorption`,
+            description: t`Credit account when overhead is absorbed into WIP`,
+            badgeType: "Expense",
+            termId: "account-default-overhead-absorption"
+          }
+        ]
+      },
+      {
+        id: "variances",
+        title: t`Standard Cost Variances`,
+        description: t`Accounts for recording differences between actual and standard costs`,
+        fields: [
           {
             name: "purchaseVarianceAccount",
             label: t`Purchase Price Variance`,

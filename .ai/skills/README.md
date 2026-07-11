@@ -66,6 +66,7 @@ in root-cause, BLOCKED in fix) always surface to the human.
 | `inngest` | Inngest v3 platform reference (steps, events, flow control, errors) as Carbon runs it | knowledge (no artifact) |
 | `rust` | Rust reference for the cargo workspace (tokio+FFI discipline, state choices, perf) | knowledge (no artifact) |
 | `carbon-docs` | Author reader-facing docs in the docs app | `docs/content/**` |
+| `translate` | Fill missing i18n .po translations via cheap Haiku subagents | `packages/locale/locales/*/*.po` |
 | `test-driven-development` | Red→green→refactor discipline (vitest) | tests-first code |
 | `writing-skills` | House guide for authoring skills | skills |
 | `pr-explainer` | Self-contained HTML review aid for a PR | `.pr-review/*.html` |

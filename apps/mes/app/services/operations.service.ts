@@ -186,9 +186,94 @@ export async function finishJobOperation(
           );
         }
       });
+
+    // The status='Done' write fires the sync_finish_job_operation trigger, which
+    // completes the job to inventory (job.status → 'Completed') when this was the
+    // last operation. At that point, return any picking-list-allocated batch/serial
+    // stock that was staged to lineside but not consumed back to its warehouse
+    // source — the SQL trigger can't call edge functions, so we orchestrate it here.
+    await returnAllocatedRemaindersAtJobComplete(client, args);
   }
 
   return result;
+}
+
+/**
+ * When a job has just completed, sweep its tracked (batch/serial) picking-list
+ * allocations and return the un-consumed remainder of each from the lineside
+ * shelf back to the warehouse source (so it's re-allocatable, and inventory
+ * reflects only what was actually consumed). No-op unless the job is 'Completed'.
+ * Idempotent: `returnPickedRemainder` returns nothing once lineside on-hand is 0.
+ *
+ * Uses the client `finishJobOperation` is given — every caller passes a
+ * service-role client, so the picking allocations (an inventory table the
+ * finishing operator may not have RLS access to) are always readable and the
+ * returns aren't silently skipped for production-only roles.
+ */
+async function returnAllocatedRemaindersAtJobComplete(
+  client: SupabaseClient<Database>,
+  args: {
+    jobOperationId: string;
+    userId: string;
+    companyId: string;
+  }
+) {
+  const op = await client
+    .from("jobOperation")
+    .select("jobId")
+    .eq("id", args.jobOperationId)
+    .maybeSingle();
+  const jobId = op.data?.jobId;
+  if (!jobId) return;
+
+  const job = await client
+    .from("job")
+    .select("status, locationId")
+    .eq("id", jobId)
+    .maybeSingle();
+  const locationId = job.data?.locationId;
+  if (job.data?.status !== "Completed" || !locationId) return;
+
+  const { data: lines } = await client
+    .from("pickingListLine")
+    .select("id, pickingListId, pickingListLineTrackedEntity(trackedEntityId)")
+    .eq("jobId", jobId)
+    .neq("status", "Cancelled");
+  if (!lines?.length) return;
+
+  const returns = lines.flatMap((line) => {
+    const allocations =
+      (line.pickingListLineTrackedEntity as Array<{
+        trackedEntityId: string;
+      }> | null) ?? [];
+    return allocations.map((allocation) =>
+      client.functions.invoke("post-picking", {
+        body: {
+          type: "returnPickedRemainder",
+          pickingListId: line.pickingListId,
+          pickingListLineId: line.id,
+          trackedEntityId: allocation.trackedEntityId,
+          locationId,
+          userId: args.userId,
+          companyId: args.companyId
+        }
+      })
+    );
+  });
+
+  // `functions.invoke` resolves to `{ data, error }` rather than rejecting, so a
+  // failed return never surfaces through Promise.all — inspect each result and log
+  // it, otherwise a stranded lineside remainder is lost silently.
+  const results = await Promise.all(returns);
+  for (const { error } of results) {
+    if (error) {
+      log.error("returnPickedRemainder failed at job complete", {
+        error,
+        jobId,
+        companyId: args.companyId
+      });
+    }
+  }
 }
 
 export async function getActiveJobOperationsByEmployee(

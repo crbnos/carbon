@@ -106,6 +106,9 @@ const SalesInvoiceForm = ({ initialValues }: SalesInvoiceFormProps) => {
       });
 
       const [customerData, paymentTermData] = await Promise.all([
+        // @ts-ignore TS2589: the composite customerShipping embed trips tsc's
+        // instantiation-depth limit but not tsgo's — @ts-ignore satisfies both
+        // (@ts-expect-error would be reported unused by tsgo in CI).
         carbon
           ?.from("customer")
           .select(

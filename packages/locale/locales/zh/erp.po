@@ -91,6 +91,9 @@ msgstr "{chainLabel}。考虑将此零件直接指向最终后继产品。"
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# 门课程} other {# 门课程}}"
 
+msgid "{done} of {total} phases complete"
+msgstr "{done} 个，共 {total} 个阶段已完成"
+
 msgid "{from}–{to} of {count}"
 msgstr "{from}–{to} 共 {count}"
 
@@ -347,6 +350,9 @@ msgstr "功能"
 msgid "About"
 msgstr "关于"
 
+msgid "Absorption"
+msgstr "吸收"
+
 msgid "Academy"
 msgstr "学院"
 
@@ -424,6 +430,9 @@ msgstr "会计：总账、应收账款、应付账款和月末结账"
 
 msgid "Accounts"
 msgstr "账户"
+
+msgid "Accounts for recording differences between actual and standard costs"
+msgstr "用于记录实际成本与标准成本之间的差异的科目"
 
 msgid "Accounts Payable"
 msgstr "应付账款"
@@ -1317,6 +1326,13 @@ msgstr "你确定要拒绝此报价吗？"
 msgid "Are you sure you want to release this job? It will become available to the shop floor, and drive purchasing and production."
 msgstr "你确定要发布此工作吗？它将在车间可用，并推动采购和生产。"
 
+#. placeholder {0}: supplierName(deleteTarget.supplierId)
+msgid "Are you sure you want to remove {0} as a supplier for this item? This cannot be undone."
+msgstr "您确定要将 {0} 从此项目的供应商中移除吗？此操作无法撤销。"
+
+msgid "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
+msgstr "您确定要将 {supplierName} 从此项目的供应商中移除吗？此操作无法撤销。"
+
 msgid "Are you sure you want to remove this item from the price list? This cannot be undone."
 msgstr "你确定要从价格列表中删除此项目吗？此操作无法撤销。"
 
@@ -1385,6 +1401,9 @@ msgstr "资产"
 
 msgid "Asset Account"
 msgstr "资产账户"
+
+msgid "Asset account for advance payments made to suppliers before goods or services are received"
+msgstr "供应商在收到商品或服务前预先支付的预付款的资产科目"
 
 msgid "Asset Acquisition Cost"
 msgstr "资产收购成本"
@@ -2277,9 +2296,6 @@ msgstr "配置现金和银行交易的默认账户"
 msgid "Configure default accounts for inventory management"
 msgstr "配置库存管理的默认账户"
 
-msgid "Configure default accounts for purchasing and COGS"
-msgstr "配置采购和COGS的默认账户"
-
 msgid "Configure default accounts for vendor and supplier transactions"
 msgstr "配置供应商和供应商交易的默认账户"
 
@@ -2960,6 +2976,12 @@ msgstr "信用账户"
 msgid "Credit account when labor/machine time is absorbed into WIP"
 msgstr "当劳动力/机器时间被吸收到WIP中时的信用账户"
 
+msgid "Credit account when overhead is absorbed into WIP"
+msgstr "制造费用吸收到在产品中时的贷方科目"
+
+msgid "Credit accounts used when manufacturing costs are absorbed into WIP"
+msgstr "制造成本吸收到在产品中时使用的贷方科目"
+
 msgid "Credits & Debits"
 msgstr "贷项和借项"
 
@@ -3336,6 +3358,9 @@ msgstr "销售和收入的默认账户"
 msgid "Default accounts for tax-related transactions"
 msgstr "税务交易的默认账户"
 
+msgid "Default accounts for the cost of goods sold and indirect purchases"
+msgstr "销售成本和间接采购的默认科目"
+
 msgid "Default Approver"
 msgstr "默认审批人"
 
@@ -3641,6 +3666,9 @@ msgstr "删除物质"
 
 msgid "Delete Suggestion"
 msgstr "删除建议"
+
+msgid "Delete supplier"
+msgstr "删除供应商"
 
 msgid "Delete Supplier"
 msgstr "删除供应商"
@@ -5445,6 +5473,9 @@ msgstr "当劳动力或机器成本被吸收到生产工作中时记入贷方的
 
 msgid "GL account credited when labor or machine cost is absorbed into a production job."
 msgstr "在处置资产时借记以清除累积折旧的GL账户。"
+
+msgid "GL account credited when manufacturing overhead is absorbed into a production job."
+msgstr "当制造费用被吸收到生产作业中时被贷记的总分类账科目。"
 
 msgid "GL account debited to clear accumulated depreciation when an asset is disposed."
 msgstr "当客户发票过账时借记的GL账户；当客户支付时清除。"
@@ -7946,9 +7977,6 @@ msgstr "OEM (原始设备制造商)"
 msgid "of"
 msgstr "的"
 
-msgid "of {total} phases complete"
-msgstr "的 {total} 个阶段已完成"
-
 msgid "OK"
 msgstr "确定"
 
@@ -8240,6 +8268,12 @@ msgstr "超额应用"
 
 msgid "Overdue"
 msgstr "逾期"
+
+msgid "Overhead Absorption"
+msgstr "制造费用吸收"
+
+msgid "Overhead Absorption (default)"
+msgstr "制造费用吸收（默认）"
 
 msgid "Overhead Rate"
 msgstr "间接费率"
@@ -9073,9 +9107,6 @@ msgstr "采购和已售商品成本"
 
 msgid "Purchasing"
 msgstr "采购"
-
-msgid "Purchasing & Cost of Goods"
-msgstr "质量"
 
 msgid "Purchasing & Inventory"
 msgstr "采购和库存"
@@ -10862,6 +10893,9 @@ msgstr "标准"
 msgid "Standard cloud Carbon fits how your company runs"
 msgstr "标准云 Carbon 适合您公司的运营方式"
 
+msgid "Standard Cost Variances"
+msgstr "标准成本差异"
+
 msgid "Standard factor"
 msgstr "标准系数"
 
@@ -11161,6 +11195,9 @@ msgstr "供应商订单号"
 msgid "Supplier Overview"
 msgstr "供应商概览"
 
+msgid "Supplier Part"
+msgstr "供应商零件"
+
 msgid "Supplier Part ID"
 msgstr "供应商零件ID"
 
@@ -11178,6 +11215,9 @@ msgstr "供应商付款折扣"
 
 msgid "Supplier Payment Discounts (default)"
 msgstr "供应商付款折扣（默认）"
+
+msgid "Supplier Prepayments"
+msgstr "供应商预付款"
 
 msgid "supplier process"
 msgstr "供应商流程"
@@ -12189,6 +12229,9 @@ msgstr "此销售订单有需要创建工作的行项目"
 #. placeholder {0}: usageCount === 1 ? "" : "s"
 msgid "This storage type is currently used by {usageCount} storage unit{0}."
 msgstr "此存储类型当前被 {usageCount} 个存储单元{0}使用。"
+
+msgid "this supplier"
+msgstr "此供应商"
 
 msgid "This updates the theme for all users of the application"
 msgstr "这会更新应用程序所有用户的主题"

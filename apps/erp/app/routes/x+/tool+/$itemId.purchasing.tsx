@@ -123,7 +123,10 @@ export default function ToolPurchasingRoute() {
           supplierParts.map((s) => s.supplierId).filter(Boolean) as string[]
         }
       />
-      <SupplierParts supplierParts={supplierParts} />
+      <SupplierParts
+        supplierParts={supplierParts}
+        deleteSupplierPath={(id) => path.to.deleteToolSupplier(itemId, id)}
+      />
       {["Batch", "Serial"].includes(
         toolData?.toolSummary?.itemTrackingType ?? ""
       ) && (

@@ -16,7 +16,11 @@ export type Events = {
     data: {
       event: NotificationEvent;
       companyId: string;
-      documentId: string;
+      // At least one of documentId / documentIds is required. Digest-capable
+      // events pass documentIds (one notification covering several documents);
+      // the primary/link id is documentId ?? documentIds[0].
+      documentId?: string;
+      documentIds?: string[];
       recipient:
         | { type: "user"; userId: string }
         | { type: "group"; groupIds: string[] }
@@ -53,6 +57,13 @@ export type Events = {
         | { filename: string; path: string }
       >;
       companyId: string;
+      // Recurring notification emails only: after the provider accepts the
+      // send, the send-email function bumps the delivery counters for these.
+      tracking?: {
+        event: NotificationEvent;
+        userId: string;
+        documentIds: string[];
+      };
     };
   };
 

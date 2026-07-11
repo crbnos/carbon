@@ -33,6 +33,14 @@ export default defineConfig(({ isSsrBuild, mode }) => {
         "react-icons",
         "react-phone-number-input",
         "tailwind-merge",
+        /**
+         * @react-three/fiber v8 (inlined via @carbon/viewer) default-imports
+         * its nested zustand v3, while the app uses zustand v5 (no default
+         * export). Externalizing zustand merges both into one bare import that
+         * resolves to v5 at runtime and crashes the server at module load.
+         * Bundling it lets each importer keep its own version.
+         */
+        "zustand",
       ],
     },
     server: {

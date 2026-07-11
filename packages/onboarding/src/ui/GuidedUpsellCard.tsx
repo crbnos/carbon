@@ -13,12 +13,12 @@ export function GuidedUpsellCard({
 }) {
   const { i18n } = useLingui();
   return (
-    <section className="rounded-2xl border border-primary/30 bg-primary/5 shadow-button-base p-6 flex items-start gap-4">
+    <section className="rounded-2xl border border-border p-6 flex items-start gap-4">
       <div className="shrink-0 size-11 rounded-2xl bg-primary/15 flex items-center justify-center text-primary">
         <LuSparkles className="text-xl" />
       </div>
       <div className="flex-1 min-w-0">
-        <div className="text-xxs uppercase tracking-wide font-medium text-primary">
+        <div className="text-xxs uppercase text-muted-foreground tracking-wide font-medium">
           {i18n._(GUIDED_UPSELL.eyebrow)}
         </div>
         <div className="text-base font-semibold tracking-tight mt-0.5 text-balance">

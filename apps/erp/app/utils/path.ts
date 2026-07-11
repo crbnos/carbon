@@ -697,6 +697,8 @@ export const path = {
     consumableRoot: `${x}/consumable`,
     consumableSupplier: (itemId: string, id: string) =>
       generatePath(`${x}/consumable/${itemId}/purchasing/${id}`),
+    deleteConsumableSupplier: (itemId: string, id: string) =>
+      generatePath(`${x}/consumable/${itemId}/purchasing/${id}/delete`),
     consumableSuppliers: (id: string) =>
       generatePath(`${x}/consumable/${id}/suppliers`),
     convertQuoteToOrder: (id: string) =>
@@ -1220,6 +1222,8 @@ export const path = {
     materialRoot: `${x}/material`,
     materialSupplier: (itemId: string, id: string) =>
       generatePath(`${x}/material/${itemId}/purchasing/${id}`),
+    deleteMaterialSupplier: (itemId: string, id: string) =>
+      generatePath(`${x}/material/${itemId}/purchasing/${id}/delete`),
     materialSuppliers: (id: string) =>
       generatePath(`${x}/material/${id}/suppliers`),
     materials: `${x}/items/materials`,
@@ -1457,6 +1461,8 @@ export const path = {
     partSales: (id: string) => generatePath(`${x}/part/${id}/sales`),
     partSupplier: (itemId: string, id: string) =>
       generatePath(`${x}/part/${itemId}/purchasing/${id}`),
+    deletePartSupplier: (itemId: string, id: string) =>
+      generatePath(`${x}/part/${itemId}/purchasing/${id}/delete`),
     parts: `${x}/items/parts`,
     partner: (id: string, abilityId: string) =>
       generatePath(`${x}/resources/partners/${id}/${abilityId}`),
@@ -1950,6 +1956,8 @@ export const path = {
     toolRoot: `${x}/tool`,
     toolSupplier: (itemId: string, id: string) =>
       generatePath(`${x}/tool/${itemId}/suppliers/${id}`),
+    deleteToolSupplier: (itemId: string, id: string) =>
+      generatePath(`${x}/tool/${itemId}/purchasing/${id}/delete`),
     toolSuppliers: (id: string) => generatePath(`${x}/tool/${id}/suppliers`),
     tools: `${x}/items/tools`,
     traceability: `${x}/traceability`,

@@ -91,6 +91,9 @@ msgstr "{chainLabel}. Bu parçayı doğrudan son halefine yönlendirmeyi düşü
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# kurs} other {# kurs}}"
 
+msgid "{done} of {total} phases complete"
+msgstr "{done} / {total} aşama tamamlandı"
+
 msgid "{from}–{to} of {count}"
 msgstr "{from}–{to} / {count}"
 
@@ -347,6 +350,9 @@ msgstr "yetenek"
 msgid "About"
 msgstr "Hakkında"
 
+msgid "Absorption"
+msgstr "Emilim"
+
 msgid "Academy"
 msgstr "Akademi"
 
@@ -424,6 +430,9 @@ msgstr "Muhasebe: GL, AR, AP ve ay sonu kapanışı"
 
 msgid "Accounts"
 msgstr "Hesaplar"
+
+msgid "Accounts for recording differences between actual and standard costs"
+msgstr "Fiili ve standart maliyetler arasındaki farklılıkları kaydetmek için kullanılan hesaplar"
 
 msgid "Accounts Payable"
 msgstr "Ödenecek hesaplar"
@@ -1317,6 +1326,13 @@ msgstr "Bu teklifi reddetmek istediğinizden emin misiniz?"
 msgid "Are you sure you want to release this job? It will become available to the shop floor, and drive purchasing and production."
 msgstr "Bu işi yayınlamak istediğinizden emin misiniz? Atölye zemininde kullanılabilir hale gelecek ve satın alma ile üretimi tetikleyecektir."
 
+#. placeholder {0}: supplierName(deleteTarget.supplierId)
+msgid "Are you sure you want to remove {0} as a supplier for this item? This cannot be undone."
+msgstr "Bu öğe için {0} tedarikçi olarak kaldırmak istediğinizden emin misiniz? Bu işlem geri alınamaz."
+
+msgid "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
+msgstr "Bu öğe için {supplierName} tedarikçisini kaldırmak istediğinizden emin misiniz? Bu işlem geri alınamaz."
+
 msgid "Are you sure you want to remove this item from the price list? This cannot be undone."
 msgstr "Bu öğeyi fiyat listesinden kaldırmak istediğinizden emin misiniz? Bu geri alınamaz."
 
@@ -1385,6 +1401,9 @@ msgstr "Varlık"
 
 msgid "Asset Account"
 msgstr "Varlık hesabı"
+
+msgid "Asset account for advance payments made to suppliers before goods or services are received"
+msgstr "Mallar veya hizmetler alınmadan önce tedarikçilere yapılan ön ödemeler için varlık hesabı"
 
 msgid "Asset Acquisition Cost"
 msgstr "Varlık satın alma maliyeti"
@@ -2277,9 +2296,6 @@ msgstr "Nakit ve banka işlemleri için varsayılan hesapları yapılandırın"
 msgid "Configure default accounts for inventory management"
 msgstr "Envanter yönetimi için varsayılan hesapları yapılandırın"
 
-msgid "Configure default accounts for purchasing and COGS"
-msgstr "Satın alma ve COGS için varsayılan hesapları yapılandırın"
-
 msgid "Configure default accounts for vendor and supplier transactions"
 msgstr "Satıcı ve tedarikçi işlemleri için varsayılan hesapları yapılandırın"
 
@@ -2960,6 +2976,12 @@ msgstr "Kredi Hesabı"
 msgid "Credit account when labor/machine time is absorbed into WIP"
 msgstr "İşçilik/makine zamanı WIP'de emildiğinde kredi hesabı"
 
+msgid "Credit account when overhead is absorbed into WIP"
+msgstr "Genel giderler devam eden işlere emildiğinde kredi hesabı"
+
+msgid "Credit accounts used when manufacturing costs are absorbed into WIP"
+msgstr "Üretim maliyetleri devam eden işlere emildiğinde kullanılan kredi hesapları"
+
 msgid "Credits & Debits"
 msgstr "Krediler ve Borçlar"
 
@@ -3336,6 +3358,9 @@ msgstr "Satış ve gelir için varsayılan hesaplar"
 msgid "Default accounts for tax-related transactions"
 msgstr "Vergi ile ilgili işlemler için varsayılan hesaplar"
 
+msgid "Default accounts for the cost of goods sold and indirect purchases"
+msgstr "Satılan malların maliyeti ve dolaylı satın almalar için varsayılan hesaplar"
+
 msgid "Default Approver"
 msgstr "Varsayılan Onaylayıcı"
 
@@ -3641,6 +3666,9 @@ msgstr "Madde Sil"
 
 msgid "Delete Suggestion"
 msgstr "Öneriyi Sil"
+
+msgid "Delete supplier"
+msgstr "Tedarikçiyi sil"
 
 msgid "Delete Supplier"
 msgstr "Tedarikçiyi Sil"
@@ -5445,6 +5473,9 @@ msgstr "İşçilik veya makine maliyeti bir üretim işine emildiğinde kredilen
 
 msgid "GL account credited when labor or machine cost is absorbed into a production job."
 msgstr "Bir varlık elden çıkarıldığında birikmiş amortisman temizlemek için borçlandırılan GL hesabı."
+
+msgid "GL account credited when manufacturing overhead is absorbed into a production job."
+msgstr "Üretim genel giderleri bir üretim işine emildiğinde alacak kaydedilen muhasebe hesabı."
 
 msgid "GL account debited to clear accumulated depreciation when an asset is disposed."
 msgstr "Müşteri faturası gönderildiğinde borçlandırılan GL hesabı; müşteri ödediğinde temizlenir."
@@ -7946,9 +7977,6 @@ msgstr "OEM (Orijinal Ekipman Üreticisi)"
 msgid "of"
 msgstr "adet"
 
-msgid "of {total} phases complete"
-msgstr "{total} aşamanın tamamlandığı"
-
 msgid "OK"
 msgstr "Tamam"
 
@@ -8240,6 +8268,12 @@ msgstr "Fazla uygulandı"
 
 msgid "Overdue"
 msgstr "Geçmiş"
+
+msgid "Overhead Absorption"
+msgstr "Genel Giderlerin Emilimi"
+
+msgid "Overhead Absorption (default)"
+msgstr "Genel Giderlerin Emilimi (varsayılan)"
 
 msgid "Overhead Rate"
 msgstr "Genel Gider Oranı"
@@ -9073,9 +9107,6 @@ msgstr "Satın Alma ve Satılan Malların Maliyeti"
 
 msgid "Purchasing"
 msgstr "Satın Alma"
-
-msgid "Purchasing & Cost of Goods"
-msgstr "kalite"
 
 msgid "Purchasing & Inventory"
 msgstr "Satın Alma & Envanter"
@@ -10862,6 +10893,9 @@ msgstr "Standart"
 msgid "Standard cloud Carbon fits how your company runs"
 msgstr "Standart bulut Carbon, şirketinizin nasıl çalıştığına uygun"
 
+msgid "Standard Cost Variances"
+msgstr "Standart Maliyet Sapmaları"
+
 msgid "Standard factor"
 msgstr "Standart faktör"
 
@@ -11161,6 +11195,9 @@ msgstr "Tedarikçi Sipariş Numarası"
 msgid "Supplier Overview"
 msgstr "Tedarikçi Genel Bakışı"
 
+msgid "Supplier Part"
+msgstr "Tedarikçi Parçası"
+
 msgid "Supplier Part ID"
 msgstr "Tedarikçi Parça Kimliği"
 
@@ -11178,6 +11215,9 @@ msgstr "Tedarikçi Ödeme İndirimleri"
 
 msgid "Supplier Payment Discounts (default)"
 msgstr "Tedarikçi Ödeme İndirimleri (varsayılan)"
+
+msgid "Supplier Prepayments"
+msgstr "Tedarikçi Ön Ödemeleri"
 
 msgid "supplier process"
 msgstr "Tedarikçi Süreci"
@@ -12189,6 +12229,9 @@ msgstr "Bu satış siparişi, iş oluşturulmasını gerektiren satırlara sahip
 #. placeholder {0}: usageCount === 1 ? "" : "s"
 msgid "This storage type is currently used by {usageCount} storage unit{0}."
 msgstr "Bu depolama türü şu anda {usageCount} depolama birimi{0} tarafından kullanılıyor."
+
+msgid "this supplier"
+msgstr "bu tedarikçi"
 
 msgid "This updates the theme for all users of the application"
 msgstr "Bu, uygulamanın tüm kullanıcıları için temayı günceller"

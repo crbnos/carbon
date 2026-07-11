@@ -239,6 +239,26 @@ Format: `Context → Problem → Rule → Applies to`
 
 **Applies to:** `packages/database/supabase/migrations/` — all `sync_*` interceptors and any PL/pgSQL function writing `createdBy`/`updatedBy`/`postedBy`; reviews of new event-system interceptors.
 
+## A LANGUAGE sql set-returning function's internal ORDER BY is not guaranteed through PostgREST
+
+**Context:** `get_available_tracked_entities` (a `LANGUAGE sql STABLE` set-returning function) was extended with a `p_sort_method` param and a CASE-based `ORDER BY` (FEFO/FIFO/LIFO) to power an on-the-fly picking suggestion. FEFO worked, but calling the RPC for FIFO returned rows in the wrong order — its only effective sort key was the trailing `te."createdAt" ASC`, which came back unordered. Adding an explicit outer `ORDER BY "createdAt"` at the call site fixed it, proving the function's internal order was being dropped.
+
+**Problem:** The Postgres planner **inlines** simple `LANGUAGE sql` functions into the calling query; when the caller (here, PostgREST via `client.rpc(...)`) supplies no outer `ORDER BY`, the inlined subquery's `ORDER BY` can be optimized away. Ordering that leads with a real indexed/leading column (expiration for FEFO) may survive by luck; ordering whose only key is a trailing column silently does not. Unit tests and typecheck can't catch this — only real-data querying does.
+
+**Rule:** Do not rely on a `LANGUAGE sql` set-returning function's internal `ORDER BY` to reach the app. Either (a) sort authoritatively in the app after the RPC returns (return the sort columns and order in TS — see `apps/mes/app/services/allocation.ts` `sortLotsByPickMethod`, applied in `getSuggestedAllocationForMaterial`), or (b) if ordering must live in SQL, use `LANGUAGE plpgsql` with `RETURN QUERY ... ORDER BY` (plpgsql is never inlined). Always verify RPC ordering against seeded real data, not just unit tests.
+
+**Applies to:** `packages/database/supabase/migrations/` set-returning `LANGUAGE sql` functions consumed via `client.rpc(...)`; any app code that greedy-fills / picks "the first row" from an RPC result.
+
+## Tracked consumption/split must book against the entity's ACTUAL bin, not an arbitrary ledger row
+
+**Context:** Building "return unused picks at job complete" surfaced a pre-existing bug in the `issue` edge function (`trackedEntitiesToOperation`). Consuming a batch that had been picked to a lineside shelf booked the Consumption + split `itemLedger` rows against `itemLedgers.find(il => il.trackedEntityId === id)?.storageUnitId` — the FIRST row for the entity in a `createdBy`-ordered list, i.e. an arbitrary bin. A picked entity has ledger rows in BOTH its warehouse source and its lineside bin, so consumption landed on the warehouse bin, leaving the entity at −N on-hand in one bin / +N in another: a per-bin-negative, internally inconsistent ledger, and the un-consumed remainder (a split entity) stranded on the wrong bin.
+
+**Problem:** For a tracked entity that has moved between bins (pick/transfer), "which bin holds the stock" is NOT the first ledger row — it's the bin whose net on-hand is positive. Picking any row's `storageUnitId` silently misplaces consumption and breaks any downstream feature that reasons about physical location (e.g. returning lineside remainder to source).
+
+**Rule:** When booking a consumption/split/movement ledger row for a tracked entity, resolve the storage unit from **net on-hand per bin** (the bin with the highest positive net), never `.find(...)?.storageUnitId` over an unordered/`createdBy`-ordered list. See `resolveTrackedEntityBin` (`packages/database/supabase/functions/issue/resolve-tracked-entity-bin.ts`, pure + `deno test`-covered). Scope such a fix to the path you can verify — the same `.find` pattern exists in other cases (e.g. `unconsumeTrackedEntities`); don't blanket-replace untested paths.
+
+**Applies to:** `packages/database/supabase/functions/issue/index.ts` and any edge function inserting `itemLedger` rows for a tracked entity that may hold stock in multiple bins.
+
 ## Biome does not apply 3rd-level nested configs — enforce Deno via an override
 
 **Context:** Bringing Supabase edge functions (`packages/database/supabase/functions/**`, Deno) into Biome's lint surface for the new `noConsole` rule. These files sit outside the linted globs (`apps/*/app/**`, `packages/*/src/**`) and were never Biome-formatted.
@@ -268,3 +288,13 @@ Format: `Context → Problem → Rule → Applies to`
 **Rule:** For a composite-FK relationship, embed by **target table name** — `.select("*, supplier(id, name)")` (or the explicit constraint `supplier:supplier!purchasingRfqSupplier_supplierId_fkey(...)`), never `alias:fkColumn(...)`. Verify a PostgREST embed against the running REST API (`/rest/v1/<table>?select=...` with the service-role key) — PGRST200 is a schema-cache error returned even on empty tables. And when a loader powers UI state, check `.error`, don't `?? []` a failed query into silent emptiness.
 
 **Applies to:** any supabase-js embed on a join table with a composite `(entityId, companyId)` FK — `purchasingRfqSupplier`, `supplierQuote.supplierId`, and siblings; `apps/erp/app/modules/purchasing/purchasing.service.ts`.
+
+## Dual-major deps of workspace source packages crash the SSR bundle when the shared dep is externalized
+
+**Context:** Merging assembly instructions (#1075) added `@carbon/viewer` (a source-only workspace package) with `@react-three/fiber@8`, whose ESM dist does `import create from 'zustand'` against its own nested zustand v3. The app + `@react-three/drei` use the catalog zustand v5, which removed the default export.
+
+**Problem:** Production (app.carbon.ms) 500'd on every request while builds stayed green. Vite/rolldown inlines deps of linked workspace packages into the SSR bundle but externalizes packages resolvable from the app root **by package name**, merging fiber's v3 default import with v5 named imports into one `import ste,{create,...}from"zustand"` in `build/server/index.js`. Node resolves that to v5 at runtime → `SyntaxError: The requested module 'zustand' does not provide an export named 'default'` at `ModuleJob._instantiate` — before any code runs, so the error never reaches error reporting, dev SSR never reproduces it (per-importer resolution), and Vercel previews show READY (crash is invocation-time). The runtime log dumps a random window of the minified bundle (logtape's timezone formatter), which reads like an Intl/timezone error — red herring.
+
+**Rule:** When a dep of a workspace source package pins a different major of a package the app also depends on, add that package to `ssr.noExternal` in the consuming apps' `vite.config.ts` so each importer keeps its own inlined copy. Verify with a build + `grep -E "from *[\"']zustand" build/server/**` (expect no bare imports) and `node --input-type=module -e "await import('.../build/server/index.js')"` — reaching an env-var error proves linking succeeded. For any all-requests-500 Vercel incident with a minified source dump, read the **last** lines for the real error and check `node:internal/modules/esm/module_job` in the stack before believing anything the dumped source suggests.
+
+**Applies to:** `apps/erp/vite.config.ts`, `apps/mes/vite.config.ts` `ssr.noExternal`; any new dep of `@carbon/viewer` or other source-only workspace packages (`@carbon/form`, `@carbon/onboarding`, ...) that pins an older major of a shared package.

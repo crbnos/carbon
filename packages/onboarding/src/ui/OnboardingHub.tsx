@@ -102,7 +102,7 @@ export function OnboardingHub({
             className="size-7 hidden dark:block"
           />
         </div>
-        <h1 className="text-3xl font-semibold tracking-tight text-balance">
+        <h1 className="text-3xl font-medium tracking-tight text-balance">
           {companyName ? (
             <Trans>Welcome, {companyName}</Trans>
           ) : (
@@ -127,12 +127,12 @@ export function OnboardingHub({
       ) : null}
 
       {done === total ? (
-        <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 shadow-button-base p-6 flex items-center gap-4 motion-safe:animate-in motion-safe:fade-in-50 motion-safe:zoom-in-95 motion-safe:duration-500">
+        <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-6 flex items-center gap-4 motion-safe:animate-in motion-safe:fade-in-50 motion-safe:zoom-in-95 motion-safe:duration-500">
           <div className="shrink-0 size-12 rounded-2xl bg-emerald-500/15 flex items-center justify-center">
             <LuPartyPopper className="text-2xl text-emerald-600 dark:text-emerald-400" />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-lg font-semibold tracking-tight">
+            <div className="text-lg font-medium tracking-tight">
               <Trans>You're live on Carbon</Trans>
             </div>
             <p className="text-sm text-muted-foreground mt-0.5">
@@ -150,11 +150,12 @@ export function OnboardingHub({
         </div>
       ) : null}
 
-      <div className="rounded-2xl border bg-card shadow-button-base overflow-hidden">
+      <div className="rounded-2xl border bg-card overflow-hidden">
         <div className="flex items-end justify-between gap-4 flex-wrap p-6 pb-4 border-b">
-          <div className="text-2xl font-semibold tracking-tight">
-            <span className="tabular-nums">{done}</span>{" "}
-            <Trans>of {total} phases complete</Trans>
+          <div className="text-base font-medium tracking-tight">
+            <Trans>
+              {done} of {total} phases complete
+            </Trans>
           </div>
           <span className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground">
             <span
@@ -239,15 +240,15 @@ function NextStepCard({
     : undefined;
 
   return (
-    <div className="rounded-2xl border border-primary/30 bg-primary/5 shadow-button-base p-5 flex items-start gap-4 motion-safe:animate-in motion-safe:fade-in-50 motion-safe:slide-in-from-bottom-2 motion-safe:duration-300">
-      <div className="shrink-0 size-9 rounded-xl bg-primary/15 flex items-center justify-center text-sm font-semibold tabular-nums text-primary">
+    <div className="rounded-2xl border border-border p-5 flex items-start gap-4 motion-safe:animate-in motion-safe:fade-in-50 motion-safe:slide-in-from-bottom-2 motion-safe:duration-300">
+      <div className="shrink-0 size-9 rounded-xl bg-primary/15 flex items-center justify-center text-sm font-medium tabular-nums text-primary">
         {action.gateNumber}
       </div>
       <div className="flex-1 min-w-0">
-        <div className="text-xxs uppercase tracking-wide font-medium text-primary">
+        <div className="text-xxs uppercase text-muted-foreground tracking-wide font-medium">
           <Trans>Next step</Trans>
         </div>
-        <div className="text-base font-semibold tracking-tight mt-0.5">
+        <div className="text-base font-medium tracking-tight mt-0.5">
           {i18n._(action.title)}
         </div>
         {action.detail ? (
@@ -342,7 +343,7 @@ function GateRow({
           <div className="flex items-center gap-2 flex-wrap">
             <span
               className={cn(
-                "text-sm font-semibold transition-colors group-hover:text-primary",
+                "text-sm font-medium transition-colors group-hover:text-primary",
                 status === "done" && "line-through text-muted-foreground"
               )}
             >

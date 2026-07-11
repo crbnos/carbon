@@ -22,7 +22,7 @@ export const meta: MetaFunction = () => {
 
 export const handle: Handle = {
   breadcrumb: msg`Accounting`,
-  to: path.to.chartOfAccounts,
+  to: path.to.accounting,
   module: "accounting"
 };
 

@@ -148,9 +148,9 @@ export async function getAccountLedger(
     offset: number;
   }
 ) {
-  // The journalLines view intentionally has no journal-status filter so that
-  // the lines shown always sum to the balances from accountTreeBalancesByCompany
-  // (which also includes Draft journals).
+  // The journalLines view excludes Draft journals so that the lines shown
+  // always sum to the balances from accountTreeBalancesByCompany (which also
+  // excludes Draft journals).
   // TODO: remove the cast once cloud-generated DB types include the view.
   let query = client
     .from("journalLines" as any)

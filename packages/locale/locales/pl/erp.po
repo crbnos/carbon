@@ -91,6 +91,9 @@ msgstr "{chainLabel}. Rozważ wskazanie tej części bezpośrednio na ostateczne
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# kurs} other {# kursy}}"
 
+msgid "{done} of {total} phases complete"
+msgstr "{done} z {total} faz ukończonych"
+
 msgid "{from}–{to} of {count}"
 msgstr "{from}–{to} z {count}"
 
@@ -347,6 +350,9 @@ msgstr "możliwość"
 msgid "About"
 msgstr "O mnie"
 
+msgid "Absorption"
+msgstr "Absorpcja"
+
 msgid "Academy"
 msgstr "Akademia"
 
@@ -424,6 +430,9 @@ msgstr "Rachunkowość: GL, AR, AP i zamknięcie miesiąca"
 
 msgid "Accounts"
 msgstr "Konta"
+
+msgid "Accounts for recording differences between actual and standard costs"
+msgstr "Konta do rejestrowania różnic między rzeczywistymi a standardowymi kosztami"
 
 msgid "Accounts Payable"
 msgstr "Rozrachunki z dostawcami"
@@ -1317,6 +1326,13 @@ msgstr "Czy na pewno chcesz odrzucić tę ofertę?"
 msgid "Are you sure you want to release this job? It will become available to the shop floor, and drive purchasing and production."
 msgstr "Czy na pewno chcesz zwolnić to zadanie? Będzie dostępne dla hali produkcyjnej i będzie napędzać zakupy i produkcję."
 
+#. placeholder {0}: supplierName(deleteTarget.supplierId)
+msgid "Are you sure you want to remove {0} as a supplier for this item? This cannot be undone."
+msgstr "Czy na pewno chcesz usunąć {0} jako dostawcę dla tego artykułu? Tej czynności nie można cofnąć."
+
+msgid "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
+msgstr "Czy na pewno chcesz usunąć {supplierName} jako dostawcę tego artykułu? Tej czynności nie można cofnąć."
+
 msgid "Are you sure you want to remove this item from the price list? This cannot be undone."
 msgstr "Czy na pewno chcesz usunąć ten element z listy cen? Tej operacji nie można cofnąć."
 
@@ -1385,6 +1401,9 @@ msgstr "Zasób"
 
 msgid "Asset Account"
 msgstr "Konto aktywów"
+
+msgid "Asset account for advance payments made to suppliers before goods or services are received"
+msgstr "Konto aktywów dla zaliczek dokonanych dostawcom przed otrzymaniem towarów lub usług"
 
 msgid "Asset Acquisition Cost"
 msgstr "Koszt nabycia zasobu"
@@ -2277,9 +2296,6 @@ msgstr "Skonfiguruj domyślne konta dla transakcji gotówkowych i bankowych"
 msgid "Configure default accounts for inventory management"
 msgstr "Skonfiguruj domyślne konta dla zarządzania zapasami"
 
-msgid "Configure default accounts for purchasing and COGS"
-msgstr "Skonfiguruj domyślne konta dla zakupów i COGS"
-
 msgid "Configure default accounts for vendor and supplier transactions"
 msgstr "Skonfiguruj domyślne konta dla transakcji dostawców i sprzedawców"
 
@@ -2960,6 +2976,12 @@ msgstr "Konto Kredytowe"
 msgid "Credit account when labor/machine time is absorbed into WIP"
 msgstr "Konto kredytowe, gdy czas pracy/maszyny jest absorbowany w WIP"
 
+msgid "Credit account when overhead is absorbed into WIP"
+msgstr "Konto kredytowe, gdy koszty ogólne są absorbowane do ZW"
+
+msgid "Credit accounts used when manufacturing costs are absorbed into WIP"
+msgstr "Konta kredytowe używane, gdy koszty produkcji są absorbowane do ZW"
+
 msgid "Credits & Debits"
 msgstr "Kredyty i Debety"
 
@@ -3336,6 +3358,9 @@ msgstr "Domyślne konta dla sprzedaży i dochodów"
 msgid "Default accounts for tax-related transactions"
 msgstr "Domyślne konta dla transakcji związanych z podatkami"
 
+msgid "Default accounts for the cost of goods sold and indirect purchases"
+msgstr "Domyślne konta dla kosztu sprzedanych towarów i zakupów pośrednich"
+
 msgid "Default Approver"
 msgstr "Domyślny Zatwierdzający"
 
@@ -3641,6 +3666,9 @@ msgstr "Usuń substancję"
 
 msgid "Delete Suggestion"
 msgstr "Usuń sugestię"
+
+msgid "Delete supplier"
+msgstr "Usuń dostawcę"
 
 msgid "Delete Supplier"
 msgstr "Usuń dostawcę"
@@ -5445,6 +5473,9 @@ msgstr "Konto GL uznawane, gdy koszt pracy lub maszyny jest wchłonięty w zadan
 
 msgid "GL account credited when labor or machine cost is absorbed into a production job."
 msgstr "Konto GL obciążane w celu wyczyszczenia skumulowanej amortyzacji w momencie likwidacji zasobu."
+
+msgid "GL account credited when manufacturing overhead is absorbed into a production job."
+msgstr "Konto GL zarachowane, gdy koszty ogólne produkcji są absorbowane do zadania produkcyjnego."
 
 msgid "GL account debited to clear accumulated depreciation when an asset is disposed."
 msgstr "Konto GL obciążane, gdy faktura klienta jest księgowana; wyczyszczane, gdy klient płaci."
@@ -7946,9 +7977,6 @@ msgstr "OEM (producent oryginalnego sprzętu)"
 msgid "of"
 msgstr "z"
 
-msgid "of {total} phases complete"
-msgstr "z {total} faz ukończonych"
-
 msgid "OK"
 msgstr "OK"
 
@@ -8240,6 +8268,12 @@ msgstr "Przekroczone o"
 
 msgid "Overdue"
 msgstr "Zaległy"
+
+msgid "Overhead Absorption"
+msgstr "Absorpcja Kosztów Ogólnych"
+
+msgid "Overhead Absorption (default)"
+msgstr "Absorpcja Kosztów Ogólnych (domyślnie)"
 
 msgid "Overhead Rate"
 msgstr "Stawka narzutu"
@@ -9073,9 +9107,6 @@ msgstr "Zakupy i Koszt Sprzedanych Towarów"
 
 msgid "Purchasing"
 msgstr "Zakupy"
-
-msgid "Purchasing & Cost of Goods"
-msgstr "jakość"
 
 msgid "Purchasing & Inventory"
 msgstr "Zakupy i Inwentarz"
@@ -10862,6 +10893,9 @@ msgstr "Standardowy"
 msgid "Standard cloud Carbon fits how your company runs"
 msgstr "Standardowy Carbon w chmurze pasuje do sposobu, w jaki prowadzi się Twoją firmę"
 
+msgid "Standard Cost Variances"
+msgstr "Odchylenia Kosztów Standardowych"
+
 msgid "Standard factor"
 msgstr "Współczynnik standardowy"
 
@@ -11161,6 +11195,9 @@ msgstr "Numer zamówienia dostawcy"
 msgid "Supplier Overview"
 msgstr "Przegląd dostawcy"
 
+msgid "Supplier Part"
+msgstr "Część dostawcy"
+
 msgid "Supplier Part ID"
 msgstr "ID części dostawcy"
 
@@ -11178,6 +11215,9 @@ msgstr "Rabaty Płatności Dostawcy"
 
 msgid "Supplier Payment Discounts (default)"
 msgstr "Rabaty Płatności Dostawcy (domyślnie)"
+
+msgid "Supplier Prepayments"
+msgstr "Przedpłaty Dostawców"
 
 msgid "supplier process"
 msgstr "Proces Dostawcy"
@@ -12189,6 +12229,9 @@ msgstr "To zamówienie sprzedaży zawiera linie, które wymagają utworzenia zad
 #. placeholder {0}: usageCount === 1 ? "" : "s"
 msgid "This storage type is currently used by {usageCount} storage unit{0}."
 msgstr "Ten typ magazynu jest obecnie używany przez {usageCount} jednostkę magazynową{0}."
+
+msgid "this supplier"
+msgstr "ten dostawca"
 
 msgid "This updates the theme for all users of the application"
 msgstr "To aktualizuje motyw dla wszystkich użytkowników aplikacji"

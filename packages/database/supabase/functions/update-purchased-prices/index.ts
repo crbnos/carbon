@@ -128,7 +128,10 @@ serve(async (req: Request) => {
             .where("companyId", "=", companyId)
             .execute();
 
-          // Create new cost ledger entries for each line item
+          // Create new cost ledger entries for each line item. These are
+          // planning/cost-history rows, NOT inventory layers — real layers
+          // are created at receipt posting. remainingQuantity stays 0 so
+          // FIFO/LIFO consumption can never eat unreceived stock.
           const costLedgerInserts = lines
             .filter((line) => line.itemId && line.unitPrice !== 0)
             .map((line) => ({
@@ -141,7 +144,7 @@ serve(async (req: Request) => {
               quantity: line.quantity,
               cost:
                 (line.quantity / (line.conversionFactor ?? 1)) * line.unitPrice,
-              remainingQuantity: line.quantity,
+              remainingQuantity: 0,
               supplierId,
               companyId,
             }));
@@ -269,7 +272,11 @@ serve(async (req: Request) => {
             };
           }
 
-          historicalPartCosts[ledger.itemId].quantity += ledger.quantity;
+          // Adjustment child rows (invoice-vs-receipt price corrections)
+          // carry cost but no additional physical quantity
+          if (!ledger.adjustment) {
+            historicalPartCosts[ledger.itemId].quantity += ledger.quantity;
+          }
           historicalPartCosts[ledger.itemId].cost += ledger.cost;
         }
       });
@@ -382,7 +389,12 @@ serve(async (req: Request) => {
         const hasLeadTimeHistory =
           (historicalPartLeadTimes[line.itemId]?.quantity ?? 0) > 0;
 
-        if (shouldUpdatePrices && line.unitPrice !== 0 && costHistory) {
+        if (
+          shouldUpdatePrices &&
+          line.unitPrice !== 0 &&
+          costHistory &&
+          costHistory.quantity > 0
+        ) {
           itemCostUpdates.push({
             itemId: line.itemId,
             unitCost: costHistory.cost / costHistory.quantity,

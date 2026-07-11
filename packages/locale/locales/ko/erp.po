@@ -91,6 +91,9 @@ msgstr "{chainLabel}. 이 품목을 최종 후속 품목으로 직접 연결하�
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "교육과정 {count}개"
 
+msgid "{done} of {total} phases complete"
+msgstr "{done}개 중 {total}개 단계 완료"
+
 msgid "{from}–{to} of {count}"
 msgstr "{count}개 중 {from}–{to}"
 
@@ -347,6 +350,9 @@ msgstr "역량"
 msgid "About"
 msgstr "정보"
 
+msgid "Absorption"
+msgstr "흡수"
+
 msgid "Academy"
 msgstr "아카데미"
 
@@ -424,6 +430,9 @@ msgstr "회계: 총계정원장, 매출채권, 매입채무, 월마감"
 
 msgid "Accounts"
 msgstr "계정"
+
+msgid "Accounts for recording differences between actual and standard costs"
+msgstr "실제 비용과 표준 비용의 차이를 기록하는 계정"
 
 msgid "Accounts Payable"
 msgstr "매입채무"
@@ -1317,6 +1326,13 @@ msgstr "이 견적을 반려하시겠습니까?"
 msgid "Are you sure you want to release this job? It will become available to the shop floor, and drive purchasing and production."
 msgstr "이 작업을 릴리즈하시겠습니까? 현장에서 사용할 수 있게 되며 구매와 생산을 유발합니다."
 
+#. placeholder {0}: supplierName(deleteTarget.supplierId)
+msgid "Are you sure you want to remove {0} as a supplier for this item? This cannot be undone."
+msgstr "정말로 이 항목의 공급업체로 {0}을(를) 제거하시겠습니까? 이 작업은 취소할 수 없습니다."
+
+msgid "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
+msgstr "정말로 이 항목의 공급업체로 {supplierName}을(를) 제거하시겠습니까? 이 작업은 취소할 수 없습니다."
+
 msgid "Are you sure you want to remove this item from the price list? This cannot be undone."
 msgstr "이 품목을 가격표에서 제거하시겠습니까? 이 작업은 되돌릴 수 없습니다."
 
@@ -1372,10 +1388,10 @@ msgid "Ask an admin with {0} permission to add the first {1}."
 msgstr "{0} 권한이 있는 관리자에게 첫 {1} 추가를 요청하세요."
 
 msgid "Assemblies"
-msgstr ""
+msgstr "조립품"
 
 msgid "Assembly Instructions"
-msgstr ""
+msgstr "조립 지침"
 
 msgid "Assembly:"
 msgstr "조립:"
@@ -1385,6 +1401,9 @@ msgstr "자산"
 
 msgid "Asset Account"
 msgstr "자산 계정"
+
+msgid "Asset account for advance payments made to suppliers before goods or services are received"
+msgstr "공급업체에 상품 또는 서비스를 받기 전에 선금으로 지불한 금액을 기록하는 자산 계정"
 
 msgid "Asset Acquisition Cost"
 msgstr "자산 취득원가"
@@ -2277,9 +2296,6 @@ msgstr "현금 및 은행 거래에 대한 기본 계정 설정"
 msgid "Configure default accounts for inventory management"
 msgstr "재고 관리를 위한 기본 계정 설정"
 
-msgid "Configure default accounts for purchasing and COGS"
-msgstr "구매 및 매출원가(COGS)에 대한 기본 계정 설정"
-
 msgid "Configure default accounts for vendor and supplier transactions"
 msgstr "매입처/공급업체 거래에 대한 기본 계정 설정"
 
@@ -2960,6 +2976,12 @@ msgstr "대변 계정"
 msgid "Credit account when labor/machine time is absorbed into WIP"
 msgstr "노무/기계 시간이 재공품(WIP)에 흡수될 때의 대변 계정"
 
+msgid "Credit account when overhead is absorbed into WIP"
+msgstr "제조 간접비가 진행 중인 작업(WIP)에 흡수될 때의 외상 계정"
+
+msgid "Credit accounts used when manufacturing costs are absorbed into WIP"
+msgstr "제조 비용이 진행 중인 작업(WIP)에 흡수될 때 사용되는 외상 계정"
+
 msgid "Credits & Debits"
 msgstr "대변 및 차변"
 
@@ -3336,6 +3358,9 @@ msgstr "매출 및 수익에 대한 기본 계정"
 msgid "Default accounts for tax-related transactions"
 msgstr "세금 관련 거래에 대한 기본 계정"
 
+msgid "Default accounts for the cost of goods sold and indirect purchases"
+msgstr "매출원가와 간접 구매를 위한 기본 계정"
+
 msgid "Default Approver"
 msgstr "기본 승인자"
 
@@ -3641,6 +3666,9 @@ msgstr "재질 삭제"
 
 msgid "Delete Suggestion"
 msgstr "제안 삭제"
+
+msgid "Delete supplier"
+msgstr "공급업체 삭제"
 
 msgid "Delete Supplier"
 msgstr "공급업체 삭제"
@@ -5445,6 +5473,9 @@ msgstr "공급업체 인보이스가 전기될 때 대변에 기록되는 총계
 
 msgid "GL account credited when labor or machine cost is absorbed into a production job."
 msgstr "노무비 또는 기계비가 생산 작업에 흡수될 때 대변에 기록되는 총계정원장 계정입니다."
+
+msgid "GL account credited when manufacturing overhead is absorbed into a production job."
+msgstr "제조 간접비가 생산 작업에 흡수될 때 외상으로 처리되는 총계정원장 계정"
 
 msgid "GL account debited to clear accumulated depreciation when an asset is disposed."
 msgstr "자산 처분 시 감가상각누계액을 정산하기 위해 차변에 기록되는 총계정원장 계정입니다."
@@ -7946,9 +7977,6 @@ msgstr "OEM(주문자상표부착생산)"
 msgid "of"
 msgstr "중"
 
-msgid "of {total} phases complete"
-msgstr "/{total}단계 완료"
-
 msgid "OK"
 msgstr "확인"
 
@@ -8240,6 +8268,12 @@ msgstr "초과 적용액"
 
 msgid "Overdue"
 msgstr "연체"
+
+msgid "Overhead Absorption"
+msgstr "간접비 흡수"
+
+msgid "Overhead Absorption (default)"
+msgstr "간접비 흡수 (기본값)"
 
 msgid "Overhead Rate"
 msgstr "제조간접비율"
@@ -9073,9 +9107,6 @@ msgstr "구매"
 
 msgid "Purchasing"
 msgstr "구매"
-
-msgid "Purchasing & Cost of Goods"
-msgstr "구매 및 매출원가"
 
 msgid "Purchasing & Inventory"
 msgstr "구매 및 재고"
@@ -10862,6 +10893,9 @@ msgstr "표준"
 msgid "Standard cloud Carbon fits how your company runs"
 msgstr "표준 클라우드 Carbon이 귀사의 운영 방식에 맞습니다"
 
+msgid "Standard Cost Variances"
+msgstr "표준 비용 편차"
+
 msgid "Standard factor"
 msgstr "표준 계수"
 
@@ -11161,6 +11195,9 @@ msgstr "공급업체 주문 번호"
 msgid "Supplier Overview"
 msgstr "공급업체 개요"
 
+msgid "Supplier Part"
+msgstr "공급업체 부품"
+
 msgid "Supplier Part ID"
 msgstr "공급업체 부품 ID"
 
@@ -11178,6 +11215,9 @@ msgstr "공급업체 결제 할인"
 
 msgid "Supplier Payment Discounts (default)"
 msgstr "공급업체 결제 할인(기본값)"
+
+msgid "Supplier Prepayments"
+msgstr "공급업체 선금"
 
 msgid "supplier process"
 msgstr "공급업체 공정"
@@ -12189,6 +12229,9 @@ msgstr "이 판매주문에는 작업 생성이 필요한 라인이 있습니다
 #. placeholder {0}: usageCount === 1 ? "" : "s"
 msgid "This storage type is currently used by {usageCount} storage unit{0}."
 msgstr "이 저장 유형은 현재 저장 단위 {usageCount}개{0}에서 사용 중입니다."
+
+msgid "this supplier"
+msgstr "이 공급업체"
 
 msgid "This updates the theme for all users of the application"
 msgstr "이 설정은 애플리케이션의 모든 사용자에 대한 테마를 업데이트합니다"

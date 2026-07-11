@@ -586,6 +586,7 @@ export const accounts = [
   { key: "receivables", number: null, name: "Receivables", isGroup: true, parentKey: "assets", accountType: "Accounts Receivable", incomeBalance: "Balance Sheet", class: "Asset", consolidatedRate: "Current", createdBy: "system" },
   { key: "1110", number: "1110", name: "Accounts Receivable", isGroup: false, parentKey: "receivables", accountType: "Accounts Receivable", incomeBalance: "Balance Sheet", class: "Asset", consolidatedRate: "Current", createdBy: "system" },
   { key: "1130", number: "1130", name: "Inter-Company Receivables", isGroup: false, parentKey: "receivables", accountType: "Accounts Receivable", incomeBalance: "Balance Sheet", class: "Asset", consolidatedRate: "Current", createdBy: "system" },
+  { key: "1150", number: "1150", name: "Supplier Prepayments", isGroup: false, parentKey: "receivables", accountType: "Other Current Asset", incomeBalance: "Balance Sheet", class: "Asset", consolidatedRate: "Current", createdBy: "system" },
 
   // Inventory
   { key: "inventory", number: null, name: "Inventory & Stock", isGroup: true, parentKey: "assets", accountType: "Inventory", incomeBalance: "Balance Sheet", class: "Asset", consolidatedRate: "Current", createdBy: "system" },
@@ -668,6 +669,7 @@ export const accounts = [
   { key: "5010", number: "5010", name: "Cost of Goods Sold - Direct", isGroup: false, parentKey: "cogs", accountType: "Cost of Goods Sold", incomeBalance: "Income Statement", class: "Expense", consolidatedRate: "Average", createdBy: "system" },
   { key: "5050", number: "5050", name: "Indirect Materials & Services", isGroup: false, parentKey: "cogs", accountType: "Cost of Goods Sold", incomeBalance: "Income Statement", class: "Expense", consolidatedRate: "Average", createdBy: "system" },
   { key: "5060", number: "5060", name: "Labor & Machine Absorption", isGroup: false, parentKey: "cogs", accountType: "Cost of Goods Sold", incomeBalance: "Income Statement", class: "Expense", consolidatedRate: "Average", createdBy: "system" },
+  { key: "5070", number: "5070", name: "Overhead Absorption", isGroup: false, parentKey: "cogs", accountType: "Cost of Goods Sold", incomeBalance: "Income Statement", class: "Expense", consolidatedRate: "Average", createdBy: "system" },
 
   // Variances
   { key: "variances", number: null, name: "Variances", isGroup: true, parentKey: "cogs", accountType: "Expense", incomeBalance: "Income Statement", class: "Expense", consolidatedRate: "Average", createdBy: "system" },
@@ -726,6 +728,7 @@ export const accountDefaults = {
   lotSizeVarianceAccount: "5250",
   subcontractingVarianceAccount: "5260",
   laborAbsorptionAccount: "5060",
+  overheadAbsorptionAccount: "5070",
   indirectCostAccount: "5050",
   maintenanceAccount: "6010",
   assetDepreciationExpenseAccount: "6310",
@@ -747,6 +750,7 @@ export const accountDefaults = {
   bankLocalCurrencyAccount: "1020",
   bankForeignCurrencyAccount: "1030",
   prepaymentAccount: "2110",
+  supplierPrepaymentAccount: "1150",
   payablesAccount: "2010",
   goodsReceivedNotInvoicedAccount: "2125",
   inventoryShippedNotInvoicedAccount: "2130",

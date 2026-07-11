@@ -96,12 +96,21 @@ to child demand. Note current `methodType` enum is
 ## Source views (open demand/supply)
 
 Newest defs in `20260417000300_storage-unit-recreate-dependents.sql`
-(`openPurchaseOrderLines` in `20260529074512_open-po-lines-required-date.sql`).
+(`openPurchaseOrderLines` in `20260529074512_open-po-lines-required-date.sql`,
+`openSalesOrderLines` in `20260710051147_mto-sales-lines-drive-demand.sql`).
 All join through `itemReplenishment` to expose `replenishmentSystem`, `leadTime`,
 `itemTrackingType`.
 
-- `openSalesOrderLines` — `salesOrderLineType != 'Service'`,
-  `methodType != 'Make to Order'`, status IN `('To Ship','To Ship and Invoice')`.
+- `openSalesOrderLines` — `salesOrderLineType != 'Service'`, status IN
+  `('To Ship','To Ship and Invoice')`. Newest def:
+  `20260710051147_mto-sales-lines-drive-demand.sql`. Make to Order lines ARE
+  included (they were excluded before that migration), but their
+  `quantityToSend` is netted down by the remaining output
+  (`quantity − quantityReceivedToInventory − quantityShipped`) of live jobs
+  linked via `job.salesOrderLineId` (statuses Planned/Ready/In Progress/Paused —
+  the same set as `openJobMaterialLines`, so each unit is counted exactly once:
+  SO line while unjobbed, job materials once a job is released, inventory once
+  produced). Draft/Cancelled jobs do not suppress line demand.
 - `openJobMaterialLines` — job status IN `('Planned','Ready','In Progress','Paused')`,
   `methodType != 'Make to Order'`.
 - `openProductionOrders` — job status IN those 4, `salesOrderId IS NULL`

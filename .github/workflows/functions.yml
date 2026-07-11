@@ -1,15 +1,22 @@
 name: Deploy Self-Hosted Functions
 
 on:
-  push:
-    branches: [main]
-    paths: ["packages/database/supabase/functions/**"]
+  # Run after the Deploy Apps workflow completes so functions sync only once the
+  # app deploy has finished (avoids racing ECS/infra changes).
+  workflow_run:
+    workflows: ["Deploy Apps"]
+    types:
+      - completed
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
   functions:
     name: Deploy Self-Hosted Functions
     runs-on: ubuntu-latest
+    # Only run if the triggering Deploy Apps workflow succeeded (or if manually triggered)
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     strategy:
       matrix:
         environment:
@@ -22,9 +29,39 @@ jobs:
       INSTANCE_SSH_KEY: ${{ secrets[matrix.environment.instance_ssh_key] }}
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          # Check out the commit that triggered the deploy so the path filter
+          # inspects the right changes (workflow_run does not set the ref for us).
+          ref: ${{ github.event.workflow_run.head_sha || github.ref }}
+          fetch-depth: 0
+
+      # workflow_run does not support path filters natively, so check whether the
+      # triggering commit actually touched the edge functions. Skipped for manual runs.
+      # We diff locally (checkout above uses fetch-depth: 0, so full history is
+      # present) rather than dorny/paths-filter, which tried to `git fetch` the
+      # base as a refspec — `<sha>~1` is a valid revision but not a valid refspec,
+      # so that fetch failed with "invalid refspec".
+      - name: Check for function changes
+        id: filter
+        if: ${{ github.event_name == 'workflow_run' }}
+        run: |
+          head='${{ github.event.workflow_run.head_sha }}'
+          changed=$(git diff --name-only "${head}~1" "${head}" -- packages/database/supabase/functions)
+          if [ -n "$changed" ]; then
+            echo "functions=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "functions=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Give ECS / infra a moment to stabilize after the deploy. Skipped for manual runs.
+      - name: Wait for infrastructure to stabilize
+        if: ${{ github.event_name == 'workflow_run' && steps.filter.outputs.functions == 'true' }}
+        run: sleep 60
 
       - name: Setup SSH key
+        if: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.functions == 'true' }}
         run: |
           mkdir -p ~/.ssh
           echo "$INSTANCE_SSH_KEY" > ~/.ssh/id_rsa
@@ -32,10 +69,11 @@ jobs:
           ssh-keyscan -H $INSTANCE_HOST >> ~/.ssh/known_hosts
 
       - name: Deploy functions
+        if: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.functions == 'true' }}
         run: |
           ssh ubuntu@$INSTANCE_HOST 'sudo bash /home/ubuntu/supabase/sync-carbon-functions.sh'
 
       - name: Cleanup SSH key
-        if: always()
+        if: ${{ always() && (github.event_name == 'workflow_dispatch' || steps.filter.outputs.functions == 'true') }}
         run: |
           rm -f ~/.ssh/id_rsa

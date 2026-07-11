@@ -88,6 +88,12 @@ export function useNotifications({
         }) => {
           if (payload.new && payload.new.companyId !== companyId) return;
           if (payload.eventType === "INSERT") {
+            // Rows born inside a digest (digestedInto set on insert) are
+            // represented by their parent — never shown individually.
+            const insertedRow = payload.new as NotificationRow & {
+              digestedInto?: string | null;
+            };
+            if (insertedRow.digestedInto) return;
             setNotifications((prev) => [
               rowToNotification(payload.new),
               ...prev

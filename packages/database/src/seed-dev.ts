@@ -408,79 +408,23 @@ async function seedDev() {
       const resolveAccountId = (number: string) =>
         accountIdByKey[number] ?? null;
 
-      // Seed account defaults
+      // Seed account defaults — columns derive from the shared accountDefaults
+      // object so this insert can't drift from seed.data.ts when new defaults
+      // are added (seed-company builds its insert the same way)
+      const accountDefaultEntries = Object.entries(accountDefaults);
+      const accountDefaultColumns = [
+        ...accountDefaultEntries.map(([column]) => `"${column}"`),
+        `"companyId"`
+      ];
       await client.query(
-        `INSERT INTO "accountDefault" (
-          "salesAccount", "salesDiscountAccount", "costOfGoodsSoldAccount",
-          "purchaseVarianceAccount", "inventoryAdjustmentVarianceAccount",
-          "materialVarianceAccount", "laborAndMachineVarianceAccount",
-          "overheadVarianceAccount", "lotSizeVarianceAccount", "subcontractingVarianceAccount",
-          "laborAbsorptionAccount", "indirectCostAccount", "maintenanceAccount", "assetDepreciationExpenseAccount",
-          "assetGainsAndLossesAccount", "serviceChargeAccount", "interestAccount",
-          "supplierPaymentDiscountAccount", "customerPaymentDiscountAccount", "roundingAccount",
-          "assetAquisitionCostAccount", "assetAquisitionCostOnDisposalAccount",
-          "accumulatedDepreciationAccount", "accumulatedDepreciationOnDisposalAccount",
-          "inventoryAccount", "workInProgressAccount",
-          "receivablesAccount", "bankCashAccount",
-          "bankLocalCurrencyAccount", "bankForeignCurrencyAccount", "prepaymentAccount",
-          "payablesAccount", "goodsReceivedNotInvoicedAccount", "inventoryShippedNotInvoicedAccount",
-          "salesTaxPayableAccount", "purchaseTaxPayableAccount", "reverseChargeSalesTaxPayableAccount",
-          "retainedEarningsAccount", "currencyTranslationAccount",
-          "customerWriteOffAccount", "supplierWriteOffAccount",
-          "realizedExchangeGainAccount", "realizedExchangeLossAccount", "companyId"
-        ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19,
-          $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40,
-          $41, $42, $43, $44
-        )`,
+        `INSERT INTO "accountDefault" (${accountDefaultColumns.join(", ")})
+         VALUES (${accountDefaultColumns
+           .map((_, i) => `$${i + 1}`)
+           .join(", ")})`,
         [
-          resolveAccountId(accountDefaults.salesAccount),
-          resolveAccountId(accountDefaults.salesDiscountAccount),
-          resolveAccountId(accountDefaults.costOfGoodsSoldAccount),
-          resolveAccountId(accountDefaults.purchaseVarianceAccount),
-          resolveAccountId(accountDefaults.inventoryAdjustmentVarianceAccount),
-          resolveAccountId(accountDefaults.materialVarianceAccount),
-          resolveAccountId(accountDefaults.laborAndMachineVarianceAccount),
-          resolveAccountId(accountDefaults.overheadVarianceAccount),
-          resolveAccountId(accountDefaults.lotSizeVarianceAccount),
-          resolveAccountId(accountDefaults.subcontractingVarianceAccount),
-          resolveAccountId(accountDefaults.laborAbsorptionAccount),
-          resolveAccountId(accountDefaults.indirectCostAccount),
-          resolveAccountId(accountDefaults.maintenanceAccount),
-          resolveAccountId(accountDefaults.assetDepreciationExpenseAccount),
-          resolveAccountId(accountDefaults.assetGainsAndLossesAccount),
-          resolveAccountId(accountDefaults.serviceChargeAccount),
-          resolveAccountId(accountDefaults.interestAccount),
-          resolveAccountId(accountDefaults.supplierPaymentDiscountAccount),
-          resolveAccountId(accountDefaults.customerPaymentDiscountAccount),
-          resolveAccountId(accountDefaults.roundingAccount),
-          resolveAccountId(accountDefaults.assetAquisitionCostAccount),
-          resolveAccountId(
-            accountDefaults.assetAquisitionCostOnDisposalAccount
+          ...accountDefaultEntries.map(([, number]) =>
+            resolveAccountId(number)
           ),
-          resolveAccountId(accountDefaults.accumulatedDepreciationAccount),
-          resolveAccountId(
-            accountDefaults.accumulatedDepreciationOnDisposalAccount
-          ),
-          resolveAccountId(accountDefaults.inventoryAccount),
-          resolveAccountId(accountDefaults.workInProgressAccount),
-          resolveAccountId(accountDefaults.receivablesAccount),
-          resolveAccountId(accountDefaults.bankCashAccount),
-          resolveAccountId(accountDefaults.bankLocalCurrencyAccount),
-          resolveAccountId(accountDefaults.bankForeignCurrencyAccount),
-          resolveAccountId(accountDefaults.prepaymentAccount),
-          resolveAccountId(accountDefaults.payablesAccount),
-          resolveAccountId(accountDefaults.goodsReceivedNotInvoicedAccount),
-          resolveAccountId(accountDefaults.inventoryShippedNotInvoicedAccount),
-          resolveAccountId(accountDefaults.salesTaxPayableAccount),
-          resolveAccountId(accountDefaults.purchaseTaxPayableAccount),
-          resolveAccountId(accountDefaults.reverseChargeSalesTaxPayableAccount),
-          resolveAccountId(accountDefaults.retainedEarningsAccount),
-          resolveAccountId(accountDefaults.currencyTranslationAccount),
-          resolveAccountId(accountDefaults.customerWriteOffAccount),
-          resolveAccountId(accountDefaults.supplierWriteOffAccount),
-          resolveAccountId(accountDefaults.realizedExchangeGainAccount),
-          resolveAccountId(accountDefaults.realizedExchangeLossAccount),
           companyId
         ]
       );

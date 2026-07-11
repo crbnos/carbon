@@ -546,6 +546,10 @@ export const terms = {
     term: msg`Labor & Machine Absorption (default)`,
     definition: msg`GL account credited when labor or machine cost is absorbed into a production job.`
   },
+  "account-default-overhead-absorption": {
+    term: msg`Overhead Absorption (default)`,
+    definition: msg`GL account credited when manufacturing overhead is absorbed into a production job.`
+  },
   "account-default-purchase-price-variance": {
     term: msg`Purchase Price Variance (default)`,
     definition: msg`GL account that captures the difference between standard cost and actual purchase cost.`

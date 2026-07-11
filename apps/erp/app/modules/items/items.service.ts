@@ -214,6 +214,18 @@ export async function deleteItemCustomerPart(
     .eq("companyId", companyId);
 }
 
+export async function deleteSupplierPart(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("supplierPart")
+    .delete()
+    .eq("id", id)
+    .eq("companyId", companyId);
+}
+
 export async function deleteConfigurationParameterGroup(
   client: SupabaseClient<Database>,
   id: string

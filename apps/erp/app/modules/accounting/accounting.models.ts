@@ -257,6 +257,9 @@ export const defaultBalanceSheetAccountValidator = z.object({
   prepaymentAccount: z.string().min(1, {
     message: "Prepayment account is required"
   }),
+  supplierPrepaymentAccount: z.string().min(1, {
+    message: "Supplier prepayment account is required"
+  }),
   payablesAccount: z.string().min(1, {
     message: "Payables account is required"
   }),
@@ -312,6 +315,7 @@ export const defaultIncomeAcountValidator = z.object({
   laborAbsorptionAccount: z.string().min(1, {
     message: "Labor absorption account is required"
   }),
+  overheadAbsorptionAccount: z.string().optional(),
   indirectCostAccount: z.string().min(1, {
     message: "Indirect cost account is required"
   }),

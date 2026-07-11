@@ -91,6 +91,9 @@ msgstr "{chainLabel}. Considere apuntar esta pieza directamente al sucesor final
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# curso} other {# cursos}}"
 
+msgid "{done} of {total} phases complete"
+msgstr "{done} de {total} fases completadas"
+
 msgid "{from}–{to} of {count}"
 msgstr "{from}–{to} de {count}"
 
@@ -347,6 +350,9 @@ msgstr "capacidad"
 msgid "About"
 msgstr "Acerca de"
 
+msgid "Absorption"
+msgstr "Absorción"
+
 msgid "Academy"
 msgstr "Academia"
 
@@ -424,6 +430,9 @@ msgstr "Contabilidad: GL, AR, AP y cierre de fin de mes"
 
 msgid "Accounts"
 msgstr "Cuentas"
+
+msgid "Accounts for recording differences between actual and standard costs"
+msgstr "Cuentas para registrar diferencias entre costos reales y estándar"
 
 msgid "Accounts Payable"
 msgstr "Cuentas por pagar"
@@ -1317,6 +1326,13 @@ msgstr "¿Estás seguro de que deseas rechazar esta cotización?"
 msgid "Are you sure you want to release this job? It will become available to the shop floor, and drive purchasing and production."
 msgstr "¿Está seguro de que desea liberar este trabajo? Estará disponible para el piso de producción e impulsará las compras y la producción."
 
+#. placeholder {0}: supplierName(deleteTarget.supplierId)
+msgid "Are you sure you want to remove {0} as a supplier for this item? This cannot be undone."
+msgstr "¿Estás seguro de que deseas eliminar {0} como proveedor para este artículo? Esto no se puede deshacer."
+
+msgid "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
+msgstr "¿Estás seguro de que deseas eliminar {supplierName} como proveedor de este artículo? Esto no se puede deshacer."
+
 msgid "Are you sure you want to remove this item from the price list? This cannot be undone."
 msgstr "¿Estás seguro de que deseas eliminar este artículo de la lista de precios? Esta acción no se puede deshacer."
 
@@ -1385,6 +1401,9 @@ msgstr "Activo"
 
 msgid "Asset Account"
 msgstr "Cuenta de activos"
+
+msgid "Asset account for advance payments made to suppliers before goods or services are received"
+msgstr "Cuenta de activo para pagos anticipados realizados a proveedores antes de recibir bienes o servicios"
 
 msgid "Asset Acquisition Cost"
 msgstr "Costo de adquisición de activos"
@@ -2277,9 +2296,6 @@ msgstr "Configurar cuentas predeterminadas para transacciones de efectivo y banc
 msgid "Configure default accounts for inventory management"
 msgstr "Configurar cuentas predeterminadas para la gestión de inventario"
 
-msgid "Configure default accounts for purchasing and COGS"
-msgstr "Configurar cuentas predeterminadas para compras y COGS"
-
 msgid "Configure default accounts for vendor and supplier transactions"
 msgstr "Configurar cuentas predeterminadas para transacciones de proveedor y suministrador"
 
@@ -2960,6 +2976,12 @@ msgstr "Cuenta de Crédito"
 msgid "Credit account when labor/machine time is absorbed into WIP"
 msgstr "Cuenta de Crédito cuando se absorbe el tiempo de trabajo/máquina en WIP"
 
+msgid "Credit account when overhead is absorbed into WIP"
+msgstr "Cuenta de crédito cuando el gasto indirecto se absorbe en WIP"
+
+msgid "Credit accounts used when manufacturing costs are absorbed into WIP"
+msgstr "Cuentas de crédito utilizadas cuando los costos de fabricación se absorben en WIP"
+
 msgid "Credits & Debits"
 msgstr "Créditos y Débitos"
 
@@ -3336,6 +3358,9 @@ msgstr "Cuentas predeterminadas para ventas e ingresos"
 msgid "Default accounts for tax-related transactions"
 msgstr "Cuentas predeterminadas para transacciones relacionadas con impuestos"
 
+msgid "Default accounts for the cost of goods sold and indirect purchases"
+msgstr "Cuentas predeterminadas para el costo de bienes vendidos y compras indirectas"
+
 msgid "Default Approver"
 msgstr "Aprobador Predeterminado"
 
@@ -3641,6 +3666,9 @@ msgstr "Eliminar Sustancia"
 
 msgid "Delete Suggestion"
 msgstr "Eliminar Sugerencia"
+
+msgid "Delete supplier"
+msgstr "Eliminar proveedor"
 
 msgid "Delete Supplier"
 msgstr "Eliminar Proveedor"
@@ -5445,6 +5473,9 @@ msgstr "Cuenta GL acreditada cuando el costo de trabajo o máquina se absorbe en
 
 msgid "GL account credited when labor or machine cost is absorbed into a production job."
 msgstr "Cuenta GL debitada para limpiar la depreciación acumulada cuando se dispone de un activo."
+
+msgid "GL account credited when manufacturing overhead is absorbed into a production job."
+msgstr "Cuenta GL acreditada cuando el gasto indirecto de fabricación se absorbe en un trabajo de producción."
 
 msgid "GL account debited to clear accumulated depreciation when an asset is disposed."
 msgstr "Cuenta GL debitada cuando se registra una factura del cliente; se limpia cuando el cliente paga."
@@ -7946,9 +7977,6 @@ msgstr "OEM (fabricante de equipos originales)"
 msgid "of"
 msgstr "de"
 
-msgid "of {total} phases complete"
-msgstr "de {total} fases completadas"
-
 msgid "OK"
 msgstr "Aceptar"
 
@@ -8240,6 +8268,12 @@ msgstr "Aplicado en exceso por"
 
 msgid "Overdue"
 msgstr "Vencido"
+
+msgid "Overhead Absorption"
+msgstr "Absorción de Gasto Indirecto"
+
+msgid "Overhead Absorption (default)"
+msgstr "Absorción de Gasto Indirecto (predeterminado)"
 
 msgid "Overhead Rate"
 msgstr "Tasa de Gastos Generales"
@@ -9073,9 +9107,6 @@ msgstr "Compras y Costo de Bienes Vendidos"
 
 msgid "Purchasing"
 msgstr "Compras"
-
-msgid "Purchasing & Cost of Goods"
-msgstr "calidad"
 
 msgid "Purchasing & Inventory"
 msgstr "Compras e Inventario"
@@ -10862,6 +10893,9 @@ msgstr "Estándar"
 msgid "Standard cloud Carbon fits how your company runs"
 msgstr "Carbon en la nube estándar se adapta a cómo funciona tu empresa"
 
+msgid "Standard Cost Variances"
+msgstr "Varianzas de Costo Estándar"
+
 msgid "Standard factor"
 msgstr "Factor estándar"
 
@@ -11161,6 +11195,9 @@ msgstr "Número de Pedido del Proveedor"
 msgid "Supplier Overview"
 msgstr "Descripción General del Proveedor"
 
+msgid "Supplier Part"
+msgstr "Parte del Proveedor"
+
 msgid "Supplier Part ID"
 msgstr "ID de Pieza del Proveedor"
 
@@ -11178,6 +11215,9 @@ msgstr "Descuentos de Pago del Proveedor"
 
 msgid "Supplier Payment Discounts (default)"
 msgstr "Descuentos de Pago del Proveedor (predeterminado)"
+
+msgid "Supplier Prepayments"
+msgstr "Pagos Anticipados de Proveedores"
 
 msgid "supplier process"
 msgstr "Proceso de Proveedor"
@@ -12189,6 +12229,9 @@ msgstr "Esta orden de venta tiene líneas que requieren que se creen trabajos"
 #. placeholder {0}: usageCount === 1 ? "" : "s"
 msgid "This storage type is currently used by {usageCount} storage unit{0}."
 msgstr "Este tipo de almacenamiento está siendo utilizado actualmente por {usageCount} unidad de almacenamiento{0}."
+
+msgid "this supplier"
+msgstr "este proveedor"
 
 msgid "This updates the theme for all users of the application"
 msgstr "Esto actualiza el tema para todos los usuarios de la aplicación"

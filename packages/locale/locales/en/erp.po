@@ -91,6 +91,9 @@ msgstr "{chainLabel}. Consider pointing this part directly at the final successo
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# course} other {# courses}}"
 
+msgid "{done} of {total} phases complete"
+msgstr "{done} of {total} phases complete"
+
 msgid "{from}–{to} of {count}"
 msgstr "{from}–{to} of {count}"
 
@@ -347,6 +350,9 @@ msgstr "ability"
 msgid "About"
 msgstr "About"
 
+msgid "Absorption"
+msgstr "Absorption"
+
 msgid "Academy"
 msgstr "Academy"
 
@@ -424,6 +430,9 @@ msgstr "Accounting: GL, AR, AP, and month-end close"
 
 msgid "Accounts"
 msgstr "Accounts"
+
+msgid "Accounts for recording differences between actual and standard costs"
+msgstr "Accounts for recording differences between actual and standard costs"
 
 msgid "Accounts Payable"
 msgstr "Accounts Payable"
@@ -1317,6 +1326,13 @@ msgstr "Are you sure you want to reject this quote?"
 msgid "Are you sure you want to release this job? It will become available to the shop floor, and drive purchasing and production."
 msgstr "Are you sure you want to release this job? It will become available to the shop floor, and drive purchasing and production."
 
+#. placeholder {0}: supplierName(deleteTarget.supplierId)
+msgid "Are you sure you want to remove {0} as a supplier for this item? This cannot be undone."
+msgstr "Are you sure you want to remove {0} as a supplier for this item? This cannot be undone."
+
+msgid "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
+msgstr "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
+
 msgid "Are you sure you want to remove this item from the price list? This cannot be undone."
 msgstr "Are you sure you want to remove this item from the price list? This cannot be undone."
 
@@ -1385,6 +1401,9 @@ msgstr "Asset"
 
 msgid "Asset Account"
 msgstr "Asset Account"
+
+msgid "Asset account for advance payments made to suppliers before goods or services are received"
+msgstr "Asset account for advance payments made to suppliers before goods or services are received"
 
 msgid "Asset Acquisition Cost"
 msgstr "Asset Acquisition Cost"
@@ -2277,9 +2296,6 @@ msgstr "Configure default accounts for cash and bank transactions"
 msgid "Configure default accounts for inventory management"
 msgstr "Configure default accounts for inventory management"
 
-msgid "Configure default accounts for purchasing and COGS"
-msgstr "Configure default accounts for purchasing and COGS"
-
 msgid "Configure default accounts for vendor and supplier transactions"
 msgstr "Configure default accounts for vendor and supplier transactions"
 
@@ -2960,6 +2976,12 @@ msgstr "Credit Account"
 msgid "Credit account when labor/machine time is absorbed into WIP"
 msgstr "Credit account when labor/machine time is absorbed into WIP"
 
+msgid "Credit account when overhead is absorbed into WIP"
+msgstr "Credit account when overhead is absorbed into WIP"
+
+msgid "Credit accounts used when manufacturing costs are absorbed into WIP"
+msgstr "Credit accounts used when manufacturing costs are absorbed into WIP"
+
 msgid "Credits & Debits"
 msgstr "Credits & Debits"
 
@@ -3336,6 +3358,9 @@ msgstr "Default accounts for sales and income"
 msgid "Default accounts for tax-related transactions"
 msgstr "Default accounts for tax-related transactions"
 
+msgid "Default accounts for the cost of goods sold and indirect purchases"
+msgstr "Default accounts for the cost of goods sold and indirect purchases"
+
 msgid "Default Approver"
 msgstr "Default Approver"
 
@@ -3641,6 +3666,9 @@ msgstr "Delete Substance"
 
 msgid "Delete Suggestion"
 msgstr "Delete Suggestion"
+
+msgid "Delete supplier"
+msgstr "Delete supplier"
 
 msgid "Delete Supplier"
 msgstr "Delete Supplier"
@@ -5445,6 +5473,9 @@ msgstr "GL account credited when a supplier invoice is posted (AP balance)."
 
 msgid "GL account credited when labor or machine cost is absorbed into a production job."
 msgstr "GL account credited when labor or machine cost is absorbed into a production job."
+
+msgid "GL account credited when manufacturing overhead is absorbed into a production job."
+msgstr "GL account credited when manufacturing overhead is absorbed into a production job."
 
 msgid "GL account debited to clear accumulated depreciation when an asset is disposed."
 msgstr "GL account debited to clear accumulated depreciation when an asset is disposed."
@@ -7946,9 +7977,6 @@ msgstr "OEM (original equipment manufacturer)"
 msgid "of"
 msgstr "of"
 
-msgid "of {total} phases complete"
-msgstr "of {total} phases complete"
-
 msgid "OK"
 msgstr "OK"
 
@@ -8240,6 +8268,12 @@ msgstr "Over-applied by"
 
 msgid "Overdue"
 msgstr "Overdue"
+
+msgid "Overhead Absorption"
+msgstr "Overhead Absorption"
+
+msgid "Overhead Absorption (default)"
+msgstr "Overhead Absorption (default)"
 
 msgid "Overhead Rate"
 msgstr "Overhead Rate"
@@ -9073,9 +9107,6 @@ msgstr "purchasing"
 
 msgid "Purchasing"
 msgstr "Purchasing"
-
-msgid "Purchasing & Cost of Goods"
-msgstr "Purchasing & Cost of Goods"
 
 msgid "Purchasing & Inventory"
 msgstr "Purchasing & Inventory"
@@ -10862,6 +10893,9 @@ msgstr "Standard"
 msgid "Standard cloud Carbon fits how your company runs"
 msgstr "Standard cloud Carbon fits how your company runs"
 
+msgid "Standard Cost Variances"
+msgstr "Standard Cost Variances"
+
 msgid "Standard factor"
 msgstr "Standard factor"
 
@@ -11161,6 +11195,9 @@ msgstr "Supplier Order Number"
 msgid "Supplier Overview"
 msgstr "Supplier Overview"
 
+msgid "Supplier Part"
+msgstr "Supplier Part"
+
 msgid "Supplier Part ID"
 msgstr "Supplier Part ID"
 
@@ -11178,6 +11215,9 @@ msgstr "Supplier Payment Discounts"
 
 msgid "Supplier Payment Discounts (default)"
 msgstr "Supplier Payment Discounts (default)"
+
+msgid "Supplier Prepayments"
+msgstr "Supplier Prepayments"
 
 msgid "supplier process"
 msgstr "supplier process"
@@ -12189,6 +12229,9 @@ msgstr "This sales order has lines that require jobs to be created"
 #. placeholder {0}: usageCount === 1 ? "" : "s"
 msgid "This storage type is currently used by {usageCount} storage unit{0}."
 msgstr "This storage type is currently used by {usageCount} storage unit{0}."
+
+msgid "this supplier"
+msgstr "this supplier"
 
 msgid "This updates the theme for all users of the application"
 msgstr "This updates the theme for all users of the application"

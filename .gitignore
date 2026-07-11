@@ -75,8 +75,15 @@ packages/database/supabase/snippets/**
 .claude/notes/
 .codex/
 
+# Editor/IDE settings — local, not source
+.vscode/
+
 # .ai/ scratch — runtime, not source
 .ai/scratch/
+.ai/daily-notes/
+
+# Daily notes — runtime scratch, not source
+memory/daily-notes/
 
 # Loop run artifacts (@carbon/harness RUNS_DIR).
 # Volatile files (screenshots, raw event log) are excluded; durable run records

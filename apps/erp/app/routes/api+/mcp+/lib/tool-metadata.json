@@ -1,5 +1,5 @@
 {
-  "generated": "2026-07-11T12:27:25.376Z",
+  "generated": "2026-07-11T06:04:09.709Z",
   "totalTools": 1304,
   "modules": 15,
   "tools": [
@@ -965,7 +965,7 @@
       "module": "accounting",
       "classification": "WRITE",
       "description": "update default balance sheet accounts",
-      "paramCount": 20,
+      "paramCount": 21,
       "serviceParams": [
         "client",
         "defaultAccounts"
@@ -1016,6 +1016,9 @@
           "prepaymentAccount": {
             "type": "string"
           },
+          "supplierPrepaymentAccount": {
+            "type": "string"
+          },
           "payablesAccount": {
             "type": "string"
           },
@@ -1052,6 +1055,7 @@
           "accumulatedDepreciationAccount",
           "accumulatedDepreciationOnDisposalAccount",
           "prepaymentAccount",
+          "supplierPrepaymentAccount",
           "payablesAccount",
           "salesTaxPayableAccount",
           "purchaseTaxPayableAccount",
@@ -1067,7 +1071,7 @@
       "module": "accounting",
       "classification": "WRITE",
       "description": "update default income accounts",
-      "paramCount": 25,
+      "paramCount": 26,
       "serviceParams": [
         "client",
         "defaultAccounts"
@@ -1110,6 +1114,9 @@
             "type": "string"
           },
           "laborAbsorptionAccount": {
+            "type": "string"
+          },
+          "overheadAbsorptionAccount": {
             "type": "string"
           },
           "indirectCostAccount": {
@@ -9690,6 +9697,32 @@
       "module": "items",
       "classification": "DESTRUCTIVE",
       "description": "delete item customer part",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "items_deleteSupplierPart",
+      "module": "items",
+      "classification": "DESTRUCTIVE",
+      "description": "delete supplier part",
       "paramCount": 1,
       "serviceParams": [
         "client",

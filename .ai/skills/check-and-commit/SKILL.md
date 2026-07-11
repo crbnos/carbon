@@ -1,6 +1,6 @@
 ---
 name: check-and-commit
-description: Pre-commit verification gate — runs Carbon's validation gates in order (generate:types if schema changed, biome, scoped typecheck, scoped tests, build if needed), fixes straightforward failures, then commits the specific files with a conventional message. Use after /fix, after an /execute task, or after manual changes when the work should be committed. Commits only when every gate is green; pushes only if the branch already tracks a remote or the user asked.
+description: Pre-commit verification gate — runs Carbon's validation gates in order (generate:types if schema changed, biome, scoped typecheck, scoped tests, build if needed, and /translate to fill missing i18n .po strings when UI/locale files changed), fixes straightforward failures, then commits the specific files with a conventional message. Use after /fix, after an /execute task, or after manual changes when the work should be committed. Commits only when every gate is green; pushes only if the branch already tracks a remote or the user asked.
 ---
 <!-- Workflow pattern inspired by Open Mercato (MIT License)
      https://github.com/open-mercato/open-mercato
@@ -18,12 +18,20 @@ then committing."
 
 ```bash
 git status --porcelain
-git diff --name-only
+git diff --name-only HEAD   # staged + unstaged vs HEAD — the full change set
 ```
 
-From the changed paths, derive:
+Derive every flag below from `git diff --name-only HEAD` (all changes vs the last
+commit). Plain `git diff --name-only` omits already-staged files, which would let
+staged UI/`.po` files slip past `I18N_RELEVANT` and skip Gate 6. From the changed
+paths, derive:
 
 - `SCHEMA_CHANGED` — any file under `packages/database/supabase/migrations/`
+- `I18N_RELEVANT` — the diff adds/edits UI source that can introduce new
+  translatable strings (`apps/erp/app/**`, `apps/mes/app/**`,
+  `packages/react/src/**`) **or** touches any `packages/locale/locales/**/*.po`.
+  When true, Gate 3 (i18n) fills missing translations so they ship in this same
+  commit instead of drifting behind the code.
 - the set of **touched packages** — run this to map changed files to workspace
   package names (these are the `--filter` values for the gates):
 
@@ -61,6 +69,25 @@ pnpm --filter <pkg> test
 # (package exports, config files, SST infra)
 pnpm exec turbo run build --filter=<pkg>
 ```
+
+### Gate 6 — i18n translations (only if `I18N_RELEVANT`)
+
+Run **last**, after the code gates are green — so no Haiku translation effort is
+spent on a commit that would fail typecheck/tests. Fill missing `.po`
+translations by invoking the **translate skill** (`/translate`), not by hand:
+
+- Invoke `/translate`. It refreshes catalogs (`lingui:extract`), fans missing
+  `msgstr` out to Haiku subagents, merges deterministically, and verifies with
+  `linguito check` — see `.ai/skills/translate/SKILL.md` for the full loop.
+- If it reports `NOTHING_TO_TRANSLATE` / `linguito check` already clean → nothing
+  to add; mark the gate SKIP and continue.
+- Otherwise it fills `packages/locale/locales/**/*.po`. Treat the gate as PASS
+  only when `/translate` finishes with `Remaining ... : 0` and `linguito check`
+  exits 0. If it stops with a residual after its 3-round cap → **STOP, report
+  BLOCKED** (don't commit half-translated catalogs).
+- The filled `.po` files are now part of this change — add them explicitly in
+  Step 4 alongside the code (their package is `@carbon/locale`). `/translate`
+  removes its own `.ai/scratch/translate/` scratch; never stage that.
 
 ## Step 3: Fix policy
 
@@ -113,6 +140,7 @@ git commit -m "<type>(<scope>): <description>"
 | typecheck (<pkgs>) | PASS | |
 | test (<pkgs>) | PASS | <pre-existing failures noted> |
 | build | PASS / SKIP | |
+| i18n (/translate) | PASS / SKIP | <N filled across locales, or "no missing"> |
 
 **Commit:** `<sha>` — `<message>`  ·  **Pushed:** yes/no
 **Excluded from staging:** <files left uncommitted and why, or "none">

@@ -765,7 +765,7 @@ msgid "Preventive"
 msgstr "예방"
 
 msgid "Previous"
-msgstr ""
+msgstr "이전"
 
 msgid "Print"
 msgstr "인쇄"
