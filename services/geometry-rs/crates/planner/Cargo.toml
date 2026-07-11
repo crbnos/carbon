@@ -4,10 +4,6 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 
-[features]
-# Swap the collision backend to coal (hpp-fcl successor). Not byte-parity.
-coal = ["collision/coal"]
-
 [dependencies]
 collision = { path = "../collision" }
 converter = { path = "../converter" }

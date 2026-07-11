@@ -1,13 +1,7 @@
-//! Thin, exact bridge over C++ FCL 0.7.0 (the same library python-fcl wraps).
-//!
-//! Only two narrowphase queries are exposed — pairwise `collide` and `distance`
-//! between two triangle-mesh BVHs. The Python planner drives FCL through a
-//! broadphase `DynamicAABBTreeCollisionManager`, but broadphase only culls
-//! non-overlapping pairs (which produce no contacts); the narrowphase contact
-//! set between two given BVHs is identical either way. Every consumer of
-//! `_contacts_at` in the planner uses max-depth or set-membership over the
-//! contacts (order-independent), so pairwise queries reproduce the planner's
-//! collision truth exactly. Rust-side AABB culling restores broadphase speed.
+//! cxx bridge over C++ FCL 0.7.0: triangle-mesh BVH build, a persistent
+//! `DynamicAABBTreeCollisionManager` broadphase, and the moving-object queries
+//! the planner drives (max penetration depth per neighbor, with a skip set and
+//! a threshold-classified early-stop variant).
 
 #[cxx::bridge(namespace = "carbon_fcl")]
 pub mod ffi {
@@ -53,14 +47,12 @@ pub mod ffi {
     unsafe extern "C++" {
         include!("collision/src/shim.h");
 
-        /// Opaque `fcl::BVHModel<fcl::OBBRSS<double>>` (matches trimesh's
-        /// `mesh_to_BVH`: default BVHModel, beginModel/addSubModel/endModel).
+        /// Opaque `fcl::BVHModel<fcl::OBBRSS<double>>`.
         type Bvh;
 
-        /// `fcl::DynamicAABBTreeCollisionManager<double>` (trimesh's default) —
-        /// bound so the all-pairs contact ORDER matches Python's, which
-        /// `_seated_pair_depths` depends on (it caps points/normals at the
-        /// first 64 in traversal order).
+        /// `fcl::DynamicAABBTreeCollisionManager<double>`. All-pairs contact
+        /// order is stable (registration order), which `seated_pair_depths`
+        /// relies on (it caps points/normals at the first 64 in that order).
         type Manager;
 
         /// Total FCL contacts appended across all narrowphase `collide` calls
@@ -73,7 +65,7 @@ pub mod ffi {
         fn manager_new() -> UniquePtr<Manager>;
 
         /// Register a BVH at identity transform (world-baked mesh). Index =
-        /// registration order — call in the same order Python adds parts.
+        /// registration order.
         fn manager_add(m: Pin<&mut Manager>, bvh: &Bvh);
 
         /// Build the broadphase tree. Call ONCE after registration changes
@@ -108,8 +100,8 @@ pub mod ffi {
         /// Like `manager_collide_single`, but skips a SET of registered objects
         /// (moving part + already-known blockers) at the broadphase callback —
         /// so a deep pass-through stops re-enumerating a known blocker's full
-        /// contact set at every subsequent sample (Python's unregister-mid-sweep,
-        /// without a manager rebuild). Returns max depth per remaining other.
+        /// contact set at every subsequent sample, without a manager rebuild.
+        /// Returns max depth per remaining other.
         fn manager_collide_single_multi(
             m: &Manager,
             moving: &Bvh,
@@ -131,8 +123,9 @@ pub mod ffi {
         /// "never reports". `want_touch_near=false` lets a backend skip the
         /// touch/near probes (free_travel / path_blockers only test blocking).
         ///
-        /// The FCL backend IGNORES all hints and full-enumerates (byte-parity
-        /// with python-fcl); the coal backend brackets with GJK early-stop.
+        /// Early-stops each neighbor's BVH traversal at the first pair past its
+        /// threshold (FCL's own `canStop` hook); a miss has already fully
+        /// enumerated, so near/touch classification stays exact.
         #[allow(clippy::too_many_arguments)]
         fn manager_classify_multi(
             m: &Manager,

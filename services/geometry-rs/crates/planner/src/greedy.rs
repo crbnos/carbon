@@ -1,6 +1,5 @@
-//! Greedy disassembly + tier-1/2/3 motion search + subassembly extraction —
-//! 1:1 port of `_plan_removal`, `_plan_escape`, `_plan_group_removal`,
-//! `_escape_blockers`, `_blockers`, `_greedy_disassembly` from `app/plan.py`.
+//! Greedy disassembly: per-part removal-motion search (linear / L / escape),
+//! single-blocker rigid merge, subassembly group extraction, and flagging.
 
 use crate::collide::*;
 use crate::consts::*;
@@ -11,16 +10,6 @@ use nalgebra::Vector3;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 
 pub type Tiers = BTreeMap<String, i64>;
-
-/// GEOMETRY_COMPAT=python pins the planner to Python-parity behavior (the
-/// migration baseline the shadow corpus captures). The domain owner rates that
-/// planner "just ok — required manual intervention on all of them", so the
-/// DEFAULT is the improved algorithm; compat mode exists for port-regression
-/// testing only (corpus replays set it).
-pub fn python_compat() -> bool {
-    static C: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
-    *C.get_or_init(|| std::env::var("GEOMETRY_COMPAT").as_deref() == Ok("python"))
-}
 
 /// Evaluate greedy candidates (`order`, in priority order) in parallel and return
 /// the first-in-priority that yields a plan — byte-identical to the sequential
@@ -932,28 +921,22 @@ pub fn greedy_disassembly(
                 let blockers = if cached_ok {
                     stuck_blockers_cache[&id].clone()
                 } else {
-                    let b = {
+                    // The part's BEST (least-blocked) escape direction decides the
+                    // merge: a part whose best direction has exactly one blocker
+                    // merges with it, even when other directions add more blockers
+                    // to the union (panel pairs, servo/mount and nut/bolt clusters).
+                    let b: Vec<String> = {
                         let part = &remaining[&id];
                         let others: Vec<&Component> =
                             remaining.values().filter(|c| c.node_id != id).collect();
-                        if python_compat() {
-                            // Python-parity: union of blockers over ALL directions.
-                            escape_blockers(part, &remaining, &others, &world, fasteners, tolerance, path_samples)
-                        } else {
-                            // Improved: the BEST single direction decides. A part whose
-                            // least-blocked escape has exactly one blocker merges with
-                            // it even when other directions add more to the union —
-                            // the pattern behind most manually-authored parts in the
-                            // flag autopsy (panel pairs, servo/mount clusters).
-                            let per = escape_blockers_by_direction(
-                                part, &remaining, &others, &world, fasteners, tolerance, path_samples,
-                            );
-                            per.into_iter()
-                                .filter(|(_, _, b)| !b.is_empty())
-                                .min_by_key(|(_, _, b)| b.len())
-                                .map(|(_, _, b)| b.into_iter().take(8).collect())
-                                .unwrap_or_default()
-                        }
+                        escape_blockers_by_direction(
+                            part, &remaining, &others, &world, fasteners, tolerance, path_samples,
+                        )
+                        .into_iter()
+                        .filter(|(_, _, b)| !b.is_empty())
+                        .min_by_key(|(_, _, b)| b.len())
+                        .map(|(_, _, b)| b.into_iter().take(8).collect())
+                        .unwrap_or_default()
                     };
                     stuck_blockers_cache.insert(id.clone(), b.clone());
                     b

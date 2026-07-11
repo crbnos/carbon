@@ -1,4 +1,4 @@
-//! Planner constants — ported 1:1 from `app/plan.py`. Values must match exactly.
+//! Planner constants (tolerances, sampling, sandwich/fastener thresholds).
 
 use nalgebra::Vector3;
 

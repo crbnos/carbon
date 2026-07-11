@@ -1,9 +1,8 @@
-//! Point-in-mesh containment via ray casting — the Rust stand-in for trimesh's
-//! `mesh.contains(points)`. Used by `_embedded_pairs` and `_fastener_joints`,
-//! both of which vote on an aggregate fraction (>=0.75 / >0.8), so per-point
-//! robustness matters more than matching trimesh's exact backend. A single ray
-//! in a deliberately non-axis-aligned direction (avoids edge/vertex degeneracy)
-//! with odd-crossing parity is the standard watertight test.
+//! Point-in-mesh containment via ray casting. Used by embedded-pair and
+//! fastener-joint detection, which vote on an aggregate fraction, so per-point
+//! robustness matters more than the exact backend. A single ray in a
+//! non-axis-aligned direction (avoids edge/vertex degeneracy) with odd-crossing
+//! parity is the standard watertight test.
 
 use crate::types::Mesh;
 use nalgebra::Vector3;

@@ -1,5 +1,4 @@
-//! Fastener classification helpers (name test + head direction) — ported from
-//! `app/plan.py`. Full `_classify_fasteners`/`_fastener_joints` land alongside.
+//! Fastener classification helpers: name/geometry test and head direction.
 
 use crate::consts::world_axes;
 use crate::types::{Component, FastenerInfo};

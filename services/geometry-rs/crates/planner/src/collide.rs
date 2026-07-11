@@ -1,12 +1,6 @@
-//! Collision-query core over the FCL bridge — 1:1 port of `app/plan.py`'s
-//! `_contacts_at`, `_blocking_depth`, `_path_is_clear`, `_free_travel`,
-//! `_path_blockers`, `_mate_exempt`, `_seated_exempt`, `_self_exempt`.
-//!
-//! The Python planner drives one FCL broadphase manager; we replace it with
-//! pairwise narrowphase `collide` over an explicit `others` slice (the parts
-//! currently "registered"), AABB-culled. Contacts collapse to one (name,
-//! max_depth) per other — exactly equivalent for every consumer (all take
-//! max-depth / set-membership). See crates/collision for the parity proof.
+//! Collision-query core over the FCL bridge: `contacts_at` (max penetration
+//! depth per neighbor), the `classify` early-stop path, path/free-travel sweeps,
+//! and the mate/seated/self exemption maps.
 
 use crate::consts::*;
 use crate::types::{Component, FastenerInfo};
@@ -28,32 +22,10 @@ pub fn contacts_at_calls() -> usize {
     CONTACTS_AT_CALLS.load(std::sync::atomic::Ordering::Relaxed)
 }
 
-/// Per-query FCL contact budget. Python's planner uses 100000; every consumer
-/// only needs max-depth-per-other vs the 0.15mm tolerance, so a deep overlap's
-/// full triangle-contact set is wasted enumeration. Lowering this caps that work
-/// — but can only change the reported MAX depth if the deepest pair is truncated,
-/// which would break parity, so the value is validated against the corpus + the
-/// real assemblies (GEOMETRY_NUM_MAX sweep) before any default below 100000.
-fn num_max_contacts() -> usize {
-    static N: std::sync::OnceLock<usize> = std::sync::OnceLock::new();
-    *N.get_or_init(|| {
-        std::env::var("GEOMETRY_NUM_MAX")
-            .ok()
-            .and_then(|v| v.parse().ok())
-            .unwrap_or(100_000)
-    })
-}
-
-/// Optional pair to trace: GEOMETRY_DEBUG_PAIR="movingId:otherId".
-fn debug_pair() -> Option<&'static (String, String)> {
-    static P: std::sync::OnceLock<Option<(String, String)>> = std::sync::OnceLock::new();
-    P.get_or_init(|| {
-        std::env::var("GEOMETRY_DEBUG_PAIR").ok().and_then(|v| {
-            v.split_once(':').map(|(a, b)| (a.to_string(), b.to_string()))
-        })
-    })
-    .as_ref()
-}
+/// Per-query FCL contact budget. Every consumer collapses contacts to
+/// max-depth-per-neighbor, so this only bounds pathological deep overlaps; the
+/// classify path early-stops well before it.
+const NUM_MAX_CONTACTS: usize = 100_000;
 
 /// An allowance map: partner nodeId -> allowed seated interference (mm).
 /// `f64::INFINITY` means "the moving part / group member itself" — never counts
@@ -94,7 +66,7 @@ impl Broadphase {
             translation[0],
             translation[1],
             translation[2],
-            num_max_contacts(),
+            NUM_MAX_CONTACTS,
         );
         cs.into_iter()
             .map(|c| (self.index_to_node[c.other].clone(), c.depth))
@@ -188,7 +160,7 @@ impl CollisionWorld {
             translation[0],
             translation[1],
             translation[2],
-            num_max_contacts(),
+            NUM_MAX_CONTACTS,
         );
         cs.into_iter()
             .map(|c| (self.index_to_node[c.other].clone(), c.depth))
@@ -254,34 +226,11 @@ impl CollisionWorld {
             translation[2],
             tol,
             want_touch_near,
-            num_max_contacts(),
+            NUM_MAX_CONTACTS,
         );
-        let out: Contacts = cs
-            .into_iter()
+        cs.into_iter()
             .map(|c| (self.index_to_node[c.other].clone(), c.depth))
-            .collect();
-        // GEOMETRY_DEBUG_PAIR="movingId:otherId" — dump this pair's per-sample
-        // depth under the active backend (diagnosing FCL-vs-coal divergence).
-        if let Some((m, o)) = debug_pair() {
-            if part.node_id == *m {
-                if o == "*" {
-                    if !out.is_empty() {
-                        eprintln!(
-                            "DBGPAIR t=[{:.4},{:.4},{:.4}] tol={tol:.3} contacts={:?}",
-                            translation[0], translation[1], translation[2],
-                            out.iter().map(|(n, d)| (&n[..8], *d)).collect::<Vec<_>>()
-                        );
-                    }
-                } else {
-                    let d = out.iter().find(|(n, _)| n == o).map(|(_, d)| *d);
-                    eprintln!(
-                        "DBGPAIR t=[{:.4},{:.4},{:.4}] tol={tol:.3} depth={d:?}",
-                        translation[0], translation[1], translation[2]
-                    );
-                }
-            }
-        }
-        out
+            .collect()
     }
 
     /// `_contacts_at` with extra bodies culled at the broadphase — the moving
@@ -309,7 +258,7 @@ impl CollisionWorld {
             translation[0],
             translation[1],
             translation[2],
-            num_max_contacts(),
+            NUM_MAX_CONTACTS,
         );
         cs.into_iter()
             .map(|c| (self.index_to_node[c.other].clone(), c.depth))

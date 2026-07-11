@@ -110,7 +110,7 @@ double distance_pair(const Bvh &a, const Bvh &b) {
   return result.min_distance;
 }
 
-// --- broadphase manager (DynamicAABBTree, matching trimesh) ---
+// --- broadphase manager (DynamicAABBTree) ---
 
 struct ManagerImpl {
   fcl::DynamicAABBTreeCollisionManager<double> mgr;
@@ -197,11 +197,10 @@ void manager_set_active(Manager &m, size_t index, bool active) {
   impl->mgr.update();
 }
 
-// A single moving object vs the manager. Mirrors python-fcl's
-// defaultCollisionCallback: ONE shared CollisionResult with a TOTAL
-// num_max_contacts budget across all pairs. Delegates to the multi-skip form
-// with the moving part's own index as the only skip (Python's `_unregistered`:
-// never narrowphase the swept part against its own seated copy).
+// A single moving object vs the manager: ONE shared CollisionResult with a
+// total num_max_contacts budget across all pairs. Delegates to the multi-skip
+// form with the moving part's own index as the only skip (so the swept part is
+// never narrowphased against its own seated copy).
 rust::Vec<SingleContact> manager_collide_single(const Manager &m, const Bvh &moving,
                                                 int64_t moving_index, double tx, double ty,
                                                 double tz, size_t num_max_contacts) {
@@ -214,8 +213,7 @@ rust::Vec<SingleContact> manager_collide_single(const Manager &m, const Bvh &mov
 // Skip a SET of registered objects at the broadphase callback. Used by
 // `_path_blockers`: once a partner is a known blocker its contacts are never
 // needed again, so skipping it stops re-enumerating its full triangle-contact
-// set (thousands) at every subsequent sample — Python's unregister-mid-sweep
-// trick, done without a manager rebuild.
+// set (thousands) at every subsequent sample, without a manager rebuild.
 struct AccumMulti {
   fcl::CollisionRequest<double> request;
   fcl::CollisionResult<double> result;
@@ -332,7 +330,7 @@ struct AccumClassify {
   rust::Slice<const int64_t> ov_idx;
   rust::Slice<const double> ov_am;
   double tol;
-  size_t budget_left;  // shared num_max budget across neighbors, as python-fcl
+  size_t budget_left;  // shared num_max budget across neighbors
   std::vector<std::pair<size_t, double>> out;
 };
 

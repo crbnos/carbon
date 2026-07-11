@@ -1,21 +1,6 @@
-//! numpy-matching numerics on **ndarray** (pure Rust, no Python).
-//!
-//! The planner's ordering heuristics compare floats (volumes, singular values,
-//! means, stds), so matching the Python service means matching numpy's float
-//! results:
-//! - `mean`/`std`/`mean_rows`: numpy's exact **pairwise summation** algorithm
-//!   (8-lane unrolled base case, blocksize 128, halving recursion) — ndarray's
-//!   own `sum` uses a different tree, so the reduction is implemented here and
-//!   ndarray supplies the array plumbing.
-//! - `svd_rows`: LAPACK **dgesdd** via `ndarray-linalg`'s `SVDDC` — the same
-//!   divide-and-conquer routine `np.linalg.svd` calls (OpenBLAS backend, which
-//!   is what Linux numpy wheels bundle).
-//! - `eigh3`: `ndarray-linalg`'s `Eigh` (LAPACK syev family), matching
-//!   `np.linalg.eigh`'s convention (ascending eigenvalues, vectors as columns).
-//! - `percentile25`: numpy's linear-interpolation percentile.
-//!
-//! Residual sign differences from a different LAPACK build are verified
-//! empirically against Python dumps (see the run log).
+//! Numerics on **ndarray**: pairwise summation for mean/std, sequential
+//! row-reduction, LAPACK SVD/eigh, and BLAS world transforms. The float
+//! evaluation order is fixed so planner ordering heuristics are reproducible.
 
 use nalgebra::{DMatrix, Matrix3, Vector3};
 #[cfg(not(target_os = "macos"))]

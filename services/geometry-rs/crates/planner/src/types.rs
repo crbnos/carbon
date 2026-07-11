@@ -1,6 +1,5 @@
-//! Core planner data structures, mirroring `app/plan.py`'s dataclasses.
+//! Core planner data structures.
 
-use crate::corpus::RawComponent;
 use cxx::UniquePtr;
 use nalgebra::Vector3;
 use std::sync::{Arc, OnceLock};
@@ -30,18 +29,6 @@ pub struct Mesh {
 }
 
 impl Mesh {
-    pub fn from_flat(vertices: &[f64], faces: &[u32]) -> Self {
-        let verts = vertices
-            .chunks_exact(3)
-            .map(|c| Vector3::new(c[0], c[1], c[2]))
-            .collect();
-        let faces = faces.chunks_exact(3).map(|c| [c[0], c[1], c[2]]).collect();
-        Mesh {
-            vertices: verts,
-            faces,
-        }
-    }
-
     pub fn bbox(&self) -> (Vector3<f64>, Vector3<f64>) {
         let mut lo = Vector3::new(f64::INFINITY, f64::INFINITY, f64::INFINITY);
         let mut hi = Vector3::new(f64::NEG_INFINITY, f64::NEG_INFINITY, f64::NEG_INFINITY);
@@ -143,15 +130,9 @@ impl Component {
         }
     }
 
-    pub fn from_raw(raw: &RawComponent) -> Self {
-        let mesh = Mesh::from_flat(&raw.vertices, &raw.faces);
-        let (lo, hi) = mesh.bbox();
-        Component::new(raw.node_id.clone(), raw.name.clone(), mesh, lo, hi, raw.is_proxy)
-    }
-
-    /// The part's FCL BVH, built once and cached (mirrors `_mesh_bvh`). The
-    /// handle is `Arc<SharedBvh>` so it can be shared read-only across the
-    /// parallel greedy sweeps.
+    /// The part's FCL BVH, built once and cached. The handle is
+    /// `Arc<SharedBvh>` so it can be shared read-only across the parallel
+    /// greedy sweeps.
     pub fn bvh(&self) -> Arc<SharedBvh> {
         self.bvh
             .get_or_init(|| {

@@ -1,7 +1,6 @@
-//! The `_plan_parts` ordering pipeline — classification, rigid merge, sandwich
-//! detection, precedence DAG, topo sort, verification. 1:1 port of `app/plan.py`.
-//! Part 1 here: seated pair depths + classification + merge + joints + sandwich +
-//! ordering adjacency. (Edges/topo/verify + the driver are in pipeline2.rs.)
+//! Ordering pipeline, part 1: seated pair depths, fastener/sandwich
+//! classification, rigid merge, joints, and ordering adjacency.
+//! (Precedence edges, topo sort, verification, and the drivers are in pipeline2.)
 
 use crate::consts::*;
 use crate::contains::mesh_contains;
@@ -41,15 +40,10 @@ impl PairData {
 
 pub type PairDepths = HashMap<(String, String), PairData>;
 
-fn aabb_overlap(a: &Component, b: &Component) -> bool {
-    (0..3).all(|i| a.bbox_min[i] <= b.bbox_max[i] && b.bbox_min[i] <= a.bbox_max[i])
-}
-
-/// `_seated_pair_depths`: max depth + capped contact points/normals + structure
-/// tensor per touching pair. Uses FCL's broadphase `DynamicAABBTreeCollisionManager`
-/// (same class + registration order as trimesh) so the all-pairs contact ORDER
-/// matches Python — `points`/`normals` are capped at the first 64 in that order,
-/// which feeds sandwich-side means, fastener ring-axis fits, and support normals.
+/// Max depth + capped contact points/normals + structure tensor per touching
+/// pair, over the broadphase all-pairs contact set. `points`/`normals` are
+/// capped at the first 64 in traversal order, feeding sandwich-side means,
+/// fastener ring-axis fits, and support normals.
 pub fn seated_pair_depths(parts: &[Component]) -> PairDepths {
     let mut mgr = collision::manager_new();
     for p in parts {

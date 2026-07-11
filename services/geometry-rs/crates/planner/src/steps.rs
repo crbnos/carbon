@@ -1,14 +1,12 @@
-//! `plan_step`: STEP file → plan.json (version 3). Ties the converter (OCCT tree)
-//! to the planner. Port of `app/plan.py::plan_step` (+ `_collect_world_parts`,
-//! `_part_to_dict`). Fixed-sequence and no-units paths fully supported; caller
-//! `units` are merged (eject-fastened-members refinement is a follow-up).
+//! `plan_step`: STEP file -> plan.json (version 3) — ties the converter (OCCT
+//! assembly tree) to the planner and emits the wire format.
 
 use crate::consts::mesh_tolerance;
 use crate::pipeline2::{merge_units, plan_fixed_sequence, plan_parts, GroupPayload, PlanOutcome};
 use crate::types::{Component, Mesh, Motion, PlannedComponent};
 use converter::convert::{build_tree, ConvertError};
 use converter::graph::AssemblyNode;
-use nalgebra::{Matrix4, Vector3};
+use nalgebra::Vector3;
 use serde_json::{json, Map, Value};
 use std::collections::{HashMap, HashSet};
 

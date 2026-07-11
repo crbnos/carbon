@@ -1,8 +1,8 @@
-//! `_plan_parts` ordering half: precedence DAG, joint/sandwich/support edges,
-//! base reselection, preference topo sort, connectivity repair, verification,
-//! plus the `plan_parts` / `plan_fixed_sequence` drivers. Port of `app/plan.py`.
+//! Ordering pipeline, part 2: precedence DAG, joint/sandwich/support edges,
+//! base reselection, preference topo sort, connectivity repair, forward
+//! verification, and the `plan_parts` / `plan_fixed_sequence` drivers.
 
-use crate::collide::{self, CollisionWorld, Exempt};
+use crate::collide::{CollisionWorld, Exempt};
 #[allow(unused_imports)]
 use crate::collide::*;
 use crate::consts::*;
@@ -869,10 +869,9 @@ pub fn preference_topo_sort(
     }
 
     if let Some(adj) = adjacency {
-        // Improved mode: repair may not violate collision precedence (Python's
-        // repair does, manufacturing forward-verify failures).
-        let hard = if crate::greedy::python_compat() { None } else { Some(edges) };
-        placed = connectivity_repair(&placed, adj, hard);
+        // The repair may not reorder a part above one of its collision
+        // predecessors, or the forward-verification pass demotes it later.
+        placed = connectivity_repair(&placed, adj, Some(edges));
     }
     placed
 }

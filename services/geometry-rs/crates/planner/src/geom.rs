@@ -1,5 +1,5 @@
-//! Pure geometry helpers ported 1:1 from `app/plan.py`. No collision library —
-//! everything here is deterministic vector math and verifiable in isolation.
+//! Pure geometry helpers: volumes, symmetry axes (SVD), candidate directions,
+//! structural sort key. Deterministic vector math, no collision library.
 
 use crate::consts::{world_axes, EXIT_MARGIN_MM};
 use crate::types::{Component, FastenerKind, Mesh};

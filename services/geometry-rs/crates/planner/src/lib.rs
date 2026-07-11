@@ -1,12 +1,10 @@
-//! Carbon geometry planner (Rust port of `services/geometry/app/plan.py`).
-//!
-//! Verified against the shadow corpus captured from the Python test suite
-//! (`services/geometry/tests/capture_corpus.py`).
+//! Carbon geometry planner: collision-free disassembly motion + assembly
+//! sequence for a tessellated CAD assembly. Collision via FCL (the `collision`
+//! crate); numerics via `npy` (LAPACK/BLAS).
 
 pub mod collide;
 pub mod consts;
 pub mod contains;
-pub mod corpus;
 pub mod fasteners;
 pub mod geom;
 pub mod greedy;
