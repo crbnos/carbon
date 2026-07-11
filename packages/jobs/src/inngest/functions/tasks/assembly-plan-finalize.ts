@@ -1,5 +1,6 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Json } from "@carbon/database";
+import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
 import type { AssemblyPlan } from "@carbon/viewer/steps";
 import { NonRetriableError } from "inngest";
 import { inngest } from "../../client";
@@ -13,6 +14,36 @@ type PlanDoneMeta = {
   graphPath: string | null;
   planPath: string;
 };
+
+/**
+ * Pull a completed plan straight from the service (GET /plan/{jobId} returns the
+ * plan body while the job stays in memory). Used when the signed upload URL
+ * expired before the service could PUT plan.json, so the worker uploads it with
+ * the service role instead. Returns null if the service is unreachable or no
+ * longer holds the job (a restart).
+ */
+async function fetchPlanFromService(
+  jobId: string
+): Promise<AssemblyPlan | null> {
+  if (!ASSEMBLER_SERVICE_URL) return null;
+  try {
+    const response = await fetch(`${ASSEMBLER_SERVICE_URL}/plan/${jobId}`, {
+      headers: ASSEMBLER_SERVICE_API_KEY
+        ? { Authorization: `Bearer ${ASSEMBLER_SERVICE_API_KEY}` }
+        : {},
+      signal: AbortSignal.timeout(10_000)
+    });
+    if (!response.ok) return null;
+    const body = (await response.json().catch(() => null)) as {
+      status?: string;
+      plan?: AssemblyPlan;
+    } | null;
+    if (body?.status !== "done" || body.plan == null) return null;
+    return body.plan;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Finalizes a motion-plan run when the geometry service pushes
@@ -95,21 +126,43 @@ export const assemblyPlanFinalizeFunction = inngest.createFunction(
 
     await step.run("persist-plan", async () => {
       const client = getCarbonServiceRole();
-      // The service uploads plan.json to the signed URL before pushing the
-      // event; planUploaded=false means that contract broke — fail loudly
-      // rather than record a Success pointing at a missing artifact.
+      // The service PUTs plan.json to a signed upload URL before pushing the
+      // event, but that token is short-lived (~60s) — an async plan that
+      // finishes after it expires can't upload there. planUploaded=false is
+      // therefore NOT a lost plan: the service still holds it at
+      // GET /plan/{jobId}, so pull it and upload with the service role (no
+      // token expiry). Only a plan we genuinely can't recover fails the job.
       if (stats?.planUploaded !== true) {
-        await client
-          .from("assemblyPlanJob")
-          .update({
-            status: "Failed",
-            error: "Planner reported done but did not upload plan.json",
-            updatedAt: new Date().toISOString()
-          })
-          .eq("id", jobId)
-          .eq("companyId", meta.companyId)
-          .eq("status", "Processing");
-        throw new NonRetriableError("plan-done event without uploaded plan");
+        const recovered = await fetchPlanFromService(jobId);
+        if (!recovered) {
+          await client
+            .from("assemblyPlanJob")
+            .update({
+              status: "Failed",
+              error: "Planner finished but plan.json could not be recovered",
+              updatedAt: new Date().toISOString()
+            })
+            .eq("id", jobId)
+            .eq("companyId", meta.companyId)
+            .eq("status", "Processing");
+          throw new NonRetriableError(
+            "plan-done event without recoverable plan"
+          );
+        }
+        const upload = await client.storage
+          .from("private")
+          .upload(meta.planPath, JSON.stringify(recovered), {
+            contentType: "application/json",
+            upsert: true
+          });
+        if (upload.error) {
+          throw new Error(
+            `Failed to upload recovered plan.json: ${upload.error.message}`
+          );
+        }
+        logger.info("uploaded plan.json worker-side (signed URL expired)", {
+          jobId
+        });
       }
 
       await client

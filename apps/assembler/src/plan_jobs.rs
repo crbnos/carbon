@@ -135,23 +135,30 @@ impl JobStore {
 
             match res {
                 Ok(Ok(r)) => {
-                    // Offload: PUT plan.json to the caller's signed URL so the
-                    // large plan body never round-trips the poll/event payloads
-                    // (mirrors /convert's glb/graph uploads). Failing the upload
-                    // fails the job — the caller asked for the artifact there.
+                    // Best-effort: PUT plan.json to the caller's signed URL so the
+                    // large plan body usually skips the poll/event payloads
+                    // (mirrors /convert's glb/graph uploads). The upload URL is a
+                    // short-lived token (~60s); an async plan that finishes after
+                    // it expires would fail the PUT. That must NOT lose the plan —
+                    // set_done still holds it (GET /plan/{id} returns `plan`), and
+                    // the worker uploads it itself when planUploaded is false. So
+                    // a failed PUT just flips the flag; the job still completes.
                     let mut plan_uploaded = false;
                     if let Some(pu) = &plan_url {
                         let body = serde_json::to_vec(&r.plan).unwrap_or_default();
                         let bytes = body.len();
-                        if let Err(e) = http::upload(pu, body, "application/json").await {
-                            let msg = format!("plan.json upload failed: {}", e.message);
-                            eprintln!("[{job_id}] {msg}");
-                            jobs.set_error(&job_id, msg.clone());
-                            send_completion_event(&job_id, "error", None, Some(&msg), jobs.meta(&job_id)).await;
-                            return;
+                        match http::upload(pu, body, "application/json").await {
+                            Ok(()) => {
+                                eprintln!("[{job_id}] plan.json uploaded ({bytes} bytes)");
+                                plan_uploaded = true;
+                            }
+                            Err(e) => {
+                                eprintln!(
+                                    "[{job_id}] plan.json upload failed ({}); worker will upload from GET /plan/{job_id}",
+                                    e.message
+                                );
+                            }
                         }
-                        eprintln!("[{job_id}] plan.json uploaded ({bytes} bytes)");
-                        plan_uploaded = true;
                     }
                     let plan_ms = started.elapsed().as_millis() as i64;
                     let stats = json!({
