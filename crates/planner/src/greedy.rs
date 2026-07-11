@@ -349,8 +349,27 @@ pub fn plan_escape(
     fasteners: &HashMap<String, FastenerInfo>,
     tolerance: f64,
 ) -> Option<PlannedComponent> {
+    plan_escape_annotated(part, others, world, path_samples, fasteners, tolerance).0
+}
+
+/// `plan_escape` plus a FROZEN flag: true when the BFS never left the root node
+/// (the part cannot exit or advance a `min_hop` in any direction). A frozen part
+/// stays frozen until a neighbor capping one of its hops leaves — the assembly
+/// bounds shrinking can't help (the obstruction is adjacent, not the exit
+/// distance; and phase 1 re-checks the exit path every round before phase 2).
+/// The flag is a free byproduct of the escape search, so the caller can cache it
+/// with a neighbor-only invalidation and skip the frozen re-search across bounds
+/// epochs — the bulk of the escape phase on dense assemblies.
+pub fn plan_escape_annotated(
+    part: &Component,
+    others: &[&Component],
+    world: &CollisionWorld,
+    path_samples: usize,
+    fasteners: &HashMap<String, FastenerInfo>,
+    tolerance: f64,
+) -> (Option<PlannedComponent>, bool) {
     if others.is_empty() {
-        return None;
+        return (None, false);
     }
     let (static_min, static_max) = bounds_over(others);
     let part_diagonal = {
@@ -410,7 +429,7 @@ pub fn plan_escape(
                 if let Some(et) = exit_touch {
                     let mut removal = segments.clone();
                     removal.push((*direction, recorded_travel(part, direction, travel, et)));
-                    return Some(removal_segments_to_planned(part, &removal));
+                    return (Some(removal_segments_to_planned(part, &removal)), false);
                 }
             }
 
@@ -446,7 +465,8 @@ pub fn plan_escape(
             queue.push_back((new_offset, new_segments));
         }
     }
-    None
+    // Frozen iff the search never enqueued a hop (only the root was visited).
+    (None, visited.len() <= 1)
 }
 
 /// Per-direction escape blockers: for each candidate direction with positive
@@ -1022,6 +1042,11 @@ pub fn greedy_disassembly(
     // escape, so each memoizes independently (escape's wander reach is larger).
     let mut blocked_p1: HashMap<String, HashSet<String>> = HashMap::new();
     let mut blocked_p2: HashMap<String, HashSet<String>> = HashMap::new();
+    // Frozen parts (immobile from their seat). Unlike blocked_p2 this is NOT
+    // cleared on a bounds change — a frozen part is held by an adjacent
+    // neighbor, not by the exit distance, so only a watched neighbor's removal
+    // can free it. Populated as a free byproduct of the escape search.
+    let mut frozen: HashMap<String, HashSet<String>> = HashMap::new();
     let mut bounds_epoch: Option<(Vector3<f64>, Vector3<f64>)> = None;
     let (mut memo_skips_p1, mut memo_skips_p2) = (0usize, 0usize);
     let watch_margin = tolerance + 2.0 * MAX_SAMPLE_SPACING_MM;
@@ -1108,6 +1133,7 @@ pub fn greedy_disassembly(
                 world.set_active(&id, false);
                 blocked_memo_invalidate(&mut blocked_p1, &id);
                 blocked_memo_invalidate(&mut blocked_p2, &id);
+                blocked_memo_invalidate(&mut frozen, &id);
                 progressed = true;
             }
         }
@@ -1117,17 +1143,67 @@ pub fn greedy_disassembly(
         // Phase 2: tier-3 escape (parallel candidate evaluation, first success).
         if !progressed && remaining.len() > 1 {
             let order = removal_priority(&remaining, fasteners, &centroid, assembly_diagonal);
-            memo_skips_p2 += order.iter().filter(|id| blocked_p2.contains_key(*id)).count();
+            memo_skips_p2 += order
+                .iter()
+                .filter(|id| blocked_p2.contains_key(*id) || frozen.contains_key(*id))
+                .count();
+            // Skip both the (bounds-sensitive) escape memo and the
+            // (neighbor-sensitive) frozen cache. A frozen part never wins the
+            // first-success, so excluding it can't change which part wins.
             let tryable: Vec<String> = order
                 .into_iter()
-                .filter(|id| !blocked_p2.contains_key(id))
+                .filter(|id| !blocked_p2.contains_key(id) && !frozen.contains_key(id))
                 .collect();
-            let result =
-                par_first_success(&tryable, &remaining, &world, None, |part, others, w, _fw| {
-                    plan_escape(part, others, w, path_samples, fasteners, tolerance)
-                });
-            let failed_upto = result.as_ref().map(|(i, _)| *i).unwrap_or(tryable.len());
-            for id in &tryable[..failed_upto] {
+            // Fan the candidates across cores and take the first-in-priority
+            // escape, exactly like the other phases (find_map_first cancels the
+            // rest once the lowest surviving index is found). The frozen flag
+            // rides the escape's own root node, so each worker records its
+            // verdict into a per-candidate atomic bit — a free byproduct,
+            // collected lock-free with no separate immobility pass.
+            let frozen_flags: Vec<std::sync::atomic::AtomicBool> =
+                (0..tryable.len()).map(|_| std::sync::atomic::AtomicBool::new(false)).collect();
+            let winner = {
+                use rayon::prelude::*;
+                use std::sync::atomic::Ordering::Relaxed;
+                (0..tryable.len()).into_par_iter().find_map_first(|i| {
+                    let id = &tryable[i];
+                    let others: Vec<&Component> =
+                        remaining.values().filter(|c| &c.node_id != id).collect();
+                    let (res, is_frozen) = plan_escape_annotated(
+                        &remaining[id],
+                        &others,
+                        &world,
+                        path_samples,
+                        fasteners,
+                        tolerance,
+                    );
+                    if is_frozen {
+                        frozen_flags[i].store(true, Relaxed);
+                    }
+                    res.map(|p| (i, p))
+                })
+            };
+            let is_frozen_at =
+                |i: usize| frozen_flags[i].load(std::sync::atomic::Ordering::Relaxed);
+            let failed_upto = winner.as_ref().map(|(i, _)| *i).unwrap_or(tryable.len());
+            // Cache every frozen verdict found (persist across bounds epochs);
+            // memoize the non-frozen failures below the winner into the
+            // bounds-sensitive escape memo, as before.
+            for (i, id) in tryable.iter().enumerate() {
+                if !is_frozen_at(i) {
+                    continue;
+                }
+                let part = &remaining[id];
+                let hop_cap = (part.bbox_max - part.bbox_min).norm().max(1.0) * 1.5;
+                frozen.insert(
+                    id.clone(),
+                    blocked_watch_set(part, &remaining, fasteners, watch_margin, hop_cap),
+                );
+            }
+            for (i, id) in tryable[..failed_upto].iter().enumerate() {
+                if is_frozen_at(i) {
+                    continue;
+                }
                 let part = &remaining[id];
                 // Escape wanders up to MAX_ESCAPE_SEGMENTS hops of 1.5x the part
                 // diagonal before its exit sweep — the watch region reaches that
@@ -1141,7 +1217,7 @@ pub fn greedy_disassembly(
                     blocked_watch_set(part, &remaining, fasteners, reach, assembly_diagonal),
                 );
             }
-            if let Some((i, p)) = result {
+            if let Some((i, p)) = winner {
                 let id = tryable[i].clone();
                 *tiers.get_mut("escape").unwrap() += 1;
                 removal_order.push(p);
@@ -1149,6 +1225,7 @@ pub fn greedy_disassembly(
                 world.set_active(&id, false);
                 blocked_memo_invalidate(&mut blocked_p1, &id);
                 blocked_memo_invalidate(&mut blocked_p2, &id);
+                blocked_memo_invalidate(&mut frozen, &id);
                 progressed = true;
             }
         }
@@ -1265,7 +1342,7 @@ pub fn greedy_disassembly(
                 // The member left and the host's geometry changed — both must
                 // fall out of the blocked memos (the grown host can only add
                 // blockage, but its own cached verdict is stale).
-                for memo in [&mut blocked_p1, &mut blocked_p2] {
+                for memo in [&mut blocked_p1, &mut blocked_p2, &mut frozen] {
                     blocked_memo_invalidate(memo, &id);
                     blocked_memo_invalidate(memo, &host_id);
                 }
@@ -1301,7 +1378,7 @@ pub fn greedy_disassembly(
                 for member_id in &members {
                     remaining.remove(member_id);
                     world.set_active(member_id, false);
-                    for memo in [&mut blocked_p1, &mut blocked_p2] {
+                    for memo in [&mut blocked_p1, &mut blocked_p2, &mut frozen] {
                         blocked_memo_invalidate(memo, member_id);
                     }
                 }
@@ -1426,7 +1503,7 @@ pub fn greedy_disassembly(
             *tiers.get_mut("flagged").unwrap() += 1;
             remaining.remove(&id);
             world.set_active(&id, false);
-            for memo in [&mut blocked_p1, &mut blocked_p2] {
+            for memo in [&mut blocked_p1, &mut blocked_p2, &mut frozen] {
                 blocked_memo_invalidate(memo, &id);
             }
             progressed = true;
