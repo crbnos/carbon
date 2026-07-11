@@ -904,6 +904,24 @@ pub fn greedy_disassembly(
     let mut world = CollisionWorld::from_components(parts);
     let full_world = CollisionWorld::from_components(parts);
 
+    // The presumptive base: the largest-volume part (mirrors pipeline2's base
+    // pick, which is connectivity-first with volume as the dominant tiebreak).
+    // Phase-3 single-blocker merges must never fold a part INTO the base —
+    // a knob merged into the frame simply vanishes from the instructions,
+    // and any real removal motion it might have had (found once neighbors
+    // clear) is lost. Stuck parts against the base get flagged instead,
+    // preserving their install step. Merges into movable hosts (nut->bolt,
+    // servo->mount, panel pairs) are unaffected.
+    let base_candidate: Option<String> = parts
+        .iter()
+        .max_by(|a, b| {
+            part_volume(a)
+                .partial_cmp(&part_volume(b))
+                .unwrap_or(std::cmp::Ordering::Equal)
+                .then_with(|| a.node_id.cmp(&b.node_id))
+        })
+        .map(|c| c.node_id.clone());
+
     let mut removal_order: Vec<PlannedComponent> = Vec::new();
     let mut group_mesh_cache: HashMap<BTreeSet<String>, Component> = HashMap::new();
     let mut stuck_blockers_cache: HashMap<String, Vec<String>> = HashMap::new();
@@ -1000,6 +1018,12 @@ pub fn greedy_disassembly(
                 if protected.map(|p| p.contains(&id)).unwrap_or(false) {
                     continue;
                 }
+                // The presumptive base neither merges into anything nor
+                // absorbs stuck parts (see base_candidate above) — otherwise
+                // the whole frame collapses into one step.
+                if base_candidate.as_deref() == Some(id.as_str()) {
+                    continue;
+                }
                 let cached_ok = stuck_blockers_cache
                     .get(&id)
                     .map(|c| c.iter().all(|b| remaining.contains_key(b)))
@@ -1038,6 +1062,9 @@ pub fn greedy_disassembly(
                 }
                 let host_id = blockers[0].clone();
                 if !remaining.contains_key(&host_id) || sandwiched.contains(&host_id) {
+                    continue;
+                }
+                if base_candidate.as_deref() == Some(host_id.as_str()) {
                     continue;
                 }
                 if protected.map(|p| p.contains(&host_id)).unwrap_or(false) {
