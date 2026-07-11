@@ -4026,16 +4026,25 @@ async function invalidateAssemblyPlanCache(
 
   const planJobs = await client
     .from("assemblyPlanJob")
-    .select("planPath")
+    .select("id, companyId, planPath")
     .eq("modelUploadId", modelUploadId)
     .eq("kind", "plan");
 
-  const planPaths = (planJobs.data ?? [])
-    .map((job) => job.planPath)
-    .filter((planPath): planPath is string => Boolean(planPath));
+  // Remove the recorded planPath AND the deterministic per-job path: a job
+  // that failed or was cancelled after the service uploaded plan.json never
+  // got planPath set on its row, and would otherwise leave an orphan file.
+  const planPaths = [
+    ...new Set(
+      (planJobs.data ?? []).flatMap((job) => [
+        ...(job.planPath ? [job.planPath] : []),
+        `${job.companyId}/models/${modelUploadId}/${job.id}/plan.json`
+      ])
+    )
+  ];
   if (planPaths.length > 0) {
-    // Best-effort artifact cleanup; deleting the rows below is what actually
-    // invalidates the cache (getLatestAssemblyPlan then finds nothing).
+    // Best-effort artifact cleanup (removing a nonexistent path is a no-op);
+    // deleting the rows below is what actually invalidates the cache
+    // (getLatestAssemblyPlan then finds nothing).
     await client.storage.from("private").remove(planPaths);
   }
 
