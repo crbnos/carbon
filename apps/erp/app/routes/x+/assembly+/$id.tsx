@@ -456,10 +456,10 @@ export default function AssemblyInstructionRoute() {
               content={
                 <div className="relative bg-background h-[calc(100dvh-99px)] w-full">
                   {glbPath && graphPath && isPlanning && (
-                    <div className="absolute left-1/2 top-3 z-10 flex -translate-x-1/2 items-center gap-2 rounded-full border border-border bg-background/90 px-3 py-1.5 shadow-sm">
+                    <div className="absolute left-1/2 top-3 z-10 flex -translate-x-1/2 items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 shadow-lg">
                       <Spinner className="h-3.5 w-3.5" />
-                      <span className="whitespace-nowrap text-xs text-muted-foreground">
-                        Planning motion
+                      <span className="whitespace-nowrap text-xs font-medium text-foreground">
+                        Planning motion…
                       </span>
                       <cancelPlanFetcher.Form
                         method="post"
@@ -519,18 +519,12 @@ export default function AssemblyInstructionRoute() {
                         />
                       )}
                     </ClientOnly>
-                  ) : isActivelyConverting && modelUpload?.id ? (
+                  ) : (isActivelyConverting || isAwaitingPickup) &&
+                    modelUpload?.id ? (
                     <ModelConvertProgress
                       modelUploadId={modelUpload.id}
                       instructionId={id!}
                     />
-                  ) : isAwaitingPickup ? (
-                    <div className="flex flex-col h-full w-full items-center justify-center gap-4">
-                      <Spinner className="h-10 w-10" />
-                      <p className="text-sm text-muted-foreground max-w-[320px] text-center">
-                        Waiting for the conversion to start…
-                      </p>
-                    </div>
                   ) : modelUpload?.processingStatus === "Failed" ? (
                     <Empty>
                       <p className="text-sm text-muted-foreground max-w-[320px] text-center">
