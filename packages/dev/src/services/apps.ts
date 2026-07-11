@@ -304,10 +304,11 @@ export function spawnAssembler(opts: {
       "--reload"
     ];
     cwd = serviceDir;
+    // The legacy Python service keeps its own GEOMETRY_* env names.
     extraEnv = {
       ...caEnv,
-      ASSEMBLER_SERVICE_API_KEY: "dev-local-key",
-      ASSEMBLER_DEV_MODE: "true"
+      GEOMETRY_SERVICE_API_KEY: "dev-local-key",
+      GEOMETRY_DEV_MODE: "true"
     };
   }
 
