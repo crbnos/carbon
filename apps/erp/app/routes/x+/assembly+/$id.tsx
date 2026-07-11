@@ -75,12 +75,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getAssemblyStandardNotes(client, companyId)
   ]);
 
-  if (instruction.error) {
+  const instructionError = instruction.error;
+  if (instructionError || !instruction.data) {
+    // A deleted/absent instruction is a normal not-found (PGRST116 = no rows),
+    // not a server error. A stale tab left open on a deleted instruction keeps
+    // revalidating (realtime + poll); logging error() on every hit spams the
+    // service log. Log only genuine DB errors; redirect quietly otherwise.
+    const notFound = !instruction.data || instructionError?.code === "PGRST116";
     throw redirect(
       path.to.assemblyInstructions,
       await flash(
         request,
-        error(instruction.error, "Failed to load assembly instruction")
+        notFound
+          ? { success: false, message: "Assembly instruction not found" }
+          : error(instructionError, "Failed to load assembly instruction")
       )
     );
   }
