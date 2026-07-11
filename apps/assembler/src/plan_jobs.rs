@@ -80,36 +80,21 @@ impl JobStore {
         Some(out)
     }
 
-    fn meta(&self, id: &str) -> Option<Value> {
-        self.inner.get(id).and_then(|j| j.meta.clone())
-    }
-
-    pub fn spawn(
-        &self,
-        state: &AppState,
-        job_id: &str,
-        url: String,
-        plan_url: Option<String>,
-        options: Value,
-    ) {
+    pub fn spawn(&self, state: &AppState, job_id: &str, url: String, options: Value) {
         let jobs = self.clone();
         let slots = Arc::clone(&state.slots);
         let job_id = job_id.to_string();
         tokio::spawn(async move {
             let _permit = slots.acquire().await;
             jobs.set_status(&job_id, "running");
-            eprintln!(
-                "[{job_id}] plan running (plan_url={})",
-                if plan_url.is_some() { "yes" } else { "no" }
-            );
+            eprintln!("[{job_id}] plan running");
             let started = std::time::Instant::now();
 
             let tmp = http::temp_path("step");
             if let Err(e) = http::download_hashed(&url, &tmp, None).await {
                 let msg = e.message;
                 eprintln!("[{job_id}] plan failed: source download: {msg}");
-                jobs.set_error(&job_id, msg.clone());
-                send_completion_event(&job_id, "error", None, Some(&msg), jobs.meta(&job_id)).await;
+                jobs.set_error(&job_id, msg);
                 return;
             }
             let tmp_str = tmp.to_string_lossy().to_string();
@@ -135,133 +120,47 @@ impl JobStore {
 
             match res {
                 Ok(Ok(r)) => {
-                    // Best-effort: PUT plan.json to the caller's signed URL so the
-                    // large plan body usually skips the poll/event payloads
-                    // (mirrors /convert's glb/graph uploads). The upload URL is a
-                    // short-lived token (~60s); an async plan that finishes after
-                    // it expires would fail the PUT. That must NOT lose the plan —
-                    // set_done still holds it (GET /plan/{id} returns `plan`), and
-                    // the worker uploads it itself when planUploaded is false. So
-                    // a failed PUT just flips the flag; the job still completes.
-                    let mut plan_uploaded = false;
-                    if let Some(pu) = &plan_url {
-                        let body = serde_json::to_vec(&r.plan).unwrap_or_default();
-                        let bytes = body.len();
-                        match http::upload(pu, body, "application/json").await {
-                            Ok(()) => {
-                                eprintln!("[{job_id}] plan.json uploaded ({bytes} bytes)");
-                                plan_uploaded = true;
-                            }
-                            Err(e) => {
-                                eprintln!(
-                                    "[{job_id}] plan.json upload failed ({}); worker will upload from GET /plan/{job_id}",
-                                    e.message
-                                );
-                            }
-                        }
-                    }
+                    // The plan stays resident at GET /plan/{id}; the app's
+                    // assembly-plan worker polls for it and uploads plan.json
+                    // itself with the service role (the assembler has no storage
+                    // credentials, and a caller-minted upload URL would expire
+                    // long before a multi-minute plan finishes).
                     let plan_ms = started.elapsed().as_millis() as i64;
                     let stats = json!({
                         "planMs": plan_ms,
                         "tiers": r.tiers,
                         "warnings": r.warnings,
                         "verifiedCount": r.verified_count,
+                        "componentCount": r.component_count,
+                        "plannedCount": r.planned_count,
                     });
+                    eprintln!(
+                        "[{job_id}] plan done: {} parts, {} planned, {plan_ms}ms",
+                        r.component_count, r.planned_count
+                    );
                     jobs.set_done(
                         &job_id,
                         json!({
                             "ok": true,
                             "status": "done",
                             "plan": r.plan,
-                            "planUploaded": plan_uploaded,
                             "componentCount": r.component_count,
                             "plannedCount": r.planned_count,
                             "stats": stats,
                         }),
                     );
-                    let event_stats = json!({
-                        "planMs": plan_ms,
-                        "tiers": r.tiers,
-                        "warnings": r.warnings,
-                        "verifiedCount": r.verified_count,
-                        "componentCount": r.component_count,
-                        "plannedCount": r.planned_count,
-                        "planUploaded": plan_uploaded,
-                    });
-                    eprintln!(
-                        "[{job_id}] plan done: {} parts, {} planned, {plan_ms}ms",
-                        r.component_count, r.planned_count
-                    );
-                    send_completion_event(&job_id, "done", Some(event_stats), None, jobs.meta(&job_id)).await;
                 }
                 Ok(Err(e)) => {
                     eprintln!("[{job_id}] plan failed: {}", e.message);
-                    jobs.set_error(&job_id, e.message.clone());
-                    send_completion_event(&job_id, "error", None, Some(&e.message), jobs.meta(&job_id)).await;
+                    jobs.set_error(&job_id, e.message);
                 }
                 Err(e) => {
                     let msg = format!("plan panicked: {e}");
                     eprintln!("[{job_id}] {msg}");
-                    jobs.set_error(&job_id, msg.clone());
-                    send_completion_event(&job_id, "error", None, Some(&msg), jobs.meta(&job_id)).await;
+                    jobs.set_error(&job_id, msg);
                 }
             }
         });
-    }
-}
-
-/// Best-effort push of `carbon/assembly-plan-done` to the app's Inngest ingest.
-/// Replaces the app's 120× status-poll loop with `step.waitForEvent`; a send
-/// failure only logs — the app keeps a timeout + one fallback poll as the
-/// safety net, so the plan must never fail because the callback didn't land.
-async fn send_completion_event(
-    job_id: &str,
-    status: &str,
-    stats: Option<Value>,
-    error: Option<&str>,
-    meta: Option<Value>,
-) {
-    let Some(url) = config::inngest_event_url() else {
-        eprintln!(
-            "[{job_id}] inngest completion event skipped (INNGEST_EVENT_KEY unset; app polls)"
-        );
-        return;
-    };
-    let mut data = json!({"jobId": job_id, "status": status});
-    if let Some(s) = stats {
-        data["stats"] = s;
-    }
-    if let Some(e) = error {
-        data["error"] = json!(e);
-    }
-    if let Some(m) = meta {
-        data["meta"] = m;
-    }
-    // Event id dedupes a double push (e.g. a retried send) for 24h; one
-    // terminal event per job.
-    let body = json!({
-        "name": "carbon/assembly-plan-done",
-        "id": format!("plan-done-{job_id}"),
-        "data": data,
-    });
-    let send = async {
-        let client = reqwest::Client::builder()
-            .timeout(std::time::Duration::from_secs(10))
-            .build()?;
-        let resp = client
-            .post(&url)
-            .header("Content-Type", "application/json")
-            .body(serde_json::to_vec(&body).unwrap_or_default())
-            .send()
-            .await?;
-        resp.error_for_status()?;
-        Ok::<_, reqwest::Error>(())
-    };
-    match send.await {
-        Ok(()) => eprintln!("[{job_id}] inngest completion event sent (status={status})"),
-        Err(e) => eprintln!(
-            "[{job_id}] inngest completion event failed (app will fall back to polling): {e}"
-        ),
     }
 }
 

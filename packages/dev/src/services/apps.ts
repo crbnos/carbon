@@ -262,16 +262,13 @@ export function spawnAssembler(opts: {
     args = [];
     cwd = join(root, "apps", "assembler");
     // ASSEMBLER_DEV_MODE=true also disables TLS verification in the service,
-    // so portless's self-signed CA needs no extra trust wiring. The Inngest
-    // vars point plan-completion events at the local Inngest dev server (it
-    // accepts any event key), so assembly-plan-finalize resolves instantly in
-    // dev — the same event path as prod.
+    // so portless's self-signed CA needs no extra trust wiring. The service is
+    // pure compute — the assembly-plan Inngest function polls GET /plan for
+    // completion, so no Inngest event wiring is needed here.
     extraEnv = {
       ASSEMBLER_BIND: `127.0.0.1:${port}`,
       ASSEMBLER_SERVICE_API_KEY: "dev-local-key",
-      ASSEMBLER_DEV_MODE: "true",
-      INNGEST_EVENT_KEY: "dev-local",
-      INNGEST_EVENT_URL: process.env.INNGEST_BASE_URL ?? ""
+      ASSEMBLER_DEV_MODE: "true"
     };
     process.stderr.write(`${prefix}${pc.dim("using rust assembler")}\n`);
   } else {

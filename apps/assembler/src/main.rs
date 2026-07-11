@@ -315,15 +315,6 @@ async fn plan(
         .as_str()
         .ok_or_else(|| ApiError::invalid("missing source.url"))?;
     config::validate_url(source_url)?;
-    // Optional signed PUT for plan.json (mirrors /convert's outputs) — when
-    // present the service uploads the plan instead of returning it by value.
-    let plan_url = match req["outputs"]["plan"]["url"].as_str() {
-        Some(u) => {
-            config::validate_url(u)?;
-            Some(u.to_string())
-        }
-        None => None,
-    };
     let job_id = req["jobId"].as_str().unwrap_or("unknown").to_string();
 
     // Idempotent: attach to an in-flight run rather than starting a second.
@@ -333,20 +324,16 @@ async fn plan(
             Json(json!({"ok": true, "jobId": job_id, "status": status})),
         ));
     }
-    // Opaque caller context echoed back in the completion event + status
-    // responses (keeps event consumers self-contained; no server semantics).
+    // Opaque caller context echoed back in status responses (debugging only; no
+    // server semantics — the app owns completion by polling GET /plan).
     let meta = match &req["meta"] {
         Value::Null => None,
         m => Some(m.clone()),
     };
     state.jobs.set_pending(&job_id, meta);
-    state.jobs.spawn(
-        &state,
-        &job_id,
-        source_url.to_string(),
-        plan_url,
-        req["options"].clone(),
-    );
+    state
+        .jobs
+        .spawn(&state, &job_id, source_url.to_string(), req["options"].clone());
 
     Ok((
         axum::http::StatusCode::ACCEPTED,
