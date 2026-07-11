@@ -133,6 +133,12 @@ services:
       PGRST_DB_SCHEMAS: public,storage,graphql_public
       PGRST_DB_ANON_ROLE: anon
       PGRST_JWT_SECRET: ${SUPABASE_JWT_SECRET}
+      # Pool default is 10 — a burst of concurrent authed queries (the /x loader
+      # alone fires ~16) plus any aborted-mid-transaction requests exhausts it and
+      # every subsequent query blocks. Bigger pool + a bounded acquisition timeout
+      # so a saturated pool fails fast instead of hanging the request forever.
+      PGRST_DB_POOL: ${PGRST_DB_POOL:-25}
+      PGRST_DB_POOL_ACQUISITION_TIMEOUT: ${PGRST_DB_POOL_ACQUISITION_TIMEOUT:-10}
       PGRST_DB_USE_LEGACY_GUCS: "false"
       PGRST_APP_SETTINGS_JWT_SECRET: ${SUPABASE_JWT_SECRET}
       PGRST_APP_SETTINGS_JWT_EXP: 3600
