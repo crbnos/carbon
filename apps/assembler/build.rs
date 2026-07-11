@@ -1,12 +1,18 @@
+use std::path::PathBuf;
 use std::process::Command;
 
-/// Same OCCT discovery as occt-bridge/build.rs. Embeds the lib dir as an rpath
-/// on the final binary so it runs without DYLD_LIBRARY_PATH/LD_LIBRARY_PATH
-/// (macOS SIP strips DYLD_* across protected binaries like nohup).
+/// Same OCCT discovery as crates/occt-bridge/build.rs (OCCT_PREFIX env → brew).
 fn occt_prefix() -> String {
     if let Ok(p) = std::env::var("OCCT_PREFIX") {
         if !p.is_empty() {
             return p;
+        }
+    }
+    // The per-machine static build (apps/assembler/scripts/build-occt.sh).
+    if let Some(home) = std::env::var_os("HOME") {
+        let cached = std::path::PathBuf::from(home).join(".cache/carbon-occt/8.0.0-p1");
+        if cached.join("lib/libTKernel.a").exists() {
+            return cached.to_string_lossy().into_owned();
         }
     }
     Command::new("brew")
@@ -20,7 +26,15 @@ fn occt_prefix() -> String {
 }
 
 fn main() {
-    let occt = occt_prefix();
-    println!("cargo:rustc-link-arg=-Wl,-rpath,{occt}/lib");
+    // Static OCCT (the deployment build) is linked into the binary — no rpath
+    // needed. Only a dynamic OCCT (e.g. a brew fallback) needs its lib dir on
+    // the runtime search path; embed it so the binary runs without
+    // DYLD_LIBRARY_PATH/LD_LIBRARY_PATH (macOS SIP strips DYLD_* across
+    // protected binaries like nohup).
+    let lib = PathBuf::from(format!("{}/lib", occt_prefix()));
+    let is_static = lib.join("libTKernel.a").exists();
+    if !is_static && lib.exists() {
+        println!("cargo:rustc-link-arg=-Wl,-rpath,{}", lib.display());
+    }
     println!("cargo:rerun-if-env-changed=OCCT_PREFIX");
 }

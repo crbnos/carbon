@@ -1,66 +1,46 @@
 # Carbon assembler service (Rust): STEP -> GLB + assembly graph, and
-# collision-free disassembly motion planning. Multi-stage build.
+# collision-free disassembly motion planning.
 #
-# OCCT is built from source at V8_0_0_p1 with:
-#   - USE_MMGR_TYPE=JEMALLOC  (Standard::Allocate global mutex -> jemalloc arenas)
-#   - the CommonBaseAllocator thread_local patch (occt-patches/)
-# Together these lift in-process STEP-convert scaling from ~3.5x to near-linear
-# on many cores (see the patch header). FCL 0.7.0 comes from apt (bookworm ships
-# exactly 0.7.0). The runtime stage carries only the shared libs + the binary.
+# OCCT is STATIC-LINKED into the binary from the prebuilt carbon-occt base
+# image (OCCT V8_0_0_p1 + the CommonBaseAllocator thread_local patch — see
+# occt.Dockerfile). Build that base ONCE and keep it:
+#   docker build -f apps/assembler/occt.Dockerfile -t carbon-occt:8.0.0-p1 apps/assembler
+# Then this image builds in ~minutes, and the runtime stage is just the binary
+# plus the FCL collision libs — no OCCT shared objects, no X11/fontconfig.
 #
 # Build from the REPO ROOT (the cargo workspace spans crates/* + apps/assembler):
 #   docker build -f apps/assembler/Dockerfile -t carbon-assembler .
-#
-# NOTE: the OCCT source build is ~20-40 min. A CI cache of the /opt/occt install
-# (or a prebuilt OCCT base image) makes rebuilds minutes.
+# Override the base tag with --build-arg OCCT_IMAGE=<registry>/carbon-occt:TAG.
 
-# ---- OCCT 8.0.0_p1 builder (jemalloc + thread_local patch) ----
-FROM debian:bookworm-slim AS occt
-RUN apt-get update && apt-get install -y --no-install-recommends \
-      git cmake g++ make ca-certificates perl \
-      libjemalloc-dev libfreetype-dev rapidjson-dev zlib1g-dev \
-    && rm -rf /var/lib/apt/lists/*
-RUN git clone --depth 1 --branch V8_0_0_p1 https://github.com/Open-Cascade-SAS/OCCT.git /src
-COPY apps/assembler/occt-patches /occt-patches
-RUN /occt-patches/apply.sh /src
-WORKDIR /src/build
-RUN cmake .. \
-      -DCMAKE_BUILD_TYPE=Release \
-      -DCMAKE_INSTALL_PREFIX=/opt/occt \
-      -DUSE_MMGR_TYPE=JEMALLOC \
-      -DBUILD_MODULE_Draw=OFF \
-      -DBUILD_MODULE_Visualization=OFF \
-      -DBUILD_MODULE_ApplicationFramework=ON \
-      -DBUILD_MODULE_DataExchange=ON \
-      -DBUILD_MODULE_ModelingAlgorithms=ON \
-      -DBUILD_MODULE_ModelingData=ON \
-      -DUSE_FREETYPE=OFF -DUSE_TK=OFF -DUSE_RAPIDJSON=OFF -DUSE_OPENGL=OFF \
-    && make -j"$(nproc)" && make install
+ARG OCCT_IMAGE=carbon-occt:8.0.0-p1
+
+# ---- prebuilt static OCCT (kept base image; no source compile) ----
+FROM ${OCCT_IMAGE} AS occt
 
 # ---- Rust builder ----
 FROM rust:1.90-bookworm AS build
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      libfcl-dev libccd-dev libeigen3-dev liboctomap-dev libjemalloc-dev libfreetype6 \
+      libfcl-dev libccd-dev libeigen3-dev liboctomap-dev \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=occt /opt/occt /opt/occt
 WORKDIR /app
-# Only the Rust workspace — not the whole monorepo (see .dockerignore).
+# Only the Rust workspace — not the whole monorepo (see Dockerfile.dockerignore).
 COPY Cargo.toml Cargo.lock ./
 COPY crates ./crates
 COPY apps/assembler ./apps/assembler
-# Point the cxx bridges at the built-OCCT + Debian/apt layout (see build.rs).
+# Point the cxx bridges at the static OCCT + Debian/apt layout (see build.rs).
 ENV OCCT_PREFIX=/opt/occt \
     FCL_PREFIX=/usr LIBCCD_PREFIX=/usr EIGEN_PREFIX=/usr OCTOMAP_PREFIX=/usr
 RUN cargo build --release -p assembler
 
 # ---- runtime ----
+# OCCT is inside the binary; only the dynamically-linked FCL stack remains.
+# The -dev packages are used because their runtime .so names are known-good on
+# bookworm (they pull the actual runtime libs; a few MB of headers ride along).
 FROM debian:bookworm-slim AS runtime
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      libfcl-dev libccd-dev liboctomap-dev libjemalloc2 libfreetype6 libfontconfig1 \
-      zlib1g libtbb12 ca-certificates \
+      libfcl-dev libccd-dev liboctomap-dev ca-certificates \
     && rm -rf /var/lib/apt/lists/*
-COPY --from=occt /opt/occt/lib /opt/occt/lib
 COPY --from=build /app/target/release/assembler /usr/local/bin/assembler
-ENV LD_LIBRARY_PATH=/opt/occt/lib
 EXPOSE 8000
 CMD ["assembler"]
