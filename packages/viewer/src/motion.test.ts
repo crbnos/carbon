@@ -552,15 +552,37 @@ describe("naturalizeMotion", () => {
     }
   });
 
-  it("caps a large part proportionally to its own size, not the raw travel", () => {
-    // 400mm part (not small), 2000mm travel → ceiling 3*400 + 5 = 1205
+  it("caps a large part at the assembly-wide ceiling, not the raw travel", () => {
+    // 400mm part (not small), 2000mm travel. Per-part ceiling is 3*400+5=1205,
+    // but the assembly cap 0.35*1000=350 governs — nothing flies in from
+    // further than a third of the whole assembly, however large the part.
     const long = { ...lift, distance: 2000 };
     const result = naturalizeMotion(long, 400, 1000);
     if (result.type === "linear") {
-      expect(result.distance).toBe(1205);
+      expect(result.distance).toBe(350);
     } else {
       throw new Error("expected linear motion");
     }
+  });
+
+  it("keeps a large flat part's drop within the assembly (seal fly-out)", () => {
+    // The SA BCU seal: 166mm diagonal, 288mm L-travel, 196mm assembly. Without
+    // the assembly cap its ceiling is 3*166+5=503, so 288mm passed through and
+    // it flew in from 1.5x the whole assembly.
+    const seal: Motion = {
+      type: "L",
+      segments: [
+        { direction: [1, 0, 0], distance: 122 },
+        { direction: [0, 0, -1], distance: 166 }
+      ]
+    };
+    const result = naturalizeMotion(seal, 166, 196);
+    if (result.type !== "L") throw new Error("expected L motion");
+    const total = result.segments.reduce(
+      (sum, s) => sum + Math.abs(s.distance),
+      0
+    );
+    expect(total).toBeCloseTo(196 * 0.35, 1); // ~68.6mm, a natural drop
   });
 
   it("leaves an in-band travel unchanged", () => {

@@ -157,6 +157,15 @@ const SMALL_COMPONENT_TRAVEL_FACTOR = 2.5;
 const NATURAL_TRAVEL_FACTOR = 3;
 /** Additive slack (mm) on the travel ceiling so a seat still fully clears. */
 const NATURAL_TRAVEL_MARGIN_MM = 5;
+/**
+ * Hard ceiling as a fraction of the whole assembly: nothing animates in from
+ * further than this, however large the part. A big FLAT part (a gasket, a lid)
+ * has a huge diagonal but should still just drop a short way onto its seat —
+ * the per-part `NATURAL_TRAVEL_FACTOR × diagonal` ceiling is meaningless for it
+ * (3× a 166 mm seal = 500 mm), so its planner collision path (an L-shaped
+ * detour around the box, ~1.5× the assembly) reads as flying in from off-screen.
+ */
+const ASSEMBLY_TRAVEL_FRACTION = 0.35;
 
 /**
  * Shapes a component's insertion travel into a natural band for playback so it
@@ -183,12 +192,18 @@ export function naturalizeMotion(
 ): Motion {
   if (componentDiagonal <= 0 || assemblyDiagonal <= 0) return motion;
 
-  const ceiling =
-    componentDiagonal * NATURAL_TRAVEL_FACTOR + NATURAL_TRAVEL_MARGIN_MM;
   const isSmall =
     componentDiagonal < assemblyDiagonal * SMALL_COMPONENT_FRACTION;
   const floor = isSmall ? componentDiagonal * SMALL_COMPONENT_TRAVEL_FACTOR : 0;
-  // Floor never exceeds the ceiling (2.5d ≤ 3d + margin).
+  // Per-part ceiling, then the assembly-wide cap; never below the floor so a
+  // borderline-small part keeps its readable minimum travel.
+  const ceiling = Math.max(
+    floor,
+    Math.min(
+      componentDiagonal * NATURAL_TRAVEL_FACTOR + NATURAL_TRAVEL_MARGIN_MM,
+      assemblyDiagonal * ASSEMBLY_TRAVEL_FRACTION
+    )
+  );
   const clamp = (t: number) => Math.min(Math.max(t, floor), ceiling);
 
   switch (motion.type) {
