@@ -1069,7 +1069,7 @@ function StepItem({
   return (
     <div
       className={cn(
-        "group relative flex w-full cursor-pointer select-none items-center gap-1.5 border-b border-border bg-card py-2 pl-1 pr-2 hover:bg-accent/30",
+        "group relative flex w-full cursor-pointer select-none items-center gap-1.5 border-b border-border bg-card py-3 pl-1.5 pr-2.5 hover:bg-accent/30",
         isSelected && "bg-accent/40 hover:bg-accent/40"
       )}
       onClick={onSelect}
