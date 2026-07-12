@@ -30,7 +30,7 @@ import { MotionPathEditor } from "./MotionPathEditor";
 import {
   buildStepClip,
   displayMotionForStep,
-  exaggerateMotion,
+  naturalizeMotion,
   stepTimelineSeconds
 } from "./motion";
 import type {
@@ -328,7 +328,7 @@ export const AssemblyPlayer = forwardRef<
         maxBox[1] - minBox[1],
         maxBox[2] - minBox[2]
       );
-      const motion = exaggerateMotion(
+      const motion = naturalizeMotion(
         baseMotion,
         componentDiagonal,
         assemblyDiagonal

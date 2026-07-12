@@ -153,36 +153,58 @@ export function displayMotionForStep(
 const SMALL_COMPONENT_FRACTION = 0.15;
 /** Small components travel at least this many times their own size. */
 const SMALL_COMPONENT_TRAVEL_FACTOR = 2.5;
+/** No component travels more than this many times its own size, +margin. */
+const NATURAL_TRAVEL_FACTOR = 3;
+/** Additive slack (mm) on the travel ceiling so a seat still fully clears. */
+const NATURAL_TRAVEL_MARGIN_MM = 5;
 
 /**
- * Exaggerates the travel of small components (bolts, washers, pins) so their
- * insertion reads clearly at assembly scale. Display-only: the stored plan
- * keeps the geometric travel. Returns the motion unchanged for large components
- * or non-translating motions.
+ * Shapes a component's insertion travel into a natural band for playback so it
+ * neither pops (too short) nor flies in from across the assembly (too long).
+ *
+ * Display-only: the stored plan keeps the geometric (collision-minimum) travel;
+ * this only shortens/lengthens where the part *starts* its animated approach.
+ * Safe because playback hides future-step parts and a part seats against the
+ * already-placed parts below/beside it, not along its short approach.
+ *
+ * - Ceiling (all parts): `d · NATURAL_TRAVEL_FACTOR + margin` — a long
+ *   collision path (slider, deep mate, a graze past a distant neighbor) is
+ *   trimmed to a few of the part's own body-lengths.
+ * - Floor (small parts only, < SMALL_COMPONENT_FRACTION of the assembly): keeps
+ *   bolts/washers/pins traveling `d · SMALL_COMPONENT_TRAVEL_FACTOR` so they
+ *   still read at assembly scale.
+ *
+ * Returns the motion unchanged when it's non-translating or already in band.
  */
-export function exaggerateMotion(
+export function naturalizeMotion(
   motion: Motion,
   componentDiagonal: number,
   assemblyDiagonal: number
 ): Motion {
   if (componentDiagonal <= 0 || assemblyDiagonal <= 0) return motion;
-  if (componentDiagonal >= assemblyDiagonal * SMALL_COMPONENT_FRACTION)
-    return motion;
 
-  const minTravel = componentDiagonal * SMALL_COMPONENT_TRAVEL_FACTOR;
+  const ceiling =
+    componentDiagonal * NATURAL_TRAVEL_FACTOR + NATURAL_TRAVEL_MARGIN_MM;
+  const isSmall =
+    componentDiagonal < assemblyDiagonal * SMALL_COMPONENT_FRACTION;
+  const floor = isSmall ? componentDiagonal * SMALL_COMPONENT_TRAVEL_FACTOR : 0;
+  // Floor never exceeds the ceiling (2.5d ≤ 3d + margin).
+  const clamp = (t: number) => Math.min(Math.max(t, floor), ceiling);
 
   switch (motion.type) {
     case "linear": {
-      if (motion.distance >= minTravel) return motion;
-      return { ...motion, distance: minTravel };
+      const distance = clamp(motion.distance);
+      return distance === motion.distance ? motion : { ...motion, distance };
     }
     case "L": {
       const total = motion.segments.reduce(
         (sum, segment) => sum + Math.abs(segment.distance),
         0
       );
-      if (total >= minTravel || total <= 0) return motion;
-      const scale = minTravel / total;
+      if (total <= 0) return motion;
+      const target = clamp(total);
+      if (target === total) return motion;
+      const scale = target / total;
       return {
         ...motion,
         segments: motion.segments.map((segment) => ({

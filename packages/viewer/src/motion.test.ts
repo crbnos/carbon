@@ -12,12 +12,12 @@ import {
   buildStepClip,
   DEFAULT_WAYPOINT_DISTANCE,
   displayMotionForStep,
-  exaggerateMotion,
   type MotionKeyframes,
   motionDuration,
   motionToKeyframes,
   motionToWaypoints,
   motionTravelDistance,
+  naturalizeMotion,
   type Pose,
   waypointsToMotion
 } from "./motion";
@@ -478,32 +478,50 @@ describe("buildStepClip", () => {
   });
 });
 
-describe("exaggerateMotion", () => {
+describe("naturalizeMotion", () => {
   const lift = {
     type: "linear",
     direction: [0, 0, -1] as [number, number, number],
     distance: 15
   } as const;
 
-  it("stretches small-component travel to a readable distance", () => {
+  it("floors small-component travel to a readable distance", () => {
     // 20mm bolt in a 1000mm assembly travels at least 2.5x its size
-    const result = exaggerateMotion(lift, 20, 1000);
+    const result = naturalizeMotion(lift, 20, 1000);
     expect(result.type).toBe("linear");
     if (result.type === "linear") {
       expect(result.distance).toBe(50);
     }
   });
 
-  it("leaves large components unchanged", () => {
-    expect(exaggerateMotion(lift, 400, 1000)).toBe(lift);
+  it("caps a long travel to a few of the part's own body-lengths", () => {
+    // 20mm part flying in 500mm → ceiling 3*20 + 5 = 65
+    const long = { ...lift, distance: 500 };
+    const result = naturalizeMotion(long, 20, 1000);
+    if (result.type === "linear") {
+      expect(result.distance).toBe(65);
+    } else {
+      throw new Error("expected linear motion");
+    }
   });
 
-  it("leaves already-long travels unchanged", () => {
-    const long = { ...lift, distance: 200 };
-    expect(exaggerateMotion(long, 20, 1000)).toBe(long);
+  it("caps a large part proportionally to its own size, not the raw travel", () => {
+    // 400mm part (not small), 2000mm travel → ceiling 3*400 + 5 = 1205
+    const long = { ...lift, distance: 2000 };
+    const result = naturalizeMotion(long, 400, 1000);
+    if (result.type === "linear") {
+      expect(result.distance).toBe(1205);
+    } else {
+      throw new Error("expected linear motion");
+    }
   });
 
-  it("scales L segments proportionally", () => {
+  it("leaves an in-band travel unchanged", () => {
+    const inBand = { ...lift, distance: 55 }; // within [50, 65] for a 20mm part
+    expect(naturalizeMotion(inBand, 20, 1000)).toBe(inBand);
+  });
+
+  it("floors then scales L segments proportionally", () => {
     const motion: Motion = {
       type: "L",
       segments: [
@@ -511,7 +529,7 @@ describe("exaggerateMotion", () => {
         { direction: [0, 0, -1], distance: 4 }
       ]
     };
-    const result = exaggerateMotion(motion, 20, 1000);
+    const result = naturalizeMotion(motion, 20, 1000); // total 10 → floor 50
     if (result.type === "L") {
       const total = result.segments.reduce((sum, s) => sum + s.distance, 0);
       expect(total).toBeCloseTo(50);
@@ -523,9 +541,29 @@ describe("exaggerateMotion", () => {
     }
   });
 
-  it("does not exaggerate none motions", () => {
+  it("caps an over-long L total to the ceiling", () => {
+    const motion: Motion = {
+      type: "L",
+      segments: [
+        { direction: [1, 0, 0], distance: 180 },
+        { direction: [0, 0, -1], distance: 120 }
+      ]
+    };
+    const result = naturalizeMotion(motion, 20, 1000); // total 300 → ceiling 65
+    if (result.type === "L") {
+      const total = result.segments.reduce((sum, s) => sum + s.distance, 0);
+      expect(total).toBeCloseTo(65);
+      expect(
+        result.segments[0]!.distance / result.segments[1]!.distance
+      ).toBeCloseTo(180 / 120);
+    } else {
+      throw new Error("expected L motion");
+    }
+  });
+
+  it("does not touch none motions", () => {
     const none = { type: "none" } as const;
-    expect(exaggerateMotion(none, 20, 1000)).toBe(none);
+    expect(naturalizeMotion(none, 20, 1000)).toBe(none);
   });
 });
 

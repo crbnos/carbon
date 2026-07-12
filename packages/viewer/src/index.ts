@@ -17,12 +17,12 @@ export {
 export {
   buildStepClip,
   displayMotionForStep,
-  exaggerateMotion,
   type MotionKeyframeOptions,
   type MotionKeyframes,
   motionDuration,
   motionToKeyframes,
   motionTravelDistance,
+  naturalizeMotion,
   type Pose,
   type StepClipOptions,
   stepTimelineSeconds
