@@ -1332,7 +1332,8 @@ function AssemblyScene({
     if (framingKey === lastFramedKeyRef.current) return;
     lastFramedKeyRef.current = framingKey;
 
-    if (step.camera) {
+    // Manual "Set view" pose — applied verbatim, fov included.
+    if (step.camera && !("source" in step.camera)) {
       desiredPoseRef.current = {
         position: new Vector3(...step.camera.position),
         target: new Vector3(...step.camera.target)
@@ -1343,6 +1344,15 @@ function AssemblyScene({
       }
       return;
     }
+
+    // Planner-baked view direction: chosen at plan time with sight lines
+    // against the real triangles of everything installed earlier — the AABB
+    // scoring below can't tell a hollow container's open top from its wall.
+    // Target, distance, and the frustum fit still happen live.
+    const planDirection =
+      step.camera && "source" in step.camera
+        ? new Vector3(...step.camera.direction).normalize()
+        : null;
 
     if (step.componentNodeIds.length === 0) return;
 
@@ -1391,79 +1401,86 @@ function AssemblyScene({
       lookPoints.push(componentCenter.clone().add(startOffset));
     }
 
-    // Occluders: everything that renders during this step, weighted by how
-    // strongly it hides the action (ghosted future components barely count)
-    const stepComponents = new Set(step.componentNodeIds);
-    const occluders: { min: Vector3; max: Vector3; weight: number }[] = [];
-    for (const leaf of leafBounds ?? []) {
-      if (stepComponents.has(leaf.nodeId)) continue;
-      if (hiddenSet.has(leaf.nodeId)) continue;
-      const leafStep = stepIndexByNode.get(leaf.nodeId);
-      const isFuture = leafStep !== undefined && leafStep > activeStepIndex;
-      if (isFuture && futureMode === "hidden") continue;
-      occluders.push({
-        min: new Vector3(...(leaf.bbox.min as [number, number, number])),
-        max: new Vector3(...(leaf.bbox.max as [number, number, number])),
-        weight: isFuture && futureMode === "ghost" ? 0.3 : 1
-      });
-    }
-
-    // Candidate view directions: two elevation rings around the up axis,
-    // plus the current view. Pick the one that sees the action with the
-    // fewest components in the way, preferring lateral travel and small turns.
     const up = camera.up.clone().normalize();
-    let basisU = new Vector3().crossVectors(up, new Vector3(0, 0, 1));
-    if (basisU.lengthSq() < 1e-6) {
-      basisU = new Vector3().crossVectors(up, new Vector3(1, 0, 0));
-    }
-    basisU.normalize();
-    const basisV = new Vector3().crossVectors(up, basisU).normalize();
-
-    const currentDirection = camera.position
-      .clone()
-      .sub(controls.target)
-      .normalize();
-    const candidates: Vector3[] = [];
-    if (currentDirection.lengthSq() > 1e-6) candidates.push(currentDirection);
-    // Third, steeper ring: in dense machines the only clear sight line to a
-    // buried part is often from high above.
-    for (const elevation of [0.3, 0.55, 0.8]) {
-      const horizontal = Math.sqrt(1 - elevation * elevation);
-      for (let i = 0; i < 8; i++) {
-        const azimuth = (i / 8) * Math.PI * 2;
-        candidates.push(
-          new Vector3()
-            .addScaledVector(basisU, Math.cos(azimuth) * horizontal)
-            .addScaledVector(basisV, Math.sin(azimuth) * horizontal)
-            .addScaledVector(up, elevation)
-            .normalize()
-        );
+    let bestDirection: Vector3;
+    if (planDirection && planDirection.lengthSq() > 1e-6) {
+      bestDirection = planDirection;
+    } else {
+      // Live fallback (manual/edited steps, plans without directions):
+      // AABB-scored candidates. Coarse — it can't see through hollow
+      // geometry — which is exactly why generated steps carry a baked
+      // direction instead.
+      const stepComponents = new Set(step.componentNodeIds);
+      const occluders: { min: Vector3; max: Vector3; weight: number }[] = [];
+      for (const leaf of leafBounds ?? []) {
+        if (stepComponents.has(leaf.nodeId)) continue;
+        if (hiddenSet.has(leaf.nodeId)) continue;
+        const leafStep = stepIndexByNode.get(leaf.nodeId);
+        const isFuture = leafStep !== undefined && leafStep > activeStepIndex;
+        if (isFuture && futureMode === "hidden") continue;
+        occluders.push({
+          min: new Vector3(...(leaf.bbox.min as [number, number, number])),
+          max: new Vector3(...(leaf.bbox.max as [number, number, number])),
+          weight: isFuture && futureMode === "ghost" ? 0.3 : 1
+        });
       }
-    }
 
-    let bestDirection = candidates[0] ?? new Vector3(1, 1, 1).normalize();
-    let bestScore = Number.POSITIVE_INFINITY;
-    for (const candidate of candidates) {
-      const eye = target.clone().addScaledVector(candidate, distance);
-      let score = 0;
-      // How much is in the way of seeing the action?
-      for (const point of lookPoints) {
-        for (const occluder of occluders) {
-          if (segmentIntersectsBox(eye, point, occluder.min, occluder.max)) {
-            score += occluder.weight;
-          }
+      // Candidate view directions: elevation rings around the up axis, plus
+      // the current view. Pick the one that sees the action with the fewest
+      // components in the way, preferring lateral travel and small turns.
+      let basisU = new Vector3().crossVectors(up, new Vector3(0, 0, 1));
+      if (basisU.lengthSq() < 1e-6) {
+        basisU = new Vector3().crossVectors(up, new Vector3(1, 0, 0));
+      }
+      basisU.normalize();
+      const basisV = new Vector3().crossVectors(up, basisU).normalize();
+
+      const currentDirection = camera.position
+        .clone()
+        .sub(controls.target)
+        .normalize();
+      const candidates: Vector3[] = [];
+      if (currentDirection.lengthSq() > 1e-6) candidates.push(currentDirection);
+      // Third, steeper ring: in dense machines the only clear sight line to a
+      // buried part is often from high above.
+      for (const elevation of [0.3, 0.55, 0.8]) {
+        const horizontal = Math.sqrt(1 - elevation * elevation);
+        for (let i = 0; i < 8; i++) {
+          const azimuth = (i / 8) * Math.PI * 2;
+          candidates.push(
+            new Vector3()
+              .addScaledVector(basisU, Math.cos(azimuth) * horizontal)
+              .addScaledVector(basisV, Math.sin(azimuth) * horizontal)
+              .addScaledVector(up, elevation)
+              .normalize()
+          );
         }
       }
-      // Prefer travel running across the screen, not into it
-      if (motionDirection) {
-        score +=
-          4 * Math.max(0, Math.abs(candidate.dot(motionDirection)) - 0.6);
-      }
-      // Prefer small turns from the current view
-      score += 1.75 * (1 - candidate.dot(currentDirection));
-      if (score < bestScore) {
-        bestScore = score;
-        bestDirection = candidate;
+
+      bestDirection = candidates[0] ?? new Vector3(1, 1, 1).normalize();
+      let bestScore = Number.POSITIVE_INFINITY;
+      for (const candidate of candidates) {
+        const eye = target.clone().addScaledVector(candidate, distance);
+        let score = 0;
+        // How much is in the way of seeing the action?
+        for (const point of lookPoints) {
+          for (const occluder of occluders) {
+            if (segmentIntersectsBox(eye, point, occluder.min, occluder.max)) {
+              score += occluder.weight;
+            }
+          }
+        }
+        // Prefer travel running across the screen, not into it
+        if (motionDirection) {
+          score +=
+            4 * Math.max(0, Math.abs(candidate.dot(motionDirection)) - 0.6);
+        }
+        // Prefer small turns from the current view
+        score += 1.75 * (1 - candidate.dot(currentDirection));
+        if (score < bestScore) {
+          bestScore = score;
+          bestDirection = candidate;
+        }
       }
     }
 

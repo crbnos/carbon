@@ -13,7 +13,6 @@ import type {
 import {
   buildAssemblyStepGroups,
   CURRENT_PLAN_VERSION,
-  computeStepCameras,
   describeStep,
   groupComponentNodeIds,
   indexAssemblyGraph
@@ -5333,12 +5332,6 @@ export async function generateAssemblyStepsFromPlan(
     return { ok: false, reason: "error", message: "The plan has no parts" };
   }
 
-  // Bake an occlusion-aware camera per step: an unobstructed view of the step's
-  // components on their motion path, given only the components already animated
-  // by earlier steps. Falls back to the viewer's live framing (camera: null)
-  // when the graph is unavailable.
-  const cameras = graphIndex ? computeStepCameras(groups, graphIndex) : [];
-
   // Authored subassembly units name their steps; the rest derive a human title
   // from the components (same `describeStep` the viewer/explorer render), so the
   // title is real editable data instead of a render-time fallback.
@@ -5369,7 +5362,12 @@ export async function generateAssemblyStepsFromPlan(
         null,
       componentNodeIds: group.componentNodeIds,
       motion: (motion.success ? motion.data : { type: "none" }) as Json,
-      camera: (cameras[index] ?? null) as Json | null,
+      // Planner-baked view direction (mesh-precise sight lines); the viewer
+      // applies it with live framing — target, distance, frustum fit at the
+      // real viewport aspect. Manual "Set view" poses replace this wholesale.
+      camera: (group.viewDirection
+        ? { source: "plan", direction: group.viewDirection }
+        : null) as Json | null,
       warnings:
         group.blockedBy.length > 0
           ? ({ flagged: true, blockedBy: group.blockedBy } as Json)

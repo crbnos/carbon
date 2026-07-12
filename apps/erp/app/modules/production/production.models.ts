@@ -1126,11 +1126,20 @@ export const motionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("none") })
 ]);
 
-export const cameraSchema = z.object({
-  position: vector3,
-  target: vector3,
-  fov: z.number().positive()
-});
+// A step camera is either a manual "Set view" pose (applied verbatim) or a
+// planner-baked view-direction hint (mesh-precise sight lines; the viewer
+// derives target/distance/frustum fit live at the real viewport aspect).
+export const cameraSchema = z.union([
+  z.object({
+    position: vector3,
+    target: vector3,
+    fov: z.number().positive()
+  }),
+  z.object({
+    source: z.literal("plan"),
+    direction: vector3
+  })
+]);
 
 export const fastenerSchema = z.object({
   spec: z.string().optional(),

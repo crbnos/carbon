@@ -5,7 +5,7 @@ export {
   type FutureComponentsMode
 } from "./AssemblyPlayer";
 export { AssemblyViewer, type AssemblyViewerProps } from "./AssemblyViewer";
-export { computeStepCameraPose, computeStepCameras } from "./camera";
+export { type FramingFit, fitFraming } from "./camera";
 export { describeStep, type NamedUnit } from "./describe";
 export { synthesizeFallbackMotion } from "./fallback";
 export {
@@ -50,6 +50,7 @@ export type {
   Motion,
   NoneMotion,
   PathMotion,
+  PlanViewHint,
   Quat,
   Vec3
 } from "./types";

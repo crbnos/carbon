@@ -26,6 +26,11 @@ crates/
 │                # write_test_step generates hermetic multi-solid STEP fixtures for tests.
 ├── converter/   # STEP → graph.json + GLB. nodeid (sha1), graph (tree/bbox/source-unit), convert, glb.
 └── planner/     # assembly-by-disassembly motion planner: greedy/geom/fasteners/collide/steps.
+                 # view.rs bakes a mesh-precise per-step camera DIRECTION into plan.json
+                 # (`viewDirection`): Fibonacci-hemisphere candidates scored by ray-vs-triangle
+                 # sight lines (Möller–Trumbore + AABB broadphase) against the bodies installed
+                 # earlier in the sequence, so a part seating inside a hollow enclosure gets a
+                 # view through the open side. The viewer fits the frame live at the real aspect.
 ```
 
 Dependency flow: `apps/assembler → planner → converter → occt-bridge`; `planner → collision`.

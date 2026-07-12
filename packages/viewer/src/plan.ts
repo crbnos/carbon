@@ -24,6 +24,13 @@ export type AssemblyPlanComponent = {
   groupId?: string;
   /** v2: rigidly merged into this component (rides its step) */
   mergedInto?: string;
+  /**
+   * Mesh-precise camera direction (unit vector, target→eye) baked by the
+   * planner: sight lines against the real triangles of everything installed
+   * earlier. The viewer applies it with live framing (target, distance,
+   * frustum fit at the real aspect). Optional: absent on older plans.
+   */
+  viewDirection?: [number, number, number];
 };
 
 /**
@@ -46,7 +53,12 @@ export type AssemblyPlan = {
    */
   groups?: Record<
     string,
-    { componentNodeIds: string[]; motion: Motion; name?: string }
+    {
+      componentNodeIds: string[];
+      motion: Motion;
+      name?: string;
+      viewDirection?: [number, number, number];
+    }
   >;
   /**
    * v3: planned-body contact graph (body node_id → touching bodies), keyed in
@@ -140,6 +152,8 @@ export type AssemblyStepGroup = {
   blockedBy: string[];
   /** v3: the pre-grouped unit's name (e.g. "PCB Assembly"), for the step title. */
   name?: string;
+  /** Planner-baked camera direction for this step (see AssemblyPlanComponent). */
+  viewDirection?: [number, number, number];
   /**
    * Subassembly phase, derived from the plan's `contacts` graph (see
    * {@link assignStepPhases}). `null` for the main phase or when the plan has no
@@ -312,6 +326,12 @@ export function buildAssemblyStepGroups(
       name: component?.groupId
         ? plan.groups?.[component.groupId]?.name
         : undefined,
+      // Group steps take the group's baked direction; merged-identical steps
+      // keep the first entry's (later same-key entries never overwrite)
+      viewDirection: component?.groupId
+        ? (plan.groups?.[component.groupId]?.viewDirection ??
+          component?.viewDirection)
+        : component?.viewDirection,
       key,
       corridors: corridor ? [corridor] : []
     });
