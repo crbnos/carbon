@@ -583,32 +583,15 @@ export const AssemblyPlayer = forwardRef<
         >
           <ChevronRightIcon />
         </ControlButton>
-        <div className="relative min-w-0 flex-1">
-          <input
-            type="range"
-            aria-label="Timeline"
-            className="w-full accent-primary"
-            min={0}
-            max={Math.max(totalSeconds, 0.01)}
-            step={0.05}
-            value={Math.min(displayTime, totalSeconds)}
-            disabled={stepCount === 0}
-            onChange={(changeEvent) =>
-              onScrub(Number(changeEvent.target.value))
-            }
-          />
-          {totalSeconds > 0 &&
-            startTimes
-              .slice(1)
-              .map((startTime) => (
-                <span
-                  key={startTime}
-                  aria-hidden="true"
-                  className="pointer-events-none absolute top-1/2 h-2 w-px -translate-y-1/2 bg-muted-foreground/40"
-                  style={{ left: `${(startTime / totalSeconds) * 100}%` }}
-                />
-              ))}
-        </div>
+        <TimelineScrubber
+          segments={segments}
+          startTimes={startTimes}
+          totalSeconds={totalSeconds}
+          displayTime={displayTime}
+          activeStepIndex={clampedIndex}
+          stepCount={stepCount}
+          onScrub={onScrub}
+        />
         <span className="whitespace-nowrap text-xs tabular-nums text-muted-foreground">
           {stepCount > 0
             ? `${formatTime(Math.min(displayTime, totalSeconds))} / ${formatTime(totalSeconds)}`
@@ -1842,6 +1825,84 @@ function formatTime(seconds: number): string {
   const minutes = Math.floor(safe / 60);
   const remainder = Math.floor(safe % 60);
   return `${minutes}:${String(remainder).padStart(2, "0")}`;
+}
+
+/**
+ * Chapter-style timeline: one segment per step (width ∝ its duration), the
+ * played portion of each filled, the active step lifted, and a handle at the
+ * playhead. A full-bleed transparent range input rides on top for pointer
+ * scrubbing and keyboard control (←/→), so the custom visual stays purely
+ * presentational.
+ */
+function TimelineScrubber({
+  segments,
+  startTimes,
+  totalSeconds,
+  displayTime,
+  activeStepIndex,
+  stepCount,
+  onScrub
+}: {
+  segments: number[];
+  startTimes: number[];
+  totalSeconds: number;
+  displayTime: number;
+  activeStepIndex: number;
+  stepCount: number;
+  onScrub: (seconds: number) => void;
+}) {
+  const clamped = Math.min(Math.max(displayTime, 0), totalSeconds);
+  const playheadPct = totalSeconds > 0 ? (clamped / totalSeconds) * 100 : 0;
+  const disabled = stepCount === 0;
+
+  return (
+    <div className="group relative flex h-5 min-w-0 flex-1 items-center">
+      <div className="flex h-1.5 w-full gap-0.5">
+        {(segments.length > 0 ? segments : [1]).map((duration, index) => {
+          const start = startTimes[index] ?? 0;
+          const fill =
+            duration > 0
+              ? Math.min(Math.max((clamped - start) / duration, 0), 1)
+              : clamped >= start
+                ? 1
+                : 0;
+          return (
+            <div
+              key={`${start}-${index}`}
+              className={cn(
+                "relative h-full overflow-hidden rounded-full bg-muted-foreground/25 transition-colors",
+                index === activeStepIndex && "bg-muted-foreground/40"
+              )}
+              style={{ flexGrow: Math.max(duration, 0.001) }}
+            >
+              <div
+                className="absolute inset-0 origin-left rounded-full bg-primary"
+                style={{ transform: `scaleX(${fill})` }}
+              />
+            </div>
+          );
+        })}
+      </div>
+      {!disabled && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 scale-50 rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.5)] transition-transform group-hover:scale-100"
+          style={{ left: `${playheadPct}%` }}
+        />
+      )}
+      <input
+        type="range"
+        aria-label="Timeline"
+        className="absolute inset-0 h-full w-full cursor-pointer opacity-0 disabled:cursor-default"
+        min={0}
+        max={Math.max(totalSeconds, 0.01)}
+        step={0.05}
+        value={clamped}
+        disabled={disabled}
+        onChange={(changeEvent) => onScrub(Number(changeEvent.target.value))}
+      />
+    </div>
+  );
 }
 
 /** True when the keyboard event is aimed at a text field, so shortcuts like
