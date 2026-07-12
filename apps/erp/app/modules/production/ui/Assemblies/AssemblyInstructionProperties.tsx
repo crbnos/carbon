@@ -459,7 +459,7 @@ function StepForm({
             onChange={(value) => {
               setDescription(value);
             }}
-            className="[&_.is-empty]:text-muted-foreground min-h-[120px] p-4 rounded-lg border w-full"
+            className="[&_.is-empty]:text-muted-foreground min-h-[88px] p-3 rounded-lg border w-full"
           />
         </VStack>
 
@@ -495,9 +495,17 @@ function StepForm({
           description="Operators must record this step to complete the operation"
         />
 
-        <VStack spacing={2} className="w-full border-t border-border pt-4">
+        <h4 className="w-full pt-1 text-xxs font-medium uppercase tracking-wide text-muted-foreground">
+          Playback &amp; components
+        </h4>
+        <VStack
+          spacing={2}
+          className="w-full rounded-lg border border-border bg-muted/40 p-3"
+        >
           <HStack className="w-full justify-between">
-            <Label>Motion</Label>
+            <Label className="text-xxs font-medium uppercase tracking-wide text-muted-foreground">
+              Motion
+            </Label>
             {!isDisabled && (
               <Button
                 variant={isEditingMotion ? "primary" : "secondary"}
@@ -536,8 +544,13 @@ function StepForm({
           )}
         </VStack>
 
-        <VStack spacing={2} className="w-full border-t border-border pt-4">
-          <Label>Camera</Label>
+        <VStack
+          spacing={2}
+          className="w-full rounded-lg border border-border bg-muted/40 p-3"
+        >
+          <Label className="text-xxs font-medium uppercase tracking-wide text-muted-foreground">
+            Camera
+          </Label>
           <p className="text-xs text-muted-foreground">
             {hasCamera
               ? "A saved view frames this step during playback."
@@ -628,9 +641,14 @@ function StepComponentsEditor({
   );
 
   return (
-    <VStack spacing={2} className="w-full border-t border-border pt-4">
+    <VStack
+      spacing={2}
+      className="w-full rounded-lg border border-border bg-muted/40 p-3"
+    >
       <HStack className="w-full justify-between">
-        <Label>Components</Label>
+        <Label className="text-xxs font-medium uppercase tracking-wide text-muted-foreground">
+          Components
+        </Label>
         {!isDisabled && (
           <Button
             variant={isAddingComponents ? "primary" : "secondary"}
