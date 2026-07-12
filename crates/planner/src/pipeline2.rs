@@ -1190,6 +1190,49 @@ pub fn detect_swarm_units(
         by_host.entry(h).or_default().push(m);
     }
 
+    // Absorb: a host that already carries a real tiny swarm is a populated
+    // board. Sweep in any remaining eligible part that CONTACTS such a host and
+    // is still clearly smaller than it (SWARM_ABSORB_FRACTION, looser than the
+    // strict tiny gate) — a chip or connector mounted on the board, which the
+    // tiny gate leaves loose (it's above tiny_limit, so it was a host candidate
+    // with no members of its own). Gated on the host ALREADY being a swarm, so a
+    // bare rail never absorbs its mid-size rollers.
+    let swarm_hosts: Vec<usize> = by_host
+        .iter()
+        .filter(|(_, members)| members.len() >= SWARM_MIN_MEMBERS)
+        .map(|(&h, _)| h)
+        .collect();
+    if !swarm_hosts.is_empty() {
+        let absorbed_by =
+            |t: usize, h: usize| diag(&parts[t]) < SWARM_ABSORB_FRACTION * diag(&parts[h]);
+        let mut absorbed: Vec<(usize, usize)> = Vec::new();
+        for i in 0..parts.len() {
+            if !eligible(&parts[i])
+                || member_host.contains_key(&i)
+                || swarm_hosts.contains(&i)
+            {
+                continue;
+            }
+            let mut best: Option<(f64, usize)> = None;
+            for &h in &swarm_hosts {
+                if !absorbed_by(i, h) || !overlaps(&parts[i], &parts[h], SWARM_CONTACT_MM) {
+                    continue;
+                }
+                let d = collision::distance_pair(&parts[i].bvh(), &parts[h].bvh());
+                if d <= SWARM_CONTACT_MM && best.is_none_or(|(bd, _)| d < bd) {
+                    best = Some((d, h));
+                }
+            }
+            if let Some((_, h)) = best {
+                absorbed.push((i, h));
+            }
+        }
+        for (i, h) in absorbed {
+            member_host.insert(i, h);
+            by_host.entry(h).or_default().push(i);
+        }
+    }
+
     let mut specs: Vec<(String, Option<String>, Vec<String>)> = Vec::new();
     for &h in &hosts {
         let Some(members) = by_host.get(&h) else {

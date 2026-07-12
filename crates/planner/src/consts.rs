@@ -94,6 +94,13 @@ pub const SWARM_CONTACT_MM: f64 = ORDERING_CONTACT_MM;
 /// large assembly whose mid-size parts (rollers on a rail at ~15-18% of the
 /// host) read as "tiny vs the assembly" but are real hand-assembled parts.
 pub const SWARM_HOST_FRACTION: f64 = 0.1;
+/// Once a host already carries a real tiny swarm (>= SWARM_MIN_MEMBERS), it is a
+/// populated board — so a bigger board-mounted part (a chip, a connector) that
+/// CONTACTS it and is still clearly smaller than it belongs to the same unit,
+/// even though it is above the strict "tiny" gate. This looser fraction only
+/// applies as an absorption pass into an ALREADY-detected swarm, so a bare rail
+/// (no swarm) never sweeps up its mid-size rollers.
+pub const SWARM_ABSORB_FRACTION: f64 = 0.35;
 
 /// World axes in the exact order the Python planner tries them:
 /// +Z, -Z, +X, -X, +Y, -Y.
