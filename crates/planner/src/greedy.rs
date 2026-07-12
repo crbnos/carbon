@@ -561,7 +561,10 @@ pub fn escape_blockers(
         ));
     }
     blockers.remove(&part.node_id);
-    blockers.into_iter().take(8).collect()
+    blockers
+        .into_iter()
+        .take(crate::consts::MAX_REPORTED_BLOCKERS)
+        .collect()
 }
 
 /// `_blockers`: parts whose bounding boxes overlap this part's (rough set).
@@ -577,7 +580,7 @@ fn bbox_blockers(part: &Component, remaining: &HashMap<String, Component>) -> Ve
             out.push(other.node_id.clone());
         }
     }
-    out.truncate(8);
+    out.truncate(crate::consts::MAX_REPORTED_BLOCKERS);
     out
 }
 

@@ -479,7 +479,7 @@ fn reselect_base(
         .map(|s| s.iter().cloned().collect())
         .unwrap_or_default();
     base_blockers.sort();
-    base_blockers.truncate(8);
+    base_blockers.truncate(crate::consts::MAX_REPORTED_BLOCKERS);
     planned[base_idx].tier = Some("flagged".to_string());
     planned[base_idx].motion = Motion::None;
     planned[base_idx].confidence = Some("low".to_string());
@@ -689,7 +689,7 @@ fn verify_sequence(
                     planned[i].removal_direction = None;
                     let mut bl: Vec<String> = blockers.into_iter().collect();
                     bl.sort();
-                    bl.truncate(8);
+                    bl.truncate(crate::consts::MAX_REPORTED_BLOCKERS);
                     planned[i].blocked_by = bl;
                     planned[i].verified = false;
                 } else {

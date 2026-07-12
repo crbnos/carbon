@@ -19,6 +19,12 @@ pub const MAX_PATH_SAMPLES: usize = 400;
 pub const MATE_MIN_DEPTH_MM: f64 = 0.2;
 pub const MATE_DEPTH_MARGIN_MM: f64 = 0.3;
 
+/// How many blocking parts a flagged component reports. The full blocker set is
+/// computed everywhere `blocked_by` is set; this caps only what reaches the wire
+/// (a heavily-flagged flat-export model can block on dozens of parts — 32 is a
+/// generous diagnostic width without pathological JSON size).
+pub const MAX_REPORTED_BLOCKERS: usize = 32;
+
 pub const ORDERING_CONTACT_MM: f64 = 0.5;
 pub const MAX_ADJACENCY_DISTANCE_PAIRS: usize = 20000;
 
