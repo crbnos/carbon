@@ -223,6 +223,57 @@ export function naturalizeMotion(
  * world pose is `basePose`. The last keyframe always equals `basePose`.
  * Returns `null` for `none` motions.
  */
+/** Sub-samples per motion when re-timing a straight path through ease-in-out. */
+const EASE_SAMPLES = 20;
+
+/** Ease-in-out cubic: slow start, quick middle, gentle settle. */
+function easeInOutCubic(t: number): number {
+  return t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
+}
+
+/**
+ * Re-times a piecewise-linear keyframe path through an ease-in-out velocity
+ * profile so an insertion accelerates off the start and decelerates into its
+ * seat instead of moving at constant speed. Preserves the geometric path and
+ * both endpoints exactly (only WHEN the part is at each point changes); total
+ * duration is unchanged. Playback-only — the stored motion and the editable
+ * waypoints keep the raw path.
+ */
+export function resampleEased(kf: MotionKeyframes): MotionKeyframes {
+  const n = kf.times.length;
+  const total = kf.times[n - 1] ?? 0;
+  if (n < 2 || total <= 0) return kf;
+
+  const times: number[] = [];
+  const positions: number[] = [];
+  const quaternions: number[] = [];
+  const a = new Vector3();
+  const b = new Vector3();
+  const qa = new Quaternion();
+  const qb = new Quaternion();
+
+  for (let j = 0; j <= EASE_SAMPLES; j++) {
+    const u = j / EASE_SAMPLES;
+    const s = easeInOutCubic(u) * total; // eased sample point along the path
+    let i = 0;
+    while (i < n - 1 && (kf.times[i + 1] ?? total) < s) i++;
+    const t0 = kf.times[i] ?? 0;
+    const t1 = kf.times[i + 1] ?? total;
+    const span = t1 - t0;
+    const f = span > 1e-9 ? (s - t0) / span : 0;
+    a.fromArray(kf.positions, i * 3);
+    b.fromArray(kf.positions, (i + 1) * 3);
+    a.lerp(b, f);
+    qa.fromArray(kf.quaternions, i * 4);
+    qb.fromArray(kf.quaternions, (i + 1) * 4);
+    qa.slerp(qb, f);
+    times.push(u * total);
+    positions.push(a.x, a.y, a.z);
+    quaternions.push(qa.x, qa.y, qa.z, qa.w);
+  }
+  return { times, positions, quaternions };
+}
+
 export function motionToKeyframes(
   motion: Motion,
   basePose: Pose,
@@ -421,7 +472,7 @@ export function buildStepClip(
     const worldScale = new Vector3();
     node.matrixWorld.decompose(worldPosition, worldQuaternion, worldScale);
 
-    const keyframes = motionToKeyframes(
+    const rawKeyframes = motionToKeyframes(
       step.motion,
       {
         position: worldPosition.toArray() as Vec3,
@@ -429,7 +480,14 @@ export function buildStepClip(
       },
       { ...options, duration }
     );
-    if (!keyframes) continue;
+    if (!rawKeyframes) continue;
+    // Ease the straight insertion approaches (accelerate off the start, settle
+    // into the seat). Helix threads at a constant rate (mechanically correct)
+    // and paths carry their own timing, so leave those raw.
+    const keyframes =
+      step.motion.type === "linear" || step.motion.type === "L"
+        ? resampleEased(rawKeyframes)
+        : rawKeyframes;
 
     const parentWorldInverse = node.parent
       ? node.parent.matrixWorld.clone().invert()

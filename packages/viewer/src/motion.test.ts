@@ -19,6 +19,7 @@ import {
   motionTravelDistance,
   naturalizeMotion,
   type Pose,
+  resampleEased,
   waypointsToMotion
 } from "./motion";
 import type { AssemblyStep, Motion, Vec3 } from "./types";
@@ -475,6 +476,52 @@ describe("buildStepClip", () => {
     expect(component.position.x).toBeCloseTo(-4);
     expect(component.position.y).toBeCloseTo(2);
     expect(component.position.z).toBeCloseTo(3);
+  });
+});
+
+describe("resampleEased", () => {
+  const straight: MotionKeyframes = {
+    times: [0, 2],
+    positions: [0, 0, 0, 0, 0, 100],
+    quaternions: [0, 0, 0, 1, 0, 0, 0, 1]
+  };
+
+  it("preserves both endpoints and the total duration exactly", () => {
+    const eased = resampleEased(straight);
+    expectVectorClose(positionAt(eased, 0), [0, 0, 0]);
+    expectVectorClose(positionAt(eased, lastIndex(eased)), [0, 0, 100]);
+    expect(eased.times[0]).toBe(0);
+    expect(eased.times[eased.times.length - 1]).toBeCloseTo(2);
+    expectMonotonicTimes(eased);
+  });
+
+  it("accelerates off the start and decelerates into the seat", () => {
+    const eased = resampleEased(straight);
+    // 21 samples → index 5 is u=0.25 (time 0.5), index 15 is u=0.75 (time 1.5)
+    expect(eased.times.length).toBe(21);
+    const early = positionAt(eased, 5)[2] ?? Number.NaN;
+    const late = positionAt(eased, 15)[2] ?? Number.NaN;
+    // slow start: quarter of the way in time, far less than a quarter of the way
+    expect(early).toBeLessThan(10); // easeInOutCubic(0.25)=0.0625 → ~6.25
+    // gentle settle: three quarters through time, most of the distance covered
+    expect(late).toBeGreaterThan(90); // easeInOutCubic(0.75)=0.9375 → ~93.75
+    // symmetric ease keeps the midpoint at the midpoint
+    expect(positionAt(eased, 10)[2] ?? Number.NaN).toBeCloseTo(50);
+  });
+
+  it("leaves a degenerate path unchanged", () => {
+    const single: MotionKeyframes = {
+      times: [0],
+      positions: [1, 2, 3],
+      quaternions: [0, 0, 0, 1]
+    };
+    expect(resampleEased(single)).toBe(single);
+    const zero: MotionKeyframes = {
+      times: [0, 0],
+      positions: [0, 0, 0, 0, 0, 0],
+      quaternions: [0, 0, 0, 1, 0, 0, 0, 1]
+    };
+    expect(resampleEased(zero)).toBe(zero);
   });
 });
 
