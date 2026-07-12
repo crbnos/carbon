@@ -892,10 +892,16 @@ function AssemblyScene({
     for (const [nodeId, stepIndex] of stepIndexByNode) {
       const node = nodesById.get(nodeId);
       if (!node) continue;
-      applyVisual(
-        node,
-        visualForComponent(stepIndex, activeStepIndex, effectiveFutureMode)
+      const visual = visualForComponent(
+        stepIndex,
+        activeStepIndex,
+        effectiveFutureMode
       );
+      // The active step's blue tint is a "what's animating now" cue — only
+      // apply it during playback. Statically selecting/seating a step leaves
+      // its parts their real color (the step list + timeline show which is
+      // current).
+      applyVisual(node, visual === "active" && !isPlaying ? "solid" : visual);
     }
 
     // Components no step installs are never "already there": they get the same
