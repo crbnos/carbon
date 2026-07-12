@@ -126,6 +126,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   }
 
+  // Auto-detected groups (swarms) are materialized as `assemblyUnit` rows so
+  // they show/edit like authored units — but that FREEZES the detection: on the
+  // next plan `loadPlanUnits` feeds them back as caller units, so the planner
+  // merges them as-is and never re-runs swarm detection (which is where things
+  // like board-mounted-component absorption happen). A from-scratch regenerate
+  // must re-derive them, so drop the auto-materialized ones (sourceGroupId set)
+  // and let the plan re-detect + re-materialize. User-authored "plan as one
+  // component" units (sourceGroupId null) are kept.
+  if (fresh) {
+    await client
+      .from("assemblyUnit")
+      .delete()
+      .eq("modelUploadId", instruction.data.modelUploadId)
+      .eq("companyId", companyId)
+      .not("sourceGroupId", "is", null);
+  }
+
   // Create the job row before sending the event so the UI reflects the run
   // immediately (the worker adopts it via planJobId). Best-effort: planning
   // still works if the insert fails — the worker inserts its own row then.
