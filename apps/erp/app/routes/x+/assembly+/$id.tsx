@@ -605,9 +605,12 @@ export default function AssemblyInstructionRoute() {
                     />
                   ) : modelUpload?.processingStatus === "Failed" ? (
                     <Empty>
-                      <p className="text-sm text-muted-foreground max-w-[320px] text-center">
+                      <p className="text-sm font-medium text-foreground">
+                        Couldn't prepare this model
+                      </p>
+                      <p className="max-w-[320px] text-center text-sm text-muted-foreground">
                         {modelUpload?.processingError ??
-                          "Model conversion failed"}
+                          "Something went wrong converting the CAD file for 3D viewing."}
                       </p>
                       <retryFetcher.Form
                         method="post"
@@ -622,15 +625,18 @@ export default function AssemblyInstructionRoute() {
                             !permissions.can("update", "production")
                           }
                         >
-                          Retry conversion
+                          Try again
                         </Button>
                       </retryFetcher.Form>
                     </Empty>
                   ) : (
                     <Empty>
-                      <p className="text-sm text-muted-foreground max-w-[320px] text-center">
-                        The model has not been processed for assembly
-                        instructions yet
+                      <p className="text-sm font-medium text-foreground">
+                        Model not ready yet
+                      </p>
+                      <p className="max-w-[320px] text-center text-sm text-muted-foreground">
+                        This model hasn't been prepared for 3D viewing. It'll
+                        appear here once processing starts.
                       </p>
                     </Empty>
                   )}

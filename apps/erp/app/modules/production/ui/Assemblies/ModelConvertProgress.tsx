@@ -11,9 +11,9 @@ type ConvertStatus = {
 };
 
 const STEPS: { key: NonNullable<ConvertStatus["phase"]>; label: string }[] = [
-  { key: "downloading", label: "Fetching model file" },
-  { key: "converting", label: "Converting geometry" },
-  { key: "uploading", label: "Publishing viewer assets" }
+  { key: "downloading", label: "Reading the CAD file" },
+  { key: "converting", label: "Building the 3D geometry" },
+  { key: "uploading", label: "Preparing the viewer" }
 ];
 
 const POLL_MS = 1000;
@@ -83,10 +83,6 @@ export function ModelConvertProgress({
   return (
     <div className="flex h-full w-full items-center justify-center p-6">
       <div className="flex w-[340px] flex-col gap-4 rounded-xl border border-border bg-card p-6 shadow-lg">
-        <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-          <LuLoaderCircle className="h-4 w-4 animate-spin text-primary motion-reduce:animate-none" />
-          Preparing the model
-        </div>
         <BarProgress progress={fraction} max={1} activeClassName="bg-primary" />
         <div className="flex flex-col gap-2.5">
           {STEPS.map((step, i) => {
