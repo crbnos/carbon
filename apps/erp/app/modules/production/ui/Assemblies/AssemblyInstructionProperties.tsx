@@ -133,7 +133,7 @@ const AssemblyInstructionProperties = ({
     >
       {/* Sticky panel header: which step you're editing, its status, and a
           one-glance summary (component count, flagged). */}
-      <div className="sticky top-0 z-10 flex-none border-b border-border bg-card/95 px-4 py-3 backdrop-blur">
+      <div className="sticky top-0 z-10 w-full min-w-0 flex-none border-b border-border bg-card/95 px-4 py-3 backdrop-blur">
         {step ? (
           <VStack spacing={1} className="w-full min-w-0">
             <HStack className="w-full min-w-0 items-center justify-between gap-2">
@@ -236,7 +236,7 @@ const AssemblyInstructionProperties = ({
           </TabsContent>
         </Tabs>
       ) : (
-        <div className="flex flex-1 flex-col items-center justify-center gap-2 px-6 py-16 text-center">
+        <div className="flex w-full flex-1 flex-col items-center justify-center gap-2 px-6 py-16 text-center">
           <div className="flex size-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
             <LuMousePointerClick className="size-5" />
           </div>
