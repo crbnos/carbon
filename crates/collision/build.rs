@@ -36,15 +36,27 @@ fn main() {
     let eigen = prefix("eigen", "EIGEN");
     let octomap = prefix("octomap", "OCTOMAP");
 
-    cxx_build::bridge("src/lib.rs")
+    let mut build = cxx_build::bridge("src/lib.rs");
+    build
         .file("src/shim.cc")
         .std("c++14")
         .include(format!("{fcl}/include"))
         .include(format!("{ccd}/include"))
         .include(format!("{eigen}/include/eigen3"))
         .include(format!("{octomap}/include"))
-        .warnings(false)
-        .compile("carbon_fcl_shim");
+        .warnings(false);
+    // The hot path is here: FCL's OBBRSS BVH + Eigen math are header-only
+    // templates instantiated in this shim, so its SIMD baseline — not the FCL
+    // .a's — governs their vectorization. On x86_64 deploy targets raise it to
+    // AVX2+FMA (x86-64-v3); a conservative fleet baseline, not target-cpu=native
+    // (which would SIGILL on older CPUs). Other arches (macOS/arm) keep NEON.
+    // FMA shifts FP rounding by ~1 ULP — the calibration fixture's 1e-6 rounding
+    // is built to absorb exactly that, but CI must confirm `cargo test -p
+    // collision --test calibration` on the x86_64 build.
+    if std::env::var("CARGO_CFG_TARGET_ARCH").as_deref() == Ok("x86_64") {
+        build.flag_if_supported("-march=x86-64-v3");
+    }
+    build.compile("carbon_fcl_shim");
 
     for p in [&fcl, &ccd] {
         println!("cargo:rustc-link-search=native={p}/lib");

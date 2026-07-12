@@ -1,0 +1,7 @@
+# The assembler's x86_64 Linux deploy target builds for AVX2/FMA (x86-64-v3) so
+# the planner's collision-heavy loops and the Eigen/FCL math vectorize — matching
+# the -march on the C++ collision shim (crates/collision/build.rs). A conservative
+# fleet baseline, NOT target-cpu=native (which bakes the build box's ISA and
+# SIGILLs on older CPUs). Other targets (macOS, arm64) are deliberately untouched.
+[target.x86_64-unknown-linux-gnu]
+rustflags = ["-C", "target-cpu=x86-64-v3"]

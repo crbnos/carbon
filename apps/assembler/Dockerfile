@@ -26,6 +26,10 @@ FROM ${OCCT_IMAGE} AS occt
 # runtime image carries no fcl/ccd/octomap shared objects. Fast (~minutes) and
 # Docker-layer cached; only rebuilt when the pinned versions below change.
 FROM debian:bookworm-slim AS fcl
+# SIMD baseline for the compiled GJK/EPA bits (the templated hot path is compiled
+# in the collision shim instead). x86-64-v3 = AVX2+FMA, the x86_64 Fargate fleet;
+# override for a different target arch (e.g. an arm64 image needs an -mcpu value).
+ARG MARCH=x86-64-v3
 RUN apt-get update && apt-get install -y --no-install-recommends \
       git cmake ninja-build g++ libeigen3-dev ca-certificates \
     && rm -rf /var/lib/apt/lists/*
@@ -33,6 +37,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN git clone --depth 1 --branch v2.1 https://github.com/danfis/libccd.git /ccd \
     && cmake -S /ccd -B /ccd/b -G Ninja -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_INSTALL_PREFIX=/opt/fcl -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+        -DCMAKE_CXX_FLAGS_RELEASE="-O3 -march=${MARCH}" \
         -DBUILD_SHARED_LIBS=OFF -DENABLE_DOUBLE_PRECISION=ON \
     && cmake --build /ccd/b --target install
 # FCL 0.7.0 — static, no octomap; finds ccd + Eigen under the same prefix.
@@ -42,6 +47,7 @@ RUN git clone --depth 1 --branch 0.7.0 https://github.com/flexible-collision-lib
     && cmake -S /fcl -B /fcl/b -G Ninja -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_INSTALL_PREFIX=/opt/fcl -DCMAKE_PREFIX_PATH=/opt/fcl \
         -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+        -DCMAKE_CXX_FLAGS_RELEASE="-O3 -march=${MARCH}" \
         -DFCL_STATIC_LIBRARY=ON -DFCL_WITH_OCTOMAP=OFF -DFCL_BUILD_TESTS=OFF \
     && cmake --build /fcl/b --target install
 
