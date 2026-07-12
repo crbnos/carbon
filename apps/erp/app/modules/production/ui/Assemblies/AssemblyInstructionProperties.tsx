@@ -459,7 +459,7 @@ function StepForm({
             onChange={(value) => {
               setDescription(value);
             }}
-            className="[&_.is-empty]:text-muted-foreground min-h-[88px] p-3 rounded-lg border w-full"
+            className="[&_.is-empty]:text-muted-foreground min-h-[88px] max-h-[360px] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent p-3 rounded-lg border w-full"
           />
         </VStack>
 

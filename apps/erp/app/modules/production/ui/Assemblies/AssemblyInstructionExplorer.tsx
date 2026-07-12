@@ -8,7 +8,6 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
-  HStack,
   IconButton,
   Input,
   Modal,
@@ -605,11 +604,12 @@ function AssemblyInstructionExplorer({
                     return (
                       <Fragment key={stepId}>
                         {showWaveDivider && (
-                          <div className="flex select-none items-center gap-2 border-b border-border bg-muted/40 px-3 py-1 text-xs font-medium text-muted-foreground">
-                            <span>Wave {wave + 1}</span>
-                            <span className="text-muted-foreground/70">
-                              can build in parallel
+                          <div className="flex select-none items-center gap-2 border-b border-border bg-muted/30 px-3 py-0.5 text-[0.6875rem] uppercase tracking-wide text-muted-foreground/70">
+                            <span className="font-medium text-muted-foreground">
+                              Wave {wave + 1}
                             </span>
+                            <span className="h-px flex-1 bg-border" />
+                            <span>parallel</span>
                           </div>
                         )}
                         <DraggableStepItem
@@ -1030,88 +1030,97 @@ function StepItem({
 
   const componentCount = step.componentNodeIds?.length ?? 0;
 
+  const needsSupport = (step.warnings as { needsSupport?: boolean } | null)
+    ?.needsSupport;
+
   return (
-    <HStack
+    <div
       className={cn(
-        "group w-full select-none p-2 items-start hover:bg-accent/30 relative border-b bg-card cursor-pointer",
-        isSelected && "bg-accent/50 hover:bg-accent/50"
+        "group relative flex w-full cursor-pointer select-none items-center gap-1.5 border-b border-border bg-card py-2 pl-1 pr-2 hover:bg-accent/30",
+        isSelected && "bg-accent/40 hover:bg-accent/40"
       )}
       onClick={onSelect}
       onDoubleClick={onPreview}
       title="Double-click to play this step"
     >
+      {isSelected && (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 left-0 w-0.5 bg-primary"
+        />
+      )}
       <IconButton
         aria-label="Drag handle"
         icon={<LuGripVertical />}
         variant="ghost"
+        size="sm"
         disabled={isDisabled}
-        className="cursor-grab active:cursor-grabbing shrink-0"
+        className="size-6 shrink-0 cursor-grab text-muted-foreground/50 hover:text-muted-foreground active:cursor-grabbing"
         onPointerDown={(e) => {
           if (!isDisabled && dragControls) dragControls.start(e);
         }}
         style={{ touchAction: "none" }}
       />
-      <VStack spacing={2} className="flex-grow min-w-0">
-        <p className="text-foreground text-sm w-full min-w-0 line-clamp-1">
-          <span className="text-muted-foreground tabular-nums mr-2">
-            {index + 1}.
-          </span>
-          {title}
-        </p>
-        <HStack spacing={2}>
-          <ProcedureStepTypeIcon
-            type={step.type ?? "Task"}
-            className="shrink-0 size-3.5 text-muted-foreground"
-          />
-          <StepStatusControl
-            stepId={step.id}
-            status={step.status ?? "Todo"}
-            isDisabled={isDisabled}
-          />
-          <p className="text-muted-foreground text-xs">
-            {componentCount} component{componentCount === 1 ? "" : "s"}
-          </p>
-          {(step.warnings as { needsSupport?: boolean } | null)
-            ?.needsSupport && (
-            <span
-              className="flex shrink-0 items-center gap-1 text-xs text-amber-600 dark:text-amber-500"
-              title="A part in this step may tip once placed — consider a fixture or a second person."
-            >
-              <LuHand className="size-3.5" />
-              Hold
-            </span>
-          )}
-        </HStack>
-      </VStack>
-      {!isDisabled && (
-        <div className="absolute right-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <IconButton
-                aria-label="More"
-                className="opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
-                icon={<LuEllipsisVertical />}
-                variant="solid"
-                onClick={(e) => e.stopPropagation()}
-              />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem
-                destructive
-                disabled={!permissions.can("delete", "production")}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete();
-                }}
-              >
-                <DropdownMenuIcon icon={<LuTrash />} />
-                Delete Step
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+      <span className="w-5 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
+        {index + 1}
+      </span>
+      <ProcedureStepTypeIcon
+        type={step.type ?? "Task"}
+        className="size-3.5 shrink-0 text-muted-foreground"
+      />
+      <span
+        className="min-w-0 flex-1 truncate text-sm text-foreground"
+        title={title}
+      >
+        {title}
+      </span>
+      {needsSupport && (
+        <span
+          className="shrink-0 text-amber-600 dark:text-amber-500"
+          title="A part in this step may tip once placed — consider a fixture or a second person."
+        >
+          <LuHand className="size-3.5" />
+        </span>
       )}
-    </HStack>
+      <span
+        className="shrink-0 text-xs tabular-nums text-muted-foreground"
+        title={`${componentCount} component${componentCount === 1 ? "" : "s"}`}
+      >
+        ×{componentCount}
+      </span>
+      <StepStatusControl
+        stepId={step.id}
+        status={step.status ?? "Todo"}
+        isDisabled={isDisabled}
+      />
+      {!isDisabled && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <IconButton
+              aria-label="More"
+              size="sm"
+              variant="ghost"
+              className="size-6 shrink-0 opacity-0 group-hover:opacity-100 data-[state=open]:opacity-100"
+              icon={<LuEllipsisVertical />}
+              onClick={(e) => e.stopPropagation()}
+            />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem
+              destructive
+              disabled={!permissions.can("delete", "production")}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+            >
+              <DropdownMenuIcon icon={<LuTrash />} />
+              Delete Step
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
+    </div>
   );
 }
 
