@@ -59,6 +59,12 @@ export type AssemblyPlayerProps = {
   steps: AssemblyStep[];
   activeStepIndex: number;
   onStepChange?: (index: number) => void;
+  /**
+   * Bumped by the host to preview (play) the active step from its start. In the
+   * editor, selecting a step just shows it seated; a double-click bumps this to
+   * animate the insertion. Ignored on its initial value.
+   */
+  playStepNonce?: number;
   /** Click-to-select component nodeIds for the editor (additive with shift held) */
   onSelectComponents?: (nodeIds: string[]) => void;
   /** Surfaces the parsed graph.json once loaded (for BOM/title derivation) */
@@ -146,6 +152,7 @@ export const AssemblyPlayer = forwardRef<
     steps,
     activeStepIndex,
     onStepChange,
+    playStepNonce,
     onSelectComponents,
     onGraphLoaded,
     highlightedNodeIds,
@@ -169,8 +176,8 @@ export const AssemblyPlayer = forwardRef<
     graphUrl
   );
   // With autoPlay, the sequence runs through every step on load. Otherwise the
-  // player starts paused: selecting a step plays just that step, and it only
-  // continues through the rest once Play is pressed (`continuous`).
+  // player starts paused: selecting a step shows it seated, and it only animates
+  // when Play (or a step double-click) is pressed (`continuous` for the former).
   const [isPlaying, setIsPlaying] = useState(autoPlay);
   const [continuous, setContinuous] = useState(autoPlay);
   // "auto": each step frames the camera toward the action. Grabbing the
@@ -233,18 +240,13 @@ export const AssemblyPlayer = forwardRef<
     ? describeStep(activeStep, graphIndex, units)
     : null;
 
+  // Selecting a step no longer auto-plays it (that surprised users). The clip
+  // effect (in AssemblyScene) snaps the newly-selected step to its SEATED pose
+  // so it reads as "this step, done"; a double-click on the step (playStepNonce)
+  // animates the insertion. autoPlay mode is unaffected — the sequence runs itself.
   useEffect(() => {
-    const prev = prevStepIndexRef.current;
     prevStepIndexRef.current = clampedIndex;
-    // Auto-playing a step on selection is the paused (editor) mode's behavior.
-    // In autoPlay mode the sequence already runs itself, so leave stepping alone.
-    if (autoPlay) return;
-    // Only on a real step change (not the initial mount), and never while the
-    // motion-path editor is open.
-    if (prev === null || prev === clampedIndex) return;
-    if (isEditingMotionRef.current) return;
-    setIsPlaying(true);
-  }, [autoPlay, clampedIndex]);
+  }, [clampedIndex]);
 
   // Cmd/Ctrl+A selects every currently visible component (skipping hidden ones and,
   // per the future-components mode, any that aren't rendered). Ignored while typing
@@ -420,6 +422,19 @@ export const AssemblyPlayer = forwardRef<
     },
     [totalSeconds, stepCount, startTimes, clampedIndex, onStepChange]
   );
+
+  // Double-click a step → preview it: restart the active step from its start and
+  // play just that one (not a continuous run-through). Skips the initial nonce
+  // value and the motion-path editor.
+  const playStepNonceRef = useRef(playStepNonce);
+  useEffect(() => {
+    if (playStepNonce === playStepNonceRef.current) return;
+    playStepNonceRef.current = playStepNonce;
+    if (isEditingMotionRef.current || stepCount === 0) return;
+    onScrub(startTimes[clampedIndex] ?? 0); // seek to the step's start
+    setContinuous(false);
+    setIsPlaying(true);
+  }, [playStepNonce, clampedIndex, stepCount, startTimes, onScrub]);
 
   return (
     <div className={cn("flex h-full w-full flex-col", className)}>
@@ -966,6 +981,10 @@ function AssemblyScene({
   const actionRef = useRef<ReturnType<AnimationMixer["clipAction"]> | null>(
     null
   );
+  // Live mirror so the step-keyed clip effect can tell "static selection" (snap
+  // seated) from "playing" without listing isPlaying as a dep.
+  const isPlayingRef = useRef(isPlaying);
+  isPlayingRef.current = isPlaying;
   /** Seconds elapsed within the active step's timeline segment */
   const localElapsedRef = useRef(0);
   const finishedRef = useRef(false);
@@ -1029,6 +1048,15 @@ function AssemblyScene({
     if (seek !== null) {
       action.time = Math.min(seek, clip.duration);
       mixer.update(0);
+    } else if (!isPlayingRef.current) {
+      // Static selection (no play): show the step COMPLETED — the component
+      // seated, not flown-out at t=0. A double-click seeks back to 0 and plays.
+      action.time = clip.duration;
+      mixer.update(0);
+      localElapsedRef.current = clip.duration;
+      finishedRef.current = true;
+      playheadRef.current =
+        (startTimesLiveRef.current[activeStepIndex] ?? 0) + clip.duration;
     }
     actionRef.current = action;
 

@@ -99,6 +99,8 @@ type AssemblyInstructionExplorerProps = {
   /** Current component selection (shared with the viewer) — highlighted in the Components tab */
   selectedNodeIds: string[];
   onSelectStep: (stepId: string) => void;
+  /** Double-click a step — preview (play) its insertion motion */
+  onPreviewStep: (stepId: string) => void;
   onHighlightComponents: (nodeIds: string[]) => void;
   onHideComponents: (nodeIds: string[]) => void;
 };
@@ -120,6 +122,7 @@ function AssemblyInstructionExplorer({
   bomMaterials,
   selectedNodeIds,
   onSelectStep,
+  onPreviewStep,
   onHighlightComponents,
   onHideComponents
 }: AssemblyInstructionExplorerProps) {
@@ -615,6 +618,7 @@ function AssemblyInstructionExplorer({
                               isSelected={stepId === selectedStepId}
                               dragControls={dragControls}
                               onSelect={() => onSelectStep(stepId)}
+                              onPreview={() => onPreviewStep(stepId)}
                               onDelete={() => setStepToDelete(step)}
                             />
                           )}
@@ -982,6 +986,7 @@ type StepItemProps = {
   isSelected: boolean;
   dragControls?: DragControls;
   onSelect: () => void;
+  onPreview: () => void;
   onDelete: () => void;
 };
 
@@ -993,6 +998,7 @@ function StepItem({
   isSelected,
   dragControls,
   onSelect,
+  onPreview,
   onDelete
 }: StepItemProps) {
   const permissions = usePermissions();
@@ -1007,6 +1013,8 @@ function StepItem({
         isSelected && "bg-accent/50 hover:bg-accent/50"
       )}
       onClick={onSelect}
+      onDoubleClick={onPreview}
+      title="Double-click to play this step"
     >
       <IconButton
         aria-label="Drag handle"

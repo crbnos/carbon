@@ -267,6 +267,9 @@ export default function AssemblyInstructionRoute() {
     [componentsFetcher, id]
   );
 
+  // Bumped to preview (play) the active step — a double-click in the Explorer.
+  const [playStepNonce, setPlayStepNonce] = useState(0);
+
   const onSelectStep = useCallback(
     (stepId: string, options?: { selectComponents?: boolean }) => {
       setSelectedStepId(stepId);
@@ -289,6 +292,16 @@ export default function AssemblyInstructionRoute() {
       }
     },
     []
+  );
+
+  // Double-clicking a step previews it: select it, then bump the nonce so the
+  // player animates its insertion (single-click just shows it seated).
+  const onPreviewStep = useCallback(
+    (stepId: string) => {
+      onSelectStep(stepId);
+      setPlayStepNonce((nonce) => nonce + 1);
+    },
+    [onSelectStep]
   );
 
   // Picking components (in the viewer or the Components panel) drives the shared
@@ -510,6 +523,7 @@ export default function AssemblyInstructionRoute() {
                   bomMaterials={bomMaterials}
                   selectedNodeIds={selectedNodeIds}
                   onSelectStep={onSelectStep}
+                  onPreviewStep={onPreviewStep}
                   onHighlightComponents={onFocusComponents}
                   onHideComponents={setHiddenNodeIds}
                 />
@@ -552,6 +566,7 @@ export default function AssemblyInstructionRoute() {
                           graphUrl={getPrivateUrl(graphPath)}
                           steps={viewerSteps}
                           activeStepIndex={Math.max(activeStepIndex, 0)}
+                          playStepNonce={playStepNonce}
                           onStepChange={(index) => {
                             const step = steps[index];
                             if (step)
