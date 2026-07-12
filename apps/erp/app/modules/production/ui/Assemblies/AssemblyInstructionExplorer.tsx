@@ -212,6 +212,23 @@ export default function AssemblyInstructionExplorer({
   }, [generateFetcher.data]);
 
   const [showRerunConfirm, setShowRerunConfirm] = useState(false);
+  const [showRegenerateConfirm, setShowRegenerateConfirm] = useState(false);
+  // Which generate mode the pending click asked for — the awaiting-plan effect
+  // re-submits after the plan lands, and a "Regenerate Steps" click must stay
+  // a regenerate (a plain re-submit would no-op with "steps-exist").
+  const generateModeRef = useRef<"generate" | "regenerate">("generate");
+  const submitGenerate = useCallback(
+    (mode: "generate" | "regenerate") => {
+      generateModeRef.current = mode;
+      const formData = new FormData();
+      formData.set("mode", mode);
+      generateFetcher.submit(formData, {
+        method: "post",
+        action: path.to.generateAssemblyInstructionSteps(id)
+      });
+    },
+    [generateFetcher, id]
+  );
 
   // Poll while planning runs (awaiting-plan generate flow, or an explicit
   // re-plan) so the fresh plan and its generated steps surface on their own
@@ -278,10 +295,7 @@ export default function AssemblyInstructionExplorer({
       { replace: true }
     );
     if (steps.length > 0 || !permissions.can("update", "production")) return;
-    generateFetcher.submit(new FormData(), {
-      method: "post",
-      action: path.to.generateAssemblyInstructionSteps(id)
-    });
+    submitGenerate("generate");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
@@ -297,10 +311,7 @@ export default function AssemblyInstructionExplorer({
     } else if (isConverting || isPlanning || planFailed) {
       return;
     }
-    generateFetcher.submit(new FormData(), {
-      method: "post",
-      action: path.to.generateAssemblyInstructionSteps(id)
-    });
+    submitGenerate(generateModeRef.current);
   }, [
     isAwaitingPlan,
     hasPlan,
@@ -308,6 +319,7 @@ export default function AssemblyInstructionExplorer({
     isPlanning,
     planFailed,
     generateFetcher,
+    submitGenerate,
     id
   ]);
 
@@ -532,10 +544,7 @@ export default function AssemblyInstructionExplorer({
                           planJob?.status === "Failed" ? planJob.id : null
                         );
                         setIsAwaitingPlan(false);
-                        generateFetcher.submit(new FormData(), {
-                          method: "post",
-                          action: path.to.generateAssemblyInstructionSteps(id)
-                        });
+                        submitGenerate("generate");
                       }}
                     >
                       {planFailed ? "Retry Generate Steps" : "Generate Steps"}
@@ -586,6 +595,20 @@ export default function AssemblyInstructionExplorer({
                     onClick={() => setShowRerunConfirm(true)}
                   >
                     {isPlanning ? "Planning motion…" : "Run Motion Planning"}
+                  </Button>
+                )}
+              {steps.length > 0 &&
+                modelUploadId &&
+                permissions.can("update", "production") && (
+                  <Button
+                    className="mb-2 w-full"
+                    isDisabled={isDisabled || isSolving}
+                    isLoading={isSolving}
+                    leftIcon={<LuSparkles />}
+                    variant="secondary"
+                    onClick={() => setShowRegenerateConfirm(true)}
+                  >
+                    Regenerate Steps
                   </Button>
                 )}
               <Button
@@ -639,6 +662,49 @@ export default function AssemblyInstructionExplorer({
           onCancel={() => setStepToDelete(null)}
           onSubmit={() => setStepToDelete(null)}
         />
+      )}
+      {showRegenerateConfirm && (
+        <Modal
+          open
+          onOpenChange={(open) => {
+            if (!open) setShowRegenerateConfirm(false);
+          }}
+        >
+          <ModalContent>
+            <ModalHeader>
+              <ModalTitle>Regenerate steps?</ModalTitle>
+              <ModalDescription>
+                Replaces all existing steps with fresh drafts from the latest
+                motion plan — titles, descriptions, and other edits on the
+                current steps are lost. Refused if any step is manually authored
+                or marked Done.
+              </ModalDescription>
+            </ModalHeader>
+            <ModalFooter>
+              <Button
+                variant="secondary"
+                onClick={() => setShowRegenerateConfirm(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                isDisabled={generateFetcher.state !== "idle"}
+                isLoading={generateFetcher.state !== "idle"}
+                onClick={() => {
+                  setIgnoredFailedJobId(
+                    planJob?.status === "Failed" ? planJob.id : null
+                  );
+                  setIsAwaitingPlan(false);
+                  submitGenerate("regenerate");
+                  setShowRegenerateConfirm(false);
+                }}
+              >
+                Regenerate
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
       )}
       {showRerunConfirm && (
         <Modal
