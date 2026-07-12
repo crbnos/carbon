@@ -31,6 +31,16 @@ export type UnitGraphNode = {
   name: string;
   isAssembly: boolean;
   geometryHash: string | null;
+  /**
+   * Axis-aligned world bbox (from graph.json). Used to tell a tiny-component
+   * swarm (a populated PCB) from a mechanical subassembly of substantial parts —
+   * geometryHash can't, because it's world-space, so a PCB's repeated footprints
+   * at different board positions each hash distinctly (just like distinct parts).
+   */
+  bbox?: {
+    min: [number, number, number];
+    max: [number, number, number];
+  } | null;
   children: UnitGraphNode[];
 };
 
@@ -99,14 +109,72 @@ export function distinctComponentNames(
 
 // --- Unit derivation -----------------------------------------------------
 
+// A BOM line collapses into one rigid unit only when its leaves form a "detail
+// swarm" — a populated PCB is many TINY components on a board, whereas a
+// mechanical subassembly is a handful of SUBSTANTIAL parts. Size (not
+// geometry-hash count) is what separates them: measure each leaf's bbox against
+// the line's own extent (not the whole assembly — that would misfire as part
+// count grows). Collapse when the line has many leaves and most are tiny.
+/** A leaf is "tiny" when its bbox diagonal is below this fraction of the line's. */
+const SWARM_TINY_FRACTION = 0.1;
+/** Collapse only when at least this share of the line's leaves are tiny. */
+const SWARM_LEAF_FRACTION = 0.7;
+/** ...and the line has at least this many leaves (a couple of parts isn't a swarm). */
+const SWARM_MIN_LEAVES = 8;
+
+/** Diagonal of a node's world bbox, or null when absent. */
+function bboxDiagonal(node: UnitGraphNode): number | null {
+  const b = node.bbox;
+  if (!b) return null;
+  const dx = b.max[0] - b.min[0];
+  const dy = b.max[1] - b.min[1];
+  const dz = b.max[2] - b.min[2];
+  return Math.sqrt(dx * dx + dy * dy + dz * dz);
+}
+
+/** Diagonal of the union bbox of a set of leaves (their collective extent). */
+function unionDiagonal(leaves: UnitGraphNode[]): number | null {
+  let minX = Infinity;
+  let minY = Infinity;
+  let minZ = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  let maxZ = -Infinity;
+  let any = false;
+  for (const l of leaves) {
+    const b = l.bbox;
+    if (!b) continue;
+    any = true;
+    minX = Math.min(minX, b.min[0]);
+    minY = Math.min(minY, b.min[1]);
+    minZ = Math.min(minZ, b.min[2]);
+    maxX = Math.max(maxX, b.max[0]);
+    maxY = Math.max(maxY, b.max[1]);
+    maxZ = Math.max(maxZ, b.max[2]);
+  }
+  if (!any) return null;
+  const dx = maxX - minX;
+  const dy = maxY - minY;
+  const dz = maxZ - minZ;
+  return Math.sqrt(dx * dx + dy * dy + dz * dz);
+}
+
 /**
- * A BOM line collapses into one rigid unit only when its leaves outnumber their
- * DISTINCT geometries by at least this factor — the "detail swarm" shape of a
- * populated PCB (many repeated footprints share a content-based geometryHash). A
- * mechanical subassembly, ~one distinct geometry per leaf, falls below it and
- * stays as separate components rather than one giant fade-in step.
+ * Whether a BOM line's leaves are a detail swarm (a populated PCB) rather than a
+ * mechanical subassembly — enough leaves, most of them tiny relative to the
+ * line's own extent. No bbox data → false (don't merge distinct parts blindly).
  */
-const COLLAPSE_LEAF_RATIO = 3;
+function isDetailSwarm(leaves: UnitGraphNode[]): boolean {
+  if (leaves.length < SWARM_MIN_LEAVES) return false;
+  const lineDiag = unionDiagonal(leaves);
+  if (lineDiag == null || lineDiag === 0) return false;
+  const threshold = SWARM_TINY_FRACTION * lineDiag;
+  const tiny = leaves.filter((l) => {
+    const d = bboxDiagonal(l);
+    return d != null && d < threshold;
+  }).length;
+  return tiny / leaves.length >= SWARM_LEAF_FRACTION;
+}
 
 /**
  * A planned unit: the set of leaf components the planner should treat as one rigid
@@ -213,19 +281,12 @@ export function deriveAssemblyUnits(args: {
   for (const [itemId, leaves] of byItem) {
     const quantity = bomByItem.get(itemId)?.quantity ?? 1;
     const name = bomName(itemId, bomByItem);
-    // Distinct geometry tells a populated PCB (a swarm of REPEATED footprints —
-    // identical solids share a content-based geometryHash, so hundreds of
-    // resistors are a handful of distinct geometries) from a mechanical
-    // subassembly (each leaf a distinct part). Only the swarm collapses into a
-    // single rigid body; a subassembly where every leaf is its own geometry must
-    // stay separate, or it becomes one 50-part fade-in step.
-    const distinctGeometry = new Set(
-      leaves.map((l) => l.geometryHash ?? `name:${l.name}`)
-    ).size;
-    const isDetailSwarm =
-      distinctGeometry <= 2 ||
-      leaves.length >= COLLAPSE_LEAF_RATIO * distinctGeometry;
-    if (leaves.length >= 2 && quantity <= 1 && isDetailSwarm) {
+    // Collapse only a detail swarm (a populated PCB — many tiny components on a
+    // board) into one rigid body. A mechanical subassembly of substantial parts
+    // stays separate, or it becomes one N-part fade-in step. Size decides this,
+    // not geometry-hash count (world-space hashes make a PCB's repeated parts
+    // look as distinct as a subassembly's).
+    if (leaves.length >= 2 && quantity <= 1 && isDetailSwarm(leaves)) {
       // A single physical subassembly shown in full detail → one rigid body.
       units.push({
         id: `unit:${itemId}`,

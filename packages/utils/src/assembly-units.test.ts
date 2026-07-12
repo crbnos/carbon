@@ -9,9 +9,20 @@ import {
 function leaf(
   nodeId: string,
   name: string,
-  geometryHash: string
+  geometryHash: string,
+  bbox?: UnitGraphNode["bbox"]
 ): UnitGraphNode {
-  return { nodeId, name, isAssembly: false, geometryHash, children: [] };
+  return { nodeId, name, isAssembly: false, geometryHash, bbox, children: [] };
+}
+
+// A tiny PCB component at a spread board position: a 1mm solid at x = i*10, so a
+// swarm of them spans the board while each sits far below the swarm's tiny-size
+// threshold — the real shape of a populated PCB (vs substantial mech parts).
+function pcbLeaf(i: number, name: string, geometryHash: string): UnitGraphNode {
+  return leaf(`pcb-${i}`, name, geometryHash, {
+    min: [i * 10, 0, 0],
+    max: [i * 10 + 1, 1, 1]
+  });
 }
 
 function flat(children: UnitGraphNode[]): UnitGraph {
@@ -44,12 +55,11 @@ describe("deriveAssemblyUnits", () => {
     expect(units.map((u) => u.id).sort()).toEqual(["a", "b", "c"]);
   });
 
-  // A flat SA-BCU-like model: a populated PCB (qty 1) shown as many component
-  // solids, plus 8 screws (qty 8) and a single seal (qty 1). The 300 passives
-  // carry distinct component NAMES (values) but only a few distinct FOOTPRINT
-  // geometries — identical solids share a content-based geometryHash — which is
-  // what marks them a detail swarm to collapse (vs a mechanical subassembly of
-  // 300 distinct parts).
+  // A flat SA-BCU-like model: a populated PCB (qty 1) shown as many TINY
+  // component solids, plus 8 screws (qty 8) and a single seal (qty 1). What
+  // marks the 300 passives a detail swarm to collapse is their SIZE — each far
+  // below the board's extent — not geometry hashes (world-space, so each hashes
+  // distinctly). A mechanical subassembly of substantial parts would not.
   const bcuGraph = () =>
     flat([
       leaf("seal", "Seal Electronics Box", "hseal"),
@@ -57,7 +67,7 @@ describe("deriveAssemblyUnits", () => {
         leaf(`screw-${i}`, "Flanged Screw", `hscrew`)
       ),
       ...Array.from({ length: 300 }, (_, i) =>
-        leaf(`pcb-${i}`, `R_0402_${i}`, `hr${i % 3}`)
+        pcbLeaf(i, `R_0402_${i}`, `hr${i}`)
       )
     ]);
   const bcuBom = [
@@ -118,11 +128,17 @@ describe("deriveAssemblyUnits", () => {
   });
 
   it("does not collapse a qty-1 line whose leaves are each a distinct part", () => {
-    // A mechanical subassembly: 30 distinct real parts (distinct geometry), one
-    // leaf each, all folded to one line — must NOT become a single 30-part
-    // fade-in step (regression: the engine's 52-part first step).
+    // A mechanical subassembly: 30 SUBSTANTIAL parts (each ~40mm, a real chunk
+    // of the subassembly), one leaf each, folded to one line — must NOT become a
+    // single 30-part fade-in step (regression: the engine's 52-part first step).
+    // Size, not part count, is why this stays split while a same-count PCB folds.
     const graph = flat(
-      Array.from({ length: 30 }, (_, i) => leaf(`p-${i}`, `Part${i}`, `hp${i}`))
+      Array.from({ length: 30 }, (_, i) =>
+        leaf(`p-${i}`, `Part${i}`, `hp${i}`, {
+          min: [i * 10, 0, 0],
+          max: [i * 10 + 40, 40, 40]
+        })
+      )
     );
     const units = deriveAssemblyUnits({
       graph,
@@ -197,9 +213,9 @@ describe("deriveAssemblyUnits", () => {
     const graph = flat([
       leaf("board", "minimalBCU_gen2_PCB", "hboard"),
       leaf("conn", "C-1-776163-1", "hconn"),
-      // 10 same-footprint passives → one shared geometryHash (a detail swarm).
+      // 10 tiny passives spread across the board → a detail swarm.
       ...Array.from({ length: 10 }, (_, i) =>
-        leaf(`pcb-${i}`, `R_0402_${i}`, "hr")
+        pcbLeaf(i, `R_0402_${i}`, `hr${i}`)
       )
     ]);
     const bom = [{ itemId: "i_pcb", name: "BCU PCB", quantity: 1 }];
