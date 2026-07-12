@@ -47,6 +47,18 @@ enum Backend {
     },
 }
 
+/// A finished plan held in memory until a long-poll hands the service a fresh
+/// signed upload URL to PUT it to (late-mint offload). Never touches Redis (it's
+/// bytes, not a pointer); lives only on the replica that computed the plan.
+struct Pending {
+    plan: Vec<u8>,
+    /// The completion pointer to publish once the upload succeeds.
+    done: Value,
+    /// Content-hash cache key `(model, contentHash, optsHash)` — the pointer is
+    /// only cached once the artifact is durably uploaded (never a dangling path).
+    cache: Option<(String, u128, u64)>,
+}
+
 /// Shared job + content-hash result store. Cloned into every handler via
 /// `AppState`; all inner state is `Arc`/manager-cloned so clones share one store.
 #[derive(Clone)]
@@ -56,15 +68,27 @@ pub struct JobStore {
     /// the worker finishes (cross-replica completion is caught by the Redis
     /// re-check inside `wait_status`).
     notifiers: Arc<DashMap<String, Arc<Notify>>>,
+    /// Computed-but-not-yet-uploaded plans, keyed by job id. A long-poll that
+    /// carries an upload URL drains this via `try_finalize`.
+    pending: Arc<DashMap<String, Pending>>,
+}
+
+/// Outcome of a finalize attempt during a long-poll.
+pub enum Finalize {
+    /// Uploaded — the returned value is the terminal `done` status.
+    Uploaded(Value),
+    /// Nothing to upload here (already finalized, or the artifact lives on
+    /// another replica) — keep waiting.
+    NotPending,
+    /// Upload failed transiently; the artifact is kept for the next poll to retry.
+    Retry,
 }
 
 /// Everything a plan task needs from the request.
 pub struct PlanReq {
     pub source_url: String,
-    /// Signed PUT URL the service uploads plan.json to (offload). None => legacy
-    /// inline behavior (plan rides the status body; the app uploads it).
-    pub plan_upload_url: Option<String>,
     /// Storage path recorded in the completion pointer (what the app persists).
+    /// The plan.json is PUT here later via a per-poll signed URL (late-mint).
     pub plan_path: Option<String>,
     /// Scopes the content-hash result cache; None disables caching for this job.
     pub model_upload_id: Option<String>,
@@ -83,6 +107,7 @@ impl JobStore {
                     return JobStore {
                         backend: Backend::Redis { conn },
                         notifiers,
+                        pending: Arc::new(DashMap::new()),
                     };
                 }
                 Err(e) => {
@@ -100,6 +125,7 @@ impl JobStore {
                 results: Arc::new(DashMap::new()),
             },
             notifiers,
+            pending: Arc::new(DashMap::new()),
         }
     }
 
@@ -218,25 +244,42 @@ impl JobStore {
         self.read(id).await.map(|r| Self::render(&r))
     }
 
-    /// Long-poll: return the terminal status the instant it lands (same-replica
-    /// via `Notify`, cross-replica via a ~500ms Redis re-check), else the current
-    /// non-terminal status when `max` elapses. `None` only if the job is unknown.
-    pub async fn wait_status(&self, id: &str, max: Duration) -> Option<Value> {
-        let notify = self.notifier(id);
-        let deadline = Instant::now() + max;
+    /// Long-poll a job to a terminal state. `upload_url` (when the request
+    /// carried one) is used to drain a computed-but-unuploaded plan the instant
+    /// it's ready (late-mint offload). With `max`, holds until terminal or the
+    /// deadline (same-replica wake via `Notify`, cross-replica via the ~500ms
+    /// re-read); without `max`, a single shot. `None` only if the job is unknown.
+    pub async fn poll(
+        &self,
+        id: &str,
+        upload_url: Option<&str>,
+        max: Option<Duration>,
+    ) -> Option<Value> {
+        let deadline = max.map(|m| Instant::now() + m);
         loop {
-            let cur = self.read(id).await;
-            match &cur {
-                Some(rec) if rec.status == "done" || rec.status == "error" => {
-                    return Some(Self::render(rec));
+            let cur = self.status(id).await;
+            if let Some(v) = &cur {
+                match v["status"].as_str().unwrap_or("") {
+                    "done" | "error" => return cur,
+                    "uploading" => {
+                        if let Some(u) = upload_url {
+                            if let Finalize::Uploaded(done) = self.try_finalize(id, u).await {
+                                return Some(done);
+                            }
+                        }
+                    }
+                    _ => {}
                 }
-                _ => {}
             }
+            let Some(dl) = deadline else {
+                return cur; // single shot: current status (or None if unknown)
+            };
             let now = Instant::now();
-            if now >= deadline {
-                return cur.map(|r| Self::render(&r));
+            if now >= dl {
+                return cur;
             }
-            let tick = (deadline - now).min(Duration::from_millis(500));
+            let notify = self.notifier(id);
+            let tick = (dl - now).min(Duration::from_millis(500));
             tokio::select! {
                 _ = notify.notified() => {}
                 _ = tokio::time::sleep(tick) => {}
@@ -255,10 +298,107 @@ impl JobStore {
         if let Some(n) = self.notifiers.get(id) {
             n.notify_waiters();
         }
-        // A late waiter recreates its notifier and immediately re-reads the now
-        // terminal status in wait_status's loop, so dropping this can't lose a
-        // wakeup — it just keeps the map from growing unbounded.
-        self.notifiers.remove(id);
+    }
+
+    /// Hold a computed-but-unuploaded plan for hand-off. Memory backend keeps it
+    /// in-process; Redis backend stores it (bytes + pointer) under a short TTL so
+    /// ANY replica's poll can drain it — removing the single-process constraint.
+    async fn pending_put(
+        &self,
+        id: &str,
+        plan: Vec<u8>,
+        done: Value,
+        cache: Option<(String, u128, u64)>,
+    ) {
+        match &self.backend {
+            Backend::Memory { .. } => {
+                self.pending
+                    .insert(id.to_string(), Pending { plan, done, cache });
+            }
+            Backend::Redis { conn } => {
+                let cache_s = cache.map(|(m, c, o)| format!("{m}|{c:032x}|{o}"));
+                let mut c = conn.clone();
+                let mut pipe = redis::pipe();
+                pipe.hset(pending_key(id), "plan", plan)
+                    .ignore()
+                    .hset(pending_key(id), "done", done.to_string())
+                    .ignore();
+                if let Some(cs) = cache_s {
+                    pipe.hset(pending_key(id), "cache", cs).ignore();
+                }
+                pipe.expire(pending_key(id), config::pending_ttl_secs() as i64)
+                    .ignore();
+                if let Err(e) = pipe.query_async::<()>(&mut c).await {
+                    eprintln!("assembler: redis pending_put failed: {e}");
+                }
+            }
+        }
+    }
+
+    async fn pending_take(&self, id: &str) -> Option<(Vec<u8>, Value, Option<(String, u128, u64)>)> {
+        match &self.backend {
+            Backend::Memory { .. } => self
+                .pending
+                .get(id)
+                .map(|p| (p.plan.clone(), p.done.clone(), p.cache.clone())),
+            Backend::Redis { conn } => {
+                let mut c = conn.clone();
+                let res: redis::RedisResult<(Option<Vec<u8>>, Option<String>, Option<String>)> =
+                    redis::pipe()
+                        .hget(pending_key(id), "plan")
+                        .hget(pending_key(id), "done")
+                        .hget(pending_key(id), "cache")
+                        .query_async(&mut c)
+                        .await;
+                let (plan, done_s, cache_s) = match res {
+                    Ok(t) => t,
+                    Err(e) => {
+                        eprintln!("assembler: redis pending_take failed: {e}");
+                        return None;
+                    }
+                };
+                let done: Value = serde_json::from_str(&done_s?).ok()?;
+                Some((plan?, done, cache_s.and_then(parse_cache)))
+            }
+        }
+    }
+
+    async fn pending_remove(&self, id: &str) {
+        match &self.backend {
+            Backend::Memory { .. } => {
+                self.pending.remove(id);
+            }
+            Backend::Redis { conn } => {
+                let mut c = conn.clone();
+                if let Err(e) = c.del::<_, ()>(pending_key(id)).await {
+                    eprintln!("assembler: redis pending_remove failed: {e}");
+                }
+            }
+        }
+    }
+
+    /// Drain a computed-but-unuploaded plan to `upload_url` (called from a
+    /// long-poll that carried a fresh signed URL). On success publishes the
+    /// terminal `done` pointer; on transient failure keeps the artifact so the
+    /// next poll can retry with a fresher URL.
+    pub async fn try_finalize(&self, id: &str, upload_url: &str) -> Finalize {
+        let Some((plan, done, cache)) = self.pending_take(id).await else {
+            return Finalize::NotPending;
+        };
+        match http::upload(upload_url, plan, "application/json").await {
+            Ok(()) => {
+                self.pending_remove(id).await;
+                if let Some((model, content, opts)) = cache {
+                    self.result_put(&model, content, opts, done.clone()).await;
+                }
+                self.set_done(id, done.clone()).await;
+                Finalize::Uploaded(done)
+            }
+            Err(e) => {
+                eprintln!("[{id}] plan upload failed (will retry next poll): {}", e.message);
+                Finalize::Retry
+            }
+        }
     }
 
     // --- content-hash result-pointer cache (CODE_VERSION-stamped) ----------
@@ -416,29 +556,7 @@ impl JobStore {
                         "componentCount": r.component_count,
                         "plannedCount": r.planned_count,
                     });
-
-                    // Offload: PUT plan.json to the caller-signed URL so only the
-                    // pointer reaches Redis/the poll body. Legacy (no upload URL):
-                    // the plan rides the status body and the app uploads it.
-                    if let Some(url) = &req.plan_upload_url {
-                        match serde_json::to_vec(&r.plan) {
-                            Ok(bytes) => {
-                                if let Err(e) =
-                                    http::upload(url, bytes, "application/json").await
-                                {
-                                    eprintln!("[{job_id}] plan upload failed: {}", e.message);
-                                    jobs.set_error(&job_id, e.message).await;
-                                    return;
-                                }
-                            }
-                            Err(e) => {
-                                jobs.set_error(&job_id, format!("serialize plan: {e}")).await;
-                                return;
-                            }
-                        }
-                    }
-
-                    let mut done = json!({
+                    let pointer = json!({
                         "ok": true,
                         "status": "done",
                         "planPath": req.plan_path,
@@ -446,26 +564,37 @@ impl JobStore {
                         "plannedCount": r.planned_count,
                         "stats": stats,
                     });
-                    if req.plan_upload_url.is_none() {
-                        // Legacy inline path (no offload): the app expects the
-                        // plan in the body and uploads it itself.
-                        done["plan"] = r.plan;
-                    }
-
-                    // Cache the pointer for identical future requests (only when
-                    // the artifact is durable in storage, i.e. it was offloaded).
-                    if let (Some(model), Some(_)) = (&req.model_upload_id, &req.plan_path) {
-                        if req.plan_upload_url.is_some() {
-                            jobs.result_put(model, content_hash, opts_hash, done.clone())
-                                .await;
-                        }
-                    }
-
                     eprintln!(
-                        "[{job_id}] plan done: {} parts, {} planned, {plan_ms}ms",
+                        "[{job_id}] plan computed: {} parts, {} planned, {plan_ms}ms",
                         r.component_count, r.planned_count
                     );
-                    jobs.set_done(&job_id, done).await;
+
+                    match &req.plan_path {
+                        // Late-mint offload: hold the plan in memory and mark the
+                        // job "uploading"; a long-poll carrying a fresh signed URL
+                        // drains it (try_finalize) and publishes the pointer.
+                        Some(_) => match serde_json::to_vec(&r.plan) {
+                            Ok(bytes) => {
+                                let cache = req
+                                    .model_upload_id
+                                    .as_ref()
+                                    .map(|m| (m.clone(), content_hash, opts_hash));
+                                jobs.pending_put(&job_id, bytes, pointer, cache).await;
+                                jobs.set_status(&job_id, "uploading").await;
+                                jobs.wake(&job_id);
+                            }
+                            Err(e) => {
+                                jobs.set_error(&job_id, format!("serialize plan: {e}")).await
+                            }
+                        },
+                        // No storage path (None meta): return the plan inline in
+                        // the status body for the app to persist itself.
+                        None => {
+                            let mut done = pointer;
+                            done["plan"] = r.plan;
+                            jobs.set_done(&job_id, done).await;
+                        }
+                    }
                 }
                 Ok(Err(e)) => {
                     eprintln!("[{job_id}] plan failed: {}", e.message);
@@ -496,6 +625,19 @@ fn job_key(id: &str) -> String {
 
 fn result_key(model: &str, content: u128, opts: u64) -> String {
     format!("asm:result:{model}:{content:032x}:{opts:016x}:v{CODE_VERSION}")
+}
+
+fn pending_key(id: &str) -> String {
+    format!("asm:pending:{id}")
+}
+
+/// Parse a `"model|contentHex|opts"` cache tuple stored alongside a pending plan.
+fn parse_cache(s: String) -> Option<(String, u128, u64)> {
+    let mut it = s.splitn(3, '|');
+    let model = it.next()?.to_string();
+    let content = u128::from_str_radix(it.next()?, 16).ok()?;
+    let opts = it.next()?.parse().ok()?;
+    Some((model, content, opts))
 }
 
 /// Stable hash of the plan options. serde_json serializes object keys sorted

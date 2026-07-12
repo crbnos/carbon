@@ -34,15 +34,7 @@ import {
 import type { DragControls } from "framer-motion";
 import { MotionConfig, Reorder, useDragControls } from "framer-motion";
 import type { ReactNode } from "react";
-import {
-  Fragment,
-  memo,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState
-} from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   LuChevronDown,
   LuCirclePlus,
@@ -83,6 +75,8 @@ type AssemblyInstructionExplorerProps = {
   isDisabled: boolean;
   /** The CAD model is still being converted — block step generation until it lands */
   isConverting: boolean;
+  /** The geometry service is reachable — required to convert models and plan steps */
+  assemblerAvailable: boolean;
   graphIndex: AssemblyGraphIndex | null;
   /** A successful motion plan exists for the model */
   hasPlan: boolean;
@@ -114,6 +108,7 @@ function AssemblyInstructionExplorer({
   selectedStepId,
   isDisabled,
   isConverting,
+  assemblerAvailable,
   graphIndex,
   hasPlan,
   planJob,
@@ -465,18 +460,6 @@ function AssemblyInstructionExplorer({
     return map;
   }, [steps, viewerStepMap, graphIndex, stepTitles]);
 
-  // Build waves only read meaningfully in true sort order and when there's more
-  // than one — a single wave (or a filtered view) shows no dividers.
-  const hasWaves = useMemo(() => {
-    const seen = new Set<number>();
-    for (const step of steps) {
-      const w = (step as { buildWave?: number | null }).buildWave;
-      if (typeof w === "number") seen.add(w);
-      if (seen.size > 1) return true;
-    }
-    return false;
-  }, [steps]);
-
   const visibleOrder = useMemo(() => {
     if (!isSearching) return sortOrder;
     const needle = search.trim().toLowerCase();
@@ -584,54 +567,29 @@ function AssemblyInstructionExplorer({
                   className="w-full"
                   disabled={isDisabled || isSearching}
                 >
-                  {visibleOrder.map((stepId, i) => {
+                  {visibleOrder.map((stepId) => {
                     const step = stepMap.get(stepId);
                     if (!step) return null;
-                    const wave = (step as { buildWave?: number | null })
-                      .buildWave;
-                    const prevWave =
-                      i > 0
-                        ? (
-                            stepMap.get(visibleOrder[i - 1]) as {
-                              buildWave?: number | null;
-                            }
-                          )?.buildWave
-                        : undefined;
-                    const showWaveDivider =
-                      hasWaves &&
-                      !isSearching &&
-                      typeof wave === "number" &&
-                      wave !== prevWave;
                     return (
-                      <Fragment key={stepId}>
-                        {showWaveDivider && (
-                          <div className="flex select-none items-center gap-2 border-b border-border bg-muted/30 px-3 py-0.5 text-[0.6875rem] uppercase tracking-wide text-muted-foreground/70">
-                            <span className="font-medium text-muted-foreground">
-                              Wave {wave + 1}
-                            </span>
-                            <span className="h-px flex-1 bg-border" />
-                            <span>parallel</span>
-                          </div>
+                      <DraggableStepItem
+                        key={stepId}
+                        stepId={stepId}
+                        isDisabled={isDisabled || isSearching}
+                      >
+                        {(dragControls) => (
+                          <StepItem
+                            step={step}
+                            title={stepTitles.get(stepId) ?? "Untitled step"}
+                            index={sortOrder.indexOf(stepId)}
+                            isDisabled={isDisabled || isSearching}
+                            isSelected={stepId === selectedStepId}
+                            dragControls={dragControls}
+                            onSelect={() => onSelectStep(stepId)}
+                            onPreview={() => onPreviewStep(stepId)}
+                            onDelete={() => setStepToDelete(step)}
+                          />
                         )}
-                        <DraggableStepItem
-                          stepId={stepId}
-                          isDisabled={isDisabled || isSearching}
-                        >
-                          {(dragControls) => (
-                            <StepItem
-                              step={step}
-                              title={stepTitles.get(stepId) ?? "Untitled step"}
-                              index={sortOrder.indexOf(stepId)}
-                              isDisabled={isDisabled || isSearching}
-                              isSelected={stepId === selectedStepId}
-                              dragControls={dragControls}
-                              onSelect={() => onSelectStep(stepId)}
-                              onPreview={() => onPreviewStep(stepId)}
-                              onDelete={() => setStepToDelete(step)}
-                            />
-                          )}
-                        </DraggableStepItem>
-                      </Fragment>
+                      </DraggableStepItem>
                     );
                   })}
                 </Reorder.Group>
@@ -677,10 +635,21 @@ function AssemblyInstructionExplorer({
                       {solveElapsedLabel} elapsed
                     </p>
                   )}
+                  {!assemblerAvailable && !hasPlan && !isSolving && (
+                    <p className="mt-2 text-pretty text-xs text-amber-600 dark:text-amber-500">
+                      The geometry service is offline — motion planning is
+                      unavailable right now.
+                    </p>
+                  )}
                   <div className="mt-5 flex w-full flex-col gap-2">
                     <Button
                       className="w-full"
-                      isDisabled={isDisabled || isConverting || isSolving}
+                      isDisabled={
+                        isDisabled ||
+                        isConverting ||
+                        isSolving ||
+                        (!assemblerAvailable && !hasPlan)
+                      }
                       isLoading={isSolving}
                       leftIcon={planFailed ? undefined : <LuSparkles />}
                       onClick={() => {
@@ -754,7 +723,15 @@ function AssemblyInstructionExplorer({
                     />
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => setShowRerunConfirm(true)}>
+                    {!assemblerAvailable && (
+                      <p className="px-2 py-1.5 text-xs text-amber-600 dark:text-amber-500">
+                        Geometry service offline — motion planning unavailable.
+                      </p>
+                    )}
+                    <DropdownMenuItem
+                      disabled={!assemblerAvailable}
+                      onClick={() => setShowRerunConfirm(true)}
+                    >
                       <DropdownMenuIcon icon={<LuWaypoints />} />
                       <div>
                         Run Motion Planning
@@ -765,6 +742,7 @@ function AssemblyInstructionExplorer({
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       destructive
+                      disabled={!assemblerAvailable}
                       onClick={() => setShowRegenerateConfirm(true)}
                     >
                       <DropdownMenuIcon icon={<LuSparkles />} />

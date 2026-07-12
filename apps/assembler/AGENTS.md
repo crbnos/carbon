@@ -93,7 +93,8 @@ unauth + http + skip TLS verify, local only), `ASSEMBLER_MAX_SOURCE_MB` (250),
 `ASSEMBLER_MAX_PARTS` (5000), `ASSEMBLER_MAX_CONCURRENCY` (2),
 `ASSEMBLER_SHUTDOWN_GRACE_S` (600), `ASSEMBLER_ALLOWED_URL_HOSTS`,
 `ASSEMBLER_REDIS_URL` (unset ⇒ in-memory store), `ASSEMBLER_JOB_TTL_SECS`
-(86400), `ASSEMBLER_RESULT_TTL_SECS` (86400), `ASSEMBLER_MAX_LONG_POLL_S` (25).
+(86400), `ASSEMBLER_RESULT_TTL_SECS` (86400), `ASSEMBLER_PENDING_TTL_SECS` (300),
+`ASSEMBLER_MAX_LONG_POLL_S` (25).
 
 ## Completion & lifecycle
 
@@ -114,12 +115,18 @@ Redis holds **only status + pointers, never plan/glb bytes**: `asm:job:{jobId}` 
 the service **stateless** — a restart or a sibling replica can still answer the
 poll (no 404-on-restart loss).
 
-**The plan artifact is offloaded to storage.** The service still has **no
-persistent storage credentials**, but the app passes a signed PUT URL as
-`outputs.plan.url` (mirroring `/convert`'s glb/graph outputs); on success the
-service PUTs plan.json there and the poll returns only the `{planPath, stats}`
-pointer. (Legacy: if `outputs.plan.url` is absent the plan rides the poll body
-and the app uploads it.)
+**The plan artifact is offloaded to storage (late-mint).** The service has **no
+persistent storage credentials**; instead the app mints a FRESH signed upload URL
+on *each* long-poll and sends it as the `X-Plan-Upload-Url` header. On completion
+the service marks the job `uploading` and parks the plan bytes in a short-TTL
+hand-off buffer (`asm:pending:{jobId}` hash in Redis, or in-process in memory
+mode); the next poll carrying a URL drains it — PUTting plan.json with a
+seconds-old token, then returning the `{planPath, stats}` pointer. Minting late
+(not at submit) keeps the token short-lived instead of needing one that outlives
+the whole plan; buffering in Redis (not one replica's memory) means **any**
+replica's poll can finalize, so it's not single-process/sticky. A plan not drained
+within `ASSEMBLER_PENDING_TTL_SECS` is abandoned (the job re-plans). (Legacy: a job
+with no `planPath` in meta returns the plan inline for the app to upload.)
 
 **Content-hash result cache** (`asm:result:{model}:{contentHash}:{optsHash}:v{CODE_VERSION}`
 → pointer, TTL `ASSEMBLER_RESULT_TTL_SECS`): a repeat of the same model + bytes +

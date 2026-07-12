@@ -382,18 +382,29 @@ export const AssemblyPlayer = forwardRef<
   }, []);
 
   const goToStep = useCallback(
-    (index: number) => {
+    (index: number, opts?: { play?: boolean }) => {
       if (index < 0 || index >= stepCount) return;
-      seekRef.current = 0;
-      playheadRef.current = startTimes[index] ?? 0;
-      setDisplayTime(startTimes[index] ?? 0);
+      if (opts?.play) {
+        // Playing into the step — start at its beginning so the insertion animates.
+        seekRef.current = 0;
+        playheadRef.current = startTimes[index] ?? 0;
+        setDisplayTime(startTimes[index] ?? 0);
+      } else {
+        // Just viewing the step (prev/next) — show it COMPLETED, parts seated and
+        // visible, matching a single-click on the step row. Leaving the seek null
+        // lets the clip effect snap to the step's end pose.
+        seekRef.current = null;
+        const end = (startTimes[index] ?? 0) + (segments[index] ?? 0);
+        playheadRef.current = end;
+        setDisplayTime(end);
+      }
       if (index === activeStepIndex) {
         setSeekVersion((version) => version + 1);
       } else {
         onStepChange?.(index);
       }
     },
-    [onStepChange, stepCount, startTimes, activeStepIndex]
+    [onStepChange, stepCount, startTimes, segments, activeStepIndex]
   );
 
   const handleStepFinished = useCallback(() => {
@@ -401,7 +412,7 @@ export const AssemblyPlayer = forwardRef<
     // single-step play (from selecting a step) stops here, paused at the seated
     // pose.
     if (continuous && clampedIndex < stepCount - 1) {
-      goToStep(clampedIndex + 1);
+      goToStep(clampedIndex + 1, { play: true });
     } else {
       setIsPlaying(false);
       setContinuous(false);
@@ -484,7 +495,7 @@ export const AssemblyPlayer = forwardRef<
           <button
             type="button"
             className={cn(
-              "absolute top-3 right-3 z-10 flex items-center gap-1.5 rounded-full border border-border bg-background/80 py-1 pr-3 pl-2 backdrop-blur",
+              "absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-border bg-background/80 py-1 pr-3 pl-2 backdrop-blur",
               "text-xs font-medium text-muted-foreground hover:text-foreground"
             )}
             onClick={() => setCameraMode("auto")}
@@ -596,7 +607,7 @@ export const AssemblyPlayer = forwardRef<
             } else if (currentStepFinished) {
               // Current step already finished (e.g. after a single-step play) →
               // continue with the next one rather than replaying this one.
-              goToStep(clampedIndex + 1);
+              goToStep(clampedIndex + 1, { play: true });
             } else {
               // Mid-step or a fresh step → (re)play it from the current position.
               setSeekVersion((version) => version + 1);
@@ -880,6 +891,36 @@ function AssemblyScene({
     camera.far = diag * 20;
     camera.updateProjectionMatrix();
   }, [camera, scene]);
+
+  // Break coincident-face z-fighting. A multi-body STEP split turns each solid
+  // into its own mesh; a part seated flush on a plate (a bolt head on its face)
+  // shares that face's exact plane, so the two meshes sit at IDENTICAL depth and
+  // the GPU can't pick a winner — the face tears at every camera distance (no
+  // depth-precision trick resolves an exact tie). Give each distinct material a
+  // unique polygon offset so one always wins at a coincidence. Coincident parts
+  // are near-always different parts with different materials (the bolt vs the
+  // plate), so per-material differentiates them with no per-mesh cloning; we
+  // just tag the loaded glTF materials in place. The offset is a few depth-buffer
+  // units — far below any real (sub-mm) gap — so separated faces are untouched.
+  useEffect(() => {
+    const tagged = new Set<Material>();
+    let offset = -1;
+    scene.traverse((object) => {
+      const mesh = object as Mesh;
+      if (!mesh.isMesh) return;
+      const materials = Array.isArray(mesh.material)
+        ? mesh.material
+        : [mesh.material];
+      for (const material of materials) {
+        if (tagged.has(material)) continue;
+        tagged.add(material);
+        material.polygonOffset = true;
+        material.polygonOffsetFactor = -1;
+        material.polygonOffsetUnits = offset;
+        offset -= 1;
+      }
+    });
+  }, [scene]);
 
   const activeStep = steps[activeStepIndex] ?? null;
   const isEditingActive = Boolean(

@@ -1334,6 +1334,18 @@ export const assemblyInstructionStepComponentsValidator = z.object({
   componentNodeIds: jsonField(z.array(z.string()))
 });
 
+export const assemblyStepComponentsReassignValidator = z
+  .object({
+    // Absent for "remove" (unassign from every step); required otherwise.
+    targetStepId: z.string().optional(),
+    componentNodeIds: jsonField(z.array(z.string()).min(1)),
+    mode: z.enum(["move", "duplicate", "remove"])
+  })
+  .refine((v) => v.mode === "remove" || !!v.targetStepId, {
+    message: "A target step is required",
+    path: ["targetStepId"]
+  });
+
 export const assemblyInstructionStepStatusValidator = z.object({
   status: z.enum(assemblyStepStatuses)
 });

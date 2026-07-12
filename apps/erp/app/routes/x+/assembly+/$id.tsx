@@ -47,6 +47,7 @@ import {
   toViewerStep,
   upsertAssemblyInstruction
 } from "~/modules/production";
+import { isAssemblerServiceHealthy } from "~/modules/production/production.server";
 import AssemblyInstructionExplorer from "~/modules/production/ui/Assemblies/AssemblyInstructionExplorer";
 import AssemblyInstructionHeader from "~/modules/production/ui/Assemblies/AssemblyInstructionHeader";
 import AssemblyInstructionProperties from "~/modules/production/ui/Assemblies/AssemblyInstructionProperties";
@@ -104,7 +105,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     planJob,
     componentMappings,
     units,
-    bomMaterials
+    bomMaterials,
+    assemblerAvailable
   ] = await Promise.all([
     getAssemblyInstructionStepRequirements(client, stepIds),
     getAssemblyInstructionStepMaterials(client, stepIds),
@@ -122,7 +124,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       : Promise.resolve({ data: [] }),
     instruction.data.itemId
       ? getFlattenedBomMaterials(client, instruction.data.itemId, companyId)
-      : Promise.resolve([])
+      : Promise.resolve([]),
+    isAssemblerServiceHealthy()
   ]);
 
   return {
@@ -135,7 +138,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     plan,
     planJob: planJob.data ?? null,
     componentMappings: componentMappings.data ?? [],
-    bomMaterials
+    bomMaterials,
+    assemblerAvailable
   };
 }
 
@@ -194,7 +198,8 @@ export default function AssemblyInstructionRoute() {
     plan,
     planJob,
     componentMappings,
-    bomMaterials
+    bomMaterials,
+    assemblerAvailable
   } = useLoaderData<typeof loader>();
   const permissions = usePermissions();
   const mode = useMode();
@@ -515,6 +520,7 @@ export default function AssemblyInstructionRoute() {
                   selectedStepId={selectedStep?.id ?? null}
                   isDisabled={isDisabled}
                   isConverting={isConverting}
+                  assemblerAvailable={assemblerAvailable}
                   graphIndex={graphIndex}
                   hasPlan={Boolean(plan)}
                   planJob={planJob}

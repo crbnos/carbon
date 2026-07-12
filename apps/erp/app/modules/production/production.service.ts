@@ -4326,6 +4326,153 @@ export async function updateAssemblyStepComponents(
     .single();
 }
 
+// Assign a set of component instances to a target step. `duplicate` unions them
+// onto the target only (a component may live on several steps). `move` unions
+// them onto the target AND strips them from every other step, so the component
+// ends up on exactly the target. `remove` (no target) strips them from EVERY
+// step, unassigning them entirely. One transaction: a half-applied move (added
+// to target but not removed from the source, or vice versa) would be a real bug.
+export async function reassignAssemblyStepComponents(
+  db: Kysely<KyselyDatabase>,
+  data: {
+    assemblyInstructionId: string;
+    companyId: string;
+    targetStepId?: string;
+    componentNodeIds: string[];
+    mode: "move" | "duplicate" | "remove";
+    updatedBy: string;
+  }
+) {
+  const moving = new Set(data.componentNodeIds);
+  return db.transaction().execute(async (trx) => {
+    const steps = await trx
+      .selectFrom("assemblyInstructionStep")
+      .select(["id", "componentNodeIds"])
+      .where("assemblyInstructionId", "=", data.assemblyInstructionId)
+      .where("companyId", "=", data.companyId)
+      .execute();
+
+    const now = new Date().toISOString();
+    for (const step of steps) {
+      const current = (step.componentNodeIds ?? []) as string[];
+      let next: string[];
+      if (data.mode !== "remove" && step.id === data.targetStepId) {
+        const merged = new Set(current);
+        for (const nodeId of moving) merged.add(nodeId);
+        next = [...merged];
+      } else if (data.mode === "move" || data.mode === "remove") {
+        next = current.filter((nodeId) => !moving.has(nodeId));
+      } else {
+        continue; // duplicate: other steps are untouched
+      }
+      // Skip a no-op write (nothing added/removed for this step).
+      if (
+        next.length === current.length &&
+        next.every((nodeId, index) => nodeId === current[index])
+      ) {
+        continue;
+      }
+      // A move that empties a source step (it had components, now none) leaves a
+      // meaningless orphan — drop it. The target step is never emptied (it gains
+      // parts), and an already-empty process step (current.length === 0) is left
+      // alone.
+      if (
+        step.id !== data.targetStepId &&
+        current.length > 0 &&
+        next.length === 0
+      ) {
+        await trx
+          .deleteFrom("assemblyInstructionStep")
+          .where("id", "=", step.id)
+          .where("companyId", "=", data.companyId)
+          .execute();
+        continue;
+      }
+      await trx
+        .updateTable("assemblyInstructionStep")
+        .set({
+          componentNodeIds: next,
+          updatedBy: data.updatedBy,
+          updatedAt: now
+        })
+        .where("id", "=", step.id)
+        .where("companyId", "=", data.companyId)
+        .execute();
+    }
+
+    // Keep UNIT membership in step with STEP membership. The Components tab
+    // groups by `assemblyUnit`, so moving a part into a step that installs a unit
+    // (e.g. the PCB step) must also add it to that unit — otherwise it shows as a
+    // loose leaf that never joins the group. `assemblyUnit` is model-scoped.
+    const targetStep = steps.find((s) => s.id === data.targetStepId);
+    const preMove = ((targetStep?.componentNodeIds ?? []) as string[]).filter(
+      (nodeId) => !moving.has(nodeId)
+    );
+    const model = await trx
+      .selectFrom("assemblyInstruction")
+      .select("modelUploadId")
+      .where("id", "=", data.assemblyInstructionId)
+      .where("companyId", "=", data.companyId)
+      .executeTakeFirst();
+    if (model?.modelUploadId) {
+      const units = await trx
+        .selectFrom("assemblyUnit")
+        .select(["id", "componentNodeIds"])
+        .where("modelUploadId", "=", model.modelUploadId)
+        .where("companyId", "=", data.companyId)
+        .execute();
+
+      // The unit the target step installs = the tightest unit whose members
+      // cover the step's pre-move components. None ⇒ a loose step (leave units).
+      let targetUnitId: string | null = null;
+      if (preMove.length > 0) {
+        let bestSize = Number.POSITIVE_INFINITY;
+        for (const unit of units) {
+          const members = new Set((unit.componentNodeIds ?? []) as string[]);
+          if (
+            preMove.every((nodeId) => members.has(nodeId)) &&
+            members.size < bestSize
+          ) {
+            bestSize = members.size;
+            targetUnitId = unit.id;
+          }
+        }
+      }
+
+      for (const unit of units) {
+        const members = new Set((unit.componentNodeIds ?? []) as string[]);
+        let changed = false;
+        // move/remove: a component leaves every unit it was in (units stay
+        // disjoint; a pure remove just unassigns it)…
+        if (data.mode === "move" || data.mode === "remove") {
+          for (const nodeId of moving)
+            if (members.delete(nodeId)) changed = true;
+        }
+        // …and joins the unit its new step installs.
+        if (unit.id === targetUnitId) {
+          for (const nodeId of moving)
+            if (!members.has(nodeId)) {
+              members.add(nodeId);
+              changed = true;
+            }
+        }
+        if (changed) {
+          await trx
+            .updateTable("assemblyUnit")
+            .set({
+              componentNodeIds: [...members],
+              updatedBy: data.updatedBy,
+              updatedAt: now
+            })
+            .where("id", "=", unit.id)
+            .where("companyId", "=", data.companyId)
+            .execute();
+        }
+      }
+    }
+  });
+}
+
 async function getNextStepSortOrder(
   client: SupabaseClient<Database>,
   data: { assemblyInstructionId: string }
@@ -5388,10 +5535,15 @@ export async function generateAssemblyStepsFromPlan(
 
   // Materialize planner-DETECTED groups (id "swarm:<host>" — e.g. a populated
   // PCB's detail swarm) as assemblyUnit rows so the Components tab shows them
-  // like authored units, editable through the same UI. DO NOTHING on conflict:
-  // once materialized the row belongs to the user — renames/member edits
-  // survive regeneration. Caller-unit groups already ARE rows. Best-effort:
-  // a failure here must not block step generation.
+  // like authored units, editable through the same UI. Caller-unit groups
+  // already ARE rows. Best-effort: a failure here must not block step generation.
+  //
+  // This is a SYSTEM/derived-data write (reflecting the plan), not a user
+  // creating a unit — so the generate route passes a bypassRls (service-role)
+  // `client`. The assemblyUnit INSERT/DELETE RLS policies require
+  // `production_create`/`production_delete`, but generate only authorizes
+  // `production_update`; through a plain RLS client the write silently no-ops
+  // (steps get built, units never do). Scoped to companyId, so it's tenant-safe.
   const detectedUnits = Object.entries(plan.groups ?? {})
     .filter(([groupId]) => groupId.startsWith("swarm:"))
     .map(([groupId, group]) => ({
@@ -5402,7 +5554,35 @@ export async function generateAssemblyStepsFromPlan(
       companyId: args.companyId,
       createdBy: args.userId
     }));
-  if (detectedUnits.length > 0) {
+  if (args.mode === "regenerate") {
+    // Fresh regenerate: the auto-units were deliberately NOT deleted before the
+    // plan (a delete-then-failed-re-plan would strand the model ungrouped).
+    // Swap them HERE, atomically with the just-rebuilt steps — drop the old auto
+    // rows and insert the freshly detected ones so new detection (absorption
+    // etc.) wins. If detection now finds no swarm, they clear (the steps don't
+    // group it either — consistent).
+    const dropped = await client
+      .from("assemblyUnit")
+      .delete()
+      .eq("modelUploadId", modelUploadId)
+      .eq("companyId", args.companyId)
+      .not("sourceGroupId", "is", null);
+    if (dropped.error) {
+      logger.error("Failed to clear detected assembly units", {
+        error: dropped.error
+      });
+    }
+    if (detectedUnits.length > 0) {
+      const inserted = await client.from("assemblyUnit").insert(detectedUnits);
+      if (inserted.error) {
+        logger.error("Failed to materialize detected assembly units", {
+          error: inserted.error
+        });
+      }
+    }
+  } else if (detectedUnits.length > 0) {
+    // First generation: DO NOTHING on conflict — once materialized the row
+    // belongs to the user (renames/member edits survive).
     const materialized = await client
       .from("assemblyUnit")
       .upsert(detectedUnits, {

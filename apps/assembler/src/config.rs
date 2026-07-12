@@ -53,6 +53,13 @@ pub fn result_ttl_secs() -> u64 {
     int_env("ASSEMBLER_RESULT_TTL_SECS", 86400) as u64
 }
 
+/// TTL (seconds) for a computed-but-unuploaded plan held in Redis for hand-off
+/// (compute -> the poll that uploads it). Short: a plan not drained within this
+/// window is abandoned and the job re-plans. Default 5 min.
+pub fn pending_ttl_secs() -> u64 {
+    int_env("ASSEMBLER_PENDING_TTL_SECS", 300) as u64
+}
+
 /// Server-side cap on the `?wait=` long-poll hold (seconds). Kept under typical
 /// proxy/LB idle timeouts so a held request never trips them.
 pub fn max_long_poll_secs() -> u64 {

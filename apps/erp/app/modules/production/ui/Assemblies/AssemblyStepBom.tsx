@@ -16,7 +16,11 @@ export default function AssemblyStepBom({
 }: AssemblyStepBomProps) {
   const groups = useMemo(
     () =>
-      graphIndex ? groupComponentNodeIds(componentNodeIds, graphIndex) : [],
+      graphIndex
+        ? groupComponentNodeIds(componentNodeIds, graphIndex).sort((a, b) =>
+            a.name.localeCompare(b.name)
+          )
+        : [],
     [componentNodeIds, graphIndex]
   );
 

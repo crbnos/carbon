@@ -19,15 +19,24 @@ export type PlanUnit = { id: string; name: string | null; nodeIds: string[] };
 export async function loadPlanUnits(args: {
   modelUploadId: string;
   companyId: string;
+  /**
+   * Fresh regenerate: omit auto-detected swarm units (`sourceGroupId` set) so the
+   * planner re-detects from geometry instead of merging the frozen grouping. The
+   * rows stay in the DB (swapped later at step generation) — only THIS run skips
+   * them. User-authored units (`sourceGroupId` null) are always sent.
+   */
+  excludeAuto?: boolean;
 }): Promise<PlanUnit[]> {
-  const { modelUploadId, companyId } = args;
+  const { modelUploadId, companyId, excludeAuto } = args;
   try {
     const client = getCarbonServiceRole();
-    const authored = await client
+    let query = client
       .from("assemblyUnit")
       .select("id, name, componentNodeIds")
       .eq("modelUploadId", modelUploadId)
       .eq("companyId", companyId);
+    if (excludeAuto) query = query.is("sourceGroupId", null);
+    const authored = await query;
 
     return (authored.data ?? [])
       .filter((unit) => (unit.componentNodeIds ?? []).length > 1)

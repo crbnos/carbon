@@ -378,16 +378,6 @@ async fn plan(
         .as_str()
         .ok_or_else(|| ApiError::invalid("missing source.url"))?;
     config::validate_url(source_url)?;
-    // Optional offload target: the service PUTs plan.json here (mirrors
-    // /convert's outputs.glb/graph) so only a pointer reaches Redis/the poll.
-    // Absent => legacy inline behavior (the app uploads the plan itself).
-    let plan_upload_url = req["outputs"]["plan"]["url"]
-        .as_str()
-        .filter(|s| !s.is_empty())
-        .map(str::to_string);
-    if let Some(url) = &plan_upload_url {
-        config::validate_url(url)?;
-    }
     let job_id = req["jobId"]
         .as_str()
         .filter(|s| !s.is_empty())
@@ -418,9 +408,8 @@ async fn plan(
         ));
     }
     eprintln!(
-        "[{job_id}] plan queued (model={} offload={})",
-        model_upload_id.as_deref().unwrap_or("?"),
-        plan_upload_url.is_some()
+        "[{job_id}] plan queued (model={})",
+        model_upload_id.as_deref().unwrap_or("?")
     );
     state.jobs.set_pending(&job_id, meta.clone()).await;
     state.jobs.spawn(
@@ -428,7 +417,6 @@ async fn plan(
         &job_id,
         plan_jobs::PlanReq {
             source_url: source_url.to_string(),
-            plan_upload_url,
             plan_path,
             model_upload_id,
             options: req["options"].clone(),
@@ -454,17 +442,27 @@ async fn plan_status(
     Query(q): Query<WaitQuery>,
 ) -> Result<Json<Value>, ApiError> {
     require_auth(&headers)?;
-    let status = match q.wait {
-        Some(secs) if secs > 0 => {
-            let capped = secs.min(config::max_long_poll_secs());
-            state
-                .jobs
-                .wait_status(&job_id, std::time::Duration::from_secs(capped))
-                .await
-        }
-        _ => state.jobs.status(&job_id).await,
+    // Late-mint offload: the app hands a FRESH signed upload URL on each poll, so
+    // the service PUTs the finished plan.json the instant it's ready with a token
+    // minted seconds ago (no long-lived URL). Absent for non-offload callers.
+    let upload_url = headers
+        .get("x-plan-upload-url")
+        .and_then(|v| v.to_str().ok())
+        .filter(|s| !s.is_empty())
+        .map(str::to_string);
+    if let Some(u) = &upload_url {
+        config::validate_url(u)?;
+    }
+    let max = match q.wait {
+        Some(secs) if secs > 0 => Some(std::time::Duration::from_secs(
+            secs.min(config::max_long_poll_secs()),
+        )),
+        _ => None,
     };
-    status
+    state
+        .jobs
+        .poll(&job_id, upload_url.as_deref(), max)
+        .await
         .ok_or_else(|| ApiError::new(404, "NOT_FOUND", format!("no plan job {job_id}")))
         .map(Json)
 }

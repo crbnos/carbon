@@ -9,6 +9,7 @@ import {
   getLatestAssemblyPlanJob,
   isAssemblyPlanRunning
 } from "~/modules/production";
+import { isAssemblerServiceHealthy } from "~/modules/production/production.server";
 
 /**
  * Re-runs motion planning over the instruction's converted model. When the
@@ -55,6 +56,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
       await flash(
         request,
         error(null, "The model must finish converting before planning")
+      )
+    );
+  }
+
+  // Every path here triggers the planner, which needs the geometry service.
+  if (!(await isAssemblerServiceHealthy())) {
+    return data(
+      { success: false },
+      await flash(
+        request,
+        error(
+          null,
+          "The geometry service is unavailable — motion planning can't run right now."
+        )
       )
     );
   }
@@ -131,17 +146,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // next plan `loadPlanUnits` feeds them back as caller units, so the planner
   // merges them as-is and never re-runs swarm detection (which is where things
   // like board-mounted-component absorption happen). A from-scratch regenerate
-  // must re-derive them, so drop the auto-materialized ones (sourceGroupId set)
-  // and let the plan re-detect + re-materialize. User-authored "plan as one
-  // component" units (sourceGroupId null) are kept.
-  if (fresh) {
-    await client
-      .from("assemblyUnit")
-      .delete()
-      .eq("modelUploadId", instruction.data.modelUploadId)
-      .eq("companyId", companyId)
-      .not("sourceGroupId", "is", null);
-  }
+  // must re-derive them. We DON'T delete the rows here (a delete-then-failed-
+  // re-plan would strand the model ungrouped); instead `reDetectUnits` below
+  // tells the worker to omit auto-units for this run so detection re-runs, and
+  // step generation swaps the rows atomically once the new plan lands.
 
   // Create the job row before sending the event so the UI reflects the run
   // immediately (the worker adopts it via planJobId). Best-effort: planning
@@ -157,7 +165,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     companyId,
     userId,
     ...(created.data?.id ? { planJobId: created.data.id } : {}),
-    ...(hasSteps ? { reMotionFor: id } : {})
+    ...(hasSteps ? { reMotionFor: id } : {}),
+    ...(fresh ? { reDetectUnits: true } : {})
   });
 
   return data(

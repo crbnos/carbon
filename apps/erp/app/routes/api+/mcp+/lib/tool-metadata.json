@@ -1,6 +1,6 @@
 {
-  "generated": "2026-07-12T20:56:20.347Z",
-  "totalTools": 1305,
+  "generated": "2026-07-12T23:58:14.390Z",
+  "totalTools": 1306,
   "modules": 15,
   "tools": [
     {
@@ -20152,6 +20152,50 @@
         "required": [
           "id",
           "componentNodeIds"
+        ]
+      }
+    },
+    {
+      "name": "production_reassignAssemblyStepComponents",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "reassign assembly step components",
+      "paramCount": 4,
+      "serviceParams": [
+        "db",
+        "data"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "assemblyInstructionId": {
+            "type": "string"
+          },
+          "targetStepId": {
+            "type": "string"
+          },
+          "componentNodeIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "move",
+              "duplicate",
+              "remove"
+            ]
+          }
+        },
+        "required": [
+          "assemblyInstructionId",
+          "componentNodeIds",
+          "mode"
         ]
       }
     },

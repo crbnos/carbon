@@ -547,6 +547,8 @@ export const path = {
       generatePath(`${x}/assembly/${id}/steps/motion/${stepId}`),
     assemblyInstructionStepComponents: (id: string, stepId: string) =>
       generatePath(`${x}/assembly/${id}/steps/components/${stepId}`),
+    assemblyInstructionStepComponentsReassign: (id: string) =>
+      generatePath(`${x}/assembly/${id}/steps/components/reassign`),
     deleteAssemblyInstructionStep: (id: string, stepId: string) =>
       generatePath(`${x}/assembly/${id}/steps/delete/${stepId}`),
     assemblyInstructionStepOrder: (id: string) =>

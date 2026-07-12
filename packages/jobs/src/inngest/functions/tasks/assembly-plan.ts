@@ -45,12 +45,12 @@ const authHeaders: Record<string, string> = ASSEMBLER_SERVICE_API_KEY
  * .ai/specs/2026-07-04-animated-work-instructions-contracts.md (POST /plan, GET /plan).
  *
  * One durable function owns the whole lifecycle: submit → long-poll GET /plan
- * until the service finishes → flip the job row. The service uploads plan.json
- * itself to a caller-minted signed URL (offload) and stores only a
- * {status, planPath, stats} pointer in its Redis-backed store, so a restart or a
- * sibling replica can still answer the poll (no 404-on-restart loss). Long-poll
- * (rather than short-poll or a pushed completion event) keeps the whole flow
- * inside this run with no dependency on service→Inngest event delivery.
+ * until the service finishes → flip the job row. Each poll carries a freshly
+ * minted signed upload URL (X-Plan-Upload-Url); the service PUTs plan.json to it
+ * (late-mint offload) and stores only a {status, planPath, stats} pointer in its
+ * Redis-backed store, so a restart still answers the poll (no 404-on-restart
+ * loss). Long-poll (rather than short-poll or a pushed completion event) keeps
+ * the whole flow inside this run with no dependency on service→Inngest events.
  */
 export const assemblyPlanFunction = inngest.createFunction(
   {
@@ -80,8 +80,14 @@ export const assemblyPlanFunction = inngest.createFunction(
   },
   { event: "carbon/assembly-plan" },
   async ({ event, step, logger }) => {
-    const { modelUploadId, companyId, userId, reMotionFor, planJobId } =
-      event.data;
+    const {
+      modelUploadId,
+      companyId,
+      userId,
+      reMotionFor,
+      planJobId,
+      reDetectUnits
+    } = event.data;
 
     const job = await step.run("queue", async () => {
       const client = getCarbonServiceRole();
@@ -151,7 +157,8 @@ export const assemblyPlanFunction = inngest.createFunction(
     const geometryUrl = ASSEMBLER_SERVICE_URL;
 
     // Where plan.json lands. The service PUTs it here itself (offload) via a
-    // signed upload URL minted at submit; this run just records the pointer.
+    // signed upload URL minted fresh on each poll (below); this run just records
+    // the pointer the service reports back.
     const planPath = `${companyId}/models/${modelUploadId}/${job.id}/plan.json`;
 
     const failJob = async (label: string, error: string) => {
@@ -196,7 +203,11 @@ export const assemblyPlanFunction = inngest.createFunction(
       sequence != null
         ? []
         : await step.run("load-authored-units", () =>
-            loadPlanUnits({ modelUploadId, companyId })
+            loadPlanUnits({
+              modelUploadId,
+              companyId,
+              excludeAuto: reDetectUnits
+            })
           );
 
     // Kick off the planner. The service starts it in the background and returns
@@ -212,26 +223,13 @@ export const assemblyPlanFunction = inngest.createFunction(
         throw new Error(`Failed to sign source URL: ${source.error.message}`);
       }
 
-      // Offload target: the service PUTs plan.json here on success. Supabase
-      // upload tokens are valid ~2h — comfortably longer than any plan — so the
-      // old "token expires mid-plan" concern doesn't apply. Minted per submit so
-      // a retry never reuses a spent token.
-      const planUpload = await client.storage
-        .from("private")
-        .createSignedUploadUrl(planPath, { upsert: true });
-      if (planUpload.error) {
-        throw new Error(
-          `Failed to sign plan upload URL: ${planUpload.error.message}`
-        );
-      }
-
       const body = JSON.stringify({
         jobId: job.id,
         source: { url: source.data.signedUrl, format: "step" },
-        outputs: { plan: { url: planUpload.data.signedUrl } },
-        // Echoed in GET /plan/{id}; the service also reads planPath (for the
-        // completion pointer) and modelUploadId (to scope its content-hash
-        // result cache) out of it.
+        // No upload URL here — it's minted fresh on each poll (late-mint) so the
+        // token is only seconds old when the service PUTs plan.json. The service
+        // reads planPath (for the completion pointer) and modelUploadId (to scope
+        // its content-hash result cache) out of meta.
         meta: {
           companyId,
           userId,
@@ -321,12 +319,24 @@ export const assemblyPlanFunction = inngest.createFunction(
     let i = 0;
     while (Date.now() - planStartedAt < MAX_PLAN_WAIT_MS) {
       const poll = await step.run(`poll-${i}`, async () => {
+        // Mint a fresh upload URL for THIS poll (late-mint). The service holds
+        // the finished plan until a poll carries a URL, then PUTs plan.json with
+        // this seconds-old token. Best-effort: a poll without it just keeps the
+        // service waiting for the next one.
+        const client = getCarbonServiceRole();
+        const upload = await client.storage
+          .from("private")
+          .createSignedUploadUrl(planPath, { upsert: true });
+        const headers: Record<string, string> = {
+          ...authHeaders,
+          ...(upload.data ? { "X-Plan-Upload-Url": upload.data.signedUrl } : {})
+        };
         let response: Response;
         try {
           response = await fetch(
             `${geometryUrl}/plan/${job.id}?wait=${LONG_POLL_WAIT_S}`,
             {
-              headers: authHeaders,
+              headers,
               signal: AbortSignal.timeout(LONG_POLL_TIMEOUT_MS)
             }
           );
