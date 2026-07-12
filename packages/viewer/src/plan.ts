@@ -90,6 +90,9 @@ export function planMotionForComponents(
     return { motion: first.motion, confidence: first.confidence ?? "low" };
   }
 
+  // Full stringify (not motionKey) — agreement must account for distance and
+  // helix/path params, which motionKey drops. This is a cold plan-gen path, so
+  // the per-entry allocation is not worth trading correctness for.
   const firstKey = JSON.stringify(first.motion);
   const allAgree =
     entries.length === componentNodeIds.length &&

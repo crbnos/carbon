@@ -5168,44 +5168,61 @@ export async function autoMatchAssemblyComponents(
   }
 
   // Quantity fallback: a still-unmatched part whose instance count equals
-  // exactly one still-unmatched BOM line's quantity
+  // exactly one still-unmatched BOM line's quantity. Index the unmatched groups
+  // and BOM lines by count once (instead of rescanning both per group), and
+  // prune the buckets as matches land so the "exactly one" checks stay O(1).
+  const unmatchedGroupsByCount = new Map<number, string[]>();
   for (const [hash, group] of componentGroups) {
     if (matchedHashes.has(hash)) continue;
-    const candidates = bom.filter(
-      (material) =>
-        !matchedItems.has(material.itemId) &&
-        Math.round(material.quantity) === group.count
-    );
-    const sameCountComponents = [...componentGroups.entries()].filter(
-      ([otherHash, other]) =>
-        !matchedHashes.has(otherHash) && other.count === group.count
-    );
-    const candidate = candidates[0];
-    if (
-      candidates.length === 1 &&
-      sameCountComponents.length === 1 &&
-      candidate
-    ) {
+    const bucket = unmatchedGroupsByCount.get(group.count);
+    if (bucket) bucket.push(hash);
+    else unmatchedGroupsByCount.set(group.count, [hash]);
+  }
+  const unmatchedBomByCount = new Map<number, string[]>();
+  for (const material of bom) {
+    if (matchedItems.has(material.itemId)) continue;
+    const count = Math.round(material.quantity);
+    const bucket = unmatchedBomByCount.get(count);
+    if (bucket) bucket.push(material.itemId);
+    else unmatchedBomByCount.set(count, [material.itemId]);
+  }
+  for (const [hash, group] of componentGroups) {
+    if (matchedHashes.has(hash)) continue;
+    const groupBucket = unmatchedGroupsByCount.get(group.count) ?? [];
+    const bomBucket = unmatchedBomByCount.get(group.count) ?? [];
+    const candidateItemId = bomBucket[0];
+    if (groupBucket.length === 1 && bomBucket.length === 1 && candidateItemId) {
       matchedHashes.add(hash);
-      matchedItems.add(candidate.itemId);
+      matchedItems.add(candidateItemId);
+      unmatchedGroupsByCount.set(group.count, []);
+      unmatchedBomByCount.set(group.count, []);
       accepted.push({
         geometryHash: hash,
-        itemId: candidate.itemId,
+        itemId: candidateItemId,
         score: 0,
         confidence: "low"
       });
     }
   }
 
-  for (const suggestion of accepted) {
-    await upsertAssemblyComponentMapping(client, {
-      modelUploadId: instruction.data.modelUploadId,
-      geometryHash: suggestion.geometryHash,
-      itemId: suggestion.itemId,
-      confidence: suggestion.confidence,
-      companyId: args.companyId,
-      createdBy: args.userId
-    });
+  // One bulk upsert instead of a round-trip per accepted mapping — this runs on
+  // the first-generation critical path. Same conflict target as the single-row
+  // helper (upsertAssemblyComponentMapping).
+  if (accepted.length > 0) {
+    const now = new Date().toISOString();
+    await client.from("assemblyComponentMapping").upsert(
+      accepted.map((suggestion) => ({
+        modelUploadId: instruction.data.modelUploadId,
+        geometryHash: suggestion.geometryHash,
+        itemId: suggestion.itemId,
+        confidence: suggestion.confidence,
+        companyId: args.companyId,
+        createdBy: args.userId,
+        updatedBy: args.userId,
+        updatedAt: now
+      })),
+      { onConflict: "modelUploadId,geometryHash" }
+    );
   }
 
   return {
