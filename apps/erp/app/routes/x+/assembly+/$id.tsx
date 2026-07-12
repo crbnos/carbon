@@ -224,6 +224,10 @@ export default function AssemblyInstructionRoute() {
   // Components panel, and (while authoring a step) stages the step's draft components.
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
   const [hiddenNodeIds, setHiddenNodeIds] = useState<string[]>([]);
+  // Isolate/focus: picking components in the Components panel shows ONLY them in
+  // the viewer (everything else hidden) so the part can be inspected alone.
+  // Cleared by a viewer/3D pick, a step change, add-mode, or an empty selection.
+  const [focusedNodeIds, setFocusedNodeIds] = useState<string[]>([]);
   // Add-mode: while on, picking components (in the viewer or the Components panel)
   // appends them to the active step. Off by default, so plain selection never
   // mutates a step's components — you must explicitly start adding.
@@ -271,6 +275,8 @@ export default function AssemblyInstructionRoute() {
       // Leave any open motion-path edit session when moving to another step.
       setEditingStepId(null);
       setDraftMotion(null);
+      // Changing steps drops any isolate — the new step's parts should be visible.
+      setFocusedNodeIds([]);
       // Selecting a step makes its components the active selection — red in the
       // viewer, marked in the Components panel. Viewer-driven changes (playback,
       // scrub, on-screen nav) pass selectComponents:false so auto-advance doesn't
@@ -291,6 +297,9 @@ export default function AssemblyInstructionRoute() {
   const onSelectComponents = useCallback(
     (nodeIds: string[]) => {
       setSelectedNodeIds(nodeIds);
+      // A viewer/3D pick (or the details-panel list) drops any isolate — only
+      // the Components panel isolates, via onFocusComponents below.
+      setFocusedNodeIds([]);
       if (isAddingComponents && !isDisabled && selectedStep) {
         const base =
           draftComponentNodeIds ?? selectedStep.componentNodeIds ?? [];
@@ -308,11 +317,28 @@ export default function AssemblyInstructionRoute() {
     ]
   );
 
+  // The Components panel selects AND isolates: picking a component shows only it
+  // in the viewer. While add-mode is on, panel picks append to the step instead
+  // (delegated to onSelectComponents) and don't isolate — you need the whole
+  // model visible to pick what to add.
+  const onFocusComponents = useCallback(
+    (nodeIds: string[]) => {
+      if (isAddingComponents) {
+        onSelectComponents(nodeIds);
+        return;
+      }
+      setSelectedNodeIds(nodeIds);
+      setFocusedNodeIds(nodeIds);
+    },
+    [isAddingComponents, onSelectComponents]
+  );
+
   // Enter add-mode with a clean slate: clear the selection so the components picked
   // *next* are the ones added, not whatever happened to be highlighted.
   const onStartAddComponents = useCallback(() => {
     setIsAddingComponents(true);
     setSelectedNodeIds([]);
+    setFocusedNodeIds([]);
   }, []);
 
   const onStopAddComponents = useCallback(
@@ -484,7 +510,7 @@ export default function AssemblyInstructionRoute() {
                   bomMaterials={bomMaterials}
                   selectedNodeIds={selectedNodeIds}
                   onSelectStep={onSelectStep}
-                  onHighlightComponents={onSelectComponents}
+                  onHighlightComponents={onFocusComponents}
                   onHideComponents={setHiddenNodeIds}
                 />
               }
@@ -537,6 +563,7 @@ export default function AssemblyInstructionRoute() {
                           onGraphLoaded={setGraph}
                           highlightedNodeIds={selectedNodeIds}
                           hiddenNodeIds={hiddenNodeIds}
+                          focusedNodeIds={focusedNodeIds}
                           readOnly={isDisabled}
                           editMotion={
                             editingStepId &&

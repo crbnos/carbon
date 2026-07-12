@@ -71,6 +71,13 @@ export type AssemblyPlayerProps = {
   highlightedNodeIds?: string[];
   /** Components hidden from the viewer entirely (fixtures, reference geometry) */
   hiddenNodeIds?: string[];
+  /**
+   * Isolate/focus set. When non-empty, ONLY these components render — everything
+   * else is hidden so the user can inspect the selection in isolation. Empty =
+   * no isolation. Cleared automatically when playback starts (the build-up needs
+   * every part).
+   */
+  focusedNodeIds?: string[];
   /** Disables component selection (MES playback) */
   readOnly?: boolean;
   /**
@@ -143,6 +150,7 @@ export const AssemblyPlayer = forwardRef<
     onGraphLoaded,
     highlightedNodeIds,
     hiddenNodeIds,
+    focusedNodeIds,
     readOnly = false,
     editMotion,
     onMotionChange,
@@ -428,6 +436,7 @@ export const AssemblyPlayer = forwardRef<
               futureMode={futureMode}
               highlightedNodeIds={highlightedNodeIds}
               hiddenNodeIds={hiddenNodeIds}
+              focusedNodeIds={isPlaying ? undefined : focusedNodeIds}
               readOnly={readOnly}
               onSelectComponents={onSelectComponents}
               editMotion={editMotion ?? null}
@@ -682,6 +691,7 @@ function AssemblyScene({
   futureMode,
   highlightedNodeIds,
   hiddenNodeIds,
+  focusedNodeIds,
   readOnly,
   onSelectComponents,
   editMotion,
@@ -709,6 +719,7 @@ function AssemblyScene({
   futureMode: FutureComponentsMode;
   highlightedNodeIds?: string[];
   hiddenNodeIds?: string[];
+  focusedNodeIds?: string[];
   readOnly: boolean;
   onSelectComponents?: (nodeIds: string[]) => void;
   /** Active-step motion draft to edit (null = play normally) */
@@ -780,6 +791,10 @@ function AssemblyScene({
     [highlightedNodeIds]
   );
 
+  const focusedSet = useMemo(
+    () => new Set(focusedNodeIds ?? []),
+    [focusedNodeIds]
+  );
   const hiddenSet = useMemo(
     () => new Set(hiddenNodeIds ?? []),
     [hiddenNodeIds]
@@ -900,6 +915,16 @@ function AssemblyScene({
       });
     }
 
+    // Isolate/focus: when a focus set is active, ONLY those components render —
+    // everything else hides so the selection can be inspected alone. Applied
+    // before the explicit-hide pass so a focused-but-manually-hidden component
+    // still stays hidden.
+    if (focusedSet.size > 0) {
+      for (const [nodeId, node] of nodesById) {
+        node.visible = focusedSet.has(nodeId);
+      }
+    }
+
     // Explicitly hidden components (fixtures/reference geometry) always hide,
     // even when highlighted
     for (const nodeId of hiddenSet) {
@@ -931,7 +956,8 @@ function AssemblyScene({
     isPlaying,
     componentPickerActive,
     highlightedSet,
-    hiddenSet
+    hiddenSet,
+    focusedSet
   ]);
 
   // --- Animation -----------------------------------------------------------
