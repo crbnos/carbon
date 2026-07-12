@@ -666,6 +666,11 @@ type MaterialOverrides = {
   fade?: Material | Material[];
 };
 
+// Scratch vectors for the camera-transition useFrame — reused every frame so
+// the transition allocates nothing.
+const SCRATCH_CURRENT_OFFSET = new Vector3();
+const SCRATCH_DESIRED_OFFSET = new Vector3();
+
 const HIGHLIGHT_COLOR = 0x3b82f6;
 // Selection is always red — both an in-scene click selection ("selected") and a
 // components-panel selection ("external", forced visible) tint the component red so the
@@ -937,9 +942,29 @@ function AssemblyScene({
   const localElapsedRef = useRef(0);
   const finishedRef = useRef(false);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: seekVersion intentionally re-applies a pending seek within the same step
+  // The clip effect is keyed on a CONTENT signature of the active step, not the
+  // `steps` array identity — a loader revalidation (5s poll, realtime) hands
+  // down a new-but-equivalent array, and re-running the effect on it would tear
+  // down and restart an in-flight animation from t=0 plus rebuild the clip.
+  // Mirrors the per-step camera effect's framingKey guard. The body reads the
+  // live values through refs so the signature is the only re-run trigger.
+  const stepsLiveRef = useRef(steps);
+  stepsLiveRef.current = steps;
+  const startTimesLiveRef = useRef(startTimes);
+  startTimesLiveRef.current = startTimes;
+  const clipKey = activeStep
+    ? [
+        activeStepIndex,
+        activeStep.id,
+        JSON.stringify(activeStep.motion),
+        activeStep.componentNodeIds.join(","),
+        isEditingActive
+      ].join("|")
+    : `none|${activeStepIndex}`;
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: clipKey is the content signature that keys the rebuild — a revalidation with an equivalent steps array must not re-run this effect
   useEffect(() => {
-    const step = steps[activeStepIndex];
+    const step = stepsLiveRef.current[activeStepIndex];
 
     // Consume any pending seek; otherwise the step starts at 0
     const seek = seekRef.current;
@@ -947,13 +972,14 @@ function AssemblyScene({
     localElapsedRef.current = seek ?? 0;
     finishedRef.current = false;
     playheadRef.current =
-      (startTimes[activeStepIndex] ?? 0) + localElapsedRef.current;
+      (startTimesLiveRef.current[activeStepIndex] ?? 0) +
+      localElapsedRef.current;
 
     if (!step) return;
 
     // Editing this step's path: keep components at their seated pose, skip the clip
     // so the animation doesn't fight the drag handles.
-    if (editMotion && step.id === editMotion.stepId) return;
+    if (isEditingActive) return;
 
     const clip = buildStepClip(step, nodesById);
     if (!clip) return;
@@ -987,18 +1013,35 @@ function AssemblyScene({
         node.quaternion.copy(quaternion);
       }
     };
-    // seekVersion re-applies a seek within the same step
   }, [
     mixer,
     nodesById,
-    steps,
+    clipKey,
     activeStepIndex,
-    seekVersion,
+    isEditingActive,
     seekRef,
-    playheadRef,
-    startTimes,
-    editMotion
+    playheadRef
   ]);
+
+  // Same-step scrub: apply the pending seek to the LIVE action instead of
+  // re-running the clip effect — a timeline drag fires many times per second,
+  // and each effect re-run would stop/uncache/rebuild the whole clip when only
+  // `action.time` changes.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: seekVersion is the trigger for re-applying a same-step seek
+  useEffect(() => {
+    const seek = seekRef.current;
+    if (seek === null) return;
+    seekRef.current = null;
+    localElapsedRef.current = seek;
+    finishedRef.current = false;
+    playheadRef.current =
+      (startTimesLiveRef.current[activeStepIndex] ?? 0) + seek;
+    const action = actionRef.current;
+    if (action) {
+      action.time = Math.min(seek, action.getClip().duration);
+      mixer.update(0);
+    }
+  }, [seekVersion, activeStepIndex, mixer, seekRef, playheadRef]);
 
   useEffect(() => {
     if (actionRef.current) actionRef.current.paused = !isPlaying;
@@ -1213,8 +1256,12 @@ function AssemblyScene({
 
     controls.target.lerp(desired.target, alpha);
 
-    const currentOffset = camera.position.clone().sub(controls.target);
-    const desiredOffset = desired.position.clone().sub(desired.target);
+    const currentOffset = SCRATCH_CURRENT_OFFSET.copy(camera.position).sub(
+      controls.target
+    );
+    const desiredOffset = SCRATCH_DESIRED_OFFSET.copy(desired.position).sub(
+      desired.target
+    );
     const currentDistance = Math.max(currentOffset.length(), 1e-3);
     const desiredDistance = Math.max(desiredOffset.length(), 1e-3);
 
@@ -1488,7 +1535,10 @@ function AssemblyScene({
       active: false,
       startX: 0,
       startY: 0,
-      moved: false
+      moved: false,
+      // Canvas rect captured once per drag — the canvas can't move mid-drag,
+      // and getBoundingClientRect per pointermove forces layout.
+      rect: null as DOMRect | null
     };
     const localX = (event: PointerEvent, rect: DOMRect) =>
       event.clientX - rect.left;
@@ -1512,6 +1562,7 @@ function AssemblyScene({
       const rect = env.gl.domElement.getBoundingClientRect();
       if (env.controls) env.controls.enabled = false; // suppress orbit for the box
       drag.active = true;
+      drag.rect = rect;
       drag.startX = localX(event, rect);
       drag.startY = localY(event, rect);
       drag.moved = false;
@@ -1526,7 +1577,7 @@ function AssemblyScene({
     const onMove = (event: PointerEvent) => {
       if (!drag.active) return;
       const env = boxEnvRef.current;
-      const rect = env.gl.domElement.getBoundingClientRect();
+      const rect = drag.rect ?? env.gl.domElement.getBoundingClientRect();
       const x = localX(event, rect);
       const y = localY(event, rect);
       const width = Math.abs(x - drag.startX);
@@ -1548,7 +1599,7 @@ function AssemblyScene({
       env.onBoxRect?.(null);
       // A click, not a drag — let the miss handler clear the selection instead.
       if (!drag.moved || !env.onSelectComponents) return;
-      const rect = env.gl.domElement.getBoundingClientRect();
+      const rect = drag.rect ?? env.gl.domElement.getBoundingClientRect();
       const endX = localX(event, rect);
       const endY = localY(event, rect);
       const minX = Math.min(drag.startX, endX);
