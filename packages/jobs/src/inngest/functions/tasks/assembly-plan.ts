@@ -241,10 +241,18 @@ export const assemblyPlanFunction = inngest.createFunction(
             signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
           });
         } catch (e) {
-          // Service unreachable (down, DNS, TLS): fail fast so onFailure
-          // releases the job row now instead of after the retry backoff.
+          const err = e as Error;
+          // A timeout may be transient (the service was briefly saturated) — let
+          // Inngest retry it. Genuine unreachability (down, DNS, TLS) is
+          // permanent, so fail fast → onFailure releases the job row now instead
+          // of after the retry backoff.
+          if (err.name === "TimeoutError" || err.name === "AbortError") {
+            throw new Error(
+              `Geometry service timed out after ${REQUEST_TIMEOUT_MS}ms`
+            );
+          }
           throw new NonRetriableError(
-            `Geometry service unreachable: ${(e as Error).message}`
+            `Geometry service unreachable: ${err.message}`
           );
         }
 
