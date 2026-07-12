@@ -17,6 +17,7 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
+  Spinner,
   Tabs,
   TabsContent,
   TabsList,
@@ -274,6 +275,13 @@ export default function AssemblyInstructionExplorer({
   ).padStart(2, "0")}`;
 
   const rerunPlanFetcher = useFetcher<{ success: boolean }>();
+  // Any planner work in flight — a re-motion run, a regenerate solve, or the
+  // submit round-trips themselves. Drives the footer's planner-menu spinner.
+  const isPlannerBusy =
+    isPlanning ||
+    isSolving ||
+    rerunPlanFetcher.state !== "idle" ||
+    generateFetcher.state !== "idle";
 
   // ?autogen=1 (set by the create-assembly redirect): a model-backed
   // instruction generates its steps without a click. One Generate submit —
@@ -578,41 +586,9 @@ export default function AssemblyInstructionExplorer({
             )}
           </VStack>
           {steps.length > 0 && (
-            <div className="w-full flex-none border-t border-border p-4">
-              {steps.length > 0 &&
-                modelUploadId &&
-                permissions.can("update", "production") && (
-                  <Button
-                    className="mb-2 w-full"
-                    isDisabled={
-                      isDisabled ||
-                      isPlanning ||
-                      rerunPlanFetcher.state !== "idle"
-                    }
-                    isLoading={isPlanning || rerunPlanFetcher.state !== "idle"}
-                    leftIcon={<LuWaypoints />}
-                    variant="secondary"
-                    onClick={() => setShowRerunConfirm(true)}
-                  >
-                    {isPlanning ? "Planning motion…" : "Run Motion Planning"}
-                  </Button>
-                )}
-              {steps.length > 0 &&
-                modelUploadId &&
-                permissions.can("update", "production") && (
-                  <Button
-                    className="mb-2 w-full"
-                    isDisabled={isDisabled || isSolving}
-                    isLoading={isSolving}
-                    leftIcon={<LuSparkles />}
-                    variant="secondary"
-                    onClick={() => setShowRegenerateConfirm(true)}
-                  >
-                    Regenerate Steps
-                  </Button>
-                )}
+            <div className="flex w-full flex-none items-center gap-2 border-t border-border p-4">
               <Button
-                className="w-full"
+                className="flex-1"
                 isDisabled={
                   isDisabled ||
                   !permissions.can("update", "production") ||
@@ -625,6 +601,51 @@ export default function AssemblyInstructionExplorer({
               >
                 Add Step
               </Button>
+              {modelUploadId && permissions.can("update", "production") && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <IconButton
+                      aria-label={
+                        isPlannerBusy
+                          ? "Motion planning in progress"
+                          : "Motion planner actions"
+                      }
+                      icon={
+                        isPlannerBusy ? (
+                          <Spinner className="size-4" />
+                        ) : (
+                          <LuSparkles />
+                        )
+                      }
+                      isDisabled={isDisabled || isPlannerBusy}
+                      variant="secondary"
+                    />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => setShowRerunConfirm(true)}>
+                      <DropdownMenuIcon icon={<LuWaypoints />} />
+                      <div>
+                        Run Motion Planning
+                        <p className="text-xs text-muted-foreground">
+                          Recompute motions, keep step order
+                        </p>
+                      </div>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      destructive
+                      onClick={() => setShowRegenerateConfirm(true)}
+                    >
+                      <DropdownMenuIcon icon={<LuSparkles />} />
+                      <div>
+                        Regenerate Steps
+                        <p className="text-xs text-muted-foreground">
+                          Replace all steps from the latest plan
+                        </p>
+                      </div>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
           )}
         </TabsContent>
