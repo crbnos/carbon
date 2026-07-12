@@ -24,6 +24,10 @@ fn client() -> &'static reqwest::Client {
         reqwest::Client::builder()
             .danger_accept_invalid_certs(!config::verify_tls())
             .connect_timeout(std::time::Duration::from_secs(10))
+            // Idle-read timeout, not a total deadline: a large source can stream
+            // for a while, but a stalled connection (no bytes for 60s) must fail
+            // so it can't hold a concurrency slot forever.
+            .read_timeout(std::time::Duration::from_secs(60))
             .build()
             .expect("reqwest client")
     })
@@ -79,13 +83,19 @@ pub async fn download_hashed(
     let mut written = 0usize;
     let mut stream = resp.bytes_stream();
     while let Some(chunk) = stream.next().await {
-        let chunk = chunk.map_err(|e| {
-            ApiError::new(
-                422,
-                "READ_FAILED",
-                format!("could not download source: {e}"),
-            )
-        })?;
+        // Any mid-stream failure must remove the partial temp file — leaving it
+        // leaks disk (callers don't clean up on error).
+        let chunk = match chunk {
+            Ok(c) => c,
+            Err(e) => {
+                let _ = tokio::fs::remove_file(dest).await;
+                return Err(ApiError::new(
+                    422,
+                    "READ_FAILED",
+                    format!("could not download source: {e}"),
+                ));
+            }
+        };
         written += chunk.len();
         if written > limit {
             let _ = tokio::fs::remove_file(dest).await;
@@ -100,13 +110,14 @@ pub async fn download_hashed(
                 .store(written as u64, std::sync::atomic::Ordering::Relaxed);
         }
         hasher.update(&chunk);
-        file.write_all(&chunk).await.map_err(|e| {
-            ApiError::new(
+        if let Err(e) = file.write_all(&chunk).await {
+            let _ = tokio::fs::remove_file(dest).await;
+            return Err(ApiError::new(
                 500,
                 "READ_FAILED",
                 format!("could not write temp file: {e}"),
-            )
-        })?;
+            ));
+        }
     }
     file.flush().await.ok();
     Ok(hasher.digest128())

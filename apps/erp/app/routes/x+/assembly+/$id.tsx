@@ -81,7 +81,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     // not a server error. A stale tab left open on a deleted instruction keeps
     // revalidating (realtime + poll); logging error() on every hit spams the
     // service log. Log only genuine DB errors; redirect quietly otherwise.
-    const notFound = !instruction.data || instructionError?.code === "PGRST116";
+    // Entered when there's an error OR no row. Not-found = a PGRST116 (no rows)
+    // error, or the no-error-no-row case; a genuine DB error falls through to
+    // error() so it's still logged.
+    const notFound = !instructionError || instructionError.code === "PGRST116";
     throw redirect(
       path.to.assemblyInstructions,
       await flash(

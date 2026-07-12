@@ -202,7 +202,11 @@ async fn convert(
     for url in [source_url, glb_url, graph_url] {
         config::validate_url(url)?;
     }
-    let job_id = req["jobId"].as_str().unwrap_or("unknown").to_string();
+    let job_id = req["jobId"]
+        .as_str()
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| ApiError::invalid("missing jobId"))?
+        .to_string();
     let lin = req["options"]["linearDeflection"].as_f64().unwrap_or(0.1);
     let ang = req["options"]["angularDeflection"].as_f64().unwrap_or(0.5);
 
@@ -363,7 +367,11 @@ async fn plan(
         .as_str()
         .ok_or_else(|| ApiError::invalid("missing source.url"))?;
     config::validate_url(source_url)?;
-    let job_id = req["jobId"].as_str().unwrap_or("unknown").to_string();
+    let job_id = req["jobId"]
+        .as_str()
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| ApiError::invalid("missing jobId"))?
+        .to_string();
 
     // Idempotent: attach to an in-flight run rather than starting a second.
     if let Some(status) = state.jobs.existing_active(&job_id) {

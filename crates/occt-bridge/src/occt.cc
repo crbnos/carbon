@@ -239,6 +239,7 @@ class Builder {
       node.product_name = product_name.empty() ? "ASSEMBLY" : product_name;
       node.is_assembly = true;
       node.has_mesh = false;
+      node.is_proxy = false;
       node.has_volume = false;
       node.volume = 0.0;
       for (auto c : children) node.children.push_back(c);
@@ -360,6 +361,7 @@ Tree read_step(rust::Str path, double linear_deflection, double angular_deflecti
       for (double x : IDENTITY_4X4) r.transform.push_back(x);
       r.is_assembly = true;
       r.has_mesh = false;
+      r.is_proxy = false;
       r.has_color = false;
       r.has_volume = false;
       r.volume = 0.0;
