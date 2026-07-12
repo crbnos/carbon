@@ -1,3 +1,4 @@
+import { Bvh } from "@react-three/drei";
 import { type ThreeEvent, useFrame, useThree } from "@react-three/fiber";
 import {
   forwardRef,
@@ -670,13 +671,7 @@ export const AssemblyPlayer = forwardRef<
   );
 });
 
-type OverrideKind =
-  | "ghost"
-  | "highlight"
-  | "selected"
-  | "external"
-  | "fade"
-  | "hover";
+type OverrideKind = "ghost" | "highlight" | "selected" | "external" | "fade";
 
 type MaterialOverrides = {
   original: Material | Material[];
@@ -686,7 +681,6 @@ type MaterialOverrides = {
   selected?: Material | Material[];
   external?: Material | Material[];
   fade?: Material | Material[];
-  hover?: Material | Material[];
 };
 
 // Scratch vectors for the camera-transition useFrame — reused every frame so
@@ -700,10 +694,6 @@ const HIGHLIGHT_COLOR = 0x3b82f6;
 // current selection reads the same everywhere, Onshape-style.
 const SELECTED_COLOR = 0xef4444;
 const EXTERNAL_COLOR = 0xef4444;
-// A soft warm tint under the pointer — a "you can pick this" affordance,
-// weaker than the blue active-step highlight and the red selection.
-const HOVER_COLOR = 0xfbbf24;
-const HOVER_EMISSIVE_INTENSITY = 0.22;
 const GHOST_OPACITY = 0.3;
 /** Seconds a flagged step's components take to fade in at the seated pose */
 const FADE_SECONDS = 1.2;
@@ -827,18 +817,24 @@ function AssemblyScene({
   );
 
   // Component picking is only meaningful in the editor (a selection callback,
-  // not read-only) — hover affordance is gated on it so pure playback stays
-  // distraction-free.
+  // not read-only) — the drill affordance is gated on it so pure playback stays
+  // untouched.
   const pickingEnabled = !readOnly && !!onSelectComponents;
-  // The pickable part under the pointer (soft tint + pointer cursor). A ref
-  // mirrors it so the high-frequency pointer-move handler only triggers a
-  // re-render when the resolved part actually changes.
-  const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
-  const hoveredRef = useRef<string | null>(null);
-  const setHovered = useCallback((nodeId: string | null) => {
-    if (hoveredRef.current === nodeId) return;
-    hoveredRef.current = nodeId;
-    setHoveredNodeId(nodeId);
+  // Alt-hover x-ray drill: the occluders in front of the pointer (ghosted so
+  // you can see through the box/lid) and the innermost part they reveal (the
+  // click target). A ref mirrors the target so the high-frequency pointer-move
+  // only re-renders when the drilled part actually changes.
+  const [drill, setDrillState] = useState<{
+    ghostIds: string[];
+    target: string;
+  } | null>(null);
+  const drillTargetRef = useRef<string | null>(null);
+  // True while the camera is being orbited — drill raycasts are skipped then.
+  const orbitingRef = useRef(false);
+  const clearDrill = useCallback(() => {
+    if (drillTargetRef.current === null) return;
+    drillTargetRef.current = null;
+    setDrillState(null);
   }, []);
 
   /** nodeId → index of the first step that installs it */
@@ -867,7 +863,6 @@ function AssemblyScene({
         if (entry.selected) disposeMaterials(entry.selected);
         if (entry.external) disposeMaterials(entry.external);
         if (entry.fade) disposeMaterials(entry.fade);
-        if (entry.hover) disposeMaterials(entry.hover);
       }
       overrides.clear();
     };
@@ -995,16 +990,19 @@ function AssemblyScene({
       });
     }
 
-    // Pointer hover: a soft tint on the pickable part under the cursor so the
-    // user sees what a click will select. Applied last but yields to a selected
-    // part (its red cue wins) and never shows on a hidden/ghosted part.
-    if (hoveredNodeId && !highlightedSet.has(hoveredNodeId)) {
-      const node = nodesById.get(hoveredNodeId);
-      if (node?.visible) {
+    // Alt-hover x-ray drill: ghost the occluders in front of the pointer so the
+    // innermost part they hide (the click target) shows through. Applied last so
+    // it wins even over a selected occluder — you're deliberately looking past
+    // it. The target keeps its real material (it's the solid thing behind glass).
+    if (drill) {
+      for (const nodeId of drill.ghostIds) {
+        const node = nodesById.get(nodeId);
+        if (!node?.visible) continue;
         node.traverse((object) => {
           if (!(object as Mesh).isMesh) return;
           const mesh = object as Mesh;
-          mesh.material = getOverride(mesh, overrides, "hover");
+          mesh.material = getOverride(mesh, overrides, "ghost");
+          mesh.renderOrder = 1;
         });
       }
     }
@@ -1020,7 +1018,7 @@ function AssemblyScene({
     highlightedSet,
     hiddenSet,
     focusedSet,
-    hoveredNodeId
+    drill
   ]);
 
   // --- Animation -----------------------------------------------------------
@@ -1334,15 +1332,26 @@ function AssemblyScene({
 
   useEffect(() => {
     if (!controls) return;
-    const cancel = () => {
+    const onStart = () => {
       desiredPoseRef.current = null;
+      // Orbiting is not picking — suppress hover raycasts (and drop the tint)
+      // while the camera is being dragged, the moment it feels choppiest.
+      orbitingRef.current = true;
+      clearDrill();
       // Grabbing the view mid-playback means the user wants to keep it — stop
       // re-framing on every step until they opt back into auto via the badge.
       if (isPlaying) onFreeCamera();
     };
-    controls.addEventListener("start", cancel);
-    return () => controls.removeEventListener("start", cancel);
-  }, [controls, isPlaying, onFreeCamera]);
+    const onEnd = () => {
+      orbitingRef.current = false;
+    };
+    controls.addEventListener("start", onStart);
+    controls.addEventListener("end", onEnd);
+    return () => {
+      controls.removeEventListener("start", onStart);
+      controls.removeEventListener("end", onEnd);
+    };
+  }, [controls, isPlaying, onFreeCamera, clearDrill]);
 
   // Returning to auto must re-frame the CURRENT step even when its framing key
   // hasn't changed — the user panned away and asked for the staged view back.
@@ -1637,7 +1646,13 @@ function AssemblyScene({
       // component still reports as the closest hit. Walk the front-to-back
       // intersections and pick the nearest component that is actually rendered,
       // letting clicks pass through hidden geometry to the components inside it.
-      const nodeId = findVisibleNodeId(clickEvent.intersections);
+      // Alt+click drills: select the INNERMOST part on the ray (through any
+      // box/lid), matching the x-ray reveal shown on Alt-hover.
+      const stack = visibleNodeStack(clickEvent.intersections);
+      const nodeId =
+        clickEvent.nativeEvent.altKey && stack.length >= 2
+          ? (stack[stack.length - 1] ?? null)
+          : findVisibleNodeId(clickEvent.intersections);
       if (!nodeId) return;
       // Selection is controlled by `highlightedNodeIds`: shift-click extends the
       // current selection, a plain click replaces it. Emit the new set and let
@@ -1658,27 +1673,57 @@ function AssemblyScene({
 
   const handlePointerMove = useCallback(
     (moveEvent: ThreeEvent<PointerEvent>) => {
-      if (!pickingEnabled) return;
-      setHovered(findVisibleNodeId(moveEvent.intersections));
+      // Skip the raycast entirely while playing or orbiting — the two moments
+      // the view is busiest. Drilling only happens with Alt held.
+      if (
+        !pickingEnabled ||
+        isPlaying ||
+        orbitingRef.current ||
+        !moveEvent.nativeEvent.altKey
+      ) {
+        clearDrill();
+        return;
+      }
+      const stack = visibleNodeStack(moveEvent.intersections);
+      // Nothing to drill through — the front part IS the target, so no reveal.
+      if (stack.length < 2) {
+        clearDrill();
+        return;
+      }
+      const target = stack[stack.length - 1] ?? null;
+      if (!target || drillTargetRef.current === target) return;
+      drillTargetRef.current = target;
+      setDrillState({ ghostIds: stack.slice(0, -1), target });
     },
-    [pickingEnabled, setHovered]
+    [pickingEnabled, isPlaying, clearDrill]
   );
 
-  const handlePointerOut = useCallback(() => setHovered(null), [setHovered]);
+  const handlePointerOut = useCallback(() => clearDrill(), [clearDrill]);
 
-  // Pointer cursor as the pickability affordance; also drop any stale hover when
-  // picking turns off (leaving edit mode / going read-only). document.body owns
-  // the cursor because the r3f canvas fills the pane.
+  // Drop any stale drill when picking turns off (leaving edit mode) or playback
+  // starts.
   useEffect(() => {
-    if (!pickingEnabled) setHovered(null);
-  }, [pickingEnabled, setHovered]);
+    if (!pickingEnabled || isPlaying) clearDrill();
+  }, [pickingEnabled, isPlaying, clearDrill]);
 
+  // Releasing Alt (even without moving) ends the drill promptly.
   useEffect(() => {
-    document.body.style.cursor = hoveredNodeId ? "pointer" : "";
+    if (!pickingEnabled) return;
+    const onKeyUp = (event: KeyboardEvent) => {
+      if (event.key === "Alt") clearDrill();
+    };
+    window.addEventListener("keyup", onKeyUp);
+    return () => window.removeEventListener("keyup", onKeyUp);
+  }, [pickingEnabled, clearDrill]);
+
+  // Pointer cursor signals a live drill target. document.body owns the cursor
+  // because the r3f canvas fills the pane.
+  useEffect(() => {
+    document.body.style.cursor = drill ? "pointer" : "";
     return () => {
       document.body.style.cursor = "";
     };
-  }, [hoveredNodeId]);
+  }, [drill]);
 
   // A box drag just completed the selection — swallow the click that fires at
   // the end of the drag so it doesn't immediately clear what we just selected.
@@ -1843,13 +1888,19 @@ function AssemblyScene({
 
   return (
     <>
-      <primitive
-        object={scene}
-        onClick={handleClick}
-        onPointerMissed={handlePointerMissed}
-        onPointerMove={handlePointerMove}
-        onPointerOut={handlePointerOut}
-      />
+      {/* Accelerated raycasting: builds a per-geometry BVH so hover/click
+          raycasts are O(log tris) instead of scanning all ~250k triangles
+          linearly — the fix for choppy picking on dense models. Rebuilt per
+          model (AssemblyScene is keyed on scene.uuid). */}
+      <Bvh firstHitOnly={false}>
+        <primitive
+          object={scene}
+          onClick={handleClick}
+          onPointerMissed={handlePointerMissed}
+          onPointerMove={handlePointerMove}
+          onPointerOut={handlePointerOut}
+        />
+      </Bvh>
       {isEditingActive && editMotion && onMotionChange && seatedCentroid && (
         <MotionPathEditor
           key={editMotion.stepId}
@@ -2082,6 +2133,27 @@ function findVisibleNodeId(
   return null;
 }
 
+/**
+ * Distinct rendered component ids the pointer ray passes through, front to back.
+ * A part is one node, so the ray entering and exiting the same box yields that
+ * box once — the LAST entry is the innermost content, the drill-select target.
+ */
+function visibleNodeStack(
+  intersections: readonly { object: Object3D }[]
+): string[] {
+  const stack: string[] = [];
+  const seen = new Set<string>();
+  for (const intersection of intersections) {
+    if (!isRendered(intersection.object)) continue;
+    const nodeId = findNodeId(intersection.object);
+    if (nodeId && !seen.has(nodeId)) {
+      seen.add(nodeId);
+      stack.push(nodeId);
+    }
+  }
+  return stack;
+}
+
 function getOverride(
   mesh: Mesh,
   cache: Map<Mesh, MaterialOverrides>,
@@ -2099,19 +2171,13 @@ function getOverride(
         ? HIGHLIGHT_COLOR
         : kind === "selected"
           ? SELECTED_COLOR
-          : kind === "hover"
-            ? HOVER_COLOR
-            : EXTERNAL_COLOR;
+          : EXTERNAL_COLOR;
     override =
       kind === "ghost"
         ? cloneAsGhost(entry.original)
         : kind === "fade"
           ? cloneAsFade(entry.original)
-          : cloneWithEmissive(
-              entry.original,
-              emissiveColor,
-              kind === "hover" ? HOVER_EMISSIVE_INTENSITY : 0.4
-            );
+          : cloneWithEmissive(entry.original, emissiveColor);
     entry[kind] = override;
   }
   return override;
@@ -2150,19 +2216,15 @@ function cloneAsGhost(material: Material | Material[]): Material | Material[] {
 
 function cloneWithEmissive(
   material: Material | Material[],
-  emissiveColor: number,
-  emissiveIntensity = 0.4
+  emissiveColor: number
 ): Material | Material[] {
   const clone = (source: Material): Material => {
     const cloned = source.clone();
     if (cloned instanceof MeshStandardMaterial) {
       cloned.emissive = new Color(emissiveColor);
-      cloned.emissiveIntensity = emissiveIntensity;
+      cloned.emissiveIntensity = 0.4;
     } else if ("color" in cloned) {
-      (cloned as MeshBasicMaterial).color.lerp(
-        new Color(emissiveColor),
-        emissiveIntensity + 0.1
-      );
+      (cloned as MeshBasicMaterial).color.lerp(new Color(emissiveColor), 0.5);
     }
     return cloned;
   };

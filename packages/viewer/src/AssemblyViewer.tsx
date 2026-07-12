@@ -34,6 +34,10 @@ export function AssemblyViewer({
     >
       <Canvas
         gl={{ antialias: true, alpha: true }}
+        // Cap the render resolution: a 3x-retina panel otherwise renders ~9x the
+        // pixels, which is the main fill-rate cost when orbiting a dense model.
+        // 2x keeps edges crisp without paying for the top DPR tier.
+        dpr={[1, 2]}
         // CAD-style home view: models are Z-up with -Y as front, so +Z is
         // screen-up (bottom faces down) and the (+X, -Y, +Z) octant shows the
         // front, right, and top faces
