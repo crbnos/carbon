@@ -328,12 +328,18 @@ function AssemblyInstructionExplorer({
   // re-submit so the action kicks the planner. Fetcher "idle" implies the
   // post-action revalidation is done, so isPlanning/isConverting are fresh.
   useEffect(() => {
-    if (!isAwaitingPlan || generateFetcher.state !== "idle") return;
-    if (hasPlan) {
-      setIsAwaitingPlan(false);
-    } else if (isConverting || isPlanning || planFailed) {
+    if (
+      !isAwaitingPlan ||
+      generateFetcher.state !== "idle" ||
+      rerunPlanFetcher.state !== "idle"
+    ) {
       return;
     }
+    // Still working — keep waiting. Checked BEFORE hasPlan so a fresh re-plan
+    // (Regenerate) isn't short-circuited by a STALE plan that still exists:
+    // wait for the running plan, then generate from it.
+    if (isConverting || isPlanning || planFailed) return;
+    if (hasPlan) setIsAwaitingPlan(false);
     submitGenerate(generateModeRef.current);
   }, [
     isAwaitingPlan,
@@ -342,6 +348,7 @@ function AssemblyInstructionExplorer({
     isPlanning,
     planFailed,
     generateFetcher,
+    rerunPlanFetcher.state,
     submitGenerate,
     id
   ]);
@@ -802,14 +809,31 @@ function AssemblyInstructionExplorer({
               </Button>
               <Button
                 variant="destructive"
-                isDisabled={generateFetcher.state !== "idle"}
-                isLoading={generateFetcher.state !== "idle"}
+                isDisabled={
+                  generateFetcher.state !== "idle" ||
+                  rerunPlanFetcher.state !== "idle"
+                }
+                isLoading={
+                  generateFetcher.state !== "idle" ||
+                  rerunPlanFetcher.state !== "idle"
+                }
                 onClick={() => {
+                  // Regenerate = re-plan from scratch, then rebuild steps from
+                  // the fresh plan. Kick a fresh DERIVE plan and arm the
+                  // awaiting machinery in regenerate mode; when the plan lands
+                  // it replaces the steps. (A stored plan is never reused —
+                  // that's what made planner changes invisible.)
                   setIgnoredFailedJobId(
                     planJob?.status === "Failed" ? planJob.id : null
                   );
-                  setIsAwaitingPlan(false);
-                  submitGenerate("regenerate");
+                  generateModeRef.current = "regenerate";
+                  setIsAwaitingPlan(true);
+                  const formData = new FormData();
+                  formData.set("fresh", "1");
+                  rerunPlanFetcher.submit(formData, {
+                    method: "post",
+                    action: path.to.assemblyPlanRerun(id)
+                  });
                   setShowRegenerateConfirm(false);
                 }}
               >

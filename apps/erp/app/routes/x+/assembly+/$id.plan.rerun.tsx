@@ -26,6 +26,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
+  // `fresh` forces a from-scratch DERIVE plan (re-detects grouping/swarms and
+  // re-orders) even when steps exist — used by "Regenerate Steps". Without it,
+  // an instruction with steps re-plans in order-preserving re-motion mode.
+  const formData = await request.formData();
+  const fresh = formData.get("fresh") === "1";
+
   const instruction = await client
     .from("assemblyInstruction")
     .select("modelUploadId, modelUpload(processingStatus)")
@@ -92,7 +98,33 @@ export async function action({ request, params }: ActionFunctionArgs) {
     .select("id", { count: "exact", head: true })
     .eq("assemblyInstructionId", id)
     .eq("companyId", companyId);
-  const hasSteps = (stepCount.count ?? 0) > 0;
+  // `fresh` re-derives from scratch (no order preservation), so treat it like
+  // "no steps yet" for the trigger below.
+  const hasSteps = !fresh && (stepCount.count ?? 0) > 0;
+
+  // Regenerate (fresh) replaces all steps once the plan lands — refuse up front
+  // if any step is manually authored or Done, rather than running the planner
+  // for ~15s and only then failing the regenerate.
+  if (fresh && (stepCount.count ?? 0) > 0) {
+    const locked = await client
+      .from("assemblyInstructionStep")
+      .select("id", { count: "exact", head: true })
+      .eq("assemblyInstructionId", id)
+      .eq("companyId", companyId)
+      .or("planConfidence.eq.manual,status.eq.Done");
+    if ((locked.count ?? 0) > 0) {
+      return data(
+        { success: false },
+        await flash(
+          request,
+          error(
+            null,
+            "Some steps are manually authored or Done — reset or delete them before regenerating"
+          )
+        )
+      );
+    }
+  }
 
   // Create the job row before sending the event so the UI reflects the run
   // immediately (the worker adopts it via planJobId). Best-effort: planning
@@ -118,7 +150,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
       success(
         hasSteps
           ? "Re-planning motions in the current step order — steps update when it finishes"
-          : "Motion planning started — regenerate steps when it finishes"
+          : fresh
+            ? "Re-planning from scratch — steps rebuild automatically when it finishes"
+            : "Motion planning started — steps generate when it finishes"
       )
     )
   );
