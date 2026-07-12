@@ -301,7 +301,7 @@ importers:
         version: 1.40.0
       '@react-router/remix-routes-option-adapter':
         specifier: 'catalog:'
-        version: 7.15.1(@react-router/dev@7.15.1(patch_hash=77f56df34c4642159bb889b71903a3953827448e994174779d32db487727da95)(@react-router/serve@7.15.1(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@24.12.2)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.0.10(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))(yaml@2.8.3))(typescript@5.8.3)
+        version: 7.15.1(@react-router/dev@7.15.1(patch_hash=77f56df34c4642159bb889b71903a3953827448e994174779d32db487727da95)(@react-router/serve@7.15.1(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@24.12.2)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.0.10(@types/node@24.12.2)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))(yaml@2.8.3))(typescript@5.8.3)
       cookie:
         specifier: 'catalog:'
         version: 1.1.1
@@ -338,7 +338,7 @@ importers:
         version: 5.9.4(babel-plugin-macros@3.1.0)(typescript@5.8.3)
       '@react-router/dev':
         specifier: 'catalog:'
-        version: 7.15.1(patch_hash=77f56df34c4642159bb889b71903a3953827448e994174779d32db487727da95)(@react-router/serve@7.15.1(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@24.12.2)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.0.10(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))(yaml@2.8.3)
+        version: 7.15.1(patch_hash=77f56df34c4642159bb889b71903a3953827448e994174779d32db487727da95)(@react-router/serve@7.15.1(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@24.12.2)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.0.10(@types/node@24.12.2)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))(yaml@2.8.3)
       '@types/aws-lambda':
         specifier: 8.10.152
         version: 8.10.152
@@ -389,7 +389,7 @@ importers:
         version: 5.8.3
       vite-plugin-babel-macros:
         specifier: 'catalog:'
-        version: 1.0.6(vite@8.0.10(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))
+        version: 1.0.6(vite@8.0.10(@types/node@24.12.2)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))
     optionalDependencies:
       '@rollup/rollup-linux-x64-gnu':
         specifier: 4.60.1
@@ -685,7 +685,7 @@ importers:
         version: 3.4.5(encoding@0.1.13)(react@18.3.1)
       '@react-router/remix-routes-option-adapter':
         specifier: 'catalog:'
-        version: 7.15.1(@react-router/dev@7.15.1(patch_hash=77f56df34c4642159bb889b71903a3953827448e994174779d32db487727da95)(@react-router/serve@7.15.1(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.1.0)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.0.10(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))(yaml@2.8.3))(typescript@5.8.3)
+        version: 7.15.1(@react-router/dev@7.15.1(patch_hash=77f56df34c4642159bb889b71903a3953827448e994174779d32db487727da95)(@react-router/serve@7.15.1(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.1.0)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.0.10(@types/node@26.1.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))(yaml@2.8.3))(typescript@5.8.3)
       '@react-router/serve':
         specifier: 'catalog:'
         version: 7.15.1(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3)
@@ -730,7 +730,7 @@ importers:
         version: 1.6.1(next@16.2.3(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
       '@vercel/react-router':
         specifier: 'catalog:'
-        version: 1.2.6(@react-router/dev@7.15.1(patch_hash=77f56df34c4642159bb889b71903a3953827448e994174779d32db487727da95)(@react-router/serve@7.15.1(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.1.0)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.0.10(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))(yaml@2.8.3))(@react-router/node@7.15.1(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(isbot@5.1.37)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 1.2.6(@react-router/dev@7.15.1(patch_hash=77f56df34c4642159bb889b71903a3953827448e994174779d32db487727da95)(@react-router/serve@7.15.1(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.1.0)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.0.10(@types/node@26.1.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))(yaml@2.8.3))(@react-router/node@7.15.1(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(isbot@5.1.37)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@visx/responsive':
         specifier: 2.17.0
         version: 2.17.0(react@18.3.1)
@@ -962,16 +962,16 @@ importers:
         version: 5.9.4(@lingui/babel-plugin-lingui-macro@5.9.4(babel-plugin-macros@3.1.0)(typescript@5.8.3))(babel-plugin-macros@3.1.0)(react@18.3.1)
       '@lingui/vite-plugin':
         specifier: 'catalog:'
-        version: 5.9.4(babel-plugin-macros@3.1.0)(typescript@5.8.3)(vite@8.0.10(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))
+        version: 5.9.4(babel-plugin-macros@3.1.0)(typescript@5.8.3)(vite@8.0.10(@types/node@26.1.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))
       '@react-router/dev':
         specifier: 'catalog:'
-        version: 7.15.1(patch_hash=77f56df34c4642159bb889b71903a3953827448e994174779d32db487727da95)(@react-router/serve@7.15.1(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.1.0)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.0.10(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))(yaml@2.8.3)
+        version: 7.15.1(patch_hash=77f56df34c4642159bb889b71903a3953827448e994174779d32db487727da95)(@react-router/serve@7.15.1(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.1.0)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.0.10(@types/node@26.1.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))(yaml@2.8.3)
       '@tailwindcss/typography':
         specifier: 'catalog:'
         version: 0.5.19(tailwindcss@4.3.0)
       '@tailwindcss/vite':
         specifier: 'catalog:'
-        version: 4.3.0(vite@8.0.10(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))
+        version: 4.3.0(vite@8.0.10(@types/node@26.1.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))
       '@types/d3':
         specifier: 7.4.3
         version: 7.4.3
@@ -1031,13 +1031,13 @@ importers:
         version: 5.8.3
       vite:
         specifier: 'catalog:'
-        version: 8.0.10(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3)
+        version: 8.0.10(@types/node@26.1.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3)
       vite-plugin-babel-macros:
         specifier: 'catalog:'
-        version: 1.0.6(vite@8.0.10(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))
+        version: 1.0.6(vite@8.0.10(@types/node@26.1.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))
       vitest:
         specifier: 'catalog:'
-        version: 4.1.6(@opentelemetry/api@1.9.0)(@types/node@26.1.0)(vite@8.0.10(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))
+        version: 4.1.6(@opentelemetry/api@1.9.0)(@types/node@26.1.0)(vite@8.0.10(@types/node@26.1.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))
 
   apps/mes:
     dependencies:
@@ -3467,6 +3467,9 @@ importers:
       three:
         specifier: 0.163.0
         version: 0.163.0
+      three-mesh-bvh:
+        specifier: 0.7.8
+        version: 0.7.8(three@0.163.0)
       three-stdlib:
         specifier: 2.36.1
         version: 2.36.1(three@0.163.0)
@@ -16961,7 +16964,7 @@ snapshots:
       '@babel/traverse': 7.29.0
       '@babel/types': 7.29.0
       convert-source-map: 2.0.0
-      debug: 4.4.3(supports-color@8.1.1)
+      debug: 4.4.3(supports-color@5.5.0)
       gensync: 1.0.0-beta.2
       json5: 2.2.3
       semver: 7.7.4
@@ -16981,7 +16984,7 @@ snapshots:
       '@babel/types': 7.29.0
       '@jridgewell/remapping': 2.3.5
       convert-source-map: 2.0.0
-      debug: 4.4.3(supports-color@8.1.1)
+      debug: 4.4.3(supports-color@5.5.0)
       gensync: 1.0.0-beta.2
       json5: 2.2.3
       semver: 7.7.4
@@ -17151,7 +17154,7 @@ snapshots:
       '@babel/parser': 7.29.2
       '@babel/template': 7.28.6
       '@babel/types': 7.29.0
-      debug: 4.4.3(supports-color@8.1.1)
+      debug: 4.4.3(supports-color@5.5.0)
       globals: 11.12.0
     transitivePeerDependencies:
       - supports-color
@@ -17164,7 +17167,7 @@ snapshots:
       '@babel/parser': 7.29.2
       '@babel/template': 7.28.6
       '@babel/types': 7.29.0
-      debug: 4.4.3(supports-color@8.1.1)
+      debug: 4.4.3(supports-color@5.5.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -18212,16 +18215,6 @@ snapshots:
     transitivePeerDependencies:
       - typescript
 
-  '@lingui/vite-plugin@5.9.4(babel-plugin-macros@3.1.0)(typescript@5.8.3)(vite@8.0.10(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))':
-    dependencies:
-      '@lingui/cli': 5.9.4(babel-plugin-macros@3.1.0)(typescript@5.8.3)
-      '@lingui/conf': 5.9.4(typescript@5.8.3)
-      vite: 8.0.10(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3)
-    transitivePeerDependencies:
-      - babel-plugin-macros
-      - supports-color
-      - typescript
-
   '@lingui/vite-plugin@5.9.4(babel-plugin-macros@3.1.0)(typescript@5.8.3)(vite@8.0.10(@types/node@26.1.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))':
     dependencies:
       '@lingui/cli': 5.9.4(babel-plugin-macros@3.1.0)(typescript@5.8.3)
@@ -18583,7 +18576,7 @@ snapshots:
     dependencies:
       '@oclif/core': 4.11.7
       ansis: 3.17.0
-      debug: 4.4.3(supports-color@8.1.1)
+      debug: 4.4.3(supports-color@5.5.0)
       npm: 11.17.0
       npm-package-arg: 11.0.3
       npm-run-path: 5.3.0
@@ -21896,7 +21889,7 @@ snapshots:
       '@react-pdf/primitives': 4.2.0
       '@react-pdf/stylesheet': 6.1.4
 
-  '@react-router/dev@7.15.1(patch_hash=77f56df34c4642159bb889b71903a3953827448e994174779d32db487727da95)(@react-router/serve@7.15.1(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@24.12.2)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.0.10(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))(yaml@2.8.3)':
+  '@react-router/dev@7.15.1(patch_hash=77f56df34c4642159bb889b71903a3953827448e994174779d32db487727da95)(@react-router/serve@7.15.1(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@24.12.2)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.0.10(@types/node@24.12.2)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))(yaml@2.8.3)':
     dependencies:
       '@babel/core': 7.29.0
       '@babel/generator': 7.29.1
@@ -21926,58 +21919,8 @@ snapshots:
       semver: 7.7.4
       tinyglobby: 0.2.17
       valibot: 1.3.1(typescript@5.8.3)
-      vite: 8.0.10(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3)
+      vite: 8.0.10(@types/node@24.12.2)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3)
       vite-node: 3.2.4(@types/node@24.12.2)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3)
-    optionalDependencies:
-      '@react-router/serve': 7.15.1(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3)
-      typescript: 5.8.3
-    transitivePeerDependencies:
-      - '@types/node'
-      - babel-plugin-macros
-      - jiti
-      - less
-      - lightningcss
-      - sass
-      - sass-embedded
-      - stylus
-      - sugarss
-      - supports-color
-      - terser
-      - tsx
-      - yaml
-
-  '@react-router/dev@7.15.1(patch_hash=77f56df34c4642159bb889b71903a3953827448e994174779d32db487727da95)(@react-router/serve@7.15.1(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.1.0)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.0.10(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))(yaml@2.8.3)':
-    dependencies:
-      '@babel/core': 7.29.0
-      '@babel/generator': 7.29.1
-      '@babel/parser': 7.29.2
-      '@babel/plugin-syntax-jsx': 7.28.6(@babel/core@7.29.0)
-      '@babel/preset-typescript': 7.28.5(@babel/core@7.29.0)
-      '@babel/traverse': 7.29.0
-      '@babel/types': 7.29.0
-      '@react-router/node': 7.15.1(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3)
-      '@remix-run/node-fetch-server': 0.13.1
-      arg: 5.0.2
-      babel-dead-code-elimination: 1.0.12
-      chokidar: 4.0.3
-      dedent: 1.7.2(babel-plugin-macros@3.1.0)
-      es-module-lexer: 1.7.0
-      exit-hook: 2.2.1
-      isbot: 5.1.37
-      jsesc: 3.0.2
-      lodash: 4.17.21
-      p-map: 7.0.4
-      pathe: 1.1.2
-      picocolors: 1.1.1
-      pkg-types: 2.3.0
-      prettier: 3.8.1
-      react-refresh: 0.14.2
-      react-router: 7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      semver: 7.7.4
-      tinyglobby: 0.2.17
-      valibot: 1.3.1(typescript@5.8.3)
-      vite: 8.0.10(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3)
-      vite-node: 3.2.4(@types/node@26.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3)
     optionalDependencies:
       '@react-router/serve': 7.15.1(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3)
       typescript: 5.8.3
@@ -22068,15 +22011,9 @@ snapshots:
     optionalDependencies:
       typescript: 5.8.3
 
-  '@react-router/remix-routes-option-adapter@7.15.1(@react-router/dev@7.15.1(patch_hash=77f56df34c4642159bb889b71903a3953827448e994174779d32db487727da95)(@react-router/serve@7.15.1(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@24.12.2)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.0.10(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))(yaml@2.8.3))(typescript@5.8.3)':
+  '@react-router/remix-routes-option-adapter@7.15.1(@react-router/dev@7.15.1(patch_hash=77f56df34c4642159bb889b71903a3953827448e994174779d32db487727da95)(@react-router/serve@7.15.1(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@24.12.2)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.0.10(@types/node@24.12.2)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))(yaml@2.8.3))(typescript@5.8.3)':
     dependencies:
-      '@react-router/dev': 7.15.1(patch_hash=77f56df34c4642159bb889b71903a3953827448e994174779d32db487727da95)(@react-router/serve@7.15.1(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@24.12.2)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.0.10(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))(yaml@2.8.3)
-    optionalDependencies:
-      typescript: 5.8.3
-
-  '@react-router/remix-routes-option-adapter@7.15.1(@react-router/dev@7.15.1(patch_hash=77f56df34c4642159bb889b71903a3953827448e994174779d32db487727da95)(@react-router/serve@7.15.1(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.1.0)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.0.10(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))(yaml@2.8.3))(typescript@5.8.3)':
-    dependencies:
-      '@react-router/dev': 7.15.1(patch_hash=77f56df34c4642159bb889b71903a3953827448e994174779d32db487727da95)(@react-router/serve@7.15.1(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.1.0)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.0.10(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))(yaml@2.8.3)
+      '@react-router/dev': 7.15.1(patch_hash=77f56df34c4642159bb889b71903a3953827448e994174779d32db487727da95)(@react-router/serve@7.15.1(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@24.12.2)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.0.10(@types/node@24.12.2)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))(yaml@2.8.3)
     optionalDependencies:
       typescript: 5.8.3
 
@@ -23366,13 +23303,6 @@ snapshots:
       postcss-selector-parser: 6.0.10
       tailwindcss: 4.3.0
 
-  '@tailwindcss/vite@4.3.0(vite@8.0.10(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))':
-    dependencies:
-      '@tailwindcss/node': 4.3.0
-      '@tailwindcss/oxide': 4.3.0
-      tailwindcss: 4.3.0
-      vite: 8.0.10(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3)
-
   '@tailwindcss/vite@4.3.0(vite@8.0.10(@types/node@26.1.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))':
     dependencies:
       '@tailwindcss/node': 4.3.0
@@ -24240,16 +24170,6 @@ snapshots:
 
   '@vercel/oidc@3.1.0': {}
 
-  '@vercel/react-router@1.2.6(@react-router/dev@7.15.1(patch_hash=77f56df34c4642159bb889b71903a3953827448e994174779d32db487727da95)(@react-router/serve@7.15.1(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.1.0)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.0.10(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))(yaml@2.8.3))(@react-router/node@7.15.1(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(isbot@5.1.37)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
-    dependencies:
-      '@react-router/dev': 7.15.1(patch_hash=77f56df34c4642159bb889b71903a3953827448e994174779d32db487727da95)(@react-router/serve@7.15.1(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.1.0)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.0.10(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))(yaml@2.8.3)
-      '@react-router/node': 7.15.1(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3)
-      '@vercel/static-config': 3.2.0
-      isbot: 5.1.37
-      react: 18.3.1
-      react-dom: 18.3.1(react@18.3.1)
-      ts-morph: 12.0.0
-
   '@vercel/react-router@1.2.6(@react-router/dev@7.15.1(patch_hash=77f56df34c4642159bb889b71903a3953827448e994174779d32db487727da95)(@react-router/serve@7.15.1(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.1.0)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.0.10(@types/node@26.1.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))(yaml@2.8.3))(@react-router/node@7.15.1(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(isbot@5.1.37)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@react-router/dev': 7.15.1(patch_hash=77f56df34c4642159bb889b71903a3953827448e994174779d32db487727da95)(@react-router/serve@7.15.1(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.1.0)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.0.10(@types/node@26.1.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))(yaml@2.8.3)
@@ -24387,14 +24307,6 @@ snapshots:
       magic-string: 0.30.21
     optionalDependencies:
       vite: 8.0.10(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3)
-
-  '@vitest/mocker@4.1.6(vite@8.0.10(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))':
-    dependencies:
-      '@vitest/spy': 4.1.6
-      estree-walker: 3.0.3
-      magic-string: 0.30.21
-    optionalDependencies:
-      vite: 8.0.10(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3)
 
   '@vitest/mocker@4.1.6(vite@8.0.10(@types/node@26.1.0)(esbuild@0.28.0)(jiti@1.21.7)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))':
     dependencies:
@@ -24865,7 +24777,7 @@ snapshots:
     dependencies:
       bytes: 3.1.2
       content-type: 1.0.5
-      debug: 4.4.3(supports-color@8.1.1)
+      debug: 4.4.3(supports-color@5.5.0)
       http-errors: 2.0.1
       iconv-lite: 0.7.2
       on-finished: 2.4.1
@@ -25741,7 +25653,7 @@ snapshots:
   engine.io-client@6.6.6:
     dependencies:
       '@socket.io/component-emitter': 3.1.2
-      debug: 4.4.3(supports-color@8.1.1)
+      debug: 4.4.3(supports-color@5.5.0)
       engine.io-parser: 5.2.3
       ws: 8.21.0
       xmlhttprequest-ssl: 2.1.2
@@ -25761,7 +25673,7 @@ snapshots:
       base64id: 2.0.0
       cookie: 0.7.2
       cors: 2.8.6
-      debug: 4.4.3(supports-color@8.1.1)
+      debug: 4.4.3(supports-color@5.5.0)
       engine.io-parser: 5.2.3
       ws: 8.21.0
     transitivePeerDependencies:
@@ -26178,7 +26090,7 @@ snapshots:
       content-type: 1.0.5
       cookie: 0.7.2
       cookie-signature: 1.2.2
-      debug: 4.4.3(supports-color@8.1.1)
+      debug: 4.4.3(supports-color@5.5.0)
       depd: 2.0.0
       encodeurl: 2.0.0
       escape-html: 1.0.3
@@ -26307,7 +26219,7 @@ snapshots:
 
   finalhandler@2.1.1:
     dependencies:
-      debug: 4.4.3(supports-color@8.1.1)
+      debug: 4.4.3(supports-color@5.5.0)
       encodeurl: 2.0.0
       escape-html: 1.0.3
       on-finished: 2.4.1
@@ -26873,14 +26785,14 @@ snapshots:
   https-proxy-agent@7.0.6:
     dependencies:
       agent-base: 7.1.4
-      debug: 4.4.3(supports-color@8.1.1)
+      debug: 4.4.3(supports-color@5.5.0)
     transitivePeerDependencies:
       - supports-color
 
   https-proxy-agent@9.0.0:
     dependencies:
       agent-base: 9.0.0
-      debug: 4.4.3(supports-color@8.1.1)
+      debug: 4.4.3(supports-color@5.5.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -26993,7 +26905,7 @@ snapshots:
       canonicalize: 1.0.8
       chalk: 4.1.2
       cross-fetch: 4.1.0(encoding@0.1.13)
-      debug: 4.4.3(supports-color@8.1.1)
+      debug: 4.4.3(supports-color@5.5.0)
       hash.js: 1.1.7
       json-stringify-safe: 5.0.1
       ms: 2.1.3
@@ -27031,7 +26943,7 @@ snapshots:
       canonicalize: 1.0.8
       chalk: 4.1.2
       cross-fetch: 4.1.0(encoding@0.1.13)
-      debug: 4.4.3(supports-color@8.1.1)
+      debug: 4.4.3(supports-color@5.5.0)
       hash.js: 1.1.7
       json-stringify-safe: 5.0.1
       ms: 2.1.3
@@ -27093,7 +27005,7 @@ snapshots:
     dependencies:
       '@ioredis/commands': 1.5.1
       cluster-key-slot: 1.1.2
-      debug: 4.4.3(supports-color@8.1.1)
+      debug: 4.4.3(supports-color@5.5.0)
       denque: 2.1.0
       lodash.defaults: 4.2.0
       lodash.isarguments: 3.1.0
@@ -28191,7 +28103,7 @@ snapshots:
   micromark@4.0.2:
     dependencies:
       '@types/debug': 4.1.13
-      debug: 4.4.3(supports-color@8.1.1)
+      debug: 4.4.3(supports-color@5.5.0)
       decode-named-character-reference: 1.3.0
       devlop: 1.1.0
       micromark-core-commonmark: 2.0.3
@@ -29773,7 +29685,7 @@ snapshots:
 
   require-in-the-middle@7.5.2:
     dependencies:
-      debug: 4.4.3(supports-color@8.1.1)
+      debug: 4.4.3(supports-color@5.5.0)
       module-details-from-path: 1.0.4
       resolve: 1.22.11
     transitivePeerDependencies:
@@ -29781,7 +29693,7 @@ snapshots:
 
   require-in-the-middle@8.0.1:
     dependencies:
-      debug: 4.4.3(supports-color@8.1.1)
+      debug: 4.4.3(supports-color@5.5.0)
       module-details-from-path: 1.0.4
     transitivePeerDependencies:
       - supports-color
@@ -29892,7 +29804,7 @@ snapshots:
 
   router@2.2.0:
     dependencies:
-      debug: 4.4.3(supports-color@8.1.1)
+      debug: 4.4.3(supports-color@5.5.0)
       depd: 2.0.0
       is-promise: 4.0.0
       parseurl: 1.3.3
@@ -30000,7 +29912,7 @@ snapshots:
 
   send@1.2.1:
     dependencies:
-      debug: 4.4.3(supports-color@8.1.1)
+      debug: 4.4.3(supports-color@5.5.0)
       encodeurl: 2.0.0
       escape-html: 1.0.3
       etag: 1.8.1
@@ -30207,7 +30119,7 @@ snapshots:
 
   socket.io-adapter@2.5.8:
     dependencies:
-      debug: 4.4.3(supports-color@8.1.1)
+      debug: 4.4.3(supports-color@5.5.0)
       ws: 8.21.0
     transitivePeerDependencies:
       - bufferutil
@@ -30228,7 +30140,7 @@ snapshots:
   socket.io-parser@4.2.6:
     dependencies:
       '@socket.io/component-emitter': 3.1.2
-      debug: 4.4.3(supports-color@8.1.1)
+      debug: 4.4.3(supports-color@5.5.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -30237,7 +30149,7 @@ snapshots:
       accepts: 1.3.8
       base64id: 2.0.0
       cors: 2.8.6
-      debug: 4.4.3(supports-color@8.1.1)
+      debug: 4.4.3(supports-color@5.5.0)
       engine.io: 6.6.9
       socket.io-adapter: 2.5.8
       socket.io-parser: 4.2.6
@@ -30698,7 +30610,7 @@ snapshots:
   threads@1.7.0:
     dependencies:
       callsites: 3.1.0
-      debug: 4.4.3(supports-color@8.1.1)
+      debug: 4.4.3(supports-color@5.5.0)
       is-observable: 2.1.0
       observable-fns: 0.6.1
     optionalDependencies:
@@ -30844,7 +30756,7 @@ snapshots:
       cac: 6.7.14
       chokidar: 4.0.3
       consola: 3.4.2
-      debug: 4.4.3(supports-color@8.1.1)
+      debug: 4.4.3(supports-color@5.5.0)
       esbuild: 0.27.7
       fix-dts-default-cjs-exports: 1.0.1
       joycon: 3.1.1
@@ -30872,7 +30784,7 @@ snapshots:
       cac: 6.7.14
       chokidar: 4.0.3
       consola: 3.4.2
-      debug: 4.4.3(supports-color@8.1.1)
+      debug: 4.4.3(supports-color@5.5.0)
       esbuild: 0.27.7
       fix-dts-default-cjs-exports: 1.0.1
       joycon: 3.1.1
@@ -31157,7 +31069,7 @@ snapshots:
   vite-node@3.2.4(@types/node@24.12.2)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3):
     dependencies:
       cac: 6.7.14
-      debug: 4.4.3(supports-color@8.1.1)
+      debug: 4.4.3(supports-color@5.5.0)
       es-module-lexer: 1.7.0
       pathe: 2.0.3
       vite: 7.3.2(@types/node@24.12.2)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3)
@@ -31178,7 +31090,7 @@ snapshots:
   vite-node@3.2.4(@types/node@26.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3):
     dependencies:
       cac: 6.7.14
-      debug: 4.4.3(supports-color@8.1.1)
+      debug: 4.4.3(supports-color@5.5.0)
       es-module-lexer: 1.7.0
       pathe: 2.0.3
       vite: 7.3.2(@types/node@26.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3)
@@ -31196,25 +31108,14 @@ snapshots:
       - tsx
       - yaml
 
-  vite-plugin-babel-macros@1.0.6(vite@8.0.10(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3)):
+  vite-plugin-babel-macros@1.0.6(vite@8.0.10(@types/node@24.12.2)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3)):
     dependencies:
       '@babel/core': 7.29.0
       '@babel/plugin-syntax-jsx': 7.28.6(@babel/core@7.29.0)
       '@babel/plugin-syntax-typescript': 7.28.6(@babel/core@7.29.0)
       '@types/babel__core': 7.20.5
       babel-plugin-macros: 3.1.0
-      vite: 8.0.10(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3)
-    transitivePeerDependencies:
-      - supports-color
-
-  vite-plugin-babel-macros@1.0.6(vite@8.0.10(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3)):
-    dependencies:
-      '@babel/core': 7.29.0
-      '@babel/plugin-syntax-jsx': 7.28.6(@babel/core@7.29.0)
-      '@babel/plugin-syntax-typescript': 7.28.6(@babel/core@7.29.0)
-      '@types/babel__core': 7.20.5
-      babel-plugin-macros: 3.1.0
-      vite: 8.0.10(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3)
+      vite: 8.0.10(@types/node@24.12.2)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3)
     transitivePeerDependencies:
       - supports-color
 
@@ -31312,6 +31213,22 @@ snapshots:
       tsx: 4.21.0
       yaml: 2.8.3
 
+  vite@8.0.10(@types/node@24.12.2)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3):
+    dependencies:
+      lightningcss: 1.32.0
+      picomatch: 4.0.4
+      postcss: 8.5.15
+      rolldown: 1.0.0-rc.17
+      tinyglobby: 0.2.17
+    optionalDependencies:
+      '@types/node': 24.12.2
+      esbuild: 0.27.7
+      fsevents: 2.3.3
+      jiti: 2.7.0
+      terser: 5.48.0
+      tsx: 4.21.0
+      yaml: 2.8.3
+
   vite@8.0.10(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3):
     dependencies:
       lightningcss: 1.32.0
@@ -31322,22 +31239,6 @@ snapshots:
     optionalDependencies:
       '@types/node': 24.12.2
       esbuild: 0.28.0
-      fsevents: 2.3.3
-      jiti: 2.7.0
-      terser: 5.48.0
-      tsx: 4.21.0
-      yaml: 2.8.3
-
-  vite@8.0.10(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3):
-    dependencies:
-      lightningcss: 1.32.0
-      picomatch: 4.0.4
-      postcss: 8.5.15
-      rolldown: 1.0.0-rc.17
-      tinyglobby: 0.2.17
-    optionalDependencies:
-      '@types/node': 26.1.0
-      esbuild: 0.27.7
       fsevents: 2.3.3
       jiti: 2.7.0
       terser: 5.48.0
@@ -31485,34 +31386,6 @@ snapshots:
     optionalDependencies:
       '@opentelemetry/api': 1.9.0
       '@types/node': 24.12.2
-    transitivePeerDependencies:
-      - msw
-
-  vitest@4.1.6(@opentelemetry/api@1.9.0)(@types/node@26.1.0)(vite@8.0.10(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3)):
-    dependencies:
-      '@vitest/expect': 4.1.6
-      '@vitest/mocker': 4.1.6(vite@8.0.10(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))
-      '@vitest/pretty-format': 4.1.6
-      '@vitest/runner': 4.1.6
-      '@vitest/snapshot': 4.1.6
-      '@vitest/spy': 4.1.6
-      '@vitest/utils': 4.1.6
-      es-module-lexer: 2.0.0
-      expect-type: 1.3.0
-      magic-string: 0.30.21
-      obug: 2.1.1
-      pathe: 2.0.3
-      picomatch: 4.0.4
-      std-env: 4.0.0
-      tinybench: 2.9.0
-      tinyexec: 1.2.4
-      tinyglobby: 0.2.17
-      tinyrainbow: 3.1.0
-      vite: 8.0.10(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3)
-      why-is-node-running: 2.3.0
-    optionalDependencies:
-      '@opentelemetry/api': 1.9.0
-      '@types/node': 26.1.0
     transitivePeerDependencies:
       - msw
 

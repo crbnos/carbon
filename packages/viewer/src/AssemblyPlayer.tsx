@@ -1,4 +1,3 @@
-import { Bvh } from "@react-three/drei";
 import { type ThreeEvent, useFrame, useThree } from "@react-three/fiber";
 import {
   forwardRef,
@@ -9,19 +8,26 @@ import {
   useRef,
   useState
 } from "react";
+import type { BufferGeometry } from "three";
 import {
   AnimationMixer,
   Box3,
   Color,
   LoopOnce,
   type Material,
-  type Mesh,
+  Mesh,
   type MeshBasicMaterial,
   MeshStandardMaterial,
   type Object3D,
   PerspectiveCamera,
   Vector3
 } from "three";
+import {
+  acceleratedRaycast,
+  computeBoundsTree,
+  disposeBoundsTree,
+  SAH
+} from "three-mesh-bvh";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { AssemblyViewer } from "./AssemblyViewer";
 import { fitFraming } from "./camera";
@@ -695,6 +701,81 @@ const HIGHLIGHT_COLOR = 0x3b82f6;
 const SELECTED_COLOR = 0xef4444;
 const EXTERNAL_COLOR = 0xef4444;
 const GHOST_OPACITY = 0.3;
+
+type BvhGeometry = BufferGeometry & {
+  computeBoundsTree?: typeof computeBoundsTree;
+  disposeBoundsTree?: typeof disposeBoundsTree;
+  boundsTree?: unknown;
+};
+
+/** Meshes to BVH per idle slice — each build is sub-ms, so a small batch keeps
+ * every frame well under budget. */
+const BVH_BUILD_BATCH = 24;
+
+/**
+ * Progressively accelerates raycasting on the scene's meshes by building a
+ * three-mesh-bvh bounds tree per geometry, a small batch at a time on browser
+ * idle. Spreading the ~250k-triangle build across idle slices keeps the model
+ * interactive the instant it renders (raycasts fall back to linear until each
+ * mesh's tree lands) without the single main-thread hitch a synchronous build
+ * causes — and without the geometry-neutering flicker a web-worker builder
+ * would cause on a visible model. Trees are disposed and raycast restored when
+ * the scene changes or the player unmounts.
+ */
+function useProgressiveBvh(scene: Object3D) {
+  const raycaster = useThree((state) => state.raycaster);
+  useEffect(() => {
+    raycaster.firstHitOnly = false;
+    const meshes: Mesh[] = [];
+    scene.traverse((object) => {
+      const mesh = object as Mesh;
+      const geom = mesh.geometry as BvhGeometry | undefined;
+      if (mesh.isMesh && geom && !geom.boundsTree) meshes.push(mesh);
+    });
+
+    let cancelled = false;
+    let handle: number | undefined;
+    let index = 0;
+    const built: Mesh[] = [];
+    const idle: (cb: () => void) => number =
+      typeof requestIdleCallback === "function"
+        ? (cb) => requestIdleCallback(cb)
+        : (cb) => window.setTimeout(cb, 0);
+    const cancelIdle: (id: number) => void =
+      typeof cancelIdleCallback === "function"
+        ? cancelIdleCallback
+        : window.clearTimeout;
+
+    const step = () => {
+      if (cancelled) return;
+      const end = Math.min(index + BVH_BUILD_BATCH, meshes.length);
+      for (; index < end; index++) {
+        const mesh = meshes[index];
+        if (!mesh) continue;
+        const geom = mesh.geometry as BvhGeometry;
+        if (geom.boundsTree) continue;
+        geom.computeBoundsTree = computeBoundsTree;
+        geom.disposeBoundsTree = disposeBoundsTree;
+        geom.computeBoundsTree({ strategy: SAH });
+        mesh.raycast = acceleratedRaycast;
+        built.push(mesh);
+      }
+      if (index < meshes.length) handle = idle(step);
+    };
+    handle = idle(step);
+
+    return () => {
+      cancelled = true;
+      if (handle !== undefined) cancelIdle(handle);
+      delete raycaster.firstHitOnly;
+      for (const mesh of built) {
+        const geom = mesh.geometry as BvhGeometry;
+        if (geom.boundsTree) geom.disposeBoundsTree?.();
+        mesh.raycast = Mesh.prototype.raycast;
+      }
+    };
+  }, [scene, raycaster]);
+}
 /** Seconds a flagged step's components take to fade in at the seated pose */
 const FADE_SECONDS = 1.2;
 
@@ -778,6 +859,10 @@ function AssemblyScene({
     (state) => state.controls
   ) as unknown as OrbitControlsImpl | null;
   const gl = useThree((state) => state.gl);
+
+  // Accelerate raycasting (hover/click picking) with per-geometry BVHs, built
+  // progressively on idle so a dense model never hitches the main thread.
+  useProgressiveBvh(scene);
 
   const activeStep = steps[activeStepIndex] ?? null;
   const isEditingActive = Boolean(
@@ -1888,19 +1973,13 @@ function AssemblyScene({
 
   return (
     <>
-      {/* Accelerated raycasting: builds a per-geometry BVH so hover/click
-          raycasts are O(log tris) instead of scanning all ~250k triangles
-          linearly — the fix for choppy picking on dense models. Rebuilt per
-          model (AssemblyScene is keyed on scene.uuid). */}
-      <Bvh firstHitOnly={false}>
-        <primitive
-          object={scene}
-          onClick={handleClick}
-          onPointerMissed={handlePointerMissed}
-          onPointerMove={handlePointerMove}
-          onPointerOut={handlePointerOut}
-        />
-      </Bvh>
+      <primitive
+        object={scene}
+        onClick={handleClick}
+        onPointerMissed={handlePointerMissed}
+        onPointerMove={handlePointerMove}
+        onPointerOut={handlePointerOut}
+      />
       {isEditingActive && editMotion && onMotionChange && seatedCentroid && (
         <MotionPathEditor
           key={editMotion.stepId}
