@@ -76,6 +76,26 @@ pub fn validate_url(url: &str) -> Result<(), ApiError> {
         if !allowed.contains(&host) {
             return Err(ApiError::invalid("URL host is not allowed"));
         }
+    } else if require_https() {
+        // No explicit allowlist, and not dev mode: default-deny SSRF against
+        // internal targets by rejecting private/loopback/link-local IP literals.
+        // (Dev fetches source URLs from local storage over portless, so this
+        // only applies when ASSEMBLER_DEV_MODE != "true".) Set
+        // ASSEMBLER_ALLOWED_URL_HOSTS in production for a positive allowlist.
+        if let Some(host) = parsed.host_str() {
+            let literal = host.trim_start_matches('[').trim_end_matches(']');
+            if let Ok(ip) = literal.parse::<std::net::IpAddr>() {
+                let blocked = match ip {
+                    std::net::IpAddr::V4(v4) => {
+                        v4.is_private() || v4.is_loopback() || v4.is_link_local()
+                    }
+                    std::net::IpAddr::V6(v6) => v6.is_loopback() || v6.is_unspecified(),
+                };
+                if blocked {
+                    return Err(ApiError::invalid("URL host is not allowed"));
+                }
+            }
+        }
     }
     Ok(())
 }

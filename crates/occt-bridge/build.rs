@@ -28,13 +28,27 @@ fn occt_prefix() -> String {
     }
 }
 
-/// All OCCT toolkits present in `lib_dir`, and whether they are static
-/// archives. Prefers static (`libTK*.a`) when present — the deployment build —
-/// else dynamic (`libTK*.dylib`/`.so`, e.g. the brew install).
+/// Candidate lib directories under a prefix — the prefix's own `lib` plus the
+/// Debian/Ubuntu multiarch subdirs where a distro OCCT actually installs. Must
+/// match the linker search paths added in `main`.
+fn lib_dirs(lib_dir: &Path) -> Vec<PathBuf> {
+    vec![
+        lib_dir.to_path_buf(),
+        lib_dir.join("x86_64-linux-gnu"),
+        lib_dir.join("aarch64-linux-gnu"),
+    ]
+}
+
+/// All OCCT toolkits present under `lib_dir` (and its multiarch subdirs), and
+/// whether they are static archives. Prefers static (`libTK*.a`) when present —
+/// the deployment build — else dynamic (`libTK*.dylib`/`.so`, e.g. brew/apt).
 fn toolkits(lib_dir: &Path) -> (Vec<String>, bool) {
     let mut static_libs = Vec::new();
     let mut dylibs = Vec::new();
-    if let Ok(entries) = std::fs::read_dir(lib_dir) {
+    for dir in lib_dirs(lib_dir) {
+        let Ok(entries) = std::fs::read_dir(&dir) else {
+            continue;
+        };
         for e in entries.flatten() {
             let name = e.file_name().to_string_lossy().to_string();
             let Some(stem) = name.strip_prefix("lib") else {
@@ -74,11 +88,9 @@ fn main() {
         .warnings(false)
         .compile("carbon_occt_shim");
 
-    println!("cargo:rustc-link-search=native={}", lib_dir.display());
-    println!(
-        "cargo:rustc-link-search=native={}/x86_64-linux-gnu",
-        lib_dir.display()
-    );
+    for dir in lib_dirs(&lib_dir) {
+        println!("cargo:rustc-link-search=native={}", dir.display());
+    }
 
     // Link every OpenCASCADE toolkit found — the STEP+XCAF+Mesh path pulls in a
     // broad transitive set; linking all TK* avoids hand-maintaining the list.
@@ -87,6 +99,16 @@ fn main() {
     // rustc wraps the native/crate library section in a --start-group on GNU
     // targets, so alphabetical order is fine for the inter-archive references.
     let (libs, is_static) = toolkits(&lib_dir);
+    // Deployment builds set OCCT_LINK=static so a slim runtime image never ships
+    // OCCT shared objects — fail loud if the static archives aren't there rather
+    // than silently linking a dynamic OCCT the runtime lacks.
+    if std::env::var("OCCT_LINK").as_deref() == Ok("static") && !is_static {
+        panic!(
+            "OCCT_LINK=static but no static OCCT archives (libTK*.a) found under {} \
+             — check OCCT_PREFIX / the static OCCT build.",
+            lib_dir.display()
+        );
+    }
     let kind = if is_static { "static" } else { "dylib" };
     for lib in &libs {
         println!("cargo:rustc-link-lib={kind}={lib}");
@@ -96,4 +118,5 @@ fn main() {
     println!("cargo:rerun-if-changed=src/occt.cc");
     println!("cargo:rerun-if-changed=src/occt.h");
     println!("cargo:rerun-if-env-changed=OCCT_PREFIX");
+    println!("cargo:rerun-if-env-changed=OCCT_LINK");
 }

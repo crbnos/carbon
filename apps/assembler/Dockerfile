@@ -61,7 +61,7 @@ COPY crates ./crates
 COPY apps/assembler ./apps/assembler
 # Point the cxx bridges at the static OCCT + static FCL/ccd (build.rs picks
 # `static=` when it finds a .a at the prefix). Eigen headers from apt.
-ENV OCCT_PREFIX=/opt/occt \
+ENV OCCT_PREFIX=/opt/occt OCCT_LINK=static \
     FCL_PREFIX=/opt/fcl LIBCCD_PREFIX=/opt/fcl EIGEN_PREFIX=/usr OCTOMAP_PREFIX=/usr
 # Cache mounts: the cargo registry and the target dir survive across builds,
 # so a code-only change relinks instead of recompiling every dependency.

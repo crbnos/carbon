@@ -73,6 +73,11 @@ pub struct ProgressGuard {
 
 impl Drop for ProgressGuard {
     fn drop(&mut self) {
-        self.store.inner.remove(&self.job_id);
+        // Only clear the entry THIS guard created: a concurrent start() for the
+        // same job_id (an idempotent retry) may have replaced it, and that newer
+        // live entry must survive so its GET /convert/status stays valid.
+        self.store
+            .inner
+            .remove_if(&self.job_id, |_, v| Arc::ptr_eq(v, &self.progress));
     }
 }
