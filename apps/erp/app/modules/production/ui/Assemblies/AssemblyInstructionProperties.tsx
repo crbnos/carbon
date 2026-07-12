@@ -135,19 +135,19 @@ const AssemblyInstructionProperties = ({
           one-glance summary (component count, flagged). */}
       <div className="sticky top-0 z-10 flex-none border-b border-border bg-card/95 px-4 py-3 backdrop-blur">
         {step ? (
-          <VStack spacing={1}>
-            <HStack className="w-full items-center justify-between gap-2">
-              <span className="text-xxs font-medium uppercase tracking-wide text-muted-foreground tabular-nums">
+          <VStack spacing={1} className="w-full min-w-0">
+            <HStack className="w-full min-w-0 items-center justify-between gap-2">
+              <span className="shrink-0 text-xxs font-medium uppercase tracking-wide text-muted-foreground tabular-nums">
                 {stepIndex != null
                   ? `Step ${stepIndex + 1} of ${stepCount}`
                   : "Step"}
               </span>
               <StepStatusPill status={normalizeStatus(step.status)} />
             </HStack>
-            <h3 className="w-full truncate text-sm font-medium text-foreground">
+            <h3 className="w-full min-w-0 truncate text-sm font-medium text-foreground">
               {title}
             </h3>
-            <HStack className="items-center gap-1.5 text-xs text-muted-foreground tabular-nums">
+            <HStack className="w-full min-w-0 items-center gap-1.5 text-xs text-muted-foreground tabular-nums">
               <span>
                 {componentCount}{" "}
                 {componentCount === 1 ? "component" : "components"}
