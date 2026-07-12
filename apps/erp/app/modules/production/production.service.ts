@@ -5332,6 +5332,36 @@ export async function generateAssemblyStepsFromPlan(
     return { ok: false, reason: "error", message: "The plan has no parts" };
   }
 
+  // Materialize planner-DETECTED groups (id "swarm:<host>" — e.g. a populated
+  // PCB's detail swarm) as assemblyUnit rows so the Components tab shows them
+  // like authored units, editable through the same UI. DO NOTHING on conflict:
+  // once materialized the row belongs to the user — renames/member edits
+  // survive regeneration. Caller-unit groups already ARE rows. Best-effort:
+  // a failure here must not block step generation.
+  const detectedUnits = Object.entries(plan.groups ?? {})
+    .filter(([groupId]) => groupId.startsWith("swarm:"))
+    .map(([groupId, group]) => ({
+      modelUploadId,
+      name: group.name ?? "Detected group",
+      componentNodeIds: group.componentNodeIds,
+      sourceGroupId: groupId,
+      companyId: args.companyId,
+      createdBy: args.userId
+    }));
+  if (detectedUnits.length > 0) {
+    const materialized = await client
+      .from("assemblyUnit")
+      .upsert(detectedUnits, {
+        onConflict: "modelUploadId,sourceGroupId",
+        ignoreDuplicates: true
+      });
+    if (materialized.error) {
+      logger.error("Failed to materialize detected assembly units", {
+        error: materialized.error
+      });
+    }
+  }
+
   // Authored subassembly units name their steps; the rest derive a human title
   // from the components (same `describeStep` the viewer/explorer render), so the
   // title is real editable data instead of a render-time fallback.

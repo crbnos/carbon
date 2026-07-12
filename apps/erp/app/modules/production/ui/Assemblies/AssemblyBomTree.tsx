@@ -857,6 +857,15 @@ function UnitListRow({
       <span className="min-w-0 flex-1 truncate font-medium" title={unit.name}>
         {unit.name}
       </span>
+      {unit.sourceGroupId && (
+        <Badge
+          variant="outline"
+          className="text-muted-foreground"
+          title="Detected by the motion planner"
+        >
+          Auto
+        </Badge>
+      )}
       <Badge variant="secondary" className="tabular-nums">
         ×{memberCount}
       </Badge>
