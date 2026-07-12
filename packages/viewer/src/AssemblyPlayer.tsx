@@ -160,6 +160,14 @@ export const AssemblyPlayer = forwardRef<
   // continues through the rest once Play is pressed (`continuous`).
   const [isPlaying, setIsPlaying] = useState(autoPlay);
   const [continuous, setContinuous] = useState(autoPlay);
+  // "auto": each step frames the camera toward the action. Grabbing the
+  // controls DURING playback switches to "free" — the user keeps their view
+  // across steps until they click the floating badge to hand control back.
+  // Paused orbiting doesn't change modes (per-step framing already yields to
+  // the framing-key guard there).
+  const [cameraMode, setCameraMode] = useState<"auto" | "free">("auto");
+  // Stable identity — the scene re-subscribes its controls listener otherwise.
+  const handleFreeCamera = useCallback(() => setCameraMode("free"), []);
   const [futureMode, setFutureMode] =
     useState<FutureComponentsMode>(defaultFutureMode);
   // Live marquee rectangle while box-selecting (drawn as a DOM overlay).
@@ -430,9 +438,36 @@ export const AssemblyPlayer = forwardRef<
               seekVersion={seekVersion}
               onStepFinished={handleStepFinished}
               onBoxRect={setBoxRect}
+              cameraMode={cameraMode}
+              onFreeCamera={handleFreeCamera}
             />
           )}
         </AssemblyViewer>
+        {cameraMode === "free" && (
+          <button
+            type="button"
+            className={cn(
+              "absolute top-3 right-3 z-10 flex items-center gap-1.5 rounded-full border border-border bg-background/80 py-1 pr-3 pl-2 backdrop-blur",
+              "text-xs font-medium text-muted-foreground hover:text-foreground"
+            )}
+            onClick={() => setCameraMode("auto")}
+          >
+            <svg
+              className="size-3.5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <circle cx="12" cy="12" r="3" />
+              <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+            </svg>
+            Free camera — click for auto
+          </button>
+        )}
         {boxRect && (
           <div
             aria-hidden
@@ -664,7 +699,9 @@ function AssemblyScene({
   seekRef,
   seekVersion,
   onStepFinished,
-  onBoxRect
+  onBoxRect,
+  cameraMode,
+  onFreeCamera
 }: {
   scene: Object3D;
   nodesById: Map<string, Object3D>;
@@ -703,6 +740,10 @@ function AssemblyScene({
   onStepFinished?: () => void;
   /** Live marquee rectangle (canvas-local px) while box-selecting; null clears */
   onBoxRect?: (rect: BoxRect | null) => void;
+  /** "free" suppresses per-step camera framing (user owns the view) */
+  cameraMode: "auto" | "free";
+  /** The user grabbed the controls during playback — switch to free mode */
+  onFreeCamera: () => void;
 }) {
   const camera = useThree((state) => state.camera);
   const controls = useThree(
@@ -1148,10 +1189,19 @@ function AssemblyScene({
     if (!controls) return;
     const cancel = () => {
       desiredPoseRef.current = null;
+      // Grabbing the view mid-playback means the user wants to keep it — stop
+      // re-framing on every step until they opt back into auto via the badge.
+      if (isPlaying) onFreeCamera();
     };
     controls.addEventListener("start", cancel);
     return () => controls.removeEventListener("start", cancel);
-  }, [controls]);
+  }, [controls, isPlaying, onFreeCamera]);
+
+  // Returning to auto must re-frame the CURRENT step even when its framing key
+  // hasn't changed — the user panned away and asked for the staged view back.
+  useEffect(() => {
+    if (cameraMode === "auto") lastFramedKeyRef.current = null;
+  }, [cameraMode]);
 
   // Transition by orbiting around the target — the view direction rotates
   // and the distance eases, so the model never leaves the frame the way a
@@ -1200,6 +1250,8 @@ function AssemblyScene({
   useEffect(() => {
     const step = steps[activeStepIndex];
     if (!step || !controls) return;
+    // Free mode: the user owns the view — no per-step framing at all.
+    if (cameraMode === "free") return;
 
     // Only re-frame when the active step (or a framing-relevant input) actually
     // changes. A bare re-render — or a revalidation / component selection that hands
@@ -1350,7 +1402,8 @@ function AssemblyScene({
     leafBounds,
     hiddenSet,
     stepIndexByNode,
-    futureMode
+    futureMode,
+    cameraMode
   ]);
 
   // --- Selection -------------------------------------------------------------
