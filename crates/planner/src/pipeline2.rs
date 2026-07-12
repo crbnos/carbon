@@ -41,6 +41,11 @@ pub struct PlanOutcome {
     /// the parts placed below them (support-polygon check, `stability.rs`).
     /// Purely diagnostic — surfaced per step as `needsSupport`.
     pub needs_support: HashSet<String>,
+    /// Unit id → build wave (longest-path level in the precedence DAG). Units
+    /// sharing a wave have no ordering constraint and can be built in parallel.
+    /// Cycle-affected units are absent. Purely additive; the linear `sequence`
+    /// is unchanged.
+    pub waves: HashMap<String, i64>,
 }
 
 /// `_removal_segments`: a stored INSERTION motion as removal segments.
@@ -111,6 +116,57 @@ fn derive_precedence(
         edges.get_mut(&entry.node_id).unwrap().extend(blockers);
     }
     edges
+}
+
+/// Longest-path level of each unit in the hard-precedence DAG (`edges[before] =
+/// {after}`): 0 for units with no predecessor, else `1 + max(predecessor wave)`.
+/// Units sharing a wave have no ordering constraint between them — the parallel-
+/// buildable group. Deterministic (sorted traversal). Units on a precedence
+/// cycle are omitted (→ no wave; the consumer shows them strictly sequential).
+pub fn compute_waves(edges: &Edges) -> HashMap<String, i64> {
+    let mut indegree: HashMap<&str, usize> = edges.keys().map(|k| (k.as_str(), 0usize)).collect();
+    for afters in edges.values() {
+        for after in afters {
+            *indegree.entry(after.as_str()).or_insert(0) += 1;
+        }
+    }
+    let mut wave: HashMap<String, i64> = HashMap::new();
+    let mut roots: Vec<&str> = indegree
+        .iter()
+        .filter(|(_, &d)| d == 0)
+        .map(|(&n, _)| n)
+        .collect();
+    roots.sort();
+    let mut queue: std::collections::VecDeque<&str> = roots.into_iter().collect();
+    for &n in &queue {
+        wave.insert(n.to_string(), 0);
+    }
+    while let Some(n) = queue.pop_front() {
+        let wn = wave[n];
+        let Some(afters) = edges.get(n) else {
+            continue;
+        };
+        let mut sorted: Vec<&str> = afters.iter().map(|s| s.as_str()).collect();
+        sorted.sort();
+        for after in sorted {
+            let w = wave.get(after).copied().unwrap_or(-1).max(wn + 1);
+            wave.insert(after.to_string(), w);
+            if let Some(d) = indegree.get_mut(after) {
+                *d -= 1;
+                if *d == 0 {
+                    queue.push_back(after);
+                }
+            }
+        }
+    }
+    // Any unit still with unresolved predecessors sits on a cycle — it can't be
+    // leveled, so drop its partial wave.
+    for (n, &d) in &indegree {
+        if d > 0 {
+            wave.remove(*n);
+        }
+    }
+    wave
 }
 
 fn reaches(edges: &Edges, source: &str, target: &str) -> bool {
@@ -1628,6 +1684,7 @@ pub fn plan_parts(
     let verified_count = planned.iter().filter(|e| e.verified).count() as i64;
     let needs_support =
         crate::stability::support_check(&sequence, &parts, &pair_depths, &fasteners);
+    let waves = compute_waves(&edges);
     PlanOutcome {
         planned,
         sequence,
@@ -1639,6 +1696,7 @@ pub fn plan_parts(
         adjacency: unit_adjacency,
         relatedness,
         needs_support,
+        waves,
     }
 }
 
@@ -1699,6 +1757,7 @@ pub fn plan_fixed_sequence(
             adjacency: HashMap::new(),
             relatedness: HashMap::new(),
             needs_support: HashSet::new(),
+            waves: HashMap::new(),
         };
     }
 
@@ -1893,5 +1952,6 @@ pub fn plan_fixed_sequence(
         adjacency: HashMap::new(),
         relatedness: HashMap::new(),
         needs_support,
+        waves: HashMap::new(),
     }
 }

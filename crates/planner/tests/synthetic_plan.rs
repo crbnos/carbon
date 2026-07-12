@@ -25,16 +25,32 @@ fn box_part(node_id: &str, extents: [f64; 3], center: [f64; 3]) -> Component {
     }
     // Corner index bits: bit0=x, bit1=y, bit2=z.
     let faces: Vec<[u32; 3]> = vec![
-        [0, 1, 3], [0, 3, 2],
-        [4, 7, 5], [4, 6, 7],
-        [0, 4, 5], [0, 5, 1],
-        [2, 3, 7], [2, 7, 6],
-        [0, 2, 6], [0, 6, 4],
-        [1, 5, 7], [1, 7, 3],
+        [0, 1, 3],
+        [0, 3, 2],
+        [4, 7, 5],
+        [4, 6, 7],
+        [0, 4, 5],
+        [0, 5, 1],
+        [2, 3, 7],
+        [2, 7, 6],
+        [0, 2, 6],
+        [0, 6, 4],
+        [1, 5, 7],
+        [1, 7, 3],
     ];
-    let mesh = Mesh { vertices: verts, faces };
+    let mesh = Mesh {
+        vertices: verts,
+        faces,
+    };
     let (lo, hi) = mesh.bbox();
-    Component::new(node_id.to_string(), node_id.to_string(), mesh, lo, hi, false)
+    Component::new(
+        node_id.to_string(),
+        node_id.to_string(),
+        mesh,
+        lo,
+        hi,
+        false,
+    )
 }
 
 fn plan(parts: Vec<Component>) -> planner::pipeline2::PlanOutcome {
@@ -63,7 +79,10 @@ fn free_parts_all_plan_cleanly() {
         .planned
         .iter()
         .any(|p| matches!(p.motion, Motion::Linear { .. }));
-    assert!(any_linear, "at least one free part removed by a linear motion");
+    assert!(
+        any_linear,
+        "at least one free part removed by a linear motion"
+    );
 }
 
 #[test]
@@ -78,7 +97,11 @@ fn stacked_boxes_top_removed_before_base() {
     let pos = |id: &str| outcome.sequence.iter().position(|s| s == id);
     let (top_i, base_i) = (pos("top"), pos("base"));
     assert!(top_i.is_some() && base_i.is_some(), "both in sequence");
-    assert!(top_i < base_i, "top removed before base: {:?}", outcome.sequence);
+    assert!(
+        top_i < base_i,
+        "top removed before base: {:?}",
+        outcome.sequence
+    );
 }
 
 #[test]
@@ -93,7 +116,11 @@ fn every_planned_part_is_sequenced_once() {
     let mut seq = outcome.sequence.clone();
     seq.sort();
     seq.dedup();
-    assert_eq!(seq.len(), outcome.sequence.len(), "no duplicate in sequence");
+    assert_eq!(
+        seq.len(),
+        outcome.sequence.len(),
+        "no duplicate in sequence"
+    );
     assert_eq!(outcome.sequence.len(), 3, "all components sequenced");
     assert_eq!(tier(&outcome, "unplanned"), 0);
 }
@@ -152,4 +179,59 @@ fn mid_size_parts_on_a_rail_are_not_a_swarm() {
 
     let specs = detect_swarm_units(&parts, &HashSet::new());
     assert!(specs.is_empty(), "no swarm expected: {specs:?}");
+}
+
+#[cfg(test)]
+mod waves {
+    use planner::pipeline2::compute_waves;
+    use std::collections::{HashMap, HashSet};
+
+    fn edges(pairs: &[(&str, &[&str])]) -> HashMap<String, HashSet<String>> {
+        // Every node that appears must be a key (derive_precedence seeds all).
+        let mut e: HashMap<String, HashSet<String>> = HashMap::new();
+        for (k, vs) in pairs {
+            e.entry(k.to_string()).or_default();
+            for v in *vs {
+                e.entry(v.to_string()).or_default();
+                e.get_mut(*k).unwrap().insert(v.to_string());
+            }
+        }
+        e
+    }
+
+    #[test]
+    fn linear_chain_levels_incrementally() {
+        // a -> b -> c  (a before b before c)
+        let w = compute_waves(&edges(&[("a", &["b"]), ("b", &["c"])]));
+        assert_eq!(w["a"], 0);
+        assert_eq!(w["b"], 1);
+        assert_eq!(w["c"], 2);
+    }
+
+    #[test]
+    fn diamond_shares_a_middle_wave() {
+        // a -> b, a -> c, b -> d, c -> d
+        let w = compute_waves(&edges(&[("a", &["b", "c"]), ("b", &["d"]), ("c", &["d"])]));
+        assert_eq!(w["a"], 0);
+        assert_eq!(w["b"], 1);
+        assert_eq!(w["c"], 1); // b and c: same wave, no constraint between them
+        assert_eq!(w["d"], 2);
+    }
+
+    #[test]
+    fn independent_parts_are_all_wave_zero() {
+        let w = compute_waves(&edges(&[("a", &[]), ("b", &[]), ("c", &[])]));
+        assert_eq!(w["a"], 0);
+        assert_eq!(w["b"], 0);
+        assert_eq!(w["c"], 0);
+    }
+
+    #[test]
+    fn cycle_nodes_get_no_wave() {
+        // a -> b -> a is a cycle; c is a clean root
+        let w = compute_waves(&edges(&[("a", &["b"]), ("b", &["a"]), ("c", &[])]));
+        assert!(!w.contains_key("a"));
+        assert!(!w.contains_key("b"));
+        assert_eq!(w["c"], 0);
+    }
 }

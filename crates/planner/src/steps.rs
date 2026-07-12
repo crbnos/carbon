@@ -103,7 +103,12 @@ fn motion_to_json(m: &Motion) -> Value {
 
 /// `_part_to_dict`. `needs_support` is the set of leaf ids flagged tippy by the
 /// stability check; a member's own id (not the group rep's) decides its flag.
-fn part_to_dict(entry: &PlannedComponent, needs_support: &HashSet<String>) -> Value {
+/// `waves` maps a unit/rep id to its build wave — group members share the rep's.
+fn part_to_dict(
+    entry: &PlannedComponent,
+    needs_support: &HashSet<String>,
+    waves: &HashMap<String, i64>,
+) -> Value {
     let mut m = Map::new();
     m.insert("motion".into(), motion_to_json(&entry.motion));
     if let Some(c) = &entry.confidence {
@@ -123,6 +128,9 @@ fn part_to_dict(entry: &PlannedComponent, needs_support: &HashSet<String>) -> Va
     }
     if needs_support.contains(&entry.node_id) {
         m.insert("needsSupport".into(), json!(true));
+    }
+    if let Some(w) = waves.get(&entry.node_id) {
+        m.insert("wave".into(), json!(w));
     }
     m.insert("verified".into(), json!(entry.verified));
     Value::Object(m)
@@ -329,7 +337,7 @@ pub fn plan_step(
         let view_entry = view.get(&entry.node_id);
         match expansion.get(&entry.node_id) {
             None => {
-                let mut payload = part_to_dict(entry, &outcome.needs_support);
+                let mut payload = part_to_dict(entry, &outcome.needs_support, &outcome.waves);
                 if let Some((d, obstruction)) = view_entry {
                     payload["viewDirection"] = json!(d.to_vec());
                     payload["viewObstruction"] = json!(obstruction);
@@ -337,7 +345,8 @@ pub fn plan_step(
                 components.insert(entry.node_id.clone(), payload);
             }
             Some((members, name)) => {
-                let mut member_payload = part_to_dict(entry, &outcome.needs_support);
+                let mut member_payload =
+                    part_to_dict(entry, &outcome.needs_support, &outcome.waves);
                 member_payload["groupId"] = json!(entry.node_id);
                 for member in members {
                     // needsSupport is per leaf, not per group rep.

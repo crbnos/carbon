@@ -26,6 +26,10 @@ crates/
 │                # write_test_step generates hermetic multi-solid STEP fixtures for tests.
 ├── converter/   # STEP → graph.json + GLB. nodeid (sha1), graph (tree/bbox/source-unit), convert, glb.
 └── planner/     # assembly-by-disassembly motion planner: greedy/geom/fasteners/collide/steps.
+                 # stability.rs adds a support-polygon check (part CoM outside the hull of the
+                 # contact points below it ⇒ `needsSupport`); pipeline2 `compute_waves` levels
+                 # the precedence DAG into parallel-buildable `wave`s. Both purely additive to
+                 # plan.json — the linear `sequence` is unchanged.
                  # view.rs bakes a mesh-precise per-step camera DIRECTION into plan.json
                  # (`viewDirection`): Fibonacci-hemisphere candidates scored by ray-vs-triangle
                  # sight lines (Möller–Trumbore + AABB broadphase) against the bodies installed

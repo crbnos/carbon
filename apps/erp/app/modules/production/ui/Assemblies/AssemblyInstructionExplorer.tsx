@@ -35,7 +35,15 @@ import {
 import type { DragControls } from "framer-motion";
 import { MotionConfig, Reorder, useDragControls } from "framer-motion";
 import type { ReactNode } from "react";
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Fragment,
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState
+} from "react";
 import {
   LuChevronDown,
   LuCirclePlus,
@@ -447,6 +455,18 @@ function AssemblyInstructionExplorer({
     return map;
   }, [steps, viewerStepMap, graphIndex, stepTitles]);
 
+  // Build waves only read meaningfully in true sort order and when there's more
+  // than one — a single wave (or a filtered view) shows no dividers.
+  const hasWaves = useMemo(() => {
+    const seen = new Set<number>();
+    for (const step of steps) {
+      const w = (step as { buildWave?: number | null }).buildWave;
+      if (typeof w === "number") seen.add(w);
+      if (seen.size > 1) return true;
+    }
+    return false;
+  }, [steps]);
+
   const visibleOrder = useMemo(() => {
     if (!isSearching) return sortOrder;
     const needle = search.trim().toLowerCase();
@@ -554,28 +574,52 @@ function AssemblyInstructionExplorer({
                   className="w-full"
                   disabled={isDisabled || isSearching}
                 >
-                  {visibleOrder.map((stepId) => {
+                  {visibleOrder.map((stepId, i) => {
                     const step = stepMap.get(stepId);
                     if (!step) return null;
+                    const wave = (step as { buildWave?: number | null })
+                      .buildWave;
+                    const prevWave =
+                      i > 0
+                        ? (
+                            stepMap.get(visibleOrder[i - 1]) as {
+                              buildWave?: number | null;
+                            }
+                          )?.buildWave
+                        : undefined;
+                    const showWaveDivider =
+                      hasWaves &&
+                      !isSearching &&
+                      typeof wave === "number" &&
+                      wave !== prevWave;
                     return (
-                      <DraggableStepItem
-                        key={stepId}
-                        stepId={stepId}
-                        isDisabled={isDisabled || isSearching}
-                      >
-                        {(dragControls) => (
-                          <StepItem
-                            step={step}
-                            title={stepTitles.get(stepId) ?? "Untitled step"}
-                            index={sortOrder.indexOf(stepId)}
-                            isDisabled={isDisabled || isSearching}
-                            isSelected={stepId === selectedStepId}
-                            dragControls={dragControls}
-                            onSelect={() => onSelectStep(stepId)}
-                            onDelete={() => setStepToDelete(step)}
-                          />
+                      <Fragment key={stepId}>
+                        {showWaveDivider && (
+                          <div className="flex select-none items-center gap-2 border-b border-border bg-muted/40 px-3 py-1 text-xs font-medium text-muted-foreground">
+                            <span>Wave {wave + 1}</span>
+                            <span className="text-muted-foreground/70">
+                              can build in parallel
+                            </span>
+                          </div>
                         )}
-                      </DraggableStepItem>
+                        <DraggableStepItem
+                          stepId={stepId}
+                          isDisabled={isDisabled || isSearching}
+                        >
+                          {(dragControls) => (
+                            <StepItem
+                              step={step}
+                              title={stepTitles.get(stepId) ?? "Untitled step"}
+                              index={sortOrder.indexOf(stepId)}
+                              isDisabled={isDisabled || isSearching}
+                              isSelected={stepId === selectedStepId}
+                              dragControls={dragControls}
+                              onSelect={() => onSelectStep(stepId)}
+                              onDelete={() => setStepToDelete(step)}
+                            />
+                          )}
+                        </DraggableStepItem>
+                      </Fragment>
                     );
                   })}
                 </Reorder.Group>

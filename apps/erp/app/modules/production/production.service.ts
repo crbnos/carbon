@@ -5409,6 +5409,9 @@ export async function generateAssemblyStepsFromPlan(
         }
         return Object.keys(w).length > 0 ? (w as Json) : null;
       })(),
+      // Parallel-buildable wave (steps sharing one have no ordering constraint);
+      // null for cycle-affected steps. Informational — sortOrder still governs.
+      buildWave: group.wave ?? null,
       planConfidence: group.confidence,
       status: "Review" as const,
       companyId: args.companyId,

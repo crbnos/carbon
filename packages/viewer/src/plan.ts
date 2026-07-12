@@ -31,6 +31,12 @@ export type AssemblyPlanComponent = {
    */
   needsSupport?: boolean;
   /**
+   * Build wave: longest-path level in the precedence DAG. Components sharing a
+   * wave have no ordering constraint and can be assembled in parallel. Absent
+   * for cycle-affected parts.
+   */
+  wave?: number;
+  /**
    * Mesh-precise camera direction (unit vector, target→eye) baked by the
    * planner: sight lines against the real triangles of everything installed
    * earlier. The viewer applies it with live framing (target, distance,
@@ -161,6 +167,12 @@ export type AssemblyStepGroup = {
    * below it — the step may need a fixture or a second hand (diagnostic).
    */
   needsSupport: boolean;
+  /**
+   * Build wave: steps sharing a wave have no ordering constraint between them
+   * (parallel-buildable). Members of one step share a wave; absent (undefined)
+   * for cycle-affected parts.
+   */
+  wave?: number;
   /** v3: the pre-grouped unit's name (e.g. "PCB Assembly"), for the step title. */
   name?: string;
   /** Planner-baked camera direction for this step (see AssemblyPlanComponent). */
@@ -281,6 +293,7 @@ export function buildAssemblyStepGroups(
     if (component?.mergedInto) continue; // defensive: hosts carry their merges
     const blockedBy = component?.blockedBy ?? [];
     const needsSupport = component?.needsSupport === true;
+    const wave = component?.wave;
     const flagged = blockedBy.length > 0 || component?.verified === false;
     const motion: Motion = flagged
       ? { type: "none" }
@@ -337,6 +350,7 @@ export function buildAssemblyStepGroups(
       confidence,
       blockedBy: [...blockedBy],
       needsSupport,
+      wave,
       name: component?.groupId
         ? plan.groups?.[component.groupId]?.name
         : undefined,

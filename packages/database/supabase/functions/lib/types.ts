@@ -2528,6 +2528,7 @@ export type Database = {
       assemblyInstructionStep: {
         Row: {
           assemblyInstructionId: string
+          buildWave: number | null
           camera: Json | null
           companyId: string
           componentNodeIds: string[]
@@ -2559,6 +2560,7 @@ export type Database = {
         }
         Insert: {
           assemblyInstructionId: string
+          buildWave?: number | null
           camera?: Json | null
           companyId: string
           componentNodeIds?: string[]
@@ -2590,6 +2592,7 @@ export type Database = {
         }
         Update: {
           assemblyInstructionId?: string
+          buildWave?: number | null
           camera?: Json | null
           companyId?: string
           componentNodeIds?: string[]
