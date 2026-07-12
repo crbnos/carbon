@@ -1030,8 +1030,11 @@ function AssemblyScene({
     }
 
     // External (BOM) highlight: emissive tint, forced visible even when the
-    // component's step would hide it ("show me all the M8 bolts")
+    // component's step would hide it ("show me all the M8 bolts"). Skipped for
+    // focused nodes — isolating a part shows it in its REAL color; the isolate
+    // itself is the cue, no tint.
     for (const nodeId of highlightedSet) {
+      if (focusedSet.has(nodeId)) continue;
       const node = nodesById.get(nodeId);
       if (!node) continue;
       node.visible = true;
@@ -1043,13 +1046,26 @@ function AssemblyScene({
       });
     }
 
-    // Isolate/focus: when a focus set is active, ONLY those components render —
-    // everything else hides so the selection can be inspected alone. Applied
-    // before the explicit-hide pass so a focused-but-manually-hidden component
-    // still stays hidden.
+    // Isolate/focus: when a focus set is active, ONLY the focused components
+    // render — everything else hides so the selection can be inspected alone.
+    // Keep the focused node's ANCESTORS visible too: three.js visibility is
+    // inherited, and every glTF node (including the root wrapper and assembly
+    // groups) carries a nodeId, so blindly hiding non-focused nodes would hide
+    // the focused leaf's parents and blank the whole model. Applied before the
+    // explicit-hide pass so a focused-but-manually-hidden component still hides.
     if (focusedSet.size > 0) {
-      for (const [nodeId, node] of nodesById) {
-        node.visible = focusedSet.has(nodeId);
+      const keep = new Set<Object3D>();
+      for (const nodeId of focusedSet) {
+        const node = nodesById.get(nodeId);
+        if (!node) continue;
+        for (let a: Object3D | null = node; a; a = a.parent) keep.add(a);
+        node.traverse((descendant) => keep.add(descendant));
+      }
+      // Only touch nodeId-stamped nodes — the reset above restores exactly these
+      // to visible, so meshes (which inherit) never get stranded hidden. Ancestor
+      // nodes stay in `keep`, so a focused leaf's parents don't blank it out.
+      for (const node of nodesById.values()) {
+        node.visible = keep.has(node);
       }
     }
 
@@ -1066,6 +1082,7 @@ function AssemblyScene({
     // material here — regardless of whether it was picked in the viewer or the
     // Components panel.
     for (const nodeId of highlightedSet) {
+      if (focusedSet.has(nodeId)) continue; // isolated part keeps its real color
       const node = nodesById.get(nodeId);
       if (!node || !node.visible) continue;
       node.traverse((object) => {
