@@ -82,6 +82,9 @@ export type AssemblyPlayerProps = {
   onMotionChange?: (stepId: string, motion: Motion) => void;
   /** Initial render mode for future-step components */
   defaultFutureMode?: FutureComponentsMode;
+  /** Picking components to add to a step: ghost every not-yet-installed part so
+   * un-animated parts are visible and clickable (x-ray). */
+  componentPickerActive?: boolean;
   /**
    * When true (default), the whole sequence auto-plays on load and runs through
    * every step. When false, the player starts paused: selecting a step plays
@@ -143,6 +146,7 @@ export const AssemblyPlayer = forwardRef<
     editMotion,
     onMotionChange,
     defaultFutureMode = "ghost",
+    componentPickerActive = false,
     autoPlay = true,
     units,
     suppressFallbackMotions = false,
@@ -440,6 +444,7 @@ export const AssemblyPlayer = forwardRef<
               onBoxRect={setBoxRect}
               cameraMode={cameraMode}
               onFreeCamera={handleFreeCamera}
+              componentPickerActive={componentPickerActive}
             />
           )}
         </AssemblyViewer>
@@ -706,7 +711,8 @@ function AssemblyScene({
   onStepFinished,
   onBoxRect,
   cameraMode,
-  onFreeCamera
+  onFreeCamera,
+  componentPickerActive
 }: {
   scene: Object3D;
   nodesById: Map<string, Object3D>;
@@ -749,6 +755,9 @@ function AssemblyScene({
   cameraMode: "auto" | "free";
   /** The user grabbed the controls during playback — switch to free mode */
   onFreeCamera: () => void;
+  /** Picking components to add to a step — ghost every not-yet-installed part so
+   * un-animated parts are visible and clickable */
+  componentPickerActive: boolean;
 }) {
   const camera = useThree((state) => state.camera);
   const controls = useThree(
@@ -854,9 +863,14 @@ function AssemblyScene({
     // While the animation plays, later-step components stay hidden until their own
     // step installs them, so playback reads as a real build-up rather than a
     // ghosted preview. The future-components toggle still applies while paused.
-    const effectiveFutureMode: FutureComponentsMode = isPlaying
-      ? "hidden"
-      : futureMode;
+    // Component-picker mode overrides both: every not-yet-installed part ghosts
+    // (x-ray) so the user can see AND click the parts they want to add — a
+    // "hidden" future part is invisible and unpickable.
+    const effectiveFutureMode: FutureComponentsMode = componentPickerActive
+      ? "ghost"
+      : isPlaying
+        ? "hidden"
+        : futureMode;
 
     for (const [nodeId, stepIndex] of stepIndexByNode) {
       const node = nodesById.get(nodeId);
@@ -928,6 +942,7 @@ function AssemblyScene({
     activeStepIndex,
     futureMode,
     isPlaying,
+    componentPickerActive,
     highlightedSet,
     hiddenSet
   ]);

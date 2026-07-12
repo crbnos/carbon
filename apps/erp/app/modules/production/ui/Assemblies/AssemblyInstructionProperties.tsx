@@ -28,7 +28,7 @@ import { Editor } from "@carbon/react/Editor";
 import type { AssemblyGraphIndex, NamedUnit } from "@carbon/viewer";
 import { describeStep, groupComponentNodeIds } from "@carbon/viewer";
 import { nanoid } from "nanoid";
-import { useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { LuCirclePlus, LuX } from "react-icons/lu";
 import { useFetcher, useParams } from "react-router";
 import { Empty } from "~/components";
@@ -188,7 +188,9 @@ const AssemblyInstructionProperties = ({
   );
 };
 
-export default AssemblyInstructionProperties;
+// Memoized: skips re-render on the route's per-frame motion-drag updates
+// (draftMotion) — none of this panel's props change during a waypoint drag.
+export default memo(AssemblyInstructionProperties);
 
 function StepForm({
   step,

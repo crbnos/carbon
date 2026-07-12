@@ -175,6 +175,13 @@ export default function AssemblyBomTree({
     [componentMappings]
   );
 
+  // itemId → BOM line, so each ComponentRow resolves its mapped line in O(1)
+  // instead of a linear scan of every BOM material per row per render.
+  const bomByItemId = useMemo(
+    () => new Map(bomMaterials.map((material) => [material.itemId, material])),
+    [bomMaterials]
+  );
+
   const [sortMode, setSortMode] = useState<SortMode>("count");
   const [search, setSearch] = useState("");
   // Selection and visibility are tracked per instance (nodeId), so a group with
@@ -652,6 +659,7 @@ export default function AssemblyBomTree({
                     usage={stepUsage.get(group.key) ?? []}
                     mapping={mappingsByHash.get(group.key) ?? null}
                     bomMaterials={bomMaterials}
+                    bomByItemId={bomByItemId}
                     canMap={canMap}
                     modelUploadId={modelUploadId}
                     instructionId={id}
@@ -1228,6 +1236,7 @@ function ComponentRow({
   usage,
   mapping,
   bomMaterials,
+  bomByItemId,
   canMap,
   modelUploadId,
   instructionId,
@@ -1244,6 +1253,7 @@ function ComponentRow({
   usage: { stepId: string; index: number; title: string }[];
   mapping: AssemblyComponentMapping | null;
   bomMaterials: FlattenedBomMaterial[];
+  bomByItemId: Map<string, FlattenedBomMaterial>;
   canMap: boolean;
   modelUploadId: string | null;
   instructionId: string;
@@ -1253,9 +1263,7 @@ function ComponentRow({
   onToggleExpand: () => void;
   onSelectStep: (stepId: string) => void;
 }) {
-  const bomLine = mapping
-    ? bomMaterials.find((material) => material.itemId === mapping.itemId)
-    : undefined;
+  const bomLine = mapping ? bomByItemId.get(mapping.itemId) : undefined;
   const quantityMismatch =
     bomLine !== undefined && Math.round(bomLine.quantity) !== group.count;
   const allHidden = hidden === "all";

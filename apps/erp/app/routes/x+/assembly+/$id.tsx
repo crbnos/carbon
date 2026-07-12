@@ -229,11 +229,18 @@ export default function AssemblyInstructionRoute() {
   // mutates a step's components — you must explicitly start adding.
   const [isAddingComponents, setIsAddingComponents] = useState(false);
 
-  const selectedStep =
-    steps.find((step) => step.id === selectedStepId) ?? steps[0] ?? null;
-  const activeStepIndex = selectedStep
-    ? steps.findIndex((step) => step.id === selectedStep.id)
-    : 0;
+  const { selectedStep, activeStepIndex } = useMemo(() => {
+    const step =
+      steps.find((candidate) => candidate.id === selectedStepId) ??
+      steps[0] ??
+      null;
+    return {
+      selectedStep: step,
+      activeStepIndex: step
+        ? steps.findIndex((candidate) => candidate.id === step.id)
+        : 0
+    };
+  }, [steps, selectedStepId]);
 
   // Read the latest steps inside the stable onSelectStep without widening its
   // deps (it feeds explorer effects that must not re-fire on every steps change).
@@ -331,6 +338,23 @@ export default function AssemblyInstructionRoute() {
   );
 
   const viewerSteps = useMemo(() => steps.map(toViewerStep), [steps]);
+
+  // Per-step requirements/materials for the properties panel — memoized so a
+  // per-frame motion-drag re-render (draftMotion) doesn't hand the panel new
+  // array identities and re-render it.
+  const activeStepId = selectedStep?.id ?? null;
+  const stepRequirements = useMemo(
+    () =>
+      activeStepId ? requirements.filter((r) => r.stepId === activeStepId) : [],
+    [requirements, activeStepId]
+  );
+  const selectedStepMaterials = useMemo(
+    () =>
+      activeStepId
+        ? stepMaterials.filter((m) => m.stepId === activeStepId)
+        : [],
+    [stepMaterials, activeStepId]
+  );
 
   // Authored subassembly units, normalized for step-title derivation: a step
   // whose components are exactly a unit is titled by the unit's name ("Add Board").
@@ -524,6 +548,7 @@ export default function AssemblyInstructionRoute() {
                           onMotionChange={onMotionChange}
                           units={namedUnits}
                           suppressFallbackMotions={isPlanning}
+                          componentPickerActive={isAddingComponents}
                           autoPlay={false}
                           mode={mode}
                           className="h-full"
@@ -588,21 +613,8 @@ export default function AssemblyInstructionRoute() {
                   onStopEditMotion={onStopEditMotion}
                   onSetCamera={onSetCamera}
                   onClearCamera={onClearCamera}
-                  requirements={
-                    selectedStep
-                      ? requirements.filter(
-                          (requirement) =>
-                            requirement.stepId === selectedStep.id
-                        )
-                      : []
-                  }
-                  stepMaterials={
-                    selectedStep
-                      ? stepMaterials.filter(
-                          (material) => material.stepId === selectedStep.id
-                        )
-                      : []
-                  }
+                  requirements={stepRequirements}
+                  stepMaterials={selectedStepMaterials}
                   bomMaterials={bomMaterials}
                   standardNotes={standardNotes}
                 />

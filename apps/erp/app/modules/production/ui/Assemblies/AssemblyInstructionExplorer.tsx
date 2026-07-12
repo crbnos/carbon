@@ -33,9 +33,9 @@ import {
   synthesizeFallbackMotion
 } from "@carbon/viewer";
 import type { DragControls } from "framer-motion";
-import { Reorder, useDragControls } from "framer-motion";
+import { MotionConfig, Reorder, useDragControls } from "framer-motion";
 import type { ReactNode } from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   LuChevronDown,
   LuCirclePlus,
@@ -94,7 +94,10 @@ type AssemblyInstructionExplorerProps = {
   onHideComponents: (nodeIds: string[]) => void;
 };
 
-export default function AssemblyInstructionExplorer({
+// Memoized: the parent route re-renders on every motion-drag frame
+// (draftMotion state) but none of this panel's props change during a drag, so
+// the ~30 step rows skip re-rendering entirely.
+function AssemblyInstructionExplorer({
   steps,
   units,
   selectedStepId,
@@ -337,10 +340,37 @@ export default function AssemblyInstructionExplorer({
   const [sortOrder, setSortOrder] = useState<string[]>(
     steps.map((step) => step.id)
   );
+  // A local reorder saves on a 2500ms debounce; until it lands, a revalidation
+  // still carries the PRE-reorder server order. Track the pending save so the
+  // sync effect below doesn't snap the user's drag back.
+  const orderSavePendingRef = useRef(false);
 
   useEffect(() => {
-    setSortOrder(steps.map((step) => step.id));
-  }, [steps]);
+    setSortOrder((prev) => {
+      const nextIds = steps.map((step) => step.id);
+      const prevSet = new Set(prev);
+      const sameSet =
+        prev.length === nextIds.length &&
+        nextIds.every((id) => prevSet.has(id));
+      if (sameSet) {
+        // Same steps, possibly reordered upstream. Keep the local order while a
+        // save is in flight; otherwise adopt the server order (source of truth).
+        const savePending =
+          orderSavePendingRef.current || sortOrderFetcher.state !== "idle";
+        if (savePending) return prev;
+        const sameOrder = nextIds.every((id, i) => prev[i] === id);
+        return sameOrder ? prev : nextIds;
+      }
+      // Steps added or removed — resync to the server list.
+      return nextIds;
+    });
+  }, [steps, sortOrderFetcher.state]);
+
+  useEffect(() => {
+    if (sortOrderFetcher.state === "idle" && sortOrderFetcher.data?.success) {
+      orderSavePendingRef.current = false;
+    }
+  }, [sortOrderFetcher.state, sortOrderFetcher.data]);
 
   // Select the newly created step
   useEffect(() => {
@@ -350,11 +380,7 @@ export default function AssemblyInstructionExplorer({
   }, [newStepFetcher.data, onSelectStep]);
 
   const stepMap = useMemo(
-    () =>
-      steps.reduce<Record<string, AssemblyInstructionStepRow>>(
-        (acc, step) => ({ ...acc, [step.id]: step }),
-        {}
-      ),
+    () => new Map(steps.map((step) => [step.id, step])),
     [steps]
   );
 
@@ -369,16 +395,26 @@ export default function AssemblyInstructionExplorer({
     [units]
   );
 
+  // Derive the viewer shape once — both stepTitles and searchText need it, and
+  // toViewerStep otherwise runs twice per step per render.
+  const viewerStepMap = useMemo(
+    () => new Map(steps.map((step) => [step.id, toViewerStep(step)])),
+    [steps]
+  );
+
   const stepTitles = useMemo(
     () =>
       new Map(
         steps.map((step) => [
           step.id,
-          describeStep(toViewerStep(step), graphIndex, namedUnits) ??
-            "Untitled step"
+          describeStep(
+            viewerStepMap.get(step.id) ?? toViewerStep(step),
+            graphIndex,
+            namedUnits
+          ) ?? "Untitled step"
         ])
       ),
-    [steps, graphIndex, namedUnits]
+    [steps, viewerStepMap, graphIndex, namedUnits]
   );
 
   const [search, setSearch] = useState("");
@@ -388,7 +424,7 @@ export default function AssemblyInstructionExplorer({
   const searchText = useMemo(() => {
     const map = new Map<string, string>();
     for (const step of steps) {
-      const viewerStep = toViewerStep(step);
+      const viewerStep = viewerStepMap.get(step.id) ?? toViewerStep(step);
       const componentNames = graphIndex
         ? groupComponentNodeIds(viewerStep.componentNodeIds, graphIndex)
             .map((group) => group.name)
@@ -408,7 +444,7 @@ export default function AssemblyInstructionExplorer({
       );
     }
     return map;
-  }, [steps, graphIndex, stepTitles]);
+  }, [steps, viewerStepMap, graphIndex, stepTitles]);
 
   const visibleOrder = useMemo(() => {
     if (!isSearching) return sortOrder;
@@ -438,6 +474,7 @@ export default function AssemblyInstructionExplorer({
     newOrder.forEach((stepId, index) => {
       updates[stepId] = index + 1;
     });
+    orderSavePendingRef.current = true;
     setSortOrder(newOrder);
     updateSortOrder(updates);
   };
@@ -508,34 +545,40 @@ export default function AssemblyInstructionExplorer({
             spacing={0}
           >
             {steps.length > 0 ? (
-              <Reorder.Group
-                axis="y"
-                values={visibleOrder}
-                onReorder={onReorder}
-                className="w-full"
-                disabled={isDisabled || isSearching}
-              >
-                {visibleOrder.map((stepId) => (
-                  <DraggableStepItem
-                    key={stepId}
-                    stepId={stepId}
-                    isDisabled={isDisabled || isSearching}
-                  >
-                    {(dragControls) => (
-                      <StepItem
-                        step={stepMap[stepId]}
-                        title={stepTitles.get(stepId) ?? "Untitled step"}
-                        index={sortOrder.indexOf(stepId)}
+              <MotionConfig reducedMotion="user">
+                <Reorder.Group
+                  axis="y"
+                  values={visibleOrder}
+                  onReorder={onReorder}
+                  className="w-full"
+                  disabled={isDisabled || isSearching}
+                >
+                  {visibleOrder.map((stepId) => {
+                    const step = stepMap.get(stepId);
+                    if (!step) return null;
+                    return (
+                      <DraggableStepItem
+                        key={stepId}
+                        stepId={stepId}
                         isDisabled={isDisabled || isSearching}
-                        isSelected={stepId === selectedStepId}
-                        dragControls={dragControls}
-                        onSelect={() => onSelectStep(stepId)}
-                        onDelete={() => setStepToDelete(stepMap[stepId])}
-                      />
-                    )}
-                  </DraggableStepItem>
-                ))}
-              </Reorder.Group>
+                      >
+                        {(dragControls) => (
+                          <StepItem
+                            step={step}
+                            title={stepTitles.get(stepId) ?? "Untitled step"}
+                            index={sortOrder.indexOf(stepId)}
+                            isDisabled={isDisabled || isSearching}
+                            isSelected={stepId === selectedStepId}
+                            dragControls={dragControls}
+                            onSelect={() => onSelectStep(stepId)}
+                            onDelete={() => setStepToDelete(step)}
+                          />
+                        )}
+                      </DraggableStepItem>
+                    );
+                  })}
+                </Reorder.Group>
+              </MotionConfig>
             ) : (
               <Empty>
                 {permissions.can("update", "production") && (
@@ -915,7 +958,7 @@ function StepItem({
   return (
     <HStack
       className={cn(
-        "group w-full p-2 items-start hover:bg-accent/30 relative border-b bg-card cursor-pointer",
+        "group w-full select-none p-2 items-start hover:bg-accent/30 relative border-b bg-card cursor-pointer",
         isSelected && "bg-accent/50 hover:bg-accent/50"
       )}
       onClick={onSelect}
@@ -984,3 +1027,5 @@ function StepItem({
     </HStack>
   );
 }
+
+export default memo(AssemblyInstructionExplorer);
