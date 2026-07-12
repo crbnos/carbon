@@ -32,6 +32,33 @@ pub fn max_concurrency() -> usize {
     int_env("ASSEMBLER_MAX_CONCURRENCY", 2).max(1)
 }
 
+/// Redis URL for the shared job/result store. Unset => in-process backend (the
+/// single-process default). A set-but-unreachable URL falls back to memory at
+/// boot rather than refusing to start (mirrors @carbon/kv's soft-fail).
+pub fn redis_url() -> Option<String> {
+    std::env::var("ASSEMBLER_REDIS_URL")
+        .ok()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+}
+
+/// TTL (seconds) for a Redis job-status entry — long enough to outlive any poll
+/// window, short enough that abandoned jobs self-evict. Default 24h.
+pub fn job_ttl_secs() -> u64 {
+    int_env("ASSEMBLER_JOB_TTL_SECS", 86400) as u64
+}
+
+/// TTL (seconds) for a Redis content-hash result-pointer entry. Default 24h.
+pub fn result_ttl_secs() -> u64 {
+    int_env("ASSEMBLER_RESULT_TTL_SECS", 86400) as u64
+}
+
+/// Server-side cap on the `?wait=` long-poll hold (seconds). Kept under typical
+/// proxy/LB idle timeouts so a held request never trips them.
+pub fn max_long_poll_secs() -> u64 {
+    int_env("ASSEMBLER_MAX_LONG_POLL_S", 25) as u64
+}
+
 /// Cap on tokio's blocking pool — the implicit convert queue. OCCT scales to
 /// ~core count; beyond that extra blocking threads just oversubscribe (c=64
 /// measured: p99 7.2s uncapped). Excess spawn_blocking tasks queue inside the

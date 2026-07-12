@@ -22,6 +22,7 @@ lru = "0.12"
 xxhash-rust = { version = "0.8", features = ["xxh3"] }
 futures-util = "0.3"
 tokio-util = { version = "0.7", features = ["rt"] }
+redis = { version = "0.27", default-features = false, features = ["tokio-comp", "connection-manager"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 tikv-jemallocator = "0.6"

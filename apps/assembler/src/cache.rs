@@ -9,8 +9,11 @@ use bytes::Bytes;
 use lru::LruCache;
 use std::sync::{Arc, Mutex};
 
-/// Bump on ANY converter behavior change so stale entries can't be served.
-const CACHE_VERSION: u32 = 1;
+/// Single version lever for ALL cached geometry results — the in-process convert
+/// LRU (below) AND the Redis job/result-pointer store (`store.rs`). Bump on ANY
+/// converter OR planner behavior change so every stale entry, in every cache,
+/// auto-misses. This is the "content-hash key + CODE_VERSION" auto-invalidation.
+pub const CODE_VERSION: u32 = 1;
 
 pub struct CachedConvert {
     pub glb: Bytes,
@@ -53,7 +56,7 @@ impl ResultCache {
     /// `content_hash` = xxh3-128 of the STEP bytes, computed while the source
     /// streams to disk (see `http::download_hashed`) — the key costs nothing.
     pub fn key(content_hash: u128, lin: f64, ang: f64) -> String {
-        format!("{content_hash:032x}:{lin}:{ang}:v{CACHE_VERSION}")
+        format!("{content_hash:032x}:{lin}:{ang}:v{CODE_VERSION}")
     }
 
     /// Key from a caller-declared content identity (`source.contentHash`, e.g.
@@ -62,7 +65,7 @@ impl ResultCache {
     /// distinct `ch:` keyspace keeps declared keys from ever colliding with
     /// computed byte-hash keys.
     pub fn key_declared(content_hash: &str, lin: f64, ang: f64) -> String {
-        format!("ch:{content_hash}:{lin}:{ang}:v{CACHE_VERSION}")
+        format!("ch:{content_hash}:{lin}:{ang}:v{CODE_VERSION}")
     }
 
     pub fn get(&self, key: &str) -> Option<Arc<CachedConvert>> {

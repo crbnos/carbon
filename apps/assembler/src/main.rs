@@ -11,7 +11,7 @@ mod plan_jobs;
 mod progress;
 
 use axum::{
-    extract::{Path, State},
+    extract::{Path, Query, State},
     http::HeaderMap,
     routing::{get, post},
     Json, Router,
@@ -59,7 +59,7 @@ async fn serve() {
     let max = config::max_concurrency();
     let state = AppState {
         slots: Arc::new(Semaphore::new(max)),
-        jobs: plan_jobs::JobStore::default(),
+        jobs: plan_jobs::JobStore::from_env().await,
         cache: Arc::new(cache::ResultCache::new(config::cache_bytes())),
         progress: progress::ProgressStore::default(),
     };
@@ -70,7 +70,18 @@ async fn serve() {
         .route("/convert/status/:job_id", get(convert_status))
         .route("/plan", post(plan))
         .route("/plan/:job_id", get(plan_status))
+        .route("/cache/invalidate", post(cache_invalidate))
         .with_state(state);
+
+    eprintln!(
+        "assembler config: version={VERSION} concurrency={max} cacheMB={} maxParts={} maxSourceMB={} longPollCap={}s jobTtl={}s resultTtl={}s",
+        config::cache_bytes() / 1024 / 1024,
+        config::max_parts(),
+        config::max_source_bytes() / 1024 / 1024,
+        config::max_long_poll_secs(),
+        config::job_ttl_secs(),
+        config::result_ttl_secs(),
+    );
 
     let addr = std::env::var("ASSEMBLER_BIND").unwrap_or_else(|_| "0.0.0.0:8000".into());
     let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
@@ -367,29 +378,62 @@ async fn plan(
         .as_str()
         .ok_or_else(|| ApiError::invalid("missing source.url"))?;
     config::validate_url(source_url)?;
+    // Optional offload target: the service PUTs plan.json here (mirrors
+    // /convert's outputs.glb/graph) so only a pointer reaches Redis/the poll.
+    // Absent => legacy inline behavior (the app uploads the plan itself).
+    let plan_upload_url = req["outputs"]["plan"]["url"]
+        .as_str()
+        .filter(|s| !s.is_empty())
+        .map(str::to_string);
+    if let Some(url) = &plan_upload_url {
+        config::validate_url(url)?;
+    }
     let job_id = req["jobId"]
         .as_str()
         .filter(|s| !s.is_empty())
         .ok_or_else(|| ApiError::invalid("missing jobId"))?
         .to_string();
 
+    // Opaque caller context echoed back in status responses; the storage path +
+    // model id inside it also drive the completion pointer and the content-hash
+    // result cache.
+    let meta = match &req["meta"] {
+        Value::Null => None,
+        m => Some(m.clone()),
+    };
+    let plan_path = meta
+        .as_ref()
+        .and_then(|m| m["planPath"].as_str())
+        .map(str::to_string);
+    let model_upload_id = meta
+        .as_ref()
+        .and_then(|m| m["modelUploadId"].as_str())
+        .map(str::to_string);
+
     // Idempotent: attach to an in-flight run rather than starting a second.
-    if let Some(status) = state.jobs.existing_active(&job_id) {
+    if let Some(status) = state.jobs.existing_active(&job_id).await {
         return Ok((
             axum::http::StatusCode::ACCEPTED,
             Json(json!({"ok": true, "jobId": job_id, "status": status})),
         ));
     }
-    // Opaque caller context echoed back in status responses (debugging only; no
-    // server semantics — the app owns completion by polling GET /plan).
-    let meta = match &req["meta"] {
-        Value::Null => None,
-        m => Some(m.clone()),
-    };
-    state.jobs.set_pending(&job_id, meta);
-    state
-        .jobs
-        .spawn(&state, &job_id, source_url.to_string(), req["options"].clone());
+    eprintln!(
+        "[{job_id}] plan queued (model={} offload={})",
+        model_upload_id.as_deref().unwrap_or("?"),
+        plan_upload_url.is_some()
+    );
+    state.jobs.set_pending(&job_id, meta.clone()).await;
+    state.jobs.spawn(
+        &state,
+        &job_id,
+        plan_jobs::PlanReq {
+            source_url: source_url.to_string(),
+            plan_upload_url,
+            plan_path,
+            model_upload_id,
+            options: req["options"].clone(),
+        },
+    );
 
     Ok((
         axum::http::StatusCode::ACCEPTED,
@@ -397,15 +441,49 @@ async fn plan(
     ))
 }
 
+#[derive(serde::Deserialize)]
+struct WaitQuery {
+    /// Long-poll hold in seconds; server-capped. Absent => return immediately.
+    wait: Option<u64>,
+}
+
 async fn plan_status(
     State(state): State<AppState>,
     headers: HeaderMap,
     Path(job_id): Path<String>,
+    Query(q): Query<WaitQuery>,
 ) -> Result<Json<Value>, ApiError> {
     require_auth(&headers)?;
-    state
-        .jobs
-        .status(&job_id)
+    let status = match q.wait {
+        Some(secs) if secs > 0 => {
+            let capped = secs.min(config::max_long_poll_secs());
+            state
+                .jobs
+                .wait_status(&job_id, std::time::Duration::from_secs(capped))
+                .await
+        }
+        _ => state.jobs.status(&job_id).await,
+    };
+    status
         .ok_or_else(|| ApiError::new(404, "NOT_FOUND", format!("no plan job {job_id}")))
         .map(Json)
+}
+
+/// Central explicit cache invalidation: drop every content-hash result pointer
+/// for a model so the next plan re-derives. Best-effort from the app's
+/// invalidateAssemblyPlanCache / invalidateAssemblyModelCache.
+async fn cache_invalidate(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    body: Result<Json<Value>, axum::extract::rejection::JsonRejection>,
+) -> Result<Json<Value>, ApiError> {
+    require_auth(&headers)?;
+    let Json(req) = body.map_err(|_| ApiError::invalid("invalid JSON body"))?;
+    let model = req["modelUploadId"]
+        .as_str()
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| ApiError::invalid("missing modelUploadId"))?;
+    let cleared = state.jobs.invalidate_model(model).await;
+    eprintln!("cache invalidate: model={model} cleared={cleared}");
+    Ok(Json(json!({"ok": true, "cleared": cleared})))
 }

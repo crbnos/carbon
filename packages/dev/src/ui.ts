@@ -171,7 +171,7 @@ export function summaryLines(
       ? [
           row(
             pc.yellow,
-            "Geometry",
+            "Assembler",
             url("assembler", ports.PORT_ASSEMBLER),
             branchPrefix ? ports.PORT_ASSEMBLER : undefined
           )

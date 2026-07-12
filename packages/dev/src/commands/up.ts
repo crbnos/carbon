@@ -8,6 +8,7 @@ import { currentBranch } from "../git.js";
 import { onShutdown } from "../helpers.js";
 import { pickApps, pickBorrowSlug } from "../prompts.js";
 import {
+  assertAssemblerDepsBuilt,
   installDeps,
   installSkills,
   spawnApps,
@@ -156,9 +157,14 @@ export async function up(opts: UpOpts = {}) {
   const allApps = opts.all === true;
   const selectedApps = appsRequested
     ? allApps
-      ? APP_CHOICES.map((c) => c.value)
+      ? // --all excludes the assembler: it needs a one-time native OCCT build,
+        // so it stays opt-in (CARBON_DEV_APPS or an explicit pick).
+        APP_CHOICES.map((c) => c.value).filter((v) => v !== "assembler")
       : await pickApps()
     : [];
+  // Fail before booting anything heavy (docker, migrations) if the assembler is
+  // selected without its one-time OCCT build.
+  if (selectedApps.includes("assembler")) assertAssemblerDepsBuilt();
   const slug = resolveSlug(root);
 
   // Resolve borrowed slot before ensureSlugAvailable (borrowing doesn't start

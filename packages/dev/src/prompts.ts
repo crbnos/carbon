@@ -56,7 +56,12 @@ export async function pickApps(): Promise<AppId[]> {
       .map((s) => s.trim())
       .filter((s): s is AppId => APP_CHOICES.some((c) => c.value === s));
   }
-  if (!process.stdin.isTTY) return APP_CHOICES.map((c) => c.value);
+  // The assembler is opt-in: it needs a one-time native OCCT build, so it's
+  // never selected by default — only via CARBON_DEV_APPS or an explicit check.
+  const defaultApps = APP_CHOICES.filter((c) => c.value !== "assembler").map(
+    (c) => c.value
+  );
+  if (!process.stdin.isTTY) return defaultApps;
 
   note(
     "When no apps are selected it will only run (postgres, kong, supabase, inngest, mail) without spawning ERP/MES dev servers.",
@@ -69,7 +74,7 @@ export async function pickApps(): Promise<AppId[]> {
       label: c.label,
       hint: c.hint
     })),
-    initialValues: APP_CHOICES.map((c) => c.value),
+    initialValues: defaultApps,
     required: false
   });
   if (isCancel(picked)) abort();

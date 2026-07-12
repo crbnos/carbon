@@ -15,7 +15,8 @@ Design + history: `.ai/plans/2026-07-10-geometry-service-rust-rewrite.md`,
 The service binary is `apps/assembler`; the heavy lifting lives in workspace crates:
 
 ```
-apps/assembler/  # axum HTTP: /health, /convert, /plan (async; poll GET /plan/{id})
+apps/assembler/  # axum HTTP: /health, /convert, /plan (async; long-poll GET /plan/{id}?wait=),
+                 #   /cache/invalidate; Memory|Redis job+result store (ASSEMBLER_REDIS_URL)
                  # + bearer auth, URL validation, concurrency semaphore, graceful shutdown
 crates/
 ├── collision/   # cxx bridge over C++ FCL 0.7.0. new_bvh / collide_pair / distance_pair.
@@ -90,17 +91,48 @@ ASSEMBLER_DEV_MODE=true cargo run -p assembler   # listens on 0.0.0.0:8000 (ASSE
 Env: `ASSEMBLER_SERVICE_API_KEY` (bearer auth), `ASSEMBLER_DEV_MODE=true` (allow
 unauth + http + skip TLS verify, local only), `ASSEMBLER_MAX_SOURCE_MB` (250),
 `ASSEMBLER_MAX_PARTS` (5000), `ASSEMBLER_MAX_CONCURRENCY` (2),
-`ASSEMBLER_SHUTDOWN_GRACE_S` (600), `ASSEMBLER_ALLOWED_URL_HOSTS`.
+`ASSEMBLER_SHUTDOWN_GRACE_S` (600), `ASSEMBLER_ALLOWED_URL_HOSTS`,
+`ASSEMBLER_REDIS_URL` (unset ⇒ in-memory store), `ASSEMBLER_JOB_TTL_SECS`
+(86400), `ASSEMBLER_RESULT_TTL_SECS` (86400), `ASSEMBLER_MAX_LONG_POLL_S` (25).
 
 ## Completion & lifecycle
 
 `/plan` is async: POST returns 202, the plan runs in a background task holding a
-concurrency slot, and the result stays in memory at `GET /plan/{jobId}`. The
-service has **no storage credentials** — it never uploads artifacts; the app's
-`assembly-plan` Inngest function polls `GET /plan` and persists plan.json itself
-with the service role. On SIGTERM/SIGINT the service stops accepting requests,
-drains in-flight converts and plan jobs, then force-exits after
-`ASSEMBLER_SHUTDOWN_GRACE_S`.
+concurrency slot. Callers **long-poll** `GET /plan/{jobId}?wait=<secs>` — the
+request is held open (server-capped at `ASSEMBLER_MAX_LONG_POLL_S`) until the job
+reaches a terminal state, so completion is near-immediate and a whole plan costs
+a handful of checkpointed Inngest steps rather than ~180 short polls (`?wait`
+absent ⇒ immediate return, back-compat).
+
+**Job status + pointers live in a backend-selectable store** (`plan_jobs.rs`),
+chosen at boot by `ASSEMBLER_REDIS_URL`:
+- unset ⇒ `Memory` (process-local DashMaps, single-process behavior);
+- set + reachable ⇒ `Redis` (a set-but-unreachable URL logs and falls back to
+  memory — never refuses to boot).
+Redis holds **only status + pointers, never plan/glb bytes**: `asm:job:{jobId}` →
+`{status, planPath, stats, …}` (TTL `ASSEMBLER_JOB_TTL_SECS`). This is what makes
+the service **stateless** — a restart or a sibling replica can still answer the
+poll (no 404-on-restart loss).
+
+**The plan artifact is offloaded to storage.** The service still has **no
+persistent storage credentials**, but the app passes a signed PUT URL as
+`outputs.plan.url` (mirroring `/convert`'s glb/graph outputs); on success the
+service PUTs plan.json there and the poll returns only the `{planPath, stats}`
+pointer. (Legacy: if `outputs.plan.url` is absent the plan rides the poll body
+and the app uploads it.)
+
+**Content-hash result cache** (`asm:result:{model}:{contentHash}:{optsHash}:v{CODE_VERSION}`
+→ pointer, TTL `ASSEMBLER_RESULT_TTL_SECS`): a repeat of the same model + bytes +
+options + code version reuses the prior plan's storage pointer, skipping the FCL
+compute. `CODE_VERSION` (`cache.rs`, shared with the convert LRU) is the single
+version lever — **bump it on any converter OR planner behavior change** to
+auto-invalidate every cache. `optsHash` includes `units`/`sequence`, so a fresh
+regenerate that drops auto-swarm units misses automatically. `POST /cache/invalidate`
+`{modelUploadId}` is the central explicit bust (called best-effort from the app's
+`invalidateAssemblyPlanCache`/`invalidateAssemblyModelCache`).
+
+On SIGTERM/SIGINT the service stops accepting requests, drains in-flight converts
+and plan jobs, then force-exits after `ASSEMBLER_SHUTDOWN_GRACE_S`.
 
 ## Not yet done
 

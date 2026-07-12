@@ -1,6 +1,7 @@
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import { nameSimilarity, tiptapToText } from "@carbon/utils";
@@ -4007,6 +4008,33 @@ export async function deleteAssemblyInstruction(
 }
 
 /**
+ * Best-effort: tell the assembler to drop its content-hash result-pointer cache
+ * for a model, so a re-plan of unchanged bytes+options re-derives instead of
+ * reusing a stale pointer. The DB/storage invalidation is the real gate; this is
+ * belt-and-suspenders (the service cache also auto-invalidates on CODE_VERSION
+ * and any option change). Skips silently when the service URL is unset, and
+ * never throws — a failed notify must not block the DB invalidation.
+ */
+async function notifyAssemblerInvalidate(modelUploadId: string) {
+  if (!ASSEMBLER_SERVICE_URL) return;
+  try {
+    await fetch(`${ASSEMBLER_SERVICE_URL}/cache/invalidate`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(ASSEMBLER_SERVICE_API_KEY
+          ? { Authorization: `Bearer ${ASSEMBLER_SERVICE_API_KEY}` }
+          : {})
+      },
+      body: JSON.stringify({ modelUploadId }),
+      signal: AbortSignal.timeout(5000)
+    });
+  } catch {
+    // swallow — best-effort
+  }
+}
+
+/**
  * Drops the cached motion plan for a model so the next instruction re-plans from
  * scratch (with the current algorithm). Leaves the expensive conversion output
  * (glb/graph on the modelUpload) intact — conversion isn't what a planner change
@@ -4053,6 +4081,22 @@ async function invalidateAssemblyPlanCache(
     .delete()
     .eq("modelUploadId", modelUploadId)
     .eq("kind", "plan");
+
+  // Auto-detected groups (swarms) get materialized as `assemblyUnit` rows, which
+  // FREEZE detection: `loadPlanUnits` feeds them back to the planner as caller
+  // units, so a re-plan merges them as-is and never re-runs swarm detection.
+  // They're derived cache — invalidating the plan must drop them too, else a
+  // deleted-then-recreated instruction re-plans against the frozen unit and
+  // resurrects the stale grouping (defeating any planner improvement). The guard
+  // above already ensured no other instruction authors against this model, so
+  // this is safe. User-authored units (sourceGroupId null) are kept.
+  await client
+    .from("assemblyUnit")
+    .delete()
+    .eq("modelUploadId", modelUploadId)
+    .not("sourceGroupId", "is", null);
+
+  await notifyAssemblerInvalidate(modelUploadId);
 }
 
 /**
@@ -4097,6 +4141,16 @@ export async function invalidateAssemblyModelCache(
     .delete()
     .eq("modelUploadId", modelUploadId)
     .eq("kind", "plan");
+
+  // Drop auto-materialized swarm units too (see invalidateAssemblyPlanCache) —
+  // they freeze detection, so a full model-cache reset must re-derive them.
+  await client
+    .from("assemblyUnit")
+    .delete()
+    .eq("modelUploadId", modelUploadId)
+    .not("sourceGroupId", "is", null);
+
+  await notifyAssemblerInvalidate(modelUploadId);
 
   return client
     .from("modelUpload")
