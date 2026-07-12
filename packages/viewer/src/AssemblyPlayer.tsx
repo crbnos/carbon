@@ -670,7 +670,13 @@ export const AssemblyPlayer = forwardRef<
   );
 });
 
-type OverrideKind = "ghost" | "highlight" | "selected" | "external" | "fade";
+type OverrideKind =
+  | "ghost"
+  | "highlight"
+  | "selected"
+  | "external"
+  | "fade"
+  | "hover";
 
 type MaterialOverrides = {
   original: Material | Material[];
@@ -680,6 +686,7 @@ type MaterialOverrides = {
   selected?: Material | Material[];
   external?: Material | Material[];
   fade?: Material | Material[];
+  hover?: Material | Material[];
 };
 
 // Scratch vectors for the camera-transition useFrame — reused every frame so
@@ -693,6 +700,10 @@ const HIGHLIGHT_COLOR = 0x3b82f6;
 // current selection reads the same everywhere, Onshape-style.
 const SELECTED_COLOR = 0xef4444;
 const EXTERNAL_COLOR = 0xef4444;
+// A soft warm tint under the pointer — a "you can pick this" affordance,
+// weaker than the blue active-step highlight and the red selection.
+const HOVER_COLOR = 0xfbbf24;
+const HOVER_EMISSIVE_INTENSITY = 0.22;
 const GHOST_OPACITY = 0.3;
 /** Seconds a flagged step's components take to fade in at the seated pose */
 const FADE_SECONDS = 1.2;
@@ -815,6 +826,21 @@ function AssemblyScene({
     [hiddenNodeIds]
   );
 
+  // Component picking is only meaningful in the editor (a selection callback,
+  // not read-only) — hover affordance is gated on it so pure playback stays
+  // distraction-free.
+  const pickingEnabled = !readOnly && !!onSelectComponents;
+  // The pickable part under the pointer (soft tint + pointer cursor). A ref
+  // mirrors it so the high-frequency pointer-move handler only triggers a
+  // re-render when the resolved part actually changes.
+  const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
+  const hoveredRef = useRef<string | null>(null);
+  const setHovered = useCallback((nodeId: string | null) => {
+    if (hoveredRef.current === nodeId) return;
+    hoveredRef.current = nodeId;
+    setHoveredNodeId(nodeId);
+  }, []);
+
   /** nodeId → index of the first step that installs it */
   const stepIndexByNode = useMemo(() => {
     const map = new Map<string, number>();
@@ -841,6 +867,7 @@ function AssemblyScene({
         if (entry.selected) disposeMaterials(entry.selected);
         if (entry.external) disposeMaterials(entry.external);
         if (entry.fade) disposeMaterials(entry.fade);
+        if (entry.hover) disposeMaterials(entry.hover);
       }
       overrides.clear();
     };
@@ -967,6 +994,20 @@ function AssemblyScene({
         mesh.material = getOverride(mesh, overrides, "selected");
       });
     }
+
+    // Pointer hover: a soft tint on the pickable part under the cursor so the
+    // user sees what a click will select. Applied last but yields to a selected
+    // part (its red cue wins) and never shows on a hidden/ghosted part.
+    if (hoveredNodeId && !highlightedSet.has(hoveredNodeId)) {
+      const node = nodesById.get(hoveredNodeId);
+      if (node?.visible) {
+        node.traverse((object) => {
+          if (!(object as Mesh).isMesh) return;
+          const mesh = object as Mesh;
+          mesh.material = getOverride(mesh, overrides, "hover");
+        });
+      }
+    }
   }, [
     nodesById,
     stepIndexByNode,
@@ -978,7 +1019,8 @@ function AssemblyScene({
     componentPickerActive,
     highlightedSet,
     hiddenSet,
-    focusedSet
+    focusedSet,
+    hoveredNodeId
   ]);
 
   // --- Animation -----------------------------------------------------------
@@ -1614,6 +1656,30 @@ function AssemblyScene({
     [readOnly, onSelectComponents, highlightedSet]
   );
 
+  const handlePointerMove = useCallback(
+    (moveEvent: ThreeEvent<PointerEvent>) => {
+      if (!pickingEnabled) return;
+      setHovered(findVisibleNodeId(moveEvent.intersections));
+    },
+    [pickingEnabled, setHovered]
+  );
+
+  const handlePointerOut = useCallback(() => setHovered(null), [setHovered]);
+
+  // Pointer cursor as the pickability affordance; also drop any stale hover when
+  // picking turns off (leaving edit mode / going read-only). document.body owns
+  // the cursor because the r3f canvas fills the pane.
+  useEffect(() => {
+    if (!pickingEnabled) setHovered(null);
+  }, [pickingEnabled, setHovered]);
+
+  useEffect(() => {
+    document.body.style.cursor = hoveredNodeId ? "pointer" : "";
+    return () => {
+      document.body.style.cursor = "";
+    };
+  }, [hoveredNodeId]);
+
   // A box drag just completed the selection — swallow the click that fires at
   // the end of the drag so it doesn't immediately clear what we just selected.
   const boxJustSelectedRef = useRef(false);
@@ -1781,6 +1847,8 @@ function AssemblyScene({
         object={scene}
         onClick={handleClick}
         onPointerMissed={handlePointerMissed}
+        onPointerMove={handlePointerMove}
+        onPointerOut={handlePointerOut}
       />
       {isEditingActive && editMotion && onMotionChange && seatedCentroid && (
         <MotionPathEditor
@@ -2031,13 +2099,19 @@ function getOverride(
         ? HIGHLIGHT_COLOR
         : kind === "selected"
           ? SELECTED_COLOR
-          : EXTERNAL_COLOR;
+          : kind === "hover"
+            ? HOVER_COLOR
+            : EXTERNAL_COLOR;
     override =
       kind === "ghost"
         ? cloneAsGhost(entry.original)
         : kind === "fade"
           ? cloneAsFade(entry.original)
-          : cloneWithEmissive(entry.original, emissiveColor);
+          : cloneWithEmissive(
+              entry.original,
+              emissiveColor,
+              kind === "hover" ? HOVER_EMISSIVE_INTENSITY : 0.4
+            );
     entry[kind] = override;
   }
   return override;
@@ -2076,15 +2150,19 @@ function cloneAsGhost(material: Material | Material[]): Material | Material[] {
 
 function cloneWithEmissive(
   material: Material | Material[],
-  emissiveColor: number
+  emissiveColor: number,
+  emissiveIntensity = 0.4
 ): Material | Material[] {
   const clone = (source: Material): Material => {
     const cloned = source.clone();
     if (cloned instanceof MeshStandardMaterial) {
       cloned.emissive = new Color(emissiveColor);
-      cloned.emissiveIntensity = 0.4;
+      cloned.emissiveIntensity = emissiveIntensity;
     } else if ("color" in cloned) {
-      (cloned as MeshBasicMaterial).color.lerp(new Color(emissiveColor), 0.5);
+      (cloned as MeshBasicMaterial).color.lerp(
+        new Color(emissiveColor),
+        emissiveIntensity + 0.1
+      );
     }
     return cloned;
   };
