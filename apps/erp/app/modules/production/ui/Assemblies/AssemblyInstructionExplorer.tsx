@@ -41,6 +41,7 @@ import {
   LuCirclePlus,
   LuEllipsisVertical,
   LuGripVertical,
+  LuHand,
   LuSearch,
   LuSparkles,
   LuTrash,
@@ -994,6 +995,16 @@ function StepItem({
           <p className="text-muted-foreground text-xs">
             {componentCount} component{componentCount === 1 ? "" : "s"}
           </p>
+          {(step.warnings as { needsSupport?: boolean } | null)
+            ?.needsSupport && (
+            <span
+              className="flex shrink-0 items-center gap-1 text-xs text-amber-600 dark:text-amber-500"
+              title="A part in this step may tip once placed — consider a fixture or a second person."
+            >
+              <LuHand className="size-3.5" />
+              Hold
+            </span>
+          )}
         </HStack>
       </VStack>
       {!isDisabled && (

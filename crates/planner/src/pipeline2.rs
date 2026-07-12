@@ -37,6 +37,10 @@ pub struct PlanOutcome {
     /// connectivity preference and the emitted viewer contact graph. Strict
     /// `adjacency` still governs base selection and collision correctness.
     pub relatedness: Edges,
+    /// Leaf node ids whose center of mass falls outside the support polygon of
+    /// the parts placed below them (support-polygon check, `stability.rs`).
+    /// Purely diagnostic — surfaced per step as `needsSupport`.
+    pub needs_support: HashSet<String>,
 }
 
 /// `_removal_segments`: a stored INSERTION motion as removal segments.
@@ -1622,6 +1626,8 @@ pub fn plan_parts(
 
     let tiers = tally_tiers(&planned);
     let verified_count = planned.iter().filter(|e| e.verified).count() as i64;
+    let needs_support =
+        crate::stability::support_check(&sequence, &parts, &pair_depths, &fasteners);
     PlanOutcome {
         planned,
         sequence,
@@ -1632,6 +1638,7 @@ pub fn plan_parts(
         edges,
         adjacency: unit_adjacency,
         relatedness,
+        needs_support,
     }
 }
 
@@ -1691,6 +1698,7 @@ pub fn plan_fixed_sequence(
             edges: HashMap::new(),
             adjacency: HashMap::new(),
             relatedness: HashMap::new(),
+            needs_support: HashSet::new(),
         };
     }
 
@@ -1872,6 +1880,8 @@ pub fn plan_fixed_sequence(
     }
 
     let verified_count = expanded.iter().filter(|e| e.verified).count() as i64;
+    let needs_support =
+        crate::stability::support_check(&sequence, &parts, &pair_depths, &fasteners);
     PlanOutcome {
         planned: expanded,
         sequence,
@@ -1882,5 +1892,6 @@ pub fn plan_fixed_sequence(
         edges: HashMap::new(),
         adjacency: HashMap::new(),
         relatedness: HashMap::new(),
+        needs_support,
     }
 }

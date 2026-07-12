@@ -11,6 +11,7 @@ pub mod greedy;
 pub mod npy;
 pub mod pipeline;
 pub mod pipeline2;
+pub mod stability;
 pub mod steps;
 pub mod types;
 pub mod view;

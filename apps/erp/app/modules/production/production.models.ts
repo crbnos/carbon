@@ -1157,7 +1157,13 @@ export const fastenerSchema = z.object({
  */
 export const stepPlanWarningsSchema = z.object({
   flagged: z.boolean().optional(),
-  blockedBy: z.array(z.string()).optional()
+  blockedBy: z.array(z.string()).optional(),
+  /**
+   * A part in this step will tip once placed (its center of mass falls outside
+   * the support polygon of the parts below it) — likely needs a fixture or a
+   * second hand. Diagnostic only; never blocks generation or playback.
+   */
+  needsSupport: z.boolean().optional()
 });
 
 const jsonField = <T extends z.ZodTypeAny>(schema: T) =>

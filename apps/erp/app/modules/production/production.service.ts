@@ -5398,10 +5398,17 @@ export async function generateAssemblyStepsFromPlan(
       camera: (group.viewDirection
         ? { source: "plan", direction: group.viewDirection }
         : null) as Json | null,
-      warnings:
-        group.blockedBy.length > 0
-          ? ({ flagged: true, blockedBy: group.blockedBy } as Json)
-          : null,
+      warnings: ((): Json | null => {
+        const w: Record<string, Json> = {};
+        if (group.blockedBy.length > 0) {
+          w.flagged = true;
+          w.blockedBy = group.blockedBy;
+        }
+        if (group.needsSupport) {
+          w.needsSupport = true;
+        }
+        return Object.keys(w).length > 0 ? (w as Json) : null;
+      })(),
       planConfidence: group.confidence,
       status: "Review" as const,
       companyId: args.companyId,

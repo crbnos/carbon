@@ -25,6 +25,12 @@ export type AssemblyPlanComponent = {
   /** v2: rigidly merged into this component (rides its step) */
   mergedInto?: string;
   /**
+   * The part's center of mass falls outside the support polygon of the parts
+   * placed below it — it will tip and likely needs a fixture or a second hand.
+   * Diagnostic only.
+   */
+  needsSupport?: boolean;
+  /**
    * Mesh-precise camera direction (unit vector, target→eye) baked by the
    * planner: sight lines against the real triangles of everything installed
    * earlier. The viewer applies it with live framing (target, distance,
@@ -150,6 +156,11 @@ export type AssemblyStepGroup = {
    * the components in at their seated pose.
    */
   blockedBy: string[];
+  /**
+   * Any member's center of mass falls outside the support polygon of the parts
+   * below it — the step may need a fixture or a second hand (diagnostic).
+   */
+  needsSupport: boolean;
   /** v3: the pre-grouped unit's name (e.g. "PCB Assembly"), for the step title. */
   name?: string;
   /** Planner-baked camera direction for this step (see AssemblyPlanComponent). */
@@ -269,6 +280,7 @@ export function buildAssemblyStepGroups(
     const component = plan.components[nodeId];
     if (component?.mergedInto) continue; // defensive: hosts carry their merges
     const blockedBy = component?.blockedBy ?? [];
+    const needsSupport = component?.needsSupport === true;
     const flagged = blockedBy.length > 0 || component?.verified === false;
     const motion: Motion = flagged
       ? { type: "none" }
@@ -309,6 +321,7 @@ export function buildAssemblyStepGroups(
           previous.blockedBy.push(blocker);
         }
       }
+      if (needsSupport) previous.needsSupport = true;
       // Identical components can sit at different depths: animate the longest
       if (motion.type === "linear" && previous.motion.type === "linear") {
         previous.motion = {
@@ -323,6 +336,7 @@ export function buildAssemblyStepGroups(
       motion,
       confidence,
       blockedBy: [...blockedBy],
+      needsSupport,
       name: component?.groupId
         ? plan.groups?.[component.groupId]?.name
         : undefined,

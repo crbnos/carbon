@@ -101,8 +101,9 @@ fn motion_to_json(m: &Motion) -> Value {
     }
 }
 
-/// `_part_to_dict`.
-fn part_to_dict(entry: &PlannedComponent) -> Value {
+/// `_part_to_dict`. `needs_support` is the set of leaf ids flagged tippy by the
+/// stability check; a member's own id (not the group rep's) decides its flag.
+fn part_to_dict(entry: &PlannedComponent, needs_support: &HashSet<String>) -> Value {
     let mut m = Map::new();
     m.insert("motion".into(), motion_to_json(&entry.motion));
     if let Some(c) = &entry.confidence {
@@ -119,6 +120,9 @@ fn part_to_dict(entry: &PlannedComponent) -> Value {
     }
     if let Some(g) = &entry.group_id {
         m.insert("groupId".into(), json!(g));
+    }
+    if needs_support.contains(&entry.node_id) {
+        m.insert("needsSupport".into(), json!(true));
     }
     m.insert("verified".into(), json!(entry.verified));
     Value::Object(m)
@@ -255,10 +259,8 @@ pub fn plan_step(
     // pre-expansion (merged-body) space, same as `outcome.sequence`.
     let view: HashMap<String, ([f64; 3], f64)> = {
         let view_start = std::time::Instant::now();
-        let by_id: HashMap<&str, &Component> = view_parts
-            .iter()
-            .map(|p| (p.node_id.as_str(), p))
-            .collect();
+        let by_id: HashMap<&str, &Component> =
+            view_parts.iter().map(|p| (p.node_id.as_str(), p)).collect();
         let motion_by_id: HashMap<&str, &Motion> = outcome
             .planned
             .iter()
@@ -268,8 +270,7 @@ pub fn plan_step(
         // Bodies not yet installed when this step plays. They're hidden/ghosted
         // during playback, so they score at a low weight — but a direction that
         // also clears them survives the viewer's "show all future parts" toggle.
-        let mut future_ids: HashSet<&str> =
-            view_parts.iter().map(|p| p.node_id.as_str()).collect();
+        let mut future_ids: HashSet<&str> = view_parts.iter().map(|p| p.node_id.as_str()).collect();
         let mut installed: Vec<&Component> = Vec::with_capacity(view_parts.len());
         let mut out = HashMap::new();
         let mut worst: (f64, &str) = (0.0, "");
@@ -328,7 +329,7 @@ pub fn plan_step(
         let view_entry = view.get(&entry.node_id);
         match expansion.get(&entry.node_id) {
             None => {
-                let mut payload = part_to_dict(entry);
+                let mut payload = part_to_dict(entry, &outcome.needs_support);
                 if let Some((d, obstruction)) = view_entry {
                     payload["viewDirection"] = json!(d.to_vec());
                     payload["viewObstruction"] = json!(obstruction);
@@ -336,10 +337,17 @@ pub fn plan_step(
                 components.insert(entry.node_id.clone(), payload);
             }
             Some((members, name)) => {
-                let mut member_payload = part_to_dict(entry);
+                let mut member_payload = part_to_dict(entry, &outcome.needs_support);
                 member_payload["groupId"] = json!(entry.node_id);
                 for member in members {
-                    components.insert(member.clone(), member_payload.clone());
+                    // needsSupport is per leaf, not per group rep.
+                    let mut mp = member_payload.clone();
+                    if outcome.needs_support.contains(member) {
+                        mp["needsSupport"] = json!(true);
+                    } else if let Some(obj) = mp.as_object_mut() {
+                        obj.remove("needsSupport");
+                    }
+                    components.insert(member.clone(), mp);
                 }
                 let mut gp = Map::new();
                 gp.insert("componentNodeIds".into(), json!(members));
