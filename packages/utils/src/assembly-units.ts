@@ -14,8 +14,9 @@
  * which BOM line each leaf belongs to, not by tree position: the LLM assigns
  * each distinct component name to a BOM line (electronic components → the "PCB"
  * line), leaves group by assignment, and a line collapses into ONE rigid body
- * only when it's a single instance shown in detail (quantity ≤ 1 with ≥ 2
- * leaves) — the PCB, never the 8 screws.
+ * only when it's a qty-1 detail swarm — many TINY components relative to the
+ * line's extent (a populated PCB) — never a mechanical subassembly of
+ * substantial parts, and never the 8 screws (see `isDetailSwarm`).
  *
  * Assignments resolve to the TOP-LEVEL line: a leaf mapped (by geometry hash
  * or name) to an item that lives INSIDE a top-level Make subassembly's BOM —
