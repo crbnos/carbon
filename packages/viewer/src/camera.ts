@@ -137,12 +137,93 @@ function segmentIntersectsBox(origin: Vec3, end: Vec3, box: Aabb): boolean {
   return true;
 }
 
+export type FramingFit = {
+  /** Target shift along the camera's [right, up] axes (world units) */
+  pan: [number, number];
+  /** Eye distance from the (shifted) target */
+  distance: number;
+};
+
+/**
+ * Minimal view-plane pan — and, only when the action genuinely can't fit,
+ * a grown eye distance — that puts every point inside the camera frustum
+ * with `margin` of the half-frustum usable (0.85 leaves a 15% border).
+ *
+ * Points are in CAMERA coordinates relative to the target: [right, up, view]
+ * where `view` points from the target toward the eye. A point at [x, y, v]
+ * sits at eye depth (distance − v) and is horizontally contained iff
+ * |x − panX| ≤ margin · tanHalfH · (distance − v); the pan interval is the
+ * intersection of those constraints, per axis, and the smallest |pan| inside
+ * it wins. Distance never shrinks below `standingDistance` — the per-step
+ * zoom stays steady.
+ */
+export function fitFraming(
+  points: readonly Vec3[],
+  tanHalfH: number,
+  tanHalfV: number,
+  margin: number,
+  standingDistance: number
+): FramingFit {
+  if (points.length === 0) return { pan: [0, 0], distance: standingDistance };
+  const maxDistance = standingDistance * 4;
+  // Smallest shift inside [lo, hi]; interval midpoint when it's empty
+  const pick = (lo: number, hi: number): number =>
+    lo <= hi ? Math.min(Math.max(0, lo), hi) : (lo + hi) / 2;
+  let distance = standingDistance;
+  for (;;) {
+    let loX = Number.NEGATIVE_INFINITY;
+    let hiX = Number.POSITIVE_INFINITY;
+    let loY = Number.NEGATIVE_INFINITY;
+    let hiY = Number.POSITIVE_INFINITY;
+    let allInFront = true;
+    for (const [x, y, v] of points) {
+      const depth = distance - v;
+      if (depth <= 1e-6) {
+        allInFront = false;
+        break;
+      }
+      const hx = margin * tanHalfH * depth;
+      const hy = margin * tanHalfV * depth;
+      loX = Math.max(loX, x - hx);
+      hiX = Math.min(hiX, x + hx);
+      loY = Math.max(loY, y - hy);
+      hiY = Math.min(hiY, y + hy);
+    }
+    if (allInFront && loX <= hiX && loY <= hiY) {
+      return { pan: [pick(loX, hiX), pick(loY, hiY)], distance };
+    }
+    if (distance >= maxDistance) {
+      // Give up growing: best-effort pan (midpoints of the empty intervals)
+      return allInFront
+        ? { pan: [pick(loX, hiX), pick(loY, hiY)], distance }
+        : { pan: [0, 0], distance };
+    }
+    distance = Math.min(distance * 1.2, maxDistance);
+  }
+}
+
+/** The 8 corners of an AABB, optionally translated by `offset`. */
+function boxCorners(box: Aabb, offset: Vec3 | null): Vec3[] {
+  const corners: Vec3[] = [];
+  for (let i = 0; i < 8; i++) {
+    const corner: Vec3 = [
+      i & 1 ? box.max[0] : box.min[0],
+      i & 2 ? box.max[1] : box.min[1],
+      i & 4 ? box.max[2] : box.min[2]
+    ];
+    corners.push(offset ? add(corner, offset) : corner);
+  }
+  return corners;
+}
+
 /**
  * A baked camera pose that frames a step's components on their motion path with
  * an unobstructed sight line, given only the components present when the step
  * plays (`occluderNodeIds` — the already-animated parts). Keeps the standing
- * whole-assembly distance and only rotates the view angle. Returns null when the
- * geometry is degenerate (no subject bounds / zero-size assembly).
+ * whole-assembly distance and only rotates the view angle, then pans (and, only
+ * if the action can't fit, zooms out) so the part AND its full travel are
+ * entirely inside the frustum. Returns null when the geometry is degenerate
+ * (no subject bounds / zero-size assembly).
  */
 export function computeStepCameraPose(
   graphIndex: AssemblyGraphIndex,
@@ -169,11 +250,17 @@ export function computeStepCameraPose(
   // Aim mostly at the whole assembly (context) with a nudge toward the part
   const target = lerp(assemblyCenter, subjectCenter, 0.3);
 
-  // Where the action happens: the seated pose and the travel midpoint
-  const lookPoints: Vec3[] = [subjectCenter];
+  // Where the action happens: the seated body (corners, so a mostly-hidden
+  // part scores worse than a clear one) plus the full travel — start,
+  // midpoint, and seat.
   const startOffset = insertionStartOffset(motion);
+  const lookPoints: Vec3[] = [
+    subjectCenter,
+    ...boxCorners(subjectBounds, null)
+  ];
   if (startOffset) {
     lookPoints.push(add(subjectCenter, scale(startOffset, 0.5)));
+    lookPoints.push(add(subjectCenter, startOffset));
   }
 
   const subjectSet = new Set(subjectNodeIds);
@@ -195,7 +282,9 @@ export function computeStepCameraPose(
   const basisV = normalize(cross(up, basisU));
 
   const candidates: Vec3[] = [];
-  for (const elevation of [0.3, 0.55]) {
+  // Third, steeper ring: in dense machines the only clear sight line to a
+  // buried part is often from high above.
+  for (const elevation of [0.3, 0.55, 0.8]) {
     const horizontal = Math.sqrt(1 - elevation * elevation);
     for (let i = 0; i < 8; i++) {
       const azimuth = (i / 8) * Math.PI * 2;
@@ -234,9 +323,35 @@ export function computeStepCameraPose(
     }
   }
 
+  // Guarantee the action is entirely in frame: pan the target (and only grow
+  // the distance when the action genuinely can't fit) so the seated body plus
+  // its travel-start copy sit inside the frustum. Aspect is unknown at bake
+  // time — 4:3 is conservative for the typical wider viewer canvas.
+  let right = normalize(cross(up, bestDirection));
+  if (len(right) < 1e-6) right = [1, 0, 0];
+  const trueUp = normalize(cross(bestDirection, right));
+  const actionPoints = boxCorners(subjectBounds, null);
+  if (startOffset) actionPoints.push(...boxCorners(subjectBounds, startOffset));
+  const camPoints: Vec3[] = actionPoints.map((point) => {
+    const rel = sub(point, target);
+    return [dot(rel, right), dot(rel, trueUp), dot(rel, bestDirection)];
+  });
+  const tanHalfV = Math.tan(((fov / 2) * Math.PI) / 180);
+  const fit = fitFraming(
+    camPoints,
+    tanHalfV * (4 / 3),
+    tanHalfV,
+    0.85,
+    distance
+  );
+  const framedTarget = add(
+    add(target, scale(right, fit.pan[0])),
+    scale(trueUp, fit.pan[1])
+  );
+
   return {
-    position: add(target, scale(bestDirection, distance)),
-    target,
+    position: add(framedTarget, scale(bestDirection, fit.distance)),
+    target: framedTarget,
     fov
   };
 }

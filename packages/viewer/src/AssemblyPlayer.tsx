@@ -23,6 +23,7 @@ import {
 } from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { AssemblyViewer } from "./AssemblyViewer";
+import { fitFraming } from "./camera";
 import { describeStep, type NamedUnit } from "./describe";
 import { indexAssemblyGraph } from "./graph";
 import { MotionPathEditor } from "./MotionPathEditor";
@@ -1366,14 +1367,28 @@ function AssemblyScene({
     // Aim mostly at the assembly (context) with a nudge toward the component
     const target = center.clone().lerp(componentCenter, 0.3);
 
-    // Where the action happens: the seated pose and the travel midpoint
+    // Where the action happens: the seated body (corners, so a mostly-hidden
+    // part scores worse than a clear one) plus the full travel — start,
+    // midpoint, and seat.
     const motionDirection = insertionDirection(step.motion);
-    const lookPoints = [componentCenter];
     const startOffset = insertionStartOffset(step.motion);
+    const boxCorner = (box: Box3, i: number, offset: Vector3 | null) => {
+      const corner = new Vector3(
+        i & 1 ? box.max.x : box.min.x,
+        i & 2 ? box.max.y : box.min.y,
+        i & 4 ? box.max.z : box.min.z
+      );
+      return offset ? corner.add(offset) : corner;
+    };
+    const lookPoints = [componentCenter];
+    for (let i = 0; i < 8; i++) {
+      lookPoints.push(boxCorner(componentBox, i, null));
+    }
     if (startOffset) {
       lookPoints.push(
         componentCenter.clone().addScaledVector(startOffset, 0.5)
       );
+      lookPoints.push(componentCenter.clone().add(startOffset));
     }
 
     // Occluders: everything that renders during this step, weighted by how
@@ -1410,7 +1425,9 @@ function AssemblyScene({
       .normalize();
     const candidates: Vector3[] = [];
     if (currentDirection.lengthSq() > 1e-6) candidates.push(currentDirection);
-    for (const elevation of [0.3, 0.55]) {
+    // Third, steeper ring: in dense machines the only clear sight line to a
+    // buried part is often from high above.
+    for (const elevation of [0.3, 0.55, 0.8]) {
       const horizontal = Math.sqrt(1 - elevation * elevation);
       for (let i = 0; i < 8; i++) {
         const azimuth = (i / 8) * Math.PI * 2;
@@ -1450,9 +1467,46 @@ function AssemblyScene({
       }
     }
 
+    // Guarantee the action is entirely in frame: pan the target (and only
+    // grow the distance when the action genuinely can't fit) so the seated
+    // body plus its travel-start copy sit inside the frustum.
+    let right = new Vector3().crossVectors(up, bestDirection);
+    if (right.lengthSq() < 1e-6) right = new Vector3(1, 0, 0);
+    right.normalize();
+    const trueUp = new Vector3().crossVectors(bestDirection, right).normalize();
+    const actionPoints: Vector3[] = [];
+    for (let i = 0; i < 8; i++) {
+      actionPoints.push(boxCorner(componentBox, i, null));
+      if (startOffset)
+        actionPoints.push(boxCorner(componentBox, i, startOffset));
+    }
+    const rel = new Vector3();
+    const camPoints: Vec3[] = actionPoints.map((point) => {
+      rel.copy(point).sub(target);
+      return [rel.dot(right), rel.dot(trueUp), rel.dot(bestDirection)];
+    });
+    const aspect =
+      camera instanceof PerspectiveCamera && camera.aspect > 0
+        ? camera.aspect
+        : 16 / 9;
+    const tanHalfV = Math.tan(((fov / 2) * Math.PI) / 180);
+    const fit = fitFraming(
+      camPoints,
+      tanHalfV * aspect,
+      tanHalfV,
+      0.85,
+      distance
+    );
+    const framedTarget = target
+      .clone()
+      .addScaledVector(right, fit.pan[0])
+      .addScaledVector(trueUp, fit.pan[1]);
+
     desiredPoseRef.current = {
-      position: target.clone().addScaledVector(bestDirection, distance),
-      target
+      position: framedTarget
+        .clone()
+        .addScaledVector(bestDirection, fit.distance),
+      target: framedTarget
     };
   }, [
     steps,
