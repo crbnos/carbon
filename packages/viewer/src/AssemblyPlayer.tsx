@@ -550,6 +550,9 @@ export const AssemblyPlayer = forwardRef<
               setContinuous(false);
               return;
             }
+            // Clear any component selection so it doesn't stay tinted red over
+            // the playback.
+            onSelectComponents?.([]);
             // Play = run on through the rest of the steps.
             const nextStart =
               startTimes[clampedIndex + 1] ?? Number.POSITIVE_INFINITY;
