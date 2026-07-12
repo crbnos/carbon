@@ -52,6 +52,7 @@ import {
   LuSearch,
   LuSparkles,
   LuTrash,
+  LuTriangleAlert,
   LuWaypoints
 } from "react-icons/lu";
 import {
@@ -635,14 +636,53 @@ function AssemblyInstructionExplorer({
                   })}
                 </Reorder.Group>
               </MotionConfig>
-            ) : (
-              <Empty>
-                {permissions.can("update", "production") && (
-                  <VStack spacing={2} className="items-center">
+            ) : permissions.can("update", "production") ? (
+              <div className="flex h-full w-full flex-col items-center justify-center px-6 py-10">
+                <div className="flex w-full max-w-[280px] flex-col items-center text-center">
+                  <div
+                    className={cn(
+                      "mb-4 flex size-12 items-center justify-center rounded-full",
+                      planFailed
+                        ? "bg-destructive/10 text-destructive"
+                        : "bg-primary/10 text-primary"
+                    )}
+                  >
+                    {isSolving ? (
+                      <Spinner className="size-5" />
+                    ) : planFailed ? (
+                      <LuTriangleAlert className="size-5" />
+                    ) : (
+                      <LuSparkles className="size-5" />
+                    )}
+                  </div>
+                  <h3 className="text-sm font-medium text-foreground">
+                    {planFailed
+                      ? "Couldn't generate steps"
+                      : isSolving
+                        ? "Solving assembly motions"
+                        : "No steps yet"}
+                  </h3>
+                  <p className="mt-1 text-pretty text-xs text-muted-foreground">
+                    {planFailed
+                      ? (planJob?.error ??
+                        "Motion planning failed. Retry to run it again.")
+                      : isSolving
+                        ? "Reading the model's geometry to work out the build order. Usually 1–3 minutes."
+                        : hasPlan
+                          ? "Generate draft steps with motions solved from the model, or add one yourself."
+                          : "Run the motion planner over the model to create draft steps, or add one yourself."}
+                  </p>
+                  {isSolving && (
+                    <p className="mt-1.5 text-[0.6875rem] tabular-nums text-muted-foreground/70">
+                      {solveElapsedLabel} elapsed
+                    </p>
+                  )}
+                  <div className="mt-5 flex w-full flex-col gap-2">
                     <Button
+                      className="w-full"
                       isDisabled={isDisabled || isConverting || isSolving}
                       isLoading={isSolving}
-                      leftIcon={<LuSparkles />}
+                      leftIcon={planFailed ? undefined : <LuSparkles />}
                       onClick={() => {
                         // The action starts a fresh planner run when the
                         // latest one failed — don't read that stale failure
@@ -656,27 +696,20 @@ function AssemblyInstructionExplorer({
                     >
                       {planFailed ? "Retry Generate Steps" : "Generate Steps"}
                     </Button>
-                    <p className="max-w-[220px] text-center text-xs text-muted-foreground">
-                      {planFailed
-                        ? (planJob?.error ??
-                          "Motion planning failed — retry to run it again")
-                        : isSolving
-                          ? `Solving assembly motions from the model's geometry — this usually takes 1–3 minutes (${solveElapsedLabel} elapsed)`
-                          : hasPlan
-                            ? "Creates draft steps with motions solved from the model's geometry"
-                            : "Runs the motion planner over the model, then creates draft steps"}
-                    </p>
                     <Button
+                      className="w-full"
                       isDisabled={isDisabled}
                       leftIcon={<LuCirclePlus />}
                       variant="secondary"
                       onClick={onAddStep}
                     >
-                      Add Step Manually
+                      Add step manually
                     </Button>
-                  </VStack>
-                )}
-              </Empty>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <Empty />
             )}
             {steps.length > 0 && isSearching && visibleOrder.length === 0 && (
               <p className="w-full px-4 py-3 text-center text-xs text-muted-foreground">
