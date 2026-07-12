@@ -2,7 +2,9 @@
 //! assembly tree) to the planner and emits the wire format.
 
 use crate::consts::mesh_tolerance;
-use crate::pipeline2::{merge_units, plan_fixed_sequence, plan_parts, GroupPayload, PlanOutcome};
+use crate::pipeline2::{
+    detect_swarm_units, merge_units, plan_fixed_sequence, plan_parts, GroupPayload, PlanOutcome,
+};
 use crate::types::{Component, Mesh, Motion, PlannedComponent};
 use converter::convert::{build_tree, ConvertError};
 use converter::graph::AssemblyNode;
@@ -169,6 +171,21 @@ pub fn plan_step(
         let (merged, exp) = merge_units(&parts, &spec);
         parts = merged;
         expansion = exp;
+    }
+
+    // Auto-detect detail swarms (populated PCBs) from pure geometry so a
+    // 400-component board plans as one rigid unit even with no caller units
+    // (no BOM, no LLM assignment). Runs after caller units (their merged
+    // bodies are never re-swallowed) and never in fixed-sequence re-motion
+    // (the sequence references the existing step structure).
+    if sequence.is_none() {
+        let consumed: HashSet<String> = expansion.keys().cloned().collect();
+        let spec = detect_swarm_units(&parts, &consumed);
+        if !spec.is_empty() {
+            let (merged, exp) = merge_units(&parts, &spec);
+            parts = merged;
+            expansion.extend(exp);
+        }
     }
 
     let planned_body_count = sequence.as_ref().map(|s| s.len()).unwrap_or(parts.len());

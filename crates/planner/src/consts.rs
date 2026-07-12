@@ -66,6 +66,29 @@ pub const MAX_GROUP_SIZE: usize = 4;
 pub const MAX_GROUP_TESTS: usize = 40;
 pub const GROUP_PROXIMITY_MM: f64 = 2.0;
 
+// --- Detail-swarm auto-detection (populated PCBs) -------------------------
+// A populated PCB is geometrically unmistakable: one substantial host part
+// (the bare board) carrying dozens-hundreds of tiny parts seated on it.
+// Detected from pure geometry before planning so a 430-component board plans
+// (and animates) as ONE rigid unit — no BOM or LLM assignment required.
+
+/// A part is swarm-member "tiny" when its bbox diagonal is below this fraction
+/// of the assembly diagonal (SA BCU components: ~0.6%; mechanical parts on the
+/// corpus models: well above 10%).
+pub const SWARM_TINY_FRACTION: f64 = 0.1;
+/// A host forms a swarm unit only with at least this many seated tiny parts.
+/// Deliberately above the "8 screws on a lid" shape (fasteners are excluded by
+/// name anyway; this guards unnamed tiny hardware on a bracket).
+pub const SWARM_MIN_MEMBERS: usize = 12;
+/// Narrowphase distance (mm) at which a tiny part counts as seated ON a host.
+/// Contact, not bbox overlap — a hollow enclosure's bbox contains everything.
+pub const SWARM_CONTACT_MM: f64 = ORDERING_CONTACT_MM;
+/// A member must also be dwarfed by its HOST (below this fraction of the host's
+/// diagonal). PCB components are ~1% of their board; the counter-example is a
+/// large assembly whose mid-size parts (rollers on a rail at ~15-18% of the
+/// host) read as "tiny vs the assembly" but are real hand-assembled parts.
+pub const SWARM_HOST_FRACTION: f64 = 0.1;
+
 /// World axes in the exact order the Python planner tries them:
 /// +Z, -Z, +X, -X, +Y, -Y.
 pub fn world_axes() -> [Vector3<f64>; 6] {

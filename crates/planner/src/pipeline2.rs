@@ -1038,6 +1038,121 @@ pub fn preference_topo_sort(
     placed
 }
 
+/// Auto-detect "detail swarms" — a populated PCB's board carrying dozens to
+/// hundreds of tiny components — from pure geometry, and emit `merge_units`
+/// specs (`(id, name, member_node_ids)`) so each board plans as ONE rigid unit.
+///
+/// Shape: a substantial HOST part with many TINY parts seated on it. Seeding
+/// uses narrowphase contact distance (a hollow enclosure's bbox contains
+/// everything, so bbox overlap can't tell "inside" from "mounted on"), then
+/// grows transitively over bbox proximity for stacked components (IC on board,
+/// cap on IC). Fastener-named parts never join a swarm — screws keep their own
+/// removal animations. `skip` holds ids already consumed by caller/authored
+/// units (never re-swallowed; a merged unit body is non-tiny anyway).
+pub fn detect_swarm_units(
+    parts: &[Component],
+    skip: &HashSet<String>,
+) -> Vec<(String, Option<String>, Vec<String>)> {
+    let refs: Vec<&Component> = parts.iter().collect();
+    if refs.len() < SWARM_MIN_MEMBERS + 1 {
+        return Vec::new();
+    }
+    let (alo, ahi) = bounds(&refs);
+    let asm_diag = (ahi - alo).norm().max(1.0);
+    let diag = |p: &Component| (p.bbox_max - p.bbox_min).norm();
+    let tiny_limit = SWARM_TINY_FRACTION * asm_diag;
+
+    let eligible = |p: &Component| !skip.contains(&p.node_id) && !crate::fasteners::is_fastener(p);
+    let mut hosts: Vec<usize> = (0..parts.len())
+        .filter(|&i| eligible(&parts[i]) && diag(&parts[i]) >= tiny_limit)
+        .collect();
+    // Largest-first so the board outranks brackets when distances tie.
+    hosts.sort_by(|&a, &b| diag(&parts[b]).total_cmp(&diag(&parts[a])));
+    let tiny: Vec<usize> = (0..parts.len())
+        .filter(|&i| eligible(&parts[i]) && diag(&parts[i]) < tiny_limit)
+        .collect();
+    if hosts.is_empty() || tiny.len() < SWARM_MIN_MEMBERS {
+        return Vec::new();
+    }
+
+    let overlaps = |p: &Component, q: &Component, pad: f64| -> bool {
+        (0..3).all(|k| p.bbox_min[k] - pad <= q.bbox_max[k] && q.bbox_min[k] - pad <= p.bbox_max[k])
+    };
+
+    // Seed: each tiny part joins the nearest host it CONTACTS (bbox prefilter,
+    // then exact narrowphase distance over the cached BVHs) — and only a host
+    // that DWARFS it. "Tiny vs the assembly" alone misfires on large models
+    // whose mid-size parts sit on a rail; a PCB component is ~1% of its board.
+    let dwarfed_by = |t: usize, h: usize| diag(&parts[t]) < SWARM_HOST_FRACTION * diag(&parts[h]);
+    let mut member_host: HashMap<usize, usize> = HashMap::new();
+    for &t in &tiny {
+        let mut best: Option<(f64, usize)> = None;
+        for &h in &hosts {
+            if !dwarfed_by(t, h) || !overlaps(&parts[t], &parts[h], SWARM_CONTACT_MM) {
+                continue;
+            }
+            let d = collision::distance_pair(&parts[t].bvh(), &parts[h].bvh());
+            if d <= SWARM_CONTACT_MM && best.is_none_or(|(bd, _)| d < bd) {
+                best = Some((d, h));
+            }
+        }
+        if let Some((_, h)) = best {
+            member_host.insert(t, h);
+        }
+    }
+
+    // Grow: unassigned tiny parts touching (bbox proximity) an assigned member
+    // join that member's swarm — stacked components don't touch the board.
+    loop {
+        let mut grew = false;
+        for &t in &tiny {
+            if member_host.contains_key(&t) {
+                continue;
+            }
+            let joined = member_host
+                .iter()
+                .find(|&(&m, &h)| {
+                    dwarfed_by(t, h) && overlaps(&parts[t], &parts[m], GROUP_PROXIMITY_MM)
+                })
+                .map(|(_, &h)| h);
+            if let Some(h) = joined {
+                member_host.insert(t, h);
+                grew = true;
+            }
+        }
+        if !grew {
+            break;
+        }
+    }
+
+    let mut by_host: HashMap<usize, Vec<usize>> = HashMap::new();
+    for (&m, &h) in &member_host {
+        by_host.entry(h).or_default().push(m);
+    }
+
+    let mut specs: Vec<(String, Option<String>, Vec<String>)> = Vec::new();
+    for &h in &hosts {
+        let Some(members) = by_host.get(&h) else {
+            continue;
+        };
+        if members.len() < SWARM_MIN_MEMBERS {
+            continue;
+        }
+        // Host + members, host first. Distinct "swarm:" id namespace so the
+        // group id can never collide with a member nodeId.
+        let mut node_ids = vec![parts[h].node_id.clone()];
+        let mut sorted = members.clone();
+        sorted.sort();
+        node_ids.extend(sorted.iter().map(|&m| parts[m].node_id.clone()));
+        specs.push((
+            format!("swarm:{}", parts[h].node_id),
+            Some(parts[h].name.clone()),
+            node_ids,
+        ));
+    }
+    specs
+}
+
 /// `_merge_units`: merge each multi-member caller unit into one rigid body.
 pub fn merge_units(
     parts: &[Component],

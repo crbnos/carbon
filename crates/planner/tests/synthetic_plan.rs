@@ -97,3 +97,59 @@ fn every_planned_part_is_sequenced_once() {
     assert_eq!(outcome.sequence.len(), 3, "all components sequenced");
     assert_eq!(tier(&outcome, "unplanned"), 0);
 }
+
+#[test]
+fn detects_a_pcb_detail_swarm_and_excludes_fasteners() {
+    use planner::pipeline2::detect_swarm_units;
+    use std::collections::HashSet;
+
+    // A populated board: 100x80 plate with 20 tiny components seated on its top
+    // face — plus a far-away bracket carrying 8 tiny screw-named parts (a lid
+    // shape that must NOT become a swarm: fastener-named parts never join).
+    let mut parts = vec![box_part("board", [100.0, 80.0, 1.6], [0.0, 0.0, 0.8])];
+    for i in 0..20 {
+        let x = -45.0 + 4.5 * i as f64;
+        parts.push(box_part(&format!("c{i}"), [2.0, 1.0, 1.0], [x, 10.0, 2.1]));
+    }
+    parts.push(box_part("bracket", [60.0, 60.0, 3.0], [220.0, 0.0, 1.5]));
+    for i in 0..8 {
+        let x = 195.0 + 7.0 * i as f64;
+        parts.push(box_part(
+            &format!("m3 screw {i}"),
+            [2.0, 2.0, 2.0],
+            [x, 0.0, 4.0],
+        ));
+    }
+
+    let specs = detect_swarm_units(&parts, &HashSet::new());
+    assert_eq!(specs.len(), 1, "exactly one swarm: {specs:?}");
+    let (id, name, node_ids) = &specs[0];
+    assert_eq!(id, "swarm:board");
+    assert_eq!(name.as_deref(), Some("board"));
+    assert_eq!(node_ids.len(), 21, "board + 20 components");
+    assert!(node_ids.iter().all(|n| !n.contains("screw")));
+}
+
+#[test]
+fn mid_size_parts_on_a_rail_are_not_a_swarm() {
+    use planner::pipeline2::detect_swarm_units;
+    use std::collections::HashSet;
+
+    // Packing-Arm shape: a long rail in a LARGE assembly carrying 14 mid-size
+    // parts. They are tiny vs the assembly (~4%) but NOT dwarfed by the host
+    // (~23% of its diagonal) — real hand-assembled parts, not a PCB swarm.
+    let mut parts = vec![box_part("rail", [180.0, 40.0, 10.0], [0.0, 0.0, 5.0])];
+    for i in 0..14 {
+        let x = -78.0 + 12.0 * i as f64;
+        parts.push(box_part(
+            &format!("roller{i}"),
+            [25.0, 15.0, 12.0],
+            [x, 0.0, 16.05],
+        ));
+    }
+    // A distant part stretches the assembly bounds (mimics the wide machine).
+    parts.push(box_part("far", [40.0, 40.0, 40.0], [650.0, 0.0, 20.0]));
+
+    let specs = detect_swarm_units(&parts, &HashSet::new());
+    assert!(specs.is_empty(), "no swarm expected: {specs:?}");
+}

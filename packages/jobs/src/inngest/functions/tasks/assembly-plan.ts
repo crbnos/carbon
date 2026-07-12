@@ -167,8 +167,8 @@ export const assemblyPlanFunction = inngest.createFunction(
     // Re-motion mode (order-preserving): take the existing step order as the
     // fixed assembly sequence and let the planner only recompute each step's
     // motion (forward-collision against earlier steps). Otherwise plan fresh:
-    // collapse the model's leaf soup into rigid-body units so a 400-part model
-    // plans as its ~7 assembled units. Best-effort: no units → every leaf.
+    // send the user-authored "plan as one component" overrides as units — the
+    // planner auto-detects PCB detail swarms from geometry on its own.
     const sequence = reMotionFor
       ? await step.run("derive-sequence", async () => {
           const client = getCarbonServiceRole();
@@ -187,12 +187,8 @@ export const assemblyPlanFunction = inngest.createFunction(
     const units =
       sequence != null
         ? []
-        : await step.run("derive-units", () =>
-            loadPlanUnits({
-              modelUploadId,
-              companyId,
-              graphPath: job.graphPath
-            })
+        : await step.run("load-authored-units", () =>
+            loadPlanUnits({ modelUploadId, companyId })
           );
 
     // Kick off the planner. The service starts it in the background and returns
