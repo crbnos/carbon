@@ -648,7 +648,7 @@ export default function AssemblyInstructionRoute() {
                   isDisabled={isDisabled}
                   graphIndex={graphIndex}
                   units={namedUnits}
-                  onSelectComponents={onSelectComponents}
+                  onSelectComponents={onFocusComponents}
                   onStartAddComponents={onStartAddComponents}
                   onStopAddComponents={onStopAddComponents}
                   onRemoveComponents={onRemoveComponents}
