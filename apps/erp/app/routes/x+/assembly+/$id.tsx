@@ -598,6 +598,8 @@ export default function AssemblyInstructionRoute() {
                 <AssemblyInstructionProperties
                   key={selectedStep?.id ?? "empty"}
                   step={selectedStep}
+                  stepIndex={selectedStep ? activeStepIndex : null}
+                  stepCount={steps.length}
                   draftComponentNodeIds={draftComponentNodeIds}
                   selectedNodeIds={selectedNodeIds}
                   isAddingComponents={isAddingComponents}
