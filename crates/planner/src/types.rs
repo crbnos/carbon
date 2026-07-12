@@ -94,6 +94,8 @@ pub struct Component {
     pub cached_volume: Option<f64>,
     /// Lazily-built FCL BVH, shared across clones.
     bvh: OnceLock<Arc<SharedBvh>>,
+    /// Lazily-built triangle BVH for view-baking rays, shared across clones.
+    view_bvh: OnceLock<Arc<crate::view::TriBvh>>,
     /// Memoized `part_volume` result (the watertight test builds a full-mesh
     /// edge map — costly, and called repeatedly during greedy sorting).
     pub(crate) vol_cache: OnceLock<f64>,
@@ -124,6 +126,7 @@ impl Component {
             seated_allowance_axes: Default::default(),
             cached_volume: None,
             bvh: OnceLock::new(),
+            view_bvh: OnceLock::new(),
             vol_cache: OnceLock::new(),
             sym_axis_cache: OnceLock::new(),
         }
@@ -139,6 +142,16 @@ impl Component {
                 let faces = self.mesh.flat_faces();
                 Arc::new(SharedBvh(collision::new_bvh(&verts, &faces)))
             })
+            .clone()
+    }
+
+    /// The part's triangle BVH for view-baking sight-line rays, built once and
+    /// cached. Separate from the FCL BVH (collision-only; the bridge exposes no
+    /// ray query). `Arc` so it survives the `view_parts` clone and is shared
+    /// across the rayon-parallel candidate scoring.
+    pub fn view_bvh(&self) -> Arc<crate::view::TriBvh> {
+        self.view_bvh
+            .get_or_init(|| Arc::new(crate::view::TriBvh::build(&self.mesh)))
             .clone()
     }
 }

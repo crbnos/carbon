@@ -253,7 +253,8 @@ pub fn plan_step(
     // Mesh-precise view direction per planned body: sight lines against the
     // triangles of everything installed earlier in the sequence. Keyed in the
     // pre-expansion (merged-body) space, same as `outcome.sequence`.
-    let view_directions: HashMap<String, [f64; 3]> = {
+    let view: HashMap<String, ([f64; 3], f64)> = {
+        let view_start = std::time::Instant::now();
         let by_id: HashMap<&str, &Component> = view_parts
             .iter()
             .map(|p| (p.node_id.as_str(), p))
@@ -264,29 +265,49 @@ pub fn plan_step(
             .map(|e| (e.node_id.as_str(), &e.motion))
             .collect();
         let (assembly_min, assembly_max) = assembly_bounds(&view_parts);
+        // Bodies not yet installed when this step plays. They're hidden/ghosted
+        // during playback, so they score at a low weight — but a direction that
+        // also clears them survives the viewer's "show all future parts" toggle.
+        let mut future_ids: HashSet<&str> =
+            view_parts.iter().map(|p| p.node_id.as_str()).collect();
         let mut installed: Vec<&Component> = Vec::with_capacity(view_parts.len());
-        let mut directions = HashMap::new();
+        let mut out = HashMap::new();
+        let mut worst: (f64, &str) = (0.0, "");
         for node_id in &outcome.sequence {
             let Some(subject) = by_id.get(node_id.as_str()) else {
                 continue;
             };
+            future_ids.remove(node_id.as_str());
             let motion = motion_by_id
                 .get(node_id.as_str())
                 .copied()
                 .unwrap_or(&Motion::None);
-            directions.insert(
-                node_id.clone(),
-                crate::view::best_view_direction(
-                    subject,
-                    motion,
-                    &installed,
-                    &assembly_min,
-                    &assembly_max,
-                ),
+            let future: Vec<&Component> = future_ids
+                .iter()
+                .filter_map(|id| by_id.get(id).copied())
+                .collect();
+            let (direction, obstruction) = crate::view::best_view_direction(
+                subject,
+                motion,
+                &installed,
+                &future,
+                &assembly_min,
+                &assembly_max,
             );
+            if obstruction > worst.0 {
+                worst = (obstruction, node_id.as_str());
+            }
+            out.insert(node_id.clone(), (direction, obstruction));
             installed.push(subject);
         }
-        directions
+        eprintln!(
+            "view: {} bodies in {:?}; worst obstruction {:.2} ({})",
+            out.len(),
+            view_start.elapsed(),
+            worst.0,
+            worst.1
+        );
+        out
     };
 
     // Expand merged units back to member leaves.
@@ -295,20 +316,22 @@ pub fn plan_step(
         .iter()
         .map(|(k, v)| {
             let mut payload = group_to_json(v);
-            if let Some(d) = view_directions.get(k) {
+            if let Some((d, obstruction)) = view.get(k) {
                 payload["viewDirection"] = json!(d.to_vec());
+                payload["viewObstruction"] = json!(obstruction);
             }
             (k.clone(), payload)
         })
         .collect();
     let mut components: Map<String, Value> = Map::new();
     for entry in &outcome.planned {
-        let view_direction = view_directions.get(&entry.node_id);
+        let view_entry = view.get(&entry.node_id);
         match expansion.get(&entry.node_id) {
             None => {
                 let mut payload = part_to_dict(entry);
-                if let Some(d) = view_direction {
+                if let Some((d, obstruction)) = view_entry {
                     payload["viewDirection"] = json!(d.to_vec());
+                    payload["viewObstruction"] = json!(obstruction);
                 }
                 components.insert(entry.node_id.clone(), payload);
             }
@@ -324,8 +347,9 @@ pub fn plan_step(
                 if let Some(n) = name {
                     gp.insert("name".into(), json!(n));
                 }
-                if let Some(d) = view_direction {
+                if let Some((d, obstruction)) = view_entry {
                     gp.insert("viewDirection".into(), json!(d.to_vec()));
+                    gp.insert("viewObstruction".into(), json!(obstruction));
                 }
                 groups.insert(entry.node_id.clone(), Value::Object(gp));
             }
