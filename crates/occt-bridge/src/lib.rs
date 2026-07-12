@@ -40,7 +40,12 @@ pub mod ffi {
         /// Read + tessellate a STEP file. `ok=false` with `error` on failure
         /// (unreadable STEP, transfer failure, no shapes).
         fn read_step(path: &str, linear_deflection: f64, angular_deflection: f64) -> Tree;
+
+        /// Test fixture generator: write `boxes` disjoint solids as ONE
+        /// product (flat multi-body, no assembly tree) to a STEP file.
+        /// Hermetic tests use this instead of committed fixture files.
+        fn write_test_step(path: &str, boxes: u32) -> bool;
     }
 }
 
-pub use ffi::{read_step, RawNode, Tree};
+pub use ffi::{read_step, write_test_step, RawNode, Tree};

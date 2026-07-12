@@ -11,6 +11,8 @@
 #include <cstdio>
 #include <cstdlib>
 #include <BRepMesh_IncrementalMesh.hxx>
+#include <BRepPrimAPI_MakeBox.hxx>
+#include <BRep_Builder.hxx>
 #include <BRep_Tool.hxx>
 #include <Bnd_Box.hxx>
 #include <GProp_GProps.hxx>
@@ -21,6 +23,7 @@
 #include <Quantity_ColorRGBA.hxx>
 #include <STEPCAFControl_Reader.hxx>
 #include <STEPControl_Controller.hxx>
+#include <STEPControl_Writer.hxx>
 #include <Standard_Failure.hxx>
 #include <TCollection_AsciiString.hxx>
 #include <TCollection_ExtendedString.hxx>
@@ -34,6 +37,7 @@
 #include <TopExp_Explorer.hxx>
 #include <TopLoc_Location.hxx>
 #include <TopoDS.hxx>
+#include <TopoDS_Compound.hxx>
 #include <TopoDS_Face.hxx>
 #include <TopoDS_Shape.hxx>
 #include <XCAFDoc_ColorTool.hxx>
@@ -206,9 +210,26 @@ static double shape_volume(const TopoDS_Shape &shape) {
   return dx * dy * dz;
 }
 
+static int count_faces(const TopoDS_Shape &shape) {
+  int n = 0;
+  for (TopExp_Explorer exp(shape, TopAbs_FACE); exp.More(); exp.Next()) n++;
+  return n;
+}
+
+// Every face of the shape belongs to exactly one of the solids? Sheet/surface
+// bodies living beside the solids would silently vanish from a per-solid
+// split, so their presence keeps the merged mesh instead.
+static bool faces_covered_by_solids(const TopoDS_Shape &shape,
+                                    const std::vector<TopoDS_Shape> &solids) {
+  int covered = 0;
+  for (const auto &solid : solids) covered += count_faces(solid);
+  return covered == count_faces(shape);
+}
+
 class Builder {
  public:
-  Builder(double lin, double ang) : lin_(lin), ang_(ang) {}
+  Builder(double lin, double ang, const Handle(XCAFDoc_ShapeTool) &shapeTool)
+      : lin_(lin), ang_(ang), shape_tool_(shapeTool) {}
 
   std::vector<RawNode> nodes;
 
@@ -248,9 +269,73 @@ class Builder {
     }
 
     TopoDS_Shape shape = XCAFDoc_ShapeTool::GetShape(product);
-    MeshData mesh = mesh_for(product, shape);
-    node.name = name.empty() ? "PART" : name;
-    node.product_name = product_name.empty() ? "PART" : product_name;
+    const std::string base_name = name.empty() ? "PART" : name;
+    const std::string base_product = product_name.empty() ? "PART" : product_name;
+
+    // Flat multi-body products (common Fusion/SolidWorks export shape: one
+    // PRODUCT, many solids, no assembly tree) split into per-solid child
+    // components — merged they'd be one un-plannable blob. Only when every
+    // face belongs to some solid; otherwise (sheet/surface bodies present)
+    // keep the merged mesh so no geometry is lost.
+    std::vector<TopoDS_Shape> solids;
+    for (TopExp_Explorer exp(shape, TopAbs_SOLID); exp.More(); exp.Next()) {
+      solids.push_back(exp.Current());
+    }
+    if (solids.size() >= 2 && faces_covered_by_solids(shape, solids)) {
+      const std::string entry = label_entry(product);
+      std::vector<uint64_t> children;
+      for (size_t i = 0; i < solids.size(); ++i) {
+        RawNode child;
+        // Solids are already in product-local coordinates
+        child.transform = to_vec(IDENTITY_4X4);
+        // Display name from the solid's own XCAF sub-label when present;
+        // the id-path product_name stays a pure function of (product, index)
+        // so nodeIds don't depend on optional naming.
+        std::string solid_name;
+        std::vector<double> solid_color;
+        bool solid_has_color = false;
+        TDF_Label sub;
+        if (!shape_tool_.IsNull() &&
+            shape_tool_->FindSubShape(product, solids[i], sub)) {
+          solid_name = label_name(sub);
+          solid_has_color = label_color(sub, TDF_Label(), false, solid_color);
+        }
+        child.name = !solid_name.empty()
+                         ? solid_name
+                         : base_name + " Body " + std::to_string(i + 1);
+        child.product_name = base_product + "#" + std::to_string(i);
+        child.has_color = solid_has_color || node.has_color;
+        if (solid_has_color) {
+          child.color = to_vec(solid_color);
+        } else if (node.has_color) {
+          child.color = node.color;
+        }
+        MeshData mesh = mesh_for(entry + "#" + std::to_string(i), solids[i]);
+        child.is_assembly = false;
+        child.has_mesh = true;
+        child.is_proxy = mesh.is_proxy;
+        for (float v : mesh.vertices) child.vertices.push_back(v);
+        for (uint32_t idx : mesh.indices) child.indices.push_back(idx);
+        child.has_volume = true;
+        child.volume = shape_volume(solids[i]);
+        nodes.push_back(child);
+        children.push_back(nodes.size() - 1);
+      }
+      node.name = base_name;
+      node.product_name = base_product;
+      node.is_assembly = true;
+      node.has_mesh = false;
+      node.is_proxy = false;
+      node.has_volume = false;
+      node.volume = 0.0;
+      for (auto c : children) node.children.push_back(c);
+      nodes.push_back(node);
+      return nodes.size() - 1;
+    }
+
+    MeshData mesh = mesh_for(label_entry(product), shape);
+    node.name = base_name;
+    node.product_name = base_product;
     node.is_assembly = false;
     node.has_mesh = true;
     node.is_proxy = mesh.is_proxy;
@@ -264,10 +349,10 @@ class Builder {
 
  private:
   double lin_, ang_;
+  Handle(XCAFDoc_ShapeTool) shape_tool_;
   std::map<std::string, MeshData> cache_;
 
-  MeshData mesh_for(const TDF_Label &product, const TopoDS_Shape &shape) {
-    std::string key = label_entry(product);
+  MeshData mesh_for(const std::string &key, const TopoDS_Shape &shape) {
     auto it = cache_.find(key);
     if (it != cache_.end()) return it->second;
     MeshData m;
@@ -341,7 +426,7 @@ Tree read_step(rust::Str path, double linear_deflection, double angular_deflecti
       return t;
     }
 
-    Builder b(linear_deflection, angular_deflection);
+    Builder b(linear_deflection, angular_deflection, shapeTool);
     std::vector<uint64_t> roots;
     for (int i = 1; i <= freeShapes.Length(); ++i) {
       roots.push_back(b.build(freeShapes.Value(i), TDF_Label(), false, TopLoc_Location(), false));
@@ -379,6 +464,43 @@ Tree read_step(rust::Str path, double linear_deflection, double angular_deflecti
     t.error = "unknown OCCT error";
   }
   return t;
+}
+
+// Test fixture generator: writes `boxes` disjoint solids as ONE product (a
+// compound, no assembly tree) — the flat multi-body export shape the split
+// path handles. Hermetic converter tests build their own STEP with this
+// instead of committing fixture files.
+bool write_test_step(rust::Str path, uint32_t boxes) {
+  try {
+    static std::once_flag occt_init;
+    std::call_once(occt_init, [] {
+      STEPControl_Controller::Init();
+      Interface_Static::SetCVal("xstep.cascade.unit", "MM");
+    });
+    TopoDS_Shape shape;
+    if (boxes <= 1) {
+      shape = BRepPrimAPI_MakeBox(10.0, 10.0, 10.0).Shape();
+    } else {
+      TopoDS_Compound compound;
+      BRep_Builder builder;
+      builder.MakeCompound(compound);
+      for (uint32_t i = 0; i < boxes; ++i) {
+        builder.Add(compound,
+                    BRepPrimAPI_MakeBox(gp_Pnt(i * 30.0, 0.0, 0.0), 10.0, 10.0,
+                                        10.0)
+                        .Shape());
+      }
+      shape = compound;
+    }
+    STEPControl_Writer writer;
+    if (writer.Transfer(shape, STEPControl_AsIs) != IFSelect_RetDone) {
+      return false;
+    }
+    std::string p(path);
+    return writer.Write(p.c_str()) == IFSelect_RetDone;
+  } catch (...) {
+    return false;
+  }
 }
 
 }  // namespace carbon_occt

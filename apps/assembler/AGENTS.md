@@ -20,6 +20,10 @@ apps/assembler/  # axum HTTP: /health, /convert, /plan (async; poll GET /plan/{i
 crates/
 ├── collision/   # cxx bridge over C++ FCL 0.7.0. new_bvh / collide_pair / distance_pair.
 ├── occt-bridge/ # cxx bridge over OpenCASCADE. read_step: XCAF walk + tessellation → flat node tree.
+│                # Flat multi-body products (one PRODUCT, ≥2 solids, no assembly tree — the common
+│                # Fusion/SolidWorks export) split into per-solid child components; guarded so any
+│                # sheet/surface geometry beside the solids keeps the merged mesh (nothing vanishes).
+│                # write_test_step generates hermetic multi-solid STEP fixtures for tests.
 ├── converter/   # STEP → graph.json + GLB. nodeid (sha1), graph (tree/bbox/source-unit), convert, glb.
 └── planner/     # assembly-by-disassembly motion planner: greedy/geom/fasteners/collide/steps.
 ```
