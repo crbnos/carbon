@@ -13,3 +13,4 @@ pub mod pipeline;
 pub mod pipeline2;
 pub mod steps;
 pub mod types;
+pub mod view;

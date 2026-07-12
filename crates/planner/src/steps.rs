@@ -134,6 +134,20 @@ fn group_to_json(g: &GroupPayload) -> Value {
     Value::Object(m)
 }
 
+/// Union AABB of every planned body (the standing camera framing bounds).
+fn assembly_bounds(parts: &[Component]) -> (Vector3<f64>, Vector3<f64>) {
+    let mut min = Vector3::repeat(f64::INFINITY);
+    let mut max = Vector3::repeat(f64::NEG_INFINITY);
+    for part in parts {
+        min = min.inf(&part.bbox_min);
+        max = max.sup(&part.bbox_max);
+    }
+    if !min.x.is_finite() {
+        return (Vector3::zeros(), Vector3::zeros());
+    }
+    (min, max)
+}
+
 /// One caller unit: id, optional name, member nodeIds.
 pub struct PlanUnit {
     pub id: String,
@@ -206,6 +220,10 @@ pub fn plan_step(
     }
 
     let tolerance = tolerance.unwrap_or_else(|| mesh_tolerance(linear_deflection));
+    // The planner consumes `parts`; keep the merged bodies (meshes + bounds)
+    // for the per-step view-direction rays afterward. FCL BVHs are Arc-shared
+    // across clones, so this is a mesh-buffer copy only.
+    let view_parts: Vec<Component> = parts.clone();
     let outcome: PlanOutcome = if let Some(seq) = &sequence {
         plan_fixed_sequence(
             parts,
@@ -232,17 +250,67 @@ pub fn plan_step(
         )
     };
 
+    // Mesh-precise view direction per planned body: sight lines against the
+    // triangles of everything installed earlier in the sequence. Keyed in the
+    // pre-expansion (merged-body) space, same as `outcome.sequence`.
+    let view_directions: HashMap<String, [f64; 3]> = {
+        let by_id: HashMap<&str, &Component> = view_parts
+            .iter()
+            .map(|p| (p.node_id.as_str(), p))
+            .collect();
+        let motion_by_id: HashMap<&str, &Motion> = outcome
+            .planned
+            .iter()
+            .map(|e| (e.node_id.as_str(), &e.motion))
+            .collect();
+        let (assembly_min, assembly_max) = assembly_bounds(&view_parts);
+        let mut installed: Vec<&Component> = Vec::with_capacity(view_parts.len());
+        let mut directions = HashMap::new();
+        for node_id in &outcome.sequence {
+            let Some(subject) = by_id.get(node_id.as_str()) else {
+                continue;
+            };
+            let motion = motion_by_id
+                .get(node_id.as_str())
+                .copied()
+                .unwrap_or(&Motion::None);
+            directions.insert(
+                node_id.clone(),
+                crate::view::best_view_direction(
+                    subject,
+                    motion,
+                    &installed,
+                    &assembly_min,
+                    &assembly_max,
+                ),
+            );
+            installed.push(subject);
+        }
+        directions
+    };
+
     // Expand merged units back to member leaves.
     let mut groups: Map<String, Value> = outcome
         .groups
         .iter()
-        .map(|(k, v)| (k.clone(), group_to_json(v)))
+        .map(|(k, v)| {
+            let mut payload = group_to_json(v);
+            if let Some(d) = view_directions.get(k) {
+                payload["viewDirection"] = json!(d.to_vec());
+            }
+            (k.clone(), payload)
+        })
         .collect();
     let mut components: Map<String, Value> = Map::new();
     for entry in &outcome.planned {
+        let view_direction = view_directions.get(&entry.node_id);
         match expansion.get(&entry.node_id) {
             None => {
-                components.insert(entry.node_id.clone(), part_to_dict(entry));
+                let mut payload = part_to_dict(entry);
+                if let Some(d) = view_direction {
+                    payload["viewDirection"] = json!(d.to_vec());
+                }
+                components.insert(entry.node_id.clone(), payload);
             }
             Some((members, name)) => {
                 let mut member_payload = part_to_dict(entry);
@@ -255,6 +323,9 @@ pub fn plan_step(
                 gp.insert("motion".into(), motion_to_json(&entry.motion));
                 if let Some(n) = name {
                     gp.insert("name".into(), json!(n));
+                }
+                if let Some(d) = view_direction {
+                    gp.insert("viewDirection".into(), json!(d.to_vec()));
                 }
                 groups.insert(entry.node_id.clone(), Value::Object(gp));
             }
