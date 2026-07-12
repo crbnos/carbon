@@ -864,6 +864,23 @@ function AssemblyScene({
   // progressively on idle so a dense model never hitches the main thread.
   useProgressiveBvh(scene);
 
+  // Fit the perspective near/far planes to the model. A static 0.1 → 100000
+  // range is a 1e6 depth ratio: the buffer spends almost all its precision
+  // right in front of `near`, so coplanar CAD faces (touching solids, a boss
+  // flush on a plate) z-fight into a tearing moiré at model distance. Sizing
+  // the range to the assembly diagonal collapses the ratio to ~1e4 and keeps
+  // those faces stable, while still leaving room to zoom close and orbit out.
+  useEffect(() => {
+    if (!(camera instanceof PerspectiveCamera)) return;
+    const box = new Box3().setFromObject(scene);
+    if (box.isEmpty()) return;
+    const diag = box.getSize(new Vector3()).length();
+    if (!(diag > 0)) return;
+    camera.near = Math.max(diag / 500, 0.01);
+    camera.far = diag * 20;
+    camera.updateProjectionMatrix();
+  }, [camera, scene]);
+
   const activeStep = steps[activeStepIndex] ?? null;
   const isEditingActive = Boolean(
     editMotion && activeStep && editMotion.stepId === activeStep.id
