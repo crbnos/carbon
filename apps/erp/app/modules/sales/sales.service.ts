@@ -4956,6 +4956,9 @@ export async function insertSalesOrder(
     requestedDate?: string;
     promisedDate?: string;
     notes?: string;
+    customerReference?: string;
+    customerEngineeringContactId?: string;
+    salesPersonId?: string;
     customFields?: Json;
   }
 ): Promise<{
@@ -5051,6 +5054,9 @@ export async function insertSalesOrder(
       customerId: input.customerId,
       customerContactId: input.customerContactId,
       customerLocationId: input.customerLocationId,
+      customerEngineeringContactId: input.customerEngineeringContactId ?? null,
+      customerReference: input.customerReference ?? null,
+      salesPersonId: input.salesPersonId ?? null,
       opportunityId,
       status: input.status ?? "Draft",
       orderDate: input.orderDate ?? new Date().toISOString().split("T")[0],

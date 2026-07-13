@@ -35514,7 +35514,7 @@
       "module": "sales",
       "classification": "WRITE",
       "description": "Create a new sales order with all business logic - generates sequence, creates opportunity, resolves payment/shipping defaults from customer. LLM can create a sales order with just customerId.",
-      "paramCount": 14,
+      "paramCount": 17,
       "serviceParams": [
         "client",
         "input"
@@ -35564,6 +35564,15 @@
             "type": "string"
           },
           "notes": {
+            "type": "string"
+          },
+          "customerReference": {
+            "type": "string"
+          },
+          "customerEngineeringContactId": {
+            "type": "string"
+          },
+          "salesPersonId": {
             "type": "string"
           },
           "customFields": {}
