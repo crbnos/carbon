@@ -588,6 +588,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "draco-bridge"
+version = "0.1.0"
+dependencies = [
+ "cxx",
+ "cxx-build",
+]
+
+[[package]]
 name = "either"
 version = "1.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1543,6 +1551,7 @@ name = "optimize"
 version = "0.1.0"
 dependencies = [
  "bytemuck",
+ "draco-bridge",
  "gltf",
  "meshopt",
  "serde_json",

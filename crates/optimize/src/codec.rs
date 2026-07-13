@@ -11,7 +11,8 @@ pub enum Codec {
     /// MeshoptDecoder. (Phase 1b.)
     #[default]
     Meshopt,
-    /// `KHR_draco_mesh_compression`. (Phase 2, via crates/draco-bridge.)
+    /// `KHR_draco_mesh_compression` (via crates/draco-bridge → C++ Google Draco).
+    /// Per-primitive; quantizes attributes (the decoder dequantizes).
     Draco,
 }
 

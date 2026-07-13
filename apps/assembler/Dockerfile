@@ -51,6 +51,24 @@ RUN git clone --depth 1 --branch 0.7.0 https://github.com/flexible-collision-lib
         -DFCL_STATIC_LIBRARY=ON -DFCL_WITH_OCTOMAP=OFF -DFCL_BUILD_TESTS=OFF \
     && cmake --build /fcl/b --target install
 
+# ---- static Draco (built from source; Debian/brew ship only shared) ----
+# KHR_draco_mesh_compression encoder for the optimise pipeline. Encoder-only
+# (transcoder off — we build the glTF ourselves in Rust), STATIC, so libdraco.a
+# links into the binary and the runtime image carries no draco .so. Draco vendors
+# its own deps, so no extra -dev packages. Docker-layer cached; rebuilt only when
+# the pinned version below changes.
+FROM debian:bookworm-slim AS draco
+ARG MARCH=x86-64-v3
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      git cmake ninja-build g++ ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+RUN git clone --depth 1 --branch 1.5.7 https://github.com/google/draco.git /draco \
+    && cmake -S /draco -B /draco/b -G Ninja -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/opt/draco -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+        -DCMAKE_CXX_FLAGS_RELEASE="-O3 -march=${MARCH}" \
+        -DBUILD_SHARED_LIBS=OFF -DDRACO_TRANSCODER_SUPPORTED=OFF \
+    && cmake --build /draco/b --target install
+
 # ---- Rust builder ----
 FROM rust:1.90-bookworm AS build
 # Eigen headers for the cxx shim; OpenBLAS/gfortran for the planner's BLAS.
@@ -60,6 +78,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=occt /opt/occt /opt/occt
 COPY --from=fcl /opt/fcl /opt/fcl
+COPY --from=draco /opt/draco /opt/draco
 WORKDIR /app
 # Only the Rust workspace — not the whole monorepo (see Dockerfile.dockerignore).
 COPY Cargo.toml Cargo.lock ./
@@ -77,6 +96,7 @@ COPY apps/assembler ./apps/assembler
 # target-scoped, so cross-compiles/other arches are untouched.
 ENV OCCT_PREFIX=/opt/occt OCCT_LINK=static \
     FCL_PREFIX=/opt/fcl LIBCCD_PREFIX=/opt/fcl EIGEN_PREFIX=/usr OCTOMAP_PREFIX=/usr \
+    DRACO_PREFIX=/opt/draco \
     CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS="-C target-cpu=x86-64-v3"
 # Cache mounts: the cargo registry and the target dir survive across builds,
 # so a code-only change relinks instead of recompiling every dependency.

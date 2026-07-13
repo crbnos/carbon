@@ -43,6 +43,9 @@ pub struct Options {
     /// Use `simplify_sloppy` (topology-breaking, faster/smaller) instead of the
     /// error-bounded `simplify`.
     pub simplify_aggressive: bool,
+    /// Draco quantization bits (position, normal, texcoord) — the Draco quality/
+    /// perf knob. Fewer bits = smaller + coarser. `Codec::Draco` only.
+    pub draco_bits: (i32, i32, i32),
     pub weld: bool,
     pub reorder: bool,
 }
@@ -55,6 +58,7 @@ impl Default for Options {
             tolerance: None,
             auto_error: None,
             simplify_aggressive: false,
+            draco_bits: (DRACO_POS_BITS, DRACO_NORM_BITS, DRACO_UV_BITS),
             weld: true,
             reorder: true,
         }
@@ -150,34 +154,53 @@ pub fn optimize_glb(glb_bytes: &[u8], options: &Options) -> Result<Optimized, Op
         }
     }
 
-    // Extract + optimise each primitive independently. Rayon would parallelise
-    // here (see caller wiring); kept serial in the core so the crate has no async
-    // assumptions — the assembler runs it inside spawn_blocking.
-    let mut builder = Builder::default();
+    // Extract + optimise each primitive, then hand it to the codec's builder:
+    // the view builder (plain / EXT_meshopt) or the per-primitive Draco builder.
+    let draco = options.codec == Codec::Draco;
+    let mut vb = Builder::default();
+    let mut db = DracoBuilder::default();
     let meshes = std::mem::take(&mut root.meshes);
     let mut new_meshes = Vec::with_capacity(meshes.len());
-    for mut mesh in meshes {
-        for prim in &mut mesh.primitives {
+    for (mi, mut mesh) in meshes.into_iter().enumerate() {
+        for (pi, prim) in mesh.primitives.iter_mut().enumerate() {
             let extracted = extract_primitive(&root, bin, prim)?;
             stats.input_vertices += extracted.count;
             stats.input_triangles += extracted.indices.len() / 3;
             let opt = optimize_primitive(extracted, options);
             stats.output_vertices += opt.vertices.len();
             stats.output_triangles += opt.indices.len() / 3;
-            builder.write_primitive(prim, &opt);
+            // Uncompressed vertex+index footprint (the decoder's render weight).
+            stats.decoded_bytes += decoded_len(&opt);
+            if draco {
+                db.write_primitive(prim, &opt, mi, pi, options.draco_bits)?;
+            } else {
+                vb.write_primitive(prim, &opt);
+            }
         }
         new_meshes.push(mesh);
     }
     root.meshes = new_meshes;
 
-    // Uncompressed vertex+index footprint (the decoder's render weight).
-    stats.decoded_bytes = builder.views.iter().map(|v| v.raw_len()).sum();
-
-    // Swap in the rebuilt geometry and assemble per codec.
-    root.accessors = builder.accessors;
-    let out = assemble(root, builder.views, options.codec)?;
+    let out = if draco {
+        assemble_draco(root, db)?
+    } else {
+        root.accessors = vb.accessors;
+        assemble(root, vb.views, options.codec)?
+    };
     stats.output_bytes = out.len();
     Ok(Optimized { glb: out, stats })
+}
+
+fn decoded_len(opt: &OptimizedPrimitive) -> usize {
+    let n = opt.vertices.len();
+    let mut b = n * 12; // positions
+    if opt.has_normals {
+        b += n * 12;
+    }
+    if opt.has_uv {
+        b += n * 8;
+    }
+    b + opt.indices.len() * 4
 }
 
 // ---- extraction --------------------------------------------------------------
@@ -539,9 +562,6 @@ impl ViewData {
             ViewData::Idx { indices, .. } => indices.len(),
         }
     }
-    fn raw_len(&self) -> usize {
-        self.count() * self.stride()
-    }
     fn is_index(&self) -> bool {
         matches!(self, ViewData::Idx { .. })
     }
@@ -876,6 +896,226 @@ fn patch_meshopt(value: &mut serde_json::Value, recs: &[ExtRec]) -> Result<(), O
     Ok(())
 }
 
+// ---- Draco (KHR_draco_mesh_compression) --------------------------------------
+
+// Quantization bits (gltf-transform defaults). Draco compresses by quantizing
+// attributes; the KHR_draco decoder dequantizes back to float.
+const DRACO_POS_BITS: i32 = 14;
+const DRACO_NORM_BITS: i32 = 10;
+const DRACO_UV_BITS: i32 = 12;
+
+/// One primitive's KHR_draco_mesh_compression record, patched into the JSON.
+struct PrimExt {
+    mesh: usize,
+    prim: usize,
+    buffer_view: usize,
+    pos: i32,
+    norm: i32,
+    uv: i32,
+}
+
+/// Draco is per-primitive: each primitive is encoded into one draco blob, and
+/// its accessors carry type/count/min-max but no bufferView (the decoder
+/// supplies the data).
+#[derive(Default)]
+struct DracoBuilder {
+    bin: Vec<u8>,
+    buffer_views: Vec<json::buffer::View>,
+    accessors: Vec<json::Accessor>,
+    prim_exts: Vec<PrimExt>,
+}
+
+impl DracoBuilder {
+    fn write_primitive(
+        &mut self,
+        prim: &mut json::mesh::Primitive,
+        opt: &OptimizedPrimitive,
+        mesh_i: usize,
+        prim_i: usize,
+        bits: (i32, i32, i32),
+    ) -> Result<(), OptimizeError> {
+        let n = opt.vertices.len();
+        let positions: Vec<f32> = opt.vertices.iter().flat_map(|v| v.pos).collect();
+        let mut min = [f32::INFINITY; 3];
+        let mut max = [f32::NEG_INFINITY; 3];
+        for v in &opt.vertices {
+            for k in 0..3 {
+                min[k] = min[k].min(v.pos[k]);
+                max[k] = max[k].max(v.pos[k]);
+            }
+        }
+        let normals: Vec<f32> = if opt.has_normals {
+            opt.vertices.iter().flat_map(|v| v.nrm).collect()
+        } else {
+            Vec::new()
+        };
+        let uvs: Vec<f32> = if opt.has_uv {
+            opt.vertices.iter().flat_map(|v| v.uv).collect()
+        } else {
+            Vec::new()
+        };
+
+        let enc = draco_bridge::encode_mesh(
+            &positions, &normals, &uvs, &opt.indices, bits.0, bits.1, bits.2,
+        );
+        if !enc.ok || enc.data.is_empty() {
+            return Err(OptimizeError::new("draco encode failed"));
+        }
+
+        while self.bin.len() % 4 != 0 {
+            self.bin.push(0);
+        }
+        let off = self.bin.len();
+        self.bin.extend_from_slice(&enc.data);
+        self.buffer_views.push(json::buffer::View {
+            buffer: json::Index::new(0),
+            byte_length: USize64::from(enc.data.len()),
+            byte_offset: Some(USize64::from(off)),
+            byte_stride: None,
+            target: None,
+            name: None,
+            extensions: Default::default(),
+            extras: Default::default(),
+        });
+        let bv = self.buffer_views.len() - 1;
+
+        let mut attributes = std::collections::BTreeMap::new();
+        let pos_acc = self.accessor_noview(
+            n,
+            json::accessor::ComponentType::F32,
+            json::accessor::Type::Vec3,
+            Some((min, max)),
+        );
+        attributes.insert(Valid(json::mesh::Semantic::Positions), json::Index::new(pos_acc as u32));
+        if opt.has_normals {
+            let a = self.accessor_noview(
+                n,
+                json::accessor::ComponentType::F32,
+                json::accessor::Type::Vec3,
+                None,
+            );
+            attributes.insert(Valid(json::mesh::Semantic::Normals), json::Index::new(a as u32));
+        }
+        if opt.has_uv {
+            let a = self.accessor_noview(
+                n,
+                json::accessor::ComponentType::F32,
+                json::accessor::Type::Vec2,
+                None,
+            );
+            attributes.insert(Valid(json::mesh::Semantic::TexCoords(0)), json::Index::new(a as u32));
+        }
+        let idx_acc = self.accessor_noview(
+            opt.indices.len(),
+            json::accessor::ComponentType::U32,
+            json::accessor::Type::Scalar,
+            None,
+        );
+        prim.attributes = attributes;
+        prim.indices = Some(json::Index::new(idx_acc as u32));
+
+        self.prim_exts.push(PrimExt {
+            mesh: mesh_i,
+            prim: prim_i,
+            buffer_view: bv,
+            pos: enc.pos_id,
+            norm: enc.norm_id,
+            uv: enc.uv_id,
+        });
+        Ok(())
+    }
+
+    fn accessor_noview(
+        &mut self,
+        count: usize,
+        comp: json::accessor::ComponentType,
+        ty: json::accessor::Type,
+        minmax: Option<([f32; 3], [f32; 3])>,
+    ) -> usize {
+        let (min, max) = match minmax {
+            Some((mn, mx)) => (
+                Some(serde_json::json!(mn.to_vec())),
+                Some(serde_json::json!(mx.to_vec())),
+            ),
+            None => (None, None),
+        };
+        self.accessors.push(json::Accessor {
+            buffer_view: None,
+            byte_offset: None,
+            count: USize64::from(count),
+            component_type: Valid(json::accessor::GenericComponentType(comp)),
+            type_: Valid(ty),
+            min,
+            max,
+            name: None,
+            normalized: false,
+            sparse: None,
+            extensions: Default::default(),
+            extras: Default::default(),
+        });
+        self.accessors.len() - 1
+    }
+}
+
+fn assemble_draco(mut root: json::Root, db: DracoBuilder) -> Result<Vec<u8>, OptimizeError> {
+    root.accessors = db.accessors;
+    root.buffer_views = db.buffer_views;
+    root.buffers = if db.bin.is_empty() {
+        Vec::new()
+    } else {
+        vec![make_buffer(db.bin.len())]
+    };
+    add_ext(&mut root.extensions_used, "KHR_draco_mesh_compression");
+    add_ext(&mut root.extensions_required, "KHR_draco_mesh_compression");
+
+    let json_bytes = json::serialize::to_vec(&root)
+        .map_err(|e| OptimizeError::new(format!("serialize glTF json: {e}")))?;
+    let mut value: serde_json::Value = serde_json::from_slice(&json_bytes)
+        .map_err(|e| OptimizeError::new(format!("reparse glTF json: {e}")))?;
+    patch_draco(&mut value, &db.prim_exts)?;
+    let patched = serde_json::to_vec(&value)
+        .map_err(|e| OptimizeError::new(format!("serialize patched json: {e}")))?;
+    build_glb(patched, db.bin)
+}
+
+fn patch_draco(value: &mut serde_json::Value, prim_exts: &[PrimExt]) -> Result<(), OptimizeError> {
+    use serde_json::json;
+    let meshes = value
+        .get_mut("meshes")
+        .and_then(|v| v.as_array_mut())
+        .ok_or_else(|| OptimizeError::new("patch: no meshes"))?;
+    for pe in prim_exts {
+        let prims = meshes
+            .get_mut(pe.mesh)
+            .and_then(|m| m.as_object_mut())
+            .and_then(|m| m.get_mut("primitives"))
+            .and_then(|p| p.as_array_mut())
+            .ok_or_else(|| OptimizeError::new("patch: mesh primitives missing"))?;
+        let prim = prims
+            .get_mut(pe.prim)
+            .and_then(|p| p.as_object_mut())
+            .ok_or_else(|| OptimizeError::new("patch: primitive out of range"))?;
+
+        let mut attrs = serde_json::Map::new();
+        attrs.insert("POSITION".into(), json!(pe.pos));
+        if pe.norm >= 0 {
+            attrs.insert("NORMAL".into(), json!(pe.norm));
+        }
+        if pe.uv >= 0 {
+            attrs.insert("TEXCOORD_0".into(), json!(pe.uv));
+        }
+        prim.entry("extensions")
+            .or_insert_with(|| json!({}))
+            .as_object_mut()
+            .ok_or_else(|| OptimizeError::new("patch: extensions not object"))?
+            .insert(
+                "KHR_draco_mesh_compression".into(),
+                json!({ "bufferView": pe.buffer_view, "attributes": serde_json::Value::Object(attrs) }),
+            );
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1064,6 +1304,44 @@ mod tests {
             assert!(ext["byteLength"].as_u64().unwrap() > 0);
             assert!(ext["mode"].is_string());
         }
+    }
+
+    #[test]
+    fn draco_codec_emits_khr_ext_and_reparses() {
+        let glb = quad_glb();
+        let opt = optimize_glb(
+            &glb,
+            &Options {
+                codec: Codec::Draco,
+                ..Default::default()
+            },
+        )
+        .expect("optimize");
+        let reparsed = gltf::binary::Glb::from_slice(&opt.glb).expect("reparse");
+        let root: serde_json::Value =
+            serde_json::from_slice(reparsed.json.as_ref()).expect("json");
+
+        for key in ["extensionsUsed", "extensionsRequired"] {
+            assert!(
+                root[key]
+                    .as_array()
+                    .expect(key)
+                    .iter()
+                    .any(|e| e == "KHR_draco_mesh_compression"),
+                "{key} missing KHR_draco_mesh_compression"
+            );
+        }
+        // Primitive carries the draco extension.
+        let ext = &root["meshes"][0]["primitives"][0]["extensions"]
+            ["KHR_draco_mesh_compression"];
+        assert_eq!(ext["bufferView"], 0);
+        assert_eq!(ext["attributes"]["POSITION"], 0);
+        // Draco accessors have no bufferView (decoder provides the data).
+        for acc in root["accessors"].as_array().expect("accessors") {
+            assert!(acc.get("bufferView").is_none() || acc["bufferView"].is_null());
+        }
+        // The draco blob is present as the single buffer.
+        assert_eq!(root["buffers"].as_array().expect("buffers").len(), 1);
     }
 
     #[test]

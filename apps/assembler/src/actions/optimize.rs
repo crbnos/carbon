@@ -32,6 +32,8 @@ pub struct Opts {
     /// Auto-mode normalized error budget, used when neither a ratio ladder nor an
     /// absolute tolerance drives simplification. `None` = lossless.
     pub auto_error: Option<f32>,
+    /// Draco quantization bits (position, normal, texcoord) — Draco codec only.
+    pub draco_bits: (i32, i32, i32),
     /// Decoded (render-weight) byte ceiling — the "packed" gate.
     pub max_packed: usize,
     /// Encoded output byte ceiling.
@@ -166,6 +168,7 @@ fn run_optimize(path: &str, format: &str, opts: &Opts) -> Result<Outcome, String
             tolerance: opts.tolerance,
             auto_error: opts.auto_error,
             simplify_aggressive: opts.simplify_aggressive,
+            draco_bits: opts.draco_bits,
             weld: opts.weld,
             reorder: opts.reorder,
         };

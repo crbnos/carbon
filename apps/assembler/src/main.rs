@@ -322,6 +322,12 @@ async fn create_optimize(
                 .unwrap_or(optimize::DEFAULT_AUTO_ERROR as f64) as f32,
         )
         .filter(|&e| e > 0.0),
+        // Draco quantization bits (position, normal, texcoord) — Draco codec only.
+        draco_bits: (
+            o["dracoPositionBits"].as_i64().unwrap_or(14) as i32,
+            o["dracoNormalBits"].as_i64().unwrap_or(10) as i32,
+            o["dracoTexcoordBits"].as_i64().unwrap_or(12) as i32,
+        ),
         max_packed: o["maxPackedBytes"].as_u64().unwrap_or(419_430_400) as usize,
         max_output: o["maxOutputBytes"].as_u64().unwrap_or(125_829_120) as usize,
         lin: o["linearDeflection"].as_f64().unwrap_or(0.1),
