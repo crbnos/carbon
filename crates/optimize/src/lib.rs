@@ -135,11 +135,23 @@ pub fn optimize_glb(glb_bytes: &[u8], options: &Options) -> Result<Optimized, Op
         .bin
         .as_deref()
         .ok_or_else(|| OptimizeError::new("GLB has no binary chunk"))?;
-    let mut root: json::Root = serde_json::from_slice(&glb.json)
+    let root: json::Root = serde_json::from_slice(&glb.json)
         .map_err(|e| OptimizeError::new(format!("parse glTF json: {e}")))?;
+    optimize_root(root, bin, glb_bytes.len(), options)
+}
 
+/// Optimise an already-parsed glTF (`root` + its single binary buffer). Used by
+/// `optimize_glb` after unwrapping the GLB container, and by callers that load a
+/// `.gltf` (external / embedded buffer) themselves. `input_bytes` is reported in
+/// stats as the source size.
+pub fn optimize_root(
+    mut root: json::Root,
+    bin: &[u8],
+    input_bytes: usize,
+    options: &Options,
+) -> Result<Optimized, OptimizeError> {
     let mut stats = Stats {
-        input_bytes: glb_bytes.len(),
+        input_bytes,
         ..Default::default()
     };
 
@@ -159,27 +171,44 @@ pub fn optimize_glb(glb_bytes: &[u8], options: &Options) -> Result<Optimized, Op
     let draco = options.codec == Codec::Draco;
     let mut vb = Builder::default();
     let mut db = DracoBuilder::default();
+    let mut dropped = 0usize;
     let meshes = std::mem::take(&mut root.meshes);
     let mut new_meshes = Vec::with_capacity(meshes.len());
     for (mi, mut mesh) in meshes.into_iter().enumerate() {
-        for (pi, prim) in mesh.primitives.iter_mut().enumerate() {
-            let extracted = extract_primitive(&root, bin, prim)?;
+        let prims = std::mem::take(&mut mesh.primitives);
+        let mut kept: Vec<json::mesh::Primitive> = Vec::with_capacity(prims.len());
+        for mut prim in prims {
+            let extracted = extract_primitive(&root, bin, &prim)?;
             stats.input_vertices += extracted.count;
             stats.input_triangles += extracted.indices.len() / 3;
+            // Drop degenerate primitives before they reach the C encoders.
+            if !is_encodable(&extracted) {
+                dropped += 1;
+                continue;
+            }
             let opt = optimize_primitive(extracted, options);
             stats.output_vertices += opt.vertices.len();
             stats.output_triangles += opt.indices.len() / 3;
             // Uncompressed vertex+index footprint (the decoder's render weight).
             stats.decoded_bytes += decoded_len(&opt);
+            // Primitive index in the REBUILT mesh (dropped ones shift it).
+            let new_pi = kept.len();
             if draco {
-                db.write_primitive(prim, &opt, mi, pi, options.draco_bits)?;
+                db.write_primitive(&mut prim, &opt, mi, new_pi, options.draco_bits)?;
             } else {
-                vb.write_primitive(prim, &opt);
+                vb.write_primitive(&mut prim, &opt);
             }
+            kept.push(prim);
         }
+        mesh.primitives = kept;
         new_meshes.push(mesh);
     }
     root.meshes = new_meshes;
+    if dropped > 0 {
+        stats
+            .warnings
+            .push(format!("dropped {dropped} degenerate primitives"));
+    }
 
     let out = if draco {
         assemble_draco(root, db)?
@@ -423,6 +452,21 @@ struct OptimizedPrimitive {
     indices: Vec<u32>,
     has_normals: bool,
     has_uv: bool,
+}
+
+/// True when a primitive has usable triangle geometry meshopt/draco can encode.
+/// A degenerate one (empty, non-triangle-count, or an index past the vertex
+/// range) would out-of-bounds-read in the C encoders → segfault; the caller
+/// drops those. Real exports (fragmented Onshape gltf) contain them.
+fn is_encodable(p: &Primitive) -> bool {
+    !p.vertices.is_empty()
+        && p.indices.len() >= 3
+        && p.indices.len() % 3 == 0
+        && p.indices
+            .iter()
+            .copied()
+            .max()
+            .is_some_and(|m| (m as usize) < p.vertices.len())
 }
 
 fn optimize_primitive(p: Primitive, opts: &Options) -> OptimizedPrimitive {
