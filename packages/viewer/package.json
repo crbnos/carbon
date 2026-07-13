@@ -19,7 +19,8 @@
   },
   "exports": {
     ".": "./src/index.ts",
-    "./steps": "./src/steps.ts"
+    "./steps": "./src/steps.ts",
+    "./canvas": "./src/ModelCanvas.tsx"
   },
   "peerDependencies": {
     "react": "catalog:",

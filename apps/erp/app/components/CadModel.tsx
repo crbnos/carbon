@@ -12,7 +12,6 @@ import {
   ModalHeader,
   ModalOverlay,
   ModalTitle,
-  ModelViewer,
   Spinner,
   toast,
   useDisclosure,
@@ -30,11 +29,22 @@ import { LuCloudUpload } from "react-icons/lu";
 import { useFetcher, useRevalidator } from "react-router";
 import { useUser } from "~/hooks";
 import { getPrivateUrl, path } from "~/utils/path";
+import { ModelPreview } from "./ModelPreview";
 
 const SIZE_LIMIT = getFileSizeLimit("CAD_MODEL_UPLOAD");
 
 type CadModelProps = {
   modelPath: string | null;
+  /**
+   * Assembler artifacts (storage paths). When present the preview renders these
+   * with three.js instead of tessellating the raw source with WASM: `lodPath`
+   * (instant single-draw LOD) → `optimizedModelPath` (compact interactive GLB) →
+   * `glbPath` (lossless assembly GLB). `thumbnailPath` is the static poster.
+   */
+  optimizedModelPath?: string | null;
+  glbPath?: string | null;
+  lodPath?: string | null;
+  thumbnailPath?: string | null;
   metadata?: {
     itemId?: string;
     salesRfqLineId?: string;
@@ -53,6 +63,10 @@ const CadModel = ({
   isReadOnly,
   metadata,
   modelPath,
+  optimizedModelPath,
+  glbPath,
+  lodPath,
+  thumbnailPath,
   title,
   uploadClassName,
   viewerClassName
@@ -194,10 +208,16 @@ const CadModel = ({
       {() => {
         return file || modelPath ? (
           <>
-            <ModelViewer
+            <ModelPreview
               key={modelPath}
-              file={file}
-              url={modelPath ? getPrivateUrl(modelPath) : null}
+              sourceFile={file}
+              sourceUrl={modelPath ? getPrivateUrl(modelPath) : null}
+              optimizedUrl={
+                optimizedModelPath ? getPrivateUrl(optimizedModelPath) : null
+              }
+              glbUrl={glbPath ? getPrivateUrl(glbPath) : null}
+              lodUrl={lodPath ? getPrivateUrl(lodPath) : null}
+              thumbnailUrl={thumbnailPath ? getPrivateUrl(thumbnailPath) : null}
               mode={mode}
               className={viewerClassName}
               onDelete={canDelete ? deleteModal.onOpen : undefined}

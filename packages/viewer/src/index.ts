@@ -14,6 +14,7 @@ export {
   groupComponentNodeIds,
   indexAssemblyGraph
 } from "./graph";
+export { ModelCanvas, type ModelCanvasProps } from "./ModelCanvas";
 export {
   buildStepClip,
   displayMotionForStep,

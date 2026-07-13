@@ -115,6 +115,7 @@
     "./Editor": "./src/Editor/index.ts",
     "./FunnelChart": "./src/FunnelChart.tsx",
     "./HTML": "./src/HTML.tsx",
+    "./ModelViewer": "./src/ModelViewer.tsx",
     "./RichText": "./src/RichText/index.ts"
   },
   "peerDependencies": {
