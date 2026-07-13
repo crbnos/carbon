@@ -328,6 +328,8 @@ async fn create_optimize(
             o["dracoNormalBits"].as_i64().unwrap_or(10) as i32,
             o["dracoTexcoordBits"].as_i64().unwrap_or(12) as i32,
         ),
+        // Quantize normals to i16 (none/meshopt); default on for optimise.
+        quantize_normals: o["quantizeNormals"].as_bool().unwrap_or(true),
         max_packed: o["maxPackedBytes"].as_u64().unwrap_or(419_430_400) as usize,
         max_output: o["maxOutputBytes"].as_u64().unwrap_or(125_829_120) as usize,
         lin: o["linearDeflection"].as_f64().unwrap_or(0.1),

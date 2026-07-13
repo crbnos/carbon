@@ -34,6 +34,8 @@ pub struct Opts {
     pub auto_error: Option<f32>,
     /// Draco quantization bits (position, normal, texcoord) — Draco codec only.
     pub draco_bits: (i32, i32, i32),
+    /// Quantize normals to i16 (none/meshopt codecs). Core glTF, ~half the normal bytes.
+    pub quantize_normals: bool,
     /// Decoded (render-weight) byte ceiling — the "packed" gate.
     pub max_packed: usize,
     /// Encoded output byte ceiling.
@@ -194,6 +196,7 @@ fn run_optimize(path: &str, format: &str, opts: &Opts) -> Result<Outcome, String
             auto_error: opts.auto_error,
             simplify_aggressive: opts.simplify_aggressive,
             draco_bits: opts.draco_bits,
+            quantize_normals: opts.quantize_normals,
             weld: opts.weld,
             reorder: opts.reorder,
         };

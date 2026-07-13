@@ -46,6 +46,10 @@ pub struct Options {
     /// Draco quantization bits (position, normal, texcoord) — the Draco quality/
     /// perf knob. Fewer bits = smaller + coarser. `Codec::Draco` only.
     pub draco_bits: (i32, i32, i32),
+    /// Quantize normals to `i16` (SHORT, normalized) — core glTF, no node
+    /// transform, halves normal bytes, visually lossless. `none`/`meshopt` codecs
+    /// (Draco quantizes via `draco_bits`). Off by default so convert stays exact.
+    pub quantize_normals: bool,
     pub weld: bool,
     pub reorder: bool,
 }
@@ -59,6 +63,7 @@ impl Default for Options {
             auto_error: None,
             simplify_aggressive: false,
             draco_bits: (DRACO_POS_BITS, DRACO_NORM_BITS, DRACO_UV_BITS),
+            quantize_normals: false,
             weld: true,
             reorder: true,
         }
@@ -169,7 +174,10 @@ pub fn optimize_root(
     // Extract + optimise each primitive, then hand it to the codec's builder:
     // the view builder (plain / EXT_meshopt) or the per-primitive Draco builder.
     let draco = options.codec == Codec::Draco;
-    let mut vb = Builder::default();
+    let mut vb = Builder {
+        quantize_normals: options.quantize_normals,
+        ..Default::default()
+    };
     let mut db = DracoBuilder::default();
     let mut dropped = 0usize;
     let meshes = std::mem::take(&mut root.meshes);
@@ -556,6 +564,8 @@ fn optimize_primitive(p: Primitive, opts: &Options) -> OptimizedPrimitive {
 /// can encode from the correct element type.
 enum ViewData {
     Attr3(Vec<[f32; 3]>),
+    /// Normalized `i16` VEC3 (quantized normals — core glTF, half the bytes).
+    Attr3i16(Vec<[i16; 3]>),
     Attr2(Vec<[f32; 2]>),
     Idx { indices: Vec<u32>, vertex_count: usize },
 }
@@ -565,6 +575,15 @@ impl ViewData {
         match self {
             ViewData::Attr3(v) => {
                 let mut b = Vec::with_capacity(v.len() * 12);
+                for e in v {
+                    for c in e {
+                        b.extend_from_slice(&c.to_le_bytes());
+                    }
+                }
+                b
+            }
+            ViewData::Attr3i16(v) => {
+                let mut b = Vec::with_capacity(v.len() * 6);
                 for e in v {
                     for c in e {
                         b.extend_from_slice(&c.to_le_bytes());
@@ -593,6 +612,7 @@ impl ViewData {
     fn stride(&self) -> usize {
         match self {
             ViewData::Attr3(_) => 12,
+            ViewData::Attr3i16(_) => 6,
             ViewData::Attr2(_) => 8,
             ViewData::Idx { .. } => 4,
         }
@@ -600,6 +620,7 @@ impl ViewData {
     fn count(&self) -> usize {
         match self {
             ViewData::Attr3(v) => v.len(),
+            ViewData::Attr3i16(v) => v.len(),
             ViewData::Attr2(v) => v.len(),
             ViewData::Idx { indices, .. } => indices.len(),
         }
@@ -625,6 +646,7 @@ impl ViewData {
     fn encode_meshopt(&self) -> Vec<u8> {
         match self {
             ViewData::Attr3(v) => meshopt::encode_vertex_buffer(v).unwrap_or_default(),
+            ViewData::Attr3i16(v) => meshopt::encode_vertex_buffer(v).unwrap_or_default(),
             ViewData::Attr2(v) => meshopt::encode_vertex_buffer(v).unwrap_or_default(),
             ViewData::Idx {
                 indices,
@@ -638,6 +660,8 @@ impl ViewData {
 struct Builder {
     views: Vec<ViewData>,
     accessors: Vec<json::Accessor>,
+    /// Quantize normals to `i16` (SHORT normalized) instead of f32.
+    quantize_normals: bool,
 }
 
 impl Builder {
@@ -647,6 +671,7 @@ impl Builder {
     }
 
     fn write_primitive(&mut self, prim: &mut json::mesh::Primitive, opt: &OptimizedPrimitive) {
+        use json::accessor::{ComponentType, Type};
         let positions: Vec<[f32; 3]> = opt.vertices.iter().map(|v| v.pos).collect();
         let mut min = [f32::INFINITY; 3];
         let mut max = [f32::NEG_INFINITY; 3];
@@ -657,39 +682,42 @@ impl Builder {
             }
         }
         let pos_view = self.add_view(ViewData::Attr3(positions));
-        let pos_acc = self.push_accessor(
-            pos_view,
-            opt.vertices.len(),
-            json::accessor::ComponentType::F32,
-            json::accessor::Type::Vec3,
-            Some((min, max)),
-        );
+        let pos_acc =
+            self.push_accessor(pos_view, opt.vertices.len(), ComponentType::F32, Type::Vec3, false, Some((min, max)));
 
         let mut attributes = std::collections::BTreeMap::new();
         attributes.insert(Valid(json::mesh::Semantic::Positions), json::Index::new(pos_acc as u32));
 
         if opt.has_normals {
-            let normals: Vec<[f32; 3]> = opt.vertices.iter().map(|v| v.nrm).collect();
-            let nv = self.add_view(ViewData::Attr3(normals));
-            let na = self.push_accessor(
-                nv,
-                opt.vertices.len(),
-                json::accessor::ComponentType::F32,
-                json::accessor::Type::Vec3,
-                None,
-            );
+            let n = opt.vertices.len();
+            let na = if self.quantize_normals {
+                // f32 unit normal → i16 snorm (normalized) VEC3. Core glTF, no
+                // node transform, ~half the bytes, visually lossless.
+                let normals: Vec<[i16; 3]> = opt
+                    .vertices
+                    .iter()
+                    .map(|v| {
+                        [
+                            meshopt::quantize_snorm(v.nrm[0], 16) as i16,
+                            meshopt::quantize_snorm(v.nrm[1], 16) as i16,
+                            meshopt::quantize_snorm(v.nrm[2], 16) as i16,
+                        ]
+                    })
+                    .collect();
+                let nv = self.add_view(ViewData::Attr3i16(normals));
+                self.push_accessor(nv, n, ComponentType::I16, Type::Vec3, true, None)
+            } else {
+                let normals: Vec<[f32; 3]> = opt.vertices.iter().map(|v| v.nrm).collect();
+                let nv = self.add_view(ViewData::Attr3(normals));
+                self.push_accessor(nv, n, ComponentType::F32, Type::Vec3, false, None)
+            };
             attributes.insert(Valid(json::mesh::Semantic::Normals), json::Index::new(na as u32));
         }
         if opt.has_uv {
             let uvs: Vec<[f32; 2]> = opt.vertices.iter().map(|v| v.uv).collect();
             let uvv = self.add_view(ViewData::Attr2(uvs));
-            let uva = self.push_accessor(
-                uvv,
-                opt.vertices.len(),
-                json::accessor::ComponentType::F32,
-                json::accessor::Type::Vec2,
-                None,
-            );
+            let uva =
+                self.push_accessor(uvv, opt.vertices.len(), ComponentType::F32, Type::Vec2, false, None);
             attributes.insert(Valid(json::mesh::Semantic::TexCoords(0)), json::Index::new(uva as u32));
         }
 
@@ -697,13 +725,8 @@ impl Builder {
             indices: opt.indices.clone(),
             vertex_count: opt.vertices.len(),
         });
-        let ia = self.push_accessor(
-            iv,
-            opt.indices.len(),
-            json::accessor::ComponentType::U32,
-            json::accessor::Type::Scalar,
-            None,
-        );
+        let ia =
+            self.push_accessor(iv, opt.indices.len(), ComponentType::U32, Type::Scalar, false, None);
 
         prim.attributes = attributes;
         prim.indices = Some(json::Index::new(ia as u32));
@@ -715,6 +738,7 @@ impl Builder {
         count: usize,
         comp: json::accessor::ComponentType,
         ty: json::accessor::Type,
+        normalized: bool,
         minmax: Option<([f32; 3], [f32; 3])>,
     ) -> usize {
         let (min, max) = match minmax {
@@ -733,7 +757,7 @@ impl Builder {
             min,
             max,
             name: None,
-            normalized: false,
+            normalized,
             sparse: None,
             extensions: Default::default(),
             extras: Default::default(),
