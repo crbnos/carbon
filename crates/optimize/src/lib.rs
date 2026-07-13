@@ -174,7 +174,7 @@ pub fn optimize_root(
     let mut dropped = 0usize;
     let meshes = std::mem::take(&mut root.meshes);
     let mut new_meshes = Vec::with_capacity(meshes.len());
-    for (mi, mut mesh) in meshes.into_iter().enumerate() {
+    for mut mesh in meshes {
         let prims = std::mem::take(&mut mesh.primitives);
         let mut kept: Vec<json::mesh::Primitive> = Vec::with_capacity(prims.len());
         for mut prim in prims {
@@ -191,10 +191,8 @@ pub fn optimize_root(
             stats.output_triangles += opt.indices.len() / 3;
             // Uncompressed vertex+index footprint (the decoder's render weight).
             stats.decoded_bytes += decoded_len(&opt);
-            // Primitive index in the REBUILT mesh (dropped ones shift it).
-            let new_pi = kept.len();
             if draco {
-                db.write_primitive(&mut prim, &opt, mi, new_pi, options.draco_bits)?;
+                db.write_primitive(&mut prim, &opt, options.draco_bits)?;
             } else {
                 vb.write_primitive(&mut prim, &opt);
             }
@@ -791,17 +789,6 @@ fn build_glb(json_bytes: Vec<u8>, bin: Vec<u8>) -> Result<Vec<u8>, OptimizeError
     .map_err(|e| OptimizeError::new(format!("assemble GLB: {e}")))
 }
 
-/// One compressed bufferView's EXT_meshopt_compression record, patched into the
-/// serialized JSON (the `gltf` crate has no typed EXT_meshopt extension).
-struct ExtRec {
-    view: usize,
-    byte_offset: usize,
-    byte_length: usize,
-    byte_stride: usize,
-    count: usize,
-    mode: &'static str,
-}
-
 /// Serialize `root` + geometry `views` into a GLB using the chosen codec.
 fn assemble(
     mut root: json::Root,
@@ -840,9 +827,8 @@ fn assemble(
             let mut bin = Vec::new(); // buffer 0: compressed (the GLB BIN)
             let mut fallback_len = 0usize; // buffer 1: fallback (no bytes emitted)
             let mut bvs = Vec::with_capacity(views.len());
-            let mut recs = Vec::with_capacity(views.len());
             for v in &views {
-                let raw_len = v.raw_bytes().len();
+                let raw_len = v.count() * v.stride(); // decompressed footprint (no alloc)
                 while fallback_len % 4 != 0 {
                     fallback_len += 1;
                 }
@@ -857,32 +843,40 @@ fn assemble(
                     bin.push(0);
                 }
                 let c_off = bin.len();
+                let c_len = comp.len();
                 bin.extend_from_slice(&comp);
 
                 let byte_stride = if v.is_index() { None } else { Some(v.stride()) };
-                bvs.push(make_view(1, f_off, raw_len, byte_stride, v.target()));
-                recs.push(ExtRec {
-                    view: bvs.len() - 1,
-                    byte_offset: c_off,
-                    byte_length: comp.len(),
-                    byte_stride: v.stride(),
-                    count: v.count(),
-                    mode: v.mode(),
-                });
+                let mut view = make_view(1, f_off, raw_len, byte_stride, v.target());
+                // Set the EXT_meshopt_compression record directly on the typed
+                // bufferView (gltf "extensions" feature) — no whole-document Value
+                // round-trip, so memory stays flat.
+                let mut m = serde_json::Map::new();
+                m.insert(
+                    "EXT_meshopt_compression".into(),
+                    serde_json::json!({
+                        "buffer": 0, "byteOffset": c_off, "byteLength": c_len,
+                        "byteStride": v.stride(), "count": v.count(), "mode": v.mode(),
+                    }),
+                );
+                view.extensions = Some(json::extensions::buffer::View { others: m });
+                bvs.push(view);
             }
             root.buffer_views = bvs;
-            root.buffers = vec![make_buffer(bin.len()), make_buffer(fallback_len)];
+            let mut fallback = make_buffer(fallback_len);
+            let mut fm = serde_json::Map::new();
+            fm.insert(
+                "EXT_meshopt_compression".into(),
+                serde_json::json!({ "fallback": true }),
+            );
+            fallback.extensions = Some(json::extensions::buffer::Buffer { others: fm });
+            root.buffers = vec![make_buffer(bin.len()), fallback];
             add_ext(&mut root.extensions_used, "EXT_meshopt_compression");
             add_ext(&mut root.extensions_required, "EXT_meshopt_compression");
 
             let json_bytes = json::serialize::to_vec(&root)
                 .map_err(|e| OptimizeError::new(format!("serialize glTF json: {e}")))?;
-            let mut value: serde_json::Value = serde_json::from_slice(&json_bytes)
-                .map_err(|e| OptimizeError::new(format!("reparse glTF json: {e}")))?;
-            patch_meshopt(&mut value, &recs)?;
-            let patched = serde_json::to_vec(&value)
-                .map_err(|e| OptimizeError::new(format!("serialize patched json: {e}")))?;
-            build_glb(patched, bin)
+            build_glb(json_bytes, bin)
         }
     }
 }
@@ -893,53 +887,6 @@ fn add_ext(list: &mut Vec<String>, name: &str) {
     }
 }
 
-fn patch_meshopt(value: &mut serde_json::Value, recs: &[ExtRec]) -> Result<(), OptimizeError> {
-    use serde_json::json;
-    {
-        let bvs = value
-            .get_mut("bufferViews")
-            .and_then(|v| v.as_array_mut())
-            .ok_or_else(|| OptimizeError::new("patch: no bufferViews"))?;
-        for rec in recs {
-            let bv = bvs
-                .get_mut(rec.view)
-                .and_then(|v| v.as_object_mut())
-                .ok_or_else(|| OptimizeError::new("patch: bufferView out of range"))?;
-            let ext = bv
-                .entry("extensions")
-                .or_insert_with(|| json!({}))
-                .as_object_mut()
-                .ok_or_else(|| OptimizeError::new("patch: extensions not object"))?;
-            ext.insert(
-                "EXT_meshopt_compression".into(),
-                json!({
-                    "buffer": 0,
-                    "byteOffset": rec.byte_offset,
-                    "byteLength": rec.byte_length,
-                    "byteStride": rec.byte_stride,
-                    "count": rec.count,
-                    "mode": rec.mode,
-                }),
-            );
-        }
-    }
-    let buffers = value
-        .get_mut("buffers")
-        .and_then(|v| v.as_array_mut())
-        .ok_or_else(|| OptimizeError::new("patch: no buffers"))?;
-    let fallback = buffers
-        .get_mut(1)
-        .and_then(|v| v.as_object_mut())
-        .ok_or_else(|| OptimizeError::new("patch: no fallback buffer"))?;
-    fallback
-        .entry("extensions")
-        .or_insert_with(|| json!({}))
-        .as_object_mut()
-        .ok_or_else(|| OptimizeError::new("patch: fallback extensions not object"))?
-        .insert("EXT_meshopt_compression".into(), json!({ "fallback": true }));
-    Ok(())
-}
-
 // ---- Draco (KHR_draco_mesh_compression) --------------------------------------
 
 // Quantization bits (gltf-transform defaults). Draco compresses by quantizing
@@ -947,16 +894,6 @@ fn patch_meshopt(value: &mut serde_json::Value, recs: &[ExtRec]) -> Result<(), O
 const DRACO_POS_BITS: i32 = 14;
 const DRACO_NORM_BITS: i32 = 10;
 const DRACO_UV_BITS: i32 = 12;
-
-/// One primitive's KHR_draco_mesh_compression record, patched into the JSON.
-struct PrimExt {
-    mesh: usize,
-    prim: usize,
-    buffer_view: usize,
-    pos: i32,
-    norm: i32,
-    uv: i32,
-}
 
 /// Draco is per-primitive: each primitive is encoded into one draco blob, and
 /// its accessors carry type/count/min-max but no bufferView (the decoder
@@ -966,7 +903,6 @@ struct DracoBuilder {
     bin: Vec<u8>,
     buffer_views: Vec<json::buffer::View>,
     accessors: Vec<json::Accessor>,
-    prim_exts: Vec<PrimExt>,
 }
 
 impl DracoBuilder {
@@ -974,8 +910,6 @@ impl DracoBuilder {
         &mut self,
         prim: &mut json::mesh::Primitive,
         opt: &OptimizedPrimitive,
-        mesh_i: usize,
-        prim_i: usize,
         bits: (i32, i32, i32),
     ) -> Result<(), OptimizeError> {
         let n = opt.vertices.len();
@@ -1058,13 +992,24 @@ impl DracoBuilder {
         prim.attributes = attributes;
         prim.indices = Some(json::Index::new(idx_acc as u32));
 
-        self.prim_exts.push(PrimExt {
-            mesh: mesh_i,
-            prim: prim_i,
-            buffer_view: bv,
-            pos: enc.pos_id,
-            norm: enc.norm_id,
-            uv: enc.uv_id,
+        // Set the KHR_draco_mesh_compression record directly on the typed
+        // primitive (no whole-document Value round-trip).
+        let mut attrs = serde_json::Map::new();
+        attrs.insert("POSITION".into(), serde_json::json!(enc.pos_id));
+        if enc.norm_id >= 0 {
+            attrs.insert("NORMAL".into(), serde_json::json!(enc.norm_id));
+        }
+        if enc.uv_id >= 0 {
+            attrs.insert("TEXCOORD_0".into(), serde_json::json!(enc.uv_id));
+        }
+        let mut m = serde_json::Map::new();
+        m.insert(
+            "KHR_draco_mesh_compression".into(),
+            serde_json::json!({ "bufferView": bv, "attributes": serde_json::Value::Object(attrs) }),
+        );
+        prim.extensions = Some(json::extensions::mesh::Primitive {
+            others: m,
+            ..Default::default()
         });
         Ok(())
     }
@@ -1114,50 +1059,7 @@ fn assemble_draco(mut root: json::Root, db: DracoBuilder) -> Result<Vec<u8>, Opt
 
     let json_bytes = json::serialize::to_vec(&root)
         .map_err(|e| OptimizeError::new(format!("serialize glTF json: {e}")))?;
-    let mut value: serde_json::Value = serde_json::from_slice(&json_bytes)
-        .map_err(|e| OptimizeError::new(format!("reparse glTF json: {e}")))?;
-    patch_draco(&mut value, &db.prim_exts)?;
-    let patched = serde_json::to_vec(&value)
-        .map_err(|e| OptimizeError::new(format!("serialize patched json: {e}")))?;
-    build_glb(patched, db.bin)
-}
-
-fn patch_draco(value: &mut serde_json::Value, prim_exts: &[PrimExt]) -> Result<(), OptimizeError> {
-    use serde_json::json;
-    let meshes = value
-        .get_mut("meshes")
-        .and_then(|v| v.as_array_mut())
-        .ok_or_else(|| OptimizeError::new("patch: no meshes"))?;
-    for pe in prim_exts {
-        let prims = meshes
-            .get_mut(pe.mesh)
-            .and_then(|m| m.as_object_mut())
-            .and_then(|m| m.get_mut("primitives"))
-            .and_then(|p| p.as_array_mut())
-            .ok_or_else(|| OptimizeError::new("patch: mesh primitives missing"))?;
-        let prim = prims
-            .get_mut(pe.prim)
-            .and_then(|p| p.as_object_mut())
-            .ok_or_else(|| OptimizeError::new("patch: primitive out of range"))?;
-
-        let mut attrs = serde_json::Map::new();
-        attrs.insert("POSITION".into(), json!(pe.pos));
-        if pe.norm >= 0 {
-            attrs.insert("NORMAL".into(), json!(pe.norm));
-        }
-        if pe.uv >= 0 {
-            attrs.insert("TEXCOORD_0".into(), json!(pe.uv));
-        }
-        prim.entry("extensions")
-            .or_insert_with(|| json!({}))
-            .as_object_mut()
-            .ok_or_else(|| OptimizeError::new("patch: extensions not object"))?
-            .insert(
-                "KHR_draco_mesh_compression".into(),
-                json!({ "bufferView": pe.buffer_view, "attributes": serde_json::Value::Object(attrs) }),
-            );
-    }
-    Ok(())
+    build_glb(json_bytes, db.bin)
 }
 
 #[cfg(test)]

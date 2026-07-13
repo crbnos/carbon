@@ -18,3 +18,4 @@ draco-bridge = { path = "../draco-bridge" }
 
 [dev-dependencies]
 base64 = "0.22"
+memmap2 = "0.9"

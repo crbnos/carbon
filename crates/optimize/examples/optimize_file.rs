@@ -3,13 +3,31 @@
 //!
 //!   cargo run --release --example optimize_file -- "<path>" [none|meshopt|draco]
 
-use base64::Engine;
 use gltf::json;
 use std::io::BufReader;
 use std::time::Instant;
 
 fn mb(bytes: usize) -> String {
     format!("{:.1} MB", bytes as f64 / 1_048_576.0)
+}
+
+/// Holds the binary buffer either memory-mapped (OS-paged, off the RSS) — with
+/// the BIN sub-range within the map — or owned.
+enum Bin {
+    Mapped(memmap2::Mmap, usize, usize),
+    Owned(Vec<u8>),
+}
+impl Bin {
+    fn as_slice(&self) -> &[u8] {
+        match self {
+            Bin::Mapped(m, off, len) => &m[*off..*off + *len],
+            Bin::Owned(v) => v,
+        }
+    }
+}
+
+fn le_u32(b: &[u8], off: usize) -> usize {
+    u32::from_le_bytes([b[off], b[off + 1], b[off + 2], b[off + 3]]) as usize
 }
 
 fn main() {
@@ -26,7 +44,7 @@ fn main() {
     eprintln!(
         "loaded: {} meshes, bin {} in {} ms",
         root.meshes.len(),
-        mb(bin.len()),
+        mb(bin.as_slice().len()),
         t.elapsed().as_millis()
     );
 
@@ -36,7 +54,7 @@ fn main() {
     };
     eprintln!("optimising (codec={codec_name}) …");
     let t = Instant::now();
-    let res = match optimize::optimize_root(root, &bin, input_bytes, &opts) {
+    let res = match optimize::optimize_root(root, bin.as_slice(), input_bytes, &opts) {
         Ok(r) => r,
         Err(e) => {
             eprintln!("ERROR: {}", e.message);
@@ -81,32 +99,46 @@ fn pct(a: usize, b: usize) -> f64 {
     }
 }
 
-fn load(path: &str) -> (json::Root, Vec<u8>) {
+fn load(path: &str) -> (json::Root, Bin) {
     if path.to_lowercase().ends_with(".glb") {
-        let bytes = std::fs::read(path).expect("read glb");
-        let glb = gltf::binary::Glb::from_slice(&bytes).expect("parse glb");
-        let root: json::Root = serde_json::from_slice(glb.json.as_ref()).expect("parse json");
-        let bin = glb.bin.expect("no bin").into_owned();
-        (root, bin)
+        // mmap the whole file; the BIN chunk becomes an OS-paged sub-slice, off
+        // the RSS. Parse the GLB chunk layout by hand to avoid a Cow borrow of
+        // the map: [magic,ver,len] then chunks [len,type,data]; chunk0=JSON (its
+        // length is 4-aligned), chunk1=BIN.
+        let file = std::fs::File::open(path).expect("open glb");
+        let map = unsafe { memmap2::Mmap::map(&file) }.expect("mmap glb");
+        let json_len = le_u32(&map, 12);
+        let root: json::Root =
+            serde_json::from_slice(&map[20..20 + json_len]).expect("parse json");
+        let bin_hdr = 20 + json_len;
+        let bin_len = le_u32(&map, bin_hdr);
+        let bin_off = bin_hdr + 8;
+        (root, Bin::Mapped(map, bin_off, bin_len))
     } else {
-        // .gltf — parse the JSON, then decode buffer[0]'s embedded base64 data URI.
+        // .gltf — parse the JSON, then STREAM-decode buffer[0]'s base64 data URI
+        // straight to a temp file and mmap it, so the ~900 MB buffer is never a
+        // resident Vec. The 1.3 GB base64 string is dropped right after.
         let file = std::fs::File::open(path).expect("open gltf");
         let mut root: json::Root =
             serde_json::from_reader(BufReader::new(file)).expect("parse gltf json");
-        let uri = root.buffers[0]
-            .uri
-            .as_ref()
-            .expect("buffer has no uri (external .bin not supported by this harness)");
-        let b64 = uri
-            .split_once(',')
-            .map(|(_, d)| d)
-            .expect("not a data URI");
-        let bin = base64::engine::general_purpose::STANDARD
-            .decode(b64)
-            .expect("decode base64 buffer");
-        // Drop the ~1.3 GB base64 string now (optimize_root rebuilds buffers and
-        // never reads the old ones); keeps peak RSS down.
+        let uri = std::mem::take(&mut root.buffers[0].uri).expect("buffer has no uri");
+        let comma = uri.find(',').expect("not a data URI") + 1;
+
+        let tmp = std::env::temp_dir().join(format!("optimize-bin-{}.bin", std::process::id()));
+        {
+            let mut out = std::fs::File::create(&tmp).expect("create temp");
+            let mut dec = base64::read::DecoderReader::new(
+                std::io::Cursor::new(&uri.as_bytes()[comma..]),
+                &base64::engine::general_purpose::STANDARD,
+            );
+            std::io::copy(&mut dec, &mut out).expect("stream-decode base64");
+        }
+        drop(uri); // free the ~1.3 GB base64 string
         root.buffers.clear();
-        (root, bin)
+        let map = unsafe { memmap2::Mmap::map(&std::fs::File::open(&tmp).expect("open temp")) }
+            .expect("mmap temp");
+        let len = map.len();
+        let _ = std::fs::remove_file(&tmp); // unlinked; the mmap keeps it alive
+        (root, Bin::Mapped(map, 0, len))
     }
 }

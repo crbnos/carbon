@@ -137,20 +137,45 @@ struct Outcome {
     warnings: Vec<String>,
 }
 
+/// GLB source bytes — either the STEP tessellation (owned) or a memory-mapped
+/// uploaded GLB (OS-paged, off the RSS).
+enum Src {
+    Owned(Vec<u8>),
+    Mapped(memmap2::Mmap),
+}
+impl Src {
+    fn bytes(&self) -> &[u8] {
+        match self {
+            Src::Owned(v) => v,
+            Src::Mapped(m) => m,
+        }
+    }
+}
+
 /// Load the source into GLB bytes (tessellating STEP), then walk the simplify
 /// ladder — the first rung under both gates wins; else keep the smallest and flag
 /// `asset-too-large` (never a silent truncation).
 fn run_optimize(path: &str, format: &str, opts: &Opts) -> Result<Outcome, String> {
-    let glb = match format {
+    let src = match format {
         "step" | "stp" => {
             let text = read_head(path, 32 * 1024 * 1024)?;
-            converter::convert::convert_step(path, &text, opts.lin, opts.ang)
-                .map_err(|e| e.message)?
-                .glb
+            Src::Owned(
+                converter::convert::convert_step(path, &text, opts.lin, opts.ang)
+                    .map_err(|e| e.message)?
+                    .glb,
+            )
         }
-        "glb" | "gltf" => std::fs::read(path).map_err(|e| format!("read source: {e}"))?,
+        // mmap the uploaded GLB so a large source stays OS-paged, never a
+        // resident Vec — the BIN chunk faults in on access during optimise.
+        "glb" | "gltf" => {
+            let file = std::fs::File::open(path).map_err(|e| format!("open source: {e}"))?;
+            Src::Mapped(
+                unsafe { memmap2::Mmap::map(&file) }.map_err(|e| format!("mmap source: {e}"))?,
+            )
+        }
         other => return Err(format!("unsupported format: {other}")),
     };
+    let glb = src.bytes();
     let input_bytes = glb.len();
 
     let ladder = if opts.ladder.is_empty() {
@@ -172,7 +197,7 @@ fn run_optimize(path: &str, format: &str, opts: &Opts) -> Result<Outcome, String
             weld: opts.weld,
             reorder: opts.reorder,
         };
-        let mut res = optimize::optimize_glb(&glb, &o).map_err(|e| e.message)?;
+        let mut res = optimize::optimize_glb(glb, &o).map_err(|e| e.message)?;
         res.stats.input_bytes = input_bytes;
         let passes = res.stats.decoded_bytes <= opts.max_packed && res.glb.len() <= opts.max_output;
         let outcome = Outcome {
