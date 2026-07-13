@@ -1,0 +1,1121 @@
+//! Mesh optimisation for GLB assets. Parses a binary glTF, runs meshopt on every
+//! mesh primitive (weld/remap → vertex-cache → overdraw → vertex-fetch, plus an
+//! optional simplify ladder), and re-encodes the GLB. The node tree, materials,
+//! and `extras` (e.g. `nodeId`) are preserved verbatim — only the geometry
+//! buffers are rebuilt.
+//!
+//! Phase 1 targets geometry-only GLBs (mesh POSITION/NORMAL/TEXCOORD_0 +
+//! indices) — the converter's output and the assembly pipeline. Embedded image
+//! bufferViews are rejected with a clear error rather than silently corrupted;
+//! texture support is a later extension.
+
+use gltf::json;
+use json::validation::Checked::Valid;
+use json::validation::USize64;
+use std::borrow::Cow;
+use std::mem::size_of;
+
+mod codec;
+pub use codec::Codec;
+
+#[derive(Debug, Clone)]
+pub struct Options {
+    /// Transmission codec for the output buffers.
+    pub codec: Codec,
+    /// Simplify target as a fraction of the input triangle count (`None` = no
+    /// ratio target; simplification then runs only if `tolerance` is set, taking
+    /// it as far as the tolerance allows). The ladder that walks several fractions
+    /// lives in the caller; this runs a single ratio.
+    pub simplify: Option<f32>,
+    /// **The quality/perf knob.** Max simplify error in source units (mm): the
+    /// simplified surface never deviates more than this from the original.
+    /// Converted per-mesh from meshopt's normalized error via `simplify_scale`.
+    /// Larger = coarser/smaller/faster, smaller = higher precision. `None` =
+    /// ratio-only (hit the simplify target regardless of error).
+    pub tolerance: Option<f32>,
+    /// **Auto mode** — a scale-invariant normalized error budget (fraction of each
+    /// mesh's extent, e.g. `0.005` = 0.5%) used only when neither `simplify` nor
+    /// `tolerance` is given. meshopt then reduces every mesh maximally within this
+    /// bound: adaptive per-mesh (a cube stays a cube, a dense surface decimates),
+    /// scale-invariant across models. `None` = no auto simplification (lossless —
+    /// convert uses this so geometry is only welded/reordered/encoded).
+    pub auto_error: Option<f32>,
+    /// Use `simplify_sloppy` (topology-breaking, faster/smaller) instead of the
+    /// error-bounded `simplify`.
+    pub simplify_aggressive: bool,
+    pub weld: bool,
+    pub reorder: bool,
+}
+
+impl Default for Options {
+    fn default() -> Self {
+        Options {
+            codec: Codec::Meshopt,
+            simplify: None,
+            tolerance: None,
+            auto_error: None,
+            simplify_aggressive: false,
+            weld: true,
+            reorder: true,
+        }
+    }
+}
+
+/// Default auto-mode error budget: 0.5% of each mesh's extent — a balanced
+/// perf/quality mix. Tunable per request; `crates/optimize` never simplifies
+/// unless the caller opts in (explicit ratio/tolerance or a non-None auto_error).
+pub const DEFAULT_AUTO_ERROR: f32 = 0.005;
+
+/// Below this triangle count auto mode skips simplification — trivial meshes
+/// aren't worth reducing and low-poly geometry risks visible artifacts.
+const AUTO_TRI_FLOOR: usize = 256;
+
+#[derive(Debug, Default, Clone)]
+pub struct Stats {
+    pub input_vertices: usize,
+    pub output_vertices: usize,
+    pub input_triangles: usize,
+    pub output_triangles: usize,
+    pub input_bytes: usize,
+    pub output_bytes: usize,
+    /// Uncompressed vertex+index size the decoder must materialise (the
+    /// "render weight"). The ladder gate bounds this — a codec shrinks download,
+    /// not what the GPU decodes back to. See PR #1092's packed-size gate.
+    pub decoded_bytes: usize,
+    pub warnings: Vec<String>,
+}
+
+#[derive(Debug)]
+pub struct Optimized {
+    pub glb: Vec<u8>,
+    pub stats: Stats,
+}
+
+#[derive(Debug)]
+pub struct OptimizeError {
+    pub message: String,
+}
+
+impl OptimizeError {
+    fn new(m: impl Into<String>) -> Self {
+        OptimizeError { message: m.into() }
+    }
+}
+
+impl std::fmt::Display for OptimizeError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.message)
+    }
+}
+impl std::error::Error for OptimizeError {}
+
+/// Interleaved vertex used for meshopt (pos always present; normal/uv zero-filled
+/// when the source primitive lacks them — the emitted accessors follow what was
+/// actually present, tracked per primitive).
+#[repr(C)]
+#[derive(Clone, Copy, Default, PartialEq, bytemuck::Pod, bytemuck::Zeroable)]
+struct Vertex {
+    pos: [f32; 3],
+    nrm: [f32; 3],
+    uv: [f32; 2],
+}
+
+const VSTRIDE: usize = size_of::<Vertex>(); // 32
+
+/// Optimise every mesh primitive in a GLB and re-encode. `Options::codec`
+/// chooses the output buffer encoding.
+pub fn optimize_glb(glb_bytes: &[u8], options: &Options) -> Result<Optimized, OptimizeError> {
+    let glb = gltf::binary::Glb::from_slice(glb_bytes)
+        .map_err(|e| OptimizeError::new(format!("parse GLB: {e}")))?;
+    let bin = glb
+        .bin
+        .as_deref()
+        .ok_or_else(|| OptimizeError::new("GLB has no binary chunk"))?;
+    let mut root: json::Root = serde_json::from_slice(&glb.json)
+        .map_err(|e| OptimizeError::new(format!("parse glTF json: {e}")))?;
+
+    let mut stats = Stats {
+        input_bytes: glb_bytes.len(),
+        ..Default::default()
+    };
+
+    // Which bufferViews are referenced by mesh geometry — everything else (image
+    // data, etc.) is unsupported in Phase 1.
+    let geometry_views = geometry_buffer_views(&root);
+    for (i, _) in root.buffer_views.iter().enumerate() {
+        if !geometry_views.contains(&i) {
+            return Err(OptimizeError::new(
+                "optimize: GLB has non-geometry bufferViews (embedded images/other) — not supported yet",
+            ));
+        }
+    }
+
+    // Extract + optimise each primitive independently. Rayon would parallelise
+    // here (see caller wiring); kept serial in the core so the crate has no async
+    // assumptions — the assembler runs it inside spawn_blocking.
+    let mut builder = Builder::default();
+    let meshes = std::mem::take(&mut root.meshes);
+    let mut new_meshes = Vec::with_capacity(meshes.len());
+    for mut mesh in meshes {
+        for prim in &mut mesh.primitives {
+            let extracted = extract_primitive(&root, bin, prim)?;
+            stats.input_vertices += extracted.count;
+            stats.input_triangles += extracted.indices.len() / 3;
+            let opt = optimize_primitive(extracted, options);
+            stats.output_vertices += opt.vertices.len();
+            stats.output_triangles += opt.indices.len() / 3;
+            builder.write_primitive(prim, &opt);
+        }
+        new_meshes.push(mesh);
+    }
+    root.meshes = new_meshes;
+
+    // Uncompressed vertex+index footprint (the decoder's render weight).
+    stats.decoded_bytes = builder.views.iter().map(|v| v.raw_len()).sum();
+
+    // Swap in the rebuilt geometry and assemble per codec.
+    root.accessors = builder.accessors;
+    let out = assemble(root, builder.views, options.codec)?;
+    stats.output_bytes = out.len();
+    Ok(Optimized { glb: out, stats })
+}
+
+// ---- extraction --------------------------------------------------------------
+
+struct Primitive {
+    vertices: Vec<Vertex>,
+    indices: Vec<u32>,
+    count: usize,
+    has_normals: bool,
+    has_uv: bool,
+}
+
+fn geometry_buffer_views(root: &json::Root) -> std::collections::HashSet<usize> {
+    let mut set = std::collections::HashSet::new();
+    let mut add = |acc_idx: usize| {
+        if let Some(a) = root.accessors.get(acc_idx) {
+            if let Some(v) = a.buffer_view {
+                set.insert(v.value());
+            }
+        }
+    };
+    for mesh in &root.meshes {
+        for p in &mesh.primitives {
+            if let Some(i) = p.indices {
+                add(i.value());
+            }
+            for (_, acc) in p.attributes.iter() {
+                add(acc.value());
+            }
+        }
+    }
+    set
+}
+
+fn extract_primitive(
+    root: &json::Root,
+    bin: &[u8],
+    prim: &json::mesh::Primitive,
+) -> Result<Primitive, OptimizeError> {
+    let pos_acc = prim
+        .attributes
+        .iter()
+        .find(|(sem, _)| matches!(sem, Valid(json::mesh::Semantic::Positions)))
+        .map(|(_, a)| a.value())
+        .ok_or_else(|| OptimizeError::new("primitive has no POSITION"))?;
+    let positions = read_vec3(root, bin, pos_acc)?;
+    let count = positions.len();
+
+    let nrm_acc = prim
+        .attributes
+        .iter()
+        .find(|(sem, _)| matches!(sem, Valid(json::mesh::Semantic::Normals)))
+        .map(|(_, a)| a.value());
+    let normals = match nrm_acc {
+        Some(a) => Some(read_vec3(root, bin, a)?),
+        None => None,
+    };
+    let uv_acc = prim
+        .attributes
+        .iter()
+        .find(|(sem, _)| matches!(sem, Valid(json::mesh::Semantic::TexCoords(0))))
+        .map(|(_, a)| a.value());
+    let uvs = match uv_acc {
+        Some(a) => Some(read_vec2(root, bin, a)?),
+        None => None,
+    };
+
+    let indices = match prim.indices {
+        Some(a) => read_indices(root, bin, a.value())?,
+        None => (0..count as u32).collect(),
+    };
+
+    let mut vertices = Vec::with_capacity(count);
+    for i in 0..count {
+        vertices.push(Vertex {
+            pos: positions[i],
+            nrm: normals.as_ref().map(|n| n[i]).unwrap_or([0.0; 3]),
+            uv: uvs.as_ref().map(|u| u[i]).unwrap_or([0.0; 2]),
+        });
+    }
+
+    Ok(Primitive {
+        vertices,
+        indices,
+        count,
+        has_normals: normals.is_some(),
+        has_uv: uvs.is_some(),
+    })
+}
+
+fn accessor_view<'a>(
+    root: &json::Root,
+    bin: &'a [u8],
+    acc_idx: usize,
+) -> Result<
+    (
+        &'a [u8],
+        usize,
+        usize,
+        json::accessor::ComponentType,
+        json::accessor::Type,
+    ),
+    OptimizeError,
+> {
+    let acc = root
+        .accessors
+        .get(acc_idx)
+        .ok_or_else(|| OptimizeError::new("accessor out of range"))?;
+    let view_idx = acc
+        .buffer_view
+        .ok_or_else(|| OptimizeError::new("accessor has no bufferView"))?
+        .value();
+    let view = root
+        .buffer_views
+        .get(view_idx)
+        .ok_or_else(|| OptimizeError::new("bufferView out of range"))?;
+    let comp = match acc.component_type {
+        Valid(c) => c.0,
+        _ => return Err(OptimizeError::new("invalid component type")),
+    };
+    let ty = match acc.type_ {
+        Valid(t) => t,
+        _ => return Err(OptimizeError::new("invalid accessor type")),
+    };
+    let view_off = view.byte_offset.map(|o| o.0 as usize).unwrap_or(0);
+    let acc_off = acc.byte_offset.map(|o| o.0 as usize).unwrap_or(0);
+    let start = view_off + acc_off;
+    let stride = view
+        .byte_stride
+        .map(|s| s.0)
+        .unwrap_or_else(|| component_size(comp) * type_components(ty));
+    Ok((bin, start, stride, comp, ty))
+}
+
+fn read_vec3(root: &json::Root, bin: &[u8], acc_idx: usize) -> Result<Vec<[f32; 3]>, OptimizeError> {
+    let (data, start, stride, comp, _) = accessor_view(root, bin, acc_idx)?;
+    if !matches!(comp, json::accessor::ComponentType::F32) {
+        return Err(OptimizeError::new("expected f32 VEC3"));
+    }
+    let count = root.accessors[acc_idx].count.0 as usize;
+    let mut out = Vec::with_capacity(count);
+    for i in 0..count {
+        let o = start + i * stride;
+        out.push([read_f32(data, o)?, read_f32(data, o + 4)?, read_f32(data, o + 8)?]);
+    }
+    Ok(out)
+}
+
+fn read_vec2(root: &json::Root, bin: &[u8], acc_idx: usize) -> Result<Vec<[f32; 2]>, OptimizeError> {
+    let (data, start, stride, comp, _) = accessor_view(root, bin, acc_idx)?;
+    if !matches!(comp, json::accessor::ComponentType::F32) {
+        return Err(OptimizeError::new("expected f32 VEC2"));
+    }
+    let count = root.accessors[acc_idx].count.0 as usize;
+    let mut out = Vec::with_capacity(count);
+    for i in 0..count {
+        let o = start + i * stride;
+        out.push([read_f32(data, o)?, read_f32(data, o + 4)?]);
+    }
+    Ok(out)
+}
+
+fn read_indices(root: &json::Root, bin: &[u8], acc_idx: usize) -> Result<Vec<u32>, OptimizeError> {
+    let (data, start, stride, comp, _) = accessor_view(root, bin, acc_idx)?;
+    let count = root.accessors[acc_idx].count.0 as usize;
+    let mut out = Vec::with_capacity(count);
+    for i in 0..count {
+        let o = start + i * stride;
+        use json::accessor::ComponentType;
+        let v = match comp {
+            ComponentType::U8 => {
+                *data.get(o).ok_or_else(|| OptimizeError::new("index oob"))? as u32
+            }
+            ComponentType::U16 => read_u16(data, o)? as u32,
+            ComponentType::U32 => read_u32(data, o)?,
+            _ => return Err(OptimizeError::new("unsupported index component type")),
+        };
+        out.push(v);
+    }
+    Ok(out)
+}
+
+fn read_f32(d: &[u8], o: usize) -> Result<f32, OptimizeError> {
+    let b = d.get(o..o + 4).ok_or_else(|| OptimizeError::new("f32 oob"))?;
+    Ok(f32::from_le_bytes([b[0], b[1], b[2], b[3]]))
+}
+fn read_u16(d: &[u8], o: usize) -> Result<u16, OptimizeError> {
+    let b = d.get(o..o + 2).ok_or_else(|| OptimizeError::new("u16 oob"))?;
+    Ok(u16::from_le_bytes([b[0], b[1]]))
+}
+fn read_u32(d: &[u8], o: usize) -> Result<u32, OptimizeError> {
+    let b = d.get(o..o + 4).ok_or_else(|| OptimizeError::new("u32 oob"))?;
+    Ok(u32::from_le_bytes([b[0], b[1], b[2], b[3]]))
+}
+
+fn component_size(comp: json::accessor::ComponentType) -> usize {
+    use json::accessor::ComponentType::*;
+    match comp {
+        I8 | U8 => 1,
+        I16 | U16 => 2,
+        U32 | F32 => 4,
+    }
+}
+fn type_components(ty: json::accessor::Type) -> usize {
+    use json::accessor::Type::*;
+    match ty {
+        Scalar => 1,
+        Vec2 => 2,
+        Vec3 => 3,
+        Vec4 | Mat2 => 4,
+        Mat3 => 9,
+        Mat4 => 16,
+    }
+}
+
+// ---- optimisation ------------------------------------------------------------
+
+struct OptimizedPrimitive {
+    vertices: Vec<Vertex>,
+    indices: Vec<u32>,
+    has_normals: bool,
+    has_uv: bool,
+}
+
+fn optimize_primitive(p: Primitive, opts: &Options) -> OptimizedPrimitive {
+    let mut vertices = p.vertices;
+    let mut indices = p.indices;
+
+    if opts.weld {
+        let (vcount, remap) = meshopt::generate_vertex_remap(&vertices, Some(&indices));
+        indices = meshopt::remap_index_buffer(Some(&indices), indices.len(), &remap);
+        vertices = meshopt::remap_vertex_buffer(&vertices, vcount, &remap);
+    }
+
+    // Simplify precedence:
+    //   explicit `simplify` (ratio) and/or `tolerance` (absolute mm)  — size- or
+    //     precision-driven, honoured on any mesh (>= 1 triangle);
+    //   else `auto_error` (normalized budget) — quality-driven, per-mesh adaptive,
+    //     skipped below AUTO_TRI_FLOOR;
+    //   else off (lossless: only weld/reorder run).
+    let explicit = opts.simplify.is_some() || opts.tolerance.is_some();
+    let run = if explicit {
+        indices.len() >= 3
+    } else if opts.auto_error.is_some() {
+        indices.len() / 3 >= AUTO_TRI_FLOOR
+    } else {
+        false
+    };
+    if run {
+        let bytes: &[u8] = bytemuck::cast_slice(&vertices);
+        if let Ok(adapter) = meshopt::VertexDataAdapter::new(bytes, VSTRIDE, 0) {
+            // Ratio sets the triangle target; 0 = "reduce as far as the error
+            // bound allows" (tolerance/auto modes).
+            let target = match opts.simplify {
+                Some(r) if r > 0.0 && r < 1.0 => {
+                    (((indices.len() as f32) * r) as usize / 3).max(1) * 3
+                }
+                _ => 0,
+            };
+            // Error ceiling (meshopt's normalized units): an explicit absolute
+            // `tolerance` (mm → normalized via simplify_scale) wins; else the
+            // normalized `auto_error` when no ratio was given; else unbounded
+            // (a pure ratio hits its target regardless of error).
+            let rel_err = if let Some(mm) = opts.tolerance.filter(|&m| m > 0.0) {
+                let scale = meshopt::simplify_scale(&adapter);
+                if scale > 0.0 {
+                    (mm / scale).min(1.0)
+                } else {
+                    1.0
+                }
+            } else if opts.simplify.is_none() {
+                opts.auto_error.unwrap_or(1.0)
+            } else {
+                1.0
+            };
+            indices = if opts.simplify_aggressive {
+                meshopt::simplify_sloppy(&indices, &adapter, target, rel_err, None)
+            } else {
+                meshopt::simplify(
+                    &indices,
+                    &adapter,
+                    target,
+                    rel_err,
+                    meshopt::SimplifyOptions::None,
+                    None,
+                )
+            };
+        }
+    }
+
+    if opts.reorder && !indices.is_empty() {
+        meshopt::optimize_vertex_cache_in_place(&mut indices, vertices.len());
+        let bytes: &[u8] = bytemuck::cast_slice(&vertices);
+        if let Ok(adapter) = meshopt::VertexDataAdapter::new(bytes, VSTRIDE, 0) {
+            meshopt::optimize_overdraw_in_place(&mut indices, &adapter, 1.05);
+        }
+        vertices = meshopt::optimize_vertex_fetch(&mut indices, &vertices);
+    }
+
+    OptimizedPrimitive {
+        vertices,
+        indices,
+        has_normals: p.has_normals,
+        has_uv: p.has_uv,
+    }
+}
+
+// ---- rebuild -----------------------------------------------------------------
+
+/// One output bufferView's typed data, kept until assembly so the meshopt codec
+/// can encode from the correct element type.
+enum ViewData {
+    Attr3(Vec<[f32; 3]>),
+    Attr2(Vec<[f32; 2]>),
+    Idx { indices: Vec<u32>, vertex_count: usize },
+}
+
+impl ViewData {
+    fn raw_bytes(&self) -> Vec<u8> {
+        match self {
+            ViewData::Attr3(v) => {
+                let mut b = Vec::with_capacity(v.len() * 12);
+                for e in v {
+                    for c in e {
+                        b.extend_from_slice(&c.to_le_bytes());
+                    }
+                }
+                b
+            }
+            ViewData::Attr2(v) => {
+                let mut b = Vec::with_capacity(v.len() * 8);
+                for e in v {
+                    for c in e {
+                        b.extend_from_slice(&c.to_le_bytes());
+                    }
+                }
+                b
+            }
+            ViewData::Idx { indices, .. } => {
+                let mut b = Vec::with_capacity(indices.len() * 4);
+                for &i in indices {
+                    b.extend_from_slice(&i.to_le_bytes());
+                }
+                b
+            }
+        }
+    }
+    fn stride(&self) -> usize {
+        match self {
+            ViewData::Attr3(_) => 12,
+            ViewData::Attr2(_) => 8,
+            ViewData::Idx { .. } => 4,
+        }
+    }
+    fn count(&self) -> usize {
+        match self {
+            ViewData::Attr3(v) => v.len(),
+            ViewData::Attr2(v) => v.len(),
+            ViewData::Idx { indices, .. } => indices.len(),
+        }
+    }
+    fn raw_len(&self) -> usize {
+        self.count() * self.stride()
+    }
+    fn is_index(&self) -> bool {
+        matches!(self, ViewData::Idx { .. })
+    }
+    /// EXT_meshopt_compression buffer mode.
+    fn mode(&self) -> &'static str {
+        if self.is_index() {
+            "TRIANGLES"
+        } else {
+            "ATTRIBUTES"
+        }
+    }
+    fn target(&self) -> json::buffer::Target {
+        if self.is_index() {
+            json::buffer::Target::ElementArrayBuffer
+        } else {
+            json::buffer::Target::ArrayBuffer
+        }
+    }
+    fn encode_meshopt(&self) -> Vec<u8> {
+        match self {
+            ViewData::Attr3(v) => meshopt::encode_vertex_buffer(v).unwrap_or_default(),
+            ViewData::Attr2(v) => meshopt::encode_vertex_buffer(v).unwrap_or_default(),
+            ViewData::Idx {
+                indices,
+                vertex_count,
+            } => meshopt::encode_index_buffer(indices, *vertex_count).unwrap_or_default(),
+        }
+    }
+}
+
+#[derive(Default)]
+struct Builder {
+    views: Vec<ViewData>,
+    accessors: Vec<json::Accessor>,
+}
+
+impl Builder {
+    fn add_view(&mut self, v: ViewData) -> usize {
+        self.views.push(v);
+        self.views.len() - 1
+    }
+
+    fn write_primitive(&mut self, prim: &mut json::mesh::Primitive, opt: &OptimizedPrimitive) {
+        let positions: Vec<[f32; 3]> = opt.vertices.iter().map(|v| v.pos).collect();
+        let mut min = [f32::INFINITY; 3];
+        let mut max = [f32::NEG_INFINITY; 3];
+        for p in &positions {
+            for k in 0..3 {
+                min[k] = min[k].min(p[k]);
+                max[k] = max[k].max(p[k]);
+            }
+        }
+        let pos_view = self.add_view(ViewData::Attr3(positions));
+        let pos_acc = self.push_accessor(
+            pos_view,
+            opt.vertices.len(),
+            json::accessor::ComponentType::F32,
+            json::accessor::Type::Vec3,
+            Some((min, max)),
+        );
+
+        let mut attributes = std::collections::BTreeMap::new();
+        attributes.insert(Valid(json::mesh::Semantic::Positions), json::Index::new(pos_acc as u32));
+
+        if opt.has_normals {
+            let normals: Vec<[f32; 3]> = opt.vertices.iter().map(|v| v.nrm).collect();
+            let nv = self.add_view(ViewData::Attr3(normals));
+            let na = self.push_accessor(
+                nv,
+                opt.vertices.len(),
+                json::accessor::ComponentType::F32,
+                json::accessor::Type::Vec3,
+                None,
+            );
+            attributes.insert(Valid(json::mesh::Semantic::Normals), json::Index::new(na as u32));
+        }
+        if opt.has_uv {
+            let uvs: Vec<[f32; 2]> = opt.vertices.iter().map(|v| v.uv).collect();
+            let uvv = self.add_view(ViewData::Attr2(uvs));
+            let uva = self.push_accessor(
+                uvv,
+                opt.vertices.len(),
+                json::accessor::ComponentType::F32,
+                json::accessor::Type::Vec2,
+                None,
+            );
+            attributes.insert(Valid(json::mesh::Semantic::TexCoords(0)), json::Index::new(uva as u32));
+        }
+
+        let iv = self.add_view(ViewData::Idx {
+            indices: opt.indices.clone(),
+            vertex_count: opt.vertices.len(),
+        });
+        let ia = self.push_accessor(
+            iv,
+            opt.indices.len(),
+            json::accessor::ComponentType::U32,
+            json::accessor::Type::Scalar,
+            None,
+        );
+
+        prim.attributes = attributes;
+        prim.indices = Some(json::Index::new(ia as u32));
+    }
+
+    fn push_accessor(
+        &mut self,
+        view: usize,
+        count: usize,
+        comp: json::accessor::ComponentType,
+        ty: json::accessor::Type,
+        minmax: Option<([f32; 3], [f32; 3])>,
+    ) -> usize {
+        let (min, max) = match minmax {
+            Some((mn, mx)) => (
+                Some(serde_json::json!(mn.to_vec())),
+                Some(serde_json::json!(mx.to_vec())),
+            ),
+            None => (None, None),
+        };
+        self.accessors.push(json::Accessor {
+            buffer_view: Some(json::Index::new(view as u32)),
+            byte_offset: Some(USize64(0)),
+            count: USize64::from(count),
+            component_type: Valid(json::accessor::GenericComponentType(comp)),
+            type_: Valid(ty),
+            min,
+            max,
+            name: None,
+            normalized: false,
+            sparse: None,
+            extensions: Default::default(),
+            extras: Default::default(),
+        });
+        self.accessors.len() - 1
+    }
+}
+
+fn make_view(
+    buffer: u32,
+    offset: usize,
+    len: usize,
+    byte_stride: Option<usize>,
+    target: json::buffer::Target,
+) -> json::buffer::View {
+    json::buffer::View {
+        buffer: json::Index::new(buffer),
+        byte_length: USize64::from(len),
+        byte_offset: Some(USize64::from(offset)),
+        byte_stride: byte_stride.map(json::buffer::Stride),
+        target: Some(Valid(target)),
+        name: None,
+        extensions: Default::default(),
+        extras: Default::default(),
+    }
+}
+
+fn make_buffer(len: usize) -> json::Buffer {
+    json::Buffer {
+        byte_length: USize64::from(len),
+        name: None,
+        uri: None,
+        extensions: Default::default(),
+        extras: Default::default(),
+    }
+}
+
+fn build_glb(json_bytes: Vec<u8>, bin: Vec<u8>) -> Result<Vec<u8>, OptimizeError> {
+    gltf::binary::Glb {
+        header: gltf::binary::Header {
+            magic: *b"glTF",
+            version: 2,
+            length: 0,
+        },
+        json: Cow::Owned(json_bytes),
+        bin: if bin.is_empty() {
+            None
+        } else {
+            Some(Cow::Owned(bin))
+        },
+    }
+    .to_vec()
+    .map_err(|e| OptimizeError::new(format!("assemble GLB: {e}")))
+}
+
+/// One compressed bufferView's EXT_meshopt_compression record, patched into the
+/// serialized JSON (the `gltf` crate has no typed EXT_meshopt extension).
+struct ExtRec {
+    view: usize,
+    byte_offset: usize,
+    byte_length: usize,
+    byte_stride: usize,
+    count: usize,
+    mode: &'static str,
+}
+
+/// Serialize `root` + geometry `views` into a GLB using the chosen codec.
+fn assemble(
+    mut root: json::Root,
+    views: Vec<ViewData>,
+    codec: Codec,
+) -> Result<Vec<u8>, OptimizeError> {
+    match codec {
+        // Draco falls back to plain in Phase 1 (crates/draco-bridge is Phase 2).
+        Codec::None | Codec::Draco => {
+            let mut blob = Vec::new();
+            let mut bvs = Vec::with_capacity(views.len());
+            for v in &views {
+                while blob.len() % 4 != 0 {
+                    blob.push(0);
+                }
+                let off = blob.len();
+                let bytes = v.raw_bytes();
+                blob.extend_from_slice(&bytes);
+                bvs.push(make_view(0, off, bytes.len(), None, v.target()));
+            }
+            root.buffer_views = bvs;
+            root.buffers = if blob.is_empty() {
+                Vec::new()
+            } else {
+                vec![make_buffer(blob.len())]
+            };
+            let json_bytes = json::serialize::to_vec(&root)
+                .map_err(|e| OptimizeError::new(format!("serialize glTF json: {e}")))?;
+            build_glb(json_bytes, blob)
+        }
+        // EXT_meshopt_compression: buffer 0 is the GLB BIN holding the meshopt-
+        // encoded data; buffer 1 is a memory-only fallback the decoder writes the
+        // decompressed data into. Each geometry bufferView points at the fallback
+        // (top-level) and at the compressed data (extension). See the EXT spec.
+        Codec::Meshopt => {
+            let mut bin = Vec::new(); // buffer 0: compressed (the GLB BIN)
+            let mut fallback_len = 0usize; // buffer 1: fallback (no bytes emitted)
+            let mut bvs = Vec::with_capacity(views.len());
+            let mut recs = Vec::with_capacity(views.len());
+            for v in &views {
+                let raw_len = v.raw_bytes().len();
+                while fallback_len % 4 != 0 {
+                    fallback_len += 1;
+                }
+                let f_off = fallback_len;
+                fallback_len += raw_len;
+
+                let comp = v.encode_meshopt();
+                if comp.is_empty() {
+                    return Err(OptimizeError::new("meshopt encode produced empty buffer"));
+                }
+                while bin.len() % 4 != 0 {
+                    bin.push(0);
+                }
+                let c_off = bin.len();
+                bin.extend_from_slice(&comp);
+
+                let byte_stride = if v.is_index() { None } else { Some(v.stride()) };
+                bvs.push(make_view(1, f_off, raw_len, byte_stride, v.target()));
+                recs.push(ExtRec {
+                    view: bvs.len() - 1,
+                    byte_offset: c_off,
+                    byte_length: comp.len(),
+                    byte_stride: v.stride(),
+                    count: v.count(),
+                    mode: v.mode(),
+                });
+            }
+            root.buffer_views = bvs;
+            root.buffers = vec![make_buffer(bin.len()), make_buffer(fallback_len)];
+            add_ext(&mut root.extensions_used, "EXT_meshopt_compression");
+            add_ext(&mut root.extensions_required, "EXT_meshopt_compression");
+
+            let json_bytes = json::serialize::to_vec(&root)
+                .map_err(|e| OptimizeError::new(format!("serialize glTF json: {e}")))?;
+            let mut value: serde_json::Value = serde_json::from_slice(&json_bytes)
+                .map_err(|e| OptimizeError::new(format!("reparse glTF json: {e}")))?;
+            patch_meshopt(&mut value, &recs)?;
+            let patched = serde_json::to_vec(&value)
+                .map_err(|e| OptimizeError::new(format!("serialize patched json: {e}")))?;
+            build_glb(patched, bin)
+        }
+    }
+}
+
+fn add_ext(list: &mut Vec<String>, name: &str) {
+    if !list.iter().any(|e| e == name) {
+        list.push(name.to_string());
+    }
+}
+
+fn patch_meshopt(value: &mut serde_json::Value, recs: &[ExtRec]) -> Result<(), OptimizeError> {
+    use serde_json::json;
+    {
+        let bvs = value
+            .get_mut("bufferViews")
+            .and_then(|v| v.as_array_mut())
+            .ok_or_else(|| OptimizeError::new("patch: no bufferViews"))?;
+        for rec in recs {
+            let bv = bvs
+                .get_mut(rec.view)
+                .and_then(|v| v.as_object_mut())
+                .ok_or_else(|| OptimizeError::new("patch: bufferView out of range"))?;
+            let ext = bv
+                .entry("extensions")
+                .or_insert_with(|| json!({}))
+                .as_object_mut()
+                .ok_or_else(|| OptimizeError::new("patch: extensions not object"))?;
+            ext.insert(
+                "EXT_meshopt_compression".into(),
+                json!({
+                    "buffer": 0,
+                    "byteOffset": rec.byte_offset,
+                    "byteLength": rec.byte_length,
+                    "byteStride": rec.byte_stride,
+                    "count": rec.count,
+                    "mode": rec.mode,
+                }),
+            );
+        }
+    }
+    let buffers = value
+        .get_mut("buffers")
+        .and_then(|v| v.as_array_mut())
+        .ok_or_else(|| OptimizeError::new("patch: no buffers"))?;
+    let fallback = buffers
+        .get_mut(1)
+        .and_then(|v| v.as_object_mut())
+        .ok_or_else(|| OptimizeError::new("patch: no fallback buffer"))?;
+    fallback
+        .entry("extensions")
+        .or_insert_with(|| json!({}))
+        .as_object_mut()
+        .ok_or_else(|| OptimizeError::new("patch: fallback extensions not object"))?
+        .insert("EXT_meshopt_compression".into(), json!({ "fallback": true }));
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A quad as two triangles with the shared edge duplicated: 6 unindexed
+    /// vertices, 4 of them unique. Weld must collapse to 4.
+    fn quad_glb() -> Vec<u8> {
+        // A(0,0,0) B(1,0,0) C(0,1,0) D(1,1,0); tri1 A,B,C  tri2 C,B,D
+        let verts: [[f32; 3]; 6] = [
+            [0.0, 0.0, 0.0],
+            [1.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0],
+            [0.0, 1.0, 0.0],
+            [1.0, 0.0, 0.0],
+            [1.0, 1.0, 0.0],
+        ];
+        let indices: [u32; 6] = [0, 1, 2, 3, 4, 5];
+
+        let mut blob = Vec::new();
+        for v in &verts {
+            for c in v {
+                blob.extend_from_slice(&c.to_le_bytes());
+            }
+        }
+        let idx_off = blob.len();
+        for i in &indices {
+            blob.extend_from_slice(&i.to_le_bytes());
+        }
+
+        let pos_view = json::buffer::View {
+            buffer: json::Index::new(0),
+            byte_length: USize64::from(idx_off),
+            byte_offset: Some(USize64(0)),
+            byte_stride: None,
+            target: Some(Valid(json::buffer::Target::ArrayBuffer)),
+            name: None,
+            extensions: Default::default(),
+            extras: Default::default(),
+        };
+        let idx_view = json::buffer::View {
+            buffer: json::Index::new(0),
+            byte_length: USize64::from(blob.len() - idx_off),
+            byte_offset: Some(USize64::from(idx_off)),
+            byte_stride: None,
+            target: Some(Valid(json::buffer::Target::ElementArrayBuffer)),
+            name: None,
+            extensions: Default::default(),
+            extras: Default::default(),
+        };
+        let pos_acc = json::Accessor {
+            buffer_view: Some(json::Index::new(0)),
+            byte_offset: Some(USize64(0)),
+            count: USize64::from(6usize),
+            component_type: Valid(json::accessor::GenericComponentType(
+                json::accessor::ComponentType::F32,
+            )),
+            type_: Valid(json::accessor::Type::Vec3),
+            min: Some(serde_json::json!([0.0, 0.0, 0.0])),
+            max: Some(serde_json::json!([1.0, 1.0, 0.0])),
+            name: None,
+            normalized: false,
+            sparse: None,
+            extensions: Default::default(),
+            extras: Default::default(),
+        };
+        let idx_acc = json::Accessor {
+            buffer_view: Some(json::Index::new(1)),
+            byte_offset: Some(USize64(0)),
+            count: USize64::from(6usize),
+            component_type: Valid(json::accessor::GenericComponentType(
+                json::accessor::ComponentType::U32,
+            )),
+            type_: Valid(json::accessor::Type::Scalar),
+            min: None,
+            max: None,
+            name: None,
+            normalized: false,
+            sparse: None,
+            extensions: Default::default(),
+            extras: Default::default(),
+        };
+        let mut attributes = std::collections::BTreeMap::new();
+        attributes.insert(Valid(json::mesh::Semantic::Positions), json::Index::new(0));
+        let prim = json::mesh::Primitive {
+            attributes,
+            indices: Some(json::Index::new(1)),
+            material: None,
+            mode: Valid(json::mesh::Mode::Triangles),
+            targets: None,
+            extensions: Default::default(),
+            extras: Default::default(),
+        };
+        let root = json::Root {
+            accessors: vec![pos_acc, idx_acc],
+            buffer_views: vec![pos_view, idx_view],
+            buffers: vec![json::Buffer {
+                byte_length: USize64::from(blob.len()),
+                name: None,
+                uri: None,
+                extensions: Default::default(),
+                extras: Default::default(),
+            }],
+            meshes: vec![json::Mesh {
+                primitives: vec![prim],
+                weights: None,
+                name: None,
+                extensions: Default::default(),
+                extras: Default::default(),
+            }],
+            nodes: vec![json::Node {
+                mesh: Some(json::Index::new(0)),
+                ..Default::default()
+            }],
+            scene: Some(json::Index::new(0)),
+            scenes: vec![json::Scene {
+                nodes: vec![json::Index::new(0)],
+                name: None,
+                extensions: Default::default(),
+                extras: Default::default(),
+            }],
+            ..Default::default()
+        };
+
+        let json_bytes = json::serialize::to_vec(&root).unwrap();
+        gltf::binary::Glb {
+            header: gltf::binary::Header {
+                magic: *b"glTF",
+                version: 2,
+                length: 0,
+            },
+            json: Cow::Owned(json_bytes),
+            bin: Some(Cow::Owned(blob)),
+        }
+        .to_vec()
+        .unwrap()
+    }
+
+    #[test]
+    fn welds_duplicate_vertices_and_reparses() {
+        let glb = quad_glb();
+        let opt = optimize_glb(
+            &glb,
+            &Options {
+                codec: Codec::None,
+                ..Default::default()
+            },
+        )
+        .expect("optimize");
+        assert_eq!(opt.stats.input_vertices, 6);
+        assert_eq!(opt.stats.input_triangles, 2);
+        // Weld collapses the two duplicated corners.
+        assert_eq!(opt.stats.output_vertices, 4);
+        assert_eq!(opt.stats.output_triangles, 2);
+        // Output must be a valid GLB that round-trips through the parser.
+        let reparsed = gltf::binary::Glb::from_slice(&opt.glb).expect("reparse");
+        let root: json::Root = serde_json::from_slice(reparsed.json.as_ref()).expect("json");
+        assert_eq!(root.meshes.len(), 1);
+        assert_eq!(root.nodes.len(), 1);
+    }
+
+    #[test]
+    fn meshopt_codec_emits_ext_and_reparses() {
+        let glb = quad_glb();
+        let opt = optimize_glb(
+            &glb,
+            &Options {
+                codec: Codec::Meshopt,
+                ..Default::default()
+            },
+        )
+        .expect("optimize");
+        let reparsed = gltf::binary::Glb::from_slice(&opt.glb).expect("reparse");
+        let root: serde_json::Value =
+            serde_json::from_slice(reparsed.json.as_ref()).expect("json");
+        // Extension declared + required.
+        let used = root["extensionsUsed"].as_array().expect("extensionsUsed");
+        assert!(used.iter().any(|e| e == "EXT_meshopt_compression"));
+        // Two buffers: compressed BIN + memory-only fallback.
+        let buffers = root["buffers"].as_array().expect("buffers");
+        assert_eq!(buffers.len(), 2);
+        assert_eq!(buffers[1]["extensions"]["EXT_meshopt_compression"]["fallback"], true);
+        // Every bufferView carries a compression record pointing at buffer 0.
+        for bv in root["bufferViews"].as_array().expect("bufferViews") {
+            let ext = &bv["extensions"]["EXT_meshopt_compression"];
+            assert_eq!(ext["buffer"], 0);
+            assert!(ext["byteLength"].as_u64().unwrap() > 0);
+            assert!(ext["mode"].is_string());
+        }
+    }
+
+    #[test]
+    fn meshopt_roundtrip_decodes_positions() {
+        let glb = quad_glb();
+        let opt = optimize_glb(
+            &glb,
+            &Options {
+                codec: Codec::Meshopt,
+                weld: true,
+                reorder: false, // keep it simple; still exercises encode/offsets
+                ..Default::default()
+            },
+        )
+        .expect("optimize");
+        let reparsed = gltf::binary::Glb::from_slice(&opt.glb).expect("reparse");
+        let root: serde_json::Value =
+            serde_json::from_slice(reparsed.json.as_ref()).expect("json");
+        let bin = reparsed.bin.as_deref().expect("bin");
+
+        // bufferView 0 is POSITION (first view written per primitive).
+        let ext = &root["bufferViews"][0]["extensions"]["EXT_meshopt_compression"];
+        let off = ext["byteOffset"].as_u64().unwrap() as usize;
+        let len = ext["byteLength"].as_u64().unwrap() as usize;
+        let count = ext["count"].as_u64().unwrap() as usize;
+        let decoded: Vec<[f32; 3]> =
+            meshopt::decode_vertex_buffer(&bin[off..off + len], count).expect("decode");
+        assert_eq!(decoded.len(), 4); // welded quad corners
+        // The four unit-quad corners must all be present.
+        for corner in [[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [1.0, 1.0, 0.0]] {
+            assert!(
+                decoded.iter().any(|p| *p == corner),
+                "missing corner {corner:?} in {decoded:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn simplify_reduces_triangles() {
+        let glb = quad_glb();
+        let opt = optimize_glb(
+            &glb,
+            &Options {
+                codec: Codec::None,
+                simplify: Some(0.5),
+                ..Default::default()
+            },
+        )
+        .expect("optimize");
+        // A 2-triangle quad can't meaningfully simplify, but it must stay valid
+        // and not grow.
+        assert!(opt.stats.output_triangles <= 2);
+        gltf::binary::Glb::from_slice(&opt.glb).expect("reparse");
+    }
+}

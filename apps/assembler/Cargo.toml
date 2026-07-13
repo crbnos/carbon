@@ -11,6 +11,7 @@ path = "src/main.rs"
 [dependencies]
 converter = { path = "../../crates/converter" }
 planner = { path = "../../crates/planner" }
+optimize = { path = "../../crates/optimize" }
 serde.workspace = true
 serde_json.workspace = true
 axum = "0.7"
@@ -23,6 +24,7 @@ xxhash-rust = { version = "0.8", features = ["xxh3"] }
 futures-util = "0.3"
 tokio-util = { version = "0.7", features = ["rt"] }
 redis = { version = "0.27", default-features = false, features = ["tokio-comp", "connection-manager"] }
+tower-http = { version = "0.6", features = ["compression-zstd", "compression-gzip"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 tikv-jemallocator = "0.6"

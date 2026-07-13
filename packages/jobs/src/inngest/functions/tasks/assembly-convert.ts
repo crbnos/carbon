@@ -1,28 +1,31 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Json } from "@carbon/database";
-import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
-import { NonRetriableError } from "inngest";
 import { inngest } from "../../client";
+import {
+  POLL_GAP,
+  pollAssemblerJobOnce,
+  submitAssemblerJob
+} from "./assembler-client";
 
-const SIGNED_URL_EXPIRY = 60 * 60; // seconds
-// Conversion is synchronous on the service — the request stays open for the
-// whole run. A generous cap turns a wedged convert into a fast Inngest retry
-// instead of a hung step.
-const CONVERT_TIMEOUT_MS = 5 * 60 * 1000;
-// Bounded backoff when the service 429s (all slots busy), honoring Retry-After.
-const BUSY_RETRIES = 4;
+const SIGNED_URL_EXPIRY = 60 * 60; // seconds — the source (read) URL only.
+// Total wall-clock budget before giving up, bounded by time (not a poll count)
+// so it holds whether the service long-polls or returns immediately. Convert is
+// far faster than plan, but the job model long-polls the same way.
+const MAX_CONVERT_WAIT_MS = 10 * 60 * 1000;
 
 /**
- * Converts an uploaded CAD model (STEP) into web artifacts via the geometry
- * service: a meshopt-compressed GLB and an assembly graph JSON. See
- * docs/specs/animated-work-instructions-contracts.md for the API contract.
+ * Converts an uploaded CAD model (STEP) into web artifacts via the assembler
+ * service: a meshopt-optimised GLB and an assembly graph JSON. Async job model:
+ * create → long-poll GET /v1/jobs/{id} → the service late-mint uploads both
+ * artifacts to signed URLs handed over on each poll. See
+ * .ai/specs/2026-07-04-animated-work-instructions-contracts.md.
  */
 export const assemblyConvertFunction = inngest.createFunction(
   {
     id: "assembly-convert",
     retries: 2,
-    // The geometry service is CPU-bound and rejects work beyond its slot
-    // count with 429s; keep per-company fan-out from starving other tenants.
+    // This function holds its run for the whole convert (it long-polls to
+    // completion); keep per-company fan-out from starving other tenants.
     concurrency: [{ limit: 4 }, { key: "event.data.companyId", limit: 2 }],
     onFailure: async ({ event }) => {
       const { modelUploadId } = event.data.event.data;
@@ -94,15 +97,15 @@ export const assemblyConvertFunction = inngest.createFunction(
       return { id: planJob.data.id, modelPath: modelUpload.data.modelPath };
     });
 
-    await step.run("convert", async () => {
+    // Job-scoped artifact paths. The service late-mint uploads to these via
+    // signed URLs minted fresh on each poll (below); we record the paths.
+    const glbPath = `${companyId}/models/${modelUploadId}/${job.id}/model.glb`;
+    const graphPath = `${companyId}/models/${modelUploadId}/${job.id}/graph.json`;
+
+    // Create the convert job (idempotent on job.id). A fresh signed source URL
+    // is minted here so retries don't reuse an expired one.
+    await step.run("submit", async () => {
       const client = getCarbonServiceRole();
-
-      if (!ASSEMBLER_SERVICE_URL) {
-        throw new Error("ASSEMBLER_SERVICE_URL is not configured");
-      }
-
-      const glbPath = `${companyId}/models/${modelUploadId}/${job.id}/model.glb`;
-      const graphPath = `${companyId}/models/${modelUploadId}/${job.id}/graph.json`;
 
       const source = await client.storage
         .from("private")
@@ -111,10 +114,10 @@ export const assemblyConvertFunction = inngest.createFunction(
         throw new Error(`Failed to sign source URL: ${source.error.message}`);
       }
 
-      // Content identity for the geometry service's result cache: with a
-      // contentHash a repeat convert of unchanged bytes is served without
-      // re-downloading the source. etag is content-derived; size disambiguates
-      // multipart etags. Best-effort — omitted on any failure.
+      // Content identity for the service's result cache: with a contentHash a
+      // repeat convert of unchanged bytes is served without re-downloading the
+      // source. etag is content-derived; size disambiguates multipart etags.
+      // Best-effort — omitted on any failure.
       let contentHash: string | undefined;
       try {
         const info = await client.storage.from("private").info(job.modelPath);
@@ -126,93 +129,77 @@ export const assemblyConvertFunction = inngest.createFunction(
         // optimization only
       }
 
-      // upsert: Inngest retries re-upload to the same paths; without it the
-      // storage API rejects the second attempt with "resource already exists"
-      const [glbUpload, graphUpload] = await Promise.all([
-        client.storage
-          .from("private")
-          .createSignedUploadUrl(glbPath, { upsert: true }),
-        client.storage
-          .from("private")
-          .createSignedUploadUrl(graphPath, { upsert: true })
-      ]);
-      if (glbUpload.error || graphUpload.error) {
-        throw new Error("Failed to sign artifact upload URLs");
-      }
-
-      const requestBody = JSON.stringify({
+      await submitAssemblerJob({
+        action: "convert",
         jobId: job.id,
-        source: {
-          url: source.data.signedUrl,
-          format: "step",
-          ...(contentHash ? { contentHash } : {})
-        },
-        outputs: {
-          glb: { url: glbUpload.data.signedUrl },
-          graph: { url: graphUpload.data.signedUrl }
+        logger,
+        body: {
+          source: {
+            url: source.data.signedUrl,
+            format: "step",
+            ...(contentHash ? { contentHash } : {})
+          },
+          // Storage paths (not URLs) — recorded in the completion pointer; the
+          // signed PUT URLs are late-minted per poll, keyed glb/graph.
+          outputs: {
+            glb: { path: glbPath },
+            graph: { path: graphPath }
+          }
         }
       });
+      logger.info("convert submitted to assembler service", { jobId: job.id });
+    });
 
-      let response: Response;
-      // Bounded 429 backoff honoring Retry-After — the service sheds load with
-      // BUSY when its conversion slots are full.
-      for (let attempt = 0; ; attempt++) {
-        try {
-          response = await fetch(`${ASSEMBLER_SERVICE_URL}/convert`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              ...(ASSEMBLER_SERVICE_API_KEY
-                ? { Authorization: `Bearer ${ASSEMBLER_SERVICE_API_KEY}` }
-                : {})
-            },
-            body: requestBody,
-            signal: AbortSignal.timeout(CONVERT_TIMEOUT_MS)
-          });
-        } catch (e) {
-          const err = e as Error;
-          // A timeout may be transient (the service was briefly saturated) — let
-          // Inngest retry it. Genuine unreachability (down, DNS, TLS) is
-          // permanent, so fail fast → onFailure releases the model + job rows now
-          // instead of after the retry backoff.
-          if (err.name === "TimeoutError" || err.name === "AbortError") {
-            throw new Error(
-              `Geometry service timed out after ${CONVERT_TIMEOUT_MS}ms`
-            );
+    // Long-poll to completion. Each poll mints fresh signed upload URLs for both
+    // artifacts; the service PUTs them the instant the convert is done.
+    let componentCount: number | null = null;
+    let stats: Json = null;
+    let finished = false;
+    const startedAt = await step.run("convert-poll-start", () => Date.now());
+    let i = 0;
+    while (Date.now() - startedAt < MAX_CONVERT_WAIT_MS) {
+      const poll = await step.run(`poll-${i}`, () =>
+        pollAssemblerJobOnce({
+          jobId: job.id,
+          mintUploadUrls: async () => {
+            const client = getCarbonServiceRole();
+            const [glbUpload, graphUpload] = await Promise.all([
+              client.storage
+                .from("private")
+                .createSignedUploadUrl(glbPath, { upsert: true }),
+              client.storage
+                .from("private")
+                .createSignedUploadUrl(graphPath, { upsert: true })
+            ]);
+            const urls: Record<string, string> = {};
+            if (glbUpload.data) urls.glb = glbUpload.data.signedUrl;
+            if (graphUpload.data) urls.graph = graphUpload.data.signedUrl;
+            return urls;
           }
-          throw new NonRetriableError(
-            `Geometry service unreachable: ${err.message}`
-          );
-        }
-        if (response.status === 429 && attempt < BUSY_RETRIES) {
-          const retryAfter = Number(response.headers.get("retry-after")) || 15;
-          const waitMs = Math.min(retryAfter * 1000 * (attempt + 1), 120_000);
-          logger.warn("geometry /convert busy (429); backing off", {
-            modelUploadId,
-            attempt,
-            waitMs
-          });
-          await new Promise((resolve) => setTimeout(resolve, waitMs));
-          continue;
-        }
+        })
+      );
+
+      if (poll.status === "done") {
+        const result = (poll.result ?? {}) as { componentCount?: number };
+        componentCount = result.componentCount ?? null;
+        stats = poll.stats;
+        finished = true;
         break;
       }
-
-      const result = (await response.json().catch(() => null)) as {
-        ok: boolean;
-        componentCount?: number;
-        stats?: Record<string, unknown>;
-        error?: string;
-      } | null;
-
-      if (!response.ok || !result?.ok) {
-        // Non-429 errors are an outage (5xx) or a permanent rejection (4xx):
-        // retrying holds the job in Processing for nothing — fail fast.
-        throw new NonRetriableError(
-          result?.error ?? `Geometry service returned ${response.status}`
-        );
+      if (poll.status === "error") {
+        // Fail fast: onFailure releases the model + job rows.
+        throw new Error(poll.error);
       }
+      await step.sleep(`gap-${i}`, POLL_GAP);
+      i++;
+    }
 
+    if (!finished) {
+      throw new Error("Convert did not finish in the expected time");
+    }
+
+    await step.run("persist", async () => {
+      const client = getCarbonServiceRole();
       await client
         .from("modelUpload")
         .update({
@@ -220,7 +207,7 @@ export const assemblyConvertFunction = inngest.createFunction(
           processingError: null,
           glbPath,
           graphPath,
-          componentCount: result.componentCount ?? null,
+          componentCount,
           processedAt: new Date().toISOString()
         })
         .eq("id", modelUploadId);
@@ -229,14 +216,14 @@ export const assemblyConvertFunction = inngest.createFunction(
         .from("assemblyPlanJob")
         .update({
           status: "Success",
-          stats: (result.stats ?? null) as Json,
+          stats,
           updatedAt: new Date().toISOString()
         })
         .eq("id", job.id);
     });
 
     // Planning is NOT chained here — it's expensive (minutes) and the user may
-    // author steps manually. It runs lazily on the first "Generate Steps"
-    // click (or an explicit re-plan), which then auto-creates the steps.
+    // author steps manually. It runs lazily on the first "Generate Steps" click
+    // (or an explicit re-plan), which then auto-creates the steps.
   }
 );
