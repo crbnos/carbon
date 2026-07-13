@@ -14,8 +14,8 @@ gltf.workspace = true
 meshopt.workspace = true
 bytemuck.workspace = true
 serde_json.workspace = true
+base64 = "0.22"
 draco-bridge = { path = "../draco-bridge" }
 
 [dev-dependencies]
-base64 = "0.22"
 memmap2 = "0.9"

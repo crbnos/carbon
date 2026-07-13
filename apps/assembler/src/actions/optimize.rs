@@ -181,6 +181,9 @@ fn run_optimize(path: &str, format: &str, opts: &Opts) -> Result<Outcome, String
     };
     let glb = src.bytes();
     let input_bytes = glb.len();
+    // A GLB starts with the "glTF" magic; a text .gltf doesn't. STEP tessellation
+    // is always a GLB. Robust to a mis-stated source.format.
+    let is_glb = glb.len() >= 4 && &glb[0..4] == b"glTF";
 
     let ladder = if opts.ladder.is_empty() {
         vec![None]
@@ -203,7 +206,12 @@ fn run_optimize(path: &str, format: &str, opts: &Opts) -> Result<Outcome, String
             weld: opts.weld,
             reorder: opts.reorder,
         };
-        let mut res = optimize::optimize_glb(glb, &o).map_err(|e| e.message)?;
+        let mut res = if is_glb {
+            optimize::optimize_glb(glb, &o)
+        } else {
+            optimize::optimize_gltf(glb, &o)
+        }
+        .map_err(|e| e.message)?;
         res.stats.input_bytes = input_bytes;
         let passes = res.stats.decoded_bytes <= opts.max_packed && res.glb.len() <= opts.max_output;
         let outcome = Outcome {

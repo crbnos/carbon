@@ -112,6 +112,16 @@ export type Events = {
     };
   };
 
+  // Eager model optimisation on upload (mesh inputs → compact optimised GLB)
+  "carbon/model-optimize": {
+    data: {
+      modelUploadId: string;
+      companyId: string;
+      userId: string;
+      format: string; // "step" | "gltf" | "glb"
+    };
+  };
+
   // Company backup export — snapshot all company-scoped rows (and
   // optionally storage files) into a gzipped backup in the company bucket
   "carbon/company-export": {

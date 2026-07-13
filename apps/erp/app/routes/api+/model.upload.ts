@@ -1,6 +1,7 @@
 // import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { trigger } from "@carbon/jobs";
+import { optimizableModelFormat } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -81,9 +82,21 @@ export async function action({ request }: ActionFunctionArgs) {
     modelId
   });
 
-  // Conversion to assembly-instruction artifacts (GLB + graph) is lazy:
-  // triggered when an assembly instruction is created for this model, not
-  // on upload — most uploaded models never become assemblies.
+  // Eager optimisation: mesh models (STEP / glTF / GLB) get a compact optimised
+  // GLB on upload via the assembler's /v1/optimize (merge + simplify + encode).
+  // Non-mesh types (stl/obj/iges/…) are skipped for now. This is independent of
+  // the lazy assembly-convert path — most uploads never become assemblies, but
+  // they should still be optimised.
+  const ext = modelPath.split(".").pop() ?? "";
+  const optimizeFormat = optimizableModelFormat(ext);
+  if (optimizeFormat) {
+    await trigger("model-optimize", {
+      modelUploadId: modelId,
+      companyId,
+      userId,
+      format: optimizeFormat
+    });
+  }
 
   return {
     success: true

@@ -150,6 +150,30 @@ pub fn optimize_glb(glb_bytes: &[u8], options: &Options) -> Result<Optimized, Op
     optimize_root(root, bin, glb_bytes.len(), options)
 }
 
+/// Optimise a text `.gltf` whose single buffer is embedded as a base64 data URI
+/// (the Onshape export shape). External `.bin` references are not supported.
+pub fn optimize_gltf(gltf_bytes: &[u8], options: &Options) -> Result<Optimized, OptimizeError> {
+    use base64::Engine;
+    let mut root: json::Root = serde_json::from_slice(gltf_bytes)
+        .map_err(|e| OptimizeError::new(format!("parse glTF json: {e}")))?;
+    // Take the buffer's data URI out so the ~1.3x base64 string can be freed
+    // right after decode (optimize_root rebuilds buffers and never reads it).
+    let uri = root
+        .buffers
+        .first_mut()
+        .and_then(|b| b.uri.take())
+        .ok_or_else(|| OptimizeError::new("glTF has no embedded buffer (external .bin unsupported)"))?;
+    let comma = uri
+        .find(',')
+        .ok_or_else(|| OptimizeError::new("glTF buffer uri is not a data URI"))?;
+    let bin = base64::engine::general_purpose::STANDARD
+        .decode(&uri.as_bytes()[comma + 1..])
+        .map_err(|e| OptimizeError::new(format!("decode glTF base64 buffer: {e}")))?;
+    drop(uri);
+    root.buffers.clear();
+    optimize_root(root, &bin, gltf_bytes.len(), options)
+}
+
 /// Optimise an already-parsed glTF (`root` + its single binary buffer). Used by
 /// `optimize_glb` after unwrapping the GLB container, and by callers that load a
 /// `.gltf` (external / embedded buffer) themselves. `input_bytes` is reported in
