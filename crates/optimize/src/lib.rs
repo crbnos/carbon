@@ -50,6 +50,10 @@ pub struct Options {
     /// transform, halves normal bytes, visually lossless. `none`/`meshopt` codecs
     /// (Draco quantizes via `draco_bits`). Off by default so convert stays exact.
     pub quantize_normals: bool,
+    /// Merge a mesh's primitives that share a material (and attribute set) into
+    /// one — fewer draw calls, fewer accessors/JSON, smaller. Within a mesh only,
+    /// so node/part identity (and assembly animation) is untouched.
+    pub merge_primitives: bool,
     pub weld: bool,
     pub reorder: bool,
 }
@@ -64,6 +68,7 @@ impl Default for Options {
             simplify_aggressive: false,
             draco_bits: (DRACO_POS_BITS, DRACO_NORM_BITS, DRACO_UV_BITS),
             quantize_normals: false,
+            merge_primitives: false,
             weld: true,
             reorder: true,
         }
@@ -184,21 +189,47 @@ pub fn optimize_root(
     let mut new_meshes = Vec::with_capacity(meshes.len());
     for mut mesh in meshes {
         let prims = std::mem::take(&mut mesh.primitives);
-        let mut kept: Vec<json::mesh::Primitive> = Vec::with_capacity(prims.len());
-        for mut prim in prims {
-            let extracted = extract_primitive(&root, bin, &prim)?;
-            stats.input_vertices += extracted.count;
-            stats.input_triangles += extracted.indices.len() / 3;
+        // Collect each primitive's geometry, tagged by material. With
+        // merge_primitives, same-(material, attribute-set) primitives accumulate
+        // into one group; otherwise each is its own group.
+        let mut groups: Vec<(Option<u32>, Primitive)> = Vec::with_capacity(prims.len());
+        let mut group_idx: std::collections::HashMap<(Option<u32>, bool, bool), usize> =
+            std::collections::HashMap::new();
+        for prim in &prims {
+            let ex = extract_primitive(&root, bin, prim)?;
+            stats.input_vertices += ex.count;
+            stats.input_triangles += ex.indices.len() / 3;
             // Drop degenerate primitives before they reach the C encoders.
-            if !is_encodable(&extracted) {
+            if !is_encodable(&ex) {
                 dropped += 1;
                 continue;
             }
-            let opt = optimize_primitive(extracted, options);
+            let material = prim.material.map(|m| m.value() as u32);
+            if options.merge_primitives {
+                let key = (material, ex.has_normals, ex.has_uv);
+                if let Some(&gi) = group_idx.get(&key) {
+                    let g = &mut groups[gi].1;
+                    let base = g.vertices.len() as u32;
+                    g.vertices.extend(ex.vertices);
+                    g.indices.extend(ex.indices.iter().map(|i| i + base));
+                    continue;
+                }
+                group_idx.insert(key, groups.len());
+            }
+            groups.push((material, ex));
+        }
+
+        let mut kept: Vec<json::mesh::Primitive> = Vec::with_capacity(groups.len());
+        for (material, ex) in groups {
+            let opt = optimize_primitive(ex, options);
+            if opt.vertices.is_empty() || opt.indices.len() < 3 {
+                continue;
+            }
             stats.output_vertices += opt.vertices.len();
             stats.output_triangles += opt.indices.len() / 3;
             // Uncompressed vertex+index footprint (the decoder's render weight).
             stats.decoded_bytes += decoded_len(&opt);
+            let mut prim = new_primitive(material.map(json::Index::new));
             if draco {
                 db.write_primitive(&mut prim, &opt, options.draco_bits)?;
             } else {
@@ -790,6 +821,20 @@ fn make_buffer(len: usize) -> json::Buffer {
         byte_length: USize64::from(len),
         name: None,
         uri: None,
+        extensions: Default::default(),
+        extras: Default::default(),
+    }
+}
+
+/// A fresh triangle-list primitive with the given material; attributes/indices
+/// are filled by the codec builder.
+fn new_primitive(material: Option<json::Index<json::Material>>) -> json::mesh::Primitive {
+    json::mesh::Primitive {
+        attributes: Default::default(),
+        indices: None,
+        material,
+        mode: Valid(json::mesh::Mode::Triangles),
+        targets: None,
         extensions: Default::default(),
         extras: Default::default(),
     }

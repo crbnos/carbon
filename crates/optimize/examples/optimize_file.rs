@@ -51,6 +51,7 @@ fn main() {
     let opts = optimize::Options {
         codec,
         quantize_normals: true,
+        merge_primitives: true,
         ..Default::default()
     };
     eprintln!("optimising (codec={codec_name}) …");
