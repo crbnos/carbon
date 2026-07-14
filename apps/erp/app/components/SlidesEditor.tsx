@@ -21,7 +21,8 @@ export type EditorSlide = {
 // Presentational slides grid — header + "Add slide" + cards (image · pins · caption).
 // Shared by the create form (draft buffer, attached after the step is saved) and the edit
 // form (persisted immediately via the slide routes). Used by both the item method editor
-// (BillOfProcess) and the job editor (JobBillOfProcess). See PRD-step-reference-images.
+// (BillOfProcess) and the job editor (JobBillOfProcess). See
+// .ai/specs/2026-07-14-mes-execution-views.md §4.
 export function SlidesEditor({
   slides,
   isDisabled,

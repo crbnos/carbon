@@ -49,7 +49,7 @@ const db = getDatabaseClient<DB>(pool);
 // copied. Source slides are queried by their (old) step ids and remapped onto the freshly
 // inserted step ids — a bulk insert preserves order, so insertedStepIds[i] ↔ sourceSteps[i].
 // Guarded: a no-op when there are no slides, so it can never break step copying.
-// See PRD-step-reference-images.
+// See .ai/specs/2026-07-14-mes-execution-views.md §4.
 async function copyStepSlides(
   trx: Transaction<DB>,
   client: SupabaseClient<Database>,

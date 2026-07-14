@@ -195,7 +195,8 @@ export const noteValidator = z.object({
 export const operationTypes = ["Inside", "Outside"] as const;
 
 // `operationKinds` lives in ./operationKind (re-exported via the shared barrel) so it can
-// stay self-contained for the backfill script. See docs/adr/0001.
+// stay self-contained for the backfill script. See
+// .ai/specs/2026-07-14-mes-execution-views.md §2.
 
 export const procedureStepType = [
   "Task",

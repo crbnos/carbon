@@ -1,9 +1,9 @@
 -- ===== 20260616132744_operation-kind.sql =====
 -- Per-operation classification (operationKind) that drives the MES view router.
--- See issues/prd.md and docs/adr/0001 (single route on operationKind). Tracking type
+-- See .ai/specs/2026-07-14-mes-execution-views.md (§5.1 view routing). Tracking type
 -- stays orthogonal. NOTE: the inspection-plan link (inspectionDocumentId) is deliberately
 -- deferred to the Inspection workstream (Phase 3) so this keystone migration does not
--- depend on the inspection tables — see docs/adr/0003.
+-- depend on the inspection tables — see §5.4 of that spec.
 
 -- 1. Classification enum. 'Operation' preserves today's behavior (the safe default).
 -- Guarded so re-running against a DB that already has the type (a shared dev
@@ -127,7 +127,8 @@ $$ LANGUAGE plpgsql;
 -- Step reference images ("slides"). A first-class child of an operation step holding a
 -- single reference image (+ optional caption + order), authored on the method (template)
 -- and copied to the job/quote by get-method, exactly like steps/tools/parameters.
--- See PRD-step-reference-images.md. Mirrors the *OperationStep tables (single TEXT id PK,
+-- See .ai/specs/2026-07-14-mes-execution-views.md §4. Mirrors the *OperationStep tables
+-- (single TEXT id PK,
 -- companyId column, stepId FK ON DELETE CASCADE, production_* RLS).
 
 -- 1. Template slides (authored in the BOP editor)

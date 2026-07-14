@@ -640,7 +640,8 @@ export function AssemblyView({
   const isLastStep = steps.length === 0 || currentStep >= steps.length - 1;
 
   // Reference slides for this step (first-class media, ordered) + "Completed item"
-  // = the finished product (the assembly item's thumbnail). See PRD-step-reference-images.
+  // = the finished product (the assembly item's thumbnail). See
+  // .ai/specs/2026-07-14-mes-execution-views.md §4.
   const stepSlides = (step?.jobOperationStepSlide ?? [])
     .slice()
     .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));

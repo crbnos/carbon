@@ -2912,7 +2912,7 @@ function StepTools({
 
 // Reference images ("slides") for an EXISTING step — upload (one image/slide to the
 // private bucket), caption, delete, persisted immediately via the slide routes. Copied
-// to job/quote by get-method. See PRD-step-reference-images.
+// to job/quote by get-method. See .ai/specs/2026-07-14-mes-execution-views.md §4.
 function StepSlides({
   step,
   isDisabled

@@ -1,5 +1,6 @@
-// Per-operation classification that drives the MES view router (see docs/adr/0001,
-// docs/adr/0005, and CONTEXT.md). Orthogonal to operationType (Inside/Outside).
+// Per-operation classification that drives the MES view router (see
+// .ai/specs/2026-07-14-mes-execution-views.md §2, §5.1). Orthogonal to operationType
+// (Inside/Outside).
 // "Operation" is the default and preserves today's single-screen behavior. Set per
 // operation in the BOP editor; copied verbatim to jobOperation/quoteOperation by
 // get-method.
