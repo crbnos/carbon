@@ -5133,9 +5133,6 @@ msgstr "Nie udało się zapisać reguły konfiguracji"
 msgid "Failed to save diagram"
 msgstr "Nie udało się zapisać diagramu"
 
-msgid "Failed to save slides"
-msgstr ""
-
 msgid "Failed to update batch property"
 msgstr "Nie udało się zaktualizować właściwości partii"
 
@@ -8262,9 +8259,6 @@ msgstr "Koszty Operacyjne"
 msgid "Operation"
 msgstr "Operacja"
 
-msgid "Operation Kind"
-msgstr ""
-
 msgid "Operation Order"
 msgstr "Kolejność operacji"
 
@@ -9711,9 +9705,6 @@ msgstr "Usuń zamówienie"
 
 msgid "Remove pair"
 msgstr "Usuń parę"
-
-msgid "Remove slide"
-msgstr ""
 
 msgid "Remove sort by column"
 msgstr "Usuń sortowanie według kolumny"

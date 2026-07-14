@@ -5133,9 +5133,6 @@ msgstr "Fehler beim Speichern der Konfigurationsregel"
 msgid "Failed to save diagram"
 msgstr "Fehler beim Speichern des Diagramms"
 
-msgid "Failed to save slides"
-msgstr ""
-
 msgid "Failed to update batch property"
 msgstr "Fehler beim Aktualisieren der Batch-Eigenschaft"
 
@@ -8262,9 +8259,6 @@ msgstr "Betriebsausgaben"
 msgid "Operation"
 msgstr "Betrieb"
 
-msgid "Operation Kind"
-msgstr ""
-
 msgid "Operation Order"
 msgstr "Operationsreihenfolge"
 
@@ -9711,9 +9705,6 @@ msgstr "Bestellung entfernen"
 
 msgid "Remove pair"
 msgstr "Paar entfernen"
-
-msgid "Remove slide"
-msgstr ""
 
 msgid "Remove sort by column"
 msgstr "Sortierung nach Spalte entfernen"

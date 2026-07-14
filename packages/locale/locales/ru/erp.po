@@ -5133,9 +5133,6 @@ msgstr "Ошибка при сохранении правила конфигур
 msgid "Failed to save diagram"
 msgstr "Не удалось сохранить диаграмму"
 
-msgid "Failed to save slides"
-msgstr ""
-
 msgid "Failed to update batch property"
 msgstr "Не удалось обновить свойство партии"
 
@@ -8262,9 +8259,6 @@ msgstr "Операционные расходы"
 msgid "Operation"
 msgstr "Операция"
 
-msgid "Operation Kind"
-msgstr ""
-
 msgid "Operation Order"
 msgstr "Порядок операции"
 
@@ -9711,9 +9705,6 @@ msgstr "Удалить заказ"
 
 msgid "Remove pair"
 msgstr "Удалить пару"
-
-msgid "Remove slide"
-msgstr ""
 
 msgid "Remove sort by column"
 msgstr "Удалить сортировку по столбцу"

@@ -5133,9 +5133,6 @@ msgstr "Échec de l'enregistrement de la règle de configuration"
 msgid "Failed to save diagram"
 msgstr "Impossible d'enregistrer le diagramme"
 
-msgid "Failed to save slides"
-msgstr ""
-
 msgid "Failed to update batch property"
 msgstr "Échec de la mise à jour de la propriété de lot"
 
@@ -8262,9 +8259,6 @@ msgstr "Frais de Fonctionnement"
 msgid "Operation"
 msgstr "Opération"
 
-msgid "Operation Kind"
-msgstr ""
-
 msgid "Operation Order"
 msgstr "Ordre d'opération"
 
@@ -9711,9 +9705,6 @@ msgstr "Supprimer la commande"
 
 msgid "Remove pair"
 msgstr "Supprimer la paire"
-
-msgid "Remove slide"
-msgstr ""
 
 msgid "Remove sort by column"
 msgstr "Supprimer le tri par colonne"

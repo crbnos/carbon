@@ -5133,9 +5133,6 @@ msgstr "Yapılandırma kuralını kaydetme başarısız oldu"
 msgid "Failed to save diagram"
 msgstr "Şemayı kaydetme başarısız oldu"
 
-msgid "Failed to save slides"
-msgstr ""
-
 msgid "Failed to update batch property"
 msgstr "Toplu özelliği güncelleme başarısız oldu"
 
@@ -8262,9 +8259,6 @@ msgstr "İşletme Giderleri"
 msgid "Operation"
 msgstr "Operasyon"
 
-msgid "Operation Kind"
-msgstr ""
-
 msgid "Operation Order"
 msgstr "Operasyon Sırası"
 
@@ -9711,9 +9705,6 @@ msgstr "Siparişi kaldır"
 
 msgid "Remove pair"
 msgstr "Çifti kaldır"
-
-msgid "Remove slide"
-msgstr ""
 
 msgid "Remove sort by column"
 msgstr "Sıralamayı kaldır"

@@ -5133,9 +5133,6 @@ msgstr "Error al guardar la regla de configuración"
 msgid "Failed to save diagram"
 msgstr "No se pudo guardar el diagrama"
 
-msgid "Failed to save slides"
-msgstr ""
-
 msgid "Failed to update batch property"
 msgstr "Error al actualizar la propiedad de lote"
 
@@ -8262,9 +8259,6 @@ msgstr "Gastos Operativos"
 msgid "Operation"
 msgstr "Operación"
 
-msgid "Operation Kind"
-msgstr ""
-
 msgid "Operation Order"
 msgstr "Orden de Operación"
 
@@ -9711,9 +9705,6 @@ msgstr "Eliminar orden"
 
 msgid "Remove pair"
 msgstr "Eliminar par"
-
-msgid "Remove slide"
-msgstr ""
 
 msgid "Remove sort by column"
 msgstr "Eliminar ordenamiento por columna"

@@ -5133,9 +5133,6 @@ msgstr "保存配置规则失败"
 msgid "Failed to save diagram"
 msgstr "保存图表失败"
 
-msgid "Failed to save slides"
-msgstr ""
-
 msgid "Failed to update batch property"
 msgstr "批处理属性更新失败"
 
@@ -8262,9 +8259,6 @@ msgstr "运营费用"
 msgid "Operation"
 msgstr "操作"
 
-msgid "Operation Kind"
-msgstr ""
-
 msgid "Operation Order"
 msgstr "操作顺序"
 
@@ -9711,9 +9705,6 @@ msgstr "删除订单"
 
 msgid "Remove pair"
 msgstr "移除配对"
-
-msgid "Remove slide"
-msgstr ""
 
 msgid "Remove sort by column"
 msgstr "删除按列排序"

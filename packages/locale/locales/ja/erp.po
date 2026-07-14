@@ -5133,9 +5133,6 @@ msgstr "設定ルールの保存に失敗しました"
 msgid "Failed to save diagram"
 msgstr "図の保存に失敗しました"
 
-msgid "Failed to save slides"
-msgstr ""
-
 msgid "Failed to update batch property"
 msgstr "バッチプロパティの更新に失敗しました"
 
@@ -8262,9 +8259,6 @@ msgstr "営業費"
 msgid "Operation"
 msgstr "操作"
 
-msgid "Operation Kind"
-msgstr ""
-
 msgid "Operation Order"
 msgstr "操作順序"
 
@@ -9711,9 +9705,6 @@ msgstr "注文を削除"
 
 msgid "Remove pair"
 msgstr "ペアを削除"
-
-msgid "Remove slide"
-msgstr ""
 
 msgid "Remove sort by column"
 msgstr "列でソートを削除"

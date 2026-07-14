@@ -5133,9 +5133,6 @@ msgstr "Impossibile salvare la regola di configurazione"
 msgid "Failed to save diagram"
 msgstr "Impossibile salvare il diagramma"
 
-msgid "Failed to save slides"
-msgstr ""
-
 msgid "Failed to update batch property"
 msgstr "Impossibile aggiornare la proprietà batch"
 
@@ -8262,9 +8259,6 @@ msgstr "Spese Operative"
 msgid "Operation"
 msgstr "Operazione"
 
-msgid "Operation Kind"
-msgstr ""
-
 msgid "Operation Order"
 msgstr "Ordine Operazione"
 
@@ -9711,9 +9705,6 @@ msgstr "Rimuovi ordine"
 
 msgid "Remove pair"
 msgstr "Rimuovi coppia"
-
-msgid "Remove slide"
-msgstr ""
 
 msgid "Remove sort by column"
 msgstr "Rimuovi ordinamento per colonna"

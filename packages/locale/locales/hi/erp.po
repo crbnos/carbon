@@ -5133,9 +5133,6 @@ msgstr "कॉन्फ़िगरेशन नियम सहेजने म
 msgid "Failed to save diagram"
 msgstr "आरेख सहेजने में विफल"
 
-msgid "Failed to save slides"
-msgstr ""
-
 msgid "Failed to update batch property"
 msgstr "बैच प्रॉपर्टी अपडेट करने में विफल"
 
@@ -8262,9 +8259,6 @@ msgstr "परिचालन व्यय"
 msgid "Operation"
 msgstr "ऑपरेशन"
 
-msgid "Operation Kind"
-msgstr ""
-
 msgid "Operation Order"
 msgstr "ऑपरेशन क्रम"
 
@@ -9711,9 +9705,6 @@ msgstr "ऑर्डर हटाएं"
 
 msgid "Remove pair"
 msgstr "जोड़ी हटाएं"
-
-msgid "Remove slide"
-msgstr ""
 
 msgid "Remove sort by column"
 msgstr "कॉलम द्वारा सॉर्ट हटाएं"

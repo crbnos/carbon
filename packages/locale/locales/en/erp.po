@@ -5133,9 +5133,6 @@ msgstr "Failed to save configuration rule"
 msgid "Failed to save diagram"
 msgstr "Failed to save diagram"
 
-msgid "Failed to save slides"
-msgstr "Failed to save slides"
-
 msgid "Failed to update batch property"
 msgstr "Failed to update batch property"
 
@@ -8262,9 +8259,6 @@ msgstr "Operating Expenses"
 msgid "Operation"
 msgstr "Operation"
 
-msgid "Operation Kind"
-msgstr "Operation Kind"
-
 msgid "Operation Order"
 msgstr "Operation Order"
 
@@ -9711,9 +9705,6 @@ msgstr "Remove order"
 
 msgid "Remove pair"
 msgstr "Remove pair"
-
-msgid "Remove slide"
-msgstr "Remove slide"
 
 msgid "Remove sort by column"
 msgstr "Remove sort by column"
