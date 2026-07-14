@@ -4442,12 +4442,6 @@ msgstr "编辑 Webhook"
 msgid "Edit Work Center"
 msgstr "编辑工作中心"
 
-msgid "Effective From"
-msgstr "生效日期"
-
-msgid "Effective To"
-msgstr "有效期至"
-
 msgid "Email"
 msgstr "电子邮件"
 
@@ -13031,12 +13025,6 @@ msgstr "用于导航和销售订单等文档中"
 
 msgid "Used in the navigation in dark mode"
 msgstr "在深色模式下的导航中使用"
-
-msgid "Used on builds on/after this date (blank = always)"
-msgstr "用于此日期及之后的构建（空白 = 始终）"
-
-msgid "Used on builds on/before this date (blank = always)"
-msgstr "用于此日期或之前的构建（空白 = 始终）"
 
 msgid "Used on the home screen and digital quotes"
 msgstr "用于主屏幕和数字报价"

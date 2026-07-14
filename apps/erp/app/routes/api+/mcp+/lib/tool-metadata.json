@@ -1,5 +1,5 @@
 {
-  "generated": "2026-07-14T18:22:39.480Z",
+  "generated": "2026-07-14T22:27:32.390Z",
   "totalTools": 1331,
   "modules": 15,
   "tools": [
@@ -13884,7 +13884,7 @@
       "module": "items",
       "classification": "WRITE",
       "description": "upsert method material",
-      "paramCount": 1,
+      "paramCount": 4,
       "serviceParams": [
         "client",
         "methodMaterial"
@@ -13897,10 +13897,22 @@
       "schema": {
         "type": "object",
         "properties": {
-          "methodMaterial": {}
+          "id": {
+            "type": "string"
+          },
+          "makeMethodId": {
+            "type": "string"
+          },
+          "order": {
+            "type": "number"
+          },
+          "itemType": {
+            "type": "string"
+          }
         },
         "required": [
-          "methodMaterial"
+          "id",
+          "makeMethodId"
         ]
       }
     },

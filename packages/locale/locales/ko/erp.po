@@ -4442,12 +4442,6 @@ msgstr "웹훅 수정"
 msgid "Edit Work Center"
 msgstr "작업장 수정"
 
-msgid "Effective From"
-msgstr "적용 시작일"
-
-msgid "Effective To"
-msgstr "적용 종료일"
-
 msgid "Email"
 msgstr "이메일"
 
@@ -13031,12 +13025,6 @@ msgstr "내비게이션과 판매주문 같은 문서에서 사용됩니다"
 
 msgid "Used in the navigation in dark mode"
 msgstr "다크 모드의 내비게이션에서 사용됩니다"
-
-msgid "Used on builds on/after this date (blank = always)"
-msgstr "이 날짜 이후(포함)의 빌드에 사용됨(비워두면 항상 사용)"
-
-msgid "Used on builds on/before this date (blank = always)"
-msgstr "이 날짜 이전(포함)의 빌드에 사용됨(비워두면 항상 사용)"
 
 msgid "Used on the home screen and digital quotes"
 msgstr "홈 화면과 디지털 견적에서 사용됩니다"

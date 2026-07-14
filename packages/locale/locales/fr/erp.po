@@ -4442,12 +4442,6 @@ msgstr "Modifier le Webhook"
 msgid "Edit Work Center"
 msgstr "Modifier le centre de travail"
 
-msgid "Effective From"
-msgstr "À partir de"
-
-msgid "Effective To"
-msgstr "Effectif jusqu'au"
-
 msgid "Email"
 msgstr "E-mail"
 
@@ -13031,12 +13025,6 @@ msgstr "Utilisé dans la navigation et sur les documents comme les commandes de 
 
 msgid "Used in the navigation in dark mode"
 msgstr "Utilisé dans la navigation en mode sombre"
-
-msgid "Used on builds on/after this date (blank = always)"
-msgstr "Utilisé sur les constructions à partir de cette date (vide = toujours)"
-
-msgid "Used on builds on/before this date (blank = always)"
-msgstr "Utilisé sur les constructions avant ou à cette date (vide = toujours)"
 
 msgid "Used on the home screen and digital quotes"
 msgstr "Utilisé sur l'écran d'accueil et les devis numériques"
