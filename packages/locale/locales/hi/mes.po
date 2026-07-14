@@ -834,6 +834,9 @@ msgstr "इन्वेंटरी हटाएं"
 msgid "Remove part"
 msgstr "भाग हटाएं"
 
+msgid "Retry Completion"
+msgstr ""
+
 msgid "Rework"
 msgstr "रीवर्क"
 

@@ -834,6 +834,9 @@ msgstr "Remover Estoque"
 msgid "Remove part"
 msgstr "Remover peça"
 
+msgid "Retry Completion"
+msgstr ""
+
 msgid "Rework"
 msgstr "Retrabalho"
 

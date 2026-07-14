@@ -834,6 +834,9 @@ msgstr "Списать запас"
 msgid "Remove part"
 msgstr "Удалить деталь"
 
+msgid "Retry Completion"
+msgstr ""
+
 msgid "Rework"
 msgstr "Переделка"
 

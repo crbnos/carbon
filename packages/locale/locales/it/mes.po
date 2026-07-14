@@ -834,6 +834,9 @@ msgstr "Rimuovi Inventario"
 msgid "Remove part"
 msgstr "Rimuovi componente"
 
+msgid "Retry Completion"
+msgstr ""
+
 msgid "Rework"
 msgstr "Rielaborazione"
 

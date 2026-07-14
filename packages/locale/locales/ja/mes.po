@@ -834,6 +834,9 @@ msgstr "在庫削除"
 msgid "Remove part"
 msgstr "パーツを削除"
 
+msgid "Retry Completion"
+msgstr ""
+
 msgid "Rework"
 msgstr "リワーク"
 

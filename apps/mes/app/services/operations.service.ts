@@ -1057,12 +1057,14 @@ export async function endProductionEvent(
     id: string;
     endTime: string;
     employeeId: string;
+    companyId: string;
   }
 ) {
   return client
     .from("productionEvent")
     .update({ endTime: data.endTime, updatedBy: data.employeeId })
     .eq("id", data.id)
+    .eq("companyId", data.companyId)
     .select("*");
 }
 

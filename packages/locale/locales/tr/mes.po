@@ -834,6 +834,9 @@ msgstr "Stoktan Çıkar"
 msgid "Remove part"
 msgstr "Parçayı kaldır"
 
+msgid "Retry Completion"
+msgstr ""
+
 msgid "Rework"
 msgstr "Revizyon"
 

@@ -834,6 +834,9 @@ msgstr "Bestand entfernen"
 msgid "Remove part"
 msgstr "Teil entfernen"
 
+msgid "Retry Completion"
+msgstr ""
+
 msgid "Rework"
 msgstr "Überarbeitung"
 

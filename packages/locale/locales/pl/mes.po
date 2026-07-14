@@ -834,6 +834,9 @@ msgstr "Usuń zapasy"
 msgid "Remove part"
 msgstr "Usuń część"
 
+msgid "Retry Completion"
+msgstr ""
+
 msgid "Rework"
 msgstr "Przeróbka"
 
