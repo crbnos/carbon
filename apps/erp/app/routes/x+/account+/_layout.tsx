@@ -3,6 +3,8 @@ import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import type { MetaFunction } from "react-router";
 import { Outlet } from "react-router";
+import { DetailSidebar } from "~/components/Layout/Navigation";
+import useAccountSubmodules from "~/modules/account/ui/useAccountSubmodules";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -17,7 +19,7 @@ export const handle: Handle = {
 };
 
 export default function AccountRoute() {
-  // const { links } = useAccountSubmodules();
+  const { links } = useAccountSubmodules();
 
   return (
     <VStack
@@ -33,8 +35,8 @@ export default function AccountRoute() {
       </div>
 
       <div className="mx-auto w-full max-w-[60rem] flex-1 min-h-0 overflow-y-auto px-2">
-        <div className="grid w-full grid-cols-1 gap-8">
-          {/* <DetailSidebar links={links} /> */}
+        <div className="grid w-full grid-cols-1 md:grid-cols-[1fr_4fr] gap-8">
+          <DetailSidebar links={links} />
           <VStack spacing={0} className="h-full w-full">
             <Outlet />
           </VStack>
