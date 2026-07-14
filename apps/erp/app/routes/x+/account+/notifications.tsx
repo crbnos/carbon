@@ -154,11 +154,11 @@ export default function AccountNotifications() {
               <th className="text-left text-sm font-medium py-2">
                 <Trans>Topic</Trans>
               </th>
-              <th className="text-right text-sm font-medium py-2 w-24">
+              <th className="text-center text-sm font-medium py-2 w-24">
                 <Trans>Email</Trans>
               </th>
               {slackActive && (
-                <th className="text-right text-sm font-medium py-2 w-24">
+                <th className="text-center text-sm font-medium py-2 w-24">
                   <Trans>Slack</Trans>
                 </th>
               )}
@@ -170,24 +170,28 @@ export default function AccountNotifications() {
                 <td className="text-sm py-3">
                   {getNotificationTopicLabel(topic)}
                 </td>
-                <td className="text-right py-3">
-                  <Switch
-                    checked={isEnabled(topic, "email")}
-                    onCheckedChange={(checked) =>
-                      toggle(topic, "email", checked)
-                    }
-                    aria-label={`${getNotificationTopicLabel(topic)} email`}
-                  />
+                <td className="py-3 w-24">
+                  <div className="flex justify-center">
+                    <Switch
+                      checked={isEnabled(topic, "email")}
+                      onCheckedChange={(checked) =>
+                        toggle(topic, "email", checked)
+                      }
+                      aria-label={`${getNotificationTopicLabel(topic)} email`}
+                    />
+                  </div>
                 </td>
                 {slackActive && (
-                  <td className="text-right py-3">
-                    <Switch
-                      checked={isEnabled(topic, "slack")}
-                      onCheckedChange={(checked) =>
-                        toggle(topic, "slack", checked)
-                      }
-                      aria-label={`${getNotificationTopicLabel(topic)} Slack`}
-                    />
+                  <td className="py-3 w-24">
+                    <div className="flex justify-center">
+                      <Switch
+                        checked={isEnabled(topic, "slack")}
+                        onCheckedChange={(checked) =>
+                          toggle(topic, "slack", checked)
+                        }
+                        aria-label={`${getNotificationTopicLabel(topic)} Slack`}
+                      />
+                    </div>
                   </td>
                 )}
               </tr>
