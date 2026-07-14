@@ -238,11 +238,19 @@ const ASSEMBLER_PREFIX = pc.yellow(pc.bold("asm | "));
  * what a plain `crbn up` should do. We never auto-build it: the user runs the
  * OCCT script once, then the assembler is available.
  */
-export function assertAssemblerDepsBuilt(): void {
+/** Non-throwing check: is the assembler's one-time native OCCT build present? */
+export function assemblerDepsBuilt(): boolean {
   const prefix =
     process.env.OCCT_PREFIX ||
     join(homedir(), ".cache", "carbon-occt", "8.0.0-p1");
-  if (!existsSync(prefix)) {
+  return existsSync(prefix);
+}
+
+export function assertAssemblerDepsBuilt(): void {
+  if (!assemblerDepsBuilt()) {
+    const prefix =
+      process.env.OCCT_PREFIX ||
+      join(homedir(), ".cache", "carbon-occt", "8.0.0-p1");
     throw new Error(
       `Assembler selected, but its OCCT dependency isn't built.\n` +
         `  expected: ${prefix}\n` +

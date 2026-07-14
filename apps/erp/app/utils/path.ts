@@ -117,6 +117,8 @@ export const path = {
         generatePath(
           `${api}/mrp${locationId ? `?location=${locationId}` : ""}`
         ),
+      modelArtifacts: (modelUploadId: string) =>
+        generatePath(`${api}/model/artifacts/${modelUploadId}`),
       modelConvertStatus: (modelUploadId: string) =>
         generatePath(`${api}/model/convert-status/${modelUploadId}`),
       modelUpload: `${api}/model/upload`,

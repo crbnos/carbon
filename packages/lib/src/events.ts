@@ -118,7 +118,7 @@ export type Events = {
       modelUploadId: string;
       companyId: string;
       userId: string;
-      format: string; // "step" | "gltf" | "glb"
+      // format is derived from the stored file inside the job, not passed here.
     };
   };
 

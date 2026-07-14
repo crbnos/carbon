@@ -1,13 +1,17 @@
+import {
+  cn,
+  IconButton,
+  Spinner,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger
+} from "@carbon/react";
 import * as OV from "online-3d-viewer";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useLocale } from "react-aria-components";
 import { LuTrash2 } from "react-icons/lu";
 // @ts-ignore -- three has no declaration file in this context
 import * as THREE from "three";
-import { IconButton } from "./IconButton";
-import { Spinner } from "./Spinner";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./Tabs";
-import { cn } from "./utils/cn";
 
 type UnitSystem = "metric" | "imperial";
 
@@ -285,8 +289,6 @@ export function ModelViewer({
     }
   }, [isDarkMode]);
 
-  const { locale } = useLocale();
-
   // Conversion functions
   const mmToInches = (mm: number) => mm / 25.4;
   const mm2ToInches2 = (mm2: number) => mm2 / (25.4 * 25.4);
@@ -294,12 +296,12 @@ export function ModelViewer({
 
   const formatter = useMemo(() => {
     const decimals = unitSystem === "imperial" ? 6 : 2;
-    return new Intl.NumberFormat(locale, {
+    return new Intl.NumberFormat(undefined, {
       style: "decimal",
       minimumFractionDigits: 0,
       maximumFractionDigits: decimals
     });
-  }, [locale, unitSystem]);
+  }, [unitSystem]);
 
   // Helper functions to get converted values
   const getDisplayValue = (

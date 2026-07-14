@@ -1,8 +1,13 @@
-//! `optimize` action — GLB | GLTF | STEP → optimised GLB. Runs the meshopt
-//! geometry passes + codec encode (via `crates/optimize`), walking a simplify
-//! ladder until the render-weight + output-size gates pass. Async job; late-mint
-//! uploads the single `glb` output.
+//! `optimize` action — any supported CAD/mesh input → optimised GLB. Resolves the
+//! source format (explicit or content auto-detected), loads it into a GLB
+//! (OCCT-tessellating B-rep, ingesting STL, or mmapping a glTF/GLB), then runs the
+//! meshopt geometry passes + codec encode (via `crates/optimize`), walking a
+//! simplify ladder until the render-weight + output-size gates pass. Async job;
+//! late-mint uploads the single `glb` output. Fails loud with a typed error
+//! (`unsupported_format` / `ambiguous_format` / `tessellation_failed` /
+//! `cannot_fit_budget`) rather than storing an over-cap or wrong result.
 
+use crate::formats::{self, Format};
 use crate::jobs::{Done, Output};
 use crate::{http, AppState};
 use serde_json::json;
@@ -11,7 +16,7 @@ use std::time::Instant;
 
 pub struct OptimizeReq {
     pub source_url: String,
-    /// "glb" | "gltf" | "step".
+    /// Declared source format, or `"auto"` / empty to content-detect.
     pub format: String,
     /// Storage path recorded in the completion pointer (late-mint uploads here).
     pub glb_path: Option<String>,
@@ -26,25 +31,37 @@ pub struct Opts {
     pub simplify_aggressive: bool,
     pub weld: bool,
     pub reorder: bool,
-    /// Quality/perf knob: max simplify error in mm (`None` = ratio-only). Applies
-    /// on top of every ladder rung as the precision floor.
+    /// Quality/perf knob: max simplify error in mm (`None` = ratio-only).
     pub tolerance: Option<f32>,
-    /// Auto-mode normalized error budget, used when neither a ratio ladder nor an
-    /// absolute tolerance drives simplification. `None` = lossless.
+    /// Auto-mode normalized error budget. `None` = lossless.
     pub auto_error: Option<f32>,
     /// Draco quantization bits (position, normal, texcoord) — Draco codec only.
     pub draco_bits: (i32, i32, i32),
-    /// Quantize normals to i16 (none/meshopt codecs). Core glTF, ~half the normal bytes.
+    /// Quantize normals to i16 (none/meshopt codecs).
     pub quantize_normals: bool,
-    /// Merge same-material primitives within a mesh (fewer draw calls + smaller).
+    /// Merge same-material primitives within a mesh.
     pub merge_primitives: bool,
     /// Decoded (render-weight) byte ceiling — the "packed" gate.
     pub max_packed: usize,
     /// Encoded output byte ceiling.
     pub max_output: usize,
-    /// STEP tessellation (ignored for glb/gltf input).
+    /// STEP/IGES tessellation deflection (ignored for mesh input).
     pub lin: f64,
     pub ang: f64,
+}
+
+/// A typed action failure carrying the snake_case API error code.
+struct ActionErr {
+    code: &'static str,
+    message: String,
+}
+impl ActionErr {
+    fn new(code: &'static str, message: impl Into<String>) -> Self {
+        ActionErr {
+            code,
+            message: message.into(),
+        }
+    }
 }
 
 pub fn spawn(state: &AppState, job_id: &str, req: OptimizeReq) {
@@ -71,55 +88,64 @@ pub fn spawn(state: &AppState, job_id: &str, req: OptimizeReq) {
             return;
         }
         let tmp_str = tmp.to_string_lossy().to_string();
-        let format = req.format.clone();
+        let declared = req.format.clone();
+        let ext = url_ext(&req.source_url);
         let opts = req.opts;
 
-        let res = tokio::task::spawn_blocking(move || run_optimize(&tmp_str, &format, &opts)).await;
+        let res = tokio::task::spawn_blocking(move || {
+            run_optimize(&tmp_str, &declared, ext.as_deref(), &opts)
+        })
+        .await;
         let _ = tokio::fs::remove_file(&tmp).await;
 
         let outcome = match res {
             Ok(Ok(o)) => o,
-            Ok(Err(msg)) => {
-                eprintln!("[{job_id}] optimize failed: {msg}");
-                jobs.set_error(&job_id, "TESSELLATION_FAILED", msg).await;
+            Ok(Err(e)) => {
+                eprintln!("[{job_id}] optimize failed ({}): {}", e.code, e.message);
+                jobs.set_error(&job_id, e.code, e.message).await;
                 return;
             }
             Err(e) => {
                 let msg = format!("optimize panicked: {e}");
                 eprintln!("[{job_id}] {msg}");
-                jobs.set_error(&job_id, "TESSELLATION_FAILED", msg).await;
+                jobs.set_error(&job_id, "optimize_failed", msg).await;
                 return;
             }
         };
 
         let optimise_ms = started.elapsed().as_millis() as i64;
         eprintln!(
-            "[{job_id}] optimize done: {} -> {} tris, {} -> {} bytes, {optimise_ms}ms{}",
+            "[{job_id}] optimize done: {} ({} via) {} -> {} tris, {} -> {} bytes, ratio={:?}, {optimise_ms}ms",
+            outcome.detected_format,
+            outcome.detected_via,
             outcome.stats.input_triangles,
             outcome.stats.output_triangles,
             outcome.stats.input_bytes,
             outcome.glb.len(),
-            if outcome.warnings.is_empty() {
-                ""
-            } else {
-                " (warnings)"
-            }
+            outcome.ratio,
         );
 
         let done = Done {
             result: json!({
-                "codec": codec_name(outcome.codec),
-                "simplifyRatioUsed": outcome.ratio,
-                "inputTris": outcome.stats.input_triangles,
-                "outputTris": outcome.stats.output_triangles,
-                "inputBytes": outcome.stats.input_bytes,
-                "outputBytes": outcome.glb.len(),
-                "outputs": { "glb": { "path": req.glb_path } },
+                "detected_format": outcome.detected_format,
+                "detected_via": outcome.detected_via,
+                "outputs": {
+                    "glb": {
+                        "path": req.glb_path,
+                        "bytes": outcome.glb.len(),
+                        "codec": codec_name(outcome.codec),
+                    }
+                },
                 "warnings": outcome.warnings,
             }),
             stats: json!({
-                "optimiseMs": optimise_ms,
-                "decodedBytes": outcome.stats.decoded_bytes,
+                "input_triangles": outcome.stats.input_triangles,
+                "output_triangles": outcome.stats.output_triangles,
+                "input_bytes": outcome.stats.input_bytes,
+                "output_bytes": outcome.glb.len(),
+                "render_weight_bytes": outcome.stats.decoded_bytes,
+                "simplify_ratio_used": outcome.ratio,
+                "optimise_ms": optimise_ms,
             }),
         };
         let outputs = vec![Output {
@@ -139,10 +165,12 @@ struct Outcome {
     codec: optimize::Codec,
     ratio: Option<f32>,
     warnings: Vec<String>,
+    detected_format: &'static str,
+    detected_via: &'static str,
 }
 
-/// GLB source bytes — either the STEP tessellation (owned) or a memory-mapped
-/// uploaded GLB (OS-paged, off the RSS).
+/// GLB source bytes — either an owned tessellation/STL-ingest or a memory-mapped
+/// uploaded glTF/GLB (OS-paged, off the RSS).
 enum Src {
     Owned(Vec<u8>),
     Mapped(memmap2::Mmap),
@@ -156,33 +184,26 @@ impl Src {
     }
 }
 
-/// Load the source into GLB bytes (tessellating STEP), then walk the simplify
-/// ladder — the first rung under both gates wins; else keep the smallest and flag
-/// `asset-too-large` (never a silent truncation).
-fn run_optimize(path: &str, format: &str, opts: &Opts) -> Result<Outcome, String> {
-    let src = match format {
-        "step" | "stp" => {
-            let text = read_head(path, 32 * 1024 * 1024)?;
-            Src::Owned(
-                converter::convert::convert_step(path, &text, opts.lin, opts.ang)
-                    .map_err(|e| e.message)?
-                    .glb,
-            )
-        }
-        // mmap the uploaded GLB so a large source stays OS-paged, never a
-        // resident Vec — the BIN chunk faults in on access during optimise.
-        "glb" | "gltf" => {
-            let file = std::fs::File::open(path).map_err(|e| format!("open source: {e}"))?;
-            Src::Mapped(
-                unsafe { memmap2::Mmap::map(&file) }.map_err(|e| format!("mmap source: {e}"))?,
-            )
-        }
-        other => return Err(format!("unsupported format: {other}")),
-    };
+/// Resolve the format, load the source into GLB bytes, then walk the simplify
+/// ladder — the first rung under both gates wins; if none fit, fail with
+/// `cannot_fit_budget` (never store an over-cap blob).
+fn run_optimize(
+    path: &str,
+    declared: &str,
+    ext: Option<&str>,
+    opts: &Opts,
+) -> Result<Outcome, ActionErr> {
+    let head = read_head_bytes(path, 512 * 1024)
+        .map_err(|e| ActionErr::new("invalid_input", e))?;
+    let size = std::fs::metadata(path).map(|m| m.len()).unwrap_or(0);
+
+    let (format, detected_via) = formats::resolve(declared, &head, size, ext)
+        .map_err(|e| ActionErr::new(e.code, e.message))?;
+    let detected_format = format.name();
+
+    let src = load_source(path, format, &head, opts)?;
     let glb = src.bytes();
     let input_bytes = glb.len();
-    // A GLB starts with the "glTF" magic; a text .gltf doesn't. STEP tessellation
-    // is always a GLB. Robust to a mis-stated source.format.
     let is_glb = glb.len() >= 4 && &glb[0..4] == b"glTF";
 
     let ladder = if opts.ladder.is_empty() {
@@ -211,40 +232,97 @@ fn run_optimize(path: &str, format: &str, opts: &Opts) -> Result<Outcome, String
         } else {
             optimize::optimize_gltf(glb, &o)
         }
-        .map_err(|e| e.message)?;
+        .map_err(|e| ActionErr::new("optimize_failed", e.message))?;
         res.stats.input_bytes = input_bytes;
-        let passes = res.stats.decoded_bytes <= opts.max_packed && res.glb.len() <= opts.max_output;
+        let passes =
+            res.stats.decoded_bytes <= opts.max_packed && res.glb.len() <= opts.max_output;
         let outcome = Outcome {
             glb: res.glb,
             stats: res.stats,
             codec: opts.codec,
             ratio: rung,
             warnings: Vec::new(),
+            detected_format,
+            detected_via,
         };
         if passes {
             return Ok(outcome);
         }
         warnings.push(format!(
-            "rung {:?} over budget: decoded {}B (max {}B), output {}B (max {}B)",
-            rung, outcome.stats.decoded_bytes, opts.max_packed, outcome.glb.len(), opts.max_output
+            "rung {:?} over budget: render-weight {}B (max {}B), output {}B (max {}B)",
+            rung,
+            outcome.stats.decoded_bytes,
+            opts.max_packed,
+            outcome.glb.len(),
+            opts.max_output
         ));
         best = Some(outcome);
     }
 
-    let mut out = best.ok_or_else(|| "no simplify rungs to run".to_string())?;
-    warnings.push("asset-too-large".into());
-    out.warnings = warnings;
-    Ok(out)
+    // Nothing fit the budget even at the most aggressive rung: fail loud rather
+    // than store an artifact the served bucket would reject.
+    let smallest = best
+        .map(|o| o.glb.len())
+        .unwrap_or(0);
+    Err(ActionErr::new(
+        "cannot_fit_budget",
+        format!(
+            "could not fit the size/render-weight budget (smallest {smallest}B, max {}B); tried rungs {:?}. {}",
+            opts.max_output,
+            opts.ladder,
+            warnings.join("; ")
+        ),
+    ))
 }
 
-fn read_head(path: &str, cap: usize) -> Result<String, String> {
+/// Load the resolved format into GLB bytes.
+fn load_source(path: &str, format: Format, head: &[u8], opts: &Opts) -> Result<Src, ActionErr> {
+    match format {
+        Format::Step => {
+            let text = String::from_utf8_lossy(head).into_owned();
+            let glb = converter::convert::convert_step(path, &text, opts.lin, opts.ang)
+                .map_err(|e| ActionErr::new("tessellation_failed", e.message))?
+                .glb;
+            Ok(Src::Owned(glb))
+        }
+        Format::Stl => {
+            let bytes = std::fs::read(path).map_err(|e| ActionErr::new("invalid_input", e.to_string()))?;
+            let glb = optimize::stl_to_glb(&bytes)
+                .map_err(|e| ActionErr::new("optimize_failed", e.message))?;
+            Ok(Src::Owned(glb))
+        }
+        Format::Glb | Format::Gltf => {
+            let file =
+                std::fs::File::open(path).map_err(|e| ActionErr::new("invalid_input", format!("open source: {e}")))?;
+            let map = unsafe { memmap2::Mmap::map(&file) }
+                .map_err(|e| ActionErr::new("invalid_input", format!("mmap source: {e}")))?;
+            Ok(Src::Mapped(map))
+        }
+        // Detected + advertised, loader not yet wired (IGES/BREP → OCCT reader,
+        // OBJ/PLY/OFF → mesh parsers). Fail clearly rather than silently no-op.
+        Format::Iges | Format::Brep | Format::Obj | Format::Ply | Format::Off => Err(ActionErr::new(
+            "unsupported_format",
+            format!("loader for '{}' is not yet implemented", format.name()),
+        )),
+    }
+}
+
+fn read_head_bytes(path: &str, cap: usize) -> Result<Vec<u8>, String> {
     use std::io::Read;
     let file = std::fs::File::open(path).map_err(|e| format!("read temp: {e}"))?;
     let mut buf = Vec::new();
     file.take(cap as u64)
         .read_to_end(&mut buf)
         .map_err(|e| format!("read temp: {e}"))?;
-    Ok(String::from_utf8_lossy(&buf).into_owned())
+    Ok(buf)
+}
+
+/// Filename extension hint from a (possibly signed) URL — the last-resort tiebreak
+/// for format detection. Strips the query string.
+fn url_ext(url: &str) -> Option<String> {
+    let path = url.split(['?', '#']).next().unwrap_or(url);
+    let name = path.rsplit('/').next().unwrap_or(path);
+    name.rsplit_once('.').map(|(_, ext)| ext.to_ascii_lowercase())
 }
 
 fn codec_name(c: optimize::Codec) -> &'static str {

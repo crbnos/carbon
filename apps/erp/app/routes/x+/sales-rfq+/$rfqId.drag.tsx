@@ -134,6 +134,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
       companyId,
       modelId
     });
+    await trigger("model-optimize", {
+      modelUploadId: modelId,
+      companyId,
+      userId
+    });
   } else {
     newPath = `${companyId}/opportunity-line/${targetLineId}/${fileName}`;
     // Move the file to the new path

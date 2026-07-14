@@ -61,6 +61,7 @@ dependencies = [
  "bytes",
  "converter",
  "dashmap",
+ "file-format",
  "futures-util",
  "lru",
  "memmap2",
@@ -623,6 +624,12 @@ name = "fastrand"
 version = "2.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9f1f227452a390804cdb637b74a86990f2a7d7ba4b7d5693aac9b4dd6defd8d6"
+
+[[package]]
+name = "file-format"
+version = "0.26.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e7ef3d5e8ae27277c8285ac43ed153158178ef0f79567f32024ca8140a0c7cd8"
 
 [[package]]
 name = "filetime"

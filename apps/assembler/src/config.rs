@@ -10,7 +10,7 @@ fn int_env(name: &str, default: usize) -> usize {
 }
 
 pub fn max_source_bytes() -> usize {
-    int_env("ASSEMBLER_MAX_SOURCE_MB", 250) * 1024 * 1024
+    int_env("ASSEMBLER_MAX_SOURCE_MB", 512) * 1024 * 1024
 }
 
 pub fn max_parts() -> usize {

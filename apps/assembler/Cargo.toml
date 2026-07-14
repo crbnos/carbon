@@ -26,6 +26,7 @@ tokio-util = { version = "0.7", features = ["rt"] }
 redis = { version = "0.27", default-features = false, features = ["tokio-comp", "connection-manager"] }
 tower-http = { version = "0.6", features = ["compression-zstd", "compression-gzip"] }
 memmap2 = "0.9"
+file-format = "0.26"
 
 [target.'cfg(target_os = "linux")'.dependencies]
 tikv-jemallocator = "0.6"

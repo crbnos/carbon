@@ -1,6 +1,6 @@
 import { notFound } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { ModelViewer } from "@carbon/react";
+import { ModelViewer } from "@carbon/viewer/wasm";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { getPublicModelUrl } from "~/utils/path";

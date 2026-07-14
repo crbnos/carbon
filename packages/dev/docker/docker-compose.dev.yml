@@ -195,7 +195,10 @@ services:
       POSTGREST_URL: http://postgrest:3000
       PGRST_JWT_SECRET: ${SUPABASE_JWT_SECRET}
       DATABASE_URL: postgres://supabase_storage_admin:postgres@postgres:5432/postgres
-      FILE_SIZE_LIMIT: 52428800
+      # 512 MiB — must be >= the largest app-level limit (CAD_MODEL_UPLOAD =
+      # 512MB, packages/utils FILE_SIZE_LIMIT_MB). At 50MiB, Storage 413s CAD
+      # uploads the UI accepts. Keep in sync with config.toml [storage].
+      FILE_SIZE_LIMIT: 2000000000
       STORAGE_BACKEND: file
       FILE_STORAGE_BACKEND_PATH: /var/lib/storage
       TENANT_ID: stub

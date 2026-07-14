@@ -19,10 +19,10 @@ impl ApiError {
         }
     }
     pub fn invalid(message: impl Into<String>) -> Self {
-        ApiError::new(400, "INVALID_INPUT", message)
+        ApiError::new(400, "invalid_input", message)
     }
     pub fn unauthorized(message: impl Into<String>) -> Self {
-        ApiError::new(401, "UNAUTHORIZED", message)
+        ApiError::new(401, "unauthorized", message)
     }
 }
 

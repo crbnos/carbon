@@ -15,7 +15,7 @@ export const convertKbToString = (kb: number) => {
 // on upload yet. Returns the service `format` string, or null if not optimisable.
 export function optimizableModelFormat(
   ext: string
-): "step" | "gltf" | "glb" | null {
+): "step" | "gltf" | "glb" | "stl" | null {
   switch (ext.toLowerCase()) {
     case "step":
     case "stp":
@@ -24,6 +24,8 @@ export function optimizableModelFormat(
       return "gltf";
     case "glb":
       return "glb";
+    case "stl":
+      return "stl";
     default:
       return null;
   }

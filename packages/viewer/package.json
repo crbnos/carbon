@@ -1,8 +1,11 @@
 {
   "name": "@carbon/viewer",
   "dependencies": {
+    "@carbon/react": "workspace:*",
     "@react-three/drei": "9.122.0",
     "@react-three/fiber": "8.18.0",
+    "online-3d-viewer": "0.15.0",
+    "react-icons": "catalog:",
     "three": "0.163.0",
     "three-mesh-bvh": "0.7.8",
     "three-stdlib": "2.36.1"
@@ -20,7 +23,9 @@
   "exports": {
     ".": "./src/index.ts",
     "./steps": "./src/steps.ts",
-    "./canvas": "./src/ModelCanvas.tsx"
+    "./canvas": "./src/ModelCanvas.tsx",
+    "./model-preview": "./src/ModelPreview.tsx",
+    "./wasm": "./src/WasmModelViewer.tsx"
   },
   "peerDependencies": {
     "react": "catalog:",

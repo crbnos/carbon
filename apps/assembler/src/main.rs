@@ -17,6 +17,7 @@ mod actions;
 mod cache;
 mod config;
 mod error;
+mod formats;
 mod http;
 mod jobs;
 mod progress;
@@ -36,6 +37,10 @@ use tokio::sync::Semaphore;
 use tower_http::compression::{predicate::SizeAbove, CompressionLayer};
 
 const VERSION: &str = "0.1.0";
+/// Default optimise output ceiling (encoded bytes) — the served-bucket safety net.
+const DEFAULT_MAX_OUTPUT_BYTES: u64 = 52_428_800; // 50 MiB
+/// Default decoded (render-weight) ceiling — guards viewer hangs on huge meshes.
+const DEFAULT_MAX_RENDER_WEIGHT_BYTES: u64 = 419_430_400; // 400 MiB
 
 // jemalloc on the Linux deploy target: the planner's blocking tasks allocate
 // heavily from many threads (rayon sweeps + tokio workers); glibc malloc is the
@@ -148,13 +153,28 @@ async fn health() -> Json<Value> {
 
 async fn discovery(headers: HeaderMap) -> Result<Json<Value>, ApiError> {
     require_auth(&headers)?;
+    let input_formats: Vec<Value> = formats::ALL
+        .iter()
+        .map(|f| {
+            json!({
+                "format": f.name(),
+                "loader": f.loader_name(),
+                "exact": f.exact(),
+                "structured": f.structured(),
+            })
+        })
+        .collect();
     Ok(Json(json!({
         "version": VERSION,
         "actions": ["convert", "optimize", "plan"],
+        "input_formats": input_formats,
+        "codecs": ["meshopt", "draco", "none"],
         "limits": {
-            "maxParts": config::max_parts(),
-            "maxSourceMB": config::max_source_bytes() / 1024 / 1024,
-            "maxLongPollSecs": config::max_long_poll_secs(),
+            "max_parts": config::max_parts(),
+            "max_source_bytes": config::max_source_bytes(),
+            "max_output_bytes": DEFAULT_MAX_OUTPUT_BYTES,
+            "max_render_weight_bytes": DEFAULT_MAX_RENDER_WEIGHT_BYTES,
+            "max_long_poll_secs": config::max_long_poll_secs(),
         },
     })))
 }
@@ -302,42 +322,45 @@ async fn create_optimize(
         return Ok(created(&job_id, "optimize", &status));
     }
 
-    let o = &req["options"];
+    // Request shape (snake_case): `{ source, output:{path,codec,max_bytes,
+    // max_render_weight_bytes}, quality:{...} }`.
+    let out = &req["output"];
+    let q = &req["quality"];
     let opts = actions::optimize::Opts {
-        codec: o["codec"]
+        codec: out["codec"]
             .as_str()
             .and_then(optimize::Codec::from_str_opt)
             .unwrap_or_default(),
-        ladder: parse_ladder(o),
-        simplify_aggressive: o["simplifyAggressive"].as_bool().unwrap_or(false),
-        weld: o["weld"].as_bool().unwrap_or(true),
-        reorder: o["reorder"].as_bool().unwrap_or(true),
+        ladder: parse_ladder(q),
+        simplify_aggressive: q["simplify_aggressive"].as_bool().unwrap_or(false),
+        weld: q["weld"].as_bool().unwrap_or(true),
+        reorder: q["reorder"].as_bool().unwrap_or(true),
         // The quality/perf knob: max simplify deviation in mm. Absent = ratio-only.
-        tolerance: o["tolerance"].as_f64().map(|f| f as f32),
-        // Auto mode by default (scale-invariant, per-mesh adaptive); `autoError: 0`
+        tolerance: q["tolerance_mm"].as_f64().map(|f| f as f32),
+        // Auto mode by default (scale-invariant, per-mesh adaptive); `auto_error: 0`
         // disables it for a lossless optimise (weld/reorder/encode only).
         auto_error: Some(
-            o["autoError"]
+            q["auto_error"]
                 .as_f64()
                 .unwrap_or(optimize::DEFAULT_AUTO_ERROR as f64) as f32,
         )
         .filter(|&e| e > 0.0),
-        // Draco quantization bits (position, normal, texcoord) — Draco codec only.
         draco_bits: (
-            o["dracoPositionBits"].as_i64().unwrap_or(14) as i32,
-            o["dracoNormalBits"].as_i64().unwrap_or(10) as i32,
-            o["dracoTexcoordBits"].as_i64().unwrap_or(12) as i32,
+            q["draco_position_bits"].as_i64().unwrap_or(14) as i32,
+            q["draco_normal_bits"].as_i64().unwrap_or(10) as i32,
+            q["draco_texcoord_bits"].as_i64().unwrap_or(12) as i32,
         ),
-        // Quantize normals to i16 (none/meshopt); default on for optimise.
-        quantize_normals: o["quantizeNormals"].as_bool().unwrap_or(true),
-        // Merge same-material primitives within a mesh; default on for optimise.
-        merge_primitives: o["mergePrimitives"].as_bool().unwrap_or(true),
-        max_packed: o["maxPackedBytes"].as_u64().unwrap_or(419_430_400) as usize,
-        max_output: o["maxOutputBytes"].as_u64().unwrap_or(125_829_120) as usize,
-        lin: o["linearDeflection"].as_f64().unwrap_or(0.1),
-        ang: o["angularDeflection"].as_f64().unwrap_or(0.5),
+        quantize_normals: q["quantize_normals"].as_bool().unwrap_or(true),
+        merge_primitives: q["merge_primitives"].as_bool().unwrap_or(true),
+        max_packed: out["max_render_weight_bytes"]
+            .as_u64()
+            .unwrap_or(DEFAULT_MAX_RENDER_WEIGHT_BYTES) as usize,
+        max_output: out["max_bytes"].as_u64().unwrap_or(DEFAULT_MAX_OUTPUT_BYTES) as usize,
+        lin: q["linear_deflection"].as_f64().unwrap_or(0.1),
+        ang: q["angular_deflection"].as_f64().unwrap_or(0.5),
     };
-    let format = req["source"]["format"].as_str().unwrap_or("glb").to_string();
+    // `auto` (the default) content-detects the format in the action.
+    let format = req["source"]["format"].as_str().unwrap_or("auto").to_string();
 
     let meta = optional_meta(&req);
     state.jobs.set_pending(&job_id, "optimize", meta).await;
@@ -348,22 +371,23 @@ async fn create_optimize(
         actions::optimize::OptimizeReq {
             source_url: source_url.to_string(),
             format,
-            glb_path: req["outputs"]["glb"]["path"].as_str().map(str::to_string),
+            glb_path: req["output"]["path"].as_str().map(str::to_string),
             opts,
         },
     );
     Ok(created(&job_id, "optimize", "queued"))
 }
 
-/// The simplify ladder: `options.ladder` (array of number|null) if present, else
-/// a single rung from `options.simplify`, else `[null]` (full fidelity).
-fn parse_ladder(options: &Value) -> Vec<Option<f32>> {
-    if let Some(arr) = options["ladder"].as_array() {
+/// The simplify ladder: `quality.ladder` (array of number|null) if present, else
+/// a single rung from `quality.simplify`, else an aggressive default ladder
+/// (performance-first: walk down until the output fits the size/render gates).
+fn parse_ladder(quality: &Value) -> Vec<Option<f32>> {
+    if let Some(arr) = quality["ladder"].as_array() {
         return arr.iter().map(|v| v.as_f64().map(|f| f as f32)).collect();
     }
-    match options["simplify"].as_f64() {
+    match quality["simplify"].as_f64() {
         Some(f) => vec![Some(f as f32)],
-        None => vec![None],
+        None => vec![None, Some(0.5), Some(0.25), Some(0.1)],
     }
 }
 
@@ -448,7 +472,7 @@ async fn get_job(
         .jobs
         .poll(&job_id, &upload_urls, max)
         .await
-        .ok_or_else(|| ApiError::new(404, "NOT_FOUND", format!("no job {job_id}")))?;
+        .ok_or_else(|| ApiError::new(404, "not_found", format!("no job {job_id}")))?;
     // Best-effort live progress (same replica only): merge the convert phase
     // checklist while the job is running.
     if v["job"]["status"] == "running" {
@@ -499,7 +523,7 @@ async fn cancel_job(
         .cancel(&job_id)
         .await
         .map(Json)
-        .ok_or_else(|| ApiError::new(404, "NOT_FOUND", format!("no job {job_id}")))
+        .ok_or_else(|| ApiError::new(404, "not_found", format!("no job {job_id}")))
 }
 
 /// Central explicit cache invalidation: drop every content-hash result pointer

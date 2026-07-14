@@ -12,7 +12,7 @@ export function isInternalEmail(email: string | null | undefined): boolean {
 }
 
 export const FILE_SIZE_LIMIT_MB = {
-  CAD_MODEL_UPLOAD: 120,
+  CAD_MODEL_UPLOAD: 512,
   DOCUMENT_UPLOAD: 50
 } as const;
 

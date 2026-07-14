@@ -613,14 +613,208 @@ fn optimize_primitive(p: Primitive, opts: &Options) -> OptimizedPrimitive {
     }
 }
 
+// ---- STL ingest --------------------------------------------------------------
+
+/// Parse a binary or ASCII STL triangle soup into an uncompressed, weldable GLB
+/// (POSITION + per-face NORMAL + sequential indices). STL has no shared vertices
+/// or structure, so the result is a single flat mesh — the optimiser then welds,
+/// reorders, simplifies, and encodes it like any other input.
+pub fn stl_to_glb(bytes: &[u8]) -> Result<Vec<u8>, OptimizeError> {
+    let (positions, normals) = parse_stl(bytes)?;
+    if positions.is_empty() {
+        return Err(OptimizeError::new("STL has no triangles"));
+    }
+    build_triangle_glb(&positions, &normals)
+}
+
+fn parse_stl(bytes: &[u8]) -> Result<(Vec<[f32; 3]>, Vec<[f32; 3]>), OptimizeError> {
+    // Binary STL: 80-byte header, u32 triangle count, then 50 bytes/triangle. The
+    // size formula is the reliable discriminator — a binary header can itself
+    // start with "solid", so never trust that prefix over the byte math.
+    if bytes.len() >= 84 {
+        let count =
+            u32::from_le_bytes([bytes[80], bytes[81], bytes[82], bytes[83]]) as usize;
+        if bytes.len() == 84 + count * 50 {
+            return Ok(parse_binary_stl(bytes, count));
+        }
+    }
+    parse_ascii_stl(bytes)
+}
+
+fn parse_binary_stl(bytes: &[u8], count: usize) -> (Vec<[f32; 3]>, Vec<[f32; 3]>) {
+    let f = |o: usize| f32::from_le_bytes([bytes[o], bytes[o + 1], bytes[o + 2], bytes[o + 3]]);
+    let mut positions = Vec::with_capacity(count * 3);
+    let mut normals = Vec::with_capacity(count * 3);
+    for i in 0..count {
+        let base = 84 + i * 50;
+        let normal = [f(base), f(base + 4), f(base + 8)];
+        for v in 0..3 {
+            let p = base + 12 + v * 12;
+            positions.push([f(p), f(p + 4), f(p + 8)]);
+            normals.push(normal);
+        }
+    }
+    (positions, normals)
+}
+
+fn parse_ascii_stl(bytes: &[u8]) -> Result<(Vec<[f32; 3]>, Vec<[f32; 3]>), OptimizeError> {
+    let text = std::str::from_utf8(bytes)
+        .map_err(|_| OptimizeError::new("STL is neither valid binary nor UTF-8 ASCII"))?;
+    let mut positions = Vec::new();
+    let mut normals = Vec::new();
+    let mut normal = [0.0f32; 3];
+    for line in text.lines() {
+        let line = line.trim();
+        if let Some(rest) = line.strip_prefix("facet normal ") {
+            let n: Vec<f32> = rest.split_whitespace().filter_map(|t| t.parse().ok()).collect();
+            normal = [
+                *n.first().unwrap_or(&0.0),
+                *n.get(1).unwrap_or(&0.0),
+                *n.get(2).unwrap_or(&0.0),
+            ];
+        } else if let Some(rest) = line.strip_prefix("vertex ") {
+            let v: Vec<f32> = rest.split_whitespace().filter_map(|t| t.parse().ok()).collect();
+            if v.len() >= 3 {
+                positions.push([v[0], v[1], v[2]]);
+                normals.push(normal);
+            }
+        }
+    }
+    if positions.len() % 3 != 0 {
+        return Err(OptimizeError::new("ASCII STL has an incomplete triangle"));
+    }
+    Ok((positions, normals))
+}
+
+/// Build an uncompressed GLB from a flat triangle list (3N vertices, sequential
+/// indices). `positions.len()` must equal `normals.len()` and be a multiple of 3.
+fn build_triangle_glb(
+    positions: &[[f32; 3]],
+    normals: &[[f32; 3]],
+) -> Result<Vec<u8>, OptimizeError> {
+    use json::accessor::{ComponentType, Type};
+
+    let count = positions.len();
+    let mut min = [f32::INFINITY; 3];
+    let mut max = [f32::NEG_INFINITY; 3];
+    for p in positions {
+        for k in 0..3 {
+            min[k] = min[k].min(p[k]);
+            max[k] = max[k].max(p[k]);
+        }
+    }
+
+    let mut blob = Vec::with_capacity(count * (12 + 12) + count * 4);
+    for p in positions {
+        for c in p {
+            blob.extend_from_slice(&c.to_le_bytes());
+        }
+    }
+    let nrm_off = blob.len();
+    for n in normals {
+        for c in n {
+            blob.extend_from_slice(&c.to_le_bytes());
+        }
+    }
+    let idx_off = blob.len();
+    for i in 0..count as u32 {
+        blob.extend_from_slice(&i.to_le_bytes());
+    }
+
+    let mut root = json::Root {
+        buffer_views: vec![
+            make_view(0, 0, nrm_off, None, json::buffer::Target::ArrayBuffer),
+            make_view(0, nrm_off, idx_off - nrm_off, None, json::buffer::Target::ArrayBuffer),
+            make_view(
+                0,
+                idx_off,
+                blob.len() - idx_off,
+                None,
+                json::buffer::Target::ElementArrayBuffer,
+            ),
+        ],
+        buffers: vec![make_buffer(blob.len())],
+        ..Default::default()
+    };
+
+    let pos_acc = json::Accessor {
+        buffer_view: Some(json::Index::new(0)),
+        byte_offset: Some(USize64(0)),
+        count: USize64::from(count),
+        component_type: Valid(json::accessor::GenericComponentType(ComponentType::F32)),
+        type_: Valid(Type::Vec3),
+        min: Some(serde_json::json!(min.to_vec())),
+        max: Some(serde_json::json!(max.to_vec())),
+        name: None,
+        normalized: false,
+        sparse: None,
+        extensions: Default::default(),
+        extras: Default::default(),
+    };
+    let nrm_acc = json::Accessor {
+        buffer_view: Some(json::Index::new(1)),
+        type_: Valid(Type::Vec3),
+        ..pos_acc.clone()
+    };
+    let idx_acc = json::Accessor {
+        buffer_view: Some(json::Index::new(2)),
+        byte_offset: Some(USize64(0)),
+        count: USize64::from(count),
+        component_type: Valid(json::accessor::GenericComponentType(ComponentType::U32)),
+        type_: Valid(Type::Scalar),
+        min: None,
+        max: None,
+        name: None,
+        normalized: false,
+        sparse: None,
+        extensions: Default::default(),
+        extras: Default::default(),
+    };
+    root.accessors = vec![pos_acc, nrm_acc, idx_acc];
+
+    let mut attributes = std::collections::BTreeMap::new();
+    attributes.insert(Valid(json::mesh::Semantic::Positions), json::Index::new(0));
+    attributes.insert(Valid(json::mesh::Semantic::Normals), json::Index::new(1));
+    let mut prim = new_primitive(None);
+    prim.attributes = attributes;
+    prim.indices = Some(json::Index::new(2));
+    root.meshes = vec![json::Mesh {
+        primitives: vec![prim],
+        weights: None,
+        name: None,
+        extensions: Default::default(),
+        extras: Default::default(),
+    }];
+    root.nodes = vec![json::Node {
+        mesh: Some(json::Index::new(0)),
+        ..Default::default()
+    }];
+    root.scene = Some(json::Index::new(0));
+    root.scenes = vec![json::Scene {
+        nodes: vec![json::Index::new(0)],
+        name: None,
+        extensions: Default::default(),
+        extras: Default::default(),
+    }];
+
+    let json_bytes = json::serialize::to_vec(&root)
+        .map_err(|e| OptimizeError::new(format!("serialize STL glTF: {e}")))?;
+    build_glb(json_bytes, blob)
+}
+
 // ---- rebuild -----------------------------------------------------------------
 
 /// One output bufferView's typed data, kept until assembly so the meshopt codec
 /// can encode from the correct element type.
 enum ViewData {
     Attr3(Vec<[f32; 3]>),
-    /// Normalized `i16` VEC3 (quantized normals — core glTF, half the bytes).
-    Attr3i16(Vec<[i16; 3]>),
+    /// Normalized `i16` VEC3 normals padded to a 4th `0` component. The accessor
+    /// stays VEC3 (reads x,y,z; the padding lane is skipped by the 8-byte
+    /// stride), but the stored element is 8 bytes — meshopt's vertex codec
+    /// requires the stride be a multiple of 4, so a bare `[i16; 3]` (6 bytes)
+    /// encodes to data the spec decoder rejects ("malformed buffer"). Still
+    /// smaller than f32 VEC3 (12 bytes) and the padding lane compresses to ~zero.
+    Attr3i16(Vec<[i16; 4]>),
     Attr2(Vec<[f32; 2]>),
     Idx { indices: Vec<u32>, vertex_count: usize },
 }
@@ -638,7 +832,7 @@ impl ViewData {
                 b
             }
             ViewData::Attr3i16(v) => {
-                let mut b = Vec::with_capacity(v.len() * 6);
+                let mut b = Vec::with_capacity(v.len() * 8);
                 for e in v {
                     for c in e {
                         b.extend_from_slice(&c.to_le_bytes());
@@ -667,7 +861,7 @@ impl ViewData {
     fn stride(&self) -> usize {
         match self {
             ViewData::Attr3(_) => 12,
-            ViewData::Attr3i16(_) => 6,
+            ViewData::Attr3i16(_) => 8,
             ViewData::Attr2(_) => 8,
             ViewData::Idx { .. } => 4,
         }
@@ -746,9 +940,12 @@ impl Builder {
         if opt.has_normals {
             let n = opt.vertices.len();
             let na = if self.quantize_normals {
-                // f32 unit normal → i16 snorm (normalized) VEC3. Core glTF, no
-                // node transform, ~half the bytes, visually lossless.
-                let normals: Vec<[i16; 3]> = opt
+                // f32 unit normal → i16 snorm (normalized), padded to a 4th `0`
+                // lane so the meshopt vertex stride is 8 (a multiple of 4, which
+                // the codec requires). Accessor is still VEC3 — it reads x,y,z and
+                // the 8-byte stride skips the padding. Core glTF, no node
+                // transform, smaller than f32, visually lossless.
+                let normals: Vec<[i16; 4]> = opt
                     .vertices
                     .iter()
                     .map(|v| {
@@ -756,6 +953,7 @@ impl Builder {
                             meshopt::quantize_snorm(v.nrm[0], 16) as i16,
                             meshopt::quantize_snorm(v.nrm[1], 16) as i16,
                             meshopt::quantize_snorm(v.nrm[2], 16) as i16,
+                            0,
                         ]
                     })
                     .collect();
@@ -1292,6 +1490,147 @@ mod tests {
         .unwrap()
     }
 
+    /// Same quad but with a NORMAL attribute, so `quantize_normals` produces an
+    /// i16 normal view — the case that regressed the meshopt vertex stride.
+    fn quad_glb_with_normals() -> Vec<u8> {
+        let verts: [[f32; 3]; 6] = [
+            [0.0, 0.0, 0.0],
+            [1.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0],
+            [0.0, 1.0, 0.0],
+            [1.0, 0.0, 0.0],
+            [1.0, 1.0, 0.0],
+        ];
+        let normals: [[f32; 3]; 6] = [[0.0, 0.0, 1.0]; 6];
+        let indices: [u32; 6] = [0, 1, 2, 3, 4, 5];
+
+        let mut blob = Vec::new();
+        for v in &verts {
+            for c in v {
+                blob.extend_from_slice(&c.to_le_bytes());
+            }
+        }
+        let nrm_off = blob.len();
+        for n in &normals {
+            for c in n {
+                blob.extend_from_slice(&c.to_le_bytes());
+            }
+        }
+        let idx_off = blob.len();
+        for i in &indices {
+            blob.extend_from_slice(&i.to_le_bytes());
+        }
+
+        let vec3 = |off: usize, len: usize| json::buffer::View {
+            buffer: json::Index::new(0),
+            byte_length: USize64::from(len),
+            byte_offset: Some(USize64::from(off)),
+            byte_stride: None,
+            target: Some(Valid(json::buffer::Target::ArrayBuffer)),
+            name: None,
+            extensions: Default::default(),
+            extras: Default::default(),
+        };
+        let pos_view = vec3(0, nrm_off);
+        let nrm_view = vec3(nrm_off, idx_off - nrm_off);
+        let idx_view = json::buffer::View {
+            buffer: json::Index::new(0),
+            byte_length: USize64::from(blob.len() - idx_off),
+            byte_offset: Some(USize64::from(idx_off)),
+            byte_stride: None,
+            target: Some(Valid(json::buffer::Target::ElementArrayBuffer)),
+            name: None,
+            extensions: Default::default(),
+            extras: Default::default(),
+        };
+        let vec3_acc = |view: u32| json::Accessor {
+            buffer_view: Some(json::Index::new(view)),
+            byte_offset: Some(USize64(0)),
+            count: USize64::from(6usize),
+            component_type: Valid(json::accessor::GenericComponentType(
+                json::accessor::ComponentType::F32,
+            )),
+            type_: Valid(json::accessor::Type::Vec3),
+            min: None,
+            max: None,
+            name: None,
+            normalized: false,
+            sparse: None,
+            extensions: Default::default(),
+            extras: Default::default(),
+        };
+        let idx_acc = json::Accessor {
+            buffer_view: Some(json::Index::new(2)),
+            byte_offset: Some(USize64(0)),
+            count: USize64::from(6usize),
+            component_type: Valid(json::accessor::GenericComponentType(
+                json::accessor::ComponentType::U32,
+            )),
+            type_: Valid(json::accessor::Type::Scalar),
+            min: None,
+            max: None,
+            name: None,
+            normalized: false,
+            sparse: None,
+            extensions: Default::default(),
+            extras: Default::default(),
+        };
+        let mut attributes = std::collections::BTreeMap::new();
+        attributes.insert(Valid(json::mesh::Semantic::Positions), json::Index::new(0));
+        attributes.insert(Valid(json::mesh::Semantic::Normals), json::Index::new(1));
+        let prim = json::mesh::Primitive {
+            attributes,
+            indices: Some(json::Index::new(2)),
+            material: None,
+            mode: Valid(json::mesh::Mode::Triangles),
+            targets: None,
+            extensions: Default::default(),
+            extras: Default::default(),
+        };
+        let root = json::Root {
+            accessors: vec![vec3_acc(0), vec3_acc(1), idx_acc],
+            buffer_views: vec![pos_view, nrm_view, idx_view],
+            buffers: vec![json::Buffer {
+                byte_length: USize64::from(blob.len()),
+                name: None,
+                uri: None,
+                extensions: Default::default(),
+                extras: Default::default(),
+            }],
+            meshes: vec![json::Mesh {
+                primitives: vec![prim],
+                weights: None,
+                name: None,
+                extensions: Default::default(),
+                extras: Default::default(),
+            }],
+            nodes: vec![json::Node {
+                mesh: Some(json::Index::new(0)),
+                ..Default::default()
+            }],
+            scene: Some(json::Index::new(0)),
+            scenes: vec![json::Scene {
+                nodes: vec![json::Index::new(0)],
+                name: None,
+                extensions: Default::default(),
+                extras: Default::default(),
+            }],
+            ..Default::default()
+        };
+        let json_bytes = json::serialize::to_vec(&root).unwrap();
+        gltf::binary::Glb {
+            header: gltf::binary::Header {
+                magic: *b"glTF",
+                version: 2,
+                length: 0,
+            },
+            json: Cow::Owned(json_bytes),
+            bin: Some(Cow::Owned(blob)),
+        }
+        .to_vec()
+        .unwrap()
+    }
+
     #[test]
     fn welds_duplicate_vertices_and_reparses() {
         let glb = quad_glb();
@@ -1343,6 +1682,87 @@ mod tests {
             assert!(ext["byteLength"].as_u64().unwrap() > 0);
             assert!(ext["mode"].is_string());
         }
+    }
+
+    #[test]
+    fn quantized_normals_keep_meshopt_stride_multiple_of_four() {
+        // Regression: i16 VEC3 normals are 6 bytes, but the meshopt vertex codec
+        // requires the stride be a multiple of 4 — a bare [i16; 3] view encodes to
+        // data the spec decoder rejects ("malformed buffer data: -2"). Every
+        // meshopt bufferView stride must be padded (normals → 8 bytes).
+        let glb = quad_glb_with_normals();
+        let opt = optimize_glb(
+            &glb,
+            &Options {
+                codec: Codec::Meshopt,
+                quantize_normals: true,
+                ..Default::default()
+            },
+        )
+        .expect("optimize");
+        let reparsed = gltf::binary::Glb::from_slice(&opt.glb).expect("reparse");
+        let root: serde_json::Value =
+            serde_json::from_slice(reparsed.json.as_ref()).expect("json");
+        let mut saw_normal_stride_8 = false;
+        for bv in root["bufferViews"].as_array().expect("bufferViews") {
+            let ext = &bv["extensions"]["EXT_meshopt_compression"];
+            // Index views ("TRIANGLES") legitimately use a 2/4-byte element; the
+            // %4 rule is on ATTRIBUTES vertex streams.
+            if ext["mode"] == "ATTRIBUTES" {
+                let stride = ext["byteStride"].as_u64().expect("byteStride");
+                assert_eq!(stride % 4, 0, "meshopt vertex stride {stride} not %4");
+                if stride == 8 {
+                    saw_normal_stride_8 = true;
+                }
+            }
+        }
+        assert!(
+            saw_normal_stride_8,
+            "expected the quantized normal view at stride 8"
+        );
+    }
+
+    #[test]
+    fn stl_binary_ingests_and_optimizes() {
+        // 1-triangle binary STL: 80-byte header, u32 count, then normal + 3 verts.
+        let mut stl = vec![0u8; 80];
+        stl.extend_from_slice(&1u32.to_le_bytes());
+        let tri: [[f32; 3]; 4] = [
+            [0.0, 0.0, 1.0], // normal
+            [0.0, 0.0, 0.0],
+            [1.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0],
+        ];
+        for v in &tri {
+            for c in v {
+                stl.extend_from_slice(&c.to_le_bytes());
+            }
+        }
+        stl.extend_from_slice(&0u16.to_le_bytes()); // attribute byte count
+        assert_eq!(stl.len(), 84 + 50);
+
+        let glb = stl_to_glb(&stl).expect("stl_to_glb");
+        assert_eq!(&glb[0..4], b"glTF");
+        // Round-trips through the optimiser like any other GLB.
+        let opt = optimize_glb(
+            &glb,
+            &Options {
+                codec: Codec::Meshopt,
+                ..Default::default()
+            },
+        )
+        .expect("optimize");
+        let reparsed = gltf::binary::Glb::from_slice(&opt.glb).expect("reparse");
+        let root: serde_json::Value =
+            serde_json::from_slice(reparsed.json.as_ref()).expect("json");
+        assert_eq!(root["meshes"].as_array().expect("meshes").len(), 1);
+    }
+
+    #[test]
+    fn stl_ascii_ingests() {
+        let ascii = "solid t\nfacet normal 0 0 1\nouter loop\nvertex 0 0 0\nvertex 1 0 0\nvertex 0 1 0\nendloop\nendfacet\nendsolid t\n";
+        let glb = stl_to_glb(ascii.as_bytes()).expect("ascii stl");
+        assert_eq!(&glb[0..4], b"glTF");
     }
 
     #[test]

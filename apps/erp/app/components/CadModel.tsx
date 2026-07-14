@@ -22,29 +22,108 @@ import {
   getFileSizeLimit,
   supportedModelTypes
 } from "@carbon/utils";
+import { ModelPreview } from "@carbon/viewer/model-preview";
 import { nanoid } from "nanoid";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { LuCloudUpload } from "react-icons/lu";
 import { useFetcher, useRevalidator } from "react-router";
 import { useUser } from "~/hooks";
 import { getPrivateUrl, path } from "~/utils/path";
-import { ModelPreview } from "./ModelPreview";
 
 const SIZE_LIMIT = getFileSizeLimit("CAD_MODEL_UPLOAD");
 
+type ModelArtifacts = {
+  optimizedModelPath: string | null;
+  lodPath: string | null;
+  glbPath: string | null;
+  thumbnailPath: string | null;
+  optimizeStatus:
+    | "Idle"
+    | "Queued"
+    | "Processing"
+    | "Success"
+    | "Failed"
+    | null;
+  /** Raw source bytes (kept, never shrinks). */
+  size: number | null;
+  /** Optimised GLB bytes — surfaced next to `size` to show the reduction. */
+  optimizedSize: number | null;
+};
+
+/**
+ * modelUpload.id is the model's filename (`${company}/models/${id}.ext`), so the
+ * id — and thus its artifact paths — is recoverable from `modelPath` alone.
+ */
+function modelIdFromPath(modelPath: string | null): string | null {
+  if (!modelPath) return null;
+  const base = modelPath.split("/").pop() ?? "";
+  return base.replace(/\.[^.]+$/, "") || null;
+}
+
+/**
+ * Resolves a model's assembler artifact paths (optimised / LOD / assembly GLB /
+ * thumbnail) via the `model.artifacts` API loader — keyed by the id derived from
+ * `modelPath`, so no summary loader has to carry these columns. While optimise is
+ * in flight it polls so the compact GLB swaps into the viewer without a reload;
+ * it stops once an interactive artifact lands, optimise fails, or after a bounded
+ * window (non-mesh uploads stay `Idle` and are only briefly checked).
+ */
+function useModelArtifacts(modelPath: string | null): {
+  artifacts: ModelArtifacts | undefined;
+  /** True while a server GLB might still arrive (fetch unresolved / optimise in
+   *  flight). Gates the heavy WASM fallback so it never loads for nothing. */
+  pending: boolean;
+} {
+  const fetcher = useFetcher<ModelArtifacts>();
+  const load = fetcher.load;
+  const dataRef = useRef<ModelArtifacts | undefined>(undefined);
+  dataRef.current = fetcher.data;
+  const [pending, setPending] = useState(true);
+
+  const modelUploadId = modelIdFromPath(modelPath);
+
+  useEffect(() => {
+    if (!modelUploadId) {
+      setPending(false);
+      return;
+    }
+    setPending(true);
+    const url = path.to.api.modelArtifacts(modelUploadId);
+    load(url);
+
+    let attempts = 0;
+    const timer = setInterval(() => {
+      const data = dataRef.current;
+      const hasInteractive = Boolean(data?.optimizedModelPath || data?.glbPath);
+      if (hasInteractive || data?.optimizeStatus === "Failed") {
+        clearInterval(timer);
+        setPending(false);
+        return;
+      }
+      const inFlight =
+        data?.optimizeStatus === "Queued" ||
+        data?.optimizeStatus === "Processing";
+      // `Idle`/undefined is the brief window before the job starts (or a non-mesh
+      // upload that never optimises) — poll it only for a short grace period.
+      const cap = inFlight ? 60 : 8; // ~3min in flight vs ~24s settling
+      attempts += 1;
+      if (attempts > cap) {
+        clearInterval(timer);
+        setPending(false);
+        return;
+      }
+      load(url);
+    }, 3000);
+
+    return () => clearInterval(timer);
+  }, [modelUploadId, load]);
+
+  return { artifacts: fetcher.data, pending };
+}
+
 type CadModelProps = {
   modelPath: string | null;
-  /**
-   * Assembler artifacts (storage paths). When present the preview renders these
-   * with three.js instead of tessellating the raw source with WASM: `lodPath`
-   * (instant single-draw LOD) → `optimizedModelPath` (compact interactive GLB) →
-   * `glbPath` (lossless assembly GLB). `thumbnailPath` is the static poster.
-   */
-  optimizedModelPath?: string | null;
-  glbPath?: string | null;
-  lodPath?: string | null;
-  thumbnailPath?: string | null;
   metadata?: {
     itemId?: string;
     salesRfqLineId?: string;
@@ -63,10 +142,6 @@ const CadModel = ({
   isReadOnly,
   metadata,
   modelPath,
-  optimizedModelPath,
-  glbPath,
-  lodPath,
-  thumbnailPath,
   title,
   uploadClassName,
   viewerClassName
@@ -82,6 +157,17 @@ const CadModel = ({
   const [file, setFile] = useState<File | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const deleteModal = useDisclosure();
+
+  const { artifacts, pending } = useModelArtifacts(modelPath);
+  const hasServerArtifact = Boolean(
+    artifacts?.optimizedModelPath || artifacts?.glbPath
+  );
+  // Only reach for the ~3 MB online-3d-viewer WASM tessellator when there's
+  // genuinely no server model to show: a just-uploaded in-memory file, or an
+  // existing model that has settled without a GLB (optimise failed / non-mesh).
+  // Never while an artifact is still resolving — that pulls occt-import-js.wasm
+  // for nothing when the optimised GLB is seconds away.
+  const useWasmFallback = Boolean(file) || (!hasServerArtifact && !pending);
 
   const onDelete = async () => {
     if (!carbon) {
@@ -208,20 +294,47 @@ const CadModel = ({
       {() => {
         return file || modelPath ? (
           <>
-            <ModelPreview
-              key={modelPath}
-              sourceFile={file}
-              sourceUrl={modelPath ? getPrivateUrl(modelPath) : null}
-              optimizedUrl={
-                optimizedModelPath ? getPrivateUrl(optimizedModelPath) : null
-              }
-              glbUrl={glbPath ? getPrivateUrl(glbPath) : null}
-              lodUrl={lodPath ? getPrivateUrl(lodPath) : null}
-              thumbnailUrl={thumbnailPath ? getPrivateUrl(thumbnailPath) : null}
-              mode={mode}
-              className={viewerClassName}
-              onDelete={canDelete ? deleteModal.onOpen : undefined}
-            />
+            <div className="relative h-full w-full">
+              <ModelPreview
+                key={modelPath}
+                sourceFile={useWasmFallback ? file : null}
+                sourceUrl={
+                  useWasmFallback && modelPath ? getPrivateUrl(modelPath) : null
+                }
+                optimizedUrl={
+                  artifacts?.optimizedModelPath
+                    ? getPrivateUrl(artifacts.optimizedModelPath)
+                    : null
+                }
+                glbUrl={
+                  artifacts?.glbPath ? getPrivateUrl(artifacts.glbPath) : null
+                }
+                lodUrl={
+                  artifacts?.lodPath ? getPrivateUrl(artifacts.lodPath) : null
+                }
+                thumbnailUrl={
+                  artifacts?.thumbnailPath
+                    ? getPrivateUrl(artifacts.thumbnailPath)
+                    : null
+                }
+                mode={mode}
+                className={viewerClassName}
+                onDelete={canDelete ? deleteModal.onOpen : undefined}
+              />
+              {artifacts?.size && artifacts?.optimizedSize ? (
+                <div className="pointer-events-none absolute bottom-2 left-2 z-10 rounded-md border border-border bg-popover px-2 py-1 font-mono text-xs text-muted-foreground shadow-sm tabular-nums">
+                  {convertKbToString(Math.round(artifacts.size / 1024))}
+                  {" → "}
+                  <span className="text-emerald-500">
+                    {convertKbToString(
+                      Math.round(artifacts.optimizedSize / 1024)
+                    )}
+                  </span>{" "}
+                  · {(artifacts.size / artifacts.optimizedSize).toFixed(1)}×
+                  smaller
+                </div>
+              ) : null}
+            </div>
             {deleteModal.isOpen && (
               <Modal
                 open
@@ -337,7 +450,7 @@ const CadModelUpload = ({
     <div
       {...getRootProps()}
       className={cn(
-        "group flex flex-col flex-grow rounded-lg border border-border bg-gradient-to-bl from-card from-50% via-card to-background dark:border-none dark:shadow-[inset_0_0.5px_0_rgb(255_255_255_/_0.08),_inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1),0px_0px_4px_rgba(0,_0,_0,_0.08)] text-card-foreground shadow-sm w-full min-h-[400px] ",
+        "group flex h-full flex-col flex-grow rounded-lg border border-border bg-gradient-to-bl from-card from-50% via-card to-background dark:border-none dark:shadow-[inset_0_0.5px_0_rgb(255_255_255_/_0.08),_inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1),0px_0px_4px_rgba(0,_0,_0,_0.08)] text-card-foreground shadow-sm w-full min-h-[400px] ",
         !hasFile &&
           "cursor-pointer hover:border-primary/30 hover:border-dashed hover:to-primary/10 hover:via-card border-2 border-dashed",
         className

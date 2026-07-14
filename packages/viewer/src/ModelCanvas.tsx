@@ -13,6 +13,15 @@ import { AssemblyViewer } from "./AssemblyViewer";
 import { useAssembly } from "./useAssembly";
 import { cn } from "./utils";
 
+/** Model measurements in model-space units (CAD tessellations are mm). */
+export type ModelMetrics = {
+  dimensions: { x: number; y: number; z: number };
+  /** Surface area (mm²), or null when skipped on a very large mesh. */
+  surfaceArea: number | null;
+  /** Enclosed volume (mm³), or null when skipped / mesh isn't closed. */
+  volume: number | null;
+};
+
 export type ModelCanvasProps = {
   /** URL of a meshopt-compressed GLB (the assembler's optimised / LOD artifact). */
   glbUrl: string | null;
@@ -21,32 +30,53 @@ export type ModelCanvasProps = {
   viewCube?: boolean;
   /** Fit the camera to the model's bounds once it loads (default true). */
   autoFrame?: boolean;
+  /** Gate orbit/zoom/pan — false shows the model but passes scroll through. */
+  interactive?: boolean;
+  /** Bump this to re-frame the camera (the "reset view" action). */
+  resetSignal?: number;
   /** Fired once the GLB has loaded and framed — the cross-fade trigger. */
   onLoaded?: () => void;
+  /** Fired once with the loaded model's measurements (bbox always; area/volume
+   *  when the mesh is small enough to measure client-side). */
+  onMetrics?: (metrics: ModelMetrics) => void;
   className?: string;
 };
 
+// Above this triangle count, skip the O(n) area/volume sweep — it would jank the
+// main thread. Dimensions (bbox) are always cheap. Exact mass properties should
+// come from the assembler (OCCT) for big models.
+const MAX_MEASURE_TRIS = 1_500_000;
+
 /**
  * Standalone static GLB viewer — the reusable core behind the assembly player.
- * Loads a meshopt GLB (via `useAssembly`), frames it, and applies the CAD depth
- * fixes (near/far range + per-material polygon offset). No steps, motion, or
- * picking — just orbit + view. The interactive tier of the progressive
- * `ModelPreview`; also usable anywhere a single optimised model needs showing.
+ * Loads a meshopt GLB (via `useAssembly`), frames it, applies the CAD depth
+ * fixes (near/far range + per-material polygon offset), and reports the model's
+ * measurements. No steps, motion, or picking — just orbit + view. The
+ * interactive tier of the progressive `ModelPreview`; also usable anywhere a
+ * single optimised model needs showing.
  */
 export function ModelCanvas({
   glbUrl,
   mode = "dark",
   viewCube = true,
   autoFrame = true,
+  interactive = true,
+  resetSignal = 0,
   onLoaded,
+  onMetrics,
   className
 }: ModelCanvasProps) {
   const { scene, isLoading, error } = useAssembly(glbUrl, null);
 
   const onLoadedRef = useRef(onLoaded);
   onLoadedRef.current = onLoaded;
+  const onMetricsRef = useRef(onMetrics);
+  onMetricsRef.current = onMetrics;
+
   useEffect(() => {
-    if (scene) onLoadedRef.current?.();
+    if (!scene) return;
+    onLoadedRef.current?.();
+    onMetricsRef.current?.(measureModel(scene));
   }, [scene]);
 
   return (
@@ -54,9 +84,16 @@ export function ModelCanvas({
       <AssemblyViewer
         mode={mode}
         viewCube={viewCube}
+        interactive={interactive}
         className="absolute inset-0"
       >
-        {scene && <ModelScene scene={scene} autoFrame={autoFrame} />}
+        {scene && (
+          <ModelScene
+            scene={scene}
+            autoFrame={autoFrame}
+            resetSignal={resetSignal}
+          />
+        )}
       </AssemblyViewer>
       {isLoading && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
@@ -93,10 +130,12 @@ export function ModelCanvas({
 
 function ModelScene({
   scene,
-  autoFrame
+  autoFrame,
+  resetSignal
 }: {
   scene: Object3D;
   autoFrame: boolean;
+  resetSignal: number;
 }) {
   const camera = useThree((state) => state.camera);
   const controls = useThree(
@@ -148,9 +187,11 @@ function ModelScene({
       const center = box.getCenter(new Vector3());
       const radius = box.getSize(new Vector3()).length() / 2;
       const fov = camera instanceof PerspectiveCamera ? camera.fov : 45;
+      // Fit the bounding sphere with a small margin. Lower factors zoom in more —
+      // the sphere circumscribes the model, so a tight fit still leaves headroom.
       const distance = Math.max(
-        (radius / Math.tan(((fov / 2) * Math.PI) / 180)) * 1.4,
-        radius * 2
+        (radius / Math.tan(((fov / 2) * Math.PI) / 180)) * 1.1,
+        radius * 1.5
       );
       const direction = camera.position
         .clone()
@@ -173,5 +214,70 @@ function ModelScene({
     frameBox(new Box3().setFromObject(scene));
   }, [scene, controls, autoFrame, frameBox]);
 
+  // Re-frame on demand (the reset-view action). Skip the initial value so it
+  // doesn't double-frame on mount.
+  const resetSeenRef = useRef(resetSignal);
+  useEffect(() => {
+    if (resetSignal === resetSeenRef.current) return;
+    resetSeenRef.current = resetSignal;
+    frameBox(new Box3().setFromObject(scene));
+  }, [resetSignal, scene, frameBox]);
+
   return <primitive object={scene} />;
+}
+
+/** Bounding-box dimensions (always) + surface area / volume (small meshes). */
+function measureModel(scene: Object3D): ModelMetrics {
+  scene.updateMatrixWorld(true);
+  const box = new Box3().setFromObject(scene);
+  const size = box.getSize(new Vector3());
+  const dimensions = { x: size.x, y: size.y, z: size.z };
+
+  let triangles = 0;
+  scene.traverse((object) => {
+    const mesh = object as Mesh;
+    if (!mesh.isMesh || !mesh.geometry) return;
+    const geom = mesh.geometry;
+    triangles += geom.index
+      ? geom.index.count / 3
+      : (geom.attributes.position?.count ?? 0) / 3;
+  });
+  if (triangles === 0 || triangles > MAX_MEASURE_TRIS) {
+    return { dimensions, surfaceArea: null, volume: null };
+  }
+
+  let area = 0;
+  let volume = 0;
+  const a = new Vector3();
+  const b = new Vector3();
+  const c = new Vector3();
+  const ab = new Vector3();
+  const ac = new Vector3();
+  const cross = new Vector3();
+  scene.traverse((object) => {
+    const mesh = object as Mesh;
+    if (!mesh.isMesh || !mesh.geometry) return;
+    const pos = mesh.geometry.attributes.position;
+    if (!pos) return;
+    const idx = mesh.geometry.index;
+    const mw = mesh.matrixWorld;
+    const tri = (i0: number, i1: number, i2: number) => {
+      a.fromBufferAttribute(pos, i0).applyMatrix4(mw);
+      b.fromBufferAttribute(pos, i1).applyMatrix4(mw);
+      c.fromBufferAttribute(pos, i2).applyMatrix4(mw);
+      area += cross.subVectors(b, a).cross(ac.subVectors(c, a)).length() * 0.5;
+      // Signed volume of the tetrahedron (origin, a, b, c); sums to the enclosed
+      // volume for a closed mesh regardless of where the origin sits.
+      volume += a.dot(ab.copy(b).cross(c)) / 6;
+    };
+    if (idx) {
+      for (let i = 0; i < idx.count; i += 3) {
+        tri(idx.getX(i), idx.getX(i + 1), idx.getX(i + 2));
+      }
+    } else {
+      for (let i = 0; i < pos.count; i += 3) tri(i, i + 1, i + 2);
+    }
+  });
+
+  return { dimensions, surfaceArea: area, volume: Math.abs(volume) };
 }
