@@ -469,6 +469,49 @@ async function readItemAttributes(
   return (item.data ?? null) as Row | null;
 }
 
+// Resolve component item UUIDs → human-readable ids (e.g. `P000123.A`). The diff
+// viewer labels each BOM line by its component; a `methodMaterial` row carries only
+// the item UUID, and the client `useItems` store can miss a just-minted/placeholder
+// component. Resolving here (server-side, guaranteed present) makes the label
+// store-independent. Flat select scoped by companyId.
+async function readItemReadableIds(
+  client: SupabaseClient<Database>,
+  itemIds: string[],
+  companyId: string
+): Promise<Map<string, string>> {
+  const map = new Map<string, string>();
+  const unique = [...new Set(itemIds)].filter((id) => id.length > 0);
+  if (unique.length === 0) return map;
+  const items = await client
+    .from("item")
+    .select("id, readableIdWithRevision")
+    .in("id", unique)
+    .eq("companyId", companyId);
+  for (const row of items.data ?? []) {
+    if (row.id && row.readableIdWithRevision)
+      map.set(row.id, row.readableIdWithRevision);
+  }
+  return map;
+}
+
+// Stamp the resolved readable id onto each material diff row (before + after) under
+// `itemReadableId`, so the read-only viewer can label the line without a store
+// lookup. Applied AFTER diffMethod so it never counts as a business-field change.
+function stampMaterialReadableIds(
+  materials: MethodDiffEntry<Row>[],
+  readableIds: Map<string, string>
+): void {
+  for (const entry of materials) {
+    for (const row of [entry.before, entry.after]) {
+      const itemId = (row as { itemId?: string } | null)?.itemId;
+      if (row && typeof itemId === "string") {
+        const readable = readableIds.get(itemId);
+        if (readable) (row as Row).itemReadableId = readable;
+      }
+    }
+  }
+}
+
 // For every affected item: read the base (source Active) method as `base` and the
 // CO-owned Draft method as `target` (both REAL method tables), correlate by
 // natural keys, run the pure `diffMethod`, and collect. Also returns the manual
@@ -545,6 +588,17 @@ export async function getChangeOrderDiff(
       baseOperationChildren: base.children,
       targetOperationChildren: target.children
     });
+
+    // Label BOM lines by their component's readable id (store-independent).
+    const componentIds = [...base.materials, ...target.materials]
+      .map((m) => m.itemId)
+      .filter((id): id is string => typeof id === "string");
+    const readableIds = await readItemReadableIds(
+      client,
+      componentIds,
+      companyId
+    );
+    stampMaterialReadableIds(diff.materials, readableIds);
 
     items.push({
       affectedItemId: affectedItem.id,

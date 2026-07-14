@@ -1,7 +1,15 @@
-import { cn, HStack, VStack } from "@carbon/react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+  cn,
+  HStack,
+  VStack
+} from "@carbon/react";
 import { getItemReadableId } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import type { ReactNode } from "react";
+import { LuChevronRight } from "react-icons/lu";
 import { useItems } from "~/stores";
 import type {
   ChangeOrderItemDiff,
@@ -14,9 +22,12 @@ import { DiffBadge } from "./diff-ui";
 // -----------------------------------------------------------------------------
 // Read-only Change Order diff viewer (authoring-time). Renders the CO-owned draft
 // method vs the base Active method it was copied from as a git-style, tree-shaped
-// redline: BOM and BOP as SEPARATE sections plus an Attributes section, each entry
-// colored in the audit-log red→green style. Unchanged rows are filtered out; an
-// unchanged operation is shown (uncolored) only when its children changed.
+// redline: BOM and BOP as SEPARATE sections plus an Attributes section. Each entry
+// is a top-level TREE NODE (a BOM component / a BOP operation) whose children are
+// its properties — the FULL property list on an add (all green), the old values on
+// a remove (all red), or the changed old→new pairs on a modify. Colors follow the
+// audit-log red→green style. Unchanged rows are filtered out; an unchanged
+// operation is shown (uncolored) only when its children changed.
 //
 // This is NOT the release merge UI (ChangeOrderReleaseMerge / ...ConflictResolver,
 // which have radio-button choices) — it is purely read-only, no forms, no state.
@@ -26,7 +37,8 @@ type Row = Record<string, unknown>;
 type Items = ReturnType<typeof useItems>[0];
 
 // Humanized labels shared with the merge resolver's FIELD_LABELS, extended with
-// the item-attribute columns the attribute diff surfaces.
+// the item-attribute columns the attribute diff surfaces. The declared order here
+// also drives property ordering in the full-property (add/remove) lists.
 const FIELD_LABELS: Record<string, string> = {
   quantity: "Quantity",
   unitOfMeasureCode: "Unit",
@@ -54,6 +66,37 @@ const FIELD_LABELS: Record<string, string> = {
   toolId: "Tool"
 };
 
+// Sort index for a field in the full-property list — known fields keep the order
+// declared in FIELD_LABELS, unknown fields sort alphabetically after them.
+const FIELD_ORDER: Record<string, number> = Object.fromEntries(
+  Object.keys(FIELD_LABELS).map((k, i) => [k, i])
+);
+
+// Audit / linkage / tenancy columns never worth showing as a property. Mirrors the
+// diff engine's IGNORED_FIELDS plus a few display-only noise columns.
+const NOISE_FIELDS = new Set<string>([
+  "id",
+  "companyId",
+  "changeOrderId",
+  "affectedItemId",
+  "sourceMaterialId",
+  "sourceOperationId",
+  "sourceId",
+  "stagedOperationId",
+  "makeMethodId",
+  "operationId",
+  "itemType",
+  "itemReadableId",
+  "createdAt",
+  "createdBy",
+  "updatedAt",
+  "updatedBy",
+  "customFields",
+  "externalId"
+]);
+
+const EMPTY_SKIP = new Set<string>();
+
 function humanizeField(field: string): string {
   return (
     FIELD_LABELS[field] ??
@@ -67,6 +110,25 @@ function formatValue(field: string, value: unknown): string {
   if (field === "workInstruction" || typeof value === "object") return "Set";
   if (typeof value === "boolean") return value ? "Yes" : "No";
   return String(value);
+}
+
+// Every meaningful, non-empty business field of a row, minus the noise set and any
+// fields already used as the node label — ordered by FIELD_ORDER.
+function meaningfulFields(row: Row, skip: Set<string>): string[] {
+  return Object.keys(row)
+    .filter(
+      (f) =>
+        !NOISE_FIELDS.has(f) &&
+        !skip.has(f) &&
+        row[f] !== null &&
+        row[f] !== undefined &&
+        row[f] !== ""
+    )
+    .sort((a, b) => {
+      const ia = FIELD_ORDER[a] ?? Number.MAX_SAFE_INTEGER;
+      const ib = FIELD_ORDER[b] ?? Number.MAX_SAFE_INTEGER;
+      return ia !== ib ? ia - ib : a.localeCompare(b);
+    });
 }
 
 // The audit-log red/green pill (mirrors AuditLogDrawer's ChangePill).
@@ -91,6 +153,17 @@ function Pill({
   );
 }
 
+// A tree-child region: indented under its parent node with a hierarchy guide line.
+function TreeChildren({ children }: { children: ReactNode }) {
+  return (
+    <div className="w-full border-l border-border/60 pl-3 ml-1">
+      <VStack spacing={1} className="w-full">
+        {children}
+      </VStack>
+    </div>
+  );
+}
+
 // One "label: [old] → [new]" line for a modified field.
 function FieldRow({
   field,
@@ -102,7 +175,7 @@ function FieldRow({
   after: unknown;
 }) {
   return (
-    <div className="flex items-center gap-2 text-xs pl-4">
+    <div className="flex items-center gap-2 text-xs">
       <span className="text-muted-foreground min-w-[6rem]">
         {humanizeField(field)}
       </span>
@@ -113,63 +186,112 @@ function FieldRow({
   );
 }
 
-// One-sided context row for an added (all green) or removed (all red) entry — the
-// "either they are all new, or they are modified" case.
-function ContextRow({
-  fields,
-  row,
+// One "label: [value]" line for an added (green) or removed (red) property.
+function ValueRow({
+  field,
+  value,
   variant
 }: {
-  fields: string[];
-  row: Row | null;
+  field: string;
+  value: unknown;
   variant: "old" | "new";
 }) {
-  if (!row) return null;
-  const shown = fields.filter(
-    (f) => row[f] !== null && row[f] !== undefined && row[f] !== ""
-  );
-  if (shown.length === 0) return null;
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs pl-4">
-      {shown.map((f) => (
-        <span key={f} className="flex items-center gap-1">
-          <span className="text-muted-foreground">{humanizeField(f)}</span>
-          <Pill variant={variant}>{formatValue(f, row[f])}</Pill>
-        </span>
-      ))}
+    <div className="flex items-center gap-2 text-xs">
+      <span className="text-muted-foreground min-w-[6rem]">
+        {humanizeField(field)}
+      </span>
+      <Pill variant={variant}>{formatValue(field, value)}</Pill>
     </div>
   );
 }
 
-// The entry title line: colored green (added) / red + strikethrough (removed);
-// no color for modified or an unchanged-with-changed-children operation.
-function EntryHeader({
+// The full property list for an added (all new, green) or removed (all old, red)
+// node — "either they are all new, or they are modified" per the diff spec.
+function AllPropertyRows({
+  row,
+  variant,
+  skip = EMPTY_SKIP
+}: {
+  row: Row | null;
+  variant: "old" | "new";
+  skip?: Set<string>;
+}): ReactNode {
+  if (!row) return null;
+  const fields = meaningfulFields(row, skip);
+  if (fields.length === 0) return null;
+  return fields.map((f) => (
+    <ValueRow key={f} field={f} value={row[f]} variant={variant} />
+  ));
+}
+
+// The status color for a node title: green (added) / red + strikethrough
+// (removed); no color for modified or an unchanged-with-changed-children op.
+function statusColor(status: MethodDiffStatus): string | null {
+  return status === "added"
+    ? "bg-green-500/10 text-green-500"
+    : status === "removed"
+      ? "bg-red-500/10 text-red-500 line-through"
+      : null;
+}
+
+// A collapsible tree node: a title line (colored by status, with the Added /
+// Modified / Removed badge) over its body, which lives in a collapsible region so
+// the user can fold away parts of a large diff. `collapsible` is false for a leaf
+// node with no body — then it renders a plain title line (aligned with a chevron
+// spacer) and no toggle. Defaults to open so nothing is hidden by default.
+function TreeNode({
   label,
-  status
+  status,
+  collapsible,
+  children
 }: {
   label: ReactNode;
   status: MethodDiffStatus;
+  collapsible: boolean;
+  children?: ReactNode;
 }) {
-  const colored =
-    status === "added"
-      ? "bg-green-500/10 text-green-500"
-      : status === "removed"
-        ? "bg-red-500/10 text-red-500 line-through"
-        : null;
+  const colored = statusColor(status);
+  const title = (
+    <span
+      className={cn("text-sm", colored && `px-2 py-0.5 rounded ${colored}`)}
+    >
+      {label}
+    </span>
+  );
+
+  if (!collapsible) {
+    return (
+      <HStack className="justify-between w-full">
+        <HStack spacing={1} className="min-w-0">
+          <span className="size-3 shrink-0" aria-hidden />
+          {title}
+        </HStack>
+        <DiffBadge status={status} />
+      </HStack>
+    );
+  }
+
   return (
-    <HStack className="justify-between w-full">
-      <span
-        className={cn("text-sm", colored && `px-2 py-0.5 rounded ${colored}`)}
-      >
-        {label}
-      </span>
-      <DiffBadge status={status} />
-    </HStack>
+    <Collapsible defaultOpen className="w-full">
+      <HStack className="justify-between w-full">
+        <CollapsibleTrigger className="group flex min-w-0 items-center gap-1 text-left">
+          <LuChevronRight className="size-3 shrink-0 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />
+          {title}
+        </CollapsibleTrigger>
+        <DiffBadge status={status} />
+      </HStack>
+      <CollapsibleContent>
+        <TreeChildren>{children}</TreeChildren>
+      </CollapsibleContent>
+    </Collapsible>
   );
 }
 
-const MATERIAL_CONTEXT = ["quantity", "unitOfMeasureCode"];
-const OPERATION_CONTEXT = ["order", "workCenterId"];
+// Fields used as a node's label — skipped from its property list to avoid echoing
+// the header text back as a property row.
+const MATERIAL_LABEL_FIELDS = new Set(["itemId"]);
+const OPERATION_LABEL_FIELDS = new Set(["description"]);
 
 function modifiedFieldRows(entry: MethodDiffEntry<Row>): ReactNode {
   if (!entry.changedFields) return null;
@@ -178,6 +300,40 @@ function modifiedFieldRows(entry: MethodDiffEntry<Row>): ReactNode {
       <FieldRow key={field} field={field} before={before} after={after} />
     )
   );
+}
+
+// The body of a top-level node (or child node): the changed old→new pairs when
+// modified, the full new property list when added, the full old list when removed.
+function EntryBody({
+  entry,
+  skip
+}: {
+  entry: MethodDiffEntry<Row>;
+  skip: Set<string>;
+}): ReactNode {
+  if (entry.status === "modified") return modifiedFieldRows(entry);
+  if (entry.status === "added")
+    return (
+      <AllPropertyRows row={entry.after as Row} variant="new" skip={skip} />
+    );
+  if (entry.status === "removed")
+    return (
+      <AllPropertyRows row={entry.before as Row} variant="old" skip={skip} />
+    );
+  return null;
+}
+
+// Whether an entry has any renderable body (changed fields, or a non-empty
+// property list after the noise/label filter) — drives whether the node is
+// collapsible or renders as a bare leaf.
+function entryHasBody(entry: MethodDiffEntry<Row>, skip: Set<string>): boolean {
+  if (entry.status === "modified")
+    return Object.keys(entry.changedFields ?? {}).length > 0;
+  if (entry.status === "added")
+    return meaningfulFields((entry.after as Row) ?? {}, skip).length > 0;
+  if (entry.status === "removed")
+    return meaningfulFields((entry.before as Row) ?? {}, skip).length > 0;
+  return false;
 }
 
 function MaterialEntry({
@@ -189,49 +345,49 @@ function MaterialEntry({
 }) {
   const row = (entry.after ?? entry.before) as Row | null;
   const itemId = (row?.itemId as string | undefined) ?? "";
-  const label = getItemReadableId(items, itemId) || itemId || "Material";
+  // Prefer the server-resolved readable id (store-independent), then the store
+  // lookup, then the raw id as a last resort.
+  const label =
+    (row?.itemReadableId as string | undefined) ||
+    getItemReadableId(items, itemId) ||
+    itemId ||
+    "Material";
   return (
-    <VStack spacing={1} className="w-full">
-      <EntryHeader label={label} status={entry.status} />
-      {entry.status === "modified" && modifiedFieldRows(entry)}
-      {entry.status === "added" && (
-        <ContextRow
-          fields={MATERIAL_CONTEXT}
-          row={entry.after as Row}
-          variant="new"
-        />
-      )}
-      {entry.status === "removed" && (
-        <ContextRow
-          fields={MATERIAL_CONTEXT}
-          row={entry.before as Row}
-          variant="old"
-        />
-      )}
-    </VStack>
+    <TreeNode
+      label={label}
+      status={entry.status}
+      collapsible={entryHasBody(entry, MATERIAL_LABEL_FIELDS)}
+    >
+      <EntryBody entry={entry} skip={MATERIAL_LABEL_FIELDS} />
+    </TreeNode>
   );
 }
 
-// The three operation-child buckets, each with a label extractor for its rows.
+// The three operation-child buckets, each with a label extractor for its rows and
+// the label fields to skip from that row's property list.
 const CHILD_BUCKETS: {
   key: "steps" | "parameters" | "tools";
   title: ReactNode;
   labelOf: (row: Row | null) => string;
+  skip: Set<string>;
 }[] = [
   {
     key: "steps",
     title: <Trans>Steps</Trans>,
-    labelOf: (r) => (r?.name as string) || (r?.description as string) || "Step"
+    labelOf: (r) => (r?.name as string) || (r?.description as string) || "Step",
+    skip: new Set(["name", "description"])
   },
   {
     key: "parameters",
     title: <Trans>Parameters</Trans>,
-    labelOf: (r) => (r?.key as string) || "Parameter"
+    labelOf: (r) => (r?.key as string) || "Parameter",
+    skip: new Set(["key"])
   },
   {
     key: "tools",
     title: <Trans>Tools</Trans>,
-    labelOf: (r) => (r?.toolId as string) || "Tool"
+    labelOf: (r) => (r?.toolId as string) || "Tool",
+    skip: new Set(["toolId"])
   }
 ];
 
@@ -248,57 +404,39 @@ function OperationEntry({ entry }: { entry: OperationDiffEntry }) {
   const label =
     (row?.description as string) || `Operation ${row?.order ?? ""}`.trim();
   const children = entry.children;
+  const buckets = children
+    ? CHILD_BUCKETS.map((bucket) => ({
+        bucket,
+        changed: children[bucket.key].filter((c) => c.status !== "unchanged")
+      })).filter((b) => b.changed.length > 0)
+    : [];
+  const collapsible =
+    entryHasBody(entry, OPERATION_LABEL_FIELDS) || buckets.length > 0;
   return (
-    <VStack spacing={1} className="w-full">
-      <EntryHeader label={label} status={entry.status} />
-      {entry.status === "modified" && modifiedFieldRows(entry)}
-      {entry.status === "added" && (
-        <ContextRow
-          fields={OPERATION_CONTEXT}
-          row={entry.after as Row}
-          variant="new"
-        />
-      )}
-      {entry.status === "removed" && (
-        <ContextRow
-          fields={OPERATION_CONTEXT}
-          row={entry.before as Row}
-          variant="old"
-        />
-      )}
-      {children &&
-        CHILD_BUCKETS.map((bucket) => {
-          const changed = children[bucket.key].filter(
-            (c) => c.status !== "unchanged"
-          );
-          if (changed.length === 0) return null;
-          return (
-            <div key={bucket.key} className="pl-4 w-full">
-              <div className="text-[0.65rem] font-medium uppercase text-muted-foreground pb-0.5">
-                {bucket.title}
-              </div>
-              <VStack spacing={1} className="w-full">
-                {changed.map((child, i) => {
-                  const childRow = (child.after ?? child.before) as Row | null;
-                  return (
-                    <VStack
-                      key={`${bucket.key}-${i}`}
-                      spacing={1}
-                      className="w-full"
-                    >
-                      <EntryHeader
-                        label={bucket.labelOf(childRow)}
-                        status={child.status}
-                      />
-                      {child.status === "modified" && modifiedFieldRows(child)}
-                    </VStack>
-                  );
-                })}
-              </VStack>
-            </div>
-          );
-        })}
-    </VStack>
+    <TreeNode label={label} status={entry.status} collapsible={collapsible}>
+      <EntryBody entry={entry} skip={OPERATION_LABEL_FIELDS} />
+      {buckets.map(({ bucket, changed }) => (
+        <div key={bucket.key} className="w-full">
+          <div className="text-[0.65rem] font-medium uppercase text-muted-foreground pb-0.5">
+            {bucket.title}
+          </div>
+          <TreeChildren>
+            {changed.map((child, i) => (
+              <TreeNode
+                key={`${bucket.key}-${i}`}
+                label={bucket.labelOf(
+                  (child.after ?? child.before) as Row | null
+                )}
+                status={child.status}
+                collapsible={entryHasBody(child, bucket.skip)}
+              >
+                <EntryBody entry={child} skip={bucket.skip} />
+              </TreeNode>
+            ))}
+          </TreeChildren>
+        </div>
+      ))}
+    </TreeNode>
   );
 }
 
