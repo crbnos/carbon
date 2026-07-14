@@ -5,7 +5,10 @@ import { validationError, validator } from "@carbon/form";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { jobCompleteValidator } from "~/modules/production";
+import {
+  advanceServiceLineFulfillment,
+  jobCompleteValidator
+} from "~/modules/production";
 import type { Handle } from "~/utils/handle";
 import { path, requestReferrer } from "~/utils/path";
 
@@ -52,6 +55,28 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw redirect(
       requestReferrer(request) ?? path.to.job(jobId),
       await flash(request, error(rpc.error, "Failed to complete job"))
+    );
+  }
+
+  // Services never ship — completing the job is the fulfillment event, so
+  // advance the linked sales-order line (no-op for inventory-tracked items,
+  // whose lines are advanced by post-shipment).
+  const fulfillment = await advanceServiceLineFulfillment(client, {
+    jobId,
+    companyId,
+    userId
+  });
+
+  if (fulfillment.error) {
+    throw redirect(
+      requestReferrer(request) ?? path.to.job(jobId),
+      await flash(
+        request,
+        error(
+          fulfillment.error,
+          "Job completed, but failed to update the sales order line"
+        )
+      )
     );
   }
 

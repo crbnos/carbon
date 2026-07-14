@@ -1,6 +1,6 @@
 {
-  "generated": "2026-07-14T04:40:07.869Z",
-  "totalTools": 1327,
+  "generated": "2026-07-14T04:43:13.238Z",
+  "totalTools": 1328,
   "modules": 15,
   "tools": [
     {
@@ -19075,6 +19075,31 @@
         },
         "required": [
           "productionQuantity"
+        ]
+      }
+    },
+    {
+      "name": "production_advanceServiceLineFulfillment",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "advance service line fulfillment",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "{\n    jobId,\n    companyId,\n    userId\n  }"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "jobId"
         ]
       }
     },
