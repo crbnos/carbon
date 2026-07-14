@@ -15,6 +15,10 @@
 --     .ai/specs/2026-07-14-service-make-to-order-jobs.md)
 --   - no 'Assembly Output' itemLedger entries, no pickMethod update,
 --     no costLedger 'Output' layer, no itemCost.unitCost update
+--   - the linked sales-order line is fulfilled here (quantitySent/sentComplete/
+--     sentDate) — completion is also reachable via the
+--     sync_finish_job_operation interceptor, so app-level hooks cannot cover
+--     every path; this function is the single choke point
 --
 -- Inventory-tracked items are byte-identical to 20260713222236: Buy items
 -- debit Raw Materials, Make items debit Finished Goods, with the full
@@ -39,6 +43,8 @@ DECLARE
   v_item_id TEXT;
   v_item_tracking_type "itemTrackingType";
   v_cogs_account TEXT;
+  v_sales_order_line_id TEXT;
+  v_line_quantity_complete NUMERIC;
   v_quantity_received_to_inventory NUMERIC;
   v_job_id_readable TEXT;
   v_job_make_method RECORD;
@@ -89,8 +95,8 @@ BEGIN
   p_user_id := COALESCE(p_user_id, (SELECT "createdBy" FROM "job" WHERE id = p_job_id));
 
   -- Fetch job details
-  SELECT "itemId", "quantityReceivedToInventory", "jobId", "locationId"
-  INTO STRICT v_item_id, v_quantity_received_to_inventory, v_job_id_readable, v_job_location_id
+  SELECT "itemId", "quantityReceivedToInventory", "jobId", "locationId", "salesOrderLineId"
+  INTO STRICT v_item_id, v_quantity_received_to_inventory, v_job_id_readable, v_job_location_id, v_sales_order_line_id
   FROM "job"
   WHERE id = p_job_id;
 
@@ -119,6 +125,36 @@ BEGIN
       "updatedAt" = NOW(),
       "updatedBy" = p_user_id
   WHERE id = p_job_id;
+
+  -- Services never ship, so job completion is the fulfillment event: advance
+  -- the linked sales-order line the way post-shipment does for physical lines.
+  -- Lives HERE (not in app code) because completion has multiple entry points —
+  -- the ERP complete route AND the sync_finish_job_operation interceptor that
+  -- auto-completes when the last operation finishes. Recomputed from ALL jobs
+  -- on the line, so it is idempotent and lot-split safe. Runs before the
+  -- accounting-enabled / zero-WIP early returns.
+  IF v_item_tracking_type = 'Non-Inventory' AND v_sales_order_line_id IS NOT NULL THEN
+    SELECT COALESCE(SUM("quantityComplete"), 0)
+    INTO v_line_quantity_complete
+    FROM "job"
+    WHERE "salesOrderLineId" = v_sales_order_line_id
+      AND "companyId" = p_company_id;
+
+    UPDATE "salesOrderLine" sol
+    SET "quantitySent" = v_line_quantity_complete,
+        "sentComplete" = (COALESCE(sol."saleQuantity", 0) > 0 AND v_line_quantity_complete >= sol."saleQuantity"),
+        "sentDate" = CASE
+          WHEN COALESCE(sol."saleQuantity", 0) > 0
+            AND v_line_quantity_complete >= sol."saleQuantity"
+            AND sol."sentDate" IS NULL
+          THEN CURRENT_DATE
+          ELSE sol."sentDate"
+        END,
+        "updatedBy" = p_user_id,
+        "updatedAt" = NOW()
+    WHERE sol.id = v_sales_order_line_id
+      AND sol."companyId" = p_company_id;
+  END IF;
 
   -- Insert itemLedger entries based on tracking type.
   -- Non-Inventory items (services) never enter inventory.

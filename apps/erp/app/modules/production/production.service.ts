@@ -18,7 +18,7 @@ import {
   groupComponentNodeIds,
   indexAssemblyGraph
 } from "@carbon/viewer";
-import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
+import { parseDate } from "@internationalized/date";
 import type { FileObject, StorageError } from "@supabase/storage-js";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
@@ -2590,79 +2590,6 @@ export async function upsertProductionQuantity(
         .single()
     );
   }
-}
-
-/**
- * Services never ship, so job completion is the fulfillment event: advance the
- * linked sales-order line the way post-shipment does for physical lines.
- * Recomputes quantitySent from ALL jobs on the line (idempotent; supports
- * multiple lot-split jobs and repeated completions).
- */
-export async function advanceServiceLineFulfillment(
-  client: SupabaseClient<Database>,
-  {
-    jobId,
-    companyId,
-    userId
-  }: { jobId: string; companyId: string; userId: string }
-) {
-  const job = await client
-    .from("job")
-    .select("id, itemId, salesOrderLineId, quantityComplete")
-    .eq("id", jobId)
-    .eq("companyId", companyId)
-    .maybeSingle();
-  if (job.error || !job.data?.salesOrderLineId || !job.data.itemId) {
-    return { data: null, error: job.error };
-  }
-
-  const item = await client
-    .from("item")
-    .select("itemTrackingType")
-    .eq("id", job.data.itemId)
-    .eq("companyId", companyId)
-    .maybeSingle();
-  if (item.error || item.data?.itemTrackingType !== "Non-Inventory") {
-    return { data: null, error: item.error };
-  }
-
-  const [line, jobs] = await Promise.all([
-    client
-      .from("salesOrderLine")
-      .select("id, saleQuantity, quantitySent, sentComplete, sentDate")
-      .eq("id", job.data.salesOrderLineId)
-      .eq("companyId", companyId)
-      .single(),
-    client
-      .from("job")
-      .select("quantityComplete")
-      .eq("salesOrderLineId", job.data.salesOrderLineId)
-      .eq("companyId", companyId)
-  ]);
-  if (line.error) return line;
-  if (jobs.error) return jobs;
-
-  const quantitySent = (jobs.data ?? []).reduce(
-    (sum, j) => sum + (j.quantityComplete ?? 0),
-    0
-  );
-  const saleQuantity = line.data.saleQuantity ?? 0;
-  const sentComplete = saleQuantity > 0 && quantitySent >= saleQuantity;
-  const todayDate = today(getLocalTimeZone()).toString();
-
-  return client
-    .from("salesOrderLine")
-    .update({
-      quantitySent,
-      sentComplete,
-      ...(sentComplete && !line.data.sentDate ? { sentDate: todayDate } : {}),
-      updatedBy: userId,
-      updatedAt: todayDate
-    })
-    .eq("id", line.data.id)
-    .eq("companyId", companyId)
-    .select("id")
-    .single();
 }
 
 export async function insertJob(

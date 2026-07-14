@@ -5,10 +5,7 @@ import { validationError, validator } from "@carbon/form";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import {
-  advanceServiceLineFulfillment,
-  jobCompleteValidator
-} from "~/modules/production";
+import { jobCompleteValidator } from "~/modules/production";
 import type { Handle } from "~/utils/handle";
 import { path, requestReferrer } from "~/utils/path";
 
@@ -58,27 +55,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  // Services never ship — completing the job is the fulfillment event, so
-  // advance the linked sales-order line (no-op for inventory-tracked items,
-  // whose lines are advanced by post-shipment).
-  const fulfillment = await advanceServiceLineFulfillment(client, {
-    jobId,
-    companyId,
-    userId
-  });
-
-  if (fulfillment.error) {
-    throw redirect(
-      requestReferrer(request) ?? path.to.job(jobId),
-      await flash(
-        request,
-        error(
-          fulfillment.error,
-          "Job completed, but failed to update the sales order line"
-        )
-      )
-    );
-  }
+  // Note: for Non-Inventory (Service) jobs, complete_job_to_inventory itself
+  // fulfills the linked sales-order line — completion is also reachable via
+  // the sync_finish_job_operation interceptor, so the SQL function is the
+  // single choke point for fulfillment.
 
   throw redirect(
     requestReferrer(request) ?? path.to.job(jobId),
