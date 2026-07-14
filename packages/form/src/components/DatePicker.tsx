@@ -1,5 +1,6 @@
 import { useFormContext } from "@carbon/form";
 import type { TermId } from "@carbon/glossary";
+import { getLogger } from "@carbon/logger";
 import {
   DatePicker as DatePickerBase,
   FormControl,
@@ -16,6 +17,8 @@ import { flushSync } from "react-dom";
 import { useField } from "../hooks";
 import { useFormStateContext } from "../internal/formStateContext";
 
+const log = getLogger("form");
+
 type DatePickerProps = {
   name: string;
   label?: string;
@@ -28,6 +31,30 @@ type DatePickerProps = {
   helperText?: string;
   value?: string;
   onChange?: (date: string | null) => void;
+};
+
+const safeParseDate = (value: string | undefined): CalendarDate | undefined => {
+  if (!value) return undefined;
+  try {
+    const cleaned = value.trim();
+    // YYYY-MM-DD
+    if (/^\d{4}-\d{2}-\d{2}$/.test(cleaned)) {
+      return parseDate(cleaned);
+    }
+    // YYYY-MM-DDTHH:mm:...
+    if (/^\d{4}-\d{2}-\d{2}T/.test(cleaned)) {
+      return parseDate(cleaned.slice(0, 10));
+    }
+    const parsed = Date.parse(cleaned);
+    if (!isNaN(parsed)) {
+      const d = new Date(parsed);
+      const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      return parseDate(iso);
+    }
+  } catch (e) {
+    log.error("Failed to parse date string", { value, error: e });
+  }
+  return undefined;
 };
 
 const DatePicker = ({
@@ -55,16 +82,12 @@ const DatePicker = ({
     isOptional: fieldIsOptional
   } = useField(name);
   const [date, setDate] = useState<CalendarDate | undefined>(
-    value
-      ? parseDate(value)
-      : defaultValue
-        ? parseDate(defaultValue)
-        : undefined
+    safeParseDate(value) ?? safeParseDate(defaultValue)
   );
 
   useEffect(() => {
     if (value) {
-      setDate(parseDate(value));
+      setDate(safeParseDate(value));
     }
   }, [value]);
 

@@ -1,9 +1,12 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getOnshapeClient } from "@carbon/ee/onshape";
+import { getLogger } from "@carbon/logger";
 import type {
   LoaderFunctionArgs,
   ShouldRevalidateFunction
 } from "react-router";
+
+const logger = getLogger("erp", "integrations-onshape-d-did-versions");
 
 export const shouldRevalidate: ShouldRevalidateFunction = () => {
   return false;
@@ -57,7 +60,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       error: null
     };
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     return {
       data: null,
       error:

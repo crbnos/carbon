@@ -10,7 +10,10 @@ import type { Database } from "../lib/types.ts";
 import { credit, debit, journalReference } from "../lib/utils.ts";
 import { getCurrentAccountingPeriod } from "../shared/get-accounting-period.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
-import { getDefaultPostingGroup } from "../shared/get-posting-group.ts";
+import {
+  getDefaultPostingGroup,
+  resolveInventoryAccount,
+} from "../shared/get-posting-group.ts";
 import { calculateCOGS } from "../shared/calculate-cogs.ts";
 
 const pool = getConnectionPool(1);
@@ -105,8 +108,12 @@ serve(async (req: Request) => {
 
     switch (type) {
       case "post": {
+        // Pre-tax denominator for allocating the header shipping cost.
+        // Comment lines post no journal entries, so they must not absorb a
+        // share of the shipping (it would never reach the GL).
         const totalLinesCost = salesInvoiceLines.data.reduce(
           (acc, invoiceLine) => {
+            if (invoiceLine.invoiceLineType === "Comment") return acc;
             const lineCost =
               (invoiceLine.quantity ?? 0) * (invoiceLine.unitPrice ?? 0) +
               (invoiceLine.shippingCost ?? 0) +
@@ -115,6 +122,10 @@ serve(async (req: Request) => {
           },
           0
         );
+
+        const postableLineCount = salesInvoiceLines.data.filter(
+          (invoiceLine) => invoiceLine.invoiceLineType !== "Comment"
+        ).length;
 
         const itemIds = salesInvoiceLines.data.reduce<string[]>(
           (acc, invoiceLine) => {
@@ -129,7 +140,7 @@ serve(async (req: Request) => {
         const [items, itemCosts, customer] = await Promise.all([
           client
             .from("item")
-            .select("id, itemTrackingType")
+            .select("id, itemTrackingType, replenishmentSystem")
             .in("id", itemIds)
             .eq("companyId", companyId),
           client
@@ -252,6 +263,8 @@ serve(async (req: Request) => {
                 "Location",
                 "CostCenter",
                 "FixedAssetClass",
+                "Customer",
+                "Item",
               ])
           : null;
 
@@ -265,43 +278,64 @@ serve(async (req: Request) => {
         const journalLineDimensionsMeta: {
           customerTypeId: string | null;
           itemPostingGroupId: string | null;
+          itemId: string | null;
           locationId: string | null;
           costCenterId: string | null;
           fixedAssetClassId: string | null;
         }[] = [];
 
-        // For IC transactions, use IC Receivables (1130) instead of regular AR
-        let receivablesAccountId: string | undefined;
-        if (isIntercompany && companyGroupId) {
-          // TODO: consider storing the IC receivables account ID in a config
-          // rather than looking it up by number each time
-          const icAccount = await client
-            .from("account")
-            .select("id")
-            .eq("number", "1130")
-            .eq("companyGroupId", companyGroupId)
-            .single();
-          if (icAccount.error) throw new Error("Failed to fetch IC receivables account 1130");
-          receivablesAccountId = icAccount.data.id;
-        } else {
-          receivablesAccountId = accountDefaults?.data?.receivablesAccount;
-        }
+        // For IC transactions, book to Inter-Company Receivables instead of
+        // regular AR. Resolve it from accountDefault (stable id), not by account
+        // number — numbers are user-editable. Fall back to regular receivables
+        // if the IC default isn't configured.
+        const icReceivablesAccount = (
+          accountDefaults?.data as unknown as {
+            intercompanyReceivablesAccount?: string | null;
+          }
+        )?.intercompanyReceivablesAccount;
+        const receivablesAccountId: string | undefined =
+          isIntercompany && icReceivablesAccount
+            ? icReceivablesAccount
+            : accountDefaults?.data?.receivablesAccount;
+
+        // Invoice exchange rate (defaults to 1 for base-currency invoices).
+        // journalLine.amount is denominated in base currency, so all monetary
+        // amounts derived from the invoice's foreign-currency unitPrice etc.
+        // must be multiplied by this rate before they reach a journal line.
+        const invoiceExchangeRate = salesInvoice.data?.exchangeRate ?? 1;
 
         for await (const invoiceLine of salesInvoiceLines.data) {
           const invoiceLineQuantityInInventoryUnit = invoiceLine.quantity;
 
-          const totalLineCost =
-            (invoiceLine.quantity * (invoiceLine.unitPrice ?? 0) +
-              (invoiceLine.shippingCost ?? 0) +
-              (invoiceLine.addOnCost ?? 0)) *
-            (1 + (invoiceLine.taxPercent ?? 0));
+          const preTaxLineCost =
+            invoiceLine.quantity * (invoiceLine.unitPrice ?? 0) +
+            (invoiceLine.shippingCost ?? 0) +
+            (invoiceLine.addOnCost ?? 0);
 
+          // nonTaxableAddOnCost is part of the invoice total (and of the
+          // salesInvoices view balance that caps payments) but is excluded
+          // from the tax basis.
+          const totalLineCost =
+            preTaxLineCost * (1 + (invoiceLine.taxPercent ?? 0)) +
+            (invoiceLine.nonTaxableAddOnCost ?? 0);
+
+          // Header shipping is untaxed (matching the salesInvoices view), so
+          // it is weighted by the pre-tax basis — weights sum to exactly 1.
+          // When every line has a zero basis, fall back to equal weights so
+          // the shipping still reaches AR.
           const lineCostPercentageOfTotalCost =
-            totalLinesCost === 0 ? 0 : totalLineCost / totalLinesCost;
+            invoiceLine.invoiceLineType === "Comment"
+              ? 0
+              : totalLinesCost === 0
+              ? postableLineCount === 0
+                ? 0
+                : 1 / postableLineCount
+              : preTaxLineCost / totalLinesCost;
           const lineWeightedShippingCost =
             shippingCost * lineCostPercentageOfTotalCost;
+          // Convert to base currency for the GL.
           const totalLineCostWithWeightedShipping =
-            totalLineCost + lineWeightedShippingCost;
+            (totalLineCost + lineWeightedShippingCost) * invoiceExchangeRate;
 
           const invoiceLineUnitCostInInventoryUnit =
             totalLineCostWithWeightedShipping / invoiceLine.quantity;
@@ -316,9 +350,11 @@ serve(async (req: Request) => {
             case "Material":
             case "Tool":
               {
+                const invoiceLineItem = items.data.find(
+                  (item) => item.id === invoiceLine.itemId
+                );
                 const itemTrackingType =
-                  items.data.find((item) => item.id === invoiceLine.itemId)
-                    ?.itemTrackingType ?? "Inventory";
+                  invoiceLineItem?.itemTrackingType ?? "Inventory";
 
                 // if the sales order line is null, we ship the part, do the normal entries and do not use accrual/reversing
                 if (
@@ -410,6 +446,7 @@ serve(async (req: Request) => {
                       journalLineDimensionsMeta.push({
                         customerTypeId: customer.data.customerTypeId ?? null,
                         itemPostingGroupId: lineItemPostingGroupId,
+                        itemId: invoiceLine.itemId ?? null,
                         locationId: invoiceLine.locationId ?? null,
                         costCenterId: null,
                         fixedAssetClassId: null,
@@ -431,9 +468,13 @@ serve(async (req: Request) => {
                         companyId,
                       });
 
+                      const inventoryAccount = resolveInventoryAccount(
+                        invoiceLineItem?.replenishmentSystem ?? null,
+                        accountDefaults.data
+                      );
                       journalLineInserts.push({
-                        accountId: accountDefaults.data.inventoryAccount,
-                        description: "Inventory Account",
+                        accountId: inventoryAccount.account,
+                        description: inventoryAccount.description,
                         amount: 0,
                         quantity: invoiceLineQuantityInInventoryUnit,
                         documentType: "Invoice",
@@ -447,6 +488,7 @@ serve(async (req: Request) => {
                         journalLineDimensionsMeta.push({
                           customerTypeId: customer.data.customerTypeId ?? null,
                           itemPostingGroupId: lineItemPostingGroupId,
+                          itemId: invoiceLine.itemId ?? null,
                           locationId: invoiceLine.locationId ?? null,
                           costCenterId: null,
                           fixedAssetClassId: null,
@@ -511,6 +553,7 @@ serve(async (req: Request) => {
                       journalLineDimensionsMeta.push({
                         customerTypeId: customer.data.customerTypeId ?? null,
                         itemPostingGroupId,
+                        itemId: invoiceLine.itemId ?? null,
                         locationId: invoiceLine.locationId ?? null,
                         costCenterId: null,
                         fixedAssetClassId: null,
@@ -522,6 +565,13 @@ serve(async (req: Request) => {
 
               break;
             case "Fixed Asset": {
+              // Silently skipping would post less to AR than the invoice
+              // total the payment flow is allowed to apply against.
+              if (accountingEnabled && !invoiceLine.assetId) {
+                throw new Error(
+                  `Fixed Asset invoice line ${invoiceLine.id} has no asset selected`
+                );
+              }
               if (accountingEnabled && accountDefaults?.data && invoiceLine.assetId) {
                 const salesOrderLine = salesOrderLines?.find(
                   (sol) => sol.id === invoiceLine.salesOrderLineId
@@ -586,6 +636,7 @@ serve(async (req: Request) => {
                     journalLineDimensionsMeta.push({
                       customerTypeId: customer.data.customerTypeId ?? null,
                       itemPostingGroupId: null,
+                      itemId: null,
                       locationId: invoiceLine.locationId ?? salesOrderLine?.locationId ?? assetRecord.data.locationId ?? null,
                       costCenterId: null,
                       fixedAssetClassId: (assetRecord.data.fixedAssetClass as any)?.id ?? null,
@@ -667,6 +718,7 @@ serve(async (req: Request) => {
                       customerTypeId:
                         customer.data.customerTypeId ?? null,
                       itemPostingGroupId: null,
+                      itemId: null,
                       locationId: invoiceLine.locationId ?? salesOrderLine?.locationId ?? assetRecord.data.locationId ?? null,
                       costCenterId: null,
                       fixedAssetClassId: (assetRecord.data.fixedAssetClass as any)?.id ?? null,
@@ -697,6 +749,7 @@ serve(async (req: Request) => {
                       customerTypeId:
                         customer.data.customerTypeId ?? null,
                       itemPostingGroupId: null,
+                      itemId: null,
                       locationId: invoiceLine.locationId ?? salesOrderLine?.locationId ?? assetRecord.data.locationId ?? null,
                       costCenterId: null,
                       fixedAssetClassId: (assetRecord.data.fixedAssetClass as any)?.id ?? null,
@@ -726,6 +779,7 @@ serve(async (req: Request) => {
                     customerTypeId:
                       customer.data.customerTypeId ?? null,
                     itemPostingGroupId: null,
+                    itemId: null,
                     locationId: invoiceLine.locationId ?? salesOrderLine?.locationId ?? null,
                     costCenterId: null,
                     fixedAssetClassId: (assetRecord.data.fixedAssetClass as any)?.id ?? null,
@@ -775,6 +829,7 @@ serve(async (req: Request) => {
                       customerTypeId:
                         customer.data.customerTypeId ?? null,
                       itemPostingGroupId: null,
+                      itemId: null,
                       locationId: invoiceLine.locationId ?? salesOrderLine?.locationId ?? assetRecord.data.locationId ?? null,
                       costCenterId: null,
                       fixedAssetClassId: (assetRecord.data.fixedAssetClass as any)?.id ?? null,
@@ -1086,6 +1141,22 @@ serve(async (req: Request) => {
                     journalLineId: jl.id,
                     dimensionId: dimensionMap.get("FixedAssetClass")!,
                     valueId: meta.fixedAssetClassId,
+                    companyId,
+                  });
+                }
+                if (meta.itemId && dimensionMap.has("Item")) {
+                  journalLineDimensionInserts.push({
+                    journalLineId: jl.id,
+                    dimensionId: dimensionMap.get("Item")!,
+                    valueId: meta.itemId,
+                    companyId,
+                  });
+                }
+                if (salesInvoice.data?.customerId && dimensionMap.has("Customer")) {
+                  journalLineDimensionInserts.push({
+                    journalLineId: jl.id,
+                    dimensionId: dimensionMap.get("Customer")!,
+                    valueId: salesInvoice.data.customerId,
                     companyId,
                   });
                 }

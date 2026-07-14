@@ -8,7 +8,7 @@ import {
   resolveTemplate
 } from "../template";
 import type { AccountsReceivableBillingAddress, PDF } from "../types";
-import { composeRegistrationLine } from "../utils/footer";
+import { resolveRegistrationLine } from "../utils/shared";
 import type { SalesInvoiceData, SalesInvoiceLocations } from "./blocks";
 import { buildSalesInvoiceVars, salesInvoiceBlockRegistry } from "./blocks";
 import { Template } from "./components";
@@ -59,12 +59,6 @@ const SalesInvoicePDF = ({
     maximumFractionDigits: 2
   });
 
-  const registrationLine = composeRegistrationLine({
-    companyName: company.name,
-    country: company.countryCode,
-    eori: company.eori
-  });
-
   const { blocks, theme, settings, headerSectionId, footerSectionId } =
     resolveTemplate("salesInvoice", template);
 
@@ -73,6 +67,14 @@ const SalesInvoicePDF = ({
     salesInvoiceLocations,
     company,
     currencyCode
+  });
+
+  const registration = resolveRegistrationLine({
+    company,
+    footerSectionId,
+    sections,
+    settings,
+    vars
   });
 
   // Header layout now lives on the global header section's config (not the
@@ -137,11 +139,11 @@ const SalesInvoicePDF = ({
         subject: meta?.subject ?? "Invoice"
       }}
       footerDocumentId={salesInvoice?.invoiceId}
-      footerLabel={registrationLine ?? undefined}
+      footerLabel={registration.label}
       showFooter={showFooter}
       showPageNumbers={settings.showPageNumbers}
       pageNumberFormat={settings.pageNumberFormat}
-      showRegistrationLine={settings.showRegistrationLine}
+      showRegistrationLine={registration.show}
       fontFamily={settings.fontFamily}
       headerContent={headerContent}
       footerContent={footerContent}

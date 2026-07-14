@@ -4,8 +4,11 @@ import { pdfjs } from "react-pdf";
 
 pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
 
+import { ensureLoggingConfigured } from "@carbon/logger/config.client";
 import { hydrateRoot } from "react-dom/client";
 import { HydratedRouter } from "react-router/dom";
+
+ensureLoggingConfigured();
 
 // function PosthogInit() {
 //   useEffect(() => {

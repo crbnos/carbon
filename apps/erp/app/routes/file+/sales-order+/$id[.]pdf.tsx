@@ -6,6 +6,7 @@ import {
   templateShowsThumbnails,
   toDocumentTemplate
 } from "@carbon/documents/template";
+import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import { getPreferenceHeaders } from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
@@ -26,6 +27,8 @@ import {
   resolveSections
 } from "~/modules/settings";
 import { getBase64ImageFromSupabase } from "~/modules/shared";
+
+const logger = getLogger("erp", "sales-order", "pdf");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -60,23 +63,27 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   ]);
 
   if (company.error) {
-    console.error(company.error);
+    logger.error("Failed to load company", { error: company.error });
   }
 
   if (salesOrder.error) {
-    console.error(salesOrder.error);
+    logger.error("Failed to load salesOrder", { error: salesOrder.error });
   }
 
   if (salesOrderLines.error) {
-    console.error(salesOrderLines.error);
+    logger.error("Failed to load salesOrderLines", {
+      error: salesOrderLines.error
+    });
   }
 
   if (salesOrderLocations.error) {
-    console.error(salesOrderLocations.error);
+    logger.error("Failed to load salesOrderLocations", {
+      error: salesOrderLocations.error
+    });
   }
 
   if (terms.error) {
-    console.error(terms.error);
+    logger.error("Failed to load terms", { error: terms.error });
   }
 
   if (

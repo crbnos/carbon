@@ -1,16 +1,18 @@
+import type { MessageDescriptor } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
 import type { Mod } from "../types";
 
 export interface DataRow {
   key: string; // stable, for the "validated" flag state
-  object: string;
-  today: string; // "what you call it today" hint
+  object: MessageDescriptor;
+  today: MessageDescriptor; // "what you call it today" hint
   moduleTags?: Mod[];
 }
 
 export interface DataGroup {
   n: number;
-  title: string;
-  desc: string;
+  title: MessageDescriptor;
+  desc: MessageDescriptor;
   rows: DataRow[];
 }
 
@@ -20,113 +22,117 @@ export interface DataGroup {
 export const DATA_GROUPS: DataGroup[] = [
   {
     n: 1,
-    title: "Foundation",
-    desc: "The reference data everything else hangs off. Loads first.",
+    title: msg`Foundation`,
+    desc: msg`The reference data everything else hangs off. Loads first.`,
     rows: [
       {
         key: "sites",
-        object: "Sites & locations",
-        today: "Plants, warehouses"
+        object: msg`Sites & locations`,
+        today: msg`Plants, warehouses`
       },
       {
         key: "coa",
-        object: "Chart of accounts",
-        today: "Your GL accounts",
+        object: msg`Chart of accounts`,
+        today: msg`Your GL accounts`,
         moduleTags: ["acc"]
       },
       {
         key: "tax",
-        object: "Currencies & tax",
-        today: "Tax codes, rates",
+        object: msg`Currencies & tax`,
+        today: msg`Tax codes, rates`,
         moduleTags: ["acc"]
       },
-      { key: "uom", object: "Units of measure", today: "Each, lb, ft…" },
-      { key: "roles", object: "User roles", today: "Who can do what" },
+      { key: "uom", object: msg`Units of measure`, today: msg`Each, lb, ft…` },
+      { key: "roles", object: msg`User roles`, today: msg`Who can do what` },
       {
         key: "workcenters",
-        object: "Work centers",
-        today: "Machines, cells, stations",
+        object: msg`Work centers`,
+        today: msg`Machines, cells, stations`,
         moduleTags: ["prd"]
       }
     ]
   },
   {
     n: 2,
-    title: "Master records",
-    desc: "The catalog you run on. Loads once foundation is in.",
+    title: msg`Master records`,
+    desc: msg`The catalog you run on. Loads once foundation is in.`,
     rows: [
-      { key: "parts", object: "Parts & items", today: "Your part numbers" },
+      {
+        key: "parts",
+        object: msg`Parts & items`,
+        today: msg`Your part numbers`
+      },
       {
         key: "boms",
-        object: "BOMs",
-        today: "Bills of material",
+        object: msg`BOMs`,
+        today: msg`Bills of material`,
         moduleTags: ["itm"]
       },
       {
         key: "routings",
-        object: "Bill of Process",
-        today: "Operations / steps",
+        object: msg`Bill of Process`,
+        today: msg`Operations / steps`,
         moduleTags: ["itm"]
       },
       {
         key: "customers",
-        object: "Customers",
-        today: "Your customer list",
+        object: msg`Customers`,
+        today: msg`Your customer list`,
         moduleTags: ["sal"]
       },
       {
         key: "suppliers",
-        object: "Suppliers",
-        today: "Your vendor list",
+        object: msg`Suppliers`,
+        today: msg`Your vendor list`,
         moduleTags: ["pur"]
       },
       {
         key: "pricelists",
-        object: "Price lists",
-        today: "Customer pricing",
+        object: msg`Price lists`,
+        today: msg`Customer pricing`,
         moduleTags: ["sal"]
       }
     ]
   },
   {
     n: 3,
-    title: "Open transactions",
-    desc: "Loaded last, right at cutover, so balances are current.",
+    title: msg`Open transactions`,
+    desc: msg`Loaded last, right at cutover, so balances are current.`,
     rows: [
       {
         key: "open-so",
-        object: "Open sales orders",
-        today: "Unshipped orders",
+        object: msg`Open sales orders`,
+        today: msg`Unshipped orders`,
         moduleTags: ["sal"]
       },
       {
         key: "open-po",
-        object: "Open purchase orders",
-        today: "Unreceived POs",
+        object: msg`Open purchase orders`,
+        today: msg`Unreceived POs`,
         moduleTags: ["pur"]
       },
       {
         key: "open-jobs",
-        object: "Open jobs",
-        today: "Work in progress",
+        object: msg`Open jobs`,
+        today: msg`Work in progress`,
         moduleTags: ["prd"]
       },
       {
         key: "inventory",
-        object: "Inventory balances",
-        today: "On-hand counts",
+        object: msg`Inventory balances`,
+        today: msg`On-hand counts`,
         moduleTags: ["inv"]
       },
       {
         key: "ar",
-        object: "Open AR",
-        today: "Money owed to you",
+        object: msg`Open AR`,
+        today: msg`Money owed to you`,
         moduleTags: ["acc"]
       },
       {
         key: "ap",
-        object: "Open AP",
-        today: "Money you owe",
+        object: msg`Open AP`,
+        today: msg`Money you owe`,
         moduleTags: ["acc"]
       }
     ]

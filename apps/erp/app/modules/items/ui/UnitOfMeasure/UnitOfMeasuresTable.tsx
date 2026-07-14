@@ -1,5 +1,5 @@
 import { MenuIcon, MenuItem } from "@carbon/react";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import { LuBookMarked, LuCode, LuPencil, LuTrash } from "react-icons/lu";
@@ -61,7 +61,7 @@ const UnitOfMeasuresTable = memo(
               }}
             >
               <MenuIcon icon={<LuPencil />} />
-              Edit Unit of Measure
+              <Trans>Edit Unit of Measure</Trans>
             </MenuItem>
             <MenuItem
               destructive
@@ -71,7 +71,7 @@ const UnitOfMeasuresTable = memo(
               }}
             >
               <MenuIcon icon={<LuTrash />} />
-              Delete Unit of Measure
+              <Trans>Delete Unit of Measure</Trans>
             </MenuItem>
           </>
         );

@@ -3,6 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { destroyAuthSession } from "@carbon/auth/session.server";
 import { ValidatedForm, validationError, validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import {
   Button,
   Card,
@@ -24,6 +25,8 @@ import {
   updatePublicAccount
 } from "~/modules/account";
 import { getUser } from "~/modules/users/users.server";
+
+const logger = getLogger("erp", "user");
 
 export async function loader({ request }: ActionFunctionArgs) {
   const { userId } = await requirePermissions(request, {});
@@ -58,7 +61,7 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   if (updateAccount.error) {
-    console.error(updateAccount.error);
+    logger.error(updateAccount.error);
     throw new Error("Fatal: failed to update account");
   }
 

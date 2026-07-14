@@ -17,7 +17,9 @@ import type {
   SalesInvoiceShipment
 } from "~/modules/invoicing";
 import {
+  getInvoiceSettlementsForInvoice,
   getSalesInvoice,
+  InvoicePaymentsPanel,
   isSalesInvoiceLocked,
   salesInvoiceValidator,
   updateSalesInvoice
@@ -35,23 +37,27 @@ import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "invoicing"
   });
 
   const { invoiceId } = params;
   if (!invoiceId) throw new Error("Could not find invoiceId");
 
-  const invoice = await getSalesInvoice(client, invoiceId);
+  const [invoice, applications] = await Promise.all([
+    getSalesInvoice(client, invoiceId),
+    getInvoiceSettlementsForInvoice(client, companyId, "sales", invoiceId)
+  ]);
   if (invoice.error) {
     throw redirect(
-      path.to.salesInvoices,
+      path.to.invoicingSales,
       await flash(request, error(invoice.error, "Failed to load sales invoice"))
     );
   }
 
   return {
-    internalNotes: (invoice.data?.internalNotes ?? {}) as JSONContent
+    internalNotes: (invoice.data?.internalNotes ?? {}) as JSONContent,
+    paymentApplications: applications.data ?? []
   };
 }
 
@@ -131,7 +137,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 export default function SalesInvoiceBasicRoute() {
   const { t } = useLingui();
-  const { internalNotes } = useLoaderData<typeof loader>();
+  const { internalNotes, paymentApplications } = useLoaderData<typeof loader>();
   const { invoiceId } = useParams();
   if (!invoiceId) throw new Error("invoiceId not found");
 
@@ -184,6 +190,7 @@ export default function SalesInvoiceBasicRoute() {
   return (
     <Fragment key={invoiceId}>
       <SalesInvoiceSummary onEditShippingCost={handleEditShippingCost} />
+      <InvoicePaymentsPanel rows={paymentApplications} />
       <OpportunityNotes
         key={`notes-${initialValues.id}`}
         id={invoiceId}

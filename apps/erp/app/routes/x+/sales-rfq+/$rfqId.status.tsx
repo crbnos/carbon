@@ -2,12 +2,15 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { trigger } from "@carbon/jobs";
+import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { salesRFQStatusType, updateSalesRFQStatus } from "~/modules/sales";
 import { getCompanySettings } from "~/modules/settings/settings.service";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "rfqid-status");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -49,7 +52,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         }
       });
     } catch (err) {
-      console.error("Failed to trigger notification", err);
+      logger.error("Failed to trigger notification", { error: err });
       return {
         success: false,
         message: "Failed to send notification"

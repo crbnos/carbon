@@ -26,17 +26,27 @@ import {
 } from "@carbon/react";
 import { convertKbToString, isInternalEmail } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { LuLoaderCircle } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, Form, redirect, useFetcher, useLoaderData } from "react-router";
+import {
+  data,
+  redirect,
+  useFetcher,
+  useLoaderData,
+  useRevalidator
+} from "react-router";
 import { z } from "zod";
+import type { CompanyBackupSummary } from "~/modules/settings";
 import {
   deleteCompanyBackup,
   exportCompanyBackup,
+  getCompanyExportRun,
   getCompanyRestoreRuns,
   listCompanyBackups
 } from "~/modules/settings";
 import {
+  dismissCompanyExportFailure,
   finalizeCompanyRestore,
   revertCompanyRestore,
   startCompanyRestore
@@ -89,15 +99,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
   });
   requireInternal(email);
 
-  const [backupsList, restoreRuns] = await Promise.all([
+  const [backupsList, restoreRuns, exportRun] = await Promise.all([
     listCompanyBackups(client, companyId),
-    getCompanyRestoreRuns(client, companyId)
+    getCompanyRestoreRuns(client, companyId),
+    getCompanyExportRun(client, companyId)
   ]);
 
   return {
     companyId,
     files: backupsList.data ?? [],
-    restoreRuns: restoreRuns.data ?? []
+    restoreRuns: restoreRuns.data ?? [],
+    exportRun: exportRun.data
   };
 }
 
@@ -214,6 +226,13 @@ export async function action({ request }: ActionFunctionArgs) {
       };
     }
 
+    // Acknowledge a failed export — clears the failure marker. Any partial
+    // backup folder stays in the list (as "Incomplete") until deleted.
+    case "dismissExportFailure": {
+      await dismissCompanyExportFailure(companyId);
+      return { success: true, message: "Dismissed" };
+    }
+
     case "delete": {
       const name = String(formData.get("name") ?? "");
       if (!name || name.includes("/"))
@@ -234,7 +253,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function BackupsRoute() {
-  const { files, restoreRuns } = useLoaderData<typeof loader>();
+  const { files, restoreRuns, exportRun } = useLoaderData<typeof loader>();
   const fetcher = useFetcher<{
     success?: boolean;
     message?: string;
@@ -244,19 +263,75 @@ export default function BackupsRoute() {
   const [active, setActive] = useState<{
     runId?: string;
     mode: "export" | "restore" | "revert";
-    /** Export only: the backup paths present when the export started. The run is
-     *  done once a path outside this set appears in the (revalidated) list. */
-    exportBaseline?: Set<string>;
   } | null>(null);
-  // Latest list, read without re-triggering the fetcher effect when it changes.
+  // Latest list, read without re-triggering effects when it changes.
   const filesRef = useRef(files);
   filesRef.current = files;
+
+  const exportRunning = exportRun?.status === "running";
+  const exportFailed = exportRun?.status === "failed";
+
+  // The in-progress export we're tracking this session. Set the instant the user
+  // clicks "Create backup" (optimistic — before the job writes its first marker,
+  // so the row shows immediately, Supabase-style) or adopted from the marker for
+  // a run started elsewhere (reload / another tab). `baseline` = the READY backups
+  // when tracking began; the run is complete once a ready backup outside it
+  // appears in the (revalidated) list.
+  const [runningExport, setRunningExport] = useState<{
+    startedAt: string | null;
+    baseline: Set<string>;
+  } | null>(null);
+
+  const readyBackupNames = useCallback(
+    () =>
+      new Set(
+        filesRef.current.filter((f) => f.status === "ready").map((f) => f.name)
+      ),
+    []
+  );
+
   const exportCompleted =
-    active?.mode === "export" &&
-    !!active.exportBaseline &&
+    runningExport != null &&
     files.some(
-      (f) => f.status === "ready" && !active.exportBaseline!.has(f.name)
+      (f) => f.status === "ready" && !runningExport.baseline.has(f.name)
     );
+  const runningExportStartedAt =
+    exportRun?.startedAt ?? runningExport?.startedAt ?? null;
+
+  // Adopt a run this session didn't start (page reload, another tab).
+  useEffect(() => {
+    if (exportRunning && !runningExport) {
+      setRunningExport({
+        startedAt: exportRun?.startedAt ?? null,
+        baseline: readyBackupNames()
+      });
+    }
+  }, [exportRunning, runningExport, exportRun, readyBackupNames]);
+
+  // Stop tracking once the run fails, or completes and isn't being shown in the
+  // detail modal (the modal keeps `completed` true until the user closes it).
+  useEffect(() => {
+    const exportModalOpen = active?.mode === "export";
+    if (
+      runningExport &&
+      (exportFailed || (exportCompleted && !exportModalOpen))
+    ) {
+      setRunningExport(null);
+    }
+  }, [runningExport, exportCompleted, exportFailed, active]);
+
+  const openExportProgress = useCallback(() => {
+    setActive({ mode: "export" });
+  }, []);
+
+  // The export runs fully server-side — poll the list to catch completion while
+  // the detail modal is closed (the modal runs its own faster poll when open).
+  const revalidator = useRevalidator();
+  useEffect(() => {
+    if (!runningExport || active) return;
+    const id = setInterval(() => revalidator.revalidate(), 2500);
+    return () => clearInterval(id);
+  }, [runningExport, active, revalidator]);
 
   // keep / dismiss / revert finalize the run via an async Inngest job, so the
   // marker is still present on the next revalidation. Hide the row optimistically
@@ -280,12 +355,13 @@ export default function BackupsRoute() {
   useEffect(() => {
     const result = fetcher.data;
     if (result?.message === undefined) return;
-    // Export and restore open a progress modal — let it own the feedback instead
-    // of also firing a toast. Everything else (keep/revert/dismiss/errors) toasts.
+    // Export is non-blocking: drop an in-progress row immediately (the user opens
+    // the detail modal by clicking it) — no toast, no forced modal. Restore opens
+    // its modal directly. Everything else (keep/revert/dismiss/errors) toasts.
     if (result.success && result.started === "export") {
-      setActive({
-        mode: "export",
-        exportBaseline: new Set(filesRef.current.map((f) => f.name))
+      setRunningExport({
+        startedAt: new Date().toISOString(),
+        baseline: readyBackupNames()
       });
       return;
     }
@@ -295,7 +371,7 @@ export default function BackupsRoute() {
     }
     if (result.success) toast.success(result.message);
     else toast.error(result.message);
-  }, [fetcher.data]);
+  }, [fetcher.data, readyBackupNames]);
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-49px)]">
@@ -429,71 +505,137 @@ export default function BackupsRoute() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {files.length === 0 ? (
+            {files.length === 0 && !runningExport && !exportFailed ? (
               <p className="text-sm text-muted-foreground">No backups yet.</p>
             ) : (
               <VStack spacing={2}>
-                {files.map((file) => (
-                  <HStack
-                    key={file.name}
-                    className={`w-full justify-between border rounded-lg p-3 ${
-                      file.status === "pending" ? "opacity-70" : ""
-                    }`}
+                {exportFailed && (
+                  <HStack className="w-full justify-between rounded-lg border border-destructive/50 bg-destructive/5 p-3">
+                    <VStack spacing={0} className="min-w-0">
+                      <span className="text-sm font-medium">Backup failed</span>
+                      <span className="break-words text-xs text-muted-foreground">
+                        The system created an invalid backup — please contact
+                        Carbon support.
+                        {exportRun?.error ? ` (${exportRun.error})` : null}
+                      </span>
+                    </VStack>
+                    <Button
+                      variant="secondary"
+                      onClick={() =>
+                        fetcher.submit(
+                          { intent: "dismissExportFailure" },
+                          { method: "post" }
+                        )
+                      }
+                    >
+                      Dismiss
+                    </Button>
+                  </HStack>
+                )}
+
+                {/* The in-flight export — fully server-side; appears the instant
+                    "Create backup" is clicked. Click it to open the progress
+                    dialog. Its partially-written folder (if any) is hidden below
+                    to avoid a duplicate row. */}
+                {runningExport && !exportCompleted && (
+                  <button
+                    type="button"
+                    onClick={openExportProgress}
+                    className="flex w-full items-center justify-between rounded-lg border p-3 text-left transition-colors hover:bg-muted/50"
                   >
                     <VStack spacing={0}>
                       <span className="text-sm font-medium">
-                        {file.label || formatBackupName(file.name)}
+                        Creating backup…
                       </span>
                       <span className="text-xs text-muted-foreground">
-                        {file.status === "pending" ? (
-                          <span className="animate-pulse">Preparing…</span>
-                        ) : (
-                          <>
-                            {formatBackupDate(file.exportedAt)}
-                            {file.sizeBytes ? (
-                              <>
-                                {" · "}
-                                {convertKbToString(
-                                  Math.round(file.sizeBytes / 1024)
-                                )}
-                              </>
-                            ) : null}
-                          </>
-                        )}
+                        {runningExportStartedAt
+                          ? `Started ${formatBackupDate(runningExportStartedAt)}`
+                          : "Starting…"}
                       </span>
                     </VStack>
-                    <HStack spacing={2}>
-                      {file.status === "ready" ? (
-                        <Button asChild variant="secondary">
-                          <a
-                            href={`/api/settings/backup-archive/${encodeURIComponent(
-                              file.name
-                            )}`}
-                            download
-                          >
-                            Download
-                          </a>
-                        </Button>
-                      ) : (
-                        <Button variant="secondary" isDisabled>
-                          Download
-                        </Button>
-                      )}
-                      <Form method="post">
-                        <input type="hidden" name="intent" value="delete" />
-                        <input type="hidden" name="name" value={file.name} />
-                        <Button type="submit" variant="destructive">
-                          Delete
-                        </Button>
-                      </Form>
-                    </HStack>
-                  </HStack>
-                ))}
+                    <LuLoaderCircle className="h-4 w-4 shrink-0 animate-spin text-primary motion-reduce:animate-none" />
+                  </button>
+                )}
+
+                {files
+                  .filter((f) => !(runningExport && f.status === "pending"))
+                  .map((file) => (
+                    <BackupRow key={file.name} file={file} />
+                  ))}
               </VStack>
             )}
           </CardContent>
         </Card>
       </div>
     </ScrollArea>
+  );
+}
+
+// One backup row. Its own fetcher so Delete shows a spinner and dims the row
+// while the (async, storage-recursing) delete runs; the row drops out of the
+// list on the revalidation that follows.
+function BackupRow({ file }: { file: CompanyBackupSummary }) {
+  const deleteFetcher = useFetcher();
+  const isDeleting = deleteFetcher.state !== "idle";
+
+  return (
+    <HStack
+      className={`w-full justify-between border rounded-lg p-3 ${
+        file.status === "pending" || isDeleting ? "opacity-70" : ""
+      }`}
+    >
+      <VStack spacing={0}>
+        <span className="text-sm font-medium">
+          {file.label || formatBackupName(file.name)}
+        </span>
+        <span className="text-xs text-muted-foreground">
+          {file.status === "pending" ? (
+            // A pending folder with no running export is a dead partial — never
+            // lie with "Preparing…".
+            <>Incomplete backup — not restorable</>
+          ) : (
+            <>
+              {formatBackupDate(file.exportedAt)}
+              {file.sizeBytes ? (
+                <>
+                  {" · "}
+                  {convertKbToString(Math.round(file.sizeBytes / 1024))}
+                </>
+              ) : null}
+            </>
+          )}
+        </span>
+      </VStack>
+      <HStack spacing={2}>
+        {file.status === "ready" ? (
+          <Button asChild variant="secondary">
+            <a
+              href={`/api/settings/backup-archive/${encodeURIComponent(
+                file.name
+              )}`}
+              download
+            >
+              Download
+            </a>
+          </Button>
+        ) : (
+          <Button variant="secondary" isDisabled>
+            Download
+          </Button>
+        )}
+        <deleteFetcher.Form method="post">
+          <input type="hidden" name="intent" value="delete" />
+          <input type="hidden" name="name" value={file.name} />
+          <Button
+            type="submit"
+            variant="destructive"
+            isLoading={isDeleting}
+            isDisabled={isDeleting}
+          >
+            Delete
+          </Button>
+        </deleteFetcher.Form>
+      </HStack>
+    </HStack>
   );
 }

@@ -8,7 +8,7 @@ import {
   resolveTemplate
 } from "../template";
 import type { AccountsReceivableBillingAddress, PDF } from "../types";
-import { composeRegistrationLine } from "../utils/footer";
+import { resolveRegistrationLine } from "../utils/shared";
 import type { SalesOrderData, SalesOrderLocations } from "./blocks/salesOrder";
 import {
   buildSalesOrderVars,
@@ -58,12 +58,6 @@ const SalesOrderPDF = ({
     maximumFractionDigits: 2
   });
 
-  const registrationLine = composeRegistrationLine({
-    companyName: company.name,
-    country: company.countryCode,
-    eori: company.eori
-  });
-
   const { blocks, theme, settings, headerSectionId, footerSectionId } =
     resolveTemplate("salesOrder", template);
 
@@ -72,6 +66,14 @@ const SalesOrderPDF = ({
     salesOrderLocations,
     company,
     currencyCode
+  });
+
+  const registration = resolveRegistrationLine({
+    company,
+    footerSectionId,
+    sections,
+    settings,
+    vars
   });
 
   const headerOptions = {
@@ -128,11 +130,11 @@ const SalesOrderPDF = ({
         subject: meta?.subject ?? "Sales Order"
       }}
       footerDocumentId={salesOrder?.salesOrderId}
-      footerLabel={registrationLine ?? undefined}
+      footerLabel={registration.label}
       showFooter={showFooter}
       showPageNumbers={settings.showPageNumbers}
       pageNumberFormat={settings.pageNumberFormat}
-      showRegistrationLine={settings.showRegistrationLine}
+      showRegistrationLine={registration.show}
       fontFamily={settings.fontFamily}
       headerContent={headerContent}
       footerContent={footerContent}

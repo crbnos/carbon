@@ -18,6 +18,7 @@ import type {
 
 export type HubMutation =
   | { intent: "setCheck"; itemKey: string; kind: StateKind; value: string }
+  | { intent: "setChecks"; itemKeys: string[]; kind: StateKind; value: string }
   | { intent: "setField"; fieldKey: string; value: string }
   | { intent: "addRow"; collection: string; payload: Record<string, unknown> }
   | { intent: "updateRow"; rowId: string; payload: Record<string, unknown> }
@@ -35,6 +36,13 @@ export function toFormFields(m: HubMutation): Record<string, string> {
       return {
         intent: m.intent,
         itemKey: m.itemKey,
+        kind: m.kind,
+        value: m.value
+      };
+    case "setChecks":
+      return {
+        intent: m.intent,
+        itemKeys: JSON.stringify(m.itemKeys),
         kind: m.kind,
         value: m.value
       };

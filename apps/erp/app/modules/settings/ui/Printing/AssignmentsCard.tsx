@@ -19,9 +19,9 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo } from "react";
 import {
+  LuBlocks,
   LuHandCoins,
   LuMapPin,
-  LuPackage,
   LuTruck,
   LuWrench
 } from "react-icons/lu";
@@ -209,7 +209,7 @@ function LocationSection({
     {
       context: "inventory",
       label: "Inventory",
-      icon: <LuPackage />,
+      icon: <LuBlocks />,
       explicit: assignment?.inventory ?? null
     },
     ...workCenters.map<AssignmentRowModel>((wc) => ({

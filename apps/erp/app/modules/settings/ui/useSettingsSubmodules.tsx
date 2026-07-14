@@ -1,6 +1,7 @@
 import { useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
 import {
+  LuBlocks,
   LuBox,
   LuCircleCheck,
   LuClipboardCheck,
@@ -18,7 +19,6 @@ import {
   LuPrinter,
   LuSheet,
   LuShoppingCart,
-  LuSquareStack,
   LuUsers,
   LuWebhook,
   LuWorkflow,
@@ -80,12 +80,6 @@ export default function useSettingsSubmodules() {
             icon: <LuImage />
           },
           {
-            name: t`Backups`,
-            to: path.to.backups,
-            role: "employee",
-            icon: <LuDatabase />
-          },
-          {
             name: t`Printing`,
             to: path.to.printingSettings,
             role: "employee",
@@ -112,7 +106,7 @@ export default function useSettingsSubmodules() {
             name: t`Items`,
             to: path.to.itemsSettings,
             role: "employee",
-            icon: <LuSquareStack />
+            icon: <LuBlocks />
           },
           {
             name: t`People`,
@@ -172,6 +166,12 @@ export default function useSettingsSubmodules() {
             to: path.to.auditLog,
             role: "employee",
             icon: <LuHistory />
+          },
+          {
+            name: t`Backups`,
+            to: path.to.backups,
+            role: "employee",
+            icon: <LuDatabase />
           },
           {
             name: t`Custom Fields`,

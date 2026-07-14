@@ -26,13 +26,13 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
 import {
+  LuBlocks,
   LuCalendar,
   LuCheck,
   LuContainer,
   LuHash,
   LuLink,
   LuMapPin,
-  LuPackage,
   LuPencil,
   LuPrinter,
   LuQrCode,
@@ -121,7 +121,7 @@ const KanbansTable = memo(
                 label: item.readableIdWithRevision
               }))
             },
-            icon: <LuPackage />
+            icon: <LuBlocks />
           }
         },
         {

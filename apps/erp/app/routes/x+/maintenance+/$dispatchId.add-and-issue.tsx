@@ -2,6 +2,7 @@ import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { trigger } from "@carbon/jobs";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
@@ -27,6 +28,8 @@ const addAndIssueValidator = z.object({
     )
     .optional()
 });
+
+const logger = getLogger("erp", "maintenance", "dispatch");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -92,7 +95,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
 
     if (issue.error) {
-      console.error(issue.error);
+      logger.error("Failed to issue tracked items", { error: issue.error });
       return data(
         { success: false, message: "Failed to issue tracked items" },
         { status: 400 }
@@ -111,7 +114,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
           });
         }
       } catch (e) {
-        console.error("Auto-print for split entities failed:", e);
+        logger.error("Auto-print for split entities failed", { error: e });
       }
     }
   } else {
@@ -129,7 +132,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
 
     if (issue.error) {
-      console.error(issue.error);
+      logger.error("Failed to issue from inventory", { error: issue.error });
       return data(
         { success: false, message: "Failed to issue from inventory" },
         { status: 400 }

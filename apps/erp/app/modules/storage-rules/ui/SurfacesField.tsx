@@ -15,7 +15,7 @@ import { useLingui } from "@lingui/react/macro";
 import { useEffect } from "react";
 import {
   LuArrowRightLeft,
-  LuPackage,
+  LuBlocks,
   LuScale,
   LuTruck,
   LuWarehouse
@@ -33,7 +33,7 @@ const SURFACE_META: Record<
   shipment: {
     title: "Shipments",
     description: "When goods leave a location",
-    icon: <LuPackage />
+    icon: <LuBlocks />
   },
   stockTransfer: {
     title: "Stock transfers",
@@ -53,12 +53,12 @@ const SURFACE_META: Record<
   place: {
     title: "Place",
     description: "When stock is placed into a storage unit",
-    icon: <LuPackage />
+    icon: <LuBlocks />
   },
   pick: {
     title: "Pick",
     description: "When stock is taken from a storage unit",
-    icon: <LuPackage />
+    icon: <LuBlocks />
   },
   operationStart: {
     title: "Operation start",

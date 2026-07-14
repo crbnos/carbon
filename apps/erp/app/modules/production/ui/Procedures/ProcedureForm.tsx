@@ -1,5 +1,6 @@
 import { ValidatedForm } from "@carbon/form";
 import {
+  Button,
   HStack,
   ModalDrawer,
   ModalDrawerBody,
@@ -107,6 +108,9 @@ const ProcedureForm = ({
                 >
                   <Trans>Save</Trans>
                 </Submit>
+                <Button size="md" variant="solid" onClick={() => onClose()}>
+                  <Trans>Cancel</Trans>
+                </Button>
               </HStack>
             </ModalDrawerFooter>
           </ValidatedForm>

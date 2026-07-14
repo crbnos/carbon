@@ -94,7 +94,8 @@ const PickingListsTable = memo(({ data, count }: PickingListsTableProps) => {
             "Unassigned"
           ),
         meta: {
-          icon: <LuUser />
+          icon: <LuUser />,
+          exportValue: (row) => row.assigneeName
         }
       },
       {
@@ -102,7 +103,8 @@ const PickingListsTable = memo(({ data, count }: PickingListsTableProps) => {
         header: t`Location`,
         cell: ({ row }) => row.original.locationName || "N/A",
         meta: {
-          icon: <LuMapPin />
+          icon: <LuMapPin />,
+          exportValue: (row) => row.locationName
         }
       },
       {

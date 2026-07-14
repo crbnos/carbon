@@ -1,13 +1,16 @@
 import { Card, CardContent, CardHeader, CardTitle, cn } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { LuTrash } from "react-icons/lu";
 import { Outlet, useNavigate } from "react-router";
 import { SupplierAvatar } from "~/components";
 import Grid from "~/components/Grid";
 import Hyperlink from "~/components/Hyperlink";
+import { ConfirmDelete } from "~/components/Modals";
 import { useCurrencyFormatter, usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
+import { useSuppliers } from "~/stores/suppliers";
 import type { SupplierPart } from "../../../types";
 
 type Part = Pick<
@@ -25,18 +28,29 @@ type Part = Pick<
 type SupplierPartsProps = {
   supplierParts: Part[];
   compact?: boolean;
+  deleteSupplierPath?: (id: string) => string;
 };
 
 const SupplierParts = ({
   supplierParts,
-  compact = false
+  compact = false,
+  deleteSupplierPath
 }: SupplierPartsProps) => {
   const navigate = useNavigate();
   const { t } = useLingui();
   const permissions = usePermissions();
   const canEdit = permissions.can("update", "parts");
+  const canDelete = permissions.can("delete", "parts");
   const formatter = useCurrencyFormatter();
   const customColumns = useCustomColumns<Part>("supplierPart");
+  const [suppliers] = useSuppliers();
+
+  const [deleteTarget, setDeleteTarget] = useState<Part | null>(null);
+
+  const supplierName = (supplierId: string | null) => {
+    if (!supplierId || !suppliers) return t`this supplier`;
+    return suppliers.find((s) => s.id === supplierId)?.name ?? t`this supplier`;
+  };
 
   const columns = useMemo<ColumnDef<Part>[]>(() => {
     const defaultColumns: ColumnDef<Part>[] = [
@@ -79,8 +93,32 @@ const SupplierParts = ({
         cell: (item) => item.getValue()
       }
     ];
-    return [...defaultColumns, ...customColumns];
-  }, [customColumns, formatter, t]);
+
+    const cols = [...defaultColumns, ...customColumns];
+
+    if (canDelete && deleteSupplierPath) {
+      cols.push({
+        id: "delete",
+        header: "",
+        size: 40,
+        cell: ({ row }) => (
+          <button
+            type="button"
+            aria-label={t`Delete supplier`}
+            className="text-muted-foreground hover:text-destructive transition-colors p-1 rounded"
+            onClick={(e) => {
+              e.stopPropagation();
+              setDeleteTarget(row.original);
+            }}
+          >
+            <LuTrash className="w-4 h-4" />
+          </button>
+        )
+      });
+    }
+
+    return cols;
+  }, [customColumns, formatter, t, canDelete, deleteSupplierPath]);
 
   return (
     <>
@@ -100,6 +138,15 @@ const SupplierParts = ({
         </CardContent>
       </Card>
       <Outlet />
+      {deleteTarget && deleteSupplierPath && deleteTarget.id && (
+        <ConfirmDelete
+          action={deleteSupplierPath(deleteTarget.id)}
+          name={t`Supplier Part`}
+          text={t`Are you sure you want to remove ${supplierName(deleteTarget.supplierId)} as a supplier for this item? This cannot be undone.`}
+          onCancel={() => setDeleteTarget(null)}
+          onSubmit={() => setDeleteTarget(null)}
+        />
+      )}
     </>
   );
 };

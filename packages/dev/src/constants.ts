@@ -11,7 +11,12 @@ export const COMPOSE_DEV_FILE_LEGACY = "docker-compose.dev.yml";
 /** Apps the CLI knows how to spawn through portless. */
 export const APP_CHOICES = [
   { value: "erp", label: "ERP", hint: "main app" },
-  { value: "mes", label: "MES", hint: "shop floor" }
+  { value: "mes", label: "MES", hint: "shop floor" },
+  {
+    value: "assembler",
+    label: "Assembler",
+    hint: "CAD convert + motion planning"
+  }
 ] as const;
 export type AppId = (typeof APP_CHOICES)[number]["value"];
 

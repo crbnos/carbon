@@ -90,7 +90,12 @@ export const usePreviewing = () => useHub((s) => s.previewing);
 export const useIsInternal = () => useHub((s) => s.isInternal);
 export const useTier = () => useHub((s) => s.tier);
 export const useHubStatus = () => useHub((s) => s.status);
-export const useExclusions = () => useHub((s) => s.exclusions);
+// What views filter by: stored exclusions + app-forced modules (e.g. "acc"
+// while accounting is disabled in company settings).
+export const useExclusions = () => useHub((s) => s.effectiveExclusions);
+// The stored, staff-editable exclusions — the editing surface for Setup &
+// Controls. Never includes forced modules, so edits can't persist them.
+export const useStoredExclusions = () => useHub((s) => s.exclusions);
 export const useContacts = () => useHub((s) => s.contacts);
 export const useSignals = () => useHub((s) => s.signals);
 export const useCheckMap = () => useHub((s) => s.checkMap);
@@ -120,6 +125,16 @@ export function useHubActions() {
       // Boolean flag toggles (scopeFlag / check) persist as "1" | "0".
       toggleFlag: (itemKey: string, kind: StateKind, on: boolean) =>
         dispatch({ intent: "setCheck", itemKey, kind, value: on ? "1" : "0" }),
+      // Batch flag toggle (e.g. a Setup Map group's "mark all as configured").
+      // One round-trip: rapid sequential dispatches on the shared fetcher would
+      // cancel each other in flight.
+      toggleFlags: (itemKeys: string[], kind: StateKind, on: boolean) =>
+        dispatch({
+          intent: "setChecks",
+          itemKeys,
+          kind,
+          value: on ? "1" : "0"
+        }),
       setGate: (itemKey: string, value: GateValue) =>
         dispatch({ intent: "setCheck", itemKey, kind: "gate", value }),
       setField: (fieldKey: string, value: string) =>

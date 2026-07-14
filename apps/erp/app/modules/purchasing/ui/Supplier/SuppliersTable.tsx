@@ -115,15 +115,11 @@ const SuppliersTable = memo(({ data, count, tags }: SuppliersTableProps) => {
       {
         accessorKey: "supplierTypeId",
         header: t`Type`,
-        cell: (item) => {
-          if (!item.getValue<string>()) return null;
-          const supplierType = supplierTypes?.find(
-            (type) => type.value === item.getValue<string>()
-          )?.label;
-          return <Enumerable value={supplierType ?? ""} />;
-        },
+        cell: ({ row }) => <Enumerable value={row.original.type ?? ""} />,
         meta: {
           icon: <LuShapes />,
+          sortBy: "type",
+          exportValue: (row) => row.type,
           filter: {
             type: "static",
             options: supplierTypes?.map((type) => ({

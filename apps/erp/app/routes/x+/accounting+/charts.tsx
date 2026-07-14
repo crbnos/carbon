@@ -7,23 +7,33 @@ import { useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
 import type { Chart } from "~/modules/accounting";
-import { getChartOfAccounts } from "~/modules/accounting";
+import {
+  getChartOfAccounts,
+  getFiscalYearSettings
+} from "~/modules/accounting";
 import { ChartOfAccountsTree } from "~/modules/accounting/ui/ChartOfAccounts";
 import ChartOfAccountsTableFilters from "~/modules/accounting/ui/ChartOfAccounts/ChartOfAccountsTableFilters";
+import { months } from "~/modules/shared";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+import { revalidateIgnoringOffset } from "~/utils/revalidate";
 
 export const handle: Handle = {
   breadcrumb: msg`Chart of Accounts`,
   to: path.to.chartOfAccounts
 };
 
+export const shouldRevalidate = revalidateIgnoringOffset;
+
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyGroupId } = await requirePermissions(request, {
-    view: "accounting",
-    role: "employee",
-    bypassRls: true
-  });
+  const { client, companyId, companyGroupId } = await requirePermissions(
+    request,
+    {
+      view: "accounting",
+      role: "employee",
+      bypassRls: true
+    }
+  );
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -31,11 +41,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const startDate = searchParams.get("startDate") || null;
   const endDate = searchParams.get("endDate") || null;
 
-  const chartOfAccounts = await getChartOfAccounts(client, companyGroupId, {
-    incomeBalance: null,
-    startDate,
-    endDate
-  });
+  const [chartOfAccounts, fiscalYearSettings] = await Promise.all([
+    getChartOfAccounts(client, companyGroupId, {
+      incomeBalance: null,
+      startDate,
+      endDate
+    }),
+    getFiscalYearSettings(client, companyId)
+  ]);
 
   if (chartOfAccounts.error) {
     throw redirect(
@@ -48,17 +61,23 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   return {
-    chartOfAccounts: (chartOfAccounts.data ?? []) as Chart[]
+    chartOfAccounts: (chartOfAccounts.data ?? []) as Chart[],
+    fiscalStartMonth:
+      months.indexOf(fiscalYearSettings.data?.startMonth ?? "January") + 1
   };
 }
 
 export default function ChartOfAccountsRoute() {
-  const { chartOfAccounts } = useLoaderData<typeof loader>();
+  const { chartOfAccounts, fiscalStartMonth } = useLoaderData<typeof loader>();
   const [search, setSearch] = useState("");
 
   return (
     <VStack spacing={0} className="h-full">
-      <ChartOfAccountsTableFilters search={search} onSearchChange={setSearch} />
+      <ChartOfAccountsTableFilters
+        fiscalStartMonth={fiscalStartMonth}
+        search={search}
+        onSearchChange={setSearch}
+      />
       <ChartOfAccountsTree data={chartOfAccounts} search={search} />
       <Outlet />
     </VStack>

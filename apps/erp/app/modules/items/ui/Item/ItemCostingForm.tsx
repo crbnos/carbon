@@ -67,10 +67,14 @@ const ItemCostingForm = ({ initialValues }: ItemCostingFormProps) => {
               name="costingMethod"
               label={t`Costing Method`}
               termId="costing-method"
-              options={itemCostingMethods.map((method) => ({
-                label: method,
-                value: method
-              }))}
+              options={itemCostingMethods
+                // Standard costing isn't implemented yet — hidden until the
+                // standard-costing work ships
+                .filter((method) => method !== "Standard")
+                .map((method) => ({
+                  label: method,
+                  value: method
+                }))}
             />
 
             <Number

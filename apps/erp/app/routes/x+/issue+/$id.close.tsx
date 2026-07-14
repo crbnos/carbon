@@ -3,11 +3,14 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { notifyIssueStatusChanged } from "@carbon/ee/notifications";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { closeIssue } from "~/modules/quality/quality.server";
 import { getCompanyIntegrations } from "~/modules/settings/settings.server";
 import { path, requestReferrer } from "~/utils/path";
+
+const logger = getLogger("erp", "id-close");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -49,7 +52,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       }
     });
   } catch (err) {
-    console.error("Failed to send close notifications:", err);
+    logger.error("Failed to send close notifications", { error: err });
   }
 
   throw redirect(

@@ -337,6 +337,7 @@ import {
   usePickOrderOptions
 } from "./TrackedEntityPicker";
 import { TruncatedTooltipText } from "./TruncatedTooltipText";
+import { TVColorBars } from "./TVColorBars";
 import { cn } from "./utils/cn";
 import { copyToClipboard } from "./utils/dom";
 import { getValidChildren, reactNodeToString } from "./utils/react";
@@ -616,6 +617,7 @@ export {
   TooltipProvider,
   TooltipTrigger,
   Tr,
+  TVColorBars,
   VStack,
   buttonVariants,
   cn,

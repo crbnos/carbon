@@ -4,8 +4,8 @@ The deterministic substrate that powers the `build` conductor skill (loop conduc
 
 ## Concepts
 
-- **Bindings** — specs for a loop iteration, parsed from `llm/loops/<id>.loop.md` frontmatter.
-- **Ledger** — append-only JSONL log of each iteration's outcome, stored at `llm/loops/<id>/ledger.jsonl`.
+- **Bindings** — specs for a loop iteration, parsed from `.ai/runs/<id>/binding.loop.md` frontmatter.
+- **Ledger** — append-only JSONL log of each iteration's outcome, stored at `.ai/runs/<id>/ledger.jsonl`.
 - **Floor gates** — cheap, deterministic checks that must pass before any iteration is recorded as `keep`.
 
 ## Usage

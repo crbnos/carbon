@@ -1,5 +1,6 @@
 import { getUser } from "@carbon/auth";
 import type { Database } from "@carbon/database";
+import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   getJiraClient,
@@ -11,6 +12,7 @@ import type { TiptapDocument } from "../../jira/lib/richtext";
 import type { NotificationEvent, NotificationService } from "../types";
 
 const jira = getJiraClient();
+const logger = getLogger("ee", "notifications", "jira");
 
 /**
  * Jira Notification Service
@@ -103,7 +105,7 @@ export class JiraNotificationService implements NotificationService {
             description
           });
         } catch (e) {
-          console.error("Failed to sync notes to Jira:", e);
+          logger.error("Failed to sync notes to Jira", { error: e });
         }
         break;
       }

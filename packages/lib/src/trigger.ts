@@ -8,6 +8,8 @@ import { inngest } from "./inngest/client.ts";
  */
 const taskToEvent = {
   "accounting-backfill": "carbon/accounting-backfill",
+  "assembly-convert": "carbon/assembly-convert",
+  "assembly-plan": "carbon/assembly-plan",
   "company-export": "carbon/company-export",
   "company-import": "carbon/company-import",
   "company-restore": "carbon/company-restore",
@@ -32,7 +34,8 @@ const taskToEvent = {
   "sync-issue-from-jira": "carbon/jira-sync",
   "sync-issue-from-linear": "carbon/linear-sync",
   "update-permissions": "carbon/update-permissions",
-  "user-admin": "carbon/user-admin"
+  "user-admin": "carbon/user-admin",
+  "extract-document": "carbon/extract-document"
 } as const;
 
 type TaskMap = typeof taskToEvent;

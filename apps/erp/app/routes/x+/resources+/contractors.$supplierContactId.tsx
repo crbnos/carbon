@@ -37,7 +37,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     create: "resources"
   });
 
@@ -58,6 +58,7 @@ export async function action({ request }: ActionFunctionArgs) {
     // @ts-expect-error TS2339 - TODO: fix type
     abilities: d.abilities ?? [],
     customFields: setCustomFields(formData),
+    companyId,
     updatedBy: userId
   });
 

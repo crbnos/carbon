@@ -1,4 +1,5 @@
 import type { Database } from "@carbon/database";
+import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { XeroProvider } from "../providers/xero";
 import type { ProviderID } from "./models";
@@ -7,6 +8,8 @@ import {
   ProviderIntegrationMetadataSchema
 } from "./models";
 import type { ProviderCredentials, ProviderIntegrationMetadata } from "./types";
+
+const logger = getLogger("ee", "accounting");
 
 export const getAccountingIntegration = async <T extends ProviderID>(
   client: SupabaseClient<Database>,
@@ -22,13 +25,11 @@ export const getAccountingIntegration = async <T extends ProviderID>(
     )
     .single();
 
-  console.log(
-    "Fetched integration for",
+  logger.info("Fetched integration", {
     provider,
-    "and ID",
     companyOrTenantId,
     integration
-  );
+  });
 
   if (integration.error || !integration.data) {
     throw new Error(
@@ -41,7 +42,7 @@ export const getAccountingIntegration = async <T extends ProviderID>(
   );
 
   if (!config.success) {
-    console.dir(config.error, { depth: null });
+    logger.error("Invalid provider config", { error: config.error });
     throw new Error("Invalid provider config");
   }
 
@@ -66,7 +67,7 @@ export const getProviderIntegration = (
   // Create a callback function to update the integration metadata when tokens are refreshed
   const onTokenRefresh = async (auth: ProviderCredentials) => {
     try {
-      console.log("Refreshing tokens for", provider, "integration");
+      logger.info("Refreshing tokens for integration", { provider });
       const update: ProviderCredentials = {
         ...auth,
         expiresAt:
@@ -80,10 +81,10 @@ export const getProviderIntegration = (
         .eq("companyId", companyId)
         .eq("id", provider);
     } catch (error) {
-      console.error(
-        `Failed to update ${provider} integration metadata:`,
+      logger.error("Failed to update integration metadata", {
+        provider,
         error
-      );
+      });
     }
   };
 
@@ -107,11 +108,7 @@ export const getProviderIntegration = (
         defaultSalesAccountCode: config?.defaultSalesAccountCode,
         defaultPurchaseAccountCode: config?.defaultPurchaseAccountCode
       };
-      console.log(
-        "[getProviderIntegration] Creating XeroProvider with settings:",
-        settings
-      );
-      console.log("[getProviderIntegration] Full config received:", config);
+      logger.info("Creating XeroProvider", { settings, config });
       return new XeroProvider({
         companyId,
         tenantId,

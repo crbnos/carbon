@@ -17,7 +17,9 @@ import type {
   PurchaseInvoiceLine
 } from "~/modules/invoicing";
 import {
+  getInvoiceSettlementsForInvoice,
   getPurchaseInvoice,
+  InvoicePaymentsPanel,
   isPurchaseInvoiceLocked,
   PurchaseInvoiceSummary,
   purchaseInvoiceValidator,
@@ -35,17 +37,20 @@ import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "invoicing"
   });
 
   const { invoiceId } = params;
   if (!invoiceId) throw new Error("Could not find invoiceId");
 
-  const invoice = await getPurchaseInvoice(client, invoiceId);
+  const [invoice, applications] = await Promise.all([
+    getPurchaseInvoice(client, invoiceId),
+    getInvoiceSettlementsForInvoice(client, companyId, "purchase", invoiceId)
+  ]);
   if (invoice.error) {
     throw redirect(
-      path.to.purchaseInvoices,
+      path.to.invoicingPurchasing,
       await flash(
         request,
         error(invoice.error, "Failed to load purchase invoice")
@@ -54,7 +59,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   return {
-    internalNotes: (invoice.data?.internalNotes ?? {}) as JSONContent
+    internalNotes: (invoice.data?.internalNotes ?? {}) as JSONContent,
+    paymentApplications: applications.data ?? []
   };
 }
 
@@ -139,7 +145,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 export default function PurchaseInvoiceBasicRoute() {
   const { t } = useLingui();
-  const { internalNotes } = useLoaderData<typeof loader>();
+  const { internalNotes, paymentApplications } = useLoaderData<typeof loader>();
   const { invoiceId } = useParams();
   if (!invoiceId) throw new Error("invoiceId not found");
 
@@ -193,6 +199,7 @@ export default function PurchaseInvoiceBasicRoute() {
   return (
     <Fragment key={invoiceId}>
       <PurchaseInvoiceSummary onEditShippingCost={handleEditShippingCost} />
+      <InvoicePaymentsPanel rows={paymentApplications} />
       <SupplierInteractionNotes
         key={`notes-${initialValues.id}`}
         id={invoiceId}

@@ -10,7 +10,10 @@ import { TrackedEntityAttributes, credit, debit, journalReference } from "../lib
 import { calculateCOGS } from "../shared/calculate-cogs.ts";
 import { getCurrentAccountingPeriod } from "../shared/get-accounting-period.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
-import { getDefaultPostingGroup } from "../shared/get-posting-group.ts";
+import {
+  getDefaultPostingGroup,
+  resolveInventoryAccount,
+} from "../shared/get-posting-group.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
@@ -79,7 +82,7 @@ serve(async (req: Request) => {
     const [items, itemCosts, jobs] = await Promise.all([
       client
         .from("item")
-        .select("id, itemTrackingType")
+        .select("id, itemTrackingType, replenishmentSystem")
         .in("id", itemIds)
         .eq("companyId", companyId),
       client
@@ -172,7 +175,9 @@ serve(async (req: Request) => {
                   .eq("companyGroupId", companyGroupId)
                   .eq("active", true)
                   .in("entityType", [
+                    "Customer",
                     "CustomerType",
+                    "Item",
                     "ItemPostingGroup",
                     "Location",
                     "CostCenter",
@@ -197,6 +202,7 @@ serve(async (req: Request) => {
 
             const journalLineDimensionsMeta: {
               customerTypeId: string | null;
+              itemId: string | null;
               itemPostingGroupId: string | null;
               locationId: string | null;
               costCenterId: string | null;
@@ -325,9 +331,11 @@ serve(async (req: Request) => {
                 }
               }
 
+              const shipmentLineItem = items.data.find(
+                (item) => item.id === shipmentLine.itemId
+              );
               const itemTrackingType =
-                items.data.find((item) => item.id === shipmentLine.itemId)
-                  ?.itemTrackingType ?? "Inventory";
+                shipmentLineItem?.itemTrackingType ?? "Inventory";
 
               // Default shippedQuantity to 0 if not defined or NaN
               const shippedQuantity =
@@ -438,9 +446,13 @@ serve(async (req: Request) => {
                   companyId,
                 });
 
+                const inventoryAccount = resolveInventoryAccount(
+                  shipmentLineItem?.replenishmentSystem ?? null,
+                  accountDefaults.data
+                );
                 journalLineInserts.push({
-                  accountId: accountDefaults.data.inventoryAccount,
-                  description: "Inventory Account",
+                  accountId: inventoryAccount.account,
+                  description: inventoryAccount.description,
                   amount: 0,
                   quantity: shippedQuantity,
                   documentType: "Sales Shipment",
@@ -454,6 +466,7 @@ serve(async (req: Request) => {
                 for (let i = 0; i < 2; i++) {
                   journalLineDimensionsMeta.push({
                     customerTypeId: customer.data.customerTypeId ?? null,
+                    itemId: shipmentLine.itemId ?? null,
                     itemPostingGroupId,
                     locationId: shipmentLine.locationId ?? locationId ?? null,
                     costCenterId: salesOrderLine?.costCenterId ?? null,
@@ -592,6 +605,7 @@ serve(async (req: Request) => {
 
                   journalLineDimensionsMeta.push({
                     customerTypeId: customer.data.customerTypeId ?? null,
+                    itemId: null,
                     itemPostingGroupId: null,
                     locationId: locationId ?? assetRecord.data.locationId ?? null,
                     costCenterId: faSoLine.costCenterId ?? null,
@@ -619,6 +633,7 @@ serve(async (req: Request) => {
 
                   journalLineDimensionsMeta.push({
                     customerTypeId: customer.data.customerTypeId ?? null,
+                    itemId: null,
                     itemPostingGroupId: null,
                     locationId: locationId ?? assetRecord.data.locationId ?? null,
                     costCenterId: faSoLine.costCenterId ?? null,
@@ -645,6 +660,7 @@ serve(async (req: Request) => {
 
                 journalLineDimensionsMeta.push({
                   customerTypeId: customer.data.customerTypeId ?? null,
+                  itemId: null,
                   itemPostingGroupId: null,
                   locationId: locationId ?? assetRecord.data.locationId ?? null,
                   costCenterId: faSoLine.costCenterId ?? null,
@@ -1206,11 +1222,30 @@ serve(async (req: Request) => {
                     const meta = journalLineDimensionsMeta[index];
                     if (!meta) return;
 
+                    if (
+                      salesOrder.data?.customerId &&
+                      dimensionMap.has("Customer")
+                    ) {
+                      journalLineDimensionInserts.push({
+                        journalLineId: jl.id,
+                        dimensionId: dimensionMap.get("Customer")!,
+                        valueId: salesOrder.data.customerId,
+                        companyId,
+                      });
+                    }
                     if (meta.customerTypeId && dimensionMap.has("CustomerType")) {
                       journalLineDimensionInserts.push({
                         journalLineId: jl.id,
                         dimensionId: dimensionMap.get("CustomerType")!,
                         valueId: meta.customerTypeId,
+                        companyId,
+                      });
+                    }
+                    if (meta.itemId && dimensionMap.has("Item")) {
+                      journalLineDimensionInserts.push({
+                        journalLineId: jl.id,
+                        dimensionId: dimensionMap.get("Item")!,
+                        valueId: meta.itemId,
                         companyId,
                       });
                     }

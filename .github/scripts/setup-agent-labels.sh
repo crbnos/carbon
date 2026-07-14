@@ -2,7 +2,7 @@
 #
 # Create/update the agent:* labels the outer loop (the OpenClaw orchestrator,
 # acting as the `carbon-agent` machine user) drives. These are the GitHub-side
-# state machine for autonomous work — see llm/outer-loop/01-openclaw-plan.md §4.
+# state machine for autonomous work — see .ai/docs/outer-loop.md.
 #
 # Idempotent: `gh label create --force` updates an existing label's color and
 # description instead of erroring, so this is safe to re-run.
@@ -26,5 +26,6 @@ create "agent:needs-grooming"      "fbca04" "Candidate for the agent groomer to 
 create "agent:groomed"             "0e8a16" "Spec + acceptance criteria proposed by the agent; safe to assign to carbon-agent"
 create "agent:needs-decomposition" "d93f0b" "Epic-sized; the agent proposed a breakdown — needs a human to split"
 create "agent:blocked"             "b60205" "The loop returned blocked/error, or binding synthesis refused — needs a human"
+create "agent:needs-verification"  "d4c5f9" "Draft PR shipped without full behavior proof (or partial work) — a human must verify before merge"
 
 echo "agent:* labels synced."

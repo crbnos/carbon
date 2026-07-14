@@ -1,7 +1,10 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { integrations as availableIntegrations } from "@carbon/ee";
+import {
+  integrations as availableIntegrations,
+  quickInstallConnectors
+} from "@carbon/ee";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
 import { IntegrationsList } from "~/modules/settings";
@@ -49,6 +52,7 @@ export default function IntegrationsRoute() {
         integrations={integrations}
         // @ts-expect-error TS2322 - TODO: fix type
         availableIntegrations={availableIntegrations}
+        quickInstallConnectors={quickInstallConnectors}
       />
       <Outlet />
     </>

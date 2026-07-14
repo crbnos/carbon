@@ -1,6 +1,7 @@
 import type { Result } from "@carbon/auth";
 import { useCarbon } from "@carbon/auth";
 import { useStorageRuleViolations } from "@carbon/ee/storage-rules";
+import { getLogger } from "@carbon/logger";
 import {
   Badge,
   Button,
@@ -85,6 +86,8 @@ import {
   useStockTransferWizardLinesCount
 } from "~/stores";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "stocktransferwizard");
 
 export function StockTransferWizard({
   locationId,
@@ -218,7 +221,7 @@ function TransferGrid({ locationId }: { locationId: string }) {
       );
 
       if (error) {
-        console.error(error);
+        logger.error(error);
         return [];
       }
 

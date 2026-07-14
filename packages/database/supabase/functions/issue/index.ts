@@ -17,8 +17,12 @@ import { TrackedEntityAttributes, credit, debit, journalReference } from "../lib
 
 import { getCurrentAccountingPeriod } from "../shared/get-accounting-period.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
-import { getDefaultPostingGroup } from "../shared/get-posting-group.ts";
+import {
+  getDefaultPostingGroup,
+  resolveInventoryAccount,
+} from "../shared/get-posting-group.ts";
 import { calculateCOGS } from "../shared/calculate-cogs.ts";
+import { resolveTrackedEntityBin } from "./resolve-tracked-entity-bin.ts";
 
 type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
 
@@ -198,8 +202,20 @@ async function issueJobOperationMaterials(
     [];
 
   for await (const material of materialsToIssue) {
+    // Cap the backflush at the material's remaining unissued requirement,
+    // mirroring backflush_job_materials. Without this, materials already
+    // issued manually (e.g. from MES after skipping the operation) get
+    // consumed a second time on operation completion — duplicate item/cost
+    // ledger entries and duplicate DR WIP / CR Inventory journal lines.
+    const demandQuantity = Number(material.quantity) * quantity;
+    const remainingQuantity = Math.max(
+      Number(material.estimatedQuantity ?? 0) -
+        Number(material.quantityIssued ?? 0),
+      0
+    );
+    const quantityToIssue = Math.min(demandQuantity, remainingQuantity);
 
-    const quantityToIssue = Number(material.quantity) * quantity;
+    if (quantityToIssue <= 0) continue;
 
     let proposedStorageUnitId = material.storageUnitId;
 
@@ -321,6 +337,7 @@ async function issueJobOperationMaterials(
 
     const journalLineDimensionsMeta: {
       itemPostingGroupId: string | null;
+      itemId: string | null;
       locationId: string | null;
     }[] = [];
 
@@ -331,16 +348,27 @@ async function issueJobOperationMaterials(
       .executeTakeFirst();
 
     const consumedItemIds = [...new Set(itemLedgerInserts.map((l) => l.itemId))];
-    const consumedItemCosts = consumedItemIds.length > 0
-      ? await trx
-          .selectFrom("itemCost")
-          .where("itemId", "in", consumedItemIds)
-          .where("companyId", "=", companyId)
-          .select(["itemId", "itemPostingGroupId"])
-          .execute()
-      : [];
+    const [consumedItemCosts, consumedItems] = consumedItemIds.length > 0
+      ? await Promise.all([
+          trx
+            .selectFrom("itemCost")
+            .where("itemId", "in", consumedItemIds)
+            .where("companyId", "=", companyId)
+            .select(["itemId", "itemPostingGroupId"])
+            .execute(),
+          trx
+            .selectFrom("item")
+            .where("id", "in", consumedItemIds)
+            .where("companyId", "=", companyId)
+            .select(["id", "replenishmentSystem"])
+            .execute(),
+        ])
+      : [[], []];
     const consumedPostingGroupMap = new Map(
       consumedItemCosts.map((ic) => [ic.itemId, ic.itemPostingGroupId])
+    );
+    const consumedReplenishmentMap = new Map(
+      consumedItems.map((i) => [i.id, i.replenishmentSystem])
     );
 
     for (const ledger of itemLedgerInserts) {
@@ -367,9 +395,13 @@ async function issueJobOperationMaterials(
         companyId,
       });
 
+      const inventoryAccount = resolveInventoryAccount(
+        consumedReplenishmentMap.get(ledger.itemId) ?? null,
+        accountDefaults.data
+      );
       journalLineInserts.push({
-        accountId: accountDefaults.data.inventoryAccount,
-        description: "Inventory Account",
+        accountId: inventoryAccount.account,
+        description: inventoryAccount.description,
         amount: credit("asset", cogsResult.totalCost),
         quantity: materialQuantity,
         documentType: "Job Consumption",
@@ -398,13 +430,14 @@ async function issueJobOperationMaterials(
       for (let i = 0; i < 2; i++) {
         journalLineDimensionsMeta.push({
           itemPostingGroupId: consumedPostingGroupMap.get(ledger.itemId) ?? null,
+          itemId: ledger.itemId ?? null,
           locationId: jobForLocation?.locationId ?? null,
         });
       }
     }
 
     if (journalLineInserts.length > 0) {
-      const accountingPeriodId = await getCurrentAccountingPeriod(client, companyId, db);
+      const accountingPeriodId = await getCurrentAccountingPeriod(client, companyId, trx);
       const journalEntryId = await getNextSequence(trx, "journalEntry", companyId);
 
       const journalResult = await trx
@@ -455,6 +488,14 @@ async function issueJobOperationMaterials(
               companyId,
             });
           }
+          if (meta.itemId && dimensionMap.has("Item")) {
+            dimensionInserts.push({
+              journalLineId: jl.id,
+              dimensionId: dimensionMap.get("Item")!,
+              valueId: meta.itemId,
+              companyId,
+            });
+          }
           if (meta.locationId && dimensionMap.has("Location")) {
             dimensionInserts.push({
               journalLineId: jl.id,
@@ -484,7 +525,8 @@ async function createMaterialWipEntries(
     operationId: string;
     description: string;
     wipAccount: string;
-    inventoryAccount: string;
+    rawMaterialsAccount: string;
+    finishedGoodsAccount: string;
     dimensionMap: Map<string, string>;
     jobLocationId: string | null;
     client: any;
@@ -495,7 +537,7 @@ async function createMaterialWipEntries(
 ) {
   const {
     consumptionLedgers, jobId, operationId, description,
-    wipAccount, inventoryAccount,
+    wipAccount, rawMaterialsAccount, finishedGoodsAccount,
     dimensionMap, jobLocationId,
     client, db, companyId, userId,
   } = args;
@@ -514,20 +556,32 @@ async function createMaterialWipEntries(
 
   const journalLineDimensionsMeta: {
     itemPostingGroupId: string | null;
+    itemId: string | null;
     locationId: string | null;
   }[] = [];
 
   const uniqueItemIds = [...new Set(consumptionLedgers.map((l) => l.itemId))];
-  const consumedItemCosts = uniqueItemIds.length > 0
-    ? await trx
-        .selectFrom("itemCost")
-        .where("itemId", "in", uniqueItemIds)
-        .where("companyId", "=", companyId)
-        .select(["itemId", "itemPostingGroupId"])
-        .execute()
-    : [];
+  const [consumedItemCosts, consumedItems] = uniqueItemIds.length > 0
+    ? await Promise.all([
+        trx
+          .selectFrom("itemCost")
+          .where("itemId", "in", uniqueItemIds)
+          .where("companyId", "=", companyId)
+          .select(["itemId", "itemPostingGroupId"])
+          .execute(),
+        trx
+          .selectFrom("item")
+          .where("id", "in", uniqueItemIds)
+          .where("companyId", "=", companyId)
+          .select(["id", "replenishmentSystem"])
+          .execute(),
+      ])
+    : [[], []];
   const consumedPostingGroupMap = new Map(
     consumedItemCosts.map((ic) => [ic.itemId, ic.itemPostingGroupId])
+  );
+  const consumedReplenishmentMap = new Map(
+    consumedItems.map((i) => [i.id, i.replenishmentSystem])
   );
 
   for (const ledger of consumptionLedgers) {
@@ -558,6 +612,10 @@ async function createMaterialWipEntries(
     if (cost <= 0) continue;
 
     const jlRef = nanoid();
+    const inventoryAccount = resolveInventoryAccount(
+      consumedReplenishmentMap.get(ledger.itemId) ?? null,
+      { rawMaterialsAccount, finishedGoodsAccount }
+    );
 
     if (isConsumption) {
       journalLineInserts.push(
@@ -573,8 +631,8 @@ async function createMaterialWipEntries(
           companyId,
         },
         {
-          accountId: inventoryAccount,
-          description: "Inventory Account",
+          accountId: inventoryAccount.account,
+          description: inventoryAccount.description,
           amount: credit("asset", cost),
           quantity: absQty,
           documentType: "Job Consumption",
@@ -587,8 +645,8 @@ async function createMaterialWipEntries(
     } else {
       journalLineInserts.push(
         {
-          accountId: inventoryAccount,
-          description: "Inventory Account",
+          accountId: inventoryAccount.account,
+          description: inventoryAccount.description,
           amount: debit("asset", cost),
           quantity: absQty,
           documentType: "Job Consumption",
@@ -630,6 +688,7 @@ async function createMaterialWipEntries(
     for (let i = 0; i < 2; i++) {
       journalLineDimensionsMeta.push({
         itemPostingGroupId: consumedPostingGroupMap.get(ledger.itemId) ?? null,
+        itemId: ledger.itemId ?? null,
         locationId: jobLocationId,
       });
     }
@@ -637,7 +696,7 @@ async function createMaterialWipEntries(
 
   if (journalLineInserts.length === 0) return;
 
-  const accountingPeriodId = await getCurrentAccountingPeriod(client, companyId, db);
+  const accountingPeriodId = await getCurrentAccountingPeriod(client, companyId, trx);
   const journalEntryId = await getNextSequence(trx, "journalEntry", companyId);
 
   const journalResult = await trx
@@ -684,6 +743,14 @@ async function createMaterialWipEntries(
           journalLineId: jl.id,
           dimensionId: dimensionMap.get("ItemPostingGroup")!,
           valueId: meta.itemPostingGroupId,
+          companyId,
+        });
+      }
+      if (meta.itemId && dimensionMap.has("Item")) {
+        dimensionInserts.push({
+          journalLineId: jl.id,
+          dimensionId: dimensionMap.get("Item")!,
+          valueId: meta.itemId,
           companyId,
         });
       }
@@ -901,7 +968,7 @@ serve(async (req: Request) => {
               .select("id, entityType")
               .eq("companyGroupId", companyRecord.data.companyGroupId)
               .eq("active", true)
-              .in("entityType", ["ItemPostingGroup", "Location"])
+              .in("entityType", ["ItemPostingGroup", "Item", "Location"])
           : null;
 
         const dimensionMap = new Map<string, string>();
@@ -972,7 +1039,7 @@ serve(async (req: Request) => {
               .select("id, entityType")
               .eq("companyGroupId", companyRecordBatch.data.companyGroupId)
               .eq("active", true)
-              .in("entityType", ["ItemPostingGroup", "Location"])
+              .in("entityType", ["ItemPostingGroup", "Item", "Location"])
           : null;
 
         const dimensionMapBatch = new Map<string, string>();
@@ -1126,7 +1193,7 @@ serve(async (req: Request) => {
               .select("id, entityType")
               .eq("companyGroupId", companyRecordSerial.data.companyGroupId)
               .eq("active", true)
-              .in("entityType", ["ItemPostingGroup", "Location"])
+              .in("entityType", ["ItemPostingGroup", "Item", "Location"])
           : null;
 
         const dimensionMapSerial = new Map<string, string>();
@@ -1288,7 +1355,7 @@ serve(async (req: Request) => {
               .select("id, entityType")
               .eq("companyGroupId", companyRecord.data.companyGroupId)
               .eq("active", true)
-              .in("entityType", ["ItemPostingGroup", "Location"])
+              .in("entityType", ["ItemPostingGroup", "Item", "Location"])
           : null;
 
         const dimensionMap = new Map<string, string>();
@@ -1382,9 +1449,14 @@ serve(async (req: Request) => {
             await trx
               .updateTable("jobMaterial")
               .set({
+                // A positive adjustment returns material to inventory, so it
+                // reduces quantityIssued — otherwise the backflush cap sees
+                // returned material as still issued.
                 quantityIssued:
                   (Number(material?.quantityIssued) ?? 0) +
-                  Number(quantityToIssue),
+                  (adjustmentType === "Positive Adjmt."
+                    ? -Number(quantityToIssue)
+                    : Number(quantityToIssue)),
               })
               .where("id", "=", materialId)
               .execute();
@@ -1512,7 +1584,8 @@ serve(async (req: Request) => {
               operationId: id,
               description: "Manual Material Issue",
               wipAccount: accountDefaults.data.workInProgressAccount,
-              inventoryAccount: accountDefaults.data.inventoryAccount,
+              rawMaterialsAccount: accountDefaults.data.rawMaterialsAccount,
+              finishedGoodsAccount: accountDefaults.data.finishedGoodsAccount,
               dimensionMap,
 
               jobLocationId: jobRecord?.locationId ?? null,
@@ -1576,7 +1649,7 @@ serve(async (req: Request) => {
               .select("id, entityType")
               .eq("companyGroupId", companyRecordScrap.data.companyGroupId)
               .eq("active", true)
-              .in("entityType", ["ItemPostingGroup", "Location"])
+              .in("entityType", ["ItemPostingGroup", "Item", "Location"])
           : null;
 
         const dimensionMapScrap = new Map<string, string>();
@@ -1687,7 +1760,8 @@ serve(async (req: Request) => {
                 operationId: material.jobOperationId!,
                 description: `Scrap — ${item?.readableIdWithRevision ?? ""}`,
                 wipAccount: accountDefaultsScrap.data.workInProgressAccount,
-                inventoryAccount: accountDefaultsScrap.data.inventoryAccount,
+                rawMaterialsAccount: accountDefaultsScrap.data.rawMaterialsAccount,
+                finishedGoodsAccount: accountDefaultsScrap.data.finishedGoodsAccount,
                 dimensionMap: dimensionMapScrap,
   
                 jobLocationId: job?.locationId ?? null,
@@ -1775,7 +1849,7 @@ serve(async (req: Request) => {
               .select("id, entityType")
               .eq("companyGroupId", companyRecordTracked.data.companyGroupId)
               .eq("active", true)
-              .in("entityType", ["ItemPostingGroup", "Location"])
+              .in("entityType", ["ItemPostingGroup", "Item", "Location"])
           : null;
 
         const dimensionMapTracked = new Map<string, string>();
@@ -2173,10 +2247,7 @@ serve(async (req: Request) => {
                     itemId: trackedEntity.sourceDocumentId,
                     quantity: -Number(trackedEntity.quantity),
                     locationId: job?.locationId,
-                    storageUnitId: itemLedgers.find(
-                      (itemLedger) =>
-                        itemLedger.trackedEntityId === trackedEntityId
-                    )?.storageUnitId,
+                    storageUnitId: resolveTrackedEntityBin(itemLedgers, trackedEntityId),
                     trackedEntityId: trackedEntity.id!,
                     createdBy: userId,
                   },
@@ -2188,10 +2259,7 @@ serve(async (req: Request) => {
                     itemId: trackedEntity.sourceDocumentId,
                     quantity: quantity,
                     locationId: job?.locationId,
-                    storageUnitId: itemLedgers.find(
-                      (itemLedger) =>
-                        itemLedger.trackedEntityId === trackedEntityId
-                    )?.storageUnitId,
+                    storageUnitId: resolveTrackedEntityBin(itemLedgers, trackedEntityId),
                     trackedEntityId: trackedEntity.id!,
                     createdBy: userId,
                   },
@@ -2203,10 +2271,7 @@ serve(async (req: Request) => {
                     itemId: trackedEntity.sourceDocumentId,
                     quantity: remainingQuantity,
                     locationId: job?.locationId,
-                    storageUnitId: itemLedgers.find(
-                      (itemLedger) =>
-                        itemLedger.trackedEntityId === trackedEntityId
-                    )?.storageUnitId,
+                    storageUnitId: resolveTrackedEntityBin(itemLedgers, trackedEntityId),
                     trackedEntityId: newTrackedEntityId,
                     createdBy: userId,
                   }
@@ -2240,9 +2305,7 @@ serve(async (req: Request) => {
                 itemId: trackedEntity.sourceDocumentId,
                 quantity: -quantity,
                 locationId: job?.locationId,
-                storageUnitId: itemLedgers.find(
-                  (itemLedger) => itemLedger.trackedEntityId === trackedEntityId
-                )?.storageUnitId,
+                storageUnitId: resolveTrackedEntityBin(itemLedgers, trackedEntityId),
                 trackedEntityId,
                 createdBy: userId,
               });
@@ -2287,7 +2350,8 @@ serve(async (req: Request) => {
                 operationId: jobMaterial?.jobOperationId ?? actualMaterialId!,
                 description: "Tracked Entity Material Issue",
                 wipAccount: accountDefaultsTracked.data.workInProgressAccount,
-                inventoryAccount: accountDefaultsTracked.data.inventoryAccount,
+                rawMaterialsAccount: accountDefaultsTracked.data.rawMaterialsAccount,
+                finishedGoodsAccount: accountDefaultsTracked.data.finishedGoodsAccount,
                 dimensionMap: dimensionMapTracked,
   
                 jobLocationId: job?.locationId ?? null,
@@ -2382,7 +2446,7 @@ serve(async (req: Request) => {
               .select("id, entityType")
               .eq("companyGroupId", companyRecordUnconsume.data.companyGroupId)
               .eq("active", true)
-              .in("entityType", ["ItemPostingGroup", "Location"])
+              .in("entityType", ["ItemPostingGroup", "Item", "Location"])
           : null;
 
         const dimensionMapUnconsume = new Map<string, string>();
@@ -2531,6 +2595,9 @@ serve(async (req: Request) => {
                 itemId: trackedEntity.sourceDocumentId,
                 quantity: quantity,
                 locationId: job?.locationId,
+                // NOTE: unconsume path left on its original bin-selection until
+                // it can be verified; the resolveTrackedEntityBin fix is scoped
+                // to the consumption path (trackedEntitiesToOperation).
                 storageUnitId: itemLedgers.find(
                   (itemLedger) => itemLedger.trackedEntityId === trackedEntityId
                 )?.storageUnitId,
@@ -2576,7 +2643,8 @@ serve(async (req: Request) => {
                 operationId: jobMaterial?.jobOperationId ?? materialId,
                 description: "Unconsume Material Return",
                 wipAccount: accountDefaultsUnconsume.data.workInProgressAccount,
-                inventoryAccount: accountDefaultsUnconsume.data.inventoryAccount,
+                rawMaterialsAccount: accountDefaultsUnconsume.data.rawMaterialsAccount,
+                finishedGoodsAccount: accountDefaultsUnconsume.data.finishedGoodsAccount,
                 dimensionMap: dimensionMapUnconsume,
   
                 jobLocationId: job?.locationId ?? null,

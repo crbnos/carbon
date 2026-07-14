@@ -5,9 +5,12 @@ import {
   getLinearClient,
   linkActionToLinearIssue
 } from "@carbon/ee/linear.server";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunction, LoaderFunction } from "react-router";
 import { data } from "react-router";
 import { getIssueAction } from "~/modules/quality/quality.service";
+
+const logger = getLogger("erp", "integrations-linear-issue-create");
 
 const linear = getLinearClient();
 
@@ -58,7 +61,7 @@ export const action: ActionFunction = async ({ request }) => {
 
     return new Response("Linear issue created");
   } catch (error) {
-    console.error("Linear issue action error:", error);
+    logger.error("Linear issue action error", { error: error });
     return data(
       { success: false, message: "Failed to create issue" },
       { status: 400 }

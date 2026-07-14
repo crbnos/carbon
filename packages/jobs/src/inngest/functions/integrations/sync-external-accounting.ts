@@ -29,9 +29,12 @@ import {
   SyncFactory
 } from "@carbon/ee/accounting";
 
+import { getLogger } from "@carbon/logger";
 import { groupBy } from "@carbon/utils";
 import { PostgresDriver } from "kysely";
 import { inngest } from "../../client";
+
+const log = getLogger("jobs", "sync-external-accounting");
 
 // Cooldown period in milliseconds to prevent redundant syncs
 // If an entity was synced within this period, skip syncing it again
@@ -44,7 +47,7 @@ const PayloadSchema = AccountingSyncSchema.extend({
 export const syncExternalAccountingFunction = inngest.createFunction(
   { id: "sync-external-accounting", retries: 1 },
   { event: "carbon/sync-external-accounting" },
-  async ({ event, step }) => {
+  async ({ event, step, logger }) => {
     const payload = PayloadSchema.parse(event.data);
 
     const client = getCarbonServiceRole();
@@ -79,12 +82,12 @@ export const syncExternalAccountingFunction = inngest.createFunction(
         const entityConfig = provider.getSyncConfig(type);
 
         if (!entityConfig?.enabled) {
-          console.info(`Sync disabled for ${entityType}, skipping`);
+          logger.info(`Sync disabled for ${entityType}, skipping`);
           continue;
         }
 
         try {
-          console.info(
+          logger.info(
             `Starting sync for ${entities.length} ${entityType} entities`,
             {
               direction: payload.syncDirection,
@@ -101,7 +104,7 @@ export const syncExternalAccountingFunction = inngest.createFunction(
           });
 
           if (entities.length === 0) {
-            console.info(`No entities to sync for type ${entityType}`);
+            logger.info(`No entities to sync for type ${entityType}`);
             continue;
           }
 
@@ -121,7 +124,7 @@ export const syncExternalAccountingFunction = inngest.createFunction(
             );
 
             if (entitiesToSync.length === 0) {
-              console.info(
+              logger.info(
                 `All ${entityType} entities were synced recently, skipping`
               );
               continue;
@@ -131,7 +134,7 @@ export const syncExternalAccountingFunction = inngest.createFunction(
               entitiesToSync.map((e) => e.entityId)
             );
 
-            console.info("Push sync result:", { entityType, result });
+            logger.info("Push sync result", { entityType, result });
             results.success.push(result);
           } else if (effectiveDirection === "pull-from-accounting") {
             // Filter out entities that were synced recently (cooldown)
@@ -143,7 +146,7 @@ export const syncExternalAccountingFunction = inngest.createFunction(
             );
 
             if (entitiesToSync.length === 0) {
-              console.info(
+              logger.info(
                 `All ${entityType} entities were synced recently, skipping`
               );
               continue;
@@ -153,7 +156,7 @@ export const syncExternalAccountingFunction = inngest.createFunction(
               entitiesToSync.map((e) => e.entityId)
             );
 
-            console.info("Pull sync result:", { entityType, result });
+            logger.info("Pull sync result", { entityType, result });
             results.success.push(result);
           } else if (effectiveDirection === "two-way") {
             // For two-way sync, we need to determine direction per-entity
@@ -167,7 +170,7 @@ export const syncExternalAccountingFunction = inngest.createFunction(
               entityConfig.owner
             );
 
-            console.info("Two-way sync result:", {
+            logger.info("Two-way sync result", {
               entityType,
               ...twoWayResult
             });
@@ -175,7 +178,7 @@ export const syncExternalAccountingFunction = inngest.createFunction(
             results.success.push(twoWayResult.pulled);
           }
         } catch (error) {
-          console.error(`Failed to process ${entityType} entities:`, error);
+          logger.error(`Failed to process ${entityType} entities`, { error });
 
           results.failed.push({
             entities: entities,
@@ -184,9 +187,7 @@ export const syncExternalAccountingFunction = inngest.createFunction(
         }
       }
     } catch (error) {
-      console.error("Sync task failed:", error);
-    } finally {
-      await pool.end();
+      logger.error("Sync task failed", { error });
     }
 
     return results;
@@ -223,7 +224,7 @@ async function filterByCooldown(
     if (now - lastSyncedAt > SYNC_COOLDOWN_MS) {
       eligibleEntities.push(entity);
     } else {
-      console.debug(
+      log.debug(
         `Skipping ${entityType} ${entity.entityId} - synced ${
           now - lastSyncedAt
         }ms ago`
@@ -265,7 +266,7 @@ async function handleTwoWaySync(
     if (mapping?.lastSyncedAt) {
       const lastSyncedAt = new Date(mapping.lastSyncedAt).getTime();
       if (now - lastSyncedAt <= SYNC_COOLDOWN_MS) {
-        console.debug(
+        log.debug(
           `Skipping two-way sync for ${entityType} ${entity.entityId} - synced recently`
         );
         continue;

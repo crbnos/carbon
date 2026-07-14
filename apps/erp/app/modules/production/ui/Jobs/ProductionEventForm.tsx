@@ -38,6 +38,7 @@ type ProductionEventFormProps = {
     label: string;
     value: string;
     helperText?: string;
+    processId?: string | null;
   }[];
 };
 
@@ -55,6 +56,13 @@ const ProductionEventForm = ({
     { label: i18n._(msg`Setup`), value: "Setup" }
   ];
   const onClose = () => navigate(-1);
+
+  const [jobOperationId, setJobOperationId] = useState(
+    initialValues.jobOperationId ?? ""
+  );
+  const processId =
+    operationOptions.find((option) => option.value === jobOperationId)
+      ?.processId ?? undefined;
 
   const [startTime, setStartTime] = useState(
     toCalendarDateTime(
@@ -104,13 +112,14 @@ const ProductionEventForm = ({
                 label={t`Operation`}
                 termId="operation"
                 options={operationOptions ?? []}
+                onChange={(value) => setJobOperationId(value?.value ?? "")}
               />
               <Employee name="employeeId" label={t`Employee`} />
               <WorkCenter
                 name="workCenterId"
                 label={t`Work Center`}
                 termId="work-center"
-                processId={initialValues.jobOperationId}
+                processId={processId}
               />
               <Select
                 name="type"

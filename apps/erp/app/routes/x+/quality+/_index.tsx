@@ -39,7 +39,6 @@ import { useLocale } from "@react-aria/i18n";
 import type { DateRange } from "@react-types/datepicker";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import {
-  LuArrowUpRight,
   LuCalendarClock,
   LuChevronDown,
   LuCircleAlert,
@@ -52,7 +51,7 @@ import {
   LuShieldX
 } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
-import { Await, Link, useFetcher, useLoaderData } from "react-router";
+import { Await, useFetcher, useLoaderData } from "react-router";
 import {
   Bar,
   BarChart,
@@ -67,7 +66,7 @@ import {
   XAxis,
   YAxis
 } from "recharts";
-import { DateSelect, Empty, Hyperlink } from "~/components";
+import { DateSelect, Empty, Hyperlink, MetricCard } from "~/components";
 import { CSVLink } from "~/components/CSVLink";
 import { getIssueTypesList, QualityKPIs } from "~/modules/quality";
 import IssueStatus from "~/modules/quality/ui/Issue/IssueStatus";
@@ -377,103 +376,36 @@ export default function QualityDashboard() {
     <div className="flex flex-col gap-4 w-full p-4 h-[calc(100dvh-var(--header-height))] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground">
       {/* KPI Cards */}
       <div className="grid w-full gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex-row gap-2">
-            <LuCircleAlert className="text-muted-foreground" />
-            <CardTitle>
-              <Trans>Open Issues</Trans>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <HStack className="justify-between w-full items-center">
-              <h3 className="text-5xl font-medium tracking-tighter">
-                {openIssuesCount}
-              </h3>
-              <Button
-                rightIcon={<LuArrowUpRight />}
-                variant="secondary"
-                asChild
-              >
-                <Link
-                  to={`${path.to.issues}?filter=status:in:${OPEN_ISSUE_STATUSES.join(",")}`}
-                >
-                  <Trans>View</Trans>
-                </Link>
-              </Button>
-            </HStack>
-          </CardContent>
-        </Card>
+        <MetricCard
+          icon={<LuCircleAlert />}
+          title={<Trans>Open Issues</Trans>}
+          value={openIssuesCount}
+          to={`${path.to.issues}?filter=status:in:${OPEN_ISSUE_STATUSES.join(",")}`}
+          linkLabel={t`View Open Issues`}
+        />
 
-        <Card>
-          <CardHeader className="flex-row gap-2">
-            <LuShieldCheck className="text-muted-foreground" />
-            <CardTitle>
-              <Trans>Contained</Trans>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <HStack className="justify-between w-full items-center">
-              <h3 className="text-5xl font-medium tracking-tighter">
-                {containedCount}
-              </h3>
-              <Button
-                rightIcon={<LuArrowUpRight />}
-                variant="secondary"
-                asChild
-              >
-                <Link
-                  to={`${path.to.issues}?filter=containmentStatus:eq:Contained`}
-                >
-                  <Trans>View</Trans>
-                </Link>
-              </Button>
-            </HStack>
-          </CardContent>
-        </Card>
+        <MetricCard
+          icon={<LuShieldCheck />}
+          title={<Trans>Contained</Trans>}
+          value={containedCount}
+          to={`${path.to.issues}?filter=containmentStatus:eq:Contained`}
+          linkLabel={t`View Contained Issues`}
+        />
 
-        <Card>
-          <CardHeader className="flex-row gap-2">
-            <LuClipboardList className="text-muted-foreground" />
-            <CardTitle>
-              <Trans>Open Actions</Trans>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <HStack className="justify-between w-full items-center">
-              <h3 className="text-5xl font-medium tracking-tighter">
-                {openActionsCount}
-              </h3>
-              <Button
-                rightIcon={<LuArrowUpRight />}
-                variant="secondary"
-                asChild
-              >
-                <Link
-                  to={`${path.to.qualityActions}?filter=status:in:Pending,In Progress`}
-                >
-                  <Trans>View</Trans>
-                </Link>
-              </Button>
-            </HStack>
-          </CardContent>
-        </Card>
+        <MetricCard
+          icon={<LuClipboardList />}
+          title={<Trans>Open Actions</Trans>}
+          value={openActionsCount}
+          to={`${path.to.qualityActions}?filter=status:in:Pending,In Progress`}
+          linkLabel={t`View Open Actions`}
+        />
 
-        <Card>
-          <CardHeader className="flex-row gap-2">
-            <LuCalendarClock className="text-muted-foreground" />
-            <CardTitle>
-              <Trans>Avg Days to Close</Trans>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <h3 className="text-5xl font-medium tracking-tighter">
-              {avgDaysToClose !== null ? avgDaysToClose : "—"}
-            </h3>
-            <span className="text-xs text-muted-foreground">
-              <Trans>in selected period</Trans>
-            </span>
-          </CardContent>
-        </Card>
+        <MetricCard
+          icon={<LuCalendarClock />}
+          title={<Trans>Avg Days to Close</Trans>}
+          value={avgDaysToClose !== null ? avgDaysToClose : "—"}
+          description={<Trans>in selected period</Trans>}
+        />
       </div>
 
       {/* Unified Chart Card */}

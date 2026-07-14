@@ -40,7 +40,6 @@ import { useDateFormatter, useNumberFormatter } from "@react-aria/i18n";
 import type { DateRange } from "@react-types/datepicker";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import {
-  LuArrowUpRight,
   LuChevronDown,
   LuClock,
   LuEllipsisVertical,
@@ -53,9 +52,15 @@ import {
   RiProgress8Line
 } from "react-icons/ri";
 import type { LoaderFunctionArgs } from "react-router";
-import { Await, Link, useFetcher, useLoaderData } from "react-router";
+import { Await, useFetcher, useLoaderData } from "react-router";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
-import { CustomerAvatar, DateSelect, Empty, Hyperlink } from "~/components";
+import {
+  CustomerAvatar,
+  DateSelect,
+  Empty,
+  Hyperlink,
+  MetricCard
+} from "~/components";
 import { CSVLink } from "~/components/CSVLink";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
 import { KPIs } from "~/modules/sales/sales.models";
@@ -380,92 +385,35 @@ export default function SalesDashboard() {
   return (
     <div className="flex flex-col gap-4 w-full p-4 h-[calc(100dvh-var(--header-height))] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground">
       <div className="grid w-full gap-4 grid-cols-1 lg:grid-cols-3">
-        <Card>
-          <CardHeader className="flex-row gap-2">
-            <RiProgress2Line className="text-muted-foreground" />
-            <CardTitle>
-              <Trans>Open RFQs</Trans>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <HStack className="justify-between w-full items-center">
-              <h3 className="text-5xl font-medium tracking-tighter">
-                {openRFQs.count ?? 0}
-              </h3>
-              <Button
-                rightIcon={<LuArrowUpRight />}
-                variant="secondary"
-                asChild
-              >
-                <Link
-                  to={`${
-                    path.to.salesRfqs
-                  }?filter=status:in:${OPEN_RFQ_STATUSES.join(",")}`}
-                >
-                  <Trans>View Open RFQs</Trans>
-                </Link>
-              </Button>
-            </HStack>
-          </CardContent>
-        </Card>
+        <MetricCard
+          icon={<RiProgress2Line />}
+          title={<Trans>Open RFQs</Trans>}
+          value={openRFQs.count ?? 0}
+          to={`${
+            path.to.salesRfqs
+          }?filter=status:in:${OPEN_RFQ_STATUSES.join(",")}`}
+          linkLabel={t`View Open RFQs`}
+        />
 
-        <Card>
-          <CardHeader className="flex-row gap-2">
-            <RiProgress4Line className="text-muted-foreground" />
-            <CardTitle>
-              <Trans>Open Quotes</Trans>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <HStack className="justify-between w-full items-center">
-              <h3 className="text-5xl font-medium tracking-tighter">
-                {openQuotes.count ?? 0}
-              </h3>
-              <Button
-                rightIcon={<LuArrowUpRight />}
-                variant="secondary"
-                asChild
-              >
-                <Link
-                  to={`${
-                    path.to.quotes
-                  }?filter=status:in:${OPEN_QUOTE_STATUSES.join(",")}`}
-                >
-                  <Trans>View Open Quotes</Trans>
-                </Link>
-              </Button>
-            </HStack>
-          </CardContent>
-        </Card>
+        <MetricCard
+          icon={<RiProgress4Line />}
+          title={<Trans>Open Quotes</Trans>}
+          value={openQuotes.count ?? 0}
+          to={`${
+            path.to.quotes
+          }?filter=status:in:${OPEN_QUOTE_STATUSES.join(",")}`}
+          linkLabel={t`View Open Quotes`}
+        />
 
-        <Card>
-          <CardHeader className="flex-row gap-2">
-            <RiProgress8Line className="text-muted-foreground" />
-            <CardTitle>
-              <Trans>Open Sales Orders</Trans>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <HStack className="justify-between w-full items-center">
-              <h3 className="text-5xl font-medium tracking-tighter">
-                {openSalesOrders.count ?? 0}
-              </h3>
-              <Button
-                rightIcon={<LuArrowUpRight />}
-                variant="secondary"
-                asChild
-              >
-                <Link
-                  to={`${
-                    path.to.salesOrders
-                  }?filter=status:in:${OPEN_SALES_ORDER_STATUSES.join(",")}`}
-                >
-                  <Trans>View Open Orders</Trans>
-                </Link>
-              </Button>
-            </HStack>
-          </CardContent>
-        </Card>
+        <MetricCard
+          icon={<RiProgress8Line />}
+          title={<Trans>Open Sales Orders</Trans>}
+          value={openSalesOrders.count ?? 0}
+          to={`${
+            path.to.salesOrders
+          }?filter=status:in:${OPEN_SALES_ORDER_STATUSES.join(",")}`}
+          linkLabel={t`View Open Orders`}
+        />
       </div>
 
       <Card>

@@ -5,8 +5,11 @@ import {
   getLinearIssueFromExternalId,
   tiptapToMarkdown
 } from "@carbon/ee/linear.server";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunction } from "react-router";
 import { data } from "react-router";
+
+const logger = getLogger("erp", "integrations-linear-issue-sync-notes");
 
 const linear = getLinearClient();
 
@@ -55,7 +58,7 @@ export const action: ActionFunction = async ({ request }) => {
 
     return { success: true, message: "Notes synced to Linear" };
   } catch (error) {
-    console.error("Failed to sync notes to Linear:", error);
+    logger.error("Failed to sync notes to Linear", { error: error });
     return data(
       { success: false, message: "Failed to sync notes to Linear" },
       500

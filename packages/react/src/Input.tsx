@@ -64,18 +64,23 @@ const InputGroup = forwardRef<HTMLDivElement, InputGroupProps>(
   ) => {
     const validChildren = getValidChildren(children);
 
-    const _children = validChildren.map((child, index) =>
-      cloneElement(child, {
-        isFirstChild: index === 0,
-        isLastChild: index === validChildren.length - 1,
-        className: child.props.className,
-        childtype: child.type,
-        size,
-        isInvalid,
-        isDisabled,
-        key: index
-      })
-    );
+    const _children = validChildren.map((child, index) => {
+      const isDomElement = typeof child.type === "string";
+      const extraProps: any = {
+        key: index,
+        className: child.props.className
+      };
+
+      if (!isDomElement) {
+        extraProps.isFirstChild = index === 0;
+        extraProps.isLastChild = index === validChildren.length - 1;
+        extraProps.size = size;
+        extraProps.isInvalid = isInvalid;
+        extraProps.isDisabled = isDisabled;
+      }
+
+      return cloneElement(child, extraProps);
+    });
 
     return (
       <InputGroupContext.Provider value={true}>

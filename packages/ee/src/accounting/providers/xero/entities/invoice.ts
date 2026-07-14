@@ -1,4 +1,5 @@
 import type { KyselyTx } from "@carbon/database/client";
+import { getLogger } from "@carbon/logger";
 import { createMappingService } from "../../../core/external-mapping";
 import {
   type Accounting,
@@ -8,6 +9,8 @@ import {
 import { throwXeroApiError } from "../../../core/utils";
 import { parseDotnetDate, type Xero } from "../models";
 import type { XeroProvider } from "../provider";
+
+const logger = getLogger("ee", "accounting", "xero");
 
 // Note: This syncer uses the default ID mapping from BaseEntitySyncer
 // which uses the externalIntegrationMapping table with entityType "invoice"
@@ -163,6 +166,9 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
     // Fetch invoice headers
     const invoiceRows = await this.database
       .selectFrom("salesInvoice")
+      // `balance` is derived (totalAmount - posted payment applications) and
+      // lives only on the `salesInvoices` view now, not the base table.
+      .leftJoin("salesInvoices", "salesInvoices.id", "salesInvoice.id")
       .select([
         "salesInvoice.id",
         "salesInvoice.invoiceId",
@@ -179,7 +185,7 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
         "salesInvoice.totalTax",
         "salesInvoice.totalDiscount",
         "salesInvoice.totalAmount",
-        "salesInvoice.balance",
+        "salesInvoices.balance",
         "salesInvoice.updatedAt"
       ])
       .where("salesInvoice.id", "in", ids)
@@ -320,14 +326,10 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
     const xeroProvider = this.provider as XeroProvider;
     const defaultAccountCode = xeroProvider.settings?.defaultSalesAccountCode;
 
-    console.log(
-      "[SalesInvoiceSyncer] Provider settings:",
-      xeroProvider.settings
-    );
-    console.log(
-      "[SalesInvoiceSyncer] Default sales account code:",
+    logger.info("Provider settings", {
+      settings: xeroProvider.settings,
       defaultAccountCode
-    );
+    });
 
     // Build line items, resolving item dependencies
     const lineItems: Xero.InvoiceLineItem[] = [];
@@ -463,7 +465,6 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
         subtotal: data.subtotal,
         totalTax: data.totalTax,
         totalAmount: data.totalAmount,
-        balance: data.balance,
         currencyCode: data.currencyCode,
         exchangeRate: data.exchangeRate,
         updatedAt: new Date().toISOString()

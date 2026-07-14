@@ -2,9 +2,12 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import { redis } from "@carbon/kv";
 import { trigger } from "@carbon/lib/trigger";
+import { getLogger } from "@carbon/logger";
 import { isUrl } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSlackWebClient } from "./client";
+
+const logger = getLogger("ee", "slack");
 
 export type DocumentType = "nonConformance";
 
@@ -128,7 +131,9 @@ export async function createIssueSlackThread(
         .single();
 
       if (threadRecord.error) {
-        console.error("Error creating thread record:", threadRecord.error);
+        logger.error("Error creating thread record", {
+          error: threadRecord.error
+        });
       }
 
       return threadRecord;
@@ -139,7 +144,7 @@ export async function createIssueSlackThread(
       error: { message: "Failed to post message to Slack" }
     };
   } catch (error) {
-    console.error("Error creating Issue Slack thread:", error);
+    logger.error("Error creating Issue Slack thread", { error });
     return {
       data: null,
       error: {
@@ -261,7 +266,7 @@ export async function getSlackUserIdByCarbonId(
       return slackUser.user.id;
     }
   } catch (error) {
-    console.error("Failed to lookup Slack user by email:", error);
+    logger.error("Failed to lookup Slack user by email", { error });
   }
 }
 
@@ -352,7 +357,7 @@ export async function getCarbonEmployeeFromSlackId(
 
     return job;
   } catch (error) {
-    console.error("Error getting Carbon employee from Slack ID:", error);
+    logger.error("Error getting Carbon employee from Slack ID", { error });
     return {
       data: null,
       error: error instanceof Error ? error.message : "Unknown error"
@@ -388,7 +393,9 @@ export async function syncDocumentToSlack(
   ]);
 
   if (!slackAuth) {
-    console.error("Slack auth not found for company", data.companyId);
+    logger.error("Slack auth not found for company", {
+      companyId: data.companyId
+    });
     return {
       data: null,
       error: "Slack auth not found"
@@ -514,7 +521,10 @@ export async function syncDocumentToSlack(
 
         case "custom":
           // For now, just log custom updates
-          console.log(`Custom update for ${data.documentType}:`, data.payload);
+          logger.info("Custom update", {
+            documentType: data.documentType,
+            payload: data.payload
+          });
           return { data: { success: true }, error: null };
 
         default:
@@ -523,7 +533,7 @@ export async function syncDocumentToSlack(
 
       return { data: { success: true, taskId: result.ids[0] }, error: null };
     } catch (error) {
-      console.error("slack-document-sync error:", error);
+      logger.error("slack-document-sync error", { error });
       return {
         data: null,
         error: error instanceof Error ? error.message : "Unknown error"

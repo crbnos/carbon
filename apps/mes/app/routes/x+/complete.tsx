@@ -4,6 +4,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
+import { getLogger } from "@carbon/logger";
 import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
@@ -13,6 +14,8 @@ import {
   insertProductionQuantity
 } from "~/services/operations.service";
 import { path } from "~/utils/path";
+
+const log = getLogger("mes");
 
 /**
  * Triggers an auto-print of the entity's label when this is its first
@@ -72,7 +75,7 @@ async function autoPrintFirstOperationLabel({
       });
     }
   } catch (e) {
-    console.error("Auto-print failed:", e);
+    log.error("Auto-print failed", { error: e });
   }
 }
 

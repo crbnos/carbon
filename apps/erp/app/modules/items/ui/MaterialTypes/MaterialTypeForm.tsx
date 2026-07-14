@@ -96,7 +96,7 @@ const MaterialTypeForm = ({
               <VStack spacing={4}>
                 <Substance name="materialSubstanceId" label={t`Substance`} />
                 <Shape name="materialFormId" label={t`Shape`} />
-                <Input name="name" label={t`Name`} />
+                <Input name="name" label={t`Name`} characterLimit={255} />
                 <InputControlled
                   name="code"
                   label={t`Code`}
@@ -104,7 +104,8 @@ const MaterialTypeForm = ({
                   onChange={(value) =>
                     setCode(value.toUpperCase().replace(/\s/g, ""))
                   }
-                  helperText={t`Unique, uppercase, without spaces`}
+                  characterLimit={10}
+                  helperText={t`Unique, uppercase, without spaces (max 10 characters)`}
                 />
               </VStack>
             </ModalDrawerBody>

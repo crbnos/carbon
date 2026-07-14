@@ -155,7 +155,7 @@ const SalesOrderShipmentForm = forwardRef<
               termId="sales-order-shipment-receipt-promised-date"
             />
             <DatePicker
-              name="shipmentDate"
+              name="deliveryDate"
               label={t`Shipment Date`}
               termId="sales-order-shipment-date"
             />

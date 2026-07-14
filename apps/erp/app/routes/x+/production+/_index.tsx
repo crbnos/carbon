@@ -48,7 +48,6 @@ import type { DateRange } from "@react-types/datepicker";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { flushSync } from "react-dom";
 import {
-  LuArrowUpRight,
   LuChevronDown,
   LuCirclePlay,
   LuClipboardCheck,
@@ -66,7 +65,8 @@ import {
   EmployeeAvatar,
   EmployeeAvatarGroup,
   Empty,
-  Hyperlink
+  Hyperlink,
+  MetricCard
 } from "~/components";
 import { CSVLink } from "~/components/CSVLink";
 import { useUser } from "~/hooks/useUser";
@@ -310,60 +310,23 @@ export default function ProductionDashboard() {
   return (
     <div className="flex flex-col gap-4 w-full p-4 h-[calc(100dvh-var(--header-height))] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground">
       <div className="grid w-full gap-y-4 lg:gap-x-4 grid-cols-1 lg:grid-cols-6">
-        <Card className="col-span-3">
-          <CardHeader className="flex-row gap-2">
-            <LuCirclePlay className="text-muted-foreground" />
-            <CardTitle>
-              <Trans>Active Jobs</Trans>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <HStack className="justify-between w-full items-center">
-              <h3 className="text-5xl font-medium tracking-tighter">
-                {activeJobs}
-              </h3>
-              <Button
-                rightIcon={<LuArrowUpRight />}
-                variant="secondary"
-                asChild
-              >
-                <Link
-                  to={`${path.to.jobs}?filter=status:in:${OPEN_JOB_STATUSES.join(
-                    ","
-                  )}`}
-                >
-                  <Trans>View Active Jobs</Trans>
-                </Link>
-              </Button>
-            </HStack>
-          </CardContent>
-        </Card>
+        <MetricCard
+          className="col-span-3"
+          icon={<LuCirclePlay />}
+          title={<Trans>Active Jobs</Trans>}
+          value={activeJobs}
+          to={`${path.to.jobs}?filter=status:in:${OPEN_JOB_STATUSES.join(",")}`}
+          linkLabel={t`View Active Jobs`}
+        />
 
-        <Card className="col-span-3">
-          <CardHeader className="flex-row gap-2">
-            <LuInbox className="text-muted-foreground" />
-            <CardTitle>
-              <Trans>Jobs Assigned to Me</Trans>
-            </CardTitle>
-          </CardHeader>
-
-          <CardContent>
-            <HStack className="justify-between w-full items-center">
-              <h3 className="text-5xl font-medium tracking-tighter">
-                {assignedJobs}
-              </h3>
-              <Button
-                rightIcon={<LuArrowUpRight />}
-                variant="secondary"
-                asChild
-              >
-                <Link to={`${path.to.jobs}?filter=assignee:eq:${user.id}`}>
-                  <Trans>View Assigned Jobs</Trans>
-                </Link>
-              </Button>
-            </HStack>
-          </CardContent>
-        </Card>
+        <MetricCard
+          className="col-span-3"
+          icon={<LuInbox />}
+          title={<Trans>Jobs Assigned to Me</Trans>}
+          value={assignedJobs}
+          to={`${path.to.jobs}?filter=assignee:eq:${user.id}`}
+          linkLabel={t`View Assigned Jobs`}
+        />
 
         <Card className="col-span-6">
           <HStack className="justify-between items-center">

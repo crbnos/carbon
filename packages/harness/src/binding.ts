@@ -9,6 +9,13 @@ export type Binding = {
   /** GitHub issue this loop addresses. When set, the PR body gets `Closes #<n>`
    *  so merging auto-closes the issue (the outer-loop state machine). */
   issue?: number;
+  /**
+   * The markdown body after the frontmatter — grooming context: resolved
+   * questions, repro steps, test-data hints, precedent pointers. Fed to the
+   * doer/judge/behavior prompts so decisions made at grooming time reach the
+   * loop instead of being re-asked mid-build.
+   */
+  notes?: string;
 };
 
 const KINDS: LoopKind[] = ["bug", "feature", "usability", "copy"];
@@ -53,12 +60,14 @@ export function parseBinding(md: string): Binding {
     scalars.issue && /^\d+$/.test(scalars.issue)
       ? Number(scalars.issue)
       : undefined;
+  const notes = md.slice(match[0].length).trim();
   return {
     id,
     kind: kind as LoopKind,
     title: scalars.title ?? "",
     risk: (scalars.risk as Binding["risk"]) ?? "low",
     acceptance,
-    ...(issue !== undefined ? { issue } : {})
+    ...(issue !== undefined ? { issue } : {}),
+    ...(notes ? { notes } : {})
   };
 }

@@ -1,5 +1,5 @@
 import { MenuIcon, MenuItem } from "@carbon/react";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import { LuPencil, LuTrash } from "react-icons/lu";
@@ -66,7 +66,7 @@ const ItemGroupsTable = memo(({ data, count }: ItemGroupsTableProps) => {
             }}
           >
             <MenuIcon icon={<LuPencil />} />
-            Edit Item Group
+            <Trans>Edit Item Group</Trans>
           </MenuItem>
           <MenuItem
             destructive
@@ -78,7 +78,7 @@ const ItemGroupsTable = memo(({ data, count }: ItemGroupsTableProps) => {
             }}
           >
             <MenuIcon icon={<LuTrash />} />
-            Delete Item Group
+            <Trans>Delete Item Group</Trans>
           </MenuItem>
         </>
       );

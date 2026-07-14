@@ -1,11 +1,14 @@
 import { GTM_EVENTS_API_SECRET_KEY, GTM_URL } from "@carbon/env";
+import { getLogger } from "@carbon/logger";
+
+const log = getLogger("stripe", "gtm-events");
 
 export async function forwardToGtm(
   type: string,
   metadata: Record<string, unknown>
 ): Promise<void> {
   if (!GTM_URL || !GTM_EVENTS_API_SECRET_KEY) {
-    console.error("[gtm-events] missing GTM_URL or GTM_EVENTS_API_SECRET_KEY");
+    log.error("missing GTM_URL or GTM_EVENTS_API_SECRET_KEY");
     return;
   }
 
@@ -21,9 +24,9 @@ export async function forwardToGtm(
 
     if (!res.ok) {
       const body = await res.text().catch(() => "");
-      console.error(`[gtm-events] ${res.status}: ${body}`);
+      log.error("request failed", { status: res.status, body });
     }
   } catch (err) {
-    console.error("[gtm-events] request failed", err);
+    log.error("request failed", { error: err });
   }
 }

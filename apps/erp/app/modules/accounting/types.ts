@@ -1,6 +1,8 @@
-import type { Database } from "@carbon/database";
+import type { Database, Json } from "@carbon/database";
+import type { periodCloseStatuses } from "./accounting.models";
 import type {
   getAccount,
+  getAccountingPeriods,
   getAccountsList,
   getCostCenters,
   getCostCentersTree,
@@ -9,7 +11,8 @@ import type {
   getDimensions,
   getJournalEntries,
   getJournalEntry,
-  getPaymentTerms
+  getPaymentTerms,
+  getPeriodCloseReadiness
 } from "./accounting.service";
 
 export type Account = NonNullable<
@@ -31,6 +34,11 @@ export type AccountClass = Database["public"]["Enums"]["glAccountClass"];
 export type AccountType = Database["public"]["Enums"]["accountType"];
 
 export type Chart = Account & Transaction;
+
+// Synthetic id for the computed "Net Income" equity line on the balance sheet
+// (undistributed current earnings rolled into equity — never a posted account).
+// Shared so the report tree can recognize and order/decorate the row.
+export const NET_INCOME_ACCOUNT_ID = "net-income";
 
 export type CostCenter = NonNullable<
   Awaited<ReturnType<typeof getCostCenters>>["data"]
@@ -398,6 +406,55 @@ export type JournalEntryListItem = NonNullable<
 >[number];
 
 export type JournalEntryLine = JournalEntry["journalLine"][number];
+
+export type AccountingPeriodListItem = NonNullable<
+  Awaited<ReturnType<typeof getAccountingPeriods>>["data"]
+>[number];
+
+export type PeriodCloseStatus = (typeof periodCloseStatuses)[number];
+
+export type PeriodCloseReadiness = NonNullable<
+  Awaited<ReturnType<typeof getPeriodCloseReadiness>>["data"]
+>;
+
+/**
+ * Row shape of the journalLines view (journalLine joined to its journal
+ * header). Maintained by hand until the cloud-generated DB types include
+ * the view — keep in sync with 20260702122210_journal-lines-view.sql.
+ */
+export type AccountLedgerLine = {
+  id: string;
+  journalId: string;
+  accountId: string | null;
+  amount: number;
+  quantity: number;
+  accrual: boolean;
+  description: string | null;
+  documentType: Database["public"]["Enums"]["journalLineDocumentType"] | null;
+  documentId: string | null;
+  documentLineReference: string | null;
+  externalDocumentId: string | null;
+  intercompanyPartnerId: string | null;
+  journalLineReference: string;
+  companyId: string;
+  customFields: Json | null;
+  tags: string[] | null;
+  createdAt: string;
+  updatedAt: string | null;
+  updatedBy: string | null;
+  // journal header columns
+  postingDate: string;
+  journalEntryId: string;
+  status: Database["public"]["Enums"]["journalEntryStatus"];
+  sourceType: Database["public"]["Enums"]["journalEntrySourceType"];
+  journalDescription: string | null;
+};
+
+export type AccountLedgerSummary = {
+  opening: number;
+  netChange: number;
+  closing: number;
+};
 
 // -- Fixed Asset types --
 

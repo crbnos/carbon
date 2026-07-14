@@ -1,10 +1,13 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { getLogger } from "@carbon/logger";
 import { getLocalTimeZone, now } from "@internationalized/date";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { clearConsolePinIn } from "~/services/console.server";
 import { endProductionEvents } from "~/services/operations.service";
+
+const log = getLogger("mes");
 
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, userId, consoleMode } = await requirePermissions(
@@ -47,7 +50,9 @@ export async function action({ request }: ActionFunctionArgs) {
       .is("clockOut", null);
 
     if (clockOutResult.error) {
-      console.error("Failed to clock out on end shift:", clockOutResult.error);
+      log.error("Failed to clock out on end shift", {
+        error: clockOutResult.error
+      });
     }
   }
 

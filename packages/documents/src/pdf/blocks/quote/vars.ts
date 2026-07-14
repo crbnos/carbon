@@ -22,6 +22,9 @@ export function buildQuoteVars(
     "customer.country": str(c?.customerCountryName),
     "company.name": str(data.company?.name),
     "company.city": str(data.company?.city),
-    "company.country": str(data.company?.countryCode)
+    "company.country": str(data.company?.countryCode),
+    "company.taxId": str(data.company?.taxId),
+    "company.eori": str(data.company?.eori),
+    "company.vatNumber": str(data.company?.vatNumber)
   };
 }

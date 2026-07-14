@@ -1,7 +1,10 @@
 import { GOOGLE_PLACES_API_KEY } from "@carbon/auth";
+import { getLogger } from "@carbon/logger";
 import { useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
 import { useCallback, useRef, useState } from "react";
+
+const logger = getLogger("erp", "usegoogleplaces");
 
 interface PlaceSuggestion {
   placeId: string;
@@ -105,7 +108,7 @@ export const useGooglePlaces = () => {
 
         setSuggestions(placeSuggestions);
       } catch (err) {
-        console.error("Google Places API error:", err);
+        logger.error("Google Places API error", { error: err });
         setError(
           err instanceof Error ? err.message : t`Failed to fetch suggestions`
         );
@@ -212,7 +215,7 @@ export const useGooglePlaces = () => {
 
       return parseAddressComponents(data.addressComponents);
     } catch (err) {
-      console.error("Google Places API error:", err);
+      logger.error("Google Places API error", { error: err });
       setError(
         err instanceof Error ? err.message : t`Failed to fetch place details`
       );

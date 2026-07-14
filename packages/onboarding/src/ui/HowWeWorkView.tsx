@@ -1,30 +1,37 @@
+import { Trans, useLingui } from "@lingui/react/macro";
 import { CADENCE, ESCALATION } from "../content/howwework";
 import { EditableField } from "./EditableField";
 import { useFieldMap } from "./state";
 
 export function HowWeWorkView() {
+  const { i18n } = useLingui();
   const fields = useFieldMap();
   return (
     <div className="w-full max-w-3xl mx-auto flex flex-col gap-6">
       <header className="flex flex-col gap-2">
         <h1 className="text-2xl font-semibold tracking-tight">
-          How We Work Together
+          <Trans>How We Work Together</Trans>
         </h1>
         <p className="text-sm text-muted-foreground max-w-2xl text-pretty">
-          How we stay aligned and how issues get resolved. Your part: show up to
-          the weekly call and raise blockers early, before they become delays.
+          <Trans>
+            How we stay aligned and how issues get resolved. Your part: show up
+            to the weekly call and raise blockers early, before they become
+            delays.
+          </Trans>
         </p>
       </header>
 
       <section className="rounded-2xl border bg-card shadow-button-base overflow-hidden">
         <div className="px-5 py-3 border-b">
-          <span className="text-sm font-semibold">Meeting cadence</span>
+          <span className="text-sm font-semibold">
+            <Trans>Meeting cadence</Trans>
+          </span>
         </div>
         <ul className="divide-y">
           {CADENCE.map((c) => (
             <li key={c.key} className="flex items-center gap-4 px-5 py-3">
               <span className="text-sm font-medium w-28 shrink-0">
-                {c.cadence}
+                {i18n._(c.cadence)}
               </span>
               <EditableField
                 fieldKey={`howWeWork.cadence.${c.key}`}
@@ -39,7 +46,7 @@ export function HowWeWorkView() {
 
       <section className="rounded-2xl border bg-card shadow-button-base p-5">
         <h2 className="text-sm font-semibold mb-4">
-          If something is off track
+          <Trans>If something is off track</Trans>
         </h2>
         <ol className="flex flex-col gap-4">
           {ESCALATION.map((step) => (
@@ -48,9 +55,9 @@ export function HowWeWorkView() {
                 {step.n}
               </span>
               <div>
-                <div className="text-sm font-medium">{step.title}</div>
+                <div className="text-sm font-medium">{i18n._(step.title)}</div>
                 <div className="text-sm text-muted-foreground mt-0.5">
-                  {step.body}
+                  {i18n._(step.body)}
                 </div>
               </div>
             </li>
@@ -60,9 +67,13 @@ export function HowWeWorkView() {
 
       <div className="rounded-2xl border-l-2 border-l-primary bg-muted/30 px-5 py-4">
         <p className="text-sm text-muted-foreground">
-          <span className="font-medium text-foreground">The principle:</span>{" "}
-          raise it early and raise it plainly. A problem named in week 2 is a
-          small fix; the same problem at go-live is a delay.
+          <span className="font-medium text-foreground">
+            <Trans>The principle:</Trans>
+          </span>{" "}
+          <Trans>
+            raise it early and raise it plainly. A problem named in week 2 is a
+            small fix; the same problem at go-live is a delay.
+          </Trans>
         </p>
       </div>
     </div>

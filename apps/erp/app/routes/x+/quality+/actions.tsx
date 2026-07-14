@@ -1,4 +1,5 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getLogger } from "@carbon/logger";
 import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
@@ -12,6 +13,8 @@ import ActionsTable from "~/modules/quality/ui/Actions/ActionsTable";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
+
+const logger = getLogger("erp", "actions");
 
 export const handle: Handle = {
   breadcrumb: msg`Actions`,
@@ -43,7 +46,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   ]);
 
   if (actions.error) {
-    console.error(actions.error);
+    logger.error(actions.error);
   }
 
   return {

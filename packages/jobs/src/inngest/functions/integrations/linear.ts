@@ -12,12 +12,11 @@ export { syncIssueFromLinearSchema };
 export const linearSyncFunction = inngest.createFunction(
   { id: "sync-issue-from-linear", retries: 1 },
   { event: "carbon/linear-sync" },
-  async ({ event, step }) => {
+  async ({ event, step, logger }) => {
     const linear = getLinearClient();
     const payload = syncIssueFromLinearSchema.parse(event.data);
 
-    console.info(`Linear webhook received: ${payload}`);
-    console.info(`Payload:`, payload);
+    logger.info("Linear webhook received", { payload });
 
     const carbon = getCarbonServiceRole();
 

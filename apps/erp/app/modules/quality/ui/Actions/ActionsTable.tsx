@@ -3,13 +3,13 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import {
+  LuBlocks,
   LuBookMarked,
   LuCalendar,
   LuCircleGauge,
   LuFileText,
   LuOctagonX,
   LuPencil,
-  LuSquareStack,
   LuUser
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
@@ -128,7 +128,7 @@ const ActionsTable = memo(
             </span>
           ),
           meta: {
-            icon: <LuSquareStack />,
+            icon: <LuBlocks />,
             filter: {
               type: "static",
               options: items.map((item) => ({
@@ -190,14 +190,6 @@ const ActionsTable = memo(
           }
         },
 
-        {
-          accessorKey: "dueDate",
-          header: t`Due Date`,
-          cell: ({ row }) => formatDate(row.original.dueDate),
-          meta: {
-            icon: <LuCalendar />
-          }
-        },
         {
           accessorKey: "completedDate",
           header: t`Completed Date`,

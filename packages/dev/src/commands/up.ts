@@ -2,14 +2,17 @@ import { box, intro, log, outro, progress, tasks } from "@clack/prompts";
 import { config as loadDotenv } from "dotenv";
 import { type ExecaChildProcess, execa } from "execa";
 import { join } from "pathe";
-import type { AppId } from "../constants.js";
+import { APP_CHOICES, type AppId } from "../constants.js";
 import { renderEnv, syncAppPortlessConfigs, writeEnv } from "../env.js";
 import { currentBranch } from "../git.js";
 import { onShutdown } from "../helpers.js";
 import { pickApps, pickBorrowSlug } from "../prompts.js";
 import {
+  assertAssemblerDepsBuilt,
   installDeps,
+  installSkills,
   spawnApps,
+  spawnAssembler,
   spawnStripeListener,
   syncEnvSymlinks
 } from "../services/apps.js";
@@ -66,6 +69,8 @@ type UpOpts = {
   migrate?: boolean;
   regen?: boolean;
   apps?: boolean;
+  /** When true, launch all apps without the interactive picker. */
+  all?: boolean;
   /** When true, always `docker compose pull` even if images exist locally. */
   pull?: boolean;
   /** When true, show a picker to borrow another worktree's running containers. */
@@ -81,6 +86,12 @@ type UpOpts = {
   /** With --run, also remove Docker volumes on teardown (headless: don't leak
    *  data volumes across dispatches on a long-lived box). */
   volumes?: boolean;
+  /**
+   * Skip non-essential services (Studio, Postgres-Meta, Inbucket) to reduce
+   * memory footprint. Useful for headless/CI builds on memory-constrained
+   * hosts where the Supabase dashboard and email testing UI aren't needed.
+   */
+  minimal?: boolean;
 };
 
 type Ctx = {
@@ -98,6 +109,7 @@ export async function up(opts: UpOpts = {}) {
   // were skipped, schema is unchanged — skip regen too.
   const shouldRegen = shouldMigrate && (opts.regen ?? true);
   const shouldBorrow = opts.borrow === true;
+  const minimal = opts.minimal ?? false;
   // Services-only mode: boot compose stack + portless aliases (api/studio/
   // mail/inngest URLs still useful), skip spawnApps + auto-`down` on Ctrl+C.
   // Triggered by --no-apps OR by deselecting everything in the picker.
@@ -117,7 +129,7 @@ export async function up(opts: UpOpts = {}) {
       ? opts.portless
       : process.env.CARBON_PORTLESS !== "0";
 
-  intro("Carbon · dev up");
+  intro(minimal ? "Carbon · dev up (minimal)" : "Carbon · dev up");
   // Fail fast with a clear message instead of a cryptic daemon error deep in
   // the boot (after prompts + sudo).
   await ensureDockerRunning();
@@ -142,7 +154,17 @@ export async function up(opts: UpOpts = {}) {
     log.info("portless disabled (CARBON_PORTLESS=0) — using localhost URLs");
   }
 
-  const selectedApps = appsRequested ? await pickApps() : [];
+  const allApps = opts.all === true;
+  const selectedApps = appsRequested
+    ? allApps
+      ? // --all excludes the assembler: it needs a one-time native OCCT build,
+        // so it stays opt-in (CARBON_DEV_APPS or an explicit pick).
+        APP_CHOICES.map((c) => c.value).filter((v) => v !== "assembler")
+      : await pickApps()
+    : [];
+  // Fail before booting anything heavy (docker, migrations) if the assembler is
+  // selected without its one-time OCCT build.
+  if (selectedApps.includes("assembler")) assertAssemblerDepsBuilt();
   const slug = resolveSlug(root);
 
   // Resolve borrowed slot before ensureSlugAvailable (borrowing doesn't start
@@ -168,17 +190,20 @@ export async function up(opts: UpOpts = {}) {
 
   await refreshStaleCopyFiles(root);
   await ensureDepsInstalled(root);
+  await ensureSkillsInstalled(root);
 
   const ctx = await provisionSlot(root, slug, portless, borrowedEntry);
   if (borrowedEntry) {
     await waitForServices(ctx);
   } else {
-    await pullImages(ctx, { force: opts.pull === true });
-    await bootDockerStack(ctx);
+    await pullImages(ctx, { force: opts.pull === true, minimal });
+    await bootDockerStack(ctx, { minimal });
     await waitForServices(ctx);
   }
   await runDatabaseMigrations(ctx, { shouldMigrate, shouldRegen });
-  await seedSmokeTestUser(ctx);
+  // Skip when migrations are skipped: the `user` table may not exist yet, and
+  // seeding would fail with `relation "user" does not exist`.
+  if (shouldMigrate) await seedSmokeTestUser(ctx);
   if (portless) {
     await setupPortless(ctx, selectedApps);
     await ensureHostsFile();
@@ -187,6 +212,10 @@ export async function up(opts: UpOpts = {}) {
   if (process.env.CARBON_EDITION === "cloud") {
     stripeChild = spawnStripeListener(root);
     log.info("stripe listener spawned (CARBON_EDITION=cloud)");
+  }
+
+  if (selectedApps.includes("assembler")) {
+    spawnAssembler({ root, ports: ctx.ports });
   }
 
   box(
@@ -273,6 +302,15 @@ async function ensureDepsInstalled(root: string) {
   else log.info("pnpm install skipped (lockfile in sync)");
 }
 
+// Keep the .claude/.codex skill+rule symlinks in sync on every boot. They're
+// gitignored (absent in fresh worktrees) and `prepare` only runs when pnpm
+// install runs, so this is the reliable place to guarantee they exist.
+async function ensureSkillsInstalled(root: string) {
+  const ok = await installSkills(root);
+  if (ok) log.step("skills + rules linked");
+  else log.info("install-skills skipped");
+}
+
 async function provisionSlot(
   root: string,
   slug: string,
@@ -348,24 +386,38 @@ async function provisionSlot(
 // Pull images outside `tasks()` so we can use clack's progress bar (one
 // tick per `<service> Pulled` event). Spinner subtitle inside `tasks()`
 // can't render a bar, only a single line of text.
-async function pullImages(ctx: Ctx, opts: { force: boolean }) {
+async function pullImages(
+  ctx: Ctx,
+  opts: { force: boolean; minimal: boolean }
+) {
   if (!opts.force) {
-    const refs = await devComposeImageRefs(ctx.root, ctx.slug);
+    const refs = await devComposeImageRefs(ctx.root, ctx.slug, {
+      minimal: opts.minimal
+    });
     if (refs && (await allImagesPresentLocally(refs))) {
       log.info("docker images already present — skipping compose pull");
       return;
     }
   }
 
-  const services = await listComposeServices(ctx.root, ctx.slug);
+  const services = await listComposeServices(ctx.root, ctx.slug, {
+    minimal: opts.minimal
+  });
   const max = Math.max(services.length, 1);
   const bar = progress({ style: "heavy", max });
-  bar.start("Pulling docker images");
+  bar.start(
+    opts.minimal ? "Pulling docker images (minimal)" : "Pulling docker images"
+  );
   try {
-    await pullStack(ctx.root, ctx.slug, (line) => {
-      bar.message(line.slice(0, 80));
-      if (/ Pulled$/.test(line)) bar.advance(1);
-    });
+    await pullStack(
+      ctx.root,
+      ctx.slug,
+      (line) => {
+        bar.message(line.slice(0, 80));
+        if (/ Pulled$/.test(line)) bar.advance(1);
+      },
+      { minimal: opts.minimal }
+    );
     bar.stop("images up to date");
   } catch (err) {
     bar.stop("pull failed");
@@ -373,13 +425,17 @@ async function pullImages(ctx: Ctx, opts: { force: boolean }) {
   }
 }
 
-async function bootDockerStack(ctx: Ctx) {
+async function bootDockerStack(ctx: Ctx, opts: { minimal: boolean }) {
+  const serviceCount = opts.minimal ? 8 : 11;
+  const label = opts.minimal
+    ? "Boot docker compose stack (minimal — no studio/meta/inbucket)"
+    : "Boot docker compose stack";
   await tasks([
     {
-      title: "Boot docker compose stack",
+      title: label,
       task: async (msg) => {
-        msg("starting 12 services");
-        await bootStack(ctx.root, ctx.slug);
+        msg(`starting ${serviceCount} services`);
+        await bootStack(ctx.root, ctx.slug, { minimal: opts.minimal });
         return "containers up";
       }
     }
@@ -545,7 +601,8 @@ async function runAppsThenTeardown(
   portless: boolean,
   stripeChild?: ExecaChildProcess
 ) {
-  await spawnApps({ root, apps: selectedApps, ports, portless });
+  const reactRouterApps = selectedApps.filter((id) => id !== "assembler");
+  await spawnApps({ root, apps: reactRouterApps, ports, portless });
 
   // Apps exit on Ctrl+C; auto-`down` so compose stack isn't orphaned.
   // Swallow further signals so a second Ctrl+C during teardown doesn't
@@ -581,28 +638,30 @@ async function appResponds(port: number): Promise<boolean> {
   }
 }
 
-/** Poll each selected app's port until it serves (or the deadline passes). */
+/** Poll each selected app's port concurrently until all serve (or deadline). */
 async function waitForApps(
   selectedApps: AppId[],
   ports: PortMap,
   timeoutMs = 180_000
 ): Promise<void> {
   const deadline = Date.now() + timeoutMs;
-  for (const id of selectedApps) {
-    const key = APP_PORT_KEY[id];
-    const port = key ? ports[key] : undefined;
-    if (port === undefined) continue;
-    let up = false;
-    while (Date.now() < deadline) {
-      if (await appResponds(port)) {
-        up = true;
-        break;
+  await Promise.all(
+    selectedApps.map(async (id) => {
+      const key = APP_PORT_KEY[id];
+      const port = key ? ports[key] : undefined;
+      if (port === undefined) return;
+      let up = false;
+      while (Date.now() < deadline) {
+        if (await appResponds(port)) {
+          up = true;
+          break;
+        }
+        await new Promise((r) => setTimeout(r, 1500));
       }
-      await new Promise((r) => setTimeout(r, 1500));
-    }
-    if (up) log.info(`${id} reachable on :${port}`);
-    else log.warn(`${id} not reachable on :${port} — running command anyway`);
-  }
+      if (up) log.info(`${id} reachable on :${port}`);
+      else log.warn(`${id} not reachable on :${port} — running command anyway`);
+    })
+  );
 }
 
 /**

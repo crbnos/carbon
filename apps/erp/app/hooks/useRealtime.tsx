@@ -1,6 +1,9 @@
+import { getLogger } from "@carbon/logger";
 import { useRealtimeChannel } from "@carbon/react";
 import { useRevalidator } from "react-router";
 import { useUser } from "./useUser";
+
+const logger = getLogger("erp", "userealtime");
 
 export function useRealtime(table: string, filter?: string) {
   const { company } = useUser();
@@ -17,7 +20,7 @@ export function useRealtime(table: string, filter?: string) {
           if ("companyId" in payload && payload.companyId !== company.id) {
             return;
           }
-          console.log("🌀 Revalidaiton payload received:", payload);
+          logger.info("🌀 Revalidaiton payload received:", payload);
           revalidator.revalidate();
         }
       );

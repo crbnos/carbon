@@ -125,6 +125,7 @@ const ToolProperties = ({ data }: ToolPropertiesProps) => {
         | "itemPostingGroupId"
         | "toolId"
         | "active"
+        | "mpn"
         | "requiresInspection",
       value: string | null
     ) => {
@@ -585,6 +586,28 @@ const ToolProperties = ({ data }: ToolPropertiesProps) => {
             variant="small"
             onChange={(value) => {
               onUpdate("requiresInspection", value ? "on" : "off");
+            }}
+          />
+        </ValidatedForm>
+      )}
+      {routeData?.toolSummary?.replenishmentSystem?.includes("Buy") && (
+        <ValidatedForm
+          defaultValues={{
+            mpn: (routeData?.toolSummary as any)?.mpn ?? undefined
+          }}
+          validator={z.object({
+            mpn: z.string().optional()
+          })}
+          className="w-full"
+        >
+          <InputControlled
+            label={t`Manufacturer Part Number`}
+            name="mpn"
+            inline
+            size="sm"
+            value={(routeData?.toolSummary as any)?.mpn ?? ""}
+            onBlur={(e) => {
+              onUpdate("mpn", e.target.value ?? null);
             }}
           />
         </ValidatedForm>

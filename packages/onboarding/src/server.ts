@@ -128,6 +128,33 @@ export function upsertCheckState(
     .single();
 }
 
+export function upsertCheckStates(
+  client: Client,
+  args: {
+    companyId: string;
+    itemKeys: string[];
+    kind: StateKind;
+    value: string;
+    userId: string;
+  }
+) {
+  const updatedAt = new Date().toISOString();
+  // Dedupe: ON CONFLICT DO UPDATE cannot affect the same row twice in one
+  // statement, so a repeated key would fail the whole batch.
+  return client.from("implementationCheckState").upsert(
+    Array.from(new Set(args.itemKeys)).map((itemKey) => ({
+      companyId: args.companyId,
+      itemKey,
+      kind: args.kind,
+      value: args.value,
+      createdBy: args.userId,
+      updatedBy: args.userId,
+      updatedAt
+    })),
+    { onConflict: "companyId, itemKey" }
+  );
+}
+
 export function upsertFieldValue(
   client: Client,
   args: { companyId: string; fieldKey: string; value: string; userId: string }

@@ -169,6 +169,11 @@ export function ColumnCard({
               />
             ))}
           </SortableContext>
+          {items.length === 0 && (
+            <div className="flex items-center justify-center rounded-md border border-dashed border-border py-8 text-xs text-muted-foreground">
+              <Trans>No items</Trans>
+            </div>
+          )}
         </div>
         <ScrollBar orientation="horizontal" />
       </ScrollArea>

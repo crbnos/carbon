@@ -2,11 +2,14 @@ import { assertIsPost, ERP_URL, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { notifyIssueStatusChanged } from "@carbon/ee/notifications";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { nonConformanceStatus, updateIssueStatus } from "~/modules/quality";
 import { getCompanyIntegrations } from "~/modules/settings/settings.server";
 import { path, requestReferrer } from "~/utils/path";
+
+const logger = getLogger("erp", "id-status");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -58,7 +61,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       }
     });
   } catch (error) {
-    console.error("Failed to send notifications:", error);
+    logger.error("Failed to send notifications", { error: error });
     // Continue without blocking the main operation
   }
 

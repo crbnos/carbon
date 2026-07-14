@@ -39,7 +39,7 @@ export const companyImportFunction = inngest.createFunction(
     concurrency: { key: "event.data.companyId", limit: 1 }
   },
   { event: "carbon/company-import" },
-  async ({ event, step }) => {
+  async ({ event, step, logger }) => {
     const {
       companyId,
       userId,
@@ -70,7 +70,7 @@ export const companyImportFunction = inngest.createFunction(
         .eq("companyId", companyId)
         .filter("metadata->>importRunId", "eq", importRunId);
       if ((existing.count ?? 0) > 0) {
-        console.log("Import run already applied, skipping", { importRunId });
+        logger.info("Import run already applied, skipping", { importRunId });
         return { importRunId, skipped: true };
       }
 
@@ -218,7 +218,7 @@ export const companyImportFunction = inngest.createFunction(
 
       const replicaMode = await canSetReplicationRole(db);
       if (!replicaMode) {
-        console.warn(
+        logger.warn(
           "session_replication_role unavailable — importing with triggers " +
             "and FK enforcement active; relying on topological order"
         );
@@ -309,7 +309,7 @@ export const companyImportFunction = inngest.createFunction(
           // entityId is the (new) id; for composite-keyed tables it's the
           // JSON-encoded primary key tuple.
           if (table.pkColumns.length === 0) {
-            console.warn("Table has no primary key — revert will skip it", {
+            logger.warn("Table has no primary key — revert will skip it", {
               table: table.name
             });
             continue;
@@ -357,12 +357,12 @@ export const companyImportFunction = inngest.createFunction(
       });
 
       if (unresolvedRefs.size > 0) {
-        console.warn(
+        logger.warn(
           "Reseed kept non-nullable references to tables it did not import " +
             "(the target already had them, so source ids could not be " +
             "remapped). These may dangle — the template likely needs those " +
-            "columns made nullable or those tables left out of the seed:",
-          [...unresolvedRefs]
+            "columns made nullable or those tables left out of the seed",
+          { unresolvedRefs: [...unresolvedRefs] }
         );
       }
 
@@ -401,7 +401,7 @@ export const companyImportFunction = inngest.createFunction(
       }
 
       const totalRows = Object.values(counts).reduce((sum, n) => sum + n, 0);
-      console.log(
+      logger.info(
         autoFinalize
           ? "Company import complete — auto-finalized"
           : "Company import complete — pending finalize/revert",

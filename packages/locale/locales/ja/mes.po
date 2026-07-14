@@ -764,6 +764,9 @@ msgstr "前へ"
 msgid "Preventive"
 msgstr "予防保全"
 
+msgid "Previous"
+msgstr "前へ"
+
 msgid "Print"
 msgstr "印刷"
 

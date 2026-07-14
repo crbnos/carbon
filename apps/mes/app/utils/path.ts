@@ -14,9 +14,19 @@ export const path = {
       batchNumbers: (itemId: string) =>
         generatePath(`${api}/batch-numbers?itemId=${itemId}`),
       failureModes: `${api}/failure-modes`,
+      pickedAllocation: (jobMaterialId: string) =>
+        generatePath(`${api}/picked-allocation?jobMaterialId=${jobMaterialId}`),
       qualityIssueTypes: `${api}/quality-issue-types`,
       serialNumbers: (itemId: string) =>
-        generatePath(`${api}/serial-numbers?itemId=${itemId}`)
+        generatePath(`${api}/serial-numbers?itemId=${itemId}`),
+      suggestedAllocation: (
+        itemId: string,
+        locationId: string,
+        quantity: number
+      ) =>
+        generatePath(
+          `${api}/suggested-allocation?itemId=${itemId}&locationId=${locationId}&quantity=${quantity}`
+        )
     },
     file: {
       jobTraveler: (id: string) => `${getAppUrl()}${file}/traveler/${id}.pdf`,

@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { getLogger } from "@carbon/logger";
 import {
   Avatar,
   Button,
@@ -20,6 +21,8 @@ import { useUser } from "~/hooks";
 import type { OperationWithDetails } from "~/services/types";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
+
+const log = getLogger("mes", "job-operation");
 
 type Message = {
   id: string;
@@ -57,7 +60,7 @@ export function OperationChat({
       .order("createdAt", { ascending: true });
 
     if (error) {
-      console.error(error);
+      log.error("Failed to fetch job operation notes", { error });
       return;
     }
     setMessages(data);
@@ -119,7 +122,7 @@ export function OperationChat({
       });
 
       if (!response.ok) {
-        console.error("Failed to notify user");
+        log.error("Failed to notify user");
       }
     },
     5000,

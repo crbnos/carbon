@@ -25,11 +25,11 @@ export const webhookFunction = inngest.createFunction(
     }
   },
   { event: "carbon/event-webhook" },
-  async ({ event, step }) => {
+  async ({ event, step, logger }) => {
     const payload = webhookPayloadSchema.parse(event.data);
 
     await step.run("send-webhook", async () => {
-      console.log(`Firing webhook to ${payload.url}`);
+      logger.info(`Firing webhook to ${payload.url}`);
       await axios.post(payload.url, payload.data, {
         headers: payload.config.headers
       });

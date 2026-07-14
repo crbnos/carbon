@@ -3,6 +3,7 @@ import { CarbonEdition } from "@carbon/auth";
 import type { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import { trigger } from "@carbon/jobs";
+import { getLogger } from "@carbon/logger";
 import { Edition } from "@carbon/utils";
 import { getLocalTimeZone } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -20,6 +21,8 @@ import {
 import { unpackBackupArchive } from "~/modules/settings/backups-archive.server";
 
 type ServiceRole = ReturnType<typeof getCarbonServiceRole>;
+
+const logger = getLogger("erp", "onboarding");
 
 /**
  * Provision a freshly-created company's data. "Restore from a backup" resolves
@@ -42,7 +45,7 @@ export async function provisionCompanyData(
   if (!backup) {
     const seed = await seedCompany(serviceRole, companyId, userId);
     if (seed.error) {
-      console.error(seed.error);
+      logger.error("Failed to seed company", { error: seed.error });
       throw new Error("Fatal: failed to seed company");
     }
     return;
@@ -52,7 +55,7 @@ export async function provisionCompanyData(
     identityOnly: true
   });
   if (seed.error) {
-    console.error(seed.error);
+    logger.error("Failed to seed company", { error: seed.error });
     throw new Error("Fatal: failed to seed company");
   }
 
@@ -84,7 +87,7 @@ export async function provisionCompanyData(
       autoFinalize: true
     });
   } catch (err) {
-    console.error(err);
+    logger.error("Failed to start company data import", { error: err });
     throw new Error("Fatal: failed to start company data import");
   }
 }
@@ -141,11 +144,13 @@ export async function provisionOnboardingCompany(
       })
     ]);
     if (companyUpdate.error) {
-      console.error(companyUpdate.error);
+      logger.error("Failed to update company", { error: companyUpdate.error });
       throw new Error("Fatal: failed to update company");
     }
     if (locationUpdate.error) {
-      console.error(locationUpdate.error);
+      logger.error("Failed to update location", {
+        error: locationUpdate.error
+      });
       throw new Error("Fatal: failed to update location");
     }
     return company.id!;
@@ -153,7 +158,7 @@ export async function provisionOnboardingCompany(
 
   const companyInsert = await insertCompany(serviceRole, companyData);
   if (companyInsert.error) {
-    console.error(companyInsert.error);
+    logger.error("Failed to insert company", { error: companyInsert.error });
     throw new Error("Fatal: failed to insert company");
   }
   const companyId = companyInsert.data?.id;
@@ -183,7 +188,7 @@ export async function provisionOnboardingCompany(
     createdBy: userId
   });
   if (locationInsert.error) {
-    console.error(locationInsert.error);
+    logger.error("Failed to insert location", { error: locationInsert.error });
     throw new Error("Fatal: failed to insert location");
   }
   const locationId = locationInsert.data?.id;
@@ -197,7 +202,7 @@ export async function provisionOnboardingCompany(
     locationId
   });
   if (job.error) {
-    console.error(job.error);
+    logger.error("Failed to insert job", { error: job.error });
     throw new Error("Fatal: failed to insert job");
   }
 

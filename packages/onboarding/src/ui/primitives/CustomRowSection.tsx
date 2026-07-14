@@ -9,6 +9,7 @@
 // Hidden entirely when there are no custom rows and the viewer can't edit.
 
 import { Button } from "@carbon/react";
+import { useLingui } from "@lingui/react/macro";
 import { Fragment, type ReactNode } from "react";
 import { LuPlus } from "react-icons/lu";
 import { COLLECTIONS, type CollectionKey, UI_TEXT } from "../../content";
@@ -24,6 +25,7 @@ export function CustomRowSection({
   children: (row: ImplementationRowData) => ReactNode;
 }) {
   const def = COLLECTIONS[collection];
+  const { i18n } = useLingui();
   const canEdit = useCanEdit();
   const rows = useRows(collection);
   const { addRow } = useHubActions();
@@ -32,11 +34,11 @@ export function CustomRowSection({
 
   return (
     <Section
-      title={UI_TEXT.addedForCustomer}
+      title={i18n._(UI_TEXT.addedForCustomer)}
       aside={
         canEdit ? (
           <span className="text-xxs text-muted-foreground">
-            {UI_TEXT.carbonOnly}
+            {i18n._(UI_TEXT.carbonOnly)}
           </span>
         ) : null
       }
@@ -49,7 +51,7 @@ export function CustomRowSection({
         </SectionList>
       ) : (
         <div className="px-5 py-4 text-sm text-muted-foreground">
-          {def.emptyText}
+          {i18n._(def.emptyText)}
         </div>
       )}
       {canEdit ? (
@@ -60,7 +62,7 @@ export function CustomRowSection({
             leftIcon={<LuPlus />}
             onClick={() => addRow(collection, def.newPayload())}
           >
-            {def.addLabel}
+            {i18n._(def.addLabel)}
           </Button>
         </div>
       ) : null}

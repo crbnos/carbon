@@ -53,12 +53,18 @@ export type Container = {
 // Lifecycle
 // ---------------------------------------------------------------------------
 
-export async function bootStack(root: string, slug: string) {
-  await execStrict(
-    "docker",
-    devArgs(root, slug, "--env-file", ".env.local", "up", "-d"),
-    root
-  );
+export async function bootStack(
+  root: string,
+  slug: string,
+  opts?: { minimal?: boolean; services?: string[] }
+) {
+  const args = devArgs(root, slug, "--env-file", ".env.local");
+  // When specific services are requested, don't activate profiles — compose
+  // starts only the named services (+ dependencies) regardless of profiles.
+  if (!opts?.services && !opts?.minimal) args.push("--profile", "full");
+  args.push("up", "-d");
+  if (opts?.services) args.push(...opts.services);
+  await execStrict("docker", args, root);
 }
 
 // `docker compose restart` a subset of services. Used by the storage-stuck
@@ -84,21 +90,13 @@ export async function restartServices(
 export async function pullStack(
   root: string,
   slug: string,
-  onLine: (line: string) => void
+  onLine: (line: string) => void,
+  opts?: { minimal?: boolean }
 ) {
-  const proc = execa(
-    "docker",
-    devArgs(
-      root,
-      slug,
-      "--env-file",
-      ".env.local",
-      "--progress",
-      "plain",
-      "pull"
-    ),
-    { cwd: root, reject: false, all: true }
-  );
+  const args = devArgs(root, slug, "--env-file", ".env.local");
+  if (!opts?.minimal) args.push("--profile", "full");
+  args.push("--progress", "plain", "pull");
+  const proc = execa("docker", args, { cwd: root, reject: false, all: true });
 
   if (proc.all) {
     readLines(proc.all, (line) => {
@@ -117,13 +115,13 @@ export async function pullStack(
 /** Resolved image refs for the dev compose file (tags as pinned in compose). */
 export async function devComposeImageRefs(
   root: string,
-  slug: string
+  slug: string,
+  opts?: { minimal?: boolean }
 ): Promise<string[] | null> {
-  const r = await execa(
-    "docker",
-    devArgs(root, slug, "--env-file", ".env.local", "config", "--images"),
-    { cwd: root, reject: false }
-  );
+  const args = devArgs(root, slug, "--env-file", ".env.local");
+  if (!opts?.minimal) args.push("--profile", "full");
+  args.push("config", "--images");
+  const r = await execa("docker", args, { cwd: root, reject: false });
   if (r.exitCode !== 0) return null;
   const refs = (r.stdout ?? "")
     .split("\n")
@@ -147,14 +145,29 @@ export async function allImagesPresentLocally(
   return results.every(Boolean);
 }
 
+// Returns the compose `down` exit code (0 = success). On compose-parse
+// failures (missing .env.local, profile issues, renamed compose file), falls
+// back to raw `docker rm -f` via destroyProject so the stack is always torn
+// down even when compose can't parse the project to find its containers.
 export async function stopStack(
   root: string,
   slug: string,
   withVolumes: boolean
-) {
-  const args = devArgs(root, slug, "--env-file", ".env.local", "down");
-  if (withVolumes) args.push("-v", "--remove-orphans");
-  await execa("docker", args, { cwd: root, stdio: "ignore", reject: false });
+): Promise<number> {
+  const args = devArgs(
+    root,
+    slug,
+    "--env-file",
+    ".env.local",
+    "down",
+    "--remove-orphans"
+  );
+  if (withVolumes) args.push("-v");
+  const r = await execa("docker", args, { cwd: root, reject: false });
+  if (r.exitCode !== 0) {
+    await destroyProject(projectName(slug), withVolumes);
+  }
+  return r.exitCode ?? 0;
 }
 
 // One redis per host, run directly via `docker run` (no compose file).
@@ -306,13 +319,13 @@ function parsePublishers(raw: unknown): Publisher[] {
 // `docker compose config --services` so we don't drift if services are added.
 export async function listComposeServices(
   root: string,
-  slug: string
+  slug: string,
+  opts?: { minimal?: boolean }
 ): Promise<string[]> {
-  const r = await execa(
-    "docker",
-    devArgs(root, slug, "--env-file", ".env.local", "config", "--services"),
-    { cwd: root, reject: false }
-  );
+  const args = devArgs(root, slug, "--env-file", ".env.local");
+  if (!opts?.minimal) args.push("--profile", "full");
+  args.push("config", "--services");
+  const r = await execa("docker", args, { cwd: root, reject: false });
   if (r.exitCode !== 0) return [];
   return (r.stdout ?? "")
     .split("\n")
@@ -360,8 +373,9 @@ export async function dockerProjectStates(): Promise<Map<string, string>> {
 
 // Destroy a compose project by force-removing its containers, volumes, and
 // networks using raw docker commands. Works even when the compose file or
-// worktree directory no longer exists (orphaned projects).
-export async function destroyProject(project: string) {
+// worktree directory no longer exists (orphaned projects). When withVolumes is
+// false (plain `crbn down`), preserves the project's data volumes.
+export async function destroyProject(project: string, withVolumes = true) {
   // Find containers belonging to the project.
   const ctr = await execa(
     "docker",
@@ -385,6 +399,28 @@ export async function destroyProject(project: string) {
     });
   }
 
+  // Remove networks prefixed with the project name (always — cheap, and stale
+  // networks block the next `up` from reusing the project name cleanly).
+  const net = await execa(
+    "docker",
+    ["network", "ls", "-q", "--filter", `name=${project}_`],
+    {
+      reject: false
+    }
+  );
+  const nets = (net.stdout ?? "")
+    .split("\n")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (nets.length > 0) {
+    await execa("docker", ["network", "rm", ...nets], {
+      reject: false,
+      stdio: "ignore"
+    });
+  }
+
+  if (!withVolumes) return;
+
   // Remove volumes prefixed with the project name.
   const vol = await execa(
     "docker",
@@ -399,25 +435,6 @@ export async function destroyProject(project: string) {
     .filter(Boolean);
   if (vols.length > 0) {
     await execa("docker", ["volume", "rm", "-f", ...vols], {
-      reject: false,
-      stdio: "ignore"
-    });
-  }
-
-  // Remove networks prefixed with the project name.
-  const net = await execa(
-    "docker",
-    ["network", "ls", "-q", "--filter", `name=${project}_`],
-    {
-      reject: false
-    }
-  );
-  const nets = (net.stdout ?? "")
-    .split("\n")
-    .map((s) => s.trim())
-    .filter(Boolean);
-  if (nets.length > 0) {
-    await execa("docker", ["network", "rm", ...nets], {
       reject: false,
       stdio: "ignore"
     });

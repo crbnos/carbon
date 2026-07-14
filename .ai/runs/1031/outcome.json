@@ -1,0 +1,5 @@
+{
+  "state": "plateau",
+  "iterations": 2,
+  "reason": "no progress across 2 iterations"
+}

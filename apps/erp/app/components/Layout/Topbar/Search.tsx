@@ -524,14 +524,14 @@ function useGroupedSubmodules() {
       const groups = groupedSubmodules[moduleName].groups;
       acc = {
         ...acc,
-        [module.name]: groups.flatMap((group) =>
-          group.routes.map((route) => ({
+        [module.name]: groups
+          .flatMap((group) => group.routes)
+          .map((route) => ({
             to: route.to,
             name: route.name,
             icon: module.icon,
             iconElement: route.icon
           }))
-        )
       };
     } else if (
       moduleName in ungroupedSubmodules ||

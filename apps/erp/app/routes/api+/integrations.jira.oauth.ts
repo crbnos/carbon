@@ -5,11 +5,14 @@ import {
   exchangeCodeForTokens,
   getAccessibleResources
 } from "@carbon/ee/jira.server";
+import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
 import { upsertCompanyIntegration } from "~/modules/settings/settings.server";
 import { oAuthCallbackSchema } from "~/modules/shared";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "integrations-jira-oauth");
 
 export const config = {
   runtime: "nodejs"
@@ -102,7 +105,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       );
     }
   } catch (err) {
-    console.error("Jira OAuth Error:", err);
+    logger.error("Jira OAuth Error", { error: err });
     return data(
       { error: "Failed to exchange code for token" },
       { status: 500 }

@@ -13,15 +13,37 @@ import { useCustomers, useItems, usePeople, useSuppliers } from "~/stores";
 type DownloadProps = {
   data: object[];
   columnAccessors: Record<string, string>;
+  exportValues: Record<string, (row: any) => unknown>;
   columnOrder: string[];
   columnVisibility: Record<string, boolean>;
+  // Export-only columns (meta.exportOnly): hidden in the grid but always
+  // included in the CSV, regardless of visibility.
+  exportOnlyColumns: string[];
 };
+
+// Last-resort guardrail so an export never ships `[object Object]` or explodes a
+// nested object into stray columns. Arrays/dates/primitives are left untouched —
+// json2csv already serializes them consistently. A column whose value is a plain
+// object should supply a readable `exportValue` rather than rely on this.
+function serializeForCsv(value: unknown): unknown {
+  if (
+    value != null &&
+    typeof value === "object" &&
+    !Array.isArray(value) &&
+    !(value instanceof Date)
+  ) {
+    return JSON.stringify(value);
+  }
+  return value;
+}
 
 const Download = ({
   data,
   columnAccessors,
+  exportValues,
   columnOrder,
-  columnVisibility
+  columnVisibility,
+  exportOnlyColumns
 }: DownloadProps) => {
   const { t } = useLingui();
 
@@ -50,9 +72,13 @@ const Download = ({
       ? columnOrder
       : Object.keys(columnAccessors);
     return order.filter(
-      (id) => id in columnAccessors && columnVisibility[id] !== false
+      (id) =>
+        id in columnAccessors &&
+        // Export-only columns export regardless of grid visibility; everything
+        // else follows the visible-in-the-current-view rule.
+        (exportOnlyColumns.includes(id) || columnVisibility[id] !== false)
     );
-  }, [columnOrder, columnVisibility, columnAccessors]);
+  }, [columnOrder, columnVisibility, columnAccessors, exportOnlyColumns]);
 
   const onClick = useCallback(() => {
     if (!data?.length) {
@@ -63,10 +89,16 @@ const Download = ({
     const rows = data.map((row) => {
       const out: Record<string, unknown> = {};
       for (const key of exportColumns) {
-        const raw = (row as Record<string, unknown>)[key];
-        const map = idNameMaps[key];
-        out[columnAccessors[key]] =
-          map && raw != null ? (map.get(String(raw)) ?? raw) : raw;
+        const exporter = exportValues[key];
+        let value: unknown;
+        if (exporter) {
+          value = exporter(row);
+        } else {
+          const raw = (row as Record<string, unknown>)[key];
+          const map = idNameMaps[key];
+          value = map && raw != null ? (map.get(String(raw)) ?? raw) : raw;
+        }
+        out[columnAccessors[key]] = serializeForCsv(value);
       }
       return out;
     });
@@ -79,7 +111,7 @@ const Download = ({
     a.download = "data.csv";
     document.body.appendChild(a);
     a.click();
-  }, [data, exportColumns, idNameMaps, columnAccessors]);
+  }, [data, exportColumns, idNameMaps, columnAccessors, exportValues]);
 
   if (!data?.length) {
     return null;

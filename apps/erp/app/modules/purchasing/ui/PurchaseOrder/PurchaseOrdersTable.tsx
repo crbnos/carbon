@@ -226,7 +226,8 @@ const PurchaseOrdersTable = memo(
                 label: employee.name
               }))
             },
-            icon: <LuUser />
+            icon: <LuUser />,
+            exportValue: (row) => row.assigneeFullName
           }
         },
 
@@ -248,7 +249,7 @@ const PurchaseOrdersTable = memo(
         },
         {
           accessorKey: "paymentTermId",
-          header: t`Payment Method`,
+          header: t`Payment Terms`,
           cell: (item) => (
             <Enumerable
               value={
@@ -291,7 +292,8 @@ const PurchaseOrdersTable = memo(
                 label: employee.name
               }))
             },
-            icon: <LuUser />
+            icon: <LuUser />,
+            exportValue: (row) => row.createdByFullName
           }
         },
         {
@@ -460,8 +462,6 @@ const PurchaseOrdersTable = memo(
             left: ["purchaseOrderId"]
           }}
           defaultColumnVisibility={{
-            shippingMethodName: false,
-            paymentTermName: false,
             dropShipment: false,
             createdBy: false,
             createdAt: false,

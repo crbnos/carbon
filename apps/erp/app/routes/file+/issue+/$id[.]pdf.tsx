@@ -5,6 +5,7 @@ import {
   resolveTemplate,
   toDocumentTemplate
 } from "@carbon/documents/template";
+import { getLogger } from "@carbon/logger";
 import { getPreferenceHeaders } from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
 import type { LoaderFunctionArgs } from "react-router";
@@ -23,6 +24,8 @@ import {
   getDocumentTemplate,
   resolveSections
 } from "~/modules/settings";
+
+const logger = getLogger("erp", "issue", "pdf");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -130,27 +133,33 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   if (company.error) {
-    console.error(company.error);
+    logger.error("Failed to load company", { error: company.error });
   }
 
   if (nonConformance.error) {
-    console.error(nonConformance.error);
+    logger.error("Failed to load nonConformance", {
+      error: nonConformance.error
+    });
   }
 
   if (nonConformanceTypes.error) {
-    console.error(nonConformanceTypes.error);
+    logger.error("Failed to load nonConformanceTypes", {
+      error: nonConformanceTypes.error
+    });
   }
 
   if (actionTasks.error) {
-    console.error(actionTasks.error);
+    logger.error("Failed to load actionTasks", { error: actionTasks.error });
   }
 
   if (approvalTasks.error) {
-    console.error(approvalTasks.error);
+    logger.error("Failed to load approvalTasks", {
+      error: approvalTasks.error
+    });
   }
 
   if (items.error) {
-    console.error(items.error);
+    logger.error("Failed to load items", { error: items.error });
   }
 
   if (

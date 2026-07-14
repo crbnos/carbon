@@ -1,9 +1,12 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { KanbanLabelPDF } from "@carbon/documents/pdf";
+import { getLogger } from "@carbon/logger";
 import { renderToStream } from "@react-pdf/renderer";
 import type { LoaderFunctionArgs } from "react-router";
 import { getCompany } from "~/modules/settings";
 import { getBase64ImageFromSupabase } from "~/modules/shared";
+
+const logger = getLogger("erp", "labels-action-pdf");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -12,7 +15,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const company = await getCompany(client, companyId);
   if (company.error) {
-    console.error(company.error);
+    logger.error(company.error);
     throw new Error("Failed to load company");
   }
 

@@ -1,4 +1,4 @@
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -64,5 +64,60 @@ describe("openPr idempotency", () => {
     expect(openPr(BINDING, ledgerWithOneEntry(), shell, cwd)).toBe(url);
     expect(calls.some((c) => c.includes("gh pr edit"))).toBe(true);
     expect(calls.some((c) => c.includes("gh pr create"))).toBe(false);
+  });
+
+  it("opens a fully-verified PR as non-draft with no label", () => {
+    const { shell, calls } = fakeShell([
+      ["gh pr view", { ok: false, output: "" }],
+      ["gh pr create", { ok: true, output: "https://github.com/o/r/pull/2\n" }]
+    ]);
+    const cwd = mkdtempSync(join(tmpdir(), "pr-cwd-"));
+
+    openPr(BINDING, ledgerWithOneEntry(), shell, cwd);
+    const create = calls.find((c) => c.includes("gh pr create"));
+    expect(create).not.toContain("--draft");
+    expect(calls.some((c) => c.includes("--add-label"))).toBe(false);
+  });
+
+  it("opens unverified work as a draft with the needs-verification label", () => {
+    const { shell, calls } = fakeShell([
+      ["gh pr view", { ok: false, output: "" }],
+      ["gh pr create", { ok: true, output: "https://github.com/o/r/pull/3\n" }]
+    ]);
+    const cwd = mkdtempSync(join(tmpdir(), "pr-cwd-"));
+
+    openPr(BINDING, ledgerWithOneEntry(), shell, cwd, {
+      unverified: ["could not create test data for a posted invoice"]
+    });
+    const create = calls.find((c) => c.includes("gh pr create"));
+    expect(create).toContain("--draft");
+    expect(
+      calls.some((c) => c.includes("--add-label 'agent:needs-verification'"))
+    ).toBe(true);
+  });
+
+  it("opens a partial salvage PR as a draft that does not auto-close the issue", () => {
+    const { shell, calls } = fakeShell([
+      ["gh pr view", { ok: false, output: "" }],
+      ["gh pr create", { ok: true, output: "https://github.com/o/r/pull/4\n" }]
+    ]);
+    const cwd = mkdtempSync(join(tmpdir(), "pr-cwd-"));
+
+    openPr({ ...BINDING, issue: 310 }, ledgerWithOneEntry(), shell, cwd, {
+      partial: { state: "plateau", reason: "no progress across 2 iterations" }
+    });
+    const create = calls.find((c) => c.includes("gh pr create"));
+    expect(create).toContain("--draft");
+    expect(create).toContain("[partial]");
+    expect(
+      calls.some((c) => c.includes("--add-label 'agent:needs-verification'"))
+    ).toBe(true);
+    // Merging partial work must not close the issue.
+    const bodyPath = create?.match(/--body-file '([^']+)'/)?.[1];
+    expect(bodyPath).toBeDefined();
+    const body = readFileSync(bodyPath ?? "", "utf8");
+    expect(body).toContain("Related to #310");
+    expect(body).not.toContain("Closes #310");
+    expect(body).toContain("Partial work");
   });
 });

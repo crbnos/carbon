@@ -126,7 +126,12 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
               label: <Enumerable value={w.label} />
             })),
             isArray: true
-          }
+          },
+          exportValue: (row) =>
+            ((row.workCenters ?? []) as Array<string>)
+              .map((wc) => workCenters.find((w) => w.value === wc)?.label)
+              .filter(Boolean)
+              .join(", ")
         }
       },
       {
@@ -160,7 +165,11 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
           </AvatarGroup>
         ),
         meta: {
-          icon: <LuUsers />
+          icon: <LuUsers />,
+          exportValue: (row) =>
+            ((row.suppliers ?? []) as Array<{ name: string }>)
+              .map((s) => s.name)
+              .join(", ")
         }
       },
       {

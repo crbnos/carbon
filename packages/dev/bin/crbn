@@ -75,7 +75,7 @@ repo_root() {
 }
 
 slugify_branch() {
-  # Mirrors packages/dev/src/lib/slug.ts:slugify — lowercase, replace
+  # Mirrors packages/dev/src/worktree.ts:slugify — lowercase, replace
   # non-[a-z0-9-] runs with `-`, trim/collapse `-`.
   printf '%s' "$1" \
     | tr '[:upper:]' '[:lower:]' \
@@ -406,6 +406,14 @@ do_post_create() {
   if ! ( cd "$target" && delegate_ts env sync >&2 ); then
     warn "env sync step failed (worktree was still created)"
   fi
+  # Link .ai skills/rules into .claude/.codex for this worktree. They're
+  # gitignored, so a fresh worktree has none until this runs. Output to stderr
+  # so the checkout stdout (the eval'd `cd`) stays clean.
+  if [[ -f "$target/.ai/scripts/install-skills.sh" ]]; then
+    if ! ( cd "$target" && bash .ai/scripts/install-skills.sh >&2 ); then
+      warn "install-skills step failed (worktree was still created)"
+    fi
+  fi
 }
 
 # Replace process with `crbn up` cd'd into the new worktree. Caller's shell
@@ -438,6 +446,7 @@ crbn — Carbon dev CLI
 
   Stack:
     crbn up                         Boot compose stack + apps.
+    crbn up --all                   Launch all apps without the picker.
     crbn up --no-portless           Localhost mode (API:54321 ERP:3000 MES:3001).
     crbn up --borrow                Reuse another worktree's containers.
     crbn up --no-apps               Services only, no dev servers.

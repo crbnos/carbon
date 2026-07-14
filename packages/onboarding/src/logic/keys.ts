@@ -15,3 +15,8 @@ export const fieldTextKey = (fieldKey: string) => `txt:${fieldKey}`;
 // a URL fragment target lookup, so swap them for hyphens (gate:configure → gate-configure).
 export const planAnchorId = (stepKey: string) =>
   `plan-${stepKey.replace(/:/g, "-")}`;
+
+// DOM anchor id for a Setup Map group. A Configure task in the Plan deep-links to
+// its matching group here — its `key` is the group key (see content/board), so
+// both sides derive the same anchor.
+export const setupAnchorId = (groupKey: string) => `setup-${groupKey}`;

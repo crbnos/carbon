@@ -1,9 +1,9 @@
 import type { IconType } from "react-icons";
 import {
+  LuBlocks,
   LuClipboardCheck,
   LuFactory,
   LuForklift,
-  LuPackage,
   LuPackageCheck,
   LuPackageMinus,
   LuPackageOpen,
@@ -91,7 +91,7 @@ export const ACTIVITY_KIND_META: Record<ActivityKind, ActivityKindMeta> = {
     color: "hsl(330 70% 60%)",
     icon: LuClipboardCheck
   },
-  Other: { label: "Other", color: "hsl(280 65% 60%)", icon: LuPackage }
+  Other: { label: "Other", color: "hsl(280 65% 60%)", icon: LuBlocks }
 };
 
 export function activityKindFor(type: string | undefined | null): ActivityKind {

@@ -7,7 +7,7 @@ import {
 } from "@carbon/utils";
 import {
   LuArrowRightLeft,
-  LuPackage,
+  LuBlocks,
   LuScale,
   LuTruck,
   LuWarehouse
@@ -18,7 +18,7 @@ const SURFACE_VISUALS: Record<
   { label: string; icon: JSX.Element }
 > = {
   receipt: { label: "Receipts", icon: <LuTruck className="size-3.5" /> },
-  shipment: { label: "Shipments", icon: <LuPackage className="size-3.5" /> },
+  shipment: { label: "Shipments", icon: <LuBlocks className="size-3.5" /> },
   stockTransfer: {
     label: "Stock transfers",
     icon: <LuArrowRightLeft className="size-3.5" />
@@ -31,8 +31,8 @@ const SURFACE_VISUALS: Record<
     label: "Inventory adjustments",
     icon: <LuScale className="size-3.5" />
   },
-  place: { label: "Place", icon: <LuPackage className="size-3.5" /> },
-  pick: { label: "Pick", icon: <LuPackage className="size-3.5" /> },
+  place: { label: "Place", icon: <LuBlocks className="size-3.5" /> },
+  pick: { label: "Pick", icon: <LuBlocks className="size-3.5" /> },
   operationStart: {
     label: "Operation start",
     icon: <LuArrowRightLeft className="size-3.5" />

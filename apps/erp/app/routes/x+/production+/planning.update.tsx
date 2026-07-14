@@ -1,4 +1,5 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
@@ -8,6 +9,8 @@ import {
   recalculateJobRequirements,
   upsertJobMethod
 } from "~/modules/production";
+
+const logger = getLogger("erp", "production", "planning");
 
 const itemsValidator = z
   .object({
@@ -75,7 +78,7 @@ export async function action({ request }: ActionFunctionArgs) {
           return error.message;
         });
 
-        console.error("Validation errors:", parsedItems.error.errors);
+        logger.error("Validation errors", { errors: parsedItems.error.errors });
         return data(
           {
             success: false,
@@ -129,21 +132,21 @@ export async function action({ request }: ActionFunctionArgs) {
 
           if (manufacturing.error) {
             const errorMsg = `Failed to retrieve manufacturing data for item ${item.id}: ${manufacturing.error.message}`;
-            console.error(errorMsg);
+            logger.error(errorMsg);
             errors.push(errorMsg);
             continue;
           }
 
           if (manufacturing.data?.manufacturingBlocked) {
             const errorMsg = `Manufacturing is blocked for item ${item.id}`;
-            console.warn(errorMsg);
+            logger.warning(errorMsg);
             errors.push(errorMsg);
             continue;
           }
 
           if (manufacturing.data?.requiresConfiguration) {
             const errorMsg = `Manufacturing requires configuration for item ${item.id}`;
-            console.warn(errorMsg);
+            logger.warning(errorMsg);
             errors.push(errorMsg);
             continue;
           }
@@ -173,7 +176,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
               if (createJob.error) {
                 const errorMsg = `Failed to create job for item ${item.id}: ${createJob.error.message}`;
-                console.error(errorMsg);
+                logger.error(errorMsg);
                 errors.push(errorMsg);
                 continue;
               }
@@ -181,7 +184,7 @@ export async function action({ request }: ActionFunctionArgs) {
               const id = createJob.data?.id;
               if (!id) {
                 const errorMsg = `Job was not returned after creation for item ${item.id}`;
-                console.error(errorMsg);
+                logger.error(errorMsg);
                 errors.push(errorMsg);
                 continue;
               }
@@ -195,7 +198,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
               if (upsertMethod.error) {
                 const errorMsg = `Failed to create job method for item ${item.id}: ${upsertMethod.error.message}`;
-                console.error(errorMsg);
+                logger.error(errorMsg);
                 errors.push(errorMsg);
                 continue;
               }
@@ -230,7 +233,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
               if (updateJob.error) {
                 const errorMsg = `Failed to update job ${order.existingId} for item ${item.id}: ${updateJob.error.message}`;
-                console.error(errorMsg);
+                logger.error(errorMsg);
                 errors.push(errorMsg);
                 continue;
               }
@@ -296,7 +299,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
           if (insertForecasts.error) {
             const errorMsg = `Failed to insert supply forecasts: ${insertForecasts.error.message}`;
-            console.error(errorMsg);
+            logger.error(errorMsg);
             errors.push(errorMsg);
           }
         }
@@ -344,7 +347,9 @@ export async function action({ request }: ActionFunctionArgs) {
           errors: errors.length > 0 ? errors : undefined
         };
       } catch (error) {
-        console.error("Unexpected error processing production orders:", error);
+        logger.error("Unexpected error processing production orders", {
+          error
+        });
         return data(
           {
             success: false,

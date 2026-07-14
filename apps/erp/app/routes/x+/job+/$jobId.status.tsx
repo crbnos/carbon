@@ -2,6 +2,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import {
@@ -11,6 +12,8 @@ import {
   updateJobStatus
 } from "~/modules/production";
 import { path, requestReferrer } from "~/utils/path";
+
+const logger = getLogger("erp", "jobid-status");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -111,7 +114,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
           .eq("id", id);
       }
     } catch (err) {
-      console.error(err);
+      logger.error("Error", { error: err });
       throw redirect(
         requestReferrer(request) ?? path.to.job(id),
         await flash(request, error(err, "Failed to schedule job"))

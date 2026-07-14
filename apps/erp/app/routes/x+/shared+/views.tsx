@@ -1,13 +1,15 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import {
   savedViewStateValidator,
   savedViewValidator
 } from "~/modules/shared/shared.models";
-
 import { upsertSavedView } from "~/modules/shared/shared.service";
+
+const logger = getLogger("erp", "views");
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -38,7 +40,7 @@ export async function action({ request }: ActionFunctionArgs) {
     });
 
     if (result.error) {
-      console.error(result.error);
+      logger.error(result.error);
       return {
         success: false,
         id: null,

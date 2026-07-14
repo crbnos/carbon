@@ -196,6 +196,9 @@ const PurchaseInvoiceProperties = () => {
           inline
           isReadOnly={isDisabled}
           onlyApproved={supplierApprovalRequired}
+          defaultCurrencyCode={
+            routeData?.purchaseInvoice?.currencyCode ?? undefined
+          }
           onChange={(value) => {
             if (value?.value) {
               onUpdate("supplierId", value.value);
@@ -243,6 +246,9 @@ const PurchaseInvoiceProperties = () => {
           inline
           isReadOnly={isDisabled}
           onlyApproved={supplierApprovalRequired}
+          defaultCurrencyCode={
+            routeData?.purchaseInvoice?.currencyCode ?? undefined
+          }
           onChange={(value) => {
             if (value?.value) {
               onUpdate("invoiceSupplierId", value.value);

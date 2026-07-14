@@ -37,6 +37,7 @@
     "@carbon/database": "workspace:*",
     "@carbon/kv": "workspace:*",
     "@carbon/lib": "workspace:*",
+    "@carbon/logger": "workspace:*",
     "@carbon/react": "workspace:*",
     "@carbon/utils": "workspace:*",
     "@internationalized/date": "catalog:",

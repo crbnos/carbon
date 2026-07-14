@@ -37,6 +37,7 @@ import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { memo, useCallback, useEffect, useState } from "react";
 import {
+  LuBlocks,
   LuCalendar,
   LuChevronDown,
   LuChevronUp,
@@ -44,7 +45,6 @@ import {
   LuCirclePlay,
   LuCirclePlus,
   LuExternalLink,
-  LuPackage,
   LuPlus,
   LuStar,
   LuTrash2
@@ -674,7 +674,7 @@ export const PurchasingPlanningOrderDrawer = memo(
                         </Th>
                         <Th>
                           <div className="flex items-center gap-2 text-right">
-                            <LuPackage />
+                            <LuBlocks />
                             <span>
                               <Trans>Purchase Qty</Trans>
                             </span>

@@ -13,6 +13,9 @@ import {
   Separator,
   Spinner,
   Switch,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   toast,
   useInterval,
   useLocalStorage,
@@ -29,7 +32,12 @@ import {
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { LuCirclePlus, LuSettings2, LuTriangleAlert } from "react-icons/lu";
+import {
+  LuCirclePlus,
+  LuInfo,
+  LuSettings2,
+  LuTriangleAlert
+} from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { Link, redirect, useLoaderData } from "react-router";
 import { SearchFilter } from "~/components";
@@ -457,6 +465,17 @@ function KanbanSchedule() {
           <ScheduleNavigation />
           <SearchFilter param="search" size="sm" placeholder="Search" />
           <Filter filters={filters} />
+          <Tooltip>
+            <TooltipTrigger tabIndex={-1} className="text-muted-foreground">
+              <LuInfo className="w-4 h-4" />
+            </TooltipTrigger>
+            <TooltipContent className="max-w-xs">
+              <Trans>
+                Reorders dispatch sequence and work center only — does not
+                reschedule. Change dates on the Dates board.
+              </Trans>
+            </TooltipContent>
+          </Tooltip>
         </HStack>
 
         <div className="flex items-center gap-2">

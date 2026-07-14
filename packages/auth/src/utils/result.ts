@@ -1,7 +1,10 @@
+import { getLogger } from "@carbon/logger";
 import type { Result } from "../types";
 
+const log = getLogger("auth");
+
 export function error(error: any, message = "Request failed"): Result {
-  if (error) console.error({ error, message });
+  if (error) log.error(message, { error });
 
   return {
     success: false,

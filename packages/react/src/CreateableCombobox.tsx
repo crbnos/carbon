@@ -1,7 +1,7 @@
 import { useLingui } from "@lingui/react/macro";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
-import { forwardRef, useMemo, useRef, useState } from "react";
+import { forwardRef, useEffect, useMemo, useRef, useState } from "react";
 import { LuCheck, LuPlus, LuSettings2, LuX } from "react-icons/lu";
 import {
   Command,
@@ -69,6 +69,12 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
     const { t } = useLingui();
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState("");
+
+    // Reset the search box whenever the dropdown closes.
+    useEffect(() => {
+      if (!open) setSearch("");
+    }, [open]);
+
     const isInlinePreview = !!inline;
     const selectedOption = useMemo(
       () => options.find((option) => option.value === value),

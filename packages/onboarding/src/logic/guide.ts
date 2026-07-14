@@ -1,3 +1,4 @@
+import type { MessageDescriptor } from "@lingui/core";
 import { pageBySlug } from "../content/registry";
 import type { NestedProductStep, StepDef } from "../types";
 import {
@@ -10,12 +11,12 @@ import {
 // points at one action instead of listing everything.
 export interface NextAction {
   gateKey: string;
-  gateTitle: string;
+  gateTitle: MessageDescriptor;
   gateNumber: number;
-  title: string; // the action to take
-  detail?: string;
+  title: MessageDescriptor; // the action to take
+  detail?: MessageDescriptor;
   refSlug: string; // hub page that backs this gate
-  refTitle: string; // that page's nav label (for the CTA)
+  refTitle: MessageDescriptor; // that page's nav label (for the CTA)
   // Present when the next thing is a product action you do inside Carbon:
   productStep?: NestedProductStep;
 }

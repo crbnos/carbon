@@ -40,6 +40,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
 import { flushSync } from "react-dom";
 import {
+  LuBlocks,
   LuCheckCheck,
   LuChevronDown,
   LuCircleCheck,
@@ -51,7 +52,6 @@ import {
   LuEllipsisVertical,
   LuList,
   LuLoaderCircle,
-  LuPackage,
   LuPanelLeft,
   LuPanelRight,
   LuQrCode,
@@ -464,7 +464,7 @@ export default JobHeader;
 function getExplorerMenuIcon(type: string) {
   switch (type) {
     case "materials":
-      return <LuPackage />;
+      return <LuBlocks />;
     case "operations":
       return <LuSettings />;
     case "dag":
@@ -1129,7 +1129,7 @@ function JobCompleteModal({
                 {hasLeftover && (
                   <>
                     <Alert>
-                      <LuPackage />
+                      <LuBlocks />
                       <AlertTitle>
                         <Trans>Leftover Parts Detected</Trans>
                       </AlertTitle>

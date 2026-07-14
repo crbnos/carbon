@@ -123,18 +123,59 @@ export const trackedEntityExpiryValidator = z.object({
     .max(500)
 });
 
-export const inventoryAdjustmentValidator = z.object({
-  itemId: z.string().min(1, { message: "Item ID is required" }),
+// Header create/update. `storageUnitIds` and `itemType` are the optional scope
+// used at creation to generate the count lines; they are not stored columns of
+// their own (they live under the header's `scope` JSONB).
+export const inventoryCountValidator = z.object({
+  id: zfd.text(z.string().optional()),
   locationId: z.string().min(1, { message: "Location is required" }),
-  storageUnitId: zfd.text(z.string().optional()),
-  originalStorageUnitId: zfd.text(z.string().optional()),
-  adjustmentType: z.enum([...itemLedgerTypes, "Set Quantity"]),
-  quantity: zfd.numeric(z.number()),
-  trackedEntityId: zfd.text(z.string().optional()),
-  readableId: zfd.text(z.string().optional()),
-  expirationDate: zfd.text(z.string().optional()),
-  comment: zfd.text(z.string().optional())
+  isBlind: zfd.checkbox(),
+  notes: zfd.text(z.string().optional()),
+  storageUnitIds: zfd.repeatableOfType(z.string()).optional(),
+  itemType: zfd.text(z.enum(itemTypes).optional())
 });
+
+// Per-line count entry. A blank `countedQuantity` (undefined) means "not counted"
+// and is skipped at post — only an explicit 0 zeroes stock. Counted quantities
+// are non-negative, which guarantees on-hand never goes negative.
+export const inventoryCountLineValidator = z.object({
+  id: z.string().min(1),
+  countedQuantity: zfd.numeric(
+    z
+      .number()
+      .min(0, { message: "Counted quantity cannot be negative" })
+      .optional()
+  )
+});
+
+export const inventoryAdjustmentValidator = z
+  .object({
+    itemId: z.string().min(1, { message: "Item ID is required" }),
+    locationId: z.string().min(1, { message: "Location is required" }),
+    storageUnitId: zfd.text(z.string().optional()),
+    originalStorageUnitId: zfd.text(z.string().optional()),
+    adjustmentType: z.enum([...itemLedgerTypes, "Set Quantity"]),
+    quantity: zfd.numeric(z.number()),
+    trackedEntityId: zfd.text(z.string().optional()),
+    readableId: zfd.text(z.string().optional()),
+    expirationDate: zfd.text(z.string().optional()),
+    comment: zfd.text(z.string().optional()),
+    // Set by serial-tracked forms so the quantity can be capped server-side.
+    requiresSerialTracking: zfd
+      .text(z.string().optional())
+      .transform((val) => val === "true")
+  })
+  .superRefine((data, ctx) => {
+    // A serial number is a single unique unit — whether setting a target or
+    // applying a delta, its resulting/moved quantity can never exceed 1.
+    if (data.requiresSerialTracking && Math.abs(data.quantity) > 1) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["quantity"],
+        message: "Serial items can only have a quantity of 1"
+      });
+    }
+  });
 
 export const itemLedgerValidator = z.object({
   postingDate: zfd.text(z.string().optional()),
@@ -406,25 +447,36 @@ export const stockTransferValidator = z.object({
   })
 });
 
-export const stockTransferLineValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  stockTransferId: z.string().min(1, { message: "Pick list is required" }),
-  itemId: z.string().min(1, { message: "Item is required" }),
-  fromStorageUnitId: zfd.text(z.string().optional()),
-  toStorageUnitId: zfd.text(z.string().optional()),
-  quantity: zfd.numeric(
-    z
-      .number()
-      .min(0, { message: "Quantity must be greater than or equal to 0" })
-  ),
-  pickedQuantity: zfd.numeric(z.number().min(0).optional()),
-  requiresBatchTracking: zfd.text(
-    z.string().transform((val) => val === "true")
-  ),
-  requiresSerialTracking: zfd.text(
-    z.string().transform((val) => val === "true")
-  )
-});
+export const stockTransferLineValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    stockTransferId: z.string().min(1, { message: "Pick list is required" }),
+    itemId: z.string().min(1, { message: "Item is required" }),
+    fromStorageUnitId: zfd.text(z.string().optional()),
+    toStorageUnitId: zfd.text(z.string().optional()),
+    quantity: zfd.numeric(
+      z
+        .number()
+        .min(0, { message: "Quantity must be greater than or equal to 0" })
+    ),
+    pickedQuantity: zfd.numeric(z.number().min(0).optional()),
+    requiresBatchTracking: zfd.text(
+      z.string().transform((val) => val === "true")
+    ),
+    requiresSerialTracking: zfd.text(
+      z.string().transform((val) => val === "true")
+    )
+  })
+  .superRefine((data, ctx) => {
+    // A serial number is a single unique unit — its quantity can never exceed 1.
+    if (data.requiresSerialTracking && data.quantity > 1) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["quantity"],
+        message: "Serial items can only have a quantity of 1"
+      });
+    }
+  });
 
 export const stockTransferLineScanValidator = z.object({
   id: zfd.text(z.string().optional()),

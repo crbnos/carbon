@@ -1,11 +1,26 @@
 import type {
   DocumentSectionPlacement,
-  HeaderOptions
+  FooterOptions,
+  HeaderOptions,
+  SectionConfig
 } from "@carbon/documents/template";
-import { DEFAULT_HEADER_OPTIONS } from "@carbon/documents/template";
+import {
+  COMPANY_MERGE_FIELDS,
+  DEFAULT_FOOTER_OPTIONS,
+  DEFAULT_HEADER_OPTIONS,
+  footerOptionsSchema,
+  getDocumentLabel,
+  headerOptionsSchema,
+  mergeToken,
+  REGISTRATION_LINE_DOCUMENT_TYPES
+} from "@carbon/documents/template";
 import type { JSONContent } from "@carbon/react";
 import {
   Button,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   Input,
   Label,
   Modal,
@@ -31,7 +46,7 @@ export type SectionFormValue = {
   name: string;
   placement: DocumentSectionPlacement;
   content: JSONContent;
-  config?: Partial<HeaderOptions>;
+  config?: SectionConfig;
   builtIn?: boolean;
 };
 
@@ -62,27 +77,35 @@ export function SectionFormModal({
   const [placement, setPlacement] = useState<DocumentSectionPlacement>(
     section?.placement ?? "body"
   );
-  const [config, setConfig] = useState<HeaderOptions>({
+  const [config, setConfig] = useState<HeaderOptions & FooterOptions>({
     ...DEFAULT_HEADER_OPTIONS,
+    ...DEFAULT_FOOTER_OPTIONS,
     ...(section?.config ?? {})
   });
   // Placement is intrinsic once a section exists — don't let it change.
   const lockPlacement = Boolean(section);
   const isHeader = placement === "header";
+  const isFooter = placement === "footer";
 
   const isSaving = fetcher.state !== "idle";
   const submittedRef = useRef(false);
 
-  const setConfigKey = <K extends keyof HeaderOptions>(
+  const setConfigKey = <K extends keyof (HeaderOptions & FooterOptions)>(
     key: K,
-    value: HeaderOptions[K]
+    value: (HeaderOptions & FooterOptions)[K]
   ) => setConfig((prev) => ({ ...prev, [key]: value }));
 
   const submit = (form: HTMLFormElement) => {
     const data = new FormData(form);
     data.set("placement", placement);
     data.set("content", JSON.stringify(content));
-    if (isHeader) data.set("config", JSON.stringify(config));
+    // Persist only the keys the placement actually uses — parsing through the
+    // placement's schema strips the other group's keys.
+    if (isHeader) {
+      data.set("config", JSON.stringify(headerOptionsSchema.parse(config)));
+    } else if (isFooter) {
+      data.set("config", JSON.stringify(footerOptionsSchema.parse(config)));
+    }
     submittedRef.current = true;
     fetcher.submit(data, { method: "post", ...(action ? { action } : {}) });
   };
@@ -175,6 +198,66 @@ export function SectionFormModal({
                     checked={config.showDocumentId}
                     onChange={(v) => setConfigKey("showDocumentId", v)}
                   />
+                </div>
+              )}
+
+              {isFooter && (
+                <div className="flex w-full flex-col gap-3 rounded-md border p-3">
+                  <ConfigSwitch
+                    label="Registration line"
+                    checked={config.showRegistrationLine}
+                    onChange={(v) => setConfigKey("showRegistrationLine", v)}
+                  />
+                  {config.showRegistrationLine && (
+                    <div className="flex w-full flex-col gap-1.5">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="registrationNumber">
+                          Registration number
+                        </Label>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              className="shrink-0"
+                            >
+                              Insert field
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            {COMPANY_MERGE_FIELDS.map((field) => (
+                              <DropdownMenuItem
+                                key={field.token}
+                                onClick={() =>
+                                  setConfigKey(
+                                    "registrationNumber",
+                                    config.registrationNumber +
+                                      mergeToken(field.token)
+                                  )
+                                }
+                              >
+                                {field.label}
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                      <Input
+                        id="registrationNumber"
+                        value={config.registrationNumber}
+                        onChange={(e) =>
+                          setConfigKey("registrationNumber", e.target.value)
+                        }
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Shown on{" "}
+                        {REGISTRATION_LINE_DOCUMENT_TYPES.map(
+                          getDocumentLabel
+                        ).join(", ")}{" "}
+                        documents.
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
 

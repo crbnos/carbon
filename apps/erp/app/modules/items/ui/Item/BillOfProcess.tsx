@@ -745,7 +745,6 @@ const BillOfProcess = ({
         onToggleItem={onToggleItem}
         onRemoveItem={onRemoveItem}
         handleDrag={() => setSelectedItemId(null)}
-        className="my-2"
         renderExtra={(item) => (
           <div key={`${isOpen}`}>
             <motion.button

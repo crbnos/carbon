@@ -20,6 +20,7 @@ import {
   Tr,
   useEscape,
   useMount,
+  useOutsideClick,
   VStack
 } from "@carbon/react";
 import { clamp } from "@carbon/utils";
@@ -40,7 +41,12 @@ import {
   getCoreRowModel,
   useReactTable
 } from "@tanstack/react-table";
-import type { CSSProperties, ReactElement, ReactNode } from "react";
+import type {
+  CSSProperties,
+  MutableRefObject,
+  ReactElement,
+  ReactNode
+} from "react";
 import {
   Fragment,
   useCallback,
@@ -79,7 +85,7 @@ import {
 import type { ColumnFilter } from "./components/Filter/types";
 import { useFilters } from "./components/Filter/useFilters";
 import type { ColumnSizeMap } from "./types";
-import { getAccessorKey, updateNestedProperty } from "./utils";
+import { buildColumnMaps, getAccessorKey, updateNestedProperty } from "./utils";
 
 interface TableProps<T extends object> {
   columns: ColumnDef<T>[];
@@ -97,7 +103,12 @@ interface TableProps<T extends object> {
   primaryAction?: ReactNode;
   table?: string;
   title?: string;
+  // Optional node rendered immediately after the title (e.g. a status badge).
+  titleBadge?: ReactNode;
   withInlineEditing?: boolean;
+  // When true, the table starts in edit mode and the Edit/Lock toggle is hidden
+  // (editing is always on — e.g. a Draft document that is inherently editable).
+  forceEditMode?: boolean;
   withPagination?: boolean;
   withSavedView?: boolean;
   withSearch?: boolean;
@@ -105,12 +116,18 @@ interface TableProps<T extends object> {
   withSimpleSorting?: boolean;
   sort?: ReactNode;
   getRowId?: (originalRow: T, index: number) => string;
+  // Optional per-row class (e.g. to highlight rows that failed validation).
+  getRowClassName?: (originalRow: T) => string | undefined;
   rowSelection?: RowSelectionState;
   onRowSelectionChange?: OnChangeFn<RowSelectionState>;
   onSelectedRowsChange?: (selectedRows: T[]) => void;
   renderActions?: (selectedRows: T[]) => ReactNode;
   renderContextMenu?: (row: T) => JSX.Element | null;
   renderExpandedRow?: (row: T) => ReactNode;
+  // When `renderExpandedRow` is set, gates which rows can expand (show a chevron
+  // + toggle). Defaults to all rows. Use it so only parents with children get an
+  // affordance, like a tree's `hasChildren`.
+  canExpandRow?: (row: T) => boolean;
 }
 
 type AggregateFunction = "sum" | "average" | "min" | "max" | "median" | "count";
@@ -236,7 +253,9 @@ const Table = <T extends object>({
   primaryAction,
   table: tableName,
   title,
+  titleBadge,
   withInlineEditing = false,
+  forceEditMode = false,
   withPagination = true,
   withSavedView = false,
   withSearch = true,
@@ -244,12 +263,14 @@ const Table = <T extends object>({
   withSimpleSorting = true,
   sort,
   getRowId,
+  getRowClassName,
   rowSelection: controlledRowSelection,
   onRowSelectionChange,
   onSelectedRowsChange,
   renderActions,
   renderContextMenu,
-  renderExpandedRow
+  renderExpandedRow,
+  canExpandRow
 }: TableProps<T>) => {
   const { i18n } = useLingui();
   const tableContainerRef = useRef<HTMLDivElement>(null);
@@ -282,6 +303,9 @@ const Table = <T extends object>({
     ? controlledRowSelection
     : internalRowSelection;
   const setRowSelection = onRowSelectionChange ?? setInternalRowSelection;
+
+  // Anchor row (by id) for shift-click range selection.
+  const selectionAnchorRef = useRef<string | null>(null);
 
   /* Clear row selection when data changes. Skip when rows have stable ids
      (getRowId) or selection is controlled — the selection survives data
@@ -393,34 +417,42 @@ const Table = <T extends object>({
   /* Sorting */
   const { isSorted, toggleSortByAscending, toggleSortByDescending } = useSort();
 
-  const columnAccessors = useMemo(
-    () =>
-      columns.reduce<Record<string, string>>((acc, column) => {
-        const accessorKey: string | undefined = getAccessorKey(column);
-        if (accessorKey?.includes("_"))
-          throw new Error(
-            `Invalid accessorKey ${accessorKey}. Cannot contain '_'`
-          );
-        if (accessorKey && column.header && typeof column.header === "string") {
-          return {
-            ...acc,
-            [accessorKey]: translateLabel(column.header)
-          };
-        }
-        return acc;
-      }, {}),
+  const {
+    accessors: columnAccessors,
+    exportValues,
+    sortKeyToLabel,
+    exportOnlyColumns
+  } = useMemo(
+    () => buildColumnMaps(columns, translateLabel),
     [columns, translateLabel]
   );
+
+  // Export-only columns must never render in the grid. Force them hidden in the
+  // table state without mutating the stored columnVisibility (so saved-view
+  // state stays correct). The CSV side reads the same `exportOnlyColumns` list
+  // (passed to Download) to include them regardless of visibility — both halves
+  // are driven by the one `meta.exportOnly` flag, not by visibility coincidence.
+  const effectiveColumnVisibility = useMemo(() => {
+    if (!exportOnlyColumns.length) return columnVisibility;
+    const next = { ...columnVisibility };
+    for (const id of exportOnlyColumns) next[id] = false;
+    return next;
+  }, [columnVisibility, exportOnlyColumns]);
 
   const internalColumns = useMemo(() => {
     let result: ColumnDef<T>[] = [];
     if (renderExpandedRow) {
       result.push(
-        ...getExpandColumn<T>(expandedRows, toggleRowExpanded, translateLabel)
+        ...getExpandColumn<T>(
+          expandedRows,
+          toggleRowExpanded,
+          translateLabel,
+          canExpandRow
+        )
       );
     }
     if (withSelectableRows) {
-      result.push(...getRowSelectionColumn<T>());
+      result.push(...getRowSelectionColumn<T>(selectionAnchorRef));
     }
     result.push(...columns);
     if (renderContextMenu) {
@@ -432,6 +464,7 @@ const Table = <T extends object>({
     renderContextMenu,
     withSelectableRows,
     renderExpandedRow,
+    canExpandRow,
     expandedRows,
     toggleRowExpanded,
     translateLabel
@@ -441,7 +474,7 @@ const Table = <T extends object>({
     data: internalData,
     columns: internalColumns,
     state: {
-      columnVisibility,
+      columnVisibility: effectiveColumnVisibility,
       columnOrder,
       columnPinning,
       rowSelection
@@ -494,7 +527,7 @@ const Table = <T extends object>({
     }
   }, [rowSelection, onSelectedRowsChange]);
 
-  const [editMode, setEditMode] = useState(false);
+  const [editMode, setEditMode] = useState(forceEditMode);
   const [isEditing, setIsEditing] = useState(false);
   const [selectedCell, setSelectedCell] = useState<Position>(null);
 
@@ -515,6 +548,21 @@ const Table = <T extends object>({
   useEscape(() => {
     setIsEditing(false);
     focusOnSelectedCell();
+  });
+
+  // Clicking outside the table clears the selected cell (and ends any edit). A
+  // cell's editable input commits on blur first, so the value is saved before
+  // this runs. Portaled dropdowns (e.g. a cell's combobox popover) render
+  // outside the container but belong to an active edit — ignore clicks in them.
+  useOutsideClick({
+    ref: tableContainerRef,
+    enabled: selectedCell != null,
+    handler: (e) => {
+      const target = e.target as HTMLElement | null;
+      if (target?.closest("[data-radix-popper-content-wrapper]")) return;
+      setIsEditing(false);
+      setSelectedCell(null);
+    }
   });
 
   const onSelectedCellChange = useCallback(
@@ -866,6 +914,9 @@ const Table = <T extends object>({
     >
       <TableHeader
         columnAccessors={columnAccessors}
+        exportValues={exportValues}
+        exportOnlyColumns={exportOnlyColumns}
+        sortKeyToLabel={sortKeyToLabel}
         columnOrder={columnOrder}
         columnPinning={columnPinning}
         columnVisibility={columnVisibility}
@@ -883,7 +934,9 @@ const Table = <T extends object>({
         setEditMode={setEditMode}
         table={tableName}
         title={title}
+        titleBadge={titleBadge}
         withInlineEditing={withInlineEditing}
+        forceEditMode={forceEditMode}
         withPagination={withPagination}
         withSavedView={withSavedView}
         withSearch={withSearch}
@@ -981,7 +1034,9 @@ const Table = <T extends object>({
                         accessorKey &&
                         !accessorKey.endsWith(".id") &&
                         header.column.columnDef.enableSorting !== false;
-                      const sorted = isSorted(accessorKey ?? "");
+                      const sortKey =
+                        header.column.columnDef.meta?.sortBy ?? accessorKey;
+                      const sorted = isSorted(sortKey ?? "");
 
                       return (
                         <Th
@@ -1042,7 +1097,7 @@ const Table = <T extends object>({
                                   >
                                     <DropdownMenuRadioItem
                                       onClick={() =>
-                                        toggleSortByAscending(accessorKey!)
+                                        toggleSortByAscending(sortKey!)
                                       }
                                       value="1"
                                     >
@@ -1051,7 +1106,7 @@ const Table = <T extends object>({
                                     </DropdownMenuRadioItem>
                                     <DropdownMenuRadioItem
                                       onClick={() =>
-                                        toggleSortByDescending(accessorKey!)
+                                        toggleSortByDescending(sortKey!)
                                       }
                                       value="-1"
                                     >
@@ -1085,9 +1140,12 @@ const Table = <T extends object>({
               </Thead>
               <Tbody>
                 {rows.map((row) => {
+                  const rowExpandable =
+                    !!renderExpandedRow &&
+                    (!canExpandRow || canExpandRow(row.original));
                   const isRowExpanded =
-                    renderExpandedRow && expandedRows[row.index];
-                  const handleRowClick = renderExpandedRow
+                    rowExpandable && expandedRows[row.index];
+                  const handleRowClick = rowExpandable
                     ? () => toggleRowExpanded(row.index)
                     : undefined;
                   const rowContent = renderContextMenu ? (
@@ -1110,9 +1168,10 @@ const Table = <T extends object>({
                             onCellClick={onCellClick}
                             onCellUpdate={onCellUpdate}
                             onClick={handleRowClick}
-                            className={
-                              renderExpandedRow ? "cursor-pointer" : undefined
-                            }
+                            className={cn(
+                              rowExpandable && "cursor-pointer",
+                              getRowClassName?.(row.original)
+                            )}
                           />
                         </ContextMenuTrigger>
                         <ContextMenuContent className="w-128">
@@ -1137,9 +1196,10 @@ const Table = <T extends object>({
                       onCellClick={onCellClick}
                       onCellUpdate={onCellUpdate}
                       onClick={handleRowClick}
-                      className={
-                        renderExpandedRow ? "cursor-pointer" : undefined
-                      }
+                      className={cn(
+                        rowExpandable && "cursor-pointer",
+                        getRowClassName?.(row.original)
+                      )}
                     />
                   );
 
@@ -1214,7 +1274,9 @@ const Table = <T extends object>({
   );
 };
 
-function getRowSelectionColumn<T>(): ColumnDef<T>[] {
+function getRowSelectionColumn<T>(
+  anchorRef: MutableRefObject<string | null>
+): ColumnDef<T>[] {
   return [
     {
       id: "Select",
@@ -1229,16 +1291,45 @@ function getRowSelectionColumn<T>(): ColumnDef<T>[] {
           {...{
             checked: table.getIsAllRowsSelected(),
             indeterminate: table.getIsSomeRowsSelected(),
-            onChange: table.getToggleAllRowsSelectedHandler()
+            onChange: (checked: boolean) => {
+              table.toggleAllRowsSelected(checked);
+              anchorRef.current = null;
+            }
           }}
         />
       ),
-      cell: ({ row }) => (
+      cell: ({ row, table }) => (
         <IndeterminateCheckbox
           {...{
             checked: row.getIsSelected(),
             indeterminate: row.getIsSomeSelected(),
-            onChange: row.getToggleSelectedHandler()
+            onChange: (checked: boolean, shiftKey: boolean) => {
+              const rows = table.getRowModel().rows;
+              const clickedIndex = rows.findIndex((r) => r.id === row.id);
+              const anchorIndex =
+                anchorRef.current == null
+                  ? -1
+                  : rows.findIndex((r) => r.id === anchorRef.current);
+
+              if (shiftKey && anchorIndex !== -1 && clickedIndex !== -1) {
+                const start = Math.min(anchorIndex, clickedIndex);
+                const end = Math.max(anchorIndex, clickedIndex);
+                table.setRowSelection((prev) => {
+                  const next = { ...prev };
+                  for (let i = start; i <= end; i++) {
+                    const id = rows[i].id;
+                    if (checked) next[id] = true;
+                    else delete next[id];
+                  }
+                  return next;
+                });
+                // Keep the anchor fixed so the range can be re-dragged.
+                return;
+              }
+
+              row.toggleSelected(checked);
+              anchorRef.current = row.id;
+            }
           }}
         />
       )
@@ -1269,7 +1360,8 @@ function getActionColumn<T>(
 function getExpandColumn<T>(
   expandedRows: Record<number, boolean>,
   toggleRowExpanded: (rowIndex: number) => void,
-  translateLabel: (value: string) => string
+  translateLabel: (value: string) => string,
+  canExpandRow?: (row: T) => boolean
 ): ColumnDef<T>[] {
   return [
     {
@@ -1278,6 +1370,8 @@ function getExpandColumn<T>(
       enablePinning: true,
       header: () => <span className="sr-only">{translateLabel("Expand")}</span>,
       cell: ({ row }) => {
+        // No chevron for rows that have nothing to reveal (tree `hasChildren`).
+        if (canExpandRow && !canExpandRow(row.original)) return null;
         const isExpanded = expandedRows[row.index] ?? false;
         return (
           <button

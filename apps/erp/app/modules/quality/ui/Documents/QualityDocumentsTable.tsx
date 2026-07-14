@@ -168,7 +168,13 @@ const QualityDocumentsTable = memo(
             );
           },
           meta: {
-            icon: <LuGitPullRequest />
+            icon: <LuGitPullRequest />,
+            exportValue: (row) => {
+              const versions = ((row as any)?.versions ?? []) as Array<{
+                version: number;
+              }>;
+              return `${versions.length} Version${versions.length === 1 ? "" : "s"}`;
+            }
           }
         }
       ];

@@ -764,6 +764,9 @@ msgstr "Önceki"
 msgid "Preventive"
 msgstr "Önleyici"
 
+msgid "Previous"
+msgstr "Önceki"
+
 msgid "Print"
 msgstr "Yazdır"
 

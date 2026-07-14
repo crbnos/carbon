@@ -5,7 +5,7 @@ import { inngest } from "../../client";
 export const modelThumbnailFunction = inngest.createFunction(
   { id: "model-thumbnail", retries: 3 },
   { event: "carbon/model-thumbnail" },
-  async ({ event, step }) => {
+  async ({ event, step, logger }) => {
     const { modelId, companyId } = event.data;
 
     const isLocal =
@@ -20,14 +20,14 @@ export const modelThumbnailFunction = inngest.createFunction(
     };
 
     if (isLocal) {
-      console.log("Skipping model-thumbnail task on local", {
+      logger.info("Skipping model-thumbnail task on local", {
         payload: event.data
       });
       return;
     }
 
     await step.run("generate-and-upload-thumbnail", async () => {
-      console.log("Starting model-thumbnail task", { payload: event.data });
+      logger.info("Starting model-thumbnail task", { payload: event.data });
       const client = getCarbonServiceRole();
 
       const url = getModelUrl(modelId);
@@ -43,7 +43,7 @@ export const modelThumbnailFunction = inngest.createFunction(
       });
 
       if (response.status !== 200) {
-        console.log("Failed to generate thumbnail", { response });
+        logger.error("Failed to generate thumbnail", { response });
         throw new Error("Failed to generate thumbnail");
       }
 
@@ -56,7 +56,7 @@ export const modelThumbnailFunction = inngest.createFunction(
         type: "image/png"
       });
 
-      console.log("Uploading thumbnail", { fileName });
+      logger.info("Uploading thumbnail", { fileName });
 
       const { data, error } = await client.storage
         .from("private")
@@ -69,7 +69,7 @@ export const modelThumbnailFunction = inngest.createFunction(
         );
 
       if (error) {
-        console.error("Failed to upload thumbnail", { error });
+        logger.error("Failed to upload thumbnail", { error });
       }
 
       const result = await client
@@ -80,7 +80,7 @@ export const modelThumbnailFunction = inngest.createFunction(
         .eq("id", modelId);
 
       if (result.error) {
-        console.error("Failed to update thumbnail path", {
+        logger.error("Failed to update thumbnail path", {
           error: result.error
         });
       }

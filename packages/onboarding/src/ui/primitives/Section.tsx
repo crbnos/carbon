@@ -6,6 +6,7 @@ import { cn } from "@carbon/react";
 import type { ReactNode } from "react";
 
 export function Section({
+  id,
   title,
   number,
   subtitle,
@@ -13,6 +14,7 @@ export function Section({
   children,
   className
 }: {
+  id?: string;
   title?: ReactNode;
   number?: number | string;
   subtitle?: ReactNode;
@@ -23,6 +25,7 @@ export function Section({
   const hasHeader = title != null || aside != null;
   return (
     <section
+      id={id}
       className={cn(
         "rounded-2xl border bg-card shadow-button-base overflow-hidden",
         className

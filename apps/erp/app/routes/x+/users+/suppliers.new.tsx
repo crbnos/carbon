@@ -10,6 +10,7 @@ import { flash } from "@carbon/auth/session.server";
 import { InviteEmail } from "@carbon/documents/email";
 import { validationError, validator } from "@carbon/form";
 import { sendEmail } from "@carbon/lib/resend.server";
+import { getLogger } from "@carbon/logger";
 import { render } from "@react-email/components";
 import { nanoid } from "nanoid";
 import type { ActionFunctionArgs } from "react-router";
@@ -20,6 +21,8 @@ import {
 } from "~/modules/users";
 import { createSupplierAccount } from "~/modules/users/users.server";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "suppliers-new");
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -48,7 +51,7 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   if (!result.success) {
-    console.error(result);
+    logger.error(result);
     throw redirect(
       path.to.supplierAccounts,
       await flash(

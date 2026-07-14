@@ -1,4 +1,5 @@
 import { Button, cn } from "@carbon/react";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { LuCheck, LuX } from "react-icons/lu";
 import { PAGE_COPY, UI_TEXT } from "../content";
 import {
@@ -23,6 +24,7 @@ import {
 } from "./state";
 
 export function ScopeView() {
+  const { t, i18n } = useLingui();
   const canEdit = useCanEdit();
   const map = useCheckMap();
   const tier = useTier();
@@ -37,18 +39,18 @@ export function ScopeView() {
   );
   const excludedModuleNotes = MODULES.filter((m) =>
     exclusions.modules.includes(m)
-  ).map((m) => `${MODULE_NAME[m]} (excluded for this customer)`);
+  ).map((m) => `${i18n._(MODULE_NAME[m])} ${t`(excluded for this customer)`}`);
 
   return (
     <div className="w-full max-w-3xl mx-auto flex flex-col gap-6">
       <PageHeader
-        title={PAGE_COPY.scope.title}
-        lead={
+        title={i18n._(PAGE_COPY.scope.title)}
+        lead={i18n._(
           tier === "self_serve" ? SCOPE_LEAD_SELF_SERVE : PAGE_COPY.scope.lead
-        }
+        )}
       />
 
-      <Panel title="The goal">
+      <Panel title={<Trans>The goal</Trans>}>
         <EditableField
           fieldKey="scope.goal"
           value={fields.get("scope.goal")}
@@ -58,54 +60,56 @@ export function ScopeView() {
         />
         {canEdit ? (
           <p className="text-xxs text-muted-foreground mt-2">
-            {UI_TEXT.carbonOnlyLockedField}
+            {i18n._(UI_TEXT.carbonOnlyLockedField)}
           </p>
         ) : null}
       </Panel>
 
-      <Panel title="What's in scope">
+      <Panel title={<Trans>What's in scope</Trans>}>
         <ul className="flex flex-col gap-2">
-          {inScope.map((item) => (
-            <li key={item.label} className="flex items-start gap-2.5 text-sm">
+          {inScope.map((item, i) => (
+            <li key={i} className="flex items-start gap-2.5 text-sm">
               <span className="shrink-0 mt-0.5 size-4 rounded flex items-center justify-center bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                 <LuCheck className="size-3" />
               </span>
-              {item.label}
+              {i18n._(item.label)}
             </li>
           ))}
         </ul>
       </Panel>
 
-      <Panel title="What's out of scope">
+      <Panel title={<Trans>What's out of scope</Trans>}>
         <ul className="flex flex-col gap-2">
-          {[...scopeOutForTier(tier), ...excludedModuleNotes].map((label) => (
-            <li
-              key={label}
-              className="flex items-start gap-2.5 text-sm text-muted-foreground"
-            >
-              <span className="shrink-0 mt-0.5 size-4 rounded flex items-center justify-center border text-muted-foreground">
-                <LuX className="size-3" />
-              </span>
-              {label}
-            </li>
-          ))}
+          {[...scopeOutForTier(tier), ...excludedModuleNotes].map(
+            (label, i) => (
+              <li
+                key={i}
+                className="flex items-start gap-2.5 text-sm text-muted-foreground"
+              >
+                <span className="shrink-0 mt-0.5 size-4 rounded flex items-center justify-center border text-muted-foreground">
+                  <LuX className="size-3" />
+                </span>
+                {typeof label === "string" ? label : i18n._(label)}
+              </li>
+            )
+          )}
         </ul>
       </Panel>
 
-      <Panel title="What we're assuming">
+      <Panel title={<Trans>What we're assuming</Trans>}>
         <ul className="flex flex-col gap-2">
-          {scopeAssumptionsForTier(tier).map((label) => (
-            <li key={label} className="flex items-start gap-2.5 text-sm">
+          {scopeAssumptionsForTier(tier).map((label, i) => (
+            <li key={i} className="flex items-start gap-2.5 text-sm">
               <span className="shrink-0 mt-1.5 size-1.5 rounded-full bg-muted-foreground/50" />
-              {label}
+              {typeof label === "string" ? label : i18n._(label)}
             </li>
           ))}
         </ul>
       </Panel>
 
-      <Panel title="How we know we're done">
+      <Panel title={<Trans>How we know we're done</Trans>}>
         <p className="text-sm leading-relaxed text-muted-foreground">
-          {scopeDoneForTier(tier)}
+          {i18n._(scopeDoneForTier(tier))}
         </p>
       </Panel>
 
@@ -123,9 +127,11 @@ export function ScopeView() {
               <LuCheck />
             </span>
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-semibold">Scope agreed</div>
+              <div className="text-sm font-semibold">
+                <Trans>Scope agreed</Trans>
+              </div>
               <div className="text-xs text-muted-foreground">
-                This completes the Discovery step.
+                <Trans>This completes the Discovery step.</Trans>
               </div>
             </div>
             <Button
@@ -133,20 +139,24 @@ export function ScopeView() {
               size="sm"
               onClick={() => setGate(gateKey("discovery"), "todo")}
             >
-              Undo
+              <Trans>Undo</Trans>
             </Button>
           </div>
         ) : (
           <div className="flex items-center gap-4">
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-semibold">Agree on the scope</div>
+              <div className="text-sm font-semibold">
+                <Trans>Agree on the scope</Trans>
+              </div>
               <p className="text-xs text-muted-foreground mt-0.5">
-                When this looks right, mark it agreed. That completes the
-                Discovery step on your command center.
+                <Trans>
+                  When this looks right, mark it agreed. That completes the
+                  Discovery step on your command center.
+                </Trans>
               </p>
             </div>
             <Button onClick={() => setGate(gateKey("discovery"), "done")}>
-              Mark scope as agreed
+              <Trans>Mark scope as agreed</Trans>
             </Button>
           </div>
         )}

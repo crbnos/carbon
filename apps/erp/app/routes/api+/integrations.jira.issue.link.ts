@@ -7,11 +7,13 @@ import {
   tiptapToAdf,
   unlinkActionFromJiraIssue
 } from "@carbon/ee/jira.server";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunction, LoaderFunction } from "react-router";
 import { data } from "react-router";
 import { getIssueAction } from "~/modules/quality/quality.service";
 
 const jira = getJiraClient();
+const logger = getLogger("erp", "jira", "issue-link");
 
 export const action: ActionFunction = async ({ request }) => {
   try {
@@ -81,7 +83,9 @@ export const action: ActionFunction = async ({ request }) => {
               description: adfDescription
             });
           } catch (e) {
-            console.error("Failed to update Jira issue description:", e);
+            logger.error("Failed to update Jira issue description", {
+              error: e
+            });
           }
         }
 
@@ -134,7 +138,7 @@ export const action: ActionFunction = async ({ request }) => {
               );
             }
           } catch (e) {
-            console.error("Failed to clean up Jira remote link:", e);
+            logger.error("Failed to clean up Jira remote link", { error: e });
           }
         }
 
@@ -142,7 +146,7 @@ export const action: ActionFunction = async ({ request }) => {
       }
     }
   } catch (error) {
-    console.error("Jira issue link action error:", error);
+    logger.error("Jira issue link action error", { error });
     return data(
       { success: false, message: `Failed to process request` },
       { status: 400 }

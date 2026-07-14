@@ -3,6 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
+import { getLogger } from "@carbon/logger";
 import { tiptapToHTML } from "@carbon/utils";
 import type { JSONContent } from "@tiptap/react";
 import type { ActionFunctionArgs } from "react-router";
@@ -24,6 +25,8 @@ import type { MethodItemType } from "~/modules/shared";
 import { methodItemType, upsertExternalLink } from "~/modules/shared";
 import { getUser } from "~/modules/users/users.server";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "purchasing-rfq", "finalize");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -130,7 +133,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
 
     if (quoteResult.error || !quoteResult.data) {
-      console.error("Failed to create supplier quote:", quoteResult.error);
+      logger.error("Failed to create supplier quote", {
+        error: quoteResult.error
+      });
       continue;
     }
 
@@ -142,7 +147,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     for (const line of lines) {
       // Skip lines without an itemId since supplierQuoteLine.itemId is NOT NULL
       if (!line.itemId) {
-        console.warn("Skipping line without itemId:", line.id);
+        logger.warning("Skipping line without itemId", { lineId: line.id });
         continue;
       }
 
@@ -303,7 +308,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
           companyId
         });
       } catch (err) {
-        console.error("Failed to send email:", err);
+        logger.error("Failed to send email", { error: err });
         // Continue with other emails even if one fails
       }
     }

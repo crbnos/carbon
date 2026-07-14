@@ -53,7 +53,11 @@ import type { MethodItemType } from "~/modules/shared";
 import type { action } from "~/routes/x+/items+/update";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
-import { deadlineTypes, isJobLocked } from "../../production.models";
+import {
+  deadlineRequiresDueDate,
+  deadlineTypes,
+  isJobLocked
+} from "../../production.models";
 import type { Job } from "../../types";
 import { getDeadlineIcon } from "./Deadline";
 
@@ -80,6 +84,10 @@ const JobProperties = () => {
   const [type, setType] = useState<MethodItemType>(
     (routeData?.job?.itemType ?? "Part") as MethodItemType
   );
+  const [deadlineType, setDeadlineType] = useState<string>(
+    routeData?.job?.deadlineType ?? ""
+  );
+  const showDueDate = deadlineRequiresDueDate(deadlineType);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdate = useCallback(
@@ -431,25 +439,27 @@ const JobProperties = () => {
         />
       </ValidatedForm>
 
-      <ValidatedForm
-        defaultValues={{
-          dueDate: routeData?.job?.dueDate ?? ""
-        }}
-        validator={z.object({
-          dueDate: zfd.text(z.string().optional())
-        })}
-        className="w-full"
-      >
-        <DatePicker
-          name="dueDate"
-          label={t`Due Date`}
-          inline
-          isDisabled={isDisabled}
-          onChange={(date) => {
-            onUpdate("dueDate", date);
+      {showDueDate && (
+        <ValidatedForm
+          defaultValues={{
+            dueDate: routeData?.job?.dueDate ?? ""
           }}
-        />
-      </ValidatedForm>
+          validator={z.object({
+            dueDate: zfd.text(z.string().optional())
+          })}
+          className="w-full"
+        >
+          <DatePicker
+            name="dueDate"
+            label={t`Due Date`}
+            inline
+            isDisabled={isDisabled}
+            onChange={(date) => {
+              onUpdate("dueDate", date);
+            }}
+          />
+        </ValidatedForm>
+      )}
 
       <ValidatedForm
         defaultValues={{
@@ -465,6 +475,7 @@ const JobProperties = () => {
         <Select
           name="deadlineType"
           label={t`Deadline Type`}
+          termId="job-deadline-type"
           inline={(value, options) => {
             const deadlineType = value as (typeof deadlineTypes)[number];
             return (
@@ -480,7 +491,12 @@ const JobProperties = () => {
             label: d
           }))}
           onChange={(value) => {
-            onUpdate("deadlineType", value?.value ?? null);
+            const next = value?.value ?? "";
+            setDeadlineType(next);
+            onUpdate("deadlineType", next || null);
+            if (!deadlineRequiresDueDate(next)) {
+              onUpdate("dueDate", null);
+            }
           }}
         />
       </ValidatedForm>

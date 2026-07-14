@@ -1,3 +1,4 @@
+import { getLogger } from "@carbon/logger";
 import { cn, Td } from "@carbon/react";
 import type { Cell as CellType, Column } from "@tanstack/react-table";
 import { flexRender } from "@tanstack/react-table";
@@ -7,6 +8,8 @@ import { LuPencil } from "react-icons/lu";
 import type { EditableTableCellComponent } from "~/components/Editable";
 import { useMovingCellRef } from "~/hooks";
 import { getAccessorKey } from "../utils";
+
+const logger = getLogger("erp", "cell");
 
 type CellProps<T> = {
   cell: CellType<T, unknown>;
@@ -100,7 +103,7 @@ const Cell = <T extends object>({
                 row: cell.row.original,
                 onUpdate: onUpdate
                   ? onUpdate
-                  : () => console.error("No update function provided"),
+                  : () => logger.error("No update function provided"),
                 onError: () => {
                   setHasError(true);
                 }

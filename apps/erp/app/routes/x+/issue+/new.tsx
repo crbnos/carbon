@@ -4,6 +4,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { notifyIssueCreated } from "@carbon/ee/notifications";
 import { validationError, validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -22,6 +23,8 @@ import { getCompanyIntegrations } from "~/modules/settings/settings.server";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "issue");
 
 export const handle: Handle = {
   breadcrumb: msg`Issues`,
@@ -159,7 +162,7 @@ export async function action({ request }: ActionFunctionArgs) {
       }
     });
   } catch (error) {
-    console.error("Failed to send notifications:", error);
+    logger.error("Failed to send notifications", { error });
   }
 
   throw redirect(path.to.issue(ncrId!));
@@ -287,7 +290,7 @@ async function autoLinkJobOperationDisposition(
       .from("nonConformanceTrackedEntity")
       .insert(ncrLinkRows);
     if (ncrInsert.error) {
-      console.error(ncrInsert.error);
+      logger.error("Issue creation step failed", { error: ncrInsert.error });
       return;
     }
   }
@@ -319,7 +322,7 @@ async function autoLinkJobOperationDisposition(
       .select("id, quantity")
       .single();
     if (insert.error || !insert.data) {
-      console.error(insert.error);
+      logger.error("Issue creation step failed", { error: insert.error });
       return;
     }
     itemRowId = insert.data.id as string;
@@ -353,7 +356,7 @@ async function autoLinkJobOperationDisposition(
     .from("nonConformanceItemTrackedEntity")
     .insert(linkRows);
   if (linkInsert.error) {
-    console.error(linkInsert.error);
+    logger.error("Issue creation step failed", { error: linkInsert.error });
     return;
   }
 

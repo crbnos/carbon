@@ -1,5 +1,6 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { companyHasPlan } from "@carbon/ee/plan.server";
+import { getLogger } from "@carbon/logger";
 import { Avatar } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
 import { useLocale, useNumberFormatter } from "@react-aria/i18n";
@@ -42,6 +43,8 @@ const defaultColumnPinning = {
   left: ["customerReference"]
 };
 
+const logger = getLogger("erp", "share", "customer-portal");
+
 export async function loader({ params, request }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) {
@@ -52,12 +55,12 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   const customer = await getCustomerPortal(serviceRole, id);
 
   if (customer.error) {
-    console.error(customer.error);
+    logger.error("Customer not found", { error: customer.error });
     throw new Error("Customer not found");
   }
 
   if (!customer.data.customerId) {
-    console.error(customer.error);
+    logger.error("Customer not found", { error: customer.error });
     throw new Error("Customer not found");
   }
 
@@ -86,7 +89,9 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   ]);
 
   if (salesOrderLines.error) {
-    console.error(salesOrderLines.error);
+    logger.error("Sales order lines not found", {
+      error: salesOrderLines.error
+    });
     throw new Error("Sales order lines not found");
   }
 

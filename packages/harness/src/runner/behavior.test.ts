@@ -82,9 +82,9 @@ describe("ensureStack", () => {
 });
 
 describe("parseBehaviorResult", () => {
-  it("parses the fenced json verdict", () => {
+  it("parses a passed verdict", () => {
     const text =
-      'verified.\n```json\n{"passed":true,"screenshots":["/a/01.png"],"notes":"saw it"}\n```';
+      'verified.\n```json\n{"verdict":"passed","screenshots":["/a/01.png"],"notes":"saw it"}\n```';
     expect(parseBehaviorResult(text)).toEqual({
       passed: true,
       screenshots: ["/a/01.png"],
@@ -92,11 +92,36 @@ describe("parseBehaviorResult", () => {
     });
   });
 
-  it("defaults missing fields safely", () => {
-    expect(parseBehaviorResult('```json\n{"passed":false}\n```')).toEqual({
-      passed: false,
-      screenshots: [],
-      notes: ""
-    });
+  it("parses a failed verdict as disproof (no unverified flag)", () => {
+    const out = parseBehaviorResult(
+      '```json\n{"verdict":"failed","screenshots":["/a/bug.png"],"notes":"still broken"}\n```'
+    );
+    expect(out.passed).toBe(false);
+    expect(out.unverified).toBeUndefined();
+  });
+
+  it("parses an unverified verdict as absence of proof", () => {
+    const out = parseBehaviorResult(
+      '```json\n{"verdict":"unverified","screenshots":[],"notes":"needs a posted invoice, could not create one"}\n```'
+    );
+    expect(out.passed).toBe(false);
+    expect(out.unverified).toBe("needs a posted invoice, could not create one");
+  });
+
+  it("tolerates the legacy passed-boolean shape", () => {
+    expect(
+      parseBehaviorResult(
+        '```json\n{"passed":true,"screenshots":["/a/01.png"],"notes":"saw it"}\n```'
+      )
+    ).toEqual({ passed: true, screenshots: ["/a/01.png"], notes: "saw it" });
+    const failed = parseBehaviorResult('```json\n{"passed":false}\n```');
+    expect(failed.passed).toBe(false);
+    expect(failed.unverified).toBeUndefined();
+  });
+
+  it("treats a missing verdict as unverified, never disproof", () => {
+    const out = parseBehaviorResult("no json here at all");
+    expect(out.passed).toBe(false);
+    expect(out.unverified).toContain("no JSON verdict");
   });
 });

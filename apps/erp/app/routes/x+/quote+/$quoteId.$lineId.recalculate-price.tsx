@@ -1,9 +1,12 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
 import { upsertQuoteLinePrices } from "~/modules/sales";
+
+const logger = getLogger("erp", "quoteid-lineid-recalculate-price");
 
 const numberArrayValidator = z.array(z.number());
 
@@ -84,7 +87,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     inserts
   );
   if (insertLinePrices.error) {
-    console.error(insertLinePrices.error);
+    logger.error(insertLinePrices.error);
     return data(
       { data: null, error: insertLinePrices.error.message },
       { status: 400 }

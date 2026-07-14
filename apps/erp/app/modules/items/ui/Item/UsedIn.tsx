@@ -58,6 +58,7 @@ export function UsedInSkeleton() {
 
 export type UsedInKey =
   | Database["public"]["Enums"]["itemType"]
+  | "assemblyInstructions"
   | "issues"
   | "jobMaterials"
   | "jobs"
@@ -513,6 +514,8 @@ function getUseInLink(
   itemReadableIdWithRevision: string
 ) {
   switch (key) {
+    case "assemblyInstructions":
+      return path.to.assemblyInstruction(child.id);
     case "Part":
       return path.to.partDetails(child.id);
     case "Material":

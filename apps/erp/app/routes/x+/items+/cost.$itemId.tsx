@@ -1,7 +1,10 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { updateItemCost } from "~/modules/items";
+
+const logger = getLogger("erp", "cost-itemid");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -20,7 +23,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     updatedBy: userId
   });
   if (update.error) {
-    console.error("Failed to update item cost", update.error);
+    logger.error("Failed to update item cost", update.error);
     return {
       error: "Failed to update item cost"
     };

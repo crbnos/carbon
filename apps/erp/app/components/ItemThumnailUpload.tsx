@@ -1,4 +1,5 @@
 import { SUPABASE_URL, useCarbon } from "@carbon/auth";
+import { getLogger } from "@carbon/logger";
 import { Button, File as FileUpload, HStack, toast } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
@@ -6,6 +7,8 @@ import type { ChangeEvent } from "react";
 import { useCallback, useEffect, useState } from "react";
 import { useUser } from "~/hooks";
 import { getPrivateUrl } from "~/utils/path";
+
+const logger = getLogger("erp", "itemthumnailupload");
 export function ItemThumbnailUpload({
   path,
   itemId,
@@ -145,7 +148,7 @@ export function ItemThumbnailUpload({
             toast.success(t`Thumbnail uploaded`);
           }
         } catch (error) {
-          console.error("Image processing error:", error);
+          logger.error("Image processing error", { error: error });
           toast.error(t`Failed to resize image`);
         }
       }

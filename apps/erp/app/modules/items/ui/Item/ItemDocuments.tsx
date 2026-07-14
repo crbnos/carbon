@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { getLogger } from "@carbon/logger";
 import {
   Card,
   CardAction,
@@ -36,6 +37,8 @@ import type { ModelUpload } from "~/types";
 import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
 import type { ItemFile } from "../../types";
+
+const logger = getLogger("erp", "itemdocuments");
 
 type ItemDocumentsProps = {
   files: ItemFile[];
@@ -369,7 +372,7 @@ export const useItemDocuments = ({ itemId, type }: Props) => {
         document.body.removeChild(a);
       } catch (error) {
         toast.error(t`Error downloading file`);
-        console.error(error);
+        logger.error("Error", { error: error });
       }
     },
 
@@ -392,7 +395,7 @@ export const useItemDocuments = ({ itemId, type }: Props) => {
         document.body.removeChild(a);
       } catch (error) {
         toast.error(t`Error downloading file`);
-        console.error(error);
+        logger.error("Error", { error: error });
       }
     },
 

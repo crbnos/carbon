@@ -764,6 +764,9 @@ msgstr "上一个"
 msgid "Preventive"
 msgstr "预防性"
 
+msgid "Previous"
+msgstr "上一步"
+
 msgid "Print"
 msgstr "打印"
 

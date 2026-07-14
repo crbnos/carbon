@@ -1,0 +1,42 @@
+{
+  "name": "@carbon/logger",
+  "dependencies": {
+    "@logtape/logtape": "catalog:",
+    "@logtape/redaction": "catalog:",
+    "@paralleldrive/cuid2": "catalog:"
+  },
+  "peerDependencies": {
+    "react-router": "catalog:"
+  },
+  "peerDependenciesMeta": {
+    "react-router": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@carbon/config": "workspace:*",
+    "@logtape/testing": "catalog:",
+    "@types/node": "catalog:",
+    "react-router": "catalog:",
+    "rimraf": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./config.server": "./src/config.server.ts",
+    "./config.client": "./src/config.client.ts",
+    "./middleware.server": "./src/middleware.server.ts",
+    "./inngest": "./src/inngest.ts"
+  },
+  "private": true,
+  "scripts": {
+    "clean": "rimraf .turbo node_modules dist",
+    "lint": "biome lint --write ",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsgo --noEmit"
+  },
+  "sideEffects": false,
+  "version": "0.0.0"
+}

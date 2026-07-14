@@ -3,7 +3,9 @@ import { notFound } from "next/navigation";
 import { BaseUrl } from "@/components/api/base-url";
 import { Breadcrumb } from "@/components/api/breadcrumb";
 import { EndpointSection } from "@/components/api/endpoint-section";
+import { ViewCallout, TableCallout } from "@/components/api/view-callout";
 import { allResourceParams, apiBase, getResource } from "@/lib/api-data";
+import { TABLE_VIEW_COMPANIONS, VIEW_TABLE_COMPANIONS } from "@/lib/api-companion-views";
 import { pageSeo } from "@/lib/seo";
 
 type Params = { params: Promise<{ module: string; resource: string }> };
@@ -42,6 +44,20 @@ export default async function ResourcePage(props: Params) {
         {r.description}
       </p>
       <BaseUrl path={r.endpoints[0]?.path ?? ""} />
+
+      {r.kind === "table" && TABLE_VIEW_COMPANIONS[r.table] && (
+        <ViewCallout
+          tableName={r.table}
+          viewName={TABLE_VIEW_COMPANIONS[r.table].viewTable}
+          viewHref={`/api-reference/${TABLE_VIEW_COMPANIONS[r.table].viewModule}/${TABLE_VIEW_COMPANIONS[r.table].viewSlug}`}
+        />
+      )}
+      {r.kind === "view" && VIEW_TABLE_COMPANIONS[r.table] && (
+        <TableCallout
+          tableName={VIEW_TABLE_COMPANIONS[r.table].tableTable}
+          tableHref={`/api-reference/${VIEW_TABLE_COMPANIONS[r.table].tableModule}/${VIEW_TABLE_COMPANIONS[r.table].tableSlug}`}
+        />
+      )}
 
       {r.endpoints.map((e) => (
         <EndpointSection key={e.id} endpoint={e} base={apiBase} />

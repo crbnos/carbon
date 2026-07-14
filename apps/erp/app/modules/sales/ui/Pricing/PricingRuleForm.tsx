@@ -15,9 +15,9 @@ import {
 import { useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import {
+  LuBlocks,
   LuBoxes,
   LuLayers,
-  LuPackage,
   LuSquareUser,
   LuUsers,
   LuUsersRound
@@ -225,7 +225,7 @@ const PricingRuleForm = ({ initialValues, onClose }: PricingRuleFormProps) => {
                       value: "item",
                       title: t`Specific Items`,
                       description: t`Target one or more items.`,
-                      icon: <LuPackage />
+                      icon: <LuBlocks />
                     },
                     {
                       value: "group",
@@ -280,7 +280,7 @@ const PricingRuleForm = ({ initialValues, onClose }: PricingRuleFormProps) => {
                 <Number
                   name="priority"
                   label={t`Priority`}
-                  helperText={t`Higher priority wins ties and applies first for markups`}
+                  termId="pricing-rule-priority"
                   minValue={0}
                   step={1}
                 />

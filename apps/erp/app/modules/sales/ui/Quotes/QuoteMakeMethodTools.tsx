@@ -32,12 +32,12 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Fragment, useEffect, useState } from "react";
 import {
+  LuBlocks,
   LuChevronRight,
   LuGitBranch,
   LuGitFork,
   LuGitMerge,
   LuSettings,
-  LuSquareStack,
   LuTriangleAlert
 } from "react-icons/lu";
 import { RiProgress4Line } from "react-icons/ri";
@@ -319,7 +319,7 @@ const QuoteMakeMethodTools = () => {
                   <Tabs defaultValue="item" className="w-full">
                     <TabsList className="grid w-full grid-cols-2 mb-4">
                       <TabsTrigger value="item">
-                        <LuSquareStack className="mr-2" /> Item
+                        <LuBlocks className="mr-2" /> Item
                       </TabsTrigger>
                       <TabsTrigger value="quote">
                         <RiProgress4Line className="mr-2" />

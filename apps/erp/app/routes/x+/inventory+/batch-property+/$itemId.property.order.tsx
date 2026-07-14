@@ -1,11 +1,14 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import {
   batchPropertyOrderValidator,
   updateBatchPropertyOrder
 } from "~/modules/inventory";
+
+const logger = getLogger("erp", "itemid-property-order");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -22,7 +25,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   );
 
   if (validation.error) {
-    console.error(validation.error);
+    logger.error(validation.error);
     return {
       success: false,
       error: "Invalid form data"
@@ -35,7 +38,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
 
   if (upsert.error) {
-    console.error(upsert.error);
+    logger.error(upsert.error);
     return {
       success: false,
       error: upsert.error.message

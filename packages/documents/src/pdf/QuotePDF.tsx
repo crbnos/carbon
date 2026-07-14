@@ -8,7 +8,7 @@ import {
   resolveTemplate
 } from "../template";
 import type { AccountsReceivableBillingAddress, PDF } from "../types";
-import { composeRegistrationLine } from "../utils/footer";
+import { resolveRegistrationLine } from "../utils/shared";
 import type { QuoteCustomerDetails, QuoteData } from "./blocks/quote";
 import { buildQuoteVars, quoteBlockRegistry } from "./blocks/quote";
 import { Template } from "./components";
@@ -61,12 +61,6 @@ const QuotePDF = ({
     style: "decimal",
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
-  });
-
-  const registrationLine = composeRegistrationLine({
-    companyName: company.name,
-    country: company.countryCode,
-    eori: company.eori
   });
 
   const pricesByLine = quoteLinePrices.reduce<Record<string, QuoteLinePrice[]>>(
@@ -165,6 +159,14 @@ const QuotePDF = ({
     currencyCode
   });
 
+  const registration = resolveRegistrationLine({
+    company,
+    footerSectionId,
+    sections,
+    settings,
+    vars
+  });
+
   const headerOptions = {
     ...DEFAULT_HEADER_OPTIONS,
     ...(headerSectionId ? (sections[headerSectionId]?.config ?? {}) : {})
@@ -228,11 +230,11 @@ const QuotePDF = ({
         subject: meta?.subject ?? "Quote"
       }}
       footerDocumentId={quote?.quoteId}
-      footerLabel={registrationLine ?? undefined}
+      footerLabel={registration.label}
       showFooter={showFooter}
       showPageNumbers={settings.showPageNumbers}
       pageNumberFormat={settings.pageNumberFormat}
-      showRegistrationLine={settings.showRegistrationLine}
+      showRegistrationLine={registration.show}
       fontFamily={settings.fontFamily}
       headerContent={headerContent}
       footerContent={footerContent}

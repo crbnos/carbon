@@ -35,6 +35,12 @@ const main = defineCommand({
           description:
             "Spawn ERP/MES dev servers (use --no-apps for services-only boot)"
         },
+        all: {
+          type: "boolean",
+          default: false,
+          description:
+            "Launch all apps without the interactive picker (implies erp+mes)"
+        },
         pull: {
           type: "boolean",
           default: false,
@@ -63,6 +69,12 @@ const main = defineCommand({
           default: false,
           description:
             "With --run, also remove Docker volumes on teardown (headless: don't leak data volumes across dispatches)"
+        },
+        minimal: {
+          type: "boolean",
+          default: false,
+          description:
+            "Skip non-essential services (Studio, Postgres-Meta, Inbucket) to reduce memory footprint (useful for headless/CI builds)"
         }
       },
       run: ({ args }) =>
@@ -70,11 +82,13 @@ const main = defineCommand({
           migrate: args.migrate !== false,
           regen: args.regen !== false,
           apps: args.apps !== false,
+          all: args.all === true,
           pull: args.pull === true,
           borrow: args.borrow === true,
           portless: args.portless !== false,
           run: typeof args.run === "string" ? args.run : undefined,
-          volumes: args.volumes === true
+          volumes: args.volumes === true,
+          minimal: args.minimal === true
         })
     }),
     down: defineCommand({

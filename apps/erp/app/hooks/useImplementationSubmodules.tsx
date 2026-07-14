@@ -8,6 +8,7 @@ import {
   type Tier
 } from "@carbon/onboarding";
 import { useRouteData } from "@carbon/react";
+import { useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import {
   LuClipboardCheck,
@@ -21,7 +22,6 @@ import {
   LuListChecks,
   LuRocket,
   LuSettings,
-  LuSwords,
   LuUsers
 } from "react-icons/lu";
 import { useCustomerPreview } from "~/hooks/useCustomerPreview";
@@ -43,13 +43,13 @@ const ICON: Record<string, ReactNode> = {
   requirements: <LuFileText />,
   "go-live": <LuFlagTriangleRight />,
   training: <LuGraduationCap />,
-  controls: <LuSettings />,
-  positioning: <LuSwords />
+  controls: <LuSettings />
 };
 
 // Grouped secondary sidebar for /x/get-started, built from the package's page
 // registry. Carbon-only pages are filtered out for non-internal users.
 export function useImplementationSubmodules() {
+  const { i18n } = useLingui();
   const { isInternal } = useFlags();
   const previewingAsCustomer = useCustomerPreview();
   // When an internal user previews as the customer, hide carbon-only pages.
@@ -61,12 +61,12 @@ export function useImplementationSubmodules() {
   const tier = data?.hub?.tier;
 
   const groups: AuthenticatedRouteGroup[] = PAGE_GROUP_ORDER.map((group) => ({
-    name: PAGE_GROUP_LABEL[group],
+    name: i18n._(PAGE_GROUP_LABEL[group]),
     routes: REGISTRY.filter((p) => p.group === group)
       .filter((p) => isPageVisible(p, exclusions, effectiveInternal, tier))
       .sort((a, b) => a.order - b.order)
       .map((p) => ({
-        name: p.navLabel,
+        name: i18n._(p.navLabel),
         to:
           p.slug === "start"
             ? path.to.getStarted

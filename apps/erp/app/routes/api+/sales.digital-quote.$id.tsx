@@ -1,6 +1,7 @@
 import { assertIsPost, notFound } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { trigger } from "@carbon/jobs";
+import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
 import type { ActionFunctionArgs } from "react-router";
 import {
@@ -12,6 +13,8 @@ import {
 import { getCompanySettings } from "~/modules/settings";
 import { generateAndAttachSalesOrderPdf } from "~/modules/shared/shared.server";
 import { loader as pdfLoader } from "~/routes/file+/sales-order+/$id[.]pdf";
+
+const logger = getLogger("erp", "sales", "digital-quote");
 
 export async function action(args: ActionFunctionArgs) {
   const { request, params } = args;
@@ -27,7 +30,7 @@ export async function action(args: ActionFunctionArgs) {
   const quote = await getQuoteByExternalId(serviceRole, id);
 
   if (quote.error) {
-    console.error("Quote not found", quote.error);
+    logger.error("Quote not found", { error: quote.error });
     return {
       success: false,
       message: "Quote not found"
@@ -38,6 +41,20 @@ export async function action(args: ActionFunctionArgs) {
     serviceRole,
     quote.data.companyId
   );
+
+  // A quote can only be accepted or rejected while it is awaiting a response.
+  // Without this guard the unauthenticated share link can be replayed to create
+  // duplicate sales orders, or to act on an already ordered / rejected / expired
+  // quote (e.g. flipping an ordered quote back to "Lost").
+  if (
+    (type === "accept" || type === "reject") &&
+    quote.data.status !== "Sent"
+  ) {
+    return {
+      success: false,
+      message: "This quote is no longer available for a response."
+    };
+  }
 
   switch (type) {
     case "accept":
@@ -59,7 +76,7 @@ export async function action(args: ActionFunctionArgs) {
       );
 
       if (!parseResult.success) {
-        console.error("Validation error:", parseResult.error);
+        logger.error("Validation error:", { error: parseResult.error });
         return { success: false, message: "Invalid selected lines data" };
       }
 
@@ -84,7 +101,9 @@ export async function action(args: ActionFunctionArgs) {
       ]);
 
       if (convert.error) {
-        console.error("Failed to convert quote to order", convert.error);
+        logger.error("Failed to convert quote to order", {
+          error: convert.error
+        });
         return {
           success: false,
           message: "Failed to convert quote to order"
@@ -109,15 +128,19 @@ export async function action(args: ActionFunctionArgs) {
             });
           }
         } catch (err) {
-          console.error(
+          logger.error(
             "Failed to generate PDF after digital quote acceptance",
-            err
+            {
+              error: err
+            }
           );
         }
       }
 
       if (companySettings.error) {
-        console.error("Failed to get company settings", companySettings.error);
+        logger.error("Failed to get company settings", {
+          error: companySettings.error
+        });
         return {
           success: false,
           message: "Failed to send notification"
@@ -137,7 +160,7 @@ export async function action(args: ActionFunctionArgs) {
             }
           });
         } catch (err) {
-          console.error("Failed to trigger notification", err);
+          logger.error("Failed to trigger notification", { error: err });
           return {
             success: false,
             message: "Failed to send notification"
@@ -153,7 +176,7 @@ export async function action(args: ActionFunctionArgs) {
           .upload(purchaseOrderDocumentPath, file);
 
         if (fileUpload.error) {
-          console.error("Failed to upload file", fileUpload.error);
+          logger.error("Failed to upload file", { error: fileUpload.error });
           return {
             success: false,
             message: "Failed to upload file"
@@ -168,10 +191,9 @@ export async function action(args: ActionFunctionArgs) {
           .eq("id", quote.data.opportunityId!);
 
         if (updateOpportunity.error) {
-          console.error(
-            "Failed to update opportunity",
-            updateOpportunity.error
-          );
+          logger.error("Failed to update opportunity", {
+            error: updateOpportunity.error
+          });
         }
       }
 
@@ -198,7 +220,7 @@ export async function action(args: ActionFunctionArgs) {
         .eq("id", quote.data.id);
 
       if (rejectQuote.error) {
-        console.error("Failed to reject quote", rejectQuote.error);
+        logger.error("Failed to reject quote", { error: rejectQuote.error });
         return {
           success: false,
           message: "Failed to reject quote"
@@ -218,7 +240,7 @@ export async function action(args: ActionFunctionArgs) {
             }
           });
         } catch (err) {
-          console.error("Failed to trigger notification", err);
+          logger.error("Failed to trigger notification", { error: err });
           return {
             success: false,
             message: "Failed to send notification"

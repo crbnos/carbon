@@ -2,6 +2,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import {
@@ -12,6 +13,8 @@ import {
 } from "~/modules/purchasing";
 import { isApprovalRequired } from "~/modules/shared";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "id-convert");
 
 // the edge function grows larger than 2MB - so this is a workaround to avoid the edge function limit
 
@@ -39,7 +42,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   );
 
   if (!parseResult.success) {
-    console.error("Validation error:", parseResult.error);
+    logger.error("Validation error:", parseResult.error);
     throw redirect(
       path.to.supplierQuoteDetails(id),
       await flash(request, error("Invalid selected lines data"))

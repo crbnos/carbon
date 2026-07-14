@@ -23,7 +23,7 @@ export function readOutcome(cwd: string, id: string): LoopOutcome | null {
   }
 }
 
-/** Every run dir under `llm/loops/runs/`, newest first. */
+/** Every run dir under `.ai/runs/`, newest first. */
 export function listRuns(cwd: string): RunSummary[] {
   let names: string[];
   try {

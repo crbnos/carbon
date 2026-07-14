@@ -41,6 +41,21 @@ export const JOB_STATUS_COLOR_MAP = {
   Cancelled: "red"
 } as const satisfies Record<string, StatusColor>;
 
+/* jobOperation statuses (production.models.ts `jobOperationStatus`). Hues mirror the
+ * parent JOB map so an operation reads consistently with its job: Ready is a go signal,
+ * Waiting is a pending hold, In Progress/Paused share the active hue, Done is complete,
+ * Canceled is dead. The MES DAG uses richer per-status shades; this collapses them to the
+ * 7 semantic tokens the Status/Badge components and the docs dot accept. */
+export const JOB_OPERATION_STATUS_COLOR_MAP = {
+  Todo: "gray",
+  Ready: "blue",
+  Waiting: "yellow",
+  "In Progress": "orange",
+  Paused: "orange",
+  Done: "green",
+  Canceled: "red"
+} as const satisfies Record<string, StatusColor>;
+
 export const QUOTE_STATUS_COLOR_MAP = {
   Draft: "gray",
   Sent: "blue",
@@ -174,6 +189,12 @@ export const JOURNAL_ENTRY_STATUS_COLOR_MAP = {
   Reversed: "red"
 } as const satisfies Record<string, StatusColor>;
 
+export const PERIOD_CLOSE_STATUS_COLOR_MAP = {
+  Open: "gray",
+  Locked: "orange",
+  Closed: "green"
+} as const satisfies Record<string, StatusColor>;
+
 export const RISK_STATUS_COLOR_MAP = {
   Open: "gray",
   "In Review": "blue",
@@ -209,6 +230,7 @@ export const GAUGE_ROLE_COLOR_MAP = {
  * resolve a status name to its color without importing each map by hand. */
 export const statusColorMaps = {
   job: JOB_STATUS_COLOR_MAP,
+  jobOperation: JOB_OPERATION_STATUS_COLOR_MAP,
   quote: QUOTE_STATUS_COLOR_MAP,
   salesOrder: SALES_STATUS_COLOR_MAP,
   purchaseOrder: PURCHASE_ORDER_STATUS_COLOR_MAP,

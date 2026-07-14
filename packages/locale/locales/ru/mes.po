@@ -764,6 +764,9 @@ msgstr "Назад"
 msgid "Preventive"
 msgstr "Профилактическое"
 
+msgid "Previous"
+msgstr "Предыдущий"
+
 msgid "Print"
 msgstr "Печать"
 

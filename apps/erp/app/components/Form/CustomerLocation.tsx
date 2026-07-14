@@ -31,7 +31,10 @@ const CustomerLocationPreview = (
   return <span>{location.label}</span>;
 };
 
-const CustomerLocation = (props: CustomerLocationSelectProps) => {
+const CustomerLocation = ({
+  customer,
+  ...props
+}: CustomerLocationSelectProps) => {
   const { t } = useLingui();
   const customerLocationsFetcher =
     useFetcher<Awaited<ReturnType<typeof getCustomerLocations>>>();
@@ -42,12 +45,10 @@ const CustomerLocation = (props: CustomerLocationSelectProps) => {
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
-    if (props?.customer) {
-      customerLocationsFetcher.load(
-        path.to.api.customerLocations(props.customer)
-      );
+    if (customer) {
+      customerLocationsFetcher.load(path.to.api.customerLocations(customer));
     }
-  }, [props.customer]);
+  }, [customer]);
 
   const options = useMemo(
     () =>
@@ -77,7 +78,7 @@ const CustomerLocation = (props: CustomerLocationSelectProps) => {
 
   const emptyMessage = useEmptyState(
     "customerLocation",
-    props.customer ? { onCreate: () => newLocationModal.onOpen() } : undefined
+    customer ? { onCreate: () => newLocationModal.onOpen() } : undefined
   );
 
   return (
@@ -98,14 +99,28 @@ const CustomerLocation = (props: CustomerLocationSelectProps) => {
       />
       {newLocationModal.isOpen && (
         <CustomerLocationForm
-          customerId={props.customer!}
+          customerId={customer!}
           type="modal"
           onClose={() => {
             setCreated("");
             newLocationModal.onClose();
+            // Reload the per-customer fetcher so a just-created location appears.
+            if (customer) {
+              customerLocationsFetcher.load(
+                path.to.api.customerLocations(customer)
+              );
+            }
             triggerRef.current?.click();
           }}
-          initialValues={{ name: created }}
+          initialValues={{
+            name: created,
+            addressLine1: "",
+            addressLine2: "",
+            city: "",
+            stateProvince: "",
+            postalCode: "",
+            countryCode: ""
+          }}
         />
       )}
     </>

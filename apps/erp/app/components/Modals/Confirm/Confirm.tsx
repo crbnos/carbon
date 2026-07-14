@@ -9,6 +9,7 @@ import {
   ModalTitle,
   toast
 } from "@carbon/react";
+import type { ComponentProps, ReactNode } from "react";
 import { useEffect, useRef } from "react";
 import { useFetcher } from "react-router";
 
@@ -18,8 +19,13 @@ type ConfirmProps = {
   title: string;
   text: string;
   confirmText: string;
+  cancelText?: string;
+  confirmVariant?: ComponentProps<typeof Button>["variant"];
   onCancel: () => void;
   onSubmit?: () => void;
+  // Extra hidden fields posted with the confirmation (e.g. a status value),
+  // letting callers reuse this dialog for status changes, not just deletes.
+  children?: ReactNode;
 };
 
 const Confirm = ({
@@ -28,8 +34,11 @@ const Confirm = ({
   title,
   text,
   confirmText = "Confirm",
+  cancelText = "Cancel",
+  confirmVariant,
   onCancel,
-  onSubmit
+  onSubmit,
+  children
 }: ConfirmProps) => {
   const fetcher = useFetcher<{ success: boolean; message: string }>();
   const submitted = useRef(false);
@@ -68,14 +77,16 @@ const Confirm = ({
         </ModalBody>
         <ModalFooter>
           <Button variant="secondary" onClick={onCancel}>
-            Cancel
+            {cancelText}
           </Button>
           <fetcher.Form
             method="post"
             action={action}
             onSubmit={() => (submitted.current = true)}
           >
+            {children}
             <Button
+              variant={confirmVariant}
               isLoading={fetcher.state !== "idle"}
               isDisabled={fetcher.state !== "idle"}
               type="submit"

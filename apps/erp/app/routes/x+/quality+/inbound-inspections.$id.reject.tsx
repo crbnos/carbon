@@ -3,6 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { notifyIssueCreated } from "@carbon/ee/notifications";
+import { getLogger } from "@carbon/logger";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { FunctionRegion } from "@supabase/supabase-js";
 import type { ActionFunctionArgs } from "react-router";
@@ -18,6 +19,8 @@ import { dispositionInboundInspection } from "~/modules/quality/quality.server";
 import { getCompanyIntegrations } from "~/modules/settings/settings.server";
 import { getUserDefaults } from "~/modules/users/users.server";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "inbound-inspections-id-reject");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -277,7 +280,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       }
     });
   } catch (err) {
-    console.error("Failed to send NCR notifications:", err);
+    logger.error("Failed to send NCR notifications", { error: err });
   }
 
   throw redirect(

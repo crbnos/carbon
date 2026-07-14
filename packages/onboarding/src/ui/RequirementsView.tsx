@@ -1,4 +1,5 @@
 import { cn, IconButton } from "@carbon/react";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { LuTrash } from "react-icons/lu";
 import { COLLECTIONS, PAGE_COPY, REQUIREMENTS } from "../content";
 import { flagKey } from "../logic";
@@ -21,6 +22,7 @@ const isInScope = (map: Map<string, string>, key: string) =>
   (map.get(key) ?? "1") === "1";
 
 export function RequirementsView() {
+  const { t, i18n } = useLingui();
   const exclusions = useExclusions();
   const map = useCheckMap();
   const { toggleFlag } = useHubActions();
@@ -34,10 +36,14 @@ export function RequirementsView() {
   return (
     <div className="w-full max-w-3xl mx-auto flex flex-col gap-6">
       <PageHeader
-        title={PAGE_COPY.requirements.title}
-        lead={PAGE_COPY.requirements.lead}
+        title={i18n._(PAGE_COPY.requirements.title)}
+        lead={i18n._(PAGE_COPY.requirements.lead)}
         aside={
-          <ProgressPill done={inScope} total={rows.length} label="in scope" />
+          <ProgressPill
+            done={inScope}
+            total={rows.length}
+            label={t`in scope`}
+          />
         }
       />
 
@@ -49,7 +55,7 @@ export function RequirementsView() {
               <span className="text-xs font-mono font-semibold rounded bg-foreground text-background px-1.5 py-0.5">
                 {module.code}
               </span>
-              {module.name}
+              {i18n._(module.name)}
             </span>
           }
         >
@@ -60,7 +66,7 @@ export function RequirementsView() {
                   {area.code}
                 </span>
                 <span className="text-xs font-medium text-muted-foreground">
-                  {area.name}
+                  {i18n._(area.name)}
                 </span>
               </div>
               <SectionList>
@@ -81,12 +87,12 @@ export function RequirementsView() {
                           !inScope && "text-muted-foreground line-through"
                         )}
                       >
-                        {row.requirement}
+                        {i18n._(row.requirement)}
                       </span>
                       <StatusToggle
                         active={inScope}
-                        activeLabel={FLAG.active}
-                        inactiveLabel={FLAG.inactive}
+                        activeLabel={i18n._(FLAG.active)}
+                        inactiveLabel={i18n._(FLAG.inactive)}
                         withIcon={false}
                         onToggle={() => toggleFlag(key, "scopeFlag", !inScope)}
                       />
@@ -107,6 +113,7 @@ export function RequirementsView() {
 }
 
 function CustomRequirementRow({ row }: { row: ImplementationRowData }) {
+  const { t, i18n } = useLingui();
   const canEdit = useCanEdit();
   const map = useCheckMap();
   const { toggleFlag, updateRow, deleteRow } = useHubActions();
@@ -119,12 +126,12 @@ function CustomRequirementRow({ row }: { row: ImplementationRowData }) {
   return (
     <li className="flex items-center gap-4 px-5 py-2.5">
       <span className="text-xxs font-mono text-muted-foreground shrink-0 w-20">
-        CUSTOM
+        <Trans>CUSTOM</Trans>
       </span>
       {canEdit ? (
         <EditableInput
           value={requirement}
-          placeholder="Requirement"
+          placeholder={t`Requirement`}
           className="flex-1 min-w-0 text-sm font-normal"
           onCommit={(next) => updateRow(row.id, { requirement: next })}
         />
@@ -140,14 +147,14 @@ function CustomRequirementRow({ row }: { row: ImplementationRowData }) {
       )}
       <StatusToggle
         active={inScope}
-        activeLabel={FLAG.active}
-        inactiveLabel={FLAG.inactive}
+        activeLabel={i18n._(FLAG.active)}
+        inactiveLabel={i18n._(FLAG.inactive)}
         withIcon={false}
         onToggle={() => toggleFlag(key, "scopeFlag", !inScope)}
       />
       {canEdit ? (
         <IconButton
-          aria-label="Delete requirement"
+          aria-label={t`Delete requirement`}
           icon={<LuTrash />}
           variant="ghost"
           size="sm"

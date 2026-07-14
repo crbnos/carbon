@@ -1,6 +1,6 @@
 import { cn } from "@carbon/react";
 import { cva } from "class-variance-authority";
-import { LuSquareStack } from "react-icons/lu";
+import { LuBlocks } from "react-icons/lu";
 import type { MethodItemType } from "~/modules/shared";
 import { getPrivateUrl } from "~/utils/path";
 import { MethodItemTypeIcon } from "./Icons";
@@ -85,7 +85,7 @@ const ItemThumbnail = ({
       {type ? (
         <MethodItemTypeIcon className={iconVariants({ size })} type={type} />
       ) : (
-        <LuSquareStack className={iconVariants({ size })} />
+        <LuBlocks className={iconVariants({ size })} />
       )}
     </div>
   );

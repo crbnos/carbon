@@ -1,5 +1,6 @@
 import { Button, cn, IconButton } from "@carbon/react";
-import { LuCheck, LuPlus, LuTrash } from "react-icons/lu";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { LuArrowUpRight, LuCheck, LuPlus, LuTrash } from "react-icons/lu";
 import { COLLECTIONS, PAGE_COPY } from "../content";
 import {
   CUTOVER_STEPS,
@@ -7,6 +8,7 @@ import {
   HYPERCARE_WEEKS_DEFAULT,
   SUPPORT_CHANNELS
 } from "../content/golive";
+import { GUIDED_CONTACT, SUPPORT_BOOKING_URL } from "../content/support";
 import { checkKey } from "../logic";
 import type { ImplementationRowData } from "../types";
 import { EditableField } from "./EditableField";
@@ -30,6 +32,7 @@ import {
 const cutoverKey = (id: string) => checkKey("cutover", id);
 
 export function GoLiveView() {
+  const { t, i18n } = useLingui();
   const map = useCheckMap();
   const fields = useFieldMap();
   const tier = useTier();
@@ -47,8 +50,8 @@ export function GoLiveView() {
   return (
     <div className="w-full max-w-3xl mx-auto flex flex-col gap-6">
       <PageHeader
-        title={PAGE_COPY["go-live"].title}
-        lead={PAGE_COPY["go-live"].lead}
+        title={i18n._(PAGE_COPY["go-live"].title)}
+        lead={i18n._(PAGE_COPY["go-live"].lead)}
         aside={
           <ProgressPill
             done={cutoverDone}
@@ -58,7 +61,7 @@ export function GoLiveView() {
         }
       />
 
-      <Section title="Cutover checklist">
+      <Section title={t`Cutover checklist`}>
         <SectionList>
           {CUTOVER_STEPS.map((step) => {
             const key = cutoverKey(step.key);
@@ -77,7 +80,7 @@ export function GoLiveView() {
                       done && "line-through text-muted-foreground"
                     )}
                   >
-                    {step.label}
+                    {i18n._(step.label)}
                   </span>
                 </button>
               </li>
@@ -95,41 +98,43 @@ export function GoLiveView() {
               leftIcon={<LuPlus />}
               onClick={() => addRow("golive", COLLECTIONS.golive.newPayload())}
             >
-              {COLLECTIONS.golive.addLabel}
+              {i18n._(COLLECTIONS.golive.addLabel)}
             </Button>
           </div>
         ) : null}
       </Section>
 
       {tier !== "self_serve" ? (
-        <Panel title="Hypercare">
+        <Panel title={t`Hypercare`}>
           <div className="flex items-center gap-2 mb-3 text-sm">
-            <span className="text-muted-foreground shrink-0">Window:</span>
+            <span className="text-muted-foreground shrink-0">
+              <Trans>Window:</Trans>
+            </span>
             <EditableField
               fieldKey="golive.hypercareWeeks"
               value={fields.get("golive.hypercareWeeks")}
               defaultValue={HYPERCARE_WEEKS_DEFAULT}
-              placeholder="e.g. the first 3 to 4 weeks"
+              placeholder={t`e.g. the first 3 to 4 weeks`}
               className="font-medium max-w-[260px]"
             />
           </div>
           <ul className="flex flex-col gap-2">
-            {HYPERCARE.map((h) => (
-              <li key={h} className="flex items-start gap-2.5 text-sm">
+            {HYPERCARE.map((h, i) => (
+              <li key={i} className="flex items-start gap-2.5 text-sm">
                 <span className="shrink-0 mt-1.5 size-1.5 rounded-full bg-emerald-500" />
-                {h}
+                {i18n._(h)}
               </li>
             ))}
           </ul>
         </Panel>
       ) : null}
 
-      <Panel title="How to reach us">
+      <Panel title={t`How to reach us`}>
         <ul className="divide-y -my-2">
           {supportChannels.map((s) => (
             <li key={s.key} className="flex items-center gap-3 py-2.5">
               <span className="text-sm font-medium w-36 shrink-0">
-                {s.channel}
+                {i18n._(s.channel)}
               </span>
               <EditableField
                 fieldKey={`golive.support.${s.key}`}
@@ -139,6 +144,34 @@ export function GoLiveView() {
               />
             </li>
           ))}
+          {/* Self-serve only — paid tiers already run the guided motion, so
+              pitching a call to discuss it would read as noise there. */}
+          {tier === "self_serve" ? (
+            <li className="flex items-start gap-3 py-2.5">
+              <span className="text-sm font-medium w-36 shrink-0">
+                {i18n._(GUIDED_CONTACT.channel)}
+              </span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-muted-foreground">
+                  {i18n._(GUIDED_CONTACT.detail)}
+                </p>
+                <Button
+                  size="sm"
+                  className="mt-2"
+                  rightIcon={<LuArrowUpRight />}
+                  onClick={() =>
+                    window.open(
+                      SUPPORT_BOOKING_URL,
+                      "_blank",
+                      "noopener,noreferrer"
+                    )
+                  }
+                >
+                  {i18n._(GUIDED_CONTACT.cta)}
+                </Button>
+              </div>
+            </li>
+          ) : null}
         </ul>
       </Panel>
     </div>
@@ -161,6 +194,7 @@ function CutoverBox({ done }: { done: boolean }) {
 }
 
 function CustomCutoverRow({ row }: { row: ImplementationRowData }) {
+  const { t } = useLingui();
   const map = useCheckMap();
   const canEdit = useCanEdit();
   const { setCheck, updateRow, deleteRow } = useHubActions();
@@ -173,7 +207,7 @@ function CustomCutoverRow({ row }: { row: ImplementationRowData }) {
     <li className="flex items-center gap-3 px-5 py-3">
       <button
         type="button"
-        aria-label={done ? "Mark not done" : "Mark done"}
+        aria-label={done ? t`Mark not done` : t`Mark done`}
         onClick={() => setCheck(key, "check", done ? "0" : "1")}
         className="shrink-0 active:scale-[0.96]"
       >
@@ -182,7 +216,7 @@ function CustomCutoverRow({ row }: { row: ImplementationRowData }) {
       {canEdit ? (
         <EditableInput
           value={label}
-          placeholder="Cutover step"
+          placeholder={t`Cutover step`}
           className="flex-1 min-w-0"
           onCommit={(next) => updateRow(row.id, { label: next })}
         />
@@ -198,7 +232,7 @@ function CustomCutoverRow({ row }: { row: ImplementationRowData }) {
       )}
       {canEdit ? (
         <IconButton
-          aria-label="Delete step"
+          aria-label={t`Delete step`}
           icon={<LuTrash />}
           variant="ghost"
           size="sm"

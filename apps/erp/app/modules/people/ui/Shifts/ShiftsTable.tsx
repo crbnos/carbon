@@ -100,7 +100,23 @@ const ShiftsTable = memo(({ data, count, locations }: ShiftsTableProps) => {
         // @ts-ignore
         cell: ({ row }) => renderDays(row.original),
         meta: {
-          icon: <LuCalendarDays />
+          icon: <LuCalendarDays />,
+          filterHeader: t`Days`,
+          exportValue: (row) =>
+            (
+              [
+                ["monday", "M"],
+                ["tuesday", "Tu"],
+                ["wednesday", "W"],
+                ["thursday", "Th"],
+                ["friday", "F"],
+                ["saturday", "Sa"],
+                ["sunday", "Su"]
+              ] as const
+            )
+              .filter(([key]) => row[key])
+              .map(([, label]) => label)
+              .join(", ")
         }
       }
     ];

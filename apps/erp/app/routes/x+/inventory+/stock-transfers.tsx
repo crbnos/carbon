@@ -1,6 +1,7 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { getLogger } from "@carbon/logger";
 import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
@@ -12,6 +13,8 @@ import { getUserDefaults } from "~/modules/users/users.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
+
+const logger = getLogger("erp", "stock-transfers");
 
 export const handle: Handle = {
   breadcrumb: msg`Stock Transfers`,
@@ -70,7 +73,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   });
 
   if (stockTransfers.error) {
-    console.error(stockTransfers.error);
+    logger.error(stockTransfers.error);
     throw redirect(
       path.to.authenticatedRoot,
       await flash(request, error(null, "Error loading stock transfers"))

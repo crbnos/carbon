@@ -9,9 +9,9 @@
 // only the provider calls it, and it always rebuilds from the server snapshot.
 //
 // One exception, for responsiveness: `dispatch` records an OPTIMISTIC override
-// for `setCheck` toggles (checkboxes/gates) in `optimisticChecks` before the
-// round-trip, so a tick reflects instantly instead of after the full
-// submit→revalidate cycle. `checkMap` is always the server state with these
+// for `setCheck` / `setChecks` toggles (checkboxes/gates, single or batched) in
+// `optimisticChecks` before the round-trip, so a tick reflects instantly
+// instead of after the full submit→revalidate cycle. `checkMap` is always the server state with these
 // overrides layered on top. Each override is held until the loader actually
 // reports the value we wrote, then released — so it survives stale/early
 // revalidations (whose snapshot doesn't yet reflect the write, and which would
@@ -36,6 +36,7 @@ import type {
   HubExclusions,
   HubStatus,
   ImplementationRowData,
+  Mod,
   Tier
 } from "../../types";
 import type { HubMutation } from "./mutations";
@@ -52,11 +53,26 @@ function mergeChecks(
   return map;
 }
 
+// The exclusions views filter by: the stored (staff-editable) exclusions with
+// the app-forced modules layered on top.
+function mergeForcedModules(
+  exclusions: HubExclusions,
+  forcedModules: Mod[]
+): HubExclusions {
+  const missing = forcedModules.filter((m) => !exclusions.modules.includes(m));
+  if (missing.length === 0) return exclusions;
+  return { ...exclusions, modules: [...exclusions.modules, ...missing] };
+}
+
 // The per-company server data the hub renders from (all loader-sourced).
 export interface HubData {
   tier: Tier;
   status: HubStatus;
   exclusions: HubExclusions;
+  // Modules forced out of scope by app settings (e.g. "acc" while the company's
+  // accountingEnabled setting is off). Merged into the exclusions every view
+  // filters by, but never written back to the stored, staff-editable exclusions.
+  forcedModules: Mod[];
   checkStates: CheckStateRow[];
   fieldValues: FieldValueRow[];
   rows: ImplementationRowData[];
@@ -80,12 +96,16 @@ export type ResolveScreenUrl = (appKey: string) => string | undefined;
 export interface HubState extends HubData, HubFlags {
   checkMap: Map<string, string>;
   fieldMap: Map<string, string>;
+  // `exclusions` merged with `forcedModules` — what every view filters by.
+  // The raw `exclusions` field stays the editing surface (Setup & Controls),
+  // so staff writes never persist an app-forced module.
+  effectiveExclusions: HubExclusions;
   // Pending optimistic check overrides (itemKey -> value), layered over the
   // server checkMap. Each is held until the loader reports the value we wrote,
   // so an in-flight toggle never flashes back when a stale/early revalidation
   // lands before the write does. Internal; views read checkMap.
   optimisticChecks: Map<string, string>;
-  // Public write path: optimistic check override (setCheck only) + round-trip.
+  // Public write path: optimistic check override (setCheck/setChecks) + round-trip.
   dispatch: (m: HubMutation) => void;
   // The raw server round-trip the route injects; `dispatch` wraps it.
   serverDispatch: (m: HubMutation) => void;
@@ -117,6 +137,7 @@ export const HUB_INITIAL: HubData & HubFlags = {
   tier: "self_serve",
   status: "tailoring",
   exclusions: EMPTY_EXCLUSIONS,
+  forcedModules: [],
   checkStates: [],
   fieldValues: [],
   rows: [],
@@ -134,14 +155,27 @@ export function createHubStore(initial: Partial<HubData & HubFlags> = {}) {
     optimisticChecks: new Map(),
     checkMap: stateMap(seed.checkStates),
     fieldMap: fieldMap(seed.fieldValues),
+    effectiveExclusions: mergeForcedModules(
+      seed.exclusions,
+      seed.forcedModules
+    ),
     // Stable wrapper, created once. Records an optimistic override for a
     // checkbox/gate toggle so the UI updates instantly, then round-trips. The
     // override is layered over the server checkMap and released by setData once
     // the loader confirms the written value (see below).
     dispatch: (m) => {
-      if (m.intent === "setCheck") {
+      // Batched setChecks overrides every key it writes — this also replaces
+      // any in-flight single-toggle override for those keys, so a toggle whose
+      // POST the batch cancels (shared fetcher) can't strand a stale value.
+      if (m.intent === "setCheck" || m.intent === "setChecks") {
         const optimisticChecks = new Map(get().optimisticChecks);
-        optimisticChecks.set(m.itemKey, m.value);
+        if (m.intent === "setCheck") {
+          optimisticChecks.set(m.itemKey, m.value);
+        } else {
+          for (const itemKey of m.itemKeys) {
+            optimisticChecks.set(itemKey, m.value);
+          }
+        }
         set({
           optimisticChecks,
           checkMap: mergeChecks(get().checkStates, optimisticChecks)
@@ -178,6 +212,10 @@ export function createHubStore(initial: Partial<HubData & HubFlags> = {}) {
         optimisticChecks,
         checkMap: mergeChecks(data.checkStates, optimisticChecks),
         fieldMap: fieldMap(data.fieldValues),
+        effectiveExclusions: mergeForcedModules(
+          data.exclusions,
+          data.forcedModules
+        ),
         serverDispatch,
         resolveScreenUrl,
         resolveVideoUrl

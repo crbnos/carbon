@@ -1,7 +1,6 @@
-import { assertIsPost, error } from "@carbon/auth";
+import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { flash } from "@carbon/auth/session.server";
 import {
   dedupeViolations,
   evaluateLinesForSurface,
@@ -33,7 +32,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (validation.error) {
     return validationError(validation.error);
   }
-  const { ...d } = validation.data;
+  // `requiresSerialTracking` is a form-only flag for the serial quantity guard —
+  // strip it before the service call (not an `insertManualInventoryAdjustment` arg).
+  const { requiresSerialTracking: _requiresSerialTracking, ...d } =
+    validation.data;
   const acknowledged = formData.get("acknowledged") === "true";
 
   // Business rule evaluation. Item rules fire on the `inventoryAdjustment`
@@ -102,17 +104,25 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
 
   if (itemLedger.error) {
-    const flashMessage =
+    // Return the error as fetcher data so the modal can toast the reason and
+    // stay open. A redirect+flash would be lost here: the modal submits via a
+    // fetcher, so a redirect-throw never surfaces the flash message.
+    const message =
       itemLedger.error === "Insufficient quantity for negative adjustment"
         ? "Insufficient quantity for negative adjustment"
         : itemLedger.error === "Serial number not found"
           ? "Serial number not found"
-          : "Failed to create manual inventory adjustment";
+          : itemLedger.error ===
+              "Multiple tracked entities in this storage unit — select a specific row to adjust"
+            ? "Multiple tracked entities in this storage unit — select a specific row to adjust"
+            : "Failed to create manual inventory adjustment";
 
-    throw redirect(
-      path.to.inventoryItem(itemId),
-      await flash(request, error(itemLedger.error, flashMessage))
-    );
+    return {
+      error: { message },
+      data: null,
+      violations: [],
+      ruleNames: {}
+    };
   }
 
   throw redirect(requestReferrer(request) ?? path.to.inventoryItem(itemId));

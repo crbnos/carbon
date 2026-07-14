@@ -15,6 +15,8 @@ type SupplierSelectProps = Omit<
   inline?: boolean;
   allowedSuppliers?: string[];
   onlyApproved?: boolean;
+  /** When creating a new supplier, pre-fill this currency instead of the company base currency */
+  defaultCurrencyCode?: string;
 };
 
 const SupplierPreview = (
@@ -27,6 +29,7 @@ const SupplierPreview = (
 const Supplier = ({
   allowedSuppliers,
   onlyApproved,
+  defaultCurrencyCode,
   ...props
 }: SupplierSelectProps) => {
   const supplierApprovalRequired = useSupplierApprovalRequired();
@@ -77,7 +80,7 @@ const Supplier = ({
           }}
           initialValues={{
             name: created,
-            currencyCode: company.baseCurrencyCode,
+            currencyCode: defaultCurrencyCode ?? company.baseCurrencyCode,
             supplierStatus: supplierApprovalRequired ? "Pending" : undefined
           }}
         />

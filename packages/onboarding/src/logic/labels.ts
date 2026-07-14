@@ -1,9 +1,11 @@
+import type { MessageDescriptor } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
 import type { Owner, StepDef, Tier } from "../types";
 
 // The hub surface label adapts by tier: self-serve sees "Get Started", paying
 // tiers see "Implementation" (matches Chase's onboarding-vs-implementation split).
-export function labelForTier(tier: Tier): string {
-  return tier === "self_serve" ? "Get Started" : "Implementation";
+export function labelForTier(tier: Tier): MessageDescriptor {
+  return tier === "self_serve" ? msg`Get Started` : msg`Implementation`;
 }
 
 // Resolve an owner for a tier. In self-serve there's no Carbon team — the
@@ -21,8 +23,8 @@ export function ownerForStep(step: StepDef, tier: Tier): Owner {
 
 // Past tense of an owner's lead role, for "{timing} · {…}" lines. Avoids the
 // ungrammatical "You leads" the bare label produced.
-export function ownerLeadLabel(owner: Owner): string {
-  if (owner === "you") return "You lead";
-  if (owner === "carbon") return "Carbon leads";
-  return "Carbon + you";
+export function ownerLeadLabel(owner: Owner): MessageDescriptor {
+  if (owner === "you") return msg`You lead`;
+  if (owner === "carbon") return msg`Carbon leads`;
+  return msg`Carbon + you`;
 }

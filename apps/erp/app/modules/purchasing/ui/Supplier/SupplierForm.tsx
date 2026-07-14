@@ -14,7 +14,7 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useFetcher } from "react-router";
 import type { z } from "zod";
 import {
@@ -39,6 +39,7 @@ import {
   supplierApprovalValidator,
   supplierValidator
 } from "~/modules/purchasing";
+import { upsertIntoListStore, useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
 
 type SupplierFormProps = {
@@ -59,18 +60,48 @@ const SupplierForm = ({
     companySettings?.showSupplierReadableId ?? false;
   const fetcher = useFetcher<PostgrestResponse<Supplier>>();
   const supplierApprovalRequired = useSupplierApprovalRequired();
+  const [, setSuppliers] = useSuppliers();
+  // Appending to the store below re-renders the parent, which changes the inline
+  // `onClose` identity and re-runs this effect. Guard so the success side-effects
+  // (store append + `onClose`, which reopens the combobox) run exactly once —
+  // otherwise `onClose`'s trigger.click() fires twice and toggles the dropdown shut.
+  const handledSuccessRef = useRef(false);
 
   useEffect(() => {
     if (type !== "modal") return;
 
     if (fetcher.state === "loading" && fetcher.data?.data) {
+      if (handledSuccessRef.current) return;
+      handledSuccessRef.current = true;
+      // Add the new supplier to the store immediately rather than waiting for
+      // the Supabase Realtime INSERT event to arrive — the realtime round-trip
+      // is best-effort and can be missed, which would leave the just-created
+      // supplier absent from the select's option list. Dedupe by id so a late
+      // realtime event doesn't double-add it.
+      // `.single()` returns one row at runtime; the fetcher generic annotates
+      // `data` as the view type, so cast through `unknown` to the inserted shape.
+      const created = fetcher.data.data as unknown as {
+        id: string;
+        name: string;
+        website?: string | null;
+        supplierStatus?: string | null;
+        readableId?: string | null;
+      };
+      setSuppliers((prev) =>
+        upsertIntoListStore(prev, {
+          id: created.id,
+          name: created.name,
+          website: created.website ?? undefined,
+          supplierStatus: created.supplierStatus ?? undefined,
+          readableId: created.readableId ?? undefined
+        })
+      );
       onClose?.();
-      // @ts-ignore
-      toast.success(t`Created supplier: ${fetcher.data.data.name}`);
+      toast.success(t`Created supplier: ${created.name}`);
     } else if (fetcher.state === "idle" && fetcher.data?.error) {
       toast.error(t`Failed to create supplier: ${fetcher.data.error.message}`);
     }
-  }, [fetcher.data, fetcher.state, onClose, t, type]);
+  }, [fetcher.data, fetcher.state, onClose, t, type, setSuppliers]);
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing

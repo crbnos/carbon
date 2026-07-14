@@ -6,8 +6,6 @@ import {
   DropdownMenuContent,
   DropdownMenuIcon,
   DropdownMenuItem,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   Heading,
@@ -22,7 +20,8 @@ import { useEffect, useMemo, useState } from "react";
 import { flushSync } from "react-dom";
 import {
   LuCheckCheck,
-  LuChevronDown,
+  LuCircleCheck,
+  LuCircleX,
   LuEllipsisVertical,
   LuHandCoins,
   LuPanelLeft,
@@ -38,12 +37,13 @@ import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import {
   usePermissions,
   useRouteData,
+  useSettings,
   useSupplierApprovalRequired,
   useUser
 } from "~/hooks";
 import type { PurchaseInvoice, PurchaseInvoiceLine } from "~/modules/invoicing";
-import { PurchaseInvoicingStatus } from "~/modules/invoicing";
-import type { action as statusAction } from "~/routes/x+/purchase-invoice+/$invoiceId.status";
+import { isInvoicePayable, PurchaseInvoicingStatus } from "~/modules/invoicing";
+import { getPayInvoiceHref } from "~/modules/invoicing/ui/Payment/PaymentForm";
 import { useItems } from "~/stores";
 import { useSuppliers } from "~/stores/suppliers";
 import { path } from "~/utils/path";
@@ -68,8 +68,6 @@ const PurchaseInvoiceHeader = () => {
     variant: "dropdown"
   });
 
-  const statusFetcher = useFetcher<typeof statusAction>();
-
   const { carbon } = useCarbon();
   const [linesNotAssociatedWithPO, setLinesNotAssociatedWithPO] = useState<
     {
@@ -87,6 +85,7 @@ const PurchaseInvoiceHeader = () => {
   const routeData = useRouteData<{
     purchaseInvoice: PurchaseInvoice;
     purchaseInvoiceLines: PurchaseInvoiceLine[];
+    orgHasCredits: boolean;
   }>(path.to.purchaseInvoice(invoiceId));
 
   const isSupplierApproved = useMemo(
@@ -110,6 +109,21 @@ const PurchaseInvoiceHeader = () => {
     purchaseInvoice.status === "Paid" ||
     purchaseInvoice.status === "Partially Paid";
   const canVoid = isPosted && !isVoided && !hasPayment;
+
+  // Manual Mark as Paid is the settled signal for companies without
+  // accounting; with accounting enabled invoices settle only via payments.
+  // baseStatus is the stored purchaseInvoice.status (the view's status column
+  // is derived from settlements, so a settlement-paid invoice stays untouched).
+  const settings = useSettings();
+  const accountingEnabled =
+    (settings as { accountingEnabled?: boolean }).accountingEnabled ?? false;
+  const baseStatus = (purchaseInvoice as { baseStatus?: string | null })
+    .baseStatus;
+  const statusFetcher = useFetcher<{}>();
+  const canToggleManualPaid =
+    !accountingEnabled && isPosted && permissions.can("update", "invoicing");
+  const canMarkPaid = canToggleManualPaid && baseStatus === "Open";
+  const canMarkUnpaid = canToggleManualPaid && baseStatus === "Paid";
 
   const [relatedDocs, setRelatedDocs] = useState<{
     purchaseOrders: { id: string; readableId: string }[];
@@ -187,13 +201,19 @@ const PurchaseInvoiceHeader = () => {
     postingModal.onOpen();
   };
 
-  const handleStatusChange = (status: string) => {
-    statusFetcher.submit(
-      { status },
-      { method: "post", action: path.to.purchaseInvoiceStatus(invoiceId) }
-    );
-  };
-
+  // Status is derived from invoiceSettlement rows, except base-status 'Paid',
+  // which is the manual/legacy/Xero "settled" signal. Companies without
+  // accounting can toggle it via Mark as Paid / Mark as Unpaid; the status
+  // route rejects manual 'Paid' when accounting is enabled.
+  const canMakePayment =
+    isInvoicePayable(purchaseInvoice.status, purchaseInvoice.balance) &&
+    permissions.can("create", "invoicing");
+  const makePaymentHref = getPayInvoiceHref({
+    side: "ap",
+    partyId: purchaseInvoice.supplierId,
+    invoiceId,
+    balance: purchaseInvoice.balance
+  });
   return (
     <>
       <div className="flex flex-shrink-0 items-center justify-between p-2 bg-background border-b h-[50px] overflow-x-auto scrollbar-hide">
@@ -222,6 +242,46 @@ const PurchaseInvoiceHeader = () => {
               </DropdownMenuTrigger>
               <DropdownMenuContent>
                 {auditLogTrigger}
+                {canMarkPaid && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      disabled={statusFetcher.state !== "idle"}
+                      onClick={() =>
+                        statusFetcher.submit(
+                          { status: "Paid" },
+                          {
+                            method: "post",
+                            action: path.to.purchaseInvoiceStatus(invoiceId)
+                          }
+                        )
+                      }
+                    >
+                      <DropdownMenuIcon icon={<LuCircleCheck />} />
+                      <Trans>Mark as Paid</Trans>
+                    </DropdownMenuItem>
+                  </>
+                )}
+                {canMarkUnpaid && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      disabled={statusFetcher.state !== "idle"}
+                      onClick={() =>
+                        statusFetcher.submit(
+                          { status: "Open" },
+                          {
+                            method: "post",
+                            action: path.to.purchaseInvoiceStatus(invoiceId)
+                          }
+                        )
+                      }
+                    >
+                      <DropdownMenuIcon icon={<LuCircleX />} />
+                      <Trans>Mark as Unpaid</Trans>
+                    </DropdownMenuItem>
+                  </>
+                )}
                 {isPosted && (
                   <>
                     <DropdownMenuSeparator />
@@ -340,52 +400,13 @@ const PurchaseInvoiceHeader = () => {
               <Trans>Post</Trans>
             </Button>
 
-            {(() => {
-              const isPaymentDisabled =
-                purchaseInvoice.status === "Draft" ||
-                purchaseInvoice.status === "Pending" ||
-                isVoided ||
-                !permissions.can("update", "invoicing");
-
-              if (isPaymentDisabled) {
-                return (
-                  <Button
-                    variant="secondary"
-                    isDisabled
-                    leftIcon={<LuHandCoins />}
-                    rightIcon={<LuChevronDown />}
-                  >
-                    <Trans>Payment</Trans>
-                  </Button>
-                );
-              }
-
-              return (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="secondary"
-                      leftIcon={<LuHandCoins />}
-                      rightIcon={<LuChevronDown />}
-                    >
-                      <Trans>Payment</Trans>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuRadioGroup
-                      value={purchaseInvoice.status ?? "Draft"}
-                      onValueChange={handleStatusChange}
-                    >
-                      {(["Paid", "Partially Paid"] as const).map((status) => (
-                        <DropdownMenuRadioItem key={status} value={status}>
-                          <PurchaseInvoicingStatus status={status} />
-                        </DropdownMenuRadioItem>
-                      ))}
-                    </DropdownMenuRadioGroup>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              );
-            })()}
+            {canMakePayment && (
+              <Button variant="primary" leftIcon={<LuHandCoins />} asChild>
+                <Link to={makePaymentHref}>
+                  <Trans>Payment</Trans>
+                </Link>
+              </Button>
+            )}
 
             <IconButton
               aria-label={t`Toggle Properties`}

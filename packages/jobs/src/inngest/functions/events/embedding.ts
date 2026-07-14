@@ -33,7 +33,7 @@ export const embeddingFunction = inngest.createFunction(
     retries: 3
   },
   { event: "carbon/event-embedding" },
-  async ({ event, step }) => {
+  async ({ event, step, logger }) => {
     return await step.run("process-embeddings", async () => {
       const payload = EmbeddingPayloadSchema.parse(event.data);
 
@@ -69,7 +69,7 @@ export const embeddingFunction = inngest.createFunction(
       }
 
       if (jobs.length === 0) {
-        console.info(
+        logger.info(
           `Embedding handler: nothing to process, skipped=${results.skipped}`
         );
         return results;
@@ -88,13 +88,13 @@ export const embeddingFunction = inngest.createFunction(
       });
 
       if (error) {
-        console.error(`Embed edge function failed: ${error.message}`);
+        logger.error(`Embed edge function failed: ${error.message}`);
         results.failed = jobs.length;
       } else {
         results.processed = jobs.length;
       }
 
-      console.info(
+      logger.info(
         `Embedding handler: processed=${results.processed}, skipped=${results.skipped}, failed=${results.failed}`
       );
 

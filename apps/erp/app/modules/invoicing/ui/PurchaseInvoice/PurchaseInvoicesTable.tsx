@@ -161,6 +161,16 @@ const PurchaseInvoicesTable = memo(
           }
         },
         {
+          accessorKey: "balance",
+          header: t`Balance`,
+          cell: (item) => currencyFormatter.format(item.getValue<number>()),
+          meta: {
+            icon: <LuDollarSign />,
+            formatter: currencyFormatter.format,
+            renderTotal: true
+          }
+        },
+        {
           id: "assignee",
           header: t`Assignee`,
           cell: ({ row }) => (
@@ -211,7 +221,7 @@ const PurchaseInvoicesTable = memo(
         },
         {
           accessorKey: "paymentTermName",
-          header: t`Payment Method`,
+          header: t`Payment Terms`,
           cell: (item) => <Enumerable value={item.getValue<string>()} />,
           meta: {
             icon: <LuCreditCard />

@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 
 import { format } from "https://deno.land/std@0.160.0/datetime/mod.ts";
+import { sql } from "kysely";
 import z from "npm:zod@^3.24.1";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { corsHeaders } from "../lib/headers.ts";
@@ -128,7 +129,10 @@ serve(async (req: Request) => {
             .where("companyId", "=", companyId)
             .execute();
 
-          // Create new cost ledger entries for each line item
+          // Create new cost ledger entries for each line item. These are
+          // planning/cost-history rows, NOT inventory layers — real layers
+          // are created at receipt posting. remainingQuantity stays 0 so
+          // FIFO/LIFO consumption can never eat unreceived stock.
           const costLedgerInserts = lines
             .filter((line) => line.itemId && line.unitPrice !== 0)
             .map((line) => ({
@@ -141,7 +145,7 @@ serve(async (req: Request) => {
               quantity: line.quantity,
               cost:
                 (line.quantity / (line.conversionFactor ?? 1)) * line.unitPrice,
-              remainingQuantity: line.quantity,
+              remainingQuantity: 0,
               supplierId,
               companyId,
             }));
@@ -236,13 +240,26 @@ serve(async (req: Request) => {
       [];
 
     if (shouldUpdatePrices && itemIds.length > 0) {
-      const [costLedgers, supplierParts] = await Promise.all([
-        client
-          .from("costLedger")
-          .select("*")
-          .in("itemId", itemIds)
-          .eq("companyId", companyId)
-          .gte("postingDate", dateOneYearAgo),
+      // Aggregate in SQL: fetching raw rows through PostgREST silently caps
+      // at 1000, which skewed the weighted average for high-volume items.
+      const [costLedgerTotals, supplierParts] = await Promise.all([
+        db
+          .selectFrom("costLedger")
+          .select(({ fn }) => [
+            "itemId",
+            // Adjustment child rows (invoice-vs-receipt price corrections)
+            // carry cost but no additional physical quantity, so they count
+            // toward cost but not quantity.
+            sql<number>`sum(case when "adjustment" then 0 else "quantity" end)`.as(
+              "quantity"
+            ),
+            fn.sum<number>("cost").as("cost"),
+          ])
+          .where("itemId", "in", itemIds)
+          .where("companyId", "=", companyId)
+          .where("postingDate", ">=", dateOneYearAgo)
+          .groupBy("itemId")
+          .execute(),
         client
           .from("supplierPart")
           .select("*")
@@ -251,26 +268,18 @@ serve(async (req: Request) => {
           .eq("companyId", companyId),
       ]);
 
-      if (costLedgers.error) {
-        throw new Error("Failed to fetch historical cost ledger entries");
-      }
       if (supplierParts.error) {
         throw new Error("Failed to fetch supplier parts");
       }
 
       supplierPartRows = supplierParts.data ?? [];
 
-      costLedgers.data?.forEach((ledger) => {
-        if (ledger.itemId) {
-          if (!historicalPartCosts[ledger.itemId]) {
-            historicalPartCosts[ledger.itemId] = {
-              quantity: 0,
-              cost: 0,
-            };
-          }
-
-          historicalPartCosts[ledger.itemId].quantity += ledger.quantity;
-          historicalPartCosts[ledger.itemId].cost += ledger.cost;
+      costLedgerTotals.forEach((row) => {
+        if (row.itemId) {
+          historicalPartCosts[row.itemId] = {
+            quantity: Number(row.quantity ?? 0),
+            cost: Number(row.cost ?? 0),
+          };
         }
       });
     }
@@ -382,7 +391,12 @@ serve(async (req: Request) => {
         const hasLeadTimeHistory =
           (historicalPartLeadTimes[line.itemId]?.quantity ?? 0) > 0;
 
-        if (shouldUpdatePrices && line.unitPrice !== 0 && costHistory) {
+        if (
+          shouldUpdatePrices &&
+          line.unitPrice !== 0 &&
+          costHistory &&
+          costHistory.quantity > 0
+        ) {
           itemCostUpdates.push({
             itemId: line.itemId,
             unitCost: costHistory.cost / costHistory.quantity,

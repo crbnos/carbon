@@ -26,11 +26,11 @@ import {
 import { useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
 import {
+  LuBlocks,
   LuBox,
   LuCheck,
   LuChevronDown,
   LuInfo,
-  LuPackage,
   LuReceipt
 } from "react-icons/lu";
 
@@ -38,7 +38,7 @@ const CONTEXT: Record<
   FieldDef["context"],
   { label: string; icon: JSX.Element }
 > = {
-  item: { label: "Item", icon: <LuPackage className="h-3.5 w-3.5" /> },
+  item: { label: "Item", icon: <LuBlocks className="h-3.5 w-3.5" /> },
   storage: { label: "Storage unit", icon: <LuBox className="h-3.5 w-3.5" /> },
   workCenter: {
     label: "Work center",

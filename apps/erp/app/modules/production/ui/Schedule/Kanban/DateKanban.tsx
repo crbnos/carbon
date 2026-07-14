@@ -1,4 +1,5 @@
-import { ClientOnly } from "@carbon/react";
+import { getLogger } from "@carbon/logger";
+import { ClientOnly, toast } from "@carbon/react";
 import type { DragOverEvent, DragStartEvent } from "@dnd-kit/core";
 import {
   DndContext,
@@ -9,6 +10,7 @@ import {
   useSensors
 } from "@dnd-kit/core";
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
+import { useLingui } from "@lingui/react/macro";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useFetchers, useSubmit } from "react-router";
@@ -18,6 +20,8 @@ import { JobCard } from "./components/JobCard";
 import { KanbanProvider } from "./context/KanbanContext";
 import type { Column, DisplaySettings, JobItem, Progress } from "./types";
 import { hasDraggableData } from "./utils";
+
+const logger = getLogger("erp", "datekanban");
 
 type DateKanbanProps = {
   columns: Column[];
@@ -50,6 +54,41 @@ function usePendingItems() {
     });
 }
 
+// Surface reschedule failures. useFetchers() returns only in-flight fetchers in
+// this React Router version, so the action result is read during the post-submit
+// "loading" (revalidation) phase — comparing fetcher.state to "idle" is not
+// possible here. Dedup per fetcher.key and reset while "submitting" so a later
+// failure re-toasts.
+function useDateUpdateFailureToast() {
+  const { t } = useLingui();
+  const fetchers = useFetchers();
+  const toastedKeys = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    for (const fetcher of fetchers) {
+      if (fetcher.formAction !== path.to.scheduleDatesUpdate) continue;
+      const key = fetcher.key;
+
+      if (fetcher.state === "submitting") {
+        toastedKeys.current.delete(key);
+        continue;
+      }
+
+      const data = fetcher.data as
+        | { success: boolean; message?: string }
+        | undefined;
+
+      if (data?.success === false && !toastedKeys.current.has(key)) {
+        toastedKeys.current.add(key);
+        // Surface a friendly, translated message; log the raw server detail.
+        if (data.message)
+          logger.error("Reschedule failed", { error: data.message });
+        toast.error(t`Couldn't reschedule the job. Please try again.`);
+      }
+    }
+  }, [fetchers, t]);
+}
+
 const DateKanban = ({
   columns,
   items: initialItems,
@@ -75,6 +114,7 @@ const DateKanban = ({
   );
 
   const pendingItems = usePendingItems();
+  useDateUpdateFailureToast();
 
   // Merge pending items and existing items for optimistic updates
   for (let pendingItem of pendingItems) {

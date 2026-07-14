@@ -97,7 +97,7 @@ export default function NewProcedureRoute() {
     <ProcedureForm
       initialValues={initialValues}
       type="new"
-      onClose={() => navigate(-1)}
+      onClose={() => navigate(path.to.procedures)}
     />
   );
 }

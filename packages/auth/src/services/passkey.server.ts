@@ -78,7 +78,8 @@ export async function storeRegistrationChallenge(
 /**
  * Retrieve and immediately delete the registration challenge for a user.
  * Returns null if not found or expired — the caller should treat this as an error.
- *
+ * Also returns null (never throws) when Redis is down: @carbon/kv fails soft, so
+ * the passkey flow rejects rather than crashing. See verifyPasskeyRegistration.
  */
 export async function getAndDeleteRegistrationChallenge(
   userId: string
@@ -102,8 +103,9 @@ export async function storeAuthChallenge(
 
 /**
  * Retrieve and immediately delete the authentication challenge.
- * Returns null if not found or expired.
- *
+ * Returns null if not found or expired. Also returns null (never throws) when
+ * Redis is down: @carbon/kv fails soft, so the passkey flow rejects rather than
+ * crashing. See verifyPasskeyAuthentication.
  */
 export async function getAndDeleteAuthChallenge(
   challengeId: string
@@ -135,7 +137,9 @@ export async function getPasskeyRegistrationOptions(
     rpID: RP_ID,
     userName: userEmail,
     userDisplayName: userDisplayName || userEmail,
-    userID: new TextEncoder().encode(userId),
+    userID: new Uint8Array(
+      new TextEncoder().encode(userId)
+    ) as unknown as Uint8Array<ArrayBuffer>,
     attestationType: "none",
     excludeCredentials: existingCredentialIds.map((id) => ({
       id,

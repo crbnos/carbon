@@ -1,3 +1,5 @@
+import { existsSync } from "node:fs";
+import { rm } from "node:fs/promises";
 import { execa } from "execa";
 import { dirname, resolve } from "pathe";
 
@@ -92,11 +94,15 @@ export async function removeWorktree(
   if (force) args.push("--force");
   args.push(path);
   const r = await execa("git", args, { reject: false });
-  if (r.exitCode !== 0) {
-    throw new Error(
-      (r.stderr || r.stdout || "git worktree remove failed").trim()
-    );
+  if (r.exitCode === 0) return;
+
+  // git refused (busy dir from a held cwd, locked, or corrupt gitdir). The
+  // caller already confirmed removal — fall back to a direct directory wipe
+  // and prune the orphaned admin metadata so git's worktree list stays clean.
+  if (existsSync(path)) {
+    await rm(path, { recursive: true, force: true });
   }
+  await execa("git", ["worktree", "prune"], { reject: false });
 }
 
 export async function isDirty(path: string): Promise<boolean> {

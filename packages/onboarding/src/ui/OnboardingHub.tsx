@@ -1,29 +1,29 @@
-import { Button, cn } from "@carbon/react";
+import { Badge, Button, cn } from "@carbon/react";
+import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useRef } from "react";
 import {
   LuArrowRight,
   LuArrowUpRight,
-  LuCheck,
-  LuCircleHelp,
   LuPartyPopper,
-  LuPlay,
-  LuRocket
+  LuPlay
 } from "react-icons/lu";
+import { BOARD_TASKS, boardTasksForScope } from "../content/board";
 import { SPINE } from "../content/spine";
 import {
+  boardTasksForTier,
   effectiveGateStatus,
-  effectiveProductStatus,
   gatesDone,
   type NextAction,
   nextAction,
   ownerForStep,
-  type Signals,
-  spineForTier
+  spineForTier,
+  stepTaskProgress
 } from "../logic";
 import type { GateValue, StepDef, Tier } from "../types";
+import { GanttChart } from "./GanttChart";
 import { GuidedUpsellCard } from "./GuidedUpsellCard";
-import { OWNER_TOKENS } from "./primitives";
-import { useCheckMap, useSignals, useTier } from "./state";
+import { DerivedStatus, OWNER_TOKENS } from "./primitives";
+import { useCheckMap, useExclusions, useSignals, useTier } from "./state";
 
 // Carbon-app routing + video resolution are injected by the ERP route (they use
 // `path.to` / trainingConfig). Hub state comes from the store.
@@ -59,7 +59,12 @@ export function OnboardingHub({
   const tier = useTier();
   const map = useCheckMap();
   const signals = useSignals();
+  const exclusions = useExclusions();
   const spine = spineForTier(SPINE, tier);
+  const tasks = boardTasksForScope(
+    boardTasksForTier(BOARD_TASKS, tier),
+    exclusions.modules
+  );
 
   const done = gatesDone(spine, map, signals);
   const total = spine.length;
@@ -78,24 +83,41 @@ export function OnboardingHub({
   }, [isComplete, onComplete]);
 
   const stateText =
-    done === total
-      ? "Live on Carbon"
-      : done === 0
-        ? `${total} phases to go live`
-        : `${remaining} ${remaining === 1 ? "phase" : "phases"} left`;
+    done === total ? (
+      <Trans>Live on Carbon</Trans>
+    ) : done === 0 ? (
+      <Trans>{total} phases to go live</Trans>
+    ) : (
+      <Plural value={remaining} one="# phase left" other="# phases left" />
+    );
 
   return (
     <div className="w-full max-w-3xl mx-auto flex flex-col gap-6">
       <header className="flex flex-col items-center text-center gap-3 pt-2">
         <div className="size-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-1">
-          <LuRocket className="text-2xl text-primary" />
+          <img
+            src="/carbon-mark-light.svg"
+            alt="Carbon"
+            className="size-7 dark:hidden"
+          />
+          <img
+            src="/carbon-mark-dark.svg"
+            alt="Carbon"
+            className="size-7 hidden dark:block"
+          />
         </div>
-        <h1 className="text-3xl font-semibold tracking-tight text-balance">
-          {companyName ? `Welcome, ${companyName}` : "Getting set up"}
+        <h1 className="text-3xl font-medium tracking-tight text-balance">
+          {companyName ? (
+            <Trans>Welcome, {companyName}</Trans>
+          ) : (
+            <Trans>Getting set up</Trans>
+          )}
         </h1>
         <p className="text-base text-muted-foreground max-w-xl text-pretty">
-          {total} phases to get your shop live on Carbon. Each one ends at a
-          checkpoint. You and the Carbon team work from the same view.
+          <Trans>
+            {total} phases to get your company live on Carbon. Each one ends at
+            a checkpoint.
+          </Trans>
         </p>
       </header>
 
@@ -109,32 +131,35 @@ export function OnboardingHub({
       ) : null}
 
       {done === total ? (
-        <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 shadow-button-base p-6 flex items-center gap-4 motion-safe:animate-in motion-safe:fade-in-50 motion-safe:zoom-in-95 motion-safe:duration-500">
+        <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-6 flex items-center gap-4 motion-safe:animate-in motion-safe:fade-in-50 motion-safe:zoom-in-95 motion-safe:duration-500">
           <div className="shrink-0 size-12 rounded-2xl bg-emerald-500/15 flex items-center justify-center">
             <LuPartyPopper className="text-2xl text-emerald-600 dark:text-emerald-400" />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-lg font-semibold tracking-tight">
-              You're live on Carbon
+            <div className="text-lg font-medium tracking-tight">
+              <Trans>You're live on Carbon</Trans>
             </div>
             <p className="text-sm text-muted-foreground mt-0.5">
-              All {total} phases are done. Nice work — your team is up and
-              running.
+              <Trans>
+                All {total} phases are done. Nice work — your team is up and
+                running.
+              </Trans>
             </p>
           </div>
           {onExit ? (
             <Button variant="primary" className="shrink-0" onClick={onExit}>
-              Finish onboarding
+              <Trans>Finish onboarding</Trans>
             </Button>
           ) : null}
         </div>
       ) : null}
 
-      <div className="rounded-2xl border bg-card shadow-button-base overflow-hidden">
+      <div className="rounded-2xl border bg-card overflow-hidden">
         <div className="flex items-end justify-between gap-4 flex-wrap p-6 pb-4 border-b">
-          <div className="text-2xl font-semibold tracking-tight">
-            <span className="text-primary tabular-nums">{done}</span> of {total}{" "}
-            phases complete
+          <div className="text-base font-medium tracking-tight">
+            <Trans>
+              {done} of {total} phases complete
+            </Trans>
           </div>
           <span className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground">
             <span
@@ -149,7 +174,12 @@ export function OnboardingHub({
 
         <div className="flex gap-1.5 px-6 py-4">
           {spine.map((step) => {
-            const st = effectiveGateStatus(step, map, signals);
+            const st = effectiveGateStatus(
+              step,
+              map,
+              signals,
+              stepTaskProgress(tasks, step.key, map)
+            );
             return (
               <div
                 key={step.key}
@@ -172,9 +202,13 @@ export function OnboardingHub({
               key={step.key}
               step={step}
               tier={tier}
-              status={effectiveGateStatus(step, map, signals)}
-              map={map}
-              signals={signals}
+              status={effectiveGateStatus(
+                step,
+                map,
+                signals,
+                stepTaskProgress(tasks, step.key, map)
+              )}
+              progress={stepTaskProgress(tasks, step.key, map)}
               onOpenInPlan={onOpenInPlan}
             />
           ))}
@@ -184,6 +218,8 @@ export function OnboardingHub({
       {tier === "self_serve" && onContactExpert ? (
         <GuidedUpsellCard onContactExpert={onContactExpert} />
       ) : null}
+
+      <GanttChart steps={spine} />
     </div>
   );
 }
@@ -201,25 +237,28 @@ function NextStepCard({
   onOpenPage: (slug: string) => void;
   resolveVideoUrl?: (videoKey: string) => string | undefined;
 }) {
+  const { t, i18n } = useLingui();
   const product = action.productStep;
   const videoUrl = product?.videoKey
     ? resolveVideoUrl?.(product.videoKey)
     : undefined;
 
   return (
-    <div className="rounded-2xl border border-primary/30 bg-primary/5 shadow-button-base p-5 flex items-start gap-4 motion-safe:animate-in motion-safe:fade-in-50 motion-safe:slide-in-from-bottom-2 motion-safe:duration-300">
-      <div className="shrink-0 size-9 rounded-xl bg-primary/15 flex items-center justify-center text-sm font-semibold tabular-nums text-primary">
+    <div className="rounded-2xl border border-border p-5 flex items-start gap-4 motion-safe:animate-in motion-safe:fade-in-50 motion-safe:slide-in-from-bottom-2 motion-safe:duration-300">
+      <div className="shrink-0 size-9 rounded-xl bg-primary/15 flex items-center justify-center text-sm font-medium tabular-nums text-primary">
         {action.gateNumber}
       </div>
       <div className="flex-1 min-w-0">
-        <div className="text-xxs uppercase tracking-wide font-medium text-primary">
-          Next step
+        <div className="text-xxs uppercase text-muted-foreground tracking-wide font-medium">
+          <Trans>Next step</Trans>
         </div>
-        <div className="text-base font-semibold tracking-tight mt-0.5">
-          {action.title}
+        <div className="text-base font-medium tracking-tight mt-0.5">
+          {i18n._(action.title)}
         </div>
         {action.detail ? (
-          <p className="text-sm text-muted-foreground mt-1">{action.detail}</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            {i18n._(action.detail)}
+          </p>
         ) : null}
         <div className="flex items-center gap-2 mt-3 flex-wrap">
           {product ? (
@@ -227,14 +266,14 @@ function NextStepCard({
               leftIcon={<LuArrowRight />}
               onClick={() => onOpenProduct(product.key)}
             >
-              {product.cta ?? "Open in Carbon"}
+              {product.cta ? i18n._(product.cta) : t`Open in Carbon`}
             </Button>
           ) : (
             <Button
               leftIcon={<LuArrowRight />}
               onClick={() => onOpenPage(action.refSlug)}
             >
-              {`Go to ${action.refTitle}`}
+              <Trans>Go to {i18n._(action.refTitle)}</Trans>
             </Button>
           )}
           {videoUrl ? (
@@ -244,7 +283,7 @@ function NextStepCard({
               leftIcon={<LuPlay />}
               onClick={() => window.open(videoUrl, "_blank", "noopener")}
             >
-              Watch
+              <Trans>Watch</Trans>
             </Button>
           ) : null}
           {product?.docsUrl ? (
@@ -256,7 +295,7 @@ function NextStepCard({
                 window.open(product.docsUrl, "_blank", "noopener,noreferrer")
               }
             >
-              Docs
+              <Trans>Docs</Trans>
             </Button>
           ) : null}
         </div>
@@ -267,40 +306,39 @@ function NextStepCard({
 
 // A flat gate row. No inline accordion — the per-step breakdown lives in the
 // Project Plan, so clicking the row jumps to that step's plan card. The status
-// box is display-only here: gates are completed in the plan (by ticking tasks or
-// the gate itself), and this command center reflects that state.
+// indicator is display-only (and deliberately not a checkbox): phases complete
+// on their own as their plan tasks finish, and this command center reflects
+// that state.
 function GateRow({
   step,
   tier,
   status,
-  map,
-  signals,
+  progress,
   onOpenInPlan
 }: {
   step: StepDef;
   tier: Tier;
   status: GateValue;
-  map: Map<string, string>;
-  signals: Signals;
+  progress: { done: number; total: number };
   onOpenInPlan: (stepKey: string) => void;
 }) {
-  const nested = step.nested ?? [];
-  const nestedDone = nested.filter(
-    (n) => effectiveProductStatus(n, map, signals) === "done"
-  ).length;
+  const { t, i18n } = useLingui();
 
   return (
     <li className="p-5 pl-6 transition-colors hover:bg-primary/[0.02]">
       <div className="flex items-start gap-4">
-        <button
-          type="button"
-          onClick={() => onOpenInPlan(step.key)}
-          aria-label={`${step.title} · ${status}. Update this in the project plan.`}
-          title="Update this in the project plan"
-          className="shrink-0 rounded-md"
-        >
-          <StatusBox status={status} interactive={false} ariaLabel="" />
-        </button>
+        <DerivedStatus
+          status={status}
+          fraction={
+            progress.total > 0 ? progress.done / progress.total : undefined
+          }
+          tooltip={
+            status === "done"
+              ? t`The "${i18n._(step.title)}" phase is done — its "${i18n._(step.gate)}" checkpoint has been passed.`
+              : t`The "${i18n._(step.title)}" phase checks itself off once all of its tasks in the project plan are done.`
+          }
+          className="size-5 mt-1"
+        />
         <button
           type="button"
           onClick={() => onOpenInPlan(step.key)}
@@ -309,24 +347,21 @@ function GateRow({
           <div className="flex items-center gap-2 flex-wrap">
             <span
               className={cn(
-                "text-sm font-semibold transition-colors group-hover:text-primary",
-                status === "done" && "text-muted-foreground"
+                "text-sm font-medium transition-colors group-hover:text-primary",
+                status === "done" && "line-through text-muted-foreground"
               )}
             >
-              {step.n} · {step.title}
+              {step.n} · {i18n._(step.title)}
             </span>
-            <span className="text-xxs uppercase tracking-wide rounded px-1.5 py-0.5 border text-muted-foreground font-medium">
-              Checkpoint: {step.gate}
-            </span>
-            {nested.length ? (
+            {progress.total > 0 ? (
               <span className="text-xxs text-muted-foreground tabular-nums">
-                {nestedDone}/{nested.length} done
+                {progress.done}/{progress.total} <Trans>done</Trans>
               </span>
             ) : null}
             {tier !== "self_serve" ? (
-              <span className="text-xxs uppercase tracking-wide rounded px-1.5 py-0.5 border text-muted-foreground font-medium ml-auto">
-                {OWNER_TOKENS[ownerForStep(step, tier)].label}
-              </span>
+              <Badge variant="outline" className="ml-auto">
+                {i18n._(OWNER_TOKENS[ownerForStep(step, tier)].label)}
+              </Badge>
             ) : null}
             <LuArrowRight
               className={cn(
@@ -336,73 +371,15 @@ function GateRow({
             />
           </div>
           {step.desc ? (
-            <p className="text-sm text-muted-foreground mt-1">{step.desc}</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              {i18n._(step.desc)}
+            </p>
           ) : null}
           <span className="text-xxs font-medium text-muted-foreground/80 mt-2 inline-block transition-colors group-hover:text-primary">
-            View in project plan
+            <Trans>View in project plan</Trans>
           </span>
         </button>
       </div>
     </li>
-  );
-}
-
-function StatusBox({
-  status,
-  small,
-  ariaLabel,
-  onClick,
-  interactive = true
-}: {
-  status: GateValue;
-  small?: boolean;
-  ariaLabel: string;
-  onClick?: () => void;
-  interactive?: boolean;
-}) {
-  const boxClass = cn(
-    "shrink-0 flex items-center justify-center rounded-md border transition-colors",
-    small ? "size-5 mt-0.5" : "size-6 mt-0.5",
-    interactive && "active:scale-[0.96]",
-    status === "done"
-      ? "bg-emerald-500 border-emerald-500 text-white"
-      : status === "prog"
-        ? "border-primary text-primary bg-primary/10"
-        : cn(
-            "bg-card border-input text-transparent",
-            interactive && "hover:border-primary"
-          )
-  );
-
-  const content =
-    status === "done" ? (
-      <LuCheck className={small ? "size-3" : "size-3.5"} />
-    ) : status === "prog" ? (
-      <span
-        className={cn("rounded-full bg-primary", small ? "size-1.5" : "size-2")}
-      />
-    ) : (
-      <LuCircleHelp className="size-0" />
-    );
-
-  // Derived gates (those with nested steps) are not manual checkboxes — they
-  // reflect their steps, so render a non-interactive indicator instead.
-  if (!interactive) {
-    return (
-      <span aria-label={ariaLabel} title={ariaLabel} className={boxClass}>
-        {content}
-      </span>
-    );
-  }
-
-  return (
-    <button
-      type="button"
-      aria-label={ariaLabel}
-      onClick={onClick}
-      className={boxClass}
-    >
-      {content}
-    </button>
   );
 }

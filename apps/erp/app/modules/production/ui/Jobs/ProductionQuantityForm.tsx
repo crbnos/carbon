@@ -111,6 +111,7 @@ const ProductionQuantityForm = ({
                   name="scrapReasonId"
                   label={t`Scrap Reason`}
                   termId="production-quantity-scrap-reason"
+                  isOptional={false}
                 />
               )}
               <TextArea name="notes" label={t`Notes`} />

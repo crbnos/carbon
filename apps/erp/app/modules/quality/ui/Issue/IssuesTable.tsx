@@ -4,6 +4,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
 import { flushSync } from "react-dom";
 import {
+  LuBlocks,
   LuBookMarked,
   LuCalendar,
   LuChartNoAxesColumnIncreasing,
@@ -13,7 +14,6 @@ import {
   LuOctagonX,
   LuPencil,
   LuShieldCheck,
-  LuSquareStack,
   LuTrash,
   LuUser
 } from "react-icons/lu";
@@ -237,7 +237,7 @@ const IssuesTable = memo(({ data, types, count }: IssuesTableProps) => {
           </span>
         ),
         meta: {
-          icon: <LuSquareStack />,
+          icon: <LuBlocks />,
           filter: {
             type: "static",
             options: items.map((item) => ({

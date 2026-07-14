@@ -29,13 +29,13 @@ import {
   useTransition
 } from "react";
 import {
+  LuBlocks,
   LuBookMarked,
   LuBox,
   LuCircleCheck,
   LuCirclePlay,
   LuClock,
   LuContainer,
-  LuPackage,
   LuSquareChartGantt
 } from "react-icons/lu";
 import { Link, useFetcher } from "react-router";
@@ -339,6 +339,15 @@ const PlanningTable = memo(
                   {numberFormatter.format(value)}
                 </span>
               );
+            },
+            meta: {
+              filterHeader: isCurrentWeek
+                ? t`Present Week`
+                : t`Week ${weekNumber}`,
+              exportValue: (row: PurchasingPlanningItem) => {
+                const value = row[weekKey] as number | undefined;
+                return value === undefined ? null : value;
+              }
             }
           };
         }
@@ -384,7 +393,13 @@ const PlanningTable = memo(
                 )?.label ?? null
               }
             />
-          )
+          ),
+          meta: {
+            filterHeader: t`Unit of Measure`,
+            exportValue: (row: PurchasingPlanningItem) =>
+              unitOfMeasures.find((uom) => uom.value === row.unitOfMeasureCode)
+                ?.label ?? null
+          }
         },
         {
           accessorKey: "preferredSupplierId",
@@ -458,7 +473,7 @@ const PlanningTable = memo(
           cell: ({ row }) =>
             numberFormatter.format(row.original.quantityOnHand),
           meta: {
-            icon: <LuPackage />,
+            icon: <LuBlocks />,
             renderTotal: true
           }
         },

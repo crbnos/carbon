@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { getLogger } from "@carbon/logger";
 import { toast } from "@carbon/react";
 import { useCallback } from "react";
 import { useNavigate } from "react-router";
@@ -8,6 +9,8 @@ import type {
   Document as DocumentType
 } from "~/modules/documents";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "usedocument");
 
 export const useDocument = () => {
   const navigate = useNavigate();
@@ -46,10 +49,11 @@ export const useDocument = () => {
       return carbon?.from("documentTransaction").insert({
         documentId: document.id,
         type,
+        companyId: user.company.id,
         userId: user.id
       });
     },
-    [carbon, user?.id]
+    [carbon, user?.id, user.company.id]
   );
 
   const deleteLabel = useCallback(
@@ -85,7 +89,7 @@ export const useDocument = () => {
         document.body.removeChild(a);
       } catch (error) {
         toast.error("Error downloading file");
-        console.error(error);
+        logger.error("Error", { error: error });
       }
 
       await insertTransaction(doc, "Download");
@@ -148,6 +152,7 @@ export const useDocument = () => {
             labels.map((label) => ({
               documentId: document.id!,
               label,
+              companyId: user.company.id,
               userId: user.id
             }))
           );
@@ -155,7 +160,7 @@ export const useDocument = () => {
 
       return insertTransaction(document, "Label");
     },
-    [insertTransaction, carbon, user.id]
+    [insertTransaction, carbon, user.id, user.company.id]
   );
 
   const makePreview = useCallback(

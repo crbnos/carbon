@@ -1,13 +1,15 @@
+import type { MessageDescriptor } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
 import type { Owner } from "../types";
 
 export interface RoleLine {
-  label: string;
+  label: MessageDescriptor;
   owner: Owner;
 }
 
 export interface RolesStep {
   stepKey: string;
-  title: string;
+  title: MessageDescriptor;
   lines: RoleLine[];
 }
 
@@ -16,75 +18,80 @@ export interface RolesStep {
 export const ROLES: RolesStep[] = [
   {
     stepKey: "gate:discovery",
-    title: "Discovery",
+    title: msg`Discovery`,
     lines: [
-      { owner: "carbon", label: "Map your current process, systems, and data" },
-      { owner: "you", label: "Provide process knowledge and inputs" },
+      {
+        owner: "carbon",
+        label: msg`Map your current process, systems, and data`
+      },
+      { owner: "you", label: msg`Provide process knowledge and inputs` },
       {
         owner: "you",
-        label: "Name an internal project owner with decision authority"
+        label: msg`Name an internal project owner with decision authority`
       },
-      { owner: "you", label: "Commit a champion user for each area" },
-      { owner: "shared", label: "Confirm and sign the scope" }
+      { owner: "you", label: msg`Commit a champion user for each area` },
+      { owner: "shared", label: msg`Confirm and sign the scope` }
     ]
   },
   {
     stepKey: "gate:configure",
-    title: "Configure",
+    title: msg`Configure`,
     lines: [
       {
         owner: "carbon",
-        label:
-          "Configure sites, work centers, Bill of Process, BOMs, costing, roles"
+        label: msg`Configure sites, work centers, Bill of Process, BOMs, costing, roles`
       },
       {
         owner: "you",
-        label: "Set up your own data with import tools and LLM help"
+        label: msg`Set up your own data with import tools and LLM help`
       },
-      { owner: "carbon", label: "Build integrations and customizations" },
-      { owner: "carbon", label: "Host, secure, and back up the platform" }
+      { owner: "carbon", label: msg`Build integrations and customizations` },
+      { owner: "carbon", label: msg`Host, secure, and back up the platform` }
     ]
   },
   {
     stepKey: "gate:migrate",
-    title: "Migrate data",
+    title: msg`Migrate data`,
     lines: [
-      { owner: "carbon", label: "Pull, map, and load your data" },
-      { owner: "you", label: "Clean and approve the migrated data" }
+      { owner: "carbon", label: msg`Pull, map, and load your data` },
+      { owner: "you", label: msg`Clean and approve the migrated data` }
     ]
   },
   {
     stepKey: "gate:train",
-    title: "Train",
+    title: msg`Train`,
     lines: [
       {
         owner: "carbon",
-        label: "Build tailored, role-based training materials"
+        label: msg`Build tailored, role-based training materials`
       },
-      { owner: "carbon", label: "Run hands-on sessions with your champions" },
-      { owner: "you", label: "Protect training time and attend" },
+      {
+        owner: "carbon",
+        label: msg`Run hands-on sessions with your champions`
+      },
+      { owner: "you", label: msg`Protect training time and attend` },
       {
         owner: "you",
-        label: "Train the rest of your team (after train-the-trainer)"
+        label: msg`Train the rest of your team (after train-the-trainer)`
       }
     ]
   },
   {
     stepKey: "gate:acceptance",
-    title: "Acceptance",
+    title: msg`Acceptance`,
     lines: [
-      { owner: "shared", label: "Run acceptance testing" },
-      { owner: "shared", label: "Make the go / no-go decision" }
+      { owner: "shared", label: msg`Run acceptance testing` },
+      { owner: "shared", label: msg`Make the go / no-go decision` }
     ]
   },
   {
     stepKey: "gate:golive",
-    title: "Go-Live",
+    title: msg`Go-Live`,
     lines: [
-      { owner: "carbon", label: "Cutover support" },
-      { owner: "you", label: "Protect the go-live date" },
-      { owner: "shared", label: "Hypercare in the first weeks" },
-      { owner: "carbon", label: "Product issues during hypercare" }
+      { owner: "carbon", label: msg`Cutover support` },
+      { owner: "you", label: msg`Protect the go-live date` },
+      { owner: "shared", label: msg`Hypercare in the first weeks` },
+      { owner: "carbon", label: msg`Product issues during hypercare` }
     ]
   }
 ];

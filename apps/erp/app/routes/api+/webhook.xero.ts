@@ -32,6 +32,7 @@ import {
   ProviderID
 } from "@carbon/ee/accounting";
 import { trigger } from "@carbon/jobs";
+import { getLogger } from "@carbon/logger";
 import crypto from "crypto";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
@@ -40,6 +41,8 @@ import { z } from "zod";
 export const config = {
   runtime: "nodejs"
 };
+
+const logger = getLogger("erp", "webhook", "xero");
 
 const WebhookSchema = z.object({
   entropy: z.string().optional(),
@@ -58,7 +61,7 @@ const WebhookSchema = z.object({
 
 function verifySignature(payload: string, header: string) {
   if (!XERO_WEBHOOK_SECRET) {
-    console.warn("XERO_WEBHOOK_SECRET is not configured");
+    logger.warning("XERO_WEBHOOK_SECRET is not configured");
     return payload;
   }
 
@@ -108,7 +111,7 @@ export async function action({ request }: ActionFunctionArgs) {
   try {
     payload = JSON.parse(payloadText);
   } catch (error) {
-    console.error("Failed to parse webhook payload:", error);
+    logger.error("Failed to parse webhook payload", { error });
     return data(
       {
         success: false,
@@ -121,7 +124,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const parsed = WebhookSchema.safeParse(payload);
 
   if (!parsed.success) {
-    console.error("Invalid Xero webhook payload:", parsed.error);
+    logger.error("Invalid Xero webhook payload", { error: parsed.error });
     return data(
       {
         success: false,
@@ -131,11 +134,9 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  console.log(
-    "Processing Xero webhook with",
-    parsed.data.events.length,
-    "events"
-  );
+  logger.info("Processing Xero webhook", {
+    eventCount: parsed.data.events.length
+  });
 
   const serviceRole = getCarbonServiceRole();
   const events = parsed.data.events;
@@ -164,7 +165,7 @@ export async function action({ request }: ActionFunctionArgs) {
       );
 
       if (!integration) {
-        console.error(`No Xero integration found for tenant ${tenantId}`);
+        logger.error("No Xero integration found for tenant", { tenantId });
         errors.push({
           tenantId,
           error: "Tenant ID not found in integrations"
@@ -192,18 +193,21 @@ export async function action({ request }: ActionFunctionArgs) {
         >;
 
         // Log each entity change for debugging
-        console.log(
-          `Xero ${operation}: ${eventCategory} ${resourceId} (tenant: ${tenantId})`
-        );
+        logger.info("Xero entity change", {
+          operation,
+          eventCategory,
+          resourceId,
+          tenantId
+        });
 
         switch (eventCategory) {
           case "CONTACT":
             const contactType = await fetchContactType(provider, resourceId);
 
             if (!contactType) {
-              console.log(
-                `Skipping contact ${resourceId} with no customer/supplier role`
-              );
+              logger.info("Skipping contact with no customer/supplier role", {
+                resourceId
+              });
               continue;
             }
 
@@ -229,9 +233,9 @@ export async function action({ request }: ActionFunctionArgs) {
             const invoiceType = await fetchInvoiceType(provider, resourceId);
 
             if (!invoiceType) {
-              console.log(
-                `Skipping invoice ${resourceId} - could not determine type`
-              );
+              logger.info("Skipping invoice - could not determine type", {
+                resourceId
+              });
               continue;
             }
 
@@ -261,14 +265,14 @@ export async function action({ request }: ActionFunctionArgs) {
             }
           };
 
-          console.dir(payload, { depth: null });
+          logger.info("Accounting sync payload", { payload });
 
           // Trigger the background job using Trigger.dev
           await trigger("sync-external-accounting", payload);
 
-          console.log(
-            `Triggered accounting sync job for ${entities.length} entities`
-          );
+          logger.info("Triggered accounting sync job", {
+            entityCount: entities.length
+          });
 
           syncJobs.push({
             companyId,
@@ -276,7 +280,7 @@ export async function action({ request }: ActionFunctionArgs) {
             entityCount: entities.length
           });
         } catch (error) {
-          console.error("Failed to trigger sync job:", error);
+          logger.error("Failed to trigger sync job", { error });
           errors.push({
             tenantId,
             error:
@@ -285,7 +289,7 @@ export async function action({ request }: ActionFunctionArgs) {
         }
       }
     } catch (error) {
-      console.error("Error processing events for tenant:", tenantId, error);
+      logger.error("Error processing events for tenant", { tenantId, error });
       errors.push({
         tenantId,
         error: error instanceof Error ? error.message : "Unknown error"
@@ -293,7 +297,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
-  console.log(`Processed Xero webhook: ${syncJobs.length} sync jobs triggered`);
+  logger.info("Processed Xero webhook", { syncJobsTriggered: syncJobs.length });
 
   // Return detailed response
   return {

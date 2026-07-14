@@ -5,6 +5,7 @@ import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
 import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
+import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
 import { msg } from "@lingui/core/macro";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -32,6 +33,8 @@ import {
 import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "id");
 
 type ApprovalContext = {
   approvalRequest: { id: string } | null;
@@ -194,7 +197,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
         from: userId
       });
     } catch (e) {
-      console.error("Failed to trigger approval decision notification", e);
+      logger.error("Failed to trigger approval decision notification", {
+        error: e
+      });
     }
   }
 

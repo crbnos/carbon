@@ -324,16 +324,18 @@ const CadModelUpload = ({
       )}
     >
       <input {...getInputProps()} name="file" className="sr-only" />
-      <div className="flex flex-col h-full w-full p-4">
-        <CardHeader>
-          <CardTitle>{title}</CardTitle>
-        </CardHeader>
+      <div className="relative flex flex-col flex-1 min-h-0 w-full p-4">
+        {title && (
+          <CardHeader className="absolute top-0 left-0 z-10">
+            <CardTitle>{title}</CardTitle>
+          </CardHeader>
+        )}
 
         <div className="flex flex-col flex-grow items-center justify-center gap-2 p-6">
-          {file && <Spinner className={cn("h-16 w-16", title && "-mt-16")} />}
+          {file && <Spinner className="h-16 w-16" />}
           {file && (
             <>
-              <p className="text-lg text-card-foreground mt-8">{file.name}</p>
+              <p className="text-lg text-card-foreground">{file.name}</p>
               <p className="text-muted-foreground group-hover:text-foreground">
                 {convertKbToString(Math.ceil(file.size / 1024))}
               </p>
@@ -341,15 +343,10 @@ const CadModelUpload = ({
           )}
           {!file && (
             <>
-              <div
-                className={cn(
-                  "p-4 bg-accent rounded-full group-hover:bg-primary",
-                  title ? "-mt-16" : "-mt-6"
-                )}
-              >
+              <div className="p-4 bg-accent rounded-full group-hover:bg-primary">
                 <LuCloudUpload className="mx-auto h-12 w-12 text-muted-foreground group-hover:text-primary-foreground" />
               </div>
-              <p className="text-base text-muted-foreground group-hover:text-foreground mt-8">
+              <p className="text-base text-muted-foreground group-hover:text-foreground">
                 Choose file to upload or drag and drop
               </p>
               <p className="text-xs text-muted-foreground group-hover:text-foreground">

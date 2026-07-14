@@ -241,7 +241,10 @@ export async function updateCompanySession(
   const authSession = await getAuthSession(request);
 
   if (authSession !== undefined) {
-    await redis.del(getPermissionCacheKey(authSession?.userId!));
+    // Fire-and-forget cache invalidation. If Redis is down, @carbon/kv fails
+    // soft and this resolves null — benign: a stale permission cache entry (if
+    // any) simply expires on its own TTL, and the session cookie is still returned.
+    redis.del(getPermissionCacheKey(authSession?.userId!));
     session.set(SESSION_KEY, {
       ...authSession,
       companyId,

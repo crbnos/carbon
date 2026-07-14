@@ -10,11 +10,14 @@ import {
 } from "@carbon/env";
 import { redis } from "@carbon/kv";
 import { trigger } from "@carbon/lib/trigger";
+import { getLogger } from "@carbon/logger";
 import { Edition, Plan } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { Stripe } from "stripe";
 import { z } from "zod";
 import { forwardToGtm } from "./gtm-events.server";
+
+const log = getLogger("stripe");
 
 export const stripe = STRIPE_SECRET_KEY
   ? new Stripe(STRIPE_SECRET_KEY, {
@@ -108,7 +111,7 @@ export async function createStripeCustomer({
 
     return customer;
   } catch (error) {
-    console.error("Error creating Stripe customer:", error);
+    log.error("Error creating Stripe customer", { error });
     throw error;
   }
 }
@@ -195,7 +198,7 @@ export async function getStripeCustomer(
     const result = await syncStripeDataToKV(customerId, companyId);
     return result?.data ?? null;
   } catch (error) {
-    console.error("Failed to sync stripe data from API fallback:", error);
+    log.error("Failed to sync stripe data from API fallback", { error });
     return null;
   }
 }
@@ -386,8 +389,8 @@ export async function processStripeEvent({
   }
 
   if (!isAllowedEventType(event)) {
-    console.warn(
-      `[STRIPE HOOK] Received untracked event: ${event.type}. Configure webhook event types in your Stripe dashboard.`
+    log.warning(
+      `Received untracked event: ${event.type}. Configure webhook event types in your Stripe dashboard.`
     );
     return;
   }
@@ -402,10 +405,9 @@ export async function processStripeEvent({
     const userId = data.metadata?.userId;
 
     if (!companyId || !userId) {
-      console.error(
-        "Missing required metadata in checkout session:",
-        data.metadata
-      );
+      log.error("Missing required metadata in checkout session", {
+        metadata: data.metadata
+      });
       throw new Error("Missing required metadata in checkout session");
     }
 
@@ -432,7 +434,7 @@ export async function processStripeEvent({
           : Promise.resolve()
       ]);
     } catch (error) {
-      console.error("Error processing webhook:", error);
+      log.error("Error processing webhook", { error });
       throw new Error("Stripe webhook handler failed");
     }
   } else if (eventType === "customer.subscription.updated") {
@@ -446,7 +448,7 @@ export async function processStripeEvent({
     try {
       await syncStripeDataToKV(customer);
     } catch (error) {
-      console.error("Error processing webhook:", error);
+      log.error("Error processing webhook", { error });
       throw new Error("Stripe webhook handler failed");
     }
   } else if (eventType === "customer.subscription.deleted") {
@@ -469,7 +471,7 @@ export async function processStripeEvent({
           .eq("stripeCustomerId", customer)
       ]);
     } catch (error) {
-      console.error("Error processing webhook:", error);
+      log.error("Error processing webhook", { error });
       throw new Error("Stripe webhook handler failed");
     }
   } else if (
@@ -478,7 +480,7 @@ export async function processStripeEvent({
     eventType === "invoice.payment_failed"
   ) {
     forwardToGtm(eventType, { invoice: event.data.object }).catch((err) => {
-      console.error("[gtm-events] forward failed:", err);
+      log.error("gtm-events forward failed", { error: err });
     });
   }
 }
@@ -577,7 +579,9 @@ export async function syncStripeDataToKV(
   });
 
   if (!subDataResult.success) {
-    console.error("Failed to parse subscription data:", subDataResult.error);
+    log.error("Failed to parse subscription data", {
+      error: subDataResult.error
+    });
     throw new Error("Failed to parse subscription data");
   }
 
@@ -609,10 +613,10 @@ export async function syncStripeDataToKV(
     ]);
 
     if (companyPlan.error) {
-      console.error("Failed to upsert company plan:", companyPlan.error);
+      log.error("Failed to upsert company plan", { error: companyPlan.error });
     }
   } else {
-    console.error("no company id, skipping company plan upsert");
+    log.error("no company id, skipping company plan upsert");
   }
 
   return subDataResult;
@@ -657,7 +661,7 @@ export async function updateSubscriptionQuantityForCompany(companyId: string) {
       .single();
 
     if (companyPlanResult.error || !companyPlanResult.data) {
-      console.log(`No company plan found for company ${companyId}`);
+      log.debug("No company plan found for company", { companyId });
       return;
     }
 
@@ -675,10 +679,10 @@ export async function updateSubscriptionQuantityForCompany(companyId: string) {
       .eq("companyId", companyId);
 
     if (activeUsersResult.error) {
-      console.error(
-        `Failed to count active users for company ${companyId}:`,
-        activeUsersResult.error
-      );
+      log.error("Failed to count active users for company", {
+        companyId,
+        error: activeUsersResult.error
+      });
       return;
     }
 
@@ -696,9 +700,9 @@ export async function updateSubscriptionQuantityForCompany(companyId: string) {
       !subscription.items ||
       subscription.items.data.length === 0
     ) {
-      console.error(
-        `No subscription items found for subscription ${stripeSubscriptionId}`
-      );
+      log.error("No subscription items found for subscription", {
+        stripeSubscriptionId
+      });
       return;
     }
 
@@ -709,14 +713,16 @@ export async function updateSubscriptionQuantityForCompany(companyId: string) {
       quantity: activeUserCount
     });
 
-    console.log(
-      `Updated Stripe subscription ${stripeSubscriptionId} quantity to ${activeUserCount} for company ${companyId}`
-    );
+    log.debug("Updated Stripe subscription quantity", {
+      stripeSubscriptionId,
+      quantity: activeUserCount,
+      companyId
+    });
   } catch (error) {
     // Log error but don't throw - we don't want to block user operations
-    console.error(
-      `Failed to update Stripe subscription quantity for company ${companyId}:`,
+    log.error("Failed to update Stripe subscription quantity for company", {
+      companyId,
       error
-    );
+    });
   }
 }

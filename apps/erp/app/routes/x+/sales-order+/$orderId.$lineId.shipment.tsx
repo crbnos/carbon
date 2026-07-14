@@ -2,10 +2,13 @@ import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { getSalesOrderLine } from "~/modules/sales";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "orderid-lineid-shipment");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -55,7 +58,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
 
   if (!salesOrderShipment.data || salesOrderShipment.error) {
-    console.error(salesOrderShipment.error);
+    logger.error(salesOrderShipment.error);
     throw redirect(
       path.to.salesOrderLine(orderId, lineId),
       await flash(

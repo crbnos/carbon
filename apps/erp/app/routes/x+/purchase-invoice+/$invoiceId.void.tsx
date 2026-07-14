@@ -26,7 +26,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
     if (!purchaseInvoice) {
       throw redirect(
-        path.to.purchaseInvoices,
+        path.to.invoicingPurchasing,
         await flash(
           request,
           error(new Error("Purchase invoice not found"), "Invalid operation")

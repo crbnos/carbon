@@ -32,6 +32,7 @@ const mockApiKeys: ApiKey[] = [
     lastUsedAt: new Date().toISOString(),
     createdAt: "2026-01-15T10:00:00Z",
     createdBy: "mock-user-1",
+    updatedBy: null,
     companyId: "mock"
   },
   {
@@ -49,6 +50,7 @@ const mockApiKeys: ApiKey[] = [
     lastUsedAt: "2026-04-30T15:22:00Z",
     createdAt: "2026-02-01T09:30:00Z",
     createdBy: "mock-user-1",
+    updatedBy: null,
     companyId: "mock"
   },
   {
@@ -65,6 +67,7 @@ const mockApiKeys: ApiKey[] = [
     lastUsedAt: "2026-05-05T08:10:00Z",
     createdAt: "2026-02-10T11:45:00Z",
     createdBy: "mock-user-2",
+    updatedBy: null,
     companyId: "mock"
   },
   {
@@ -82,6 +85,7 @@ const mockApiKeys: ApiKey[] = [
     lastUsedAt: null,
     createdAt: "2026-03-20T14:00:00Z",
     createdBy: "mock-user-2",
+    updatedBy: null,
     companyId: "mock"
   }
 ];

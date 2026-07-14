@@ -1,8 +1,11 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { getLogger } from "@carbon/logger";
 import type { TrackedEntityAttributes } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+
+const logger = getLogger("erp", "receipt", "tracking");
 
 export async function action({ request, context }: ActionFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -46,7 +49,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
     try {
       propertiesJson = properties ? JSON.parse(properties) : {};
     } catch (error) {
-      console.error(error);
+      logger.error("Failed to parse tracking properties", { error });
     }
 
     const serviceRole = await getCarbonServiceRole();
@@ -64,7 +67,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
     );
 
     if (error) {
-      console.error(error);
+      logger.error("Failed to update batch tracking", { error });
       return data({ error: "Failed to update tracking" }, { status: 500 });
     }
   } else if (trackingType === "serial") {
@@ -98,7 +101,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
       const receiptLineMatches = attributes["Receipt Line"] === receiptLineId;
       const indexMatches = attributes["Receipt Line Index"] === index;
 
-      console.log("Serial number check:", {
+      logger.info("Serial number check", {
         serialNumber,
         existingEntityId: existingEntityWithIndex.id,
         hasReceiptLineIndex,
@@ -136,7 +139,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
     );
 
     if (error) {
-      console.error(error);
+      logger.error("Failed to update serial tracking", { error });
       // Check if error is due to unique constraint violation
       if (error.message?.includes("duplicate key value")) {
         return data(

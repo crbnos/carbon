@@ -10,6 +10,7 @@ import {
   useDisclosure
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
+import type { ComponentProps } from "react";
 import { useEffect, useState } from "react";
 import { LuCheck, LuPrinter } from "react-icons/lu";
 import { useFetcher } from "react-router";
@@ -29,7 +30,9 @@ export function PrintButton({
   context,
   workCenterId,
   fileRoutes,
-  disabled
+  disabled,
+  variant = "secondary",
+  size
 }: {
   sourceDocument: string;
   sourceDocumentId: string;
@@ -38,6 +41,8 @@ export function PrintButton({
   workCenterId?: string;
   fileRoutes: FileRoutes;
   disabled?: boolean;
+  variant?: ComponentProps<typeof Button>["variant"];
+  size?: ComponentProps<typeof Button>["size"];
 }) {
   const { printerRoutes, resolvePrinterRoute, printPath } = usePrinting();
   const modal = useDisclosure();
@@ -93,7 +98,8 @@ export function PrintButton({
     <>
       <Button
         leftIcon={<LuPrinter />}
-        variant="secondary"
+        variant={variant}
+        size={size}
         disabled={disabled}
         onClick={handleClick}
       >

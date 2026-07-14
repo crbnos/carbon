@@ -1,3 +1,4 @@
+import type React from "react";
 import { forwardRef } from "react";
 import * as ReactAria from "react-aria-components";
 import type { InputProps } from "./Input";
@@ -32,35 +33,17 @@ const NumberInputStepper = ({
 };
 
 const NumberInput = forwardRef<HTMLInputElement, InputProps>(
-  ({ className, ...props }, ref) => {
-    const handleFocus = (input: HTMLInputElement) => {
-      input.select();
-    };
-
-    const internalRef = (input: HTMLInputElement | null) => {
-      if (input && !input.hasAttribute("data-focus-listener")) {
-        input.addEventListener("focus", () => handleFocus(input));
-        input.setAttribute("data-focus-listener", "true");
-
-        return () => {
-          input.removeEventListener("focus", () => handleFocus(input));
-          input.removeAttribute("data-focus-listener");
-        };
-      }
-    };
-
+  ({ className, isReadOnly, isDisabled, onFocus, ...props }, ref) => {
     return (
       <Input
-        ref={(input) => {
-          if (typeof ref === "function") {
-            ref(input);
-          } else if (ref) {
-            ref.current = input;
-          }
-          internalRef(input);
-        }}
-        isReadOnly={props.isDisabled || props.isReadOnly}
+        ref={ref}
+        isReadOnly={isDisabled || isReadOnly}
+        isDisabled={isDisabled}
         className={cn("pr-6", className)}
+        onFocus={(e) => {
+          (e.target as HTMLInputElement).select();
+          onFocus?.(e);
+        }}
         {...props}
       />
     );

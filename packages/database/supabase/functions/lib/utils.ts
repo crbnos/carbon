@@ -90,5 +90,6 @@ export const journalReference = {
     shipment: (id: string) => `shipment:${id}`,
     job: (id: string) => `job:${id}`,
     materialIssue: (id: string) => `material-issue:${id}`,
+    productionEvent: (id: string) => `production-event:${id}`,
   },
 };

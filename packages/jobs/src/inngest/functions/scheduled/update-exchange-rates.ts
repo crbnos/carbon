@@ -71,10 +71,10 @@ type CurrencyCode =
 export const updateExchangeRatesFunction = inngest.createFunction(
   { id: "update-exchange-rates", retries: 2 },
   { cron: "0 0 * * *" },
-  async ({ step }) => {
+  async ({ step, logger }) => {
     const serviceRole = getCarbonServiceRole();
     await step.run("fetch-and-update-exchange-rates", async () => {
-      console.log(`Exchange Rates Task Started: ${new Date().toISOString()}`);
+      logger.info("Exchange rates task started");
       const integrations = await serviceRole
         .from("companyIntegration")
         .select("active, companyId")
@@ -82,20 +82,20 @@ export const updateExchangeRatesFunction = inngest.createFunction(
         .eq("active", true);
 
       if (integrations.error) {
-        console.error(
-          `Error fetching integrations: ${JSON.stringify(integrations.error)}`
-        );
+        logger.error("Error fetching integrations", {
+          error: integrations.error
+        });
         return;
       }
 
       if (integrations.data?.length === 0) {
-        console.log(
-          "No active exchange rate integrations found. Exiting task."
-        );
+        logger.info("No active exchange rate integrations found, exiting task");
         return;
       }
 
-      console.log(`Found ${integrations.data.length} active integrations`);
+      logger.info("Found active integrations", {
+        count: integrations.data.length
+      });
 
       // Fetch the exchange rates for the base currency of EUR
       const exchangeRatesClient = getExchangeRatesClient(
@@ -103,8 +103,8 @@ export const updateExchangeRatesFunction = inngest.createFunction(
       );
 
       if (!exchangeRatesClient) {
-        console.error(
-          "Exchange rates client is undefined. Check API key configuration."
+        logger.error(
+          "Exchange rates client is undefined, check API key configuration"
         );
         return;
       }
@@ -114,17 +114,14 @@ export const updateExchangeRatesFunction = inngest.createFunction(
         ratesEUR = await exchangeRatesClient.getExchangeRates();
         if (!ratesEUR)
           throw new Error("No rates returned from exchange rates API");
-        console.log(
-          `Successfully fetched exchange rates with base currency of EUR for ${
-            Object.keys(ratesEUR).length
-          } currencies`
+        logger.info(
+          "Successfully fetched exchange rates with base currency EUR",
+          {
+            currencyCount: Object.keys(ratesEUR).length
+          }
         );
       } catch (error) {
-        console.error(
-          `Error fetching exchange rates: ${
-            error instanceof Error ? error.message : String(error)
-          }`
-        );
+        logger.error("Error fetching exchange rates", { error });
         return;
       }
 
@@ -134,9 +131,9 @@ export const updateExchangeRatesFunction = inngest.createFunction(
       };
 
       for (const integration of integrations.data) {
-        console.log(
-          `Processing integration for company ID: ${integration.companyId}`
-        );
+        logger.info("Processing integration for company", {
+          companyId: integration.companyId
+        });
 
         const company = await serviceRole
           .from("company")
@@ -145,11 +142,10 @@ export const updateExchangeRatesFunction = inngest.createFunction(
           .single();
 
         if (company.error) {
-          console.error(
-            `Error fetching company ${
-              integration.companyId
-            }: ${JSON.stringify(company.error)}`
-          );
+          logger.error("Error fetching company", {
+            companyId: integration.companyId,
+            error: company.error
+          });
           continue;
         }
 
@@ -158,9 +154,9 @@ export const updateExchangeRatesFunction = inngest.createFunction(
         rates = cachedRates[baseCurrencyCode];
         // Check if the rates for this base currency are cached, and if not compute them
         if (rates) {
-          console.log(`Using cached rates for ${baseCurrencyCode}`);
+          logger.info("Using cached rates", { baseCurrencyCode });
         } else {
-          console.log(`Computing rates for ${baseCurrencyCode}`);
+          logger.info("Computing rates", { baseCurrencyCode });
           rates = await exchangeRatesClient.convertExchangeRates(
             baseCurrencyCode,
             ratesEUR
@@ -172,9 +168,9 @@ export const updateExchangeRatesFunction = inngest.createFunction(
 
         try {
           if (!company.data.companyGroupId) {
-            console.warn(
-              `Company ${integration.companyId} has no companyGroupId, skipping`
-            );
+            logger.warn("Company has no companyGroupId, skipping", {
+              companyId: integration.companyId
+            });
             continue;
           }
           const { data, error } = await serviceRole
@@ -183,18 +179,17 @@ export const updateExchangeRatesFunction = inngest.createFunction(
             .eq("companyGroupId", company.data.companyGroupId);
 
           if (error) {
-            console.error(
-              `Error fetching currencies for company ${
-                integration.companyId
-              }: ${JSON.stringify(error)}`
-            );
+            logger.error("Error fetching currencies for company", {
+              companyId: integration.companyId,
+              error
+            });
             continue;
           }
 
           if (!data || data.length === 0) {
-            console.log(
-              `No currencies found for company ${integration.companyId}`
-            );
+            logger.info("No currencies found for company", {
+              companyId: integration.companyId
+            });
             continue;
           }
 
@@ -211,39 +206,38 @@ export const updateExchangeRatesFunction = inngest.createFunction(
             .filter((currency) => currency.exchangeRate);
 
           if (updates.length === 0) {
-            console.log(
-              `No currency updates needed for company ${integration.companyId}`
-            );
+            logger.info("No currency updates needed for company", {
+              companyId: integration.companyId
+            });
             continue;
           }
 
-          console.log(
-            `Updating ${updates.length} currencies for company ${integration.companyId}`
-          );
+          logger.info("Updating currencies for company", {
+            count: updates.length,
+            companyId: integration.companyId
+          });
           const { error: upsertError } = await serviceRole
             .from("currency")
             .upsert(updates);
           if (upsertError) {
-            console.error(
-              `Error updating currencies for company ${
-                integration.companyId
-              }: ${JSON.stringify(upsertError)}`
-            );
+            logger.error("Error updating currencies for company", {
+              companyId: integration.companyId,
+              error: upsertError
+            });
           } else {
-            console.log(
-              `Successfully updated currencies for company ${integration.companyId}`
-            );
+            logger.info("Successfully updated currencies for company", {
+              companyId: integration.companyId
+            });
           }
         } catch (err) {
-          console.error(
-            `Unexpected error processing company ${integration.companyId}: ${
-              err instanceof Error ? err.message : String(err)
-            }`
-          );
+          logger.error("Unexpected error processing company", {
+            companyId: integration.companyId,
+            error: err
+          });
         }
       }
 
-      console.log(`Exchange Rates Task Completed: ${new Date().toISOString()}`);
+      logger.info("Exchange rates task completed");
     });
   }
 );

@@ -16,9 +16,9 @@ import {
 } from "@carbon/utils";
 import { cva } from "class-variance-authority";
 import {
+  LuBlocks,
   LuCirclePlay,
   LuClipboardCheck,
-  LuPackage,
   LuSquareUser,
   LuTimer,
   LuTrash
@@ -224,7 +224,7 @@ export function PickingItemCard({
 
         {/* Parts to pick — the reason this operation is on the picking schedule */}
         <HStack className="justify-start space-x-2 font-medium">
-          <LuPackage className="text-muted-foreground shrink-0" />
+          <LuBlocks className="text-muted-foreground shrink-0" />
           <span className="text-sm tabular-nums">
             {Number(item.partsToPickCount).toLocaleString()}{" "}
             {Number(item.partsToPickCount) === 1 ? "part" : "parts"} ·{" "}

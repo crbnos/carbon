@@ -1,5 +1,8 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
+
+const logger = getLogger("erp", "tags");
 
 export async function action({ request }: ActionFunctionArgs) {
   const { client, userId } = await requirePermissions(request, {});
@@ -20,7 +23,7 @@ export async function action({ request }: ActionFunctionArgs) {
     .in(getIdField(table as string), ids as string[]);
 
   if (result.error) {
-    console.error(result.error);
+    logger.error(result.error);
   }
 
   return result;

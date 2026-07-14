@@ -120,6 +120,26 @@ export const terms = {
     definition: msg`One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates.`,
     href: "/docs/reference/routings"
   },
+  "job-operation": {
+    term: msg`Job operation`,
+    definition: msg`A routing step on a released job, the job's own copy of an operation, carrying a status the floor drives from Todo through Done.`,
+    href: "/docs/reference/jobs#operations"
+  },
+  "production-event": {
+    term: msg`Production event`,
+    definition: msg`A timed record of Setup, Labor, or Machine work logged against a job operation, whose duration rolls up into the operation's actual cost.`,
+    href: "/docs/reference/jobs#operations"
+  },
+  procedure: {
+    term: msg`Procedure`,
+    definition: msg`A reusable, versioned set of work instructions attached to a process, giving an operation its ordered steps to record and check plus the parameters it runs at.`,
+    href: "/docs/reference/jobs#procedures"
+  },
+  "standard-factor": {
+    term: msg`Standard factor`,
+    definition: msg`The unit a routing time is expressed in, such as Hours/Piece or Total Hours, telling Carbon whether the time scales with quantity or is fixed per run.`,
+    href: "/docs/reference/routings"
+  },
   "work-center": {
     term: msg`Work center`,
     definition: msg`Where an operation runs; carries labor and quoting rates, with overhead the difference between them.`,
@@ -446,17 +466,17 @@ export const terms = {
     term: msg`Prepayments (default)`,
     definition: msg`GL account used when a customer pays before an invoice is issued; cleared when the invoice posts.`
   },
-  "account-default-inventory": {
-    term: msg`Inventory (default)`,
-    definition: msg`Default GL account that holds inventory value; debited on receipt, credited on shipment/issue.`
+  "account-default-raw-materials": {
+    term: msg`Raw Materials (default)`,
+    definition: msg`GL account that holds the value of purchased stock and components (Buy items); debited on receipt, credited on issue/shipment.`
+  },
+  "account-default-finished-goods": {
+    term: msg`Finished Goods (default)`,
+    definition: msg`GL account that holds the value of manufactured goods (Make items); debited on job completion, credited on shipment.`
   },
   "account-default-wip": {
     term: msg`Work in Progress (default)`,
     definition: msg`GL account that holds the value of jobs in production until they post to finished goods.`
-  },
-  "account-default-inventory-shipped-not-invoiced": {
-    term: msg`Inventory Shipped Not Invoiced (default)`,
-    definition: msg`Accrual account debited at shipment to recognize the receivable before the sales invoice posts; cleared when the invoice posts.`
   },
   "account-default-asset-acquisition-cost": {
     term: msg`Asset Acquisition Cost (default)`,
@@ -525,6 +545,10 @@ export const terms = {
   "account-default-labor-machine-absorption": {
     term: msg`Labor & Machine Absorption (default)`,
     definition: msg`GL account credited when labor or machine cost is absorbed into a production job.`
+  },
+  "account-default-overhead-absorption": {
+    term: msg`Overhead Absorption (default)`,
+    definition: msg`GL account credited when manufacturing overhead is absorbed into a production job.`
   },
   "account-default-purchase-price-variance": {
     term: msg`Purchase Price Variance (default)`,
@@ -1264,6 +1288,10 @@ export const terms = {
     term: msg`Version`,
     definition: msg`The version stamp for this procedure; new versions create a copy that supersedes the previous one without deleting it.`
   },
+  "procedure-status": {
+    term: msg`Status`,
+    definition: msg`Draft is editable; Active is in use and requires a new version to change; Archived is retired.`
+  },
 
   // ── Purchasing: Supplier (SupplierForm, SupplierPaymentForm, SupplierShippingForm) ──
   "supplier-status": {
@@ -1483,6 +1511,10 @@ export const terms = {
   "pricing-rule-quantity-range": {
     term: msg`Quantity Range`,
     definition: msg`The quantity range over which this rule applies; orders outside the range fall through to the next rule.`
+  },
+  "pricing-rule-priority": {
+    term: msg`Priority`,
+    definition: msg`Order rules are evaluated in — for discounts only the highest-priority match applies (no stacking); markups all apply and compound in priority order.`
   },
 
   // ── Sales: Quote header & shipment (QuoteForm, QuoteShipmentForm) ───────

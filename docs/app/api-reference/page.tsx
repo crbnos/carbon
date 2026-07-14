@@ -7,7 +7,10 @@ import {
   DocTitle,
   H2,
   Lead,
-  P
+  P,
+  Warn,
+  Table,
+  Row
 } from "@/components/api/doc";
 import { ContentFooter } from "@/components/api/page-footer";
 import { SdkCards } from "@/components/api/sdk-cards";
@@ -62,6 +65,46 @@ export default async function ApiIntroPage() {
         <Code>supabase-js</Code>.
       </P>
       <SdkCards />
+
+      <H2 id="tables-and-views">Tables &amp; views</H2>
+      <P>
+        The API exposes both <strong>tables</strong> (read/write) and{" "}
+        <strong>views</strong> (read-only, computed). Some resources appear
+        twice — for example <Code>salesInvoice</Code> (a table) and{" "}
+        <Code>salesInvoices</Code> (a view). These are not interchangeable.
+      </P>
+      <Warn title="Always read from the view">
+        Tables like <Code>salesInvoice</Code> and <Code>purchaseInvoice</Code>{" "}
+        have stored total and status columns that are set at creation and{" "}
+        <strong>not updated</strong> when line items change. The corresponding
+        views (<Code>salesInvoices</Code>, <Code>purchaseInvoices</Code>)
+        compute totals, tax, balance, and status live from line items and
+        settlements. If you read from the table, you will get stale data.
+      </Warn>
+      <P>The rule is simple:</P>
+      <Table>
+        <Row head cols="1fr 1fr" cells={["Operation", "Use"]} />
+        <Row
+          cols="1fr 1fr"
+          cells={[
+            "List / retrieve / analytics",
+            <>The <strong>view</strong> (plural, e.g. salesInvoices)</>,
+          ]}
+        />
+        <Row
+          cols="1fr 1fr"
+          cells={[
+            "Create / update / delete",
+            <>The <strong>table</strong> (singular, e.g. salesInvoice)</>,
+          ]}
+        />
+      </Table>
+      <P>
+        In the sidebar, views are marked with an{" "}
+        <span title="eye icon">eye icon</span> and tables with a{" "}
+        <span title="grid icon">grid icon</span>. Affected resource pages also
+        show a banner linking to the correct counterpart.
+      </P>
 
       <H2 id="quickstart">Quickstart</H2>
       <P>Save your key and the API URL as environment variables:</P>

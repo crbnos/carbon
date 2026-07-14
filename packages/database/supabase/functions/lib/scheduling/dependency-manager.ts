@@ -1,4 +1,4 @@
-import { Database } from "../types.ts";
+import type { Database } from "../types.ts";
 import type {
   BaseOperation,
   DependencyGraph,

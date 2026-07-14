@@ -1,5 +1,5 @@
 import type { BoardTask, TaskValue, Tier } from "../types";
-import { taskKey } from "./keys";
+import { flagKey, taskKey } from "./keys";
 
 // Drop tasks that don't apply to this tier (omitted `tiers` => all tiers), so a
 // self-serve plan/board never shows paid-only work like hypercare.
@@ -7,13 +7,38 @@ export function boardTasksForTier(tasks: BoardTask[], tier: Tier): BoardTask[] {
   return tasks.filter((t) => !t.tiers || t.tiers.includes(tier));
 }
 
-// The status of a board task from stored state (default "todo"). Plan-page
-// bullets derive from these same values, so Board ↔ Plan can never drift.
+// The status of a board task. A task with `setupKeys` always derives its
+// status from those Setup Map rows' "configured" flags — all checked => done,
+// some checked => in progress — with no manual tick of its own, so Plan and
+// the Setup Map can never drift apart for the same work. Every other task is
+// manual-only, ticked directly on the Plan page.
 export function taskStatus(
   task: BoardTask,
   states: Map<string, string>
 ): TaskValue {
+  if (task.setupKeys?.length) {
+    const doneCount = task.setupKeys.filter(
+      (k) => states.get(flagKey(`setup.${k}`)) === "1"
+    ).length;
+    if (doneCount === task.setupKeys.length) return "done";
+    if (doneCount > 0) return "prog";
+    return "todo";
+  }
+
   return (states.get(taskKey(task.key)) as TaskValue) ?? "todo";
+}
+
+// How many of a Setup-Map-derived task's rows are configured (0/0 for manual
+// tasks) — drives the proportional in-progress pie on its derived indicator.
+export function taskSetupProgress(
+  task: BoardTask,
+  states: Map<string, string>
+): { done: number; total: number } {
+  const keys = task.setupKeys ?? [];
+  const done = keys.filter(
+    (k) => states.get(flagKey(`setup.${k}`)) === "1"
+  ).length;
+  return { done, total: keys.length };
 }
 
 export function tasksForStep(tasks: BoardTask[], stepKey: string): BoardTask[] {

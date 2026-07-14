@@ -111,11 +111,14 @@ export const path = {
       materialTypes: (substanceId: string, formId: string) =>
         generatePath(`${api}/items/types/${substanceId}/${formId}`),
       materialSubstances: `${api}/items/substances`,
+      itemMpns: `${api}/items/mpns`,
       messagingNotify: `${api}/messaging/notify`,
       mrp: (locationId?: string) =>
         generatePath(
           `${api}/mrp${locationId ? `?location=${locationId}` : ""}`
         ),
+      modelConvertStatus: (modelUploadId: string) =>
+        generatePath(`${api}/model/convert-status/${modelUploadId}`),
       modelUpload: `${api}/model/upload`,
       onShapeBom: (documentId: string, versionId: string, elementId: string) =>
         generatePath(
@@ -169,6 +172,9 @@ export const path = {
         ),
       resourcesKpi: (key: string) =>
         generatePath(`${api}/resources/kpi/${key}`),
+      purchaseInvoice: (id: string) =>
+        generatePath(`${api}/purchase-invoice/${id}`),
+      salesRfq: (id: string) => generatePath(`${api}/sales-rfq/${id}`),
       salesCustomerOverride: `${api}/sales/customer-override`,
       salesKpi: (key: string) => generatePath(`${api}/sales/kpi/${key}`),
       salesResolvePrice: `${api}/sales/resolve-price`,
@@ -466,6 +472,12 @@ export const path = {
     accounting: `${x}/accounting`,
     accountingDefaults: `${x}/accounting/defaults`,
     accountingJournals: `${x}/accounting/journals`,
+    accountingPeriods: `${x}/accounting/periods`,
+    accountingPeriodsGenerate: `${x}/accounting/periods/generate`,
+    accountingPeriodClose: (id: string) =>
+      generatePath(`${x}/accounting/periods/${id}/close`),
+    accountingPeriodDelete: (id: string) =>
+      generatePath(`${x}/accounting/periods/${id}/delete`),
     accountingSettings: `${x}/settings/accounting`,
     journalEntry: (id: string) => generatePath(`${x}/journal-entry/${id}`),
     journalEntryDetails: (id: string) =>
@@ -518,6 +530,74 @@ export const path = {
       generatePath(`${x}/items/methods/versions/activate/${id}`),
     activateGauge: (id: string) =>
       generatePath(`${x}/quality/gauges/activate/${id}`),
+    assemblyInstruction: (id: string) => generatePath(`${x}/assembly/${id}`),
+    assemblyInstructions: `${x}/production/assemblies`,
+    assemblyInstructionStatus: (id: string) =>
+      generatePath(`${x}/assembly/${id}/status`),
+    assemblyJobsCancel: (id: string) =>
+      generatePath(`${x}/assembly/${id}/jobs/cancel`),
+    assemblyModelConvert: (id: string) =>
+      generatePath(`${x}/assembly/${id}/model/convert`),
+    assemblyModelInvalidate: (id: string) =>
+      generatePath(`${x}/assembly/${id}/model/invalidate`),
+    assemblyPlanRerun: (id: string) =>
+      generatePath(`${x}/assembly/${id}/plan/rerun`),
+    deleteAssemblyInstruction: (id: string) =>
+      generatePath(`${x}/assembly/delete/${id}`),
+    newAssemblyInstruction: `${x}/production/assemblies/new`,
+    newAssemblyInstructionStep: (id: string) =>
+      generatePath(`${x}/assembly/${id}/steps/new`),
+    assemblyInstructionStep: (id: string, stepId: string) =>
+      generatePath(`${x}/assembly/${id}/steps/${stepId}`),
+    assemblyInstructionStepMotion: (id: string, stepId: string) =>
+      generatePath(`${x}/assembly/${id}/steps/motion/${stepId}`),
+    assemblyInstructionStepComponents: (id: string, stepId: string) =>
+      generatePath(`${x}/assembly/${id}/steps/components/${stepId}`),
+    assemblyInstructionStepComponentsReassign: (id: string) =>
+      generatePath(`${x}/assembly/${id}/steps/components/reassign`),
+    deleteAssemblyInstructionStep: (id: string, stepId: string) =>
+      generatePath(`${x}/assembly/${id}/steps/delete/${stepId}`),
+    assemblyInstructionStepOrder: (id: string) =>
+      generatePath(`${x}/assembly/${id}/steps/order`),
+    assemblyInstructionStepStatus: (id: string, stepId: string) =>
+      generatePath(`${x}/assembly/${id}/steps/status/${stepId}`),
+    generateAssemblyInstructionSteps: (id: string) =>
+      generatePath(`${x}/assembly/${id}/steps/generate`),
+    newAssemblyStepRequirement: (id: string) =>
+      generatePath(`${x}/assembly/${id}/requirements/new`),
+    assemblyStepRequirement: (id: string, requirementId: string) =>
+      generatePath(`${x}/assembly/${id}/requirements/${requirementId}`),
+    deleteAssemblyStepRequirement: (id: string, requirementId: string) =>
+      generatePath(`${x}/assembly/${id}/requirements/delete/${requirementId}`),
+    assemblyStepRequirementOrder: (id: string) =>
+      generatePath(`${x}/assembly/${id}/requirements/order`),
+    newAssemblyStepMaterial: (id: string) =>
+      generatePath(`${x}/assembly/${id}/materials/new`),
+    assemblyStepMaterial: (id: string, materialId: string) =>
+      generatePath(`${x}/assembly/${id}/materials/${materialId}`),
+    deleteAssemblyStepMaterial: (id: string, materialId: string) =>
+      generatePath(`${x}/assembly/${id}/materials/delete/${materialId}`),
+    assemblyStepMaterialOrder: (id: string) =>
+      generatePath(`${x}/assembly/${id}/materials/order`),
+    newAssemblyUnit: (id: string) =>
+      generatePath(`${x}/assembly/${id}/units/new`),
+    updateAssemblyUnit: (id: string, unitId: string) =>
+      generatePath(`${x}/assembly/${id}/units/${unitId}`),
+    newAssemblyComponentMapping: (id: string) =>
+      generatePath(`${x}/assembly/${id}/component-mappings/new`),
+    deleteAssemblyComponentMapping: (id: string, mappingId: string) =>
+      generatePath(
+        `${x}/assembly/${id}/component-mappings/delete/${mappingId}`
+      ),
+    autoMatchAssemblyComponents: (id: string) =>
+      generatePath(`${x}/assembly/${id}/component-mappings/auto`),
+    deleteAssemblyUnit: (id: string, unitId: string) =>
+      generatePath(`${x}/assembly/${id}/units/delete/${unitId}`),
+    newAssemblyStandardNote: `${x}/assembly/standard-notes/new`,
+    assemblyStandardNote: (noteId: string) =>
+      generatePath(`${x}/assembly/standard-notes/${noteId}`),
+    deleteAssemblyStandardNote: (noteId: string) =>
+      generatePath(`${x}/assembly/standard-notes/delete/${noteId}`),
     attribute: (id: string) => generatePath(`${x}/people/attribute/${id}`),
     attributes: `${x}/people/attributes`,
     apiDocs: "https://docs.carbon.ms/api-reference",
@@ -564,14 +644,22 @@ export const path = {
     chartOfAccount: (id: string) =>
       generatePath(`${x}/accounting/charts/${id}`),
     chartOfAccounts: `${x}/accounting/charts`,
+    chartOfAccountsLedger: (id: string) =>
+      generatePath(`${x}/accounting/charts/ledger/${id}`),
     moveChartOfAccount: (id: string) =>
       generatePath(`${x}/accounting/charts/move/${id}`),
     costCenter: (id: string) =>
       generatePath(`${x}/accounting/cost-centers/${id}`),
     costCenters: `${x}/accounting/cost-centers`,
     trialBalance: `${x}/accounting/trial-balance`,
+    trialBalanceLedger: (id: string) =>
+      generatePath(`${x}/accounting/trial-balance/${id}`),
     balanceSheet: `${x}/accounting/balance-sheet`,
+    balanceSheetLedger: (id: string) =>
+      generatePath(`${x}/accounting/balance-sheet/${id}`),
     incomeStatement: `${x}/accounting/income-statement`,
+    incomeStatementLedger: (id: string) =>
+      generatePath(`${x}/accounting/income-statement/${id}`),
     company: `${x}/settings/company`,
     companySwitch: (companyId: string) =>
       generatePath(`${x}/settings/company/switch/${companyId}`),
@@ -617,6 +705,8 @@ export const path = {
     consumableRoot: `${x}/consumable`,
     consumableSupplier: (itemId: string, id: string) =>
       generatePath(`${x}/consumable/${itemId}/purchasing/${id}`),
+    deleteConsumableSupplier: (itemId: string, id: string) =>
+      generatePath(`${x}/consumable/${itemId}/purchasing/${id}/delete`),
     consumableSuppliers: (id: string) =>
       generatePath(`${x}/consumable/${id}/suppliers`),
     convertQuoteToOrder: (id: string) =>
@@ -990,6 +1080,8 @@ export const path = {
     stockMovements: `${x}/inventory/stock-movements`,
     inventorySettings: `${x}/settings/inventory`,
     invoicing: `${x}/invoicing`,
+    invoicingPurchasing: `${x}/invoicing/purchasing`,
+    invoicingSales: `${x}/invoicing/sales`,
     issues: `${x}/quality/issues`,
     issue: (id: string) => generatePath(`${x}/issue/${id}`),
     issueDetails: (id: string) => generatePath(`${x}/issue/${id}/details`),
@@ -1079,6 +1171,8 @@ export const path = {
     locations: `${x}/resources/locations`,
     login: "/login",
     logout: "/logout",
+    download: (token: string) => `/download/${token}`,
+    downloadError: (reason: string) => `/download/error?reason=${reason}`,
     logos: `${x}/settings/logos`,
     maintenanceDispatch: (id: string) => generatePath(`${x}/maintenance/${id}`),
     maintenanceDispatchComments: (id: string) =>
@@ -1144,6 +1238,8 @@ export const path = {
     materialRoot: `${x}/material`,
     materialSupplier: (itemId: string, id: string) =>
       generatePath(`${x}/material/${itemId}/purchasing/${id}`),
+    deleteMaterialSupplier: (itemId: string, id: string) =>
+      generatePath(`${x}/material/${itemId}/purchasing/${id}/delete`),
     materialSuppliers: (id: string) =>
       generatePath(`${x}/material/${id}/suppliers`),
     materials: `${x}/items/materials`,
@@ -1387,10 +1483,26 @@ export const path = {
     partSales: (id: string) => generatePath(`${x}/part/${id}/sales`),
     partSupplier: (itemId: string, id: string) =>
       generatePath(`${x}/part/${itemId}/purchasing/${id}`),
+    deletePartSupplier: (itemId: string, id: string) =>
+      generatePath(`${x}/part/${itemId}/purchasing/${id}/delete`),
     parts: `${x}/items/parts`,
     partner: (id: string, abilityId: string) =>
       generatePath(`${x}/resources/partners/${id}/${abilityId}`),
     partners: `${x}/resources/partners`,
+    payment: (id: string) => generatePath(`${x}/payments/${id}`),
+    paymentApplicationsSet: (id: string) =>
+      generatePath(`${x}/payments/${id}/applications/set`),
+    paymentCreditsSet: (id: string) =>
+      generatePath(`${x}/payments/${id}/credits/set`),
+    paymentDelete: (id: string) => generatePath(`${x}/payments/${id}/delete`),
+    paymentNew: `${x}/payments/new`,
+    paymentPost: (id: string) => generatePath(`${x}/payments/${id}/post`),
+    paymentVoid: (id: string) => generatePath(`${x}/payments/${id}/void`),
+    payments: `${x}/invoicing/payments`,
+    receivables: `${x}/invoicing/receivables`,
+    receivablesAdjust: `${x}/invoicing/receivables/adjust`,
+    payables: `${x}/invoicing/payables`,
+    payablesAdjust: `${x}/invoicing/payables/adjust`,
     paymentTerm: (id: string) =>
       generatePath(`${x}/accounting/payment-terms/${id}`),
     paymentTerms: `${x}/accounting/payment-terms`,
@@ -1464,7 +1576,6 @@ export const path = {
       generatePath(`${x}/purchase-invoice/${id}/status`),
     purchaseInvoiceVoid: (id: string) =>
       generatePath(`${x}/purchase-invoice/${id}/void`),
-    purchaseInvoices: `${x}/purchasing/invoices`,
     purchaseOrder: (id: string) => generatePath(`${x}/purchase-order/${id}`),
     purchaseOrderDuplicate: (id: string) =>
       generatePath(`${x}/purchase-order/${id}/duplicate`),
@@ -1575,6 +1686,20 @@ export const path = {
     receiptPost: (id: string) => generatePath(`${x}/receipt/${id}/post`),
     receiptRoot: `${x}/receipt`,
     receiptVoid: (id: string) => generatePath(`${x}/receipt/${id}/void`),
+    inventoryCounts: `${x}/inventory/inventory-count`,
+    newInventoryCount: `${x}/inventory/inventory-count/new`,
+    inventoryCount: (id: string) => generatePath(`${x}/inventory-count/${id}`),
+    inventoryCountConfirm: (id: string) =>
+      generatePath(`${x}/inventory-count/${id}/confirm`),
+    inventoryCountReopen: (id: string) =>
+      generatePath(`${x}/inventory-count/${id}/reopen`),
+    inventoryCountPost: (id: string) =>
+      generatePath(`${x}/inventory-count/${id}/post`),
+    inventoryCountRectify: (id: string) =>
+      generatePath(`${x}/inventory-count/${id}/rectify`),
+    inventoryCountDelete: (id: string) =>
+      generatePath(`${x}/inventory-count/${id}/delete`),
+    inventoryCountLineUpdate: `${x}/inventory-count/lines/update`,
     refreshSession: "/refresh-session",
     requiredAction: (id: string) =>
       generatePath(`${x}/quality/required-actions/${id}`),
@@ -1606,7 +1731,14 @@ export const path = {
       generatePath(`${x}/sales-invoice/${id}/status`),
     salesInvoiceVoid: (id: string) =>
       generatePath(`${x}/sales-invoice/${id}/void`),
-    salesInvoices: `${x}/sales/invoices`,
+    // Credit / Debit memos — payment-shaped documents (the `memo` table). The
+    // list lives in the invoicing nav beside Payments; details mirror payments.
+    memo: (id: string) => generatePath(`${x}/credits/${id}`),
+    memoDelete: (id: string) => generatePath(`${x}/credits/${id}/delete`),
+    memoNew: `${x}/credits/new`,
+    memoPost: (id: string) => generatePath(`${x}/credits/${id}/post`),
+    memoVoid: (id: string) => generatePath(`${x}/credits/${id}/void`),
+    memos: `${x}/invoicing/credits`,
     salesOrder: (id: string) => generatePath(`${x}/sales-order/${id}`),
     salesOrderConfirm: (id: string) =>
       generatePath(`${x}/sales-order/${id}/confirm`),
@@ -1848,6 +1980,8 @@ export const path = {
     toolRoot: `${x}/tool`,
     toolSupplier: (itemId: string, id: string) =>
       generatePath(`${x}/tool/${itemId}/suppliers/${id}`),
+    deleteToolSupplier: (itemId: string, id: string) =>
+      generatePath(`${x}/tool/${itemId}/purchasing/${id}/delete`),
     toolSuppliers: (id: string) => generatePath(`${x}/tool/${id}/suppliers`),
     tools: `${x}/items/tools`,
     traceability: `${x}/traceability`,

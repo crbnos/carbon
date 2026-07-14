@@ -1,3 +1,5 @@
+import type { MessageDescriptor } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
 import type { HubExclusions, PageDef } from "../types";
 
 // The hub's page list + sidebar structure (the prototype's REG array). `slug`
@@ -6,38 +8,40 @@ import type { HubExclusions, PageDef } from "../types";
 export const REGISTRY: PageDef[] = [
   {
     slug: "start",
-    navLabel: "Start Here",
-    title: "Start Here",
+    navLabel: msg`Start Here`,
+    title: msg`Start Here`,
     group: "get-started",
     order: 0
   },
   {
     slug: "team",
-    navLabel: "Your Project Team",
-    title: "Your Project Team",
+    navLabel: msg`Your Project Team`,
+    title: msg`Your Project Team`,
     group: "get-started",
     order: 1,
     tiers: ["guided", "enterprise"]
   },
   {
     slug: "how-we-work",
-    navLabel: "How We Work",
-    title: "How We Work Together",
+    navLabel: msg`How We Work`,
+    title: msg`How We Work Together`,
     group: "get-started",
     order: 2,
     tiers: ["guided", "enterprise"]
   },
   {
     slug: "scope",
-    navLabel: "Scope Summary",
-    title: "Scope Summary",
+    navLabel: msg`Scope Summary`,
+    title: msg`Scope Summary`,
     group: "align",
-    order: 3
+    order: 3,
+    // Paid-tier only — self-serve has no commercial scope/acceptance agreement.
+    tiers: ["guided", "enterprise"]
   },
   {
     slug: "roles",
-    navLabel: "Roles",
-    title: "Roles and Responsibilities",
+    navLabel: msg`Roles`,
+    title: msg`Roles and Responsibilities`,
     group: "align",
     order: 4,
     // Paid-tier only — self-serve has no Carbon team, so there are no shared
@@ -46,25 +50,24 @@ export const REGISTRY: PageDef[] = [
   },
   {
     slug: "value",
-    navLabel: "Value Snapshot",
-    title: "Value Snapshot",
+    navLabel: msg`Value Snapshot`,
+    title: msg`Value Snapshot`,
     group: "align",
     order: 5,
     optional: true
   },
   {
-    // Plan + Board are one page now, switched via a view toggle (?view=board).
     slug: "plan",
-    navLabel: "Plan & Board",
-    title: "Project Plan & Board",
+    navLabel: msg`Plan`,
+    title: msg`Project Plan`,
     group: "plan",
     order: 6,
     key: true
   },
   {
     slug: "requirements",
-    navLabel: "Requirements",
-    title: "Requirements and Process Map",
+    navLabel: msg`Requirements`,
+    title: msg`Requirements and Process Map`,
     group: "plan",
     order: 7,
     // Paid-tier only — self-serve customers configure directly rather than going
@@ -73,15 +76,15 @@ export const REGISTRY: PageDef[] = [
   },
   {
     slug: "setup",
-    navLabel: "Setup Map",
-    title: "Setup Map",
+    navLabel: msg`Setup Map`,
+    title: msg`Setup Map`,
     group: "configure",
     order: 8
   },
   {
     slug: "data",
-    navLabel: "Data Migration",
-    title: "Data Migration Map",
+    navLabel: msg`Data Migration`,
+    title: msg`Data Migration Map`,
     group: "configure",
     order: 9,
     // Paid-tier only — self-serve customers bring no data to migrate.
@@ -89,43 +92,35 @@ export const REGISTRY: PageDef[] = [
   },
   {
     slug: "training",
-    navLabel: "Training Plan",
-    title: "Training Plan",
+    navLabel: msg`Training Plan`,
+    title: msg`Training Plan`,
     group: "launch",
     order: 10
   },
   {
     slug: "go-live",
-    navLabel: "Go-Live",
-    title: "Go-Live and Acceptance",
+    navLabel: msg`Go-Live`,
+    title: msg`Go-Live and Acceptance`,
     group: "launch",
     order: 11
   },
   {
     slug: "controls",
-    navLabel: "Setup & Controls",
-    title: "Setup & Controls",
+    navLabel: msg`Setup & Controls`,
+    title: msg`Setup & Controls`,
     group: "carbon-only",
     order: 12,
-    carbonOnly: true
-  },
-  {
-    slug: "positioning",
-    navLabel: "Others vs Carbon",
-    title: "Others vs Carbon",
-    group: "carbon-only",
-    order: 13,
     carbonOnly: true
   }
 ];
 
-export const PAGE_GROUP_LABEL: Record<PageDef["group"], string> = {
-  "get-started": "Get started",
-  align: "Align on scope",
-  plan: "Plan the work",
-  configure: "Configure Carbon",
-  launch: "Train & go live",
-  "carbon-only": "Carbon only"
+export const PAGE_GROUP_LABEL: Record<PageDef["group"], MessageDescriptor> = {
+  "get-started": msg`Get started`,
+  align: msg`Align on scope`,
+  plan: msg`Plan the work`,
+  configure: msg`Configure Carbon`,
+  launch: msg`Train & go live`,
+  "carbon-only": msg`Carbon only`
 };
 
 export const PAGE_GROUP_ORDER: PageDef["group"][] = [
@@ -143,9 +138,10 @@ export function pageBySlug(slug: string): PageDef | undefined {
 
 // Optional sections (sub-page blocks a customer may not need). Canonical list —
 // the Setup & Controls toggles and the default-exclusions seed both read it.
-export const OPTIONAL_SECTIONS: { key: string; label: string }[] = [
-  { key: "risks", label: "Risks (on the Project Board)" }
-];
+// Empty since the Project Board (and its Risks section) was removed; keep the
+// list + wiring so a future optional section is a one-line add.
+export const OPTIONAL_SECTIONS: { key: string; label: MessageDescriptor }[] =
+  [];
 
 // New hubs start with every optional page and section excluded — a Carbon admin
 // opts them back in per customer from Setup & Controls. Modules stay all-in.

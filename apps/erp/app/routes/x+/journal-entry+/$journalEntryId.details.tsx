@@ -129,6 +129,7 @@ export default function JournalEntryDetailsRoute() {
     companies: { id: string; name: string }[];
     dimensions: DimensionWithValues[];
     lineDimensions: Record<string, JournalLineDimensionValue[]>;
+    sourceDocument: { readableId: string; to: string } | null;
   }>(path.to.journalEntry(journalEntryId));
 
   if (!routeData?.journalEntry)
@@ -158,6 +159,7 @@ export default function JournalEntryDetailsRoute() {
       displayId={routeData.journalEntry.journalEntryId}
       status={routeData.journalEntry.status}
       sourceType={routeData.journalEntry.sourceType ?? "Manual"}
+      sourceDocument={routeData.sourceDocument ?? null}
       reversedById={routeData.journalEntry.reversedById}
       initialValues={{
         id: routeData.journalEntry.id,

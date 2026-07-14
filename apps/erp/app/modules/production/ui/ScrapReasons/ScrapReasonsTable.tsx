@@ -55,7 +55,7 @@ const ScrapReasonsTable = memo(({ data, count }: ScrapReasonsTableProps) => {
           </MenuItem>
           <MenuItem
             destructive
-            disabled={!permissions.can("delete", "sales")}
+            disabled={!permissions.can("delete", "production")}
             onClick={() => {
               navigate(
                 `${path.to.deleteScrapReason(row.id)}?${params.toString()}`
@@ -77,7 +77,7 @@ const ScrapReasonsTable = memo(({ data, count }: ScrapReasonsTableProps) => {
       columns={columns}
       count={count}
       primaryAction={
-        permissions.can("create", "sales") && (
+        permissions.can("create", "production") && (
           <New
             label={t`Scrap Reason`}
             to={`${path.to.newScrapReason}?${params.toString()}`}

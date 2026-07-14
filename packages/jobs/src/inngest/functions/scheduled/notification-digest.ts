@@ -38,7 +38,7 @@ function bucketKey(userId: string, companyId: string, topic: string): string {
 export const notificationDigestFunction = inngest.createFunction(
   { id: "notification-digest", retries: 2 },
   { cron: "*/15 * * * *" },
-  async ({ step }) => {
+  async ({ step, logger }) => {
     const client = getCarbonServiceRole();
 
     const work = await step.run("collect-work", async () => {
@@ -70,11 +70,13 @@ export const notificationDigestFunction = inngest.createFunction(
       ]);
 
       if (candidateErr) {
-        console.error("Failed to load digest candidates", candidateErr);
+        logger.error("Failed to load digest candidates", {
+          error: candidateErr
+        });
         throw candidateErr;
       }
       if (digestErr) {
-        console.error("Failed to load existing digests", digestErr);
+        logger.error("Failed to load existing digests", { error: digestErr });
         throw digestErr;
       }
 
@@ -154,7 +156,7 @@ export const notificationDigestFunction = inngest.createFunction(
             .single();
 
           if (insertError || !createdRow?.id) {
-            console.error("Failed to insert digest row", insertError);
+            logger.error("Failed to insert digest row", { error: insertError });
             continue;
           }
 
@@ -167,7 +169,9 @@ export const notificationDigestFunction = inngest.createFunction(
             );
 
           if (updateError) {
-            console.error("Failed to attach children to digest", updateError);
+            logger.error("Failed to attach children to digest", {
+              error: updateError
+            });
             continue;
           }
 
@@ -191,10 +195,9 @@ export const notificationDigestFunction = inngest.createFunction(
               others.map((d) => d.id)
             );
           if (repointErr) {
-            console.error(
-              "Failed to repoint stacked digest children",
-              repointErr
-            );
+            logger.error("Failed to repoint stacked digest children", {
+              error: repointErr
+            });
             continue;
           }
 
@@ -206,7 +209,9 @@ export const notificationDigestFunction = inngest.createFunction(
               others.map((d) => d.id)
             );
           if (deleteErr) {
-            console.error("Failed to delete stacked digest rows", deleteErr);
+            logger.error("Failed to delete stacked digest rows", {
+              error: deleteErr
+            });
             continue;
           }
           merged += others.length;
@@ -221,7 +226,9 @@ export const notificationDigestFunction = inngest.createFunction(
               newChildren.map((r) => r.id)
             );
           if (absorbErr) {
-            console.error("Failed to absorb children into digest", absorbErr);
+            logger.error("Failed to absorb children into digest", {
+              error: absorbErr
+            });
             continue;
           }
           absorbed += newChildren.length;
@@ -234,7 +241,7 @@ export const notificationDigestFunction = inngest.createFunction(
           .eq("digestedInto", keeper.id);
 
         if (countErr) {
-          console.error("Failed to count digest children", countErr);
+          logger.error("Failed to count digest children", { error: countErr });
           continue;
         }
 
@@ -253,7 +260,7 @@ export const notificationDigestFunction = inngest.createFunction(
           })
           .eq("id", keeper.id);
         if (titleErr) {
-          console.error("Failed to refresh digest title", titleErr);
+          logger.error("Failed to refresh digest title", { error: titleErr });
         }
       }
 

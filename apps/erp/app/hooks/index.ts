@@ -21,6 +21,7 @@ import { usePermissions } from "./usePermissions";
 import { usePlanGate } from "./usePlanGate";
 import { useRealtime } from "./useRealtime";
 import { useScrollPosition } from "./useScrollPosition";
+import { useScrollToHash } from "./useScrollToHash";
 import { useSettings } from "./useSettings";
 import { useSupplierApprovalRequired } from "./useSupplierApprovalRequired";
 import { useTrainingPanel } from "./useTrainingPanel";
@@ -49,6 +50,7 @@ export {
   useRealtime,
   useRouteData,
   useScrollPosition,
+  useScrollToHash,
   useSettings,
   useSupplierApprovalRequired,
   useTrainingPanel,

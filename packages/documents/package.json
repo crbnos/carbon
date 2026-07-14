@@ -28,10 +28,13 @@
     "@fontsource/playfair-display": "^5.0.0",
     "@fontsource/roboto": "^5.0.0",
     "@internationalized/date": "catalog:",
+    "@react-email/preview-server": "4.2.8",
     "@testing-library/dom": "8.20.1",
     "@types/dompurify": "2.4.0",
     "@types/react": "catalog:",
+    "postcss": "8.5.15",
     "react": "catalog:",
+    "react-email": "4.2.8",
     "tsup": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
@@ -48,6 +51,8 @@
   "scripts": {
     "build": "node ./scripts/generate-fonts.mjs",
     "clean": "rimraf .turbo node_modules dist",
+    "email": "node ./scripts/email-dev.mjs ./src/email",
+    "email:previews": "node ./scripts/email-dev.mjs ./src/email/previews",
     "lint": "biome lint --write ",
     "test": "vitest run",
     "typecheck": "tsgo --noEmit"

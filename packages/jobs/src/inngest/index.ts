@@ -10,6 +10,7 @@ import {
   webhookFunction,
   workflowFunction
 } from "./functions/events";
+import { extractDocumentFunction } from "./functions/extraction";
 import {
   accountingBackfillFunction,
   jiraSyncFunction,
@@ -39,6 +40,8 @@ import {
   weeklyFunction
 } from "./functions/scheduled";
 import {
+  assemblyConvertFunction,
+  assemblyPlanFunction,
   companyExportFunction,
   companyImportFunction,
   companyRestoreFinalizeFunction,
@@ -70,6 +73,8 @@ export const functions = [
   workflowFunction,
   embeddingFunction,
   // Tasks
+  assemblyConvertFunction,
+  assemblyPlanFunction,
   companyExportFunction,
   companyImportFunction,
   companyRestoreFunction,
@@ -103,5 +108,7 @@ export const functions = [
   slackDocumentStatusUpdateFunction,
   slackDocumentTaskUpdateFunction,
   slackDocumentAssignmentUpdateFunction,
-  timeCardAutoCloseFunction
+  timeCardAutoCloseFunction,
+  // Document extraction
+  extractDocumentFunction
 ];

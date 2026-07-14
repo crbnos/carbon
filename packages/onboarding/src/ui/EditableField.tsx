@@ -1,4 +1,6 @@
 import { cn, Input, Textarea } from "@carbon/react";
+import type { MessageDescriptor } from "@lingui/core";
+import { useLingui } from "@lingui/react/macro";
 import { useEffect, useRef, useState } from "react";
 import { useCanEdit, useHubActions } from "./state";
 
@@ -16,23 +18,32 @@ export function EditableField({
 }: {
   fieldKey: string;
   value: string | undefined; // the override, if any
-  defaultValue: string;
+  defaultValue: string | MessageDescriptor;
   multiline?: boolean;
   placeholder?: string;
   className?: string;
 }) {
   const canEdit = useCanEdit();
+  const { i18n } = useLingui();
   const { setField } = useHubActions();
-  const resolved = value ?? defaultValue;
+  const resolvedDefault =
+    defaultValue == null
+      ? ""
+      : typeof defaultValue === "string"
+        ? defaultValue
+        : i18n._(defaultValue);
+  const resolved = value ?? resolvedDefault;
   const [draft, setDraft] = useState(resolved);
   const focused = useRef(false);
 
   // Keep in sync when realtime / another editor changes the value — but not
   // while focused, so a concurrent revalidation can't clobber live typing.
+  // Depend on the resolved string (not the raw descriptor object, whose identity
+  // changes every render) so the effect doesn't re-fire on every render.
   // biome-ignore lint/correctness/useExhaustiveDependencies: reset on external value change only
   useEffect(() => {
     if (!focused.current) setDraft(resolved);
-  }, [value, defaultValue]);
+  }, [value, resolvedDefault]);
 
   if (!canEdit) {
     return <span className={className}>{resolved || placeholder}</span>;

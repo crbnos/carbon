@@ -37,7 +37,7 @@ import {
 import { GroupedContentSidebar } from "~/components/Layout";
 import { CollapsibleSidebarProvider } from "~/components/Layout/Navigation";
 import { MeshGradientBackground } from "~/components/MeshGradientBackground";
-import { useUser } from "~/hooks";
+import { useSettings, useUser } from "~/hooks";
 import {
   setCustomerPreview,
   useCustomerPreview
@@ -106,9 +106,13 @@ const SETUP_SCREEN_PATHS: Record<string, string> = {
   "default-accounts": path.to.accountingDefaults,
   "cost-centers": path.to.costCenters,
   "payment-terms": path.to.paymentTerms,
-  "exchange-rates": path.to.exchangeRates,
+  // Exchange rates are set up by installing the integration, so deep-link to
+  // the integrations page pre-filtered to it rather than the rates list.
+  "exchange-rates": `${path.to.integrations}?search=exchange`,
   "fiscal-year": path.to.fiscalYears,
+  "accounting-periods": path.to.accountingPeriods,
   "asset-classes": path.to.assetClasses,
+  "fixed-assets": path.to.fixedAssets,
   "scrap-reasons": path.to.scrapReasons,
   "maintenance-schedules": path.to.maintenanceSchedules
 };
@@ -133,7 +137,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const hub = await getImplementationHub(client, companyId);
   // Only enrolled companies have a hub row — others never reach this surface.
-  // Enrollment is the gate (manual today; Cloud auto-enroll later), not staff.
+  // Enrollment is the gate (self-serve from the home page), not staff.
   if (!hub.data) {
     throw redirect(path.to.authenticatedRoot);
   }
@@ -157,6 +161,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export default function GetStartedLayout() {
   const { company } = useUser();
   const { isInternal } = useFlags();
+  const settings = useSettings();
+  // Same read as useAccountingSubmodules — the generated companySettings type
+  // doesn't carry the column yet.
+  const accountingEnabled =
+    (settings as { accountingEnabled?: boolean }).accountingEnabled ?? false;
   const previewingAsCustomer = useCustomerPreview();
   useImplementationRealtime(company.id);
   const { groups } = useImplementationSubmodules();
@@ -165,6 +174,16 @@ export default function GetStartedLayout() {
   const fetcher = useFetcher();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // The hub scrolls inside this container (not the window), so client-side
+  // navigations keep the previous page's scroll position. Smooth-scroll back
+  // to the top on each page change — unless the target has a hash, in which
+  // case the destination page owns the scroll (e.g. the Plan's deep links).
+  const scrollRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (location.hash) return;
+    scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  }, [location.pathname, location.hash]);
 
   // When the customer clears the final checkpoint anywhere (typically the Plan),
   // send them to the command center so they land on the confetti + the exit
@@ -207,13 +226,17 @@ export default function GetStartedLayout() {
       exclusions:
         (loaderData.hub.exclusions as unknown as HubExclusions) ??
         EMPTY_EXCLUSIONS,
+      // The Accounting module only appears in the hub when the company has
+      // accounting enabled; forced here so it never persists into the stored
+      // (staff-editable) exclusions.
+      forcedModules: accountingEnabled ? [] : ["acc"],
       contacts: (loaderData.hub.contacts as unknown as HubContacts) ?? {},
       checkStates: loaderData.checkStates,
       fieldValues: loaderData.fieldValues,
       rows: loaderData.rows as unknown as ImplementationRowData[],
       signals: loaderData.signals
     }),
-    [loaderData]
+    [loaderData, accountingEnabled]
   );
 
   const flags = useMemo<HubFlags>(
@@ -230,8 +253,8 @@ export default function GetStartedLayout() {
       <div className="grid grid-cols-[auto_1fr] grid-rows-[minmax(0,1fr)] w-full h-full overflow-hidden">
         <GroupedContentSidebar groups={groups} exactMatch />
         <div className="relative min-w-0 overflow-hidden">
-          <MeshGradientBackground theme="blue" />
-          <div className="relative z-10 h-full overflow-y-auto">
+          <MeshGradientBackground darkOnly />
+          <div ref={scrollRef} className="relative z-10 h-full overflow-y-auto">
             {isInternal ? (
               <PreviewBar previewing={previewingAsCustomer} />
             ) : null}

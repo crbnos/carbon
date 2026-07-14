@@ -8,9 +8,12 @@ import {
   getPostgresConnectionPool,
   type KyselyDatabase
 } from "@carbon/database/client";
+import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { type Kysely, PostgresDriver, type RawBuilder, sql } from "kysely";
 import { nanoid } from "nanoid";
+
+const log = getLogger("jobs", "company-backup");
 
 /**
  * Shared core for company backup export/import.
@@ -1189,7 +1192,7 @@ export async function copyAssetsToBackup(
         copied++;
       } else {
         failed++;
-        console.warn("Failed to copy backup asset", { path, error });
+        log.warning("Failed to copy backup asset", { path, error });
       }
       await onProgress?.(++done, total);
     }
@@ -1231,7 +1234,7 @@ export async function restoreAssetsFromBackup(
       idRewrite
     );
     if (!targetPath.startsWith(`${companyId}/`)) {
-      console.warn("Skipping backup asset outside target company prefix", {
+      log.warning("Skipping backup asset outside target company prefix", {
         path: file.path,
         targetPath
       });
@@ -1248,7 +1251,7 @@ export async function restoreAssetsFromBackup(
       copied++;
     } else {
       failed++;
-      console.warn("Failed to restore backup asset", {
+      log.warning("Failed to restore backup asset", {
         path: file.path,
         targetPath,
         error

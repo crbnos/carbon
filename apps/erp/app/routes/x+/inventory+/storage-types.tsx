@@ -1,6 +1,7 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { getLogger } from "@carbon/logger";
 import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
@@ -10,6 +11,8 @@ import StorageTypesTable from "~/modules/inventory/ui/StorageTypes/StorageTypesT
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
+
+const logger = getLogger("erp", "storage-types");
 
 export const handle: Handle = {
   breadcrumb: msg`Storage Types`,
@@ -37,7 +40,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   });
 
   if (storageTypes.error) {
-    console.error(storageTypes.error);
+    logger.error(storageTypes.error);
     throw redirect(
       path.to.inventory,
       await flash(request, error(null, "Error loading storage types"))

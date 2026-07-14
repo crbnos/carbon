@@ -9,6 +9,7 @@ import {
   updateImplementationHub,
   updateImplementationRow,
   upsertCheckState,
+  upsertCheckStates,
   upsertFieldValue
 } from "@carbon/onboarding/server";
 import { isInternalEmail } from "@carbon/utils";
@@ -46,6 +47,17 @@ export async function action({ request }: ActionFunctionArgs) {
       const result = await upsertCheckState(client, {
         companyId,
         itemKey: a.itemKey,
+        kind: a.kind,
+        value: a.value,
+        userId
+      });
+      if (result.error) return fail(result.error);
+      break;
+    }
+    case "setChecks": {
+      const result = await upsertCheckStates(client, {
+        companyId,
+        itemKeys: JSON.parse(a.itemKeys),
         kind: a.kind,
         value: a.value,
         userId

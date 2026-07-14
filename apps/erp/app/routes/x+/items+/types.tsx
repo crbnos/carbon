@@ -1,6 +1,7 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { getLogger } from "@carbon/logger";
 import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
@@ -10,6 +11,8 @@ import MaterialTypesTable from "~/modules/items/ui/MaterialTypes/MaterialTypesTa
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
+
+const logger = getLogger("erp", "types");
 
 export const handle: Handle = {
   breadcrumb: msg`Types`,
@@ -37,7 +40,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   });
 
   if (materialTypes.error) {
-    console.error(materialTypes.error);
+    logger.error(materialTypes.error);
     throw redirect(
       path.to.items,
       await flash(request, error(null, "Error loading material types"))

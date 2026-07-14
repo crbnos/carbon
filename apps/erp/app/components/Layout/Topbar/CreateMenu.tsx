@@ -8,11 +8,11 @@ import {
 import { useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
 import {
+  LuBlocks,
   LuCirclePlay,
   LuContainer,
   LuShieldX,
   LuShoppingCart,
-  LuSquareStack,
   LuSquareUser,
   LuUsers,
   LuWrench
@@ -37,7 +37,7 @@ function useCreate(): Route[] {
       links.push({
         name: t`Part`,
         to: path.to.newPart,
-        icon: <LuSquareStack />
+        icon: <LuBlocks />
       });
     }
 

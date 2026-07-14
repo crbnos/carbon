@@ -29,13 +29,18 @@ type DimensionFormProps = {
 const entityTypeLabels: Record<string, string> = {
   Custom: "Custom",
   Location: "Location",
+  Item: "Item",
   ItemPostingGroup: "Item Group",
+  Supplier: "Supplier",
   SupplierType: "Supplier Type",
+  Customer: "Customer",
   CustomerType: "Customer Type",
   Department: "Department",
   Employee: "Employee",
   FixedAssetClass: "Asset Class",
-  CostCenter: "Cost Center"
+  CostCenter: "Cost Center",
+  WorkCenter: "Work Center",
+  Process: "Process"
 };
 
 const DimensionForm = ({ initialValues, onClose }: DimensionFormProps) => {

@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<!-- FILL: page title -->
+<title>PR #000 — Title</title>
+<style>
+  :root {
+    --bg: #fbfbf9; --panel: #ffffff; --ink: #262323; --faint: rgba(38,35,35,.62);
+    --hairline: #e7e7e3; --accent: #1e84b0; --code-bg: #21201d; --code-ink: #f2f0ec;
+    --add-bg: #e4f8da; --add-ink: #2c5e14; --del-bg: #fde5e2; --del-ink: #8c2318;
+    --callout-bg: #dff5ff; --callout-border: #a9daf3;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 16px/1.65 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 860px; margin: 0 auto; padding: 48px 24px 96px; }
+  h1 { font-size: 28px; line-height: 1.25; margin: 8px 0 4px; }
+  h2 { font-size: 20px; margin: 48px 0 12px; padding-top: 24px; border-top: 1px solid var(--hairline); }
+  h3 { font-size: 16px; margin: 24px 0 8px; }
+  p, li { max-width: 72ch; }
+  a { color: var(--accent); }
+  .kicker { color: var(--faint); font-size: 13px; letter-spacing: .06em; text-transform: uppercase; }
+  .summary { font-size: 18px; color: var(--faint); margin-top: 0; }
+  .metrics { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 0; padding: 0; list-style: none; }
+  .metrics li { border: 1px solid var(--hairline); background: var(--panel);
+                border-radius: 999px; padding: 4px 12px; font-size: 13px; color: var(--faint); }
+  .metrics b { color: var(--ink); font-weight: 600; }
+  .callout { background: var(--callout-bg); border: 1px solid var(--callout-border);
+             border-radius: 10px; padding: 12px 16px; margin: 16px 0; }
+  .callout .label { font-size: 11px; font-weight: 700; letter-spacing: .08em;
+                    text-transform: uppercase; color: var(--accent); }
+  code, pre { font: 13px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; }
+  code { background: #efefeb; border-radius: 4px; padding: 1px 5px; }
+  pre { background: var(--code-bg); color: var(--code-ink); border-radius: 10px;
+        padding: 14px 16px; overflow-x: auto; }
+  pre code { background: none; padding: 0; }
+  /* Focused diff snippet */
+  .diff { border: 1px solid var(--hairline); border-radius: 10px; overflow: hidden; margin: 16px 0; }
+  .diff-title { font: 12px/1 ui-monospace, monospace; background: var(--panel);
+                border-bottom: 1px solid var(--hairline); padding: 8px 12px; color: var(--faint); }
+  .diff pre { margin: 0; border-radius: 0; background: var(--panel); color: var(--ink); }
+  .diff .add { display: block; background: var(--add-bg); color: var(--add-ink); }
+  .diff .del { display: block; background: var(--del-bg); color: var(--del-ink); }
+  .diff .ctx { display: block; color: var(--faint); }
+  /* Before/after flow diagram */
+  .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 12px 0; }
+  .flow .node { border: 1px solid var(--hairline); background: var(--panel);
+                border-radius: 8px; padding: 6px 12px; font-size: 14px; }
+  .flow .node.hot { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+  .flow .arrow { color: var(--faint); }
+  .flow-label { font-size: 12px; font-weight: 700; letter-spacing: .06em;
+                text-transform: uppercase; color: var(--faint); margin: 16px 0 4px; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 14px; }
+  th, td { text-align: left; border-bottom: 1px solid var(--hairline); padding: 8px 10px; vertical-align: top; }
+  th { color: var(--faint); font-weight: 600; }
+  .takeaway { background: var(--panel); border: 1px solid var(--hairline);
+              border-radius: 12px; padding: 16px 20px; margin-top: 16px; }
+</style>
+</head>
+<body>
+<main>
+
+  <header>
+    <!-- FILL: PR number, branch, link -->
+    <p class="kicker">PR #000 · branch-name · <a href="#">github link</a></p>
+    <!-- FILL: PR title -->
+    <h1>Title of the change</h1>
+    <!-- FILL: one-sentence summary a reviewer can repeat from memory -->
+    <p class="summary">One sentence: what this PR does and why it matters.</p>
+    <ul class="metrics">
+      <!-- FILL: real numbers from git diff --stat -->
+      <li><b>0</b> files changed</li>
+      <li><b>+0 / −0</b> lines</li>
+      <li><b>0</b> tests added</li>
+      <li><b>0</b> packages touched</li>
+    </ul>
+  </header>
+
+  <section>
+    <h2>The problem</h2>
+    <!-- FILL: previous behavior; why it was wrong, confusing, missing, or risky.
+         Concrete example > abstract description. -->
+    <p></p>
+  </section>
+
+  <section>
+    <h2>Where this sits in the system</h2>
+    <!-- FILL: upstream callers, downstream effects, why this layer is the right
+         place. Name what is intentionally NOT changed. -->
+    <p></p>
+  </section>
+
+  <section>
+    <h2>Before → after</h2>
+    <!-- FILL: keep the two flows parallel so the difference jumps out.
+         Mark the changed node(s) with class="node hot". Delete if the PR
+         doesn't change a flow. -->
+    <p class="flow-label">Before</p>
+    <div class="flow">
+      <span class="node">Client</span><span class="arrow">→</span>
+      <span class="node">Handler</span><span class="arrow">→</span>
+      <span class="node hot">old behavior</span>
+    </div>
+    <p class="flow-label">After</p>
+    <div class="flow">
+      <span class="node">Client</span><span class="arrow">→</span>
+      <span class="node">Handler</span><span class="arrow">→</span>
+      <span class="node hot">new behavior</span>
+    </div>
+    <div class="callout">
+      <span class="label">Why</span>
+      <!-- FILL: the counterintuitive fact a reviewer would otherwise miss -->
+      <p></p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Code walkthrough</h2>
+    <!-- FILL: one .diff block per important file, in teaching order (not diff
+         order). Each snippet: only the lines that matter, then one short
+         paragraph on what it accomplishes. Repeat the block as needed. -->
+    <h3>1. What changed first</h3>
+    <div class="diff">
+      <div class="diff-title">path/to/file.ts</div>
+      <pre><span class="del">- old line</span><span class="add">+ new line</span><span class="ctx">  unchanged context</span></pre>
+    </div>
+    <p></p>
+  </section>
+
+  <section>
+    <h2>Tests &amp; verification</h2>
+    <!-- FILL: tests added/updated and the exact commands run with results.
+         If something was NOT verified, say so and list the recommended command. -->
+    <table>
+      <tr><th>Check</th><th>Command</th><th>Result</th></tr>
+      <tr><td></td><td><code></code></td><td></td></tr>
+    </table>
+  </section>
+
+  <section>
+    <h2>Reviewer takeaway</h2>
+    <div class="takeaway">
+      <!-- FILL: the shortest useful mental model of the PR, plus what to focus
+           on while reading the real diff. -->
+      <p></p>
+    </div>
+  </section>
+
+</main>
+</body>
+</html>

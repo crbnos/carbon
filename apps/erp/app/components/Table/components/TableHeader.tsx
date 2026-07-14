@@ -60,6 +60,9 @@ import Sort from "./Sort";
 type HeaderProps<T> = {
   renderActions?: (selectedRows: T[]) => ReactNode;
   columnAccessors: Record<string, string>;
+  exportValues: Record<string, (row: T) => unknown>;
+  exportOnlyColumns: string[];
+  sortKeyToLabel: Record<string, string>;
   columnOrder: ColumnOrderState;
   columnPinning: ColumnPinningState;
   columnVisibility: Record<string, boolean>;
@@ -79,8 +82,10 @@ type HeaderProps<T> = {
   setEditMode: (editMode: boolean) => void;
   table?: string;
   title?: string;
+  titleBadge?: ReactNode;
   withSavedView: boolean;
   withInlineEditing: boolean;
+  forceEditMode: boolean;
   withPagination: boolean;
   withSearch: boolean;
   withSelectableRows: boolean;
@@ -90,6 +95,9 @@ type HeaderProps<T> = {
 const TableHeader = <T extends object>({
   compact,
   columnAccessors,
+  exportValues,
+  exportOnlyColumns,
+  sortKeyToLabel,
   columnOrder,
   columnPinning,
   columnVisibility,
@@ -106,7 +114,9 @@ const TableHeader = <T extends object>({
   setEditMode,
   table,
   title,
+  titleBadge,
   withInlineEditing,
+  forceEditMode,
   withPagination,
   withSavedView,
   withSearch,
@@ -161,7 +171,8 @@ const TableHeader = <T extends object>({
     [t]
   );
 
-  const hideTitleBar = !viewTitle && !primaryAction && !canSaveView;
+  const hideTitleBar =
+    !viewTitle && !primaryAction && !canSaveView && !titleBadge;
 
   return (
     <div className={cn("w-full flex flex-col", !compact && "mb-8")}>
@@ -225,11 +236,12 @@ const TableHeader = <T extends object>({
                 : "px-4 md:px-0 py-6 justify-between bg-card w-full relative"
             )}
           >
-            <HStack spacing={1}>
+            <HStack spacing={2}>
               <CollapsibleSidebarTrigger />
               {viewTitle && (
                 <Heading size={compact ? "h3" : "h2"}>{viewTitle}</Heading>
               )}
+              {titleBadge}
             </HStack>
 
             <HStack>
@@ -301,11 +313,7 @@ const TableHeader = <T extends object>({
           {!!filters?.length && <Filter filters={filters} />}
         </HStack>
         <HStack>
-          {sort === undefined ? (
-            <Sort columnAccessors={columnAccessors} />
-          ) : (
-            sort
-          )}
+          {sort === undefined ? <Sort sortKeyToLabel={sortKeyToLabel} /> : sort}
 
           <Columns
             columnOrder={columnOrder}
@@ -341,6 +349,8 @@ const TableHeader = <T extends object>({
           <Download
             data={data}
             columnAccessors={columnAccessors}
+            exportValues={exportValues}
+            exportOnlyColumns={exportOnlyColumns}
             columnOrder={columnOrder}
             columnVisibility={columnVisibility}
           />
@@ -351,6 +361,7 @@ const TableHeader = <T extends object>({
             )}
 
           {withInlineEditing &&
+            !forceEditMode &&
             (editMode ? (
               <Button
                 leftIcon={<LuLock />}

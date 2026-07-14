@@ -1,6 +1,9 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
+
+const logger = getLogger("erp", "bucket");
 
 const supportedFileTypes: Record<string, string> = {
   pdf: "application/pdf",
@@ -50,9 +53,14 @@ export let loader = async ({ request, params }: LoaderFunctionArgs) => {
   }
   const contentType = supportedFileTypes[fileType];
 
-  // Check if the decoded path includes companyId for security
+  // Authorize against the companyId as a full path segment (prefix or
+  // slash-bounded), not a loose substring — `.includes(companyId)` lets
+  // `<otherCo>/.../<yourCompanyId>.pdf` serve another company's private file.
   const decodedPath = decodeURIComponent(path);
-  if (!decodedPath.includes(companyId)) {
+  const ownsPath =
+    decodedPath.startsWith(`${companyId}/`) ||
+    decodedPath.includes(`/${companyId}/`);
+  if (!ownsPath) {
     return new Response(null, { status: 403 });
   }
 
@@ -63,7 +71,7 @@ export let loader = async ({ request, params }: LoaderFunctionArgs) => {
     // Use the original encoded path for the storage API call
     const result = await serviceRole.storage.from(bucket!).download(path);
     if (result.error) {
-      console.error(result.error);
+      logger.error(result.error);
       return null;
     }
     return result.data;
