@@ -181,14 +181,6 @@ export const workCentersQuery = (companyId: string | null) => ({
   staleTime: RefreshRate.Low
 });
 
-export const groupsByTypeQuery = (
-  companyId: string | null,
-  type: string | null
-) => ({
-  queryKey: ["groupsByType", companyId ?? "null", type ?? "null"],
-  staleTime: RefreshRate.Low
-});
-
 export const materialTypesQuery = (
   substanceId: string,
   formId: string,
