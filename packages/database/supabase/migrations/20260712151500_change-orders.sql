@@ -474,13 +474,13 @@ INSERT INTO "customFieldTable" ("table", "name", "module")
 VALUES ('changeOrder', 'Change Order', 'Items');
 
 -- -----------------------------------------------------------------------------
--- 13. Sequence seed — CO readable id per company (CO-000001), size 6
+-- 13. Sequence seed — change notice readable id per company (CN-000001), size 6
 -- -----------------------------------------------------------------------------
 INSERT INTO "sequence" ("table", "name", "prefix", "suffix", "next", "size", "step", "companyId")
 SELECT
   'changeOrder',
   'Change Order',
-  'CO-',
+  'CN-',
   NULL,
   0,
   6,

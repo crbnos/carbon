@@ -265,7 +265,7 @@ export const sequences = [
   {
     table: "changeOrder",
     name: "Change Order",
-    prefix: "CO-",
+    prefix: "CN-",
     suffix: null,
     next: 0,
     size: 6,
