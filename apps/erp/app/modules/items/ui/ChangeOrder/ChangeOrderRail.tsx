@@ -1,18 +1,21 @@
 import type { JSONContent } from "@carbon/react";
-import { Badge, HStack } from "@carbon/react";
+import { Badge, Button, HStack, VStack } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import type { ReactNode } from "react";
+import { LuCircleCheck } from "react-icons/lu";
 import type {
   ChangeOrder,
   ChangeOrderActionTask,
   ChangeOrderImpact,
   ChangeOrderReleaseConflict
 } from "~/modules/items";
+import type { AffectedItemDraft } from "./affectedItem.types";
 import ChangeOrderActions from "./ChangeOrderActions";
 import { ChangeOrderContentSection } from "./ChangeOrderContent";
 import ChangeOrderProperties from "./ChangeOrderProperties";
 import ChangeOrderReleaseMerge from "./ChangeOrderReleaseMerge";
 import ImpactPanel from "./ImpactPanel";
+import { releaseDialogOpenAtom } from "./releaseDialog.store";
 
 // A flat CO-centric section — mirrors the Properties panel's own section style
 // (xxs uppercase heading + content), so the whole rail reads as one consistent
@@ -41,11 +44,13 @@ function RailSection({
 }
 
 // Right pane of the change-order workspace: all CO-centric content (not tied to
-// any single affected item), as one consistent sidebar — Properties, Reason for
-// change, Description, Actions, and (at Implementation/Done) Impact + Release.
+// any single affected item), as one consistent sidebar — Release (at
+// Implementation), Properties, Reason for change, Description, Actions, and
+// (at Implementation/Done) Impact.
 export default function ChangeOrderRail({
   id,
   changeOrder,
+  affectedItems,
   actions,
   impact,
   releaseConflicts,
@@ -54,6 +59,7 @@ export default function ChangeOrderRail({
 }: {
   id: string;
   changeOrder: ChangeOrder;
+  affectedItems: AffectedItemDraft[];
   actions: ChangeOrderActionTask[];
   impact: ChangeOrderImpact;
   releaseConflicts: ChangeOrderReleaseConflict[];
@@ -65,9 +71,45 @@ export default function ChangeOrderRail({
     (a) => a.status === "Completed" || a.status === "Skipped"
   ).length;
 
+  // The read-only changes shown in the release confirmation dialog.
+  const changes = affectedItems.map((a) => ({
+    id: a.affectedItem.id,
+    label: a.affectedItem.item?.readableIdWithRevision ?? a.affectedItem.itemId,
+    diff: a.diff
+  }));
+
   return (
     <aside className="w-[420px] flex-shrink-0 bg-card h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border text-sm">
       <div className="flex flex-col divide-y divide-border">
+        {/* Release is the primary action at Implementation — surfaced first so
+            it's never buried below the scroll. The button opens the review +
+            confirm dialog (also openable from the header); release is gated on
+            confirmation, never one-click. */}
+        {isImplementation && (
+          <RailSection title={<Trans>Release</Trans>}>
+            <VStack spacing={2} className="w-full">
+              <Button
+                className="w-full"
+                leftIcon={<LuCircleCheck />}
+                variant="primary"
+                isDisabled={isDisabled}
+                onClick={() => releaseDialogOpenAtom.set(true)}
+              >
+                <Trans>Release change order</Trans>
+              </Button>
+              <span className="text-xs text-muted-foreground">
+                <Trans>Review the changes and confirm to activate them.</Trans>
+              </span>
+            </VStack>
+            <ChangeOrderReleaseMerge
+              changeOrderId={id}
+              status={changeOrder.status}
+              conflicts={releaseConflicts}
+              changes={changes}
+            />
+          </RailSection>
+        )}
+
         {/* Properties renders its own "Properties" heading + fields. */}
         <ChangeOrderProperties />
 
@@ -116,17 +158,6 @@ export default function ChangeOrderRail({
         {showImplementation && (
           <RailSection title={<Trans>Impact</Trans>}>
             <ImpactPanel embedded impact={impact} />
-          </RailSection>
-        )}
-
-        {isImplementation && (
-          <RailSection title={<Trans>Release</Trans>}>
-            <ChangeOrderReleaseMerge
-              embedded
-              changeOrderId={id}
-              status={changeOrder.status}
-              conflicts={releaseConflicts}
-            />
           </RailSection>
         )}
       </div>

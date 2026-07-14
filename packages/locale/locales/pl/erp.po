@@ -2424,6 +2424,9 @@ msgstr "Potwierdź"
 msgid "Confirm {0}"
 msgstr "Potwierdź {0}"
 
+msgid "Confirm & release"
+msgstr ""
+
 msgid "Confirm and sign the scope"
 msgstr "Potwierdź i podpisz zakres"
 
@@ -7791,6 +7794,9 @@ msgstr "Brak dotkniętych zespołów."
 msgid "No affected items yet — add a part or tool below."
 msgstr ""
 
+msgid "No affected items."
+msgstr ""
+
 msgid "No applications. Payment will be on-account."
 msgstr "Brak aplikacji. Płatność będzie na rachunek."
 
@@ -9709,7 +9715,7 @@ msgstr "Względna oś czasu · daty do potwierdzenia"
 msgid "Release"
 msgstr "Zwolnienie"
 
-msgid "Release Change Order"
+msgid "Release change order"
 msgstr ""
 
 msgid "Release control"
@@ -9720,9 +9726,6 @@ msgstr "Kontrola Wydania"
 
 msgid "Release Job"
 msgstr "Zwolnij zadanie"
-
-msgid "Release the change order to activate the changes."
-msgstr ""
 
 msgid "Released"
 msgstr "Wydane"
@@ -9952,16 +9955,13 @@ msgstr "Wartość resztkowa %"
 msgid "Resolve"
 msgstr ""
 
-msgid "Resolve & Release"
+msgid "Resolve & release"
 msgstr ""
 
 msgid "Resolve conflicts"
 msgstr ""
 
-msgid "Resolve each part's conflicts below, then release. This activates every affected item's method."
-msgstr ""
-
-msgid "Resolve every part above to release."
+msgid "Resolve every conflicting part to release."
 msgstr ""
 
 msgid "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
@@ -10033,7 +10033,13 @@ msgstr "Odwróć powiązane wpisy w dzienniku"
 msgid "Review"
 msgstr ""
 
+msgid "Review each item's changes, then confirm — releasing can't be undone."
+msgstr ""
+
 msgid "Review required"
+msgstr ""
+
+msgid "Review the changes and confirm to activate them."
 msgstr ""
 
 msgid "Revision"

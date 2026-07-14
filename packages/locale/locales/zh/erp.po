@@ -2424,6 +2424,9 @@ msgstr "确认"
 msgid "Confirm {0}"
 msgstr "确认 {0}"
 
+msgid "Confirm & release"
+msgstr ""
+
 msgid "Confirm and sign the scope"
 msgstr "确认并签署范围"
 
@@ -7791,6 +7794,9 @@ msgstr "暂无受影响的装配体。"
 msgid "No affected items yet — add a part or tool below."
 msgstr ""
 
+msgid "No affected items."
+msgstr ""
+
 msgid "No applications. Payment will be on-account."
 msgstr "无应用。付款将按账户处理。"
 
@@ -9709,7 +9715,7 @@ msgstr "相对时间线 · 日期待确认"
 msgid "Release"
 msgstr "释放"
 
-msgid "Release Change Order"
+msgid "Release change order"
 msgstr ""
 
 msgid "Release control"
@@ -9720,9 +9726,6 @@ msgstr "发布控制"
 
 msgid "Release Job"
 msgstr "发布工作"
-
-msgid "Release the change order to activate the changes."
-msgstr ""
 
 msgid "Released"
 msgstr "已发布"
@@ -9952,16 +9955,13 @@ msgstr "残差值 %"
 msgid "Resolve"
 msgstr ""
 
-msgid "Resolve & Release"
+msgid "Resolve & release"
 msgstr ""
 
 msgid "Resolve conflicts"
 msgstr ""
 
-msgid "Resolve each part's conflicts below, then release. This activates every affected item's method."
-msgstr ""
-
-msgid "Resolve every part above to release."
+msgid "Resolve every conflicting part to release."
 msgstr ""
 
 msgid "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
@@ -10033,7 +10033,13 @@ msgstr "反转相关日记账分录"
 msgid "Review"
 msgstr ""
 
+msgid "Review each item's changes, then confirm — releasing can't be undone."
+msgstr ""
+
 msgid "Review required"
+msgstr ""
+
+msgid "Review the changes and confirm to activate them."
 msgstr ""
 
 msgid "Revision"

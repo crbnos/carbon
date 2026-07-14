@@ -80,6 +80,7 @@ export default function ChangeOrderWorkspace({
       <ChangeOrderRail
         id={id}
         changeOrder={changeOrder}
+        affectedItems={affectedItems}
         actions={actions}
         impact={impact}
         releaseConflicts={releaseConflicts}

@@ -32,6 +32,7 @@ import {
 } from "../../changeOrder.models";
 import type { ChangeOrder } from "../../types";
 import ChangeOrderStatus from "./ChangeOrderStatus";
+import { releaseDialogOpenAtom } from "./releaseDialog.store";
 
 const ChangeOrderHeader = () => {
   const { id } = useParams();
@@ -129,9 +130,9 @@ const ChangeOrderHeader = () => {
             })}
           </HStack>
 
-          {/* Implementation → Done ("Done") is released via the merge control
-              in the detail body (it carries the merge resolution); the header
-              only advances the earlier stages. */}
+          {/* Implementation → Done is a release: it opens the review + confirm
+              dialog (which carries the merge resolution), not a one-click stage
+              advance. The header only auto-advances the earlier stages. */}
           {nextStatus && nextStatus !== "Done" && !isLocked && (
             <statusFetcher.Form
               method="post"
@@ -153,6 +154,17 @@ const ChangeOrderHeader = () => {
                 {t`Advance to ${nextStatus}`}
               </Button>
             </statusFetcher.Form>
+          )}
+
+          {status === "Implementation" && !isLocked && (
+            <Button
+              leftIcon={<LuCircleCheck />}
+              variant="primary"
+              isDisabled={!permissions.can("update", "parts")}
+              onClick={() => releaseDialogOpenAtom.set(true)}
+            >
+              {t`Release`}
+            </Button>
           )}
         </HStack>
       </div>
