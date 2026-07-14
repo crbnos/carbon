@@ -4454,6 +4454,9 @@ msgstr "メール"
 msgid "Email Address"
 msgstr "メールアドレス"
 
+msgid "Email notifications are not included in your company's current plan; email preferences will apply if they are enabled."
+msgstr "メール通知はあなたの会社の現在のプランに含まれていません。メール設定が有効になっている場合は適用されます。"
+
 msgid "Email notifications not configured"
 msgstr "メール通知が設定されていません"
 
@@ -6032,6 +6035,12 @@ msgstr "在庫あり"
 
 msgid "In the loop together"
 msgstr "一緒にループの中にいる"
+
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
+msgstr "アプリ内通知は常に配信されます。どのトピックがメールまたはSlackでも届くかを選択してください。"
+
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
+msgstr "アプリ内通知は常に配信されます。どのトピックがメールでも届くかを選択してください。"
 
 msgid "Inactive"
 msgstr "非アクティブ"
@@ -10941,6 +10950,9 @@ msgstr "リリースされたが開始していない状態をスキップしま
 msgid "Skipped"
 msgstr "スキップ"
 
+msgid "Slack"
+msgstr "Slack"
+
 msgid "Smoke-test the core daily flows end to end"
 msgstr "コア日次フローのスモークテストを端から端まで実施"
 
@@ -12568,6 +12580,9 @@ msgstr "ツール"
 
 msgid "Top-level classification (asset / liability / equity / revenue / expense); set only on root groups, inherited by children."
 msgstr "トップレベルの分類（資産/負債/資本/収益/費用）。ルートグループにのみ設定され、子に継承されます。"
+
+msgid "Topic"
+msgstr "トピック"
 
 msgid "Total"
 msgstr "合計"

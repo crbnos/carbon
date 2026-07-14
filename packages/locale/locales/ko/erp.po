@@ -4454,6 +4454,9 @@ msgstr "이메일"
 msgid "Email Address"
 msgstr "이메일 주소"
 
+msgid "Email notifications are not included in your company's current plan; email preferences will apply if they are enabled."
+msgstr "이메일 알림은 귀사의 현재 플랜에 포함되지 않습니다. 이메일 알림이 활성화되면 이메일 환경설정이 적용됩니다."
+
 msgid "Email notifications not configured"
 msgstr "이메일 알림이 설정되지 않음"
 
@@ -6032,6 +6035,12 @@ msgstr "재고 있음"
 
 msgid "In the loop together"
 msgstr "함께 정보 공유하기"
+
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
+msgstr "인앱 알림은 항상 전달됩니다. 이메일 또는 Slack으로도 전달받을 주제를 선택하세요."
+
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
+msgstr "인앱 알림은 항상 전달됩니다. 이메일로도 전달받을 주제를 선택하세요."
 
 msgid "Inactive"
 msgstr "비활성"
@@ -10941,6 +10950,9 @@ msgstr "릴리즈되었지만 시작되지 않은 상태를 건너뜁니다 — 
 msgid "Skipped"
 msgstr "건너뜀"
 
+msgid "Slack"
+msgstr "Slack"
+
 msgid "Smoke-test the core daily flows end to end"
 msgstr "핵심 일일 업무 흐름을 처음부터 끝까지 스모크 테스트하세요"
 
@@ -12568,6 +12580,9 @@ msgstr "공구"
 
 msgid "Top-level classification (asset / liability / equity / revenue / expense); set only on root groups, inherited by children."
 msgstr "최상위 분류(자산/부채/자본/수익/비용)로, 루트 그룹에만 설정하며 하위 항목에 상속됩니다."
+
+msgid "Topic"
+msgstr "주제"
 
 msgid "Total"
 msgstr "합계"

@@ -4454,6 +4454,9 @@ msgstr "Email"
 msgid "Email Address"
 msgstr "Email Address"
 
+msgid "Email notifications are not included in your company's current plan; email preferences will apply if they are enabled."
+msgstr "Email notifications are not included in your company's current plan; email preferences will apply if they are enabled."
+
 msgid "Email notifications not configured"
 msgstr "Email notifications not configured"
 
@@ -6032,6 +6035,12 @@ msgstr "In stock"
 
 msgid "In the loop together"
 msgstr "In the loop together"
+
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
+msgstr "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
+
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
+msgstr "In-app notifications are always delivered. Choose which topics also reach you by email."
 
 msgid "Inactive"
 msgstr "Inactive"
@@ -10941,6 +10950,9 @@ msgstr "Skip the released-but-not-started state — the job starts immediately o
 msgid "Skipped"
 msgstr "Skipped"
 
+msgid "Slack"
+msgstr "Slack"
+
 msgid "Smoke-test the core daily flows end to end"
 msgstr "Smoke-test the core daily flows end to end"
 
@@ -12568,6 +12580,9 @@ msgstr "Tools"
 
 msgid "Top-level classification (asset / liability / equity / revenue / expense); set only on root groups, inherited by children."
 msgstr "Top-level classification (asset / liability / equity / revenue / expense); set only on root groups, inherited by children."
+
+msgid "Topic"
+msgstr "Topic"
 
 msgid "Total"
 msgstr "Total"

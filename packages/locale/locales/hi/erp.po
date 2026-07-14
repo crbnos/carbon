@@ -4454,6 +4454,9 @@ msgstr "ईमेल"
 msgid "Email Address"
 msgstr "ईमेल पता"
 
+msgid "Email notifications are not included in your company's current plan; email preferences will apply if they are enabled."
+msgstr "ईमेल नोटिफिकेशन आपकी कंपनी की वर्तमान योजना में शामिल नहीं हैं; यदि वे सक्षम हैं तो ईमेल प्राथमिकताएं लागू होंगी।"
+
 msgid "Email notifications not configured"
 msgstr "ईमेल सूचनाएं कॉन्फ़िगर नहीं की गई हैं"
 
@@ -6032,6 +6035,12 @@ msgstr "स्टॉक में"
 
 msgid "In the loop together"
 msgstr "एक साथ लूप में"
+
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
+msgstr "इन-ऐप नोटिफिकेशन हमेशा डिलीवर किए जाते हैं। चुनें कि कौन से विषय आपको ईमेल या Slack के माध्यम से भी पहुंचते हैं।"
+
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
+msgstr "इन-ऐप नोटिफिकेशन हमेशा डिलीवर किए जाते हैं। चुनें कि कौन से विषय आपको ईमेल के माध्यम से भी पहुंचते हैं।"
 
 msgid "Inactive"
 msgstr "निष्क्रिय"
@@ -10941,6 +10950,9 @@ msgstr "जारी-लेकिन-शुरू नहीं की गई स
 msgid "Skipped"
 msgstr "छोड़ा गया"
 
+msgid "Slack"
+msgstr "Slack"
+
 msgid "Smoke-test the core daily flows end to end"
 msgstr "कोर दैनिक प्रवाह को अंत से अंत तक स्मोक-टेस्ट करें"
 
@@ -12568,6 +12580,9 @@ msgstr "उपकरण"
 
 msgid "Top-level classification (asset / liability / equity / revenue / expense); set only on root groups, inherited by children."
 msgstr "शीर्ष-स्तर वर्गीकरण (संपत्ति / देयता / इक्विटी / राजस्व / व्यय); केवल मूल समूहों पर सेट, बच्चों द्वारा विरासत में।"
+
+msgid "Topic"
+msgstr "विषय"
 
 msgid "Total"
 msgstr "कुल"

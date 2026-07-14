@@ -4454,6 +4454,9 @@ msgstr "Correo electrónico"
 msgid "Email Address"
 msgstr "Dirección de Correo Electrónico"
 
+msgid "Email notifications are not included in your company's current plan; email preferences will apply if they are enabled."
+msgstr "Las notificaciones por correo electrónico no se incluyen en el plan actual de su empresa; las preferencias de correo electrónico se aplicarán si se habilitan."
+
 msgid "Email notifications not configured"
 msgstr "Notificaciones por correo electrónico no configuradas"
 
@@ -6032,6 +6035,12 @@ msgstr "En stock"
 
 msgid "In the loop together"
 msgstr "En el ciclo juntos"
+
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
+msgstr "Las notificaciones en la aplicación siempre se entregan. Elija qué temas también le llegan por correo electrónico o Slack."
+
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
+msgstr "Las notificaciones en la aplicación siempre se entregan. Elija qué temas también le llegan por correo electrónico."
 
 msgid "Inactive"
 msgstr "Inactivo"
@@ -10941,6 +10950,9 @@ msgstr "Omita el estado liberado pero no iniciado: el trabajo comienza inmediata
 msgid "Skipped"
 msgstr "Omitido"
 
+msgid "Slack"
+msgstr "Slack"
+
 msgid "Smoke-test the core daily flows end to end"
 msgstr "Prueba de humo de los flujos diarios principales de principio a fin"
 
@@ -12568,6 +12580,9 @@ msgstr "Herramientas"
 
 msgid "Top-level classification (asset / liability / equity / revenue / expense); set only on root groups, inherited by children."
 msgstr "Clasificación de nivel superior (activo/pasivo/patrimonio/ingresos/gastos); establecido solo en grupos raíz, heredado por hijos."
+
+msgid "Topic"
+msgstr "Tema"
 
 msgid "Total"
 msgstr "Total"

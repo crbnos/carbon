@@ -4454,6 +4454,9 @@ msgstr "E-posta"
 msgid "Email Address"
 msgstr "E-posta Adresi"
 
+msgid "Email notifications are not included in your company's current plan; email preferences will apply if they are enabled."
+msgstr "E-posta bildirimleri şirketinizin mevcut planına dahil değildir; e-posta tercihleriniz etkinleştirildiğinde uygulanacaktır."
+
 msgid "Email notifications not configured"
 msgstr "E-posta bildirimleri yapılandırılmamış"
 
@@ -6032,6 +6035,12 @@ msgstr "Stokta"
 
 msgid "In the loop together"
 msgstr "Birlikte döngüde"
+
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
+msgstr "Uygulama içi bildirimler her zaman iletilir. Hangi konuların e-posta veya Slack aracılığıyla sizi ulaştıracağını seçin."
+
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
+msgstr "Uygulama içi bildirimler her zaman iletilir. Hangi konuların e-posta aracılığıyla sizi ulaştıracağını seçin."
 
 msgid "Inactive"
 msgstr "Pasif"
@@ -10941,6 +10950,9 @@ msgstr "Yayınlanan ancak başlatılmayan durumu atlayın - iş tarama sırasın
 msgid "Skipped"
 msgstr "Atlanmış"
 
+msgid "Slack"
+msgstr "Slack"
+
 msgid "Smoke-test the core daily flows end to end"
 msgstr "Temel günlük akışları uçtan uca test et"
 
@@ -12568,6 +12580,9 @@ msgstr "Araçlar"
 
 msgid "Top-level classification (asset / liability / equity / revenue / expense); set only on root groups, inherited by children."
 msgstr "Üst düzey sınıflandırma (varlık/yükümlülük/öz sermaye/gelir/gider); yalnızca kök gruplarda ayarlanır, çocuklar tarafından devralınır."
+
+msgid "Topic"
+msgstr "Konu"
 
 msgid "Total"
 msgstr "Toplam"
