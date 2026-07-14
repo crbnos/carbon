@@ -198,13 +198,7 @@ const GroupRow = ({ node }: { node: GroupNode }) => {
         )}
 
         <span className="flex-1 truncate">{group.name}</span>
-        {loading ? (
-          <Spinner className="h-3 w-3" />
-        ) : (
-          <span className="text-[10px] font-normal tabular-nums">
-            {group.userCount}
-          </span>
-        )}
+        {loading && <Spinner className="h-3 w-3" />}
       </div>
 
       {/* Direct members: child groups first, then users */}
