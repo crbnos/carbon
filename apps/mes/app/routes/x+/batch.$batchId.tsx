@@ -135,6 +135,12 @@ export default function BatchRoute() {
   );
   const isRunning = !!openEvent;
   const isCompleted = batch.status === "Completed";
+  // 'Completing' is an in-flight state: a prior completion committed the timer
+  // slice but a post-commit effect (issue / Done / GL) failed. Timing is done, so
+  // hide the Start/End timer, but keep the Complete form enabled so the operator
+  // can retry — the edge function resumes the idempotent post-commit steps.
+  const isCompleting = batch.status === "Completing";
+  const canRunTimer = batch.status === "Active";
 
   const computeElapsed = useMemo(
     () => () => {
@@ -168,7 +174,11 @@ export default function BatchRoute() {
           <Heading size="h4">
             <Trans>Batch</Trans> {batch.readableId}
           </Heading>
-          <Badge variant={isCompleted ? "green" : "secondary"}>
+          <Badge
+            variant={
+              isCompleted ? "green" : isCompleting ? "yellow" : "secondary"
+            }
+          >
             {batch.status}
           </Badge>
         </div>
@@ -196,7 +206,7 @@ export default function BatchRoute() {
                 )}
               </HStack>
 
-              {!isCompleted && representativeId && (
+              {canRunTimer && representativeId && (
                 <startFetcher.Form method="post" action={path.to.batchEvent}>
                   <input
                     type="hidden"
@@ -242,7 +252,10 @@ export default function BatchRoute() {
         <CompleteBatch
           batchId={batch.id}
           members={members}
-          disabled={isCompleted}
+          // Enabled while Active OR Completing (a retry resumes the post-commit
+          // steps); only a terminal Completed/Cancelled batch disables it.
+          disabled={isCompleted || batch.status === "Cancelled"}
+          resuming={isCompleting}
         />
       </div>
     </div>
@@ -261,11 +274,15 @@ type MemberRow = {
 function CompleteBatch({
   batchId,
   members,
-  disabled
+  disabled,
+  resuming
 }: {
   batchId: string;
   members: Awaited<ReturnType<typeof loader>>["members"];
   disabled: boolean;
+  // The batch is 'Completing' — a prior attempt's post-commit step failed and
+  // submitting resumes it rather than starting a fresh completion.
+  resuming: boolean;
 }) {
   const { t } = useLingui();
   const fetcher = useFetcher<{}>();
@@ -377,7 +394,7 @@ function CompleteBatch({
                   disabled || fetcher.state !== "idle" || rows.length === 0
                 }
               >
-                {t`Complete Batch`}
+                {resuming ? t`Retry Completion` : t`Complete Batch`}
               </Button>
             </HStack>
           </VStack>

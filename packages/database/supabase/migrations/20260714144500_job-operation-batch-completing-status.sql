@@ -1,0 +1,19 @@
+-- Add a 'Completing' intermediate state to the job operation batch status enum.
+--
+-- Batch completion is a two-phase, resumable workflow. Phase 1 (one Kysely
+-- transaction) slices the recorded batch timers into per-member productionEvent +
+-- productionQuantity rows and flips the batch Active -> 'Completing'. Phase 2
+-- (post-commit) issues each member's BOM, flips members Done, and posts GL per
+-- sliced event. Only after every phase-2 effect succeeds does the batch flip
+-- 'Completing' -> 'Completed'.
+--
+-- 'Completing' is the durable resume marker: if a phase-2 effect fails, the batch
+-- stays 'Completing' and a retry re-runs ONLY the idempotent post-commit steps
+-- (backflush-capped issue, Done flip skipping already-Done members, GL skipping
+-- already-posted events) instead of being rejected as "already completed". This
+-- guarantees a batch can never get stuck 'Completed' with partial effects.
+--
+-- ADD VALUE only (the value is not consumed in this migration) so it is safe
+-- inside the migration transaction. Placed BEFORE 'Completed' to keep the
+-- lifecycle order Active -> Completing -> Completed.
+ALTER TYPE "jobOperationBatchStatus" ADD VALUE IF NOT EXISTS 'Completing' BEFORE 'Completed';

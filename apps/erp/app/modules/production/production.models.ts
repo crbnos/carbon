@@ -262,6 +262,7 @@ export const jobCompleteValidator = z.object({
 // membership/lifecycle mutations and the MES completion form.
 export const jobOperationBatchStatus = [
   "Active",
+  "Completing",
   "Completed",
   "Cancelled"
 ] as const;

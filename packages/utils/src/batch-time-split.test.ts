@@ -4,6 +4,7 @@ import {
   assertBatchCompletionMembership,
   assertBatchWorkCenterMutable,
   buildBatchCompletionPlan,
+  planBatchCompletion,
   sliceEventByWeight,
   splitSecondsByWeight
 } from "./batch-time-split";
@@ -215,6 +216,31 @@ describe("assertBatchWorkCenterMutable", () => {
   it("rejects changing the work center of a Cancelled batch", () => {
     expect(() => assertBatchWorkCenterMutable("Cancelled")).toThrow(
       /not active/
+    );
+  });
+});
+
+describe("planBatchCompletion", () => {
+  it("slices on the first attempt (Active batch)", () => {
+    expect(planBatchCompletion("Active")).toBe("slice");
+  });
+
+  it("resumes an in-flight completion (Completing batch)", () => {
+    // The two-phase flow: a prior attempt committed the timer slice + flipped the
+    // batch to 'Completing', then a post-commit step (issue / Done / GL) failed.
+    // A retry must RESUME the idempotent post-commit steps, never re-slice.
+    expect(planBatchCompletion("Completing")).toBe("resume");
+  });
+
+  it("rejects an already-completed batch", () => {
+    expect(() => planBatchCompletion("Completed")).toThrow(
+      /already been completed/
+    );
+  });
+
+  it("rejects a cancelled batch", () => {
+    expect(() => planBatchCompletion("Cancelled")).toThrow(
+      /Only an active batch can be completed/
     );
   });
 });

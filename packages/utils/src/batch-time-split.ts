@@ -304,3 +304,33 @@ export function assertBatchWorkCenterMutable(status: string): void {
     );
   }
 }
+
+/**
+ * The two phases of the resumable batch-completion workflow, chosen from the
+ * batch's current status:
+ *
+ *  - `"slice"`  — the batch is `Active`. Runs ONCE: the completion transaction
+ *                 slices the recorded batch timers into per-member events +
+ *                 quantities and flips the batch `Active` -> `Completing`.
+ *  - `"resume"` — the batch is already `Completing`, meaning a prior attempt
+ *                 committed the slice but a post-commit effect (material issue,
+ *                 member Done, or GL posting) failed. Re-run ONLY the idempotent
+ *                 post-commit steps; the aggregate timers are already gone, so the
+ *                 slice must NOT be repeated.
+ *
+ * A `Completed` batch is terminal (rejected), as is any other status (e.g.
+ * `Cancelled`). Pure so the resume decision is unit-testable without a database.
+ * Keep in sync with the Deno mirror at supabase/functions/shared/batch-time-split.ts.
+ */
+export function planBatchCompletion(status: string): "slice" | "resume" {
+  switch (status) {
+    case "Active":
+      return "slice";
+    case "Completing":
+      return "resume";
+    case "Completed":
+      throw new Error("This batch has already been completed");
+    default:
+      throw new Error("Only an active batch can be completed");
+  }
+}

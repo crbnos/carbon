@@ -9,6 +9,7 @@ import {
   assertBatchCompletionMembership,
   assertBatchWorkCenterMutable,
   buildBatchCompletionPlan,
+  planBatchCompletion,
   type PlannedMemberEvent,
 } from "../shared/batch-time-split.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
@@ -173,6 +174,17 @@ async function assertOperationsEligible(
 // into per-member `productionEvent` slices proportional to planned quantity,
 // writes per-member Production/Scrap `productionQuantity` rows, flips every
 // member Done, issues each member's own BOM, and posts GL per sliced event.
+//
+// Two-phase, resumable workflow (see planBatchCompletion + the migration that
+// adds the 'Completing' status):
+//   Phase 1 (transaction): slice the timers + write quantities, flip
+//     Active -> Completing. Runs once.
+//   Phase 2 (post-commit, idempotent): issue BOMs, flip members Done, post GL.
+//   Finalize: flip Completing -> Completed only after ALL of phase 2 succeeds.
+// If any phase-2 effect throws, the batch stays 'Completing' and a retry re-runs
+// phase 2 alone (the transaction re-loads the existing slices instead of
+// re-slicing). This removes the old failure mode where a post-commit error left
+// the batch permanently 'Completed' with partial effects and no recovery path.
 async function completeBatch(
   client: Awaited<ReturnType<typeof requirePermissions>>,
   args: {
@@ -186,16 +198,16 @@ async function completeBatch(
   const { companyId, userId, now, jobOperationBatchId, members } = args;
   const memberIds = members.map((m) => m.jobOperationId);
 
-  // Per-member slice events, pre-assigned ids so we can post each to GL AFTER the
-  // transaction commits (post-production-event runs in a separate edge function
-  // and can only see committed rows). Populated inside the transaction below.
-  let memberEventRows: (PlannedMemberEvent & { id: string })[] = [];
+  // The per-member sliced events whose GL is posted AFTER the transaction commits
+  // (post-production-event runs in a separate edge function and can only see
+  // committed rows). `postedToGL` lets the post-commit pass skip events a prior
+  // attempt already posted. Populated inside the transaction below — freshly
+  // sliced on the first attempt, re-loaded on a resume.
+  let glEvents: { id: string; postedToGL: boolean }[] = [];
 
-  // Everything up to (and including) the terminal status flip runs in ONE Kysely
-  // transaction. A FOR UPDATE lock on the batch row plus the guarded
-  // `WHERE status = 'Active'` flip at the end serialize completion: a concurrent
-  // completer blocks on the lock, then re-reads the row as Completed and is
-  // rejected before it can double-issue material or double-post GL.
+  // Phase 1 runs in ONE Kysely transaction. A FOR UPDATE lock on the batch row
+  // serializes completers: a concurrent completer blocks on the lock, then
+  // re-reads the row and either resumes (Completing) or is rejected (Completed).
   await db.transaction().execute(async (trx) => {
     const batch = await trx
       .selectFrom("jobOperationBatch")
@@ -206,10 +218,30 @@ async function completeBatch(
       .executeTakeFirst();
 
     if (!batch) throw new Error(`Batch ${jobOperationBatchId} was not found`);
-    if (batch.status !== "Active") {
-      throw new Error("Only an active batch can be completed");
+
+    // Rejects a terminal batch; returns "slice" for Active, "resume" for
+    // Completing (a prior attempt's phase-2 step failed).
+    const phase = planBatchCompletion(batch.status);
+
+    if (phase === "resume") {
+      // The prior attempt already sliced the aggregate timers into per-member
+      // events; re-collect them so phase 2 can finish the GL posting. Do NOT
+      // re-slice or re-write quantities.
+      const existing = await trx
+        .selectFrom("productionEvent")
+        .select(["id", "postedToGL"])
+        .where("jobOperationBatchId", "=", jobOperationBatchId)
+        .where("companyId", "=", companyId)
+        .where("endTime", "is not", null)
+        .execute();
+      glEvents = existing.map((e) => ({
+        id: e.id,
+        postedToGL: e.postedToGL ?? false,
+      }));
+      return;
     }
 
+    // phase === "slice": first attempt.
     // Load the ACTUAL membership (its planned operationQuantity is the proportional
     // time weight) and validate the submitted list against it — reject duplicates,
     // unknown ids, and omitted real members (all would corrupt quantities/issue).
@@ -280,7 +312,8 @@ async function completeBatch(
       }))
     );
 
-    memberEventRows = plan.memberEvents.map((e) => ({ ...e, id: nanoid() }));
+    const memberEventRows: (PlannedMemberEvent & { id: string })[] =
+      plan.memberEvents.map((e) => ({ ...e, id: nanoid() }));
 
     // Replace the aggregate timers with the per-member slices.
     if (recorded.length) {
@@ -333,29 +366,31 @@ async function completeBatch(
         .execute();
     }
 
-    // Guarded terminal flip. The `WHERE status = 'Active'` precondition is the
-    // backstop to the FOR UPDATE lock: if it matches 0 rows a concurrent completer
-    // won the race, so we throw and roll back every write in this transaction,
-    // leaving that completer's effects the only ones applied.
-    const completed = await trx
+    // Freshly sliced events are unposted — phase 2 posts every one.
+    glEvents = memberEventRows.map((e) => ({ id: e.id, postedToGL: false }));
+
+    // Guarded intermediate flip Active -> Completing. The `WHERE status = 'Active'`
+    // precondition is the backstop to the FOR UPDATE lock: if it matches 0 rows a
+    // concurrent completer won the race, so we throw and roll back every write in
+    // this transaction, leaving that completer to carry the batch through.
+    const marked = await trx
       .updateTable("jobOperationBatch")
-      .set({ status: "Completed", updatedBy: userId, updatedAt: now })
+      .set({ status: "Completing", updatedBy: userId, updatedAt: now })
       .where("id", "=", jobOperationBatchId)
       .where("companyId", "=", companyId)
       .where("status", "=", "Active")
       .returning(["id"])
       .executeTakeFirst();
 
-    if (!completed) {
+    if (!marked) {
       throw new Error("Only an active batch can be completed");
     }
   });
 
-  // Post-commit orchestration (mirrors MES complete.tsx, which is likewise
-  // non-transactional across issue / finish / GL). The batch is already terminal
-  // and serialized, so no other completion can interleave with these effects.
-  // Issue each member's OWN job BOM — the `issue` fn is backflush-capped, so
-  // per-member calls don't double-issue.
+  // Phase 2 (post-commit, idempotent) — safe to re-run on a resume. The batch is
+  // 'Completing', so any failure below leaves it 'Completing' and a retry resumes.
+  // Issue each member's OWN job BOM — the `issue` fn is backflush-capped, so a
+  // re-issue on resume computes 0 remaining and doesn't double-issue.
   for (const m of members) {
     const issue = await client.functions.invoke("issue", {
       body: {
@@ -373,22 +408,48 @@ async function completeBatch(
     }
   }
 
-  // Flip every member Done in one action — the sync_finish_job_operation trigger
-  // readies each member job's next operation and completes the job independently.
+  // Flip every member Done — the sync_finish_job_operation trigger readies each
+  // member job's next operation and completes the job independently. Skip members
+  // already Done so a resume doesn't re-fire the trigger (idempotent).
   const done = await client
     .from("jobOperation")
     .update({ status: "Done", updatedBy: userId })
     .in("id", memberIds)
-    .eq("companyId", companyId);
+    .eq("companyId", companyId)
+    .neq("status", "Done");
   if (done.error) {
     throw new Error(`Failed to finish batch operations: ${done.error.message}`);
   }
 
-  // Post GL for each per-member sliced event (proportional share, no special case).
-  for (const e of memberEventRows) {
-    await client.functions.invoke("post-production-event", {
+  // Post GL for each per-member sliced event (proportional share, no special
+  // case). Skip events a prior attempt already posted, and propagate any error
+  // (previously swallowed) so a GL failure keeps the batch resumable rather than
+  // silently finalizing with missing journal lines.
+  for (const e of glEvents) {
+    if (e.postedToGL) continue;
+    const posted = await client.functions.invoke("post-production-event", {
       body: { productionEventId: e.id, userId, companyId },
     });
+    if (posted.error) {
+      throw new Error(
+        `Failed to post GL for production event ${e.id}: ${posted.error.message}`
+      );
+    }
+  }
+
+  // Finalize: flip Completing -> Completed now that every phase-2 effect
+  // succeeded. Guarded so a concurrent finalizer that already flipped it is a
+  // no-op rather than an error.
+  const finalized = await client
+    .from("jobOperationBatch")
+    .update({ status: "Completed", updatedBy: userId, updatedAt: now })
+    .eq("id", jobOperationBatchId)
+    .eq("companyId", companyId)
+    .eq("status", "Completing");
+  if (finalized.error) {
+    throw new Error(
+      `Failed to finalize batch completion: ${finalized.error.message}`
+    );
   }
 
   return new Response(
