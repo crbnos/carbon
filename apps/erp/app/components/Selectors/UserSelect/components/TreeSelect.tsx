@@ -176,7 +176,7 @@ const GroupRow = ({ node }: { node: GroupNode }) => {
               e.stopPropagation();
               expanded ? onGroupCollapse(uid) : onGroupExpand(uid);
             }}
-            className="-m-1.5 flex items-center justify-center rounded-md p-1.5 hover:bg-muted"
+            className="-m-1.5 flex items-center justify-center rounded-md p-1.5 hover:bg-muted pointer-events-auto"
           >
             <ExpandIcon isExpanded={expanded} />
           </button>
