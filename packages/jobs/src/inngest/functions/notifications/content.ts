@@ -1165,7 +1165,8 @@ export function getNotificationEmailComponent(args: {
         message: args.content.description,
         preview: args.heading,
         recipientName: args.recipientName,
-        reference: args.content.reference
+        reference: args.content.reference,
+        settingsUrl: `${ERP_URL}/x/account/notifications`
       });
   }
 }

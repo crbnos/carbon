@@ -3,6 +3,7 @@ import {
   Button,
   Container,
   Heading,
+  Hr,
   Link,
   Preview,
   Section,
@@ -30,6 +31,9 @@ interface Props {
   ctaLabel?: string;
   ctaUrl?: string;
   details?: NotificationDetail[];
+  // Absolute URL of the user's notification-settings page. When present it
+  // renders the "Manage notification settings" footer.
+  settingsUrl?: string;
 }
 
 // Dark-mode-aware styles. Backgrounds are intentionally set via CSS classes
@@ -189,7 +193,8 @@ export const NotificationEmail = ({
   recipientName,
   ctaLabel = "View details",
   ctaUrl,
-  details
+  details,
+  settingsUrl
 }: Props) => {
   const themeClasses = getEmailThemeClasses();
 
@@ -356,15 +361,23 @@ export const NotificationEmail = ({
             </>
           )}
 
-          {/* <Hr className={`my-[32px] nf-divider ${themeClasses.border}`} />
-
-          <Text
-            className={`text-[12px] leading-[18px] m-0 nf-fallback ${themeClasses.mutedText}`}
-          >
-            You're receiving this email because you have email notifications
-            enabled on your Carbon account. You can manage your preferences from
-            your account settings.
-          </Text> */}
+          {settingsUrl && (
+            <>
+              <Hr className={`my-[32px] nf-divider ${themeClasses.border}`} />
+              <Text
+                className={`text-[12px] leading-[18px] m-0 nf-fallback ${themeClasses.mutedText}`}
+              >
+                You&apos;re receiving this email because you have email
+                notifications enabled on your Carbon account.{" "}
+                <Link
+                  href={settingsUrl}
+                  className={`${themeClasses.mutedText} underline nf-fallback`}
+                >
+                  Manage notification settings
+                </Link>
+              </Text>
+            </>
+          )}
         </Container>
       </Body>
     </EmailThemeProvider>
