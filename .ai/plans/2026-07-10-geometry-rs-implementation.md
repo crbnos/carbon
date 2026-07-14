@@ -15,7 +15,7 @@
 
 ## Rust conventions (apply to every task)
 
-From `.agents/skills/rust-best-practices` (read `references/chapter_01.md`, `chapter_04.md`, `chapter_05.md` before writing code):
+From `.ai/skills/rust-best-practices` (read `references/chapter_01.md`, `chapter_04.md`, `chapter_05.md` before writing code):
 
 - Errors: `thiserror` enums in library crates (`planner`, `converter`, `glb`, `geometry-types`, `occt-bridge`); `anyhow` only in the `server` binary.
 - **Never `unwrap()`/`expect()` outside `#[cfg(test)]`.** OCCT and mesh data are hostile inputs.

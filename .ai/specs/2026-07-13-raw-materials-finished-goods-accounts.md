@@ -28,7 +28,7 @@ Verified current state:
 | Question | Resolution (Brad, 2026-07-13) |
 |---|---|
 | How does an item map to RM vs FG? | **Derived from `item.replenishmentSystem`**: `Buy` → Raw Materials; `Make` / `Buy and Make` → Finished Goods. Stable per item so debit and credit sides always agree (no drift). No new schema on `item`. Inventory-tracked Tools/Consumables/Fixtures are almost always `Buy` → RM. |
-| How are existing companies migrated? | **Auto-create a "Finished Goods" (1220) account per company group** (precedent: PR #1127 overhead-absorption pattern) and wire `finishedGoodsAccount` to it; `rawMaterialsAccount` takes the old `inventoryAccount` value. Accepted caveat: pre-split on-hand FG value stays in the old account, so FG can go negative until a manual reclass JE. Existing account names untouched. |
+| How are existing companies migrated? | **Auto-create a "Finished Goods" (1220) account per company group** (precedent: PR #1127 overhead-absorption pattern) and wire `finishedGoodsAccount` to it; `rawMaterialsAccount` takes the old `inventoryAccount` value. Accepted caveat: pre-split on-hand FG value stays in the old account, so FG can go negative until a manual reclass JE. ~~Existing account names untouched.~~ **Revised 2026-07-13 (follow-up migration `20260713234852`):** existing account names were NOT untouched enough — leaving the raw-materials account named "Inventory" while new companies seed it as "Raw Materials" left existing charts asymmetric (a "Finished Goods" account but no "Raw Materials"). A follow-up migration renames each company's `rawMaterialsAccount`-designated account to "Raw Materials" regardless of its current name (guarded: posting account only, not also serving as `finishedGoodsAccount`, no same-group collision). |
 | Column naming | `rawMaterialsAccount`, `finishedGoodsAccount` — matches `workInProgressAccount` style (inventory accounts without an "Inventory" suffix). |
 | Keep old column for compatibility? | No — **drop `inventoryAccount`** so TypeScript surfaces every stale reference. |
 
@@ -109,3 +109,4 @@ Edge functions `post-receipt`, `post-purchase-invoice`, `post-shipment`, `post-s
 ## Changelog
 
 - 2026-07-13 — Spec written and approved (classification + migration strategy resolved with Brad).
+- 2026-07-13 — Follow-up migration `20260713234852_rename-inventory-account-to-raw-materials.sql`: the original "leave existing account names untouched" decision left existing companies with an "Inventory" raw-materials account while new companies seed "Raw Materials" — an asymmetric, confusing chart. The follow-up renames the `rawMaterialsAccount`-designated "Inventory" account to "Raw Materials" (guarded + idempotent).

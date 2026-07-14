@@ -1,5 +1,5 @@
 {
-  "generated": "2026-07-14T05:08:53.257Z",
+  "generated": "2026-07-14T13:07:13.255Z",
   "totalTools": 1327,
   "modules": 15,
   "tools": [
@@ -2197,14 +2197,16 @@
       "module": "accounting",
       "classification": "WRITE",
       "description": "translate company balances",
-      "paramCount": 3,
+      "paramCount": 5,
       "serviceParams": [
         "client",
         "companyGroupId",
         "companyId",
         "targetCurrency",
         "periodEnd",
-        "periodStart"
+        "periodStart",
+        "// Rows from getFinancialStatementBalances for the same company/dates —\n  // translation only needs balanceAtDate + consolidatedRate",
+        "so re-running\n  // the full journalLine scan through the translateTrialBalance RPC would\n  // double the cost of every translated statement.\n  balances"
       ],
       "injectAuth": [
         "companyId"
@@ -2218,13 +2220,16 @@
           "periodEnd": {
             "type": "string"
           },
-          "periodStart": {
-            "type": "string"
-          }
+          "periodStart": {},
+          "// Rows from getFinancialStatementBalances for the same company/dates —\n  // translation only needs balanceAtDate + consolidatedRate": {},
+          "so re-running\n  // the full journalLine scan through the translateTrialBalance RPC would\n  // double the cost of every translated statement.\n  balances": {}
         },
         "required": [
           "targetCurrency",
-          "periodEnd"
+          "periodEnd",
+          "periodStart",
+          "// Rows from getFinancialStatementBalances for the same company/dates —\n  // translation only needs balanceAtDate + consolidatedRate",
+          "so re-running\n  // the full journalLine scan through the translateTrialBalance RPC would\n  // double the cost of every translated statement.\n  balances"
         ]
       }
     },

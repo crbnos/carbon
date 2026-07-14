@@ -23,9 +23,29 @@ ALTER TABLE "accountDefault"
 -- ============================================================
 -- Step 2: Delete the seeded account where it is unused
 -- ============================================================
--- Guarded per row: skip accounts with journal history, and swallow FK
--- violations from any other reference (e.g. an admin wired it into other
--- custom config) — those rows simply stay in the chart.
+-- Deleting a chart-of-accounts row makes Postgres enforce every FK that
+-- references "account" (~40 of them, several via ("number","companyId") into
+-- salesOrderLine / salesInvoiceLine / purchaseInvoiceLines / journalLine). During
+-- a live deploy that delete can block on a lock held by the running app, and the
+-- ambient statement_timeout then cancels the whole DO block (SQLSTATE 57014) —
+-- which is what happened here (prod data is small, so scan cost is not the cause).
+--
+-- Fix: lift statement_timeout so the cleanup isn't cancelled, but cap lock waits
+-- (lock_timeout) so a held lock bails fast instead of hanging the deploy; a row we
+-- can't take cleanly is simply left in the chart. (statement_timeout must be set as
+-- a separate top-level statement BEFORE the DO block — the timer is armed when a
+-- statement starts, so SET *inside* the block is too late to disarm it.)
+--
+-- Guarded per row: skip accounts with journal history, and swallow ANY error
+-- (a RESTRICT FK, the posted-journal immutability trigger on a stray SET NULL
+-- cascade into "journalLine", or a lock_timeout) so one stuck account never aborts
+-- the batch — those rows simply stay in the chart for an admin to remove.
+--
+-- Re-runnable: Step 1 above uses IF EXISTS and this block re-selects live rows,
+-- so re-executing the whole file after a mid-file failure is a no-op.
+
+SET statement_timeout = 0;
+SET lock_timeout = '15s';
 
 DO $$
 DECLARE
@@ -42,9 +62,12 @@ BEGIN
   LOOP
     BEGIN
       DELETE FROM "account" WHERE "id" = v_account."id";
-    EXCEPTION WHEN foreign_key_violation THEN
-      -- still referenced somewhere (custom config) — leave it in the chart
+    EXCEPTION WHEN OTHERS THEN
+      -- still referenced (RESTRICT FK) or blocked by a trigger — leave it in the chart
       NULL;
     END;
   END LOOP;
 END $$;
+
+SET lock_timeout = DEFAULT;
+SET statement_timeout = DEFAULT;

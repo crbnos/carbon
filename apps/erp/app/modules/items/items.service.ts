@@ -508,7 +508,8 @@ export async function getItemCostHistory(
     .eq("itemId", itemId)
     .eq("companyId", companyId)
     .gte("postingDate", dateOneYearAgo)
-    .order("postingDate", { ascending: false });
+    .order("postingDate", { ascending: false })
+    .limit(500);
 }
 
 export async function getItemCustomerPart(
@@ -762,11 +763,16 @@ export async function getItemQuantities(
   companyId: string,
   locationId: string
 ) {
+  // item_id restricts the RPC to one item so it doesn't aggregate the whole
+  // location's ledger/PO/SO/job history for a single detail page (added in
+  // migration 20260713231142; the committed DB types regenerate from the
+  // cloud DB after deploy, hence the cast).
   return client
     .rpc("get_inventory_quantities", {
       location_id: locationId,
-      company_id: companyId
-    })
+      company_id: companyId,
+      item_id: itemId
+    } as { location_id: string; company_id: string })
     .eq("id", itemId)
     .maybeSingle();
 }
