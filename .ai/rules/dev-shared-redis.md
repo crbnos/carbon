@@ -15,10 +15,21 @@ paths:
 - Single global singleton in **`packages/kv/src/client.ts`**: `new Redis(REDIS_URL, ...)`
   stashed on `global.__redis` (survives HMR / warm lambdas). Options:
   `maxRetriesPerRequest: 3`, `lazyConnect: true`, `enableOfflineQueue: true`,
-  capped `retryStrategy` (stop after 3). Throws if `REDIS_URL` is unset.
+  and a `retryStrategy` that reconnects forever with capped backoff
+  (`min(times * 200, 5000)`) so the client auto-recovers when Redis returns —
+  per-command latency is bounded by `maxRetriesPerRequest` + the resilience-layer
+  timeout, not by giving up on reconnection. Throws if `REDIS_URL` is unset.
 - Exported as `{ redis }` from `packages/kv/src/index.ts`, which also exports the
   `Ratelimit` class (a custom ioredis-backed reimplementation of the
   `@upstash/ratelimit` API using Lua `eval` scripts — see `packages/kv/src/ratelimit/`).
+- **Resilience wrapper** (`packages/kv/src/resilient.ts`): the singleton is
+  passed through `withResilience()`, a Proxy that makes every command fail soft
+  when Redis is unreachable — reads resolve `null` (collections `[]`), writes
+  resolve `null`, and `pipeline().exec()` resolves `[]`, each with a
+  `REDIS_TIMEOUT_MS` cap. Consumers keep the ordinary ioredis API and need no
+  per-call try/catch; a `null` read is just a cache miss → read through to the DB.
+  `Ratelimit.limit()` fails open (`success: true`) on any Redis error. This is the
+  fix for a Redis outage no longer taking down requests (issue #1076).
 
 ## Connection config
 

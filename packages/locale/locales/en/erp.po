@@ -51,6 +51,10 @@ msgstr "{0} days"
 msgid "{0} deleted successfully"
 msgstr "{0} deleted successfully"
 
+#. placeholder {0}: task.autoCheck.count
+msgid "{0} draft journal entries"
+msgstr "{0} draft journal entries"
+
 #. placeholder {0}: mappings.length
 msgid "{0} lines to map"
 msgstr "{0} lines to map"
@@ -71,6 +75,10 @@ msgstr "{0} suppliers with a balance"
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 msgstr "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 
+#. placeholder {0}: task.autoCheck.count
+msgid "{0} unposted documents"
+msgstr "{0} unposted documents"
+
 #. placeholder {0}: file.name
 msgid "{0} uploaded successfully"
 msgstr "{0} uploaded successfully"
@@ -90,6 +98,9 @@ msgstr "{chainLabel}. Consider pointing this part directly at the final successo
 
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# course} other {# courses}}"
+
+msgid "{done} of {total} phases complete"
+msgstr "{done} of {total} phases complete"
 
 msgid "{from}–{to} of {count}"
 msgstr "{from}–{to} of {count}"
@@ -117,6 +128,12 @@ msgstr "{total} phases to get your company live on Carbon. Each one ends at a ch
 msgid "{total} phases to go live"
 msgstr "{total} phases to go live"
 
+msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
+msgstr "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
+
+msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
+msgstr "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
+
 msgid "/month/user"
 msgstr "/month/user"
 
@@ -133,6 +150,15 @@ msgstr "0-4 weeks"
 
 msgid "1 day"
 msgstr "1 day"
+
+msgid "1 draft journal entry"
+msgstr "1 draft journal entry"
+
+msgid "1 unposted document"
+msgstr "1 unposted document"
+
+msgid "12 monthly periods"
+msgstr "12 monthly periods"
 
 msgid "13+ weeks"
 msgstr "13+ weeks"
@@ -160,6 +186,9 @@ msgstr "5 User Minimum"
 
 msgid "5-8 weeks"
 msgstr "5-8 weeks"
+
+msgid "52-week demand"
+msgstr "52-week demand"
 
 msgid "5MB file limit"
 msgstr "5MB file limit"
@@ -341,6 +370,9 @@ msgstr "Ability"
 msgid "About"
 msgstr "About"
 
+msgid "Absorption"
+msgstr "Absorption"
+
 msgid "Academy"
 msgstr "Academy"
 
@@ -413,11 +445,17 @@ msgstr "Accounting is enabled"
 msgid "Accounting period"
 msgstr "Accounting period"
 
+msgid "Accounting Periods"
+msgstr "Accounting Periods"
+
 msgid "Accounting: GL, AR, AP, and month-end close"
 msgstr "Accounting: GL, AR, AP, and month-end close"
 
 msgid "Accounts"
 msgstr "Accounts"
+
+msgid "Accounts for recording differences between actual and standard costs"
+msgstr "Accounts for recording differences between actual and standard costs"
 
 msgid "Accounts Payable"
 msgstr "Accounts Payable"
@@ -536,6 +574,9 @@ msgstr "Add a column below to sort the view"
 msgid "Add a comment..."
 msgstr "Add a comment..."
 
+msgid "Add a custom pricing row to override quantity, price, shipping, lead time, and tax"
+msgstr "Add a custom pricing row to override quantity, price, shipping, lead time, and tax"
+
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Add a printer in the printing settings to print labels directly."
 
@@ -553,6 +594,9 @@ msgstr "Add Ability"
 
 msgid "Add Actions"
 msgstr "Add Actions"
+
+msgid "Add Adjustment"
+msgstr "Add Adjustment"
 
 msgid "Add any notes about your decision..."
 msgstr "Add any notes about your decision..."
@@ -744,6 +788,9 @@ msgstr "All Customers"
 msgid "All Documents"
 msgstr "All Documents"
 
+msgid "All item types"
+msgstr "All item types"
+
 msgid "All Items"
 msgstr "All Items"
 
@@ -819,6 +866,10 @@ msgstr "Anchors the Plan timeline to real dates. Leave blank for a relative, wee
 
 msgid "AND"
 msgstr "AND"
+
+#. placeholder {0}: count - documents.length
+msgid "And {0} more — resolve these to see the rest."
+msgstr "And {0} more — resolve these to see the rest."
 
 msgid "and {remaining} more"
 msgstr "and {remaining} more"
@@ -994,6 +1045,10 @@ msgstr "Are you sure you want to activate this gauge?."
 #. placeholder {0}: routeData?.rfqSummary ?.rfqId!
 msgid "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
 msgstr "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
+
+#. placeholder {0}: routeData?.purchaseOrder?.purchaseOrderId ?? "this purchase order"
+msgid "Are you sure you want to cancel {0}? This will close the order."
+msgstr "Are you sure you want to cancel {0}? This will close the order."
 
 msgid "Are you sure you want to cancel this job? It will no longer be available on the shop floor."
 msgstr "Are you sure you want to cancel this job? It will no longer be available on the shop floor."
@@ -1310,6 +1365,13 @@ msgstr "Are you sure you want to reject this quote?"
 msgid "Are you sure you want to release this job? It will become available to the shop floor, and drive purchasing and production."
 msgstr "Are you sure you want to release this job? It will become available to the shop floor, and drive purchasing and production."
 
+#. placeholder {0}: supplierName(deleteTarget.supplierId)
+msgid "Are you sure you want to remove {0} as a supplier for this item? This cannot be undone."
+msgstr "Are you sure you want to remove {0} as a supplier for this item? This cannot be undone."
+
+msgid "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
+msgstr "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
+
 msgid "Are you sure you want to remove this employee from {name}? The training history is kept and the employee can be re-added later."
 msgstr "Are you sure you want to remove this employee from {name}? The training history is kept and the employee can be re-added later."
 
@@ -1367,8 +1429,14 @@ msgstr "Ascending"
 msgid "Ask an admin with {0} permission to add the first {1}."
 msgstr "Ask an admin with {0} permission to add the first {1}."
 
+msgid "Assemblies"
+msgstr "Assemblies"
+
 msgid "Assembly"
 msgstr "Assembly"
+
+msgid "Assembly Instructions"
+msgstr "Assembly Instructions"
 
 msgid "Assembly:"
 msgstr "Assembly:"
@@ -1378,6 +1446,9 @@ msgstr "Asset"
 
 msgid "Asset Account"
 msgstr "Asset Account"
+
+msgid "Asset account for advance payments made to suppliers before goods or services are received"
+msgstr "Asset account for advance payments made to suppliers before goods or services are received"
 
 msgid "Asset Acquisition Cost"
 msgstr "Asset Acquisition Cost"
@@ -1616,6 +1687,9 @@ msgstr "Basic Information"
 msgid "Batch"
 msgstr "Batch"
 
+msgid "Batch / Serial"
+msgstr "Batch / Serial"
+
 msgid "Batch items require a sales order"
 msgstr "Batch items require a sales order"
 
@@ -1673,6 +1747,9 @@ msgstr "Bills of material"
 
 msgid "Blank = computed from the ability's recertification period"
 msgstr "Blank = computed from the ability's recertification period"
+
+msgid "Blind Count"
+msgstr "Blind Count"
 
 msgid "Block with an error"
 msgstr "Block with an error"
@@ -1747,6 +1824,9 @@ msgstr "Build role-based training materials"
 msgid "Build tailored, role-based training materials"
 msgstr "Build tailored, role-based training materials"
 
+msgid "Built and costed as its own method"
+msgstr "Built and costed as its own method"
+
 msgid "Bulk Import"
 msgstr "Bulk Import"
 
@@ -1819,6 +1899,9 @@ msgstr "Calibrations"
 msgid "Called a method in Carbon — the components plus operations that produce a part."
 msgstr "Called a method in Carbon — the components plus operations that produce a part."
 
+msgid "Can't delete this period"
+msgstr "Can't delete this period"
+
 msgid "Can't disable the only active break. Add another break or toggle the override's Active instead."
 msgstr "Can't disable the only active break. Add another break or toggle the override's Active instead."
 
@@ -1830,6 +1913,12 @@ msgstr "Cancel"
 
 msgid "Cancel Job"
 msgstr "Cancel Job"
+
+msgid "Cancel Order"
+msgstr "Cancel Order"
+
+msgid "Cancel Purchase Order"
+msgstr "Cancel Purchase Order"
 
 msgid "Cancel Sales Order"
 msgstr "Cancel Sales Order"
@@ -1863,6 +1952,9 @@ msgstr "Cannot add steps to unsaved operation"
 
 msgid "Cannot add tools to unsaved operation"
 msgstr "Cannot add tools to unsaved operation"
+
+msgid "Cannot close yet"
+msgstr "Cannot close yet"
 
 msgid "Cannot convert RFQ to quote"
 msgstr "Cannot convert RFQ to quote"
@@ -2011,6 +2103,9 @@ msgstr "Chart of Accounts"
 msgid "Chat"
 msgstr "Chat"
 
+msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
+msgstr "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
+
 msgid "Check your email"
 msgstr "Check your email"
 
@@ -2090,8 +2185,17 @@ msgstr "Clocked in since {0}"
 msgid "Close"
 msgstr "Close"
 
+msgid "Close {periodLabel}"
+msgstr "Close {periodLabel}"
+
 msgid "Close Date"
 msgstr "Close Date"
+
+msgid "Close Period"
+msgstr "Close Period"
+
+msgid "Close Status"
+msgstr "Close Status"
 
 msgid "Closed"
 msgstr "Closed"
@@ -2261,9 +2365,6 @@ msgstr "Configure default accounts for cash and bank transactions"
 msgid "Configure default accounts for inventory management"
 msgstr "Configure default accounts for inventory management"
 
-msgid "Configure default accounts for purchasing and COGS"
-msgstr "Configure default accounts for purchasing and COGS"
-
 msgid "Configure default accounts for vendor and supplier transactions"
 msgstr "Configure default accounts for vendor and supplier transactions"
 
@@ -2331,6 +2432,9 @@ msgstr "Confirm {0}"
 msgid "Confirm and sign the scope"
 msgstr "Confirm and sign the scope"
 
+msgid "Confirm Count"
+msgstr "Confirm Count"
+
 msgid "Confirm how your company runs and lock the scope."
 msgstr "Confirm how your company runs and lock the scope."
 
@@ -2340,17 +2444,29 @@ msgstr "Confirm ID Change"
 msgid "Confirm Import"
 msgstr "Confirm Import"
 
+msgid "Confirm Inventory Count"
+msgstr "Confirm Inventory Count"
+
 msgid "Confirm Mapping"
 msgstr "Confirm Mapping"
 
 msgid "Confirm Password"
 msgstr "Confirm Password"
 
+msgid "Confirm Skip"
+msgstr "Confirm Skip"
+
 msgid "Confirmed incoming stock — purchase & production orders (bars above zero)."
 msgstr "Confirmed incoming stock — purchase & production orders (bars above zero)."
 
 msgid "Confirmed outgoing stock — sales orders & job materials (bars below zero)."
 msgstr "Confirmed outgoing stock — sales orders & job materials (bars below zero)."
+
+msgid "Confirming locks the counted quantities. Review the warnings below, then post the count to apply the adjustments."
+msgstr "Confirming locks the counted quantities. Review the warnings below, then post the count to apply the adjustments."
+
+msgid "Confirms every posted journal entry in the period has equal debits and credits. If any entry is out of balance the trial balance won't tie out, so it must be corrected before the period can close."
+msgstr "Confirms every posted journal entry in the period has equal debits and credits. If any entry is out of balance the trial balance won't tie out, so it must be corrected before the period can close."
 
 msgid "Conflict"
 msgstr "Conflict"
@@ -2699,8 +2815,20 @@ msgstr "Could not read the document: {0}"
 msgid "Couldn't load documents"
 msgstr "Couldn't load documents"
 
+msgid "Couldn't load related documents. Refresh before creating a new one to avoid duplicates."
+msgstr "Couldn't load related documents. Refresh before creating a new one to avoid duplicates."
+
+msgid "Couldn't reschedule the job. Please try again."
+msgstr "Couldn't reschedule the job. Please try again."
+
 msgid "Count"
 msgstr "Count"
+
+msgid "Count ID"
+msgstr "Count ID"
+
+msgid "Counted Qty"
+msgstr "Counted Qty"
 
 msgid "Counterparties"
 msgstr "Counterparties"
@@ -2722,6 +2850,9 @@ msgstr "Create {0}"
 #. placeholder {0}: unmatchedValues.length
 msgid "Create {0} values"
 msgstr "Create {0} values"
+
+msgid "Create & Snapshot"
+msgstr "Create & Snapshot"
 
 msgid "Create a new kanban card for scan-based replenishment."
 msgstr "Create a new kanban card for scan-based replenishment."
@@ -2908,6 +3039,9 @@ msgstr "Created webhook"
 msgid "Created work center"
 msgstr "Created work center"
 
+msgid "Creates the 12 monthly periods for a fiscal year. Periods that already exist are kept."
+msgstr "Creates the 12 monthly periods for a fiscal year. Periods that already exist are kept."
+
 msgid "Creating part..."
 msgstr "Creating part..."
 
@@ -2923,6 +3057,15 @@ msgstr "Credit Account"
 msgid "Credit account when labor/machine time is absorbed into WIP"
 msgstr "Credit account when labor/machine time is absorbed into WIP"
 
+msgid "Credit account when overhead is absorbed into WIP"
+msgstr "Credit account when overhead is absorbed into WIP"
+
+msgid "Credit accounts used when manufacturing costs are absorbed into WIP"
+msgstr "Credit accounts used when manufacturing costs are absorbed into WIP"
+
+msgid "Credit Memo"
+msgstr "Credit Memo"
+
 msgid "Credits & Debits"
 msgstr "Credits & Debits"
 
@@ -2937,6 +3080,9 @@ msgstr "CSV column"
 
 msgid "CSV file must have at least 2 rows."
 msgstr "CSV file must have at least 2 rows."
+
+msgid "Cumulative"
+msgstr "Cumulative"
 
 msgid "Cumulative %"
 msgstr "Cumulative %"
@@ -3263,6 +3409,9 @@ msgstr "Debit"
 msgid "Debit Account"
 msgstr "Debit Account"
 
+msgid "Debit Memo"
+msgstr "Debit Memo"
+
 msgid "Decide what an operator sees if they try to issue a batch or serial that's already expired."
 msgstr "Decide what an operator sees if they try to issue a batch or serial that's already expired."
 
@@ -3295,6 +3444,9 @@ msgstr "Default accounts for sales and income"
 
 msgid "Default accounts for tax-related transactions"
 msgstr "Default accounts for tax-related transactions"
+
+msgid "Default accounts for the cost of goods sold and indirect purchases"
+msgstr "Default accounts for the cost of goods sold and indirect purchases"
 
 msgid "Default Approver"
 msgstr "Default Approver"
@@ -3392,6 +3544,9 @@ msgstr "Delete"
 msgid "Delete {name}"
 msgstr "Delete {name}"
 
+msgid "Delete {periodLabel}"
+msgstr "Delete {periodLabel}"
+
 msgid "Delete {storageUnitName}"
 msgstr "Delete {storageUnitName}"
 
@@ -3418,6 +3573,9 @@ msgstr "Delete Contact"
 
 msgid "Delete Contractor"
 msgstr "Delete Contractor"
+
+msgid "Delete Count"
+msgstr "Delete Count"
 
 msgid "Delete Custom Field"
 msgstr "Delete Custom Field"
@@ -3458,6 +3616,9 @@ msgstr "Delete Holiday"
 msgid "Delete Issue"
 msgstr "Delete Issue"
 
+msgid "Delete Item Group"
+msgstr "Delete Item Group"
+
 msgid "Delete Line"
 msgstr "Delete Line"
 
@@ -3496,6 +3657,9 @@ msgstr "Delete Payment"
 
 msgid "Delete Payment Term"
 msgstr "Delete Payment Term"
+
+msgid "Delete Period"
+msgstr "Delete Period"
 
 msgid "Delete Picking List"
 msgstr "Delete Picking List"
@@ -3596,6 +3760,9 @@ msgstr "Delete Substance"
 msgid "Delete Suggestion"
 msgstr "Delete Suggestion"
 
+msgid "Delete supplier"
+msgstr "Delete supplier"
+
 msgid "Delete Supplier"
 msgstr "Delete Supplier"
 
@@ -3604,6 +3771,10 @@ msgstr "Delete Supplier Quote"
 
 msgid "Delete Supplier Type"
 msgstr "Delete Supplier Type"
+
+#. placeholder {0}: pendingDelete.quantity
+msgid "Delete the price break for quantity {0}? This can't be undone."
+msgstr "Delete the price break for quantity {0}? This can't be undone."
 
 msgid "Delete Timecard"
 msgstr "Delete Timecard"
@@ -3619,6 +3790,9 @@ msgstr "Delete Transfer"
 
 msgid "Delete Transfer Line"
 msgstr "Delete Transfer Line"
+
+msgid "Delete Unit of Measure"
+msgstr "Delete Unit of Measure"
 
 msgid "Delete View"
 msgstr "Delete View"
@@ -3691,6 +3865,9 @@ msgstr "Depreciation Method (default)"
 
 msgid "Depreciation reversal when a fixed asset is disposed"
 msgstr "Depreciation reversal when a fixed asset is disposed"
+
+msgid "Depreciation runs ending in this period that are still Draft should be posted so the period reflects the correct depreciation expense and accumulated depreciation. Skip with a reason if depreciation doesn't apply this period."
+msgstr "Depreciation runs ending in this period that are still Draft should be posted so the period reflects the correct depreciation expense and accumulated depreciation. Skip with a reason if depreciation doesn't apply this period."
 
 msgid "Depreciation Start Date"
 msgstr "Depreciation Start Date"
@@ -3880,6 +4057,12 @@ msgstr "Download template"
 msgid "Draft"
 msgstr "Draft"
 
+msgid "Draft is editable; Active is in use and requires a new version to change; Archived is retired."
+msgstr "Draft is editable; Active is in use and requires a new version to change; Archived is retired."
+
+msgid "Draft Journal Entries"
+msgstr "Draft Journal Entries"
+
 msgid "Drag & drop files, or click to browse"
 msgstr "Drag & drop files, or click to browse"
 
@@ -4048,6 +4231,9 @@ msgstr "Edit Contact"
 
 msgid "Edit Contractor"
 msgstr "Edit Contractor"
+
+msgid "Edit Count"
+msgstr "Edit Count"
 
 msgid "Edit Currency"
 msgstr "Edit Currency"
@@ -4430,6 +4616,12 @@ msgstr "Engineering Changes and CAD"
 msgid "Engineering Contact"
 msgstr "Engineering Contact"
 
+msgid "Enroll"
+msgstr "Enroll"
+
+msgid "Enroll this company in the Implementation Hub"
+msgstr "Enroll this company in the Implementation Hub"
+
 msgid "Enter a batch number before setting the expiration date"
 msgstr "Enter a batch number before setting the expiration date"
 
@@ -4594,6 +4786,9 @@ msgstr "Every condition must match"
 
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "Every in-scope test passes in your configured system, with your data."
+
+msgid "Every required task must be Done or Skipped before the period can be closed."
+msgstr "Every required task must be Done or Skipped before the period can be closed."
 
 msgid "Every row was imported successfully."
 msgstr "Every row was imported successfully."
@@ -5010,6 +5205,9 @@ msgstr "Failed to update category markups"
 msgid "Failed to update configuration parameter"
 msgstr "Failed to update configuration parameter"
 
+msgid "Failed to update count"
+msgstr "Failed to update count"
+
 msgid "Failed to update item cost"
 msgstr "Failed to update item cost"
 
@@ -5180,6 +5378,9 @@ msgstr "First Operation"
 msgid "First-year additional deduction taken before the regular MACRS schedule begins."
 msgstr "First-year additional deduction taken before the regular MACRS schedule begins."
 
+msgid "Fiscal year"
+msgstr "Fiscal year"
+
 msgid "Fiscal Year"
 msgstr "Fiscal Year"
 
@@ -5206,6 +5407,9 @@ msgstr "Fixed Assets"
 
 msgid "Fixed cost amortization variance when batch size differs from standard"
 msgstr "Fixed cost amortization variance when batch size differs from standard"
+
+msgid "Fixed once accounting periods have been posted to or closed. Delete all open periods to change it."
+msgstr "Fixed once accounting periods have been posted to or closed. Delete all open periods to change it."
 
 msgid "Fixed Reorder"
 msgstr "Fixed Reorder"
@@ -5333,11 +5537,20 @@ msgstr "General Ledger"
 msgid "General Ledger and month-end close"
 msgstr "General Ledger and month-end close"
 
+msgid "Generate"
+msgstr "Generate"
+
 msgid "Generate a new 4-digit PIN. Share it with the operator so they can pin in at MES terminals."
 msgstr "Generate a new 4-digit PIN. Share it with the operator so they can pin in at MES terminals."
 
 msgid "Generate and send customer invoices"
 msgstr "Generate and send customer invoices"
+
+msgid "Generate fiscal year"
+msgstr "Generate fiscal year"
+
+msgid "Generate Fiscal Year"
+msgstr "Generate Fiscal Year"
 
 msgid "Generate material IDs and descriptions based on the properties of the material."
 msgstr "Generate material IDs and descriptions based on the properties of the material."
@@ -5404,6 +5617,9 @@ msgstr "GL account credited when a supplier invoice is posted (AP balance)."
 
 msgid "GL account credited when labor or machine cost is absorbed into a production job."
 msgstr "GL account credited when labor or machine cost is absorbed into a production job."
+
+msgid "GL account credited when manufacturing overhead is absorbed into a production job."
+msgstr "GL account credited when manufacturing overhead is absorbed into a production job."
 
 msgid "GL account debited to clear accumulated depreciation when an asset is disposed."
 msgstr "GL account debited to clear accumulated depreciation when an asset is disposed."
@@ -5601,14 +5817,14 @@ msgstr "Help"
 msgid "Hide"
 msgstr "Hide"
 
+msgid "Hide system quantities until the review step"
+msgstr "Hide system quantities until the review step"
+
 msgid "Hide, pin and reorder columns"
 msgstr "Hide, pin and reorder columns"
 
 msgid "High"
 msgstr "High"
-
-msgid "Higher priority wins ties and applies first for markups"
-msgstr "Higher priority wins ties and applies first for markups"
 
 msgid "Hints in the first row"
 msgstr "Hints in the first row"
@@ -6015,6 +6231,9 @@ msgstr "Integrations not named here"
 msgid "Intercompany"
 msgstr "Intercompany"
 
+msgid "Intercompany transactions involving this company that are still Unmatched should be matched and eliminated, so consolidated results don't double-count activity between entities."
+msgstr "Intercompany transactions involving this company that are still Unmatched should be matched and eliminated, so consolidated results don't double-count activity between entities."
+
 msgid "Interest"
 msgstr "Interest"
 
@@ -6071,6 +6290,9 @@ msgstr "Inventory Control"
 
 msgid "Inventory control and counts"
 msgstr "Inventory control and counts"
+
+msgid "Inventory Count"
+msgstr "Inventory Count"
 
 msgid "Inventory History"
 msgstr "Inventory History"
@@ -6264,6 +6486,9 @@ msgstr "Item Scope"
 msgid "Item Type"
 msgstr "Item Type"
 
+msgid "Item Type (optional)"
+msgstr "Item Type (optional)"
+
 msgid "Item types"
 msgstr "Item types"
 
@@ -6327,6 +6552,12 @@ msgstr "Journal"
 
 msgid "Journal Entries"
 msgstr "Journal Entries"
+
+msgid "Journal entries dated in this period that are still Draft must be posted, or re-dated into a later open period. Draft entries aren't part of the ledger, so their debits and credits would be missing from the close."
+msgstr "Journal entries dated in this period that are still Draft must be posted, or re-dated into a later open period. Draft entries aren't part of the ledger, so their debits and credits would be missing from the close."
+
+msgid "Journal Entry"
+msgstr "Journal Entry"
 
 msgid "Kanban"
 msgstr "Kanban"
@@ -6525,6 +6756,9 @@ msgstr "Line Status"
 msgid "Linear Team"
 msgstr "Linear Team"
 
+msgid "Lines"
+msgstr "Lines"
+
 msgid "Lines need internal part numbers"
 msgstr "Lines need internal part numbers"
 
@@ -6607,6 +6841,15 @@ msgstr "Locations"
 
 msgid "Lock"
 msgstr "Lock"
+
+msgid "Lock Period"
+msgstr "Lock Period"
+
+msgid "Locked"
+msgstr "Locked"
+
+msgid "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
+msgstr "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 
 msgid "Log In"
 msgstr "Log In"
@@ -6837,6 +7080,9 @@ msgstr "Mark Dark Mode"
 
 msgid "Mark done"
 msgstr "Mark done"
+
+msgid "Mark Done"
+msgstr "Mark Done"
 
 msgid "Mark Light Mode"
 msgstr "Mark Light Mode"
@@ -7332,6 +7578,9 @@ msgstr "New IC Transaction"
 msgid "New Inspection Document"
 msgstr "New Inspection Document"
 
+msgid "New Inventory Count"
+msgstr "New Inventory Count"
+
 msgid "New Invoice"
 msgstr "New Invoice"
 
@@ -7680,6 +7929,9 @@ msgstr "No image"
 msgid "No issue types configured"
 msgstr "No issue types configured"
 
+msgid "No items"
+msgstr "No items"
+
 msgid "No lines to map"
 msgstr "No lines to map"
 
@@ -7908,9 +8160,6 @@ msgstr "OEM (original equipment manufacturer)"
 msgid "of"
 msgstr "of"
 
-msgid "of {total} phases complete"
-msgstr "of {total} phases complete"
-
 msgid "OK"
 msgstr "OK"
 
@@ -7973,6 +8222,12 @@ msgstr "One step in a job's routing, naming a process and a work center and carr
 
 msgid "One system from quote to cash"
 msgstr "One system from quote to cash"
+
+msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
+msgstr "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
+
+msgid "Only empty, open periods can be deleted."
+msgstr "Only empty, open periods can be deleted."
 
 msgid "Only qualified employees can be scheduled for and run this process"
 msgstr "Only qualified employees can be scheduled for and run this process"
@@ -8158,6 +8413,9 @@ msgstr "Order Qty"
 msgid "Order quantities must be whole multiples of this number (a multiple of 12 → 12, 24, 36 …)."
 msgstr "Order quantities must be whole multiples of this number (a multiple of 12 → 12, 24, 36 …)."
 
+msgid "Order rules are evaluated in — for discounts only the highest-priority match applies (no stacking); markups all apply and compound in priority order."
+msgstr "Order rules are evaluated in — for discounts only the highest-priority match applies (no stacking); markups all apply and compound in priority order."
+
 msgid "Order Total"
 msgstr "Order Total"
 
@@ -8205,6 +8463,12 @@ msgstr "Over-applied by"
 
 msgid "Overdue"
 msgstr "Overdue"
+
+msgid "Overhead Absorption"
+msgstr "Overhead Absorption"
+
+msgid "Overhead Absorption (default)"
+msgstr "Overhead Absorption (default)"
 
 msgid "Overhead Rate"
 msgstr "Overhead Rate"
@@ -8492,6 +8756,9 @@ msgstr "Pick Order"
 msgid "Pick tracked item"
 msgstr "Pick tracked item"
 
+msgid "Picked and consumed as separate components"
+msgstr "Picked and consumed as separate components"
+
 msgid "Picked quantity"
 msgstr "Picked quantity"
 
@@ -8647,6 +8914,9 @@ msgstr "Postal Code"
 
 msgid "Posted"
 msgstr "Posted"
+
+msgid "Posted At"
+msgstr "Posted At"
 
 msgid "Posted By"
 msgstr "Posted By"
@@ -9033,9 +9303,6 @@ msgstr "purchasing"
 msgid "Purchasing"
 msgstr "Purchasing"
 
-msgid "Purchasing & Cost of Goods"
-msgstr "Purchasing & Cost of Goods"
-
 msgid "Purchasing & Inventory"
 msgstr "Purchasing & Inventory"
 
@@ -9269,6 +9536,9 @@ msgstr "Reason Account"
 msgid "Reason for declining (Optional)"
 msgstr "Reason for declining (Optional)"
 
+msgid "Reason for skipping (required)"
+msgstr "Reason for skipping (required)"
+
 msgid "Reasons"
 msgstr "Reasons"
 
@@ -9280,6 +9550,9 @@ msgstr "Recalculate"
 
 msgid "Recalculate Unit Cost"
 msgstr "Recalculate Unit Cost"
+
+msgid "Recalculating…"
+msgstr "Recalculating…"
 
 msgid "Receipt"
 msgstr "Receipt"
@@ -9301,6 +9574,9 @@ msgstr "Receipt Requested Date"
 
 msgid "Receipts"
 msgstr "Receipts"
+
+msgid "Receipts, shipments, sales invoices, purchase invoices, payments, and credit/debit memos that are still Draft or Pending must be posted or voided — both documents dated in this period and undated documents that would receive a date in it when posted. Until they post, their amounts aren't in the general ledger, so the period would be understated."
+msgstr "Receipts, shipments, sales invoices, purchase invoices, payments, and credit/debit memos that are still Draft or Pending must be posted or voided — both documents dated in this period and undated documents that would receive a date in it when posted. Until they post, their amounts aren't in the general ledger, so the period would be understated."
 
 msgid "Receivables"
 msgstr "Receivables"
@@ -9547,6 +9823,9 @@ msgstr "Reordering policy"
 msgid "Reordering Policy"
 msgstr "Reordering Policy"
 
+msgid "Reorders dispatch sequence and work center only — does not reschedule. Change dates on the Dates board."
+msgstr "Reorders dispatch sequence and work center only — does not reschedule. Change dates on the Dates board."
+
 msgid "Replace drawing?"
 msgstr "Replace drawing?"
 
@@ -9722,6 +10001,9 @@ msgstr "Reverse Charge Sales Tax (default)"
 
 msgid "Reverse the related journal entries"
 msgstr "Reverse the related journal entries"
+
+msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
+msgstr "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 
 msgid "Revision"
 msgstr "Revision"
@@ -10225,6 +10507,9 @@ msgstr "Select an item to configure"
 msgid "Select an option"
 msgstr "Select an option"
 
+msgid "Select at least one line to convert"
+msgstr "Select at least one line to convert"
+
 msgid "Select Contact"
 msgstr "Select Contact"
 
@@ -10441,6 +10726,9 @@ msgstr "Set Quantity"
 
 msgid "Set up the right way"
 msgstr "Set up the right way"
+
+msgid "Set up your company with a step-by-step implementation plan covering setup, data, training, and go-live."
+msgstr "Set up your company with a step-by-step implementation plan covering setup, data, training, and go-live."
 
 msgid "Set up your own data with import tools and LLM help"
 msgstr "Set up your own data with import tools and LLM help"
@@ -10713,6 +11001,9 @@ msgstr "Size"
 msgid "Sizes"
 msgstr "Sizes"
 
+msgid "Skip"
+msgstr "Skip"
+
 msgid "Skip Existing"
 msgstr "Skip Existing"
 
@@ -10838,6 +11129,9 @@ msgstr "Standard"
 
 msgid "Standard cloud Carbon fits how your company runs"
 msgstr "Standard cloud Carbon fits how your company runs"
+
+msgid "Standard Cost Variances"
+msgstr "Standard Cost Variances"
 
 msgid "Standard factor"
 msgstr "Standard factor"
@@ -10988,6 +11282,9 @@ msgstr "storage unit"
 
 msgid "Storage Unit"
 msgstr "Storage Unit"
+
+msgid "Storage Unit (optional)"
+msgstr "Storage Unit (optional)"
 
 msgid "storage units"
 msgstr "storage units"
@@ -11142,6 +11439,9 @@ msgstr "Supplier Order Number"
 msgid "Supplier Overview"
 msgstr "Supplier Overview"
 
+msgid "Supplier Part"
+msgstr "Supplier Part"
+
 msgid "Supplier Part ID"
 msgstr "Supplier Part ID"
 
@@ -11159,6 +11459,9 @@ msgstr "Supplier Payment Discounts"
 
 msgid "Supplier Payment Discounts (default)"
 msgstr "Supplier Payment Discounts (default)"
+
+msgid "Supplier Prepayments"
+msgstr "Supplier Prepayments"
 
 msgid "supplier process"
 msgstr "supplier process"
@@ -11266,6 +11569,9 @@ msgstr "System"
 msgid "System configured"
 msgstr "System configured"
 
+msgid "System Qty"
+msgstr "System Qty"
+
 msgid "Table"
 msgstr "Table"
 
@@ -11319,6 +11625,9 @@ msgstr "Target one or more items."
 
 msgid "Target Version"
 msgstr "Target Version"
+
+msgid "Task"
+msgstr "Task"
 
 msgid "tasks"
 msgstr "tasks"
@@ -11461,6 +11770,9 @@ msgstr "The book of all posted journal lines, summed by account — written only
 
 msgid "The buckets you track costs against"
 msgstr "The buckets you track costs against"
+
+msgid "The capital assets you own and depreciate"
+msgstr "The capital assets you own and depreciate"
 
 msgid "The Carbon user responsible for this customer relationship; emails and reminders about this customer route to them."
 msgstr "The Carbon user responsible for this customer relationship; emails and reminders about this customer route to them."
@@ -11777,6 +12089,9 @@ msgstr "The month your financial year begins; periods are numbered from this mon
 msgid "The month your tax year begins; may differ from the fiscal year in some jurisdictions."
 msgstr "The month your tax year begins; may differ from the fiscal year in some jurisdictions."
 
+msgid "The monthly periods you post into and close"
+msgstr "The monthly periods you post into and close"
+
 msgid "The most likely failure mode the requester suspects; the technician confirms or replaces this on close-out, and the difference between suspected and actual feeds reliability reports."
 msgstr "The most likely failure mode the requester suspects; the technician confirms or replaces this on close-out, and the difference between suspected and actual feeds reliability reports."
 
@@ -12074,6 +12389,9 @@ msgstr "There's nothing outstanding to apply these credits to."
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "These custom fields will only be available for entities with the same tags"
 
+msgid "These documents haven't posted to the general ledger, so their amounts are missing from this period. Post or void each one — an undated document receives the posting day's date when it posts."
+msgstr "These documents haven't posted to the general ledger, so their amounts are missing from this period. Post or void each one — an undated document receives the posting day's date when it posts."
+
 msgid "These email addresses will be automatically CC'd on all emails sent to suppliers (quotes, purchase orders, etc.)."
 msgstr "These email addresses will be automatically CC'd on all emails sent to suppliers (quotes, purchase orders, etc.)."
 
@@ -12082,6 +12400,9 @@ msgstr "These email addresses will be automatically CC'd on all quote emails sen
 
 msgid "These jobs have operations assigned to this work center:"
 msgstr "These jobs have operations assigned to this work center:"
+
+msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
+msgstr "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 
 msgid "this ability"
 msgstr "this ability"
@@ -12137,6 +12458,9 @@ msgstr "This lot is expired and can't be picked."
 msgid "This may take a moment. Hang tight."
 msgstr "This may take a moment. Hang tight."
 
+msgid "This method version is read-only. Create a new version from the method menu to make changes."
+msgstr "This method version is read-only. Create a new version from the method menu to make changes."
+
 msgid "This Month"
 msgstr "This Month"
 
@@ -12155,6 +12479,9 @@ msgstr "This part is obsolete (No Stock)."
 msgid "This part is superseded and set to Stock Only — it's replenished to its spares reserve floor, independent of demand."
 msgstr "This part is superseded and set to Stock Only — it's replenished to its spares reserve floor, independent of demand."
 
+msgid "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
+msgstr "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
+
 msgid "This Quarter"
 msgstr "This Quarter"
 
@@ -12167,6 +12494,9 @@ msgstr "This sales order has lines that require jobs to be created"
 #. placeholder {0}: usageCount === 1 ? "" : "s"
 msgid "This storage type is currently used by {usageCount} storage unit{0}."
 msgstr "This storage type is currently used by {usageCount} storage unit{0}."
+
+msgid "this supplier"
+msgstr "this supplier"
 
 msgid "This updates the theme for all users of the application"
 msgstr "This updates the theme for all users of the application"
@@ -12540,6 +12870,9 @@ msgstr "Unassigned"
 msgid "Unballoon"
 msgstr "Unballoon"
 
+msgid "Uncounted lines are left unchanged at post — they are not zeroed."
+msgstr "Uncounted lines are left unchanged at post — they are not zeroed."
+
 msgid "Under Demand-Based Reorder, planning sums demand inside this rolling window when computing a replenishment quantity."
 msgstr "Under Demand-Based Reorder, planning sums demand inside this rolling window when computing a replenishment quantity."
 
@@ -12555,8 +12888,8 @@ msgstr "Undo"
 msgid "Uninstall"
 msgstr "Uninstall"
 
-msgid "Unique, uppercase, without spaces"
-msgstr "Unique, uppercase, without spaces"
+msgid "Unique, uppercase, without spaces (max 10 characters)"
+msgstr "Unique, uppercase, without spaces (max 10 characters)"
 
 msgid "Unit"
 msgstr "Unit"
@@ -12612,6 +12945,9 @@ msgstr "Unlink"
 msgid "Unlink job from sales order?"
 msgstr "Unlink job from sales order?"
 
+msgid "Unlock"
+msgstr "Unlock"
+
 msgid "Unmapped Extracted Lines"
 msgstr "Unmapped Extracted Lines"
 
@@ -12621,6 +12957,9 @@ msgstr "Unpick"
 #. placeholder {0}: pickedLots[0].trackedEntity.readableId
 msgid "Unpick {0}"
 msgstr "Unpick {0}"
+
+msgid "Unposted Documents"
+msgstr "Unposted Documents"
 
 msgid "Unreceived POs"
 msgstr "Unreceived POs"
@@ -12961,6 +13300,9 @@ msgstr "View Contact"
 msgid "View Contained Issues"
 msgstr "View Contained Issues"
 
+msgid "View Count"
+msgstr "View Count"
+
 msgid "View Custom Fields"
 msgstr "View Custom Fields"
 
@@ -12997,6 +13339,9 @@ msgstr "View Memo"
 msgid "View missing values"
 msgstr "View missing values"
 
+msgid "View notes"
+msgstr "View notes"
+
 msgid "View Open"
 msgstr "View Open"
 
@@ -13026,6 +13371,9 @@ msgstr "View Payables"
 
 msgid "View Payment"
 msgstr "View Payment"
+
+msgid "View Period"
+msgstr "View Period"
 
 msgid "View permissions"
 msgstr "View permissions"
@@ -13192,6 +13540,10 @@ msgstr "Website"
 msgid "Wednesday"
 msgstr "Wednesday"
 
+#. placeholder {0}: d.week
+msgid "Week {0}"
+msgstr "Week {0}"
+
 #. placeholder {0}: i + 1
 msgid "Week {0} ({formattedDate})"
 msgstr "Week {0} ({formattedDate})"
@@ -13208,6 +13560,9 @@ msgstr "Week of {0}"
 
 msgid "Weekly"
 msgstr "Weekly"
+
+msgid "Weekly demand"
+msgstr "Weekly demand"
 
 #. placeholder {0}: Math.round(startWeek) + 1
 #. placeholder {1}: Math.round(endWeek)
@@ -13288,6 +13643,9 @@ msgstr "What this receipt is fulfilling — a purchase order, a return, an inbou
 
 msgid "What this shipment is fulfilling — a sales order, an outbound transfer, an RMA return, or a manual shipment."
 msgstr "What this shipment is fulfilling — a sales order, an outbound transfer, an RMA return, or a manual shipment."
+
+msgid "What this task means"
+msgstr "What this task means"
 
 msgid "What this time entry counts as — Labor (operator time), Machine (run time), or Setup (changeover time); each rolls up under a different rate."
 msgstr "What this time entry counts as — Labor (operator time), Machine (run time), or Setup (changeover time); each rolls up under a different rate."
@@ -13402,6 +13760,9 @@ msgstr "When this specific lot/serial expires; drives FEFO picking and the shelf
 
 msgid "When you committed to deliver; planning treats this as the demand-due-date for fulfillment."
 msgstr "When you committed to deliver; planning treats this as the demand-due-date for fulfillment."
+
+msgid "When your fiscal and tax years start"
+msgstr "When your fiscal and tax years start"
 
 msgid "Where an operation runs; carries labor and quoting rates, with overhead the difference between them."
 msgstr "Where an operation runs; carries labor and quoting rates, with overhead the difference between them."
@@ -13538,6 +13899,11 @@ msgstr "Window:"
 msgid "WIP"
 msgstr "WIP"
 
+#. placeholder {0}: quarter.start + 1
+#. placeholder {1}: quarter.end
+msgid "Wk {0}–{1}"
+msgstr "Wk {0}–{1}"
+
 msgid "wks"
 msgstr "wks"
 
@@ -13670,6 +14036,9 @@ msgstr ""
 "                        ordered quantity of {1}. What would you like\n"
 "                        to do with the extra parts?"
 
+msgid "You don't have permission to edit this bill of material."
+msgstr "You don't have permission to edit this bill of material."
+
 msgid "You drive it; we make sure it's done right. Expert eyes on your setup, data, and go-live."
 msgstr "You drive it; we make sure it's done right. Expert eyes on your setup, data, and go-live."
 
@@ -13718,9 +14087,6 @@ msgstr "Your data is accessible and reasonably clean"
 
 msgid "Your Email"
 msgstr "Your Email"
-
-msgid "Your fiscal year and its accounting periods"
-msgstr "Your fiscal year and its accounting periods"
 
 msgid "Your general-ledger accounts and their structure"
 msgstr "Your general-ledger accounts and their structure"

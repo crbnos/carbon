@@ -5,18 +5,18 @@ import { inngest } from "../../client";
 export const recalculateFunction = inngest.createFunction(
   { id: "recalculate", retries: 3 },
   { event: "carbon/recalculate" },
-  async ({ event, step }) => {
+  async ({ event, step, logger }) => {
     const payload = event.data;
 
     const result = await step.run("recalculate", async () => {
-      console.info(`Type: ${payload.type}, id: ${payload.id}`);
+      logger.info(`Type: ${payload.type}, id: ${payload.id}`);
 
       const serviceRole = getCarbonServiceRole();
       let calculateQuantities: FunctionsResponse<{ success: boolean }>;
 
       switch (payload.type) {
         case "jobRequirements":
-          console.info(`Recalculating job requirements for ${payload.id}`);
+          logger.info(`Recalculating job requirements for ${payload.id}`);
           calculateQuantities = await recalculateJobRequirements(serviceRole, {
             id: payload.id,
             companyId: payload.companyId,
@@ -29,7 +29,7 @@ export const recalculateFunction = inngest.createFunction(
           };
 
         case "jobMakeMethodRequirements":
-          console.info(
+          logger.info(
             `Recalculating job make method requirements for ${payload.id}`
           );
           calculateQuantities = await recalculateJobMakeMethodRequirements(
@@ -55,11 +55,11 @@ export const recalculateFunction = inngest.createFunction(
     });
 
     if (result.success) {
-      console.info(`Success ${payload.id}`);
+      logger.info(`Success ${payload.id}`);
     } else {
-      console.error(
-        `Recalculation ${payload.type} failed for ${payload.id}: ${result.message}`
-      );
+      logger.error(`Recalculation ${payload.type} failed for ${payload.id}`, {
+        message: result.message
+      });
     }
 
     return result;

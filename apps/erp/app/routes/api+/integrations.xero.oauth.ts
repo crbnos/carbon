@@ -7,6 +7,7 @@ import {
   ProviderID
 } from "@carbon/ee/accounting";
 import { xeroOnInstall } from "@carbon/ee/xero/hooks.server";
+import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
 import { upsertCompanyIntegration } from "~/modules/settings/settings.server";
@@ -16,6 +17,8 @@ import { path } from "~/utils/path";
 export const config = {
   runtime: "nodejs"
 };
+
+const logger = getLogger("erp", "xero", "oauth");
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, userId, companyId } = await requirePermissions(request, {
@@ -123,11 +126,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
 
     if (!xeroOrgResponse.ok) {
-      console.error(
-        "Xero Organisation API error:",
-        xeroOrgResponse.status,
-        await xeroOrgResponse.text()
-      );
+      logger.error("Xero Organisation API error", {
+        status: xeroOrgResponse.status,
+        body: await xeroOrgResponse.text()
+      });
       return data(
         { error: "Failed to fetch Xero organization details" },
         { status: 500 }
@@ -138,7 +140,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     try {
       xeroOrgData = await xeroOrgResponse.json();
     } catch (parseError) {
-      console.error("Failed to parse Xero Organisation response:", parseError);
+      logger.error("Failed to parse Xero Organisation response", {
+        error: parseError
+      });
       return data(
         { error: "Invalid response from Xero organization API" },
         { status: 500 }
@@ -199,7 +203,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       );
     }
   } catch (err) {
-    console.error("Xero OAuth Error:", err);
+    logger.error("Xero OAuth Error", { error: err });
     return data(
       { error: "Failed to exchange code for token" },
       { status: 500 }

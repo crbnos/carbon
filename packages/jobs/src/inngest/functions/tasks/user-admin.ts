@@ -13,18 +13,18 @@ import { inngest } from "../../client";
 export const userAdminFunction = inngest.createFunction(
   { id: "user-admin", retries: 3 },
   { event: "carbon/user-admin" },
-  async ({ event, step }) => {
+  async ({ event, step, logger }) => {
     const serviceRole = getCarbonServiceRole();
     const payload = event.data;
 
     const result = await step.run("user-admin-action", async () => {
-      console.log(`User admin update ${payload.type} for ${payload.id}`);
+      logger.info(`User admin update ${payload.type} for ${payload.id}`);
 
       let result: Result = { success: false, message: "Unknown action" };
 
       switch (payload.type) {
         case "deactivate":
-          console.log(`Deactivating ${payload.id}`);
+          logger.info(`Deactivating ${payload.id}`);
           result = await deactivateUser(
             serviceRole,
             payload.id,
@@ -36,7 +36,7 @@ export const userAdminFunction = inngest.createFunction(
           break;
         case "resend":
           const { id: userId, companyId, location, ip } = payload;
-          console.log(`Resending invite for ${payload.id}`);
+          logger.info(`Resending invite for ${payload.id}`);
           const [company, user] = await Promise.all([
             serviceRole
               .from("company")
@@ -119,11 +119,11 @@ export const userAdminFunction = inngest.createFunction(
       }
 
       if (result.success) {
-        console.log(`Success ${payload.id}`);
+        logger.info(`Success ${payload.id}`);
       } else {
-        console.error(
-          `Admin action ${payload.type} failed for ${payload.id}: ${result.message}`
-        );
+        logger.error(`Admin action ${payload.type} failed for ${payload.id}`, {
+          message: result.message
+        });
       }
 
       return result;

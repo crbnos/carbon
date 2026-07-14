@@ -12,6 +12,7 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
+  toast,
   useMount,
   VStack
 } from "@carbon/react";
@@ -72,14 +73,18 @@ const QuotationFinalizeModal = ({
   const fetchQuoteData = async () => {
     if (!carbon) return;
 
-    const [lines, prices] = await Promise.all([
-      getQuoteLines(carbon, quoteId),
-      getQuoteLinePricesByQuoteId(carbon, quoteId)
-    ]);
-    setLines(lines.data ?? []);
-    setPrices(prices.data ?? []);
-
-    setLoading(false);
+    try {
+      const [lines, prices] = await Promise.all([
+        getQuoteLines(carbon, quoteId),
+        getQuoteLinePricesByQuoteId(carbon, quoteId)
+      ]);
+      setLines(lines.data ?? []);
+      setPrices(prices.data ?? []);
+    } catch {
+      toast.error("Failed to load quote data");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useMount(() => {

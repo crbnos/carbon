@@ -4,10 +4,10 @@ import { inngest } from "../../client";
 export const mrpFunction = inngest.createFunction(
   { id: "mrp", retries: 2 },
   { cron: "0 */3 * * *" },
-  async ({ step }) => {
+  async ({ step, logger }) => {
     const serviceRole = getCarbonServiceRole();
     await step.run("run-mrp-for-all-companies", async () => {
-      console.log(
+      logger.info(
         `Scheduled MRP Calculation Started: ${new Date().toISOString()}`
       );
 
@@ -16,13 +16,7 @@ export const mrpFunction = inngest.createFunction(
         .select("id, ...company(name)");
 
       if (companies.error) {
-        console.error(
-          `Failed to get companies: ${
-            companies.error instanceof Error
-              ? companies.error.message
-              : String(companies.error)
-          }`
-        );
+        logger.error("Failed to get companies", { error: companies.error });
         return;
       }
 
@@ -38,22 +32,14 @@ export const mrpFunction = inngest.createFunction(
           });
 
           if (result.error) {
-            console.error(
-              `Failed to run MRP for company ${company.name}: ${
-                result.error instanceof Error
-                  ? result.error.message
-                  : String(result.error)
-              }`
-            );
+            logger.error(`Failed to run MRP for company ${company.name}`, {
+              error: result.error
+            });
           } else {
-            console.log(`Successfully ran MRP for company ${company.name}`);
+            logger.info(`Successfully ran MRP for company ${company.name}`);
           }
         } catch (error) {
-          console.error(
-            `Unexpected error in MRP run task: ${
-              error instanceof Error ? error.message : String(error)
-            }`
-          );
+          logger.error("Unexpected error in MRP run task", { error });
         }
       }
     });

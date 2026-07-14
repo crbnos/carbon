@@ -19,6 +19,7 @@ import { getCurrentAccountingPeriod } from "../shared/get-accounting-period.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
 import { getDefaultPostingGroup } from "../shared/get-posting-group.ts";
 import { calculateCOGS } from "../shared/calculate-cogs.ts";
+import { resolveTrackedEntityBin } from "./resolve-tracked-entity-bin.ts";
 
 type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
 
@@ -2210,10 +2211,7 @@ serve(async (req: Request) => {
                     itemId: trackedEntity.sourceDocumentId,
                     quantity: -Number(trackedEntity.quantity),
                     locationId: job?.locationId,
-                    storageUnitId: itemLedgers.find(
-                      (itemLedger) =>
-                        itemLedger.trackedEntityId === trackedEntityId
-                    )?.storageUnitId,
+                    storageUnitId: resolveTrackedEntityBin(itemLedgers, trackedEntityId),
                     trackedEntityId: trackedEntity.id!,
                     createdBy: userId,
                   },
@@ -2225,10 +2223,7 @@ serve(async (req: Request) => {
                     itemId: trackedEntity.sourceDocumentId,
                     quantity: quantity,
                     locationId: job?.locationId,
-                    storageUnitId: itemLedgers.find(
-                      (itemLedger) =>
-                        itemLedger.trackedEntityId === trackedEntityId
-                    )?.storageUnitId,
+                    storageUnitId: resolveTrackedEntityBin(itemLedgers, trackedEntityId),
                     trackedEntityId: trackedEntity.id!,
                     createdBy: userId,
                   },
@@ -2240,10 +2235,7 @@ serve(async (req: Request) => {
                     itemId: trackedEntity.sourceDocumentId,
                     quantity: remainingQuantity,
                     locationId: job?.locationId,
-                    storageUnitId: itemLedgers.find(
-                      (itemLedger) =>
-                        itemLedger.trackedEntityId === trackedEntityId
-                    )?.storageUnitId,
+                    storageUnitId: resolveTrackedEntityBin(itemLedgers, trackedEntityId),
                     trackedEntityId: newTrackedEntityId,
                     createdBy: userId,
                   }
@@ -2277,9 +2269,7 @@ serve(async (req: Request) => {
                 itemId: trackedEntity.sourceDocumentId,
                 quantity: -quantity,
                 locationId: job?.locationId,
-                storageUnitId: itemLedgers.find(
-                  (itemLedger) => itemLedger.trackedEntityId === trackedEntityId
-                )?.storageUnitId,
+                storageUnitId: resolveTrackedEntityBin(itemLedgers, trackedEntityId),
                 trackedEntityId,
                 createdBy: userId,
               });
@@ -2568,6 +2558,9 @@ serve(async (req: Request) => {
                 itemId: trackedEntity.sourceDocumentId,
                 quantity: quantity,
                 locationId: job?.locationId,
+                // NOTE: unconsume path left on its original bin-selection until
+                // it can be verified; the resolveTrackedEntityBin fix is scoped
+                // to the consumption path (trackedEntitiesToOperation).
                 storageUnitId: itemLedgers.find(
                   (itemLedger) => itemLedger.trackedEntityId === trackedEntityId
                 )?.storageUnitId,

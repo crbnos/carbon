@@ -1,23 +1,46 @@
 ---
 name: conductor
-description: Supervised loop conductor — drive a single work item (a bug, a usability tweak, a small feature) through a doer→gate→judge→keep-or-revert→ledger cycle to a gated PR, while the human watches. Use when asked to "conduct", "loop on", or build/fix one tightly-scoped item with explicit acceptance criteria. Backed by @carbon/harness and the @carbon/checks gates. Supervised only — never autonomous/overnight, never auto-merged. For multi-phase features prefer /feature.
+description: Autonomous loop conductor — drive a single work item (a bug, a usability tweak, a small feature) through a doer→gate→judge→keep-or-revert→ledger cycle to a gated PR, unattended. Use when asked to "conduct", "loop on", or build/fix one tightly-scoped item with explicit acceptance criteria, and as the inner loop the outer-loop orchestrator dispatches headless. Backed by @carbon/harness and the @carbon/checks gates. Autonomous means: never call /grill or block on human input mid-loop; the gated PR is the supervision point — never auto-merged. For multi-phase features with human design gates prefer /feature.
 ---
 
-# conductor — supervised doer→gate→judge loop
+# conductor — autonomous doer→gate→judge loop
 
 Iterate on one work item until its acceptance criteria are met and provable,
-with the human watching and giving final approval. Ship a **gated PR** — never
-merge. Architecture context: `.ai/docs/loop-system.md`; the deterministic
-helpers live in `packages/harness` (see its `AGENTS.md`).
+**without human input mid-loop** — this skill runs unattended (the outer loop
+dispatches it headless via cron; see `.ai/docs/outer-loop.md`). Human review
+happens exactly once, at the end: ship a **gated PR** — never merge.
+Architecture context: `.ai/docs/loop-system.md`; the deterministic helpers
+live in `packages/harness` (see its `AGENTS.md`).
 
-**Announce at start:** "Using the conductor skill — supervised loop on
+**Announce at start:** "Using the conductor skill — autonomous loop on
 {work item}."
+
+## Autonomous decision protocol — no mid-loop questions
+
+The loop never waits on a human. Concretely:
+
+- **Never invoke `/grill`** or any interactive interview from inside a loop.
+  If a sub-skill offers a supervised question gate (e.g. spec-writing Step 5),
+  use its **autonomous mode** instead.
+- A decision that would normally go to the user is resolved in this order:
+  (1) codebase precedent, (2) the research file / competitor consensus,
+  (3) your own recommended answer. Record every such call in the ledger entry
+  (`reason`) and collect them into an **"Assumed decisions"** section of the
+  PR body — the human reviews them there, not mid-loop.
+- **BLOCKED, not guessed** — some calls are never made autonomously (the root
+  `AGENTS.md` Ask-First list): production-critical schema changes, auth/RBAC/
+  multi-tenancy changes, public contract changes, scope reductions, new
+  production dependencies. Hitting one of these → record BLOCKED in the
+  outcome with the question stated crisply, and stop. Same for a visual proof
+  the stack can't provide.
 
 ## Step 0: Isolated worktree off origin/main — always first
 
 ```bash
 git fetch origin main
 crbn new loop/<id> --base origin/main --yes   # prints the worktree path
+cd <worktree-path>
+git merge origin/main                         # always merge origin/main before starting
 ```
 
 Do all loop work in that worktree, on branch `loop/<id>`. **Never run on

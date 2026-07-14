@@ -1,4 +1,5 @@
 import type { Database } from "@carbon/database";
+import { textToTiptap } from "@carbon/utils";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import {
@@ -41,6 +42,14 @@ export const deadlineTypes = [
   "No Deadline"
 ] as const;
 
+// A due date only applies to the two dated deadline types; ASAP / No Deadline
+// ignore it. Single source for both the validators below and the job form UI.
+export function deadlineRequiresDueDate(
+  deadlineType: string | null | undefined
+): boolean {
+  return deadlineType === "Hard Deadline" || deadlineType === "Soft Deadline";
+}
+
 export const jobStatus = [
   "Draft",
   "Planned",
@@ -64,6 +73,33 @@ export function isJobLocked(status: string | null | undefined): boolean {
   return JOB_LOCKED_STATUSES.includes(
     status as (typeof JOB_LOCKED_STATUSES)[number]
   );
+}
+
+/**
+ * A Queued assemblyPlanJob older than this never got picked up by the worker
+ * (pickup normally takes seconds) — treat it as dead rather than blocking the
+ * UI and re-runs forever. Processing rows are alive regardless of age: large
+ * models legitimately plan for many minutes, and the worker's onFailure flips
+ * them to Failed.
+ */
+const ASSEMBLY_PLAN_QUEUED_STALE_MS = 2 * 60 * 1000;
+// A Processing row with no live worker behind it (worker crash, or the dev
+// Inngest server — which keeps runs in memory — restarting mid-run) would
+// otherwise read as "running" forever: the UI spins and the re-run guard
+// blocks recovery. The worker's own budget is ~30 min of waiting plus
+// retries, so anything past this is an orphan.
+const ASSEMBLY_PLAN_PROCESSING_STALE_MS = 45 * 60 * 1000;
+
+/** Whether a motion-planning run is live (drives badges, polling, re-run guards). */
+export function isAssemblyPlanRunning(
+  job: { status: string; createdAt: string } | null | undefined
+): boolean {
+  if (!job) return false;
+  const age = Date.now() - new Date(job.createdAt).getTime();
+  if (job.status === "Processing") {
+    return age < ASSEMBLY_PLAN_PROCESSING_STALE_MS;
+  }
+  return job.status === "Queued" && age < ASSEMBLY_PLAN_QUEUED_STALE_MS;
 }
 
 export const jobOperationStatus = [
@@ -169,7 +205,7 @@ export const bulkJobValidator = z
   )
   .refine(
     (data) => {
-      if (["Hard Deadline", "Soft Deadline"].includes(data.deadlineType)) {
+      if (deadlineRequiresDueDate(data.deadlineType)) {
         return !!data.dueDateOfFirstJob;
       }
       return true;
@@ -181,7 +217,7 @@ export const bulkJobValidator = z
   )
   .refine(
     (data) => {
-      if (["Hard Deadline", "Soft Deadline"].includes(data.deadlineType)) {
+      if (deadlineRequiresDueDate(data.deadlineType)) {
         return !!data.dueDateOfLastJob;
       }
       return true;
@@ -194,10 +230,7 @@ export const bulkJobValidator = z
 
 export const jobValidator = baseJobValidator.refine(
   (data) => {
-    if (
-      ["Hard Deadline", "Soft Deadline"].includes(data.deadlineType) &&
-      !data.dueDate
-    ) {
+    if (deadlineRequiresDueDate(data.deadlineType) && !data.dueDate) {
       return false;
     }
     return true;
@@ -232,10 +265,7 @@ export const salesOrderToJobValidator = baseJobValidator
   })
   .refine(
     (data) => {
-      if (
-        ["Hard Deadline", "Soft Deadline"].includes(data.deadlineType) &&
-        !data.dueDate
-      ) {
+      if (deadlineRequiresDueDate(data.deadlineType) && !data.dueDate) {
         return false;
       }
       return true;
@@ -890,17 +920,22 @@ export const productionOrderValidator = z.object({
 
 export type ProductionOrder = z.infer<typeof productionOrderValidator>;
 
-export const productionQuantityValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  jobOperationId: z.string().min(1, { message: "Operation is required" }),
-  type: z.enum(["Rework", "Scrap", "Production"], {
-    errorMap: () => ({ message: "Quantity type is required" })
-  }),
-  scrapReasonId: zfd.text(z.string().optional()),
-  notes: zfd.text(z.string().optional()),
-  createdBy: zfd.text(z.string().optional()),
-  quantity: zfd.numeric(z.number().min(0))
-});
+export const productionQuantityValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    jobOperationId: z.string().min(1, { message: "Operation is required" }),
+    type: z.enum(["Rework", "Scrap", "Production"], {
+      errorMap: () => ({ message: "Quantity type is required" })
+    }),
+    scrapReasonId: zfd.text(z.string().optional()),
+    notes: zfd.text(z.string().optional()),
+    createdBy: zfd.text(z.string().optional()),
+    quantity: zfd.numeric(z.number().min(0))
+  })
+  .refine((data) => data.type !== "Scrap" || !!data.scrapReasonId, {
+    message: "Scrap reason is required",
+    path: ["scrapReasonId"]
+  });
 
 export const scheduleOperationUpdateValidator = z.object({
   id: z.string().min(1, { message: "ID is required" }),
@@ -1019,6 +1054,387 @@ export const demandProjectionValidator = z.object({
     ])
   )
 });
+
+// --- Assembly Instructions ---------------------------------------------
+
+export const assemblyInstructionStatuses = [
+  "Draft",
+  "Published",
+  "Archived"
+] as const;
+
+export const planConfidences = ["high", "low", "manual"] as const;
+
+export const assemblyStepStatuses = ["Todo", "Review", "Done"] as const;
+
+export const assemblyRequirementTypes = [
+  "Tool",
+  "Fixture",
+  "Consumable",
+  "Note",
+  "Media"
+] as const;
+
+export const assemblyNoteSeverities = ["Info", "Caution", "Warning"] as const;
+
+const vector3 = z.tuple([z.number(), z.number(), z.number()]);
+const quaternion = z.tuple([z.number(), z.number(), z.number(), z.number()]);
+
+/**
+ * Insertion motion of a step's parts. See
+ * docs/specs/animated-work-instructions-contracts.md §4.
+ */
+export const motionSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("linear"),
+    direction: vector3,
+    distance: z.number().positive()
+  }),
+  z.object({
+    type: z.literal("L"),
+    // 2+ segments: the tier-3 escape planner emits up to 3 (e.g. slide out
+    // of a blind slot, lift, exit); the viewer interpolates any count
+    segments: z
+      .array(
+        z.object({
+          direction: vector3,
+          distance: z.number().positive()
+        })
+      )
+      .min(2)
+  }),
+  z.object({
+    type: z.literal("helix"),
+    axis: vector3,
+    origin: vector3,
+    pitch: z.number().positive(),
+    turns: z.number().positive(),
+    approach: z.number().nonnegative()
+  }),
+  z.object({
+    type: z.literal("path"),
+    keyframes: z
+      .array(
+        z.object({
+          t: z.number().min(0).max(1),
+          position: vector3,
+          quaternion
+        })
+      )
+      .min(2)
+  }),
+  z.object({ type: z.literal("none") })
+]);
+
+// A step camera is either a manual "Set view" pose (applied verbatim) or a
+// planner-baked view-direction hint (mesh-precise sight lines; the viewer
+// derives target/distance/frustum fit live at the real viewport aspect).
+export const cameraSchema = z.union([
+  z.object({
+    position: vector3,
+    target: vector3,
+    fov: z.number().positive()
+  }),
+  z.object({
+    source: z.literal("plan"),
+    direction: vector3
+  })
+]);
+
+export const fastenerSchema = z.object({
+  spec: z.string().optional(),
+  count: z.number().int().positive().optional(),
+  torqueNm: z.number().positive().optional(),
+  tool: z.string().optional()
+});
+
+/**
+ * Planner flags persisted on assemblyInstructionStep.warnings (jsonb).
+ * `flagged` marks steps whose parts have no proven collision-free path —
+ * the viewer fades them in at the seated pose instead of animating a
+ * fabricated motion. `blockedBy` records the obstructing nodeIds from
+ * plan.json so the editor can name the blockers.
+ */
+export const stepPlanWarningsSchema = z.object({
+  flagged: z.boolean().optional(),
+  blockedBy: z.array(z.string()).optional(),
+  /**
+   * A part in this step will tip once placed (its center of mass falls outside
+   * the support polygon of the parts below it) — likely needs a fixture or a
+   * second hand. Diagnostic only; never blocks generation or playback.
+   */
+  needsSupport: z.boolean().optional()
+});
+
+const jsonField = <T extends z.ZodTypeAny>(schema: T) =>
+  z.preprocess((raw) => {
+    if (typeof raw !== "string") return raw;
+    if (raw.trim() === "") return undefined;
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return raw;
+    }
+  }, schema);
+
+export const assemblyInstructionValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  name: z.string().min(1, { message: "Name is required" }),
+  modelUploadId: z.string().min(1, { message: "Model is required" }),
+  itemId: zfd.text(z.string().optional())
+});
+
+export type AssemblyModelState =
+  | "converted" // GLB + graph artifacts exist — ready for the viewer
+  | "processing" // conversion job is queued or running
+  | "failed" // last conversion failed — retriable
+  | "convertible" // STEP file present but never converted (lazy conversion)
+  | "none"; // no model, or a format the geometry service can't convert
+
+export function getAssemblyModelState(
+  model: {
+    modelPath: string | null;
+    processingStatus: Database["public"]["Enums"]["modelProcessingStatus"];
+    glbPath: string | null;
+    graphPath: string | null;
+  } | null
+): AssemblyModelState {
+  if (!model) return "none";
+  if (
+    model.processingStatus === "Success" &&
+    model.glbPath &&
+    model.graphPath
+  ) {
+    return "converted";
+  }
+  const isStep = [".step", ".stp"].some((ext) =>
+    (model.modelPath ?? "").toLowerCase().endsWith(ext)
+  );
+  if (!isStep) return "none";
+  if (
+    model.processingStatus === "Queued" ||
+    model.processingStatus === "Processing"
+  ) {
+    return "processing";
+  }
+  if (model.processingStatus === "Failed") return "failed";
+  return "convertible";
+}
+
+/**
+ * Creating an instruction starts from a made item; the instruction name and
+ * model are derived server-side (the name from the item, the model from the
+ * item's CAD files, converted lazily if needed). An explicit modelUploadId
+ * (e.g. from the part details page) takes precedence.
+ */
+export const assemblyInstructionFromItemValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  itemId: z.string().min(1, { message: "Item is required" }),
+  modelUploadId: zfd.text(z.string().optional())
+});
+
+export const assemblyInstructionStatusValidator = z.object({
+  status: z.enum(assemblyInstructionStatuses)
+});
+
+/**
+ * Optional tiptap-doc transform: same coercion as the shared
+ * operationStepValidator description, but optional because "Add Step" posts
+ * only assemblyInstructionId + motion. Returns `any` for the same reason —
+ * the doc is consumed both as a DB Json value and as editor JSONContent.
+ */
+const optionalTiptapDescription = zfd
+  .text(z.string().optional())
+  .transform((val): any => {
+    if (val === undefined || val === "") return undefined;
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(val);
+    } catch {
+      parsed = val;
+    }
+    // Always store a tiptap doc object, never a scalar string (jsonb scalar
+    // strings break method copies) and never silently drop content to {}.
+    if (typeof parsed === "string") return textToTiptap(parsed);
+    if (parsed && typeof parsed === "object") return parsed;
+    return textToTiptap(String(val));
+  });
+
+export const assemblyInstructionStepValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    assemblyInstructionId: z.string().min(1),
+    title: zfd.text(z.string().optional()),
+    // Typed-step fields mirror jobOperationStep so steps can eventually be
+    // copied into job operations
+    type: zfd.text(z.enum(procedureStepType).optional()),
+    description: optionalTiptapDescription,
+    required: zfd.checkbox(),
+    unitOfMeasureCode: zfd.text(z.string().optional()),
+    minValue: zfd.numeric(z.number().min(0).optional()),
+    maxValue: zfd.numeric(z.number().min(0).optional()),
+    listValues: z.array(z.string()).optional(),
+    componentNodeIds: jsonField(z.array(z.string()).optional()),
+    motion: jsonField(motionSchema.optional()),
+    camera: jsonField(cameraSchema.nullable().optional()),
+    fastener: jsonField(fastenerSchema.nullable().optional()),
+    durationSeconds: zfd.numeric(z.number().positive().optional())
+  })
+  .superRefine((data, ctx) => {
+    if (data.type === "Measurement" && !data.unitOfMeasureCode) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["unitOfMeasureCode"],
+        message: "Unit of measure is required"
+      });
+    }
+    if (
+      data.type === "List" &&
+      !(
+        Array.isArray(data.listValues) &&
+        data.listValues.length > 0 &&
+        data.listValues.every((option) => option.trim() !== "")
+      )
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["listValues"],
+        message: "List options are required"
+      });
+    }
+    if (
+      data.minValue != null &&
+      data.maxValue != null &&
+      data.maxValue < data.minValue
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["maxValue"],
+        message: "Maximum value must be greater than or equal to minimum value"
+      });
+    }
+  });
+
+/**
+ * Partial update for a step's viewer-authored motion path and/or camera pose,
+ * saved directly from the 3D editor (drag autosave, "Set view" button) without
+ * round-tripping the whole step form. `camera: null` clears it (auto-frame).
+ */
+export const assemblyInstructionStepMotionValidator = z.object({
+  motion: jsonField(motionSchema.optional()),
+  camera: jsonField(cameraSchema.nullable().optional())
+});
+
+/**
+ * Partial update for a step's assigned components, saved directly from the
+ * Details panel's Add/remove controls without round-tripping the whole step
+ * form. An empty array is valid — a process-only step with no components.
+ */
+export const assemblyInstructionStepComponentsValidator = z.object({
+  componentNodeIds: jsonField(z.array(z.string()))
+});
+
+export const assemblyStepComponentsReassignValidator = z
+  .object({
+    // Absent for "remove" (unassign from every step); required otherwise.
+    targetStepId: z.string().optional(),
+    componentNodeIds: jsonField(z.array(z.string()).min(1)),
+    mode: z.enum(["move", "duplicate", "remove"])
+  })
+  .refine((v) => v.mode === "remove" || !!v.targetStepId, {
+    message: "A target step is required",
+    path: ["targetStepId"]
+  });
+
+export const assemblyInstructionStepStatusValidator = z.object({
+  status: z.enum(assemblyStepStatuses)
+});
+
+export const assemblyInstructionStepOrderValidator = z.object({
+  updates: z
+    .array(
+      z.object({
+        id: z.string().min(1),
+        sortOrder: z.number()
+      })
+    )
+    .min(1)
+});
+
+/**
+ * Bill-of-material parts consumed at a step. Stores itemId (not a
+ * methodMaterial FK) so associations survive make-method re-versioning; the
+ * UI picker is limited to items on the instruction item's make-method BOM.
+ */
+export const assemblyStepMaterialValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  stepId: z.string().min(1),
+  itemId: z.string().min(1, { message: "Item is required" }),
+  quantity: zfd.numeric(z.number().min(0).optional()),
+  sortOrder: zfd.numeric(z.number().min(0).optional())
+});
+
+export const assemblyStepRequirementValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    stepId: z.string().min(1),
+    type: z.enum(assemblyRequirementTypes),
+    itemId: zfd.text(z.string().optional()),
+    name: zfd.text(z.string().optional()),
+    text: zfd.text(z.string().optional()),
+    severity: zfd.text(z.enum(assemblyNoteSeverities).optional()),
+    filePath: zfd.text(z.string().optional()),
+    quantity: zfd.numeric(z.number().int().positive().optional())
+  })
+  .superRefine((data, ctx) => {
+    if (data.type === "Note" && !data.text?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["text"],
+        message: "Note text is required"
+      });
+    }
+    if (data.type === "Media" && !data.filePath?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["filePath"],
+        message: "A file is required"
+      });
+    }
+    if (
+      ["Tool", "Fixture", "Consumable"].includes(data.type) &&
+      !data.itemId?.trim() &&
+      !data.name?.trim()
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["name"],
+        message: "Pick a catalog item or enter a name"
+      });
+    }
+  });
+
+export const assemblyStandardNoteValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  name: z.string().min(1, { message: "Name is required" }),
+  content: z.string().min(1, { message: "Content is required" }),
+  severity: z.enum(assemblyNoteSeverities)
+});
+
+// An assembly unit: model leaf nodes the planner treats as one rigid body — a
+// user override on the automatic BOM-driven derivation. Scoped to the model
+// upload so it survives instruction delete/recreate (like component mappings).
+export const assemblyUnitValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  modelUploadId: z.string().min(1),
+  name: z.string().min(1, { message: "Name is required" }),
+  componentNodeIds: jsonField(z.array(z.string()).min(1)),
+  itemId: zfd.text(z.string().optional())
+});
+
+export type Motion = z.infer<typeof motionSchema>;
+export type CameraPose = z.infer<typeof cameraSchema>;
+export type Fastener = z.infer<typeof fastenerSchema>;
 
 // Must match the demand window in get_job_quantity_on_hand and the scheduling
 // sequence.

@@ -2,11 +2,14 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { trigger } from "@carbon/jobs";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { getStockTransfer } from "~/modules/inventory";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "id-line-quantity");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -139,7 +142,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         });
       }
     } catch (e) {
-      console.error("Auto-print for split entity failed:", e);
+      logger.error("Auto-print for split entity failed", { error: e });
     }
   }
 

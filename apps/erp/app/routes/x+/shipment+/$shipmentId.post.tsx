@@ -8,6 +8,7 @@ import {
   isBlocked
 } from "@carbon/ee/storage-rules.server";
 import { trigger } from "@carbon/jobs";
+import { getLogger } from "@carbon/logger";
 import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import type { ActionFunctionArgs } from "react-router";
@@ -18,6 +19,8 @@ import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
 
 type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
+
+const logger = getLogger("erp", "shipment", "post");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
@@ -243,7 +246,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         }
       } catch (err) {
         // Continue with posting even if PDF generation fails
-        console.error("Failed to generate packing slip PDF:", err);
+        logger.error("Failed to generate packing slip PDF", { error: err });
       }
     }
 
@@ -299,7 +302,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         }
       }
     } catch (e) {
-      console.error("Auto-print failed:", e);
+      logger.error("Auto-print failed", { error: e });
     }
 
     // Auto-print labels for batch split entities
@@ -315,7 +318,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
           });
         }
       } catch (e) {
-        console.error("Auto-print for split entities failed:", e);
+        logger.error("Auto-print for split entities failed", { error: e });
       }
     }
   } catch (thrown) {

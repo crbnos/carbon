@@ -5,9 +5,12 @@ import {
   linkActionToLinearIssue,
   unlinkActionFromLinearIssue
 } from "@carbon/ee/linear.server";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunction, LoaderFunction } from "react-router";
 import { data } from "react-router";
 import { getIssueAction } from "~/modules/quality/quality.service";
+
+const logger = getLogger("erp", "integrations-linear-issue-link");
 
 const linear = getLinearClient();
 
@@ -100,14 +103,14 @@ export const action: ActionFunction = async ({ request }) => {
             }
           }
         } catch (e) {
-          console.error("Failed to clean up Linear attachment:", e);
+          logger.error("Failed to clean up Linear attachment", { error: e });
         }
 
         return { success: true, message: "Unlinked successfully" };
       }
     }
   } catch (error) {
-    console.error("Linear issue link action error:", error);
+    logger.error("Linear issue link action error", { error: error });
     return data(
       { success: false, message: `Failed to process request` },
       { status: 400 }

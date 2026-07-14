@@ -2,6 +2,7 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { getLogger } from "@carbon/logger";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
@@ -9,6 +10,8 @@ import type { ShipmentSourceDocument } from "~/modules/inventory";
 import { getUserDefaults } from "~/modules/users/users.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "shipment");
 
 export const handle: Handle = {
   breadcrumb: msg`Shipments`,
@@ -43,7 +46,9 @@ export async function action({ request }: ActionFunctionArgs) {
         }
       });
       if (!salesOrderShipment.data || salesOrderShipment.error) {
-        console.error(salesOrderShipment.error);
+        logger.error("Failed to create shipment", {
+          error: salesOrderShipment.error
+        });
         throw redirect(
           path.to.salesOrder(sourceDocumentId),
           await flash(
@@ -68,7 +73,9 @@ export async function action({ request }: ActionFunctionArgs) {
         }
       });
       if (!purchaseOrderShipment.data || purchaseOrderShipment.error) {
-        console.error(purchaseOrderShipment.error);
+        logger.error("Failed to create shipment", {
+          error: purchaseOrderShipment.error
+        });
         throw redirect(
           path.to.purchaseOrder(sourceDocumentId),
           await flash(
@@ -92,7 +99,9 @@ export async function action({ request }: ActionFunctionArgs) {
         }
       });
       if (!warehouseTransferShipment.data || warehouseTransferShipment.error) {
-        console.error(warehouseTransferShipment.error);
+        logger.error("Failed to create shipment", {
+          error: warehouseTransferShipment.error
+        });
         throw redirect(
           path.to.warehouseTransferDetails(sourceDocumentId),
           await flash(
@@ -118,7 +127,9 @@ export async function action({ request }: ActionFunctionArgs) {
       });
 
       if (!defaultShipment.data || defaultShipment.error) {
-        console.error(defaultShipment.error);
+        logger.error("Failed to create shipment", {
+          error: defaultShipment.error
+        });
         throw redirect(
           path.to.shipments,
           await flash(request, error(error, "Failed to create shipment"))

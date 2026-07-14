@@ -9,20 +9,22 @@ import { inngest } from "../../client";
 export const updatePermissionsFunction = inngest.createFunction(
   { id: "update-permissions", retries: 3 },
   { event: "carbon/update-permissions" },
-  async ({ event, step }) => {
+  async ({ event, step, logger }) => {
     const serviceRole = getCarbonServiceRole();
     const payload = event.data;
 
     const result = await step.run("update-permissions", async () => {
-      console.info(`Permission Update for ${payload.id}`);
+      logger.info(`Permission Update for ${payload.id}`);
       const { success, message } = await updatePermissions(
         serviceRole,
         payload
       );
       if (success) {
-        console.info(`Permission Update for ${payload.id} succeeded`);
+        logger.info(`Permission Update for ${payload.id} succeeded`);
       } else {
-        console.error(`Permission Update for ${payload.id} failed: ${message}`);
+        logger.error(`Permission Update for ${payload.id} failed`, {
+          message
+        });
       }
       return { success, message };
     });

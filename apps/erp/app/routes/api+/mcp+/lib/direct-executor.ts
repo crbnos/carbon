@@ -1,6 +1,7 @@
 // Direct executor for ERP functions without MCP protocol wrapper
 
 import type { Database } from "@carbon/database";
+import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import * as accountFunctions from "~/modules/account/account.service";
 import * as accountingFunctions from "~/modules/accounting/accounting.service";
@@ -20,6 +21,8 @@ import * as usersFunctions from "~/modules/users/users.service";
 import { isMcpBlockedTool } from "./mcp-blocked-tools";
 import toolMetadata from "./tool-metadata.json";
 import type { AuthField } from "./types";
+
+const logger = getLogger("erp", "mcp", "direct-executor");
 
 // Combine all functions into a single registry
 const functionRegistry = {
@@ -105,10 +108,7 @@ export async function executeFunction(
   // Parse the function name to get module and function
   const parts = functionName.split("_");
   if (parts.length < 2) {
-    console.error(
-      "[DirectExecutor] Invalid function name format:",
-      functionName
-    );
+    logger.error("Invalid function name format", { functionName });
     throw new Error(`Invalid function name format: ${functionName}`);
   }
 
@@ -119,19 +119,14 @@ export async function executeFunction(
   const moduleFunctions =
     functionRegistry[moduleName as keyof typeof functionRegistry];
   if (!moduleFunctions) {
-    console.error("[DirectExecutor] Module not found:", moduleName);
+    logger.error("Module not found", { moduleName });
     throw new Error(`Module not found: ${moduleName}`);
   }
 
   // Get the specific function
   const func = moduleFunctions[funcName as keyof typeof moduleFunctions];
   if (!func || typeof func !== "function") {
-    console.error(
-      "[DirectExecutor] Function not found:",
-      funcName,
-      "in module",
-      moduleName
-    );
+    logger.error("Function not found", { funcName, moduleName });
     throw new Error(`Function not found: ${funcName} in module ${moduleName}`);
   }
 
@@ -208,7 +203,7 @@ export async function executeFunction(
         const executedResult = await result;
         result = executedResult;
       } catch (queryError: any) {
-        console.error("[DirectExecutor] Query execution failed:", queryError);
+        logger.error("Query execution failed", { error: queryError });
         throw queryError;
       }
     }
@@ -218,8 +213,7 @@ export async function executeFunction(
       data: result
     };
   } catch (error: any) {
-    console.error("[DirectExecutor] Function execution failed:", error);
-    console.error("[DirectExecutor] Error stack:", error.stack);
+    logger.error("Function execution failed", { error, stack: error.stack });
     return {
       success: false,
       error: error.message || "Function execution failed"

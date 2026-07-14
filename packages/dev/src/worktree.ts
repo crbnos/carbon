@@ -22,7 +22,8 @@ export const PORT_NAMES = [
   "PORT_INBUCKET",
   "PORT_INNGEST",
   "PORT_ERP",
-  "PORT_MES"
+  "PORT_MES",
+  "PORT_ASSEMBLER"
 ] as const;
 type PortName = (typeof PORT_NAMES)[number];
 

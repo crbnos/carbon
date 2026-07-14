@@ -2,6 +2,7 @@
 
 import { useCarbon } from "@carbon/auth";
 import { type Database, fetchAllFromTable } from "@carbon/database";
+import { getLogger } from "@carbon/logger";
 import { useInterval, useRealtimeChannel } from "@carbon/react";
 import { useEffect } from "react";
 import { useUser } from "~/hooks";
@@ -15,8 +16,17 @@ import {
 import type { Item } from "~/stores/items";
 import type { ListItem } from "~/types";
 
-let hydratedFromIdb = false;
+const logger = getLogger("erp", "realtime-data-provider");
+
+// IndexedDB entries are keyed per company (`customers:<companyId>`) — a global
+// key let one company's cached list hydrate the pickers after switching to
+// another company, which produced cross-tenant refs (e.g. a salesOrder pointing
+// at another company's customer). `activeCompanyId` also guards the async idb /
+// fetch callbacks racing a mid-flight company switch.
+let activeCompanyId: string | null = null;
 let hydratedFromServer = false;
+
+const LEGACY_IDB_KEYS = ["customers", "items", "suppliers", "people"];
 
 const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
   const { carbon, accessToken } = useCarbon();
@@ -81,21 +91,30 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
 
   const hydrate = async () => {
     const idb = (await import("localforage")).default;
-    if (!hydratedFromIdb) {
-      hydratedFromIdb = true;
+    const requestedCompanyId = companyId;
+    if (activeCompanyId !== requestedCompanyId) {
+      activeCompanyId = requestedCompanyId;
 
-      idb.getItem("customers").then((data) => {
-        if (data && !hydratedFromServer) setCustomers(data as ListItem[], true);
+      // pre-keying entries were global; purge so they can never hydrate again
+      for (const key of LEGACY_IDB_KEYS) {
+        void idb.removeItem(key);
+      }
+
+      const fresh = () =>
+        !hydratedFromServer && activeCompanyId === requestedCompanyId;
+
+      idb.getItem(`customers:${requestedCompanyId}`).then((data) => {
+        if (data && fresh()) setCustomers(data as ListItem[], true);
       });
-      idb.getItem("items").then((data) => {
-        if (data && !hydratedFromServer) setItems(data as Item[], true);
+      idb.getItem(`items:${requestedCompanyId}`).then((data) => {
+        if (data && fresh()) setItems(data as Item[], true);
       });
-      idb.getItem("suppliers").then((data) => {
-        if (data && !hydratedFromServer) setSuppliers(data as ListItem[], true);
+      idb.getItem(`suppliers:${requestedCompanyId}`).then((data) => {
+        if (data && fresh()) setSuppliers(data as ListItem[], true);
       });
-      idb.getItem("people").then((data) => {
+      idb.getItem(`people:${requestedCompanyId}`).then((data) => {
         // @ts-ignore
-        if (data && !hydratedFromServer) setPeople(data, true);
+        if (data && fresh()) setPeople(data, true);
       });
     }
 
@@ -175,6 +194,9 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
       throw new Error("Failed to fetch people");
     }
 
+    // company switched while fetching — these results belong to the old company
+    if (activeCompanyId !== requestedCompanyId) return;
+
     hydratedFromServer = true;
 
     const supersessionByItem = new Map(
@@ -191,10 +213,10 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
     setPeople(people.data ?? []);
 
     await Promise.all([
-      idb.setItem("items", itemsWithLifecycle),
-      idb.setItem("suppliers", suppliers.data),
-      idb.setItem("customers", customers.data),
-      idb.setItem("people", people.data)
+      idb.setItem(`items:${requestedCompanyId}`, itemsWithLifecycle),
+      idb.setItem(`suppliers:${requestedCompanyId}`, suppliers.data),
+      idb.setItem(`customers:${requestedCompanyId}`, customers.data),
+      idb.setItem(`people:${requestedCompanyId}`, people.data)
     ]);
 
     fetchQuantities();
@@ -206,7 +228,7 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
   // biome-ignore lint/correctness/useExhaustiveDependencies: hydrate closes over setters + idb
   useEffect(() => {
     if (!companyId) return;
-    hydrate().catch((err) => console.error("hydrate failed:", err));
+    hydrate().catch((err) => logger.error("hydrate failed", { error: err }));
   }, [companyId, carbon, accessToken]);
 
   useInterval(fetchQuantities, companyId ? 10 * 60 * 1000 : null);

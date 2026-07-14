@@ -1,10 +1,13 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { trigger } from "@carbon/jobs";
+import { getLogger } from "@carbon/logger";
 import crypto from "crypto";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
 import { getIntegration } from "~/modules/settings/settings.service";
+
+const logger = getLogger("erp", "webhook-paperless-parts-companyid");
 
 const integrationValidator = z.object({
   apiKey: z.string(),
@@ -97,7 +100,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
 
     const payload = JSON.parse(payloadText);
-    console.log("payload", payload);
+    logger.info("payload", payload);
 
     await trigger("paperless-parts", {
       apiKey,

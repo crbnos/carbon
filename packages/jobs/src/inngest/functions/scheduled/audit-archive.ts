@@ -2,7 +2,10 @@ import { gzipSync } from "node:zlib";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { auditConfig } from "@carbon/database/audit.config";
 import type { AuditLogEntry } from "@carbon/database/audit.types";
+import { getLogger } from "@carbon/logger";
 import { inngest } from "../../client";
+
+const log = getLogger("jobs", "audit-archive");
 
 // Type for RPC calls
 type AuditArchiveRpcClient = {
@@ -38,7 +41,7 @@ async function archiveCompanyLogs(
     return { recordsArchived: 0, recordsDeleted: 0 };
   }
 
-  console.log(`Archiving ${records.length} records for company ${companyId}`);
+  log.info(`Archiving ${records.length} records for company ${companyId}`);
 
   // Convert to JSONL format
   const jsonl = records.map((r) => JSON.stringify(r)).join("\n");
@@ -94,10 +97,9 @@ async function archiveCompanyLogs(
   );
 
   if (deleteError) {
-    console.error(
-      `Failed to delete archived records for ${companyId}`,
-      deleteError
-    );
+    log.error(`Failed to delete archived records for ${companyId}`, {
+      error: deleteError
+    });
     // Don't throw - archive was successful, just couldn't clean up
     return { recordsArchived: records.length, recordsDeleted: 0 };
   }
@@ -111,7 +113,7 @@ async function archiveCompanyLogs(
 export const auditArchiveFunction = inngest.createFunction(
   { id: "audit-log-archive", retries: 2 },
   { cron: "0 2 * * *" },
-  async ({ step }) => {
+  async ({ step, logger }) => {
     const results = await step.run("archive-audit-logs", async () => {
       const client = getCarbonServiceRole();
 
@@ -119,7 +121,7 @@ export const auditArchiveFunction = inngest.createFunction(
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - auditConfig.retentionDays);
 
-      console.log(
+      logger.info(
         `Archiving audit logs older than ${cutoffDate.toISOString()}`
       );
 
@@ -130,7 +132,7 @@ export const auditArchiveFunction = inngest.createFunction(
         .eq("auditLogEnabled", true);
 
       if (companiesError) {
-        console.error("Failed to fetch companies", companiesError);
+        logger.error("Failed to fetch companies", { error: companiesError });
         throw new Error(`Failed to fetch companies: ${companiesError.message}`);
       }
 
@@ -153,15 +155,14 @@ export const auditArchiveFunction = inngest.createFunction(
           results.recordsArchived += archived.recordsArchived;
           results.recordsDeleted += archived.recordsDeleted;
         } catch (error) {
-          console.error(
-            `Failed to archive logs for company ${company.id}`,
+          logger.error(`Failed to archive logs for company ${company.id}`, {
             error
-          );
+          });
           results.errors++;
         }
       }
 
-      console.log("Audit log archive task completed", results);
+      logger.info("Audit log archive task completed", results);
       return results;
     });
 

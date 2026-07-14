@@ -8,6 +8,7 @@ import {
   Submit,
   ValidatedForm
 } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import {
   Button,
@@ -75,6 +76,8 @@ import {
   procedureStepValidator
 } from "../../production.models";
 import type { Procedure, ProcedureParameter, ProcedureStep } from "../../types";
+
+const logger = getLogger("erp", "procedureexplorer");
 
 export default function ProcedureExplorer() {
   const prettifyShortcut = usePrettifyShortcut();
@@ -334,12 +337,22 @@ export default function ProcedureExplorer() {
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <HStack>
-                    <span>
-                      <Trans>Add Step</Trans>
-                    </span>
-                    <Kbd>{prettifyShortcut("Command+Shift+a")}</Kbd>
-                  </HStack>
+                  <VStack spacing={1}>
+                    <HStack>
+                      <span>
+                        <Trans>Add Step</Trans>
+                      </span>
+                      <Kbd>{prettifyShortcut("Command+Shift+a")}</Kbd>
+                    </HStack>
+                    {isDisabled && (
+                      <span className="text-muted-foreground">
+                        <Trans>
+                          Only Draft procedures are editable. Create a new
+                          version to change an Active or Archived procedure.
+                        </Trans>
+                      </span>
+                    )}
+                  </VStack>
                 </TooltipContent>
               </Tooltip>
             </div>
@@ -595,8 +608,8 @@ function DeleteProcedureStep({
   return (
     <ConfirmDelete
       action={path.to.deleteProcedureStep(id, attribute.id)}
-      name={attribute.name ?? "this attribute"}
-      text={`Are you sure you want to delete the attribute: ${attribute.name}? This cannot be undone.`}
+      name={attribute.name ?? "this step"}
+      text={`Are you sure you want to delete the step: ${attribute.name}? This cannot be undone.`}
       onCancel={onCancel}
       onSubmit={onCancel}
     />
@@ -712,7 +725,7 @@ function ProcedureStepForm({
       }
       return {} as JSONContent;
     } catch (e) {
-      console.error("Error parsing description:", e);
+      logger.error("Error parsing description", { error: e });
       return {} as JSONContent;
     }
   });

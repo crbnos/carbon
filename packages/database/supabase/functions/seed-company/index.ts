@@ -17,6 +17,7 @@ import {
   nonConformanceRequiredActions,
   nonConformanceTypes,
   paymentTerms,
+  periodCloseTaskDefinitions,
   scrapReasons,
   sequences,
   unitOfMeasures,
@@ -296,6 +297,20 @@ serve(async (req: Request) => {
         .values(sequences.map((s) => ({ ...s, companyId })))
         .execute();
 
+      // period-close checklist definitions (system template rows). The table is
+      // new on this branch and not yet in the cloud-generated Kysely types, so
+      // the insert goes through a cast (mirrors accounting.service.ts).
+      await (trx as any)
+        .insertInto("periodCloseTaskDefinition")
+        .values(
+          periodCloseTaskDefinitions.map((d) => ({
+            ...d,
+            companyId,
+            createdBy: "system",
+          }))
+        )
+        .execute();
+
       // Shared tables: only seed for new groups (existing groups already have these)
       let accountIdByKey: Record<string, string> = {};
       if (isNewGroup) {
@@ -352,17 +367,19 @@ serve(async (req: Request) => {
         resolvedDefaults[key] = accountIdByKey[number] ?? null;
       }
 
-      // The four AR/AP defaults are NOT NULL in the schema. If a customized COA
+      // These defaults are NOT NULL in the schema. If a customized COA
       // on an existing group is missing one of their accounts
-      // (6050/4130/4120/7060), the lookup yields null and the insert below would
-      // violate the not-null constraint. Fall back to an existing default of the
-      // same nature so the insert can't fail — mirrors the COALESCE backfill in
-      // 20260630093809_ar-ap-payments.sql.
+      // (6050/4130/4120/7060/1150), the lookup yields null and the insert below
+      // would violate the not-null constraint. Fall back to an existing default
+      // of the same nature so the insert can't fail — mirrors the COALESCE
+      // backfills in 20260630093809_ar-ap-payments.sql and
+      // 20260711155312_supplier-prepayment-account.sql.
       const arApDefaultFallbacks: Record<string, string> = {
         customerWriteOffAccount: "salesDiscountAccount",
         supplierWriteOffAccount: "salesAccount",
         realizedExchangeGainAccount: "salesAccount",
         realizedExchangeLossAccount: "interestAccount",
+        supplierPrepaymentAccount: "receivablesAccount",
       };
       for (const [key, fallbackKey] of Object.entries(arApDefaultFallbacks)) {
         if (!resolvedDefaults[key]) {

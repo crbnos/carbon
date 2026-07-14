@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { getLogger } from "@carbon/logger";
 import {
   Button,
   Card,
@@ -63,6 +64,8 @@ import type {
   QuotationLine,
   QuotationPrice
 } from "../../types";
+
+const logger = getLogger("erp", "sales", "quote-line-pricing");
 
 const categoryLabels: Record<CostCategoryKey, string> = {
   materialCost: "Material",
@@ -232,7 +235,9 @@ const QuoteLinePricing = ({
         .eq("id", lineId);
 
       if (costUpdate?.error) {
-        console.error(costUpdate.error);
+        logger.error("Failed to update quote line pricing", {
+          error: costUpdate.error
+        });
         toast.error(t`Failed to update quote line`);
       }
     },
@@ -265,7 +270,9 @@ const QuoteLinePricing = ({
         .eq("id", lineId);
 
       if (costUpdate?.error) {
-        console.error(costUpdate.error);
+        logger.error("Failed to update quote line pricing", {
+          error: costUpdate.error
+        });
         toast.error("Failed to update quote line");
       }
     },
@@ -293,7 +300,9 @@ const QuoteLinePricing = ({
         .eq("id", lineId);
 
       if (costUpdate?.error) {
-        console.error(costUpdate.error);
+        logger.error("Failed to update quote line pricing", {
+          error: costUpdate.error
+        });
         toast.error("Failed to update quote line");
       }
     },
@@ -409,7 +418,9 @@ const QuoteLinePricing = ({
         .single();
 
       if (costUpdate?.error) {
-        console.error(costUpdate.error);
+        logger.error("Failed to update quote line pricing", {
+          error: costUpdate.error
+        });
         toast.error(t`Failed to update item cost`);
       }
     },
@@ -450,7 +461,9 @@ const QuoteLinePricing = ({
         .eq("quantity", quantity);
 
       if (priceUpdate?.error) {
-        console.error(priceUpdate.error);
+        logger.error("Failed to update quote line pricing", {
+          error: priceUpdate.error
+        });
         toast.error(t`Failed to update category markups`);
       }
     },
@@ -512,7 +525,9 @@ const QuoteLinePricing = ({
           .eq("quoteLineId", lineId)
           .eq("quantity", quantity);
         if (update?.error) {
-          console.error(update.error);
+          logger.error("Failed to update quote line pricing", {
+            error: update.error
+          });
           toast.error("Failed to update quote line");
         }
       } else {
@@ -523,7 +538,9 @@ const QuoteLinePricing = ({
         });
 
         if (insert?.error) {
-          console.error(insert.error);
+          logger.error("Failed to update quote line pricing", {
+            error: insert.error
+          });
           toast.error(t`Failed to insert quote line`);
         }
       }

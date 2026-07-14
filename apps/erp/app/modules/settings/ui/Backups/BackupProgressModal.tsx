@@ -134,11 +134,14 @@ export function JobProgressModal({
   }>();
   // Export reports progress via a separate company-scoped marker (no run id).
   const exportFetcher = useFetcher<{
+    status: "running" | "failed" | null;
     progress: { phase: string; done: number; total: number } | null;
     startedAt: string | null;
+    error: string | null;
   }>();
   const raw = statusFetcher.data?.status;
-  const failed = !isExport && raw === "failed";
+  const exportFailed = isExport && exportFetcher.data?.status === "failed";
+  const failed = (!isExport && raw === "failed") || exportFailed;
   const restoreReady = mode === "restore" && raw === "ready";
   const revertDone = isRevert && raw === "gone";
 
@@ -146,7 +149,9 @@ export function JobProgressModal({
   const done = success || failed;
 
   const rows = statusFetcher.data?.rows ?? 0;
-  const error = statusFetcher.data?.error;
+  const error = isExport
+    ? exportFetcher.data?.error
+    : statusFetcher.data?.error;
   const progress = isExport
     ? (exportFetcher.data?.progress ?? null)
     : (statusFetcher.data?.progress ?? null);
@@ -244,9 +249,11 @@ export function JobProgressModal({
       ? "Reverting…"
       : "Restoring…";
   const title = failed
-    ? isRevert
-      ? "Revert failed"
-      : "Restore failed"
+    ? isExport
+      ? "Backup failed"
+      : isRevert
+        ? "Revert failed"
+        : "Restore failed"
     : success
       ? isExport
         ? "Backup ready"
@@ -256,8 +263,10 @@ export function JobProgressModal({
       : workingTitle;
 
   // The modal just reports progress — keep/revert is decided from the review
-  // card, so any terminal (or slow/stalled) state is dismissable.
-  const dismissable = done || slow || stalled;
+  // card, so any terminal (or slow/stalled) state is dismissable. Export is
+  // dismissable from the start: the run is fully server-side, and the list
+  // shows an in-progress row that reopens this modal.
+  const dismissable = done || slow || stalled || isExport;
 
   return (
     <Modal
@@ -285,14 +294,30 @@ export function JobProgressModal({
           ) : failed ? (
             <div className="flex flex-col items-center gap-3 py-4">
               <LuTriangleAlert className="h-8 w-8 text-destructive-foreground duration-300 animate-in fade-in zoom-in-75 motion-reduce:animate-none" />
-              <p className="text-center text-sm text-muted-foreground">
-                {error ?? "Something went wrong."}
-              </p>
-              {!isRevert && (
-                <p className="text-center text-xs text-muted-foreground">
-                  Your data was not changed — the restore stops before touching
-                  anything if it can't complete.
-                </p>
+              {isExport ? (
+                <>
+                  <p className="text-center text-sm text-muted-foreground">
+                    The system created an invalid backup — please contact Carbon
+                    support.
+                  </p>
+                  {error ? (
+                    <p className="max-w-full break-words text-center text-xs text-muted-foreground">
+                      {error}
+                    </p>
+                  ) : null}
+                </>
+              ) : (
+                <>
+                  <p className="text-center text-sm text-muted-foreground">
+                    {error ?? "Something went wrong."}
+                  </p>
+                  {!isRevert && (
+                    <p className="text-center text-xs text-muted-foreground">
+                      Your data was not changed — the restore stops before
+                      touching anything if it can't complete.
+                    </p>
+                  )}
+                </>
               )}
             </div>
           ) : (

@@ -48,7 +48,8 @@ pnpm --filter @carbon/erp test -- --testPathPattern=accounting
 | `account` / `accounts` (view) | Chart of accounts with class, type, and hierarchy |
 | `journal` / `journalLine` | Double-entry transactions; lines carry dimension assignments |
 | `journalLineDimension` | Dimension values assigned to journal lines |
-| `accountingPeriod` | Fiscal periods with Active/Inactive/Closed status |
+| `accountingPeriod` | Fiscal periods. `closeStatus` (`periodCloseStatus`: Open→Locked→Closed lifecycle), `fiscalYear`/`periodNumber` (identity from the fiscal start month), `lockedAt`/`lockedBy`. Legacy `status` (Active/Inactive) is deprecated. |
+| `periodCloseTaskDefinition` / `periodCloseTask` | NetSuite-style close checklist: company-level task templates + per-period instances (seeded via `seed-company`) |
 | `accountDefault` | Default GL account mappings (AR, AP, inventory, etc.) |
 | `currency` / `currencyCode` / `exchangeRateHistory` | Multi-currency with historical rates |
 | `paymentTerm` | Payment terms (Net 30, 2/10 Net 30, etc.) |
@@ -67,7 +68,12 @@ pnpm --filter @carbon/erp test -- --testPathPattern=accounting
 - `getFinancialStatementBalances` — balance sheet / income statement with Net Income computation
 - `getConsolidatedBalances` — multi-company consolidation with currency translation
 - `createJournalEntry` / `saveJournalEntryWithLines` / `postJournalEntry` / `reverseJournalEntry` — journal lifecycle
-- `getOrCreateAccountingPeriod` / `getCurrentAccountingPeriod` — period management
+- `getOrCreateAccountingPeriod` / `getCurrentAccountingPeriod` — period management (lazy create on posting)
+- `createFiscalYearPeriods` — generate the 12 monthly periods for a fiscal year (idempotent; from `fiscalYearSettings.startMonth`)
+- `lockAccountingPeriod` / `unlockAccountingPeriod` / `closeAccountingPeriod` / `reopenAccountingPeriod` — Open↔Locked↔Closed transitions (sequential close/reopen)
+- `getPeriodCloseChecklist` / `closePeriodWithChecklist` / `completeCloseTask` / `skipCloseTask` — the close checklist (instantiates tasks, evaluates auto-checks, gates the close)
+- `getAccountingPeriodDeletability` / `deleteAccountingPeriod` — delete an empty, open period (blocks Locked/Closed or periods with journals)
+- `getFiscalCalendarCommitted` — is the fiscal calendar committed (any posting or Locked/Closed period)? Gates editing the fiscal start month
 - `getCurrencies` / `getBaseCurrency` / `getCurrencyByCode` — currency lookups
 - `translateCompanyBalances` — balance translation for multi-currency consolidation
 - `getDimensions` / `getActiveDimensionsWithValues` / `saveJournalLineDimensions` — dimension management

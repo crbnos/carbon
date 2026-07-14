@@ -3,6 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
+import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -16,6 +17,8 @@ import {
 import type { TrainingListItem } from "~/modules/resources/types";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "assignments-new");
 
 export const handle: Handle = {
   breadcrumb: msg`New Assignment`,
@@ -94,7 +97,9 @@ export async function action({ request }: ActionFunctionArgs) {
         from: userId
       });
     } catch (err) {
-      console.error("Failed to send training assignment notifications", err);
+      logger.error("Failed to send training assignment notifications", {
+        error: err
+      });
     }
   }
 

@@ -59,42 +59,42 @@ export async function getCustomFieldsSchemas(
   }
 ) {
   const key = await getCustomFieldsCacheKey(args);
-  let schema: CustomFieldsTableType[] | null = null;
 
-  try {
-    const cachedSchema = await redis.get(key);
-    if (cachedSchema) {
-      schema = JSON.parse(cachedSchema) as CustomFieldsTableType[];
-    }
-  } finally {
-    if (schema) {
+  // redis.get returns null on a cache miss (or when Redis is unreachable — the
+  // @carbon/kv resilience wrapper fails soft). Treat both, and a malformed
+  // cached payload, as a miss and fall through to the database.
+  const cachedSchema = await redis.get(key);
+  if (cachedSchema) {
+    try {
       return {
-        data: schema as CustomFieldsTableType[],
+        data: JSON.parse(cachedSchema) as CustomFieldsTableType[],
         error: null
       };
+    } catch {
+      // Corrupt cache entry — fall through to the source of truth.
     }
-
-    const query = client.from("customFieldTables").select("*");
-
-    if (args?.companyId) {
-      query.eq("companyId", args.companyId);
-    }
-
-    if (args?.module) {
-      query.eq("module", args.module as any);
-    }
-
-    if (args?.table) {
-      query.eq("table", args.table);
-    }
-
-    const result = await query;
-    if (result.data) {
-      await redis.set(key, JSON.stringify(result.data));
-    }
-
-    return result;
   }
+
+  const query = client.from("customFieldTables").select("*");
+
+  if (args?.companyId) {
+    query.eq("companyId", args.companyId);
+  }
+
+  if (args?.module) {
+    query.eq("module", args.module as any);
+  }
+
+  if (args?.table) {
+    query.eq("table", args.table);
+  }
+
+  const result = await query;
+  if (result.data) {
+    await redis.set(key, JSON.stringify(result.data));
+  }
+
+  return result;
 }
 
 /**

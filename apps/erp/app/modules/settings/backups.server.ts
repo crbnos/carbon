@@ -1,3 +1,4 @@
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { trigger } from "@carbon/jobs";
 import { nanoid } from "nanoid";
 
@@ -37,4 +38,21 @@ export async function revertCompanyRestore(args: {
   restoreRunId: string;
 }): Promise<void> {
   await trigger("company-restore-revert", args);
+}
+
+/**
+ * Clear the failed-export marker once the user has acknowledged it. Service
+ * role: `externalIntegrationMapping` has no DELETE policy, and the marker is
+ * written by the export job (see EXPORT_INTEGRATION in
+ * packages/jobs/src/inngest/functions/tasks/company-export.ts).
+ */
+export async function dismissCompanyExportFailure(
+  companyId: string
+): Promise<void> {
+  const serviceRole = getCarbonServiceRole();
+  await serviceRole
+    .from("externalIntegrationMapping")
+    .delete()
+    .eq("integration", "company-export")
+    .eq("companyId", companyId);
 }

@@ -29,6 +29,8 @@ export enum NotificationEvent {
   SalesRfqReady = "sales-rfq-ready",
   StockTransferAssignment = "stock-transfer-assignment",
   SuggestionResponse = "suggestion-response",
+  // Weekly digest reminder for outstanding trainings (documentIds-shaped).
+  TrainingReminder = "training-reminder",
   SupplierQuoteAssignment = "supplier-quote-assignment",
   SupplierQuoteResponse = "supplier-quote-response",
   TrainingAssignment = "training-assignment",
@@ -51,6 +53,31 @@ export enum NotificationTopic {
   Sales = "sales",
   Suggestion = "suggestion",
   Training = "training"
+}
+
+// A labeled fact attached to a notification (e.g. Customer / Acme Corp),
+// rendered in the email, Slack text, and notification.payload.details.
+export type NotificationDetail = {
+  label: string;
+  value: string;
+};
+
+// Max successful email deliveries of the same recurring notification per
+// (user, event, document+period); past it the reminder is acknowledged rather
+// than re-sent forever. Only provider-accepted sends count.
+export const MAX_NOTIFICATION_DELIVERIES = 5;
+
+// Cron reminders that re-fire for the same document. Only these attach
+// delivery tracking and are subject to MAX_NOTIFICATION_DELIVERIES.
+export function isRecurringNotificationEvent(
+  event: NotificationEvent
+): boolean {
+  switch (event) {
+    case NotificationEvent.TrainingReminder:
+      return true;
+    default:
+      return false;
+  }
 }
 
 // Fan-out targets understood by the notify Inngest function. inApp is
@@ -93,6 +120,7 @@ export function getNotificationTopic(
       return NotificationTopic.Quality;
     case NotificationEvent.ProcedureAssignment:
     case NotificationEvent.TrainingAssignment:
+    case NotificationEvent.TrainingReminder:
     case NotificationEvent.ResourceTrainingAssignment:
       return NotificationTopic.Training;
     case NotificationEvent.PickingListAssignment:
@@ -157,6 +185,8 @@ export function getNotificationEmailHeading(event: NotificationEvent): string {
       return "Procedure assigned to you";
     case NotificationEvent.TrainingAssignment:
       return "Training assigned to you";
+    case NotificationEvent.TrainingReminder:
+      return "Training reminder";
     case NotificationEvent.ResourceTrainingAssignment:
       return "New training available";
     case NotificationEvent.PickingListAssignment:
@@ -193,6 +223,8 @@ export function getNotificationEmailCtaLabel(event: NotificationEvent): string {
       return "View gauge";
     case NotificationEvent.QuoteExpired:
       return "View quote";
+    case NotificationEvent.TrainingReminder:
+      return "View training";
     case NotificationEvent.DigitalQuoteResponse:
     case NotificationEvent.SupplierQuoteResponse:
       return "View response";

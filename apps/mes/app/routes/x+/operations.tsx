@@ -1,6 +1,7 @@
 import { useCarbon } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { getLogger } from "@carbon/logger";
 import {
   Button,
   ClientOnly,
@@ -48,6 +49,8 @@ import {
 } from "~/services/operations.service";
 import { usePeople } from "~/stores";
 import { makeDurations } from "~/utils/durations";
+
+const log = getLogger("mes");
 
 export async function loader({ context, request }: LoaderFunctionArgs) {
   const { companyId } = await requirePermissions(request, {});
@@ -147,7 +150,7 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
   ]);
 
   if (operations.error) {
-    console.error(operations.error);
+    log.error("Failed to load operations", { error: operations.error });
   }
 
   const activeWorkCenters = new Set();

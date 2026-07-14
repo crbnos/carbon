@@ -401,6 +401,16 @@ export const auditConfig = {
       tables: {
         fixedAsset: { role: "root" }
       }
+    },
+
+    accountingPeriod: {
+      label: "Accounting Period",
+      tables: {
+        accountingPeriod: {
+          role: "root",
+          createFields: ["startDate", "endDate", "status"]
+        }
+      }
     }
   } satisfies Record<string, EntityConfig>,
 
@@ -475,7 +485,8 @@ export const auditConfig = {
     pricingRule: "Pricing Rule",
     customerItemPriceOverride: "Price Override",
     customerItemPriceOverrideBreak: "Quantity Break",
-    fixedAsset: "Fixed Asset"
+    fixedAsset: "Fixed Asset",
+    accountingPeriod: "Accounting Period"
   } satisfies Partial<Record<TableName, string>>,
 
   /** Fields to skip in diff computation */

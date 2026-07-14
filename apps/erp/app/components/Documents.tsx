@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { getLogger } from "@carbon/logger";
 import {
   Card,
   CardAction,
@@ -34,6 +35,8 @@ import { getDocumentType } from "~/modules/shared";
 import type { ModelUpload, StorageItem } from "~/types";
 import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
+
+const logger = getLogger("erp", "documents");
 
 type DocumentsProps = {
   files: StorageItem[];
@@ -135,7 +138,7 @@ const Documents = ({
         document.body.removeChild(a);
       } catch (error) {
         toast.error(t`Error downloading file`);
-        console.error(error);
+        logger.error("Error", { error: error });
       }
     },
 
@@ -182,7 +185,7 @@ const Documents = ({
         document.body.removeChild(a);
       } catch (error) {
         toast.error(t`Error downloading file`);
-        console.error(error);
+        logger.error("Error", { error: error });
       }
     },
     [getReadPath, t]

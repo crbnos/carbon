@@ -8,9 +8,11 @@ import { currentBranch } from "../git.js";
 import { onShutdown } from "../helpers.js";
 import { pickApps, pickBorrowSlug } from "../prompts.js";
 import {
+  assertAssemblerDepsBuilt,
   installDeps,
   installSkills,
   spawnApps,
+  spawnAssembler,
   spawnStripeListener,
   syncEnvSymlinks
 } from "../services/apps.js";
@@ -155,9 +157,14 @@ export async function up(opts: UpOpts = {}) {
   const allApps = opts.all === true;
   const selectedApps = appsRequested
     ? allApps
-      ? APP_CHOICES.map((c) => c.value)
+      ? // --all excludes the assembler: it needs a one-time native OCCT build,
+        // so it stays opt-in (CARBON_DEV_APPS or an explicit pick).
+        APP_CHOICES.map((c) => c.value).filter((v) => v !== "assembler")
       : await pickApps()
     : [];
+  // Fail before booting anything heavy (docker, migrations) if the assembler is
+  // selected without its one-time OCCT build.
+  if (selectedApps.includes("assembler")) assertAssemblerDepsBuilt();
   const slug = resolveSlug(root);
 
   // Resolve borrowed slot before ensureSlugAvailable (borrowing doesn't start
@@ -194,7 +201,9 @@ export async function up(opts: UpOpts = {}) {
     await waitForServices(ctx);
   }
   await runDatabaseMigrations(ctx, { shouldMigrate, shouldRegen });
-  await seedSmokeTestUser(ctx);
+  // Skip when migrations are skipped: the `user` table may not exist yet, and
+  // seeding would fail with `relation "user" does not exist`.
+  if (shouldMigrate) await seedSmokeTestUser(ctx);
   if (portless) {
     await setupPortless(ctx, selectedApps);
     await ensureHostsFile();
@@ -203,6 +212,10 @@ export async function up(opts: UpOpts = {}) {
   if (process.env.CARBON_EDITION === "cloud") {
     stripeChild = spawnStripeListener(root);
     log.info("stripe listener spawned (CARBON_EDITION=cloud)");
+  }
+
+  if (selectedApps.includes("assembler")) {
+    spawnAssembler({ root, ports: ctx.ports });
   }
 
   box(
@@ -588,7 +601,8 @@ async function runAppsThenTeardown(
   portless: boolean,
   stripeChild?: ExecaChildProcess
 ) {
-  await spawnApps({ root, apps: selectedApps, ports, portless });
+  const reactRouterApps = selectedApps.filter((id) => id !== "assembler");
+  await spawnApps({ root, apps: reactRouterApps, ports, portless });
 
   // Apps exit on Ctrl+C; auto-`down` so compose stack isn't orphaned.
   // Swallow further signals so a second Ctrl+C during teardown doesn't

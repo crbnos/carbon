@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { getLogger } from "@carbon/logger";
 import { toast } from "@carbon/react";
 import { useCallback } from "react";
 import { useNavigate } from "react-router";
@@ -8,6 +9,8 @@ import type {
   Document as DocumentType
 } from "~/modules/documents";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "usedocument");
 
 export const useDocument = () => {
   const navigate = useNavigate();
@@ -86,7 +89,7 @@ export const useDocument = () => {
         document.body.removeChild(a);
       } catch (error) {
         toast.error("Error downloading file");
-        console.error(error);
+        logger.error("Error", { error: error });
       }
 
       await insertTransaction(doc, "Download");

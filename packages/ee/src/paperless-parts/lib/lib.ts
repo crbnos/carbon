@@ -1,6 +1,7 @@
 import { openai } from "@ai-sdk/openai";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
+import { getLogger } from "@carbon/logger";
 import {
   getMaterialDescription,
   getMaterialId,
@@ -28,6 +29,8 @@ import type {
   SalesPersonSchema
 } from "./schemas";
 import { calculatePromisedDate } from "./utils";
+
+const logger = getLogger("ee", "paperless-parts");
 
 async function lookupEntityByPaperlessId(
   carbon: SupabaseClient<Database>,
@@ -88,11 +91,11 @@ async function downloadFileFromUrl(
   filename: string
 ): Promise<File | null> {
   try {
-    console.log(`Downloading file from: ${url}`);
+    logger.info(`Downloading file from: ${url}`);
     const response = await fetch(url);
 
     if (!response.ok) {
-      console.error(
+      logger.error(
         `Failed to download file from ${url}: ${response.statusText}`
       );
       return null;
@@ -101,10 +104,10 @@ async function downloadFileFromUrl(
     const blob = await response.blob();
     const file = new File([blob], filename, { type: blob.type });
 
-    console.log(`Successfully downloaded: ${filename} (${blob.size} bytes)`);
+    logger.info(`Successfully downloaded: ${filename} (${blob.size} bytes)`);
     return file;
   } catch (error) {
-    console.error(`Error downloading file from ${url}:`, error);
+    logger.error("Error downloading file", { url, error });
     return null;
   }
 }
@@ -148,7 +151,9 @@ async function determineMaterialSubstance(
     .is("companyId", null);
 
   if (substances.error || !substances.data?.length) {
-    console.error("Failed to fetch material substances:", substances.error);
+    logger.error("Failed to fetch material substances", {
+      error: substances.error
+    });
     return null;
   }
 
@@ -181,7 +186,9 @@ async function determineMaterialSubstance(
 
     return object;
   } catch (error) {
-    console.error("Failed to determine material substance using AI:", error);
+    logger.error("Failed to determine material substance using AI", {
+      error
+    });
     return null;
   }
 }
@@ -300,7 +307,7 @@ async function getCachedMaterialProperties(
     forms.error ||
     substance.error
   ) {
-    console.error("Error fetching material properties:", {
+    logger.error("Error fetching material properties:", {
       grades: grades.error,
       dimensions: dimensions.error,
       finishes: finishes.error,
@@ -312,7 +319,7 @@ async function getCachedMaterialProperties(
   }
 
   if (!substance.data) {
-    console.error(`Substance not found for ID: ${substanceId}`);
+    logger.error(`Substance not found for ID: ${substanceId}`);
     return null;
   }
 
@@ -338,7 +345,7 @@ async function getCachedMaterialProperties(
  */
 export function clearMaterialPropertiesCache(): void {
   materialPropertiesCache.clear();
-  console.log("Material properties cache cleared");
+  logger.info("Material properties cache cleared");
 }
 
 /**
@@ -533,7 +540,7 @@ export async function getMaterialProperties(
       .single();
 
     if (materialNamingDetails.error || !materialNamingDetails.data) {
-      console.error(
+      logger.error(
         "Failed to get material naming details:",
         materialNamingDetails.error
       );
@@ -569,7 +576,7 @@ export async function getMaterialProperties(
       reasoningText: undefined
     };
   } catch (error) {
-    console.error("Error getting material properties:", error);
+    logger.error("Error getting material properties", { error });
     return null;
   }
 }
@@ -593,7 +600,7 @@ export async function getOrCreateMaterial(
     args.input.process?.name?.toLowerCase().includes("plasma") ||
     args.input.process?.name?.toLowerCase().includes("jet")
   ) {
-    console.log("Found material with laser, plasma, or jet process");
+    logger.info("Found material with laser, plasma, or jet process");
     const materialInfo = {
       description: args.input.description || "",
       materialName: args.input.material?.name || "",
@@ -687,7 +694,7 @@ export async function getOrCreateMaterial(
         .eq("readableId", materialResult.data.id);
 
       if (item.error || !item.data?.length) {
-        console.error(`Failed to find item:`);
+        logger.error(`Failed to find item:`);
 
         return null;
       }
@@ -733,7 +740,7 @@ export async function getOrCreateMaterial(
         .single();
 
       if (itemInsert.error) {
-        console.error(`Failed to insert item:`, itemInsert.error);
+        logger.error(`Failed to insert item:`, itemInsert.error);
         return null;
       }
 
@@ -756,7 +763,7 @@ export async function getOrCreateMaterial(
         .single();
 
       if (materialInsert.error) {
-        console.error(`Failed to insert material:`, materialInsert.error);
+        logger.error(`Failed to insert material:`, materialInsert.error);
         return null;
       }
 
@@ -797,7 +804,7 @@ async function uploadModelFile(
       .single();
 
     if (existingItem.error) {
-      console.error(
+      logger.error(
         `Failed to read item ${itemId} before model upload:`,
         existingItem.error
       );
@@ -811,14 +818,14 @@ async function uploadModelFile(
         .eq("id", salesOrderLineId);
 
       if (lineUpdate.error) {
-        console.error(
+        logger.error(
           `Failed to link existing model to sales order line:`,
           lineUpdate.error
         );
         return false;
       }
 
-      console.log(
+      logger.info(
         `Item ${itemId} already has model ${existingItem.data.modelUploadId}; skipped uploading ${file.name} and linked line ${salesOrderLineId} to existing model`
       );
       return true;
@@ -828,7 +835,7 @@ async function uploadModelFile(
     const fileExtension = file.name.split(".").pop();
     const modelPath = `${companyId}/models/${modelId}.${fileExtension}`;
 
-    console.log(`Uploading CAD model ${file.name} to ${modelPath}`);
+    logger.info(`Uploading CAD model ${file.name} to ${modelPath}`);
 
     // Upload model to storage
     const modelUpload = await carbon.storage
@@ -838,12 +845,12 @@ async function uploadModelFile(
       });
 
     if (modelUpload.error) {
-      console.error(`Failed to upload model ${file.name}:`, modelUpload.error);
+      logger.error(`Failed to upload model ${file.name}:`, modelUpload.error);
       return false;
     }
 
     if (!modelUpload.data?.path) {
-      console.error(`No path returned for uploaded model ${file.name}`);
+      logger.error(`No path returned for uploaded model ${file.name}`);
       return false;
     }
 
@@ -858,7 +865,7 @@ async function uploadModelFile(
     });
 
     if (modelRecord.error) {
-      console.error(
+      logger.error(
         `Failed to create model record for ${file.name}:`,
         modelRecord.error
       );
@@ -875,7 +882,7 @@ async function uploadModelFile(
     ]);
 
     if (lineUpdate.error) {
-      console.error(
+      logger.error(
         `Failed to link model to sales order line:`,
         lineUpdate.error
       );
@@ -883,16 +890,16 @@ async function uploadModelFile(
     }
 
     if (itemUpdate.error) {
-      console.error(`Failed to link model to item:`, itemUpdate.error);
+      logger.error(`Failed to link model to item:`, itemUpdate.error);
       return false;
     }
 
-    console.log(
+    logger.info(
       `Successfully uploaded CAD model ${file.name} and linked to line ${salesOrderLineId} and item ${itemId}`
     );
     return true;
   } catch (error) {
-    console.error(`Error uploading model ${file.name}:`, error);
+    logger.error("Error uploading model", { fileName: file.name, error });
     return false;
   }
 }
@@ -918,7 +925,7 @@ async function uploadFileToItem(
       file.name
     )}`;
 
-    console.log(`Uploading ${file.name} to ${storagePath}`);
+    logger.info(`Uploading ${file.name} to ${storagePath}`);
 
     const fileUpload = await carbon.storage
       .from("private")
@@ -928,18 +935,21 @@ async function uploadFileToItem(
       });
 
     if (fileUpload.error) {
-      console.error(`Failed to upload file ${file.name}:`, fileUpload.error);
+      logger.error("Failed to upload file", {
+        fileName: file.name,
+        error: fileUpload.error
+      });
       return false;
     }
 
     if (!fileUpload.data?.path) {
-      console.error(`No path returned for uploaded file ${file.name}`);
+      logger.error(`No path returned for uploaded file ${file.name}`);
       return false;
     }
 
     return true;
   } catch (error) {
-    console.error(`Error uploading file ${file.name}:`, error);
+    logger.error("Error uploading file", { fileName: file.name, error });
     return false;
   }
 }
@@ -965,7 +975,7 @@ async function processSupportingFiles(
     return;
   }
 
-  console.log(
+  logger.info(
     `Processing ${supportingFiles.length} supporting files for line ${lineId}`
   );
 
@@ -973,7 +983,7 @@ async function processSupportingFiles(
 
   for (const supportingFile of supportingFiles) {
     if (!supportingFile.url || !supportingFile.filename) {
-      console.warn(
+      logger.warn(
         "Skipping supporting file with missing URL or filename:",
         supportingFile
       );
@@ -988,7 +998,7 @@ async function processSupportingFiles(
       );
 
       if (!file) {
-        console.error(
+        logger.error(
           `Failed to download supporting file: ${supportingFile.filename}`
         );
         continue;
@@ -996,7 +1006,7 @@ async function processSupportingFiles(
 
       // Check if this is a CAD model file
       if (isModelFile(file.name) && !hasModel) {
-        console.log(`Processing ${file.name} as CAD model`);
+        logger.info(`Processing ${file.name} as CAD model`);
         const uploadSuccess = await uploadModelFile(carbon, {
           file,
           companyId,
@@ -1008,12 +1018,12 @@ async function processSupportingFiles(
         if (uploadSuccess) {
           hasModel = true;
         } else {
-          console.error(
+          logger.error(
             `Failed to upload CAD model: ${supportingFile.filename}`
           );
         }
       } else {
-        console.log(`Processing ${file.name} as document`);
+        logger.info(`Processing ${file.name} as document`);
         // Upload as regular document
         const uploadSuccess = await uploadFileToItem(carbon, {
           file,
@@ -1023,16 +1033,16 @@ async function processSupportingFiles(
         });
 
         if (!uploadSuccess) {
-          console.error(
+          logger.error(
             `Failed to upload supporting file: ${supportingFile.filename}`
           );
         }
       }
     } catch (error) {
-      console.error(
-        `Error processing supporting file ${supportingFile.filename}:`,
+      logger.error("Error processing supporting file", {
+        filename: supportingFile.filename,
         error
-      );
+      });
     }
   }
 }
@@ -1113,7 +1123,7 @@ export async function getCustomerIdAndContactId(
           .single();
 
         if (newCustomer.error || !newCustomer.data) {
-          console.error(
+          logger.error(
             "Failed to create customer in Carbon",
             newCustomer.error
           );
@@ -1174,9 +1184,9 @@ export async function getCustomerIdAndContactId(
         if (err instanceof Response) {
           try {
             const errorBody = await err.text();
-            console.log(`Error response body:`, errorBody);
+            logger.info("Error response body", { errorBody });
           } catch (e) {
-            console.log(`Could not read error body:`, e);
+            logger.info("Could not read error body", { error: e });
           }
         }
         // Set to an error state to trigger the fallback logic
@@ -1186,7 +1196,7 @@ export async function getCustomerIdAndContactId(
       if (newPaperlessPartsAccount.error) {
         // If we get an error creating the account (e.g., "An account with this name already exists"),
         // search again more thoroughly to find the existing account
-        console.log(
+        logger.info(
           `Account creation failed in Paperless Parts, searching more thoroughly for: ${customerName}`
         );
 
@@ -1194,9 +1204,9 @@ export async function getCustomerIdAndContactId(
         if (newPaperlessPartsAccount.error instanceof Response) {
           try {
             const errorBody = await newPaperlessPartsAccount.error.text();
-            console.log(`Error response body:`, errorBody);
+            logger.info("Error response body", { errorBody });
           } catch (e) {
-            console.log(`Could not read error body:`, e);
+            logger.info("Could not read error body", { error: e });
           }
         }
 
@@ -1250,7 +1260,7 @@ export async function getCustomerIdAndContactId(
 
         // If we still haven't found an account, log the error but continue without throwing
         if (!existingPaperlessAccount) {
-          console.error(
+          logger.error(
             `Could not create or find account in Paperless Parts for: ${customerName}. Error:`,
             newPaperlessPartsAccount.error
           );
@@ -1258,7 +1268,7 @@ export async function getCustomerIdAndContactId(
           paperlessPartsAccountId = 0; // Use 0 as a fallback to indicate no Paperless Parts account
         }
       } else if (!newPaperlessPartsAccount.data) {
-        console.error(
+        logger.error(
           "Failed to create account in Paperless Parts - no data returned"
         );
         paperlessPartsAccountId = 0; // Use 0 as a fallback
@@ -1322,7 +1332,7 @@ export async function getCustomerIdAndContactId(
           .single();
 
         if (newCustomer.error || !newCustomer.data) {
-          console.error(
+          logger.error(
             "Failed to create customer in Carbon",
             newCustomer.error
           );
@@ -1396,7 +1406,9 @@ export async function getCustomerIdAndContactId(
         .single();
 
       if (updatedContact.error || !updatedContact.data) {
-        console.error("Failed to update contact in Carbon", updatedContact);
+        logger.error("Failed to update contact in Carbon", {
+          error: updatedContact.error
+        });
         return {
           customerContactId: null,
           customerId
@@ -1429,7 +1441,9 @@ export async function getCustomerIdAndContactId(
         .single();
 
       if (newContact.error || !newContact.data) {
-        console.error("Failed to create contact in Carbon", newContact);
+        logger.error("Failed to create contact in Carbon", {
+          error: newContact.error
+        });
         return {
           customerContactId: null,
           customerId
@@ -1471,7 +1485,9 @@ export async function getCustomerIdAndContactId(
         .single();
 
       if (newCustomerContact.error || !newCustomerContact.data) {
-        console.error("Failed to create customerContact", newCustomerContact);
+        logger.error("Failed to create customerContact", {
+          error: newCustomerContact.error
+        });
         return {
           customerContactId: null,
           customerId
@@ -1580,7 +1596,7 @@ export async function getCustomerLocationIds(
             .single();
 
           if (newAddress.error || !newAddress.data) {
-            console.error(
+            logger.error(
               "Failed to create billing address in Carbon",
               newAddress.error
             );
@@ -1703,7 +1719,7 @@ export async function getCustomerLocationIds(
             .single();
 
           if (newAddress.error || !newAddress.data) {
-            console.error(
+            logger.error(
               "Failed to create shipping address in Carbon",
               newAddress.error
             );
@@ -1774,7 +1790,7 @@ export async function getEmployeeAndSalesPersonId(
     .eq("companyId", company.id);
 
   if (employees.error) {
-    console.error("Failed to fetch employees", employees.error);
+    logger.error("Failed to fetch employees", employees.error);
     return {
       salesPersonId: null,
       estimatorId: null,
@@ -1934,7 +1950,7 @@ async function downloadAndUploadThumbnail(
     // Download the thumbnail from the URL
     const response = await fetch(thumbnailUrl);
     if (!response.ok) {
-      console.error(`Failed to download thumbnail: ${response.statusText}`);
+      logger.error(`Failed to download thumbnail: ${response.statusText}`);
       return null;
     }
 
@@ -1949,7 +1965,7 @@ async function downloadAndUploadThumbnail(
     // Process the image through the resizer
     const supabaseUrl = process.env.SUPABASE_URL;
     if (!supabaseUrl) {
-      console.error("SUPABASE_URL environment variable not found");
+      logger.error("SUPABASE_URL environment variable not found");
       return null;
     }
 
@@ -1962,7 +1978,7 @@ async function downloadAndUploadThumbnail(
     );
 
     if (!resizerResponse.ok) {
-      console.error(`Image resizer failed: ${resizerResponse.statusText}`);
+      logger.error(`Image resizer failed: ${resizerResponse.statusText}`);
       return null;
     }
 
@@ -1992,13 +2008,13 @@ async function downloadAndUploadThumbnail(
       });
 
     if (error) {
-      console.error("Failed to upload thumbnail to storage:", error);
+      logger.error("Failed to upload thumbnail to storage", { error });
       return null;
     }
 
     return data?.path || null;
   } catch (error) {
-    console.error("Error processing thumbnail:", error);
+    logger.error("Error processing thumbnail", { error });
     return null;
   }
 }
@@ -2080,7 +2096,7 @@ export async function createPartFromComponent(
             operationName.toLowerCase().includes(blacklistedName.toLowerCase())
           );
           if (isBlacklisted) {
-            console.log(`Skipping blacklisted operation: ${operationName}`);
+            logger.info(`Skipping blacklisted operation: ${operationName}`);
             continue;
           }
         }
@@ -2115,16 +2131,16 @@ export async function createPartFromComponent(
           });
         }
       } else {
-        console.error("operation.category is not operation", operation);
+        logger.error("operation.category is not operation", operation);
       }
       // if (operation.costing_variables) {
       //   operation.costing_variables.forEach((cv: any) => {
-      //     console.log("shop costing_variable", cv);
+      //     logger.info("shop costing_variable", cv);
       //   });
       // }
       // if (operation.quantities) {
       //   operation.quantities.forEach((q: any) => {
-      //     console.log("shop quantity", q.quantity);
+      //     logger.info("shop quantity", q.quantity);
       //   });
       // }
     }
@@ -2181,11 +2197,10 @@ export async function createPartFromComponent(
           unitOfMeasureCode: "EA"
         });
       } catch (err) {
-        console.error(
-          "Failed to add child component as method material:",
+        logger.error("Failed to add child component as method material", {
           childRef,
-          err
-        );
+          error: err
+        });
       }
     }
   }
@@ -2232,7 +2247,7 @@ export async function createPartFromComponent(
       );
 
       if (unitCost > 0) {
-        console.log(
+        logger.info(
           `Updating itemCost for existing purchased component ${partId} with unitCost: ${unitCost}`
         );
 
@@ -2246,13 +2261,13 @@ export async function createPartFromComponent(
           .single();
 
         if (itemCostUpdate.error) {
-          console.error(
+          logger.error(
             `Failed to update itemCost for existing ${partId}:`,
             itemCostUpdate.error
           );
           // Don't throw here, just log the error and continue
         } else {
-          console.log(`Successfully updated itemCost for existing ${partId}`);
+          logger.info(`Successfully updated itemCost for existing ${partId}`);
         }
       }
     }
@@ -2284,7 +2299,7 @@ export async function createPartFromComponent(
     .single();
 
   if (itemInsert.error) {
-    console.error("Failed to create item:", itemInsert.error);
+    logger.error("Failed to create item:", itemInsert.error);
     throw new Error(`Failed to create item: ${itemInsert.error.message}`);
   }
 
@@ -2307,7 +2322,7 @@ export async function createPartFromComponent(
     );
 
     if (unitCost > 0) {
-      console.log(
+      logger.info(
         `Updating itemCost for purchased component ${partId} with unitCost: ${unitCost}`
       );
 
@@ -2322,13 +2337,13 @@ export async function createPartFromComponent(
         .single();
 
       if (itemCostUpdate.error) {
-        console.error(
+        logger.error(
           `Failed to update itemCost for ${partId}:`,
           itemCostUpdate.error
         );
         // Don't throw here, just log the error and continue
       } else {
-        console.log(`Successfully updated itemCost for ${partId}`);
+        logger.info(`Successfully updated itemCost for ${partId}`);
       }
     }
   }
@@ -2350,7 +2365,7 @@ export async function createPartFromComponent(
         .eq("id", itemId);
 
       if (thumbnailUpdate.error) {
-        console.error(
+        logger.error(
           "Failed to update item with thumbnail path:",
           thumbnailUpdate.error
         );
@@ -2388,10 +2403,10 @@ export async function createPartFromComponent(
   }
 
   if (partInsert.error) {
-    console.error("Failed to create part:", partInsert.error);
+    logger.error("Failed to create part:", partInsert.error);
   }
   if (makeMethod.error) {
-    console.error("Failed to create make method:", makeMethod.error);
+    logger.error("Failed to create make method:", makeMethod.error);
   }
 
   const makeMethodId = makeMethod.data?.id;
@@ -2405,7 +2420,7 @@ export async function createPartFromComponent(
         }))
       );
       if (operationInsert.error) {
-        console.error(
+        logger.error(
           "Failed to create method operations:",
           operationInsert.error
         );
@@ -2420,7 +2435,7 @@ export async function createPartFromComponent(
         }))
       );
       if (materialInsert.error) {
-        console.error(
+        logger.error(
           "Failed to create method materials:",
           materialInsert.error
         );
@@ -2512,7 +2527,7 @@ export async function getOrCreatePart(
       );
 
       if (unitCost > 0) {
-        console.log(
+        logger.info(
           `Updating itemCost for existing purchased component (external ID) ${existingPart.partId} with unitCost: ${unitCost}`
         );
 
@@ -2527,13 +2542,13 @@ export async function getOrCreatePart(
           .single();
 
         if (itemCostUpdate.error) {
-          console.error(
+          logger.error(
             `Failed to update itemCost for existing (external ID) ${existingPart.partId}:`,
             itemCostUpdate.error
           );
           // Don't throw here, just log the error and continue
         } else {
-          console.log(
+          logger.info(
             `Successfully updated itemCost for existing (external ID) ${existingPart.partId}`
           );
         }
@@ -2582,7 +2597,7 @@ async function getOrCreateProcess(
     .single();
 
   if (processInsert.error) {
-    console.error("Failed to create process:", processInsert.error);
+    logger.error("Failed to create process:", processInsert.error);
     return null;
   }
   return processInsert.data ?? null;
@@ -2652,7 +2667,7 @@ export async function insertOrderLines(
           .single();
 
         if (result.error) {
-          console.error("Failed to insert comment line:", result.error);
+          logger.error("Failed to insert comment line:", result.error);
           continue;
         }
 
@@ -2698,7 +2713,7 @@ export async function insertOrderLines(
           .eq("itemId", itemId);
 
         if (updateLeadTime.error) {
-          console.error("Failed to update lead time:", updateLeadTime.error);
+          logger.error("Failed to update lead time:", updateLeadTime.error);
         }
 
         const promisedDate = calculatePromisedDate(
@@ -2757,7 +2772,7 @@ export async function insertOrderLines(
           .single();
 
         if (lineResult.error) {
-          console.error(
+          logger.error(
             `Failed to insert sales order line for component ${component.part_uuid}:`,
             lineResult.error
           );
@@ -2803,18 +2818,18 @@ export async function insertOrderLines(
               createdBy
             });
           } catch (error) {
-            console.error(
-              `Failed to process supporting files for component ${component.part_uuid}:`,
+            logger.error("Failed to process supporting files for component", {
+              partUuid: component.part_uuid,
               error
-            );
+            });
             // Continue processing instead of failing the entire order
           }
         }
       } catch (error) {
-        console.error(
-          `Failed to process component ${component.part_uuid}:`,
+        logger.error("Failed to process component", {
+          partUuid: component.part_uuid,
           error
-        );
+        });
         // Continue with other components instead of failing the entire order
         continue;
       }
@@ -2829,7 +2844,7 @@ export async function insertOrderLines(
   }
 
   if (insertedLinesCount === 0) {
-    console.warn("No valid order lines were inserted");
+    logger.warn("No valid order lines were inserted");
     return;
   }
 }
@@ -3009,7 +3024,7 @@ export async function insertQuoteLines(
           .single();
 
         if (lineResult.error) {
-          console.error(
+          logger.error(
             `Failed to insert quote line for component ${component.part_uuid}:`,
             lineResult.error
           );
@@ -3038,7 +3053,7 @@ export async function insertQuoteLines(
             .insert(quoteLinePrices);
 
           if (priceResult.error) {
-            console.error(
+            logger.error(
               `Failed to insert quote line prices for component ${component.part_uuid}:`,
               priceResult.error
             );
@@ -3129,7 +3144,7 @@ export async function insertQuoteLines(
                     .insert(quoteOperation);
 
                   if (opResult.error) {
-                    console.error(
+                    logger.error(
                       `Failed to insert quote operation ${operationName}:`,
                       opResult.error
                     );
@@ -3179,9 +3194,12 @@ export async function insertQuoteLines(
                     await carbon.from("quoteMaterial").insert(quoteMaterial);
                   }
                 } catch (error) {
-                  console.error(
-                    `Failed to create quote material for component ${comp.part_uuid}:`,
-                    error
+                  logger.error(
+                    "Failed to create quote material for component",
+                    {
+                      partUuid: comp.part_uuid,
+                      error
+                    }
                   );
                 }
               }
@@ -3239,10 +3257,12 @@ export async function insertQuoteLines(
                       });
                     }
                   } catch (err) {
-                    console.error(
-                      "Failed to get or create part for child component:",
-                      childRef,
-                      err
+                    logger.error(
+                      "Failed to get or create part for child component",
+                      {
+                        childRef,
+                        error: err
+                      }
                     );
                   }
                 }
@@ -3289,7 +3309,7 @@ export async function insertQuoteLines(
                     .select("id");
 
                   if (madeMaterialResult.error) {
-                    console.error(
+                    logger.error(
                       "Failed to insert made materials:",
                       madeMaterialResult.error
                     );
@@ -3416,26 +3436,26 @@ export async function insertQuoteLines(
               createdBy
             });
           } catch (error) {
-            console.error(
-              `Failed to process supporting files for component ${component.part_uuid}:`,
+            logger.error("Failed to process supporting files for component", {
+              partUuid: component.part_uuid,
               error
-            );
+            });
           }
         }
       } catch (error) {
-        console.error(
-          `Failed to process component ${component.part_uuid}:`,
+        logger.error("Failed to process component", {
+          partUuid: component.part_uuid,
           error
-        );
+        });
         continue;
       }
     }
   }
 
   if (insertedLinesCount === 0) {
-    console.warn("No valid quote lines were inserted");
+    logger.warn("No valid quote lines were inserted");
     return;
   }
 
-  console.log(`✅ Successfully inserted ${insertedLinesCount} quote lines`);
+  logger.info(`✅ Successfully inserted ${insertedLinesCount} quote lines`);
 }

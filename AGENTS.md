@@ -121,7 +121,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Execute an approved plan | `.ai/skills/execute/SKILL.md` |
 | Bug fix: root-cause analysis (read-only) | `.ai/skills/root-cause/SKILL.md` |
 | Bug fix: runtime instrumentation | `.ai/skills/debugging-difficult-bugs/SKILL.md` |
-| Bug fix: implement the fix | `.ai/skills/fix/SKILL.md` |
+| Bug fix: end-to-end pipeline (diagnose → fix → verify → commit) | `.ai/skills/fix/SKILL.md` |
 | Pre-commit verification gate | `.ai/skills/check-and-commit/SKILL.md` |
 | Feature build (doer→gate→judge loop) | `.ai/skills/conductor/SKILL.md` |
 | Browser-verify a feature | `.ai/skills/test/SKILL.md` |
@@ -167,7 +167,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 - **Database**: Supabase (Postgres) with RLS, typed via `@carbon/database` + Kysely
 - **Background jobs**: Inngest (NOT Trigger.dev), via `@carbon/jobs`
 - **Apps**: `erp` (main), `mes` (shop floor), `academy` (training), `starter` (example)
-- **Packages**: 22 under `packages/` — auth, database, lib, react, form, documents, jobs, notifications, config, env, checks, harness, dev, stripe, ee, tiptap, locale, glossary, utils, kv, printing, onboarding
+- **Packages**: 23 under `packages/` — auth, database, lib, react, form, documents, jobs, notifications, config, env, checks, harness, dev, stripe, ee, tiptap, locale, glossary, utils, kv, printing, onboarding, logger
 - **Multi-tenancy**: every table has `companyId` + composite PK `("id", "companyId")`
 - **IDs**: `id('prefix')` default in SQL
 - **Imports**: `~/*` → app code; `@carbon/*` → workspace packages

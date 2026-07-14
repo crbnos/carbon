@@ -136,7 +136,7 @@ const SupplierInteractionNotes = ({
           </HStack>
           <CardContent>
             <TabsContent value="internal">
-              {!isReadOnly && permissions.can("update", "sales") ? (
+              {!isReadOnly && permissions.can("update", "purchasing") ? (
                 <Editor
                   initialValue={(internalNotes ?? {}) as JSONContent}
                   onUpload={onUploadImage}
@@ -156,7 +156,7 @@ const SupplierInteractionNotes = ({
             </TabsContent>
             {["purchaseOrder", "purchaseInvoice"].includes(table) && (
               <TabsContent value="external">
-                {!isReadOnly && permissions.can("update", "sales") ? (
+                {!isReadOnly && permissions.can("update", "purchasing") ? (
                   <Editor
                     initialValue={(externalNotes ?? {}) as JSONContent}
                     onUpload={onUploadImage}

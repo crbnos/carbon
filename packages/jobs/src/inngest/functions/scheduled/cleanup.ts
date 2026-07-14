@@ -15,14 +15,14 @@ type NotifyEvent = {
 export const cleanupFunction = inngest.createFunction(
   { id: "cleanup", retries: 2 },
   { cron: "0 7,12,17 * * *" },
-  async ({ step }) => {
+  async ({ step, logger }) => {
     const serviceRole = getCarbonServiceRole();
 
     await step.run("expire-quotes-and-rfqs", async () => {
-      console.log(`Starting cleanup tasks: ${new Date().toISOString()}`);
+      logger.info(`Starting cleanup tasks: ${new Date().toISOString()}`);
 
       // Clean up expired quotes
-      console.log("Checking for expired quotes...");
+      logger.info("Checking for expired quotes...");
       const [expiredQuotes, expiredSupplierQuotes] = await Promise.all([
         serviceRole
           .from("quote")
@@ -39,25 +39,23 @@ export const cleanupFunction = inngest.createFunction(
       ]);
 
       if (expiredQuotes.error) {
-        console.error(
-          `Error fetching expired quotes: ${JSON.stringify(expiredQuotes.error)}`
-        );
+        logger.error("Error fetching expired quotes", {
+          error: expiredQuotes.error
+        });
         return;
       }
 
       if (expiredSupplierQuotes.error) {
-        console.error(
-          `Error fetching expired supplier quotes: ${JSON.stringify(
-            expiredSupplierQuotes.error
-          )}`
-        );
+        logger.error("Error fetching expired supplier quotes", {
+          error: expiredSupplierQuotes.error
+        });
         return;
       }
 
       if (expiredSupplierQuotes.data.length > 0) {
-        console.log(
-          `Found ${expiredSupplierQuotes.data.length} expired supplier quotes`
-        );
+        logger.info("Found expired supplier quotes", {
+          count: expiredSupplierQuotes.data.length
+        });
         const expireSupplierQuotes = await serviceRole
           .from("supplierQuote")
           .update({ status: "Expired" })
@@ -67,19 +65,17 @@ export const cleanupFunction = inngest.createFunction(
           );
 
         if (expireSupplierQuotes.error) {
-          console.error(
-            `Error updating expired supplier quotes: ${JSON.stringify(
-              expireSupplierQuotes.error
-            )}`
-          );
+          logger.error("Error updating expired supplier quotes", {
+            error: expireSupplierQuotes.error
+          });
           return;
         }
       } else {
-        console.log("No expired supplier quotes found");
+        logger.info("No expired supplier quotes found");
       }
 
       // Auto-expire purchasing RFQs past due date
-      console.log("Checking for expired purchasing RFQs...");
+      logger.info("Checking for expired purchasing RFQs...");
       const expiredRfqs = await serviceRole
         .from("purchasingRfq")
         .select("*")
@@ -88,11 +84,11 @@ export const cleanupFunction = inngest.createFunction(
         .lt("expirationDate", new Date().toISOString());
 
       if (expiredRfqs.error) {
-        console.error(
-          `Error fetching expired RFQs: ${JSON.stringify(expiredRfqs.error)}`
-        );
+        logger.error("Error fetching expired RFQs", {
+          error: expiredRfqs.error
+        });
       } else if (expiredRfqs.data.length > 0) {
-        console.log(`Found ${expiredRfqs.data.length} expired RFQs`);
+        logger.info("Found expired RFQs", { count: expiredRfqs.data.length });
         const closeRfqs = await serviceRole
           .from("purchasingRfq")
           .update({ status: "Closed" })
@@ -102,18 +98,20 @@ export const cleanupFunction = inngest.createFunction(
           );
 
         if (closeRfqs.error) {
-          console.error(
-            `Error closing expired RFQs: ${JSON.stringify(closeRfqs.error)}`
-          );
+          logger.error("Error closing expired RFQs", {
+            error: closeRfqs.error
+          });
         }
       } else {
-        console.log("No expired RFQs found");
+        logger.info("No expired RFQs found");
       }
 
       if (!expiredQuotes?.data?.length) {
-        console.log("No expired quotes found requiring notification");
+        logger.info("No expired quotes found requiring notification");
       } else {
-        console.log(`Found ${expiredQuotes.data.length} expired quotes`);
+        logger.info("Found expired quotes", {
+          count: expiredQuotes.data.length
+        });
         const expireQuotes = await serviceRole
           .from("quote")
           .update({ status: "Expired" })
@@ -123,11 +121,9 @@ export const cleanupFunction = inngest.createFunction(
           );
 
         if (expireQuotes.error) {
-          console.error(
-            `Error updating expired quotes: ${JSON.stringify(
-              expireQuotes.error
-            )}`
-          );
+          logger.error("Error updating expired quotes", {
+            error: expireQuotes.error
+          });
           return;
         }
 
@@ -147,22 +143,23 @@ export const cleanupFunction = inngest.createFunction(
           }));
 
         if (notificationEvents.length > 0) {
-          console.log(`Triggering ${notificationEvents.length} notifications`);
+          logger.info("Triggering notifications", {
+            count: notificationEvents.length
+          });
           try {
             await inngest.send(notificationEvents);
           } catch (error) {
-            console.error("Error triggering notifications");
-            console.error(error);
+            logger.error("Error triggering notifications", { error });
           }
         } else {
-          console.log("No notifications to trigger");
+          logger.info("No notifications to trigger");
         }
       }
     });
 
     await step.run("check-gauge-calibration", async () => {
       // Check for gauges going out of calibration
-      console.log("Checking for gauges going out of calibration...");
+      logger.info("Checking for gauges going out of calibration...");
       const outOfCalibrationGauges = await serviceRole
         .from("gauges")
         .select("*")
@@ -170,15 +167,13 @@ export const cleanupFunction = inngest.createFunction(
         .neq("lastCalibrationStatus", "Out-of-Calibration");
 
       if (outOfCalibrationGauges.error) {
-        console.error(
-          `Error fetching out of calibration gauges: ${JSON.stringify(
-            outOfCalibrationGauges.error
-          )}`
-        );
+        logger.error("Error fetching out of calibration gauges", {
+          error: outOfCalibrationGauges.error
+        });
       } else if (outOfCalibrationGauges.data.length > 0) {
-        console.log(
-          `Found ${outOfCalibrationGauges.data.length} gauges going out of calibration`
-        );
+        logger.info("Found gauges going out of calibration", {
+          count: outOfCalibrationGauges.data.length
+        });
 
         // Get unique company IDs
         const companyIds = [
@@ -196,11 +191,9 @@ export const cleanupFunction = inngest.createFunction(
           .in("id", companyIds);
 
         if (companySettingsResult.error) {
-          console.error(
-            `Error fetching company settings: ${JSON.stringify(
-              companySettingsResult.error
-            )}`
-          );
+          logger.error("Error fetching company settings", {
+            error: companySettingsResult.error
+          });
         } else {
           // Create a map of companyId -> notification group
           const notificationGroupsByCompany = new Map(
@@ -221,9 +214,10 @@ export const cleanupFunction = inngest.createFunction(
               notificationGroupsByCompany.get(gauge.companyId) ?? [];
 
             if (notificationGroup.length === 0) {
-              console.log(
-                `No notification group configured for company ${gauge.companyId}, skipping gauge ${gauge.gaugeId}`
-              );
+              logger.info("No notification group configured, skipping gauge", {
+                companyId: gauge.companyId,
+                gaugeId: gauge.gaugeId
+              });
               continue;
             }
 
@@ -242,9 +236,9 @@ export const cleanupFunction = inngest.createFunction(
           }
 
           if (gaugeNotificationEvents.length > 0) {
-            console.log(
-              `Triggering ${gaugeNotificationEvents.length} gauge calibration notifications`
-            );
+            logger.info("Triggering gauge calibration notifications", {
+              count: gaugeNotificationEvents.length
+            });
             try {
               await inngest.send(gaugeNotificationEvents);
 
@@ -256,33 +250,32 @@ export const cleanupFunction = inngest.createFunction(
                 .in("id", gaugeIdsToUpdate);
 
               if (updateGauges.error) {
-                console.error(
-                  `Error updating gauge lastCalibrationStatus: ${JSON.stringify(
-                    updateGauges.error
-                  )}`
-                );
+                logger.error("Error updating gauge lastCalibrationStatus", {
+                  error: updateGauges.error
+                });
               } else {
-                console.log(
-                  `Updated lastCalibrationStatus for ${gaugeIdsToUpdate.length} gauges`
-                );
+                logger.info("Updated gauge lastCalibrationStatus", {
+                  count: gaugeIdsToUpdate.length
+                });
               }
             } catch (error) {
-              console.error("Error triggering gauge calibration notifications");
-              console.error(error);
+              logger.error("Error triggering gauge calibration notifications", {
+                error
+              });
             }
           } else {
-            console.log("No gauge calibration notifications to trigger");
+            logger.info("No gauge calibration notifications to trigger");
           }
         }
       } else {
-        console.log("No gauges going out of calibration found");
+        logger.info("No gauges going out of calibration found");
       }
 
       // Clean up old print jobs:
       // - Completed jobs older than 30 days (served their purpose)
       // - Failed jobs older than 90 days (retained longer for diagnostics)
       // - Jobs in generating, queued, or printing status are never cleaned up
-      console.log("Cleaning up old print jobs...");
+      logger.info("Cleaning up old print jobs...");
       const thirtyDaysAgo = new Date(
         Date.now() - 30 * 24 * 60 * 60 * 1000
       ).toISOString();
@@ -304,18 +297,18 @@ export const cleanupFunction = inngest.createFunction(
       ]);
 
       if (completedCleanup.error) {
-        console.error(
-          `Error cleaning up completed print jobs: ${JSON.stringify(completedCleanup.error)}`
-        );
+        logger.error("Error cleaning up completed print jobs", {
+          error: completedCleanup.error
+        });
       }
       if (failedCleanup.error) {
-        console.error(
-          `Error cleaning up failed print jobs: ${JSON.stringify(failedCleanup.error)}`
-        );
+        logger.error("Error cleaning up failed print jobs", {
+          error: failedCleanup.error
+        });
       }
-      console.log("Print job cleanup completed");
+      logger.info("Print job cleanup completed");
 
-      console.log(`🧹 Cleanup tasks completed: ${new Date().toISOString()}`);
+      logger.info(`Cleanup tasks completed: ${new Date().toISOString()}`);
     });
   }
 );

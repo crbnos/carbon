@@ -4,6 +4,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
+import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
 import { getLocalTimeZone, now } from "@internationalized/date";
 import type { ActionFunctionArgs } from "react-router";
@@ -11,6 +12,8 @@ import { data, redirect } from "react-router";
 import { maintenanceDispatchValidator } from "~/services/models";
 import { endProductionEventsByWorkCenter } from "~/services/operations.service";
 import { path } from "~/utils/path";
+
+const log = getLogger("mes");
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -185,7 +188,9 @@ export async function action({ request }: ActionFunctionArgs) {
         }
       }
     } catch (err) {
-      console.error("Failed to trigger maintenance dispatch notification", err);
+      log.error("Failed to trigger maintenance dispatch notification", {
+        error: err
+      });
     }
   }
 

@@ -1,6 +1,7 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { getLogger } from "@carbon/logger";
 import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
@@ -10,6 +11,8 @@ import IssuesTable from "~/modules/quality/ui/Issue/IssuesTable";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
+
+const logger = getLogger("erp", "issues");
 
 export const handle: Handle = {
   breadcrumb: msg`Issues`,
@@ -40,7 +43,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   ]);
 
   if (issues.error) {
-    console.error(issues.error);
+    logger.error(issues.error);
     throw redirect(
       path.to.authenticatedRoot,
       await flash(request, error(issues.error, "Error loading issues"))

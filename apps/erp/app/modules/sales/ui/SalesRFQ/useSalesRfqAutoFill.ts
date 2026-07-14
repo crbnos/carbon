@@ -108,7 +108,7 @@ export function useSalesRfqAutoFill(initialValues: SalesRFQFormValues) {
       const { data: customerDetails, error } = await carbon
         .from("customer")
         .select(
-          "salesContactId, customerShipping!customerId(shippingCustomerLocationId)"
+          "salesContactId, customerShipping!customerShipping_customerId_fkey(shippingCustomerLocationId)"
         )
         .eq("id", resolvedCustomerId)
         .single();
@@ -120,7 +120,7 @@ export function useSalesRfqAutoFill(initialValues: SalesRFQFormValues) {
           undefined;
         finalLocationId =
           resolvedLocationId ??
-          customerDetails.customerShipping?.shippingCustomerLocationId ??
+          customerDetails.customerShipping?.[0]?.shippingCustomerLocationId ??
           undefined;
 
         setCustomer((prev) => ({
@@ -179,7 +179,7 @@ export function useSalesRfqAutoFill(initialValues: SalesRFQFormValues) {
       const { data, error } = await carbon
         .from("customer")
         .select(
-          "salesContactId, customerShipping!customerId(shippingCustomerLocationId)"
+          "salesContactId, customerShipping!customerShipping_customerId_fkey(shippingCustomerLocationId)"
         )
         .eq("id", newValue.value)
         .single();
@@ -190,7 +190,7 @@ export function useSalesRfqAutoFill(initialValues: SalesRFQFormValues) {
           ...prev,
           customerContactId: data.salesContactId ?? undefined,
           customerLocationId:
-            data.customerShipping?.shippingCustomerLocationId ?? undefined
+            data.customerShipping?.[0]?.shippingCustomerLocationId ?? undefined
         }));
       }
     } else {

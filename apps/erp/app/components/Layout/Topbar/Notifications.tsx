@@ -372,10 +372,19 @@ function GenericNotification({
         />
       );
     case NotificationEvent.TrainingAssignment:
+    case NotificationEvent.TrainingReminder:
       return (
         <Notification
           icon={<LuListChecks />}
           to={path.to.completeTrainingAssignment(id)}
+          {...props}
+        />
+      );
+    case NotificationEvent.ResourceTrainingAssignment:
+      return (
+        <Notification
+          icon={<LuGraduationCap />}
+          to={path.to.training(id)}
           {...props}
         />
       );

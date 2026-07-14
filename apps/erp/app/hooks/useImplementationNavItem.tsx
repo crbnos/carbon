@@ -32,8 +32,8 @@ type AppLayoutData = {
 const isFinished = (status: HubStatus) =>
   status === "complete" || status === "archived";
 
-// Shared reader: the enrolled hub (a row only exists once Carbon enrolls a
-// company), or null. Both nav entries below key off this.
+// Shared reader: the enrolled hub (a row only exists once the company is
+// enrolled), or null. Both nav entries below key off this.
 function useHub() {
   return (
     useRouteData<AppLayoutData>(path.to.authenticatedRoot)?.implementationHub ??

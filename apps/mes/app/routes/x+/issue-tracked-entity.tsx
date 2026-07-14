@@ -2,9 +2,12 @@ import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { trigger } from "@carbon/jobs";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { issueTrackedEntityValidator } from "~/services/models";
+
+const log = getLogger("mes");
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -47,7 +50,7 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   if (issue.error) {
-    console.error(issue.error);
+    log.error("Failed to issue material", { error: issue.error });
     // Supabase wraps non-2xx edge-fn responses in FunctionsHttpError where
     // the actual body lives on `context`. Try to pull our { message } out;
     // fall back to the wrapper's own message if parsing fails.
@@ -104,7 +107,7 @@ export async function action({ request }: ActionFunctionArgs) {
         });
       }
     } catch (e) {
-      console.error("Auto-print for split entities failed:", e);
+      log.error("Auto-print for split entities failed", { error: e });
     }
   }
 

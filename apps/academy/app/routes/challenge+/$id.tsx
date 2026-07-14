@@ -1,4 +1,5 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getLogger } from "@carbon/logger";
 import { Alert, AlertDescription, AlertTitle, Button, cn } from "@carbon/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import ConfettiExplosion from "react-confetti-explosion";
@@ -14,6 +15,8 @@ import { Form, Link, useActionData, useParams, useSubmit } from "react-router";
 import { useOptionalUser } from "~/hooks/useUser";
 import { path } from "~/utils/path";
 import { findTopicContext } from "~/utils/video";
+
+const log = getLogger("academy");
 
 interface ActionData {
   passed: boolean;
@@ -69,7 +72,7 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   if (error) {
-    console.error(error);
+    log.error("Failed to insert challenge attempt", { error });
   }
 
   return {

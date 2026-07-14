@@ -356,10 +356,10 @@ export const searchFunction = inngest.createFunction(
     retries: 3
   },
   { event: "carbon/event-search" },
-  async ({ event, step }) => {
+  async ({ event, step, logger }) => {
     const payload = SearchPayloadSchema.parse(event.data);
 
-    console.log(`Processing ${payload.records.length} search index events`);
+    logger.info(`Processing ${payload.records.length} search index events`);
 
     const results = {
       updated: 0,
@@ -409,7 +409,7 @@ export const searchFunction = inngest.createFunction(
               });
               stepResults.deleted++;
             } catch (error) {
-              console.error(`Failed to delete from search index:`, {
+              logger.error("Failed to delete from search index", {
                 error,
                 record: del
               });
@@ -471,7 +471,7 @@ export const searchFunction = inngest.createFunction(
 
               stepResults.updated++;
             } catch (error) {
-              console.error(`Failed to update search index:`, {
+              logger.error("Failed to update search index", {
                 error,
                 record: upsert
               });
@@ -489,7 +489,7 @@ export const searchFunction = inngest.createFunction(
       results.failed += companyResult.failed;
     }
 
-    console.log("Search function completed", results);
+    logger.info("Search function completed", results);
 
     return results;
   }

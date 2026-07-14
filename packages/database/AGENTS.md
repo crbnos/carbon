@@ -48,3 +48,4 @@ pnpm --filter @carbon/database typecheck
 - `.ai/rules/event-system.md` — trigger dispatch, PGMQ queue, handler types
 - `packages/auth/` — Supabase client factories (`getCarbon`, `getCarbonServiceRole`)
 - `packages/jobs/` — Inngest event handlers that consume the event queue
+- `supabase/functions/lib/logging.ts` — Deno-native logger (`getFunctionLogger`) mirroring `@carbon/logger`; use it instead of `console.*` in edge functions (`@logtape/*` via `deno.json` jsr imports)

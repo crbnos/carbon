@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { getLogger } from "@carbon/logger";
 import {
   Card,
   CardContent,
@@ -32,6 +33,8 @@ import type {
   SupplierQuoteLine,
   SupplierQuoteLinePrice
 } from "../../types";
+
+const logger = getLogger("erp", "supplierquotelinepricing");
 
 const SupplierQuoteLinePricing = ({
   line,
@@ -119,14 +122,16 @@ const SupplierQuoteLinePricing = ({
           .update({
             [key]: value,
             supplierQuoteLineId: lineId,
-            quantity
+            quantity,
+            updatedBy: userId
           })
           .eq("supplierQuoteLineId", lineId)
           .eq("quantity", quantity);
 
         if (update?.error) {
-          console.error(update.error);
+          logger.error(update.error);
           toast.error(t`Failed to update supplier quote line`);
+          setEditableFields((prev) => ({ ...prev, prices: oldPrices }));
         }
       } else {
         const insert = await carbon?.from("supplierQuoteLinePrice").insert({
@@ -136,8 +141,9 @@ const SupplierQuoteLinePricing = ({
         });
 
         if (insert?.error) {
-          console.error(insert.error);
+          logger.error(insert.error);
           toast.error(t`Failed to insert supplier quote line`);
+          setEditableFields((prev) => ({ ...prev, prices: oldPrices }));
         }
       }
     },

@@ -93,7 +93,7 @@ const ItemPostingGroupForm = ({
               <Hidden name="id" />
               <Hidden name="type" value={type} />
               <VStack spacing={4}>
-                <Input name="name" label={t`Name`} />
+                <Input name="name" label={t`Name`} characterLimit={255} />
                 <TextArea name="description" label={t`Description`} />
                 <CustomFormFields table="itemPostingGroup" />
               </VStack>

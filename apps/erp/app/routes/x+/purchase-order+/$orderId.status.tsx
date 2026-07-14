@@ -2,6 +2,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { runMRP } from "~/modules/production";
@@ -12,6 +13,8 @@ import {
 } from "~/modules/purchasing";
 import { canApproveRequest } from "~/modules/shared";
 import { path, requestReferrer } from "~/utils/path";
+
+const logger = getLogger("erp", "orderid-status");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -79,7 +82,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       .select("id");
 
     if (cancelResult.data && cancelResult.data.length > 0) {
-      console.log(
+      logger.info(
         `Cancelled ${cancelResult.data.length} pending approval request(s) for PO ${id} when closing`
       );
     }

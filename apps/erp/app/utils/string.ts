@@ -1,3 +1,7 @@
+import { getLogger } from "@carbon/logger";
+
+const logger = getLogger("erp", "utils", "string");
+
 export const capitalize = (words: string) => {
   const [first, ...otherLetters] = words;
   return [first.toLocaleUpperCase(), ...otherLetters].join("");
@@ -47,7 +51,7 @@ export const copyToClipboard = async (
       .then((text) => window.navigator?.clipboard?.writeText(text))
       .then(callback);
   } else {
-    console.warn("Unable to copy to clipboard");
+    logger.warning("Unable to copy to clipboard");
   }
 };
 

@@ -1,6 +1,7 @@
 import type { Result } from "@carbon/auth";
 import { useCarbon } from "@carbon/auth";
 import type { Database } from "@carbon/database";
+import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import {
   Badge,
@@ -139,6 +140,8 @@ import {
 import { TableSkeleton } from "./components/TableSkeleton";
 import { useFiles } from "./hooks/useFiles";
 import { useOperation } from "./hooks/useOperation";
+
+const log = getLogger("mes", "job-operation");
 
 type JobOperationProps = {
   events: ProductionEvent[];
@@ -373,9 +376,9 @@ export const JobOperation = ({
           });
         }
       } catch (error) {
-        console.error(
-          "Failed to create inspection steps for non-conformance actions:",
-          error
+        log.error(
+          "Failed to create inspection steps for non-conformance actions",
+          { error }
         );
       }
     }

@@ -5,6 +5,7 @@ import {
   resolveTemplate,
   toDocumentTemplate
 } from "@carbon/documents/template";
+import { getLogger } from "@carbon/logger";
 import { getPreferenceHeaders } from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
 import type { LoaderFunctionArgs } from "react-router";
@@ -15,6 +16,8 @@ import {
   resolveSections
 } from "~/modules/settings";
 import { getBase64ImageFromSupabase } from "~/modules/shared";
+
+const logger = getLogger("erp", "stock-transfer", "pdf");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -31,15 +34,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   ]);
 
   if (company.error) {
-    console.error(company.error);
+    logger.error("Failed to load company", { error: company.error });
   }
 
   if (stockTransfer.error) {
-    console.error(stockTransfer.error);
+    logger.error("Failed to load stockTransfer", {
+      error: stockTransfer.error
+    });
   }
 
   if (stockTransferLines.error) {
-    console.error(stockTransferLines.error);
+    logger.error("Failed to load stockTransferLines", {
+      error: stockTransferLines.error
+    });
   }
 
   if (
@@ -59,7 +66,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     .single();
 
   if (location.error) {
-    console.error(location.error);
+    logger.error("Failed to load location", { error: location.error });
     throw new Error("Failed to load location");
   }
 

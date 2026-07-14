@@ -36,6 +36,7 @@ All from `src/index.ts` (single file):
 - **Auth:** `SESSION_SECRET`, `SESSION_MAX_AGE`, `RATE_LIMIT`, `AUTH_PROVIDERS`, `isAuthProviderEnabled()`
 - **Edition:** `CarbonEdition` (Community/Cloud/Enterprise/Test), `CONTROLLED_ENVIRONMENT` (ITAR flag)
 - **URLs:** `getAppUrl()`, `getMESUrl()`, `getBrowserEnv()`
+- **Logging:** `LOG_LEVEL` (optional, non-secret, browser-safe — consumed by `@carbon/logger`)
 - **Integrations:** Stripe, Resend, Slack, Xero, Jira, OnShape, QuickBooks keys (all optional)
 
 ## Cross-References

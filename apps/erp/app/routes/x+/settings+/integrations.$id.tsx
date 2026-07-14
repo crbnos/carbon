@@ -12,6 +12,7 @@ import { getIntegrationServerHooks } from "@carbon/ee/hooks.server";
 import { isIntegrationWhitelisted } from "@carbon/ee/plan";
 import { requirePlan } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useNavigate } from "react-router";
 import { getIntegration, IntegrationForm } from "~/modules/settings";
@@ -20,6 +21,8 @@ import {
   upsertCompanyIntegration
 } from "~/modules/settings/settings.server";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "integrations-id");
 
 /**
  * Transforms flat owner settings (customerOwner, vendorOwner, etc.) into
@@ -176,7 +179,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         defaultPurchaseAccountCode: accountOptions
       };
     } catch (error) {
-      console.error("Failed to fetch Xero accounts for settings:", error);
+      logger.error("Failed to fetch Xero accounts for settings", {
+        error: error
+      });
       // Continue without dynamic options - form will show empty selects
     }
   }
@@ -292,10 +297,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
       try {
         await onInstall(companyId);
       } catch (hookError) {
-        console.error(
-          `onInstall hook failed for integration '${integrationId}'`,
-          hookError
-        );
+        logger.error("onInstall hook failed for integration", {
+          integrationId,
+          error: hookError
+        });
         throw redirect(
           path.to.integrations,
           await flash(

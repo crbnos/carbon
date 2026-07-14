@@ -9,6 +9,7 @@ import {
   ValidatedForm,
   validator
 } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import {
   Card,
   CardContent,
@@ -50,6 +51,8 @@ import {
 } from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "settings", "purchasing");
 
 export const handle: Handle = {
   breadcrumb: msg`Purchasing`,
@@ -104,10 +107,9 @@ export async function action({ request }: ActionFunctionArgs) {
         apToggleEnabled
       );
       if (apToggleResult.error) {
-        console.error(
-          "Failed to update accounts payable address toggle:",
-          apToggleResult.error
-        );
+        logger.error("Failed to update accounts payable address toggle", {
+          error: apToggleResult.error
+        });
         return {
           success: false,
           message: apToggleResult.error.message
@@ -134,10 +136,9 @@ export async function action({ request }: ActionFunctionArgs) {
       );
 
       if (result.error) {
-        console.error(
-          "Failed to update purchase price timing setting:",
-          result.error
-        );
+        logger.error("Failed to update purchase price timing setting", {
+          error: result.error
+        });
         return {
           success: false,
           message: result.error.message
@@ -158,10 +159,9 @@ export async function action({ request }: ActionFunctionArgs) {
       );
 
       if (updateLeadTimesResult.error) {
-        console.error(
-          "Failed to update lead-time-on-receipt setting:",
-          updateLeadTimesResult.error
-        );
+        logger.error("Failed to update lead-time-on-receipt setting", {
+          error: updateLeadTimesResult.error
+        });
         return {
           success: false,
           message: updateLeadTimesResult.error.message
@@ -183,10 +183,9 @@ export async function action({ request }: ActionFunctionArgs) {
         );
 
       if (showSupplierReadableIdResult.error) {
-        console.error(
-          "Failed to update supplier ID visibility setting:",
-          showSupplierReadableIdResult.error
-        );
+        logger.error("Failed to update supplier ID visibility setting", {
+          error: showSupplierReadableIdResult.error
+        });
         return {
           success: false,
           message: showSupplierReadableIdResult.error.message
@@ -214,10 +213,9 @@ export async function action({ request }: ActionFunctionArgs) {
       );
 
       if (supplierQuoteResult.error) {
-        console.error(
-          "Failed to update supplier quote notification setting:",
-          supplierQuoteResult.error
-        );
+        logger.error("Failed to update supplier quote notification setting", {
+          error: supplierQuoteResult.error
+        });
         return {
           success: false,
           message: supplierQuoteResult.error.message
@@ -246,10 +244,9 @@ export async function action({ request }: ActionFunctionArgs) {
       );
 
       if (apBillingResult.error) {
-        console.error(
-          "Failed to update accounts payable billing address:",
-          apBillingResult.error
-        );
+        logger.error("Failed to update accounts payable billing address", {
+          error: apBillingResult.error
+        });
         return {
           success: false,
           message: apBillingResult.error.message
@@ -277,10 +274,9 @@ export async function action({ request }: ActionFunctionArgs) {
       );
 
       if (defaultSupplierCcResult.error) {
-        console.error(
-          "Failed to update default supplier CC:",
-          defaultSupplierCcResult.error
-        );
+        logger.error("Failed to update default supplier CC", {
+          error: defaultSupplierCcResult.error
+        });
         return {
           success: false,
           message: defaultSupplierCcResult.error.message

@@ -2,6 +2,7 @@ import { assertIsPost, notFound } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
+import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
@@ -11,6 +12,8 @@ import {
 } from "~/modules/purchasing/purchasing.models";
 import { getSupplierQuoteByExternalLinkId } from "~/modules/purchasing/purchasing.service";
 import { getCompanySettings } from "~/modules/settings";
+
+const logger = getLogger("erp", "purchasing", "digital-quote");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -25,7 +28,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const quote = await getSupplierQuoteByExternalLinkId(serviceRole, id);
 
   if (quote.error || !quote.data) {
-    console.error("Quote not found", quote.error);
+    logger.error("Quote not found", { error: quote.error });
     return {
       success: false,
       message: "Quote not found"
@@ -131,7 +134,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       const parseResult = nestedSelectedLinesValidator.safeParse(parsedData);
 
       if (!parseResult.success) {
-        console.error("Validation error:", parseResult.error);
+        logger.error("Validation error:", { error: parseResult.error });
         return { success: false, message: "Invalid selected lines data" };
       }
 
@@ -254,7 +257,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
       }
 
       if (companySettings.error) {
-        console.error("Failed to get company settings", companySettings.error);
+        logger.error("Failed to get company settings", {
+          error: companySettings.error
+        });
       }
 
       // Send notification to supplier quote notification group
@@ -270,7 +275,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
             }
           });
         } catch (err) {
-          console.error("Failed to trigger supplier quote notification", err);
+          logger.error("Failed to trigger supplier quote notification", {
+            error: err
+          });
         }
       }
 
@@ -309,7 +316,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         .eq("supplierQuoteId", quote.data.id);
 
       if (updateResult.error) {
-        console.error("Failed to update notes", updateResult.error);
+        logger.error("Failed to update notes", { error: updateResult.error });
         return { success: false, message: "Failed to update notes" };
       }
 

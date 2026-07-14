@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { getLogger } from "@carbon/logger";
 import {
   Card,
   CardAction,
@@ -42,6 +43,8 @@ import { getDocumentType } from "~/modules/shared";
 import type { ModelUpload } from "~/types";
 import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
+
+const logger = getLogger("erp", "production", "job-documents");
 
 const useJobDocuments = ({
   jobId,
@@ -126,7 +129,7 @@ const useJobDocuments = ({
         document.body.removeChild(a);
       } catch (error) {
         toast.error(t`Error downloading file`);
-        console.error(error);
+        logger.error("Failed to process file operation", { error });
       }
     },
 
@@ -153,7 +156,7 @@ const useJobDocuments = ({
         document.body.removeChild(a);
       } catch (error) {
         toast.error(t`Error downloading file`);
-        console.error(error);
+        logger.error("Failed to process file operation", { error });
       }
     },
 
@@ -300,7 +303,7 @@ const useJobDocuments = ({
         revalidator.revalidate();
       } catch (error) {
         toast.error(t`Error moving file`);
-        console.error(error);
+        logger.error("Failed to process file operation", { error });
       }
     },
     [carbon, itemId, getPath, revalidator, t]

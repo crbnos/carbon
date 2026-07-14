@@ -4,6 +4,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { trigger } from "@carbon/jobs";
+import { getLogger } from "@carbon/logger";
 import { supportedModelTypes } from "@carbon/utils";
 import { generateObject } from "ai";
 import { nanoid } from "nanoid";
@@ -25,6 +26,8 @@ const quoteDragValidator = z.object({
   path: z.string(),
   lineId: z.string().optional()
 });
+
+const logger = getLogger("erp", "quote", "drag");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -87,7 +90,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       readableId = parsedFilename.partId;
       revision = parsedFilename.revision || "0";
     } catch (error) {
-      console.error(error);
+      logger.error("Failed to parse part filename", { error });
     }
 
     let suffix = 1;
@@ -227,10 +230,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
 
     if (modelRecord.error) {
-      console.error(
-        `Failed to create model record for ${fileName}:`,
-        modelRecord.error
-      );
+      logger.error("Failed to create model record", {
+        fileName,
+        error: modelRecord.error
+      });
       return false;
     }
 
@@ -255,10 +258,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     const [lineUpdate] = await Promise.all(updates);
 
     if (lineUpdate.error) {
-      console.error(
-        `Failed to link model to sales order line:`,
-        lineUpdate.error
-      );
+      logger.error("Failed to link model to sales order line", {
+        error: lineUpdate.error
+      });
     }
 
     // Move the file to the new path

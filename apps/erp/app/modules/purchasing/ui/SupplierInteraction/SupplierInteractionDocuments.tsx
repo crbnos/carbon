@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { getLogger } from "@carbon/logger";
 import {
   Card,
   CardAction,
@@ -33,6 +34,8 @@ import { useDateFormatter, usePermissions, useUser } from "~/hooks";
 import { getDocumentType } from "~/modules/shared";
 import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
+
+const logger = getLogger("erp", "supplierinteractiondocuments");
 
 type SupplierInteractionDocumentsProps = {
   attachments: FileObject[];
@@ -208,7 +211,7 @@ export const useSupplierInteractionDocuments = ({
   const revalidator = useRevalidator();
   const submit = useSubmit();
 
-  const canDelete = permissions.can("delete", "sales"); // TODO: or is document owner
+  const canDelete = permissions.can("delete", "purchasing"); // TODO: or is document owner
 
   const getPath = useCallback(
     (attachment: { name: string }) => {
@@ -254,7 +257,7 @@ export const useSupplierInteractionDocuments = ({
         document.body.removeChild(a);
       } catch (error) {
         toast.error(t`Error downloading file`);
-        console.error(error);
+        logger.error("Error", { error: error });
       }
     },
     [getPath, t]
@@ -347,7 +350,7 @@ const SupplierInteractionDocumentForm = (
 
   return (
     <File
-      isDisabled={!permissions.can("update", "sales")}
+      isDisabled={!permissions.can("update", "purchasing")}
       leftIcon={<LuUpload />}
       onChange={uploadFiles}
       multiple

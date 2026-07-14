@@ -24,7 +24,7 @@ import { flash } from "@carbon/auth/session.server";     // session.server.ts
 - `success(message = "Request succeeded", data?): Result` → `{ success: true, message }`.
   Note: the `data` arg is accepted but **ignored** (not returned).
 - `error(error: any, message = "Request failed"): Result` → `{ success: false, message }`.
-  Logs `console.error({ error, message })` when `error` is truthy.
+  Logs via `getLogger("auth").error(message, { error })` (`@carbon/logger`) when `error` is truthy.
 - `flash(request, result): Promise<{ headers: { "Set-Cookie": ... } }>` — commits the
   result into the `carbon` session cookie and returns a `ResponseInit`-shaped object you
   spread as the response's second arg.

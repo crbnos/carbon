@@ -5,8 +5,11 @@ import {
   getJiraIssueFromExternalId,
   tiptapToAdf
 } from "@carbon/ee/jira.server";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunction } from "react-router";
 import { data } from "react-router";
+
+const logger = getLogger("erp", "integrations-jira-issue-sync-notes");
 
 const jira = getJiraClient();
 
@@ -54,7 +57,7 @@ export const action: ActionFunction = async ({ request }) => {
 
     return { success: true, message: "Notes synced to Jira" };
   } catch (error) {
-    console.error("Failed to sync notes to Jira:", error);
+    logger.error("Failed to sync notes to Jira", { error: error });
     return data(
       { success: false, message: "Failed to sync notes to Jira" },
       500

@@ -2,6 +2,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { trigger } from "@carbon/jobs";
+import { getLogger } from "@carbon/logger";
 import {
   createPrintJob,
   getPrintJob,
@@ -24,6 +25,8 @@ import { useRealtime } from "~/hooks";
 import { PrintJobsTable } from "~/modules/settings";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
+
+const logger = getLogger("erp", "printing-jobs");
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -135,7 +138,7 @@ export async function action({ request }: ActionFunctionArgs) {
           companyId
         });
       } catch (e) {
-        console.error("Failed to trigger delivery:", e);
+        logger.error("Failed to trigger delivery", { error: e });
       }
 
       return data(

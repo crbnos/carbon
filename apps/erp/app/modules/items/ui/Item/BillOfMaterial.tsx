@@ -382,7 +382,6 @@ const BillOfMaterial = ({
         onToggleItem={onToggleItem}
         onRemoveItem={onRemoveItem}
         handleDrag={onCloseOnDrag}
-        className="my-2 "
         renderExtra={(item) => (
           <div key={`${isOpen}`}>
             <motion.button
@@ -511,7 +510,26 @@ const BillOfMaterial = ({
       <HStack className="justify-between">
         <CardHeader>
           <CardTitle className="flex flex-row items-center gap-2">
-            <Trans>Bill of Material</Trans> {isReadOnly && <LuLock />}
+            <Trans>Bill of Material</Trans>
+            {isReadOnly && (
+              <Tooltip>
+                <TooltipTrigger tabIndex={-1} className="text-muted-foreground">
+                  <LuLock />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  {makeMethod.status !== "Draft" ? (
+                    <Trans>
+                      This method version is read-only. Create a new version
+                      from the method menu to make changes.
+                    </Trans>
+                  ) : (
+                    <Trans>
+                      You don't have permission to edit this bill of material.
+                    </Trans>
+                  )}
+                </TooltipContent>
+              </Tooltip>
+            )}
           </CardTitle>
         </CardHeader>
 
@@ -1150,11 +1168,30 @@ function MaterialForm({
                     }));
                   }}
                 >
-                  <DropdownMenuRadioItem value="Subassembly">
-                    <Trans>Subassembly</Trans>
+                  <DropdownMenuRadioItem
+                    value="Subassembly"
+                    className="items-start"
+                  >
+                    <div className="flex flex-col gap-0.5">
+                      <span>
+                        <Trans>Subassembly</Trans>
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        <Trans>Built and costed as its own method</Trans>
+                      </span>
+                    </div>
                   </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="Kit">
-                    <Trans>Kit</Trans>
+                  <DropdownMenuRadioItem value="Kit" className="items-start">
+                    <div className="flex flex-col gap-0.5">
+                      <span>
+                        <Trans>Kit</Trans>
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        <Trans>
+                          Picked and consumed as separate components
+                        </Trans>
+                      </span>
+                    </div>
                   </DropdownMenuRadioItem>
                 </DropdownMenuRadioGroup>
               </DropdownMenuContent>

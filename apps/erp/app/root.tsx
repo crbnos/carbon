@@ -7,12 +7,14 @@ import {
 } from "@carbon/auth/middleware/flash.server";
 import { validator } from "@carbon/form";
 import { LocaleProvider, resolveLanguage } from "@carbon/locale";
+import { requestIdMiddleware } from "@carbon/logger/middleware.server";
 import {
   Button,
   Heading,
   OperatingSystemContextProvider,
   Toaster,
   TooltipProvider,
+  TVColorBars,
   useMode,
   useMount
 } from "@carbon/react";
@@ -32,6 +34,7 @@ import type {
 import {
   data,
   isRouteErrorResponse,
+  Link,
   Links,
   Meta,
   Outlet,
@@ -50,7 +53,7 @@ import type { Route } from "./+types/root";
 import "./polyfill";
 import { getTheme } from "./services/theme.server";
 
-export const middleware = [flashMiddleware];
+export const middleware = [requestIdMiddleware, flashMiddleware];
 export const clientMiddleware = [flashClientMiddleware];
 
 export const links: LinksFunction = () => {
@@ -110,7 +113,9 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     ERP_URL,
     GOOGLE_PLACES_API_KEY,
     JIRA_CLIENT_ID,
+    LOG_LEVEL,
     MES_URL,
+    NODE_ENV,
     ONSHAPE_CLIENT_ID,
     POSTHOG_API_HOST,
     POSTHOG_PROJECT_PUBLIC_KEY,
@@ -139,7 +144,9 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
         ERP_URL,
         GOOGLE_PLACES_API_KEY,
         JIRA_CLIENT_ID,
+        LOG_LEVEL,
         MES_URL,
+        NODE_ENV,
         ONSHAPE_CLIENT_ID,
         POSTHOG_API_HOST,
         POSTHOG_PROJECT_PUBLIC_KEY,
@@ -248,7 +255,7 @@ export function Document({
         <Toaster position="bottom-right" visibleToasts={5} />
         <ScrollRestoration />
         <Scripts />
-        {!CONTROLLED_ENVIRONMENT && <Analytics />}
+        {!CONTROLLED_ENVIRONMENT && import.meta.env.PROD && <Analytics />}
       </body>
     </html>
   );
@@ -324,24 +331,36 @@ function ErrorBoundaryContent({ error }: { error: unknown }) {
   return (
     <Document>
       <div className="light">
-        <div className="flex flex-col w-full h-screen items-center justify-center space-y-4 ">
-          <img
-            src="/carbon-mark-light.svg"
-            alt="Carbon Logo"
-            className="block max-w-[60px] dark:hidden"
-          />
-          <img
-            src="/carbon-mark-dark.svg"
-            alt="Carbon Logo"
-            className="max-w-[60px] hidden dark:block"
-          />
-          <Heading size="h1">
-            <Trans>Something went wrong</Trans>
-          </Heading>
-          <p className="text-muted-foreground max-w-2xl">{message}</p>
-          <Button onClick={() => (window.location.href = "/")}>
-            <Trans>Back Home</Trans>
-          </Button>
+        <div className="relative flex min-h-dvh w-full flex-col items-center justify-center p-6">
+          <TVColorBars />
+          <div className="relative z-10 flex w-full max-w-lg flex-col items-center gap-8 rounded-2xl border border-white/40 bg-card/75 p-10 text-center shadow-2xl inset-ring inset-ring-white/30 backdrop-blur-xl backdrop-saturate-150">
+            <img
+              src="/carbon-mark-light.svg"
+              alt="Carbon Logo"
+              className="max-w-[60px] dark:hidden"
+            />
+            <img
+              src="/carbon-mark-dark.svg"
+              alt="Carbon Logo"
+              className="max-w-[60px] not-dark:hidden"
+            />
+            <div className="flex flex-col items-center gap-3">
+              <Heading size="h2">
+                <Trans>Something went wrong</Trans>
+              </Heading>
+              <p className="max-w-[48ch] break-words font-mono text-sm text-pretty text-muted-foreground">
+                {message}
+              </p>
+            </div>
+            <Button asChild>
+              {/* Full document load: client-side nav out of a root error state
+                  can leave the boundary rendered (or hydration may have failed
+                  entirely), so never let the router intercept this click. */}
+              <Link to="/" reloadDocument>
+                <Trans>Back Home</Trans>
+              </Link>
+            </Button>
+          </div>
         </div>
       </div>
     </Document>

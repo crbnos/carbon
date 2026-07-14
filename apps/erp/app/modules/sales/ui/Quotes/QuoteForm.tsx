@@ -93,9 +93,9 @@ const QuoteForm = ({ initialValues }: QuoteFormProps) => {
       });
 
       const { data, error } = await carbon
-        ?.from("customer")
+        .from("customer")
         .select(
-          "currencyCode, salesContactId, customerShipping!customerId(shippingCustomerLocationId)"
+          "currencyCode, salesContactId, customerShipping!customerShipping_customerId_fkey(shippingCustomerLocationId)"
         )
         .eq("id", newValue.value)
         .single();
@@ -107,7 +107,7 @@ const QuoteForm = ({ initialValues }: QuoteFormProps) => {
           currencyCode: data.currencyCode ?? undefined,
           customerContactId: data.salesContactId ?? undefined,
           customerLocationId:
-            data.customerShipping?.shippingCustomerLocationId ?? undefined
+            data.customerShipping?.[0]?.shippingCustomerLocationId ?? undefined
         }));
       }
     } else {

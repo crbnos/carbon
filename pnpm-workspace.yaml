@@ -29,6 +29,9 @@ catalog:
   '@lingui/macro': 5.9.4
   '@lingui/react': 5.9.4
   '@lingui/vite-plugin': 5.9.4
+  '@logtape/logtape': 2.2.3
+  '@logtape/redaction': 2.2.3
+  '@logtape/testing': 2.2.3
   '@nanostores/react': 0.7.3
   '@react-aria/i18n': 3.12.16
   '@react-email/components': 0.3.3
@@ -60,8 +63,10 @@ catalog:
   '@tiptap/pm': 2.27.2
   '@tiptap/react': 2.27.2
   '@tiptap/starter-kit': 2.27.2
+  '@typescript/native-preview': '7.0.0-dev.20260703.1'
   '@types/react': 18.3.28
   '@types/react-dom': 18.3.7
+  '@types/node': '24'
   '@vercel/analytics': 1.6.1
   '@vercel/react-router': 1.2.6
   axios: 1.15.0

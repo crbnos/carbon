@@ -22,11 +22,13 @@ Check `.ai/specs/` before modifying any module. Create or update specs when the 
 ## Spec Lifecycle
 
 ```
-1. Idea → spec draft in .ai/specs/{YYYY-MM-DD}-{title}.md
-2. Open questions resolved (hard stop until answered)
-3. Implementation proceeds phase-by-phase
-4. Completed spec moves to .ai/specs/implemented/
-5. PR links back to spec via "Tracking spec:" line
+1. Idea → research + design decisions; open questions collected
+2. Open questions resolved with the user (hard stop — BEFORE the spec is written)
+3. Spec written in .ai/specs/{YYYY-MM-DD}-{title}.md with resolutions baked in
+   (questions surfaced while writing go back to step 2 before the spec is final)
+4. Implementation proceeds phase-by-phase
+5. Completed spec moves to .ai/specs/implemented/
+6. PR links back to spec via "Tracking spec:" line
 ```
 
 ## File Naming Convention

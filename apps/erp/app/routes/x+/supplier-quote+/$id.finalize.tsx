@@ -1,6 +1,7 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import {
@@ -11,6 +12,8 @@ import {
 } from "~/modules/purchasing";
 import { upsertExternalLink } from "~/modules/shared";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "id-finalize");
 
 export async function action(args: ActionFunctionArgs) {
   const { request, params } = args;
@@ -166,7 +169,9 @@ export async function action(args: ActionFunctionArgs) {
           .single();
 
         if (newPart.error || !newPart.data?.id) {
-          console.error("Error creating supplier part:", newPart.error);
+          logger.error("Error creating supplier part", {
+            error: newPart.error
+          });
           continue;
         }
         supplierPartId = newPart.data.id;
@@ -199,7 +204,7 @@ export async function action(args: ActionFunctionArgs) {
         );
 
         if (upsertResult.error) {
-          console.error(
+          logger.error(
             "Error upserting supplier part price:",
             upsertResult.error
           );

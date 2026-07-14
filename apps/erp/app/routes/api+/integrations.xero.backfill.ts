@@ -1,9 +1,12 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { ProviderID } from "@carbon/ee/accounting";
 import { trigger } from "@carbon/jobs";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
+
+const logger = getLogger("erp", "integrations-xero-backfill");
 
 const BackfillSettingsSchema = z.object({
   backfillCustomers: z.boolean().optional().default(true),
@@ -75,7 +78,7 @@ export async function action({ request }: ActionFunctionArgs) {
       message: "Contact import started"
     });
   } catch (error) {
-    console.error("Failed to start backfill:", error);
+    logger.error("Failed to start backfill", { error: error });
     return data({ error: "Failed to start contact import" }, { status: 500 });
   }
 }

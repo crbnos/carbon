@@ -1,24 +1,29 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { NotificationEvent } from "@carbon/notifications";
+import { fetchAllFromTable } from "@carbon/database";
+import { isReminderItemStatus } from "@carbon/documents/email";
+import {
+  MAX_NOTIFICATION_DELIVERIES,
+  NotificationEvent
+} from "@carbon/notifications";
 import { Edition } from "@carbon/utils";
 import { inngest } from "../../client";
 
 export const weeklyFunction = inngest.createFunction(
   { id: "weekly", retries: 2 },
   { cron: "0 21 * * 0" },
-  async ({ step }) => {
+  async ({ step, logger }) => {
     const serviceRole = getCarbonServiceRole();
     await step.run("cloud-cleanup", async () => {
-      console.log(`Starting weekly tasks: ${new Date().toISOString()}`);
+      logger.info("Starting weekly tasks");
 
       try {
         if (process.env.CARBON_EDITION === Edition.Cloud) {
           const bypassUrl = `${process.env.VERCEL_URL}/api/settings/bypass`;
           const bypassResponse = await fetch(bypassUrl);
           if (!bypassResponse.ok) {
-            console.error(
-              `Failed to fetch bypass list: ${bypassResponse.statusText}`
-            );
+            logger.error("Failed to fetch bypass list", {
+              statusText: bypassResponse.statusText
+            });
             return;
           }
           const bypassData = (await bypassResponse.json()) as {
@@ -26,7 +31,7 @@ export const weeklyFunction = inngest.createFunction(
           };
           const bypassList = bypassData.bypassList ?? [];
 
-          console.log(`Bypass list: ${bypassList}`);
+          logger.info("Bypass list", { bypassList });
 
           // Get all companies
           const { data: companies, error: companiesError } = await serviceRole
@@ -34,13 +39,13 @@ export const weeklyFunction = inngest.createFunction(
             .select("id, name, createdAt");
 
           if (companiesError) {
-            console.error(
-              `Failed to fetch companies: ${companiesError.message}`
-            );
+            logger.error("Failed to fetch companies", {
+              error: companiesError
+            });
             return;
           }
 
-          console.log(`Found ${companies?.length || 0} companies`);
+          logger.info("Found companies", { count: companies?.length || 0 });
 
           // Get all company plans
           const { data: companyPlans, error: plansError } = await serviceRole
@@ -48,9 +53,9 @@ export const weeklyFunction = inngest.createFunction(
             .select("id, stripeSubscriptionStatus");
 
           if (plansError) {
-            console.error(
-              `Failed to fetch company plans: ${plansError.message}`
-            );
+            logger.error("Failed to fetch company plans", {
+              error: plansError
+            });
             return;
           }
 
@@ -90,7 +95,9 @@ export const weeklyFunction = inngest.createFunction(
               return true;
             }) || [];
 
-          console.log(`Companies to delete: ${companiesToDelete.length}`);
+          logger.info("Companies to delete", {
+            count: companiesToDelete.length
+          });
 
           const { error: deletedCompaniesError } = await serviceRole
             .from("company")
@@ -101,14 +108,16 @@ export const weeklyFunction = inngest.createFunction(
             );
 
           if (deletedCompaniesError) {
-            console.error(
-              `Failed to delete companies: ${deletedCompaniesError.message}`
-            );
+            logger.error("Failed to delete companies", {
+              error: deletedCompaniesError
+            });
             return;
           } else {
-            console.log(`Deleted ${companiesToDelete.length} companies`);
+            logger.info("Deleted companies", {
+              count: companiesToDelete.length
+            });
             for (const company of companiesToDelete) {
-              console.log(`Deleted company ${company.name}`);
+              logger.info("Deleted company", { company: company.name });
             }
           }
 
@@ -119,51 +128,64 @@ export const weeklyFunction = inngest.createFunction(
               { p_company_id: company.id }
             );
             if (dropSearchError) {
-              console.error(
-                `Failed to drop search index for company ${company.name}: ${dropSearchError.message}`
-              );
+              logger.error("Failed to drop search index for company", {
+                company: company.name,
+                error: dropSearchError
+              });
             } else {
-              console.log(`Dropped search index for company ${company.name}`);
+              logger.info("Dropped search index for company", {
+                company: company.name
+              });
             }
           }
         }
       } catch (error) {
-        console.error(
-          `Unexpected error in cloud cleanup: ${
-            error instanceof Error ? error.message : String(error)
-          }`
-        );
+        logger.error("Unexpected error in cloud cleanup", { error });
       }
     });
 
-    await step.run("notify-outstanding-trainings", async () => {
+    // Build inside a memoized step, send via step.sendEvent — sending
+    // mid-step would double-deliver on a retry after a partial send.
+    const reminders = await step.run("build-training-reminders", async () => {
       // Notify employees with outstanding trainings (Pending or Overdue)
-      console.log(`Checking for outstanding training assignments...`);
+      logger.info("Checking for outstanding training assignments");
+
+      // One digest-shaped TrainingReminder per employee (documentIds); the
+      // notify function owns all channel fan-out.
+      const notifyEvents: Array<{
+        name: "carbon/notify";
+        data: {
+          companyId: string;
+          documentIds: string[];
+          event: NotificationEvent;
+          recipient: { type: "user"; userId: string };
+        };
+      }> = [];
 
       try {
-        // Get all companies with training assignments
+        // fetchAllFromTable pages past PostgREST's 1000-row cap — one big
+        // company would otherwise starve the rest out of reminders.
         const { data: companiesWithTrainings, error: companiesError } =
-          await serviceRole
-            .from("trainingAssignment")
-            .select("companyId")
-            .limit(1000);
+          await fetchAllFromTable<{ companyId: string }>(
+            serviceRole,
+            "trainingAssignment",
+            "companyId"
+          );
 
         if (companiesError) {
-          console.error(
-            `Failed to fetch companies with trainings: ${companiesError.message}`
-          );
-          return;
+          logger.error("Failed to fetch companies with trainings", {
+            error: companiesError
+          });
+          return { notifyEvents };
         }
 
         const uniqueCompanyIds = [
           ...new Set(companiesWithTrainings?.map((c) => c.companyId) ?? [])
         ];
 
-        console.log(
-          `Found ${uniqueCompanyIds.length} companies with training assignments`
-        );
-
-        let totalNotifications = 0;
+        logger.info("Found companies with training assignments", {
+          count: uniqueCompanyIds.length
+        });
 
         for (const companyId of uniqueCompanyIds) {
           const { data: trainingStatus, error: trainingsError } =
@@ -172,27 +194,22 @@ export const weeklyFunction = inngest.createFunction(
             });
 
           if (trainingsError) {
-            console.error(
-              `Failed to fetch trainings for company ${companyId}: ${trainingsError.message}`
-            );
+            logger.error("Failed to fetch trainings for company", {
+              companyId,
+              error: trainingsError
+            });
             continue;
           }
 
-          // Filter to pending/overdue and dedupe by employee+assignment
-          const outstandingTrainings = (trainingStatus ?? []).filter(
-            (t) => t.status === "Pending" || t.status === "Overdue"
+          // Filter to outstanding and dedupe by employee+assignment
+          const outstandingTrainings = (trainingStatus ?? []).filter((t) =>
+            isReminderItemStatus(t.status)
           );
 
           // Group by trainingAssignmentId to send one notification per assignment per employee
           const assignmentsByEmployee = new Map<
             string,
-            {
-              trainingAssignmentId: string;
-              employeeId: string;
-              companyId: string;
-              trainingName: string;
-              status: string;
-            }
+            (typeof outstandingTrainings)[number]
           >();
 
           for (const training of outstandingTrainings) {
@@ -202,47 +219,95 @@ export const weeklyFunction = inngest.createFunction(
             }
           }
 
-          // Send notifications for each unique employee-assignment combination
-          for (const [, assignment] of assignmentsByEmployee) {
-            try {
-              await inngest.send({
-                name: "carbon/notify",
-                data: {
-                  companyId: assignment.companyId,
-                  documentId: assignment.trainingAssignmentId,
-                  event: NotificationEvent.TrainingAssignment,
-                  recipient: {
-                    type: "user" as const,
-                    userId: assignment.employeeId
-                  }
-                }
+          let assignments = [...assignmentsByEmployee.values()];
+          if (assignments.length === 0) continue;
+
+          // Delivery cap: drop (employee, assignment, period) tuples that
+          // already received MAX_NOTIFICATION_DELIVERIES successful emails.
+          // Counter documentIds carry the recurrence period ("ta_1:2026", set
+          // in notify.ts) so the budget resets each period; frequency "Once"
+          // has no period and stays capped permanently. fetchAllFromTable so
+          // capped rows past the 1000-row page aren't silently missed.
+          const { data: cappedDeliveries, error: cappedError } =
+            await fetchAllFromTable<{ userId: string; documentId: string }>(
+              serviceRole,
+              "notificationDelivery",
+              "userId, documentId",
+              (query) =>
+                query
+                  .eq("companyId", companyId)
+                  .eq("event", NotificationEvent.TrainingReminder)
+                  .gte("successCount", MAX_NOTIFICATION_DELIVERIES)
+            );
+
+          if (cappedError) {
+            // Fail open: a broken cap lookup shouldn't stop reminders.
+            logger.error("Failed to fetch delivery caps", {
+              companyId,
+              error: cappedError
+            });
+          } else if (cappedDeliveries && cappedDeliveries.length > 0) {
+            const capped = new Set(
+              cappedDeliveries.map((d) => `${d.userId}:${d.documentId}`)
+            );
+            const before = assignments.length;
+            assignments = assignments.filter((a) => {
+              const trackedId = a.currentPeriod
+                ? `${a.trainingAssignmentId}:${a.currentPeriod}`
+                : a.trainingAssignmentId;
+              return !capped.has(`${a.employeeId}:${trackedId}`);
+            });
+            if (assignments.length < before) {
+              logger.info("Acknowledged capped training reminders", {
+                companyId,
+                count: before - assignments.length,
+                cap: MAX_NOTIFICATION_DELIVERIES
               });
-              console.log(
-                `Sent reminder for training "${assignment.trainingName}" to employee ${assignment.employeeId}`
-              );
-              totalNotifications++;
-            } catch (err) {
-              console.error(
-                `Failed to send training reminder: ${
-                  err instanceof Error ? err.message : String(err)
-                }`
-              );
             }
+            if (assignments.length === 0) continue;
+          }
+
+          const byEmployee = new Map<string, typeof assignments>();
+          for (const assignment of assignments) {
+            const list = byEmployee.get(assignment.employeeId) ?? [];
+            list.push(assignment);
+            byEmployee.set(assignment.employeeId, list);
+          }
+
+          for (const [employeeId, employeeAssignments] of byEmployee) {
+            notifyEvents.push({
+              name: "carbon/notify" as const,
+              data: {
+                companyId,
+                documentIds: employeeAssignments.map(
+                  (assignment) => assignment.trainingAssignmentId
+                ),
+                event: NotificationEvent.TrainingReminder,
+                recipient: {
+                  type: "user" as const,
+                  userId: employeeId
+                }
+              }
+            });
           }
         }
-
-        console.log(
-          `Sent ${totalNotifications} training reminder notifications`
-        );
       } catch (error) {
-        console.error(
-          `Unexpected error in training notifications: ${
-            error instanceof Error ? error.message : String(error)
-          }`
-        );
+        logger.error("Unexpected error in training notifications", { error });
       }
 
-      console.log(`Weekly tasks completed: ${new Date().toISOString()}`);
+      logger.info("Built weekly training reminder digests", {
+        count: notifyEvents.length
+      });
+      return { notifyEvents };
     });
+
+    if (reminders.notifyEvents.length > 0) {
+      await step.sendEvent(
+        "send-training-reminder-notifications",
+        reminders.notifyEvents
+      );
+    }
+
+    console.log(`Weekly tasks completed: ${new Date().toISOString()}`);
   }
 );

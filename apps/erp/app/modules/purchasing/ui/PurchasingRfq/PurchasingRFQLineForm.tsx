@@ -204,7 +204,9 @@ const PurchasingRFQLineForm = ({
                 <Hidden name="order" />
                 <Hidden
                   name="inventoryUnitOfMeasureCode"
-                  value={itemData?.inventoryUom}
+                  value={
+                    itemData?.inventoryUom || itemData?.purchaseUom || "EA"
+                  }
                 />
                 <VStack>
                   <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">

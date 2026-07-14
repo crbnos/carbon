@@ -1,6 +1,7 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { companyHasPlan } from "@carbon/ee/plan.server";
 import { Ratelimit, redis } from "@carbon/kv";
+import { getLogger } from "@carbon/logger";
 import { supportedModelTypes } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { getJobByOperationId } from "~/modules/production";
@@ -36,6 +37,8 @@ const supportedFileTypes: Record<string, string> = {
   step: "application/step"
 };
 
+const logger = getLogger("erp", "share", "customer-portal");
+
 export let loader = async ({ params, request }: LoaderFunctionArgs) => {
   const { id } = params;
   if (!id) {
@@ -58,12 +61,12 @@ export let loader = async ({ params, request }: LoaderFunctionArgs) => {
   const customer = await getCustomerPortal(serviceRole, id);
 
   if (customer.error) {
-    console.error(customer.error);
+    logger.error("Customer not found", { error: customer.error });
     throw new Error("Customer not found");
   }
 
   if (!customer.data.customerId) {
-    console.error(customer.error);
+    logger.error("Customer not found", { error: customer.error });
     throw new Error("Customer not found");
   }
 
@@ -98,7 +101,7 @@ export let loader = async ({ params, request }: LoaderFunctionArgs) => {
   const job = await getJobByOperationId(serviceRole, operationId);
 
   if (job.error) {
-    console.error(job.error);
+    logger.error("Failed to get job by operation id", { error: job.error });
     return new Response(null, { status: 403 });
   }
 
@@ -125,7 +128,7 @@ export let loader = async ({ params, request }: LoaderFunctionArgs) => {
   async function downloadFile() {
     const result = await serviceRole.storage.from(bucket!).download(`${path}`);
     if (result.error) {
-      console.error(result.error);
+      logger.error("Failed to download file", { error: result.error });
       return null;
     }
     return result.data;

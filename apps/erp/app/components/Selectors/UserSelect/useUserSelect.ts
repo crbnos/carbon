@@ -1,3 +1,4 @@
+import { getLogger } from "@carbon/logger";
 import { useDisclosure, useOutsideClick } from "@carbon/react";
 import type { PostgrestError } from "@supabase/supabase-js";
 import debounce from "lodash/debounce";
@@ -44,6 +45,8 @@ const defaultProps = {
   // biome-ignore lint/suspicious/noEmptyBlockStatements: suppressed due to migration
   onCancel: () => {}
 };
+
+const logger = getLogger("erp", "user-select");
 
 export default function useUserSelect(props: UserSelectProps) {
   /* Inner Props */
@@ -220,7 +223,7 @@ export default function useUserSelect(props: UserSelectProps) {
               });
             }
           } catch (err) {
-            console.error("Failed to fetch preselected users", err);
+            logger.error("Failed to fetch preselected users", { error: err });
           }
         };
         fetchMissing();
@@ -322,7 +325,9 @@ export default function useUserSelect(props: UserSelectProps) {
               setFetchedMembers((prev) => ({ ...prev, [groupId]: users }));
             }
           })
-          .catch((err) => console.error("Failed to prefetch group", err))
+          .catch((err) =>
+            logger.error("Failed to prefetch group", { error: err })
+          )
           .finally(() => {
             setLoadingGroups((prev) => ({ ...prev, [groupId]: false }));
           });
@@ -544,7 +549,7 @@ export default function useUserSelect(props: UserSelectProps) {
             setFilteredOptionGroups([]);
           }
         } catch (e) {
-          console.error(e);
+          logger.error("Failed to search users", { error: e });
         }
       } else {
         setFilteredOptionGroups(makeFilteredOptionGroups(search));

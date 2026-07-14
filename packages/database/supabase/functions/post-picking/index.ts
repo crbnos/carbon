@@ -73,6 +73,21 @@ const payloadValidator = z.discriminatedUnion("type", [
     locationId: z.string(),
     userId: z.string(),
     companyId: z.string()
+  }),
+  // Return the un-consumed remainder of a tracked (batch/serial) allocation from
+  // the lineside shelf back to the warehouse source at job complete. Unlike
+  // unpickBatch (all-or-nothing, keyed to the original picked entity), this walks
+  // the picked entity's split lineage and moves whatever is still physically on
+  // hand at the lineside bin — because a partial consume splits the remainder
+  // into a NEW entity the picking line never references.
+  z.object({
+    type: z.literal("returnPickedRemainder"),
+    pickingListId: z.string(),
+    pickingListLineId: z.string(),
+    trackedEntityId: z.string(),
+    locationId: z.string(),
+    userId: z.string(),
+    companyId: z.string()
   })
 ]);
 
@@ -709,6 +724,151 @@ serve(async (req: Request) => {
         });
         break;
       }
+
+      case "returnPickedRemainder": {
+        const {
+          pickingListId,
+          pickingListLineId,
+          trackedEntityId,
+          locationId,
+          userId,
+          companyId
+        } = validatedPayload;
+
+        await db.transaction().execute(async (trx) => {
+          const line = await trx
+            .selectFrom("pickingListLine")
+            .where("id", "=", pickingListLineId)
+            .where("companyId", "=", companyId)
+            .selectAll()
+            .executeTakeFirstOrThrow();
+
+          const lineside = line.toStorageUnitId;
+          const source = line.storageUnitId;
+          // No lineside stage or no source to return to → nothing to do.
+          if (!lineside || !source) return;
+
+          // Walk the picked entity's split lineage (picked entity + every split
+          // descendant). A partial consume splits the un-consumed remainder into
+          // a new entity, so the leftover stock at lineside sits under a
+          // descendant, not the originally-picked entity.
+          const lineage = new Set<string>([trackedEntityId]);
+          let frontier: string[] = [trackedEntityId];
+          while (frontier.length > 0) {
+            const rows = await trx
+              .selectFrom("trackedActivityInput as tai")
+              .innerJoin(
+                "trackedActivityOutput as tao",
+                "tao.trackedActivityId",
+                "tai.trackedActivityId"
+              )
+              .where("tai.trackedEntityId", "in", frontier)
+              .where("tai.companyId", "=", companyId)
+              .whereRef("tao.trackedEntityId", "<>", "tai.trackedEntityId")
+              .select("tao.trackedEntityId as id")
+              .distinct()
+              .execute();
+            const next: string[] = [];
+            for (const r of rows) {
+              if (r.id && !lineage.has(r.id)) {
+                lineage.add(r.id);
+                next.push(r.id);
+              }
+            }
+            frontier = next;
+          }
+
+          // Transfer each lineage entity's remaining lineside on-hand back to
+          // the warehouse source bin.
+          const inserts: ItemLedgerInsert[] = [];
+          let totalReturned = 0;
+          for (const entityId of lineage) {
+            const onHandRow = await trx
+              .selectFrom("itemLedger")
+              .where("trackedEntityId", "=", entityId)
+              .where("storageUnitId", "=", lineside)
+              .where("itemId", "=", line.itemId)
+              .where("companyId", "=", companyId)
+              .select((eb) => eb.fn.sum<number>("quantity").as("qty"))
+              .executeTakeFirst();
+            const onHand = Number(onHandRow?.qty ?? 0);
+            if (onHand <= 0) continue;
+            inserts.push(
+              ...transferPair({
+                today,
+                itemId: line.itemId,
+                quantity: onHand,
+                locationId,
+                fromStorageUnitId: lineside,
+                toStorageUnitId: source,
+                documentId: pickingListId,
+                trackedEntityId: entityId,
+                userId,
+                companyId
+              })
+            );
+            totalReturned += onHand;
+          }
+
+          if (totalReturned <= 0) return;
+
+          await trx.insertInto("itemLedger").values(inserts).execute();
+
+          // Decrement the recorded picked qty by what was returned so the lot is
+          // re-allocatable and the picked/to-pick display reflects reality.
+          const allocation = await trx
+            .selectFrom("pickingListLineTrackedEntity")
+            .where("pickingListLineId", "=", pickingListLineId)
+            .where("trackedEntityId", "=", trackedEntityId)
+            .selectAll()
+            .executeTakeFirst();
+          if (allocation) {
+            const nextQuantity = Math.max(
+              0,
+              Number(allocation.quantity ?? 0) - totalReturned
+            );
+            const nextPicked = Math.max(
+              0,
+              Number(allocation.quantityPicked ?? 0) - totalReturned
+            );
+            if (nextPicked <= 0) {
+              await trx
+                .deleteFrom("pickingListLineTrackedEntity")
+                .where("pickingListLineId", "=", pickingListLineId)
+                .where("trackedEntityId", "=", trackedEntityId)
+                .execute();
+            } else {
+              await trx
+                .updateTable("pickingListLineTrackedEntity")
+                .set({ quantity: nextQuantity, quantityPicked: nextPicked })
+                .where("pickingListLineId", "=", pickingListLineId)
+                .where("trackedEntityId", "=", trackedEntityId)
+                .execute();
+            }
+          }
+
+          const nextLinePicked = Math.max(
+            0,
+            Number(line.quantityPicked ?? 0) - totalReturned
+          );
+          await trx
+            .updateTable("pickingListLine")
+            .set({
+              quantityPicked: nextLinePicked,
+              // Fully returned → the line is no longer picked; mirror unpick's
+              // reset so status doesn't linger on 'Picked' with 0 picked qty.
+              ...(nextLinePicked <= 0 ? { status: "Pending" as const } : {}),
+              updatedBy: userId,
+              updatedAt: new Date().toISOString()
+            })
+            .where("id", "=", pickingListLineId)
+            .where("companyId", "=", companyId)
+            .execute();
+
+          await restoreJobMaterialSource(trx, line, userId);
+        });
+        break;
+      }
     }
 
     return new Response(
@@ -729,6 +889,37 @@ serve(async (req: Request) => {
     );
   }
 });
+
+// A balanced Transfer ledger pair moving `quantity` of a tracked entity from one
+// storage unit to another (a pick, unpick, or return is all the same shape).
+function transferPair(args: {
+  today: string;
+  itemId: string;
+  quantity: number;
+  locationId: string;
+  fromStorageUnitId: string;
+  toStorageUnitId: string;
+  documentId: string;
+  trackedEntityId: string;
+  userId: string;
+  companyId: string;
+}): ItemLedgerInsert[] {
+  const base = {
+    postingDate: args.today,
+    itemId: args.itemId,
+    locationId: args.locationId,
+    entryType: "Transfer" as const,
+    documentType: "Direct Transfer" as const,
+    documentId: args.documentId,
+    trackedEntityId: args.trackedEntityId,
+    createdBy: args.userId,
+    companyId: args.companyId
+  };
+  return [
+    { ...base, quantity: -args.quantity, storageUnitId: args.fromStorageUnitId },
+    { ...base, quantity: args.quantity, storageUnitId: args.toStorageUnitId }
+  ];
+}
 
 // Point the job material at the lineside shelf so production (backflush/issue)
 // consumes from where the pick just moved the stock.

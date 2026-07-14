@@ -1,4 +1,7 @@
+import { getLogger } from "@carbon/logger";
 import { path } from "./path";
+
+const log = getLogger("auth");
 
 export function getCurrentPath(request: Request) {
   return new URL(request.url).pathname;
@@ -117,7 +120,7 @@ export function parseNumberFromUrlParam(
 export function parseVercelId(id: string | null) {
   const parts = id?.split(":").filter(Boolean);
   if (!parts) {
-    console.log('"x-vercel-id" header not present. Running on localhost?');
+    log.debug('"x-vercel-id" header not present. Running on localhost?');
     return { proxyRegion: "localhost", computeRegion: "localhost" };
   }
   const proxyRegion = parts[0];

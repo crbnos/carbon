@@ -16,6 +16,7 @@ export {
   nonConformanceRequiredActions,
   nonConformanceTypes,
   paymentTerms,
+  periodCloseTaskDefinitions,
   scrapReasons,
   sequences,
   unitOfMeasures,

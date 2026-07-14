@@ -90,7 +90,11 @@ const UnitOfMeasureForm = ({
               <Hidden name="id" />
               <Hidden name="type" value={type} />
               <VStack spacing={4}>
-                <Input name="name" label={t`Unit of Measure`} />
+                <Input
+                  name="name"
+                  label={t`Unit of Measure`}
+                  characterLimit={50}
+                />
                 <InputControlled
                   name="code"
                   label={t`Code`}
@@ -98,7 +102,8 @@ const UnitOfMeasureForm = ({
                   onChange={(value) =>
                     setCode(value.toUpperCase().replace(/\s/g, ""))
                   }
-                  helperText={t`Unique, uppercase, without spaces`}
+                  characterLimit={10}
+                  helperText={t`Unique, uppercase, without spaces (max 10 characters)`}
                 />
                 <CustomFormFields table="unitOfMeasure" />
               </VStack>

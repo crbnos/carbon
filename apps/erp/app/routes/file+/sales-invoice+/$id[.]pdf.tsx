@@ -6,6 +6,7 @@ import {
   templateShowsThumbnails,
   toDocumentTemplate
 } from "@carbon/documents/template";
+import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import { getPreferenceHeaders } from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
@@ -27,6 +28,8 @@ import {
   resolveSections
 } from "~/modules/settings";
 import { getBase64ImageFromSupabase } from "~/modules/shared";
+
+const logger = getLogger("erp", "sales-invoice", "pdf");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -63,27 +66,33 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   ]);
 
   if (company.error) {
-    console.error(company.error);
+    logger.error("Failed to load company", { error: company.error });
   }
 
   if (salesInvoice.error) {
-    console.error(salesInvoice.error);
+    logger.error("Failed to load salesInvoice", { error: salesInvoice.error });
   }
 
   if (salesInvoiceLines.error) {
-    console.error(salesInvoiceLines.error);
+    logger.error("Failed to load salesInvoiceLines", {
+      error: salesInvoiceLines.error
+    });
   }
 
   if (salesInvoiceShipment.error) {
-    console.error(salesInvoiceShipment.error);
+    logger.error("Failed to load salesInvoiceShipment", {
+      error: salesInvoiceShipment.error
+    });
   }
 
   if (salesInvoiceLocations.error) {
-    console.error(salesInvoiceLocations.error);
+    logger.error("Failed to load salesInvoiceLocations", {
+      error: salesInvoiceLocations.error
+    });
   }
 
   if (terms.error) {
-    console.error(terms.error);
+    logger.error("Failed to load terms", { error: terms.error });
   }
 
   if (
@@ -155,7 +164,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (linkedSalesOrderIds.length > 0) {
     const salesOrders = await getSalesOrdersByIds(client, linkedSalesOrderIds);
     if (salesOrders.error) {
-      console.error(salesOrders.error);
+      logger.error("Failed to load salesOrders", { error: salesOrders.error });
     }
     salesOrderIds = Array.from(
       new Set((salesOrders.data ?? []).map((order) => order.salesOrderId))

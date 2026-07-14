@@ -1,11 +1,14 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { getIssue, isIssueLocked } from "~/modules/quality";
 import { issueAssociationValidator } from "~/modules/quality/quality.models";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "issue-association");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -54,7 +57,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         });
 
       if (itemError) {
-        console.error(itemError);
+        logger.error("Failed to create association", { error: itemError });
         return {
           success: false,
           message: "Failed to create issue item"
@@ -73,7 +76,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         });
 
       if (customerError) {
-        console.error(customerError);
+        logger.error("Failed to create association", { error: customerError });
         return {
           success: false,
           message: "Failed to create issue customer"
@@ -91,7 +94,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         });
 
       if (supplierError) {
-        console.error(supplierError);
+        logger.error("Failed to create association", { error: supplierError });
         return {
           success: false,
           message: "Failed to create issue supplier"
@@ -105,7 +108,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         .eq("id", id)
         .single();
       if (job.error) {
-        console.error(job.error);
+        logger.error("Failed to create association", { error: job.error });
         return {
           success: false,
           message: "Failed to create issue job operation"
@@ -124,7 +127,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
         });
 
       if (jobOperation.error) {
-        console.error(jobOperation.error);
+        logger.error("Failed to create association", {
+          error: jobOperation.error
+        });
         return {
           success: false,
           message: "Failed to create issue job operation"
@@ -146,7 +151,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
         .eq("id", id)
         .single();
       if (purchaseOrder.error) {
-        console.error(purchaseOrder.error);
+        logger.error("Failed to create association", {
+          error: purchaseOrder.error
+        });
         return {
           success: false,
           message: "Failed to create issue purchase order line"
@@ -165,7 +172,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
         });
 
       if (purchaseOrderLine.error) {
-        console.error(purchaseOrderLine.error);
+        logger.error("Failed to create association", {
+          error: purchaseOrderLine.error
+        });
         return {
           success: false,
           message: "Failed to create issue purchase order line"
@@ -179,7 +188,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
         .eq("id", id)
         .single();
       if (salesOrder.error) {
-        console.error(salesOrder.error);
+        logger.error("Failed to create association", {
+          error: salesOrder.error
+        });
         return {
           success: false,
           message: "Failed to create issue sales order line"
@@ -198,7 +209,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
         });
 
       if (salesOrderLine.error) {
-        console.error(salesOrderLine.error);
+        logger.error("Failed to create association", {
+          error: salesOrderLine.error
+        });
         return {
           success: false,
           message: "Failed to create issue sales order line"
@@ -212,7 +225,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         .eq("id", id)
         .single();
       if (shipment.error) {
-        console.error(shipment.error);
+        logger.error("Failed to create association", { error: shipment.error });
         return {
           success: false,
           message: "Failed to create issue shipment line"
@@ -231,7 +244,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
         });
 
       if (shipmentLine.error) {
-        console.error(shipmentLine.error);
+        logger.error("Failed to create association", {
+          error: shipmentLine.error
+        });
         return {
           success: false,
           message: "Failed to create issue shipment line"
@@ -245,7 +260,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         .eq("id", id)
         .single();
       if (receipt.error) {
-        console.error(receipt.error);
+        logger.error("Failed to create association", { error: receipt.error });
         return {
           success: false,
           message: "Failed to create issue receipt line"
@@ -264,7 +279,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
         });
 
       if (receiptLine.error) {
-        console.error(receiptLine.error);
+        logger.error("Failed to create association", {
+          error: receiptLine.error
+        });
         return {
           success: false,
           message: "Failed to create issue receipt line"
@@ -297,7 +314,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
         .eq("id", id)
         .single();
       if (inspection.error) {
-        console.error(inspection.error);
+        logger.error("Failed to create association", {
+          error: inspection.error
+        });
         return {
           success: false,
           message: "Failed to create issue inbound inspection"
@@ -313,7 +332,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
           companyId: companyId
         });
       if (linkResult.error) {
-        console.error(linkResult.error);
+        logger.error("Failed to create association", {
+          error: linkResult.error
+        });
         return {
           success: false,
           message: "Failed to create issue inbound inspection"
@@ -473,7 +494,7 @@ async function autoLinkInboundInspectionContext(
       .select("id, quantity")
       .single();
     if (insert.error || !insert.data) {
-      console.error(insert.error);
+      logger.error("Failed to create association", { error: insert.error });
       return;
     }
     itemRowId = insert.data.id as string;
@@ -535,7 +556,7 @@ async function autoLinkInboundInspectionContext(
     .from("nonConformanceItemTrackedEntity")
     .insert(linkRows);
   if (linkInsert.error) {
-    console.error(linkInsert.error);
+    logger.error("Failed to create association", { error: linkInsert.error });
     return;
   }
 
@@ -577,7 +598,8 @@ async function insertMissingItem(
     companyId,
     quantity
   });
-  if (result.error) console.error(result.error);
+  if (result.error)
+    logger.error("Failed to create association", { error: result.error });
 }
 
 async function insertMissingTrackedEntities(
@@ -612,5 +634,6 @@ async function insertMissingTrackedEntities(
   if (rows.length === 0) return;
 
   const result = await client.from("nonConformanceTrackedEntity").insert(rows);
-  if (result.error) console.error(result.error);
+  if (result.error)
+    logger.error("Failed to create association", { error: result.error });
 }

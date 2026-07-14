@@ -27,7 +27,7 @@ pnpm --filter @carbon/lib typecheck   # tsgo --noEmit
 
 ## Key Patterns
 
-- **Inngest client**: `src/inngest/client.ts` — singleton `new Inngest({ id: "carbon" })`
+- **Inngest client**: `src/inngest/client.ts` — singleton `new Inngest({ id: "carbon", logger: createInngestLogger() })`. The `logger` (from `@carbon/logger/inngest`) routes every job's `ctx.logger` into LogTape under the `["carbon","jobs"]` category.
 - **Trigger helper**: `trigger(taskId, payload)` / `batchTrigger(taskId, items)` — typed dispatch
 - **Events**: `src/events.ts` — full `Events` type map (`carbon/notify`, `carbon/send-email`, `carbon/send-slack`, etc.)
 - **Exports**: `./events`, `./inngest`, `./trigger`, `./resend.server`, `./slack.server`, `./twenty.server`
@@ -37,3 +37,4 @@ pnpm --filter @carbon/lib typecheck   # tsgo --noEmit
 - `packages/notifications/` — `NotificationEvent` / `NotificationDestination` enums used in event payloads
 - `packages/jobs/` — Inngest function implementations that consume these events
 - `packages/env/` — `SLACK_BOT_TOKEN`, `RESEND_API_KEY`, and other env vars
+- `packages/logger/` — `createInngestLogger()` wired as the Inngest client's `logger`

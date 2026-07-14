@@ -1,3 +1,7 @@
+import { getLogger } from "@carbon/logger";
+
+const log = getLogger("react", "dom");
+
 export type Booleanish = boolean | "true" | "false";
 
 export const dataAttr = (condition: boolean | undefined) =>
@@ -34,6 +38,6 @@ export const copyToClipboard = async (
       .then((text) => window.navigator?.clipboard?.writeText(text))
       .then(callback);
   } else {
-    console.warn("Unable to copy to clipboard");
+    log.warning("Unable to copy to clipboard");
   }
 };

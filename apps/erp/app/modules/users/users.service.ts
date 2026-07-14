@@ -1,11 +1,14 @@
 import type { Database } from "@carbon/database";
 import { fetchAllFromTable } from "@carbon/database";
+import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { capitalize } from "~/utils/string";
 import { sanitize } from "~/utils/supabase";
 import type { CompanyPermission } from "./types";
+
+const logger = getLogger("erp", "users");
 
 export async function deleteEmployeeType(
   client: SupabaseClient<Database>,
@@ -35,7 +38,7 @@ export async function getCompaniesForUser(
     .eq("userId", userId);
 
   if (error) {
-    console.log(`Failed to get companies for user ${userId}`, error);
+    logger.error("Failed to get companies for user", { userId, error });
     return [];
   }
 

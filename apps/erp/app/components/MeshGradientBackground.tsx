@@ -60,13 +60,17 @@ export function getMeshBackgroundGradient(theme: string, mode: string) {
 // content as a sibling with `relative z-10` on top.
 export function MeshGradientBackground({
   className,
-  theme: themeOverride
+  theme: themeOverride,
+  darkOnly = false
 }: {
   className?: string;
   // Force a fixed palette (e.g. "blue") instead of the company theme. By default
   // the mesh follows the company's chosen theme — both the signup onboarding flow
   // and the Implementation Hub leave this unset so they match the company theme.
   theme?: string;
+  // Skip the gradient in light mode (the Implementation Hub renders on the plain
+  // page background there); the signup onboarding flow keeps it in both modes.
+  darkOnly?: boolean;
 }) {
   const mode = useMode();
   const serverTheme = useTheme();
@@ -86,6 +90,10 @@ export function MeshGradientBackground({
   }, []);
 
   const activeTheme = themeOverride ?? theme;
+
+  if (darkOnly && mode !== "dark") {
+    return null;
+  }
 
   return (
     <div

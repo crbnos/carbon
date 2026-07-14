@@ -2,6 +2,7 @@ import { useLingui } from "@lingui/react/macro";
 import {
   LuArrowDownUp,
   LuArrowRightLeft,
+  LuClipboardCheck,
   LuClipboardList,
   LuHandCoins,
   LuListChecks,
@@ -56,6 +57,12 @@ export default function useInventorySubmodules() {
           to: path.to.warehouseTransfers,
           icon: <LuArrowRightLeft />,
           table: "warehouseTransfer"
+        },
+        {
+          name: t`Inventory Count`,
+          to: path.to.inventoryCounts,
+          icon: <LuClipboardCheck />,
+          table: "inventoryCount"
         }
       ]
     },

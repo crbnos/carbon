@@ -8,11 +8,14 @@ import {
   isBlocked
 } from "@carbon/ee/storage-rules.server";
 import { trigger } from "@carbon/jobs";
+import { getLogger } from "@carbon/logger";
 import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { reconcileReceiptSerialEntities } from "~/modules/inventory";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "receiptid-post");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
@@ -190,7 +193,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
 
       if (leadTimeUpdate.error) {
-        console.error(
+        logger.error(
           "Failed to update lead time on receipt posting:",
           leadTimeUpdate.error
         );
@@ -223,7 +226,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         }
       }
     } catch (e) {
-      console.error("Auto-print failed:", e);
+      logger.error("Auto-print failed", { error: e });
     }
   } catch (thrown) {
     // Re-throw redirects — don't swallow them

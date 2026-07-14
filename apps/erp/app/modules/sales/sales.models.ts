@@ -741,8 +741,8 @@ export const salesOrderShipmentValidator = z
       return true;
     },
     {
-      message: "Drop shipment requires supplier and location",
-      path: ["dropShipment"] // path of error
+      message: "Drop shipment requires customer and location",
+      path: ["customerLocationId"]
     }
   );
 

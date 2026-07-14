@@ -1,5 +1,6 @@
 import { getCarbon } from "@carbon/auth";
 import { getOrRefreshAuthSession } from "@carbon/auth/session.server";
+import { getLogger } from "@carbon/logger";
 import { Button, Spinner } from "@carbon/react";
 import { useEffect } from "react";
 import {
@@ -20,6 +21,8 @@ import {
   getNextLesson,
   getPreviousLesson
 } from "~/utils/video";
+
+const log = getLogger("academy");
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const { id: lessonId } = params;
@@ -154,7 +157,7 @@ export default function LessonRoute() {
           onComplete(id);
         }
       } catch (error) {
-        console.error("Error parsing message data", error);
+        log.error("Error parsing message data", { error });
       }
     };
 

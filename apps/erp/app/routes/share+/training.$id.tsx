@@ -1,4 +1,5 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { JSONContent } from "@carbon/react";
 import {
   Alert,
@@ -68,8 +69,39 @@ type UserAnswer = {
   correct: boolean;
 };
 
+// The training-completion page is opened by the assigned employee themselves.
+// A normal employee lacks the `people_view` permission that RLS on
+// `trainingAssignment` requires, so a user-scoped read 404s for exactly the
+// people the assignment (and its reminder notification) targets. Read with the
+// service role instead, and authorize by confirming the signed-in user is a
+// recipient of the assignment — a member of one of its target groups (the same
+// expansion the notify job uses to decide who gets notified).
+async function getAuthorizedAssignment(
+  serviceRole: ReturnType<typeof getCarbonServiceRole>,
+  assignmentId: string,
+  userId: string
+) {
+  const assignment = await getTrainingAssignmentForCompletion(
+    serviceRole,
+    assignmentId
+  );
+  if (assignment.error || !assignment.data) {
+    throw new Response("Training assignment not found", { status: 404 });
+  }
+
+  const recipients = await serviceRole.rpc("users_for_groups", {
+    groups: assignment.data.groupIds ?? []
+  });
+  const recipientIds = (recipients.data ?? []) as string[];
+  if (!recipientIds.includes(userId)) {
+    throw new Response("Training assignment not found", { status: 404 });
+  }
+
+  return assignment.data;
+}
+
 export async function loader({ params, request }: LoaderFunctionArgs) {
-  const { client, userId, companyId } = await requirePermissions(request, {
+  const { userId, companyId } = await requirePermissions(request, {
     role: "employee"
   });
 
@@ -78,13 +110,10 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     throw new Response("Assignment ID is required", { status: 400 });
   }
 
-  const assignment = await getTrainingAssignmentForCompletion(client, id);
+  const serviceRole = getCarbonServiceRole();
+  const assignment = await getAuthorizedAssignment(serviceRole, id, userId);
 
-  if (assignment.error || !assignment.data) {
-    throw new Response("Training assignment not found", { status: 404 });
-  }
-
-  const training = assignment.data.training;
+  const training = assignment.training;
   if (!training || Array.isArray(training)) {
     throw new Response("Training not found", { status: 404 });
   }
@@ -99,7 +128,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   const sortedQuestions = questions.sort((a, b) => a.sortOrder - b.sortOrder);
 
   return {
-    assignment: assignment.data,
+    assignment,
     training: {
       id: training.id,
       name: training.name,
@@ -116,7 +145,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client, userId, companyId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     role: "employee"
   });
 
@@ -216,26 +245,26 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const passed = score >= PASSING_THRESHOLD;
 
   if (passed) {
-    const assignment = await getTrainingAssignmentForCompletion(client, id);
+    const serviceRole = getCarbonServiceRole();
+    const assignment = await getAuthorizedAssignment(serviceRole, id, userId);
 
-    if (assignment.error || !assignment.data) {
-      return data({ error: "Training assignment not found" }, { status: 404 });
-    }
-
-    const training = assignment.data.training;
+    const training = assignment.training;
     if (!training || Array.isArray(training)) {
       return data({ error: "Training not found" }, { status: 404 });
     }
 
-    const { data: period } = await client.rpc("get_current_training_period", {
-      frequency: training.frequency
-    });
+    const { data: period } = await serviceRole.rpc(
+      "get_current_training_period",
+      {
+        frequency: training.frequency
+      }
+    );
 
-    await insertTrainingCompletion(client, {
+    await insertTrainingCompletion(serviceRole, {
       trainingAssignmentId: id,
       employeeId: userId,
       period: period ?? null,
-      companyId,
+      companyId: assignment.companyId,
       completedBy: userId,
       createdBy: userId
     });

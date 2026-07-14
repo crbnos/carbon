@@ -87,6 +87,9 @@
       "suspicious": {
         "noCatchAssign": "warn",
         "noCommentText": "warn",
+        // Use @carbon/logging (getLogger) instead of console.*. Warn for now;
+        // ratchet to error per-area as call sites migrate.
+        "noConsole": "warn",
         "noControlCharactersInRegex": "warn",
         "noDuplicateCase": "warn",
         "noDuplicateClassMembers": "warn",
@@ -145,6 +148,11 @@
       ],
       "javascript": {
         "globals": []
+      },
+      "linter": {
+        "rules": {
+          "suspicious": { "noConsole": "off" }
+        }
       }
     }
   ],

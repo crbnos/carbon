@@ -23,8 +23,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!ruleId) throw notFound("ruleId not found");
 
   const pricingRule = await getPricingRule(client, ruleId);
+  if (pricingRule.error) {
+    throw redirect(
+      path.to.salesPricingRules,
+      await flash(
+        request,
+        error(pricingRule.error, "Failed to load pricing rule")
+      )
+    );
+  }
 
-  return { pricingRule: pricingRule?.data ?? null };
+  return { pricingRule: pricingRule.data };
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {

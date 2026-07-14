@@ -1,5 +1,6 @@
 import { JIRA_CLIENT_ID, JIRA_CLIENT_SECRET } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { getLogger } from "@carbon/logger";
 import { getJiraIntegration, updateJiraCredentials } from "./service";
 import type {
   CreateJiraIssueInput,
@@ -17,6 +18,8 @@ import type {
 
 const ATLASSIAN_AUTH_URL = "https://auth.atlassian.com";
 const ATLASSIAN_API_URL = "https://api.atlassian.com";
+
+const logger = getLogger("ee", "jira");
 
 /**
  * Exchange authorization code for access and refresh tokens.
@@ -45,11 +48,10 @@ export async function exchangeCodeForTokens(
     });
 
     if (!response.ok) {
-      console.error(
-        "Failed to exchange code for tokens:",
-        response.status,
-        await response.text()
-      );
+      logger.error("Failed to exchange code for tokens", {
+        status: response.status,
+        body: await response.text()
+      });
       return null;
     }
 
@@ -65,7 +67,7 @@ export async function exchangeCodeForTokens(
       expiresIn: data.expires_in
     };
   } catch (e) {
-    console.error("Error exchanging code for tokens:", e);
+    logger.error("Error exchanging code for tokens", { error: e });
     return null;
   }
 }
@@ -93,11 +95,10 @@ export async function refreshAccessToken(refreshToken: string): Promise<{
     });
 
     if (!response.ok) {
-      console.error(
-        "Failed to refresh token:",
-        response.status,
-        await response.text()
-      );
+      logger.error("Failed to refresh token", {
+        status: response.status,
+        body: await response.text()
+      });
       return null;
     }
 
@@ -113,7 +114,7 @@ export async function refreshAccessToken(refreshToken: string): Promise<{
       expiresIn: data.expires_in
     };
   } catch (e) {
-    console.error("Error refreshing token:", e);
+    logger.error("Error refreshing token", { error: e });
     return null;
   }
 }
@@ -137,17 +138,16 @@ export async function getAccessibleResources(
     );
 
     if (!response.ok) {
-      console.error(
-        "Failed to get accessible resources:",
-        response.status,
-        await response.text()
-      );
+      logger.error("Failed to get accessible resources", {
+        status: response.status,
+        body: await response.text()
+      });
       return [];
     }
 
     return (await response.json()) as JiraAccessibleResource[];
   } catch (e) {
-    console.error("Error getting accessible resources:", e);
+    logger.error("Error getting accessible resources", { error: e });
     return [];
   }
 }
@@ -259,7 +259,11 @@ export class JiraClient {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`Jira API error (${path}):`, response.status, errorText);
+      logger.error("Jira API error", {
+        path,
+        status: response.status,
+        body: errorText
+      });
       throw new Error(`Jira API error: ${response.status}`);
     }
 
@@ -294,7 +298,7 @@ export class JiraClient {
       );
       return response.values || [];
     } catch (e) {
-      console.error("Error listing Jira projects:", e);
+      logger.error("Error listing Jira projects", { error: e });
       return [];
     }
   }
@@ -313,7 +317,7 @@ export class JiraClient {
       );
       return (response.issueTypes || []).filter((t) => !t.subtask);
     } catch (e) {
-      console.error("Error getting Jira issue types:", e);
+      logger.error("Error getting Jira issue types", { error: e });
       return [];
     }
   }
@@ -331,7 +335,7 @@ export class JiraClient {
         `/user/assignable/search?project=${projectKey}&maxResults=50`
       );
     } catch (e) {
-      console.error("Error listing Jira project users:", e);
+      logger.error("Error listing Jira project users", { error: e });
       return [];
     }
   }
@@ -353,7 +357,7 @@ export class JiraClient {
       );
       return response.issues || [];
     } catch (e) {
-      console.error("Error searching Jira issues:", e);
+      logger.error("Error searching Jira issues", { error: e });
       return [];
     }
   }
@@ -371,7 +375,7 @@ export class JiraClient {
         `/issue/${issueIdOrKey}?fields=summary,description,status,assignee,duedate,issuetype,project,priority`
       );
     } catch (e) {
-      console.error("Error getting Jira issue:", e);
+      logger.error("Error getting Jira issue", { error: e });
       return null;
     }
   }
@@ -414,7 +418,7 @@ export class JiraClient {
       // Fetch the full issue details
       return this.getIssue(companyId, response.key);
     } catch (e) {
-      console.error("Error creating Jira issue:", e);
+      logger.error("Error creating Jira issue", { error: e });
       return null;
     }
   }
@@ -453,7 +457,7 @@ export class JiraClient {
         body: JSON.stringify({ fields })
       });
     } catch (e) {
-      console.error("Error updating Jira issue:", e);
+      logger.error("Error updating Jira issue", { error: e });
     }
   }
 
@@ -471,7 +475,7 @@ export class JiraClient {
       );
       return response.transitions || [];
     } catch (e) {
-      console.error("Error getting Jira transitions:", e);
+      logger.error("Error getting Jira transitions", { error: e });
       return [];
     }
   }
@@ -493,7 +497,7 @@ export class JiraClient {
       );
 
       if (!transition) {
-        console.warn(
+        logger.warn(
           `No transition found to ${targetCategory} for issue ${issueId}`
         );
         return false;
@@ -506,7 +510,7 @@ export class JiraClient {
 
       return true;
     } catch (e) {
-      console.error("Error transitioning Jira issue:", e);
+      logger.error("Error transitioning Jira issue", { error: e });
       return false;
     }
   }
@@ -540,7 +544,7 @@ export class JiraClient {
         }
       );
     } catch (e) {
-      console.error("Error creating Jira remote link:", e);
+      logger.error("Error creating Jira remote link", { error: e });
       return null;
     }
   }
@@ -558,7 +562,7 @@ export class JiraClient {
         `/issue/${issueId}/remotelink`
       );
     } catch (e) {
-      console.error("Error getting Jira remote links:", e);
+      logger.error("Error getting Jira remote links", { error: e });
       return [];
     }
   }
@@ -579,7 +583,7 @@ export class JiraClient {
       );
       return true;
     } catch (e) {
-      console.error("Error deleting Jira remote link:", e);
+      logger.error("Error deleting Jira remote link", { error: e });
       return false;
     }
   }
@@ -598,7 +602,7 @@ export class JiraClient {
       );
       return users.length > 0 ? (users[0] ?? null) : null;
     } catch (e) {
-      console.error("Error finding Jira user:", e);
+      logger.error("Error finding Jira user", { error: e });
       return null;
     }
   }

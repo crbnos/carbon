@@ -1,5 +1,6 @@
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable } from "@carbon/database";
+import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import type { TrackedEntityAttributes } from "@carbon/utils";
 import { getLocalTimeZone, now, today } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
@@ -15,6 +16,7 @@ import type {
   batchPropertyOrderValidator,
   batchPropertyValidator,
   inventoryAdjustmentValidator,
+  inventoryCountLineValidator,
   kanbanValidator,
   pickingListLineValidator,
   pickingListValidator,
@@ -1757,6 +1759,343 @@ export async function insertManualInventoryAdjustment(
   }
 
   return client.from("itemLedger").insert([data]).select("*").single();
+}
+
+// ===========================================================================
+// Inventory Count / Cycle Count
+// ===========================================================================
+
+export async function getInventoryCounts(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("inventoryCount")
+    .select("*", { count: "exact" })
+    .eq("companyId", companyId);
+
+  if (args.search) {
+    query = query.ilike("inventoryCountId", `%${args.search}%`);
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "inventoryCountId", ascending: false }
+  ]);
+  return query;
+}
+
+export async function getInventoryCount(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("inventoryCount")
+    .select("*")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .single();
+}
+
+export async function getInventoryCountLines(
+  client: SupabaseClient<Database>,
+  inventoryCountId: string,
+  companyId: string,
+  args: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("inventoryCountLine")
+    .select(
+      "*, item!inner(name, readableIdWithRevision, type, unitOfMeasureCode, thumbnailPath)",
+      {
+        count: "exact"
+      }
+    )
+    .eq("inventoryCountId", inventoryCountId)
+    .eq("companyId", companyId);
+
+  if (args.search) {
+    // Strip characters that are structural in a PostgREST `.or(...)` filter so
+    // the search value can't alter the filter shape.
+    const search = args.search.replace(/[,()\\]/g, " ");
+    // Search the item's identity (part number / name); the line's own readableId
+    // is only the batch/serial and is null for most rows.
+    query = query.or(
+      `name.ilike.%${search}%,readableIdWithRevision.ilike.%${search}%`,
+      { foreignTable: "item" }
+    );
+  }
+
+  // Snapshot lines all share one insert timestamp, so order by the item's part
+  // number for a readable count sheet and fall back to the line id for a stable,
+  // deterministic order.
+  query = setGenericQueryFilters(query, args, [
+    { column: "readableIdWithRevision", ascending: true, foreignTable: "item" },
+    { column: "id", ascending: true }
+  ]);
+  return query;
+}
+
+// Aggregate counts for the confirm dialog. Computed server-side so the warnings
+// stay accurate regardless of which page of lines is currently loaded.
+export async function getInventoryCountLineSummary(
+  client: SupabaseClient<Database>,
+  inventoryCountId: string,
+  companyId: string
+) {
+  const base = () =>
+    client
+      .from("inventoryCountLine")
+      .select("id", { count: "exact", head: true })
+      .eq("inventoryCountId", inventoryCountId)
+      .eq("companyId", companyId);
+
+  const [uncounted, variances] = await Promise.all([
+    base().is("countedQuantity", null),
+    base().not("countedQuantity", "is", null).not("variance", "eq", 0)
+  ]);
+
+  return {
+    uncounted: uncounted.count ?? 0,
+    variances: variances.count ?? 0
+  };
+}
+
+// Counts are created once and never edited as a header (only their lines and
+// status change), so this is insert-only — no upsert/update branch.
+export async function insertInventoryCount(
+  client: SupabaseClient<Database>,
+  inventoryCount: {
+    inventoryCountId: string;
+    locationId: string;
+    isBlind: boolean;
+    notes?: string | null;
+    scope?: Json;
+    companyId: string;
+    createdBy: string;
+    customFields?: Json;
+  }
+) {
+  return client
+    .from("inventoryCount")
+    .insert([inventoryCount])
+    .select("id")
+    .single();
+}
+
+export async function deleteInventoryCount(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("inventoryCount")
+    .delete()
+    .eq("id", id)
+    .eq("companyId", companyId);
+}
+
+// Snapshot the current on-hand into count lines: one line per
+// (item, storage unit, tracked entity) bucket that has any ledger history in
+// scope — positive, negative, or net-zero — so the counter can verify expected-
+// empty bins and correct discrepancies. On-hand is summed from `itemLedger`
+// (status-aware: excludes Rejected, matching `get_inventory_quantities`).
+// Idempotent: safe to re-run to re-snapshot while the count is Draft.
+export async function generateInventoryCountLines(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    inventoryCountId: string;
+    companyId: string;
+    locationId: string;
+    createdBy: string;
+    storageUnitIds?: string[];
+    itemType?: string;
+  }
+) {
+  const {
+    inventoryCountId,
+    companyId,
+    locationId,
+    createdBy,
+    storageUnitIds,
+    itemType
+  } = args;
+
+  return db.transaction().execute(async (trx) => {
+    let aggregate = trx
+      .selectFrom("itemLedger")
+      .innerJoin("item", "item.id", "itemLedger.itemId")
+      .select([
+        "itemLedger.itemId as itemId",
+        "itemLedger.storageUnitId as storageUnitId",
+        "itemLedger.trackedEntityId as trackedEntityId"
+      ])
+      .select((eb) => eb.fn.sum<number>("itemLedger.quantity").as("quantity"))
+      .where("itemLedger.companyId", "=", companyId)
+      .where("itemLedger.locationId", "=", locationId)
+      // Status-aware on-hand: exclude Rejected stock so `systemQuantity` matches
+      // the `get_inventory_quantities` definition of quantityOnHand (which is
+      // `SUM(quantity) WHERE trackedEntityStatus IS NULL OR != 'Rejected'`) used
+      // everywhere else in the app. Non-tracked rows have a NULL status.
+      .where((eb) =>
+        eb.or([
+          eb("itemLedger.trackedEntityStatus", "is", null),
+          eb("itemLedger.trackedEntityStatus", "!=", "Rejected")
+        ])
+      )
+      .groupBy([
+        "itemLedger.itemId",
+        "itemLedger.storageUnitId",
+        "itemLedger.trackedEntityId"
+      ]);
+    // Drop blank entries — an unselected storage-unit field submits [""], which
+    // would otherwise filter to `storageUnitId IN ('')` and match no stock.
+    const scopedStorageUnitIds = storageUnitIds?.filter(Boolean) ?? [];
+    if (scopedStorageUnitIds.length > 0) {
+      aggregate = aggregate.where(
+        "itemLedger.storageUnitId",
+        "in",
+        scopedStorageUnitIds
+      );
+    }
+
+    if (itemType) {
+      aggregate = aggregate.where(
+        "item.type",
+        "=",
+        itemType as Database["public"]["Enums"]["itemType"]
+      );
+    }
+
+    const buckets = await aggregate.execute();
+
+    // Resolve denormalized tracked-entity labels for the snapshot lines.
+    const trackedEntityIds = buckets
+      .map((b) => b.trackedEntityId)
+      .filter((id): id is string => Boolean(id));
+
+    const trackedEntities = trackedEntityIds.length
+      ? await trx
+          .selectFrom("trackedEntity")
+          .select(["id", "readableId"])
+          .where("id", "in", trackedEntityIds)
+          .where("companyId", "=", companyId)
+          .execute()
+      : [];
+
+    const readableIdByEntity = new Map(
+      trackedEntities.map((te) => [te.id, te.readableId])
+    );
+
+    // Regenerate from scratch (only valid while Draft).
+    await trx
+      .deleteFrom("inventoryCountLine")
+      .where("inventoryCountId", "=", inventoryCountId)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    if (buckets.length > 0) {
+      await trx
+        .insertInto("inventoryCountLine")
+        .values(
+          buckets.map((bucket) => ({
+            inventoryCountId,
+            companyId,
+            itemId: bucket.itemId,
+            locationId,
+            storageUnitId: bucket.storageUnitId,
+            trackedEntityId: bucket.trackedEntityId,
+            readableId: bucket.trackedEntityId
+              ? (readableIdByEntity.get(bucket.trackedEntityId) ?? null)
+              : null,
+            systemQuantity: Number(bucket.quantity ?? 0),
+            createdBy
+          }))
+        )
+        .execute();
+    }
+
+    await trx
+      .updateTable("inventoryCount")
+      .set({ snapshotAt: new Date().toISOString() })
+      .where("id", "=", inventoryCountId)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    return buckets.length;
+  });
+}
+
+// Persist a single line's counted quantity. Uses Kysely so the Draft-only guard
+// is part of the same statement: the EXISTS subquery checks the parent count is
+// still Draft *atomically* with the write, closing the TOCTOU window a separate
+// read-then-update would leave open (a concurrent Confirm can't slip in between).
+// Returns the updated row id, or undefined when the line doesn't exist or the
+// count is no longer Draft. Kysely bypasses RLS — authorize at the route first.
+export async function updateInventoryCountLine(
+  db: Kysely<KyselyDatabase>,
+  args: z.infer<typeof inventoryCountLineValidator> & {
+    companyId: string;
+    countedBy: string;
+  }
+) {
+  const { id, countedQuantity, companyId, countedBy } = args;
+  const now = new Date().toISOString();
+  // Clearing a count (null) un-counts the line, so the count audit fields are
+  // cleared too; only an actual count stamps countedBy/countedAt.
+  const isCounted = countedQuantity !== undefined && countedQuantity !== null;
+  return db
+    .updateTable("inventoryCountLine")
+    .set({
+      countedQuantity: countedQuantity ?? null,
+      countedBy: isCounted ? countedBy : null,
+      countedAt: isCounted ? now : null,
+      updatedBy: countedBy,
+      updatedAt: now
+    })
+    .where("id", "=", id)
+    .where("companyId", "=", companyId)
+    .where((eb) =>
+      eb.exists(
+        eb
+          .selectFrom("inventoryCount")
+          .select("inventoryCount.id")
+          .whereRef(
+            "inventoryCount.id",
+            "=",
+            "inventoryCountLine.inventoryCountId"
+          )
+          .where("inventoryCount.companyId", "=", companyId)
+          .where("inventoryCount.status", "=", "Draft")
+      )
+    )
+    .returning("id")
+    .executeTakeFirst();
+}
+
+export async function updateInventoryCountStatus(
+  client: SupabaseClient<Database>,
+  args: {
+    id: string;
+    companyId: string;
+    status: Database["public"]["Enums"]["inventoryCountStatus"];
+    updatedBy: string;
+    // When set, the transition only applies if the row is still in this status.
+    // The `.eq("status", expectedStatus)` makes the read-then-write atomic, so a
+    // concurrent transition can't be clobbered (0 rows matched → `.single()`
+    // errors and the caller surfaces a failure).
+    expectedStatus?: Database["public"]["Enums"]["inventoryCountStatus"];
+  }
+) {
+  const { id, companyId, status, updatedBy, expectedStatus } = args;
+  let query = client
+    .from("inventoryCount")
+    .update({ status, updatedBy, updatedAt: new Date().toISOString() })
+    .eq("id", id)
+    .eq("companyId", companyId);
+  if (expectedStatus) query = query.eq("status", expectedStatus);
+  return query.select("id").single();
 }
 
 export async function updateBatchPropertyOrder(

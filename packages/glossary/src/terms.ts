@@ -546,6 +546,10 @@ export const terms = {
     term: msg`Labor & Machine Absorption (default)`,
     definition: msg`GL account credited when labor or machine cost is absorbed into a production job.`
   },
+  "account-default-overhead-absorption": {
+    term: msg`Overhead Absorption (default)`,
+    definition: msg`GL account credited when manufacturing overhead is absorbed into a production job.`
+  },
   "account-default-purchase-price-variance": {
     term: msg`Purchase Price Variance (default)`,
     definition: msg`GL account that captures the difference between standard cost and actual purchase cost.`
@@ -1284,6 +1288,10 @@ export const terms = {
     term: msg`Version`,
     definition: msg`The version stamp for this procedure; new versions create a copy that supersedes the previous one without deleting it.`
   },
+  "procedure-status": {
+    term: msg`Status`,
+    definition: msg`Draft is editable; Active is in use and requires a new version to change; Archived is retired.`
+  },
 
   // ── Purchasing: Supplier (SupplierForm, SupplierPaymentForm, SupplierShippingForm) ──
   "supplier-status": {
@@ -1503,6 +1511,10 @@ export const terms = {
   "pricing-rule-quantity-range": {
     term: msg`Quantity Range`,
     definition: msg`The quantity range over which this rule applies; orders outside the range fall through to the next rule.`
+  },
+  "pricing-rule-priority": {
+    term: msg`Priority`,
+    definition: msg`Order rules are evaluated in — for discounts only the highest-priority match applies (no stacking); markups all apply and compound in priority order.`
   },
 
   // ── Sales: Quote header & shipment (QuoteForm, QuoteShipmentForm) ───────

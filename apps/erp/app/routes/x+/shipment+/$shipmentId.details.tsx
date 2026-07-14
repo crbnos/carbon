@@ -3,6 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect, useParams } from "react-router";
@@ -21,6 +22,8 @@ import {
 import type { Note } from "~/modules/shared";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "shipment", "details");
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -71,7 +74,9 @@ export async function action({ request }: ActionFunctionArgs) {
           }
         });
         if (!salesOrderShipment.data || salesOrderShipment.error) {
-          console.error(salesOrderShipment.error);
+          logger.error("Failed to create shipment from source document", {
+            error: salesOrderShipment.error
+          });
           throw redirect(
             path.to.shipment(id),
             await flash(
@@ -95,7 +100,9 @@ export async function action({ request }: ActionFunctionArgs) {
           }
         });
         if (!purchaseOrderShipment.data || purchaseOrderShipment.error) {
-          console.error(purchaseOrderShipment.error);
+          logger.error("Failed to create shipment from source document", {
+            error: purchaseOrderShipment.error
+          });
           throw redirect(
             path.to.shipment(id),
             await flash(
@@ -121,7 +128,9 @@ export async function action({ request }: ActionFunctionArgs) {
           !warehouseTransferShipment.data ||
           warehouseTransferShipment.error
         ) {
-          console.error(warehouseTransferShipment.error);
+          logger.error("Failed to create shipment from source document", {
+            error: warehouseTransferShipment.error
+          });
           throw redirect(
             path.to.shipment(id),
             await flash(

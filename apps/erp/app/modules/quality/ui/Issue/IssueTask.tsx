@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import {
   BarProgress,
@@ -67,6 +68,8 @@ import { useSuppliers } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
 import { JiraIssueDialog } from "./Jira/IssueDialog";
 import { LinearIssueDialog } from "./Linear/IssueDialog";
+
+const logger = getLogger("erp", "issuetask");
 
 export function TaskProgress({
   tasks,
@@ -516,7 +519,7 @@ function useTaskNotes({
           });
         } catch (e) {
           // Silently fail Linear sync - not critical
-          console.error("Failed to sync notes to Linear:", e);
+          logger.error("Failed to sync notes to Linear", { error: e });
         }
       }
 
@@ -533,7 +536,7 @@ function useTaskNotes({
           });
         } catch (e) {
           // Silently fail Jira sync - not critical
-          console.error("Failed to sync notes to Jira:", e);
+          logger.error("Failed to sync notes to Jira", { error: e });
         }
       }
     },

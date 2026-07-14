@@ -1,5 +1,6 @@
 import { getUser } from "@carbon/auth";
 import type { Database } from "@carbon/database";
+import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { TiptapDocument } from "../../linear/lib/index.server";
 import {
@@ -11,6 +12,7 @@ import {
 import type { NotificationEvent, NotificationService } from "../types";
 
 const linear = getLinearClient();
+const logger = getLogger("ee", "notifications", "linear");
 
 /**
  * Linear Notification Service
@@ -109,7 +111,7 @@ export class LinearNotificationService implements NotificationService {
             description
           });
         } catch (e) {
-          console.error("Failed to sync notes to Linear:", e);
+          logger.error("Failed to sync notes to Linear", { error: e });
         }
         break;
       }

@@ -8,6 +8,11 @@ import { toDocumentTemplate } from "@carbon/documents/template";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
+import type { SuggestedAllocationLot } from "./allocation";
+import { greedyFillAllocation, sortLotsByPickMethod } from "./allocation";
+
+export type { SuggestedAllocationLot };
+export { greedyFillAllocation, sortLotsByPickMethod };
 
 /**
  * Load a stored document template as a `DocumentTemplate | null` to pass to a
@@ -166,6 +171,7 @@ export async function getAvailableTrackedEntities(
     excludeLineside?: boolean;
     excludeAllocated?: boolean;
     excludeLineId?: string | null;
+    sortMethod?: Database["public"]["Enums"]["pickMethodSortMethod"];
   }
 ) {
   return client.rpc("get_available_tracked_entities", {
@@ -174,7 +180,8 @@ export async function getAvailableTrackedEntities(
     p_location_id: args.locationId,
     p_exclude_lineside: args.excludeLineside ?? false,
     p_exclude_allocated: args.excludeAllocated ?? false,
-    p_exclude_line_id: args.excludeLineId ?? undefined
+    p_exclude_line_id: args.excludeLineId ?? undefined,
+    p_sort_method: args.sortMethod ?? undefined
   });
 }
 
@@ -274,6 +281,59 @@ export async function getPickingListRecommendations(
   }
 
   return recommendations;
+}
+
+/**
+ * On-the-fly batch/lot suggestion for issuing a single tracked material when no
+ * picking list has allocated it — the same allocation the picking list would make,
+ * computed per material. Sources the ordered, allocation-netted, warehouse-only
+ * pool from `get_available_tracked_entities` honoring the item's `pickMethod`
+ * sort, then greedily fills `quantity` across lots. Returns [] for non-tracked
+ * items, zero/negative quantity, or when nothing is available.
+ */
+export async function getSuggestedAllocationForMaterial(
+  client: SupabaseClient<Database>,
+  args: {
+    itemId: string;
+    companyId: string;
+    locationId: string;
+    quantity: number;
+  }
+): Promise<SuggestedAllocationLot[]> {
+  if (args.quantity <= 0) return [];
+
+  const sortMethod = await getPickOrder(client, {
+    itemId: args.itemId,
+    locationId: args.locationId,
+    companyId: args.companyId
+  });
+
+  const { data, error } = await getAvailableTrackedEntities(client, {
+    itemId: args.itemId,
+    companyId: args.companyId,
+    locationId: args.locationId,
+    excludeLineside: true,
+    excludeAllocated: true,
+    sortMethod
+  });
+  if (error || !data) return [];
+
+  // Sort in the app: the RPC's internal ORDER BY is not guaranteed through
+  // PostgREST (SQL-function inlining), so ordering is authoritative here.
+  const ordered = sortLotsByPickMethod(
+    data.map((row) => ({
+      trackedEntityId: row.trackedEntityId,
+      readableId: row.readableId,
+      availableQuantity: Number(row.availableQuantity ?? 0),
+      expirationDate: row.expirationDate,
+      createdAt: row.createdAt,
+      storageUnitId: row.storageUnitId,
+      storageUnitName: row.storageUnitName
+    })),
+    sortMethod
+  );
+
+  return greedyFillAllocation(ordered, args.quantity);
 }
 
 export type JobMaterialPickedQuantity = {

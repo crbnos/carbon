@@ -6,6 +6,7 @@
     "@carbon/env": "workspace:*",
     "@carbon/kv": "workspace:*",
     "@carbon/lib": "workspace:*",
+    "@carbon/logger": "workspace:*",
     "@carbon/utils": "workspace:*",
     "@supabase/supabase-js": "catalog:",
     "stripe": "18.5.0"

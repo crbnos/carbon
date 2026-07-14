@@ -1,6 +1,6 @@
 ---
 name: grill
-description: Interview the user relentlessly, one question at a time, to stress-test a plan, spec, or design until every open decision is resolved — recommended answer per question, answers cross-checked against the codebase and the @carbon/glossary domain terms, resolutions written back to the artifact as they land. Use when the user says "grill me", wants to stress-test a design or plan, or a spec's Open Questions need resolving (spec-writing Step 7 invokes this). Do not use to author the artifact itself — use /spec-writing for specs, /plan for implementation plans.
+description: Interview the user relentlessly, one question at a time, to stress-test a plan, spec, or design until every open decision is resolved — recommended answer per question, answers cross-checked against the codebase and the @carbon/glossary domain terms, resolutions written back to the artifact as they land. Use when the user says "grill me", wants to stress-test a design or plan, or a spec-in-design's open questions need resolving (spec-writing Step 5 invokes this BEFORE the spec is written). SUPERVISED ONLY — never invoke from an automated loop (conductor, headless/outer-loop runs); autonomous flows use spec-writing's autonomous mode instead. Do not use to author the artifact itself — use /spec-writing for specs, /plan for implementation plans.
 ---
 
 # grill — stress-test a design by interviewing its author
@@ -10,6 +10,12 @@ open decision resolved with the human one branch at a time, each resolution
 written to its canonical home, and every contradiction between the user's
 answers and the codebase surfaced along the way.
 
+**Supervised only.** This skill exists to interview a human; there is no
+autonomous variant. Inside an automated loop (conductor, headless/outer-loop
+runs) do NOT invoke it — spec-writing's autonomous mode (recommendation-based
+resolutions recorded as `**Autonomous:**`, Ask-First territory → BLOCKED) is
+the substitute.
+
 **Announce at start:** "Using the grill skill — stress-testing {target}."
 
 ## Step 1: Identify the target and its write destination
@@ -17,6 +23,7 @@ answers and the codebase surfaced along the way.
 | Grilling | Questions come from | Resolutions written to |
 |----------|--------------------|------------------------|
 | A spec (`.ai/specs/…`) | its Open Questions section, plus anything fuzzy in Design Decisions | inline in the spec: `- [x] {Question} — **Answer:** {decision and rationale}`, plus a changelog entry when done |
+| A spec **in design** (spec-writing Step 5 — no file yet) | the question list assembled in spec-writing Step 4 | carried into the spec's Open Questions section (pre-checked, with answers) when the spec is written in Step 6 |
 | A plan (`.ai/plans/…`) | ambiguous or risky tasks, missing acceptance criteria | the affected task in the plan file |
 | An idea in chat (no artifact) | the whole decision tree of the idea | `.ai/runs/{YYYY-MM-DD}-grill-{slug}.md` — create it when the first decision lands |
 

@@ -1,8 +1,11 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { onShapeDataValidator } from "@carbon/ee/onshape";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+
+const logger = getLogger("erp", "integrations-onshape-sync");
 
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
@@ -52,7 +55,7 @@ export async function action({ request }: ActionFunctionArgs) {
     });
 
     if (sync.error) {
-      console.log("Failed to sync onshape data", sync.error);
+      logger.info("Failed to sync onshape data", { error: sync.error });
       return data(
         { success: false, message: "Failed to sync onshape data" },
         { status: 400 }
@@ -82,7 +85,7 @@ export async function action({ request }: ActionFunctionArgs) {
       companyId
     });
   } catch (error) {
-    console.error("Failed to sync onshape data", error);
+    logger.error("Failed to sync onshape data", { error: error });
     return data(
       { success: false, message: "Invalid rows data" },
       { status: 400 }

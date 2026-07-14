@@ -96,7 +96,7 @@ const SalesOrderForm = ({ initialValues }: SalesOrderFormProps) => {
       const { data, error } = await carbon
         ?.from("customer")
         .select(
-          "currencyCode, salesContactId, customerShipping!customerId(shippingCustomerLocationId)"
+          "currencyCode, salesContactId, customerShipping!customerShipping_customerId_fkey(shippingCustomerLocationId)"
         )
         .eq("id", newValue.value)
         .single();
@@ -108,7 +108,7 @@ const SalesOrderForm = ({ initialValues }: SalesOrderFormProps) => {
           currencyCode: data.currencyCode ?? undefined,
           customerContactId: data.salesContactId ?? undefined,
           customerLocationId:
-            data.customerShipping?.shippingCustomerLocationId ?? undefined
+            data.customerShipping?.[0]?.shippingCustomerLocationId ?? undefined
         }));
       }
     } else {

@@ -113,7 +113,6 @@ InlineDiff.displayName = "InlineDiff";
 // diff. Defense-in-depth — backend strips skipFields too, but legacy entries
 // or newly-added skipFields can slip through.
 function isSkippedDiffKey(key: string): boolean {
-  console.log(key, "KEY");
   const skip = auditConfig.skipFields as readonly string[];
   for (let i = 0; i < skip.length; i++) {
     const s = skip[i]!;
@@ -125,7 +124,6 @@ function isSkippedDiffKey(key: string): boolean {
 function visibleDiffEntries(
   diff: AuditDiff | null | undefined
 ): [string, AuditDiff[string]][] {
-  console.log(diff);
   if (!diff) return [];
   return Object.entries(diff).filter(([k]) => !isSkippedDiffKey(k));
 }

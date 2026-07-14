@@ -1,5 +1,6 @@
 import { CarbonEdition, getUser } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getLogger } from "@carbon/logger";
 import {
   Button,
   Card,
@@ -22,6 +23,8 @@ import type { ActionFunctionArgs } from "react-router";
 import { Form, redirect, useFetcher, useLoaderData } from "react-router";
 import { getCompany, getPlans } from "~/modules/settings";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "plan");
 
 function usePlans() {
   const { t } = useLingui();
@@ -140,7 +143,7 @@ export default function OnboardingPlan() {
     [locale]
   );
 
-  console.log({ companyId });
+  logger.info({ companyId });
   const fetcher = useFetcher<typeof action>();
 
   return (

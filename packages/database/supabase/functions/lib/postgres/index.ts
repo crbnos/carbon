@@ -41,7 +41,11 @@ const poolCache = new Map<number, Pool>();
 
 export function getPostgresConnectionPool(connections: number): Pool {
   const cached = poolCache.get(connections);
-  if (cached) return cached;
+  // An ended pool can never serve connections again ("Cannot use a pool after
+  // calling end on the pool") — evict it so callers get a live pool instead of
+  // a permanently broken process. `ending` is node-postgres only; on Deno it's
+  // undefined and the cached pool is always reused.
+  if (cached && !(cached as { ending?: boolean }).ending) return cached;
 
   const pool = createPostgresConnectionPool(connections);
   poolCache.set(connections, pool);
@@ -66,10 +70,22 @@ function createPostgresConnectionPool(connections: number): Pool {
       const connectionPoolerUrl = url.includes("supabase.co")
         ? url.replace("5432", "6543")
         : url;
-      return new Pool({
+      const pool = new Pool({
         connectionString: connectionPoolerUrl,
         max: connections,
+        // Fail fast instead of queueing forever when the DB/pooler is
+        // unreachable or the pool is saturated.
+        connectionTimeoutMillis: 10_000,
+        // Rotate connections so direct (non-Supavisor) connections can't rot
+        // through NAT/firewall idle limits.
+        maxLifetimeSeconds: 1800,
       });
+      // pg-pool purges the broken client before emitting 'error'; the listener
+      // exists because an unlistened EventEmitter 'error' crashes the process.
+      pool.on("error", (err) => {
+        console.error("postgres pool: idle client error", err);
+      });
+      return pool;
     }
 
     default:

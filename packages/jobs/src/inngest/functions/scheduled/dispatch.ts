@@ -1,7 +1,10 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
 import { getLocalTimeZone, now } from "@internationalized/date";
 import { inngest } from "../../client";
+
+const log = getLogger("jobs", "dispatch");
 
 // Day of week mapping (0 = Sunday, 1 = Monday, etc.)
 const dayOfWeekFields = [
@@ -60,7 +63,7 @@ async function isHoliday(companyId: string, date: Date): Promise<boolean> {
     .maybeSingle();
 
   if (error) {
-    console.error(`Error checking holiday for ${dateString}: ${error.message}`);
+    log.error("Error checking holiday", { date: dateString, error });
     return false;
   }
 
@@ -70,14 +73,14 @@ async function isHoliday(companyId: string, date: Date): Promise<boolean> {
 export const dispatchFunction = inngest.createFunction(
   { id: "dispatch", retries: 2 },
   { cron: "0 6 * * *" },
-  async ({ step }) => {
+  async ({ step, logger }) => {
     const serviceRole = getCarbonServiceRole();
 
     return await step.run("generate-maintenance-dispatches", async () => {
       const currentDateTime = now(getLocalTimeZone());
-      console.log(
-        `Starting maintenance dispatch generation: ${currentDateTime.toString()}`
-      );
+      logger.info("Starting maintenance dispatch generation", {
+        startedAt: currentDateTime.toString()
+      });
 
       try {
         // Get all companies with maintenanceGenerateInAdvance enabled
@@ -88,15 +91,15 @@ export const dispatchFunction = inngest.createFunction(
             .eq("maintenanceGenerateInAdvance", true);
 
         if (settingsError) {
-          console.error(
-            `Failed to fetch company settings: ${settingsError.message}`
-          );
+          logger.error("Failed to fetch company settings", {
+            error: settingsError
+          });
           return;
         }
 
-        console.log(
-          `Found ${companiesWithSettings?.length || 0} companies with auto-generation enabled`
-        );
+        logger.info("Found companies with auto-generation enabled", {
+          count: companiesWithSettings?.length || 0
+        });
 
         let totalDispatchesCreated = 0;
 
@@ -116,15 +119,17 @@ export const dispatchFunction = inngest.createFunction(
               );
 
           if (schedulesError) {
-            console.error(
-              `Failed to fetch schedules for company ${settings.id}: ${schedulesError.message}`
-            );
+            logger.error("Failed to fetch schedules for company", {
+              companyId: settings.id,
+              error: schedulesError
+            });
             continue;
           }
 
-          console.log(
-            `Company ${settings.id}: ${dueSchedules?.length || 0} schedules due`
-          );
+          logger.info("Schedules due for company", {
+            companyId: settings.id,
+            count: dueSchedules?.length || 0
+          });
 
           for (const schedule of dueSchedules ?? []) {
             try {
@@ -143,9 +148,10 @@ export const dispatchFunction = inngest.createFunction(
 
                 // For Daily schedules, check if this day of week is enabled
                 if (!isDayEnabledForSchedule(typedSchedule, targetDate)) {
-                  console.log(
-                    `Skipping schedule "${typedSchedule.name}" for ${targetDate.toISOString().split("T")[0]} - day of week not enabled`
-                  );
+                  logger.info("Skipping schedule - day of week not enabled", {
+                    schedule: typedSchedule.name,
+                    date: targetDate.toISOString().split("T")[0]
+                  });
                   // Advance to next day for daily schedules
                   if (typedSchedule.frequency === "Daily") {
                     currentNextDueAt = new Date(currentNextDueAt);
@@ -162,9 +168,10 @@ export const dispatchFunction = inngest.createFunction(
                     targetDate
                   );
                   if (isHolidayDate) {
-                    console.log(
-                      `Skipping schedule "${typedSchedule.name}" - ${targetDate.toISOString().split("T")[0]} is a holiday`
-                    );
+                    logger.info("Skipping schedule - holiday", {
+                      schedule: typedSchedule.name,
+                      date: targetDate.toISOString().split("T")[0]
+                    });
                     // Advance to next occurrence based on frequency
                     currentNextDueAt = new Date(currentNextDueAt);
                     switch (typedSchedule.frequency) {
@@ -206,9 +213,10 @@ export const dispatchFunction = inngest.createFunction(
                   });
 
                 if (sequenceError) {
-                  console.error(
-                    `Failed to get sequence for schedule ${schedule.id}: ${sequenceError.message}`
-                  );
+                  logger.error("Failed to get sequence for schedule", {
+                    scheduleId: schedule.id,
+                    error: sequenceError
+                  });
                   break;
                 }
 
@@ -234,9 +242,10 @@ export const dispatchFunction = inngest.createFunction(
                     .single();
 
                 if (dispatchError) {
-                  console.error(
-                    `Failed to create dispatch for schedule ${schedule.id}: ${dispatchError.message}`
-                  );
+                  logger.error("Failed to create dispatch for schedule", {
+                    scheduleId: schedule.id,
+                    error: dispatchError
+                  });
                   break;
                 }
 
@@ -268,9 +277,11 @@ export const dispatchFunction = inngest.createFunction(
                 });
 
                 totalDispatchesCreated++;
-                console.log(
-                  `Created dispatch ${sequenceData} for schedule "${schedule.name}" on ${targetDate.toISOString().split("T")[0]}`
-                );
+                logger.info("Created dispatch for schedule", {
+                  dispatchId: sequenceData,
+                  schedule: schedule.name,
+                  date: targetDate.toISOString().split("T")[0]
+                });
 
                 // Get employees assigned to this work center to notify them
                 const { data: workCenterEmployees } = await (serviceRole as any)
@@ -294,9 +305,10 @@ export const dispatchFunction = inngest.createFunction(
                       }
                     }
                   });
-                  console.log(
-                    `Notified ${userIds.length} work center employees about dispatch ${sequenceData}`
-                  );
+                  logger.info("Notified work center employees about dispatch", {
+                    count: userIds.length,
+                    dispatchId: sequenceData
+                  });
                 }
 
                 // Calculate next due date based on frequency
@@ -331,26 +343,21 @@ export const dispatchFunction = inngest.createFunction(
                 })
                 .eq("id", schedule.id);
             } catch (err) {
-              console.error(
-                `Error processing schedule ${schedule.id}: ${
-                  err instanceof Error ? err.message : String(err)
-                }`
-              );
+              logger.error("Error processing schedule", {
+                scheduleId: schedule.id,
+                error: err
+              });
             }
           }
         }
 
-        console.log(
-          `Maintenance dispatch generation completed: ${totalDispatchesCreated} dispatches created`
-        );
+        logger.info("Maintenance dispatch generation completed", {
+          dispatchesCreated: totalDispatchesCreated
+        });
 
         return { dispatchesCreated: totalDispatchesCreated };
       } catch (error) {
-        console.error(
-          `Unexpected error in maintenance generation: ${
-            error instanceof Error ? error.message : String(error)
-          }`
-        );
+        logger.error("Unexpected error in maintenance generation", { error });
         throw error;
       }
     });

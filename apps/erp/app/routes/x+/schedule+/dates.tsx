@@ -1,6 +1,7 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { getLogger } from "@carbon/logger";
 import {
   Button,
   ClientOnly,
@@ -59,6 +60,8 @@ import { getUserDefaults } from "~/modules/users/users.server";
 import { usePeople } from "~/stores";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "dates");
 
 export const handle: Handle = {
   breadcrumb: msg`Schedule`,
@@ -180,7 +183,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   ]);
 
   if (jobs.error) {
-    console.error(jobs.error);
+    logger.error(jobs.error);
     throw redirect(
       path.to.scheduleOperation,
       await flash(request, error(jobs.error, "Failed to fetch jobs"))
@@ -188,7 +191,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   if (unscheduledJobs.error) {
-    console.error(unscheduledJobs.error);
+    logger.error(unscheduledJobs.error);
     throw redirect(
       path.to.scheduleOperation,
       await flash(

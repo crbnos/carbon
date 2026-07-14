@@ -49,6 +49,16 @@ Rules for UI code in Carbon. These are laws, not suggestions. Follow them when w
 - ALWAYS use semantic status classes or component variants
 - Prefer component props (`variant="destructive"`) over color classes
 - Background colors: use card/surface components, not raw `bg-*` classes
+- NEVER use green/emerald **text** (`text-emerald-*`, `text-green-*`) OR
+  yellow/amber **text** (`text-yellow-*`, `text-amber-*`) as an inline status
+  indicator (e.g. a "Planned automatically" success note or a "low confidence"
+  caution note). Keep inline status understated (Vercel aesthetic): neutral
+  `text-muted-foreground`, with a `Lu*` icon (e.g. `LuCircleCheck`,
+  `LuTriangleAlert`) if affirmation/emphasis is needed, and let the wording
+  carry the meaning. This is about colored *prose*, not chips or icon glyphs —
+  `Status`/`Badge` status components (including `color="green"`/`"yellow"`),
+  status dots (`bg-green-500`), and severity **icon** colors are fine and
+  encouraged for status affordances.
 
 ## Typography Rules
 

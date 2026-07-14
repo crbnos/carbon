@@ -77,26 +77,34 @@ export class Ratelimit {
       }
     }
 
-    // Apply timeout
-    const response = this.limiter().limit(this.ctx, key, opts?.rate);
+    // Fail open on any Redis error — a cache outage must not block auth.
+    try {
+      const response = this.limiter().limit(this.ctx, key, opts?.rate);
 
-    if (this.timeout > 0) {
-      const timeoutPromise = new Promise<RatelimitResponse>((resolve) => {
-        setTimeout(() => {
-          resolve({
-            success: true,
-            limit: 0,
-            remaining: 0,
-            reset: 0,
-            pending: Promise.resolve()
-          });
-        }, this.timeout);
-      });
+      if (this.timeout > 0) {
+        const timeoutPromise = new Promise<RatelimitResponse>((resolve) => {
+          setTimeout(() => {
+            resolve(this.failOpen());
+          }, this.timeout);
+        });
 
-      return Promise.race([response, timeoutPromise]);
+        return await Promise.race([response, timeoutPromise]);
+      }
+
+      return await response;
+    } catch {
+      return this.failOpen();
     }
+  }
 
-    return response;
+  private failOpen(): RatelimitResponse {
+    return {
+      success: true,
+      limit: 0,
+      remaining: 0,
+      reset: 0,
+      pending: Promise.resolve()
+    };
   }
 
   /**
@@ -143,7 +151,12 @@ export class Ratelimit {
     identifier: string
   ): Promise<{ remaining: number; reset: number; limit: number }> {
     const key = this.getKey(identifier);
-    return this.limiter().getRemaining(this.ctx, key);
+    try {
+      return await this.limiter().getRemaining(this.ctx, key);
+    } catch {
+      // Redis down: report no known usage rather than throwing.
+      return { remaining: 0, reset: 0, limit: 0 };
+    }
   }
 
   /**
@@ -152,7 +165,11 @@ export class Ratelimit {
    */
   async resetUsedTokens(identifier: string): Promise<void> {
     const key = this.getKey(identifier);
-    return this.limiter().resetTokens(this.ctx, key);
+    try {
+      return await this.limiter().resetTokens(this.ctx, key);
+    } catch {
+      // Redis down: nothing to reset, don't throw.
+    }
   }
 
   private getKey(identifier: string): string {

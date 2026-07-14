@@ -2,7 +2,7 @@ import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
-import { data, redirect } from "react-router";
+import { redirect } from "react-router";
 import { deleteJob } from "~/modules/production";
 import { path } from "~/utils/path";
 
@@ -18,7 +18,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const jobDelete = await deleteJob(client, jobId);
 
   if (jobDelete.error) {
-    return data(
+    throw redirect(
       path.to.jobs,
       await flash(request, error(jobDelete.error, jobDelete.error.message))
     );

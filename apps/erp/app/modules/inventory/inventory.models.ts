@@ -123,6 +123,31 @@ export const trackedEntityExpiryValidator = z.object({
     .max(500)
 });
 
+// Header create/update. `storageUnitIds` and `itemType` are the optional scope
+// used at creation to generate the count lines; they are not stored columns of
+// their own (they live under the header's `scope` JSONB).
+export const inventoryCountValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  locationId: z.string().min(1, { message: "Location is required" }),
+  isBlind: zfd.checkbox(),
+  notes: zfd.text(z.string().optional()),
+  storageUnitIds: zfd.repeatableOfType(z.string()).optional(),
+  itemType: zfd.text(z.enum(itemTypes).optional())
+});
+
+// Per-line count entry. A blank `countedQuantity` (undefined) means "not counted"
+// and is skipped at post — only an explicit 0 zeroes stock. Counted quantities
+// are non-negative, which guarantees on-hand never goes negative.
+export const inventoryCountLineValidator = z.object({
+  id: z.string().min(1),
+  countedQuantity: zfd.numeric(
+    z
+      .number()
+      .min(0, { message: "Counted quantity cannot be negative" })
+      .optional()
+  )
+});
+
 export const inventoryAdjustmentValidator = z.object({
   itemId: z.string().min(1, { message: "Item ID is required" }),
   locationId: z.string().min(1, { message: "Location is required" }),

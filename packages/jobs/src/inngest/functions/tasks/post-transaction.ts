@@ -4,21 +4,21 @@ import { inngest } from "../../client";
 export const postTransactionFunction = inngest.createFunction(
   { id: "post-transactions", retries: 3 },
   { event: "carbon/post-transaction" },
-  async ({ event, step }) => {
+  async ({ event, step, logger }) => {
     const serviceRole = getCarbonServiceRole();
     const payload = event.data;
 
     const result = await step.run("post-transaction", async () => {
-      console.info(
-        `Post transaction ${payload.type} for ${payload.documentId}`
-      );
+      logger.info("Post transaction", {
+        type: payload.type,
+        documentId: payload.documentId
+      });
 
       let result: { success: boolean; message: string };
 
       switch (payload.type) {
         case "receipt":
-          console.info(`Posting receipt ${payload.documentId}`);
-          console.info(payload);
+          logger.info("Posting receipt", { payload });
           const postReceipt = await serviceRole.functions.invoke(
             "post-receipt",
             {
@@ -37,8 +37,7 @@ export const postTransactionFunction = inngest.createFunction(
 
           break;
         case "purchase-invoice":
-          console.info(`Posting purchase invoice ${payload.documentId}`);
-          console.info(payload);
+          logger.info("Posting purchase invoice", { payload });
           const postPurchaseInvoice = await serviceRole.functions.invoke(
             "post-purchase-invoice",
             {
@@ -68,9 +67,9 @@ export const postTransactionFunction = inngest.createFunction(
               companySettings.data.purchasePriceUpdateTiming ===
                 "Purchase Invoice Post"
             ) {
-              console.info(
-                `Updating pricing from invoice ${payload.documentId}`
-              );
+              logger.info("Updating pricing from invoice", {
+                documentId: payload.documentId
+              });
 
               const priceUpdate = await serviceRole.functions.invoke(
                 "update-purchased-prices",
@@ -93,8 +92,7 @@ export const postTransactionFunction = inngest.createFunction(
 
           break;
         case "shipment":
-          console.info(`Posting shipment ${payload.documentId}`);
-          console.info(payload);
+          logger.info("Posting shipment", { payload });
 
           const postShipment = await serviceRole.functions.invoke(
             "post-shipment",
@@ -122,11 +120,13 @@ export const postTransactionFunction = inngest.createFunction(
       }
 
       if (result.success) {
-        console.info(`Success ${payload.documentId}`);
+        logger.info("Success", { documentId: payload.documentId });
       } else {
-        console.error(
-          `Admin action ${payload.type} failed for ${payload.documentId}: ${result.message}`
-        );
+        logger.error("Admin action failed", {
+          type: payload.type,
+          documentId: payload.documentId,
+          message: result.message
+        });
       }
 
       return result;

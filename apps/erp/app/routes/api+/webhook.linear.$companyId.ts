@@ -1,8 +1,11 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { syncIssueFromLinearSchema, trigger } from "@carbon/jobs";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { getIntegration } from "../../modules/settings";
+
+const logger = getLogger("erp", "webhook-linear-companyid");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { companyId } = params;
@@ -26,10 +29,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const integration = await getIntegration(serviceRole, "linear", companyId);
 
   if (integration.error) {
-    console.error(
-      "Linear webhook: integration query failed",
-      integration.error
-    );
+    logger.error("Linear webhook: integration query failed", integration.error);
     return data(
       { success: false, error: "Integration query failed" },
       { status: 400 }
@@ -68,7 +68,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     await trigger("sync-issue-from-linear", parsed.data);
     return { success: true };
   } catch (err) {
-    console.error("Linear webhook: failed to trigger task", err);
+    logger.error("Linear webhook: failed to trigger task", { error: err });
     return data({ success: false }, { status: 500 });
   }
 }

@@ -4,6 +4,7 @@
     "@carbon/database": "workspace:*",
     "@carbon/env": "workspace:*",
     "@carbon/kv": "workspace:*",
+    "@carbon/logger": "workspace:*",
     "@carbon/notifications": "workspace:*",
     "@slack/web-api": "catalog:",
     "@supabase/supabase-js": "catalog:",

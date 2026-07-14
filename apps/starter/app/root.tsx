@@ -6,6 +6,7 @@ import {
   flashResultContext
 } from "@carbon/auth/middleware/flash.server";
 import { validator } from "@carbon/form";
+import { requestIdMiddleware } from "@carbon/logger/middleware.server";
 import { Button, Heading, Toaster, useMode } from "@carbon/react";
 import type { Theme } from "@carbon/utils";
 import { modeValidator, themes } from "@carbon/utils";
@@ -33,7 +34,7 @@ import NProgress from "~/styles/nprogress.css?url";
 import Tailwind from "~/styles/tailwind.css?url";
 import { getTheme } from "./services/theme.server";
 
-export const middleware = [flashMiddleware];
+export const middleware = [requestIdMiddleware, flashMiddleware];
 export const clientMiddleware = [flashClientMiddleware];
 
 export const links: LinksFunction = () => [
@@ -83,6 +84,8 @@ export const meta: MetaFunction = () => {
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const {
     CARBON_EDITION,
+    LOG_LEVEL,
+    NODE_ENV,
     POSTHOG_API_HOST,
     POSTHOG_PROJECT_PUBLIC_KEY,
     SUPABASE_URL,
@@ -93,6 +96,8 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     {
       env: {
         CARBON_EDITION,
+        LOG_LEVEL,
+        NODE_ENV,
         POSTHOG_API_HOST,
         POSTHOG_PROJECT_PUBLIC_KEY,
         SUPABASE_URL,
@@ -192,7 +197,7 @@ function Document({
         <Toaster position="bottom-right" visibleToasts={5} />
         <ScrollRestoration />
         <Scripts />
-        {!CONTROLLED_ENVIRONMENT && <Analytics />}
+        {!CONTROLLED_ENVIRONMENT && import.meta.env.PROD && <Analytics />}
       </body>
     </html>
   );

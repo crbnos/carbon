@@ -1,5 +1,8 @@
 import { getAppUrl, SLACK_BOT_TOKEN } from "@carbon/env";
+import { getLogger } from "@carbon/logger";
 import { WebClient } from "@slack/web-api";
+
+const log = getLogger("lib", "slack");
 
 interface SlackMessage {
   channel: string;
@@ -26,7 +29,7 @@ class SlackClient {
         blocks
       });
     } catch (error) {
-      console.error("Error sending Slack message:", error);
+      log.error("Error sending Slack message", { error });
     }
   }
 }

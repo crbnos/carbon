@@ -1,8 +1,11 @@
 import { VerificationEmail } from "@carbon/documents/email";
 import { redis } from "@carbon/kv";
 import { sendEmail } from "@carbon/lib/resend.server";
+import { getLogger } from "@carbon/logger";
 import { render } from "@react-email/components";
 import { RESEND_DOMAIN } from "../config/env";
+
+const log = getLogger("auth");
 
 export async function sendVerificationCode(email: string) {
   try {
@@ -11,13 +14,21 @@ export async function sendVerificationCode(email: string) {
       100000 + Math.random() * 900000
     ).toString();
 
-    // Store in Redis with 10-minute expiration
-    await redis.set(
+    // Store in Redis with 10-minute expiration. @carbon/kv (withResilience) fails
+    // soft: on a Redis-down condition `set` resolves null instead of "OK". If we
+    // can't persist the code we must NOT send an unverifiable email — fail closed.
+    const stored = await redis.set(
       `verification:${email.toLowerCase()}`,
       verificationCode,
       "EX",
       600
     );
+    if (!stored) {
+      log.error(
+        "Failed to store verification code (Redis unavailable); not sending email"
+      );
+      return false;
+    }
 
     // Send email with verification code using React template
     const html = await render(
@@ -33,11 +44,11 @@ export async function sendVerificationCode(email: string) {
       subject: "Verify your email address",
       html
     });
-    console.log(result);
+    log.debug("Verification email sent", { result });
 
     return !result.error;
   } catch (error) {
-    console.error("Failed to send verification code:", error);
+    log.error("Failed to send verification code", { error });
     return false;
   }
 }
@@ -46,6 +57,9 @@ export async function verifyEmailCode(email: string, code: string) {
   try {
     const storedCode = await redis.get(`verification:${email.toLowerCase()}`);
 
+    // If Redis is down, @carbon/kv fails soft and `storedCode` is null, so we
+    // return false. Blocking verification when the code store is unreachable is
+    // the expected/acceptable fail-closed behavior — we cannot confirm the code.
     if (!storedCode || String(storedCode).trim() !== String(code).trim()) {
       return false;
     }
@@ -55,7 +69,7 @@ export async function verifyEmailCode(email: string, code: string) {
 
     return true;
   } catch (error) {
-    console.error("Failed to verify email code:", error);
+    log.error("Failed to verify email code", { error });
     return false;
   }
 }

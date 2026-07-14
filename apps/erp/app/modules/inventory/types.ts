@@ -1,6 +1,8 @@
 import type { Database } from "@carbon/database";
 import type {
   getBatchProperties,
+  getInventoryCountLines,
+  getInventoryCounts,
   getInventoryItems,
   getItemLedgerPage,
   getKanbans,
@@ -37,6 +39,14 @@ export type ItemTracking = NonNullable<
 
 export type Kanban = NonNullable<
   Awaited<ReturnType<typeof getKanbans>>["data"]
+>[number];
+
+export type InventoryCount = NonNullable<
+  Awaited<ReturnType<typeof getInventoryCounts>>["data"]
+>[number];
+
+export type InventoryCountLine = NonNullable<
+  Awaited<ReturnType<typeof getInventoryCountLines>>["data"]
 >[number];
 
 export type Receipt = NonNullable<

@@ -1,4 +1,7 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { getLogger } from "@carbon/logger";
+
+const log = getLogger("academy");
 
 export async function loader() {
   try {
@@ -7,7 +10,7 @@ export async function loader() {
     if (test.error !== null) throw test.error;
     return new Response("OK");
   } catch (error: unknown) {
-    console.log("health ❌", { error });
+    log.error("health check failed", { error });
     return new Response("ERROR", { status: 500 });
   }
 }

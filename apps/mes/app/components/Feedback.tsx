@@ -5,6 +5,7 @@ import {
   TextAreaControlled,
   ValidatedForm
 } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import {
   Badge,
   BadgeCloseButton,
@@ -28,6 +29,8 @@ import { useFetcher, useLocation } from "react-router";
 import type { action } from "~/routes/x+/feedback";
 import { feedbackValidator } from "~/services/models";
 import { path } from "~/utils/path";
+
+const log = getLogger("mes");
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
 
@@ -70,7 +73,7 @@ const Feedback = () => {
         });
 
       if (imageUpload.error) {
-        console.error(imageUpload.error);
+        log.error("Failed to upload image", { error: imageUpload.error });
         toast.error(t`Failed to upload image`);
       }
 

@@ -1,0 +1,28 @@
+[package]
+name = "assembler"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "assembler"
+path = "src/main.rs"
+
+[dependencies]
+converter = { path = "../../crates/converter" }
+planner = { path = "../../crates/planner" }
+serde.workspace = true
+serde_json.workspace = true
+axum = "0.7"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "fs", "signal", "time"] }
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "stream"] }
+dashmap = "6"
+bytes = "1"
+lru = "0.12"
+xxhash-rust = { version = "0.8", features = ["xxh3"] }
+futures-util = "0.3"
+tokio-util = { version = "0.7", features = ["rt"] }
+redis = { version = "0.27", default-features = false, features = ["tokio-comp", "connection-manager"] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+tikv-jemallocator = "0.6"

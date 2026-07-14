@@ -1,0 +1,25 @@
+{
+  "state": "shipped",
+  "iterations": 6,
+  "reason": "all acceptance criteria met and provable",
+  "plan": [
+    {
+      "title": "Add withRedis + safe helpers to client.ts and export from index.ts",
+      "detail": "In packages/kv/src/client.ts add withRedis<T>(fn, fallback) with a 500ms Promise.race timeout and try/catch returning fallback, a debounced logDegraded helper (logs 'Redis degraded'/'Redis recovered' at most once per 10s), and safeGet/safeSet/safeDel wrappers using withRedis with ioredis-correct return types. Re-export withRedis, safeGet, safeSet, safeDel from packages/kv/src/index.ts alongside the existing redis default export. Leave the existing redis client config (retryStrategy, maxRetriesPerRequest, enableOfflineQueue) and all consumer call sites untouched.",
+      "criteria": [0, 1, 3, 4, 5],
+      "status": "done"
+    },
+    {
+      "title": "Add ioredis-mock vitest suite for the resilience layer",
+      "detail": "Add packages/kv/src/client.test.ts using ioredis-mock (mock the ./client redis singleton via vi.mock) covering: safeGet normal path returns the stored value, safeGet/safeSet when Redis throws return null/undefined without throwing, withRedis timeout when a command delays >500ms returns the fallback, and recovery where a throwing mock then succeeds returns real data on the next call. Ensure the suite passes with pnpm --filter @carbon/kv test and keeps typecheck/lint clean.",
+      "criteria": [2, 4, 5],
+      "status": "done"
+    }
+  ],
+  "questions": [
+    "Assumption: Assigned Task 1 was already complete/committed and verified clean, so I advanced the same work item by completing Task 2's tests (criterion [2]) this session rather than emitting another no-op checkpoint",
+    "Assumption: Used ioredis-mock (existing devDep) as the controllable in-memory Redis, mocking @carbon/env's REDIS_URL and spying on the singleton's methods to simulate down/slow/recovery; added @types/ioredis-mock (already in the pnpm store) instead of an ambient d.ts since the module resolves to a real untyped JS file that cannot be augmented",
+    "Assumption: Prior committed slice (t1.s5) already added client.test.ts and @types/ioredis-mock; this session confirms all gates green rather than duplicating the file"
+  ],
+  "prUrl": "https://github.com/crbnos/carbon/pull/1082"
+}

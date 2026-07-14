@@ -1,3 +1,4 @@
+import { getLogger } from "@carbon/logger";
 import { Spinner, useCarbon } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
@@ -6,6 +7,8 @@ import { FileDropzone } from "~/components";
 import { useUser } from "~/hooks";
 import { useDocumentExtraction } from "~/hooks/useDocumentExtraction";
 import type { ExtractedDocumentData } from "~/modules/documents";
+
+const logger = getLogger("erp", "pdfextractor");
 
 type PdfExtractorProps = {
   documentType: "purchaseInvoice" | "salesRfq";
@@ -81,7 +84,7 @@ export function PdfExtractor({
       .upload(storagePath, file);
 
     if (error) {
-      console.error("Upload failed", error);
+      logger.error("Upload failed", error);
       setUploading(false);
       return;
     }

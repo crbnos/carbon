@@ -27,6 +27,14 @@ steps/parameters, files, serials, and scrap/rework/finish actions.
   `path.to.endOperation(id)` (`/x/end/:operationId`); rework targets at
   `path.to.reworkTargets(id)`. Start/end routes write `productionEvent` /
   `productionQuantity` (end calls `finishJobOperation`).
+- **`finishJobOperation`** (`operations.service.ts`) flips the op to `Done` (firing
+  the `sync_finish_job_operation` trigger that completes the job to inventory when
+  it's the last op). It then runs `returnAllocatedRemaindersAtJobComplete`: once
+  `job.status='Completed'`, it sweeps the job's tracked (batch/serial) picking-list
+  allocations and invokes the `post-picking` `returnPickedRemainder` case (via the
+  service-role client) to return each un-consumed lineside remainder to its
+  warehouse source. The SQL trigger can't call edge functions, so this is
+  orchestrated in TS.
 
 ## Components
 

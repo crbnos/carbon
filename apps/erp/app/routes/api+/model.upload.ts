@@ -29,6 +29,11 @@ export async function action({ request }: ActionFunctionArgs) {
   if (!modelPath) {
     throw new Error("Model path is required");
   }
+  // The path is client-supplied; never let it point outside this tenant's
+  // storage prefix or escape via traversal.
+  if (!modelPath.startsWith(`${companyId}/`) || modelPath.includes("..")) {
+    throw new Error("Invalid model path");
+  }
 
   const modelRecord = await client.from("modelUpload").insert({
     id: modelId,
@@ -75,6 +80,10 @@ export async function action({ request }: ActionFunctionArgs) {
     companyId,
     modelId
   });
+
+  // Conversion to assembly-instruction artifacts (GLB + graph) is lazy:
+  // triggered when an assembly instruction is created for this model, not
+  // on upload — most uploaded models never become assemblies.
 
   return {
     success: true

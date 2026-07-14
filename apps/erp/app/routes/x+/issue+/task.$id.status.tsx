@@ -2,6 +2,7 @@ import { assertIsPost, ERP_URL, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { notifyTaskStatusChanged } from "@carbon/ee/notifications";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 // @ts-expect-error TS2305 - TODO: fix type
@@ -9,6 +10,8 @@ import type { IssueInvestigationTask } from "~/modules/quality";
 import { updateIssueTaskStatus } from "~/modules/quality";
 import { getCompanyIntegrations } from "~/modules/settings/settings.server";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "task-id-status");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -63,7 +66,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       });
     }
   } catch (error) {
-    console.error("Failed to sync task to Slack:", error);
+    logger.error("Failed to sync task to Slack", { error: error });
     // Continue without blocking the main operation
   }
 

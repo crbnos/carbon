@@ -1,6 +1,9 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
+
+const logger = getLogger("erp", "bucket");
 
 const supportedFileTypes: Record<string, string> = {
   pdf: "application/pdf",
@@ -68,7 +71,7 @@ export let loader = async ({ request, params }: LoaderFunctionArgs) => {
     // Use the original encoded path for the storage API call
     const result = await serviceRole.storage.from(bucket!).download(path);
     if (result.error) {
-      console.error(result.error);
+      logger.error(result.error);
       return null;
     }
     return result.data;

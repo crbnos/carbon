@@ -1,7 +1,10 @@
 import type { Database } from "@carbon/database";
+import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { methodItemType } from "~/modules/shared";
+
+const logger = getLogger("erp", "documents-models");
 
 export const documentSourceTypes = [
   "Job",
@@ -153,7 +156,7 @@ export function parseExtractedData(
       : purchaseInvoiceExtractionSchema;
   const result = schema.safeParse(filteredData);
   if (!result.success) {
-    console.warn(
+    logger.warning(
       `Unexpected ${documentType} extraction payload`,
       result.error.flatten()
     );

@@ -1,6 +1,7 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { JobTravelerPDF } from "@carbon/documents/pdf";
+import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import {
   flattenTree,
@@ -19,6 +20,8 @@ import {
 import { getCompany } from "~/modules/settings";
 import { getBase64ImageFromSupabase } from "~/modules/shared";
 
+const logger = getLogger("erp", "traveler", "pdf");
+
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { companyId } = await requirePermissions(request, {});
 
@@ -31,7 +34,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // while allowing guys on the shop floor with no permissions to download the traveler
   const jobMakeMethod = await getJobMakeMethodById(serviceRole, id, companyId);
   if (jobMakeMethod.error) {
-    console.error(jobMakeMethod.error);
+    logger.error("Failed to load jobMakeMethod", {
+      error: jobMakeMethod.error
+    });
     throw new Error("Failed to load job make method");
   }
 
@@ -41,12 +46,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   ]);
 
   if (company.error) {
-    console.error(company.error);
+    logger.error("Failed to load company", { error: company.error });
     throw new Error("Failed to load company");
   }
 
   if (job.error || !job.data) {
-    console.error(job.error);
+    logger.error("Failed to load job", { error: job.error });
     throw new Error("Failed to load job");
   }
 
@@ -65,12 +70,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   ]);
 
   if (jobOperations.error || !jobOperations.data) {
-    console.error(jobOperations.error);
+    logger.error("Failed to load jobOperations", {
+      error: jobOperations.error
+    });
     throw new Error("Failed to load job operations");
   }
 
   if (item.error || !item.data) {
-    console.error(item.error);
+    logger.error("Failed to load item", { error: item.error });
     throw new Error("Failed to load item");
   }
 
@@ -81,7 +88,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       job.data.id!
     );
     if (trackedEntity.error) {
-      console.error(trackedEntity.error);
+      logger.error("Failed to load trackedEntity", {
+        error: trackedEntity.error
+      });
       throw new Error("Failed to load tracked entity");
     }
     batchNumber = trackedEntity.data?.readableId ?? undefined;

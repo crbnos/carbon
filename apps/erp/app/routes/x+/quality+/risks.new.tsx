@@ -3,6 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
+import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
 import { useDisclosure } from "@carbon/react";
 import type { ActionFunctionArgs } from "react-router";
@@ -11,6 +12,8 @@ import { riskRegisterValidator } from "~/modules/quality/quality.models";
 import { upsertRisk } from "~/modules/quality/quality.service";
 import RiskRegisterForm from "~/modules/quality/ui/RiskRegister/RiskRegisterForm";
 import { getParams, path } from "~/utils/path";
+
+const logger = getLogger("erp", "risks-new");
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const { client, userId, companyId } = await requirePermissions(request, {
@@ -59,7 +62,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         from: userId
       });
     } catch (err) {
-      console.error("Failed to notify assignee", err);
+      logger.error("Failed to notify assignee", { error: err });
     }
   }
 

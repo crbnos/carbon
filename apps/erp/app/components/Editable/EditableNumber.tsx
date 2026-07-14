@@ -10,7 +10,11 @@ const EditableNumber =
       newValue: string,
       row: T
     ) => Promise<PostgrestSingleResponse<unknown>>,
-    numberFieldProps?: NumberFieldProps
+    numberFieldProps?: NumberFieldProps,
+    // `clearable` lets an empty input persist as a cleared value (sent as "") so
+    // a nullable column can be reset. Off by default so non-nullable columns keep
+    // ignoring empty input.
+    options?: { clearable?: boolean }
   ) =>
   ({
     value,
@@ -24,12 +28,20 @@ const EditableNumber =
         {...numberFieldProps}
         value={value as number}
         onChange={(numberValue) => {
-          if (!Number.isFinite(numberValue) || numberValue === value) return;
+          const isEmpty = !Number.isFinite(numberValue);
+          if (isEmpty) {
+            // Ignore empty unless clearable, and skip the no-op re-clear of an
+            // already-empty cell.
+            if (!options?.clearable || value === null || value === undefined)
+              return;
+          } else if (numberValue === value) {
+            return;
+          }
 
-          onUpdate({ [accessorKey]: numberValue });
+          onUpdate({ [accessorKey]: isEmpty ? null : numberValue });
 
-          // @ts-ignore
-          mutation(accessorKey, numberValue, row)
+          // @ts-ignore - mutation receives the raw cell value ("" clears)
+          mutation(accessorKey, isEmpty ? "" : numberValue, row)
             .then(({ error }) => {
               if (error) {
                 onError();
