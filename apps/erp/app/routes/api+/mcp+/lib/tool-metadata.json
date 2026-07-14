@@ -1,5 +1,5 @@
 {
-  "generated": "2026-07-14T05:02:36.173Z",
+  "generated": "2026-07-14T18:22:39.480Z",
   "totalTools": 1331,
   "modules": 15,
   "tools": [
@@ -40832,7 +40832,7 @@
       "module": "users",
       "classification": "READ",
       "description": "search users for select",
-      "paramCount": 3,
+      "paramCount": 4,
       "serviceParams": [
         "client",
         "companyId",
@@ -40845,6 +40845,9 @@
         "type": "object",
         "properties": {
           "q": {
+            "type": "string"
+          },
+          "type": {
             "type": "string"
           },
           "excludeSelf": {

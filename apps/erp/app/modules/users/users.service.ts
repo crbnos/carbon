@@ -298,28 +298,43 @@ export async function searchUsersForSelect(
   companyId: string,
   args: {
     q: string;
+    type?: string;
     excludeSelf?: boolean;
     allowedIds?: string[];
     userId: string;
   }
 ) {
-  const query = client
-    .from("user")
-    .select(
-      "id, firstName, lastName, fullName, email, avatarUrl, userToCompany!inner(companyId)"
-    )
-    .eq("userToCompany.companyId", companyId)
-    .eq("active", true)
-    .ilike("fullName", `%${args.q}%`)
-    .order("lastName")
-    .limit(20);
+  // Search exactly the population the user-select tree can reach: active
+  // users who are members of this company's groups (the groupMembers view
+  // joins active users only — same visibility rule as expanding a group),
+  // filtered by the same type flags as get_user_select_groups. Rows repeat
+  // per group membership — the caller dedupes by memberUserId.
+  let query = client
+    .from("groupMembers")
+    .select("memberUserId, user")
+    .eq("companyId", companyId)
+    .not("memberUserId", "is", null)
+    .ilike("user->>fullName", `%${args.q}%`)
+    .limit(100);
+
+  if (args.type === "customer") {
+    query = query.or("isCustomerTypeGroup.eq.true,isCustomerOrgGroup.eq.true");
+  } else if (args.type === "supplier") {
+    query = query.or("isSupplierTypeGroup.eq.true,isSupplierOrgGroup.eq.true");
+  } else {
+    query = query
+      .eq("isCustomerTypeGroup", false)
+      .eq("isCustomerOrgGroup", false)
+      .eq("isSupplierTypeGroup", false)
+      .eq("isSupplierOrgGroup", false);
+  }
 
   if (args.excludeSelf) {
-    query.neq("id", args.userId);
+    query = query.neq("memberUserId", args.userId);
   }
 
   if (args.allowedIds && args.allowedIds.length > 0) {
-    query.in("id", args.allowedIds);
+    query = query.in("memberUserId", args.allowedIds);
   }
 
   return query;

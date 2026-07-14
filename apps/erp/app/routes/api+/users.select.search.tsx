@@ -33,6 +33,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }),
     searchUsersForSelect(client, companyId, {
       q,
+      type,
       excludeSelf,
       allowedIds,
       userId
@@ -47,15 +48,40 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
   }
 
+  // groupMembers rows repeat per membership and carry the user as jsonb
+  const seen = new Set<string>();
+  const users: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    fullName: string | null;
+    email: string;
+    avatarUrl: string | null;
+  }[] = [];
+  for (const row of usersResult.data ?? []) {
+    const user = row.user as {
+      id: string;
+      firstName: string;
+      lastName: string;
+      fullName: string | null;
+      email: string;
+      avatarUrl: string | null;
+    } | null;
+    if (!user || !row.memberUserId || seen.has(row.memberUserId)) continue;
+    seen.add(row.memberUserId);
+    users.push({
+      id: user.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      fullName: user.fullName,
+      email: user.email,
+      avatarUrl: user.avatarUrl
+    });
+  }
+  users.sort((a, b) => (a.lastName ?? "").localeCompare(b.lastName ?? ""));
+
   return {
     groups: groupsResult.data ?? [],
-    users: (usersResult.data ?? []).map((u) => ({
-      id: u.id,
-      firstName: u.firstName,
-      lastName: u.lastName,
-      fullName: u.fullName,
-      email: u.email,
-      avatarUrl: u.avatarUrl
-    }))
+    users: users.slice(0, 20)
   };
 }
