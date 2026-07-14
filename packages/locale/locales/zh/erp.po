@@ -862,6 +862,9 @@ msgstr "资本化项目的会计记录，您要贬值而不是支出；草稿→
 msgid "An asset's acquisition cost minus accumulated depreciation — what it's still worth on the books, and the figure it's disposed at."
 msgstr "资产的收购成本减去累计折旧—仍在账簿上的价值和处置的金额。"
 
+msgid "An engineering change: the affected items whose methods are revised on a draft and released together, superseding the versions they replace."
+msgstr ""
+
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "一个集成或自定义更改——实际上是自定义的小部分。"
 
@@ -2061,6 +2064,9 @@ msgstr "冠军"
 
 msgid "Change"
 msgstr "更改"
+
+msgid "Change order"
+msgstr ""
 
 msgid "Change Order"
 msgstr "变更单"

@@ -862,6 +862,9 @@ msgstr "An accounting record for a capitalized item you depreciate rather than e
 msgid "An asset's acquisition cost minus accumulated depreciation — what it's still worth on the books, and the figure it's disposed at."
 msgstr "An asset's acquisition cost minus accumulated depreciation — what it's still worth on the books, and the figure it's disposed at."
 
+msgid "An engineering change: the affected items whose methods are revised on a draft and released together, superseding the versions they replace."
+msgstr "An engineering change: the affected items whose methods are revised on a draft and released together, superseding the versions they replace."
+
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "An integration or a custom change — the small slice that's actually custom."
 
@@ -2061,6 +2064,9 @@ msgstr "Champions"
 
 msgid "Change"
 msgstr "Change"
+
+msgid "Change order"
+msgstr "Change order"
 
 msgid "Change Order"
 msgstr "Change Order"

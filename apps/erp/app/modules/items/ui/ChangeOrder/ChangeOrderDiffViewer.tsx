@@ -1,9 +1,11 @@
+import type { TermId } from "@carbon/glossary";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
   cn,
   HStack,
+  LabelWithHelp,
   VStack
 } from "@carbon/react";
 import { getItemReadableId } from "@carbon/utils";
@@ -61,6 +63,8 @@ const FIELD_LABELS: Record<string, string> = {
   sourcingType: "Sourcing",
   requiresInspection: "Requires inspection",
   defaultMethodType: "Default method",
+  itemPostingGroupId: "Item group",
+  mpn: "MPN",
   thumbnailPath: "Thumbnail",
   key: "Parameter",
   toolId: "Tool"
@@ -442,16 +446,20 @@ function OperationEntry({ entry }: { entry: OperationDiffEntry }) {
 
 function Section({
   title,
+  termId,
   children
 }: {
   title: ReactNode;
+  termId?: TermId;
   children: ReactNode;
 }) {
   return (
     <VStack spacing={2} className="w-full">
-      <div className="text-xs font-medium uppercase text-muted-foreground">
-        {title}
-      </div>
+      <LabelWithHelp termId={termId} variant="inline">
+        <span className="text-xs font-medium text-muted-foreground">
+          {title}
+        </span>
+      </LabelWithHelp>
       {children}
     </VStack>
   );
@@ -481,8 +489,12 @@ export default function ChangeOrderDiffViewer({
 
   return (
     <div className="w-full rounded-lg border border-border p-3">
-      <div className="text-xs font-medium uppercase text-muted-foreground pb-2">
-        <Trans>Changes</Trans>
+      <div className="pb-2">
+        <LabelWithHelp termId="change-order" variant="inline">
+          <span className="text-xs font-medium uppercase text-muted-foreground">
+            <Trans>Changes</Trans>
+          </span>
+        </LabelWithHelp>
       </div>
       {isEmpty ? (
         <span className="text-sm text-muted-foreground italic">
@@ -491,21 +503,21 @@ export default function ChangeOrderDiffViewer({
       ) : (
         <VStack spacing={8} className="w-full">
           {materials.length > 0 && (
-            <Section title={<Trans>Bill of Materials</Trans>}>
+            <Section title={<Trans>Bill of Materials</Trans>} termId="bom">
               {materials.map((m, i) => (
                 <MaterialEntry key={`mat-${i}`} entry={m} items={items} />
               ))}
             </Section>
           )}
           {operations.length > 0 && (
-            <Section title={<Trans>Bill of Process</Trans>}>
+            <Section title={<Trans>Bill of Process</Trans>} termId="routing">
               {operations.map((o, i) => (
                 <OperationEntry key={`op-${i}`} entry={o} />
               ))}
             </Section>
           )}
           {attributes.length > 0 && (
-            <Section title={<Trans>Attributes</Trans>}>
+            <Section title={<Trans>Properties</Trans>}>
               {attributes.map((a, i) => (
                 <VStack key={`attr-${i}`} spacing={1} className="w-full">
                   {modifiedFieldRows(a)}

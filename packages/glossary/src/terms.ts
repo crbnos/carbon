@@ -69,6 +69,10 @@ export const terms = {
     definition: msg`Called a method in Carbon — the components plus operations that produce a part.`,
     href: "/docs/reference/methods"
   },
+  "change-order": {
+    term: msg`Change order`,
+    definition: msg`An engineering change: the affected items whose methods are revised on a draft and released together, superseding the versions they replace.`
+  },
   wip: {
     term: msg`Work in process (WIP)`,
     definition: msg`Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock.`,

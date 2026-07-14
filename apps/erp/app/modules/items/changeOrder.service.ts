@@ -13,6 +13,7 @@ import type {
 import { isAllowedChangeOrderTransition } from "./changeOrder.models";
 import {
   copyItem,
+  copyItemPostingGroup,
   copyMakeMethod,
   createRevision,
   getItem,
@@ -538,24 +539,41 @@ export async function mintPlaceholderPart(
 // same privileged method helpers — see applyChangeOrder / changeOrder.server).
 // =============================================================================
 
-// Mirror of the numeric branch of useNextItemId (collision-free in the numeric
-// readableId space). get_next_numeric_sequence returns the current MAX numeric
-// readableId for the type; we increment + zero-pad to its width. Prefix-based
-// company numbering is not derived server-side (a known simplification).
-async function getNextNumericItemId(
+// Mint the next readableId for a CO-derived New Part, following the SAME numbering
+// scheme as the source part — so "GA-0029" yields "GA-0030", not a bare number.
+// Server-side mirror of useNextItemId: split the source readableId into its
+// non-numeric prefix + trailing number, ask the matching sequence RPC for the
+// current MAX with that shape, then increment + zero-pad to the same width.
+// Falls back to a plain numeric id when the source has no prefix.
+async function getNextItemIdFromSource(
   client: SupabaseClient<Database>,
   companyId: string,
-  itemType: Database["public"]["Enums"]["itemType"]
+  itemType: Database["public"]["Enums"]["itemType"],
+  sourceReadableId: string
 ): Promise<string> {
-  const maxId = await client.rpc("get_next_numeric_sequence", {
-    company_id: companyId,
-    item_type: itemType
-  });
-  const current = maxId.data;
-  if (!current || !/^\d+$/.test(current)) {
-    return (1).toString().padStart(9, "0");
+  const prefix = sourceReadableId.match(/^(.*?)\d+$/)?.[1] ?? "";
+
+  const rpc = prefix
+    ? await client.rpc("get_next_prefixed_sequence", {
+        company_id: companyId,
+        item_type: itemType,
+        prefix
+      })
+    : await client.rpc("get_next_numeric_sequence", {
+        company_id: companyId,
+        item_type: itemType
+      });
+
+  const current = rpc.data;
+  const sequence = current?.slice(prefix.length) ?? "";
+  const currentSequence = parseInt(sequence, 10);
+  if (!current || Number.isNaN(currentSequence)) {
+    return `${prefix}${(1).toString().padStart(9, "0")}`;
   }
-  return (parseInt(current, 10) + 1).toString().padStart(current.length, "0");
+  // Preserve the source's digit width (mirrors useNextItemId's pad math).
+  const tail = current.split(`${currentSequence}`)?.[1]?.length ?? 0;
+  const width = Math.max(sequence.length - tail, 1);
+  return `${prefix}${(currentSequence + 1).toString().padStart(width, "0")}`;
 }
 
 // Resolve the current Active make method id for an item (the base the draft is
@@ -766,10 +784,11 @@ export async function createChangeOrderDraftMethod(
       }
     };
   }
-  const newReadableId = await getNextNumericItemId(
+  const newReadableId = await getNextItemIdFromSource(
     client,
     companyId,
-    source.data.type
+    source.data.type,
+    source.data.readableId
   );
   const newItem = await client
     .from("item")
@@ -782,6 +801,13 @@ export async function createChangeOrderDraftMethod(
       defaultMethodType: source.data.defaultMethodType,
       itemTrackingType: source.data.itemTrackingType,
       unitOfMeasureCode: source.data.unitOfMeasureCode,
+      // Faithfully copy the source's attributes so the CO diff shows only the
+      // user's edits, not gaps left by an incomplete copy.
+      description: source.data.description,
+      sourcingType: source.data.sourcingType,
+      requiresInspection: source.data.requiresInspection,
+      thumbnailPath: source.data.thumbnailPath,
+      mpn: source.data.mpn,
       active: false,
       revisionStatus: "Design",
       changeOrderId,
@@ -799,6 +825,13 @@ export async function createChangeOrderDraftMethod(
     .from(typeTable)
     .insert({ id: newReadableId, companyId, createdBy: userId });
   if (typeRow.error) return { data: null, error: typeRow.error };
+
+  // Carry the source's item group (on itemCost) onto the new part.
+  await copyItemPostingGroup(client, {
+    sourceItemId: itemId,
+    targetItemId: newItemId,
+    companyId
+  });
 
   // Copy the affected part's method into the new item's (trigger-created) draft.
   // @ts-expect-error TS2345 - getMethodValidator flags default via edge fn

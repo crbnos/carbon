@@ -862,6 +862,9 @@ msgstr "費用ではなく減価償却する資本化されたアイテムの会
 msgid "An asset's acquisition cost minus accumulated depreciation — what it's still worth on the books, and the figure it's disposed at."
 msgstr "資産の取得原価から累計減価償却費を差し引いたもの—帳簿上の現在の価値と処分される金額。"
 
+msgid "An engineering change: the affected items whose methods are revised on a draft and released together, superseding the versions they replace."
+msgstr ""
+
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "統合またはカスタム変更 — 実際にカスタムである小さなスライス。"
 
@@ -2061,6 +2064,9 @@ msgstr "チャンピオン"
 
 msgid "Change"
 msgstr "変更"
+
+msgid "Change order"
+msgstr ""
 
 msgid "Change Order"
 msgstr "変更指示"

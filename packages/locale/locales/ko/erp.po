@@ -862,6 +862,9 @@ msgstr "비용 처리 대신 감가상각하는 자본화 항목의 회계 기�
 msgid "An asset's acquisition cost minus accumulated depreciation — what it's still worth on the books, and the figure it's disposed at."
 msgstr "자산의 취득원가에서 감가상각누계액을 뺀 값 — 장부상 남은 가치이며 처분 시 사용되는 금액입니다."
 
+msgid "An engineering change: the affected items whose methods are revised on a draft and released together, superseding the versions they replace."
+msgstr ""
+
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "연동이나 커스텀 변경 — 실제로 커스텀인 작은 부분."
 
@@ -2061,6 +2064,9 @@ msgstr "챔피언"
 
 msgid "Change"
 msgstr "변경"
+
+msgid "Change order"
+msgstr ""
 
 msgid "Change Order"
 msgstr "변경주문"

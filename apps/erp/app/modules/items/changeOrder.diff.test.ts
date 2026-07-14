@@ -1,12 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 
-// changeOrder.diff imports the staging service for getChangeOrderDiff. The pure
-// diffMethod under test needs none of it, and the real staging module drags in
-// the full change-order module graph (service + Lingui macros) which explodes
+// changeOrder.diff imports the change-order service for getChangeOrderDiff. The
+// pure diffMethod under test needs none of it, and the real service module drags
+// in the full change-order module graph (service + Lingui macros) which explodes
 // under plain vitest. Stub it so the dynamic import stays lightweight.
-vi.mock("./changeOrder.staging", () => ({
-  getChangeOrderAffectedItems: vi.fn(),
-  getChangeOrderStagedMaterials: vi.fn()
+vi.mock("./changeOrder.service", () => ({
+  getChangeOrderAffectedItems: vi.fn()
 }));
 
 const { diffMethod } = await import("./changeOrder.diff");

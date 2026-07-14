@@ -1,6 +1,6 @@
 {
-  "generated": "2026-07-14T03:53:25.981Z",
-  "totalTools": 1308,
+  "generated": "2026-07-14T09:32:15.384Z",
+  "totalTools": 1309,
   "modules": 15,
   "tools": [
     {
@@ -9598,6 +9598,37 @@
           "tools",
           "steps",
           "workInstructions"
+        ]
+      }
+    },
+    {
+      "name": "items_copyItemPostingGroup",
+      "module": "items",
+      "classification": "WRITE",
+      "description": "copy item posting group",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "sourceItemId": {
+            "type": "string"
+          },
+          "targetItemId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "sourceItemId",
+          "targetItemId"
         ]
       }
     },

@@ -862,6 +862,9 @@ msgstr "Un enregistrement comptable pour un élément capitalisé que vous amort
 msgid "An asset's acquisition cost minus accumulated depreciation — what it's still worth on the books, and the figure it's disposed at."
 msgstr "Le coût d'acquisition d'un actif moins l'amortissement cumulé — ce qu'il vaut encore sur les livres et le montant auquel il est cédé."
 
+msgid "An engineering change: the affected items whose methods are revised on a draft and released together, superseding the versions they replace."
+msgstr ""
+
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "Une intégration ou une modification personnalisée — la petite partie qui est réellement personnalisée."
 
@@ -2061,6 +2064,9 @@ msgstr "Champions"
 
 msgid "Change"
 msgstr "Modifier"
+
+msgid "Change order"
+msgstr ""
 
 msgid "Change Order"
 msgstr "Ordre de modification"

@@ -862,6 +862,9 @@ msgstr "Учетная запись капитализированного эл�
 msgid "An asset's acquisition cost minus accumulated depreciation — what it's still worth on the books, and the figure it's disposed at."
 msgstr "Первоначальная стоимость активов минус накопленная амортизация — его текущая балансовая стоимость и сумма, по которой он ликвидируется."
 
+msgid "An engineering change: the affected items whose methods are revised on a draft and released together, superseding the versions they replace."
+msgstr ""
+
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "Интеграция или пользовательское изменение — небольшая часть, которая действительно является пользовательской."
 
@@ -2061,6 +2064,9 @@ msgstr "Чемпионы"
 
 msgid "Change"
 msgstr "Изменить"
+
+msgid "Change order"
+msgstr ""
 
 msgid "Change Order"
 msgstr "Приказ об изменении"

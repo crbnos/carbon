@@ -136,6 +136,29 @@ export async function copyMakeMethod(
   });
 }
 
+// Copy a source item's item group (itemPostingGroupId, stored on itemCost) onto a
+// freshly-created target item whose itemCost row was just auto-created with
+// defaults by the item-insert trigger. No-op when the source has no group set.
+export async function copyItemPostingGroup(
+  client: SupabaseClient<Database>,
+  args: { sourceItemId: string; targetItemId: string; companyId: string | null }
+) {
+  if (!args.companyId) return;
+  const source = await client
+    .from("itemCost")
+    .select("itemPostingGroupId")
+    .eq("itemId", args.sourceItemId)
+    .eq("companyId", args.companyId)
+    .maybeSingle();
+  const groupId = source.data?.itemPostingGroupId ?? null;
+  if (!groupId) return;
+  await client
+    .from("itemCost")
+    .update({ itemPostingGroupId: groupId })
+    .eq("itemId", args.targetItemId)
+    .eq("companyId", args.companyId);
+}
+
 export async function createRevision(
   client: SupabaseClient<Database>,
   args: {
@@ -160,6 +183,13 @@ export async function createRevision(
       defaultMethodType: item.defaultMethodType,
       itemTrackingType: item.itemTrackingType,
       unitOfMeasureCode: item.unitOfMeasureCode,
+      // A revision starts as a faithful copy of the source's attributes so the
+      // only differences the user (and the CO diff) sees are ones they made.
+      description: item.description,
+      sourcingType: item.sourcingType,
+      requiresInspection: item.requiresInspection,
+      thumbnailPath: item.thumbnailPath,
+      mpn: item.mpn,
       active,
       modelUploadId: item.modelUploadId,
       companyId: item.companyId,
@@ -171,6 +201,14 @@ export async function createRevision(
   if (itemInsert.error) {
     return itemInsert;
   }
+
+  // Carry the source's item group (itemPostingGroupId lives on itemCost, which
+  // the item-insert trigger auto-creates with defaults) onto the new revision.
+  await copyItemPostingGroup(client, {
+    sourceItemId: item.id,
+    targetItemId: itemInsert.data.id,
+    companyId: item.companyId
+  });
 
   if (item.replenishmentSystem !== "Buy") {
     await client.functions.invoke("get-method", {

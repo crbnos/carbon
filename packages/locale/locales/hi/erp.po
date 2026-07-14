@@ -862,6 +862,9 @@ msgstr "एक पूंजीकृत वस्तु के लिए एक 
 msgid "An asset's acquisition cost minus accumulated depreciation — what it's still worth on the books, and the figure it's disposed at."
 msgstr "एक संपत्ति की अधिग्रहण लागत माइनस संचयी मूल्यह्रास — यह किताबों पर अभी भी क्या मूल्य है और राशि जिस पर इसे निपटाया जाता है।"
 
+msgid "An engineering change: the affected items whose methods are revised on a draft and released together, superseding the versions they replace."
+msgstr ""
+
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "एक एकीकरण या एक कस्टम परिवर्तन — वह छोटा हिस्सा जो वास्तव में कस्टम है।"
 
@@ -2061,6 +2064,9 @@ msgstr "चैंपियन"
 
 msgid "Change"
 msgstr "बदलें"
+
+msgid "Change order"
+msgstr ""
 
 msgid "Change Order"
 msgstr "परिवर्तन आदेश"

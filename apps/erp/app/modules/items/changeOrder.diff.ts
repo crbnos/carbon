@@ -61,6 +61,9 @@ const IGNORED_FIELDS = new Set<string>([
   // linkage columns always differ and must never count as a business change.
   "makeMethodId",
   "operationId",
+  // The customFields JSON bag differs as a copy artifact (null vs {}), surfacing
+  // a meaningless "— → Set" on unrelated edits — never diff it as a whole column.
+  "customFields",
   "createdAt",
   "createdBy",
   "updatedAt",
@@ -336,9 +339,12 @@ export type ChangeOrderDiff = {
   items: ChangeOrderItemDiff[];
 };
 
-// Editable item attribute columns compared for the attribute diff.
+// Editable item attribute columns compared for the attribute diff. `mpn` lives on
+// item; the item group (itemPostingGroupId) lives on itemCost and is merged in
+// separately by readItemAttributes. `active` is intentionally excluded — a CO
+// draft is created inactive until release, so it always differs (not a real edit).
 const ITEM_ATTRIBUTE_COLUMNS =
-  "name, description, unitOfMeasureCode, itemTrackingType, defaultMethodType, replenishmentSystem, sourcingType, requiresInspection, thumbnailPath";
+  "name, description, unitOfMeasureCode, itemTrackingType, defaultMethodType, replenishmentSystem, sourcingType, requiresInspection, thumbnailPath, mpn";
 
 // Read one make method's materials + operations + per-operation children (real
 // method tables — the v2 substrate). Empty for a null makeMethodId (e.g. a Buy
@@ -460,13 +466,46 @@ async function readItemAttributes(
   itemId: string,
   companyId: string
 ): Promise<Row | null> {
-  const item = await client
-    .from("item")
-    .select(ITEM_ATTRIBUTE_COLUMNS)
-    .eq("id", itemId)
-    .eq("companyId", companyId)
-    .maybeSingle();
-  return (item.data ?? null) as Row | null;
+  const [item, cost] = await Promise.all([
+    client
+      .from("item")
+      .select(ITEM_ATTRIBUTE_COLUMNS)
+      .eq("id", itemId)
+      .eq("companyId", companyId)
+      .maybeSingle(),
+    // The item group lives on itemCost, not item — merge it in so it diffs too.
+    client
+      .from("itemCost")
+      .select("itemPostingGroupId")
+      .eq("itemId", itemId)
+      .eq("companyId", companyId)
+      .maybeSingle()
+  ]);
+  if (!item.data) return null;
+  return {
+    ...(item.data as Row),
+    itemPostingGroupId: cost.data?.itemPostingGroupId ?? null
+  };
+}
+
+// Resolve item-group ids → their names for readable diff display.
+async function readPostingGroupNames(
+  client: SupabaseClient<Database>,
+  ids: string[],
+  companyId: string
+): Promise<Map<string, string>> {
+  const map = new Map<string, string>();
+  const unique = [...new Set(ids)].filter((id) => id.length > 0);
+  if (unique.length === 0) return map;
+  const groups = await client
+    .from("itemPostingGroup")
+    .select("id, name")
+    .in("id", unique)
+    .eq("companyId", companyId);
+  for (const g of groups.data ?? []) {
+    if (g.id && g.name) map.set(g.id, g.name);
+  }
+  return map;
 }
 
 // Resolve component item UUIDs → human-readable ids (e.g. `P000123.A`). The diff
@@ -599,6 +638,28 @@ export async function getChangeOrderDiff(
       companyId
     );
     stampMaterialReadableIds(diff.materials, readableIds);
+
+    // Resolve the item-group id → name so the attribute diff reads "Group A →
+    // Group B" instead of opaque ids.
+    const groupIds = diff.attributes.flatMap((a) => {
+      const cf = a.changedFields?.itemPostingGroupId;
+      return cf
+        ? [cf.before, cf.after].filter(
+            (v): v is string => typeof v === "string"
+          )
+        : [];
+    });
+    if (groupIds.length > 0) {
+      const names = await readPostingGroupNames(client, groupIds, companyId);
+      for (const a of diff.attributes) {
+        const cf = a.changedFields?.itemPostingGroupId;
+        if (!cf) continue;
+        if (typeof cf.before === "string")
+          cf.before = names.get(cf.before) ?? cf.before;
+        if (typeof cf.after === "string")
+          cf.after = names.get(cf.after) ?? cf.after;
+      }
+    }
 
     items.push({
       affectedItemId: affectedItem.id,

@@ -279,76 +279,83 @@ const PartProperties = ({
       )}
     >
       <VStack spacing={2}>
-        <HStack className="w-full justify-between">
-          <h3 className="text-xxs text-foreground/70 uppercase font-light tracking-wide">
-            <Trans>Properties</Trans>
-          </h3>
-          <HStack spacing={1}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  aria-label={t`Link`}
-                  size="sm"
-                  className="p-1"
-                  onClick={() =>
-                    copyToClipboard(
-                      window.location.origin + path.to.part(itemId)
-                    )
-                  }
-                >
-                  <LuLink className="w-3 h-3" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <span>
-                  <Trans>Copy link to part</Trans>
-                </span>
-              </TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  aria-label={t`Copy`}
-                  size="sm"
-                  className="p-1"
-                  onClick={() => copyToClipboard(itemId)}
-                >
-                  <LuKeySquare className="w-3 h-3" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <span>
-                  <Trans>Copy part unique identifier</Trans>
-                </span>
-              </TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  aria-label={t`Copy`}
-                  size="sm"
-                  className="p-1"
-                  onClick={() =>
-                    copyToClipboard(
-                      routeData?.partSummary?.readableIdWithRevision ?? ""
-                    )
-                  }
-                >
-                  <LuCopy className="w-3 h-3" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <span>
-                  <Trans>Copy part number</Trans>
-                </span>
-              </TooltipContent>
-            </Tooltip>
+        {/* On the CO affected-item card the tab already reads "Properties" and
+            the card title carries the item id — so drop the redundant heading +
+            copy affordances there. Part page (non-embedded) is unchanged. */}
+        {!embedded && (
+          <HStack className="w-full justify-between">
+            <h3 className="text-xxs text-foreground/70 uppercase font-light tracking-wide">
+              <Trans>Properties</Trans>
+            </h3>
+            <HStack spacing={1}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    aria-label={t`Link`}
+                    size="sm"
+                    className="p-1"
+                    onClick={() =>
+                      copyToClipboard(
+                        window.location.origin + path.to.part(itemId)
+                      )
+                    }
+                  >
+                    <LuLink className="w-3 h-3" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <span>
+                    <Trans>Copy link to part</Trans>
+                  </span>
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    aria-label={t`Copy`}
+                    size="sm"
+                    className="p-1"
+                    onClick={() => copyToClipboard(itemId)}
+                  >
+                    <LuKeySquare className="w-3 h-3" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <span>
+                    <Trans>Copy part unique identifier</Trans>
+                  </span>
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    aria-label={t`Copy`}
+                    size="sm"
+                    className="p-1"
+                    onClick={() =>
+                      copyToClipboard(
+                        routeData?.partSummary?.readableIdWithRevision ?? ""
+                      )
+                    }
+                  >
+                    <LuCopy className="w-3 h-3" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <span>
+                    <Trans>Copy part number</Trans>
+                  </span>
+                </TooltipContent>
+              </Tooltip>
+            </HStack>
           </HStack>
-        </HStack>
+        )}
         <VStack spacing={1} className="pt-2">
+          {/* Part ID (readable id) + name — both editable inline, same as the
+              part detail page. On the CO card these edit the draft item. */}
           <ValidatedForm
             defaultValues={{
               partId:
@@ -661,24 +668,28 @@ const PartProperties = ({
           />
         ))}
       </VStack>
-      <ValidatedForm
-        defaultValues={{
-          active: routeData?.partSummary?.active ?? undefined
-        }}
-        validator={z.object({
-          active: zfd.checkbox()
-        })}
-        className="w-full"
-      >
-        <Boolean
-          label={t`Active`}
-          name="active"
-          variant="small"
-          onChange={(value) => {
-            onUpdate("active", value ? "on" : "off");
+      {/* Active is a lifecycle flag the change order controls at release — not a
+          user-editable attribute in the CO card. Keep it on the part page only. */}
+      {!embedded && (
+        <ValidatedForm
+          defaultValues={{
+            active: routeData?.partSummary?.active ?? undefined
           }}
-        />
-      </ValidatedForm>
+          validator={z.object({
+            active: zfd.checkbox()
+          })}
+          className="w-full"
+        >
+          <Boolean
+            label={t`Active`}
+            name="active"
+            variant="small"
+            onChange={(value) => {
+              onUpdate("active", value ? "on" : "off");
+            }}
+          />
+        </ValidatedForm>
+      )}
       {routeData?.partSummary?.replenishmentSystem?.includes("Buy") && (
         <ValidatedForm
           defaultValues={{
@@ -761,24 +772,30 @@ const PartProperties = ({
           )}
         </div>
       )}
-      <ValidatedForm
-        defaultValues={{
-          tags: routeData?.partSummary?.tags ?? []
-        }}
-        validator={z.object({
-          tags: z.array(z.string()).optional()
-        })}
-        className="w-full"
-      >
-        <Tags
-          availableTags={routeData?.tags ?? []}
-          label={t`Tags`}
-          name="tags"
-          table="part"
-          inline
-          onChange={onUpdateTags}
-        />
-      </ValidatedForm>
+      {/* Tags live on the part row, keyed by readableId — shared across all
+          revisions. Editing them on a CO draft isn't isolated (it'd change the
+          live part now) and can't be diffed per-revision, so hide them here.
+          They remain editable on the part page. */}
+      {!embedded && (
+        <ValidatedForm
+          defaultValues={{
+            tags: routeData?.partSummary?.tags ?? []
+          }}
+          validator={z.object({
+            tags: z.array(z.string()).optional()
+          })}
+          className="w-full"
+        >
+          <Tags
+            availableTags={routeData?.tags ?? []}
+            label={t`Tags`}
+            name="tags"
+            table="part"
+            inline
+            onChange={onUpdateTags}
+          />
+        </ValidatedForm>
+      )}
 
       <CustomFormInlineFields
         customFields={

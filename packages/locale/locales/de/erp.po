@@ -862,6 +862,9 @@ msgstr "Ein Buchhaltungsdatensatz für einen aktivierten Gegenstand, den Sie abs
 msgid "An asset's acquisition cost minus accumulated depreciation — what it's still worth on the books, and the figure it's disposed at."
 msgstr "Die Anschaffungskosten eines Vermögenswertes minus kumulierte Abschreibung — was es auf dem Bücher noch wert ist und der Betrag, zu dem es entsorgt wird."
 
+msgid "An engineering change: the affected items whose methods are revised on a draft and released together, superseding the versions they replace."
+msgstr ""
+
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "Eine Integration oder eine benutzerdefinierte Änderung — der kleine Teil, der tatsächlich benutzerdefiniert ist."
 
@@ -2061,6 +2064,9 @@ msgstr "Fachleute"
 
 msgid "Change"
 msgstr "Ändern"
+
+msgid "Change order"
+msgstr ""
 
 msgid "Change Order"
 msgstr "Änderungsanweisung"
