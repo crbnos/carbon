@@ -19,7 +19,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // @ts-expect-error TS2589 — Supabase joined-select type instantiation too deep
   const result = await client
     .from("supplierPart")
-    .select("id, supplierId, supplier:supplierId(name)")
+    .select("id, supplierId, supplier(name)")
     .eq("id", supplierPartId)
     .eq("companyId", companyId)
     .single();

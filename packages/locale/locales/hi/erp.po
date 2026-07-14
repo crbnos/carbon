@@ -4454,12 +4454,6 @@ msgstr "वेबहुक संपादित करें"
 msgid "Edit Work Center"
 msgstr "कार्य केंद्र संपादित करें"
 
-msgid "Effective From"
-msgstr "प्रभावी से"
-
-msgid "Effective To"
-msgstr "प्रभावी तक"
-
 msgid "Email"
 msgstr "ईमेल"
 
@@ -13055,12 +13049,6 @@ msgstr "नेविगेशन में और बिक्री आदे�
 
 msgid "Used in the navigation in dark mode"
 msgstr "डार्क मोड में नेविगेशन में उपयोग किया जाता है"
-
-msgid "Used on builds on/after this date (blank = always)"
-msgstr "इस तारीख के बाद बनाए गए बिल्ड पर उपयोग किया जाता है (खाली = हमेशा)"
-
-msgid "Used on builds on/before this date (blank = always)"
-msgstr "इस तारीख पर या इससे पहले बनाए गए बिल्ड पर उपयोग किया जाता है (खाली = हमेशा)"
 
 msgid "Used on the home screen and digital quotes"
 msgstr "होम स्क्रीन और डिजिटल उद्धरणों पर उपयोग किया जाता है"

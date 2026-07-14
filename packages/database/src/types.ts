@@ -25362,8 +25362,6 @@ export type Database = {
           createdAt: string
           createdBy: string
           customFields: Json | null
-          effectiveFrom: string | null
-          effectiveTo: string | null
           id: string
           itemId: string
           itemType: string
@@ -25388,8 +25386,6 @@ export type Database = {
           createdAt?: string
           createdBy: string
           customFields?: Json | null
-          effectiveFrom?: string | null
-          effectiveTo?: string | null
           id?: string
           itemId: string
           itemType?: string
@@ -25414,8 +25410,6 @@ export type Database = {
           createdAt?: string
           createdBy?: string
           customFields?: Json | null
-          effectiveFrom?: string | null
-          effectiveTo?: string | null
           id?: string
           itemId?: string
           itemType?: string
@@ -71089,8 +71083,6 @@ export type Database = {
         Args: { uid: string }
         Returns: {
           description: string
-          effectiveFrom: string
-          effectiveTo: string
           externalId: Json
           isPickDescendant: boolean
           isRoot: boolean
