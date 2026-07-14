@@ -26,7 +26,7 @@ export default function AffectedItemsSidebar({
   isDisabled: boolean;
 }) {
   return (
-    <aside className="w-64 flex-shrink-0 bg-sidebar h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-r border-border text-sm flex flex-col">
+    <aside className="w-64 flex-shrink-0 bg-card h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-r border-border text-sm flex flex-col">
       <div className="text-xs font-medium uppercase text-muted-foreground px-3 py-3">
         <Trans>Affected Items</Trans>
       </div>
