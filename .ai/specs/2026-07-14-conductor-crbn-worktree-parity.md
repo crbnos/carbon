@@ -1,10 +1,28 @@
 # Spec: Conductor ⇄ crbn worktree parity
 
-**Status:** Draft (design) — decisions flagged for veto in §9
+**Status:** Implemented on branch — settings.toml activates once merged to `origin/main`
 **Date:** 2026-07-14
 **Author:** research + draft (agent)
 **Area:** `packages/dev` (crbn CLI) + Conductor repo config
 **Related rules:** `.ai/rules/environment-configuration.md`, `.ai/rules/dev-shared-redis.md`, `packages/dev/AGENTS.md`
+
+## Changelog
+
+- **2026-07-14 — implemented.** `crbn init` (`packages/dev/src/commands/init.ts`,
+  `canonicalSlug` in `worktree.ts`); `crbn new`'s `.env`-copy task and the bash
+  `checkout` `do_post_create` hook both now delegate to it; `crbn down --purge`
+  (§9-C decision below); `conductor.json` → `.conductor/settings.toml`. Unit
+  tests for `canonicalSlug` in `worktree.test.ts`. Verified: `pnpm --filter
+  @carbon/dev typecheck` + `test` (38 pass) + a live `crbn init` run producing
+  slug `carbon-featuser-select` (no longer collides with the main checkout's
+  `carbon`).
+- **§9-C resolved as `crbn down --purge`, not the recommended `crbn remove
+  --path/--yes`.** Reason discovered in implementation: Conductor runs `archive`
+  *inside* the workspace dir and manages worktree/dir removal itself, but `crbn
+  remove` deliberately skips the *current* worktree and does its own `git
+  worktree remove` — wrong fit. `down --purge` tears down the stack + volumes,
+  flushes the redis db, and calls `removeSlot` (freeing the registry slot)
+  without removing the dir, which is exactly what the archive hook needs.
 
 ---
 

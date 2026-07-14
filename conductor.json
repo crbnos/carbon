@@ -1,7 +1,0 @@
-{
-  "scripts": {
-    "setup": "echo \"$CONDUCTOR_WORKSPACE_NAME\" > .carbon-worktree && pnpm install && ./packages/dev/bin/crbn env sync && bash .ai/scripts/install-skills.sh",
-    "run": "./packages/dev/bin/crbn up --all",
-    "archive": "./packages/dev/bin/crbn down --volumes"
-  }
-}
