@@ -61,8 +61,8 @@ import type { PurchaseInvoice } from "~/modules/invoicing";
 import { purchaseInvoiceLineValidator } from "~/modules/invoicing";
 import { getSupplierPartPriceBreaks } from "~/modules/items";
 import {
-  type OrderLineItemType,
-  orderLineItemType,
+  type ItemType,
+  itemType,
   resolveSupplierPrice
 } from "~/modules/shared";
 import { useItems } from "~/stores";
@@ -101,8 +101,8 @@ const PurchaseInvoiceLineForm = ({
     routeData?.purchaseInvoice?.status ?? ""
   );
 
-  const [itemType, setItemType] = useState<OrderLineItemType>(
-    initialValues.invoiceLineType as OrderLineItemType
+  const [lineType, setLineType] = useState<ItemType>(
+    initialValues.invoiceLineType as ItemType
   );
   const [locationId, setLocationId] = useState(defaults.locationId ?? "");
   const [itemData, setItemData] = useState<{
@@ -276,9 +276,9 @@ const PurchaseInvoiceLineForm = ({
   const currencyFormatter = useCurrencyFormatter();
   const percentFormatter = usePercentFormatter();
 
-  const onTypeChange = (t: OrderLineItemType | "Item") => {
-    if (t === itemType) return;
-    setItemType(t as OrderLineItemType);
+  const onTypeChange = (t: ItemType | "Item") => {
+    if (t === lineType) return;
+    setLineType(t as ItemType);
     setItemData({
       itemId: "",
       description: "",
@@ -299,7 +299,7 @@ const PurchaseInvoiceLineForm = ({
 
   const onItemChange = async (itemId: string) => {
     if (!carbon) throw new Error("Carbon client not found");
-    switch (itemType) {
+    switch (lineType) {
       // @ts-expect-error
       case "Item":
       case "Consumable":
@@ -378,13 +378,13 @@ const PurchaseInvoiceLineForm = ({
         });
 
         if (item.data?.type) {
-          setItemType(item.data.type as OrderLineItemType);
+          setLineType(item.data.type as ItemType);
         }
 
         break;
       default:
         throw new Error(
-          `Invalid invoice line type: ${itemType} is not implemented`
+          `Invalid invoice line type: ${lineType} is not implemented`
         );
     }
   };
@@ -528,7 +528,7 @@ const PurchaseInvoiceLineForm = ({
                 />
 
                 <TabsContent value="item">
-                  <Hidden name="invoiceLineType" value={itemType} />
+                  <Hidden name="invoiceLineType" value={lineType} />
                   {activeTab === "item" && (
                     <Hidden name="description" value={itemData.description} />
                   )}
@@ -540,9 +540,9 @@ const PurchaseInvoiceLineForm = ({
                     <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
                       <Item
                         name="itemId"
-                        label={itemType}
-                        type={itemType}
-                        validItemTypes={[...orderLineItemType]}
+                        label={lineType}
+                        type={lineType}
+                        validItemTypes={[...itemType]}
                         locationId={locationId}
                         replenishmentSystem="Buy"
                         onChange={(value) => {
@@ -574,7 +574,7 @@ const PurchaseInvoiceLineForm = ({
                         "Consumable",
                         "Service",
                         "Fixture"
-                      ].includes(itemType) && (
+                      ].includes(lineType) && (
                         <>
                           <NumberControlled
                             minValue={itemData.minimumOrderQuantity}
@@ -647,7 +647,7 @@ const PurchaseInvoiceLineForm = ({
                             value={locationId}
                             onChange={onLocationChange}
                           />
-                          {itemType !== "Service" && (
+                          {lineType !== "Service" && (
                             <StorageUnit
                               name="storageUnitId"
                               label={t`Storage Unit`}

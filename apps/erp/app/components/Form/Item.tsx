@@ -34,8 +34,8 @@ import ConsumableForm from "~/modules/items/ui/Consumables/ConsumableForm";
 import MaterialForm from "~/modules/items/ui/Materials/MaterialForm";
 import PartForm from "~/modules/items/ui/Parts/PartForm";
 import ToolForm from "~/modules/items/ui/Tools/ToolForm";
-import type { MethodItemType, OrderLineItemType } from "~/modules/shared";
-import { methodItemType, orderLineItemType } from "~/modules/shared";
+import type { ItemType, MethodItemType } from "~/modules/shared";
+import { itemType, methodItemType } from "~/modules/shared";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import { MethodItemTypeIcon } from "../Icons";
@@ -51,9 +51,9 @@ type ItemSelectProps = Omit<ComboboxProps, "options" | "type" | "inline"> & {
   isConfigured?: boolean;
   locationId?: string;
   replenishmentSystem?: "Buy" | "Make";
-  type: OrderLineItemType | "Item";
+  type: ItemType | "Item";
   typeFieldName?: string;
-  validItemTypes?: OrderLineItemType[];
+  validItemTypes?: ItemType[];
   whitelist?: string[];
   onConfigure?: () => void;
   // Narrower than `type`/`validItemTypes` on purpose: BOM/method callers pass a
@@ -74,7 +74,7 @@ const ItemPreview = (
 
 const useTranslatedItemType = () => {
   const { t } = useLingui();
-  return (type: OrderLineItemType | "Item") => {
+  return (type: ItemType | "Item") => {
     switch (type) {
       case "Item":
         return t`Item`;
@@ -360,23 +360,23 @@ const Item = ({
                       <Trans>All Items</Trans>
                     </span>
                   </DropdownMenuRadioItem>
-                  {orderLineItemType
-                    .filter((itemType) =>
+                  {itemType
+                    .filter((option) =>
                       // Default to methodItemType so BOM/method pickers never
                       // surface Service; order-line forms opt in by passing
                       // validItemTypes that include it.
                       (validItemTypes ?? methodItemType).some(
-                        (t) => t === itemType
+                        (t) => t === option
                       )
                     )
-                    .map((itemType) => (
+                    .map((option) => (
                       <DropdownMenuRadioItem
-                        key={itemType}
-                        value={itemType}
+                        key={option}
+                        value={option}
                         className="flex items-center gap-2"
                       >
-                        <MethodItemTypeIcon type={itemType} />
-                        <span>{translateItemType(itemType)}</span>
+                        <MethodItemTypeIcon type={option} />
+                        <span>{translateItemType(option)}</span>
                       </DropdownMenuRadioItem>
                     ))}
                 </DropdownMenuRadioGroup>
@@ -443,31 +443,29 @@ const Item = ({
             </ModalHeader>
             <ModalBody>
               <div className="grid grid-cols-1 gap-4">
-                {orderLineItemType
-                  .filter((itemType) =>
+                {itemType
+                  .filter((option) =>
                     // Same narrowing as the dropdown above: BOM/method pickers
                     // never surface Tool or Service; order-line forms opt in
                     // via validItemTypes.
-                    (validItemTypes ?? methodItemType).some(
-                      (t) => t === itemType
-                    )
+                    (validItemTypes ?? methodItemType).some((t) => t === option)
                   )
-                  .map((itemType) => (
+                  .map((option) => (
                     <Button
-                      key={itemType}
-                      leftIcon={<MethodItemTypeIcon type={itemType} />}
+                      key={option}
+                      leftIcon={<MethodItemTypeIcon type={option} />}
                       className="flex w-full"
-                      variant={type === itemType ? "primary" : "secondary"}
+                      variant={type === option ? "primary" : "secondary"}
                       size="lg"
                       onClick={() => {
                         // Same contravariance cast as the dropdown emit above.
-                        onTypeChange?.(itemType as MethodItemType);
+                        onTypeChange?.(option as MethodItemType);
                         setTimeout(() => {
                           submitRef.current?.focus();
                         }, 0);
                       }}
                     >
-                      {translateItemType(itemType)}
+                      {translateItemType(option)}
                     </Button>
                   ))}
               </div>

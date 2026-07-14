@@ -2,7 +2,7 @@ import { getLocalTimeZone, today } from "@internationalized/date";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { address, contact } from "~/types/validators";
-import { incoterms, orderLineItemType, taxExemptionReasons } from "../shared";
+import { incoterms, itemType, taxExemptionReasons } from "../shared";
 
 export const KPIs = [
   {
@@ -207,7 +207,7 @@ export const purchaseOrderLineValidator = z
     id: zfd.text(z.string().optional()),
     purchaseOrderId: z.string().min(1, { message: "Order is required" }),
     purchaseOrderLineType: z.enum(
-      [...orderLineItemType, "Fixture", "G/L Account", "Fixed Asset"],
+      [...itemType, "Fixture", "G/L Account", "Fixed Asset"],
       {
         errorMap: (issue, ctx) => ({
           message: "Type is required"
@@ -475,7 +475,7 @@ export const supplierQuoteLineValidator = z
   .object({
     id: zfd.text(z.string().optional()),
     supplierQuoteId: z.string(),
-    supplierQuoteLineType: z.enum([...orderLineItemType, "G/L Account"], {
+    supplierQuoteLineType: z.enum([...itemType, "G/L Account"], {
       errorMap: () => ({ message: "Type is required" })
     }),
     itemId: zfd.text(z.string().optional()),

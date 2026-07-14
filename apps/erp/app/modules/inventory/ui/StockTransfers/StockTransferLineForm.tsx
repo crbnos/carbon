@@ -23,7 +23,7 @@ import {
   type StockTransfer,
   stockTransferLineValidator
 } from "~/modules/inventory";
-import type { OrderLineItemType } from "~/modules/shared/types";
+import type { ItemType } from "~/modules/shared/types";
 import { useItems } from "~/stores/items";
 import { path } from "~/utils/path";
 
@@ -56,11 +56,11 @@ const StockTransferLineForm = ({
     initialValues.itemId ?? null
   );
 
-  const [itemType, setItemType] = useState<OrderLineItemType | "Item">(() => {
+  const [itemType, setItemType] = useState<ItemType | "Item">(() => {
     if (initialValues.itemId) {
       return (
         (items.find((item) => item.id === initialValues.itemId)
-          ?.type as OrderLineItemType) ?? "Item"
+          ?.type as ItemType) ?? "Item"
       );
     }
     return "Item";
@@ -78,7 +78,7 @@ const StockTransferLineForm = ({
     }
   );
 
-  const onTypeChange = (t: OrderLineItemType | "Item") => {
+  const onTypeChange = (t: ItemType | "Item") => {
     setItemType(t);
     setItemId(null);
   };
@@ -86,7 +86,7 @@ const StockTransferLineForm = ({
   const onItemChange = (itemId: string) => {
     setItemId(itemId);
     const item = items.find((item) => item.id === itemId);
-    const itemType = (item?.type as OrderLineItemType) ?? "Item";
+    const itemType = (item?.type as ItemType) ?? "Item";
     const trackingType = item?.itemTrackingType ?? null;
     setItemType(itemType);
     setItemTrackingType(trackingType);

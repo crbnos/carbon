@@ -12,8 +12,8 @@ import {
   updatePurchasingRFQStatus,
   upsertSupplierQuoteLine
 } from "~/modules/purchasing";
-import type { OrderLineItemType } from "~/modules/shared";
-import { orderLineItemType } from "~/modules/shared";
+import type { ItemType } from "~/modules/shared";
+import { itemType } from "~/modules/shared";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "rfqid-convert");
@@ -114,10 +114,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
       await upsertSupplierQuoteLine(client, {
         supplierQuoteId,
-        supplierQuoteLineType: orderLineItemType.includes(
-          line.itemType as OrderLineItemType
-        )
-          ? (line.itemType as OrderLineItemType)
+        supplierQuoteLineType: itemType.includes(line.itemType as ItemType)
+          ? (line.itemType as ItemType)
           : "Part",
         itemId: line.itemId,
         description: line.description ?? "",

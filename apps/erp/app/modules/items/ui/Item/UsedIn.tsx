@@ -39,7 +39,7 @@ import { Hyperlink, MethodIcon } from "~/components";
 import { Confirm } from "~/components/Modals";
 import { LevelLine } from "~/components/TreeView";
 import { usePermissions } from "~/hooks";
-import type { OrderLineItemType } from "~/modules/shared";
+import type { ItemType } from "~/modules/shared";
 import { path } from "~/utils/path";
 import { getReadableIdWithRevision } from "~/utils/string";
 import { getPathToMakeMethod } from "../Methods/utils";
@@ -81,7 +81,7 @@ export type UsedInNode = {
     documentReadableId: string;
     documentId?: string;
     documentParentId?: string;
-    itemType?: OrderLineItemType;
+    itemType?: ItemType;
     methodType?: string;
     revision?: string;
     version?: number;

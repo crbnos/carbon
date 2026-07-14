@@ -56,8 +56,8 @@ import type {
   ConfigurationParameterGroup
 } from "~/modules/items/types";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
-import type { OrderLineItemType } from "~/modules/shared";
-import { methodType, orderLineItemType } from "~/modules/shared";
+import type { ItemType } from "~/modules/shared";
+import { itemType, methodType } from "~/modules/shared";
 import type { action } from "~/routes/x+/quote+/$quoteId.new";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
@@ -118,11 +118,11 @@ const QuoteLineForm = ({
     modelUploadId: initialValues.modelUploadId ?? null
   });
 
-  const [lineType, setLineType] = useState<OrderLineItemType>(
-    (initialValues.itemType as OrderLineItemType) ?? "Part"
+  const [lineType, setLineType] = useState<ItemType>(
+    (initialValues.itemType as ItemType) ?? "Part"
   );
 
-  const onTypeChange = (t: OrderLineItemType | "Item") => {
+  const onTypeChange = (t: ItemType | "Item") => {
     if (t === "Item") return;
     setLineType(t);
     if (itemData.itemId) {
@@ -401,7 +401,7 @@ const QuoteLineForm = ({
                         label={i18n._(itemTypeLabel(lineType))}
                         type={lineType}
                         typeFieldName="itemType"
-                        validItemTypes={[...orderLineItemType]}
+                        validItemTypes={[...itemType]}
                         value={itemData.itemId}
                         includeInactive
                         locationId={routeData?.quote?.locationId ?? undefined}

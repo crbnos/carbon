@@ -3,11 +3,7 @@ import { zfd } from "zod-form-data";
 // Import the constants from the models file directly (not the `../shared` barrel),
 // which also re-exports shared.service/shared.server — those transitively pull in
 // `@carbon/auth`'s Lingui-macro glossary and break plain unit tests of this module.
-import {
-  incoterms,
-  methodType,
-  orderLineItemType
-} from "../shared/shared.models";
+import { incoterms, itemType, methodType } from "../shared/shared.models";
 
 export const purchaseInvoiceLineType = [
   "Part",
@@ -110,13 +106,7 @@ export const purchaseInvoiceLineValidator = z
     id: zfd.text(z.string().optional()),
     invoiceId: z.string().min(1, { message: "Invoice is required" }),
     invoiceLineType: z.enum(
-      [
-        ...orderLineItemType,
-        "Fixture",
-        "G/L Account",
-        "Fixed Asset",
-        "Comment"
-      ],
+      [...itemType, "Fixture", "G/L Account", "Fixed Asset", "Comment"],
 
       {
         errorMap: (issue, ctx) => ({
@@ -238,7 +228,7 @@ export const salesInvoiceLineValidator = z
   .object({
     id: zfd.text(z.string().optional()),
     invoiceId: z.string().min(1, { message: "Invoice is required" }),
-    invoiceLineType: z.enum([...orderLineItemType, "Fixture", "Fixed Asset"], {
+    invoiceLineType: z.enum([...itemType, "Fixture", "Fixed Asset"], {
       errorMap: (issue, ctx) => ({
         message: "Type is required"
       })

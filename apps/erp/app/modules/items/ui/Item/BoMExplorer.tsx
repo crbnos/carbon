@@ -44,14 +44,14 @@ import { OnshapeSync } from "~/components/OnshapeSync";
 import type { FlatTreeItem } from "~/components/TreeView";
 import { LevelLine, TreeView, useTree } from "~/components/TreeView";
 import { useIntegrations } from "~/hooks/useIntegrations";
-import type { OrderLineItemType } from "~/modules/shared";
+import type { ItemType } from "~/modules/shared";
 import { generateBomIds } from "~/utils/bom";
 import { path } from "~/utils/path";
 import type { MakeMethod, Method, MethodOperation } from "../../types";
 import { getLinkToItemDetails } from "./ItemForm";
 
 type BoMExplorerProps = {
-  itemType: OrderLineItemType;
+  itemType: ItemType;
   makeMethod: MakeMethod;
   methods: FlatTreeItem<Method>[];
   methodId?: string;
@@ -643,11 +643,7 @@ function NodePreview({ node }: { node: FlatTreeItem<Method> }) {
   );
 }
 
-function getRootLink(
-  itemType: OrderLineItemType,
-  itemId: string,
-  methodId: string
-) {
+function getRootLink(itemType: ItemType, itemId: string, methodId: string) {
   switch (itemType) {
     case "Part":
       return `${path.to.partDetails(itemId)}?methodId=${methodId}`;
@@ -661,7 +657,7 @@ function getRootLink(
 }
 
 function getMaterialLink(
-  itemType: OrderLineItemType,
+  itemType: ItemType,
   itemId: string,
   methodId: string,
   makeMethodId: string,

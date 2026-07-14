@@ -128,7 +128,7 @@ export const methodItemType = ["Part", "Material", "Consumable"] as const;
 // Item types that can appear as a top-level quote/sales-order/purchase-order/
 // invoice line. Tools and services are bought and sold even though neither is
 // a method component, so this is wider than methodItemType.
-export const orderLineItemType = [
+export const itemType = [
   "Part",
   "Material",
   "Tool",

@@ -1,8 +1,8 @@
-import type { OrderLineItemType } from "~/modules/shared";
+import type { ItemType } from "~/modules/shared";
 import { path } from "~/utils/path";
 
 export function getPathToMakeMethod(
-  type: OrderLineItemType,
+  type: ItemType,
   id: string,
   methodId: string
 ) {

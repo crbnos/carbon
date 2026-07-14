@@ -6,12 +6,12 @@ import type {
   ApprovalDocumentType,
   approvalRequestValidator,
   approvalRuleValidator,
+  itemType,
   methodItemType,
   methodType,
   operationParameterValidator,
   operationStepValidator,
   operationToolValidator,
-  orderLineItemType,
   sourcingType,
   standardFactorType
 } from "./shared.models";
@@ -94,7 +94,7 @@ export enum DataType {
 
 export type MethodItemType = (typeof methodItemType)[number];
 
-export type OrderLineItemType = (typeof orderLineItemType)[number];
+export type ItemType = (typeof itemType)[number];
 export type MethodType = (typeof methodType)[number];
 export type SourcingType = (typeof sourcingType)[number];
 

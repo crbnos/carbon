@@ -17,8 +17,8 @@ import MaterialForm from "~/modules/items/ui/Materials/MaterialForm";
 import PartForm from "~/modules/items/ui/Parts/PartForm";
 import ServiceForm from "~/modules/items/ui/Services/ServiceForm";
 import ToolForm from "~/modules/items/ui/Tools/ToolForm";
-import type { OrderLineItemType } from "~/modules/shared";
-import { orderLineItemType } from "~/modules/shared";
+import type { ItemType } from "~/modules/shared";
+import { itemType } from "~/modules/shared";
 import { useItems } from "~/stores";
 import { MethodItemTypeIcon } from "../Icons";
 import { useEmptyState } from "./emptyStates";
@@ -27,7 +27,7 @@ type ItemsSelectProps = Omit<CreatableMultiSelectProps, "options">;
 
 const Items = (props: ItemsSelectProps) => {
   const { t } = useLingui();
-  const translateType = (type: OrderLineItemType) => {
+  const translateType = (type: ItemType) => {
     switch (type) {
       case "Part":
         return t`Part`;
@@ -47,7 +47,7 @@ const Items = (props: ItemsSelectProps) => {
   const selectTypeModal = useDisclosure();
   const newItemsModal = useDisclosure();
   const [created, setCreated] = useState<string>("");
-  const [type, setType] = useState<OrderLineItemType>("Part");
+  const [type, setType] = useState<ItemType>("Part");
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const options = useMemo(
@@ -105,16 +105,16 @@ const Items = (props: ItemsSelectProps) => {
             </ModalHeader>
             <ModalBody>
               <div className="grid grid-cols-1 gap-4">
-                {orderLineItemType.map((itemType) => (
+                {itemType.map((option) => (
                   <Button
-                    key={itemType}
-                    leftIcon={<MethodItemTypeIcon type={itemType} />}
+                    key={option}
+                    leftIcon={<MethodItemTypeIcon type={option} />}
                     className="flex w-full"
-                    variant={type === itemType ? "primary" : "secondary"}
+                    variant={type === option ? "primary" : "secondary"}
                     size="lg"
-                    onClick={() => setType(itemType)}
+                    onClick={() => setType(option)}
                   >
-                    {translateType(itemType)}
+                    {translateType(option)}
                   </Button>
                 ))}
               </div>
