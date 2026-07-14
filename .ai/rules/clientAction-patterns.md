@@ -72,9 +72,15 @@ clientLoader.hydrate = true;
 - `clientLoader.hydrate = true` makes the client loader run on **initial hydration**, not
   just subsequent client navigations — so the cache warms on first load. Present on all
   `api+` clientLoader files; no `HydrateFallback` is exported anywhere.
-- Variants destructure `request` to fold URL search params into the key
-  (`apps/erp/app/routes/api+/users.groups.tsx` →
-  `groupsByTypeQuery(companyId, type)`).
+- Variants fold route/search params into the key
+  (`apps/erp/app/routes/api+/items.types.$substanceId.$formId.ts` →
+  `materialTypesQuery(substanceId, formId, companyId)`).
+- For component-driven (non-navigation) fetches, `clientLoader` never runs — raw
+  `fetch` bypasses it. Those use `cachedApiQuery(queryDef, url)`
+  (`apps/erp/app/utils/react-query.ts`), an imperative
+  `clientCache.fetchQuery` read-through with the same key factories, so
+  `clientAction` invalidation still applies (see the user-select endpoints,
+  invalidated by `invalidateUserSelectQueries`).
 
 ## clientAction — cache invalidation (mutation routes, `x+/`)
 
