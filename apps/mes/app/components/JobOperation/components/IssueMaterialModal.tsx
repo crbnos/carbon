@@ -73,7 +73,7 @@ import type { JobMaterial, TrackedInput } from "~/services/types";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 
-type TrackingType = "Serial" | "Batch" | "Inventory" | null;
+type TrackingType = "Serial" | "Batch" | "Inventory" | "Non-Inventory" | null;
 
 interface ItemDetails {
   id: string;
@@ -1033,8 +1033,12 @@ export function IssueMaterialModal({
                 </AlertDescription>
               </Alert>
             </ModalBody>
-          ) : trackingType === "Inventory" || trackingType === null ? (
-            // Inventory item - use ValidatedForm
+          ) : trackingType === "Inventory" ||
+            trackingType === "Non-Inventory" ||
+            trackingType === null ? (
+            // Untracked item (Inventory or Non-Inventory, e.g. consumables and
+            // services) - use ValidatedForm; the issue edge function skips the
+            // itemLedger for Non-Inventory items but still posts the WIP cost
             <ValidatedForm
               method="post"
               action={path.to.issue}
@@ -1094,32 +1098,34 @@ export function IssueMaterialModal({
                     </div>
                   )}
 
-                  {showContent && trackingType === "Inventory" && (
-                    <>
-                      {!material?.id && (
-                        <div>
-                          <label className="block text-sm font-medium mb-1">
-                            Adjustment Type
-                          </label>
-                          <Select
-                            name="adjustmentType"
-                            defaultValue="Negative Adjmt."
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Positive Adjmt.">
-                                Add to Inventory
-                              </SelectItem>
-                              <SelectItem value="Negative Adjmt.">
-                                Pull from Inventory
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      )}
-                      {/*
+                  {showContent &&
+                    (trackingType === "Inventory" ||
+                      trackingType === "Non-Inventory") && (
+                      <>
+                        {!material?.id && (
+                          <div>
+                            <label className="block text-sm font-medium mb-1">
+                              Adjustment Type
+                            </label>
+                            <Select
+                              name="adjustmentType"
+                              defaultValue="Negative Adjmt."
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Positive Adjmt.">
+                                  Add to Inventory
+                                </SelectItem>
+                                <SelectItem value="Negative Adjmt.">
+                                  Pull from Inventory
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+                        {/*
                         Use the form-aware `<Number>` (FormNumberInput) so
                         `name="quantity"` lands on react-aria's NumberField
                         and a hidden form input is rendered with the numeric
@@ -1129,13 +1135,13 @@ export function IssueMaterialModal({
                         the server's zod schema rejected it, and the action
                         returned a 400 the modal silently swallowed.
                       */}
-                      <FormNumberInput
-                        name="quantity"
-                        label="Quantity"
-                        minValue={0.01}
-                      />
-                    </>
-                  )}
+                        <FormNumberInput
+                          name="quantity"
+                          label="Quantity"
+                          minValue={0.01}
+                        />
+                      </>
+                    )}
                 </div>
               </ModalBody>
               <ModalFooter>
