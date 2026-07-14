@@ -126,6 +126,10 @@ const defaultDestinations: Partial<
     NotificationDestination.Email,
     NotificationDestination.Slack
   ],
+  [NotificationEvent.PurchasingRfqAssignment]: [
+    NotificationDestination.Email,
+    NotificationDestination.Slack
+  ],
   [NotificationEvent.SalesRfqAssignment]: [
     NotificationDestination.Email,
     NotificationDestination.Slack

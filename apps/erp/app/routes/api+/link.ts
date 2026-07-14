@@ -53,6 +53,8 @@ function resolve(
       return path.to.supplierQuote(documentId);
     case NotificationEvent.SalesOrderAssignment:
       return path.to.salesOrder(documentId);
+    case NotificationEvent.PurchasingRfqAssignment:
+      return path.to.purchasingRfq(documentId);
     case NotificationEvent.SalesRfqAssignment:
     case NotificationEvent.SalesRfqReady:
       return path.to.salesRfq(documentId);

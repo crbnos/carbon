@@ -895,6 +895,35 @@ async function buildEventContent(
       };
     }
 
+    case NotificationEvent.PurchasingRfqAssignment: {
+      const purchasingRfq = await client
+        .from("purchasingRfq")
+        .select("*")
+        .eq("id", documentId)
+        .single();
+
+      if (purchasingRfq.error) {
+        console.error("Failed to get purchasing RFQ", purchasingRfq.error);
+        throw purchasingRfq.error;
+      }
+
+      return {
+        description: `Purchasing RFQ ${purchasingRfq?.data?.rfqId} assigned to you`,
+        reference: purchasingRfq?.data?.rfqId ?? undefined,
+        details: buildDetails([
+          {
+            label: "RFQ date",
+            value: formatDetailDate(purchasingRfq.data?.rfqDate)
+          },
+          {
+            label: "Expires",
+            value: formatDetailDate(purchasingRfq.data?.expirationDate)
+          },
+          { label: "Status", value: purchasingRfq.data?.status }
+        ])
+      };
+    }
+
     case NotificationEvent.SupplierQuoteAssignment: {
       const supplierQuoteAssignment = await client
         .from("supplierQuote")
