@@ -6,6 +6,7 @@ import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
 import { batchCompleteValidator } from "~/services/models";
+import { getJobOperationBatch } from "~/services/operations.service";
 import { path } from "~/utils/path";
 
 // Completes a batch: hands the per-member quantities to the `batch-operations`
@@ -14,7 +15,7 @@ import { path } from "~/utils/path";
 // member's own BOM, flips every member Done, and posts GL per sliced event.
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "production"
   });
 
@@ -23,6 +24,28 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (validation.error) {
     return validationError(validation.error);
+  }
+
+  // Only a non-terminal batch may be completed. 'Active' starts a fresh
+  // completion; 'Completing' resumes a prior attempt whose post-commit step
+  // failed (the edge function re-runs phase 2 idempotently). A terminal
+  // 'Completed'/'Cancelled' batch is rejected — the edge function enforces this
+  // too, but guarding here avoids the round-trip and surfaces a clear message.
+  const batch = await getJobOperationBatch(
+    client,
+    validation.data.jobOperationBatchId,
+    companyId
+  );
+
+  if (batch.error || !batch.data) {
+    return data(
+      {},
+      await flash(request, error(batch.error, "Failed to load batch"))
+    );
+  }
+
+  if (batch.data.status !== "Active" && batch.data.status !== "Completing") {
+    return data({}, await flash(request, error("Batch is not active")));
   }
 
   const serviceRole = await getCarbonServiceRole();

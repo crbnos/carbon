@@ -116,20 +116,36 @@ async function assertNoBatchProductionEvent(
   }
 }
 
-// Validates that each candidate operation may join a batch on `processId`, throwing
-// a specific error (AC[4]) on the first violation. Returns nothing on success.
+// Validates that each candidate operation may join a batch on `processId` at
+// `locationId`, throwing a specific error (AC[4]) on the first violation. Returns
+// nothing on success. Joins jobOperation -> job so the operation's job location can
+// be checked against the batch's location — a batch is a single machine at one
+// location, so a member whose job runs elsewhere would corrupt the planning board
+// (and the location-scoped candidate pool would never have surfaced it).
 async function assertOperationsEligible(
   // deno-lint-ignore no-explicit-any
   trx: any,
   jobOperationIds: string[],
   processId: string,
-  companyId: string
+  companyId: string,
+  locationId: string
 ) {
   const operations = await trx
     .selectFrom("jobOperation")
-    .select(["id", "processId", "status", "jobOperationBatchId"])
-    .where("id", "in", jobOperationIds)
-    .where("companyId", "=", companyId)
+    .innerJoin("job", (join: any) =>
+      join
+        .onRef("job.id", "=", "jobOperation.jobId")
+        .onRef("job.companyId", "=", "jobOperation.companyId")
+    )
+    .select([
+      "jobOperation.id as id",
+      "jobOperation.processId as processId",
+      "jobOperation.status as status",
+      "jobOperation.jobOperationBatchId as jobOperationBatchId",
+      "job.locationId as jobLocationId",
+    ])
+    .where("jobOperation.id", "in", jobOperationIds)
+    .where("jobOperation.companyId", "=", companyId)
     .execute();
 
   const found = new Set(operations.map((o: { id: string }) => o.id));
@@ -141,6 +157,11 @@ async function assertOperationsEligible(
     if (op.processId !== processId) {
       throw new Error(
         "All operations in a batch must share the same process"
+      );
+    }
+    if (op.jobLocationId !== locationId) {
+      throw new Error(
+        "All operations in a batch must be at the same location"
       );
     }
     if (op.jobOperationBatchId) {
@@ -516,7 +537,8 @@ serve(async (req: Request) => {
             trx,
             jobOperationIds,
             processId,
-            companyId
+            companyId,
+            parsed.locationId
           );
 
           const readableId = await getNextSequence(
@@ -577,7 +599,7 @@ serve(async (req: Request) => {
 
           const batch = await trx
             .selectFrom("jobOperationBatch")
-            .select(["id", "processId", "workCenterId", "status"])
+            .select(["id", "processId", "workCenterId", "status", "locationId"])
             .where("id", "=", jobOperationBatchId)
             .where("companyId", "=", companyId)
             .executeTakeFirst();
@@ -600,7 +622,8 @@ serve(async (req: Request) => {
             trx,
             jobOperationIds,
             batch.processId,
-            companyId
+            companyId,
+            batch.locationId
           );
 
           const memberUpdate: Record<string, unknown> = {

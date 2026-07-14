@@ -2,12 +2,14 @@ import { Badge, Button, cn, Heading, HStack, VStack } from "@carbon/react";
 import type { DragEndEvent } from "@dnd-kit/core";
 import {
   DndContext,
+  KeyboardSensor,
   PointerSensor,
   useDraggable,
   useDroppable,
   useSensor,
   useSensors
 } from "@dnd-kit/core";
+import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
 import { LuLayers, LuTrash2 } from "react-icons/lu";
@@ -80,7 +82,10 @@ export function BatchPlanningBoard({
   const { t } = useLingui();
   const fetcher = useFetcher();
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates
+    })
   );
 
   const [filters, setFilters] = useState<Record<Facet, string>>({

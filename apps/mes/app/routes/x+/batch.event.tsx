@@ -8,6 +8,7 @@ import { data } from "react-router";
 import { batchProductionEventValidator } from "~/services/models";
 import {
   endProductionEvent,
+  getJobOperationBatch,
   startBatchProductionEvent
 } from "~/services/operations.service";
 
@@ -30,6 +31,27 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const { id, action: productionAction, timezone, ...d } = validation.data;
+
+  // Only an Active batch may run its timer. A Completed/Cancelled batch is
+  // terminal, and a 'Completing' batch has already committed its timer slice —
+  // starting or ending an aggregate timer against any of those would record time
+  // that completion can never account for (and could spawn a duplicate timer).
+  const batch = await getJobOperationBatch(
+    client,
+    d.jobOperationBatchId,
+    companyId
+  );
+
+  if (batch.error || !batch.data) {
+    return data(
+      {},
+      await flash(request, error(batch.error, "Failed to load batch"))
+    );
+  }
+
+  if (batch.data.status !== "Active") {
+    return data({}, await flash(request, error("Batch is not active")));
+  }
 
   if (productionAction === "Start") {
     const startEvent = await startBatchProductionEvent(client, {

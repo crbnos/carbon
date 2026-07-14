@@ -70202,7 +70202,7 @@ export type Database = {
           jobDueDate: string
           jobId: string
           jobMakeMethodId: string
-          jobOperationBatchId: string
+          jobOperationBatchId: string | null
           jobReadableId: string
           jobStatus: Database["public"]["Enums"]["jobStatus"]
           laborTime: number
