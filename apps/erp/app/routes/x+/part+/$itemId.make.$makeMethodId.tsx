@@ -121,10 +121,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         operationUnitCost: operation.operationUnitCost ?? 0,
         tags: operation.tags ?? [],
         workCenterId: operation.workCenterId ?? undefined,
-        abilities:
-          operation.methodOperationAbility?.map(
-            (a: { abilityId: string }) => a.abilityId
-          ) ?? [],
         workInstruction: operation.workInstruction as JSONContent | null
       })) ?? [],
     partManufacturing: partManufacturing.data,

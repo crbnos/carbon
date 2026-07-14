@@ -25,12 +25,9 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   LuAlignLeft,
   LuBuilding2,
-  LuCalendarClock,
-  LuCalendarRange,
   LuCheck,
   LuCog,
   LuDollarSign,
-  LuLayers,
   LuPencil,
   LuTrash,
   LuTriangleAlert,
@@ -59,13 +56,6 @@ type WorkCentersTableProps = {
   count: number;
   departments: ListItem[];
   locations: ListItem[];
-};
-
-// TODO: the workCenters view predates the capacity/calendar columns —
-// recreate the view (wc.*) so these fields flow through WorkCenter directly
-type WorkCenterCapacityFields = {
-  schedulingMode?: "Finite" | "Infinite" | null;
-  parallelCapacity?: number | null;
 };
 
 const defaultColumnVisibility = {
@@ -199,34 +189,6 @@ const WorkCentersTable = memo(
           }
         },
         {
-          id: "schedulingMode",
-          header: t`Scheduling Mode`,
-          cell: ({ row }) => (
-            <Enumerable
-              value={
-                (row.original as WorkCenter & WorkCenterCapacityFields)
-                  .schedulingMode ?? null
-              }
-            />
-          ),
-          meta: {
-            icon: <LuCalendarClock />
-          }
-        },
-        {
-          id: "parallelCapacity",
-          header: t`Parallel Capacity`,
-          cell: ({ row }) => (
-            <span className="tabular-nums">
-              {(row.original as WorkCenter & WorkCenterCapacityFields)
-                .parallelCapacity ?? null}
-            </span>
-          ),
-          meta: {
-            icon: <LuLayers />
-          }
-        },
-        {
           accessorKey: "active",
           header: t`Active`,
           cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
@@ -333,15 +295,6 @@ const WorkCentersTable = memo(
           >
             <MenuIcon icon={<LuPencil />} />
             <Trans>Edit Work Center</Trans>
-          </MenuItem>
-          <MenuItem
-            disabled={!permissions.can("update", "resources")}
-            onClick={() => {
-              navigate(path.to.workCenterCapacity(row.id!));
-            }}
-          >
-            <MenuIcon icon={<LuCalendarRange />} />
-            <Trans>Edit Capacity Overrides</Trans>
           </MenuItem>
           {row.active ? (
             <MenuItem

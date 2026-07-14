@@ -130,16 +130,9 @@ export type AssemblyNode = {
 // Work Center Types
 // ============================================================================
 
-export type WorkCenterLoad = {
-  workCenterId: string;
-  totalHours: number;
-  operationCount: number;
-};
-
 export type WorkCenterSelection = {
   workCenterId: string | null;
   priority: number;
-  load?: number;
   error?: string;
   // Finite placement (present when the selected work center is Finite and a
   // slot was allocated). ISO timestamps.

@@ -1,6 +1,6 @@
 {
-  "generated": "2026-07-09T20:36:55.100Z",
-  "totalTools": 1279,
+  "generated": "2026-07-14T08:32:22.849Z",
+  "totalTools": 1262,
   "modules": 15,
   "tools": [
     {
@@ -13075,67 +13075,6 @@
       }
     },
     {
-      "name": "items_getMethodOperationAbilities",
-      "module": "items",
-      "classification": "READ",
-      "description": "get method operation abilities",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "methodOperationId"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "methodOperationId": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "methodOperationId"
-        ]
-      }
-    },
-    {
-      "name": "items_syncMethodOperationAbilities",
-      "module": "items",
-      "classification": "WRITE",
-      "description": "sync method operation abilities",
-      "paramCount": 2,
-      "serviceParams": [
-        "client",
-        "methodOperationId",
-        "companyId",
-        "abilityIds",
-        "userId"
-      ],
-      "injectAuth": [
-        "companyId",
-        "updatedBy"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "methodOperationId": {
-            "type": "string"
-          },
-          "abilityIds": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        },
-        "required": [
-          "methodOperationId",
-          "abilityIds"
-        ]
-      }
-    },
-    {
       "name": "items_upsertMethodOperation",
       "module": "items",
       "classification": "WRITE",
@@ -18788,67 +18727,6 @@
         },
         "required": [
           "jobId"
-        ]
-      }
-    },
-    {
-      "name": "production_getJobOperationAbilities",
-      "module": "production",
-      "classification": "READ",
-      "description": "get job operation abilities",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "operationId"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "operationId": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "operationId"
-        ]
-      }
-    },
-    {
-      "name": "production_syncJobOperationAbilities",
-      "module": "production",
-      "classification": "WRITE",
-      "description": "sync job operation abilities",
-      "paramCount": 2,
-      "serviceParams": [
-        "client",
-        "operationId",
-        "companyId",
-        "abilityIds",
-        "userId"
-      ],
-      "injectAuth": [
-        "companyId",
-        "updatedBy"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "operationId": {
-            "type": "string"
-          },
-          "abilityIds": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        },
-        "required": [
-          "operationId",
-          "abilityIds"
         ]
       }
     },
@@ -27816,419 +27694,6 @@
       }
     },
     {
-      "name": "resources_getResourceCalendars",
-      "module": "resources",
-      "classification": "READ",
-      "description": "get resource calendars",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "companyId",
-        "args"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "search": {
-            "type": "object",
-            "properties": {
-              "limit": {
-                "type": "integer",
-                "default": 100
-              },
-              "offset": {
-                "type": "integer",
-                "default": 0
-              }
-            }
-          }
-        },
-        "required": [
-          "search"
-        ]
-      }
-    },
-    {
-      "name": "resources_getResourceCalendarsList",
-      "module": "resources",
-      "classification": "READ",
-      "description": "get resource calendars list",
-      "paramCount": 0,
-      "serviceParams": [
-        "client",
-        "companyId"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {}
-      }
-    },
-    {
-      "name": "resources_getResourceCalendar",
-      "module": "resources",
-      "classification": "READ",
-      "description": "get resource calendar",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "id"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id"
-        ]
-      }
-    },
-    {
-      "name": "resources_getResourceCalendarShifts",
-      "module": "resources",
-      "classification": "READ",
-      "description": "get resource calendar shifts",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "resourceCalendarId"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "resourceCalendarId": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "resourceCalendarId"
-        ]
-      }
-    },
-    {
-      "name": "resources_getResourceCalendarExceptions",
-      "module": "resources",
-      "classification": "READ",
-      "description": "get resource calendar exceptions",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "resourceCalendarId"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "resourceCalendarId": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "resourceCalendarId"
-        ]
-      }
-    },
-    {
-      "name": "resources_upsertResourceCalendar",
-      "module": "resources",
-      "classification": "WRITE",
-      "description": "upsert resource calendar",
-      "paramCount": 3,
-      "serviceParams": [
-        "client",
-        "resourceCalendar"
-      ],
-      "injectAuth": [
-        "companyId",
-        "createdBy",
-        "updatedBy"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "locationId": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "name"
-        ]
-      }
-    },
-    {
-      "name": "resources_deleteResourceCalendar",
-      "module": "resources",
-      "classification": "DESTRUCTIVE",
-      "description": "delete resource calendar",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "id"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id"
-        ]
-      }
-    },
-    {
-      "name": "resources_upsertResourceCalendarShift",
-      "module": "resources",
-      "classification": "WRITE",
-      "description": "upsert resource calendar shift",
-      "paramCount": 5,
-      "serviceParams": [
-        "client",
-        "shift"
-      ],
-      "injectAuth": [
-        "companyId",
-        "createdBy",
-        "updatedBy"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "resourceCalendarId": {
-            "type": "string"
-          },
-          "dayOfWeek": {
-            "type": "number"
-          },
-          "startTime": {
-            "type": "string"
-          },
-          "endTime": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "resourceCalendarId",
-          "startTime",
-          "endTime"
-        ]
-      }
-    },
-    {
-      "name": "resources_deleteResourceCalendarShift",
-      "module": "resources",
-      "classification": "DESTRUCTIVE",
-      "description": "delete resource calendar shift",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "id"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id"
-        ]
-      }
-    },
-    {
-      "name": "resources_upsertResourceCalendarException",
-      "module": "resources",
-      "classification": "WRITE",
-      "description": "upsert resource calendar exception",
-      "paramCount": 6,
-      "serviceParams": [
-        "client",
-        "exception"
-      ],
-      "injectAuth": [
-        "companyId",
-        "createdBy",
-        "updatedBy"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "resourceCalendarId": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "startAt": {
-            "type": "string"
-          },
-          "endAt": {
-            "type": "string"
-          },
-          "type": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "resourceCalendarId",
-          "name",
-          "startAt",
-          "endAt"
-        ]
-      }
-    },
-    {
-      "name": "resources_deleteResourceCalendarException",
-      "module": "resources",
-      "classification": "DESTRUCTIVE",
-      "description": "delete resource calendar exception",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "id"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id"
-        ]
-      }
-    },
-    {
-      "name": "resources_getWorkCenterCapacities",
-      "module": "resources",
-      "classification": "READ",
-      "description": "get work center capacities",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "workCenterId"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "workCenterId": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "workCenterId"
-        ]
-      }
-    },
-    {
-      "name": "resources_upsertWorkCenterCapacity",
-      "module": "resources",
-      "classification": "WRITE",
-      "description": "upsert work center capacity",
-      "paramCount": 5,
-      "serviceParams": [
-        "client",
-        "capacity"
-      ],
-      "injectAuth": [
-        "companyId",
-        "createdBy",
-        "updatedBy"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "workCenterId": {
-            "type": "string"
-          },
-          "effectiveFrom": {
-            "type": "string"
-          },
-          "effectiveTo": {
-            "type": "string"
-          },
-          "parallelCapacity": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "workCenterId",
-          "effectiveFrom"
-        ]
-      }
-    },
-    {
-      "name": "resources_deleteWorkCenterCapacity",
-      "module": "resources",
-      "classification": "DESTRUCTIVE",
-      "description": "delete work center capacity",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "id"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id"
-        ]
-      }
-    },
-    {
       "name": "resources_insertAbility",
       "module": "resources",
       "classification": "WRITE",
@@ -28445,7 +27910,7 @@
       "module": "resources",
       "classification": "WRITE",
       "description": "upsert employee ability cell",
-      "paramCount": 7,
+      "paramCount": 6,
       "serviceParams": [
         "client",
         "cell"
@@ -28481,12 +27946,6 @@
               "string",
               "null"
             ]
-          },
-          "proficiencyOverride": {
-            "type": [
-              "number",
-              "null"
-            ]
           }
         },
         "required": [
@@ -28495,8 +27954,36 @@
           "active",
           "trainingCompleted",
           "lastTrainingDate",
-          "expiresAt",
-          "proficiencyOverride"
+          "expiresAt"
+        ]
+      }
+    },
+    {
+      "name": "resources_ensureProcessAbility",
+      "module": "resources",
+      "classification": "WRITE",
+      "description": "ensure process ability",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "processId": {
+            "type": "string"
+          },
+          "processName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "processId",
+          "processName"
         ]
       }
     },

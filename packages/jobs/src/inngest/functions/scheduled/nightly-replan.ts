@@ -8,15 +8,14 @@ const ACTIVE_JOB_STATUSES = ["Ready", "In Progress", "Paused"] as const;
  *
  * Conflict flags (`jobOperation.hasConflict`/`conflictReason`) and capacity
  * reservations are snapshots written at scheduling time — they do NOT react
- * to master-data changes (operator qualifications granted/expiring, calendar
- * exceptions starting, capacity overrides taking effect) or to time simply
- * passing. Without this cron, a stale conflict badge sticks to the schedule
- * boards until someone manually re-triggers scheduling for that job.
+ * to master-data changes (operator qualifications granted/expiring, shift
+ * assignments changing) or to time simply passing. Without this cron, a
+ * stale conflict badge sticks to the schedule boards until someone manually
+ * re-triggers scheduling for that job.
  *
- * Runs at 01:00 UTC — before the 02:00 capacity rollup, so the rollup
- * aggregates the fresh plan. Within a company, jobs are rescheduled
- * sequentially in due-date order so the most urgent job claims capacity
- * first (matching backward-scheduling semantics).
+ * Runs at 01:00 UTC. Within a company, jobs are rescheduled sequentially in
+ * due-date order so the most urgent job claims capacity first (matching
+ * backward-scheduling semantics).
  */
 export const nightlyReplanFunction = inngest.createFunction(
   { id: "nightly-replan", retries: 2 },

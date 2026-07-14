@@ -157,6 +157,11 @@ const ProcessForm = ({
                   label={t`Complete all quantities on barcode scan`}
                   termId="process-complete-all-on-scan"
                 />
+                <Boolean
+                  name="requiresAbility"
+                  label={t`Requires Ability`}
+                  description={t`Only qualified employees can be scheduled for and run this process`}
+                />
                 <CustomFormFields table="process" />
               </VStack>
             </ModalDrawerBody>

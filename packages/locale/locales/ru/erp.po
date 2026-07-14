@@ -581,9 +581,6 @@ msgstr ""
 msgid "Add Entry"
 msgstr "Добавить запись"
 
-msgid "Add Exception"
-msgstr ""
-
 msgid "Add Feature"
 msgstr "Добавить функцию"
 
@@ -613,9 +610,6 @@ msgstr "Добавить операцию"
 
 msgid "Add options above first"
 msgstr "Сначала добавьте параметры выше"
-
-msgid "Add Override"
-msgstr ""
 
 msgid "Add Pair"
 msgstr "Добавить пару"
@@ -655,9 +649,6 @@ msgstr "Добавить правило"
 
 msgid "Add Selector"
 msgstr "Добавить селектор"
-
-msgid "Add Shift"
-msgstr ""
 
 msgid "Add Shipment"
 msgstr "Добавить отправку"
@@ -1038,9 +1029,6 @@ msgid "Are you sure you want to deactivate the {label} configuration rule?"
 msgstr "Вы уверены, что хотите деактивировать правило конфигурации {label}?"
 
 msgid "Are you sure you want to deactivate the ability: {name}?"
-msgstr ""
-
-msgid "Are you sure you want to deactivate the calendar: {name}?"
 msgstr ""
 
 msgid "Are you sure you want to deactivate the process: {name}? It will no longer appear in dropdowns."
@@ -1804,12 +1792,6 @@ msgstr "Рассчитанный срок годности готовой про
 msgid "Calculation Method"
 msgstr "Метод расчета"
 
-msgid "Calendar"
-msgstr ""
-
-msgid "Calendars"
-msgstr ""
-
 msgid "Calibration Attempts"
 msgstr "Попытки калибровки"
 
@@ -1902,12 +1884,6 @@ msgstr "Невозможно загрузить — взаимодействие
 
 msgid "Cannot upload to parts bucket without item ID"
 msgstr "Невозможно загрузить в корзину деталей без ID элемента"
-
-msgid "Capacity Override"
-msgstr ""
-
-msgid "Capacity Overrides: {workCenterName}"
-msgstr ""
 
 msgid "Carbon"
 msgstr "Углерод"
@@ -3220,9 +3196,6 @@ msgstr "Дата оплаты"
 msgid "Dates"
 msgstr "Даты"
 
-msgid "Day"
-msgstr ""
-
 msgid "Day-to-day questions and hypercare after launch"
 msgstr "Ежедневные вопросы и поддержка после запуска"
 
@@ -3262,9 +3235,6 @@ msgstr ""
 
 msgid "Deactivate Account"
 msgstr "Деактивировать аккаунт"
-
-msgid "Deactivate Calendar"
-msgstr ""
 
 msgid "Deactivate Employee"
 msgstr "Деактивировать сотрудника"
@@ -3437,9 +3407,6 @@ msgstr "Удалить ассоциацию"
 msgid "Delete Attribute"
 msgstr "Удалить атрибут"
 
-msgid "Delete capacity override"
-msgstr ""
-
 msgid "Delete Category"
 msgstr "Удалить категорию"
 
@@ -3475,9 +3442,6 @@ msgstr "Удалить документ"
 
 msgid "Delete Employee Type"
 msgstr "Удалить тип сотрудника"
-
-msgid "Delete exception"
-msgstr ""
 
 msgid "Delete Failure Mode"
 msgstr "Удалить режим отказа"
@@ -3598,9 +3562,6 @@ msgstr "Удалить заказ продажи"
 
 msgid "Delete Schedule"
 msgstr "Удалить расписание"
-
-msgid "Delete shift"
-msgstr ""
 
 msgid "Delete Shift"
 msgstr "Удалить смену"
@@ -3736,9 +3697,6 @@ msgstr "Дата начала амортизации"
 
 msgid "Derive this item's shelf life from the shortest shelf life of its components, ignoring the Days field above."
 msgstr "Выведите срок хранения этого товара из кратчайшего срока хранения его компонентов, игнорируя поле «Дни» выше."
-
-msgid "Derived"
-msgstr ""
 
 msgid "Description"
 msgstr "Описание"
@@ -4079,15 +4037,6 @@ msgstr "Редактировать атрибут"
 msgid "Edit Attribute Category"
 msgstr "Редактировать категорию атрибута"
 
-msgid "Edit Calendar"
-msgstr ""
-
-msgid "Edit capacity override"
-msgstr ""
-
-msgid "Edit Capacity Overrides"
-msgstr ""
-
 msgid "Edit Category"
 msgstr "Редактировать категорию"
 
@@ -4355,9 +4304,6 @@ msgstr "Действительно с"
 msgid "Effective To"
 msgstr "Действительно до"
 
-msgid "Efficiency Factor"
-msgstr ""
-
 msgid "Email"
 msgstr "Электронная почта"
 
@@ -4447,9 +4393,6 @@ msgstr "Включите использование метрических ед�
 
 msgid "Enabled"
 msgstr "Включено"
-
-msgid "End"
-msgstr ""
 
 msgid "End Date"
 msgstr "Дата окончания"
@@ -4660,9 +4603,6 @@ msgstr "Всё из Starter"
 
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "Превышает {PO_EMAIL_ATTACHMENT_LIMIT_MB} МБ всего — удалите некоторые вложения для отправки."
-
-msgid "Exceptions"
-msgstr ""
 
 msgid "Exchange Rate"
 msgstr "Курс обмена"
@@ -5230,9 +5170,6 @@ msgstr "Дополнительное вычитание в первый год, 
 
 msgid "Finishes"
 msgstr "Отделки"
-
-msgid "Finite"
-msgstr ""
 
 msgid "First Name"
 msgstr "Имя"
@@ -5990,9 +5927,6 @@ msgstr "Косвенные материалы и услуги"
 
 msgid "Indirect Materials & Services (default)"
 msgstr "Косвенные материалы и услуги (по умолчанию)"
-
-msgid "Infinite"
-msgstr ""
 
 msgid "Infrastructure"
 msgstr "Инфраструктура"
@@ -7338,9 +7272,6 @@ msgstr "Новый атрибут"
 msgid "New Attribute Category"
 msgstr "Новая категория атрибутов"
 
-msgid "New Calendar"
-msgstr ""
-
 msgid "New Consumable"
 msgstr "Новый расходный материал"
 
@@ -7671,9 +7602,6 @@ msgstr "Ни один вход BOM не имеет политики срока �
 msgid "No calibration records found"
 msgstr "Записи о калибровке не найдены"
 
-msgid "No capacity overrides defined"
-msgstr ""
-
 msgid "No changes recorded"
 msgstr "Изменений не записано"
 
@@ -7715,9 +7643,6 @@ msgstr "Сотрудники еще не назначены. Добавьте г
 
 msgid "No employees found"
 msgstr "Сотрудники не найдены"
-
-msgid "No exceptions defined"
-msgstr ""
 
 msgid "No extra cutover steps yet. Add anything specific to this customer."
 msgstr "Нет дополнительных этапов перехода. Добавьте что-нибудь специфичное для этого клиента."
@@ -7859,9 +7784,6 @@ msgstr "Нет назначенных правил"
 
 msgid "No samples inspected yet."
 msgstr "Пока нет проверенных образцов."
-
-msgid "No shifts defined"
-msgstr ""
 
 msgid "No single, trusted number for inventory or job status"
 msgstr "Нет единого надежного показателя для инвентаря или статуса работы"
@@ -8052,6 +7974,9 @@ msgstr "Один шаг в маршрутизации задания, опред
 msgid "One system from quote to cash"
 msgstr "Одна система от предложения до оплаты"
 
+msgid "Only qualified employees can be scheduled for and run this process"
+msgstr ""
+
 msgid "Onshape Status"
 msgstr "Статус Onshape"
 
@@ -8138,9 +8063,6 @@ msgstr "Открыть карту настройки"
 
 msgid "Open transactions"
 msgstr "Открытые транзакции"
-
-msgid "open-ended"
-msgstr ""
 
 msgid "Opened"
 msgstr "Открыт"
@@ -8311,9 +8233,6 @@ msgstr "Переопределить цену для всех клиентов �
 msgid "Override the expiration on {label}."
 msgstr "Переопределить срок действия для {label}."
 
-msgid "Overrides the derived learning-curve proficiency (0 to 1); blank = derived"
-msgstr ""
-
 msgid "Overtime"
 msgstr "Переработки"
 
@@ -8350,9 +8269,6 @@ msgstr "Оплаченная сумма:"
 
 msgid "Paid Date"
 msgstr "Дата оплаты"
-
-msgid "Parallel Capacity"
-msgstr ""
 
 msgid "Parameters"
 msgstr "Параметры"
@@ -8944,9 +8860,6 @@ msgstr "Прогнозируемый спрос, разложенный из в�
 msgid "Production: shop-floor app and scheduling"
 msgstr "Производство: приложение для цеха и планирование"
 
-msgid "Proficiency Override"
-msgstr ""
-
 msgid "Profile"
 msgstr "Профиль"
 
@@ -9489,9 +9402,6 @@ msgstr "Перенаправление на страницу проверки...
 msgid "Reduced"
 msgstr "Сокращено"
 
-msgid "Reduced Capacity"
-msgstr ""
-
 msgid "Reference"
 msgstr "Ссылка"
 
@@ -9685,12 +9595,6 @@ msgstr "Требуется одобрение для документов кач
 msgid "Required"
 msgstr "Обязательно"
 
-msgid "Required Abilities"
-msgstr ""
-
-msgid "Required Ability"
-msgstr ""
-
 msgid "Required Action"
 msgstr "Требуемое действие"
 
@@ -9714,6 +9618,9 @@ msgstr "Требования и карта процессов"
 
 msgid "Requirements and Process Map"
 msgstr "Требования и карта процесса"
+
+msgid "Requires Ability"
+msgstr ""
 
 msgid "Requires Action"
 msgstr "Требует действия"
@@ -10159,9 +10066,6 @@ msgid "Schedules"
 msgstr "Расписания"
 
 msgid "Scheduling conflict"
-msgstr ""
-
-msgid "Scheduling Mode"
 msgstr ""
 
 msgid "Scope"
@@ -10796,9 +10700,6 @@ msgstr "Утверждения, которые должны быть запис�
 
 msgid "Signed in as {name}"
 msgstr "Вы вошли как {name}"
-
-msgid "Simultaneous operations this work center can run"
-msgstr ""
 
 msgid "Sites & locations"
 msgstr "Объекты и местоположения"
@@ -12760,9 +12661,6 @@ msgstr "Обновить Kanban"
 msgid "Update Linear issue"
 msgstr "Обновить задачу Linear"
 
-msgid "Update Override"
-msgstr ""
-
 msgid "Update part lead times from posted purchase receipts."
 msgstr "Обновлять сроки поставки деталей из учтённых приходных накладных."
 
@@ -13310,9 +13208,6 @@ msgstr "Неделя {0}"
 
 msgid "Weekly"
 msgstr "Еженедельно"
-
-msgid "Weekly Pattern"
-msgstr ""
 
 #. placeholder {0}: Math.round(startWeek) + 1
 #. placeholder {1}: Math.round(endWeek)

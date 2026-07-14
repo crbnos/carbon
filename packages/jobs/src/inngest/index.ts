@@ -31,7 +31,6 @@ import {
 } from "./functions/notifications";
 import {
   auditArchiveFunction,
-  capacityRollupFunction,
   cleanupFunction,
   dispatchFunction,
   mrpFunction,
@@ -91,7 +90,6 @@ export const functions = [
   cleanupFunction,
   dispatchFunction,
   auditArchiveFunction,
-  capacityRollupFunction,
   mrpFunction,
   nightlyReplanFunction,
   weeklyFunction,

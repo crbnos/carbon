@@ -96,7 +96,6 @@ import {
 } from "~/components";
 import Activity from "~/components/Activity";
 import {
-  Abilities,
   Hidden,
   InputControlled,
   Number,
@@ -340,7 +339,6 @@ const initialOperation: Omit<
   Operation,
   "jobMakeMethodId" | "order" | "jobOperationTool" | "id"
 > = {
-  abilities: [],
   assignee: null,
   description: "",
   laborRate: 0,
@@ -2456,7 +2454,6 @@ function OperationForm({
                 }
               }}
             />
-            <Abilities name="abilities" label={t`Required Abilities`} />
           </>
         )}
       </div>

@@ -581,9 +581,6 @@ msgstr ""
 msgid "Add Entry"
 msgstr "添加条目"
 
-msgid "Add Exception"
-msgstr ""
-
 msgid "Add Feature"
 msgstr "添加功能"
 
@@ -613,9 +610,6 @@ msgstr "添加操作"
 
 msgid "Add options above first"
 msgstr "先添加选项"
-
-msgid "Add Override"
-msgstr ""
 
 msgid "Add Pair"
 msgstr "添加配对"
@@ -655,9 +649,6 @@ msgstr "添加规则"
 
 msgid "Add Selector"
 msgstr "添加选择器"
-
-msgid "Add Shift"
-msgstr ""
 
 msgid "Add Shipment"
 msgstr "添加发货"
@@ -1038,9 +1029,6 @@ msgid "Are you sure you want to deactivate the {label} configuration rule?"
 msgstr "你确定要停用 {label} 配置规则吗？"
 
 msgid "Are you sure you want to deactivate the ability: {name}?"
-msgstr ""
-
-msgid "Are you sure you want to deactivate the calendar: {name}?"
 msgstr ""
 
 msgid "Are you sure you want to deactivate the process: {name}? It will no longer appear in dropdowns."
@@ -1804,12 +1792,6 @@ msgstr "计算成品过期时间"
 msgid "Calculation Method"
 msgstr "计算方法"
 
-msgid "Calendar"
-msgstr ""
-
-msgid "Calendars"
-msgstr ""
-
 msgid "Calibration Attempts"
 msgstr "校准尝试"
 
@@ -1902,12 +1884,6 @@ msgstr "无法上传 — 供应商互动尚未创建"
 
 msgid "Cannot upload to parts bucket without item ID"
 msgstr "无法在没有项目ID的情况下上传到零件存储桶"
-
-msgid "Capacity Override"
-msgstr ""
-
-msgid "Capacity Overrides: {workCenterName}"
-msgstr ""
 
 msgid "Carbon"
 msgstr "Carbon"
@@ -3220,9 +3196,6 @@ msgstr "支付日期"
 msgid "Dates"
 msgstr "日期"
 
-msgid "Day"
-msgstr ""
-
 msgid "Day-to-day questions and hypercare after launch"
 msgstr "日常问题和上线后的超级护理"
 
@@ -3262,9 +3235,6 @@ msgstr ""
 
 msgid "Deactivate Account"
 msgstr "停用账户"
-
-msgid "Deactivate Calendar"
-msgstr ""
 
 msgid "Deactivate Employee"
 msgstr "停用员工"
@@ -3437,9 +3407,6 @@ msgstr "删除关联"
 msgid "Delete Attribute"
 msgstr "删除属性"
 
-msgid "Delete capacity override"
-msgstr ""
-
 msgid "Delete Category"
 msgstr "删除分类"
 
@@ -3475,9 +3442,6 @@ msgstr "删除文档"
 
 msgid "Delete Employee Type"
 msgstr "删除员工类型"
-
-msgid "Delete exception"
-msgstr ""
 
 msgid "Delete Failure Mode"
 msgstr "删除故障模式"
@@ -3598,9 +3562,6 @@ msgstr "删除销售订单"
 
 msgid "Delete Schedule"
 msgstr "删除计划"
-
-msgid "Delete shift"
-msgstr ""
 
 msgid "Delete Shift"
 msgstr "删除班次"
@@ -3736,9 +3697,6 @@ msgstr "折旧开始日期"
 
 msgid "Derive this item's shelf life from the shortest shelf life of its components, ignoring the Days field above."
 msgstr "从其组件的最短货架寿命推导该物品的货架寿命，忽略上面的Days字段。"
-
-msgid "Derived"
-msgstr ""
 
 msgid "Description"
 msgstr "描述"
@@ -4079,15 +4037,6 @@ msgstr "编辑属性"
 msgid "Edit Attribute Category"
 msgstr "编辑属性类别"
 
-msgid "Edit Calendar"
-msgstr ""
-
-msgid "Edit capacity override"
-msgstr ""
-
-msgid "Edit Capacity Overrides"
-msgstr ""
-
 msgid "Edit Category"
 msgstr "编辑分类"
 
@@ -4355,9 +4304,6 @@ msgstr "生效日期"
 msgid "Effective To"
 msgstr "有效期至"
 
-msgid "Efficiency Factor"
-msgstr ""
-
 msgid "Email"
 msgstr "电子邮件"
 
@@ -4447,9 +4393,6 @@ msgstr "启用以使用公制单位表示材料尺寸。"
 
 msgid "Enabled"
 msgstr "已启用"
-
-msgid "End"
-msgstr ""
 
 msgid "End Date"
 msgstr "结束日期"
@@ -4660,9 +4603,6 @@ msgstr "Starter 中的所有功能"
 
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "超过 {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB 总限制 — 请删除一些附件以发送。"
-
-msgid "Exceptions"
-msgstr ""
 
 msgid "Exchange Rate"
 msgstr "汇率"
@@ -5230,9 +5170,6 @@ msgstr "在常规MACRS计划开始之前采取的第一年额外扣除。"
 
 msgid "Finishes"
 msgstr "表面处理"
-
-msgid "Finite"
-msgstr ""
 
 msgid "First Name"
 msgstr "名字"
@@ -5990,9 +5927,6 @@ msgstr "间接材料和服务"
 
 msgid "Indirect Materials & Services (default)"
 msgstr "间接材料和服务（默认）"
-
-msgid "Infinite"
-msgstr ""
 
 msgid "Infrastructure"
 msgstr "基础设施"
@@ -7338,9 +7272,6 @@ msgstr "新属性"
 msgid "New Attribute Category"
 msgstr "新属性类别"
 
-msgid "New Calendar"
-msgstr ""
-
 msgid "New Consumable"
 msgstr "新消耗品"
 
@@ -7671,9 +7602,6 @@ msgstr "没有物料清单输入具有保质期政策"
 msgid "No calibration records found"
 msgstr "未找到校准记录"
 
-msgid "No capacity overrides defined"
-msgstr ""
-
 msgid "No changes recorded"
 msgstr "未记录任何更改"
 
@@ -7715,9 +7643,6 @@ msgstr "还未分配员工。添加组以查看状态。"
 
 msgid "No employees found"
 msgstr "未找到员工"
-
-msgid "No exceptions defined"
-msgstr ""
 
 msgid "No extra cutover steps yet. Add anything specific to this customer."
 msgstr "还没有额外的切换步骤。添加特定于此客户的任何内容。"
@@ -7859,9 +7784,6 @@ msgstr "未分配规则"
 
 msgid "No samples inspected yet."
 msgstr "还没有检查任何样品。"
-
-msgid "No shifts defined"
-msgstr ""
 
 msgid "No single, trusted number for inventory or job status"
 msgstr "没有单一的、可信的库存或工作状态数字"
@@ -8052,6 +7974,9 @@ msgstr "工作路线中的一个步骤，命名流程和工作中心，并携带
 msgid "One system from quote to cash"
 msgstr "从报价到收款的一个系统"
 
+msgid "Only qualified employees can be scheduled for and run this process"
+msgstr ""
+
 msgid "Onshape Status"
 msgstr "Onshape 状态"
 
@@ -8138,9 +8063,6 @@ msgstr "打开设置地图"
 
 msgid "Open transactions"
 msgstr "未结交易"
-
-msgid "open-ended"
-msgstr ""
 
 msgid "Opened"
 msgstr "打开"
@@ -8311,9 +8233,6 @@ msgstr "为所有该类型的客户覆盖价格"
 msgid "Override the expiration on {label}."
 msgstr "覆盖 {label} 上的过期日期。"
 
-msgid "Overrides the derived learning-curve proficiency (0 to 1); blank = derived"
-msgstr ""
-
 msgid "Overtime"
 msgstr "加班"
 
@@ -8350,9 +8269,6 @@ msgstr "已支付金额："
 
 msgid "Paid Date"
 msgstr "支付日期"
-
-msgid "Parallel Capacity"
-msgstr ""
 
 msgid "Parameters"
 msgstr "参数"
@@ -8944,9 +8860,6 @@ msgstr "从物料清单和预测中分解的预计需求。"
 msgid "Production: shop-floor app and scheduling"
 msgstr "生产：车间应用和排程"
 
-msgid "Proficiency Override"
-msgstr ""
-
 msgid "Profile"
 msgstr "个人资料"
 
@@ -9489,9 +9402,6 @@ msgstr "正在重定向到验证页面..."
 msgid "Reduced"
 msgstr "减少"
 
-msgid "Reduced Capacity"
-msgstr ""
-
 msgid "Reference"
 msgstr "参考"
 
@@ -9685,12 +9595,6 @@ msgstr "在您的工作流程中需要质量文件的批准"
 msgid "Required"
 msgstr "必需"
 
-msgid "Required Abilities"
-msgstr ""
-
-msgid "Required Ability"
-msgstr ""
-
 msgid "Required Action"
 msgstr "必需操作"
 
@@ -9714,6 +9618,9 @@ msgstr "需求与流程图"
 
 msgid "Requirements and Process Map"
 msgstr "需求和流程图"
+
+msgid "Requires Ability"
+msgstr ""
 
 msgid "Requires Action"
 msgstr "需要采取行动"
@@ -10159,9 +10066,6 @@ msgid "Schedules"
 msgstr "日程"
 
 msgid "Scheduling conflict"
-msgstr ""
-
-msgid "Scheduling Mode"
 msgstr ""
 
 msgid "Scope"
@@ -10796,9 +10700,6 @@ msgstr "在关闭此问题之前必须记录的签署；除了工作流程所需
 
 msgid "Signed in as {name}"
 msgstr "以 {name} 身份登录"
-
-msgid "Simultaneous operations this work center can run"
-msgstr ""
 
 msgid "Sites & locations"
 msgstr "站点和位置"
@@ -12760,9 +12661,6 @@ msgstr "更新看板"
 msgid "Update Linear issue"
 msgstr "更新 Linear 问题"
 
-msgid "Update Override"
-msgstr ""
-
 msgid "Update part lead times from posted purchase receipts."
 msgstr "从已过账的采购收据更新零件提前期。"
 
@@ -13310,9 +13208,6 @@ msgstr "{0} 的周"
 
 msgid "Weekly"
 msgstr "每周"
-
-msgid "Weekly Pattern"
-msgstr ""
 
 #. placeholder {0}: Math.round(startWeek) + 1
 #. placeholder {1}: Math.round(endWeek)

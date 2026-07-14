@@ -1,28 +1,22 @@
 /**
- * Calendar expansion + slot-walking utilities for finite-capacity scheduling.
- * Pure functions — no DB access. The caller loads resourceCalendarShift /
- * resourceCalendarException rows and the location timezone, then expands them
- * into concrete UTC windows for the scheduling horizon.
+ * Availability-window + slot-walking utilities for finite scheduling.
+ * Pure functions — no DB access.
+ *
+ * Work centers are always open (24/7) — availability constraints come from
+ * PEOPLE: a qualified employee's assigned shifts (`employeeShift` ⋈ `shift`)
+ * expand into concrete UTC working windows. An employee with no shift
+ * assignment is treated as always available.
  */
 
 export type CalendarShiftRow = {
   dayOfWeek: number; // 0 = Sunday .. 6 = Saturday
-  startTime: string; // "HH:MM" or "HH:MM:SS", local to the calendar's timezone
+  startTime: string; // "HH:MM" or "HH:MM:SS", local to the shift's timezone
   endTime: string;
-};
-
-export type CalendarExceptionRow = {
-  startAt: Date;
-  endAt: Date;
-  type: "Closed" | "Open" | "ReducedCapacity";
-  // Fraction of normal capacity (0..1) for ReducedCapacity; null = no reduction
-  capacityOverride: number | null;
 };
 
 export type CalendarWindow = {
   start: Date;
   end: Date;
-  capacityFactor: number; // 1 normally, <1 in a ReducedCapacity exception
 };
 
 const HOUR_MS = 3_600_000;
@@ -98,8 +92,6 @@ export function shiftTimeToDate(
   return new Date(naive.getTime() - offset2);
 }
 
-type RawInterval = { start: number; end: number; factor: number };
-
 /** Clip an interval to [rangeStart, rangeEnd); null if empty. */
 function clip(
   start: number,
@@ -112,21 +104,35 @@ function clip(
   return e > s ? { start: s, end: e } : null;
 }
 
+/** Merge raw ms intervals into disjoint, chronologically sorted windows. */
+function mergeIntervals(
+  intervals: { start: number; end: number }[]
+): CalendarWindow[] {
+  const sorted = [...intervals].sort((a, b) => a.start - b.start);
+  const result: CalendarWindow[] = [];
+  for (const i of sorted) {
+    const prev = result[result.length - 1];
+    if (prev && i.start <= prev.end.getTime()) {
+      if (i.end > prev.end.getTime()) {
+        prev.end = new Date(i.end);
+      }
+    } else {
+      result.push({ start: new Date(i.start), end: new Date(i.end) });
+    }
+  }
+  return result;
+}
+
 /**
- * Expand a weekly shift pattern + exceptions into concrete, disjoint,
- * chronologically sorted working windows over [rangeStart, rangeEnd).
+ * Expand a weekly shift pattern into concrete, disjoint, chronologically
+ * sorted working windows over [rangeStart, rangeEnd).
  *
- * - Empty `shifts` => one 24x7 window covering the whole range (back-compat:
- *   a resource with no calendar is always open).
- * - `Open` exceptions add working time (factor 1).
- * - `Closed` exceptions remove working time.
- * - `ReducedCapacity` exceptions scale the overlapped portion's capacityFactor
- *   by `capacityOverride` (fraction of normal capacity; null = no reduction).
+ * - Empty `shifts` => one 24x7 window covering the whole range (a person with
+ *   no shift assignment is always available).
  * - An overnight shift row (endTime <= startTime) runs into the next day.
  */
 export function expandCalendar(
   shifts: CalendarShiftRow[],
-  exceptions: CalendarExceptionRow[],
   rangeStart: Date,
   rangeEnd: Date,
   timezone = "UTC"
@@ -137,138 +143,74 @@ export function expandCalendar(
     return [];
   }
 
-  // 1. Base working intervals
-  const base: RawInterval[] = [];
   if (shifts.length === 0) {
-    base.push({ start: rangeStartMs, end: rangeEndMs, factor: 1 });
-  } else {
-    // Iterate local calendar days covering the range (pad one day each side
-    // so overnight shifts and tz offsets can't clip the boundary days).
-    const startLocal = localDateParts(rangeStart, timezone);
-    let dayCursor = Date.UTC(
-      startLocal.year,
-      startLocal.month - 1,
-      startLocal.day
-    );
-    dayCursor -= DAY_MS;
-    const lastDay = rangeEndMs + DAY_MS;
+    return [{ start: new Date(rangeStartMs), end: new Date(rangeEndMs) }];
+  }
 
-    for (; dayCursor <= lastDay; dayCursor += DAY_MS) {
-      const dayDate = new Date(dayCursor);
-      const dow = dayDate.getUTCDay(); // weekday of the local calendar date
-      for (const shift of shifts) {
-        if (shift.dayOfWeek !== dow) continue;
-        const start = shiftTimeToDate(dayDate, shift.startTime, timezone);
-        let end = shiftTimeToDate(dayDate, shift.endTime, timezone);
-        if (end.getTime() <= start.getTime()) {
-          // overnight shift: ends the next local day
-          end = shiftTimeToDate(
-            new Date(dayCursor + DAY_MS),
-            shift.endTime,
-            timezone
-          );
-        }
-        const clipped = clip(
-          start.getTime(),
-          end.getTime(),
-          rangeStartMs,
-          rangeEndMs
+  // Iterate local calendar days covering the range (pad one day each side
+  // so overnight shifts and tz offsets can't clip the boundary days).
+  const intervals: { start: number; end: number }[] = [];
+  const startLocal = localDateParts(rangeStart, timezone);
+  let dayCursor = Date.UTC(
+    startLocal.year,
+    startLocal.month - 1,
+    startLocal.day
+  );
+  dayCursor -= DAY_MS;
+  const lastDay = rangeEndMs + DAY_MS;
+
+  for (; dayCursor <= lastDay; dayCursor += DAY_MS) {
+    const dayDate = new Date(dayCursor);
+    const dow = dayDate.getUTCDay(); // weekday of the local calendar date
+    for (const shift of shifts) {
+      if (shift.dayOfWeek !== dow) continue;
+      const start = shiftTimeToDate(dayDate, shift.startTime, timezone);
+      let end = shiftTimeToDate(dayDate, shift.endTime, timezone);
+      if (end.getTime() <= start.getTime()) {
+        // overnight shift: ends the next local day
+        end = shiftTimeToDate(
+          new Date(dayCursor + DAY_MS),
+          shift.endTime,
+          timezone
         );
-        if (clipped) {
-          base.push({ ...clipped, factor: 1 });
-        }
+      }
+      const clipped = clip(
+        start.getTime(),
+        end.getTime(),
+        rangeStartMs,
+        rangeEndMs
+      );
+      if (clipped) {
+        intervals.push(clipped);
       }
     }
   }
 
-  // 2. Open exceptions add working time
-  for (const ex of exceptions) {
-    if (ex.type !== "Open") continue;
-    const clipped = clip(
-      ex.startAt.getTime(),
-      ex.endAt.getTime(),
-      rangeStartMs,
-      rangeEndMs
-    );
-    if (clipped) {
-      base.push({ ...clipped, factor: 1 });
+  return mergeIntervals(intervals);
+}
+
+/**
+ * Union several window lists (e.g. each pool member's availability) into one
+ * disjoint sorted list: time where AT LEAST ONE member is available.
+ */
+export function unionWindows(windowLists: CalendarWindow[][]): CalendarWindow[] {
+  const intervals: { start: number; end: number }[] = [];
+  for (const list of windowLists) {
+    for (const w of list) {
+      intervals.push({ start: w.start.getTime(), end: w.end.getTime() });
     }
   }
+  return mergeIntervals(intervals);
+}
 
-  if (base.length === 0) {
-    return [];
-  }
-
-  // 3. Boundary sweep -> disjoint segments (factor = max of covering windows)
-  const closed = exceptions.filter((e) => e.type === "Closed");
-  const reduced = exceptions.filter((e) => e.type === "ReducedCapacity");
-
-  const boundaries = new Set<number>();
-  for (const i of base) {
-    boundaries.add(i.start);
-    boundaries.add(i.end);
-  }
-  for (const ex of [...closed, ...reduced]) {
-    const s = ex.startAt.getTime();
-    const e = ex.endAt.getTime();
-    if (e > rangeStartMs && s < rangeEndMs) {
-      boundaries.add(Math.max(s, rangeStartMs));
-      boundaries.add(Math.min(e, rangeEndMs));
+/** Whether an instant falls inside any window. */
+export function coversInstant(windows: CalendarWindow[], at: number): boolean {
+  for (const w of windows) {
+    if (w.start.getTime() <= at && w.end.getTime() > at) {
+      return true;
     }
   }
-  const sorted = Array.from(boundaries).sort((a, b) => a - b);
-
-  const result: CalendarWindow[] = [];
-  for (let i = 0; i < sorted.length - 1; i++) {
-    const segStart = sorted[i];
-    const segEnd = sorted[i + 1];
-    const mid = (segStart + segEnd) / 2;
-
-    // covered by any working interval?
-    let factor = 0;
-    for (const interval of base) {
-      if (interval.start <= segStart && interval.end >= segEnd) {
-        factor = Math.max(factor, interval.factor);
-      } else if (interval.start < segEnd && interval.end > segStart) {
-        // partial overlap can't happen after the sweep unless boundaries
-        // missed it; guard with midpoint containment
-        if (interval.start <= mid && interval.end >= mid) {
-          factor = Math.max(factor, interval.factor);
-        }
-      }
-    }
-    if (factor === 0) continue;
-
-    // Closed removes the segment entirely
-    if (
-      closed.some(
-        (ex) => ex.startAt.getTime() <= mid && ex.endAt.getTime() >= mid
-      )
-    ) {
-      continue;
-    }
-
-    // ReducedCapacity scales the factor
-    for (const ex of reduced) {
-      if (ex.startAt.getTime() <= mid && ex.endAt.getTime() >= mid) {
-        factor = Math.min(factor, factor * (ex.capacityOverride ?? 1));
-      }
-    }
-
-    // merge with previous when contiguous and same factor
-    const prev = result[result.length - 1];
-    if (prev && prev.end.getTime() === segStart && prev.capacityFactor === factor) {
-      prev.end = new Date(segEnd);
-    } else {
-      result.push({
-        start: new Date(segStart),
-        end: new Date(segEnd),
-        capacityFactor: factor,
-      });
-    }
-  }
-
-  return result;
+  return false;
 }
 
 /** Count reservations overlapping [start, end). */

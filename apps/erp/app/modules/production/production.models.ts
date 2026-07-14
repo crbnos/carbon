@@ -297,10 +297,7 @@ export const baseJobOperationValidator = z.object({
 export const jobOperationValidator = baseJobOperationValidator
   .merge(
     z.object({
-      workCenterId: zfd.text(z.string().optional()),
-      abilities: z
-        .array(z.string().min(1, { message: "Invalid ability" }))
-        .optional()
+      workCenterId: zfd.text(z.string().optional())
     })
   )
   .refine(

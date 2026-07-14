@@ -20,7 +20,6 @@ import {
   DatePicker,
   Employee,
   Hidden,
-  Number,
   Submit
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
@@ -97,14 +96,6 @@ const EmployeeAbilityForm = ({
                   name="expiresAt"
                   label={t`Expires At`}
                   helperText={t`Blank = computed from the ability's recertification period`}
-                />
-                <Number
-                  name="proficiencyOverride"
-                  label={t`Proficiency Override`}
-                  helperText={t`Overrides the derived learning-curve proficiency (0 to 1); blank = derived`}
-                  minValue={0}
-                  maxValue={1}
-                  formatOptions={{ maximumFractionDigits: 2 }}
                 />
               </VStack>
             </ModalDrawerBody>

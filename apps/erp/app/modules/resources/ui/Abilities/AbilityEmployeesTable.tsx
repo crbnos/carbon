@@ -6,7 +6,6 @@ import {
   LuAward,
   LuCalendarClock,
   LuCalendarDays,
-  LuGauge,
   LuPencil,
   LuTrash,
   LuUser
@@ -83,18 +82,6 @@ const AbilityEmployeesTable = memo(
             ),
           meta: {
             icon: <LuCalendarClock />
-          }
-        },
-        {
-          accessorKey: "proficiencyOverride",
-          header: t`Proficiency Override`,
-          cell: ({ row }) => (
-            <span className="tabular-nums">
-              {row.original.proficiencyOverride ?? t`Derived`}
-            </span>
-          ),
-          meta: {
-            icon: <LuGauge />
           }
         }
       ];

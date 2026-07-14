@@ -36,16 +36,6 @@ export type ActiveWorkCenter = {
   locationId: string | null;
 };
 
-export type WorkCenterLoadOperation = {
-  setupTime: number | null;
-  setupUnit: Database["public"]["Enums"]["factor"] | null;
-  laborTime: number | null;
-  laborUnit: Database["public"]["Enums"]["factor"] | null;
-  machineTime: number | null;
-  machineUnit: Database["public"]["Enums"]["factor"] | null;
-  operationQuantity: number | null;
-};
-
 export type CrossJobOperation = {
   id: string | null;
   dueDate: string | null;
@@ -54,36 +44,6 @@ export type CrossJobOperation = {
   deadlineType: Database["public"]["Enums"]["deadlineType"] | null;
   jobPriority: number | null;
   workCenterId: string | null;
-};
-
-export type WorkCenterCapacityInfo = {
-  id: string;
-  parallelCapacity: number;
-  efficiencyFactor: number;
-  schedulingMode: "Finite" | "Infinite";
-  resourceCalendarId: string | null;
-  requiredAbilityId: string | null;
-  locationId: string | null;
-  timezone: string;
-};
-
-export type CalendarPattern = {
-  workCenterId: string;
-  timezone: string;
-  shifts: { dayOfWeek: number; startTime: string; endTime: string }[];
-  exceptions: {
-    startAt: string;
-    endAt: string;
-    type: "Closed" | "Open" | "ReducedCapacity";
-    capacityOverride: number | null;
-  }[];
-};
-
-export type CapacityOverride = {
-  workCenterId: string;
-  effectiveFrom: string;
-  effectiveTo: string | null;
-  parallelCapacity: number;
 };
 
 export type LiveReservation = {
@@ -98,18 +58,11 @@ export type SchedulingPolicyRow = {
   dispatchRule: "FIFO" | "EDD" | "SPT" | "WSPT" | "CR" | "MinSlack";
 };
 
-export type OperationAbilityRequirement = {
-  operationId: string;
-  abilityId: string;
-  abilityName: string;
-  minimumProficiency: number | null;
-};
-
-export type ProcessAbilityRequirement = {
+/** A process that requires an ability, with its 1:1 linked ability. */
+export type ProcessRequirementRow = {
   processId: string;
   abilityId: string;
   abilityName: string;
-  minimumProficiency: number | null;
 };
 
 export type QualifiedEmployeeRow = {
@@ -117,14 +70,17 @@ export type QualifiedEmployeeRow = {
   employeeId: string;
   active: boolean;
   trainingCompleted: boolean | null;
-  lastTrainingDate: string | null;
   expiresAt: string | null;
-  proficiencyOverride: number | null;
-  curve: unknown;
-  shadowWeeks: number;
 };
 
-export type AbilityNameRow = { id: string; name: string };
+/** One weekday window of an employee's assigned shift (employeeShift ⋈ shift). */
+export type EmployeeShiftRow = {
+  employeeId: string;
+  dayOfWeek: number; // 0 = Sunday .. 6 = Saturday
+  startTime: string;
+  endTime: string;
+  timezone: string;
+};
 
 /**
  * Master Data Provider
@@ -157,37 +113,23 @@ export interface MasterDataProvider {
   ): Promise<{ data: JobMethodTreeItem[] | null; error: unknown }>;
   getProcessesWithWorkCenters(): Promise<ProcessWorkCenters[]>;
   getActiveWorkCenters(locationId: string): Promise<ActiveWorkCenter[]>;
-  getWorkCenterLoadOperations(
-    workCenterId: string,
-    beforeDate: string
-  ): Promise<WorkCenterLoadOperation[]>;
   getCrossJobOperationsAtWorkCenters(
     workCenterIds: string[]
   ): Promise<CrossJobOperation[]>;
 
   // ---- finite-capacity reads ----
-  getWorkCenterCapacityInfo(
-    workCenterIds: string[]
-  ): Promise<WorkCenterCapacityInfo[]>;
-  getWorkCenterCalendars(
-    workCenters: WorkCenterCapacityInfo[]
-  ): Promise<CalendarPattern[]>;
-  getWorkCenterCapacityOverrides(
-    workCenterIds: string[]
-  ): Promise<CapacityOverride[]>;
   getLiveReservations(
     fromDate: Date,
     excludeJobId: string
   ): Promise<LiveReservation[]>;
   getSchedulingPolicies(): Promise<SchedulingPolicyRow[]>;
-  getOperationRequiredAbilities(
-    operationIds: string[]
-  ): Promise<OperationAbilityRequirement[]>;
-  getProcessAbilities(
+  getProcessRequirements(
     processIds: string[]
-  ): Promise<ProcessAbilityRequirement[]>;
+  ): Promise<ProcessRequirementRow[]>;
   getQualifiedEmployees(abilityIds: string[]): Promise<QualifiedEmployeeRow[]>;
-  getAbilityNames(abilityIds: string[]): Promise<AbilityNameRow[]>;
+  getEmployeeShiftWindows(
+    employeeIds: string[]
+  ): Promise<EmployeeShiftRow[]>;
 }
 
 /**
@@ -349,30 +291,6 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
       .execute();
   }
 
-  async getWorkCenterLoadOperations(
-    workCenterId: string,
-    beforeDate: string
-  ): Promise<WorkCenterLoadOperation[]> {
-    return await this.db
-      .selectFrom("jobOperation")
-      .select([
-        "setupTime",
-        "setupUnit",
-        "laborTime",
-        "laborUnit",
-        "machineTime",
-        "machineUnit",
-        "operationQuantity",
-      ])
-      .where("workCenterId", "=", workCenterId)
-      .where("companyId", "=", this.companyId)
-      .where("status", "not in", ["Done", "Canceled"])
-      .where((eb) =>
-        eb.or([eb("startDate", "<=", beforeDate), eb("startDate", "is", null)])
-      )
-      .execute();
-  }
-
   async getCrossJobOperationsAtWorkCenters(
     workCenterIds: string[]
   ): Promise<CrossJobOperation[]> {
@@ -395,195 +313,6 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
       .where("jo.workCenterId", "in", workCenterIds)
       .where("jo.status", "not in", ["Done", "Canceled"])
       .execute();
-  }
-
-  async getWorkCenterCapacityInfo(
-    workCenterIds: string[]
-  ): Promise<WorkCenterCapacityInfo[]> {
-    if (workCenterIds.length === 0) {
-      return [];
-    }
-
-    const rows = await this.db
-      .selectFrom("workCenter as wc")
-      .leftJoin("location as l", "l.id", "wc.locationId")
-      .select([
-        "wc.id",
-        "wc.parallelCapacity",
-        "wc.efficiencyFactor",
-        "wc.schedulingMode",
-        "wc.resourceCalendarId",
-        "wc.requiredAbilityId",
-        "wc.locationId",
-        "l.timezone",
-      ])
-      .where("wc.id", "in", workCenterIds)
-      .where("wc.companyId", "=", this.companyId)
-      .execute();
-
-    return rows.map((r) => ({
-      id: r.id!,
-      parallelCapacity: Number(r.parallelCapacity ?? 1),
-      efficiencyFactor: Number(r.efficiencyFactor ?? 1),
-      schedulingMode: (r.schedulingMode ?? "Finite") as "Finite" | "Infinite",
-      resourceCalendarId: r.resourceCalendarId,
-      requiredAbilityId: r.requiredAbilityId,
-      locationId: r.locationId,
-      timezone: r.timezone ?? "UTC",
-    }));
-  }
-
-  async getWorkCenterCalendars(
-    workCenters: WorkCenterCapacityInfo[]
-  ): Promise<CalendarPattern[]> {
-    if (workCenters.length === 0) {
-      return [];
-    }
-
-    // Resolve each work center's calendar set: its explicit calendar, else
-    // all active calendars at its location (location-default fallback).
-    const explicitIds = workCenters
-      .map((wc) => wc.resourceCalendarId)
-      .filter((id): id is string => id !== null);
-    const fallbackLocationIds = Array.from(
-      new Set(
-        workCenters
-          .filter((wc) => wc.resourceCalendarId === null && wc.locationId)
-          .map((wc) => wc.locationId as string)
-      )
-    );
-
-    const calendars: {
-      id: string;
-      locationId: string | null;
-    }[] = [];
-
-    if (explicitIds.length > 0) {
-      const rows = await this.db
-        .selectFrom("resourceCalendar")
-        .select(["id", "locationId"])
-        .where("id", "in", explicitIds)
-        .where("companyId", "=", this.companyId)
-        .execute();
-      calendars.push(
-        ...rows.map((r) => ({ id: r.id!, locationId: r.locationId }))
-      );
-    }
-
-    const calendarsByLocation = new Map<string, string[]>();
-    if (fallbackLocationIds.length > 0) {
-      const rows = await this.db
-        .selectFrom("resourceCalendar")
-        .select(["id", "locationId"])
-        .where("locationId", "in", fallbackLocationIds)
-        .where("companyId", "=", this.companyId)
-        .where("active", "=", true)
-        .execute();
-      for (const r of rows) {
-        if (!r.id || !r.locationId) continue;
-        calendars.push({ id: r.id, locationId: r.locationId });
-        const list = calendarsByLocation.get(r.locationId) ?? [];
-        list.push(r.id);
-        calendarsByLocation.set(r.locationId, list);
-      }
-    }
-
-    const allCalendarIds = Array.from(new Set(calendars.map((c) => c.id)));
-
-    const shiftsByCalendar = new Map<
-      string,
-      { dayOfWeek: number; startTime: string; endTime: string }[]
-    >();
-    const exceptionsByCalendar = new Map<
-      string,
-      CalendarPattern["exceptions"]
-    >();
-
-    if (allCalendarIds.length > 0) {
-      const shiftRows = await this.db
-        .selectFrom("resourceCalendarShift")
-        .select(["resourceCalendarId", "dayOfWeek", "startTime", "endTime"])
-        .where("resourceCalendarId", "in", allCalendarIds)
-        .where("companyId", "=", this.companyId)
-        .execute();
-      for (const s of shiftRows) {
-        const list = shiftsByCalendar.get(s.resourceCalendarId) ?? [];
-        list.push({
-          dayOfWeek: s.dayOfWeek,
-          startTime: String(s.startTime),
-          endTime: String(s.endTime),
-        });
-        shiftsByCalendar.set(s.resourceCalendarId, list);
-      }
-
-      const exceptionRows = await this.db
-        .selectFrom("resourceCalendarException")
-        .select([
-          "resourceCalendarId",
-          "startAt",
-          "endAt",
-          "type",
-          "capacityOverride",
-        ])
-        .where("resourceCalendarId", "in", allCalendarIds)
-        .where("companyId", "=", this.companyId)
-        .execute();
-      for (const e of exceptionRows) {
-        const list = exceptionsByCalendar.get(e.resourceCalendarId) ?? [];
-        list.push({
-          startAt: new Date(e.startAt as unknown as string).toISOString(),
-          endAt: new Date(e.endAt as unknown as string).toISOString(),
-          type: e.type as "Closed" | "Open" | "ReducedCapacity",
-          capacityOverride:
-            e.capacityOverride === null ? null : Number(e.capacityOverride),
-        });
-        exceptionsByCalendar.set(e.resourceCalendarId, list);
-      }
-    }
-
-    return workCenters.map((wc) => {
-      const calendarIds = wc.resourceCalendarId
-        ? [wc.resourceCalendarId]
-        : wc.locationId
-        ? calendarsByLocation.get(wc.locationId) ?? []
-        : [];
-
-      const shifts = calendarIds.flatMap(
-        (id) => shiftsByCalendar.get(id) ?? []
-      );
-      const exceptions = calendarIds.flatMap(
-        (id) => exceptionsByCalendar.get(id) ?? []
-      );
-
-      return { workCenterId: wc.id, timezone: wc.timezone, shifts, exceptions };
-    });
-  }
-
-  async getWorkCenterCapacityOverrides(
-    workCenterIds: string[]
-  ): Promise<CapacityOverride[]> {
-    if (workCenterIds.length === 0) {
-      return [];
-    }
-
-    const rows = await this.db
-      .selectFrom("workCenterCapacity")
-      .select([
-        "workCenterId",
-        "effectiveFrom",
-        "effectiveTo",
-        "parallelCapacity",
-      ])
-      .where("workCenterId", "in", workCenterIds)
-      .where("companyId", "=", this.companyId)
-      .execute();
-
-    return rows.map((r) => ({
-      workCenterId: r.workCenterId,
-      effectiveFrom: toIsoDate(r.effectiveFrom)!,
-      effectiveTo: toIsoDate(r.effectiveTo),
-      parallelCapacity: Number(r.parallelCapacity),
-    }));
   }
 
   async getLiveReservations(
@@ -620,61 +349,31 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
     }));
   }
 
-  async getOperationRequiredAbilities(
-    operationIds: string[]
-  ): Promise<OperationAbilityRequirement[]> {
-    if (operationIds.length === 0) {
-      return [];
-    }
-
-    const rows = await this.db
-      .selectFrom("jobOperationAbility as joa")
-      .innerJoin("ability as a", "a.id", "joa.abilityId")
-      .select([
-        "joa.operationId",
-        "joa.abilityId",
-        "joa.minimumProficiency",
-        "a.name as abilityName",
-      ])
-      .where("joa.operationId", "in", operationIds)
-      .where("joa.companyId", "=", this.companyId)
-      .execute();
-
-    return rows.map((r) => ({
-      operationId: r.operationId,
-      abilityId: r.abilityId,
-      abilityName: r.abilityName,
-      minimumProficiency:
-        r.minimumProficiency === null ? null : Number(r.minimumProficiency),
-    }));
-  }
-
-  async getProcessAbilities(
+  async getProcessRequirements(
     processIds: string[]
-  ): Promise<ProcessAbilityRequirement[]> {
+  ): Promise<ProcessRequirementRow[]> {
     if (processIds.length === 0) {
       return [];
     }
 
     const rows = await this.db
-      .selectFrom("processAbility as pa")
-      .innerJoin("ability as a", "a.id", "pa.abilityId")
-      .select([
-        "pa.processId",
-        "pa.abilityId",
-        "pa.minimumProficiency",
-        "a.name as abilityName",
-      ])
-      .where("pa.processId", "in", processIds)
-      .where("pa.companyId", "=", this.companyId)
+      .selectFrom("process as p")
+      .innerJoin("ability as a", (join) =>
+        join
+          .onRef("a.processId", "=", "p.id")
+          .on("a.companyId", "=", this.companyId)
+          .on("a.active", "=", true)
+      )
+      .select(["p.id as processId", "a.id as abilityId", "a.name as abilityName"])
+      .where("p.id", "in", processIds)
+      .where("p.companyId", "=", this.companyId)
+      .where("p.requiresAbility", "=", true)
       .execute();
 
     return rows.map((r) => ({
       processId: r.processId,
       abilityId: r.abilityId,
       abilityName: r.abilityName,
-      minimumProficiency:
-        r.minimumProficiency === null ? null : Number(r.minimumProficiency),
     }));
   }
 
@@ -687,17 +386,12 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
 
     const rows = await this.db
       .selectFrom("employeeAbility as ea")
-      .innerJoin("ability as a", "a.id", "ea.abilityId")
       .select([
         "ea.abilityId",
         "ea.employeeId",
         "ea.active",
         "ea.trainingCompleted",
-        "ea.lastTrainingDate",
         "ea.expiresAt",
-        "ea.proficiencyOverride",
-        "a.curve",
-        "a.shadowWeeks",
       ])
       .where("ea.abilityId", "in", abilityIds)
       .where("ea.companyId", "=", this.companyId)
@@ -708,27 +402,61 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
       employeeId: r.employeeId,
       active: Boolean(r.active),
       trainingCompleted: r.trainingCompleted,
-      lastTrainingDate: toIsoDate(r.lastTrainingDate),
       expiresAt: toIsoDate(r.expiresAt),
-      proficiencyOverride:
-        r.proficiencyOverride === null ? null : Number(r.proficiencyOverride),
-      curve: r.curve,
-      shadowWeeks: Number(r.shadowWeeks ?? 0),
     }));
   }
 
-  async getAbilityNames(abilityIds: string[]): Promise<AbilityNameRow[]> {
-    if (abilityIds.length === 0) {
+  async getEmployeeShiftWindows(
+    employeeIds: string[]
+  ): Promise<EmployeeShiftRow[]> {
+    if (employeeIds.length === 0) {
       return [];
     }
 
     const rows = await this.db
-      .selectFrom("ability")
-      .select(["id", "name"])
-      .where("id", "in", abilityIds)
-      .where("companyId", "=", this.companyId)
+      .selectFrom("employeeShift as es")
+      .innerJoin("shift as s", "s.id", "es.shiftId")
+      .leftJoin("location as l", "l.id", "s.locationId")
+      .select([
+        "es.employeeId",
+        "s.startTime",
+        "s.endTime",
+        "s.sunday",
+        "s.monday",
+        "s.tuesday",
+        "s.wednesday",
+        "s.thursday",
+        "s.friday",
+        "s.saturday",
+        "l.timezone",
+      ])
+      .where("es.employeeId", "in", employeeIds)
+      .where("es.companyId", "=", this.companyId)
+      .where("s.active", "=", true)
       .execute();
 
-    return rows.map((r) => ({ id: r.id!, name: r.name }));
+    const result: EmployeeShiftRow[] = [];
+    for (const r of rows) {
+      const days = [
+        r.sunday,
+        r.monday,
+        r.tuesday,
+        r.wednesday,
+        r.thursday,
+        r.friday,
+        r.saturday,
+      ];
+      for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
+        if (!days[dayOfWeek]) continue;
+        result.push({
+          employeeId: r.employeeId,
+          dayOfWeek,
+          startTime: String(r.startTime),
+          endTime: String(r.endTime),
+          timezone: r.timezone ?? "UTC",
+        });
+      }
+    }
+    return result;
   }
 }

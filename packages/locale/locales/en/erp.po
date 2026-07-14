@@ -581,9 +581,6 @@ msgstr "Add Employee"
 msgid "Add Entry"
 msgstr "Add Entry"
 
-msgid "Add Exception"
-msgstr "Add Exception"
-
 msgid "Add Feature"
 msgstr "Add Feature"
 
@@ -613,9 +610,6 @@ msgstr "Add Operation"
 
 msgid "Add options above first"
 msgstr "Add options above first"
-
-msgid "Add Override"
-msgstr "Add Override"
 
 msgid "Add Pair"
 msgstr "Add Pair"
@@ -655,9 +649,6 @@ msgstr "Add rule"
 
 msgid "Add Selector"
 msgstr "Add Selector"
-
-msgid "Add Shift"
-msgstr "Add Shift"
 
 msgid "Add Shipment"
 msgstr "Add Shipment"
@@ -1039,9 +1030,6 @@ msgstr "Are you sure you want to deactivate the {label} configuration rule?"
 
 msgid "Are you sure you want to deactivate the ability: {name}?"
 msgstr "Are you sure you want to deactivate the ability: {name}?"
-
-msgid "Are you sure you want to deactivate the calendar: {name}?"
-msgstr "Are you sure you want to deactivate the calendar: {name}?"
 
 msgid "Are you sure you want to deactivate the process: {name}? It will no longer appear in dropdowns."
 msgstr "Are you sure you want to deactivate the process: {name}? It will no longer appear in dropdowns."
@@ -1804,12 +1792,6 @@ msgstr "Calculated finished-good expiry"
 msgid "Calculation Method"
 msgstr "Calculation Method"
 
-msgid "Calendar"
-msgstr "Calendar"
-
-msgid "Calendars"
-msgstr "Calendars"
-
 msgid "Calibration Attempts"
 msgstr "Calibration Attempts"
 
@@ -1902,12 +1884,6 @@ msgstr "Cannot upload — supplier interaction not yet created"
 
 msgid "Cannot upload to parts bucket without item ID"
 msgstr "Cannot upload to parts bucket without item ID"
-
-msgid "Capacity Override"
-msgstr "Capacity Override"
-
-msgid "Capacity Overrides: {workCenterName}"
-msgstr "Capacity Overrides: {workCenterName}"
 
 msgid "Carbon"
 msgstr "Carbon"
@@ -3220,9 +3196,6 @@ msgstr "Date Paid"
 msgid "Dates"
 msgstr "Dates"
 
-msgid "Day"
-msgstr "Day"
-
 msgid "Day-to-day questions and hypercare after launch"
 msgstr "Day-to-day questions and hypercare after launch"
 
@@ -3262,9 +3235,6 @@ msgstr "Deactivate Ability"
 
 msgid "Deactivate Account"
 msgstr "Deactivate Account"
-
-msgid "Deactivate Calendar"
-msgstr "Deactivate Calendar"
 
 msgid "Deactivate Employee"
 msgstr "Deactivate Employee"
@@ -3437,9 +3407,6 @@ msgstr "Delete Association"
 msgid "Delete Attribute"
 msgstr "Delete Attribute"
 
-msgid "Delete capacity override"
-msgstr "Delete capacity override"
-
 msgid "Delete Category"
 msgstr "Delete Category"
 
@@ -3475,9 +3442,6 @@ msgstr "Delete Document"
 
 msgid "Delete Employee Type"
 msgstr "Delete Employee Type"
-
-msgid "Delete exception"
-msgstr "Delete exception"
 
 msgid "Delete Failure Mode"
 msgstr "Delete Failure Mode"
@@ -3598,9 +3562,6 @@ msgstr "Delete Sales Order"
 
 msgid "Delete Schedule"
 msgstr "Delete Schedule"
-
-msgid "Delete shift"
-msgstr "Delete shift"
 
 msgid "Delete Shift"
 msgstr "Delete Shift"
@@ -3736,9 +3697,6 @@ msgstr "Depreciation Start Date"
 
 msgid "Derive this item's shelf life from the shortest shelf life of its components, ignoring the Days field above."
 msgstr "Derive this item's shelf life from the shortest shelf life of its components, ignoring the Days field above."
-
-msgid "Derived"
-msgstr "Derived"
 
 msgid "Description"
 msgstr "Description"
@@ -4079,15 +4037,6 @@ msgstr "Edit Attribute"
 msgid "Edit Attribute Category"
 msgstr "Edit Attribute Category"
 
-msgid "Edit Calendar"
-msgstr "Edit Calendar"
-
-msgid "Edit capacity override"
-msgstr "Edit capacity override"
-
-msgid "Edit Capacity Overrides"
-msgstr "Edit Capacity Overrides"
-
 msgid "Edit Category"
 msgstr "Edit Category"
 
@@ -4355,9 +4304,6 @@ msgstr "Effective From"
 msgid "Effective To"
 msgstr "Effective To"
 
-msgid "Efficiency Factor"
-msgstr "Efficiency Factor"
-
 msgid "Email"
 msgstr "Email"
 
@@ -4447,9 +4393,6 @@ msgstr "Enable to use metric units for material dimensions."
 
 msgid "Enabled"
 msgstr "Enabled"
-
-msgid "End"
-msgstr "End"
 
 msgid "End Date"
 msgstr "End Date"
@@ -4660,9 +4603,6 @@ msgstr "Everything from Starter"
 
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
-
-msgid "Exceptions"
-msgstr "Exceptions"
 
 msgid "Exchange Rate"
 msgstr "Exchange Rate"
@@ -5230,9 +5170,6 @@ msgstr "finishes"
 
 msgid "Finishes"
 msgstr "Finishes"
-
-msgid "Finite"
-msgstr "Finite"
 
 msgid "First Name"
 msgstr "First Name"
@@ -5990,9 +5927,6 @@ msgstr "Indirect Materials & Services"
 
 msgid "Indirect Materials & Services (default)"
 msgstr "Indirect Materials & Services (default)"
-
-msgid "Infinite"
-msgstr "Infinite"
 
 msgid "Infrastructure"
 msgstr "Infrastructure"
@@ -7338,9 +7272,6 @@ msgstr "New Attribute"
 msgid "New Attribute Category"
 msgstr "New Attribute Category"
 
-msgid "New Calendar"
-msgstr "New Calendar"
-
 msgid "New Consumable"
 msgstr "New Consumable"
 
@@ -7671,9 +7602,6 @@ msgstr "No BOM input has a shelf-life policy"
 msgid "No calibration records found"
 msgstr "No calibration records found"
 
-msgid "No capacity overrides defined"
-msgstr "No capacity overrides defined"
-
 msgid "No changes recorded"
 msgstr "No changes recorded"
 
@@ -7715,9 +7643,6 @@ msgstr "No employees assigned yet. Add groups to see status."
 
 msgid "No employees found"
 msgstr "No employees found"
-
-msgid "No exceptions defined"
-msgstr "No exceptions defined"
 
 msgid "No extra cutover steps yet. Add anything specific to this customer."
 msgstr "No extra cutover steps yet. Add anything specific to this customer."
@@ -7859,9 +7784,6 @@ msgstr "No rules assigned"
 
 msgid "No samples inspected yet."
 msgstr "No samples inspected yet."
-
-msgid "No shifts defined"
-msgstr "No shifts defined"
 
 msgid "No single, trusted number for inventory or job status"
 msgstr "No single, trusted number for inventory or job status"
@@ -8052,6 +7974,9 @@ msgstr "One step in a job's routing, naming a process and a work center and carr
 msgid "One system from quote to cash"
 msgstr "One system from quote to cash"
 
+msgid "Only qualified employees can be scheduled for and run this process"
+msgstr "Only qualified employees can be scheduled for and run this process"
+
 msgid "Onshape Status"
 msgstr "Onshape Status"
 
@@ -8138,9 +8063,6 @@ msgstr "Open the Setup Map"
 
 msgid "Open transactions"
 msgstr "Open transactions"
-
-msgid "open-ended"
-msgstr "open-ended"
 
 msgid "Opened"
 msgstr "Opened"
@@ -8311,9 +8233,6 @@ msgstr "Override price for all customers of a type"
 msgid "Override the expiration on {label}."
 msgstr "Override the expiration on {label}."
 
-msgid "Overrides the derived learning-curve proficiency (0 to 1); blank = derived"
-msgstr "Overrides the derived learning-curve proficiency (0 to 1); blank = derived"
-
 msgid "Overtime"
 msgstr "Overtime"
 
@@ -8350,9 +8269,6 @@ msgstr "Paid Amount:"
 
 msgid "Paid Date"
 msgstr "Paid Date"
-
-msgid "Parallel Capacity"
-msgstr "Parallel Capacity"
 
 msgid "Parameters"
 msgstr "Parameters"
@@ -8944,9 +8860,6 @@ msgstr "Production variance"
 msgid "Production: shop-floor app and scheduling"
 msgstr "Production: shop-floor app and scheduling"
 
-msgid "Proficiency Override"
-msgstr "Proficiency Override"
-
 msgid "Profile"
 msgstr "Profile"
 
@@ -9489,9 +9402,6 @@ msgstr "Redirecting to verification page..."
 msgid "Reduced"
 msgstr "Reduced"
 
-msgid "Reduced Capacity"
-msgstr "Reduced Capacity"
-
 msgid "Reference"
 msgstr "Reference"
 
@@ -9685,12 +9595,6 @@ msgstr "Require approval for quality documents in your workflow"
 msgid "Required"
 msgstr "Required"
 
-msgid "Required Abilities"
-msgstr "Required Abilities"
-
-msgid "Required Ability"
-msgstr "Required Ability"
-
 msgid "Required Action"
 msgstr "Required Action"
 
@@ -9714,6 +9618,9 @@ msgstr "Requirements & Process Map"
 
 msgid "Requirements and Process Map"
 msgstr "Requirements and Process Map"
+
+msgid "Requires Ability"
+msgstr "Requires Ability"
 
 msgid "Requires Action"
 msgstr "Requires Action"
@@ -10160,9 +10067,6 @@ msgstr "Schedules"
 
 msgid "Scheduling conflict"
 msgstr "Scheduling conflict"
-
-msgid "Scheduling Mode"
-msgstr "Scheduling Mode"
 
 msgid "Scope"
 msgstr "Scope"
@@ -10796,9 +10700,6 @@ msgstr "Sign-offs that must be recorded before this issue can be closed; in addi
 
 msgid "Signed in as {name}"
 msgstr "Signed in as {name}"
-
-msgid "Simultaneous operations this work center can run"
-msgstr "Simultaneous operations this work center can run"
 
 msgid "Sites & locations"
 msgstr "Sites & locations"
@@ -12760,9 +12661,6 @@ msgstr "Update Kanban"
 msgid "Update Linear issue"
 msgstr "Update Linear issue"
 
-msgid "Update Override"
-msgstr "Update Override"
-
 msgid "Update part lead times from posted purchase receipts."
 msgstr "Update part lead times from posted purchase receipts."
 
@@ -13310,9 +13208,6 @@ msgstr "Week of {0}"
 
 msgid "Weekly"
 msgstr "Weekly"
-
-msgid "Weekly Pattern"
-msgstr "Weekly Pattern"
 
 #. placeholder {0}: Math.round(startWeek) + 1
 #. placeholder {1}: Math.round(endWeek)

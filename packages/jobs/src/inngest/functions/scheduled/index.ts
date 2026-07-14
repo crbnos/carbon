@@ -1,5 +1,4 @@
 export { auditArchiveFunction } from "./audit-archive";
-export { capacityRollupFunction } from "./capacity-rollup";
 export { cleanupFunction } from "./cleanup";
 export { dispatchFunction } from "./dispatch";
 export { mrpFunction } from "./mrp";

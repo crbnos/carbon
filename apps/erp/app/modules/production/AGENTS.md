@@ -12,8 +12,8 @@ Work orders (jobs), scheduling, routings (operations), bill of materials, proced
 - **Production Quantity** — output recording (Production/Scrap/Rework) against an operation with optional `scrapReason`.
 - **Procedure** — versioned work instructions linked to operations via `processId`. Statuses: Draft/Active/Archived.
 - **Maintenance Dispatch** — reactive/scheduled repair for work centers with comments, events, items, and linked work centers.
-- **Scheduling** — finite-capacity DRC scheduling via the `schedule` edge function: backward date calculation feeds a forward slot allocator that respects work-center `parallelCapacity`, resource calendars, and qualified-operator pools (required abilities). Placements persist as `capacityReservation` rows (authoritative across jobs/runs; rebuilt per job per run). Work centers with `schedulingMode = 'Infinite'` keep legacy least-loaded placement. Dispatch rules per `schedulingPolicy` (per-WC row → company default → EDD). MUST use `triggerJobSchedule` to reschedule, never direct date writes.
-- **Operation ability requirements** — `jobOperationAbility` rows (copied from `methodOperationAbility` at get-method explosion, falling back to `processAbility` then `workCenter.requiredAbilityId` at scheduling time) gate both the scheduler's operator pools and MES operation start.
+- **Scheduling** — finite scheduling via the `schedule` edge function: backward date calculation feeds a forward slot allocator. Every work center is finite — one operation at a time, always open (24×7). When an operation's process `requiresAbility`, work only accumulates while a qualified employee is on shift (`employeeShift` ⋈ `shift`; no shift assignment = always available) and not reserved elsewhere. Placements persist as `capacityReservation` rows (authoritative across jobs/runs; rebuilt per job per run; `WorkCenter` + `OperatorPool` kinds). Dispatch rules per `schedulingPolicy` (per-WC row → company default → EDD). MUST use `triggerJobSchedule` to reschedule, never direct date writes.
+- **Ability requirements** — resolved through the operation's PROCESS: `process.requiresAbility` → the ability linked 1:1 to the process (`ability.processId`) → binary `employeeAbility` qualification (active ∧ trainingCompleted ∧ not expired). Gates both the scheduler's operator pools and MES operation start. There are no operation-level ability tables.
 
 ## Safety
 
@@ -51,10 +51,8 @@ pnpm --filter @carbon/erp test
 | `jobMaterial` | BOM line: item, quantity, methodType, unitCost |
 | `jobOperationStep` / `jobOperationParameter` / `jobOperationTool` | Work instruction details on operations |
 | `jobOperationDependency` | Operation sequencing dependencies |
-| `jobOperationAbility` | Required abilities per operation (scheduler + MES gate) |
 | `capacityReservation` | Durable finite-capacity slot allocations (WorkCenter / OperatorPool) |
 | `schedulingPolicy` | Dispatch rule per work center (null workCenterId = company default) |
-| `workCenterUtilization` | Nightly rollup: available/reserved/actual hours, rho, CV, avg queue time |
 | `jobOperationQueueTime` (view) | Ready → first productionEvent queue time (`jobOperation.readyAt` stamped by trigger) |
 | `productionEvent` | Time tracking: type (Labor/Machine/Setup), start/end, employee |
 | `productionQuantity` | Output: type (Production/Scrap/Rework), quantity, scrapReason |
@@ -73,7 +71,6 @@ pnpm --filter @carbon/erp test
 - `recalculateJobRequirements` / `recalculateJobOperationDependencies` — recalculation after changes
 - `triggerJobSchedule` — fires the scheduling engine via Inngest
 - `getJobPromiseDate` — promise date = scheduled finish of the job's last operation (predictLeadTime v1)
-- `getJobOperationAbilities` / `syncJobOperationAbilities` — required-ability rows per operation
 - `runMRP` — triggers Material Requirements Planning via `mrp` edge function
 - `calculateJobPriority` — computes priority from deadline type and due date
 - `getActiveJobOperationsByLocation` — schedule board data (RPC `get_active_job_operations_by_location`)

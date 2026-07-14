@@ -93,31 +93,17 @@ export default function WorkCenterRoute() {
   const navigate = useNavigate();
   const onClose = () => navigate(path.to.workCenters);
 
-  // TODO: the workCenters view predates the capacity/calendar columns —
-  // recreate the view (wc.*) so these fields round-trip without the cast
-  const capacityFields = workCenter as typeof workCenter & {
-    parallelCapacity?: number | null;
-    efficiencyFactor?: number | null;
-    schedulingMode?: "Finite" | "Infinite" | null;
-    resourceCalendarId?: string | null;
-  };
-
   const initialValues = {
     id: workCenter?.id ?? undefined,
     defaultStandardFactor: workCenter?.defaultStandardFactor ?? "Minutes/Piece",
     departmentId: workCenter?.departmentId ?? undefined,
     description: workCenter?.description ?? "",
-    efficiencyFactor: capacityFields?.efficiencyFactor ?? 1,
     laborRate: workCenter?.laborRate ?? 0,
     locationId: workCenter?.locationId ?? "",
     machineRate: workCenter?.machineRate ?? 0,
     name: workCenter?.name ?? "",
     overheadRate: workCenter?.overheadRate ?? 0,
-    parallelCapacity: capacityFields?.parallelCapacity ?? 1,
     processes: workCenter?.processes ?? [],
-    requiredAbilityId: workCenter?.requiredAbilityId ?? undefined,
-    resourceCalendarId: capacityFields?.resourceCalendarId ?? undefined,
-    schedulingMode: capacityFields?.schedulingMode ?? ("Finite" as const),
     ...getCustomFields(workCenter?.customFields)
   };
 

@@ -8,6 +8,7 @@ import type {
 } from "react-router";
 import { redirect, useNavigate } from "react-router";
 import {
+  ensureProcessAbility,
   ProcessForm,
   processValidator,
   upsertProcess
@@ -53,6 +54,26 @@ export async function action({ request }: ActionFunctionArgs) {
         );
   }
 
+  if (d.requiresAbility && createProcess.data?.id) {
+    const abilityResult = await ensureProcessAbility(client, {
+      processId: createProcess.data.id,
+      processName: d.name,
+      companyId,
+      userId
+    });
+    if (abilityResult.error) {
+      return modal
+        ? abilityResult
+        : redirect(
+            path.to.processes,
+            await flash(
+              request,
+              error(abilityResult.error, "Failed to create process ability.")
+            )
+          );
+    }
+  }
+
   return modal
     ? createProcess
     : redirect(
@@ -77,7 +98,8 @@ export default function NewProcessRoute() {
     name: "",
     processType: "Inside" as const,
     defaultStandardFactor: "Minutes/Piece" as const,
-    completeAllOnScan: false
+    completeAllOnScan: false,
+    requiresAbility: false
   };
 
   return <ProcessForm initialValues={initialValues} onClose={onClose} />;

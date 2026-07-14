@@ -33,14 +33,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const {
-    employeeId,
-    active,
-    trainingCompleted,
-    lastTrainingDate,
-    expiresAt,
-    proficiencyOverride
-  } = validation.data;
+  const { employeeId, active, trainingCompleted, lastTrainingDate, expiresAt } =
+    validation.data;
 
   const resolvedExpiresAt = await resolveEmployeeAbilityExpiresAt(
     client,
@@ -56,8 +50,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     active,
     trainingCompleted,
     lastTrainingDate: lastTrainingDate ?? null,
-    expiresAt: resolvedExpiresAt,
-    proficiencyOverride: proficiencyOverride ?? null
+    expiresAt: resolvedExpiresAt
   });
   if (upsert.error) {
     return data(
@@ -91,8 +84,7 @@ export default function NewEmployeeAbilityRoute() {
     active: true,
     trainingCompleted: false,
     lastTrainingDate: "",
-    expiresAt: "",
-    proficiencyOverride: undefined
+    expiresAt: ""
   };
 
   return (

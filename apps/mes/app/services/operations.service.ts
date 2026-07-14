@@ -19,7 +19,6 @@ import type {
   scrapQuantityValidator,
   stepRecordValidator
 } from "./models";
-import { deriveProficiency } from "./proficiency";
 import type { BaseOperationWithDetails, Job, StorageItem } from "./types";
 
 export async function getOpenJobs(
@@ -654,138 +653,109 @@ export async function getOperationEligibility(
   // NOTE: query failures here FAIL OPEN (eligible: true). An RLS/database
   // error must not brick the shop floor — the scheduler is the primary
   // enforcement of ability requirements; this gate is a best-effort backstop.
-  const operationAbilities = await client
-    .from("jobOperationAbility")
-    .select("abilityId, minimumProficiency, ability(name)")
-    .eq("operationId", operationId)
-    .eq("companyId", companyId);
+  // The requirement comes from the operation's PROCESS: process.requiresAbility
+  // gates, and the ability linked 1:1 to the process (ability.processId) is
+  // what the employee must be qualified for.
+  const operation = await client
+    .from("jobOperation")
+    .select("processId")
+    .eq("id", operationId)
+    .maybeSingle();
 
-  if (operationAbilities.error) {
+  if (operation.error) {
     console.error(
-      "getOperationEligibility: failed to fetch jobOperationAbility",
-      operationAbilities.error
+      "getOperationEligibility: failed to fetch jobOperation",
+      operation.error
     );
     return { eligible: true, reason: null };
   }
 
-  let requiredAbilities: {
-    abilityId: string;
-    minimumProficiency: number | null;
-    name: string | null;
-  }[] = (operationAbilities.data ?? []).map((row) => ({
-    abilityId: row.abilityId,
-    minimumProficiency: row.minimumProficiency,
-    name: row.ability?.name ?? null
-  }));
+  if (!operation.data?.processId) {
+    return { eligible: true, reason: null };
+  }
 
-  if (requiredAbilities.length === 0) {
-    // Fallback: the operation's work center may require a single ability
-    const operation = await client
-      .from("jobOperation")
-      .select("workCenterId")
-      .eq("id", operationId)
-      .maybeSingle();
+  const process = await client
+    .from("process")
+    .select("name, requiresAbility")
+    .eq("id", operation.data.processId)
+    .eq("companyId", companyId)
+    .maybeSingle();
 
-    if (operation.error) {
-      console.error(
-        "getOperationEligibility: failed to fetch jobOperation",
-        operation.error
-      );
-      return { eligible: true, reason: null };
-    }
+  if (process.error) {
+    console.error(
+      "getOperationEligibility: failed to fetch process",
+      process.error
+    );
+    return { eligible: true, reason: null };
+  }
 
-    if (!operation.data?.workCenterId) {
-      return { eligible: true, reason: null };
-    }
+  if (!process.data?.requiresAbility) {
+    return { eligible: true, reason: null };
+  }
 
-    const workCenter = await client
-      .from("workCenter")
-      .select("requiredAbilityId, ability(name)")
-      .eq("id", operation.data.workCenterId)
-      .maybeSingle();
+  const ability = await client
+    .from("ability")
+    .select("id, name")
+    .eq("processId", operation.data.processId)
+    .eq("companyId", companyId)
+    .eq("active", true)
+    .maybeSingle();
 
-    if (workCenter.error) {
-      console.error(
-        "getOperationEligibility: failed to fetch workCenter",
-        workCenter.error
-      );
-      return { eligible: true, reason: null };
-    }
+  if (ability.error) {
+    console.error(
+      "getOperationEligibility: failed to fetch ability",
+      ability.error
+    );
+    return { eligible: true, reason: null };
+  }
 
-    if (!workCenter.data?.requiredAbilityId) {
-      return { eligible: true, reason: null };
-    }
+  if (!ability.data) {
+    // requiresAbility is on but no linked ability exists — data anomaly,
+    // don't block the floor
+    return { eligible: true, reason: null };
+  }
 
-    requiredAbilities = [
-      {
-        abilityId: workCenter.data.requiredAbilityId,
-        minimumProficiency: null,
-        name: workCenter.data.ability?.name ?? null
-      }
-    ];
+  const abilityName = ability.data.name ?? process.data.name ?? "ability";
+
+  const employeeAbility = await client
+    .from("employeeAbility")
+    .select("active, trainingCompleted, expiresAt")
+    .eq("employeeId", employeeId)
+    .eq("abilityId", ability.data.id)
+    .eq("companyId", companyId)
+    .maybeSingle();
+
+  if (employeeAbility.error) {
+    console.error(
+      "getOperationEligibility: failed to fetch employeeAbility",
+      employeeAbility.error
+    );
+    return { eligible: true, reason: null };
+  }
+
+  if (!employeeAbility.data || !employeeAbility.data.active) {
+    return {
+      eligible: false,
+      reason: `Requires ${abilityName} — not qualified`
+    };
+  }
+
+  if (!employeeAbility.data.trainingCompleted) {
+    return {
+      eligible: false,
+      reason: `Requires ${abilityName} — training not completed`
+    };
   }
 
   const todayDate = today(getLocalTimeZone()).toString();
-
-  for (const required of requiredAbilities) {
-    const employeeAbility = await client
-      .from("employeeAbility")
-      .select(
-        "active, trainingCompleted, lastTrainingDate, expiresAt, proficiencyOverride, ability(name, curve, shadowWeeks)"
-      )
-      .eq("employeeId", employeeId)
-      .eq("abilityId", required.abilityId)
-      .eq("companyId", companyId)
-      .maybeSingle();
-
-    if (employeeAbility.error) {
-      console.error(
-        "getOperationEligibility: failed to fetch employeeAbility",
-        employeeAbility.error
-      );
-      return { eligible: true, reason: null };
-    }
-
-    const abilityName =
-      required.name ?? employeeAbility.data?.ability?.name ?? "ability";
-
-    if (!employeeAbility.data || !employeeAbility.data.active) {
-      return {
-        eligible: false,
-        reason: `Requires ${abilityName} — not qualified`
-      };
-    }
-
-    if (!employeeAbility.data.trainingCompleted) {
-      return {
-        eligible: false,
-        reason: `Requires ${abilityName} — training not completed`
-      };
-    }
-
-    if (
-      employeeAbility.data.expiresAt !== null &&
-      employeeAbility.data.expiresAt <= todayDate
-    ) {
-      return {
-        eligible: false,
-        reason: `Requires ${abilityName} — qualification expired ${employeeAbility.data.expiresAt}`
-      };
-    }
-
-    const proficiency = deriveProficiency({
-      curve: employeeAbility.data.ability?.curve,
-      shadowWeeks: employeeAbility.data.ability?.shadowWeeks ?? 0,
-      lastTrainingDate: employeeAbility.data.lastTrainingDate,
-      proficiencyOverride: employeeAbility.data.proficiencyOverride
-    });
-
-    if (proficiency < (required.minimumProficiency ?? 0)) {
-      return {
-        eligible: false,
-        reason: `Requires ${abilityName} — proficiency below required minimum`
-      };
-    }
+  if (
+    employeeAbility.data.expiresAt !== null &&
+    employeeAbility.data.expiresAt <= todayDate
+  ) {
+    return {
+      eligible: false,
+      reason: `Requires ${abilityName} — qualification expired ${employeeAbility.data.expiresAt}`
+    };
   }
 
   return { eligible: true, reason: null };

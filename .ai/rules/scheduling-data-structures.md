@@ -23,15 +23,14 @@ first match.
   `dependency-manager.ts`, `date-calculator.ts`, `work-center-selector.ts`,
   `priority-calculator.ts`, `material-manager.ts`, `duration-calculator.ts`,
   `assembly-handler.ts`, `master-data-provider.ts`, `calendar-utils.ts`,
-  `slot-allocator.ts`, `proficiency.ts`, `types.ts`). All engine READS go
+  `slot-allocator.ts`, `types.ts`). All engine READS go
   through the `MasterDataProvider` interface (`KyselyMasterDataProvider` is the
   live impl); writes stay on Kysely. `resource-manager.ts` was dead code and
   has been deleted. `calendar-utils.ts` / `slot-allocator.ts` /
   `date-utils.ts` / `operator-eligibility.ts` are pure and have Deno tests
   (`deno test lib/scheduling/` from the functions dir). `date-utils.toIsoDate`
   normalizes pg DATE columns (JS Date at local midnight) to "YYYY-MM-DD" —
-  required before any lexicographic date comparison (operator expiry,
-  capacity-override effectivity).
+  required before any lexicographic date comparison (operator expiry).
 - **ERP authoring boards** (`apps/erp/app/routes/x+/schedule+/`): `operations.tsx`
   (ops Kanban; drag → `operations.update.tsx` writes `jobOperation.workCenterId` +
   `priority`, no reschedule) and `dates.tsx` (jobs-by-due-date Kanban; drag →
@@ -67,23 +66,24 @@ selectWorkCenters → calculatePriorities → persistChanges`.
   `job.dueDate`, walk reverse-topo, each op `dueDate` = min dependent constraint − lead
   time, `startDate` = `dueDate` − duration in **business days** (`subtractBusinessDays`,
   skips weekends). Duration = `setup + max(labor, machine)`, ceil to 8-hour days.
-- **Dates, pass 2 (finite/DRC placement)** — `selectWorkCenters` builds a
-  `FiniteSchedulingContext` (work-center capacity info, expanded calendars,
-  time-phased `workCenterCapacity` overrides, live `capacityReservation` rows
-  excluding this job, required abilities per op with process/work-center
-  fallbacks, qualified-operator pools with derived proficiency) and, per op,
-  walks each candidate work center's calendar **forward** from
-  max(backward start, now, in-run predecessor finish) to the first slot where
-  a machine slot (`< parallelCapacity` concurrent) AND ≥1 qualified operator
-  per required ability are simultaneously free (`slot-allocator.ts`). Picks
-  the earliest-finish candidate (tie → least reserved). Placement overwrites
-  `startDate`/`dueDate`; placements past the backward due date set
-  `hasConflict`/`conflictReason` but keep the placement. Work centers with
-  `schedulingMode = 'Infinite'` keep the legacy least-loaded pick with
-  pass-1 dates. In `mode: "reschedule"` selection is **sticky**: an op with an
-  assigned `workCenterId` keeps it (`ctx.stickyWorkCenters`); free selection
-  happens only at `mode: "initial"` or via the ops board drag. Reservations persist to `capacityReservation`
-  (delete-by-job + bulk insert per run, `scenarioId IS NULL` = live plan).
+- **Dates, pass 2 (finite placement)** — `selectWorkCenters` builds a
+  `FiniteSchedulingContext` (live `capacityReservation` rows excluding this
+  job, per-process ability requirements via `process.requiresAbility` +
+  `ability.processId`, qualified employees with their shift windows from
+  `employeeShift` ⋈ `shift` — no shift assignment = always available) and,
+  per op, walks **forward** from max(backward start, now, in-run predecessor
+  finish) to the first interval where the work center is free (always finite,
+  capacity 1, open 24×7) AND — for ability-gated processes — ≥1 qualified
+  employee is on shift and unreserved (`slot-allocator.ts`; the accumulation
+  windows for gated ops are the union of the pool members' shift windows, so
+  work pauses while nobody qualified is on shift). Picks the earliest-finish
+  candidate (tie → least reserved). Placement overwrites `startDate`/`dueDate`;
+  placements past the backward due date set `hasConflict`/`conflictReason`
+  but keep the placement. In `mode: "reschedule"` selection is **sticky**: an
+  op with an assigned `workCenterId` keeps it (`ctx.stickyWorkCenters`); free
+  selection happens only at `mode: "initial"` or via the ops board drag.
+  Reservations persist to `capacityReservation` (delete-by-job + bulk insert
+  per run, `scenarioId IS NULL` = live plan).
 - **Priority** = per-work-center dispatch sequence number (`priority-calculator.ts`): ops
   grouped by `workCenterId`, sorted by the work center's **dispatch rule**
   (`schedulingPolicy`: per-WC row → company default row → `EDD`; rules
@@ -170,10 +170,10 @@ thumbnailPath, operationCount, completedOperationCount, hasConflict, jobMakeMeth
 ## Gotchas
 
 - The engine backward-computes target dates, then **finite forward placement**
-  decides actual timing on `Finite` work centers (the default). Only
-  `schedulingMode = 'Infinite'` work centers keep pure load-balanced,
-  capacity-blind placement. Manually scheduled ops are not reallocated — their
-  existing window is reserved as-is.
+  decides actual timing. Every work center is finite (one op at a time);
+  there is no Infinite mode and no work-center calendar — availability
+  constraints come from qualified people's shifts. Manually scheduled ops are
+  not reallocated — their existing window is reserved as-is.
 - `jobOperation."order"` (topo position) vs `"operationOrder"` (serial/parallel enum) are
   distinct columns — easy to confuse; the RPC surfaces them as `operationOrder` and
   `operationOrderType` respectively.

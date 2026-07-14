@@ -19,12 +19,8 @@ import type {
   oeeImpact,
   partnerValidator,
   processValidator,
-  resourceCalendarExceptionValidator,
-  resourceCalendarShiftValidator,
-  resourceCalendarValidator,
   trainingQuestionValidator,
   trainingValidator,
-  workCenterCapacityValidator,
   workCenterValidator
 } from "./resources.models";
 
@@ -247,7 +243,7 @@ export async function getAbility(
   return client
     .from("ability")
     .select(
-      `*, employeeAbility(id, employeeId, lastTrainingDate, trainingDays, trainingCompleted, expiresAt, proficiencyOverride, active)`,
+      `*, employeeAbility(id, employeeId, lastTrainingDate, trainingDays, trainingCompleted, expiresAt, active)`,
       {
         count: "exact"
       }
@@ -1054,222 +1050,6 @@ export async function getWorkCentersListWithBlockingStatus(
     .order("name");
 }
 
-export async function getResourceCalendars(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  args?: { search: string | null } & GenericQueryFilters
-) {
-  let query = client
-    .from("resourceCalendar")
-    .select("*", {
-      count: "exact"
-    })
-    .eq("companyId", companyId);
-
-  if (args?.search) {
-    query = query.ilike("name", `%${args.search}%`);
-  }
-
-  if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
-  }
-
-  return query;
-}
-
-export async function getResourceCalendarsList(
-  client: SupabaseClient<Database>,
-  companyId: string
-) {
-  return client
-    .from("resourceCalendar")
-    .select("id, name, locationId")
-    .eq("companyId", companyId)
-    .eq("active", true)
-    .order("name");
-}
-
-export async function getResourceCalendar(
-  client: SupabaseClient<Database>,
-  id: string
-) {
-  return client.from("resourceCalendar").select("*").eq("id", id).single();
-}
-
-export async function getResourceCalendarShifts(
-  client: SupabaseClient<Database>,
-  resourceCalendarId: string
-) {
-  return client
-    .from("resourceCalendarShift")
-    .select("*")
-    .eq("resourceCalendarId", resourceCalendarId)
-    .order("dayOfWeek")
-    .order("startTime");
-}
-
-export async function getResourceCalendarExceptions(
-  client: SupabaseClient<Database>,
-  resourceCalendarId: string
-) {
-  return client
-    .from("resourceCalendarException")
-    .select("*")
-    .eq("resourceCalendarId", resourceCalendarId)
-    .order("startAt");
-}
-
-export async function upsertResourceCalendar(
-  client: SupabaseClient<Database>,
-  resourceCalendar:
-    | (Omit<z.infer<typeof resourceCalendarValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (Omit<z.infer<typeof resourceCalendarValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  if ("createdBy" in resourceCalendar) {
-    return client
-      .from("resourceCalendar")
-      .insert([resourceCalendar])
-      .select("id")
-      .single();
-  }
-  return client
-    .from("resourceCalendar")
-    .update(sanitize(resourceCalendar))
-    .eq("id", resourceCalendar.id)
-    .select("id")
-    .single();
-}
-
-export async function deleteResourceCalendar(
-  client: SupabaseClient<Database>,
-  id: string
-) {
-  return client.from("resourceCalendar").update({ active: false }).eq("id", id);
-}
-
-export async function upsertResourceCalendarShift(
-  client: SupabaseClient<Database>,
-  shift:
-    | (Omit<z.infer<typeof resourceCalendarShiftValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-      })
-    | (Omit<z.infer<typeof resourceCalendarShiftValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-      })
-) {
-  if ("createdBy" in shift) {
-    return client
-      .from("resourceCalendarShift")
-      .insert([shift])
-      .select("id")
-      .single();
-  }
-  return client
-    .from("resourceCalendarShift")
-    .update(sanitize(shift))
-    .eq("id", shift.id)
-    .select("id")
-    .single();
-}
-
-export async function deleteResourceCalendarShift(
-  client: SupabaseClient<Database>,
-  id: string
-) {
-  return client.from("resourceCalendarShift").delete().eq("id", id);
-}
-
-export async function upsertResourceCalendarException(
-  client: SupabaseClient<Database>,
-  exception:
-    | (Omit<z.infer<typeof resourceCalendarExceptionValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-      })
-    | (Omit<z.infer<typeof resourceCalendarExceptionValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-      })
-) {
-  if ("createdBy" in exception) {
-    return client
-      .from("resourceCalendarException")
-      .insert([exception])
-      .select("id")
-      .single();
-  }
-  return client
-    .from("resourceCalendarException")
-    .update(sanitize(exception))
-    .eq("id", exception.id)
-    .select("id")
-    .single();
-}
-
-export async function deleteResourceCalendarException(
-  client: SupabaseClient<Database>,
-  id: string
-) {
-  return client.from("resourceCalendarException").delete().eq("id", id);
-}
-
-export async function getWorkCenterCapacities(
-  client: SupabaseClient<Database>,
-  workCenterId: string
-) {
-  return client
-    .from("workCenterCapacity")
-    .select("*")
-    .eq("workCenterId", workCenterId)
-    .order("effectiveFrom");
-}
-
-export async function upsertWorkCenterCapacity(
-  client: SupabaseClient<Database>,
-  capacity:
-    | (Omit<z.infer<typeof workCenterCapacityValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-      })
-    | (Omit<z.infer<typeof workCenterCapacityValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-      })
-) {
-  if ("createdBy" in capacity) {
-    return client
-      .from("workCenterCapacity")
-      .insert([capacity])
-      .select("id")
-      .single();
-  }
-  return client
-    .from("workCenterCapacity")
-    .update(sanitize(capacity))
-    .eq("id", capacity.id)
-    .select("id")
-    .single();
-}
-
-export async function deleteWorkCenterCapacity(
-  client: SupabaseClient<Database>,
-  id: string
-) {
-  return client.from("workCenterCapacity").delete().eq("id", id);
-}
-
 export async function insertAbility(
   client: SupabaseClient<Database>,
   ability: {
@@ -1385,12 +1165,54 @@ export async function upsertEmployeeAbilityCell(
     trainingCompleted: boolean;
     lastTrainingDate: string | null;
     expiresAt: string | null;
-    proficiencyOverride: number | null;
   }
 ) {
   return client
     .from("employeeAbility")
     .upsert(cell, { onConflict: "employeeId,abilityId" })
+    .select("id")
+    .single();
+}
+
+/**
+ * Find-or-create the ability linked 1:1 to a process. Called when a process
+ * has "Requires Ability" toggled on — the ability (named after the process)
+ * is what employees get qualified against.
+ */
+export async function ensureProcessAbility(
+  client: SupabaseClient<Database>,
+  args: {
+    processId: string;
+    processName: string;
+    companyId: string;
+    userId: string;
+  }
+) {
+  const existing = await client
+    .from("ability")
+    .select("id")
+    .eq("processId", args.processId)
+    .eq("companyId", args.companyId)
+    .maybeSingle();
+
+  if (existing.error || existing.data) {
+    return existing;
+  }
+
+  return client
+    .from("ability")
+    .insert([
+      {
+        name: args.processName,
+        processId: args.processId,
+        companyId: args.companyId,
+        curve: {
+          data: [{ week: 0, value: 100 }]
+        },
+        shadowWeeks: 0,
+        createdBy: args.userId
+      }
+    ])
     .select("id")
     .single();
 }

@@ -7,8 +7,10 @@ import {
   buildMakeMethodDependencies,
 } from "./assembly-handler.ts";
 import {
-  type CalendarExceptionRow,
+  type CalendarShiftRow,
+  type CalendarWindow,
   expandCalendar,
+  unionWindows,
 } from "./calendar-utils.ts";
 import { calculateOperationDates } from "./date-calculator.ts";
 import {
@@ -40,10 +42,9 @@ import type {
   SchedulingResult,
 } from "./types.ts";
 import {
-  type AbilityRequirement,
   applyWorkCenterSelections,
   type FiniteSchedulingContext,
-  type QualifiedEmployee,
+  type PoolEmployee,
   WorkCenterSelector,
 } from "./work-center-selector.ts";
 
@@ -360,11 +361,11 @@ export class SchedulingEngine {
   }
 
   /**
-   * Build the finite-capacity context: calendars, capacity, live
-   * reservations, skill requirements, and qualified-operator pools for every
-   * candidate work center. Runs just before selection so the rebuilt
-   * dependency DAG is final. When every candidate work center is Infinite the
-   * context still works — those candidates take the legacy load path.
+   * Build the finite-capacity context: live reservations, per-process ability
+   * requirements, and qualified-operator availability. Work centers are
+   * always finite (one operation at a time) and always open — availability
+   * constraints come from qualified PEOPLE's shifts. Runs just before
+   * selection so the rebuilt dependency DAG is final.
    */
   private async buildFiniteContext(): Promise<FiniteSchedulingContext | null> {
     if (!this.workCenterSelector) {
@@ -388,119 +389,87 @@ export class SchedulingEngine {
       }
     }
 
-    const wcInfos = await this.provider.getWorkCenterCapacityInfo(
-      Array.from(workCenterIds)
-    );
-    if (wcInfos.length === 0) {
-      return null;
-    }
-
-    const [calendars, overrides, liveReservations, opAbilities, processAbilities] =
-      await Promise.all([
-        this.provider.getWorkCenterCalendars(wcInfos),
-        this.provider.getWorkCenterCapacityOverrides(
-          wcInfos.map((wc) => wc.id)
-        ),
-        this.provider.getLiveReservations(now, this.jobId),
-        this.provider.getOperationRequiredAbilities(
-          operations.map((op) => op.id)
-        ),
-        this.provider.getProcessAbilities(processIds),
-      ]);
-
-    // Qualified employees + names for every ability in play
-    const abilityIds = new Set<string>();
-    for (const a of opAbilities) abilityIds.add(a.abilityId);
-    for (const a of processAbilities) abilityIds.add(a.abilityId);
-    for (const wc of wcInfos) {
-      if (wc.requiredAbilityId) abilityIds.add(wc.requiredAbilityId);
-    }
-    const [employees, abilityNames] = await Promise.all([
-      this.provider.getQualifiedEmployees(Array.from(abilityIds)),
-      this.provider.getAbilityNames(Array.from(abilityIds)),
+    const [liveReservations, processRequirements] = await Promise.all([
+      this.provider.getLiveReservations(now, this.jobId),
+      this.provider.getProcessRequirements(processIds),
     ]);
 
-    // Expand each work center's calendar over the scheduling horizon
+    const abilityIds = Array.from(
+      new Set(processRequirements.map((r) => r.abilityId))
+    );
+    const employees = await this.provider.getQualifiedEmployees(abilityIds);
+    const employeeIds = Array.from(
+      new Set(employees.map((e) => e.employeeId))
+    );
+    const shiftRows = await this.provider.getEmployeeShiftWindows(employeeIds);
+
     const rangeStart = now;
     const rangeEnd = new Date(
       now.getTime() + (SCHEDULING_HORIZON_DAYS + 7) * 24 * 3_600_000
     );
-    const calendarByWorkCenter = new Map(
-      calendars.map((c) => [c.workCenterId, c])
-    );
 
+    // Work centers: capacity 1, always open across the horizon
     const capacityByWorkCenter = new Map<string, ResourceCapacityData>();
-    for (const wc of wcInfos) {
-      const pattern = calendarByWorkCenter.get(wc.id);
-      const exceptions: CalendarExceptionRow[] = (
-        pattern?.exceptions ?? []
-      ).map((e) => ({
-        startAt: new Date(e.startAt),
-        endAt: new Date(e.endAt),
-        type: e.type,
-        capacityOverride: e.capacityOverride,
-      }));
-      const windows = expandCalendar(
-        pattern?.shifts ?? [],
-        exceptions,
-        rangeStart,
-        rangeEnd,
-        wc.timezone
-      );
-
-      capacityByWorkCenter.set(wc.id, {
-        workCenter: {
-          id: wc.id,
-          parallelCapacity: wc.parallelCapacity,
-          efficiencyFactor: wc.efficiencyFactor,
-          schedulingMode: wc.schedulingMode,
-          requiredAbilityId: wc.requiredAbilityId,
-        },
-        windows,
-        capacityOverrides: overrides
-          .filter((o) => o.workCenterId === wc.id)
-          .map((o) => ({
-            effectiveFrom: o.effectiveFrom,
-            effectiveTo: o.effectiveTo,
-            parallelCapacity: o.parallelCapacity,
-          })),
+    for (const wcId of workCenterIds) {
+      capacityByWorkCenter.set(wcId, {
+        workCenter: { id: wcId },
+        windows: [{ start: rangeStart, end: rangeEnd }],
         reservations: liveReservations
           .filter(
-            (r) => r.resourceKind === "WorkCenter" && r.resourceId === wc.id
+            (r) => r.resourceKind === "WorkCenter" && r.resourceId === wcId
           )
           .map((r) => ({ startAt: r.startAt, endAt: r.endAt })),
       });
     }
 
-    const requiredAbilitiesByOperation = new Map<
+    const requirementByProcess = new Map(
+      processRequirements.map((r) => [
+        r.processId,
+        { abilityId: r.abilityId, abilityName: r.abilityName },
+      ])
+    );
+
+    // Each qualified person's availability = their assigned shifts expanded
+    // over the horizon (grouped by timezone, unioned). No shift assignment
+    // => always available.
+    const shiftPatternsByEmployee = new Map<
       string,
-      AbilityRequirement[]
+      Map<string, CalendarShiftRow[]>
     >();
-    for (const a of opAbilities) {
-      const list = requiredAbilitiesByOperation.get(a.operationId) ?? [];
+    for (const row of shiftRows) {
+      let byTz = shiftPatternsByEmployee.get(row.employeeId);
+      if (!byTz) {
+        byTz = new Map();
+        shiftPatternsByEmployee.set(row.employeeId, byTz);
+      }
+      const list = byTz.get(row.timezone) ?? [];
       list.push({
-        abilityId: a.abilityId,
-        abilityName: a.abilityName,
-        minimumProficiency: a.minimumProficiency,
+        dayOfWeek: row.dayOfWeek,
+        startTime: row.startTime,
+        endTime: row.endTime,
       });
-      requiredAbilitiesByOperation.set(a.operationId, list);
+      byTz.set(row.timezone, list);
+    }
+    const windowsByEmployee = new Map<string, CalendarWindow[]>();
+    for (const [employeeId, byTz] of shiftPatternsByEmployee) {
+      const lists = Array.from(byTz.entries()).map(([tz, shifts]) =>
+        expandCalendar(shifts, rangeStart, rangeEnd, tz)
+      );
+      windowsByEmployee.set(employeeId, unionWindows(lists));
     }
 
-    const processAbilitiesByProcess = new Map<string, AbilityRequirement[]>();
-    for (const a of processAbilities) {
-      const list = processAbilitiesByProcess.get(a.processId) ?? [];
-      list.push({
-        abilityId: a.abilityId,
-        abilityName: a.abilityName,
-        minimumProficiency: a.minimumProficiency,
-      });
-      processAbilitiesByProcess.set(a.processId, list);
-    }
-
-    const employeesByAbility = new Map<string, QualifiedEmployee[]>();
+    const employeesByAbility = new Map<string, PoolEmployee[]>();
     for (const e of employees) {
       const list = employeesByAbility.get(e.abilityId) ?? [];
-      list.push(e);
+      list.push({
+        employeeId: e.employeeId,
+        active: e.active,
+        trainingCompleted: e.trainingCompleted,
+        expiresAt: e.expiresAt,
+        windows: windowsByEmployee.get(e.employeeId) ?? [
+          { start: rangeStart, end: rangeEnd },
+        ],
+      });
       employeesByAbility.set(e.abilityId, list);
     }
 
@@ -517,11 +486,9 @@ export class SchedulingEngine {
 
     return {
       capacityByWorkCenter,
-      requiredAbilitiesByOperation,
-      processAbilitiesByProcess,
+      requirementByProcess,
       employeesByAbility,
       poolReservationsByAbility,
-      abilityNamesById: new Map(abilityNames.map((a) => [a.id, a.name])),
       dependencies: this.dependencies,
       now,
       horizonDays: SCHEDULING_HORIZON_DAYS,

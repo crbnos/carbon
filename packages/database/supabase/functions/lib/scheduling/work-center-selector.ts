@@ -1,4 +1,5 @@
 import { calculateDurationHours } from "./duration-calculator.ts";
+import type { CalendarWindow } from "./calendar-utils.ts";
 import type { MasterDataProvider } from "./master-data-provider.ts";
 import {
   isEligibleOperator,
@@ -15,15 +16,17 @@ import type {
   JobOperationDependency,
   PlannedReservation,
   ScheduledOperation,
-  WorkCenterLoad,
   WorkCenterSelection,
 } from "./types.ts";
 
-export type AbilityRequirement = {
+/** The single ability a process requires (resolved via process.requiresAbility). */
+export type ProcessRequirement = {
   abilityId: string;
   abilityName: string;
-  minimumProficiency: number | null;
 };
+
+/** A qualified employee plus their availability windows (from their shifts). */
+export type PoolEmployee = QualifiedEmployee & { windows: CalendarWindow[] };
 
 export {
   isEligibleOperator,
@@ -31,17 +34,16 @@ export {
 } from "./operator-eligibility.ts";
 
 /**
- * Preloaded finite-capacity data, built by the engine in initialize().
+ * Preloaded finite-capacity data, built by the engine in selectWorkCenters().
  * Reservation arrays are mutated in-run as operations are placed so later
  * operations see earlier placements.
  */
 export type FiniteSchedulingContext = {
   capacityByWorkCenter: Map<string, ResourceCapacityData>;
-  requiredAbilitiesByOperation: Map<string, AbilityRequirement[]>;
-  processAbilitiesByProcess: Map<string, AbilityRequirement[]>;
-  employeesByAbility: Map<string, QualifiedEmployee[]>;
+  /** processId -> required ability (only processes with requiresAbility = true) */
+  requirementByProcess: Map<string, ProcessRequirement>;
+  employeesByAbility: Map<string, PoolEmployee[]>;
   poolReservationsByAbility: Map<string, ReservationInterval[]>;
-  abilityNamesById: Map<string, string>;
   dependencies: JobOperationDependency[];
   now: Date;
   horizonDays: number;
@@ -54,17 +56,15 @@ export type FiniteSchedulingContext = {
 };
 
 /**
- * Work Center Selector
- * Handles work center selection based on load balancing
+ * Work Center Selector — finite placement. Every work center is finite with
+ * capacity 1 (one operation at a time); ability-gated operations additionally
+ * wait for a qualified person to be on shift.
  */
 export class WorkCenterSelector {
   private provider: MasterDataProvider;
   private locationId: string;
   private workCentersByProcess: Map<string, string[]> = new Map();
   private activeWorkCenters: Set<string> = new Set();
-  // Track in-memory load from operations assigned in current scheduling run
-  private inMemoryLoadByWorkCenter: Map<string, number> = new Map();
-  // Finite-capacity context (null => pure legacy load balancing)
   private finiteContext: FiniteSchedulingContext | null = null;
   private plannedReservations: PlannedReservation[] = [];
 
@@ -91,28 +91,6 @@ export class WorkCenterSelector {
       }
     }
     return Array.from(ids);
-  }
-
-  /**
-   * Add load for an operation assigned in memory (not yet persisted)
-   */
-  addInMemoryLoad(workCenterId: string, hours: number): void {
-    const currentLoad = this.inMemoryLoadByWorkCenter.get(workCenterId) ?? 0;
-    this.inMemoryLoadByWorkCenter.set(workCenterId, currentLoad + hours);
-  }
-
-  /**
-   * Get total in-memory load for a work center
-   */
-  getInMemoryLoad(workCenterId: string): number {
-    return this.inMemoryLoadByWorkCenter.get(workCenterId) ?? 0;
-  }
-
-  /**
-   * Reset in-memory load tracking (call before a new scheduling run)
-   */
-  resetInMemoryLoad(): void {
-    this.inMemoryLoadByWorkCenter.clear();
   }
 
   /**
@@ -160,198 +138,23 @@ export class WorkCenterSelector {
   }
 
   /**
-   * Calculate total load (in hours) on a work center up to a given date
+   * Select work centers for multiple operations: for each operation, walk
+   * every candidate work center forward to the first interval where the
+   * machine is free AND (when the process requires an ability) a qualified
+   * person is on shift; pick the candidate with the earliest finish (tie →
+   * least reserved time). Conflicts surface on the selection, never fail hard.
    */
-  async calculateLoadBeforeDate(
-    workCenterId: string,
-    beforeDate: string
-  ): Promise<number> {
-    const operations = await this.provider.getWorkCenterLoadOperations(
-      workCenterId,
-      beforeDate
-    );
-
-    let totalHours = 0;
-    for (const op of operations) {
-      totalHours += calculateDurationHours({
-        jobId: "", // Not needed for duration calculation
-        processId: null,
-        setupTime: op.setupTime ?? undefined,
-        setupUnit: op.setupUnit ?? undefined,
-        laborTime: op.laborTime ?? undefined,
-        laborUnit: op.laborUnit ?? undefined,
-        machineTime: op.machineTime ?? undefined,
-        machineUnit: op.machineUnit ?? undefined,
-        operationQuantity: op.operationQuantity ?? undefined,
-      });
-    }
-
-    return totalHours;
-  }
-
-  /**
-   * Get load information for all work centers supporting a process
-   */
-  async getLoadForProcessWorkCenters(
-    processId: string,
-    beforeDate: string
-  ): Promise<WorkCenterLoad[]> {
-    const workCenters = this.getWorkCentersForProcess(processId);
-    const loads: WorkCenterLoad[] = [];
-
-    for (const wcId of workCenters) {
-      const operations = await this.provider.getWorkCenterLoadOperations(
-        wcId,
-        beforeDate
-      );
-
-      let totalHours = 0;
-      for (const op of operations) {
-        totalHours += calculateDurationHours({
-          jobId: "", // Not needed for duration calculation
-          processId: null,
-          setupTime: op.setupTime ?? undefined,
-          setupUnit: op.setupUnit ?? undefined,
-          laborTime: op.laborTime ?? undefined,
-          laborUnit: op.laborUnit ?? undefined,
-          machineTime: op.machineTime ?? undefined,
-          machineUnit: op.machineUnit ?? undefined,
-          operationQuantity: op.operationQuantity ?? undefined,
-        });
-      }
-
-      loads.push({
-        workCenterId: wcId,
-        totalHours,
-        operationCount: operations.length,
-      });
-    }
-
-    return loads;
-  }
-
-  /**
-   * Select the optimal work center for an operation based on load balancing
-   * Selects the work center with the least load before the operation's start date
-   * Includes both database load and in-memory load from current scheduling run
-   */
-  async selectWorkCenter(
-    processId: string | null,
-    scheduledStartDate: string | null
-  ): Promise<WorkCenterSelection> {
-    if (!processId) {
-      return {
-        workCenterId: null,
-        priority: 0,
-        error: "No process ID provided",
-      };
-    }
-
-    const workCenters = this.getWorkCentersForProcess(processId);
-
-    if (workCenters.length === 0) {
-      return {
-        workCenterId: null,
-        priority: 0,
-        error: `No work centers found for process ${processId}`,
-      };
-    }
-
-    // Use today if no start date
-    const beforeDate = scheduledStartDate || new Date().toISOString().split("T")[0];
-
-    let selectedWorkCenter: string | null = null;
-    let lowestLoad = Infinity;
-
-    for (const wcId of workCenters) {
-      // Get load from database (other jobs)
-      const dbLoad = await this.calculateLoadBeforeDate(wcId, beforeDate);
-      // Add in-memory load from current scheduling run
-      const inMemoryLoad = this.getInMemoryLoad(wcId);
-      const totalLoad = dbLoad + inMemoryLoad;
-
-      if (totalLoad < lowestLoad) {
-        lowestLoad = totalLoad;
-        selectedWorkCenter = wcId;
-      }
-    }
-
-    if (!selectedWorkCenter) {
-      return {
-        workCenterId: null,
-        priority: 0,
-        error: "No work center selected after evaluation",
-      };
-    }
-
-    return {
-      workCenterId: selectedWorkCenter,
-      priority: 0, // Priority will be calculated separately
-      load: lowestLoad,
-    };
-  }
-
-  /**
-   * Select work centers for multiple operations
-   * Re-evaluates all work center assignments based on scheduled dates
-   * Tracks in-memory load to ensure proper load balancing within same scheduling run
-   */
-  async selectWorkCentersForOperations(
+  selectWorkCentersForOperations(
     operations: ScheduledOperation[]
-  ): Promise<Map<string, WorkCenterSelection>> {
-    if (this.finiteContext) {
-      return this.selectWithFiniteCapacity(operations);
+  ): Map<string, WorkCenterSelection> {
+    const ctx = this.finiteContext;
+    if (!ctx) {
+      throw new Error(
+        "WorkCenterSelector: finite context not set — call setFiniteContext() first"
+      );
     }
 
     const selections = new Map<string, WorkCenterSelection>();
-
-    // Reset in-memory load tracking for this scheduling run
-    this.resetInMemoryLoad();
-
-    // Sort by start date to process in order
-    const sorted = [...operations].sort((a, b) => {
-      if (!a.startDate && !b.startDate) return 0;
-      if (!a.startDate) return 1;
-      if (!b.startDate) return -1;
-      return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
-    });
-
-    for (const op of sorted) {
-      // Skip outside operations (they don't need work center assignment)
-      if (op.operationType === "Outside") {
-        continue;
-      }
-
-      const selection = await this.selectWorkCenter(
-        op.processId,
-        op.startDate
-      );
-      selections.set(op.id, selection);
-
-      // Track this operation's load in memory for subsequent selections
-      if (selection.workCenterId) {
-        const opDuration = op.durationHours ?? calculateDurationHours(op);
-        this.addInMemoryLoad(selection.workCenterId, opDuration);
-      }
-    }
-
-    return selections;
-  }
-
-  /**
-   * Finite/DRC selection: for each operation, walk every candidate work
-   * center's calendar to the first interval where a machine slot AND a
-   * qualified operator are simultaneously free; pick the candidate with the
-   * earliest finish (tie → least reserved time). Infinite work centers keep
-   * the legacy least-loaded behavior. Conflicts surface on the selection,
-   * never fail hard.
-   */
-  private async selectWithFiniteCapacity(
-    operations: ScheduledOperation[]
-  ): Promise<Map<string, WorkCenterSelection>> {
-    const ctx = this.finiteContext!;
-    const selections = new Map<string, WorkCenterSelection>();
-    this.resetInMemoryLoad();
     this.plannedReservations = [];
 
     const depsByOperation = new Map<string, string[]>();
@@ -451,70 +254,35 @@ export class WorkCenterSelector {
         earliestMs + ctx.horizonDays * 24 * 3_600_000
       );
 
-      // Operation-level requirements, falling back to process-level defaults.
-      // The per-work-center requiredAbilityId fallback applies per candidate.
-      const opRequirements =
-        ctx.requiredAbilitiesByOperation.get(op.id) ??
-        ctx.processAbilitiesByProcess.get(op.processId) ??
-        null;
+      // The operation's requirement comes from its PROCESS (single ability)
+      const requirement =
+        ctx.requirementByProcess.get(op.processId) ?? null;
+      const pool = requirement
+        ? this.buildOperatorPool(requirement, earliestStart, ctx)
+        : null;
 
-      const durationBase =
+      const durationHours =
         op.durationHours ??
         calculateDurationHours({ ...op, priority: op.priority ?? undefined });
 
-      let bestFinite: {
+      let best: {
         wcId: string;
         slot: { start: Date; end: Date };
         reservedMs: number;
         capacity: ResourceCapacityData;
-        requirements: AbilityRequirement[];
       } | null = null;
-      let bestInfinite: { wcId: string; load: number } | null = null;
       let firstConflict: string | null = null;
 
       for (const wcId of candidates) {
         const capacity = ctx.capacityByWorkCenter.get(wcId);
         if (!capacity) continue;
 
-        if (capacity.workCenter.schedulingMode === "Infinite") {
-          const beforeDate =
-            op.startDate || ctx.now.toISOString().slice(0, 10);
-          const dbLoad = await this.calculateLoadBeforeDate(wcId, beforeDate);
-          const load = dbLoad + this.getInMemoryLoad(wcId);
-          if (!bestInfinite || load < bestInfinite.load) {
-            bestInfinite = { wcId, load };
-          }
-          continue;
-        }
-
-        const requirements: AbilityRequirement[] =
-          opRequirements ??
-          (capacity.workCenter.requiredAbilityId
-            ? [
-                {
-                  abilityId: capacity.workCenter.requiredAbilityId,
-                  abilityName:
-                    ctx.abilityNamesById.get(
-                      capacity.workCenter.requiredAbilityId
-                    ) ?? "required ability",
-                  minimumProficiency: null,
-                },
-              ]
-            : []);
-
-        const pools = requirements.map((r) =>
-          this.buildOperatorPool(r, earliestStart, ctx)
-        );
-
-        const durationHours =
-          durationBase / (capacity.workCenter.efficiencyFactor || 1);
-
         const result = allocateOperation({
           durationHours,
           earliestStart,
           horizonEnd,
           capacity,
-          operatorPools: pools,
+          operatorPool: pool,
         });
 
         if (isConflict(result)) {
@@ -530,17 +298,17 @@ export class WorkCenterSelector {
         );
 
         if (
-          !bestFinite ||
-          result.end.getTime() < bestFinite.slot.end.getTime() ||
-          (result.end.getTime() === bestFinite.slot.end.getTime() &&
-            reservedMs < bestFinite.reservedMs)
+          !best ||
+          result.end.getTime() < best.slot.end.getTime() ||
+          (result.end.getTime() === best.slot.end.getTime() &&
+            reservedMs < best.reservedMs)
         ) {
-          bestFinite = { wcId, slot: result, reservedMs, capacity, requirements };
+          best = { wcId, slot: result, reservedMs, capacity };
         }
       }
 
-      if (bestFinite) {
-        const { wcId, slot, capacity, requirements } = bestFinite;
+      if (best) {
+        const { wcId, slot, capacity } = best;
 
         // Commit in-run so subsequent operations see this placement
         capacity.reservations.push({ startAt: slot.start, endAt: slot.end });
@@ -551,20 +319,20 @@ export class WorkCenterSelector {
           startAt: slot.start,
           endAt: slot.end,
         });
-        for (const r of requirements) {
-          const list = ctx.poolReservationsByAbility.get(r.abilityId) ?? [];
+        if (requirement) {
+          const list =
+            ctx.poolReservationsByAbility.get(requirement.abilityId) ?? [];
           list.push({ startAt: slot.start, endAt: slot.end });
-          ctx.poolReservationsByAbility.set(r.abilityId, list);
+          ctx.poolReservationsByAbility.set(requirement.abilityId, list);
           this.plannedReservations.push({
             resourceKind: "OperatorPool",
-            resourceId: r.abilityId,
+            resourceId: requirement.abilityId,
             operationId: op.id,
             startAt: slot.start,
             endAt: slot.end,
           });
         }
         placedEndByOperation.set(op.id, slot.end);
-        this.addInMemoryLoad(wcId, durationBase);
 
         // Late vs the DAG-computed due date => surface as a conflict
         let conflict: string | null = null;
@@ -580,25 +348,29 @@ export class WorkCenterSelector {
           placedEnd: slot.end.toISOString(),
           conflict,
         });
-      } else if (bestInfinite) {
-        selections.set(op.id, {
-          workCenterId: bestInfinite.wcId,
-          priority: 0,
-          load: bestInfinite.load,
-        });
-        this.addInMemoryLoad(bestInfinite.wcId, durationBase);
       } else {
-        // Every finite candidate conflicted (machine, skill, or calendar):
-        // keep the legacy least-loaded assignment so the op still has a work
+        // Every candidate conflicted (machine, skill, or shift coverage):
+        // keep the least-reserved candidate so the op still has a work
         // center, and surface the cause
-        const legacy = await this.selectWorkCenter(op.processId, op.startDate);
+        let fallbackWc: string | null = null;
+        let leastReserved = Infinity;
+        for (const wcId of candidates) {
+          const capacity = ctx.capacityByWorkCenter.get(wcId);
+          if (!capacity) continue;
+          const reservedMs = capacity.reservations.reduce(
+            (sum, r) => sum + (r.endAt.getTime() - r.startAt.getTime()),
+            0
+          );
+          if (reservedMs < leastReserved) {
+            leastReserved = reservedMs;
+            fallbackWc = wcId;
+          }
+        }
         selections.set(op.id, {
-          ...legacy,
+          workCenterId: fallbackWc ?? op.workCenterId ?? null,
+          priority: 0,
           conflict: firstConflict ?? "No feasible capacity slot",
         });
-        if (legacy.workCenterId) {
-          this.addInMemoryLoad(legacy.workCenterId, durationBase);
-        }
       }
     }
 
@@ -606,15 +378,15 @@ export class WorkCenterSelector {
   }
 
   private buildOperatorPool(
-    requirement: AbilityRequirement,
+    requirement: ProcessRequirement,
     earliestStart: Date,
     ctx: FiniteSchedulingContext
   ): OperatorPool {
     const employees = ctx.employeesByAbility.get(requirement.abilityId) ?? [];
 
-    const poolSize = employees.filter((e) =>
-      isEligibleOperator(e, requirement.minimumProficiency, earliestStart)
-    ).length;
+    const members = employees
+      .filter((e) => isEligibleOperator(e, earliestStart))
+      .map((e) => ({ employeeId: e.employeeId, windows: e.windows }));
 
     // Return the SAME array instance stored in the context so in-run pushes
     // are visible to later allocations
@@ -627,7 +399,7 @@ export class WorkCenterSelector {
     return {
       abilityId: requirement.abilityId,
       abilityName: requirement.abilityName,
-      poolSize,
+      members,
       reservations,
     };
   }

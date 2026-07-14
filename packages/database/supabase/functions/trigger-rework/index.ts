@@ -255,8 +255,8 @@ async function triggerRework(
 
   console.info(`🔧 Cloned ${clonedOperationIds.length} operations`);
 
-  // 6. Clone steps, tools, parameters, and abilities (batch fetch + batch insert)
-  const [allSteps, allTools, allParams, allAbilities] = await Promise.all([
+  // 6. Clone steps, tools, and parameters (batch fetch + batch insert)
+  const [allSteps, allTools, allParams] = await Promise.all([
     trx
       .selectFrom("jobOperationStep")
       .selectAll()
@@ -269,11 +269,6 @@ async function triggerRework(
       .execute(),
     trx
       .selectFrom("jobOperationParameter")
-      .selectAll()
-      .where("operationId", "in", operationPath)
-      .execute(),
-    trx
-      .selectFrom("jobOperationAbility")
       .selectAll()
       .where("operationId", "in", operationPath)
       .execute(),
@@ -310,14 +305,6 @@ async function triggerRework(
     createdBy: userId,
   }));
 
-  const abilityValues = allAbilities.map((ability) => ({
-    abilityId: ability.abilityId,
-    minimumProficiency: ability.minimumProficiency,
-    operationId: sourceToCloneMap.get(ability.operationId)!,
-    companyId,
-    createdBy: userId,
-  }));
-
   await Promise.all([
     stepValues.length > 0
       ? trx.insertInto("jobOperationStep").values(stepValues).execute()
@@ -327,9 +314,6 @@ async function triggerRework(
       : null,
     paramValues.length > 0
       ? trx.insertInto("jobOperationParameter").values(paramValues).execute()
-      : null,
-    abilityValues.length > 0
-      ? trx.insertInto("jobOperationAbility").values(abilityValues).execute()
       : null,
   ]);
 

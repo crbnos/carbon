@@ -73,16 +73,12 @@ export default function NewWorkCenterRoute() {
     defaultStandardFactor: "Minutes/Piece" as "Minutes/Piece",
     departmentId: undefined as string | undefined,
     description: "",
-    efficiencyFactor: 1,
     laborRate: 0,
     locationId: defaults?.locationId ?? "",
     machineRate: 0,
     name: "",
     overheadRate: 0,
-    parallelCapacity: 1,
-    processes: [],
-    resourceCalendarId: undefined as string | undefined,
-    schedulingMode: "Finite" as const
+    processes: []
   };
 
   return <WorkCenterForm onClose={onClose} initialValues={initialValues} />;

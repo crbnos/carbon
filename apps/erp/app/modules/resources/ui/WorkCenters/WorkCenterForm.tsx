@@ -2,7 +2,6 @@ import {
   Hidden,
   Input,
   Number,
-  Select,
   Submit,
   TextArea,
   ValidatedForm
@@ -25,12 +24,10 @@ import type { PostgrestResponse } from "@supabase/supabase-js";
 import { useEffect } from "react";
 import { useFetcher } from "react-router";
 import type { z } from "zod";
-import Ability from "~/components/Form/Ability";
 import CustomFormFields from "~/components/Form/CustomFormFields";
 import Department from "~/components/Form/Department";
 import Location from "~/components/Form/Location";
 import Processes from "~/components/Form/Processes";
-import ResourceCalendar from "~/components/Form/ResourceCalendar";
 import StandardFactor from "~/components/Form/StandardFactor";
 import { usePermissions, useUser } from "~/hooks";
 import { workCenterValidator } from "~/modules/resources";
@@ -155,31 +152,6 @@ const WorkCenterForm = ({
                   label={t`Default Unit`}
                   termId="work-center-default-unit"
                   value={initialValues.defaultStandardFactor}
-                />
-                <Number
-                  name="parallelCapacity"
-                  label={t`Parallel Capacity`}
-                  helperText={t`Simultaneous operations this work center can run`}
-                  minValue={1}
-                />
-                <Number name="efficiencyFactor" label={t`Efficiency Factor`} />
-                <Select
-                  name="schedulingMode"
-                  label={t`Scheduling Mode`}
-                  options={[
-                    { label: t`Finite`, value: "Finite" },
-                    { label: t`Infinite`, value: "Infinite" }
-                  ]}
-                />
-                <ResourceCalendar
-                  name="resourceCalendarId"
-                  label={t`Calendar`}
-                  isClearable
-                />
-                <Ability
-                  name="requiredAbilityId"
-                  label={t`Required Ability`}
-                  isClearable
                 />
                 <CustomFormFields table="workCenter" />
               </VStack>

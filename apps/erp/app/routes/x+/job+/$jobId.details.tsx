@@ -123,10 +123,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         machineRate: o.machineRate ?? 0,
         operationSupplierProcessId: o.operationSupplierProcessId ?? undefined,
         jobMakeMethodId: o.jobMakeMethodId ?? methodId,
-        abilities:
-          o.jobOperationAbility?.map(
-            (a: { abilityId: string }) => a.abilityId
-          ) ?? [],
         workInstruction: o.workInstruction as JSONContent
       })) ?? [],
     makeMethod: makeMethod.data ?? null,

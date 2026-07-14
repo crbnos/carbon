@@ -1446,7 +1446,7 @@ export async function getMethodOperationsByMakeMethodId(
   return client
     .from("methodOperation")
     .select(
-      "*, methodOperationTool(*), methodOperationParameter(*), methodOperationStep(*), methodOperationAbility(abilityId)"
+      "*, methodOperationTool(*), methodOperationParameter(*), methodOperationStep(*)"
     )
     .eq("makeMethodId", makeMethodId)
     .order("order", { ascending: true });
@@ -3825,40 +3825,6 @@ export async function upsertMethodMaterial(
     .eq("id", methodMaterial.id)
     .select("id")
     .single();
-}
-
-export async function getMethodOperationAbilities(
-  client: SupabaseClient<Database>,
-  methodOperationId: string
-) {
-  return client
-    .from("methodOperationAbility")
-    .select("*")
-    .eq("methodOperationId", methodOperationId);
-}
-
-export async function syncMethodOperationAbilities(
-  client: SupabaseClient<Database>,
-  methodOperationId: string,
-  companyId: string,
-  abilityIds: string[],
-  userId: string
-) {
-  const del = await client
-    .from("methodOperationAbility")
-    .delete()
-    .eq("methodOperationId", methodOperationId)
-    .eq("companyId", companyId);
-  if (del.error) return del;
-  if (abilityIds.length === 0) return del;
-  return client.from("methodOperationAbility").insert(
-    abilityIds.map((abilityId) => ({
-      methodOperationId,
-      abilityId,
-      companyId,
-      createdBy: userId
-    }))
-  );
 }
 
 export async function upsertMethodOperation(

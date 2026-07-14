@@ -9,6 +9,7 @@ import type {
 } from "react-router";
 import { redirect, useLoaderData, useNavigate } from "react-router";
 import {
+  ensureProcessAbility,
   getProcess,
   ProcessForm,
   processValidator,
@@ -75,6 +76,24 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
+  if (d.requiresAbility) {
+    const abilityResult = await ensureProcessAbility(client, {
+      processId: id,
+      processName: d.name,
+      companyId,
+      userId
+    });
+    if (abilityResult.error) {
+      throw redirect(
+        path.to.processes,
+        await flash(
+          request,
+          error(abilityResult.error, "Failed to create process ability.")
+        )
+      );
+    }
+  }
+
   return modal ? createProcess : redirect(path.to.processes);
 }
 
@@ -100,7 +119,8 @@ export default function ProcessRoute() {
     // @ts-ignore
     suppliers: (process.suppliers ?? []).map((s) => s.id) ?? [],
     ...getCustomFields(process.customFields),
-    completeAllOnScan: process.completeAllOnScan ?? false
+    completeAllOnScan: process.completeAllOnScan ?? false,
+    requiresAbility: process.requiresAbility ?? false
   };
 
   return <ProcessForm initialValues={initialValues} onClose={onClose} />;

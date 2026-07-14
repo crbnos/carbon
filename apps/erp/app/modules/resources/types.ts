@@ -23,9 +23,6 @@ import type {
   getMaintenanceSchedulesByLocation,
   getPartners,
   getProcesses,
-  getResourceCalendarExceptions,
-  getResourceCalendarShifts,
-  getResourceCalendars,
   getSuggestion,
   getSuggestions,
   getTraining,
@@ -89,18 +86,6 @@ export type Partner = NonNullable<
 
 export type Process = NonNullable<
   Awaited<ReturnType<typeof getProcesses>>["data"]
->[number];
-
-export type ResourceCalendar = NonNullable<
-  Awaited<ReturnType<typeof getResourceCalendars>>["data"]
->[number];
-
-export type ResourceCalendarException = NonNullable<
-  Awaited<ReturnType<typeof getResourceCalendarExceptions>>["data"]
->[number];
-
-export type ResourceCalendarShift = NonNullable<
-  Awaited<ReturnType<typeof getResourceCalendarShifts>>["data"]
 >[number];
 
 export type ShiftLocation = NonNullable<

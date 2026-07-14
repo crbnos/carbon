@@ -1592,7 +1592,7 @@ export async function getJobOperationsByMethodId(
   return client
     .from("jobOperation")
     .select(
-      "*, jobOperationTool(*), jobOperationParameter(*), jobOperationStep(*, jobOperationStepRecord(*)), jobOperationAbility(abilityId)"
+      "*, jobOperationTool(*), jobOperationParameter(*), jobOperationStep(*, jobOperationStepRecord(*))"
     )
     .eq("jobMakeMethodId", jobMakeMethodId)
     .order("order", { ascending: true });
@@ -3096,40 +3096,6 @@ export async function getJobPromiseDate(
     },
     error: null
   };
-}
-
-export async function getJobOperationAbilities(
-  client: SupabaseClient<Database>,
-  operationId: string
-) {
-  return client
-    .from("jobOperationAbility")
-    .select("*")
-    .eq("operationId", operationId);
-}
-
-export async function syncJobOperationAbilities(
-  client: SupabaseClient<Database>,
-  operationId: string,
-  companyId: string,
-  abilityIds: string[],
-  userId: string
-) {
-  const del = await client
-    .from("jobOperationAbility")
-    .delete()
-    .eq("operationId", operationId)
-    .eq("companyId", companyId);
-  if (del.error) return del;
-  if (abilityIds.length === 0) return del;
-  return client.from("jobOperationAbility").insert(
-    abilityIds.map((abilityId) => ({
-      operationId,
-      abilityId,
-      companyId,
-      createdBy: userId
-    }))
-  );
 }
 
 export async function upsertJobOperationTool(

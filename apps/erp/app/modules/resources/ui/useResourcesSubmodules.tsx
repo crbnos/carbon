@@ -2,7 +2,6 @@ import { useLingui } from "@lingui/react/macro";
 import {
   LuAward,
   LuCalendarClock,
-  LuCalendarDays,
   LuCircleAlert,
   LuClipboardCheck,
   LuCog,
@@ -62,12 +61,6 @@ export default function useResourcesSubmodules() {
           to: path.to.workCenters,
           icon: <LuWrench />,
           table: "workCenter"
-        },
-        {
-          name: t`Calendars`,
-          to: path.to.resourceCalendars,
-          icon: <LuCalendarDays />,
-          table: "resourceCalendar"
         }
       ]
     },
