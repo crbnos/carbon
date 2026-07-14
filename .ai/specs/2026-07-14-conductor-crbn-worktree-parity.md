@@ -193,6 +193,15 @@ Then refactor `do_post_create` (bash, `bin/crbn:404-417`) and the `.env` copy in
 `new`, `checkout`, and Conductor. This removes today's drift where `new` copies
 `.env` inline but skips `env sync`/skills while `checkout` does both.
 
+`initWorktree` takes an explicit `{ root }` and threads it through every step
+(`persistSlug(root)`, `syncStaleCopyFiles(root)`, `installSkills` via
+`execa(…, { cwd: root })`) rather than trusting `process.cwd()`. **`new` must
+pass `root: targetPath`** — the freshly-created worktree, not the caller — so
+provisioning lands there. The bash `checkout`/Conductor paths run init with
+their cwd already inside the target, so the `root` default (`getWorktreeRoot()`)
+resolves correctly. Covered by `init.test.ts` (asserts `.carbon-worktree` is
+written under the target, never the main checkout).
+
 ### Part B — Conductor config → `.conductor/settings.toml`
 
 Replace committed `conductor.json` with `.conductor/settings.toml`:
@@ -283,8 +292,12 @@ having archive free the slot. Options:
 
 - **Main branch / main checkout.** Conductor workspaces are always on a feature
   branch, never `main`, so `slug = carbon-<branch>` never regenerates the main
-  checkout's `carbon`. `crbn init` should still refuse to run in the main checkout
-  root (guard via `--git-common-dir` == cwd) to avoid clobbering `carbon`.
+  checkout's `carbon`. `crbn init` still refuses to run in the main checkout to
+  avoid clobbering `carbon`, via `isLinkedWorktree(root)` — it compares the
+  normalized `git-dir` and `git-common-dir` (equal in the main worktree, differ
+  in linked worktrees). (Comparing `--git-common-dir` to `cwd` would be
+  unreliable — they aren't equal even in the main checkout.) Guard covered by
+  `init.test.ts`.
 - **Codename reuse with stale `.carbon-worktree`.** `crbn init` overwrites the
   slug file every run, so a reused dir is corrected on setup. (Today's `echo` also
   overwrites, but with the wrong value.)
