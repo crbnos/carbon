@@ -1,6 +1,6 @@
 # Service Make-to-Order Jobs
 
-> Status: draft
+> Status: implemented (on feat/service; move to implemented/ after merge)
 > Author: Claude (with Brad Barbin)
 > Date: 2026-07-14
 > Branch: feat/service

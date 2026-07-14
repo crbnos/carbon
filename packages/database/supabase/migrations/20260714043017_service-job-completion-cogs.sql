@@ -138,7 +138,8 @@ BEGIN
     INTO v_line_quantity_complete
     FROM "job"
     WHERE "salesOrderLineId" = v_sales_order_line_id
-      AND "companyId" = p_company_id;
+      AND "companyId" = p_company_id
+      AND status != 'Cancelled';
 
     UPDATE "salesOrderLine" sol
     SET "quantitySent" = v_line_quantity_complete,

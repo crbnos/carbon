@@ -55,6 +55,7 @@ Unchanged branches: Non-Inventory → `indirectCostAccount`; outside processing 
 | Purchase invoice (Inventory item, no receipt) | RM or FG by item rule | Payables |
 | Material issue / backflush | WIP | RM or FG by consumed item (Make subassembly credits FG) |
 | Job completion | RM or FG by job item (normally FG) | WIP |
+| Job completion (Non-Inventory item, e.g. Service) | COGS — no inventory leg, no itemLedger/costLedger (see `2026-07-14-service-make-to-order-jobs.md`, migration `20260714043017`) | WIP |
 | Shipment | COGS | RM or FG by shipped item |
 | Sales invoice (no prior shipment) | COGS | RM or FG by invoiced item |
 
