@@ -62,7 +62,7 @@ import {
 import type { action as mrpAction } from "~/routes/api+/mrp";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
-import { itemTypes } from "../../inventory.models";
+import { inventoryItemTypes } from "../../inventory.models";
 import type { InventoryItem } from "../../types";
 
 type InventoryTableProps = {
@@ -439,7 +439,7 @@ const InventoryTable = memo(
           meta: {
             filter: {
               type: "static",
-              options: itemTypes.map((type) => ({
+              options: inventoryItemTypes.map((type) => ({
                 label: (
                   <HStack spacing={2}>
                     <MethodItemTypeIcon type={type} />

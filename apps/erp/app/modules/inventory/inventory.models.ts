@@ -5,12 +5,14 @@ import { batchPropertyDataTypes } from "../items/items.models";
 export const demandPeriodTypes = ["Week", "Day", "Month"] as const;
 export const demandSourceTypes = ["Sales Order", "Job Material"] as const;
 
-export const itemTypes = [
+// Stockable item types — the subset of the shared `itemType` list that can
+// hold inventory. Services are Non-Inventory (never stocked, counted, planned,
+// or storage-ruled), so they are deliberately excluded here.
+export const inventoryItemTypes = [
   "Part",
   "Material",
   "Tool",
   "Consumable"
-  // "Service",
 ] as const;
 
 export const itemLedgerTypes = [
@@ -132,7 +134,7 @@ export const inventoryCountValidator = z.object({
   isBlind: zfd.checkbox(),
   notes: zfd.text(z.string().optional()),
   storageUnitIds: zfd.repeatableOfType(z.string()).optional(),
-  itemType: zfd.text(z.enum(itemTypes).optional())
+  itemType: zfd.text(z.enum(inventoryItemTypes).optional())
 });
 
 // Per-line count entry. A blank `countedQuantity` (undefined) means "not counted"
