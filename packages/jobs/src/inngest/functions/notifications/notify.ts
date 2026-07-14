@@ -276,6 +276,39 @@ export const notifyFunction = inngest.createFunction(
       return;
     }
 
+    const topic = getNotificationTopic(payload.event);
+
+    // Per-user channel opt-outs (user notification preferences). Absence of a
+    // row = enabled; a row with enabled=false mutes that (topic, channel) for
+    // that user. In-app delivery is never filtered.
+    const { emailRecipientIds, slackRecipientIds } = await step.run(
+      "filter-recipients-by-preference",
+      async () => {
+        const { data: prefs, error } = await client
+          .from("notificationPreference")
+          .select("userId, channel, enabled")
+          .in("userId", userIds)
+          .eq("companyId", payload.companyId)
+          .eq("topic", topic);
+        if (error) {
+          console.error("Failed to load notification preferences", error);
+          throw error;
+        }
+        const mutedFor = (channel: "email" | "slack") =>
+          new Set(
+            (prefs ?? [])
+              .filter((p) => p.channel === channel && !p.enabled)
+              .map((p) => p.userId)
+          );
+        const emailMuted = mutedFor("email");
+        const slackMuted = mutedFor("slack");
+        return {
+          emailRecipientIds: userIds.filter((id) => !emailMuted.has(id)),
+          slackRecipientIds: userIds.filter((id) => !slackMuted.has(id))
+        };
+      }
+    );
+
     // Existing EE hook for non-conformance assignment — keep as a separate
     // path because it handles cross-system task linking (Linear/Jira), not
     // user-facing notification delivery.
@@ -318,8 +351,6 @@ export const notifyFunction = inngest.createFunction(
         }
       });
     }
-
-    const topic = getNotificationTopic(payload.event);
 
     // ---- In-app fan-out ----
     if (destinations.includes(NotificationDestination.InApp)) {
@@ -471,14 +502,14 @@ export const notifyFunction = inngest.createFunction(
       );
     }
 
-    if (emailAllowed) {
+    if (emailAllowed && emailRecipientIds.length > 0) {
       const emailEvents = await step.run(
         "resolve-email-recipients",
         async () => {
           const { data: users, error } = await client
             .from("user")
             .select("id, email, fullName")
-            .in("id", userIds);
+            .in("id", emailRecipientIds);
           if (error) {
             console.error("Failed to resolve email recipients", error);
             throw error;
@@ -571,7 +602,10 @@ export const notifyFunction = inngest.createFunction(
     // ---- Slack DM fan-out ----
     // Per-user DMs via the company's linked Slack workspace. Users without a
     // matching Slack account in that workspace are silently skipped.
-    if (destinations.includes(NotificationDestination.Slack)) {
+    if (
+      destinations.includes(NotificationDestination.Slack) &&
+      slackRecipientIds.length > 0
+    ) {
       const slackEvents = await step.run(
         "resolve-slack-recipients",
         async () => {
@@ -617,7 +651,7 @@ export const notifyFunction = inngest.createFunction(
               }\n<${ctaUrl}|View in Carbon>`;
 
           const slackUserIds = await Promise.all(
-            userIds.map((userId) =>
+            slackRecipientIds.map((userId) =>
               getSlackUserIdByCarbonId(client, accessToken, userId)
             )
           );
