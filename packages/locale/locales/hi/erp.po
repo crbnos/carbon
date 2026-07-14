@@ -4493,9 +4493,6 @@ msgstr "प्रभावी से"
 msgid "Effective To"
 msgstr "प्रभावी तक"
 
-msgid "Effectivity Date"
-msgstr "प्रभावशीलता तारीख"
-
 msgid "Email"
 msgstr "ईमेल"
 

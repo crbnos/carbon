@@ -130,7 +130,6 @@ export const changeOrderValidator = z.object({
   nonConformanceId: zfd.text(z.string().optional()),
   openDate: z.string().min(1, { message: "Open date is required" }),
   dueDate: zfd.text(z.string().optional()),
-  effectiveDate: zfd.text(z.string().optional()),
   assignee: zfd.text(z.string().optional())
 });
 
@@ -141,7 +140,6 @@ export const changeOrderStatusValidator = z.object({
   fromStatus: z.enum(changeOrderStatus),
   status: z.enum(changeOrderStatus),
   assignee: zfd.text(z.string().optional()),
-  effectiveDate: zfd.text(z.string().optional()),
   // Release-time merge: a JSON array of ChangeOrderMergeResolution (the user's
   // per-line picks when the live method moved under this CO), and an explicit
   // acknowledgement that the merge was reviewed. Both optional — only sent when

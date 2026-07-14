@@ -4493,9 +4493,6 @@ msgstr "Obowiązuje od"
 msgid "Effective To"
 msgstr "Ważne do"
 
-msgid "Effectivity Date"
-msgstr "Data Wejścia w Życie"
-
 msgid "Email"
 msgstr "E-mail"
 

@@ -70,7 +70,6 @@ export async function action({ request }: ActionFunctionArgs) {
     nonConformanceId: d.nonConformanceId || undefined,
     openDate: d.openDate || today(getLocalTimeZone()).toString(),
     dueDate: d.dueDate || undefined,
-    effectiveDate: d.effectiveDate || undefined,
     assignee: d.assignee || undefined,
     companyId,
     createdBy: userId,
@@ -104,7 +103,6 @@ export default function ChangeOrderNewRoute() {
     priority: "Medium" as const,
     openDate: today(getLocalTimeZone()).toString(),
     dueDate: "",
-    effectiveDate: "",
     nonConformanceId: ""
   };
 

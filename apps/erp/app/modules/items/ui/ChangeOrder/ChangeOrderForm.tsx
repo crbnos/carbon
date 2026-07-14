@@ -104,7 +104,6 @@ const ChangeOrderForm = ({
               />
               <DatePicker name="openDate" label={t`Open Date`} />
               <DatePicker name="dueDate" label={t`Due Date`} />
-              <DatePicker name="effectiveDate" label={t`Effectivity Date`} />
               {nonConformances.length > 0 && (
                 <Combobox
                   name="nonConformanceId"

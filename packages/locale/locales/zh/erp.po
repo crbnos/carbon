@@ -4493,9 +4493,6 @@ msgstr "生效日期"
 msgid "Effective To"
 msgstr "有效期至"
 
-msgid "Effectivity Date"
-msgstr "生效日期"
-
 msgid "Email"
 msgstr "电子邮件"
 

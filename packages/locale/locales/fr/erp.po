@@ -4493,9 +4493,6 @@ msgstr "À partir de"
 msgid "Effective To"
 msgstr "Effectif jusqu'au"
 
-msgid "Effectivity Date"
-msgstr "Date d'effectivité"
-
 msgid "Email"
 msgstr "E-mail"
 

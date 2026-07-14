@@ -179,20 +179,6 @@ const ChangeOrderProperties = () => {
       </ValidatedForm>
 
       <ValidatedForm
-        defaultValues={{ effectiveDate: changeOrder?.effectiveDate ?? "" }}
-        validator={z.object({ effectiveDate: z.string().optional() })}
-        className="w-full"
-      >
-        <DatePicker
-          name="effectiveDate"
-          label={t`Effectivity Date`}
-          inline
-          isDisabled={!canUpdate || isLocked}
-          onChange={(date) => onUpdate("effectiveDate", date)}
-        />
-      </ValidatedForm>
-
-      <ValidatedForm
         defaultValues={{ priority: changeOrder?.priority ?? "" }}
         validator={z.object({ priority: z.string().optional() })}
         className="w-full"

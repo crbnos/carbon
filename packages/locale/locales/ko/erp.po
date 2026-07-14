@@ -4493,9 +4493,6 @@ msgstr "적용 시작일"
 msgid "Effective To"
 msgstr "적용 종료일"
 
-msgid "Effectivity Date"
-msgstr "유효 시작일"
-
 msgid "Email"
 msgstr "이메일"
 

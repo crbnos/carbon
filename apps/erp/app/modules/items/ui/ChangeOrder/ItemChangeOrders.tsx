@@ -51,11 +51,6 @@ const ItemChangeOrders = ({ changeOrders, types }: ItemChangeOrdersProps) => {
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
                   {categoryName && <Enumerable value={categoryName} />}
-                  {co.effectiveDate && (
-                    <span className="text-xs text-muted-foreground tabular-nums">
-                      {co.effectiveDate}
-                    </span>
-                  )}
                   <ChangeOrderStatus status={co.status} />
                 </div>
               </Link>

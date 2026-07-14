@@ -4493,9 +4493,6 @@ msgstr "Действительно с"
 msgid "Effective To"
 msgstr "Действительно до"
 
-msgid "Effectivity Date"
-msgstr "Дата вступления в силу"
-
 msgid "Email"
 msgstr "Электронная почта"
 

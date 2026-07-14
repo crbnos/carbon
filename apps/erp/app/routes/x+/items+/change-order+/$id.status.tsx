@@ -41,7 +41,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
     fromStatus,
     status: toStatus,
     assignee,
-    effectiveDate,
     resolutions: resolutionsRaw,
     mergeAcknowledged
   } = validation.data;
@@ -85,7 +84,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
       fromStatus,
       toStatus,
       assignee,
-      effectiveDate,
       updatedBy: userId
     });
 

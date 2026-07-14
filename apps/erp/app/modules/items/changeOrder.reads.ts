@@ -24,7 +24,6 @@ export type ChangeOrderForItem = {
   name: string;
   status: Database["public"]["Enums"]["changeOrderStatus"];
   changeOrderTypeId: string | null;
-  effectiveDate: string | null;
   createdAt: string;
 };
 
@@ -123,9 +122,7 @@ export async function findChangeOrdersForItem(
 
   let query = client
     .from("changeOrder")
-    .select(
-      "id, changeOrderId, name, status, changeOrderTypeId, effectiveDate, createdAt"
-    )
+    .select("id, changeOrderId, name, status, changeOrderTypeId, createdAt")
     .in("id", [...coIds])
     .eq("companyId", companyId);
   if (statuses && statuses.length > 0) query = query.in("status", statuses);

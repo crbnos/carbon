@@ -4493,9 +4493,6 @@ msgstr "Geçerlilik Başlangıcı"
 msgid "Effective To"
 msgstr "Geçerli Olacağı Tarih"
 
-msgid "Effectivity Date"
-msgstr "Yürürlük Tarihi"
-
 msgid "Email"
 msgstr "E-posta"
 

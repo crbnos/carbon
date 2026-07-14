@@ -470,7 +470,6 @@ type ChangeOrderInput = {
   status: string;
   changeOrderTypeId: string;
   assignee: string | null;
-  effectiveDate?: string | null;
   reasonForChange?: string;
   description?: string;
   nonConformanceId?: string | null;
@@ -484,9 +483,9 @@ async function createChangeOrder(
   const res = await client.query(
     `INSERT INTO "changeOrder" (
       "changeOrderId", name, "openDate", "createdBy", status, "companyId",
-      type, "changeOrderTypeId", assignee, "effectiveDate",
+      type, "changeOrderTypeId", assignee,
       "reasonForChange", "description", "nonConformanceId"
-    ) VALUES ($1, $2, $3, $4, $5, $6, 'Engineering', $7, $8, $9, $10, $11, $12)
+    ) VALUES ($1, $2, $3, $4, $5, $6, 'Engineering', $7, $8, $9, $10, $11)
     RETURNING id`,
     [
       input.changeOrderId,
@@ -497,7 +496,6 @@ async function createChangeOrder(
       companyId,
       input.changeOrderTypeId,
       input.assignee,
-      input.effectiveDate ?? null,
       RICH(input.reasonForChange ?? "Reason for change to be documented."),
       RICH(input.description ?? "Description of change to be documented."),
       input.nonConformanceId ?? null
@@ -1079,7 +1077,6 @@ async function seed() {
         status: "Implementation",
         changeOrderTypeId: cotDesign,
         assignee: userId,
-        effectiveDate: "2026-07-15",
         reasonForChange:
           "Field returns show the derailleur mount thread fails under sustained load. " +
           "Root-caused to the Rear Dropout Bracket geometry (see NCR-CO-001).",
@@ -1208,7 +1205,6 @@ async function seed() {
         status: "Done",
         changeOrderTypeId: cotObsolescence,
         assignee: userId,
-        effectiveDate: "2026-06-01",
         reasonForChange:
           "Original saddle supplier discontinued the SKU; superseded by Royal MW.",
         description:

@@ -90,7 +90,7 @@ export async function applyChangeOrder(
 
   const co = await client
     .from("changeOrder")
-    .select("id, status, effectiveDate")
+    .select("id, status")
     .eq("id", changeOrderId)
     .eq("companyId", companyId)
     .single();
@@ -103,8 +103,6 @@ export async function applyChangeOrder(
       error: { message: "Change order must be at Implementation to apply" }
     };
   }
-  const effectiveDate =
-    co.data.effectiveDate ?? new Date().toISOString().split("T")[0];
 
   // Load the affected items with change type + draft refs + cutover config.
   // v2: the draft make method already holds the edited BOM/BOP; release just
@@ -129,7 +127,6 @@ export async function applyChangeOrder(
       changeOrderId,
       companyId,
       userId,
-      effectiveDate,
       affected,
       resolutions,
       mergeAcknowledged
@@ -182,7 +179,6 @@ async function releaseAffectedItem(
     changeOrderId: string;
     companyId: string;
     userId: string;
-    effectiveDate: string;
     affected: {
       id: string;
       itemId: string;
@@ -202,7 +198,6 @@ async function releaseAffectedItem(
     changeOrderId,
     companyId,
     userId,
-    effectiveDate,
     affected,
     resolutions,
     mergeAcknowledged
@@ -283,9 +278,11 @@ async function releaseAffectedItem(
       itemId: sourceItemId,
       successorItemId: newItemId,
       supersessionMode: normalizeSupersessionMode(affected.supersessionMode),
-      discontinuationDate: affected.discontinuationDate ?? effectiveDate,
-      successorEffectivityDate:
-        affected.successorEffectivityDate ?? effectiveDate,
+      // Empty per-item dates mean "effective immediately at release" — the
+      // supersession redirect map treats a null successorEffectivityDate as
+      // always-effective. Cutover timing is driven purely per affected item now.
+      discontinuationDate: affected.discontinuationDate ?? undefined,
+      successorEffectivityDate: affected.successorEffectivityDate ?? undefined,
       companyId,
       createdBy: userId,
       updatedBy: userId

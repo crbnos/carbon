@@ -13,7 +13,6 @@ const EDITABLE_FIELDS = [
   "priority",
   "openDate",
   "dueDate",
-  "effectiveDate",
   "nonConformanceId"
 ] as const;
 

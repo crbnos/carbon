@@ -84,7 +84,6 @@ export async function insertChangeOrder(
     reasonForChange?: Json;
     description?: Json;
     dueDate?: string;
-    effectiveDate?: string;
     assignee?: string;
     customFields?: Json;
   }
@@ -124,7 +123,6 @@ export async function insertChangeOrder(
       reasonForChange: input.reasonForChange ?? {},
       description: input.description ?? {},
       dueDate: input.dueDate ?? null,
-      effectiveDate: input.effectiveDate ?? null,
       assignee: input.assignee ?? null,
       customFields: input.customFields,
       companyId: input.companyId,
@@ -158,7 +156,6 @@ export async function updateChangeOrder(
     reasonForChange?: Json;
     description?: Json;
     dueDate?: string | null;
-    effectiveDate?: string | null;
     assignee?: string | null;
     customFields?: Json;
   }
@@ -204,7 +201,6 @@ export async function updateChangeOrderStatus(
     fromStatus: (typeof changeOrderStatus)[number];
     toStatus: (typeof changeOrderStatus)[number];
     assignee?: string | null;
-    effectiveDate?: string | null;
     updatedBy: string;
   }
 ): Promise<{
@@ -223,18 +219,15 @@ export async function updateChangeOrderStatus(
   }
 
   // Build the update explicitly rather than sanitize({...rest}): sanitize coerces
-  // every `undefined` field to null, which would wipe an existing
-  // assignee/effectiveDate on a transition where the caller passes those as
-  // undefined. Only set an optional field when the caller provided a value.
+  // every `undefined` field to null, which would wipe an existing assignee on a
+  // transition where the caller passes it as undefined. Only set an optional
+  // field when the caller provided a value.
   const payload: {
     status: (typeof changeOrderStatus)[number];
     updatedBy: string;
     assignee?: string | null;
-    effectiveDate?: string | null;
   } = { status: toStatus, updatedBy: rest.updatedBy };
   if (rest.assignee !== undefined) payload.assignee = rest.assignee;
-  if (rest.effectiveDate !== undefined)
-    payload.effectiveDate = rest.effectiveDate;
 
   const result = await client
     .from("changeOrder")
