@@ -580,7 +580,8 @@ export function AssemblyView({
   // Serial binds a serial per unit, Batch binds the lot to unit 0, and Inventory binds
   // none — all still page 1..N with per-unit step records. A job can pre-generate more
   // serials than the quantity, so the count caps the entity list.
-  // See apps/mes/app/utils/units.ts + CONTEXT.md ("unit axis").
+  // See apps/mes/app/utils/units.ts + .ai/specs/2026-07-14-mes-execution-views.md
+  // §2 ("unit axis").
   const unitCount = Math.max(
     1,
     Math.round(operation?.operationQuantity ?? trackedEntities.length)

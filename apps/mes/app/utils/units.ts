@@ -9,7 +9,8 @@
  * `index` is the 0-based axis position and is the key written to
  * `jobOperationStepRecord.index` / the inspection result record, identical to the
  * convention the Operation view already uses. This is what isolates unit i's
- * step records from every other unit. See CONTEXT.md ("unit axis") and the PRD.
+ * step records from every other unit. See .ai/specs/2026-07-14-mes-execution-views.md
+ * §2 ("unit axis").
  */
 export type Unit<E> = {
   index: number;
