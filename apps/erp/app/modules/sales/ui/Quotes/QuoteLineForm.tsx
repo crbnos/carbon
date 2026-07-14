@@ -137,6 +137,13 @@ const QuoteLineForm = ({
         uom: "EA",
         modelUploadId: null
       });
+      // Clearing the item must also clear its configuration — otherwise a
+      // configured Part's stale parameters/values remain submittable after
+      // switching to a different item type.
+      setRequiresConfiguration(false);
+      setIsConfigured(false);
+      setConfigurationParameters(null);
+      setConfigurationValues("");
     }
   };
 

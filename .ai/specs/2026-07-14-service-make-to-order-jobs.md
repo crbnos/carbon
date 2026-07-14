@@ -124,11 +124,11 @@ No views select the changed function's output columns; nothing to redefine. (Ver
 `apps/erp/app/modules/production/production.service.ts`:
 
 - **`convertSalesOrderLinesToJobs`** — `itemReplenishment` via `.maybeSingle()` + defaults (`lotSize: null`, `scrapPercentage: 0`, `leadTime: 7`); skip storage-unit resolution when the item is `Non-Inventory`. (The per-line `insertJob` path already uses `maybeSingle` — align the bulk converter.)
-- **New** `advanceServiceLineFulfillment(client, { jobId, companyId, userId })` (or fold into the completion action) — after a successful `complete_job_to_inventory` RPC for a Non-Inventory job with `salesOrderLineId`, advance the SO line: `quantitySent += quantityComplete`, `sentComplete`, `sentDate = today`. Mirrors `post-shipment`'s SO-line update. Returns `{data, error}`.
+- **No new TypeScript fulfillment helper.** (An `advanceServiceLineFulfillment` route hook was originally specified here, implemented, then removed during e2e — see §Fulfillment and Changelog.) Fulfillment lives ONLY inside `complete_job_to_inventory`'s Non-Inventory branch: it recomputes `quantitySent` from ALL non-cancelled jobs on the line (idempotent, lot-split safe), sets `sentComplete`/`sentDate`, and runs before the accounting-enabled / zero-WIP early returns, so every completion entry point (the ERP route AND the `sync_finish_job_operation` interceptor) crosses the single SQL path. Do not add an app-level fulfillment hook — it would double-write `quantitySent`.
 
 Callers/hooks:
-- **`apps/erp/app/routes/x+/job+/$jobId.complete.tsx`** — after the `complete_job_to_inventory` RPC succeeds, call `advanceServiceLineFulfillment` when the job's item is `Non-Inventory` and `job.salesOrderLineId` is set.
-- **`complete_job_to_inventory`** (SQL) — Non-Inventory branch (§Data Model).
+- **`apps/erp/app/routes/x+/job+/$jobId.complete.tsx`** — unchanged behavior; carries a comment pointing at the SQL fulfillment path.
+- **`complete_job_to_inventory`** (SQL) — Non-Inventory branch (§Data Model), including the SO-line fulfillment.
 
 Unchanged and relied upon: `issue` / `post-production-event` (WIP by `documentId = jobId`), `close-job` (residual WIP → `materialVarianceAccount`), `post-shipment` (Non-Inventory COGS exclusion + service-line always-shipped rollup), `get-method` `itemToJob` (make-method copy), `post-sales-invoice` (revenue `Dr AR / Cr salesAccount`).
 

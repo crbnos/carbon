@@ -19,6 +19,7 @@ import type { z } from "zod";
 import { Hidden, Item, Number, StorageUnit, Submit } from "~/components/Form";
 import { usePermissions, useRouteData } from "~/hooks";
 import {
+  inventoryItemTypes,
   isStockTransferLocked,
   type StockTransfer,
   stockTransferLineValidator
@@ -166,6 +167,9 @@ const StockTransferLineForm = ({
                   }
                   // @ts-ignore
                   type={itemType}
+                  // Only stockable types can be transferred — Services are
+                  // Non-Inventory and must not be selectable here.
+                  validItemTypes={[...inventoryItemTypes]}
                   locationId={locationId}
                   onTypeChange={onTypeChange}
                   onChange={(value) => {

@@ -3643,6 +3643,7 @@ export async function upsertSupplierPart(
       })
     | (Omit<z.infer<typeof supplierPartValidator>, "id"> & {
         id: string;
+        companyId: string;
         updatedBy: string;
         customFields?: Json;
       })
@@ -3658,6 +3659,7 @@ export async function upsertSupplierPart(
     .from("supplierPart")
     .update(sanitize(supplierPart))
     .eq("id", supplierPart.id)
+    .eq("companyId", supplierPart.companyId)
     .select("id")
     .single();
 }

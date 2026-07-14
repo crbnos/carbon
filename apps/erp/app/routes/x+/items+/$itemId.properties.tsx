@@ -59,8 +59,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const url = new URL(request.url);
   const typeParam = url.searchParams.get("type");
+  // Own-key check: `in` also accepts inherited keys, so e.g. ?type=toString
+  // would pass and crash on the destructure below.
   const type =
-    typeParam && typeParam in typeConfig
+    typeParam && Object.prototype.hasOwnProperty.call(typeConfig, typeParam)
       ? (typeParam as keyof typeof typeConfig)
       : "Part";
 

@@ -20,9 +20,16 @@
 --     sync_finish_job_operation interceptor, so app-level hooks cannot cover
 --     every path; this function is the single choke point
 --
--- Inventory-tracked items are byte-identical to 20260713222236: Buy items
+-- Inventory-tracked items keep the 20260713222236 posting behavior: Buy items
 -- debit Raw Materials, Make items debit Finished Goods, with the full
 -- itemLedger/costLedger/itemCost flow unchanged.
+--
+-- Hardening (PR #1107 review):
+--   - the call is bound to the job's own company (SECURITY DEFINER bypasses
+--     RLS, so p_company_id must match job.companyId before any write)
+--   - job.quantityReceivedToInventory now stores the CUMULATIVE received
+--     quantity; re-completions previously overwrote it with the delta, which
+--     corrupted get_inventory_quantities' on-production supply calculation
 -- =============================================================================
 DROP FUNCTION IF EXISTS complete_job_to_inventory(TEXT, NUMERIC, TEXT, TEXT, TEXT, TEXT);
 
@@ -45,6 +52,8 @@ DECLARE
   v_cogs_account TEXT;
   v_sales_order_line_id TEXT;
   v_line_quantity_complete NUMERIC;
+  v_job_company_id TEXT;
+  v_prior_quantity_received NUMERIC;
   v_quantity_received_to_inventory NUMERIC;
   v_job_id_readable TEXT;
   v_job_make_method RECORD;
@@ -95,10 +104,17 @@ BEGIN
   p_user_id := COALESCE(p_user_id, (SELECT "createdBy" FROM "job" WHERE id = p_job_id));
 
   -- Fetch job details
-  SELECT "itemId", "quantityReceivedToInventory", "jobId", "locationId", "salesOrderLineId"
-  INTO STRICT v_item_id, v_quantity_received_to_inventory, v_job_id_readable, v_job_location_id, v_sales_order_line_id
+  SELECT "itemId", "quantityReceivedToInventory", "jobId", "locationId", "salesOrderLineId", "companyId"
+  INTO STRICT v_item_id, v_prior_quantity_received, v_job_id_readable, v_job_location_id, v_sales_order_line_id, v_job_company_id
   FROM "job"
   WHERE id = p_job_id;
+
+  -- SECURITY DEFINER bypasses RLS: bind the call to the job's own company so a
+  -- caller can never complete another tenant's job or post into a mismatched
+  -- company's ledger/journal.
+  IF p_company_id IS NULL OR v_job_company_id IS DISTINCT FROM p_company_id THEN
+    RAISE EXCEPTION 'Job % does not belong to company %', p_job_id, COALESCE(p_company_id, '<null>');
+  END IF;
 
   -- Non-Inventory items (services) never enter inventory
   SELECT "itemTrackingType"
@@ -107,7 +123,11 @@ BEGIN
   WHERE id = v_item_id
     AND "companyId" = p_company_id;
 
-  v_quantity_received_to_inventory := p_quantity_complete - COALESCE(v_quantity_received_to_inventory, 0);
+  -- Delta for this completion: drives the itemLedger/costLedger quantities and
+  -- the WIP-discharge journal. The job column itself stores the CUMULATIVE
+  -- quantity (get_inventory_quantities computes on-production supply as
+  -- production + scrap - received - shipped, which requires cumulative).
+  v_quantity_received_to_inventory := p_quantity_complete - COALESCE(v_prior_quantity_received, 0);
 
   -- Fetch jobMakeMethod for the top-level (no parentMaterialId)
   SELECT *
@@ -116,12 +136,18 @@ BEGIN
   WHERE "jobId" = p_job_id
     AND "parentMaterialId" IS NULL;
 
-  -- Update job status
+  -- Update job status. quantityReceivedToInventory is CUMULATIVE (not the
+  -- delta): re-completions previously overwrote it with the delta, corrupting
+  -- get_inventory_quantities' on-production supply math. Non-Inventory items
+  -- never receive to inventory, so their value is left unchanged.
   UPDATE "job"
   SET status = 'Completed',
       "completedDate" = NOW(),
       "quantityComplete" = p_quantity_complete,
-      "quantityReceivedToInventory" = v_quantity_received_to_inventory,
+      "quantityReceivedToInventory" = CASE
+        WHEN v_item_tracking_type = 'Non-Inventory' THEN v_prior_quantity_received
+        ELSE p_quantity_complete
+      END,
       "updatedAt" = NOW(),
       "updatedBy" = p_user_id
   WHERE id = p_job_id;
