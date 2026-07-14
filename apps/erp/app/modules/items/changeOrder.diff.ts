@@ -551,6 +551,26 @@ function stampMaterialReadableIds(
   }
 }
 
+// A methodOperationTool row references a Tool item by `toolId` (a UUID). Stamp the
+// resolved readable id onto each tool child row (before + after) under
+// `toolReadableId` so the viewer labels the tool by its readable id, not the UUID.
+function stampToolReadableIds(
+  operations: OperationDiffEntry[],
+  readableIds: Map<string, string>
+): void {
+  for (const op of operations) {
+    for (const entry of op.children?.tools ?? []) {
+      for (const row of [entry.before, entry.after]) {
+        const toolId = (row as { toolId?: string } | null)?.toolId;
+        if (row && typeof toolId === "string") {
+          const readable = readableIds.get(toolId);
+          if (readable) (row as Row).toolReadableId = readable;
+        }
+      }
+    }
+  }
+}
+
 // For every affected item: read the base (source Active) method as `base` and the
 // CO-owned Draft method as `target` (both REAL method tables), correlate by
 // natural keys, run the pure `diffMethod`, and collect. Also returns the manual
@@ -628,16 +648,25 @@ export async function getChangeOrderDiff(
       targetOperationChildren: target.children
     });
 
-    // Label BOM lines by their component's readable id (store-independent).
+    // Label BOM lines by their component's readable id and BOP tools by the tool
+    // item's readable id (both reference item UUIDs) — store-independent. One
+    // batch resolve over every referenced item id.
     const componentIds = [...base.materials, ...target.materials]
       .map((m) => m.itemId)
       .filter((id): id is string => typeof id === "string");
+    const toolIds = diff.operations.flatMap((op) =>
+      (op.children?.tools ?? [])
+        .flatMap((tool) => [tool.before, tool.after])
+        .map((row) => (row as { toolId?: string } | null)?.toolId)
+        .filter((id): id is string => typeof id === "string")
+    );
     const readableIds = await readItemReadableIds(
       client,
-      componentIds,
+      [...componentIds, ...toolIds],
       companyId
     );
     stampMaterialReadableIds(diff.materials, readableIds);
+    stampToolReadableIds(diff.operations, readableIds);
 
     // Resolve the item-group id → name so the attribute diff reads "Group A →
     // Group B" instead of opaque ids.

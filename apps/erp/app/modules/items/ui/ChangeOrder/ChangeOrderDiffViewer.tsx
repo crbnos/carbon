@@ -91,6 +91,7 @@ const NOISE_FIELDS = new Set<string>([
   "operationId",
   "itemType",
   "itemReadableId",
+  "toolReadableId",
   "createdAt",
   "createdBy",
   "updatedAt",
@@ -390,8 +391,10 @@ const CHILD_BUCKETS: {
   {
     key: "tools",
     title: <Trans>Tools</Trans>,
-    labelOf: (r) => (r?.toolId as string) || "Tool",
-    skip: new Set(["toolId"])
+    // Prefer the server-resolved tool readable id over the raw toolId UUID.
+    labelOf: (r) =>
+      (r?.toolReadableId as string) || (r?.toolId as string) || "Tool",
+    skip: new Set(["toolId", "toolReadableId"])
   }
 ];
 
