@@ -13,16 +13,16 @@ Global constraints for every task:
 
 ## Progress
 
-- [ ] Task 1: Create the user-select RPC migration
-- [ ] Task 2: Add user-select service functions and types to the users module
-- [ ] Task 3: Add query-key factories, cachedApiQuery, and invalidateUserSelectQueries
-- [ ] Task 4: Create the five API routes and path helpers
-- [ ] Task 5: Rewrite UserSelect internals (hook, tree, focus, chips)
-- [ ] Task 6: Migrate EmailRecipients off the eager endpoint
-- [ ] Task 7: Wire cache invalidation into all group-mutating routes
-- [ ] Task 8: Delete the old endpoints, path helpers, and query key
-- [ ] Task 9: Run validation gates
-- [ ] Task 10: Browser-verify via /test
+- [x] Task 1: Create the user-select RPC migration (commit 7c3dfa54d — applied by stack boot; types regen kept: clean diff + new RPCs)
+- [x] Task 2: Add user-select service functions and types to the users module (commit 7caabce5c — typed rpc calls; pre-commit codegen added MCP tool-metadata entries)
+- [x] Task 3: Add query-key factories, cachedApiQuery, and invalidateUserSelectQueries (commit e8932e748)
+- [x] Task 4: Create the five API routes and path helpers (commit 01fe515a5 — includes lesson-prescribed @ts-ignore conversion on two supplierPart delete routes)
+- [x] Task 5: Rewrite UserSelect internals (hook, tree, focus, chips) (commit 34a4af4d3)
+- [x] Task 6: Migrate EmailRecipients off the eager endpoint (commit 8105266b1)
+- [x] Task 7: Wire cache invalidation into all group-mutating routes (commit 3c5a91ff4 — 11 routes)
+- [x] Task 8: Delete the old endpoints, path helpers, and query key (commit a5b69a066 — Group type + arrayToTree kept: admin groups.tsx uses them)
+- [x] Task 9: Run validation gates (typecheck ✓, lint ✓ — 13 warnings all in pre-existing untouched files, tests 21/21 tasks ✓, generated types clean)
+- [x] Task 10: Browser-verify via /test (10/11 scenarios PASS; EmailRecipients modal flow SKIP — empty dev DB, its unique endpoint smoke-tested live; two fixes landed: explode ghost chip + sentinel root, commit 17a655389; screenshots in .ai/scratch/e2e/; playbook .ai/playbooks/user-select.md)
 
 ## Dependencies
 
