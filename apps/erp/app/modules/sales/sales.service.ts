@@ -56,6 +56,7 @@ import type {
   selectedLinesValidator
 } from "./sales.models";
 import { costCategoryKeys } from "./sales.models";
+import { decideRecalcPricing, getEffectiveDefaultMarkups } from "./sales.utils";
 import type {
   MatchedRule,
   OverrideEntry,
@@ -4228,6 +4229,7 @@ export async function calculatePricesForQuantities(
   for (const [key, value] of Object.entries(rawMarkups)) {
     defaultMarkups[key] = value * 100;
   }
+  const effectiveDefaults = getEffectiveDefaultMarkups(defaultMarkups);
 
   // 2. Build cost effects
   const result = await buildCostEffects(client, quoteLineId);
@@ -4247,7 +4249,7 @@ export async function calculatePricesForQuantities(
 
     const rollupPrice = costCategoryKeys.reduce((sum, key) => {
       const cost = categoryCosts[key] ?? 0;
-      const markup = defaultMarkups[key] ?? 0;
+      const markup = effectiveDefaults[key] ?? 0;
       return sum + cost * (1 + markup / 100);
     }, 0);
 
@@ -4268,7 +4270,7 @@ export async function calculatePricesForQuantities(
       companyId,
       quantity: qty,
       unitPrice: Number(finalPrice.toFixed(precision)),
-      categoryMarkups: defaultMarkups,
+      categoryMarkups: effectiveDefaults,
       exchangeRate,
       createdBy: userId,
       leadTime: 0,
@@ -4479,12 +4481,41 @@ export async function recalculateQuoteLinePrices(
 
   const { effects } = result;
 
+  const effectiveDefaults = getEffectiveDefaultMarkups(defaultMarkups);
+
   const updatedRows = [];
   for (const row of existingPrices.data) {
     const qty = row.quantity;
-    const rowMarkups = (row.categoryMarkups as Record<string, number>) ?? {};
-    const markups =
-      Object.keys(rowMarkups).length > 0 ? rowMarkups : defaultMarkups;
+
+    const decision = decideRecalcPricing(
+      {
+        categoryMarkups: row.categoryMarkups as Record<string, number> | null,
+        unitPrice: row.unitPrice
+      },
+      effectiveDefaults
+    );
+
+    // Fixed price: the user set an explicit price and the row has no
+    // per-category markups. Preserve it exactly — never re-derive from the
+    // default markup (the core fix).
+    if (decision.mode === "preserve") {
+      updatedRows.push({
+        quoteId: row.quoteId,
+        quoteLineId: row.quoteLineId,
+        companyId: row.companyId,
+        quantity: row.quantity,
+        unitPrice: row.unitPrice,
+        categoryMarkups: row.categoryMarkups ?? {},
+        exchangeRate: row.exchangeRate,
+        createdBy: row.createdBy,
+        updatedBy: userId,
+        leadTime: row.leadTime,
+        discountPercent: row.discountPercent
+      });
+      continue;
+    }
+
+    const markups = decision.markups;
 
     const categoryCosts: Record<string, number> = {};
     for (const key of costCategoryKeys) {

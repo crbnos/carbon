@@ -507,7 +507,14 @@ const QuoteLinePricing = ({
         // Round the value to the precision of the quote line
         roundedValue = Number(value.toFixed(unitPricePrecision));
       }
-      newPrices[quantity] = { ...newPrices[quantity], [key]: roundedValue };
+      newPrices[quantity] = {
+        ...newPrices[quantity],
+        [key]: roundedValue,
+        // A direct price / virtual-markup edit makes this a fixed price, so clear
+        // any stored per-category markups — otherwise a later recalc would revert
+        // the user's value to the seeded/default markup.
+        ...(key === "unitPrice" ? { categoryMarkups: {} } : {})
+      };
 
       setEditableFields((prev) => ({
         ...prev,
@@ -519,6 +526,7 @@ const QuoteLinePricing = ({
           ?.from("quoteLinePrice")
           .update({
             [key]: roundedValue,
+            ...(key === "unitPrice" ? { categoryMarkups: {} } : {}),
             quoteLineId: lineId,
             quantity
           })
