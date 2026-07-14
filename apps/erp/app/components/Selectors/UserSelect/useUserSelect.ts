@@ -686,6 +686,9 @@ export default function useUserSelect(props: UserSelectProps) {
     (selectionItem: IndividualOrGroup) => {
       if (selectionItem === undefined) return;
       const { id } = selectionItem;
+      // Keep the hydration effect from re-resolving an id the user just
+      // removed while the wrapper's value prop is still one render behind.
+      resolveRequested.current.add(id);
       setSelectionItemsById((previousSelections) => {
         if (id in previousSelections) {
           // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
@@ -773,6 +776,11 @@ export default function useUserSelect(props: UserSelectProps) {
       if (!("users" in selectionItem)) return;
       const { id } = selectionItem;
       const { queryFilters } = innerProps;
+
+      // The wrapper's value prop lags one render behind the onChange below;
+      // without this the hydration effect resolves the exploded group id and
+      // re-adds it as a ghost chip.
+      resolveRequested.current.add(id);
 
       void (async () => {
         const members = membersById[id] ?? (await fetchMembers(id));

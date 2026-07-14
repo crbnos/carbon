@@ -69,7 +69,16 @@ const SentinelRow = ({
   onVisible: () => void;
   loading: boolean;
 }) => {
-  const { ref, inView } = useInView({ threshold: 0 });
+  const {
+    refs: { listBoxRef }
+  } = useUserSelectContext();
+  // Root must be the tree's own scrollport: the popover can be clipped by an
+  // ancestor (drawer body overflow), which makes viewport-rooted observation
+  // never intersect even when the user scrolls the list to the bottom.
+  const { ref, inView } = useInView({
+    threshold: 0,
+    root: listBoxRef.current
+  });
 
   useEffect(() => {
     if (inView && !loading) {
