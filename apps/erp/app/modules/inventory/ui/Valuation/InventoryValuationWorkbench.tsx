@@ -25,12 +25,14 @@ import {
   LuScale,
   LuTriangleAlert
 } from "react-icons/lu";
+import { useFetcher } from "react-router";
 import { Hyperlink, ItemThumbnail, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import {
   useCurrencyFormatter,
   usePercentFormatter,
+  usePermissions,
   useUrlParams
 } from "~/hooks";
 import type {
@@ -91,6 +93,8 @@ export function InventoryValuationWorkbench({
   const [, setParams] = useUrlParams();
   const currencyFormatter = useCurrencyFormatter();
   const percentFormatter = usePercentFormatter();
+  const permissions = usePermissions();
+  const reconcileFetcher = useFetcher<object>();
   const unitOfMeasures = useUnitOfMeasure();
 
   const money = useCallback(
@@ -535,12 +539,24 @@ export function InventoryValuationWorkbench({
                   {money(tieOutTotal.variance)}
                 </span>
               </div>
-              <p className="text-xs text-muted-foreground">
-                <Trans>
-                  Manual quantity adjustments don't post to the GL yet, so a
-                  nonzero variance is expected if you cycle count.
-                </Trans>
-              </p>
+              {hasVariance && permissions.can("create", "accounting") ? (
+                <reconcileFetcher.Form
+                  method="post"
+                  action={path.to.inventoryValuationReconcile}
+                >
+                  <input type="hidden" name="asOfDate" value={asOfDate} />
+                  <Button
+                    type="submit"
+                    variant="secondary"
+                    className="w-full"
+                    leftIcon={<LuScale />}
+                    isLoading={reconcileFetcher.state !== "idle"}
+                    isDisabled={reconcileFetcher.state !== "idle"}
+                  >
+                    <Trans>Reconcile</Trans>
+                  </Button>
+                </reconcileFetcher.Form>
+              ) : null}
             </div>
           </PopoverContent>
         </Popover>
