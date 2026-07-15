@@ -201,7 +201,7 @@ msgid "Complete All"
 msgstr "Completar Tudo"
 
 msgid "Complete Batch"
-msgstr ""
+msgstr "Concluir lote"
 
 msgid "Completed"
 msgstr "Concluído"
@@ -322,7 +322,7 @@ msgid "Empty work centers"
 msgstr "Centros de trabalho vazios"
 
 msgid "End Batch"
-msgstr ""
+msgstr "Encerrar lote"
 
 msgid "End Operations"
 msgstr "Encerrar Operações"
@@ -844,7 +844,7 @@ msgid "Rework created successfully"
 msgstr "Rework criado com sucesso"
 
 msgid "Running"
-msgstr ""
+msgstr "Em execução"
 
 msgid "Sales Order"
 msgstr "Pedido de Venda"
@@ -1000,7 +1000,7 @@ msgid "Start"
 msgstr "Iniciar"
 
 msgid "Start Batch"
-msgstr ""
+msgstr "Iniciar lote"
 
 msgid "Station User"
 msgstr "Usuário da Estação"

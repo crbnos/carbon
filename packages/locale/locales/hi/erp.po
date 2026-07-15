@@ -1676,7 +1676,7 @@ msgid "Batch Number"
 msgstr "बैच नंबर"
 
 msgid "Batch Planning"
-msgstr ""
+msgstr "बैच योजना"
 
 msgid "Batch Properties"
 msgstr "बैच प्रॉपर्टीज़"
@@ -1691,10 +1691,10 @@ msgid "Batch Tracking"
 msgstr "बैच ट्रैकिंग"
 
 msgid "Batchable"
-msgstr ""
+msgstr "बैच योग्य"
 
 msgid "Batchable — multiple jobs can run on this process at the same time"
-msgstr ""
+msgstr "बैच योग्य — इस प्रक्रिया पर एक साथ कई कार्य चल सकते हैं"
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
@@ -1927,7 +1927,7 @@ msgid "Cancelled"
 msgstr "रद्द किया गया"
 
 msgid "Candidate Operations"
-msgstr ""
+msgstr "उम्मीदवार संचालन"
 
 msgid "Cannot add parameters to unsaved operation"
 msgstr "असहेजे ऑपरेशन में पैरामीटर नहीं जोड़ सकते"
@@ -7478,7 +7478,7 @@ msgid "New Attribute Category"
 msgstr "नई विशेषता श्रेणी"
 
 msgid "New batch"
-msgstr ""
+msgstr "नया बैच"
 
 msgid "New Consumable"
 msgstr "नया उपभोग्य"
@@ -7783,7 +7783,7 @@ msgid "No actions selected"
 msgstr "कोई क्रिया चयनित नहीं"
 
 msgid "No active batches. Drag an operation onto \"New batch\" to start one."
-msgstr ""
+msgstr "कोई सक्रिय बैच नहीं। एक शुरू करने के लिए किसी संचालन को \"नया बैच\" पर खींचें।"
 
 msgid "No active jobs found for this sales order. The order will be cancelled directly."
 msgstr "इस बिक्रय आदेश के लिए कोई सक्रिय कार्य नहीं मिला। आदेश सीधे रद्द कर दिया जाएगा।"
@@ -7814,7 +7814,7 @@ msgid "No available tracked entities found"
 msgstr "कोई उपलब्ध ट्रैक किए गए इकाइयां नहीं मिलीं"
 
 msgid "No batchable operations"
-msgstr ""
+msgstr "कोई बैच योग्य संचालन नहीं"
 
 msgid "No BOM input has a shelf-life policy"
 msgstr "कोई BOM इनपुट शेल्फ-लाइफ नीति नहीं है"
@@ -7919,7 +7919,7 @@ msgid "No matches for \"{query}\". Try a different search term."
 msgstr "\"{query}\" के लिए कोई मिलान नहीं। एक अलग खोज शब्द आजमाएं।"
 
 msgid "No material properties"
-msgstr ""
+msgstr "कोई सामग्री गुण नहीं"
 
 msgid "No new notifications"
 msgstr "कोई नई सूचनाएं नहीं"

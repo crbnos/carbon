@@ -1676,7 +1676,7 @@ msgid "Batch Number"
 msgstr "Número de Lote"
 
 msgid "Batch Planning"
-msgstr ""
+msgstr "Planificación por lotes"
 
 msgid "Batch Properties"
 msgstr "Propiedades de Lote"
@@ -1691,10 +1691,10 @@ msgid "Batch Tracking"
 msgstr "Seguimiento de Lotes"
 
 msgid "Batchable"
-msgstr ""
+msgstr "Agrupable"
 
 msgid "Batchable — multiple jobs can run on this process at the same time"
-msgstr ""
+msgstr "Agrupable — varios trabajos pueden ejecutarse en este proceso al mismo tiempo"
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
@@ -1927,7 +1927,7 @@ msgid "Cancelled"
 msgstr "Cancelado"
 
 msgid "Candidate Operations"
-msgstr ""
+msgstr "Operaciones candidatas"
 
 msgid "Cannot add parameters to unsaved operation"
 msgstr "No se pueden agregar parámetros a una operación sin guardar"
@@ -7478,7 +7478,7 @@ msgid "New Attribute Category"
 msgstr "Nueva Categoría de Atributo"
 
 msgid "New batch"
-msgstr ""
+msgstr "Nuevo lote"
 
 msgid "New Consumable"
 msgstr "Nuevo Consumible"
@@ -7783,7 +7783,7 @@ msgid "No actions selected"
 msgstr "No hay acciones seleccionadas"
 
 msgid "No active batches. Drag an operation onto \"New batch\" to start one."
-msgstr ""
+msgstr "No hay lotes activos. Arrastra una operación a \"Nuevo lote\" para comenzar uno."
 
 msgid "No active jobs found for this sales order. The order will be cancelled directly."
 msgstr "No se encontraron trabajos activos para esta orden de venta. La orden será cancelada directamente."
@@ -7814,7 +7814,7 @@ msgid "No available tracked entities found"
 msgstr "No se encontraron entidades rastreadas disponibles"
 
 msgid "No batchable operations"
-msgstr ""
+msgstr "No hay operaciones agrupables"
 
 msgid "No BOM input has a shelf-life policy"
 msgstr "Ninguna entrada de BOM tiene una política de vida útil"
@@ -7919,7 +7919,7 @@ msgid "No matches for \"{query}\". Try a different search term."
 msgstr "No hay coincidencias para \"{query}\". Intenta un término de búsqueda diferente."
 
 msgid "No material properties"
-msgstr ""
+msgstr "Sin propiedades de material"
 
 msgid "No new notifications"
 msgstr "Sin notificaciones nuevas"

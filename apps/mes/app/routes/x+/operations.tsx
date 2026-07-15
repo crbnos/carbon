@@ -707,7 +707,8 @@ function useProgressByOperation(
                         return {
                           ...item,
                           columnId: updated.workCenterId,
-                          priority: updated.priority
+                          priority: updated.priority,
+                          jobOperationBatchId: updated.jobOperationBatchId
                         };
                       }
                       return item;

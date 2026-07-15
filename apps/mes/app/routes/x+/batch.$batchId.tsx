@@ -358,6 +358,7 @@ function CompleteBatch({
                       <Input
                         type="number"
                         min={0}
+                        step="any"
                         className="w-24 ml-auto"
                         value={row.quantity}
                         isDisabled={disabled}
@@ -372,6 +373,7 @@ function CompleteBatch({
                       <Input
                         type="number"
                         min={0}
+                        step="any"
                         className="w-24 ml-auto"
                         value={row.scrapQuantity}
                         isDisabled={disabled}

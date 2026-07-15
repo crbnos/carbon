@@ -1676,7 +1676,7 @@ msgid "Batch Number"
 msgstr "Numer partii"
 
 msgid "Batch Planning"
-msgstr ""
+msgstr "Planowanie wsadowe"
 
 msgid "Batch Properties"
 msgstr "Właściwości partii"
@@ -1691,10 +1691,10 @@ msgid "Batch Tracking"
 msgstr "Śledzenie partii"
 
 msgid "Batchable"
-msgstr ""
+msgstr "Wsadowalny"
 
 msgid "Batchable — multiple jobs can run on this process at the same time"
-msgstr ""
+msgstr "Wsadowalny — wiele zleceń może być realizowanych w tym procesie jednocześnie"
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
@@ -1927,7 +1927,7 @@ msgid "Cancelled"
 msgstr "Anulowano"
 
 msgid "Candidate Operations"
-msgstr ""
+msgstr "Operacje kandydujące"
 
 msgid "Cannot add parameters to unsaved operation"
 msgstr "Nie można dodać parametrów do niezapisanej operacji"
@@ -7478,7 +7478,7 @@ msgid "New Attribute Category"
 msgstr "Nowa Kategoria Atrybutu"
 
 msgid "New batch"
-msgstr ""
+msgstr "Nowy wsád"
 
 msgid "New Consumable"
 msgstr "Nowy materiał zużywalny"
@@ -7783,7 +7783,7 @@ msgid "No actions selected"
 msgstr "Nie wybrano żadnych akcji"
 
 msgid "No active batches. Drag an operation onto \"New batch\" to start one."
-msgstr ""
+msgstr "Brak aktywnych wsadów. Przeciągnij operację na \"Nowy wsad\" aby rozpocząć."
 
 msgid "No active jobs found for this sales order. The order will be cancelled directly."
 msgstr "Nie znaleziono aktywnych zadań dla tego zamówienia sprzedaży. Zamówienie zostanie anulowane bezpośrednio."
@@ -7814,7 +7814,7 @@ msgid "No available tracked entities found"
 msgstr "Nie znaleziono dostępnych śledzonych jednostek"
 
 msgid "No batchable operations"
-msgstr ""
+msgstr "Brak operacji wsadowalnych"
 
 msgid "No BOM input has a shelf-life policy"
 msgstr "Żadne wejście BOM nie ma polityki przydatności do spożycia"
@@ -7919,7 +7919,7 @@ msgid "No matches for \"{query}\". Try a different search term."
 msgstr "Brak wyników dla „{query}\". Spróbuj innego terminu wyszukiwania."
 
 msgid "No material properties"
-msgstr ""
+msgstr "Brak właściwości materiału"
 
 msgid "No new notifications"
 msgstr "Brak nowych powiadomień"

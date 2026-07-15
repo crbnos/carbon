@@ -1676,7 +1676,7 @@ msgid "Batch Number"
 msgstr "Lot Numarası"
 
 msgid "Batch Planning"
-msgstr ""
+msgstr "Toplu Planlama"
 
 msgid "Batch Properties"
 msgstr "Toplu Özellikler"
@@ -1691,10 +1691,10 @@ msgid "Batch Tracking"
 msgstr "Lot Takibi"
 
 msgid "Batchable"
-msgstr ""
+msgstr "Toplu İşlenebilir"
 
 msgid "Batchable — multiple jobs can run on this process at the same time"
-msgstr ""
+msgstr "Toplu işlenebilir — bu işlemde birden fazla iş aynı anda çalışabilir"
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
@@ -1927,7 +1927,7 @@ msgid "Cancelled"
 msgstr "İptal edildi"
 
 msgid "Candidate Operations"
-msgstr ""
+msgstr "Aday Operasyonlar"
 
 msgid "Cannot add parameters to unsaved operation"
 msgstr "Kaydedilmemiş işleme parametre eklenemez"
@@ -7478,7 +7478,7 @@ msgid "New Attribute Category"
 msgstr "Yeni Öznitelik Kategorisi"
 
 msgid "New batch"
-msgstr ""
+msgstr "Yeni toplu iş"
 
 msgid "New Consumable"
 msgstr "Yeni Sarf Malzemesi"
@@ -7783,7 +7783,7 @@ msgid "No actions selected"
 msgstr "Hiçbir işlem seçilmedi"
 
 msgid "No active batches. Drag an operation onto \"New batch\" to start one."
-msgstr ""
+msgstr "Aktif toplu iş yok. Başlatmak için bir operasyonu \"Yeni toplu iş\" üzerine sürükleyin."
 
 msgid "No active jobs found for this sales order. The order will be cancelled directly."
 msgstr "Bu satış siparişi için aktif iş bulunamadı. Sipariş doğrudan iptal edilecektir."
@@ -7814,7 +7814,7 @@ msgid "No available tracked entities found"
 msgstr "Kullanılabilir izlenen varlık bulunamadı"
 
 msgid "No batchable operations"
-msgstr ""
+msgstr "Toplu işlenebilir operasyon yok"
 
 msgid "No BOM input has a shelf-life policy"
 msgstr "Hiçbir BOM girdisi raf ömrü politikasına sahip değil"
@@ -7919,7 +7919,7 @@ msgid "No matches for \"{query}\". Try a different search term."
 msgstr "\"{query}\" için eşleşme bulunamadı. Farklı bir arama terbi deneyin."
 
 msgid "No material properties"
-msgstr ""
+msgstr "Malzeme özelliği yok"
 
 msgid "No new notifications"
 msgstr "Yeni bildirim yok"

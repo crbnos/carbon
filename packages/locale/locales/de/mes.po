@@ -201,7 +201,7 @@ msgid "Complete All"
 msgstr "Alles abschließen"
 
 msgid "Complete Batch"
-msgstr ""
+msgstr "Charge abschließen"
 
 msgid "Completed"
 msgstr "Abgeschlossen"
@@ -322,7 +322,7 @@ msgid "Empty work centers"
 msgstr "Leere Arbeitszentren"
 
 msgid "End Batch"
-msgstr ""
+msgstr "Charge beenden"
 
 msgid "End Operations"
 msgstr "Arbeitsgänge beenden"
@@ -844,7 +844,7 @@ msgid "Rework created successfully"
 msgstr "Überarbeitung erfolgreich erstellt"
 
 msgid "Running"
-msgstr ""
+msgstr "Läuft"
 
 msgid "Sales Order"
 msgstr "Kundenauftrag"
@@ -1000,7 +1000,7 @@ msgid "Start"
 msgstr "Start"
 
 msgid "Start Batch"
-msgstr ""
+msgstr "Charge starten"
 
 msgid "Station User"
 msgstr "Stationsbenutzer"

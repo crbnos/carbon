@@ -87,7 +87,7 @@ export function sliceEventByWeight(
       id: share.id,
       startTime: new Date(windowStartMs).toISOString(),
       endTime: new Date(windowEndMs).toISOString(),
-      durationSeconds: share.durationSeconds
+      durationSeconds: Math.round((windowEndMs - windowStartMs) / 1000)
     };
   });
 }
@@ -164,11 +164,13 @@ export function buildBatchCompletionPlan(
 
   const quantities: PlannedProductionQuantity[] = [];
   for (const m of members) {
-    quantities.push({
-      jobOperationId: m.jobOperationId,
-      type: "Production",
-      quantity: m.quantity
-    });
+    if (m.quantity > 0) {
+      quantities.push({
+        jobOperationId: m.jobOperationId,
+        type: "Production",
+        quantity: m.quantity
+      });
+    }
     if ((m.scrapQuantity ?? 0) > 0) {
       quantities.push({
         jobOperationId: m.jobOperationId,

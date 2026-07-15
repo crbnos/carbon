@@ -201,7 +201,7 @@ msgid "Complete All"
 msgstr "すべて完了"
 
 msgid "Complete Batch"
-msgstr ""
+msgstr "バッチ完了"
 
 msgid "Completed"
 msgstr "完了済み"
@@ -322,7 +322,7 @@ msgid "Empty work centers"
 msgstr "空の作業センター"
 
 msgid "End Batch"
-msgstr ""
+msgstr "バッチ終了"
 
 msgid "End Operations"
 msgstr "工程を終了"
@@ -844,7 +844,7 @@ msgid "Rework created successfully"
 msgstr "リワーク作成に成功しました"
 
 msgid "Running"
-msgstr ""
+msgstr "実行中"
 
 msgid "Sales Order"
 msgstr "受注"
@@ -1000,7 +1000,7 @@ msgid "Start"
 msgstr "開始"
 
 msgid "Start Batch"
-msgstr ""
+msgstr "バッチ開始"
 
 msgid "Station User"
 msgstr "ステーションユーザー"

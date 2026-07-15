@@ -1676,7 +1676,7 @@ msgid "Batch Number"
 msgstr "バッチ番号"
 
 msgid "Batch Planning"
-msgstr ""
+msgstr "バッチ計画"
 
 msgid "Batch Properties"
 msgstr "バッチプロパティ"
@@ -1691,10 +1691,10 @@ msgid "Batch Tracking"
 msgstr "バッチ追跡"
 
 msgid "Batchable"
-msgstr ""
+msgstr "バッチ処理可能"
 
 msgid "Batchable — multiple jobs can run on this process at the same time"
-msgstr ""
+msgstr "バッチ処理可能 — 複数のジョブをこのプロセスで同時に実行できます"
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
@@ -1927,7 +1927,7 @@ msgid "Cancelled"
 msgstr "キャンセル済み"
 
 msgid "Candidate Operations"
-msgstr ""
+msgstr "候補工程"
 
 msgid "Cannot add parameters to unsaved operation"
 msgstr "保存されていない操作にパラメータを追加できません"
@@ -7478,7 +7478,7 @@ msgid "New Attribute Category"
 msgstr "新しい属性カテゴリ"
 
 msgid "New batch"
-msgstr ""
+msgstr "新規バッチ"
 
 msgid "New Consumable"
 msgstr "新しい消耗品"
@@ -7783,7 +7783,7 @@ msgid "No actions selected"
 msgstr "アクションが選択されていません"
 
 msgid "No active batches. Drag an operation onto \"New batch\" to start one."
-msgstr ""
+msgstr "アクティブなバッチがありません。工程を「新規バッチ」にドラッグして開始してください。"
 
 msgid "No active jobs found for this sales order. The order will be cancelled directly."
 msgstr "このセールスオーダーのアクティブなジョブが見つかりません。注文は直接キャンセルされます。"
@@ -7814,7 +7814,7 @@ msgid "No available tracked entities found"
 msgstr "利用可能な追跡対象エンティティが見つかりません"
 
 msgid "No batchable operations"
-msgstr ""
+msgstr "バッチ処理可能な工程なし"
 
 msgid "No BOM input has a shelf-life policy"
 msgstr "BOMインプットに棚卸資産有効期限ポリシーがありません"
@@ -7919,7 +7919,7 @@ msgid "No matches for \"{query}\". Try a different search term."
 msgstr "\"{query}\"に一致するものがありません。別の検索用語を試してください。"
 
 msgid "No material properties"
-msgstr ""
+msgstr "材料特性なし"
 
 msgid "No new notifications"
 msgstr "新しい通知はありません"

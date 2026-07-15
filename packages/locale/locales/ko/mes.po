@@ -201,7 +201,7 @@ msgid "Complete All"
 msgstr "모두 완료"
 
 msgid "Complete Batch"
-msgstr ""
+msgstr "배치 완료"
 
 msgid "Completed"
 msgstr "완료됨"
@@ -322,7 +322,7 @@ msgid "Empty work centers"
 msgstr "빈 작업장"
 
 msgid "End Batch"
-msgstr ""
+msgstr "배치 종료"
 
 msgid "End Operations"
 msgstr "공정작업 종료"
@@ -844,7 +844,7 @@ msgid "Rework created successfully"
 msgstr "재작업이 생성되었습니다"
 
 msgid "Running"
-msgstr ""
+msgstr "실행 중"
 
 msgid "Sales Order"
 msgstr "판매주문"
@@ -1000,7 +1000,7 @@ msgid "Start"
 msgstr "시작"
 
 msgid "Start Batch"
-msgstr ""
+msgstr "배치 시작"
 
 msgid "Station User"
 msgstr "스테이션 사용자"

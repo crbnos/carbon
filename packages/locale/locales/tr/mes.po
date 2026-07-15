@@ -201,7 +201,7 @@ msgid "Complete All"
 msgstr "Tümünü Tamamla"
 
 msgid "Complete Batch"
-msgstr ""
+msgstr "Toplu işi tamamla"
 
 msgid "Completed"
 msgstr "Tamamlandı"
@@ -322,7 +322,7 @@ msgid "Empty work centers"
 msgstr "Boş iş merkezleri"
 
 msgid "End Batch"
-msgstr ""
+msgstr "Toplu işi bitir"
 
 msgid "End Operations"
 msgstr "Operasyonları Sonlandır"
@@ -844,7 +844,7 @@ msgid "Rework created successfully"
 msgstr "Yeniden işleme başarıyla oluşturuldu"
 
 msgid "Running"
-msgstr ""
+msgstr "Çalışıyor"
 
 msgid "Sales Order"
 msgstr "Satış Siparişi"
@@ -1000,7 +1000,7 @@ msgid "Start"
 msgstr "Başlat"
 
 msgid "Start Batch"
-msgstr ""
+msgstr "Toplu işi başlat"
 
 msgid "Station User"
 msgstr "İstasyon Kullanıcısı"

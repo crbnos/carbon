@@ -201,7 +201,7 @@ msgid "Complete All"
 msgstr "Завершить все"
 
 msgid "Complete Batch"
-msgstr ""
+msgstr "Завершить партию"
 
 msgid "Completed"
 msgstr "Завершено"
@@ -322,7 +322,7 @@ msgid "Empty work centers"
 msgstr "Пустые рабочие центры"
 
 msgid "End Batch"
-msgstr ""
+msgstr "Закончить партию"
 
 msgid "End Operations"
 msgstr "Завершить операции"
@@ -844,7 +844,7 @@ msgid "Rework created successfully"
 msgstr "Переработка успешно создана"
 
 msgid "Running"
-msgstr ""
+msgstr "Выполняется"
 
 msgid "Sales Order"
 msgstr "Заказ на продажу"
@@ -1000,7 +1000,7 @@ msgid "Start"
 msgstr "Старт"
 
 msgid "Start Batch"
-msgstr ""
+msgstr "Начать партию"
 
 msgid "Station User"
 msgstr "Пользователь станции"

@@ -1676,7 +1676,7 @@ msgid "Batch Number"
 msgstr "Номер партии"
 
 msgid "Batch Planning"
-msgstr ""
+msgstr "Пакетное планирование"
 
 msgid "Batch Properties"
 msgstr "Свойства партии"
@@ -1691,10 +1691,10 @@ msgid "Batch Tracking"
 msgstr "Отслеживание партий"
 
 msgid "Batchable"
-msgstr ""
+msgstr "Пакетируемый"
 
 msgid "Batchable — multiple jobs can run on this process at the same time"
-msgstr ""
+msgstr "Пакетируемый — несколько заданий могут выполняться на этом процессе одновременно"
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
@@ -1927,7 +1927,7 @@ msgid "Cancelled"
 msgstr "Отменено"
 
 msgid "Candidate Operations"
-msgstr ""
+msgstr "Операции-кандидаты"
 
 msgid "Cannot add parameters to unsaved operation"
 msgstr "Невозможно добавить параметры к несохраненной операции"
@@ -7478,7 +7478,7 @@ msgid "New Attribute Category"
 msgstr "Новая категория атрибутов"
 
 msgid "New batch"
-msgstr ""
+msgstr "Новый пакет"
 
 msgid "New Consumable"
 msgstr "Новый расходный материал"
@@ -7783,7 +7783,7 @@ msgid "No actions selected"
 msgstr "Действия не выбраны"
 
 msgid "No active batches. Drag an operation onto \"New batch\" to start one."
-msgstr ""
+msgstr "Нет активных пакетов. Перетащите операцию на «Новый пакет», чтобы начать."
 
 msgid "No active jobs found for this sales order. The order will be cancelled directly."
 msgstr "Для этого заказа не найдено активных работ. Заказ будет отменен напрямую."
@@ -7814,7 +7814,7 @@ msgid "No available tracked entities found"
 msgstr "Не найдено доступных отслеживаемых объектов"
 
 msgid "No batchable operations"
-msgstr ""
+msgstr "Нет пакетируемых операций"
 
 msgid "No BOM input has a shelf-life policy"
 msgstr "Ни один вход BOM не имеет политики срока хранения"
@@ -7919,7 +7919,7 @@ msgid "No matches for \"{query}\". Try a different search term."
 msgstr "Нет совпадений для \"{query}\". Попробуйте другой поисковый запрос."
 
 msgid "No material properties"
-msgstr ""
+msgstr "Нет свойств материала"
 
 msgid "No new notifications"
 msgstr "Нет новых уведомлений"
