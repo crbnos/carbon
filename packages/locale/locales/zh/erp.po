@@ -782,6 +782,9 @@ msgstr "高级"
 msgid "Affected assemblies"
 msgstr "受影响的总成"
 
+msgid "Affected item not found."
+msgstr ""
+
 msgid "Affected Items"
 msgstr ""
 

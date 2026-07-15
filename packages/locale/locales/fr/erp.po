@@ -782,6 +782,9 @@ msgstr "Avancé"
 msgid "Affected assemblies"
 msgstr "Assemblages affectés"
 
+msgid "Affected item not found."
+msgstr ""
+
 msgid "Affected Items"
 msgstr ""
 

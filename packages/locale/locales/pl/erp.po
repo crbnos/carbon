@@ -782,6 +782,9 @@ msgstr "Zaawansowane"
 msgid "Affected assemblies"
 msgstr "Dotknięte zespoły"
 
+msgid "Affected item not found."
+msgstr ""
+
 msgid "Affected Items"
 msgstr ""
 

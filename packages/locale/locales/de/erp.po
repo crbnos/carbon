@@ -782,6 +782,9 @@ msgstr "Erweitert"
 msgid "Affected assemblies"
 msgstr "Betroffene Baugruppen"
 
+msgid "Affected item not found."
+msgstr ""
+
 msgid "Affected Items"
 msgstr ""
 

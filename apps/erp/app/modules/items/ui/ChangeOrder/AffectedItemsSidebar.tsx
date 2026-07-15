@@ -2,29 +2,26 @@ import { ValidatedForm } from "@carbon/form";
 import { Badge, cn, HStack, VStack } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { LuPlus } from "react-icons/lu";
-import { useFetcher } from "react-router";
+import { Link, useFetcher, useParams } from "react-router";
 import { Hidden, Item, Submit } from "~/components/Form";
 import { path } from "~/utils/path";
 import { changeOrderAffectedItemValidator } from "../../changeOrder.models";
 import type { AffectedItemDraft } from "./affectedItem.types";
 
-// Left pane of the change-order workspace: a selectable list of the CO's affected
-// items plus the add-item form. Selecting one drives the middle detail pane. The
-// aside shell mirrors the traceability sidebar (TraceabilitySidebar), flipped to a
-// left border since this is the left pane.
+// Left pane of the change-order workspace: a list of the CO's affected items plus
+// the add-item form. Selection lives in the URL (the affectedId route param) —
+// each row is a Link, so the middle pane, refresh, and back/forward all follow the
+// URL. The aside shell mirrors the traceability sidebar, flipped to a left border.
 export default function AffectedItemsSidebar({
   changeOrderId,
   affectedItems,
-  selectedId,
-  onSelect,
   isDisabled
 }: {
   changeOrderId: string;
   affectedItems: AffectedItemDraft[];
-  selectedId: string | null;
-  onSelect: (affectedItemId: string) => void;
   isDisabled: boolean;
 }) {
+  const { affectedId } = useParams();
   return (
     <aside className="w-64 flex-shrink-0 bg-card h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-r border-border text-sm flex flex-col">
       <div className="text-xs font-medium uppercase text-muted-foreground px-3 py-3">
@@ -40,12 +37,11 @@ export default function AffectedItemsSidebar({
         {affectedItems.map((affected) => {
           const item = affected.affectedItem;
           const label = item.item;
-          const isSelected = item.id === selectedId;
+          const isSelected = item.id === affectedId;
           return (
-            <button
+            <Link
               key={item.id}
-              type="button"
-              onClick={() => onSelect(item.id)}
+              to={path.to.changeOrderAffectedItem(changeOrderId, item.id)}
               className={cn(
                 "group w-full flex items-start justify-between gap-2 px-2 py-1.5 text-left rounded-md transition-colors",
                 isSelected ? "bg-accent" : "hover:bg-accent/50"
@@ -66,7 +62,7 @@ export default function AffectedItemsSidebar({
               <Badge variant="secondary" className="flex-shrink-0">
                 {item.changeType}
               </Badge>
-            </button>
+            </Link>
           );
         })}
       </VStack>

@@ -782,6 +782,9 @@ msgstr "고급"
 msgid "Affected assemblies"
 msgstr "영향받는 어셈블리"
 
+msgid "Affected item not found."
+msgstr ""
+
 msgid "Affected Items"
 msgstr ""
 

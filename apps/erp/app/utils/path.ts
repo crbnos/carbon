@@ -696,6 +696,10 @@ export const path = {
     changeOrder: (id: string) => generatePath(`${x}/items/change-order/${id}`),
     changeOrderDetails: (id: string) =>
       generatePath(`${x}/items/change-order/${id}/details`),
+    // The selected affected item drives the middle pane via the URL (not client
+    // state), so refresh + back/forward reselect it — mirrors the PO line detail.
+    changeOrderAffectedItem: (id: string, affectedId: string) =>
+      generatePath(`${x}/items/change-order/${id}/details/${affectedId}`),
     changeOrderStatus: (id: string) =>
       generatePath(`${x}/items/change-order/${id}/status`),
     newChangeOrder: `${x}/items/change-order/new`,

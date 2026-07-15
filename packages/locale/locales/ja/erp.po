@@ -782,6 +782,9 @@ msgstr "詳細"
 msgid "Affected assemblies"
 msgstr "影響を受けるアセンブリ"
 
+msgid "Affected item not found."
+msgstr ""
+
 msgid "Affected Items"
 msgstr ""
 

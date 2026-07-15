@@ -782,6 +782,9 @@ msgstr "उन्नत"
 msgid "Affected assemblies"
 msgstr "प्रभावित असेंबलियां"
 
+msgid "Affected item not found."
+msgstr ""
+
 msgid "Affected Items"
 msgstr ""
 

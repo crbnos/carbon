@@ -782,6 +782,9 @@ msgstr "Дополнительно"
 msgid "Affected assemblies"
 msgstr "Затронутые сборки"
 
+msgid "Affected item not found."
+msgstr ""
+
 msgid "Affected Items"
 msgstr ""
 
