@@ -35,8 +35,7 @@ Tracks item quantities across locations and storage units. Manages receipts, shi
 ## Validation Commands
 
 ```bash
-pnpm --filter @carbon/erp typecheck
-pnpm --filter @carbon/erp test
+pnpm exec turbo run typecheck --filter=erp   # the app's package name is "erp", not "@carbon/erp"
 ```
 
 ## Key Data Model

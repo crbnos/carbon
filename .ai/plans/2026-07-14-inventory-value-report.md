@@ -22,7 +22,7 @@
 - [x] Task 4: Path helper + sidebar nav entry (Track group, accounting_view-gated, LuChartBar)
 - [x] Task 5: Workbench UI component (grouped union rows + tie-out popover + as-of label; cloned from ARAPWorkbench)
 - [x] Task 6: Route `/x/inventory/valuation` (accounting_view gate; valuation errors throw to boundary; +156 translations filled via /translate)
-- [ ] Task 7: Final verification sweep
+- [x] Task 7: Final verification sweep (typecheck + biome + 7/7 psql asserts + pnpm test 21/21 green; fixed stale AGENTS.md validation command)
 
 ## Dependencies
 - Task 2 needs Task 1 (migration file). Task 3 needs Task 2 (functions exist locally).
