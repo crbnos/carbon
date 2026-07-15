@@ -50,12 +50,14 @@ import type { UsedInNode } from "~/modules/items/ui/Item/UsedIn";
 import { UsedInSkeleton, UsedInTree } from "~/modules/items/ui/Item/UsedIn";
 import { PartHeader, PartProperties } from "~/modules/items/ui/Parts";
 import { getTagsList } from "~/modules/shared";
-import type { Handle } from "~/utils/handle";
+import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
-  breadcrumb: msg`Parts`,
-  to: path.to.parts,
+  breadcrumb: detailBreadcrumb(
+    { breadcrumb: msg`Parts`, to: path.to.parts },
+    (data) => data?.partSummary?.readableIdWithRevision
+  ),
   module: "items"
 };
 

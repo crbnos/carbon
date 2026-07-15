@@ -30,12 +30,14 @@ import {
 import IssueHeader from "~/modules/quality/ui/Issue/IssueHeader";
 import IssueProperties from "~/modules/quality/ui/Issue/IssueProperties";
 import { getTagsList } from "~/modules/shared";
-import type { Handle } from "~/utils/handle";
+import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
-  breadcrumb: msg`Issues`,
-  to: path.to.issues,
+  breadcrumb: detailBreadcrumb(
+    { breadcrumb: msg`Issues`, to: path.to.issues },
+    (data) => data?.nonConformance?.nonConformanceId
+  ),
   module: "quality"
 };
 

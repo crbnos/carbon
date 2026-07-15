@@ -45,12 +45,14 @@ import type { UsedInNode } from "~/modules/items/ui/Item/UsedIn";
 import { UsedInSkeleton, UsedInTree } from "~/modules/items/ui/Item/UsedIn";
 import { ToolHeader, ToolProperties } from "~/modules/items/ui/Tools";
 import { getTagsList } from "~/modules/shared";
-import type { Handle } from "~/utils/handle";
+import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
-  breadcrumb: msg`Tools`,
-  to: path.to.tools,
+  breadcrumb: detailBreadcrumb(
+    { breadcrumb: msg`Tools`, to: path.to.tools },
+    (data) => data?.toolSummary?.readableIdWithRevision
+  ),
   module: "items"
 };
 
