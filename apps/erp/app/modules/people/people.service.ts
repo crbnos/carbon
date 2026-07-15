@@ -561,11 +561,34 @@ export async function updateEmployeeJob(
     customFields?: Json;
   }
 ) {
-  return client
+  const update = await client
     .from("employeeJob")
     .update(sanitize(employeeJob))
     .eq("id", employeeId)
     .eq("companyId", employeeJob.companyId);
+  if (update.error) return update;
+
+  // The scheduler reads shift assignments from employeeShift (see
+  // getEmployeeShiftWindows in the schedule engine), NOT from
+  // employeeJob.shiftId — keep them in sync so assigning a shift here
+  // actually constrains ability-gated scheduling.
+  const clearShifts = await client
+    .from("employeeShift")
+    .delete()
+    .eq("employeeId", employeeId)
+    .eq("companyId", employeeJob.companyId);
+  if (clearShifts.error) return clearShifts;
+
+  if (employeeJob.shiftId) {
+    const assignShift = await client.from("employeeShift").insert({
+      employeeId,
+      shiftId: employeeJob.shiftId,
+      companyId: employeeJob.companyId
+    });
+    if (assignShift.error) return assignShift;
+  }
+
+  return update;
 }
 
 export async function upsertDepartment(

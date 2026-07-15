@@ -149,16 +149,34 @@ export function TimelineDetail({
                 <DetailRow label={t`Ends`} value={t`In progress`} />
               )
             )}
-            <DetailRow
-              label={t`Duration`}
-              value={
-                detail.durationMs > 0
-                  ? formatDurationMilliseconds(detail.durationMs, {
-                      style: "short"
-                    })
-                  : "—"
-              }
-            />
+            {/* A gated op's span includes off-shift pauses: show the actual
+                work content alongside the wall-clock span so "22h" reads as
+                "6h of work across 22h", not 22 hours of soldering */}
+            {detail.workMs &&
+            detail.durationMs > 0 &&
+            // >1 min gap — avoid noise from rounding
+            detail.durationMs - detail.workMs > 60_000 ? (
+              <DetailRow
+                label={t`Duration`}
+                value={t`${formatDurationMilliseconds(detail.workMs, {
+                  style: "short"
+                })} of work across ${formatDurationMilliseconds(
+                  detail.durationMs,
+                  { style: "short" }
+                )}`}
+              />
+            ) : (
+              <DetailRow
+                label={t`Duration`}
+                value={
+                  detail.durationMs > 0
+                    ? formatDurationMilliseconds(detail.durationMs, {
+                        style: "short"
+                      })
+                    : "—"
+                }
+              />
+            )}
             {!!detail.waitMs && detail.waitMs > 0 && (
               <DetailRow
                 label={t`Waited`}

@@ -59,6 +59,11 @@ msgstr "{0} ड्राफ्ट जर्नल प्रविष्टिय
 msgid "{0} lines to map"
 msgstr "{0} लाइनें मैप करने के लिए"
 
+#. placeholder {0}: formatDurationMilliseconds(detail.workMs, { style: "short" })
+#. placeholder {1}: formatDurationMilliseconds( detail.durationMs, { style: "short" } )
+msgid "{0} of work across {1}"
+msgstr "{0} का कार्य {1} में"
+
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} ऑर्डर"

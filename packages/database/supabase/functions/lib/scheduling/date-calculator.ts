@@ -2,6 +2,7 @@ import {
   calculateDurationDays,
   calculateDurationHours,
 } from "./duration-calculator.ts";
+import { toIsoDateInTimeZone } from "./date-utils.ts";
 import type {
   BaseOperation,
   DependencyGraph,
@@ -48,17 +49,23 @@ function addBusinessDays(date: Date, days: number): Date {
 }
 
 /**
- * Format date to ISO date string (YYYY-MM-DD)
+ * Format date to ISO date string (YYYY-MM-DD).
+ *
+ * Deliberately UTC: this round-trips DATE-ONLY strings that were parsed to
+ * UTC midnight for business-day math — re-interpreting them through a time
+ * zone would shift every backward-pass date by a day in zones behind UTC.
+ * Only "now" (a real instant) is zone-sensitive; see getTodayString.
  */
 function formatDate(date: Date): string {
   return date.toISOString().split("T")[0];
 }
 
 /**
- * Get today's date as ISO string
+ * Today's calendar date at the job's location ("what day is it at the
+ * factory"), not UTC's.
  */
-function getTodayString(): string {
-  return formatDate(new Date());
+function getTodayString(timeZone = "UTC"): string {
+  return toIsoDateInTimeZone(new Date(), timeZone);
 }
 
 /**
@@ -69,7 +76,8 @@ export interface SchedulingStrategy {
     operations: BaseOperation[],
     operationMap: Map<string, BaseOperation>,
     graph: DependencyGraph,
-    anchorDate: string | null
+    anchorDate: string | null,
+    timeZone?: string
   ): Map<string, ScheduledOperation>;
 }
 
@@ -81,10 +89,11 @@ export class BackwardSchedulingStrategy implements SchedulingStrategy {
     _operations: BaseOperation[],
     operationMap: Map<string, BaseOperation>,
     graph: DependencyGraph,
-    jobDueDate: string | null
+    jobDueDate: string | null,
+    timeZone = "UTC"
   ): Map<string, ScheduledOperation> {
     const scheduled = new Map<string, ScheduledOperation>();
-    const today = getTodayString();
+    const today = getTodayString(timeZone);
     const finalDueDate = jobDueDate || today;
 
     // Topological sort in reverse order (leaf nodes first)
@@ -246,10 +255,11 @@ export class ForwardSchedulingStrategy implements SchedulingStrategy {
     _operations: BaseOperation[],
     operationMap: Map<string, BaseOperation>,
     graph: DependencyGraph,
-    jobStartDate: string | null
+    jobStartDate: string | null,
+    timeZone = "UTC"
   ): Map<string, ScheduledOperation> {
     const scheduled = new Map<string, ScheduledOperation>();
-    const today = getTodayString();
+    const today = getTodayString(timeZone);
     const startDate = jobStartDate || today;
 
     // Topological sort in forward order (root nodes first)
@@ -382,7 +392,8 @@ export function calculateOperationDates(
   operations: BaseOperation[],
   graph: DependencyGraph,
   anchorDate: string | null,
-  direction: SchedulingDirection = "backward"
+  direction: SchedulingDirection = "backward",
+  timeZone = "UTC"
 ): Map<string, ScheduledOperation> {
   // Build operation map for quick lookup
   const operationMap = new Map<string, BaseOperation>();
@@ -393,7 +404,13 @@ export function calculateOperationDates(
   }
 
   const strategy = getSchedulingStrategy(direction);
-  return strategy.calculateDates(operations, operationMap, graph, anchorDate);
+  return strategy.calculateDates(
+    operations,
+    operationMap,
+    graph,
+    anchorDate,
+    timeZone
+  );
 }
 
 export { addBusinessDays, formatDate, getTodayString, subtractBusinessDays };

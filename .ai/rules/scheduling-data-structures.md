@@ -72,8 +72,8 @@ selectWorkCenters → calculatePriorities → persistChanges`.
   `ability.processId`, qualified employees with their shift windows from
   `employeeShift` ⋈ `shift` — no shift assignment = always available) and,
   per op, walks **forward** from max(backward start, now, in-run predecessor
-  finish) to the first interval where the work center is free (always finite,
-  capacity 1, open 24×7) AND — for ability-gated processes — ≥1 qualified
+  finish) to the first feasible interval. Work centers do NOT limit
+  concurrency (no capacity check); for ability-gated processes ≥1 qualified
   employee is on shift and unreserved (`slot-allocator.ts`; the accumulation
   windows for gated ops are the union of the pool members' shift windows, so
   work pauses while nobody qualified is on shift). Picks the earliest-finish

@@ -214,7 +214,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       startAt: r.startAt,
       endAt: r.endAt,
       earliestStartAt: r.earliestStartAt,
-      scheduleNote: r.scheduleNote
+      scheduleNote: r.scheduleNote,
+      workHours: r.workHours
     })),
     productionEvents: (productionEvents.data ?? []).map((e) => ({
       id: e.id,

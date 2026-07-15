@@ -1,10 +1,11 @@
 /**
- * Finite slot allocator — places one operation into the earliest feasible
- * interval on a work center. Work centers are always finite with capacity 1
- * (one operation at a time) and always open; when the operation's process
- * requires an ability, work can only accumulate while at least one qualified
- * pool member is on shift AND not already reserved elsewhere — the
- * dual-resource core. Pure given preloaded data: no DB access, fully testable
+ * Slot allocator — places one operation into the earliest feasible interval.
+ * Work centers do NOT limit concurrency: anyone qualified can work at a
+ * station, so the only finite resource is PEOPLE. When the operation's
+ * process requires an ability, work accumulates only while at least one
+ * qualified pool member is on shift AND not already reserved elsewhere;
+ * operations without an ability requirement place at their earliest start
+ * unconditionally. Pure given preloaded data: no DB access, fully testable
  * with fixtures.
  */
 
@@ -15,6 +16,7 @@ import {
   findSlot,
   unionWindows,
 } from "./calendar-utils.ts";
+import { toIsoDateInTimeZone } from "./date-utils.ts";
 
 export type ReservationInterval = {
   startAt: Date;
@@ -98,33 +100,6 @@ export function formatBlockingJobs(
 }
 
 /**
- * Machine freeness of [start, end): capacity is 1, so any overlapping
- * reservation makes the interval busy. Returns the earliest overlapping
- * reservation end as the retry hint.
- */
-function machineIsFree(
-  capacity: ResourceCapacityData,
-  start: Date,
-  end: Date
-): { free: boolean; nextTryAfter?: Date } {
-  const s = start.getTime();
-  const e = end.getTime();
-  let earliestEnd: number | null = null;
-  for (const r of capacity.reservations) {
-    if (r.startAt.getTime() < e && r.endAt.getTime() > s) {
-      const re = r.endAt.getTime();
-      if (earliestEnd === null || re < earliestEnd) {
-        earliestEnd = re;
-      }
-    }
-  }
-  if (earliestEnd !== null) {
-    return { free: false, nextTryAfter: new Date(earliestEnd) };
-  }
-  return { free: true };
-}
-
-/**
  * Pool freeness of [start, end): at every instant covered by a member's
  * shift window, the number of concurrent pool reservations must stay below
  * the number of members on shift. Instants no member covers are non-working
@@ -190,9 +165,12 @@ export function allocateOperation(args: {
   horizonEnd: Date; // never walk unbounded
   capacity: ResourceCapacityData;
   operatorPool?: OperatorPool | null;
+  /** IANA zone used to word dates in conflict messages (factory time) */
+  timeZone?: string;
 }): AllocationResult {
   const { durationHours, earliestStart, horizonEnd, capacity } = args;
   const pool = args.operatorPool ?? null;
+  const timeZone = args.timeZone ?? "UTC";
 
   // A pool with zero eligible members can never free up — immediate skill conflict
   if (pool && pool.members.length === 0) {
@@ -213,10 +191,10 @@ export function allocateOperation(args: {
     return {
       conflict: pool
         ? `No qualified operator on shift for ${pool.abilityName} before ${
-            horizonEnd.toISOString().slice(0, 10)
+            toIsoDateInTimeZone(horizonEnd, timeZone)
           }`
         : `No working time available at work center before ${
-            horizonEnd.toISOString().slice(0, 10)
+            toIsoDateInTimeZone(horizonEnd, timeZone)
           }`,
     };
   }
@@ -229,21 +207,21 @@ export function allocateOperation(args: {
       if (end.getTime() > horizonEnd.getTime()) {
         return { free: false }; // past the horizon; findSlot will exhaust
       }
-      const machine = machineIsFree(capacity, start, end);
-      if (!machine.free) {
-        return machine;
-      }
+      // Work centers do NOT limit concurrency — anyone qualified can work
+      // at a station, so the only finite resource is the operator pool.
+      // Ungated operations (no required ability) place at their earliest
+      // start unconditionally.
       return pool ? poolIsFree(pool, start, end) : { free: true };
     },
   });
 
   if (!slot) {
     const cause = pool
-      ? "No slot with both an open work center and a qualified operator"
-      : "No work center capacity";
+      ? "No qualified operator availability"
+      : "No working time";
     return {
       conflict: `${cause} available before ${
-        horizonEnd.toISOString().slice(0, 10)
+        toIsoDateInTimeZone(horizonEnd, timeZone)
       }`,
     };
   }

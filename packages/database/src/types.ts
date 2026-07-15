@@ -4256,6 +4256,7 @@ export type Database = {
           startAt: string
           updatedAt: string | null
           updatedBy: string | null
+          workHours: number | null
         }
         Insert: {
           companyId: string
@@ -4273,6 +4274,7 @@ export type Database = {
           startAt: string
           updatedAt?: string | null
           updatedBy?: string | null
+          workHours?: number | null
         }
         Update: {
           companyId?: string
@@ -4290,6 +4292,7 @@ export type Database = {
           startAt?: string
           updatedAt?: string | null
           updatedBy?: string | null
+          workHours?: number | null
         }
         Relationships: [
           {
@@ -25426,8 +25429,6 @@ export type Database = {
           createdAt: string
           createdBy: string
           customFields: Json | null
-          effectiveFrom: string | null
-          effectiveTo: string | null
           id: string
           itemId: string
           itemType: string
@@ -25452,8 +25453,6 @@ export type Database = {
           createdAt?: string
           createdBy: string
           customFields?: Json | null
-          effectiveFrom?: string | null
-          effectiveTo?: string | null
           id?: string
           itemId: string
           itemType?: string
@@ -25478,8 +25477,6 @@ export type Database = {
           createdAt?: string
           createdBy?: string
           customFields?: Json | null
-          effectiveFrom?: string | null
-          effectiveTo?: string | null
           id?: string
           itemId?: string
           itemType?: string
@@ -38838,6 +38835,7 @@ export type Database = {
           leadTime: number
           netExtendedPrice: number | null
           netUnitPrice: number | null
+          priceSource: string
           quantity: number
           quoteId: string
           quoteLineId: string
@@ -38860,6 +38858,7 @@ export type Database = {
           leadTime?: number
           netExtendedPrice?: number | null
           netUnitPrice?: number | null
+          priceSource?: string
           quantity?: number
           quoteId: string
           quoteLineId: string
@@ -38882,6 +38881,7 @@ export type Database = {
           leadTime?: number
           netExtendedPrice?: number | null
           netUnitPrice?: number | null
+          priceSource?: string
           quantity?: number
           quoteId?: string
           quoteLineId?: string
@@ -61422,14 +61422,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["supplierLocationId"]
+            columns: ["id"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["id"]
+            columns: ["supplierLocationId"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
@@ -63084,14 +63084,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -66468,7 +66468,7 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["shipmentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -66482,7 +66482,7 @@ export type Database = {
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["shipmentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -71043,6 +71043,37 @@ export type Database = {
           usageLast90Days: number
         }[]
       }
+      get_inventory_tie_out: {
+        Args: { as_of_date?: string; company_id: string }
+        Returns: {
+          accountId: string
+          accountKind: string
+          accountName: string
+          glBalance: number
+          subledgerValue: number
+          variance: number
+        }[]
+      }
+      get_inventory_valuation: {
+        Args: { as_of_date?: string; company_id: string; location_id?: string }
+        Returns: {
+          costingMethod: Database["public"]["Enums"]["itemCostingMethod"]
+          itemId: string
+          locationId: string
+          locationName: string
+          name: string
+          quantityOnHand: number
+          quantityOnHold: number
+          quantityRejected: number
+          readableIdWithRevision: string
+          replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
+          thumbnailPath: string
+          totalValue: number
+          type: Database["public"]["Enums"]["itemType"]
+          unitCost: number
+          unitOfMeasureCode: string
+        }[]
+      }
       get_inventory_value_by_location: {
         Args: { company_id: string }
         Returns: {
@@ -71434,8 +71465,6 @@ export type Database = {
         Args: { uid: string }
         Returns: {
           description: string
-          effectiveFrom: string
-          effectiveTo: string
           externalId: Json
           isPickDescendant: boolean
           isRoot: boolean
@@ -72153,6 +72182,31 @@ export type Database = {
           status: Database["public"]["Enums"]["jobStatus"]
           tags: string[]
           thumbnailPath: string
+        }[]
+      }
+      get_user_select_group_members: {
+        Args: { p_company_id: string; p_group_id: string }
+        Returns: Json
+      }
+      get_user_select_groups: {
+        Args: {
+          p_company_id: string
+          p_limit?: number
+          p_offset?: number
+          p_search?: string
+          p_type?: string
+        }
+        Returns: {
+          groupCount: number
+          id: string
+          isCustomerOrgGroup: boolean
+          isCustomerTypeGroup: boolean
+          isEmployeeTypeGroup: boolean
+          isRoot: boolean
+          isSupplierOrgGroup: boolean
+          isSupplierTypeGroup: boolean
+          name: string
+          userCount: number
         }[]
       }
       getConsolidationRates: {
@@ -73024,6 +73078,8 @@ export type Database = {
         | "Job Close"
         | "Payment"
         | "Memo"
+        | "Inventory Adjustment"
+        | "Inventory Count"
       kanbanOutput: "label" | "qrcode" | "url"
       macrsConvention: "Half-Year" | "Mid-Quarter"
       macrsPropertyClass: "3" | "5" | "7" | "10" | "15" | "20" | "27.5" | "39"
@@ -74389,6 +74445,8 @@ export const Constants = {
         "Job Close",
         "Payment",
         "Memo",
+        "Inventory Adjustment",
+        "Inventory Count",
       ],
       kanbanOutput: ["label", "qrcode", "url"],
       macrsConvention: ["Half-Year", "Mid-Quarter"],

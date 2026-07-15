@@ -114,7 +114,7 @@ describe("buildResourceTimeline", () => {
           id: "res-2",
           hasConflict: true,
           conflictReason:
-            "Finishes 2026-07-20 but the job is due 2026-07-17 — waited for the work center, queued behind J000001 (1 op)"
+            "Finishes 2026-07-20 but the job is due 2026-07-17 — waited for a qualified operator, queued behind J000001 (1 op)"
         })
       ]
     });

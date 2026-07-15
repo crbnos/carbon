@@ -59,6 +59,11 @@ msgstr "{0} bozze di registrazioni contabili"
 msgid "{0} lines to map"
 msgstr "{0} righe da mappare"
 
+#. placeholder {0}: formatDurationMilliseconds(detail.workMs, { style: "short" })
+#. placeholder {1}: formatDurationMilliseconds( detail.durationMs, { style: "short" } )
+msgid "{0} of work across {1}"
+msgstr "{0} di lavoro in {1}"
+
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} ordini"

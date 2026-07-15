@@ -404,12 +404,13 @@ export class SchedulingEngine {
     const anchorDate =
       this.direction === "backward" ? this.job?.dueDate ?? null : null; // Forward scheduling would use start date
 
-    // Calculate dates
+    // Calculate dates ("today" is judged in the factory's time zone)
     this.scheduledOperations = calculateOperationDates(
       this.operations,
       graph,
       anchorDate,
-      this.direction
+      this.direction,
+      this.job?.timezone ?? "UTC"
     );
 
     // Count conflicts
@@ -424,7 +425,8 @@ export class SchedulingEngine {
   /**
    * Build the finite-capacity context: live reservations, per-process ability
    * requirements, and qualified-operator availability. Work centers are
-   * always finite (one operation at a time) and always open — availability
+   * never a concurrency limit (anyone qualified can work at a station) —
+   * availability
    * constraints come from qualified PEOPLE's shifts. Runs just before
    * selection so the rebuilt dependency DAG is final.
    */
@@ -469,7 +471,8 @@ export class SchedulingEngine {
       now.getTime() + (SCHEDULING_HORIZON_DAYS + 7) * 24 * 3_600_000
     );
 
-    // Work centers: capacity 1, always open across the horizon
+    // Work centers: no concurrency limit, always open across the horizon;
+    // reservations are kept for reporting/attribution, not gating
     const capacityByWorkCenter = new Map<string, ResourceCapacityData>();
     for (const wcId of workCenterIds) {
       capacityByWorkCenter.set(wcId, {
@@ -561,6 +564,7 @@ export class SchedulingEngine {
       dependencies: this.dependencies,
       now,
       horizonDays: SCHEDULING_HORIZON_DAYS,
+      timeZone: this.job?.timezone ?? "UTC",
       // Reschedules (incl. the nightly replan) keep operations on their
       // assigned work center — machines only get (re)picked at initial
       // scheduling or by an explicit human move on the operations board.
@@ -588,10 +592,11 @@ export class SchedulingEngine {
         jobDueDate: this.job?.dueDate ?? null,
       });
 
-    // Apply selections
+    // Apply selections (placed timestamps → factory-day date columns)
     this.scheduledOperations = applyWorkCenterSelections(
       this.scheduledOperations,
-      selections
+      selections,
+      this.job?.timezone ?? "UTC"
     );
 
     // Track affected work centers
@@ -856,6 +861,7 @@ export class SchedulingEngine {
             endAt: p.endAt.toISOString(),
             earliestStartAt: p.earliestStartAt?.toISOString() ?? null,
             scheduleNote: p.scheduleNote ?? null,
+            workHours: p.workHours ?? null,
             createdBy: this.userId,
           }))
         )

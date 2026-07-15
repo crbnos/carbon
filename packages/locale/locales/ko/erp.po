@@ -59,6 +59,11 @@ msgstr "{0}건의 임시 분개"
 msgid "{0} lines to map"
 msgstr "매핑할 라인 {0}개"
 
+#. placeholder {0}: formatDurationMilliseconds(detail.workMs, { style: "short" })
+#. placeholder {1}: formatDurationMilliseconds( detail.durationMs, { style: "short" } )
+msgid "{0} of work across {1}"
+msgstr "{1}에 걸친 {0}의 작업"
+
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "주문 {0}건"

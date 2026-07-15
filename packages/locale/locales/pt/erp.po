@@ -59,6 +59,11 @@ msgstr "{0} lançamentos de diário em rascunho"
 msgid "{0} lines to map"
 msgstr "{0} linhas para mapear"
 
+#. placeholder {0}: formatDurationMilliseconds(detail.workMs, { style: "short" })
+#. placeholder {1}: formatDurationMilliseconds( detail.durationMs, { style: "short" } )
+msgid "{0} of work across {1}"
+msgstr "{0} de trabalho em {1}"
+
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} pedidos"

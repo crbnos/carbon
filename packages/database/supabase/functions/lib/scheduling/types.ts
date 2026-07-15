@@ -72,6 +72,8 @@ export type Job = {
   deadlineType?: DeadlineType;
   locationId?: string;
   priority?: number;
+  /** IANA time zone of the job's location; "UTC" when unset */
+  timezone?: string;
 };
 
 export enum SchedulingStrategy {
@@ -166,6 +168,11 @@ export type PlannedReservation = {
    * it could — no explanation needed.
    */
   scheduleNote?: string | null;
+  /**
+   * Actual work content (hours) inside the interval — endAt - startAt minus
+   * off-shift pauses. A 6h gated op can span 22h of wall clock.
+   */
+  workHours?: number | null;
 };
 
 // ============================================================================

@@ -95,7 +95,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       operationDescription: r.jobOperation?.description ?? null,
       hasConflict: r.jobOperation?.hasConflict ?? false,
       conflictReason: r.jobOperation?.conflictReason ?? null,
-      scheduleNote: r.scheduleNote
+      scheduleNote: r.scheduleNote,
+      workHours: r.workHours
     }))
   });
 

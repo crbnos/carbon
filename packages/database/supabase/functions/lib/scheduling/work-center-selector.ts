@@ -4,6 +4,7 @@ import {
   composeLateConflict,
   composePlacementNote,
 } from "./conflict-messages.ts";
+import { toIsoDateInTimeZone } from "./date-utils.ts";
 import type { CalendarWindow } from "./calendar-utils.ts";
 import type { MasterDataProvider } from "./master-data-provider.ts";
 import {
@@ -54,6 +55,11 @@ export type FiniteSchedulingContext = {
   now: Date;
   horizonDays: number;
   /**
+   * IANA time zone of the job's location. Lateness is judged and message
+   * dates are worded in the FACTORY's calendar day, not UTC's.
+   */
+  timeZone: string;
+  /**
    * When true (reschedule mode), an operation that already has a work center
    * keeps it — only timing/conflicts are recomputed. Work centers are only
    * (re)selected at initial scheduling, or manually on the operations board.
@@ -62,9 +68,10 @@ export type FiniteSchedulingContext = {
 };
 
 /**
- * Work Center Selector — finite placement. Every work center is finite with
- * capacity 1 (one operation at a time); ability-gated operations additionally
- * wait for a qualified person to be on shift.
+ * Work Center Selector — placement. Work centers never limit concurrency
+ * (anyone qualified can work at a station); the only finite resource is
+ * PEOPLE: ability-gated operations wait for a qualified person to be on
+ * shift and unreserved.
  */
 export class WorkCenterSelector {
   private provider: MasterDataProvider;
@@ -145,10 +152,12 @@ export class WorkCenterSelector {
 
   /**
    * Select work centers for multiple operations: for each operation, walk
-   * every candidate work center forward to the first interval where the
-   * machine is free AND (when the process requires an ability) a qualified
-   * person is on shift; pick the candidate with the earliest finish (tie →
-   * least reserved time). Conflicts surface on the selection, never fail hard.
+   * forward to the first interval where (when the process requires an
+   * ability) a qualified person is on shift and unreserved — machines never
+   * constrain; ungated ops place at their earliest start. Pick the candidate
+   * work center with the earliest finish (tie → least reserved time, for
+   * load-spreading of the ASSIGNMENT, not gating). Conflicts surface on the
+   * selection, never fail hard.
    */
   selectWorkCentersForOperations(
     operations: ScheduledOperation[],
@@ -236,7 +245,7 @@ export class WorkCenterSelector {
         placedEndByOperation.set(op.id, end);
 
         let outsideConflict: string | null = null;
-        const outsideEndDate = end.toISOString().slice(0, 10);
+        const outsideEndDate = toIsoDateInTimeZone(end, ctx.timeZone);
         if (jobDueDate && outsideEndDate > jobDueDate) {
           outsideConflict = composeLateConflict(outsideEndDate, jobDueDate, {
             kind: "outside-processing",
@@ -363,6 +372,7 @@ export class WorkCenterSelector {
           horizonEnd,
           capacity,
           operatorPool: pool,
+          timeZone: ctx.timeZone,
         });
 
         if (isConflict(result)) {
@@ -390,17 +400,20 @@ export class WorkCenterSelector {
       if (best) {
         const { wcId, slot, capacity } = best;
 
-        // Who is ahead of us in the queue? Other jobs' reservations in the
-        // region between when we could have started and when we actually
-        // did. Captured before this op's own interval is committed.
+        // Who is ahead of us in the queue? Machines don't limit concurrency,
+        // so a wait can only come from the OPERATOR pool: other jobs'
+        // pool reservations in the region between when we could have started
+        // and when we actually did. Captured before this op's own interval
+        // is committed.
+        const poolReservations = pool?.reservations ?? [];
         const blockers = formatBlockingJobs(
-          capacity.reservations,
+          poolReservations,
           earliestStart,
           slot.start
         );
-        // Untagged reservations in the wait region are this job's own earlier
-        // operations on the same work center (in-run pushes carry no job id)
-        const ownJobAhead = capacity.reservations.some(
+        // Untagged pool reservations in the wait region are this job's own
+        // earlier gated operations (in-run pushes carry no job id)
+        const ownJobAhead = poolReservations.some(
           (r) =>
             !r.readableJobId &&
             r.startAt.getTime() < slot.start.getTime() &&
@@ -429,6 +442,7 @@ export class WorkCenterSelector {
           endAt: slot.end,
           earliestStartAt: earliestStart,
           scheduleNote: composePlacementNote(cause, waitedMs),
+          workHours: durationHours,
         });
         if (requirement) {
           const list =
@@ -441,13 +455,14 @@ export class WorkCenterSelector {
             operationId: op.id,
             startAt: slot.start,
             endAt: slot.end,
+            workHours: durationHours,
           });
         }
         placedEndByOperation.set(op.id, slot.end);
 
         // Late vs the JOB due date => surface as a conflict naming the cause
         let conflict: string | null = null;
-        const placedEndDate = slot.end.toISOString().slice(0, 10);
+        const placedEndDate = toIsoDateInTimeZone(slot.end, ctx.timeZone);
         if (jobDueDate && placedEndDate > jobDueDate) {
           conflict = composeLateConflict(placedEndDate, jobDueDate, cause);
         }
@@ -496,7 +511,7 @@ export class WorkCenterSelector {
     const employees = ctx.employeesByAbility.get(requirement.abilityId) ?? [];
 
     const members = employees
-      .filter((e) => isEligibleOperator(e, earliestStart))
+      .filter((e) => isEligibleOperator(e, earliestStart, ctx.timeZone))
       .map((e) => ({ employeeId: e.employeeId, windows: e.windows }));
 
     // Return the SAME array instance stored in the context so in-run pushes

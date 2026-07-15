@@ -158,14 +158,27 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
   async getJob(jobId: string): Promise<Job | undefined> {
     const job = await this.db
       .selectFrom("job")
-      .select(["id", "dueDate", "deadlineType", "locationId", "priority"])
-      .where("id", "=", jobId)
+      .leftJoin("location", "location.id", "job.locationId")
+      .select([
+        "job.id",
+        "job.dueDate",
+        "job.deadlineType",
+        "job.locationId",
+        "job.priority",
+        "location.timezone",
+      ])
+      .where("job.id", "=", jobId)
+      .where("job.companyId", "=", this.companyId)
       .executeTakeFirst();
     if (!job) return undefined;
     // pg returns DATE columns as JS Date objects; every consumer compares
     // dueDate lexicographically as "YYYY-MM-DD" (a Date silently fails those
     // comparisons — string > Date is always false)
-    return { ...job, dueDate: toIsoDate(job.dueDate) };
+    return {
+      ...job,
+      dueDate: toIsoDate(job.dueDate),
+      timezone: job.timezone ?? "UTC",
+    };
   }
 
   async getOperations(

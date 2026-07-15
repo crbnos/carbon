@@ -55,7 +55,7 @@ function expectSlot(r: AllocationResult): { start: Date; end: Date } {
   return r;
 }
 
-Deno.test("fills a work center sequentially — one operation at a time", () => {
+Deno.test("work centers never limit concurrency — ungated ops overlap freely", () => {
   const capacity = makeCapacity();
   const placed: { start: Date; end: Date }[] = [];
 
@@ -72,15 +72,15 @@ Deno.test("fills a work center sequentially — one operation at a time", () => 
     capacity.reservations.push({ startAt: slot.start, endAt: slot.end });
   }
 
-  // 24/7 continuum: back-to-back with no overlap and no gaps
-  assertEquals(placed[0].start.toISOString(), "2026-01-05T08:00:00.000Z");
-  assertEquals(placed[0].end.toISOString(), "2026-01-05T12:00:00.000Z");
-  assertEquals(placed[1].start.toISOString(), "2026-01-05T12:00:00.000Z");
-  assertEquals(placed[1].end.toISOString(), "2026-01-05T16:00:00.000Z");
-  assertEquals(placed[2].start.toISOString(), "2026-01-05T16:00:00.000Z");
+  // Anyone qualified can work at a station: all three place at the earliest
+  // start, fully overlapping — only the operator pool ever serializes work
+  for (const slot of placed) {
+    assertEquals(slot.start.toISOString(), "2026-01-05T08:00:00.000Z");
+    assertEquals(slot.end.toISOString(), "2026-01-05T12:00:00.000Z");
+  }
 });
 
-Deno.test("an existing reservation pushes the operation to its end", () => {
+Deno.test("existing work-center reservations do not delay ungated ops", () => {
   const capacity = makeCapacity([
     {
       startAt: utc("2026-01-05T06:00:00Z"),
@@ -97,7 +97,8 @@ Deno.test("an existing reservation pushes the operation to its end", () => {
     })
   );
 
-  assertEquals(slot.start.toISOString(), "2026-01-05T18:00:00.000Z");
+  // Machine "busy" is not a constraint — the op starts at its earliest start
+  assertEquals(slot.start.toISOString(), "2026-01-05T08:00:00.000Z");
 });
 
 Deno.test("conflict when the horizon is exhausted", () => {
@@ -350,11 +351,14 @@ Deno.test("formatBlockingJobs ranks by op count then job id, capping at 3", () =
   );
 });
 
-Deno.test("delayed placement names the job whose reservation forced the wait", () => {
-  // Another job holds the machine 06:00-18:00; our op could start at 08:00
-  const capacity = makeCapacity([
-    interval("2026-01-05T06:00:00Z", "2026-01-05T18:00:00Z", "J000001"),
-  ]);
+Deno.test("delayed placement names the job whose POOL reservation forced the wait", () => {
+  // Another job holds the only qualified operator 06:00-18:00 (shiftless
+  // member = 24/7 availability); our op could start at 08:00
+  const capacity = makeCapacity();
+  const pool = makePool(
+    [{ employeeId: "emp-1", windows: alwaysOpen }],
+    [interval("2026-01-05T06:00:00Z", "2026-01-05T18:00:00Z", "J000001")]
+  );
   const earliestStart = utc("2026-01-05T08:00:00Z");
 
   const slot = expectSlot(
@@ -363,13 +367,14 @@ Deno.test("delayed placement names the job whose reservation forced the wait", (
       earliestStart,
       horizonEnd: HORIZON,
       capacity,
+      operatorPool: pool,
     })
   );
 
   // The selector composes the past-due message from exactly this call
   assertEquals(slot.start.toISOString(), "2026-01-05T18:00:00.000Z");
   assertEquals(
-    formatBlockingJobs(capacity.reservations, earliestStart, slot.start),
+    formatBlockingJobs(pool.reservations, earliestStart, slot.start),
     "queued behind J000001 (1 op)"
   );
 });

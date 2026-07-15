@@ -149,3 +149,30 @@ Deno.test("operation without a selection passes through unchanged", () => {
   );
   assertEquals(result.get("op-1"), original);
 });
+
+Deno.test("placed dates are recorded as the factory's calendar day", () => {
+  const ops = new Map<string, ScheduledOperation>([["op-1", makeOp({})]]);
+  const selections = new Map<string, WorkCenterSelection>([
+    [
+      "op-1",
+      {
+        workCenterId: "wc-1",
+        priority: 0,
+        // 21:34 UTC on the 20th = 03:04 IST on the 21st
+        placedStart: "2026-07-19T22:00:00.000Z",
+        placedEnd: "2026-07-20T21:34:00.000Z",
+        conflict: null,
+      },
+    ],
+  ]);
+
+  const utc = applyWorkCenterSelections(ops, selections).get("op-1")!;
+  assertEquals(utc.startDate, "2026-07-19");
+  assertEquals(utc.dueDate, "2026-07-20");
+
+  const ist = applyWorkCenterSelections(ops, selections, "Asia/Kolkata").get(
+    "op-1"
+  )!;
+  assertEquals(ist.startDate, "2026-07-20");
+  assertEquals(ist.dueDate, "2026-07-21");
+});

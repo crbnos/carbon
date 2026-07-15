@@ -8,7 +8,7 @@ import {
 
 const HOUR = 3_600_000;
 
-Deno.test("waited behind other jobs → machine-queue naming the blockers", () => {
+Deno.test("waited behind other jobs → operator-queue naming the blockers", () => {
   const cause = classifyLatePlacement({
     waitedMs: 30 * HOUR,
     blockers: "queued behind J000009 (3 ops), J000010 (1 op)",
@@ -16,12 +16,12 @@ Deno.test("waited behind other jobs → machine-queue naming the blockers", () =
     dominantDep: null,
   });
   assertEquals(cause, {
-    kind: "machine-queue",
+    kind: "operator-queue",
     blockers: "queued behind J000009 (3 ops), J000010 (1 op)",
   });
   assertEquals(
     composeLateConflict("2026-07-20", "2026-07-17", cause),
-    "Finishes 2026-07-20 but the job is due 2026-07-17 — waited for the work center, queued behind J000009 (3 ops), J000010 (1 op)"
+    "Finishes 2026-07-20 but the job is due 2026-07-17 — waited for a qualified operator, queued behind J000009 (3 ops), J000010 (1 op)"
   );
 });
 
@@ -32,7 +32,7 @@ Deno.test("blockers win over own-job queueing and a dominant dep", () => {
     ownJobAhead: true,
     dominantDep: { description: "Assembly" },
   });
-  assertEquals(cause.kind, "machine-queue");
+  assertEquals(cause.kind, "operator-queue");
 });
 
 Deno.test("waited behind this job's own operations → own-job-queue", () => {
@@ -45,7 +45,7 @@ Deno.test("waited behind this job's own operations → own-job-queue", () => {
   assertEquals(cause, { kind: "own-job-queue" });
   assertEquals(
     composeLateConflict("2026-07-20", "2026-07-17", cause),
-    "Finishes 2026-07-20 but the job is due 2026-07-17 — waited for the work center, busy with earlier operations in this job"
+    "Finishes 2026-07-20 but the job is due 2026-07-17 — waited for a qualified operator, busy with earlier operations in this job"
   );
 });
 
@@ -115,17 +115,17 @@ Deno.test("formatWaitDuration is coarse and human", () => {
 Deno.test("placement note: queued behind other jobs", () => {
   assertEquals(
     composePlacementNote(
-      { kind: "machine-queue", blockers: "queued behind J000010 (2 ops)" },
+      { kind: "operator-queue", blockers: "queued behind J000010 (2 ops)" },
       14 * HOUR
     ),
-    "Waited 14h for the work center — queued behind J000010 (2 ops)"
+    "Waited 14h for a qualified operator — queued behind J000010 (2 ops)"
   );
 });
 
 Deno.test("placement note: own job ahead / operator wait", () => {
   assertEquals(
     composePlacementNote({ kind: "own-job-queue" }, 8 * HOUR),
-    "Waited 8h for the work center — busy with earlier operations in this job"
+    "Waited 8h for a qualified operator — busy with earlier operations in this job"
   );
   assertEquals(
     composePlacementNote({ kind: "operator-wait" }, 90 * 60_000),

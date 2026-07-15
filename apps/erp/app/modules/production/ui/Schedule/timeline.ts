@@ -51,6 +51,8 @@ export type TimelineReservation = {
   earliestStartAt?: string | null;
   /** Engine's plain-words reason for the placement timing */
   scheduleNote?: string | null;
+  /** Actual work content (hours) inside the interval, excluding off-shift pauses */
+  workHours?: number | null;
 };
 
 export type TimelineProductionEvent = {
@@ -85,6 +87,11 @@ export type TimelineNodeDetail = {
   scheduleNote?: string | null;
   /** Time spent waiting for capacity before the start */
   waitMs?: number;
+  /**
+   * Actual work content in ms when it differs from durationMs — a gated op's
+   * span includes off-shift pauses ("6h of work across 22h").
+   */
+  workMs?: number;
   /**
    * Owning job for rows in the cross-job resource view, where each
    * reservation belongs to a different job. The single-job view leaves these
@@ -481,7 +488,10 @@ export function buildJobTimeline(input: {
       assigneeName: op.assigneeName,
       conflictReason: op.hasConflict ? op.conflictReason : null,
       scheduleNote,
-      waitMs
+      waitMs,
+      workMs: wcReservations[0]?.workHours
+        ? wcReservations[0].workHours * 3_600_000
+        : undefined
     };
 
     // Grow the assembly node — and every ancestor assembly — to cover this
@@ -554,7 +564,8 @@ export function buildJobTimeline(input: {
         durationMs: Math.max(rEnd - rStart, 0),
         approximate: false,
         resourceKind: r.resourceKind,
-        scheduleNote: r.scheduleNote ?? null
+        scheduleNote: r.scheduleNote ?? null,
+        workMs: r.workHours ? r.workHours * 3_600_000 : undefined
       };
     }
 

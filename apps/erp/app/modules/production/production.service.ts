@@ -962,7 +962,7 @@ export async function getCapacityReservationsByJob(
   return client
     .from("capacityReservation")
     .select(
-      "id, operationId, resourceKind, resourceId, startAt, endAt, earliestStartAt, scheduleNote"
+      "id, operationId, resourceKind, resourceId, startAt, endAt, earliestStartAt, scheduleNote, workHours"
     )
     .eq("jobId", jobId)
     .is("scenarioId", null);
@@ -980,7 +980,7 @@ export async function getCapacityReservationsForResources(
   return client
     .from("capacityReservation")
     .select(
-      `id, operationId, jobId, resourceKind, resourceId, startAt, endAt, scheduleNote,
+      `id, operationId, jobId, resourceKind, resourceId, startAt, endAt, scheduleNote, workHours,
        job!inner(jobId, status, dueDate),
        jobOperation(description, hasConflict, conflictReason)`
     )

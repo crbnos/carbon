@@ -27,6 +27,8 @@ export type ResourceTimelineReservation = {
   conflictReason: string | null;
   /** Engine's plain-words reason for the placement timing */
   scheduleNote?: string | null;
+  /** Actual work content (hours) inside the interval, excluding pauses */
+  workHours?: number | null;
 };
 
 export type ResourceTimeline = {
@@ -203,6 +205,7 @@ export function buildResourceTimeline(input: {
         workCenterName: r.resourceKind === "WorkCenter" ? r.resourceName : null,
         conflictReason: r.hasConflict ? r.conflictReason : null,
         scheduleNote: r.scheduleNote ?? null,
+        workMs: r.workHours ? r.workHours * 3_600_000 : undefined,
         jobId: r.jobId,
         jobReadableId: r.jobReadableId
       };

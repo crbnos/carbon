@@ -59,6 +59,11 @@ msgstr "{0} Entwurfs-Journaleinträge"
 msgid "{0} lines to map"
 msgstr "{0} Zeilen zum Zuordnen"
 
+#. placeholder {0}: formatDurationMilliseconds(detail.workMs, { style: "short" })
+#. placeholder {1}: formatDurationMilliseconds( detail.durationMs, { style: "short" } )
+msgid "{0} of work across {1}"
+msgstr "{0} Arbeit über {1}"
+
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} Bestellungen"

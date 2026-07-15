@@ -117,6 +117,33 @@ describe("buildJobTimeline", () => {
     );
   });
 
+  it("carries work content vs wall-clock span into details", () => {
+    const result = buildJobTimeline({
+      job,
+      operations: [op({})],
+      reservations: [
+        // 6h08m of work stretched across a 22h08m span (off-shift pause)
+        reservation({
+          startAt: "2026-07-16T09:43:00.000Z",
+          endAt: "2026-07-17T07:51:00.000Z",
+          workHours: 6.133
+        })
+      ],
+      productionEvents: []
+    });
+
+    const opDetail = result.detailsById["op-1"];
+    expect(opDetail.workMs).toBeCloseTo(6.133 * 3_600_000, 0);
+    expect(opDetail.durationMs).toBe(
+      Date.parse("2026-07-17T07:51:00.000Z") -
+        Date.parse("2026-07-16T09:43:00.000Z")
+    );
+    expect(result.detailsById["res-1"].workMs).toBeCloseTo(
+      6.133 * 3_600_000,
+      0
+    );
+  });
+
   it("no ghost when the op started as early as it could", () => {
     const result = buildJobTimeline({
       job,

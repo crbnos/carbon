@@ -2,7 +2,7 @@ import {
   assert,
   assertEquals,
 } from "https://deno.land/std@0.175.0/testing/asserts.ts";
-import { toIsoDate } from "./date-utils.ts";
+import { toIsoDate, toIsoDateInTimeZone } from "./date-utils.ts";
 
 Deno.test("toIsoDate converts a pg DATE (local-midnight Date object) to YYYY-MM-DD", () => {
   // node-postgres constructs DATE columns as new Date(y, m, d) — LOCAL midnight
@@ -36,4 +36,17 @@ Deno.test("regression: String(Date) breaks lexicographic date comparison; toIsoD
 
   // Normalized, the comparison is correct: expired-as-of-start fails the check.
   assert(!(toIsoDate(expiredDate)! > opStart));
+});
+
+Deno.test("toIsoDateInTimeZone: the factory's calendar day, not UTC's", () => {
+  // Pack's real case: ends 2026-07-20 21:34 UTC = 2026-07-21 03:04 IST.
+  // The message must say the 21st for an Indian factory, the 20th for UTC.
+  const packEnd = new Date("2026-07-20T21:34:00.000Z");
+  assertEquals(toIsoDateInTimeZone(packEnd, "Asia/Kolkata"), "2026-07-21");
+  assertEquals(toIsoDateInTimeZone(packEnd, "UTC"), "2026-07-20");
+  // Zones behind UTC flip the other way
+  assertEquals(
+    toIsoDateInTimeZone(new Date("2026-07-21T02:00:00.000Z"), "America/New_York"),
+    "2026-07-20"
+  );
 });

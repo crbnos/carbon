@@ -61,3 +61,17 @@ Deno.test("regression: pg DATE object stringified via String() defeated the expi
   assertEquals(isEligibleOperator(normalized, opStart), false);
   assert(toIsoDate(pgDateExpired) === "2026-07-07");
 });
+
+Deno.test("expiry boundary respects the factory time zone", () => {
+  const employee: QualifiedEmployee = {
+    employeeId: "emp-1",
+    active: true,
+    trainingCompleted: true,
+    expiresAt: "2026-07-21",
+  };
+  // 20:00 UTC on the 20th is already the 21st in India: the qualification
+  // expiring on the 21st is expired-as-of-start there, but not in UTC.
+  const start = new Date("2026-07-20T20:00:00.000Z");
+  assert(isEligibleOperator(employee, start, "UTC"));
+  assert(!isEligibleOperator(employee, start, "Asia/Kolkata"));
+});

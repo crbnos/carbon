@@ -11,11 +11,11 @@
  */
 
 export type LatePlacementCause =
-  /** Waited for the work center behind other jobs' reservations. */
-  | { kind: "machine-queue"; blockers: string }
-  /** Waited for the work center behind this job's own earlier operations. */
+  /** Waited for a qualified operator busy on other jobs' operations. */
+  | { kind: "operator-queue"; blockers: string }
+  /** Waited for a qualified operator busy on this job's earlier operations. */
   | { kind: "own-job-queue" }
-  /** Waited for a qualified operator (off shift or reserved elsewhere). */
+  /** Waited for a qualified operator (nobody on shift in the gap). */
   | { kind: "operator-wait" }
   /** Started on time for its own resources but a predecessor finished late. */
   | { kind: "inherited-delay"; predecessorDescription: string | null }
@@ -38,7 +38,7 @@ export function classifyLatePlacement(args: {
 }): LatePlacementCause {
   const { waitedMs, blockers, ownJobAhead, dominantDep } = args;
   if (waitedMs > 0) {
-    if (blockers) return { kind: "machine-queue", blockers };
+    if (blockers) return { kind: "operator-queue", blockers };
     if (ownJobAhead) return { kind: "own-job-queue" };
     return { kind: "operator-wait" };
   }
@@ -76,14 +76,14 @@ export function composePlacementNote(
   waitedMs: number
 ): string | null {
   switch (cause.kind) {
-    case "machine-queue":
-      return `Waited ${formatWaitDuration(waitedMs)} for the work center — ${
+    case "operator-queue":
+      return `Waited ${formatWaitDuration(waitedMs)} for a qualified operator — ${
         cause.blockers
       }`;
     case "own-job-queue":
       return `Waited ${formatWaitDuration(
         waitedMs
-      )} for the work center — busy with earlier operations in this job`;
+      )} for a qualified operator — busy with earlier operations in this job`;
     case "operator-wait":
       return `Waited ${formatWaitDuration(
         waitedMs
@@ -105,10 +105,10 @@ export function composeLateConflict(
 ): string {
   const late = `Finishes ${finishDate} but the job is due ${jobDueDate}`;
   switch (cause.kind) {
-    case "machine-queue":
-      return `${late} — waited for the work center, ${cause.blockers}`;
+    case "operator-queue":
+      return `${late} — waited for a qualified operator, ${cause.blockers}`;
     case "own-job-queue":
-      return `${late} — waited for the work center, busy with earlier operations in this job`;
+      return `${late} — waited for a qualified operator, busy with earlier operations in this job`;
     case "operator-wait":
       return `${late} — waited for a qualified operator to be available`;
     case "inherited-delay":

@@ -16,3 +16,30 @@ export function toIsoDate(value: unknown): string | null {
   const day = String(d.getDate()).padStart(2, "0");
   return `${d.getFullYear()}-${month}-${day}`;
 }
+
+const isoDateFormatters = new Map<string, Intl.DateTimeFormat>();
+
+/**
+ * The calendar date ("YYYY-MM-DD") of an INSTANT in a given IANA time zone.
+ *
+ * The engine judges lateness, words conflict messages, and persists operation
+ * dates in the FACTORY's day, not UTC's — an op ending 03:04 IST on the 21st
+ * must not be recorded as finishing "2026-07-20". Use this only for real
+ * timestamps (slot ends, "now"); date-only strings already ARE calendar dates
+ * and must not be re-interpreted through a zone (see formatDate in
+ * date-calculator.ts, which round-trips date strings in pure date space).
+ */
+export function toIsoDateInTimeZone(date: Date, timeZone: string): string {
+  let formatter = isoDateFormatters.get(timeZone);
+  if (!formatter) {
+    // en-CA formats as YYYY-MM-DD
+    formatter = new Intl.DateTimeFormat("en-CA", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+    isoDateFormatters.set(timeZone, formatter);
+  }
+  return formatter.format(date);
+}
