@@ -2,11 +2,7 @@ import type { JSONContent } from "@carbon/react";
 import { HStack, Separator, VStack } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import type { ReactNode } from "react";
-import type {
-  ChangeOrder,
-  ChangeOrderActionTask,
-  ChangeOrderReleaseConflict
-} from "~/modules/items";
+import type { ChangeOrder, ChangeOrderActionTask } from "~/modules/items";
 import type { AffectedItemDraft } from "./affectedItem.types";
 import ChangeOrderActions from "./ChangeOrderActions";
 import { ChangeOrderContentSection } from "./ChangeOrderContent";
@@ -49,7 +45,6 @@ export default function ChangeOrderRail({
   affectedItems,
   actions,
   impactUsedIn,
-  releaseConflicts,
   isDisabled
 }: {
   id: string;
@@ -57,7 +52,6 @@ export default function ChangeOrderRail({
   affectedItems: AffectedItemDraft[];
   actions: ChangeOrderActionTask[];
   impactUsedIn: ChangeOrderImpactItem[];
-  releaseConflicts: ChangeOrderReleaseConflict[];
   isDisabled: boolean;
 }) {
   const isImplementation = changeOrder.status === "Implementation";
@@ -81,7 +75,6 @@ export default function ChangeOrderRail({
         <ChangeOrderReleaseMerge
           changeOrderId={id}
           status={changeOrder.status}
-          conflicts={releaseConflicts}
           changes={changes}
         />
       )}

@@ -19,13 +19,14 @@ import {
   LuGitPullRequestArrow,
   LuTrash
 } from "react-icons/lu";
-import { Link, useFetcher, useParams } from "react-router";
+import { Link, useParams } from "react-router";
 import { useAuditLog } from "~/components/AuditLog";
 import { DetailsTopbar } from "~/components/Layout";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { path } from "~/utils/path";
 import type { PartSummary } from "../../types";
+import { CreateChangeOrderModal } from "../ChangeOrder";
 import { getItemLifecycleStatus } from "../Item/ItemSupersessionForm";
 import { usePartNavigation } from "./usePartNavigation";
 
@@ -38,7 +39,7 @@ const PartHeader = () => {
   const { company } = useUser();
   const permissions = usePermissions();
   const deleteModal = useDisclosure();
-  const changeOrderFetcher = useFetcher();
+  const changeOrderModal = useDisclosure();
   const { trigger: auditLogTrigger, drawer: auditLogDrawer } = useAuditLog({
     entityType: "item",
     entityId: itemId,
@@ -92,12 +93,7 @@ const PartHeader = () => {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   disabled={!permissions.can("create", "parts")}
-                  onClick={() =>
-                    changeOrderFetcher.submit(null, {
-                      method: "post",
-                      action: path.to.newChangeOrderFromItem(itemId)
-                    })
-                  }
+                  onClick={changeOrderModal.onOpen}
                 >
                   <DropdownMenuIcon icon={<LuGitPullRequestArrow />} />
                   <Trans>Create Change Order</Trans>
@@ -136,6 +132,12 @@ const PartHeader = () => {
           />
         )}
       </div>
+      {changeOrderModal.isOpen && (
+        <CreateChangeOrderModal
+          itemId={itemId}
+          onClose={changeOrderModal.onClose}
+        />
+      )}
       {auditLogDrawer}
     </>
   );

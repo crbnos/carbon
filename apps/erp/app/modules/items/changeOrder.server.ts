@@ -4,12 +4,6 @@ import { trigger } from "@carbon/jobs";
 import { NotificationEvent } from "@carbon/notifications";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { activateMethodVersion, upsertItemSupersession } from "~/modules/items";
-import {
-  buildReleaseConflictEntries,
-  getCurrentActiveMakeMethodId
-} from "./changeOrder.diff";
-import type { ChangeOrderMergeResolution } from "./changeOrder.models";
-import { changeOrderMergeEntryKey } from "./changeOrder.models";
 import { supersessionModes } from "./items.models";
 
 // =============================================================================
@@ -74,19 +68,9 @@ export async function applyChangeOrder(
     changeOrderId: string;
     userId: string;
     companyId: string;
-    // Release-time 2-way merge (Q3): the user's per-line picks and an explicit
-    // acknowledgement. Empty/false on a plain release (no moved base).
-    resolutions?: ChangeOrderMergeResolution[];
-    mergeAcknowledged?: boolean;
   }
 ): Promise<{ data: { id: string } | null; error: { message: string } | null }> {
-  const {
-    changeOrderId,
-    userId,
-    companyId,
-    resolutions = [],
-    mergeAcknowledged = false
-  } = args;
+  const { changeOrderId, userId, companyId } = args;
 
   const co = await client
     .from("changeOrder")
@@ -127,9 +111,7 @@ export async function applyChangeOrder(
       changeOrderId,
       companyId,
       userId,
-      affected,
-      resolutions,
-      mergeAcknowledged
+      affected
     });
     if (result.error) return { data: null, error: result.error };
   }
@@ -190,18 +172,9 @@ async function releaseAffectedItem(
       discontinuationDate: string | null;
       successorEffectivityDate: string | null;
     };
-    resolutions: ChangeOrderMergeResolution[];
-    mergeAcknowledged: boolean;
   }
 ): Promise<{ error: { message: string } | null }> {
-  const {
-    changeOrderId,
-    companyId,
-    userId,
-    affected,
-    resolutions,
-    mergeAcknowledged
-  } = input;
+  const { changeOrderId, companyId, userId, affected } = input;
   const { changeType, draftMakeMethodId, newItemId } = affected;
   const sourceItemId = affected.itemId;
 
@@ -222,23 +195,10 @@ async function releaseAffectedItem(
     return { error: null };
   }
 
-  // Release-time 2-way merge (Q3). A Version activates the Draft over the item's
-  // CURRENT live method; if that live method moved since the draft was created
-  // (a same-part parallel CO released first), reconcile draft-vs-live first so
-  // the other CO's work isn't silently clobbered.
-  if (changeType === "Version") {
-    const reconciled = await reconcileDraftWithLive(client, {
-      affected,
-      draftMakeMethodId,
-      resolutions,
-      mergeAcknowledged,
-      companyId,
-      userId
-    });
-    if (reconciled.error) return { error: reconciled.error };
-  }
-
-  // Activate the Draft method (Draft → Active; prior Active → Archived).
+  // Activate the Draft method (Draft → Active; prior Active → Archived). A
+  // Version simply appends a new Active version and archives the prior one — the
+  // prior version's rows are preserved as method history, so there is nothing to
+  // merge even if another CO released a newer version in the meantime.
   const activated = await activateMethodVersion(client, {
     id: draftMakeMethodId,
     companyId,
@@ -292,233 +252,6 @@ async function releaseAffectedItem(
     }
   }
 
-  return { error: null };
-}
-
-// -----------------------------------------------------------------------------
-// Release-time 2-way merge (Q3). When the live method moved under a Version
-// draft, reconcile draft("mine") vs current live("theirs") per the user's picks
-// (default = the safe choice the diff computed), then activation reflects the
-// merged end-state. "Keep mine" is a no-op; "take theirs" makes the draft line
-// match live — drop the draft's version (if any) and re-insert live's (if any).
-// -----------------------------------------------------------------------------
-const AUDIT_COLUMNS = [
-  "id",
-  "createdAt",
-  "createdBy",
-  "updatedAt",
-  "updatedBy"
-];
-
-// Every method-row table this merge copies between. `never` casts below are
-// confined to this set — a generic column spread can't be expressed across the
-// tables' distinct Insert types, and the rows are read straight back from the DB.
-type MethodRowTable =
-  | "methodMaterial"
-  | "methodOperation"
-  | "methodOperationStep"
-  | "methodOperationParameter"
-  | "methodOperationTool";
-
-// Copy one live row into the target method, re-pointing linkage/tenancy via
-// `overrides` (audit + id columns are dropped so the DB assigns fresh ones).
-async function insertRowCopy(
-  client: SupabaseClient<Database>,
-  table: MethodRowTable,
-  sourceId: string,
-  companyId: string,
-  overrides: Record<string, unknown>
-): Promise<{ id: string | null; error: { message: string } | null }> {
-  const src = await client
-    .from(table)
-    .select("*")
-    .eq("id", sourceId)
-    .eq("companyId", companyId)
-    .single();
-  if (src.error) return { id: null, error: src.error };
-  const cols = { ...(src.data as Record<string, unknown>) };
-  for (const k of AUDIT_COLUMNS) delete cols[k];
-  const ins = await client
-    .from(table)
-    .insert({ ...cols, ...overrides } as never)
-    .select("id")
-    .single();
-  return { id: ins.data?.id ?? null, error: ins.error };
-}
-
-// Remove a draft operation and everything hanging off it (children + any draft
-// material links) so a subsequent copy/activation has no dangling references.
-async function deleteDraftOperation(
-  client: SupabaseClient<Database>,
-  operationId: string,
-  companyId: string
-): Promise<{ error: { message: string } | null }> {
-  await client
-    .from("methodMaterial")
-    .update({ methodOperationId: null })
-    .eq("methodOperationId", operationId)
-    .eq("companyId", companyId);
-  for (const table of [
-    "methodOperationStep",
-    "methodOperationParameter",
-    "methodOperationTool"
-  ] as const) {
-    await client
-      .from(table)
-      .delete()
-      .eq("operationId", operationId)
-      .eq("companyId", companyId);
-  }
-  const del = await client
-    .from("methodOperation")
-    .delete()
-    .eq("id", operationId)
-    .eq("companyId", companyId);
-  return { error: del.error };
-}
-
-// Apply one "take theirs" pick: make the draft's line match live. Material and
-// operation share the same drop-then-insert shape; an operation carries its
-// children (steps/parameters/tools) as a unit.
-async function applyTheirs(
-  client: SupabaseClient<Database>,
-  input: {
-    kind: ChangeOrderMergeResolution["kind"];
-    draftMakeMethodId: string;
-    draftId: string | null;
-    liveId: string | null;
-    companyId: string;
-    userId: string;
-  }
-): Promise<{ error: { message: string } | null }> {
-  const { kind, draftMakeMethodId, draftId, liveId, companyId, userId } = input;
-
-  // Drop the draft's version of the line (if it has one).
-  if (draftId) {
-    if (kind === "operation") {
-      const del = await deleteDraftOperation(client, draftId, companyId);
-      if (del.error) return del;
-    } else {
-      const del = await client
-        .from("methodMaterial")
-        .delete()
-        .eq("id", draftId)
-        .eq("companyId", companyId);
-      if (del.error) return { error: del.error };
-    }
-  }
-
-  // Live-only removal (draft never had it / just dropped it) → nothing to add.
-  if (!liveId) return { error: null };
-
-  if (kind === "material") {
-    // methodOperationId points at a LIVE operation — null it, don't dangle it.
-    const copied = await insertRowCopy(
-      client,
-      "methodMaterial",
-      liveId,
-      companyId,
-      {
-        makeMethodId: draftMakeMethodId,
-        methodOperationId: null,
-        companyId,
-        createdBy: userId
-      }
-    );
-    return { error: copied.error };
-  }
-
-  const op = await insertRowCopy(client, "methodOperation", liveId, companyId, {
-    makeMethodId: draftMakeMethodId,
-    companyId,
-    createdBy: userId
-  });
-  if (op.error || !op.id) {
-    return { error: op.error ?? { message: "Failed to copy operation" } };
-  }
-  for (const table of [
-    "methodOperationStep",
-    "methodOperationParameter",
-    "methodOperationTool"
-  ] as const) {
-    const kids = await client
-      .from(table)
-      .select("id")
-      .eq("operationId", liveId)
-      .eq("companyId", companyId);
-    if (kids.error) return { error: kids.error };
-    for (const kid of kids.data ?? []) {
-      const copied = await insertRowCopy(client, table, kid.id, companyId, {
-        operationId: op.id,
-        companyId,
-        createdBy: userId
-      });
-      if (copied.error) return { error: copied.error };
-    }
-  }
-  return { error: null };
-}
-
-// Reconcile a Version draft against the item's current live method before it is
-// activated. No-op when the base hasn't moved. When it has, blocks release until
-// the merge is acknowledged, then applies each conflicting line's resolution
-// (client pick, else the diff's safe default).
-async function reconcileDraftWithLive(
-  client: SupabaseClient<Database>,
-  input: {
-    affected: { id: string; itemId: string; baseMakeMethodId: string | null };
-    draftMakeMethodId: string;
-    resolutions: ChangeOrderMergeResolution[];
-    mergeAcknowledged: boolean;
-    companyId: string;
-    userId: string;
-  }
-): Promise<{ error: { message: string } | null }> {
-  const { affected, draftMakeMethodId, resolutions, companyId, userId } = input;
-
-  const liveId = await getCurrentActiveMakeMethodId(
-    client,
-    affected.itemId,
-    companyId
-  );
-  if (!liveId || liveId === affected.baseMakeMethodId) return { error: null };
-
-  const built = await buildReleaseConflictEntries(
-    client,
-    { id: affected.id, itemId: affected.itemId, draftMakeMethodId },
-    liveId,
-    companyId
-  );
-  if (built.error) return { error: built.error };
-  if (built.entries.length === 0) return { error: null };
-  if (!input.mergeAcknowledged) {
-    return {
-      error: {
-        message:
-          "The live method changed since this change order started. Review and resolve the merge before releasing."
-      }
-    };
-  }
-
-  const picks = new Map(
-    resolutions
-      .filter((r) => r.affectedItemId === affected.id)
-      .map((r) => [changeOrderMergeEntryKey(r), r.choice])
-  );
-  for (const entry of built.entries) {
-    const choice =
-      picks.get(changeOrderMergeEntryKey(entry)) ?? entry.defaultChoice;
-    if (choice !== "theirs") continue;
-    const applied = await applyTheirs(client, {
-      kind: entry.kind,
-      draftMakeMethodId,
-      draftId: entry.draftId,
-      liveId: entry.liveId,
-      companyId,
-      userId
-    });
-    if (applied.error) return applied;
-  }
   return { error: null };
 }
 

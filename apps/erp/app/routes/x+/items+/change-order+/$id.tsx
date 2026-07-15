@@ -10,7 +10,6 @@ import {
   getChangeOrderActions,
   getChangeOrderAffectedItems,
   getChangeOrderDiff,
-  getChangeOrderReleaseDiff,
   getChangeOrderRequiredActionsList,
   getChangeOrderTypesList,
   getConfigurationParameters,
@@ -91,13 +90,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const linkedNonConformance = linkedNonConformanceId
     ? (await getIssue(client, linkedNonConformanceId)).data
     : null;
-
-  // Release-time merge conflicts (Q3) — only relevant at the release step. Empty
-  // unless a same-part parallel CO moved the live method under a Version draft.
-  const releaseConflicts =
-    changeOrder.data?.status === "Implementation"
-      ? (await getChangeOrderReleaseDiff(client, id, companyId)).data
-      : [];
 
   const affectedRows = affected.data ?? [];
 
@@ -280,7 +272,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     types: types.data ?? [],
     affectedItems,
     diff: diff.data ?? { items: [] },
-    releaseConflicts,
     actions: actions.data ?? [],
     requiredActions,
     affectedAssemblies,

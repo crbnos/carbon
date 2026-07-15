@@ -4,7 +4,6 @@ import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type { nonConformancePriority } from "../quality/quality.models";
-import { seedDefaultChangeOrderActions } from "./changeOrder.actions";
 import type {
   ChangeOrderChangeType,
   ChangeOrderError,
@@ -136,13 +135,9 @@ export async function insertChangeOrder(
     return { data: null, error: result.error };
   }
 
-  // Seed the company's default actions onto the new CO (non-gating — a soft
-  // failure must not roll back the change order).
-  await seedDefaultChangeOrderActions(client, {
-    changeOrderId: result.data.id,
-    companyId: input.companyId,
-    userId: input.createdBy
-  });
+  // No default actions are seeded on create — the CO starts with zero required
+  // actions selected; the user picks them afterward from the rail's Required
+  // Actions multiselect (reconciled by setChangeOrderActionTasks).
 
   return {
     data: { id: result.data.id, changeOrderId: result.data.changeOrderId },
@@ -189,8 +184,23 @@ export async function deleteChangeOrder(
   changeOrderId: string,
   companyId: string
 ) {
-  // Children (products affected, BOM changes + assemblies, action tasks)
-  // cascade via their FK ON DELETE CASCADE.
+  // Discard each affected item's CO-owned Draft first (the Draft make method for
+  // a Version, or the revealed inactive item for a Revision/New Part). These are
+  // NOT FK children of the change order, so the cascade below won't remove them —
+  // only the changeOrderAffectedItem rows cascade. Without this, deleting a CO
+  // orphans its drafts (mirrors removeChangeOrderAffectedItem's cleanup).
+  const affected = await client
+    .from("changeOrderAffectedItem")
+    .select("draftMakeMethodId, newItemId")
+    .eq("changeOrderId", changeOrderId)
+    .eq("companyId", companyId);
+  if (!affected.error && affected.data) {
+    for (const item of affected.data) {
+      await discardChangeOrderDraft(client, item, companyId);
+    }
+  }
+
+  // Remaining children (affected items, action tasks) cascade via ON DELETE CASCADE.
   return client
     .from("changeOrder")
     .delete()

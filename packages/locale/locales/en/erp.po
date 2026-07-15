@@ -42,10 +42,6 @@ msgstr "(excluded for this customer)"
 msgid "{0, plural, one {This part is on 1 open change order} other {This part is on # open change orders}}"
 msgstr "{0, plural, one {This part is on 1 open change order} other {This part is on # open change orders}}"
 
-#. placeholder {0}: c.entries.length
-msgid "{0} conflicting change(s)"
-msgstr "{0} conflicting change(s)"
-
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
 msgstr "{0} customers with a balance"
@@ -67,33 +63,17 @@ msgstr "{0} draft journal entries"
 msgid "{0} lines to map"
 msgstr "{0} lines to map"
 
-#. placeholder {0}: conflicts.length
-msgid "{0} of these parts"
-msgstr "{0} of these parts"
-
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} orders"
-
-#. placeholder {0}: cc.parameters
-msgid "{0} parameters"
-msgstr "{0} parameters"
 
 #. placeholder {0}: selectedProcesses.length
 msgid "{0} Processes"
 msgstr "{0} Processes"
 
-#. placeholder {0}: cc.steps
-msgid "{0} steps"
-msgstr "{0} steps"
-
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
 msgstr "{0} suppliers with a balance"
-
-#. placeholder {0}: cc.tools
-msgid "{0} tools"
-msgstr "{0} tools"
 
 #. placeholder {0}: lotEntities.length - inspected
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
@@ -297,9 +277,6 @@ msgstr "A new revision will be created using a copy of the current revision"
 
 msgid "A new size will be created using a copy of the current size"
 msgstr "A new size will be created using a copy of the current size"
-
-msgid "A newer version of this part was released while you were working. Choose which version to keep for each change."
-msgstr "A newer version of this part was released while you were working. Choose which version to keep for each change."
 
 msgid "A non-taxable surcharge (e.g. recoverable expenses like permit fees) added to the line; excluded from the tax base."
 msgstr "A non-taxable surcharge (e.g. recoverable expenses like permit fees) added to the line; excluded from the tax base."
@@ -785,6 +762,9 @@ msgstr "Affected assemblies"
 msgid "Affected item not found."
 msgstr "Affected item not found."
 
+msgid "Affected Parts & Tools"
+msgstr "Affected Parts & Tools"
+
 msgid "After"
 msgstr "After"
 
@@ -930,10 +910,6 @@ msgstr "Annotation text is required"
 
 msgid "Annotation updated"
 msgstr "Annotation updated"
-
-#. placeholder {0}: conflicts.length === 1 ? t`this part` : t`${conflicts.length} of these parts`
-msgid "Another change order released a newer version of {0}. Resolve each one to choose which changes to keep before releasing."
-msgstr "Another change order released a newer version of {0}. Resolve each one to choose which changes to keep before releasing."
 
 msgid "Another cost center this one rolls up into, letting you nest a sub-department under its parent for hierarchical cost reporting."
 msgstr "Another cost center this one rolls up into, letting you nest a sub-department under its parent for hierarchical cost reporting."
@@ -6692,9 +6668,6 @@ msgstr "Keep Current"
 msgid "Keep existing pricing, only add new items"
 msgstr "Keep existing pricing, only add new items"
 
-msgid "Keeping {keptMine} of {total} from your version"
-msgstr "Keeping {keptMine} of {total} from your version"
-
 msgid "Key"
 msgstr "Key"
 
@@ -6771,9 +6744,6 @@ msgstr "Last synced: {0}"
 
 msgid "Last updated: {formattedDate}"
 msgstr "Last updated: {formattedDate}"
-
-msgid "Latest released"
-msgstr "Latest released"
 
 msgid "Lead time"
 msgstr "Lead time"
@@ -8268,9 +8238,6 @@ msgstr "Not a table but a general-ledger balance: cost accumulates as job materi
 
 msgid "Not enough jobs to cover quantity"
 msgstr "Not enough jobs to cover quantity"
-
-msgid "Not in the latest version"
-msgstr "Not in the latest version"
 
 msgid "Not referenced anywhere yet."
 msgstr "Not referenced anywhere yet."
@@ -9968,9 +9935,6 @@ msgstr "Remove"
 msgid "Remove {0}"
 msgstr "Remove {0}"
 
-msgid "Remove action"
-msgstr "Remove action"
-
 msgid "Remove affected item"
 msgstr "Remove affected item"
 
@@ -10006,9 +9970,6 @@ msgstr "Remove this storage type from all referencing storage units and delete i
 
 msgid "Removed"
 msgstr "Removed"
-
-msgid "Removed in your version"
-msgstr "Removed in your version"
 
 msgid "Rendering label preview..."
 msgstr "Rendering label preview..."
@@ -10165,23 +10126,8 @@ msgstr "Residual value"
 msgid "Residual Value %"
 msgstr "Residual Value %"
 
-msgid "Resolve"
-msgstr "Resolve"
-
-msgid "Resolve & release"
-msgstr "Resolve & release"
-
-msgid "Resolve conflicts"
-msgstr "Resolve conflicts"
-
-msgid "Resolve every conflicting part to release."
-msgstr "Resolve every conflicting part to release."
-
 msgid "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
 msgstr "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
-
-msgid "Resolved"
-msgstr "Resolved"
 
 msgid "Resolved Price"
 msgstr "Resolved Price"
@@ -10243,14 +10189,8 @@ msgstr "Reverse Charge Sales Tax (default)"
 msgid "Reverse the related journal entries"
 msgstr "Reverse the related journal entries"
 
-msgid "Review"
-msgstr "Review"
-
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "Review each item's changes, then confirm — releasing can't be undone."
-
-msgid "Review required"
-msgstr "Review required"
 
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
@@ -11553,9 +11493,6 @@ msgstr "Sub-assembly expiries only"
 msgid "Sub-Departments"
 msgstr "Sub-Departments"
 
-msgid "sub-steps differ ({childNote}), kept with your pick"
-msgstr "sub-steps differ ({childNote}), kept with your pick"
-
 msgid "Subassembly"
 msgstr "Subassembly"
 
@@ -11829,12 +11766,6 @@ msgstr "Tags"
 
 msgid "Tailor this hub for the customer. Changes apply live for everyone viewing it. Never shown to the customer here."
 msgstr "Tailor this hub for the customer. Changes apply live for everyone viewing it. Never shown to the customer here."
-
-msgid "Take all latest"
-msgstr "Take all latest"
-
-msgid "Take all mine"
-msgstr "Take all mine"
 
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
@@ -12290,9 +12221,6 @@ msgstr "The lifecycle state of this customer — Active, Prospect, Inactive, etc
 msgid "The lifecycle state of this supplier — Active, Inactive, Pending Approval, etc.; only Active suppliers appear in PO / quote selectors."
 msgstr "The lifecycle state of this supplier — Active, Inactive, Pending Approval, etc.; only Active suppliers appear in PO / quote selectors."
 
-msgid "The live method changed since you started"
-msgstr "The live method changed since you started"
-
 msgid "The local timezone this location reports time in; schedules, timecards, and shift hours at this location are interpreted in this zone regardless of the user's browser locale."
 msgstr "The local timezone this location reports time in; schedules, timecards, and shift hours at this location are interpreted in this zone regardless of the user's browser locale."
 
@@ -12721,9 +12649,6 @@ msgstr "This Month"
 
 msgid "This page of your Implementation Hub is being built. Start from the command center while we finish it."
 msgstr "This page of your Implementation Hub is being built. Start from the command center while we finish it."
-
-msgid "this part"
-msgstr "this part"
 
 msgid "This part has {quantityOnHand} on hand at this location. No Stock means it will be neither planned nor consumed."
 msgstr "This part has {quantityOnHand} on hand at this location. No Stock means it will be neither planned nor consumed."
@@ -14408,9 +14333,6 @@ msgstr "Your team, structure, and access."
 
 msgid "Your vendor list"
 msgstr "Your vendor list"
-
-msgid "Your version"
-msgstr "Your version"
 
 msgid "yourself"
 msgstr "yourself"

@@ -42,10 +42,6 @@ msgstr "(このお客様では除外されています)"
 msgid "{0, plural, one {This part is on 1 open change order} other {This part is on # open change orders}}"
 msgstr "{0, plural, one {このパーツは1件のオープンな変更指示に含まれています} other {このパーツは#件のオープンな変更指示に含まれています}}"
 
-#. placeholder {0}: c.entries.length
-msgid "{0} conflicting change(s)"
-msgstr "{0}個の競合する変更"
-
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
 msgstr "{0}件の残高のある顧客"
@@ -67,33 +63,17 @@ msgstr "{0}件の下書き仕訳"
 msgid "{0} lines to map"
 msgstr "{0}件のラインをマップします"
 
-#. placeholder {0}: conflicts.length
-msgid "{0} of these parts"
-msgstr "これらの部品の{0}個"
-
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0}件の注文"
-
-#. placeholder {0}: cc.parameters
-msgid "{0} parameters"
-msgstr "{0}個のパラメータ"
 
 #. placeholder {0}: selectedProcesses.length
 msgid "{0} Processes"
 msgstr "{0}個のプロセス"
 
-#. placeholder {0}: cc.steps
-msgid "{0} steps"
-msgstr "{0}個のステップ"
-
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
 msgstr "{0}件の残高のある仕入先"
-
-#. placeholder {0}: cc.tools
-msgid "{0} tools"
-msgstr "{0}個のツール"
 
 #. placeholder {0}: lotEntities.length - inspected
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
@@ -297,9 +277,6 @@ msgstr "現在のリビジョンのコピーを使用して、新しいリビジ
 
 msgid "A new size will be created using a copy of the current size"
 msgstr "新しいサイズが現在のサイズのコピーを使用して作成されます"
-
-msgid "A newer version of this part was released while you were working. Choose which version to keep for each change."
-msgstr "作業中にこの部品の新しいバージョンがリリースされました。各変更に対してどちらのバージョンを保持するかを選択してください。"
 
 msgid "A non-taxable surcharge (e.g. recoverable expenses like permit fees) added to the line; excluded from the tax base."
 msgstr "非課税追加料金（返還可能経費など許可手数料）を行に追加し、課税ベースから除外します。"
@@ -785,6 +762,9 @@ msgstr "影響を受けるアセンブリ"
 msgid "Affected item not found."
 msgstr "影響を受けるアイテムが見つかりません。"
 
+msgid "Affected Parts & Tools"
+msgstr "影響を受ける部品・工具"
+
 msgid "After"
 msgstr "後"
 
@@ -930,10 +910,6 @@ msgstr "注釈テキストが必要です"
 
 msgid "Annotation updated"
 msgstr "注釈が更新されました"
-
-#. placeholder {0}: conflicts.length === 1 ? t`this part` : t`${conflicts.length} of these parts`
-msgid "Another change order released a newer version of {0}. Resolve each one to choose which changes to keep before releasing."
-msgstr "別の変更オーダーが{0}の新しいバージョンをリリースしました。リリースする前に、どの変更を保持するかを選択するため、それぞれを解決してください。"
 
 msgid "Another cost center this one rolls up into, letting you nest a sub-department under its parent for hierarchical cost reporting."
 msgstr "これが集計される別のコストセンター。階層的なコストレポート用に、親の下に部分コストセンターをネストできます。"
@@ -6692,9 +6668,6 @@ msgstr "現在の設定を保持"
 msgid "Keep existing pricing, only add new items"
 msgstr "既存の価格を保持し、新しい項目のみを追加"
 
-msgid "Keeping {keptMine} of {total} from your version"
-msgstr "あなたのバージョンから{total}個のうち{keptMine}個を保持"
-
 msgid "Key"
 msgstr "キー"
 
@@ -6771,9 +6744,6 @@ msgstr "最後に同期: {0}"
 
 msgid "Last updated: {formattedDate}"
 msgstr "最終更新: {formattedDate}"
-
-msgid "Latest released"
-msgstr "最新リリース版"
 
 msgid "Lead time"
 msgstr "リードタイム"
@@ -8268,9 +8238,6 @@ msgstr "テーブルではなく、総勘定元帳残高：ジョブ材料が発
 
 msgid "Not enough jobs to cover quantity"
 msgstr "数量をカバーするのに十分なジョブがありません"
-
-msgid "Not in the latest version"
-msgstr "最新バージョンに含まれていません"
 
 msgid "Not referenced anywhere yet."
 msgstr "どこでも参照されていません。"
@@ -9968,9 +9935,6 @@ msgstr "削除"
 msgid "Remove {0}"
 msgstr "{0}を削除"
 
-msgid "Remove action"
-msgstr "アクションを削除"
-
 msgid "Remove affected item"
 msgstr "影響を受けるアイテムを削除"
 
@@ -10006,9 +9970,6 @@ msgstr "このストレージタイプをすべての参照ストレージユニ
 
 msgid "Removed"
 msgstr "削除済み"
-
-msgid "Removed in your version"
-msgstr "あなたのバージョンで削除"
 
 msgid "Rendering label preview..."
 msgstr "ラベルプレビューをレンダリング中..."
@@ -10165,23 +10126,8 @@ msgstr "残存価値"
 msgid "Residual Value %"
 msgstr "残存価値 %"
 
-msgid "Resolve"
-msgstr "解決"
-
-msgid "Resolve & release"
-msgstr "解決してリリース"
-
-msgid "Resolve conflicts"
-msgstr "競合を解決"
-
-msgid "Resolve every conflicting part to release."
-msgstr "リリースするには、競合するすべてのパーツを解決してください。"
-
 msgid "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
 msgstr "NCRを完了する前にこれらを解決してください。すべての行は保留中以外の処分を持つ必要があり、リンクされたエンティティの数量は行の数量と一致する必要があります。"
-
-msgid "Resolved"
-msgstr "解決済み"
 
 msgid "Resolved Price"
 msgstr "解決済み価格"
@@ -10243,14 +10189,8 @@ msgstr "逆請求売上税 (既定)"
 msgid "Reverse the related journal entries"
 msgstr "関連する仕訳エントリを取り消す"
 
-msgid "Review"
-msgstr "レビュー"
-
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "各アイテムの変更をレビューしてから確認してください。リリースは取り消せません。"
-
-msgid "Review required"
-msgstr "レビューが必要"
 
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "当期の貸借対照表と損益計算書を確認し、数字が正しいことを確認してください。これは手動による認可です。確認後、完了とマークしてください。"
@@ -11553,9 +11493,6 @@ msgstr "サブアセンブリの有効期限のみ"
 msgid "Sub-Departments"
 msgstr "サブ部門"
 
-msgid "sub-steps differ ({childNote}), kept with your pick"
-msgstr "サブステップが異なります（{childNote}）。あなたの選択で保持されます"
-
 msgid "Subassembly"
 msgstr "サブアセンブリ"
 
@@ -11829,12 +11766,6 @@ msgstr "タグ"
 
 msgid "Tailor this hub for the customer. Changes apply live for everyone viewing it. Never shown to the customer here."
 msgstr "このハブを顧客向けにカスタマイズします。変更はそれを表示している全員にリアルタイムで適用されます。顧客にはここに表示されません。"
-
-msgid "Take all latest"
-msgstr "最新をすべて採用"
-
-msgid "Take all mine"
-msgstr "自分のをすべて採用"
 
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "このアイテムを製造するために消費される材料全体で、最も短い残りの賞味期限を取得します。製品の有効期限がその成分に依存する場合に使用します。"
@@ -12290,9 +12221,6 @@ msgstr "このカスタマーのライフサイクル状態 - アクティブ、
 msgid "The lifecycle state of this supplier — Active, Inactive, Pending Approval, etc.; only Active suppliers appear in PO / quote selectors."
 msgstr "このサプライヤーのライフサイクル状態 - アクティブ、非アクティブ、承認待機中など。アクティブなサプライヤーのみがPO/見積もりセレクタに表示されます。"
 
-msgid "The live method changed since you started"
-msgstr "開始以来、ライブ方法が変更されました"
-
 msgid "The local timezone this location reports time in; schedules, timecards, and shift hours at this location are interpreted in this zone regardless of the user's browser locale."
 msgstr "この場所が時刻を報告する現地タイムゾーン。この場所でのスケジュール、タイムカード、シフト時間は、ユーザーのブラウザロケールに関係なく、このゾーンで解釈されます。"
 
@@ -12721,9 +12649,6 @@ msgstr "今月"
 
 msgid "This page of your Implementation Hub is being built. Start from the command center while we finish it."
 msgstr "このページのImplementation Hubは現在構築中です。完成するまでコマンドセンターから始めてください。"
-
-msgid "this part"
-msgstr "このパーツ"
 
 msgid "This part has {quantityOnHand} on hand at this location. No Stock means it will be neither planned nor consumed."
 msgstr "このパーツはこの場所に{quantityOnHand}個あります。「在庫なし」は計画にも消費にも含まれないことを意味します。"
@@ -14404,9 +14329,6 @@ msgstr "あなたのチーム、構造、およびアクセス。"
 
 msgid "Your vendor list"
 msgstr "あなたのベンダーリスト"
-
-msgid "Your version"
-msgstr "あなたのバージョン"
 
 msgid "yourself"
 msgstr "自分自身"

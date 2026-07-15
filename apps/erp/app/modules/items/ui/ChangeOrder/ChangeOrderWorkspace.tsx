@@ -1,10 +1,6 @@
 import { VStack } from "@carbon/react";
 import { Outlet } from "react-router";
-import type {
-  ChangeOrder,
-  ChangeOrderActionTask,
-  ChangeOrderReleaseConflict
-} from "~/modules/items";
+import type { ChangeOrder, ChangeOrderActionTask } from "~/modules/items";
 import AffectedItemsSidebar from "./AffectedItemsSidebar";
 import type { AffectedItemDraft } from "./affectedItem.types";
 import ChangeOrderActions from "./ChangeOrderActions";
@@ -22,7 +18,6 @@ export default function ChangeOrderWorkspace({
   affectedItems,
   actions,
   impactUsedIn,
-  releaseConflicts,
   isDisabled
 }: {
   id: string;
@@ -30,7 +25,6 @@ export default function ChangeOrderWorkspace({
   affectedItems: AffectedItemDraft[];
   actions: ChangeOrderActionTask[];
   impactUsedIn: ChangeOrderImpactItem[];
-  releaseConflicts: ChangeOrderReleaseConflict[];
   isDisabled: boolean;
 }) {
   return (
@@ -63,7 +57,6 @@ export default function ChangeOrderWorkspace({
         affectedItems={affectedItems}
         actions={actions}
         impactUsedIn={impactUsedIn}
-        releaseConflicts={releaseConflicts}
         isDisabled={isDisabled}
       />
     </div>

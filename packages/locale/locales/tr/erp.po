@@ -42,10 +42,6 @@ msgstr "(bu müşteri için hariç tutulmuş)"
 msgid "{0, plural, one {This part is on 1 open change order} other {This part is on # open change orders}}"
 msgstr "{0, plural, one {Bu parça 1 açık değişiklik emrinde} other {Bu parça # açık değişiklik emrinde}}"
 
-#. placeholder {0}: c.entries.length
-msgid "{0} conflicting change(s)"
-msgstr "{0} çakışan değişiklik"
-
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
 msgstr "{0} müşteri bakiye ile"
@@ -67,33 +63,17 @@ msgstr "{0} taslak muhasebe kaydı"
 msgid "{0} lines to map"
 msgstr "{0} satır eşlenecek"
 
-#. placeholder {0}: conflicts.length
-msgid "{0} of these parts"
-msgstr "bunların {0}'ı"
-
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} sipariş"
-
-#. placeholder {0}: cc.parameters
-msgid "{0} parameters"
-msgstr "{0} parametre"
 
 #. placeholder {0}: selectedProcesses.length
 msgid "{0} Processes"
 msgstr "{0} Süreçler"
 
-#. placeholder {0}: cc.steps
-msgid "{0} steps"
-msgstr "{0} adım"
-
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
 msgstr "{0} bakiyesi olan tedarikçi"
-
-#. placeholder {0}: cc.tools
-msgid "{0} tools"
-msgstr "{0} araç"
 
 #. placeholder {0}: lotEntities.length - inspected
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
@@ -297,9 +277,6 @@ msgstr "Yeni bir revizyon, mevcut revizyonun bir kopyası kullanılarak oluştur
 
 msgid "A new size will be created using a copy of the current size"
 msgstr "Yeni bir boyut, mevcut boyutun bir kopyası kullanılarak oluşturulacaktır"
-
-msgid "A newer version of this part was released while you were working. Choose which version to keep for each change."
-msgstr "Çalışırken bu parçanın daha yeni bir sürümü yayınlandı. Her değişiklik için hangi sürümü tutacağınızı seçin."
 
 msgid "A non-taxable surcharge (e.g. recoverable expenses like permit fees) added to the line; excluded from the tax base."
 msgstr "Vergilendirilmeyen bir ek ücret (örneğin izin ücretleri gibi geri alınabilir giderler) satıra eklenir ve vergi matrahından hariç tutulur."
@@ -785,6 +762,9 @@ msgstr "Etkilenen montajlar"
 msgid "Affected item not found."
 msgstr "Etkilenen öğe bulunamadı."
 
+msgid "Affected Parts & Tools"
+msgstr "Etkilenen Parçalar ve Araçlar"
+
 msgid "After"
 msgstr "Sonra"
 
@@ -930,10 +910,6 @@ msgstr "Açıklama metni gerekli"
 
 msgid "Annotation updated"
 msgstr "Açıklama güncellendi"
-
-#. placeholder {0}: conflicts.length === 1 ? t`this part` : t`${conflicts.length} of these parts`
-msgid "Another change order released a newer version of {0}. Resolve each one to choose which changes to keep before releasing."
-msgstr "Başka bir değişiklik emri {0}'nin daha yeni bir sürümünü yayınladı. Yayınlamadan önce hangi değişiklikleri tutacağınızı seçmek için her birini çözün."
 
 msgid "Another cost center this one rolls up into, letting you nest a sub-department under its parent for hierarchical cost reporting."
 msgstr "Bu toplandığı başka bir maliyet merkezi, hiyerarşik maliyet raporlaması için bir alt maliyet merkezini ana kütesinin altında iç içe geçirmenizi sağlar."
@@ -6692,9 +6668,6 @@ msgstr "Mevcut Tut"
 msgid "Keep existing pricing, only add new items"
 msgstr "Mevcut fiyatlandırmayı koru, yalnızca yeni öğeler ekle"
 
-msgid "Keeping {keptMine} of {total} from your version"
-msgstr "Sürümünüzden {total} içinden {keptMine} tutulmuş"
-
 msgid "Key"
 msgstr "Anahtar"
 
@@ -6771,9 +6744,6 @@ msgstr "Son senkronize edildi: {0}"
 
 msgid "Last updated: {formattedDate}"
 msgstr "Son güncellendi: {formattedDate}"
-
-msgid "Latest released"
-msgstr "En son yayınlanan"
 
 msgid "Lead time"
 msgstr "Teslim Süresi"
@@ -8268,9 +8238,6 @@ msgstr "Bir tablo değil, bir genel muhasebe dengesi: iş malzemeleri verildiği
 
 msgid "Not enough jobs to cover quantity"
 msgstr "Miktarı karşılayacak yeterli iş yok"
-
-msgid "Not in the latest version"
-msgstr "En son sürümde değil"
 
 msgid "Not referenced anywhere yet."
 msgstr "Henüz hiçbir yerde referans verilmemiş."
@@ -9968,9 +9935,6 @@ msgstr "Kaldır"
 msgid "Remove {0}"
 msgstr "Kaldır {0}"
 
-msgid "Remove action"
-msgstr "İşlemi kaldır"
-
 msgid "Remove affected item"
 msgstr "Etkilenen ürünü kaldır"
 
@@ -10006,9 +9970,6 @@ msgstr "Bu depolama türünü tüm referans veren depolama birimlerinden kaldır
 
 msgid "Removed"
 msgstr "Kaldırıldı"
-
-msgid "Removed in your version"
-msgstr "Sizin sürümünüzde kaldırıldı"
 
 msgid "Rendering label preview..."
 msgstr "Etiket önizlemesi oluşturuluyor..."
@@ -10165,23 +10126,8 @@ msgstr "Artık değer"
 msgid "Residual Value %"
 msgstr "Artık değer %"
 
-msgid "Resolve"
-msgstr "Çöz"
-
-msgid "Resolve & release"
-msgstr "Çöz ve yayınla"
-
-msgid "Resolve conflicts"
-msgstr "Çakışmaları çöz"
-
-msgid "Resolve every conflicting part to release."
-msgstr "Yayınlamak için her çakışan parçayı çözün."
-
 msgid "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
 msgstr "Bu NC'yi tamamlamadan önce bunları çözün: her satırın Geçici Olmayan bir elden çıkarma durumuna sahip olması ve bağlı varlık miktarlarının satır miktarını eşleştirmesi gerekir."
-
-msgid "Resolved"
-msgstr "Çözüldü"
 
 msgid "Resolved Price"
 msgstr "Belirlenmiş Fiyat"
@@ -10243,14 +10189,8 @@ msgstr "Ters yükleme satış vergisi (varsayılan)"
 msgid "Reverse the related journal entries"
 msgstr "İlgili günlük girişlerini tersine çevir"
 
-msgid "Review"
-msgstr "İncele"
-
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "Her ürünün değişikliklerini gözden geçirin, sonra onaylayın — yayınlama geri alınamaz."
-
-msgid "Review required"
-msgstr "İnceleme gerekli"
 
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "Dönemin bilançosunu ve gelir tablosunu gözden geçirin ve rakamların doğru göründüğünü doğrulayın. Bu manuel bir onay — bunları gözden geçirdikten sonra bitti olarak işaretleyin."
@@ -11553,9 +11493,6 @@ msgstr "Yalnızca alt montaj son kullanma tarihleri"
 msgid "Sub-Departments"
 msgstr "Alt Departmanlar"
 
-msgid "sub-steps differ ({childNote}), kept with your pick"
-msgstr "alt-adımlar farklıdır ({childNote}), sizin seçiminizle tutuldu"
-
 msgid "Subassembly"
 msgstr "Alt Montaj"
 
@@ -11829,12 +11766,6 @@ msgstr "Etiketler"
 
 msgid "Tailor this hub for the customer. Changes apply live for everyone viewing it. Never shown to the customer here."
 msgstr "Bu hub'ı müşteri için özelleştirin. Değişiklikler bunu görüntüleyen herkes için canlı olarak uygulanır. Müşteriye burada asla gösterilmez."
-
-msgid "Take all latest"
-msgstr "Tümünü en sonuncusunu al"
-
-msgid "Take all mine"
-msgstr "Tümünü benimkini al"
 
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "Bu öğeyi üretmek için tüketilen malzemelerdeki en kısa kalan raf ömrünü alır. Ürünün son kullanma tarihinin bileşenlerine bağlı olduğu durumlarda kullanılır."
@@ -12290,9 +12221,6 @@ msgstr "Bu müşterinin yaşam döngüsü durumu - Etkin, Potansiyel Müşteri, 
 msgid "The lifecycle state of this supplier — Active, Inactive, Pending Approval, etc.; only Active suppliers appear in PO / quote selectors."
 msgstr "Bu tedarikçinin yaşam döngüsü durumu - Etkin, Etkin Değil, Onay Bekleniyor, vb.; yalnızca Etkin tedarikçiler PO / alıntı seçicilerinde görünür."
 
-msgid "The live method changed since you started"
-msgstr "Başladığınızdan beri canlı yöntem değişti"
-
 msgid "The local timezone this location reports time in; schedules, timecards, and shift hours at this location are interpreted in this zone regardless of the user's browser locale."
 msgstr "Bu konumun zamanı raporladığı yerel saat dilimi; bu konumdaki zamanlamalar, zaman kartları ve vardiya saatleri, kullanıcının tarayıcı yerel ayarından bağımsız olarak bu bölgede yorumlanır."
 
@@ -12721,9 +12649,6 @@ msgstr "Bu Ay"
 
 msgid "This page of your Implementation Hub is being built. Start from the command center while we finish it."
 msgstr "Bu Implementation Hub sayfası şu anda inşa edilmektedir. Biz bitirirken komut merkezinden başlayın."
-
-msgid "this part"
-msgstr "bu parça"
 
 msgid "This part has {quantityOnHand} on hand at this location. No Stock means it will be neither planned nor consumed."
 msgstr "Bu parça bu konumda {quantityOnHand} adet stokta bulunmaktadır. Stok Yok, bunun ne planlanacağı ne de tüketileceği anlamına gelir."
@@ -14404,9 +14329,6 @@ msgstr "Takımınız, yapı ve erişim."
 
 msgid "Your vendor list"
 msgstr "Satıcı listeniz"
-
-msgid "Your version"
-msgstr "Sizin sürümünüz"
 
 msgid "yourself"
 msgstr "kendiniz"

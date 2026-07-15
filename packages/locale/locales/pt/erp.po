@@ -42,10 +42,6 @@ msgstr "(excluído para este cliente)"
 msgid "{0, plural, one {This part is on 1 open change order} other {This part is on # open change orders}}"
 msgstr "{0, plural, one {Esta peça está em 1 ordem de alteração aberta} other {Esta peça está em # ordens de alteração abertas}}"
 
-#. placeholder {0}: c.entries.length
-msgid "{0} conflicting change(s)"
-msgstr "{0} mudança(s) em conflito"
-
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
 msgstr "{0} clientes com saldo"
@@ -67,33 +63,17 @@ msgstr "{0} lançamentos de diário em rascunho"
 msgid "{0} lines to map"
 msgstr "{0} linhas para mapear"
 
-#. placeholder {0}: conflicts.length
-msgid "{0} of these parts"
-msgstr "{0} dessas peças"
-
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} pedidos"
-
-#. placeholder {0}: cc.parameters
-msgid "{0} parameters"
-msgstr "{0} parâmetros"
 
 #. placeholder {0}: selectedProcesses.length
 msgid "{0} Processes"
 msgstr "{0} Processos"
 
-#. placeholder {0}: cc.steps
-msgid "{0} steps"
-msgstr "{0} etapas"
-
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
 msgstr "{0} fornecedores com saldo"
-
-#. placeholder {0}: cc.tools
-msgid "{0} tools"
-msgstr "{0} ferramentas"
 
 #. placeholder {0}: lotEntities.length - inspected
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
@@ -297,9 +277,6 @@ msgstr "Uma nova revisão será criada usando uma cópia da revisão atual"
 
 msgid "A new size will be created using a copy of the current size"
 msgstr "Um novo tamanho será criado usando uma cópia do tamanho atual"
-
-msgid "A newer version of this part was released while you were working. Choose which version to keep for each change."
-msgstr "Uma versão mais recente desta peça foi lançada enquanto você estava trabalhando. Escolha qual versão manter para cada mudança."
 
 msgid "A non-taxable surcharge (e.g. recoverable expenses like permit fees) added to the line; excluded from the tax base."
 msgstr "Uma sobretaxa não tributável (p. ex. despesas recuperáveis como taxas de licença) adicionada à linha e excluída da base tributária."
@@ -785,6 +762,9 @@ msgstr "Montagens afetadas"
 msgid "Affected item not found."
 msgstr "Item afetado não encontrado."
 
+msgid "Affected Parts & Tools"
+msgstr "Peças e Ferramentas Afetadas"
+
 msgid "After"
 msgstr "Após"
 
@@ -930,10 +910,6 @@ msgstr "O texto da anotação é obrigatório"
 
 msgid "Annotation updated"
 msgstr "Anotação atualizada"
-
-#. placeholder {0}: conflicts.length === 1 ? t`this part` : t`${conflicts.length} of these parts`
-msgid "Another change order released a newer version of {0}. Resolve each one to choose which changes to keep before releasing."
-msgstr "Outra ordem de mudança lançou uma versão mais recente de {0}. Resolva cada uma para escolher quais mudanças manter antes de lançar."
 
 msgid "Another cost center this one rolls up into, letting you nest a sub-department under its parent for hierarchical cost reporting."
 msgstr "Outro centro de custo ao qual este agrega, permitindo aninhar um subcentro de custo sob seu pai para relatórios de custo hierárquicos."
@@ -6692,9 +6668,6 @@ msgstr "Manter Atual"
 msgid "Keep existing pricing, only add new items"
 msgstr "Manter preços existentes, adicionar apenas novos itens"
 
-msgid "Keeping {keptMine} of {total} from your version"
-msgstr "Mantendo {keptMine} de {total} de sua versão"
-
 msgid "Key"
 msgstr "Chave"
 
@@ -6771,9 +6744,6 @@ msgstr "Última sincronização: {0}"
 
 msgid "Last updated: {formattedDate}"
 msgstr "Última atualização: {formattedDate}"
-
-msgid "Latest released"
-msgstr "Mais recente lançado"
 
 msgid "Lead time"
 msgstr "Tempo de Entrega"
@@ -8268,9 +8238,6 @@ msgstr "Não é uma tabela, mas um saldo do livro-razão geral: o custo se acumu
 
 msgid "Not enough jobs to cover quantity"
 msgstr "Não há trabalhos suficientes para cobrir a quantidade"
-
-msgid "Not in the latest version"
-msgstr "Não na versão mais recente"
 
 msgid "Not referenced anywhere yet."
 msgstr "Não referenciado em lugar nenhum ainda."
@@ -9968,9 +9935,6 @@ msgstr "Remover"
 msgid "Remove {0}"
 msgstr "Remover {0}"
 
-msgid "Remove action"
-msgstr "Remover ação"
-
 msgid "Remove affected item"
 msgstr "Remover item afetado"
 
@@ -10006,9 +9970,6 @@ msgstr "Remova este tipo de armazenamento de todas as unidades de armazenamento 
 
 msgid "Removed"
 msgstr "Removido"
-
-msgid "Removed in your version"
-msgstr "Removido na sua versão"
 
 msgid "Rendering label preview..."
 msgstr "Renderizando visualização de etiqueta..."
@@ -10165,23 +10126,8 @@ msgstr "Valor residual"
 msgid "Residual Value %"
 msgstr "Valor residual %"
 
-msgid "Resolve"
-msgstr "Resolver"
-
-msgid "Resolve & release"
-msgstr "Resolver e liberar"
-
-msgid "Resolve conflicts"
-msgstr "Resolver conflitos"
-
-msgid "Resolve every conflicting part to release."
-msgstr "Resolva todas as peças conflitantes para liberar."
-
 msgid "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
 msgstr "Resolva estes antes de concluir a NCR: cada linha deve ter uma disposição não-Pendente e suas quantidades de entidades vinculadas devem corresponder à quantidade da linha."
-
-msgid "Resolved"
-msgstr "Resolvido"
 
 msgid "Resolved Price"
 msgstr "Preço Resolvido"
@@ -10243,14 +10189,8 @@ msgstr "Imposto de vendas de cobrança reversa (padrão)"
 msgid "Reverse the related journal entries"
 msgstr "Reverter os lançamentos contábeis relacionados"
 
-msgid "Review"
-msgstr "Revisar"
-
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "Revise as alterações de cada item e confirme — liberar não pode ser desfeito."
-
-msgid "Review required"
-msgstr "Revisão obrigatória"
 
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "Revise o balanço patrimonial e demonstração de resultado do período e confirme se os valores parecem corretos. Esta é uma aprovação manual — marque como concluído depois de tê-los revisado."
@@ -11553,9 +11493,6 @@ msgstr "Apenas expirações de subconjuntos"
 msgid "Sub-Departments"
 msgstr "Sub-Departamentos"
 
-msgid "sub-steps differ ({childNote}), kept with your pick"
-msgstr "sub-etapas diferem ({childNote}), mantidas com sua escolha"
-
 msgid "Subassembly"
 msgstr "Subconjunto"
 
@@ -11829,12 +11766,6 @@ msgstr "Etiquetas"
 
 msgid "Tailor this hub for the customer. Changes apply live for everyone viewing it. Never shown to the customer here."
 msgstr "Personalize este hub para o cliente. As alterações são aplicadas em tempo real para todos que o visualizam. Nunca é mostrado ao cliente aqui."
-
-msgid "Take all latest"
-msgstr "Tomar o mais recente"
-
-msgid "Take all mine"
-msgstr "Tomar todos os meus"
 
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "Pegue a vida útil restante mais curta entre os materiais consumidos para fazer este item. Use quando a validade do produto depender de seus ingredientes."
@@ -12290,9 +12221,6 @@ msgstr "O estado do ciclo de vida deste cliente - Ativo, Perspectiva, Inativo, e
 msgid "The lifecycle state of this supplier — Active, Inactive, Pending Approval, etc.; only Active suppliers appear in PO / quote selectors."
 msgstr "O estado do ciclo de vida deste fornecedor - Ativo, Inativo, Aprovação Pendente, etc.; apenas fornecedores Ativos aparecem nos seletores PO/cotação."
 
-msgid "The live method changed since you started"
-msgstr "O método ativo mudou desde que você começou"
-
 msgid "The local timezone this location reports time in; schedules, timecards, and shift hours at this location are interpreted in this zone regardless of the user's browser locale."
 msgstr "O fuso horário local em que essa localização relata a hora; os cronogramas, cartões de tempo e horas de turno nessa localização são interpretados neste fuso independentemente da localidade do navegador do usuário."
 
@@ -12721,9 +12649,6 @@ msgstr "Este Mês"
 
 msgid "This page of your Implementation Hub is being built. Start from the command center while we finish it."
 msgstr "Esta página do seu Implementation Hub está sendo construída. Comece pelo centro de comando enquanto terminamos."
-
-msgid "this part"
-msgstr "esta peça"
 
 msgid "This part has {quantityOnHand} on hand at this location. No Stock means it will be neither planned nor consumed."
 msgstr "Esta peça tem {quantityOnHand} em mãos nesta localização. Sem Estoque significa que não será planejada nem consumida."
@@ -14404,9 +14329,6 @@ msgstr "Sua equipe, estrutura e acesso."
 
 msgid "Your vendor list"
 msgstr "Sua lista de fornecedores"
-
-msgid "Your version"
-msgstr "Sua versão"
 
 msgid "yourself"
 msgstr "você mesmo"

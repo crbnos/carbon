@@ -1,16 +1,10 @@
 import { useCarbon } from "@carbon/auth";
 import { ValidatedForm } from "@carbon/form";
-import {
-  IconButton,
-  type JSONContent,
-  toast,
-  useDebounce
-} from "@carbon/react";
+import { type JSONContent, toast, useDebounce } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { DragControls } from "framer-motion";
 import { nanoid } from "nanoid";
 import { useState } from "react";
-import { LuTrash2 } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { z } from "zod";
 import {
@@ -133,8 +127,9 @@ function ChangeOrderRequiredActions({
 }
 
 // The CO wrapper over the shared ActionTaskCard: owns CO-specific persistence
-// (notes via supabase, status + delete via CO routes) and passes the delete
-// affordance + due date into the card's slots.
+// (notes via supabase, status via CO routes) and passes the due date into the
+// card's slots. Actions are added/removed from the right-rail picker, so the
+// card itself has no delete affordance.
 function ActionItem({
   changeOrderId,
   action,
@@ -154,7 +149,6 @@ function ActionItem({
   } = useUser();
   const { carbon } = useCarbon();
   const statusFetcher = useFetcher<{ success: boolean }>();
-  const deleteFetcher = useFetcher<{ success: boolean }>();
 
   const [content, setContent] = useState((action.notes ?? {}) as JSONContent);
   const status = (action.status ?? "Pending") as ActionTaskStatus;
@@ -217,21 +211,6 @@ function ActionItem({
           onChange={onStatusChange}
           isDisabled={isDisabled}
         />
-      }
-      headerExtras={
-        !isDisabled ? (
-          <deleteFetcher.Form
-            method="post"
-            action={path.to.deleteChangeOrderAction(changeOrderId, action.id)}
-          >
-            <IconButton
-              type="submit"
-              aria-label={t`Remove action`}
-              variant="ghost"
-              icon={<LuTrash2 />}
-            />
-          </deleteFetcher.Form>
-        ) : undefined
       }
       footerExtras={
         action.dueDate ? (

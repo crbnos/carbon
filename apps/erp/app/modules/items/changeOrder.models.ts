@@ -130,7 +130,11 @@ export const changeOrderValidator = z.object({
   nonConformanceId: zfd.text(z.string().optional()),
   openDate: z.string().min(1, { message: "Open date is required" }),
   dueDate: zfd.text(z.string().optional()),
-  assignee: zfd.text(z.string().optional())
+  assignee: zfd.text(z.string().optional()),
+  // Optional affected Parts/Tools to attach at create time — each is added as a
+  // Version affected item (Buy items coerced to Revision service-side). More can
+  // be added later on the CO detail. Only consumed by the create action.
+  affectedItemIds: zfd.repeatableOfType(z.string()).optional()
 });
 
 // Status transition (used by the $id.status route). fromStatus drives a
@@ -139,13 +143,7 @@ export const changeOrderStatusValidator = z.object({
   id: z.string().min(1, { message: "Id is required" }),
   fromStatus: z.enum(changeOrderStatus),
   status: z.enum(changeOrderStatus),
-  assignee: zfd.text(z.string().optional()),
-  // Release-time merge: a JSON array of ChangeOrderMergeResolution (the user's
-  // per-line picks when the live method moved under this CO), and an explicit
-  // acknowledgement that the merge was reviewed. Both optional — only sent when
-  // releasing (Implementation → Done) through the merge UI.
-  resolutions: zfd.text(z.string().optional()),
-  mergeAcknowledged: zfd.text(z.string().optional())
+  assignee: zfd.text(z.string().optional())
 });
 
 // =============================================================================
@@ -238,71 +236,6 @@ export type ChangeOrderItemDiff = {
   operations: OperationDiffEntry[];
   attributes: MethodDiffEntry<Record<string, unknown>>[];
 };
-
-// -----------------------------------------------------------------------------
-// Release-time 2-way merge (Q3). When a same-part parallel CO released first,
-// the live method moved under this CO's draft. At release we diff the draft
-// ("mine") against the CURRENT live method ("theirs") and let the user pick,
-// per conflicting line, which to keep — then apply the picks to the draft and
-// activate it. This is the ONLY place a same-part clobber is possible, so
-// releasing into a moved base without an acknowledged resolution is blocked.
-// -----------------------------------------------------------------------------
-export const changeOrderMergeChoices = ["mine", "theirs"] as const;
-export type ChangeOrderMergeChoice = (typeof changeOrderMergeChoices)[number];
-export type ChangeOrderMergeEntityKind = "material" | "operation";
-
-// One resolved conflicting line. `draftId` is the CO draft row (present for a
-// line the draft has: added / modified); `liveId` is the current-live row
-// (present for a line live has: modified / removed). `mine` keeps the draft as
-// is; `theirs` rewrites the draft line to match live before activation.
-export type ChangeOrderMergeResolution = {
-  affectedItemId: string;
-  kind: ChangeOrderMergeEntityKind;
-  draftId: string | null;
-  liveId: string | null;
-  choice: ChangeOrderMergeChoice;
-};
-
-// A single conflicting line surfaced to the release UI (never "unchanged").
-export type ChangeOrderReleaseConflictEntry = {
-  kind: ChangeOrderMergeEntityKind;
-  status: MethodDiffStatus;
-  draftId: string | null;
-  liveId: string | null;
-  // The item id (materials) used to resolve a readable label client-side.
-  itemId: string | null;
-  label: string;
-  detail: string | null;
-  defaultChoice: ChangeOrderMergeChoice;
-  // Full row snapshots powering the git-style side-by-side resolver: `mine` is
-  // this CO's draft row (diff `after`), `theirs` is the current-live row (diff
-  // `before`). One side is null for an added (theirs null) / removed (mine null)
-  // line. `changedFields` is the field-level before/after map for a modified
-  // line; `childChanges` counts an operation's changed steps/parameters/tools
-  // (op-unit merge granularity — the children ride along with the pick).
-  mine: Record<string, unknown> | null;
-  theirs: Record<string, unknown> | null;
-  changedFields?: Record<string, { before: unknown; after: unknown }>;
-  childChanges?: { steps: number; parameters: number; tools: number };
-};
-
-export type ChangeOrderReleaseConflict = {
-  affectedItemId: string;
-  itemId: string;
-  entries: ChangeOrderReleaseConflictEntry[];
-};
-
-// The identity of a conflicting line within one affected item — the single
-// source of truth used to match a client pick to a server-computed entry (and
-// to key the UI's per-line selection). draftId/liveId together are unique per
-// line (added: draft only, removed: live only, modified: both).
-export function changeOrderMergeEntryKey(e: {
-  kind: ChangeOrderMergeEntityKind;
-  draftId: string | null;
-  liveId: string | null;
-}): string {
-  return `${e.kind}:${e.draftId ?? ""}:${e.liveId ?? ""}`;
-}
 
 // -----------------------------------------------------------------------------
 // Change Order Types (the "Category" lookup — configured like Issue Types)

@@ -8,6 +8,7 @@ import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData } from "react-router";
 import {
+  addChangeOrderAffectedItem,
   changeOrderValidator,
   getChangeOrderTypesList,
   insertChangeOrder
@@ -86,6 +87,36 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
+  // Attach any affected Parts/Tools picked at create time. Each is added as a
+  // Version change (the service coerces Buy items to Revision). Best-effort: the
+  // CO already exists, so a per-item failure lands the user on the detail page
+  // with a warning rather than losing the CO.
+  const affectedItemIds = [...new Set(d.affectedItemIds ?? [])];
+  let affectedError: Parameters<typeof error>[0] = null;
+  for (const itemId of affectedItemIds) {
+    const add = await addChangeOrderAffectedItem(client, {
+      changeOrderId: createResult.data.id,
+      itemId,
+      changeType: "Version",
+      companyId,
+      userId
+    });
+    if (add.error) affectedError = add.error;
+  }
+
+  if (affectedError) {
+    throw redirect(
+      path.to.changeOrderDetails(createResult.data.id),
+      await flash(
+        request,
+        error(
+          affectedError,
+          "Change order created, but some items could not be added"
+        )
+      )
+    );
+  }
+
   throw redirect(path.to.changeOrderDetails(createResult.data.id));
 }
 
@@ -103,7 +134,8 @@ export default function ChangeOrderNewRoute() {
     priority: "Medium" as const,
     openDate: today(getLocalTimeZone()).toString(),
     dueDate: "",
-    nonConformanceId: ""
+    nonConformanceId: "",
+    affectedItemIds: []
   };
 
   return (

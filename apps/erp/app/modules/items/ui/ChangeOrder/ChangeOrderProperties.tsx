@@ -1,4 +1,9 @@
-import { DatePicker, Select, ValidatedForm } from "@carbon/form";
+import {
+  DatePicker,
+  InputControlled,
+  Select,
+  ValidatedForm
+} from "@carbon/form";
 import {
   Button,
   HStack,
@@ -118,9 +123,29 @@ const ChangeOrderProperties = () => {
             </TooltipContent>
           </Tooltip>
         </HStack>
-        <span className="text-sm tracking-tight">
-          {changeOrder?.changeOrderId}
-        </span>
+        <VStack spacing={1}>
+          <span className="text-sm tracking-tight">
+            {changeOrder?.changeOrderId}
+          </span>
+          <ValidatedForm
+            defaultValues={{ name: changeOrder?.name ?? undefined }}
+            validator={z.object({ name: z.string() })}
+            className="w-full"
+          >
+            <InputControlled
+              label=""
+              name="name"
+              size="sm"
+              inline
+              isReadOnly={!canUpdate || isLocked}
+              value={changeOrder?.name ?? ""}
+              onBlur={(e) => {
+                onUpdate("name", e.target.value ?? null);
+              }}
+              className="text-muted-foreground"
+            />
+          </ValidatedForm>
+        </VStack>
       </VStack>
 
       <VStack spacing={2}>

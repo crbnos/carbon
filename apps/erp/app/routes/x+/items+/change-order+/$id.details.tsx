@@ -1,10 +1,6 @@
 import { useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import type {
-  ChangeOrder,
-  ChangeOrderActionTask,
-  ChangeOrderReleaseConflict
-} from "~/modules/items";
+import type { ChangeOrder, ChangeOrderActionTask } from "~/modules/items";
 import { canEditChangeOrder } from "~/modules/items";
 import type { ChangeOrderDiff } from "~/modules/items/changeOrder.diff";
 import type {
@@ -22,7 +18,6 @@ export default function ChangeOrderDetailsRoute() {
     changeOrder: ChangeOrder;
     affectedItems: AffectedItemDraft[];
     diff: ChangeOrderDiff;
-    releaseConflicts: ChangeOrderReleaseConflict[];
     actions: ChangeOrderActionTask[];
     impactUsedIn: ChangeOrderImpactItem[];
   }>(path.to.changeOrder(id));
@@ -39,7 +34,6 @@ export default function ChangeOrderDetailsRoute() {
       affectedItems={routeData?.affectedItems ?? []}
       actions={routeData?.actions ?? []}
       impactUsedIn={routeData?.impactUsedIn ?? []}
-      releaseConflicts={routeData?.releaseConflicts ?? []}
       isDisabled={isDisabled}
     />
   );

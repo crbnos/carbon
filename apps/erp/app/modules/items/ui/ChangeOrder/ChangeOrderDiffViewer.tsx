@@ -46,6 +46,7 @@ const FIELD_LABELS: Record<string, string> = {
   unitOfMeasureCode: "Unit",
   order: "Sequence",
   description: "Description",
+  processId: "Process",
   workCenterId: "Work center",
   procedureId: "Procedure",
   operationSupplierProcessId: "Supplier process",
@@ -89,6 +90,8 @@ const NOISE_FIELDS = new Set<string>([
   "stagedOperationId",
   "makeMethodId",
   "operationId",
+  // Internal linkage id with no user-facing name — never show its raw UUID.
+  "assemblyInstructionId",
   "itemType",
   "itemReadableId",
   "toolReadableId",
@@ -139,15 +142,18 @@ function meaningfulFields(row: Row, skip: Set<string>): string[] {
 // The audit-log red/green pill (mirrors AuditLogDrawer's ChangePill).
 function Pill({
   variant,
-  children
+  children,
+  title
 }: {
   variant: "old" | "new";
   children: ReactNode;
+  title?: string;
 }) {
   return (
     <span
+      title={title}
       className={cn(
-        "px-2 py-0.5 rounded text-xs",
+        "inline-block max-w-[14rem] truncate rounded px-2 py-0.5 align-bottom text-xs",
         variant === "old"
           ? "bg-red-500/10 text-red-500"
           : "bg-green-500/10 text-green-500"
@@ -179,14 +185,20 @@ function FieldRow({
   before: unknown;
   after: unknown;
 }) {
+  const beforeText = formatValue(field, before);
+  const afterText = formatValue(field, after);
   return (
-    <div className="flex items-center gap-2 text-xs">
-      <span className="text-muted-foreground min-w-[6rem]">
+    <div className="flex min-w-0 items-center gap-2 text-xs">
+      <span className="min-w-[6rem] shrink-0 text-muted-foreground">
         {humanizeField(field)}
       </span>
-      <Pill variant="old">{formatValue(field, before)}</Pill>
-      <span className="text-muted-foreground">→</span>
-      <Pill variant="new">{formatValue(field, after)}</Pill>
+      <Pill variant="old" title={beforeText}>
+        {beforeText}
+      </Pill>
+      <span className="shrink-0 text-muted-foreground">→</span>
+      <Pill variant="new" title={afterText}>
+        {afterText}
+      </Pill>
     </div>
   );
 }
@@ -201,12 +213,15 @@ function ValueRow({
   value: unknown;
   variant: "old" | "new";
 }) {
+  const text = formatValue(field, value);
   return (
-    <div className="flex items-center gap-2 text-xs">
-      <span className="text-muted-foreground min-w-[6rem]">
+    <div className="flex min-w-0 items-center gap-2 text-xs">
+      <span className="min-w-[6rem] shrink-0 text-muted-foreground">
         {humanizeField(field)}
       </span>
-      <Pill variant={variant}>{formatValue(field, value)}</Pill>
+      <Pill variant={variant} title={text}>
+        {text}
+      </Pill>
     </div>
   );
 }
@@ -259,7 +274,11 @@ function TreeNode({
   const colored = statusColor(status);
   const title = (
     <span
-      className={cn("text-sm", colored && `px-2 py-0.5 rounded ${colored}`)}
+      className={cn(
+        "inline-block max-w-full truncate align-bottom text-sm",
+        colored && `px-2 py-0.5 rounded ${colored}`
+      )}
+      title={typeof label === "string" ? label : undefined}
     >
       {label}
     </span>
@@ -408,8 +427,12 @@ function operationHasChildChanges(entry: OperationDiffEntry): boolean {
 
 function OperationEntry({ entry }: { entry: OperationDiffEntry }) {
   const row = (entry.after ?? entry.before) as Row | null;
+  // processId is resolved to the process name server-side; use it as a human
+  // fallback label so an operation without a description isn't shown as a number.
   const label =
-    (row?.description as string) || `Operation ${row?.order ?? ""}`.trim();
+    (row?.description as string) ||
+    (row?.processId as string) ||
+    `Operation ${row?.order ?? ""}`.trim();
   const children = entry.children;
   const buckets = children
     ? CHILD_BUCKETS.map((bucket) => ({
