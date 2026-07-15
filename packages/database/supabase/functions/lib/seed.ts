@@ -6,6 +6,7 @@
 export {
   accountDefaults,
   accounts,
+  changeOrderRequiredActions,
   currencies,
   customerStatuses,
   dimensions,
