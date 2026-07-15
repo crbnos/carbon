@@ -14,19 +14,14 @@ import {
   VStack
 } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
-import {
-  LuChevronRight,
-  LuCircleCheck,
-  LuEllipsisVertical,
-  LuTrash
-} from "react-icons/lu";
+import { LuCircleCheck, LuEllipsisVertical, LuTrash } from "react-icons/lu";
 import { Link, useFetcher, useParams } from "react-router";
 import { useAuditLog } from "~/components/AuditLog";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { path } from "~/utils/path";
 import {
-  changeOrderStatus,
+  type changeOrderStatus,
   changeOrderStatusTransitions,
   isChangeOrderLocked
 } from "../../changeOrder.models";
@@ -72,7 +67,9 @@ const ChangeOrderHeader = () => {
                 <span>{routeData?.changeOrder?.changeOrderId}</span>
               </Heading>
             </Link>
-            <ChangeOrderStatus status={routeData?.changeOrder?.status} />
+            <span className={cn(isLocked && "line-through")}>
+              <ChangeOrderStatus status={routeData?.changeOrder?.status} />
+            </span>
             <Copy text={routeData?.changeOrder?.changeOrderId ?? ""} />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -102,33 +99,9 @@ const ChangeOrderHeader = () => {
         </VStack>
 
         <HStack spacing={2}>
-          {/* Stage bar — the five stages with the current one highlighted. */}
-          <HStack spacing={1} className="hidden md:flex">
-            {changeOrderStatus.map((stage, index) => {
-              const isCurrent = stage === status;
-              const isPast =
-                changeOrderStatus.indexOf(
-                  status as (typeof changeOrderStatus)[number]
-                ) > index;
-              return (
-                <HStack spacing={1} key={stage}>
-                  {index > 0 && (
-                    <LuChevronRight className="size-3 text-muted-foreground" />
-                  )}
-                  <span
-                    className={cn(
-                      "text-xs whitespace-nowrap",
-                      isCurrent && "font-semibold text-foreground",
-                      isPast && "text-muted-foreground line-through",
-                      !isCurrent && !isPast && "text-muted-foreground"
-                    )}
-                  >
-                    {stage}
-                  </span>
-                </HStack>
-              );
-            })}
-          </HStack>
+          {/* The full stage flow (green-dot progress) lives in the middle pane
+              (ChangeOrderStatusFlow); the header keeps only the canonical status
+              badge (above) + the advance/release action. */}
 
           {/* Implementation → Done is a release: it opens the review + confirm
               dialog (which carries the merge resolution), not a one-click stage
