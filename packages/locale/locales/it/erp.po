@@ -529,6 +529,9 @@ msgstr "Costo di acquisizione"
 msgid "Acquisition Date"
 msgstr "Data di acquisizione"
 
+msgid "Action"
+msgstr ""
+
 msgid "Action Status"
 msgstr "Stato Azione"
 
@@ -1168,6 +1171,10 @@ msgstr "Sei sicuro di voler eliminare l'account: {0}{1}? Questa azione non può 
 #. placeholder {0}: apiKey.name
 msgid "Are you sure you want to delete the API key: {0}? This cannot be undone."
 msgstr "Sei sicuro di voler eliminare la chiave API: {0}? Questa azione non può essere annullata."
+
+#. placeholder {0}: requiredAction.name
+msgid "Are you sure you want to delete the change order action: {0}? This cannot be undone."
+msgstr ""
 
 #. placeholder {0}: changeOrderType.name
 msgid "Are you sure you want to delete the change order category: {0}? This cannot be undone."
@@ -2111,6 +2118,9 @@ msgstr ""
 msgid "Change Order"
 msgstr "Ordine di Modifica"
 
+msgid "Change Order Actions"
+msgstr ""
+
 msgid "Change Order Categories"
 msgstr "Categorie Ordini di Modifica"
 
@@ -3012,6 +3022,9 @@ msgstr "Creato il"
 msgid "Created By"
 msgstr "Creato da"
 
+msgid "Created change order action"
+msgstr ""
+
 msgid "Created change order category"
 msgstr "Categoria di ordine di modifica creata"
 
@@ -3626,6 +3639,9 @@ msgstr "Elimina {periodLabel}"
 
 msgid "Delete {storageUnitName}"
 msgstr "Elimina {storageUnitName}"
+
+msgid "Delete Action"
+msgstr ""
 
 msgid "Delete API Key"
 msgstr "Elimina Chiave API"
@@ -4291,6 +4307,9 @@ msgstr "Modifica Flusso di Lavoro <0>Problema</0>"
 msgid "Edit Account"
 msgstr "Modifica Account"
 
+msgid "Edit Action"
+msgstr ""
+
 msgid "Edit API Key"
 msgstr "Modifica Chiave API"
 
@@ -4314,6 +4333,9 @@ msgstr "Modifica Categoria"
 
 msgid "Edit Change Order"
 msgstr "Modifica Ordine di Modifica"
+
+msgid "Edit Change Order Action"
+msgstr ""
 
 msgid "Edit Change Order Category"
 msgstr "Modifica Categoria Ordine di Modifica"
@@ -7610,6 +7632,9 @@ msgstr "Nuova Categoria Attributo"
 
 msgid "New Change Order"
 msgstr "Nuovo Ordine di Modifica"
+
+msgid "New Change Order Action"
+msgstr ""
 
 msgid "New Change Order Category"
 msgstr "Nuova Categoria di Ordine di Modifica"

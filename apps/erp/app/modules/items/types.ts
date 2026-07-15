@@ -57,6 +57,9 @@ export type ChangeOrderStatus =
 export type ChangeOrderActionTask =
   Database["public"]["Tables"]["changeOrderActionTask"]["Row"];
 
+export type ChangeOrderRequiredAction =
+  Database["public"]["Tables"]["changeOrderRequiredAction"]["Row"];
+
 export type MaterialConfigurationData = {
   materialId?: string;
   materialSubstanceId?: string;

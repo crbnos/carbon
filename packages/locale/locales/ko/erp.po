@@ -529,6 +529,9 @@ msgstr "취득원가"
 msgid "Acquisition Date"
 msgstr "취득일"
 
+msgid "Action"
+msgstr ""
+
 msgid "Action Status"
 msgstr "조치 상태"
 
@@ -1168,6 +1171,10 @@ msgstr "계정 {0}{1}을(를) 삭제하시겠습니까? 이 작업은 되돌릴 
 #. placeholder {0}: apiKey.name
 msgid "Are you sure you want to delete the API key: {0}? This cannot be undone."
 msgstr "API 키 {0}을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
+
+#. placeholder {0}: requiredAction.name
+msgid "Are you sure you want to delete the change order action: {0}? This cannot be undone."
+msgstr ""
 
 #. placeholder {0}: changeOrderType.name
 msgid "Are you sure you want to delete the change order category: {0}? This cannot be undone."
@@ -2111,6 +2118,9 @@ msgstr ""
 msgid "Change Order"
 msgstr "변경주문"
 
+msgid "Change Order Actions"
+msgstr ""
+
 msgid "Change Order Categories"
 msgstr "변경주문 카테고리"
 
@@ -3012,6 +3022,9 @@ msgstr "생성일"
 msgid "Created By"
 msgstr "생성자"
 
+msgid "Created change order action"
+msgstr ""
+
 msgid "Created change order category"
 msgstr "변경주문 카테고리가 생성되었습니다."
 
@@ -3626,6 +3639,9 @@ msgstr "{periodLabel} 삭제"
 
 msgid "Delete {storageUnitName}"
 msgstr "{storageUnitName} 삭제"
+
+msgid "Delete Action"
+msgstr ""
 
 msgid "Delete API Key"
 msgstr "API 키 삭제"
@@ -4291,6 +4307,9 @@ msgstr "<0>이슈</0> 워크플로 수정"
 msgid "Edit Account"
 msgstr "계정 수정"
 
+msgid "Edit Action"
+msgstr ""
+
 msgid "Edit API Key"
 msgstr "API 키 수정"
 
@@ -4314,6 +4333,9 @@ msgstr "카테고리 수정"
 
 msgid "Edit Change Order"
 msgstr "변경주문 편집"
+
+msgid "Edit Change Order Action"
+msgstr ""
 
 msgid "Edit Change Order Category"
 msgstr "변경주문 카테고리 편집"
@@ -7610,6 +7632,9 @@ msgstr "신규 속성 카테고리"
 
 msgid "New Change Order"
 msgstr "새 변경 주문"
+
+msgid "New Change Order Action"
+msgstr ""
 
 msgid "New Change Order Category"
 msgstr "새 변경 주문 카테고리"

@@ -529,6 +529,9 @@ msgstr "取得原価"
 msgid "Acquisition Date"
 msgstr "取得日"
 
+msgid "Action"
+msgstr ""
+
 msgid "Action Status"
 msgstr "アクション状態"
 
@@ -1168,6 +1171,10 @@ msgstr "本当にアカウント {0}{1} を削除してもよろしいですか�
 #. placeholder {0}: apiKey.name
 msgid "Are you sure you want to delete the API key: {0}? This cannot be undone."
 msgstr "API キー: {0} を削除してもよろしいですか？この操作は取り消せません。"
+
+#. placeholder {0}: requiredAction.name
+msgid "Are you sure you want to delete the change order action: {0}? This cannot be undone."
+msgstr ""
 
 #. placeholder {0}: changeOrderType.name
 msgid "Are you sure you want to delete the change order category: {0}? This cannot be undone."
@@ -2111,6 +2118,9 @@ msgstr ""
 msgid "Change Order"
 msgstr "変更指示"
 
+msgid "Change Order Actions"
+msgstr ""
+
 msgid "Change Order Categories"
 msgstr "変更指示カテゴリ"
 
@@ -3012,6 +3022,9 @@ msgstr "作成日時"
 msgid "Created By"
 msgstr "作成者"
 
+msgid "Created change order action"
+msgstr ""
+
 msgid "Created change order category"
 msgstr "変更指示カテゴリを作成しました"
 
@@ -3626,6 +3639,9 @@ msgstr "{periodLabel}を削除"
 
 msgid "Delete {storageUnitName}"
 msgstr "{storageUnitName}を削除"
+
+msgid "Delete Action"
+msgstr ""
 
 msgid "Delete API Key"
 msgstr "APIキーを削除"
@@ -4291,6 +4307,9 @@ msgstr "<0>問題</0>ワークフローを編集"
 msgid "Edit Account"
 msgstr "アカウントを編集"
 
+msgid "Edit Action"
+msgstr ""
+
 msgid "Edit API Key"
 msgstr "APIキーを編集"
 
@@ -4314,6 +4333,9 @@ msgstr "カテゴリを編集"
 
 msgid "Edit Change Order"
 msgstr "変更指示を編集"
+
+msgid "Edit Change Order Action"
+msgstr ""
 
 msgid "Edit Change Order Category"
 msgstr "変更指示カテゴリを編集"
@@ -7610,6 +7632,9 @@ msgstr "新しい属性カテゴリ"
 
 msgid "New Change Order"
 msgstr "新しい変更指示"
+
+msgid "New Change Order Action"
+msgstr ""
 
 msgid "New Change Order Category"
 msgstr "新しい変更指示カテゴリ"

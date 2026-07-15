@@ -529,6 +529,9 @@ msgstr "Первоначальная стоимость"
 msgid "Acquisition Date"
 msgstr "Дата приобретения"
 
+msgid "Action"
+msgstr ""
+
 msgid "Action Status"
 msgstr "Статус действия"
 
@@ -1168,6 +1171,10 @@ msgstr "Вы уверены, что хотите удалить счет: {0}{1}
 #. placeholder {0}: apiKey.name
 msgid "Are you sure you want to delete the API key: {0}? This cannot be undone."
 msgstr "Вы уверены, что хотите удалить API ключ: {0}? Это действие невозможно отменить."
+
+#. placeholder {0}: requiredAction.name
+msgid "Are you sure you want to delete the change order action: {0}? This cannot be undone."
+msgstr ""
 
 #. placeholder {0}: changeOrderType.name
 msgid "Are you sure you want to delete the change order category: {0}? This cannot be undone."
@@ -2111,6 +2118,9 @@ msgstr ""
 msgid "Change Order"
 msgstr "Приказ об изменении"
 
+msgid "Change Order Actions"
+msgstr ""
+
 msgid "Change Order Categories"
 msgstr "Категории приказов об изменении"
 
@@ -3012,6 +3022,9 @@ msgstr "Создано"
 msgid "Created By"
 msgstr "Создано"
 
+msgid "Created change order action"
+msgstr ""
+
 msgid "Created change order category"
 msgstr "Создана категория приказа об изменении"
 
@@ -3626,6 +3639,9 @@ msgstr "Удалить {periodLabel}"
 
 msgid "Delete {storageUnitName}"
 msgstr "Удалить {storageUnitName}"
+
+msgid "Delete Action"
+msgstr ""
 
 msgid "Delete API Key"
 msgstr "Удалить API ключ"
@@ -4291,6 +4307,9 @@ msgstr "Редактировать Рабочий процесс <0>Пробле
 msgid "Edit Account"
 msgstr "Редактировать счет"
 
+msgid "Edit Action"
+msgstr ""
+
 msgid "Edit API Key"
 msgstr "Редактировать API ключ"
 
@@ -4314,6 +4333,9 @@ msgstr "Редактировать категорию"
 
 msgid "Edit Change Order"
 msgstr "Редактировать приказ об изменении"
+
+msgid "Edit Change Order Action"
+msgstr ""
 
 msgid "Edit Change Order Category"
 msgstr "Редактировать категорию приказа об изменении"
@@ -7610,6 +7632,9 @@ msgstr "Новая категория атрибутов"
 
 msgid "New Change Order"
 msgstr "Новый приказ на изменение"
+
+msgid "New Change Order Action"
+msgstr ""
 
 msgid "New Change Order Category"
 msgstr "Новая категория приказа на изменение"

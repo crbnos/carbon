@@ -10,6 +10,7 @@ import {
   LuGroup,
   LuHammer,
   LuHeadphones,
+  LuListChecks,
   LuPizza,
   LuPuzzle,
   LuRuler,
@@ -115,6 +116,12 @@ export default function useItemsSubmodules() {
           name: t`Change Order Types`,
           to: path.to.changeOrderTypes,
           icon: <LuTags />,
+          role: "employee"
+        },
+        {
+          name: t`Change Order Actions`,
+          to: path.to.changeOrderRequiredActions,
+          icon: <LuListChecks />,
           role: "employee"
         }
       ]

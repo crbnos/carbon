@@ -529,6 +529,9 @@ msgstr "Costo de adquisición"
 msgid "Acquisition Date"
 msgstr "Fecha de adquisición"
 
+msgid "Action"
+msgstr ""
+
 msgid "Action Status"
 msgstr "Estado de la Acción"
 
@@ -1168,6 +1171,10 @@ msgstr "¿Estás seguro de que deseas eliminar la cuenta: {0}{1}? Esta acción n
 #. placeholder {0}: apiKey.name
 msgid "Are you sure you want to delete the API key: {0}? This cannot be undone."
 msgstr "¿Estás seguro de que deseas eliminar la clave API: {0}? Esto no se puede deshacer."
+
+#. placeholder {0}: requiredAction.name
+msgid "Are you sure you want to delete the change order action: {0}? This cannot be undone."
+msgstr ""
 
 #. placeholder {0}: changeOrderType.name
 msgid "Are you sure you want to delete the change order category: {0}? This cannot be undone."
@@ -2111,6 +2118,9 @@ msgstr ""
 msgid "Change Order"
 msgstr "Orden de Cambio"
 
+msgid "Change Order Actions"
+msgstr ""
+
 msgid "Change Order Categories"
 msgstr "Categorías de Orden de Cambio"
 
@@ -3012,6 +3022,9 @@ msgstr "Creado el"
 msgid "Created By"
 msgstr "Creado por"
 
+msgid "Created change order action"
+msgstr ""
+
 msgid "Created change order category"
 msgstr "Categoría de orden de cambio creada"
 
@@ -3626,6 +3639,9 @@ msgstr "Eliminar {periodLabel}"
 
 msgid "Delete {storageUnitName}"
 msgstr "Eliminar {storageUnitName}"
+
+msgid "Delete Action"
+msgstr ""
 
 msgid "Delete API Key"
 msgstr "Eliminar clave API"
@@ -4291,6 +4307,9 @@ msgstr "Editar Flujo de Trabajo <0>Problema</0>"
 msgid "Edit Account"
 msgstr "Editar Cuenta"
 
+msgid "Edit Action"
+msgstr ""
+
 msgid "Edit API Key"
 msgstr "Editar Clave API"
 
@@ -4314,6 +4333,9 @@ msgstr "Editar Categoría"
 
 msgid "Edit Change Order"
 msgstr "Editar Orden de Cambio"
+
+msgid "Edit Change Order Action"
+msgstr ""
 
 msgid "Edit Change Order Category"
 msgstr "Editar Categoría de Orden de Cambio"
@@ -7610,6 +7632,9 @@ msgstr "Nueva Categoría de Atributo"
 
 msgid "New Change Order"
 msgstr "Nueva orden de cambio"
+
+msgid "New Change Order Action"
+msgstr ""
 
 msgid "New Change Order Category"
 msgstr "Nueva categoría de orden de cambio"

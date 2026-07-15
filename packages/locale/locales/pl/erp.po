@@ -529,6 +529,9 @@ msgstr "Koszt nabycia"
 msgid "Acquisition Date"
 msgstr "Data nabycia"
 
+msgid "Action"
+msgstr ""
+
 msgid "Action Status"
 msgstr "Status działania"
 
@@ -1168,6 +1171,10 @@ msgstr "Czy na pewno chcesz usunąć konto: {0}{1}? Tej czynności nie można co
 #. placeholder {0}: apiKey.name
 msgid "Are you sure you want to delete the API key: {0}? This cannot be undone."
 msgstr "Czy na pewno chcesz usunąć klucz API: {0}? Tej czynności nie można cofnąć."
+
+#. placeholder {0}: requiredAction.name
+msgid "Are you sure you want to delete the change order action: {0}? This cannot be undone."
+msgstr ""
 
 #. placeholder {0}: changeOrderType.name
 msgid "Are you sure you want to delete the change order category: {0}? This cannot be undone."
@@ -2111,6 +2118,9 @@ msgstr ""
 msgid "Change Order"
 msgstr "Zlecenie Zmian"
 
+msgid "Change Order Actions"
+msgstr ""
+
 msgid "Change Order Categories"
 msgstr "Kategorie Zleceń Zmian"
 
@@ -3012,6 +3022,9 @@ msgstr "Utworzono"
 msgid "Created By"
 msgstr "Utworzono przez"
 
+msgid "Created change order action"
+msgstr ""
+
 msgid "Created change order category"
 msgstr "Utworzona kategoria zlecenia zmian"
 
@@ -3626,6 +3639,9 @@ msgstr "Usuń {periodLabel}"
 
 msgid "Delete {storageUnitName}"
 msgstr "Usuń {storageUnitName}"
+
+msgid "Delete Action"
+msgstr ""
 
 msgid "Delete API Key"
 msgstr "Usuń klucz API"
@@ -4291,6 +4307,9 @@ msgstr "Edytuj Przepływ Pracy <0>Problem</0>"
 msgid "Edit Account"
 msgstr "Edytuj konto"
 
+msgid "Edit Action"
+msgstr ""
+
 msgid "Edit API Key"
 msgstr "Edytuj klucz API"
 
@@ -4314,6 +4333,9 @@ msgstr "Edytuj kategorię"
 
 msgid "Edit Change Order"
 msgstr "Edytuj Zlecenie Zmian"
+
+msgid "Edit Change Order Action"
+msgstr ""
 
 msgid "Edit Change Order Category"
 msgstr "Edytuj Kategorię Zlecenia Zmian"
@@ -7610,6 +7632,9 @@ msgstr "Nowa Kategoria Atrybutu"
 
 msgid "New Change Order"
 msgstr "Nowe Zlecenie Zmiany"
+
+msgid "New Change Order Action"
+msgstr ""
 
 msgid "New Change Order Category"
 msgstr "Nowa Kategoria Zlecenia Zmiany"

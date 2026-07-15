@@ -529,6 +529,9 @@ msgstr "अधिग्रहण लागत"
 msgid "Acquisition Date"
 msgstr "अधिग्रहण तारीख"
 
+msgid "Action"
+msgstr ""
+
 msgid "Action Status"
 msgstr "कार्रवाई स्थिति"
 
@@ -1168,6 +1171,10 @@ msgstr "क्या आप सुनिश्चित हैं कि आप 
 #. placeholder {0}: apiKey.name
 msgid "Are you sure you want to delete the API key: {0}? This cannot be undone."
 msgstr "क्या आप सुनिश्चित हैं कि आप API कुंजी को हटाना चाहते हैं: {0}? यह पूर्ववत नहीं किया जा सकता।"
+
+#. placeholder {0}: requiredAction.name
+msgid "Are you sure you want to delete the change order action: {0}? This cannot be undone."
+msgstr ""
 
 #. placeholder {0}: changeOrderType.name
 msgid "Are you sure you want to delete the change order category: {0}? This cannot be undone."
@@ -2111,6 +2118,9 @@ msgstr ""
 msgid "Change Order"
 msgstr "परिवर्तन आदेश"
 
+msgid "Change Order Actions"
+msgstr ""
+
 msgid "Change Order Categories"
 msgstr "परिवर्तन आदेश श्रेणियां"
 
@@ -3012,6 +3022,9 @@ msgstr "बनाया गया"
 msgid "Created By"
 msgstr "द्वारा बनाया गया"
 
+msgid "Created change order action"
+msgstr ""
+
 msgid "Created change order category"
 msgstr "परिवर्तन आदेश श्रेणी बनाई गई"
 
@@ -3626,6 +3639,9 @@ msgstr "{periodLabel} हटाएँ"
 
 msgid "Delete {storageUnitName}"
 msgstr "Delete {storageUnitName} को हटाएं"
+
+msgid "Delete Action"
+msgstr ""
 
 msgid "Delete API Key"
 msgstr "API Key हटाएं"
@@ -4291,6 +4307,9 @@ msgstr "<0>समस्या</0> वर्कफ़्लो संपादि
 msgid "Edit Account"
 msgstr "खाता संपादित करें"
 
+msgid "Edit Action"
+msgstr ""
+
 msgid "Edit API Key"
 msgstr "API Key संपादित करें"
 
@@ -4314,6 +4333,9 @@ msgstr "श्रेणी संपादित करें"
 
 msgid "Edit Change Order"
 msgstr "परिवर्तन आदेश संपादित करें"
+
+msgid "Edit Change Order Action"
+msgstr ""
 
 msgid "Edit Change Order Category"
 msgstr "परिवर्तन आदेश श्रेणी संपादित करें"
@@ -7610,6 +7632,9 @@ msgstr "नई विशेषता श्रेणी"
 
 msgid "New Change Order"
 msgstr "नया परिवर्तन आदेश"
+
+msgid "New Change Order Action"
+msgstr ""
 
 msgid "New Change Order Category"
 msgstr "नई परिवर्तन आदेश श्रेणी"

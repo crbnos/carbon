@@ -529,6 +529,9 @@ msgstr "Satın alma maliyeti"
 msgid "Acquisition Date"
 msgstr "Satın alma tarihi"
 
+msgid "Action"
+msgstr ""
+
 msgid "Action Status"
 msgstr "Aksiyon Durumu"
 
@@ -1168,6 +1171,10 @@ msgstr "Hesabı silmek istediğinizden emin misiniz: {0}{1}? Bu geri alınamaz."
 #. placeholder {0}: apiKey.name
 msgid "Are you sure you want to delete the API key: {0}? This cannot be undone."
 msgstr "API anahtarını silmek istediğinizden emin misiniz: {0}? Bu geri alınamaz."
+
+#. placeholder {0}: requiredAction.name
+msgid "Are you sure you want to delete the change order action: {0}? This cannot be undone."
+msgstr ""
 
 #. placeholder {0}: changeOrderType.name
 msgid "Are you sure you want to delete the change order category: {0}? This cannot be undone."
@@ -2111,6 +2118,9 @@ msgstr ""
 msgid "Change Order"
 msgstr "Değişiklik Emri"
 
+msgid "Change Order Actions"
+msgstr ""
+
 msgid "Change Order Categories"
 msgstr "Değişiklik Emri Kategorileri"
 
@@ -3012,6 +3022,9 @@ msgstr "Oluşturulma Tarihi"
 msgid "Created By"
 msgstr "Oluşturan"
 
+msgid "Created change order action"
+msgstr ""
+
 msgid "Created change order category"
 msgstr "Oluşturulan değişiklik emri kategorisi"
 
@@ -3626,6 +3639,9 @@ msgstr "{periodLabel} öğesini sil"
 
 msgid "Delete {storageUnitName}"
 msgstr "Delete {storageUnitName}"
+
+msgid "Delete Action"
+msgstr ""
 
 msgid "Delete API Key"
 msgstr "API Anahtarını Sil"
@@ -4291,6 +4307,9 @@ msgstr "<0>Sorun</0> İş Akışını Düzenle"
 msgid "Edit Account"
 msgstr "Hesabı Düzenle"
 
+msgid "Edit Action"
+msgstr ""
+
 msgid "Edit API Key"
 msgstr "API Anahtarını Düzenle"
 
@@ -4314,6 +4333,9 @@ msgstr "Kategoriyi Düzenle"
 
 msgid "Edit Change Order"
 msgstr "Değişiklik Emrini Düzenle"
+
+msgid "Edit Change Order Action"
+msgstr ""
 
 msgid "Edit Change Order Category"
 msgstr "Değişiklik Emri Kategorisini Düzenle"
@@ -7610,6 +7632,9 @@ msgstr "Yeni Öznitelik Kategorisi"
 
 msgid "New Change Order"
 msgstr "Yeni Değişiklik Emri"
+
+msgid "New Change Order Action"
+msgstr ""
 
 msgid "New Change Order Category"
 msgstr "Yeni Değişiklik Emri Kategorisi"

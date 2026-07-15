@@ -710,6 +710,14 @@ export const path = {
       generatePath(`${x}/items/change-order-types/${id}`),
     deleteChangeOrderType: (id: string) =>
       generatePath(`${x}/items/change-order-types/delete/${id}`),
+    // Change Order Actions config (the changeOrderRequiredAction default-action
+    // templates) — a sibling of the CO list, like change-order-types above.
+    changeOrderRequiredActions: `${x}/items/change-order-actions`,
+    newChangeOrderRequiredAction: `${x}/items/change-order-actions/new`,
+    changeOrderRequiredAction: (id: string) =>
+      generatePath(`${x}/items/change-order-actions/${id}`),
+    deleteChangeOrderRequiredAction: (id: string) =>
+      generatePath(`${x}/items/change-order-actions/delete/${id}`),
     // Change Order content (Phase 2): BOM change rows + per-assembly targets, and
     // freeform actions. Top-to-bottom: affected items selected first, then
     // per-item staged BOM/BOP/attributes edited in place.

@@ -529,6 +529,9 @@ msgstr "收购成本"
 msgid "Acquisition Date"
 msgstr "收购日期"
 
+msgid "Action"
+msgstr ""
+
 msgid "Action Status"
 msgstr "操作状态"
 
@@ -1168,6 +1171,10 @@ msgstr "您确定要删除账户：{0}{1}吗？此操作无法撤销。"
 #. placeholder {0}: apiKey.name
 msgid "Are you sure you want to delete the API key: {0}? This cannot be undone."
 msgstr "您确定要删除 API 密钥：{0}？此操作无法撤销。"
+
+#. placeholder {0}: requiredAction.name
+msgid "Are you sure you want to delete the change order action: {0}? This cannot be undone."
+msgstr ""
 
 #. placeholder {0}: changeOrderType.name
 msgid "Are you sure you want to delete the change order category: {0}? This cannot be undone."
@@ -2111,6 +2118,9 @@ msgstr ""
 msgid "Change Order"
 msgstr "变更单"
 
+msgid "Change Order Actions"
+msgstr ""
+
 msgid "Change Order Categories"
 msgstr "变更单类别"
 
@@ -3012,6 +3022,9 @@ msgstr "创建于"
 msgid "Created By"
 msgstr "由...创建"
 
+msgid "Created change order action"
+msgstr ""
+
 msgid "Created change order category"
 msgstr "已创建变更单类别"
 
@@ -3626,6 +3639,9 @@ msgstr "删除{periodLabel}"
 
 msgid "Delete {storageUnitName}"
 msgstr "删除 {storageUnitName}"
+
+msgid "Delete Action"
+msgstr ""
 
 msgid "Delete API Key"
 msgstr "删除 API 密钥"
@@ -4291,6 +4307,9 @@ msgstr "编辑<0>问题</0>工作流"
 msgid "Edit Account"
 msgstr "编辑账户"
 
+msgid "Edit Action"
+msgstr ""
+
 msgid "Edit API Key"
 msgstr "编辑 API 密钥"
 
@@ -4314,6 +4333,9 @@ msgstr "编辑分类"
 
 msgid "Edit Change Order"
 msgstr "编辑变更单"
+
+msgid "Edit Change Order Action"
+msgstr ""
 
 msgid "Edit Change Order Category"
 msgstr "编辑变更单类别"
@@ -7610,6 +7632,9 @@ msgstr "新属性类别"
 
 msgid "New Change Order"
 msgstr "新建变更单"
+
+msgid "New Change Order Action"
+msgstr ""
 
 msgid "New Change Order Category"
 msgstr "新建变更单类别"
