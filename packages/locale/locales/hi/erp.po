@@ -335,7 +335,7 @@ msgid "A separate schedule for tax reporting when tax rules require a method dif
 msgstr "कर रिपोर्टिंग के लिए एक अलग अनुसूची जब कर नियम पुस्तक मूल्यह्रास से अलग विधि की आवश्यकता होती है।"
 
 msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
-msgstr ""
+msgstr "एक सेवा एक बिलयोग्य गतिविधि है जो खरीदी या प्रदर्शन की जाती है — इसे कभी भेजा नहीं जाता, प्राप्त नहीं किया जाता, या स्टॉक नहीं किया जाता"
 
 msgid "A set of companies under one owner that share group-scoped configuration — the chart of accounts, currencies, and dimensions — so the same accounting setup spans every company in the group."
 msgstr "एक ही मालिक के अधीन कंपनियों का समूह जो समूह-स्तरीय कॉन्फ़िगरेशन साझा करती हैं — खातों का चार्ट, मुद्राएँ और आयाम — ताकि वही लेखांकन सेटअप समूह की हर कंपनी पर लागू हो।"
@@ -2643,7 +2643,7 @@ msgid "Copy link to procedure"
 msgstr "प्रक्रिया के लिए लिंक कॉपी करें"
 
 msgid "Copy link to service"
-msgstr ""
+msgstr "सेवा के लिए लिंक कॉपी करें"
 
 msgid "Copy link to tool"
 msgstr "टूल के लिए लिंक कॉपी करें"
@@ -2694,10 +2694,10 @@ msgid "Copy Quote number"
 msgstr "उद्धरण संख्या कॉपी करें"
 
 msgid "Copy service number"
-msgstr ""
+msgstr "सेवा संख्या कॉपी करें"
 
 msgid "Copy service unique identifier"
-msgstr ""
+msgstr "सेवा अनन्य पहचानकर्ता कॉपी करें"
 
 msgid "Copy this item's pricing to another scope."
 msgstr "इस आइटम की मूल्य निर्धारण को दूसरे स्कोप में कॉपी करें।"
@@ -2997,7 +2997,7 @@ msgid "Created scrap reason"
 msgstr "स्क्रैप कारण बनाया गया"
 
 msgid "Created service"
-msgstr ""
+msgstr "सेवा बनाई गई"
 
 msgid "Created shipping method"
 msgstr "शिपिंग विधि बनाई गई"
@@ -3710,7 +3710,7 @@ msgid "Delete Schedule"
 msgstr "शेड्यूल हटाएं"
 
 msgid "Delete Service"
-msgstr ""
+msgstr "सेवा हटाएं"
 
 msgid "Delete Shift"
 msgstr "शिफ्ट हटाएं"
@@ -4389,7 +4389,7 @@ msgid "Edit Sequence"
 msgstr "अनुक्रम संपादित करें"
 
 msgid "Edit Service"
-msgstr ""
+msgstr "सेवा संपादित करें"
 
 msgid "Edit Shift"
 msgstr "शिफ्ट संपादित करें"
@@ -5014,7 +5014,7 @@ msgstr "प्रक्रिया बनाने में विफल: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create service: {0}"
-msgstr ""
+msgstr "सेवा बनाने में विफल: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create shipping method: {0}"
@@ -7658,7 +7658,7 @@ msgid "New Scheduled Maintenance"
 msgstr "नया निर्धारित रखरखाव"
 
 msgid "New Service"
-msgstr ""
+msgstr "नई सेवा"
 
 msgid "New Shift"
 msgstr "नई शिफ्ट"
@@ -10633,7 +10633,7 @@ msgid "Service Charges (default)"
 msgstr "सेवा शुल्क (डिफ़ॉल्ट)"
 
 msgid "Service Details"
-msgstr ""
+msgstr "सेवा विवरण"
 
 msgid "Service ID"
 msgstr "सेवा ID"
@@ -10642,7 +10642,7 @@ msgid "services"
 msgstr "सेवाएं"
 
 msgid "Services"
-msgstr ""
+msgstr "सेवाएं"
 
 msgid "Set a target"
 msgstr "लक्ष्य निर्धारित करें"
@@ -13043,7 +13043,7 @@ msgid "Use ... to get the next part ID"
 msgstr "अगला पार्ट आईडी प्राप्त करने के लिए ... का उपयोग करें"
 
 msgid "Use ... to get the next service ID"
-msgstr ""
+msgstr "अगली सेवा ID प्राप्त करने के लिए ... का उपयोग करें"
 
 msgid "Use ... to get the next tool ID"
 msgstr "अगली टूल ID प्राप्त करने के लिए ... का उपयोग करें"

@@ -335,7 +335,7 @@ msgid "A separate schedule for tax reporting when tax rules require a method dif
 msgstr "Vergi kuralları defter amortismanından farklı bir yöntem gerektirdiğinde vergi raporlaması için ayrı bir zaman çizelgesi."
 
 msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
-msgstr ""
+msgstr "Bir hizmet, satın alınan veya gerçekleştirilen faturalaştırılabilir bir etkinliktir — hiçbir zaman gönderilmez, alınmaz veya depolanmaz"
 
 msgid "A set of companies under one owner that share group-scoped configuration — the chart of accounts, currencies, and dimensions — so the same accounting setup spans every company in the group."
 msgstr "Tek bir sahip altında, grup kapsamlı yapılandırmayı — hesap planı, para birimleri ve boyutlar — paylaşan, böylece aynı muhasebe kurulumunun gruptaki her şirketi kapsadığı şirketler kümesi."
@@ -2643,7 +2643,7 @@ msgid "Copy link to procedure"
 msgstr "Prosedüre bağlantısını kopyala"
 
 msgid "Copy link to service"
-msgstr ""
+msgstr "Hizmet bağlantısını kopyala"
 
 msgid "Copy link to tool"
 msgstr "Aleteye bağlantısını kopyala"
@@ -2694,10 +2694,10 @@ msgid "Copy Quote number"
 msgstr "Teklif numarasını kopyala"
 
 msgid "Copy service number"
-msgstr ""
+msgstr "Hizmet numarasını kopyala"
 
 msgid "Copy service unique identifier"
-msgstr ""
+msgstr "Hizmet benzersiz tanımlayıcısını kopyala"
 
 msgid "Copy this item's pricing to another scope."
 msgstr "Bu öğenin fiyatlandırmasını başka bir kapsamdaki konumlandırın."
@@ -2997,7 +2997,7 @@ msgid "Created scrap reason"
 msgstr "Üretim sebebi oluşturuldu"
 
 msgid "Created service"
-msgstr ""
+msgstr "Hizmet oluşturuldu"
 
 msgid "Created shipping method"
 msgstr "Gönderi yöntemi oluşturuldu"
@@ -3710,7 +3710,7 @@ msgid "Delete Schedule"
 msgstr "Programı Sil"
 
 msgid "Delete Service"
-msgstr ""
+msgstr "Hizmeti Sil"
 
 msgid "Delete Shift"
 msgstr "Vardaki Vardiyayı Sil"
@@ -4389,7 +4389,7 @@ msgid "Edit Sequence"
 msgstr "Sıralamayı Düzenle"
 
 msgid "Edit Service"
-msgstr ""
+msgstr "Hizmeti Düzenle"
 
 msgid "Edit Shift"
 msgstr "Vardiya Düzenle"
@@ -5014,7 +5014,7 @@ msgstr "İşlemi oluşturulamadı: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create service: {0}"
-msgstr ""
+msgstr "Hizmet oluşturma başarısız: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create shipping method: {0}"
@@ -7658,7 +7658,7 @@ msgid "New Scheduled Maintenance"
 msgstr "Yeni Planlanmış Bakım"
 
 msgid "New Service"
-msgstr ""
+msgstr "Yeni Hizmet"
 
 msgid "New Shift"
 msgstr "Yeni Vardiya"
@@ -10633,7 +10633,7 @@ msgid "Service Charges (default)"
 msgstr "Hizmet ücretleri (varsayılan)"
 
 msgid "Service Details"
-msgstr ""
+msgstr "Hizmet Detayları"
 
 msgid "Service ID"
 msgstr "Hizmet Kimliği"
@@ -10642,7 +10642,7 @@ msgid "services"
 msgstr "hizmetler"
 
 msgid "Services"
-msgstr ""
+msgstr "Hizmetler"
 
 msgid "Set a target"
 msgstr "Hedef belirle"
@@ -13043,7 +13043,7 @@ msgid "Use ... to get the next part ID"
 msgstr "Bir sonraki parça kimliğini almak için ..."
 
 msgid "Use ... to get the next service ID"
-msgstr ""
+msgstr "Sonraki hizmet kimliğini almak için ... kullan"
 
 msgid "Use ... to get the next tool ID"
 msgstr "Sonraki araç kimliğini almak için ..."

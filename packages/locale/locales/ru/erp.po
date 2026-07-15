@@ -335,7 +335,7 @@ msgid "A separate schedule for tax reporting when tax rules require a method dif
 msgstr "Отдельный график для налоговой отчетности, когда налоговые правила требуют метода, отличного от бухгалтерской амортизации."
 
 msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
-msgstr ""
+msgstr "Услуга — это платная деятельность, которая покупается или выполняется — она никогда не отправляется, не принимается и не хранится на складе"
 
 msgid "A set of companies under one owner that share group-scoped configuration — the chart of accounts, currencies, and dimensions — so the same accounting setup spans every company in the group."
 msgstr "Набор компаний под одним владельцем, которые совместно используют конфигурацию уровня группы — план счетов, валюты и аналитики — так что одна и та же настройка учёта распространяется на каждую компанию в группе."
@@ -2643,7 +2643,7 @@ msgid "Copy link to procedure"
 msgstr "Скопировать ссылку на процедуру"
 
 msgid "Copy link to service"
-msgstr ""
+msgstr "Копировать ссылку на услугу"
 
 msgid "Copy link to tool"
 msgstr "Скопировать ссылку на инструмент"
@@ -2694,10 +2694,10 @@ msgid "Copy Quote number"
 msgstr "Копировать номер предложения"
 
 msgid "Copy service number"
-msgstr ""
+msgstr "Копировать номер услуги"
 
 msgid "Copy service unique identifier"
-msgstr ""
+msgstr "Копировать уникальный идентификатор услуги"
 
 msgid "Copy this item's pricing to another scope."
 msgstr "Скопируйте цены этого товара в другую область."
@@ -2997,7 +2997,7 @@ msgid "Created scrap reason"
 msgstr "Причина брака создана"
 
 msgid "Created service"
-msgstr ""
+msgstr "Услуга создана"
 
 msgid "Created shipping method"
 msgstr "Способ доставки создан"
@@ -3710,7 +3710,7 @@ msgid "Delete Schedule"
 msgstr "Удалить расписание"
 
 msgid "Delete Service"
-msgstr ""
+msgstr "Удалить услугу"
 
 msgid "Delete Shift"
 msgstr "Удалить смену"
@@ -4389,7 +4389,7 @@ msgid "Edit Sequence"
 msgstr "Редактировать последовательность"
 
 msgid "Edit Service"
-msgstr ""
+msgstr "Редактировать услугу"
 
 msgid "Edit Shift"
 msgstr "Редактировать смену"
@@ -5014,7 +5014,7 @@ msgstr "Ошибка при создании процесса: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create service: {0}"
-msgstr ""
+msgstr "Ошибка при создании услуги: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create shipping method: {0}"
@@ -7658,7 +7658,7 @@ msgid "New Scheduled Maintenance"
 msgstr "Новое плановое обслуживание"
 
 msgid "New Service"
-msgstr ""
+msgstr "Новая услуга"
 
 msgid "New Shift"
 msgstr "Новая смена"
@@ -10633,7 +10633,7 @@ msgid "Service Charges (default)"
 msgstr "Сборы за услуги (по умолчанию)"
 
 msgid "Service Details"
-msgstr ""
+msgstr "Сведения об услуге"
 
 msgid "Service ID"
 msgstr "ID обслуживания"
@@ -10642,7 +10642,7 @@ msgid "services"
 msgstr "услуги"
 
 msgid "Services"
-msgstr ""
+msgstr "Услуги"
 
 msgid "Set a target"
 msgstr "Установить цель"
@@ -13043,7 +13043,7 @@ msgid "Use ... to get the next part ID"
 msgstr "Используйте ... для получения следующего ID детали"
 
 msgid "Use ... to get the next service ID"
-msgstr ""
+msgstr "Используйте ... для получения следующего ID услуги"
 
 msgid "Use ... to get the next tool ID"
 msgstr "Используйте ... для получения следующего ID инструмента"

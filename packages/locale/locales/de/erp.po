@@ -335,7 +335,7 @@ msgid "A separate schedule for tax reporting when tax rules require a method dif
 msgstr "Ein separater Zeitplan für die Steuererklärung, wenn die Steuervorschriften eine andere Methode als die Buchabschreibung erfordern."
 
 msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
-msgstr ""
+msgstr "Eine Dienstleistung ist eine abrechenbare Tätigkeit, die gekauft oder erbracht wird – sie wird nie versandt, empfangen oder gelagert"
 
 msgid "A set of companies under one owner that share group-scoped configuration — the chart of accounts, currencies, and dimensions — so the same accounting setup spans every company in the group."
 msgstr "Eine Gruppe von Unternehmen unter einem Eigentümer, die gruppenweite Konfigurationen teilen – den Kontenplan, Währungen und Dimensionen –, sodass dieselbe Buchhaltungseinrichtung für jedes Unternehmen der Gruppe gilt."
@@ -2643,7 +2643,7 @@ msgid "Copy link to procedure"
 msgstr "Link zum Verfahren kopieren"
 
 msgid "Copy link to service"
-msgstr ""
+msgstr "Link zur Dienstleistung kopieren"
 
 msgid "Copy link to tool"
 msgstr "Link zum Werkzeug kopieren"
@@ -2694,10 +2694,10 @@ msgid "Copy Quote number"
 msgstr "Angebotsnummer kopieren"
 
 msgid "Copy service number"
-msgstr ""
+msgstr "Dienstleistungsnummer kopieren"
 
 msgid "Copy service unique identifier"
-msgstr ""
+msgstr "Eindeutige Kennung der Dienstleistung kopieren"
 
 msgid "Copy this item's pricing to another scope."
 msgstr "Kopieren Sie die Preisgestaltung dieses Artikels in einen anderen Bereich."
@@ -2997,7 +2997,7 @@ msgid "Created scrap reason"
 msgstr "Verschrottungsgrund erstellt"
 
 msgid "Created service"
-msgstr ""
+msgstr "Dienstleistung erstellt"
 
 msgid "Created shipping method"
 msgstr "Versandmethode erstellt"
@@ -3710,7 +3710,7 @@ msgid "Delete Schedule"
 msgstr "Zeitplan löschen"
 
 msgid "Delete Service"
-msgstr ""
+msgstr "Dienstleistung löschen"
 
 msgid "Delete Shift"
 msgstr "Schicht löschen"
@@ -4389,7 +4389,7 @@ msgid "Edit Sequence"
 msgstr "Sequenz bearbeiten"
 
 msgid "Edit Service"
-msgstr ""
+msgstr "Dienstleistung bearbeiten"
 
 msgid "Edit Shift"
 msgstr "Schicht bearbeiten"
@@ -5014,7 +5014,7 @@ msgstr "Fehler beim Erstellen des Prozesses: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create service: {0}"
-msgstr ""
+msgstr "Fehler beim Erstellen der Dienstleistung: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create shipping method: {0}"
@@ -7658,7 +7658,7 @@ msgid "New Scheduled Maintenance"
 msgstr "Neue geplante Wartung"
 
 msgid "New Service"
-msgstr ""
+msgstr "Neue Dienstleistung"
 
 msgid "New Shift"
 msgstr "Neue Schicht"
@@ -10633,7 +10633,7 @@ msgid "Service Charges (default)"
 msgstr "Servicegebühren (Standard)"
 
 msgid "Service Details"
-msgstr ""
+msgstr "Dienstleistungsdetails"
 
 msgid "Service ID"
 msgstr "Service-ID"
@@ -10642,7 +10642,7 @@ msgid "services"
 msgstr "Dienstleistungen"
 
 msgid "Services"
-msgstr ""
+msgstr "Dienstleistungen"
 
 msgid "Set a target"
 msgstr "Ziel festlegen"
@@ -13043,7 +13043,7 @@ msgid "Use ... to get the next part ID"
 msgstr "Verwenden Sie ..., um die nächste Teile-ID zu erhalten"
 
 msgid "Use ... to get the next service ID"
-msgstr ""
+msgstr "Verwenden Sie ..., um die nächste Dienstleistungs-ID zu erhalten"
 
 msgid "Use ... to get the next tool ID"
 msgstr "Verwenden Sie ..., um die nächste Werkzeug-ID zu erhalten"

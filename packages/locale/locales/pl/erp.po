@@ -335,7 +335,7 @@ msgid "A separate schedule for tax reporting when tax rules require a method dif
 msgstr "Osobny harmonogram dla sprawozdawczości podatkowej, gdy przepisy podatkowe wymagają metody innej niż amortyzacja księgowa."
 
 msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
-msgstr ""
+msgstr "Usługa to działalność podlegająca rozliczeniu, która jest kupowana lub wykonywana — nigdy nie jest wysyłana, odbierana ani magazynowana"
 
 msgid "A set of companies under one owner that share group-scoped configuration — the chart of accounts, currencies, and dimensions — so the same accounting setup spans every company in the group."
 msgstr "Zbiór firm pod jednym właścicielem, które współdzielą konfigurację na poziomie grupy — plan kont, waluty i wymiary — dzięki czemu ta sama konfiguracja księgowa obejmuje każdą firmę w grupie."
@@ -2643,7 +2643,7 @@ msgid "Copy link to procedure"
 msgstr "Skopiuj link do procedury"
 
 msgid "Copy link to service"
-msgstr ""
+msgstr "Skopiuj link do usługi"
 
 msgid "Copy link to tool"
 msgstr "Skopiuj link do narzędzia"
@@ -2694,10 +2694,10 @@ msgid "Copy Quote number"
 msgstr "Skopiuj numer oferty"
 
 msgid "Copy service number"
-msgstr ""
+msgstr "Skopiuj numer usługi"
 
 msgid "Copy service unique identifier"
-msgstr ""
+msgstr "Skopiuj unikalny identyfikator usługi"
 
 msgid "Copy this item's pricing to another scope."
 msgstr "Skopiuj ceny tego artykułu do innego zakresu."
@@ -2997,7 +2997,7 @@ msgid "Created scrap reason"
 msgstr "Utworzono przyczynę złomu"
 
 msgid "Created service"
-msgstr ""
+msgstr "Utworzona usługa"
 
 msgid "Created shipping method"
 msgstr "Utworzono metodę wysyłki"
@@ -3710,7 +3710,7 @@ msgid "Delete Schedule"
 msgstr "Usuń harmonogram"
 
 msgid "Delete Service"
-msgstr ""
+msgstr "Usuń usługę"
 
 msgid "Delete Shift"
 msgstr "Usuń zmianę"
@@ -4389,7 +4389,7 @@ msgid "Edit Sequence"
 msgstr "Edytuj sekwencję"
 
 msgid "Edit Service"
-msgstr ""
+msgstr "Edytuj usługę"
 
 msgid "Edit Shift"
 msgstr "Edytuj zmianę"
@@ -5014,7 +5014,7 @@ msgstr "Nie udało się utworzyć procesu: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create service: {0}"
-msgstr ""
+msgstr "Nie udało się utworzyć usługi: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create shipping method: {0}"
@@ -7658,7 +7658,7 @@ msgid "New Scheduled Maintenance"
 msgstr "Nowa zaplanowana konserwacja"
 
 msgid "New Service"
-msgstr ""
+msgstr "Nowa usługa"
 
 msgid "New Shift"
 msgstr "Nowa zmiana"
@@ -10633,7 +10633,7 @@ msgid "Service Charges (default)"
 msgstr "Opłaty za usługi (domyślnie)"
 
 msgid "Service Details"
-msgstr ""
+msgstr "Szczegóły usługi"
 
 msgid "Service ID"
 msgstr "Identyfikator Serwisu"
@@ -10642,7 +10642,7 @@ msgid "services"
 msgstr "usługi"
 
 msgid "Services"
-msgstr ""
+msgstr "Usługi"
 
 msgid "Set a target"
 msgstr "Ustaw cel"
@@ -13043,7 +13043,7 @@ msgid "Use ... to get the next part ID"
 msgstr "Użyj ... aby uzyskać następny identyfikator części"
 
 msgid "Use ... to get the next service ID"
-msgstr ""
+msgstr "Użyj ... aby uzyskać następny identyfikator usługi"
 
 msgid "Use ... to get the next tool ID"
 msgstr "Użyj ... aby uzyskać następny identyfikator narzędzia"
