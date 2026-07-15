@@ -91,7 +91,7 @@ serve(async (req: Request) => {
         .single(),
       client
         .from("itemCost")
-        .select("costingMethod, unitCost, standardCost")
+        .select("costingMethod, unitCost, standardCost, itemPostingGroupId")
         .eq("itemId", itemId)
         .eq("companyId", companyId)
         .single(),
@@ -112,6 +112,7 @@ serve(async (req: Request) => {
     const item = {
       itemTrackingType: itemResult.data.itemTrackingType,
       replenishmentSystem: itemResult.data.replenishmentSystem,
+      itemPostingGroupId: itemCostResult.data.itemPostingGroupId,
     };
     const itemCost = itemCostResult.data;
 
@@ -124,6 +125,27 @@ serve(async (req: Request) => {
       : null;
     if (accountingEnabled && (accountDefaults?.error || !accountDefaults?.data)) {
       throw new Error("Error getting account defaults");
+    }
+
+    // Active dimensions for the company group (post-shipment precedent) —
+    // journal lines get Item / ItemPostingGroup / Location tags.
+    const dimensionMap: Record<string, string> = {};
+    if (accountingEnabled) {
+      const companyRecord = await client
+        .from("company")
+        .select("companyGroupId")
+        .eq("id", companyId)
+        .single();
+      if (companyRecord.error) throw new Error("Failed to fetch company");
+      const dimensions = await client
+        .from("dimension")
+        .select("id, entityType")
+        .eq("companyGroupId", companyRecord.data.companyGroupId)
+        .eq("active", true)
+        .in("entityType", ["Item", "ItemPostingGroup", "Location"]);
+      for (const dim of dimensions.data ?? []) {
+        if (dim.entityType) dimensionMap[dim.entityType] = dim.id;
+      }
     }
     // Resolve the accounting period BEFORE opening the Kysely transaction —
     // getCurrentAccountingPeriod uses the REST client and calling it
@@ -145,6 +167,7 @@ serve(async (req: Request) => {
               ? `Inventory Adjustment — ${comment.trim()}`
               : "Inventory Adjustment",
             userId,
+            dimensions: dimensionMap,
           }
         : null;
 

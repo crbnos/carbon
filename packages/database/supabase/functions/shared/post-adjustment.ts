@@ -41,6 +41,7 @@ export interface BookAdjustmentArgs {
     replenishmentSystem:
       | Database["public"]["Enums"]["itemReplenishmentSystem"]
       | null;
+    itemPostingGroupId?: string | null;
   };
   itemCost: AdjustmentItemCost;
   // null ⇒ accounting disabled: ledger + cost layers only, no journal
@@ -53,6 +54,10 @@ export interface BookAdjustmentArgs {
     };
     description: string;
     userId: string;
+    // active dimensions for the company group, entityType → dimension id
+    // (Item / ItemPostingGroup / Location are consulted) — journal lines get
+    // journalLineDimension tags for whichever are configured
+    dimensions?: Record<string, string>;
   } | null;
   // storage-unit-transfer legs move stock between bins without changing its
   // value: ledger row only — no cost layers, no journal
@@ -235,7 +240,7 @@ export async function bookAdjustment(
   const journalLineDocumentType = ledger.documentType ?? "Inventory Adjustment";
   const isGain = ledger.quantity > 0;
 
-  await trx
+  const journalLines = await trx
     .insertInto("journalLine")
     .values([
       {
@@ -261,7 +266,34 @@ export async function bookAdjustment(
         companyId,
       },
     ])
+    .returning(["id"])
     .execute();
+
+  // Dimension tags (post-shipment precedent): every line of the entry gets
+  // the movement's Item / ItemPostingGroup / Location, for whichever
+  // dimensions are active on the company group.
+  const dimensions = accounting.dimensions ?? {};
+  const dimensionValues: Array<[string, string | null | undefined]> = [
+    ["Item", ledger.itemId],
+    ["ItemPostingGroup", item.itemPostingGroupId],
+    ["Location", ledger.locationId],
+  ];
+  const journalLineDimensionInserts = journalLines.flatMap((line) =>
+    dimensionValues
+      .filter(([entityType, valueId]) => dimensions[entityType] && valueId)
+      .map(([entityType, valueId]) => ({
+        journalLineId: line.id,
+        dimensionId: dimensions[entityType],
+        valueId: valueId as string,
+        companyId,
+      }))
+  );
+  if (journalLineDimensionInserts.length > 0) {
+    await trx
+      .insertInto("journalLineDimension")
+      .values(journalLineDimensionInserts)
+      .execute();
+  }
 
   return { itemLedgerId: inserted.id, journalId: journal.id, cost };
 }

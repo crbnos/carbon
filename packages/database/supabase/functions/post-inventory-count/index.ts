@@ -124,6 +124,7 @@ serve(async (req: Request) => {
       costingMethod: Database["public"]["Enums"]["itemCostingMethod"];
       unitCost: number | null;
       standardCost: number | null;
+      itemPostingGroupId: string | null;
     };
     const replenishmentByItem = new Map(
       ((items?.data ?? []) as CountItemRow[]).map((item) => [
@@ -135,7 +136,9 @@ serve(async (req: Request) => {
     const itemCosts = itemIds.length
       ? await client
           .from("itemCost")
-          .select("itemId, costingMethod, unitCost, standardCost")
+          .select(
+            "itemId, costingMethod, unitCost, standardCost, itemPostingGroupId"
+          )
           .in("itemId", itemIds)
           .eq("companyId", companyId)
       : null;
@@ -182,6 +185,28 @@ serve(async (req: Request) => {
     const accountingPeriodId = accountingEnabled
       ? await getCurrentAccountingPeriod(client, companyId, db)
       : null;
+
+    // Active dimensions for the company group (post-shipment precedent) —
+    // journal lines get Item / ItemPostingGroup / Location tags.
+    const dimensionMap: Record<string, string> = {};
+    if (accountingEnabled) {
+      const companyRecord = await client
+        .from("company")
+        .select("companyGroupId")
+        .eq("id", companyId)
+        .single();
+      if (companyRecord.error) throw new Error("Failed to fetch company");
+      const dimensions = await client
+        .from("dimension")
+        .select("id, entityType")
+        .eq("companyGroupId", companyRecord.data.companyGroupId)
+        .eq("active", true)
+        .in("entityType", ["Item", "ItemPostingGroup", "Location"]);
+      for (const dim of dimensions.data ?? []) {
+        if (dim.entityType) dimensionMap[dim.entityType] = dim.id;
+      }
+    }
+
     const accounting =
       accountingEnabled && accountDefaults?.data && accountingPeriodId
         ? {
@@ -193,7 +218,8 @@ serve(async (req: Request) => {
                 accountDefaults.data.inventoryAdjustmentVarianceAccount
             },
             description: comment,
-            userId
+            userId,
+            dimensions: dimensionMap
           }
         : null;
 
@@ -247,7 +273,8 @@ serve(async (req: Request) => {
           },
           item: {
             itemTrackingType: trackingTypeByItem.get(line.itemId) ?? null,
-            replenishmentSystem: replenishmentByItem.get(line.itemId) ?? null
+            replenishmentSystem: replenishmentByItem.get(line.itemId) ?? null,
+            itemPostingGroupId: itemCost.itemPostingGroupId
           },
           itemCost,
           accounting

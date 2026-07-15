@@ -148,7 +148,10 @@ registered in `config.toml` (`verify_jwt = true`), authored per
        item-ledger entry id, `quantity` = adjusted quantity. (The item-ledger
        and cost-ledger rows keep their own `itemLedgerDocumentType` — NULL for
        manual adjustments, as today; `costPostedToGL` no longer exists on
-       `costLedger`.)
+       `costLedger`.) Every journal line is tagged with
+       `journalLineDimension` rows for the movement's **Item /
+       ItemPostingGroup / Location**, for whichever dimensions are active on
+       the company group (post-shipment precedent; Brad, 2026-07-15).
 - The posting core (steps 2–4) lives in a shared module
   `functions/shared/post-adjustment.ts` so `post-inventory-count` reuses it.
 
@@ -354,6 +357,9 @@ churn.
 
 ## Changelog
 
+- 2026-07-15: Journal lines from adjustments and counts carry
+  Item/ItemPostingGroup/Location dimension tags (Brad) — same
+  `journalLineDimension` mechanism as post-shipment.
 - 2026-07-15: Tie-out popover carries no caveat text (Brad) — Reconcile button
   only, shown when variance ≠ 0 and the user has `accounting_create`.
 - 2026-07-14: Created — after competitor research
