@@ -1,6 +1,6 @@
 {
-  "generated": "2026-07-14T19:38:37.774Z",
-  "totalTools": 1327,
+  "generated": "2026-07-15T02:23:30.091Z",
+  "totalTools": 1329,
   "modules": 15,
   "tools": [
     {
@@ -4431,6 +4431,64 @@
           "locationId",
           "args"
         ]
+      }
+    },
+    {
+      "name": "inventory_getInventoryValuation",
+      "module": "inventory",
+      "classification": "READ",
+      "description": "get inventory valuation",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "asOfDate": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "locationId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "inventory_getInventoryValuationTieOut",
+      "module": "inventory",
+      "classification": "READ",
+      "description": "get inventory valuation tie out",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "asOfDate"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "asOfDate": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
       }
     },
     {
@@ -13884,7 +13942,7 @@
       "module": "items",
       "classification": "WRITE",
       "description": "upsert method material",
-      "paramCount": 1,
+      "paramCount": 4,
       "serviceParams": [
         "client",
         "methodMaterial"
@@ -13897,10 +13955,22 @@
       "schema": {
         "type": "object",
         "properties": {
-          "methodMaterial": {}
+          "id": {
+            "type": "string"
+          },
+          "makeMethodId": {
+            "type": "string"
+          },
+          "order": {
+            "type": "number"
+          },
+          "itemType": {
+            "type": "string"
+          }
         },
         "required": [
-          "methodMaterial"
+          "id",
+          "makeMethodId"
         ]
       }
     },

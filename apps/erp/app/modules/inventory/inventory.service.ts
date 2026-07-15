@@ -327,6 +327,29 @@ export async function getInventoryItemsCount(
   return query;
 }
 
+export async function getInventoryValuation(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: { asOfDate?: string | null; locationId?: string | null }
+) {
+  return client.rpc("get_inventory_valuation", {
+    company_id: companyId,
+    as_of_date: args.asOfDate ?? undefined,
+    location_id: args.locationId ?? undefined
+  });
+}
+
+export async function getInventoryValuationTieOut(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  asOfDate?: string | null
+) {
+  return client.rpc("get_inventory_tie_out", {
+    company_id: companyId,
+    as_of_date: asOfDate ?? undefined
+  });
+}
+
 export async function getKanbans(
   client: SupabaseClient<Database>,
   locationId: string,
