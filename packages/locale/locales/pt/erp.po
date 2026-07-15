@@ -9590,6 +9590,9 @@ msgstr "Receber Pagamento · {0} faturas"
 msgid "Receive to Inventory"
 msgstr "Receber para Inventário"
 
+msgid "Received"
+msgstr "Recebido"
+
 #. placeholder {0}: status?.received
 #. placeholder {1}: status?.ordered
 msgid "Received {0} of {1}"
@@ -9948,6 +9951,9 @@ msgstr "Resultados"
 
 msgid "Results per page"
 msgstr "Resultados por página"
+
+msgid "Resume Receiving"
+msgstr "Retomar Recebimento"
 
 msgid "Retained Earnings"
 msgstr "Lucros acumulados"
@@ -11226,6 +11232,9 @@ msgstr "Fora de estoque"
 msgid "Stop raising purchase orders after this date"
 msgstr "Parar de criar ordens de compra após esta data"
 
+msgid "Stop Receiving"
+msgstr "Parar Recebimento"
+
 msgid "Storage client not available"
 msgstr "Cliente de armazenamento não disponível"
 
@@ -12175,6 +12184,16 @@ msgstr "A genealogia registrada de entidades rastreadas - quais entradas foram c
 
 msgid "The reference data everything else hangs off. Loads first."
 msgstr "Os dados de referência dos quais tudo o mais depende. Carrega primeiro."
+
+#. placeholder {0}: line.quantityToReceive
+#. placeholder {1}: line.purchaseUnitOfMeasureCode ?? ""
+msgid "The remaining {0} {1} will be expected again and counted as incoming supply."
+msgstr "Os {0} {1} restantes serão esperados novamente e contados como fornecimento de entrada."
+
+#. placeholder {0}: line.quantityToReceive
+#. placeholder {1}: line.purchaseUnitOfMeasureCode ?? ""
+msgid "The remaining {0} {1} will no longer be expected. On-order supply and MRP will stop counting it. The ordered quantity and pricing are unchanged."
+msgstr "Os {0} {1} restantes não serão mais esperados. O fornecimento em aberto e o MRP deixarão de contabilizá-lo. A quantidade encomendada e o preço permanecem inalterados."
 
 msgid "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
 msgstr "O WIP residual que um trabalho deixou no fechamento, varrido para uma conta de variância de produção - a única variância que o Carbon registra para um trabalho."

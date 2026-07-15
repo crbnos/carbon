@@ -97,6 +97,11 @@ Relevant enums: `itemLedgerType`, `itemLedgerDocumentType`, `trackedEntityStatus
   `customRule`→`storageRule`. Grep the NEWEST migration for the real name; never trust an older one or the
   old cache. The `shelf`→`storageUnit` rename was split across paired migrations
   `20260417000100` (rename, M2) + `..000300` (recreate dependents, M4) — they must apply together.
+- **Short-closed PO lines don't count as incoming supply.** `get_inventory_quantities`,
+  `get_job_quantity_on_hand`, and the `openPurchaseOrderLines` view (MRP) all filter open-PO supply with
+  `pol."receivedComplete" = false` (`20260708204214`). A line short-closed via
+  `shortClosePurchaseOrderLine` ("Stop Receiving") keeps `quantityToReceive > 0` but is excluded from
+  `quantityOnPurchaseOrder`.
 - **`get_inventory_quantities` has many revisions.** Always read the newest (`20260713235406`), not the
   first match. `quantityOnHand` is status-aware: `Rejected` tracked entities are excluded, and tracked
   rows are always computed live (never from `itemLedgerSnapshot`) so status flips are never stale.

@@ -9590,6 +9590,9 @@ msgstr "收款 · {0} 张发票"
 msgid "Receive to Inventory"
 msgstr "接收到库存"
 
+msgid "Received"
+msgstr "已接收"
+
 #. placeholder {0}: status?.received
 #. placeholder {1}: status?.ordered
 msgid "Received {0} of {1}"
@@ -9948,6 +9951,9 @@ msgstr "结果"
 
 msgid "Results per page"
 msgstr "每页结果数"
+
+msgid "Resume Receiving"
+msgstr "恢复接收"
 
 msgid "Retained Earnings"
 msgstr "留存收益"
@@ -11226,6 +11232,9 @@ msgstr "缺货"
 msgid "Stop raising purchase orders after this date"
 msgstr "在此日期后停止提出采购订单"
 
+msgid "Stop Receiving"
+msgstr "停止接收"
+
 msgid "Storage client not available"
 msgstr "存储客户端不可用"
 
@@ -12175,6 +12184,16 @@ msgstr "跟踪实体的记录系统 - 消费了哪些输入来生成哪些输出
 
 msgid "The reference data everything else hangs off. Loads first."
 msgstr "参考数据是其他一切的基础。首先加载。"
+
+#. placeholder {0}: line.quantityToReceive
+#. placeholder {1}: line.purchaseUnitOfMeasureCode ?? ""
+msgid "The remaining {0} {1} will be expected again and counted as incoming supply."
+msgstr "剩余的 {0} {1} 将被再次预期并计入传入供应。"
+
+#. placeholder {0}: line.quantityToReceive
+#. placeholder {1}: line.purchaseUnitOfMeasureCode ?? ""
+msgid "The remaining {0} {1} will no longer be expected. On-order supply and MRP will stop counting it. The ordered quantity and pricing are unchanged."
+msgstr "剩余的 {0} {1} 将不再被预期。在途供应和 MRP 将停止计算它。订购数量和价格保持不变。"
 
 msgid "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
 msgstr "工作在关闭时留下的残余在制品，扫至生产差异帐户 - Carbon为工作记录的唯一差异。"

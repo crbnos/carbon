@@ -9590,6 +9590,9 @@ msgstr "Otrzymaj płatność · {0} faktury"
 msgid "Receive to Inventory"
 msgstr "Odbierz do Magazynu"
 
+msgid "Received"
+msgstr "Otrzymane"
+
 #. placeholder {0}: status?.received
 #. placeholder {1}: status?.ordered
 msgid "Received {0} of {1}"
@@ -9948,6 +9951,9 @@ msgstr "Wyniki"
 
 msgid "Results per page"
 msgstr "Wyniki na stronę"
+
+msgid "Resume Receiving"
+msgstr "Wznów Odbieranie"
 
 msgid "Retained Earnings"
 msgstr "Zyski zatrzymane"
@@ -11226,6 +11232,9 @@ msgstr "Brak zapasów"
 msgid "Stop raising purchase orders after this date"
 msgstr "Przestań wystawiać zamówienia zakupu po tej dacie"
 
+msgid "Stop Receiving"
+msgstr "Zatrzymaj Odbieranie"
+
 msgid "Storage client not available"
 msgstr "Klient magazynu niedostępny"
 
@@ -12175,6 +12184,16 @@ msgstr "Zanotowana genealogia śledzonych jednostek - które wejścia zostały z
 
 msgid "The reference data everything else hangs off. Loads first."
 msgstr "Dane referencyjne, na których opiera się wszystko inne. Ładuje się jako pierwsze."
+
+#. placeholder {0}: line.quantityToReceive
+#. placeholder {1}: line.purchaseUnitOfMeasureCode ?? ""
+msgid "The remaining {0} {1} will be expected again and counted as incoming supply."
+msgstr "Pozostała {0} {1} będzie oczekiwana ponownie i policzona jako dostarczane zapasy."
+
+#. placeholder {0}: line.quantityToReceive
+#. placeholder {1}: line.purchaseUnitOfMeasureCode ?? ""
+msgid "The remaining {0} {1} will no longer be expected. On-order supply and MRP will stop counting it. The ordered quantity and pricing are unchanged."
+msgstr "Pozostała {0} {1} nie będzie już oczekiwana. Dostawy zamówione i MRP przestaną ją liczyć. Ilość zamówiona i ceny pozostają niezmienione."
 
 msgid "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
 msgstr "Pozostałe WIP, które zadanie pozostawiło przy zamknięciu, zamiecione na konto wariancji produkcji - jedyna wariancja, którą Carbon rejestruje dla zadania."

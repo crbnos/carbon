@@ -9590,6 +9590,9 @@ msgstr "Ödeme Al · {0} fatura"
 msgid "Receive to Inventory"
 msgstr "Envantere Al"
 
+msgid "Received"
+msgstr "Alındı"
+
 #. placeholder {0}: status?.received
 #. placeholder {1}: status?.ordered
 msgid "Received {0} of {1}"
@@ -9948,6 +9951,9 @@ msgstr "Sonuçlar"
 
 msgid "Results per page"
 msgstr "Sayfa başına sonuçlar"
+
+msgid "Resume Receiving"
+msgstr "Alımı Devam Et"
 
 msgid "Retained Earnings"
 msgstr "Biriktirilmiş kârlar"
@@ -11226,6 +11232,9 @@ msgstr "Stok tükenmesi"
 msgid "Stop raising purchase orders after this date"
 msgstr "Bu tarihten sonra satın alma siparişleri vermeyi durdur"
 
+msgid "Stop Receiving"
+msgstr "Alımı Durdur"
+
 msgid "Storage client not available"
 msgstr "Depolama istemcisi kullanılamıyor"
 
@@ -12175,6 +12184,16 @@ msgstr "İzlenen varlıkların kaydedilmiş soykütüğü - hangi girdiler hangi
 
 msgid "The reference data everything else hangs off. Loads first."
 msgstr "Diğer her şeyin bağlı olduğu referans veriler. Önce yüklenir."
+
+#. placeholder {0}: line.quantityToReceive
+#. placeholder {1}: line.purchaseUnitOfMeasureCode ?? ""
+msgid "The remaining {0} {1} will be expected again and counted as incoming supply."
+msgstr "Kalan {0} {1} yeniden beklenir ve gelen arz olarak sayılır."
+
+#. placeholder {0}: line.quantityToReceive
+#. placeholder {1}: line.purchaseUnitOfMeasureCode ?? ""
+msgid "The remaining {0} {1} will no longer be expected. On-order supply and MRP will stop counting it. The ordered quantity and pricing are unchanged."
+msgstr "Kalan {0} {1} artık beklenmeyecektir. Sipariş edilen arz ve MRP bunu saymayı durduracaktır. Sipariş edilen miktar ve fiyatlandırma değişmemiştir."
 
 msgid "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
 msgstr "Bir işin kapatmada bıraktığı artık WIP, bir üretim varyans hesabına süpürülen - Carbon'un bir iş için kaydettiği tek varyans."

@@ -1,6 +1,6 @@
 {
-  "generated": "2026-07-15T06:27:13.763Z",
-  "totalTools": 1334,
+  "generated": "2026-07-15T13:07:53.800Z",
+  "totalTools": 1335,
   "modules": 15,
   "tools": [
     {
@@ -24027,6 +24027,43 @@
         "required": [
           "id",
           "sortOrder"
+        ]
+      }
+    },
+    {
+      "name": "purchasing_shortClosePurchaseOrderLine",
+      "module": "purchasing",
+      "classification": "WRITE",
+      "description": "short close purchase order line",
+      "paramCount": 3,
+      "serviceParams": [
+        "db",
+        "{\n    lineId,\n    purchaseOrderId,\n    companyId,\n    userId,\n    intent\n  }"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "lineId": {
+            "type": "string"
+          },
+          "purchaseOrderId": {
+            "type": "string"
+          },
+          "intent": {
+            "type": "string",
+            "enum": [
+              "close",
+              "reopen"
+            ]
+          }
+        },
+        "required": [
+          "lineId",
+          "purchaseOrderId",
+          "intent"
         ]
       }
     },

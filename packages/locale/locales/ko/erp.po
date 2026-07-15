@@ -9590,6 +9590,9 @@ msgstr "결제 수령 · 인보이스 {0}건"
 msgid "Receive to Inventory"
 msgstr "재고로 입고"
 
+msgid "Received"
+msgstr "수령됨"
+
 #. placeholder {0}: status?.received
 #. placeholder {1}: status?.ordered
 msgid "Received {0} of {1}"
@@ -9948,6 +9951,9 @@ msgstr "결과"
 
 msgid "Results per page"
 msgstr "페이지당 결과 수"
+
+msgid "Resume Receiving"
+msgstr "수령 재개"
 
 msgid "Retained Earnings"
 msgstr "이익잉여금"
@@ -11226,6 +11232,9 @@ msgstr "재고 부족"
 msgid "Stop raising purchase orders after this date"
 msgstr "이 날짜 이후에는 구매주문을 생성하지 않습니다"
 
+msgid "Stop Receiving"
+msgstr "수령 중지"
+
 msgid "Storage client not available"
 msgstr "저장소 클라이언트를 사용할 수 없습니다"
 
@@ -12175,6 +12184,16 @@ msgstr "추적 개체의 기록된 계보입니다 — 입고부터 출하까지
 
 msgid "The reference data everything else hangs off. Loads first."
 msgstr "다른 모든 것의 기반이 되는 참조 데이터입니다. 가장 먼저 로드됩니다."
+
+#. placeholder {0}: line.quantityToReceive
+#. placeholder {1}: line.purchaseUnitOfMeasureCode ?? ""
+msgid "The remaining {0} {1} will be expected again and counted as incoming supply."
+msgstr "{0} {1}의 남은 수량이 다시 예상되고 수입 공급으로 계산됩니다."
+
+#. placeholder {0}: line.quantityToReceive
+#. placeholder {1}: line.purchaseUnitOfMeasureCode ?? ""
+msgid "The remaining {0} {1} will no longer be expected. On-order supply and MRP will stop counting it. The ordered quantity and pricing are unchanged."
+msgstr "{0} {1}의 남은 수량은 더 이상 예상되지 않습니다. 주문 공급 및 MRP 계산이 중단됩니다. 주문 수량 및 가격은 변경되지 않습니다."
 
 msgid "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
 msgstr "작업 마감 시 남은 재공품(WIP)으로, 생산 차이 계정으로 이관됩니다 — Carbon이 작업에 대해 계상하는 유일한 차이 항목입니다."

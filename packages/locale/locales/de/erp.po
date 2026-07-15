@@ -9590,6 +9590,9 @@ msgstr "Zahlung erhalten · {0} Rechnungen"
 msgid "Receive to Inventory"
 msgstr "In Bestand empfangen"
 
+msgid "Received"
+msgstr "Eingegangen"
+
 #. placeholder {0}: status?.received
 #. placeholder {1}: status?.ordered
 msgid "Received {0} of {1}"
@@ -9948,6 +9951,9 @@ msgstr "Ergebnisse"
 
 msgid "Results per page"
 msgstr "Ergebnisse pro Seite"
+
+msgid "Resume Receiving"
+msgstr "Empfang fortsetzen"
 
 msgid "Retained Earnings"
 msgstr "Thesaurierte Gewinne"
@@ -11226,6 +11232,9 @@ msgstr "Ausverkauft"
 msgid "Stop raising purchase orders after this date"
 msgstr "Bestellungen nach diesem Datum nicht mehr aufgeben"
 
+msgid "Stop Receiving"
+msgstr "Empfang beenden"
+
 msgid "Storage client not available"
 msgstr "Speicherclient nicht verfügbar"
 
@@ -12175,6 +12184,16 @@ msgstr "Die aufgezeichnete Genealogie der verfolgten Einheiten – welche Eingab
 
 msgid "The reference data everything else hangs off. Loads first."
 msgstr "Die Referenzdaten, auf denen alles andere aufbaut. Wird zuerst geladen."
+
+#. placeholder {0}: line.quantityToReceive
+#. placeholder {1}: line.purchaseUnitOfMeasureCode ?? ""
+msgid "The remaining {0} {1} will be expected again and counted as incoming supply."
+msgstr "Die restliche {0} {1} wird erneut erwartet und als eingehende Versorgung gezählt."
+
+#. placeholder {0}: line.quantityToReceive
+#. placeholder {1}: line.purchaseUnitOfMeasureCode ?? ""
+msgid "The remaining {0} {1} will no longer be expected. On-order supply and MRP will stop counting it. The ordered quantity and pricing are unchanged."
+msgstr "Die restliche {0} {1} wird nicht mehr erwartet. Die Bestellversorgung und MRP werden sie nicht mehr berücksichtigen. Die bestellte Menge und die Preisgestaltung bleiben unverändert."
 
 msgid "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
 msgstr "Das Residualwip, das ein Auftrag bei Schließung verlassen hat, gefegt auf ein Produktionsvarianzverkehr – die einzige Varianz Carbon Bücher für einen Auftrag."

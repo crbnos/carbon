@@ -9590,6 +9590,9 @@ msgstr "Ricevi Pagamento · {0} fatture"
 msgid "Receive to Inventory"
 msgstr "Ricevi in Inventario"
 
+msgid "Received"
+msgstr "Ricevuto"
+
 #. placeholder {0}: status?.received
 #. placeholder {1}: status?.ordered
 msgid "Received {0} of {1}"
@@ -9948,6 +9951,9 @@ msgstr "Risultati"
 
 msgid "Results per page"
 msgstr "Risultati per pagina"
+
+msgid "Resume Receiving"
+msgstr "Riprendi ricezione"
 
 msgid "Retained Earnings"
 msgstr "Utili non distribuiti"
@@ -11226,6 +11232,9 @@ msgstr "Esaurimento scorte"
 msgid "Stop raising purchase orders after this date"
 msgstr "Smetti di creare ordini di acquisto dopo questa data"
 
+msgid "Stop Receiving"
+msgstr "Interrompi ricezione"
+
 msgid "Storage client not available"
 msgstr "Client di archiviazione non disponibile"
 
@@ -12175,6 +12184,16 @@ msgstr "La genealogia registrata delle entità monitorate - quali input sono sta
 
 msgid "The reference data everything else hangs off. Loads first."
 msgstr "I dati di riferimento su cui tutto il resto si basa. Caricati per primi."
+
+#. placeholder {0}: line.quantityToReceive
+#. placeholder {1}: line.purchaseUnitOfMeasureCode ?? ""
+msgid "The remaining {0} {1} will be expected again and counted as incoming supply."
+msgstr "I rimanenti {0} {1} saranno previsti di nuovo e conteggiati come fornitura in arrivo."
+
+#. placeholder {0}: line.quantityToReceive
+#. placeholder {1}: line.purchaseUnitOfMeasureCode ?? ""
+msgid "The remaining {0} {1} will no longer be expected. On-order supply and MRP will stop counting it. The ordered quantity and pricing are unchanged."
+msgstr "I rimanenti {0} {1} non saranno più previsti. La fornitura ordinata e l'MRP smetteranno di contarla. La quantità ordinata e i prezzi rimangono invariati."
 
 msgid "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
 msgstr "Il WIP residuo che un lavoro ha lasciato alla chiusura, spazzato via in un conto di varianza di produzione - l'unica varianza che Carbon registra per un lavoro."

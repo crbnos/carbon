@@ -9590,6 +9590,9 @@ msgstr "Receive Payment · {0} invoices"
 msgid "Receive to Inventory"
 msgstr "Receive to Inventory"
 
+msgid "Received"
+msgstr "Received"
+
 #. placeholder {0}: status?.received
 #. placeholder {1}: status?.ordered
 msgid "Received {0} of {1}"
@@ -9948,6 +9951,9 @@ msgstr "Results"
 
 msgid "Results per page"
 msgstr "Results per page"
+
+msgid "Resume Receiving"
+msgstr "Resume Receiving"
 
 msgid "Retained Earnings"
 msgstr "Retained Earnings"
@@ -11226,6 +11232,9 @@ msgstr "Stockout"
 msgid "Stop raising purchase orders after this date"
 msgstr "Stop raising purchase orders after this date"
 
+msgid "Stop Receiving"
+msgstr "Stop Receiving"
+
 msgid "Storage client not available"
 msgstr "Storage client not available"
 
@@ -12175,6 +12184,16 @@ msgstr "The recorded genealogy of tracked entities — which inputs were consume
 
 msgid "The reference data everything else hangs off. Loads first."
 msgstr "The reference data everything else hangs off. Loads first."
+
+#. placeholder {0}: line.quantityToReceive
+#. placeholder {1}: line.purchaseUnitOfMeasureCode ?? ""
+msgid "The remaining {0} {1} will be expected again and counted as incoming supply."
+msgstr "The remaining {0} {1} will be expected again and counted as incoming supply."
+
+#. placeholder {0}: line.quantityToReceive
+#. placeholder {1}: line.purchaseUnitOfMeasureCode ?? ""
+msgid "The remaining {0} {1} will no longer be expected. On-order supply and MRP will stop counting it. The ordered quantity and pricing are unchanged."
+msgstr "The remaining {0} {1} will no longer be expected. On-order supply and MRP will stop counting it. The ordered quantity and pricing are unchanged."
 
 msgid "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
 msgstr "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."

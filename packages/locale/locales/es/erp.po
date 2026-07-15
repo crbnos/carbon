@@ -9590,6 +9590,9 @@ msgstr "Recibir Pago · {0} facturas"
 msgid "Receive to Inventory"
 msgstr "Recibir al Inventario"
 
+msgid "Received"
+msgstr "Recibido"
+
 #. placeholder {0}: status?.received
 #. placeholder {1}: status?.ordered
 msgid "Received {0} of {1}"
@@ -9948,6 +9951,9 @@ msgstr "Resultados"
 
 msgid "Results per page"
 msgstr "Resultados por página"
+
+msgid "Resume Receiving"
+msgstr "Reanudar recepción"
 
 msgid "Retained Earnings"
 msgstr "Ganancias retenidas"
@@ -11226,6 +11232,9 @@ msgstr "Agotado"
 msgid "Stop raising purchase orders after this date"
 msgstr "Dejar de crear órdenes de compra después de esta fecha"
 
+msgid "Stop Receiving"
+msgstr "Detener recepción"
+
 msgid "Storage client not available"
 msgstr "Cliente de almacenamiento no disponible"
 
@@ -12175,6 +12184,16 @@ msgstr "La genealogía registrada de entidades rastreadas - qué entradas se con
 
 msgid "The reference data everything else hangs off. Loads first."
 msgstr "Los datos de referencia de los que todo lo demás depende. Se carga primero."
+
+#. placeholder {0}: line.quantityToReceive
+#. placeholder {1}: line.purchaseUnitOfMeasureCode ?? ""
+msgid "The remaining {0} {1} will be expected again and counted as incoming supply."
+msgstr "Los {0} {1} restantes se esperarán nuevamente y se contarán como suministro entrante."
+
+#. placeholder {0}: line.quantityToReceive
+#. placeholder {1}: line.purchaseUnitOfMeasureCode ?? ""
+msgid "The remaining {0} {1} will no longer be expected. On-order supply and MRP will stop counting it. The ordered quantity and pricing are unchanged."
+msgstr "Los {0} {1} restantes ya no se esperarán. El suministro pendiente y el MRP dejarán de contarlos. La cantidad pedida y los precios permanecen sin cambios."
 
 msgid "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
 msgstr "El WIP residual que un trabajo ha dejado al cerrar, barrido a una cuenta de varianza de producción - la única varianza que Carbon registra para un trabajo."

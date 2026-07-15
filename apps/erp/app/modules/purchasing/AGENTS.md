@@ -39,7 +39,7 @@ pnpm --filter @carbon/erp test
 
 | Table / View | Purpose |
 |---|---|
-| `purchaseOrder` / `purchaseOrders` (view) | PO header: supplier, status, dates, location |
+| `purchaseOrder` / `purchaseOrders` (view) | PO header: supplier, status, dates, location; view adds `receivableQuantity`/`receivedQuantity` aggregates (drives the list's Received progress bar and the derived "Partially Received" header chip — display-only, not a status enum value) |
 | `purchaseOrderLine` | Line items: item, quantity, price, conversionFactor, jobId |
 | `purchaseOrderDelivery` / `purchaseOrderPayment` | PO delivery and payment terms |
 | `supplier` / `suppliers` (view) | Vendor master: name, type, status, tax info |
@@ -54,6 +54,7 @@ pnpm --filter @carbon/erp test
 
 - `getPurchaseOrder` / `getPurchaseOrders` / `getPurchaseOrderLines` — read POs
 - `closePurchaseOrder` — marks a PO closed
+- `shortClosePurchaseOrderLine` — Kysely transaction; sets a line's `receivedComplete` ("Stop/Resume Receiving") and recomputes the header status. Open-PO supply queries (`get_inventory_quantities`, `openPurchaseOrderLines`, `get_job_quantity_on_hand`) exclude `receivedComplete` lines, so short-closed remainders stop counting as incoming stock
 - `convertSupplierQuoteToOrder` — calls `convert` edge function
 - `duplicatePurchaseOrder` — copies a PO with new sequence
 - `finalizePurchaseOrder` / `finalizeSupplierQuote` — lock documents for processing

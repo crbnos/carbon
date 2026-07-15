@@ -9590,6 +9590,9 @@ msgstr "支払いを受け取る · {0} 件の請求書"
 msgid "Receive to Inventory"
 msgstr "在庫に受け取る"
 
+msgid "Received"
+msgstr "受信済み"
+
 #. placeholder {0}: status?.received
 #. placeholder {1}: status?.ordered
 msgid "Received {0} of {1}"
@@ -9948,6 +9951,9 @@ msgstr "結果"
 
 msgid "Results per page"
 msgstr "ページあたりの結果数"
+
+msgid "Resume Receiving"
+msgstr "受信を再開"
 
 msgid "Retained Earnings"
 msgstr "利益剰余金"
@@ -11226,6 +11232,9 @@ msgstr "在庫切れ"
 msgid "Stop raising purchase orders after this date"
 msgstr "この日付以降、発注を停止します"
 
+msgid "Stop Receiving"
+msgstr "受信を停止"
+
 msgid "Storage client not available"
 msgstr "ストレージクライアントが利用できません"
 
@@ -12175,6 +12184,16 @@ msgstr "追跡されたエンティティの記録された系統 - どの入力
 
 msgid "The reference data everything else hangs off. Loads first."
 msgstr "参照データはすべての基盤となります。最初に読み込まれます。"
+
+#. placeholder {0}: line.quantityToReceive
+#. placeholder {1}: line.purchaseUnitOfMeasureCode ?? ""
+msgid "The remaining {0} {1} will be expected again and counted as incoming supply."
+msgstr "残りの{0}{1}は再び期待され、入荷供給としてカウントされます"
+
+#. placeholder {0}: line.quantityToReceive
+#. placeholder {1}: line.purchaseUnitOfMeasureCode ?? ""
+msgid "The remaining {0} {1} will no longer be expected. On-order supply and MRP will stop counting it. The ordered quantity and pricing are unchanged."
+msgstr "残りの{0}{1}は期待されなくなります。発注済み供給とMRPはそれをカウント対象から外します。注文数量と価格は変更されません。"
 
 msgid "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
 msgstr "ジョブがクローズ時に残した残留WIP。生産差異勘定に削除されます—Carbonがジョブのために記録する唯一の差異。"

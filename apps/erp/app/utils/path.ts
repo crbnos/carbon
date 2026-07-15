@@ -1586,6 +1586,8 @@ export const path = {
     purchaseOrderFavorite: `${x}/purchasing/orders/favorite`,
     purchaseOrderLine: (orderId: string, id: string) =>
       generatePath(`${x}/purchase-order/${orderId}/${id}/details`),
+    purchaseOrderLineReceiving: (orderId: string, id: string) =>
+      generatePath(`${x}/purchase-order/${orderId}/${id}/receiving`),
     purchaseOrderLineOrder: (orderId: string) =>
       generatePath(`${x}/purchase-order/${orderId}/line-order`),
     purchaseOrderPayment: (id: string) =>

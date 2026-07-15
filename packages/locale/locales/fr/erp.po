@@ -9590,6 +9590,9 @@ msgstr "Recevoir le paiement · {0} factures"
 msgid "Receive to Inventory"
 msgstr "Recevoir en inventaire"
 
+msgid "Received"
+msgstr "Reçu"
+
 #. placeholder {0}: status?.received
 #. placeholder {1}: status?.ordered
 msgid "Received {0} of {1}"
@@ -9948,6 +9951,9 @@ msgstr "Résultats"
 
 msgid "Results per page"
 msgstr "Résultats par page"
+
+msgid "Resume Receiving"
+msgstr "Reprendre la réception"
 
 msgid "Retained Earnings"
 msgstr "Bénéfices non distribués"
@@ -11226,6 +11232,9 @@ msgstr "Rupture de stock"
 msgid "Stop raising purchase orders after this date"
 msgstr "Arrêter de créer des commandes d'achat après cette date"
 
+msgid "Stop Receiving"
+msgstr "Arrêter la réception"
+
 msgid "Storage client not available"
 msgstr "Client de stockage non disponible"
 
@@ -12175,6 +12184,16 @@ msgstr "La généalogie enregistrée des entités suivies - quelles entrées ont
 
 msgid "The reference data everything else hangs off. Loads first."
 msgstr "Les données de référence sur lesquelles tout le reste repose. Se charge en premier."
+
+#. placeholder {0}: line.quantityToReceive
+#. placeholder {1}: line.purchaseUnitOfMeasureCode ?? ""
+msgid "The remaining {0} {1} will be expected again and counted as incoming supply."
+msgstr "Les {0} {1} restants seront attendus à nouveau et comptabilisés comme approvisionnement entrant."
+
+#. placeholder {0}: line.quantityToReceive
+#. placeholder {1}: line.purchaseUnitOfMeasureCode ?? ""
+msgid "The remaining {0} {1} will no longer be expected. On-order supply and MRP will stop counting it. The ordered quantity and pricing are unchanged."
+msgstr "Les {0} {1} restants ne seront plus attendus. L'approvisionnement en commande et l'MRP cesseront de les compter. La quantité commandée et la tarification restent inchangées."
 
 msgid "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
 msgstr "Le WIP résiduel qu'un travail a laissé à la fermeture, balayé sur un compte de variance de production - la seule variance que Carbon enregistre pour une tâche."
