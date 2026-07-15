@@ -78,13 +78,17 @@ type PartPropertiesProps = {
   // rows of the part detail sidebar. "form" = standard labeled form fields (used
   // by the CO card). Only affects presentation — persistence is unchanged.
   layout?: "sidebar" | "form";
+  // Read-only: every field/control is non-editable (used when the change order
+  // is released/locked). Defaults to editable.
+  isReadOnly?: boolean;
 };
 
 const PartProperties = ({
   data,
   embedded,
   section = "all",
-  layout = "sidebar"
+  layout = "sidebar",
+  isReadOnly = false
 }: PartPropertiesProps) => {
   // Inline click-to-edit only in the sidebar layout; the form layout renders
   // each field as a standard labeled control.
@@ -225,6 +229,7 @@ const PartProperties = ({
       path={routeData?.partSummary?.thumbnailPath}
       itemId={itemId}
       modelId={routeData?.partSummary?.modelId}
+      isReadOnly={isReadOnly}
     />
   );
   const filesBlock = (
@@ -293,6 +298,7 @@ const PartProperties = ({
         partId: z.string()
       })}
       className={cn("w-full", !formLayout && "-mt-2")}
+      isReadOnly={isReadOnly}
     >
       <span className="text-sm">
         <InputControlled
@@ -318,6 +324,7 @@ const PartProperties = ({
         name: z.string()
       })}
       className={cn("w-full", !formLayout && "-mt-2")}
+      isReadOnly={isReadOnly}
     >
       <span className="text-xs text-muted-foreground">
         <InputControlled
@@ -456,6 +463,7 @@ const PartProperties = ({
           itemPostingGroupId: z.string().nullable().optional()
         })}
         className="w-full"
+        isReadOnly={isReadOnly}
       >
         <ItemPostingGroup
           label={t`Item Group`}
@@ -477,6 +485,7 @@ const PartProperties = ({
           replenishmentSystem: z.string()
         })}
         className="w-full"
+        isReadOnly={isReadOnly}
       >
         <Select
           name="replenishmentSystem"
@@ -526,6 +535,7 @@ const PartProperties = ({
           itemTrackingType: z.string()
         })}
         className="w-full"
+        isReadOnly={isReadOnly}
       >
         <Select
           name="itemTrackingType"
@@ -579,6 +589,7 @@ const PartProperties = ({
           defaultMethodType: z.string()
         })}
         className="w-full"
+        isReadOnly={isReadOnly}
       >
         <Select
           name="defaultMethodType"
@@ -630,6 +641,7 @@ const PartProperties = ({
         replenishmentSystem={routeData?.partSummary?.replenishmentSystem}
         value={routeData?.partSummary?.sourcingType}
         inline={inlineLayout}
+        isReadOnly={isReadOnly}
         onChange={(value) => onUpdate("sourcingType", value)}
       />
 
@@ -644,6 +656,7 @@ const PartProperties = ({
             .min(1, { message: "Unit of Measure is required" })
         })}
         className="w-full"
+        isReadOnly={isReadOnly}
       >
         <UnitOfMeasure
           label={t`Unit of Measure`}
@@ -659,6 +672,7 @@ const PartProperties = ({
         <ItemDescription
           value={routeData?.partSummary?.description ?? ""}
           inline={inlineLayout}
+          isReadOnly={isReadOnly}
           onChange={(value) => onUpdate("description", value)}
         />
       </div>
@@ -724,6 +738,7 @@ const PartProperties = ({
             active: zfd.checkbox()
           })}
           className="w-full"
+          isReadOnly={isReadOnly}
         >
           <Boolean
             label={t`Active`}
@@ -745,6 +760,7 @@ const PartProperties = ({
             requiresInspection: zfd.checkbox()
           })}
           className="w-full"
+          isReadOnly={isReadOnly}
         >
           <Boolean
             label={t`Requires Inspection`}
@@ -765,6 +781,7 @@ const PartProperties = ({
             mpn: z.string().optional()
           })}
           className="w-full"
+          isReadOnly={isReadOnly}
         >
           <InputControlled
             label={t`Manufacturer Part Number`}
@@ -830,6 +847,7 @@ const PartProperties = ({
             tags: z.array(z.string()).optional()
           })}
           className="w-full"
+          isReadOnly={isReadOnly}
         >
           <Tags
             availableTags={routeData?.tags ?? []}
@@ -849,6 +867,7 @@ const PartProperties = ({
           }
           table="part"
           tags={routeData?.partSummary?.tags ?? []}
+          isDisabled={isReadOnly}
           onUpdate={onUpdateCustomFields}
         />
       </div>

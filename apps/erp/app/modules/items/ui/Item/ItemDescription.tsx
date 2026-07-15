@@ -20,6 +20,8 @@ type ItemDescriptionProps = {
   // Match the parent panel's field idiom: `true` (default) = click-to-edit
   // preview for the sidebar; `false` = an always-open textarea for the form.
   inline?: boolean;
+  // Read-only: render the value as a static preview, no textarea / edit control.
+  isReadOnly?: boolean;
 };
 
 /**
@@ -32,12 +34,13 @@ type ItemDescriptionProps = {
 const ItemDescription = ({
   value,
   onChange,
-  inline = true
+  inline = true,
+  isReadOnly = false
 }: ItemDescriptionProps) => {
   const { t } = useLingui();
   const [isEditing, setIsEditing] = useState(false);
 
-  if (!inline || isEditing) {
+  if (!isReadOnly && (!inline || isEditing)) {
     return (
       <ValidatedForm
         defaultValues={{ description: value ?? undefined }}
@@ -72,13 +75,15 @@ const ItemDescription = ({
             {value}
           </TruncatedTooltipText>
         )}
-        <IconButton
-          icon={value ? <LuSettings2 /> : <LuPlus />}
-          aria-label={value ? "Edit" : "Add"}
-          size="sm"
-          variant="secondary"
-          onClick={() => setIsEditing(true)}
-        />
+        {!isReadOnly && (
+          <IconButton
+            icon={value ? <LuSettings2 /> : <LuPlus />}
+            aria-label={value ? "Edit" : "Add"}
+            size="sm"
+            variant="secondary"
+            onClick={() => setIsEditing(true)}
+          />
+        )}
       </HStack>
     </VStack>
   );

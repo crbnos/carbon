@@ -13,6 +13,7 @@ type SourcingTypePropertyProps = {
   // Match the parent panel's field idiom: `true` (default) = click-to-edit
   // badge for the sidebar; `false` = a standard labeled control for the form.
   inline?: boolean;
+  isReadOnly?: boolean;
 };
 
 /**
@@ -25,7 +26,8 @@ export function SourcingTypeProperty({
   replenishmentSystem,
   value,
   onChange,
-  inline = true
+  inline = true,
+  isReadOnly = false
 }: SourcingTypePropertyProps) {
   const { t } = useLingui();
 
@@ -36,6 +38,7 @@ export function SourcingTypeProperty({
       defaultValues={{ sourcingType: value ?? undefined }}
       validator={z.object({ sourcingType: z.enum(sourcingType) })}
       className="w-full"
+      isReadOnly={isReadOnly}
     >
       <Select
         name="sourcingType"

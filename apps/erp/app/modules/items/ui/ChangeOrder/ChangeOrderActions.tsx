@@ -235,7 +235,7 @@ function ActionItem({
       }
       footerExtras={
         action.dueDate ? (
-          <span className="text-xs text-muted-foreground tabular-nums">
+          <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap shrink-0">
             {action.dueDate}
           </span>
         ) : undefined

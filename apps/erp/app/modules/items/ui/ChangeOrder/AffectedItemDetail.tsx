@@ -207,6 +207,7 @@ export default function AffectedItemDetail({
                     layout="form"
                     section="properties"
                     data={affected.partData}
+                    isReadOnly={isDisabled}
                   />
                 ) : (
                   <p className="text-sm text-muted-foreground py-2">
@@ -232,6 +233,7 @@ export default function AffectedItemDetail({
                     embedded
                     section="files"
                     data={affected.partData}
+                    isReadOnly={isDisabled}
                   />
                 ) : (
                   <p className="text-sm text-muted-foreground py-2">
