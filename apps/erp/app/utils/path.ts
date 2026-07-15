@@ -121,6 +121,7 @@ export const path = {
         generatePath(`${api}/model/artifacts/${modelUploadId}`),
       modelConvertStatus: (modelUploadId: string) =>
         generatePath(`${api}/model/convert-status/${modelUploadId}`),
+      modelReoptimize: `${api}/model/reoptimize`,
       modelUpload: `${api}/model/upload`,
       onShapeBom: (documentId: string, versionId: string, elementId: string) =>
         generatePath(

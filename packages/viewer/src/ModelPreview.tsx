@@ -1,23 +1,24 @@
 import { cn, IconButton } from "@carbon/react";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
-import { LuChevronDown, LuMaximize, LuTrash2 } from "react-icons/lu";
+import {
+  LuChevronDown,
+  LuDownload,
+  LuMaximize,
+  LuRotateCw,
+  LuTrash2
+} from "react-icons/lu";
 import type { ModelMetrics } from "./ModelCanvas";
 
-// Heavy renderers are code-split: a page with a model ships only this tier
-// selector until the viewer scrolls into view, then loads three.js (interactive
-// tier) or online-3d-viewer WASM (fallback) on demand.
+// The three.js renderer is code-split: a page with a model ships only this tier
+// selector until the viewer scrolls into view, then loads three.js on demand.
 const ModelCanvas = lazy(() =>
   import("./ModelCanvas").then((m) => ({ default: m.ModelCanvas }))
 );
-const WasmModelViewer = lazy(() =>
-  import("./WasmModelViewer").then((m) => ({ default: m.ModelViewer }))
-);
 
 export type ModelPreviewProps = {
-  /** Raw source model — the WASM fallback (STEP/etc.) when no server GLB exists. */
-  sourceUrl?: string | null;
-  /** Just-uploaded in-memory file — also the WASM fallback path. */
-  sourceFile?: File | null;
+  /** True while a server GLB might still arrive (upload / optimise in flight).
+   *  Distinguishes "preparing" (spinner) from "no preview available". */
+  awaitingModel?: boolean;
   /** Instant single-draw LOD GLB (assembler), rendered immediately on visible. */
   lodUrl?: string | null;
   /** Full optimised GLB (assembler) — the interactive tier. */
@@ -26,27 +27,32 @@ export type ModelPreviewProps = {
   glbUrl?: string | null;
   /** Static poster image (thumbnail PNG) shown before any 3D loads. */
   thumbnailUrl?: string | null;
+  /** Filename for the download-GLB action (defaults to the URL basename). */
+  downloadName?: string;
+  /** Re-run optimise when the model settled with no GLB (shows a Retry button). */
+  onRetry?: () => void;
   mode?: "dark" | "light";
   onDelete?: () => void;
   className?: string;
 };
 
 /**
- * Progressive model preview. When the assembler has produced artifacts it renders
- * them with three.js (`ModelCanvas`): the single-draw LOD paints instantly, the
- * full optimised GLB cross-fades in on top. Only when there is no server GLB does
- * it fall back to WASM source tessellation (`online-3d-viewer`). Both renderers
- * are lazy-imported and only mount once the viewer scrolls into view. Carries the
- * same viewer chrome as the WASM viewer — dimensions/properties, unit toggle,
- * reset view, click-to-interact — over the three.js tier.
+ * Progressive model preview. Renders the assembler's artifacts with three.js
+ * (`ModelCanvas`): the single-draw LOD paints instantly, the full optimised GLB
+ * cross-fades in on top. When there is no server GLB it shows a spinner (while
+ * one may still arrive) or a "preview unavailable" notice — there is no
+ * in-browser tessellation fallback. The renderer is lazy-imported and only
+ * mounts once the viewer scrolls into view. Chrome: dimensions/properties, unit
+ * toggle, download, reset view, click-to-interact.
  */
 export function ModelPreview({
-  sourceUrl = null,
-  sourceFile = null,
+  awaitingModel = false,
   lodUrl = null,
   optimizedUrl = null,
   glbUrl = null,
   thumbnailUrl = null,
+  downloadName,
+  onRetry,
   mode = "dark",
   onDelete,
   className
@@ -135,8 +141,17 @@ export function ModelPreview({
             </button>
           )}
 
-          {/* Toolbar: reset view + delete. */}
+          {/* Toolbar: download + reset view + delete. */}
           <div className="absolute bottom-2 right-2 z-20 flex items-center gap-1">
+            {mainUrl && (
+              <IconButton
+                aria-label="Download optimised GLB"
+                className="text-muted-foreground"
+                icon={<LuDownload />}
+                variant="ghost"
+                onClick={() => downloadFile(mainUrl, downloadName)}
+              />
+            )}
             {fullLoaded && (
               <IconButton
                 aria-label="Reset view"
@@ -157,22 +172,8 @@ export function ModelPreview({
             )}
           </div>
         </>
-      ) : inView && (sourceUrl || sourceFile) ? (
-        // Genuinely no server model → WASM source tessellation (lazy). Only
-        // mounted when a source is actually provided, so the ~3 MB online-3d-
-        // viewer + occt WASM chunk never loads while an optimised GLB is still
-        // on its way.
-        <Suspense fallback={null}>
-          <WasmModelViewer
-            file={sourceFile}
-            url={sourceUrl}
-            mode={mode}
-            onDelete={onDelete}
-            className="absolute inset-0 min-h-0 border-none shadow-none"
-          />
-        </Suspense>
-      ) : inView ? (
-        // Waiting on the server model (optimise in flight) — a spinner, not WASM.
+      ) : inView && awaitingModel ? (
+        // Server GLB still being prepared (upload / optimise in flight) — spinner.
         <div className="absolute inset-0 flex items-center justify-center">
           <svg
             className="h-6 w-6 animate-spin text-muted-foreground"
@@ -195,6 +196,35 @@ export function ModelPreview({
             />
           </svg>
         </div>
+      ) : inView ? (
+        // Settled with no server GLB (optimise failed / non-mesh). No in-browser
+        // tessellation fallback — surface the state instead of a dead spinner.
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-4 text-center">
+          <p className="text-sm text-muted-foreground">
+            3D preview unavailable
+          </p>
+          <div className="flex items-center gap-2">
+            {onRetry && (
+              <button
+                type="button"
+                onClick={onRetry}
+                className="flex items-center gap-1.5 rounded-md border border-border bg-popover px-3 py-1.5 text-xs font-medium text-foreground shadow-sm transition-transform hover:bg-accent active:scale-[0.96]"
+              >
+                <LuRotateCw className="size-3.5" />
+                Retry
+              </button>
+            )}
+            {onDelete && (
+              <IconButton
+                aria-label="Delete model"
+                className="text-muted-foreground hover:bg-destructive hover:text-destructive-foreground"
+                icon={<LuTrash2 />}
+                variant="ghost"
+                onClick={onDelete}
+              />
+            )}
+          </div>
+        </div>
       ) : null}
     </div>
   );
@@ -206,7 +236,7 @@ const MM_PER_IN = 25.4;
 
 /** Dimensions + surface area / volume, with an mm/in toggle. Model space is mm. */
 function ModelMetricsPanel({ metrics }: { metrics: ModelMetrics }) {
-  const [unit, setUnit] = useState<UnitSystem>("metric");
+  const [unit, setUnit] = useState<UnitSystem>("imperial");
   const [open, setOpen] = useState(true);
   const imperial = unit === "imperial";
 
@@ -342,6 +372,16 @@ function Row({
       <span>{value}</span>
     </div>
   );
+}
+
+/** Trigger a browser download of a same-origin URL (the served GLB proxy). */
+function downloadFile(url: string, name?: string) {
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = name ?? url.split("/").pop()?.split("?")[0] ?? "model.glb";
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
 }
 
 /**

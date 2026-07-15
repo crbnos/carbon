@@ -79,14 +79,33 @@ fn to_node(tree: &occt_bridge::Tree, index: u64) -> AssemblyNode {
     }
 }
 
-/// Read a STEP file into the assembly tree with nodeIds + world bboxes assigned,
-/// without emitting graph.json or GLB. Shared by `convert_step` and the planner.
+/// OCCT BinXCAF (`.xbf`) files start with the ASCII `BINFILE` magic. Content
+/// sniff (not extension): transparent zstd means a `.step`-named temp can hold
+/// xbf bytes, so the loader must be chosen by what's actually on disk.
+fn is_xbf(path: &str) -> bool {
+    use std::io::Read;
+    let mut head = [0u8; 7];
+    std::fs::File::open(path)
+        .and_then(|mut f| f.read_exact(&mut head))
+        .map(|_| &head == b"BINFILE")
+        .unwrap_or(false)
+}
+
+/// Read a CAD file (STEP or BinXCAF `.xbf`, auto-detected) into the assembly tree
+/// with nodeIds + world bboxes assigned, without emitting graph.json or GLB.
+/// Shared by `convert_step` / `convert_xbf` and the planner. Both loaders share
+/// the same OCCT tessellation walk, so a STEP and the `.xbf` derived from it
+/// yield identical nodeIds + geometry.
 pub fn build_tree(
-    step_path: &str,
+    path: &str,
     linear_deflection: f64,
     angular_deflection: f64,
 ) -> Result<AssemblyNode, ConvertError> {
-    let tree = occt_bridge::read_step(step_path, linear_deflection, angular_deflection);
+    let tree = if is_xbf(path) {
+        occt_bridge::read_xbf(path, linear_deflection, angular_deflection)
+    } else {
+        occt_bridge::read_step(path, linear_deflection, angular_deflection)
+    };
     if !tree.ok {
         return Err(ConvertError::new("READ_FAILED", tree.error.clone()));
     }
@@ -94,6 +113,40 @@ pub fn build_tree(
     assign_node_ids(&mut root);
     compute_world_bboxes(&mut root, &Matrix4::identity());
     Ok(root)
+}
+
+/// Write a STEP file as a compact lossless BinXCAF (`.xbf`) document — the
+/// retained-raw form that replaces fat ASCII STEP in storage.
+pub fn step_to_xbf(step_path: &str, xbf_path: &str) -> Result<(), ConvertError> {
+    if !occt_bridge::step_to_xbf(step_path, xbf_path) {
+        return Err(ConvertError::new(
+            "READ_FAILED",
+            "could not write XBF from STEP",
+        ));
+    }
+    Ok(())
+}
+
+/// Convert a BinXCAF (`.xbf`) document to graph.json + GLB. Geometry is already
+/// mm (OCCT normalized units when the STEP was read into the xbf), so `sourceUnit`
+/// is reported as `mm` — there is no STEP header to re-detect from.
+pub fn convert_xbf(
+    xbf_path: &str,
+    linear_deflection: f64,
+    angular_deflection: f64,
+) -> Result<Conversion, ConvertError> {
+    let root = build_tree(xbf_path, linear_deflection, angular_deflection)?;
+    let component_count = count_leaves(&root);
+    let triangles = count_triangles(&root);
+    let graph = build_graph(&root, "mm");
+    let glb = crate::glb::write_glb(&root);
+    Ok(Conversion {
+        graph,
+        glb,
+        root,
+        component_count,
+        triangles,
+    })
 }
 
 pub fn convert_step(

@@ -198,6 +198,13 @@ export const MES_URL =
 export const ASSEMBLER_SERVICE_URL = getEnv("ASSEMBLER_SERVICE_URL", {
   isRequired: false
 });
+// Dev-only: the local kong port (`crbn up` writes it to .env.local). Lets
+// host-side jobs rewrite storage signed URLs to hit kong directly instead of the
+// public `portless` `.dev` proxy, which times out on large transfers. Unset in prod.
+export const PORT_API = getEnv("PORT_API", {
+  isRequired: false,
+  isSecret: false
+});
 export const ASSEMBLER_SERVICE_API_KEY = getEnv("ASSEMBLER_SERVICE_API_KEY", {
   isRequired: false,
   isSecret: true

@@ -36,7 +36,9 @@ fn main() {
     let codec_name = args.get(2).map(String::as_str).unwrap_or("meshopt");
     let codec = optimize::Codec::from_str_opt(codec_name).expect("bad codec");
 
-    let input_bytes = std::fs::metadata(path).map(|m| m.len() as usize).unwrap_or(0);
+    let input_bytes = std::fs::metadata(path)
+        .map(|m| m.len() as usize)
+        .unwrap_or(0);
     eprintln!("loading {path} ({}) …", mb(input_bytes));
 
     let t = Instant::now();
@@ -110,8 +112,7 @@ fn load(path: &str) -> (json::Root, Bin) {
         let file = std::fs::File::open(path).expect("open glb");
         let map = unsafe { memmap2::Mmap::map(&file) }.expect("mmap glb");
         let json_len = le_u32(&map, 12);
-        let root: json::Root =
-            serde_json::from_slice(&map[20..20 + json_len]).expect("parse json");
+        let root: json::Root = serde_json::from_slice(&map[20..20 + json_len]).expect("parse json");
         let bin_hdr = 20 + json_len;
         let bin_len = le_u32(&map, bin_hdr);
         let bin_off = bin_hdr + 8;

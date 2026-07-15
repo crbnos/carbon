@@ -1,7 +1,8 @@
 //! Carbon assembler service (Rust) — the CAD heavy-lifting hub. Action-based RPC
 //! over HTTP/JSON, versioned under `/v1`, with one shared async job model:
 //!
-//!   POST /v1/convert | /v1/optimize | /v1/plan   → 202 { ok, job }   (create)
+//!   POST /v1/convert | /v1/optimize | /v1/plan | /v1/compact
+//!                                                → 202 { ok, job }   (create)
 //!   GET  /v1/jobs/{id}?wait=N                     → 200 { ok, job }   (poll)
 //!   POST /v1/jobs/{id}/cancel                     → 200 { ok, job }
 //!   POST /v1/cache/invalidate                     → 200 { ok, cleared }
@@ -81,6 +82,7 @@ async fn serve() {
         .route("/v1/convert", post(create_convert))
         .route("/v1/optimize", post(create_optimize))
         .route("/v1/plan", post(create_plan))
+        .route("/v1/compact", post(create_compact))
         .route("/v1/jobs/:job_id", get(get_job))
         .route("/v1/jobs/:job_id/cancel", post(cancel_job))
         .route("/v1/cache/invalidate", post(cache_invalidate))
@@ -166,7 +168,7 @@ async fn discovery(headers: HeaderMap) -> Result<Json<Value>, ApiError> {
         .collect();
     Ok(Json(json!({
         "version": VERSION,
-        "actions": ["convert", "optimize", "plan"],
+        "actions": ["convert", "optimize", "plan", "compact"],
         "input_formats": input_formats,
         "codecs": ["meshopt", "draco", "none"],
         "limits": {
@@ -355,12 +357,17 @@ async fn create_optimize(
         max_packed: out["max_render_weight_bytes"]
             .as_u64()
             .unwrap_or(DEFAULT_MAX_RENDER_WEIGHT_BYTES) as usize,
-        max_output: out["max_bytes"].as_u64().unwrap_or(DEFAULT_MAX_OUTPUT_BYTES) as usize,
+        max_output: out["max_bytes"]
+            .as_u64()
+            .unwrap_or(DEFAULT_MAX_OUTPUT_BYTES) as usize,
         lin: q["linear_deflection"].as_f64().unwrap_or(0.1),
         ang: q["angular_deflection"].as_f64().unwrap_or(0.5),
     };
     // `auto` (the default) content-detects the format in the action.
-    let format = req["source"]["format"].as_str().unwrap_or("auto").to_string();
+    let format = req["source"]["format"]
+        .as_str()
+        .unwrap_or("auto")
+        .to_string();
 
     let meta = optional_meta(&req);
     state.jobs.set_pending(&job_id, "optimize", meta).await;
@@ -435,6 +442,41 @@ async fn create_plan(
         },
     );
     Ok(created(&job_id, "plan", "queued"))
+}
+
+async fn create_compact(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    body: Result<Json<Value>, axum::extract::rejection::JsonRejection>,
+) -> Result<(StatusCode, HeaderMap, Json<Value>), ApiError> {
+    require_auth(&headers)?;
+    let req = parse_body(body)?;
+
+    let source_url = req["source"]["url"]
+        .as_str()
+        .ok_or_else(|| ApiError::invalid("missing source.url"))?;
+    config::validate_url(source_url)?;
+    let mode = actions::compact::Mode::from_str(req["mode"].as_str().unwrap_or("xbf"))
+        .ok_or_else(|| ApiError::invalid("mode must be 'xbf' or 'zstd'"))?;
+    let job_id = resolve_job_id(&headers);
+
+    if let Some(status) = state.jobs.existing_active(&job_id).await {
+        return Ok(created(&job_id, "compact", &status));
+    }
+
+    let meta = optional_meta(&req);
+    state.jobs.set_pending(&job_id, "compact", meta).await;
+    eprintln!("[{job_id}] compact queued");
+    actions::compact::spawn(
+        &state,
+        &job_id,
+        actions::compact::CompactReq {
+            source_url: source_url.to_string(),
+            mode,
+            raw_path: req["output"]["path"].as_str().map(str::to_string),
+        },
+    );
+    Ok(created(&job_id, "compact", "queued"))
 }
 
 fn optional_meta(req: &Value) -> Option<Value> {

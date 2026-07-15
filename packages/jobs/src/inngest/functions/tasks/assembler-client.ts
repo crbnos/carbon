@@ -1,5 +1,10 @@
 import type { Json } from "@carbon/database";
-import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
+import {
+  ASSEMBLER_SERVICE_API_KEY,
+  ASSEMBLER_SERVICE_URL,
+  PORT_API,
+  SUPABASE_URL
+} from "@carbon/env";
 import { NonRetriableError } from "inngest";
 
 // Shared client for the assembler service's `/v1` action-RPC API. Every heavy
@@ -36,6 +41,34 @@ export function assemblerBaseUrl(): string {
   return ASSEMBLER_SERVICE_URL;
 }
 
+/**
+ * The assembler runs on the host and pulls (and pushes) storage objects over
+ * HTTP. In dev `SUPABASE_URL` is the public `portless` `.dev` proxy, which times
+ * out on large (multi-GB) transfers and uses a self-signed TLS cert the Rust
+ * client rejects. When the local kong port is known (`PORT_API`, dev only),
+ * rewrite a storage signed URL to hit kong directly. No-op in prod (no
+ * `PORT_API`, and prod's proxy handles large transfers) or on a non-`.dev` host.
+ */
+export function internalizeStorageUrl(url: string): string {
+  if (!PORT_API || !SUPABASE_URL) return url;
+  let publicHost: string;
+  try {
+    publicHost = new URL(SUPABASE_URL).host;
+  } catch {
+    return url;
+  }
+  if (!/\.dev(?::\d+)?$/.test(publicHost)) return url;
+  try {
+    const parsed = new URL(url);
+    if (parsed.host !== publicHost) return url;
+    parsed.protocol = "http:";
+    parsed.host = `localhost:${PORT_API}`;
+    return parsed.toString();
+  } catch {
+    return url;
+  }
+}
+
 type ErrorBody = { message?: string } | string | null | undefined;
 
 function errorMessage(error: ErrorBody, fallback: string): string {
@@ -49,7 +82,7 @@ function errorMessage(error: ErrorBody, fallback: string): string {
  * honoring Retry-After; a genuine outage / permanent rejection fails fast.
  */
 export async function submitAssemblerJob(opts: {
-  action: "convert" | "optimize" | "plan";
+  action: "convert" | "optimize" | "plan" | "compact";
   jobId: string;
   body: unknown;
   logger: { warn: (msg: string, meta?: unknown) => void };

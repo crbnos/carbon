@@ -1,6 +1,7 @@
 //! `optimize` action — any supported CAD/mesh input → optimised GLB. Resolves the
 //! source format (explicit or content auto-detected), loads it into a GLB
-//! (OCCT-tessellating B-rep, ingesting STL, or mmapping a glTF/GLB), then runs the
+//! (OCCT-tessellating B-rep, ingesting STL, mmapping a GLB, or repacking a text
+//! glTF to GLB via a streaming base64 decode), then runs the
 //! meshopt geometry passes + codec encode (via `crates/optimize`), walking a
 //! simplify ladder until the render-weight + output-size gates pass. Async job;
 //! late-mint uploads the single `glb` output. Fails loud with a typed error
@@ -169,17 +170,21 @@ struct Outcome {
     detected_via: &'static str,
 }
 
-/// GLB source bytes — either an owned tessellation/STL-ingest or a memory-mapped
-/// uploaded glTF/GLB (OS-paged, off the RSS).
+/// GLB source bytes — an owned tessellation/STL-ingest, a memory-mapped uploaded
+/// GLB, or a memory-mapped repacked temp GLB (from a text glTF). All OS-paged, off
+/// the RSS.
 enum Src {
     Owned(Vec<u8>),
     Mapped(memmap2::Mmap),
+    /// Repacked temp `.glb` (from text glTF); the `TempPath` holds the file open
+    /// for the mmap's lifetime and deletes it on drop.
+    MappedTemp(memmap2::Mmap, #[allow(dead_code)] tempfile::TempPath),
 }
 impl Src {
     fn bytes(&self) -> &[u8] {
         match self {
             Src::Owned(v) => v,
-            Src::Mapped(m) => m,
+            Src::Mapped(m) | Src::MappedTemp(m, _) => m,
         }
     }
 }
@@ -193,8 +198,7 @@ fn run_optimize(
     ext: Option<&str>,
     opts: &Opts,
 ) -> Result<Outcome, ActionErr> {
-    let head = read_head_bytes(path, 512 * 1024)
-        .map_err(|e| ActionErr::new("invalid_input", e))?;
+    let head = read_head_bytes(path, 512 * 1024).map_err(|e| ActionErr::new("invalid_input", e))?;
     let size = std::fs::metadata(path).map(|m| m.len()).unwrap_or(0);
 
     let (format, detected_via) = formats::resolve(declared, &head, size, ext)
@@ -204,7 +208,6 @@ fn run_optimize(
     let src = load_source(path, format, &head, opts)?;
     let glb = src.bytes();
     let input_bytes = glb.len();
-    let is_glb = glb.len() >= 4 && &glb[0..4] == b"glTF";
 
     let ladder = if opts.ladder.is_empty() {
         vec![None]
@@ -227,15 +230,12 @@ fn run_optimize(
             weld: opts.weld,
             reorder: opts.reorder,
         };
-        let mut res = if is_glb {
-            optimize::optimize_glb(glb, &o)
-        } else {
-            optimize::optimize_gltf(glb, &o)
-        }
-        .map_err(|e| ActionErr::new("optimize_failed", e.message))?;
+        // Every source is GLB here (STEP/STL ingested to GLB, GLB mmap'd, text
+        // glTF repacked to GLB in load_source).
+        let mut res = optimize::optimize_glb(glb, &o)
+            .map_err(|e| ActionErr::new("optimize_failed", e.message))?;
         res.stats.input_bytes = input_bytes;
-        let passes =
-            res.stats.decoded_bytes <= opts.max_packed && res.glb.len() <= opts.max_output;
+        let passes = res.stats.decoded_bytes <= opts.max_packed && res.glb.len() <= opts.max_output;
         let outcome = Outcome {
             glb: res.glb,
             stats: res.stats,
@@ -261,9 +261,7 @@ fn run_optimize(
 
     // Nothing fit the budget even at the most aggressive rung: fail loud rather
     // than store an artifact the served bucket would reject.
-    let smallest = best
-        .map(|o| o.glb.len())
-        .unwrap_or(0);
+    let smallest = best.map(|o| o.glb.len()).unwrap_or(0);
     Err(ActionErr::new(
         "cannot_fit_budget",
         format!(
@@ -285,25 +283,63 @@ fn load_source(path: &str, format: Format, head: &[u8], opts: &Opts) -> Result<S
                 .glb;
             Ok(Src::Owned(glb))
         }
+        Format::Xbf => {
+            // Compacted retained raw (BinXCAF). Geometry already mm; tessellate
+            // like STEP. Lets reoptimise run off the compacted source.
+            let glb = converter::convert::convert_xbf(path, opts.lin, opts.ang)
+                .map_err(|e| ActionErr::new("tessellation_failed", e.message))?
+                .glb;
+            Ok(Src::Owned(glb))
+        }
         Format::Stl => {
-            let bytes = std::fs::read(path).map_err(|e| ActionErr::new("invalid_input", e.to_string()))?;
+            let bytes =
+                std::fs::read(path).map_err(|e| ActionErr::new("invalid_input", e.to_string()))?;
             let glb = optimize::stl_to_glb(&bytes)
                 .map_err(|e| ActionErr::new("optimize_failed", e.message))?;
             Ok(Src::Owned(glb))
         }
-        Format::Glb | Format::Gltf => {
-            let file =
-                std::fs::File::open(path).map_err(|e| ActionErr::new("invalid_input", format!("open source: {e}")))?;
+        Format::Glb => {
+            let file = std::fs::File::open(path)
+                .map_err(|e| ActionErr::new("invalid_input", format!("open source: {e}")))?;
             let map = unsafe { memmap2::Mmap::map(&file) }
                 .map_err(|e| ActionErr::new("invalid_input", format!("mmap source: {e}")))?;
             Ok(Src::Mapped(map))
         }
+        Format::Gltf => {
+            use std::io::Write as _;
+            // Repack text glTF → GLB with a streaming base64 decode, then mmap the
+            // GLB and run the bounded GLB path. A serde parse of a multi-GB glTF
+            // holds the base64 string + decoded bytes at once (~3× the file); this
+            // keeps peak memory off the geometry (it lives in the temp GLB on disk).
+            let file = std::fs::File::open(path)
+                .map_err(|e| ActionErr::new("invalid_input", format!("open source: {e}")))?;
+            let gltf = unsafe { memmap2::Mmap::map(&file) }
+                .map_err(|e| ActionErr::new("invalid_input", format!("mmap source: {e}")))?;
+            let mut tmp = tempfile::NamedTempFile::new()
+                .map_err(|e| ActionErr::new("invalid_input", format!("temp glb: {e}")))?;
+            {
+                let mut bw = std::io::BufWriter::new(&mut tmp);
+                optimize::gltf_to_glb(&gltf, &mut bw)
+                    .map_err(|e| ActionErr::new("optimize_failed", e.message))?;
+                bw.flush().map_err(|e| {
+                    ActionErr::new("optimize_failed", format!("flush temp glb: {e}"))
+                })?;
+            }
+            let temp_path = tmp.into_temp_path();
+            let glb_file = std::fs::File::open(&temp_path)
+                .map_err(|e| ActionErr::new("invalid_input", format!("open temp glb: {e}")))?;
+            let glb_map = unsafe { memmap2::Mmap::map(&glb_file) }
+                .map_err(|e| ActionErr::new("invalid_input", format!("mmap temp glb: {e}")))?;
+            Ok(Src::MappedTemp(glb_map, temp_path))
+        }
         // Detected + advertised, loader not yet wired (IGES/BREP → OCCT reader,
         // OBJ/PLY/OFF → mesh parsers). Fail clearly rather than silently no-op.
-        Format::Iges | Format::Brep | Format::Obj | Format::Ply | Format::Off => Err(ActionErr::new(
-            "unsupported_format",
-            format!("loader for '{}' is not yet implemented", format.name()),
-        )),
+        Format::Iges | Format::Brep | Format::Obj | Format::Ply | Format::Off => {
+            Err(ActionErr::new(
+                "unsupported_format",
+                format!("loader for '{}' is not yet implemented", format.name()),
+            ))
+        }
     }
 }
 
@@ -322,7 +358,8 @@ fn read_head_bytes(path: &str, cap: usize) -> Result<Vec<u8>, String> {
 fn url_ext(url: &str) -> Option<String> {
     let path = url.split(['?', '#']).next().unwrap_or(url);
     let name = path.rsplit('/').next().unwrap_or(path);
-    name.rsplit_once('.').map(|(_, ext)| ext.to_ascii_lowercase())
+    name.rsplit_once('.')
+        .map(|(_, ext)| ext.to_ascii_lowercase())
 }
 
 fn codec_name(c: optimize::Codec) -> &'static str {

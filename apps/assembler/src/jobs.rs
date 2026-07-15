@@ -350,14 +350,17 @@ impl JobStore {
                     .iter()
                     .map(|o| json!({ "name": o.name, "contentType": o.content_type }))
                     .collect();
-                let done_json =
-                    json!({ "result": done.result, "stats": done.stats }).to_string();
+                let done_json = json!({ "result": done.result, "stats": done.stats }).to_string();
                 let mut c = conn.clone();
                 let mut pipe = redis::pipe();
-                pipe.hset(pending_key(id), "manifest", Value::from(manifest).to_string())
-                    .ignore()
-                    .hset(pending_key(id), "done", done_json)
-                    .ignore();
+                pipe.hset(
+                    pending_key(id),
+                    "manifest",
+                    Value::from(manifest).to_string(),
+                )
+                .ignore()
+                .hset(pending_key(id), "done", done_json)
+                .ignore();
                 for o in &outputs {
                     pipe.hset(pending_key(id), format!("b:{}", o.name), o.bytes.clone())
                         .ignore();
@@ -380,13 +383,10 @@ impl JobStore {
         id: &str,
     ) -> Option<(Vec<Output>, Done, Option<(String, u128, u64)>)> {
         match &self.backend {
-            Backend::Memory { .. } => self.pending.get(id).map(|p| {
-                (
-                    p.outputs.clone(),
-                    p.done.clone(),
-                    p.cache.clone(),
-                )
-            }),
+            Backend::Memory { .. } => self
+                .pending
+                .get(id)
+                .map(|p| (p.outputs.clone(), p.done.clone(), p.cache.clone())),
             Backend::Redis { conn } => {
                 let mut c = conn.clone();
                 let res: redis::RedisResult<(Option<String>, Option<String>, Option<String>)> =
@@ -407,7 +407,10 @@ impl JobStore {
                 let mut outputs = Vec::with_capacity(manifest.len());
                 for m in &manifest {
                     let name = m["name"].as_str()?.to_string();
-                    let content_type = m["contentType"].as_str().unwrap_or("application/octet-stream").to_string();
+                    let content_type = m["contentType"]
+                        .as_str()
+                        .unwrap_or("application/octet-stream")
+                        .to_string();
                     let bytes: Option<Vec<u8>> =
                         c.hget(pending_key(id), format!("b:{name}")).await.ok()?;
                     outputs.push(Output {

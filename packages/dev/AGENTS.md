@@ -30,7 +30,7 @@ pnpm --filter @carbon/dev typecheck   # tsgo --noEmit
 
 ## Key Patterns
 
-- **Commands**: `up`, `down`, `new`, `remove`, `list`, `status`, `reset`, `migrate`, `copy` (env sync)
+- **Commands**: `up`, `down`, `new`, `remove`, `list`, `status`, `reset`, `migrate`, `copy` (env sync), `reload` (`crbn reload <service...>` → `docker compose up -d --force-recreate` a subset, applying compose/`.env.local` edits without restarting the app dev servers)
 - **Stack boot** (`commands/up.ts`): Docker Compose → wait Postgres → migrations → regen types → spawn apps → portless aliases
 - **Worktree** (`worktree.ts`): `resolveSlug()`, `getWorktreeRoot()`, `projectName()`, `ensureSlugAvailable()`
 - **Services**: `compose.ts` (Docker), `migrations.ts` (Postgres/Supabase), `portless.ts` (`.dev` URLs), `apps.ts` (dev servers)

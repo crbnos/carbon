@@ -9,8 +9,11 @@ fn int_env(name: &str, default: usize) -> usize {
         .unwrap_or(default)
 }
 
+/// Max source-download size (bytes). 0 disables the limit (the default) — the
+/// download streams to a temp file, and the storage bucket already bounds upload
+/// size, so no in-service cap is enforced unless one is explicitly configured.
 pub fn max_source_bytes() -> usize {
-    int_env("ASSEMBLER_MAX_SOURCE_MB", 512) * 1024 * 1024
+    int_env("ASSEMBLER_MAX_SOURCE_MB", 0) * 1024 * 1024
 }
 
 pub fn max_parts() -> usize {

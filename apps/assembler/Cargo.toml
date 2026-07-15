@@ -22,11 +22,14 @@ bytes = "1"
 lru = "0.12"
 xxhash-rust = { version = "0.8", features = ["xxh3"] }
 futures-util = "0.3"
-tokio-util = { version = "0.7", features = ["rt"] }
+tokio-util = { version = "0.7", features = ["rt", "io"] }
+async-compression = { version = "0.4", features = ["tokio", "zstd"] }
+zstd = "0.13"
 redis = { version = "0.27", default-features = false, features = ["tokio-comp", "connection-manager"] }
 tower-http = { version = "0.6", features = ["compression-zstd", "compression-gzip"] }
 memmap2 = "0.9"
 file-format = "0.26"
+tempfile = "3"
 
 [target.'cfg(target_os = "linux")'.dependencies]
 tikv-jemallocator = "0.6"

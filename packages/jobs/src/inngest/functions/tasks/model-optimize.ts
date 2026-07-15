@@ -1,8 +1,9 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Json } from "@carbon/database";
-import { optimizableModelFormat } from "@carbon/utils";
+import { modelPathOptimizeFormat } from "@carbon/utils";
 import { inngest } from "../../client";
 import {
+  internalizeStorageUrl,
   POLL_GAP,
   pollAssemblerJobOnce,
   submitAssemblerJob
@@ -56,9 +57,9 @@ export const modelOptimizeFunction = inngest.createFunction(
       }
       // Derive the source format from the stored file, not the caller — every
       // attach point (part/quote/rfq create, generic upload) then triggers with
-      // just the id, and non-mesh inputs (stl/obj/iges/…) skip cleanly.
-      const ext = upload.data.modelPath.split(".").pop() ?? "";
-      const format = optimizableModelFormat(ext);
+      // just the id, and non-mesh inputs (stl/obj/iges/…) skip cleanly. Strips a
+      // `.zst` compaction suffix so reoptimise of a compacted raw resolves too.
+      const format = modelPathOptimizeFormat(upload.data.modelPath);
       if (format) {
         await client
           .from("modelUpload")
@@ -85,8 +86,10 @@ export const modelOptimizeFunction = inngest.createFunction(
 
     await step.run("submit", async () => {
       const client = getCarbonServiceRole();
+      // Raw source lands in `temp-staging` (2.5 GB cap); optimised artifacts are
+      // written to `private` (50 MB served cap) below.
       const source = await client.storage
-        .from("private")
+        .from("temp-staging")
         .createSignedUrl(model.modelPath, SIGNED_URL_EXPIRY);
       if (source.error) {
         throw new Error(`Failed to sign source URL: ${source.error.message}`);
@@ -96,7 +99,7 @@ export const modelOptimizeFunction = inngest.createFunction(
         jobId,
         logger,
         body: {
-          source: { url: source.data.signedUrl, format },
+          source: { url: internalizeStorageUrl(source.data.signedUrl), format },
           output: { path: optimizedPath }
           // quality omitted → the service defaults apply (codec meshopt, merge on,
           // normal quant on, auto simplify tolerance, aggressive ladder to fit the
@@ -120,7 +123,8 @@ export const modelOptimizeFunction = inngest.createFunction(
               .from("private")
               .createSignedUploadUrl(optimizedPath, { upsert: true });
             const urls: Record<string, string> = {};
-            if (upload.data) urls.glb = upload.data.signedUrl;
+            if (upload.data)
+              urls.glb = internalizeStorageUrl(upload.data.signedUrl);
             return urls;
           }
         })
@@ -165,6 +169,104 @@ export const modelOptimizeFunction = inngest.createFunction(
         })
         .eq("id", modelUploadId);
     });
+
+    // Compact the retained raw so it never lingers as the fat upload. Every
+    // optimisable source (any size) is zstd-compressed IN ITS ORIGINAL FORMAT —
+    // `raw.<ext>.zst` stays a valid STEP/glTF/… that the download route
+    // decompresses back to the source file, and the assembler reads it back
+    // transparently (zstd-decoded on fetch), so plan/convert/reoptimise need no
+    // change. Already-compacted (`.zst`) raws are skipped. Best-effort: a
+    // compaction failure must not fail the already-succeeded optimise (the
+    // scheduled big-raw TTL prune is the safety net).
+    const alreadyCompacted = model.modelPath.toLowerCase().endsWith(".zst");
+    if (!alreadyCompacted) {
+      // Flat, mirroring the original raw (`${id}.step` → `${id}.step.zst`), so the
+      // model id stays recoverable from the path (CadModel's `modelIdFromPath`)
+      // and the download route resolves the underlying format from the extension.
+      const compactPath = `${companyId}/models/${modelUploadId}.${format}.zst`;
+      const compactJobId = `compact-${modelUploadId}`;
+      try {
+        await step.run("compact-submit", async () => {
+          const client = getCarbonServiceRole();
+          const source = await client.storage
+            .from("temp-staging")
+            .createSignedUrl(model.modelPath, SIGNED_URL_EXPIRY);
+          if (source.error) {
+            throw new Error(`sign source: ${source.error.message}`);
+          }
+          await submitAssemblerJob({
+            action: "compact",
+            jobId: compactJobId,
+            logger,
+            body: {
+              source: { url: internalizeStorageUrl(source.data.signedUrl) },
+              mode: "zstd",
+              output: { path: compactPath }
+            }
+          });
+        });
+
+        const compactStartedAt = await step.run("compact-poll-start", () =>
+          Date.now()
+        );
+        let ci = 0;
+        let compacted = false;
+        let compactedSize: number | null = null;
+        while (Date.now() - compactStartedAt < MAX_OPTIMIZE_WAIT_MS) {
+          const poll = await step.run(`compact-poll-${ci}`, () =>
+            pollAssemblerJobOnce({
+              jobId: compactJobId,
+              mintUploadUrls: async () => {
+                const client = getCarbonServiceRole();
+                const upload = await client.storage
+                  .from("temp-staging")
+                  .createSignedUploadUrl(compactPath, { upsert: true });
+                const urls: Record<string, string> = {};
+                if (upload.data)
+                  urls.raw = internalizeStorageUrl(upload.data.signedUrl);
+                return urls;
+              }
+            })
+          );
+          if (poll.status === "done") {
+            compacted = true;
+            compactedSize =
+              (poll.stats as { outputBytes?: number } | null)?.outputBytes ??
+              null;
+            break;
+          }
+          if (poll.status === "error") {
+            throw new Error(poll.error);
+          }
+          await step.sleep(`compact-gap-${ci}`, POLL_GAP);
+          ci++;
+        }
+        if (!compacted) {
+          throw new Error("compact did not finish in the expected time");
+        }
+
+        await step.run("compact-persist", async () => {
+          const client = getCarbonServiceRole();
+          // Repoint modelPath at the compacted raw and record its (compressed)
+          // stored size so the files list reflects what's actually on disk, then
+          // drop the fat original.
+          await client
+            .from("modelUpload")
+            .update({
+              modelPath: compactPath,
+              ...(compactedSize != null ? { size: compactedSize } : {})
+            })
+            .eq("id", modelUploadId);
+          await client.storage.from("temp-staging").remove([model.modelPath]);
+        });
+        logger.info("raw compacted", { modelUploadId, compactPath });
+      } catch (err) {
+        logger.warn("raw compaction skipped", {
+          modelUploadId,
+          error: (err as Error).message
+        });
+      }
+    }
 
     logger.info("model optimise finalized", { modelUploadId, stats });
     return { modelUploadId, status: "Success" as const };

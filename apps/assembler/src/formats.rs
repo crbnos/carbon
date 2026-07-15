@@ -12,6 +12,9 @@ pub enum Format {
     Step,
     Iges,
     Brep,
+    /// OCCT BinXCAF document (`.xbf`) — the compacted lossless retained-raw form
+    /// of a STEP (B-rep + assembly tree + names + colors, already mm).
+    Xbf,
     Glb,
     Gltf,
     Stl,
@@ -31,7 +34,7 @@ pub enum Loader {
 /// Every supported input token (canonical names + aliases), for the
 /// `unsupported_format` error payload.
 pub const SUPPORTED: &[&str] = &[
-    "step", "stp", "iges", "igs", "brep", "glb", "gltf", "stl", "obj", "ply", "off",
+    "step", "stp", "iges", "igs", "brep", "xbf", "glb", "gltf", "stl", "obj", "ply", "off",
 ];
 
 /// Canonical formats, in registry order — the `GET /v1` discovery listing.
@@ -39,6 +42,7 @@ pub const ALL: &[Format] = &[
     Format::Step,
     Format::Iges,
     Format::Brep,
+    Format::Xbf,
     Format::Glb,
     Format::Gltf,
     Format::Stl,
@@ -53,6 +57,7 @@ impl Format {
             Format::Step => "step",
             Format::Iges => "iges",
             Format::Brep => "brep",
+            Format::Xbf => "xbf",
             Format::Glb => "glb",
             Format::Gltf => "gltf",
             Format::Stl => "stl",
@@ -64,7 +69,7 @@ impl Format {
 
     pub fn loader(self) -> Loader {
         match self {
-            Format::Step | Format::Iges | Format::Brep => Loader::Occt,
+            Format::Step | Format::Iges | Format::Brep | Format::Xbf => Loader::Occt,
             _ => Loader::Mesh,
         }
     }
@@ -85,7 +90,13 @@ impl Format {
     pub fn structured(self) -> bool {
         matches!(
             self,
-            Format::Step | Format::Iges | Format::Brep | Format::Glb | Format::Gltf | Format::Obj
+            Format::Step
+                | Format::Iges
+                | Format::Brep
+                | Format::Xbf
+                | Format::Glb
+                | Format::Gltf
+                | Format::Obj
         )
     }
 
@@ -94,6 +105,7 @@ impl Format {
             "step" | "stp" => Some(Format::Step),
             "iges" | "igs" => Some(Format::Iges),
             "brep" => Some(Format::Brep),
+            "xbf" => Some(Format::Xbf),
             "glb" => Some(Format::Glb),
             "gltf" => Some(Format::Gltf),
             "stl" => Some(Format::Stl),
@@ -149,6 +161,10 @@ pub fn sniff(head: &[u8], size: u64, ext: Option<&str>) -> Option<Format> {
     // 1. Unambiguous binary/structural signatures.
     if head.len() >= 4 && &head[0..4] == b"glTF" {
         return Some(Format::Glb);
+    }
+    // OCCT BinXCAF documents start with the ASCII `BINFILE` magic.
+    if head.len() >= 7 && &head[0..7] == b"BINFILE" {
+        return Some(Format::Xbf);
     }
     let text = leading_text(head);
     let trimmed = text.trim_start();
@@ -245,6 +261,7 @@ mod tests {
     #[test]
     fn detects_by_magic() {
         assert_eq!(sniff_bytes(b"glTF\x02\0\0\0"), Some(Format::Glb));
+        assert_eq!(sniff_bytes(b"BINFILE\x01\x02\x03\x04"), Some(Format::Xbf));
         assert_eq!(sniff_bytes(b"ISO-10303-21;\nHEADER;"), Some(Format::Step));
         assert_eq!(sniff_bytes(b"ply\nformat ascii 1.0\n"), Some(Format::Ply));
         assert_eq!(sniff_bytes(b"OFF\n8 6 0\n"), Some(Format::Off));
@@ -290,13 +307,13 @@ mod tests {
             (Format::Stl, "declared")
         );
         assert_eq!(
-            resolve("fbx", glb, glb.len() as u64, None).unwrap_err().code,
+            resolve("fbx", glb, glb.len() as u64, None)
+                .unwrap_err()
+                .code,
             "unsupported_format"
         );
         assert_eq!(
-            resolve("auto", b"random bytes", 12, None)
-                .unwrap_err()
-                .code,
+            resolve("auto", b"random bytes", 12, None).unwrap_err().code,
             "ambiguous_format"
         );
         // Extension fallback when content is inconclusive.

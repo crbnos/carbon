@@ -24,12 +24,13 @@ import {
 } from "@carbon/utils";
 import { ModelPreview } from "@carbon/viewer/model-preview";
 import { nanoid } from "nanoid";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useDropzone } from "react-dropzone";
-import { LuCloudUpload } from "react-icons/lu";
+import { LuCloudUpload, LuZap } from "react-icons/lu";
 import { useFetcher, useRevalidator } from "react-router";
-import { useUser } from "~/hooks";
+import { useModelUpload, useUser } from "~/hooks";
 import { getPrivateUrl, path } from "~/utils/path";
+import { ModelUploadProgress } from "./ModelUploadProgress";
 
 const SIZE_LIMIT = getFileSizeLimit("CAD_MODEL_UPLOAD");
 
@@ -45,9 +46,9 @@ type ModelArtifacts = {
     | "Success"
     | "Failed"
     | null;
-  /** Raw source bytes (kept, never shrinks). */
+  /** Stored raw bytes — the compacted (`.zst`) size once compaction runs. */
   size: number | null;
-  /** Optimised GLB bytes — surfaced next to `size` to show the reduction. */
+  /** Optimized GLB bytes — surfaced next to `size` to show the reduction. */
   optimizedSize: number | null;
 };
 
@@ -57,7 +58,10 @@ type ModelArtifacts = {
  */
 function modelIdFromPath(modelPath: string | null): string | null {
   if (!modelPath) return null;
-  const base = modelPath.split("/").pop() ?? "";
+  let base = modelPath.split("/").pop() ?? "";
+  // Retained raws are compacted in place (`${id}.step` → `${id}.step.zst`); peel
+  // the `.zst` wrapper before the source extension so the id resolves either way.
+  if (base.toLowerCase().endsWith(".zst")) base = base.slice(0, -4);
   return base.replace(/\.[^.]+$/, "") || null;
 }
 
@@ -72,17 +76,28 @@ function modelIdFromPath(modelPath: string | null): string | null {
 function useModelArtifacts(modelPath: string | null): {
   artifacts: ModelArtifacts | undefined;
   /** True while a server GLB might still arrive (fetch unresolved / optimise in
-   *  flight). Gates the heavy WASM fallback so it never loads for nothing. */
+   *  flight). */
   pending: boolean;
+  /** Restart polling (after a re-optimise is fired) even if it had settled. */
+  retry: () => void;
 } {
-  const fetcher = useFetcher<ModelArtifacts>();
+  const uid = useId();
+  const modelUploadId = modelIdFromPath(modelPath);
+  // Scope the fetcher per model id: a delete or swap gives a DIFFERENT fetcher
+  // whose `data` is undefined until its own load resolves — so a previous
+  // model's artifacts can never leak into the new one's viewer (the old model
+  // flashing before the spinner). The `none:<uid>` key keeps model-less
+  // instances from colliding on a shared fetcher.
+  const fetcher = useFetcher<ModelArtifacts>({
+    key: `model-artifacts:${modelUploadId ?? `none:${uid}`}`
+  });
   const load = fetcher.load;
   const dataRef = useRef<ModelArtifacts | undefined>(undefined);
   dataRef.current = fetcher.data;
   const [pending, setPending] = useState(true);
+  const [reloadKey, setReloadKey] = useState(0);
 
-  const modelUploadId = modelIdFromPath(modelPath);
-
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reloadKey re-runs the effect on retry without being read inside it
   useEffect(() => {
     if (!modelUploadId) {
       setPending(false);
@@ -117,9 +132,13 @@ function useModelArtifacts(modelPath: string | null): {
     }, 3000);
 
     return () => clearInterval(timer);
-  }, [modelUploadId, load]);
+  }, [modelUploadId, load, reloadKey]);
 
-  return { artifacts: fetcher.data, pending };
+  return {
+    artifacts: fetcher.data,
+    pending,
+    retry: () => setReloadKey((k) => k + 1)
+  };
 }
 
 type CadModelProps = {
@@ -152,22 +171,20 @@ const CadModel = ({
   const mode = useMode();
   const { carbon } = useCarbon();
   const revalidator = useRevalidator();
+  const { upload, runUpload } = useModelUpload();
 
   const fetcher = useFetcher<{}>();
   const [file, setFile] = useState<File | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const deleteModal = useDisclosure();
 
-  const { artifacts, pending } = useModelArtifacts(modelPath);
-  const hasServerArtifact = Boolean(
-    artifacts?.optimizedModelPath || artifacts?.glbPath
-  );
-  // Only reach for the ~3 MB online-3d-viewer WASM tessellator when there's
-  // genuinely no server model to show: a just-uploaded in-memory file, or an
-  // existing model that has settled without a GLB (optimise failed / non-mesh).
-  // Never while an artifact is still resolving — that pulls occt-import-js.wasm
-  // for nothing when the optimised GLB is seconds away.
-  const useWasmFallback = Boolean(file) || (!hasServerArtifact && !pending);
+  const { artifacts, pending, retry } = useModelArtifacts(modelPath);
+  const reoptimizeFetcher = useFetcher<{ success: boolean }>();
+  // A server GLB may still be on its way while a fresh file uploads or the
+  // optimise job runs. There is no in-browser tessellation fallback — the viewer
+  // shows a spinner until the GLB lands, then "preview unavailable" if it never
+  // does (optimise failed / non-mesh).
+  const awaitingModel = pending || Boolean(file);
 
   const onDelete = async () => {
     if (!carbon) {
@@ -228,6 +245,18 @@ const CadModel = ({
       metadata?.jobId
     );
 
+  // Re-fire the optimise for an existing model (raw still in temp-staging) and
+  // restart artifact polling so the GLB swaps in without a reload.
+  const onRetry = () => {
+    const modelUploadId = modelIdFromPath(modelPath);
+    if (isReadOnly || !modelUploadId) return;
+    reoptimizeFetcher.submit(
+      { modelUploadId },
+      { method: "post", action: path.to.api.modelReoptimize }
+    );
+    retry();
+  };
+
   const onFileChange = async (file: File | null) => {
     const modelId = nanoid();
 
@@ -237,26 +266,31 @@ const CadModel = ({
       if (!carbon) {
         toast.error("Failed to initialize carbon client");
         return;
-      } else {
-        toast.info(`Uploading ${file.name}`);
       }
       const fileExtension = file.name.split(".").pop();
       const fileName = `${companyId}/models/${modelId}.${fileExtension}`;
 
-      const modelUpload = await carbon.storage
-        .from("private")
-        .upload(fileName, file, {
-          upsert: true
-        });
-
-      if (modelUpload.error) {
-        toast.error("Failed to upload file to storage");
+      // Raw CAD lands in `temp-staging` (2.5 GB cap) via a resumable (TUS) upload
+      // — a standard buffered upload times out on multi-GB files. The
+      // optimise/assembly jobs read it from there and write the gated artifacts
+      // (<=50 MB) to `private`.
+      const toastId = toast.loading(`Uploading ${file.name}…`);
+      const { error: uploadError } = await runUpload({
+        bucket: "temp-staging",
+        path: fileName,
+        file
+      });
+      if (uploadError) {
+        toast.error("Failed to upload file to storage", { id: toastId });
+        setFile(null);
+        return;
       }
+      toast.success(`Uploaded ${file.name}`, { id: toastId });
 
       const formData = new FormData();
       formData.append("name", file.name);
       formData.append("modelId", modelId);
-      formData.append("modelPath", modelUpload.data!.path);
+      formData.append("modelPath", fileName);
       formData.append("size", file.size.toString());
       if (metadata) {
         if (metadata.itemId) {
@@ -297,10 +331,7 @@ const CadModel = ({
             <div className="relative h-full w-full">
               <ModelPreview
                 key={modelPath}
-                sourceFile={useWasmFallback ? file : null}
-                sourceUrl={
-                  useWasmFallback && modelPath ? getPrivateUrl(modelPath) : null
-                }
+                awaitingModel={awaitingModel}
                 optimizedUrl={
                   artifacts?.optimizedModelPath
                     ? getPrivateUrl(artifacts.optimizedModelPath)
@@ -319,19 +350,32 @@ const CadModel = ({
                 }
                 mode={mode}
                 className={viewerClassName}
+                onRetry={!isReadOnly && modelPath ? onRetry : undefined}
                 onDelete={canDelete ? deleteModal.onOpen : undefined}
               />
+              {upload !== null && (
+                <div className="absolute inset-0 z-30 flex items-center justify-center rounded-lg bg-background/95 p-6">
+                  <ModelUploadProgress
+                    percent={upload.percent}
+                    uploaded={upload.uploaded}
+                    total={upload.total}
+                    className="max-w-sm"
+                  />
+                </div>
+              )}
               {artifacts?.size && artifacts?.optimizedSize ? (
-                <div className="pointer-events-none absolute bottom-2 left-2 z-10 rounded-md border border-border bg-popover px-2 py-1 font-mono text-xs text-muted-foreground shadow-sm tabular-nums">
-                  {convertKbToString(Math.round(artifacts.size / 1024))}
-                  {" → "}
-                  <span className="text-emerald-500">
-                    {convertKbToString(
-                      Math.round(artifacts.optimizedSize / 1024)
-                    )}
-                  </span>{" "}
-                  · {(artifacts.size / artifacts.optimizedSize).toFixed(1)}×
-                  smaller
+                <div className="pointer-events-none absolute bottom-2 left-2 z-10 flex items-center gap-1.5 rounded-md border border-border bg-popover px-2 py-1 text-xs text-muted-foreground shadow-sm">
+                  <LuZap className="size-3 shrink-0 text-emerald-500" />
+                  <span>Optimized GLB</span>
+                  <span className="font-mono tabular-nums">
+                    {convertKbToString(Math.round(artifacts.size / 1024))}
+                    {" → "}
+                    <span className="text-emerald-500">
+                      {convertKbToString(
+                        Math.round(artifacts.optimizedSize / 1024)
+                      )}
+                    </span>
+                  </span>
                 </div>
               ) : null}
             </div>

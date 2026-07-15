@@ -3,6 +3,7 @@
 //! (running → uploading/done/error). The HTTP layer (`main.rs`) only parses the
 //! request and calls `spawn`; all compute + storage I/O lives here.
 
+pub mod compact;
 pub mod convert;
 pub mod optimize;
 pub mod plan;

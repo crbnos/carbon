@@ -196,7 +196,10 @@ fn optimize_glb(glb: Vec<u8>) -> Vec<u8> {
     match optimize::optimize_glb(&glb, &opts) {
         Ok(res) => res.glb,
         Err(e) => {
-            eprintln!("convert: meshopt optimise skipped ({}); serving plain GLB", e);
+            eprintln!(
+                "convert: meshopt optimise skipped ({}); serving plain GLB",
+                e
+            );
             glb
         }
     }

@@ -38,7 +38,10 @@ export function AssemblyViewer({
       )}
     >
       <Canvas
-        gl={{ antialias: true, alpha: true }}
+        // Logarithmic depth buffer: distributes depth precision across a huge
+        // CAD scale range (metre-scale body, mm-scale parts) so coplanar faces
+        // don't z-fight into shimmering seams.
+        gl={{ antialias: true, alpha: true, logarithmicDepthBuffer: true }}
         // Cap the render resolution: a 3x-retina panel otherwise renders ~9x the
         // pixels, which is the main fill-rate cost when orbiting a dense model.
         // 2x keeps edges crisp without paying for the top DPR tier.

@@ -11,15 +11,18 @@ export const convertKbToString = (kb: number) => {
 };
 
 // Mesh formats the assembler's /v1/optimize can ingest today: STEP (it
-// tessellates) or a glTF/GLB container. Others (stl/obj/iges/…) aren't optimised
-// on upload yet. Returns the service `format` string, or null if not optimisable.
+// tessellates), the compacted BinXCAF (`xbf`) retained-raw form, or a glTF/GLB
+// container. Others (stl/obj/iges/…) aren't optimised on upload yet. Returns the
+// service `format` string, or null if not optimisable.
 export function optimizableModelFormat(
   ext: string
-): "step" | "gltf" | "glb" | "stl" | null {
+): "step" | "xbf" | "gltf" | "glb" | "stl" | null {
   switch (ext.toLowerCase()) {
     case "step":
     case "stp":
       return "step";
+    case "xbf":
+      return "xbf";
     case "gltf":
       return "gltf";
     case "glb":
@@ -29,6 +32,16 @@ export function optimizableModelFormat(
     default:
       return null;
   }
+}
+
+// Resolve the assembler source format from a stored modelPath, transparently
+// stripping a `.zst` compaction suffix — the retained raw may have been compacted
+// to `raw.xbf.zst` / `raw.gltf.zst`, which the assembler decompresses on read.
+export function modelPathOptimizeFormat(modelPath: string) {
+  const lower = modelPath.toLowerCase();
+  const base = lower.endsWith(".zst") ? lower.slice(0, -4) : lower;
+  const ext = base.split(".").pop() ?? "";
+  return optimizableModelFormat(ext);
 }
 
 export const supportedModelTypes = [

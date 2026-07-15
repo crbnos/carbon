@@ -3,6 +3,7 @@ import type { Json } from "@carbon/database";
 import type { AssemblyPlan } from "@carbon/viewer/steps";
 import { inngest } from "../../client";
 import {
+  internalizeStorageUrl,
   POLL_GAP,
   pollAssemblerJobOnce,
   submitAssemblerJob
@@ -193,8 +194,9 @@ export const assemblyPlanFunction = inngest.createFunction(
     await step.run("submit", async () => {
       const client = getCarbonServiceRole();
 
+      // Raw source lives in `temp-staging` (2.5 GB cap).
       const source = await client.storage
-        .from("private")
+        .from("temp-staging")
         .createSignedUrl(job.modelPath, SIGNED_URL_EXPIRY);
       if (source.error) {
         throw new Error(`Failed to sign source URL: ${source.error.message}`);
@@ -205,7 +207,10 @@ export const assemblyPlanFunction = inngest.createFunction(
         jobId: job.id,
         logger,
         body: {
-          source: { url: source.data.signedUrl, format: "step" },
+          source: {
+            url: internalizeStorageUrl(source.data.signedUrl),
+            format: "step"
+          },
           // No upload URL here — it's minted fresh on each poll (late-mint) so
           // the token is only seconds old when the service PUTs plan.json. The
           // service reads planPath (completion pointer) and modelUploadId (to
@@ -252,7 +257,8 @@ export const assemblyPlanFunction = inngest.createFunction(
               .from("private")
               .createSignedUploadUrl(planPath, { upsert: true });
             const urls: Record<string, string> = {};
-            if (upload.data) urls.plan = upload.data.signedUrl;
+            if (upload.data)
+              urls.plan = internalizeStorageUrl(upload.data.signedUrl);
             return urls;
           }
         })

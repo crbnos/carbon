@@ -2,6 +2,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Json } from "@carbon/database";
 import { inngest } from "../../client";
 import {
+  internalizeStorageUrl,
   POLL_GAP,
   pollAssemblerJobOnce,
   submitAssemblerJob
@@ -107,8 +108,10 @@ export const assemblyConvertFunction = inngest.createFunction(
     await step.run("submit", async () => {
       const client = getCarbonServiceRole();
 
+      // Raw source lives in `temp-staging` (2.5 GB cap); assembly artifacts
+      // (glb/graph) are written to `private`.
       const source = await client.storage
-        .from("private")
+        .from("temp-staging")
         .createSignedUrl(job.modelPath, SIGNED_URL_EXPIRY);
       if (source.error) {
         throw new Error(`Failed to sign source URL: ${source.error.message}`);
@@ -120,7 +123,9 @@ export const assemblyConvertFunction = inngest.createFunction(
       // Best-effort — omitted on any failure.
       let contentHash: string | undefined;
       try {
-        const info = await client.storage.from("private").info(job.modelPath);
+        const info = await client.storage
+          .from("temp-staging")
+          .info(job.modelPath);
         const etag = info.data?.etag?.replaceAll('"', "");
         if (!info.error && etag) {
           contentHash = `${etag}-${info.data?.size ?? 0}`;
@@ -135,7 +140,7 @@ export const assemblyConvertFunction = inngest.createFunction(
         logger,
         body: {
           source: {
-            url: source.data.signedUrl,
+            url: internalizeStorageUrl(source.data.signedUrl),
             format: "step",
             ...(contentHash ? { contentHash } : {})
           },
@@ -172,8 +177,10 @@ export const assemblyConvertFunction = inngest.createFunction(
                 .createSignedUploadUrl(graphPath, { upsert: true })
             ]);
             const urls: Record<string, string> = {};
-            if (glbUpload.data) urls.glb = glbUpload.data.signedUrl;
-            if (graphUpload.data) urls.graph = graphUpload.data.signedUrl;
+            if (glbUpload.data)
+              urls.glb = internalizeStorageUrl(glbUpload.data.signedUrl);
+            if (graphUpload.data)
+              urls.graph = internalizeStorageUrl(graphUpload.data.signedUrl);
             return urls;
           }
         })

@@ -14,8 +14,13 @@ bufferViews (images, etc.) are copied through untouched.
 
 - `optimize_glb(glb_bytes, &Options) -> Result<Optimized, OptimizeError>` — GLB in,
   optimised GLB out. Binary-GLB entry point.
-- `optimize_gltf(gltf_bytes, &Options) -> …` — `.gltf` whose geometry is embedded
-  as a base64 `data:` URI (the Onshape export shape); decodes then delegates.
+- `gltf_to_glb(gltf, &mut impl Write) -> Result<(), OptimizeError>` — repack a text
+  `.gltf` whose single buffer is an embedded base64 `data:` URI (the Onshape export
+  shape) into a binary `.glb`, **streaming** the base64 decode (`struson`
+  `next_string_reader` + `base64::read::DecoderReader`) so a multi-GB buffer never
+  materialises. Callers mmap the `.glb` and use `optimize_glb`. (Replaced
+  `optimize_gltf`, whose serde parse held the base64 string + decoded bytes at once
+  ≈ 3× the file.) External `.bin` and multi-buffer glTF are rejected.
 - `optimize_root(root, bin, input_bytes, &Options) -> …` — lowest level; the two
   above wrap it. Use when you already hold a parsed `json::Root` + BIN slice
   (lets the caller mmap/stream the source — see `examples/optimize_file.rs`).

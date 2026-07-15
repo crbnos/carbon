@@ -104,8 +104,12 @@ pub fn spawn(state: &AppState, job_id: &str, req: PlanReq) {
                         let bytes = match serde_json::to_vec(&r.plan) {
                             Ok(b) => b,
                             Err(e) => {
-                                jobs.set_error(&job_id, "TESSELLATION_FAILED", format!("serialize plan: {e}"))
-                                    .await;
+                                jobs.set_error(
+                                    &job_id,
+                                    "TESSELLATION_FAILED",
+                                    format!("serialize plan: {e}"),
+                                )
+                                .await;
                                 return;
                             }
                         };
@@ -142,7 +146,8 @@ pub fn spawn(state: &AppState, job_id: &str, req: PlanReq) {
             }
             Ok(Err(e)) => {
                 eprintln!("[{job_id}] plan failed: {}", e.message);
-                jobs.set_error(&job_id, "TESSELLATION_FAILED", e.message).await;
+                jobs.set_error(&job_id, "TESSELLATION_FAILED", e.message)
+                    .await;
             }
             Err(e) => {
                 let msg = format!("plan panicked: {e}");
@@ -199,5 +204,13 @@ fn parse_options(options: &Value) -> Opts {
             })
             .collect()
     });
-    (lin, ang, clearance, path_samples, units, sequence, tolerance)
+    (
+        lin,
+        ang,
+        clearance,
+        path_samples,
+        units,
+        sequence,
+        tolerance,
+    )
 }

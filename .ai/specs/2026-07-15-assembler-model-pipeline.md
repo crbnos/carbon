@@ -219,3 +219,12 @@ identity` bypasses zstd.
     readers (`assembly-convert.ts`/`assembly-plan.ts`) + `cache/invalidate`
     (`modelUploadId` → `model_upload_id`). IGES/BREP/OBJ/PLY/OFF are detected + advertised
     but their loaders error `unsupported_format` until slice 6 / mesh-loader follow-ups.
+- 2026-07-15 — **slice 2 foundation**: `temp-staging` storage bucket created
+  (`20260715150742_temp-staging-bucket.sql`) — high size limit (inherits the global
+  cap), private, company-scoped RLS mirroring the `private` model policies. `private`
+  is intentionally NOT yet capped to 50 MB (the lossless assembly-convert GLB exceeds
+  it for big assemblies until the slice-3 structure-preserving tier gates it).
+  **Remaining in slice 2**: route raw uploads to `temp-staging` (CadModel/PartForm/
+  drag + `model.upload`); job reads raw from `temp-staging`, writes the artifact to
+  `private`, drops the staged raw (keep-raw-if-≤50 MB in `private`); `provenance`
+  column + retention rules; scheduled TTL cleanup of staged orphans.

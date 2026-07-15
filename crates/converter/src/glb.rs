@@ -60,7 +60,9 @@ impl Builder {
     }
 
     fn material(&mut self, color: Option<[f64; 4]>) -> usize {
-        let rgba = color.map_or(DEFAULT_COLOR, |c| [c[0] as f32, c[1] as f32, c[2] as f32, c[3] as f32]);
+        let rgba = color.map_or(DEFAULT_COLOR, |c| {
+            [c[0] as f32, c[1] as f32, c[2] as f32, c[3] as f32]
+        });
         let key = format!("{:?}", rgba);
         if let Some(&i) = self.material_by_color.get(&key) {
             return i;
@@ -119,7 +121,8 @@ impl Builder {
 
         let pos_view = self.append_buffer_view(&pos_bytes, json::buffer::Target::ArrayBuffer);
         let nrm_view = self.append_buffer_view(&nrm_bytes, json::buffer::Target::ArrayBuffer);
-        let idx_view = self.append_buffer_view(&idx_bytes, json::buffer::Target::ElementArrayBuffer);
+        let idx_view =
+            self.append_buffer_view(&idx_bytes, json::buffer::Target::ElementArrayBuffer);
 
         self.accessors.push(json::Accessor {
             buffer_view: Some(json::Index::new(pos_view as u32)),
@@ -213,14 +216,16 @@ impl Builder {
         } else {
             None
         };
-        let mesh = node.mesh.as_ref().filter(|m| !m.positions.is_empty()).map(|m| {
-            let i = self.mesh(m, node.color, &node.product_name);
-            json::Index::new(i as u32)
-        });
-        let extras = serde_json::value::to_raw_value(
-            &serde_json::json!({ "nodeId": node.node_id }),
-        )
-        .ok();
+        let mesh = node
+            .mesh
+            .as_ref()
+            .filter(|m| !m.positions.is_empty())
+            .map(|m| {
+                let i = self.mesh(m, node.color, &node.product_name);
+                json::Index::new(i as u32)
+            });
+        let extras =
+            serde_json::value::to_raw_value(&serde_json::json!({ "nodeId": node.node_id })).ok();
 
         self.nodes.push(json::Node {
             name: Some(node.name.clone()),

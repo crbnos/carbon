@@ -150,28 +150,205 @@ pub fn optimize_glb(glb_bytes: &[u8], options: &Options) -> Result<Optimized, Op
     optimize_root(root, bin, glb_bytes.len(), options)
 }
 
-/// Optimise a text `.gltf` whose single buffer is embedded as a base64 data URI
-/// (the Onshape export shape). External `.bin` references are not supported.
-pub fn optimize_gltf(gltf_bytes: &[u8], options: &Options) -> Result<Optimized, OptimizeError> {
-    use base64::Engine;
-    let mut root: json::Root = serde_json::from_slice(gltf_bytes)
-        .map_err(|e| OptimizeError::new(format!("parse glTF json: {e}")))?;
-    // Take the buffer's data URI out so the ~1.3x base64 string can be freed
-    // right after decode (optimize_root rebuilds buffers and never reads it).
-    let uri = root
-        .buffers
-        .first_mut()
-        .and_then(|b| b.uri.take())
-        .ok_or_else(|| OptimizeError::new("glTF has no embedded buffer (external .bin unsupported)"))?;
-    let comma = uri
-        .find(',')
-        .ok_or_else(|| OptimizeError::new("glTF buffer uri is not a data URI"))?;
-    let bin = base64::engine::general_purpose::STANDARD
-        .decode(&uri.as_bytes()[comma + 1..])
-        .map_err(|e| OptimizeError::new(format!("decode glTF base64 buffer: {e}")))?;
-    drop(uri);
-    root.buffers.clear();
-    optimize_root(root, &bin, gltf_bytes.len(), options)
+/// Repack a text `.gltf` whose single buffer is an embedded base64 data URI (the
+/// Onshape export shape) into a binary `.glb`, streaming the base64 decode so a
+/// multi-GB buffer never materialises in memory. The caller then mmaps the `.glb`
+/// and runs the (bounded) [`optimize_glb`] path — a serde parse of a multi-GB
+/// glTF holds the ~1.3× base64 string plus the decoded bytes at once (~3× the
+/// file). External `.bin` references and multi-buffer glTF are not supported.
+///
+/// Two passes over the source slice (mmap-backed; the second is page-cache-warm):
+/// pass 1 copies the small structural JSON verbatim (dropping the buffer's `uri`,
+/// since a GLB embeds its buffer) and captures `byteLength`; pass 2 streams the
+/// base64 value straight into the GLB BIN chunk via a [`base64::read::DecoderReader`].
+pub fn gltf_to_glb(gltf: &[u8], out: &mut impl std::io::Write) -> Result<(), OptimizeError> {
+    gltf_to_glb_inner(gltf, out).map_err(|e| OptimizeError::new(format!("repack glTF to GLB: {e}")))
+}
+
+fn gltf_to_glb_inner(
+    gltf: &[u8],
+    out: &mut impl std::io::Write,
+) -> Result<(), Box<dyn std::error::Error>> {
+    use std::io::Cursor;
+    use struson::reader::{JsonReader, JsonStreamReader};
+    use struson::writer::{JsonStreamWriter, JsonWriter};
+
+    // Pass 1: copy the structural JSON minus the buffer's data URI, capturing the
+    // (single) buffer's declared byteLength for the BIN chunk.
+    let mut json_buf: Vec<u8> = Vec::new();
+    let byte_length: u64;
+    {
+        let mut r = JsonStreamReader::new(Cursor::new(gltf));
+        let mut w = JsonStreamWriter::new(&mut json_buf);
+        let mut found_len: Option<u64> = None;
+        r.begin_object()?;
+        w.begin_object()?;
+        while r.has_next()? {
+            let name = r.next_name_owned()?;
+            if name == "buffers" {
+                w.name("buffers")?;
+                found_len = Some(rewrite_buffers(&mut r, &mut w)?);
+            } else {
+                w.name(&name)?;
+                r.transfer_to(&mut w)?;
+            }
+        }
+        r.end_object()?;
+        w.end_object()?;
+        w.finish_document()?;
+        byte_length = found_len.ok_or("glTF has no buffers")?;
+    }
+
+    // GLB layout: 12B header + [len|"JSON"|json+space-pad] + [len|"BIN\0"|bin+zero-pad].
+    // A chunk's length field includes its 4-byte-alignment padding.
+    let json_pad = (4 - json_buf.len() % 4) % 4;
+    let json_chunk_len = json_buf.len() + json_pad;
+    let bin_len = byte_length as usize;
+    let bin_pad = (4 - bin_len % 4) % 4;
+    let bin_chunk_len = bin_len + bin_pad;
+    let total = 12 + 8 + json_chunk_len + 8 + bin_chunk_len;
+
+    out.write_all(b"glTF")?;
+    out.write_all(&2u32.to_le_bytes())?;
+    out.write_all(&u32::try_from(total)?.to_le_bytes())?;
+    out.write_all(&u32::try_from(json_chunk_len)?.to_le_bytes())?;
+    out.write_all(b"JSON")?;
+    out.write_all(&json_buf)?;
+    out.write_all(&vec![0x20u8; json_pad])?;
+    out.write_all(&u32::try_from(bin_chunk_len)?.to_le_bytes())?;
+    out.write_all(&[0x42, 0x49, 0x4E, 0x00])?; // "BIN\0"
+
+    // Pass 2: stream the base64 buffer value straight into the BIN chunk.
+    {
+        let mut r = JsonStreamReader::new(Cursor::new(gltf));
+        navigate_to_buffer0_uri(&mut r)?;
+        let mut sr = r.next_string_reader()?;
+        skip_data_uri_prefix(&mut sr)?;
+        let mut dec =
+            base64::read::DecoderReader::new(&mut sr, &base64::engine::general_purpose::STANDARD);
+        let n = std::io::copy(&mut dec, out)?;
+        drop(dec);
+        // Drain any trailing bytes so the string value is fully consumed.
+        std::io::copy(&mut sr, &mut std::io::sink())?;
+        if n != bin_len as u64 {
+            return Err(
+                format!("decoded buffer is {n}B but byteLength declares {bin_len}B").into(),
+            );
+        }
+    }
+    out.write_all(&vec![0x00u8; bin_pad])?;
+    Ok(())
+}
+
+/// Copy a glTF `buffers` array, dropping each buffer's `uri` (a GLB embeds its
+/// buffer). Rejects external `.bin` (validated in pass 2 when the URI is read) and
+/// multi-buffer glTF. Returns buffer 0's `byteLength`.
+fn rewrite_buffers(
+    r: &mut struson::reader::JsonStreamReader<std::io::Cursor<&[u8]>>,
+    w: &mut struson::writer::JsonStreamWriter<&mut Vec<u8>>,
+) -> Result<u64, Box<dyn std::error::Error>> {
+    use struson::reader::JsonReader;
+    use struson::writer::JsonWriter;
+
+    r.begin_array()?;
+    w.begin_array()?;
+    let mut count = 0u32;
+    let mut byte_length = 0u64;
+    let mut saw_uri = false;
+    while r.has_next()? {
+        count += 1;
+        if count > 1 {
+            return Err("multi-buffer glTF is not supported (single embedded buffer only)".into());
+        }
+        r.begin_object()?;
+        w.begin_object()?;
+        while r.has_next()? {
+            let key = r.next_name_owned()?;
+            match key.as_str() {
+                "uri" => {
+                    // Dropped from the GLB (embedded); the bytes are streamed in pass 2.
+                    r.skip_value()?;
+                    saw_uri = true;
+                }
+                "byteLength" => {
+                    let s = r.next_number_as_string()?;
+                    byte_length = s.parse::<u64>()?;
+                    w.name("byteLength")?;
+                    w.number_value_from_string(&s)?;
+                }
+                other => {
+                    w.name(other)?;
+                    r.transfer_to(w)?;
+                }
+            }
+        }
+        r.end_object()?;
+        w.end_object()?;
+    }
+    r.end_array()?;
+    w.end_array()?;
+    if count == 0 {
+        return Err("glTF has no buffers".into());
+    }
+    if !saw_uri {
+        return Err("glTF buffer has no embedded data URI (external .bin unsupported)".into());
+    }
+    Ok(byte_length)
+}
+
+/// Walk the root object to buffer 0's `uri`, leaving the reader positioned at the
+/// (string) value ready for `next_string_reader`.
+fn navigate_to_buffer0_uri(
+    r: &mut struson::reader::JsonStreamReader<std::io::Cursor<&[u8]>>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    use struson::reader::JsonReader;
+    r.begin_object()?;
+    loop {
+        if !r.has_next()? {
+            return Err("glTF buffer uri not found".into());
+        }
+        if r.next_name_owned()? == "buffers" {
+            r.begin_array()?;
+            if !r.has_next()? {
+                return Err("glTF has no buffers".into());
+            }
+            r.begin_object()?;
+            loop {
+                if !r.has_next()? {
+                    return Err("glTF buffer 0 has no uri".into());
+                }
+                if r.next_name_owned()? == "uri" {
+                    return Ok(());
+                }
+                r.skip_value()?;
+            }
+        }
+        r.skip_value()?;
+    }
+}
+
+/// Consume the `data:<media>;base64,` prefix of a data-URI string reader, up to and
+/// including the first `,`. Errors if it isn't a base64 data URI (e.g. external `.bin`).
+fn skip_data_uri_prefix(r: &mut impl std::io::Read) -> Result<(), Box<dyn std::error::Error>> {
+    let mut prefix = Vec::new();
+    let mut byte = [0u8; 1];
+    loop {
+        if r.read(&mut byte)? == 0 {
+            return Err("glTF buffer uri is not a base64 data URI".into());
+        }
+        if byte[0] == b',' {
+            break;
+        }
+        prefix.push(byte[0]);
+        if prefix.len() > 256 {
+            return Err("glTF buffer uri prefix is implausibly long".into());
+        }
+    }
+    let p = String::from_utf8_lossy(&prefix);
+    if !p.starts_with("data:") || !p.contains("base64") {
+        return Err(format!("glTF buffer uri is not a base64 data URI: {p:?}").into());
+    }
+    Ok(())
 }
 
 /// Optimise an already-parsed glTF (`root` + its single binary buffer). Used by
@@ -425,7 +602,11 @@ fn accessor_view<'a>(
     Ok((bin, start, stride, comp, ty))
 }
 
-fn read_vec3(root: &json::Root, bin: &[u8], acc_idx: usize) -> Result<Vec<[f32; 3]>, OptimizeError> {
+fn read_vec3(
+    root: &json::Root,
+    bin: &[u8],
+    acc_idx: usize,
+) -> Result<Vec<[f32; 3]>, OptimizeError> {
     let (data, start, stride, comp, _) = accessor_view(root, bin, acc_idx)?;
     if !matches!(comp, json::accessor::ComponentType::F32) {
         return Err(OptimizeError::new("expected f32 VEC3"));
@@ -434,12 +615,20 @@ fn read_vec3(root: &json::Root, bin: &[u8], acc_idx: usize) -> Result<Vec<[f32; 
     let mut out = Vec::with_capacity(count);
     for i in 0..count {
         let o = start + i * stride;
-        out.push([read_f32(data, o)?, read_f32(data, o + 4)?, read_f32(data, o + 8)?]);
+        out.push([
+            read_f32(data, o)?,
+            read_f32(data, o + 4)?,
+            read_f32(data, o + 8)?,
+        ]);
     }
     Ok(out)
 }
 
-fn read_vec2(root: &json::Root, bin: &[u8], acc_idx: usize) -> Result<Vec<[f32; 2]>, OptimizeError> {
+fn read_vec2(
+    root: &json::Root,
+    bin: &[u8],
+    acc_idx: usize,
+) -> Result<Vec<[f32; 2]>, OptimizeError> {
     let (data, start, stride, comp, _) = accessor_view(root, bin, acc_idx)?;
     if !matches!(comp, json::accessor::ComponentType::F32) {
         return Err(OptimizeError::new("expected f32 VEC2"));
@@ -474,15 +663,21 @@ fn read_indices(root: &json::Root, bin: &[u8], acc_idx: usize) -> Result<Vec<u32
 }
 
 fn read_f32(d: &[u8], o: usize) -> Result<f32, OptimizeError> {
-    let b = d.get(o..o + 4).ok_or_else(|| OptimizeError::new("f32 oob"))?;
+    let b = d
+        .get(o..o + 4)
+        .ok_or_else(|| OptimizeError::new("f32 oob"))?;
     Ok(f32::from_le_bytes([b[0], b[1], b[2], b[3]]))
 }
 fn read_u16(d: &[u8], o: usize) -> Result<u16, OptimizeError> {
-    let b = d.get(o..o + 2).ok_or_else(|| OptimizeError::new("u16 oob"))?;
+    let b = d
+        .get(o..o + 2)
+        .ok_or_else(|| OptimizeError::new("u16 oob"))?;
     Ok(u16::from_le_bytes([b[0], b[1]]))
 }
 fn read_u32(d: &[u8], o: usize) -> Result<u32, OptimizeError> {
-    let b = d.get(o..o + 4).ok_or_else(|| OptimizeError::new("u32 oob"))?;
+    let b = d
+        .get(o..o + 4)
+        .ok_or_else(|| OptimizeError::new("u32 oob"))?;
     Ok(u32::from_le_bytes([b[0], b[1], b[2], b[3]]))
 }
 
@@ -632,8 +827,7 @@ fn parse_stl(bytes: &[u8]) -> Result<(Vec<[f32; 3]>, Vec<[f32; 3]>), OptimizeErr
     // size formula is the reliable discriminator — a binary header can itself
     // start with "solid", so never trust that prefix over the byte math.
     if bytes.len() >= 84 {
-        let count =
-            u32::from_le_bytes([bytes[80], bytes[81], bytes[82], bytes[83]]) as usize;
+        let count = u32::from_le_bytes([bytes[80], bytes[81], bytes[82], bytes[83]]) as usize;
         if bytes.len() == 84 + count * 50 {
             return Ok(parse_binary_stl(bytes, count));
         }
@@ -666,14 +860,20 @@ fn parse_ascii_stl(bytes: &[u8]) -> Result<(Vec<[f32; 3]>, Vec<[f32; 3]>), Optim
     for line in text.lines() {
         let line = line.trim();
         if let Some(rest) = line.strip_prefix("facet normal ") {
-            let n: Vec<f32> = rest.split_whitespace().filter_map(|t| t.parse().ok()).collect();
+            let n: Vec<f32> = rest
+                .split_whitespace()
+                .filter_map(|t| t.parse().ok())
+                .collect();
             normal = [
                 *n.first().unwrap_or(&0.0),
                 *n.get(1).unwrap_or(&0.0),
                 *n.get(2).unwrap_or(&0.0),
             ];
         } else if let Some(rest) = line.strip_prefix("vertex ") {
-            let v: Vec<f32> = rest.split_whitespace().filter_map(|t| t.parse().ok()).collect();
+            let v: Vec<f32> = rest
+                .split_whitespace()
+                .filter_map(|t| t.parse().ok())
+                .collect();
             if v.len() >= 3 {
                 positions.push([v[0], v[1], v[2]]);
                 normals.push(normal);
@@ -724,7 +924,13 @@ fn build_triangle_glb(
     let mut root = json::Root {
         buffer_views: vec![
             make_view(0, 0, nrm_off, None, json::buffer::Target::ArrayBuffer),
-            make_view(0, nrm_off, idx_off - nrm_off, None, json::buffer::Target::ArrayBuffer),
+            make_view(
+                0,
+                nrm_off,
+                idx_off - nrm_off,
+                None,
+                json::buffer::Target::ArrayBuffer,
+            ),
             make_view(
                 0,
                 idx_off,
@@ -816,7 +1022,10 @@ enum ViewData {
     /// smaller than f32 VEC3 (12 bytes) and the padding lane compresses to ~zero.
     Attr3i16(Vec<[i16; 4]>),
     Attr2(Vec<[f32; 2]>),
-    Idx { indices: Vec<u32>, vertex_count: usize },
+    Idx {
+        indices: Vec<u32>,
+        vertex_count: usize,
+    },
 }
 
 impl ViewData {
@@ -931,11 +1140,20 @@ impl Builder {
             }
         }
         let pos_view = self.add_view(ViewData::Attr3(positions));
-        let pos_acc =
-            self.push_accessor(pos_view, opt.vertices.len(), ComponentType::F32, Type::Vec3, false, Some((min, max)));
+        let pos_acc = self.push_accessor(
+            pos_view,
+            opt.vertices.len(),
+            ComponentType::F32,
+            Type::Vec3,
+            false,
+            Some((min, max)),
+        );
 
         let mut attributes = std::collections::BTreeMap::new();
-        attributes.insert(Valid(json::mesh::Semantic::Positions), json::Index::new(pos_acc as u32));
+        attributes.insert(
+            Valid(json::mesh::Semantic::Positions),
+            json::Index::new(pos_acc as u32),
+        );
 
         if opt.has_normals {
             let n = opt.vertices.len();
@@ -964,22 +1182,40 @@ impl Builder {
                 let nv = self.add_view(ViewData::Attr3(normals));
                 self.push_accessor(nv, n, ComponentType::F32, Type::Vec3, false, None)
             };
-            attributes.insert(Valid(json::mesh::Semantic::Normals), json::Index::new(na as u32));
+            attributes.insert(
+                Valid(json::mesh::Semantic::Normals),
+                json::Index::new(na as u32),
+            );
         }
         if opt.has_uv {
             let uvs: Vec<[f32; 2]> = opt.vertices.iter().map(|v| v.uv).collect();
             let uvv = self.add_view(ViewData::Attr2(uvs));
-            let uva =
-                self.push_accessor(uvv, opt.vertices.len(), ComponentType::F32, Type::Vec2, false, None);
-            attributes.insert(Valid(json::mesh::Semantic::TexCoords(0)), json::Index::new(uva as u32));
+            let uva = self.push_accessor(
+                uvv,
+                opt.vertices.len(),
+                ComponentType::F32,
+                Type::Vec2,
+                false,
+                None,
+            );
+            attributes.insert(
+                Valid(json::mesh::Semantic::TexCoords(0)),
+                json::Index::new(uva as u32),
+            );
         }
 
         let iv = self.add_view(ViewData::Idx {
             indices: opt.indices.clone(),
             vertex_count: opt.vertices.len(),
         });
-        let ia =
-            self.push_accessor(iv, opt.indices.len(), ComponentType::U32, Type::Scalar, false, None);
+        let ia = self.push_accessor(
+            iv,
+            opt.indices.len(),
+            ComponentType::U32,
+            Type::Scalar,
+            false,
+            None,
+        );
 
         prim.attributes = attributes;
         prim.indices = Some(json::Index::new(ia as u32));
@@ -1225,7 +1461,13 @@ impl DracoBuilder {
         };
 
         let enc = draco_bridge::encode_mesh(
-            &positions, &normals, &uvs, &opt.indices, bits.0, bits.1, bits.2,
+            &positions,
+            &normals,
+            &uvs,
+            &opt.indices,
+            bits.0,
+            bits.1,
+            bits.2,
         );
         if !enc.ok || enc.data.is_empty() {
             return Err(OptimizeError::new("draco encode failed"));
@@ -1255,7 +1497,10 @@ impl DracoBuilder {
             json::accessor::Type::Vec3,
             Some((min, max)),
         );
-        attributes.insert(Valid(json::mesh::Semantic::Positions), json::Index::new(pos_acc as u32));
+        attributes.insert(
+            Valid(json::mesh::Semantic::Positions),
+            json::Index::new(pos_acc as u32),
+        );
         if opt.has_normals {
             let a = self.accessor_noview(
                 n,
@@ -1263,7 +1508,10 @@ impl DracoBuilder {
                 json::accessor::Type::Vec3,
                 None,
             );
-            attributes.insert(Valid(json::mesh::Semantic::Normals), json::Index::new(a as u32));
+            attributes.insert(
+                Valid(json::mesh::Semantic::Normals),
+                json::Index::new(a as u32),
+            );
         }
         if opt.has_uv {
             let a = self.accessor_noview(
@@ -1272,7 +1520,10 @@ impl DracoBuilder {
                 json::accessor::Type::Vec2,
                 None,
             );
-            attributes.insert(Valid(json::mesh::Semantic::TexCoords(0)), json::Index::new(a as u32));
+            attributes.insert(
+                Valid(json::mesh::Semantic::TexCoords(0)),
+                json::Index::new(a as u32),
+            );
         }
         let idx_acc = self.accessor_noview(
             opt.indices.len(),
@@ -1655,6 +1906,57 @@ mod tests {
     }
 
     #[test]
+    fn gltf_to_glb_repacks_embedded_base64() {
+        use base64::Engine as _;
+        // A known GLB → a text glTF with its buffer as a base64 data URI → repack
+        // back to GLB, streaming the base64 decode.
+        let glb = quad_glb();
+        let parsed = gltf::binary::Glb::from_slice(&glb).expect("parse glb");
+        let bin = parsed.bin.as_deref().expect("bin").to_vec();
+        let mut root: json::Root = serde_json::from_slice(parsed.json.as_ref()).expect("json");
+        let b64 = base64::engine::general_purpose::STANDARD.encode(&bin);
+        root.buffers[0].uri = Some(format!("data:application/octet-stream;base64,{b64}"));
+        let gltf_text = serde_json::to_vec(&root).expect("serialize gltf");
+
+        let mut out = Vec::new();
+        gltf_to_glb(&gltf_text, &mut out).expect("repack");
+        assert_eq!(&out[0..4], b"glTF");
+
+        // The repacked BIN chunk is byte-identical to the source buffer.
+        let re = gltf::binary::Glb::from_slice(&out).expect("parse repacked");
+        assert_eq!(&re.bin.as_deref().expect("bin")[..bin.len()], &bin[..]);
+
+        // And it optimises identically to the original GLB (weld → 4 verts).
+        let opt = optimize_glb(
+            &out,
+            &Options {
+                codec: Codec::None,
+                ..Default::default()
+            },
+        )
+        .expect("optimize repacked");
+        assert_eq!(opt.stats.input_vertices, 6);
+        assert_eq!(opt.stats.output_vertices, 4);
+    }
+
+    #[test]
+    fn gltf_to_glb_rejects_external_bin() {
+        let glb = quad_glb();
+        let parsed = gltf::binary::Glb::from_slice(&glb).unwrap();
+        let mut root: json::Root = serde_json::from_slice(parsed.json.as_ref()).unwrap();
+        root.buffers[0].uri = Some("buffer.bin".to_string()); // external, not a data URI
+        let gltf_text = serde_json::to_vec(&root).unwrap();
+
+        let mut out = Vec::new();
+        let err = gltf_to_glb(&gltf_text, &mut out).unwrap_err();
+        assert!(
+            err.message.contains("data URI"),
+            "unexpected error: {}",
+            err.message
+        );
+    }
+
+    #[test]
     fn meshopt_codec_emits_ext_and_reparses() {
         let glb = quad_glb();
         let opt = optimize_glb(
@@ -1666,15 +1968,17 @@ mod tests {
         )
         .expect("optimize");
         let reparsed = gltf::binary::Glb::from_slice(&opt.glb).expect("reparse");
-        let root: serde_json::Value =
-            serde_json::from_slice(reparsed.json.as_ref()).expect("json");
+        let root: serde_json::Value = serde_json::from_slice(reparsed.json.as_ref()).expect("json");
         // Extension declared + required.
         let used = root["extensionsUsed"].as_array().expect("extensionsUsed");
         assert!(used.iter().any(|e| e == "EXT_meshopt_compression"));
         // Two buffers: compressed BIN + memory-only fallback.
         let buffers = root["buffers"].as_array().expect("buffers");
         assert_eq!(buffers.len(), 2);
-        assert_eq!(buffers[1]["extensions"]["EXT_meshopt_compression"]["fallback"], true);
+        assert_eq!(
+            buffers[1]["extensions"]["EXT_meshopt_compression"]["fallback"],
+            true
+        );
         // Every bufferView carries a compression record pointing at buffer 0.
         for bv in root["bufferViews"].as_array().expect("bufferViews") {
             let ext = &bv["extensions"]["EXT_meshopt_compression"];
@@ -1701,8 +2005,7 @@ mod tests {
         )
         .expect("optimize");
         let reparsed = gltf::binary::Glb::from_slice(&opt.glb).expect("reparse");
-        let root: serde_json::Value =
-            serde_json::from_slice(reparsed.json.as_ref()).expect("json");
+        let root: serde_json::Value = serde_json::from_slice(reparsed.json.as_ref()).expect("json");
         let mut saw_normal_stride_8 = false;
         for bv in root["bufferViews"].as_array().expect("bufferViews") {
             let ext = &bv["extensions"]["EXT_meshopt_compression"];
@@ -1753,8 +2056,7 @@ mod tests {
         )
         .expect("optimize");
         let reparsed = gltf::binary::Glb::from_slice(&opt.glb).expect("reparse");
-        let root: serde_json::Value =
-            serde_json::from_slice(reparsed.json.as_ref()).expect("json");
+        let root: serde_json::Value = serde_json::from_slice(reparsed.json.as_ref()).expect("json");
         assert_eq!(root["meshes"].as_array().expect("meshes").len(), 1);
     }
 
@@ -1777,8 +2079,7 @@ mod tests {
         )
         .expect("optimize");
         let reparsed = gltf::binary::Glb::from_slice(&opt.glb).expect("reparse");
-        let root: serde_json::Value =
-            serde_json::from_slice(reparsed.json.as_ref()).expect("json");
+        let root: serde_json::Value = serde_json::from_slice(reparsed.json.as_ref()).expect("json");
 
         for key in ["extensionsUsed", "extensionsRequired"] {
             assert!(
@@ -1791,8 +2092,7 @@ mod tests {
             );
         }
         // Primitive carries the draco extension.
-        let ext = &root["meshes"][0]["primitives"][0]["extensions"]
-            ["KHR_draco_mesh_compression"];
+        let ext = &root["meshes"][0]["primitives"][0]["extensions"]["KHR_draco_mesh_compression"];
         assert_eq!(ext["bufferView"], 0);
         assert_eq!(ext["attributes"]["POSITION"], 0);
         // Draco accessors have no bufferView (decoder provides the data).
@@ -1817,8 +2117,7 @@ mod tests {
         )
         .expect("optimize");
         let reparsed = gltf::binary::Glb::from_slice(&opt.glb).expect("reparse");
-        let root: serde_json::Value =
-            serde_json::from_slice(reparsed.json.as_ref()).expect("json");
+        let root: serde_json::Value = serde_json::from_slice(reparsed.json.as_ref()).expect("json");
         let bin = reparsed.bin.as_deref().expect("bin");
 
         // bufferView 0 is POSITION (first view written per primitive).
@@ -1829,8 +2128,13 @@ mod tests {
         let decoded: Vec<[f32; 3]> =
             meshopt::decode_vertex_buffer(&bin[off..off + len], count).expect("decode");
         assert_eq!(decoded.len(), 4); // welded quad corners
-        // The four unit-quad corners must all be present.
-        for corner in [[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [1.0, 1.0, 0.0]] {
+                                      // The four unit-quad corners must all be present.
+        for corner in [
+            [0.0, 0.0, 0.0],
+            [1.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0],
+            [1.0, 1.0, 0.0],
+        ] {
             assert!(
                 decoded.iter().any(|p| *p == corner),
                 "missing corner {corner:?} in {decoded:?}"

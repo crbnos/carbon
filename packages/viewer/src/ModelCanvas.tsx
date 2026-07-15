@@ -1,8 +1,8 @@
 import { useThree } from "@react-three/fiber";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { LuRotateCw } from "react-icons/lu";
 import {
   Box3,
-  type Material,
   type Mesh,
   type Object3D,
   PerspectiveCamera,
@@ -66,7 +66,8 @@ export function ModelCanvas({
   onMetrics,
   className
 }: ModelCanvasProps) {
-  const { scene, isLoading, error } = useAssembly(glbUrl, null);
+  const [reloadKey, setReloadKey] = useState(0);
+  const { scene, isLoading, error } = useAssembly(glbUrl, null, reloadKey);
 
   const onLoadedRef = useRef(onLoaded);
   onLoadedRef.current = onLoaded;
@@ -120,8 +121,18 @@ export function ModelCanvas({
         </div>
       )}
       {error && (
-        <div className="absolute inset-0 flex items-center justify-center p-4">
-          <p className="text-sm text-destructive">{error.message}</p>
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-4 text-center">
+          <p className="max-w-xs text-sm text-muted-foreground">
+            Couldn't load the 3D model.
+          </p>
+          <button
+            type="button"
+            onClick={() => setReloadKey((n) => n + 1)}
+            className="flex items-center gap-1.5 rounded-md border border-border bg-popover px-3 py-1.5 text-xs font-medium text-foreground shadow-sm transition-transform hover:bg-accent active:scale-[0.96]"
+          >
+            <LuRotateCw className="size-3.5" />
+            Retry
+          </button>
         </div>
       )}
     </div>
@@ -145,7 +156,7 @@ function ModelScene({
   // Fit the perspective near/far planes to the model. A static 0.1 → 100000
   // range spends nearly all depth precision right in front of `near`, so
   // coplanar CAD faces z-fight into a moiré at model distance. Sizing the range
-  // to the model diagonal keeps them stable (mirrors AssemblyPlayer).
+  // to the model diagonal keeps them stable.
   useEffect(() => {
     if (!(camera instanceof PerspectiveCamera)) return;
     const box = new Box3().setFromObject(scene);
@@ -157,29 +168,9 @@ function ModelScene({
     camera.updateProjectionMatrix();
   }, [camera, scene]);
 
-  // Break coincident-face z-fighting: a multi-body STEP splits each solid into
-  // its own mesh; a part seated flush on another shares its exact plane, so the
-  // GPU can't pick a depth winner and the face tears. Give each distinct
-  // material a unique polygon offset so one always wins at a coincidence.
-  useEffect(() => {
-    const tagged = new Set<Material>();
-    let offset = -1;
-    scene.traverse((object) => {
-      const mesh = object as Mesh;
-      if (!mesh.isMesh) return;
-      const materials = Array.isArray(mesh.material)
-        ? mesh.material
-        : [mesh.material];
-      for (const material of materials) {
-        if (!material || tagged.has(material)) continue;
-        tagged.add(material);
-        material.polygonOffset = true;
-        material.polygonOffsetFactor = -1;
-        material.polygonOffsetUnits = offset;
-        offset -= 1;
-      }
-    });
-  }, [scene]);
+  // Coincident-face z-fighting across the model's scale range is handled by the
+  // renderer's logarithmic depth buffer (`logarithmicDepthBuffer` on the Canvas)
+  // plus the near/far fit above.
 
   const frameBox = useCallback(
     (box: Box3) => {
