@@ -153,36 +153,73 @@ export function displayMotionForStep(
 const SMALL_COMPONENT_FRACTION = 0.15;
 /** Small components travel at least this many times their own size. */
 const SMALL_COMPONENT_TRAVEL_FACTOR = 2.5;
+/** No component travels more than this many times its own size, +margin. */
+const NATURAL_TRAVEL_FACTOR = 3;
+/** Additive slack (mm) on the travel ceiling so a seat still fully clears. */
+const NATURAL_TRAVEL_MARGIN_MM = 5;
+/**
+ * Hard ceiling as a fraction of the whole assembly: nothing animates in from
+ * further than this, however large the part. A big FLAT part (a gasket, a lid)
+ * has a huge diagonal but should still just drop a short way onto its seat —
+ * the per-part `NATURAL_TRAVEL_FACTOR × diagonal` ceiling is meaningless for it
+ * (3× a 166 mm seal = 500 mm), so its planner collision path (an L-shaped
+ * detour around the box, ~1.5× the assembly) reads as flying in from off-screen.
+ */
+const ASSEMBLY_TRAVEL_FRACTION = 0.35;
 
 /**
- * Exaggerates the travel of small components (bolts, washers, pins) so their
- * insertion reads clearly at assembly scale. Display-only: the stored plan
- * keeps the geometric travel. Returns the motion unchanged for large components
- * or non-translating motions.
+ * Shapes a component's insertion travel into a natural band for playback so it
+ * neither pops (too short) nor flies in from across the assembly (too long).
+ *
+ * Display-only: the stored plan keeps the geometric (collision-minimum) travel;
+ * this only shortens/lengthens where the part *starts* its animated approach.
+ * Safe because playback hides future-step parts and a part seats against the
+ * already-placed parts below/beside it, not along its short approach.
+ *
+ * - Ceiling (all parts): `d · NATURAL_TRAVEL_FACTOR + margin` — a long
+ *   collision path (slider, deep mate, a graze past a distant neighbor) is
+ *   trimmed to a few of the part's own body-lengths.
+ * - Floor (small parts only, < SMALL_COMPONENT_FRACTION of the assembly): keeps
+ *   bolts/washers/pins traveling `d · SMALL_COMPONENT_TRAVEL_FACTOR` so they
+ *   still read at assembly scale.
+ *
+ * Returns the motion unchanged when it's non-translating or already in band.
  */
-export function exaggerateMotion(
+export function naturalizeMotion(
   motion: Motion,
   componentDiagonal: number,
   assemblyDiagonal: number
 ): Motion {
   if (componentDiagonal <= 0 || assemblyDiagonal <= 0) return motion;
-  if (componentDiagonal >= assemblyDiagonal * SMALL_COMPONENT_FRACTION)
-    return motion;
 
-  const minTravel = componentDiagonal * SMALL_COMPONENT_TRAVEL_FACTOR;
+  const isSmall =
+    componentDiagonal < assemblyDiagonal * SMALL_COMPONENT_FRACTION;
+  const floor = isSmall ? componentDiagonal * SMALL_COMPONENT_TRAVEL_FACTOR : 0;
+  // Per-part ceiling, then the assembly-wide cap; never below the floor so a
+  // borderline-small part keeps its readable minimum travel.
+  const ceiling = Math.max(
+    floor,
+    Math.min(
+      componentDiagonal * NATURAL_TRAVEL_FACTOR + NATURAL_TRAVEL_MARGIN_MM,
+      assemblyDiagonal * ASSEMBLY_TRAVEL_FRACTION
+    )
+  );
+  const clamp = (t: number) => Math.min(Math.max(t, floor), ceiling);
 
   switch (motion.type) {
     case "linear": {
-      if (motion.distance >= minTravel) return motion;
-      return { ...motion, distance: minTravel };
+      const distance = clamp(motion.distance);
+      return distance === motion.distance ? motion : { ...motion, distance };
     }
     case "L": {
       const total = motion.segments.reduce(
         (sum, segment) => sum + Math.abs(segment.distance),
         0
       );
-      if (total >= minTravel || total <= 0) return motion;
-      const scale = minTravel / total;
+      if (total <= 0) return motion;
+      const target = clamp(total);
+      if (target === total) return motion;
+      const scale = target / total;
       return {
         ...motion,
         segments: motion.segments.map((segment) => ({
@@ -201,6 +238,57 @@ export function exaggerateMotion(
  * world pose is `basePose`. The last keyframe always equals `basePose`.
  * Returns `null` for `none` motions.
  */
+/** Sub-samples per motion when re-timing a straight path through ease-in-out. */
+const EASE_SAMPLES = 20;
+
+/** Ease-in-out cubic: slow start, quick middle, gentle settle. */
+function easeInOutCubic(t: number): number {
+  return t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
+}
+
+/**
+ * Re-times a piecewise-linear keyframe path through an ease-in-out velocity
+ * profile so an insertion accelerates off the start and decelerates into its
+ * seat instead of moving at constant speed. Preserves the geometric path and
+ * both endpoints exactly (only WHEN the part is at each point changes); total
+ * duration is unchanged. Playback-only — the stored motion and the editable
+ * waypoints keep the raw path.
+ */
+export function resampleEased(kf: MotionKeyframes): MotionKeyframes {
+  const n = kf.times.length;
+  const total = kf.times[n - 1] ?? 0;
+  if (n < 2 || total <= 0) return kf;
+
+  const times: number[] = [];
+  const positions: number[] = [];
+  const quaternions: number[] = [];
+  const a = new Vector3();
+  const b = new Vector3();
+  const qa = new Quaternion();
+  const qb = new Quaternion();
+
+  for (let j = 0; j <= EASE_SAMPLES; j++) {
+    const u = j / EASE_SAMPLES;
+    const s = easeInOutCubic(u) * total; // eased sample point along the path
+    let i = 0;
+    while (i < n - 1 && (kf.times[i + 1] ?? total) < s) i++;
+    const t0 = kf.times[i] ?? 0;
+    const t1 = kf.times[i + 1] ?? total;
+    const span = t1 - t0;
+    const f = span > 1e-9 ? (s - t0) / span : 0;
+    a.fromArray(kf.positions, i * 3);
+    b.fromArray(kf.positions, (i + 1) * 3);
+    a.lerp(b, f);
+    qa.fromArray(kf.quaternions, i * 4);
+    qb.fromArray(kf.quaternions, (i + 1) * 4);
+    qa.slerp(qb, f);
+    times.push(u * total);
+    positions.push(a.x, a.y, a.z);
+    quaternions.push(qa.x, qa.y, qa.z, qa.w);
+  }
+  return { times, positions, quaternions };
+}
+
 export function motionToKeyframes(
   motion: Motion,
   basePose: Pose,
@@ -399,7 +487,7 @@ export function buildStepClip(
     const worldScale = new Vector3();
     node.matrixWorld.decompose(worldPosition, worldQuaternion, worldScale);
 
-    const keyframes = motionToKeyframes(
+    const rawKeyframes = motionToKeyframes(
       step.motion,
       {
         position: worldPosition.toArray() as Vec3,
@@ -407,7 +495,14 @@ export function buildStepClip(
       },
       { ...options, duration }
     );
-    if (!keyframes) continue;
+    if (!rawKeyframes) continue;
+    // Ease the straight insertion approaches (accelerate off the start, settle
+    // into the seat). Helix threads at a constant rate (mechanically correct)
+    // and paths carry their own timing, so leave those raw.
+    const keyframes =
+      step.motion.type === "linear" || step.motion.type === "L"
+        ? resampleEased(rawKeyframes)
+        : rawKeyframes;
 
     const parentWorldInverse = node.parent
       ? node.parent.matrixWorld.clone().invert()

@@ -88,6 +88,13 @@ export type Events = {
       // each step's motion to avoid collision with parts from earlier steps, then
       // updates the step motions in place. Mutually exclusive with reordering.
       reMotionFor?: string;
+      // Fresh regenerate: re-detect groups from scratch. When set, the worker
+      // sends only USER-authored units to the planner (auto-detected swarm units
+      // are excluded) so detection re-runs — WITHOUT deleting the materialized
+      // `assemblyUnit` rows up front. The rows are swapped atomically when the
+      // new plan's steps are generated, so a failed/late generate leaves the old
+      // grouped state intact instead of stranding the model ungrouped.
+      reDetectUnits?: boolean;
       // A pre-created `assemblyPlanJob` row (status Queued) the worker should
       // adopt instead of inserting its own. User-facing triggers create the row
       // synchronously so the UI reflects "planning" immediately — the worker's

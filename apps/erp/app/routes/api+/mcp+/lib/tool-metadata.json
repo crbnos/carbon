@@ -1,6 +1,6 @@
 {
-  "generated": "2026-07-15T03:10:55.534Z",
-  "totalTools": 1307,
+  "generated": "2026-07-15T03:20:40.219Z",
+  "totalTools": 1335,
   "modules": 15,
   "tools": [
     {
@@ -821,11 +821,12 @@
       "module": "accounting",
       "classification": "READ",
       "description": "get or create accounting period",
-      "paramCount": 1,
+      "paramCount": 2,
       "serviceParams": [
         "client",
         "companyId",
-        "date"
+        "date",
+        "source"
       ],
       "injectAuth": [
         "companyId"
@@ -835,10 +836,518 @@
         "properties": {
           "date": {
             "type": "string"
+          },
+          "source": {}
+        },
+        "required": [
+          "date",
+          "source"
+        ]
+      }
+    },
+    {
+      "name": "accounting_getAccountingPeriods",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get accounting periods",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "accounting_getAccountingPeriodDeletability",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get accounting period deletability",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "periodId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "periodId": {
+            "type": "string"
           }
         },
         "required": [
-          "date"
+          "periodId"
+        ]
+      }
+    },
+    {
+      "name": "accounting_deleteAccountingPeriod",
+      "module": "accounting",
+      "classification": "DESTRUCTIVE",
+      "description": "delete accounting period",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "periodId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "periodId"
+        ]
+      }
+    },
+    {
+      "name": "accounting_getFiscalCalendarCommitted",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get fiscal calendar committed",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "accounting_lockAccountingPeriod",
+      "module": "accounting",
+      "classification": "WRITE",
+      "description": "lock accounting period",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "periodId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "periodId"
+        ]
+      }
+    },
+    {
+      "name": "accounting_unlockAccountingPeriod",
+      "module": "accounting",
+      "classification": "WRITE",
+      "description": "unlock accounting period",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "periodId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "periodId"
+        ]
+      }
+    },
+    {
+      "name": "accounting_closeAccountingPeriod",
+      "module": "accounting",
+      "classification": "WRITE",
+      "description": "close accounting period",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "db",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "periodId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "periodId"
+        ]
+      }
+    },
+    {
+      "name": "accounting_closePeriodWithChecklist",
+      "module": "accounting",
+      "classification": "WRITE",
+      "description": "close period with checklist",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "db",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "periodId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "periodId"
+        ]
+      }
+    },
+    {
+      "name": "accounting_reopenAccountingPeriod",
+      "module": "accounting",
+      "classification": "WRITE",
+      "description": "reopen accounting period",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "periodId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "periodId"
+        ]
+      }
+    },
+    {
+      "name": "accounting_createFiscalYearPeriods",
+      "module": "accounting",
+      "classification": "WRITE",
+      "description": "create fiscal year periods",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "fiscalYear": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "fiscalYear"
+        ]
+      }
+    },
+    {
+      "name": "accounting_getPeriodCloseReadiness",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get period close readiness",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "periodId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "periodId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "periodId"
+        ]
+      }
+    },
+    {
+      "name": "accounting_evaluateCloseChecklist",
+      "module": "accounting",
+      "classification": "WRITE",
+      "description": "evaluate close checklist",
+      "paramCount": 3,
+      "serviceParams": [
+        "tasks",
+        "checks",
+        "closeStatus"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "tasks": {
+            "type": "array",
+            "items": {}
+          },
+          "checks": {
+            "type": "array",
+            "items": {}
+          },
+          "closeStatus": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "tasks",
+          "checks",
+          "closeStatus"
+        ]
+      }
+    },
+    {
+      "name": "accounting_getPeriodCloseChecklist",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get period close checklist",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "periodId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "periodId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "periodId"
+        ]
+      }
+    },
+    {
+      "name": "accounting_completeCloseTask",
+      "module": "accounting",
+      "classification": "WRITE",
+      "description": "complete close task",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "taskId": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "taskId"
+        ]
+      }
+    },
+    {
+      "name": "accounting_skipCloseTask",
+      "module": "accounting",
+      "classification": "WRITE",
+      "description": "skip close task",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "taskId": {
+            "type": "string"
+          },
+          "skippedReason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "taskId",
+          "skippedReason"
+        ]
+      }
+    },
+    {
+      "name": "accounting_addCloseTask",
+      "module": "accounting",
+      "classification": "WRITE",
+      "description": "add close task",
+      "paramCount": 5,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "periodId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "taskType": {
+            "type": "string"
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "assigneeId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "periodId",
+          "name",
+          "taskType",
+          "required"
+        ]
+      }
+    },
+    {
+      "name": "accounting_getPeriodCloseTaskDefinitions",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get period close task definitions",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "accounting_upsertPeriodCloseTaskDefinition",
+      "module": "accounting",
+      "classification": "WRITE",
+      "description": "upsert period close task definition",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "definition"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "taskType": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      }
+    },
+    {
+      "name": "accounting_deletePeriodCloseTaskDefinition",
+      "module": "accounting",
+      "classification": "DESTRUCTIVE",
+      "description": "delete period close task definition",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
         ]
       }
     },
@@ -965,7 +1474,7 @@
       "module": "accounting",
       "classification": "WRITE",
       "description": "update default balance sheet accounts",
-      "paramCount": 20,
+      "paramCount": 21,
       "serviceParams": [
         "client",
         "defaultAccounts"
@@ -977,13 +1486,13 @@
       "schema": {
         "type": "object",
         "properties": {
-          "inventoryAccount": {
+          "rawMaterialsAccount": {
+            "type": "string"
+          },
+          "finishedGoodsAccount": {
             "type": "string"
           },
           "goodsReceivedNotInvoicedAccount": {
-            "type": "string"
-          },
-          "inventoryShippedNotInvoicedAccount": {
             "type": "string"
           },
           "workInProgressAccount": {
@@ -1016,6 +1525,9 @@
           "prepaymentAccount": {
             "type": "string"
           },
+          "supplierPrepaymentAccount": {
+            "type": "string"
+          },
           "payablesAccount": {
             "type": "string"
           },
@@ -1039,9 +1551,9 @@
           }
         },
         "required": [
-          "inventoryAccount",
+          "rawMaterialsAccount",
+          "finishedGoodsAccount",
           "goodsReceivedNotInvoicedAccount",
-          "inventoryShippedNotInvoicedAccount",
           "workInProgressAccount",
           "receivablesAccount",
           "bankCashAccount",
@@ -1052,6 +1564,7 @@
           "accumulatedDepreciationAccount",
           "accumulatedDepreciationOnDisposalAccount",
           "prepaymentAccount",
+          "supplierPrepaymentAccount",
           "payablesAccount",
           "salesTaxPayableAccount",
           "purchaseTaxPayableAccount",
@@ -1067,7 +1580,7 @@
       "module": "accounting",
       "classification": "WRITE",
       "description": "update default income accounts",
-      "paramCount": 25,
+      "paramCount": 26,
       "serviceParams": [
         "client",
         "defaultAccounts"
@@ -1110,6 +1623,9 @@
             "type": "string"
           },
           "laborAbsorptionAccount": {
+            "type": "string"
+          },
+          "overheadAbsorptionAccount": {
             "type": "string"
           },
           "indirectCostAccount": {
@@ -1681,14 +2197,16 @@
       "module": "accounting",
       "classification": "WRITE",
       "description": "translate company balances",
-      "paramCount": 3,
+      "paramCount": 5,
       "serviceParams": [
         "client",
         "companyGroupId",
         "companyId",
         "targetCurrency",
         "periodEnd",
-        "periodStart"
+        "periodStart",
+        "// Rows from getFinancialStatementBalances for the same company/dates —\n  // translation only needs balanceAtDate + consolidatedRate",
+        "so re-running\n  // the full journalLine scan through the translateTrialBalance RPC would\n  // double the cost of every translated statement.\n  balances"
       ],
       "injectAuth": [
         "companyId"
@@ -1702,13 +2220,16 @@
           "periodEnd": {
             "type": "string"
           },
-          "periodStart": {
-            "type": "string"
-          }
+          "periodStart": {},
+          "// Rows from getFinancialStatementBalances for the same company/dates —\n  // translation only needs balanceAtDate + consolidatedRate": {},
+          "so re-running\n  // the full journalLine scan through the translateTrialBalance RPC would\n  // double the cost of every translated statement.\n  balances": {}
         },
         "required": [
           "targetCurrency",
-          "periodEnd"
+          "periodEnd",
+          "periodStart",
+          "// Rows from getFinancialStatementBalances for the same company/dates —\n  // translation only needs balanceAtDate + consolidatedRate",
+          "so re-running\n  // the full journalLine scan through the translateTrialBalance RPC would\n  // double the cost of every translated statement.\n  balances"
         ]
       }
     },
@@ -5460,10 +5981,10 @@
       "module": "inventory",
       "classification": "WRITE",
       "description": "insert manual inventory adjustment",
-      "paramCount": 10,
+      "paramCount": 1,
       "serviceParams": [
         "client",
-        "inventoryAdjustment"
+        "// `requiresSerialTracking` is a form-only flag for the validator's serial\n  // quantity guard — the route strips it before calling this.\n  inventoryAdjustment"
       ],
       "injectAuth": [
         "companyId",
@@ -5472,45 +5993,10 @@
       "schema": {
         "type": "object",
         "properties": {
-          "itemId": {
-            "type": "string"
-          },
-          "locationId": {
-            "type": "string"
-          },
-          "storageUnitId": {
-            "type": "string"
-          },
-          "originalStorageUnitId": {
-            "type": "string"
-          },
-          "adjustmentType": {
-            "type": "string",
-            "enum": [
-              "...itemLedgerTypes",
-              "Set Quantity"
-            ]
-          },
-          "quantity": {
-            "type": "number"
-          },
-          "trackedEntityId": {
-            "type": "string"
-          },
-          "readableId": {
-            "type": "string"
-          },
-          "expirationDate": {
-            "type": "string"
-          },
-          "comment": {
-            "type": "string"
-          }
+          "// `requiresSerialTracking` is a form-only flag for the validator's serial\n  // quantity guard — the route strips it before calling this.\n  inventoryAdjustment": {}
         },
         "required": [
-          "itemId",
-          "locationId",
-          "adjustmentType"
+          "// `requiresSerialTracking` is a form-only flag for the validator's serial\n  // quantity guard — the route strips it before calling this.\n  inventoryAdjustment"
         ]
       }
     },
@@ -5653,6 +6139,32 @@
       }
     },
     {
+      "name": "inventory_getInventoryCountMovements",
+      "module": "inventory",
+      "classification": "READ",
+      "description": "get inventory count movements",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "inventoryCountId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "inventoryCountId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "inventoryCountId"
+        ]
+      }
+    },
+    {
       "name": "inventory_insertInventoryCount",
       "module": "inventory",
       "classification": "WRITE",
@@ -5758,6 +6270,29 @@
         "required": [
           "inventoryCountId",
           "locationId"
+        ]
+      }
+    },
+    {
+      "name": "inventory_rectifyInventoryCount",
+      "module": "inventory",
+      "classification": "WRITE",
+      "description": "rectify inventory count",
+      "paramCount": 1,
+      "serviceParams": [
+        "db",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "args": {}
+        },
+        "required": [
+          "args"
         ]
       }
     },
@@ -6149,7 +6684,7 @@
       "module": "inventory",
       "classification": "WRITE",
       "description": "upsert stock transfer line",
-      "paramCount": 8,
+      "paramCount": 1,
       "serviceParams": [
         "client",
         "stockTransferLine"
@@ -6162,34 +6697,10 @@
       "schema": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string"
-          },
-          "stockTransferId": {
-            "type": "string"
-          },
-          "itemId": {
-            "type": "string"
-          },
-          "fromStorageUnitId": {
-            "type": "string"
-          },
-          "toStorageUnitId": {
-            "type": "string"
-          },
-          "quantity": {
-            "type": "number"
-          },
-          "pickedQuantity": {
-            "type": "number"
-          },
-          "requiresBatchTracking": {
-            "type": "string"
-          }
+          "stockTransferLine": {}
         },
         "required": [
-          "stockTransferId",
-          "itemId"
+          "stockTransferLine"
         ]
       }
     },
@@ -9770,6 +10281,32 @@
       }
     },
     {
+      "name": "items_deleteSupplierPart",
+      "module": "items",
+      "classification": "DESTRUCTIVE",
+      "description": "delete supplier part",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
       "name": "items_deleteConfigurationParameterGroup",
       "module": "items",
       "classification": "DESTRUCTIVE",
@@ -12053,7 +12590,7 @@
       "module": "items",
       "classification": "READ",
       "description": "get services",
-      "paramCount": 6,
+      "paramCount": 5,
       "serviceParams": [
         "client",
         "companyId",
@@ -12077,12 +12614,6 @@
                 "default": 0
               },
               "search": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              },
-              "type": {
                 "type": [
                   "string",
                   "null"
@@ -13431,7 +13962,7 @@
       "module": "items",
       "classification": "WRITE",
       "description": "upsert method material",
-      "paramCount": 1,
+      "paramCount": 4,
       "serviceParams": [
         "client",
         "methodMaterial"
@@ -13444,10 +13975,22 @@
       "schema": {
         "type": "object",
         "properties": {
-          "methodMaterial": {}
+          "id": {
+            "type": "string"
+          },
+          "makeMethodId": {
+            "type": "string"
+          },
+          "order": {
+            "type": "number"
+          },
+          "itemType": {
+            "type": "string"
+          }
         },
         "required": [
-          "methodMaterial"
+          "id",
+          "makeMethodId"
         ]
       }
     },
@@ -20035,6 +20578,31 @@
       }
     },
     {
+      "name": "production_invalidateAssemblyModelCache",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "invalidate assembly model cache",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "modelUploadId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "modelUploadId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "modelUploadId"
+        ]
+      }
+    },
+    {
       "name": "production_upsertAssemblyInstructionStep",
       "module": "production",
       "classification": "WRITE",
@@ -20178,6 +20746,50 @@
         "required": [
           "id",
           "componentNodeIds"
+        ]
+      }
+    },
+    {
+      "name": "production_reassignAssemblyStepComponents",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "reassign assembly step components",
+      "paramCount": 4,
+      "serviceParams": [
+        "db",
+        "data"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "assemblyInstructionId": {
+            "type": "string"
+          },
+          "targetStepId": {
+            "type": "string"
+          },
+          "componentNodeIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "move",
+              "duplicate",
+              "remove"
+            ]
+          }
+        },
+        "required": [
+          "assemblyInstructionId",
+          "componentNodeIds",
+          "mode"
         ]
       }
     },
@@ -34777,7 +35389,7 @@
       "module": "sales",
       "classification": "WRITE",
       "description": "upsert quote line",
-      "paramCount": 4,
+      "paramCount": 5,
       "serviceParams": [
         "client",
         "quotationLine"
@@ -34794,6 +35406,9 @@
             "type": "string"
           },
           "quoteId": {
+            "type": "string"
+          },
+          "itemType": {
             "type": "string"
           },
           "itemId": {
@@ -35496,7 +36111,7 @@
       "module": "sales",
       "classification": "WRITE",
       "description": "Create a new sales order with all business logic - generates sequence, creates opportunity, resolves payment/shipping defaults from customer. LLM can create a sales order with just customerId.",
-      "paramCount": 14,
+      "paramCount": 17,
       "serviceParams": [
         "client",
         "input"
@@ -35546,6 +36161,15 @@
             "type": "string"
           },
           "notes": {
+            "type": "string"
+          },
+          "customerReference": {
+            "type": "string"
+          },
+          "customerEngineeringContactId": {
+            "type": "string"
+          },
+          "salesPersonId": {
             "type": "string"
           },
           "customFields": {}
@@ -40258,6 +40882,135 @@
         },
         "required": [
           "groupIds"
+        ]
+      }
+    },
+    {
+      "name": "users_getUserSelectGroups",
+      "module": "users",
+      "classification": "READ",
+      "description": "get user select groups",
+      "paramCount": 4,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "search": {
+            "type": "string"
+          },
+          "limit": {
+            "type": "number"
+          },
+          "offset": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "limit",
+          "offset"
+        ]
+      }
+    },
+    {
+      "name": "users_getUserSelectGroupMembers",
+      "module": "users",
+      "classification": "READ",
+      "description": "get user select group members",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "groupId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "groupId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "groupId"
+        ]
+      }
+    },
+    {
+      "name": "users_searchUsersForSelect",
+      "module": "users",
+      "classification": "READ",
+      "description": "search users for select",
+      "paramCount": 4,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "q": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "excludeSelf": {
+            "type": "boolean"
+          },
+          "allowedIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "q"
+        ]
+      }
+    },
+    {
+      "name": "users_resolveUserSelectIds",
+      "module": "users",
+      "classification": "WRITE",
+      "description": "resolve user select ids",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "ids"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "ids"
         ]
       }
     },

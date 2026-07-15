@@ -449,3 +449,53 @@ describe("corridor-aware simultaneous steps", () => {
     expect(groups).toHaveLength(4);
   });
 });
+
+describe("buildAssemblyStepGroups floater fold", () => {
+  const push: Motion = { type: "linear", direction: [0, 0, -1], distance: 20 };
+  // base placed first; "arm" is precedence-forced before "clip" (the neighbor
+  // that attaches to it), so it lands detached; "tail" then attaches to clip.
+  const foldPlan: AssemblyPlan = {
+    version: 3,
+    unit: "mm",
+    sequence: ["base", "arm", "clip", "tail"],
+    components: {
+      base: { motion: { type: "none" } },
+      arm: { motion: push, confidence: "high" },
+      clip: { motion: push, confidence: "high" },
+      tail: { motion: push, confidence: "high" }
+    },
+    contacts: {
+      base: ["tail"],
+      arm: ["clip"],
+      clip: ["arm", "tail"],
+      tail: ["clip", "base"]
+    },
+    warnings: []
+  };
+  const foldGraph = indexAssemblyGraph(
+    graphOf([
+      graphLeaf("base", { min: [-50, -50, 0], max: [50, 50, 10] }, "h-base"),
+      graphLeaf("arm", { min: [-40, -40, 10], max: [-30, -30, 30] }, "h-arm"),
+      graphLeaf("clip", { min: [-32, -32, 10], max: [-22, -22, 30] }, "h-clip"),
+      graphLeaf("tail", { min: [10, 10, 10], max: [20, 20, 30] }, "h-tail")
+    ])
+  );
+
+  it("folds a detached part into the next step that attaches to it", () => {
+    const groups = buildAssemblyStepGroups(foldPlan, foldGraph);
+    // base, [arm+clip], tail — the orphan arm rides one step with its neighbor
+    expect(groups.map((g) => g.componentNodeIds)).toEqual([
+      ["base"],
+      ["arm", "clip"],
+      ["tail"]
+    ]);
+  });
+
+  it("leaves the sequence untouched when the plan has no contacts", () => {
+    const groups = buildAssemblyStepGroups(
+      { ...foldPlan, contacts: undefined },
+      foldGraph
+    );
+    expect(groups).toHaveLength(4);
+  });
+});

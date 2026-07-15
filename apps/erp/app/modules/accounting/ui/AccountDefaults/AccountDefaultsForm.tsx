@@ -105,7 +105,7 @@ const AccountDefaultsForm = ({
             name: "prepaymentAccount",
             label: t`Prepayments`,
             description: t`Account for advance payments made before goods or services are received`,
-            badgeType: "Asset",
+            badgeType: "Liability",
             termId: "account-default-prepayments"
           },
           {
@@ -122,11 +122,18 @@ const AccountDefaultsForm = ({
         description: t`Configure default accounts for inventory management`,
         fields: [
           {
-            name: "inventoryAccount",
-            label: t`Inventory`,
-            description: t`Primary account for on-hand inventory valuation`,
+            name: "rawMaterialsAccount",
+            label: t`Raw Materials`,
+            description: t`On-hand value of purchased stock and components (Buy items)`,
             badgeType: "Asset",
-            termId: "account-default-inventory"
+            termId: "account-default-raw-materials"
+          },
+          {
+            name: "finishedGoodsAccount",
+            label: t`Finished Goods`,
+            description: t`On-hand value of manufactured goods (Make items)`,
+            badgeType: "Asset",
+            termId: "account-default-finished-goods"
           },
           {
             name: "workInProgressAccount",
@@ -134,13 +141,6 @@ const AccountDefaultsForm = ({
             description: t`Account for production orders not yet completed`,
             badgeType: "Asset",
             termId: "account-default-wip"
-          },
-          {
-            name: "inventoryShippedNotInvoicedAccount",
-            label: t`Inventory Shipped Not Invoiced`,
-            description: t`Accrual for inventory shipped but not yet invoiced to customer`,
-            badgeType: "Asset",
-            termId: "account-default-inventory-shipped-not-invoiced"
           }
         ]
       },
@@ -190,6 +190,12 @@ const AccountDefaultsForm = ({
             description: t`Accounts payable for amounts owed to suppliers`,
             badgeType: "Liability",
             termId: "account-default-payables"
+          },
+          {
+            name: "supplierPrepaymentAccount",
+            label: t`Supplier Prepayments`,
+            description: t`Asset account for advance payments made to suppliers before goods or services are received`,
+            badgeType: "Asset"
           },
           {
             name: "goodsReceivedNotInvoicedAccount",
@@ -291,8 +297,8 @@ const AccountDefaultsForm = ({
       },
       {
         id: "cogs",
-        title: t`Purchasing & Cost of Goods`,
-        description: t`Configure default accounts for purchasing and COGS`,
+        title: t`Cost of Goods Sold`,
+        description: t`Default accounts for the cost of goods sold and indirect purchases`,
         fields: [
           {
             name: "costOfGoodsSoldAccount",
@@ -307,7 +313,14 @@ const AccountDefaultsForm = ({
             description: t`Expense account for non-inventory purchases (services, supplies)`,
             badgeType: "Expense",
             termId: "account-default-indirect-materials-services"
-          },
+          }
+        ]
+      },
+      {
+        id: "absorption",
+        title: t`Absorption`,
+        description: t`Credit accounts used when manufacturing costs are absorbed into WIP`,
+        fields: [
           {
             name: "laborAbsorptionAccount",
             label: t`Labor & Machine Absorption`,
@@ -315,6 +328,20 @@ const AccountDefaultsForm = ({
             badgeType: "Expense",
             termId: "account-default-labor-machine-absorption"
           },
+          {
+            name: "overheadAbsorptionAccount",
+            label: t`Overhead Absorption`,
+            description: t`Credit account when overhead is absorbed into WIP`,
+            badgeType: "Expense",
+            termId: "account-default-overhead-absorption"
+          }
+        ]
+      },
+      {
+        id: "variances",
+        title: t`Standard Cost Variances`,
+        description: t`Accounts for recording differences between actual and standard costs`,
+        fields: [
           {
             name: "purchaseVarianceAccount",
             label: t`Purchase Price Variance`,

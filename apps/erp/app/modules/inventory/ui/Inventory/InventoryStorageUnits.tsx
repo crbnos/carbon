@@ -380,6 +380,10 @@ const InventoryStorageUnits = ({
               <ModalBody>
                 <Hidden name="itemId" />
                 {isEditing && <Hidden name="originalStorageUnitId" />}
+                <Hidden
+                  name="requiresSerialTracking"
+                  value={isSerial ? "true" : "false"}
+                />
 
                 <VStack spacing={2}>
                   <Location name="locationId" label={t`Location`} isReadOnly />

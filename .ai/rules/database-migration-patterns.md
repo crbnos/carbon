@@ -70,7 +70,7 @@ ALTER TABLE "documentTemplate" ADD CONSTRAINT "documentTemplate_companyId_docume
 - **`updatedAt` is set by the app on write, not by a DB trigger.** Don't add a generic
   timestamp trigger.
 - Index `companyId` and every FK (e.g. `createdBy`).
-- Never add an `itemReadableId` column, and never specify decimal places in a `NUMERIC`.
+- Never add an `itemReadableId` column, and never specify decimal places in a `NUMERIC` — this applies everywhere: column definitions, `RETURNS TABLE` declarations, and `::NUMERIC` casts. Always use bare `NUMERIC`, never `NUMERIC(19,4)` or any precision form.
 
 ## RLS (the only correct pattern)
 

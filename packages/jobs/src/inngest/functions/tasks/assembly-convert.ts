@@ -1,9 +1,16 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Json } from "@carbon/database";
-import { GEOMETRY_SERVICE_API_KEY, GEOMETRY_SERVICE_URL } from "@carbon/env";
+import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
+import { NonRetriableError } from "inngest";
 import { inngest } from "../../client";
 
 const SIGNED_URL_EXPIRY = 60 * 60; // seconds
+// Conversion is synchronous on the service — the request stays open for the
+// whole run. A generous cap turns a wedged convert into a fast Inngest retry
+// instead of a hung step.
+const CONVERT_TIMEOUT_MS = 5 * 60 * 1000;
+// Bounded backoff when the service 429s (all slots busy), honoring Retry-After.
+const BUSY_RETRIES = 4;
 
 /**
  * Converts an uploaded CAD model (STEP) into web artifacts via the geometry
@@ -42,7 +49,7 @@ export const assemblyConvertFunction = inngest.createFunction(
     }
   },
   { event: "carbon/assembly-convert" },
-  async ({ event, step }) => {
+  async ({ event, step, logger }) => {
     const { modelUploadId, companyId, userId } = event.data;
 
     const job = await step.run("queue", async () => {
@@ -90,8 +97,8 @@ export const assemblyConvertFunction = inngest.createFunction(
     await step.run("convert", async () => {
       const client = getCarbonServiceRole();
 
-      if (!GEOMETRY_SERVICE_URL) {
-        throw new Error("GEOMETRY_SERVICE_URL is not configured");
+      if (!ASSEMBLER_SERVICE_URL) {
+        throw new Error("ASSEMBLER_SERVICE_URL is not configured");
       }
 
       const glbPath = `${companyId}/models/${modelUploadId}/${job.id}/model.glb`;
@@ -102,6 +109,21 @@ export const assemblyConvertFunction = inngest.createFunction(
         .createSignedUrl(job.modelPath, SIGNED_URL_EXPIRY);
       if (source.error) {
         throw new Error(`Failed to sign source URL: ${source.error.message}`);
+      }
+
+      // Content identity for the geometry service's result cache: with a
+      // contentHash a repeat convert of unchanged bytes is served without
+      // re-downloading the source. etag is content-derived; size disambiguates
+      // multipart etags. Best-effort — omitted on any failure.
+      let contentHash: string | undefined;
+      try {
+        const info = await client.storage.from("private").info(job.modelPath);
+        const etag = info.data?.etag?.replaceAll('"', "");
+        if (!info.error && etag) {
+          contentHash = `${etag}-${info.data?.size ?? 0}`;
+        }
+      } catch {
+        // optimization only
       }
 
       // upsert: Inngest retries re-upload to the same paths; without it the
@@ -118,26 +140,63 @@ export const assemblyConvertFunction = inngest.createFunction(
         throw new Error("Failed to sign artifact upload URLs");
       }
 
-      const response = await fetch(`${GEOMETRY_SERVICE_URL}/convert`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(GEOMETRY_SERVICE_API_KEY
-            ? { Authorization: `Bearer ${GEOMETRY_SERVICE_API_KEY}` }
-            : {})
+      const requestBody = JSON.stringify({
+        jobId: job.id,
+        source: {
+          url: source.data.signedUrl,
+          format: "step",
+          ...(contentHash ? { contentHash } : {})
         },
-        body: JSON.stringify({
-          jobId: job.id,
-          source: {
-            url: source.data.signedUrl,
-            format: "step"
-          },
-          outputs: {
-            glb: { url: glbUpload.data.signedUrl },
-            graph: { url: graphUpload.data.signedUrl }
-          }
-        })
+        outputs: {
+          glb: { url: glbUpload.data.signedUrl },
+          graph: { url: graphUpload.data.signedUrl }
+        }
       });
+
+      let response: Response;
+      // Bounded 429 backoff honoring Retry-After — the service sheds load with
+      // BUSY when its conversion slots are full.
+      for (let attempt = 0; ; attempt++) {
+        try {
+          response = await fetch(`${ASSEMBLER_SERVICE_URL}/convert`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...(ASSEMBLER_SERVICE_API_KEY
+                ? { Authorization: `Bearer ${ASSEMBLER_SERVICE_API_KEY}` }
+                : {})
+            },
+            body: requestBody,
+            signal: AbortSignal.timeout(CONVERT_TIMEOUT_MS)
+          });
+        } catch (e) {
+          const err = e as Error;
+          // A timeout may be transient (the service was briefly saturated) — let
+          // Inngest retry it. Genuine unreachability (down, DNS, TLS) is
+          // permanent, so fail fast → onFailure releases the model + job rows now
+          // instead of after the retry backoff.
+          if (err.name === "TimeoutError" || err.name === "AbortError") {
+            throw new Error(
+              `Geometry service timed out after ${CONVERT_TIMEOUT_MS}ms`
+            );
+          }
+          throw new NonRetriableError(
+            `Geometry service unreachable: ${err.message}`
+          );
+        }
+        if (response.status === 429 && attempt < BUSY_RETRIES) {
+          const retryAfter = Number(response.headers.get("retry-after")) || 15;
+          const waitMs = Math.min(retryAfter * 1000 * (attempt + 1), 120_000);
+          logger.warn("geometry /convert busy (429); backing off", {
+            modelUploadId,
+            attempt,
+            waitMs
+          });
+          await new Promise((resolve) => setTimeout(resolve, waitMs));
+          continue;
+        }
+        break;
+      }
 
       const result = (await response.json().catch(() => null)) as {
         ok: boolean;
@@ -147,7 +206,9 @@ export const assemblyConvertFunction = inngest.createFunction(
       } | null;
 
       if (!response.ok || !result?.ok) {
-        throw new Error(
+        // Non-429 errors are an outage (5xx) or a permanent rejection (4xx):
+        // retrying holds the job in Processing for nothing — fail fast.
+        throw new NonRetriableError(
           result?.error ?? `Geometry service returned ${response.status}`
         );
       }

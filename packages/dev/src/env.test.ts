@@ -10,7 +10,7 @@ const ports: PortMap = {
   PORT_INNGEST: 54004,
   PORT_ERP: 54005,
   PORT_MES: 54006,
-  PORT_GEOMETRY: 54007
+  PORT_ASSEMBLER: 54007
 };
 
 const jwt: JwtCreds = {

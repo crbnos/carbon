@@ -493,11 +493,12 @@ function NodeData({ node }: { node: FlatTreeItem<JobMethod> }) {
 
   const orderStatusByMaterialId = useContext(OrderStatusContext);
   // Show the procurement badge for any material that has order status —
-  // purchased, pulled from inventory, or a buy-and-make part. Materials with no
-  // shortfall and no PO (e.g. a make-to-order part) render nothing.
-  const orderStatus = node.data.methodMaterialId
-    ? orderStatusByMaterialId[node.data.methodMaterialId]
-    : undefined;
+  // purchased, pulled from inventory, or a buy-and-make part. Make to Order
+  // materials are manufactured, not procured, so they never show a status icon.
+  const orderStatus =
+    node.data.methodType !== "Make to Order" && node.data.methodMaterialId
+      ? orderStatusByMaterialId[node.data.methodMaterialId]
+      : undefined;
 
   return (
     <HStack spacing={1}>
@@ -513,7 +514,9 @@ function NodeData({ node }: { node: FlatTreeItem<JobMethod> }) {
         {node.data.quantity}
       </Badge>
       {onShapeState && <OnshapeStatus status={onShapeState} />}
-      <JobOrderStatusBadge status={orderStatus} />
+      {node.data.methodType !== "Make to Order" && (
+        <JobOrderStatusBadge status={orderStatus} />
+      )}
     </HStack>
   );
 }

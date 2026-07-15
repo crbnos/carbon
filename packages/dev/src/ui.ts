@@ -167,13 +167,13 @@ export function summaryLines(
       url("inngest", ports.PORT_INNGEST),
       branchPrefix ? ports.PORT_INNGEST : undefined
     ),
-    ...(apps.includes("geometry")
+    ...(apps.includes("assembler")
       ? [
           row(
             pc.yellow,
-            "Geometry",
-            url("geometry", ports.PORT_GEOMETRY),
-            branchPrefix ? ports.PORT_GEOMETRY : undefined
+            "Assembler",
+            url("assembler", ports.PORT_ASSEMBLER),
+            branchPrefix ? ports.PORT_ASSEMBLER : undefined
           )
         ]
       : []),

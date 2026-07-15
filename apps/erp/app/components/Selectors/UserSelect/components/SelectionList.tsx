@@ -8,7 +8,7 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
-import { LuListPlus, LuUsers, LuX } from "react-icons/lu";
+import { LuListPlus, LuX } from "react-icons/lu";
 import { Avatar } from "~/components";
 import useUserSelectContext from "../provider";
 import { isGroup } from "../useUserSelect";
@@ -50,9 +50,6 @@ const SelectionList = () => {
       {selected.map((item) => {
         const id = `UserSelection:SelectedItem-${item.id}`;
         const canExpand = !checkedSelections && !readOnly && isGroup(item);
-        // Groups always carry the type flags; users never do. `isGroup` alone is
-        // unreliable here (a group with no direct members reads as false).
-        const itemIsGroup = "isEmployeeTypeGroup" in item;
 
         return (
           <li className="p-2 rounded-md hover:bg-accent" key={item.id}>
@@ -69,25 +66,18 @@ const SelectionList = () => {
                 </HStack>
               ) : (
                 <>
-                  {itemIsGroup ? (
-                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted">
-                      <LuUsers className="h-3 w-3 text-muted-foreground" />
-                    </div>
-                  ) : (
+                  {"fullName" in item ? (
                     <Avatar
                       name={item.fullName ?? undefined}
                       path={item.avatarUrl}
                       size="sm"
                     />
+                  ) : (
+                    <Avatar name={item.name} path={null} size="sm" />
                   )}
 
-                  <div className="flex items-center gap-2 flex-grow min-w-0">
+                  <div className="flex items-center flex-grow">
                     <p className="text-sm line-clamp-1">{item.label}</p>
-                    {itemIsGroup && (
-                      <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase text-muted-foreground">
-                        Group
-                      </span>
-                    )}
                   </div>
                 </>
               )}

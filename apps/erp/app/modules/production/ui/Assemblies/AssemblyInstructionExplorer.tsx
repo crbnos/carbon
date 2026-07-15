@@ -8,7 +8,6 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
-  HStack,
   IconButton,
   Input,
   Modal,
@@ -17,6 +16,7 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
+  Spinner,
   Tabs,
   TabsContent,
   TabsList,
@@ -32,24 +32,31 @@ import {
   synthesizeFallbackMotion
 } from "@carbon/viewer";
 import type { DragControls } from "framer-motion";
-import { Reorder, useDragControls } from "framer-motion";
+import { MotionConfig, Reorder, useDragControls } from "framer-motion";
 import type { ReactNode } from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   LuChevronDown,
   LuCirclePlus,
   LuEllipsisVertical,
   LuGripVertical,
+  LuHand,
   LuSearch,
   LuSparkles,
   LuTrash,
+  LuTriangleAlert,
   LuWaypoints
 } from "react-icons/lu";
-import { useFetcher, useParams, useRevalidator } from "react-router";
+import {
+  useFetcher,
+  useParams,
+  useRevalidator,
+  useSearchParams
+} from "react-router";
 import { Empty } from "~/components";
 import { ProcedureStepTypeIcon } from "~/components/Icons";
 import { ConfirmDelete } from "~/components/Modals";
-import { usePermissions } from "~/hooks";
+import { usePermissions, useRealtime } from "~/hooks";
 import { path } from "~/utils/path";
 import { isAssemblyPlanRunning } from "../../production.models";
 import type { FlattenedBomMaterial } from "../../production.service";
@@ -68,6 +75,8 @@ type AssemblyInstructionExplorerProps = {
   isDisabled: boolean;
   /** The CAD model is still being converted — block step generation until it lands */
   isConverting: boolean;
+  /** The geometry service is reachable — required to convert models and plan steps */
+  assemblerAvailable: boolean;
   graphIndex: AssemblyGraphIndex | null;
   /** A successful motion plan exists for the model */
   hasPlan: boolean;
@@ -84,16 +93,22 @@ type AssemblyInstructionExplorerProps = {
   /** Current component selection (shared with the viewer) — highlighted in the Components tab */
   selectedNodeIds: string[];
   onSelectStep: (stepId: string) => void;
+  /** Double-click a step — preview (play) its insertion motion */
+  onPreviewStep: (stepId: string) => void;
   onHighlightComponents: (nodeIds: string[]) => void;
   onHideComponents: (nodeIds: string[]) => void;
 };
 
-export default function AssemblyInstructionExplorer({
+// Memoized: the parent route re-renders on every motion-drag frame
+// (draftMotion state) but none of this panel's props change during a drag, so
+// the ~30 step rows skip re-rendering entirely.
+function AssemblyInstructionExplorer({
   steps,
   units,
   selectedStepId,
   isDisabled,
   isConverting,
+  assemblerAvailable,
   graphIndex,
   hasPlan,
   planJob,
@@ -102,6 +117,7 @@ export default function AssemblyInstructionExplorer({
   bomMaterials,
   selectedNodeIds,
   onSelectStep,
+  onPreviewStep,
   onHighlightComponents,
   onHideComponents
 }: AssemblyInstructionExplorerProps) {
@@ -121,18 +137,78 @@ export default function AssemblyInstructionExplorer({
   // Generate Steps needs a motion plan. Planning is lazy (nothing runs until
   // the user asks), so the first click usually lands before plan.json exists —
   // the action then (idempotently) kicks the planner and returns
-  // planning:true. We hold the button in a pending state, poll until the plan
-  // lands, then generate the steps automatically — the click already
-  // expressed the intent.
-  const [isAwaitingPlan, setIsAwaitingPlan] = useState(false);
+  // planning:true. We hold the button in a pending state until the plan lands,
+  // then generate the steps automatically — the click already expressed the
+  // intent. The intent persists per-instruction in sessionStorage so it
+  // survives a remount or navigating away and back mid-plan (first-time plans
+  // run for tens of seconds); without it the auto-generate effect never fires
+  // and the plan lands Success with zero steps and no path forward except a
+  // second manual click.
+  const awaitingPlanKey = `assembly-awaiting-plan:${id}`;
+  const [isAwaitingPlan, setIsAwaitingPlanState] = useState(() => {
+    try {
+      return sessionStorage.getItem(awaitingPlanKey) === "1";
+    } catch {
+      return false;
+    }
+  });
+  const setIsAwaitingPlan = useCallback(
+    (value: boolean) => {
+      setIsAwaitingPlanState(value);
+      try {
+        if (value) {
+          sessionStorage.setItem(awaitingPlanKey, "1");
+        } else {
+          sessionStorage.removeItem(awaitingPlanKey);
+        }
+      } catch {
+        // sessionStorage unavailable — fall back to ephemeral state only
+      }
+    },
+    [awaitingPlanKey]
+  );
+
+  // Plan completion is pushed: the worker flips assemblyPlanJob to
+  // Success/Failed, realtime revalidates the loader, and the awaiting effect
+  // below generates the steps — the 5s poll stays only as a fallback.
+  useRealtime(
+    "assemblyPlanJob",
+    `modelUploadId=eq.${modelUploadId ?? "__none__"}`
+  );
 
   // Controlled so the Components tab knows when it becomes active — it scrolls the
   // current selection into view on activation
   const [tab, setTab] = useState<"steps" | "components">("steps");
   // A pre-existing Failed job stays the latest row until the freshly
   // triggered run inserts its own — remember it so it doesn't read as the
-  // outcome of the run we're waiting on.
-  const ignoredFailedJobId = useRef<string | null>(null);
+  // outcome of the run we're waiting on. Persisted next to the awaiting flag:
+  // after a remount mid-plan the flag survives, so this must too, or the stale
+  // failure reads as ours.
+  const ignoredFailedKey = `assembly-ignored-failed:${id}`;
+  const ignoredFailedJobId = useRef<string | null>(
+    (() => {
+      try {
+        return sessionStorage.getItem(ignoredFailedKey);
+      } catch {
+        return null;
+      }
+    })()
+  );
+  const setIgnoredFailedJobId = useCallback(
+    (value: string | null) => {
+      ignoredFailedJobId.current = value;
+      try {
+        if (value) {
+          sessionStorage.setItem(ignoredFailedKey, value);
+        } else {
+          sessionStorage.removeItem(ignoredFailedKey);
+        }
+      } catch {
+        // sessionStorage unavailable — ref only
+      }
+    },
+    [ignoredFailedKey]
+  );
   const planFailed =
     isAwaitingPlan &&
     planJob?.status === "Failed" &&
@@ -147,6 +223,23 @@ export default function AssemblyInstructionExplorer({
   }, [generateFetcher.data]);
 
   const [showRerunConfirm, setShowRerunConfirm] = useState(false);
+  const [showRegenerateConfirm, setShowRegenerateConfirm] = useState(false);
+  // Which generate mode the pending click asked for — the awaiting-plan effect
+  // re-submits after the plan lands, and a "Regenerate Steps" click must stay
+  // a regenerate (a plain re-submit would no-op with "steps-exist").
+  const generateModeRef = useRef<"generate" | "regenerate">("generate");
+  const submitGenerate = useCallback(
+    (mode: "generate" | "regenerate") => {
+      generateModeRef.current = mode;
+      const formData = new FormData();
+      formData.set("mode", mode);
+      generateFetcher.submit(formData, {
+        method: "post",
+        action: path.to.generateAssemblyInstructionSteps(id)
+      });
+    },
+    [generateFetcher, id]
+  );
 
   // Poll while planning runs (awaiting-plan generate flow, or an explicit
   // re-plan) so the fresh plan and its generated steps surface on their own
@@ -192,6 +285,37 @@ export default function AssemblyInstructionExplorer({
   ).padStart(2, "0")}`;
 
   const rerunPlanFetcher = useFetcher<{ success: boolean }>();
+  // Any planner work in flight — a re-motion run, a regenerate solve, or the
+  // submit round-trips themselves. Drives the footer's planner-menu spinner.
+  const isPlannerBusy =
+    isPlanning ||
+    isSolving ||
+    rerunPlanFetcher.state !== "idle" ||
+    generateFetcher.state !== "idle";
+
+  // ?autogen=1 (set by the create-assembly redirect): a model-backed
+  // instruction generates its steps without a click. One Generate submit —
+  // if the plan is already there the steps land instantly; otherwise the
+  // action kicks planning and returns planning:true, which arms the same
+  // persisted awaiting machinery a manual click would. The param is stripped
+  // immediately so reloads and shared links don't re-fire it.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const autogenFired = useRef(false);
+  useEffect(() => {
+    if (searchParams.get("autogen") !== "1" || autogenFired.current) return;
+    autogenFired.current = true;
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.delete("autogen");
+        return next;
+      },
+      { replace: true }
+    );
+    if (steps.length > 0 || !permissions.can("update", "production")) return;
+    submitGenerate("generate");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   // The user's click is waiting on a plan. When it lands, generate the steps —
   // no second click. If the wait stalls with nothing running (the click raced
@@ -199,16 +323,19 @@ export default function AssemblyInstructionExplorer({
   // re-submit so the action kicks the planner. Fetcher "idle" implies the
   // post-action revalidation is done, so isPlanning/isConverting are fresh.
   useEffect(() => {
-    if (!isAwaitingPlan || generateFetcher.state !== "idle") return;
-    if (hasPlan) {
-      setIsAwaitingPlan(false);
-    } else if (isConverting || isPlanning || planFailed) {
+    if (
+      !isAwaitingPlan ||
+      generateFetcher.state !== "idle" ||
+      rerunPlanFetcher.state !== "idle"
+    ) {
       return;
     }
-    generateFetcher.submit(new FormData(), {
-      method: "post",
-      action: path.to.generateAssemblyInstructionSteps(id)
-    });
+    // Still working — keep waiting. Checked BEFORE hasPlan so a fresh re-plan
+    // (Regenerate) isn't short-circuited by a STALE plan that still exists:
+    // wait for the running plan, then generate from it.
+    if (isConverting || isPlanning || planFailed) return;
+    if (hasPlan) setIsAwaitingPlan(false);
+    submitGenerate(generateModeRef.current);
   }, [
     isAwaitingPlan,
     hasPlan,
@@ -216,6 +343,8 @@ export default function AssemblyInstructionExplorer({
     isPlanning,
     planFailed,
     generateFetcher,
+    rerunPlanFetcher.state,
+    submitGenerate,
     id
   ]);
 
@@ -225,10 +354,37 @@ export default function AssemblyInstructionExplorer({
   const [sortOrder, setSortOrder] = useState<string[]>(
     steps.map((step) => step.id)
   );
+  // A local reorder saves on a 2500ms debounce; until it lands, a revalidation
+  // still carries the PRE-reorder server order. Track the pending save so the
+  // sync effect below doesn't snap the user's drag back.
+  const orderSavePendingRef = useRef(false);
 
   useEffect(() => {
-    setSortOrder(steps.map((step) => step.id));
-  }, [steps]);
+    setSortOrder((prev) => {
+      const nextIds = steps.map((step) => step.id);
+      const prevSet = new Set(prev);
+      const sameSet =
+        prev.length === nextIds.length &&
+        nextIds.every((id) => prevSet.has(id));
+      if (sameSet) {
+        // Same steps, possibly reordered upstream. Keep the local order while a
+        // save is in flight; otherwise adopt the server order (source of truth).
+        const savePending =
+          orderSavePendingRef.current || sortOrderFetcher.state !== "idle";
+        if (savePending) return prev;
+        const sameOrder = nextIds.every((id, i) => prev[i] === id);
+        return sameOrder ? prev : nextIds;
+      }
+      // Steps added or removed — resync to the server list.
+      return nextIds;
+    });
+  }, [steps, sortOrderFetcher.state]);
+
+  useEffect(() => {
+    if (sortOrderFetcher.state === "idle" && sortOrderFetcher.data?.success) {
+      orderSavePendingRef.current = false;
+    }
+  }, [sortOrderFetcher.state, sortOrderFetcher.data]);
 
   // Select the newly created step
   useEffect(() => {
@@ -238,11 +394,7 @@ export default function AssemblyInstructionExplorer({
   }, [newStepFetcher.data, onSelectStep]);
 
   const stepMap = useMemo(
-    () =>
-      steps.reduce<Record<string, AssemblyInstructionStepRow>>(
-        (acc, step) => ({ ...acc, [step.id]: step }),
-        {}
-      ),
+    () => new Map(steps.map((step) => [step.id, step])),
     [steps]
   );
 
@@ -257,16 +409,26 @@ export default function AssemblyInstructionExplorer({
     [units]
   );
 
+  // Derive the viewer shape once — both stepTitles and searchText need it, and
+  // toViewerStep otherwise runs twice per step per render.
+  const viewerStepMap = useMemo(
+    () => new Map(steps.map((step) => [step.id, toViewerStep(step)])),
+    [steps]
+  );
+
   const stepTitles = useMemo(
     () =>
       new Map(
         steps.map((step) => [
           step.id,
-          describeStep(toViewerStep(step), graphIndex, namedUnits) ??
-            "Untitled step"
+          describeStep(
+            viewerStepMap.get(step.id) ?? toViewerStep(step),
+            graphIndex,
+            namedUnits
+          ) ?? "Untitled step"
         ])
       ),
-    [steps, graphIndex, namedUnits]
+    [steps, viewerStepMap, graphIndex, namedUnits]
   );
 
   const [search, setSearch] = useState("");
@@ -276,7 +438,7 @@ export default function AssemblyInstructionExplorer({
   const searchText = useMemo(() => {
     const map = new Map<string, string>();
     for (const step of steps) {
-      const viewerStep = toViewerStep(step);
+      const viewerStep = viewerStepMap.get(step.id) ?? toViewerStep(step);
       const componentNames = graphIndex
         ? groupComponentNodeIds(viewerStep.componentNodeIds, graphIndex)
             .map((group) => group.name)
@@ -296,7 +458,7 @@ export default function AssemblyInstructionExplorer({
       );
     }
     return map;
-  }, [steps, graphIndex, stepTitles]);
+  }, [steps, viewerStepMap, graphIndex, stepTitles]);
 
   const visibleOrder = useMemo(() => {
     if (!isSearching) return sortOrder;
@@ -326,6 +488,7 @@ export default function AssemblyInstructionExplorer({
     newOrder.forEach((stepId, index) => {
       updates[stepId] = index + 1;
     });
+    orderSavePendingRef.current = true;
     setSortOrder(newOrder);
     updateSortOrder(updates);
   };
@@ -396,78 +559,126 @@ export default function AssemblyInstructionExplorer({
             spacing={0}
           >
             {steps.length > 0 ? (
-              <Reorder.Group
-                axis="y"
-                values={visibleOrder}
-                onReorder={onReorder}
-                className="w-full"
-                disabled={isDisabled || isSearching}
-              >
-                {visibleOrder.map((stepId) => (
-                  <DraggableStepItem
-                    key={stepId}
-                    stepId={stepId}
-                    isDisabled={isDisabled || isSearching}
-                  >
-                    {(dragControls) => (
-                      <StepItem
-                        step={stepMap[stepId]}
-                        title={stepTitles.get(stepId) ?? "Untitled step"}
-                        index={sortOrder.indexOf(stepId)}
+              <MotionConfig reducedMotion="user">
+                <Reorder.Group
+                  axis="y"
+                  values={visibleOrder}
+                  onReorder={onReorder}
+                  className="w-full"
+                  disabled={isDisabled || isSearching}
+                >
+                  {visibleOrder.map((stepId) => {
+                    const step = stepMap.get(stepId);
+                    if (!step) return null;
+                    return (
+                      <DraggableStepItem
+                        key={stepId}
+                        stepId={stepId}
                         isDisabled={isDisabled || isSearching}
-                        isSelected={stepId === selectedStepId}
-                        dragControls={dragControls}
-                        onSelect={() => onSelectStep(stepId)}
-                        onDelete={() => setStepToDelete(stepMap[stepId])}
-                      />
+                      >
+                        {(dragControls) => (
+                          <StepItem
+                            step={step}
+                            title={stepTitles.get(stepId) ?? "Untitled step"}
+                            index={sortOrder.indexOf(stepId)}
+                            isDisabled={isDisabled || isSearching}
+                            isSelected={stepId === selectedStepId}
+                            dragControls={dragControls}
+                            onSelect={() => onSelectStep(stepId)}
+                            onPreview={() => onPreviewStep(stepId)}
+                            onDelete={() => setStepToDelete(step)}
+                          />
+                        )}
+                      </DraggableStepItem>
+                    );
+                  })}
+                </Reorder.Group>
+              </MotionConfig>
+            ) : permissions.can("update", "production") ? (
+              <div className="flex h-full w-full flex-col items-center justify-center px-6 py-10">
+                <div className="flex w-full max-w-[280px] flex-col items-center text-center">
+                  <div
+                    className={cn(
+                      "mb-4 flex size-12 items-center justify-center rounded-full",
+                      planFailed
+                        ? "bg-destructive/10 text-destructive"
+                        : "bg-primary/10 text-primary"
                     )}
-                  </DraggableStepItem>
-                ))}
-              </Reorder.Group>
-            ) : (
-              <Empty>
-                {permissions.can("update", "production") && (
-                  <VStack spacing={2} className="items-center">
+                  >
+                    {isSolving ? (
+                      <Spinner className="size-5" />
+                    ) : planFailed ? (
+                      <LuTriangleAlert className="size-5" />
+                    ) : (
+                      <LuSparkles className="size-5" />
+                    )}
+                  </div>
+                  <h3 className="text-sm font-medium text-foreground">
+                    {planFailed
+                      ? "Couldn't generate steps"
+                      : isSolving
+                        ? "Solving assembly motions"
+                        : "No steps yet"}
+                  </h3>
+                  <p className="mt-1 text-pretty text-xs text-muted-foreground">
+                    {planFailed
+                      ? (planJob?.error ??
+                        "Motion planning failed. Retry to run it again.")
+                      : isSolving
+                        ? "Reading the model's geometry to work out the build order. Usually 1–3 minutes."
+                        : hasPlan
+                          ? "Generate draft steps with motions solved from the model, or add one yourself."
+                          : "Run the motion planner over the model to create draft steps, or add one yourself."}
+                  </p>
+                  {isSolving && (
+                    <p className="mt-1.5 text-[0.6875rem] tabular-nums text-muted-foreground/70">
+                      {solveElapsedLabel} elapsed
+                    </p>
+                  )}
+                  {!assemblerAvailable && !hasPlan && !isSolving && (
+                    <p className="mt-2 text-pretty text-xs text-amber-600 dark:text-amber-500">
+                      The geometry service is offline — motion planning is
+                      unavailable right now.
+                    </p>
+                  )}
+                  <div className="mt-5 flex w-full flex-col gap-2">
                     <Button
-                      isDisabled={isDisabled || isConverting || isSolving}
+                      className="w-full"
+                      isDisabled={
+                        isDisabled ||
+                        isConverting ||
+                        isSolving ||
+                        (!assemblerAvailable && !hasPlan)
+                      }
                       isLoading={isSolving}
-                      leftIcon={<LuSparkles />}
+                      leftIcon={planFailed ? undefined : <LuSparkles />}
                       onClick={() => {
                         // The action starts a fresh planner run when the
                         // latest one failed — don't read that stale failure
                         // as this run's outcome
-                        ignoredFailedJobId.current =
-                          planJob?.status === "Failed" ? planJob.id : null;
+                        setIgnoredFailedJobId(
+                          planJob?.status === "Failed" ? planJob.id : null
+                        );
                         setIsAwaitingPlan(false);
-                        generateFetcher.submit(new FormData(), {
-                          method: "post",
-                          action: path.to.generateAssemblyInstructionSteps(id)
-                        });
+                        submitGenerate("generate");
                       }}
                     >
                       {planFailed ? "Retry Generate Steps" : "Generate Steps"}
                     </Button>
-                    <p className="max-w-[220px] text-center text-xs text-muted-foreground">
-                      {planFailed
-                        ? (planJob?.error ??
-                          "Motion planning failed — retry to run it again")
-                        : isSolving
-                          ? `Solving assembly motions from the model's geometry — this usually takes 1–3 minutes (${solveElapsedLabel} elapsed)`
-                          : hasPlan
-                            ? "Creates draft steps with motions solved from the model's geometry"
-                            : "Runs the motion planner over the model, then creates draft steps"}
-                    </p>
                     <Button
+                      className="w-full"
                       isDisabled={isDisabled}
                       leftIcon={<LuCirclePlus />}
                       variant="secondary"
                       onClick={onAddStep}
                     >
-                      Add Step Manually
+                      Add step manually
                     </Button>
-                  </VStack>
-                )}
-              </Empty>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <Empty />
             )}
             {steps.length > 0 && isSearching && visibleOrder.length === 0 && (
               <p className="w-full px-4 py-3 text-center text-xs text-muted-foreground">
@@ -476,27 +687,9 @@ export default function AssemblyInstructionExplorer({
             )}
           </VStack>
           {steps.length > 0 && (
-            <div className="w-full flex-none border-t border-border p-4">
-              {steps.length > 0 &&
-                modelUploadId &&
-                permissions.can("update", "production") && (
-                  <Button
-                    className="mb-2 w-full"
-                    isDisabled={
-                      isDisabled ||
-                      isPlanning ||
-                      rerunPlanFetcher.state !== "idle"
-                    }
-                    isLoading={isPlanning || rerunPlanFetcher.state !== "idle"}
-                    leftIcon={<LuWaypoints />}
-                    variant="secondary"
-                    onClick={() => setShowRerunConfirm(true)}
-                  >
-                    {isPlanning ? "Planning motion…" : "Run Motion Planning"}
-                  </Button>
-                )}
+            <div className="flex w-full flex-none items-center gap-2 border-t border-border p-4">
               <Button
-                className="w-full"
+                className="flex-1"
                 isDisabled={
                   isDisabled ||
                   !permissions.can("update", "production") ||
@@ -509,6 +702,60 @@ export default function AssemblyInstructionExplorer({
               >
                 Add Step
               </Button>
+              {modelUploadId && permissions.can("update", "production") && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <IconButton
+                      aria-label={
+                        isPlannerBusy
+                          ? "Motion planning in progress"
+                          : "Motion planner actions"
+                      }
+                      icon={
+                        isPlannerBusy ? (
+                          <Spinner className="size-4" />
+                        ) : (
+                          <LuSparkles />
+                        )
+                      }
+                      isDisabled={isDisabled || isPlannerBusy}
+                      variant="secondary"
+                    />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {!assemblerAvailable && (
+                      <p className="px-2 py-1.5 text-xs text-amber-600 dark:text-amber-500">
+                        Geometry service offline — motion planning unavailable.
+                      </p>
+                    )}
+                    <DropdownMenuItem
+                      disabled={!assemblerAvailable}
+                      onClick={() => setShowRerunConfirm(true)}
+                    >
+                      <DropdownMenuIcon icon={<LuWaypoints />} />
+                      <div>
+                        Run Motion Planning
+                        <p className="text-xs text-muted-foreground">
+                          Recompute motions, keep step order
+                        </p>
+                      </div>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      destructive
+                      disabled={!assemblerAvailable}
+                      onClick={() => setShowRegenerateConfirm(true)}
+                    >
+                      <DropdownMenuIcon icon={<LuSparkles />} />
+                      <div>
+                        Regenerate Steps
+                        <p className="text-xs text-muted-foreground">
+                          Replace all steps from the latest plan
+                        </p>
+                      </div>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
           )}
         </TabsContent>
@@ -546,6 +793,66 @@ export default function AssemblyInstructionExplorer({
           onCancel={() => setStepToDelete(null)}
           onSubmit={() => setStepToDelete(null)}
         />
+      )}
+      {showRegenerateConfirm && (
+        <Modal
+          open
+          onOpenChange={(open) => {
+            if (!open) setShowRegenerateConfirm(false);
+          }}
+        >
+          <ModalContent>
+            <ModalHeader>
+              <ModalTitle>Regenerate steps?</ModalTitle>
+              <ModalDescription>
+                Replaces all existing steps with fresh drafts from the latest
+                motion plan — titles, descriptions, and other edits on the
+                current steps are lost. Refused if any step is manually authored
+                or marked Done.
+              </ModalDescription>
+            </ModalHeader>
+            <ModalFooter>
+              <Button
+                variant="secondary"
+                onClick={() => setShowRegenerateConfirm(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                isDisabled={
+                  generateFetcher.state !== "idle" ||
+                  rerunPlanFetcher.state !== "idle"
+                }
+                isLoading={
+                  generateFetcher.state !== "idle" ||
+                  rerunPlanFetcher.state !== "idle"
+                }
+                onClick={() => {
+                  // Regenerate = re-plan from scratch, then rebuild steps from
+                  // the fresh plan. Kick a fresh DERIVE plan and arm the
+                  // awaiting machinery in regenerate mode; when the plan lands
+                  // it replaces the steps. (A stored plan is never reused —
+                  // that's what made planner changes invisible.)
+                  setIgnoredFailedJobId(
+                    planJob?.status === "Failed" ? planJob.id : null
+                  );
+                  generateModeRef.current = "regenerate";
+                  setIsAwaitingPlan(true);
+                  const formData = new FormData();
+                  formData.set("fresh", "1");
+                  rerunPlanFetcher.submit(formData, {
+                    method: "post",
+                    action: path.to.assemblyPlanRerun(id)
+                  });
+                  setShowRegenerateConfirm(false);
+                }}
+              >
+                Regenerate
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
       )}
       {showRerunConfirm && (
         <Modal
@@ -714,6 +1021,7 @@ type StepItemProps = {
   isSelected: boolean;
   dragControls?: DragControls;
   onSelect: () => void;
+  onPreview: () => void;
   onDelete: () => void;
 };
 
@@ -725,6 +1033,7 @@ function StepItem({
   isSelected,
   dragControls,
   onSelect,
+  onPreview,
   onDelete
 }: StepItemProps) {
   const permissions = usePermissions();
@@ -732,75 +1041,98 @@ function StepItem({
 
   const componentCount = step.componentNodeIds?.length ?? 0;
 
+  const needsSupport = (step.warnings as { needsSupport?: boolean } | null)
+    ?.needsSupport;
+
   return (
-    <HStack
+    <div
       className={cn(
-        "group w-full p-2 items-start hover:bg-accent/30 relative border-b bg-card cursor-pointer",
-        isSelected && "bg-accent/50 hover:bg-accent/50"
+        "group relative flex w-full cursor-pointer select-none items-center gap-1.5 border-b border-border bg-card py-3 pl-1.5 pr-2.5 hover:bg-accent/30",
+        isSelected && "bg-accent/40 hover:bg-accent/40"
       )}
       onClick={onSelect}
+      onDoubleClick={onPreview}
+      title="Double-click to play this step"
     >
+      {isSelected && (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 left-0 w-0.5 bg-primary"
+        />
+      )}
       <IconButton
         aria-label="Drag handle"
         icon={<LuGripVertical />}
         variant="ghost"
+        size="sm"
         disabled={isDisabled}
-        className="cursor-grab active:cursor-grabbing shrink-0"
+        className="size-6 shrink-0 cursor-grab text-muted-foreground/50 hover:text-muted-foreground active:cursor-grabbing"
         onPointerDown={(e) => {
           if (!isDisabled && dragControls) dragControls.start(e);
         }}
         style={{ touchAction: "none" }}
       />
-      <VStack spacing={2} className="flex-grow min-w-0">
-        <p className="text-foreground text-sm w-full min-w-0 line-clamp-1">
-          <span className="text-muted-foreground tabular-nums mr-2">
-            {index + 1}.
-          </span>
-          {title}
-        </p>
-        <HStack spacing={2}>
-          <ProcedureStepTypeIcon
-            type={step.type ?? "Task"}
-            className="shrink-0 size-3.5 text-muted-foreground"
-          />
-          <StepStatusControl
-            stepId={step.id}
-            status={step.status ?? "Todo"}
-            isDisabled={isDisabled}
-          />
-          <p className="text-muted-foreground text-xs">
-            {componentCount} component{componentCount === 1 ? "" : "s"}
-          </p>
-        </HStack>
-      </VStack>
-      {!isDisabled && (
-        <div className="absolute right-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <IconButton
-                aria-label="More"
-                className="opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
-                icon={<LuEllipsisVertical />}
-                variant="solid"
-                onClick={(e) => e.stopPropagation()}
-              />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem
-                destructive
-                disabled={!permissions.can("delete", "production")}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete();
-                }}
-              >
-                <DropdownMenuIcon icon={<LuTrash />} />
-                Delete Step
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+      <span className="w-5 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
+        {index + 1}
+      </span>
+      <ProcedureStepTypeIcon
+        type={step.type ?? "Task"}
+        className="size-3.5 shrink-0 text-muted-foreground"
+      />
+      <span
+        className="min-w-0 flex-1 truncate text-sm text-foreground"
+        title={title}
+      >
+        {title}
+      </span>
+      {needsSupport && (
+        <span
+          className="shrink-0 text-amber-600 dark:text-amber-500"
+          title="A part in this step may tip once placed — consider a fixture or a second person."
+        >
+          <LuHand className="size-3.5" />
+        </span>
       )}
-    </HStack>
+      <span
+        className="shrink-0 text-xs tabular-nums text-muted-foreground"
+        title={`${componentCount} component${componentCount === 1 ? "" : "s"}`}
+      >
+        ×{componentCount}
+      </span>
+      <StepStatusControl
+        stepId={step.id}
+        status={step.status ?? "Todo"}
+        isDisabled={isDisabled}
+      />
+      {!isDisabled && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <IconButton
+              aria-label="More"
+              size="sm"
+              variant="ghost"
+              className="size-6 shrink-0 opacity-0 group-hover:opacity-100 data-[state=open]:opacity-100"
+              icon={<LuEllipsisVertical />}
+              onClick={(e) => e.stopPropagation()}
+            />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem
+              destructive
+              disabled={!permissions.can("delete", "production")}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+            >
+              <DropdownMenuIcon icon={<LuTrash />} />
+              Delete Step
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
+    </div>
   );
 }
+
+export default memo(AssemblyInstructionExplorer);

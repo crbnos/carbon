@@ -189,6 +189,12 @@ export const JOURNAL_ENTRY_STATUS_COLOR_MAP = {
   Reversed: "red"
 } as const satisfies Record<string, StatusColor>;
 
+export const PERIOD_CLOSE_STATUS_COLOR_MAP = {
+  Open: "gray",
+  Locked: "orange",
+  Closed: "green"
+} as const satisfies Record<string, StatusColor>;
+
 export const RISK_STATUS_COLOR_MAP = {
   Open: "gray",
   "In Review": "blue",

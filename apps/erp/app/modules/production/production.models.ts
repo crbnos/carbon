@@ -83,18 +83,23 @@ export function isJobLocked(status: string | null | undefined): boolean {
  * them to Failed.
  */
 const ASSEMBLY_PLAN_QUEUED_STALE_MS = 2 * 60 * 1000;
+// A Processing row with no live worker behind it (worker crash, or the dev
+// Inngest server — which keeps runs in memory — restarting mid-run) would
+// otherwise read as "running" forever: the UI spins and the re-run guard
+// blocks recovery. The worker's own budget is ~30 min of waiting plus
+// retries, so anything past this is an orphan.
+const ASSEMBLY_PLAN_PROCESSING_STALE_MS = 45 * 60 * 1000;
 
 /** Whether a motion-planning run is live (drives badges, polling, re-run guards). */
 export function isAssemblyPlanRunning(
   job: { status: string; createdAt: string } | null | undefined
 ): boolean {
   if (!job) return false;
-  if (job.status === "Processing") return true;
-  return (
-    job.status === "Queued" &&
-    Date.now() - new Date(job.createdAt).getTime() <
-      ASSEMBLY_PLAN_QUEUED_STALE_MS
-  );
+  const age = Date.now() - new Date(job.createdAt).getTime();
+  if (job.status === "Processing") {
+    return age < ASSEMBLY_PLAN_PROCESSING_STALE_MS;
+  }
+  return job.status === "Queued" && age < ASSEMBLY_PLAN_QUEUED_STALE_MS;
 }
 
 export const jobOperationStatus = [
@@ -706,18 +711,6 @@ export const jobMaterialValidator = baseMaterialValidator
   )
   .refine(
     (data) => {
-      if (data.itemType === "Tool") {
-        return !!data.itemId;
-      }
-      return true;
-    },
-    {
-      message: "Tool ID is required",
-      path: ["itemId"]
-    }
-  )
-  .refine(
-    (data) => {
       if (data.itemType === "Consumable") {
         return !!data.itemId;
       }
@@ -754,18 +747,6 @@ export const jobMaterialValidatorForReleasedJob = baseMaterialValidator
     },
     {
       message: "Material ID is required",
-      path: ["itemId"]
-    }
-  )
-  .refine(
-    (data) => {
-      if (data.itemType === "Tool") {
-        return !!data.itemId;
-      }
-      return true;
-    },
-    {
-      message: "Tool ID is required",
       path: ["itemId"]
     }
   )
@@ -1121,11 +1102,20 @@ export const motionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("none") })
 ]);
 
-export const cameraSchema = z.object({
-  position: vector3,
-  target: vector3,
-  fov: z.number().positive()
-});
+// A step camera is either a manual "Set view" pose (applied verbatim) or a
+// planner-baked view-direction hint (mesh-precise sight lines; the viewer
+// derives target/distance/frustum fit live at the real viewport aspect).
+export const cameraSchema = z.union([
+  z.object({
+    position: vector3,
+    target: vector3,
+    fov: z.number().positive()
+  }),
+  z.object({
+    source: z.literal("plan"),
+    direction: vector3
+  })
+]);
 
 export const fastenerSchema = z.object({
   spec: z.string().optional(),
@@ -1143,7 +1133,13 @@ export const fastenerSchema = z.object({
  */
 export const stepPlanWarningsSchema = z.object({
   flagged: z.boolean().optional(),
-  blockedBy: z.array(z.string()).optional()
+  blockedBy: z.array(z.string()).optional(),
+  /**
+   * A part in this step will tip once placed (its center of mass falls outside
+   * the support polygon of the parts below it) — likely needs a fixture or a
+   * second hand. Diagnostic only; never blocks generation or playback.
+   */
+  needsSupport: z.boolean().optional()
 });
 
 const jsonField = <T extends z.ZodTypeAny>(schema: T) =>
@@ -1313,6 +1309,18 @@ export const assemblyInstructionStepMotionValidator = z.object({
 export const assemblyInstructionStepComponentsValidator = z.object({
   componentNodeIds: jsonField(z.array(z.string()))
 });
+
+export const assemblyStepComponentsReassignValidator = z
+  .object({
+    // Absent for "remove" (unassign from every step); required otherwise.
+    targetStepId: z.string().optional(),
+    componentNodeIds: jsonField(z.array(z.string()).min(1)),
+    mode: z.enum(["move", "duplicate", "remove"])
+  })
+  .refine((v) => v.mode === "remove" || !!v.targetStepId, {
+    message: "A target step is required",
+    path: ["targetStepId"]
+  });
 
 export const assemblyInstructionStepStatusValidator = z.object({
   status: z.enum(assemblyStepStatuses)

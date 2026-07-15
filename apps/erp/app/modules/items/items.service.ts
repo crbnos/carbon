@@ -276,6 +276,18 @@ export async function deleteItemCustomerPart(
     .eq("companyId", companyId);
 }
 
+export async function deleteSupplierPart(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("supplierPart")
+    .delete()
+    .eq("id", id)
+    .eq("companyId", companyId);
+}
+
 export async function deleteConfigurationParameterGroup(
   client: SupabaseClient<Database>,
   id: string
@@ -559,7 +571,8 @@ export async function getItemCostHistory(
     .eq("itemId", itemId)
     .eq("companyId", companyId)
     .gte("postingDate", dateOneYearAgo)
-    .order("postingDate", { ascending: false });
+    .order("postingDate", { ascending: false })
+    .limit(500);
 }
 
 export async function getItemCustomerPart(
@@ -813,11 +826,16 @@ export async function getItemQuantities(
   companyId: string,
   locationId: string
 ) {
+  // item_id restricts the RPC to one item so it doesn't aggregate the whole
+  // location's ledger/PO/SO/job history for a single detail page (added in
+  // migration 20260713231142; the committed DB types regenerate from the
+  // cloud DB after deploy, hence the cast).
   return client
     .rpc("get_inventory_quantities", {
       location_id: locationId,
-      company_id: companyId
-    })
+      company_id: companyId,
+      item_id: itemId
+    } as { location_id: string; company_id: string })
     .eq("id", itemId)
     .maybeSingle();
 }
@@ -1951,13 +1969,12 @@ export async function getServices(
   companyId: string,
   args: GenericQueryFilters & {
     search: string | null;
-    type: string | null;
     group: string | null;
     supplierId: string | null;
   }
 ) {
   let query = client
-    .from("service")
+    .from("services")
     .select("*", {
       count: "exact"
     })
@@ -1965,14 +1982,7 @@ export async function getServices(
 
   if (args.search) {
     query = query.or(
-      `readableIdWithRevision.ilike.%${args.search}%,name.ilike.%${args.search}%,description.ilike.%${args.search}%`
-    );
-  }
-
-  if (args.type) {
-    query = query.eq(
-      "serviceType",
-      args.type as NonNullable<"Internal" | "External">
+      `readableIdWithRevision.ilike.%${args.search}%,name.ilike.%${args.search}%,description.ilike.%${args.search}%,supplierIds.ilike.%${args.search}%`
     );
   }
 
@@ -1995,11 +2005,14 @@ export async function getService(
   itemId: string,
   companyId: string
 ) {
+  // get_service_details returns the same shape as get_tool_details. The RPC only
+  // enters the committed (cloud-sourced) types once the migration is applied to
+  // the cloud DB, so until then we borrow the tool-details typing while calling
+  // the real RPC. Drop the cast after the next cloud type regeneration.
   return client
-    .from("service")
-    .select("*")
-    .eq("itemId", itemId)
-    .eq("companyId", companyId)
+    .rpc("get_service_details" as unknown as "get_tool_details", {
+      item_id: itemId
+    })
     .single();
 }
 
@@ -2010,7 +2023,8 @@ export async function getServicesList(
   return fetchAllFromTable<{
     id: string;
     name: string;
-  }>(client, "item", "id, name", (query) =>
+    readableIdWithRevision: string;
+  }>(client, "item", "id, name, readableIdWithRevision", (query) =>
     query
       .eq("type", "Service")
       .eq("companyId", companyId)
@@ -3720,6 +3734,7 @@ export async function upsertSupplierPart(
       })
     | (Omit<z.infer<typeof supplierPartValidator>, "id"> & {
         id: string;
+        companyId: string;
         updatedBy: string;
         customFields?: Json;
       })
@@ -3735,6 +3750,7 @@ export async function upsertSupplierPart(
     .from("supplierPart")
     .update(sanitize(supplierPart))
     .eq("id", supplierPart.id)
+    .eq("companyId", supplierPart.companyId)
     .select("id")
     .single();
 }
@@ -4510,8 +4526,7 @@ export async function upsertService(
         createdBy: string;
         customFields?: Json;
       })
-    | (Omit<z.infer<typeof serviceValidator>, "id"> & {
-        id: string;
+    | (z.infer<typeof serviceValidator> & {
         updatedBy: string;
         customFields?: Json;
       })
@@ -4521,16 +4536,15 @@ export async function upsertService(
       .from("item")
       .insert({
         readableId: service.id,
+        revision: service.revision ?? "0",
         name: service.name,
+        description: service.description,
         type: "Service",
-        replenishmentSystem:
-          service.serviceType === "External" ? "Buy" : "Make",
-        defaultMethodType:
-          service.serviceType === "External"
-            ? "Purchase to Order"
-            : "Make to Order",
-        itemTrackingType: service.itemTrackingType,
-        unitOfMeasureCode: "EA",
+        replenishmentSystem: service.replenishmentSystem,
+        defaultMethodType: service.defaultMethodType,
+        // Services can never be shipped, received, or stocked
+        itemTrackingType: "Non-Inventory",
+        unitOfMeasureCode: service.unitOfMeasureCode,
         active: true,
         companyId: service.companyId,
         createdBy: service.createdBy
@@ -4540,54 +4554,61 @@ export async function upsertService(
     if (itemInsert.error) return itemInsert;
     const itemId = itemInsert.data?.id;
 
-    const serviceInsert = await client
-      .from("service")
-      .insert({
+    const [serviceInsert, itemCostUpdate] = await Promise.all([
+      client.from("service").upsert({
         id: service.id,
-        serviceType: service.serviceType,
+        // Legacy column, no longer surfaced in the UI; the migration adds a
+        // DB-level default of "External". Passed explicitly until the committed
+        // (cloud-sourced) types pick up that default and make it optional.
+        serviceType: "External",
         companyId: service.companyId,
         createdBy: service.createdBy,
         customFields: service.customFields
-      })
-      .select("*")
-      .single();
+      }),
+      client
+        .from("itemCost")
+        .update(
+          sanitize({
+            itemPostingGroupId: service.postingGroupId,
+            unitCost: service.unitCost
+          })
+        )
+        .eq("itemId", itemId)
+    ]);
 
     if (serviceInsert.error) return serviceInsert;
-
-    const costUpdate = await client
-      .from("itemCost")
-      .update({ unitCost: service.unitCost })
-      .eq("itemId", itemId)
-      .select("*")
-      .single();
-
-    if (costUpdate.error) return costUpdate;
+    if (itemCostUpdate.error) return itemCostUpdate;
 
     const newService = await client
-      .from("service")
+      .from("services")
       .select("*")
       .eq("readableId", service.id)
+      .eq("companyId", service.companyId)
       .single();
 
     return newService;
   }
+
+  const item = await client
+    .from("item")
+    .select("readableId, companyId")
+    .eq("id", service.id)
+    .single();
+  if (item.error) return item;
+
   const itemUpdate = {
     id: service.id,
     name: service.name,
     description: service.description,
-    replenishmentSystem:
-      service.serviceType === "External" ? "Buy" : ("Make" as "Buy"),
-    defaultMethodType:
-      service.serviceType === "External"
-        ? "Purchase to Order"
-        : ("Make to Order" as "Purchase to Order"),
-    itemTrackingType: service.itemTrackingType,
-    unitOfMeasureCode: null,
+    replenishmentSystem: service.replenishmentSystem,
+    defaultMethodType: service.defaultMethodType,
+    itemTrackingType: "Non-Inventory" as const,
+    unitOfMeasureCode: service.unitOfMeasureCode,
     active: true
   };
 
   const serviceUpdate = {
-    serviceType: service.serviceType
+    customFields: service.customFields
   };
 
   const [updateItem, updateService] = await Promise.all([
@@ -4598,13 +4619,15 @@ export async function upsertService(
         updatedAt: today(getLocalTimeZone()).toString()
       })
       .eq("id", service.id),
+    // service.id is the item uuid; the service row is keyed by readableId
     client
       .from("service")
       .update({
         ...sanitize(serviceUpdate),
         updatedAt: today(getLocalTimeZone()).toString()
       })
-      .eq("itemId", service.id)
+      .eq("id", item.data.readableId ?? "")
+      .eq("companyId", item.data.companyId ?? "")
   ]);
 
   if (updateItem.error) return updateItem;

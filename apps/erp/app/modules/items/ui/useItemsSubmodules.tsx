@@ -9,6 +9,7 @@ import {
   LuGlassWater,
   LuGroup,
   LuHammer,
+  LuHeadphones,
   LuPizza,
   LuPuzzle,
   LuRuler,
@@ -51,6 +52,12 @@ export default function useItemsSubmodules() {
           to: path.to.consumables,
           icon: <LuPizza />,
           table: "consumable"
+        },
+        {
+          name: t`Services`,
+          to: path.to.services,
+          icon: <LuHeadphones />,
+          table: "service"
         }
       ]
     },

@@ -3,12 +3,13 @@ import pc from "picocolors";
 import { syncAppPortlessConfigs } from "../env.js";
 import { currentBranch } from "../git.js";
 import { killOrphanedApps, killOrphanedStripe } from "../services/apps.js";
-import { stopStack } from "../services/compose.js";
+import { flushDb, stopStack } from "../services/compose.js";
 import { branchToPrefix, unregisterAliases } from "../services/portless.js";
 import {
   getSlot,
   getWorktreeRoot,
   projectName,
+  removeSlot,
   resolveSlug
 } from "../worktree.js";
 
@@ -16,18 +17,22 @@ import {
 // the freshly-interrupted stdin; fall back to plain printf progress.
 // volumes: also drop the stack's Docker volumes (data is wiped) — for headless
 // dispatch teardown where leftover volumes would accumulate on a long-lived box.
-export async function down(opts: { silent?: boolean; volumes?: boolean } = {}) {
+export async function down(
+  opts: { silent?: boolean; volumes?: boolean; purge?: boolean } = {}
+) {
   const root = await getWorktreeRoot();
   const slug = resolveSlug(root);
   const project = projectName(slug);
-  const withVolumes = opts.volumes ?? false;
+  const purge = opts.purge ?? false;
+  // Purge is a full teardown (workspace archive/removal) — it implies volumes.
+  const withVolumes = (opts.volumes ?? false) || purge;
 
   // No ensureSlugAvailable guard here — `down` is the user explicitly asking
   // to stop their own stack. The guard (meant for `up`) would block teardown
   // of moved/borrowed/stale worktrees, leaving containers orphaned.
 
   if (opts.silent) {
-    return runPlain(root, slug, project, withVolumes);
+    return runPlain(root, slug, project, withVolumes, purge);
   }
 
   intro("Carbon · dev down");
@@ -68,16 +73,34 @@ export async function down(opts: { silent?: boolean; volumes?: boolean } = {}) {
         syncAppPortlessConfigs(root);
         return "configs reset";
       }
-    }
+    },
+    // Purge: release the worktree's registry slot (ports/jwt) and flush its
+    // redis db, so archived/removed workspaces don't leak slots from the pool.
+    ...(purge
+      ? [
+          {
+            title: "Release port slot + flush redis",
+            task: async () => {
+              const slot = getSlot(slug);
+              if (slot && typeof slot.redisDb === "number") {
+                await flushDb(slot.redisDb);
+              }
+              removeSlot(slug);
+              return "slot released";
+            }
+          }
+        ]
+      : [])
   ]);
-  outro("stopped");
+  outro(purge ? "stopped and purged" : "stopped");
 }
 
 async function runPlain(
   root: string,
   slug: string,
   project: string,
-  withVolumes: boolean
+  withVolumes: boolean,
+  purge: boolean
 ) {
   const step = (msg: string) =>
     process.stderr.write(`${pc.cyan("•")} ${msg}…\n`);
@@ -110,4 +133,12 @@ async function runPlain(
   step("cleaning up portless.json");
   syncAppPortlessConfigs(root);
   done("configs reset");
+
+  if (purge) {
+    step("releasing port slot + flushing redis");
+    const slot = getSlot(slug);
+    if (slot && typeof slot.redisDb === "number") await flushDb(slot.redisDb);
+    removeSlot(slug);
+    done("slot released");
+  }
 }

@@ -7,7 +7,7 @@ import {
   LuPartyPopper,
   LuPlay
 } from "react-icons/lu";
-import { BOARD_TASKS } from "../content/board";
+import { BOARD_TASKS, boardTasksForScope } from "../content/board";
 import { SPINE } from "../content/spine";
 import {
   boardTasksForTier,
@@ -23,7 +23,7 @@ import type { GateValue, StepDef, Tier } from "../types";
 import { GanttChart } from "./GanttChart";
 import { GuidedUpsellCard } from "./GuidedUpsellCard";
 import { DerivedStatus, OWNER_TOKENS } from "./primitives";
-import { useCheckMap, useSignals, useTier } from "./state";
+import { useCheckMap, useExclusions, useSignals, useTier } from "./state";
 
 // Carbon-app routing + video resolution are injected by the ERP route (they use
 // `path.to` / trainingConfig). Hub state comes from the store.
@@ -59,8 +59,12 @@ export function OnboardingHub({
   const tier = useTier();
   const map = useCheckMap();
   const signals = useSignals();
+  const exclusions = useExclusions();
   const spine = spineForTier(SPINE, tier);
-  const tasks = boardTasksForTier(BOARD_TASKS, tier);
+  const tasks = boardTasksForScope(
+    boardTasksForTier(BOARD_TASKS, tier),
+    exclusions.modules
+  );
 
   const done = gatesDone(spine, map, signals);
   const total = spine.length;

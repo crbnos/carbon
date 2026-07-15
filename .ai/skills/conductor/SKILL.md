@@ -39,6 +39,8 @@ The loop never waits on a human. Concretely:
 ```bash
 git fetch origin main
 crbn new loop/<id> --base origin/main --yes   # prints the worktree path
+cd <worktree-path>
+git merge origin/main                         # always merge origin/main before starting
 ```
 
 Do all loop work in that worktree, on branch `loop/<id>`. **Never run on

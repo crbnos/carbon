@@ -87,6 +87,7 @@ Technical highlights:
 - [Lingui](https://lingui.dev) - i18n
 - [Vercel](https://vercel.com) – hosting
 - [Stripe](https://stripe.com) - billing
+- [Rust](https://www.rust-lang.org) – geometry service (FCL collision + OpenCASCADE CAD)
 
 
 ## Codebase
@@ -104,8 +105,9 @@ The monorepo follows the Turborepo convention of grouping packages into one of t
 | `mes`        | MES             | `pnpm dev` (select MES in picker, or both)          |
 | `academy`    | Academy         | `pnpm dev:academy`                                  |
 | `starter`    | Starter         | `pnpm dev:starter`                                  |
+| `assembler`  | Geometry service (Rust): STEP → GLB + assembly motion planning | spawned by `crbn up` (needs a release binary — see [Installation](#installation)) |
 
-`pnpm dev` runs the per-worktree dev CLI (`crbn up`). ERP and MES are first-class — the CLI boots the docker stack, applies migrations, regenerates types/swagger, and spawns the selected apps behind portless. Academy and starter are standalone Turborepo entries.
+`pnpm dev` runs the per-worktree dev CLI (`crbn up`). ERP and MES are first-class — the CLI boots the docker stack, applies migrations, regenerates types/swagger, and spawns the selected apps behind portless. The `assembler` geometry service is spawned too when its release binary is present. Academy and starter are standalone Turborepo entries.
 
 ### `/packages`
 
@@ -167,6 +169,33 @@ Then install dependencies:
 $ nvm use            # use node v22
 $ pnpm install       # install dependencies
 ```
+
+#### Optional: the `assembler` geometry service
+
+`assembler` is a Rust service (STEP → GLB + assembly motion planning) over C++ FCL and OpenCASCADE. ERP/MES run fine without it — set it up only if you need the 3D `/convert` and `/plan` endpoints.
+
+1. **Toolchain + native build deps** (macOS):
+
+   ```bash
+   $ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh   # Rust, if not already installed
+   $ brew install fcl cmake ninja                                     # collision libs (+ libccd/eigen/octomap) and build tools
+   ```
+
+   On Linux, install the equivalents from your package manager: `libfcl-dev libccd-dev libeigen3-dev liboctomap-dev cmake ninja-build` plus a C/C++ toolchain.
+
+2. **Build OCCT once** — a patched static OpenCASCADE, cached in `~/.cache/carbon-occt`. Slow (~15–30 min) but one-time per machine; re-running is a no-op once cached:
+
+   ```bash
+   $ ./apps/assembler/scripts/build-occt.sh
+   ```
+
+3. **Build the service** — seconds once OCCT is cached (`build.rs` finds it automatically):
+
+   ```bash
+   $ cargo build --release -p assembler
+   ```
+
+`crbn up` spawns the binary when it's present. Verify it's up with `curl -sf "$ASSEMBLER_SERVICE_URL/health"` (the URL is in your worktree's `.env.local`) or by watching the `asm |` lines in the `crbn up` output. Without the binary the rest of the stack still runs — only `/convert` and `/plan` are unavailable.
 
 The dev stack (Postgres, GoTrue, Kong, Storage, Inngest, Inbucket, Studio, Realtime) is booted later by `crbn up` — see [Local dev CLI](#local-dev-cli-crbn) below. There is no separate "start the database" step.
 

@@ -63,6 +63,8 @@ in root-cause, BLOCKED in fix) always surface to the human.
 | `auth` | Authenticate agent-browser against local dev | authed session (building block) |
 | `error` | Capture screenshot + snapshot on browser failure | `.ai/scratch/e2e/…` (building block) |
 | `create-agents-md` | Generate/refresh a grounded AGENTS.md | `AGENTS.md` |
+| `inngest` | Inngest v3 platform reference (steps, events, flow control, errors) as Carbon runs it | knowledge (no artifact) |
+| `rust` | Rust reference for the cargo workspace (tokio+FFI discipline, state choices, perf) | knowledge (no artifact) |
 | `carbon-docs` | Author reader-facing docs in the docs app | `docs/content/**` |
 | `translate` | Fill missing i18n .po translations via cheap Haiku subagents | `packages/locale/locales/*/*.po` |
 | `test-driven-development` | Red→green→refactor discipline (vitest) | tests-first code |

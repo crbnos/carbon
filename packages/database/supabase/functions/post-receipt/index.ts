@@ -15,7 +15,10 @@ import {
 import { calculateCOGS } from "../shared/calculate-cogs.ts";
 import { getCurrentAccountingPeriod } from "../shared/get-accounting-period.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
-import { getDefaultPostingGroup } from "../shared/get-posting-group.ts";
+import {
+  getDefaultPostingGroup,
+  resolveInventoryAccount,
+} from "../shared/get-posting-group.ts";
 import {
   resolveSamplingPlan,
   type SamplingStandard,
@@ -106,7 +109,7 @@ serve(async (req: Request) => {
       await Promise.all([
         client
           .from("item")
-          .select("id, itemTrackingType, requiresInspection")
+          .select("id, itemTrackingType, replenishmentSystem, requiresInspection")
           .in("id", itemIds)
           .eq("companyId", companyId),
         client
@@ -367,7 +370,8 @@ serve(async (req: Request) => {
         (line) => {
           if (
             line.purchaseOrderLineType === "Comment" ||
-            line.purchaseOrderLineType === "G/L Account"
+            line.purchaseOrderLineType === "G/L Account" ||
+            line.purchaseOrderLineType === "Service"
           )
             return true;
           const target = line.purchaseQuantity ?? 0;
@@ -924,9 +928,11 @@ serve(async (req: Request) => {
         for await (const receiptLine of receiptLines.data) {
           const jlStartIdx = journalLineInserts.length;
 
+          const receiptLineItem = items.data.find(
+            (item) => item.id === receiptLine.itemId
+          );
           const itemTrackingType =
-            items.data.find((item) => item.id === receiptLine.itemId)
-              ?.itemTrackingType ?? "Inventory";
+            receiptLineItem?.itemTrackingType ?? "Inventory";
 
           const receivedQuantity =
             isNaN(receiptLine.receivedQuantity) ||
@@ -997,8 +1003,12 @@ serve(async (req: Request) => {
             let debitDescription: string;
 
             if (itemTrackingType !== "Non-Inventory" && !isOutsideProcessing) {
-              debitAccount = accountDefaults.data.inventoryAccount;
-              debitDescription = "Inventory Account";
+              const inventoryAccount = resolveInventoryAccount(
+                receiptLineItem?.replenishmentSystem ?? null,
+                accountDefaults.data
+              );
+              debitAccount = inventoryAccount.account;
+              debitDescription = inventoryAccount.description;
             } else if (isOutsideProcessing) {
               debitAccount = accountDefaults.data.workInProgressAccount;
               debitDescription = "WIP Account";
@@ -1578,6 +1588,7 @@ serve(async (req: Request) => {
             (line) =>
               line.purchaseOrderLineType === "Comment" ||
               line.purchaseOrderLineType === "G/L Account" ||
+              line.purchaseOrderLineType === "Service" ||
               line.receivedComplete
           );
 
@@ -1838,13 +1849,23 @@ serve(async (req: Request) => {
         const transferItemIds = warehouseTransferLines.data
           .map((line) => line.itemId)
           .filter(Boolean) as string[];
-        const itemCosts = await client
-          .from("itemCost")
-          .select("itemId, itemPostingGroupId, unitCost")
-          .in("itemId", transferItemIds);
+        const [itemCosts, transferItems] = await Promise.all([
+          client
+            .from("itemCost")
+            .select("itemId, itemPostingGroupId, unitCost")
+            .in("itemId", transferItemIds),
+          client
+            .from("item")
+            .select("id, replenishmentSystem")
+            .in("id", transferItemIds)
+            .eq("companyId", companyId),
+        ]);
 
         if (itemCosts.error) {
           throw new Error("Failed to fetch item costs");
+        }
+        if (transferItems.error) {
+          throw new Error("Failed to fetch items");
         }
 
         const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
@@ -1922,9 +1943,17 @@ serve(async (req: Request) => {
           // Create journal entries for inventory movement if there's value
           if (accountingEnabled && accountDefaults?.data && totalValue > 0) {
             const journalLineReference = nanoid();
+            // Same account on both sides: a transfer moves stock between
+            // locations, not between inventory classes.
+            const inventoryAccount = resolveInventoryAccount(
+              transferItems.data.find(
+                (item: { id: string }) => item.id === receiptLine.itemId
+              )?.replenishmentSystem ?? null,
+              accountDefaults.data
+            );
 
             journalLineInserts.push({
-              accountId: accountDefaults.data.inventoryAccount,
+              accountId: inventoryAccount.account,
               description: `Transfer Out - ${warehouseTransfer.data?.transferId}`,
               amount: credit("asset", totalValue),
               quantity: Math.abs(receivedQuantity),
@@ -1937,7 +1966,7 @@ serve(async (req: Request) => {
             });
 
             journalLineInserts.push({
-              accountId: accountDefaults.data.inventoryAccount,
+              accountId: inventoryAccount.account,
               description: `Transfer In - ${warehouseTransfer.data?.transferId}`,
               amount: debit("asset", totalValue),
               quantity: Math.abs(receivedQuantity),

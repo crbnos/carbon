@@ -1,6 +1,7 @@
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import { nameSimilarity, tiptapToText } from "@carbon/utils";
@@ -13,7 +14,7 @@ import type {
 import {
   buildAssemblyStepGroups,
   CURRENT_PLAN_VERSION,
-  computeStepCameras,
+  describeStep,
   groupComponentNodeIds,
   indexAssemblyGraph
 } from "@carbon/viewer";
@@ -141,7 +142,7 @@ export async function convertSalesOrderLinesToJobs(
         .select("*")
         .eq("itemId", line.itemId)
         .eq("companyId", companyId)
-        .single();
+        .maybeSingle();
 
       const lotSize = manufacturing.data?.lotSize ?? 0;
       const totalQuantity = line.saleQuantity ?? 0;
@@ -186,12 +187,16 @@ export async function convertSalesOrderLinesToJobs(
           }
         }
 
-        const storageUnitId = await getDefaultStorageUnitForJob(
-          client,
-          line.itemId,
-          locationId!,
-          companyId
-        );
+        // Services are Non-Inventory and never have storage units
+        const storageUnitId =
+          line.salesOrderLineType === "Service"
+            ? null
+            : await getDefaultStorageUnitForJob(
+                client,
+                line.itemId,
+                locationId!,
+                companyId
+              );
 
         // Calculate scrap quantity based on item's scrap percentage
         const scrapPercentage = manufacturing.data?.scrapPercentage ?? 0;
@@ -4007,6 +4012,33 @@ export async function deleteAssemblyInstruction(
 }
 
 /**
+ * Best-effort: tell the assembler to drop its content-hash result-pointer cache
+ * for a model, so a re-plan of unchanged bytes+options re-derives instead of
+ * reusing a stale pointer. The DB/storage invalidation is the real gate; this is
+ * belt-and-suspenders (the service cache also auto-invalidates on CODE_VERSION
+ * and any option change). Skips silently when the service URL is unset, and
+ * never throws — a failed notify must not block the DB invalidation.
+ */
+async function notifyAssemblerInvalidate(modelUploadId: string) {
+  if (!ASSEMBLER_SERVICE_URL) return;
+  try {
+    await fetch(`${ASSEMBLER_SERVICE_URL}/cache/invalidate`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(ASSEMBLER_SERVICE_API_KEY
+          ? { Authorization: `Bearer ${ASSEMBLER_SERVICE_API_KEY}` }
+          : {})
+      },
+      body: JSON.stringify({ modelUploadId }),
+      signal: AbortSignal.timeout(5000)
+    });
+  } catch {
+    // swallow — best-effort
+  }
+}
+
+/**
  * Drops the cached motion plan for a model so the next instruction re-plans from
  * scratch (with the current algorithm). Leaves the expensive conversion output
  * (glb/graph on the modelUpload) intact — conversion isn't what a planner change
@@ -4026,16 +4058,25 @@ async function invalidateAssemblyPlanCache(
 
   const planJobs = await client
     .from("assemblyPlanJob")
-    .select("planPath")
+    .select("id, companyId, planPath")
     .eq("modelUploadId", modelUploadId)
     .eq("kind", "plan");
 
-  const planPaths = (planJobs.data ?? [])
-    .map((job) => job.planPath)
-    .filter((planPath): planPath is string => Boolean(planPath));
+  // Remove the recorded planPath AND the deterministic per-job path: a job
+  // that failed or was cancelled after the service uploaded plan.json never
+  // got planPath set on its row, and would otherwise leave an orphan file.
+  const planPaths = [
+    ...new Set(
+      (planJobs.data ?? []).flatMap((job) => [
+        ...(job.planPath ? [job.planPath] : []),
+        `${job.companyId}/models/${modelUploadId}/${job.id}/plan.json`
+      ])
+    )
+  ];
   if (planPaths.length > 0) {
-    // Best-effort artifact cleanup; deleting the rows below is what actually
-    // invalidates the cache (getLatestAssemblyPlan then finds nothing).
+    // Best-effort artifact cleanup (removing a nonexistent path is a no-op);
+    // deleting the rows below is what actually invalidates the cache
+    // (getLatestAssemblyPlan then finds nothing).
     await client.storage.from("private").remove(planPaths);
   }
 
@@ -4044,6 +4085,86 @@ async function invalidateAssemblyPlanCache(
     .delete()
     .eq("modelUploadId", modelUploadId)
     .eq("kind", "plan");
+
+  // Auto-detected groups (swarms) get materialized as `assemblyUnit` rows, which
+  // FREEZE detection: `loadPlanUnits` feeds them back to the planner as caller
+  // units, so a re-plan merges them as-is and never re-runs swarm detection.
+  // They're derived cache — invalidating the plan must drop them too, else a
+  // deleted-then-recreated instruction re-plans against the frozen unit and
+  // resurrects the stale grouping (defeating any planner improvement). The guard
+  // above already ensured no other instruction authors against this model, so
+  // this is safe. User-authored units (sourceGroupId null) are kept.
+  await client
+    .from("assemblyUnit")
+    .delete()
+    .eq("modelUploadId", modelUploadId)
+    .not("sourceGroupId", "is", null);
+
+  await notifyAssemblerInvalidate(modelUploadId);
+}
+
+/**
+ * Explicitly invalidates EVERY cached artifact for a model — plan rows +
+ * plan.json files (for all instructions on the model) and the conversion
+ * output (glb/graph files + paths) — and resets processingStatus so a fresh
+ * convert can run. This is the user-facing escape hatch for stale caches
+ * (e.g. after a geometry-service upgrade that changes nodeIds); routine
+ * instruction deletion uses the narrower invalidateAssemblyPlanCache instead.
+ */
+export async function invalidateAssemblyModelCache(
+  client: SupabaseClient<Database>,
+  modelUploadId: string
+) {
+  const planJobs = await client
+    .from("assemblyPlanJob")
+    .select("id, companyId, planPath")
+    .eq("modelUploadId", modelUploadId)
+    .eq("kind", "plan");
+
+  const paths = new Set<string>();
+  for (const job of planJobs.data ?? []) {
+    if (job.planPath) paths.add(job.planPath);
+    paths.add(`${job.companyId}/models/${modelUploadId}/${job.id}/plan.json`);
+  }
+
+  const model = await client
+    .from("modelUpload")
+    .select("glbPath, graphPath")
+    .eq("id", modelUploadId)
+    .maybeSingle();
+  if (model.data?.glbPath) paths.add(model.data.glbPath);
+  if (model.data?.graphPath) paths.add(model.data.graphPath);
+
+  if (paths.size > 0) {
+    // Best-effort file cleanup; the row updates below are what invalidate.
+    await client.storage.from("private").remove([...paths]);
+  }
+
+  await client
+    .from("assemblyPlanJob")
+    .delete()
+    .eq("modelUploadId", modelUploadId)
+    .eq("kind", "plan");
+
+  // Drop auto-materialized swarm units too (see invalidateAssemblyPlanCache) —
+  // they freeze detection, so a full model-cache reset must re-derive them.
+  await client
+    .from("assemblyUnit")
+    .delete()
+    .eq("modelUploadId", modelUploadId)
+    .not("sourceGroupId", "is", null);
+
+  await notifyAssemblerInvalidate(modelUploadId);
+
+  return client
+    .from("modelUpload")
+    .update({
+      processingStatus: "Idle",
+      processingError: null,
+      glbPath: null,
+      graphPath: null
+    })
+    .eq("id", modelUploadId);
 }
 
 export async function upsertAssemblyInstructionStep(
@@ -4207,6 +4328,153 @@ export async function updateAssemblyStepComponents(
     .eq("id", data.id)
     .select("id")
     .single();
+}
+
+// Assign a set of component instances to a target step. `duplicate` unions them
+// onto the target only (a component may live on several steps). `move` unions
+// them onto the target AND strips them from every other step, so the component
+// ends up on exactly the target. `remove` (no target) strips them from EVERY
+// step, unassigning them entirely. One transaction: a half-applied move (added
+// to target but not removed from the source, or vice versa) would be a real bug.
+export async function reassignAssemblyStepComponents(
+  db: Kysely<KyselyDatabase>,
+  data: {
+    assemblyInstructionId: string;
+    companyId: string;
+    targetStepId?: string;
+    componentNodeIds: string[];
+    mode: "move" | "duplicate" | "remove";
+    updatedBy: string;
+  }
+) {
+  const moving = new Set(data.componentNodeIds);
+  return db.transaction().execute(async (trx) => {
+    const steps = await trx
+      .selectFrom("assemblyInstructionStep")
+      .select(["id", "componentNodeIds"])
+      .where("assemblyInstructionId", "=", data.assemblyInstructionId)
+      .where("companyId", "=", data.companyId)
+      .execute();
+
+    const now = new Date().toISOString();
+    for (const step of steps) {
+      const current = (step.componentNodeIds ?? []) as string[];
+      let next: string[];
+      if (data.mode !== "remove" && step.id === data.targetStepId) {
+        const merged = new Set(current);
+        for (const nodeId of moving) merged.add(nodeId);
+        next = [...merged];
+      } else if (data.mode === "move" || data.mode === "remove") {
+        next = current.filter((nodeId) => !moving.has(nodeId));
+      } else {
+        continue; // duplicate: other steps are untouched
+      }
+      // Skip a no-op write (nothing added/removed for this step).
+      if (
+        next.length === current.length &&
+        next.every((nodeId, index) => nodeId === current[index])
+      ) {
+        continue;
+      }
+      // A move that empties a source step (it had components, now none) leaves a
+      // meaningless orphan — drop it. The target step is never emptied (it gains
+      // parts), and an already-empty process step (current.length === 0) is left
+      // alone.
+      if (
+        step.id !== data.targetStepId &&
+        current.length > 0 &&
+        next.length === 0
+      ) {
+        await trx
+          .deleteFrom("assemblyInstructionStep")
+          .where("id", "=", step.id)
+          .where("companyId", "=", data.companyId)
+          .execute();
+        continue;
+      }
+      await trx
+        .updateTable("assemblyInstructionStep")
+        .set({
+          componentNodeIds: next,
+          updatedBy: data.updatedBy,
+          updatedAt: now
+        })
+        .where("id", "=", step.id)
+        .where("companyId", "=", data.companyId)
+        .execute();
+    }
+
+    // Keep UNIT membership in step with STEP membership. The Components tab
+    // groups by `assemblyUnit`, so moving a part into a step that installs a unit
+    // (e.g. the PCB step) must also add it to that unit — otherwise it shows as a
+    // loose leaf that never joins the group. `assemblyUnit` is model-scoped.
+    const targetStep = steps.find((s) => s.id === data.targetStepId);
+    const preMove = ((targetStep?.componentNodeIds ?? []) as string[]).filter(
+      (nodeId) => !moving.has(nodeId)
+    );
+    const model = await trx
+      .selectFrom("assemblyInstruction")
+      .select("modelUploadId")
+      .where("id", "=", data.assemblyInstructionId)
+      .where("companyId", "=", data.companyId)
+      .executeTakeFirst();
+    if (model?.modelUploadId) {
+      const units = await trx
+        .selectFrom("assemblyUnit")
+        .select(["id", "componentNodeIds"])
+        .where("modelUploadId", "=", model.modelUploadId)
+        .where("companyId", "=", data.companyId)
+        .execute();
+
+      // The unit the target step installs = the tightest unit whose members
+      // cover the step's pre-move components. None ⇒ a loose step (leave units).
+      let targetUnitId: string | null = null;
+      if (preMove.length > 0) {
+        let bestSize = Number.POSITIVE_INFINITY;
+        for (const unit of units) {
+          const members = new Set((unit.componentNodeIds ?? []) as string[]);
+          if (
+            preMove.every((nodeId) => members.has(nodeId)) &&
+            members.size < bestSize
+          ) {
+            bestSize = members.size;
+            targetUnitId = unit.id;
+          }
+        }
+      }
+
+      for (const unit of units) {
+        const members = new Set((unit.componentNodeIds ?? []) as string[]);
+        let changed = false;
+        // move/remove: a component leaves every unit it was in (units stay
+        // disjoint; a pure remove just unassigns it)…
+        if (data.mode === "move" || data.mode === "remove") {
+          for (const nodeId of moving)
+            if (members.delete(nodeId)) changed = true;
+        }
+        // …and joins the unit its new step installs.
+        if (unit.id === targetUnitId) {
+          for (const nodeId of moving)
+            if (!members.has(nodeId)) {
+              members.add(nodeId);
+              changed = true;
+            }
+        }
+        if (changed) {
+          await trx
+            .updateTable("assemblyUnit")
+            .set({
+              componentNodeIds: [...members],
+              updatedBy: data.updatedBy,
+              updatedAt: now
+            })
+            .where("id", "=", unit.id)
+            .where("companyId", "=", data.companyId)
+            .execute();
+        }
+      }
+    }
+  });
 }
 
 async function getNextStepSortOrder(
@@ -5104,44 +5372,61 @@ export async function autoMatchAssemblyComponents(
   }
 
   // Quantity fallback: a still-unmatched part whose instance count equals
-  // exactly one still-unmatched BOM line's quantity
+  // exactly one still-unmatched BOM line's quantity. Index the unmatched groups
+  // and BOM lines by count once (instead of rescanning both per group), and
+  // prune the buckets as matches land so the "exactly one" checks stay O(1).
+  const unmatchedGroupsByCount = new Map<number, string[]>();
   for (const [hash, group] of componentGroups) {
     if (matchedHashes.has(hash)) continue;
-    const candidates = bom.filter(
-      (material) =>
-        !matchedItems.has(material.itemId) &&
-        Math.round(material.quantity) === group.count
-    );
-    const sameCountComponents = [...componentGroups.entries()].filter(
-      ([otherHash, other]) =>
-        !matchedHashes.has(otherHash) && other.count === group.count
-    );
-    const candidate = candidates[0];
-    if (
-      candidates.length === 1 &&
-      sameCountComponents.length === 1 &&
-      candidate
-    ) {
+    const bucket = unmatchedGroupsByCount.get(group.count);
+    if (bucket) bucket.push(hash);
+    else unmatchedGroupsByCount.set(group.count, [hash]);
+  }
+  const unmatchedBomByCount = new Map<number, string[]>();
+  for (const material of bom) {
+    if (matchedItems.has(material.itemId)) continue;
+    const count = Math.round(material.quantity);
+    const bucket = unmatchedBomByCount.get(count);
+    if (bucket) bucket.push(material.itemId);
+    else unmatchedBomByCount.set(count, [material.itemId]);
+  }
+  for (const [hash, group] of componentGroups) {
+    if (matchedHashes.has(hash)) continue;
+    const groupBucket = unmatchedGroupsByCount.get(group.count) ?? [];
+    const bomBucket = unmatchedBomByCount.get(group.count) ?? [];
+    const candidateItemId = bomBucket[0];
+    if (groupBucket.length === 1 && bomBucket.length === 1 && candidateItemId) {
       matchedHashes.add(hash);
-      matchedItems.add(candidate.itemId);
+      matchedItems.add(candidateItemId);
+      unmatchedGroupsByCount.set(group.count, []);
+      unmatchedBomByCount.set(group.count, []);
       accepted.push({
         geometryHash: hash,
-        itemId: candidate.itemId,
+        itemId: candidateItemId,
         score: 0,
         confidence: "low"
       });
     }
   }
 
-  for (const suggestion of accepted) {
-    await upsertAssemblyComponentMapping(client, {
-      modelUploadId: instruction.data.modelUploadId,
-      geometryHash: suggestion.geometryHash,
-      itemId: suggestion.itemId,
-      confidence: suggestion.confidence,
-      companyId: args.companyId,
-      createdBy: args.userId
-    });
+  // One bulk upsert instead of a round-trip per accepted mapping — this runs on
+  // the first-generation critical path. Same conflict target as the single-row
+  // helper (upsertAssemblyComponentMapping).
+  if (accepted.length > 0) {
+    const now = new Date().toISOString();
+    await client.from("assemblyComponentMapping").upsert(
+      accepted.map((suggestion) => ({
+        modelUploadId: instruction.data.modelUploadId,
+        geometryHash: suggestion.geometryHash,
+        itemId: suggestion.itemId,
+        confidence: suggestion.confidence,
+        companyId: args.companyId,
+        createdBy: args.userId,
+        updatedBy: args.userId,
+        updatedAt: now
+      })),
+      { onConflict: "modelUploadId,geometryHash" }
+    );
   }
 
   return {
@@ -5157,7 +5442,7 @@ export async function autoMatchAssemblyComponents(
 }
 
 type GenerateStepsResult =
-  | { ok: true; created: number }
+  | { ok: true; created: number; unmappedComponentCount: number }
   | {
       ok: false;
       reason: "no-model" | "no-plan" | "steps-exist" | "steps-locked" | "error";
@@ -5252,11 +5537,77 @@ export async function generateAssemblyStepsFromPlan(
     return { ok: false, reason: "error", message: "The plan has no parts" };
   }
 
-  // Bake an occlusion-aware camera per step: an unobstructed view of the step's
-  // components on their motion path, given only the components already animated
-  // by earlier steps. Falls back to the viewer's live framing (camera: null)
-  // when the graph is unavailable.
-  const cameras = graphIndex ? computeStepCameras(groups, graphIndex) : [];
+  // Materialize planner-DETECTED groups (id "swarm:<host>" — e.g. a populated
+  // PCB's detail swarm) as assemblyUnit rows so the Components tab shows them
+  // like authored units, editable through the same UI. Caller-unit groups
+  // already ARE rows. Best-effort: a failure here must not block step generation.
+  //
+  // This is a SYSTEM/derived-data write (reflecting the plan), not a user
+  // creating a unit — so the generate route passes a bypassRls (service-role)
+  // `client`. The assemblyUnit INSERT/DELETE RLS policies require
+  // `production_create`/`production_delete`, but generate only authorizes
+  // `production_update`; through a plain RLS client the write silently no-ops
+  // (steps get built, units never do). Scoped to companyId, so it's tenant-safe.
+  const detectedUnits = Object.entries(plan.groups ?? {})
+    .filter(([groupId]) => groupId.startsWith("swarm:"))
+    .map(([groupId, group]) => ({
+      modelUploadId,
+      name: group.name ?? "Detected group",
+      componentNodeIds: group.componentNodeIds,
+      sourceGroupId: groupId,
+      companyId: args.companyId,
+      createdBy: args.userId
+    }));
+  if (args.mode === "regenerate") {
+    // Fresh regenerate: the auto-units were deliberately NOT deleted before the
+    // plan (a delete-then-failed-re-plan would strand the model ungrouped).
+    // Swap them HERE, atomically with the just-rebuilt steps — drop the old auto
+    // rows and insert the freshly detected ones so new detection (absorption
+    // etc.) wins. If detection now finds no swarm, they clear (the steps don't
+    // group it either — consistent).
+    const dropped = await client
+      .from("assemblyUnit")
+      .delete()
+      .eq("modelUploadId", modelUploadId)
+      .eq("companyId", args.companyId)
+      .not("sourceGroupId", "is", null);
+    if (dropped.error) {
+      logger.error("Failed to clear detected assembly units", {
+        error: dropped.error
+      });
+    }
+    if (detectedUnits.length > 0) {
+      const inserted = await client.from("assemblyUnit").insert(detectedUnits);
+      if (inserted.error) {
+        logger.error("Failed to materialize detected assembly units", {
+          error: inserted.error
+        });
+      }
+    }
+  } else if (detectedUnits.length > 0) {
+    // First generation: DO NOTHING on conflict — once materialized the row
+    // belongs to the user (renames/member edits survive).
+    const materialized = await client
+      .from("assemblyUnit")
+      .upsert(detectedUnits, {
+        onConflict: "modelUploadId,sourceGroupId",
+        ignoreDuplicates: true
+      });
+    if (materialized.error) {
+      logger.error("Failed to materialize detected assembly units", {
+        error: materialized.error
+      });
+    }
+  }
+
+  // Authored subassembly units name their steps; the rest derive a human title
+  // from the components (same `describeStep` the viewer/explorer render), so the
+  // title is real editable data instead of a render-time fallback.
+  const units = await getAssemblyUnits(client, modelUploadId);
+  const namedUnits = (units.data ?? []).map((unit) => ({
+    name: unit.name,
+    componentNodeIds: unit.componentNodeIds ?? []
+  }));
 
   const rows = groups.map((group, index) => {
     const motion = motionSchema.safeParse(group.motion);
@@ -5265,14 +5616,40 @@ export async function generateAssemblyStepsFromPlan(
       sortOrder: index + 1,
       // A pre-grouped unit (e.g. a purchased PCB) titles its step with the
       // unit name; ungrouped steps derive their title from their parts.
-      title: group.name ?? null,
+      title:
+        group.name ??
+        describeStep(
+          {
+            title: null,
+            componentNodeIds: group.componentNodeIds,
+            fastener: null
+          },
+          graphIndex,
+          namedUnits
+        ) ??
+        null,
       componentNodeIds: group.componentNodeIds,
       motion: (motion.success ? motion.data : { type: "none" }) as Json,
-      camera: (cameras[index] ?? null) as Json | null,
-      warnings:
-        group.blockedBy.length > 0
-          ? ({ flagged: true, blockedBy: group.blockedBy } as Json)
-          : null,
+      // Planner-baked view direction (mesh-precise sight lines); the viewer
+      // applies it with live framing — target, distance, frustum fit at the
+      // real viewport aspect. Manual "Set view" poses replace this wholesale.
+      camera: (group.viewDirection
+        ? { source: "plan", direction: group.viewDirection }
+        : null) as Json | null,
+      warnings: ((): Json | null => {
+        const w: Record<string, Json> = {};
+        if (group.blockedBy.length > 0) {
+          w.flagged = true;
+          w.blockedBy = group.blockedBy;
+        }
+        if (group.needsSupport) {
+          w.needsSupport = true;
+        }
+        return Object.keys(w).length > 0 ? (w as Json) : null;
+      })(),
+      // Parallel-buildable wave (steps sharing one have no ordering constraint);
+      // null for cycle-affected steps. Informational — sortOrder still governs.
+      buildWave: group.wave ?? null,
       planConfidence: group.confidence,
       status: "Review" as const,
       companyId: args.companyId,
@@ -5290,8 +5667,21 @@ export async function generateAssemblyStepsFromPlan(
 
   // Seed each step's materials from the model's component→BOM mappings —
   // best-effort; generation succeeds regardless.
+  let unmappedComponentCount = 0;
   if (graphIndex && insert.data?.length) {
-    const mappings = await getAssemblyComponentMappings(client, modelUploadId);
+    let mappings = await getAssemblyComponentMappings(client, modelUploadId);
+    // First generation usually has no mappings yet. Rather than silently seed
+    // nothing (and leave the user to discover "Match BOM"), auto-match once so
+    // steps come out with their materials populated. Best-effort: a missing BOM
+    // or a match failure just leaves mappings empty and the warning below fires.
+    if ((mappings.data ?? []).length === 0) {
+      await autoMatchAssemblyComponents(client, {
+        assemblyInstructionId: args.assemblyInstructionId,
+        companyId: args.companyId,
+        userId: args.userId
+      });
+      mappings = await getAssemblyComponentMappings(client, modelUploadId);
+    }
     const itemIdByGeometryHash = new Map(
       (mappings.data ?? []).map((mapping) => [
         mapping.geometryHash,
@@ -5308,9 +5698,18 @@ export async function generateAssemblyStepsFromPlan(
         await insertAssemblyStepMaterialSeeds(client, seeds, args);
       }
     }
+    // Surface how many distinct geometry groups still have no BOM item, so the
+    // route can nudge the user to Match BOM instead of a silent gap.
+    const allNodeIds = insert.data.flatMap(
+      (step) => step.componentNodeIds ?? []
+    );
+    unmappedComponentCount = groupComponentNodeIds(
+      allNodeIds,
+      graphIndex
+    ).filter((group) => !itemIdByGeometryHash.has(group.key)).length;
   }
 
-  return { ok: true, created: rows.length };
+  return { ok: true, created: rows.length, unmappedComponentCount };
 }
 
 /**

@@ -1418,7 +1418,12 @@ export async function getWarehouseTransferLines(
 
 export async function insertManualInventoryAdjustment(
   client: SupabaseClient<Database>,
-  inventoryAdjustment: z.infer<typeof inventoryAdjustmentValidator> & {
+  // `requiresSerialTracking` is a form-only flag for the validator's serial
+  // quantity guard — the route strips it before calling this.
+  inventoryAdjustment: Omit<
+    z.infer<typeof inventoryAdjustmentValidator>,
+    "requiresSerialTracking"
+  > & {
     companyId: string;
     createdBy: string;
   }
@@ -1651,19 +1656,63 @@ export async function insertManualInventoryAdjustment(
         .select("*")
         .single();
     }
-    // No serial number — fall back to legacy (untracked) stock
-    const legacyQty =
-      storageUnitQuantities?.data?.find(
-        (q) =>
-          q.trackedEntityId == null && q.storageUnitId == data.storageUnitId
-      )?.quantity ?? 0;
-    if (data.quantity > legacyQty) {
+    // No serial number provided. Prefer untracked (legacy) stock in this bin.
+    const legacyRow = storageUnitQuantities?.data?.find(
+      (q) => q.trackedEntityId == null && q.storageUnitId == data.storageUnitId
+    );
+    if (legacyRow) {
+      const legacyQty = legacyRow.quantity ?? 0;
+      if (data.quantity > legacyQty) {
+        return { error: "Insufficient quantity for negative adjustment" };
+      }
+      return client
+        .from("itemLedger")
+        .insert([
+          { ...data, trackedEntityId: null, quantity: -Math.abs(data.quantity) }
+        ])
+        .select("*")
+        .single();
+    }
+
+    // No untracked stock in the bin — resolve a tracked entity sitting in the
+    // same storage unit so a negative adjustment can decrement identifiable
+    // tracked stock (e.g. serial/batch entities created without a serial number,
+    // adjusted via the "Update Inventory" button where no trackedEntityId is
+    // pre-selected). Ambiguous when more than one entity holds stock there.
+    const trackedRowsInUnit = (storageUnitQuantities?.data ?? []).filter(
+      (q) =>
+        q.trackedEntityId != null &&
+        q.storageUnitId == data.storageUnitId &&
+        (q.quantity ?? 0) > 0
+    );
+    if (trackedRowsInUnit.length === 0) {
       return { error: "Insufficient quantity for negative adjustment" };
     }
+    if (trackedRowsInUnit.length > 1) {
+      return {
+        error:
+          "Multiple tracked entities in this storage unit — select a specific row to adjust"
+      };
+    }
+    const targetRow = trackedRowsInUnit[0];
+    const targetQty = targetRow.quantity ?? 0;
+    if (data.quantity > targetQty) {
+      return { error: "Insufficient quantity for negative adjustment" };
+    }
+    const targetId = targetRow.trackedEntityId as string;
+    const entityUpdate = await client
+      .from("trackedEntity")
+      .update({ quantity: targetQty - data.quantity })
+      .eq("id", targetId);
+    if (entityUpdate.error) return entityUpdate;
     return client
       .from("itemLedger")
       .insert([
-        { ...data, trackedEntityId: null, quantity: -Math.abs(data.quantity) }
+        {
+          ...data,
+          trackedEntityId: targetId,
+          quantity: -Math.abs(data.quantity)
+        }
       ])
       .select("*")
       .single();
@@ -1807,7 +1856,7 @@ export async function getInventoryCountLines(
   let query = client
     .from("inventoryCountLine")
     .select(
-      "*, item!inner(name, readableIdWithRevision, type, unitOfMeasureCode, thumbnailPath)",
+      "*, item!inner(name, readableIdWithRevision, type, itemTrackingType, unitOfMeasureCode, thumbnailPath)",
       {
         count: "exact"
       }
@@ -1860,6 +1909,24 @@ export async function getInventoryCountLineSummary(
     uncounted: uncounted.count ?? 0,
     variances: variances.count ?? 0
   };
+}
+
+// Every item-ledger adjustment a count posted (including rectify corrections),
+// found via the movement's `documentType`/`documentId` back-reference. Used to
+// show a posted count what it actually did to inventory. Chronological.
+export async function getInventoryCountMovements(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  inventoryCountId: string
+) {
+  return client
+    .from("itemLedgers")
+    .select("*")
+    .eq("companyId", companyId)
+    .eq("documentType", "Inventory Count")
+    .eq("documentId", inventoryCountId)
+    .order("createdAt", { ascending: true })
+    .order("entryNumber", { ascending: true });
 }
 
 // Counts are created once and never edited as a header (only their lines and
@@ -2027,6 +2094,130 @@ export async function generateInventoryCountLines(
   });
 }
 
+// Refresh a count's frozen `systemQuantity` to the current live on-hand WITHOUT
+// touching the entered `countedQuantity`. Used by Rectify: reopening a Posted
+// count re-baselines the snapshot to now, so re-posting applies the corrected
+// count on top of current stock. A full regenerate would wipe the counts; this
+// only moves the baseline forward. The calling route guards status; re-stamps
+// `snapshotAt`.
+type ResnapshotInventoryCountArgs = {
+  inventoryCountId: string;
+  companyId: string;
+  locationId: string;
+  updatedBy: string;
+};
+
+// Re-baseline each line's `systemQuantity` to fresh live on-hand, inside a
+// caller-supplied transaction. A `Transaction` is a `Kysely`, so callers pass
+// `trx`; this never opens its own transaction, letting a caller (rectify) bundle
+// it with a status guard + status flip atomically.
+async function resnapshotInventoryCountLinesInTrx(
+  trx: Kysely<KyselyDatabase>,
+  args: ResnapshotInventoryCountArgs
+) {
+  const { inventoryCountId, companyId, locationId, updatedBy } = args;
+
+  const bucketKey = (
+    itemId: string,
+    storageUnitId: string | null,
+    trackedEntityId: string | null
+  ) => `${itemId}|${storageUnitId ?? ""}|${trackedEntityId ?? ""}`;
+
+  const lines = await trx
+    .selectFrom("inventoryCountLine")
+    .select(["id", "itemId", "storageUnitId", "trackedEntityId"])
+    .where("inventoryCountId", "=", inventoryCountId)
+    .where("companyId", "=", companyId)
+    .execute();
+
+  // Fresh status-aware on-hand for the location, grouped by bucket (matches
+  // `generateInventoryCountLines` / `get_inventory_quantities`).
+  const onHandRows = await trx
+    .selectFrom("itemLedger")
+    .select(["itemId", "storageUnitId", "trackedEntityId"])
+    .select((eb) => eb.fn.sum<number>("quantity").as("quantity"))
+    .where("companyId", "=", companyId)
+    .where("locationId", "=", locationId)
+    .where((eb) =>
+      eb.or([
+        eb("trackedEntityStatus", "is", null),
+        eb("trackedEntityStatus", "!=", "Rejected")
+      ])
+    )
+    .groupBy(["itemId", "storageUnitId", "trackedEntityId"])
+    .execute();
+
+  const onHandByBucket = new Map(
+    onHandRows.map((r) => [
+      bucketKey(r.itemId, r.storageUnitId, r.trackedEntityId),
+      Number(r.quantity ?? 0)
+    ])
+  );
+
+  const now = new Date().toISOString();
+  for (const line of lines) {
+    await trx
+      .updateTable("inventoryCountLine")
+      .set({
+        systemQuantity:
+          onHandByBucket.get(
+            bucketKey(line.itemId, line.storageUnitId, line.trackedEntityId)
+          ) ?? 0,
+        updatedBy,
+        updatedAt: now
+      })
+      .where("id", "=", line.id)
+      .where("companyId", "=", companyId)
+      .execute();
+  }
+
+  await trx
+    .updateTable("inventoryCount")
+    .set({ snapshotAt: now, updatedBy, updatedAt: now })
+    .where("id", "=", inventoryCountId)
+    .where("companyId", "=", companyId)
+    .execute();
+
+  return lines.length;
+}
+
+// Rectify a posted count in one transaction: lock the row, verify it is still
+// Posted, re-baseline the lines, and flip it back to Draft — all-or-nothing.
+// This closes the race the previous two-step route left open (a count could be
+// re-snapshotted while remaining Posted if the second write failed or a
+// concurrent request slipped in between). Throws on rollback; the route maps it
+// to a flash. Kysely bypasses RLS — authorize at the route first.
+export async function rectifyInventoryCount(
+  db: Kysely<KyselyDatabase>,
+  args: ResnapshotInventoryCountArgs
+) {
+  const { inventoryCountId, companyId, updatedBy } = args;
+  return db.transaction().execute(async (trx) => {
+    const locked = await trx
+      .selectFrom("inventoryCount")
+      .select(["id", "status"])
+      .where("id", "=", inventoryCountId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+
+    if (!locked) throw new Error("Inventory count not found");
+    if (locked.status !== "Posted") {
+      throw new Error("Only a posted count can be rectified");
+    }
+
+    await resnapshotInventoryCountLinesInTrx(trx, args);
+
+    await trx
+      .updateTable("inventoryCount")
+      .set({ status: "Draft", updatedBy, updatedAt: new Date().toISOString() })
+      .where("id", "=", inventoryCountId)
+      .where("companyId", "=", companyId)
+      .where("status", "=", "Posted")
+      .execute();
+  });
+}
+
 // Persist a single line's counted quantity. Uses Kysely so the Draft-only guard
 // is part of the same statement: the EXISTS subquery checks the parent count is
 // still Draft *atomically* with the write, closing the TOCTOU window a separate
@@ -2067,6 +2258,8 @@ export async function updateInventoryCountLine(
             "inventoryCountLine.inventoryCountId"
           )
           .where("inventoryCount.companyId", "=", companyId)
+          // Counted quantities are entered while the count is Draft; once it
+          // moves on (Pending/Posted) the lines are no longer writable.
           .where("inventoryCount.status", "=", "Draft")
       )
     )

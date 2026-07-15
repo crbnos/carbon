@@ -113,6 +113,7 @@
     "./Chart": "./src/Chart.tsx",
     "./Carousel": "./src/Carousel.tsx",
     "./Editor": "./src/Editor/index.ts",
+    "./ErrorBoundary": "./src/ErrorBoundary/index.ts",
     "./FunnelChart": "./src/FunnelChart.tsx",
     "./HTML": "./src/HTML.tsx",
     "./RichText": "./src/RichText/index.ts"

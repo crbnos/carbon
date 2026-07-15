@@ -5,6 +5,7 @@ import { trigger } from "@carbon/jobs";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { getAssemblyModelState } from "~/modules/production";
+import { isAssemblerServiceHealthy } from "~/modules/production/production.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -50,6 +51,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
             : modelState === "converted"
               ? "The model is already converted"
               : "This model cannot be converted (only STEP files are supported)"
+        )
+      )
+    );
+  }
+
+  if (!(await isAssemblerServiceHealthy())) {
+    return data(
+      { success: false },
+      await flash(
+        request,
+        error(
+          null,
+          "The geometry service is unavailable — model conversion can't run right now."
         )
       )
     );

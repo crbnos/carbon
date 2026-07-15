@@ -195,10 +195,10 @@ export const MES_URL =
   getEnv("MES_URL", { isRequired: false, isSecret: false }) ??
   "https://mes.carbon.ms";
 
-export const GEOMETRY_SERVICE_URL = getEnv("GEOMETRY_SERVICE_URL", {
+export const ASSEMBLER_SERVICE_URL = getEnv("ASSEMBLER_SERVICE_URL", {
   isRequired: false
 });
-export const GEOMETRY_SERVICE_API_KEY = getEnv("GEOMETRY_SERVICE_API_KEY", {
+export const ASSEMBLER_SERVICE_API_KEY = getEnv("ASSEMBLER_SERVICE_API_KEY", {
   isRequired: false,
   isSecret: true
 });

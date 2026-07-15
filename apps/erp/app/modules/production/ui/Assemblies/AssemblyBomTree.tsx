@@ -12,6 +12,8 @@ import {
   Modal,
   ModalBody,
   ModalContent,
+  ModalDescription,
+  ModalFooter,
   ModalHeader,
   ModalTitle,
   Popover,
@@ -27,7 +29,7 @@ import type { AssemblyGraphIndex, ComponentGroup } from "@carbon/viewer";
 import { describeStep, groupComponentNodeIds } from "@carbon/viewer";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import type { MouseEvent } from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   LuArrowDownAZ,
   LuArrowDownWideNarrow,
@@ -37,6 +39,8 @@ import {
   LuCirclePlus,
   LuEye,
   LuEyeOff,
+  LuListPlus,
+  LuListX,
   LuMerge,
   LuPencil,
   LuSearch,
@@ -175,6 +179,13 @@ export default function AssemblyBomTree({
     [componentMappings]
   );
 
+  // itemId → BOM line, so each ComponentRow resolves its mapped line in O(1)
+  // instead of a linear scan of every BOM material per row per render.
+  const bomByItemId = useMemo(
+    () => new Map(bomMaterials.map((material) => [material.itemId, material])),
+    [bomMaterials]
+  );
+
   const [sortMode, setSortMode] = useState<SortMode>("count");
   const [search, setSearch] = useState("");
   // Selection and visibility are tracked per instance (nodeId), so a group with
@@ -222,6 +233,8 @@ export default function AssemblyBomTree({
           : { ...group, nodeIds, count: nodeIds.length }
       );
     }
+    // Every mode falls back to alphabetical: count sorts by instance count then
+    // by name so equal-count components stay A→Z, and alpha is pure name order.
     if (sortMode === "count") {
       groups.sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
     } else {
@@ -292,16 +305,23 @@ export default function AssemblyBomTree({
         if (existing) existing.nodeIds.push(nodeId);
         else byGroup.set(group.key, { group, nodeIds: [nodeId] });
       }
-      map.set(unit.id, [...byGroup.values()]);
+      map.set(
+        unit.id,
+        [...byGroup.values()].sort((a, b) =>
+          a.group.name.localeCompare(b.group.name)
+        )
+      );
     }
     return map;
   }, [units, graphIndex]);
 
   const visibleUnits = useMemo(() => {
-    if (!normalizedSearch) return units;
-    return units.filter((unit) =>
-      unit.name.toLowerCase().includes(normalizedSearch)
-    );
+    const filtered = normalizedSearch
+      ? units.filter((unit) =>
+          unit.name.toLowerCase().includes(normalizedSearch)
+        )
+      : units;
+    return [...filtered].sort((a, b) => a.name.localeCompare(b.name));
   }, [units, normalizedSearch]);
 
   // Flatten subassemblies and component groups (each with their expanded children)
@@ -337,6 +357,94 @@ export default function AssemblyBomTree({
   }, [rows, expandedKeys, visibleUnits, unitChildren]);
 
   const hasSelection = selectedNodeIds.length > 0;
+
+  // Assign the current selection to an existing step. `move` strips it from the
+  // steps it's already on; `duplicate` leaves those. When the selection is
+  // already used elsewhere we ask which — otherwise assign straight away.
+  const reassignFetcher = useFetcher<{ success: boolean }>();
+  const [assignPickerOpen, setAssignPickerOpen] = useState(false);
+  const [pendingAssign, setPendingAssign] = useState<{
+    targetStepId: string;
+    targetTitle: string;
+    conflictTitles: string[];
+  } | null>(null);
+
+  const stepList = useMemo(
+    () =>
+      steps.map((step, index) => ({
+        id: step.id,
+        index,
+        title:
+          describeStep(toViewerStep(step), graphIndex, namedUnits) ??
+          step.title ??
+          "Untitled step"
+      })),
+    [steps, graphIndex, namedUnits]
+  );
+
+  const submitAssign = useCallback(
+    (targetStepId: string, mode: "move" | "duplicate") => {
+      const formData = new FormData();
+      formData.set("targetStepId", targetStepId);
+      formData.set("componentNodeIds", JSON.stringify(selectedNodeIds));
+      formData.set("mode", mode);
+      reassignFetcher.submit(formData, {
+        method: "post",
+        action: path.to.assemblyInstructionStepComponentsReassign(id)
+      });
+    },
+    [reassignFetcher, id, selectedNodeIds]
+  );
+
+  // Unassign the selection from every step (no target). Enabled only when the
+  // selection is actually installed on some step.
+  const selectionOnSomeStep = useMemo(
+    () =>
+      steps.some((step) =>
+        (step.componentNodeIds ?? []).some((nodeId) => selectedSet.has(nodeId))
+      ),
+    [steps, selectedSet]
+  );
+  const submitRemove = useCallback(() => {
+    setAssignPickerOpen(false);
+    const formData = new FormData();
+    formData.set("componentNodeIds", JSON.stringify(selectedNodeIds));
+    formData.set("mode", "remove");
+    reassignFetcher.submit(formData, {
+      method: "post",
+      action: path.to.assemblyInstructionStepComponentsReassign(id)
+    });
+  }, [reassignFetcher, id, selectedNodeIds]);
+
+  const onPickAssignStep = useCallback(
+    (targetStepId: string) => {
+      setAssignPickerOpen(false);
+      // Steps (other than the target) that already install any selected instance.
+      const conflictTitles = stepList
+        .filter(
+          (entry) =>
+            entry.id !== targetStepId &&
+            (steps
+              .find((step) => step.id === entry.id)
+              ?.componentNodeIds?.some((nodeId) => selectedSet.has(nodeId)) ??
+              false)
+        )
+        .map((entry) => `${entry.index + 1}. ${entry.title}`);
+      if (conflictTitles.length === 0) {
+        // Not on any other step — nothing to move, just add it here.
+        submitAssign(targetStepId, "duplicate");
+        return;
+      }
+      setPendingAssign({
+        targetStepId,
+        targetTitle:
+          stepList.find((entry) => entry.id === targetStepId)?.title ??
+          "this step",
+        conflictTitles
+      });
+    },
+    [stepList, steps, selectedSet, submitAssign]
+  );
 
   // Push the hidden instance set up to the viewer.
   useEffect(() => {
@@ -482,6 +590,68 @@ export default function AssemblyBomTree({
               </TooltipTrigger>
               <TooltipContent>Match components to BOM items</TooltipContent>
             </Tooltip>
+          )}
+          {hasSelection && canAddStep && stepList.length > 0 && (
+            <Popover open={assignPickerOpen} onOpenChange={setAssignPickerOpen}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <PopoverTrigger asChild>
+                    <IconButton
+                      aria-label="Add selection to a step"
+                      icon={<LuListPlus />}
+                      variant="ghost"
+                      size="sm"
+                      isDisabled={reassignFetcher.state !== "idle"}
+                    />
+                  </PopoverTrigger>
+                </TooltipTrigger>
+                <TooltipContent>Add to step</TooltipContent>
+              </Tooltip>
+              <PopoverContent
+                align="end"
+                className="w-64 p-1"
+                onWheel={(e) => e.stopPropagation()}
+                onTouchMove={(e) => e.stopPropagation()}
+              >
+                <p className="px-2 py-1.5 text-xxs font-medium uppercase tracking-wide text-muted-foreground">
+                  Add {selectedNodeIds.length} to step
+                </p>
+                <ul className="max-h-64 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
+                  {stepList.map((entry) => (
+                    <li key={entry.id}>
+                      <button
+                        type="button"
+                        className="flex w-full items-center gap-2 truncate rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent"
+                        title={entry.title}
+                        onClick={() => onPickAssignStep(entry.id)}
+                      >
+                        <span className="text-muted-foreground tabular-nums">
+                          {entry.index + 1}.
+                        </span>
+                        <span className="min-w-0 flex-1 truncate">
+                          {entry.title}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+                {selectionOnSomeStep && (
+                  <>
+                    <div className="my-1 h-px bg-border" />
+                    <button
+                      type="button"
+                      className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm text-destructive hover:bg-destructive/10"
+                      onClick={submitRemove}
+                    >
+                      <LuListX className="size-4 shrink-0" />
+                      <span className="min-w-0 flex-1 truncate">
+                        Remove from steps
+                      </span>
+                    </button>
+                  </>
+                )}
+              </PopoverContent>
+            </Popover>
           )}
           {hasSelection && canGroup && (
             <Tooltip>
@@ -652,6 +822,7 @@ export default function AssemblyBomTree({
                     usage={stepUsage.get(group.key) ?? []}
                     mapping={mappingsByHash.get(group.key) ?? null}
                     bomMaterials={bomMaterials}
+                    bomByItemId={bomByItemId}
                     canMap={canMap}
                     modelUploadId={modelUploadId}
                     instructionId={id}
@@ -749,6 +920,54 @@ export default function AssemblyBomTree({
             );
           }}
         />
+      )}
+      {pendingAssign && (
+        <Modal
+          open
+          onOpenChange={(open) => {
+            if (!open) setPendingAssign(null);
+          }}
+        >
+          <ModalContent>
+            <ModalHeader>
+              <ModalTitle>Move or add a copy?</ModalTitle>
+              <ModalDescription>
+                {selectedNodeIds.length} component
+                {selectedNodeIds.length === 1 ? " is" : "s are"} already used in{" "}
+                {pendingAssign.conflictTitles.join(", ")}. Move{" "}
+                {selectedNodeIds.length === 1 ? "it" : "them"} to{" "}
+                {pendingAssign.targetTitle}, or keep a copy on both?
+              </ModalDescription>
+            </ModalHeader>
+            <ModalFooter>
+              <Button
+                variant="secondary"
+                onClick={() => setPendingAssign(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="secondary"
+                isDisabled={reassignFetcher.state !== "idle"}
+                onClick={() => {
+                  submitAssign(pendingAssign.targetStepId, "duplicate");
+                  setPendingAssign(null);
+                }}
+              >
+                Add a copy
+              </Button>
+              <Button
+                isDisabled={reassignFetcher.state !== "idle"}
+                onClick={() => {
+                  submitAssign(pendingAssign.targetStepId, "move");
+                  setPendingAssign(null);
+                }}
+              >
+                Move here
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
       )}
     </div>
   );
@@ -849,6 +1068,15 @@ function UnitListRow({
       <span className="min-w-0 flex-1 truncate font-medium" title={unit.name}>
         {unit.name}
       </span>
+      {unit.sourceGroupId && (
+        <Badge
+          variant="outline"
+          className="text-muted-foreground"
+          title="Detected by the motion planner"
+        >
+          Auto
+        </Badge>
+      )}
       <Badge variant="secondary" className="tabular-nums">
         ×{memberCount}
       </Badge>
@@ -1228,6 +1456,7 @@ function ComponentRow({
   usage,
   mapping,
   bomMaterials,
+  bomByItemId,
   canMap,
   modelUploadId,
   instructionId,
@@ -1244,6 +1473,7 @@ function ComponentRow({
   usage: { stepId: string; index: number; title: string }[];
   mapping: AssemblyComponentMapping | null;
   bomMaterials: FlattenedBomMaterial[];
+  bomByItemId: Map<string, FlattenedBomMaterial>;
   canMap: boolean;
   modelUploadId: string | null;
   instructionId: string;
@@ -1253,9 +1483,7 @@ function ComponentRow({
   onToggleExpand: () => void;
   onSelectStep: (stepId: string) => void;
 }) {
-  const bomLine = mapping
-    ? bomMaterials.find((material) => material.itemId === mapping.itemId)
-    : undefined;
+  const bomLine = mapping ? bomByItemId.get(mapping.itemId) : undefined;
   const quantityMismatch =
     bomLine !== undefined && Math.round(bomLine.quantity) !== group.count;
   const allHidden = hidden === "all";

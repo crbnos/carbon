@@ -229,59 +229,76 @@ export function spawnApps(opts: {
     });
 }
 
-export function spawnGeometry(opts: {
+const ASSEMBLER_PREFIX = pc.yellow(pc.bold("asm | "));
+
+/**
+ * Fail fast (before spawning) when the assembler is selected but its one-time
+ * native OCCT dependency isn't built. `cargo run --release` would otherwise
+ * either fail deep in a cc/link error or trigger a ~30-min build — neither is
+ * what a plain `crbn up` should do. We never auto-build it: the user runs the
+ * OCCT script once, then the assembler is available.
+ */
+export function assertAssemblerDepsBuilt(): void {
+  const prefix =
+    process.env.OCCT_PREFIX ||
+    join(homedir(), ".cache", "carbon-occt", "8.0.0-p1");
+  if (!existsSync(prefix)) {
+    throw new Error(
+      `Assembler selected, but its OCCT dependency isn't built.\n` +
+        `  expected: ${prefix}\n` +
+        `  build it once (~15-30 min): apps/assembler/scripts/build-occt.sh\n` +
+        `  then re-run, or run without the assembler app.`
+    );
+  }
+}
+
+export function spawnAssembler(opts: {
   root: string;
   ports: PortMap;
 }): ExecaChildProcess | null {
   const { root, ports } = opts;
-  const serviceDir = join(root, "services", "geometry");
-  const venvPython = join(serviceDir, ".venv", "bin", "python");
+  const port = ports.PORT_ASSEMBLER;
+  const prefix = ASSEMBLER_PREFIX;
 
-  if (!existsSync(venvPython)) {
-    const prefix = pc.yellow(pc.bold("geo | "));
-    process.stderr.write(
-      `${prefix}${pc.dim("skipped — no .venv (run: cd services/geometry && python3 -m venv .venv && .venv/bin/pip install -e .)")}\n`
-    );
-    return null;
-  }
-
-  const color = pc.yellow;
-  const port = ports.PORT_GEOMETRY;
-
-  // Trust portless's self-signed CA so the service can fetch signed URLs
-  // from the local Supabase storage (served over HTTPS via portless).
-  const caPath = join(homedir(), ".portless", "ca.pem");
-  const caEnv = existsSync(caPath)
-    ? { SSL_CERT_FILE: caPath, REQUESTS_CA_BUNDLE: caPath }
-    : {};
-
-  const child = execa(
-    venvPython,
-    [
-      "-m",
-      "uvicorn",
-      "app.main:app",
-      "--port",
-      String(port),
-      "--host",
-      "127.0.0.1",
-      "--reload"
-    ],
-    {
-      cwd: serviceDir,
-      env: {
-        ...process.env,
-        ...caEnv,
-        GEOMETRY_SERVICE_API_KEY: "dev-local-key",
-        GEOMETRY_DEV_MODE: "true"
-      },
-      reject: false,
-      stdin: "ignore",
-      detached: true
-    }
+  // `cargo run --release` compiles-if-stale then runs, so a Rust change is
+  // picked up on the next `crbn up` (the CLI does not watch/rebuild otherwise).
+  // First build is slow (OCCT/FCL); incremental is quick. Run from the workspace
+  // root so cargo resolves the `assembler` package.
+  const file = "cargo";
+  const args = ["run", "--release", "-p", "assembler"];
+  const cwd = root;
+  // Merge the worktree .env* stack so the assembler shares the same REDIS_URL as
+  // the apps (keys are asm:-prefixed, so sharing the logical DB is safe).
+  const appEnv = spawnAppEnv(root, "assembler");
+  // ASSEMBLER_DEV_MODE=true also disables TLS verification in the service, so
+  // portless's self-signed CA needs no extra trust wiring. Passing
+  // ASSEMBLER_REDIS_URL flips the service to the stateless Redis-backed job +
+  // result store; unset (no worktree REDIS_URL) => in-memory, single-process.
+  const extraEnv: NodeJS.ProcessEnv = {
+    ASSEMBLER_BIND: `127.0.0.1:${port}`,
+    ASSEMBLER_SERVICE_API_KEY: "dev-local-key",
+    ASSEMBLER_DEV_MODE: "true",
+    ...(appEnv.REDIS_URL ? { ASSEMBLER_REDIS_URL: appEnv.REDIS_URL } : {})
+  };
+  process.stderr.write(
+    `${prefix}${pc.dim(
+      appEnv.REDIS_URL
+        ? "cargo run --release (redis store)"
+        : "cargo run --release"
+    )}\n`
   );
 
-  const prefix = color(pc.bold("geo | "));
+  const child = execa(file, args, {
+    cwd,
+    env: {
+      ...appEnv,
+      ...extraEnv
+    },
+    reject: false,
+    stdin: "ignore",
+    detached: true
+  });
+
   const pipe = (
     stream: NodeJS.ReadableStream | null,
     sink: NodeJS.WriteStream

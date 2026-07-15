@@ -1,0 +1,26 @@
+Subject: [PATCH] NCollection_BaseAllocator: per-thread CommonBaseAllocator (freed at thread exit)
+
+The single process-wide CommonBaseAllocator singleton is copied into every
+NCollection container ctor/dtor, so its atomic refcount is a true-sharing
+hotspot: under multithreaded DataExchange (parallel STEP convert) every core
+RMWs the same cache line, capping in-process scaling at ~3.5x on a 10-P-core
+box regardless of jemalloc/mutex changes. A per-thread instance keeps refcount
+traffic core-local (measured 3.5x -> ~8.5x, output bit-identical). The allocator
+is stateless (a malloc wrapper) and handle refcounting keeps each thread's
+instance alive across any cross-thread handoff, so this is semantics-preserving.
+
+Held BY VALUE (not a thread_local raw pointer): a `new occ::handle<...>` per
+thread would leak one Handle + allocator for every worker thread that ever
+touches OCCT. A by-value thread_local Handle runs its destructor at thread exit,
+dropping only that thread's ref — containers that copied the Handle keep the
+allocator alive until their own refs drop, so freeing here is safe (and the main
+thread's instance lives for the whole process as before).
+--- a/src/FoundationClasses/TKernel/NCollection/NCollection_BaseAllocator.cxx
++++ b/src/FoundationClasses/TKernel/NCollection/NCollection_BaseAllocator.cxx
+@@ CommonBaseAllocator
+-  static occ::handle<NCollection_BaseAllocator>* THE_SINGLETON_ALLOC =
+-    new occ::handle<NCollection_BaseAllocator>(new NCollection_BaseAllocator);
+-  return *THE_SINGLETON_ALLOC;
++  static thread_local occ::handle<NCollection_BaseAllocator> THE_SINGLETON_ALLOC(
++    new NCollection_BaseAllocator);
++  return THE_SINGLETON_ALLOC;

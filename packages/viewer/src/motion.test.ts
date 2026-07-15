@@ -12,13 +12,14 @@ import {
   buildStepClip,
   DEFAULT_WAYPOINT_DISTANCE,
   displayMotionForStep,
-  exaggerateMotion,
   type MotionKeyframes,
   motionDuration,
   motionToKeyframes,
   motionToWaypoints,
   motionTravelDistance,
+  naturalizeMotion,
   type Pose,
+  resampleEased,
   waypointsToMotion
 } from "./motion";
 import type { AssemblyStep, Motion, Vec3 } from "./types";
@@ -478,32 +479,118 @@ describe("buildStepClip", () => {
   });
 });
 
-describe("exaggerateMotion", () => {
+describe("resampleEased", () => {
+  const straight: MotionKeyframes = {
+    times: [0, 2],
+    positions: [0, 0, 0, 0, 0, 100],
+    quaternions: [0, 0, 0, 1, 0, 0, 0, 1]
+  };
+
+  it("preserves both endpoints and the total duration exactly", () => {
+    const eased = resampleEased(straight);
+    expectVectorClose(positionAt(eased, 0), [0, 0, 0]);
+    expectVectorClose(positionAt(eased, lastIndex(eased)), [0, 0, 100]);
+    expect(eased.times[0]).toBe(0);
+    expect(eased.times[eased.times.length - 1]).toBeCloseTo(2);
+    expectMonotonicTimes(eased);
+  });
+
+  it("accelerates off the start and decelerates into the seat", () => {
+    const eased = resampleEased(straight);
+    // 21 samples → index 5 is u=0.25 (time 0.5), index 15 is u=0.75 (time 1.5)
+    expect(eased.times.length).toBe(21);
+    const early = positionAt(eased, 5)[2] ?? Number.NaN;
+    const late = positionAt(eased, 15)[2] ?? Number.NaN;
+    // slow start: quarter of the way in time, far less than a quarter of the way
+    expect(early).toBeLessThan(10); // easeInOutCubic(0.25)=0.0625 → ~6.25
+    // gentle settle: three quarters through time, most of the distance covered
+    expect(late).toBeGreaterThan(90); // easeInOutCubic(0.75)=0.9375 → ~93.75
+    // symmetric ease keeps the midpoint at the midpoint
+    expect(positionAt(eased, 10)[2] ?? Number.NaN).toBeCloseTo(50);
+  });
+
+  it("leaves a degenerate path unchanged", () => {
+    const single: MotionKeyframes = {
+      times: [0],
+      positions: [1, 2, 3],
+      quaternions: [0, 0, 0, 1]
+    };
+    expect(resampleEased(single)).toBe(single);
+    const zero: MotionKeyframes = {
+      times: [0, 0],
+      positions: [0, 0, 0, 0, 0, 0],
+      quaternions: [0, 0, 0, 1, 0, 0, 0, 1]
+    };
+    expect(resampleEased(zero)).toBe(zero);
+  });
+});
+
+describe("naturalizeMotion", () => {
   const lift = {
     type: "linear",
     direction: [0, 0, -1] as [number, number, number],
     distance: 15
   } as const;
 
-  it("stretches small-component travel to a readable distance", () => {
+  it("floors small-component travel to a readable distance", () => {
     // 20mm bolt in a 1000mm assembly travels at least 2.5x its size
-    const result = exaggerateMotion(lift, 20, 1000);
+    const result = naturalizeMotion(lift, 20, 1000);
     expect(result.type).toBe("linear");
     if (result.type === "linear") {
       expect(result.distance).toBe(50);
     }
   });
 
-  it("leaves large components unchanged", () => {
-    expect(exaggerateMotion(lift, 400, 1000)).toBe(lift);
+  it("caps a long travel to a few of the part's own body-lengths", () => {
+    // 20mm part flying in 500mm → ceiling 3*20 + 5 = 65
+    const long = { ...lift, distance: 500 };
+    const result = naturalizeMotion(long, 20, 1000);
+    if (result.type === "linear") {
+      expect(result.distance).toBe(65);
+    } else {
+      throw new Error("expected linear motion");
+    }
   });
 
-  it("leaves already-long travels unchanged", () => {
-    const long = { ...lift, distance: 200 };
-    expect(exaggerateMotion(long, 20, 1000)).toBe(long);
+  it("caps a large part at the assembly-wide ceiling, not the raw travel", () => {
+    // 400mm part (not small), 2000mm travel. Per-part ceiling is 3*400+5=1205,
+    // but the assembly cap 0.35*1000=350 governs — nothing flies in from
+    // further than a third of the whole assembly, however large the part.
+    const long = { ...lift, distance: 2000 };
+    const result = naturalizeMotion(long, 400, 1000);
+    if (result.type === "linear") {
+      expect(result.distance).toBe(350);
+    } else {
+      throw new Error("expected linear motion");
+    }
   });
 
-  it("scales L segments proportionally", () => {
+  it("keeps a large flat part's drop within the assembly (seal fly-out)", () => {
+    // The SA BCU seal: 166mm diagonal, 288mm L-travel, 196mm assembly. Without
+    // the assembly cap its ceiling is 3*166+5=503, so 288mm passed through and
+    // it flew in from 1.5x the whole assembly.
+    const seal: Motion = {
+      type: "L",
+      segments: [
+        { direction: [1, 0, 0], distance: 122 },
+        { direction: [0, 0, -1], distance: 166 }
+      ]
+    };
+    const result = naturalizeMotion(seal, 166, 196);
+    if (result.type !== "L") throw new Error("expected L motion");
+    const total = result.segments.reduce(
+      (sum, s) => sum + Math.abs(s.distance),
+      0
+    );
+    expect(total).toBeCloseTo(196 * 0.35, 1); // ~68.6mm, a natural drop
+  });
+
+  it("leaves an in-band travel unchanged", () => {
+    const inBand = { ...lift, distance: 55 }; // within [50, 65] for a 20mm part
+    expect(naturalizeMotion(inBand, 20, 1000)).toBe(inBand);
+  });
+
+  it("floors then scales L segments proportionally", () => {
     const motion: Motion = {
       type: "L",
       segments: [
@@ -511,7 +598,7 @@ describe("exaggerateMotion", () => {
         { direction: [0, 0, -1], distance: 4 }
       ]
     };
-    const result = exaggerateMotion(motion, 20, 1000);
+    const result = naturalizeMotion(motion, 20, 1000); // total 10 → floor 50
     if (result.type === "L") {
       const total = result.segments.reduce((sum, s) => sum + s.distance, 0);
       expect(total).toBeCloseTo(50);
@@ -523,9 +610,29 @@ describe("exaggerateMotion", () => {
     }
   });
 
-  it("does not exaggerate none motions", () => {
+  it("caps an over-long L total to the ceiling", () => {
+    const motion: Motion = {
+      type: "L",
+      segments: [
+        { direction: [1, 0, 0], distance: 180 },
+        { direction: [0, 0, -1], distance: 120 }
+      ]
+    };
+    const result = naturalizeMotion(motion, 20, 1000); // total 300 → ceiling 65
+    if (result.type === "L") {
+      const total = result.segments.reduce((sum, s) => sum + s.distance, 0);
+      expect(total).toBeCloseTo(65);
+      expect(
+        result.segments[0]!.distance / result.segments[1]!.distance
+      ).toBeCloseTo(180 / 120);
+    } else {
+      throw new Error("expected L motion");
+    }
+  });
+
+  it("does not touch none motions", () => {
     const none = { type: "none" } as const;
-    expect(exaggerateMotion(none, 20, 1000)).toBe(none);
+    expect(naturalizeMotion(none, 20, 1000)).toBe(none);
   });
 });
 

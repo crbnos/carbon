@@ -24,6 +24,25 @@ export type AssemblyPlanComponent = {
   groupId?: string;
   /** v2: rigidly merged into this component (rides its step) */
   mergedInto?: string;
+  /**
+   * The part's center of mass falls outside the support polygon of the parts
+   * placed below it — it will tip and likely needs a fixture or a second hand.
+   * Diagnostic only.
+   */
+  needsSupport?: boolean;
+  /**
+   * Build wave: longest-path level in the precedence DAG. Components sharing a
+   * wave have no ordering constraint and can be assembled in parallel. Absent
+   * for cycle-affected parts.
+   */
+  wave?: number;
+  /**
+   * Mesh-precise camera direction (unit vector, target→eye) baked by the
+   * planner: sight lines against the real triangles of everything installed
+   * earlier. The viewer applies it with live framing (target, distance,
+   * frustum fit at the real aspect). Optional: absent on older plans.
+   */
+  viewDirection?: [number, number, number];
 };
 
 /**
@@ -46,8 +65,20 @@ export type AssemblyPlan = {
    */
   groups?: Record<
     string,
-    { componentNodeIds: string[]; motion: Motion; name?: string }
+    {
+      componentNodeIds: string[];
+      motion: Motion;
+      name?: string;
+      viewDirection?: [number, number, number];
+    }
   >;
+  /**
+   * v3: planned-body contact graph (body node_id → touching bodies), keyed in
+   * the pre-expansion body space — a member maps to its body via
+   * `components[member].groupId ?? member`. Powers floater-into-neighbor step
+   * folding in {@link buildAssemblyStepGroups}. Optional: absent on older plans.
+   */
+  contacts?: Record<string, string[]>;
   warnings: string[];
 };
 
@@ -83,6 +114,9 @@ export function planMotionForComponents(
     return { motion: first.motion, confidence: first.confidence ?? "low" };
   }
 
+  // Full stringify (not motionKey) — agreement must account for distance and
+  // helix/path params, which motionKey drops. This is a cold plan-gen path, so
+  // the per-entry allocation is not worth trading correctness for.
   const firstKey = JSON.stringify(first.motion);
   const allAgree =
     entries.length === componentNodeIds.length &&
@@ -109,6 +143,15 @@ function isMotion(value: unknown): value is Motion {
   );
 }
 
+/**
+ * A subassembly phase a step belongs to. `null` = the main phase (built seated
+ * at final coordinates). A non-null phase is a cluster that builds staged off to
+ * the side and flies into the main body at its `join` step. `id` is stable
+ * within a plan; `join` is true on exactly the one step that attaches the
+ * cluster to the main body.
+ */
+export type StepPhase = { id: string; name: string; join: boolean };
+
 export type AssemblyStepGroup = {
   componentNodeIds: string[];
   motion: Motion;
@@ -119,8 +162,27 @@ export type AssemblyStepGroup = {
    * the components in at their seated pose.
    */
   blockedBy: string[];
+  /**
+   * Any member's center of mass falls outside the support polygon of the parts
+   * below it — the step may need a fixture or a second hand (diagnostic).
+   */
+  needsSupport: boolean;
+  /**
+   * Build wave: steps sharing a wave have no ordering constraint between them
+   * (parallel-buildable). Members of one step share a wave; absent (undefined)
+   * for cycle-affected parts.
+   */
+  wave?: number;
   /** v3: the pre-grouped unit's name (e.g. "PCB Assembly"), for the step title. */
   name?: string;
+  /** Planner-baked camera direction for this step (see AssemblyPlanComponent). */
+  viewDirection?: [number, number, number];
+  /**
+   * Subassembly phase, derived from the plan's `contacts` graph (see
+   * {@link assignStepPhases}). `null` for the main phase or when the plan has no
+   * `contacts`.
+   */
+  phase?: StepPhase | null;
 };
 
 function motionKey(motion: Motion): string {
@@ -230,6 +292,8 @@ export function buildAssemblyStepGroups(
     const component = plan.components[nodeId];
     if (component?.mergedInto) continue; // defensive: hosts carry their merges
     const blockedBy = component?.blockedBy ?? [];
+    const needsSupport = component?.needsSupport === true;
+    const wave = component?.wave;
     const flagged = blockedBy.length > 0 || component?.verified === false;
     const motion: Motion = flagged
       ? { type: "none" }
@@ -270,6 +334,7 @@ export function buildAssemblyStepGroups(
           previous.blockedBy.push(blocker);
         }
       }
+      if (needsSupport) previous.needsSupport = true;
       // Identical components can sit at different depths: animate the longest
       if (motion.type === "linear" && previous.motion.type === "linear") {
         previous.motion = {
@@ -284,9 +349,17 @@ export function buildAssemblyStepGroups(
       motion,
       confidence,
       blockedBy: [...blockedBy],
+      needsSupport,
+      wave,
       name: component?.groupId
         ? plan.groups?.[component.groupId]?.name
         : undefined,
+      // Group steps take the group's baked direction; merged-identical steps
+      // keep the first entry's (later same-key entries never overwrite)
+      viewDirection: component?.groupId
+        ? (plan.groups?.[component.groupId]?.viewDirection ??
+          component?.viewDirection)
+        : component?.viewDirection,
       key,
       corridors: corridor ? [corridor] : []
     });
@@ -314,5 +387,224 @@ export function buildAssemblyStepGroups(
     }
   }
 
-  return groups.map(({ key: _key, corridors: _corridors, ...group }) => group);
+  // Floater fold: a part whose insertion path is blocked by a later neighbor is
+  // placed BEFORE that neighbor (collision precedence), so for one step it sits
+  // detached — a floating island. When the very next step is exactly the
+  // neighbor that attaches to it, fold the two into one step: they install as a
+  // rigid pair animating along the detached part's (open-space) approach, so it
+  // never renders alone. Uses the planner's body-level contact graph; skipped on
+  // older plans that predate `contacts`.
+  const contacts = plan.contacts;
+  if (contacts) {
+    const bodyKey = (nodeId: string): string => {
+      const component = plan.components[nodeId];
+      return component?.mergedInto ?? component?.groupId ?? nodeId;
+    };
+    const bodiesOf = (group: WorkingGroup): string[] => {
+      const bodies = new Set<string>();
+      for (const nodeId of group.componentNodeIds) bodies.add(bodyKey(nodeId));
+      return [...bodies];
+    };
+    const touchesAny = (bodies: string[], target: Set<string>): boolean =>
+      bodies.some((body) =>
+        (contacts[body] ?? []).some((neighbor) => target.has(neighbor))
+      );
+
+    const folded: WorkingGroup[] = [];
+    const present = new Set<string>();
+    let index = 0;
+    while (index < groups.length) {
+      const group = groups[index];
+      if (!group) {
+        index++;
+        continue;
+      }
+      // The first placed group is the base — seated, never a floater.
+      if (folded.length > 0) {
+        const bodies = bodiesOf(group);
+        const detached = !touchesAny(bodies, present);
+        const next = groups[index + 1];
+        if (detached && next && touchesAny(bodiesOf(next), new Set(bodies))) {
+          group.componentNodeIds.push(...next.componentNodeIds);
+          for (const blocker of next.blockedBy) {
+            if (!group.blockedBy.includes(blocker))
+              group.blockedBy.push(blocker);
+          }
+          if (next.confidence === "low") group.confidence = "low";
+          for (const body of bodies) present.add(body);
+          for (const body of bodiesOf(next)) present.add(body);
+          folded.push(group);
+          index += 2;
+          continue;
+        }
+      }
+      for (const body of bodiesOf(group)) present.add(body);
+      folded.push(group);
+      index++;
+    }
+    groups.length = 0;
+    groups.push(...folded);
+  }
+
+  const stripped = groups.map(
+    ({ key: _key, corridors: _corridors, ...group }) => group
+  );
+  const phases = assignStepPhases(stripped, plan, graphIndex);
+  for (let index = 0; index < stripped.length; index++) {
+    const group = stripped[index];
+    if (group) group.phase = phases[index] ?? null;
+  }
+  return stripped;
+}
+
+/** A staged subassembly cluster being built up before it joins the main body. */
+type PhaseIsland = {
+  /** Group indices belonging to this cluster, in order. */
+  groups: number[];
+  /** Group index that attaches this cluster to the main body, or null if it never does. */
+  join: number | null;
+  /** Cluster name (largest-volume member of its seed group). */
+  name: string;
+};
+
+/**
+ * Partition the step groups into subassembly phases from the plan's body-level
+ * `contacts` graph. Replays the sequence tracking which bodies are connected to
+ * the main body (the first group's cluster) versus building up in a detached
+ * cluster off to the side. A group that touches nothing placed starts a new
+ * staged cluster; a group that first bridges a staged cluster to the main body
+ * is that cluster's `join` step; staged clusters that touch each other before
+ * joining merge into one phase. Groups on (or joined into) the main body get
+ * `null`. Deterministic; returns `null` for every group when the plan has no
+ * `contacts` (older plans).
+ */
+export function assignStepPhases(
+  groups: readonly Pick<AssemblyStepGroup, "componentNodeIds">[],
+  plan: AssemblyPlan,
+  graphIndex: AssemblyGraphIndex | null
+): (StepPhase | null)[] {
+  const result: (StepPhase | null)[] = groups.map(() => null);
+  const contacts = plan.contacts;
+  if (!contacts || groups.length === 0) return result;
+
+  const bodyKey = (nodeId: string): string => {
+    const component = plan.components[nodeId];
+    return component?.mergedInto ?? component?.groupId ?? nodeId;
+  };
+  const bodiesOf = (index: number): string[] => {
+    const bodies = new Set<string>();
+    for (const nodeId of groups[index]?.componentNodeIds ?? []) {
+      bodies.add(bodyKey(nodeId));
+    }
+    return [...bodies];
+  };
+  const seedName = (index: number): string => {
+    let best: string | null = null;
+    let bestVolume = -1;
+    if (graphIndex) {
+      for (const nodeId of groups[index]?.componentNodeIds ?? []) {
+        const node = graphIndex.nodesById.get(nodeId);
+        const volume = node?.volume ?? 0;
+        if (node?.name && volume >= bestVolume) {
+          best = node.name;
+          bestVolume = volume;
+        }
+      }
+    }
+    return best ?? "Subassembly";
+  };
+
+  const baseBodies = new Set<string>();
+  const bodyIsland = new Map<string, PhaseIsland>();
+  const islandOfGroup: (PhaseIsland | null)[] = groups.map(() => null);
+
+  const touchesBase = (bodies: string[]): boolean =>
+    bodies.some((body) =>
+      (contacts[body] ?? []).some((neighbor) => baseBodies.has(neighbor))
+    );
+  const touchedIslands = (bodies: string[]): PhaseIsland[] => {
+    const seen = new Set<PhaseIsland>();
+    for (const body of bodies) {
+      for (const neighbor of contacts[body] ?? []) {
+        const island = bodyIsland.get(neighbor);
+        if (island) seen.add(island);
+      }
+    }
+    return [...seen];
+  };
+  const earliest = (islands: PhaseIsland[]): PhaseIsland =>
+    islands.reduce((a, b) => (a.groups[0]! <= b.groups[0]! ? a : b));
+
+  for (let index = 0; index < groups.length; index++) {
+    const bodies = bodiesOf(index);
+    if (index === 0) {
+      for (const body of bodies) baseBodies.add(body);
+      continue;
+    }
+    const onBase = touchesBase(bodies);
+    const islands = touchedIslands(bodies);
+
+    if (!onBase && islands.length === 0) {
+      const island: PhaseIsland = {
+        groups: [index],
+        join: null,
+        name: seedName(index)
+      };
+      islandOfGroup[index] = island;
+      for (const body of bodies) bodyIsland.set(body, island);
+      continue;
+    }
+
+    if (onBase) {
+      if (islands.length > 0) {
+        // Join step: bridges staged cluster(s) into the main body.
+        const primary = earliest(islands);
+        primary.join = index;
+        islandOfGroup[index] = primary;
+        for (const island of islands) {
+          for (const [body, owner] of bodyIsland) {
+            if (owner === island) {
+              bodyIsland.delete(body);
+              baseBodies.add(body);
+            }
+          }
+        }
+      }
+      for (const body of bodies) baseBodies.add(body);
+      continue;
+    }
+
+    // Touches only staged cluster(s) — merge them and extend.
+    const primary = earliest(islands);
+    for (const island of islands) {
+      if (island === primary) continue;
+      for (const groupIndex of island.groups) {
+        islandOfGroup[groupIndex] = primary;
+        primary.groups.push(groupIndex);
+      }
+      for (const [body, owner] of bodyIsland) {
+        if (owner === island) bodyIsland.set(body, primary);
+      }
+    }
+    primary.groups.push(index);
+    islandOfGroup[index] = primary;
+    for (const body of bodies) bodyIsland.set(body, primary);
+  }
+
+  // Assign stable ids by first-appearance order (also the staging lane order).
+  const order = new Map<PhaseIsland, number>();
+  for (let index = 0; index < groups.length; index++) {
+    const island = islandOfGroup[index];
+    if (island && !order.has(island)) order.set(island, order.size);
+  }
+  for (let index = 0; index < groups.length; index++) {
+    const island = islandOfGroup[index];
+    if (!island) continue;
+    result[index] = {
+      id: `p${order.get(island)}`,
+      name: island.name,
+      join: island.join === index
+    };
+  }
+  return result;
 }

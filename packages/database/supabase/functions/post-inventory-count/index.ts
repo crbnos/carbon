@@ -5,20 +5,45 @@ import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { corsHeaders } from "../lib/headers.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import type { Database } from "../lib/types.ts";
+import { planInventoryCountPost } from "./plan-post.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
 
 type ItemLedgerInsert = Database["public"]["Tables"]["itemLedger"]["Insert"];
 
-// Inventory Count posting reconciles on-hand to the counted value
-// (Set-Quantity-to-counted semantics): for each counted line we post a single
-// Positive/Negative inventory adjustment for the delta between the counted
-// quantity and the *live* on-hand at post time. Because the counted quantity is
-// always >= 0, on-hand can never go negative. Like the manual inventory
-// adjustment path (`insertManualInventoryAdjustment`), this writes to the item
-// ledger only (on-hand is derived from `itemLedger`); it does not post GL
-// journal lines.
+// Base for post-blocking validation errors. Carries the offending line ids so
+// the response can hand them to the UI to highlight the rows.
+class InvalidLinesError extends Error {
+  lineIds: string[];
+  constructor(message: string, lineIds: string[]) {
+    super(message);
+    this.name = "InvalidLinesError";
+    this.lineIds = lineIds;
+  }
+}
+
+// Thrown when a serial-tracked line is counted as anything other than 0 or 1
+// (a serial entity is a single unique unit).
+class SerialQuantityError extends InvalidLinesError {
+  constructor(lineIds: string[]) {
+    super(
+      `${lineIds.length} serial line(s) must be counted as 0 or 1 — a serial number is a single unit.`,
+      lineIds
+    );
+    this.name = "SerialQuantityError";
+  }
+}
+
+// Inventory Count posting uses snapshot-delta reconciliation: for each counted
+// line we post a single Positive/Negative adjustment for the variance the counter
+// reviewed — `counted - systemQuantity` (the FROZEN snapshot on the line), NOT
+// `counted - live on-hand`. This preserves any stock movements that posted between
+// the snapshot and the post (a receipt/shipment isn't clobbered; the correction is
+// applied on top of it). Like `insertManualInventoryAdjustment`, this writes to the
+// item ledger only (on-hand is derived from `itemLedger`); no GL journal lines.
+// (Rectify re-snapshots `systemQuantity` to current live on-hand first, so for a
+// correction the same formula resolves to "set to counted".)
 const payloadValidator = z.object({
   type: z.literal("post"),
   inventoryCountId: z.string(),
@@ -63,41 +88,60 @@ serve(async (req: Request) => {
     if (lines.error) throw new Error(lines.error.message);
 
     const comment = `Inventory Count ${inventoryCount.data.inventoryCountId}`;
+    const countedLines = (lines.data ?? []).filter(
+      (line) => line.countedQuantity !== null
+    );
+
+    // Serial validation: a serial-tracked item is a single unique unit, so each
+    // serial line can only be counted 0 or 1. Block the post (before any write)
+    // and return the offending line ids so the UI can highlight them.
+    const itemIds = [...new Set(countedLines.map((line) => line.itemId))];
+    const items = itemIds.length
+      ? await client
+          .from("item")
+          .select("id, itemTrackingType")
+          .in("id", itemIds)
+          .eq("companyId", companyId)
+      : null;
+    if (items?.error) throw new Error(items.error.message);
+
+    const trackingTypeByItem = new Map<string, string | null>(
+      (items?.data ?? []).map((item) => [item.id, item.itemTrackingType])
+    );
+    const serialInvalidLineIds = countedLines
+      .filter((line) => {
+        if (trackingTypeByItem.get(line.itemId) !== "Serial") return false;
+        const counted = Number(line.countedQuantity);
+        return counted !== 0 && counted !== 1;
+      })
+      .map((line) => line.id);
+    if (serialInvalidLineIds.length > 0) {
+      throw new SerialQuantityError(serialInvalidLineIds);
+    }
+
+    // Reconcile against the frozen snapshot — no live on-hand read needed.
+    const { planned } = planInventoryCountPost(countedLines);
 
     await db.transaction().execute(async (trx) => {
-      for (const line of lines.data ?? []) {
-        if (line.countedQuantity === null) continue;
+      // Concurrency guard: lock the header and re-assert it is still Pending so
+      // two concurrent posts can't both apply the delta (double-post). Mirrors
+      // the FOR UPDATE guard in post-payment / post-memo; the end-of-transaction
+      // guarded UPDATE below is the backstop.
+      const locked = await trx
+        .selectFrom("inventoryCount")
+        .select(["id", "status"])
+        .where("id", "=", inventoryCountId)
+        .where("companyId", "=", companyId)
+        .forUpdate()
+        .executeTakeFirst();
 
-        // Live on-hand for this exact bucket (item / location / storage unit /
-        // tracked entity). Mirror the snapshot's status-aware definition (and
-        // `get_inventory_quantities`): exclude Rejected stock so the delta is
-        // measured against the same on-hand the count was built from.
-        let onHandQuery = trx
-          .selectFrom("itemLedger")
-          .select((eb) => eb.fn.sum<number>("quantity").as("quantity"))
-          .where("companyId", "=", companyId)
-          .where("itemId", "=", line.itemId)
-          .where((eb) =>
-            eb.or([
-              eb("trackedEntityStatus", "is", null),
-              eb("trackedEntityStatus", "!=", "Rejected")
-            ])
-          );
+      if (!locked) throw new Error("Inventory count not found");
+      if (locked.status !== "Pending") {
+        throw new Error("Inventory count is no longer pending");
+      }
 
-        onHandQuery = line.locationId
-          ? onHandQuery.where("locationId", "=", line.locationId)
-          : onHandQuery.where("locationId", "is", null);
-        onHandQuery = line.storageUnitId
-          ? onHandQuery.where("storageUnitId", "=", line.storageUnitId)
-          : onHandQuery.where("storageUnitId", "is", null);
-        onHandQuery = line.trackedEntityId
-          ? onHandQuery.where("trackedEntityId", "=", line.trackedEntityId)
-          : onHandQuery.where("trackedEntityId", "is", null);
-
-        const onHandRow = await onHandQuery.executeTakeFirst();
-        const currentOnHand = Number(onHandRow?.quantity ?? 0);
-
-        const delta = line.countedQuantity - currentOnHand;
+      // Post the reviewed variance for each line as an inventory adjustment.
+      for (const { line, delta } of planned) {
         if (delta === 0) continue;
 
         const ledgerEntry: ItemLedgerInsert = {
@@ -110,6 +154,11 @@ serve(async (req: Request) => {
           entryType: delta > 0 ? "Positive Adjmt." : "Negative Adjmt.",
           documentType: "Inventory Count",
           documentId: inventoryCountId,
+          // In-place rectify: if this line already posted a movement (the count
+          // was rectified), link the new fix movement back to that prior one so
+          // both stay visible and linked in the movements screens. Null on the
+          // first post.
+          correctionOfItemLedgerId: line.postedItemLedgerId ?? null,
           comment,
           companyId,
           createdBy: userId
@@ -121,11 +170,12 @@ serve(async (req: Request) => {
           .returning(["id"])
           .executeTakeFirstOrThrow();
 
-        // Tracked lines: set that entity's quantity to the counted value.
+        // Tracked lines: apply the same delta to the entity's quantity (not a
+        // set-to-counted) so movements since the snapshot aren't overwritten.
         if (line.trackedEntityId) {
           await trx
             .updateTable("trackedEntity")
-            .set({ quantity: line.countedQuantity })
+            .set((eb) => ({ quantity: eb("quantity", "+", delta) }))
             .where("id", "=", line.trackedEntityId)
             .where("companyId", "=", companyId)
             .execute();
@@ -173,9 +223,25 @@ serve(async (req: Request) => {
     // as it was (Pending). We do NOT touch the status here: reverting a failed
     // post to Draft would silently discard the user's confirmation. Pending is
     // the correct retryable state.
-    return new Response(JSON.stringify({ error: (err as Error).message }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500
-    });
+    // Body key is `message` so the route's `getEdgeFunctionErrorMessage` can pull
+    // the real reason (e.g. the snapshot-drift or serial text) out of the response
+    // body — supabase-js otherwise only exposes a generic FunctionsHttpError.message.
+    // For line-level validation errors we also return `invalidLineIds` so the UI
+    // can highlight the offending rows.
+    // Only line-level validation failures are client errors (400). Everything
+    // else — "not found", "no longer pending", DB/runtime failures — is a 500 so
+    // real outages surface in monitoring instead of hiding as a 400.
+    const isValidationError = err instanceof InvalidLinesError;
+    const invalidLineIds = isValidationError ? err.lineIds : undefined;
+    return new Response(
+      JSON.stringify({
+        message: (err as Error).message,
+        ...(invalidLineIds ? { invalidLineIds } : {})
+      }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: isValidationError ? 400 : 500
+      }
+    );
   }
 });

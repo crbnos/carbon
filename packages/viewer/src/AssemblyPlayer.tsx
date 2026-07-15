@@ -8,28 +8,36 @@ import {
   useRef,
   useState
 } from "react";
+import type { BufferGeometry } from "three";
 import {
   AnimationMixer,
   Box3,
   Color,
   LoopOnce,
   type Material,
-  type Mesh,
+  Mesh,
   type MeshBasicMaterial,
   MeshStandardMaterial,
   type Object3D,
   PerspectiveCamera,
   Vector3
 } from "three";
+import {
+  acceleratedRaycast,
+  computeBoundsTree,
+  disposeBoundsTree,
+  SAH
+} from "three-mesh-bvh";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { AssemblyViewer } from "./AssemblyViewer";
+import { fitFraming } from "./camera";
 import { describeStep, type NamedUnit } from "./describe";
 import { indexAssemblyGraph } from "./graph";
 import { MotionPathEditor } from "./MotionPathEditor";
 import {
   buildStepClip,
   displayMotionForStep,
-  exaggerateMotion,
+  naturalizeMotion,
   stepTimelineSeconds
 } from "./motion";
 import type {
@@ -58,6 +66,12 @@ export type AssemblyPlayerProps = {
   steps: AssemblyStep[];
   activeStepIndex: number;
   onStepChange?: (index: number) => void;
+  /**
+   * Bumped by the host to preview (play) the active step from its start. In the
+   * editor, selecting a step just shows it seated; a double-click bumps this to
+   * animate the insertion. Ignored on its initial value.
+   */
+  playStepNonce?: number;
   /** Click-to-select component nodeIds for the editor (additive with shift held) */
   onSelectComponents?: (nodeIds: string[]) => void;
   /** Surfaces the parsed graph.json once loaded (for BOM/title derivation) */
@@ -70,6 +84,13 @@ export type AssemblyPlayerProps = {
   highlightedNodeIds?: string[];
   /** Components hidden from the viewer entirely (fixtures, reference geometry) */
   hiddenNodeIds?: string[];
+  /**
+   * Isolate/focus set. When non-empty, ONLY these components render — everything
+   * else is hidden so the user can inspect the selection in isolation. Empty =
+   * no isolation. Cleared automatically when playback starts (the build-up needs
+   * every part).
+   */
+  focusedNodeIds?: string[];
   /** Disables component selection (MES playback) */
   readOnly?: boolean;
   /**
@@ -82,6 +103,9 @@ export type AssemblyPlayerProps = {
   onMotionChange?: (stepId: string, motion: Motion) => void;
   /** Initial render mode for future-step components */
   defaultFutureMode?: FutureComponentsMode;
+  /** Picking components to add to a step: ghost every not-yet-installed part so
+   * un-animated parts are visible and clickable (x-ray). */
+  componentPickerActive?: boolean;
   /**
    * When true (default), the whole sequence auto-plays on load and runs through
    * every step. When false, the player starts paused: selecting a step plays
@@ -135,14 +159,17 @@ export const AssemblyPlayer = forwardRef<
     steps,
     activeStepIndex,
     onStepChange,
+    playStepNonce,
     onSelectComponents,
     onGraphLoaded,
     highlightedNodeIds,
     hiddenNodeIds,
+    focusedNodeIds,
     readOnly = false,
     editMotion,
     onMotionChange,
     defaultFutureMode = "ghost",
+    componentPickerActive = false,
     autoPlay = true,
     units,
     suppressFallbackMotions = false,
@@ -156,10 +183,18 @@ export const AssemblyPlayer = forwardRef<
     graphUrl
   );
   // With autoPlay, the sequence runs through every step on load. Otherwise the
-  // player starts paused: selecting a step plays just that step, and it only
-  // continues through the rest once Play is pressed (`continuous`).
+  // player starts paused: selecting a step shows it seated, and it only animates
+  // when Play (or a step double-click) is pressed (`continuous` for the former).
   const [isPlaying, setIsPlaying] = useState(autoPlay);
   const [continuous, setContinuous] = useState(autoPlay);
+  // "auto": each step frames the camera toward the action. Grabbing the
+  // controls DURING playback switches to "free" — the user keeps their view
+  // across steps until they click the floating badge to hand control back.
+  // Paused orbiting doesn't change modes (per-step framing already yields to
+  // the framing-key guard there).
+  const [cameraMode, setCameraMode] = useState<"auto" | "free">("auto");
+  // Stable identity — the scene re-subscribes its controls listener otherwise.
+  const handleFreeCamera = useCallback(() => setCameraMode("free"), []);
   const [futureMode, setFutureMode] =
     useState<FutureComponentsMode>(defaultFutureMode);
   // Live marquee rectangle while box-selecting (drawn as a DOM overlay).
@@ -212,18 +247,13 @@ export const AssemblyPlayer = forwardRef<
     ? describeStep(activeStep, graphIndex, units)
     : null;
 
+  // Selecting a step no longer auto-plays it (that surprised users). The clip
+  // effect (in AssemblyScene) snaps the newly-selected step to its SEATED pose
+  // so it reads as "this step, done"; a double-click on the step (playStepNonce)
+  // animates the insertion. autoPlay mode is unaffected — the sequence runs itself.
   useEffect(() => {
-    const prev = prevStepIndexRef.current;
     prevStepIndexRef.current = clampedIndex;
-    // Auto-playing a step on selection is the paused (editor) mode's behavior.
-    // In autoPlay mode the sequence already runs itself, so leave stepping alone.
-    if (autoPlay) return;
-    // Only on a real step change (not the initial mount), and never while the
-    // motion-path editor is open.
-    if (prev === null || prev === clampedIndex) return;
-    if (isEditingMotionRef.current) return;
-    setIsPlaying(true);
-  }, [autoPlay, clampedIndex]);
+  }, [clampedIndex]);
 
   // Cmd/Ctrl+A selects every currently visible component (skipping hidden ones and,
   // per the future-components mode, any that aren't rendered). Ignored while typing
@@ -305,7 +335,7 @@ export const AssemblyPlayer = forwardRef<
         maxBox[1] - minBox[1],
         maxBox[2] - minBox[2]
       );
-      const motion = exaggerateMotion(
+      const motion = naturalizeMotion(
         baseMotion,
         componentDiagonal,
         assemblyDiagonal
@@ -352,18 +382,29 @@ export const AssemblyPlayer = forwardRef<
   }, []);
 
   const goToStep = useCallback(
-    (index: number) => {
+    (index: number, opts?: { play?: boolean }) => {
       if (index < 0 || index >= stepCount) return;
-      seekRef.current = 0;
-      playheadRef.current = startTimes[index] ?? 0;
-      setDisplayTime(startTimes[index] ?? 0);
+      if (opts?.play) {
+        // Playing into the step — start at its beginning so the insertion animates.
+        seekRef.current = 0;
+        playheadRef.current = startTimes[index] ?? 0;
+        setDisplayTime(startTimes[index] ?? 0);
+      } else {
+        // Just viewing the step (prev/next) — show it COMPLETED, parts seated and
+        // visible, matching a single-click on the step row. Leaving the seek null
+        // lets the clip effect snap to the step's end pose.
+        seekRef.current = null;
+        const end = (startTimes[index] ?? 0) + (segments[index] ?? 0);
+        playheadRef.current = end;
+        setDisplayTime(end);
+      }
       if (index === activeStepIndex) {
         setSeekVersion((version) => version + 1);
       } else {
         onStepChange?.(index);
       }
     },
-    [onStepChange, stepCount, startTimes, activeStepIndex]
+    [onStepChange, stepCount, startTimes, segments, activeStepIndex]
   );
 
   const handleStepFinished = useCallback(() => {
@@ -371,7 +412,7 @@ export const AssemblyPlayer = forwardRef<
     // single-step play (from selecting a step) stops here, paused at the seated
     // pose.
     if (continuous && clampedIndex < stepCount - 1) {
-      goToStep(clampedIndex + 1);
+      goToStep(clampedIndex + 1, { play: true });
     } else {
       setIsPlaying(false);
       setContinuous(false);
@@ -400,6 +441,19 @@ export const AssemblyPlayer = forwardRef<
     [totalSeconds, stepCount, startTimes, clampedIndex, onStepChange]
   );
 
+  // Double-click a step → preview it: restart the active step from its start and
+  // play just that one (not a continuous run-through). Skips the initial nonce
+  // value and the motion-path editor.
+  const playStepNonceRef = useRef(playStepNonce);
+  useEffect(() => {
+    if (playStepNonce === playStepNonceRef.current) return;
+    playStepNonceRef.current = playStepNonce;
+    if (isEditingMotionRef.current || stepCount === 0) return;
+    onScrub(startTimes[clampedIndex] ?? 0); // seek to the step's start
+    setContinuous(false);
+    setIsPlaying(true);
+  }, [playStepNonce, clampedIndex, stepCount, startTimes, onScrub]);
+
   return (
     <div className={cn("flex h-full w-full flex-col", className)}>
       <div className="relative min-h-0 flex-1">
@@ -415,6 +469,7 @@ export const AssemblyPlayer = forwardRef<
               futureMode={futureMode}
               highlightedNodeIds={highlightedNodeIds}
               hiddenNodeIds={hiddenNodeIds}
+              focusedNodeIds={isPlaying ? undefined : focusedNodeIds}
               readOnly={readOnly}
               onSelectComponents={onSelectComponents}
               editMotion={editMotion ?? null}
@@ -430,9 +485,37 @@ export const AssemblyPlayer = forwardRef<
               seekVersion={seekVersion}
               onStepFinished={handleStepFinished}
               onBoxRect={setBoxRect}
+              cameraMode={cameraMode}
+              onFreeCamera={handleFreeCamera}
+              componentPickerActive={componentPickerActive}
             />
           )}
         </AssemblyViewer>
+        {cameraMode === "free" && (
+          <button
+            type="button"
+            className={cn(
+              "absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-border bg-background/80 py-1 pr-3 pl-2 backdrop-blur",
+              "text-xs font-medium text-muted-foreground hover:text-foreground"
+            )}
+            onClick={() => setCameraMode("auto")}
+          >
+            <svg
+              className="size-3.5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <circle cx="12" cy="12" r="3" />
+              <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+            </svg>
+            Free camera — click for auto
+          </button>
+        )}
         {boxRect && (
           <div
             aria-hidden
@@ -509,6 +592,9 @@ export const AssemblyPlayer = forwardRef<
               setContinuous(false);
               return;
             }
+            // Clear any component selection so it doesn't stay tinted red over
+            // the playback.
+            onSelectComponents?.([]);
             // Play = run on through the rest of the steps.
             const nextStart =
               startTimes[clampedIndex + 1] ?? Number.POSITIVE_INFINITY;
@@ -521,7 +607,7 @@ export const AssemblyPlayer = forwardRef<
             } else if (currentStepFinished) {
               // Current step already finished (e.g. after a single-step play) →
               // continue with the next one rather than replaying this one.
-              goToStep(clampedIndex + 1);
+              goToStep(clampedIndex + 1, { play: true });
             } else {
               // Mid-step or a fresh step → (re)play it from the current position.
               setSeekVersion((version) => version + 1);
@@ -539,32 +625,15 @@ export const AssemblyPlayer = forwardRef<
         >
           <ChevronRightIcon />
         </ControlButton>
-        <div className="relative min-w-0 flex-1">
-          <input
-            type="range"
-            aria-label="Timeline"
-            className="w-full accent-primary"
-            min={0}
-            max={Math.max(totalSeconds, 0.01)}
-            step={0.05}
-            value={Math.min(displayTime, totalSeconds)}
-            disabled={stepCount === 0}
-            onChange={(changeEvent) =>
-              onScrub(Number(changeEvent.target.value))
-            }
-          />
-          {totalSeconds > 0 &&
-            startTimes
-              .slice(1)
-              .map((startTime) => (
-                <span
-                  key={startTime}
-                  aria-hidden="true"
-                  className="pointer-events-none absolute top-1/2 h-2 w-px -translate-y-1/2 bg-muted-foreground/40"
-                  style={{ left: `${(startTime / totalSeconds) * 100}%` }}
-                />
-              ))}
-        </div>
+        <TimelineScrubber
+          segments={segments}
+          startTimes={startTimes}
+          totalSeconds={totalSeconds}
+          displayTime={displayTime}
+          activeStepIndex={clampedIndex}
+          stepCount={stepCount}
+          onScrub={onScrub}
+        />
         <span className="whitespace-nowrap text-xs tabular-nums text-muted-foreground">
           {stepCount > 0
             ? `${formatTime(Math.min(displayTime, totalSeconds))} / ${formatTime(totalSeconds)}`
@@ -631,6 +700,11 @@ type MaterialOverrides = {
   fade?: Material | Material[];
 };
 
+// Scratch vectors for the camera-transition useFrame — reused every frame so
+// the transition allocates nothing.
+const SCRATCH_CURRENT_OFFSET = new Vector3();
+const SCRATCH_DESIRED_OFFSET = new Vector3();
+
 const HIGHLIGHT_COLOR = 0x3b82f6;
 // Selection is always red — both an in-scene click selection ("selected") and a
 // components-panel selection ("external", forced visible) tint the component red so the
@@ -638,6 +712,81 @@ const HIGHLIGHT_COLOR = 0x3b82f6;
 const SELECTED_COLOR = 0xef4444;
 const EXTERNAL_COLOR = 0xef4444;
 const GHOST_OPACITY = 0.3;
+
+type BvhGeometry = BufferGeometry & {
+  computeBoundsTree?: typeof computeBoundsTree;
+  disposeBoundsTree?: typeof disposeBoundsTree;
+  boundsTree?: unknown;
+};
+
+/** Meshes to BVH per idle slice — each build is sub-ms, so a small batch keeps
+ * every frame well under budget. */
+const BVH_BUILD_BATCH = 24;
+
+/**
+ * Progressively accelerates raycasting on the scene's meshes by building a
+ * three-mesh-bvh bounds tree per geometry, a small batch at a time on browser
+ * idle. Spreading the ~250k-triangle build across idle slices keeps the model
+ * interactive the instant it renders (raycasts fall back to linear until each
+ * mesh's tree lands) without the single main-thread hitch a synchronous build
+ * causes — and without the geometry-neutering flicker a web-worker builder
+ * would cause on a visible model. Trees are disposed and raycast restored when
+ * the scene changes or the player unmounts.
+ */
+function useProgressiveBvh(scene: Object3D) {
+  const raycaster = useThree((state) => state.raycaster);
+  useEffect(() => {
+    raycaster.firstHitOnly = false;
+    const meshes: Mesh[] = [];
+    scene.traverse((object) => {
+      const mesh = object as Mesh;
+      const geom = mesh.geometry as BvhGeometry | undefined;
+      if (mesh.isMesh && geom && !geom.boundsTree) meshes.push(mesh);
+    });
+
+    let cancelled = false;
+    let handle: number | undefined;
+    let index = 0;
+    const built: Mesh[] = [];
+    const idle: (cb: () => void) => number =
+      typeof requestIdleCallback === "function"
+        ? (cb) => requestIdleCallback(cb)
+        : (cb) => window.setTimeout(cb, 0);
+    const cancelIdle: (id: number) => void =
+      typeof cancelIdleCallback === "function"
+        ? cancelIdleCallback
+        : window.clearTimeout;
+
+    const step = () => {
+      if (cancelled) return;
+      const end = Math.min(index + BVH_BUILD_BATCH, meshes.length);
+      for (; index < end; index++) {
+        const mesh = meshes[index];
+        if (!mesh) continue;
+        const geom = mesh.geometry as BvhGeometry;
+        if (geom.boundsTree) continue;
+        geom.computeBoundsTree = computeBoundsTree;
+        geom.disposeBoundsTree = disposeBoundsTree;
+        geom.computeBoundsTree({ strategy: SAH });
+        mesh.raycast = acceleratedRaycast;
+        built.push(mesh);
+      }
+      if (index < meshes.length) handle = idle(step);
+    };
+    handle = idle(step);
+
+    return () => {
+      cancelled = true;
+      if (handle !== undefined) cancelIdle(handle);
+      delete raycaster.firstHitOnly;
+      for (const mesh of built) {
+        const geom = mesh.geometry as BvhGeometry;
+        if (geom.boundsTree) geom.disposeBoundsTree?.();
+        mesh.raycast = Mesh.prototype.raycast;
+      }
+    };
+  }, [scene, raycaster]);
+}
 /** Seconds a flagged step's components take to fade in at the seated pose */
 const FADE_SECONDS = 1.2;
 
@@ -650,6 +799,7 @@ function AssemblyScene({
   futureMode,
   highlightedNodeIds,
   hiddenNodeIds,
+  focusedNodeIds,
   readOnly,
   onSelectComponents,
   editMotion,
@@ -664,7 +814,10 @@ function AssemblyScene({
   seekRef,
   seekVersion,
   onStepFinished,
-  onBoxRect
+  onBoxRect,
+  cameraMode,
+  onFreeCamera,
+  componentPickerActive
 }: {
   scene: Object3D;
   nodesById: Map<string, Object3D>;
@@ -674,6 +827,7 @@ function AssemblyScene({
   futureMode: FutureComponentsMode;
   highlightedNodeIds?: string[];
   hiddenNodeIds?: string[];
+  focusedNodeIds?: string[];
   readOnly: boolean;
   onSelectComponents?: (nodeIds: string[]) => void;
   /** Active-step motion draft to edit (null = play normally) */
@@ -703,12 +857,70 @@ function AssemblyScene({
   onStepFinished?: () => void;
   /** Live marquee rectangle (canvas-local px) while box-selecting; null clears */
   onBoxRect?: (rect: BoxRect | null) => void;
+  /** "free" suppresses per-step camera framing (user owns the view) */
+  cameraMode: "auto" | "free";
+  /** The user grabbed the controls during playback — switch to free mode */
+  onFreeCamera: () => void;
+  /** Picking components to add to a step — ghost every not-yet-installed part so
+   * un-animated parts are visible and clickable */
+  componentPickerActive: boolean;
 }) {
   const camera = useThree((state) => state.camera);
   const controls = useThree(
     (state) => state.controls
   ) as unknown as OrbitControlsImpl | null;
   const gl = useThree((state) => state.gl);
+
+  // Accelerate raycasting (hover/click picking) with per-geometry BVHs, built
+  // progressively on idle so a dense model never hitches the main thread.
+  useProgressiveBvh(scene);
+
+  // Fit the perspective near/far planes to the model. A static 0.1 → 100000
+  // range is a 1e6 depth ratio: the buffer spends almost all its precision
+  // right in front of `near`, so coplanar CAD faces (touching solids, a boss
+  // flush on a plate) z-fight into a tearing moiré at model distance. Sizing
+  // the range to the assembly diagonal collapses the ratio to ~1e4 and keeps
+  // those faces stable, while still leaving room to zoom close and orbit out.
+  useEffect(() => {
+    if (!(camera instanceof PerspectiveCamera)) return;
+    const box = new Box3().setFromObject(scene);
+    if (box.isEmpty()) return;
+    const diag = box.getSize(new Vector3()).length();
+    if (!(diag > 0)) return;
+    camera.near = Math.max(diag / 500, 0.01);
+    camera.far = diag * 20;
+    camera.updateProjectionMatrix();
+  }, [camera, scene]);
+
+  // Break coincident-face z-fighting. A multi-body STEP split turns each solid
+  // into its own mesh; a part seated flush on a plate (a bolt head on its face)
+  // shares that face's exact plane, so the two meshes sit at IDENTICAL depth and
+  // the GPU can't pick a winner — the face tears at every camera distance (no
+  // depth-precision trick resolves an exact tie). Give each distinct material a
+  // unique polygon offset so one always wins at a coincidence. Coincident parts
+  // are near-always different parts with different materials (the bolt vs the
+  // plate), so per-material differentiates them with no per-mesh cloning; we
+  // just tag the loaded glTF materials in place. The offset is a few depth-buffer
+  // units — far below any real (sub-mm) gap — so separated faces are untouched.
+  useEffect(() => {
+    const tagged = new Set<Material>();
+    let offset = -1;
+    scene.traverse((object) => {
+      const mesh = object as Mesh;
+      if (!mesh.isMesh) return;
+      const materials = Array.isArray(mesh.material)
+        ? mesh.material
+        : [mesh.material];
+      for (const material of materials) {
+        if (tagged.has(material)) continue;
+        tagged.add(material);
+        material.polygonOffset = true;
+        material.polygonOffsetFactor = -1;
+        material.polygonOffsetUnits = offset;
+        offset -= 1;
+      }
+    });
+  }, [scene]);
 
   const activeStep = steps[activeStepIndex] ?? null;
   const isEditingActive = Boolean(
@@ -738,10 +950,35 @@ function AssemblyScene({
     [highlightedNodeIds]
   );
 
+  const focusedSet = useMemo(
+    () => new Set(focusedNodeIds ?? []),
+    [focusedNodeIds]
+  );
   const hiddenSet = useMemo(
     () => new Set(hiddenNodeIds ?? []),
     [hiddenNodeIds]
   );
+
+  // Component picking is only meaningful in the editor (a selection callback,
+  // not read-only) — the drill affordance is gated on it so pure playback stays
+  // untouched.
+  const pickingEnabled = !readOnly && !!onSelectComponents;
+  // Alt-hover x-ray drill: the occluders in front of the pointer (ghosted so
+  // you can see through the box/lid) and the innermost part they reveal (the
+  // click target). A ref mirrors the target so the high-frequency pointer-move
+  // only re-renders when the drilled part actually changes.
+  const [drill, setDrillState] = useState<{
+    ghostIds: string[];
+    target: string;
+  } | null>(null);
+  const drillTargetRef = useRef<string | null>(null);
+  // True while the camera is being orbited — drill raycasts are skipped then.
+  const orbitingRef = useRef(false);
+  const clearDrill = useCallback(() => {
+    if (drillTargetRef.current === null) return;
+    drillTargetRef.current = null;
+    setDrillState(null);
+  }, []);
 
   /** nodeId → index of the first step that installs it */
   const stepIndexByNode = useMemo(() => {
@@ -808,17 +1045,28 @@ function AssemblyScene({
     // While the animation plays, later-step components stay hidden until their own
     // step installs them, so playback reads as a real build-up rather than a
     // ghosted preview. The future-components toggle still applies while paused.
-    const effectiveFutureMode: FutureComponentsMode = isPlaying
-      ? "hidden"
-      : futureMode;
+    // Component-picker mode overrides both: every not-yet-installed part ghosts
+    // (x-ray) so the user can see AND click the parts they want to add — a
+    // "hidden" future part is invisible and unpickable.
+    const effectiveFutureMode: FutureComponentsMode = componentPickerActive
+      ? "ghost"
+      : isPlaying
+        ? "hidden"
+        : futureMode;
 
     for (const [nodeId, stepIndex] of stepIndexByNode) {
       const node = nodesById.get(nodeId);
       if (!node) continue;
-      applyVisual(
-        node,
-        visualForComponent(stepIndex, activeStepIndex, effectiveFutureMode)
+      const visual = visualForComponent(
+        stepIndex,
+        activeStepIndex,
+        effectiveFutureMode
       );
+      // The active step's blue tint is a "what's animating now" cue — only
+      // apply it during playback. Statically selecting/seating a step leaves
+      // its parts their real color (the step list + timeline show which is
+      // current).
+      applyVisual(node, visual === "active" && !isPlaying ? "solid" : visual);
     }
 
     // Components no step installs are never "already there": they get the same
@@ -840,8 +1088,11 @@ function AssemblyScene({
     }
 
     // External (BOM) highlight: emissive tint, forced visible even when the
-    // component's step would hide it ("show me all the M8 bolts")
+    // component's step would hide it ("show me all the M8 bolts"). Skipped for
+    // focused nodes — isolating a part shows it in its REAL color; the isolate
+    // itself is the cue, no tint.
     for (const nodeId of highlightedSet) {
+      if (focusedSet.has(nodeId)) continue;
       const node = nodesById.get(nodeId);
       if (!node) continue;
       node.visible = true;
@@ -851,6 +1102,29 @@ function AssemblyScene({
         mesh.material = getOverride(mesh, overrides, "external");
         mesh.renderOrder = 0;
       });
+    }
+
+    // Isolate/focus: when a focus set is active, ONLY the focused components
+    // render — everything else hides so the selection can be inspected alone.
+    // Keep the focused node's ANCESTORS visible too: three.js visibility is
+    // inherited, and every glTF node (including the root wrapper and assembly
+    // groups) carries a nodeId, so blindly hiding non-focused nodes would hide
+    // the focused leaf's parents and blank the whole model. Applied before the
+    // explicit-hide pass so a focused-but-manually-hidden component still hides.
+    if (focusedSet.size > 0) {
+      const keep = new Set<Object3D>();
+      for (const nodeId of focusedSet) {
+        const node = nodesById.get(nodeId);
+        if (!node) continue;
+        for (let a: Object3D | null = node; a; a = a.parent) keep.add(a);
+        node.traverse((descendant) => keep.add(descendant));
+      }
+      // Only touch nodeId-stamped nodes — the reset above restores exactly these
+      // to visible, so meshes (which inherit) never get stranded hidden. Ancestor
+      // nodes stay in `keep`, so a focused leaf's parents don't blank it out.
+      for (const node of nodesById.values()) {
+        node.visible = keep.has(node);
+      }
     }
 
     // Explicitly hidden components (fixtures/reference geometry) always hide,
@@ -866,6 +1140,7 @@ function AssemblyScene({
     // material here — regardless of whether it was picked in the viewer or the
     // Components panel.
     for (const nodeId of highlightedSet) {
+      if (focusedSet.has(nodeId)) continue; // isolated part keeps its real color
       const node = nodesById.get(nodeId);
       if (!node || !node.visible) continue;
       node.traverse((object) => {
@@ -873,6 +1148,23 @@ function AssemblyScene({
         const mesh = object as Mesh;
         mesh.material = getOverride(mesh, overrides, "selected");
       });
+    }
+
+    // Alt-hover x-ray drill: ghost the occluders in front of the pointer so the
+    // innermost part they hide (the click target) shows through. Applied last so
+    // it wins even over a selected occluder — you're deliberately looking past
+    // it. The target keeps its real material (it's the solid thing behind glass).
+    if (drill) {
+      for (const nodeId of drill.ghostIds) {
+        const node = nodesById.get(nodeId);
+        if (!node?.visible) continue;
+        node.traverse((object) => {
+          if (!(object as Mesh).isMesh) return;
+          const mesh = object as Mesh;
+          mesh.material = getOverride(mesh, overrides, "ghost");
+          mesh.renderOrder = 1;
+        });
+      }
     }
   }, [
     nodesById,
@@ -882,8 +1174,11 @@ function AssemblyScene({
     activeStepIndex,
     futureMode,
     isPlaying,
+    componentPickerActive,
     highlightedSet,
-    hiddenSet
+    hiddenSet,
+    focusedSet,
+    drill
   ]);
 
   // --- Animation -----------------------------------------------------------
@@ -892,13 +1187,37 @@ function AssemblyScene({
   const actionRef = useRef<ReturnType<AnimationMixer["clipAction"]> | null>(
     null
   );
+  // Live mirror so the step-keyed clip effect can tell "static selection" (snap
+  // seated) from "playing" without listing isPlaying as a dep.
+  const isPlayingRef = useRef(isPlaying);
+  isPlayingRef.current = isPlaying;
   /** Seconds elapsed within the active step's timeline segment */
   const localElapsedRef = useRef(0);
   const finishedRef = useRef(false);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: seekVersion intentionally re-applies a pending seek within the same step
+  // The clip effect is keyed on a CONTENT signature of the active step, not the
+  // `steps` array identity — a loader revalidation (5s poll, realtime) hands
+  // down a new-but-equivalent array, and re-running the effect on it would tear
+  // down and restart an in-flight animation from t=0 plus rebuild the clip.
+  // Mirrors the per-step camera effect's framingKey guard. The body reads the
+  // live values through refs so the signature is the only re-run trigger.
+  const stepsLiveRef = useRef(steps);
+  stepsLiveRef.current = steps;
+  const startTimesLiveRef = useRef(startTimes);
+  startTimesLiveRef.current = startTimes;
+  const clipKey = activeStep
+    ? [
+        activeStepIndex,
+        activeStep.id,
+        JSON.stringify(activeStep.motion),
+        activeStep.componentNodeIds.join(","),
+        isEditingActive
+      ].join("|")
+    : `none|${activeStepIndex}`;
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: clipKey is the content signature that keys the rebuild — a revalidation with an equivalent steps array must not re-run this effect
   useEffect(() => {
-    const step = steps[activeStepIndex];
+    const step = stepsLiveRef.current[activeStepIndex];
 
     // Consume any pending seek; otherwise the step starts at 0
     const seek = seekRef.current;
@@ -906,13 +1225,14 @@ function AssemblyScene({
     localElapsedRef.current = seek ?? 0;
     finishedRef.current = false;
     playheadRef.current =
-      (startTimes[activeStepIndex] ?? 0) + localElapsedRef.current;
+      (startTimesLiveRef.current[activeStepIndex] ?? 0) +
+      localElapsedRef.current;
 
     if (!step) return;
 
     // Editing this step's path: keep components at their seated pose, skip the clip
     // so the animation doesn't fight the drag handles.
-    if (editMotion && step.id === editMotion.stepId) return;
+    if (isEditingActive) return;
 
     const clip = buildStepClip(step, nodesById);
     if (!clip) return;
@@ -934,6 +1254,15 @@ function AssemblyScene({
     if (seek !== null) {
       action.time = Math.min(seek, clip.duration);
       mixer.update(0);
+    } else if (!isPlayingRef.current) {
+      // Static selection (no play): show the step COMPLETED — the component
+      // seated, not flown-out at t=0. A double-click seeks back to 0 and plays.
+      action.time = clip.duration;
+      mixer.update(0);
+      localElapsedRef.current = clip.duration;
+      finishedRef.current = true;
+      playheadRef.current =
+        (startTimesLiveRef.current[activeStepIndex] ?? 0) + clip.duration;
     }
     actionRef.current = action;
 
@@ -946,18 +1275,35 @@ function AssemblyScene({
         node.quaternion.copy(quaternion);
       }
     };
-    // seekVersion re-applies a seek within the same step
   }, [
     mixer,
     nodesById,
-    steps,
+    clipKey,
     activeStepIndex,
-    seekVersion,
+    isEditingActive,
     seekRef,
-    playheadRef,
-    startTimes,
-    editMotion
+    playheadRef
   ]);
+
+  // Same-step scrub: apply the pending seek to the LIVE action instead of
+  // re-running the clip effect — a timeline drag fires many times per second,
+  // and each effect re-run would stop/uncache/rebuild the whole clip when only
+  // `action.time` changes.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: seekVersion is the trigger for re-applying a same-step seek
+  useEffect(() => {
+    const seek = seekRef.current;
+    if (seek === null) return;
+    seekRef.current = null;
+    localElapsedRef.current = seek;
+    finishedRef.current = false;
+    playheadRef.current =
+      (startTimesLiveRef.current[activeStepIndex] ?? 0) + seek;
+    const action = actionRef.current;
+    if (action) {
+      action.time = Math.min(seek, action.getClip().duration);
+      mixer.update(0);
+    }
+  }, [seekVersion, activeStepIndex, mixer, seekRef, playheadRef]);
 
   useEffect(() => {
     if (actionRef.current) actionRef.current.paused = !isPlaying;
@@ -1146,12 +1492,32 @@ function AssemblyScene({
 
   useEffect(() => {
     if (!controls) return;
-    const cancel = () => {
+    const onStart = () => {
       desiredPoseRef.current = null;
+      // Orbiting is not picking — suppress hover raycasts (and drop the tint)
+      // while the camera is being dragged, the moment it feels choppiest.
+      orbitingRef.current = true;
+      clearDrill();
+      // Grabbing the view mid-playback means the user wants to keep it — stop
+      // re-framing on every step until they opt back into auto via the badge.
+      if (isPlaying) onFreeCamera();
     };
-    controls.addEventListener("start", cancel);
-    return () => controls.removeEventListener("start", cancel);
-  }, [controls]);
+    const onEnd = () => {
+      orbitingRef.current = false;
+    };
+    controls.addEventListener("start", onStart);
+    controls.addEventListener("end", onEnd);
+    return () => {
+      controls.removeEventListener("start", onStart);
+      controls.removeEventListener("end", onEnd);
+    };
+  }, [controls, isPlaying, onFreeCamera, clearDrill]);
+
+  // Returning to auto must re-frame the CURRENT step even when its framing key
+  // hasn't changed — the user panned away and asked for the staged view back.
+  useEffect(() => {
+    if (cameraMode === "auto") lastFramedKeyRef.current = null;
+  }, [cameraMode]);
 
   // Transition by orbiting around the target — the view direction rotates
   // and the distance eases, so the model never leaves the frame the way a
@@ -1163,8 +1529,12 @@ function AssemblyScene({
 
     controls.target.lerp(desired.target, alpha);
 
-    const currentOffset = camera.position.clone().sub(controls.target);
-    const desiredOffset = desired.position.clone().sub(desired.target);
+    const currentOffset = SCRATCH_CURRENT_OFFSET.copy(camera.position).sub(
+      controls.target
+    );
+    const desiredOffset = SCRATCH_DESIRED_OFFSET.copy(desired.position).sub(
+      desired.target
+    );
     const currentDistance = Math.max(currentOffset.length(), 1e-3);
     const desiredDistance = Math.max(desiredOffset.length(), 1e-3);
 
@@ -1200,6 +1570,8 @@ function AssemblyScene({
   useEffect(() => {
     const step = steps[activeStepIndex];
     if (!step || !controls) return;
+    // Free mode: the user owns the view — no per-step framing at all.
+    if (cameraMode === "free") return;
 
     // Only re-frame when the active step (or a framing-relevant input) actually
     // changes. A bare re-render — or a revalidation / component selection that hands
@@ -1217,7 +1589,8 @@ function AssemblyScene({
     if (framingKey === lastFramedKeyRef.current) return;
     lastFramedKeyRef.current = framingKey;
 
-    if (step.camera) {
+    // Manual "Set view" pose — applied verbatim, fov included.
+    if (step.camera && !("source" in step.camera)) {
       desiredPoseRef.current = {
         position: new Vector3(...step.camera.position),
         target: new Vector3(...step.camera.target)
@@ -1228,6 +1601,15 @@ function AssemblyScene({
       }
       return;
     }
+
+    // Planner-baked view direction: chosen at plan time with sight lines
+    // against the real triangles of everything installed earlier — the AABB
+    // scoring below can't tell a hollow container's open top from its wall.
+    // Target, distance, and the frustum fit still happen live.
+    const planDirection =
+      step.camera && "source" in step.camera
+        ? new Vector3(...step.camera.direction).normalize()
+        : null;
 
     if (step.componentNodeIds.length === 0) return;
 
@@ -1252,93 +1634,153 @@ function AssemblyScene({
     // Aim mostly at the assembly (context) with a nudge toward the component
     const target = center.clone().lerp(componentCenter, 0.3);
 
-    // Where the action happens: the seated pose and the travel midpoint
+    // Where the action happens: the seated body (corners, so a mostly-hidden
+    // part scores worse than a clear one) plus the full travel — start,
+    // midpoint, and seat.
     const motionDirection = insertionDirection(step.motion);
-    const lookPoints = [componentCenter];
     const startOffset = insertionStartOffset(step.motion);
+    const boxCorner = (box: Box3, i: number, offset: Vector3 | null) => {
+      const corner = new Vector3(
+        i & 1 ? box.max.x : box.min.x,
+        i & 2 ? box.max.y : box.min.y,
+        i & 4 ? box.max.z : box.min.z
+      );
+      return offset ? corner.add(offset) : corner;
+    };
+    const lookPoints = [componentCenter];
+    for (let i = 0; i < 8; i++) {
+      lookPoints.push(boxCorner(componentBox, i, null));
+    }
     if (startOffset) {
       lookPoints.push(
         componentCenter.clone().addScaledVector(startOffset, 0.5)
       );
+      lookPoints.push(componentCenter.clone().add(startOffset));
     }
 
-    // Occluders: everything that renders during this step, weighted by how
-    // strongly it hides the action (ghosted future components barely count)
-    const stepComponents = new Set(step.componentNodeIds);
-    const occluders: { min: Vector3; max: Vector3; weight: number }[] = [];
-    for (const leaf of leafBounds ?? []) {
-      if (stepComponents.has(leaf.nodeId)) continue;
-      if (hiddenSet.has(leaf.nodeId)) continue;
-      const leafStep = stepIndexByNode.get(leaf.nodeId);
-      const isFuture = leafStep !== undefined && leafStep > activeStepIndex;
-      if (isFuture && futureMode === "hidden") continue;
-      occluders.push({
-        min: new Vector3(...(leaf.bbox.min as [number, number, number])),
-        max: new Vector3(...(leaf.bbox.max as [number, number, number])),
-        weight: isFuture && futureMode === "ghost" ? 0.3 : 1
-      });
-    }
-
-    // Candidate view directions: two elevation rings around the up axis,
-    // plus the current view. Pick the one that sees the action with the
-    // fewest components in the way, preferring lateral travel and small turns.
     const up = camera.up.clone().normalize();
-    let basisU = new Vector3().crossVectors(up, new Vector3(0, 0, 1));
-    if (basisU.lengthSq() < 1e-6) {
-      basisU = new Vector3().crossVectors(up, new Vector3(1, 0, 0));
-    }
-    basisU.normalize();
-    const basisV = new Vector3().crossVectors(up, basisU).normalize();
-
-    const currentDirection = camera.position
-      .clone()
-      .sub(controls.target)
-      .normalize();
-    const candidates: Vector3[] = [];
-    if (currentDirection.lengthSq() > 1e-6) candidates.push(currentDirection);
-    for (const elevation of [0.3, 0.55]) {
-      const horizontal = Math.sqrt(1 - elevation * elevation);
-      for (let i = 0; i < 8; i++) {
-        const azimuth = (i / 8) * Math.PI * 2;
-        candidates.push(
-          new Vector3()
-            .addScaledVector(basisU, Math.cos(azimuth) * horizontal)
-            .addScaledVector(basisV, Math.sin(azimuth) * horizontal)
-            .addScaledVector(up, elevation)
-            .normalize()
-        );
+    let bestDirection: Vector3;
+    if (planDirection && planDirection.lengthSq() > 1e-6) {
+      bestDirection = planDirection;
+    } else {
+      // Live fallback (manual/edited steps, plans without directions):
+      // AABB-scored candidates. Coarse — it can't see through hollow
+      // geometry — which is exactly why generated steps carry a baked
+      // direction instead.
+      const stepComponents = new Set(step.componentNodeIds);
+      const occluders: { min: Vector3; max: Vector3; weight: number }[] = [];
+      for (const leaf of leafBounds ?? []) {
+        if (stepComponents.has(leaf.nodeId)) continue;
+        if (hiddenSet.has(leaf.nodeId)) continue;
+        const leafStep = stepIndexByNode.get(leaf.nodeId);
+        const isFuture = leafStep !== undefined && leafStep > activeStepIndex;
+        if (isFuture && futureMode === "hidden") continue;
+        occluders.push({
+          min: new Vector3(...(leaf.bbox.min as [number, number, number])),
+          max: new Vector3(...(leaf.bbox.max as [number, number, number])),
+          weight: isFuture && futureMode === "ghost" ? 0.3 : 1
+        });
       }
-    }
 
-    let bestDirection = candidates[0] ?? new Vector3(1, 1, 1).normalize();
-    let bestScore = Number.POSITIVE_INFINITY;
-    for (const candidate of candidates) {
-      const eye = target.clone().addScaledVector(candidate, distance);
-      let score = 0;
-      // How much is in the way of seeing the action?
-      for (const point of lookPoints) {
-        for (const occluder of occluders) {
-          if (segmentIntersectsBox(eye, point, occluder.min, occluder.max)) {
-            score += occluder.weight;
-          }
+      // Candidate view directions: elevation rings around the up axis, plus
+      // the current view. Pick the one that sees the action with the fewest
+      // components in the way, preferring lateral travel and small turns.
+      let basisU = new Vector3().crossVectors(up, new Vector3(0, 0, 1));
+      if (basisU.lengthSq() < 1e-6) {
+        basisU = new Vector3().crossVectors(up, new Vector3(1, 0, 0));
+      }
+      basisU.normalize();
+      const basisV = new Vector3().crossVectors(up, basisU).normalize();
+
+      const currentDirection = camera.position
+        .clone()
+        .sub(controls.target)
+        .normalize();
+      const candidates: Vector3[] = [];
+      if (currentDirection.lengthSq() > 1e-6) candidates.push(currentDirection);
+      // Third, steeper ring: in dense machines the only clear sight line to a
+      // buried part is often from high above.
+      for (const elevation of [0.3, 0.55, 0.8]) {
+        const horizontal = Math.sqrt(1 - elevation * elevation);
+        for (let i = 0; i < 8; i++) {
+          const azimuth = (i / 8) * Math.PI * 2;
+          candidates.push(
+            new Vector3()
+              .addScaledVector(basisU, Math.cos(azimuth) * horizontal)
+              .addScaledVector(basisV, Math.sin(azimuth) * horizontal)
+              .addScaledVector(up, elevation)
+              .normalize()
+          );
         }
       }
-      // Prefer travel running across the screen, not into it
-      if (motionDirection) {
-        score +=
-          4 * Math.max(0, Math.abs(candidate.dot(motionDirection)) - 0.6);
-      }
-      // Prefer small turns from the current view
-      score += 1.75 * (1 - candidate.dot(currentDirection));
-      if (score < bestScore) {
-        bestScore = score;
-        bestDirection = candidate;
+
+      bestDirection = candidates[0] ?? new Vector3(1, 1, 1).normalize();
+      let bestScore = Number.POSITIVE_INFINITY;
+      for (const candidate of candidates) {
+        const eye = target.clone().addScaledVector(candidate, distance);
+        let score = 0;
+        // How much is in the way of seeing the action?
+        for (const point of lookPoints) {
+          for (const occluder of occluders) {
+            if (segmentIntersectsBox(eye, point, occluder.min, occluder.max)) {
+              score += occluder.weight;
+            }
+          }
+        }
+        // Prefer travel running across the screen, not into it
+        if (motionDirection) {
+          score +=
+            4 * Math.max(0, Math.abs(candidate.dot(motionDirection)) - 0.6);
+        }
+        // Prefer small turns from the current view
+        score += 1.75 * (1 - candidate.dot(currentDirection));
+        if (score < bestScore) {
+          bestScore = score;
+          bestDirection = candidate;
+        }
       }
     }
 
+    // Guarantee the action is entirely in frame: pan the target (and only
+    // grow the distance when the action genuinely can't fit) so the seated
+    // body plus its travel-start copy sit inside the frustum.
+    let right = new Vector3().crossVectors(up, bestDirection);
+    if (right.lengthSq() < 1e-6) right = new Vector3(1, 0, 0);
+    right.normalize();
+    const trueUp = new Vector3().crossVectors(bestDirection, right).normalize();
+    const actionPoints: Vector3[] = [];
+    for (let i = 0; i < 8; i++) {
+      actionPoints.push(boxCorner(componentBox, i, null));
+      if (startOffset)
+        actionPoints.push(boxCorner(componentBox, i, startOffset));
+    }
+    const rel = new Vector3();
+    const camPoints: Vec3[] = actionPoints.map((point) => {
+      rel.copy(point).sub(target);
+      return [rel.dot(right), rel.dot(trueUp), rel.dot(bestDirection)];
+    });
+    const aspect =
+      camera instanceof PerspectiveCamera && camera.aspect > 0
+        ? camera.aspect
+        : 16 / 9;
+    const tanHalfV = Math.tan(((fov / 2) * Math.PI) / 180);
+    const fit = fitFraming(
+      camPoints,
+      tanHalfV * aspect,
+      tanHalfV,
+      0.85,
+      distance
+    );
+    const framedTarget = target
+      .clone()
+      .addScaledVector(right, fit.pan[0])
+      .addScaledVector(trueUp, fit.pan[1]);
+
     desiredPoseRef.current = {
-      position: target.clone().addScaledVector(bestDirection, distance),
-      target
+      position: framedTarget
+        .clone()
+        .addScaledVector(bestDirection, fit.distance),
+      target: framedTarget
     };
   }, [
     steps,
@@ -1350,7 +1792,8 @@ function AssemblyScene({
     leafBounds,
     hiddenSet,
     stepIndexByNode,
-    futureMode
+    futureMode,
+    cameraMode
   ]);
 
   // --- Selection -------------------------------------------------------------
@@ -1363,7 +1806,13 @@ function AssemblyScene({
       // component still reports as the closest hit. Walk the front-to-back
       // intersections and pick the nearest component that is actually rendered,
       // letting clicks pass through hidden geometry to the components inside it.
-      const nodeId = findVisibleNodeId(clickEvent.intersections);
+      // Alt+click drills: select the INNERMOST part on the ray (through any
+      // box/lid), matching the x-ray reveal shown on Alt-hover.
+      const stack = visibleNodeStack(clickEvent.intersections);
+      const nodeId =
+        clickEvent.nativeEvent.altKey && stack.length >= 2
+          ? (stack[stack.length - 1] ?? null)
+          : findVisibleNodeId(clickEvent.intersections);
       if (!nodeId) return;
       // Selection is controlled by `highlightedNodeIds`: shift-click extends the
       // current selection, a plain click replaces it. Emit the new set and let
@@ -1381,6 +1830,60 @@ function AssemblyScene({
     },
     [readOnly, onSelectComponents, highlightedSet]
   );
+
+  const handlePointerMove = useCallback(
+    (moveEvent: ThreeEvent<PointerEvent>) => {
+      // Skip the raycast entirely while playing or orbiting — the two moments
+      // the view is busiest. Drilling only happens with Alt held.
+      if (
+        !pickingEnabled ||
+        isPlaying ||
+        orbitingRef.current ||
+        !moveEvent.nativeEvent.altKey
+      ) {
+        clearDrill();
+        return;
+      }
+      const stack = visibleNodeStack(moveEvent.intersections);
+      // Nothing to drill through — the front part IS the target, so no reveal.
+      if (stack.length < 2) {
+        clearDrill();
+        return;
+      }
+      const target = stack[stack.length - 1] ?? null;
+      if (!target || drillTargetRef.current === target) return;
+      drillTargetRef.current = target;
+      setDrillState({ ghostIds: stack.slice(0, -1), target });
+    },
+    [pickingEnabled, isPlaying, clearDrill]
+  );
+
+  const handlePointerOut = useCallback(() => clearDrill(), [clearDrill]);
+
+  // Drop any stale drill when picking turns off (leaving edit mode) or playback
+  // starts.
+  useEffect(() => {
+    if (!pickingEnabled || isPlaying) clearDrill();
+  }, [pickingEnabled, isPlaying, clearDrill]);
+
+  // Releasing Alt (even without moving) ends the drill promptly.
+  useEffect(() => {
+    if (!pickingEnabled) return;
+    const onKeyUp = (event: KeyboardEvent) => {
+      if (event.key === "Alt") clearDrill();
+    };
+    window.addEventListener("keyup", onKeyUp);
+    return () => window.removeEventListener("keyup", onKeyUp);
+  }, [pickingEnabled, clearDrill]);
+
+  // Pointer cursor signals a live drill target. document.body owns the cursor
+  // because the r3f canvas fills the pane.
+  useEffect(() => {
+    document.body.style.cursor = drill ? "pointer" : "";
+    return () => {
+      document.body.style.cursor = "";
+    };
+  }, [drill]);
 
   // A box drag just completed the selection — swallow the click that fires at
   // the end of the drag so it doesn't immediately clear what we just selected.
@@ -1435,7 +1938,10 @@ function AssemblyScene({
       active: false,
       startX: 0,
       startY: 0,
-      moved: false
+      moved: false,
+      // Canvas rect captured once per drag — the canvas can't move mid-drag,
+      // and getBoundingClientRect per pointermove forces layout.
+      rect: null as DOMRect | null
     };
     const localX = (event: PointerEvent, rect: DOMRect) =>
       event.clientX - rect.left;
@@ -1459,6 +1965,7 @@ function AssemblyScene({
       const rect = env.gl.domElement.getBoundingClientRect();
       if (env.controls) env.controls.enabled = false; // suppress orbit for the box
       drag.active = true;
+      drag.rect = rect;
       drag.startX = localX(event, rect);
       drag.startY = localY(event, rect);
       drag.moved = false;
@@ -1473,7 +1980,7 @@ function AssemblyScene({
     const onMove = (event: PointerEvent) => {
       if (!drag.active) return;
       const env = boxEnvRef.current;
-      const rect = env.gl.domElement.getBoundingClientRect();
+      const rect = drag.rect ?? env.gl.domElement.getBoundingClientRect();
       const x = localX(event, rect);
       const y = localY(event, rect);
       const width = Math.abs(x - drag.startX);
@@ -1495,7 +2002,7 @@ function AssemblyScene({
       env.onBoxRect?.(null);
       // A click, not a drag — let the miss handler clear the selection instead.
       if (!drag.moved || !env.onSelectComponents) return;
-      const rect = env.gl.domElement.getBoundingClientRect();
+      const rect = drag.rect ?? env.gl.domElement.getBoundingClientRect();
       const endX = localX(event, rect);
       const endY = localY(event, rect);
       const minX = Math.min(drag.startX, endX);
@@ -1545,6 +2052,8 @@ function AssemblyScene({
         object={scene}
         onClick={handleClick}
         onPointerMissed={handlePointerMissed}
+        onPointerMove={handlePointerMove}
+        onPointerOut={handlePointerOut}
       />
       {isEditingActive && editMotion && onMotionChange && seatedCentroid && (
         <MotionPathEditor
@@ -1651,6 +2160,84 @@ function formatTime(seconds: number): string {
   return `${minutes}:${String(remainder).padStart(2, "0")}`;
 }
 
+/**
+ * Chapter-style timeline: one segment per step (width ∝ its duration), the
+ * played portion of each filled, the active step lifted, and a handle at the
+ * playhead. A full-bleed transparent range input rides on top for pointer
+ * scrubbing and keyboard control (←/→), so the custom visual stays purely
+ * presentational.
+ */
+function TimelineScrubber({
+  segments,
+  startTimes,
+  totalSeconds,
+  displayTime,
+  activeStepIndex,
+  stepCount,
+  onScrub
+}: {
+  segments: number[];
+  startTimes: number[];
+  totalSeconds: number;
+  displayTime: number;
+  activeStepIndex: number;
+  stepCount: number;
+  onScrub: (seconds: number) => void;
+}) {
+  const clamped = Math.min(Math.max(displayTime, 0), totalSeconds);
+  const playheadPct = totalSeconds > 0 ? (clamped / totalSeconds) * 100 : 0;
+  const disabled = stepCount === 0;
+
+  return (
+    <div className="group relative flex h-5 min-w-0 flex-1 items-center">
+      <div className="flex h-1.5 w-full gap-0.5">
+        {(segments.length > 0 ? segments : [1]).map((duration, index) => {
+          const start = startTimes[index] ?? 0;
+          const fill =
+            duration > 0
+              ? Math.min(Math.max((clamped - start) / duration, 0), 1)
+              : clamped >= start
+                ? 1
+                : 0;
+          return (
+            <div
+              key={`${start}-${index}`}
+              className={cn(
+                "relative h-full overflow-hidden rounded-full bg-muted-foreground/25 transition-colors",
+                index === activeStepIndex && "bg-muted-foreground/40"
+              )}
+              style={{ flexGrow: Math.max(duration, 0.001) }}
+            >
+              <div
+                className="absolute inset-0 origin-left rounded-full bg-primary"
+                style={{ transform: `scaleX(${fill})` }}
+              />
+            </div>
+          );
+        })}
+      </div>
+      {!disabled && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 scale-50 rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.5)] transition-transform group-hover:scale-100"
+          style={{ left: `${playheadPct}%` }}
+        />
+      )}
+      <input
+        type="range"
+        aria-label="Timeline"
+        className="absolute inset-0 h-full w-full cursor-pointer opacity-0 disabled:cursor-default"
+        min={0}
+        max={Math.max(totalSeconds, 0.01)}
+        step={0.05}
+        value={clamped}
+        disabled={disabled}
+        onChange={(changeEvent) => onScrub(Number(changeEvent.target.value))}
+      />
+    </div>
+  );
+}
+
 /** True when the keyboard event is aimed at a text field, so shortcuts like
  * Cmd/Ctrl+A should fall through to the browser's own select-all. */
 function isEditableTarget(target: EventTarget | null): boolean {
@@ -1698,6 +2285,27 @@ function findVisibleNodeId(
     if (nodeId) return nodeId;
   }
   return null;
+}
+
+/**
+ * Distinct rendered component ids the pointer ray passes through, front to back.
+ * A part is one node, so the ray entering and exiting the same box yields that
+ * box once — the LAST entry is the innermost content, the drill-select target.
+ */
+function visibleNodeStack(
+  intersections: readonly { object: Object3D }[]
+): string[] {
+  const stack: string[] = [];
+  const seen = new Set<string>();
+  for (const intersection of intersections) {
+    if (!isRendered(intersection.object)) continue;
+    const nodeId = findNodeId(intersection.object);
+    if (nodeId && !seen.has(nodeId)) {
+      seen.add(nodeId);
+      stack.push(nodeId);
+    }
+  }
+  return stack;
 }
 
 function getOverride(

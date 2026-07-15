@@ -14,6 +14,8 @@ export const path = {
       batchNumbers: (itemId: string) =>
         generatePath(`${api}/batch-numbers?itemId=${itemId}`),
       failureModes: `${api}/failure-modes`,
+      pickedAllocation: (jobMaterialId: string) =>
+        generatePath(`${api}/picked-allocation?jobMaterialId=${jobMaterialId}`),
       qualityIssueTypes: `${api}/quality-issue-types`,
       serialNumbers: (itemId: string) =>
         generatePath(`${api}/serial-numbers?itemId=${itemId}`),

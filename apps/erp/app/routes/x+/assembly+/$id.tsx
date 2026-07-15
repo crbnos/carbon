@@ -47,9 +47,11 @@ import {
   toViewerStep,
   upsertAssemblyInstruction
 } from "~/modules/production";
+import { isAssemblerServiceHealthy } from "~/modules/production/production.server";
 import AssemblyInstructionExplorer from "~/modules/production/ui/Assemblies/AssemblyInstructionExplorer";
 import AssemblyInstructionHeader from "~/modules/production/ui/Assemblies/AssemblyInstructionHeader";
 import AssemblyInstructionProperties from "~/modules/production/ui/Assemblies/AssemblyInstructionProperties";
+import { ModelConvertProgress } from "~/modules/production/ui/Assemblies/ModelConvertProgress";
 import type { Handle } from "~/utils/handle";
 import { getPrivateUrl, path } from "~/utils/path";
 
@@ -74,12 +76,23 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getAssemblyStandardNotes(client, companyId)
   ]);
 
-  if (instruction.error) {
+  const instructionError = instruction.error;
+  if (instructionError || !instruction.data) {
+    // A deleted/absent instruction is a normal not-found (PGRST116 = no rows),
+    // not a server error. A stale tab left open on a deleted instruction keeps
+    // revalidating (realtime + poll); logging error() on every hit spams the
+    // service log. Log only genuine DB errors; redirect quietly otherwise.
+    // Entered when there's an error OR no row. Not-found = a PGRST116 (no rows)
+    // error, or the no-error-no-row case; a genuine DB error falls through to
+    // error() so it's still logged.
+    const notFound = !instructionError || instructionError.code === "PGRST116";
     throw redirect(
       path.to.assemblyInstructions,
       await flash(
         request,
-        error(instruction.error, "Failed to load assembly instruction")
+        notFound
+          ? { success: false, message: "Assembly instruction not found" }
+          : error(instructionError, "Failed to load assembly instruction")
       )
     );
   }
@@ -92,7 +105,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     planJob,
     componentMappings,
     units,
-    bomMaterials
+    bomMaterials,
+    assemblerAvailable
   ] = await Promise.all([
     getAssemblyInstructionStepRequirements(client, stepIds),
     getAssemblyInstructionStepMaterials(client, stepIds),
@@ -110,7 +124,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       : Promise.resolve({ data: [] }),
     instruction.data.itemId
       ? getFlattenedBomMaterials(client, instruction.data.itemId, companyId)
-      : Promise.resolve([])
+      : Promise.resolve([]),
+    isAssemblerServiceHealthy()
   ]);
 
   return {
@@ -123,7 +138,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     plan,
     planJob: planJob.data ?? null,
     componentMappings: componentMappings.data ?? [],
-    bomMaterials
+    bomMaterials,
+    assemblerAvailable
   };
 }
 
@@ -182,7 +198,8 @@ export default function AssemblyInstructionRoute() {
     plan,
     planJob,
     componentMappings,
-    bomMaterials
+    bomMaterials,
+    assemblerAvailable
   } = useLoaderData<typeof loader>();
   const permissions = usePermissions();
   const mode = useMode();
@@ -212,16 +229,27 @@ export default function AssemblyInstructionRoute() {
   // Components panel, and (while authoring a step) stages the step's draft components.
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
   const [hiddenNodeIds, setHiddenNodeIds] = useState<string[]>([]);
+  // Isolate/focus: picking components in the Components panel shows ONLY them in
+  // the viewer (everything else hidden) so the part can be inspected alone.
+  // Cleared by a viewer/3D pick, a step change, add-mode, or an empty selection.
+  const [focusedNodeIds, setFocusedNodeIds] = useState<string[]>([]);
   // Add-mode: while on, picking components (in the viewer or the Components panel)
   // appends them to the active step. Off by default, so plain selection never
   // mutates a step's components — you must explicitly start adding.
   const [isAddingComponents, setIsAddingComponents] = useState(false);
 
-  const selectedStep =
-    steps.find((step) => step.id === selectedStepId) ?? steps[0] ?? null;
-  const activeStepIndex = selectedStep
-    ? steps.findIndex((step) => step.id === selectedStep.id)
-    : 0;
+  const { selectedStep, activeStepIndex } = useMemo(() => {
+    const step =
+      steps.find((candidate) => candidate.id === selectedStepId) ??
+      steps[0] ??
+      null;
+    return {
+      selectedStep: step,
+      activeStepIndex: step
+        ? steps.findIndex((candidate) => candidate.id === step.id)
+        : 0
+    };
+  }, [steps, selectedStepId]);
 
   // Read the latest steps inside the stable onSelectStep without widening its
   // deps (it feeds explorer effects that must not re-fire on every steps change).
@@ -244,6 +272,9 @@ export default function AssemblyInstructionRoute() {
     [componentsFetcher, id]
   );
 
+  // Bumped to preview (play) the active step — a double-click in the Explorer.
+  const [playStepNonce, setPlayStepNonce] = useState(0);
+
   const onSelectStep = useCallback(
     (stepId: string, options?: { selectComponents?: boolean }) => {
       setSelectedStepId(stepId);
@@ -252,6 +283,8 @@ export default function AssemblyInstructionRoute() {
       // Leave any open motion-path edit session when moving to another step.
       setEditingStepId(null);
       setDraftMotion(null);
+      // Changing steps drops any isolate — the new step's parts should be visible.
+      setFocusedNodeIds([]);
       // Selecting a step makes its components the active selection — red in the
       // viewer, marked in the Components panel. Viewer-driven changes (playback,
       // scrub, on-screen nav) pass selectComponents:false so auto-advance doesn't
@@ -266,12 +299,25 @@ export default function AssemblyInstructionRoute() {
     []
   );
 
+  // Double-clicking a step previews it: select it, then bump the nonce so the
+  // player animates its insertion (single-click just shows it seated).
+  const onPreviewStep = useCallback(
+    (stepId: string) => {
+      onSelectStep(stepId);
+      setPlayStepNonce((nonce) => nonce + 1);
+    },
+    [onSelectStep]
+  );
+
   // Picking components (in the viewer or the Components panel) drives the shared
   // selection. It only touches the active step's components while add-mode is on —
   // then each selection is appended (union) and autosaved immediately.
   const onSelectComponents = useCallback(
     (nodeIds: string[]) => {
       setSelectedNodeIds(nodeIds);
+      // A viewer/3D pick (or the details-panel list) drops any isolate — only
+      // the Components panel isolates, via onFocusComponents below.
+      setFocusedNodeIds([]);
       if (isAddingComponents && !isDisabled && selectedStep) {
         const base =
           draftComponentNodeIds ?? selectedStep.componentNodeIds ?? [];
@@ -289,11 +335,28 @@ export default function AssemblyInstructionRoute() {
     ]
   );
 
+  // The Components panel selects AND isolates: picking a component shows only it
+  // in the viewer. While add-mode is on, panel picks append to the step instead
+  // (delegated to onSelectComponents) and don't isolate — you need the whole
+  // model visible to pick what to add.
+  const onFocusComponents = useCallback(
+    (nodeIds: string[]) => {
+      if (isAddingComponents) {
+        onSelectComponents(nodeIds);
+        return;
+      }
+      setSelectedNodeIds(nodeIds);
+      setFocusedNodeIds(nodeIds);
+    },
+    [isAddingComponents, onSelectComponents]
+  );
+
   // Enter add-mode with a clean slate: clear the selection so the components picked
   // *next* are the ones added, not whatever happened to be highlighted.
   const onStartAddComponents = useCallback(() => {
     setIsAddingComponents(true);
     setSelectedNodeIds([]);
+    setFocusedNodeIds([]);
   }, []);
 
   const onStopAddComponents = useCallback(
@@ -320,6 +383,23 @@ export default function AssemblyInstructionRoute() {
 
   const viewerSteps = useMemo(() => steps.map(toViewerStep), [steps]);
 
+  // Per-step requirements/materials for the properties panel — memoized so a
+  // per-frame motion-drag re-render (draftMotion) doesn't hand the panel new
+  // array identities and re-render it.
+  const activeStepId = selectedStep?.id ?? null;
+  const stepRequirements = useMemo(
+    () =>
+      activeStepId ? requirements.filter((r) => r.stepId === activeStepId) : [],
+    [requirements, activeStepId]
+  );
+  const selectedStepMaterials = useMemo(
+    () =>
+      activeStepId
+        ? stepMaterials.filter((m) => m.stepId === activeStepId)
+        : [],
+    [stepMaterials, activeStepId]
+  );
+
   // Authored subassembly units, normalized for step-title derivation: a step
   // whose components are exactly a unit is titled by the unit's name ("Add Board").
   const namedUnits = useMemo(
@@ -336,15 +416,22 @@ export default function AssemblyInstructionRoute() {
   const graphPath = modelUpload?.graphPath;
 
   // Conversion is lazy (kicked off when the instruction was created), so the
-  // artifacts may still be in flight — poll until they land. "Idle" without
-  // artifacts covers the window before the queued event is picked up.
-  const isConverting =
+  // artifacts may still be in flight. A job that is actually running gets a
+  // fast poll + live progress; "Idle" without artifacts (pre-pickup window, or
+  // nothing triggered yet) polls gently — an eternal fast loop on the heavy
+  // route loader makes the whole page feel sluggish.
+  const isActivelyConverting =
     !glbPath &&
     (modelUpload?.processingStatus === "Queued" ||
-      modelUpload?.processingStatus === "Processing" ||
-      modelUpload?.processingStatus === "Idle");
+      modelUpload?.processingStatus === "Processing");
+  const isAwaitingPickup = !glbPath && modelUpload?.processingStatus === "Idle";
+  const isConverting = isActivelyConverting || isAwaitingPickup;
   const revalidator = useRevalidator();
-  useInterval(() => revalidator.revalidate(), isConverting ? 5000 : null);
+  useInterval(
+    () => revalidator.revalidate(),
+    isActivelyConverting ? 2000 : isAwaitingPickup ? 5000 : null
+  );
+  const cancelPlanFetcher = useFetcher<{ success: boolean }>();
   const retryFetcher = useFetcher<{}>();
 
   // --- Motion path + camera editing (viewer-driven) ------------------------
@@ -433,6 +520,7 @@ export default function AssemblyInstructionRoute() {
                   selectedStepId={selectedStep?.id ?? null}
                   isDisabled={isDisabled}
                   isConverting={isConverting}
+                  assemblerAvailable={assemblerAvailable}
                   graphIndex={graphIndex}
                   hasPlan={Boolean(plan)}
                   planJob={planJob}
@@ -441,18 +529,32 @@ export default function AssemblyInstructionRoute() {
                   bomMaterials={bomMaterials}
                   selectedNodeIds={selectedNodeIds}
                   onSelectStep={onSelectStep}
-                  onHighlightComponents={onSelectComponents}
+                  onPreviewStep={onPreviewStep}
+                  onHighlightComponents={onFocusComponents}
                   onHideComponents={setHiddenNodeIds}
                 />
               }
               content={
                 <div className="relative bg-background h-[calc(100dvh-99px)] w-full">
                   {glbPath && graphPath && isPlanning && (
-                    <div className="pointer-events-none absolute left-1/2 top-3 z-10 flex -translate-x-1/2 items-center gap-2 rounded-full border border-border bg-background/90 px-3 py-1.5 shadow-sm">
+                    <div className="absolute left-1/2 top-3 z-10 flex -translate-x-1/2 items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 shadow-lg">
                       <Spinner className="h-3.5 w-3.5" />
-                      <span className="whitespace-nowrap text-xs text-muted-foreground">
-                        Planning motion
+                      <span className="whitespace-nowrap text-xs font-medium text-foreground">
+                        Planning motion…
                       </span>
+                      <cancelPlanFetcher.Form
+                        method="post"
+                        action={path.to.assemblyJobsCancel(id!)}
+                      >
+                        <input type="hidden" name="kind" value="plan" />
+                        <button
+                          type="submit"
+                          disabled={cancelPlanFetcher.state !== "idle"}
+                          className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline disabled:opacity-50"
+                        >
+                          Cancel
+                        </button>
+                      </cancelPlanFetcher.Form>
                     </div>
                   )}
                   {glbPath && graphPath ? (
@@ -470,6 +572,7 @@ export default function AssemblyInstructionRoute() {
                           graphUrl={getPrivateUrl(graphPath)}
                           steps={viewerSteps}
                           activeStepIndex={Math.max(activeStepIndex, 0)}
+                          playStepNonce={playStepNonce}
                           onStepChange={(index) => {
                             const step = steps[index];
                             if (step)
@@ -481,6 +584,7 @@ export default function AssemblyInstructionRoute() {
                           onGraphLoaded={setGraph}
                           highlightedNodeIds={selectedNodeIds}
                           hiddenNodeIds={hiddenNodeIds}
+                          focusedNodeIds={focusedNodeIds}
                           readOnly={isDisabled}
                           editMotion={
                             editingStepId &&
@@ -492,25 +596,27 @@ export default function AssemblyInstructionRoute() {
                           onMotionChange={onMotionChange}
                           units={namedUnits}
                           suppressFallbackMotions={isPlanning}
+                          componentPickerActive={isAddingComponents}
                           autoPlay={false}
                           mode={mode}
                           className="h-full"
                         />
                       )}
                     </ClientOnly>
-                  ) : isConverting ? (
-                    <div className="flex flex-col h-full w-full items-center justify-center gap-4">
-                      <Spinner className="h-10 w-10" />
-                      <p className="text-sm text-muted-foreground max-w-[320px] text-center">
-                        Converting the model for assembly instructions… this can
-                        take a minute.
-                      </p>
-                    </div>
+                  ) : (isActivelyConverting || isAwaitingPickup) &&
+                    modelUpload?.id ? (
+                    <ModelConvertProgress
+                      modelUploadId={modelUpload.id}
+                      instructionId={id!}
+                    />
                   ) : modelUpload?.processingStatus === "Failed" ? (
                     <Empty>
-                      <p className="text-sm text-muted-foreground max-w-[320px] text-center">
+                      <p className="text-sm font-medium text-foreground">
+                        Couldn't prepare this model
+                      </p>
+                      <p className="max-w-[320px] text-center text-sm text-muted-foreground">
                         {modelUpload?.processingError ??
-                          "Model conversion failed"}
+                          "Something went wrong converting the CAD file for 3D viewing."}
                       </p>
                       <retryFetcher.Form
                         method="post"
@@ -525,15 +631,18 @@ export default function AssemblyInstructionRoute() {
                             !permissions.can("update", "production")
                           }
                         >
-                          Retry conversion
+                          Try again
                         </Button>
                       </retryFetcher.Form>
                     </Empty>
                   ) : (
                     <Empty>
-                      <p className="text-sm text-muted-foreground max-w-[320px] text-center">
-                        The model has not been processed for assembly
-                        instructions yet
+                      <p className="text-sm font-medium text-foreground">
+                        Model not ready yet
+                      </p>
+                      <p className="max-w-[320px] text-center text-sm text-muted-foreground">
+                        This model hasn't been prepared for 3D viewing. It'll
+                        appear here once processing starts.
                       </p>
                     </Empty>
                   )}
@@ -543,13 +652,15 @@ export default function AssemblyInstructionRoute() {
                 <AssemblyInstructionProperties
                   key={selectedStep?.id ?? "empty"}
                   step={selectedStep}
+                  stepIndex={selectedStep ? activeStepIndex : null}
+                  stepCount={steps.length}
                   draftComponentNodeIds={draftComponentNodeIds}
                   selectedNodeIds={selectedNodeIds}
                   isAddingComponents={isAddingComponents}
                   isDisabled={isDisabled}
                   graphIndex={graphIndex}
                   units={namedUnits}
-                  onSelectComponents={onSelectComponents}
+                  onSelectComponents={onFocusComponents}
                   onStartAddComponents={onStartAddComponents}
                   onStopAddComponents={onStopAddComponents}
                   onRemoveComponents={onRemoveComponents}
@@ -558,21 +669,8 @@ export default function AssemblyInstructionRoute() {
                   onStopEditMotion={onStopEditMotion}
                   onSetCamera={onSetCamera}
                   onClearCamera={onClearCamera}
-                  requirements={
-                    selectedStep
-                      ? requirements.filter(
-                          (requirement) =>
-                            requirement.stepId === selectedStep.id
-                        )
-                      : []
-                  }
-                  stepMaterials={
-                    selectedStep
-                      ? stepMaterials.filter(
-                          (material) => material.stepId === selectedStep.id
-                        )
-                      : []
-                  }
+                  requirements={stepRequirements}
+                  stepMaterials={selectedStepMaterials}
                   bomMaterials={bomMaterials}
                   standardNotes={standardNotes}
                 />

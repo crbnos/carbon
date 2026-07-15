@@ -54,7 +54,13 @@ export function LabelWithHelp({
             aria-label={t`What is ${translatedTerm}?`}
             className={cn(
               "inline-flex items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-              isInline ? "h-4 w-4" : "h-5 w-5"
+              // Stacked labels sit above a form control: the 20px button is 4px
+              // taller than the text-xs (16px) line, which would push the input
+              // down and misalign it with tooltip-less fields in a grid. The
+              // -2px vertical margin collapses the button's margin-box back to
+              // the text line height so the row height is identical either way;
+              // the hover ring overhangs harmlessly and the icon stays in line.
+              isInline ? "h-4 w-4" : "h-5 w-5 -my-0.5"
             )}
           >
             <LuInfo

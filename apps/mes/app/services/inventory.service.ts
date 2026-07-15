@@ -381,6 +381,61 @@ export async function getPickedQuantitiesByJobMaterial(
   return picked;
 }
 
+/**
+ * The exact lots a picking list already picked for a job material — read from
+ * `pickingListLineTrackedEntity`, summed by `trackedEntityId` across every live
+ * picking line (a material can span several lines/lists). Same live-list filter
+ * as `getPickedQuantitiesByJobMaterial`: only "In Progress"/"Completed" lists, and
+ * never a Cancelled line. Shaped as `SuggestedAllocationLot[]` so the Issue modal
+ * can seed it through the same path the no-picking-list suggestion uses. On a
+ * partial-batch pick the original entity keeps the picked qty on the lineside
+ * shelf (still `Available`), so these ids are valid picker options. Never throws
+ * (returns []).
+ */
+export async function getPickedTrackedEntitiesForMaterial(
+  client: SupabaseClient<Database>,
+  args: { jobMaterialId: string; companyId: string }
+): Promise<SuggestedAllocationLot[]> {
+  const { data, error } = await client
+    .from("pickingListLine")
+    .select(
+      "companyId, pickingList!inner(status), pickingListLineTrackedEntity(trackedEntityId, quantityPicked, trackedEntity(readableId, expirationDate))"
+    )
+    .eq("jobMaterialId", args.jobMaterialId)
+    .eq("companyId", args.companyId)
+    .neq("status", "Cancelled")
+    .in("pickingList.status", ["In Progress", "Completed"]);
+
+  if (error || !data) return [];
+
+  const byEntity = new Map<string, SuggestedAllocationLot>();
+  for (const line of data) {
+    for (const picked of line.pickingListLineTrackedEntity ?? []) {
+      const quantity = Number(picked.quantityPicked ?? 0);
+      if (!picked.trackedEntityId || quantity <= 0) continue;
+      const existing = byEntity.get(picked.trackedEntityId);
+      if (existing) {
+        existing.quantity += quantity;
+      } else {
+        const entity = picked.trackedEntity as {
+          readableId: string | null;
+          expirationDate: string | null;
+        } | null;
+        byEntity.set(picked.trackedEntityId, {
+          trackedEntityId: picked.trackedEntityId,
+          readableId: entity?.readableId ?? null,
+          quantity,
+          expirationDate: entity?.expirationDate ?? null,
+          storageUnitId: null,
+          storageUnitName: null
+        });
+      }
+    }
+  }
+
+  return [...byEntity.values()];
+}
+
 export async function insertManualInventoryAdjustment(
   client: SupabaseClient<Database>,
   inventoryAdjustment: z.infer<typeof inventoryAdjustmentValidator> & {

@@ -1,39 +1,65 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Json } from "@carbon/database";
-import { GEOMETRY_SERVICE_API_KEY, GEOMETRY_SERVICE_URL } from "@carbon/env";
+import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
 import type { AssemblyPlan } from "@carbon/viewer/steps";
+import { NonRetriableError } from "inngest";
 import { inngest } from "../../client";
 import { loadPlanUnits } from "./plan-units";
 import { updateAssemblyStepMotionsFromPlan } from "./update-step-motions";
 
-const SIGNED_URL_EXPIRY = 60 * 60; // seconds
-// Every geometry HTTP call is now short (submit or a status poll), so a tight
-// per-request timeout is safe and catches a genuinely unreachable service.
+const SIGNED_URL_EXPIRY = 60 * 60; // seconds — the source (read) URL only.
+// Every geometry HTTP call is short (a submit), so a tight per-request timeout
+// is safe and catches a genuinely unreachable service.
 const REQUEST_TIMEOUT_MS = 60 * 1000;
-// Large assemblies can plan for 10+ minutes. Poll the async job on this cadence
-// up to this many times; exceeding it fails the job (→ onFailure → Failed → the
-// UI offers a retry) rather than waiting forever.
-const PLAN_POLL_INTERVAL = "15s";
-const PLAN_MAX_POLLS = 120; // 15s × 120 = 30 min budget
-// The geometry job registry is in-process; a restart drops running jobs. Re-submit
-// the plan on a lost job up to this many times before giving up.
-const PLAN_MAX_RESUBMITS = 3;
+// Bounded backoff when the service 429s a submit (all slots busy) — honors
+// Retry-After so Inngest's own retries don't hammer the semaphore.
+const BUSY_RETRIES = 4;
+// This function holds its run for the whole plan (it long-polls to completion),
+// so the global concurrency limit caps concurrent long-running plans
+// cluster-wide. Keep it aligned with the service's ASSEMBLER_MAX_CONCURRENCY
+// (default 2) so Inngest queues surplus plans instead of 429-storming.
+const PLAN_CONCURRENCY = 2;
+// Long-poll: GET /plan/{id}?wait=N holds the request open until the plan
+// finishes (or N elapses), so completion is near-immediate and a whole plan
+// costs a handful of checkpointed steps, not ~180 short polls. The client
+// timeout must exceed the server hold.
+const LONG_POLL_WAIT_S = 25;
+const LONG_POLL_TIMEOUT_MS = (LONG_POLL_WAIT_S + 10) * 1000;
+// Floor between polls. When the service actually holds the request for ~25s this
+// is negligible; when a poll returns immediately (a service without ?wait
+// support, a 404, or a network blip) this is what stops the loop from hammering
+// Inngest with back-to-back re-invocations.
+const POLL_GAP = "3s";
+// Total wall-clock budget before giving up, bounded by time (not a fixed poll
+// count) so it holds whether the service long-polls or returns immediately.
+const MAX_PLAN_WAIT_MS = 40 * 60 * 1000;
 
-const authHeaders: Record<string, string> = GEOMETRY_SERVICE_API_KEY
-  ? { Authorization: `Bearer ${GEOMETRY_SERVICE_API_KEY}` }
+const authHeaders: Record<string, string> = ASSEMBLER_SERVICE_API_KEY
+  ? { Authorization: `Bearer ${ASSEMBLER_SERVICE_API_KEY}` }
   : {};
 
 /**
  * Runs the geometry service motion planner over a converted model: computes a
- * collision-free insertion motion per part plus an assembly sequence, stored
- * as plan.json next to the model artifacts. See
- * docs/specs/animated-work-instructions-contracts.md (POST /plan).
+ * collision-free insertion motion per part plus an assembly sequence, stored as
+ * plan.json next to the model artifacts. See
+ * .ai/specs/2026-07-04-animated-work-instructions-contracts.md (POST /plan, GET /plan).
+ *
+ * One durable function owns the whole lifecycle: submit → long-poll GET /plan
+ * until the service finishes → flip the job row. Each poll carries a freshly
+ * minted signed upload URL (X-Plan-Upload-Url); the service PUTs plan.json to it
+ * (late-mint offload) and stores only a {status, planPath, stats} pointer in its
+ * Redis-backed store, so a restart still answers the poll (no 404-on-restart
+ * loss). Long-poll (rather than short-poll or a pushed completion event) keeps
+ * the whole flow inside this run with no dependency on service→Inngest events.
  */
 export const assemblyPlanFunction = inngest.createFunction(
   {
     id: "assembly-plan",
     retries: 2,
-    concurrency: [{ limit: 4 }, { key: "event.data.companyId", limit: 1 }],
+    concurrency: [
+      { limit: PLAN_CONCURRENCY },
+      { key: "event.data.companyId", limit: 1 }
+    ],
     onFailure: async ({ event }) => {
       const { modelUploadId } = event.data.event.data;
       const client = getCarbonServiceRole();
@@ -53,9 +79,15 @@ export const assemblyPlanFunction = inngest.createFunction(
     }
   },
   { event: "carbon/assembly-plan" },
-  async ({ event, step }) => {
-    const { modelUploadId, companyId, userId, reMotionFor, planJobId } =
-      event.data;
+  async ({ event, step, logger }) => {
+    const {
+      modelUploadId,
+      companyId,
+      userId,
+      reMotionFor,
+      planJobId,
+      reDetectUnits
+    } = event.data;
 
     const job = await step.run("queue", async () => {
       const client = getCarbonServiceRole();
@@ -119,16 +151,39 @@ export const assemblyPlanFunction = inngest.createFunction(
       };
     });
 
-    if (!GEOMETRY_SERVICE_URL) {
-      throw new Error("GEOMETRY_SERVICE_URL is not configured");
+    if (!ASSEMBLER_SERVICE_URL) {
+      throw new Error("ASSEMBLER_SERVICE_URL is not configured");
     }
-    const geometryUrl = GEOMETRY_SERVICE_URL;
+    const geometryUrl = ASSEMBLER_SERVICE_URL;
+
+    // Where plan.json lands. The service PUTs it here itself (offload) via a
+    // signed upload URL minted fresh on each poll (below); this run just records
+    // the pointer the service reports back.
+    const planPath = `${companyId}/models/${modelUploadId}/${job.id}/plan.json`;
+
+    const failJob = async (label: string, error: string) => {
+      await step.run(label, async () => {
+        const client = getCarbonServiceRole();
+        await client
+          .from("assemblyPlanJob")
+          .update({
+            status: "Failed",
+            error,
+            updatedAt: new Date().toISOString()
+          })
+          .eq("id", job.id)
+          .eq("companyId", companyId)
+          .eq("status", "Processing");
+      });
+      logger.warn("plan failed", { jobId: job.id, error });
+      return { jobId: job.id, status: "Failed" as const, error };
+    };
 
     // Re-motion mode (order-preserving): take the existing step order as the
     // fixed assembly sequence and let the planner only recompute each step's
     // motion (forward-collision against earlier steps). Otherwise plan fresh:
-    // collapse the model's leaf soup into rigid-body units so a 400-part model
-    // plans as its ~7 assembled units. Best-effort: no units → every leaf.
+    // send the user-authored "plan as one component" overrides as units — the
+    // planner auto-detects PCB detail swarms from geometry on its own.
     const sequence = reMotionFor
       ? await step.run("derive-sequence", async () => {
           const client = getCarbonServiceRole();
@@ -147,18 +202,17 @@ export const assemblyPlanFunction = inngest.createFunction(
     const units =
       sequence != null
         ? []
-        : await step.run("derive-units", () =>
+        : await step.run("load-authored-units", () =>
             loadPlanUnits({
               modelUploadId,
               companyId,
-              graphPath: job.graphPath
+              excludeAuto: reDetectUnits
             })
           );
 
     // Kick off the planner. The service starts it in the background and returns
-    // immediately, so the request is short — no connection is held open across
-    // the multi-minute run (which no HTTP hop survives). A fresh signed source
-    // URL is minted per submit so re-submits (below) don't reuse an expired one.
+    // 202 immediately; we then poll GET /plan below. A fresh signed source URL
+    // is minted per submit so retries don't reuse an expired one.
     const submitPlan = async () => {
       const client = getCarbonServiceRole();
 
@@ -169,134 +223,245 @@ export const assemblyPlanFunction = inngest.createFunction(
         throw new Error(`Failed to sign source URL: ${source.error.message}`);
       }
 
-      const response = await fetch(`${geometryUrl}/plan`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...authHeaders },
-        body: JSON.stringify({
-          jobId: job.id,
-          source: { url: source.data.signedUrl, format: "step" },
-          ...(sequence != null
-            ? { options: { sequence } }
-            : units.length > 0
-              ? { options: { units } }
-              : {})
-        }),
-        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
+      const body = JSON.stringify({
+        jobId: job.id,
+        source: { url: source.data.signedUrl, format: "step" },
+        // No upload URL here — it's minted fresh on each poll (late-mint) so the
+        // token is only seconds old when the service PUTs plan.json. The service
+        // reads planPath (for the completion pointer) and modelUploadId (to scope
+        // its content-hash result cache) out of meta.
+        meta: {
+          companyId,
+          userId,
+          modelUploadId,
+          reMotionFor: reMotionFor ?? null,
+          graphPath: job.graphPath ?? null,
+          planPath
+        },
+        ...(sequence != null
+          ? { options: { sequence } }
+          : units.length > 0
+            ? { options: { units } }
+            : {})
       });
 
-      const result = (await response.json().catch(() => null)) as {
-        ok?: boolean;
-        error?: string;
-      } | null;
-      if (!response.ok || !result?.ok) {
-        throw new Error(
-          result?.error ?? `Geometry service returned ${response.status}`
-        );
-      }
-      return { ok: true };
-    };
+      // Bounded 429 backoff honoring Retry-After: the service sheds load with
+      // BUSY when its slots are full; hammering it via instant retries only
+      // extends the outage.
+      for (let attempt = 0; ; attempt++) {
+        let response: Response;
+        try {
+          response = await fetch(`${geometryUrl}/plan`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", ...authHeaders },
+            body,
+            signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
+          });
+        } catch (e) {
+          const err = e as Error;
+          // A timeout may be transient (the service was briefly saturated) — let
+          // Inngest retry it. Genuine unreachability (down, DNS, TLS) is
+          // permanent, so fail fast → onFailure releases the job row now instead
+          // of after the retry backoff.
+          if (err.name === "TimeoutError" || err.name === "AbortError") {
+            throw new Error(
+              `Geometry service timed out after ${REQUEST_TIMEOUT_MS}ms`
+            );
+          }
+          throw new NonRetriableError(
+            `Geometry service unreachable: ${err.message}`
+          );
+        }
 
-    await step.run("start-plan", submitPlan);
+        if (response.status === 429 && attempt < BUSY_RETRIES) {
+          const retryAfter = Number(response.headers.get("retry-after")) || 15;
+          const waitMs = Math.min(retryAfter * 1000 * (attempt + 1), 120_000);
+          logger.warn("geometry /plan busy (429); backing off", {
+            jobId: job.id,
+            attempt,
+            waitMs
+          });
+          await new Promise((resolve) => setTimeout(resolve, waitMs));
+          continue;
+        }
 
-    // Poll the async job until it finishes. Each poll is its own short step, so
-    // Inngest sleeps between them rather than holding a request open. The
-    // geometry service keeps its job registry in-process, so a restart (or its
-    // dev `uvicorn --reload`) drops the running job and the poll 404s — recover
-    // by re-submitting rather than failing the whole plan.
-    let plan: Json | null = null;
-    let stats: Json = null;
-    let resubmits = 0;
-    for (let attempt = 0; attempt < PLAN_MAX_POLLS; attempt++) {
-      await step.sleep(`plan-wait-${attempt}`, PLAN_POLL_INTERVAL);
-
-      const status = await step.run(`plan-poll-${attempt}`, async () => {
-        const response = await fetch(`${geometryUrl}/plan/${job.id}`, {
-          headers: authHeaders,
-          signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
-        });
-        // 404 = the service no longer knows this job (it restarted).
-        if (response.status === 404) return { status: "missing" as const };
-        const body = (await response.json().catch(() => null)) as {
+        const result = (await response.json().catch(() => null)) as {
           ok?: boolean;
-          status?: string;
-          plan?: Json;
-          stats?: Record<string, unknown>;
           error?: string;
         } | null;
-        if (!response.ok || !body?.ok) {
-          throw new Error(
-            body?.error ?? `Geometry status check returned ${response.status}`
+        if (!response.ok || !result?.ok) {
+          // Non-429 errors are an outage (5xx) or a permanent rejection (4xx):
+          // retrying holds the job in Processing for nothing — fail fast.
+          throw new NonRetriableError(
+            result?.error ?? `Geometry service returned ${response.status}`
           );
         }
-        return body;
+        logger.info("plan submitted to geometry service", { jobId: job.id });
+        return { ok: true };
+      }
+    };
+
+    await step.run("submit", submitPlan);
+
+    // Long-poll GET /plan?wait until the service finishes. Each request holds
+    // open server-side until the plan lands (or ~25s elapses), so completion is
+    // near-immediate and each is a checkpointed step (a worker restart resumes
+    // the loop). The service offloaded plan.json to storage, so "done" carries
+    // only a { planPath, stats } pointer — not the plan body. A legacy service
+    // that ignored outputs.plan.url still returns the plan inline; handle both.
+    let resolvedPlanPath: string | null = null;
+    let inlinePlan: AssemblyPlan | null = null;
+    let stats: Json = null;
+    let finished = false;
+    // Bound by elapsed time, not a fixed poll count: the loop must behave whether
+    // the service long-polls (few iterations) or returns immediately (many).
+    const planStartedAt = await step.run("plan-poll-start", () => Date.now());
+    let i = 0;
+    while (Date.now() - planStartedAt < MAX_PLAN_WAIT_MS) {
+      const poll = await step.run(`poll-${i}`, async () => {
+        // Mint a fresh upload URL for THIS poll (late-mint). The service holds
+        // the finished plan until a poll carries a URL, then PUTs plan.json with
+        // this seconds-old token. Best-effort: a poll without it just keeps the
+        // service waiting for the next one.
+        const client = getCarbonServiceRole();
+        const upload = await client.storage
+          .from("private")
+          .createSignedUploadUrl(planPath, { upsert: true });
+        const headers: Record<string, string> = {
+          ...authHeaders,
+          ...(upload.data ? { "X-Plan-Upload-Url": upload.data.signedUrl } : {})
+        };
+        let response: Response;
+        try {
+          response = await fetch(
+            `${geometryUrl}/plan/${job.id}?wait=${LONG_POLL_WAIT_S}`,
+            {
+              headers,
+              signal: AbortSignal.timeout(LONG_POLL_TIMEOUT_MS)
+            }
+          );
+        } catch {
+          // A dropped/timed-out hold (service restart mid-hold, brief network
+          // blip) is transient with the Redis-backed store — treat as "still
+          // waiting" and long-poll again rather than failing the run.
+          return { status: "pending" as const };
+        }
+        // 404 with the Redis store is rare (only a genuinely unknown/expired
+        // job); treat as transient within the wall-clock window.
+        if (response.status === 404) return { status: "pending" as const };
+        const bodyJson = (await response.json().catch(() => null)) as {
+          status?: string;
+          planPath?: string;
+          plan?: AssemblyPlan;
+          stats?: Json;
+          error?: string;
+        } | null;
+        if (!response.ok || !bodyJson) {
+          throw new Error(`GET /plan returned ${response.status}`);
+        }
+        if (bodyJson.status === "done") {
+          return {
+            status: "done" as const,
+            planPath: bodyJson.planPath ?? null,
+            plan: bodyJson.plan ?? null,
+            stats: bodyJson.stats ?? null
+          };
+        }
+        if (bodyJson.status === "error") {
+          return {
+            status: "error" as const,
+            error: bodyJson.error ?? "Motion planning failed"
+          };
+        }
+        return { status: "pending" as const };
       });
 
-      if (status.status === "missing") {
-        if (resubmits >= PLAN_MAX_RESUBMITS) {
-          throw new Error(
-            "The geometry service repeatedly lost the plan job (restarting?)"
-          );
-        }
-        resubmits++;
-        await step.run(`plan-resubmit-${attempt}`, submitPlan);
-        continue;
-      }
-      if (status.status === "done") {
-        if (status.plan == null) {
-          throw new Error("Planner reported done but returned no plan");
-        }
-        plan = status.plan;
-        stats = (status.stats ?? null) as Json;
+      if (poll.status === "done") {
+        resolvedPlanPath = poll.planPath ?? planPath;
+        inlinePlan = poll.plan;
+        stats = poll.stats;
+        finished = true;
         break;
       }
-      if (status.status === "error") {
-        throw new Error(status.error ?? "Motion planning failed");
+      if (poll.status === "error") {
+        return failJob("mark-failed", poll.error);
       }
+      await step.sleep(`gap-${i}`, POLL_GAP);
+      i++;
     }
 
-    if (plan == null) {
-      throw new Error("Motion planning did not finish in time");
+    if (!finished) {
+      return failJob(
+        "mark-failed",
+        "Planner did not finish in the expected time"
+      );
     }
-    const planData = plan;
+    const donePlanPath = resolvedPlanPath ?? planPath;
 
+    // Persist: flip the row to the pointer the service reported. A legacy
+    // service returned the plan inline instead of offloading — upload it here in
+    // that case. Guarded by status=Processing so a cancel/racing-retry no-ops.
     await step.run("persist-plan", async () => {
       const client = getCarbonServiceRole();
-      const planPath = `${companyId}/models/${modelUploadId}/${job.id}/plan.json`;
-
-      const upload = await client.storage
-        .from("private")
-        .upload(planPath, JSON.stringify(planData), {
-          contentType: "application/json",
-          upsert: true
-        });
-      if (upload.error) {
-        throw new Error(`Failed to upload plan: ${upload.error.message}`);
+      if (inlinePlan) {
+        const upload = await client.storage
+          .from("private")
+          .upload(donePlanPath, JSON.stringify(inlinePlan), {
+            contentType: "application/json",
+            upsert: true
+          });
+        if (upload.error) {
+          throw new Error(
+            `Failed to upload plan.json: ${upload.error.message}`
+          );
+        }
       }
-
       await client
         .from("assemblyPlanJob")
         .update({
           status: "Success",
-          planPath,
+          planPath: donePlanPath,
           stats,
           updatedAt: new Date().toISOString()
         })
-        .eq("id", job.id);
+        .eq("id", job.id)
+        .eq("companyId", companyId)
+        .eq("status", "Processing");
     });
 
-    // Re-motion: the plan preserved the step order — update each step's motion
-    // in place (Done steps kept, order/titles/typed fields untouched).
+    // Re-motion: preserve step order, refresh each step's motion from the new
+    // plan (Done steps kept, titles/typed fields untouched). The plan lives in
+    // storage now (offloaded), so download it unless the legacy inline path
+    // already has it in memory.
     if (reMotionFor) {
       await step.run("update-step-motions", async () => {
         const client = getCarbonServiceRole();
+        let plan = inlinePlan;
+        if (!plan) {
+          const download = await client.storage
+            .from("private")
+            .download(donePlanPath);
+          if (download.error || !download.data) {
+            throw new Error(
+              `Failed to download plan.json for re-motion: ${download.error?.message ?? "not found"}`
+            );
+          }
+          plan = JSON.parse(await download.data.text()) as AssemblyPlan;
+        }
         await updateAssemblyStepMotionsFromPlan(client, {
           assemblyInstructionId: reMotionFor,
-          plan: planData as unknown as AssemblyPlan,
-          graphPath: job.graphPath,
+          plan,
+          graphPath: job.graphPath ?? null,
           companyId,
           userId
         });
       });
     }
+
+    logger.info("plan finalized", {
+      jobId: job.id,
+      reMotion: Boolean(reMotionFor)
+    });
+    return { jobId: job.id, status: "Success" as const };
   }
 );

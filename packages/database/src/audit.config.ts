@@ -350,6 +350,16 @@ export const auditConfig = {
       }
     },
 
+    inventoryCount: {
+      label: "Inventory Count",
+      tables: {
+        inventoryCount: { role: "root" },
+        // Line INSERTs (bulk snapshot generation) are auto-skipped for non-root
+        // tables; only UPDATE/DELETE on a counted line are logged.
+        inventoryCountLine: { entityIdColumn: "inventoryCountId" }
+      }
+    },
+
     workCenter: {
       label: "Work Center",
       tables: {
@@ -410,6 +420,16 @@ export const auditConfig = {
       label: "Fixed Asset",
       tables: {
         fixedAsset: { role: "root" }
+      }
+    },
+
+    accountingPeriod: {
+      label: "Accounting Period",
+      tables: {
+        accountingPeriod: {
+          role: "root",
+          createFields: ["startDate", "endDate", "status"]
+        }
       }
     }
   } satisfies Record<string, EntityConfig>,
@@ -475,6 +495,8 @@ export const auditConfig = {
     warehouseTransferLine: "Line Item",
     stockTransfer: "Stock Transfer",
     stockTransferLine: "Line Item",
+    inventoryCount: "Inventory Count",
+    inventoryCountLine: "Line Item",
     workCenter: "Work Center",
     workCenterProcess: "Process",
     maintenanceSchedule: "Maintenance Schedule",
@@ -485,7 +507,8 @@ export const auditConfig = {
     pricingRule: "Pricing Rule",
     customerItemPriceOverride: "Price Override",
     customerItemPriceOverrideBreak: "Quantity Break",
-    fixedAsset: "Fixed Asset"
+    fixedAsset: "Fixed Asset",
+    accountingPeriod: "Accounting Period"
   } satisfies Partial<Record<TableName, string>>,
 
   /** Fields to skip in diff computation */
