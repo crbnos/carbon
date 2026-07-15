@@ -17,43 +17,59 @@ describe("getEffectiveDefaultMarkups", () => {
 });
 
 describe("decideRecalcPricing", () => {
-  it("reprices a cost-plus row from its explicit categoryMarkups", () => {
+  it("PRESERVES a manual row — no recalc may change a stated price", () => {
     expect(
       decideRecalcPricing(
-        { categoryMarkups: { laborCost: 20 }, unitPrice: 120 },
+        { priceSource: "manual", categoryMarkups: {} },
+        { laborCost: 30 }
+      )
+    ).toEqual({ mode: "preserve" });
+  });
+  it("preserves a manual row even when it has stale categoryMarkups", () => {
+    expect(
+      decideRecalcPricing(
+        { priceSource: "manual", categoryMarkups: { laborCost: 20 } },
+        { laborCost: 30 }
+      )
+    ).toEqual({ mode: "preserve" });
+  });
+  it("preserves a manual row when defaults are disabled (the reported case)", () => {
+    expect(
+      decideRecalcPricing({ priceSource: "manual", categoryMarkups: {} }, {})
+    ).toEqual({ mode: "preserve" });
+  });
+  it("reprices a system cost-plus row from its explicit categoryMarkups", () => {
+    expect(
+      decideRecalcPricing(
+        { priceSource: "system", categoryMarkups: { laborCost: 20 } },
         { laborCost: 30 }
       )
     ).toEqual({ mode: "reprice", markups: { laborCost: 20 } });
   });
-  it("PRESERVES a fixed-price row (empty markups, price set) — default never overrides", () => {
+  it("reprices a system row without markups from the effective defaults", () => {
     expect(
       decideRecalcPricing(
-        { categoryMarkups: {}, unitPrice: 110 },
-        { laborCost: 30 }
-      )
-    ).toEqual({ mode: "preserve" });
-  });
-  it("preserves a fixed-price row even when the default is 0% (the reported case)", () => {
-    expect(
-      decideRecalcPricing({ categoryMarkups: {}, unitPrice: 110 }, {})
-    ).toEqual({ mode: "preserve" });
-  });
-  it("treats null categoryMarkups as empty", () => {
-    expect(
-      decideRecalcPricing({ categoryMarkups: null, unitPrice: 110 }, {})
-    ).toEqual({ mode: "preserve" });
-  });
-  it("prices an unpriced row from the effective defaults", () => {
-    expect(
-      decideRecalcPricing(
-        { categoryMarkups: {}, unitPrice: 0 },
+        { priceSource: "system", categoryMarkups: {} },
         { laborCost: 30 }
       )
     ).toEqual({ mode: "reprice", markups: { laborCost: 30 } });
   });
-  it("prices an unpriced row at cost (empty markups) when defaults are disabled", () => {
+  it("reprices a system row at cost (empty markups) when defaults are disabled — no freeze", () => {
     expect(
-      decideRecalcPricing({ categoryMarkups: {}, unitPrice: 0 }, {})
+      decideRecalcPricing({ priceSource: "system", categoryMarkups: {} }, {})
     ).toEqual({ mode: "reprice", markups: {} });
+  });
+  it("treats null categoryMarkups as empty", () => {
+    expect(
+      decideRecalcPricing({ priceSource: "system", categoryMarkups: null }, {})
+    ).toEqual({ mode: "reprice", markups: {} });
+  });
+  it("treats a null priceSource as system (legacy safety)", () => {
+    expect(
+      decideRecalcPricing(
+        { priceSource: null, categoryMarkups: { laborCost: 20 } },
+        {}
+      )
+    ).toEqual({ mode: "reprice", markups: { laborCost: 20 } });
   });
 });

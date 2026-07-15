@@ -446,15 +446,20 @@ const QuoteLinePricing = ({
           [quantity]: {
             ...prev.prices[quantity],
             categoryMarkups: newMarkups,
+            priceSource: "system",
             unitPrice
           }
         }
       }));
 
+      // Editing a per-category markup is explicit cost-plus intent: the row
+      // goes back to system pricing so BOM changes reprice it from these
+      // markups.
       const priceUpdate = await carbon
         ?.from("quoteLinePrice")
         .update({
           categoryMarkups: newMarkups,
+          priceSource: "system",
           unitPrice
         })
         .eq("quoteLineId", lineId)
@@ -510,10 +515,12 @@ const QuoteLinePricing = ({
       newPrices[quantity] = {
         ...newPrices[quantity],
         [key]: roundedValue,
-        // A direct price / virtual-markup edit makes this a fixed price, so clear
-        // any stored per-category markups — otherwise a later recalc would revert
-        // the user's value to the seeded/default markup.
-        ...(key === "unitPrice" ? { categoryMarkups: {} } : {})
+        // A direct price / virtual-markup edit makes this a manual price:
+        // priceSource 'manual' tells every recalc to preserve it, and clearing
+        // the stored per-category markups keeps the display consistent.
+        ...(key === "unitPrice"
+          ? { categoryMarkups: {}, priceSource: "manual" }
+          : {})
       };
 
       setEditableFields((prev) => ({
@@ -526,7 +533,9 @@ const QuoteLinePricing = ({
           ?.from("quoteLinePrice")
           .update({
             [key]: roundedValue,
-            ...(key === "unitPrice" ? { categoryMarkups: {} } : {}),
+            ...(key === "unitPrice"
+              ? { categoryMarkups: {}, priceSource: "manual" }
+              : {}),
             quoteLineId: lineId,
             quantity
           })

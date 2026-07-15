@@ -4928,6 +4928,7 @@ export type Database = {
           accountsReceivableEmail: string | null
           assetTaxDepreciationEnabled: boolean
           assetTaxRate: number | null
+          autoStartOperationTimer: boolean
           consoleEnabled: boolean
           defaultCustomerCc: string[] | null
           defaultSupplierCc: string[] | null
@@ -4971,6 +4972,7 @@ export type Database = {
           accountsReceivableEmail?: string | null
           assetTaxDepreciationEnabled?: boolean
           assetTaxRate?: number | null
+          autoStartOperationTimer?: boolean
           consoleEnabled?: boolean
           defaultCustomerCc?: string[] | null
           defaultSupplierCc?: string[] | null
@@ -5014,6 +5016,7 @@ export type Database = {
           accountsReceivableEmail?: string | null
           assetTaxDepreciationEnabled?: boolean
           assetTaxRate?: number | null
+          autoStartOperationTimer?: boolean
           consoleEnabled?: boolean
           defaultCustomerCc?: string[] | null
           defaultSupplierCc?: string[] | null
@@ -19751,6 +19754,50 @@ export type Database = {
           },
         ]
       }
+      jobMaterialStep: {
+        Row: {
+          jobMaterialId: string
+          jobOperationStepId: string
+        }
+        Insert: {
+          jobMaterialId: string
+          jobOperationStepId: string
+        }
+        Update: {
+          jobMaterialId?: string
+          jobOperationStepId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jobMaterialStep_jobMaterialId_fkey"
+            columns: ["jobMaterialId"]
+            isOneToOne: false
+            referencedRelation: "jobMaterial"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterialStep_jobMaterialId_fkey"
+            columns: ["jobMaterialId"]
+            isOneToOne: false
+            referencedRelation: "jobMaterialWithMakeMethodId"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterialStep_jobMaterialId_fkey"
+            columns: ["jobMaterialId"]
+            isOneToOne: false
+            referencedRelation: "openJobMaterialLines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterialStep_jobOperationStepId_fkey"
+            columns: ["jobOperationStepId"]
+            isOneToOne: false
+            referencedRelation: "jobOperationStep"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       jobOperation: {
         Row: {
           assemblyInstructionId: string | null
@@ -19773,6 +19820,7 @@ export type Database = {
           machineTime: number
           machineUnit: Database["public"]["Enums"]["factor"]
           manuallyScheduled: boolean
+          operationKind: Database["public"]["Enums"]["operationKind"]
           operationLeadTime: number
           operationMinimumCost: number
           operationOrder: Database["public"]["Enums"]["methodOperationOrder"]
@@ -19821,6 +19869,7 @@ export type Database = {
           machineTime?: number
           machineUnit?: Database["public"]["Enums"]["factor"]
           manuallyScheduled?: boolean
+          operationKind?: Database["public"]["Enums"]["operationKind"]
           operationLeadTime?: number
           operationMinimumCost?: number
           operationOrder?: Database["public"]["Enums"]["methodOperationOrder"]
@@ -19869,6 +19918,7 @@ export type Database = {
           machineTime?: number
           machineUnit?: Database["public"]["Enums"]["factor"]
           manuallyScheduled?: boolean
+          operationKind?: Database["public"]["Enums"]["operationKind"]
           operationLeadTime?: number
           operationMinimumCost?: number
           operationOrder?: Database["public"]["Enums"]["methodOperationOrder"]
@@ -20888,6 +20938,157 @@ export type Database = {
           },
         ]
       }
+      jobOperationStepSlide: {
+        Row: {
+          annotations: Json
+          caption: string | null
+          companyId: string
+          createdAt: string
+          createdBy: string
+          id: string
+          imagePath: string
+          size: string
+          sortOrder: number
+          stepId: string
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          annotations?: Json
+          caption?: string | null
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          id?: string
+          imagePath: string
+          size?: string
+          sortOrder?: number
+          stepId: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          annotations?: Json
+          caption?: string | null
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          id?: string
+          imagePath?: string
+          size?: string
+          sortOrder?: number
+          stepId?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jobOperationStepSlide_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationStepSlide_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationStepSlide_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "jobOperationStepSlide_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "jobOperationStepSlide_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationStepSlide_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationStepSlide_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationStepSlide_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationStepSlide_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "jobOperationStepSlide_stepId_fkey"
+            columns: ["stepId"]
+            isOneToOne: false
+            referencedRelation: "jobOperationStep"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationStepSlide_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationStepSlide_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationStepSlide_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationStepSlide_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationStepSlide_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
       jobOperationTool: {
         Row: {
           companyId: string
@@ -21083,6 +21284,36 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+        ]
+      }
+      jobOperationToolStep: {
+        Row: {
+          jobOperationStepId: string
+          jobOperationToolId: string
+        }
+        Insert: {
+          jobOperationStepId: string
+          jobOperationToolId: string
+        }
+        Update: {
+          jobOperationStepId?: string
+          jobOperationToolId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jobOperationToolStep_jobOperationStepId_fkey"
+            columns: ["jobOperationStepId"]
+            isOneToOne: false
+            referencedRelation: "jobOperationStep"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationToolStep_jobOperationToolId_fkey"
+            columns: ["jobOperationToolId"]
+            isOneToOne: false
+            referencedRelation: "jobOperationTool"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -25442,6 +25673,36 @@ export type Database = {
           },
         ]
       }
+      methodMaterialStep: {
+        Row: {
+          methodMaterialId: string
+          methodOperationStepId: string
+        }
+        Insert: {
+          methodMaterialId: string
+          methodOperationStepId: string
+        }
+        Update: {
+          methodMaterialId?: string
+          methodOperationStepId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "methodMaterialStep_methodMaterialId_fkey"
+            columns: ["methodMaterialId"]
+            isOneToOne: false
+            referencedRelation: "methodMaterial"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodMaterialStep_methodOperationStepId_fkey"
+            columns: ["methodOperationStepId"]
+            isOneToOne: false
+            referencedRelation: "methodOperationStep"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       methodOperation: {
         Row: {
           assemblyInstructionId: string | null
@@ -25456,6 +25717,7 @@ export type Database = {
           machineTime: number
           machineUnit: Database["public"]["Enums"]["factor"]
           makeMethodId: string
+          operationKind: Database["public"]["Enums"]["operationKind"]
           operationLeadTime: number | null
           operationMinimumCost: number | null
           operationOrder: Database["public"]["Enums"]["methodOperationOrder"]
@@ -25486,6 +25748,7 @@ export type Database = {
           machineTime?: number
           machineUnit?: Database["public"]["Enums"]["factor"]
           makeMethodId: string
+          operationKind?: Database["public"]["Enums"]["operationKind"]
           operationLeadTime?: number | null
           operationMinimumCost?: number | null
           operationOrder?: Database["public"]["Enums"]["methodOperationOrder"]
@@ -25516,6 +25779,7 @@ export type Database = {
           machineTime?: number
           machineUnit?: Database["public"]["Enums"]["factor"]
           makeMethodId?: string
+          operationKind?: Database["public"]["Enums"]["operationKind"]
           operationLeadTime?: number | null
           operationMinimumCost?: number | null
           operationOrder?: Database["public"]["Enums"]["methodOperationOrder"]
@@ -25991,6 +26255,157 @@ export type Database = {
           },
         ]
       }
+      methodOperationStepSlide: {
+        Row: {
+          annotations: Json
+          caption: string | null
+          companyId: string
+          createdAt: string
+          createdBy: string
+          id: string
+          imagePath: string
+          size: string
+          sortOrder: number
+          stepId: string
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          annotations?: Json
+          caption?: string | null
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          id?: string
+          imagePath: string
+          size?: string
+          sortOrder?: number
+          stepId: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          annotations?: Json
+          caption?: string | null
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          id?: string
+          imagePath?: string
+          size?: string
+          sortOrder?: number
+          stepId?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "methodOperationStepSlide_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodOperationStepSlide_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodOperationStepSlide_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "methodOperationStepSlide_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "methodOperationStepSlide_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodOperationStepSlide_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodOperationStepSlide_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodOperationStepSlide_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodOperationStepSlide_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "methodOperationStepSlide_stepId_fkey"
+            columns: ["stepId"]
+            isOneToOne: false
+            referencedRelation: "methodOperationStep"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodOperationStepSlide_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodOperationStepSlide_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodOperationStepSlide_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodOperationStepSlide_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodOperationStepSlide_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
       methodOperationTool: {
         Row: {
           companyId: string
@@ -26172,6 +26587,36 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+        ]
+      }
+      methodOperationToolStep: {
+        Row: {
+          methodOperationStepId: string
+          methodOperationToolId: string
+        }
+        Insert: {
+          methodOperationStepId: string
+          methodOperationToolId: string
+        }
+        Update: {
+          methodOperationStepId?: string
+          methodOperationToolId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "methodOperationToolStep_methodOperationStepId_fkey"
+            columns: ["methodOperationStepId"]
+            isOneToOne: false
+            referencedRelation: "methodOperationStep"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodOperationToolStep_methodOperationToolId_fkey"
+            columns: ["methodOperationToolId"]
+            isOneToOne: false
+            referencedRelation: "methodOperationTool"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -38523,6 +38968,7 @@ export type Database = {
           leadTime: number
           netExtendedPrice: number | null
           netUnitPrice: number | null
+          priceSource: string
           quantity: number
           quoteId: string
           quoteLineId: string
@@ -38545,6 +38991,7 @@ export type Database = {
           leadTime?: number
           netExtendedPrice?: number | null
           netUnitPrice?: number | null
+          priceSource?: string
           quantity?: number
           quoteId: string
           quoteLineId: string
@@ -38567,6 +39014,7 @@ export type Database = {
           leadTime?: number
           netExtendedPrice?: number | null
           netUnitPrice?: number | null
+          priceSource?: string
           quantity?: number
           quoteId?: string
           quoteLineId?: string
@@ -39244,6 +39692,43 @@ export type Database = {
           },
         ]
       }
+      quoteMaterialStep: {
+        Row: {
+          quoteMaterialId: string
+          quoteOperationStepId: string
+        }
+        Insert: {
+          quoteMaterialId: string
+          quoteOperationStepId: string
+        }
+        Update: {
+          quoteMaterialId?: string
+          quoteOperationStepId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quoteMaterialStep_quoteMaterialId_fkey"
+            columns: ["quoteMaterialId"]
+            isOneToOne: false
+            referencedRelation: "quoteMaterial"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteMaterialStep_quoteMaterialId_fkey"
+            columns: ["quoteMaterialId"]
+            isOneToOne: false
+            referencedRelation: "quoteMaterialWithMakeMethodId"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteMaterialStep_quoteOperationStepId_fkey"
+            columns: ["quoteOperationStepId"]
+            isOneToOne: false
+            referencedRelation: "quoteOperationStep"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quoteOperation: {
         Row: {
           companyId: string
@@ -39258,6 +39743,7 @@ export type Database = {
           machineRate: number | null
           machineTime: number
           machineUnit: Database["public"]["Enums"]["factor"]
+          operationKind: Database["public"]["Enums"]["operationKind"]
           operationLeadTime: number
           operationMinimumCost: number
           operationOrder: Database["public"]["Enums"]["methodOperationOrder"]
@@ -39292,6 +39778,7 @@ export type Database = {
           machineRate?: number | null
           machineTime?: number
           machineUnit?: Database["public"]["Enums"]["factor"]
+          operationKind?: Database["public"]["Enums"]["operationKind"]
           operationLeadTime?: number
           operationMinimumCost?: number
           operationOrder?: Database["public"]["Enums"]["methodOperationOrder"]
@@ -39326,6 +39813,7 @@ export type Database = {
           machineRate?: number | null
           machineTime?: number
           machineUnit?: Database["public"]["Enums"]["factor"]
+          operationKind?: Database["public"]["Enums"]["operationKind"]
           operationLeadTime?: number
           operationMinimumCost?: number
           operationOrder?: Database["public"]["Enums"]["methodOperationOrder"]
@@ -39840,6 +40328,157 @@ export type Database = {
           },
         ]
       }
+      quoteOperationStepSlide: {
+        Row: {
+          annotations: Json
+          caption: string | null
+          companyId: string
+          createdAt: string
+          createdBy: string
+          id: string
+          imagePath: string
+          size: string
+          sortOrder: number
+          stepId: string
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          annotations?: Json
+          caption?: string | null
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          id?: string
+          imagePath: string
+          size?: string
+          sortOrder?: number
+          stepId: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          annotations?: Json
+          caption?: string | null
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          id?: string
+          imagePath?: string
+          size?: string
+          sortOrder?: number
+          stepId?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quoteOperationStepSlide_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteOperationStepSlide_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteOperationStepSlide_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "quoteOperationStepSlide_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "quoteOperationStepSlide_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteOperationStepSlide_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteOperationStepSlide_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteOperationStepSlide_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteOperationStepSlide_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "quoteOperationStepSlide_stepId_fkey"
+            columns: ["stepId"]
+            isOneToOne: false
+            referencedRelation: "quoteOperationStep"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteOperationStepSlide_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteOperationStepSlide_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteOperationStepSlide_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteOperationStepSlide_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteOperationStepSlide_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
       quoteOperationTool: {
         Row: {
           companyId: string
@@ -40028,6 +40667,36 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+        ]
+      }
+      quoteOperationToolStep: {
+        Row: {
+          quoteOperationStepId: string
+          quoteOperationToolId: string
+        }
+        Insert: {
+          quoteOperationStepId: string
+          quoteOperationToolId: string
+        }
+        Update: {
+          quoteOperationStepId?: string
+          quoteOperationToolId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quoteOperationToolStep_quoteOperationStepId_fkey"
+            columns: ["quoteOperationStepId"]
+            isOneToOne: false
+            referencedRelation: "quoteOperationStep"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteOperationToolStep_quoteOperationToolId_fkey"
+            columns: ["quoteOperationToolId"]
+            isOneToOne: false
+            referencedRelation: "quoteOperationTool"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -62494,14 +63163,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -66440,14 +67109,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -70582,6 +71251,7 @@ export type Database = {
           machineTime: number
           machineUnit: Database["public"]["Enums"]["factor"]
           operationDueDate: string
+          operationKind: Database["public"]["Enums"]["operationKind"]
           operationOrder: number
           operationOrderType: Database["public"]["Enums"]["methodOperationOrder"]
           operationQuantity: number
@@ -70855,6 +71525,7 @@ export type Database = {
           makeMethodId: string
           materialMakeMethodId: string
           methodMaterialId: string
+          methodOperationStepIds: Json
           methodType: Database["public"]["Enums"]["methodType"]
           operationId: string
           order: number
@@ -72515,6 +73186,7 @@ export type Database = {
         | "Completed"
         | "Skipped"
       oeeImpact: "Down" | "Planned" | "Impact" | "No Impact"
+      operationKind: "Operation" | "Assembly" | "Inspection"
       operationType: "Inside" | "Outside"
       payableLineType:
         | "Comment"
@@ -73882,6 +74554,7 @@ export const Constants = {
         "Skipped",
       ],
       oeeImpact: ["Down", "Planned", "Impact", "No Impact"],
+      operationKind: ["Operation", "Assembly", "Inspection"],
       operationType: ["Inside", "Outside"],
       payableLineType: [
         "Comment",

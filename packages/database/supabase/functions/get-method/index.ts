@@ -5181,6 +5181,10 @@ serve(async (req: Request) => {
                     unitPrice: l.unitPrice ?? 0,
                     shippingCost: l.shippingCost ?? 0,
                     exchangeRate: l.exchangeRate ?? 0,
+                    categoryMarkups: JSON.stringify(l.categoryMarkups ?? {}),
+                    // Copied prices keep their provenance so a manual price
+                    // stays protected on the new quote/revision.
+                    priceSource: l.priceSource ?? "system",
                     createdBy: userId,
                   }))
                 )
