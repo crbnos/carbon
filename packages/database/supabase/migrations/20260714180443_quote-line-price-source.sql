@@ -11,9 +11,12 @@
 ALTER TABLE "quoteLinePrice"
   ADD COLUMN "priceSource" TEXT NOT NULL DEFAULT 'system';
 
+-- NOT VALID skips the full-table validation scan under the ACCESS EXCLUSIVE
+-- lock; the constraint is validated explicitly after the backfill under a
+-- weaker lock.
 ALTER TABLE "quoteLinePrice"
   ADD CONSTRAINT "quoteLinePrice_priceSource_check"
-  CHECK ("priceSource" IN ('system', 'manual'));
+  CHECK ("priceSource" IN ('system', 'manual')) NOT VALID;
 
 -- Backfill: err on the side of never overwriting a price. A frozen price is
 -- visible and recoverable (edit a markup to re-enable cost tracking); a
@@ -31,3 +34,6 @@ WHERE "unitPrice" > 0
       WHERE kv.value::numeric > 0
     )
   );
+
+ALTER TABLE "quoteLinePrice"
+  VALIDATE CONSTRAINT "quoteLinePrice_priceSource_check";

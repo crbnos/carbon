@@ -509,6 +509,10 @@ export async function calculateQuoteLinePrices(
     .select("quantity, priceSource")
     .eq("quoteLineId", quoteLineId)
     .eq("companyId", companyId);
+  // A failed read must abort: treating it as "no manual rows" would let the
+  // delete/replace below wipe manually priced rows.
+  if (existingPricesResult.error)
+    throw new Error("Failed to get existing quote line prices");
   const manualQuantities = new Set(
     (existingPricesResult.data ?? [])
       .filter(
