@@ -2938,6 +2938,9 @@ msgstr "{0} मान बनाएं"
 msgid "Create & Snapshot"
 msgstr "बनाएं और स्नैपशॉट लें"
 
+msgid "Create a change order for the new revision and open it"
+msgstr ""
+
 msgid "Create a new kanban card for scan-based replenishment."
 msgstr "स्कैन-आधारित पुनःपूर्ति के लिए एक नया कानबन कार्ड बनाएं।"
 
@@ -8406,6 +8409,9 @@ msgstr "अरे! आप जिस लिंक को एक्सेस क�
 
 msgid "Open"
 msgstr "खोलें"
+
+msgid "Open a change order"
+msgstr ""
 
 msgid "Open Actions"
 msgstr "खुली कार्रवाइयाँ"

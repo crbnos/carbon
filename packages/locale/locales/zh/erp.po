@@ -2938,6 +2938,9 @@ msgstr "创建 {0} 个值"
 msgid "Create & Snapshot"
 msgstr "创建并快照"
 
+msgid "Create a change order for the new revision and open it"
+msgstr ""
+
 msgid "Create a new kanban card for scan-based replenishment."
 msgstr "为扫描式补货创建新的看板卡。"
 
@@ -8406,6 +8409,9 @@ msgstr "哎呀！您尝试访问的链接无效。"
 
 msgid "Open"
 msgstr "打开"
+
+msgid "Open a change order"
+msgstr ""
 
 msgid "Open Actions"
 msgstr "开放操作"

@@ -2938,6 +2938,9 @@ msgstr "Crear {0} valores"
 msgid "Create & Snapshot"
 msgstr "Crear y Capturar"
 
+msgid "Create a change order for the new revision and open it"
+msgstr ""
+
 msgid "Create a new kanban card for scan-based replenishment."
 msgstr "Crea una nueva tarjeta kanban para reabastecimiento basado en escaneo."
 
@@ -8406,6 +8409,9 @@ msgstr "¡Oops! El enlace que intentas acceder no es válido."
 
 msgid "Open"
 msgstr "Abrir"
+
+msgid "Open a change order"
+msgstr ""
 
 msgid "Open Actions"
 msgstr "Acciones Abiertas"

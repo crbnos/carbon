@@ -19,7 +19,7 @@ import {
   LuGitPullRequestArrow,
   LuTrash
 } from "react-icons/lu";
-import { Link, useParams } from "react-router";
+import { Link, useFetcher, useParams } from "react-router";
 import { useAuditLog } from "~/components/AuditLog";
 import { DetailsTopbar } from "~/components/Layout";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
@@ -38,6 +38,7 @@ const PartHeader = () => {
   const { company } = useUser();
   const permissions = usePermissions();
   const deleteModal = useDisclosure();
+  const changeOrderFetcher = useFetcher();
   const { trigger: auditLogTrigger, drawer: auditLogDrawer } = useAuditLog({
     entityType: "item",
     entityId: itemId,
@@ -91,12 +92,15 @@ const PartHeader = () => {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   disabled={!permissions.can("create", "parts")}
-                  asChild
+                  onClick={() =>
+                    changeOrderFetcher.submit(null, {
+                      method: "post",
+                      action: path.to.newChangeOrderFromItem(itemId)
+                    })
+                  }
                 >
-                  <Link to={`${path.to.newChangeOrder}?itemId=${itemId}`}>
-                    <DropdownMenuIcon icon={<LuGitPullRequestArrow />} />
-                    <Trans>Create Change Order</Trans>
-                  </Link>
+                  <DropdownMenuIcon icon={<LuGitPullRequestArrow />} />
+                  <Trans>Create Change Order</Trans>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem

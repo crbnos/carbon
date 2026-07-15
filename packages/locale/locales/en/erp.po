@@ -2938,6 +2938,9 @@ msgstr "Create {0} values"
 msgid "Create & Snapshot"
 msgstr "Create & Snapshot"
 
+msgid "Create a change order for the new revision and open it"
+msgstr "Create a change order for the new revision and open it"
+
 msgid "Create a new kanban card for scan-based replenishment."
 msgstr "Create a new kanban card for scan-based replenishment."
 
@@ -8406,6 +8409,9 @@ msgstr "Oops! The link you're trying to access is not valid."
 
 msgid "Open"
 msgstr "Open"
+
+msgid "Open a change order"
+msgstr "Open a change order"
 
 msgid "Open Actions"
 msgstr "Open Actions"

@@ -694,6 +694,10 @@ export const path = {
     // /x/items/change-orders; the detail record lives under /x/items/change-order/:id.
     changeOrders: `${x}/items/change-orders`,
     changeOrder: (id: string) => generatePath(`${x}/items/change-order/${id}`),
+    // One-click create-a-CO-for-this-item (POST) — used by the part version
+    // dropdown and the new-revision modal.
+    newChangeOrderFromItem: (itemId: string) =>
+      generatePath(`${x}/items/change-order/new-from-item/${itemId}`),
     changeOrderDetails: (id: string) =>
       generatePath(`${x}/items/change-order/${id}/details`),
     // The selected affected item drives the middle pane via the URL (not client

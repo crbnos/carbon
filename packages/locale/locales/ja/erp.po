@@ -2938,6 +2938,9 @@ msgstr "{0}個の値を作成"
 msgid "Create & Snapshot"
 msgstr "作成とスナップショット"
 
+msgid "Create a change order for the new revision and open it"
+msgstr ""
+
 msgid "Create a new kanban card for scan-based replenishment."
 msgstr "スキャンベースの補充用に新しいかんばんカードを作成します。"
 
@@ -8406,6 +8409,9 @@ msgstr "申し訳ございません。アクセスしようとしているリン
 
 msgid "Open"
 msgstr "開く"
+
+msgid "Open a change order"
+msgstr ""
 
 msgid "Open Actions"
 msgstr "オープンアクション"

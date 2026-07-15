@@ -2938,6 +2938,9 @@ msgstr "{0} 값 생성"
 msgid "Create & Snapshot"
 msgstr "생성 및 스냅샷"
 
+msgid "Create a change order for the new revision and open it"
+msgstr ""
+
 msgid "Create a new kanban card for scan-based replenishment."
 msgstr "스캔 기반 보충을 위한 새 칸반 카드를 생성합니다."
 
@@ -8406,6 +8409,9 @@ msgstr "이런! 접근하려는 링크가 유효하지 않습니다."
 
 msgid "Open"
 msgstr "열림"
+
+msgid "Open a change order"
+msgstr ""
 
 msgid "Open Actions"
 msgstr "미결 조치"
