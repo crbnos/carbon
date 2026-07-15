@@ -804,7 +804,9 @@ serve(async (req: Request) => {
 
               const areAllLinesShipped = salesOrderLines.every(
                 (line) =>
-                  line.salesOrderLineType === "Comment" || line.sentComplete
+                  line.salesOrderLineType === "Comment" ||
+                  line.salesOrderLineType === "Service" ||
+                  line.sentComplete
               );
 
               let status: Database["public"]["Tables"]["salesOrder"]["Row"]["status"] =
@@ -2246,7 +2248,9 @@ serve(async (req: Request) => {
 
               const areAllLinesShipped = salesOrderLines.every(
                 (line) =>
-                  line.salesOrderLineType === "Comment" || line.sentComplete
+                  line.salesOrderLineType === "Comment" ||
+                  line.salesOrderLineType === "Service" ||
+                  line.sentComplete
               );
 
               let status: Database["public"]["Tables"]["salesOrder"]["Row"]["status"] =

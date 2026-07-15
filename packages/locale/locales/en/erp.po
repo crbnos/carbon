@@ -334,6 +334,9 @@ msgstr "A sales RFQ (a customer asks you to quote) or a purchasing RFQ (you ask 
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 
+msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
+msgstr "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
+
 msgid "A set of companies under one owner that share group-scoped configuration — the chart of accounts, currencies, and dimensions — so the same accounting setup spans every company in the group."
 msgstr "A set of companies under one owner that share group-scoped configuration — the chart of accounts, currencies, and dimensions — so the same accounting setup spans every company in the group."
 
@@ -1591,9 +1594,6 @@ msgstr "Awaiting approval"
 msgid "Back"
 msgstr "Back"
 
-msgid "Back Home"
-msgstr "Back Home"
-
 msgid "Back to traceability"
 msgstr "Back to traceability"
 
@@ -2639,6 +2639,9 @@ msgstr "Copy link to part"
 msgid "Copy link to procedure"
 msgstr "Copy link to procedure"
 
+msgid "Copy link to service"
+msgstr "Copy link to service"
+
 msgid "Copy link to tool"
 msgstr "Copy link to tool"
 
@@ -2686,6 +2689,12 @@ msgstr "Copy Quote"
 
 msgid "Copy Quote number"
 msgstr "Copy Quote number"
+
+msgid "Copy service number"
+msgstr "Copy service number"
+
+msgid "Copy service unique identifier"
+msgstr "Copy service unique identifier"
 
 msgid "Copy this item's pricing to another scope."
 msgstr "Copy this item's pricing to another scope."
@@ -2983,6 +2992,9 @@ msgstr "Created required action"
 
 msgid "Created scrap reason"
 msgstr "Created scrap reason"
+
+msgid "Created service"
+msgstr "Created service"
 
 msgid "Created shipping method"
 msgstr "Created shipping method"
@@ -3694,6 +3706,9 @@ msgstr "Delete Sales Order"
 msgid "Delete Schedule"
 msgstr "Delete Schedule"
 
+msgid "Delete Service"
+msgstr "Delete Service"
+
 msgid "Delete Shift"
 msgstr "Delete Shift"
 
@@ -4370,6 +4385,9 @@ msgstr "Edit Scheduled Maintenance"
 msgid "Edit Sequence"
 msgstr "Edit Sequence"
 
+msgid "Edit Service"
+msgstr "Edit Service"
+
 msgid "Edit Shift"
 msgstr "Edit Shift"
 
@@ -4441,12 +4459,6 @@ msgstr "Edit Webhook"
 
 msgid "Edit Work Center"
 msgstr "Edit Work Center"
-
-msgid "Effective From"
-msgstr "Effective From"
-
-msgid "Effective To"
-msgstr "Effective To"
 
 msgid "Email"
 msgstr "Email"
@@ -4996,6 +5008,10 @@ msgstr "Failed to create payment term: {0}"
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create process: {0}"
 msgstr "Failed to create process: {0}"
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create service: {0}"
+msgstr "Failed to create service: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create shipping method: {0}"
@@ -7637,6 +7653,9 @@ msgstr "New Sales Order Line"
 
 msgid "New Scheduled Maintenance"
 msgstr "New Scheduled Maintenance"
+
+msgid "New Service"
+msgstr "New Service"
 
 msgid "New Shift"
 msgstr "New Shift"
@@ -10610,11 +10629,17 @@ msgstr "Service Charges"
 msgid "Service Charges (default)"
 msgstr "Service Charges (default)"
 
+msgid "Service Details"
+msgstr "Service Details"
+
 msgid "Service ID"
 msgstr "Service ID"
 
 msgid "services"
 msgstr "services"
+
+msgid "Services"
+msgstr "Services"
 
 msgid "Set a target"
 msgstr "Set a target"
@@ -10952,9 +10977,6 @@ msgstr "Solutions Engineer"
 
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
-
-msgid "Something went wrong"
-msgstr "Something went wrong"
 
 msgid "Something went wrong. Please try again."
 msgstr "Something went wrong. Please try again."
@@ -13014,6 +13036,9 @@ msgstr "Use ... to get the next material ID"
 msgid "Use ... to get the next part ID"
 msgstr "Use ... to get the next part ID"
 
+msgid "Use ... to get the next service ID"
+msgstr "Use ... to get the next service ID"
+
 msgid "Use ... to get the next tool ID"
 msgstr "Use ... to get the next tool ID"
 
@@ -13031,12 +13056,6 @@ msgstr "Used in the navigation and on documents like sales orders"
 
 msgid "Used in the navigation in dark mode"
 msgstr "Used in the navigation in dark mode"
-
-msgid "Used on builds on/after this date (blank = always)"
-msgstr "Used on builds on/after this date (blank = always)"
-
-msgid "Used on builds on/before this date (blank = always)"
-msgstr "Used on builds on/before this date (blank = always)"
 
 msgid "Used on the home screen and digital quotes"
 msgstr "Used on the home screen and digital quotes"

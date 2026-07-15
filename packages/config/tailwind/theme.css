@@ -137,6 +137,11 @@
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
 
+  /* ErrorBoundary (VOID//SYS) effects */
+  --animate-scan: scan 6s linear infinite;
+  --animate-flicker: flicker 1.6s steps(1, end) infinite;
+  --animate-marquee: marquee 24s linear infinite;
+
   --container-2xl: 1400px;
 }
 
@@ -164,5 +169,41 @@
   }
   to {
     stroke-dashoffset: 0;
+  }
+}
+
+/* ErrorBoundary (VOID//SYS) effects */
+@keyframes scan {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(300%);
+  }
+}
+
+@keyframes flicker {
+  0%,
+  18%,
+  22%,
+  25%,
+  53%,
+  57%,
+  100% {
+    opacity: 1;
+  }
+  20%,
+  24%,
+  55% {
+    opacity: 0.25;
+  }
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
   }
 }

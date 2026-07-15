@@ -25387,8 +25387,6 @@ export type Database = {
           createdAt: string
           createdBy: string
           customFields: Json | null
-          effectiveFrom: string | null
-          effectiveTo: string | null
           id: string
           itemId: string
           itemType: string
@@ -25413,8 +25411,6 @@ export type Database = {
           createdAt?: string
           createdBy: string
           customFields?: Json | null
-          effectiveFrom?: string | null
-          effectiveTo?: string | null
           id?: string
           itemId: string
           itemType?: string
@@ -25439,8 +25435,6 @@ export type Database = {
           createdAt?: string
           createdBy?: string
           customFields?: Json | null
-          effectiveFrom?: string | null
-          effectiveTo?: string | null
           id?: string
           itemId?: string
           itemType?: string
@@ -59941,7 +59935,6 @@ export type Database = {
           amount: number | null
           companyId: string | null
           createdAt: string | null
-          createdBy: string | null
           customFields: Json | null
           description: string | null
           documentId: string | null
@@ -60008,41 +60001,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "integrations"
             referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "journalLine_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "journalLine_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "journalLine_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "journalLine_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "journalLine_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
           },
           {
             foreignKeyName: "journalLine_intercompanyPartnerId_fkey"
@@ -66547,6 +66505,13 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
+            columns: ["shipmentCountryCode"]
+            isOneToOne: false
+            referencedRelation: "country"
+            referencedColumns: ["alpha2"]
+          },
+          {
+            foreignKeyName: "address_countryCode_fkey"
             columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
@@ -66555,13 +66520,6 @@ export type Database = {
           {
             foreignKeyName: "address_countryCode_fkey"
             columns: ["invoiceCountryCode"]
-            isOneToOne: false
-            referencedRelation: "country"
-            referencedColumns: ["alpha2"]
-          },
-          {
-            foreignKeyName: "address_countryCode_fkey"
-            columns: ["shipmentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -71512,8 +71470,6 @@ export type Database = {
         Args: { uid: string }
         Returns: {
           description: string
-          effectiveFrom: string
-          effectiveTo: string
           externalId: Json
           isPickDescendant: boolean
           isRoot: boolean
@@ -72232,6 +72188,31 @@ export type Database = {
           status: Database["public"]["Enums"]["jobStatus"]
           tags: string[]
           thumbnailPath: string
+        }[]
+      }
+      get_user_select_group_members: {
+        Args: { p_company_id: string; p_group_id: string }
+        Returns: Json
+      }
+      get_user_select_groups: {
+        Args: {
+          p_company_id: string
+          p_limit?: number
+          p_offset?: number
+          p_search?: string
+          p_type?: string
+        }
+        Returns: {
+          groupCount: number
+          id: string
+          isCustomerOrgGroup: boolean
+          isCustomerTypeGroup: boolean
+          isEmployeeTypeGroup: boolean
+          isRoot: boolean
+          isSupplierOrgGroup: boolean
+          isSupplierTypeGroup: boolean
+          name: string
+          userCount: number
         }[]
       }
       getConsolidationRates: {

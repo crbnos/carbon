@@ -76,7 +76,7 @@ import {
   useUser
 } from "~/hooks";
 import { getDefaultStorageUnitForJob } from "~/modules/inventory/inventory.service";
-import { methodType } from "~/modules/shared";
+import { itemType, methodType } from "~/modules/shared";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import {
@@ -579,6 +579,7 @@ const SalesOrderLineForm = ({
                           name="itemId"
                           label={i18n._(itemTypeLabel(lineType as "Part"))}
                           type={lineType as "Part"}
+                          validItemTypes={[...itemType]}
                           typeFieldName="salesOrderLineType"
                           value={itemData.itemId}
                           locationId={locationId}

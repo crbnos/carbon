@@ -59,8 +59,8 @@ import {
   useUser
 } from "~/hooks";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
-import type { MethodItemType } from "~/modules/shared";
-import { methodItemType } from "~/modules/shared";
+import type { ItemType } from "~/modules/shared";
+import { itemType } from "~/modules/shared";
 import { useItems } from "~/stores/items";
 import { path } from "~/utils/path";
 import { isSalesOrderLocked } from "../../sales.models";
@@ -431,14 +431,14 @@ function SalesOrderLineItem({
                   <Trans>Delete Line</Trans>
                 </DropdownMenuItem>
                 {/* @ts-expect-error */}
-                {methodItemType.includes(line?.salesOrderLineType ?? "") && (
+                {itemType.includes(line?.salesOrderLineType ?? "") && (
                   <DropdownMenuItem
                     asChild
                     onClick={(e) => e.stopPropagation()}
                   >
                     <Link
                       to={getLinkToItemDetails(
-                        line.salesOrderLineType as MethodItemType,
+                        line.salesOrderLineType as ItemType,
                         line.itemId!
                       )}
                     >

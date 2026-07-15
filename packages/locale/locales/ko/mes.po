@@ -105,9 +105,6 @@ msgstr "인증 오류"
 msgid "available"
 msgstr "사용 가능"
 
-msgid "Back Home"
-msgstr "홈으로"
-
 msgid "Batch"
 msgstr "배치"
 
@@ -327,9 +324,6 @@ msgstr "{0}의 PIN 입력"
 
 msgid "Error"
 msgstr "오류"
-
-msgid "Error!"
-msgstr "오류!"
 
 msgid "Estimated"
 msgstr "예상"
@@ -971,9 +965,6 @@ msgstr "{stationName}(으)로 로그인됨"
 
 msgid "Size"
 msgstr "사이즈"
-
-msgid "Something went wrong"
-msgstr "문제가 발생했습니다"
 
 msgid "Source"
 msgstr "소스"

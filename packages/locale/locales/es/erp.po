@@ -334,6 +334,9 @@ msgstr "Un RFQ de venta (un cliente te pide que cotices) o un RFQ de compra (tu 
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "Un cronograma separado para la presentación de impuestos cuando las reglas fiscales requieren un método diferente a la depreciación de libros."
 
+msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
+msgstr "Un servicio es una actividad facturable que se compra o realiza; nunca se envía, recibe o almacena"
+
 msgid "A set of companies under one owner that share group-scoped configuration — the chart of accounts, currencies, and dimensions — so the same accounting setup spans every company in the group."
 msgstr "Un conjunto de empresas bajo un mismo propietario que comparten una configuración con alcance de grupo —el plan de cuentas, las monedas y las dimensiones— de modo que la misma configuración contable abarca todas las empresas del grupo."
 
@@ -1591,9 +1594,6 @@ msgstr "A la espera de aprobación"
 msgid "Back"
 msgstr "Atrás"
 
-msgid "Back Home"
-msgstr "Volver a casa"
-
 msgid "Back to traceability"
 msgstr "Volver a trazabilidad"
 
@@ -2639,6 +2639,9 @@ msgstr "Copiar enlace a la pieza"
 msgid "Copy link to procedure"
 msgstr "Copiar enlace al procedimiento"
 
+msgid "Copy link to service"
+msgstr "Copiar enlace al servicio"
+
 msgid "Copy link to tool"
 msgstr "Copiar enlace a la herramienta"
 
@@ -2686,6 +2689,12 @@ msgstr "Copiar Presupuesto"
 
 msgid "Copy Quote number"
 msgstr "Copiar número de cotización"
+
+msgid "Copy service number"
+msgstr "Copiar número de servicio"
+
+msgid "Copy service unique identifier"
+msgstr "Copiar identificador único del servicio"
 
 msgid "Copy this item's pricing to another scope."
 msgstr "Copiar el precio de este artículo a otro ámbito."
@@ -2983,6 +2992,9 @@ msgstr "Acción requerida creada"
 
 msgid "Created scrap reason"
 msgstr "Razón de rechazo creada"
+
+msgid "Created service"
+msgstr "Servicio creado"
 
 msgid "Created shipping method"
 msgstr "Método de envío creado"
@@ -3694,6 +3706,9 @@ msgstr "Eliminar Orden de Venta"
 msgid "Delete Schedule"
 msgstr "Eliminar Programa"
 
+msgid "Delete Service"
+msgstr "Eliminar servicio"
+
 msgid "Delete Shift"
 msgstr "Eliminar Turno"
 
@@ -4370,6 +4385,9 @@ msgstr "Editar Mantenimiento Programado"
 msgid "Edit Sequence"
 msgstr "Editar Secuencia"
 
+msgid "Edit Service"
+msgstr "Editar servicio"
+
 msgid "Edit Shift"
 msgstr "Editar Turno"
 
@@ -4441,12 +4459,6 @@ msgstr "Editar Webhook"
 
 msgid "Edit Work Center"
 msgstr "Editar Centro de Trabajo"
-
-msgid "Effective From"
-msgstr "Efectivo Desde"
-
-msgid "Effective To"
-msgstr "Efectivo Hasta"
 
 msgid "Email"
 msgstr "Correo electrónico"
@@ -4996,6 +5008,10 @@ msgstr "Error al crear el término de pago: {0}"
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create process: {0}"
 msgstr "Error al crear proceso: {0}"
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create service: {0}"
+msgstr "Error al crear el servicio: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create shipping method: {0}"
@@ -7637,6 +7653,9 @@ msgstr "Nueva Línea de Orden de Venta"
 
 msgid "New Scheduled Maintenance"
 msgstr "Nuevo Mantenimiento Programado"
+
+msgid "New Service"
+msgstr "Nuevo servicio"
 
 msgid "New Shift"
 msgstr "Nuevo Turno"
@@ -10610,11 +10629,17 @@ msgstr "Cargos de servicio"
 msgid "Service Charges (default)"
 msgstr "Cargos de servicio (predeterminado)"
 
+msgid "Service Details"
+msgstr "Detalles del servicio"
+
 msgid "Service ID"
 msgstr "ID del Servicio"
 
 msgid "services"
 msgstr "servicios"
+
+msgid "Services"
+msgstr "Servicios"
 
 msgid "Set a target"
 msgstr "Establecer un objetivo"
@@ -10952,9 +10977,6 @@ msgstr "Ingeniero de Soluciones"
 
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "Algunas líneas extraídas del PDF no se pudieron asignar automáticamente a sus artículos de inventario. Revise y asigne cada línea a continuación."
-
-msgid "Something went wrong"
-msgstr "Algo salió mal"
 
 msgid "Something went wrong. Please try again."
 msgstr "Algo salió mal. Por favor, inténtalo de nuevo."
@@ -13014,6 +13036,9 @@ msgstr "Utiliza ... para obtener el siguiente ID de material"
 msgid "Use ... to get the next part ID"
 msgstr "Usa ... para obtener el siguiente ID de parte"
 
+msgid "Use ... to get the next service ID"
+msgstr "Usa ... para obtener el siguiente ID de servicio"
+
 msgid "Use ... to get the next tool ID"
 msgstr "Usa ... para obtener el siguiente ID de herramienta"
 
@@ -13031,12 +13056,6 @@ msgstr "Utilizado en la navegación y en documentos como pedidos de venta"
 
 msgid "Used in the navigation in dark mode"
 msgstr "Utilizado en la navegación en modo oscuro"
-
-msgid "Used on builds on/after this date (blank = always)"
-msgstr "Se utiliza en compilaciones en/después de esta fecha (en blanco = siempre)"
-
-msgid "Used on builds on/before this date (blank = always)"
-msgstr "Se utiliza en compilaciones en/antes de esta fecha (en blanco = siempre)"
 
 msgid "Used on the home screen and digital quotes"
 msgstr "Utilizado en la pantalla de inicio y presupuestos digitales"

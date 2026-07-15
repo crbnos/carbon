@@ -67,7 +67,6 @@ import {
 import { ConfigurationEditor } from "~/components/Configurator/ConfigurationEditor";
 import type { Configuration } from "~/components/Configurator/types";
 import {
-  DatePicker,
   DefaultMethodType,
   Hidden,
   Item,
@@ -874,16 +873,6 @@ function MaterialForm({
                   })
               : undefined
           }
-        />
-        <DatePicker
-          name="effectiveFrom"
-          label={t`Effective From`}
-          helperText={t`Used on builds on/after this date (blank = always)`}
-        />
-        <DatePicker
-          name="effectiveTo"
-          label={t`Effective To`}
-          helperText={t`Used on builds on/before this date (blank = always)`}
         />
       </div>
       {itemData.itemReplenishmentSystem === "Buy and Make" && (
