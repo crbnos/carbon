@@ -16,8 +16,8 @@
 > generate types after schema changes, BEFORE typechecking). Never hand-edit them.
 
 ## Progress
-- [ ] Task 1: Create the migration — `get_inventory_valuation` + `get_inventory_tie_out` RPCs
-- [ ] Task 2: Apply migration and validate the math in a rolled-back psql transaction
+- [x] Task 1: Create the migration — `get_inventory_valuation` + `get_inventory_tie_out` RPCs (commit 1e3e89fbe)
+- [x] Task 2: Apply migration and validate the math in a rolled-back psql transaction (7/7 asserts PASS; fixed account join — companyGroup-scoped, no companyId)
 - [ ] Task 3: Service functions + row types in the inventory module
 - [ ] Task 4: Path helper + sidebar nav entry
 - [ ] Task 5: Workbench UI component

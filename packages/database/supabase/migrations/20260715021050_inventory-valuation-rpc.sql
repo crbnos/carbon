@@ -229,8 +229,10 @@ BEGIN
     COALESCE(s."value", 0) AS "subledgerValue",
     COALESCE(g."balance", 0) AS "glBalance",
     COALESCE(s."value", 0) - COALESCE(g."balance", 0) AS "variance"
+  -- account is companyGroup-scoped (no companyId); the ids come from the
+  -- company-scoped accountDefault row, so joining by id alone is correct.
   FROM accounts a
-  LEFT JOIN "account" acc ON acc."id" = a."account" AND acc."companyId" = company_id
+  LEFT JOIN "account" acc ON acc."id" = a."account"
   LEFT JOIN subledger s ON s."kind" = a."kind"
   LEFT JOIN gl g ON g."account" = a."account"
   ORDER BY a."kind" DESC; -- rawMaterials first
