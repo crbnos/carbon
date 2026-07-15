@@ -10,18 +10,22 @@ type SourcingTypePropertyProps = {
   replenishmentSystem?: string | null;
   value?: SourcingType | null;
   onChange: (value: SourcingType | null) => void;
+  // Match the parent panel's field idiom: `true` (default) = click-to-edit
+  // badge for the sidebar; `false` = a standard labeled control for the form.
+  inline?: boolean;
 };
 
 /**
- * Item-level sourcing selector shown in the Part/Tool Properties sidebar.
- * Sourcing only applies to "Buy and Make" items, so it renders nothing
- * otherwise. Shared between PartProperties and ToolProperties — keep it here
- * rather than duplicating the form block in each.
+ * Item-level sourcing selector for the Part/Tool Properties panel. Sourcing only
+ * applies to "Buy and Make" items, so it renders nothing otherwise. Shared
+ * between PartProperties and ToolProperties — keep it here rather than
+ * duplicating the form block in each.
  */
 export function SourcingTypeProperty({
   replenishmentSystem,
   value,
-  onChange
+  onChange,
+  inline = true
 }: SourcingTypePropertyProps) {
   const { t } = useLingui();
 
@@ -36,12 +40,16 @@ export function SourcingTypeProperty({
       <Select
         name="sourcingType"
         label={t`Sourcing`}
-        inline={(value) => (
-          <Badge variant="secondary">
-            <SourcingTypeIcon type={value} className="mr-2" />
-            <span>{value}</span>
-          </Badge>
-        )}
+        inline={
+          inline
+            ? (value) => (
+                <Badge variant="secondary">
+                  <SourcingTypeIcon type={value} className="mr-2" />
+                  <span>{value}</span>
+                </Badge>
+              )
+            : undefined
+        }
         options={sourcingType.map((type) => ({
           value: type,
           label: (

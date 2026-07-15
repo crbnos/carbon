@@ -276,145 +276,166 @@ const PartProperties = ({
     );
   }
 
+  const formLayout = layout === "form";
+  // Blocks that hold a wide control (textarea / badge list / custom fields)
+  // shouldn't be squeezed into a single grid column — span the full row.
+  const spanFull = formLayout ? "sm:col-span-2" : undefined;
+
+  // Part ID (readable id) + name — both editable inline, same as the part
+  // detail page. On the CO card these edit the draft item. Extracted so the
+  // form + sidebar layouts share the same fields.
+  const partIdField = (
+    <ValidatedForm
+      defaultValues={{
+        partId: routeData?.partSummary?.readableIdWithRevision ?? undefined
+      }}
+      validator={z.object({
+        partId: z.string()
+      })}
+      className={cn("w-full", !formLayout && "-mt-2")}
+    >
+      <span className="text-sm">
+        <InputControlled
+          label={formLayout ? t`Part Number` : ""}
+          name="partId"
+          inline={inlineLayout}
+          size="sm"
+          value={routeData?.partSummary?.readableId ?? ""}
+          onBlur={(e) => {
+            onUpdate("partId", e.target.value ?? null);
+          }}
+          className="text-muted-foreground"
+        />
+      </span>
+    </ValidatedForm>
+  );
+  const nameField = (
+    <ValidatedForm
+      defaultValues={{
+        name: routeData?.partSummary?.name ?? undefined
+      }}
+      validator={z.object({
+        name: z.string()
+      })}
+      className={cn("w-full", !formLayout && "-mt-2")}
+    >
+      <span className="text-xs text-muted-foreground">
+        <InputControlled
+          label={formLayout ? t`Name` : ""}
+          name="name"
+          inline={inlineLayout}
+          size="sm"
+          characterLimit={40}
+          value={routeData?.partSummary?.name ?? ""}
+          onBlur={(e) => {
+            onUpdate("name", e.target.value ?? null);
+          }}
+          className="text-muted-foreground"
+        />
+      </span>
+    </ValidatedForm>
+  );
+
   return (
-    <VStack
-      spacing={4}
+    <div
       className={cn(
-        "text-sm",
+        "text-sm w-full",
+        formLayout
+          ? "grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 items-start"
+          : "flex flex-col items-start space-y-4",
         embedded
-          ? "w-full px-1 py-2"
+          ? "px-1 py-2"
           : "w-96 bg-card h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border px-4 py-2"
       )}
     >
-      <VStack spacing={2}>
-        {/* On the CO affected-item card the tab already reads "Properties" and
-            the card title carries the item id — so drop the redundant heading +
-            copy affordances there. Part page (non-embedded) is unchanged. */}
-        {!embedded && (
-          <HStack className="w-full justify-between">
-            <h3 className="text-xxs text-foreground/70 uppercase font-light tracking-wide">
-              <Trans>Properties</Trans>
-            </h3>
-            <HStack spacing={1}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    aria-label={t`Link`}
-                    size="sm"
-                    className="p-1"
-                    onClick={() =>
-                      copyToClipboard(
-                        window.location.origin + path.to.part(itemId)
-                      )
-                    }
-                  >
-                    <LuLink className="w-3 h-3" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <span>
-                    <Trans>Copy link to part</Trans>
-                  </span>
-                </TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    aria-label={t`Copy`}
-                    size="sm"
-                    className="p-1"
-                    onClick={() => copyToClipboard(itemId)}
-                  >
-                    <LuKeySquare className="w-3 h-3" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <span>
-                    <Trans>Copy part unique identifier</Trans>
-                  </span>
-                </TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    aria-label={t`Copy`}
-                    size="sm"
-                    className="p-1"
-                    onClick={() =>
-                      copyToClipboard(
-                        routeData?.partSummary?.readableIdWithRevision ?? ""
-                      )
-                    }
-                  >
-                    <LuCopy className="w-3 h-3" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <span>
-                    <Trans>Copy part number</Trans>
-                  </span>
-                </TooltipContent>
-              </Tooltip>
+      {formLayout ? (
+        <>
+          {partIdField}
+          {nameField}
+        </>
+      ) : (
+        <VStack spacing={2}>
+          {/* On the CO affected-item card the tab already reads "Properties" and
+              the card title carries the item id — so drop the redundant heading +
+              copy affordances there. Part page (non-embedded) is unchanged. */}
+          {!embedded && (
+            <HStack className="w-full justify-between">
+              <h3 className="text-xxs text-foreground/70 uppercase font-light tracking-wide">
+                <Trans>Properties</Trans>
+              </h3>
+              <HStack spacing={1}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      aria-label={t`Link`}
+                      size="sm"
+                      className="p-1"
+                      onClick={() =>
+                        copyToClipboard(
+                          window.location.origin + path.to.part(itemId)
+                        )
+                      }
+                    >
+                      <LuLink className="w-3 h-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <span>
+                      <Trans>Copy link to part</Trans>
+                    </span>
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      aria-label={t`Copy`}
+                      size="sm"
+                      className="p-1"
+                      onClick={() => copyToClipboard(itemId)}
+                    >
+                      <LuKeySquare className="w-3 h-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <span>
+                      <Trans>Copy part unique identifier</Trans>
+                    </span>
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      aria-label={t`Copy`}
+                      size="sm"
+                      className="p-1"
+                      onClick={() =>
+                        copyToClipboard(
+                          routeData?.partSummary?.readableIdWithRevision ?? ""
+                        )
+                      }
+                    >
+                      <LuCopy className="w-3 h-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <span>
+                      <Trans>Copy part number</Trans>
+                    </span>
+                  </TooltipContent>
+                </Tooltip>
+              </HStack>
             </HStack>
-          </HStack>
-        )}
-        <VStack spacing={1} className="pt-2">
-          {/* Part ID (readable id) + name — both editable inline, same as the
-              part detail page. On the CO card these edit the draft item. */}
-          <ValidatedForm
-            defaultValues={{
-              partId:
-                routeData?.partSummary?.readableIdWithRevision ?? undefined
-            }}
-            validator={z.object({
-              partId: z.string()
-            })}
-            className="w-full -mt-2"
-          >
-            <span className="text-sm">
-              <InputControlled
-                label={layout === "form" ? t`Part Number` : ""}
-                name="partId"
-                inline={inlineLayout}
-                size="sm"
-                value={routeData?.partSummary?.readableId ?? ""}
-                onBlur={(e) => {
-                  onUpdate("partId", e.target.value ?? null);
-                }}
-                className="text-muted-foreground"
-              />
-            </span>
-          </ValidatedForm>
-          <ValidatedForm
-            defaultValues={{
-              name: routeData?.partSummary?.name ?? undefined
-            }}
-            validator={z.object({
-              name: z.string()
-            })}
-            className="w-full -mt-2"
-          >
-            <span className="text-xs text-muted-foreground">
-              <InputControlled
-                label={layout === "form" ? t`Name` : ""}
-                name="name"
-                inline={inlineLayout}
-                size="sm"
-                characterLimit={40}
-                value={routeData?.partSummary?.name ?? ""}
-                onBlur={(e) => {
-                  onUpdate("name", e.target.value ?? null);
-                }}
-                className="text-muted-foreground"
-              />
-            </span>
-          </ValidatedForm>
+          )}
+          <VStack spacing={1} className="pt-2">
+            {partIdField}
+            {nameField}
+          </VStack>
+          {section === "all" && thumbnail}
         </VStack>
-        {section === "all" && thumbnail}
-      </VStack>
+      )}
 
       {/* <VStack spacing={2}>
         <h3 className="text-xs text-muted-foreground">Assignee</h3>
@@ -608,6 +629,7 @@ const PartProperties = ({
       <SourcingTypeProperty
         replenishmentSystem={routeData?.partSummary?.replenishmentSystem}
         value={routeData?.partSummary?.sourcingType}
+        inline={inlineLayout}
         onChange={(value) => onUpdate("sourcingType", value)}
       />
 
@@ -633,12 +655,15 @@ const PartProperties = ({
         />
       </ValidatedForm>
 
-      <ItemDescription
-        value={routeData?.partSummary?.description ?? ""}
-        onChange={(value) => onUpdate("description", value)}
-      />
+      <div className={cn("w-full", spanFull)}>
+        <ItemDescription
+          value={routeData?.partSummary?.description ?? ""}
+          inline={inlineLayout}
+          onChange={(value) => onUpdate("description", value)}
+        />
+      </div>
 
-      <VStack spacing={2}>
+      <VStack spacing={2} className={spanFull}>
         <HStack className="w-full justify-between">
           <h3 className="text-xs text-muted-foreground">
             <Trans>Methods</Trans>
@@ -817,17 +842,19 @@ const PartProperties = ({
         </ValidatedForm>
       )}
 
-      <CustomFormInlineFields
-        customFields={
-          (routeData?.partSummary?.customFields ?? {}) as Record<string, Json>
-        }
-        table="part"
-        tags={routeData?.partSummary?.tags ?? []}
-        onUpdate={onUpdateCustomFields}
-      />
+      <div className={cn("w-full", spanFull)}>
+        <CustomFormInlineFields
+          customFields={
+            (routeData?.partSummary?.customFields ?? {}) as Record<string, Json>
+          }
+          table="part"
+          tags={routeData?.partSummary?.tags ?? []}
+          onUpdate={onUpdateCustomFields}
+        />
+      </div>
 
       {section === "all" && filesBlock}
-    </VStack>
+    </div>
   );
 };
 
