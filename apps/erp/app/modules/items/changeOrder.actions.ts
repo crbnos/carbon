@@ -1,6 +1,8 @@
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { GenericQueryFilters } from "~/utils/query";
+import { setGenericQueryFilters } from "~/utils/query";
 import type { changeOrderTaskStatus } from "./changeOrder.models";
 
 // =============================================================================
@@ -106,4 +108,121 @@ export async function updateChangeOrderActionOrder(
         .execute();
     }
   });
+}
+
+// =============================================================================
+// Change Order Required Actions (the configurable default-action templates the
+// config CRUD page manages, and the source new change orders are seeded from).
+// =============================================================================
+export async function getChangeOrderRequiredActions(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("changeOrderRequiredAction")
+    .select("*", { count: "exact" })
+    .eq("companyId", companyId);
+
+  if (args?.search) {
+    query = query.ilike("name", `%${args.search}%`);
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "name", ascending: true }
+    ]);
+  }
+
+  return query;
+}
+
+export async function getChangeOrderRequiredActionsList(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("changeOrderRequiredAction")
+    .select("id, name")
+    .eq("companyId", companyId)
+    .eq("active", true)
+    .order("name", { ascending: true });
+}
+
+export async function getChangeOrderRequiredAction(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client
+    .from("changeOrderRequiredAction")
+    .select("*")
+    .eq("id", id)
+    .single();
+}
+
+export async function upsertChangeOrderRequiredAction(
+  client: SupabaseClient<Database>,
+  input: {
+    id?: string;
+    name: string;
+    active: boolean;
+    companyId: string;
+    userId: string;
+  }
+) {
+  if (input.id) {
+    return client
+      .from("changeOrderRequiredAction")
+      .update({
+        name: input.name,
+        active: input.active,
+        updatedBy: input.userId
+      })
+      .eq("id", input.id)
+      .select("id")
+      .single();
+  }
+
+  return client
+    .from("changeOrderRequiredAction")
+    .insert({
+      name: input.name,
+      active: input.active,
+      companyId: input.companyId,
+      createdBy: input.userId
+    })
+    .select("id")
+    .single();
+}
+
+export async function deleteChangeOrderRequiredAction(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("changeOrderRequiredAction").delete().eq("id", id);
+}
+
+// Instantiate one changeOrderActionTask per active template onto a new change
+// order. Called by insertChangeOrder; non-gating, so callers ignore a soft
+// failure rather than roll back the change order.
+export async function seedDefaultChangeOrderActions(
+  client: SupabaseClient<Database>,
+  input: { changeOrderId: string; companyId: string; userId: string }
+) {
+  const templates = await getChangeOrderRequiredActionsList(
+    client,
+    input.companyId
+  );
+  if (templates.error || !templates.data?.length) return templates;
+
+  return client.from("changeOrderActionTask").insert(
+    templates.data.map((template, index) => ({
+      changeOrderId: input.changeOrderId,
+      name: template.name,
+      status: "Pending" as const,
+      sortOrder: index + 1,
+      companyId: input.companyId,
+      createdBy: input.userId
+    }))
+  );
 }

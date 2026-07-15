@@ -4,6 +4,7 @@ import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type { nonConformancePriority } from "../quality/quality.models";
+import { seedDefaultChangeOrderActions } from "./changeOrder.actions";
 import type {
   ChangeOrderChangeType,
   ChangeOrderError,
@@ -134,6 +135,14 @@ export async function insertChangeOrder(
   if (result.error || !result.data) {
     return { data: null, error: result.error };
   }
+
+  // Seed the company's default actions onto the new CO (non-gating — a soft
+  // failure must not roll back the change order).
+  await seedDefaultChangeOrderActions(client, {
+    changeOrderId: result.data.id,
+    companyId: input.companyId,
+    userId: input.createdBy
+  });
 
   return {
     data: { id: result.data.id, changeOrderId: result.data.changeOrderId },

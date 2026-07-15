@@ -197,6 +197,14 @@ export const changeOrderActionStatusValidator = z.object({
   status: z.enum(changeOrderTaskStatus)
 });
 
+// Configurable default actions (changeOrderRequiredAction templates) — the
+// per-company set a new change order is seeded from. Configured like Issue Types.
+export const changeOrderRequiredActionValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  name: z.string().min(1, { message: "Name is required" }),
+  active: zfd.checkbox()
+});
+
 // -----------------------------------------------------------------------------
 // Diff types (Q5 git-style) — one shape reused for the pre-release "tips"
 // (staged-vs-live) and the post-release revision redline (oldRev-vs-newRev).
