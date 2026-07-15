@@ -6214,9 +6214,6 @@ msgstr "有库存"
 msgid "In the loop together"
 msgstr "一起保持沟通"
 
-msgid "In-flight work and inventory this release touches. Informational — nothing here blocks releasing."
-msgstr ""
-
 msgid "Inactive"
 msgstr "未激活"
 
@@ -7983,6 +7980,9 @@ msgstr "未找到地址"
 msgid "No affected assemblies yet."
 msgstr "暂无受影响的装配体。"
 
+msgid "No affected items to assess."
+msgstr ""
+
 msgid "No affected items yet — add a part or tool below."
 msgstr ""
 
@@ -8284,6 +8284,9 @@ msgstr "工作数量不足以覆盖数量"
 msgid "Not in the latest version"
 msgstr ""
 
+msgid "Not referenced anywhere yet."
+msgstr ""
+
 msgid "Not Required"
 msgstr "不需要"
 
@@ -8310,9 +8313,6 @@ msgstr "备注"
 
 msgid "Notes (optional)"
 msgstr "备注（可选）"
-
-msgid "Nothing downstream is affected by this release."
-msgstr ""
 
 msgid "Nothing in the archive"
 msgstr "存档中没有任何内容"
@@ -8467,14 +8467,8 @@ msgstr "在MES中打开"
 msgid "Open Issues"
 msgstr "未解决的问题"
 
-msgid "open job(s)"
-msgstr ""
-
 msgid "Open jobs"
 msgstr "未结工单"
-
-msgid "open line(s)"
-msgstr ""
 
 msgid "Open menu"
 msgstr "打开菜单"
@@ -8488,9 +8482,6 @@ msgstr "未结采购订单"
 msgid "Open Purchase Orders"
 msgstr "未结采购订单"
 
-msgid "Open purchase orders are still inbound for components this change removes from a BOM."
-msgstr ""
-
 msgid "Open Quotes"
 msgstr "未结报价"
 
@@ -8499,9 +8490,6 @@ msgstr "开放反应"
 
 msgid "Open RFQs"
 msgstr "未结RFQ"
-
-msgid "Open sales lines still reference the part being replaced. Move them to the successor if the change should apply."
-msgstr ""
 
 msgid "Open sales orders"
 msgstr "未结销售订单"
@@ -9397,9 +9385,6 @@ msgstr "预测"
 msgid "Projections"
 msgstr "预测"
 
-msgid "Promised"
-msgstr ""
-
 msgid "Promised Date"
 msgstr "承诺日期"
 
@@ -10288,9 +10273,6 @@ msgstr ""
 msgid "Review required"
 msgstr ""
 
-msgid "Review the changes and confirm to activate them."
-msgstr ""
-
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "审查期间的资产负债表和损益表，并确认数字正确。这是手动签核 — 审查后标记为完成。"
 
@@ -10529,9 +10511,6 @@ msgstr "销售订单位置"
 
 msgid "Sales Order Number"
 msgstr "销售订单号"
-
-msgid "Sales orders"
-msgstr ""
 
 msgid "Sales Orders"
 msgstr "销售订单"
@@ -12701,9 +12680,6 @@ msgstr "这些电子邮件地址将自动抄送到发送给客户的所有报价
 msgid "These jobs have operations assigned to this work center:"
 msgstr "这些工作有分配给此工作中心的操作："
 
-msgid "These jobs were built on the previous method and won't change when you release — finish them as-is or re-pull the method."
-msgstr ""
-
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "这些日记账条目仍为草稿状态，因此其借贷金额不在本期分类账中。过账每一份，或将其重新标记日期至较晚的开放期间。"
 
@@ -12894,14 +12870,8 @@ msgstr "标题"
 msgid "To Location"
 msgstr "至位置"
 
-msgid "To receive"
-msgstr ""
-
 msgid "To Receive"
 msgstr "待接收"
-
-msgid "To send"
-msgstr ""
 
 msgid "To Ship"
 msgstr "待发货"
@@ -14102,6 +14072,9 @@ msgstr "此项目的新库存在收据时默认登陆到哪里;收据上每行�
 
 msgid "Where stock lives and how it ships."
 msgstr "库存存放位置及其发货方式。"
+
+msgid "Where the affected items are used across the system. Informational — nothing here blocks releasing."
+msgstr ""
 
 msgid "Where this entry originated (manual entry, posting from sales/purchasing, recurring template, etc.)."
 msgstr "此条目的来源(手动输入、来自销售/采购的过账、重复模板等)。"

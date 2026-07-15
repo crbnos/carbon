@@ -6214,9 +6214,6 @@ msgstr "재고 있음"
 msgid "In the loop together"
 msgstr "함께 정보 공유하기"
 
-msgid "In-flight work and inventory this release touches. Informational — nothing here blocks releasing."
-msgstr ""
-
 msgid "Inactive"
 msgstr "비활성"
 
@@ -7983,6 +7980,9 @@ msgstr "주소가 없습니다"
 msgid "No affected assemblies yet."
 msgstr "영향을 받는 조립품이 아직 없습니다."
 
+msgid "No affected items to assess."
+msgstr ""
+
 msgid "No affected items yet — add a part or tool below."
 msgstr ""
 
@@ -8284,6 +8284,9 @@ msgstr "수량을 충족할 만큼 작업이 충분하지 않습니다"
 msgid "Not in the latest version"
 msgstr ""
 
+msgid "Not referenced anywhere yet."
+msgstr ""
+
 msgid "Not Required"
 msgstr "필수 아님"
 
@@ -8310,9 +8313,6 @@ msgstr "메모"
 
 msgid "Notes (optional)"
 msgstr "메모(선택)"
-
-msgid "Nothing downstream is affected by this release."
-msgstr ""
 
 msgid "Nothing in the archive"
 msgstr "보관함이 비어 있습니다"
@@ -8467,14 +8467,8 @@ msgstr "MES에서 열기"
 msgid "Open Issues"
 msgstr "미결 이슈"
 
-msgid "open job(s)"
-msgstr ""
-
 msgid "Open jobs"
 msgstr "미결 작업"
-
-msgid "open line(s)"
-msgstr ""
 
 msgid "Open menu"
 msgstr "메뉴 열기"
@@ -8488,9 +8482,6 @@ msgstr "미결 구매주문"
 msgid "Open Purchase Orders"
 msgstr "미결 구매주문"
 
-msgid "Open purchase orders are still inbound for components this change removes from a BOM."
-msgstr ""
-
 msgid "Open Quotes"
 msgstr "미결 견적"
 
@@ -8499,9 +8490,6 @@ msgstr "미결 반응형 정비"
 
 msgid "Open RFQs"
 msgstr "미결 견적요청"
-
-msgid "Open sales lines still reference the part being replaced. Move them to the successor if the change should apply."
-msgstr ""
 
 msgid "Open sales orders"
 msgstr "미결 판매주문"
@@ -9397,9 +9385,6 @@ msgstr "예측"
 msgid "Projections"
 msgstr "예측"
 
-msgid "Promised"
-msgstr ""
-
 msgid "Promised Date"
 msgstr "약속일"
 
@@ -10288,9 +10273,6 @@ msgstr ""
 msgid "Review required"
 msgstr ""
 
-msgid "Review the changes and confirm to activate them."
-msgstr ""
-
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "기간의 대차대조표와 손익계산서를 검토하고 수치가 올바른지 확인하세요. 이것은 수동 승인입니다. 검토가 끝나면 완료로 표시하세요."
 
@@ -10529,9 +10511,6 @@ msgstr "판매주문 위치"
 
 msgid "Sales Order Number"
 msgstr "판매주문 번호"
-
-msgid "Sales orders"
-msgstr ""
 
 msgid "Sales Orders"
 msgstr "판매주문"
@@ -12701,9 +12680,6 @@ msgstr "이 이메일 주소는 고객에게 발송되는 모든 견적 이메�
 msgid "These jobs have operations assigned to this work center:"
 msgstr "다음 작업에 이 작업장이 지정된 공정작업이 있습니다:"
 
-msgid "These jobs were built on the previous method and won't change when you release — finish them as-is or re-pull the method."
-msgstr ""
-
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "이 분개들은 아직 임시이므로 그 차변과 대변이 이 기간의 총계정원장에 없습니다. 각각을 전기하거나 나중의 개방된 기간으로 재날짜하세요."
 
@@ -12894,14 +12870,8 @@ msgstr "제목"
 msgid "To Location"
 msgstr "대상 위치"
 
-msgid "To receive"
-msgstr ""
-
 msgid "To Receive"
 msgstr "입고 예정"
-
-msgid "To send"
-msgstr ""
 
 msgid "To Ship"
 msgstr "출하 예정"
@@ -14102,6 +14072,9 @@ msgstr "이 품목의 신규 재고가 입고 시 기본적으로 저장되는 �
 
 msgid "Where stock lives and how it ships."
 msgstr "재고가 어디에 있고 어떻게 출하되는지."
+
+msgid "Where the affected items are used across the system. Informational — nothing here blocks releasing."
+msgstr ""
 
 msgid "Where this entry originated (manual entry, posting from sales/purchasing, recurring template, etc.)."
 msgstr "이 항목의 출처(수동 입력, 판매/구매에서의 전기, 반복 템플릿 등)."

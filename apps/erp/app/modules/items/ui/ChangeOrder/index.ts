@@ -12,6 +12,7 @@ export { default as ChangeOrderReleaseMerge } from "./ChangeOrderReleaseMerge";
 export { default as ChangeOrderStatus } from "./ChangeOrderStatus";
 export { default as ChangeOrdersTable } from "./ChangeOrdersTable";
 export { default as ChangeOrderWorkspace } from "./ChangeOrderWorkspace";
+export type { ChangeOrderImpactItem } from "./ImpactPanel";
 export { default as ImpactPanel } from "./ImpactPanel";
 export { default as ItemChangeOrders } from "./ItemChangeOrders";
 export { default as ItemOpenChangeOrderAlert } from "./ItemOpenChangeOrderAlert";

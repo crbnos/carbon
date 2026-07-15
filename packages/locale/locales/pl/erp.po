@@ -6214,9 +6214,6 @@ msgstr "W magazynie"
 msgid "In the loop together"
 msgstr "W pętli razem"
 
-msgid "In-flight work and inventory this release touches. Informational — nothing here blocks releasing."
-msgstr ""
-
 msgid "Inactive"
 msgstr "Nieaktywny"
 
@@ -7983,6 +7980,9 @@ msgstr "Nie znaleziono adresów"
 msgid "No affected assemblies yet."
 msgstr "Brak dotkniętych zespołów."
 
+msgid "No affected items to assess."
+msgstr ""
+
 msgid "No affected items yet — add a part or tool below."
 msgstr ""
 
@@ -8284,6 +8284,9 @@ msgstr "Niewystarczająca liczba zadań do pokrycia ilości"
 msgid "Not in the latest version"
 msgstr ""
 
+msgid "Not referenced anywhere yet."
+msgstr ""
+
 msgid "Not Required"
 msgstr "Nie wymagane"
 
@@ -8310,9 +8313,6 @@ msgstr "Notatki"
 
 msgid "Notes (optional)"
 msgstr "Notatki (opcjonalnie)"
-
-msgid "Nothing downstream is affected by this release."
-msgstr ""
 
 msgid "Nothing in the archive"
 msgstr "Nic w archiwum"
@@ -8467,14 +8467,8 @@ msgstr "Otwórz w MES"
 msgid "Open Issues"
 msgstr "Otwarte problemy"
 
-msgid "open job(s)"
-msgstr ""
-
 msgid "Open jobs"
 msgstr "Otwarte zadania"
-
-msgid "open line(s)"
-msgstr ""
 
 msgid "Open menu"
 msgstr "Otwórz menu"
@@ -8488,9 +8482,6 @@ msgstr "Otwarte zamówienia zakupu"
 msgid "Open Purchase Orders"
 msgstr "Otwarte Zamówienia Zakupu"
 
-msgid "Open purchase orders are still inbound for components this change removes from a BOM."
-msgstr ""
-
 msgid "Open Quotes"
 msgstr "Otwarte Oferty"
 
@@ -8499,9 +8490,6 @@ msgstr "Otwarte reaktywne"
 
 msgid "Open RFQs"
 msgstr "Otwarte Zapytania Ofertowe"
-
-msgid "Open sales lines still reference the part being replaced. Move them to the successor if the change should apply."
-msgstr ""
 
 msgid "Open sales orders"
 msgstr "Otwarte zamówienia sprzedaży"
@@ -9397,9 +9385,6 @@ msgstr "Projekcja"
 msgid "Projections"
 msgstr "Prognozy"
 
-msgid "Promised"
-msgstr ""
-
 msgid "Promised Date"
 msgstr "Data obiecana"
 
@@ -10288,9 +10273,6 @@ msgstr ""
 msgid "Review required"
 msgstr ""
 
-msgid "Review the changes and confirm to activate them."
-msgstr ""
-
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "Przejrzyj bilans i rachunek zysków i strat okresu i potwierdź, że liczby wyglądają prawidłowo. To jest ręczne zatwierdzenie — oznacz jako gotowe po ich przejrzeniu."
 
@@ -10529,9 +10511,6 @@ msgstr "Lokalizacja Zamówienia Sprzedaży"
 
 msgid "Sales Order Number"
 msgstr "Numer zamówienia sprzedaży"
-
-msgid "Sales orders"
-msgstr ""
 
 msgid "Sales Orders"
 msgstr "Zamówienia sprzedaży"
@@ -12701,9 +12680,6 @@ msgstr "Te adresy e-mail będą automatycznie dodawane w polu DW do wszystkich w
 msgid "These jobs have operations assigned to this work center:"
 msgstr "Te zadania mają operacje przypisane do tego centrum pracy:"
 
-msgid "These jobs were built on the previous method and won't change when you release — finish them as-is or re-pull the method."
-msgstr ""
-
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "Te wpisy dziennika są wciąż w wersji roboczej, więc ich obciążenia i kredyty nie znajdują się w księdze w tym okresie. Opublikuj każdy lub przedatuj go na późniejszy otwarty okres."
 
@@ -12894,14 +12870,8 @@ msgstr "Tytuł"
 msgid "To Location"
 msgstr "Do lokalizacji"
 
-msgid "To receive"
-msgstr ""
-
 msgid "To Receive"
 msgstr "Do Odebrania"
-
-msgid "To send"
-msgstr ""
 
 msgid "To Ship"
 msgstr "Do wysłania"
@@ -14102,6 +14072,9 @@ msgstr "Gdzie nowy zapas tego artykułu ląduje domyślnie przy odbiorze; wybory
 
 msgid "Where stock lives and how it ships."
 msgstr "Gdzie znajduje się zapas i jak się wysyła."
+
+msgid "Where the affected items are used across the system. Informational — nothing here blocks releasing."
+msgstr ""
 
 msgid "Where this entry originated (manual entry, posting from sales/purchasing, recurring template, etc.)."
 msgstr "Skąd pochodzi ten wpis (wpis ręczny, zaksięgowanie ze sprzedaży/zakupów, szablon powtarzalny itp.)."

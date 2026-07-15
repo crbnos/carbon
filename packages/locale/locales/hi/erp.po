@@ -6214,9 +6214,6 @@ msgstr "स्टॉक में"
 msgid "In the loop together"
 msgstr "एक साथ लूप में"
 
-msgid "In-flight work and inventory this release touches. Informational — nothing here blocks releasing."
-msgstr ""
-
 msgid "Inactive"
 msgstr "निष्क्रिय"
 
@@ -7983,6 +7980,9 @@ msgstr "कोई पता नहीं मिला"
 msgid "No affected assemblies yet."
 msgstr "अभी तक कोई प्रभावित असेंबली नहीं है।"
 
+msgid "No affected items to assess."
+msgstr ""
+
 msgid "No affected items yet — add a part or tool below."
 msgstr ""
 
@@ -8284,6 +8284,9 @@ msgstr "पर्याप्त नौकरियां नहीं हैं
 msgid "Not in the latest version"
 msgstr ""
 
+msgid "Not referenced anywhere yet."
+msgstr ""
+
 msgid "Not Required"
 msgstr "आवश्यक नहीं"
 
@@ -8310,9 +8313,6 @@ msgstr "नोट्स"
 
 msgid "Notes (optional)"
 msgstr "नोट्स (वैकल्पिक)"
-
-msgid "Nothing downstream is affected by this release."
-msgstr ""
 
 msgid "Nothing in the archive"
 msgstr "आर्काइव में कुछ नहीं है"
@@ -8467,14 +8467,8 @@ msgstr "MES में खोलें"
 msgid "Open Issues"
 msgstr "खुले मुद्दे"
 
-msgid "open job(s)"
-msgstr ""
-
 msgid "Open jobs"
 msgstr "खुली नौकरियां"
-
-msgid "open line(s)"
-msgstr ""
 
 msgid "Open menu"
 msgstr "मेनू खोलें"
@@ -8488,9 +8482,6 @@ msgstr "खुले क्रय आदेश"
 msgid "Open Purchase Orders"
 msgstr "खुले क्रय आदेश"
 
-msgid "Open purchase orders are still inbound for components this change removes from a BOM."
-msgstr ""
-
 msgid "Open Quotes"
 msgstr "खुली उद्धरणें"
 
@@ -8499,9 +8490,6 @@ msgstr "खुली प्रतिक्रियाशील"
 
 msgid "Open RFQs"
 msgstr "खुले RFQ"
-
-msgid "Open sales lines still reference the part being replaced. Move them to the successor if the change should apply."
-msgstr ""
 
 msgid "Open sales orders"
 msgstr "खुले बिक्रय आदेश"
@@ -9397,9 +9385,6 @@ msgstr "प्रक्षेपण"
 msgid "Projections"
 msgstr "अनुमान"
 
-msgid "Promised"
-msgstr ""
-
 msgid "Promised Date"
 msgstr "वादा की गई तारीख"
 
@@ -10288,9 +10273,6 @@ msgstr ""
 msgid "Review required"
 msgstr ""
 
-msgid "Review the changes and confirm to activate them."
-msgstr ""
-
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "अवधि की बैलेंस शीट और आय विवरण की समीक्षा करें और पुष्टि करें कि आंकड़े सही लगते हैं। यह एक मैनुअल साइन-ऑफ है — एक बार समीक्षा करने के बाद इसे पूर्ण चिह्नित करें।"
 
@@ -10529,9 +10511,6 @@ msgstr "बिक्रय आदेश स्थान"
 
 msgid "Sales Order Number"
 msgstr "बिक्रय आदेश संख्या"
-
-msgid "Sales orders"
-msgstr ""
 
 msgid "Sales Orders"
 msgstr "बिक्रय आदेश"
@@ -12701,9 +12680,6 @@ msgstr "ये ईमेल पते सभी ग्राहकों को 
 msgid "These jobs have operations assigned to this work center:"
 msgstr "इन कार्यों के पास इस कार्य केंद्र को सौंपे गए संचालन हैं:"
 
-msgid "These jobs were built on the previous method and won't change when you release — finish them as-is or re-pull the method."
-msgstr ""
-
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "ये जर्नल प्रविष्टियाँ अभी भी ड्राफ्ट हैं, इसलिए उनके डेबिट और क्रेडिट इस अवधि के लिए लेजर में नहीं हैं। प्रत्येक को पोस्ट करें, या इसे बाद की खुली अवधि में पुनः दिनांकित करें।"
 
@@ -12894,14 +12870,8 @@ msgstr "शीर्षक"
 msgid "To Location"
 msgstr "स्थान को"
 
-msgid "To receive"
-msgstr ""
-
 msgid "To Receive"
 msgstr "प्राप्त करने के लिए"
-
-msgid "To send"
-msgstr ""
 
 msgid "To Ship"
 msgstr "भेजने के लिए"
@@ -14102,6 +14072,9 @@ msgstr "जहां इस आइटम की नई स्टॉक डिफ
 
 msgid "Where stock lives and how it ships."
 msgstr "स्टॉक कहाँ रहता है और यह कैसे भेजा जाता है।"
+
+msgid "Where the affected items are used across the system. Informational — nothing here blocks releasing."
+msgstr ""
 
 msgid "Where this entry originated (manual entry, posting from sales/purchasing, recurring template, etc.)."
 msgstr "यह प्रविष्टि कहाँ से उत्पन्न हुई (मैनुअल प्रविष्टि, बिक्रय/खरीद से पोस्टिंग, पुनरावर्ती टेम्पलेट, आदि)।"

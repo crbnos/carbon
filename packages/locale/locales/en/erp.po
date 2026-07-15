@@ -6214,9 +6214,6 @@ msgstr "In stock"
 msgid "In the loop together"
 msgstr "In the loop together"
 
-msgid "In-flight work and inventory this release touches. Informational — nothing here blocks releasing."
-msgstr "In-flight work and inventory this release touches. Informational — nothing here blocks releasing."
-
 msgid "Inactive"
 msgstr "Inactive"
 
@@ -7983,6 +7980,9 @@ msgstr "No addresses found"
 msgid "No affected assemblies yet."
 msgstr "No affected assemblies yet."
 
+msgid "No affected items to assess."
+msgstr "No affected items to assess."
+
 msgid "No affected items yet — add a part or tool below."
 msgstr "No affected items yet — add a part or tool below."
 
@@ -8284,6 +8284,9 @@ msgstr "Not enough jobs to cover quantity"
 msgid "Not in the latest version"
 msgstr "Not in the latest version"
 
+msgid "Not referenced anywhere yet."
+msgstr "Not referenced anywhere yet."
+
 msgid "Not Required"
 msgstr "Not Required"
 
@@ -8310,9 +8313,6 @@ msgstr "Notes"
 
 msgid "Notes (optional)"
 msgstr "Notes (optional)"
-
-msgid "Nothing downstream is affected by this release."
-msgstr "Nothing downstream is affected by this release."
 
 msgid "Nothing in the archive"
 msgstr "Nothing in the archive"
@@ -8467,14 +8467,8 @@ msgstr "Open in MES"
 msgid "Open Issues"
 msgstr "Open Issues"
 
-msgid "open job(s)"
-msgstr "open job(s)"
-
 msgid "Open jobs"
 msgstr "Open jobs"
-
-msgid "open line(s)"
-msgstr "open line(s)"
 
 msgid "Open menu"
 msgstr "Open menu"
@@ -8488,9 +8482,6 @@ msgstr "Open purchase orders"
 msgid "Open Purchase Orders"
 msgstr "Open Purchase Orders"
 
-msgid "Open purchase orders are still inbound for components this change removes from a BOM."
-msgstr "Open purchase orders are still inbound for components this change removes from a BOM."
-
 msgid "Open Quotes"
 msgstr "Open Quotes"
 
@@ -8499,9 +8490,6 @@ msgstr "Open Reactive"
 
 msgid "Open RFQs"
 msgstr "Open RFQs"
-
-msgid "Open sales lines still reference the part being replaced. Move them to the successor if the change should apply."
-msgstr "Open sales lines still reference the part being replaced. Move them to the successor if the change should apply."
 
 msgid "Open sales orders"
 msgstr "Open sales orders"
@@ -9397,9 +9385,6 @@ msgstr "Projection"
 msgid "Projections"
 msgstr "Projections"
 
-msgid "Promised"
-msgstr "Promised"
-
 msgid "Promised Date"
 msgstr "Promised Date"
 
@@ -10288,9 +10273,6 @@ msgstr "Review each item's changes, then confirm — releasing can't be undone."
 msgid "Review required"
 msgstr "Review required"
 
-msgid "Review the changes and confirm to activate them."
-msgstr "Review the changes and confirm to activate them."
-
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 
@@ -10529,9 +10511,6 @@ msgstr "Sales Order Location"
 
 msgid "Sales Order Number"
 msgstr "Sales Order Number"
-
-msgid "Sales orders"
-msgstr "Sales orders"
 
 msgid "Sales Orders"
 msgstr "Sales Orders"
@@ -12701,9 +12680,6 @@ msgstr "These email addresses will be automatically CC'd on all quote emails sen
 msgid "These jobs have operations assigned to this work center:"
 msgstr "These jobs have operations assigned to this work center:"
 
-msgid "These jobs were built on the previous method and won't change when you release — finish them as-is or re-pull the method."
-msgstr "These jobs were built on the previous method and won't change when you release — finish them as-is or re-pull the method."
-
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 
@@ -12894,14 +12870,8 @@ msgstr "Title"
 msgid "To Location"
 msgstr "To Location"
 
-msgid "To receive"
-msgstr "To receive"
-
 msgid "To Receive"
 msgstr "To Receive"
-
-msgid "To send"
-msgstr "To send"
 
 msgid "To Ship"
 msgstr "To Ship"
@@ -14102,6 +14072,9 @@ msgstr "Where new stock of this item lands by default on receipt; per-line stora
 
 msgid "Where stock lives and how it ships."
 msgstr "Where stock lives and how it ships."
+
+msgid "Where the affected items are used across the system. Informational — nothing here blocks releasing."
+msgstr "Where the affected items are used across the system. Informational — nothing here blocks releasing."
 
 msgid "Where this entry originated (manual entry, posting from sales/purchasing, recurring template, etc.)."
 msgstr "Where this entry originated (manual entry, posting from sales/purchasing, recurring template, etc.)."

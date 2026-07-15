@@ -3,12 +3,14 @@ import { useRouteData } from "~/hooks";
 import type {
   ChangeOrder,
   ChangeOrderActionTask,
-  ChangeOrderImpact,
   ChangeOrderReleaseConflict
 } from "~/modules/items";
 import { canEditChangeOrder } from "~/modules/items";
 import type { ChangeOrderDiff } from "~/modules/items/changeOrder.diff";
-import type { AffectedItemDraft } from "~/modules/items/ui/ChangeOrder";
+import type {
+  AffectedItemDraft,
+  ChangeOrderImpactItem
+} from "~/modules/items/ui/ChangeOrder";
 import ChangeOrderWorkspace from "~/modules/items/ui/ChangeOrder/ChangeOrderWorkspace";
 import { path } from "~/utils/path";
 
@@ -22,15 +24,13 @@ export default function ChangeOrderDetailsRoute() {
     diff: ChangeOrderDiff;
     releaseConflicts: ChangeOrderReleaseConflict[];
     actions: ChangeOrderActionTask[];
-    impact: ChangeOrderImpact;
+    impactUsedIn: ChangeOrderImpactItem[];
   }>(path.to.changeOrder(id));
   const changeOrder = routeData?.changeOrder;
 
   if (!changeOrder) throw new Error("Could not find change order data");
 
   const isDisabled = !canEditChangeOrder(changeOrder.status);
-  const showImplementation =
-    changeOrder.status === "Implementation" || changeOrder.status === "Done";
 
   return (
     <ChangeOrderWorkspace
@@ -38,16 +38,9 @@ export default function ChangeOrderDetailsRoute() {
       changeOrder={changeOrder}
       affectedItems={routeData?.affectedItems ?? []}
       actions={routeData?.actions ?? []}
-      impact={
-        routeData?.impact ?? {
-          removedParts: [],
-          affectedJobs: [],
-          supersededSalesOrders: []
-        }
-      }
+      impactUsedIn={routeData?.impactUsedIn ?? []}
       releaseConflicts={routeData?.releaseConflicts ?? []}
       isDisabled={isDisabled}
-      showImplementation={showImplementation}
     />
   );
 }

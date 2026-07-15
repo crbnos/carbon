@@ -6214,9 +6214,6 @@ msgstr "Stokta"
 msgid "In the loop together"
 msgstr "Birlikte döngüde"
 
-msgid "In-flight work and inventory this release touches. Informational — nothing here blocks releasing."
-msgstr ""
-
 msgid "Inactive"
 msgstr "Pasif"
 
@@ -7983,6 +7980,9 @@ msgstr "Adres bulunamadı"
 msgid "No affected assemblies yet."
 msgstr "Henüz etkilenen montajlar yok."
 
+msgid "No affected items to assess."
+msgstr ""
+
 msgid "No affected items yet — add a part or tool below."
 msgstr ""
 
@@ -8284,6 +8284,9 @@ msgstr "Miktarı karşılayacak yeterli iş yok"
 msgid "Not in the latest version"
 msgstr ""
 
+msgid "Not referenced anywhere yet."
+msgstr ""
+
 msgid "Not Required"
 msgstr "Gerekli Değil"
 
@@ -8310,9 +8313,6 @@ msgstr "Açıklamalar"
 
 msgid "Notes (optional)"
 msgstr "Notlar (isteğe bağlı)"
-
-msgid "Nothing downstream is affected by this release."
-msgstr ""
 
 msgid "Nothing in the archive"
 msgstr "Arşivde hiçbir şey yok"
@@ -8467,14 +8467,8 @@ msgstr "MES'te Aç"
 msgid "Open Issues"
 msgstr "Açık Sorunlar"
 
-msgid "open job(s)"
-msgstr ""
-
 msgid "Open jobs"
 msgstr "Açık işler"
-
-msgid "open line(s)"
-msgstr ""
 
 msgid "Open menu"
 msgstr "Menüyü aç"
@@ -8488,9 +8482,6 @@ msgstr "Açık satın alma siparişleri"
 msgid "Open Purchase Orders"
 msgstr "Açık Satın Alma Siparişleri"
 
-msgid "Open purchase orders are still inbound for components this change removes from a BOM."
-msgstr ""
-
 msgid "Open Quotes"
 msgstr "Açık Teklifler"
 
@@ -8499,9 +8490,6 @@ msgstr "Açık Reaktif"
 
 msgid "Open RFQs"
 msgstr "Açık RFQ'lar"
-
-msgid "Open sales lines still reference the part being replaced. Move them to the successor if the change should apply."
-msgstr ""
 
 msgid "Open sales orders"
 msgstr "Açık satış siparişleri"
@@ -9397,9 +9385,6 @@ msgstr "Projeksiyon"
 msgid "Projections"
 msgstr "Projeksiyonlar"
 
-msgid "Promised"
-msgstr ""
-
 msgid "Promised Date"
 msgstr "Planlanan Tarih"
 
@@ -10288,9 +10273,6 @@ msgstr ""
 msgid "Review required"
 msgstr ""
 
-msgid "Review the changes and confirm to activate them."
-msgstr ""
-
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "Dönemin bilançosunu ve gelir tablosunu gözden geçirin ve rakamların doğru göründüğünü doğrulayın. Bu manuel bir onay — bunları gözden geçirdikten sonra bitti olarak işaretleyin."
 
@@ -10529,9 +10511,6 @@ msgstr "Satış Siparişi Konumu"
 
 msgid "Sales Order Number"
 msgstr "Satış Siparişi Numarası"
-
-msgid "Sales orders"
-msgstr ""
 
 msgid "Sales Orders"
 msgstr "Satış Siparişleri"
@@ -12701,9 +12680,6 @@ msgstr "Bu e-posta adresleri, müşterilere gönderilen tüm teklif e-postaları
 msgid "These jobs have operations assigned to this work center:"
 msgstr "Bu işler bu iş merkezine atanmış işlemlere sahiptir:"
 
-msgid "These jobs were built on the previous method and won't change when you release — finish them as-is or re-pull the method."
-msgstr ""
-
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "Bu muhasebe kayıtları hâlâ Taslak durumundadır, bu nedenle borç ve alacakları bu dönem için defteri kebir'de değildir. Her birini deftere geçirin veya daha sonraki bir açık döneme yeniden tarihlendiriniz."
 
@@ -12894,14 +12870,8 @@ msgstr "Unvan"
 msgid "To Location"
 msgstr "Varış Konumu"
 
-msgid "To receive"
-msgstr ""
-
 msgid "To Receive"
 msgstr "Alınacak"
-
-msgid "To send"
-msgstr ""
 
 msgid "To Ship"
 msgstr "Gönderilecek"
@@ -14102,6 +14072,9 @@ msgstr "Bu öğenin yeni stoku varsayılan olarak alındığında nereye inerken
 
 msgid "Where stock lives and how it ships."
 msgstr "Stokun nerede bulunduğu ve nasıl gönderildiği."
+
+msgid "Where the affected items are used across the system. Informational — nothing here blocks releasing."
+msgstr ""
 
 msgid "Where this entry originated (manual entry, posting from sales/purchasing, recurring template, etc.)."
 msgstr "Bu giriş nereden geldi (manuel giriş, satış/satın almadan deftere nakil, yinelenen şablon, vb.)."

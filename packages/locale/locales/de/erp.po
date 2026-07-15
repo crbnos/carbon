@@ -6214,9 +6214,6 @@ msgstr "Auf Lager"
 msgid "In the loop together"
 msgstr "Im Prozess dabei"
 
-msgid "In-flight work and inventory this release touches. Informational — nothing here blocks releasing."
-msgstr ""
-
 msgid "Inactive"
 msgstr "Inaktiv"
 
@@ -7983,6 +7980,9 @@ msgstr "Keine Adressen gefunden"
 msgid "No affected assemblies yet."
 msgstr "Noch keine betroffenen Baugruppen."
 
+msgid "No affected items to assess."
+msgstr ""
+
 msgid "No affected items yet — add a part or tool below."
 msgstr ""
 
@@ -8284,6 +8284,9 @@ msgstr "Nicht genug Aufträge zur Deckung der Menge"
 msgid "Not in the latest version"
 msgstr ""
 
+msgid "Not referenced anywhere yet."
+msgstr ""
+
 msgid "Not Required"
 msgstr "Nicht erforderlich"
 
@@ -8310,9 +8313,6 @@ msgstr "Notizen"
 
 msgid "Notes (optional)"
 msgstr "Notizen (optional)"
-
-msgid "Nothing downstream is affected by this release."
-msgstr ""
 
 msgid "Nothing in the archive"
 msgstr "Nichts im Archiv"
@@ -8467,14 +8467,8 @@ msgstr "Im MES öffnen"
 msgid "Open Issues"
 msgstr "Offene Probleme"
 
-msgid "open job(s)"
-msgstr ""
-
 msgid "Open jobs"
 msgstr "Offene Aufträge"
-
-msgid "open line(s)"
-msgstr ""
 
 msgid "Open menu"
 msgstr "Menü öffnen"
@@ -8488,9 +8482,6 @@ msgstr "Offene Bestellungen"
 msgid "Open Purchase Orders"
 msgstr "Offene Bestellungen"
 
-msgid "Open purchase orders are still inbound for components this change removes from a BOM."
-msgstr ""
-
 msgid "Open Quotes"
 msgstr "Offene Angebote"
 
@@ -8499,9 +8490,6 @@ msgstr "Offene reaktive Wartung"
 
 msgid "Open RFQs"
 msgstr "Offene Anfragen"
-
-msgid "Open sales lines still reference the part being replaced. Move them to the successor if the change should apply."
-msgstr ""
 
 msgid "Open sales orders"
 msgstr "Offene Verkaufsaufträge"
@@ -9397,9 +9385,6 @@ msgstr "Projektion"
 msgid "Projections"
 msgstr "Prognosen"
 
-msgid "Promised"
-msgstr ""
-
 msgid "Promised Date"
 msgstr "Zugesagtes Datum"
 
@@ -10288,9 +10273,6 @@ msgstr ""
 msgid "Review required"
 msgstr ""
 
-msgid "Review the changes and confirm to activate them."
-msgstr ""
-
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "Überprüfen Sie die Bilanz und die Gewinn- und Verlustrechnung der Periode und bestätigen Sie, dass die Zahlen korrekt aussehen. Dies ist eine manuelle Genehmigung – markieren Sie sie als erledigt, sobald Sie diese überprüft haben."
 
@@ -10529,9 +10511,6 @@ msgstr "Verkaufsauftrag-Standort"
 
 msgid "Sales Order Number"
 msgstr "Verkaufsauftragsnummer"
-
-msgid "Sales orders"
-msgstr ""
 
 msgid "Sales Orders"
 msgstr "Verkaufsaufträge"
@@ -12701,9 +12680,6 @@ msgstr "Diese E-Mail-Adressen werden automatisch in CC auf alle Angebots-E-Mails
 msgid "These jobs have operations assigned to this work center:"
 msgstr "Diese Aufträge haben Operationen, die diesem Arbeitszentrum zugewiesen sind:"
 
-msgid "These jobs were built on the previous method and won't change when you release — finish them as-is or re-pull the method."
-msgstr ""
-
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "Diese Journaleinträge sind noch im Entwurf, daher befinden sich ihre Belastungen und Gutschriften nicht im Ledger für diese Periode. Buchen Sie jeden Eintrag, oder buchen Sie ihn in eine spätere offene Periode um."
 
@@ -12894,14 +12870,8 @@ msgstr "Titel"
 msgid "To Location"
 msgstr "Zielort"
 
-msgid "To receive"
-msgstr ""
-
 msgid "To Receive"
 msgstr "Zum Empfangen"
-
-msgid "To send"
-msgstr ""
 
 msgid "To Ship"
 msgstr "Zum Versand"
@@ -14102,6 +14072,9 @@ msgstr "Wo neuer Bestand dieses Artikels standardmäßig beim Empfang landet; Pr
 
 msgid "Where stock lives and how it ships."
 msgstr "Wo Bestände lagern und wie sie versendet werden."
+
+msgid "Where the affected items are used across the system. Informational — nothing here blocks releasing."
+msgstr ""
 
 msgid "Where this entry originated (manual entry, posting from sales/purchasing, recurring template, etc.)."
 msgstr "Woher dieser Eintrag stammt (manueller Eintrag, Buchung aus Verkauf/Einkauf, wiederkehrende Vorlage usw.)."

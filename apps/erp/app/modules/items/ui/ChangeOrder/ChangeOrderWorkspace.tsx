@@ -3,7 +3,6 @@ import { Outlet } from "react-router";
 import type {
   ChangeOrder,
   ChangeOrderActionTask,
-  ChangeOrderImpact,
   ChangeOrderReleaseConflict
 } from "~/modules/items";
 import AffectedItemsSidebar from "./AffectedItemsSidebar";
@@ -11,6 +10,7 @@ import type { AffectedItemDraft } from "./affectedItem.types";
 import ChangeOrderActions from "./ChangeOrderActions";
 import ChangeOrderRail from "./ChangeOrderRail";
 import ChangeOrderStatusFlow from "./ChangeOrderStatusFlow";
+import type { ChangeOrderImpactItem } from "./ImpactPanel";
 
 // The 3-pane change-order workspace shell: left = affected-items list, middle =
 // the selected item's detail (an <Outlet> — the selection lives in the URL, not
@@ -21,19 +21,17 @@ export default function ChangeOrderWorkspace({
   changeOrder,
   affectedItems,
   actions,
-  impact,
+  impactUsedIn,
   releaseConflicts,
-  isDisabled,
-  showImplementation
+  isDisabled
 }: {
   id: string;
   changeOrder: ChangeOrder;
   affectedItems: AffectedItemDraft[];
   actions: ChangeOrderActionTask[];
-  impact: ChangeOrderImpact;
+  impactUsedIn: ChangeOrderImpactItem[];
   releaseConflicts: ChangeOrderReleaseConflict[];
   isDisabled: boolean;
-  showImplementation: boolean;
 }) {
   return (
     <div className="flex h-[calc(100dvh-99px)] w-full overflow-hidden">
@@ -64,10 +62,9 @@ export default function ChangeOrderWorkspace({
         changeOrder={changeOrder}
         affectedItems={affectedItems}
         actions={actions}
-        impact={impact}
+        impactUsedIn={impactUsedIn}
         releaseConflicts={releaseConflicts}
         isDisabled={isDisabled}
-        showImplementation={showImplementation}
       />
     </div>
   );

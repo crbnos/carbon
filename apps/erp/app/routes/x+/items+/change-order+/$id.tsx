@@ -10,7 +10,6 @@ import {
   getChangeOrderActions,
   getChangeOrderAffectedItems,
   getChangeOrderDiff,
-  getChangeOrderImpact,
   getChangeOrderReleaseDiff,
   getChangeOrderRequiredActionsList,
   getChangeOrderTypesList,
@@ -23,6 +22,7 @@ import {
   getMethodMaterialsByMakeMethod,
   getMethodOperationsByMakeMethodId,
   getPart,
+  getPartUsedIn,
   getPickMethods,
   getSupplierParts
 } from "~/modules/items";
@@ -57,14 +57,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const [changeOrder, types, affected, diff, actions, impact, nonConformances] =
+  const [changeOrder, types, affected, diff, actions, nonConformances] =
     await Promise.all([
       getChangeOrder(client, id, companyId),
       getChangeOrderTypesList(client, companyId),
       getChangeOrderAffectedItems(client, id, companyId),
       getChangeOrderDiff(client, id, companyId),
       getChangeOrderActions(client, id, companyId),
-      getChangeOrderImpact(client, id, companyId),
       // NCR cross-link picker options (4a).
       getIssues(client, companyId)
     ]);
@@ -101,6 +100,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       : [];
 
   const affectedRows = affected.data ?? [];
+
+  // Impact = where each affected item is used across the system (jobs, POs,
+  // sales, receipts, methods, NCRs, …) — the same "Used In" data the part detail
+  // page loads, one entry per affected item.
+  const impactUsedIn = await Promise.all(
+    affectedRows.map(async (a) => ({
+      itemId: a.itemId,
+      readableIdWithRevision: a.item?.readableIdWithRevision ?? a.itemId,
+      itemName: a.item?.name ?? null,
+      usedIn: await getPartUsedIn(client, a.itemId, companyId)
+    }))
+  );
+
   const diffByAffectedId = new Map(
     (diff.data?.items ?? []).map((entry) => [entry.affectedItemId, entry])
   );
@@ -272,11 +284,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     actions: actions.data ?? [],
     requiredActions,
     affectedAssemblies,
-    impact: impact.data ?? {
-      removedParts: [],
-      affectedJobs: [],
-      supersededSalesOrders: []
-    },
+    impactUsedIn,
     nonConformanceOptions,
     linkedNonConformance: linkedNonConformance
       ? {

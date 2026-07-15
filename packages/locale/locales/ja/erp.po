@@ -6214,9 +6214,6 @@ msgstr "在庫あり"
 msgid "In the loop together"
 msgstr "一緒にループの中にいる"
 
-msgid "In-flight work and inventory this release touches. Informational — nothing here blocks releasing."
-msgstr ""
-
 msgid "Inactive"
 msgstr "非アクティブ"
 
@@ -7983,6 +7980,9 @@ msgstr "住所が見つかりません"
 msgid "No affected assemblies yet."
 msgstr "影響を受けるアセンブリはまだありません。"
 
+msgid "No affected items to assess."
+msgstr ""
+
 msgid "No affected items yet — add a part or tool below."
 msgstr ""
 
@@ -8284,6 +8284,9 @@ msgstr "数量をカバーするのに十分なジョブがありません"
 msgid "Not in the latest version"
 msgstr ""
 
+msgid "Not referenced anywhere yet."
+msgstr ""
+
 msgid "Not Required"
 msgstr "不要"
 
@@ -8310,9 +8313,6 @@ msgstr "メモ"
 
 msgid "Notes (optional)"
 msgstr "メモ（オプション）"
-
-msgid "Nothing downstream is affected by this release."
-msgstr ""
 
 msgid "Nothing in the archive"
 msgstr "アーカイブに何もありません"
@@ -8467,14 +8467,8 @@ msgstr "MESで開く"
 msgid "Open Issues"
 msgstr "未解決の問題"
 
-msgid "open job(s)"
-msgstr ""
-
 msgid "Open jobs"
 msgstr "未処理ジョブ"
-
-msgid "open line(s)"
-msgstr ""
 
 msgid "Open menu"
 msgstr "メニューを開く"
@@ -8488,9 +8482,6 @@ msgstr "未処理の発注書"
 msgid "Open Purchase Orders"
 msgstr "未処理の発注書"
 
-msgid "Open purchase orders are still inbound for components this change removes from a BOM."
-msgstr ""
-
 msgid "Open Quotes"
 msgstr "オープン見積"
 
@@ -8499,9 +8490,6 @@ msgstr "オープン反応"
 
 msgid "Open RFQs"
 msgstr "オープンRFQ"
-
-msgid "Open sales lines still reference the part being replaced. Move them to the successor if the change should apply."
-msgstr ""
 
 msgid "Open sales orders"
 msgstr "未出荷の販売注文"
@@ -9397,9 +9385,6 @@ msgstr "予測"
 msgid "Projections"
 msgstr "予測"
 
-msgid "Promised"
-msgstr ""
-
 msgid "Promised Date"
 msgstr "約束日"
 
@@ -10288,9 +10273,6 @@ msgstr ""
 msgid "Review required"
 msgstr ""
 
-msgid "Review the changes and confirm to activate them."
-msgstr ""
-
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "当期の貸借対照表と損益計算書を確認し、数字が正しいことを確認してください。これは手動による認可です。確認後、完了とマークしてください。"
 
@@ -10529,9 +10511,6 @@ msgstr "販売注文の場所"
 
 msgid "Sales Order Number"
 msgstr "販売注文番号"
-
-msgid "Sales orders"
-msgstr ""
 
 msgid "Sales Orders"
 msgstr "販売注文"
@@ -12701,9 +12680,6 @@ msgstr "これらのメールアドレスは、顧客に送信されるすべて
 msgid "These jobs have operations assigned to this work center:"
 msgstr "これらのジョブにはこのワークセンターに割り当てられた操作があります:"
 
-msgid "These jobs were built on the previous method and won't change when you release — finish them as-is or re-pull the method."
-msgstr ""
-
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "これらの仕訳はまだ下書きであるため、それらの借方と貸方は当期の元帳に含まれていません。各仕訳を転記するか、後の開いている期間に再度日付を付け直してください。"
 
@@ -12894,14 +12870,8 @@ msgstr "タイトル"
 msgid "To Location"
 msgstr "到着地"
 
-msgid "To receive"
-msgstr ""
-
 msgid "To Receive"
 msgstr "受け取り予定"
-
-msgid "To send"
-msgstr ""
 
 msgid "To Ship"
 msgstr "発送予定"
@@ -14102,6 +14072,9 @@ msgstr "このアイテムの新しいストックが受取時にデフォルト
 
 msgid "Where stock lives and how it ships."
 msgstr "在庫がどこに保管され、どのように出荷されるか。"
+
+msgid "Where the affected items are used across the system. Informational — nothing here blocks releasing."
+msgstr ""
 
 msgid "Where this entry originated (manual entry, posting from sales/purchasing, recurring template, etc.)."
 msgstr "このエントリーの出所(手動入力、販売/購買からのポスティング、反復テンプレートなど)。"
