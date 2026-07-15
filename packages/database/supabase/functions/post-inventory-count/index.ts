@@ -3,15 +3,20 @@ import { format } from "https://deno.land/std@0.205.0/datetime/mod.ts";
 import { z } from "https://deno.land/x/zod@v3.21.4/mod.ts";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { corsHeaders } from "../lib/headers.ts";
+import { getFunctionLogger } from "../lib/logging.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import type { Database } from "../lib/types.ts";
 import { getCurrentAccountingPeriod } from "../shared/get-accounting-period.ts";
 import { getDefaultPostingGroup } from "../shared/get-posting-group.ts";
-import { bookAdjustment } from "../shared/post-adjustment.ts";
+import {
+  bookAdjustment,
+  createAdjustmentJournal
+} from "../shared/post-adjustment.ts";
 import { planInventoryCountPost } from "./plan-post.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
+const logger = getFunctionLogger("post-inventory-count");
 
 // Base for post-blocking validation errors. Carries the offending line ids so
 // the response can hand them to the UI to highlight the rows.
@@ -241,6 +246,27 @@ serve(async (req: Request) => {
         throw new Error("Inventory count is no longer pending");
       }
 
+      // ONE journal per count post: created lazily on the first variance that
+      // carries value, then shared by every line's journal-line pair.
+      let sharedJournalId: string | null = null;
+      const accountingForLines = accounting
+        ? {
+            ...accounting,
+            getJournalId: async () => {
+              if (!sharedJournalId) {
+                sharedJournalId = await createAdjustmentJournal(trx, {
+                  companyId,
+                  accountingPeriodId: accounting.accountingPeriodId,
+                  description: accounting.description,
+                  postingDate: today,
+                  userId
+                });
+              }
+              return sharedJournalId;
+            }
+          }
+        : null;
+
       // Post the reviewed variance for each line as an inventory adjustment,
       // booked through the shared core (ledger + cost layers + journal).
       for (const { line, delta } of planned) {
@@ -277,7 +303,7 @@ serve(async (req: Request) => {
             itemPostingGroupId: itemCost.itemPostingGroupId
           },
           itemCost,
-          accounting
+          accounting: accountingForLines
         });
 
         // Tracked lines: apply the same delta to the entity's quantity (not a
@@ -327,7 +353,9 @@ serve(async (req: Request) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" }
     });
   } catch (err) {
-    console.error("Error in post-inventory-count:", err);
+    logger.error("post-inventory-count failed", {
+      error: String((err as Error).stack ?? err)
+    });
     // The post is a single atomic transaction, so a failure has already rolled
     // back any ledger writes and the status change — the count is left exactly
     // as it was (Pending). We do NOT touch the status here: reverting a failed

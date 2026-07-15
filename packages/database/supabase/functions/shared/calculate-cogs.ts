@@ -117,6 +117,7 @@ export async function calculateCOGS(
           .selectFrom("costLedger")
           .selectAll()
           .where("appliesToCostLedgerId", "=", layer.id)
+          .where("companyId", "=", companyId)
           .where("remainingQuantity", ">", 0)
           .orderBy("createdAt", "asc")
           .execute();

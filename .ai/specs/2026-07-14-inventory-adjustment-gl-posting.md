@@ -171,9 +171,13 @@ posting legs are added:
 - **First post**: each counted line posts the reviewed variance —
   `counted − frozen snapshot systemQuantity`, per `planInventoryCountPost` —
   and the per-line loop calls the shared posting core instead of raw
-  `itemLedger` inserts, so each delta now maintains cost layers and posts a
-  journal (`documentType 'Inventory Count'`, `documentId` = count id) inside
-  the function's existing transaction and `FOR UPDATE` double-post guard.
+  `itemLedger` inserts, so each delta now maintains cost layers and adds a
+  journal-line pair (`documentType 'Inventory Count'`, `documentId` = count
+  id) inside the function's existing transaction and `FOR UPDATE` double-post
+  guard. A count post creates **ONE journal** shared by all its lines (Brad,
+  2026-07-15) — created lazily on the first variance that carries value, so an
+  all-zero-cost post writes no empty journal. Each Rectify re-post likewise
+  gets one journal of its own.
 - **Rectify** (`rectifyInventoryCount`, `inventory.service.ts:2207`): reopening
   a Posted count re-snapshots each line's `systemQuantity` to current live
   on-hand and **posts nothing** by itself. The subsequent re-post sends the
@@ -295,9 +299,10 @@ verify_jwt = true`. Run `pnpm run generate:types` before typechecking.
 - [ ] **Storage-unit transfer.** Moving a tracked batch between bins writes the
   ledger pair and zero costLedger/journal rows; tie-out variance unchanged.
 - [ ] **Count posting.** Posting a count with one +2 and one −4 variance line
-  writes one journal pair per line with `documentType 'Inventory Count'` /
-  `documentId` = count id; the count's status/`postedItemLedgerId` bookkeeping
-  and `getInventoryCountMovements` behave exactly as today.
+  writes **one journal** containing a balanced line pair per variance line
+  (four lines total), `documentType 'Inventory Count'` / `documentId` = count
+  id; the count's status/`postedItemLedgerId` bookkeeping and
+  `getInventoryCountMovements` behave exactly as today.
 - [ ] **Rectify (numeric).** A count posts −10 against a $7.00 layer
   (Dr 5310 $70.00 / Cr Inventory $70.00). Rectify the count, re-count so the
   line's delta is +4: the re-post writes a +4 movement linked via
@@ -357,6 +362,12 @@ churn.
 
 ## Changelog
 
+- 2026-07-15: One journal per inventory count post (Brad) — the shared core
+  gains `accounting.getJournalId` so count lines append to a lazily created
+  shared journal; manual adjustments keep one journal per movement.
+  Post-review hardening: `companyId` scoping on applied-children queries,
+  `quantity.min(0)` on the payload, `getFunctionLogger` over `console.error`,
+  `msg`-wrapped Valuation breadcrumb.
 - 2026-07-15: Journal lines from adjustments and counts carry
   Item/ItemPostingGroup/Location dimension tags (Brad) — same
   `journalLineDimension` mechanism as post-shipment.

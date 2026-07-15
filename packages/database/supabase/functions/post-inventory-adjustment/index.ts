@@ -4,6 +4,7 @@ import { z } from "https://deno.land/x/zod@v3.21.4/mod.ts";
 import { Transaction } from "kysely";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { corsHeaders } from "../lib/headers.ts";
+import { getFunctionLogger } from "../lib/logging.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import type { Json } from "../lib/types.ts";
 import { getCurrentAccountingPeriod } from "../shared/get-accounting-period.ts";
@@ -12,6 +13,7 @@ import { bookAdjustment } from "../shared/post-adjustment.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
+const logger = getFunctionLogger("post-inventory-adjustment");
 
 // The single write path for manual inventory adjustments (ERP quantities page,
 // MES shop floor). Ports the former app-side insertManualInventoryAdjustment
@@ -27,7 +29,9 @@ const payloadValidator = z.object({
   locationId: z.string(),
   storageUnitId: z.string().optional().nullable(),
   trackedEntityId: z.string().optional().nullable(),
-  quantity: z.number(),
+  // 0 is legal for Set Quantity (set to zero); a negative magnitude is never
+  // valid — direction comes from adjustmentType, not the sign.
+  quantity: z.number().min(0),
   readableId: z.string().optional().nullable(),
   originalStorageUnitId: z.string().optional().nullable(),
   expirationDate: z.string().optional().nullable(),
@@ -556,7 +560,9 @@ serve(async (req: Request) => {
       }
     );
   } catch (err) {
-    console.error("Error in post-inventory-adjustment:", err);
+    logger.error("post-inventory-adjustment failed", {
+      error: String((err as Error).stack ?? err),
+    });
     const isValidationError = err instanceof ValidationError;
     return new Response(
       JSON.stringify({ message: (err as Error).message }),

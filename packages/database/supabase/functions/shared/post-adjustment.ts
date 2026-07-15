@@ -58,6 +58,12 @@ export interface BookAdjustmentArgs {
     // (Item / ItemPostingGroup / Location are consulted) — journal lines get
     // journalLineDimension tags for whichever are configured
     dimensions?: Record<string, string>;
+    // When set, lines append to this shared journal instead of the core
+    // creating one journal per movement — inventory counts post ONE journal
+    // per count with a line pair per variance. Lazy (called only when a
+    // movement actually carries value) so an all-zero-cost run never creates
+    // an empty journal.
+    getJournalId?: () => Promise<string>;
   } | null;
   // storage-unit-transfer legs move stock between bins without changing its
   // value: ledger row only — no cost layers, no journal
@@ -68,6 +74,45 @@ export interface BookAdjustmentResult {
   itemLedgerId: string;
   journalId: string | null;
   cost: number;
+}
+
+export interface CreateAdjustmentJournalArgs {
+  companyId: string;
+  accountingPeriodId: string;
+  description: string;
+  postingDate: string;
+  userId: string;
+}
+
+// One journal header for adjustment postings ('Inventory Adjustment' source,
+// posted immediately). Manual adjustments create one per movement; inventory
+// counts share ONE journal per count post via accounting.getJournalId.
+export async function createAdjustmentJournal(
+  trx: Transaction<DB>,
+  args: CreateAdjustmentJournalArgs
+): Promise<string> {
+  const journalEntryId = await getNextSequence(
+    trx,
+    "journalEntry",
+    args.companyId
+  );
+  const journal = await trx
+    .insertInto("journal")
+    .values({
+      journalEntryId,
+      accountingPeriodId: args.accountingPeriodId,
+      description: args.description,
+      postingDate: args.postingDate,
+      companyId: args.companyId,
+      sourceType: "Inventory Adjustment",
+      status: "Posted",
+      postedAt: new Date().toISOString(),
+      postedBy: args.userId,
+      createdBy: args.userId,
+    })
+    .returning(["id"])
+    .executeTakeFirstOrThrow();
+  return journal.id;
 }
 
 // Book one adjustment movement inside the caller's transaction: the item
@@ -169,6 +214,7 @@ export async function bookAdjustment(
           "in",
           openLayers.map((layer) => layer.id)
         )
+        .where("companyId", "=", companyId)
         .execute();
       for (const child of children) {
         const key = child.appliesToCostLedgerId as string;
@@ -213,24 +259,15 @@ export async function bookAdjustment(
     return { itemLedgerId: inserted.id, journalId: null, cost };
   }
 
-  const journalEntryId = await getNextSequence(trx, "journalEntry", companyId);
-
-  const journal = await trx
-    .insertInto("journal")
-    .values({
-      journalEntryId,
-      accountingPeriodId: accounting.accountingPeriodId,
-      description: accounting.description,
-      postingDate: ledger.postingDate,
-      companyId,
-      sourceType: "Inventory Adjustment",
-      status: "Posted",
-      postedAt: new Date().toISOString(),
-      postedBy: accounting.userId,
-      createdBy: accounting.userId,
-    })
-    .returning(["id"])
-    .executeTakeFirstOrThrow();
+  const journalId = accounting.getJournalId
+    ? await accounting.getJournalId()
+    : await createAdjustmentJournal(trx, {
+        companyId,
+        accountingPeriodId: accounting.accountingPeriodId,
+        description: accounting.description,
+        postingDate: ledger.postingDate,
+        userId: accounting.userId,
+      });
 
   const inventoryAccount = resolveInventoryAccount(
     item.replenishmentSystem,
@@ -244,7 +281,7 @@ export async function bookAdjustment(
     .insertInto("journalLine")
     .values([
       {
-        journalId: journal.id,
+        journalId,
         accountId: inventoryAccount.account,
         description: inventoryAccount.description,
         amount: isGain ? debit("asset", cost) : credit("asset", cost),
@@ -255,7 +292,7 @@ export async function bookAdjustment(
         companyId,
       },
       {
-        journalId: journal.id,
+        journalId,
         accountId: accounting.accountDefaults.inventoryAdjustmentVarianceAccount,
         description: "Inventory Adjustment",
         amount: isGain ? credit("expense", cost) : debit("expense", cost),
@@ -295,5 +332,5 @@ export async function bookAdjustment(
       .execute();
   }
 
-  return { itemLedgerId: inserted.id, journalId: journal.id, cost };
+  return { itemLedgerId: inserted.id, journalId, cost };
 }
