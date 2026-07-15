@@ -1840,14 +1840,17 @@ export const path = {
       generatePath(`${x}/inventory/serial-numbers/${id}`),
     service: (id: string) => generatePath(`${x}/service/${id}`),
     services: `${x}/items/services`,
+    serviceCosting: (id: string) => generatePath(`${x}/service/${id}/costing`),
     serviceDetails: (id: string) => `${x}/service/${id}/details`,
+    serviceMake: (id: string, makeMethodId: string) =>
+      generatePath(`${x}/service/${id}/make/${makeMethodId}`),
+    serviceQuality: (id: string) => generatePath(`${x}/service/${id}/quality`),
     serviceRoot: `${x}/service`,
+    serviceSales: (id: string) => generatePath(`${x}/service/${id}/sales`),
     servicePurchasing: (id: string) =>
       generatePath(`${x}/service/${id}/purchasing`),
     serviceSupplier: (serviceId: string, id: string) =>
       generatePath(`${x}/service/${serviceId}/purchasing/${id}`),
-    serviceSuppliers: (id: string) =>
-      generatePath(`${x}/service/${id}/suppliers`),
     settings: `${x}/settings`,
     sequences: `${x}/settings/sequences`,
     storageUnit: (id: string) =>

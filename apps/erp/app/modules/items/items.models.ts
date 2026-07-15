@@ -73,7 +73,9 @@ export const partManufacturingPolicies = [
   "Make to Order"
 ] as const;
 
-export const serviceType = ["Internal", "External"] as const;
+// Services are Buy or Make only — never "Buy and Make", and never stocked
+// ("Pull from Inventory" is not a valid method for a Non-Inventory item).
+export const serviceReplenishmentSystems = ["Buy", "Make"] as const;
 
 export const supplierPartPriceSourceTypes = [
   "Quote",
@@ -800,11 +802,17 @@ export const serviceValidator = applyStorageAndShelfLifeRefines(
   itemValidator.merge(
     z.object({
       id: z.string().min(1, { message: "Service ID is required" }).max(255),
-      serviceType: z.enum(serviceType, {
+      revision: z.string().min(1, { message: "Revision is required" }),
+      unitOfMeasureCode: z
+        .string()
+        .min(1, { message: "Unit of Measure is required" }),
+      replenishmentSystem: z.enum(serviceReplenishmentSystems, {
         errorMap: (issue, ctx) => ({
-          message: "Service type is required"
+          message: "Replenishment system is required"
         })
-      })
+      }),
+      // Services can never be shipped, received, or stocked
+      itemTrackingType: z.literal("Non-Inventory")
     })
   )
 );

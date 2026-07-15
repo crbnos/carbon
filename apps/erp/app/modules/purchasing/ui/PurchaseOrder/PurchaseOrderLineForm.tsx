@@ -67,7 +67,11 @@ import {
   isPurchaseOrderLocked,
   purchaseOrderLineValidator
 } from "~/modules/purchasing";
-import { type MethodItemType, resolveSupplierPrice } from "~/modules/shared";
+import {
+  type ItemType,
+  itemType,
+  resolveSupplierPrice
+} from "~/modules/shared";
 import type { action } from "~/routes/x+/purchase-order+/$orderId.$lineId.details";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
@@ -121,8 +125,8 @@ const PurchaseOrderLineForm = ({
     routeData?.purchaseOrder?.purchaseOrderType === "Outside Processing";
   const isLocked = isPurchaseOrderLocked(routeData?.purchaseOrder?.status);
 
-  const [itemType, setItemType] = useState<MethodItemType>(
-    initialValues.purchaseOrderLineType as MethodItemType
+  const [lineType, setLineType] = useState<ItemType>(
+    initialValues.purchaseOrderLineType as ItemType
   );
   const [locationId, setLocationId] = useState(initialValues.locationId);
   const [itemData, setItemData] = useState<{
@@ -315,9 +319,9 @@ const PurchaseOrderLineForm = ({
   const currencyFormatter = useCurrencyFormatter();
   const percentFormatter = usePercentFormatter();
 
-  const onTypeChange = (t: MethodItemType | "Item") => {
-    if (t === itemType) return;
-    setItemType(t as MethodItemType);
+  const onTypeChange = (t: ItemType | "Item") => {
+    if (t === lineType) return;
+    setLineType(t as ItemType);
     setItemData({
       itemId: "",
       conversionFactor: 1,
@@ -340,14 +344,13 @@ const PurchaseOrderLineForm = ({
 
   const onItemChange = async (itemId: string) => {
     if (!carbon) throw new Error("Carbon client not found");
-    switch (itemType) {
+    switch (lineType) {
       // @ts-expect-error
       case "Item":
       case "Consumable":
       case "Material":
       case "Part":
       case "Tool":
-      // @ts-expect-error
       case "Service":
       // @ts-expect-error
       case "Fixture":
@@ -426,13 +429,13 @@ const PurchaseOrderLineForm = ({
         });
 
         if (item.data?.type) {
-          setItemType(item.data.type as MethodItemType);
+          setLineType(item.data.type as ItemType);
         }
 
         break;
       default:
         throw new Error(
-          `Invalid purchase order line type: ${itemType} is not implemented`
+          `Invalid purchase order line type: ${lineType} is not implemented`
         );
     }
   };
@@ -599,7 +602,7 @@ const PurchaseOrderLineForm = ({
                   />
 
                   <TabsContent value="item">
-                    <Hidden name="purchaseOrderLineType" value={itemType} />
+                    <Hidden name="purchaseOrderLineType" value={lineType} />
                     <Hidden
                       name="inventoryUnitOfMeasureCode"
                       value={itemData?.inventoryUom}
@@ -608,8 +611,9 @@ const PurchaseOrderLineForm = ({
                       <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
                         <Item
                           name="itemId"
-                          label={i18n._(itemTypeLabel(itemType))}
-                          type={itemType}
+                          label={i18n._(itemTypeLabel(lineType))}
+                          type={lineType}
+                          validItemTypes={[...itemType]}
                           locationId={locationId}
                           replenishmentSystem={
                             isOutsideProcessing ? undefined : "Buy"
@@ -686,7 +690,7 @@ const PurchaseOrderLineForm = ({
                           "Tool",
                           "Service",
                           "Fixture"
-                        ].includes(itemType) && (
+                        ].includes(lineType) && (
                           <>
                             <UnitOfMeasure
                               name="purchaseUnitOfMeasureCode"
@@ -741,7 +745,7 @@ const PurchaseOrderLineForm = ({
                           "Tool",
                           "Consumable",
                           "Fixture"
-                        ].includes(itemType) &&
+                        ].includes(lineType) &&
                           !isOutsideProcessing && (
                             <Location
                               name="locationId"
@@ -754,12 +758,11 @@ const PurchaseOrderLineForm = ({
                         {[
                           "Item",
                           "Part",
-                          "Service",
                           "Material",
                           "Tool",
                           "Consumable",
                           "Fixture"
-                        ].includes(itemType) &&
+                        ].includes(lineType) &&
                           !isOutsideProcessing && (
                             <StorageUnit
                               name="storageUnitId"

@@ -114,16 +114,26 @@ export const tablesWithTags = [
   "job",
   "material",
   "part",
+  "service",
   "suggestion",
   "tool"
 ];
 
-export const methodItemType = [
+// Item types that can appear as a BOM/method material component. Tool and
+// Service are intentionally excluded — tools attach to operations
+// (methodOperationTool) and services are billable activities bought or
+// performed; neither is ever consumed as a component.
+export const methodItemType = ["Part", "Material", "Consumable"] as const;
+
+// Item types that can appear as a top-level quote/sales-order/purchase-order/
+// invoice line. Tools and services are bought and sold even though neither is
+// a method component, so this is wider than methodItemType.
+export const itemType = [
   "Part",
   "Material",
   "Tool",
-  "Consumable"
-  // "Service",
+  "Consumable",
+  "Service"
 ] as const;
 
 export const months = [

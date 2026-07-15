@@ -1,5 +1,5 @@
 {
-  "generated": "2026-07-14T22:27:32.390Z",
+  "generated": "2026-07-15T00:11:05.860Z",
   "totalTools": 1331,
   "modules": 15,
   "tools": [
@@ -12506,7 +12506,7 @@
       "module": "items",
       "classification": "READ",
       "description": "get services",
-      "paramCount": 6,
+      "paramCount": 5,
       "serviceParams": [
         "client",
         "companyId",
@@ -12530,12 +12530,6 @@
                 "default": 0
               },
               "search": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              },
-              "type": {
                 "type": [
                   "string",
                   "null"
@@ -35415,7 +35409,7 @@
       "module": "sales",
       "classification": "WRITE",
       "description": "upsert quote line",
-      "paramCount": 4,
+      "paramCount": 5,
       "serviceParams": [
         "client",
         "quotationLine"
@@ -35432,6 +35426,9 @@
             "type": "string"
           },
           "quoteId": {
+            "type": "string"
+          },
+          "itemType": {
             "type": "string"
           },
           "itemId": {

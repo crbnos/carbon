@@ -97,7 +97,14 @@ const SentinelRow = ({
  * A group at any depth: the row selects the group (when groups are
  * selectable); the chevron expands/collapses; hovering prefetches members.
  */
-const GroupRow = ({ node }: { node: GroupNode }) => {
+const GroupRow = ({
+  node,
+  inheritedSelected = false
+}: {
+  node: GroupNode;
+  /** True when an ancestor group is selected — forces this row checked + locked. */
+  inheritedSelected?: boolean;
+}) => {
   const {
     innerProps: { alwaysSelected, usersOnly },
     focusedId,
@@ -112,9 +119,15 @@ const GroupRow = ({ node }: { node: GroupNode }) => {
   const { group, uid, expanded, loading, members } = node;
 
   const isFocused = uid === focusedId;
-  const isSelected = group.id in selectionItemsById;
-  const isDisabled = alwaysSelected?.includes(group.id) ?? false;
-  const canExpand = group.userCount + group.groupCount > 0;
+  // Selected directly, or implicitly because an ancestor group is selected.
+  const isSelected = inheritedSelected || group.id in selectionItemsById;
+  // Locked when an ancestor is selected (included via that ancestor, can't be
+  // toggled off) or when force-selected via alwaysSelected.
+  const isDisabled =
+    inheritedSelected || (alwaysSelected?.includes(group.id) ?? false);
+  // The seeded roots ("All Employees/Customers/Suppliers") are select-all
+  // targets, not folders — never expandable; their members are top-level siblings.
+  const canExpand = !group.isRoot && group.userCount + group.groupCount > 0;
   const isOpen = expanded && members !== null;
   const isEmpty =
     members !== null &&
@@ -206,13 +219,15 @@ const GroupRow = ({ node }: { node: GroupNode }) => {
         <ul role="group" className="flex flex-col gap-0.5 py-1 pl-2">
           {members.groups.map((child) => (
             <li key={child.uid}>
-              <GroupRow node={child} />
+              <GroupRow node={child} inheritedSelected={isSelected} />
             </li>
           ))}
           {members.users.map((item) => {
-            const itemIsDisabled = alwaysSelected?.includes(item.id) ?? false;
             const itemIsFocused = item.uid === focusedId;
-            const itemIsSelected = item.id in selectionItemsById;
+            // A selected group implicitly includes (and locks) all its members.
+            const itemIsSelected = isSelected || item.id in selectionItemsById;
+            const itemIsDisabled =
+              isSelected || (alwaysSelected?.includes(item.id) ?? false);
 
             return (
               <Option

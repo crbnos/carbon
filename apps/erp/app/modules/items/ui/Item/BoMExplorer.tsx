@@ -44,14 +44,14 @@ import { OnshapeSync } from "~/components/OnshapeSync";
 import type { FlatTreeItem } from "~/components/TreeView";
 import { LevelLine, TreeView, useTree } from "~/components/TreeView";
 import { useIntegrations } from "~/hooks/useIntegrations";
-import type { MethodItemType } from "~/modules/shared";
+import type { ItemType } from "~/modules/shared";
 import { generateBomIds } from "~/utils/bom";
 import { path } from "~/utils/path";
 import type { MakeMethod, Method, MethodOperation } from "../../types";
 import { getLinkToItemDetails } from "./ItemForm";
 
 type BoMExplorerProps = {
-  itemType: MethodItemType;
+  itemType: ItemType;
   makeMethod: MakeMethod;
   methods: FlatTreeItem<Method>[];
   methodId?: string;
@@ -643,23 +643,21 @@ function NodePreview({ node }: { node: FlatTreeItem<Method> }) {
   );
 }
 
-function getRootLink(
-  itemType: MethodItemType,
-  itemId: string,
-  methodId: string
-) {
+function getRootLink(itemType: ItemType, itemId: string, methodId: string) {
   switch (itemType) {
     case "Part":
       return `${path.to.partDetails(itemId)}?methodId=${methodId}`;
     case "Tool":
       return `${path.to.toolDetails(itemId)}?methodId=${methodId}`;
+    case "Service":
+      return `${path.to.serviceDetails(itemId)}?methodId=${methodId}`;
     default:
       throw new Error(`Unimplemented BoMExplorer itemType: ${itemType}`);
   }
 }
 
 function getMaterialLink(
-  itemType: MethodItemType,
+  itemType: ItemType,
   itemId: string,
   methodId: string,
   makeMethodId: string,
@@ -670,6 +668,8 @@ function getMaterialLink(
       return `${path.to.partMake(itemId, makeMethodId)}?methodId=${methodId}`;
     case "Tool":
       return `${path.to.toolMake(itemId, makeMethodId)}?methodId=${methodId}`;
+    case "Service":
+      return `${path.to.serviceMake(itemId, makeMethodId)}?methodId=${methodId}`;
     default:
       throw new Error(`Unimplemented BoMExplorer itemType: ${itemType}`);
   }

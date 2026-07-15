@@ -31,7 +31,7 @@ import { Link, useFetchers, useRevalidator, useSubmit } from "react-router";
 import { DocumentPreview, FileDropzone, Hyperlink } from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
 import { useDateFormatter, usePermissions, useUser } from "~/hooks";
-import type { MethodItemType, OptimisticFileObject } from "~/modules/shared";
+import type { ItemType, OptimisticFileObject } from "~/modules/shared";
 import { getDocumentType } from "~/modules/shared";
 import type { ModelUpload } from "~/types";
 import { path } from "~/utils/path";
@@ -44,7 +44,7 @@ type ItemDocumentsProps = {
   files: ItemFile[];
   itemId: string;
   modelUpload?: ModelUpload;
-  type: MethodItemType;
+  type: ItemType;
 };
 
 const ItemDocuments = ({
@@ -266,7 +266,7 @@ export default ItemDocuments;
 
 type ItemDocumentFormProps = {
   itemId: string;
-  type: MethodItemType;
+  type: ItemType;
 };
 
 const ItemDocumentForm = ({ itemId, type }: ItemDocumentFormProps) => {
@@ -293,7 +293,7 @@ const ItemDocumentForm = ({ itemId, type }: ItemDocumentFormProps) => {
 
 type Props = {
   itemId: string;
-  type: MethodItemType;
+  type: ItemType;
 };
 
 export const useItemDocuments = ({ itemId, type }: Props) => {

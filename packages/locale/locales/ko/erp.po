@@ -334,6 +334,9 @@ msgstr "판매 RFQ(고객이 견적을 요청) 또는 구매 RFQ(귀사가 공�
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "세무 신고용 별도 상각 스케줄로, 세법이 장부상 감가상각과 다른 방법을 요구할 때 사용합니다."
 
+msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
+msgstr "서비스는 구매하거나 수행되는 청구 가능한 활동이며, 절대 배송되거나 수령되거나 재고되지 않습니다"
+
 msgid "A set of companies under one owner that share group-scoped configuration — the chart of accounts, currencies, and dimensions — so the same accounting setup spans every company in the group."
 msgstr "하나의 소유주 아래 있는 여러 회사가 계정과목표, 통화, 차원 등 그룹 범위 설정을 공유하여, 그룹 내 모든 회사에 동일한 회계 설정이 적용되도록 합니다."
 
@@ -2651,6 +2654,9 @@ msgstr "품목 링크 복사"
 msgid "Copy link to procedure"
 msgstr "절차 링크 복사"
 
+msgid "Copy link to service"
+msgstr "서비스 링크 복사"
+
 msgid "Copy link to tool"
 msgstr "공구 링크 복사"
 
@@ -2698,6 +2704,12 @@ msgstr "견적 복사"
 
 msgid "Copy Quote number"
 msgstr "견적 번호 복사"
+
+msgid "Copy service number"
+msgstr "서비스 번호 복사"
+
+msgid "Copy service unique identifier"
+msgstr "서비스 고유 식별자 복사"
 
 msgid "Copy this item's pricing to another scope."
 msgstr "이 품목의 가격을 다른 범위로 복사합니다."
@@ -2995,6 +3007,9 @@ msgstr "필수 조치 생성됨"
 
 msgid "Created scrap reason"
 msgstr "스크랩 사유 생성됨"
+
+msgid "Created service"
+msgstr "서비스 생성됨"
 
 msgid "Created shipping method"
 msgstr "배송 방법 생성됨"
@@ -3706,6 +3721,9 @@ msgstr "판매주문 삭제"
 msgid "Delete Schedule"
 msgstr "일정 삭제"
 
+msgid "Delete Service"
+msgstr "서비스 삭제"
+
 msgid "Delete Shift"
 msgstr "교대 삭제"
 
@@ -4382,6 +4400,9 @@ msgstr "예정된 유지보수 수정"
 msgid "Edit Sequence"
 msgstr "순서 수정"
 
+msgid "Edit Service"
+msgstr "서비스 편집"
+
 msgid "Edit Shift"
 msgstr "교대 수정"
 
@@ -5002,6 +5023,10 @@ msgstr "결제조건 생성 실패: {0}"
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create process: {0}"
 msgstr "공정 생성 실패: {0}"
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create service: {0}"
+msgstr "서비스 생성 실패: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create shipping method: {0}"
@@ -7646,6 +7671,9 @@ msgstr "새 판매주문 라인"
 
 msgid "New Scheduled Maintenance"
 msgstr "새 예정된 유지보수"
+
+msgid "New Service"
+msgstr "새 서비스"
 
 msgid "New Shift"
 msgstr "새 교대"
@@ -10628,10 +10656,16 @@ msgstr "서비스 요금"
 msgid "Service Charges (default)"
 msgstr "서비스 요금(기본값)"
 
+msgid "Service Details"
+msgstr "서비스 상세정보"
+
 msgid "Service ID"
 msgstr "서비스 ID"
 
 msgid "services"
+msgstr "서비스"
+
+msgid "Services"
 msgstr "서비스"
 
 msgid "Set a target"
@@ -13031,6 +13065,9 @@ msgstr "다음 자재 ID를 가져오려면 ...을(를) 사용하세요"
 
 msgid "Use ... to get the next part ID"
 msgstr "다음 품목 ID를 가져오려면 ...을(를) 사용하세요"
+
+msgid "Use ... to get the next service ID"
+msgstr "다음 서비스 ID를 얻으려면 ...을(를) 사용하세요"
 
 msgid "Use ... to get the next tool ID"
 msgstr "다음 공구 ID를 가져오려면 ...을(를) 사용하세요"

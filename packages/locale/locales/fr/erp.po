@@ -334,6 +334,9 @@ msgstr "Un RFQ de vente (un client vous demande de citer) ou un RFQ d'achat (vou
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "Un calendrier séparé pour la déclaration fiscale lorsque les règles fiscales exigent une méthode différente de l'amortissement comptable."
 
+msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
+msgstr "Un service est une activité facturable qui est achetée ou exécutée — il n'est jamais expédié, reçu ou stocké"
+
 msgid "A set of companies under one owner that share group-scoped configuration — the chart of accounts, currencies, and dimensions — so the same accounting setup spans every company in the group."
 msgstr "Un ensemble d'entreprises sous un même propriétaire qui partagent une configuration à l'échelle du groupe — le plan comptable, les devises et les dimensions — de sorte que la même configuration comptable s'applique à toutes les entreprises du groupe."
 
@@ -2651,6 +2654,9 @@ msgstr "Copier le lien vers la pièce"
 msgid "Copy link to procedure"
 msgstr "Copier le lien vers la procédure"
 
+msgid "Copy link to service"
+msgstr "Copier le lien vers le service"
+
 msgid "Copy link to tool"
 msgstr "Copier le lien de l'outil"
 
@@ -2698,6 +2704,12 @@ msgstr "Copier le devis"
 
 msgid "Copy Quote number"
 msgstr "Copier le numéro de devis"
+
+msgid "Copy service number"
+msgstr "Copier le numéro de service"
+
+msgid "Copy service unique identifier"
+msgstr "Copier l'identifiant unique du service"
 
 msgid "Copy this item's pricing to another scope."
 msgstr "Copiez la tarification de cet article vers une autre portée."
@@ -2995,6 +3007,9 @@ msgstr "Action requise créée"
 
 msgid "Created scrap reason"
 msgstr "Raison de rebut créée"
+
+msgid "Created service"
+msgstr "Service créé"
 
 msgid "Created shipping method"
 msgstr "Méthode d'expédition créée"
@@ -3706,6 +3721,9 @@ msgstr "Supprimer la commande client"
 msgid "Delete Schedule"
 msgstr "Supprimer le calendrier"
 
+msgid "Delete Service"
+msgstr "Supprimer le service"
+
 msgid "Delete Shift"
 msgstr "Supprimer le quart"
 
@@ -4382,6 +4400,9 @@ msgstr "Modifier la maintenance planifiée"
 msgid "Edit Sequence"
 msgstr "Modifier la séquence"
 
+msgid "Edit Service"
+msgstr "Modifier le service"
+
 msgid "Edit Shift"
 msgstr "Modifier le quart"
 
@@ -5002,6 +5023,10 @@ msgstr "Échec de la création du délai de paiement : {0}"
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create process: {0}"
 msgstr "Échec de la création du processus : {0}"
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create service: {0}"
+msgstr "Échec de la création du service : {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create shipping method: {0}"
@@ -7646,6 +7671,9 @@ msgstr "Nouvelle ligne de commande client"
 
 msgid "New Scheduled Maintenance"
 msgstr "Nouvelle Maintenance Planifiée"
+
+msgid "New Service"
+msgstr "Nouveau service"
 
 msgid "New Shift"
 msgstr "Nouveau Quart"
@@ -10628,11 +10656,17 @@ msgstr "Frais de service"
 msgid "Service Charges (default)"
 msgstr "Frais de service (défaut)"
 
+msgid "Service Details"
+msgstr "Détails du service"
+
 msgid "Service ID"
 msgstr "ID du Service"
 
 msgid "services"
 msgstr "services"
+
+msgid "Services"
+msgstr "Services"
 
 msgid "Set a target"
 msgstr "Définir un objectif"
@@ -13031,6 +13065,9 @@ msgstr "Utilisez ... pour obtenir l'ID de matériau suivant"
 
 msgid "Use ... to get the next part ID"
 msgstr "Utilisez ... pour obtenir l'ID de pièce suivant"
+
+msgid "Use ... to get the next service ID"
+msgstr "Utilisez ... pour obtenir le prochain ID de service"
 
 msgid "Use ... to get the next tool ID"
 msgstr "Utilisez ... pour obtenir l'ID d'outil suivant"
