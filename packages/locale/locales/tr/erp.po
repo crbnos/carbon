@@ -137,6 +137,9 @@ msgstr "{variances, plural, one {# satır beklenen miktardan farklı} other {# s
 msgid "/month/user"
 msgstr "/ay/kullanıcı"
 
+msgid "% of Total"
+msgstr ""
+
 #. placeholder {0}: numberFormatter.format(redirectedTotal)
 #. placeholder {1}: redirectedParts.join(", ")
 msgid "↩ {0} redirected from superseded {1}"
@@ -781,6 +784,9 @@ msgstr "Tüm Öğeler"
 
 msgid "All jobs completed"
 msgstr "Tüm işler tamamlandı"
+
+msgid "All Locations"
+msgstr ""
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "Seçilen gruplardaki ve bireylerdeki tüm üyeler talepleri onaylayabilecektir"
@@ -1826,6 +1832,12 @@ msgstr "Belge Tarihine Göre"
 
 msgid "By Due Date"
 msgstr "Vade Tarihine Göre"
+
+msgid "By Item"
+msgstr ""
+
+msgid "By Location"
+msgstr ""
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "Oturum açarak <0>Hizmet Şartları</0> ve <1>Gizlilik Politikası</1>'na katılıyorsunuz."
@@ -6246,6 +6258,9 @@ msgstr "Stok Takibi"
 msgid "Inventory Unit of Measure"
 msgstr "Stok Birimi"
 
+msgid "Inventory Valuation"
+msgstr ""
+
 msgid "Invite"
 msgstr "Davet et"
 
@@ -6371,6 +6386,9 @@ msgstr "Ürün"
 
 msgid "Item {scannedItem} is not the same as the item {expectedItem}"
 msgstr "Ürün {scannedItem}, ürün {expectedItem} ile aynı değil"
+
+msgid "Item / Location"
+msgstr ""
 
 msgid "Item filters"
 msgstr "Ürün filtreleri"
@@ -6755,6 +6773,9 @@ msgstr "konum"
 msgid "Location"
 msgstr "Konum"
 
+msgid "Location / Item"
+msgstr ""
+
 msgid "Location Name"
 msgstr "Konum Adı"
 
@@ -6953,6 +6974,9 @@ msgstr "Yönetici"
 
 msgid "Manual"
 msgstr "Manuel"
+
+msgid "Manual quantity adjustments don't post to the GL yet, so a nonzero variance is expected if you cycle count."
+msgstr ""
 
 msgid "Manufacturer"
 msgstr "Üretici"
@@ -9258,6 +9282,9 @@ msgstr "Bu kanban için bir sonraki işlemi başlatmak üzere QR kod"
 
 msgid "Qty"
 msgstr "Miktar"
+
+msgid "Qty On Hand"
+msgstr ""
 
 msgid "Qty to Order"
 msgstr "Sipariş Edilecek Miktar"
@@ -12593,6 +12620,12 @@ msgstr "Bu konumdaki tüm depolama birimlerinde öğenin toplam eldeki miktarı.
 msgid "Total quantity required across all active jobs and sales orders at this location — not just this job."
 msgstr "Bu konumdaki tüm aktif işler ve satış siparişleri genelinde gereken toplam miktar — yalnızca bu iş için değil."
 
+msgid "Total Value"
+msgstr ""
+
+msgid "Total Variance"
+msgstr ""
+
 msgid "Total:"
 msgstr "Toplam:"
 
@@ -13109,6 +13142,9 @@ msgstr "Katma değer vergisi kayıt numarası; AB faturalarında ters ücretlend
 
 msgid "Values"
 msgstr "Değerler"
+
+msgid "Values apply today's unit costs to historical quantities."
+msgstr ""
 
 msgid "Variance"
 msgstr "Varyans"

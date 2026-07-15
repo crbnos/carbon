@@ -137,6 +137,9 @@ msgstr "예상 수량과 다른 라인 {variances}개"
 msgid "/month/user"
 msgstr "/월/사용자"
 
+msgid "% of Total"
+msgstr ""
+
 #. placeholder {0}: numberFormatter.format(redirectedTotal)
 #. placeholder {1}: redirectedParts.join(", ")
 msgid "↩ {0} redirected from superseded {1}"
@@ -781,6 +784,9 @@ msgstr "모든 품목"
 
 msgid "All jobs completed"
 msgstr "모든 작업 완료됨"
+
+msgid "All Locations"
+msgstr ""
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "선택한 그룹의 모든 구성원과 선택한 개인이 요청을 승인할 수 있습니다"
@@ -1826,6 +1832,12 @@ msgstr "문서 날짜 기준"
 
 msgid "By Due Date"
 msgstr "만기일 기준"
+
+msgid "By Item"
+msgstr ""
+
+msgid "By Location"
+msgstr ""
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "로그인하면 <0>서비스 약관</0> 및 <1>개인정보 처리방침</1>에 동의하는 것으로 간주됩니다."
@@ -6246,6 +6258,9 @@ msgstr "재고 추적"
 msgid "Inventory Unit of Measure"
 msgstr "재고 측정 단위"
 
+msgid "Inventory Valuation"
+msgstr ""
+
 msgid "Invite"
 msgstr "초대"
 
@@ -6371,6 +6386,9 @@ msgstr "품목"
 
 msgid "Item {scannedItem} is not the same as the item {expectedItem}"
 msgstr "품목 {scannedItem}이(가) 품목 {expectedItem}과(와) 일치하지 않습니다"
+
+msgid "Item / Location"
+msgstr ""
 
 msgid "Item filters"
 msgstr "품목 필터"
@@ -6755,6 +6773,9 @@ msgstr "위치"
 msgid "Location"
 msgstr "위치"
 
+msgid "Location / Item"
+msgstr ""
+
 msgid "Location Name"
 msgstr "위치 이름"
 
@@ -6953,6 +6974,9 @@ msgstr "관리자"
 
 msgid "Manual"
 msgstr "수동"
+
+msgid "Manual quantity adjustments don't post to the GL yet, so a nonzero variance is expected if you cycle count."
+msgstr ""
 
 msgid "Manufacturer"
 msgstr "제조사"
@@ -9258,6 +9282,9 @@ msgstr "이 칸반의 다음 공정작업을 시작하는 QR 코드"
 
 msgid "Qty"
 msgstr "수량"
+
+msgid "Qty On Hand"
+msgstr ""
 
 msgid "Qty to Order"
 msgstr "주문 수량"
@@ -12593,6 +12620,12 @@ msgstr "이 위치의 모든 저장 단위에 걸친 해당 품목의 총 재고
 msgid "Total quantity required across all active jobs and sales orders at this location — not just this job."
 msgstr "이 작업뿐 아니라 이 위치의 모든 진행 중인 작업과 판매주문에서 필요한 총 수량입니다."
 
+msgid "Total Value"
+msgstr ""
+
+msgid "Total Variance"
+msgstr ""
+
 msgid "Total:"
 msgstr "합계:"
 
@@ -13109,6 +13142,9 @@ msgstr "부가가치세 등록번호로, 대리납부(리버스차지) 또는 �
 
 msgid "Values"
 msgstr "값"
+
+msgid "Values apply today's unit costs to historical quantities."
+msgstr ""
 
 msgid "Variance"
 msgstr "차이"

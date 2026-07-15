@@ -137,6 +137,9 @@ msgstr "{variances, plural, one {# 行与预期数量不同} other {# 行与预�
 msgid "/month/user"
 msgstr "/月/用户"
 
+msgid "% of Total"
+msgstr ""
+
 #. placeholder {0}: numberFormatter.format(redirectedTotal)
 #. placeholder {1}: redirectedParts.join(", ")
 msgid "↩ {0} redirected from superseded {1}"
@@ -781,6 +784,9 @@ msgstr "所有项目"
 
 msgid "All jobs completed"
 msgstr "所有工作已完成"
+
+msgid "All Locations"
+msgstr ""
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "所选组的所有成员和所选个人将能够批准请求"
@@ -1826,6 +1832,12 @@ msgstr "按单据日期"
 
 msgid "By Due Date"
 msgstr "按到期日期"
+
+msgid "By Item"
+msgstr ""
+
+msgid "By Location"
+msgstr ""
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "通过登录，您同意<0>服务条款</0>和<1>隐私政策。</1>"
@@ -6246,6 +6258,9 @@ msgstr "库存追踪"
 msgid "Inventory Unit of Measure"
 msgstr "库存计量单位"
 
+msgid "Inventory Valuation"
+msgstr ""
+
 msgid "Invite"
 msgstr "邀请"
 
@@ -6371,6 +6386,9 @@ msgstr "物品"
 
 msgid "Item {scannedItem} is not the same as the item {expectedItem}"
 msgstr "项目 {scannedItem} 与项目 {expectedItem} 不相同"
+
+msgid "Item / Location"
+msgstr ""
 
 msgid "Item filters"
 msgstr "项目筛选器"
@@ -6755,6 +6773,9 @@ msgstr "位置"
 msgid "Location"
 msgstr "位置"
 
+msgid "Location / Item"
+msgstr ""
+
 msgid "Location Name"
 msgstr "位置名称"
 
@@ -6953,6 +6974,9 @@ msgstr "经理"
 
 msgid "Manual"
 msgstr "手动"
+
+msgid "Manual quantity adjustments don't post to the GL yet, so a nonzero variance is expected if you cycle count."
+msgstr ""
 
 msgid "Manufacturer"
 msgstr "制造商"
@@ -9258,6 +9282,9 @@ msgstr "二维码用于启动此看板的下一个操作"
 
 msgid "Qty"
 msgstr "数量"
+
+msgid "Qty On Hand"
+msgstr ""
 
 msgid "Qty to Order"
 msgstr "订购数量"
@@ -12593,6 +12620,12 @@ msgstr "此地点所有存储单元中该物料的现有总数量。当现有数
 msgid "Total quantity required across all active jobs and sales orders at this location — not just this job."
 msgstr "此地点所有活动作业和销售订单所需的总数量——而不仅仅是此作业。"
 
+msgid "Total Value"
+msgstr ""
+
+msgid "Total Variance"
+msgstr ""
+
 msgid "Total:"
 msgstr "总计："
 
@@ -13109,6 +13142,9 @@ msgstr "增值税注册号;欧盟发票中反向收费或零税率供应所需�
 
 msgid "Values"
 msgstr "值"
+
+msgid "Values apply today's unit costs to historical quantities."
+msgstr ""
 
 msgid "Variance"
 msgstr "差异"

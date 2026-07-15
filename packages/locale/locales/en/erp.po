@@ -137,6 +137,9 @@ msgstr "{variances, plural, one {# line differs from the expected quantity} othe
 msgid "/month/user"
 msgstr "/month/user"
 
+msgid "% of Total"
+msgstr "% of Total"
+
 #. placeholder {0}: numberFormatter.format(redirectedTotal)
 #. placeholder {1}: redirectedParts.join(", ")
 msgid "↩ {0} redirected from superseded {1}"
@@ -781,6 +784,9 @@ msgstr "All Items"
 
 msgid "All jobs completed"
 msgstr "All jobs completed"
+
+msgid "All Locations"
+msgstr "All Locations"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "All members of selected groups and selected individuals will be able to approve requests"
@@ -1826,6 +1832,12 @@ msgstr "By Document Date"
 
 msgid "By Due Date"
 msgstr "By Due Date"
+
+msgid "By Item"
+msgstr "By Item"
+
+msgid "By Location"
+msgstr "By Location"
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
@@ -6246,6 +6258,9 @@ msgstr "Inventory Tracking"
 msgid "Inventory Unit of Measure"
 msgstr "Inventory Unit of Measure"
 
+msgid "Inventory Valuation"
+msgstr "Inventory Valuation"
+
 msgid "Invite"
 msgstr "Invite"
 
@@ -6371,6 +6386,9 @@ msgstr "Item"
 
 msgid "Item {scannedItem} is not the same as the item {expectedItem}"
 msgstr "Item {scannedItem} is not the same as the item {expectedItem}"
+
+msgid "Item / Location"
+msgstr "Item / Location"
 
 msgid "Item filters"
 msgstr "Item filters"
@@ -6755,6 +6773,9 @@ msgstr "location"
 msgid "Location"
 msgstr "Location"
 
+msgid "Location / Item"
+msgstr "Location / Item"
+
 msgid "Location Name"
 msgstr "Location Name"
 
@@ -6953,6 +6974,9 @@ msgstr "Manager"
 
 msgid "Manual"
 msgstr "Manual"
+
+msgid "Manual quantity adjustments don't post to the GL yet, so a nonzero variance is expected if you cycle count."
+msgstr "Manual quantity adjustments don't post to the GL yet, so a nonzero variance is expected if you cycle count."
 
 msgid "Manufacturer"
 msgstr "Manufacturer"
@@ -9258,6 +9282,9 @@ msgstr "QR Code to start the next operation for this kanban"
 
 msgid "Qty"
 msgstr "Qty"
+
+msgid "Qty On Hand"
+msgstr "Qty On Hand"
 
 msgid "Qty to Order"
 msgstr "Qty to Order"
@@ -12593,6 +12620,12 @@ msgstr "Total quantity on hand for the item across all storage units at this loc
 msgid "Total quantity required across all active jobs and sales orders at this location — not just this job."
 msgstr "Total quantity required across all active jobs and sales orders at this location — not just this job."
 
+msgid "Total Value"
+msgstr "Total Value"
+
+msgid "Total Variance"
+msgstr "Total Variance"
+
 msgid "Total:"
 msgstr "Total:"
 
@@ -13109,6 +13142,9 @@ msgstr "Value-added-tax registration number; required on EU invoices for reverse
 
 msgid "Values"
 msgstr "Values"
+
+msgid "Values apply today's unit costs to historical quantities."
+msgstr "Values apply today's unit costs to historical quantities."
 
 msgid "Variance"
 msgstr "Variance"

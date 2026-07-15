@@ -137,6 +137,9 @@ msgstr "{variances, plural, one {# linia różni się od oczekiwanej ilości} ot
 msgid "/month/user"
 msgstr "/miesiąc/użytkownik"
 
+msgid "% of Total"
+msgstr ""
+
 #. placeholder {0}: numberFormatter.format(redirectedTotal)
 #. placeholder {1}: redirectedParts.join(", ")
 msgid "↩ {0} redirected from superseded {1}"
@@ -781,6 +784,9 @@ msgstr "Wszystkie elementy"
 
 msgid "All jobs completed"
 msgstr "Wszystkie zadania ukończone"
+
+msgid "All Locations"
+msgstr ""
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "Wszyscy członkowie wybranych grup i wybrane osoby będą mogły zatwierdzać żądania"
@@ -1826,6 +1832,12 @@ msgstr "Według daty dokumentu"
 
 msgid "By Due Date"
 msgstr "Według daty wymagalności"
+
+msgid "By Item"
+msgstr ""
+
+msgid "By Location"
+msgstr ""
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "Logując się, wyrażasz zgodę na <0>Warunki korzystania z usługi</0> i <1>Politykę prywatności.</1>"
@@ -6246,6 +6258,9 @@ msgstr "Śledzenie zapasów"
 msgid "Inventory Unit of Measure"
 msgstr "Jednostka miary zapasów"
 
+msgid "Inventory Valuation"
+msgstr ""
+
 msgid "Invite"
 msgstr "Zaproś"
 
@@ -6371,6 +6386,9 @@ msgstr "Przedmiot"
 
 msgid "Item {scannedItem} is not the same as the item {expectedItem}"
 msgstr "Pozycja {scannedItem} nie jest taka sama jak pozycja {expectedItem}"
+
+msgid "Item / Location"
+msgstr ""
 
 msgid "Item filters"
 msgstr "Filtry elementów"
@@ -6755,6 +6773,9 @@ msgstr "lokalizacja"
 msgid "Location"
 msgstr "Lokalizacja"
 
+msgid "Location / Item"
+msgstr ""
+
 msgid "Location Name"
 msgstr "Nazwa lokalizacji"
 
@@ -6953,6 +6974,9 @@ msgstr "Kierownik"
 
 msgid "Manual"
 msgstr "Ręczny"
+
+msgid "Manual quantity adjustments don't post to the GL yet, so a nonzero variance is expected if you cycle count."
+msgstr ""
 
 msgid "Manufacturer"
 msgstr "Producent"
@@ -9258,6 +9282,9 @@ msgstr "Kod QR do rozpoczęcia następnej operacji dla tego kanbanu"
 
 msgid "Qty"
 msgstr "Ilość"
+
+msgid "Qty On Hand"
+msgstr ""
 
 msgid "Qty to Order"
 msgstr "Ilość do zamówienia"
@@ -12593,6 +12620,12 @@ msgstr "Łączna ilość dostępna dla pozycji we wszystkich jednostkach magazyn
 msgid "Total quantity required across all active jobs and sales orders at this location — not just this job."
 msgstr "Łączna ilość wymagana we wszystkich aktywnych zadaniach i zamówieniach sprzedaży w tej lokalizacji — nie tylko w tym zadaniu."
 
+msgid "Total Value"
+msgstr ""
+
+msgid "Total Variance"
+msgstr ""
+
 msgid "Total:"
 msgstr "Razem:"
 
@@ -13109,6 +13142,9 @@ msgstr "Numer rejestracyjny podatku od wartości dodanej; wymagany na fakturach 
 
 msgid "Values"
 msgstr "Wartości"
+
+msgid "Values apply today's unit costs to historical quantities."
+msgstr ""
 
 msgid "Variance"
 msgstr "Odchylenie"

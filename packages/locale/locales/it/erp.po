@@ -137,6 +137,9 @@ msgstr "{variances, plural, one {# riga differisce dalla quantità prevista} oth
 msgid "/month/user"
 msgstr "/mese/utente"
 
+msgid "% of Total"
+msgstr ""
+
 #. placeholder {0}: numberFormatter.format(redirectedTotal)
 #. placeholder {1}: redirectedParts.join(", ")
 msgid "↩ {0} redirected from superseded {1}"
@@ -781,6 +784,9 @@ msgstr "Tutti gli articoli"
 
 msgid "All jobs completed"
 msgstr "Tutti i lavori completati"
+
+msgid "All Locations"
+msgstr ""
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "Tutti i membri dei gruppi selezionati e gli individui selezionati potranno approvare le richieste"
@@ -1826,6 +1832,12 @@ msgstr "Per Data Documento"
 
 msgid "By Due Date"
 msgstr "Per Data di Scadenza"
+
+msgid "By Item"
+msgstr ""
+
+msgid "By Location"
+msgstr ""
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "Accedendo, accetti i <0>Termini di Servizio</0> e l'<1>Informativa sulla Privacy.</1>"
@@ -6246,6 +6258,9 @@ msgstr "Tracciamento Inventario"
 msgid "Inventory Unit of Measure"
 msgstr "Unità di Misura Inventario"
 
+msgid "Inventory Valuation"
+msgstr ""
+
 msgid "Invite"
 msgstr "Invita"
 
@@ -6371,6 +6386,9 @@ msgstr "Articolo"
 
 msgid "Item {scannedItem} is not the same as the item {expectedItem}"
 msgstr "L'articolo {scannedItem} non è lo stesso dell'articolo {expectedItem}"
+
+msgid "Item / Location"
+msgstr ""
 
 msgid "Item filters"
 msgstr "Filtri articoli"
@@ -6755,6 +6773,9 @@ msgstr "ubicazione"
 msgid "Location"
 msgstr "Ubicazione"
 
+msgid "Location / Item"
+msgstr ""
+
 msgid "Location Name"
 msgstr "Nome Ubicazione"
 
@@ -6953,6 +6974,9 @@ msgstr "Responsabile"
 
 msgid "Manual"
 msgstr "Manuale"
+
+msgid "Manual quantity adjustments don't post to the GL yet, so a nonzero variance is expected if you cycle count."
+msgstr ""
 
 msgid "Manufacturer"
 msgstr "Produttore"
@@ -9258,6 +9282,9 @@ msgstr "Codice QR per avviare l'operazione successiva per questo kanban"
 
 msgid "Qty"
 msgstr "Qtà"
+
+msgid "Qty On Hand"
+msgstr ""
 
 msgid "Qty to Order"
 msgstr "Qtà da ordinare"
@@ -12593,6 +12620,12 @@ msgstr "Quantità totale disponibile dell'articolo su tutte le unità di stoccag
 msgid "Total quantity required across all active jobs and sales orders at this location — not just this job."
 msgstr "Quantità totale richiesta su tutti i lavori attivi e gli ordini di vendita in questa posizione, non solo questo lavoro."
 
+msgid "Total Value"
+msgstr ""
+
+msgid "Total Variance"
+msgstr ""
+
 msgid "Total:"
 msgstr "Totale:"
 
@@ -13109,6 +13142,9 @@ msgstr "Numero di registrazione dell'imposta sul valore aggiunto; richiesto sull
 
 msgid "Values"
 msgstr "Valori"
+
+msgid "Values apply today's unit costs to historical quantities."
+msgstr ""
 
 msgid "Variance"
 msgstr "Varianza"
