@@ -2562,16 +2562,6 @@ msgstr "ठेकेदार"
 msgid "Control design changes with revisions / ECOs"
 msgstr "संशोधन / ECOs के साथ डिज़ाइन परिवर्तनों को नियंत्रित करें"
 
-msgid "Controlled Drawing"
-msgstr "नियंत्रित चित्र"
-
-#. placeholder {0}: drawing.drawingRevisionLabel
-msgid "Controlled Drawing (Rev {0})"
-msgstr "नियंत्रित चित्र (Rev {0})"
-
-msgid "Controlled drawing uploaded"
-msgstr "नियंत्रित चित्र अपलोड किया गया"
-
 msgid "Controller, Accountant"
 msgstr "नियंत्रक, लेखाकार"
 
@@ -4083,10 +4073,6 @@ msgstr "ज़ूम करने के लिए ड्रैग करें"
 msgid "Drawing"
 msgstr "आहरण"
 
-#. placeholder {0}: drawing.drawingRevisionLabel
-msgid "Drawing (Rev {0})"
-msgstr "चित्र (Rev {0})"
-
 msgid "Drawing Number"
 msgstr "ड्राइंग नंबर"
 
@@ -5214,10 +5200,6 @@ msgstr "प्रमाणपत्र अपलोड करने में �
 
 msgid "Failed to upload CSV file."
 msgstr "CSV फ़ाइल अपलोड करने में विफल।"
-
-#. placeholder {0}: file.name
-msgid "Failed to upload drawing: {0}"
-msgstr "ड्राइंग अपलोड करने में विफल: {0}"
 
 msgid "Failed to upload file"
 msgstr "फ़ाइल अपलोड करने में विफल"

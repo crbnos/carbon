@@ -2562,16 +2562,6 @@ msgstr "承包商"
 msgid "Control design changes with revisions / ECOs"
 msgstr "控制设计变更与修订版本/工程变更单"
 
-msgid "Controlled Drawing"
-msgstr "受控图纸"
-
-#. placeholder {0}: drawing.drawingRevisionLabel
-msgid "Controlled Drawing (Rev {0})"
-msgstr "受控图纸（版本{0}）"
-
-msgid "Controlled drawing uploaded"
-msgstr "受控图纸已上传"
-
 msgid "Controller, Accountant"
 msgstr "控制器，会计"
 
@@ -4083,10 +4073,6 @@ msgstr "拖动以缩放"
 msgid "Drawing"
 msgstr "提取"
 
-#. placeholder {0}: drawing.drawingRevisionLabel
-msgid "Drawing (Rev {0})"
-msgstr "图纸（版本{0}）"
-
 msgid "Drawing Number"
 msgstr "图纸编号"
 
@@ -5214,10 +5200,6 @@ msgstr "证书上传失败"
 
 msgid "Failed to upload CSV file."
 msgstr "未能上传 CSV 文件。"
-
-#. placeholder {0}: file.name
-msgid "Failed to upload drawing: {0}"
-msgstr "上传图纸失败：{0}"
 
 msgid "Failed to upload file"
 msgstr "上传文件失败"

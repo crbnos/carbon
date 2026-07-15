@@ -1,6 +1,6 @@
 {
-  "generated": "2026-07-14T10:50:59.058Z",
-  "totalTools": 1309,
+  "generated": "2026-07-15T03:10:55.534Z",
+  "totalTools": 1307,
   "modules": 15,
   "tools": [
     {
@@ -10283,59 +10283,6 @@
       "schema": {
         "type": "object",
         "properties": {}
-      }
-    },
-    {
-      "name": "items_getControlledDrawing",
-      "module": "items",
-      "classification": "READ",
-      "description": "get controlled drawing",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "args"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "itemId": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "itemId"
-        ]
-      }
-    },
-    {
-      "name": "items_getControlledDrawings",
-      "module": "items",
-      "classification": "READ",
-      "description": "get controlled drawings",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "args"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "itemIds": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        },
-        "required": [
-          "itemIds"
-        ]
       }
     },
     {

@@ -2562,16 +2562,6 @@ msgstr "請負業者"
 msgid "Control design changes with revisions / ECOs"
 msgstr "設計変更をリビジョン/ECOで管理"
 
-msgid "Controlled Drawing"
-msgstr "管理対象図面"
-
-#. placeholder {0}: drawing.drawingRevisionLabel
-msgid "Controlled Drawing (Rev {0})"
-msgstr "管理対象図面 (Rev {0})"
-
-msgid "Controlled drawing uploaded"
-msgstr "管理対象図面がアップロードされました"
-
 msgid "Controller, Accountant"
 msgstr "コントローラー、会計士"
 
@@ -4083,10 +4073,6 @@ msgstr "ズームするにはドラッグしてください"
 msgid "Drawing"
 msgstr "引き出し中"
 
-#. placeholder {0}: drawing.drawingRevisionLabel
-msgid "Drawing (Rev {0})"
-msgstr "図面 (Rev {0})"
-
 msgid "Drawing Number"
 msgstr "図面番号"
 
@@ -5214,10 +5200,6 @@ msgstr "証明書のアップロードに失敗しました"
 
 msgid "Failed to upload CSV file."
 msgstr "CSVファイルのアップロードに失敗しました。"
-
-#. placeholder {0}: file.name
-msgid "Failed to upload drawing: {0}"
-msgstr "図面のアップロードに失敗しました: {0}"
 
 msgid "Failed to upload file"
 msgstr "ファイルのアップロードに失敗しました"

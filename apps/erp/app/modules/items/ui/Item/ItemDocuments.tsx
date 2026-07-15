@@ -36,12 +36,7 @@ import { getDocumentType } from "~/modules/shared";
 import type { ModelUpload } from "~/types";
 import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
-import type { ControlledDrawing } from "../../items.service";
 import type { ItemFile } from "../../types";
-import {
-  ControlledDrawingRow,
-  ControlledDrawingUpload
-} from "./ControlledDrawing";
 
 const logger = getLogger("erp", "itemdocuments");
 
@@ -49,10 +44,6 @@ type ItemDocumentsProps = {
   files: ItemFile[];
   itemId: string;
   modelUpload?: ModelUpload;
-  // The controlled drawing PDF pinned to this revision. It is NOT a modelUpload
-  // (that slot holds the STEP geometry) and NOT an item file; its location
-  // lives in the `drawing` externalIntegrationMapping metadata.
-  controlledDrawing?: ControlledDrawing | null;
   type: MethodItemType;
 };
 
@@ -60,7 +51,6 @@ const ItemDocuments = ({
   files,
   itemId,
   modelUpload,
-  controlledDrawing,
   type
 }: ItemDocumentsProps) => {
   const { t } = useLingui();
@@ -110,7 +100,6 @@ const ItemDocuments = ({
         </CardHeader>
         <CardAction>
           <HStack>
-            <ControlledDrawingUpload itemId={itemId} />
             <ItemDocumentForm type={type} itemId={itemId} />
           </HStack>
         </CardAction>
@@ -132,7 +121,6 @@ const ItemDocuments = ({
             </Tr>
           </Thead>
           <Tbody>
-            <ControlledDrawingRow itemId={itemId} drawing={controlledDrawing} />
             {modelUpload?.modelId && (
               <Tr>
                 <Td>
@@ -258,7 +246,7 @@ const ItemDocuments = ({
                 </Tr>
               );
             })}
-            {allFiles.length === 0 && !modelUpload && !controlledDrawing && (
+            {allFiles.length === 0 && !modelUpload && (
               <Tr>
                 <Td
                   colSpan={24}

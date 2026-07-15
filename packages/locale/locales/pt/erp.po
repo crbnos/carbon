@@ -2562,16 +2562,6 @@ msgstr "Contratantes"
 msgid "Control design changes with revisions / ECOs"
 msgstr "Controlar alterações de design com revisões / ECOs"
 
-msgid "Controlled Drawing"
-msgstr "Desenho Controlado"
-
-#. placeholder {0}: drawing.drawingRevisionLabel
-msgid "Controlled Drawing (Rev {0})"
-msgstr "Desenho Controlado (Rev {0})"
-
-msgid "Controlled drawing uploaded"
-msgstr "Desenho controlado enviado"
-
 msgid "Controller, Accountant"
 msgstr "Controlador, Contador"
 
@@ -4083,10 +4073,6 @@ msgstr "Arrastar para ampliar"
 msgid "Drawing"
 msgstr "Sacando"
 
-#. placeholder {0}: drawing.drawingRevisionLabel
-msgid "Drawing (Rev {0})"
-msgstr "Desenho (Rev {0})"
-
 msgid "Drawing Number"
 msgstr "Número do Desenho"
 
@@ -5214,10 +5200,6 @@ msgstr "Falha ao fazer upload do certificado"
 
 msgid "Failed to upload CSV file."
 msgstr "Falha ao carregar arquivo CSV."
-
-#. placeholder {0}: file.name
-msgid "Failed to upload drawing: {0}"
-msgstr "Falha ao fazer upload do desenho: {0}"
 
 msgid "Failed to upload file"
 msgstr "Falha ao carregar arquivo"

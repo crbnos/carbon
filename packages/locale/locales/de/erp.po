@@ -2562,16 +2562,6 @@ msgstr "Auftragnehmer"
 msgid "Control design changes with revisions / ECOs"
 msgstr "Designänderungen mit Revisionen / ECOs steuern"
 
-msgid "Controlled Drawing"
-msgstr "Kontrollierte Zeichnung"
-
-#. placeholder {0}: drawing.drawingRevisionLabel
-msgid "Controlled Drawing (Rev {0})"
-msgstr "Kontrollierte Zeichnung (Rev {0})"
-
-msgid "Controlled drawing uploaded"
-msgstr "Kontrollierte Zeichnung hochgeladen"
-
 msgid "Controller, Accountant"
 msgstr "Controller, Buchhalter"
 
@@ -4083,10 +4073,6 @@ msgstr "Zum Zoomen ziehen"
 msgid "Drawing"
 msgstr "Abheben"
 
-#. placeholder {0}: drawing.drawingRevisionLabel
-msgid "Drawing (Rev {0})"
-msgstr "Zeichnung (Rev {0})"
-
 msgid "Drawing Number"
 msgstr "Zeichnungsnummer"
 
@@ -5214,10 +5200,6 @@ msgstr "Zertifikat konnte nicht hochgeladen werden"
 
 msgid "Failed to upload CSV file."
 msgstr "CSV-Datei konnte nicht hochgeladen werden."
-
-#. placeholder {0}: file.name
-msgid "Failed to upload drawing: {0}"
-msgstr "Zeichnung konnte nicht hochgeladen werden: {0}"
 
 msgid "Failed to upload file"
 msgstr "Datei-Upload fehlgeschlagen"

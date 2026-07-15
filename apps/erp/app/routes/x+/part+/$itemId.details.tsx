@@ -20,7 +20,6 @@ import type { ItemFile, MakeMethod, PartSummary } from "~/modules/items";
 import {
   getConfigurationParameters,
   getConfigurationRules,
-  getControlledDrawing,
   getItemChangeOrderData,
   getItemManufacturing,
   getMakeMethodById,
@@ -68,14 +67,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const requestedMethodId = url.searchParams.get("methodId");
 
-  const [makeMethods, revisionLock, controlledDrawing, changeOrderData] =
-    await Promise.all([
-      getMakeMethods(client, itemId, companyId),
-      getRevisionLock(client, { itemId, companyId }),
-      getControlledDrawing(client, { itemId, companyId }),
-      // Part → CO traceability (4b): CO history for this part + type labels.
-      getItemChangeOrderData(client, itemId, companyId)
-    ]);
+  const [makeMethods, revisionLock, changeOrderData] = await Promise.all([
+    getMakeMethods(client, itemId, companyId),
+    getRevisionLock(client, { itemId, companyId }),
+    // Part → CO traceability (4b): CO history for this part + type labels.
+    getItemChangeOrderData(client, itemId, companyId)
+  ]);
   const revisionStatus = revisionLock.revisionStatus;
   const releaseControl = revisionLock.releaseControl;
 
@@ -92,7 +89,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       tags: [],
       revisionStatus,
       releaseControl,
-      controlledDrawing,
       ...changeOrderData
     };
   }
@@ -104,7 +100,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       tags: [],
       revisionStatus,
       releaseControl,
-      controlledDrawing,
       ...changeOrderData
     };
   }
@@ -159,7 +154,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     tags: tags.data ?? [],
     revisionStatus,
     releaseControl,
-    controlledDrawing,
     ...changeOrderData
   };
 }
@@ -256,7 +250,6 @@ export default function PartDetailsRoute() {
     tags,
     revisionStatus,
     releaseControl,
-    controlledDrawing,
     changeOrders,
     changeOrderTypes
   } = useLoaderData<typeof loader>();
@@ -381,7 +374,6 @@ export default function PartDetailsRoute() {
                 files={resolvedFiles}
                 itemId={itemId}
                 modelUpload={partData.partSummary ?? undefined}
-                controlledDrawing={controlledDrawing}
                 type="Part"
               />
             )}

@@ -4,16 +4,12 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
 import { VStack } from "@carbon/react";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData, useParams } from "react-router";
+import type { ActionFunctionArgs } from "react-router";
+import { redirect, useParams } from "react-router";
 import { DeferredFiles } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { ConsumableSummary, ItemFile } from "~/modules/items";
-import {
-  consumableValidator,
-  getControlledDrawing,
-  upsertConsumable
-} from "~/modules/items";
+import { consumableValidator, upsertConsumable } from "~/modules/items";
 import {
   ItemDocuments,
   ItemNotes,
@@ -22,21 +18,6 @@ import {
 
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
-
-export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "parts"
-  });
-
-  const { itemId } = params;
-  if (!itemId) throw new Error("Could not find itemId");
-
-  const controlledDrawing = await getControlledDrawing(client, {
-    itemId,
-    companyId
-  });
-  return { controlledDrawing };
-}
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -80,7 +61,6 @@ export default function ConsumableDetailsRoute() {
   const { itemId } = useParams();
   if (!itemId) throw new Error("Could not find itemId");
 
-  const { controlledDrawing } = useLoaderData<typeof loader>();
   const consumableData = useRouteData<{
     consumableSummary: ConsumableSummary;
     files: Promise<ItemFile[]>;
@@ -106,7 +86,6 @@ export default function ConsumableDetailsRoute() {
               <ItemDocuments
                 files={resolvedFiles}
                 itemId={itemId}
-                controlledDrawing={controlledDrawing}
                 type="Consumable"
               />
             )}

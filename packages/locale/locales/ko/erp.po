@@ -2562,16 +2562,6 @@ msgstr "계약직"
 msgid "Control design changes with revisions / ECOs"
 msgstr "리비전/ECO로 설계 변경을 관리하세요"
 
-msgid "Controlled Drawing"
-msgstr "제어된 도면"
-
-#. placeholder {0}: drawing.drawingRevisionLabel
-msgid "Controlled Drawing (Rev {0})"
-msgstr "제어된 도면 (개정 {0})"
-
-msgid "Controlled drawing uploaded"
-msgstr "제어된 도면이 업로드되었습니다."
-
 msgid "Controller, Accountant"
 msgstr "컨트롤러, 회계 담당자"
 
@@ -4083,10 +4073,6 @@ msgstr "드래그하여 확대/축소"
 msgid "Drawing"
 msgstr "도면"
 
-#. placeholder {0}: drawing.drawingRevisionLabel
-msgid "Drawing (Rev {0})"
-msgstr "도면 (개정 {0})"
-
 msgid "Drawing Number"
 msgstr "도면 번호"
 
@@ -5214,10 +5200,6 @@ msgstr "인증서를 업로드하지 못했습니다"
 
 msgid "Failed to upload CSV file."
 msgstr "CSV 파일을 업로드하지 못했습니다."
-
-#. placeholder {0}: file.name
-msgid "Failed to upload drawing: {0}"
-msgstr "도면 업로드 실패: {0}"
 
 msgid "Failed to upload file"
 msgstr "파일을 업로드하지 못했습니다"

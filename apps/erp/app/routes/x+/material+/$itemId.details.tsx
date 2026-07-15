@@ -4,16 +4,12 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
 import { VStack } from "@carbon/react";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData, useParams } from "react-router";
+import type { ActionFunctionArgs } from "react-router";
+import { redirect, useParams } from "react-router";
 import { DeferredFiles } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { ItemFile, MaterialSummary } from "~/modules/items";
-import {
-  getControlledDrawing,
-  materialValidator,
-  upsertMaterial
-} from "~/modules/items";
+import { materialValidator, upsertMaterial } from "~/modules/items";
 import {
   ItemDocuments,
   ItemNotes,
@@ -21,21 +17,6 @@ import {
 } from "~/modules/items/ui/Item";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
-
-export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "parts"
-  });
-
-  const { itemId } = params;
-  if (!itemId) throw new Error("Could not find itemId");
-
-  const controlledDrawing = await getControlledDrawing(client, {
-    itemId,
-    companyId
-  });
-  return { controlledDrawing };
-}
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -79,7 +60,6 @@ export default function MaterialDetailsRoute() {
   const { itemId } = useParams();
   if (!itemId) throw new Error("Could not find itemId");
 
-  const { controlledDrawing } = useLoaderData<typeof loader>();
   const materialData = useRouteData<{
     materialSummary: MaterialSummary;
     files: Promise<ItemFile[]>;
@@ -103,7 +83,6 @@ export default function MaterialDetailsRoute() {
               <ItemDocuments
                 files={resolvedFiles}
                 itemId={itemId}
-                controlledDrawing={controlledDrawing}
                 type="Material"
               />
             )}

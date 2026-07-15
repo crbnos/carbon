@@ -49,7 +49,6 @@ import {
   companyRestoreRevertFunction,
   modelThumbnailFunction,
   onboardFunction,
-  onshapeFilePullFunction,
   postTransactionFunction,
   printJobDeliverFunction,
   printJobFunction,
@@ -88,7 +87,6 @@ export const functions = [
   postTransactionFunction,
   rescheduleJobFunction,
   onboardFunction,
-  onshapeFilePullFunction,
   printJobFunction,
   printJobDeliverFunction,
   // Scheduled

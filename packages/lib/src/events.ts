@@ -105,26 +105,6 @@ export type Events = {
     };
   };
 
-  // Onshape released-revision file pulls (drawing PDF + STEP geometry) run out of
-  // band of the import request so minutes-long translations aren't dropped by the
-  // ~40s request budget. The import lands the CO + BOM synchronously, then fires
-  // this; the job downloads the files and patches the revision's
-  // externalIntegrationMapping metadata.
-  "carbon/onshape-file-pull": {
-    data: {
-      companyId: string;
-      userId: string;
-      revisionItemId: string;
-      documentId: string;
-      sourceVid: string;
-      elementId: string;
-      elementType: string;
-      configuration?: string;
-      partNumber: string;
-      readableIdWithRevision: string;
-    };
-  };
-
   // Company backup export — snapshot all company-scoped rows (and
   // optionally storage files) into a gzipped backup in the company bucket
   "carbon/company-export": {

@@ -131,9 +131,6 @@ export const path = {
           `${api}/integrations/onshape/d/${documentId}/v/${versionId}/elements`
         ),
       onShapeSync: `${api}/integrations/onshape/sync`,
-      onShapeReleasedRevisions: (documentId: string) =>
-        generatePath(`${api}/integrations/onshape/d/${documentId}/revisions`),
-      onShapeImport: `${api}/integrations/onshape/import`,
       linearCreateIssue: `${api}/integrations/linear/issue/create`,
       linearLinkExistingIssue: `${api}/integrations/linear/issue/link`,
       linearSyncNotes: `${api}/integrations/linear/issue/sync-notes`,

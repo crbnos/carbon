@@ -2562,16 +2562,6 @@ msgstr "Contractors"
 msgid "Control design changes with revisions / ECOs"
 msgstr "Control design changes with revisions / ECOs"
 
-msgid "Controlled Drawing"
-msgstr "Controlled Drawing"
-
-#. placeholder {0}: drawing.drawingRevisionLabel
-msgid "Controlled Drawing (Rev {0})"
-msgstr "Controlled Drawing (Rev {0})"
-
-msgid "Controlled drawing uploaded"
-msgstr "Controlled drawing uploaded"
-
 msgid "Controller, Accountant"
 msgstr "Controller, Accountant"
 
@@ -4083,10 +4073,6 @@ msgstr "Drag to zoom"
 msgid "Drawing"
 msgstr "Drawing"
 
-#. placeholder {0}: drawing.drawingRevisionLabel
-msgid "Drawing (Rev {0})"
-msgstr "Drawing (Rev {0})"
-
 msgid "Drawing Number"
 msgstr "Drawing Number"
 
@@ -5214,10 +5200,6 @@ msgstr "Failed to upload certificate"
 
 msgid "Failed to upload CSV file."
 msgstr "Failed to upload CSV file."
-
-#. placeholder {0}: file.name
-msgid "Failed to upload drawing: {0}"
-msgstr "Failed to upload drawing: {0}"
 
 msgid "Failed to upload file"
 msgstr "Failed to upload file"
