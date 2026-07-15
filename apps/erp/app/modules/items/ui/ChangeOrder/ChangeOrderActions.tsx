@@ -1,46 +1,29 @@
 import { useCarbon } from "@carbon/auth";
 import {
   Badge,
-  Button,
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-  Checkbox,
-  cn,
-  generateHTML,
   HStack,
   IconButton,
   type JSONContent,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  ModalOverlay,
-  ModalTitle,
   toast,
   useDebounce,
-  useDisclosure,
   VStack
 } from "@carbon/react";
-import { Editor } from "@carbon/react/Editor";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { DragControls } from "framer-motion";
 import { Reorder, useDragControls } from "framer-motion";
 import { nanoid } from "nanoid";
 import { useCallback, useEffect, useState } from "react";
-import {
-  LuChevronRight,
-  LuCircleCheck,
-  LuCirclePlay,
-  LuCirclePlus,
-  LuGripVertical,
-  LuLoaderCircle,
-  LuTrash2
-} from "react-icons/lu";
+import { LuTrash2 } from "react-icons/lu";
 import { useFetcher } from "react-router";
-import { Assignee } from "~/components";
+import { ActionTaskAddModal } from "~/components/ActionTasks/ActionTaskAddModal";
+import {
+  ActionTaskCard,
+  type ActionTaskStatus
+} from "~/components/ActionTasks/ActionTaskCard";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 // Reuse Quality's progress bar (entity-agnostic: { status }[]) so the CO actions
 // look identical to an issue's — no second copy of the progress widget.
@@ -48,18 +31,6 @@ import { TaskProgress } from "~/modules/quality/ui/Issue/IssueTask";
 import type { ListItem } from "~/types";
 import { getPrivateUrl, path } from "~/utils/path";
 import type { ChangeOrderActionTask } from "../../types";
-
-// Next status on the Start/Complete/Reopen button, mirroring Quality.
-const statusActions = {
-  Pending: { action: "Start", icon: <LuCirclePlay />, next: "In Progress" },
-  "In Progress": {
-    action: "Complete",
-    icon: <LuCircleCheck />,
-    next: "Completed"
-  },
-  Completed: { action: "Reopen", icon: <LuLoaderCircle />, next: "Pending" },
-  Skipped: { action: "Reopen", icon: <LuLoaderCircle />, next: "Pending" }
-} as const;
 
 export default function ChangeOrderActions({
   changeOrderId,
@@ -70,7 +41,7 @@ export default function ChangeOrderActions({
   changeOrderId: string;
   actions: ChangeOrderActionTask[];
   isDisabled: boolean;
-  // "full" = the Card with title + progress + reorderable list + add form (the
+  // "full" = the Card with title + progress + reorderable list + add modal (the
   // primary surface, at the top of the middle pane). "summary" = just the
   // progress bar (the compact right-rail view).
   variant?: "full" | "summary";
@@ -186,9 +157,9 @@ function ReorderableActionItem({
   );
 }
 
-// Mirrors Quality's TaskItem: a bordered card with the title + drag/delete/toggle
-// on top, a collapsible rich-text notes editor, and a bottom bar carrying the
-// status badge, assignee, due date, and the Start/Complete/Reopen action.
+// Thin CO wrapper over the shared ActionTaskCard: owns CO-specific persistence
+// (notes via supabase, status + reorder + delete via CO routes) and passes the
+// delete affordance + due date into the card's slots.
 function ActionItem({
   changeOrderId,
   action,
@@ -207,15 +178,11 @@ function ActionItem({
     company: { id: companyId }
   } = useUser();
   const { carbon } = useCarbon();
-  const disclosure = useDisclosure({ defaultIsOpen: true });
   const statusFetcher = useFetcher<{ success: boolean }>();
   const deleteFetcher = useFetcher<{ success: boolean }>();
 
   const [content, setContent] = useState((action.notes ?? {}) as JSONContent);
-
-  const status = (action.status ?? "Pending") as keyof typeof statusActions;
-  const statusAction = statusActions[status];
-  const isComplete = status === "Completed" || status === "Skipped";
+  const status = (action.status ?? "Pending") as ActionTaskStatus;
   const canEdit = permissions.can("update", "parts") && !isDisabled;
 
   const onUploadImage = async (file: File) => {
@@ -240,11 +207,11 @@ function ActionItem({
     true
   );
 
-  const onStatusChange = () => {
+  const onStatusChange = (next: ActionTaskStatus) => {
     if (isDisabled) return;
     const formData = new FormData();
     formData.append("id", action.id);
-    formData.append("status", statusAction.next);
+    formData.append("status", next);
     statusFetcher.submit(formData, {
       method: "post",
       action: path.to.changeOrderActionStatus(changeOrderId, action.id)
@@ -252,218 +219,77 @@ function ActionItem({
   };
 
   return (
-    <div className="rounded-lg border w-full flex flex-col bg-card">
-      <div className="flex w-full justify-between px-4 py-2 items-center">
-        <span
-          className={cn(
-            "text-base font-semibold tracking-tight",
-            isComplete && "line-through text-muted-foreground"
-          )}
-        >
-          {action.name}
-        </span>
-        <div className="flex items-center gap-1">
-          {!isDisabled && (
-            <button
-              type="button"
-              className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors p-1"
-              onPointerDown={(e) => dragControls.start(e)}
-            >
-              <LuGripVertical size={16} />
-            </button>
-          )}
-          {!isDisabled && (
-            <deleteFetcher.Form
-              method="post"
-              action={path.to.deleteChangeOrderAction(changeOrderId, action.id)}
-            >
-              <IconButton
-                type="submit"
-                aria-label={t`Remove action`}
-                variant="ghost"
-                icon={<LuTrash2 />}
-              />
-            </deleteFetcher.Form>
-          )}
-          <IconButton
-            icon={<LuChevronRight />}
-            variant="ghost"
-            onClick={disclosure.onToggle}
-            aria-label={t`Open action details`}
-            className={cn(disclosure.isOpen && "rotate-90")}
-          />
-        </div>
-      </div>
-
-      {disclosure.isOpen && (
-        <div className="px-4 py-2 rounded">
-          {canEdit ? (
-            <Editor
-              className="w-full min-h-[100px]"
-              initialValue={content}
-              onUpload={onUploadImage}
-              onChange={(value) => {
-                setContent(value);
-                onUpdateContent(value);
-              }}
-            />
-          ) : (
-            <div
-              className="prose dark:prose-invert"
-              // biome-ignore lint/security/noDangerouslySetInnerHtml: read-only render of stored notes
-              dangerouslySetInnerHTML={{
-                __html: generateHTML(content as JSONContent)
-              }}
-            />
-          )}
-        </div>
-      )}
-
-      <div className="bg-muted/30 border-t px-4 py-2 flex justify-between w-full">
-        <HStack>
-          <Badge variant="secondary">{status}</Badge>
-          <Assignee
-            table="changeOrderActionTask"
-            id={action.id}
-            size="sm"
-            value={action.assignee ?? undefined}
-            disabled={isDisabled}
-          />
-          {action.dueDate && (
-            <span className="text-xs text-muted-foreground tabular-nums">
-              {action.dueDate}
-            </span>
-          )}
-        </HStack>
-        <HStack>
-          <Button
-            isDisabled={isDisabled}
-            leftIcon={statusAction.icon}
-            variant="secondary"
-            size="sm"
-            onClick={onStatusChange}
+    <ActionTaskCard
+      title={action.name ?? ""}
+      status={status}
+      notes={content}
+      canEditNotes={canEdit}
+      onNotesChange={(value) => {
+        setContent(value);
+        onUpdateContent(value);
+      }}
+      onUploadImage={onUploadImage}
+      onStatusChange={onStatusChange}
+      assigneeTable="changeOrderActionTask"
+      assigneeId={action.id}
+      assignee={action.assignee ?? undefined}
+      isDisabled={isDisabled}
+      showDragHandle={!isDisabled}
+      dragControls={dragControls}
+      statusBadge={<Badge variant="secondary">{status}</Badge>}
+      headerExtras={
+        !isDisabled ? (
+          <deleteFetcher.Form
+            method="post"
+            action={path.to.deleteChangeOrderAction(changeOrderId, action.id)}
           >
-            {statusAction.action}
-          </Button>
-        </HStack>
-      </div>
-    </div>
+            <IconButton
+              type="submit"
+              aria-label={t`Remove action`}
+              variant="ghost"
+              icon={<LuTrash2 />}
+            />
+          </deleteFetcher.Form>
+        ) : undefined
+      }
+      footerExtras={
+        action.dueDate ? (
+          <span className="text-xs text-muted-foreground tabular-nums">
+            {action.dueDate}
+          </span>
+        ) : undefined
+      }
+    />
   );
 }
 
-// Mirrors Quality's "Add Actions" affordance: a dashed button opening a modal
-// that picks from the company's change-order action templates
-// (changeOrderRequiredAction) and instantiates the selected ones as tasks.
+// CO "Add Actions": the shared dashed-button + template-picker modal, wired to
+// the CO required-action templates + the CO action route.
 function NewAction({ changeOrderId }: { changeOrderId: string }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-
+  const { t } = useLingui();
   const routeData = useRouteData<{ requiredActions: ListItem[] }>(
     path.to.changeOrder(changeOrderId)
   );
-  const templates = routeData?.requiredActions ?? [];
-
   const fetcher = useFetcher<{ success: boolean }>();
 
-  useEffect(() => {
-    if (fetcher.state === "idle" && fetcher.data?.success) {
-      setIsOpen(false);
-      setSelectedIds([]);
-    }
-  }, [fetcher.state, fetcher.data]);
-
-  const onToggle = useCallback((id: string, checked: boolean) => {
-    setSelectedIds((prev) =>
-      checked ? [...prev, id] : prev.filter((x) => x !== id)
-    );
-  }, []);
-
-  const onSubmit = useCallback(() => {
-    const formData = new FormData();
-    formData.append("actionIds", selectedIds.join(","));
-    fetcher.submit(formData, {
-      method: "post",
-      action: path.to.changeOrderAction(changeOrderId)
-    });
-  }, [changeOrderId, selectedIds, fetcher]);
+  const onAdd = useCallback(
+    (selectedIds: string[]) => {
+      const formData = new FormData();
+      formData.append("actionIds", selectedIds.join(","));
+      fetcher.submit(formData, {
+        method: "post",
+        action: path.to.changeOrderAction(changeOrderId)
+      });
+    },
+    [changeOrderId, fetcher]
+  );
 
   return (
-    <>
-      <button
-        type="button"
-        className="flex items-center justify-start bg-card border-2 border-dashed border-background w-full hover:bg-background/80 rounded-lg px-10 py-6 text-muted-foreground hover:text-foreground gap-2 transition-colors duration-200 text-sm cursor-pointer"
-        onClick={() => setIsOpen(true)}
-      >
-        <LuCirclePlus size={16} />
-        <span>
-          <Trans>Add Actions</Trans>
-        </span>
-      </button>
-
-      <Modal
-        open={isOpen}
-        onOpenChange={(open) => {
-          if (!open) {
-            setIsOpen(false);
-            setSelectedIds([]);
-          }
-        }}
-      >
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>
-            <ModalTitle>
-              <Trans>Add Actions</Trans>
-            </ModalTitle>
-          </ModalHeader>
-          <ModalBody>
-            <VStack spacing={2}>
-              {templates.length === 0 && (
-                <span className="text-sm text-muted-foreground">
-                  <Trans>
-                    No action templates configured. Add them under Change Order
-                    Actions.
-                  </Trans>
-                </span>
-              )}
-              {templates.map((template) => (
-                <label
-                  key={template.id}
-                  htmlFor={template.id}
-                  className="flex items-center gap-2 w-full px-4 py-3 rounded-lg hover:bg-accent hover:text-accent-foreground border border-border cursor-pointer"
-                >
-                  <Checkbox
-                    id={template.id}
-                    isChecked={selectedIds.includes(template.id)}
-                    onCheckedChange={(checked) =>
-                      onToggle(template.id, !!checked)
-                    }
-                  />
-                  <span className="text-sm font-medium">{template.name}</span>
-                </label>
-              ))}
-            </VStack>
-          </ModalBody>
-          <ModalFooter>
-            <Button
-              variant="secondary"
-              onClick={() => {
-                setIsOpen(false);
-                setSelectedIds([]);
-              }}
-            >
-              <Trans>Cancel</Trans>
-            </Button>
-            <Button
-              onClick={onSubmit}
-              isDisabled={selectedIds.length === 0 || fetcher.state !== "idle"}
-              isLoading={fetcher.state !== "idle"}
-            >
-              <Trans>Add Actions</Trans>
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
-    </>
+    <ActionTaskAddModal
+      templates={routeData?.requiredActions ?? []}
+      onAdd={onAdd}
+      isSubmitting={fetcher.state !== "idle"}
+      emptyMessage={t`No action templates configured. Add them under Change Order Actions.`}
+    />
   );
 }

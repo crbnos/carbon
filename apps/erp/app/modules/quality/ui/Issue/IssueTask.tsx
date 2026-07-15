@@ -17,17 +17,13 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
-  generateHTML,
-  HStack,
   IconButton,
   Popover,
   PopoverContent,
   PopoverTrigger,
   toast,
-  useDebounce,
-  useDisclosure
+  useDebounce
 } from "@carbon/react";
-import { Editor } from "@carbon/react/Editor";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { DragControls } from "framer-motion";
@@ -35,17 +31,18 @@ import { nanoid } from "nanoid";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   LuCalendar,
-  LuChevronRight,
   LuCircleCheck,
   LuCirclePlay,
   LuCog,
   LuContainer,
-  LuGripVertical,
   LuLoaderCircle
 } from "react-icons/lu";
 import { RxCheck } from "react-icons/rx";
 import { useFetchers, useParams, useSubmit } from "react-router";
-import { Assignee } from "~/components";
+import {
+  ActionTaskCard,
+  type ActionTaskStatus
+} from "~/components/ActionTasks/ActionTaskCard";
 import { useProcesses } from "~/components/Form/Process";
 import { IssueTaskStatusIcon } from "~/components/Icons";
 import SupplierAvatar from "~/components/SupplierAvatar";
@@ -283,20 +280,14 @@ export function TaskItem({
 }) {
   useRealtime("nonConformanceActionTask", `id=eq.${task.id}`);
 
-  const { t } = useLingui();
   const integrations = useIntegrations();
   const permissions = usePermissions();
-  const disclosure = useDisclosure({
-    defaultIsOpen: true
-  });
 
   const { currentStatus, onOperationStatusChange } = useTaskStatus({
     task,
     type,
     disabled: isDisabled
   });
-  const statusAction =
-    statusActions[currentStatus as keyof typeof statusActions];
 
   // Check if this action task has a linked Linear or Jira issue
   const hasLinearLink =
@@ -327,92 +318,57 @@ export function TaskItem({
   }
 
   return (
-    <div className="rounded-lg border w-full flex flex-col bg-card">
-      <div className="flex w-full justify-between px-4 py-2 items-center">
-        <div className="flex flex-col flex-1">
-          <span className="text-base font-semibold tracking-tight">
-            {taskTitle}
-          </span>
-        </div>
-        <div className="flex items-center gap-1">
-          {showDragHandle && !isDisabled && dragControls && (
-            <button
-              className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors p-1"
-              onPointerDown={(e) => dragControls.start(e)}
-            >
-              <LuGripVertical size={16} />
-            </button>
-          )}
+    <ActionTaskCard
+      title={taskTitle ?? ""}
+      status={currentStatus as ActionTaskStatus}
+      notes={content as JSONContent}
+      canEditNotes={permissions.can("update", "quality") && !isDisabled}
+      onNotesChange={(value) => {
+        setContent(value);
+        onUpdateContent(value);
 
+        // Auto-start issue when typing in task if issue status is "Registered"
+        if (
+          routeData?.nonConformance?.status === "Registered" &&
+          !hasStartedRef.current &&
+          value?.content?.some((node: any) => node.content?.length > 0)
+        ) {
+          hasStartedRef.current = true;
+          submit(
+            { status: "In Progress" },
+            {
+              method: "post",
+              action: path.to.issueStatus(id!),
+              navigate: false
+            }
+          );
+        }
+      }}
+      onUploadImage={onUploadImage}
+      onStatusChange={(next) => onOperationStatusChange(task.id!, next)}
+      assigneeTable={getTable(type)}
+      assigneeId={task.id!}
+      assignee={task.assignee ?? undefined}
+      isDisabled={isDisabled}
+      showDragHandle={showDragHandle}
+      dragControls={dragControls}
+      statusBadge={
+        <IssueTaskStatus
+          task={task}
+          type="investigation"
+          isDisabled={isDisabled}
+        />
+      }
+      headerExtras={
+        <>
           {/* @ts-expect-error TS2322 */}
           {integrations.has("linear") && <LinearIssueDialog task={task} />}
           {/* @ts-expect-error TS2322 */}
           {integrations.has("jira") && <JiraIssueDialog task={task} />}
-
-          <IconButton
-            icon={<LuChevronRight />}
-            variant="ghost"
-            onClick={disclosure.onToggle}
-            aria-label={t`Open task details`}
-            className={cn(disclosure.isOpen && "rotate-90")}
-          />
-        </div>
-      </div>
-
-      {disclosure.isOpen && (
-        <div className="px-4 py-2 rounded">
-          {permissions.can("update", "quality") && !isDisabled ? (
-            <Editor
-              className="w-full min-h-[100px]"
-              initialValue={content}
-              onUpload={onUploadImage}
-              onChange={(value) => {
-                setContent(value);
-                onUpdateContent(value);
-
-                // Auto-start issue when typing in task if issue status is "Registered"
-                if (
-                  routeData?.nonConformance?.status === "Registered" &&
-                  !hasStartedRef.current &&
-                  value?.content?.some((node: any) => node.content?.length > 0)
-                ) {
-                  hasStartedRef.current = true;
-                  submit(
-                    { status: "In Progress" },
-                    {
-                      method: "post",
-                      action: path.to.issueStatus(id!),
-                      navigate: false
-                    }
-                  );
-                }
-              }}
-            />
-          ) : (
-            <div
-              className="prose dark:prose-invert"
-              dangerouslySetInnerHTML={{
-                __html: generateHTML(content as JSONContent)
-              }}
-            />
-          )}
-        </div>
-      )}
-
-      <div className="bg-muted/30 border-t px-4 py-2 flex justify-between w-full">
-        <HStack>
-          <IssueTaskStatus
-            task={task}
-            type="investigation"
-            isDisabled={isDisabled}
-          />
-          <Assignee
-            table={getTable(type)}
-            id={task.id}
-            size="sm"
-            value={task.assignee ?? undefined}
-            disabled={isDisabled}
-          />
+        </>
+      }
+      footerExtras={
+        <>
           {type === "action" && (
             <>
               <TaskDueDate
@@ -433,22 +389,9 @@ export function TaskItem({
               isDisabled={isDisabled}
             />
           )}
-        </HStack>
-        <HStack>
-          <Button
-            isDisabled={isDisabled}
-            leftIcon={statusAction.icon}
-            variant="secondary"
-            size="sm"
-            onClick={() => {
-              onOperationStatusChange(task.id!, statusAction.status);
-            }}
-          >
-            {statusAction.action}
-          </Button>
-        </HStack>
-      </div>
-    </div>
+        </>
+      }
+    />
   );
 }
 

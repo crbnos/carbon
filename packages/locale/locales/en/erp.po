@@ -8410,9 +8410,6 @@ msgstr "Open"
 msgid "Open a change order"
 msgstr "Open a change order"
 
-msgid "Open action details"
-msgstr "Open action details"
-
 msgid "Open Actions"
 msgstr "Open Actions"
 
