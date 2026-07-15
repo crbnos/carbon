@@ -2269,6 +2269,9 @@ msgstr "회사명"
 msgid "Company policy asks for a different person to inspect inbound items than the one who received them."
 msgstr "회사 정책상 입고 품목을 받은 사람과 검사하는 사람이 달라야 합니다."
 
+msgid "Company-wide — includes all locations"
+msgstr "회사 전체 — 모든 위치 포함"
+
 msgid "Compare and Order"
 msgstr "비교 후 주문"
 
@@ -12515,6 +12518,9 @@ msgstr "재입력 없이 출하를 인보이스까지 연결"
 
 msgid "Tie-Out"
 msgstr "대사"
+
+msgid "Tie-Out unavailable"
+msgstr "동적 대조 불가능"
 
 msgid "Tightened"
 msgstr "강화됨"

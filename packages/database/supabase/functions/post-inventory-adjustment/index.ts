@@ -108,11 +108,19 @@ serve(async (req: Request) => {
         .from("itemShelfLife")
         .select("mode, days")
         .eq("itemId", itemId)
+        .eq("companyId", companyId)
         .maybeSingle(),
     ]);
 
     if (itemResult.error) throw new Error("Failed to fetch item");
     if (itemCostResult.error) throw new Error("Failed to fetch item cost");
+    // Fail closed: a failed quantity read must abort, not read as "no stock" —
+    // a Set Quantity against an empty snapshot would post the full target as
+    // new stock on top of whatever actually exists.
+    if (storageUnitQuantities.error) {
+      throw new Error("Failed to fetch current quantities");
+    }
+    if (shelfLife.error) throw new Error("Failed to fetch item shelf life");
     const item = {
       itemTrackingType: itemResult.data.itemTrackingType,
       replenishmentSystem: itemResult.data.replenishmentSystem,
@@ -122,6 +130,10 @@ serve(async (req: Request) => {
 
     // The accountingEnabled flag gates ALL journal writes: when false the
     // posting core receives accounting = null and books ledger + layers only.
+    // Fail closed: a failed settings read must not silently post without GL.
+    if (accountingSettings.error) {
+      throw new Error("Failed to fetch company settings");
+    }
     const accountingEnabled =
       accountingSettings.data?.accountingEnabled ?? false;
     const accountDefaults = accountingEnabled
@@ -147,6 +159,8 @@ serve(async (req: Request) => {
         .eq("companyGroupId", companyRecord.data.companyGroupId)
         .eq("active", true)
         .in("entityType", ["Item", "ItemPostingGroup", "Location"]);
+      // Fail closed: journal lines must not silently lose dimension tags.
+      if (dimensions.error) throw new Error("Failed to fetch dimensions");
       for (const dim of dimensions.data ?? []) {
         if (dim.entityType) dimensionMap[dim.entityType] = dim.id;
       }

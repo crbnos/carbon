@@ -2269,6 +2269,9 @@ msgstr "Nome Azienda"
 msgid "Company policy asks for a different person to inspect inbound items than the one who received them."
 msgstr "La politica aziendale richiede che una persona diversa ispezionare gli articoli in entrata rispetto a quella che li ha ricevuti."
 
+msgid "Company-wide — includes all locations"
+msgstr "A livello aziendale — include tutte le sedi"
+
 msgid "Compare and Order"
 msgstr "Confronta e Ordina"
 
@@ -12515,6 +12518,9 @@ msgstr "Collegare le spedizioni a una fattura senza reinserimento dati"
 
 msgid "Tie-Out"
 msgstr "Riconciliazione"
+
+msgid "Tie-Out unavailable"
+msgstr "Riconciliazione non disponibile"
 
 msgid "Tightened"
 msgstr "Stretto"

@@ -2269,6 +2269,9 @@ msgstr "会社名"
 msgid "Company policy asks for a different person to inspect inbound items than the one who received them."
 msgstr "会社のポリシーでは、受け取った人とは異なる人が受け入れ品を検査することが求められています。"
 
+msgid "Company-wide — includes all locations"
+msgstr "会社全体 — すべての場所を含む"
+
 msgid "Compare and Order"
 msgstr "比較して注文"
 
@@ -12515,6 +12518,9 @@ msgstr "出荷を請求書に結びつけ、再入力なしで処理する"
 
 msgid "Tie-Out"
 msgstr "照合"
+
+msgid "Tie-Out unavailable"
+msgstr "Tie-Outは利用できません"
 
 msgid "Tightened"
 msgstr "厳しい"

@@ -2269,6 +2269,9 @@ msgstr "Company Name"
 msgid "Company policy asks for a different person to inspect inbound items than the one who received them."
 msgstr "Company policy asks for a different person to inspect inbound items than the one who received them."
 
+msgid "Company-wide — includes all locations"
+msgstr "Company-wide — includes all locations"
+
 msgid "Compare and Order"
 msgstr "Compare and Order"
 
@@ -12515,6 +12518,9 @@ msgstr "Tie shipments through to an invoice with no re-keying"
 
 msgid "Tie-Out"
 msgstr "Tie-Out"
+
+msgid "Tie-Out unavailable"
+msgstr "Tie-Out unavailable"
 
 msgid "Tightened"
 msgstr "Tightened"

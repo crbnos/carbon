@@ -159,8 +159,8 @@ BEGIN
     q."quantityOnHand" * COALESCE(c."unitCost", 0) AS "totalValue"
   FROM quantities q
   INNER JOIN "item" i ON q."itemId" = i."id" AND i."companyId" = company_id
-  INNER JOIN "location" l ON q."locationId" = l."id"
-  LEFT JOIN "modelUpload" mu ON mu."id" = i."modelUploadId"
+  INNER JOIN "location" l ON q."locationId" = l."id" AND l."companyId" = company_id
+  LEFT JOIN "modelUpload" mu ON mu."id" = i."modelUploadId" AND mu."companyId" = company_id
   LEFT JOIN carrying c ON c."itemId" = q."itemId"
   ORDER BY l."name", i."readableIdWithRevision";
 END;
@@ -216,7 +216,8 @@ BEGIN
   gl AS (
     SELECT jl."accountId" AS "account", SUM(jl."amount") AS "balance"
     FROM "journal" j
-    INNER JOIN "journalLine" jl ON jl."journalId" = j."id"
+    INNER JOIN "journalLine" jl
+      ON jl."journalId" = j."id" AND jl."companyId" = j."companyId"
     WHERE j."companyId" = company_id
       AND j."status" <> 'Draft'
       AND j."postingDate" <= v_as_of

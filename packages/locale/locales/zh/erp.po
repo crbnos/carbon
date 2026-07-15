@@ -2269,6 +2269,9 @@ msgstr "公司名称"
 msgid "Company policy asks for a different person to inspect inbound items than the one who received them."
 msgstr "公司政策要求由与收货人不同的人员检验入库物品。"
 
+msgid "Company-wide — includes all locations"
+msgstr "公司范围 — 包括所有地点"
+
 msgid "Compare and Order"
 msgstr "比较并订购"
 
@@ -12515,6 +12518,9 @@ msgstr "将发货与发票关联，无需重新输入"
 
 msgid "Tie-Out"
 msgstr "对账"
+
+msgid "Tie-Out unavailable"
+msgstr "结账检验不可用"
 
 msgid "Tightened"
 msgstr "紧张"

@@ -2269,6 +2269,9 @@ msgstr "Название компании"
 msgid "Company policy asks for a different person to inspect inbound items than the one who received them."
 msgstr "Политика компании требует, чтобы входящие товары проверял другой сотрудник, а не тот, кто их получил."
 
+msgid "Company-wide — includes all locations"
+msgstr "Во всей компании — включает все местоположения"
+
 msgid "Compare and Order"
 msgstr "Сравнить и заказать"
 
@@ -12515,6 +12518,9 @@ msgstr "Связать отправки с счетом без повторно�
 
 msgid "Tie-Out"
 msgstr "Сверка"
+
+msgid "Tie-Out unavailable"
+msgstr "Сверка недоступна"
 
 msgid "Tightened"
 msgstr "Ужесточенный"

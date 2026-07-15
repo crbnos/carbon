@@ -358,8 +358,12 @@ export async function getInventoryValuationTieOut(
 // Asset = debit, negative on the (Expense) adjustment account = credit — raw
 // amounts sum to zero. The journal stays Draft: a human reviews and posts it
 // from the Journals screen, and the tie-out ignores Draft journals.
+// Posted on the tie-out's as-of date — the tie-out only counts journals with
+// postingDate <= asOfDate, so a today-dated journal could never resolve a
+// backdated variance. Posting may still be rejected if that period is Closed.
 export async function createInventoryReconciliationJournal(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   companyId: string,
   args: { asOfDate: string; userId: string }
 ) {
@@ -386,49 +390,69 @@ export async function createInventoryReconciliationJournal(
 
   const nextSequence = await getNextSequence(client, "journalEntry", companyId);
   if (nextSequence.error) return nextSequence;
+  const journalEntryId = nextSequence.data;
 
-  const journal = await client
-    .from("journal")
-    .insert({
-      journalEntryId: nextSequence.data,
-      description: `Inventory subledger reconciliation as of ${args.asOfDate}`,
-      postingDate: today(getLocalTimeZone()).toString(),
-      sourceType: "Manual" as const,
-      status: "Draft" as const,
-      companyId,
-      createdBy: args.userId
-    })
-    .select("id")
-    .single();
-  if (journal.error) return journal;
+  // Header + lines in one transaction — a partial failure must not leave an
+  // orphaned Draft header behind.
+  try {
+    const journalId = await db.transaction().execute(async (trx) => {
+      const journal = await trx
+        .insertInto("journal")
+        .values({
+          journalEntryId,
+          description: `Inventory subledger reconciliation as of ${args.asOfDate}`,
+          postingDate: args.asOfDate,
+          sourceType: "Manual" as const,
+          status: "Draft" as const,
+          companyId,
+          createdBy: args.userId
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
 
-  const journalLines = await client.from("journalLine").insert(
-    rows.flatMap((row) => {
-      const variance = Number(row.variance);
-      const journalLineReference = crypto.randomUUID();
-      return [
-        {
-          journalId: journal.data.id,
-          accountId: row.accountId,
-          description: `Reconcile ${row.accountName} to subledger`,
-          amount: variance,
-          journalLineReference,
-          companyId
-        },
-        {
-          journalId: journal.data.id,
-          accountId: accountDefaults.data.inventoryAdjustmentVarianceAccount,
-          description: "Inventory Adjustment",
-          amount: -variance,
-          journalLineReference,
-          companyId
-        }
-      ];
-    })
-  );
-  if (journalLines.error) return journalLines;
+      await trx
+        .insertInto("journalLine")
+        .values(
+          rows.flatMap((row) => {
+            const variance = Number(row.variance);
+            const journalLineReference = crypto.randomUUID();
+            return [
+              {
+                journalId: journal.id,
+                accountId: row.accountId,
+                description: `Reconcile ${row.accountName} to subledger`,
+                amount: variance,
+                journalLineReference,
+                companyId
+              },
+              {
+                journalId: journal.id,
+                accountId:
+                  accountDefaults.data.inventoryAdjustmentVarianceAccount,
+                description: "Inventory Adjustment",
+                amount: -variance,
+                journalLineReference,
+                companyId
+              }
+            ];
+          })
+        )
+        .execute();
 
-  return { data: { journalId: journal.data.id }, error: null };
+      return journal.id;
+    });
+    return { data: { journalId }, error: null };
+  } catch (err) {
+    return {
+      data: null,
+      error: {
+        message:
+          err instanceof Error
+            ? err.message
+            : "Failed to create reconciliation journal"
+      }
+    };
+  }
 }
 
 export async function getKanbans(

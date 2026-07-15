@@ -2269,6 +2269,9 @@ msgstr "Şirket Adı"
 msgid "Company policy asks for a different person to inspect inbound items than the one who received them."
 msgstr "Şirket politikası, gelen ürünleri kontrol edecek kişinin, onları alan kişi olmamasını gerektirir."
 
+msgid "Company-wide — includes all locations"
+msgstr "Şirket genelinde — tüm konumları içerir"
+
 msgid "Compare and Order"
 msgstr "Karşılaştır ve Sipariş Ver"
 
@@ -12515,6 +12518,9 @@ msgstr "Sevkiyatları faturaya bağlayın, yeniden veri girişi olmadan"
 
 msgid "Tie-Out"
 msgstr "Mutabakat Kontrolü"
+
+msgid "Tie-Out unavailable"
+msgstr "Uzlaştırma kullanılamıyor"
 
 msgid "Tightened"
 msgstr "Sıkı"

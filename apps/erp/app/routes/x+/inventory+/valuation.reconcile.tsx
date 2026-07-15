@@ -4,6 +4,7 @@ import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
 import { createInventoryReconciliationJournal } from "~/modules/inventory";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 // Tie-out Reconcile action: drafts an adjusting journal that brings the GL
@@ -20,10 +21,12 @@ export async function action({ request }: ActionFunctionArgs) {
     (formData.get("asOfDate") as string | null) ||
     new Date().toISOString().slice(0, 10);
 
-  const result = await createInventoryReconciliationJournal(client, companyId, {
-    asOfDate,
-    userId
-  });
+  const result = await createInventoryReconciliationJournal(
+    client,
+    getDatabaseClient(),
+    companyId,
+    { asOfDate, userId }
+  );
 
   if (result.error) {
     return data(

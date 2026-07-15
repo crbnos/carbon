@@ -176,6 +176,10 @@ serve(async (req: Request) => {
       .select("accountingEnabled")
       .eq("id", companyId)
       .single();
+    // Fail closed: a failed settings read must not silently post without GL.
+    if (accountingSettings.error) {
+      throw new Error("Failed to fetch company settings");
+    }
     const accountingEnabled =
       accountingSettings.data?.accountingEnabled ?? false;
     const accountDefaults = accountingEnabled
@@ -207,6 +211,8 @@ serve(async (req: Request) => {
         .eq("companyGroupId", companyRecord.data.companyGroupId)
         .eq("active", true)
         .in("entityType", ["Item", "ItemPostingGroup", "Location"]);
+      // Fail closed: journal lines must not silently lose dimension tags.
+      if (dimensions.error) throw new Error("Failed to fetch dimensions");
       for (const dim of dimensions.data ?? []) {
         if (dim.entityType) dimensionMap[dim.entityType] = dim.id;
       }

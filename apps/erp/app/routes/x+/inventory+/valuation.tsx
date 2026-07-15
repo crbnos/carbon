@@ -59,17 +59,28 @@ export async function loader({ request }: LoaderFunctionArgs) {
     locationId,
     rows: valuation.data ?? [],
     tieOut: tieOut.data ?? null,
+    // A failed tie-out must read as "unavailable", not "nothing to tie out" —
+    // this is a financial control surface.
+    tieOutError: Boolean(tieOut.error),
     locations: locations.data ?? []
   };
 }
 
 export default function InventoryValuationRoute() {
-  const { asOfDate, groupBy, locationId, rows, tieOut, locations } =
-    useLoaderData<typeof loader>();
+  const {
+    asOfDate,
+    groupBy,
+    locationId,
+    rows,
+    tieOut,
+    tieOutError,
+    locations
+  } = useLoaderData<typeof loader>();
   return (
     <InventoryValuationWorkbench
       rows={rows}
       tieOut={tieOut}
+      tieOutError={tieOutError}
       asOfDate={asOfDate}
       groupBy={groupBy}
       locationId={locationId}

@@ -2269,6 +2269,9 @@ msgstr "कंपनी का नाम"
 msgid "Company policy asks for a different person to inspect inbound items than the one who received them."
 msgstr "कंपनी की नीति के अनुसार, इनबाउंड आइटम्स का निरीक्षण उस व्यक्ति के अलावा किसी और को करना चाहिए जिसने उन्हें प्राप्त किया है।"
 
+msgid "Company-wide — includes all locations"
+msgstr "कंपनी-व्यापी — सभी स्थानों को शामिल करता है"
+
 msgid "Compare and Order"
 msgstr "तुलना करें और ऑर्डर करें"
 
@@ -12515,6 +12518,9 @@ msgstr "शिपमेंट को बिना पुनः-कुंजी�
 
 msgid "Tie-Out"
 msgstr "टाई-आउट"
+
+msgid "Tie-Out unavailable"
+msgstr "Tie-Out उपलब्ध नहीं है"
 
 msgid "Tightened"
 msgstr "कड़ा"

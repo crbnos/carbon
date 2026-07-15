@@ -44,6 +44,8 @@ import { path } from "~/utils/path";
 type InventoryValuationWorkbenchProps = {
   rows: InventoryValuationRow[];
   tieOut: InventoryTieOutRow[] | null;
+  // The tie-out query failed — distinct from "accounting disabled" (null).
+  tieOutError?: boolean;
   asOfDate: string;
   groupBy: "location" | "item";
   locationId: string | null;
@@ -84,6 +86,7 @@ const VARIANCE_EPSILON = 0.005;
 export function InventoryValuationWorkbench({
   rows,
   tieOut,
+  tieOutError,
   asOfDate,
   groupBy,
   locationId,
@@ -461,6 +464,13 @@ export function InventoryValuationWorkbench({
 
   const filters = (
     <HStack>
+      {tieOutError ? (
+        // The tie-out query failed — say so; rendering nothing would read as
+        // "no variance" on a financial control surface.
+        <Button variant="destructive" leftIcon={<LuTriangleAlert />} isDisabled>
+          <Trans>Tie-Out unavailable</Trans>
+        </Button>
+      ) : null}
       {tieOut && tieOut.length > 0 ? (
         <Popover>
           <PopoverTrigger asChild>
@@ -476,6 +486,14 @@ export function InventoryValuationWorkbench({
               <Trans>GL Tie-Out</Trans>
             </PopoverHeader>
             <div className="flex flex-col gap-3 p-4">
+              {locationId ? (
+                // The tie-out (and its Reconcile journal) always covers the
+                // whole company — flag that while the table is filtered to a
+                // single location so the two aren't read as the same scope.
+                <span className="text-xs text-muted-foreground">
+                  <Trans>Company-wide — includes all locations</Trans>
+                </span>
+              ) : null}
               {tieOut.map((row) => {
                 const rowVariance =
                   Math.abs(Number(row.variance)) > VARIANCE_EPSILON;
