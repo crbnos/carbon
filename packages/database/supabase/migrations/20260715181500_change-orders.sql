@@ -156,7 +156,6 @@ CREATE TABLE "changeOrder" (
   "nonConformanceId" TEXT,
   "openDate" DATE NOT NULL,
   "dueDate" DATE,
-  "effectiveDate" DATE,
   "requiredActionIds" TEXT[] DEFAULT ARRAY[]::TEXT[],
   "approvalRequirements" TEXT[] DEFAULT ARRAY[]::TEXT[],
   "sourceType" TEXT,
@@ -264,8 +263,8 @@ CREATE TABLE "changeOrderAffectedItem" (
   -- 2-way diff at release). Nullable for a fresh New Part with no source method.
   "baseMakeMethodId" TEXT,
   -- Per-item revision cutover config (Q3): the oldRev→newRev supersession is
-  -- auto-written at release; the user only tunes mode + dates (defaults applied
-  -- from the CO effectiveDate when NULL).
+  -- auto-written at release; the user only tunes mode + dates (an empty
+  -- successorEffectivityDate = effective immediately at release).
   "supersessionMode" "supersessionMode" NOT NULL DEFAULT 'Consume First',
   "discontinuationDate" DATE,
   "successorEffectivityDate" DATE,
