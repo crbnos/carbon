@@ -507,7 +507,8 @@ export async function calculateQuoteLinePrices(
   const existingPricesResult = await client
     .from("quoteLinePrice")
     .select("quantity, priceSource")
-    .eq("quoteLineId", quoteLineId);
+    .eq("quoteLineId", quoteLineId)
+    .eq("companyId", companyId);
   const manualQuantities = new Set(
     (existingPricesResult.data ?? [])
       .filter(
@@ -799,6 +800,7 @@ export async function calculateQuoteLinePrices(
       return {
         quoteId,
         quoteLineId,
+        companyId,
         quantity: qty,
         unitPrice: roundedUnitPrice,
         categoryMarkups: effectiveDefaults,
@@ -816,7 +818,8 @@ export async function calculateQuoteLinePrices(
   let deleteQuery = client
     .from("quoteLinePrice")
     .delete()
-    .eq("quoteLineId", quoteLineId);
+    .eq("quoteLineId", quoteLineId)
+    .eq("companyId", companyId);
   if (manualQuantities.size > 0) {
     deleteQuery = deleteQuery.not(
       "quantity",

@@ -5166,6 +5166,7 @@ serve(async (req: Request) => {
                   sourceQuotePricingForLine.map((l) => ({
                     quoteId: newQuoteId!,
                     quoteLineId: newLine.id!,
+                    companyId,
                     leadTime: l.leadTime ?? 0,
                     discountPercent: l.discountPercent ?? 0,
                     quantity: l.quantity ?? 0,
