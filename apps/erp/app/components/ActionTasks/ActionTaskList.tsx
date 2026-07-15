@@ -41,8 +41,11 @@ export function ActionTaskList<T extends ActionTaskRow>({
   tasks: T[];
   renderItem: (task: T, dragControls: DragControls) => ReactNode;
   reorderAction: string;
-  templates: ListItem[];
-  onAdd: (selectedIds: string[]) => void;
+  // Add-from-template is opt-in: pass `onAdd` (and its templates) to show the
+  // "Add Actions" picker. Omit it — as Change Orders do — and there's no add
+  // affordance at all; the list is seeded elsewhere.
+  templates?: ListItem[];
+  onAdd?: (selectedIds: string[]) => void;
   isAddSubmitting?: boolean;
   addEmptyMessage?: string;
   isDisabled?: boolean;
@@ -115,9 +118,9 @@ export function ActionTaskList<T extends ActionTaskRow>({
             </Reorder.Group>
           )}
 
-          {!isDisabled && (
+          {!isDisabled && onAdd && (
             <ActionTaskAddModal
-              templates={templates}
+              templates={templates ?? []}
               onAdd={onAdd}
               isSubmitting={isAddSubmitting}
               emptyMessage={addEmptyMessage}

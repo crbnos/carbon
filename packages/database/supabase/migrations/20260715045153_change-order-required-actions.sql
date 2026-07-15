@@ -62,3 +62,30 @@ CROSS JOIN (VALUES
   ('Notify Affected Parties')
 ) AS action(name)
 ON CONFLICT ("companyId", "name") DO NOTHING;
+
+-- Link each instantiated action task back to its template (mirrors
+-- nonConformanceActionTask.actionTypeId). Powers the sidebar's editable Required
+-- Actions multiselect: selected = the templates that have a task; deselecting
+-- removes the task. `id` is globally unique (id('cora')), so a single-column FK
+-- is valid despite the composite PK.
+ALTER TABLE "changeOrderRequiredAction"
+  ADD CONSTRAINT "changeOrderRequiredAction_id_key" UNIQUE ("id");
+
+ALTER TABLE "changeOrderActionTask"
+  ADD COLUMN "actionTypeId" TEXT;
+
+ALTER TABLE "changeOrderActionTask"
+  ADD CONSTRAINT "changeOrderActionTask_actionTypeId_fkey"
+  FOREIGN KEY ("actionTypeId") REFERENCES "changeOrderRequiredAction"("id")
+  ON UPDATE CASCADE ON DELETE SET NULL;
+
+CREATE INDEX "changeOrderActionTask_actionTypeId_idx"
+  ON "changeOrderActionTask" ("actionTypeId");
+
+-- Backfill the link for any tasks already seeded by name (per company).
+UPDATE "changeOrderActionTask" cat
+SET "actionTypeId" = cra."id"
+FROM "changeOrderRequiredAction" cra
+WHERE cra."name" = cat."name"
+  AND cra."companyId" = cat."companyId"
+  AND cat."actionTypeId" IS NULL;

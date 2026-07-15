@@ -7935,9 +7935,6 @@ msgstr "Aucun accès"
 msgid "No action needed"
 msgstr "Aucune action requise"
 
-msgid "No action templates configured. Add them under Change Order Actions."
-msgstr ""
-
 msgid "No actions selected"
 msgstr "Aucune action sélectionnée"
 

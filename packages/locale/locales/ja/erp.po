@@ -7935,9 +7935,6 @@ msgstr "アクセスなし"
 msgid "No action needed"
 msgstr "対応は不要です"
 
-msgid "No action templates configured. Add them under Change Order Actions."
-msgstr ""
-
 msgid "No actions selected"
 msgstr "アクションが選択されていません"
 

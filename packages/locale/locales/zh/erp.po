@@ -7935,9 +7935,6 @@ msgstr "无权限"
 msgid "No action needed"
 msgstr "无需操作"
 
-msgid "No action templates configured. Add them under Change Order Actions."
-msgstr ""
-
 msgid "No actions selected"
 msgstr "未选择任何操作"
 

@@ -1,5 +1,5 @@
 import type { JSONContent } from "@carbon/react";
-import { Badge, Button, HStack, VStack } from "@carbon/react";
+import { Button, HStack, VStack } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { LuCircleCheck } from "react-icons/lu";
@@ -66,9 +66,6 @@ export default function ChangeOrderRail({
   showImplementation: boolean;
 }) {
   const isImplementation = changeOrder.status === "Implementation";
-  const actionsDone = actions.filter(
-    (a) => a.status === "Completed" || a.status === "Skipped"
-  ).length;
 
   // The read-only changes shown in the release confirmation dialog.
   const changes = affectedItems.map((a) => ({
@@ -80,7 +77,7 @@ export default function ChangeOrderRail({
   return (
     <VStack
       spacing={4}
-      className="w-96 flex-shrink-0 bg-card h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border px-4 py-2 text-sm"
+      className="w-96 flex-shrink-0 bg-card h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border px-4 pt-2 pb-12 text-sm"
     >
       {/* Release is the primary action at Implementation — surfaced first so
           it's never buried below the scroll. The button opens the review +
@@ -138,23 +135,15 @@ export default function ChangeOrderRail({
         />
       </RailSection>
 
-      <RailSection
-        title={<Trans>Actions</Trans>}
-        accessory={
-          actions.length > 0 ? (
-            <Badge variant="secondary" className="tabular-nums">
-              {actionsDone}/{actions.length}
-            </Badge>
-          ) : undefined
-        }
-      >
-        <ChangeOrderActions
-          variant="summary"
-          changeOrderId={id}
-          actions={actions}
-          isDisabled={isDisabled}
-        />
-      </RailSection>
+      {/* Actions — an editable "Required Actions" multiselect matching the
+          Quality issue sidebar; it renders its own label, so no RailSection
+          heading. Selecting/deselecting a template adds/removes its task. */}
+      <ChangeOrderActions
+        variant="summary"
+        changeOrderId={id}
+        actions={actions}
+        isDisabled={isDisabled}
+      />
 
       {showImplementation && (
         <RailSection title={<Trans>Impact</Trans>}>

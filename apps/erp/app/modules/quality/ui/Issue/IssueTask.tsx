@@ -11,13 +11,6 @@ import {
   CommandItem,
   cn,
   DatePicker,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuIcon,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuTrigger,
-  IconButton,
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -36,8 +29,8 @@ import {
   ActionTaskCard,
   type ActionTaskStatus
 } from "~/components/ActionTasks/ActionTaskCard";
+import { ActionTaskStatusButton } from "~/components/ActionTasks/ActionTaskStatusButton";
 import { useProcesses } from "~/components/Form/Process";
-import { IssueTaskStatusIcon } from "~/components/Icons";
 import SupplierAvatar from "~/components/SupplierAvatar";
 import {
   useDateFormatter,
@@ -53,7 +46,6 @@ import type {
   IssueItem,
   IssueReviewer
 } from "~/modules/quality";
-import { nonConformanceTaskStatus } from "~/modules/quality";
 import { useSuppliers } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
 import { JiraIssueDialog } from "./Jira/IssueDialog";
@@ -521,7 +513,6 @@ export function IssueTaskStatus({
   onChange?: (status: IssueActionTask["status"]) => void;
   isDisabled?: boolean;
 }) {
-  const { t } = useLingui();
   const { currentStatus, onOperationStatusChange } = useTaskStatus({
     task,
     type,
@@ -530,40 +521,12 @@ export function IssueTaskStatus({
   });
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <IconButton
-          size="sm"
-          variant="ghost"
-          className={className}
-          aria-label={t`Change status`}
-          icon={<IssueTaskStatusIcon status={currentStatus} />}
-          isDisabled={isDisabled}
-        />
-      </DropdownMenuTrigger>
-      {!isDisabled && (
-        <DropdownMenuContent align="start">
-          <DropdownMenuRadioGroup
-            value={currentStatus}
-            onValueChange={(status) =>
-              onOperationStatusChange(
-                task.id!,
-                status as IssueActionTask["status"]
-              )
-            }
-          >
-            {nonConformanceTaskStatus.map((status) => (
-              <DropdownMenuRadioItem key={status} value={status}>
-                <DropdownMenuIcon
-                  icon={<IssueTaskStatusIcon status={status} />}
-                />
-                <span>{status}</span>
-              </DropdownMenuRadioItem>
-            ))}
-          </DropdownMenuRadioGroup>
-        </DropdownMenuContent>
-      )}
-    </DropdownMenu>
+    <ActionTaskStatusButton
+      status={currentStatus as ActionTaskStatus}
+      onChange={(next) => onOperationStatusChange(task.id!, next)}
+      isDisabled={isDisabled}
+      className={className}
+    />
   );
 }
 

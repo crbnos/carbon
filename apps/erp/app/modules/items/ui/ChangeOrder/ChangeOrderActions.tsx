@@ -1,6 +1,6 @@
 import { useCarbon } from "@carbon/auth";
+import { ValidatedForm } from "@carbon/form";
 import {
-  Badge,
   IconButton,
   type JSONContent,
   toast,
@@ -9,15 +9,17 @@ import {
 import { useLingui } from "@lingui/react/macro";
 import type { DragControls } from "framer-motion";
 import { nanoid } from "nanoid";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { LuTrash2 } from "react-icons/lu";
 import { useFetcher } from "react-router";
+import { z } from "zod";
 import {
   ActionTaskCard,
   type ActionTaskStatus
 } from "~/components/ActionTasks/ActionTaskCard";
 import { ActionTaskList } from "~/components/ActionTasks/ActionTaskList";
-import { ActionTaskProgress } from "~/components/ActionTasks/ActionTaskProgress";
+import { ActionTaskStatusButton } from "~/components/ActionTasks/ActionTaskStatusButton";
+import { MultiSelect } from "~/components/Form";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import type { ListItem } from "~/types";
 import { getPrivateUrl, path } from "~/utils/path";
@@ -32,40 +34,30 @@ export default function ChangeOrderActions({
   changeOrderId: string;
   actions: ChangeOrderActionTask[];
   isDisabled: boolean;
-  // "full" = the shared action-task list at the top of the middle pane.
-  // "summary" = just the progress bar (the compact right-rail view).
+  // "full" = the shared action-task list in the middle pane. Change Orders are
+  // seeded from configured templates on create, so there is deliberately no
+  // "Add Actions" affordance here (no `onAdd` passed to the list).
+  // "summary" = the right-rail read-only list of the selected actions.
   variant?: "full" | "summary";
 }) {
-  const routeData = useRouteData<{ requiredActions: ListItem[] }>(
-    path.to.changeOrder(changeOrderId)
-  );
-  const { t } = useLingui();
-  const addFetcher = useFetcher<{ success: boolean }>();
-
-  const onAdd = useCallback(
-    (selectedIds: string[]) => {
-      const formData = new FormData();
-      formData.append("actionIds", selectedIds.join(","));
-      addFetcher.submit(formData, {
-        method: "post",
-        action: path.to.changeOrderAction(changeOrderId)
-      });
-    },
-    [changeOrderId, addFetcher]
-  );
-
   if (variant === "summary") {
-    return actions.length > 0 ? <ActionTaskProgress tasks={actions} /> : null;
+    return (
+      <ChangeOrderRequiredActions
+        changeOrderId={changeOrderId}
+        actions={actions}
+        isDisabled={isDisabled}
+      />
+    );
   }
+
+  // Actions are chosen from the right rail; with none selected there's nothing
+  // to show in the middle, so drop the card entirely (no empty shell).
+  if (actions.length === 0) return null;
 
   return (
     <ActionTaskList
       tasks={actions}
       reorderAction={path.to.changeOrderActionOrder(changeOrderId)}
-      templates={routeData?.requiredActions ?? []}
-      onAdd={onAdd}
-      isAddSubmitting={addFetcher.state !== "idle"}
-      addEmptyMessage={t`No action templates configured. Add them under Change Order Actions.`}
       isDisabled={isDisabled}
       renderItem={(action, dragControls) => (
         <ActionItem
@@ -76,6 +68,60 @@ export default function ChangeOrderActions({
         />
       )}
     />
+  );
+}
+
+// The right-rail "Required Actions" picker — an inline multiselect of the
+// configured templates, mirroring the Quality issue sidebar. Selecting a
+// template instantiates its action task; deselecting removes it (both reconciled
+// by the $id.action route, keyed by the task's actionTypeId).
+function ChangeOrderRequiredActions({
+  changeOrderId,
+  actions,
+  isDisabled
+}: {
+  changeOrderId: string;
+  actions: ChangeOrderActionTask[];
+  isDisabled: boolean;
+}) {
+  const { t } = useLingui();
+  const routeData = useRouteData<{ requiredActions: ListItem[] }>(
+    path.to.changeOrder(changeOrderId)
+  );
+  const fetcher = useFetcher<{ success: boolean }>();
+
+  const selected = actions
+    .map((a) => a.actionTypeId)
+    .filter((id): id is string => Boolean(id));
+
+  return (
+    <ValidatedForm
+      defaultValues={{ requiredActionIds: selected }}
+      validator={z.object({
+        requiredActionIds: z.array(z.string()).optional()
+      })}
+      className="w-full"
+    >
+      <MultiSelect
+        name="requiredActionIds"
+        label={t`Required Actions`}
+        isReadOnly={isDisabled}
+        inline
+        value={selected}
+        options={(routeData?.requiredActions ?? []).map((a) => ({
+          value: a.id,
+          label: a.name
+        }))}
+        onChange={(value) => {
+          const formData = new FormData();
+          formData.append("actionIds", value.map((v) => v.value).join(","));
+          fetcher.submit(formData, {
+            method: "post",
+            action: path.to.changeOrderAction(changeOrderId)
+          });
+        }}
+      />
+    </ValidatedForm>
   );
 }
 
@@ -158,7 +204,13 @@ function ActionItem({
       isDisabled={isDisabled}
       showDragHandle={!isDisabled}
       dragControls={dragControls}
-      statusBadge={<Badge variant="secondary">{status}</Badge>}
+      statusBadge={
+        <ActionTaskStatusButton
+          status={status}
+          onChange={onStatusChange}
+          isDisabled={isDisabled}
+        />
+      }
       headerExtras={
         !isDisabled ? (
           <deleteFetcher.Form

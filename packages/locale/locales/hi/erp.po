@@ -7935,9 +7935,6 @@ msgstr "कोई एक्सेस नहीं"
 msgid "No action needed"
 msgstr "कोई कार्रवाई की आवश्यकता नहीं है"
 
-msgid "No action templates configured. Add them under Change Order Actions."
-msgstr ""
-
 msgid "No actions selected"
 msgstr "कोई क्रिया चयनित नहीं"
 

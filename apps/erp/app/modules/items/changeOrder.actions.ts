@@ -161,10 +161,12 @@ export async function deleteChangeOrderRequiredAction(
   return client.from("changeOrderRequiredAction").delete().eq("id", id);
 }
 
-// Instantiate action tasks from a chosen set of required-action templates (the
-// "Add Actions" modal, mirroring Quality's required-action picker). New rows are
-// appended after any existing tasks.
-export async function addChangeOrderActionTasksFromTemplates(
+// Reconcile a change order's action tasks to a chosen set of required-action
+// templates — the sidebar's editable "Required Actions" multiselect (mirrors
+// Quality's requiredActionIds field). Templates newly selected are instantiated
+// (appended); templates deselected have their task removed. Tasks with no
+// template link (actionTypeId IS NULL) are left untouched.
+export async function setChangeOrderActionTasks(
   client: SupabaseClient<Database>,
   input: {
     changeOrderId: string;
@@ -173,33 +175,55 @@ export async function addChangeOrderActionTasksFromTemplates(
     userId: string;
   }
 ) {
-  if (input.requiredActionIds.length === 0) return { data: null, error: null };
-
-  const templates = await client
-    .from("changeOrderRequiredAction")
-    .select("id, name")
-    .in("id", input.requiredActionIds)
-    .eq("companyId", input.companyId);
-  if (templates.error || !templates.data?.length) return templates;
-
   const existing = await client
     .from("changeOrderActionTask")
-    .select("sortOrder")
+    .select("id, actionTypeId, sortOrder")
     .eq("changeOrderId", input.changeOrderId)
-    .order("sortOrder", { ascending: false })
-    .limit(1);
-  const base = existing.data?.[0]?.sortOrder ?? 0;
+    .eq("companyId", input.companyId);
+  if (existing.error) return existing;
 
-  return client.from("changeOrderActionTask").insert(
-    templates.data.map((template, index) => ({
-      changeOrderId: input.changeOrderId,
-      name: template.name,
-      status: "Pending" as const,
-      sortOrder: base + index + 1,
-      companyId: input.companyId,
-      createdBy: input.userId
-    }))
+  const rows = existing.data ?? [];
+  const desired = new Set(input.requiredActionIds);
+  const linked = new Set(
+    rows.map((r) => r.actionTypeId).filter((id): id is string => Boolean(id))
   );
+
+  const toRemove = rows
+    .filter((r) => r.actionTypeId && !desired.has(r.actionTypeId))
+    .map((r) => r.id);
+  if (toRemove.length > 0) {
+    const del = await client
+      .from("changeOrderActionTask")
+      .delete()
+      .in("id", toRemove);
+    if (del.error) return del;
+  }
+
+  const toAddIds = input.requiredActionIds.filter((id) => !linked.has(id));
+  if (toAddIds.length > 0) {
+    const templates = await client
+      .from("changeOrderRequiredAction")
+      .select("id, name")
+      .in("id", toAddIds)
+      .eq("companyId", input.companyId);
+    if (templates.error) return templates;
+
+    const base = rows.reduce((max, r) => Math.max(max, r.sortOrder ?? 0), 0);
+    const ins = await client.from("changeOrderActionTask").insert(
+      (templates.data ?? []).map((template, index) => ({
+        changeOrderId: input.changeOrderId,
+        actionTypeId: template.id,
+        name: template.name,
+        status: "Pending" as const,
+        sortOrder: base + index + 1,
+        companyId: input.companyId,
+        createdBy: input.userId
+      }))
+    );
+    if (ins.error) return ins;
+  }
+
+  return { data: null, error: null };
 }
 
 // Instantiate one changeOrderActionTask per active template onto a new change
@@ -218,6 +242,7 @@ export async function seedDefaultChangeOrderActions(
   return client.from("changeOrderActionTask").insert(
     templates.data.map((template, index) => ({
       changeOrderId: input.changeOrderId,
+      actionTypeId: template.id,
       name: template.name,
       status: "Pending" as const,
       sortOrder: index + 1,
