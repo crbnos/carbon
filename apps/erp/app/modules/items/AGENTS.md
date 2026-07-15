@@ -59,7 +59,8 @@ pnpm --filter @carbon/erp test
 
 ## Key Service Functions
 
-- `getItem` / `getPart` / `getMaterial` / `getConsumable` / `getTool` — item reads by type (RPCs `get_part_details`, `get_material_details`, etc.)
+- `getItem` / `getPart` / `getMaterial` / `getConsumable` / `getTool` / `getService` — item reads by type (RPCs `get_part_details`, `get_material_details`, `get_service_details`, etc.)
+- `upsertService` — creates/updates a Service item; always `itemTrackingType = 'Non-Inventory'` (never shipped/received/stocked), replenishment `Buy` or `Make` only. The `service` row is keyed by `item.readableId` (like tool/material). Legacy `service.serviceType` is defaulted and no longer read.
 - `upsertMaterial` — creates/updates material with taxonomy FKs and `item`/`material` linkage
 - `getMakeMethods` / `getMethodMaterials` / `getMethodOperations` / `getMethodTreeArray` — BOM/routing reads
 - `copyItem` / `copyMakeMethod` — duplicates via edge function

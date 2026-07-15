@@ -337,6 +337,9 @@ msgstr "Запрос коммерческого предложения прод�
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "Отдельный график для налоговой отчетности, когда налоговые правила требуют метода, отличного от бухгалтерской амортизации."
 
+msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
+msgstr "Услуга — это платная деятельность, которая покупается или выполняется — она никогда не отправляется, не принимается и не хранится на складе"
+
 msgid "A set of companies under one owner that share group-scoped configuration — the chart of accounts, currencies, and dimensions — so the same accounting setup spans every company in the group."
 msgstr "Набор компаний под одним владельцем, которые совместно используют конфигурацию уровня группы — план счетов, валюты и аналитики — так что одна и та же настройка учёта распространяется на каждую компанию в группе."
 
@@ -1597,9 +1600,6 @@ msgstr "Ожидает утверждения"
 msgid "Back"
 msgstr "Назад"
 
-msgid "Back Home"
-msgstr "Вернуться домой"
-
 msgid "Back to traceability"
 msgstr "Вернуться к отслеживанию"
 
@@ -2651,6 +2651,9 @@ msgstr "Скопировать ссылку на деталь"
 msgid "Copy link to procedure"
 msgstr "Скопировать ссылку на процедуру"
 
+msgid "Copy link to service"
+msgstr "Копировать ссылку на услугу"
+
 msgid "Copy link to tool"
 msgstr "Скопировать ссылку на инструмент"
 
@@ -2698,6 +2701,12 @@ msgstr "Копировать предложение"
 
 msgid "Copy Quote number"
 msgstr "Копировать номер предложения"
+
+msgid "Copy service number"
+msgstr "Копировать номер услуги"
+
+msgid "Copy service unique identifier"
+msgstr "Копировать уникальный идентификатор услуги"
 
 msgid "Copy this item's pricing to another scope."
 msgstr "Скопируйте цены этого товара в другую область."
@@ -2995,6 +3004,9 @@ msgstr "Требуемое действие создано"
 
 msgid "Created scrap reason"
 msgstr "Причина брака создана"
+
+msgid "Created service"
+msgstr "Услуга создана"
 
 msgid "Created shipping method"
 msgstr "Способ доставки создан"
@@ -3706,6 +3718,9 @@ msgstr "Удалить заказ продажи"
 msgid "Delete Schedule"
 msgstr "Удалить расписание"
 
+msgid "Delete Service"
+msgstr "Удалить услугу"
+
 msgid "Delete Shift"
 msgstr "Удалить смену"
 
@@ -4382,6 +4397,9 @@ msgstr "Редактировать плановое обслуживание"
 msgid "Edit Sequence"
 msgstr "Редактировать последовательность"
 
+msgid "Edit Service"
+msgstr "Редактировать услугу"
+
 msgid "Edit Shift"
 msgstr "Редактировать смену"
 
@@ -5002,6 +5020,10 @@ msgstr "Не удалось создать условие платежа: {0}"
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create process: {0}"
 msgstr "Ошибка при создании процесса: {0}"
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create service: {0}"
+msgstr "Ошибка при создании услуги: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create shipping method: {0}"
@@ -7658,6 +7680,9 @@ msgstr "Новая строка заказа продажи"
 
 msgid "New Scheduled Maintenance"
 msgstr "Новое плановое обслуживание"
+
+msgid "New Service"
+msgstr "Новая услуга"
 
 msgid "New Shift"
 msgstr "Новая смена"
@@ -10637,11 +10662,17 @@ msgstr "Сборы за услуги"
 msgid "Service Charges (default)"
 msgstr "Сборы за услуги (по умолчанию)"
 
+msgid "Service Details"
+msgstr "Сведения об услуге"
+
 msgid "Service ID"
 msgstr "ID обслуживания"
 
 msgid "services"
 msgstr "услуги"
+
+msgid "Services"
+msgstr "Услуги"
 
 msgid "Set a target"
 msgstr "Установить цель"
@@ -10979,9 +11010,6 @@ msgstr "Инженер решений"
 
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "Некоторые строки, извлеченные из PDF, не удалось автоматически сопоставить с элементами вашего инвентаря. Проверьте и сопоставьте каждую строку ниже."
-
-msgid "Something went wrong"
-msgstr "Что-то пошло не так"
 
 msgid "Something went wrong. Please try again."
 msgstr "Что-то пошло не так. Пожалуйста, попробуйте еще раз."
@@ -13043,6 +13071,9 @@ msgstr "Используйте ... для получения следующег�
 
 msgid "Use ... to get the next part ID"
 msgstr "Используйте ... для получения следующего ID детали"
+
+msgid "Use ... to get the next service ID"
+msgstr "Используйте ... для получения следующего ID услуги"
 
 msgid "Use ... to get the next tool ID"
 msgstr "Используйте ... для получения следующего ID инструмента"

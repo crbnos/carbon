@@ -11,13 +11,15 @@ import {
   getInventoryCountMovements,
   InventoryCountDetails
 } from "~/modules/inventory";
-import type { Handle } from "~/utils/handle";
+import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
-  breadcrumb: msg`Inventory Count`,
-  to: path.to.inventoryCounts
+  breadcrumb: detailBreadcrumb(
+    { breadcrumb: msg`Inventory Count`, to: path.to.inventoryCounts },
+    (data) => data?.inventoryCount?.inventoryCountId
+  )
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

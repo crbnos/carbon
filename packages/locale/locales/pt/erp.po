@@ -337,6 +337,9 @@ msgstr "Um RFQ de venda (um cliente pede para você fazer uma cotação) ou um R
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "Um cronograma separado para fins de declaração de impostos quando as regras fiscais exigem um método diferente da depreciação contábil."
 
+msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
+msgstr "Um serviço é uma atividade faturável que é comprada ou realizada — nunca é enviada, recebida ou armazenada"
+
 msgid "A set of companies under one owner that share group-scoped configuration — the chart of accounts, currencies, and dimensions — so the same accounting setup spans every company in the group."
 msgstr "Um conjunto de empresas sob um mesmo proprietário que compartilham configuração com escopo de grupo — o plano de contas, as moedas e as dimensões — de modo que a mesma configuração contábil abrange todas as empresas do grupo."
 
@@ -1597,9 +1600,6 @@ msgstr "Aguardando aprovação"
 msgid "Back"
 msgstr "Voltar"
 
-msgid "Back Home"
-msgstr "Voltar para casa"
-
 msgid "Back to traceability"
 msgstr "Voltar para rastreabilidade"
 
@@ -2651,6 +2651,9 @@ msgstr "Copiar link da peça"
 msgid "Copy link to procedure"
 msgstr "Copiar link para procedimento"
 
+msgid "Copy link to service"
+msgstr "Copiar link para o serviço"
+
 msgid "Copy link to tool"
 msgstr "Copiar link da ferramenta"
 
@@ -2698,6 +2701,12 @@ msgstr "Copiar Cotação"
 
 msgid "Copy Quote number"
 msgstr "Copiar número da Cotação"
+
+msgid "Copy service number"
+msgstr "Copiar número do serviço"
+
+msgid "Copy service unique identifier"
+msgstr "Copiar identificador exclusivo do serviço"
 
 msgid "Copy this item's pricing to another scope."
 msgstr "Copie o preço deste item para outro escopo."
@@ -2995,6 +3004,9 @@ msgstr "Ação obrigatória criada"
 
 msgid "Created scrap reason"
 msgstr "Motivo de sucata criado"
+
+msgid "Created service"
+msgstr "Serviço criado"
 
 msgid "Created shipping method"
 msgstr "Método de envio criado"
@@ -3706,6 +3718,9 @@ msgstr "Eliminar Pedido de Venda"
 msgid "Delete Schedule"
 msgstr "Eliminar Cronograma"
 
+msgid "Delete Service"
+msgstr "Excluir Serviço"
+
 msgid "Delete Shift"
 msgstr "Eliminar Turno"
 
@@ -4382,6 +4397,9 @@ msgstr "Editar Manutenção Agendada"
 msgid "Edit Sequence"
 msgstr "Editar Sequência"
 
+msgid "Edit Service"
+msgstr "Editar Serviço"
+
 msgid "Edit Shift"
 msgstr "Editar Turno"
 
@@ -5002,6 +5020,10 @@ msgstr "Falha ao criar termo de pagamento: {0}"
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create process: {0}"
 msgstr "Falha ao criar processo: {0}"
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create service: {0}"
+msgstr "Falha ao criar serviço: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create shipping method: {0}"
@@ -7658,6 +7680,9 @@ msgstr "Nova Linha de Pedido de Venda"
 
 msgid "New Scheduled Maintenance"
 msgstr "Nova Manutenção Agendada"
+
+msgid "New Service"
+msgstr "Novo Serviço"
 
 msgid "New Shift"
 msgstr "Novo Turno"
@@ -10637,11 +10662,17 @@ msgstr "Taxas de serviço"
 msgid "Service Charges (default)"
 msgstr "Taxas de serviço (padrão)"
 
+msgid "Service Details"
+msgstr "Detalhes do Serviço"
+
 msgid "Service ID"
 msgstr "ID do Serviço"
 
 msgid "services"
 msgstr "serviços"
+
+msgid "Services"
+msgstr "Serviços"
 
 msgid "Set a target"
 msgstr "Defina uma meta"
@@ -10979,9 +11010,6 @@ msgstr "Engenheiro de Soluções"
 
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "Algumas linhas extraídas do PDF não puderam ser mapeadas automaticamente para seus itens de inventário. Revise e mapeie cada linha abaixo."
-
-msgid "Something went wrong"
-msgstr "Algo deu errado"
 
 msgid "Something went wrong. Please try again."
 msgstr "Algo deu errado. Tente novamente."
@@ -13043,6 +13071,9 @@ msgstr "Use ... to get the next material ID"
 
 msgid "Use ... to get the next part ID"
 msgstr "Use ... to get the next part ID"
+
+msgid "Use ... to get the next service ID"
+msgstr "Use ... para obter o próximo ID do serviço"
 
 msgid "Use ... to get the next tool ID"
 msgstr "Use ... to get the next tool ID"

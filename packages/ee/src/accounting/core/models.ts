@@ -503,7 +503,14 @@ export const ItemSchema = z.object({
   name: z.string(),
   description: withNullable(z.string()),
   companyId: z.string(),
-  type: z.enum(["Part", "Material", "Tool", "Consumable", "Fixture"]),
+  type: z.enum([
+    "Part",
+    "Material",
+    "Tool",
+    "Consumable",
+    "Fixture",
+    "Service"
+  ]),
   unitOfMeasureCode: withNullable(z.string()),
   unitCost: z.number(),
   unitSalePrice: z.number(),

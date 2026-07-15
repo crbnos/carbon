@@ -105,9 +105,6 @@ msgstr "認証エラー"
 msgid "available"
 msgstr "利用可能"
 
-msgid "Back Home"
-msgstr "ホームに戻る"
-
 msgid "Batch"
 msgstr "バッチ"
 
@@ -327,9 +324,6 @@ msgstr "{0} のPINを入力"
 
 msgid "Error"
 msgstr "エラー"
-
-msgid "Error!"
-msgstr "エラー!"
 
 msgid "Estimated"
 msgstr "見積"
@@ -971,9 +965,6 @@ msgstr "{stationName} としてサインイン中"
 
 msgid "Size"
 msgstr "サイズ"
-
-msgid "Something went wrong"
-msgstr "エラーが発生しました"
 
 msgid "Source"
 msgstr "ソース"

@@ -26,12 +26,14 @@ import {
 } from "~/modules/resources";
 import { getTagsList } from "~/modules/shared";
 import type { action } from "~/routes/x+/training+/update";
-import type { Handle } from "~/utils/handle";
+import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { getPrivateUrl, path } from "~/utils/path";
 
 export const handle: Handle = {
-  breadcrumb: msg`Training`,
-  to: path.to.trainings,
+  breadcrumb: detailBreadcrumb(
+    { breadcrumb: msg`Training`, to: path.to.trainings },
+    (data) => data?.training?.name
+  ),
   module: "resources"
 };
 

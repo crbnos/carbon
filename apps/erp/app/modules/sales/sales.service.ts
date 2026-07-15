@@ -56,6 +56,7 @@ import type {
   selectedLinesValidator
 } from "./sales.models";
 import { costCategoryKeys } from "./sales.models";
+import { decideRecalcPricing, getEffectiveDefaultMarkups } from "./sales.utils";
 import type {
   MatchedRule,
   OverrideEntry,
@@ -3839,6 +3840,7 @@ export async function upsertQuoteLinePrices(
     quantity: number;
     createdBy: string;
     categoryMarkups?: Record<string, number>;
+    priceSource?: "system" | "manual";
   }[]
 ) {
   const existingPrices = await client
@@ -3876,6 +3878,7 @@ export async function upsertQuoteLinePrices(
         discountPercent: number;
         leadTime: number;
         categoryMarkups: unknown;
+        priceSource: string;
       }
     >
   >((acc, price) => {
@@ -3897,6 +3900,9 @@ export async function upsertQuoteLinePrices(
       discountPercent: existing?.discountPercent ?? p.discountPercent,
       leadTime: existing?.leadTime ?? p.leadTime,
       categoryMarkups: p.categoryMarkups ?? existing?.categoryMarkups ?? {},
+      // Explicit caller intent wins; otherwise keep the row's provenance so a
+      // delete+reinsert can never turn a manual price back into a system one.
+      priceSource: p.priceSource ?? existing?.priceSource ?? "system",
       quoteId: quoteId,
       exchangeRate: quoteExchangeRate.data?.exchangeRate ?? 1
     };
@@ -4228,6 +4234,7 @@ export async function calculatePricesForQuantities(
   for (const [key, value] of Object.entries(rawMarkups)) {
     defaultMarkups[key] = value * 100;
   }
+  const effectiveDefaults = getEffectiveDefaultMarkups(defaultMarkups);
 
   // 2. Build cost effects
   const result = await buildCostEffects(client, quoteLineId);
@@ -4247,7 +4254,7 @@ export async function calculatePricesForQuantities(
 
     const rollupPrice = costCategoryKeys.reduce((sum, key) => {
       const cost = categoryCosts[key] ?? 0;
-      const markup = defaultMarkups[key] ?? 0;
+      const markup = effectiveDefaults[key] ?? 0;
       return sum + cost * (1 + markup / 100);
     }, 0);
 
@@ -4268,7 +4275,8 @@ export async function calculatePricesForQuantities(
       companyId,
       quantity: qty,
       unitPrice: Number(finalPrice.toFixed(precision)),
-      categoryMarkups: defaultMarkups,
+      categoryMarkups: effectiveDefaults,
+      priceSource: "system",
       exchangeRate,
       createdBy: userId,
       leadTime: 0,
@@ -4479,12 +4487,32 @@ export async function recalculateQuoteLinePrices(
 
   const { effects } = result;
 
-  const updatedRows = [];
+  const effectiveDefaults = getEffectiveDefaultMarkups(defaultMarkups);
+
+  const repricedRows: {
+    quantity: number;
+    unitPrice: number;
+    categoryMarkups: Record<string, number>;
+  }[] = [];
   for (const row of existingPrices.data) {
     const qty = row.quantity;
-    const rowMarkups = (row.categoryMarkups as Record<string, number>) ?? {};
-    const markups =
-      Object.keys(rowMarkups).length > 0 ? rowMarkups : defaultMarkups;
+
+    const decision = decideRecalcPricing(
+      {
+        priceSource: row.priceSource,
+        categoryMarkups: row.categoryMarkups as Record<string, number> | null
+      },
+      effectiveDefaults
+    );
+
+    // Manual price: a person or an external system stated this price.
+    // Leave the row untouched — never re-derive it from costs or defaults
+    // (the core fix).
+    if (decision.mode === "preserve") {
+      continue;
+    }
+
+    const markups = decision.markups;
 
     const categoryCosts: Record<string, number> = {};
     for (const key of costCategoryKeys) {
@@ -4510,42 +4538,35 @@ export async function recalculateQuoteLinePrices(
           ).finalPrice
         : rollupPrice;
 
-    updatedRows.push({
-      quoteId: row.quoteId,
-      quoteLineId: row.quoteLineId,
-      companyId: row.companyId,
-      quantity: row.quantity,
+    repricedRows.push({
+      quantity: qty,
       unitPrice: Number(finalPrice.toFixed(precision)),
-      categoryMarkups: markups,
-      exchangeRate: row.exchangeRate,
-      createdBy: row.createdBy,
-      updatedBy: userId,
-      leadTime: row.leadTime,
-      discountPercent: row.discountPercent
+      categoryMarkups: markups
     });
   }
 
-  // 5. Delete existing and re-insert with updated prices
-  const deleteResult = await client
-    .from("quoteLinePrice")
-    .delete()
-    .eq("quoteLineId", quoteLineId);
+  // 5. Update only the repriced rows in place. Preserved (manual) rows are
+  // not written at all, so no column can be lost or clobbered.
+  for (const row of repricedRows) {
+    const updateResult = await client
+      .from("quoteLinePrice")
+      .update({
+        unitPrice: row.unitPrice,
+        categoryMarkups: row.categoryMarkups,
+        priceSource: "system",
+        updatedBy: userId
+      })
+      .eq("quoteLineId", quoteLineId)
+      .eq("quantity", row.quantity);
 
-  if (deleteResult.error) {
-    logger.error("Failed to delete quote line prices during recalc", {
-      quoteLineId,
-      error: deleteResult.error
-    });
-    return { error: deleteResult.error };
-  }
-
-  const insertResult = await client.from("quoteLinePrice").insert(updatedRows);
-  if (insertResult.error) {
-    logger.error("Failed to insert quote line prices during recalc", {
-      quoteLineId,
-      error: insertResult.error
-    });
-    return { error: insertResult.error };
+    if (updateResult.error) {
+      logger.error("Failed to update quote line price during recalc", {
+        quoteLineId,
+        quantity: row.quantity,
+        error: updateResult.error
+      });
+      return { error: updateResult.error };
+    }
   }
   return { error: null };
 }

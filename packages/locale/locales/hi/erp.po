@@ -337,6 +337,9 @@ msgstr "एक बिक्रय RFQ (एक ग्राहक आपको �
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "कर रिपोर्टिंग के लिए एक अलग अनुसूची जब कर नियम पुस्तक मूल्यह्रास से अलग विधि की आवश्यकता होती है।"
 
+msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
+msgstr "एक सेवा एक बिलयोग्य गतिविधि है जो खरीदी या प्रदर्शन की जाती है — इसे कभी भेजा नहीं जाता, प्राप्त नहीं किया जाता, या स्टॉक नहीं किया जाता"
+
 msgid "A set of companies under one owner that share group-scoped configuration — the chart of accounts, currencies, and dimensions — so the same accounting setup spans every company in the group."
 msgstr "एक ही मालिक के अधीन कंपनियों का समूह जो समूह-स्तरीय कॉन्फ़िगरेशन साझा करती हैं — खातों का चार्ट, मुद्राएँ और आयाम — ताकि वही लेखांकन सेटअप समूह की हर कंपनी पर लागू हो।"
 
@@ -1597,9 +1600,6 @@ msgstr "अनुमोदन की प्रतीक्षा में"
 msgid "Back"
 msgstr "वापस"
 
-msgid "Back Home"
-msgstr "घर वापस"
-
 msgid "Back to traceability"
 msgstr "ट्रेसेबिलिटी पर वापस जाएं"
 
@@ -2651,6 +2651,9 @@ msgstr "भाग के लिए लिंक कॉपी करें"
 msgid "Copy link to procedure"
 msgstr "प्रक्रिया के लिए लिंक कॉपी करें"
 
+msgid "Copy link to service"
+msgstr "सेवा के लिए लिंक कॉपी करें"
+
 msgid "Copy link to tool"
 msgstr "टूल के लिए लिंक कॉपी करें"
 
@@ -2698,6 +2701,12 @@ msgstr "उद्धरण की प्रतिलिपि बनाएँ"
 
 msgid "Copy Quote number"
 msgstr "उद्धरण संख्या कॉपी करें"
+
+msgid "Copy service number"
+msgstr "सेवा संख्या कॉपी करें"
+
+msgid "Copy service unique identifier"
+msgstr "सेवा अनन्य पहचानकर्ता कॉपी करें"
 
 msgid "Copy this item's pricing to another scope."
 msgstr "इस आइटम की मूल्य निर्धारण को दूसरे स्कोप में कॉपी करें।"
@@ -2995,6 +3004,9 @@ msgstr "आवश्यक कार्रवाई बनाई गई"
 
 msgid "Created scrap reason"
 msgstr "स्क्रैप कारण बनाया गया"
+
+msgid "Created service"
+msgstr "सेवा बनाई गई"
 
 msgid "Created shipping method"
 msgstr "शिपिंग विधि बनाई गई"
@@ -3706,6 +3718,9 @@ msgstr "बिक्रय आदेश हटाएं"
 msgid "Delete Schedule"
 msgstr "शेड्यूल हटाएं"
 
+msgid "Delete Service"
+msgstr "सेवा हटाएं"
+
 msgid "Delete Shift"
 msgstr "शिफ्ट हटाएं"
 
@@ -4382,6 +4397,9 @@ msgstr "निर्धारित रखरखाव संपादित क
 msgid "Edit Sequence"
 msgstr "अनुक्रम संपादित करें"
 
+msgid "Edit Service"
+msgstr "सेवा संपादित करें"
+
 msgid "Edit Shift"
 msgstr "शिफ्ट संपादित करें"
 
@@ -5002,6 +5020,10 @@ msgstr "भुगतान शर्त बनाने में विफल: 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create process: {0}"
 msgstr "प्रक्रिया बनाने में विफल: {0}"
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create service: {0}"
+msgstr "सेवा बनाने में विफल: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create shipping method: {0}"
@@ -7658,6 +7680,9 @@ msgstr "नई बिक्रय आदेश पंक्ति"
 
 msgid "New Scheduled Maintenance"
 msgstr "नया निर्धारित रखरखाव"
+
+msgid "New Service"
+msgstr "नई सेवा"
 
 msgid "New Shift"
 msgstr "नई शिफ्ट"
@@ -10637,10 +10662,16 @@ msgstr "सेवा शुल्क"
 msgid "Service Charges (default)"
 msgstr "सेवा शुल्क (डिफ़ॉल्ट)"
 
+msgid "Service Details"
+msgstr "सेवा विवरण"
+
 msgid "Service ID"
 msgstr "सेवा ID"
 
 msgid "services"
+msgstr "सेवाएं"
+
+msgid "Services"
 msgstr "सेवाएं"
 
 msgid "Set a target"
@@ -10979,9 +11010,6 @@ msgstr "समाधान इंजीनियर"
 
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "PDF से निकाली गई कुछ पंक्तियों को आपकी इन्वेंटरी आइटम्स से स्वचालित रूप से मैप नहीं किया जा सका। नीचे प्रत्येक पंक्ति की समीक्षा करें और मैप करें।"
-
-msgid "Something went wrong"
-msgstr "कुछ गलत हो गया"
 
 msgid "Something went wrong. Please try again."
 msgstr "कुछ गलत हो गया। कृपया पुनः प्रयास करें।"
@@ -13043,6 +13071,9 @@ msgstr "अगली सामग्री ID प्राप्त करने
 
 msgid "Use ... to get the next part ID"
 msgstr "अगला पार्ट आईडी प्राप्त करने के लिए ... का उपयोग करें"
+
+msgid "Use ... to get the next service ID"
+msgstr "अगली सेवा ID प्राप्त करने के लिए ... का उपयोग करें"
 
 msgid "Use ... to get the next tool ID"
 msgstr "अगली टूल ID प्राप्त करने के लिए ... का उपयोग करें"

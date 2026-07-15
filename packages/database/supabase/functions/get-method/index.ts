@@ -5166,12 +5166,17 @@ serve(async (req: Request) => {
                   sourceQuotePricingForLine.map((l) => ({
                     quoteId: newQuoteId!,
                     quoteLineId: newLine.id!,
+                    companyId,
                     leadTime: l.leadTime ?? 0,
                     discountPercent: l.discountPercent ?? 0,
                     quantity: l.quantity ?? 0,
                     unitPrice: l.unitPrice ?? 0,
                     shippingCost: l.shippingCost ?? 0,
                     exchangeRate: l.exchangeRate ?? 0,
+                    categoryMarkups: JSON.stringify(l.categoryMarkups ?? {}),
+                    // Copied prices keep their provenance so a manual price
+                    // stays protected on the new quote/revision.
+                    priceSource: l.priceSource ?? "system",
                     createdBy: userId,
                   }))
                 )

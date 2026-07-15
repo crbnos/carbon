@@ -43,8 +43,8 @@ import {
   useUser
 } from "~/hooks";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
-import type { MethodItemType } from "~/modules/shared";
-import { methodItemType } from "~/modules/shared";
+import type { ItemType } from "~/modules/shared";
+import { itemType } from "~/modules/shared";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import { isPurchaseOrderLocked } from "../../purchasing.models";
@@ -66,7 +66,7 @@ export default function PurchaseOrderExplorer() {
 
   const purchaseOrderLineInitialValues = {
     purchaseOrderId: orderId,
-    purchaseOrderLineType: "Item" as MethodItemType,
+    purchaseOrderLineType: "Item" as ItemType,
     purchaseQuantity: 1,
     supplierUnitPrice: 0,
     locationId:
@@ -349,12 +349,13 @@ function PurchaseOrderLineItem({
                   <DropdownMenuIcon icon={<LuTrash />} />
                   <Trans>Delete Line</Trans>
                 </DropdownMenuItem>
-                {/* @ts-expect-error */}
-                {methodItemType.includes(line?.purchaseOrderLineType ?? "") && (
+                {(itemType as readonly string[]).includes(
+                  line?.purchaseOrderLineType ?? ""
+                ) && (
                   <DropdownMenuItem asChild>
                     <Link
                       to={getLinkToItemDetails(
-                        line.purchaseOrderLineType as MethodItemType,
+                        line.purchaseOrderLineType as ItemType,
                         line.itemId!
                       )}
                     >
