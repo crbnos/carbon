@@ -86,6 +86,19 @@ CREATE OR REPLACE FUNCTION get_production_planning(company_id TEXT, location_id 
     "week51" NUMERIC,
     "week52" NUMERIC
   ) AS $$
+BEGIN
+  -- Tenant guard: SECURITY DEFINER bypasses RLS and PostgREST lets any caller
+  -- supply an arbitrary company_id. Require company membership (user JWT or
+  -- API key — get_companies_with_employee_role() covers both) unless the
+  -- caller is service_role (the ERP route uses bypassRls) or a direct
+  -- Postgres connection (edge functions), which are already privileged.
+  IF session_user = 'authenticator' AND COALESCE(auth.role(), '') <> 'service_role' THEN
+    IF NOT (company_id = ANY (COALESCE(get_companies_with_employee_role(), ARRAY[]::text[]))) THEN
+      RAISE EXCEPTION 'Insufficient permissions';
+    END IF;
+  END IF;
+
+  RETURN QUERY
   WITH RECURSIVE
   -- Incoming supply per item/period: received quantities (supplyActual) plus
   -- planned/expected receipts (supplyForecast, e.g. MRP planned orders).
@@ -326,7 +339,7 @@ CREATE OR REPLACE FUNCTION get_production_planning(company_id TEXT, location_id 
         )
       ELSE COALESCE(oq."quantityToOrder", 0)
     END AS "quantityToOrder",
-    ss."supersessionMode" AS "supersessionMode",
+    ss."supersessionMode"::TEXT AS "supersessionMode",
     COALESCE(rsv."minimumReserveQuantity", 0) AS "minimumReserveQuantity",
     MAX(CASE WHEN p."periodId" = periods[1] THEN p."projection" END) AS "week1",
     MAX(CASE WHEN p."periodId" = periods[2] THEN p."projection" END) AS "week2",
@@ -415,4 +428,5 @@ CREATE OR REPLACE FUNCTION get_production_planning(company_id TEXT, location_id 
     ss."supersessionMode",
     rsv."minimumReserveQuantity",
     sup."incomingSupply";
-$$ LANGUAGE sql SECURITY DEFINER;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
