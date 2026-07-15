@@ -72454,6 +72454,8 @@ export type Database = {
         | "Job Close"
         | "Payment"
         | "Memo"
+        | "Inventory Adjustment"
+        | "Inventory Count"
       kanbanOutput: "label" | "qrcode" | "url"
       macrsConvention: "Half-Year" | "Mid-Quarter"
       macrsPropertyClass: "3" | "5" | "7" | "10" | "15" | "20" | "27.5" | "39"
@@ -73811,6 +73813,8 @@ export const Constants = {
         "Job Close",
         "Payment",
         "Memo",
+        "Inventory Adjustment",
+        "Inventory Count",
       ],
       kanbanOutput: ["label", "qrcode", "url"],
       macrsConvention: ["Half-Year", "Mid-Quarter"],
