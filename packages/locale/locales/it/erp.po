@@ -785,9 +785,6 @@ msgstr "Assiemi interessati"
 msgid "Affected item not found."
 msgstr ""
 
-msgid "Affected Items"
-msgstr ""
-
 msgid "After"
 msgstr "Dopo"
 
@@ -1759,9 +1756,6 @@ msgstr "Tracciamento Batch"
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
 msgstr "In fase di eliminazione — successore: <0>{0}</0>"
-
-msgid "Being validated before production."
-msgstr "In corso di convalida prima della produzione."
 
 msgid "Below safety stock"
 msgstr "Sotto stock di sicurezza"
@@ -4004,9 +3998,6 @@ msgstr "Descrizione della Modifica"
 msgid "Description of Issue"
 msgstr "Descrizione del Problema"
 
-msgid "Design"
-msgstr "Progettazione"
-
 msgid "Detail"
 msgstr "Dettagli"
 
@@ -4615,9 +4606,6 @@ msgstr "Modifica Webhook"
 
 msgid "Edit Work Center"
 msgstr "Modifica Centro di Lavoro"
-
-msgid "Editable draft; becomes Production when released."
-msgstr "Bozza modificabile; diventa Produzione quando rilasciata."
 
 msgid "Email"
 msgstr "Email"
@@ -8329,9 +8317,6 @@ msgstr "Numero"
 msgid "Number of inventory units per purchase unit"
 msgstr "Numero di unità di inventario per unità di acquisto"
 
-msgid "Obsolete"
-msgstr "Obsoleto"
-
 msgid "OEE Impact"
 msgstr "Impatto OEE"
 
@@ -9397,9 +9382,6 @@ msgstr "Proteggi la data di go-live"
 msgid "Protect training time and attend"
 msgstr "Proteggi il tempo di formazione e partecipa"
 
-msgid "Prototype"
-msgstr "Prototipo"
-
 msgid "Provide process knowledge and inputs"
 msgstr "Fornisci conoscenze e input del processo"
 
@@ -9963,9 +9945,6 @@ msgstr "Rilascia Commessa"
 
 msgid "Released"
 msgstr "Rilasciato"
-
-msgid "Released and locked; change via a change order."
-msgstr "Rilasciato e bloccato; modificare tramite un ordine di modifica."
 
 msgid "Released revision"
 msgstr "Revisione rilasciata"
@@ -11660,9 +11639,6 @@ msgstr "Domenica"
 
 msgid "Superseded By"
 msgstr "Sostituito da"
-
-msgid "Superseded by a newer revision."
-msgstr "Sostituito da una revisione più recente."
 
 msgid "Supersedes"
 msgstr "Sostituisce"

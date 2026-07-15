@@ -785,9 +785,6 @@ msgstr "Assemblages affectés"
 msgid "Affected item not found."
 msgstr ""
 
-msgid "Affected Items"
-msgstr ""
-
 msgid "After"
 msgstr "Après"
 
@@ -1759,9 +1756,6 @@ msgstr "Suivi par lot"
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
 msgstr "En cours de suppression — successeur : <0>{0}</0>"
-
-msgid "Being validated before production."
-msgstr "En cours de validation avant la production."
 
 msgid "Below safety stock"
 msgstr "Sous stock de sécurité"
@@ -4004,9 +3998,6 @@ msgstr "Description du changement"
 msgid "Description of Issue"
 msgstr "Description du problème"
 
-msgid "Design"
-msgstr "Conception"
-
 msgid "Detail"
 msgstr "Détail"
 
@@ -4615,9 +4606,6 @@ msgstr "Modifier le Webhook"
 
 msgid "Edit Work Center"
 msgstr "Modifier le centre de travail"
-
-msgid "Editable draft; becomes Production when released."
-msgstr "Brouillon modifiable ; devient Production une fois publié."
 
 msgid "Email"
 msgstr "E-mail"
@@ -8329,9 +8317,6 @@ msgstr "Nombre"
 msgid "Number of inventory units per purchase unit"
 msgstr "Nombre d'unités d'inventaire par unité d'achat"
 
-msgid "Obsolete"
-msgstr "Obsolète"
-
 msgid "OEE Impact"
 msgstr "Impact OEE"
 
@@ -9397,9 +9382,6 @@ msgstr "Protéger la date de mise en production"
 msgid "Protect training time and attend"
 msgstr "Protégez le temps de formation et participez"
 
-msgid "Prototype"
-msgstr "Prototype"
-
 msgid "Provide process knowledge and inputs"
 msgstr "Fournir les connaissances et les données du processus"
 
@@ -9963,9 +9945,6 @@ msgstr "Lancer le travail"
 
 msgid "Released"
 msgstr "Libéré"
-
-msgid "Released and locked; change via a change order."
-msgstr "Publiée et verrouillée ; modifiez-la via une demande de modification."
 
 msgid "Released revision"
 msgstr "Révision publiée"
@@ -11660,9 +11639,6 @@ msgstr "Dimanche"
 
 msgid "Superseded By"
 msgstr "Remplacé par"
-
-msgid "Superseded by a newer revision."
-msgstr "Remplacée par une révision plus récente."
 
 msgid "Supersedes"
 msgstr "Remplace"

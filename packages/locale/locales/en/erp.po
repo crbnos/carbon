@@ -785,9 +785,6 @@ msgstr "Affected assemblies"
 msgid "Affected item not found."
 msgstr "Affected item not found."
 
-msgid "Affected Items"
-msgstr "Affected Items"
-
 msgid "After"
 msgstr "After"
 
@@ -1759,9 +1756,6 @@ msgstr "Batch Tracking"
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
 msgstr "Being phased out — successor: <0>{0}</0>"
-
-msgid "Being validated before production."
-msgstr "Being validated before production."
 
 msgid "Below safety stock"
 msgstr "Below safety stock"
@@ -4004,9 +3998,6 @@ msgstr "Description of Change"
 msgid "Description of Issue"
 msgstr "Description of Issue"
 
-msgid "Design"
-msgstr "Design"
-
 msgid "Detail"
 msgstr "Detail"
 
@@ -4615,9 +4606,6 @@ msgstr "Edit Webhook"
 
 msgid "Edit Work Center"
 msgstr "Edit Work Center"
-
-msgid "Editable draft; becomes Production when released."
-msgstr "Editable draft; becomes Production when released."
 
 msgid "Email"
 msgstr "Email"
@@ -8329,9 +8317,6 @@ msgstr "Number"
 msgid "Number of inventory units per purchase unit"
 msgstr "Number of inventory units per purchase unit"
 
-msgid "Obsolete"
-msgstr "Obsolete"
-
 msgid "OEE Impact"
 msgstr "OEE Impact"
 
@@ -9397,9 +9382,6 @@ msgstr "Protect the go-live date"
 msgid "Protect training time and attend"
 msgstr "Protect training time and attend"
 
-msgid "Prototype"
-msgstr "Prototype"
-
 msgid "Provide process knowledge and inputs"
 msgstr "Provide process knowledge and inputs"
 
@@ -9963,9 +9945,6 @@ msgstr "Release Job"
 
 msgid "Released"
 msgstr "Released"
-
-msgid "Released and locked; change via a change order."
-msgstr "Released and locked; change via a change order."
 
 msgid "Released revision"
 msgstr "Released revision"
@@ -11660,9 +11639,6 @@ msgstr "Sunday"
 
 msgid "Superseded By"
 msgstr "Superseded By"
-
-msgid "Superseded by a newer revision."
-msgstr "Superseded by a newer revision."
 
 msgid "Supersedes"
 msgstr "Supersedes"

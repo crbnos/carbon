@@ -30,7 +30,6 @@ import { flattenTree } from "~/components/TreeView";
 import type { ItemFile, PartSummary } from "~/modules/items";
 import {
   getItemFiles,
-  getItemRevisionStatuses,
   getItemSupersededBy,
   getItemSupersession,
   getMakeMethodById,
@@ -146,11 +145,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     makeMethods: getMakeMethods(client, itemId, companyId),
     tags: tags.data ?? [],
     usedIn: getPartUsedIn(client, itemId, companyId),
-    revisionStatusById: await getItemRevisionStatuses(
-      client,
-      itemId,
-      companyId
-    ),
     methodTree
   };
 }
@@ -167,8 +161,7 @@ export default function PartRoute() {
 
   if (!partData) throw new Error("Could not find part data");
 
-  const { usedIn, methodTree, revisionStatusById } =
-    useLoaderData<typeof loader>();
+  const { usedIn, methodTree } = useLoaderData<typeof loader>();
 
   const isManufactured = partData.partSummary?.replenishmentSystem !== "Buy";
 
@@ -374,7 +367,6 @@ export default function PartRoute() {
                                 <UsedInTree
                                   tree={tree}
                                   revisions={partData.partSummary?.revisions}
-                                  revisionStatusById={revisionStatusById}
                                   itemReadableId={
                                     partData.partSummary?.readableId ?? ""
                                   }
@@ -534,7 +526,6 @@ export default function PartRoute() {
                               <UsedInTree
                                 tree={tree}
                                 revisions={partData.partSummary?.revisions}
-                                revisionStatusById={revisionStatusById}
                                 itemReadableId={
                                   partData.partSummary?.readableId ?? ""
                                 }

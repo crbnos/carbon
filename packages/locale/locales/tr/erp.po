@@ -785,9 +785,6 @@ msgstr "Etkilenen montajlar"
 msgid "Affected item not found."
 msgstr ""
 
-msgid "Affected Items"
-msgstr ""
-
 msgid "After"
 msgstr "Sonra"
 
@@ -1759,9 +1756,6 @@ msgstr "Lot Takibi"
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
 msgstr "Aşamalı olarak kaldırılıyor — halef: <0>{0}</0>"
-
-msgid "Being validated before production."
-msgstr "Üretim öncesi doğrulanıyor."
 
 msgid "Below safety stock"
 msgstr "Emniyet stoğunun altında"
@@ -4004,9 +3998,6 @@ msgstr "Değişiklimin Açıklaması"
 msgid "Description of Issue"
 msgstr "Sorun Açıklaması"
 
-msgid "Design"
-msgstr "Tasarım"
-
 msgid "Detail"
 msgstr "Detay"
 
@@ -4615,9 +4606,6 @@ msgstr "Webhook Düzenle"
 
 msgid "Edit Work Center"
 msgstr "İş Merkezi Düzenle"
-
-msgid "Editable draft; becomes Production when released."
-msgstr "Düzenlenebilir taslak; yayınlandığında Üretim olur."
 
 msgid "Email"
 msgstr "E-posta"
@@ -8329,9 +8317,6 @@ msgstr "Numara"
 msgid "Number of inventory units per purchase unit"
 msgstr "Satın alma birimi başına envanter birimi sayısı"
 
-msgid "Obsolete"
-msgstr "Eski"
-
 msgid "OEE Impact"
 msgstr "OEE Etkisi"
 
@@ -9397,9 +9382,6 @@ msgstr "Go-live tarihini koruyun"
 msgid "Protect training time and attend"
 msgstr "Eğitim zamanını koru ve katıl"
 
-msgid "Prototype"
-msgstr "Prototip"
-
 msgid "Provide process knowledge and inputs"
 msgstr "Süreç bilgisi ve girdileri sağlayın"
 
@@ -9963,9 +9945,6 @@ msgstr "İşi Yayınla"
 
 msgid "Released"
 msgstr "Yayınlandı"
-
-msgid "Released and locked; change via a change order."
-msgstr "Yayınlandı ve kilitlendi; bir değişiklik emri aracılığıyla değiştirin."
 
 msgid "Released revision"
 msgstr "Yayınlanan revizyon"
@@ -11660,9 +11639,6 @@ msgstr "Pazar"
 
 msgid "Superseded By"
 msgstr "Yerine Geçirildi"
-
-msgid "Superseded by a newer revision."
-msgstr "Daha yeni bir revizyon tarafından değiştirildi."
 
 msgid "Supersedes"
 msgstr "Yerine Geçer"

@@ -785,9 +785,6 @@ msgstr "Montagens afetadas"
 msgid "Affected item not found."
 msgstr ""
 
-msgid "Affected Items"
-msgstr ""
-
 msgid "After"
 msgstr "Após"
 
@@ -1759,9 +1756,6 @@ msgstr "Rastreamento em Lote"
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
 msgstr "Sendo descontinuado — sucessor: <0>{0}</0>"
-
-msgid "Being validated before production."
-msgstr "Em validação antes da produção."
 
 msgid "Below safety stock"
 msgstr "Abaixo do estoque de segurança"
@@ -4004,9 +3998,6 @@ msgstr "Descrição da Alteração"
 msgid "Description of Issue"
 msgstr "Descrição do Problema"
 
-msgid "Design"
-msgstr "Design"
-
 msgid "Detail"
 msgstr "Detalhe"
 
@@ -4615,9 +4606,6 @@ msgstr "Editar Webhook"
 
 msgid "Edit Work Center"
 msgstr "Editar Centro de Trabalho"
-
-msgid "Editable draft; becomes Production when released."
-msgstr "Rascunho editável; torna-se Produção quando lançado."
 
 msgid "Email"
 msgstr "Email"
@@ -8329,9 +8317,6 @@ msgstr "Número"
 msgid "Number of inventory units per purchase unit"
 msgstr "Número de unidades de inventário por unidade de compra"
 
-msgid "Obsolete"
-msgstr "Obsoleto"
-
 msgid "OEE Impact"
 msgstr "Impacto OEE"
 
@@ -9397,9 +9382,6 @@ msgstr "Proteja a data de ativação"
 msgid "Protect training time and attend"
 msgstr "Proteja o tempo de treinamento e participe"
 
-msgid "Prototype"
-msgstr "Protótipo"
-
 msgid "Provide process knowledge and inputs"
 msgstr "Forneça conhecimento do processo e entradas"
 
@@ -9963,9 +9945,6 @@ msgstr "Liberar Trabalho"
 
 msgid "Released"
 msgstr "Liberado"
-
-msgid "Released and locked; change via a change order."
-msgstr "Lançado e bloqueado; mude através de uma ordem de mudança."
 
 msgid "Released revision"
 msgstr "Revisão lançada"
@@ -11660,9 +11639,6 @@ msgstr "Domingo"
 
 msgid "Superseded By"
 msgstr "Substituído Por"
-
-msgid "Superseded by a newer revision."
-msgstr "Substituído por uma revisão mais recente."
 
 msgid "Supersedes"
 msgstr "Substitui"

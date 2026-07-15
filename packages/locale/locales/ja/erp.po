@@ -785,9 +785,6 @@ msgstr "影響を受けるアセンブリ"
 msgid "Affected item not found."
 msgstr ""
 
-msgid "Affected Items"
-msgstr ""
-
 msgid "After"
 msgstr "後"
 
@@ -1759,9 +1756,6 @@ msgstr "バッチ追跡"
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
 msgstr "段階的に廃止予定 — 後継品: <0>{0}</0>"
-
-msgid "Being validated before production."
-msgstr "本番前の検証中です。"
 
 msgid "Below safety stock"
 msgstr "安全在庫以下"
@@ -4004,9 +3998,6 @@ msgstr "変更の説明"
 msgid "Description of Issue"
 msgstr "問題の説明"
 
-msgid "Design"
-msgstr "設計"
-
 msgid "Detail"
 msgstr "詳細"
 
@@ -4615,9 +4606,6 @@ msgstr "Webhookを編集"
 
 msgid "Edit Work Center"
 msgstr "ワークセンターを編集"
-
-msgid "Editable draft; becomes Production when released."
-msgstr "編集可能なドラフト。リリースされると本番になります。"
 
 msgid "Email"
 msgstr "メール"
@@ -8329,9 +8317,6 @@ msgstr "数字"
 msgid "Number of inventory units per purchase unit"
 msgstr "購買単位あたりの在庫単位数"
 
-msgid "Obsolete"
-msgstr "廃止"
-
 msgid "OEE Impact"
 msgstr "OEE影響"
 
@@ -9397,9 +9382,6 @@ msgstr "ゴーライブ日を保護する"
 msgid "Protect training time and attend"
 msgstr "トレーニング時間を確保して参加する"
 
-msgid "Prototype"
-msgstr "プロトタイプ"
-
 msgid "Provide process knowledge and inputs"
 msgstr "プロセスの知識と入力を提供する"
 
@@ -9963,9 +9945,6 @@ msgstr "ジョブをリリース"
 
 msgid "Released"
 msgstr "リリース済み"
-
-msgid "Released and locked; change via a change order."
-msgstr "リリースされてロックされています。変更指示を通じて変更してください。"
 
 msgid "Released revision"
 msgstr "リリースされたリビジョン"
@@ -11660,9 +11639,6 @@ msgstr "日曜日"
 
 msgid "Superseded By"
 msgstr "置き換えられた"
-
-msgid "Superseded by a newer revision."
-msgstr "より新しいリビジョンで置き換えられました。"
 
 msgid "Supersedes"
 msgstr "置き換える"

@@ -4,7 +4,7 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
-import { HStack, Menubar, VStack } from "@carbon/react";
+import { Menubar, VStack } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { Suspense } from "react";
@@ -35,7 +35,6 @@ import {
   BillOfProcess,
   ItemDocuments,
   ItemNotes,
-  ItemRevisionStatus,
   ItemRiskRegister,
   MakeMethodTools
 } from "~/modules/items/ui/Item";
@@ -235,11 +234,6 @@ export default function ToolDetailsRoute() {
 
   return (
     <VStack spacing={2} className="p-2">
-      {revisionStatus && (
-        <HStack className="w-full justify-end px-2">
-          <ItemRevisionStatus status={revisionStatus} />
-        </HStack>
-      )}
       {permissions.is("employee") && (
         <ItemOpenChangeOrderAlert changeOrders={changeOrders ?? []} />
       )}

@@ -785,9 +785,6 @@ msgstr "प्रभावित असेंबलियां"
 msgid "Affected item not found."
 msgstr ""
 
-msgid "Affected Items"
-msgstr ""
-
 msgid "After"
 msgstr "के बाद"
 
@@ -1759,9 +1756,6 @@ msgstr "बैच ट्रैकिंग"
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
 msgstr "चरणबद्ध रूप से बंद किया जा रहा है — उत्तराधिकारी: <0>{0}</0>"
-
-msgid "Being validated before production."
-msgstr "उत्पादन से पहले मान्य किया जा रहा है।"
 
 msgid "Below safety stock"
 msgstr "सुरक्षा स्टॉक से नीचे"
@@ -4004,9 +3998,6 @@ msgstr "परिवर्तन का विवरण"
 msgid "Description of Issue"
 msgstr "समस्या का विवरण"
 
-msgid "Design"
-msgstr "डिजाइन"
-
 msgid "Detail"
 msgstr "विवरण"
 
@@ -4615,9 +4606,6 @@ msgstr "वेबहुक संपादित करें"
 
 msgid "Edit Work Center"
 msgstr "कार्य केंद्र संपादित करें"
-
-msgid "Editable draft; becomes Production when released."
-msgstr "संपादन योग्य ड्राफ्ट; जारी होने पर उत्पादन बन जाता है।"
 
 msgid "Email"
 msgstr "ईमेल"
@@ -8329,9 +8317,6 @@ msgstr "संख्या"
 msgid "Number of inventory units per purchase unit"
 msgstr "प्रति क्रय इकाई इन्वेंटरी इकाइयों की संख्या"
 
-msgid "Obsolete"
-msgstr "पुरानी"
-
 msgid "OEE Impact"
 msgstr "OEE प्रभाव"
 
@@ -9397,9 +9382,6 @@ msgstr "गो-लाइव की तारीख की सुरक्षा 
 msgid "Protect training time and attend"
 msgstr "प्रशिक्षण समय की सुरक्षा करें और भाग लें"
 
-msgid "Prototype"
-msgstr "प्रोटोटाइप"
-
 msgid "Provide process knowledge and inputs"
 msgstr "प्रक्रिया ज्ञान और इनपुट प्रदान करें"
 
@@ -9963,9 +9945,6 @@ msgstr "जॉब रिलीज़ करें"
 
 msgid "Released"
 msgstr "जारी किया गया"
-
-msgid "Released and locked; change via a change order."
-msgstr "जारी किया गया और लॉक किया गया; एक परिवर्तन आदेश के माध्यम से परिवर्तन करें।"
 
 msgid "Released revision"
 msgstr "जारी किया गया संशोधन"
@@ -11660,9 +11639,6 @@ msgstr "रविवार"
 
 msgid "Superseded By"
 msgstr "द्वारा प्रतिस्थापित"
-
-msgid "Superseded by a newer revision."
-msgstr "एक नए संशोधन द्वारा प्रतिस्थापित।"
 
 msgid "Supersedes"
 msgstr "अधिक्रमण करता है"

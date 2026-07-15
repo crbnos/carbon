@@ -1,6 +1,6 @@
 {
-  "generated": "2026-07-15T12:52:33.895Z",
-  "totalTools": 1338,
+  "generated": "2026-07-15T14:36:01.884Z",
+  "totalTools": 1337,
   "modules": 15,
   "tools": [
     {
@@ -12543,32 +12543,6 @@
       "schema": {
         "type": "object",
         "properties": {}
-      }
-    },
-    {
-      "name": "items_getItemRevisionStatuses",
-      "module": "items",
-      "classification": "READ",
-      "description": "get item revision statuses",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "itemId",
-        "companyId"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "itemId": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "itemId"
-        ]
       }
     },
     {

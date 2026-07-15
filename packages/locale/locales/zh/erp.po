@@ -785,9 +785,6 @@ msgstr "受影响的总成"
 msgid "Affected item not found."
 msgstr ""
 
-msgid "Affected Items"
-msgstr ""
-
 msgid "After"
 msgstr "之后"
 
@@ -1759,9 +1756,6 @@ msgstr "批次追踪"
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
 msgstr "正在逐步淘汰 — 后继产品：<0>{0}</0>"
-
-msgid "Being validated before production."
-msgstr "在生产前进行验证。"
 
 msgid "Below safety stock"
 msgstr "低于安全库存"
@@ -4004,9 +3998,6 @@ msgstr "变更说明"
 msgid "Description of Issue"
 msgstr "问题描述"
 
-msgid "Design"
-msgstr "设计"
-
 msgid "Detail"
 msgstr "详情"
 
@@ -4615,9 +4606,6 @@ msgstr "编辑 Webhook"
 
 msgid "Edit Work Center"
 msgstr "编辑工作中心"
-
-msgid "Editable draft; becomes Production when released."
-msgstr "可编辑的草稿；发布时变为生产版本。"
 
 msgid "Email"
 msgstr "电子邮件"
@@ -8329,9 +8317,6 @@ msgstr "数字"
 msgid "Number of inventory units per purchase unit"
 msgstr "每个采购单位的库存单位数"
 
-msgid "Obsolete"
-msgstr "已过时"
-
 msgid "OEE Impact"
 msgstr "OEE 影响"
 
@@ -9397,9 +9382,6 @@ msgstr "保护上线日期"
 msgid "Protect training time and attend"
 msgstr "保护培训时间并参加"
 
-msgid "Prototype"
-msgstr "原型"
-
 msgid "Provide process knowledge and inputs"
 msgstr "提供流程知识和输入"
 
@@ -9963,9 +9945,6 @@ msgstr "发布工作"
 
 msgid "Released"
 msgstr "已发布"
-
-msgid "Released and locked; change via a change order."
-msgstr "已发布且已锁定；请通过变更单进行变更。"
 
 msgid "Released revision"
 msgstr "已发布的版本"
@@ -11660,9 +11639,6 @@ msgstr "星期日"
 
 msgid "Superseded By"
 msgstr "被替代为"
-
-msgid "Superseded by a newer revision."
-msgstr "已被较新版本取代。"
 
 msgid "Supersedes"
 msgstr "取代"

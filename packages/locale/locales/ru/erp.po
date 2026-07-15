@@ -785,9 +785,6 @@ msgstr "Затронутые сборки"
 msgid "Affected item not found."
 msgstr ""
 
-msgid "Affected Items"
-msgstr ""
-
 msgid "After"
 msgstr "После"
 
@@ -1759,9 +1756,6 @@ msgstr "Отслеживание партий"
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
 msgstr "Снимается с производства — преемник: <0>{0}</0>"
-
-msgid "Being validated before production."
-msgstr "Проходит проверку перед производством."
 
 msgid "Below safety stock"
 msgstr "Ниже страховой запас"
@@ -4004,9 +3998,6 @@ msgstr "Описание изменения"
 msgid "Description of Issue"
 msgstr "Описание проблемы"
 
-msgid "Design"
-msgstr "Конструкция"
-
 msgid "Detail"
 msgstr "Подробности"
 
@@ -4615,9 +4606,6 @@ msgstr "Редактировать Webhook"
 
 msgid "Edit Work Center"
 msgstr "Редактировать рабочий центр"
-
-msgid "Editable draft; becomes Production when released."
-msgstr "Редактируемый черновик; становится производством при выпуске."
 
 msgid "Email"
 msgstr "Электронная почта"
@@ -8329,9 +8317,6 @@ msgstr "Число"
 msgid "Number of inventory units per purchase unit"
 msgstr "Количество единиц запасов на единицу закупки"
 
-msgid "Obsolete"
-msgstr "Устаревший"
-
 msgid "OEE Impact"
 msgstr "Влияние OEE"
 
@@ -9397,9 +9382,6 @@ msgstr "Защитите дату запуска"
 msgid "Protect training time and attend"
 msgstr "Защитите время обучения и участвуйте"
 
-msgid "Prototype"
-msgstr "Прототип"
-
 msgid "Provide process knowledge and inputs"
 msgstr "Предоставить знания о процессе и входные данные"
 
@@ -9963,9 +9945,6 @@ msgstr "Выпустить задание"
 
 msgid "Released"
 msgstr "Выпущено"
-
-msgid "Released and locked; change via a change order."
-msgstr "Выпущено и заблокировано; измените через приказ на изменение."
 
 msgid "Released revision"
 msgstr "Выпущенная версия"
@@ -11660,9 +11639,6 @@ msgstr "Воскресенье"
 
 msgid "Superseded By"
 msgstr "Заменено на"
-
-msgid "Superseded by a newer revision."
-msgstr "Заменена более новой версией."
 
 msgid "Supersedes"
 msgstr "Заменяет"

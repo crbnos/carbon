@@ -1744,34 +1744,6 @@ export async function getItemMpnsList(
   );
 }
 
-// Maps each sibling revision (same readableId + type) to its revisionStatus, so
-// the revision switcher can badge Design/Production/Obsolete without baking the
-// status into the detail RPC's `revisions` JSON. Keyed by item id.
-export async function getItemRevisionStatuses(
-  client: SupabaseClient<Database>,
-  itemId: string,
-  companyId: string
-): Promise<Record<string, string | null>> {
-  const base = await client
-    .from("item")
-    .select("readableId, type")
-    .eq("id", itemId)
-    .eq("companyId", companyId)
-    .single();
-  if (base.error || !base.data) return {};
-
-  const rows = await client
-    .from("item")
-    .select("id, revisionStatus")
-    .eq("readableId", base.data.readableId)
-    .eq("type", base.data.type)
-    .eq("companyId", companyId);
-
-  return Object.fromEntries(
-    (rows.data ?? []).map((r) => [r.id, r.revisionStatus])
-  );
-}
-
 export async function getPartsList(
   client: SupabaseClient<Database>,
   companyId: string

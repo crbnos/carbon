@@ -785,9 +785,6 @@ msgstr "영향받는 어셈블리"
 msgid "Affected item not found."
 msgstr ""
 
-msgid "Affected Items"
-msgstr ""
-
 msgid "After"
 msgstr "이후"
 
@@ -1759,9 +1756,6 @@ msgstr "배치 추적"
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
 msgstr "단계적으로 폐지 중 — 후속: <0>{0}</0>"
-
-msgid "Being validated before production."
-msgstr "생산 전 검증 중입니다."
 
 msgid "Below safety stock"
 msgstr "안전재고 미만"
@@ -4004,9 +3998,6 @@ msgstr "변경 설명"
 msgid "Description of Issue"
 msgstr "이슈 설명"
 
-msgid "Design"
-msgstr "설계"
-
 msgid "Detail"
 msgstr "상세"
 
@@ -4615,9 +4606,6 @@ msgstr "웹훅 수정"
 
 msgid "Edit Work Center"
 msgstr "작업장 수정"
-
-msgid "Editable draft; becomes Production when released."
-msgstr "편집 가능한 초안이며, 출시 시 생산으로 변환됩니다."
 
 msgid "Email"
 msgstr "이메일"
@@ -8329,9 +8317,6 @@ msgstr "번호"
 msgid "Number of inventory units per purchase unit"
 msgstr "구매 단위당 재고 단위 수"
 
-msgid "Obsolete"
-msgstr "폐기됨"
-
 msgid "OEE Impact"
 msgstr "OEE 영향"
 
@@ -9397,9 +9382,6 @@ msgstr "도입일을 사수하세요"
 msgid "Protect training time and attend"
 msgstr "교육 시간을 확보하고 참석하세요"
 
-msgid "Prototype"
-msgstr "프로토타입"
-
 msgid "Provide process knowledge and inputs"
 msgstr "공정 지식과 의견을 제공하세요"
 
@@ -9963,9 +9945,6 @@ msgstr "작업 릴리즈"
 
 msgid "Released"
 msgstr "릴리즈됨"
-
-msgid "Released and locked; change via a change order."
-msgstr "릴리스되고 잠금됨; 변경 주문을 통해 변경하세요."
 
 msgid "Released revision"
 msgstr "릴리스된 리비전"
@@ -11660,9 +11639,6 @@ msgstr "일요일"
 
 msgid "Superseded By"
 msgstr "대체 품목"
-
-msgid "Superseded by a newer revision."
-msgstr "최신 리비전으로 대체됨."
 
 msgid "Supersedes"
 msgstr "대체 대상"

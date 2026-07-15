@@ -785,9 +785,6 @@ msgstr "Ensamblajes afectados"
 msgid "Affected item not found."
 msgstr ""
 
-msgid "Affected Items"
-msgstr ""
-
 msgid "After"
 msgstr "Después"
 
@@ -1759,9 +1756,6 @@ msgstr "Seguimiento de Lotes"
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
 msgstr "Siendo descontinuado — sucesor: <0>{0}</0>"
-
-msgid "Being validated before production."
-msgstr "Siendo validado antes de la producción."
 
 msgid "Below safety stock"
 msgstr "Por debajo del stock de seguridad"
@@ -4004,9 +3998,6 @@ msgstr "Descripción del Cambio"
 msgid "Description of Issue"
 msgstr "Descripción del Problema"
 
-msgid "Design"
-msgstr "Diseño"
-
 msgid "Detail"
 msgstr "Detalle"
 
@@ -4615,9 +4606,6 @@ msgstr "Editar Webhook"
 
 msgid "Edit Work Center"
 msgstr "Editar Centro de Trabajo"
-
-msgid "Editable draft; becomes Production when released."
-msgstr "Borrador editable; se convierte en Producción cuando se libera."
 
 msgid "Email"
 msgstr "Correo electrónico"
@@ -8329,9 +8317,6 @@ msgstr "Número"
 msgid "Number of inventory units per purchase unit"
 msgstr "Número de unidades de inventario por unidad de compra"
 
-msgid "Obsolete"
-msgstr "Obsoleto"
-
 msgid "OEE Impact"
 msgstr "Impacto OEE"
 
@@ -9397,9 +9382,6 @@ msgstr "Proteger la fecha de puesta en marcha"
 msgid "Protect training time and attend"
 msgstr "Protege el tiempo de capacitación y asiste"
 
-msgid "Prototype"
-msgstr "Prototipo"
-
 msgid "Provide process knowledge and inputs"
 msgstr "Proporcionar conocimiento del proceso e información"
 
@@ -9963,9 +9945,6 @@ msgstr "Liberar Trabajo"
 
 msgid "Released"
 msgstr "Liberado"
-
-msgid "Released and locked; change via a change order."
-msgstr "Lanzado y bloqueado; cambia mediante una orden de cambio."
 
 msgid "Released revision"
 msgstr "Revisión lanzada"
@@ -11660,9 +11639,6 @@ msgstr "Domingo"
 
 msgid "Superseded By"
 msgstr "Reemplazado por"
-
-msgid "Superseded by a newer revision."
-msgstr "Reemplazado por una revisión más nueva."
 
 msgid "Supersedes"
 msgstr "Reemplaza"
