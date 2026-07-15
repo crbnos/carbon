@@ -509,6 +509,7 @@ function SplitLineModal({
   const hasMultipleEntities = target.links.length > 1;
 
   const [selected, setSelected] = useState<Record<string, boolean>>({});
+  const [splitQty, setSplitQty] = useState(1);
 
   const selectedAssignments = target.links
     .filter((l) => selected[l.trackedEntityId])
@@ -521,11 +522,15 @@ function SplitLineModal({
     (acc, a) => acc + a.quantity,
     0
   );
+  // The split-off portion must leave something on the original row, so it has
+  // to be a whole positive quantity strictly less than the current quantity.
+  const splitQtyValid =
+    Number.isFinite(splitQty) && splitQty >= 1 && splitQty < target.maxQuantity;
   const canSubmit = hasMultipleEntities
     ? selectedAssignments.length > 0 &&
       selectedSum > 0 &&
       selectedSum < target.maxQuantity
-    : true;
+    : splitQtyValid;
 
   return (
     <Modal
@@ -616,8 +621,16 @@ function SplitLineModal({
                   label={t`Split off quantity`}
                   minValue={1}
                   maxValue={target.maxQuantity - 1}
+                  onChange={setSplitQty}
                   helperText={t`Remaining after split stays on the original row.`}
                 />
+              )}
+              {!hasMultipleEntities && !splitQtyValid && (
+                <p className="text-xs text-destructive-foreground">
+                  <Trans>
+                    Enter a quantity between 1 and {target.maxQuantity - 1}.
+                  </Trans>
+                </p>
               )}
             </div>
           </ModalBody>
