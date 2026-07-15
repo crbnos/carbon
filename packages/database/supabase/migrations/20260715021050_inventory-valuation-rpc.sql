@@ -31,6 +31,7 @@ RETURNS TABLE (
   "itemId" TEXT,
   "readableIdWithRevision" TEXT,
   "name" TEXT,
+  "thumbnailPath" TEXT,
   "type" "itemType",
   "replenishmentSystem" "itemReplenishmentSystem",
   "unitOfMeasureCode" TEXT,
@@ -143,6 +144,10 @@ BEGIN
     i."id" AS "itemId",
     i."readableIdWithRevision",
     i."name",
+    CASE
+      WHEN i."thumbnailPath" IS NULL AND mu."thumbnailPath" IS NOT NULL THEN mu."thumbnailPath"
+      ELSE i."thumbnailPath"
+    END AS "thumbnailPath",
     i."type",
     i."replenishmentSystem",
     i."unitOfMeasureCode",
@@ -155,6 +160,7 @@ BEGIN
   FROM quantities q
   INNER JOIN "item" i ON q."itemId" = i."id" AND i."companyId" = company_id
   INNER JOIN "location" l ON q."locationId" = l."id"
+  LEFT JOIN "modelUpload" mu ON mu."id" = i."modelUploadId"
   LEFT JOIN carrying c ON c."itemId" = q."itemId"
   ORDER BY l."name", i."readableIdWithRevision";
 END;

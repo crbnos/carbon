@@ -6249,6 +6249,9 @@ msgstr "इन्वेंटरी इतिहास"
 msgid "Inventory Job Notifications"
 msgstr "इन्वेंटरी जॉब नोटिफिकेशन"
 
+msgid "Inventory Movements"
+msgstr "इन्वेंटरी मूवमेंट्स"
+
 msgid "Inventory Qty"
 msgstr "इन्वेंटरी मात्रा"
 
@@ -7376,6 +7379,9 @@ msgstr "ट्रैश में स्थानांतरित करें
 #. placeholder {1}: targetBucket === "parts" ? "Parts" : "Opportunity"
 msgid "Moved {0} to {1} bucket"
 msgstr "{0} को {1} बकेट में स्थानांतरित किया गया"
+
+msgid "Movements"
+msgstr "मूवमेंट्स"
 
 msgid "MRP (planning)"
 msgstr "MRP (योजना)"
@@ -11160,9 +11166,6 @@ msgstr "कदम"
 
 msgid "Steps"
 msgstr "चरण"
-
-msgid "Stock Movements"
-msgstr "स्टॉक मूवमेंट्स"
 
 msgid "Stock Transfer ID"
 msgstr "स्टॉक ट्रांसफर आईडी"

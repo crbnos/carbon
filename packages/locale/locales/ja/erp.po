@@ -6249,6 +6249,9 @@ msgstr "在庫履歴"
 msgid "Inventory Job Notifications"
 msgstr "在庫ジョブ通知"
 
+msgid "Inventory Movements"
+msgstr "在庫移動"
+
 msgid "Inventory Qty"
 msgstr "在庫数量"
 
@@ -7376,6 +7379,9 @@ msgstr "ゴミ箱に移動"
 #. placeholder {1}: targetBucket === "parts" ? "Parts" : "Opportunity"
 msgid "Moved {0} to {1} bucket"
 msgstr "{0}を{1}バケットに移動しました"
+
+msgid "Movements"
+msgstr "移動"
 
 msgid "MRP (planning)"
 msgstr "MRP (計画)"
@@ -11160,9 +11166,6 @@ msgstr "ステップ"
 
 msgid "Steps"
 msgstr "ステップ"
-
-msgid "Stock Movements"
-msgstr "在庫移動"
 
 msgid "Stock Transfer ID"
 msgstr "在庫移動ID"

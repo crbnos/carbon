@@ -6249,6 +6249,9 @@ msgstr "Bestandsverlauf"
 msgid "Inventory Job Notifications"
 msgstr "Bestandsverwaltungs-Jobbenachrichtigungen"
 
+msgid "Inventory Movements"
+msgstr "Bestandsbewegungen"
+
 msgid "Inventory Qty"
 msgstr "Bestandsmenge"
 
@@ -7376,6 +7379,9 @@ msgstr "In den Papierkorb verschieben"
 #. placeholder {1}: targetBucket === "parts" ? "Parts" : "Opportunity"
 msgid "Moved {0} to {1} bucket"
 msgstr "Verschoben {0} zu {1} Bucket"
+
+msgid "Movements"
+msgstr "Bewegungen"
 
 msgid "MRP (planning)"
 msgstr "MRP (Planung)"
@@ -11160,9 +11166,6 @@ msgstr "Schritte"
 
 msgid "Steps"
 msgstr "Schritte"
-
-msgid "Stock Movements"
-msgstr "Lagerbewegungen"
 
 msgid "Stock Transfer ID"
 msgstr "Lagerbestandstransfer-ID"

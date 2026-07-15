@@ -6249,6 +6249,9 @@ msgstr "库存历史"
 msgid "Inventory Job Notifications"
 msgstr "库存工作通知"
 
+msgid "Inventory Movements"
+msgstr "库存移动"
+
 msgid "Inventory Qty"
 msgstr "库存数量"
 
@@ -7376,6 +7379,9 @@ msgstr "移至垃圾箱"
 #. placeholder {1}: targetBucket === "parts" ? "Parts" : "Opportunity"
 msgid "Moved {0} to {1} bucket"
 msgstr "已将 {0} 移至 {1} 存储桶"
+
+msgid "Movements"
+msgstr "移动"
 
 msgid "MRP (planning)"
 msgstr "MRP (计划)"
@@ -11160,9 +11166,6 @@ msgstr "步骤"
 
 msgid "Steps"
 msgstr "步骤"
-
-msgid "Stock Movements"
-msgstr "库存移动"
 
 msgid "Stock Transfer ID"
 msgstr "库存转移ID"

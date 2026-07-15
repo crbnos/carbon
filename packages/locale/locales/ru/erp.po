@@ -6249,6 +6249,9 @@ msgstr "История инвентаря"
 msgid "Inventory Job Notifications"
 msgstr "Уведомления о завершении работ по инвентаризации"
 
+msgid "Inventory Movements"
+msgstr "Движения по товарно-материальным ценностям"
+
 msgid "Inventory Qty"
 msgstr "Кол-во в инвентаре"
 
@@ -7376,6 +7379,9 @@ msgstr "Переместить в корзину"
 #. placeholder {1}: targetBucket === "parts" ? "Parts" : "Opportunity"
 msgid "Moved {0} to {1} bucket"
 msgstr "Перемещено {0} в хранилище {1}"
+
+msgid "Movements"
+msgstr "Движения"
 
 msgid "MRP (planning)"
 msgstr "MRP (планирование)"
@@ -11160,9 +11166,6 @@ msgstr "шаги"
 
 msgid "Steps"
 msgstr "Шаги"
-
-msgid "Stock Movements"
-msgstr "Движения запасов"
 
 msgid "Stock Transfer ID"
 msgstr "ID передачи запасов"

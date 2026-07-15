@@ -77,18 +77,18 @@ export default function useInventorySubmodules() {
           icon: <LuScanQrCode />
         },
         {
+          name: t`Movements`,
+          to: path.to.stockMovements,
+          role: "employee",
+          icon: <LuArrowDownUp />,
+          table: "itemLedger"
+        },
+        {
           name: t`Quantities`,
           to: path.to.inventory,
           role: "employee",
           icon: <LuTally5 />,
           table: "inventory"
-        },
-        {
-          name: t`Stock Movements`,
-          to: path.to.stockMovements,
-          role: "employee",
-          icon: <LuArrowDownUp />,
-          table: "itemLedger"
         },
         {
           name: t`Tracked Entities`,

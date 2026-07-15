@@ -6249,6 +6249,9 @@ msgstr "재고 이력"
 msgid "Inventory Job Notifications"
 msgstr "재고 작업 알림"
 
+msgid "Inventory Movements"
+msgstr "재고 이동"
+
 msgid "Inventory Qty"
 msgstr "재고 수량"
 
@@ -7376,6 +7379,9 @@ msgstr "휴지통으로 이동"
 #. placeholder {1}: targetBucket === "parts" ? "Parts" : "Opportunity"
 msgid "Moved {0} to {1} bucket"
 msgstr "{0}을(를) {1} 버킷으로 이동함"
+
+msgid "Movements"
+msgstr "이동"
 
 msgid "MRP (planning)"
 msgstr "MRP(계획)"
@@ -11160,9 +11166,6 @@ msgstr "단계"
 
 msgid "Steps"
 msgstr "단계"
-
-msgid "Stock Movements"
-msgstr "재고 이동"
 
 msgid "Stock Transfer ID"
 msgstr "재고 이동 ID"

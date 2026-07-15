@@ -70469,6 +70469,7 @@ export type Database = {
           quantityRejected: number
           readableIdWithRevision: string
           replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
+          thumbnailPath: string
           totalValue: number
           type: Database["public"]["Enums"]["itemType"]
           unitCost: number

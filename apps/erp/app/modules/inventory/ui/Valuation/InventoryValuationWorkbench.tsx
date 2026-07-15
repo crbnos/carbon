@@ -2,16 +2,16 @@ import {
   Button,
   cn,
   DatePicker,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
   HStack,
   Popover,
   PopoverContent,
   PopoverHeader,
   PopoverTrigger,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   VStack
 } from "@carbon/react";
 import { parseDate } from "@internationalized/date";
@@ -25,9 +25,9 @@ import {
   LuScale,
   LuTriangleAlert
 } from "react-icons/lu";
-import { Link } from "react-router";
-import { Table } from "~/components";
+import { Hyperlink, ItemThumbnail, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import {
   useCurrencyFormatter,
   usePercentFormatter,
@@ -56,6 +56,12 @@ type ValuationRow =
       kind: "group";
       id: string;
       label: string;
+      // Set when grouping by item — renders the standard ItemThumbnail +
+      // stacked readableId/name cell (InventoryTable precedent).
+      item?: Pick<
+        InventoryValuationRow,
+        "itemId" | "readableIdWithRevision" | "name" | "thumbnailPath" | "type"
+      >;
       quantityOnHand: number;
       quantityOnHold: number;
       quantityRejected: number;
@@ -85,6 +91,7 @@ export function InventoryValuationWorkbench({
   const [, setParams] = useUrlParams();
   const currencyFormatter = useCurrencyFormatter();
   const percentFormatter = usePercentFormatter();
+  const unitOfMeasures = useUnitOfMeasure();
 
   const money = useCallback(
     (n: number) => currencyFormatter.format(Number(n)),
@@ -122,6 +129,16 @@ export function InventoryValuationWorkbench({
       kind: "group" as const,
       id,
       label,
+      item:
+        groupBy === "item" && children[0]
+          ? {
+              itemId: children[0].itemId,
+              readableIdWithRevision: children[0].readableIdWithRevision,
+              name: children[0].name,
+              thumbnailPath: children[0].thumbnailPath,
+              type: children[0].type
+            }
+          : undefined,
       quantityOnHand: children.reduce(
         (s, c) => s + Number(c.quantityOnHand),
         0
@@ -229,7 +246,28 @@ export function InventoryValuationWorkbench({
                     </button>
                   ) : null}
                 </div>
-                <span className="font-semibold">{r.label}</span>
+                {r.item ? (
+                  <HStack className="py-1">
+                    <ItemThumbnail
+                      size="sm"
+                      thumbnailPath={r.item.thumbnailPath}
+                      // @ts-expect-error
+                      type={r.item.type}
+                    />
+                    <Hyperlink
+                      to={path.to.inventoryItemActivity(r.item.itemId)}
+                    >
+                      <VStack spacing={0}>
+                        {r.item.readableIdWithRevision}
+                        <div className="w-full truncate text-muted-foreground text-xs">
+                          {r.item.name}
+                        </div>
+                      </VStack>
+                    </Hyperlink>
+                  </HStack>
+                ) : (
+                  <span className="font-semibold">{r.label}</span>
+                )}
               </div>
             );
           }
@@ -241,14 +279,24 @@ export function InventoryValuationWorkbench({
               />
               <div className="flex items-center gap-2 pl-2 py-1">
                 {groupBy === "location" ? (
-                  <Link
-                    to={path.to.inventoryItemActivity(r.itemId)}
-                    className="text-foreground/90 hover:underline"
-                  >
-                    {detailLabel(r)}
-                  </Link>
+                  <HStack className="py-1">
+                    <ItemThumbnail
+                      size="sm"
+                      thumbnailPath={r.thumbnailPath}
+                      // @ts-expect-error
+                      type={r.type}
+                    />
+                    <Hyperlink to={path.to.inventoryItemActivity(r.itemId)}>
+                      <VStack spacing={0}>
+                        {r.readableIdWithRevision}
+                        <div className="w-full truncate text-muted-foreground text-xs">
+                          {r.name}
+                        </div>
+                      </VStack>
+                    </Hyperlink>
+                  </HStack>
                 ) : (
-                  <span className="text-foreground/90">{detailLabel(r)}</span>
+                  <Enumerable value={r.locationName} />
                 )}
               </div>
             </div>
@@ -316,14 +364,24 @@ export function InventoryValuationWorkbench({
       },
       {
         id: "uom",
-        header: t`UoM`,
-        cell: ({ row }) =>
-          row.original.kind === "detail"
-            ? row.original.unitOfMeasureCode
-            : null,
+        header: t`Unit of Measure`,
+        cell: ({ row }) => {
+          const r = row.original;
+          if (r.kind !== "detail") return null;
+          const unitOfMeasure = unitOfMeasures.find(
+            (uom) => uom.value === r.unitOfMeasureCode
+          );
+          return (
+            <Enumerable value={unitOfMeasure?.label ?? r.unitOfMeasureCode} />
+          );
+        },
         meta: {
           exportValue: (row: ValuationRow) =>
-            row.kind === "detail" ? row.unitOfMeasureCode : null
+            row.kind === "detail"
+              ? (unitOfMeasures.find(
+                  (uom) => uom.value === row.unitOfMeasureCode
+                )?.label ?? row.unitOfMeasureCode)
+              : null
         }
       },
       {
@@ -381,7 +439,8 @@ export function InventoryValuationWorkbench({
     detailLabel,
     money,
     quantity,
-    percentFormatter
+    percentFormatter,
+    unitOfMeasures
   ]);
 
   const hasVariance = (tieOut ?? []).some(
@@ -486,42 +545,61 @@ export function InventoryValuationWorkbench({
           </PopoverContent>
         </Popover>
       ) : null}
-      <Select
-        value={groupBy}
-        onValueChange={(value) => setParams({ groupBy: value })}
-      >
-        <SelectTrigger size="sm" className="w-[160px]">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="location">
-            <Trans>By Location</Trans>
-          </SelectItem>
-          <SelectItem value="item">
-            <Trans>By Item</Trans>
-          </SelectItem>
-        </SelectContent>
-      </Select>
-      <Select
-        value={locationId ?? "all"}
-        onValueChange={(value) =>
-          setParams({ locationId: value === "all" ? undefined : value })
-        }
-      >
-        <SelectTrigger size="sm" className="w-[180px]">
-          <SelectValue placeholder={t`All Locations`} />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">
-            <Trans>All Locations</Trans>
-          </SelectItem>
-          {locations.map((location) => (
-            <SelectItem key={location.id} value={location.id}>
-              {location.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="secondary" rightIcon={<LuChevronDown />}>
+            {groupBy === "location" ? (
+              <Trans>By Location</Trans>
+            ) : (
+              <Trans>By Item</Trans>
+            )}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-48">
+          <DropdownMenuRadioGroup value={groupBy}>
+            <DropdownMenuRadioItem
+              value="location"
+              onClick={() => setParams({ groupBy: "location" })}
+            >
+              <Trans>By Location</Trans>
+            </DropdownMenuRadioItem>
+            <DropdownMenuRadioItem
+              value="item"
+              onClick={() => setParams({ groupBy: "item" })}
+            >
+              <Trans>By Item</Trans>
+            </DropdownMenuRadioItem>
+          </DropdownMenuRadioGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="secondary" rightIcon={<LuChevronDown />}>
+            {locations.find((location) => location.id === locationId)?.name ?? (
+              <Trans>All Locations</Trans>
+            )}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-48">
+          <DropdownMenuRadioGroup value={locationId ?? "all"}>
+            <DropdownMenuRadioItem
+              value="all"
+              onClick={() => setParams({ locationId: undefined })}
+            >
+              <Trans>All Locations</Trans>
+            </DropdownMenuRadioItem>
+            {locations.map((location) => (
+              <DropdownMenuRadioItem
+                key={location.id}
+                value={location.id}
+                onClick={() => setParams({ locationId: location.id })}
+              >
+                {location.name}
+              </DropdownMenuRadioItem>
+            ))}
+          </DropdownMenuRadioGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
       <span className="text-sm text-muted-foreground whitespace-nowrap">
         <Trans>As of:</Trans>
       </span>

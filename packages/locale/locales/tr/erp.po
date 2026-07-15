@@ -6249,6 +6249,9 @@ msgstr "Envanter Geçmişi"
 msgid "Inventory Job Notifications"
 msgstr "Envanter İş Bildirimleri"
 
+msgid "Inventory Movements"
+msgstr "Envanter Hareketleri"
+
 msgid "Inventory Qty"
 msgstr "Stok Miktarı"
 
@@ -7376,6 +7379,9 @@ msgstr "Çöp Sepetine Taşı"
 #. placeholder {1}: targetBucket === "parts" ? "Parts" : "Opportunity"
 msgid "Moved {0} to {1} bucket"
 msgstr "{0} dosyası {1} klasörüne taşındı"
+
+msgid "Movements"
+msgstr "Hareketler"
 
 msgid "MRP (planning)"
 msgstr "MRP (planlama)"
@@ -11160,9 +11166,6 @@ msgstr "adımlar"
 
 msgid "Steps"
 msgstr "Adımlar"
-
-msgid "Stock Movements"
-msgstr "Stok Hareketleri"
 
 msgid "Stock Transfer ID"
 msgstr "Stok Transfer Kimliği"
