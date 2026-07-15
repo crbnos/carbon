@@ -8763,6 +8763,9 @@ msgstr "零件ID"
 msgid "Part is configured for manufacturing"
 msgstr "零件已配置用于制造"
 
+msgid "Part Number"
+msgstr ""
+
 msgid "Part or Tool"
 msgstr ""
 

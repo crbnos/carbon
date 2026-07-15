@@ -204,6 +204,7 @@ export default function AffectedItemDetail({
                 {affected.partData ? (
                   <PartProperties
                     embedded
+                    layout="form"
                     section="properties"
                     data={affected.partData}
                   />

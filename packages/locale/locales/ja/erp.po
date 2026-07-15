@@ -8763,6 +8763,9 @@ msgstr "部品ID"
 msgid "Part is configured for manufacturing"
 msgstr "部品は製造用に構成されています"
 
+msgid "Part Number"
+msgstr ""
+
 msgid "Part or Tool"
 msgstr ""
 

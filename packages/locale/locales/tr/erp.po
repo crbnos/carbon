@@ -8763,6 +8763,9 @@ msgstr "Parça Kimliği"
 msgid "Part is configured for manufacturing"
 msgstr "Parça üretim için yapılandırılmış"
 
+msgid "Part Number"
+msgstr ""
+
 msgid "Part or Tool"
 msgstr ""
 

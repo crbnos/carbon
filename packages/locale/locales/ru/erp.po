@@ -8763,6 +8763,9 @@ msgstr "ID детали"
 msgid "Part is configured for manufacturing"
 msgstr "Деталь настроена для производства"
 
+msgid "Part Number"
+msgstr ""
+
 msgid "Part or Tool"
 msgstr ""
 

@@ -8763,6 +8763,9 @@ msgstr "품목 ID"
 msgid "Part is configured for manufacturing"
 msgstr "제조용으로 설정된 품목입니다"
 
+msgid "Part Number"
+msgstr ""
+
 msgid "Part or Tool"
 msgstr ""
 

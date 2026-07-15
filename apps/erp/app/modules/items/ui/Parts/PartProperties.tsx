@@ -74,13 +74,21 @@ type PartPropertiesProps = {
   // "properties" omits the image + files; "files" shows only the image + files.
   // Lets a caller (the CO card) split the panel across tabs.
   section?: "all" | "properties" | "files";
+  // Field presentation. "sidebar" (default) = the compact inline click-to-edit
+  // rows of the part detail sidebar. "form" = standard labeled form fields (used
+  // by the CO card). Only affects presentation — persistence is unchanged.
+  layout?: "sidebar" | "form";
 };
 
 const PartProperties = ({
   data,
   embedded,
-  section = "all"
+  section = "all",
+  layout = "sidebar"
 }: PartPropertiesProps) => {
+  // Inline click-to-edit only in the sidebar layout; the form layout renders
+  // each field as a standard labeled control.
+  const inlineLayout = layout === "sidebar";
   const { t } = useLingui();
   const params = useParams();
   const itemId = data?.itemId ?? params.itemId;
@@ -368,9 +376,9 @@ const PartProperties = ({
           >
             <span className="text-sm">
               <InputControlled
-                label=""
+                label={layout === "form" ? t`Part Number` : ""}
                 name="partId"
-                inline
+                inline={inlineLayout}
                 size="sm"
                 value={routeData?.partSummary?.readableId ?? ""}
                 onBlur={(e) => {
@@ -391,9 +399,9 @@ const PartProperties = ({
           >
             <span className="text-xs text-muted-foreground">
               <InputControlled
-                label=""
+                label={layout === "form" ? t`Name` : ""}
                 name="name"
-                inline
+                inline={inlineLayout}
                 size="sm"
                 characterLimit={40}
                 value={routeData?.partSummary?.name ?? ""}
@@ -431,7 +439,7 @@ const PartProperties = ({
         <ItemPostingGroup
           label={t`Item Group`}
           name="itemPostingGroupId"
-          inline
+          inline={inlineLayout}
           isClearable
           onChange={(value) => {
             onUpdate("itemPostingGroupId", value?.value ?? null);
@@ -453,18 +461,22 @@ const PartProperties = ({
           name="replenishmentSystem"
           label={t`Replenishment`}
           termId="replenishment-system"
-          inline={(value) => (
-            <Badge variant="secondary">
-              <ReplenishmentSystemIcon type={value} className="mr-2" />
-              <span>
-                {value === "Buy"
-                  ? t`Buy`
-                  : value === "Make"
-                    ? t`Make`
-                    : t`Buy and Make`}
-              </span>
-            </Badge>
-          )}
+          inline={
+            inlineLayout
+              ? (value) => (
+                  <Badge variant="secondary">
+                    <ReplenishmentSystemIcon type={value} className="mr-2" />
+                    <span>
+                      {value === "Buy"
+                        ? t`Buy`
+                        : value === "Make"
+                          ? t`Make`
+                          : t`Buy and Make`}
+                    </span>
+                  </Badge>
+                )
+              : undefined
+          }
           options={itemReplenishmentSystems.map((system) => ({
             value: system,
             label: (
@@ -498,20 +510,24 @@ const PartProperties = ({
           name="itemTrackingType"
           label={t`Tracking Type`}
           termId="item-tracking-type"
-          inline={(value) => (
-            <Badge variant="secondary">
-              <TrackingTypeIcon type={value} className="mr-2" />
-              <span>
-                {value === "Inventory"
-                  ? t`Inventory`
-                  : value === "Non-Inventory"
-                    ? t`Non-Inventory`
-                    : value === "Serial"
-                      ? t`Serial`
-                      : t`Batch`}
-              </span>
-            </Badge>
-          )}
+          inline={
+            inlineLayout
+              ? (value) => (
+                  <Badge variant="secondary">
+                    <TrackingTypeIcon type={value} className="mr-2" />
+                    <span>
+                      {value === "Inventory"
+                        ? t`Inventory`
+                        : value === "Non-Inventory"
+                          ? t`Non-Inventory`
+                          : value === "Serial"
+                            ? t`Serial`
+                            : t`Batch`}
+                    </span>
+                  </Badge>
+                )
+              : undefined
+          }
           options={itemTrackingTypes.map((type) => ({
             value: type,
             label: (
@@ -547,18 +563,22 @@ const PartProperties = ({
           name="defaultMethodType"
           label={t`Default Method Type`}
           termId="item-default-method-type"
-          inline={(value) => (
-            <Badge variant="secondary">
-              <MethodIcon type={value} className="mr-2" />
-              <span>
-                {value === "Purchase to Order"
-                  ? t`Purchase to Order`
-                  : value === "Pull from Inventory"
-                    ? t`Pull from Inventory`
-                    : t`Make to Order`}
-              </span>
-            </Badge>
-          )}
+          inline={
+            inlineLayout
+              ? (value) => (
+                  <Badge variant="secondary">
+                    <MethodIcon type={value} className="mr-2" />
+                    <span>
+                      {value === "Purchase to Order"
+                        ? t`Purchase to Order`
+                        : value === "Pull from Inventory"
+                          ? t`Pull from Inventory`
+                          : t`Make to Order`}
+                    </span>
+                  </Badge>
+                )
+              : undefined
+          }
           options={methodType
             .filter((type) => {
               const replenishment = routeData?.partSummary?.replenishmentSystem;
@@ -606,7 +626,7 @@ const PartProperties = ({
         <UnitOfMeasure
           label={t`Unit of Measure`}
           name="unitOfMeasureCode"
-          inline
+          inline={inlineLayout}
           onChange={(value) => {
             onUpdate("unitOfMeasureCode", value?.value ?? null);
           }}
@@ -724,7 +744,7 @@ const PartProperties = ({
           <InputControlled
             label={t`Manufacturer Part Number`}
             name="mpn"
-            inline
+            inline={inlineLayout}
             size="sm"
             value={routeData?.partSummary?.mpn ?? ""}
             onBlur={(e) => {
