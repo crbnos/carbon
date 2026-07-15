@@ -130,7 +130,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       selectedCompanyId!,
       parentCurrency,
       periodEnd,
-      startDate ?? undefined
+      startDate ?? undefined,
+      balances.data ?? []
     );
 
     if (translation.data) {

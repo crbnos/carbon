@@ -10,69 +10,47 @@ const Popover = ({ children }: PropsWithChildren) => {
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
-    /* Build a triple linked-list (TreeNode[]) of focusable DOM Elements that are children 
-    
+    /* Build a triple linked-list (TreeNode[]) of the focusable tree items in
+    DOM order, at any nesting depth.
+
     type TreeNode {
-      id: string;
-      expandable: boolean;
+      uid: string;
+      expandable: boolean;   // from data-expandable (group rows)
       previousId?: string;
       nextId?: string;
-      parentId? string;
-    } 
-    
+      parentId?: string;     // nearest ancestor treeitem
+    }
     */
 
     focusableNodes.current = {};
 
-    /* First get the parents */
-    const parents: Element[] = [];
-    if (listBoxRef.current) {
-      let node = listBoxRef.current.firstElementChild;
-      let lastNode = listBoxRef.current.lastElementChild;
+    if (!listBoxRef.current) return;
 
-      while (node && node !== lastNode) {
-        parents.push(node);
-        node = node.nextElementSibling;
+    const elements = Array.from(
+      listBoxRef.current.querySelectorAll<HTMLElement>('[role="treeitem"]')
+    ).filter((el) => el.id);
+
+    const nodes: [string, string | undefined, boolean][] = elements.map(
+      (el) => {
+        const parent =
+          el.parentElement?.closest<HTMLElement>('[role="treeitem"]');
+        return [
+          el.id,
+          parent?.id || undefined,
+          el.getAttribute("data-expandable") === "true"
+        ];
       }
+    );
 
-      if (node) {
-        parents.push(node);
-      }
-    }
-
-    /* Then make a flat list with the children spliced in */
-    const nodes: [string, string | undefined][] = [];
-
-    parents.forEach((parent) => {
-      nodes.push([parent.id, undefined]);
-      const group = parent.getElementsByTagName("ul");
-      if (group?.[0]) {
-        let child = group[0].firstElementChild;
-        let lastChild = group[0].lastElementChild;
-
-        while (child && child !== lastChild) {
-          nodes.push([child.id, parent.id]);
-          child = child.nextElementSibling;
-        }
-
-        if (child) {
-          nodes.push([child.id, parent.id]);
-        }
-      }
-    });
-
-    /* Finally, create the triple linked list */
     for (let i = 0; i < nodes.length; i++) {
-      const [node, parent] = nodes[i];
-      const previous = nodes?.[i - 1];
-      const next = nodes?.[i + 1];
+      const [uid, parentId, expandable] = nodes[i];
 
-      focusableNodes.current[node] = {
-        uid: node,
-        expandable: parent === undefined,
-        parentId: parent,
-        previousId: previous?.[0] || undefined,
-        nextId: next?.[0] || undefined
+      focusableNodes.current[uid] = {
+        uid,
+        expandable,
+        parentId,
+        previousId: nodes[i - 1]?.[0] || undefined,
+        nextId: nodes[i + 1]?.[0] || undefined
       };
     }
   }, [children, focusableNodes, listBoxRef]);

@@ -466,17 +466,17 @@ export const terms = {
     term: msg`Prepayments (default)`,
     definition: msg`GL account used when a customer pays before an invoice is issued; cleared when the invoice posts.`
   },
-  "account-default-inventory": {
-    term: msg`Inventory (default)`,
-    definition: msg`Default GL account that holds inventory value; debited on receipt, credited on shipment/issue.`
+  "account-default-raw-materials": {
+    term: msg`Raw Materials (default)`,
+    definition: msg`GL account that holds the value of purchased stock and components (Buy items); debited on receipt, credited on issue/shipment.`
+  },
+  "account-default-finished-goods": {
+    term: msg`Finished Goods (default)`,
+    definition: msg`GL account that holds the value of manufactured goods (Make items); debited on job completion, credited on shipment.`
   },
   "account-default-wip": {
     term: msg`Work in Progress (default)`,
     definition: msg`GL account that holds the value of jobs in production until they post to finished goods.`
-  },
-  "account-default-inventory-shipped-not-invoiced": {
-    term: msg`Inventory Shipped Not Invoiced (default)`,
-    definition: msg`Accrual account debited at shipment to recognize the receivable before the sales invoice posts; cleared when the invoice posts.`
   },
   "account-default-asset-acquisition-cost": {
     term: msg`Asset Acquisition Cost (default)`,

@@ -43,6 +43,7 @@ import {
   SelectControlled,
   Submit
 } from "~/components/Form";
+import { itemTypeLabel } from "~/components/Form/itemTypeLabel";
 import { QuoteLineStatusIcon } from "~/components/Icons";
 import {
   usePercentFormatter,
@@ -55,7 +56,8 @@ import type {
   ConfigurationParameterGroup
 } from "~/modules/items/types";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
-import { methodType } from "~/modules/shared";
+import type { ItemType } from "~/modules/shared";
+import { itemType, methodType } from "~/modules/shared";
 import type { action } from "~/routes/x+/quote+/$quoteId.new";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
@@ -78,7 +80,7 @@ const QuoteLineForm = ({
   type,
   onClose
 }: QuoteLineFormProps) => {
-  const { t } = useLingui();
+  const { t, i18n } = useLingui();
   const fetcher = useFetcher<typeof action>();
   const permissions = usePermissions();
   const { company } = useUser();
@@ -115,6 +117,35 @@ const QuoteLineForm = ({
     uom: initialValues.unitOfMeasureCode ?? "",
     modelUploadId: initialValues.modelUploadId ?? null
   });
+
+  const [lineType, setLineType] = useState<ItemType>(
+    (initialValues.itemType as ItemType) ?? "Part"
+  );
+
+  const onTypeChange = (t: ItemType | "Item") => {
+    if (t === "Item") return;
+    setLineType(t);
+    if (itemData.itemId) {
+      const currentType = items.find((i) => i.id === itemData.itemId)?.type;
+      if (currentType === t) return;
+      setItemData({
+        customerPartId: "",
+        customerPartRevision: "",
+        itemId: "",
+        description: "",
+        methodType: "",
+        uom: "EA",
+        modelUploadId: null
+      });
+      // Clearing the item must also clear its configuration — otherwise a
+      // configured Part's stale parameters/values remain submittable after
+      // switching to a different item type.
+      setRequiresConfiguration(false);
+      setIsConfigured(false);
+      setConfigurationParameters(null);
+      setConfigurationValues("");
+    }
+  };
 
   const configurationDisclosure = useDisclosure();
   const [requiresConfiguration, setRequiresConfiguration] = useState(false);
@@ -338,10 +369,13 @@ const QuoteLineForm = ({
                         )}
                         <DropdownMenuItem asChild>
                           <Link
-                            to={getLinkToItemDetails("Part", itemData.itemId!)}
+                            to={getLinkToItemDetails(
+                              lineType,
+                              itemData.itemId!
+                            )}
                           >
                             <DropdownMenuIcon
-                              icon={<MethodItemTypeIcon type="Part" />}
+                              icon={<MethodItemTypeIcon type={lineType} />}
                             />
                             <Trans>View Item Master</Trans>
                           </Link>
@@ -371,14 +405,17 @@ const QuoteLineForm = ({
                       <Item
                         autoFocus
                         name="itemId"
-                        label={t`Part`}
-                        type="Part"
+                        label={i18n._(itemTypeLabel(lineType))}
+                        type={lineType}
+                        typeFieldName="itemType"
+                        validItemTypes={[...itemType]}
                         value={itemData.itemId}
                         includeInactive
                         locationId={routeData?.quote?.locationId ?? undefined}
                         onChange={(value) => {
                           onItemChange(value?.value as string);
                         }}
+                        onTypeChange={onTypeChange}
                       />
 
                       <InputControlled

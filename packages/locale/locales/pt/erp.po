@@ -334,6 +334,9 @@ msgstr "Um RFQ de venda (um cliente pede para você fazer uma cotação) ou um R
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "Um cronograma separado para fins de declaração de impostos quando as regras fiscais exigem um método diferente da depreciação contábil."
 
+msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
+msgstr "Um serviço é uma atividade faturável que é comprada ou realizada — nunca é enviada, recebida ou armazenada"
+
 msgid "A set of companies under one owner that share group-scoped configuration — the chart of accounts, currencies, and dimensions — so the same accounting setup spans every company in the group."
 msgstr "Um conjunto de empresas sob um mesmo proprietário que compartilham configuração com escopo de grupo — o plano de contas, as moedas e as dimensões — de modo que a mesma configuração contábil abrange todas as empresas do grupo."
 
@@ -465,12 +468,6 @@ msgstr "Contas a receber"
 
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "Contas a receber para valores devidos pelos clientes."
-
-msgid "Accrual account debited at shipment to recognize the receivable before the sales invoice posts; cleared when the invoice posts."
-msgstr "Conta accrual debitada no envio para reconhecer a conta a receber antes da fatura de vendas ser lançada; eliminada quando a fatura é lançada."
-
-msgid "Accrual for inventory shipped but not yet invoiced to customer"
-msgstr "Accrual para inventário enviado mas não faturado ao cliente."
 
 msgid "Accumulated Depreciation"
 msgstr "Depreciação acumulada"
@@ -1597,9 +1594,6 @@ msgstr "Aguardando aprovação"
 msgid "Back"
 msgstr "Voltar"
 
-msgid "Back Home"
-msgstr "Voltar para casa"
-
 msgid "Back to traceability"
 msgstr "Voltar para rastreabilidade"
 
@@ -2645,6 +2639,9 @@ msgstr "Copiar link da peça"
 msgid "Copy link to procedure"
 msgstr "Copiar link para procedimento"
 
+msgid "Copy link to service"
+msgstr "Copiar link para o serviço"
+
 msgid "Copy link to tool"
 msgstr "Copiar link da ferramenta"
 
@@ -2692,6 +2689,12 @@ msgstr "Copiar Cotação"
 
 msgid "Copy Quote number"
 msgstr "Copiar número da Cotação"
+
+msgid "Copy service number"
+msgstr "Copiar número do serviço"
+
+msgid "Copy service unique identifier"
+msgstr "Copiar identificador exclusivo do serviço"
 
 msgid "Copy this item's pricing to another scope."
 msgstr "Copie o preço deste item para outro escopo."
@@ -2989,6 +2992,9 @@ msgstr "Ação obrigatória criada"
 
 msgid "Created scrap reason"
 msgstr "Motivo de sucata criado"
+
+msgid "Created service"
+msgstr "Serviço criado"
 
 msgid "Created shipping method"
 msgstr "Método de envio criado"
@@ -3439,9 +3445,6 @@ msgstr "Conta de caixa padrão para transações em sua moeda base."
 msgid "Default CC Recipients"
 msgstr "Destinatários CC Padrão"
 
-msgid "Default GL account that holds inventory value; debited on receipt, credited on shipment/issue."
-msgstr "Conta GL padrão que mantém o valor do inventário; debitada no recebimento, creditada no envio/emissão."
-
 msgid "Default GL account used for cash transactions when no specific bank account is selected."
 msgstr "Conta GL padrão usada para transações em dinheiro quando nenhuma conta bancária específica é selecionada."
 
@@ -3702,6 +3705,9 @@ msgstr "Eliminar Pedido de Venda"
 
 msgid "Delete Schedule"
 msgstr "Eliminar Cronograma"
+
+msgid "Delete Service"
+msgstr "Excluir Serviço"
 
 msgid "Delete Shift"
 msgstr "Eliminar Turno"
@@ -4379,6 +4385,9 @@ msgstr "Editar Manutenção Agendada"
 msgid "Edit Sequence"
 msgstr "Editar Sequência"
 
+msgid "Edit Service"
+msgstr "Editar Serviço"
+
 msgid "Edit Shift"
 msgstr "Editar Turno"
 
@@ -4450,12 +4459,6 @@ msgstr "Editar Webhook"
 
 msgid "Edit Work Center"
 msgstr "Editar Centro de Trabalho"
-
-msgid "Effective From"
-msgstr "Efetivo A Partir De"
-
-msgid "Effective To"
-msgstr "Efetivo Até"
 
 msgid "Email"
 msgstr "Email"
@@ -5007,6 +5010,10 @@ msgid "Failed to create process: {0}"
 msgstr "Falha ao criar processo: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create service: {0}"
+msgstr "Falha ao criar serviço: {0}"
+
+#. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create shipping method: {0}"
 msgstr "Falha ao criar método de envio: {0}"
 
@@ -5308,6 +5315,12 @@ msgstr "Terminar Em"
 
 msgid "Finished goods"
 msgstr "Acabamentos"
+
+msgid "Finished Goods"
+msgstr "Produtos Acabados"
+
+msgid "Finished Goods (default)"
+msgstr "Produtos Acabados (padrão)"
 
 msgid "finishes"
 msgstr "Dedução adicional do primeiro ano tomada antes do cronograma MACRS regular começar."
@@ -5620,6 +5633,12 @@ msgstr "Conta GL que captura a diferença entre custo padrão e custo real de co
 
 msgid "GL account that holds the value of jobs in production until they post to finished goods."
 msgstr "Conta GL que mantém o valor de trabalhos em produção até que sejam registrados como produtos acabados."
+
+msgid "GL account that holds the value of manufactured goods (Make items); debited on job completion, credited on shipment."
+msgstr "Conta contábil que mantém o valor de bens manufaturados (itens de fabricação); debitada na conclusão do trabalho, creditada no envio."
+
+msgid "GL account that holds the value of purchased stock and components (Buy items); debited on receipt, credited on issue/shipment."
+msgstr "Conta contábil que mantém o valor de estoque comprado e componentes (itens de compra); debitada no recebimento, creditada na emissão/envio."
 
 msgid "GL account used when a customer pays before an invoice is issued; cleared when the invoice posts."
 msgstr "Conta GL usada quando um cliente paga antes de uma fatura ser emitida; limpa quando a fatura é registrada."
@@ -6207,9 +6226,6 @@ msgstr "inventário"
 msgid "Inventory"
 msgstr "Inventário"
 
-msgid "Inventory (default)"
-msgstr "Inventário (padrão)"
-
 msgid "Inventory accuracy"
 msgstr "Precisão do inventário"
 
@@ -6245,12 +6261,6 @@ msgstr "Notificações de Trabalho de Inventário"
 
 msgid "Inventory Qty"
 msgstr "Qtd. Inventário"
-
-msgid "Inventory Shipped Not Invoiced"
-msgstr "Inventário Enviado Não Faturado"
-
-msgid "Inventory Shipped Not Invoiced (default)"
-msgstr "Inventário Enviado Não Faturado (padrão)"
 
 msgid "Inventory Tracking"
 msgstr "Rastreamento de Inventário"
@@ -7644,6 +7654,9 @@ msgstr "Nova Linha de Pedido de Venda"
 msgid "New Scheduled Maintenance"
 msgstr "Nova Manutenção Agendada"
 
+msgid "New Service"
+msgstr "Novo Serviço"
+
 msgid "New Shift"
 msgstr "Novo Turno"
 
@@ -8138,6 +8151,12 @@ msgstr "Piso de estoque em mão a manter para uso de serviço neste local"
 
 msgid "On-hand inventory remains"
 msgstr "Inventário em mão permanece"
+
+msgid "On-hand value of manufactured goods (Make items)"
+msgstr "Valor em mãos de bens manufaturados (itens de fabricação)"
+
+msgid "On-hand value of purchased stock and components (Buy items)"
+msgstr "Valor em mãos de estoque comprado e componentes (itens de compra)"
 
 msgid "On-time delivery"
 msgstr "Entrega no prazo"
@@ -8948,9 +8967,6 @@ msgstr "Regras de Preço"
 msgid "Pricing Trace"
 msgstr "Rastreamento de Preços"
 
-msgid "Primary account for on-hand inventory valuation"
-msgstr "Conta de caixa principal para transações bancárias"
-
 msgid "Primary cash account for bank transactions"
 msgstr "procedimento"
 
@@ -9424,6 +9440,12 @@ msgstr "levante cedo e levante claramente. Um problema identificado na semana 2 
 
 msgid "Rate Limit"
 msgstr "Limite de Taxa"
+
+msgid "Raw Materials"
+msgstr "Matérias-Primas"
+
+msgid "Raw Materials (default)"
+msgstr "Matérias-Primas (padrão)"
 
 msgid "Re-keying between quoting, the floor, and finance"
 msgstr "Re-digitação entre orçamento, chão de fábrica e finanças"
@@ -10607,11 +10629,17 @@ msgstr "Taxas de serviço"
 msgid "Service Charges (default)"
 msgstr "Taxas de serviço (padrão)"
 
+msgid "Service Details"
+msgstr "Detalhes do Serviço"
+
 msgid "Service ID"
 msgstr "ID do Serviço"
 
 msgid "services"
 msgstr "serviços"
+
+msgid "Services"
+msgstr "Serviços"
 
 msgid "Set a target"
 msgstr "Defina uma meta"
@@ -10949,9 +10977,6 @@ msgstr "Engenheiro de Soluções"
 
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "Algumas linhas extraídas do PDF não puderam ser mapeadas automaticamente para seus itens de inventário. Revise e mapeie cada linha abaixo."
-
-msgid "Something went wrong"
-msgstr "Algo deu errado"
 
 msgid "Something went wrong. Please try again."
 msgstr "Algo deu errado. Tente novamente."
@@ -13011,6 +13036,9 @@ msgstr "Use ... to get the next material ID"
 msgid "Use ... to get the next part ID"
 msgstr "Use ... to get the next part ID"
 
+msgid "Use ... to get the next service ID"
+msgstr "Use ... para obter o próximo ID do serviço"
+
 msgid "Use ... to get the next tool ID"
 msgstr "Use ... to get the next tool ID"
 
@@ -13028,12 +13056,6 @@ msgstr "Usado na navegação e em documentos como pedidos de venda"
 
 msgid "Used in the navigation in dark mode"
 msgstr "Usado na navegação no modo escuro"
-
-msgid "Used on builds on/after this date (blank = always)"
-msgstr "Usado em builds em/após esta data (em branco = sempre)"
-
-msgid "Used on builds on/before this date (blank = always)"
-msgstr "Utilizado em compilações em/antes desta data (em branco = sempre)"
 
 msgid "Used on the home screen and digital quotes"
 msgstr "Usado na tela inicial e em cotações digitais"

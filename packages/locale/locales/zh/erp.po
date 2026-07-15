@@ -334,6 +334,9 @@ msgstr "销售RFQ（客户要求您报价）或采购RFQ（您要求供应商）
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "当税收规则要求与账面折旧不同的方法时，用于税务报告的单独时间表。"
 
+msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
+msgstr "服务是一种可计费活动，可以购买或执行——它从不被运送、接收或存储"
+
 msgid "A set of companies under one owner that share group-scoped configuration — the chart of accounts, currencies, and dimensions — so the same accounting setup spans every company in the group."
 msgstr "同一所有者下的一组公司，共享组范围的配置——会计科目表、币种和维度——因此同一套会计设置适用于组内的每家公司。"
 
@@ -465,12 +468,6 @@ msgstr "应收账款"
 
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "客户应付金额的应收账款。"
-
-msgid "Accrual account debited at shipment to recognize the receivable before the sales invoice posts; cleared when the invoice posts."
-msgstr "在装运时借记的应计账户，以在销售发票转记之前确认应收账款；转记发票时清除。"
-
-msgid "Accrual for inventory shipped but not yet invoiced to customer"
-msgstr "已发货但尚未对客户开票的库存的应计费用。"
 
 msgid "Accumulated Depreciation"
 msgstr "累计折旧"
@@ -1597,9 +1594,6 @@ msgstr "等待批准"
 msgid "Back"
 msgstr "返回"
 
-msgid "Back Home"
-msgstr "返回主页"
-
 msgid "Back to traceability"
 msgstr "返回可追溯性"
 
@@ -2645,6 +2639,9 @@ msgstr "复制零件链接"
 msgid "Copy link to procedure"
 msgstr "复制程序链接"
 
+msgid "Copy link to service"
+msgstr "复制服务链接"
+
 msgid "Copy link to tool"
 msgstr "复制工具链接"
 
@@ -2692,6 +2689,12 @@ msgstr "复制报价"
 
 msgid "Copy Quote number"
 msgstr "复制报价单号"
+
+msgid "Copy service number"
+msgstr "复制服务编号"
+
+msgid "Copy service unique identifier"
+msgstr "复制服务唯一标识符"
 
 msgid "Copy this item's pricing to another scope."
 msgstr "将此项目的定价复制到另一个范围。"
@@ -2989,6 +2992,9 @@ msgstr "已创建必需操作"
 
 msgid "Created scrap reason"
 msgstr "已创建报废原因"
+
+msgid "Created service"
+msgstr "创建服务"
 
 msgid "Created shipping method"
 msgstr "已创建配送方式"
@@ -3439,9 +3445,6 @@ msgstr "您基础货币中交易的默认现金账户。"
 msgid "Default CC Recipients"
 msgstr "默认抄送收件人"
 
-msgid "Default GL account that holds inventory value; debited on receipt, credited on shipment/issue."
-msgstr "保存库存价值的默认GL账户; 在收据上借记，在发货/发行时贷记。"
-
 msgid "Default GL account used for cash transactions when no specific bank account is selected."
 msgstr "未选择特定银行账户时用于现金交易的默认GL账户。"
 
@@ -3702,6 +3705,9 @@ msgstr "删除销售订单"
 
 msgid "Delete Schedule"
 msgstr "删除计划"
+
+msgid "Delete Service"
+msgstr "删除服务"
 
 msgid "Delete Shift"
 msgstr "删除班次"
@@ -4379,6 +4385,9 @@ msgstr "编辑计划维护"
 msgid "Edit Sequence"
 msgstr "编辑序列"
 
+msgid "Edit Service"
+msgstr "编辑服务"
+
 msgid "Edit Shift"
 msgstr "编辑班次"
 
@@ -4450,12 +4459,6 @@ msgstr "编辑 Webhook"
 
 msgid "Edit Work Center"
 msgstr "编辑工作中心"
-
-msgid "Effective From"
-msgstr "生效日期"
-
-msgid "Effective To"
-msgstr "有效期至"
 
 msgid "Email"
 msgstr "电子邮件"
@@ -5007,6 +5010,10 @@ msgid "Failed to create process: {0}"
 msgstr "创建流程失败：{0}"
 
 #. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create service: {0}"
+msgstr "创建服务失败：{0}"
+
+#. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create shipping method: {0}"
 msgstr "创建配送方式失败：{0}"
 
@@ -5308,6 +5315,12 @@ msgstr "完成至"
 
 msgid "Finished goods"
 msgstr "表面处理"
+
+msgid "Finished Goods"
+msgstr "成品"
+
+msgid "Finished Goods (default)"
+msgstr "成品（默认）"
 
 msgid "finishes"
 msgstr "在常规MACRS计划开始之前采取的第一年额外扣除。"
@@ -5620,6 +5633,12 @@ msgstr "捕获标准成本和实际采购成本之间差异的GL账户。"
 
 msgid "GL account that holds the value of jobs in production until they post to finished goods."
 msgstr "持有生产中的工作价值的GL账户，直到它们过帐到成品。"
+
+msgid "GL account that holds the value of manufactured goods (Make items); debited on job completion, credited on shipment."
+msgstr "持有制造商品（制造项）价值的总帐账户；在工作完成时记借，在发货时记贷。"
+
+msgid "GL account that holds the value of purchased stock and components (Buy items); debited on receipt, credited on issue/shipment."
+msgstr "持有采购的库存和组件（采购项）价值的总帐账户；在收货时记借，在发货/发货时记贷。"
 
 msgid "GL account used when a customer pays before an invoice is issued; cleared when the invoice posts."
 msgstr "当客户在发票签发前付款时使用的GL账户; 发票过帐时清除。"
@@ -6207,9 +6226,6 @@ msgstr "库存"
 msgid "Inventory"
 msgstr "库存"
 
-msgid "Inventory (default)"
-msgstr "库存（默认）"
-
 msgid "Inventory accuracy"
 msgstr "库存准确性"
 
@@ -6245,12 +6261,6 @@ msgstr "库存工作通知"
 
 msgid "Inventory Qty"
 msgstr "库存数量"
-
-msgid "Inventory Shipped Not Invoiced"
-msgstr "已发货库存未开票"
-
-msgid "Inventory Shipped Not Invoiced (default)"
-msgstr "已发货库存未开票（默认）"
 
 msgid "Inventory Tracking"
 msgstr "库存追踪"
@@ -7644,6 +7654,9 @@ msgstr "新销售订单行"
 msgid "New Scheduled Maintenance"
 msgstr "新的定期维护"
 
+msgid "New Service"
+msgstr "新服务"
+
 msgid "New Shift"
 msgstr "新班次"
 
@@ -8138,6 +8151,12 @@ msgstr "在此位置维护用于服务的最低库存"
 
 msgid "On-hand inventory remains"
 msgstr "现有库存仍然存在"
+
+msgid "On-hand value of manufactured goods (Make items)"
+msgstr "制造商品（制造项）的现有价值"
+
+msgid "On-hand value of purchased stock and components (Buy items)"
+msgstr "采购的库存和组件（采购项）的现有价值"
 
 msgid "On-time delivery"
 msgstr "准时交付"
@@ -8948,9 +8967,6 @@ msgstr "定价规则"
 msgid "Pricing Trace"
 msgstr "定价追踪"
 
-msgid "Primary account for on-hand inventory valuation"
-msgstr "银行交易的主要现金账户"
-
 msgid "Primary cash account for bank transactions"
 msgstr "程序"
 
@@ -9424,6 +9440,12 @@ msgstr "尽早提出问题，直言不讳地提出。第2周发现的问题很�
 
 msgid "Rate Limit"
 msgstr "速率限制"
+
+msgid "Raw Materials"
+msgstr "原材料"
+
+msgid "Raw Materials (default)"
+msgstr "原材料（默认）"
 
 msgid "Re-keying between quoting, the floor, and finance"
 msgstr "在报价、车间和财务之间重复输入数据"
@@ -10607,10 +10629,16 @@ msgstr "服务费"
 msgid "Service Charges (default)"
 msgstr "服务费 (默认)"
 
+msgid "Service Details"
+msgstr "服务详情"
+
 msgid "Service ID"
 msgstr "服务ID"
 
 msgid "services"
+msgstr "服务"
+
+msgid "Services"
 msgstr "服务"
 
 msgid "Set a target"
@@ -10949,9 +10977,6 @@ msgstr "解决方案工程师"
 
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "从PDF提取的某些行无法自动映射到您的库存项目。请查看并映射下面的每一行。"
-
-msgid "Something went wrong"
-msgstr "出错了"
 
 msgid "Something went wrong. Please try again."
 msgstr "出现问题。请重试。"
@@ -13011,6 +13036,9 @@ msgstr "使用 ... 获取下一个物料 ID"
 msgid "Use ... to get the next part ID"
 msgstr "使用 ... 获取下一个零件 ID"
 
+msgid "Use ... to get the next service ID"
+msgstr "使用...获取下一个服务ID"
+
 msgid "Use ... to get the next tool ID"
 msgstr "使用 ... 获取下一个工具 ID"
 
@@ -13028,12 +13056,6 @@ msgstr "用于导航和销售订单等文档中"
 
 msgid "Used in the navigation in dark mode"
 msgstr "在深色模式下的导航中使用"
-
-msgid "Used on builds on/after this date (blank = always)"
-msgstr "用于此日期及之后的构建（空白 = 始终）"
-
-msgid "Used on builds on/before this date (blank = always)"
-msgstr "用于此日期或之前的构建（空白 = 始终）"
 
 msgid "Used on the home screen and digital quotes"
 msgstr "用于主屏幕和数字报价"

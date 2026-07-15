@@ -334,6 +334,9 @@ msgstr "एक बिक्रय RFQ (एक ग्राहक आपको �
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "कर रिपोर्टिंग के लिए एक अलग अनुसूची जब कर नियम पुस्तक मूल्यह्रास से अलग विधि की आवश्यकता होती है।"
 
+msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
+msgstr "एक सेवा एक बिलयोग्य गतिविधि है जो खरीदी या प्रदर्शन की जाती है — इसे कभी भेजा नहीं जाता, प्राप्त नहीं किया जाता, या स्टॉक नहीं किया जाता"
+
 msgid "A set of companies under one owner that share group-scoped configuration — the chart of accounts, currencies, and dimensions — so the same accounting setup spans every company in the group."
 msgstr "एक ही मालिक के अधीन कंपनियों का समूह जो समूह-स्तरीय कॉन्फ़िगरेशन साझा करती हैं — खातों का चार्ट, मुद्राएँ और आयाम — ताकि वही लेखांकन सेटअप समूह की हर कंपनी पर लागू हो।"
 
@@ -465,12 +468,6 @@ msgstr "प्राप्य खाते"
 
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "ग्राहकों द्वारा देय राशियों के लिए प्राप्य खाते।"
-
-msgid "Accrual account debited at shipment to recognize the receivable before the sales invoice posts; cleared when the invoice posts."
-msgstr "एक अप्रैल खाता जो शिपमेंट पर डेबिट किया जाता है ताकि बिक्रय चालान पोस्ट होने से पहले प्राप्य को पहचाना जा सके; जब चालान पोस्ट होता है तो क्लीयर किया जाता है।"
-
-msgid "Accrual for inventory shipped but not yet invoiced to customer"
-msgstr "शिप की गई लेकिन अभी तक ग्राहक को बिल न किए गए इन्वेंटरी के लिए अप्रैल।"
 
 msgid "Accumulated Depreciation"
 msgstr "संचयी मूल्यह्रास"
@@ -1597,9 +1594,6 @@ msgstr "अनुमोदन की प्रतीक्षा में"
 msgid "Back"
 msgstr "वापस"
 
-msgid "Back Home"
-msgstr "घर वापस"
-
 msgid "Back to traceability"
 msgstr "ट्रेसेबिलिटी पर वापस जाएं"
 
@@ -2645,6 +2639,9 @@ msgstr "भाग के लिए लिंक कॉपी करें"
 msgid "Copy link to procedure"
 msgstr "प्रक्रिया के लिए लिंक कॉपी करें"
 
+msgid "Copy link to service"
+msgstr "सेवा के लिए लिंक कॉपी करें"
+
 msgid "Copy link to tool"
 msgstr "टूल के लिए लिंक कॉपी करें"
 
@@ -2692,6 +2689,12 @@ msgstr "उद्धरण की प्रतिलिपि बनाएँ"
 
 msgid "Copy Quote number"
 msgstr "उद्धरण संख्या कॉपी करें"
+
+msgid "Copy service number"
+msgstr "सेवा संख्या कॉपी करें"
+
+msgid "Copy service unique identifier"
+msgstr "सेवा अनन्य पहचानकर्ता कॉपी करें"
 
 msgid "Copy this item's pricing to another scope."
 msgstr "इस आइटम की मूल्य निर्धारण को दूसरे स्कोप में कॉपी करें।"
@@ -2989,6 +2992,9 @@ msgstr "आवश्यक कार्रवाई बनाई गई"
 
 msgid "Created scrap reason"
 msgstr "स्क्रैप कारण बनाया गया"
+
+msgid "Created service"
+msgstr "सेवा बनाई गई"
 
 msgid "Created shipping method"
 msgstr "शिपिंग विधि बनाई गई"
@@ -3439,9 +3445,6 @@ msgstr "आपकी आधार मुद्रा में लेनदे�
 msgid "Default CC Recipients"
 msgstr "डिफ़ॉल्ट CC प्राप्तकर्ता"
 
-msgid "Default GL account that holds inventory value; debited on receipt, credited on shipment/issue."
-msgstr "डिफ़ॉल्ट GL खाता जो इन्वेंटरी मान धारण करता है; प्राप्ति पर डेबिट किया जाता है, शिपमेंट/जारी पर क्रेडिट किया जाता है।"
-
 msgid "Default GL account used for cash transactions when no specific bank account is selected."
 msgstr "जब कोई विशिष्ट बैंक खाता नहीं चुना जाता है तो नकद लेनदेन के लिए उपयोग किया जाने वाला डिफ़ॉल्ट GL खाता।"
 
@@ -3702,6 +3705,9 @@ msgstr "बिक्रय आदेश हटाएं"
 
 msgid "Delete Schedule"
 msgstr "शेड्यूल हटाएं"
+
+msgid "Delete Service"
+msgstr "सेवा हटाएं"
 
 msgid "Delete Shift"
 msgstr "शिफ्ट हटाएं"
@@ -4379,6 +4385,9 @@ msgstr "निर्धारित रखरखाव संपादित क
 msgid "Edit Sequence"
 msgstr "अनुक्रम संपादित करें"
 
+msgid "Edit Service"
+msgstr "सेवा संपादित करें"
+
 msgid "Edit Shift"
 msgstr "शिफ्ट संपादित करें"
 
@@ -4450,12 +4459,6 @@ msgstr "वेबहुक संपादित करें"
 
 msgid "Edit Work Center"
 msgstr "कार्य केंद्र संपादित करें"
-
-msgid "Effective From"
-msgstr "प्रभावी से"
-
-msgid "Effective To"
-msgstr "प्रभावी तक"
 
 msgid "Email"
 msgstr "ईमेल"
@@ -5007,6 +5010,10 @@ msgid "Failed to create process: {0}"
 msgstr "प्रक्रिया बनाने में विफल: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create service: {0}"
+msgstr "सेवा बनाने में विफल: {0}"
+
+#. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create shipping method: {0}"
 msgstr "शिपिंग विधि बनाने में विफल: {0}"
 
@@ -5308,6 +5315,12 @@ msgstr "समाप्त करने के लिए"
 
 msgid "Finished goods"
 msgstr "फिनिशें"
+
+msgid "Finished Goods"
+msgstr "तैयार माल"
+
+msgid "Finished Goods (default)"
+msgstr "तैयार माल (डिफ़ॉल्ट)"
 
 msgid "finishes"
 msgstr "नियमित MACRS अनुसूची शुरू होने से पहले लिया गया पहले वर्ष का अतिरिक्त कटौती।"
@@ -5620,6 +5633,12 @@ msgstr "GL खाता जो मानक लागत और वास्त�
 
 msgid "GL account that holds the value of jobs in production until they post to finished goods."
 msgstr "GL खाता जो उत्पादन में कार्यों का मान रखता है जब तक वे तैयार माल को पोस्ट नहीं करते।"
+
+msgid "GL account that holds the value of manufactured goods (Make items); debited on job completion, credited on shipment."
+msgstr "GL खाता जो निर्मित माल का मूल्य रखता है (Make आइटम); नौकरी पूरी होने पर डेबिट किया जाता है, शिपमेंट पर क्रेडिट किया जाता है।"
+
+msgid "GL account that holds the value of purchased stock and components (Buy items); debited on receipt, credited on issue/shipment."
+msgstr "GL खाता जो खरीदे गए स्टॉक और घटकों का मूल्य रखता है (Buy आइटम); रसीद पर डेबिट किया जाता है, जारी/शिपमेंट पर क्रेडिट किया जाता है।"
 
 msgid "GL account used when a customer pays before an invoice is issued; cleared when the invoice posts."
 msgstr "GL खाता जिसका उपयोग तब किया जाता है जब ग्राहक चालान जारी होने से पहले भुगतान करता है; जब चालान पोस्ट किया जाता है तो साफ किया जाता है।"
@@ -6207,9 +6226,6 @@ msgstr "इन्वेंटरी"
 msgid "Inventory"
 msgstr "इन्वेंटरी"
 
-msgid "Inventory (default)"
-msgstr "इन्वेंटरी (डिफ़ॉल्ट)"
-
 msgid "Inventory accuracy"
 msgstr "इन्वेंटरी सटीकता"
 
@@ -6245,12 +6261,6 @@ msgstr "इन्वेंटरी जॉब नोटिफिकेशन"
 
 msgid "Inventory Qty"
 msgstr "इन्वेंटरी मात्रा"
-
-msgid "Inventory Shipped Not Invoiced"
-msgstr "इन्वेंटरी भेजी गई अचालान"
-
-msgid "Inventory Shipped Not Invoiced (default)"
-msgstr "इन्वेंटरी भेजी गई अचालान (डिफ़ॉल्ट)"
 
 msgid "Inventory Tracking"
 msgstr "इन्वेंटरी ट्रैकिंग"
@@ -7644,6 +7654,9 @@ msgstr "नई बिक्रय आदेश पंक्ति"
 msgid "New Scheduled Maintenance"
 msgstr "नया निर्धारित रखरखाव"
 
+msgid "New Service"
+msgstr "नई सेवा"
+
 msgid "New Shift"
 msgstr "नई शिफ्ट"
 
@@ -8138,6 +8151,12 @@ msgstr "इस स्थान पर सेवा उपयोग के लि
 
 msgid "On-hand inventory remains"
 msgstr "हाथ में इन्वेंटरी बची है"
+
+msgid "On-hand value of manufactured goods (Make items)"
+msgstr "निर्मित माल का मौजूदा मूल्य (Make आइटम)"
+
+msgid "On-hand value of purchased stock and components (Buy items)"
+msgstr "खरीदे गए स्टॉक और घटकों का मौजूदा मूल्य (Buy आइटम)"
 
 msgid "On-time delivery"
 msgstr "समय पर डिलीवरी"
@@ -8948,9 +8967,6 @@ msgstr "मूल्य निर्धारण नियम"
 msgid "Pricing Trace"
 msgstr "मूल्य निर्धारण ट्रेस"
 
-msgid "Primary account for on-hand inventory valuation"
-msgstr "बैंक लेनदेन के लिए प्राथमिक नकद खाता"
-
 msgid "Primary cash account for bank transactions"
 msgstr "प्रक्रिया"
 
@@ -9424,6 +9440,12 @@ msgstr "इसे जल्दी उठाएं और स्पष्ट र�
 
 msgid "Rate Limit"
 msgstr "दर सीमा"
+
+msgid "Raw Materials"
+msgstr "कच्चा माल"
+
+msgid "Raw Materials (default)"
+msgstr "कच्चा माल (डिफ़ॉल्ट)"
 
 msgid "Re-keying between quoting, the floor, and finance"
 msgstr "उद्धरण, फर्श और वित्त के बीच पुनः-कुंजीकरण"
@@ -10607,10 +10629,16 @@ msgstr "सेवा शुल्क"
 msgid "Service Charges (default)"
 msgstr "सेवा शुल्क (डिफ़ॉल्ट)"
 
+msgid "Service Details"
+msgstr "सेवा विवरण"
+
 msgid "Service ID"
 msgstr "सेवा ID"
 
 msgid "services"
+msgstr "सेवाएं"
+
+msgid "Services"
 msgstr "सेवाएं"
 
 msgid "Set a target"
@@ -10949,9 +10977,6 @@ msgstr "समाधान इंजीनियर"
 
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "PDF से निकाली गई कुछ पंक्तियों को आपकी इन्वेंटरी आइटम्स से स्वचालित रूप से मैप नहीं किया जा सका। नीचे प्रत्येक पंक्ति की समीक्षा करें और मैप करें।"
-
-msgid "Something went wrong"
-msgstr "कुछ गलत हो गया"
 
 msgid "Something went wrong. Please try again."
 msgstr "कुछ गलत हो गया। कृपया पुनः प्रयास करें।"
@@ -13011,6 +13036,9 @@ msgstr "अगली सामग्री ID प्राप्त करने
 msgid "Use ... to get the next part ID"
 msgstr "अगला पार्ट आईडी प्राप्त करने के लिए ... का उपयोग करें"
 
+msgid "Use ... to get the next service ID"
+msgstr "अगली सेवा ID प्राप्त करने के लिए ... का उपयोग करें"
+
 msgid "Use ... to get the next tool ID"
 msgstr "अगली टूल ID प्राप्त करने के लिए ... का उपयोग करें"
 
@@ -13028,12 +13056,6 @@ msgstr "नेविगेशन में और बिक्री आदे�
 
 msgid "Used in the navigation in dark mode"
 msgstr "डार्क मोड में नेविगेशन में उपयोग किया जाता है"
-
-msgid "Used on builds on/after this date (blank = always)"
-msgstr "इस तारीख के बाद बनाए गए बिल्ड पर उपयोग किया जाता है (खाली = हमेशा)"
-
-msgid "Used on builds on/before this date (blank = always)"
-msgstr "इस तारीख पर या इससे पहले बनाए गए बिल्ड पर उपयोग किया जाता है (खाली = हमेशा)"
 
 msgid "Used on the home screen and digital quotes"
 msgstr "होम स्क्रीन और डिजिटल उद्धरणों पर उपयोग किया जाता है"

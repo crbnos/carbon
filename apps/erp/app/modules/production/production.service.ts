@@ -142,7 +142,7 @@ export async function convertSalesOrderLinesToJobs(
         .select("*")
         .eq("itemId", line.itemId)
         .eq("companyId", companyId)
-        .single();
+        .maybeSingle();
 
       const lotSize = manufacturing.data?.lotSize ?? 0;
       const totalQuantity = line.saleQuantity ?? 0;
@@ -187,12 +187,16 @@ export async function convertSalesOrderLinesToJobs(
           }
         }
 
-        const storageUnitId = await getDefaultStorageUnitForJob(
-          client,
-          line.itemId,
-          locationId!,
-          companyId
-        );
+        // Services are Non-Inventory and never have storage units
+        const storageUnitId =
+          line.salesOrderLineType === "Service"
+            ? null
+            : await getDefaultStorageUnitForJob(
+                client,
+                line.itemId,
+                locationId!,
+                companyId
+              );
 
         // Calculate scrap quantity based on item's scrap percentage
         const scrapPercentage = manufacturing.data?.scrapPercentage ?? 0;

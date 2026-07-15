@@ -10,6 +10,7 @@ import {
   toStoredAmount
 } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
+import { sql } from "kysely";
 import type { z } from "zod";
 import { getNextSequence } from "~/modules/settings";
 import type { GenericQueryFilters } from "~/utils/query";
@@ -157,14 +158,15 @@ export async function getAccountLedger(
     offset: number;
   }
 ) {
-  // The journalLines view excludes Draft journals so that the lines shown
-  // always sum to the balances from accountTreeBalancesByCompany (which also
-  // excludes Draft journals).
+  // Draft journals are excluded so the lines shown always sum to the balances
+  // from accountTreeBalancesByCompany, which excludes them too — unposted
+  // entries belong in the Journal Entries list, not the account ledger.
   // TODO: remove the cast once cloud-generated DB types include the view.
   let query = client
     .from("journalLines" as any)
     .select("*", { count: "exact" })
     .eq("accountId", args.accountId)
+    .neq("status", "Draft")
     .gte(
       "postingDate",
       args.startDate ?? getDateNYearsAgo(50).toISOString().split("T")[0]
@@ -1034,6 +1036,28 @@ export async function closeAccountingPeriod(
         .where("id", "=", args.periodId)
         .where("companyId", "=", args.companyId)
         .execute();
+
+      // Write the per-account cumulative GL balance snapshot for this period
+      // *inside* the close transaction, after the flip to Closed. The snapshot
+      // is what makes accountTreeBalancesByCompany read "latest snapshot +
+      // lines after it" instead of scanning all history. It runs here (not as
+      // a supabase RPC) so it stays private to the service-role/Kysely path —
+      // the function is SECURITY DEFINER and takes companyId as an argument, so
+      // exposing it via PostgREST would be a cross-tenant write. The function
+      // asserts the period is Closed (true within this tx's view), so it can
+      // never snapshot a still-postable period.
+      //
+      // Race safety: the flip above holds the accountingPeriod row lock until
+      // commit, and check_accounting_period_open reads that row FOR SHARE on
+      // every posting (migration 20260713235930), so no journal can land in the
+      // period between this snapshot and the commit. Keeping the snapshot in the
+      // same transaction is deliberate: close ⇔ snapshot is atomic, so a snapshot
+      // failure rolls the whole close back cleanly rather than leaving a Closed
+      // period with a stale/absent snapshot. Any period without a snapshot is
+      // still correct — the read path falls back to the full-history scan.
+      await sql`SELECT "snapshotAccountingPeriodBalances"(${args.companyId}, ${args.periodId}, ${args.userId})`.execute(
+        trx
+      );
     });
   } catch (err) {
     return {
@@ -1099,6 +1123,24 @@ export async function reopenAccountingPeriod(
           "Later periods must be reopened first (reopen from the most recent close backwards)"
       }
     };
+  }
+
+  // Invariant #3 (accountingPeriodBalance migration): snapshots are cumulative
+  // through their period's endDate, so reopening this period invalidates its own
+  // snapshot and any later one that embeds it. Delete them BEFORE flipping to
+  // Open: if the delete fails we abort with the period still Closed (snapshots
+  // intact, consistent); if the flip later fails, the period stays Closed with
+  // no snapshots, so reads fall back to the full scan (correct, just slower)
+  // rather than trusting a stale snapshot once postings resume in the period.
+  // accountingPeriodBalance is not in the cloud-generated DB types yet, so the
+  // client is cast to reach it (same reason the period reads above use `as any`).
+  const deletedSnapshots = await (client as any)
+    .from("accountingPeriodBalance")
+    .delete()
+    .eq("companyId", args.companyId)
+    .gte("endingBalanceDate", period.data.endDate);
+  if (deletedSnapshots.error) {
+    return { data: null, error: deletedSnapshots.error };
   }
 
   return (client.from("accountingPeriod") as any)
@@ -2633,46 +2675,93 @@ export async function translateCompanyBalances(
   companyId: string,
   targetCurrency: string,
   periodEnd: string,
-  periodStart?: string
+  periodStart: string | undefined,
+  // Rows from getFinancialStatementBalances for the same company/dates —
+  // translation only needs balanceAtDate + consolidatedRate, so re-running
+  // the full journalLine scan through the translateTrialBalance RPC would
+  // double the cost of every translated statement.
+  balances: Array<{
+    id: string;
+    balanceAtDate: number;
+    consolidatedRate: string | null;
+    isGroup: boolean | null;
+    class: string | null;
+  }>
 ): Promise<{
   data: TranslatedBalance[] | null;
   cta: number;
   error: string | null;
 }> {
-  const { data, error } = await client.rpc("translateTrialBalance", {
+  // getConsolidationRates is defined in migration
+  // 20260713225803_ledger-balance-posted-filter.sql; the committed DB types
+  // regenerate from the cloud DB after deploy, hence the cast.
+  const { data: ratesData, error: ratesError } = await (
+    client.rpc as unknown as (
+      fn: string,
+      args: Record<string, unknown>
+    ) => PromiseLike<{ data: unknown; error: { message: string } | null }>
+  )("getConsolidationRates", {
     p_company_group_id: companyGroupId,
-    p_company_id: companyId ?? undefined,
-    p_target_currency: targetCurrency,
+    p_company_id: companyId,
     p_period_end: periodEnd,
-    p_period_start: periodStart ?? undefined
+    p_period_start: periodStart
   });
 
-  if (error) {
-    return { data: null, cta: 0, error: error.message };
+  if (ratesError) {
+    return { data: null, cta: 0, error: ratesError.message };
   }
 
-  const rows = (data ?? []) as unknown as TranslatedBalance[];
+  const rates = (Array.isArray(ratesData) ? ratesData[0] : ratesData) as
+    | {
+        sourceCurrency: string | null;
+        closingRate: number;
+        averageRate: number;
+        historicalRate: number;
+      }
+    | undefined;
 
-  // Look up each account's class to compute CTA
-  const accountIds = rows.map((r) => r.accountId);
-  const { data: accounts } = await client
-    .from("account")
-    .select("id, class")
-    .in("id", accountIds);
+  const sameCurrency = rates?.sourceCurrency === targetCurrency;
+  const rateFor = (consolidatedRate: string | null): number => {
+    if (sameCurrency || !rates) return 1;
+    switch (consolidatedRate) {
+      case "Average":
+        return Number(rates.averageRate);
+      case "Historical":
+        return Number(rates.historicalRate);
+      default:
+        // 'Current' (the column default)
+        return Number(rates.closingRate);
+    }
+  };
 
-  const classById = new Map((accounts ?? []).map((a) => [a.id, a.class]));
-
+  const rows: TranslatedBalance[] = [];
   let totalTranslatedAssets = 0;
   let totalTranslatedLiabilitiesAndEquity = 0;
 
-  for (const row of rows) {
-    const cls = classById.get(row.accountId);
-    if (cls === "Asset") {
-      totalTranslatedAssets += Number(row.translatedBalance);
+  for (const account of balances) {
+    // Leaf accounts only, and never the synthetic Net Income line — its
+    // income-statement components are already in the rows, so translating it
+    // too would double-count net income in the CTA.
+    if (account.isGroup || account.id === NET_INCOME_ACCOUNT_ID) continue;
+
+    const exchangeRate = rateFor(account.consolidatedRate);
+    const localBalance = Number(account.balanceAtDate ?? 0);
+    const translatedBalance =
+      Math.round(localBalance * exchangeRate * 10000) / 10000;
+
+    rows.push({
+      accountId: account.id,
+      localBalance,
+      exchangeRate,
+      translatedBalance
+    });
+
+    if (account.class === "Asset") {
+      totalTranslatedAssets += translatedBalance;
     } else {
       // Liability, Equity, Revenue, Expense (but income statement
       // accounts net to retained earnings on balance sheet)
-      totalTranslatedLiabilitiesAndEquity += Number(row.translatedBalance);
+      totalTranslatedLiabilitiesAndEquity += translatedBalance;
     }
   }
 
@@ -2729,29 +2818,43 @@ export async function getConsolidatedBalances(
   // All companies whose balances we need (operating + elimination entities)
   const allIds = [...companyIds, ...eliminationIds];
 
-  // Get balances for all companies and translate to target currency
-  const [allBalances, translations] = await Promise.all([
-    Promise.all(
-      allIds.map((id) =>
-        getFinancialStatementBalances(client, companyGroupId, id, {
+  // Get balances for all companies, then translate the already-computed
+  // balances to the target currency (one ledger scan per company, not two).
+  const results = await Promise.all(
+    allIds.map(async (id) => {
+      const balances = await getFinancialStatementBalances(
+        client,
+        companyGroupId,
+        id,
+        {
           startDate: periodStart ?? null,
           endDate: periodEnd
-        })
-      )
-    ),
-    Promise.all(
-      allIds.map((id) =>
-        translateCompanyBalances(
-          client,
-          companyGroupId,
-          id,
-          targetCurrency,
-          periodEnd,
-          periodStart
-        )
-      )
-    )
-  ]);
+        }
+      );
+
+      const translation =
+        balances.error || !balances.data
+          ? {
+              data: null,
+              cta: 0,
+              error: balances.error?.message ?? "Failed to load balances"
+            }
+          : await translateCompanyBalances(
+              client,
+              companyGroupId,
+              id,
+              targetCurrency,
+              periodEnd,
+              periodStart,
+              balances.data
+            );
+
+      return { balances, translation };
+    })
+  );
+
+  const allBalances = results.map((r) => r.balances);
+  const translations = results.map((r) => r.translation);
 
   // Build a map of translated balances per account, summed across companies
   const translationByAccount = new Map<

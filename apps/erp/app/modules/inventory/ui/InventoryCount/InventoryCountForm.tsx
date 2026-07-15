@@ -24,7 +24,10 @@ import {
   TextArea
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { inventoryCountValidator, itemTypes } from "~/modules/inventory";
+import {
+  inventoryCountValidator,
+  inventoryItemTypes
+} from "~/modules/inventory";
 import { path } from "~/utils/path";
 
 type InventoryCountFormProps = {
@@ -42,7 +45,7 @@ const InventoryCountForm = ({
 
   const [locationId, setLocationId] = useState(initialValues.locationId ?? "");
 
-  const itemTypeOptions = itemTypes.map((type) => ({
+  const itemTypeOptions = inventoryItemTypes.map((type) => ({
     label: type,
     value: type
   }));

@@ -32,10 +32,7 @@ import {
 import { KyselyDatabase } from "../lib/postgres/index.ts";
 import { importTypeScript } from "../lib/sandbox.ee.ts";
 import { getStorageUnitId } from "../lib/storage-units.ts";
-import {
-  buildSupersessionRedirectMap,
-  isLineEffective,
-} from "../lib/supersession-pick.ts";
+import { buildSupersessionRedirectMap } from "../lib/supersession-pick.ts";
 import { toTiptapDoc } from "../shared/tiptap.ts";
 import {
     getNextRevisionSequence,
@@ -1066,7 +1063,6 @@ serve(async (req: Request) => {
                   client,
                   trx,
                   companyId,
-                  job: job.data,
                   child,
                   material,
                   materialId,
@@ -1104,8 +1100,6 @@ serve(async (req: Request) => {
           }
           logTree(methodTree);
 
-          // Drop BOM lines not effective for the job's build date before traversal.
-          pruneMethodTreeByEffectivity(methodTree, jobBuildDate(job.data));
           // Start traversal with job quantity as the root's target/parent estimated quantity
           await traverseMethod(
             methodTree,
@@ -1576,7 +1570,6 @@ serve(async (req: Request) => {
                   client,
                   trx,
                   companyId,
-                  job: job.data,
                   child,
                   material,
                   materialId,
@@ -1606,8 +1599,6 @@ serve(async (req: Request) => {
             } // end if (parts.billOfMaterial)
           }
 
-          // Drop BOM lines not effective for the job's build date before traversal.
-          pruneMethodTreeByEffectivity(methodTree, jobBuildDate(job.data));
           // Start traversal with the parent's estimated quantity
           await traverseMethod(
             methodTree,
@@ -5175,12 +5166,17 @@ serve(async (req: Request) => {
                   sourceQuotePricingForLine.map((l) => ({
                     quoteId: newQuoteId!,
                     quoteLineId: newLine.id!,
+                    companyId,
                     leadTime: l.leadTime ?? 0,
                     discountPercent: l.discountPercent ?? 0,
                     quantity: l.quantity ?? 0,
                     unitPrice: l.unitPrice ?? 0,
                     shippingCost: l.shippingCost ?? 0,
                     exchangeRate: l.exchangeRate ?? 0,
+                    categoryMarkups: JSON.stringify(l.categoryMarkups ?? {}),
+                    // Copied prices keep their provenance so a manual price
+                    // stays protected on the new quote/revision.
+                    priceSource: l.priceSource ?? "system",
                     createdBy: userId,
                   }))
                 )
@@ -5557,7 +5553,6 @@ async function swapMadeSubAssembly(opts: {
   client: SupabaseClient<Database>;
   trx: Transaction<DB>;
   companyId: string;
-  job: { startDate?: string | null; dueDate?: string | null } | null | undefined;
   child: MethodTreeItem;
   material:
     | {
@@ -5580,7 +5575,6 @@ async function swapMadeSubAssembly(opts: {
     client,
     trx,
     companyId,
-    job,
     child,
     material,
     materialId,
@@ -5631,7 +5625,6 @@ async function swapMadeSubAssembly(opts: {
   const successorTree = await getMethodTree(client, successorMakeMethod.data.id);
   const successorRoot = successorTree.data?.[0];
   if (successorRoot) {
-    pruneMethodTreeByEffectivity(successorRoot, jobBuildDate(job));
     await traverseMethod(
       successorRoot,
       newMakeMethodId,
@@ -5683,27 +5676,6 @@ async function resolveJobMaterialSupersession(
     requiresSerialTracking: successor.data.itemTrackingType === "Serial",
     requiresBatchTracking: successor.data.itemTrackingType === "Batch",
   };
-}
-
-// BOM-line effectivity at job creation: drop any method-tree node (and its whole
-// subtree) whose effective window does not cover the job's build date, so the job
-// is instantiated with only the date-appropriate components — the same filter MRP
-// applies when exploding demand. Mutates and returns the node. The root has no
-// methodMaterial (NULL dates) so it is always kept.
-function pruneMethodTreeByEffectivity(
-  node: MethodTreeItem,
-  buildDate: string
-): MethodTreeItem {
-  node.children = node.children
-    .filter((c) => {
-      const data = c.data as {
-        effectiveFrom?: string | null;
-        effectiveTo?: string | null;
-      };
-      return isLineEffective(data.effectiveFrom, data.effectiveTo, buildDate);
-    })
-    .map((c) => pruneMethodTreeByEffectivity(c, buildDate));
-  return node;
 }
 
 function getMethodTreeArrayToTree(items: Method[]): MethodTreeItem[] {

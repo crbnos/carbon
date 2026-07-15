@@ -73,7 +73,9 @@ export const partManufacturingPolicies = [
   "Make to Order"
 ] as const;
 
-export const serviceType = ["Internal", "External"] as const;
+// Services are Buy or Make only — never "Buy and Make", and never stocked
+// ("Pull from Inventory" is not a valid method for a Non-Inventory item).
+export const serviceReplenishmentSystems = ["Buy", "Make"] as const;
 
 export const supplierPartPriceSourceTypes = [
   "Quote",
@@ -345,55 +347,41 @@ export const materialValidatorWithGeneratedIds = z.object({
   sizes: z.array(z.string()).optional()
 });
 
-export const methodMaterialValidator = z
-  .object({
-    id: z.string().min(1, { message: "Material ID is required" }),
-    makeMethodId: z.string().min(1, { message: "Make method is required" }),
-    order: zfd.numeric(z.number().min(0)),
-    itemType: z.enum(methodItemType, {
-      errorMap: (issue, ctx) => ({
-        message: "Item type is required"
-      })
-    }),
-    kit: zfd.text(z.string().optional()).transform((value) => value === "true"),
-    methodType: z.enum(methodType, {
-      errorMap: (issue, ctx) => ({
-        message: "Method type is required"
-      })
-    }),
-    sourcingType: z.enum(sourcingType, {
-      errorMap: (issue, ctx) => ({
-        message: "Sourcing type is required"
-      })
-    }),
-    itemId: z.string().optional(),
-    methodOperationId: zfd.text(z.string().optional()),
-    // description: z.string().min(1, { message: "Description is required" }),
-    quantity: zfd.numeric(z.number().min(0)),
-    unitOfMeasureCode: z
-      .string()
-      .min(1, { message: "Unit of Measure is required" }),
-    storageUnitIds: z.string().transform((val) => {
-      try {
-        return JSON.parse(val) as Record<string, string>;
-      } catch {
-        return {};
-      }
-    }),
-    // BOM line-item effectivity: the build-date window this line applies to.
-    effectiveFrom: zfd.text(z.string().optional()),
-    effectiveTo: zfd.text(z.string().optional())
-  })
-  .refine(
-    (data) =>
-      !data.effectiveFrom ||
-      !data.effectiveTo ||
-      data.effectiveFrom <= data.effectiveTo,
-    {
-      message: "Effective From must be on or before Effective To",
-      path: ["effectiveTo"]
+export const methodMaterialValidator = z.object({
+  id: z.string().min(1, { message: "Material ID is required" }),
+  makeMethodId: z.string().min(1, { message: "Make method is required" }),
+  order: zfd.numeric(z.number().min(0)),
+  itemType: z.enum(methodItemType, {
+    errorMap: (issue, ctx) => ({
+      message: "Item type is required"
+    })
+  }),
+  kit: zfd.text(z.string().optional()).transform((value) => value === "true"),
+  methodType: z.enum(methodType, {
+    errorMap: (issue, ctx) => ({
+      message: "Method type is required"
+    })
+  }),
+  sourcingType: z.enum(sourcingType, {
+    errorMap: (issue, ctx) => ({
+      message: "Sourcing type is required"
+    })
+  }),
+  itemId: z.string().optional(),
+  methodOperationId: zfd.text(z.string().optional()),
+  // description: z.string().min(1, { message: "Description is required" }),
+  quantity: zfd.numeric(z.number().min(0)),
+  unitOfMeasureCode: z
+    .string()
+    .min(1, { message: "Unit of Measure is required" }),
+  storageUnitIds: z.string().transform((val) => {
+    try {
+      return JSON.parse(val) as Record<string, string>;
+    } catch {
+      return {};
     }
-  );
+  })
+});
 
 export const methodOperationValidator = z
   .object({
@@ -814,11 +802,17 @@ export const serviceValidator = applyStorageAndShelfLifeRefines(
   itemValidator.merge(
     z.object({
       id: z.string().min(1, { message: "Service ID is required" }).max(255),
-      serviceType: z.enum(serviceType, {
+      revision: z.string().min(1, { message: "Revision is required" }),
+      unitOfMeasureCode: z
+        .string()
+        .min(1, { message: "Unit of Measure is required" }),
+      replenishmentSystem: z.enum(serviceReplenishmentSystems, {
         errorMap: (issue, ctx) => ({
-          message: "Service type is required"
+          message: "Replenishment system is required"
         })
-      })
+      }),
+      // Services can never be shipped, received, or stocked
+      itemTrackingType: z.literal("Non-Inventory")
     })
   )
 );
