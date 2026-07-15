@@ -14,25 +14,36 @@ import { path } from "~/utils/path";
 type InventoryCountLinesProps = {
   lines: InventoryCountLine[];
   count: number;
-  isBlind: boolean;
+  // Blind counting withholds System Qty + Variance until Posted; the caller
+  // decides when — kept separate from the read-only (Draft) edit gate.
+  hideSystemQuantity: boolean;
   isReadOnly: boolean;
   locationId: string;
   title?: string;
   titleBadge?: ReactNode;
   primaryAction?: ReactNode;
+  // Line ids the last post attempt rejected (snapshot drift or invalid serial
+  // quantity) — highlighted red until fixed.
+  invalidLineIds?: string[];
 };
 
 const InventoryCountLines = ({
   lines,
   count,
-  isBlind,
+  hideSystemQuantity,
   isReadOnly,
   locationId,
   title,
   titleBadge,
-  primaryAction
+  primaryAction,
+  invalidLineIds
 }: InventoryCountLinesProps) => {
   const { t } = useLingui();
+
+  const invalidLineIdSet = useMemo(
+    () => new Set(invalidLineIds ?? []),
+    [invalidLineIds]
+  );
 
   // Build the inventory query filter: scope to this count's location and search
   // the quantities page for the item's readable id.
@@ -42,9 +53,7 @@ const InventoryCountLines = ({
     return `${path.to.inventoryItem(itemId)}?${next.toString()}`;
   }, []);
 
-  // Blind mode hides System Qty + Variance while the count is editable; the
-  // figures reappear once the document is locked (Pending/Posted).
-  const hideSystem = isBlind && !isReadOnly;
+  const hideSystem = hideSystemQuantity;
 
   const storageUnits = useStorageUnits(locationId);
   // The options resolve asynchronously; until they do, render a loading
@@ -198,7 +207,16 @@ const InventoryCountLines = ({
     () => ({
       countedQuantity: EditableNumber<InventoryCountLine>(
         onCellEdit,
-        { minValue: 0 },
+        // Serial-tracked lines are a single unique unit — cap the counted
+        // quantity at 1 (per row, since tracking type varies by line).
+        (row) => ({
+          minValue: 0,
+          maxValue:
+            (row as { item?: { itemTrackingType?: string } }).item
+              ?.itemTrackingType === "Serial"
+              ? 1
+              : undefined
+        }),
         { clearable: true }
       )
     }),
@@ -212,10 +230,17 @@ const InventoryCountLines = ({
       data={lines}
       count={count}
       editableComponents={editableComponents}
+      getRowClassName={(row) =>
+        invalidLineIdSet.has(row.id ?? "")
+          ? "bg-destructive/30 hover:bg-destructive/40"
+          : undefined
+      }
       primaryAction={primaryAction}
       title={title ?? t`Lines`}
       titleBadge={titleBadge}
       withInlineEditing={!isReadOnly}
+      // Draft counts are inherently editable — no Edit/Lock toggle, always on.
+      forceEditMode={!isReadOnly}
     />
   );
 };

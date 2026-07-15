@@ -120,6 +120,37 @@ function makeRecordingClient(responses: Scripted[]) {
 // result and returns `{ id: periodId }` on a clean transaction.
 function makeKyselyRecorder() {
   const updates: { table: string; values: any }[] = [];
+  // Raw statements executed on the transaction. The close path snapshots GL
+  // balances via `sql`SELECT "snapshotAccountingPeriodBalances"(...)`.execute(trx)`
+  // after the period flip, so `tx` must satisfy Kysely's RawBuilder.execute
+  // (which reads `trx.getExecutor()`). We don't parse the SQL — recording that a
+  // raw statement ran is enough to assert the snapshot fired. The executor is a
+  // Proxy so it tolerates whatever internal methods RawBuilder.execute calls.
+  const rawExecutions: unknown[] = [];
+  const executor = new Proxy(
+    {},
+    {
+      get(_t, prop) {
+        if (prop === "executeQuery")
+          return async (compiled: unknown) => {
+            rawExecutions.push(compiled);
+            return { rows: [] };
+          };
+        if (prop === "transformQuery") return (node: unknown) => node;
+        if (prop === "compileQuery")
+          return (node: unknown) => ({ sql: "", parameters: [], query: node });
+        if (prop === "provideConnection")
+          return async (fn: (c: unknown) => unknown) =>
+            fn({
+              executeQuery: async (compiled: unknown) => {
+                rawExecutions.push(compiled);
+                return { rows: [] };
+              }
+            });
+        return () => undefined;
+      }
+    }
+  );
   const tx = {
     updateTable(table: string) {
       const builder: any = {
@@ -131,7 +162,8 @@ function makeKyselyRecorder() {
         execute: () => Promise.resolve([])
       };
       return builder;
-    }
+    },
+    getExecutor: () => executor
   };
   const db: any = {
     transaction: () => ({
@@ -140,7 +172,7 @@ function makeKyselyRecorder() {
       }
     })
   };
-  return { db, updates };
+  return { db, updates, rawExecutions };
 }
 
 const args = { periodId: "P2", companyId: "C1", userId: "U1" };
@@ -332,12 +364,16 @@ describe("closePeriodWithChecklist — Blocker gate + Auto-task persistence", ()
       { count: 0 } // readiness: draft memos
     ]);
     // The task persist + period flip both run inside the Kysely transaction.
-    const { db, updates: txUpdates } = makeKyselyRecorder();
+    const { db, updates: txUpdates, rawExecutions } = makeKyselyRecorder();
 
     const result = await closePeriodWithChecklist(client, db, args);
 
     expect(result.error).toBeNull();
     expect(result.data).toEqual({ id: "P2" });
+
+    // The GL balance snapshot is written (snapshotAccountingPeriodBalances) via a
+    // raw statement inside the same transaction, after the period is flipped.
+    expect(rawExecutions.length).toBeGreaterThan(0);
 
     // Final Auto-task state persisted to periodCloseTask as Done.
     const taskUpdate = txUpdates.find((u) => u.table === "periodCloseTask");
@@ -508,8 +544,16 @@ describe("reopenAccountingPeriod — reverse-sequential reopen", () => {
 
   it("allows reopening when no later period is Closed", async () => {
     const client = makeClient([
-      { data: { id: "P2", startDate: "2026-02-01", closeStatus: "Closed" } },
+      {
+        data: {
+          id: "P2",
+          startDate: "2026-02-01",
+          endDate: "2026-02-28",
+          closeStatus: "Closed"
+        }
+      },
       { count: 0 }, // no later closed periods
+      { error: null }, // delete cumulative snapshots (invariant #3)
       { data: { id: "P2" }, error: null } // update
     ]);
 
@@ -517,6 +561,86 @@ describe("reopenAccountingPeriod — reverse-sequential reopen", () => {
 
     expect(result.error).toBeNull();
     expect(result.data).toEqual({ id: "P2" });
+  });
+
+  // Records which table each terminal op hit, so we can assert the reopen both
+  // deletes the stale cumulative snapshots and orders the delete before the flip.
+  function makeReopenTracker(responses: Scripted[]) {
+    const ops: string[] = [];
+    let i = 0;
+    const next = () => responses[i++] ?? { data: null, error: null };
+    const makeBuilder = (table: string) => {
+      const builder: any = {
+        select: () => builder,
+        update: () => {
+          ops.push(`update:${table}`);
+          return builder;
+        },
+        delete: () => {
+          ops.push(`delete:${table}`);
+          return builder;
+        },
+        eq: () => builder,
+        neq: () => builder,
+        gt: () => builder,
+        gte: () => builder,
+        lt: () => builder,
+        lte: () => builder,
+        or: () => builder,
+        order: () => builder,
+        limit: () => builder,
+        single: () => Promise.resolve(next()),
+        then: (resolve: (v: Scripted) => unknown) => resolve(next())
+      };
+      return builder;
+    };
+    return { client: { from: (t: string) => makeBuilder(t) } as any, ops };
+  }
+
+  it("deletes cumulative snapshots at/after the period end before flipping to Open", async () => {
+    const { client, ops } = makeReopenTracker([
+      {
+        data: {
+          id: "P2",
+          startDate: "2026-02-01",
+          endDate: "2026-02-28",
+          closeStatus: "Closed"
+        }
+      },
+      { count: 0 }, // no later closed periods
+      { error: null }, // delete snapshots
+      { data: { id: "P2" }, error: null } // update
+    ]);
+
+    const result = await reopenAccountingPeriod(client, args);
+
+    expect(result.error).toBeNull();
+    // Snapshot rows are cleared, and the delete precedes the status flip.
+    expect(ops).toEqual([
+      "delete:accountingPeriodBalance",
+      "update:accountingPeriod"
+    ]);
+  });
+
+  it("aborts the reopen (period stays Closed) if snapshot deletion fails", async () => {
+    const { client, ops } = makeReopenTracker([
+      {
+        data: {
+          id: "P2",
+          startDate: "2026-02-01",
+          endDate: "2026-02-28",
+          closeStatus: "Closed"
+        }
+      },
+      { count: 0 }, // no later closed periods
+      { error: { message: "snapshot delete failed" } } // delete fails
+    ]);
+
+    const result = await reopenAccountingPeriod(client, args);
+
+    expect(result.error?.message).toBe("snapshot delete failed");
+    // The period was never flipped — no update issued after the failed delete.
+    expect(ops).toEqual(["delete:accountingPeriodBalance"]);
   });
 });
 

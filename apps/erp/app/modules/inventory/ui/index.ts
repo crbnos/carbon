@@ -8,5 +8,6 @@ export * from "./Receipts";
 export * from "./ShippingMethods";
 export * from "./StorageTypes";
 export * from "./StorageUnits";
+export * from "./Valuation";
 export * from "./WarehouseTransfers";
 export { useInventorySubmodules };

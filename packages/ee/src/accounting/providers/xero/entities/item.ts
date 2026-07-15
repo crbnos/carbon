@@ -11,7 +11,7 @@ type ItemRow = {
   name: string;
   description: string | null;
   companyId: string | null;
-  type: "Part" | "Material" | "Tool" | "Consumable" | "Fixture";
+  type: "Part" | "Material" | "Tool" | "Consumable" | "Fixture" | "Service";
   unitOfMeasureCode: string | null;
   replenishmentSystem: "Buy" | "Make" | "Buy and Make";
   itemTrackingType: string;

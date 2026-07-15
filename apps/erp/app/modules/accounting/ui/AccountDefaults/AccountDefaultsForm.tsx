@@ -122,11 +122,18 @@ const AccountDefaultsForm = ({
         description: t`Configure default accounts for inventory management`,
         fields: [
           {
-            name: "inventoryAccount",
-            label: t`Inventory`,
-            description: t`Primary account for on-hand inventory valuation`,
+            name: "rawMaterialsAccount",
+            label: t`Raw Materials`,
+            description: t`On-hand value of purchased stock and components (Buy items)`,
             badgeType: "Asset",
-            termId: "account-default-inventory"
+            termId: "account-default-raw-materials"
+          },
+          {
+            name: "finishedGoodsAccount",
+            label: t`Finished Goods`,
+            description: t`On-hand value of manufactured goods (Make items)`,
+            badgeType: "Asset",
+            termId: "account-default-finished-goods"
           },
           {
             name: "workInProgressAccount",
@@ -134,13 +141,6 @@ const AccountDefaultsForm = ({
             description: t`Account for production orders not yet completed`,
             badgeType: "Asset",
             termId: "account-default-wip"
-          },
-          {
-            name: "inventoryShippedNotInvoicedAccount",
-            label: t`Inventory Shipped Not Invoiced`,
-            description: t`Accrual for inventory shipped but not yet invoiced to customer`,
-            badgeType: "Asset",
-            termId: "account-default-inventory-shipped-not-invoiced"
           }
         ]
       },

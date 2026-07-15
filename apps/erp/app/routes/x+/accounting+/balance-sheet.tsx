@@ -136,7 +136,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
       companyGroupId,
       selectedCompanyId!,
       parentCurrency,
-      periodEnd
+      periodEnd,
+      undefined,
+      balances.data ?? []
     );
 
     if (translation.data) {

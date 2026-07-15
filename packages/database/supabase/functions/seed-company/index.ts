@@ -369,17 +369,22 @@ serve(async (req: Request) => {
 
       // These defaults are NOT NULL in the schema. If a customized COA
       // on an existing group is missing one of their accounts
-      // (6050/4130/4120/7060/1150), the lookup yields null and the insert below
-      // would violate the not-null constraint. Fall back to an existing default
-      // of the same nature so the insert can't fail — mirrors the COALESCE
-      // backfills in 20260630093809_ar-ap-payments.sql and
-      // 20260711155312_supplier-prepayment-account.sql.
+      // (6050/4130/4120/7060/1150/1210/1220), the lookup yields null and the
+      // insert below would violate the not-null constraint. Fall back to an
+      // existing default of the same nature so the insert can't fail — mirrors
+      // the COALESCE backfills in 20260630093809_ar-ap-payments.sql,
+      // 20260711155312_supplier-prepayment-account.sql, and
+      // 20260713190909_raw-materials-finished-goods-accounts.sql.
+      // Order matters: rawMaterialsAccount resolves before finishedGoodsAccount
+      // chains onto it.
       const arApDefaultFallbacks: Record<string, string> = {
         customerWriteOffAccount: "salesDiscountAccount",
         supplierWriteOffAccount: "salesAccount",
         realizedExchangeGainAccount: "salesAccount",
         realizedExchangeLossAccount: "interestAccount",
         supplierPrepaymentAccount: "receivablesAccount",
+        rawMaterialsAccount: "workInProgressAccount",
+        finishedGoodsAccount: "rawMaterialsAccount",
       };
       for (const [key, fallbackKey] of Object.entries(arApDefaultFallbacks)) {
         if (!resolvedDefaults[key]) {

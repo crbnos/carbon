@@ -181,14 +181,6 @@ export const workCentersQuery = (companyId: string | null) => ({
   staleTime: RefreshRate.Low
 });
 
-export const groupsByTypeQuery = (
-  companyId: string | null,
-  type: string | null
-) => ({
-  queryKey: ["groupsByType", companyId ?? "null", type ?? "null"],
-  staleTime: RefreshRate.Low
-});
-
 export const materialTypesQuery = (
   substanceId: string,
   formId: string,
@@ -197,3 +189,99 @@ export const materialTypesQuery = (
   queryKey: ["materialTypes", substanceId, formId, companyId ?? "null"],
   staleTime: RefreshRate.Low
 });
+
+export const userSelectGroupsQuery = (
+  companyId: string | null,
+  type: string | null,
+  offset: number
+) => ({
+  queryKey: ["userSelectGroups", companyId ?? "null", type ?? "all", offset],
+  staleTime: RefreshRate.Low
+});
+
+export const userSelectMembersQuery = (
+  companyId: string | null,
+  groupId: string
+) => ({
+  queryKey: ["userSelectMembers", companyId ?? "null", groupId],
+  staleTime: RefreshRate.Low
+});
+
+export const userSelectSearchQuery = (
+  companyId: string | null,
+  type: string | null,
+  q: string,
+  filters: string
+) => ({
+  queryKey: [
+    "userSelectSearch",
+    companyId ?? "null",
+    type ?? "all",
+    q,
+    filters
+  ],
+  staleTime: RefreshRate.High
+});
+
+export const userSelectResolveQuery = (
+  companyId: string | null,
+  ids: string[]
+) => ({
+  queryKey: [
+    "userSelectResolve",
+    companyId ?? "null",
+    [...ids].sort().join(",")
+  ],
+  staleTime: RefreshRate.Low
+});
+
+export const groupEmailsQuery = (
+  companyId: string | null,
+  groupId: string
+) => ({
+  queryKey: ["groupEmails", companyId ?? "null", groupId],
+  staleTime: RefreshRate.Low
+});
+
+const USER_SELECT_QUERY_PREFIXES = [
+  "userSelectGroups",
+  "userSelectMembers",
+  "userSelectSearch",
+  "userSelectResolve",
+  "groupEmails"
+];
+
+/**
+ * Read-through fetch against an API route, cached in window.clientCache.
+ * fetchQuery dedupes concurrent identical calls and honors staleTime.
+ * Falls back to a plain fetch when the cache isn't mounted yet.
+ */
+export async function cachedApiQuery<T>(
+  query: { queryKey: unknown[]; staleTime: number },
+  url: string
+): Promise<T> {
+  const queryFn = async (): Promise<T> => {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Request failed with status ${res.status}`);
+    return res.json();
+  };
+  const cache = getClientCache();
+  if (!cache) return queryFn();
+  return cache.fetchQuery({
+    queryKey: query.queryKey,
+    queryFn,
+    staleTime: query.staleTime
+  });
+}
+
+export function invalidateUserSelectQueries(companyId: string | null) {
+  window.clientCache?.invalidateQueries({
+    predicate: (query) => {
+      const queryKey = query.queryKey as unknown[];
+      return (
+        USER_SELECT_QUERY_PREFIXES.includes(queryKey[0] as string) &&
+        queryKey[1] === (companyId ?? "null")
+      );
+    }
+  });
+}

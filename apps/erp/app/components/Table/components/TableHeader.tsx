@@ -85,6 +85,7 @@ type HeaderProps<T> = {
   titleBadge?: ReactNode;
   withSavedView: boolean;
   withInlineEditing: boolean;
+  forceEditMode: boolean;
   withPagination: boolean;
   withSearch: boolean;
   withSelectableRows: boolean;
@@ -115,6 +116,7 @@ const TableHeader = <T extends object>({
   title,
   titleBadge,
   withInlineEditing,
+  forceEditMode,
   withPagination,
   withSavedView,
   withSearch,
@@ -359,6 +361,7 @@ const TableHeader = <T extends object>({
             )}
 
           {withInlineEditing &&
+            !forceEditMode &&
             (editMode ? (
               <Button
                 leftIcon={<LuLock />}

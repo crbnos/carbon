@@ -340,6 +340,16 @@ export const auditConfig = {
       }
     },
 
+    inventoryCount: {
+      label: "Inventory Count",
+      tables: {
+        inventoryCount: { role: "root" },
+        // Line INSERTs (bulk snapshot generation) are auto-skipped for non-root
+        // tables; only UPDATE/DELETE on a counted line are logged.
+        inventoryCountLine: { entityIdColumn: "inventoryCountId" }
+      }
+    },
+
     workCenter: {
       label: "Work Center",
       tables: {
@@ -475,6 +485,8 @@ export const auditConfig = {
     warehouseTransferLine: "Line Item",
     stockTransfer: "Stock Transfer",
     stockTransferLine: "Line Item",
+    inventoryCount: "Inventory Count",
+    inventoryCountLine: "Line Item",
     workCenter: "Work Center",
     workCenterProcess: "Process",
     maintenanceSchedule: "Maintenance Schedule",

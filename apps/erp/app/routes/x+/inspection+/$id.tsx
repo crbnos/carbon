@@ -14,7 +14,7 @@ import {
   getInspectionFeatures
 } from "~/modules/quality";
 import type { InspectionDocumentContent } from "~/modules/quality/types";
-import type { Handle } from "~/utils/handle";
+import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 const InspectionDocumentEditor = lazy(
@@ -23,8 +23,10 @@ const InspectionDocumentEditor = lazy(
 );
 
 export const handle: Handle = {
-  breadcrumb: (_params: unknown) => msg`Inspection Document`,
-  to: path.to.inspectionDocuments,
+  breadcrumb: detailBreadcrumb(
+    { breadcrumb: msg`Inspection Document`, to: path.to.inspectionDocuments },
+    (data) => data?.diagram?.name
+  ),
   module: "quality"
 };
 

@@ -218,14 +218,14 @@ export const currencyValidator = z.object({
 });
 
 export const defaultBalanceSheetAccountValidator = z.object({
-  inventoryAccount: z.string().min(1, {
-    message: "Inventory account is required"
+  rawMaterialsAccount: z.string().min(1, {
+    message: "Raw materials account is required"
+  }),
+  finishedGoodsAccount: z.string().min(1, {
+    message: "Finished goods account is required"
   }),
   goodsReceivedNotInvoicedAccount: z.string().min(1, {
     message: "GR/IR clearing account is required"
-  }),
-  inventoryShippedNotInvoicedAccount: z.string().min(1, {
-    message: "Inventory shipped not invoiced account is required"
   }),
   workInProgressAccount: z.string().min(1, {
     message: "Work in progress account is required"

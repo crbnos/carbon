@@ -143,6 +143,9 @@ msgstr "{variances, plural, one {# riga differisce dalla quantità prevista} oth
 msgid "/month/user"
 msgstr "/mese/utente"
 
+msgid "% of Total"
+msgstr "% del Totale"
+
 #. placeholder {0}: numberFormatter.format(redirectedTotal)
 #. placeholder {1}: redirectedParts.join(", ")
 msgid "↩ {0} redirected from superseded {1}"
@@ -343,6 +346,9 @@ msgstr "Un RFQ di vendita (un cliente ti chiede di quotare) o un RFQ di acquisto
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "Un calendario separato per la dichiarazione dei redditi quando le regole fiscali richiedono un metodo diverso dall'ammortamento contabile."
 
+msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
+msgstr "Un servizio è un'attività fatturabile che viene acquistata o eseguita — non viene mai spedita, ricevuta o stoccata"
+
 msgid "A set of companies under one owner that share group-scoped configuration — the chart of accounts, currencies, and dimensions — so the same accounting setup spans every company in the group."
 msgstr "Un insieme di aziende sotto un unico proprietario che condividono una configurazione a livello di gruppo — il piano dei conti, le valute e le dimensioni — in modo che la stessa configurazione contabile si applichi a ogni azienda del gruppo."
 
@@ -477,12 +483,6 @@ msgstr "Crediti verso clienti"
 
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "Crediti verso clienti per importi dovuti dai clienti."
-
-msgid "Accrual account debited at shipment to recognize the receivable before the sales invoice posts; cleared when the invoice posts."
-msgstr "Conto di accantonamento addebitato al trasporto per riconoscere il credito prima che la fattura di vendita venga registrata; annullato quando la fattura viene registrata."
-
-msgid "Accrual for inventory shipped but not yet invoiced to customer"
-msgstr "Accantonamento per inventario spedito ma non ancora fatturato al cliente."
 
 msgid "Accumulated Depreciation"
 msgstr "Fondo di ammortamento"
@@ -805,6 +805,9 @@ msgstr "Tutti gli articoli"
 
 msgid "All jobs completed"
 msgstr "Tutti i lavori completati"
+
+msgid "All Locations"
+msgstr "Tutte le Ubicazioni"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "Tutti i membri dei gruppi selezionati e gli individui selezionati potranno approvare le richieste"
@@ -1627,9 +1630,6 @@ msgstr "In attesa di approvazione"
 msgid "Back"
 msgstr "Indietro"
 
-msgid "Back Home"
-msgstr "Torna a casa"
-
 msgid "Back to traceability"
 msgstr "Torna alla tracciabilità"
 
@@ -1865,6 +1865,12 @@ msgstr "Per Data Documento"
 
 msgid "By Due Date"
 msgstr "Per Data di Scadenza"
+
+msgid "By Item"
+msgstr "Per Articolo"
+
+msgid "By Location"
+msgstr "Per Ubicazione"
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "Accedendo, accetti i <0>Termini di Servizio</0> e l'<1>Informativa sulla Privacy.</1>"
@@ -2296,6 +2302,9 @@ msgstr "Nome Azienda"
 msgid "Company policy asks for a different person to inspect inbound items than the one who received them."
 msgstr "La politica aziendale richiede che una persona diversa ispezionare gli articoli in entrata rispetto a quella che li ha ricevuti."
 
+msgid "Company-wide — includes all locations"
+msgstr "A livello aziendale — include tutte le sedi"
+
 msgid "Compare and Order"
 msgstr "Confronta e Ordina"
 
@@ -2470,9 +2479,6 @@ msgstr "Stock in entrata confermato — ordini di acquisto e di produzione (barr
 
 msgid "Confirmed outgoing stock — sales orders & job materials (bars below zero)."
 msgstr "Stock in uscita confermato — ordini di vendita e materiali di lavoro (barre sotto zero)."
-
-msgid "Confirming locks the counted quantities. Review the warnings below, then post the count to apply the adjustments."
-msgstr "La conferma blocca le quantità conteggiate. Rivedi gli avvisi di seguito, quindi pubblica il conteggio per applicare gli adeguamenti."
 
 msgid "Confirms every posted journal entry in the period has equal debits and credits. If any entry is out of balance the trial balance won't tie out, so it must be corrected before the period can close."
 msgstr "Conferma che ogni registrazione contabile registrata nel periodo abbia debiti e crediti uguali. Se una registrazione è squilibrata, il bilancio di prova non sarà bilanciato, quindi deve essere corretta prima che il periodo possa chiudersi."
@@ -2687,6 +2693,9 @@ msgstr "Copia il collegamento alla parte"
 msgid "Copy link to procedure"
 msgstr "Copia collegamento alla procedura"
 
+msgid "Copy link to service"
+msgstr "Copia link al servizio"
+
 msgid "Copy link to tool"
 msgstr "Copia il collegamento dello strumento"
 
@@ -2735,6 +2744,12 @@ msgstr "Copia Preventivo"
 msgid "Copy Quote number"
 msgstr "Copia numero preventivo"
 
+msgid "Copy service number"
+msgstr "Copia numero servizio"
+
+msgid "Copy service unique identifier"
+msgstr "Copia identificatore univoco del servizio"
+
 msgid "Copy this item's pricing to another scope."
 msgstr "Copia il prezzo di questo articolo in un altro ambito."
 
@@ -2761,6 +2776,12 @@ msgstr "Risposta Corretta"
 
 msgid "Correct Answers"
 msgstr "Risposte Corrette"
+
+msgid "Correction"
+msgstr "Correzione"
+
+msgid "Corrections"
+msgstr "Correzioni"
 
 msgid "Corrective action"
 msgstr "Azione correttiva"
@@ -2832,6 +2853,9 @@ msgstr "Impossibile ripianificare il lavoro. Riprova."
 
 msgid "Count"
 msgstr "Conteggio"
+
+msgid "Count History"
+msgstr "Storico dei Conteggi"
 
 msgid "Count ID"
 msgstr "ID Conteggio"
@@ -3022,6 +3046,9 @@ msgstr "Azione richiesta creata"
 
 msgid "Created scrap reason"
 msgstr "Motivo di scarto creato"
+
+msgid "Created service"
+msgstr "Servizio creato"
 
 msgid "Created shipping method"
 msgstr "Metodo di spedizione creato"
@@ -3472,9 +3499,6 @@ msgstr "Conto di cassa predefinito per le transazioni nella tua valuta di base."
 msgid "Default CC Recipients"
 msgstr "Destinatari CC predefiniti"
 
-msgid "Default GL account that holds inventory value; debited on receipt, credited on shipment/issue."
-msgstr "Conto GL predefinito che contiene il valore dell'inventario; addebitato alla ricezione, accreditato alla spedizione/emissione."
-
 msgid "Default GL account used for cash transactions when no specific bank account is selected."
 msgstr "Conto GL predefinito utilizzato per le transazioni in contanti quando non è selezionato uno specifico conto bancario."
 
@@ -3735,6 +3759,9 @@ msgstr "Elimina Ordine di Vendita"
 
 msgid "Delete Schedule"
 msgstr "Elimina Pianificazione"
+
+msgid "Delete Service"
+msgstr "Elimina Servizio"
 
 msgid "Delete Shift"
 msgstr "Elimina Turno"
@@ -4422,6 +4449,9 @@ msgstr "Modifica Manutenzione Programmata"
 msgid "Edit Sequence"
 msgstr "Modifica Sequenza"
 
+msgid "Edit Service"
+msgstr "Modifica Servizio"
+
 msgid "Edit Shift"
 msgstr "Modifica Turno"
 
@@ -4493,12 +4523,6 @@ msgstr "Modifica Webhook"
 
 msgid "Edit Work Center"
 msgstr "Modifica Centro di Lavoro"
-
-msgid "Effective From"
-msgstr "Effettivo Da"
-
-msgid "Effective To"
-msgstr "Effettivo Fino A"
 
 msgid "Email"
 msgstr "Email"
@@ -5074,6 +5098,10 @@ msgid "Failed to create process: {0}"
 msgstr "Impossibile creare il processo: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create service: {0}"
+msgstr "Impossibile creare il servizio: {0}"
+
+#. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create shipping method: {0}"
 msgstr "Impossibile creare il metodo di spedizione: {0}"
 
@@ -5375,6 +5403,12 @@ msgstr "Finisci a"
 
 msgid "Finished goods"
 msgstr "Finiture"
+
+msgid "Finished Goods"
+msgstr "Prodotti Finiti"
+
+msgid "Finished Goods (default)"
+msgstr "Prodotti Finiti (predefinito)"
 
 msgid "finishes"
 msgstr "Deduzione aggiuntiva del primo anno presa prima dell'inizio del calendario MACRS regolare."
@@ -5684,6 +5718,12 @@ msgstr "Conto GL che acquisisce la differenza tra il costo standard e il costo d
 
 msgid "GL account that holds the value of jobs in production until they post to finished goods."
 msgstr "Conto GL che tiene il valore dei lavori in produzione fino a quando non vengono registrati come prodotti finiti."
+
+msgid "GL account that holds the value of manufactured goods (Make items); debited on job completion, credited on shipment."
+msgstr "Conto di contabilità generale che contiene il valore dei beni fabbricati (articoli Make); addebitato al completamento del lavoro, accreditato sulla spedizione."
+
+msgid "GL account that holds the value of purchased stock and components (Buy items); debited on receipt, credited on issue/shipment."
+msgstr "Conto di contabilità generale che contiene il valore delle scorte acquistate e dei componenti (articoli Buy); addebitato al ricevimento, accreditato su emissione/spedizione."
 
 msgid "GL account used when a customer pays before an invoice is issued; cleared when the invoice posts."
 msgstr "Conto GL utilizzato quando un cliente paga prima dell'emissione di una fattura; svuotato quando la fattura viene registrata."
@@ -6277,9 +6317,6 @@ msgstr "inventario"
 msgid "Inventory"
 msgstr "Inventario"
 
-msgid "Inventory (default)"
-msgstr "Inventario (predefinito)"
-
 msgid "Inventory accuracy"
 msgstr "Precisione dell'inventario"
 
@@ -6313,20 +6350,20 @@ msgstr "Cronologia Inventario"
 msgid "Inventory Job Notifications"
 msgstr "Notifiche Lavoro Inventario"
 
+msgid "Inventory Movements"
+msgstr "Movimenti di magazzino"
+
 msgid "Inventory Qty"
 msgstr "Quantità Inventario"
-
-msgid "Inventory Shipped Not Invoiced"
-msgstr "Inventario Spedito Non Fatturato"
-
-msgid "Inventory Shipped Not Invoiced (default)"
-msgstr "Inventario Spedito Non Fatturato (predefinito)"
 
 msgid "Inventory Tracking"
 msgstr "Tracciamento Inventario"
 
 msgid "Inventory Unit of Measure"
 msgstr "Unità di Misura Inventario"
+
+msgid "Inventory Valuation"
+msgstr "Valutazione Inventario"
 
 msgid "Invite"
 msgstr "Invita"
@@ -6453,6 +6490,9 @@ msgstr "Articolo"
 
 msgid "Item {scannedItem} is not the same as the item {expectedItem}"
 msgstr "L'articolo {scannedItem} non è lo stesso dell'articolo {expectedItem}"
+
+msgid "Item / Location"
+msgstr "Articolo / Ubicazione"
 
 msgid "Item filters"
 msgstr "Filtri articoli"
@@ -6842,6 +6882,9 @@ msgstr "ubicazione"
 
 msgid "Location"
 msgstr "Ubicazione"
+
+msgid "Location / Item"
+msgstr "Ubicazione / Articolo"
 
 msgid "Location Name"
 msgstr "Nome Ubicazione"
@@ -7441,6 +7484,9 @@ msgstr "Sposta nel Cestino"
 msgid "Moved {0} to {1} bucket"
 msgstr "Spostato {0} nel bucket {1}"
 
+msgid "Movements"
+msgstr "Movimenti"
+
 msgid "MRP (planning)"
 msgstr "MRP (pianificazione)"
 
@@ -7722,6 +7768,9 @@ msgstr "Nuova Riga Ordine Vendita"
 
 msgid "New Scheduled Maintenance"
 msgstr "Nuova Manutenzione Programmata"
+
+msgid "New Service"
+msgstr "Nuovo Servizio"
 
 msgid "New Shift"
 msgstr "Nuovo Turno"
@@ -8227,6 +8276,12 @@ msgstr "Quantità minima da mantenere per uso in servizio presso questa ubicazio
 msgid "On-hand inventory remains"
 msgstr "L'inventario disponibile rimane"
 
+msgid "On-hand value of manufactured goods (Make items)"
+msgstr "Valore disponibile dei beni fabbricati (articoli Make)"
+
+msgid "On-hand value of purchased stock and components (Buy items)"
+msgstr "Valore disponibile delle scorte acquistate e dei componenti (articoli Buy)"
+
 msgid "On-time delivery"
 msgstr "Consegna puntuale"
 
@@ -8455,6 +8510,12 @@ msgstr "Ordini inviati"
 
 msgid "Origin"
 msgstr "Origine"
+
+msgid "Original"
+msgstr "Originale"
+
+msgid "Original Count"
+msgstr "Conteggio Originale"
 
 msgid "Other Income account for FX gains when a payment settles a foreign-currency invoice at a more favorable rate"
 msgstr "Account di Altro Reddito per guadagni in valuta estera quando un pagamento regola una fattura in valuta estera a un tasso più favorevole"
@@ -8943,6 +9004,15 @@ msgstr "Pubblicato il"
 msgid "Posted By"
 msgstr "Pubblicato da"
 
+msgid "Posted once, no rectifications."
+msgstr "Pubblicato una volta, nessuna rettifica."
+
+msgid "Posted once, rectified {rectifications} times."
+msgstr "Pubblicato una volta, rettificato {rectifications} volte."
+
+msgid "Posted once, rectified 1 time."
+msgstr "Pubblicato una volta, rettificato 1 volta."
+
 msgid "Posting"
 msgstr "Anticipi"
 
@@ -9032,9 +9102,6 @@ msgstr "Regole di Prezzo"
 
 msgid "Pricing Trace"
 msgstr "Traccia Prezzi"
-
-msgid "Primary account for on-hand inventory valuation"
-msgstr "Conto cassa principale per le transazioni bancarie"
 
 msgid "Primary cash account for bank transactions"
 msgstr "procedura"
@@ -9353,6 +9420,9 @@ msgstr "Codice QR per avviare l'operazione successiva per questo kanban"
 msgid "Qty"
 msgstr "Qtà"
 
+msgid "Qty On Hand"
+msgstr "Qtà a Magazzino"
+
 msgid "Qty to Order"
 msgstr "Qtà da ordinare"
 
@@ -9519,6 +9589,12 @@ msgstr "segnalalo presto e segnalalo chiaramente. Un problema identificato nella
 msgid "Rate Limit"
 msgstr "Limite di Velocità"
 
+msgid "Raw Materials"
+msgstr "Materie Prime"
+
+msgid "Raw Materials (default)"
+msgstr "Materie Prime (predefinito)"
+
 msgid "Re-keying between quoting, the floor, and finance"
 msgstr "Reinserimento dati tra preventivazione, produzione e finanza"
 
@@ -9658,6 +9734,9 @@ msgstr "Creato di recente"
 msgid "Recertify Every (Days)"
 msgstr "Ricertifica ogni (giorni)"
 
+msgid "Reconcile"
+msgstr "Riconcilia"
+
 msgid "Reconciling a purchase order against what was received and invoiced — implicit in Carbon, via the line quantities and GR/IR balance."
 msgstr "Periodo di Recupero"
 
@@ -9693,6 +9772,12 @@ msgstr "Registri"
 
 msgid "Recovery Period"
 msgstr "Registrare"
+
+msgid "Rectification {rectifyNumber}"
+msgstr "Rettifica {rectifyNumber}"
+
+msgid "Rectify"
+msgstr "Rettificare"
 
 msgid "Redirecting to verification page..."
 msgstr "Reindirizzamento alla pagina di verifica..."
@@ -10026,6 +10111,9 @@ msgstr "Storna le relative registrazioni contabili"
 
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "Rivedi il bilancio e il conto economico del periodo e conferma che i dati sembrino corretti. Questo è un completamento manuale — contrassegnalo come eseguito una volta revisionati."
+
+msgid "Review the warnings below, then post the count to apply the adjustments."
+msgstr "Rivedi gli avvisi di seguito, quindi pubblica il conteggio per applicare gli aggiustamenti."
 
 msgid "Revision"
 msgstr "Revisione"
@@ -10710,11 +10798,17 @@ msgstr "Spese di servizio"
 msgid "Service Charges (default)"
 msgstr "Spese di servizio (predefinito)"
 
+msgid "Service Details"
+msgstr "Dettagli Servizio"
+
 msgid "Service ID"
 msgstr "ID Servizio"
 
 msgid "services"
 msgstr "servizi"
+
+msgid "Services"
+msgstr "Servizi"
 
 msgid "Set a target"
 msgstr "Imposta un obiettivo"
@@ -11056,9 +11150,6 @@ msgstr "Solutions Engineer"
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "Alcune righe estratte dal PDF non potevano essere mappate automaticamente ai tuoi articoli di inventario. Rivedi e mappa ogni riga di seguito."
 
-msgid "Something went wrong"
-msgstr "Qualcosa è andato storto"
-
 msgid "Something went wrong. Please try again."
 msgstr "Qualcosa è andato storto. Riprova."
 
@@ -11249,9 +11340,6 @@ msgstr "passaggi"
 
 msgid "Steps"
 msgstr "Passaggi"
-
-msgid "Stock Movements"
-msgstr "Movimenti di Magazzino"
 
 msgid "Stock Transfer ID"
 msgstr "ID Trasferimento Magazzino"
@@ -12577,6 +12665,9 @@ msgstr "Collegare le spedizioni a una fattura senza reinserimento dati"
 msgid "Tie-Out"
 msgstr "Riconciliazione"
 
+msgid "Tie-Out unavailable"
+msgstr "Riconciliazione non disponibile"
+
 msgid "Tightened"
 msgstr "Stretto"
 
@@ -12711,6 +12802,12 @@ msgstr "Quantità totale disponibile dell'articolo su tutte le unità di stoccag
 
 msgid "Total quantity required across all active jobs and sales orders at this location — not just this job."
 msgstr "Quantità totale richiesta su tutti i lavori attivi e gli ordini di vendita in questa posizione, non solo questo lavoro."
+
+msgid "Total Value"
+msgstr "Valore Totale"
+
+msgid "Total Variance"
+msgstr "Varianza Totale"
 
 msgid "Total:"
 msgstr "Totale:"
@@ -13130,6 +13227,9 @@ msgstr "Usa ... per ottenere il prossimo ID materiale"
 msgid "Use ... to get the next part ID"
 msgstr "Usa ... per ottenere l'ID parte successivo"
 
+msgid "Use ... to get the next service ID"
+msgstr "Usa ... per ottenere il prossimo ID servizio"
+
 msgid "Use ... to get the next tool ID"
 msgstr "Usa ... per ottenere il prossimo ID strumento"
 
@@ -13147,12 +13247,6 @@ msgstr "Utilizzato nella navigazione e nei documenti come ordini di vendita"
 
 msgid "Used in the navigation in dark mode"
 msgstr "Utilizzato nella navigazione in modalità scura"
-
-msgid "Used on builds on/after this date (blank = always)"
-msgstr "Utilizzato su build in/dopo questa data (vuoto = sempre)"
-
-msgid "Used on builds on/before this date (blank = always)"
-msgstr "Utilizzato su build in/prima di questa data (vuoto = sempre)"
 
 msgid "Used on the home screen and digital quotes"
 msgstr "Utilizzato nella schermata iniziale e nelle quotazioni digitali"
@@ -13223,6 +13317,9 @@ msgstr "Convalidato"
 msgid "Validating job..."
 msgstr "Convalida processo..."
 
+msgid "Valuation"
+msgstr "Valutazione"
+
 msgid "Value"
 msgstr "Valore"
 
@@ -13237,6 +13334,9 @@ msgstr "Numero di registrazione dell'imposta sul valore aggiunto; richiesto sull
 
 msgid "Values"
 msgstr "Valori"
+
+msgid "Values apply today's unit costs to historical quantities."
+msgstr "I valori applicano i costi unitari odierni alle quantità storiche."
 
 msgid "Variance"
 msgstr "Varianza"

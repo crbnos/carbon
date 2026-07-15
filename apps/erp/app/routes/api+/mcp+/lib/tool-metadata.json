@@ -1,6 +1,6 @@
 {
-  "generated": "2026-07-15T12:46:41.732Z",
-  "totalTools": 1334,
+  "generated": "2026-07-15T12:52:25.189Z",
+  "totalTools": 1343,
   "modules": 15,
   "tools": [
     {
@@ -1486,13 +1486,13 @@
       "schema": {
         "type": "object",
         "properties": {
-          "inventoryAccount": {
+          "rawMaterialsAccount": {
+            "type": "string"
+          },
+          "finishedGoodsAccount": {
             "type": "string"
           },
           "goodsReceivedNotInvoicedAccount": {
-            "type": "string"
-          },
-          "inventoryShippedNotInvoicedAccount": {
             "type": "string"
           },
           "workInProgressAccount": {
@@ -1551,9 +1551,9 @@
           }
         },
         "required": [
-          "inventoryAccount",
+          "rawMaterialsAccount",
+          "finishedGoodsAccount",
           "goodsReceivedNotInvoicedAccount",
-          "inventoryShippedNotInvoicedAccount",
           "workInProgressAccount",
           "receivablesAccount",
           "bankCashAccount",
@@ -2197,14 +2197,16 @@
       "module": "accounting",
       "classification": "WRITE",
       "description": "translate company balances",
-      "paramCount": 3,
+      "paramCount": 5,
       "serviceParams": [
         "client",
         "companyGroupId",
         "companyId",
         "targetCurrency",
         "periodEnd",
-        "periodStart"
+        "periodStart",
+        "// Rows from getFinancialStatementBalances for the same company/dates —\n  // translation only needs balanceAtDate + consolidatedRate",
+        "so re-running\n  // the full journalLine scan through the translateTrialBalance RPC would\n  // double the cost of every translated statement.\n  balances"
       ],
       "injectAuth": [
         "companyId"
@@ -2218,13 +2220,16 @@
           "periodEnd": {
             "type": "string"
           },
-          "periodStart": {
-            "type": "string"
-          }
+          "periodStart": {},
+          "// Rows from getFinancialStatementBalances for the same company/dates —\n  // translation only needs balanceAtDate + consolidatedRate": {},
+          "so re-running\n  // the full journalLine scan through the translateTrialBalance RPC would\n  // double the cost of every translated statement.\n  balances": {}
         },
         "required": [
           "targetCurrency",
-          "periodEnd"
+          "periodEnd",
+          "periodStart",
+          "// Rows from getFinancialStatementBalances for the same company/dates —\n  // translation only needs balanceAtDate + consolidatedRate",
+          "so re-running\n  // the full journalLine scan through the translateTrialBalance RPC would\n  // double the cost of every translated statement.\n  balances"
         ]
       }
     },
@@ -4429,6 +4434,93 @@
       }
     },
     {
+      "name": "inventory_getInventoryValuation",
+      "module": "inventory",
+      "classification": "READ",
+      "description": "get inventory valuation",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "asOfDate": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "locationId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "inventory_getInventoryValuationTieOut",
+      "module": "inventory",
+      "classification": "READ",
+      "description": "get inventory valuation tie out",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "asOfDate"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "asOfDate": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "inventory_createInventoryReconciliationJournal",
+      "module": "inventory",
+      "classification": "WRITE",
+      "description": "create inventory reconciliation journal",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "db",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "asOfDate": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "asOfDate"
+        ]
+      }
+    },
+    {
       "name": "inventory_getKanbans",
       "module": "inventory",
       "classification": "READ",
@@ -5976,10 +6068,10 @@
       "module": "inventory",
       "classification": "WRITE",
       "description": "insert manual inventory adjustment",
-      "paramCount": 10,
+      "paramCount": 1,
       "serviceParams": [
         "client",
-        "inventoryAdjustment"
+        "// `requiresSerialTracking` is a form-only flag for the validator's serial\n  // quantity guard — the route strips it before calling this.\n  inventoryAdjustment"
       ],
       "injectAuth": [
         "companyId",
@@ -5988,45 +6080,10 @@
       "schema": {
         "type": "object",
         "properties": {
-          "itemId": {
-            "type": "string"
-          },
-          "locationId": {
-            "type": "string"
-          },
-          "storageUnitId": {
-            "type": "string"
-          },
-          "originalStorageUnitId": {
-            "type": "string"
-          },
-          "adjustmentType": {
-            "type": "string",
-            "enum": [
-              "...itemLedgerTypes",
-              "Set Quantity"
-            ]
-          },
-          "quantity": {
-            "type": "number"
-          },
-          "trackedEntityId": {
-            "type": "string"
-          },
-          "readableId": {
-            "type": "string"
-          },
-          "expirationDate": {
-            "type": "string"
-          },
-          "comment": {
-            "type": "string"
-          }
+          "// `requiresSerialTracking` is a form-only flag for the validator's serial\n  // quantity guard — the route strips it before calling this.\n  inventoryAdjustment": {}
         },
         "required": [
-          "itemId",
-          "locationId",
-          "adjustmentType"
+          "// `requiresSerialTracking` is a form-only flag for the validator's serial\n  // quantity guard — the route strips it before calling this.\n  inventoryAdjustment"
         ]
       }
     },
@@ -6169,6 +6226,32 @@
       }
     },
     {
+      "name": "inventory_getInventoryCountMovements",
+      "module": "inventory",
+      "classification": "READ",
+      "description": "get inventory count movements",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "inventoryCountId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "inventoryCountId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "inventoryCountId"
+        ]
+      }
+    },
+    {
       "name": "inventory_insertInventoryCount",
       "module": "inventory",
       "classification": "WRITE",
@@ -6274,6 +6357,29 @@
         "required": [
           "inventoryCountId",
           "locationId"
+        ]
+      }
+    },
+    {
+      "name": "inventory_rectifyInventoryCount",
+      "module": "inventory",
+      "classification": "WRITE",
+      "description": "rectify inventory count",
+      "paramCount": 1,
+      "serviceParams": [
+        "db",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "args": {}
+        },
+        "required": [
+          "args"
         ]
       }
     },
@@ -6665,7 +6771,7 @@
       "module": "inventory",
       "classification": "WRITE",
       "description": "upsert stock transfer line",
-      "paramCount": 8,
+      "paramCount": 1,
       "serviceParams": [
         "client",
         "stockTransferLine"
@@ -6678,34 +6784,10 @@
       "schema": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string"
-          },
-          "stockTransferId": {
-            "type": "string"
-          },
-          "itemId": {
-            "type": "string"
-          },
-          "fromStorageUnitId": {
-            "type": "string"
-          },
-          "toStorageUnitId": {
-            "type": "string"
-          },
-          "quantity": {
-            "type": "number"
-          },
-          "pickedQuantity": {
-            "type": "number"
-          },
-          "requiresBatchTracking": {
-            "type": "string"
-          }
+          "stockTransferLine": {}
         },
         "required": [
-          "stockTransferId",
-          "itemId"
+          "stockTransferLine"
         ]
       }
     },
@@ -12511,7 +12593,7 @@
       "module": "items",
       "classification": "READ",
       "description": "get services",
-      "paramCount": 6,
+      "paramCount": 5,
       "serviceParams": [
         "client",
         "companyId",
@@ -12535,12 +12617,6 @@
                 "default": 0
               },
               "search": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              },
-              "type": {
                 "type": [
                   "string",
                   "null"
@@ -13889,7 +13965,7 @@
       "module": "items",
       "classification": "WRITE",
       "description": "upsert method material",
-      "paramCount": 1,
+      "paramCount": 4,
       "serviceParams": [
         "client",
         "methodMaterial"
@@ -13902,10 +13978,22 @@
       "schema": {
         "type": "object",
         "properties": {
-          "methodMaterial": {}
+          "id": {
+            "type": "string"
+          },
+          "makeMethodId": {
+            "type": "string"
+          },
+          "order": {
+            "type": "number"
+          },
+          "itemType": {
+            "type": "string"
+          }
         },
         "required": [
-          "methodMaterial"
+          "id",
+          "makeMethodId"
         ]
       }
     },
@@ -35581,7 +35669,7 @@
       "module": "sales",
       "classification": "WRITE",
       "description": "upsert quote line",
-      "paramCount": 4,
+      "paramCount": 5,
       "serviceParams": [
         "client",
         "quotationLine"
@@ -35598,6 +35686,9 @@
             "type": "string"
           },
           "quoteId": {
+            "type": "string"
+          },
+          "itemType": {
             "type": "string"
           },
           "itemId": {
@@ -35725,7 +35816,14 @@
               "quantity": {
                 "type": "number"
               },
-              "categoryMarkups": {}
+              "categoryMarkups": {},
+              "priceSource": {
+                "type": "string",
+                "enum": [
+                  "system",
+                  "manual"
+                ]
+              }
             },
             "required": [
               "quoteLineId",
@@ -41044,6 +41142,135 @@
         },
         "required": [
           "groupIds"
+        ]
+      }
+    },
+    {
+      "name": "users_getUserSelectGroups",
+      "module": "users",
+      "classification": "READ",
+      "description": "get user select groups",
+      "paramCount": 4,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "search": {
+            "type": "string"
+          },
+          "limit": {
+            "type": "number"
+          },
+          "offset": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "limit",
+          "offset"
+        ]
+      }
+    },
+    {
+      "name": "users_getUserSelectGroupMembers",
+      "module": "users",
+      "classification": "READ",
+      "description": "get user select group members",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "groupId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "groupId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "groupId"
+        ]
+      }
+    },
+    {
+      "name": "users_searchUsersForSelect",
+      "module": "users",
+      "classification": "READ",
+      "description": "search users for select",
+      "paramCount": 4,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "q": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "excludeSelf": {
+            "type": "boolean"
+          },
+          "allowedIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "q"
+        ]
+      }
+    },
+    {
+      "name": "users_resolveUserSelectIds",
+      "module": "users",
+      "classification": "WRITE",
+      "description": "resolve user select ids",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "ids"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "ids"
         ]
       }
     },

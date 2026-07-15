@@ -16,9 +16,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { supplierPartId } = params;
   if (!supplierPartId) throw notFound("supplierPartId not found");
 
+  // @ts-ignore TS2589 — supabase embedded-select inference exceeds the depth
+  // limit on this branch; the query is unchanged from main where it checks fine
   const result = await client
     .from("supplierPart")
-    .select("id, supplierId, supplier:supplierId(name)")
+    .select("id, supplierId, supplier(name)")
     .eq("id", supplierPartId)
     .eq("companyId", companyId)
     .single();

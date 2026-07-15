@@ -68,6 +68,7 @@ function getEntityPath(entityId: string): string | null {
     nc: path.to.issue,
     sh: path.to.shipment,
     rec: path.to.receipt,
+    ic: path.to.inventoryCount,
     g: path.to.gauge,
     sq: path.to.supplierQuote,
     wc: path.to.workCenter,

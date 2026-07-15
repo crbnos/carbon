@@ -11,12 +11,14 @@ import {
   getShipmentRelatedItems,
   getShipmentTracking
 } from "~/modules/inventory";
-import type { Handle } from "~/utils/handle";
+import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
-  breadcrumb: msg`Shipments`,
-  to: path.to.shipments
+  breadcrumb: detailBreadcrumb(
+    { breadcrumb: msg`Shipments`, to: path.to.shipments },
+    (data) => data?.shipment?.shipmentId
+  )
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

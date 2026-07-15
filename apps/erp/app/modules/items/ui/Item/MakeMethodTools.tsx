@@ -53,7 +53,7 @@ import { Link, useFetcher, useParams } from "react-router";
 import { Hidden, Item, useConfigurableItems } from "~/components/Form";
 import { Confirm } from "~/components/Modals";
 import { usePermissions, useUser } from "~/hooks";
-import type { MethodItemType } from "~/modules/shared";
+import type { ItemType } from "~/modules/shared";
 import { path } from "~/utils/path";
 import {
   getMethodValidator,
@@ -66,7 +66,7 @@ import MakeMethodVersionStatus from "./MakeMethodVersionStatus";
 
 type MakeMethodToolsProps = {
   itemId: string;
-  type: MethodItemType;
+  type: ItemType;
   makeMethods: MakeMethod[];
   currentMethodId?: string;
 };

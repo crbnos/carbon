@@ -42,8 +42,9 @@ at the app layer (`requirePermissions`). A separate `auditLogArchive` table trac
 Entity keys are **not** all bare table names — notably `salesQuote` (label "Quote", tables `quote`/`quoteLine`),
 `productionJob` (label "Job", tables `job`/...), plus `itemShelfLife`, `supplierQuote`, `customer`, `supplier`,
 `item`, `salesOrder`, `purchaseOrder`, `salesInvoice`, `purchaseInvoice`, `employee`, `nonConformance`, `gauge`,
-`shipment`, `receipt`, `warehouseTransfer`, `stockTransfer`, `workCenter`, `maintenanceSchedule`,
-`maintenanceDispatch`, `pricingRule`, `priceOverride`, `priceOverrideBreak`, `fixedAsset`. (~26 entities; the
+`shipment`, `receipt`, `warehouseTransfer`, `stockTransfer`, `inventoryCount` (root `inventoryCount` +
+child `inventoryCountLine`), `workCenter`, `maintenanceSchedule`,
+`maintenanceDispatch`, `pricingRule`, `priceOverride`, `priceOverrideBreak`, `fixedAsset`. (~27 entities; the
 old `quote`/`job`/`itemCost` entity keys are gone — `itemCost` is now an extension table of `item`.)
 
 Other config knobs:
@@ -92,7 +93,7 @@ than from config.
   badges, actor + entity links). `getEntityPath(entityId)` maps the id **prefix** (before first `_`) to a
   `path.to.*` route: `pi`→purchaseInvoice, `si`→salesInvoice, `po`→purchaseOrder, `so`→salesOrder,
   `cust`→customer, `sup`→supplier, `item`→part, `job`→job, `quote`→quote, `emp`→employeeAccount, `nc`→issue,
-  `sh`→shipment, `rec`→receipt, `g`→gauge, `sq`→supplierQuote, `wc`→workCenter, `main`→maintenanceDispatch.
+  `sh`→shipment, `rec`→receipt, `ic`→inventoryCount, `g`→gauge, `sq`→supplierQuote, `wc`→workCenter, `main`→maintenanceDispatch.
   Unknown prefixes render as plain text.
 - `.../AuditLog/AuditLogSettings.tsx` — enable/disable + archive download list.
 - `apps/erp/app/components/AuditLog/` — per-entity history `AuditLogDrawer.tsx` + `useAuditLog.tsx` hook,
@@ -113,4 +114,5 @@ than from config.
 `20260212174458_remove_actor_name_from_audit_log.sql`,
 `20260217120000_audit_log_add_table_name.sql`, `20260218000000_expand_audit_log_entities.sql`,
 `20260418000000_audit_log_add_record_id.sql`, `20260427120000_audit-event-timestamp.sql`,
-`20260513130000_audit-item-shelf-life-history.sql`.
+`20260513130000_audit-item-shelf-life-history.sql`,
+`20260713095136_attach-inventory-count-audit-triggers.sql` (attaches triggers on `inventoryCount`/`inventoryCountLine`).

@@ -590,7 +590,8 @@ export const accounts = [
 
   // Inventory
   { key: "inventory", number: null, name: "Inventory & Stock", isGroup: true, parentKey: "assets", accountType: "Inventory", incomeBalance: "Balance Sheet", class: "Asset", consolidatedRate: "Current", createdBy: "system" },
-  { key: "1210", number: "1210", name: "Inventory", isGroup: false, parentKey: "inventory", accountType: "Inventory", incomeBalance: "Balance Sheet", class: "Asset", consolidatedRate: "Current", createdBy: "system" },
+  { key: "1210", number: "1210", name: "Raw Materials", isGroup: false, parentKey: "inventory", accountType: "Inventory", incomeBalance: "Balance Sheet", class: "Asset", consolidatedRate: "Current", createdBy: "system" },
+  { key: "1220", number: "1220", name: "Finished Goods", isGroup: false, parentKey: "inventory", accountType: "Inventory", incomeBalance: "Balance Sheet", class: "Asset", consolidatedRate: "Current", createdBy: "system" },
   { key: "1230", number: "1230", name: "Work In Progress (WIP)", isGroup: false, parentKey: "inventory", accountType: "Inventory", incomeBalance: "Balance Sheet", class: "Asset", consolidatedRate: "Current", createdBy: "system" },
   { key: "1240", number: "1240", name: "Inventory Reserves / Allowances", isGroup: false, parentKey: "inventory", accountType: "Inventory", incomeBalance: "Balance Sheet", class: "Asset", consolidatedRate: "Current", createdBy: "system" },
 
@@ -622,7 +623,6 @@ export const accounts = [
   { key: "current-liabilities", number: null, name: "Current Liabilities", isGroup: true, parentKey: "liabilities", accountType: "Other Current Liability", incomeBalance: "Balance Sheet", class: "Liability", consolidatedRate: "Current", createdBy: "system" },
   { key: "2110", number: "2110", name: "Customer Prepayments", isGroup: false, parentKey: "current-liabilities", accountType: "Other Current Liability", incomeBalance: "Balance Sheet", class: "Liability", consolidatedRate: "Current", createdBy: "system" },
   { key: "2125", number: "2125", name: "GR/IR Clearing", isGroup: false, parentKey: "current-liabilities", accountType: "Other Current Liability", incomeBalance: "Balance Sheet", class: "Liability", consolidatedRate: "Current", createdBy: "system" },
-  { key: "2130", number: "2130", name: "Inventory Shipped Not Invoiced", isGroup: false, parentKey: "current-liabilities", accountType: "Other Current Liability", incomeBalance: "Balance Sheet", class: "Liability", consolidatedRate: "Current", createdBy: "system" },
   { key: "2140", number: "2140", name: "Accrued Expenses", isGroup: false, parentKey: "current-liabilities", accountType: "Other Current Liability", incomeBalance: "Balance Sheet", class: "Liability", consolidatedRate: "Current", createdBy: "system" },
   { key: "2150", number: "2150", name: "Accrued Wages & Salaries", isGroup: false, parentKey: "current-liabilities", accountType: "Other Current Liability", incomeBalance: "Balance Sheet", class: "Liability", consolidatedRate: "Current", createdBy: "system" },
   { key: "2160", number: "2160", name: "Deferred Revenue", isGroup: false, parentKey: "current-liabilities", accountType: "Other Current Liability", incomeBalance: "Balance Sheet", class: "Liability", consolidatedRate: "Current", createdBy: "system" },
@@ -742,7 +742,8 @@ export const accountDefaults = {
   assetAquisitionCostOnDisposalAccount: "1320",
   accumulatedDepreciationAccount: "1330",
   accumulatedDepreciationOnDisposalAccount: "1340",
-  inventoryAccount: "1210",
+  rawMaterialsAccount: "1210",
+  finishedGoodsAccount: "1220",
   workInProgressAccount: "1230",
   receivablesAccount: "1110",
   intercompanyReceivablesAccount: "1130",
@@ -753,7 +754,6 @@ export const accountDefaults = {
   supplierPrepaymentAccount: "1150",
   payablesAccount: "2010",
   goodsReceivedNotInvoicedAccount: "2125",
-  inventoryShippedNotInvoicedAccount: "2130",
   salesTaxPayableAccount: "2210",
   purchaseTaxPayableAccount: "2220",
   reverseChargeSalesTaxPayableAccount: "2230",

@@ -318,3 +318,93 @@ Format: `Context → Problem → Rule → Applies to`
 **Rule:** When you change seeded per-company template rows (`periodCloseTaskDefinition`, `paymentTerm`, `accountDefault`, …) in `seed.data.ts`, also write an idempotent **reconciling migration** for existing companies (`INSERT … FROM company … ON CONFLICT DO UPDATE`, plus deletes for removed rows), guarded on the `system` user for the `createdBy` FK. Validate it in a rolled-back psql txn that simulates the old state. Deleting instance rows to force re-instantiation is fine when no real data depends on them (confirm first).
 
 **Applies to:** any change to `packages/database/supabase/functions/lib/seed.data.ts` per-company templates; `seed-company/index.ts`, `seed-dev.ts`.
+
+## Raw-SQL item fixtures break type-specific UI — Material items need a companion `material` row keyed by readableId
+
+**Context:** Posting-flow verification created a type-`Material` item (RM-STEEL) with a raw `INSERT INTO "item"`. Interceptors auto-created `itemCost`/`itemReplenishment`/etc., so purchasing and posting worked. Later, selecting that material on a part's BOM (`/x/part/{id}/details?materialId=…`) crashed the whole page with "Not Found".
+
+**Problem:** Type-specific detail RPCs join companion tables the interceptors do NOT create: `get_material_details` requires a `material` row joined via `material."id" = item."readableId"` (readableId, not item id — all revisions share one taxonomy row). The properties route throws `404` when the RPC returns nothing, and a fetcher 404 bubbles to the route error boundary, taking down the entire details page.
+
+**Rule:** When creating item fixtures via SQL, create the type's companion row too (`material` keyed by `readableId` for Materials; check the `get_{type}_details` RPC joins for the type). Prefer creating fixtures through the UI or service functions when the item will be used in UI flows, not just ledger posting.
+
+**Applies to:** any psql/SQL test-fixture item creation; `get_material_details` / `get_part_details` / `get_tool_details` consumers; `apps/erp/app/routes/x+/items+/$itemId.properties.tsx`.
+
+## Journal debit/credit is derived from account class + amount sign, not the raw sign
+
+**Context:** Seeding a Cash sale as a journal via SQL, I used Cash (Asset) `amount = +1000` and Sales (Revenue) `amount = -1000`, assuming `+ = debit, - = credit` (which the `journal` AGENTS.md states for the *stored* value). The `journalEntries` view then reported the entry as `totalDebits = 2000, totalCredits = 0` — unbalanced — and the period-close "Trial balance in balance" auto-check (`tb-balanced`) refused the close.
+
+**Problem:** `journalEntries.totalDebits`/`totalCredits` are computed from **account class AND amount sign**: Asset/Expense `amount>0` OR Liability/Equity/Revenue `amount<0` → debit; the mirror → credit. So a *positive* amount on a Revenue account is a **credit**, not a debit. A correctly-balanced sale is Cash (Asset) `+1000` and Sales (Revenue) `+1000` — both positive. The raw `SUM(amount)` the balance RPCs use is a separate, class-agnostic signed sum; don't conflate the two.
+
+**Rule:** When hand-seeding `journalLine` rows, set the sign to move the account toward its natural balance: `+` increases an Asset/Expense (debit) and increases a Liability/Equity/Revenue (credit). Verify against the `journalEntries` view (`totalDebits == totalCredits` per `journalEntryId`) before relying on the data — an unbalanced entry silently blocks period close. Posted `journal`/`journalLine` rows are immutable (`journal_posted_immutable` / `journalLine_posted_immutable`); to correct seeded mistakes you must disable those triggers on the local DB (superuser), never in a migration.
+
+**Applies to:** any SQL journal fixtures; the `journalEntries` view; the `tb-balanced` close check in `computePeriodReadiness` (`accounting.service.ts`).
+
+## A period snapshot written at close races Locked-period postings unless the posting guard locks the period row
+
+**Context:** `closeAccountingPeriod` writes the `accountingPeriodBalance` snapshot inside its transaction, after flipping the period to `Closed`. `check_accounting_period_open` only *rejects* postings when a period is already `Closed`; a `Locked` period still accepts them (Locked is a soft freeze for adjustments). A period only becomes Closed on COMMIT.
+
+**Problem:** In the window between the close txn's snapshot `SELECT` and its COMMIT, a concurrent posting reads the period as still-Locked (the flip is uncommitted under READ COMMITTED), is allowed, and commits a line with `postingDate <= endDate` that the snapshot never captured. The read path's delta only adds `postingDate > endDate`, so that line is silently dropped from the optimized balance until reopen+reclose — a wrong financial figure with no error.
+
+**Rule:** When a cache/snapshot is written inside a state-flip transaction and a concurrent writer keys off the *committed* state, make the writer take a lock that conflicts with the flip. Here: the posting guard reads the target `accountingPeriod` row `FOR SHARE` (migration `20260713235930`), which blocks behind the close's row lock — postings before the flip commit first (and land in the snapshot); postings after block, then see `Closed` and are rejected. `FOR SHARE` is shared, so normal concurrent postings don't block each other; only an in-flight close serializes them. Verify with two psql sessions + `lock_timeout`.
+
+**Applies to:** `check_accounting_period_open`; `snapshotAccountingPeriodBalances` / `accountingPeriodBalance`; any close/snapshot-on-commit pattern.
+
+## Inline-editable table cells commit on blur — the container must own navigation keys in the capture phase
+
+**Context:** Inventory count table (PR #1135 follow-up): typed Counted Qty values were lost on Tab/Enter (only click-away saved), Enter never navigated, arrows stepped the number instead of moving the selection, and keyboard nav went dead after a commit.
+
+**Problem:** Editable cells (`~/components/Editable/*`) persist via the input's native `onBlur`, but three things prevent that blur from ever firing on keyboard navigation: (1) the Table's key handler `preventDefault()`s Tab/Enter, so the browser never moves focus; (2) React unmounts the still-focused input when the selection moves, and browsers fire no blur on a removed element; (3) react-aria's NumberField swallows Enter entirely (`onKeyDownEnter` commits internally without `continuePropagation()`) and consumes ArrowUp/Down as spinbutton steps, so a bubble-phase table handler never sees those keys. Blurring at the input level without navigating drops `document.activeElement` to `body`, after which the table wrapper hears no further keys.
+
+**Rule:** The table container owns the Excel keyboard model: attach the handler with `onKeyDownCapture` (so it beats react-aria to Enter/arrows), `stopPropagation()` for handled keys while editing, blur `document.activeElement` to commit *before* `setSelectedCell`, and let the roving-tabindex cell ref (`useMovingCellRef`) refocus the newly selected cell. Skip events targeting portaled overlays (`[data-radix-popper-content-wrapper]`, `[role=menu|listbox|dialog]`) — those own their keys. Editors must keep blur as their *single* commit path (no keydown commits — they double-fire the mutation, as `EditableText` did in Grid).
+
+**Applies to:** `apps/erp/app/components/Table/Table.tsx`, `apps/erp/app/components/Grid/Grid.tsx`, `apps/erp/app/components/Editable/*`, any future inline-editable cell editor.
+
+## Seeding useState from a prop goes stale when the document flips state in place
+
+**Context:** After Rectify flipped a Posted inventory count back to Draft, the lines table stayed read-only until a full page reload.
+
+**Problem:** `Table` read `forceEditMode` only as the `useState` initial value. Rectify/Post actions revalidate the route in place — the component never remounts, so the prop change never reached the state, and the Edit/Lock toggle is hidden while `forceEditMode` is set, leaving no way to recover. The same staleness applied in the opposite direction after posting a Draft (table looked editable on a read-only document).
+
+**Rule:** When a prop derives from a document's mutable status (Draft/Posted etc.) and controls interaction mode, sync it with an effect (`useEffect(() => setEditMode(forceEditMode), [forceEditMode])`) or derive it instead of seeding state once. Test the transition without a reload — loader revalidation does not remount components.
+
+**Applies to:** `apps/erp/app/components/Table/Table.tsx` (`forceEditMode`), any component seeding state from status-derived props on revalidating routes.
+
+## journalLineDocumentType and itemLedgerDocumentType are different enums with near-identical value sets
+
+**Context:** Adding GL posting for inventory adjustments: journal lines needed a `documentType` of `'Inventory Adjustment'`, and the plan also stamped the same value onto `itemLedger`/`costLedger` rows.
+
+**Problem:** `journalLine.documentType` uses the `journalLineDocumentType` enum while `itemLedger.documentType` AND `costLedger.documentType` share the `itemLedgerDocumentType` enum. The two lists overlap heavily ('Inventory Count' exists in both) but are not identical — `'Inventory Adjustment'` existed in neither and was added only to `journalLineDocumentType`. Writing a journal-only value into a ledger column fails at runtime with an invalid-enum error, and stamping a new documentType onto manual-adjustment `itemLedger` rows would also have broken the "byte-identical ledger writes when accounting is disabled" guarantee (they are NULL today).
+
+**Rule:** Before using a `documentType` string, check WHICH enum the target column uses (`\dT+` or grep the migration) — never assume the journal and ledger enums share values. When adding GL posting to an existing subledger flow, keep the subledger rows' shape unchanged (documentType stays whatever it was, usually NULL) and put the new linkage value on the journal lines only.
+
+**Applies to:** `packages/database/supabase/migrations/` enum additions; `functions/shared/post-adjustment.ts`; any `post-*` function writing both `itemLedger`/`costLedger` and `journalLine`.
+
+## Deno edge functions are not deno-check-clean — gate on own-file error deltas, not exit code
+
+**Context:** Verifying new/edited Supabase edge functions (`post-inventory-adjustment`, `post-inventory-count`) with `deno check`.
+
+**Problem:** `deno check` on ANY edge function fails with ~10–20 pre-existing errors from the shared dependency graph (TS2589 in `shared/get-next-sequence.ts`, kysely pool-config type skew, supabase-js generic inference collapsing to implicit-any callbacks). CI never runs `deno check`, so committed, working functions fail it — a red exit code proves nothing about the change, and chasing those errors means rewriting shared files out of scope.
+
+**Rule:** Gate edge-function changes on the DELTA of errors attributed to the touched file: `deno check <file> 2>&1 | sed 's/\x1b\[[0-9;]*m//g' | grep -c "<file>:"` must not exceed the committed baseline (copy the HEAD version beside it to measure, e.g. `git show HEAD:<path> > <dir>/index.orig.ts`, check, delete). New code should contribute zero; annotate supabase-js callbacks with explicit row types instead of leaving implicit-any. Pure logic goes in a small module importing only `lib/types.ts` so `deno test` type-checks clean.
+
+**Applies to:** `packages/database/supabase/functions/**` verification; `.ai/skills/check-and-commit` runs touching edge functions.
+
+## Forking a SQL function migration silently drops sibling branches added since your fork base
+
+**Context:** `complete_job_to_inventory` gained a Non-Inventory branch in `20260707022142` (services post WIP→COGS, no inventory artifacts). Six days later, two migrations (`20260713190909` raw-materials split, `20260713222236` overhead fix) each forked the function from the older `20260630092517` baseline — silently deleting the Non-Inventory branch. Service job completions then posted phantom Finished Goods until the branch was restored in `20260714043017`.
+
+**Problem:** "Fork from the newest definition" fails when the author greps for the migration that matters to *their* change and misses intermediate redefinitions that added orthogonal branches. The dropped branch produces no error — the divergent behavior only surfaces when someone exercises the other feature.
+
+**Rule:** Before redefining a function, list EVERY migration that touches it (`grep -l '<fn_name>' migrations/*.sql | sort`), and fork from the last one — then diff your new body against that exact file (`diff <(sed -n 'a,bp' newest.sql) <(...)`) so the only hunks are your intended edits. If the timeline shows a branch you don't understand (an `itemTrackingType` guard, a feature flag), it is load-bearing — carry it forward, never re-derive the body from an older file or memory.
+
+**Applies to:** `packages/database/supabase/migrations/` — any `CREATE OR REPLACE FUNCTION` fork; reviews of migrations that redefine shared functions (`complete_job_to_inventory`, `backflush_job_materials`, `get_inventory_quantities`, sync interceptors).
+
+## Job-completion side effects must live in complete_job_to_inventory, not in route actions
+
+**Context:** Service-job fulfillment (advance the linked salesOrderLine on completion) was first implemented in the ERP `$jobId.complete.tsx` action after the RPC call. In e2e it never ran: the operator finished the last operation, and `sync_update_job_operation_quantities` → `sync_finish_job_operation` (DB interceptors) called `complete_job_to_inventory` directly — the ERP route was never involved.
+
+**Problem:** Job completion has multiple entry points — the ERP Complete button AND the interceptor cascade that auto-completes when the last operation flips to Done (fired from MES quantity recording or ERP production quantities). Any completion side effect hooked at the app layer silently misses the interceptor path.
+
+**Rule:** Side effects that must accompany job completion (fulfillment, status propagation, posting) go INSIDE `complete_job_to_inventory` — the single choke point every path crosses. Place them before the `accountingEnabled` / zero-WIP early returns if they must run unconditionally. App-layer completion hooks are only valid for effects the SQL function cannot perform (edge-function invocation — cf. `returnAllocatedRemaindersAtJobComplete`, orchestrated in TS for exactly that reason).
+
+**Applies to:** `complete_job_to_inventory`; `apps/erp/app/routes/x+/job+/$jobId.complete.tsx`; `sync_finish_job_operation`; any future completion-triggered behavior (rev-rec POC recognition events).

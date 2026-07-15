@@ -1,6 +1,6 @@
 import { withContext } from "@logtape/logtape";
 import { DEFAULT_REDACT_FIELDS } from "@logtape/redaction";
-import { nanoid } from "nanoid";
+import { createId } from "@paralleldrive/cuid2";
 import {
   createContext,
   type MiddlewareFunction,
@@ -131,7 +131,7 @@ export const requestIdMiddleware: MiddlewareFunction<Response> = async (
   { request, context },
   next
 ) => {
-  const requestId = request.headers.get(REQUEST_ID_HEADER) ?? nanoid();
+  const requestId = request.headers.get(REQUEST_ID_HEADER) ?? createId();
   context.set(requestIdContext, requestId);
 
   const { method } = request;

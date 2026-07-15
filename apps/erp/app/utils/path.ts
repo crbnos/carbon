@@ -59,16 +59,24 @@ export const path = {
         generatePath(
           `${api}/quality/inspection-document/${inspectionDocumentId}/balloon-analyze`
         ),
-      groupsByType: (type?: string) =>
-        generatePath(`${api}/users/groups?type=${type}`),
-      groupsByTypeWithUsers: (type?: string) =>
-        generatePath(`${api}/users/groups?type=${type}&include=users`),
-      groupMembers: (groupId: string) =>
-        generatePath(`${api}/users/groups/${groupId}/members`),
-      usersSearch: (q: string) =>
-        generatePath(`${api}/users/search?q=${encodeURIComponent(q)}`),
-      usersBatch: (ids: string[]) =>
-        generatePath(`${api}/users/batch?ids=${ids.join(",")}`),
+      userSelectGroups: (
+        type: string | undefined,
+        offset: number,
+        limit = 25
+      ) =>
+        generatePath(
+          `${api}/users/select/groups?type=${type ?? ""}&offset=${offset}&limit=${limit}`
+        ),
+      userSelectGroupMembers: (groupId: string) =>
+        generatePath(`${api}/users/select/groups/${groupId}/members`),
+      userSelectSearch: (q: string, type?: string) =>
+        generatePath(
+          `${api}/users/select/search?q=${encodeURIComponent(q)}&type=${type ?? ""}`
+        ),
+      userSelectResolve: (ids: string[]) =>
+        generatePath(`${api}/users/select/resolve?ids=${ids.join(",")}`),
+      userSelectGroupEmails: (groupId: string) =>
+        generatePath(`${api}/users/select/groups/${groupId}/emails`),
       item: (type: string) => generatePath(`${api}/item/${type}`),
       itemCostRecalculate: (itemId: string) =>
         generatePath(`${api}/items/${itemId}/recalculate-cost`),
@@ -1075,6 +1083,8 @@ export const path = {
     inventoryItemAdjustment: (id: string) =>
       generatePath(`${x}/inventory/quantities/${id}/adjustment`),
     inventoryRoot: `${x}/inventory`,
+    inventoryValuation: `${x}/inventory/valuation`,
+    inventoryValuationReconcile: `${x}/inventory/valuation/reconcile`,
     stockMovements: `${x}/inventory/stock-movements`,
     inventorySettings: `${x}/settings/inventory`,
     invoicing: `${x}/invoicing`,
@@ -1685,6 +1695,8 @@ export const path = {
       generatePath(`${x}/inventory-count/${id}/reopen`),
     inventoryCountPost: (id: string) =>
       generatePath(`${x}/inventory-count/${id}/post`),
+    inventoryCountRectify: (id: string) =>
+      generatePath(`${x}/inventory-count/${id}/rectify`),
     inventoryCountDelete: (id: string) =>
       generatePath(`${x}/inventory-count/${id}/delete`),
     inventoryCountLineUpdate: `${x}/inventory-count/lines/update`,
@@ -1836,14 +1848,17 @@ export const path = {
       generatePath(`${x}/inventory/serial-numbers/${id}`),
     service: (id: string) => generatePath(`${x}/service/${id}`),
     services: `${x}/items/services`,
+    serviceCosting: (id: string) => generatePath(`${x}/service/${id}/costing`),
     serviceDetails: (id: string) => `${x}/service/${id}/details`,
+    serviceMake: (id: string, makeMethodId: string) =>
+      generatePath(`${x}/service/${id}/make/${makeMethodId}`),
+    serviceQuality: (id: string) => generatePath(`${x}/service/${id}/quality`),
     serviceRoot: `${x}/service`,
+    serviceSales: (id: string) => generatePath(`${x}/service/${id}/sales`),
     servicePurchasing: (id: string) =>
       generatePath(`${x}/service/${id}/purchasing`),
     serviceSupplier: (serviceId: string, id: string) =>
       generatePath(`${x}/service/${serviceId}/purchasing/${id}`),
-    serviceSuppliers: (id: string) =>
-      generatePath(`${x}/service/${id}/suppliers`),
     settings: `${x}/settings`,
     sequences: `${x}/settings/sequences`,
     storageUnit: (id: string) =>

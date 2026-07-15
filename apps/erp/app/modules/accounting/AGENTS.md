@@ -49,6 +49,7 @@ pnpm --filter @carbon/erp test -- --testPathPattern=accounting
 | `journal` / `journalLine` | Double-entry transactions; lines carry dimension assignments |
 | `journalLineDimension` | Dimension values assigned to journal lines |
 | `accountingPeriod` | Fiscal periods. `closeStatus` (`periodCloseStatus`: Open→Locked→Closed lifecycle), `fiscalYear`/`periodNumber` (identity from the fiscal start month), `lockedAt`/`lockedBy`. Legacy `status` (Active/Inactive) is deprecated. |
+| `accountingPeriodBalance` | Cumulative per-account GL balance snapshots. `closeAccountingPeriod` calls `snapshotAccountingPeriodBalances` inside its close transaction (after the flip to Closed) to write them; `reopenAccountingPeriod` deletes them (`endingBalanceDate` ≥ period `endDate`) before flipping back to Open. Read by `accountTreeBalancesByCompany` (snapshot + delta; full-scan fallback when empty). Balance RPCs exclude Draft journals. |
 | `periodCloseTaskDefinition` / `periodCloseTask` | NetSuite-style close checklist: company-level task templates + per-period instances (seeded via `seed-company`) |
 | `accountDefault` | Default GL account mappings (AR, AP, inventory, etc.) |
 | `currency` / `currencyCode` / `exchangeRateHistory` | Multi-currency with historical rates |

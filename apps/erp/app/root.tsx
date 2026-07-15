@@ -9,18 +9,15 @@ import { validator } from "@carbon/form";
 import { LocaleProvider, resolveLanguage } from "@carbon/locale";
 import { requestIdMiddleware } from "@carbon/logger/middleware.server";
 import {
-  Button,
-  Heading,
   OperatingSystemContextProvider,
   Toaster,
   TooltipProvider,
-  TVColorBars,
   useMode,
   useMount
 } from "@carbon/react";
+import { RootErrorBoundary } from "@carbon/react/ErrorBoundary";
 import type { Theme } from "@carbon/utils";
 import { getPreferenceHeaders, modeValidator, themes } from "@carbon/utils";
-import { Trans } from "@lingui/react/macro";
 import { I18nProvider } from "@react-aria/i18n";
 import { QueryClient } from "@tanstack/react-query";
 import { Analytics } from "@vercel/analytics/react";
@@ -33,15 +30,12 @@ import type {
 } from "react-router";
 import {
   data,
-  isRouteErrorResponse,
-  Link,
   Links,
   Meta,
   Outlet,
   Scripts,
   ScrollRestoration,
-  useLoaderData,
-  useRouteLoaderData
+  useLoaderData
 } from "react-router";
 import SonnerStyle from "sonner/dist/styles.css?url";
 import { loadLinguiCatalogForRequest } from "~/services/lingui.server";
@@ -200,12 +194,14 @@ export function Document({
   children,
   lang = "en",
   mode = "light",
-  theme = "zinc"
+  theme = "zinc",
+  env
 }: {
   children: React.ReactNode;
   lang?: string;
   mode?: "light" | "dark";
   theme?: string;
+  env?: Record<string, unknown>;
 }) {
   const selectedTheme = themes.find((t) => t.name === theme) as
     | Theme
@@ -252,6 +248,17 @@ export function Document({
       </head>
       <body className="h-full bg-background antialiased selection:bg-primary/10 selection:text-primary">
         {children}
+        {/* Injected before <Scripts /> so `window.env` is populated before the
+            client entry module loads. Rendered here (not in <App />) so error
+            pages get it too — the client Supabase client reads SUPABASE_URL from
+            window.env at module load and otherwise crashes hydration. */}
+        {env ? (
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `window.env = ${JSON.stringify(env)};`
+            }}
+          />
+        ) : null}
         <Toaster position="bottom-right" visibleToasts={5} />
         <ScrollRestoration />
         <Scripts />
@@ -289,13 +296,8 @@ export default function App() {
       <LocaleProvider locale={appLanguage} catalog={linguiCatalog}>
         <I18nProvider locale={prefs.locale}>
           <TooltipProvider delayDuration={200}>
-            <Document mode={mode} theme={theme} lang={appLanguage}>
+            <Document mode={mode} theme={theme} lang={appLanguage} env={env}>
               <Outlet />
-              <script
-                dangerouslySetInnerHTML={{
-                  __html: `window.env = ${JSON.stringify(env)};`
-                }}
-              />
             </Document>
           </TooltipProvider>
         </I18nProvider>
@@ -305,64 +307,17 @@ export default function App() {
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  // The ErrorBoundary renders in place of <App />, so it is outside the
-  // LocaleProvider mounted there. Re-establish it from the root loader data
-  // (falling back to defaults if the loader itself threw) so the boundary can
-  // use the same lingui catalog as the rest of the app.
-  const rootLoaderData = useRouteLoaderData<typeof loader>("root");
-
+  // The ErrorBoundary renders in place of <App />, so it needs its own
+  // <Document> shell (html/head/scripts + theme vars). The VOID//SYS screen is
+  // dark by design, so force dark mode regardless of the user's preference.
+  // Inject `window.env` so the client can hydrate: the Supabase client reads
+  // SUPABASE_URL from window.env at module load and otherwise throws
+  // "supabaseUrl is required", aborting hydration (leaving this screen static).
+  // Use getBrowserEnv() rather than root loader data — the latter is undefined
+  // in a no-match (404) boundary.
   return (
-    <LocaleProvider
-      locale={rootLoaderData?.preferences?.locale}
-      catalog={rootLoaderData?.linguiCatalog}
-    >
-      <ErrorBoundaryContent error={error} />
-    </LocaleProvider>
-  );
-}
-
-function ErrorBoundaryContent({ error }: { error: unknown }) {
-  const message = isRouteErrorResponse(error)
-    ? (error.data.message ?? error.data)
-    : error instanceof Error
-      ? error.message
-      : String(error);
-
-  return (
-    <Document>
-      <div className="light">
-        <div className="relative flex min-h-dvh w-full flex-col items-center justify-center p-6">
-          <TVColorBars />
-          <div className="relative z-10 flex w-full max-w-lg flex-col items-center gap-8 rounded-2xl border border-white/40 bg-card/75 p-10 text-center shadow-2xl inset-ring inset-ring-white/30 backdrop-blur-xl backdrop-saturate-150">
-            <img
-              src="/carbon-mark-light.svg"
-              alt="Carbon Logo"
-              className="max-w-[60px] dark:hidden"
-            />
-            <img
-              src="/carbon-mark-dark.svg"
-              alt="Carbon Logo"
-              className="max-w-[60px] not-dark:hidden"
-            />
-            <div className="flex flex-col items-center gap-3">
-              <Heading size="h2">
-                <Trans>Something went wrong</Trans>
-              </Heading>
-              <p className="max-w-[48ch] break-words font-mono text-sm text-pretty text-muted-foreground">
-                {message}
-              </p>
-            </div>
-            <Button asChild>
-              {/* Full document load: client-side nav out of a root error state
-                  can leave the boundary rendered (or hydration may have failed
-                  entirely), so never let the router intercept this click. */}
-              <Link to="/" reloadDocument>
-                <Trans>Back Home</Trans>
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </div>
+    <Document mode="dark" env={getBrowserEnv()}>
+      <RootErrorBoundary error={error} />
     </Document>
   );
 }

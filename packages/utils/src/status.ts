@@ -34,7 +34,11 @@ export const getSalesOrderStatus = (
   );
 
   const allShipped = lines.every(
-    (line) => line.salesOrderLineType === "Comment" || line.sentComplete
+    (line) =>
+      line.salesOrderLineType === "Comment" ||
+      // Services are never shipped — they can't block shipping completeness
+      line.salesOrderLineType === "Service" ||
+      line.sentComplete
   );
 
   let status: Database["public"]["Tables"]["salesOrder"]["Row"]["status"] =
@@ -71,6 +75,8 @@ export const getPurchaseOrderStatus = (
     (line) =>
       line.purchaseOrderLineType === "Comment" ||
       line.purchaseOrderLineType === "G/L Account" ||
+      // Services are never received — they can't block receipt completeness
+      line.purchaseOrderLineType === "Service" ||
       line.receivedComplete
   );
 

@@ -25,8 +25,17 @@ Key service functions (verified):
 - `getInventoryItems` / `getInventoryItemsCount` — call the `get_inventory_quantities` RPC
   (args `{ location_id, company_id }`, `count: "exact"`); supports search + generic filters.
 - `getItemLedgerPage` — paginated item-ledger history for an item at a location.
-- `insertManualInventoryAdjustment` — positive/negative/set-quantity adjustments, tracked-entity
-  storage-unit transfers, expiry override, batch/serial assignment.
+- `insertManualInventoryAdjustment` — thin wrapper over the **`post-inventory-adjustment`
+  edge function** (MES has a matching wrapper in `apps/mes/app/services/inventory.service.ts`).
+  The edge function owns positive/negative/set-quantity resolution, tracked-entity storage-unit
+  transfers, expiry override, batch/serial assignment — and, in one Kysely transaction, maintains
+  `costLedger` layers (consume via `calculateCOGS` on decreases, new layer at current cost on
+  increases) and posts a journal (Dr/Cr `resolveInventoryAccount` vs
+  `accountDefault.inventoryAdjustmentVarianceAccount`) when `companySettings.accountingEnabled`.
+  `post-inventory-count` books its variances through the same shared core
+  (`functions/shared/post-adjustment.ts`). Storage-unit transfers post no GL. The valuation
+  workbench tie-out offers a **Reconcile** action (`createInventoryReconciliationJournal`) that
+  drafts an adjusting journal for any residual pre-feature variance.
 - Storage units: `getStorageUnit(s)`, `getStorageUnitRoots`, `getStorageUnitChildren`,
   `getStorageUnitTree`, `getStorageUnitsTreeForLocation`, `getDefaultStorageUnitForJob`,
   `getDefaultStorageUnitOrStorageUnitWithHighestQuantity` (these are the picking/job defaults).
@@ -46,8 +55,14 @@ Validators in `inventory.models.ts`: `inventoryAdjustmentValidator`, `receiptVal
   `documentType` (`itemLedgerDocumentType`), `postingDate`, `itemId`, `locationId`,
   `storageUnitId`, `quantity`, `trackedEntityId`, and `trackedEntityStatus` (denormalized from
   `trackedEntity.status` — added `20260420112047`, lets reads filter status without a JOIN).
-- **`itemInventory`** — denormalized per-(item, location, storageUnit) aggregate (`quantityOnHand`,
-  `quantityOnPurchase`, `quantityOnSalesOrder`, `quantityOnProductionOrder`), trigger-maintained.
+- **`itemLedgerSnapshot`** (matview, `20260713235406`) — snapshot of the immutable UNTRACKED
+  ledger rows (`trackedEntityId IS NULL`, `createdAt` older than 1h) per item/company/location:
+  `quantity`, `consumed30/90`, `storageUnitIds`, `snapshotCutoff`. pg_cron refresh every 30 min.
+  Read only inside the SECURITY DEFINER quantity functions (REVOKEd from PostgREST roles); live
+  reads add rows past `snapshotCutoff` plus ALL tracked rows, so results stay exact. Distinct
+  from `itemStockQuantities` (the approximate UI item-store matview used by RealtimeDataProvider).
+  The old `itemInventory` rollup table is DEAD — its maintaining trigger was dropped in
+  `20250209170952_shipment.sql`; don't read or write it.
 - **`storageUnit`** — bins/locations. Renamed from `shelf` (`20260417000100`); supports nesting via
   `parentId` and `storageTypeIds TEXT[]` (`20260417000200`). Cols: `id`, `name`, `locationId`,
   `warehouseId`, `parentId`, `storageTypeIds`, `active`.
@@ -62,8 +77,9 @@ Validators in `inventory.models.ts`: `inventoryAdjustmentValidator`, `receiptVal
 - **`itemPlanning`** / **`itemReplenishment`** — reorder/planning params and replenishment strategy.
 - **`storageRule`** + assignment tables — renamed from `customRule`/`itemRule` (`20260603130000`).
 
-`get_inventory_quantities(company_id TEXT, location_id TEXT)` — the central read. Newest definition is
-`20260512130000_inventory-storage-unit-filter.sql` (NOT the old-doc's 2025 migration). Returns ~52 cols:
+`get_inventory_quantities(company_id TEXT, location_id TEXT, item_id TEXT DEFAULT NULL)` — the central
+read. Newest definition is `20260713235406_item-ledger-snapshot.sql` (snapshot + delta via
+`itemLedgerSnapshot`; `item_id` restricts to one item for detail-page loads). Returns ~52 cols:
 item identity + material props, planning fields, and quantities `quantityOnHand`, `quantityOnHold`,
 `quantityRejected` (status-aware: excludes `Rejected`, surfaces `On Hold`), `quantityOnSalesOrder`,
 `quantityOnPurchaseOrder`, `quantityOnProductionOrder`, `quantityOnProductionDemand`, `demandForecast`,
@@ -81,10 +97,12 @@ Relevant enums: `itemLedgerType`, `itemLedgerDocumentType`, `trackedEntityStatus
   `customRule`→`storageRule`. Grep the NEWEST migration for the real name; never trust an older one or the
   old cache. The `shelf`→`storageUnit` rename was split across paired migrations
   `20260417000100` (rename, M2) + `..000300` (recreate dependents, M4) — they must apply together.
-- **`get_inventory_quantities` has many revisions.** Always read the newest (`20260512130000`), not the
-  first match. `quantityOnHand` is status-aware: `Rejected` tracked entities are excluded.
+- **`get_inventory_quantities` has many revisions.** Always read the newest (`20260713235406`), not the
+  first match. `quantityOnHand` is status-aware: `Rejected` tracked entities are excluded, and tracked
+  rows are always computed live (never from `itemLedgerSnapshot`) so status flips are never stale.
 - **The auto-generated MCP reference (`.ai/rules/mcp-tools-reference.md`) is stale** for storage units —
   it still lists `getShelf`/`getDefaultShelfForJob`. The real service exports `getStorageUnit*` /
   `getDefaultStorageUnitForJob`. Trust the service file.
 - On-hand math comes from `itemLedger` (and the `get_inventory_quantities` RPC), not from summing
-  `trackedEntity` directly; `itemInventory` is a trigger-maintained cache, not authoritative.
+  `trackedEntity` directly. The old `itemInventory` table is orphaned (trigger dropped
+  `20250209170952`) — never read or write it.

@@ -2,7 +2,7 @@ import { mkdtempSync, rmSync, symlinkSync, unlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "pathe";
 import { afterAll, describe, expect, it } from "vitest";
-import { sameWorktreePath, slugify } from "./worktree.js";
+import { canonicalSlug, sameWorktreePath, slugify } from "./worktree.js";
 
 describe("slugify", () => {
   it("lowercases", () => {
@@ -34,6 +34,58 @@ describe("slugify", () => {
   it("returns empty string when input is empty or all-symbol", () => {
     expect(slugify("")).toBe("");
     expect(slugify("///")).toBe("");
+  });
+});
+
+describe("canonicalSlug", () => {
+  it("derives <repoBase>-<branch> independent of the worktree path", () => {
+    // Conductor codename dir (`moscow`) must NOT drive the slug — the branch does.
+    expect(
+      canonicalSlug({
+        worktreeRoot: "/Users/x/conductor/workspaces/carbon/moscow",
+        mainRoot: "/Users/x/Code/carbon",
+        branch: "featuser-select"
+      })
+    ).toBe("carbon-featuser-select");
+  });
+
+  it("sanitizes slashes in the branch (matches `crbn new` dir naming)", () => {
+    expect(
+      canonicalSlug({
+        worktreeRoot: "/Users/x/anything",
+        mainRoot: "/Users/x/Code/carbon",
+        branch: "feat/service"
+      })
+    ).toBe("carbon-feat-service");
+  });
+
+  it("strips a prior -<slug> suffix from the main checkout basename", () => {
+    expect(
+      canonicalSlug({
+        worktreeRoot: "/Users/x/wt",
+        mainRoot: "/Users/x/Code/carbon-standard-costing",
+        branch: "fix-bug"
+      })
+    ).toBe("carbon-fix-bug");
+  });
+
+  it("never collides with the main checkout's bare `carbon` slug", () => {
+    const slug = canonicalSlug({
+      worktreeRoot: "/Users/x/conductor/workspaces/carbon/macau",
+      mainRoot: "/Users/x/Code/carbon",
+      branch: "some-feature"
+    });
+    expect(slug).not.toBe("carbon");
+  });
+
+  it("falls back to the worktree dir basename when HEAD is detached", () => {
+    expect(
+      canonicalSlug({
+        worktreeRoot: "/Users/x/conductor/workspaces/carbon/moscow",
+        mainRoot: "/Users/x/Code/carbon",
+        branch: ""
+      })
+    ).toBe("moscow");
   });
 });
 

@@ -37,12 +37,14 @@ import {
   getDepreciationRunLines
 } from "~/modules/accounting";
 import { DepreciationRunStatus } from "~/modules/accounting/ui/FixedAssets";
-import type { Handle } from "~/utils/handle";
+import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
-  breadcrumb: "Depreciation",
-  to: path.to.depreciationRuns
+  breadcrumb: detailBreadcrumb(
+    { breadcrumb: "Depreciation", to: path.to.depreciationRuns },
+    (data) => data?.run?.depreciationRunId
+  )
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
