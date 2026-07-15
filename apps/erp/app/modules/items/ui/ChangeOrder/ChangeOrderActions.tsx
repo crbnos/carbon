@@ -1,6 +1,5 @@
 import { ValidatedForm } from "@carbon/form";
 import {
-  BarProgress,
   Button,
   Card,
   CardContent,
@@ -26,6 +25,9 @@ import {
 import { useFetcher } from "react-router";
 import { EmployeeAvatar } from "~/components";
 import { DatePicker, Employee, Hidden, Input, Submit } from "~/components/Form";
+// Reuse Quality's progress bar (entity-agnostic: { status }[]) so the CO actions
+// look identical to an issue's — no second copy of the progress widget.
+import { TaskProgress } from "~/modules/quality/ui/Issue/IssueTask";
 import { path } from "~/utils/path";
 import { changeOrderActionValidator } from "../../changeOrder.models";
 import type { ChangeOrderActionTask } from "../../types";
@@ -42,39 +44,19 @@ const statusActions = {
   Skipped: { action: "Reopen", icon: <LuLoaderCircle />, next: "Pending" }
 } as const;
 
-export function ChangeOrderActionsProgress({
-  actions
-}: {
-  actions: { status: ChangeOrderActionTask["status"] }[];
-}) {
-  const done = actions.filter(
-    (a) => a.status === "Completed" || a.status === "Skipped"
-  ).length;
-  const progress = actions.length > 0 ? (done / actions.length) * 100 : 0;
-
-  return (
-    <div className="flex flex-col items-end gap-2 py-3 pr-14 w-[120px]">
-      <BarProgress
-        gradient
-        progress={progress}
-        value={`${done}/${actions.length}`}
-      />
-    </div>
-  );
-}
-
 export default function ChangeOrderActions({
   changeOrderId,
   actions,
   isDisabled,
-  embedded = false
+  variant = "full"
 }: {
   changeOrderId: string;
   actions: ChangeOrderActionTask[];
   isDisabled: boolean;
-  // When true, render without the Card chrome — the accordion rail supplies the
-  // section frame + title.
-  embedded?: boolean;
+  // "full" = the Card with title + progress + reorderable list + add form (the
+  // primary surface, at the top of the middle pane). "summary" = just the
+  // progress bar (the compact right-rail view).
+  variant?: "full" | "summary";
 }) {
   const orderFetcher = useFetcher<{ success: boolean }>();
 
@@ -143,9 +125,10 @@ export default function ChangeOrderActions({
     </VStack>
   );
 
-  // Embedded (rail) mode: the section header shows the progress badge, so just
-  // render the list + add form with no card chrome.
-  if (embedded) return list;
+  // Rail summary: just the progress bar (the full list lives in the middle pane).
+  if (variant === "summary") {
+    return actions.length > 0 ? <TaskProgress tasks={actions} /> : null;
+  }
 
   return (
     <Card className="w-full">
@@ -155,7 +138,7 @@ export default function ChangeOrderActions({
             <Trans>Actions</Trans>
           </CardTitle>
         </CardHeader>
-        {actions.length > 0 && <ChangeOrderActionsProgress actions={actions} />}
+        {actions.length > 0 && <TaskProgress tasks={actions} />}
       </HStack>
       <CardContent>{list}</CardContent>
     </Card>

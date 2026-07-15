@@ -1,3 +1,4 @@
+import { VStack } from "@carbon/react";
 import { Outlet } from "react-router";
 import type {
   ChangeOrder,
@@ -7,6 +8,7 @@ import type {
 } from "~/modules/items";
 import AffectedItemsSidebar from "./AffectedItemsSidebar";
 import type { AffectedItemDraft } from "./affectedItem.types";
+import ChangeOrderActions from "./ChangeOrderActions";
 import ChangeOrderRail from "./ChangeOrderRail";
 import ChangeOrderStatusFlow from "./ChangeOrderStatusFlow";
 
@@ -41,15 +43,20 @@ export default function ChangeOrderWorkspace({
         isDisabled={isDisabled}
       />
 
-      {/* Middle shell: the always-visible top region (stage flow now, actions
-          added by Task 5) sits above the scrollable per-item detail Outlet. */}
-      <div className="flex-grow h-full flex flex-col overflow-hidden">
-        <div className="flex-shrink-0 border-b border-border px-2 py-2">
+      {/* Middle pane (scrolls as one, like the Quality issue detail): the
+          CO-wide stage flow + actions sit at the top, above the selected
+          affected item's detail (the URL-addressed <Outlet>). */}
+      <div className="flex-grow h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent p-2">
+        <VStack spacing={2}>
           <ChangeOrderStatusFlow status={changeOrder.status} />
-        </div>
-        <div className="flex-grow overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent p-2">
+          <ChangeOrderActions
+            variant="full"
+            changeOrderId={id}
+            actions={actions}
+            isDisabled={isDisabled}
+          />
           <Outlet />
-        </div>
+        </VStack>
       </div>
 
       <ChangeOrderRail

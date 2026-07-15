@@ -149,7 +149,7 @@ export default function ChangeOrderRail({
         }
       >
         <ChangeOrderActions
-          embedded
+          variant="summary"
           changeOrderId={id}
           actions={actions}
           isDisabled={isDisabled}
