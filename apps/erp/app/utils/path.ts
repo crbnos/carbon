@@ -59,16 +59,24 @@ export const path = {
         generatePath(
           `${api}/quality/inspection-document/${inspectionDocumentId}/balloon-analyze`
         ),
-      groupsByType: (type?: string) =>
-        generatePath(`${api}/users/groups?type=${type}`),
-      groupsByTypeWithUsers: (type?: string) =>
-        generatePath(`${api}/users/groups?type=${type}&include=users`),
-      groupMembers: (groupId: string) =>
-        generatePath(`${api}/users/groups/${groupId}/members`),
-      usersSearch: (q: string) =>
-        generatePath(`${api}/users/search?q=${encodeURIComponent(q)}`),
-      usersBatch: (ids: string[]) =>
-        generatePath(`${api}/users/batch?ids=${ids.join(",")}`),
+      userSelectGroups: (
+        type: string | undefined,
+        offset: number,
+        limit = 25
+      ) =>
+        generatePath(
+          `${api}/users/select/groups?type=${type ?? ""}&offset=${offset}&limit=${limit}`
+        ),
+      userSelectGroupMembers: (groupId: string) =>
+        generatePath(`${api}/users/select/groups/${groupId}/members`),
+      userSelectSearch: (q: string, type?: string) =>
+        generatePath(
+          `${api}/users/select/search?q=${encodeURIComponent(q)}&type=${type ?? ""}`
+        ),
+      userSelectResolve: (ids: string[]) =>
+        generatePath(`${api}/users/select/resolve?ids=${ids.join(",")}`),
+      userSelectGroupEmails: (groupId: string) =>
+        generatePath(`${api}/users/select/groups/${groupId}/emails`),
       item: (type: string) => generatePath(`${api}/item/${type}`),
       itemCostRecalculate: (itemId: string) =>
         generatePath(`${api}/items/${itemId}/recalculate-cost`),

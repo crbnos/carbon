@@ -2,7 +2,11 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import type {
+  ActionFunctionArgs,
+  ClientActionFunctionArgs,
+  LoaderFunctionArgs
+} from "react-router";
 import { data, redirect, useLoaderData } from "react-router";
 import {
   EmployeeTypeForm,
@@ -15,6 +19,7 @@ import {
 } from "~/modules/users";
 import { makeCompanyPermissionsFromEmployeeType } from "~/modules/users/users.server";
 import { path } from "~/utils/path";
+import { getCompanyId, invalidateUserSelectQueries } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -108,6 +113,11 @@ export async function action({ request }: ActionFunctionArgs) {
     path.to.employeeTypes,
     await flash(request, success("Updated employee type"))
   );
+}
+
+export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
+  invalidateUserSelectQueries(getCompanyId());
+  return await serverAction();
 }
 
 export default function EditEmployeeTypesRoute() {

@@ -1,5 +1,5 @@
 {
-  "generated": "2026-07-14T19:38:37.774Z",
+  "generated": "2026-07-14T22:27:32.390Z",
   "totalTools": 1331,
   "modules": 15,
   "tools": [
@@ -13884,7 +13884,7 @@
       "module": "items",
       "classification": "WRITE",
       "description": "upsert method material",
-      "paramCount": 1,
+      "paramCount": 4,
       "serviceParams": [
         "client",
         "methodMaterial"
@@ -13897,10 +13897,22 @@
       "schema": {
         "type": "object",
         "properties": {
-          "methodMaterial": {}
+          "id": {
+            "type": "string"
+          },
+          "makeMethodId": {
+            "type": "string"
+          },
+          "order": {
+            "type": "number"
+          },
+          "itemType": {
+            "type": "string"
+          }
         },
         "required": [
-          "methodMaterial"
+          "id",
+          "makeMethodId"
         ]
       }
     },
@@ -40866,6 +40878,135 @@
         },
         "required": [
           "groupIds"
+        ]
+      }
+    },
+    {
+      "name": "users_getUserSelectGroups",
+      "module": "users",
+      "classification": "READ",
+      "description": "get user select groups",
+      "paramCount": 4,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "search": {
+            "type": "string"
+          },
+          "limit": {
+            "type": "number"
+          },
+          "offset": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "limit",
+          "offset"
+        ]
+      }
+    },
+    {
+      "name": "users_getUserSelectGroupMembers",
+      "module": "users",
+      "classification": "READ",
+      "description": "get user select group members",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "groupId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "groupId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "groupId"
+        ]
+      }
+    },
+    {
+      "name": "users_searchUsersForSelect",
+      "module": "users",
+      "classification": "READ",
+      "description": "search users for select",
+      "paramCount": 4,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "q": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "excludeSelf": {
+            "type": "boolean"
+          },
+          "allowedIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "q"
+        ]
+      }
+    },
+    {
+      "name": "users_resolveUserSelectIds",
+      "module": "users",
+      "classification": "WRITE",
+      "description": "resolve user select ids",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "ids"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "ids"
         ]
       }
     },

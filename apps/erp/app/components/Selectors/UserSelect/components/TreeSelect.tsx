@@ -1,17 +1,20 @@
 import { cn, Spinner } from "@carbon/react";
+import { useEffect } from "react";
 import { FaChevronRight } from "react-icons/fa";
 import { LuCheck, LuUsers } from "react-icons/lu";
+import { useInView } from "react-intersection-observer";
 import { Avatar } from "~/components";
 import useUserSelectContext from "../provider";
-import type { IndividualOrGroup, OptionGroup } from "../types";
+import type { GroupNode, IndividualOrGroup } from "../types";
 import { isGroup } from "../useUserSelect";
 
 const UserTreeSelect = () => {
   const {
     aria: { listBoxProps },
-    groups,
+    viewModel,
     innerProps: { isMulti },
     loading,
+    loadMore,
     onMouseOver,
     refs: { listBoxRef }
   } = useUserSelectContext();
@@ -29,8 +32,17 @@ const UserTreeSelect = () => {
         <div className="flex items-center justify-center py-4">
           <Spinner />
         </div>
-      ) : groups.length > 0 ? (
-        groups.map((group) => <Group key={group.uid} group={group} />)
+      ) : viewModel.mode === "search" ? (
+        <SearchResults />
+      ) : viewModel.nodes.length > 0 ? (
+        <>
+          {viewModel.nodes.map((node) => (
+            <GroupRow key={node.uid} node={node} />
+          ))}
+          {viewModel.hasMore && (
+            <SentinelRow onVisible={loadMore} loading={viewModel.loadingMore} />
+          )}
+        </>
       ) : (
         <p className="text-center text-sm text-muted-foreground py-4">
           No options found
@@ -49,82 +61,258 @@ const ExpandIcon = ({ isExpanded }: { isExpanded: boolean }) => (
   />
 );
 
-const Group = ({ group }: { group: OptionGroup }) => {
+/** Loads the next page of top-level groups when scrolled into view. */
+const SentinelRow = ({
+  onVisible,
+  loading
+}: {
+  onVisible: () => void;
+  loading: boolean;
+}) => {
   const {
-    innerProps: { alwaysSelected },
-    onGroupCollapse,
-    onGroupExpand,
-    prefetchGroup,
-    focusedId,
-    onSelect,
-    onDeselect,
-    selectionItemsById,
-    loadingGroups
+    refs: { listBoxRef }
   } = useUserSelectContext();
+  // Root must be the tree's own scrollport: the popover can be clipped by an
+  // ancestor (drawer body overflow), which makes viewport-rooted observation
+  // never intersect even when the user scrolls the list to the bottom.
+  const { ref, inView } = useInView({
+    threshold: 0,
+    root: listBoxRef.current
+  });
 
-  const isFocused = group.uid === focusedId;
-  const isExpanded = group.expanded && group.items.length > 0;
-
-  const groupId = group.uid.split("_")[1];
-  const isLoading = groupId ? loadingGroups?.[groupId] : false;
+  useEffect(() => {
+    if (inView && !loading) {
+      onVisible();
+    }
+  }, [inView, loading, onVisible]);
 
   return (
-    // biome-ignore lint/a11y/useAriaPropsSupportedByRole: suppressed due to migration
+    <div ref={ref} className="flex items-center justify-center py-2">
+      {loading && <Spinner className="h-4 w-4" />}
+    </div>
+  );
+};
+
+/**
+ * A group at any depth: the row selects the group (when groups are
+ * selectable); the chevron expands/collapses; hovering prefetches members.
+ */
+const GroupRow = ({ node }: { node: GroupNode }) => {
+  const {
+    innerProps: { alwaysSelected, usersOnly },
+    focusedId,
+    onDeselect,
+    onGroupCollapse,
+    onGroupExpand,
+    onSelect,
+    prefetchGroup,
+    selectionItemsById
+  } = useUserSelectContext();
+
+  const { group, uid, expanded, loading, members } = node;
+
+  const isFocused = uid === focusedId;
+  const isSelected = group.id in selectionItemsById;
+  const isDisabled = alwaysSelected?.includes(group.id) ?? false;
+  const canExpand = group.userCount + group.groupCount > 0;
+  const isOpen = expanded && members !== null;
+  const isEmpty =
+    members !== null &&
+    members.groups.length === 0 &&
+    members.users.length === 0;
+
+  const selectionItem = (): IndividualOrGroup => ({
+    ...group,
+    users: [],
+    memberCount: group.userCount + group.groupCount,
+    uid,
+    label: group.name || ""
+  });
+
+  const handleRowClick = () => {
+    if (usersOnly) {
+      if (canExpand) {
+        expanded ? onGroupCollapse(uid) : onGroupExpand(uid);
+      }
+      return;
+    }
+    if (isDisabled) return;
+    if (isSelected) {
+      onDeselect(selectionItem());
+    } else {
+      onSelect(selectionItem());
+    }
+  };
+
+  return (
     <div
-      id={group.uid}
+      id={uid}
+      role="treeitem"
       tabIndex={0}
+      data-expandable={canExpand ? "true" : "false"}
+      aria-expanded={canExpand ? expanded : undefined}
+      aria-selected={isSelected}
+      aria-disabled={isDisabled}
       className="rounded-md outline-none"
-      aria-expanded={isExpanded}
     >
       {/* Group Header */}
       <div
-        role="treeitem"
-        aria-selected={isExpanded ? "true" : "false"}
-        onClick={() =>
-          group.expanded ? onGroupCollapse(group.uid) : onGroupExpand(group.uid)
-        }
+        onClick={handleRowClick}
         onMouseEnter={() => {
-          if (!group.expanded) prefetchGroup(group.uid);
+          if (!expanded) prefetchGroup(group.id);
         }}
         className={cn(
           "flex cursor-pointer select-none items-center gap-2 rounded-md px-2 py-2 hover:bg-muted/50 text-sm",
-          isFocused && "bg-muted/50"
+          isFocused && "bg-muted/50",
+          isSelected && "bg-accent",
+          isDisabled && "opacity-50 pointer-events-none"
         )}
       >
-        <ExpandIcon isExpanded={isExpanded} />
-        <span className="flex-1 truncate">{group.name}</span>
-        {isLoading ? (
-          <Spinner className="h-3 w-3" />
+        {canExpand ? (
+          <button
+            type="button"
+            aria-label={expanded ? "Collapse group" : "Expand group"}
+            onClick={(e) => {
+              e.stopPropagation();
+              expanded ? onGroupCollapse(uid) : onGroupExpand(uid);
+            }}
+            className="-m-1.5 flex items-center justify-center rounded-md p-1.5 hover:bg-muted pointer-events-auto"
+          >
+            <ExpandIcon isExpanded={expanded} />
+          </button>
         ) : (
-          <span className="text-[10px] font-normal">{group.items.length}</span>
+          <span className="h-3 w-3 shrink-0" />
         )}
+
+        {!usersOnly && (
+          <div
+            className={cn(
+              "flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors",
+              isSelected
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-muted-foreground/30 bg-background"
+            )}
+          >
+            {isSelected && <LuCheck className="h-3 w-3" />}
+          </div>
+        )}
+
+        <span className="flex-1 truncate">{group.name}</span>
+        {loading && <Spinner className="h-3 w-3" />}
       </div>
 
-      {/* Group Items */}
-      {isExpanded && (
+      {/* Direct members: child groups first, then users */}
+      {isOpen && members && (
         <ul role="group" className="flex flex-col gap-0.5 py-1 pl-2">
-          {group.items.map((item) => {
-            const isDisabled = alwaysSelected?.includes(item.id) ?? false;
-            const isFocused = item.uid === focusedId;
-            const isSelected = item.id in selectionItemsById;
+          {members.groups.map((child) => (
+            <li key={child.uid}>
+              <GroupRow node={child} />
+            </li>
+          ))}
+          {members.users.map((item) => {
+            const itemIsDisabled = alwaysSelected?.includes(item.id) ?? false;
+            const itemIsFocused = item.uid === focusedId;
+            const itemIsSelected = item.id in selectionItemsById;
 
             return (
               <Option
                 key={item.uid}
                 id={item.uid}
                 item={item}
-                isDisabled={isDisabled}
-                isFocused={isFocused}
-                isSelected={isSelected}
+                isDisabled={itemIsDisabled}
+                isFocused={itemIsFocused}
+                isSelected={itemIsSelected}
                 onClick={
-                  !alwaysSelected.includes(item.id)
-                    ? () => (isSelected ? onDeselect(item) : onSelect(item))
+                  !itemIsDisabled
+                    ? () => (itemIsSelected ? onDeselect(item) : onSelect(item))
                     : undefined
                 }
               />
             );
           })}
+          {isEmpty && (
+            <li className="px-2 py-1.5 text-xs text-muted-foreground">
+              No members
+            </li>
+          )}
         </ul>
+      )}
+    </div>
+  );
+};
+
+/** Flat, non-expandable results: matching groups, then matching people. */
+const SearchResults = () => {
+  const {
+    innerProps: { alwaysSelected },
+    viewModel,
+    focusedId,
+    onDeselect,
+    onSelect,
+    selectionItemsById
+  } = useUserSelectContext();
+
+  if (viewModel.mode !== "search") return null;
+
+  const { groups, users, searching } = viewModel;
+
+  if (groups.length === 0 && users.length === 0) {
+    return (
+      <div className="flex items-center justify-center py-4">
+        {searching ? (
+          <Spinner />
+        ) : (
+          <p className="text-center text-sm text-muted-foreground">
+            No options found
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  const renderOption = (item: IndividualOrGroup) => {
+    const isDisabled = alwaysSelected?.includes(item.id) ?? false;
+    const isFocused = item.uid === focusedId;
+    const isSelected = item.id in selectionItemsById;
+
+    return (
+      <Option
+        key={item.uid}
+        id={item.uid}
+        item={item}
+        isDisabled={isDisabled}
+        isFocused={isFocused}
+        isSelected={isSelected}
+        onClick={
+          !isDisabled
+            ? () => (isSelected ? onDeselect(item) : onSelect(item))
+            : undefined
+        }
+      />
+    );
+  };
+
+  return (
+    <div className="flex flex-col gap-1">
+      {groups.length > 0 && (
+        <>
+          <p className="px-2 pt-1 text-xs font-medium text-muted-foreground">
+            Groups
+          </p>
+          <ul role="group" className="flex flex-col gap-0.5">
+            {groups.map(renderOption)}
+          </ul>
+        </>
+      )}
+      {users.length > 0 && (
+        <>
+          <p className="px-2 pt-1 text-xs font-medium text-muted-foreground">
+            People
+          </p>
+          <ul role="group" className="flex flex-col gap-0.5">
+            {users.map(renderOption)}
+          </ul>
+        </>
       )}
     </div>
   );
@@ -148,10 +336,7 @@ const Option = ({
   const name = item.label;
   const itemIsGroup = isGroup(item);
   const memberCount =
-    itemIsGroup && "users" in item
-      ? (item.users?.length ?? 0) +
-        ("children" in item ? (item.children?.length ?? 0) : 0)
-      : 0;
+    itemIsGroup && "memberCount" in item ? (item.memberCount ?? 0) : 0;
 
   // Get avatar info for individuals
   const avatarUrl = "avatarUrl" in item ? item.avatarUrl : null;
@@ -198,7 +383,7 @@ const Option = ({
       <div className="flex min-w-0 flex-1 flex-col">
         <span className="truncate">{name}</span>
         {itemIsGroup && memberCount > 0 && (
-          <span className="text-xs text-muted-foreground">
+          <span className="text-xs text-muted-foreground tabular-nums">
             {memberCount} {memberCount === 1 ? "member" : "members"}
           </span>
         )}

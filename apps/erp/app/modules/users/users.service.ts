@@ -1,12 +1,12 @@
 import type { Database } from "@carbon/database";
 import { fetchAllFromTable } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { capitalize } from "~/utils/string";
 import { sanitize } from "~/utils/supabase";
-import type { CompanyPermission } from "./types";
+import type { CompanyPermission, UserSelectGroupMembers } from "./types";
 
 const logger = getLogger("erp", "users");
 
@@ -259,6 +259,105 @@ export async function getGroupEmails(
   if (userIdsResult.error || !Array.isArray(userIdsResult.data)) return [];
 
   return getUserEmails(client, userIdsResult.data);
+}
+
+export async function getUserSelectGroups(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: { type?: string; search?: string; limit: number; offset: number }
+) {
+  return client.rpc("get_user_select_groups", {
+    p_company_id: companyId,
+    p_limit: args.limit,
+    p_offset: args.offset,
+    ...(args.type ? { p_type: args.type } : {}),
+    ...(args.search ? { p_search: args.search } : {})
+  });
+}
+
+export async function getUserSelectGroupMembers(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  groupId: string
+): Promise<{
+  data: UserSelectGroupMembers | null;
+  error: PostgrestError | null;
+}> {
+  const result = await client.rpc("get_user_select_group_members", {
+    p_company_id: companyId,
+    p_group_id: groupId
+  });
+  return {
+    data: result.data as unknown as UserSelectGroupMembers | null,
+    error: result.error
+  };
+}
+
+export async function searchUsersForSelect(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: {
+    q: string;
+    type?: string;
+    excludeSelf?: boolean;
+    allowedIds?: string[];
+    userId: string;
+  }
+) {
+  // Search exactly the population the user-select tree can reach: active
+  // users who are members of this company's groups (the groupMembers view
+  // joins active users only — same visibility rule as expanding a group),
+  // filtered by the same type flags as get_user_select_groups. Rows repeat
+  // per group membership — the caller dedupes by memberUserId.
+  let query = client
+    .from("groupMembers")
+    .select("memberUserId, user")
+    .eq("companyId", companyId)
+    .not("memberUserId", "is", null)
+    .ilike("user->>fullName", `%${args.q}%`)
+    .limit(100);
+
+  if (args.type === "customer") {
+    query = query.or("isCustomerTypeGroup.eq.true,isCustomerOrgGroup.eq.true");
+  } else if (args.type === "supplier") {
+    query = query.or("isSupplierTypeGroup.eq.true,isSupplierOrgGroup.eq.true");
+  } else {
+    query = query
+      .eq("isCustomerTypeGroup", false)
+      .eq("isCustomerOrgGroup", false)
+      .eq("isSupplierTypeGroup", false)
+      .eq("isSupplierOrgGroup", false);
+  }
+
+  if (args.excludeSelf) {
+    query = query.neq("memberUserId", args.userId);
+  }
+
+  if (args.allowedIds && args.allowedIds.length > 0) {
+    query = query.in("memberUserId", args.allowedIds);
+  }
+
+  return query;
+}
+
+export async function resolveUserSelectIds(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  ids: string[]
+) {
+  const [users, groups] = await Promise.all([
+    client
+      .from("user")
+      .select("id, firstName, lastName, fullName, email, avatarUrl")
+      .in("id", ids),
+    client
+      .from("group")
+      .select("id, name")
+      .in("id", ids)
+      .eq("companyId", companyId)
+      .eq("isIdentityGroup", false)
+  ]);
+  return { users, groups };
 }
 
 export async function getPermissionsByEmployeeType(

@@ -1,0 +1,25 @@
+"$schema" = "https://conductor.build/schemas/settings.repo.schema.json"
+
+# Copy only `.env` (secrets) from the main checkout into each new workspace.
+# NOT the default `.env*` — that would drag in the main checkout's `.env.local`
+# (its ports/slug/domain); `crbn up` regenerates `.env.local` per worktree.
+file_include_globs = ".env"
+
+[scripts]
+# Conductor creates the git worktree itself; `crbn init` then provisions it the
+# same way `crbn checkout` does: a deterministic branch-derived slug
+# (`.carbon-worktree`), `.env` synced from main, and .ai skills linked. This
+# replaces the old `echo "$CONDUCTOR_WORKSPACE_NAME" > .carbon-worktree`, which
+# produced non-unique slugs that collided with the main checkout's `carbon`.
+setup = "pnpm install && ./packages/dev/bin/crbn init"
+# Each worktree gets its own ports/DB/redis-slot (the crbn slot registry), so
+# multiple workspaces can run their stacks at once.
+run_mode = "concurrent"
+# Full teardown when a workspace is archived: stop the stack, wipe volumes,
+# flush redis, and release the port slot so the pool doesn't leak entries.
+archive = "./packages/dev/bin/crbn down --purge"
+
+[scripts.run.dev]
+command = "./packages/dev/bin/crbn up --all"
+default = true
+icon = "rocket"
