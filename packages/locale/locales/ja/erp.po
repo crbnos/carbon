@@ -4229,9 +4229,6 @@ msgstr "期限"
 msgid "Due {0}"
 msgstr "期限 {0}"
 
-msgid "Due date"
-msgstr "期限"
-
 msgid "Due Date"
 msgstr "支払期日"
 
@@ -7615,9 +7612,6 @@ msgstr "新しい<0>Issue</0>ワークフロー"
 msgid "New Account"
 msgstr "新規アカウント"
 
-msgid "New action"
-msgstr "新しいアクション"
-
 msgid "New API Key"
 msgstr "新しいAPIキー"
 
@@ -7943,6 +7937,9 @@ msgstr "アクセスなし"
 
 msgid "No action needed"
 msgstr "対応は不要です"
+
+msgid "No action templates configured. Add them under Change Order Actions."
+msgstr ""
 
 msgid "No actions selected"
 msgstr "アクションが選択されていません"

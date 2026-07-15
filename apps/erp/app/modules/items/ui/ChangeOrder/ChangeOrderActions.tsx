@@ -1,5 +1,4 @@
 import { useCarbon } from "@carbon/auth";
-import { ValidatedForm } from "@carbon/form";
 import {
   Badge,
   Button,
@@ -7,11 +6,19 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  Checkbox,
   cn,
   generateHTML,
   HStack,
   IconButton,
   type JSONContent,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
+  ModalTitle,
   toast,
   useDebounce,
   useDisclosure,
@@ -22,24 +29,24 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import type { DragControls } from "framer-motion";
 import { Reorder, useDragControls } from "framer-motion";
 import { nanoid } from "nanoid";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   LuChevronRight,
   LuCircleCheck,
   LuCirclePlay,
+  LuCirclePlus,
   LuGripVertical,
   LuLoaderCircle,
   LuTrash2
 } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { Assignee } from "~/components";
-import { DatePicker, Employee, Hidden, Input, Submit } from "~/components/Form";
-import { usePermissions, useUser } from "~/hooks";
+import { usePermissions, useRouteData, useUser } from "~/hooks";
 // Reuse Quality's progress bar (entity-agnostic: { status }[]) so the CO actions
 // look identical to an issue's — no second copy of the progress widget.
 import { TaskProgress } from "~/modules/quality/ui/Issue/IssueTask";
+import type { ListItem } from "~/types";
 import { getPrivateUrl, path } from "~/utils/path";
-import { changeOrderActionValidator } from "../../changeOrder.models";
 import type { ChangeOrderActionTask } from "../../types";
 
 // Next status on the Start/Complete/Reopen button, mirroring Quality.
@@ -344,36 +351,119 @@ function ActionItem({
   );
 }
 
+// Mirrors Quality's "Add Actions" affordance: a dashed button opening a modal
+// that picks from the company's change-order action templates
+// (changeOrderRequiredAction) and instantiates the selected ones as tasks.
 function NewAction({ changeOrderId }: { changeOrderId: string }) {
-  const { t } = useLingui();
+  const [isOpen, setIsOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  const routeData = useRouteData<{ requiredActions: ListItem[] }>(
+    path.to.changeOrder(changeOrderId)
+  );
+  const templates = routeData?.requiredActions ?? [];
+
   const fetcher = useFetcher<{ success: boolean }>();
 
+  useEffect(() => {
+    if (fetcher.state === "idle" && fetcher.data?.success) {
+      setIsOpen(false);
+      setSelectedIds([]);
+    }
+  }, [fetcher.state, fetcher.data]);
+
+  const onToggle = useCallback((id: string, checked: boolean) => {
+    setSelectedIds((prev) =>
+      checked ? [...prev, id] : prev.filter((x) => x !== id)
+    );
+  }, []);
+
+  const onSubmit = useCallback(() => {
+    const formData = new FormData();
+    formData.append("actionIds", selectedIds.join(","));
+    fetcher.submit(formData, {
+      method: "post",
+      action: path.to.changeOrderAction(changeOrderId)
+    });
+  }, [changeOrderId, selectedIds, fetcher]);
+
   return (
-    <ValidatedForm
-      fetcher={fetcher}
-      method="post"
-      action={path.to.changeOrderAction(changeOrderId)}
-      validator={changeOrderActionValidator}
-      defaultValues={{
-        changeOrderId,
-        name: "",
-        assignee: "",
-        dueDate: ""
-      }}
-      className="w-full"
-      resetAfterSubmit
-    >
-      <Hidden name="changeOrderId" value={changeOrderId} />
-      <VStack spacing={2} className="w-full">
-        <Input name="name" label={t`New action`} />
-        <Employee name="assignee" label={t`Assignee`} />
-        <DatePicker name="dueDate" label={t`Due date`} />
-        <HStack className="w-full justify-end">
-          <Submit>
-            <Trans>Add</Trans>
-          </Submit>
-        </HStack>
-      </VStack>
-    </ValidatedForm>
+    <>
+      <button
+        type="button"
+        className="flex items-center justify-start bg-card border-2 border-dashed border-background w-full hover:bg-background/80 rounded-lg px-10 py-6 text-muted-foreground hover:text-foreground gap-2 transition-colors duration-200 text-sm cursor-pointer"
+        onClick={() => setIsOpen(true)}
+      >
+        <LuCirclePlus size={16} />
+        <span>
+          <Trans>Add Actions</Trans>
+        </span>
+      </button>
+
+      <Modal
+        open={isOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsOpen(false);
+            setSelectedIds([]);
+          }
+        }}
+      >
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>
+            <ModalTitle>
+              <Trans>Add Actions</Trans>
+            </ModalTitle>
+          </ModalHeader>
+          <ModalBody>
+            <VStack spacing={2}>
+              {templates.length === 0 && (
+                <span className="text-sm text-muted-foreground">
+                  <Trans>
+                    No action templates configured. Add them under Change Order
+                    Actions.
+                  </Trans>
+                </span>
+              )}
+              {templates.map((template) => (
+                <label
+                  key={template.id}
+                  htmlFor={template.id}
+                  className="flex items-center gap-2 w-full px-4 py-3 rounded-lg hover:bg-accent hover:text-accent-foreground border border-border cursor-pointer"
+                >
+                  <Checkbox
+                    id={template.id}
+                    isChecked={selectedIds.includes(template.id)}
+                    onCheckedChange={(checked) =>
+                      onToggle(template.id, !!checked)
+                    }
+                  />
+                  <span className="text-sm font-medium">{template.name}</span>
+                </label>
+              ))}
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setIsOpen(false);
+                setSelectedIds([]);
+              }}
+            >
+              <Trans>Cancel</Trans>
+            </Button>
+            <Button
+              onClick={onSubmit}
+              isDisabled={selectedIds.length === 0 || fetcher.state !== "idle"}
+              isLoading={fetcher.state !== "idle"}
+            >
+              <Trans>Add Actions</Trans>
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+    </>
   );
 }

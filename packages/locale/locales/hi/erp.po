@@ -4229,9 +4229,6 @@ msgstr "देय"
 msgid "Due {0}"
 msgstr "Due {0}"
 
-msgid "Due date"
-msgstr "देय तारीख"
-
 msgid "Due Date"
 msgstr "देय तारीख"
 
@@ -7615,9 +7612,6 @@ msgstr "नया <0>Issue</0> वर्कफ़्लो"
 msgid "New Account"
 msgstr "नया खाता"
 
-msgid "New action"
-msgstr "नई कार्रवाई"
-
 msgid "New API Key"
 msgstr "नई API कुंजी"
 
@@ -7943,6 +7937,9 @@ msgstr "कोई एक्सेस नहीं"
 
 msgid "No action needed"
 msgstr "कोई कार्रवाई की आवश्यकता नहीं है"
+
+msgid "No action templates configured. Add them under Change Order Actions."
+msgstr ""
 
 msgid "No actions selected"
 msgstr "कोई क्रिया चयनित नहीं"

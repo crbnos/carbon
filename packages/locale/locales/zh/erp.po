@@ -4229,9 +4229,6 @@ msgstr "到期"
 msgid "Due {0}"
 msgstr "截止日期 {0}"
 
-msgid "Due date"
-msgstr "截止日期"
-
 msgid "Due Date"
 msgstr "到期日期"
 
@@ -7615,9 +7612,6 @@ msgstr "新的<0>Issue</0>工作流"
 msgid "New Account"
 msgstr "新账户"
 
-msgid "New action"
-msgstr "新建操作"
-
 msgid "New API Key"
 msgstr "新 API 密钥"
 
@@ -7943,6 +7937,9 @@ msgstr "无权限"
 
 msgid "No action needed"
 msgstr "无需操作"
+
+msgid "No action templates configured. Add them under Change Order Actions."
+msgstr ""
 
 msgid "No actions selected"
 msgstr "未选择任何操作"

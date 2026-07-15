@@ -4229,9 +4229,6 @@ msgstr "Scadenza"
 msgid "Due {0}"
 msgstr "Scadenza {0}"
 
-msgid "Due date"
-msgstr "Data di scadenza"
-
 msgid "Due Date"
 msgstr "Data di scadenza"
 
@@ -7615,9 +7612,6 @@ msgstr "Nuovo Flusso di Lavoro <0>Issue</0>"
 msgid "New Account"
 msgstr "Nuovo Account"
 
-msgid "New action"
-msgstr "Nuova azione"
-
 msgid "New API Key"
 msgstr "Nuova Chiave API"
 
@@ -7943,6 +7937,9 @@ msgstr "Nessun accesso"
 
 msgid "No action needed"
 msgstr "Nessuna azione necessaria"
+
+msgid "No action templates configured. Add them under Change Order Actions."
+msgstr ""
 
 msgid "No actions selected"
 msgstr "Nessuna azione selezionata"

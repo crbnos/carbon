@@ -4229,9 +4229,6 @@ msgstr "Vade"
 msgid "Due {0}"
 msgstr "Vadesi {0}"
 
-msgid "Due date"
-msgstr "Son Tarih"
-
 msgid "Due Date"
 msgstr "Son Kullanma Tarihi"
 
@@ -7615,9 +7612,6 @@ msgstr "Yeni <0>Issue</0> İş Akışı"
 msgid "New Account"
 msgstr "Yeni Hesap"
 
-msgid "New action"
-msgstr "Yeni işlem"
-
 msgid "New API Key"
 msgstr "Yeni API Anahtarı"
 
@@ -7943,6 +7937,9 @@ msgstr "Erişim Yok"
 
 msgid "No action needed"
 msgstr "Yapılacak işlem yok"
+
+msgid "No action templates configured. Add them under Change Order Actions."
+msgstr ""
 
 msgid "No actions selected"
 msgstr "Hiçbir işlem seçilmedi"

@@ -4229,9 +4229,6 @@ msgstr "기한"
 msgid "Due {0}"
 msgstr "기한 {0}"
 
-msgid "Due date"
-msgstr "기한"
-
 msgid "Due Date"
 msgstr "기한일"
 
@@ -7615,9 +7612,6 @@ msgstr "새 <0>이슈</0> 워크플로"
 msgid "New Account"
 msgstr "신규 계정"
 
-msgid "New action"
-msgstr "새 작업"
-
 msgid "New API Key"
 msgstr "신규 API 키"
 
@@ -7943,6 +7937,9 @@ msgstr "접근 권한 없음"
 
 msgid "No action needed"
 msgstr "조치가 필요하지 않습니다"
+
+msgid "No action templates configured. Add them under Change Order Actions."
+msgstr ""
 
 msgid "No actions selected"
 msgstr "선택된 조치가 없습니다"

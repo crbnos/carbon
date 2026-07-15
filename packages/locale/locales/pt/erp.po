@@ -4229,9 +4229,6 @@ msgstr "Vencimento"
 msgid "Due {0}"
 msgstr "Vencimento {0}"
 
-msgid "Due date"
-msgstr "Data de vencimento"
-
 msgid "Due Date"
 msgstr "Data de Vencimento"
 
@@ -7615,9 +7612,6 @@ msgstr "Novo Fluxo de Trabalho <0>Issue</0>"
 msgid "New Account"
 msgstr "Nova Conta"
 
-msgid "New action"
-msgstr "Nova ação"
-
 msgid "New API Key"
 msgstr "Nova Chave de API"
 
@@ -7943,6 +7937,9 @@ msgstr "Sem Acesso"
 
 msgid "No action needed"
 msgstr "Nenhuma ação necessária"
+
+msgid "No action templates configured. Add them under Change Order Actions."
+msgstr ""
 
 msgid "No actions selected"
 msgstr "Nenhuma ação selecionada"

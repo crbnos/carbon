@@ -4229,9 +4229,6 @@ msgstr "Termin"
 msgid "Due {0}"
 msgstr "Termin {0}"
 
-msgid "Due date"
-msgstr "Data terminu"
-
 msgid "Due Date"
 msgstr "Data wymagalności"
 
@@ -7615,9 +7612,6 @@ msgstr "Nowy Przepływ Pracy <0>Issue</0>"
 msgid "New Account"
 msgstr "Nowe Konto"
 
-msgid "New action"
-msgstr "Nowa akcja"
-
 msgid "New API Key"
 msgstr "Nowy klucz API"
 
@@ -7943,6 +7937,9 @@ msgstr "Brak dostępu"
 
 msgid "No action needed"
 msgstr "Brak wymaganych działań"
+
+msgid "No action templates configured. Add them under Change Order Actions."
+msgstr ""
 
 msgid "No actions selected"
 msgstr "Nie wybrano żadnych akcji"

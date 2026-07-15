@@ -202,6 +202,47 @@ export async function deleteChangeOrderRequiredAction(
   return client.from("changeOrderRequiredAction").delete().eq("id", id);
 }
 
+// Instantiate action tasks from a chosen set of required-action templates (the
+// "Add Actions" modal, mirroring Quality's required-action picker). New rows are
+// appended after any existing tasks.
+export async function addChangeOrderActionTasksFromTemplates(
+  client: SupabaseClient<Database>,
+  input: {
+    changeOrderId: string;
+    requiredActionIds: string[];
+    companyId: string;
+    userId: string;
+  }
+) {
+  if (input.requiredActionIds.length === 0) return { data: null, error: null };
+
+  const templates = await client
+    .from("changeOrderRequiredAction")
+    .select("id, name")
+    .in("id", input.requiredActionIds)
+    .eq("companyId", input.companyId);
+  if (templates.error || !templates.data?.length) return templates;
+
+  const existing = await client
+    .from("changeOrderActionTask")
+    .select("sortOrder")
+    .eq("changeOrderId", input.changeOrderId)
+    .order("sortOrder", { ascending: false })
+    .limit(1);
+  const base = existing.data?.[0]?.sortOrder ?? 0;
+
+  return client.from("changeOrderActionTask").insert(
+    templates.data.map((template, index) => ({
+      changeOrderId: input.changeOrderId,
+      name: template.name,
+      status: "Pending" as const,
+      sortOrder: base + index + 1,
+      companyId: input.companyId,
+      createdBy: input.userId
+    }))
+  );
+}
+
 // Instantiate one changeOrderActionTask per active template onto a new change
 // order. Called by insertChangeOrder; non-gating, so callers ignore a soft
 // failure rather than roll back the change order.

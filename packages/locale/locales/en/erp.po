@@ -4229,9 +4229,6 @@ msgstr "Due"
 msgid "Due {0}"
 msgstr "Due {0}"
 
-msgid "Due date"
-msgstr "Due date"
-
 msgid "Due Date"
 msgstr "Due Date"
 
@@ -7615,9 +7612,6 @@ msgstr "New <0>Issue</0> Workflow"
 msgid "New Account"
 msgstr "New Account"
 
-msgid "New action"
-msgstr "New action"
-
 msgid "New API Key"
 msgstr "New API Key"
 
@@ -7943,6 +7937,9 @@ msgstr "No Access"
 
 msgid "No action needed"
 msgstr "No action needed"
+
+msgid "No action templates configured. Add them under Change Order Actions."
+msgstr "No action templates configured. Add them under Change Order Actions."
 
 msgid "No actions selected"
 msgstr "No actions selected"

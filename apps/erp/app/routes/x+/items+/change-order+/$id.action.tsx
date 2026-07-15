@@ -5,17 +5,40 @@ import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import {
+  addChangeOrderActionTasksFromTemplates,
   changeOrderActionValidator,
   upsertChangeOrderAction
 } from "~/modules/items";
 
-export async function action({ request }: ActionFunctionArgs) {
+export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await requirePermissions(request, {
     update: "parts"
   });
 
   const formData = await request.formData();
+
+  // "Add Actions" modal (Quality-style required-action picker): a comma-list of
+  // changeOrderRequiredAction template ids to instantiate as tasks.
+  const actionIds = formData.get("actionIds");
+  if (typeof actionIds === "string") {
+    const { id } = params;
+    if (!id) throw new Error("id not found");
+    const add = await addChangeOrderActionTasksFromTemplates(client, {
+      changeOrderId: id,
+      requiredActionIds: actionIds.split(",").filter(Boolean),
+      companyId,
+      userId
+    });
+    if (add.error) {
+      return data(
+        { success: false },
+        await flash(request, error(add.error, "Failed to add actions"))
+      );
+    }
+    return { success: true };
+  }
+
   const validation = await validator(changeOrderActionValidator).validate(
     formData
   );

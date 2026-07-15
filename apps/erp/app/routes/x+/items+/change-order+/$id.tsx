@@ -12,6 +12,7 @@ import {
   getChangeOrderDiff,
   getChangeOrderImpact,
   getChangeOrderReleaseDiff,
+  getChangeOrderRequiredActionsList,
   getChangeOrderTypesList,
   getConfigurationParameters,
   getConfigurationRules,
@@ -70,6 +71,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   // Company locations feed the embedded PartProperties pick-method editor.
   const locations = (await getLocationsList(client, companyId)).data ?? [];
+
+  // Active default-action templates for the "Add Actions" picker.
+  const requiredActions =
+    (await getChangeOrderRequiredActionsList(client, companyId)).data ?? [];
 
   if (changeOrder.error) {
     throw redirect(
@@ -265,6 +270,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     diff: diff.data ?? { items: [] },
     releaseConflicts,
     actions: actions.data ?? [],
+    requiredActions,
     affectedAssemblies,
     impact: impact.data ?? {
       removedParts: [],

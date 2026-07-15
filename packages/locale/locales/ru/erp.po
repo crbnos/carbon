@@ -4229,9 +4229,6 @@ msgstr "Срок"
 msgid "Due {0}"
 msgstr "Срок {0}"
 
-msgid "Due date"
-msgstr "Срок выполнения"
-
 msgid "Due Date"
 msgstr "Дата платежа"
 
@@ -7615,9 +7612,6 @@ msgstr "Новый рабочий процесс <0>Issue</0>"
 msgid "New Account"
 msgstr "Новый счет"
 
-msgid "New action"
-msgstr "Новое действие"
-
 msgid "New API Key"
 msgstr "Новый API ключ"
 
@@ -7943,6 +7937,9 @@ msgstr "Нет доступа"
 
 msgid "No action needed"
 msgstr "Никаких действий не требуется"
+
+msgid "No action templates configured. Add them under Change Order Actions."
+msgstr ""
 
 msgid "No actions selected"
 msgstr "Действия не выбраны"

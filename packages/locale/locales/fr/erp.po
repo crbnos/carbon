@@ -4229,9 +4229,6 @@ msgstr "Échéance"
 msgid "Due {0}"
 msgstr "Échéance {0}"
 
-msgid "Due date"
-msgstr "Date d'échéance"
-
 msgid "Due Date"
 msgstr "Date d'échéance"
 
@@ -7615,9 +7612,6 @@ msgstr "Nouveau Flux de Travail <0>Issue</0>"
 msgid "New Account"
 msgstr "Nouveau Compte"
 
-msgid "New action"
-msgstr "Nouvelle action"
-
 msgid "New API Key"
 msgstr "Nouvelle clé API"
 
@@ -7943,6 +7937,9 @@ msgstr "Aucun accès"
 
 msgid "No action needed"
 msgstr "Aucune action requise"
+
+msgid "No action templates configured. Add them under Change Order Actions."
+msgstr ""
 
 msgid "No actions selected"
 msgstr "Aucune action sélectionnée"

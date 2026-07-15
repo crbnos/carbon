@@ -4229,9 +4229,6 @@ msgstr "Fällig"
 msgid "Due {0}"
 msgstr "Fällig {0}"
 
-msgid "Due date"
-msgstr "Fälligkeitsdatum"
-
 msgid "Due Date"
 msgstr "Fälligkeitsdatum"
 
@@ -7615,9 +7612,6 @@ msgstr "Neuer <0>Issue</0>-Workflow"
 msgid "New Account"
 msgstr "Neues Konto"
 
-msgid "New action"
-msgstr "Neue Aktion"
-
 msgid "New API Key"
 msgstr "Neuer API-Schlüssel"
 
@@ -7943,6 +7937,9 @@ msgstr "Kein Zugriff"
 
 msgid "No action needed"
 msgstr "Keine Aktion erforderlich"
+
+msgid "No action templates configured. Add them under Change Order Actions."
+msgstr ""
 
 msgid "No actions selected"
 msgstr "Keine Aktionen ausgewählt"
