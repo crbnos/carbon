@@ -24,47 +24,6 @@ export async function getChangeOrderActions(
     .order("createdAt", { ascending: true });
 }
 
-export async function upsertChangeOrderAction(
-  client: SupabaseClient<Database>,
-  input: {
-    id?: string;
-    changeOrderId: string;
-    name: string;
-    assignee?: string | null;
-    dueDate?: string | null;
-    companyId: string;
-    userId: string;
-  }
-) {
-  if (input.id) {
-    return client
-      .from("changeOrderActionTask")
-      .update({
-        name: input.name,
-        assignee: input.assignee ?? null,
-        dueDate: input.dueDate ?? null,
-        updatedBy: input.userId
-      })
-      .eq("id", input.id)
-      .select("id")
-      .single();
-  }
-
-  return client
-    .from("changeOrderActionTask")
-    .insert({
-      changeOrderId: input.changeOrderId,
-      name: input.name,
-      assignee: input.assignee ?? null,
-      dueDate: input.dueDate ?? null,
-      status: "Pending",
-      companyId: input.companyId,
-      createdBy: input.userId
-    })
-    .select("id")
-    .single();
-}
-
 export async function updateChangeOrderActionStatus(
   client: SupabaseClient<Database>,
   input: {

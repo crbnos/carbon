@@ -703,9 +703,6 @@ msgstr "Soru Ekle"
 msgid "Add Receipt"
 msgstr "Makbuz Ekle"
 
-msgid "Add Required Actions"
-msgstr "Gerekli Eylemler Ekle"
-
 msgid "Add Requirement"
 msgstr "Gereksinim Ekle"
 

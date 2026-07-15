@@ -182,16 +182,9 @@ export const changeOrderAffectedItemCutoverValidator = z.object({
   successorEffectivityDate: zfd.text(z.string().optional())
 });
 
-// Actions — freeform tasks (reuse changeOrderActionTask). Any user, any stage;
-// non-gating.
-export const changeOrderActionValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  changeOrderId: z.string().min(1, { message: "Change order is required" }),
-  name: z.string().min(1, { message: "Title is required" }),
-  assignee: zfd.text(z.string().optional()),
-  dueDate: zfd.text(z.string().optional())
-});
-
+// Action task status transition (Start / Complete / Reopen). Actions are
+// instantiated from templates (see changeOrderRequiredAction); there's no
+// freeform-create validator.
 export const changeOrderActionStatusValidator = z.object({
   id: z.string().min(1, { message: "Id is required" }),
   status: z.enum(changeOrderTaskStatus)

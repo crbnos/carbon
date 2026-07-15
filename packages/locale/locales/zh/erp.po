@@ -703,9 +703,6 @@ msgstr "添加问题"
 msgid "Add Receipt"
 msgstr "添加收据"
 
-msgid "Add Required Actions"
-msgstr "添加必需的操作"
-
 msgid "Add Requirement"
 msgstr "添加要求"
 

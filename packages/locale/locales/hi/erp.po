@@ -703,9 +703,6 @@ msgstr "प्रश्न जोड़ें"
 msgid "Add Receipt"
 msgstr "रसीद जोड़ें"
 
-msgid "Add Required Actions"
-msgstr "आवश्यक कार्य जोड़ें"
-
 msgid "Add Requirement"
 msgstr "आवश्यकता जोड़ें"
 

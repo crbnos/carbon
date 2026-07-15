@@ -703,9 +703,6 @@ msgstr "Add Question"
 msgid "Add Receipt"
 msgstr "Add Receipt"
 
-msgid "Add Required Actions"
-msgstr "Add Required Actions"
-
 msgid "Add Requirement"
 msgstr "Add Requirement"
 

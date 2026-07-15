@@ -703,9 +703,6 @@ msgstr "질문 추가"
 msgid "Add Receipt"
 msgstr "입고 추가"
 
-msgid "Add Required Actions"
-msgstr "필수 조치 추가"
-
 msgid "Add Requirement"
 msgstr "요구사항 추가"
 

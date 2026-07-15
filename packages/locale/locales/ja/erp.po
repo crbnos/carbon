@@ -703,9 +703,6 @@ msgstr "質問を追加"
 msgid "Add Receipt"
 msgstr "領収書を追加"
 
-msgid "Add Required Actions"
-msgstr "必須アクションを追加"
-
 msgid "Add Requirement"
 msgstr "要件を追加"
 

@@ -29,14 +29,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import type { DragControls } from "framer-motion";
 import { nanoid } from "nanoid";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  LuCalendar,
-  LuCircleCheck,
-  LuCirclePlay,
-  LuCog,
-  LuContainer,
-  LuLoaderCircle
-} from "react-icons/lu";
+import { LuCalendar, LuCog, LuContainer } from "react-icons/lu";
 import { RxCheck } from "react-icons/rx";
 import { useFetchers, useParams, useSubmit } from "react-router";
 import {
@@ -68,33 +61,9 @@ import { LinearIssueDialog } from "./Linear/IssueDialog";
 
 const logger = getLogger("erp", "issuetask");
 
-export function TaskProgress({
-  tasks,
-  className
-}: {
-  tasks: { status: IssueActionTask["status"] }[];
-  className?: string;
-}) {
-  const completedOrSkippedTasks = tasks.filter(
-    (task) => task.status === "Completed" || task.status === "Skipped"
-  ).length;
-  const progressPercentage = (completedOrSkippedTasks / tasks.length) * 100;
-
-  return (
-    <div
-      className={cn(
-        "flex flex-col items-end gap-2 py-3 pr-14 w-[120px]",
-        className
-      )}
-    >
-      <BarProgress
-        gradient
-        progress={progressPercentage}
-        value={`${completedOrSkippedTasks}/${tasks.length}`}
-      />
-    </div>
-  );
-}
+// TaskProgress moved to the shared ActionTasks folder (SSOT with Change Orders);
+// re-exported here so existing `~/modules/quality/ui/Issue` importers keep working.
+export { ActionTaskProgress as TaskProgress } from "~/components/ActionTasks/ActionTaskProgress";
 
 export function ItemProgress({ items }: { items: IssueItem[] }) {
   const completedOrSkippedItems = items.filter(
@@ -112,29 +81,6 @@ export function ItemProgress({ items }: { items: IssueItem[] }) {
     </div>
   );
 }
-
-export const statusActions = {
-  Completed: {
-    action: "Reopen",
-    icon: <LuLoaderCircle />,
-    status: "Pending"
-  },
-  Pending: {
-    action: "Start",
-    icon: <LuCirclePlay />,
-    status: "In Progress"
-  },
-  Skipped: {
-    action: "Reopen",
-    icon: <LuLoaderCircle />,
-    status: "Pending"
-  },
-  "In Progress": {
-    action: "Complete",
-    icon: <LuCircleCheck />,
-    status: "Completed"
-  }
-} as const;
 
 function SupplierAssignment({
   task,

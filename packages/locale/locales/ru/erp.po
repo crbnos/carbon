@@ -703,9 +703,6 @@ msgstr "Добавить вопрос"
 msgid "Add Receipt"
 msgstr "Добавить приходную накладную"
 
-msgid "Add Required Actions"
-msgstr "Добавить требуемые действия"
-
 msgid "Add Requirement"
 msgstr "Добавить требование"
 

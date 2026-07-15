@@ -703,9 +703,6 @@ msgstr "Dodaj pytanie"
 msgid "Add Receipt"
 msgstr "Dodaj Paragon"
 
-msgid "Add Required Actions"
-msgstr "Dodaj wymagane działania"
-
 msgid "Add Requirement"
 msgstr "Dodaj Wymóg"
 

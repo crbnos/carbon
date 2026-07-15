@@ -703,9 +703,6 @@ msgstr "Aggiungi Domanda"
 msgid "Add Receipt"
 msgstr "Aggiungi Ricevuta"
 
-msgid "Add Required Actions"
-msgstr "Aggiungi Azioni Richieste"
-
 msgid "Add Requirement"
 msgstr "Aggiungi Requisito"
 
