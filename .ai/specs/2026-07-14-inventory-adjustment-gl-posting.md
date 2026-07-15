@@ -145,8 +145,10 @@ registered in `config.toml` (`verify_jwt = true`), authored per
        | Negative Adjmt. | 5310 | inventory account |
        at the §1.3 cost. `documentType 'Inventory Adjustment'` (manual) or
        `'Inventory Count'` (count path), `documentId` = the count id or the
-       item-ledger entry id, `quantity` = adjusted quantity. Set
-       `costLedger.costPostedToGL` on the rows the journal covers.
+       item-ledger entry id, `quantity` = adjusted quantity. (The item-ledger
+       and cost-ledger rows keep their own `itemLedgerDocumentType` — NULL for
+       manual adjustments, as today; `costPostedToGL` no longer exists on
+       `costLedger`.)
 - The posting core (steps 2–4) lives in a shared module
   `functions/shared/post-adjustment.ts` so `post-inventory-count` reuses it.
 
@@ -206,9 +208,9 @@ pattern.
 - Redirects to the journals screen for review/edit/post. The tie-out already
   excludes Draft journals, so the variance clears only when the accountant
   posts.
-- Panel copy: replace the current caveat with *"Adjustments made before
-  {feature ship} did not post to the GL — use Reconcile to clear the opening
-  variance."* Once a company's variance is zero the caveat and action hide.
+- Panel copy: the old caveat is removed entirely with **no replacement text**
+  (Brad, 2026-07-15) — when a variance exists the popover simply offers the
+  Reconcile button; at zero variance the button hides too.
 
 ### 5. Documentation + parent-spec sync
 
@@ -352,6 +354,8 @@ churn.
 
 ## Changelog
 
+- 2026-07-15: Tie-out popover carries no caveat text (Brad) — Reconcile button
+  only, shown when variance ≠ 0 and the user has `accounting_create`.
 - 2026-07-14: Created — after competitor research
   (`.ai/research/inventory-adjustment-gl-posting.md`) and a 3-question grill
   with Brad (resolutions inline). Grounded in code exploration: the three
