@@ -21,7 +21,7 @@
 - [x] Task 3: Service functions + row types in the inventory module (typed rpc calls; erp typecheck green — note: correct filter is `erp`, not `@carbon/erp`)
 - [x] Task 4: Path helper + sidebar nav entry (Track group, accounting_view-gated, LuChartBar)
 - [x] Task 5: Workbench UI component (grouped union rows + tie-out popover + as-of label; cloned from ARAPWorkbench)
-- [ ] Task 6: Route `/x/inventory/valuation`
+- [x] Task 6: Route `/x/inventory/valuation` (accounting_view gate; valuation errors throw to boundary; +156 translations filled via /translate)
 - [ ] Task 7: Final verification sweep
 
 ## Dependencies

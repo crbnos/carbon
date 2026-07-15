@@ -138,7 +138,7 @@ msgid "/month/user"
 msgstr "/ay/kullanıcı"
 
 msgid "% of Total"
-msgstr ""
+msgstr "% Toplam"
 
 #. placeholder {0}: numberFormatter.format(redirectedTotal)
 #. placeholder {1}: redirectedParts.join(", ")
@@ -786,7 +786,7 @@ msgid "All jobs completed"
 msgstr "Tüm işler tamamlandı"
 
 msgid "All Locations"
-msgstr ""
+msgstr "Tüm Konumlar"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "Seçilen gruplardaki ve bireylerdeki tüm üyeler talepleri onaylayabilecektir"
@@ -1834,10 +1834,10 @@ msgid "By Due Date"
 msgstr "Vade Tarihine Göre"
 
 msgid "By Item"
-msgstr ""
+msgstr "Ürüne Göre"
 
 msgid "By Location"
-msgstr ""
+msgstr "Konuma Göre"
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "Oturum açarak <0>Hizmet Şartları</0> ve <1>Gizlilik Politikası</1>'na katılıyorsunuz."
@@ -6259,7 +6259,7 @@ msgid "Inventory Unit of Measure"
 msgstr "Stok Birimi"
 
 msgid "Inventory Valuation"
-msgstr ""
+msgstr "Envanter Değerlemesi"
 
 msgid "Invite"
 msgstr "Davet et"
@@ -6388,7 +6388,7 @@ msgid "Item {scannedItem} is not the same as the item {expectedItem}"
 msgstr "Ürün {scannedItem}, ürün {expectedItem} ile aynı değil"
 
 msgid "Item / Location"
-msgstr ""
+msgstr "Ürün / Konum"
 
 msgid "Item filters"
 msgstr "Ürün filtreleri"
@@ -6774,7 +6774,7 @@ msgid "Location"
 msgstr "Konum"
 
 msgid "Location / Item"
-msgstr ""
+msgstr "Konum / Ürün"
 
 msgid "Location Name"
 msgstr "Konum Adı"
@@ -6976,7 +6976,7 @@ msgid "Manual"
 msgstr "Manuel"
 
 msgid "Manual quantity adjustments don't post to the GL yet, so a nonzero variance is expected if you cycle count."
-msgstr ""
+msgstr "Manuel miktar ayarlamaları henüz muhasebe defterine kaydedilmez, bu nedenle envanter sayımı yaparsanız sıfır olmayan bir fark beklenmektedir."
 
 msgid "Manufacturer"
 msgstr "Üretici"
@@ -9284,7 +9284,7 @@ msgid "Qty"
 msgstr "Miktar"
 
 msgid "Qty On Hand"
-msgstr ""
+msgstr "Elde Bulunan Miktar"
 
 msgid "Qty to Order"
 msgstr "Sipariş Edilecek Miktar"
@@ -12621,10 +12621,10 @@ msgid "Total quantity required across all active jobs and sales orders at this l
 msgstr "Bu konumdaki tüm aktif işler ve satış siparişleri genelinde gereken toplam miktar — yalnızca bu iş için değil."
 
 msgid "Total Value"
-msgstr ""
+msgstr "Toplam Değer"
 
 msgid "Total Variance"
-msgstr ""
+msgstr "Toplam Fark"
 
 msgid "Total:"
 msgstr "Toplam:"
@@ -13126,7 +13126,7 @@ msgid "Validating job..."
 msgstr "İş doğrulanıyor..."
 
 msgid "Valuation"
-msgstr ""
+msgstr "Değerleme"
 
 msgid "Value"
 msgstr "Değer"
@@ -13144,7 +13144,7 @@ msgid "Values"
 msgstr "Değerler"
 
 msgid "Values apply today's unit costs to historical quantities."
-msgstr ""
+msgstr "Değerler, tarihsel miktarlara bugünün birim maliyetlerini uygular."
 
 msgid "Variance"
 msgstr "Varyans"

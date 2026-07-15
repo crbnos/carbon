@@ -138,7 +138,7 @@ msgid "/month/user"
 msgstr "/月/ユーザー"
 
 msgid "% of Total"
-msgstr ""
+msgstr "総量比"
 
 #. placeholder {0}: numberFormatter.format(redirectedTotal)
 #. placeholder {1}: redirectedParts.join(", ")
@@ -786,7 +786,7 @@ msgid "All jobs completed"
 msgstr "すべてのジョブが完了しました"
 
 msgid "All Locations"
-msgstr ""
+msgstr "すべての場所"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "選択されたグループのすべてのメンバーと選択された個人が承認リクエストを承認できます"
@@ -1834,10 +1834,10 @@ msgid "By Due Date"
 msgstr "支払期日別"
 
 msgid "By Item"
-msgstr ""
+msgstr "品目別"
 
 msgid "By Location"
-msgstr ""
+msgstr "場所別"
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "サインインすることで、<0>利用規約</0>および<1>プライバシーポリシー</1>に同意するものとします。"
@@ -6259,7 +6259,7 @@ msgid "Inventory Unit of Measure"
 msgstr "在庫単位"
 
 msgid "Inventory Valuation"
-msgstr ""
+msgstr "在庫評価"
 
 msgid "Invite"
 msgstr "招待"
@@ -6388,7 +6388,7 @@ msgid "Item {scannedItem} is not the same as the item {expectedItem}"
 msgstr "アイテム {scannedItem} は、アイテム {expectedItem} と同じではありません"
 
 msgid "Item / Location"
-msgstr ""
+msgstr "品目 / 場所"
 
 msgid "Item filters"
 msgstr "アイテムフィルター"
@@ -6774,7 +6774,7 @@ msgid "Location"
 msgstr "ロケーション"
 
 msgid "Location / Item"
-msgstr ""
+msgstr "場所 / 品目"
 
 msgid "Location Name"
 msgstr "ロケーション名"
@@ -6976,7 +6976,7 @@ msgid "Manual"
 msgstr "手動"
 
 msgid "Manual quantity adjustments don't post to the GL yet, so a nonzero variance is expected if you cycle count."
-msgstr ""
+msgstr "手動数量調整はまだGLに転記されないため、循環棚卸しを行う場合はゼロ以外の差異が予想されます。"
 
 msgid "Manufacturer"
 msgstr "製造業者"
@@ -9284,7 +9284,7 @@ msgid "Qty"
 msgstr "数量"
 
 msgid "Qty On Hand"
-msgstr ""
+msgstr "手持数量"
 
 msgid "Qty to Order"
 msgstr "注文数量"
@@ -12621,10 +12621,10 @@ msgid "Total quantity required across all active jobs and sales orders at this l
 msgstr "このロケーションのすべての進行中ジョブおよび受注で必要とされる総数量 — このジョブだけではありません。"
 
 msgid "Total Value"
-msgstr ""
+msgstr "合計価値"
 
 msgid "Total Variance"
-msgstr ""
+msgstr "合計差異"
 
 msgid "Total:"
 msgstr "合計:"
@@ -13126,7 +13126,7 @@ msgid "Validating job..."
 msgstr "ジョブを検証中..."
 
 msgid "Valuation"
-msgstr ""
+msgstr "評価"
 
 msgid "Value"
 msgstr "値"
@@ -13144,7 +13144,7 @@ msgid "Values"
 msgstr "値"
 
 msgid "Values apply today's unit costs to historical quantities."
-msgstr ""
+msgstr "値は今日の単価を履歴数量に適用します。"
 
 msgid "Variance"
 msgstr "差異"

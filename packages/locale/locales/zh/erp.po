@@ -138,7 +138,7 @@ msgid "/month/user"
 msgstr "/月/用户"
 
 msgid "% of Total"
-msgstr ""
+msgstr "占总数的 %"
 
 #. placeholder {0}: numberFormatter.format(redirectedTotal)
 #. placeholder {1}: redirectedParts.join(", ")
@@ -786,7 +786,7 @@ msgid "All jobs completed"
 msgstr "所有工作已完成"
 
 msgid "All Locations"
-msgstr ""
+msgstr "所有位置"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "所选组的所有成员和所选个人将能够批准请求"
@@ -1834,10 +1834,10 @@ msgid "By Due Date"
 msgstr "按到期日期"
 
 msgid "By Item"
-msgstr ""
+msgstr "按物品"
 
 msgid "By Location"
-msgstr ""
+msgstr "按位置"
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "通过登录，您同意<0>服务条款</0>和<1>隐私政策。</1>"
@@ -6259,7 +6259,7 @@ msgid "Inventory Unit of Measure"
 msgstr "库存计量单位"
 
 msgid "Inventory Valuation"
-msgstr ""
+msgstr "库存估值"
 
 msgid "Invite"
 msgstr "邀请"
@@ -6388,7 +6388,7 @@ msgid "Item {scannedItem} is not the same as the item {expectedItem}"
 msgstr "项目 {scannedItem} 与项目 {expectedItem} 不相同"
 
 msgid "Item / Location"
-msgstr ""
+msgstr "物品 / 位置"
 
 msgid "Item filters"
 msgstr "项目筛选器"
@@ -6774,7 +6774,7 @@ msgid "Location"
 msgstr "位置"
 
 msgid "Location / Item"
-msgstr ""
+msgstr "位置 / 物品"
 
 msgid "Location Name"
 msgstr "位置名称"
@@ -6976,7 +6976,7 @@ msgid "Manual"
 msgstr "手动"
 
 msgid "Manual quantity adjustments don't post to the GL yet, so a nonzero variance is expected if you cycle count."
-msgstr ""
+msgstr "手动数量调整还未过账至总账，所以如果您进行周期盘点，预期会产生非零差异。"
 
 msgid "Manufacturer"
 msgstr "制造商"
@@ -9284,7 +9284,7 @@ msgid "Qty"
 msgstr "数量"
 
 msgid "Qty On Hand"
-msgstr ""
+msgstr "现有数量"
 
 msgid "Qty to Order"
 msgstr "订购数量"
@@ -12621,10 +12621,10 @@ msgid "Total quantity required across all active jobs and sales orders at this l
 msgstr "此地点所有活动作业和销售订单所需的总数量——而不仅仅是此作业。"
 
 msgid "Total Value"
-msgstr ""
+msgstr "总价值"
 
 msgid "Total Variance"
-msgstr ""
+msgstr "总差异"
 
 msgid "Total:"
 msgstr "总计："
@@ -13126,7 +13126,7 @@ msgid "Validating job..."
 msgstr "正在验证工作..."
 
 msgid "Valuation"
-msgstr ""
+msgstr "估值"
 
 msgid "Value"
 msgstr "值"
@@ -13144,7 +13144,7 @@ msgid "Values"
 msgstr "值"
 
 msgid "Values apply today's unit costs to historical quantities."
-msgstr ""
+msgstr "价值采用今日的单位成本应用于历史数量。"
 
 msgid "Variance"
 msgstr "差异"

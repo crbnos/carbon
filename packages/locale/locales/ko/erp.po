@@ -138,7 +138,7 @@ msgid "/month/user"
 msgstr "/월/사용자"
 
 msgid "% of Total"
-msgstr ""
+msgstr "전체의 %"
 
 #. placeholder {0}: numberFormatter.format(redirectedTotal)
 #. placeholder {1}: redirectedParts.join(", ")
@@ -786,7 +786,7 @@ msgid "All jobs completed"
 msgstr "모든 작업 완료됨"
 
 msgid "All Locations"
-msgstr ""
+msgstr "모든 위치"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "선택한 그룹의 모든 구성원과 선택한 개인이 요청을 승인할 수 있습니다"
@@ -1834,10 +1834,10 @@ msgid "By Due Date"
 msgstr "만기일 기준"
 
 msgid "By Item"
-msgstr ""
+msgstr "항목별"
 
 msgid "By Location"
-msgstr ""
+msgstr "위치별"
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "로그인하면 <0>서비스 약관</0> 및 <1>개인정보 처리방침</1>에 동의하는 것으로 간주됩니다."
@@ -6259,7 +6259,7 @@ msgid "Inventory Unit of Measure"
 msgstr "재고 측정 단위"
 
 msgid "Inventory Valuation"
-msgstr ""
+msgstr "재고 평가"
 
 msgid "Invite"
 msgstr "초대"
@@ -6388,7 +6388,7 @@ msgid "Item {scannedItem} is not the same as the item {expectedItem}"
 msgstr "품목 {scannedItem}이(가) 품목 {expectedItem}과(와) 일치하지 않습니다"
 
 msgid "Item / Location"
-msgstr ""
+msgstr "항목 / 위치"
 
 msgid "Item filters"
 msgstr "품목 필터"
@@ -6774,7 +6774,7 @@ msgid "Location"
 msgstr "위치"
 
 msgid "Location / Item"
-msgstr ""
+msgstr "위치 / 항목"
 
 msgid "Location Name"
 msgstr "위치 이름"
@@ -6976,7 +6976,7 @@ msgid "Manual"
 msgstr "수동"
 
 msgid "Manual quantity adjustments don't post to the GL yet, so a nonzero variance is expected if you cycle count."
-msgstr ""
+msgstr "수동 수량 조정은 아직 총장부(GL)에 게시되지 않으므로, 재고실사를 수행하면 0이 아닌 차이가 예상됩니다."
 
 msgid "Manufacturer"
 msgstr "제조사"
@@ -9284,7 +9284,7 @@ msgid "Qty"
 msgstr "수량"
 
 msgid "Qty On Hand"
-msgstr ""
+msgstr "현재고"
 
 msgid "Qty to Order"
 msgstr "주문 수량"
@@ -12621,10 +12621,10 @@ msgid "Total quantity required across all active jobs and sales orders at this l
 msgstr "이 작업뿐 아니라 이 위치의 모든 진행 중인 작업과 판매주문에서 필요한 총 수량입니다."
 
 msgid "Total Value"
-msgstr ""
+msgstr "총 가치"
 
 msgid "Total Variance"
-msgstr ""
+msgstr "총 차이"
 
 msgid "Total:"
 msgstr "합계:"
@@ -13126,7 +13126,7 @@ msgid "Validating job..."
 msgstr "작업 검증 중..."
 
 msgid "Valuation"
-msgstr ""
+msgstr "평가"
 
 msgid "Value"
 msgstr "값"
@@ -13144,7 +13144,7 @@ msgid "Values"
 msgstr "값"
 
 msgid "Values apply today's unit costs to historical quantities."
-msgstr ""
+msgstr "값은 오늘의 단가를 이전 수량에 적용합니다."
 
 msgid "Variance"
 msgstr "차이"
