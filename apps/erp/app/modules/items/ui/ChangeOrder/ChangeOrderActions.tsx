@@ -90,9 +90,16 @@ function ChangeOrderRequiredActions({
   );
   const fetcher = useFetcher<{ success: boolean }>();
 
-  const selected = actions
-    .map((a) => a.actionTypeId)
-    .filter((id): id is string => Boolean(id));
+  // While a select/deselect is in flight, reflect the submitted set immediately —
+  // the `actions` prop only updates after the reconcile revalidates. Without this
+  // optimistic read the chip flickers (added → reset to stale → re-added).
+  const pending = fetcher.formData?.get("actionIds");
+  const selected =
+    pending != null
+      ? String(pending).split(",").filter(Boolean)
+      : actions
+          .map((a) => a.actionTypeId)
+          .filter((id): id is string => Boolean(id));
 
   return (
     <ValidatedForm

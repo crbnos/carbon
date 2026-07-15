@@ -82,6 +82,7 @@ export function ChangeOrderContentSection({
   const body =
     permissions.can("update", "parts") && !isDisabled ? (
       <Editor
+        className="[&_.ProseMirror]:text-sm"
         initialValue={(content ?? {}) as JSONContent}
         onUpload={onUploadImage}
         onChange={(value) => {
@@ -91,7 +92,7 @@ export function ChangeOrderContentSection({
       />
     ) : (
       <div
-        className="prose dark:prose-invert"
+        className="prose prose-sm dark:prose-invert"
         dangerouslySetInnerHTML={{
           __html: generateHTML(content as JSONContent)
         }}

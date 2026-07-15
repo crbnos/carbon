@@ -212,12 +212,19 @@ const ChangeOrderProperties = () => {
             label=""
             isReadOnly={!canUpdate || isLocked}
             inline={(value) => {
-              const label =
+              // Chip shows just the NCR id/number — the full name is shown in the
+              // link below, so repeating it here only overflows the chip.
+              const nonConformanceId =
                 linkedNonConformance && linkedNonConformance.id === value
-                  ? `${linkedNonConformance.nonConformanceId} — ${linkedNonConformance.name}`
+                  ? linkedNonConformance.nonConformanceId
                   : (nonConformanceOptions.find((nc) => nc.id === value)
                       ?.nonConformanceId ?? null);
-              return <Enumerable value={label} />;
+              return (
+                <Enumerable
+                  value={nonConformanceId}
+                  className="max-w-[140px]"
+                />
+              );
             }}
             options={nonConformanceOptions.map((nc) => ({
               value: nc.id,

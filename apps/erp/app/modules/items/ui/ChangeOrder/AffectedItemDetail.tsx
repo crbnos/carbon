@@ -188,13 +188,13 @@ export default function AffectedItemDetail({
             // Revision / New Part edit two distinct surfaces — split them into
             // tabs so the tall attribute editor and the method/cutover don't
             // stack into one long scroll.
-            <Tabs defaultValue="properties" className="w-full">
+            <Tabs defaultValue="manufacturing" className="w-full">
               <TabsList>
-                <TabsTrigger value="properties">
-                  <Trans>Properties</Trans>
-                </TabsTrigger>
                 <TabsTrigger value="manufacturing">
                   <Trans>Manufacturing</Trans>
+                </TabsTrigger>
+                <TabsTrigger value="properties">
+                  <Trans>Properties</Trans>
                 </TabsTrigger>
                 <TabsTrigger value="files">
                   <Trans>Files</Trans>
@@ -347,7 +347,7 @@ function CutoverControl({
     >
       <Hidden name="id" value={affected.id} />
       <VStack spacing={2}>
-        <HStack className="w-full items-end gap-2 flex-wrap">
+        <HStack className="w-full items-start gap-2 flex-wrap">
           <div className="w-52">
             <Select
               name="supersessionMode"
@@ -380,9 +380,13 @@ function CutoverControl({
             />
           </div>
           {!isDisabled && (
-            <Submit isDisabled={fetcher.state !== "idle"}>
-              <Trans>Save</Trans>
-            </Submit>
+            // Fields align-start; nudge the label-less Save down so it lines up
+            // with the inputs rather than the labels.
+            <div className="pt-8">
+              <Submit isDisabled={fetcher.state !== "idle"}>
+                <Trans>Save</Trans>
+              </Submit>
+            </div>
           )}
         </HStack>
       </VStack>

@@ -1,5 +1,5 @@
 import type { JSONContent } from "@carbon/react";
-import { HStack, VStack } from "@carbon/react";
+import { HStack, Separator, VStack } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import type {
@@ -89,29 +89,44 @@ export default function ChangeOrderRail({
       {/* Properties renders its own "Properties" heading + fields. */}
       <ChangeOrderProperties />
 
-      <RailSection title={<Trans>Reason for change</Trans>}>
-        <ChangeOrderContentSection
-          key={`${id}-reason`}
-          embedded
-          id={id}
-          title=""
-          field="reasonForChange"
-          content={changeOrder.reasonForChange as JSONContent}
-          isDisabled={isDisabled}
-        />
+      <Separator />
+
+      {/* Details — the narrative of the change. Reason + Description are both
+          free-text, so they live in one section as labeled sub-fields. */}
+      <RailSection title={<Trans>Details</Trans>}>
+        <VStack spacing={4} className="w-full">
+          <VStack spacing={1} className="w-full">
+            <h3 className="text-xs text-muted-foreground">
+              <Trans>Reason for change</Trans>
+            </h3>
+            <ChangeOrderContentSection
+              key={`${id}-reason`}
+              embedded
+              id={id}
+              title=""
+              field="reasonForChange"
+              content={changeOrder.reasonForChange as JSONContent}
+              isDisabled={isDisabled}
+            />
+          </VStack>
+          <VStack spacing={1} className="w-full">
+            <h3 className="text-xs text-muted-foreground">
+              <Trans>Description</Trans>
+            </h3>
+            <ChangeOrderContentSection
+              key={`${id}-description`}
+              embedded
+              id={id}
+              title=""
+              field="description"
+              content={changeOrder.description as JSONContent}
+              isDisabled={isDisabled}
+            />
+          </VStack>
+        </VStack>
       </RailSection>
 
-      <RailSection title={<Trans>Description</Trans>}>
-        <ChangeOrderContentSection
-          key={`${id}-description`}
-          embedded
-          id={id}
-          title=""
-          field="description"
-          content={changeOrder.description as JSONContent}
-          isDisabled={isDisabled}
-        />
-      </RailSection>
+      <Separator />
 
       {/* Actions — an editable "Required Actions" multiselect matching the
           Quality issue sidebar; it renders its own label, so no RailSection
@@ -122,6 +137,8 @@ export default function ChangeOrderRail({
         actions={actions}
         isDisabled={isDisabled}
       />
+
+      <Separator />
 
       <RailSection title={<Trans>Impact</Trans>}>
         <ImpactPanel embedded items={impactUsedIn} />
