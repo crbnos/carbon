@@ -622,7 +622,7 @@ msgstr "कार्य जोड़ें"
 msgid "Add Adjustment"
 msgstr "समायोजन जोड़ें"
 
-msgid "Add affected item"
+msgid "Add Affected Item"
 msgstr ""
 
 msgid "Add any notes about your decision..."
@@ -8756,6 +8756,9 @@ msgstr "पार्ट आईडी"
 
 msgid "Part is configured for manufacturing"
 msgstr "भाग विनिर्माण के लिए कॉन्फ़िगर किया गया है"
+
+msgid "Part or Tool"
+msgstr ""
 
 msgid "Partial"
 msgstr "आंशिक"

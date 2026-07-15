@@ -622,7 +622,7 @@ msgstr "조치 추가"
 msgid "Add Adjustment"
 msgstr "조정 추가"
 
-msgid "Add affected item"
+msgid "Add Affected Item"
 msgstr ""
 
 msgid "Add any notes about your decision..."
@@ -8756,6 +8756,9 @@ msgstr "품목 ID"
 
 msgid "Part is configured for manufacturing"
 msgstr "제조용으로 설정된 품목입니다"
+
+msgid "Part or Tool"
+msgstr ""
 
 msgid "Partial"
 msgstr "부분"

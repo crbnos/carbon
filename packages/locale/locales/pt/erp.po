@@ -622,7 +622,7 @@ msgstr "Adicionar Ações"
 msgid "Add Adjustment"
 msgstr "Adicionar ajuste"
 
-msgid "Add affected item"
+msgid "Add Affected Item"
 msgstr ""
 
 msgid "Add any notes about your decision..."
@@ -8756,6 +8756,9 @@ msgstr "ID da Peça"
 
 msgid "Part is configured for manufacturing"
 msgstr "Peça configurada para fabricação"
+
+msgid "Part or Tool"
+msgstr ""
 
 msgid "Partial"
 msgstr "Parcial"

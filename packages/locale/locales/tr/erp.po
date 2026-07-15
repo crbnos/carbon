@@ -622,7 +622,7 @@ msgstr "Eylemler Ekle"
 msgid "Add Adjustment"
 msgstr "Ayarlama ekle"
 
-msgid "Add affected item"
+msgid "Add Affected Item"
 msgstr ""
 
 msgid "Add any notes about your decision..."
@@ -8756,6 +8756,9 @@ msgstr "Parça Kimliği"
 
 msgid "Part is configured for manufacturing"
 msgstr "Parça üretim için yapılandırılmış"
+
+msgid "Part or Tool"
+msgstr ""
 
 msgid "Partial"
 msgstr "Kısmi"

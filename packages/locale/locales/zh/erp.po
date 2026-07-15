@@ -622,7 +622,7 @@ msgstr "添加操作"
 msgid "Add Adjustment"
 msgstr "添加调整"
 
-msgid "Add affected item"
+msgid "Add Affected Item"
 msgstr ""
 
 msgid "Add any notes about your decision..."
@@ -8756,6 +8756,9 @@ msgstr "零件ID"
 
 msgid "Part is configured for manufacturing"
 msgstr "零件已配置用于制造"
+
+msgid "Part or Tool"
+msgstr ""
 
 msgid "Partial"
 msgstr "部分"
