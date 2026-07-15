@@ -19,7 +19,7 @@
 - [x] Task 1: Create the migration — `get_inventory_valuation` + `get_inventory_tie_out` RPCs (commit 1e3e89fbe)
 - [x] Task 2: Apply migration and validate the math in a rolled-back psql transaction (7/7 asserts PASS; fixed account join — companyGroup-scoped, no companyId)
 - [x] Task 3: Service functions + row types in the inventory module (typed rpc calls; erp typecheck green — note: correct filter is `erp`, not `@carbon/erp`)
-- [ ] Task 4: Path helper + sidebar nav entry
+- [x] Task 4: Path helper + sidebar nav entry (Track group, accounting_view-gated, LuChartBar)
 - [ ] Task 5: Workbench UI component
 - [ ] Task 6: Route `/x/inventory/valuation`
 - [ ] Task 7: Final verification sweep

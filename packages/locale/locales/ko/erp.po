@@ -13092,6 +13092,9 @@ msgstr "검증됨"
 msgid "Validating job..."
 msgstr "작업 검증 중..."
 
+msgid "Valuation"
+msgstr ""
+
 msgid "Value"
 msgstr "값"
 

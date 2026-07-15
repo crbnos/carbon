@@ -13092,6 +13092,9 @@ msgstr "Validé"
 msgid "Validating job..."
 msgstr "Validation du travail en cours..."
 
+msgid "Valuation"
+msgstr ""
+
 msgid "Value"
 msgstr "Valeur"
 

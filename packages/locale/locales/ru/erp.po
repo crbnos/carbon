@@ -13092,6 +13092,9 @@ msgstr "Проверено"
 msgid "Validating job..."
 msgstr "Проверка задания..."
 
+msgid "Valuation"
+msgstr ""
+
 msgid "Value"
 msgstr "Значение"
 

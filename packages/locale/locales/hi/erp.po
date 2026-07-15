@@ -13092,6 +13092,9 @@ msgstr "सत्यापित"
 msgid "Validating job..."
 msgstr "नौकरी को मान्य कर रहे हैं..."
 
+msgid "Valuation"
+msgstr ""
+
 msgid "Value"
 msgstr "मान"
 
