@@ -20,7 +20,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // limit on this branch; the query is unchanged from main where it checks fine
   const result = await client
     .from("supplierPart")
-    .select("id, supplierId, supplier:supplierId(name)")
+    .select("id, supplierId, supplier(name)")
     .eq("id", supplierPartId)
     .eq("companyId", companyId)
     .single();

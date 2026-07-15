@@ -48,6 +48,24 @@ export type Group = {
   children: Group[];
 };
 
+export type UserSelectGroup = {
+  id: string;
+  name: string;
+  isEmployeeTypeGroup: boolean;
+  isCustomerOrgGroup: boolean;
+  isCustomerTypeGroup: boolean;
+  isSupplierOrgGroup: boolean;
+  isSupplierTypeGroup: boolean;
+  userCount: number;
+  groupCount: number;
+  isRoot?: boolean; // present on list results, absent on member child groups
+};
+
+export type UserSelectGroupMembers = {
+  groups: UserSelectGroup[];
+  users: User[];
+};
+
 export type CompanyPermission = {
   view: boolean;
   create: boolean;

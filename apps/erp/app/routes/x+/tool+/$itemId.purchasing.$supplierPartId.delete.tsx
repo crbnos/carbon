@@ -21,7 +21,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // green whether or not it triggers.
   const result = await client
     .from("supplierPart")
-    .select("id, supplierId, supplier:supplierId(name)")
+    .select("id, supplierId, supplier(name)")
     .eq("id", supplierPartId)
     .eq("companyId", companyId)
     .single();

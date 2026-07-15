@@ -4463,12 +4463,6 @@ msgstr "Редактировать Webhook"
 msgid "Edit Work Center"
 msgstr "Редактировать рабочий центр"
 
-msgid "Effective From"
-msgstr "Действительно с"
-
-msgid "Effective To"
-msgstr "Действительно до"
-
 msgid "Email"
 msgstr "Электронная почта"
 
@@ -13068,12 +13062,6 @@ msgstr "Используется в навигации и в документа�
 
 msgid "Used in the navigation in dark mode"
 msgstr "Используется в навигации в темном режиме"
-
-msgid "Used on builds on/after this date (blank = always)"
-msgstr "Используется при сборках на/после этой даты (пусто = всегда)"
-
-msgid "Used on builds on/before this date (blank = always)"
-msgstr "Используется при сборках на/до этой даты (пусто = всегда)"
 
 msgid "Used on the home screen and digital quotes"
 msgstr "Используется на главном экране и в цифровых предложениях"
