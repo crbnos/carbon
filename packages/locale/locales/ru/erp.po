@@ -161,6 +161,9 @@ msgstr "{variances, plural, one {# строка отличается от ожи
 msgid "/month/user"
 msgstr "/месяц/пользователь"
 
+msgid "% of Total"
+msgstr "% от всего"
+
 #. placeholder {0}: numberFormatter.format(redirectedTotal)
 #. placeholder {1}: redirectedParts.join(", ")
 msgid "↩ {0} redirected from superseded {1}"
@@ -832,6 +835,9 @@ msgstr "Все элементы"
 
 msgid "All jobs completed"
 msgstr "Все работы завершены"
+
+msgid "All Locations"
+msgstr "Все местоположения"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "Все члены выбранных групп и выбранные лица смогут одобрять запросы"
@@ -1896,6 +1902,12 @@ msgstr "По дате документа"
 msgid "By Due Date"
 msgstr "По дате платежа"
 
+msgid "By Item"
+msgstr "По товару"
+
+msgid "By Location"
+msgstr "По местоположению"
+
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "Подписываясь, вы соглашаетесь с <0>Условиями обслуживания</0> и <1>Политикой конфиденциальности.</1>"
 
@@ -2349,6 +2361,9 @@ msgstr "Название компании"
 
 msgid "Company policy asks for a different person to inspect inbound items than the one who received them."
 msgstr "Политика компании требует, чтобы входящие товары проверял другой сотрудник, а не тот, кто их получил."
+
+msgid "Company-wide — includes all locations"
+msgstr "Во всей компании — включает все местоположения"
 
 msgid "Compare and Order"
 msgstr "Сравнить и заказать"
@@ -6412,6 +6427,9 @@ msgstr "История инвентаря"
 msgid "Inventory Job Notifications"
 msgstr "Уведомления о завершении работ по инвентаризации"
 
+msgid "Inventory Movements"
+msgstr "Движения по товарно-материальным ценностям"
+
 msgid "Inventory Qty"
 msgstr "Кол-во в инвентаре"
 
@@ -6420,6 +6438,9 @@ msgstr "Отслеживание запасов"
 
 msgid "Inventory Unit of Measure"
 msgstr "Единица измерения запасов"
+
+msgid "Inventory Valuation"
+msgstr "Оценка товарно-материального запаса"
 
 msgid "Invite"
 msgstr "Пригласить"
@@ -6546,6 +6567,9 @@ msgstr "Товар"
 
 msgid "Item {scannedItem} is not the same as the item {expectedItem}"
 msgstr "Товар {scannedItem} не совпадает с товаром {expectedItem}"
+
+msgid "Item / Location"
+msgstr "Товар / Местоположение"
 
 msgid "Item filters"
 msgstr "Фильтры товаров"
@@ -6938,6 +6962,9 @@ msgstr "расположение"
 
 msgid "Location"
 msgstr "Местоположение"
+
+msgid "Location / Item"
+msgstr "Местоположение / Товар"
 
 msgid "Location Name"
 msgstr "Название местоположения"
@@ -7539,6 +7566,9 @@ msgstr "Переместить в корзину"
 #. placeholder {1}: targetBucket === "parts" ? "Parts" : "Opportunity"
 msgid "Moved {0} to {1} bucket"
 msgstr "Перемещено {0} в хранилище {1}"
+
+msgid "Movements"
+msgstr "Движения"
 
 msgid "MRP (planning)"
 msgstr "MRP (планирование)"
@@ -9527,6 +9557,9 @@ msgstr "QR-код для начала следующей операции для
 msgid "Qty"
 msgstr "Кол-во"
 
+msgid "Qty On Hand"
+msgstr "Кол-во в наличии"
+
 msgid "Qty to Order"
 msgstr "Кол-во для заказа"
 
@@ -9831,6 +9864,9 @@ msgstr "Недавние платежи"
 
 msgid "Recently Created"
 msgstr "Недавно созданные"
+
+msgid "Reconcile"
+msgstr "Согласовать"
 
 msgid "Reconciling a purchase order against what was received and invoiced — implicit in Carbon, via the line quantities and GR/IR balance."
 msgstr "Период восстановления"
@@ -11477,9 +11513,6 @@ msgstr "шаги"
 msgid "Steps"
 msgstr "Шаги"
 
-msgid "Stock Movements"
-msgstr "Движения запасов"
-
 msgid "Stock Transfer ID"
 msgstr "ID передачи запасов"
 
@@ -12834,6 +12867,9 @@ msgstr "Связать отправки с счетом без повторно�
 msgid "Tie-Out"
 msgstr "Сверка"
 
+msgid "Tie-Out unavailable"
+msgstr "Сверка недоступна"
+
 msgid "Tightened"
 msgstr "Ужесточенный"
 
@@ -12974,6 +13010,12 @@ msgstr "Общее наличное количество позиции по в�
 
 msgid "Total quantity required across all active jobs and sales orders at this location — not just this job."
 msgstr "Общее требуемое количество по всем активным заданиям и заказам на продажу в этом местоположении — не только по этому заданию."
+
+msgid "Total Value"
+msgstr "Общая стоимость"
+
+msgid "Total Variance"
+msgstr "Общее отклонение"
 
 msgid "Total:"
 msgstr "Итого:"
@@ -13477,6 +13519,9 @@ msgstr "Проверено"
 msgid "Validating job..."
 msgstr "Проверка задания..."
 
+msgid "Valuation"
+msgstr "Оценка"
+
 msgid "Value"
 msgstr "Значение"
 
@@ -13491,6 +13536,9 @@ msgstr "Номер регистрации налога на добавленну
 
 msgid "Values"
 msgstr "Значения"
+
+msgid "Values apply today's unit costs to historical quantities."
+msgstr "Значения применяют текущие цены за единицу к историческим количествам."
 
 msgid "Variance"
 msgstr "Расхождение"

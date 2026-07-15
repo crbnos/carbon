@@ -52,12 +52,14 @@ import AssemblyInstructionExplorer from "~/modules/production/ui/Assemblies/Asse
 import AssemblyInstructionHeader from "~/modules/production/ui/Assemblies/AssemblyInstructionHeader";
 import AssemblyInstructionProperties from "~/modules/production/ui/Assemblies/AssemblyInstructionProperties";
 import { ModelConvertProgress } from "~/modules/production/ui/Assemblies/ModelConvertProgress";
-import type { Handle } from "~/utils/handle";
+import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { getPrivateUrl, path } from "~/utils/path";
 
 export const handle: Handle = {
-  breadcrumb: msg`Assemblies`,
-  to: path.to.assemblyInstructions,
+  breadcrumb: detailBreadcrumb(
+    { breadcrumb: msg`Assemblies`, to: path.to.assemblyInstructions },
+    (data) => data?.instruction?.name
+  ),
   module: "production"
 };
 

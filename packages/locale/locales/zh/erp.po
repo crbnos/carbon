@@ -161,6 +161,9 @@ msgstr "{variances, plural, one {# 行与预期数量不同} other {# 行与预�
 msgid "/month/user"
 msgstr "/月/用户"
 
+msgid "% of Total"
+msgstr "占总数的 %"
+
 #. placeholder {0}: numberFormatter.format(redirectedTotal)
 #. placeholder {1}: redirectedParts.join(", ")
 msgid "↩ {0} redirected from superseded {1}"
@@ -832,6 +835,9 @@ msgstr "所有项目"
 
 msgid "All jobs completed"
 msgstr "所有工作已完成"
+
+msgid "All Locations"
+msgstr "所有位置"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "所选组的所有成员和所选个人将能够批准请求"
@@ -1896,6 +1902,12 @@ msgstr "按单据日期"
 msgid "By Due Date"
 msgstr "按到期日期"
 
+msgid "By Item"
+msgstr "按物品"
+
+msgid "By Location"
+msgstr "按位置"
+
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "通过登录，您同意<0>服务条款</0>和<1>隐私政策。</1>"
 
@@ -2349,6 +2361,9 @@ msgstr "公司名称"
 
 msgid "Company policy asks for a different person to inspect inbound items than the one who received them."
 msgstr "公司政策要求由与收货人不同的人员检验入库物品。"
+
+msgid "Company-wide — includes all locations"
+msgstr "公司范围 — 包括所有地点"
 
 msgid "Compare and Order"
 msgstr "比较并订购"
@@ -6412,6 +6427,9 @@ msgstr "库存历史"
 msgid "Inventory Job Notifications"
 msgstr "库存工作通知"
 
+msgid "Inventory Movements"
+msgstr "库存移动"
+
 msgid "Inventory Qty"
 msgstr "库存数量"
 
@@ -6420,6 +6438,9 @@ msgstr "库存追踪"
 
 msgid "Inventory Unit of Measure"
 msgstr "库存计量单位"
+
+msgid "Inventory Valuation"
+msgstr "库存估值"
 
 msgid "Invite"
 msgstr "邀请"
@@ -6546,6 +6567,9 @@ msgstr "物品"
 
 msgid "Item {scannedItem} is not the same as the item {expectedItem}"
 msgstr "项目 {scannedItem} 与项目 {expectedItem} 不相同"
+
+msgid "Item / Location"
+msgstr "物品 / 位置"
 
 msgid "Item filters"
 msgstr "项目筛选器"
@@ -6938,6 +6962,9 @@ msgstr "位置"
 
 msgid "Location"
 msgstr "位置"
+
+msgid "Location / Item"
+msgstr "位置 / 物品"
 
 msgid "Location Name"
 msgstr "位置名称"
@@ -7539,6 +7566,9 @@ msgstr "移至垃圾箱"
 #. placeholder {1}: targetBucket === "parts" ? "Parts" : "Opportunity"
 msgid "Moved {0} to {1} bucket"
 msgstr "已将 {0} 移至 {1} 存储桶"
+
+msgid "Movements"
+msgstr "移动"
 
 msgid "MRP (planning)"
 msgstr "MRP (计划)"
@@ -9527,6 +9557,9 @@ msgstr "二维码用于启动此看板的下一个操作"
 msgid "Qty"
 msgstr "数量"
 
+msgid "Qty On Hand"
+msgstr "现有数量"
+
 msgid "Qty to Order"
 msgstr "订购数量"
 
@@ -9831,6 +9864,9 @@ msgstr "最近的付款"
 
 msgid "Recently Created"
 msgstr "最近创建"
+
+msgid "Reconcile"
+msgstr "对账"
 
 msgid "Reconciling a purchase order against what was received and invoiced — implicit in Carbon, via the line quantities and GR/IR balance."
 msgstr "回收期"
@@ -11477,9 +11513,6 @@ msgstr "步骤"
 msgid "Steps"
 msgstr "步骤"
 
-msgid "Stock Movements"
-msgstr "库存移动"
-
 msgid "Stock Transfer ID"
 msgstr "库存转移ID"
 
@@ -12834,6 +12867,9 @@ msgstr "将发货与发票关联，无需重新输入"
 msgid "Tie-Out"
 msgstr "对账"
 
+msgid "Tie-Out unavailable"
+msgstr "结账检验不可用"
+
 msgid "Tightened"
 msgstr "紧张"
 
@@ -12974,6 +13010,12 @@ msgstr "此地点所有存储单元中该物料的现有总数量。当现有数
 
 msgid "Total quantity required across all active jobs and sales orders at this location — not just this job."
 msgstr "此地点所有活动作业和销售订单所需的总数量——而不仅仅是此作业。"
+
+msgid "Total Value"
+msgstr "总价值"
+
+msgid "Total Variance"
+msgstr "总差异"
 
 msgid "Total:"
 msgstr "总计："
@@ -13477,6 +13519,9 @@ msgstr "已验证"
 msgid "Validating job..."
 msgstr "正在验证工作..."
 
+msgid "Valuation"
+msgstr "估值"
+
 msgid "Value"
 msgstr "值"
 
@@ -13491,6 +13536,9 @@ msgstr "增值税注册号;欧盟发票中反向收费或零税率供应所需�
 
 msgid "Values"
 msgstr "值"
+
+msgid "Values apply today's unit costs to historical quantities."
+msgstr "价值采用今日的单位成本应用于历史数量。"
 
 msgid "Variance"
 msgstr "差异"

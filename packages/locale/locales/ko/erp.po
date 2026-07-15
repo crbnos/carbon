@@ -161,6 +161,9 @@ msgstr "예상 수량과 다른 라인 {variances}개"
 msgid "/month/user"
 msgstr "/월/사용자"
 
+msgid "% of Total"
+msgstr "전체의 %"
+
 #. placeholder {0}: numberFormatter.format(redirectedTotal)
 #. placeholder {1}: redirectedParts.join(", ")
 msgid "↩ {0} redirected from superseded {1}"
@@ -832,6 +835,9 @@ msgstr "모든 품목"
 
 msgid "All jobs completed"
 msgstr "모든 작업 완료됨"
+
+msgid "All Locations"
+msgstr "모든 위치"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "선택한 그룹의 모든 구성원과 선택한 개인이 요청을 승인할 수 있습니다"
@@ -1896,6 +1902,12 @@ msgstr "문서 날짜 기준"
 msgid "By Due Date"
 msgstr "만기일 기준"
 
+msgid "By Item"
+msgstr "항목별"
+
+msgid "By Location"
+msgstr "위치별"
+
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "로그인하면 <0>서비스 약관</0> 및 <1>개인정보 처리방침</1>에 동의하는 것으로 간주됩니다."
 
@@ -2349,6 +2361,9 @@ msgstr "회사명"
 
 msgid "Company policy asks for a different person to inspect inbound items than the one who received them."
 msgstr "회사 정책상 입고 품목을 받은 사람과 검사하는 사람이 달라야 합니다."
+
+msgid "Company-wide — includes all locations"
+msgstr "회사 전체 — 모든 위치 포함"
 
 msgid "Compare and Order"
 msgstr "비교 후 주문"
@@ -6412,6 +6427,9 @@ msgstr "재고 이력"
 msgid "Inventory Job Notifications"
 msgstr "재고 작업 알림"
 
+msgid "Inventory Movements"
+msgstr "재고 이동"
+
 msgid "Inventory Qty"
 msgstr "재고 수량"
 
@@ -6420,6 +6438,9 @@ msgstr "재고 추적"
 
 msgid "Inventory Unit of Measure"
 msgstr "재고 측정 단위"
+
+msgid "Inventory Valuation"
+msgstr "재고 평가"
 
 msgid "Invite"
 msgstr "초대"
@@ -6546,6 +6567,9 @@ msgstr "품목"
 
 msgid "Item {scannedItem} is not the same as the item {expectedItem}"
 msgstr "품목 {scannedItem}이(가) 품목 {expectedItem}과(와) 일치하지 않습니다"
+
+msgid "Item / Location"
+msgstr "항목 / 위치"
 
 msgid "Item filters"
 msgstr "품목 필터"
@@ -6938,6 +6962,9 @@ msgstr "위치"
 
 msgid "Location"
 msgstr "위치"
+
+msgid "Location / Item"
+msgstr "위치 / 항목"
 
 msgid "Location Name"
 msgstr "위치 이름"
@@ -7539,6 +7566,9 @@ msgstr "휴지통으로 이동"
 #. placeholder {1}: targetBucket === "parts" ? "Parts" : "Opportunity"
 msgid "Moved {0} to {1} bucket"
 msgstr "{0}을(를) {1} 버킷으로 이동함"
+
+msgid "Movements"
+msgstr "이동"
 
 msgid "MRP (planning)"
 msgstr "MRP(계획)"
@@ -9527,6 +9557,9 @@ msgstr "이 칸반의 다음 공정작업을 시작하는 QR 코드"
 msgid "Qty"
 msgstr "수량"
 
+msgid "Qty On Hand"
+msgstr "현재고"
+
 msgid "Qty to Order"
 msgstr "주문 수량"
 
@@ -9831,6 +9864,9 @@ msgstr "최근 결제"
 
 msgid "Recently Created"
 msgstr "최근 생성됨"
+
+msgid "Reconcile"
+msgstr "조정"
 
 msgid "Reconciling a purchase order against what was received and invoiced — implicit in Carbon, via the line quantities and GR/IR balance."
 msgstr "구매주문을 실제 입고 및 청구 내역과 대조하는 작업 — Carbon에서는 라인 수량과 GR/IR 잔액을 통해 암묵적으로 처리됩니다."
@@ -11477,9 +11513,6 @@ msgstr "단계"
 msgid "Steps"
 msgstr "단계"
 
-msgid "Stock Movements"
-msgstr "재고 이동"
-
 msgid "Stock Transfer ID"
 msgstr "재고 이동 ID"
 
@@ -12834,6 +12867,9 @@ msgstr "재입력 없이 출하를 인보이스까지 연결"
 msgid "Tie-Out"
 msgstr "대사"
 
+msgid "Tie-Out unavailable"
+msgstr "동적 대조 불가능"
+
 msgid "Tightened"
 msgstr "강화됨"
 
@@ -12974,6 +13010,12 @@ msgstr "이 위치의 모든 저장 단위에 걸친 해당 품목의 총 재고
 
 msgid "Total quantity required across all active jobs and sales orders at this location — not just this job."
 msgstr "이 작업뿐 아니라 이 위치의 모든 진행 중인 작업과 판매주문에서 필요한 총 수량입니다."
+
+msgid "Total Value"
+msgstr "총 가치"
+
+msgid "Total Variance"
+msgstr "총 차이"
 
 msgid "Total:"
 msgstr "합계:"
@@ -13477,6 +13519,9 @@ msgstr "검증됨"
 msgid "Validating job..."
 msgstr "작업 검증 중..."
 
+msgid "Valuation"
+msgstr "평가"
+
 msgid "Value"
 msgstr "값"
 
@@ -13491,6 +13536,9 @@ msgstr "부가가치세 등록번호로, 대리납부(리버스차지) 또는 �
 
 msgid "Values"
 msgstr "값"
+
+msgid "Values apply today's unit costs to historical quantities."
+msgstr "값은 오늘의 단가를 이전 수량에 적용합니다."
 
 msgid "Variance"
 msgstr "차이"

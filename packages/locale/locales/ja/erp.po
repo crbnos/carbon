@@ -161,6 +161,9 @@ msgstr "{variances, plural, one {# 行が予想数量と異なります} other {
 msgid "/month/user"
 msgstr "/月/ユーザー"
 
+msgid "% of Total"
+msgstr "総量比"
+
 #. placeholder {0}: numberFormatter.format(redirectedTotal)
 #. placeholder {1}: redirectedParts.join(", ")
 msgid "↩ {0} redirected from superseded {1}"
@@ -832,6 +835,9 @@ msgstr "すべてのアイテム"
 
 msgid "All jobs completed"
 msgstr "すべてのジョブが完了しました"
+
+msgid "All Locations"
+msgstr "すべての場所"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "選択されたグループのすべてのメンバーと選択された個人が承認リクエストを承認できます"
@@ -1896,6 +1902,12 @@ msgstr "ドキュメント日付別"
 msgid "By Due Date"
 msgstr "支払期日別"
 
+msgid "By Item"
+msgstr "品目別"
+
+msgid "By Location"
+msgstr "場所別"
+
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "サインインすることで、<0>利用規約</0>および<1>プライバシーポリシー</1>に同意するものとします。"
 
@@ -2349,6 +2361,9 @@ msgstr "会社名"
 
 msgid "Company policy asks for a different person to inspect inbound items than the one who received them."
 msgstr "会社のポリシーでは、受け取った人とは異なる人が受け入れ品を検査することが求められています。"
+
+msgid "Company-wide — includes all locations"
+msgstr "会社全体 — すべての場所を含む"
 
 msgid "Compare and Order"
 msgstr "比較して注文"
@@ -6412,6 +6427,9 @@ msgstr "在庫履歴"
 msgid "Inventory Job Notifications"
 msgstr "在庫ジョブ通知"
 
+msgid "Inventory Movements"
+msgstr "在庫移動"
+
 msgid "Inventory Qty"
 msgstr "在庫数量"
 
@@ -6420,6 +6438,9 @@ msgstr "在庫追跡"
 
 msgid "Inventory Unit of Measure"
 msgstr "在庫単位"
+
+msgid "Inventory Valuation"
+msgstr "在庫評価"
 
 msgid "Invite"
 msgstr "招待"
@@ -6546,6 +6567,9 @@ msgstr "アイテム"
 
 msgid "Item {scannedItem} is not the same as the item {expectedItem}"
 msgstr "アイテム {scannedItem} は、アイテム {expectedItem} と同じではありません"
+
+msgid "Item / Location"
+msgstr "品目 / 場所"
 
 msgid "Item filters"
 msgstr "アイテムフィルター"
@@ -6938,6 +6962,9 @@ msgstr "場所"
 
 msgid "Location"
 msgstr "ロケーション"
+
+msgid "Location / Item"
+msgstr "場所 / 品目"
 
 msgid "Location Name"
 msgstr "ロケーション名"
@@ -7539,6 +7566,9 @@ msgstr "ゴミ箱に移動"
 #. placeholder {1}: targetBucket === "parts" ? "Parts" : "Opportunity"
 msgid "Moved {0} to {1} bucket"
 msgstr "{0}を{1}バケットに移動しました"
+
+msgid "Movements"
+msgstr "移動"
 
 msgid "MRP (planning)"
 msgstr "MRP (計画)"
@@ -9527,6 +9557,9 @@ msgstr "このカンバンの次の操作を開始するためのQRコード"
 msgid "Qty"
 msgstr "数量"
 
+msgid "Qty On Hand"
+msgstr "手持数量"
+
 msgid "Qty to Order"
 msgstr "注文数量"
 
@@ -9831,6 +9864,9 @@ msgstr "最近の支払い"
 
 msgid "Recently Created"
 msgstr "最近作成"
+
+msgid "Reconcile"
+msgstr "調整"
 
 msgid "Reconciling a purchase order against what was received and invoiced — implicit in Carbon, via the line quantities and GR/IR balance."
 msgstr "回収期間"
@@ -11477,9 +11513,6 @@ msgstr "ステップ"
 msgid "Steps"
 msgstr "ステップ"
 
-msgid "Stock Movements"
-msgstr "在庫移動"
-
 msgid "Stock Transfer ID"
 msgstr "在庫移動ID"
 
@@ -12834,6 +12867,9 @@ msgstr "出荷を請求書に結びつけ、再入力なしで処理する"
 msgid "Tie-Out"
 msgstr "照合"
 
+msgid "Tie-Out unavailable"
+msgstr "Tie-Outは利用できません"
+
 msgid "Tightened"
 msgstr "厳しい"
 
@@ -12974,6 +13010,12 @@ msgstr "このロケーションのすべての保管単位における品目の
 
 msgid "Total quantity required across all active jobs and sales orders at this location — not just this job."
 msgstr "このロケーションのすべての進行中ジョブおよび受注で必要とされる総数量 — このジョブだけではありません。"
+
+msgid "Total Value"
+msgstr "合計価値"
+
+msgid "Total Variance"
+msgstr "合計差異"
 
 msgid "Total:"
 msgstr "合計:"
@@ -13477,6 +13519,9 @@ msgstr "検証済み"
 msgid "Validating job..."
 msgstr "ジョブを検証中..."
 
+msgid "Valuation"
+msgstr "評価"
+
 msgid "Value"
 msgstr "値"
 
@@ -13491,6 +13536,9 @@ msgstr "付加価値税登録番号;EUの請求書でのリバースチャージ
 
 msgid "Values"
 msgstr "値"
+
+msgid "Values apply today's unit costs to historical quantities."
+msgstr "値は今日の単価を履歴数量に適用します。"
 
 msgid "Variance"
 msgstr "差異"

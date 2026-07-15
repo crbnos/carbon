@@ -436,6 +436,10 @@ export async function getPickedTrackedEntitiesForMaterial(
   return [...byEntity.values()];
 }
 
+// Thin wrapper over the post-inventory-adjustment edge function — the same
+// unified write path the ERP uses. The edge function books the item ledger,
+// cost layers, and (when companySettings.accountingEnabled) the GL journal in
+// one transaction, and owns the insufficient-quantity guard.
 export async function insertManualInventoryAdjustment(
   client: SupabaseClient<Database>,
   inventoryAdjustment: z.infer<typeof inventoryAdjustmentValidator> & {
@@ -443,14 +447,38 @@ export async function insertManualInventoryAdjustment(
     createdBy: string;
   }
 ) {
-  // Check if it's a negative adjustment and if the quantity is sufficient
-  if (inventoryAdjustment.entryType === "Negative Adjmt.") {
-    inventoryAdjustment.quantity = -Math.abs(inventoryAdjustment.quantity);
+  const { companyId, createdBy, entryType, ...adjustment } =
+    inventoryAdjustment;
+
+  const result = await client.functions.invoke<{
+    success: boolean;
+    itemLedger: { id: string } | null;
+  }>("post-inventory-adjustment", {
+    body: {
+      ...adjustment,
+      adjustmentType: entryType,
+      companyId,
+      userId: createdBy
+    }
+  });
+
+  if (result.error) {
+    // Supabase wraps non-2xx edge-fn responses in FunctionsHttpError with the
+    // body on error.context — pull the real message out so the route's string
+    // match on "Insufficient quantity..." keeps working (same pattern as
+    // x+/issue-tracked-entity.tsx).
+    let message = "Failed to create manual inventory adjustment";
+    const ctx = (result.error as { context?: Response })?.context;
+    if (ctx && typeof ctx.clone === "function") {
+      try {
+        const body = await ctx.clone().json();
+        if (body && typeof body.message === "string") message = body.message;
+      } catch {
+        // body wasn't JSON — keep the fallback
+      }
+    }
+    return { data: null, error: { message } };
   }
 
-  return client
-    .from("itemLedger")
-    .insert([inventoryAdjustment])
-    .select("*")
-    .single();
+  return { data: result.data?.itemLedger ?? null, error: null };
 }

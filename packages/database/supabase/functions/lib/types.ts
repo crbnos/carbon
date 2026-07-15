@@ -39793,6 +39793,7 @@ export type Database = {
           leadTime: number
           netExtendedPrice: number | null
           netUnitPrice: number | null
+          priceSource: string
           quantity: number
           quoteId: string
           quoteLineId: string
@@ -39815,6 +39816,7 @@ export type Database = {
           leadTime?: number
           netExtendedPrice?: number | null
           netUnitPrice?: number | null
+          priceSource?: string
           quantity?: number
           quoteId: string
           quoteLineId: string
@@ -39837,6 +39839,7 @@ export type Database = {
           leadTime?: number
           netExtendedPrice?: number | null
           netUnitPrice?: number | null
+          priceSource?: string
           quantity?: number
           quoteId?: string
           quoteLineId?: string
@@ -71676,6 +71679,37 @@ export type Database = {
           usageLast90Days: number
         }[]
       }
+      get_inventory_tie_out: {
+        Args: { as_of_date?: string; company_id: string }
+        Returns: {
+          accountId: string
+          accountKind: string
+          accountName: string
+          glBalance: number
+          subledgerValue: number
+          variance: number
+        }[]
+      }
+      get_inventory_valuation: {
+        Args: { as_of_date?: string; company_id: string; location_id?: string }
+        Returns: {
+          costingMethod: Database["public"]["Enums"]["itemCostingMethod"]
+          itemId: string
+          locationId: string
+          locationName: string
+          name: string
+          quantityOnHand: number
+          quantityOnHold: number
+          quantityRejected: number
+          readableIdWithRevision: string
+          replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
+          thumbnailPath: string
+          totalValue: number
+          type: Database["public"]["Enums"]["itemType"]
+          unitCost: number
+          unitOfMeasureCode: string
+        }[]
+      }
       get_inventory_value_by_location: {
         Args: { company_id: string }
         Returns: {
@@ -73725,6 +73759,8 @@ export type Database = {
         | "Job Close"
         | "Payment"
         | "Memo"
+        | "Inventory Adjustment"
+        | "Inventory Count"
       kanbanOutput: "label" | "qrcode" | "url"
       macrsConvention: "Half-Year" | "Mid-Quarter"
       macrsPropertyClass: "3" | "5" | "7" | "10" | "15" | "20" | "27.5" | "39"
@@ -75093,6 +75129,8 @@ export const Constants = {
         "Job Close",
         "Payment",
         "Memo",
+        "Inventory Adjustment",
+        "Inventory Count",
       ],
       kanbanOutput: ["label", "qrcode", "url"],
       macrsConvention: ["Half-Year", "Mid-Quarter"],

@@ -3045,6 +3045,9 @@ export async function insertQuoteLines(
               unitPrice: qp.unit_price ?? 0,
               leadTime: qp.lead_time ?? 0,
               discountPercent: 0,
+              // Paperless is the pricing source of truth for imported quotes —
+              // mark the price manual so no Carbon recalc ever overwrites it.
+              priceSource: "manual",
               createdBy
             }));
 

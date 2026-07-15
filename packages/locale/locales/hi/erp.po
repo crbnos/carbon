@@ -161,6 +161,9 @@ msgstr "{variances, plural, one {# लाइन अपेक्षित मा�
 msgid "/month/user"
 msgstr "/माह/उपयोगकर्ता"
 
+msgid "% of Total"
+msgstr "कुल का %"
+
 #. placeholder {0}: numberFormatter.format(redirectedTotal)
 #. placeholder {1}: redirectedParts.join(", ")
 msgid "↩ {0} redirected from superseded {1}"
@@ -832,6 +835,9 @@ msgstr "सभी आइटम"
 
 msgid "All jobs completed"
 msgstr "सभी नौकरियां पूरी हुईं"
+
+msgid "All Locations"
+msgstr "सभी स्थान"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "चयनित समूहों के सभी सदस्य और चयनित व्यक्ति अनुरोधों को मंजूरी दे सकेंगे"
@@ -1896,6 +1902,12 @@ msgstr "दस्तावेज़ तारीख के अनुसार"
 msgid "By Due Date"
 msgstr "देय तारीख के अनुसार"
 
+msgid "By Item"
+msgstr "आइटम के अनुसार"
+
+msgid "By Location"
+msgstr "स्थान के अनुसार"
+
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "साइन इन करके, आप <0>सेवा की शर्तें</0> और <1>गोपनीयता नीति</1> से सहमत हैं।"
 
@@ -2349,6 +2361,9 @@ msgstr "कंपनी का नाम"
 
 msgid "Company policy asks for a different person to inspect inbound items than the one who received them."
 msgstr "कंपनी की नीति के अनुसार, इनबाउंड आइटम्स का निरीक्षण उस व्यक्ति के अलावा किसी और को करना चाहिए जिसने उन्हें प्राप्त किया है।"
+
+msgid "Company-wide — includes all locations"
+msgstr "कंपनी-व्यापी — सभी स्थानों को शामिल करता है"
 
 msgid "Compare and Order"
 msgstr "तुलना करें और ऑर्डर करें"
@@ -6412,6 +6427,9 @@ msgstr "इन्वेंटरी इतिहास"
 msgid "Inventory Job Notifications"
 msgstr "इन्वेंटरी जॉब नोटिफिकेशन"
 
+msgid "Inventory Movements"
+msgstr "इन्वेंटरी मूवमेंट्स"
+
 msgid "Inventory Qty"
 msgstr "इन्वेंटरी मात्रा"
 
@@ -6420,6 +6438,9 @@ msgstr "इन्वेंटरी ट्रैकिंग"
 
 msgid "Inventory Unit of Measure"
 msgstr "इन्वेंटरी माप की इकाई"
+
+msgid "Inventory Valuation"
+msgstr "इन्वेंटरी मूल्यांकन"
 
 msgid "Invite"
 msgstr "आमंत्रित करें"
@@ -6546,6 +6567,9 @@ msgstr "आइटम"
 
 msgid "Item {scannedItem} is not the same as the item {expectedItem}"
 msgstr "आइटम {scannedItem} आइटम {expectedItem} के समान नहीं है"
+
+msgid "Item / Location"
+msgstr "आइटम / स्थान"
 
 msgid "Item filters"
 msgstr "आइटम फ़िल्टर"
@@ -6938,6 +6962,9 @@ msgstr "स्थान"
 
 msgid "Location"
 msgstr "स्थान"
+
+msgid "Location / Item"
+msgstr "स्थान / आइटम"
 
 msgid "Location Name"
 msgstr "स्थान का नाम"
@@ -7539,6 +7566,9 @@ msgstr "ट्रैश में स्थानांतरित करें
 #. placeholder {1}: targetBucket === "parts" ? "Parts" : "Opportunity"
 msgid "Moved {0} to {1} bucket"
 msgstr "{0} को {1} बकेट में स्थानांतरित किया गया"
+
+msgid "Movements"
+msgstr "मूवमेंट्स"
 
 msgid "MRP (planning)"
 msgstr "MRP (योजना)"
@@ -9527,6 +9557,9 @@ msgstr "इस कनबन के लिए अगली ऑपरेशन श
 msgid "Qty"
 msgstr "मात्रा"
 
+msgid "Qty On Hand"
+msgstr "हाथ में मात्रा"
+
 msgid "Qty to Order"
 msgstr "ऑर्डर करने की मात्रा"
 
@@ -9831,6 +9864,9 @@ msgstr "हाल के भुगतान"
 
 msgid "Recently Created"
 msgstr "हाल ही में बनाया गया"
+
+msgid "Reconcile"
+msgstr "सुलह करें"
 
 msgid "Reconciling a purchase order against what was received and invoiced — implicit in Carbon, via the line quantities and GR/IR balance."
 msgstr "वसूली अवधि"
@@ -11477,9 +11513,6 @@ msgstr "कदम"
 msgid "Steps"
 msgstr "चरण"
 
-msgid "Stock Movements"
-msgstr "स्टॉक मूवमेंट्स"
-
 msgid "Stock Transfer ID"
 msgstr "स्टॉक ट्रांसफर आईडी"
 
@@ -12834,6 +12867,9 @@ msgstr "शिपमेंट को बिना पुनः-कुंजी�
 msgid "Tie-Out"
 msgstr "टाई-आउट"
 
+msgid "Tie-Out unavailable"
+msgstr "Tie-Out उपलब्ध नहीं है"
+
 msgid "Tightened"
 msgstr "कड़ा"
 
@@ -12974,6 +13010,12 @@ msgstr "इस स्थान पर सभी भंडारण इकाइ�
 
 msgid "Total quantity required across all active jobs and sales orders at this location — not just this job."
 msgstr "इस स्थान पर सभी सक्रिय कार्यों और बिक्री आदेशों में आवश्यक कुल मात्रा — केवल इस कार्य के लिए नहीं।"
+
+msgid "Total Value"
+msgstr "कुल मूल्य"
+
+msgid "Total Variance"
+msgstr "कुल भिन्नता"
 
 msgid "Total:"
 msgstr "कुल:"
@@ -13477,6 +13519,9 @@ msgstr "सत्यापित"
 msgid "Validating job..."
 msgstr "नौकरी को मान्य कर रहे हैं..."
 
+msgid "Valuation"
+msgstr "मूल्यांकन"
+
 msgid "Value"
 msgstr "मान"
 
@@ -13491,6 +13536,9 @@ msgstr "मूल्य वर्धित कर पंजीकरण सं�
 
 msgid "Values"
 msgstr "मूल्य"
+
+msgid "Values apply today's unit costs to historical quantities."
+msgstr "मान ऐतिहासिक मात्राओं पर आज की इकाई लागत को लागू करते हैं।"
 
 msgid "Variance"
 msgstr "विचरण"

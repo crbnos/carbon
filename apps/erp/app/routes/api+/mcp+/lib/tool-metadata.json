@@ -1,6 +1,6 @@
 {
-  "generated": "2026-07-15T05:04:51.750Z",
-  "totalTools": 1335,
+  "generated": "2026-07-15T11:33:27.142Z",
+  "totalTools": 1338,
   "modules": 15,
   "tools": [
     {
@@ -4430,6 +4430,93 @@
         "required": [
           "locationId",
           "args"
+        ]
+      }
+    },
+    {
+      "name": "inventory_getInventoryValuation",
+      "module": "inventory",
+      "classification": "READ",
+      "description": "get inventory valuation",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "asOfDate": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "locationId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "inventory_getInventoryValuationTieOut",
+      "module": "inventory",
+      "classification": "READ",
+      "description": "get inventory valuation tie out",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "asOfDate"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "asOfDate": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "inventory_createInventoryReconciliationJournal",
+      "module": "inventory",
+      "classification": "WRITE",
+      "description": "create inventory reconciliation journal",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "db",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "asOfDate": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "asOfDate"
         ]
       }
     },
@@ -35536,7 +35623,14 @@
               "quantity": {
                 "type": "number"
               },
-              "categoryMarkups": {}
+              "categoryMarkups": {},
+              "priceSource": {
+                "type": "string",
+                "enum": [
+                  "system",
+                  "manual"
+                ]
+              }
             },
             "required": [
               "quoteLineId",

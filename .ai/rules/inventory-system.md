@@ -25,8 +25,17 @@ Key service functions (verified):
 - `getInventoryItems` / `getInventoryItemsCount` — call the `get_inventory_quantities` RPC
   (args `{ location_id, company_id }`, `count: "exact"`); supports search + generic filters.
 - `getItemLedgerPage` — paginated item-ledger history for an item at a location.
-- `insertManualInventoryAdjustment` — positive/negative/set-quantity adjustments, tracked-entity
-  storage-unit transfers, expiry override, batch/serial assignment.
+- `insertManualInventoryAdjustment` — thin wrapper over the **`post-inventory-adjustment`
+  edge function** (MES has a matching wrapper in `apps/mes/app/services/inventory.service.ts`).
+  The edge function owns positive/negative/set-quantity resolution, tracked-entity storage-unit
+  transfers, expiry override, batch/serial assignment — and, in one Kysely transaction, maintains
+  `costLedger` layers (consume via `calculateCOGS` on decreases, new layer at current cost on
+  increases) and posts a journal (Dr/Cr `resolveInventoryAccount` vs
+  `accountDefault.inventoryAdjustmentVarianceAccount`) when `companySettings.accountingEnabled`.
+  `post-inventory-count` books its variances through the same shared core
+  (`functions/shared/post-adjustment.ts`). Storage-unit transfers post no GL. The valuation
+  workbench tie-out offers a **Reconcile** action (`createInventoryReconciliationJournal`) that
+  drafts an adjusting journal for any residual pre-feature variance.
 - Storage units: `getStorageUnit(s)`, `getStorageUnitRoots`, `getStorageUnitChildren`,
   `getStorageUnitTree`, `getStorageUnitsTreeForLocation`, `getDefaultStorageUnitForJob`,
   `getDefaultStorageUnitOrStorageUnitWithHighestQuantity` (these are the picking/job defaults).

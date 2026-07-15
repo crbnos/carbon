@@ -8,6 +8,7 @@ import { nanoid } from "nanoid";
 import type { z } from "zod";
 import { getNextSequence } from "~/modules/settings";
 import type { StorageItem } from "~/types";
+import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
@@ -325,6 +326,133 @@ export async function getInventoryItemsCount(
   query = setGenericQueryFilters(query, args);
 
   return query;
+}
+
+export async function getInventoryValuation(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: { asOfDate?: string | null; locationId?: string | null }
+) {
+  return client.rpc("get_inventory_valuation", {
+    company_id: companyId,
+    as_of_date: args.asOfDate ?? undefined,
+    location_id: args.locationId ?? undefined
+  });
+}
+
+export async function getInventoryValuationTieOut(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  asOfDate?: string | null
+) {
+  return client.rpc("get_inventory_tie_out", {
+    company_id: companyId,
+    as_of_date: asOfDate ?? undefined
+  });
+}
+
+// Draft adjusting journal that brings the GL inventory accounts to the
+// subledger valuation — the tie-out's Reconcile action (cutover path for
+// adjustments posted before GL posting existed). variance = subledger − GL,
+// so the inventory line is +variance and the offset −variance: positive on an
+// Asset = debit, negative on the (Expense) adjustment account = credit — raw
+// amounts sum to zero. The journal stays Draft: a human reviews and posts it
+// from the Journals screen, and the tie-out ignores Draft journals.
+// Posted on the tie-out's as-of date — the tie-out only counts journals with
+// postingDate <= asOfDate, so a today-dated journal could never resolve a
+// backdated variance. Posting may still be rejected if that period is Closed.
+export async function createInventoryReconciliationJournal(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  args: { asOfDate: string; userId: string }
+) {
+  const [tieOut, accountDefaults] = await Promise.all([
+    getInventoryValuationTieOut(client, companyId, args.asOfDate),
+    client
+      .from("accountDefault")
+      .select("inventoryAdjustmentVarianceAccount")
+      .eq("companyId", companyId)
+      .single()
+  ]);
+  if (tieOut.error) return tieOut;
+  if (accountDefaults.error) return accountDefaults;
+
+  const rows = (tieOut.data ?? []).filter(
+    (row) => Math.abs(Number(row.variance)) > 0.005
+  );
+  if (rows.length === 0) {
+    return {
+      data: null,
+      error: { message: "Nothing to reconcile — variance is zero" }
+    };
+  }
+
+  const nextSequence = await getNextSequence(client, "journalEntry", companyId);
+  if (nextSequence.error) return nextSequence;
+  const journalEntryId = nextSequence.data;
+
+  // Header + lines in one transaction — a partial failure must not leave an
+  // orphaned Draft header behind.
+  try {
+    const journalId = await db.transaction().execute(async (trx) => {
+      const journal = await trx
+        .insertInto("journal")
+        .values({
+          journalEntryId,
+          description: `Inventory subledger reconciliation as of ${args.asOfDate}`,
+          postingDate: args.asOfDate,
+          sourceType: "Manual" as const,
+          status: "Draft" as const,
+          companyId,
+          createdBy: args.userId
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+
+      await trx
+        .insertInto("journalLine")
+        .values(
+          rows.flatMap((row) => {
+            const variance = Number(row.variance);
+            const journalLineReference = crypto.randomUUID();
+            return [
+              {
+                journalId: journal.id,
+                accountId: row.accountId,
+                description: `Reconcile ${row.accountName} to subledger`,
+                amount: variance,
+                journalLineReference,
+                companyId
+              },
+              {
+                journalId: journal.id,
+                accountId:
+                  accountDefaults.data.inventoryAdjustmentVarianceAccount,
+                description: "Inventory Adjustment",
+                amount: -variance,
+                journalLineReference,
+                companyId
+              }
+            ];
+          })
+        )
+        .execute();
+
+      return journal.id;
+    });
+    return { data: { journalId }, error: null };
+  } catch (err) {
+    return {
+      data: null,
+      error: {
+        message:
+          err instanceof Error
+            ? err.message
+            : "Failed to create reconciliation journal"
+      }
+    };
+  }
 }
 
 export async function getKanbans(
@@ -1416,6 +1544,11 @@ export async function getWarehouseTransferLines(
     .eq("transferId", transferId);
 }
 
+// Thin wrapper over the post-inventory-adjustment edge function — the single
+// write path for manual adjustments (shared with MES). The edge function owns
+// Set Quantity resolution, storage-unit transfers, serial/batch stock-target
+// resolution, tracked-entity updates, cost layers, and GL posting (only when
+// companySettings.accountingEnabled) in one transaction.
 export async function insertManualInventoryAdjustment(
   client: SupabaseClient<Database>,
   // `requiresSerialTracking` is a form-only flag for the validator's serial
@@ -1428,386 +1561,28 @@ export async function insertManualInventoryAdjustment(
     createdBy: string;
   }
 ) {
-  const {
-    adjustmentType,
-    readableId,
-    originalStorageUnitId,
-    comment,
-    expirationDate: providedExpirationDate,
-    ...rest
-  } = inventoryAdjustment;
-  const data = {
-    ...rest,
-    entryType:
-      adjustmentType === "Set Quantity" ? "Positive Adjmt." : adjustmentType, // This will be overwritten below
-    comment: comment || null
-  };
+  const { companyId, createdBy, ...adjustment } = inventoryAdjustment;
 
-  // For new tracked entities created here, fall back to the item's Fixed
-  // Duration shelf-life policy when the user did not type an expiry. Other
-  // modes (Calculated, Set on Receipt) intentionally stay NULL — they get
-  // resolved at production / receipt time, not on a manual adjustment.
-  const resolveExpirationForNewEntity = async (): Promise<string | null> => {
-    if (providedExpirationDate) return providedExpirationDate;
-    const shelfLife = await client
-      .from("itemShelfLife")
-      .select("mode, days")
-      .eq("itemId", inventoryAdjustment.itemId)
-      .maybeSingle();
-    if (
-      !shelfLife.error &&
-      shelfLife.data?.mode === "Fixed Duration" &&
-      shelfLife.data.days
-    ) {
-      return today(getLocalTimeZone())
-        .add({ days: Number(shelfLife.data.days) })
-        .toString();
-    }
-    return null;
-  };
+  const result = await client.functions.invoke<{
+    success: boolean;
+    itemLedger: { id: string } | null;
+  }>("post-inventory-adjustment", {
+    body: { ...adjustment, companyId, userId: createdBy }
+  });
 
-  // For existing tracked entities, only write when the user supplied a value
-  // and it differs from the current row. Routes through updateTrackedEntityExpiry
-  // so the override is captured in attributes.expiryOverrides for traceability.
-  const applyExpirationOverride = async (trackedEntityId: string) => {
-    if (!providedExpirationDate) return null;
-    const current = await client
-      .from("trackedEntity")
-      .select("expirationDate")
-      .eq("id", trackedEntityId)
-      .single();
-    if (
-      !current.error &&
-      current.data?.expirationDate === providedExpirationDate
-    )
-      return null;
-    return updateTrackedEntityExpiry(client, {
-      trackedEntityId,
-      expirationDate: providedExpirationDate,
-      reason: comment?.trim() || "Updated via inventory adjustment",
-      source: "Inventory Adjustment",
-      userId: data.createdBy
-    });
-  };
-
-  const storageUnitQuantities = await client.rpc(
-    "get_item_quantities_by_tracking_id",
-    {
-      item_id: data.itemId,
-      company_id: data.companyId,
-      location_id: data.locationId
-    }
-  );
-
-  const currentQuantity = inventoryAdjustment.trackedEntityId
-    ? storageUnitQuantities?.data?.find(
-        (quantity) =>
-          quantity.trackedEntityId == inventoryAdjustment.trackedEntityId
+  if (result.error) {
+    // Bare-string error, matching the old service's validation-branch
+    // contract — the adjustment route compares `error === "<message>"`.
+    return {
+      data: null,
+      error: await getEdgeFunctionErrorMessage(
+        result.error,
+        "Failed to create manual inventory adjustment"
       )
-    : storageUnitQuantities?.data?.find(
-        // null == undefined - so we use a == instead of === here
-        (quantity) => quantity.storageUnitId == data.storageUnitId
-      );
-
-  const currentQuantityOnHand = currentQuantity?.quantity ?? 0;
-
-  // Check if this is a storage unit transfer for a tracked entity
-  const isStorageUnitTransfer =
-    inventoryAdjustment.trackedEntityId &&
-    originalStorageUnitId &&
-    originalStorageUnitId !== data.storageUnitId;
-
-  if (isStorageUnitTransfer) {
-    // Handle storage unit transfer: negative adjustment at original unit, positive at new unit
-    // First, update the readableId if provided
-    if (readableId !== undefined) {
-      const trackedEntityUpdate = await client
-        .from("trackedEntity")
-        .update({ readableId })
-        // @ts-expect-error TS2345 - TODO: fix type
-        .eq("id", inventoryAdjustment.trackedEntityId);
-
-      if (trackedEntityUpdate.error) {
-        return trackedEntityUpdate;
-      }
-    }
-
-    if (inventoryAdjustment.trackedEntityId) {
-      const expiryOverride = await applyExpirationOverride(
-        inventoryAdjustment.trackedEntityId
-      );
-      if (expiryOverride?.error) return expiryOverride;
-    }
-
-    // Create negative adjustment at original storage unit
-    const negativeAdjustment = await client
-      .from("itemLedger")
-      .insert([
-        {
-          itemId: data.itemId,
-          locationId: data.locationId,
-          storageUnitId: originalStorageUnitId,
-          trackedEntityId: inventoryAdjustment.trackedEntityId,
-          entryType: "Negative Adjmt." as const,
-          quantity: -currentQuantityOnHand,
-          companyId: data.companyId,
-          createdBy: data.createdBy,
-          comment: data.comment
-        }
-      ])
-      .select("*")
-      .single();
-
-    if (negativeAdjustment.error) {
-      return negativeAdjustment;
-    }
-
-    // Create positive adjustment at new storage unit
-    return client
-      .from("itemLedger")
-      .insert([
-        {
-          itemId: data.itemId,
-          locationId: data.locationId,
-          storageUnitId: data.storageUnitId,
-          trackedEntityId: inventoryAdjustment.trackedEntityId,
-          entryType: "Positive Adjmt." as const,
-          quantity: currentQuantityOnHand,
-          companyId: data.companyId,
-          createdBy: data.createdBy,
-          comment: data.comment
-        }
-      ])
-      .select("*")
-      .single();
+    };
   }
 
-  if (adjustmentType === "Set Quantity" && currentQuantity) {
-    const quantityDifference = data.quantity - currentQuantityOnHand;
-    if (quantityDifference > 0) {
-      data.entryType = "Positive Adjmt.";
-      data.quantity = quantityDifference;
-    } else if (quantityDifference < 0) {
-      data.entryType = "Negative Adjmt.";
-      data.quantity = -Math.abs(quantityDifference);
-    } else {
-      // No change in quantity, but readableId / expirationDate might have changed
-      if (inventoryAdjustment.trackedEntityId && readableId !== undefined) {
-        const trackedEntityUpdate = await client
-          .from("trackedEntity")
-          .update({ readableId })
-          .eq("id", inventoryAdjustment.trackedEntityId);
-        if (trackedEntityUpdate.error) return trackedEntityUpdate;
-      }
-      if (inventoryAdjustment.trackedEntityId) {
-        const expiryOverride = await applyExpirationOverride(
-          inventoryAdjustment.trackedEntityId
-        );
-        if (expiryOverride?.error) return expiryOverride;
-      }
-      return { data: null };
-    }
-  }
-
-  // Resolve the correct stock target for a negative adjustment when:
-  //   - readableId is provided: always resolve via serial number (currentQuantity
-  //     may point to the wrong row due to loose null == undefined matching), OR
-  //   - No currentQuantity found at all: fall back to untracked (legacy) stock.
-  //
-  //   1. If readableId is provided, adjust the entity with that serial number that
-  //      has positive stock. If not found, return an error — never silently fall back.
-  //   2. If no readableId, fall back to untracked (legacy) stock.
-  if (
-    data.entryType === "Negative Adjmt." &&
-    (readableId || !currentQuantity)
-  ) {
-    if (readableId) {
-      // storageUnitQuantities is scoped to this item + location.
-      // Filter to positive-qty rows only — multiple entities can share a readableId
-      // if the same serial was used across repeated positive adjustments.
-      const resolvedQtyRow = storageUnitQuantities?.data?.find(
-        (q) =>
-          q.readableId === readableId &&
-          q.trackedEntityId != null &&
-          (q.quantity ?? 0) > 0
-      );
-      if (!resolvedQtyRow) {
-        return { error: "Serial number not found" };
-      }
-      const resolvedId = resolvedQtyRow.trackedEntityId as string;
-      const resolvedQty = resolvedQtyRow.quantity ?? 0;
-      if (data.quantity > resolvedQty) {
-        return { error: "Insufficient quantity for negative adjustment" };
-      }
-      const entityUpdate = await client
-        .from("trackedEntity")
-        .update({ quantity: resolvedQty - data.quantity, readableId })
-        .eq("id", resolvedId);
-      if (entityUpdate.error) return entityUpdate;
-      return client
-        .from("itemLedger")
-        .insert([
-          {
-            ...data,
-            trackedEntityId: resolvedId,
-            quantity: -Math.abs(data.quantity)
-          }
-        ])
-        .select("*")
-        .single();
-    }
-    // No serial number provided. Prefer untracked (legacy) stock in this bin.
-    const legacyRow = storageUnitQuantities?.data?.find(
-      (q) => q.trackedEntityId == null && q.storageUnitId == data.storageUnitId
-    );
-    if (legacyRow) {
-      const legacyQty = legacyRow.quantity ?? 0;
-      if (data.quantity > legacyQty) {
-        return { error: "Insufficient quantity for negative adjustment" };
-      }
-      return client
-        .from("itemLedger")
-        .insert([
-          { ...data, trackedEntityId: null, quantity: -Math.abs(data.quantity) }
-        ])
-        .select("*")
-        .single();
-    }
-
-    // No untracked stock in the bin — resolve a tracked entity sitting in the
-    // same storage unit so a negative adjustment can decrement identifiable
-    // tracked stock (e.g. serial/batch entities created without a serial number,
-    // adjusted via the "Update Inventory" button where no trackedEntityId is
-    // pre-selected). Ambiguous when more than one entity holds stock there.
-    const trackedRowsInUnit = (storageUnitQuantities?.data ?? []).filter(
-      (q) =>
-        q.trackedEntityId != null &&
-        q.storageUnitId == data.storageUnitId &&
-        (q.quantity ?? 0) > 0
-    );
-    if (trackedRowsInUnit.length === 0) {
-      return { error: "Insufficient quantity for negative adjustment" };
-    }
-    if (trackedRowsInUnit.length > 1) {
-      return {
-        error:
-          "Multiple tracked entities in this storage unit — select a specific row to adjust"
-      };
-    }
-    const targetRow = trackedRowsInUnit[0];
-    const targetQty = targetRow.quantity ?? 0;
-    if (data.quantity > targetQty) {
-      return { error: "Insufficient quantity for negative adjustment" };
-    }
-    const targetId = targetRow.trackedEntityId as string;
-    const entityUpdate = await client
-      .from("trackedEntity")
-      .update({ quantity: targetQty - data.quantity })
-      .eq("id", targetId);
-    if (entityUpdate.error) return entityUpdate;
-    return client
-      .from("itemLedger")
-      .insert([
-        {
-          ...data,
-          trackedEntityId: targetId,
-          quantity: -Math.abs(data.quantity)
-        }
-      ])
-      .select("*")
-      .single();
-  }
-
-  // Check if it's a negative adjustment and if the quantity is sufficient
-  if (data.entryType === "Negative Adjmt.") {
-    if (data.quantity > currentQuantityOnHand) {
-      return {
-        error: "Insufficient quantity for negative adjustment"
-      };
-    }
-    data.quantity = -Math.abs(data.quantity);
-  }
-
-  if (inventoryAdjustment.trackedEntityId) {
-    if (currentQuantity) {
-      // Update the existing tracked entity
-      const trackedEntityUpdate = await client
-        .from("trackedEntity")
-        .update({
-          quantity: data.quantity + currentQuantityOnHand,
-          readableId: readableId
-        })
-        .eq("id", inventoryAdjustment.trackedEntityId);
-
-      if (trackedEntityUpdate.error) {
-        return trackedEntityUpdate;
-      }
-
-      const expiryOverride = await applyExpirationOverride(
-        inventoryAdjustment.trackedEntityId
-      );
-      if (expiryOverride?.error) return expiryOverride;
-    } else {
-      const [item, expirationDate] = await Promise.all([
-        client.from("item").select("*").eq("id", data.itemId).single(),
-        resolveExpirationForNewEntity()
-      ]);
-
-      // Stamp the trace blob so the popover Source / Override steps can show
-      // the entity originated from a manual inventory adjustment, by whom,
-      // and when. Mirrors the receipt/job markers consumed by
-      // ExpiryTracePopover (attrs.Receipt, attrs.Job).
-      const adjustmentStamp = {
-        userId: data.createdBy,
-        at: now(getLocalTimeZone()).toAbsoluteString(),
-        reason: comment?.trim() || "Created via inventory adjustment"
-      };
-      const attributes: Record<string, unknown> = {
-        "Inventory Adjustment": adjustmentStamp,
-        ...(expirationDate
-          ? {
-              expiryOverrides: [
-                {
-                  previous: null,
-                  next: expirationDate,
-                  reason: adjustmentStamp.reason,
-                  source: "Inventory Adjustment",
-                  userId: adjustmentStamp.userId,
-                  at: adjustmentStamp.at
-                }
-              ]
-            }
-          : {})
-      };
-
-      // Create a new tracked entity
-      const trackedEntityInsert = await client
-        .from("trackedEntity")
-        .insert([
-          {
-            id: inventoryAdjustment.trackedEntityId,
-            sourceDocument: "Item",
-            sourceDocumentId: data.itemId,
-            sourceDocumentReadableId: item.data?.readableIdWithRevision,
-            readableId: readableId,
-            quantity: data.quantity,
-            status: "Available",
-            expirationDate,
-            attributes: attributes as unknown as Json,
-            companyId: data.companyId,
-            createdBy: data.createdBy
-          }
-        ])
-        .select("*")
-        .single();
-
-      if (trackedEntityInsert.error) {
-        return trackedEntityInsert;
-      }
-    }
-  }
-
-  return client.from("itemLedger").insert([data]).select("*").single();
+  return { data: result.data?.itemLedger ?? null, error: null };
 }
 
 // ===========================================================================

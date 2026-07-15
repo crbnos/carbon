@@ -20,12 +20,14 @@ import {
   PurchasingRFQHeader,
   PurchasingRFQProperties
 } from "~/modules/purchasing/ui/PurchasingRfq";
-import type { Handle } from "~/utils/handle";
+import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
-  breadcrumb: msg`RFQs`,
-  to: path.to.purchasingRfqs
+  breadcrumb: detailBreadcrumb(
+    { breadcrumb: msg`RFQs`, to: path.to.purchasingRfqs },
+    (data) => data?.rfqSummary?.rfqId
+  )
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

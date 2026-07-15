@@ -161,6 +161,9 @@ msgstr "{variances, plural, one {# linha difere da quantidade esperada} other {#
 msgid "/month/user"
 msgstr "/mês/utilizador"
 
+msgid "% of Total"
+msgstr "% do Total"
+
 #. placeholder {0}: numberFormatter.format(redirectedTotal)
 #. placeholder {1}: redirectedParts.join(", ")
 msgid "↩ {0} redirected from superseded {1}"
@@ -832,6 +835,9 @@ msgstr "Todos os Itens"
 
 msgid "All jobs completed"
 msgstr "Todos os trabalhos concluídos"
+
+msgid "All Locations"
+msgstr "Todos os Locais"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "Todos os membros dos grupos selecionados e indivíduos selecionados poderão aprovar solicitações"
@@ -1896,6 +1902,12 @@ msgstr "Por Data do Documento"
 msgid "By Due Date"
 msgstr "Por Data de Vencimento"
 
+msgid "By Item"
+msgstr "Por Item"
+
+msgid "By Location"
+msgstr "Por Local"
+
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "Ao fazer login, você concorda com os <0>Termos de Serviço</0> e a <1>Política de Privacidade.</1>"
 
@@ -2349,6 +2361,9 @@ msgstr "Nome da Empresa"
 
 msgid "Company policy asks for a different person to inspect inbound items than the one who received them."
 msgstr "A política da empresa exige que uma pessoa diferente inspecione os itens recebidos do que aquela que os recebeu."
+
+msgid "Company-wide — includes all locations"
+msgstr "Em toda a empresa — inclui todas as localidades"
 
 msgid "Compare and Order"
 msgstr "Comparar e Encomendar"
@@ -6412,6 +6427,9 @@ msgstr "Histórico de Inventário"
 msgid "Inventory Job Notifications"
 msgstr "Notificações de Trabalho de Inventário"
 
+msgid "Inventory Movements"
+msgstr "Movimentações de Inventário"
+
 msgid "Inventory Qty"
 msgstr "Qtd. Inventário"
 
@@ -6420,6 +6438,9 @@ msgstr "Rastreamento de Inventário"
 
 msgid "Inventory Unit of Measure"
 msgstr "Unidade de Medida do Inventário"
+
+msgid "Inventory Valuation"
+msgstr "Avaliação de Inventário"
 
 msgid "Invite"
 msgstr "Convidar"
@@ -6546,6 +6567,9 @@ msgstr "Item"
 
 msgid "Item {scannedItem} is not the same as the item {expectedItem}"
 msgstr "Item {scannedItem} não é o mesmo que o item {expectedItem}"
+
+msgid "Item / Location"
+msgstr "Item / Local"
 
 msgid "Item filters"
 msgstr "Filtros de itens"
@@ -6938,6 +6962,9 @@ msgstr "localização"
 
 msgid "Location"
 msgstr "Localização"
+
+msgid "Location / Item"
+msgstr "Local / Item"
 
 msgid "Location Name"
 msgstr "Nome da Localização"
@@ -7539,6 +7566,9 @@ msgstr "Mover para Lixo"
 #. placeholder {1}: targetBucket === "parts" ? "Parts" : "Opportunity"
 msgid "Moved {0} to {1} bucket"
 msgstr "Movido {0} para o bucket {1}"
+
+msgid "Movements"
+msgstr "Movimentações"
 
 msgid "MRP (planning)"
 msgstr "MRP (planejamento)"
@@ -9527,6 +9557,9 @@ msgstr "Código QR para iniciar a próxima operação para este kanban"
 msgid "Qty"
 msgstr "Qtd"
 
+msgid "Qty On Hand"
+msgstr "Qtd. em Mãos"
+
 msgid "Qty to Order"
 msgstr "Qtd a Encomendar"
 
@@ -9831,6 +9864,9 @@ msgstr "Pagamentos recentes"
 
 msgid "Recently Created"
 msgstr "Criado Recentemente"
+
+msgid "Reconcile"
+msgstr "Reconciliar"
 
 msgid "Reconciling a purchase order against what was received and invoiced — implicit in Carbon, via the line quantities and GR/IR balance."
 msgstr "Período de Recuperação"
@@ -11477,9 +11513,6 @@ msgstr "passos"
 msgid "Steps"
 msgstr "Etapas"
 
-msgid "Stock Movements"
-msgstr "Movimentos de Estoque"
-
 msgid "Stock Transfer ID"
 msgstr "ID de Transferência de Estoque"
 
@@ -12834,6 +12867,9 @@ msgstr "Vincular remessas a uma fatura sem re-digitação"
 msgid "Tie-Out"
 msgstr "Reconciliação"
 
+msgid "Tie-Out unavailable"
+msgstr "Conciliação indisponível"
+
 msgid "Tightened"
 msgstr "Apertado"
 
@@ -12974,6 +13010,12 @@ msgstr "Quantidade total disponível do item em todas as unidades de armazenamen
 
 msgid "Total quantity required across all active jobs and sales orders at this location — not just this job."
 msgstr "Quantidade total exigida em todos os trabalhos ativos e pedidos de venda neste local — não apenas neste trabalho."
+
+msgid "Total Value"
+msgstr "Valor Total"
+
+msgid "Total Variance"
+msgstr "Variância Total"
 
 msgid "Total:"
 msgstr "Total:"
@@ -13477,6 +13519,9 @@ msgstr "Validado"
 msgid "Validating job..."
 msgstr "Validando trabalho..."
 
+msgid "Valuation"
+msgstr "Avaliação"
+
 msgid "Value"
 msgstr "Valor"
 
@@ -13491,6 +13536,9 @@ msgstr "Número de registro de imposto sobre valor agregado; obrigatório em fat
 
 msgid "Values"
 msgstr "Valores"
+
+msgid "Values apply today's unit costs to historical quantities."
+msgstr "Os valores aplicam os custos unitários de hoje às quantidades históricas."
 
 msgid "Variance"
 msgstr "Variação"
