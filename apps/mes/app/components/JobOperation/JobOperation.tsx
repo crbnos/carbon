@@ -25,7 +25,6 @@ import {
   Heading,
   HStack,
   IconButton,
-  ModelViewer,
   ScrollArea,
   Separator,
   SidebarTrigger,
@@ -56,6 +55,7 @@ import {
   formatDurationMilliseconds,
   getItemReadableId
 } from "@carbon/utils";
+import { ModelCanvas } from "@carbon/viewer/canvas";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestSingleResponse } from "@supabase/supabase-js";
 import { Suspense, useEffect, useMemo, useState } from "react";
@@ -142,6 +142,21 @@ import { useFiles } from "./hooks/useFiles";
 import { useOperation } from "./hooks/useOperation";
 
 const log = getLogger("mes", "job-operation");
+
+// The new pipeline serves an optimised GLB per model (no client-side
+// tessellation). Derive its private preview URL from the raw modelPath
+// `${co}/models/${id}.ext[.zst]` → `${co}/models/${id}/optimized.glb`.
+function optimizedModelPreviewUrl(rawModelPath: string | null): string | null {
+  if (!rawModelPath) return null;
+  const slash = rawModelPath.lastIndexOf("/");
+  if (slash < 0) return null;
+  const dir = rawModelPath.slice(0, slash);
+  let base = rawModelPath.slice(slash + 1);
+  if (base.toLowerCase().endsWith(".zst")) base = base.slice(0, -4);
+  const id = base.replace(/\.[^.]+$/, "");
+  if (!id) return null;
+  return `/file/preview/private/${dir}/${id}/optimized.glb`;
+}
 
 type JobOperationProps = {
   events: ProductionEvent[];
@@ -1749,15 +1764,25 @@ export const JobOperation = ({
         </TabsContent>
         <TabsContent value="model">
           <div className="w-full h-[calc(100dvh-var(--header-height)*2)] p-0">
-            <ModelViewer
-              file={null}
-              key={`model-${operation.itemModelPath ?? job.modelPath}`}
-              url={`/file/preview/private/${
+            {(() => {
+              const glbUrl = optimizedModelPreviewUrl(
                 operation.itemModelPath ?? job.modelPath
-              }`}
-              mode={mode}
-              className="rounded-none"
-            />
+              );
+              return glbUrl ? (
+                <ModelCanvas
+                  key={glbUrl}
+                  glbUrl={glbUrl}
+                  mode={mode}
+                  className="rounded-none"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center">
+                  <p className="text-sm text-muted-foreground">
+                    3D preview unavailable
+                  </p>
+                </div>
+              );
+            })()}
           </div>
         </TabsContent>
         <TabsContent value="procedure" className="flex flex-grow">
