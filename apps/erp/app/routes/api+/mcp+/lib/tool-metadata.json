@@ -1,6 +1,6 @@
 {
-  "generated": "2026-07-15T04:27:16.969Z",
-  "totalTools": 1329,
+  "generated": "2026-07-15T04:34:32.388Z",
+  "totalTools": 1330,
   "modules": 15,
   "tools": [
     {
@@ -4489,6 +4489,34 @@
             ]
           }
         }
+      }
+    },
+    {
+      "name": "inventory_createInventoryReconciliationJournal",
+      "module": "inventory",
+      "classification": "WRITE",
+      "description": "create inventory reconciliation journal",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "asOfDate": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "asOfDate"
+        ]
       }
     },
     {

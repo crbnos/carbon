@@ -351,6 +351,86 @@ export async function getInventoryValuationTieOut(
   });
 }
 
+// Draft adjusting journal that brings the GL inventory accounts to the
+// subledger valuation — the tie-out's Reconcile action (cutover path for
+// adjustments posted before GL posting existed). variance = subledger − GL,
+// so the inventory line is +variance and the offset −variance: positive on an
+// Asset = debit, negative on the (Expense) adjustment account = credit — raw
+// amounts sum to zero. The journal stays Draft: a human reviews and posts it
+// from the Journals screen, and the tie-out ignores Draft journals.
+export async function createInventoryReconciliationJournal(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: { asOfDate: string; userId: string }
+) {
+  const [tieOut, accountDefaults] = await Promise.all([
+    getInventoryValuationTieOut(client, companyId, args.asOfDate),
+    client
+      .from("accountDefault")
+      .select("inventoryAdjustmentVarianceAccount")
+      .eq("companyId", companyId)
+      .single()
+  ]);
+  if (tieOut.error) return tieOut;
+  if (accountDefaults.error) return accountDefaults;
+
+  const rows = (tieOut.data ?? []).filter(
+    (row) => Math.abs(Number(row.variance)) > 0.005
+  );
+  if (rows.length === 0) {
+    return {
+      data: null,
+      error: { message: "Nothing to reconcile — variance is zero" }
+    };
+  }
+
+  const nextSequence = await getNextSequence(client, "journalEntry", companyId);
+  if (nextSequence.error) return nextSequence;
+
+  const journal = await client
+    .from("journal")
+    .insert({
+      journalEntryId: nextSequence.data,
+      description: `Inventory subledger reconciliation as of ${args.asOfDate}`,
+      postingDate: today(getLocalTimeZone()).toString(),
+      sourceType: "Manual" as const,
+      status: "Draft" as const,
+      companyId,
+      createdBy: args.userId
+    })
+    .select("id")
+    .single();
+  if (journal.error) return journal;
+
+  const journalLines = await client.from("journalLine").insert(
+    rows.flatMap((row) => {
+      const variance = Number(row.variance);
+      const journalLineReference = crypto.randomUUID();
+      return [
+        {
+          journalId: journal.data.id,
+          accountId: row.accountId,
+          description: `Reconcile ${row.accountName} to subledger`,
+          amount: variance,
+          journalLineReference,
+          companyId
+        },
+        {
+          journalId: journal.data.id,
+          accountId: accountDefaults.data.inventoryAdjustmentVarianceAccount,
+          description: "Inventory Adjustment",
+          amount: -variance,
+          journalLineReference,
+          companyId
+        }
+      ];
+    })
+  );
+  if (journalLines.error) return journalLines;
+
+  return { data: { journalId: journal.data.id }, error: null };
+}
+
 export async function getKanbans(
   client: SupabaseClient<Database>,
   locationId: string,

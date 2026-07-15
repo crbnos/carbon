@@ -1074,6 +1074,7 @@ export const path = {
       generatePath(`${x}/inventory/quantities/${id}/adjustment`),
     inventoryRoot: `${x}/inventory`,
     inventoryValuation: `${x}/inventory/valuation`,
+    inventoryValuationReconcile: `${x}/inventory/valuation/reconcile`,
     stockMovements: `${x}/inventory/stock-movements`,
     inventorySettings: `${x}/settings/inventory`,
     invoicing: `${x}/invoicing`,
