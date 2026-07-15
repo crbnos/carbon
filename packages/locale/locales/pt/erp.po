@@ -44,7 +44,7 @@ msgstr "{0, plural, one {Esta peça está em 1 ordem de alteração aberta} othe
 
 #. placeholder {0}: c.entries.length
 msgid "{0} conflicting change(s)"
-msgstr ""
+msgstr "{0} mudança(s) em conflito"
 
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
@@ -69,7 +69,7 @@ msgstr "{0} linhas para mapear"
 
 #. placeholder {0}: conflicts.length
 msgid "{0} of these parts"
-msgstr ""
+msgstr "{0} dessas peças"
 
 #. placeholder {0}: history.length
 msgid "{0} orders"
@@ -77,7 +77,7 @@ msgstr "{0} pedidos"
 
 #. placeholder {0}: cc.parameters
 msgid "{0} parameters"
-msgstr ""
+msgstr "{0} parâmetros"
 
 #. placeholder {0}: selectedProcesses.length
 msgid "{0} Processes"
@@ -85,7 +85,7 @@ msgstr "{0} Processos"
 
 #. placeholder {0}: cc.steps
 msgid "{0} steps"
-msgstr ""
+msgstr "{0} etapas"
 
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
@@ -93,7 +93,7 @@ msgstr "{0} fornecedores com saldo"
 
 #. placeholder {0}: cc.tools
 msgid "{0} tools"
-msgstr ""
+msgstr "{0} ferramentas"
 
 #. placeholder {0}: lotEntities.length - inspected
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
@@ -299,7 +299,7 @@ msgid "A new size will be created using a copy of the current size"
 msgstr "Um novo tamanho será criado usando uma cópia do tamanho atual"
 
 msgid "A newer version of this part was released while you were working. Choose which version to keep for each change."
-msgstr ""
+msgstr "Uma versão mais recente desta peça foi lançada enquanto você estava trabalhando. Escolha qual versão manter para cada mudança."
 
 msgid "A non-taxable surcharge (e.g. recoverable expenses like permit fees) added to the line; excluded from the tax base."
 msgstr "Uma sobretaxa não tributável (p. ex. despesas recuperáveis como taxas de licença) adicionada à linha e excluída da base tributária."
@@ -533,7 +533,7 @@ msgid "Acquisition Date"
 msgstr "Data de aquisição"
 
 msgid "Action"
-msgstr ""
+msgstr "Ação"
 
 msgid "Action Status"
 msgstr "Status da Ação"
@@ -626,7 +626,7 @@ msgid "Add Adjustment"
 msgstr "Adicionar ajuste"
 
 msgid "Add Affected Item"
-msgstr ""
+msgstr "Adicionar Item Afetado"
 
 msgid "Add any notes about your decision..."
 msgstr "Adicione qualquer nota sobre sua decisão..."
@@ -753,7 +753,7 @@ msgid "Add-On Cost"
 msgstr "Custo Adicional"
 
 msgid "Added"
-msgstr ""
+msgstr "Adicionado"
 
 msgid "Added for this customer"
 msgstr "Adicionado para este cliente"
@@ -783,7 +783,7 @@ msgid "Affected assemblies"
 msgstr "Montagens afetadas"
 
 msgid "Affected item not found."
-msgstr ""
+msgstr "Item afetado não encontrado."
 
 msgid "After"
 msgstr "Após"
@@ -892,7 +892,7 @@ msgid "An asset's acquisition cost minus accumulated depreciation — what it's 
 msgstr "O custo de aquisição de um ativo menos a depreciação acumulada — o que ainda vale nos livros e o valor em que é alienado."
 
 msgid "An engineering change: the affected items whose methods are revised on a draft and released together, superseding the versions they replace."
-msgstr ""
+msgstr "Uma mudança de engenharia: os itens afetados cujos métodos são revisados em um rascunho e lançados juntos, substituindo as versões que substituem."
 
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "Uma integração ou uma mudança personalizada — a pequena parte que é realmente personalizada."
@@ -933,7 +933,7 @@ msgstr "Anotação atualizada"
 
 #. placeholder {0}: conflicts.length === 1 ? t`this part` : t`${conflicts.length} of these parts`
 msgid "Another change order released a newer version of {0}. Resolve each one to choose which changes to keep before releasing."
-msgstr ""
+msgstr "Outra ordem de mudança lançou uma versão mais recente de {0}. Resolva cada uma para escolher quais mudanças manter antes de lançar."
 
 msgid "Another cost center this one rolls up into, letting you nest a sub-department under its parent for hierarchical cost reporting."
 msgstr "Outro centro de custo ao qual este agrega, permitindo aninhar um subcentro de custo sob seu pai para relatórios de custo hierárquicos."
@@ -1177,7 +1177,7 @@ msgstr "Tem a certeza de que deseja eliminar a chave de API: {0}? Esta ação n�
 
 #. placeholder {0}: requiredAction.name
 msgid "Are you sure you want to delete the change order action: {0}? This cannot be undone."
-msgstr ""
+msgstr "Tem certeza de que deseja excluir a ação da ordem de mudança: {0}? Isso não pode ser desfeito."
 
 #. placeholder {0}: changeOrderType.name
 msgid "Are you sure you want to delete the change order category: {0}? This cannot be undone."
@@ -2119,13 +2119,13 @@ msgid "Change"
 msgstr "Alterar"
 
 msgid "Change order"
-msgstr ""
+msgstr "Ordem de mudança"
 
 msgid "Change Order"
 msgstr "Ordem de Alteração"
 
 msgid "Change Order Actions"
-msgstr ""
+msgstr "Ações de Ordem de Mudança"
 
 msgid "Change Order Categories"
 msgstr "Categorias de Ordem de Alteração"
@@ -2143,7 +2143,7 @@ msgid "Change the item type (e.g. Part, Material, Tool, etc.)"
 msgstr "Alterar o tipo de item (por exemplo, Peça, Material, Ferramenta, etc.)"
 
 msgid "Change type"
-msgstr ""
+msgstr "Tipo de mudança"
 
 msgid "Change Type"
 msgstr "Alterar Tipo"
@@ -2161,7 +2161,7 @@ msgid "Changing this will update the part ID"
 msgstr "Alterar isto atualizará o ID da peça"
 
 msgid "Changing type resets this item's draft edits."
-msgstr ""
+msgstr "Alterar tipo redefine as edições de rascunho deste item."
 
 msgid "Chart of accounts"
 msgstr "Plano de contas"
@@ -2499,7 +2499,7 @@ msgid "Confirm {0}"
 msgstr "Confirmar {0}"
 
 msgid "Confirm & release"
-msgstr ""
+msgstr "Confirmar e lançar"
 
 msgid "Confirm and sign the scope"
 msgstr "Confirmar e assinar o escopo"
@@ -2945,7 +2945,7 @@ msgid "Create & Snapshot"
 msgstr "Criar e Capturar"
 
 msgid "Create a change order for the new revision and open it"
-msgstr ""
+msgstr "Criar uma ordem de mudança para a nova revisão e abri-la"
 
 msgid "Create a new kanban card for scan-based replenishment."
 msgstr "Crie um novo cartão kanban para reabastecimento baseado em varredura."
@@ -3035,7 +3035,7 @@ msgid "Created By"
 msgstr "Criado por"
 
 msgid "Created change order action"
-msgstr ""
+msgstr "Ação de ordem de mudança criada"
 
 msgid "Created change order category"
 msgstr "Categoria de ordem de alteração criada"
@@ -3653,7 +3653,7 @@ msgid "Delete {storageUnitName}"
 msgstr "Eliminar {storageUnitName}"
 
 msgid "Delete Action"
-msgstr ""
+msgstr "Excluir Ação"
 
 msgid "Delete API Key"
 msgstr "Eliminar Chave de API"
@@ -4041,7 +4041,7 @@ msgid "Discard"
 msgstr "Descartar"
 
 msgid "Discontinuation date"
-msgstr ""
+msgstr "Data de descontinuação"
 
 msgid "Discontinuation Date"
 msgstr "Data de Descontinuação"
@@ -4314,7 +4314,7 @@ msgid "Edit Account"
 msgstr "Editar Conta"
 
 msgid "Edit Action"
-msgstr ""
+msgstr "Editar Ação"
 
 msgid "Edit API Key"
 msgstr "Editar Chave de API"
@@ -4341,7 +4341,7 @@ msgid "Edit Change Order"
 msgstr "Editar Ordem de Alteração"
 
 msgid "Edit Change Order Action"
-msgstr ""
+msgstr "Editar Ação de Ordem de Mudança"
 
 msgid "Edit Change Order Category"
 msgstr "Editar Categoria de Ordem de Alteração"
@@ -6693,7 +6693,7 @@ msgid "Keep existing pricing, only add new items"
 msgstr "Manter preços existentes, adicionar apenas novos itens"
 
 msgid "Keeping {keptMine} of {total} from your version"
-msgstr ""
+msgstr "Mantendo {keptMine} de {total} de sua versão"
 
 msgid "Key"
 msgstr "Chave"
@@ -6773,7 +6773,7 @@ msgid "Last updated: {formattedDate}"
 msgstr "Última atualização: {formattedDate}"
 
 msgid "Latest released"
-msgstr ""
+msgstr "Mais recente lançado"
 
 msgid "Lead time"
 msgstr "Tempo de Entrega"
@@ -7491,7 +7491,7 @@ msgid "Model removed from line"
 msgstr "Modelo removido da linha"
 
 msgid "Modified"
-msgstr ""
+msgstr "Modificado"
 
 msgid "Module"
 msgstr "Módulo"
@@ -7646,7 +7646,7 @@ msgid "New Change Order"
 msgstr "Nova Ordem de Mudança"
 
 msgid "New Change Order Action"
-msgstr ""
+msgstr "Nova Ação de Ordem de Mudança"
 
 msgid "New Change Order Category"
 msgstr "Nova Categoria de Ordem de Mudança"
@@ -7969,13 +7969,13 @@ msgid "No affected assemblies yet."
 msgstr "Nenhuma montagem afetada ainda."
 
 msgid "No affected items to assess."
-msgstr ""
+msgstr "Nenhum item afetado para avaliar."
 
 msgid "No affected items yet — add a part or tool below."
-msgstr ""
+msgstr "Nenhum item afetado ainda — adicione uma peça ou ferramenta abaixo."
 
 msgid "No affected items."
-msgstr ""
+msgstr "Nenhum item afetado."
 
 msgid "No applications. Payment will be on-account."
 msgstr "Sem aplicações. O pagamento será na conta."
@@ -8003,7 +8003,7 @@ msgid "No changes recorded"
 msgstr "Nenhuma alteração registrada"
 
 msgid "No changes yet."
-msgstr ""
+msgstr "Nenhuma mudança ainda."
 
 msgid "No comments yet. Be the first to add a comment."
 msgstr "Sem comentários ainda. Seja o primeiro a adicionar um comentário."
@@ -8033,7 +8033,7 @@ msgid "No default attachments yet."
 msgstr "Nenhum anexo padrão ainda."
 
 msgid "No draft make method for this item yet."
-msgstr ""
+msgstr "Nenhum método de fabricação de rascunho para este item ainda."
 
 msgid "No draft versions available"
 msgstr "Nenhuma versão de rascunho disponível"
@@ -8042,7 +8042,7 @@ msgid "No due date"
 msgstr "Sem data de vencimento"
 
 msgid "No editable properties for this item."
-msgstr ""
+msgstr "Nenhuma propriedade editável para este item."
 
 msgid "No employees assigned yet. Add groups to see status."
 msgstr "Nenhum funcionário atribuído ainda. Adicione grupos para ver o status."
@@ -8069,7 +8069,7 @@ msgid "No files"
 msgstr "Nenhum arquivo"
 
 msgid "No files for this item."
-msgstr ""
+msgstr "Nenhum arquivo para este item."
 
 msgid "No files uploaded"
 msgstr "Nenhum arquivo enviado"
@@ -8270,10 +8270,10 @@ msgid "Not enough jobs to cover quantity"
 msgstr "Não há trabalhos suficientes para cobrir a quantidade"
 
 msgid "Not in the latest version"
-msgstr ""
+msgstr "Não na versão mais recente"
 
 msgid "Not referenced anywhere yet."
-msgstr ""
+msgstr "Não referenciado em lugar nenhum ainda."
 
 msgid "Not Required"
 msgstr "Não Obrigatório"
@@ -8417,7 +8417,7 @@ msgid "Open"
 msgstr "Abrir"
 
 msgid "Open a change order"
-msgstr ""
+msgstr "Abrir uma ordem de mudança"
 
 msgid "Open Actions"
 msgstr "Ações Abertas"
@@ -8758,10 +8758,10 @@ msgid "Part is configured for manufacturing"
 msgstr "Peça configurada para fabricação"
 
 msgid "Part Number"
-msgstr ""
+msgstr "Número da Peça"
 
 msgid "Part or Tool"
-msgstr ""
+msgstr "Peça ou Ferramenta"
 
 msgid "Partial"
 msgstr "Parcial"
@@ -9727,7 +9727,7 @@ msgid "Reason Account"
 msgstr "Conta de Motivo"
 
 msgid "Reason for change"
-msgstr ""
+msgstr "Motivo da alteração"
 
 msgid "Reason for Change"
 msgstr "Motivo da Mudança"
@@ -9932,7 +9932,7 @@ msgid "Release"
 msgstr "Liberação"
 
 msgid "Release change order"
-msgstr ""
+msgstr "Liberar ordem de alteração"
 
 msgid "Release control"
 msgstr "Controle de lançamento"
@@ -9972,7 +9972,7 @@ msgid "Remove action"
 msgstr "Remover ação"
 
 msgid "Remove affected item"
-msgstr ""
+msgstr "Remover item afetado"
 
 msgid "Remove condition"
 msgstr "Remover condição"
@@ -10005,10 +10005,10 @@ msgid "Remove this storage type from all referencing storage units and delete it
 msgstr "Remova este tipo de armazenamento de todas as unidades de armazenamento que o referenciam e o delete. Isto não pode ser desfeito."
 
 msgid "Removed"
-msgstr ""
+msgstr "Removido"
 
 msgid "Removed in your version"
-msgstr ""
+msgstr "Removido na sua versão"
 
 msgid "Rendering label preview..."
 msgstr "Renderizando visualização de etiqueta..."
@@ -10166,22 +10166,22 @@ msgid "Residual Value %"
 msgstr "Valor residual %"
 
 msgid "Resolve"
-msgstr ""
+msgstr "Resolver"
 
 msgid "Resolve & release"
-msgstr ""
+msgstr "Resolver e liberar"
 
 msgid "Resolve conflicts"
-msgstr ""
+msgstr "Resolver conflitos"
 
 msgid "Resolve every conflicting part to release."
-msgstr ""
+msgstr "Resolva todas as peças conflitantes para liberar."
 
 msgid "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
 msgstr "Resolva estes antes de concluir a NCR: cada linha deve ter uma disposição não-Pendente e suas quantidades de entidades vinculadas devem corresponder à quantidade da linha."
 
 msgid "Resolved"
-msgstr ""
+msgstr "Resolvido"
 
 msgid "Resolved Price"
 msgstr "Preço Resolvido"
@@ -10244,13 +10244,13 @@ msgid "Reverse the related journal entries"
 msgstr "Reverter os lançamentos contábeis relacionados"
 
 msgid "Review"
-msgstr ""
+msgstr "Revisar"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
-msgstr ""
+msgstr "Revise as alterações de cada item e confirme — liberar não pode ser desfeito."
 
 msgid "Review required"
-msgstr ""
+msgstr "Revisão obrigatória"
 
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "Revise o balanço patrimonial e demonstração de resultado do período e confirme se os valores parecem corretos. Esta é uma aprovação manual — marque como concluído depois de tê-los revisado."
@@ -10737,7 +10737,7 @@ msgid "Select all"
 msgstr "Selecionar tudo"
 
 msgid "Select an affected item, or add one on the left."
-msgstr ""
+msgstr "Selecione um item afetado ou adicione um à esquerda."
 
 msgid "Select an assignee"
 msgstr "Selecione um responsável"
@@ -11554,7 +11554,7 @@ msgid "Sub-Departments"
 msgstr "Sub-Departamentos"
 
 msgid "sub-steps differ ({childNote}), kept with your pick"
-msgstr ""
+msgstr "sub-etapas diferem ({childNote}), mantidas com sua escolha"
 
 msgid "Subassembly"
 msgstr "Subconjunto"
@@ -11611,7 +11611,7 @@ msgid "Successfully created a new revision"
 msgstr "Revisão criada com sucesso"
 
 msgid "Successor effectivity"
-msgstr ""
+msgstr "Efetividade do sucessor"
 
 msgid "Successor Effectivity Date"
 msgstr "Data de Efetividade do Sucessor"
@@ -11831,10 +11831,10 @@ msgid "Tailor this hub for the customer. Changes apply live for everyone viewing
 msgstr "Personalize este hub para o cliente. As alterações são aplicadas em tempo real para todos que o visualizam. Nunca é mostrado ao cliente aqui."
 
 msgid "Take all latest"
-msgstr ""
+msgstr "Tomar o mais recente"
 
 msgid "Take all mine"
-msgstr ""
+msgstr "Tomar todos os meus"
 
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "Pegue a vida útil restante mais curta entre os materiais consumidos para fazer este item. Use quando a validade do produto depender de seus ingredientes."
@@ -12291,7 +12291,7 @@ msgid "The lifecycle state of this supplier — Active, Inactive, Pending Approv
 msgstr "O estado do ciclo de vida deste fornecedor - Ativo, Inativo, Aprovação Pendente, etc.; apenas fornecedores Ativos aparecem nos seletores PO/cotação."
 
 msgid "The live method changed since you started"
-msgstr ""
+msgstr "O método ativo mudou desde que você começou"
 
 msgid "The local timezone this location reports time in; schedules, timecards, and shift hours at this location are interpreted in this zone regardless of the user's browser locale."
 msgstr "O fuso horário local em que essa localização relata a hora; os cronogramas, cartões de tempo e horas de turno nessa localização são interpretados neste fuso independentemente da localidade do navegador do usuário."
@@ -12681,7 +12681,7 @@ msgid "This information will be visible to all users, so be careful what you sha
 msgstr "Esta informação será visível para todos os usuários, portanto, tenha cuidado com o que você compartilha."
 
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
-msgstr ""
+msgstr "Este é um item comprado — não tem BOM/BOP; apenas seus atributos e documentos podem mudar."
 
 msgid "This is a unique identifier for the webhook"
 msgstr "Este é um identificador único para o webhook"
@@ -12723,7 +12723,7 @@ msgid "This page of your Implementation Hub is being built. Start from the comma
 msgstr "Esta página do seu Implementation Hub está sendo construída. Comece pelo centro de comando enquanto terminamos."
 
 msgid "this part"
-msgstr ""
+msgstr "esta peça"
 
 msgid "This part has {quantityOnHand} on hand at this location. No Stock means it will be neither planned nor consumed."
 msgstr "Esta peça tem {quantityOnHand} em mãos nesta localização. Sem Estoque significa que não será planejada nem consumida."
@@ -13888,7 +13888,7 @@ msgid "What it is"
 msgstr "O que é"
 
 msgid "What kind of change this is: Version updates how the part is made, Revision edits its details and documents, and New Part replaces it with a new part number."
-msgstr ""
+msgstr "Que tipo de alteração é: Versão atualiza como a peça é feita, Revisão edita seus detalhes e documentos, e Nova Peça a substitui por um novo número de peça."
 
 msgid "What kind of output this entry records — Production (good units), Scrap (unrecoverable), or Rework (sent back for correction); reveals Scrap Reason when Scrap."
 msgstr "Que tipo de saída esta entrada registra — Produção (unidades boas), Sucata (irrecuperável) ou Retrabaho (enviado de volta para correção); revela Scrap Reason quando Sucata."
@@ -14050,7 +14050,7 @@ msgid "Where stock lives and how it ships."
 msgstr "Onde o estoque fica e como é enviado."
 
 msgid "Where the affected items are used across the system. Informational — nothing here blocks releasing."
-msgstr ""
+msgstr "Onde os itens afetados são usados em todo o sistema. Informativo — nada aqui bloqueia a liberação."
 
 msgid "Where this entry originated (manual entry, posting from sales/purchasing, recurring template, etc.)."
 msgstr "De onde esta entrada se originou (entrada manual, contabilização de vendas/compras, modelo recorrente, etc.)."
@@ -14406,7 +14406,7 @@ msgid "Your vendor list"
 msgstr "Sua lista de fornecedores"
 
 msgid "Your version"
-msgstr ""
+msgstr "Sua versão"
 
 msgid "yourself"
 msgstr "você mesmo"

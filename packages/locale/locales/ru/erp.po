@@ -44,7 +44,7 @@ msgstr "{0, plural, one {Эта деталь находится в 1 откры�
 
 #. placeholder {0}: c.entries.length
 msgid "{0} conflicting change(s)"
-msgstr ""
+msgstr "{0} конфликтующее(ых) изменение(я)"
 
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
@@ -69,7 +69,7 @@ msgstr "{0} строк для сопоставления"
 
 #. placeholder {0}: conflicts.length
 msgid "{0} of these parts"
-msgstr ""
+msgstr "{0} из этих деталей"
 
 #. placeholder {0}: history.length
 msgid "{0} orders"
@@ -77,7 +77,7 @@ msgstr "{0} заказов"
 
 #. placeholder {0}: cc.parameters
 msgid "{0} parameters"
-msgstr ""
+msgstr "{0} параметров"
 
 #. placeholder {0}: selectedProcesses.length
 msgid "{0} Processes"
@@ -85,7 +85,7 @@ msgstr "{0} Процессов"
 
 #. placeholder {0}: cc.steps
 msgid "{0} steps"
-msgstr ""
+msgstr "{0} шагов"
 
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
@@ -93,7 +93,7 @@ msgstr "{0} поставщиков с остатком"
 
 #. placeholder {0}: cc.tools
 msgid "{0} tools"
-msgstr ""
+msgstr "{0} инструментов"
 
 #. placeholder {0}: lotEntities.length - inspected
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
@@ -299,7 +299,7 @@ msgid "A new size will be created using a copy of the current size"
 msgstr "Новый размер будет создан с использованием копии текущего размера"
 
 msgid "A newer version of this part was released while you were working. Choose which version to keep for each change."
-msgstr ""
+msgstr "Во время вашей работы была выпущена новая версия этой детали. Выберите, какую версию сохранить для каждого изменения."
 
 msgid "A non-taxable surcharge (e.g. recoverable expenses like permit fees) added to the line; excluded from the tax base."
 msgstr "Неналоговый сбор (например, возмещаемые расходы в виде сборов за разрешения), добавляемый к строке и исключенный из налоговой базы."
@@ -533,7 +533,7 @@ msgid "Acquisition Date"
 msgstr "Дата приобретения"
 
 msgid "Action"
-msgstr ""
+msgstr "Действие"
 
 msgid "Action Status"
 msgstr "Статус действия"
@@ -626,7 +626,7 @@ msgid "Add Adjustment"
 msgstr "Добавить корректировку"
 
 msgid "Add Affected Item"
-msgstr ""
+msgstr "Добавить затронутый элемент"
 
 msgid "Add any notes about your decision..."
 msgstr "Добавьте любые заметки о вашем решении..."
@@ -753,7 +753,7 @@ msgid "Add-On Cost"
 msgstr "Дополнительная стоимость"
 
 msgid "Added"
-msgstr ""
+msgstr "Добавлено"
 
 msgid "Added for this customer"
 msgstr "Добавлено для этого клиента"
@@ -783,7 +783,7 @@ msgid "Affected assemblies"
 msgstr "Затронутые сборки"
 
 msgid "Affected item not found."
-msgstr ""
+msgstr "Затронутый элемент не найден."
 
 msgid "After"
 msgstr "После"
@@ -892,7 +892,7 @@ msgid "An asset's acquisition cost minus accumulated depreciation — what it's 
 msgstr "Первоначальная стоимость активов минус накопленная амортизация — его текущая балансовая стоимость и сумма, по которой он ликвидируется."
 
 msgid "An engineering change: the affected items whose methods are revised on a draft and released together, superseding the versions they replace."
-msgstr ""
+msgstr "Инженерное изменение: затронутые элементы, методы которых пересмотрены в черновике и выпущены вместе, заменяя версии, которые они заменяют."
 
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "Интеграция или пользовательское изменение — небольшая часть, которая действительно является пользовательской."
@@ -933,7 +933,7 @@ msgstr "Аннотация обновлена"
 
 #. placeholder {0}: conflicts.length === 1 ? t`this part` : t`${conflicts.length} of these parts`
 msgid "Another change order released a newer version of {0}. Resolve each one to choose which changes to keep before releasing."
-msgstr ""
+msgstr "Другой приказ об изменении выпустил новую версию {0}. Разрешите каждый из них, чтобы выбрать, какие изменения сохранить перед выпуском."
 
 msgid "Another cost center this one rolls up into, letting you nest a sub-department under its parent for hierarchical cost reporting."
 msgstr "Другой центр затрат, в который это согласовывается, позволяя вам вложить центр затрат на подчиненном уровне под его родителем для иерархического отчета о затратах."
@@ -1177,7 +1177,7 @@ msgstr "Вы уверены, что хотите удалить API ключ: {0
 
 #. placeholder {0}: requiredAction.name
 msgid "Are you sure you want to delete the change order action: {0}? This cannot be undone."
-msgstr ""
+msgstr "Вы уверены, что хотите удалить действие приказа об изменении: {0}? Это невозможно отменить."
 
 #. placeholder {0}: changeOrderType.name
 msgid "Are you sure you want to delete the change order category: {0}? This cannot be undone."
@@ -2119,13 +2119,13 @@ msgid "Change"
 msgstr "Изменить"
 
 msgid "Change order"
-msgstr ""
+msgstr "Приказ об изменении"
 
 msgid "Change Order"
 msgstr "Приказ об изменении"
 
 msgid "Change Order Actions"
-msgstr ""
+msgstr "Действия приказа об изменении"
 
 msgid "Change Order Categories"
 msgstr "Категории приказов об изменении"
@@ -2143,7 +2143,7 @@ msgid "Change the item type (e.g. Part, Material, Tool, etc.)"
 msgstr "Измените тип элемента (например, Деталь, Материал, Инструмент и т. д.)"
 
 msgid "Change type"
-msgstr ""
+msgstr "Тип изменения"
 
 msgid "Change Type"
 msgstr "Изменить тип"
@@ -2161,7 +2161,7 @@ msgid "Changing this will update the part ID"
 msgstr "Изменение этого обновит ID детали"
 
 msgid "Changing type resets this item's draft edits."
-msgstr ""
+msgstr "Изменение типа сбрасывает черновые редактирования этого элемента."
 
 msgid "Chart of accounts"
 msgstr "План счетов"
@@ -2499,7 +2499,7 @@ msgid "Confirm {0}"
 msgstr "Подтвердить {0}"
 
 msgid "Confirm & release"
-msgstr ""
+msgstr "Подтвердить и выпустить"
 
 msgid "Confirm and sign the scope"
 msgstr "Подтвердите и подпишите объем работ"
@@ -2945,7 +2945,7 @@ msgid "Create & Snapshot"
 msgstr "Создать и снимок"
 
 msgid "Create a change order for the new revision and open it"
-msgstr ""
+msgstr "Создать приказ об изменении для новой редакции и открыть его"
 
 msgid "Create a new kanban card for scan-based replenishment."
 msgstr "Создайте новую карточку канбана для пополнения на основе сканирования."
@@ -3035,7 +3035,7 @@ msgid "Created By"
 msgstr "Создано"
 
 msgid "Created change order action"
-msgstr ""
+msgstr "Создано действие приказа об изменении"
 
 msgid "Created change order category"
 msgstr "Создана категория приказа об изменении"
@@ -3653,7 +3653,7 @@ msgid "Delete {storageUnitName}"
 msgstr "Удалить {storageUnitName}"
 
 msgid "Delete Action"
-msgstr ""
+msgstr "Удалить действие"
 
 msgid "Delete API Key"
 msgstr "Удалить API ключ"
@@ -4041,7 +4041,7 @@ msgid "Discard"
 msgstr "Отклонить"
 
 msgid "Discontinuation date"
-msgstr ""
+msgstr "Дата прекращения"
 
 msgid "Discontinuation Date"
 msgstr "Дата снятия с производства"
@@ -4314,7 +4314,7 @@ msgid "Edit Account"
 msgstr "Редактировать счет"
 
 msgid "Edit Action"
-msgstr ""
+msgstr "Редактировать действие"
 
 msgid "Edit API Key"
 msgstr "Редактировать API ключ"
@@ -4341,7 +4341,7 @@ msgid "Edit Change Order"
 msgstr "Редактировать приказ об изменении"
 
 msgid "Edit Change Order Action"
-msgstr ""
+msgstr "Редактировать действие приказа об изменении"
 
 msgid "Edit Change Order Category"
 msgstr "Редактировать категорию приказа об изменении"
@@ -6693,7 +6693,7 @@ msgid "Keep existing pricing, only add new items"
 msgstr "Сохранить существующие цены, добавить только новые товары"
 
 msgid "Keeping {keptMine} of {total} from your version"
-msgstr ""
+msgstr "Сохранение {keptMine} из {total} из вашей версии"
 
 msgid "Key"
 msgstr "Ключ"
@@ -6773,7 +6773,7 @@ msgid "Last updated: {formattedDate}"
 msgstr "Последнее обновление: {formattedDate}"
 
 msgid "Latest released"
-msgstr ""
+msgstr "Последняя выпущенная"
 
 msgid "Lead time"
 msgstr "Время поставки"
@@ -7491,7 +7491,7 @@ msgid "Model removed from line"
 msgstr "Модель удалена из строки"
 
 msgid "Modified"
-msgstr ""
+msgstr "Изменено"
 
 msgid "Module"
 msgstr "Модуль"
@@ -7646,7 +7646,7 @@ msgid "New Change Order"
 msgstr "Новый приказ на изменение"
 
 msgid "New Change Order Action"
-msgstr ""
+msgstr "Новое действие приказа об изменении"
 
 msgid "New Change Order Category"
 msgstr "Новая категория приказа на изменение"
@@ -7969,13 +7969,13 @@ msgid "No affected assemblies yet."
 msgstr "Нет затронутых сборок."
 
 msgid "No affected items to assess."
-msgstr ""
+msgstr "Нет затронутых элементов для оценки."
 
 msgid "No affected items yet — add a part or tool below."
-msgstr ""
+msgstr "Нет затронутых элементов — добавьте деталь или инструмент ниже."
 
 msgid "No affected items."
-msgstr ""
+msgstr "Нет затронутых элементов."
 
 msgid "No applications. Payment will be on-account."
 msgstr "Нет приложений. Платеж будет на счет."
@@ -8003,7 +8003,7 @@ msgid "No changes recorded"
 msgstr "Изменений не записано"
 
 msgid "No changes yet."
-msgstr ""
+msgstr "Пока нет изменений."
 
 msgid "No comments yet. Be the first to add a comment."
 msgstr "Нет комментариев. Будьте первым, кто добавит комментарий."
@@ -8033,7 +8033,7 @@ msgid "No default attachments yet."
 msgstr "Пока нет вложений по умолчанию."
 
 msgid "No draft make method for this item yet."
-msgstr ""
+msgstr "Пока нет чернового метода производства для этого элемента."
 
 msgid "No draft versions available"
 msgstr "Нет доступных черновиков версий"
@@ -8042,7 +8042,7 @@ msgid "No due date"
 msgstr "Нет срока выполнения"
 
 msgid "No editable properties for this item."
-msgstr ""
+msgstr "Нет редактируемых свойств для этого элемента."
 
 msgid "No employees assigned yet. Add groups to see status."
 msgstr "Сотрудники еще не назначены. Добавьте группы, чтобы увидеть статус."
@@ -8069,7 +8069,7 @@ msgid "No files"
 msgstr "Нет файлов"
 
 msgid "No files for this item."
-msgstr ""
+msgstr "Нет файлов для этого элемента."
 
 msgid "No files uploaded"
 msgstr "Файлы не загружены"
@@ -8270,10 +8270,10 @@ msgid "Not enough jobs to cover quantity"
 msgstr "Недостаточно заданий для покрытия количества"
 
 msgid "Not in the latest version"
-msgstr ""
+msgstr "Отсутствует в последней версии"
 
 msgid "Not referenced anywhere yet."
-msgstr ""
+msgstr "Пока не на что-либо ссылается."
 
 msgid "Not Required"
 msgstr "Не требуется"
@@ -8417,7 +8417,7 @@ msgid "Open"
 msgstr "Открыть"
 
 msgid "Open a change order"
-msgstr ""
+msgstr "Открыть приказ об изменении"
 
 msgid "Open Actions"
 msgstr "Открытые действия"
@@ -8758,10 +8758,10 @@ msgid "Part is configured for manufacturing"
 msgstr "Деталь настроена для производства"
 
 msgid "Part Number"
-msgstr ""
+msgstr "Номер детали"
 
 msgid "Part or Tool"
-msgstr ""
+msgstr "Деталь или инструмент"
 
 msgid "Partial"
 msgstr "Частичный"
@@ -9727,7 +9727,7 @@ msgid "Reason Account"
 msgstr "Счет причины"
 
 msgid "Reason for change"
-msgstr ""
+msgstr "Причина изменения"
 
 msgid "Reason for Change"
 msgstr "Причина изменения"
@@ -9932,7 +9932,7 @@ msgid "Release"
 msgstr "Выпуск"
 
 msgid "Release change order"
-msgstr ""
+msgstr "Выпустить заказ на изменение"
 
 msgid "Release control"
 msgstr "Контроль выпуска"
@@ -9972,7 +9972,7 @@ msgid "Remove action"
 msgstr "Удалить действие"
 
 msgid "Remove affected item"
-msgstr ""
+msgstr "Удалить затронутый элемент"
 
 msgid "Remove condition"
 msgstr "Удалить условие"
@@ -10005,10 +10005,10 @@ msgid "Remove this storage type from all referencing storage units and delete it
 msgstr "Удалите этот тип хранилища из всех ссылающихся на него единиц хранения и удалите его. Это невозможно отменить."
 
 msgid "Removed"
-msgstr ""
+msgstr "Удалено"
 
 msgid "Removed in your version"
-msgstr ""
+msgstr "Удалено в вашей версии"
 
 msgid "Rendering label preview..."
 msgstr "Отрисовка предпросмотра этикетки..."
@@ -10166,22 +10166,22 @@ msgid "Residual Value %"
 msgstr "Остаточная стоимость %"
 
 msgid "Resolve"
-msgstr ""
+msgstr "Разрешить"
 
 msgid "Resolve & release"
-msgstr ""
+msgstr "Разрешить и выпустить"
 
 msgid "Resolve conflicts"
-msgstr ""
+msgstr "Разрешить конфликты"
 
 msgid "Resolve every conflicting part to release."
-msgstr ""
+msgstr "Разрешите каждую конфликтующую деталь для выпуска."
 
 msgid "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
 msgstr "Разрешите эти проблемы перед завершением NCR: каждая строка должна иметь статус, отличный от «Ожидание», и количество связанных сущностей должно совпадать с количеством строки."
 
 msgid "Resolved"
-msgstr ""
+msgstr "Разрешено"
 
 msgid "Resolved Price"
 msgstr "Разрешённая цена"
@@ -10244,13 +10244,13 @@ msgid "Reverse the related journal entries"
 msgstr "Отменить связанные записи в журнале"
 
 msgid "Review"
-msgstr ""
+msgstr "Просмотр"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
-msgstr ""
+msgstr "Просмотрите изменения каждого элемента, затем подтвердите — выпуск нельзя отменить."
 
 msgid "Review required"
-msgstr ""
+msgstr "Требуется просмотр"
 
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "Проверьте балансовый лист и отчёт о прибылях и убытках за период и подтвердите, что цифры выглядят правильно. Это ручное утверждение — отметьте как завершённое после их проверки."
@@ -10737,7 +10737,7 @@ msgid "Select all"
 msgstr "Выбрать все"
 
 msgid "Select an affected item, or add one on the left."
-msgstr ""
+msgstr "Выберите затронутый элемент или добавьте один слева."
 
 msgid "Select an assignee"
 msgstr "Выберите исполнителя"
@@ -11554,7 +11554,7 @@ msgid "Sub-Departments"
 msgstr "Подразделения"
 
 msgid "sub-steps differ ({childNote}), kept with your pick"
-msgstr ""
+msgstr "подэтапы отличаются ({childNote}), сохранены с вашим выбором"
 
 msgid "Subassembly"
 msgstr "Узел в сборке"
@@ -11611,7 +11611,7 @@ msgid "Successfully created a new revision"
 msgstr "Успешно создана новая редакция"
 
 msgid "Successor effectivity"
-msgstr ""
+msgstr "Эффективность преемника"
 
 msgid "Successor Effectivity Date"
 msgstr "Дата вступления преемника в силу"
@@ -11831,10 +11831,10 @@ msgid "Tailor this hub for the customer. Changes apply live for everyone viewing
 msgstr "Настройте этот центр для клиента. Изменения применяются в реальном времени для всех, кто его просматривает. Никогда не показывается клиенту здесь."
 
 msgid "Take all latest"
-msgstr ""
+msgstr "Взять все последние"
 
 msgid "Take all mine"
-msgstr ""
+msgstr "Взять все свои"
 
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "Возьмите самый короткий оставшийся срок годности среди материалов, использованных для изготовления этого товара. Используйте, когда срок годности продукта зависит от его ингредиентов."
@@ -12291,7 +12291,7 @@ msgid "The lifecycle state of this supplier — Active, Inactive, Pending Approv
 msgstr "Состояние жизненного цикла этого поставщика - Активный, Неактивный, Ожидание одобрения и т. д.; только активные поставщики отображаются в селекторах ПО/предложений."
 
 msgid "The live method changed since you started"
-msgstr ""
+msgstr "Активный метод изменился с момента начала"
 
 msgid "The local timezone this location reports time in; schedules, timecards, and shift hours at this location are interpreted in this zone regardless of the user's browser locale."
 msgstr "Местный часовой пояс, в котором это местоположение сообщает время; расписания, табели учета рабочего времени и часы смены в этом месте интерпретируются в этом часовом поясе независимо от локали браузера пользователя."
@@ -12681,7 +12681,7 @@ msgid "This information will be visible to all users, so be careful what you sha
 msgstr "Эта информация будет видна всем пользователям, поэтому будьте осторожны с тем, что вы делитесь."
 
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
-msgstr ""
+msgstr "Это купленный элемент — у него нет BoM/BoP; могут изменяться только его атрибуты и документы."
 
 msgid "This is a unique identifier for the webhook"
 msgstr "Это уникальный идентификатор для вебхука"
@@ -12723,7 +12723,7 @@ msgid "This page of your Implementation Hub is being built. Start from the comma
 msgstr "Эта страница вашего Implementation Hub находится в разработке. Начните с командного центра, пока мы её завершаем."
 
 msgid "this part"
-msgstr ""
+msgstr "эта деталь"
 
 msgid "This part has {quantityOnHand} on hand at this location. No Stock means it will be neither planned nor consumed."
 msgstr "Эта деталь имеет {quantityOnHand} на складе в этом месте. Режим \"No Stock\" означает, что она не будет ни планироваться, ни использоваться."
@@ -13888,7 +13888,7 @@ msgid "What it is"
 msgstr "Что это такое"
 
 msgid "What kind of change this is: Version updates how the part is made, Revision edits its details and documents, and New Part replaces it with a new part number."
-msgstr ""
+msgstr "Какой это тип изменения: Version обновляет способ изготовления детали, Revision редактирует её детали и документы, а New Part заменяет её новым номером детали."
 
 msgid "What kind of output this entry records — Production (good units), Scrap (unrecoverable), or Rework (sent back for correction); reveals Scrap Reason when Scrap."
 msgstr "Какой тип выхода записывает эта запись — Производство (хорошие единицы), Отходы (невозвратные) или Переработка (отправлено на исправление); показывает Причину отходов при отходах."
@@ -14050,7 +14050,7 @@ msgid "Where stock lives and how it ships."
 msgstr "Где находится запас и как он отправляется."
 
 msgid "Where the affected items are used across the system. Informational — nothing here blocks releasing."
-msgstr ""
+msgstr "Где затронутые элементы используются по всей системе. Информационно — ничто здесь не блокирует выпуск."
 
 msgid "Where this entry originated (manual entry, posting from sales/purchasing, recurring template, etc.)."
 msgstr "Откуда произошла эта запись (ручной ввод, контировка из продаж/покупок, повторяющийся шаблон и т. д.)."
@@ -14406,7 +14406,7 @@ msgid "Your vendor list"
 msgstr "Ваш список поставщиков"
 
 msgid "Your version"
-msgstr ""
+msgstr "Ваша версия"
 
 msgid "yourself"
 msgstr "себя"

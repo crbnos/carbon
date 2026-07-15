@@ -44,7 +44,7 @@ msgstr "{0, plural, one {このパーツは1件のオープンな変更指示に
 
 #. placeholder {0}: c.entries.length
 msgid "{0} conflicting change(s)"
-msgstr ""
+msgstr "{0}個の競合する変更"
 
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
@@ -69,7 +69,7 @@ msgstr "{0}件のラインをマップします"
 
 #. placeholder {0}: conflicts.length
 msgid "{0} of these parts"
-msgstr ""
+msgstr "これらの部品の{0}個"
 
 #. placeholder {0}: history.length
 msgid "{0} orders"
@@ -77,7 +77,7 @@ msgstr "{0}件の注文"
 
 #. placeholder {0}: cc.parameters
 msgid "{0} parameters"
-msgstr ""
+msgstr "{0}個のパラメータ"
 
 #. placeholder {0}: selectedProcesses.length
 msgid "{0} Processes"
@@ -85,7 +85,7 @@ msgstr "{0}個のプロセス"
 
 #. placeholder {0}: cc.steps
 msgid "{0} steps"
-msgstr ""
+msgstr "{0}個のステップ"
 
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
@@ -93,7 +93,7 @@ msgstr "{0}件の残高のある仕入先"
 
 #. placeholder {0}: cc.tools
 msgid "{0} tools"
-msgstr ""
+msgstr "{0}個のツール"
 
 #. placeholder {0}: lotEntities.length - inspected
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
@@ -299,7 +299,7 @@ msgid "A new size will be created using a copy of the current size"
 msgstr "新しいサイズが現在のサイズのコピーを使用して作成されます"
 
 msgid "A newer version of this part was released while you were working. Choose which version to keep for each change."
-msgstr ""
+msgstr "作業中にこの部品の新しいバージョンがリリースされました。各変更に対してどちらのバージョンを保持するかを選択してください。"
 
 msgid "A non-taxable surcharge (e.g. recoverable expenses like permit fees) added to the line; excluded from the tax base."
 msgstr "非課税追加料金（返還可能経費など許可手数料）を行に追加し、課税ベースから除外します。"
@@ -533,7 +533,7 @@ msgid "Acquisition Date"
 msgstr "取得日"
 
 msgid "Action"
-msgstr ""
+msgstr "アクション"
 
 msgid "Action Status"
 msgstr "アクション状態"
@@ -626,7 +626,7 @@ msgid "Add Adjustment"
 msgstr "調整を追加"
 
 msgid "Add Affected Item"
-msgstr ""
+msgstr "影響を受けるアイテムを追加"
 
 msgid "Add any notes about your decision..."
 msgstr "あなたの決定についてのメモを追加してください..."
@@ -753,7 +753,7 @@ msgid "Add-On Cost"
 msgstr "アドオンコスト"
 
 msgid "Added"
-msgstr ""
+msgstr "追加済み"
 
 msgid "Added for this customer"
 msgstr "このカスタマー向けに追加"
@@ -783,7 +783,7 @@ msgid "Affected assemblies"
 msgstr "影響を受けるアセンブリ"
 
 msgid "Affected item not found."
-msgstr ""
+msgstr "影響を受けるアイテムが見つかりません。"
 
 msgid "After"
 msgstr "後"
@@ -892,7 +892,7 @@ msgid "An asset's acquisition cost minus accumulated depreciation — what it's 
 msgstr "資産の取得原価から累計減価償却費を差し引いたもの—帳簿上の現在の価値と処分される金額。"
 
 msgid "An engineering change: the affected items whose methods are revised on a draft and released together, superseding the versions they replace."
-msgstr ""
+msgstr "エンジニアリング変更：ドラフト上で方法が改訂され、一緒にリリースされる影響を受けるアイテム。それらが置き換える版に取って代わります。"
 
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "統合またはカスタム変更 — 実際にカスタムである小さなスライス。"
@@ -933,7 +933,7 @@ msgstr "注釈が更新されました"
 
 #. placeholder {0}: conflicts.length === 1 ? t`this part` : t`${conflicts.length} of these parts`
 msgid "Another change order released a newer version of {0}. Resolve each one to choose which changes to keep before releasing."
-msgstr ""
+msgstr "別の変更オーダーが{0}の新しいバージョンをリリースしました。リリースする前に、どの変更を保持するかを選択するため、それぞれを解決してください。"
 
 msgid "Another cost center this one rolls up into, letting you nest a sub-department under its parent for hierarchical cost reporting."
 msgstr "これが集計される別のコストセンター。階層的なコストレポート用に、親の下に部分コストセンターをネストできます。"
@@ -1177,7 +1177,7 @@ msgstr "API キー: {0} を削除してもよろしいですか？この操作�
 
 #. placeholder {0}: requiredAction.name
 msgid "Are you sure you want to delete the change order action: {0}? This cannot be undone."
-msgstr ""
+msgstr "変更オーダーアクション「{0}」を削除してもよろしいですか？この操作は取り消せません。"
 
 #. placeholder {0}: changeOrderType.name
 msgid "Are you sure you want to delete the change order category: {0}? This cannot be undone."
@@ -2119,13 +2119,13 @@ msgid "Change"
 msgstr "変更"
 
 msgid "Change order"
-msgstr ""
+msgstr "変更オーダー"
 
 msgid "Change Order"
 msgstr "変更指示"
 
 msgid "Change Order Actions"
-msgstr ""
+msgstr "変更オーダーアクション"
 
 msgid "Change Order Categories"
 msgstr "変更指示カテゴリ"
@@ -2143,7 +2143,7 @@ msgid "Change the item type (e.g. Part, Material, Tool, etc.)"
 msgstr "アイテムタイプを変更します（例：部品、材料、工具など）"
 
 msgid "Change type"
-msgstr ""
+msgstr "種類を変更"
 
 msgid "Change Type"
 msgstr "タイプを変更"
@@ -2161,7 +2161,7 @@ msgid "Changing this will update the part ID"
 msgstr "これを変更するとパーツIDが更新されます"
 
 msgid "Changing type resets this item's draft edits."
-msgstr ""
+msgstr "種類を変更すると、このアイテムのドラフト編集がリセットされます。"
 
 msgid "Chart of accounts"
 msgstr "勘定科目表"
@@ -2499,7 +2499,7 @@ msgid "Confirm {0}"
 msgstr "{0}を確認"
 
 msgid "Confirm & release"
-msgstr ""
+msgstr "確認してリリース"
 
 msgid "Confirm and sign the scope"
 msgstr "スコープを確認して署名する"
@@ -2945,7 +2945,7 @@ msgid "Create & Snapshot"
 msgstr "作成とスナップショット"
 
 msgid "Create a change order for the new revision and open it"
-msgstr ""
+msgstr "新しいリビジョンの変更オーダーを作成して開く"
 
 msgid "Create a new kanban card for scan-based replenishment."
 msgstr "スキャンベースの補充用に新しいかんばんカードを作成します。"
@@ -3035,7 +3035,7 @@ msgid "Created By"
 msgstr "作成者"
 
 msgid "Created change order action"
-msgstr ""
+msgstr "変更オーダーアクションを作成"
 
 msgid "Created change order category"
 msgstr "変更指示カテゴリを作成しました"
@@ -3653,7 +3653,7 @@ msgid "Delete {storageUnitName}"
 msgstr "{storageUnitName}を削除"
 
 msgid "Delete Action"
-msgstr ""
+msgstr "アクションを削除"
 
 msgid "Delete API Key"
 msgstr "APIキーを削除"
@@ -4041,7 +4041,7 @@ msgid "Discard"
 msgstr "破棄"
 
 msgid "Discontinuation date"
-msgstr ""
+msgstr "廃止日"
 
 msgid "Discontinuation Date"
 msgstr "廃止日"
@@ -4314,7 +4314,7 @@ msgid "Edit Account"
 msgstr "アカウントを編集"
 
 msgid "Edit Action"
-msgstr ""
+msgstr "アクションを編集"
 
 msgid "Edit API Key"
 msgstr "APIキーを編集"
@@ -4341,7 +4341,7 @@ msgid "Edit Change Order"
 msgstr "変更指示を編集"
 
 msgid "Edit Change Order Action"
-msgstr ""
+msgstr "変更オーダーアクションを編集"
 
 msgid "Edit Change Order Category"
 msgstr "変更指示カテゴリを編集"
@@ -6693,7 +6693,7 @@ msgid "Keep existing pricing, only add new items"
 msgstr "既存の価格を保持し、新しい項目のみを追加"
 
 msgid "Keeping {keptMine} of {total} from your version"
-msgstr ""
+msgstr "あなたのバージョンから{total}個のうち{keptMine}個を保持"
 
 msgid "Key"
 msgstr "キー"
@@ -6773,7 +6773,7 @@ msgid "Last updated: {formattedDate}"
 msgstr "最終更新: {formattedDate}"
 
 msgid "Latest released"
-msgstr ""
+msgstr "最新リリース版"
 
 msgid "Lead time"
 msgstr "リードタイム"
@@ -7491,7 +7491,7 @@ msgid "Model removed from line"
 msgstr "モデルがラインから削除されました"
 
 msgid "Modified"
-msgstr ""
+msgstr "修正済み"
 
 msgid "Module"
 msgstr "モジュール"
@@ -7646,7 +7646,7 @@ msgid "New Change Order"
 msgstr "新しい変更指示"
 
 msgid "New Change Order Action"
-msgstr ""
+msgstr "新しい変更オーダーアクション"
 
 msgid "New Change Order Category"
 msgstr "新しい変更指示カテゴリ"
@@ -7969,13 +7969,13 @@ msgid "No affected assemblies yet."
 msgstr "影響を受けるアセンブリはまだありません。"
 
 msgid "No affected items to assess."
-msgstr ""
+msgstr "評価する影響を受けるアイテムがありません。"
 
 msgid "No affected items yet — add a part or tool below."
-msgstr ""
+msgstr "影響を受けるアイテムはまだありません。下記から部品またはツールを追加してください。"
 
 msgid "No affected items."
-msgstr ""
+msgstr "影響を受けるアイテムがありません。"
 
 msgid "No applications. Payment will be on-account."
 msgstr "申請がありません。支払いはオンアカウントになります。"
@@ -8003,7 +8003,7 @@ msgid "No changes recorded"
 msgstr "変更が記録されていません"
 
 msgid "No changes yet."
-msgstr ""
+msgstr "まだ変更がありません。"
 
 msgid "No comments yet. Be the first to add a comment."
 msgstr "まだコメントがありません。最初のコメントを追加してください。"
@@ -8033,7 +8033,7 @@ msgid "No default attachments yet."
 msgstr "まだデフォルト添付ファイルがありません。"
 
 msgid "No draft make method for this item yet."
-msgstr ""
+msgstr "このアイテムのドラフト製造方法はまだありません。"
 
 msgid "No draft versions available"
 msgstr "ドラフト版は利用できません"
@@ -8042,7 +8042,7 @@ msgid "No due date"
 msgstr "期限なし"
 
 msgid "No editable properties for this item."
-msgstr ""
+msgstr "このアイテムの編集可能なプロパティはありません。"
 
 msgid "No employees assigned yet. Add groups to see status."
 msgstr "まだ従業員が割り当てられていません。グループを追加してステータスを確認してください。"
@@ -8069,7 +8069,7 @@ msgid "No files"
 msgstr "ファイルなし"
 
 msgid "No files for this item."
-msgstr ""
+msgstr "このアイテムのファイルはありません。"
 
 msgid "No files uploaded"
 msgstr "ファイルがアップロードされていません"
@@ -8270,10 +8270,10 @@ msgid "Not enough jobs to cover quantity"
 msgstr "数量をカバーするのに十分なジョブがありません"
 
 msgid "Not in the latest version"
-msgstr ""
+msgstr "最新バージョンに含まれていません"
 
 msgid "Not referenced anywhere yet."
-msgstr ""
+msgstr "どこでも参照されていません。"
 
 msgid "Not Required"
 msgstr "不要"
@@ -8417,7 +8417,7 @@ msgid "Open"
 msgstr "開く"
 
 msgid "Open a change order"
-msgstr ""
+msgstr "変更オーダーを開く"
 
 msgid "Open Actions"
 msgstr "オープンアクション"
@@ -8758,10 +8758,10 @@ msgid "Part is configured for manufacturing"
 msgstr "部品は製造用に構成されています"
 
 msgid "Part Number"
-msgstr ""
+msgstr "部品番号"
 
 msgid "Part or Tool"
-msgstr ""
+msgstr "部品またはツール"
 
 msgid "Partial"
 msgstr "部分的"
@@ -9727,7 +9727,7 @@ msgid "Reason Account"
 msgstr "理由アカウント"
 
 msgid "Reason for change"
-msgstr ""
+msgstr "変更理由"
 
 msgid "Reason for Change"
 msgstr "変更の理由"
@@ -9932,7 +9932,7 @@ msgid "Release"
 msgstr "リリース"
 
 msgid "Release change order"
-msgstr ""
+msgstr "変更オーダーをリリース"
 
 msgid "Release control"
 msgstr "リリース管理"
@@ -9972,7 +9972,7 @@ msgid "Remove action"
 msgstr "アクションを削除"
 
 msgid "Remove affected item"
-msgstr ""
+msgstr "影響を受けるアイテムを削除"
 
 msgid "Remove condition"
 msgstr "条件を削除"
@@ -10005,10 +10005,10 @@ msgid "Remove this storage type from all referencing storage units and delete it
 msgstr "このストレージタイプをすべての参照ストレージユニットから削除し、削除します。これは元に戻すことはできません。"
 
 msgid "Removed"
-msgstr ""
+msgstr "削除済み"
 
 msgid "Removed in your version"
-msgstr ""
+msgstr "あなたのバージョンで削除"
 
 msgid "Rendering label preview..."
 msgstr "ラベルプレビューをレンダリング中..."
@@ -10166,22 +10166,22 @@ msgid "Residual Value %"
 msgstr "残存価値 %"
 
 msgid "Resolve"
-msgstr ""
+msgstr "解決"
 
 msgid "Resolve & release"
-msgstr ""
+msgstr "解決してリリース"
 
 msgid "Resolve conflicts"
-msgstr ""
+msgstr "競合を解決"
 
 msgid "Resolve every conflicting part to release."
-msgstr ""
+msgstr "リリースするには、競合するすべてのパーツを解決してください。"
 
 msgid "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
 msgstr "NCRを完了する前にこれらを解決してください。すべての行は保留中以外の処分を持つ必要があり、リンクされたエンティティの数量は行の数量と一致する必要があります。"
 
 msgid "Resolved"
-msgstr ""
+msgstr "解決済み"
 
 msgid "Resolved Price"
 msgstr "解決済み価格"
@@ -10244,13 +10244,13 @@ msgid "Reverse the related journal entries"
 msgstr "関連する仕訳エントリを取り消す"
 
 msgid "Review"
-msgstr ""
+msgstr "レビュー"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
-msgstr ""
+msgstr "各アイテムの変更をレビューしてから確認してください。リリースは取り消せません。"
 
 msgid "Review required"
-msgstr ""
+msgstr "レビューが必要"
 
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "当期の貸借対照表と損益計算書を確認し、数字が正しいことを確認してください。これは手動による認可です。確認後、完了とマークしてください。"
@@ -10737,7 +10737,7 @@ msgid "Select all"
 msgstr "すべて選択"
 
 msgid "Select an affected item, or add one on the left."
-msgstr ""
+msgstr "影響を受けるアイテムを選択するか、左側に追加してください。"
 
 msgid "Select an assignee"
 msgstr "担当者を選択"
@@ -11554,7 +11554,7 @@ msgid "Sub-Departments"
 msgstr "サブ部門"
 
 msgid "sub-steps differ ({childNote}), kept with your pick"
-msgstr ""
+msgstr "サブステップが異なります（{childNote}）。あなたの選択で保持されます"
 
 msgid "Subassembly"
 msgstr "サブアセンブリ"
@@ -11611,7 +11611,7 @@ msgid "Successfully created a new revision"
 msgstr "新しいリビジョンが正常に作成されました"
 
 msgid "Successor effectivity"
-msgstr ""
+msgstr "後継の有効性"
 
 msgid "Successor Effectivity Date"
 msgstr "後継品有効日"
@@ -11831,10 +11831,10 @@ msgid "Tailor this hub for the customer. Changes apply live for everyone viewing
 msgstr "このハブを顧客向けにカスタマイズします。変更はそれを表示している全員にリアルタイムで適用されます。顧客にはここに表示されません。"
 
 msgid "Take all latest"
-msgstr ""
+msgstr "最新をすべて採用"
 
 msgid "Take all mine"
-msgstr ""
+msgstr "自分のをすべて採用"
 
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "このアイテムを製造するために消費される材料全体で、最も短い残りの賞味期限を取得します。製品の有効期限がその成分に依存する場合に使用します。"
@@ -12291,7 +12291,7 @@ msgid "The lifecycle state of this supplier — Active, Inactive, Pending Approv
 msgstr "このサプライヤーのライフサイクル状態 - アクティブ、非アクティブ、承認待機中など。アクティブなサプライヤーのみがPO/見積もりセレクタに表示されます。"
 
 msgid "The live method changed since you started"
-msgstr ""
+msgstr "開始以来、ライブ方法が変更されました"
 
 msgid "The local timezone this location reports time in; schedules, timecards, and shift hours at this location are interpreted in this zone regardless of the user's browser locale."
 msgstr "この場所が時刻を報告する現地タイムゾーン。この場所でのスケジュール、タイムカード、シフト時間は、ユーザーのブラウザロケールに関係なく、このゾーンで解釈されます。"
@@ -12681,7 +12681,7 @@ msgid "This information will be visible to all users, so be careful what you sha
 msgstr "この情報はすべてのユーザーに表示されるため、共有する内容に注意してください。"
 
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
-msgstr ""
+msgstr "これは購入アイテムです。BoM/BoP はありません。属性と文書のみ変更できます。"
 
 msgid "This is a unique identifier for the webhook"
 msgstr "これはウェブフックの一意の識別子です"
@@ -12723,7 +12723,7 @@ msgid "This page of your Implementation Hub is being built. Start from the comma
 msgstr "このページのImplementation Hubは現在構築中です。完成するまでコマンドセンターから始めてください。"
 
 msgid "this part"
-msgstr ""
+msgstr "このパーツ"
 
 msgid "This part has {quantityOnHand} on hand at this location. No Stock means it will be neither planned nor consumed."
 msgstr "このパーツはこの場所に{quantityOnHand}個あります。「在庫なし」は計画にも消費にも含まれないことを意味します。"
@@ -13888,7 +13888,7 @@ msgid "What it is"
 msgstr "それが何であるか"
 
 msgid "What kind of change this is: Version updates how the part is made, Revision edits its details and documents, and New Part replaces it with a new part number."
-msgstr ""
+msgstr "このような変更の種類：バージョンはパーツの製造方法を更新し、リビジョンはその詳細と文書を編集し、新しいパーツは新しいパーツ番号で置き換えます。"
 
 msgid "What kind of output this entry records — Production (good units), Scrap (unrecoverable), or Rework (sent back for correction); reveals Scrap Reason when Scrap."
 msgstr "このエントリが記録する出力のタイプ — 生産(良好ユニット)、スクラップ(回復不可)、または再作業(修正のために返送)。スクラップの場合、スクラップの理由を表示します。"
@@ -14050,7 +14050,7 @@ msgid "Where stock lives and how it ships."
 msgstr "在庫がどこに保管され、どのように出荷されるか。"
 
 msgid "Where the affected items are used across the system. Informational — nothing here blocks releasing."
-msgstr ""
+msgstr "影響を受けるアイテムがシステム全体でどこで使用されているか。情報提供 - ここに何もリリースをブロックしません。"
 
 msgid "Where this entry originated (manual entry, posting from sales/purchasing, recurring template, etc.)."
 msgstr "このエントリーの出所(手動入力、販売/購買からのポスティング、反復テンプレートなど)。"
@@ -14406,7 +14406,7 @@ msgid "Your vendor list"
 msgstr "あなたのベンダーリスト"
 
 msgid "Your version"
-msgstr ""
+msgstr "あなたのバージョン"
 
 msgid "yourself"
 msgstr "自分自身"

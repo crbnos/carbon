@@ -44,7 +44,7 @@ msgstr "{0, plural, one {यह भाग 1 खुले परिवर्त�
 
 #. placeholder {0}: c.entries.length
 msgid "{0} conflicting change(s)"
-msgstr ""
+msgstr "{0} विरोधाभासी परिवर्तन"
 
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
@@ -69,7 +69,7 @@ msgstr "{0} लाइनें मैप करने के लिए"
 
 #. placeholder {0}: conflicts.length
 msgid "{0} of these parts"
-msgstr ""
+msgstr "इनमें से {0} भाग"
 
 #. placeholder {0}: history.length
 msgid "{0} orders"
@@ -77,7 +77,7 @@ msgstr "{0} ऑर्डर"
 
 #. placeholder {0}: cc.parameters
 msgid "{0} parameters"
-msgstr ""
+msgstr "{0} पैरामीटर"
 
 #. placeholder {0}: selectedProcesses.length
 msgid "{0} Processes"
@@ -85,7 +85,7 @@ msgstr "{0} प्रक्रियाएं"
 
 #. placeholder {0}: cc.steps
 msgid "{0} steps"
-msgstr ""
+msgstr "{0} चरण"
 
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
@@ -93,7 +93,7 @@ msgstr "{0} आपूर्तिकर्ता शेष के साथ"
 
 #. placeholder {0}: cc.tools
 msgid "{0} tools"
-msgstr ""
+msgstr "{0} उपकरण"
 
 #. placeholder {0}: lotEntities.length - inspected
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
@@ -299,7 +299,7 @@ msgid "A new size will be created using a copy of the current size"
 msgstr "एक नया आकार वर्तमान आकार की प्रतिलिपि का उपयोग करके बनाया जाएगा"
 
 msgid "A newer version of this part was released while you were working. Choose which version to keep for each change."
-msgstr ""
+msgstr "आपके काम के दौरान इस भाग का एक नया संस्करण जारी किया गया। प्रत्येक परिवर्तन के लिए कौन सा संस्करण रखना है, यह चुनें।"
 
 msgid "A non-taxable surcharge (e.g. recoverable expenses like permit fees) added to the line; excluded from the tax base."
 msgstr "एक गैर-कर योग्य अधिभार (जैसे पुनः प्राप्य खर्च जैसे परमिट शुल्क) जो पंक्ति में जोड़ा जाता है और कर आधार से बाहर रखा जाता है।"
@@ -533,7 +533,7 @@ msgid "Acquisition Date"
 msgstr "अधिग्रहण तारीख"
 
 msgid "Action"
-msgstr ""
+msgstr "कार्रवाई"
 
 msgid "Action Status"
 msgstr "कार्रवाई स्थिति"
@@ -626,7 +626,7 @@ msgid "Add Adjustment"
 msgstr "समायोजन जोड़ें"
 
 msgid "Add Affected Item"
-msgstr ""
+msgstr "प्रभावित आइटम जोड़ें"
 
 msgid "Add any notes about your decision..."
 msgstr "अपने निर्णय के बारे में कोई भी नोट्स जोड़ें..."
@@ -753,7 +753,7 @@ msgid "Add-On Cost"
 msgstr "ऐड-ऑन लागत"
 
 msgid "Added"
-msgstr ""
+msgstr "जोड़ा गया"
 
 msgid "Added for this customer"
 msgstr "इस ग्राहक के लिए जोड़ा गया"
@@ -783,7 +783,7 @@ msgid "Affected assemblies"
 msgstr "प्रभावित असेंबलियां"
 
 msgid "Affected item not found."
-msgstr ""
+msgstr "प्रभावित आइटम नहीं मिला।"
 
 msgid "After"
 msgstr "के बाद"
@@ -892,7 +892,7 @@ msgid "An asset's acquisition cost minus accumulated depreciation — what it's 
 msgstr "एक संपत्ति की अधिग्रहण लागत माइनस संचयी मूल्यह्रास — यह किताबों पर अभी भी क्या मूल्य है और राशि जिस पर इसे निपटाया जाता है।"
 
 msgid "An engineering change: the affected items whose methods are revised on a draft and released together, superseding the versions they replace."
-msgstr ""
+msgstr "एक इंजीनियरिंग परिवर्तन: प्रभावित आइटम जिनकी विधियों को ड्राफ्ट पर संशोधित किया गया है और एक साथ जारी किया गया है, जो वे संस्करणों को प्रतिस्थापित करते हैं।"
 
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "एक एकीकरण या एक कस्टम परिवर्तन — वह छोटा हिस्सा जो वास्तव में कस्टम है।"
@@ -933,7 +933,7 @@ msgstr "एनोटेशन अपडेट किया गया"
 
 #. placeholder {0}: conflicts.length === 1 ? t`this part` : t`${conflicts.length} of these parts`
 msgid "Another change order released a newer version of {0}. Resolve each one to choose which changes to keep before releasing."
-msgstr ""
+msgstr "किसी अन्य परिवर्तन आदेश ने {0} का एक नया संस्करण जारी किया। जारी करने से पहले कौन से परिवर्तन रखने हैं यह चुनने के लिए प्रत्येक को हल करें।"
 
 msgid "Another cost center this one rolls up into, letting you nest a sub-department under its parent for hierarchical cost reporting."
 msgstr "एक अन्य लागत केंद्र जिसमें यह रोल हो जाता है, आपको एक उप-लागत केंद्र को इसके मूल के अंतर्गत घोंसले के लिए सक्षम करता है जो पदानुक्रमित लागत रिपोर्टिंग के लिए।"
@@ -1177,7 +1177,7 @@ msgstr "क्या आप सुनिश्चित हैं कि आप 
 
 #. placeholder {0}: requiredAction.name
 msgid "Are you sure you want to delete the change order action: {0}? This cannot be undone."
-msgstr ""
+msgstr "क्या आप वाकई परिवर्तन आदेश कार्रवाई को हटाना चाहते हैं: {0}? यह पूर्ववत नहीं किया जा सकता।"
 
 #. placeholder {0}: changeOrderType.name
 msgid "Are you sure you want to delete the change order category: {0}? This cannot be undone."
@@ -2119,13 +2119,13 @@ msgid "Change"
 msgstr "बदलें"
 
 msgid "Change order"
-msgstr ""
+msgstr "परिवर्तन आदेश"
 
 msgid "Change Order"
 msgstr "परिवर्तन आदेश"
 
 msgid "Change Order Actions"
-msgstr ""
+msgstr "परिवर्तन आदेश कार्रवाई"
 
 msgid "Change Order Categories"
 msgstr "परिवर्तन आदेश श्रेणियां"
@@ -2143,7 +2143,7 @@ msgid "Change the item type (e.g. Part, Material, Tool, etc.)"
 msgstr "आइटम प्रकार बदलें (जैसे भाग, सामग्री, उपकरण, आदि)"
 
 msgid "Change type"
-msgstr ""
+msgstr "प्रकार परिवर्तित करें"
 
 msgid "Change Type"
 msgstr "प्रकार बदलें"
@@ -2161,7 +2161,7 @@ msgid "Changing this will update the part ID"
 msgstr "इसे बदलने से पार्ट ID अपडेट हो जाएगा"
 
 msgid "Changing type resets this item's draft edits."
-msgstr ""
+msgstr "प्रकार बदलने से इस आइटम के ड्राफ्ट संपादन रीसेट हो जाते हैं।"
 
 msgid "Chart of accounts"
 msgstr "खातों की चार्ट"
@@ -2499,7 +2499,7 @@ msgid "Confirm {0}"
 msgstr "की पुष्टि करें {0}"
 
 msgid "Confirm & release"
-msgstr ""
+msgstr "पुष्टि करें और जारी करें"
 
 msgid "Confirm and sign the scope"
 msgstr "स्कोप की पुष्टि करें और हस्ताक्षर करें"
@@ -2945,7 +2945,7 @@ msgid "Create & Snapshot"
 msgstr "बनाएं और स्नैपशॉट लें"
 
 msgid "Create a change order for the new revision and open it"
-msgstr ""
+msgstr "नए संशोधन के लिए एक परिवर्तन आदेश बनाएं और इसे खोलें"
 
 msgid "Create a new kanban card for scan-based replenishment."
 msgstr "स्कैन-आधारित पुनःपूर्ति के लिए एक नया कानबन कार्ड बनाएं।"
@@ -3035,7 +3035,7 @@ msgid "Created By"
 msgstr "द्वारा बनाया गया"
 
 msgid "Created change order action"
-msgstr ""
+msgstr "बनाई गई परिवर्तन आदेश कार्रवाई"
 
 msgid "Created change order category"
 msgstr "परिवर्तन आदेश श्रेणी बनाई गई"
@@ -3653,7 +3653,7 @@ msgid "Delete {storageUnitName}"
 msgstr "Delete {storageUnitName} को हटाएं"
 
 msgid "Delete Action"
-msgstr ""
+msgstr "कार्रवाई हटाएं"
 
 msgid "Delete API Key"
 msgstr "API Key हटाएं"
@@ -4041,7 +4041,7 @@ msgid "Discard"
 msgstr "त्यागें"
 
 msgid "Discontinuation date"
-msgstr ""
+msgstr "बंद करने की तारीख"
 
 msgid "Discontinuation Date"
 msgstr "बंद करने की तारीख"
@@ -4314,7 +4314,7 @@ msgid "Edit Account"
 msgstr "खाता संपादित करें"
 
 msgid "Edit Action"
-msgstr ""
+msgstr "कार्रवाई संपादित करें"
 
 msgid "Edit API Key"
 msgstr "API Key संपादित करें"
@@ -4341,7 +4341,7 @@ msgid "Edit Change Order"
 msgstr "परिवर्तन आदेश संपादित करें"
 
 msgid "Edit Change Order Action"
-msgstr ""
+msgstr "परिवर्तन आदेश कार्रवाई संपादित करें"
 
 msgid "Edit Change Order Category"
 msgstr "परिवर्तन आदेश श्रेणी संपादित करें"
@@ -6693,7 +6693,7 @@ msgid "Keep existing pricing, only add new items"
 msgstr "मौजूदा मूल्य निर्धारण रखें, केवल नई वस्तुएं जोड़ें"
 
 msgid "Keeping {keptMine} of {total} from your version"
-msgstr ""
+msgstr "आपके संस्करण से {total} में से {keptMine} रख रहे हैं"
 
 msgid "Key"
 msgstr "कुंजी"
@@ -6773,7 +6773,7 @@ msgid "Last updated: {formattedDate}"
 msgstr "अंतिम अपडेट: {formattedDate}"
 
 msgid "Latest released"
-msgstr ""
+msgstr "नवीनतम जारी"
 
 msgid "Lead time"
 msgstr "लीड समय"
@@ -7491,7 +7491,7 @@ msgid "Model removed from line"
 msgstr "मॉडल लाइन से हटाया गया"
 
 msgid "Modified"
-msgstr ""
+msgstr "संशोधित"
 
 msgid "Module"
 msgstr "मॉड्यूल"
@@ -7646,7 +7646,7 @@ msgid "New Change Order"
 msgstr "नया परिवर्तन आदेश"
 
 msgid "New Change Order Action"
-msgstr ""
+msgstr "नई परिवर्तन आदेश कार्रवाई"
 
 msgid "New Change Order Category"
 msgstr "नई परिवर्तन आदेश श्रेणी"
@@ -7969,13 +7969,13 @@ msgid "No affected assemblies yet."
 msgstr "अभी तक कोई प्रभावित असेंबली नहीं है।"
 
 msgid "No affected items to assess."
-msgstr ""
+msgstr "मूल्यांकन के लिए कोई प्रभावित आइटम नहीं।"
 
 msgid "No affected items yet — add a part or tool below."
-msgstr ""
+msgstr "अभी तक कोई प्रभावित आइटम नहीं — नीचे एक भाग या उपकरण जोड़ें।"
 
 msgid "No affected items."
-msgstr ""
+msgstr "कोई प्रभावित आइटम नहीं।"
 
 msgid "No applications. Payment will be on-account."
 msgstr "कोई आवेदन नहीं। भुगतान खाते पर होगा।"
@@ -8003,7 +8003,7 @@ msgid "No changes recorded"
 msgstr "कोई परिवर्तन दर्ज नहीं किया गया"
 
 msgid "No changes yet."
-msgstr ""
+msgstr "अभी तक कोई परिवर्तन नहीं।"
 
 msgid "No comments yet. Be the first to add a comment."
 msgstr "अभी तक कोई टिप्पणी नहीं है। टिप्पणी जोड़ने वाले पहले व्यक्ति बनें।"
@@ -8033,7 +8033,7 @@ msgid "No default attachments yet."
 msgstr "अभी तक कोई डिफ़ॉल्ट अटैचमेंट नहीं है।"
 
 msgid "No draft make method for this item yet."
-msgstr ""
+msgstr "इस आइटम के लिए अभी तक कोई ड्राफ्ट विधि नहीं।"
 
 msgid "No draft versions available"
 msgstr "कोई ड्राफ्ट संस्करण उपलब्ध नहीं है"
@@ -8042,7 +8042,7 @@ msgid "No due date"
 msgstr "कोई नियत तारीख नहीं"
 
 msgid "No editable properties for this item."
-msgstr ""
+msgstr "इस आइटम के लिए कोई संपादन योग्य गुण नहीं।"
 
 msgid "No employees assigned yet. Add groups to see status."
 msgstr "अभी तक कोई कर्मचारी असाइन नहीं किया गया है। स्थिति देखने के लिए समूह जोड़ें।"
@@ -8069,7 +8069,7 @@ msgid "No files"
 msgstr "कोई फ़ाइलें नहीं"
 
 msgid "No files for this item."
-msgstr ""
+msgstr "इस आइटम के लिए कोई फ़ाइल नहीं।"
 
 msgid "No files uploaded"
 msgstr "कोई फ़ाइल अपलोड नहीं की गई"
@@ -8270,10 +8270,10 @@ msgid "Not enough jobs to cover quantity"
 msgstr "पर्याप्त नौकरियां नहीं हैं मात्रा को कवर करने के लिए"
 
 msgid "Not in the latest version"
-msgstr ""
+msgstr "नवीनतम संस्करण में नहीं"
 
 msgid "Not referenced anywhere yet."
-msgstr ""
+msgstr "अभी तक कहीं भी संदर्भित नहीं।"
 
 msgid "Not Required"
 msgstr "आवश्यक नहीं"
@@ -8417,7 +8417,7 @@ msgid "Open"
 msgstr "खोलें"
 
 msgid "Open a change order"
-msgstr ""
+msgstr "एक परिवर्तन आदेश खोलें"
 
 msgid "Open Actions"
 msgstr "खुली कार्रवाइयाँ"
@@ -8758,10 +8758,10 @@ msgid "Part is configured for manufacturing"
 msgstr "भाग विनिर्माण के लिए कॉन्फ़िगर किया गया है"
 
 msgid "Part Number"
-msgstr ""
+msgstr "भाग संख्या"
 
 msgid "Part or Tool"
-msgstr ""
+msgstr "भाग या उपकरण"
 
 msgid "Partial"
 msgstr "आंशिक"
@@ -9727,7 +9727,7 @@ msgid "Reason Account"
 msgstr "कारण खाता"
 
 msgid "Reason for change"
-msgstr ""
+msgstr "परिवर्तन का कारण"
 
 msgid "Reason for Change"
 msgstr "परिवर्तन का कारण"
@@ -9932,7 +9932,7 @@ msgid "Release"
 msgstr "रिलीज़"
 
 msgid "Release change order"
-msgstr ""
+msgstr "परिवर्तन आदेश जारी करें"
 
 msgid "Release control"
 msgstr "जारी करने का नियंत्रण"
@@ -9972,7 +9972,7 @@ msgid "Remove action"
 msgstr "कार्रवाई हटाएं"
 
 msgid "Remove affected item"
-msgstr ""
+msgstr "प्रभावित आइटम निकालें"
 
 msgid "Remove condition"
 msgstr "शर्त हटाएं"
@@ -10005,10 +10005,10 @@ msgid "Remove this storage type from all referencing storage units and delete it
 msgstr "इस स्टोरेज प्रकार को सभी संदर्भित स्टोरेज इकाइयों से हटाएं और इसे हटाएं। यह पूर्ववत नहीं किया जा सकता।"
 
 msgid "Removed"
-msgstr ""
+msgstr "हटाया गया"
 
 msgid "Removed in your version"
-msgstr ""
+msgstr "आपके संस्करण में हटाया गया"
 
 msgid "Rendering label preview..."
 msgstr "लेबल पूर्वावलोकन प्रस्तुत किया जा रहा है..."
@@ -10166,22 +10166,22 @@ msgid "Residual Value %"
 msgstr "अवशिष्ट मूल्य %"
 
 msgid "Resolve"
-msgstr ""
+msgstr "समाधान करें"
 
 msgid "Resolve & release"
-msgstr ""
+msgstr "समाधान करें और जारी करें"
 
 msgid "Resolve conflicts"
-msgstr ""
+msgstr "संघर्षों को हल करें"
 
 msgid "Resolve every conflicting part to release."
-msgstr ""
+msgstr "जारी करने के लिए प्रत्येक संघर्षपूर्ण भाग को हल करें।"
 
 msgid "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
 msgstr "इसे NCR पूरा करने से पहले हल करें: प्रत्येक पंक्ति के पास एक गैर-लंबित निपटान होना चाहिए, और इसकी जुड़ी हुई इकाई मात्रा पंक्ति मात्रा से मेल खानी चाहिए।"
 
 msgid "Resolved"
-msgstr ""
+msgstr "समाधान किया गया"
 
 msgid "Resolved Price"
 msgstr "समाधान की गई कीमत"
@@ -10244,13 +10244,13 @@ msgid "Reverse the related journal entries"
 msgstr "संबंधित जर्नल प्रविष्टियों को उलट दें"
 
 msgid "Review"
-msgstr ""
+msgstr "समीक्षा करें"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
-msgstr ""
+msgstr "प्रत्येक आइटम के परिवर्तनों की समीक्षा करें, फिर पुष्टि करें — जारी करना वापस नहीं किया जा सकता।"
 
 msgid "Review required"
-msgstr ""
+msgstr "समीक्षा की आवश्यकता है"
 
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "अवधि की बैलेंस शीट और आय विवरण की समीक्षा करें और पुष्टि करें कि आंकड़े सही लगते हैं। यह एक मैनुअल साइन-ऑफ है — एक बार समीक्षा करने के बाद इसे पूर्ण चिह्नित करें।"
@@ -10737,7 +10737,7 @@ msgid "Select all"
 msgstr "सभी का चयन करें"
 
 msgid "Select an affected item, or add one on the left."
-msgstr ""
+msgstr "एक प्रभावित आइटम चुनें, या बाईं ओर एक जोड़ें।"
 
 msgid "Select an assignee"
 msgstr "एक असाइनी चुनें"
@@ -11554,7 +11554,7 @@ msgid "Sub-Departments"
 msgstr "उप-विभाग"
 
 msgid "sub-steps differ ({childNote}), kept with your pick"
-msgstr ""
+msgstr "उप-चरण अलग हैं ({childNote}), आपकी पसंद के साथ रखे गए"
 
 msgid "Subassembly"
 msgstr "उप-विधानसभा"
@@ -11611,7 +11611,7 @@ msgid "Successfully created a new revision"
 msgstr "सफलतापूर्वक एक नया संशोधन बनाया गया"
 
 msgid "Successor effectivity"
-msgstr ""
+msgstr "उत्तराधिकारी प्रभावशीलता"
 
 msgid "Successor Effectivity Date"
 msgstr "उत्तराधिकारी प्रभावी तारीख"
@@ -11831,10 +11831,10 @@ msgid "Tailor this hub for the customer. Changes apply live for everyone viewing
 msgstr "इस हब को ग्राहक के लिए अनुकूलित करें। परिवर्तन सभी के लिए लाइव लागू होते हैं जो इसे देख रहे हैं। ग्राहक को यहां कभी नहीं दिखाया जाता है।"
 
 msgid "Take all latest"
-msgstr ""
+msgstr "सभी नवीनतम लें"
 
 msgid "Take all mine"
-msgstr ""
+msgstr "सभी मेरे लें"
 
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "इस आइटम को बनाने के लिए उपयोग की गई सामग्रियों में सबसे कम शेष शेल्फ लाइफ लें। जब उत्पाद की समाप्ति तारीख इसकी सामग्री पर निर्भर करती है तो उपयोग करें।"
@@ -12291,7 +12291,7 @@ msgid "The lifecycle state of this supplier — Active, Inactive, Pending Approv
 msgstr "इस आपूर्तिकर्ता की जीवन चक्र स्थिति - सक्रिय, निष्क्रिय, अनुमोदन अप्रबंधित, आदि; केवल सक्रिय आपूर्तिकर्ता PO / उद्धरण चयनकर्ताओं में दिखाई देते हैं।"
 
 msgid "The live method changed since you started"
-msgstr ""
+msgstr "आपके शुरू करने के बाद से लाइव विधि बदल गई है"
 
 msgid "The local timezone this location reports time in; schedules, timecards, and shift hours at this location are interpreted in this zone regardless of the user's browser locale."
 msgstr "स्थानीय समय क्षेत्र जिसमें यह स्थान समय की रिपोर्ट करता है; इस स्थान पर शेड्यूल, समयपत्र और शिफ्ट के घंटों की व्याख्या उपयोगकर्ता के ब्राउज़र स्थान की परवाह किए बिना इस क्षेत्र में की जाती है।"
@@ -12681,7 +12681,7 @@ msgid "This information will be visible to all users, so be careful what you sha
 msgstr "यह जानकारी सभी उपयोगकर्ताओं को दिखाई देगी, इसलिए सावधान रहें कि आप क्या साझा करते हैं।"
 
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
-msgstr ""
+msgstr "यह एक खरीदा गया आइटम है — इसके पास कोई BoM/BoP नहीं है; केवल इसकी विशेषताओं और दस्तावेजों को बदला जा सकता है।"
 
 msgid "This is a unique identifier for the webhook"
 msgstr "यह वेबहुक के लिए एक अद्वितीय पहचानकर्ता है"
@@ -12723,7 +12723,7 @@ msgid "This page of your Implementation Hub is being built. Start from the comma
 msgstr "आपके Implementation Hub का यह पृष्ठ बनाया जा रहा है। जब तक हम इसे पूरा करते हैं, command center से शुरू करें।"
 
 msgid "this part"
-msgstr ""
+msgstr "यह हिस्सा"
 
 msgid "This part has {quantityOnHand} on hand at this location. No Stock means it will be neither planned nor consumed."
 msgstr "यह पार्ट इस स्थान पर {quantityOnHand} की मात्रा में उपलब्ध है। No Stock का अर्थ है कि इसकी न तो योजना बनाई जाएगी और न ही इसका उपयोग किया जाएगा।"
@@ -13888,7 +13888,7 @@ msgid "What it is"
 msgstr "यह क्या है"
 
 msgid "What kind of change this is: Version updates how the part is made, Revision edits its details and documents, and New Part replaces it with a new part number."
-msgstr ""
+msgstr "यह किस प्रकार का परिवर्तन है: संस्करण अपडेट करता है कि भाग कैसे बनाया जाता है, संशोधन इसके विवरण और दस्तावेज़ों को संपादित करता है, और नया भाग इसे एक नए भाग संख्या से बदल देता है।"
 
 msgid "What kind of output this entry records — Production (good units), Scrap (unrecoverable), or Rework (sent back for correction); reveals Scrap Reason when Scrap."
 msgstr "यह प्रविष्टि किस प्रकार का आउटपुट रिकॉर्ड करती है — उत्पादन (अच्छी इकाइयाँ), स्क्रैप (अपूरणीय) या पुनः कार्य (सुधार के लिए वापस भेजा गया); जब स्क्रैप हो तो स्क्रैप कारण प्रकट करता है।"
@@ -14050,7 +14050,7 @@ msgid "Where stock lives and how it ships."
 msgstr "स्टॉक कहाँ रहता है और यह कैसे भेजा जाता है।"
 
 msgid "Where the affected items are used across the system. Informational — nothing here blocks releasing."
-msgstr ""
+msgstr "जहां प्रभावित आइटम पूरे सिस्टम में उपयोग किए जाते हैं। सूचनात्मक — यहां कुछ भी जारी करने में बाधा नहीं डालता।"
 
 msgid "Where this entry originated (manual entry, posting from sales/purchasing, recurring template, etc.)."
 msgstr "यह प्रविष्टि कहाँ से उत्पन्न हुई (मैनुअल प्रविष्टि, बिक्रय/खरीद से पोस्टिंग, पुनरावर्ती टेम्पलेट, आदि)।"
@@ -14406,7 +14406,7 @@ msgid "Your vendor list"
 msgstr "आपकी विक्रेता सूची"
 
 msgid "Your version"
-msgstr ""
+msgstr "आपका संस्करण"
 
 msgid "yourself"
 msgstr "अपने आप"
