@@ -1,21 +1,30 @@
+import { useCarbon } from "@carbon/auth";
 import { ValidatedForm } from "@carbon/form";
 import {
+  Badge,
   Button,
   Card,
   CardContent,
   CardHeader,
   CardTitle,
   cn,
+  generateHTML,
   HStack,
   IconButton,
+  type JSONContent,
+  toast,
   useDebounce,
+  useDisclosure,
   VStack
 } from "@carbon/react";
+import { Editor } from "@carbon/react/Editor";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { DragControls } from "framer-motion";
 import { Reorder, useDragControls } from "framer-motion";
+import { nanoid } from "nanoid";
 import { useEffect, useState } from "react";
 import {
+  LuChevronRight,
   LuCircleCheck,
   LuCirclePlay,
   LuGripVertical,
@@ -23,12 +32,13 @@ import {
   LuTrash2
 } from "react-icons/lu";
 import { useFetcher } from "react-router";
-import { EmployeeAvatar } from "~/components";
+import { Assignee } from "~/components";
 import { DatePicker, Employee, Hidden, Input, Submit } from "~/components/Form";
+import { usePermissions, useUser } from "~/hooks";
 // Reuse Quality's progress bar (entity-agnostic: { status }[]) so the CO actions
 // look identical to an issue's — no second copy of the progress widget.
 import { TaskProgress } from "~/modules/quality/ui/Issue/IssueTask";
-import { path } from "~/utils/path";
+import { getPrivateUrl, path } from "~/utils/path";
 import { changeOrderActionValidator } from "../../changeOrder.models";
 import type { ChangeOrderActionTask } from "../../types";
 
@@ -97,41 +107,13 @@ export default function ChangeOrderActions({
     updateSortOrder(updates);
   };
 
-  const list = (
-    <VStack spacing={3}>
-      {actions.length > 0 && (
-        <Reorder.Group
-          axis="y"
-          values={sortOrder}
-          onReorder={onReorder}
-          className="w-full space-y-3"
-        >
-          {sortOrder.map((id) => {
-            const action = actions.find((a) => a.id === id);
-            if (!action) return null;
-            return (
-              <ReorderableActionItem
-                key={id}
-                changeOrderId={changeOrderId}
-                action={action}
-                isDisabled={isDisabled}
-              />
-            );
-          })}
-        </Reorder.Group>
-      )}
-
-      {!isDisabled && <NewAction changeOrderId={changeOrderId} />}
-    </VStack>
-  );
-
   // Rail summary: just the progress bar (the full list lives in the middle pane).
   if (variant === "summary") {
     return actions.length > 0 ? <TaskProgress tasks={actions} /> : null;
   }
 
   return (
-    <Card className="w-full">
+    <Card className="w-full" isCollapsible>
       <HStack className="justify-between w-full">
         <CardHeader>
           <CardTitle>
@@ -140,7 +122,33 @@ export default function ChangeOrderActions({
         </CardHeader>
         {actions.length > 0 && <TaskProgress tasks={actions} />}
       </HStack>
-      <CardContent>{list}</CardContent>
+      <CardContent>
+        <VStack spacing={3}>
+          {actions.length > 0 && (
+            <Reorder.Group
+              axis="y"
+              values={sortOrder}
+              onReorder={onReorder}
+              className="w-full space-y-3"
+            >
+              {sortOrder.map((id) => {
+                const action = actions.find((a) => a.id === id);
+                if (!action) return null;
+                return (
+                  <ReorderableActionItem
+                    key={id}
+                    changeOrderId={changeOrderId}
+                    action={action}
+                    isDisabled={isDisabled}
+                  />
+                );
+              })}
+            </Reorder.Group>
+          )}
+
+          {!isDisabled && <NewAction changeOrderId={changeOrderId} />}
+        </VStack>
+      </CardContent>
     </Card>
   );
 }
@@ -171,6 +179,9 @@ function ReorderableActionItem({
   );
 }
 
+// Mirrors Quality's TaskItem: a bordered card with the title + drag/delete/toggle
+// on top, a collapsible rich-text notes editor, and a bottom bar carrying the
+// status badge, assignee, due date, and the Start/Complete/Reopen action.
 function ActionItem({
   changeOrderId,
   action,
@@ -183,12 +194,44 @@ function ActionItem({
   dragControls: DragControls;
 }) {
   const { t } = useLingui();
+  const permissions = usePermissions();
+  const {
+    id: userId,
+    company: { id: companyId }
+  } = useUser();
+  const { carbon } = useCarbon();
+  const disclosure = useDisclosure({ defaultIsOpen: true });
   const statusFetcher = useFetcher<{ success: boolean }>();
   const deleteFetcher = useFetcher<{ success: boolean }>();
+
+  const [content, setContent] = useState((action.notes ?? {}) as JSONContent);
 
   const status = (action.status ?? "Pending") as keyof typeof statusActions;
   const statusAction = statusActions[status];
   const isComplete = status === "Completed" || status === "Skipped";
+  const canEdit = permissions.can("update", "parts") && !isDisabled;
+
+  const onUploadImage = async (file: File) => {
+    const fileType = file.name.split(".").pop();
+    const fileName = `${companyId}/parts/${nanoid()}.${fileType}`;
+    const result = await carbon?.storage.from("private").upload(fileName, file);
+    if (result?.error || !result?.data) {
+      toast.error(t`Failed to upload image`);
+      throw new Error(result?.error?.message ?? "Failed to upload image");
+    }
+    return getPrivateUrl(result.data.path);
+  };
+
+  const onUpdateContent = useDebounce(
+    async (value: JSONContent) => {
+      await carbon
+        ?.from("changeOrderActionTask")
+        .update({ notes: value, updatedBy: userId })
+        .eq("id", action.id);
+    },
+    2500,
+    true
+  );
 
   const onStatusChange = () => {
     if (isDisabled) return;
@@ -202,69 +245,102 @@ function ActionItem({
   };
 
   return (
-    // Fields stack vertically so the row stays readable in the narrow rail:
-    // title (+ grip / delete) on top, then meta, then the status action.
-    <VStack spacing={2} className="w-full border border-border rounded-lg p-3">
-      <HStack className="w-full justify-between gap-2">
-        <HStack spacing={2} className="min-w-0">
+    <div className="rounded-lg border w-full flex flex-col bg-card">
+      <div className="flex w-full justify-between px-4 py-2 items-center">
+        <span
+          className={cn(
+            "text-base font-semibold tracking-tight",
+            isComplete && "line-through text-muted-foreground"
+          )}
+        >
+          {action.name}
+        </span>
+        <div className="flex items-center gap-1">
           {!isDisabled && (
             <button
               type="button"
-              className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors p-1 shrink-0"
+              className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors p-1"
               onPointerDown={(e) => dragControls.start(e)}
             >
               <LuGripVertical size={16} />
             </button>
           )}
-          <span
-            className={cn(
-              "text-sm font-medium truncate",
-              isComplete && "line-through text-muted-foreground"
-            )}
-          >
-            {action.name}
-          </span>
-        </HStack>
-        {!isDisabled && (
-          <deleteFetcher.Form
-            method="post"
-            action={path.to.deleteChangeOrderAction(changeOrderId, action.id)}
-            className="shrink-0"
-          >
-            <IconButton
-              type="submit"
-              aria-label={t`Remove action`}
-              variant="ghost"
-              icon={<LuTrash2 />}
-            />
-          </deleteFetcher.Form>
-        )}
-      </HStack>
-
-      {(action.assignee || action.dueDate) && (
-        <HStack spacing={2}>
-          {action.assignee && (
-            <EmployeeAvatar employeeId={action.assignee} size="xxs" />
+          {!isDisabled && (
+            <deleteFetcher.Form
+              method="post"
+              action={path.to.deleteChangeOrderAction(changeOrderId, action.id)}
+            >
+              <IconButton
+                type="submit"
+                aria-label={t`Remove action`}
+                variant="ghost"
+                icon={<LuTrash2 />}
+              />
+            </deleteFetcher.Form>
           )}
+          <IconButton
+            icon={<LuChevronRight />}
+            variant="ghost"
+            onClick={disclosure.onToggle}
+            aria-label={t`Open action details`}
+            className={cn(disclosure.isOpen && "rotate-90")}
+          />
+        </div>
+      </div>
+
+      {disclosure.isOpen && (
+        <div className="px-4 py-2 rounded">
+          {canEdit ? (
+            <Editor
+              className="w-full min-h-[100px]"
+              initialValue={content}
+              onUpload={onUploadImage}
+              onChange={(value) => {
+                setContent(value);
+                onUpdateContent(value);
+              }}
+            />
+          ) : (
+            <div
+              className="prose dark:prose-invert"
+              // biome-ignore lint/security/noDangerouslySetInnerHtml: read-only render of stored notes
+              dangerouslySetInnerHTML={{
+                __html: generateHTML(content as JSONContent)
+              }}
+            />
+          )}
+        </div>
+      )}
+
+      <div className="bg-muted/30 border-t px-4 py-2 flex justify-between w-full">
+        <HStack>
+          <Badge variant="secondary">{status}</Badge>
+          <Assignee
+            table="changeOrderActionTask"
+            id={action.id}
+            size="sm"
+            value={action.assignee ?? undefined}
+            disabled={isDisabled}
+          />
           {action.dueDate && (
             <span className="text-xs text-muted-foreground tabular-nums">
               {action.dueDate}
             </span>
           )}
         </HStack>
-      )}
-
-      <Button
-        isDisabled={isDisabled}
-        leftIcon={statusAction.icon}
-        variant="secondary"
-        size="sm"
-        onClick={onStatusChange}
-        className="w-full justify-center"
-      >
-        {statusAction.action}
-      </Button>
-    </VStack>
+        <HStack>
+          <Button
+            isDisabled={isDisabled}
+            leftIcon={statusAction.icon}
+            variant="secondary"
+            size="sm"
+            onClick={onStatusChange}
+          >
+            {statusAction.action}
+          </Button>
+        </HStack>
+      </div>
+    </div>
   );
 }
 
