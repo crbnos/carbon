@@ -1591,9 +1591,6 @@ msgstr "Genehmigung ausstehend"
 msgid "Back"
 msgstr "Zurück"
 
-msgid "Back Home"
-msgstr "Zurück Nach Hause"
-
 msgid "Back to traceability"
 msgstr "Zurück zur Rückverfolgbarkeit"
 
@@ -10946,9 +10943,6 @@ msgstr "Lösungsingenieur"
 
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "Einige aus dem PDF extrahierte Zeilen konnten nicht automatisch Ihren Bestandsartikeln zugeordnet werden. Überprüfen und ordnen Sie jede Zeile unten zu."
-
-msgid "Something went wrong"
-msgstr "Etwas ist schief gelaufen"
 
 msgid "Something went wrong. Please try again."
 msgstr "Etwas ist schief gelaufen. Bitte versuchen Sie es erneut."

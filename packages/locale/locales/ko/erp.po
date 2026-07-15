@@ -1591,9 +1591,6 @@ msgstr "승인 대기 중"
 msgid "Back"
 msgstr "뒤로"
 
-msgid "Back Home"
-msgstr "홈으로"
-
 msgid "Back to traceability"
 msgstr "이력추적으로 돌아가기"
 
@@ -10946,9 +10943,6 @@ msgstr "솔루션 엔지니어"
 
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "PDF에서 추출된 일부 라인을 재고 품목에 자동으로 매핑할 수 없습니다. 아래에서 각 라인을 검토하고 매핑하세요."
-
-msgid "Something went wrong"
-msgstr "문제가 발생했습니다"
 
 msgid "Something went wrong. Please try again."
 msgstr "문제가 발생했습니다. 다시 시도해 주세요."

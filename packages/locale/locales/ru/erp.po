@@ -1591,9 +1591,6 @@ msgstr "Ожидает утверждения"
 msgid "Back"
 msgstr "Назад"
 
-msgid "Back Home"
-msgstr "Вернуться домой"
-
 msgid "Back to traceability"
 msgstr "Вернуться к отслеживанию"
 
@@ -10946,9 +10943,6 @@ msgstr "Инженер решений"
 
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "Некоторые строки, извлеченные из PDF, не удалось автоматически сопоставить с элементами вашего инвентаря. Проверьте и сопоставьте каждую строку ниже."
-
-msgid "Something went wrong"
-msgstr "Что-то пошло не так"
 
 msgid "Something went wrong. Please try again."
 msgstr "Что-то пошло не так. Пожалуйста, попробуйте еще раз."

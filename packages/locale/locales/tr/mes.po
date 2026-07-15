@@ -105,9 +105,6 @@ msgstr "Kimlik Doğrulama Hatası"
 msgid "available"
 msgstr "mevcut"
 
-msgid "Back Home"
-msgstr "Ana Sayfaya Dön"
-
 msgid "Batch"
 msgstr "Parti"
 
@@ -327,9 +324,6 @@ msgstr "PIN'i {0} için girin"
 
 msgid "Error"
 msgstr "Hata"
-
-msgid "Error!"
-msgstr "Hata!"
 
 msgid "Estimated"
 msgstr "Tahmini"
@@ -971,9 +965,6 @@ msgstr "Oturum açıldı olarak {stationName}"
 
 msgid "Size"
 msgstr "Boyut"
-
-msgid "Something went wrong"
-msgstr "Bir şeyler yanlış gitti"
 
 msgid "Source"
 msgstr "Kaynak"

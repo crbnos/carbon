@@ -105,9 +105,6 @@ msgstr "Erreur d'authentification"
 msgid "available"
 msgstr "disponible"
 
-msgid "Back Home"
-msgstr "Retour à la maison"
-
 msgid "Batch"
 msgstr "Lot"
 
@@ -327,9 +324,6 @@ msgstr "Saisir le NIP pour {0}"
 
 msgid "Error"
 msgstr "Erreur"
-
-msgid "Error!"
-msgstr "Erreur !"
 
 msgid "Estimated"
 msgstr "Estimé"
@@ -971,9 +965,6 @@ msgstr "Connecté en tant que {stationName}"
 
 msgid "Size"
 msgstr "Taille"
-
-msgid "Something went wrong"
-msgstr "Une erreur s'est produite"
 
 msgid "Source"
 msgstr "Source"

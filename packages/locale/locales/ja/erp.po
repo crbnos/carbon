@@ -1591,9 +1591,6 @@ msgstr "承認待ち"
 msgid "Back"
 msgstr "戻る"
 
-msgid "Back Home"
-msgstr "ホームに戻る"
-
 msgid "Back to traceability"
 msgstr "トレーサビリティに戻る"
 
@@ -10946,9 +10943,6 @@ msgstr "ソリューションズエンジニア"
 
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "PDFから抽出された一部の行は、在庫アイテムに自動的にマップできませんでした。以下の各行を確認してマップしてください。"
-
-msgid "Something went wrong"
-msgstr "エラーが発生しました"
 
 msgid "Something went wrong. Please try again."
 msgstr "何か問題が発生しました。もう一度お試しください。"

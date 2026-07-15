@@ -1591,9 +1591,6 @@ msgstr "En attente d'approbation"
 msgid "Back"
 msgstr "Retour"
 
-msgid "Back Home"
-msgstr "Retour à la maison"
-
 msgid "Back to traceability"
 msgstr "Retour à la traçabilité"
 
@@ -10946,9 +10943,6 @@ msgstr "Ingénieur Solutions"
 
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "Certaines lignes extraites du PDF n'ont pas pu être automatiquement mappées à vos articles d'inventaire. Vérifiez et mappez chaque ligne ci-dessous."
-
-msgid "Something went wrong"
-msgstr "Une erreur s'est produite"
 
 msgid "Something went wrong. Please try again."
 msgstr "Quelque chose s'est mal passé. Veuillez réessayer."

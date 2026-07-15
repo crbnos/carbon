@@ -1591,9 +1591,6 @@ msgstr "Onay bekliyor"
 msgid "Back"
 msgstr "Geri"
 
-msgid "Back Home"
-msgstr "Ana Sayfaya Dön"
-
 msgid "Back to traceability"
 msgstr "İzlenebilirliğe geri dön"
 
@@ -10946,9 +10943,6 @@ msgstr "Çözüm Mühendisi"
 
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "PDF'den çıkarılan bazı satırlar envanter öğelerinize otomatik olarak eşleştirilemedi. Aşağıdaki her satırı gözden geçirin ve eşleştirin."
-
-msgid "Something went wrong"
-msgstr "Bir şeyler yanlış gitti"
 
 msgid "Something went wrong. Please try again."
 msgstr "Bir şeyler ters gitti. Lütfen tekrar deneyin."
