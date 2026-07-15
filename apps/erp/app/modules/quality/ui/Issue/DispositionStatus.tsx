@@ -30,7 +30,7 @@ export function DispositionStatus({
       color={color}
       className={cn("max-w-full [&>svg]:shrink-0", className)}
     >
-      <span className="truncate">{disposition}</span>
+      <span className="min-w-0 truncate">{disposition}</span>
     </Status>
   );
 }

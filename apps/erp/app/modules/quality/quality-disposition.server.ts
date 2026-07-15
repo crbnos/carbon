@@ -3,6 +3,7 @@ import type { KyselyTx } from "@carbon/database/client";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { getDatabaseClient } from "~/services/database.server";
+import { isIssueLocked } from "./quality.models";
 import { errResult, type Result } from "./quality.server";
 
 type TrackedEntityRow = Database["public"]["Tables"]["trackedEntity"]["Row"];
@@ -26,6 +27,12 @@ export async function assignEntitiesToIssueItem(args: {
 
   if (assignments.length === 0) {
     return errResult("No assignments provided");
+  }
+
+  // Same source and target would decrement then re-inflate the same row off a
+  // stale read, corrupting its quantity.
+  if (nonConformanceItemId === targetItemId) {
+    return errResult("Cannot move entities onto the same row");
   }
 
   const db = getDatabaseClient();
@@ -354,10 +361,15 @@ export async function splitIssueItem(args: {
 
       const issue = await trx
         .selectFrom("nonConformance")
-        .select(["nonConformanceId", "locationId"])
+        .select(["nonConformanceId", "status", "locationId"])
         .where("id", "=", item.nonConformanceId)
         .where("companyId", "=", companyId)
         .executeTakeFirst();
+      // Re-check inside the transaction: the route lock check is a separate read
+      // and could race with a concurrent close.
+      if (isIssueLocked(issue?.status)) {
+        throw new Error("Cannot modify a closed issue. Reopen it first.");
+      }
       const readableNc = issue?.nonConformanceId ?? item.nonConformanceId;
       const locationId = issue?.locationId ?? null;
 
@@ -381,6 +393,7 @@ export async function splitIssueItem(args: {
         ])
         .where("link.nonConformanceItemId", "=", id)
         .where("link.companyId", "=", companyId)
+        .where("te.companyId", "=", companyId)
         .orderBy("te.quantity", "asc")
         .execute();
 
@@ -393,12 +406,19 @@ export async function splitIssueItem(args: {
       const moves: Move[] = [];
 
       if (entityAssignments && entityAssignments.length > 0) {
+        // Whole-lot picks: trust only the server-side link, not the client's
+        // quantity, and reject unknown or duplicated entities.
+        const seen = new Set<string>();
         for (const a of entityAssignments) {
+          if (seen.has(a.trackedEntityId)) {
+            throw new Error("Duplicate entity in split selection");
+          }
+          seen.add(a.trackedEntityId);
           const link = links.find((l) => l.entityId === a.trackedEntityId);
           if (!link) {
             throw new Error("Selected entity is not linked to this row");
           }
-          moves.push({ link, moveQty: Number(a.quantity) });
+          moves.push({ link, moveQty: Number(link.linkQuantity ?? 0) });
         }
       } else if (typeof splitQuantity === "number" && splitQuantity > 0) {
         let remaining = splitQuantity;
