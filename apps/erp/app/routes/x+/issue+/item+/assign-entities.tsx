@@ -8,7 +8,7 @@ import {
   assignIssueItemEntitiesValidator,
   isIssueLocked
 } from "~/modules/quality";
-import { assignEntitiesToIssueItem } from "~/modules/quality/quality.server";
+import { assignEntitiesToIssueItem } from "~/modules/quality/quality-disposition.server";
 import { requireUnlockedBulk } from "~/utils/lockedGuard.server";
 
 export async function action({ request }: ActionFunctionArgs) {

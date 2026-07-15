@@ -51,7 +51,6 @@ import { path } from "~/utils/path";
 import {
   assignIssueItemEntitiesValidator,
   disposition,
-  itemQuantityValidator,
   splitIssueItemValidator
 } from "../../quality.models";
 import type { IssueAssociationNode } from "../../types";
@@ -167,21 +166,6 @@ export function AssociatedItemsList({
     [fetcher]
   );
 
-  const onUpdateQuantity = useCallback(
-    (nonConformanceItemId: string, quantityValue: number | null) => {
-      const formData = new FormData();
-      formData.append("id", nonConformanceItemId);
-      formData.append("field", "quantity");
-      formData.append("value", quantityValue?.toString() ?? "0");
-
-      fetcher.submit(formData, {
-        method: "post",
-        action: path.to.updateIssueItem
-      });
-    },
-    [fetcher]
-  );
-
   const onMoveEntity = useCallback(
     (
       sourceRowId: string,
@@ -283,6 +267,12 @@ export function AssociatedItemsList({
                 disposition: (s.disposition ?? "Pending") as string,
                 itemReadableId: item.readableIdWithRevision
               }));
+            // Split breaks a portion of the row onto a new disposition row.
+            // A single batch lot is subdivided server-side (a new tracked
+            // entity is created for the split-off quantity), so any row with
+            // quantity > 1 is splittable, even when it's one indivisible lot.
+            const canSplit = r.quantity > 1;
+            const hasRowActions = canSplit || siblings.length > 0;
             const isDropTarget =
               canEdit &&
               sameItemSiblings.length > 0 &&
@@ -335,7 +325,7 @@ export function AssociatedItemsList({
                   }
                 }}
               >
-                <div className="flex items-center w-full gap-4">
+                <div className="flex items-start w-full gap-4">
                   <div className="flex flex-col min-w-0 flex-1">
                     <h3 className="font-semibold truncate">
                       {item.readableIdWithRevision}
@@ -344,27 +334,14 @@ export function AssociatedItemsList({
                       {item.name}
                     </p>
                   </div>
-                  <ValidatedForm
-                    key={`${r.child.id}-${r.quantity}`}
-                    defaultValues={{
-                      quantity: r.quantity
-                    }}
-                    validator={itemQuantityValidator}
-                    className="w-24 shrink-0"
-                  >
-                    <NumberInput
-                      label={t`Quantity`}
-                      name="quantity"
-                      isReadOnly={!canEdit || r.links.length > 0}
-                      minValue={0}
-                      size="sm"
-                      onBlur={(e) => {
-                        const target = e.target as HTMLInputElement;
-                        const numValue = parseFloat(target.value) || 0;
-                        onUpdateQuantity(r.child.id, numValue);
-                      }}
-                    />
-                  </ValidatedForm>
+                  <div className="w-20 shrink-0 flex flex-col gap-1">
+                    <span className="text-xs font-medium text-muted-foreground">
+                      <Trans>Quantity</Trans>
+                    </span>
+                    <span className="h-8 flex items-center text-sm tabular-nums">
+                      {r.quantity}
+                    </span>
+                  </div>
                   <ValidatedForm
                     defaultValues={{
                       disposition: r.disposition ?? "Pending"
@@ -372,7 +349,7 @@ export function AssociatedItemsList({
                     validator={z.object({
                       disposition: z.string()
                     })}
-                    className="w-[120px] shrink-0 items-center"
+                    className="w-[150px] shrink-0 items-center"
                   >
                     <Select
                       options={disposition.map((d) => ({
@@ -384,7 +361,7 @@ export function AssociatedItemsList({
                       name="disposition"
                       inline={(value) => {
                         return (
-                          <div className="h-8 flex items-center">
+                          <div className="h-8 flex items-center min-w-0 max-w-full">
                             <DispositionStatus disposition={value} />
                           </div>
                         );
@@ -396,8 +373,8 @@ export function AssociatedItemsList({
                       }}
                     />
                   </ValidatedForm>
-                  <div className="w-10 shrink-0 flex items-end justify-end">
-                    {canEdit && r.links.length > 0 && (
+                  <div className="w-10 shrink-0 flex items-start justify-end">
+                    {canEdit && r.links.length > 0 && hasRowActions && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <IconButton
@@ -408,7 +385,7 @@ export function AssociatedItemsList({
                           />
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          {r.quantity > 1 && (
+                          {canSplit && (
                             <DropdownMenuItem
                               onClick={() =>
                                 setSplitTarget({
@@ -581,16 +558,16 @@ function SplitLineModal({
           }}
         >
           <ModalBody>
+            <Hidden name="id" />
+            <Hidden name="itemId" />
+            <input
+              type="hidden"
+              name="entityAssignments"
+              value={
+                hasMultipleEntities ? JSON.stringify(selectedAssignments) : ""
+              }
+            />
             <div className="flex flex-col gap-4 w-full">
-              <Hidden name="id" />
-              <Hidden name="itemId" />
-              <input
-                type="hidden"
-                name="entityAssignments"
-                value={
-                  hasMultipleEntities ? JSON.stringify(selectedAssignments) : ""
-                }
-              />
               <Input
                 name="currentQuantity"
                 label={t`Current quantity`}
