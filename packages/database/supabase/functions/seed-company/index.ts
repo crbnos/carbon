@@ -11,6 +11,7 @@ import {
   failureModes,
   fiscalYearSettings,
   fixedAssetClasses,
+  changeOrderRequiredActions,
   gaugeTypes,
   groupCompanyTemplate,
   groups,
@@ -289,6 +290,16 @@ serve(async (req: Request) => {
         .insertInto("nonConformanceRequiredAction")
         .values(
           nonConformanceRequiredActions.map((nc) => ({ ...nc, companyId }))
+        )
+        .execute();
+
+      // change-order default actions (system template rows). New on this branch
+      // and not yet in the cloud-generated Kysely types, so the insert goes
+      // through a cast (mirrors periodCloseTaskDefinition below).
+      await (trx as any)
+        .insertInto("changeOrderRequiredAction")
+        .values(
+          changeOrderRequiredActions.map((ca) => ({ ...ca, companyId }))
         )
         .execute();
 

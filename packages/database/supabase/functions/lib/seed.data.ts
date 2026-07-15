@@ -198,6 +198,19 @@ export const nonConformanceRequiredActions = [
   { name: "Documentation", createdBy: "system" }
 ] as const;
 
+// Default change-order actions (the changeOrderRequiredAction templates). Kept in
+// sync with the one-time backfill in the change-order-required-actions migration so
+// new companies get the same defaults existing ones were backfilled with.
+export const changeOrderRequiredActions = [
+  { name: "Engineering Review", createdBy: "system" },
+  { name: "Update Drawings / CAD", createdBy: "system" },
+  { name: "Update BOM / Routing", createdBy: "system" },
+  { name: "Cost Impact Review", createdBy: "system" },
+  { name: "Quality Review", createdBy: "system" },
+  { name: "Inventory Disposition (rework / scrap / use-as-is)", createdBy: "system" },
+  { name: "Notify Affected Parties", createdBy: "system" }
+] as const;
+
 export const sequences = [
   {
     table: "journalEntry",
