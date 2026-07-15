@@ -96,6 +96,9 @@ msgstr "{arOverduePct}% дебиторской задолженности"
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Рассмотрите возможность указания этой детали непосредственно на финального преемника."
 
+msgid "{conflictCount} conflicts"
+msgstr "{conflictCount} конфликтов"
+
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# курс} other {# курсов}}"
 
@@ -118,6 +121,9 @@ msgstr "{name} удален"
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# этап остался} other {# этапов осталось}}"
+
+msgid "{resourceCount} resources · {reservationCount} reservations · {jobCount} jobs"
+msgstr "{resourceCount} ресурсов · {reservationCount} резервирований · {jobCount} заданий"
 
 msgid "{scopeCount} permissions"
 msgstr "{scopeCount} разрешений"
@@ -147,6 +153,9 @@ msgstr "<0>Добавьте компонент поставщика</0> для �
 
 msgid "0-4 weeks"
 msgstr "0-4 недели"
+
+msgid "1 conflict"
+msgstr "1 конфликт"
 
 msgid "1 day"
 msgstr "1 день"
@@ -365,7 +374,7 @@ msgid "ability"
 msgstr "возможность"
 
 msgid "Ability"
-msgstr ""
+msgstr "Способность"
 
 msgid "About"
 msgstr "О программе"
@@ -590,7 +599,7 @@ msgid "Add a step"
 msgstr "Добавить этап"
 
 msgid "Add Ability"
-msgstr ""
+msgstr "Добавить способность"
 
 msgid "Add Actions"
 msgstr "Добавить действия"
@@ -620,7 +629,7 @@ msgid "Add Contractor"
 msgstr "Добавить подрядчика"
 
 msgid "Add Employee"
-msgstr ""
+msgstr "Добавить сотрудника"
 
 msgid "Add Entry"
 msgstr "Добавить запись"
@@ -1002,7 +1011,7 @@ msgid "Approved By"
 msgstr "Одобрено"
 
 msgid "Approximate — derived from scheduled dates; no capacity reservation exists for this row."
-msgstr ""
+msgstr "Приблизительно — получено из запланированных дат; нет резервирования мощности для этой строки."
 
 msgid "AQL"
 msgstr "AQL"
@@ -1084,7 +1093,7 @@ msgid "Are you sure you want to deactivate the {label} configuration rule?"
 msgstr "Вы уверены, что хотите деактивировать правило конфигурации {label}?"
 
 msgid "Are you sure you want to deactivate the ability: {name}?"
-msgstr ""
+msgstr "Вы уверены, что хотите деактивировать способность: {name}?"
 
 msgid "Are you sure you want to deactivate the process: {name}? It will no longer appear in dropdowns."
 msgstr "Вы уверены, что хотите деактивировать процесс: {name}? Он больше не будет отображаться в раскрывающихся списках."
@@ -1373,7 +1382,7 @@ msgid "Are you sure you want to remove {supplierName} as a supplier for this ite
 msgstr "Вы уверены, что хотите удалить {supplierName} как поставщика для этого товара? Это действие невозможно отменить."
 
 msgid "Are you sure you want to remove this employee from {name}? The training history is kept and the employee can be re-added later."
-msgstr ""
+msgstr "Вы уверены, что хотите удалить этого сотрудника из {name}? История обучения сохраняется и сотрудник может быть добавлен позже."
 
 msgid "Are you sure you want to remove this item from the price list? This cannot be undone."
 msgstr "Вы уверены, что хотите удалить этот товар из прайс-листа? Это действие невозможно отменить."
@@ -1433,7 +1442,7 @@ msgid "Assemblies"
 msgstr "Сборки"
 
 msgid "Assembly"
-msgstr ""
+msgstr "Сборка"
 
 msgid "Assembly Instructions"
 msgstr "Инструкции по сборке"
@@ -1746,7 +1755,7 @@ msgid "Bills of material"
 msgstr "Спецификации материалов"
 
 msgid "Blank = computed from the ability's recertification period"
-msgstr ""
+msgstr "Пусто = вычисляется из периода переподтверждения способности"
 
 msgid "Blind Count"
 msgstr "Слепой подсчет"
@@ -2330,7 +2339,7 @@ msgid "Completed Qty"
 msgstr "Завершённое кол-во"
 
 msgid "Completing this training grants or renews the selected ability."
-msgstr ""
+msgstr "Завершение этого обучения предоставляет или обновляет выбранную способность."
 
 msgid "Completion Barcode"
 msgstr "Штрихкод завершения"
@@ -2469,7 +2478,7 @@ msgid "Confirms every posted journal entry in the period has equal debits and cr
 msgstr "Проверяет, что каждая опубликованная запись в журнале за период имеет равные дебеты и кредиты. Если какая-либо запись не сбалансирована, пробный баланс не совпадёт, поэтому её необходимо исправить перед закрытием периода."
 
 msgid "Conflict"
-msgstr ""
+msgstr "Конфликт"
 
 msgid "Connect Carbon to your accounting, project management, and CAD tools and much more."
 msgstr "Подключите Carbon к своим инструментам бухгалтерского учета, управления проектами, CAD и многому другому."
@@ -3377,7 +3386,7 @@ msgid "Deactivate {name}"
 msgstr "Деактивировать {name}"
 
 msgid "Deactivate Ability"
-msgstr ""
+msgstr "Деактивировать способность"
 
 msgid "Deactivate Account"
 msgstr "Деактивировать аккаунт"
@@ -4111,6 +4120,7 @@ msgstr "Прямая доставка"
 msgid "Due"
 msgstr "Срок"
 
+#. placeholder {0}: formatDate(jobDueDate)
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
 msgid "Due {0}"
 msgstr "Срок {0}"
@@ -4194,10 +4204,10 @@ msgid "Edit <0>Issue</0> Workflow"
 msgstr "Редактировать Рабочий процесс <0>Проблема</0>"
 
 msgid "Edit ability"
-msgstr ""
+msgstr "Изменить способность"
 
 msgid "Edit Ability"
-msgstr ""
+msgstr "Изменить способность"
 
 msgid "Edit Account"
 msgstr "Редактировать счет"
@@ -4263,7 +4273,7 @@ msgid "Edit Employee"
 msgstr "Редактировать сотрудника"
 
 msgid "Edit Employee Ability"
-msgstr ""
+msgstr "Изменить способность сотрудника"
 
 msgid "Edit Employee Type"
 msgstr "Редактировать тип сотрудника"
@@ -4596,7 +4606,7 @@ msgid "End Time"
 msgstr "Время окончания"
 
 msgid "Ends"
-msgstr ""
+msgstr "Заканчивается"
 
 msgid "Enforce per-item validation and guidelines across receipts, shipments, transfers, and adjustments."
 msgstr "Обеспечьте валидацию и рекомендации для каждого товара в квитанциях, отправках, передачах и корректировках."
@@ -4752,7 +4762,10 @@ msgid "Est. Duration"
 msgstr "Прибл. Длительность"
 
 msgid "Estimated"
-msgstr ""
+msgstr "Приблизительно"
+
+msgid "Estimated — no capacity reservation"
+msgstr "Приблизительно — нет резервирования мощности"
 
 msgid "Estimated Duration"
 msgstr "Предполагаемая продолжительность"
@@ -4889,7 +4902,7 @@ msgstr "Истекло"
 
 #. placeholder {0}: formatDate(status.expiresAt)
 msgid "Expired {0}"
-msgstr ""
+msgstr "Истекло {0}"
 
 msgid "Expired {date}"
 msgstr "Истекло {date}"
@@ -4905,20 +4918,20 @@ msgstr "Истекает"
 
 #. placeholder {0}: formatDate(status.expiresAt)
 msgid "Expires {0}"
-msgstr ""
+msgstr "Истекает {0}"
 
 msgid "Expires {date}"
 msgstr "Истекает {date}"
 
 msgid "Expires At"
-msgstr ""
+msgstr "Истекает в"
 
 msgid "Expires At (optional)"
 msgstr "Истекает (опционально)"
 
 #. placeholder {0}: status.daysLeft
 msgid "Expires in {0}d"
-msgstr ""
+msgstr "Истекает через {0}д"
 
 msgid "Expiring first"
 msgstr "Истекающие первыми"
@@ -5779,7 +5792,7 @@ msgid "Grades"
 msgstr "Сорта"
 
 msgid "Grants Ability"
-msgstr ""
+msgstr "Предоставляет способность"
 
 msgid "Group"
 msgstr "Группа"
@@ -6085,7 +6098,7 @@ msgid "In the loop together"
 msgstr "В курсе дела вместе"
 
 msgid "In Training"
-msgstr ""
+msgstr "На обучении"
 
 msgid "Inactive"
 msgstr "Неактивно"
@@ -6652,10 +6665,10 @@ msgid "Last synced: {0}"
 msgstr "Последняя синхронизация: {0}"
 
 msgid "Last Training"
-msgstr ""
+msgstr "Последнее обучение"
 
 msgid "Last Training Date"
-msgstr ""
+msgstr "Дата последнего обучения"
 
 msgid "Last updated: {formattedDate}"
 msgstr "Последнее обновление: {formattedDate}"
@@ -7495,7 +7508,7 @@ msgid "New <0>Issue</0> Workflow"
 msgstr "Новый рабочий процесс <0>Issue</0>"
 
 msgid "New Ability"
-msgstr ""
+msgstr "Новая способность"
 
 msgid "New Account"
 msgstr "Новый счет"
@@ -7851,6 +7864,9 @@ msgstr "Ни один вход BOM не имеет политики срока �
 msgid "No calibration records found"
 msgstr "Записи о калибровке не найдены"
 
+msgid "No capacity reservations to visualize. Schedule a job to see work-center load."
+msgstr "Нет резервирований мощности для визуализации. Запланируйте задание, чтобы увидеть нагрузку рабочего центра."
+
 msgid "No changes recorded"
 msgstr "Изменений не записано"
 
@@ -8017,7 +8033,7 @@ msgid "No receivables"
 msgstr "Нет дебиторской задолженности"
 
 msgid "No released jobs to visualize. Release a job to see its schedule."
-msgstr ""
+msgstr "Нет выпущенных заданий для визуализации. Выпустите задание, чтобы увидеть его расписание."
 
 msgid "No remaining entities to inspect."
 msgstr "Нет оставшихся объектов для проверки."
@@ -8112,6 +8128,9 @@ msgstr "Недостаточно заданий для покрытия коли
 msgid "Not Required"
 msgstr "Не требуется"
 
+msgid "Not scheduled — no feasible slot. The stored dates are backward-planning placeholders, not a real booking."
+msgstr "Не запланировано — нет доступного слота. Сохраненные даты являются заполнителями обратного планирования, а не реальным бронированием."
+
 msgid "Not set"
 msgstr "Не установлено"
 
@@ -8119,7 +8138,7 @@ msgid "Not started"
 msgstr "Не начинается"
 
 msgid "Not Started"
-msgstr ""
+msgstr "Не начато"
 
 msgid "Not yet"
 msgstr "Еще нет"
@@ -8230,7 +8249,7 @@ msgid "Only empty, open periods can be deleted."
 msgstr "Удалять можно только пустые открытые периоды."
 
 msgid "Only qualified employees can be scheduled for and run this process"
-msgstr ""
+msgstr "Только квалифицированные сотрудники могут быть запланированы и выполнить этот процесс"
 
 msgid "Onshape Status"
 msgstr "Статус Onshape"
@@ -8275,7 +8294,7 @@ msgid "Open Issues"
 msgstr "Открытые проблемы"
 
 msgid "Open Job"
-msgstr ""
+msgstr "Открытое задание"
 
 msgid "Open jobs"
 msgstr "Открытые заказы"
@@ -8358,8 +8377,11 @@ msgstr "Оператор получит предупреждение. Товар
 msgid "Operator must pick a different batch/serial."
 msgstr "Оператор должен выбрать другую партию/серию."
 
+msgid "Operator Pool"
+msgstr "Пул операторов"
+
 msgid "Operator Pool Reservation"
-msgstr ""
+msgstr "Резервирование пула операторов"
 
 msgid "Operators"
 msgstr "Операторы"
@@ -9347,13 +9369,13 @@ msgid "Qty. Scrapped"
 msgstr "Кол-во брака"
 
 msgid "Qualification expires this many days after training; blank = never"
-msgstr ""
+msgstr "Квалификация истекает через столько дней после обучения; пусто = никогда"
 
 msgid "Qualified"
-msgstr ""
+msgstr "Квалифицирован"
 
 msgid "Qualified Employees"
-msgstr ""
+msgstr "Квалифицированные сотрудники"
 
 msgid "quality"
 msgstr "От предложения к платежу"
@@ -9634,7 +9656,7 @@ msgid "Recently Created"
 msgstr "Недавно созданные"
 
 msgid "Recertify Every (Days)"
-msgstr ""
+msgstr "Пересертификация каждые (дни)"
 
 msgid "Reconciling a purchase order against what was received and invoiced — implicit in Carbon, via the line quantities and GR/IR balance."
 msgstr "Период восстановления"
@@ -9752,7 +9774,7 @@ msgid "Remove condition"
 msgstr "Удалить условие"
 
 msgid "Remove Employee"
-msgstr ""
+msgstr "Удалить сотрудника"
 
 msgid "Remove feature"
 msgstr "Удалить функцию"
@@ -9899,7 +9921,7 @@ msgid "Requirements and Process Map"
 msgstr "Требования и карта процесса"
 
 msgid "Requires Ability"
-msgstr ""
+msgstr "Требует навык"
 
 msgid "Requires Action"
 msgstr "Требует действия"
@@ -10336,7 +10358,7 @@ msgid "Schedule Name"
 msgstr "Имя расписания"
 
 msgid "Scheduled"
-msgstr ""
+msgstr "Запланировано"
 
 msgid "Scheduled Maintenance"
 msgstr "Плановое обслуживание"
@@ -10348,7 +10370,7 @@ msgid "Schedules"
 msgstr "Расписания"
 
 msgid "Scheduling conflict"
-msgstr ""
+msgstr "Конфликт расписания"
 
 msgid "Scope"
 msgstr "Область действия"
@@ -10459,7 +10481,7 @@ msgid "Select a default approver"
 msgstr "Выберите утверждающего по умолчанию"
 
 msgid "Select a job"
-msgstr ""
+msgstr "Выберите работу"
 
 msgid "Select a new owner"
 msgstr "Выберите нового владельца"
@@ -10771,7 +10793,7 @@ msgid "Severity"
 msgstr "Серьезность"
 
 msgid "Shadow Weeks"
-msgstr ""
+msgstr "Недели теневой подготовки"
 
 msgid "shape"
 msgstr "форма"
@@ -11183,11 +11205,11 @@ msgid "Started"
 msgstr "Начал"
 
 msgid "Starts"
-msgstr ""
+msgstr "Начинается"
 
 #. placeholder {0}: new Date(trace.rootStartedAt).toLocaleString()
 msgid "Starts {0}"
-msgstr ""
+msgstr "Начинается {0}"
 
 msgid "State / Province"
 msgstr "Штат / Провинция"
@@ -12405,7 +12427,7 @@ msgid "These journal entries are still Draft, so their debits and credits aren't
 msgstr "Эти записи в журнале всё ещё находятся в статусе «Черновик», поэтому их дебеты и кредиты не находятся в главной книге за этот период. Опубликуйте каждую или переделируйте её на более поздний открытый период."
 
 msgid "this ability"
-msgstr ""
+msgstr "этот навык"
 
 msgid "This completes the Discovery step."
 msgstr "Это завершает этап Discovery."
@@ -12775,7 +12797,7 @@ msgid "Training Assignments"
 msgstr "Назначения обучения"
 
 msgid "Training Completed"
-msgstr ""
+msgstr "Обучение завершено"
 
 msgid "Training Plan"
 msgstr "План обучения"
@@ -13139,7 +13161,7 @@ msgid "Used on the home screen in dark mode"
 msgstr "Используется на главном экране в темном режиме"
 
 msgid "Used to build the default learning curve"
-msgstr ""
+msgstr "Используется для построения кривой обучения по умолчанию"
 
 msgid "Used to categorize items for reporting and analysis"
 msgstr "Используется для категоризации товаров в целях отчетности и анализа"
@@ -13271,7 +13293,7 @@ msgid "View"
 msgstr "Просмотр"
 
 msgid "View Ability"
-msgstr ""
+msgstr "Просмотреть навык"
 
 msgid "View Active Jobs"
 msgstr "Просмотр активных заданий"
@@ -13465,6 +13487,9 @@ msgstr "Аннулирование этого чека приведет к:"
 msgid "Voiding this shipment will:"
 msgstr "Отмена этой отправки приведет к:"
 
+msgid "Waited"
+msgstr "Ожидание"
+
 msgid "Walk each area with your champion and toggle anything out of scope. Codes read Module.Area.Number (ACC.GL.01 = Accounting, General Ledger, item 1)."
 msgstr "Пройдите каждую область со своим чемпионом и отключите все, что выходит за рамки. Коды читаются как Module.Area.Number (ACC.GL.01 = Accounting, General Ledger, item 1)."
 
@@ -13585,13 +13610,13 @@ msgid "Weeks 7 to 8"
 msgstr "Недели 7–8"
 
 msgid "Weeks of shadowing before an employee is productive"
-msgstr ""
+msgstr "Недели теневой подготовки перед тем как сотрудник начинает самостоятельную работу"
 
 msgid "Weeks Open"
 msgstr "Недель открыто"
 
 msgid "Weeks to Full Proficiency"
-msgstr ""
+msgstr "Недели до полной компетентности"
 
 msgid "Weighted Average"
 msgstr "Средневзвешенное значение"
@@ -13926,7 +13951,7 @@ msgid "Work Center"
 msgstr "Рабочий центр"
 
 msgid "Work Center Reservation"
-msgstr ""
+msgstr "Резервирование рабочего центра"
 
 msgid "Work Center Utilization"
 msgstr "Использование рабочего центра"

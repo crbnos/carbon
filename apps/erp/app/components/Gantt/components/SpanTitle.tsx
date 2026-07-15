@@ -92,6 +92,10 @@ export function SpanBadgeAccessory({
 function eventTextClassName(
   event: Pick<SpanTitleProps, "isError" | "style" | "level">
 ) {
+  if (event.isError) {
+    return "text-red-500";
+  }
+
   switch (event.level) {
     case "TRACE": {
       return textClassNameForVariant(event.style.variant);
@@ -116,7 +120,7 @@ function eventTextClassName(
 export function eventBackgroundClassName(
   event: Pick<
     GanttEvent["data"],
-    "isError" | "style" | "level" | "isPartial" | "isCancelled"
+    "isError" | "style" | "level" | "isPartial" | "isEstimated" | "isCancelled"
   >
 ) {
   if (event.isError) {
@@ -127,20 +131,16 @@ export function eventBackgroundClassName(
     return "bg-muted";
   }
 
+  const isPending = event.isPartial || !!event.isEstimated;
+
   switch (event.level) {
     case "TRACE": {
-      return backgroundClassNameForVariant(
-        event.style.variant,
-        event.isPartial
-      );
+      return backgroundClassNameForVariant(event.style.variant, isPending);
     }
     case "LOG":
     case "INFO":
     case "DEBUG": {
-      return backgroundClassNameForVariant(
-        event.style.variant,
-        event.isPartial
-      );
+      return backgroundClassNameForVariant(event.style.variant, isPending);
     }
     case "WARN": {
       return "bg-orange-500";
@@ -149,10 +149,7 @@ export function eventBackgroundClassName(
       return "bg-red-500";
     }
     default: {
-      return backgroundClassNameForVariant(
-        event.style.variant,
-        event.isPartial
-      );
+      return backgroundClassNameForVariant(event.style.variant, isPending);
     }
   }
 }

@@ -96,6 +96,9 @@ msgstr "매출채권의 {arOverduePct}%"
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. 이 품목을 최종 후속 품목으로 직접 연결하는 것을 고려하세요."
 
+msgid "{conflictCount} conflicts"
+msgstr "{conflictCount}개 충돌"
+
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "교육과정 {count}개"
 
@@ -118,6 +121,9 @@ msgstr "{name} 삭제됨"
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining}단계 남음"
+
+msgid "{resourceCount} resources · {reservationCount} reservations · {jobCount} jobs"
+msgstr "{resourceCount}개 리소스 · {reservationCount}개 예약 · {jobCount}개 작업"
 
 msgid "{scopeCount} permissions"
 msgstr "권한 {scopeCount}개"
@@ -147,6 +153,9 @@ msgstr "이 품목에 <0>공급업체 부품 추가</0>를 하여 선호 공급�
 
 msgid "0-4 weeks"
 msgstr "0-4주"
+
+msgid "1 conflict"
+msgstr "1개 충돌"
 
 msgid "1 day"
 msgstr "1일"
@@ -365,7 +374,7 @@ msgid "ability"
 msgstr "역량"
 
 msgid "Ability"
-msgstr ""
+msgstr "능력"
 
 msgid "About"
 msgstr "정보"
@@ -590,7 +599,7 @@ msgid "Add a step"
 msgstr "단계 추가"
 
 msgid "Add Ability"
-msgstr ""
+msgstr "능력 추가"
 
 msgid "Add Actions"
 msgstr "조치 추가"
@@ -620,7 +629,7 @@ msgid "Add Contractor"
 msgstr "계약직 추가"
 
 msgid "Add Employee"
-msgstr ""
+msgstr "직원 추가"
 
 msgid "Add Entry"
 msgstr "항목 추가"
@@ -1002,7 +1011,7 @@ msgid "Approved By"
 msgstr "승인자"
 
 msgid "Approximate — derived from scheduled dates; no capacity reservation exists for this row."
-msgstr ""
+msgstr "대략적 — 예정된 날짜에서 파생됨, 이 행에 대한 용량 예약이 없습니다."
 
 msgid "AQL"
 msgstr "AQL"
@@ -1084,7 +1093,7 @@ msgid "Are you sure you want to deactivate the {label} configuration rule?"
 msgstr "{label} 설정 규칙을 비활성화하시겠습니까?"
 
 msgid "Are you sure you want to deactivate the ability: {name}?"
-msgstr ""
+msgstr "능력 {name}을(를) 비활성화하시겠습니까?"
 
 msgid "Are you sure you want to deactivate the process: {name}? It will no longer appear in dropdowns."
 msgstr "공정 {name}을(를) 비활성화하시겠습니까? 더 이상 드롭다운에 표시되지 않습니다."
@@ -1373,7 +1382,7 @@ msgid "Are you sure you want to remove {supplierName} as a supplier for this ite
 msgstr "정말로 이 항목의 공급업체로 {supplierName}을(를) 제거하시겠습니까? 이 작업은 취소할 수 없습니다."
 
 msgid "Are you sure you want to remove this employee from {name}? The training history is kept and the employee can be re-added later."
-msgstr ""
+msgstr "{name}에서 이 직원을 제거하시겠습니까? 교육 이력은 유지되며 직원을 나중에 다시 추가할 수 있습니다."
 
 msgid "Are you sure you want to remove this item from the price list? This cannot be undone."
 msgstr "이 품목을 가격표에서 제거하시겠습니까? 이 작업은 되돌릴 수 없습니다."
@@ -1433,7 +1442,7 @@ msgid "Assemblies"
 msgstr "조립품"
 
 msgid "Assembly"
-msgstr ""
+msgstr "조립"
 
 msgid "Assembly Instructions"
 msgstr "조립 지침"
@@ -1746,7 +1755,7 @@ msgid "Bills of material"
 msgstr "자재명세서"
 
 msgid "Blank = computed from the ability's recertification period"
-msgstr ""
+msgstr "공백 = 능력의 재인증 기간에서 계산됨"
 
 msgid "Blind Count"
 msgstr "블라인드 실사"
@@ -2330,7 +2339,7 @@ msgid "Completed Qty"
 msgstr "완료 수량"
 
 msgid "Completing this training grants or renews the selected ability."
-msgstr ""
+msgstr "이 교육을 완료하면 선택한 능력을 부여하거나 갱신합니다."
 
 msgid "Completion Barcode"
 msgstr "완료 바코드"
@@ -2469,7 +2478,7 @@ msgid "Confirms every posted journal entry in the period has equal debits and cr
 msgstr "기간 내 모든 전기된 분개의 차변과 대변이 일치하는지 확인합니다. 어떤 분개라도 불균형이면 시산표가 맞지 않으므로 기간을 종료하기 전에 수정해야 합니다."
 
 msgid "Conflict"
-msgstr ""
+msgstr "충돌"
 
 msgid "Connect Carbon to your accounting, project management, and CAD tools and much more."
 msgstr "Carbon을 회계, 프로젝트 관리, CAD 도구 등과 연동하세요."
@@ -3377,7 +3386,7 @@ msgid "Deactivate {name}"
 msgstr "{name} 비활성화"
 
 msgid "Deactivate Ability"
-msgstr ""
+msgstr "능력 비활성화"
 
 msgid "Deactivate Account"
 msgstr "계정 비활성화"
@@ -4111,6 +4120,7 @@ msgstr "직송"
 msgid "Due"
 msgstr "기한"
 
+#. placeholder {0}: formatDate(jobDueDate)
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
 msgid "Due {0}"
 msgstr "기한 {0}"
@@ -4194,10 +4204,10 @@ msgid "Edit <0>Issue</0> Workflow"
 msgstr "<0>이슈</0> 워크플로 수정"
 
 msgid "Edit ability"
-msgstr ""
+msgstr "능력 편집"
 
 msgid "Edit Ability"
-msgstr ""
+msgstr "능력 편집"
 
 msgid "Edit Account"
 msgstr "계정 수정"
@@ -4263,7 +4273,7 @@ msgid "Edit Employee"
 msgstr "직원 수정"
 
 msgid "Edit Employee Ability"
-msgstr ""
+msgstr "직원 능력 편집"
 
 msgid "Edit Employee Type"
 msgstr "직원 유형 수정"
@@ -4596,7 +4606,7 @@ msgid "End Time"
 msgstr "종료 시간"
 
 msgid "Ends"
-msgstr ""
+msgstr "끝남"
 
 msgid "Enforce per-item validation and guidelines across receipts, shipments, transfers, and adjustments."
 msgstr "입고, 출하, 이동, 조정 전반에 걸쳐 품목별 검증 및 지침을 적용합니다."
@@ -4752,7 +4762,10 @@ msgid "Est. Duration"
 msgstr "예상 소요시간"
 
 msgid "Estimated"
-msgstr ""
+msgstr "예상"
+
+msgid "Estimated — no capacity reservation"
+msgstr "예상 — 용량 예약 없음"
 
 msgid "Estimated Duration"
 msgstr "예상 소요시간"
@@ -4889,7 +4902,7 @@ msgstr "만료됨"
 
 #. placeholder {0}: formatDate(status.expiresAt)
 msgid "Expired {0}"
-msgstr ""
+msgstr "만료됨 {0}"
 
 msgid "Expired {date}"
 msgstr "{date}에 만료됨"
@@ -4905,20 +4918,20 @@ msgstr "만료"
 
 #. placeholder {0}: formatDate(status.expiresAt)
 msgid "Expires {0}"
-msgstr ""
+msgstr "만료 예정 {0}"
 
 msgid "Expires {date}"
 msgstr "{date}에 만료"
 
 msgid "Expires At"
-msgstr ""
+msgstr "만료 시간"
 
 msgid "Expires At (optional)"
 msgstr "만료일(선택)"
 
 #. placeholder {0}: status.daysLeft
 msgid "Expires in {0}d"
-msgstr ""
+msgstr "{0}일 후 만료"
 
 msgid "Expiring first"
 msgstr "먼저 만료되는 순"
@@ -5779,7 +5792,7 @@ msgid "Grades"
 msgstr "등급"
 
 msgid "Grants Ability"
-msgstr ""
+msgstr "능력 부여"
 
 msgid "Group"
 msgstr "그룹"
@@ -6085,7 +6098,7 @@ msgid "In the loop together"
 msgstr "함께 정보 공유하기"
 
 msgid "In Training"
-msgstr ""
+msgstr "교육 중"
 
 msgid "Inactive"
 msgstr "비활성"
@@ -6652,10 +6665,10 @@ msgid "Last synced: {0}"
 msgstr "마지막 동기화: {0}"
 
 msgid "Last Training"
-msgstr ""
+msgstr "마지막 교육"
 
 msgid "Last Training Date"
-msgstr ""
+msgstr "마지막 교육 날짜"
 
 msgid "Last updated: {formattedDate}"
 msgstr "마지막 업데이트: {formattedDate}"
@@ -7495,7 +7508,7 @@ msgid "New <0>Issue</0> Workflow"
 msgstr "새 <0>이슈</0> 워크플로"
 
 msgid "New Ability"
-msgstr ""
+msgstr "새 능력"
 
 msgid "New Account"
 msgstr "신규 계정"
@@ -7851,6 +7864,9 @@ msgstr "BOM 투입 항목 중 유효기간 정책이 설정된 항목이 없습�
 msgid "No calibration records found"
 msgstr "교정 기록이 없습니다"
 
+msgid "No capacity reservations to visualize. Schedule a job to see work-center load."
+msgstr "시각화할 용량 예약이 없습니다. 작업을 예약하여 작업 센터 부하를 확인하세요."
+
 msgid "No changes recorded"
 msgstr "기록된 변경 사항이 없습니다"
 
@@ -8017,7 +8033,7 @@ msgid "No receivables"
 msgstr "매출채권이 없습니다"
 
 msgid "No released jobs to visualize. Release a job to see its schedule."
-msgstr ""
+msgstr "시각화할 릴리스된 작업이 없습니다. 작업을 릴리스하여 일정을 확인하세요."
 
 msgid "No remaining entities to inspect."
 msgstr "검사할 개체가 남아 있지 않습니다."
@@ -8112,6 +8128,9 @@ msgstr "수량을 충족할 만큼 작업이 충분하지 않습니다"
 msgid "Not Required"
 msgstr "필수 아님"
 
+msgid "Not scheduled — no feasible slot. The stored dates are backward-planning placeholders, not a real booking."
+msgstr "예약되지 않음 — 가능한 슬롯이 없습니다. 저장된 날짜는 역방향 계획 자리 표시자이며 실제 예약이 아닙니다."
+
 msgid "Not set"
 msgstr "설정되지 않음"
 
@@ -8119,7 +8138,7 @@ msgid "Not started"
 msgstr "시작되지 않음"
 
 msgid "Not Started"
-msgstr ""
+msgstr "시작하지 않음"
 
 msgid "Not yet"
 msgstr "아직 아님"
@@ -8230,7 +8249,7 @@ msgid "Only empty, open periods can be deleted."
 msgstr "비어있는 열린 기간만 삭제할 수 있습니다."
 
 msgid "Only qualified employees can be scheduled for and run this process"
-msgstr ""
+msgstr "자격이 있는 직원만 이 프로세스를 예약하고 실행할 수 있습니다."
 
 msgid "Onshape Status"
 msgstr "Onshape 상태"
@@ -8275,7 +8294,7 @@ msgid "Open Issues"
 msgstr "미결 이슈"
 
 msgid "Open Job"
-msgstr ""
+msgstr "오픈 작업"
 
 msgid "Open jobs"
 msgstr "미결 작업"
@@ -8358,8 +8377,11 @@ msgstr "작업자에게 경고가 표시됩니다. 재고는 그대로 진행됩
 msgid "Operator must pick a different batch/serial."
 msgstr "작업자는 다른 배치/일련번호를 선택해야 합니다."
 
+msgid "Operator Pool"
+msgstr "운영자 풀"
+
 msgid "Operator Pool Reservation"
-msgstr ""
+msgstr "운영자 풀 예약"
 
 msgid "Operators"
 msgstr "작업자"
@@ -9347,13 +9369,13 @@ msgid "Qty. Scrapped"
 msgstr "스크랩 수량"
 
 msgid "Qualification expires this many days after training; blank = never"
-msgstr ""
+msgstr "자격은 교육 후 이 많은 일 후에 만료됩니다. 공백 = 절대 안 함"
 
 msgid "Qualified"
-msgstr ""
+msgstr "자격 있음"
 
 msgid "Qualified Employees"
-msgstr ""
+msgstr "자격 있는 직원"
 
 msgid "quality"
 msgstr "품질"
@@ -9634,7 +9656,7 @@ msgid "Recently Created"
 msgstr "최근 생성됨"
 
 msgid "Recertify Every (Days)"
-msgstr ""
+msgstr "매 (Days)마다 재인증"
 
 msgid "Reconciling a purchase order against what was received and invoiced — implicit in Carbon, via the line quantities and GR/IR balance."
 msgstr "구매주문을 실제 입고 및 청구 내역과 대조하는 작업 — Carbon에서는 라인 수량과 GR/IR 잔액을 통해 암묵적으로 처리됩니다."
@@ -9752,7 +9774,7 @@ msgid "Remove condition"
 msgstr "조건 제거"
 
 msgid "Remove Employee"
-msgstr ""
+msgstr "직원 제거"
 
 msgid "Remove feature"
 msgstr "기능 제거"
@@ -9899,7 +9921,7 @@ msgid "Requirements and Process Map"
 msgstr "요구사항 및 프로세스 맵"
 
 msgid "Requires Ability"
-msgstr ""
+msgstr "필수 능력"
 
 msgid "Requires Action"
 msgstr "조치 필요"
@@ -10336,7 +10358,7 @@ msgid "Schedule Name"
 msgstr "일정 이름"
 
 msgid "Scheduled"
-msgstr ""
+msgstr "예정됨"
 
 msgid "Scheduled Maintenance"
 msgstr "예정된 유지보수"
@@ -10348,7 +10370,7 @@ msgid "Schedules"
 msgstr "일정"
 
 msgid "Scheduling conflict"
-msgstr ""
+msgstr "스케줄링 충돌"
 
 msgid "Scope"
 msgstr "범위"
@@ -10459,7 +10481,7 @@ msgid "Select a default approver"
 msgstr "기본 승인자 선택"
 
 msgid "Select a job"
-msgstr ""
+msgstr "작업 선택"
 
 msgid "Select a new owner"
 msgstr "새 소유자 선택"
@@ -10771,7 +10793,7 @@ msgid "Severity"
 msgstr "심각도"
 
 msgid "Shadow Weeks"
-msgstr ""
+msgstr "섀도우 주"
 
 msgid "shape"
 msgstr "형상"
@@ -11183,11 +11205,11 @@ msgid "Started"
 msgstr "시작됨"
 
 msgid "Starts"
-msgstr ""
+msgstr "시작"
 
 #. placeholder {0}: new Date(trace.rootStartedAt).toLocaleString()
 msgid "Starts {0}"
-msgstr ""
+msgstr "다음에 시작: {0}"
 
 msgid "State / Province"
 msgstr "주/도"
@@ -12405,7 +12427,7 @@ msgid "These journal entries are still Draft, so their debits and credits aren't
 msgstr "이 분개들은 아직 임시이므로 그 차변과 대변이 이 기간의 총계정원장에 없습니다. 각각을 전기하거나 나중의 개방된 기간으로 재날짜하세요."
 
 msgid "this ability"
-msgstr ""
+msgstr "이 능력"
 
 msgid "This completes the Discovery step."
 msgstr "이것으로 발견(Discovery) 단계가 완료됩니다."
@@ -12775,7 +12797,7 @@ msgid "Training Assignments"
 msgstr "교육 배정"
 
 msgid "Training Completed"
-msgstr ""
+msgstr "훈련 완료"
 
 msgid "Training Plan"
 msgstr "교육 계획"
@@ -13139,7 +13161,7 @@ msgid "Used on the home screen in dark mode"
 msgstr "다크 모드에서 홈 화면에 사용됩니다"
 
 msgid "Used to build the default learning curve"
-msgstr ""
+msgstr "기본 학습 곡선을 구축하는 데 사용됨"
 
 msgid "Used to categorize items for reporting and analysis"
 msgstr "보고 및 분석을 위해 품목을 분류하는 데 사용됩니다"
@@ -13271,7 +13293,7 @@ msgid "View"
 msgstr "보기"
 
 msgid "View Ability"
-msgstr ""
+msgstr "능력 보기"
 
 msgid "View Active Jobs"
 msgstr "진행 중인 작업 보기"
@@ -13465,6 +13487,9 @@ msgstr "이 입고를 무효화하면 다음과 같은 결과가 발생합니다
 msgid "Voiding this shipment will:"
 msgstr "이 출하를 무효화하면 다음과 같은 결과가 발생합니다:"
 
+msgid "Waited"
+msgstr "대기함"
+
 msgid "Walk each area with your champion and toggle anything out of scope. Codes read Module.Area.Number (ACC.GL.01 = Accounting, General Ledger, item 1)."
 msgstr "담당자와 함께 각 영역을 살펴보고 범위에서 벗어난 항목은 토글로 제외하세요. 코드는 모듈.영역.번호 형식입니다(ACC.GL.01 = 회계, 총계정원장, 1번 항목)."
 
@@ -13585,13 +13610,13 @@ msgid "Weeks 7 to 8"
 msgstr "7~8주"
 
 msgid "Weeks of shadowing before an employee is productive"
-msgstr ""
+msgstr "직원이 생산성을 갖기 전의 섀도우 주"
 
 msgid "Weeks Open"
 msgstr "미결 주수"
 
 msgid "Weeks to Full Proficiency"
-msgstr ""
+msgstr "완전한 숙련도까지의 주"
 
 msgid "Weighted Average"
 msgstr "가중평균"
@@ -13926,7 +13951,7 @@ msgid "Work Center"
 msgstr "작업장"
 
 msgid "Work Center Reservation"
-msgstr ""
+msgstr "작업 센터 예약"
 
 msgid "Work Center Utilization"
 msgstr "작업장 가동률"

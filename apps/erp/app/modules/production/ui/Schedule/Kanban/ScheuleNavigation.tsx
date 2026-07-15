@@ -17,6 +17,7 @@ import {
   LuChartNoAxesGantt,
   LuChevronDown,
   LuCog,
+  LuFactory,
   LuList
 } from "react-icons/lu";
 import { useLocation, useNavigate } from "react-router";
@@ -27,6 +28,8 @@ export function ScheduleNavigation() {
   const navigate = useNavigate();
 
   const getCurrentView = () => {
+    if (location.pathname.includes(path.to.scheduleResources))
+      return "capacity";
     if (location.pathname.includes(path.to.scheduleGantt())) return "timeline";
     if (location.pathname.includes(path.to.scheduleOperation))
       return "operations";
@@ -46,6 +49,8 @@ export function ScheduleNavigation() {
     switch (option) {
       case "operations":
         return "Work Centers";
+      case "capacity":
+        return "Capacity";
       case "week":
         return "Week";
       case "month":
@@ -61,6 +66,8 @@ export function ScheduleNavigation() {
     switch (option) {
       case "operations":
         return <LuCog />;
+      case "capacity":
+        return <LuFactory />;
       case "week":
         return <LuCalendarDays />;
       case "month":
@@ -78,6 +85,9 @@ export function ScheduleNavigation() {
     switch (view) {
       case "operations":
         navigate(path.to.scheduleOperation + "?" + searchParams.toString());
+        break;
+      case "capacity":
+        navigate(path.to.scheduleResources);
         break;
       case "week":
         searchParams.set("view", "week");
@@ -115,6 +125,10 @@ export function ScheduleNavigation() {
           <DropdownMenuRadioItem value="operations">
             <DropdownMenuIcon icon={getViewIcon("operations")} />
             {getViewLabel("operations")}
+          </DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="capacity">
+            <DropdownMenuIcon icon={getViewIcon("capacity")} />
+            {getViewLabel("capacity")}
           </DropdownMenuRadioItem>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>

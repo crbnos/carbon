@@ -24,7 +24,20 @@ export type GanttEvent = {
     style: GantEventStyle;
     level: GantEventLevel;
     isPartial: boolean;
+    /**
+     * Placement derived from scheduled dates only (no capacity reservation).
+     * Renders as a static striped bar — distinct from isPartial, which means
+     * work is genuinely still running and animates.
+     */
+    isEstimated?: boolean;
     isCancelled: boolean;
+    /**
+     * Time spent waiting for capacity before the bar starts (queued at a
+     * busy work center, waiting for an operator). Rendered as a faded ghost
+     * segment that ends where the solid bar begins; `reason` is its tooltip.
+     * Offset/duration in ms relative to the timeline window, like the bar's.
+     */
+    wait?: { offset: number; duration: number; reason?: string | null };
   };
 };
 

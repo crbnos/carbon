@@ -1,4 +1,9 @@
 import { calculateDurationHours } from "./duration-calculator.ts";
+import {
+  classifyLatePlacement,
+  composeLateConflict,
+  composePlacementNote,
+} from "./conflict-messages.ts";
 import type { CalendarWindow } from "./calendar-utils.ts";
 import type { MasterDataProvider } from "./master-data-provider.ts";
 import {
@@ -7,6 +12,7 @@ import {
 } from "./operator-eligibility.ts";
 import {
   allocateOperation,
+  formatBlockingJobs,
   isConflict,
   type OperatorPool,
   type ReservationInterval,
@@ -145,8 +151,20 @@ export class WorkCenterSelector {
    * least reserved time). Conflicts surface on the selection, never fail hard.
    */
   selectWorkCentersForOperations(
-    operations: ScheduledOperation[]
+    operations: ScheduledOperation[],
+    options?: {
+      /**
+       * The JOB's due date ("YYYY-MM-DD") — the real deadline. Placements
+       * finishing after it are flagged as late. The backward-computed
+       * per-op due dates are NOT used for lateness: they round every step
+       * up to a whole business day, so they land far earlier than the real
+       * requirement and would flag on-time placements. When null/omitted
+       * (job has no due date), placements are never flagged as late.
+       */
+      jobDueDate?: string | null;
+    }
   ): Map<string, WorkCenterSelection> {
+    const jobDueDate = options?.jobDueDate ?? null;
     const ctx = this.finiteContext;
     if (!ctx) {
       throw new Error(
@@ -166,6 +184,13 @@ export class WorkCenterSelector {
 
     const placedEndByOperation = new Map<string, Date>();
 
+    // For inherited-delay conflict messages: name the predecessor that made
+    // an operation start late
+    const descriptionById = new Map<string, string>();
+    for (const o of operations) {
+      if (o.description) descriptionById.set(o.id, o.description);
+    }
+
     // Sort by start date so DAG order is approximated and in-run reservations
     // from predecessors are visible to successors
     const sorted = [...operations].sort((a, b) => {
@@ -177,6 +202,54 @@ export class WorkCenterSelector {
 
     for (const op of sorted) {
       if (op.operationType === "Outside") {
+        // Outside operations consume no internal capacity, but they DO
+        // occupy calendar time: place them after their predecessors so
+        // successors wait for the outsourced turnaround and the timeline
+        // shows real dates instead of the coarse backward-pass ones.
+        if (op.manuallyScheduled) {
+          // Keep pinned dates; successors still chain after the pinned end
+          if (op.dueDate) {
+            placedEndByOperation.set(
+              op.id,
+              new Date(new Date(op.dueDate).getTime() + 24 * 3_600_000)
+            );
+          }
+          continue;
+        }
+
+        let earliestMs = ctx.now.getTime();
+        if (op.startDate) {
+          earliestMs = Math.max(earliestMs, new Date(op.startDate).getTime());
+        }
+        for (const depId of depsByOperation.get(op.id) ?? []) {
+          const depEnd = placedEndByOperation.get(depId);
+          if (depEnd) {
+            earliestMs = Math.max(earliestMs, depEnd.getTime());
+          }
+        }
+        const start = new Date(earliestMs);
+        const outsideDurationHours =
+          op.durationHours ??
+          calculateDurationHours({ ...op, priority: op.priority ?? undefined });
+        // Calendar time, not working time — the supplier's clock runs 24/7
+        const end = new Date(earliestMs + outsideDurationHours * 3_600_000);
+        placedEndByOperation.set(op.id, end);
+
+        let outsideConflict: string | null = null;
+        const outsideEndDate = end.toISOString().slice(0, 10);
+        if (jobDueDate && outsideEndDate > jobDueDate) {
+          outsideConflict = composeLateConflict(outsideEndDate, jobDueDate, {
+            kind: "outside-processing",
+          });
+        }
+
+        selections.set(op.id, {
+          workCenterId: op.workCenterId ?? null,
+          priority: 0,
+          placedStart: start.toISOString(),
+          placedEnd: end.toISOString(),
+          conflict: outsideConflict,
+        });
         continue;
       }
 
@@ -238,15 +311,22 @@ export class WorkCenterSelector {
       }
 
       // Earliest feasible start: DAG-computed start date, never in the past,
-      // never before an in-run predecessor placement
+      // never before an in-run predecessor placement. Track whether a
+      // predecessor's placement is the binding bound — a late placement that
+      // never waited for its own resources inherited the delay from that dep.
       let earliestMs = ctx.now.getTime();
+      let dominantDepId: string | null = null;
       if (op.startDate) {
-        earliestMs = Math.max(earliestMs, new Date(op.startDate).getTime());
+        const backwardMs = new Date(op.startDate).getTime();
+        if (backwardMs > earliestMs) {
+          earliestMs = backwardMs;
+        }
       }
       for (const depId of depsByOperation.get(op.id) ?? []) {
         const depEnd = placedEndByOperation.get(depId);
-        if (depEnd) {
-          earliestMs = Math.max(earliestMs, depEnd.getTime());
+        if (depEnd && depEnd.getTime() > earliestMs) {
+          earliestMs = depEnd.getTime();
+          dominantDepId = depId;
         }
       }
       const earliestStart = new Date(earliestMs);
@@ -310,6 +390,35 @@ export class WorkCenterSelector {
       if (best) {
         const { wcId, slot, capacity } = best;
 
+        // Who is ahead of us in the queue? Other jobs' reservations in the
+        // region between when we could have started and when we actually
+        // did. Captured before this op's own interval is committed.
+        const blockers = formatBlockingJobs(
+          capacity.reservations,
+          earliestStart,
+          slot.start
+        );
+        // Untagged reservations in the wait region are this job's own earlier
+        // operations on the same work center (in-run pushes carry no job id)
+        const ownJobAhead = capacity.reservations.some(
+          (r) =>
+            !r.readableJobId &&
+            r.startAt.getTime() < slot.start.getTime() &&
+            r.endAt.getTime() > earliestMs
+        );
+
+        // Why does this op start when it does? Classified once; feeds the
+        // always-stored placement note AND the late-only conflict message.
+        const waitedMs = slot.start.getTime() - earliestMs;
+        const cause = classifyLatePlacement({
+          waitedMs,
+          blockers,
+          ownJobAhead,
+          dominantDep: dominantDepId
+            ? { description: descriptionById.get(dominantDepId) ?? null }
+            : null,
+        });
+
         // Commit in-run so subsequent operations see this placement
         capacity.reservations.push({ startAt: slot.start, endAt: slot.end });
         this.plannedReservations.push({
@@ -318,6 +427,8 @@ export class WorkCenterSelector {
           operationId: op.id,
           startAt: slot.start,
           endAt: slot.end,
+          earliestStartAt: earliestStart,
+          scheduleNote: composePlacementNote(cause, waitedMs),
         });
         if (requirement) {
           const list =
@@ -334,11 +445,11 @@ export class WorkCenterSelector {
         }
         placedEndByOperation.set(op.id, slot.end);
 
-        // Late vs the DAG-computed due date => surface as a conflict
+        // Late vs the JOB due date => surface as a conflict naming the cause
         let conflict: string | null = null;
         const placedEndDate = slot.end.toISOString().slice(0, 10);
-        if (op.dueDate && placedEndDate > op.dueDate) {
-          conflict = `No capacity before due date: finite capacity pushes finish to ${placedEndDate} (due ${op.dueDate})`;
+        if (jobDueDate && placedEndDate > jobDueDate) {
+          conflict = composeLateConflict(placedEndDate, jobDueDate, cause);
         }
 
         selections.set(op.id, {
@@ -405,45 +516,4 @@ export class WorkCenterSelector {
   }
 }
 
-/**
- * Apply work center selections to scheduled operations
- */
-export function applyWorkCenterSelections(
-  operations: Map<string, ScheduledOperation>,
-  selections: Map<string, WorkCenterSelection>
-): Map<string, ScheduledOperation> {
-  const result = new Map<string, ScheduledOperation>();
-
-  for (const [opId, op] of operations) {
-    const selection = selections.get(opId);
-    if (selection?.workCenterId) {
-      const updated: ScheduledOperation = {
-        ...op,
-        workCenterId: selection.workCenterId,
-      };
-
-      // Finite placement overrides the infinite-capacity dates
-      if (selection.placedStart && selection.placedEnd) {
-        updated.startDate = selection.placedStart.slice(0, 10);
-        updated.dueDate = selection.placedEnd.slice(0, 10);
-      }
-
-      if (selection.conflict) {
-        updated.hasConflict = true;
-        updated.conflictReason = selection.conflict;
-      }
-
-      result.set(opId, updated);
-    } else if (selection?.conflict) {
-      result.set(opId, {
-        ...op,
-        hasConflict: true,
-        conflictReason: selection.conflict,
-      });
-    } else {
-      result.set(opId, op);
-    }
-  }
-
-  return result;
-}
+export { applyWorkCenterSelections } from "./apply-work-center-selections.ts";

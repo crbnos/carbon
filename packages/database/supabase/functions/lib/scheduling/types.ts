@@ -154,6 +154,18 @@ export type PlannedReservation = {
   operationId: string;
   startAt: Date;
   endAt: Date;
+  /**
+   * Earliest the operation could have started (dependencies + release date
+   * honored); startAt - earliestStartAt is time spent waiting for capacity.
+   * Set on WorkCenter reservations from finite placement.
+   */
+  earliestStartAt?: Date;
+  /**
+   * Why the operation starts when it does, in plain words (e.g. queued behind
+   * another job, waiting on a predecessor). Null when it started as early as
+   * it could — no explanation needed.
+   */
+  scheduleNote?: string | null;
 };
 
 // ============================================================================

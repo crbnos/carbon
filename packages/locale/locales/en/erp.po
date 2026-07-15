@@ -96,6 +96,9 @@ msgstr "{arOverduePct}% of receivables"
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Consider pointing this part directly at the final successor."
 
+msgid "{conflictCount} conflicts"
+msgstr "{conflictCount} conflicts"
+
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# course} other {# courses}}"
 
@@ -118,6 +121,9 @@ msgstr "{name} deleted"
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# phase left} other {# phases left}}"
+
+msgid "{resourceCount} resources · {reservationCount} reservations · {jobCount} jobs"
+msgstr "{resourceCount} resources · {reservationCount} reservations · {jobCount} jobs"
 
 msgid "{scopeCount} permissions"
 msgstr "{scopeCount} permissions"
@@ -147,6 +153,9 @@ msgstr "<0>Add a supplier part</0> for this item to set a preferred supplier."
 
 msgid "0-4 weeks"
 msgstr "0-4 weeks"
+
+msgid "1 conflict"
+msgstr "1 conflict"
 
 msgid "1 day"
 msgstr "1 day"
@@ -4111,6 +4120,7 @@ msgstr "Drop-ship"
 msgid "Due"
 msgstr "Due"
 
+#. placeholder {0}: formatDate(jobDueDate)
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
 msgid "Due {0}"
 msgstr "Due {0}"
@@ -4753,6 +4763,9 @@ msgstr "Est. Duration"
 
 msgid "Estimated"
 msgstr "Estimated"
+
+msgid "Estimated — no capacity reservation"
+msgstr "Estimated — no capacity reservation"
 
 msgid "Estimated Duration"
 msgstr "Estimated Duration"
@@ -7851,6 +7864,9 @@ msgstr "No BOM input has a shelf-life policy"
 msgid "No calibration records found"
 msgstr "No calibration records found"
 
+msgid "No capacity reservations to visualize. Schedule a job to see work-center load."
+msgstr "No capacity reservations to visualize. Schedule a job to see work-center load."
+
 msgid "No changes recorded"
 msgstr "No changes recorded"
 
@@ -8112,6 +8128,9 @@ msgstr "Not enough jobs to cover quantity"
 msgid "Not Required"
 msgstr "Not Required"
 
+msgid "Not scheduled — no feasible slot. The stored dates are backward-planning placeholders, not a real booking."
+msgstr "Not scheduled — no feasible slot. The stored dates are backward-planning placeholders, not a real booking."
+
 msgid "Not set"
 msgstr "Not set"
 
@@ -8357,6 +8376,9 @@ msgstr "Operator gets a warning. Stock still goes through."
 
 msgid "Operator must pick a different batch/serial."
 msgstr "Operator must pick a different batch/serial."
+
+msgid "Operator Pool"
+msgstr "Operator Pool"
 
 msgid "Operator Pool Reservation"
 msgstr "Operator Pool Reservation"
@@ -13464,6 +13486,9 @@ msgstr "Voiding this receipt will:"
 
 msgid "Voiding this shipment will:"
 msgstr "Voiding this shipment will:"
+
+msgid "Waited"
+msgstr "Waited"
 
 msgid "Walk each area with your champion and toggle anything out of scope. Codes read Module.Area.Number (ACC.GL.01 = Accounting, General Ledger, item 1)."
 msgstr "Walk each area with your champion and toggle anything out of scope. Codes read Module.Area.Number (ACC.GL.01 = Accounting, General Ledger, item 1)."

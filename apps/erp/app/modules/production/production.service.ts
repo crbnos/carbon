@@ -957,9 +957,34 @@ export async function getCapacityReservationsByJob(
 ) {
   return client
     .from("capacityReservation")
-    .select("id, operationId, resourceKind, resourceId, startAt, endAt")
+    .select(
+      "id, operationId, resourceKind, resourceId, startAt, endAt, earliestStartAt, scheduleNote"
+    )
     .eq("jobId", jobId)
     .is("scenarioId", null);
+}
+
+export async function getCapacityReservationsForResources(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  // Live/upcoming reservations across ALL jobs — feeds the resource-lane
+  // Gantt. Rows that ended within the last day stay visible for context.
+  // Cancelled/completed/closed jobs keep their reservation rows until the
+  // next reschedule, so filter them out here — they are no longer real load.
+  const cutoff = new Date(Date.now() - 24 * 3_600_000).toISOString();
+  return client
+    .from("capacityReservation")
+    .select(
+      `id, operationId, jobId, resourceKind, resourceId, startAt, endAt, scheduleNote,
+       job!inner(jobId, status, dueDate),
+       jobOperation(description, hasConflict, conflictReason)`
+    )
+    .eq("companyId", companyId)
+    .is("scenarioId", null)
+    .gte("endAt", cutoff)
+    .not("job.status", "in", '("Cancelled","Completed","Closed")')
+    .order("startAt");
 }
 
 export async function getProductionEventsByJob(

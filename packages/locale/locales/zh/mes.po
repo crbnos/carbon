@@ -856,7 +856,7 @@ msgid "Schedule"
 msgstr "排程"
 
 msgid "Scheduling conflict"
-msgstr ""
+msgstr "排程冲突"
 
 msgid "Scrap"
 msgstr "报废"

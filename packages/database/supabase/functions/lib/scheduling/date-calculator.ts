@@ -210,8 +210,10 @@ export class BackwardSchedulingStrategy implements SchedulingStrategy {
       const startDateObj = subtractBusinessDays(dueDateObj, durationDays);
       const startDate = formatDate(startDateObj);
 
-      // Check for conflicts (start date in the past)
-      const hasConflict = startDate < today;
+      // Check for conflicts (start date in the past). Without a job due
+      // date the anchor is synthetic ("today"), so lateness against it is
+      // meaningless — only a real due date produces conflicts.
+      const hasConflict = !!jobDueDate && startDate < today;
       const conflictReason = hasConflict
         ? `Operation must start on ${startDate} but current date is ${today}`
         : null;

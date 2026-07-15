@@ -51,6 +51,9 @@ export type LiveReservation = {
   resourceId: string;
   startAt: Date;
   endAt: Date;
+  jobId: string;
+  /** Human-readable job number (job."jobId", e.g. J000001) for conflict messages */
+  readableJobId: string;
 };
 
 export type SchedulingPolicyRow = {
@@ -153,11 +156,16 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
   }
 
   async getJob(jobId: string): Promise<Job | undefined> {
-    return await this.db
+    const job = await this.db
       .selectFrom("job")
       .select(["id", "dueDate", "deadlineType", "locationId", "priority"])
       .where("id", "=", jobId)
       .executeTakeFirst();
+    if (!job) return undefined;
+    // pg returns DATE columns as JS Date objects; every consumer compares
+    // dueDate lexicographically as "YYYY-MM-DD" (a Date silently fails those
+    // comparisons — string > Date is always false)
+    return { ...job, dueDate: toIsoDate(job.dueDate) };
   }
 
   async getOperations(
@@ -312,6 +320,9 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
       ])
       .where("jo.workCenterId", "in", workCenterIds)
       .where("jo.status", "not in", ["Done", "Canceled"])
+      // Ops can outlive their job's lifecycle (cancelling a job does not
+      // cancel its ops) — terminal jobs must not compete in dispatch order
+      .where("j.status", "not in", ["Cancelled", "Completed", "Closed"])
       .execute();
   }
 
@@ -320,12 +331,24 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
     excludeJobId: string
   ): Promise<LiveReservation[]> {
     const rows = await this.db
-      .selectFrom("capacityReservation")
-      .select(["resourceKind", "resourceId", "startAt", "endAt"])
-      .where("companyId", "=", this.companyId)
-      .where("scenarioId", "is", null)
-      .where("jobId", "!=", excludeJobId)
-      .where("endAt", ">", fromDate.toISOString())
+      .selectFrom("capacityReservation as cr")
+      .innerJoin("job as j", "j.id", "cr.jobId")
+      .select([
+        "cr.resourceKind",
+        "cr.resourceId",
+        "cr.startAt",
+        "cr.endAt",
+        "cr.jobId",
+        "j.jobId as readableJobId",
+      ])
+      .where("cr.companyId", "=", this.companyId)
+      .where("cr.scenarioId", "is", null)
+      .where("cr.jobId", "!=", excludeJobId)
+      .where("cr.endAt", ">", fromDate.toISOString())
+      // Reservations are only deleted when their job is rescheduled, so a
+      // cancelled/completed/closed job's rows linger — they must not hold
+      // capacity against live jobs
+      .where("j.status", "not in", ["Cancelled", "Completed", "Closed"])
       .execute();
 
     return rows.map((r) => ({
@@ -333,6 +356,8 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
       resourceId: r.resourceId,
       startAt: new Date(r.startAt as unknown as string),
       endAt: new Date(r.endAt as unknown as string),
+      jobId: r.jobId,
+      readableJobId: r.readableJobId,
     }));
   }
 

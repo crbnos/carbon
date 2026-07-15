@@ -1,6 +1,6 @@
 {
-  "generated": "2026-07-14T08:34:42.558Z",
-  "totalTools": 1333,
+  "generated": "2026-07-15T12:46:41.732Z",
+  "totalTools": 1334,
   "modules": 15,
   "tools": [
     {
@@ -16967,6 +16967,24 @@
         "required": [
           "jobId"
         ]
+      }
+    },
+    {
+      "name": "production_getCapacityReservationsForResources",
+      "module": "production",
+      "classification": "READ",
+      "description": "get capacity reservations for resources",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
       }
     },
     {

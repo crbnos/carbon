@@ -96,6 +96,9 @@ msgstr "{arOverduePct}% należności"
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Rozważ wskazanie tej części bezpośrednio na ostatecznego następcę."
 
+msgid "{conflictCount} conflicts"
+msgstr "{conflictCount} konflikty"
+
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# kurs} other {# kursy}}"
 
@@ -118,6 +121,9 @@ msgstr "{name} usunięty"
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# faza pozostała} other {# faz pozostało}}"
+
+msgid "{resourceCount} resources · {reservationCount} reservations · {jobCount} jobs"
+msgstr "{resourceCount} zasoby · {reservationCount} rezerwacje · {jobCount} prace"
 
 msgid "{scopeCount} permissions"
 msgstr "{scopeCount} uprawnień"
@@ -147,6 +153,9 @@ msgstr "<0>Dodaj część dostawcy</0> do tego artykułu, aby ustawić preferowa
 
 msgid "0-4 weeks"
 msgstr "0-4 tygodnie"
+
+msgid "1 conflict"
+msgstr "1 konflikt"
 
 msgid "1 day"
 msgstr "1 dzień"
@@ -365,7 +374,7 @@ msgid "ability"
 msgstr "możliwość"
 
 msgid "Ability"
-msgstr ""
+msgstr "Umiejętność"
 
 msgid "About"
 msgstr "O mnie"
@@ -590,7 +599,7 @@ msgid "Add a step"
 msgstr "Dodaj krok"
 
 msgid "Add Ability"
-msgstr ""
+msgstr "Dodaj Umiejętność"
 
 msgid "Add Actions"
 msgstr "Dodaj Działania"
@@ -620,7 +629,7 @@ msgid "Add Contractor"
 msgstr "Dodaj Wykonawcę"
 
 msgid "Add Employee"
-msgstr ""
+msgstr "Dodaj Pracownika"
 
 msgid "Add Entry"
 msgstr "Dodaj wpis"
@@ -1002,7 +1011,7 @@ msgid "Approved By"
 msgstr "Zatwierdzone przez"
 
 msgid "Approximate — derived from scheduled dates; no capacity reservation exists for this row."
-msgstr ""
+msgstr "Przybliżone — pochodzą z zaplanowanych dat; brak rezerwacji pojemności dla tego wiersza."
 
 msgid "AQL"
 msgstr "AQL"
@@ -1084,7 +1093,7 @@ msgid "Are you sure you want to deactivate the {label} configuration rule?"
 msgstr "Czy na pewno chcesz dezaktywować regułę konfiguracji {label}?"
 
 msgid "Are you sure you want to deactivate the ability: {name}?"
-msgstr ""
+msgstr "Czy na pewno chcesz deaktywować umiejętność: {name}?"
 
 msgid "Are you sure you want to deactivate the process: {name}? It will no longer appear in dropdowns."
 msgstr "Czy na pewno chcesz dezaktywować proces: {name}? Nie będzie już wyświetlany w listach rozwijanych."
@@ -1373,7 +1382,7 @@ msgid "Are you sure you want to remove {supplierName} as a supplier for this ite
 msgstr "Czy na pewno chcesz usunąć {supplierName} jako dostawcę tego artykułu? Tej czynności nie można cofnąć."
 
 msgid "Are you sure you want to remove this employee from {name}? The training history is kept and the employee can be re-added later."
-msgstr ""
+msgstr "Czy na pewno chcesz usunąć tego pracownika z {name}? Historia szkolenia jest zachowywana i pracownik może być dodany ponownie później."
 
 msgid "Are you sure you want to remove this item from the price list? This cannot be undone."
 msgstr "Czy na pewno chcesz usunąć ten element z listy cen? Tej operacji nie można cofnąć."
@@ -1433,7 +1442,7 @@ msgid "Assemblies"
 msgstr "Zespoły"
 
 msgid "Assembly"
-msgstr ""
+msgstr "Montaż"
 
 msgid "Assembly Instructions"
 msgstr "Instrukcje montażu"
@@ -1746,7 +1755,7 @@ msgid "Bills of material"
 msgstr "Zestawienia materiałowe"
 
 msgid "Blank = computed from the ability's recertification period"
-msgstr ""
+msgstr "Puste = obliczone z okresu ponownej certyfikacji umiejętności"
 
 msgid "Blind Count"
 msgstr "Niewidoczna inwentaryzacja"
@@ -2330,7 +2339,7 @@ msgid "Completed Qty"
 msgstr "Ukończona Ilość"
 
 msgid "Completing this training grants or renews the selected ability."
-msgstr ""
+msgstr "Ukończenie tego szkolenia przyznaje lub odnawia wybraną umiejętność."
 
 msgid "Completion Barcode"
 msgstr "Kod kreskowy ukończenia"
@@ -2469,7 +2478,7 @@ msgid "Confirms every posted journal entry in the period has equal debits and cr
 msgstr "Potwierdza, że każdy opublikowany wpis dziennika w okresie ma równe obciążenia i kredyty. Jeśli jakiś wpis jest niezrównoważony, bilans próbny się nie zgramadzi, więc musi być poprawiony przed zamknięciem okresu."
 
 msgid "Conflict"
-msgstr ""
+msgstr "Konflikt"
 
 msgid "Connect Carbon to your accounting, project management, and CAD tools and much more."
 msgstr "Połącz Carbon ze swoimi narzędziami księgowości, zarządzania projektami, CAD i wieloma innymi."
@@ -3377,7 +3386,7 @@ msgid "Deactivate {name}"
 msgstr "Dezaktywuj {name}"
 
 msgid "Deactivate Ability"
-msgstr ""
+msgstr "Deaktywuj Umiejętność"
 
 msgid "Deactivate Account"
 msgstr "Dezaktywuj konto"
@@ -4111,6 +4120,7 @@ msgstr "Dostawa Bezpośrednia"
 msgid "Due"
 msgstr "Termin"
 
+#. placeholder {0}: formatDate(jobDueDate)
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
 msgid "Due {0}"
 msgstr "Termin {0}"
@@ -4194,10 +4204,10 @@ msgid "Edit <0>Issue</0> Workflow"
 msgstr "Edytuj Przepływ Pracy <0>Problem</0>"
 
 msgid "Edit ability"
-msgstr ""
+msgstr "Edytuj umiejętność"
 
 msgid "Edit Ability"
-msgstr ""
+msgstr "Edytuj Umiejętność"
 
 msgid "Edit Account"
 msgstr "Edytuj konto"
@@ -4263,7 +4273,7 @@ msgid "Edit Employee"
 msgstr "Edytuj pracownika"
 
 msgid "Edit Employee Ability"
-msgstr ""
+msgstr "Edytuj Umiejętność Pracownika"
 
 msgid "Edit Employee Type"
 msgstr "Edytuj typ pracownika"
@@ -4596,7 +4606,7 @@ msgid "End Time"
 msgstr "Czas zakończenia"
 
 msgid "Ends"
-msgstr ""
+msgstr "Kończy się"
 
 msgid "Enforce per-item validation and guidelines across receipts, shipments, transfers, and adjustments."
 msgstr "Wymuszaj walidację i wytyczne dla każdej pozycji w paragonach, wysyłkach, transferach i korektach."
@@ -4752,7 +4762,10 @@ msgid "Est. Duration"
 msgstr "Szac. Czas trwania"
 
 msgid "Estimated"
-msgstr ""
+msgstr "Szacunkowe"
+
+msgid "Estimated — no capacity reservation"
+msgstr "Szacunkowe — brak rezerwacji pojemności"
 
 msgid "Estimated Duration"
 msgstr "Szacunkowy czas trwania"
@@ -4889,7 +4902,7 @@ msgstr "Wygasło"
 
 #. placeholder {0}: formatDate(status.expiresAt)
 msgid "Expired {0}"
-msgstr ""
+msgstr "Wygasło {0}"
 
 msgid "Expired {date}"
 msgstr "Wygasło {date}"
@@ -4905,20 +4918,20 @@ msgstr "Wygasa"
 
 #. placeholder {0}: formatDate(status.expiresAt)
 msgid "Expires {0}"
-msgstr ""
+msgstr "Wygasa {0}"
 
 msgid "Expires {date}"
 msgstr "Wygasa {date}"
 
 msgid "Expires At"
-msgstr ""
+msgstr "Wygasa O"
 
 msgid "Expires At (optional)"
 msgstr "Wygasa (opcjonalnie)"
 
 #. placeholder {0}: status.daysLeft
 msgid "Expires in {0}d"
-msgstr ""
+msgstr "Wygasa za {0}d"
 
 msgid "Expiring first"
 msgstr "Wygasające pierwsze"
@@ -5779,7 +5792,7 @@ msgid "Grades"
 msgstr "Gatunki"
 
 msgid "Grants Ability"
-msgstr ""
+msgstr "Przyznaje Umiejętność"
 
 msgid "Group"
 msgstr "Grupa"
@@ -6085,7 +6098,7 @@ msgid "In the loop together"
 msgstr "W pętli razem"
 
 msgid "In Training"
-msgstr ""
+msgstr "Na Szkoleniu"
 
 msgid "Inactive"
 msgstr "Nieaktywny"
@@ -6652,10 +6665,10 @@ msgid "Last synced: {0}"
 msgstr "Ostatnia synchronizacja: {0}"
 
 msgid "Last Training"
-msgstr ""
+msgstr "Ostatnie Szkolenie"
 
 msgid "Last Training Date"
-msgstr ""
+msgstr "Data Ostatniego Szkolenia"
 
 msgid "Last updated: {formattedDate}"
 msgstr "Ostatnia aktualizacja: {formattedDate}"
@@ -7495,7 +7508,7 @@ msgid "New <0>Issue</0> Workflow"
 msgstr "Nowy Przepływ Pracy <0>Issue</0>"
 
 msgid "New Ability"
-msgstr ""
+msgstr "Nowa Umiejętność"
 
 msgid "New Account"
 msgstr "Nowe Konto"
@@ -7851,6 +7864,9 @@ msgstr "Żadne wejście BOM nie ma polityki przydatności do spożycia"
 msgid "No calibration records found"
 msgstr "Nie znaleziono rekordów kalibracji"
 
+msgid "No capacity reservations to visualize. Schedule a job to see work-center load."
+msgstr "Brak rezerwacji pojemności do wizualizacji. Zaplanuj pracę, aby zobaczyć obciążenie centrum pracy."
+
 msgid "No changes recorded"
 msgstr "Brak zarejestrowanych zmian"
 
@@ -8017,7 +8033,7 @@ msgid "No receivables"
 msgstr "Brak należności"
 
 msgid "No released jobs to visualize. Release a job to see its schedule."
-msgstr ""
+msgstr "Brak uwolnionych prac do wizualizacji. Uwolnij pracę, aby zobaczyć jej harmonogram."
 
 msgid "No remaining entities to inspect."
 msgstr "Brak pozostałych jednostek do sprawdzenia."
@@ -8112,6 +8128,9 @@ msgstr "Niewystarczająca liczba zadań do pokrycia ilości"
 msgid "Not Required"
 msgstr "Nie wymagane"
 
+msgid "Not scheduled — no feasible slot. The stored dates are backward-planning placeholders, not a real booking."
+msgstr "Nie zaplanowano — brak dostępnego slotu. Przechowywane daty to symbole zastępcze planowania wstecznego, a nie rzeczywista rezerwacja."
+
 msgid "Not set"
 msgstr "Nie ustawiono"
 
@@ -8119,7 +8138,7 @@ msgid "Not started"
 msgstr "Nie rozpoczęte"
 
 msgid "Not Started"
-msgstr ""
+msgstr "Nie Rozpoczęto"
 
 msgid "Not yet"
 msgstr "Jeszcze nie"
@@ -8230,7 +8249,7 @@ msgid "Only empty, open periods can be deleted."
 msgstr "Usunięte mogą być tylko puste, otwarte okresy."
 
 msgid "Only qualified employees can be scheduled for and run this process"
-msgstr ""
+msgstr "Tylko wykwalifikowani pracownicy mogą być zaplanowani i uruchamiać ten proces"
 
 msgid "Onshape Status"
 msgstr "Status Onshape"
@@ -8275,7 +8294,7 @@ msgid "Open Issues"
 msgstr "Otwarte problemy"
 
 msgid "Open Job"
-msgstr ""
+msgstr "Otwarta Praca"
 
 msgid "Open jobs"
 msgstr "Otwarte zadania"
@@ -8358,8 +8377,11 @@ msgstr "Operator otrzymuje ostrzeżenie. Zapasy przechodzą dalej."
 msgid "Operator must pick a different batch/serial."
 msgstr "Operator musi wybrać inną partię/numer seryjny."
 
+msgid "Operator Pool"
+msgstr "Pula Operatorów"
+
 msgid "Operator Pool Reservation"
-msgstr ""
+msgstr "Rezerwacja Puli Operatorów"
 
 msgid "Operators"
 msgstr "Operatorzy"
@@ -9347,13 +9369,13 @@ msgid "Qty. Scrapped"
 msgstr "Ilość. Złomowana"
 
 msgid "Qualification expires this many days after training; blank = never"
-msgstr ""
+msgstr "Kwalifikacja wygasa tyle dni po szkoleniu; puste = nigdy"
 
 msgid "Qualified"
-msgstr ""
+msgstr "Wykwalifikowany"
 
 msgid "Qualified Employees"
-msgstr ""
+msgstr "Wykwalifikowani Pracownicy"
 
 msgid "quality"
 msgstr "Od Wyceny do Płatności"
@@ -9634,7 +9656,7 @@ msgid "Recently Created"
 msgstr "Niedawno utworzone"
 
 msgid "Recertify Every (Days)"
-msgstr ""
+msgstr "Ponownie certyfikuj co (Dni)"
 
 msgid "Reconciling a purchase order against what was received and invoiced — implicit in Carbon, via the line quantities and GR/IR balance."
 msgstr "Okres Odzysku"
@@ -9752,7 +9774,7 @@ msgid "Remove condition"
 msgstr "Usuń warunek"
 
 msgid "Remove Employee"
-msgstr ""
+msgstr "Usuń pracownika"
 
 msgid "Remove feature"
 msgstr "Usuń funkcję"
@@ -9899,7 +9921,7 @@ msgid "Requirements and Process Map"
 msgstr "Wymagania i Mapa Procesów"
 
 msgid "Requires Ability"
-msgstr ""
+msgstr "Wymaga zdolności"
 
 msgid "Requires Action"
 msgstr "Wymaga działania"
@@ -10336,7 +10358,7 @@ msgid "Schedule Name"
 msgstr "Nazwa harmonogramu"
 
 msgid "Scheduled"
-msgstr ""
+msgstr "Zaplanowano"
 
 msgid "Scheduled Maintenance"
 msgstr "Zaplanowana konserwacja"
@@ -10348,7 +10370,7 @@ msgid "Schedules"
 msgstr "Harmonogramy"
 
 msgid "Scheduling conflict"
-msgstr ""
+msgstr "Konflikt harmonogramu"
 
 msgid "Scope"
 msgstr "Zakres"
@@ -10459,7 +10481,7 @@ msgid "Select a default approver"
 msgstr "Wybierz domyślnego zatwierdzającego"
 
 msgid "Select a job"
-msgstr ""
+msgstr "Wybierz pracę"
 
 msgid "Select a new owner"
 msgstr "Wybierz nowego właściciela"
@@ -10771,7 +10793,7 @@ msgid "Severity"
 msgstr "Ważność"
 
 msgid "Shadow Weeks"
-msgstr ""
+msgstr "Tygodnie obserwacji"
 
 msgid "shape"
 msgstr "kształt"
@@ -11183,11 +11205,11 @@ msgid "Started"
 msgstr "Rozpoczęto"
 
 msgid "Starts"
-msgstr ""
+msgstr "Rozpoczyna się"
 
 #. placeholder {0}: new Date(trace.rootStartedAt).toLocaleString()
 msgid "Starts {0}"
-msgstr ""
+msgstr "Rozpoczyna się {0}"
 
 msgid "State / Province"
 msgstr "Stan / Prowincja"
@@ -12405,7 +12427,7 @@ msgid "These journal entries are still Draft, so their debits and credits aren't
 msgstr "Te wpisy dziennika są wciąż w wersji roboczej, więc ich obciążenia i kredyty nie znajdują się w księdze w tym okresie. Opublikuj każdy lub przedatuj go na późniejszy otwarty okres."
 
 msgid "this ability"
-msgstr ""
+msgstr "ta zdolność"
 
 msgid "This completes the Discovery step."
 msgstr "To uzupełnia krok Discovery."
@@ -12775,7 +12797,7 @@ msgid "Training Assignments"
 msgstr "Przypisania szkoleniowe"
 
 msgid "Training Completed"
-msgstr ""
+msgstr "Szkolenie ukończone"
 
 msgid "Training Plan"
 msgstr "Plan szkoleniowy"
@@ -13139,7 +13161,7 @@ msgid "Used on the home screen in dark mode"
 msgstr "Używane na ekranie głównym w trybie ciemnym"
 
 msgid "Used to build the default learning curve"
-msgstr ""
+msgstr "Używane do budowania domyślnej krzywej uczenia się"
 
 msgid "Used to categorize items for reporting and analysis"
 msgstr "Używane do kategoryzacji pozycji do raportowania i analizy"
@@ -13271,7 +13293,7 @@ msgid "View"
 msgstr "Wyświetl"
 
 msgid "View Ability"
-msgstr ""
+msgstr "Wyświetl zdolność"
 
 msgid "View Active Jobs"
 msgstr "Wyświetl aktywne zadania"
@@ -13465,6 +13487,9 @@ msgstr "Anulowanie tego paragonu spowoduje:"
 msgid "Voiding this shipment will:"
 msgstr "Anulowanie tej przesyłki spowoduje:"
 
+msgid "Waited"
+msgstr "Czekał"
+
 msgid "Walk each area with your champion and toggle anything out of scope. Codes read Module.Area.Number (ACC.GL.01 = Accounting, General Ledger, item 1)."
 msgstr "Przejdź przez każdy obszar ze swoim liderem i wyłącz wszystko, co jest poza zakresem. Kody czytaj jako Module.Area.Number (ACC.GL.01 = Accounting, General Ledger, item 1)."
 
@@ -13585,13 +13610,13 @@ msgid "Weeks 7 to 8"
 msgstr "Tygodnie 7 do 8"
 
 msgid "Weeks of shadowing before an employee is productive"
-msgstr ""
+msgstr "Tygodnie obserwacji przed tym, jak pracownik staje się produktywny"
 
 msgid "Weeks Open"
 msgstr "Tygodnie otwarte"
 
 msgid "Weeks to Full Proficiency"
-msgstr ""
+msgstr "Tygodnie do pełnej biegłości"
 
 msgid "Weighted Average"
 msgstr "Średnia ważona"
@@ -13926,7 +13951,7 @@ msgid "Work Center"
 msgstr "Centrum Pracy"
 
 msgid "Work Center Reservation"
-msgstr ""
+msgstr "Rezerwacja centrum pracy"
 
 msgid "Work Center Utilization"
 msgstr "Wykorzystanie Centrum Pracy"

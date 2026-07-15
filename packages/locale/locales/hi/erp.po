@@ -96,6 +96,9 @@ msgstr "{arOverduePct}% प्राप्य"
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. इस भाग को सीधे अंतिम उत्तराधिकारी की ओर इंगित करने पर विचार करें।"
 
+msgid "{conflictCount} conflicts"
+msgstr "{conflictCount} विरोध"
+
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# कोर्स} other {# कोर्स}}"
 
@@ -118,6 +121,9 @@ msgstr "{name} हटाया गया"
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# चरण बचा} other {# चरण बचे}}"
+
+msgid "{resourceCount} resources · {reservationCount} reservations · {jobCount} jobs"
+msgstr "{resourceCount} संसाधन · {reservationCount} आरक्षण · {jobCount} नौकरियां"
 
 msgid "{scopeCount} permissions"
 msgstr "{scopeCount} अनुमतियाँ"
@@ -147,6 +153,9 @@ msgstr "<0>इस आइटम के लिए एक आपूर्तिक�
 
 msgid "0-4 weeks"
 msgstr "0-4 सप्ताह"
+
+msgid "1 conflict"
+msgstr "1 विरोध"
 
 msgid "1 day"
 msgstr "1 दिन"
@@ -365,7 +374,7 @@ msgid "ability"
 msgstr "क्षमता"
 
 msgid "Ability"
-msgstr ""
+msgstr "क्षमता"
 
 msgid "About"
 msgstr "के बारे में"
@@ -590,7 +599,7 @@ msgid "Add a step"
 msgstr "एक चरण जोड़ें"
 
 msgid "Add Ability"
-msgstr ""
+msgstr "क्षमता जोड़ें"
 
 msgid "Add Actions"
 msgstr "कार्य जोड़ें"
@@ -620,7 +629,7 @@ msgid "Add Contractor"
 msgstr "ठेकेदार जोड़ें"
 
 msgid "Add Employee"
-msgstr ""
+msgstr "कर्मचारी जोड़ें"
 
 msgid "Add Entry"
 msgstr "प्रविष्टि जोड़ें"
@@ -1002,7 +1011,7 @@ msgid "Approved By"
 msgstr "द्वारा अनुमोदित"
 
 msgid "Approximate — derived from scheduled dates; no capacity reservation exists for this row."
-msgstr ""
+msgstr "अनुमानित — निर्धारित तारीखों से प्राप्त; इस पंक्ति के लिए कोई क्षमता आरक्षण मौजूद नहीं है।"
 
 msgid "AQL"
 msgstr "AQL"
@@ -1084,7 +1093,7 @@ msgid "Are you sure you want to deactivate the {label} configuration rule?"
 msgstr "क्या आप सुनिश्चित हैं कि आप {label} कॉन्फ़िगरेशन नियम को निष्क्रिय करना चाहते हैं?"
 
 msgid "Are you sure you want to deactivate the ability: {name}?"
-msgstr ""
+msgstr "क्या आप निश्चित हैं कि आप यह क्षमता निष्क्रिय करना चाहते हैं: {name}?"
 
 msgid "Are you sure you want to deactivate the process: {name}? It will no longer appear in dropdowns."
 msgstr "क्या आप सुनिश्चित हैं कि आप प्रक्रिया को निष्क्रिय करना चाहते हैं: {name}? यह अब ड्रॉपडाउन में दिखाई नहीं देगा।"
@@ -1373,7 +1382,7 @@ msgid "Are you sure you want to remove {supplierName} as a supplier for this ite
 msgstr "क्या आप सुनिश्चित हैं कि आप इस आइटम के लिए {supplierName} को आपूर्तिकर्ता के रूप में हटाना चाहते हैं? यह पूर्ववत नहीं किया जा सकता।"
 
 msgid "Are you sure you want to remove this employee from {name}? The training history is kept and the employee can be re-added later."
-msgstr ""
+msgstr "क्या आप निश्चित हैं कि आप इस कर्मचारी को {name} से हटाना चाहते हैं? प्रशिक्षण इतिहास रखा जाता है और कर्मचारी को बाद में फिर से जोड़ा जा सकता है।"
 
 msgid "Are you sure you want to remove this item from the price list? This cannot be undone."
 msgstr "क्या आप सुनिश्चित हैं कि आप इस आइटम को मूल्य सूची से हटाना चाहते हैं? यह पूर्ववत नहीं किया जा सकता।"
@@ -1433,7 +1442,7 @@ msgid "Assemblies"
 msgstr "असेंबलीज"
 
 msgid "Assembly"
-msgstr ""
+msgstr "असेंबली"
 
 msgid "Assembly Instructions"
 msgstr "असेंबली निर्देश"
@@ -1746,7 +1755,7 @@ msgid "Bills of material"
 msgstr "सामग्री के बिल"
 
 msgid "Blank = computed from the ability's recertification period"
-msgstr ""
+msgstr "रिक्त = क्षमता की पुनर्प्रमाणन अवधि से गणना की गई"
 
 msgid "Blind Count"
 msgstr "ब्लाइंड काउंट"
@@ -2330,7 +2339,7 @@ msgid "Completed Qty"
 msgstr "पूर्ण मात्रा"
 
 msgid "Completing this training grants or renews the selected ability."
-msgstr ""
+msgstr "इस प्रशिक्षण को पूरा करने से चयनित क्षमता प्रदान या नवीनीकृत होती है।"
 
 msgid "Completion Barcode"
 msgstr "पूर्ण बारकोड"
@@ -2469,7 +2478,7 @@ msgid "Confirms every posted journal entry in the period has equal debits and cr
 msgstr "पुष्टि करता है कि अवधि में हर पोस्ट की गई जर्नल प्रविष्टि में बराबर डेबिट और क्रेडिट हैं। यदि कोई प्रविष्टि असंतुलित है तो ट्रायल बैलेंस मेल नहीं खाएगा, इसलिए अवधि बंद होने से पहले इसे ठीक किया जाना चाहिए।"
 
 msgid "Conflict"
-msgstr ""
+msgstr "विरोध"
 
 msgid "Connect Carbon to your accounting, project management, and CAD tools and much more."
 msgstr "Carbon को अपने लेखांकन, परियोजना प्रबंधन, और CAD उपकरणों और बहुत कुछ से जोड़ें।"
@@ -3377,7 +3386,7 @@ msgid "Deactivate {name}"
 msgstr "{name} को निष्क्रिय करें"
 
 msgid "Deactivate Ability"
-msgstr ""
+msgstr "क्षमता निष्क्रिय करें"
 
 msgid "Deactivate Account"
 msgstr "खाता निष्क्रिय करें"
@@ -4111,6 +4120,7 @@ msgstr "ड्रॉप-शिप"
 msgid "Due"
 msgstr "देय"
 
+#. placeholder {0}: formatDate(jobDueDate)
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
 msgid "Due {0}"
 msgstr "Due {0}"
@@ -4194,10 +4204,10 @@ msgid "Edit <0>Issue</0> Workflow"
 msgstr "<0>समस्या</0> वर्कफ़्लो संपादित करें"
 
 msgid "Edit ability"
-msgstr ""
+msgstr "क्षमता संपादित करें"
 
 msgid "Edit Ability"
-msgstr ""
+msgstr "क्षमता संपादित करें"
 
 msgid "Edit Account"
 msgstr "खाता संपादित करें"
@@ -4263,7 +4273,7 @@ msgid "Edit Employee"
 msgstr "कर्मचारी संपादित करें"
 
 msgid "Edit Employee Ability"
-msgstr ""
+msgstr "कर्मचारी क्षमता संपादित करें"
 
 msgid "Edit Employee Type"
 msgstr "कर्मचारी प्रकार संपादित करें"
@@ -4596,7 +4606,7 @@ msgid "End Time"
 msgstr "समाप्ति समय"
 
 msgid "Ends"
-msgstr ""
+msgstr "समाप्त होता है"
 
 msgid "Enforce per-item validation and guidelines across receipts, shipments, transfers, and adjustments."
 msgstr "रसीदों, शिपमेंट, ट्रांसफर और समायोजन में प्रति-आइटम सत्यापन और दिशानिर्देश लागू करें।"
@@ -4752,7 +4762,10 @@ msgid "Est. Duration"
 msgstr "अनुमानित अवधि"
 
 msgid "Estimated"
-msgstr ""
+msgstr "अनुमानित"
+
+msgid "Estimated — no capacity reservation"
+msgstr "अनुमानित — कोई क्षमता आरक्षण नहीं"
 
 msgid "Estimated Duration"
 msgstr "अनुमानित अवधि"
@@ -4889,7 +4902,7 @@ msgstr "समाप्त"
 
 #. placeholder {0}: formatDate(status.expiresAt)
 msgid "Expired {0}"
-msgstr ""
+msgstr "समाप्त {0}"
 
 msgid "Expired {date}"
 msgstr "समाप्त {date}"
@@ -4905,20 +4918,20 @@ msgstr "समाप्त होता है"
 
 #. placeholder {0}: formatDate(status.expiresAt)
 msgid "Expires {0}"
-msgstr ""
+msgstr "समाप्त होता है {0}"
 
 msgid "Expires {date}"
 msgstr "समाप्त होता है {date}"
 
 msgid "Expires At"
-msgstr ""
+msgstr "समाप्त होता है"
 
 msgid "Expires At (optional)"
 msgstr "समाप्त होता है (वैकल्पिक)"
 
 #. placeholder {0}: status.daysLeft
 msgid "Expires in {0}d"
-msgstr ""
+msgstr "{0}d में समाप्त होता है"
 
 msgid "Expiring first"
 msgstr "पहले समाप्त होने वाला"
@@ -5779,7 +5792,7 @@ msgid "Grades"
 msgstr "ग्रेड"
 
 msgid "Grants Ability"
-msgstr ""
+msgstr "क्षमता प्रदान करता है"
 
 msgid "Group"
 msgstr "समूह"
@@ -6085,7 +6098,7 @@ msgid "In the loop together"
 msgstr "एक साथ लूप में"
 
 msgid "In Training"
-msgstr ""
+msgstr "प्रशिक्षण में"
 
 msgid "Inactive"
 msgstr "निष्क्रिय"
@@ -6652,10 +6665,10 @@ msgid "Last synced: {0}"
 msgstr "अंतिम सिंक: {0}"
 
 msgid "Last Training"
-msgstr ""
+msgstr "अंतिम प्रशिक्षण"
 
 msgid "Last Training Date"
-msgstr ""
+msgstr "अंतिम प्रशिक्षण की तारीख"
 
 msgid "Last updated: {formattedDate}"
 msgstr "अंतिम अपडेट: {formattedDate}"
@@ -7495,7 +7508,7 @@ msgid "New <0>Issue</0> Workflow"
 msgstr "नया <0>Issue</0> वर्कफ़्लो"
 
 msgid "New Ability"
-msgstr ""
+msgstr "नई क्षमता"
 
 msgid "New Account"
 msgstr "नया खाता"
@@ -7851,6 +7864,9 @@ msgstr "कोई BOM इनपुट शेल्फ-लाइफ नीति 
 msgid "No calibration records found"
 msgstr "कोई अंशांकन रिकॉर्ड नहीं मिला"
 
+msgid "No capacity reservations to visualize. Schedule a job to see work-center load."
+msgstr "कोई क्षमता आरक्षण नहीं है जो देखा जा सके। कार्य-केंद्र लोड देखने के लिए एक नौकरी शेड्यूल करें।"
+
 msgid "No changes recorded"
 msgstr "कोई परिवर्तन दर्ज नहीं किया गया"
 
@@ -8017,7 +8033,7 @@ msgid "No receivables"
 msgstr "कोई प्राप्य नहीं"
 
 msgid "No released jobs to visualize. Release a job to see its schedule."
-msgstr ""
+msgstr "कोई जारी की गई नौकरी नहीं है जो देखी जा सके। इसके शेड्यूल को देखने के लिए एक नौकरी जारी करें।"
 
 msgid "No remaining entities to inspect."
 msgstr "निरीक्षण के लिए कोई शेष इकाई नहीं है।"
@@ -8112,6 +8128,9 @@ msgstr "पर्याप्त नौकरियां नहीं हैं
 msgid "Not Required"
 msgstr "आवश्यक नहीं"
 
+msgid "Not scheduled — no feasible slot. The stored dates are backward-planning placeholders, not a real booking."
+msgstr "शेड्यूल नहीं किया गया — कोई संभव स्लॉट नहीं। संग्रहीत तारीखें पिछड़ी-योजना प्लेसहोल्डर हैं, वास्तविक बुकिंग नहीं।"
+
 msgid "Not set"
 msgstr "सेट नहीं है"
 
@@ -8119,7 +8138,7 @@ msgid "Not started"
 msgstr "शुरू नहीं किया गया"
 
 msgid "Not Started"
-msgstr ""
+msgstr "शुरू नहीं किया गया"
 
 msgid "Not yet"
 msgstr "अभी नहीं"
@@ -8230,7 +8249,7 @@ msgid "Only empty, open periods can be deleted."
 msgstr "केवल खाली, खुली अवधियों को हटाया जा सकता है।"
 
 msgid "Only qualified employees can be scheduled for and run this process"
-msgstr ""
+msgstr "केवल योग्य कर्मचारी ही इस प्रक्रिया के लिए अनुसूचित और चलाए जा सकते हैं"
 
 msgid "Onshape Status"
 msgstr "Onshape स्थिति"
@@ -8275,7 +8294,7 @@ msgid "Open Issues"
 msgstr "खुले मुद्दे"
 
 msgid "Open Job"
-msgstr ""
+msgstr "खुली नौकरी"
 
 msgid "Open jobs"
 msgstr "खुली नौकरियां"
@@ -8358,8 +8377,11 @@ msgstr "ऑपरेटर को एक चेतावनी मिलती �
 msgid "Operator must pick a different batch/serial."
 msgstr "ऑपरेटर को एक अलग बैच/सीरीज़ चुननी होगी।"
 
+msgid "Operator Pool"
+msgstr "ऑपरेटर पूल"
+
 msgid "Operator Pool Reservation"
-msgstr ""
+msgstr "ऑपरेटर पूल आरक्षण"
 
 msgid "Operators"
 msgstr "ऑपरेटर"
@@ -9347,13 +9369,13 @@ msgid "Qty. Scrapped"
 msgstr "मात्रा। स्क्रैप किया गया"
 
 msgid "Qualification expires this many days after training; blank = never"
-msgstr ""
+msgstr "योग्यता प्रशिक्षण के इतने दिन बाद समाप्त होती है; रिक्त = कभी नहीं"
 
 msgid "Qualified"
-msgstr ""
+msgstr "योग्य"
 
 msgid "Qualified Employees"
-msgstr ""
+msgstr "योग्य कर्मचारी"
 
 msgid "quality"
 msgstr "उद्धरण से नकद तक"
@@ -9634,7 +9656,7 @@ msgid "Recently Created"
 msgstr "हाल ही में बनाया गया"
 
 msgid "Recertify Every (Days)"
-msgstr ""
+msgstr "हर (दिन) को पुनः प्रमाणित करें"
 
 msgid "Reconciling a purchase order against what was received and invoiced — implicit in Carbon, via the line quantities and GR/IR balance."
 msgstr "वसूली अवधि"
@@ -9752,7 +9774,7 @@ msgid "Remove condition"
 msgstr "शर्त हटाएं"
 
 msgid "Remove Employee"
-msgstr ""
+msgstr "कर्मचारी को हटाएँ"
 
 msgid "Remove feature"
 msgstr "सुविधा हटाएं"
@@ -9899,7 +9921,7 @@ msgid "Requirements and Process Map"
 msgstr "आवश्यकताएं और प्रक्रिया मानचित्र"
 
 msgid "Requires Ability"
-msgstr ""
+msgstr "क्षमता की आवश्यकता है"
 
 msgid "Requires Action"
 msgstr "कार्रवाई आवश्यक है"
@@ -10336,7 +10358,7 @@ msgid "Schedule Name"
 msgstr "शेड्यूल नाम"
 
 msgid "Scheduled"
-msgstr ""
+msgstr "अनुसूचित"
 
 msgid "Scheduled Maintenance"
 msgstr "अनुसूचित रखरखाव"
@@ -10348,7 +10370,7 @@ msgid "Schedules"
 msgstr "शेड्यूल"
 
 msgid "Scheduling conflict"
-msgstr ""
+msgstr "शेड्यूलिंग संघर्ष"
 
 msgid "Scope"
 msgstr "दायरा"
@@ -10459,7 +10481,7 @@ msgid "Select a default approver"
 msgstr "एक डिफ़ॉल्ट अनुमोदक चुनें"
 
 msgid "Select a job"
-msgstr ""
+msgstr "एक नौकरी चुनें"
 
 msgid "Select a new owner"
 msgstr "एक नया मालिक चुनें"
@@ -10771,7 +10793,7 @@ msgid "Severity"
 msgstr "गंभीरता"
 
 msgid "Shadow Weeks"
-msgstr ""
+msgstr "प्रशिक्षण सप्ताह"
 
 msgid "shape"
 msgstr "आकार"
@@ -11183,11 +11205,11 @@ msgid "Started"
 msgstr "शुरू किया गया"
 
 msgid "Starts"
-msgstr ""
+msgstr "शुरू होता है"
 
 #. placeholder {0}: new Date(trace.rootStartedAt).toLocaleString()
 msgid "Starts {0}"
-msgstr ""
+msgstr "शुरू होता है {0}"
 
 msgid "State / Province"
 msgstr "राज्य / प्रांत"
@@ -12405,7 +12427,7 @@ msgid "These journal entries are still Draft, so their debits and credits aren't
 msgstr "ये जर्नल प्रविष्टियाँ अभी भी ड्राफ्ट हैं, इसलिए उनके डेबिट और क्रेडिट इस अवधि के लिए लेजर में नहीं हैं। प्रत्येक को पोस्ट करें, या इसे बाद की खुली अवधि में पुनः दिनांकित करें।"
 
 msgid "this ability"
-msgstr ""
+msgstr "यह क्षमता"
 
 msgid "This completes the Discovery step."
 msgstr "यह Discovery चरण को पूरा करता है।"
@@ -12775,7 +12797,7 @@ msgid "Training Assignments"
 msgstr "प्रशिक्षण असाइनमेंट"
 
 msgid "Training Completed"
-msgstr ""
+msgstr "प्रशिक्षण पूर्ण"
 
 msgid "Training Plan"
 msgstr "प्रशिक्षण योजना"
@@ -13139,7 +13161,7 @@ msgid "Used on the home screen in dark mode"
 msgstr "होम स्क्रीन पर डार्क मोड में उपयोग किया जाता है"
 
 msgid "Used to build the default learning curve"
-msgstr ""
+msgstr "डिफ़ॉल्ट सीखने के वक्र को बनाने के लिए उपयोग किया जाता है"
 
 msgid "Used to categorize items for reporting and analysis"
 msgstr "रिपोर्टिंग और विश्लेषण के लिए आइटम को वर्गीकृत करने के लिए उपयोग किया जाता है"
@@ -13271,7 +13293,7 @@ msgid "View"
 msgstr "देखें"
 
 msgid "View Ability"
-msgstr ""
+msgstr "क्षमता देखें"
 
 msgid "View Active Jobs"
 msgstr "सक्रिय नौकरियां देखें"
@@ -13465,6 +13487,9 @@ msgstr "इस रसीद को रद्द करने से:"
 msgid "Voiding this shipment will:"
 msgstr "इस शिपमेंट को रद्द करने से:"
 
+msgid "Waited"
+msgstr "प्रतीक्षा की"
+
 msgid "Walk each area with your champion and toggle anything out of scope. Codes read Module.Area.Number (ACC.GL.01 = Accounting, General Ledger, item 1)."
 msgstr "अपने चैंपियन के साथ प्रत्येक क्षेत्र को देखें और स्कोप से बाहर कुछ भी टॉगल करें। कोड Module.Area.Number पढ़ते हैं (ACC.GL.01 = Accounting, General Ledger, item 1)।"
 
@@ -13585,13 +13610,13 @@ msgid "Weeks 7 to 8"
 msgstr "सप्ताह 7 से 8"
 
 msgid "Weeks of shadowing before an employee is productive"
-msgstr ""
+msgstr "एक कर्मचारी के उत्पादक होने से पहले प्रशिक्षण के सप्ताह"
 
 msgid "Weeks Open"
 msgstr "हफ्ते खुले"
 
 msgid "Weeks to Full Proficiency"
-msgstr ""
+msgstr "पूर्ण दक्षता के लिए सप्ताह"
 
 msgid "Weighted Average"
 msgstr "भारित औसत"
@@ -13926,7 +13951,7 @@ msgid "Work Center"
 msgstr "कार्य केंद्र"
 
 msgid "Work Center Reservation"
-msgstr ""
+msgstr "कार्य केंद्र आरक्षण"
 
 msgid "Work Center Utilization"
 msgstr "कार्य केंद्र उपयोग"

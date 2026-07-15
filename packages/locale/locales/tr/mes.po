@@ -856,7 +856,7 @@ msgid "Schedule"
 msgstr "Planlama"
 
 msgid "Scheduling conflict"
-msgstr ""
+msgstr "Zamanlama çakışması"
 
 msgid "Scrap"
 msgstr "Hurda"

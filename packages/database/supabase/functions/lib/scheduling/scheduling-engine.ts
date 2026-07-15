@@ -479,7 +479,11 @@ export class SchedulingEngine {
           .filter(
             (r) => r.resourceKind === "WorkCenter" && r.resourceId === wcId
           )
-          .map((r) => ({ startAt: r.startAt, endAt: r.endAt })),
+          .map((r) => ({
+            startAt: r.startAt,
+            endAt: r.endAt,
+            readableJobId: r.readableJobId,
+          })),
       });
     }
 
@@ -536,12 +540,16 @@ export class SchedulingEngine {
 
     const poolReservationsByAbility = new Map<
       string,
-      { startAt: Date; endAt: Date }[]
+      { startAt: Date; endAt: Date; readableJobId?: string }[]
     >();
     for (const r of liveReservations) {
       if (r.resourceKind !== "OperatorPool") continue;
       const list = poolReservationsByAbility.get(r.resourceId) ?? [];
-      list.push({ startAt: r.startAt, endAt: r.endAt });
+      list.push({
+        startAt: r.startAt,
+        endAt: r.endAt,
+        readableJobId: r.readableJobId,
+      });
       poolReservationsByAbility.set(r.resourceId, list);
     }
 
@@ -576,7 +584,9 @@ export class SchedulingEngine {
 
     const operations = Array.from(this.scheduledOperations.values());
     const selections =
-      await this.workCenterSelector.selectWorkCentersForOperations(operations);
+      await this.workCenterSelector.selectWorkCentersForOperations(operations, {
+        jobDueDate: this.job?.dueDate ?? null,
+      });
 
     // Apply selections
     this.scheduledOperations = applyWorkCenterSelections(
@@ -844,6 +854,8 @@ export class SchedulingEngine {
             companyId: this.companyId,
             startAt: p.startAt.toISOString(),
             endAt: p.endAt.toISOString(),
+            earliestStartAt: p.earliestStartAt?.toISOString() ?? null,
+            scheduleNote: p.scheduleNote ?? null,
             createdBy: this.userId,
           }))
         )

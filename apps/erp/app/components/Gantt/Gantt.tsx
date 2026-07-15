@@ -18,6 +18,9 @@ import {
   Slider,
   Switch,
   shortcutKeyVariants,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   useDebounce,
   useInitialDimensions,
   useShortcutKeys
@@ -29,9 +32,12 @@ import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 import {
+  LuCalendarClock,
   LuChevronDown,
   LuChevronRight,
+  LuCircleCheck,
   LuSearch,
+  LuTriangleAlert,
   LuZoomIn,
   LuZoomOut
 } from "react-icons/lu";
@@ -175,8 +181,8 @@ const Gantt = ({
                     className={cn(
                       "flex h-8 cursor-pointer items-center overflow-hidden rounded-l-sm pr-2",
                       state.selected
-                        ? "bg-muted hover:bg-accent"
-                        : "bg-transparent hover:bg-accent"
+                        ? "bg-muted"
+                        : "bg-transparent hover:bg-muted/60"
                     )}
                     onClick={() => {
                       selectNode(node.id);
@@ -193,7 +199,7 @@ const Gantt = ({
                       <div
                         className={cn(
                           "flex h-8 w-4 items-center",
-                          node.hasChildren && "hover:bg-accent"
+                          node.hasChildren && "hover:bg-muted"
                         )}
                         onClick={(e) => {
                           e.stopPropagation();
@@ -211,9 +217,9 @@ const Gantt = ({
                       >
                         {node.hasChildren ? (
                           state.expanded ? (
-                            <LuChevronDown className="h-4 w-4 text-gray-400" />
+                            <LuChevronDown className="size-4 text-muted-foreground" />
                           ) : (
-                            <LuChevronRight className="h-4 w-4 text-gray-400" />
+                            <LuChevronRight className="size-4 text-muted-foreground" />
                           )
                         ) : (
                           <div className="h-8 w-4" />
@@ -225,7 +231,7 @@ const Gantt = ({
                       <div className="flex items-center gap-2 overflow-x-hidden">
                         <GanttIcon
                           name={node.data.style?.icon}
-                          className="h-4 min-h-4 w-4 min-w-4"
+                          className="size-4 min-h-4 min-w-4"
                         />
                         <NodeText node={node} />
                         {node.data.isRoot && (
@@ -403,7 +409,7 @@ const GanttTimeline = ({
                     <Timeline.Point
                       ms={ms}
                       className={
-                        "relative bottom-[2px] text-xxs text-text-dimmed"
+                        "relative bottom-[2px] text-xxs text-muted-foreground"
                       }
                     >
                       {(ms) => (
@@ -466,7 +472,7 @@ const GanttTimeline = ({
                   "h-full border-r",
                   rootSpanStatus === "completed"
                     ? "border-success/30"
-                    : "border-error/30"
+                    : "border-destructive/30"
                 )}
               />
             </Timeline.Row>
@@ -516,10 +522,10 @@ const GanttTimeline = ({
                   <Timeline.Row
                     key={index}
                     className={cn(
-                      "group flex h-8 items-center",
+                      "group flex h-8 cursor-pointer items-center",
                       state.selected
-                        ? "bg-muted hover:bg-accent"
-                        : "bg-transparent hover:bg-muted"
+                        ? "bg-muted"
+                        : "bg-transparent hover:bg-muted/60"
                     )}
                     // onMouseOver={() => console.log(`hover ${index}`)}
                     onClick={(e) => {
@@ -527,22 +533,27 @@ const GanttTimeline = ({
                     }}
                   >
                     {node.data.level === "TRACE" ? (
-                      <SpanWithDuration
-                        showDuration={state.selected ? true : showDurations}
-                        startMs={node.data.offset}
-                        durationMs={
-                          node.data.duration
-                            ? node.data.duration
-                            : duration - node.data.offset
-                        }
-                        node={node}
-                      />
+                      <>
+                        {node.data.wait && node.data.wait.duration > 0 && (
+                          <WaitSpan wait={node.data.wait} />
+                        )}
+                        <SpanWithDuration
+                          showDuration={state.selected ? true : showDurations}
+                          startMs={node.data.offset}
+                          durationMs={
+                            node.data.duration
+                              ? node.data.duration
+                              : duration - node.data.offset
+                          }
+                          node={node}
+                        />
+                      </>
                     ) : (
                       <Timeline.Point ms={node.data.offset}>
                         {(ms) => (
                           <motion.div
                             className={cn(
-                              "-ml-1 h-3 w-3 rounded-full",
+                              "-ml-1 size-3 rounded-full",
                               eventBackgroundClassName(node.data)
                             )}
                             layoutId={node.id}
@@ -576,6 +587,25 @@ function NodeText({ node }: { node: GanttEvent }) {
   );
 }
 
+function StatusIconTooltip({
+  label,
+  children
+}: {
+  label: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className="inline-flex">{children}</span>
+      </TooltipTrigger>
+      <TooltipContent>
+        <span>{label}</span>
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
 function NodeStatusIcon({ node }: { node: GanttEvent }) {
   if (node.data.isCancelled) {
     return (
@@ -586,31 +616,41 @@ function NodeStatusIcon({ node }: { node: GanttEvent }) {
         >
           <Trans>Canceled</Trans>
         </Paragraph>
-        <GanttTaskStatusIcon status="CANCELED" className={cn("w-4 h-4")} />
+        <GanttTaskStatusIcon status="CANCELED" className="size-4" />
       </>
     );
   }
 
   if (node.data.isError) {
     return (
-      <GanttTaskStatusIcon
-        status="COMPLETED_WITH_ERRORS"
-        className={cn("w-4 h-4")}
-      />
+      <StatusIconTooltip label={<Trans>Scheduling conflict</Trans>}>
+        <LuTriangleAlert className="size-4 text-red-500" />
+      </StatusIconTooltip>
     );
   }
 
   if (node.data.isPartial) {
     return (
-      <GanttTaskStatusIcon status={"EXECUTING"} className={cn("w-4 h-4")} />
+      <StatusIconTooltip label={<Trans>In progress</Trans>}>
+        <GanttTaskStatusIcon status={"EXECUTING"} className="size-4" />
+      </StatusIconTooltip>
+    );
+  }
+
+  if (node.data.isEstimated) {
+    return (
+      <StatusIconTooltip
+        label={<Trans>Estimated — no capacity reservation</Trans>}
+      >
+        <LuCalendarClock className="size-4 text-blue-500" />
+      </StatusIconTooltip>
     );
   }
 
   return (
-    <GanttTaskStatusIcon
-      status="COMPLETED_SUCCESSFULLY"
-      className={cn("w-4 h-4")}
-    />
+    <StatusIconTooltip label={<Trans>Scheduled</Trans>}>
+      <LuCircleCheck className="size-4 text-success" />
+    </StatusIconTooltip>
   );
 }
 
@@ -668,6 +708,42 @@ function LiveReloadingStatus({
   );
 }
 
+/**
+ * Faded "waiting" segment drawn before a bar: the operation could have
+ * started at the segment's left edge but sat in queue until the solid bar
+ * begins. The reason is written on the segment (truncated when narrow) and
+ * shown in full as the tooltip.
+ */
+function WaitSpan({ wait }: { wait: NonNullable<GanttEvent["data"]["wait"]> }) {
+  // The tooltip trigger must wrap a plain element INSIDE Timeline.Span —
+  // Timeline.Span doesn't forward props/refs, so `asChild` on it silently
+  // drops the tooltip's hover listeners and the tooltip never opens.
+  const bar = (
+    <div
+      className="h-4 w-full min-w-[2px] rounded-l-sm bg-foreground/20 opacity-40"
+      style={{
+        backgroundImage: `url(${tileBgPath})`,
+        backgroundSize: "8px 8px"
+      }}
+    />
+  );
+
+  return (
+    <Timeline.Span startMs={wait.offset} durationMs={wait.duration}>
+      {wait.reason ? (
+        <Tooltip>
+          <TooltipTrigger asChild>{bar}</TooltipTrigger>
+          <TooltipContent>
+            <span>{wait.reason}</span>
+          </TooltipContent>
+        </Tooltip>
+      ) : (
+        bar
+      )}
+    </Timeline.Span>
+  );
+}
+
 function SpanWithDuration({
   showDuration,
   node,
@@ -682,9 +758,13 @@ function SpanWithDuration({
         )}
         layoutId={node.id}
       >
-        {node.data.isPartial && (
+        {(node.data.isPartial || node.data.isEstimated) && (
           <div
-            className="absolute left-0 top-0 h-full w-full animate-tile-scroll rounded-sm opacity-30"
+            className={cn(
+              "absolute left-0 top-0 h-full w-full rounded-sm opacity-30",
+              // estimated placements are static; only live work animates
+              node.data.isPartial && "animate-tile-scroll"
+            )}
             style={{
               backgroundImage: `url(${tileBgPath})`,
               backgroundSize: "8px 8px"
@@ -697,7 +777,7 @@ function SpanWithDuration({
             !showDuration && "opacity-0"
           )}
         >
-          <div className="rounded-sm px-1 py-0.5 text-xxs text-foreground">
+          <div className="rounded-sm bg-black/40 px-1 py-0.5 text-xxs font-medium text-white tabular-nums">
             {formatDurationMilliseconds(props.durationMs, {
               style: "short",
               maxDecimalPoints: props.durationMs < 1000 ? 0 : 1
@@ -727,7 +807,7 @@ function CurrentTimeIndicator({ totalDuration }: { totalDuration: number }) {
           <div className="relative z-50 flex h-full flex-col">
             <div className="relative flex h-6 items-end">
               <div
-                className="absolute w-fit whitespace-nowrap rounded-sm border border-border bg-gray-700 px-1 py-0.5 text-xxs text-text-bright"
+                className="absolute w-fit whitespace-nowrap rounded-sm border border-border bg-popover px-1 py-0.5 text-xxs text-popover-foreground shadow-sm tabular-nums"
                 style={{
                   left: `${offset * 100}%`,
                   transform: `translateX(-${offset * 100}%)`

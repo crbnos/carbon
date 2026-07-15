@@ -1827,6 +1827,7 @@ export const path = {
     scheduleDatesUpdate: `${x}/schedule/dates/update`,
     scheduleGantt: (jobId?: string) =>
       jobId ? `${x}/scheduling/gantt?jobId=${jobId}` : `${x}/scheduling/gantt`,
+    scheduleResources: `${x}/scheduling/resources`,
     scrapReason: (id: string) =>
       generatePath(`${x}/production/scrap-reasons/${id}`),
     scrapReasons: `${x}/production/scrap-reasons`,

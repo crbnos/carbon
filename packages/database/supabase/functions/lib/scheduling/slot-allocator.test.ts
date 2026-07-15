@@ -6,8 +6,10 @@ import { expandCalendar } from "./calendar-utils.ts";
 import {
   type AllocationResult,
   allocateOperation,
+  formatBlockingJobs,
   isConflict,
   type OperatorPool,
+  type ReservationInterval,
   type ResourceCapacityData,
 } from "./slot-allocator.ts";
 
@@ -247,4 +249,127 @@ Deno.test("pool concurrency: one member on shift cannot cover two overlapping op
 
   // Second op must wait for the welder even though its machine is free
   assertEquals(second.start.toISOString(), first.end.toISOString());
+});
+
+// --- formatBlockingJobs -----------------------------------------------------
+
+function interval(
+  startIso: string,
+  endIso: string,
+  readableJobId?: string
+): ReservationInterval {
+  return { startAt: utc(startIso), endAt: utc(endIso), readableJobId };
+}
+
+Deno.test("formatBlockingJobs groups by job and counts reservations", () => {
+  const reservations = [
+    interval("2026-01-05T08:00:00Z", "2026-01-05T10:00:00Z", "J000001"),
+    interval("2026-01-05T10:00:00Z", "2026-01-05T12:00:00Z", "J000001"),
+    interval("2026-01-05T12:00:00Z", "2026-01-05T14:00:00Z", "J000001"),
+    interval("2026-01-05T14:00:00Z", "2026-01-05T16:00:00Z", "J000007"),
+  ];
+
+  assertEquals(
+    formatBlockingJobs(
+      reservations,
+      utc("2026-01-05T08:00:00Z"),
+      utc("2026-01-05T16:00:00Z")
+    ),
+    "queued behind J000001 (3 ops), J000007 (1 op)"
+  );
+});
+
+Deno.test("formatBlockingJobs ignores untagged (own-job) intervals", () => {
+  const reservations = [
+    interval("2026-01-05T08:00:00Z", "2026-01-05T12:00:00Z"), // own in-run push
+    interval("2026-01-05T12:00:00Z", "2026-01-05T14:00:00Z", "J000002"),
+  ];
+
+  assertEquals(
+    formatBlockingJobs(
+      reservations,
+      utc("2026-01-05T08:00:00Z"),
+      utc("2026-01-05T16:00:00Z")
+    ),
+    "queued behind J000002 (1 op)"
+  );
+});
+
+Deno.test("formatBlockingJobs treats touching intervals as non-overlapping", () => {
+  const reservations = [
+    // ends exactly at region start / starts exactly at region end
+    interval("2026-01-05T06:00:00Z", "2026-01-05T08:00:00Z", "J000003"),
+    interval("2026-01-05T16:00:00Z", "2026-01-05T18:00:00Z", "J000004"),
+  ];
+
+  assertEquals(
+    formatBlockingJobs(
+      reservations,
+      utc("2026-01-05T08:00:00Z"),
+      utc("2026-01-05T16:00:00Z")
+    ),
+    null
+  );
+});
+
+Deno.test("formatBlockingJobs returns null for an empty region or no blockers", () => {
+  const tagged = [
+    interval("2026-01-05T08:00:00Z", "2026-01-05T12:00:00Z", "J000005"),
+  ];
+  // zero-width region (op started exactly when it could have)
+  assertEquals(
+    formatBlockingJobs(
+      tagged,
+      utc("2026-01-05T08:00:00Z"),
+      utc("2026-01-05T08:00:00Z")
+    ),
+    null
+  );
+  assertEquals(
+    formatBlockingJobs([], utc("2026-01-05T08:00:00Z"), utc("2026-01-06T00:00:00Z")),
+    null
+  );
+});
+
+Deno.test("formatBlockingJobs ranks by op count then job id, capping at 3", () => {
+  const reservations = [
+    interval("2026-01-05T08:00:00Z", "2026-01-05T09:00:00Z", "J000004"),
+    interval("2026-01-05T09:00:00Z", "2026-01-05T10:00:00Z", "J000002"),
+    interval("2026-01-05T10:00:00Z", "2026-01-05T11:00:00Z", "J000002"),
+    interval("2026-01-05T11:00:00Z", "2026-01-05T12:00:00Z", "J000003"),
+    interval("2026-01-05T12:00:00Z", "2026-01-05T13:00:00Z", "J000001"),
+  ];
+
+  assertEquals(
+    formatBlockingJobs(
+      reservations,
+      utc("2026-01-05T08:00:00Z"),
+      utc("2026-01-05T16:00:00Z")
+    ),
+    "queued behind J000002 (2 ops), J000001 (1 op), J000003 (1 op), +1 more"
+  );
+});
+
+Deno.test("delayed placement names the job whose reservation forced the wait", () => {
+  // Another job holds the machine 06:00-18:00; our op could start at 08:00
+  const capacity = makeCapacity([
+    interval("2026-01-05T06:00:00Z", "2026-01-05T18:00:00Z", "J000001"),
+  ]);
+  const earliestStart = utc("2026-01-05T08:00:00Z");
+
+  const slot = expectSlot(
+    allocateOperation({
+      durationHours: 2,
+      earliestStart,
+      horizonEnd: HORIZON,
+      capacity,
+    })
+  );
+
+  // The selector composes the past-due message from exactly this call
+  assertEquals(slot.start.toISOString(), "2026-01-05T18:00:00.000Z");
+  assertEquals(
+    formatBlockingJobs(capacity.reservations, earliestStart, slot.start),
+    "queued behind J000001 (1 op)"
+  );
 });

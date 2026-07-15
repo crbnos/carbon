@@ -856,7 +856,7 @@ msgid "Schedule"
 msgstr "일정"
 
 msgid "Scheduling conflict"
-msgstr ""
+msgstr "일정 충돌"
 
 msgid "Scrap"
 msgstr "스크랩"

@@ -856,7 +856,7 @@ msgid "Schedule"
 msgstr "शेड्यूल"
 
 msgid "Scheduling conflict"
-msgstr ""
+msgstr "शेड्यूलिंग संघर्ष"
 
 msgid "Scrap"
 msgstr "स्क्रैप"

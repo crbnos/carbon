@@ -20,7 +20,8 @@ export const webhookFunction = inngest.createFunction(
     retries: 3,
     idempotency: "event.data.msgId",
     concurrency: {
-      limit: 0,
+      // limit: 0 means zero capacity — runs queue forever and never execute
+      limit: 1,
       key: "event.data.data.table + '-' + event.data.data.recordId"
     }
   },

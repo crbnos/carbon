@@ -3,6 +3,7 @@ import { AiOutlinePartition } from "react-icons/ai";
 import {
   LuCalendarClock,
   LuClock,
+  LuFactory,
   LuFlaskConical,
   LuHand,
   LuInfo,
@@ -29,6 +30,8 @@ export function GanttIcon({ name, className }: TaskIconProps) {
       );
     case "operation":
       return <LuClock className={cn(className, "text-blue-500")} />;
+    case "workCenter":
+      return <LuFactory className={cn(className, "text-blue-500")} />;
     case "timecard":
       return <TaskIcon className={cn(className, "text-yellow-500")} />;
     case "inspection":

@@ -10,7 +10,10 @@ export const rescheduleJobFunction = inngest.createFunction(
     id: "schedule-job",
     retries: 3,
     concurrency: {
-      limit: 0,
+      // One scheduling run at a time per company — capacity reservations are
+      // cross-job, so concurrent runs could double-book a work center.
+      // (limit: 0 means zero capacity: runs queue forever and never execute.)
+      limit: 1,
       key: "event.data.companyId"
     }
   },

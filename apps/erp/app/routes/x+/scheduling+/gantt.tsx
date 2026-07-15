@@ -4,21 +4,17 @@ import {
   ClientOnly,
   Combobox,
   cn,
-  Heading,
   HStack,
-  IconButton,
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
-  useDebounce,
-  VStack
+  useDebounce
 } from "@carbon/react";
-import { formatDurationMilliseconds } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { LuTriangleAlert, LuX } from "react-icons/lu";
+import { LuTriangleAlert } from "react-icons/lu";
 import type { LoaderFunctionArgs, Location } from "react-router";
-import { Link, useLoaderData, useNavigate } from "react-router";
+import { useLoaderData, useNavigate } from "react-router";
 import { Empty } from "~/components";
 import { Gantt } from "~/components/Gantt";
 import { useDateFormatter } from "~/hooks";
@@ -28,7 +24,9 @@ import {
   getJobOperationsForTimeline,
   getProductionEventsByJob
 } from "~/modules/production";
+import JobStatus from "~/modules/production/ui/Jobs/JobStatus";
 import { ScheduleNavigation } from "~/modules/production/ui/Schedule/Kanban/ScheuleNavigation";
+import { TimelineDetail } from "~/modules/production/ui/Schedule/TimelineDetail";
 import type { TimelineNodeDetail } from "~/modules/production/ui/Schedule/timeline";
 import { buildJobTimeline } from "~/modules/production/ui/Schedule/timeline";
 import type { Handle } from "~/utils/handle";
@@ -73,6 +71,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return {
       jobOptions,
       selectedJobId: null,
+      jobStatus: null,
+      jobDueDate: null,
+      conflictCount: 0,
       trace: null,
       detailsById: {} as Record<string, TimelineNodeDetail>,
       resizeSettings
@@ -82,7 +83,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const [job, operations, reservations, productionEvents] = await Promise.all([
     client
       .from("job")
-      .select("id, jobId, status")
+      .select("id, jobId, status, dueDate")
       .eq("id", selectedJobId)
       .eq("companyId", companyId)
       .single(),
@@ -95,6 +96,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return {
       jobOptions,
       selectedJobId: null,
+      jobStatus: null,
+      jobDueDate: null,
+      conflictCount: 0,
       trace: null,
       detailsById: {} as Record<string, TimelineNodeDetail>,
       resizeSettings
@@ -116,8 +120,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
   for (const e of productionEvents.data ?? []) {
     if (e.employeeId) userIds.add(e.employeeId);
   }
+  // A make method's parentMaterialId points at a jobMaterial row in the
+  // PARENT make method — resolve that ownership so the Gantt can nest
+  // subassemblies under the assembly that consumes them
+  const parentMaterialIds = new Set<string>();
+  for (const o of operations.data ?? []) {
+    if (o.jobMakeMethod?.parentMaterialId) {
+      parentMaterialIds.add(o.jobMakeMethod.parentMaterialId);
+    }
+  }
 
-  const [workCenters, abilities, users] = await Promise.all([
+  const [workCenters, abilities, users, parentMaterials] = await Promise.all([
     workCenterIds.size > 0
       ? client
           .from("workCenter")
@@ -134,6 +147,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
       ? client.from("user").select("id, fullName").in("id", Array.from(userIds))
       : Promise.resolve({
           data: [] as { id: string; fullName: string | null }[]
+        }),
+    parentMaterialIds.size > 0
+      ? client
+          .from("jobMaterial")
+          .select("id, jobMakeMethodId, order")
+          .in("id", Array.from(parentMaterialIds))
+      : Promise.resolve({
+          data: [] as {
+            id: string;
+            jobMakeMethodId: string;
+            order: number | null;
+          }[]
         })
   ]);
 
@@ -144,6 +169,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
     (abilities.data ?? []).map((a) => [a.id, a.name])
   );
   const userNames = new Map((users.data ?? []).map((u) => [u.id, u.fullName]));
+  const materialOwnerMethod = new Map(
+    (parentMaterials.data ?? []).map((m) => [m.id, m.jobMakeMethodId])
+  );
+  const materialOrder = new Map(
+    (parentMaterials.data ?? []).map((m) => [m.id, m.order])
+  );
 
   const timeline = buildJobTimeline({
     job: {
@@ -164,6 +195,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
       workCenterName: o.workCenter?.name ?? null,
       makeMethodId: o.jobMakeMethod?.id ?? null,
       makeMethodParentMaterialId: o.jobMakeMethod?.parentMaterialId ?? null,
+      makeMethodParentMakeMethodId: o.jobMakeMethod?.parentMaterialId
+        ? (materialOwnerMethod.get(o.jobMakeMethod.parentMaterialId) ?? null)
+        : null,
+      makeMethodParentMaterialOrder: o.jobMakeMethod?.parentMaterialId
+        ? (materialOrder.get(o.jobMakeMethod.parentMaterialId) ?? null)
+        : null,
       makeMethodItemReadableId: o.jobMakeMethod?.item?.readableId ?? null
     })),
     reservations: (reservations.data ?? []).map((r) => ({
@@ -175,7 +212,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
           ? (workCenterNames.get(r.resourceId) ?? "Work Center")
           : (abilityNames.get(r.resourceId) ?? "Operator Pool"),
       startAt: r.startAt,
-      endAt: r.endAt
+      endAt: r.endAt,
+      earliestStartAt: r.earliestStartAt,
+      scheduleNote: r.scheduleNote
     })),
     productionEvents: (productionEvents.data ?? []).map((e) => ({
       id: e.id,
@@ -190,6 +229,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return {
     jobOptions,
     selectedJobId,
+    jobStatus: job.data.status,
+    jobDueDate: job.data.dueDate,
+    conflictCount: (operations.data ?? []).filter((o) => o.hasConflict).length,
     trace: {
       events: timeline.events,
       duration: timeline.totalDuration,
@@ -207,10 +249,19 @@ function getSpanId(location: Location<any>): string | undefined {
 }
 
 export default function GanttView() {
-  const { jobOptions, selectedJobId, trace, detailsById, resizeSettings } =
-    useLoaderData<typeof loader>();
+  const {
+    jobOptions,
+    selectedJobId,
+    jobStatus,
+    jobDueDate,
+    conflictCount,
+    trace,
+    detailsById,
+    resizeSettings
+  } = useLoaderData<typeof loader>();
   const { t } = useLingui();
   const navigate = useNavigate();
+  const { formatDate } = useDateFormatter();
 
   const { location, replaceSearchParam } = useReplaceLocation();
   const selectedSpanId = getSpanId(location);
@@ -238,22 +289,46 @@ export default function GanttView() {
               if (jobId) navigate(path.to.scheduleGantt(jobId));
             }}
           />
+          {jobStatus && <div className="h-4 w-px bg-border" />}
+          <JobStatus status={jobStatus} />
+          {jobDueDate && (
+            <span className="text-xs text-muted-foreground whitespace-nowrap">
+              <Trans>Due {formatDate(jobDueDate)}</Trans>
+            </span>
+          )}
+          {conflictCount > 0 && (
+            <Badge
+              variant="destructive"
+              className="gap-1 whitespace-nowrap tabular-nums"
+            >
+              <LuTriangleAlert className="size-3" />
+              {conflictCount === 1 ? (
+                <Trans>1 conflict</Trans>
+              ) : (
+                <Trans>{conflictCount} conflicts</Trans>
+              )}
+            </Badge>
+          )}
         </HStack>
         <HStack spacing={4} className="text-xs text-muted-foreground">
-          <HStack spacing={1}>
+          <HStack className="gap-x-1">
             <span className="inline-block h-2 w-4 rounded-sm bg-emerald-500" />
             <Trans>Scheduled</Trans>
           </HStack>
-          <HStack spacing={1}>
+          <HStack className="gap-x-1">
             <span className="inline-block h-2 w-4 rounded-sm bg-blue-500 [background-image:repeating-linear-gradient(45deg,transparent,transparent_2px,rgba(255,255,255,0.45)_2px,rgba(255,255,255,0.45)_4px)]" />
             <Trans>Estimated</Trans>
           </HStack>
-          <HStack spacing={1}>
+          <HStack className="gap-x-1">
+            <span className="inline-block h-2 w-4 rounded-sm bg-gray-500 [background-image:repeating-linear-gradient(45deg,transparent,transparent_2px,rgba(255,255,255,0.45)_2px,rgba(255,255,255,0.45)_4px)]" />
+            <Trans>In progress</Trans>
+          </HStack>
+          <HStack className="gap-x-1">
             <span className="inline-block h-2 w-4 rounded-sm bg-red-500" />
             <Trans>Conflict</Trans>
           </HStack>
           {trace?.rootStartedAt && (
-            <span>
+            <span className="whitespace-nowrap">
               <Trans>
                 Starts {new Date(trace.rootStartedAt).toLocaleString()}
               </Trans>
@@ -333,111 +408,5 @@ export default function GanttView() {
         </div>
       )}
     </div>
-  );
-}
-
-function TimelineDetail({
-  detail,
-  jobId,
-  onClose
-}: {
-  detail: TimelineNodeDetail;
-  jobId: string;
-  onClose: () => void;
-}) {
-  const { t } = useLingui();
-  const { formatDateTime } = useDateFormatter();
-
-  const kindLabel: Record<TimelineNodeDetail["kind"], string> = {
-    job: t`Job`,
-    assembly: t`Assembly`,
-    operation: t`Operation`,
-    reservation:
-      detail.resourceKind === "OperatorPool"
-        ? t`Operator Pool Reservation`
-        : t`Work Center Reservation`,
-    productionEvent: t`Production Event`
-  };
-
-  return (
-    <VStack
-      spacing={4}
-      className="h-full overflow-y-auto border-l border-border bg-card p-4"
-    >
-      <HStack className="w-full justify-between">
-        <VStack spacing={1}>
-          <Badge variant="secondary">{kindLabel[detail.kind]}</Badge>
-          <Heading size="h3">{detail.title}</Heading>
-        </VStack>
-        <IconButton
-          aria-label={t`Close`}
-          variant="ghost"
-          icon={<LuX />}
-          onClick={onClose}
-        />
-      </HStack>
-
-      {detail.conflictReason && (
-        <div className="flex w-full items-start gap-2 rounded-md border border-red-500 bg-red-500/10 p-3 text-sm text-red-600 dark:text-red-400">
-          <LuTriangleAlert className="mt-0.5 h-4 w-4 flex-shrink-0" />
-          <span>{detail.conflictReason}</span>
-        </div>
-      )}
-
-      <VStack spacing={2} className="w-full text-sm">
-        {detail.status && <DetailRow label={t`Status`} value={detail.status} />}
-        {detail.workCenterName && (
-          <DetailRow label={t`Work Center`} value={detail.workCenterName} />
-        )}
-        {detail.assigneeName && (
-          <DetailRow label={t`Assignee`} value={detail.assigneeName} />
-        )}
-        {detail.employeeName && (
-          <DetailRow label={t`Employee`} value={detail.employeeName} />
-        )}
-        {detail.start && (
-          <DetailRow label={t`Starts`} value={formatDateTime(detail.start)} />
-        )}
-        {detail.end ? (
-          <DetailRow label={t`Ends`} value={formatDateTime(detail.end)} />
-        ) : (
-          detail.start && <DetailRow label={t`Ends`} value={t`In progress`} />
-        )}
-        <DetailRow
-          label={t`Duration`}
-          value={
-            detail.durationMs > 0
-              ? formatDurationMilliseconds(detail.durationMs, {
-                  style: "short"
-                })
-              : "—"
-          }
-        />
-        {detail.approximate && (
-          <p className="text-xs text-muted-foreground">
-            <Trans>
-              Approximate — derived from scheduled dates; no capacity
-              reservation exists for this row.
-            </Trans>
-          </p>
-        )}
-      </VStack>
-
-      <Link
-        to={path.to.job(jobId)}
-        className="text-sm font-medium text-primary hover:underline"
-      >
-        <Trans>Open Job</Trans>
-      </Link>
-    </VStack>
-  );
-}
-
-function DetailRow({ label, value }: { label: string; value: string }) {
-  return (
-    <HStack className="w-full justify-between">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="font-medium text-right">{value}</span>
-    </HStack>
   );
 }

@@ -16,7 +16,17 @@ import {
   unionWindows,
 } from "./calendar-utils.ts";
 
-export type ReservationInterval = { startAt: Date; endAt: Date };
+export type ReservationInterval = {
+  startAt: Date;
+  endAt: Date;
+  /**
+   * Readable job number (e.g. J000001) of the job holding this reservation.
+   * Set on live rows loaded from the DB (other jobs); in-run pushes for the
+   * job being scheduled stay untagged, which is what excludes them from
+   * blocker attribution in conflict messages.
+   */
+  readableJobId?: string;
+};
 
 export type ResourceCapacityData = {
   workCenter: { id: string };
@@ -42,6 +52,49 @@ export type AllocationResult = AllocationSuccess | AllocationConflict;
 
 export function isConflict(r: AllocationResult): r is AllocationConflict {
   return "conflict" in r;
+}
+
+/**
+ * Name the jobs whose reservations occupy [from, to) — the region that
+ * delayed an operation — so conflict messages can say WHO is ahead in the
+ * queue, not just how late the finish is. Only intervals tagged with a
+ * readableJobId count (untagged = the job being scheduled itself). Returns
+ * e.g. "queued behind J000001 (3 ops), J000007 (1 op)", or null when no
+ * other job's work overlaps the region.
+ */
+export function formatBlockingJobs(
+  reservations: ReservationInterval[],
+  from: Date,
+  to: Date
+): string | null {
+  const f = from.getTime();
+  const t = to.getTime();
+  if (t <= f) return null;
+
+  const opCountByJob = new Map<string, number>();
+  for (const r of reservations) {
+    if (!r.readableJobId) continue;
+    if (r.startAt.getTime() < t && r.endAt.getTime() > f) {
+      opCountByJob.set(
+        r.readableJobId,
+        (opCountByJob.get(r.readableJobId) ?? 0) + 1
+      );
+    }
+  }
+  if (opCountByJob.size === 0) return null;
+
+  const ranked = Array.from(opCountByJob.entries()).sort(
+    (a, b) => b[1] - a[1] || a[0].localeCompare(b[0])
+  );
+  const MAX_JOBS = 3;
+  const parts = ranked
+    .slice(0, MAX_JOBS)
+    .map(([jobId, count]) => `${jobId} (${count} ${count === 1 ? "op" : "ops"})`);
+  const overflow = ranked.length - MAX_JOBS;
+  if (overflow > 0) {
+    parts.push(`+${overflow} more`);
+  }
+  return `queued behind ${parts.join(", ")}`;
 }
 
 /**

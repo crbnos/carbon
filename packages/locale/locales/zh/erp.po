@@ -96,6 +96,9 @@ msgstr "{arOverduePct}% 的应收账款"
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}。考虑将此零件直接指向最终后继产品。"
 
+msgid "{conflictCount} conflicts"
+msgstr "{conflictCount} 个冲突"
+
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# 门课程} other {# 门课程}}"
 
@@ -118,6 +121,9 @@ msgstr "{name} 已删除"
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# 个阶段剩余} other {# 个阶段剩余}}"
+
+msgid "{resourceCount} resources · {reservationCount} reservations · {jobCount} jobs"
+msgstr "{resourceCount} 个资源 · {reservationCount} 个预留 · {jobCount} 个任务"
 
 msgid "{scopeCount} permissions"
 msgstr "{scopeCount} 个权限"
@@ -147,6 +153,9 @@ msgstr "<0>为此项目添加供应商零件</0>以设置首选供应商。"
 
 msgid "0-4 weeks"
 msgstr "0-4 周"
+
+msgid "1 conflict"
+msgstr "1 个冲突"
 
 msgid "1 day"
 msgstr "1 天"
@@ -365,7 +374,7 @@ msgid "ability"
 msgstr "功能"
 
 msgid "Ability"
-msgstr ""
+msgstr "能力"
 
 msgid "About"
 msgstr "关于"
@@ -590,7 +599,7 @@ msgid "Add a step"
 msgstr "添加步骤"
 
 msgid "Add Ability"
-msgstr ""
+msgstr "添加能力"
 
 msgid "Add Actions"
 msgstr "添加操作"
@@ -620,7 +629,7 @@ msgid "Add Contractor"
 msgstr "添加承包商"
 
 msgid "Add Employee"
-msgstr ""
+msgstr "添加员工"
 
 msgid "Add Entry"
 msgstr "添加条目"
@@ -1002,7 +1011,7 @@ msgid "Approved By"
 msgstr "批准人"
 
 msgid "Approximate — derived from scheduled dates; no capacity reservation exists for this row."
-msgstr ""
+msgstr "近似 — 由计划日期推导；此行不存在产能预留。"
 
 msgid "AQL"
 msgstr "AQL"
@@ -1084,7 +1093,7 @@ msgid "Are you sure you want to deactivate the {label} configuration rule?"
 msgstr "你确定要停用 {label} 配置规则吗？"
 
 msgid "Are you sure you want to deactivate the ability: {name}?"
-msgstr ""
+msgstr "您确定要停用能力：{name}？"
 
 msgid "Are you sure you want to deactivate the process: {name}? It will no longer appear in dropdowns."
 msgstr "您确定要停用此流程：{name}？它将不再出现在下拉菜单中。"
@@ -1373,7 +1382,7 @@ msgid "Are you sure you want to remove {supplierName} as a supplier for this ite
 msgstr "您确定要将 {supplierName} 从此项目的供应商中移除吗？此操作无法撤销。"
 
 msgid "Are you sure you want to remove this employee from {name}? The training history is kept and the employee can be re-added later."
-msgstr ""
+msgstr "您确定要从 {name} 中移除此员工？培训历史被保留，员工可以稍后重新添加。"
 
 msgid "Are you sure you want to remove this item from the price list? This cannot be undone."
 msgstr "你确定要从价格列表中删除此项目吗？此操作无法撤销。"
@@ -1433,7 +1442,7 @@ msgid "Assemblies"
 msgstr "装配件"
 
 msgid "Assembly"
-msgstr ""
+msgstr "装配"
 
 msgid "Assembly Instructions"
 msgstr "装配说明"
@@ -1746,7 +1755,7 @@ msgid "Bills of material"
 msgstr "物料清单"
 
 msgid "Blank = computed from the ability's recertification period"
-msgstr ""
+msgstr "空白 = 从能力的再认证期间计算"
 
 msgid "Blind Count"
 msgstr "盲点库存"
@@ -2330,7 +2339,7 @@ msgid "Completed Qty"
 msgstr "已完成数量"
 
 msgid "Completing this training grants or renews the selected ability."
-msgstr ""
+msgstr "完成此培训将授予或更新所选能力。"
 
 msgid "Completion Barcode"
 msgstr "完成条码"
@@ -2469,7 +2478,7 @@ msgid "Confirms every posted journal entry in the period has equal debits and cr
 msgstr "确认期间内每笔已过账日记账条目都有相等的借贷金额。如果任何条目不平衡，试算平衡表将无法对账，因此必须在期间结束前进行更正。"
 
 msgid "Conflict"
-msgstr ""
+msgstr "冲突"
 
 msgid "Connect Carbon to your accounting, project management, and CAD tools and much more."
 msgstr "将 Carbon 连接到您的会计、项目管理和 CAD 工具等更多应用。"
@@ -3377,7 +3386,7 @@ msgid "Deactivate {name}"
 msgstr "停用 {name}"
 
 msgid "Deactivate Ability"
-msgstr ""
+msgstr "停用能力"
 
 msgid "Deactivate Account"
 msgstr "停用账户"
@@ -4111,6 +4120,7 @@ msgstr "直接发货"
 msgid "Due"
 msgstr "到期"
 
+#. placeholder {0}: formatDate(jobDueDate)
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
 msgid "Due {0}"
 msgstr "截止日期 {0}"
@@ -4194,10 +4204,10 @@ msgid "Edit <0>Issue</0> Workflow"
 msgstr "编辑<0>问题</0>工作流"
 
 msgid "Edit ability"
-msgstr ""
+msgstr "编辑能力"
 
 msgid "Edit Ability"
-msgstr ""
+msgstr "编辑能力"
 
 msgid "Edit Account"
 msgstr "编辑账户"
@@ -4263,7 +4273,7 @@ msgid "Edit Employee"
 msgstr "编辑员工"
 
 msgid "Edit Employee Ability"
-msgstr ""
+msgstr "编辑员工能力"
 
 msgid "Edit Employee Type"
 msgstr "编辑员工类型"
@@ -4596,7 +4606,7 @@ msgid "End Time"
 msgstr "结束时间"
 
 msgid "Ends"
-msgstr ""
+msgstr "结束"
 
 msgid "Enforce per-item validation and guidelines across receipts, shipments, transfers, and adjustments."
 msgstr "在收据、发货、转移和调整中强制执行按项目验证和指南。"
@@ -4752,7 +4762,10 @@ msgid "Est. Duration"
 msgstr "预计时长"
 
 msgid "Estimated"
-msgstr ""
+msgstr "估计"
+
+msgid "Estimated — no capacity reservation"
+msgstr "估计 — 无产能预留"
 
 msgid "Estimated Duration"
 msgstr "预计时长"
@@ -4889,7 +4902,7 @@ msgstr "已过期"
 
 #. placeholder {0}: formatDate(status.expiresAt)
 msgid "Expired {0}"
-msgstr ""
+msgstr "已过期 {0}"
 
 msgid "Expired {date}"
 msgstr "已过期 {date}"
@@ -4905,20 +4918,20 @@ msgstr "过期"
 
 #. placeholder {0}: formatDate(status.expiresAt)
 msgid "Expires {0}"
-msgstr ""
+msgstr "过期 {0}"
 
 msgid "Expires {date}"
 msgstr "过期时间 {date}"
 
 msgid "Expires At"
-msgstr ""
+msgstr "过期时间"
 
 msgid "Expires At (optional)"
 msgstr "过期时间（可选）"
 
 #. placeholder {0}: status.daysLeft
 msgid "Expires in {0}d"
-msgstr ""
+msgstr "在 {0}d 后过期"
 
 msgid "Expiring first"
 msgstr "先到期"
@@ -5779,7 +5792,7 @@ msgid "Grades"
 msgstr "等级"
 
 msgid "Grants Ability"
-msgstr ""
+msgstr "授予能力"
 
 msgid "Group"
 msgstr "组"
@@ -6085,7 +6098,7 @@ msgid "In the loop together"
 msgstr "一起保持沟通"
 
 msgid "In Training"
-msgstr ""
+msgstr "培训中"
 
 msgid "Inactive"
 msgstr "未激活"
@@ -6652,10 +6665,10 @@ msgid "Last synced: {0}"
 msgstr "最后同步: {0}"
 
 msgid "Last Training"
-msgstr ""
+msgstr "最后培训"
 
 msgid "Last Training Date"
-msgstr ""
+msgstr "最后培训日期"
 
 msgid "Last updated: {formattedDate}"
 msgstr "最后更新: {formattedDate}"
@@ -7495,7 +7508,7 @@ msgid "New <0>Issue</0> Workflow"
 msgstr "新的<0>Issue</0>工作流"
 
 msgid "New Ability"
-msgstr ""
+msgstr "新能力"
 
 msgid "New Account"
 msgstr "新账户"
@@ -7851,6 +7864,9 @@ msgstr "没有物料清单输入具有保质期政策"
 msgid "No calibration records found"
 msgstr "未找到校准记录"
 
+msgid "No capacity reservations to visualize. Schedule a job to see work-center load."
+msgstr "没有产能预留可显示。计划一项任务以查看工作中心负荷。"
+
 msgid "No changes recorded"
 msgstr "未记录任何更改"
 
@@ -8017,7 +8033,7 @@ msgid "No receivables"
 msgstr "无应收账款"
 
 msgid "No released jobs to visualize. Release a job to see its schedule."
-msgstr ""
+msgstr "没有已发布的任务可显示。发布一项任务以查看其计划。"
 
 msgid "No remaining entities to inspect."
 msgstr "没有剩余的实体可检查。"
@@ -8112,6 +8128,9 @@ msgstr "工作数量不足以覆盖数量"
 msgid "Not Required"
 msgstr "不需要"
 
+msgid "Not scheduled — no feasible slot. The stored dates are backward-planning placeholders, not a real booking."
+msgstr "未计划 — 没有可行的时隙。存储的日期是向后规划占位符，不是真实预订。"
+
 msgid "Not set"
 msgstr "未设置"
 
@@ -8119,7 +8138,7 @@ msgid "Not started"
 msgstr "未开始"
 
 msgid "Not Started"
-msgstr ""
+msgstr "未开始"
 
 msgid "Not yet"
 msgstr "还未"
@@ -8230,7 +8249,7 @@ msgid "Only empty, open periods can be deleted."
 msgstr "仅可删除空白的开放期间。"
 
 msgid "Only qualified employees can be scheduled for and run this process"
-msgstr ""
+msgstr "只有合格的员工才能被安排和运行此流程"
 
 msgid "Onshape Status"
 msgstr "Onshape 状态"
@@ -8275,7 +8294,7 @@ msgid "Open Issues"
 msgstr "未解决的问题"
 
 msgid "Open Job"
-msgstr ""
+msgstr "开放任务"
 
 msgid "Open jobs"
 msgstr "未结工单"
@@ -8358,8 +8377,11 @@ msgstr "操作员收到警告。库存仍然可以通过。"
 msgid "Operator must pick a different batch/serial."
 msgstr "操作员必须选择不同的批次/序列号。"
 
+msgid "Operator Pool"
+msgstr "操作员池"
+
 msgid "Operator Pool Reservation"
-msgstr ""
+msgstr "操作员池预留"
 
 msgid "Operators"
 msgstr "操作员"
@@ -9347,13 +9369,13 @@ msgid "Qty. Scrapped"
 msgstr "数量. 报废"
 
 msgid "Qualification expires this many days after training; blank = never"
-msgstr ""
+msgstr "资格在培训后这么多天后过期；空白 = 永不"
 
 msgid "Qualified"
-msgstr ""
+msgstr "合格"
 
 msgid "Qualified Employees"
-msgstr ""
+msgstr "合格员工"
 
 msgid "quality"
 msgstr "报价到现金"
@@ -9634,7 +9656,7 @@ msgid "Recently Created"
 msgstr "最近创建"
 
 msgid "Recertify Every (Days)"
-msgstr ""
+msgstr "每(天)重新认证"
 
 msgid "Reconciling a purchase order against what was received and invoiced — implicit in Carbon, via the line quantities and GR/IR balance."
 msgstr "回收期"
@@ -9752,7 +9774,7 @@ msgid "Remove condition"
 msgstr "移除条件"
 
 msgid "Remove Employee"
-msgstr ""
+msgstr "移除员工"
 
 msgid "Remove feature"
 msgstr "删除功能"
@@ -9899,7 +9921,7 @@ msgid "Requirements and Process Map"
 msgstr "需求和流程图"
 
 msgid "Requires Ability"
-msgstr ""
+msgstr "需要能力"
 
 msgid "Requires Action"
 msgstr "需要采取行动"
@@ -10336,7 +10358,7 @@ msgid "Schedule Name"
 msgstr "计划名称"
 
 msgid "Scheduled"
-msgstr ""
+msgstr "已计划"
 
 msgid "Scheduled Maintenance"
 msgstr "定期维护"
@@ -10348,7 +10370,7 @@ msgid "Schedules"
 msgstr "日程"
 
 msgid "Scheduling conflict"
-msgstr ""
+msgstr "计划冲突"
 
 msgid "Scope"
 msgstr "范围"
@@ -10459,7 +10481,7 @@ msgid "Select a default approver"
 msgstr "选择默认审批人"
 
 msgid "Select a job"
-msgstr ""
+msgstr "选择工作"
 
 msgid "Select a new owner"
 msgstr "选择新的所有者"
@@ -10771,7 +10793,7 @@ msgid "Severity"
 msgstr "严重程度"
 
 msgid "Shadow Weeks"
-msgstr ""
+msgstr "跟班周数"
 
 msgid "shape"
 msgstr "形状"
@@ -11183,11 +11205,11 @@ msgid "Started"
 msgstr "开始于"
 
 msgid "Starts"
-msgstr ""
+msgstr "开始"
 
 #. placeholder {0}: new Date(trace.rootStartedAt).toLocaleString()
 msgid "Starts {0}"
-msgstr ""
+msgstr "开始于 {0}"
 
 msgid "State / Province"
 msgstr "州/省"
@@ -12405,7 +12427,7 @@ msgid "These journal entries are still Draft, so their debits and credits aren't
 msgstr "这些日记账条目仍为草稿状态，因此其借贷金额不在本期分类账中。过账每一份，或将其重新标记日期至较晚的开放期间。"
 
 msgid "this ability"
-msgstr ""
+msgstr "此能力"
 
 msgid "This completes the Discovery step."
 msgstr "这完成了发现步骤。"
@@ -12775,7 +12797,7 @@ msgid "Training Assignments"
 msgstr "培训分配"
 
 msgid "Training Completed"
-msgstr ""
+msgstr "培训已完成"
 
 msgid "Training Plan"
 msgstr "培训计划"
@@ -13139,7 +13161,7 @@ msgid "Used on the home screen in dark mode"
 msgstr "在深色模式下用于主屏幕"
 
 msgid "Used to build the default learning curve"
-msgstr ""
+msgstr "用于构建默认学习曲线"
 
 msgid "Used to categorize items for reporting and analysis"
 msgstr "用于对项目进行分类以用于报告和分析"
@@ -13271,7 +13293,7 @@ msgid "View"
 msgstr "查看"
 
 msgid "View Ability"
-msgstr ""
+msgstr "查看能力"
 
 msgid "View Active Jobs"
 msgstr "查看活跃工作"
@@ -13465,6 +13487,9 @@ msgstr "作废此收据将："
 msgid "Voiding this shipment will:"
 msgstr "取消此货运将会："
 
+msgid "Waited"
+msgstr "已等待"
+
 msgid "Walk each area with your champion and toggle anything out of scope. Codes read Module.Area.Number (ACC.GL.01 = Accounting, General Ledger, item 1)."
 msgstr "与您的项目冠军一起逐个领域进行审查，并切换任何超出范围的内容。代码格式为 Module.Area.Number（ACC.GL.01 = 会计、总账、项目 1）。"
 
@@ -13585,13 +13610,13 @@ msgid "Weeks 7 to 8"
 msgstr "第7至8周"
 
 msgid "Weeks of shadowing before an employee is productive"
-msgstr ""
+msgstr "员工提高生产力前的跟班周数"
 
 msgid "Weeks Open"
 msgstr "周数开放"
 
 msgid "Weeks to Full Proficiency"
-msgstr ""
+msgstr "达到完全熟练的周数"
 
 msgid "Weighted Average"
 msgstr "加权平均"
@@ -13926,7 +13951,7 @@ msgid "Work Center"
 msgstr "工作中心"
 
 msgid "Work Center Reservation"
-msgstr ""
+msgstr "工作中心预留"
 
 msgid "Work Center Utilization"
 msgstr "工作中心利用率"
