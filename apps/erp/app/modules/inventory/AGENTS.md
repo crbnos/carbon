@@ -59,7 +59,7 @@ pnpm exec turbo run typecheck --filter=erp   # the app's package name is "erp", 
 
 - `getInventoryItems` / `getInventoryItemsCount` — calls `get_inventory_quantities` RPC for on-hand quantities
 - `getItemLedgerPage` / `getItemLedgerActivity` — paginated ledger history
-- `insertManualInventoryAdjustment` — adjustments with tracked entity handling and ledger entries
+- `insertManualInventoryAdjustment` — adjustments with tracked entity handling; wraps the `post-inventory-adjustment` edge function, which also maintains cost layers and posts GL journals (5310 vs RM/FG) in one transaction when accounting is enabled
 - `getStorageUnit(s)` / `getStorageUnitTree` / `getStorageUnitsTreeForLocation` — storage hierarchy
 - `getAvailableTrackedEntities` — calls `get_available_tracked_entities` RPC
 - `getReceipts` / `getReceiptLines` / `reconcileReceiptSerialEntities` — receipt management
