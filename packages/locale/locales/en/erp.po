@@ -6463,9 +6463,6 @@ msgstr "Item Scope"
 msgid "Item Type"
 msgstr "Item Type"
 
-msgid "Item Type (optional)"
-msgstr "Item Type (optional)"
-
 msgid "Item types"
 msgstr "Item types"
 
@@ -10587,6 +10584,9 @@ msgstr "Selected Operation"
 msgid "Selected: {selectedSum} / remaining after split: {0}"
 msgstr "Selected: {selectedSum} / remaining after split: {0}"
 
+msgid "Selecting a parent also counts everything inside it"
+msgstr "Selecting a parent also counts everything inside it"
+
 msgid "Self Managed"
 msgstr "Self Managed"
 
@@ -11258,9 +11258,6 @@ msgstr "storage unit"
 
 msgid "Storage Unit"
 msgstr "Storage Unit"
-
-msgid "Storage Unit (optional)"
-msgstr "Storage Unit (optional)"
 
 msgid "storage units"
 msgstr "storage units"

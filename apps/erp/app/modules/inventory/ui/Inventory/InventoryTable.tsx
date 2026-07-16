@@ -418,9 +418,11 @@ const InventoryTable = memo(
                 materialSubstanceId,
                 materialFormId
               ),
+              // The `materialType` column holds the type's name, not its id, so
+              // the filter value must be the name to match.
               transform: (data: { id: string; name: string }[] | null) =>
-                data?.map(({ id, name }) => ({
-                  value: id,
+                data?.map(({ name }) => ({
+                  value: name,
                   label: name
                 })) ?? []
             }
@@ -457,8 +459,7 @@ const InventoryTable = memo(
           header: t`Tags`,
           cell: ({ row }) => (
             <HStack spacing={0} className="gap-1">
-              {/* @ts-expect-error TS2339 */}
-              {(row.original.tags || []).map((tag) => (
+              {(row.original.tags ?? []).map((tag) => (
                 <Badge key={tag} variant="secondary">
                   {tag}
                 </Badge>

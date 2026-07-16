@@ -3,22 +3,30 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Json } from "@carbon/database";
 import { validationError, validator } from "@carbon/form";
+import { pluckUnique } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, redirect, useNavigate } from "react-router";
+import { data, redirect, useLoaderData, useNavigate } from "react-router";
 import {
   deleteInventoryCount,
+  expandStorageUnitIdsWithDescendants,
   generateInventoryCountLines,
   InventoryCountForm,
   insertInventoryCount,
   inventoryCountValidator
 } from "~/modules/inventory";
 import { getNextSequence } from "~/modules/settings";
+import { getTagsList } from "~/modules/shared";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await requirePermissions(request, { create: "inventory" });
-  return null;
+  const { client, companyId } = await requirePermissions(request, {
+    create: "inventory"
+  });
+
+  const tags = await getTagsList(client, companyId);
+
+  return { tags: pluckUnique(tags.data, (t) => t.name) };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -36,8 +44,34 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const { locationId, isBlind, notes, storageUnitIds, itemType } =
-    validation.data;
+  const {
+    locationId,
+    isBlind,
+    notes,
+    storageUnitIds,
+    storageTypeIds,
+    itemType,
+    materialSubstanceId,
+    materialFormId,
+    finishId,
+    gradeId,
+    dimensionId,
+    materialTypeId,
+    tags
+  } = validation.data;
+
+  // An unselected multi-select submits [""], which would otherwise scope the
+  // count to an id that matches no stock.
+  const scopedStorageUnitIds = storageUnitIds?.filter(Boolean) ?? [];
+  const scopedStorageTypeIds = storageTypeIds?.filter(Boolean) ?? [];
+  const scopedTags = tags?.filter(Boolean) ?? [];
+
+  // Selecting a parent unit means "count everything inside it", so resolve the
+  // subtree before generating lines. The unexpanded selection is what gets
+  // persisted to `scope` (see below).
+  const expandedStorageUnitIds = scopedStorageUnitIds.length
+    ? await expandStorageUnitIdsWithDescendants(client, scopedStorageUnitIds)
+    : [];
 
   const sequence = await getNextSequence(client, "inventoryCount", companyId);
   if (sequence.error || !sequence.data) {
@@ -53,9 +87,29 @@ export async function action({ request }: ActionFunctionArgs) {
   // Persisted for a future "regenerate from current stock while Draft" action:
   // it records the filter this count was generated with so the snapshot can be
   // rebuilt with the same scope. Written now, not yet read back.
+  //
+  // Stores the user's ORIGINAL storage-unit selection, not the expanded
+  // subtree, so a later regenerate re-expands against the tree as it stands
+  // then rather than freezing today's descendants.
+  const itemFilter = {
+    ...(itemType ? { type: itemType } : {}),
+    ...(materialSubstanceId ? { materialSubstanceId } : {}),
+    ...(materialFormId ? { materialFormId } : {}),
+    ...(finishId ? { finishId } : {}),
+    ...(gradeId ? { gradeId } : {}),
+    ...(dimensionId ? { dimensionId } : {}),
+    ...(materialTypeId ? { materialTypeId } : {}),
+    ...(scopedTags.length > 0 ? { tags: scopedTags } : {})
+  };
+
   const scope = {
-    ...(storageUnitIds && storageUnitIds.length > 0 ? { storageUnitIds } : {}),
-    ...(itemType ? { itemFilter: { type: itemType } } : {})
+    ...(scopedStorageUnitIds.length > 0
+      ? { storageUnitIds: scopedStorageUnitIds }
+      : {}),
+    ...(scopedStorageTypeIds.length > 0
+      ? { storageTypeIds: scopedStorageTypeIds }
+      : {}),
+    ...(Object.keys(itemFilter).length > 0 ? { itemFilter } : {})
   };
 
   const created = await insertInventoryCount(client, {
@@ -88,8 +142,16 @@ export async function action({ request }: ActionFunctionArgs) {
       companyId,
       locationId,
       createdBy: userId,
-      storageUnitIds,
-      itemType
+      storageUnitIds: expandedStorageUnitIds,
+      storageTypeIds: scopedStorageTypeIds,
+      itemType,
+      materialSubstanceId,
+      materialFormId,
+      finishId,
+      gradeId,
+      dimensionId,
+      materialTypeId,
+      tags: scopedTags
     });
   } catch (err) {
     await deleteInventoryCount(client, created.data.id, companyId);
@@ -107,10 +169,12 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function NewInventoryCountRoute() {
   const navigate = useNavigate();
+  const { tags } = useLoaderData<typeof loader>();
 
   return (
     <InventoryCountForm
       initialValues={{ locationId: "", isBlind: false }}
+      availableTags={tags.map((name) => ({ name }))}
       onClose={() => navigate(-1)}
     />
   );

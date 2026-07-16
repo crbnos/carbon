@@ -62501,6 +62501,8 @@ export type Database = {
             | null
           receiptPromisedDate: string | null
           receiptRequestedDate: string | null
+          receivableQuantity: number | null
+          receivedQuantity: number | null
           revisionId: number | null
           shippingMethodId: string | null
           shippingTermId: string | null
@@ -65837,14 +65839,14 @@ export type Database = {
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["invoiceCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["invoiceCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -70396,6 +70398,7 @@ export type Database = {
           replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
           storageTypeIds: string[]
           storageUnitIds: string[]
+          tags: string[]
           thumbnailPath: string
           type: Database["public"]["Enums"]["itemType"]
           unitOfMeasureCode: string

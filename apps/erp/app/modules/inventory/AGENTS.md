@@ -13,6 +13,7 @@ Tracks item quantities across locations and storage units. Manages receipts, shi
 - **Warehouse Transfer** — moves inventory between locations (inter-location).
 - **Picking List** — generated pick instructions with FEFO/FIFO ordering and tracked entity allocation.
 - **Kanban** — pull-based replenishment signal between storage units.
+- **Inventory Count** — physical/cycle count. The header's `scope` JSONB records the item-level filters the count was generated with (storage units, storage types, item type, tags, and the material attributes substance/shape/finish/grade/dimension/materialType), ANDed. `scope` stores the user's ORIGINAL storage-unit selection, not the expanded subtree, so a future regenerate re-expands against the current tree. Written at create; not yet read back.
 
 ## Safety
 
@@ -67,6 +68,7 @@ pnpm exec turbo run typecheck --filter=erp   # the app's package name is "erp", 
 - `generatePickingList` / `getPickingListAvailability` / `getPickingSchedule` — picking operations
 - `getDefaultStorageUnitOrStorageUnitWithHighestQuantity` — picking defaults
 - `getTrackedEntities` / `getTrackedEntityExpirations` / `getShelfLifeForItems` — tracking and expiry
+- `generateInventoryCountLines` — Kysely; snapshots on-hand into count lines for the given scope. Material attributes and tags join the item SUBTYPE tables (`material`/`part`/`tool`/`consumable`) on `id = item."readableId"` — the same predicate `get_inventory_quantities` uses, NOT `material.itemId`. All such joins MUST be LEFT: Parts/Tools/Consumables have no `material` row. Callers pass `storageUnitIds` already expanded via `expandStorageUnitIdsWithDescendants`.
 
 ## Key Exports
 

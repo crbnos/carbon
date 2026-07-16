@@ -4,6 +4,7 @@ import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import type { TrackedEntityAttributes } from "@carbon/utils";
 import { getLocalTimeZone, now, today } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
+import { sql } from "kysely";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
 import { getNextSequence } from "~/modules/settings";
@@ -1751,8 +1752,17 @@ export async function generateInventoryCountLines(
     companyId: string;
     locationId: string;
     createdBy: string;
+    /** Already expanded to include descendants by the caller. */
     storageUnitIds?: string[];
+    storageTypeIds?: string[];
     itemType?: string;
+    materialSubstanceId?: string;
+    materialFormId?: string;
+    finishId?: string;
+    gradeId?: string;
+    dimensionId?: string;
+    materialTypeId?: string;
+    tags?: string[];
   }
 ) {
   const {
@@ -1761,13 +1771,53 @@ export async function generateInventoryCountLines(
     locationId,
     createdBy,
     storageUnitIds,
-    itemType
+    storageTypeIds,
+    itemType,
+    materialSubstanceId,
+    materialFormId,
+    finishId,
+    gradeId,
+    dimensionId,
+    materialTypeId,
+    tags
   } = args;
 
   return db.transaction().execute(async (trx) => {
     let aggregate = trx
       .selectFrom("itemLedger")
       .innerJoin("item", "item.id", "itemLedger.itemId")
+      // Material attributes and tags hang off the item SUBTYPE tables, keyed by
+      // `item.readableId` (not `item.id`, and not `material.itemId`) — matching
+      // the join `get_inventory_quantities` uses, so a scoped count agrees with
+      // the quantities screen. Every join must be LEFT: Parts/Tools/Consumables
+      // have no `material` row and an inner join would silently drop them.
+      // Declared unconditionally to keep Kysely's builder type stable across the
+      // conditional `.where()` reassignments below; all are indexed lookups.
+      .leftJoin("material as m", (join) =>
+        join
+          .onRef("m.id", "=", "item.readableId")
+          .on("m.companyId", "=", companyId)
+      )
+      .leftJoin("part as p", (join) =>
+        join
+          .onRef("p.id", "=", "item.readableId")
+          .on("p.companyId", "=", companyId)
+      )
+      .leftJoin("tool as tl", (join) =>
+        join
+          .onRef("tl.id", "=", "item.readableId")
+          .on("tl.companyId", "=", companyId)
+      )
+      .leftJoin("consumable as c", (join) =>
+        join
+          .onRef("c.id", "=", "item.readableId")
+          .on("c.companyId", "=", companyId)
+      )
+      .leftJoin("storageUnit as su", (join) =>
+        join
+          .onRef("su.id", "=", "itemLedger.storageUnitId")
+          .on("su.companyId", "=", companyId)
+      )
       .select([
         "itemLedger.itemId as itemId",
         "itemLedger.storageUnitId as storageUnitId",
@@ -1802,11 +1852,55 @@ export async function generateInventoryCountLines(
       );
     }
 
+    const scopedStorageTypeIds = storageTypeIds?.filter(Boolean) ?? [];
+    if (scopedStorageTypeIds.length > 0) {
+      aggregate = aggregate.where(
+        sql<boolean>`su."storageTypeIds" && ${scopedStorageTypeIds}::text[]`
+      );
+    }
+
     if (itemType) {
       aggregate = aggregate.where(
         "item.type",
         "=",
         itemType as Database["public"]["Enums"]["itemType"]
+      );
+    }
+
+    if (materialSubstanceId) {
+      aggregate = aggregate.where(
+        "m.materialSubstanceId",
+        "=",
+        materialSubstanceId
+      );
+    }
+
+    if (materialFormId) {
+      aggregate = aggregate.where("m.materialFormId", "=", materialFormId);
+    }
+
+    if (finishId) {
+      aggregate = aggregate.where("m.finishId", "=", finishId);
+    }
+
+    if (gradeId) {
+      aggregate = aggregate.where("m.gradeId", "=", gradeId);
+    }
+
+    if (dimensionId) {
+      aggregate = aggregate.where("m.dimensionId", "=", dimensionId);
+    }
+
+    if (materialTypeId) {
+      aggregate = aggregate.where("m.materialTypeId", "=", materialTypeId);
+    }
+
+    // An item is exactly one subtype, so COALESCE resolves to that subtype's
+    // tag array; `&&` is the same overlap the quantities filter applies.
+    const scopedTags = tags?.filter(Boolean) ?? [];
+    if (scopedTags.length > 0) {
+      aggregate = aggregate.where(
+        sql<boolean>`COALESCE(m."tags", p."tags", tl."tags", c."tags", '{}'::text[]) && ${scopedTags}::text[]`
       );
     }
 

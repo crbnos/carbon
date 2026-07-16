@@ -6463,9 +6463,6 @@ msgstr "Alcance de Artículos"
 msgid "Item Type"
 msgstr "Tipo de Artículo"
 
-msgid "Item Type (optional)"
-msgstr "Tipo de artículo (opcional)"
-
 msgid "Item types"
 msgstr "Tipos de artículo"
 
@@ -10587,6 +10584,9 @@ msgstr "Operación Seleccionada"
 msgid "Selected: {selectedSum} / remaining after split: {0}"
 msgstr "Seleccionado: {selectedSum} / restante después de dividir: {0}"
 
+msgid "Selecting a parent also counts everything inside it"
+msgstr "Al seleccionar una unidad principal también se cuenta todo lo que contiene"
+
 msgid "Self Managed"
 msgstr "Autogestionado"
 
@@ -11258,9 +11258,6 @@ msgstr "unidad de almacenamiento"
 
 msgid "Storage Unit"
 msgstr "Unidad de Almacenamiento"
-
-msgid "Storage Unit (optional)"
-msgstr "Unidad de Almacenamiento (opcional)"
 
 msgid "storage units"
 msgstr "unidades de almacenamiento"

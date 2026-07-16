@@ -1,5 +1,5 @@
 {
-  "generated": "2026-07-15T13:07:53.800Z",
+  "generated": "2026-07-16T09:08:32.417Z",
   "totalTools": 1335,
   "modules": 15,
   "tools": [
@@ -6325,7 +6325,7 @@
       "module": "inventory",
       "classification": "WRITE",
       "description": "generate inventory count lines",
-      "paramCount": 4,
+      "paramCount": 12,
       "serviceParams": [
         "db",
         "args"
@@ -6344,7 +6344,13 @@
           "locationId": {
             "type": "string"
           },
-          "storageUnitIds": {
+          "/** Already expanded to include descendants by the caller. */\n    storageUnitIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "storageTypeIds": {
             "type": "array",
             "items": {
               "type": "string"
@@ -6352,6 +6358,30 @@
           },
           "itemType": {
             "type": "string"
+          },
+          "materialSubstanceId": {
+            "type": "string"
+          },
+          "materialFormId": {
+            "type": "string"
+          },
+          "finishId": {
+            "type": "string"
+          },
+          "gradeId": {
+            "type": "string"
+          },
+          "dimensionId": {
+            "type": "string"
+          },
+          "materialTypeId": {
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "required": [

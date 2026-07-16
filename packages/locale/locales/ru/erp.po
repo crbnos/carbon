@@ -6463,9 +6463,6 @@ msgstr "Область применения товара"
 msgid "Item Type"
 msgstr "Тип товара"
 
-msgid "Item Type (optional)"
-msgstr "Тип товара (опционально)"
-
 msgid "Item types"
 msgstr "Типы товаров"
 
@@ -10587,6 +10584,9 @@ msgstr "Выбранная операция"
 msgid "Selected: {selectedSum} / remaining after split: {0}"
 msgstr "Выбрано: {selectedSum} / осталось после разделения: {0}"
 
+msgid "Selecting a parent also counts everything inside it"
+msgstr "При выборе родительской единицы хранения пересчитывается и всё её содержимое"
+
 msgid "Self Managed"
 msgstr "Самоуправляемый"
 
@@ -11258,9 +11258,6 @@ msgstr "единица хранения"
 
 msgid "Storage Unit"
 msgstr "Единица хранения"
-
-msgid "Storage Unit (optional)"
-msgstr "Единица хранения (опционально)"
 
 msgid "storage units"
 msgstr "единицы хранения"

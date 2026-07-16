@@ -6463,9 +6463,6 @@ msgstr "품목 범위"
 msgid "Item Type"
 msgstr "품목 유형"
 
-msgid "Item Type (optional)"
-msgstr "품목 유형(선택 사항)"
-
 msgid "Item types"
 msgstr "품목 유형"
 
@@ -10587,6 +10584,9 @@ msgstr "선택된 공정작업"
 msgid "Selected: {selectedSum} / remaining after split: {0}"
 msgstr "선택됨: {selectedSum} / 분할 후 남은 수량: {0}"
 
+msgid "Selecting a parent also counts everything inside it"
+msgstr "상위 보관 단위를 선택하면 그 안의 모든 항목도 함께 실사됩니다"
+
 msgid "Self Managed"
 msgstr "자체 관리"
 
@@ -11258,9 +11258,6 @@ msgstr "저장 단위"
 
 msgid "Storage Unit"
 msgstr "저장 단위"
-
-msgid "Storage Unit (optional)"
-msgstr "저장 단위(선택사항)"
 
 msgid "storage units"
 msgstr "저장 단위"

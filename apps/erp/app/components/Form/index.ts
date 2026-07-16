@@ -72,6 +72,7 @@ import ShippingMethod from "./ShippingMethod";
 import StandardFactor from "./StandardFactor";
 import StorageTypes from "./StorageTypes";
 import StorageUnit from "./StorageUnit";
+import StorageUnits from "./StorageUnits";
 import Supplier from "./Supplier";
 import SupplierContact from "./SupplierContact";
 import SupplierLocation from "./SupplierLocation";
@@ -153,6 +154,7 @@ export {
   SequenceOrCustomId,
   Service,
   StorageUnit,
+  StorageUnits,
   StorageTypes,
   Shift,
   ShippingMethod,

@@ -125,16 +125,25 @@ export const trackedEntityExpiryValidator = z.object({
     .max(500)
 });
 
-// Header create/update. `storageUnitIds` and `itemType` are the optional scope
-// used at creation to generate the count lines; they are not stored columns of
-// their own (they live under the header's `scope` JSONB).
+// Header create/update. Everything below `notes` is the optional scope used at
+// creation to generate the count lines — the same item-level filters the
+// inventory quantities screen offers, ANDed together. None are stored columns
+// of their own (they live under the header's `scope` JSONB).
 export const inventoryCountValidator = z.object({
   id: zfd.text(z.string().optional()),
   locationId: z.string().min(1, { message: "Location is required" }),
   isBlind: zfd.checkbox(),
   notes: zfd.text(z.string().optional()),
   storageUnitIds: zfd.repeatableOfType(z.string()).optional(),
-  itemType: zfd.text(z.enum(inventoryItemTypes).optional())
+  storageTypeIds: zfd.repeatableOfType(z.string()).optional(),
+  itemType: zfd.text(z.enum(inventoryItemTypes).optional()),
+  materialSubstanceId: zfd.text(z.string().optional()),
+  materialFormId: zfd.text(z.string().optional()),
+  finishId: zfd.text(z.string().optional()),
+  gradeId: zfd.text(z.string().optional()),
+  dimensionId: zfd.text(z.string().optional()),
+  materialTypeId: zfd.text(z.string().optional()),
+  tags: zfd.repeatableOfType(z.string()).optional()
 });
 
 // Per-line count entry. A blank `countedQuantity` (undefined) means "not counted"
