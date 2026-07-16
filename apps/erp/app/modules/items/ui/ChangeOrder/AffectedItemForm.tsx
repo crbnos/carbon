@@ -81,7 +81,7 @@ export default function AffectedItemForm({
             </ModalDrawerBody>
             <ModalDrawerFooter>
               <HStack>
-                <Submit>
+                <Submit withBlocker={false}>
                   <Trans>Add</Trans>
                 </Submit>
                 <Button size="md" variant="solid" onClick={onClose}>

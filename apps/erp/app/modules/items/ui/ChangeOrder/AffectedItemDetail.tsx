@@ -303,7 +303,7 @@ function ChangeTypeControl({
         </div>
         {!isDisabled && hasChanged && (
           <>
-            <Submit isDisabled={fetcher.state !== "idle"}>
+            <Submit withBlocker={false} isDisabled={fetcher.state !== "idle"}>
               <Trans>Apply</Trans>
             </Submit>
             <span className="text-xs text-muted-foreground pb-2">
@@ -385,7 +385,7 @@ function CutoverControl({
             // Fields align-start; nudge the label-less Save down so it lines up
             // with the inputs rather than the labels.
             <div className="pt-8">
-              <Submit isDisabled={fetcher.state !== "idle"}>
+              <Submit withBlocker={false} isDisabled={fetcher.state !== "idle"}>
                 <Trans>Save</Trans>
               </Submit>
             </div>

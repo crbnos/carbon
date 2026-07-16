@@ -3,9 +3,11 @@ import type { ReactNode } from "react";
 import { Link } from "react-router";
 import { getItemDetailPath } from "~/utils/path";
 
-// Renders an item reference (id/name) as a link to the item's detail page,
-// opened in a NEW TAB so the change order stays put. `type` picks the right
-// detail route (defaults to Part for assemblies/unknown types).
+// Renders an item reference (id/name) as a link to the item's detail page.
+// Classic link behavior: a plain click navigates in the same tab; a Cmd/Ctrl
+// (or middle) click opens a new tab — React Router's Link handles the modifier
+// keys natively. `type` picks the right detail route (defaults to Part for
+// assemblies/unknown types).
 export default function ItemLink({
   itemId,
   type,
@@ -20,8 +22,6 @@ export default function ItemLink({
   return (
     <Link
       to={getItemDetailPath(type, itemId)}
-      target="_blank"
-      rel="noopener noreferrer"
       prefetch="intent"
       className={cn("hover:underline", className)}
     >
