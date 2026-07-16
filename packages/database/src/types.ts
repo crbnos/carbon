@@ -57166,6 +57166,303 @@ export type Database = {
         }
         Relationships: []
       }
+      inventoryCountLines: {
+        Row: {
+          companyId: string | null
+          countedAt: string | null
+          countedBy: string | null
+          countedQuantity: number | null
+          createdAt: string | null
+          createdBy: string | null
+          customFields: Json | null
+          dimension: string | null
+          dimensionId: string | null
+          finish: string | null
+          finishId: string | null
+          grade: string | null
+          gradeId: string | null
+          id: string | null
+          inventoryCountId: string | null
+          itemId: string | null
+          itemName: string | null
+          itemReadableIdWithRevision: string | null
+          itemThumbnailPath: string | null
+          itemTrackingType:
+            | Database["public"]["Enums"]["itemTrackingType"]
+            | null
+          locationId: string | null
+          materialFormId: string | null
+          materialSubstanceId: string | null
+          materialType: string | null
+          materialTypeId: string | null
+          postedItemLedgerId: string | null
+          readableId: string | null
+          storageTypeIds: string[] | null
+          storageUnitId: string | null
+          systemQuantity: number | null
+          tags: string[] | null
+          trackedEntityId: string | null
+          type: Database["public"]["Enums"]["itemType"] | null
+          unitOfMeasureCode: string | null
+          updatedAt: string | null
+          updatedBy: string | null
+          variance: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventoryCountLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventoryCountLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventoryCountLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "inventoryCountLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "inventoryCountLine_countedBy_fkey"
+            columns: ["countedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventoryCountLine_countedBy_fkey"
+            columns: ["countedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventoryCountLine_countedBy_fkey"
+            columns: ["countedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventoryCountLine_countedBy_fkey"
+            columns: ["countedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventoryCountLine_countedBy_fkey"
+            columns: ["countedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "inventoryCountLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventoryCountLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventoryCountLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventoryCountLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventoryCountLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "inventoryCountLine_inventoryCountId_companyId_fkey"
+            columns: ["inventoryCountId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "inventoryCount"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "inventoryCountLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventoryCountLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventoryCountLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventoryCountLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventoryCountLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventoryCountLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventoryCountLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventoryCountLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventoryCountLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventoryCountLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventoryCountLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "material_dimensionId_fkey"
+            columns: ["dimensionId"]
+            isOneToOne: false
+            referencedRelation: "materialDimension"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_dimensionId_fkey"
+            columns: ["dimensionId"]
+            isOneToOne: false
+            referencedRelation: "materialDimensions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_finishId_fkey"
+            columns: ["finishId"]
+            isOneToOne: false
+            referencedRelation: "materialFinish"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_finishId_fkey"
+            columns: ["finishId"]
+            isOneToOne: false
+            referencedRelation: "materialFinishes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_gradeId_fkey"
+            columns: ["gradeId"]
+            isOneToOne: false
+            referencedRelation: "materialGrade"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_gradeId_fkey"
+            columns: ["gradeId"]
+            isOneToOne: false
+            referencedRelation: "materialGrades"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_materialFormId_fkey"
+            columns: ["materialFormId"]
+            isOneToOne: false
+            referencedRelation: "materialForm"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_materialSubstanceId_fkey"
+            columns: ["materialSubstanceId"]
+            isOneToOne: false
+            referencedRelation: "materialSubstance"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_materialTypeId_fkey"
+            columns: ["materialTypeId"]
+            isOneToOne: false
+            referencedRelation: "materialType"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_materialTypeId_fkey"
+            columns: ["materialTypeId"]
+            isOneToOne: false
+            referencedRelation: "materialTypes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       issues: {
         Row: {
           approvalRequirements:
@@ -62501,6 +62798,8 @@ export type Database = {
             | null
           receiptPromisedDate: string | null
           receiptRequestedDate: string | null
+          receivableQuantity: number | null
+          receivedQuantity: number | null
           revisionId: number | null
           shippingMethodId: string | null
           shippingTermId: string | null
@@ -65830,13 +66129,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["shipmentCountryCode"]
-            isOneToOne: false
-            referencedRelation: "country"
-            referencedColumns: ["alpha2"]
-          },
-          {
-            foreignKeyName: "address_countryCode_fkey"
             columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
@@ -65845,6 +66137,13 @@ export type Database = {
           {
             foreignKeyName: "address_countryCode_fkey"
             columns: ["invoiceCountryCode"]
+            isOneToOne: false
+            referencedRelation: "country"
+            referencedColumns: ["alpha2"]
+          },
+          {
+            foreignKeyName: "address_countryCode_fkey"
+            columns: ["shipmentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -70396,6 +70695,7 @@ export type Database = {
           replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
           storageTypeIds: string[]
           storageUnitIds: string[]
+          tags: string[]
           thumbnailPath: string
           type: Database["public"]["Enums"]["itemType"]
           unitOfMeasureCode: string

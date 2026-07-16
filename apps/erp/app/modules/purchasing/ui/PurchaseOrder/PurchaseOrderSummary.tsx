@@ -79,6 +79,9 @@ const LineItems = ({
         const isGlAccount = line.purchaseOrderLineType === "G/L Account";
         const isFixedAsset = line.purchaseOrderLineType === "Fixed Asset";
         const isIndirect = isGlAccount || isFixedAsset;
+        const isReceivable = !isGlAccount && (line.purchaseQuantity ?? 0) > 0;
+        const quantityReceived = line.quantityReceived ?? 0;
+        const quantityInvoiced = line.quantityInvoiced ?? 0;
         const itemReadableId = isGlAccount
           ? line.description || "Indirect Expense"
           : isFixedAsset
@@ -228,7 +231,7 @@ const LineItems = ({
                     <Tr>
                       <Td>Quantity</Td>
                       <Td className="text-right">
-                        <VStack spacing={0}>
+                        <VStack spacing={0} className="items-end">
                           <span>
                             {line.purchaseQuantity}{" "}
                             {
@@ -254,10 +257,58 @@ const LineItems = ({
                         </VStack>
                       </Td>
                     </Tr>
+                    {isReceivable && (
+                      <Tr>
+                        <Td>Received</Td>
+                        <Td className="text-right">
+                          <VStack spacing={0} className="items-end">
+                            <span>
+                              {quantityReceived} of {line.purchaseQuantity}{" "}
+                              {
+                                unitOfMeasures.find(
+                                  (uom) =>
+                                    uom.value === line.purchaseUnitOfMeasureCode
+                                )?.label
+                              }
+                            </span>
+                            {!line.receivedComplete &&
+                              (line.quantityToReceive ?? 0) > 0 && (
+                                <span className="text-muted-foreground text-xs">
+                                  {line.quantityToReceive} remaining
+                                </span>
+                              )}
+                          </VStack>
+                        </Td>
+                      </Tr>
+                    )}
+                    {(line.purchaseQuantity ?? 0) > 0 && (
+                      <Tr>
+                        <Td>Invoiced</Td>
+                        <Td className="text-right">
+                          <VStack spacing={0} className="items-end">
+                            <span>
+                              {quantityInvoiced} of {line.purchaseQuantity}{" "}
+                              {
+                                unitOfMeasures.find(
+                                  (uom) =>
+                                    uom.value === line.purchaseUnitOfMeasureCode
+                                )?.label
+                              }
+                            </span>
+                            {!line.invoicedComplete &&
+                              (line.quantityToInvoice ?? 0) > 0 && (
+                                <span className="text-muted-foreground text-xs">
+                                  {line.quantityToInvoice} remaining
+                                </span>
+                              )}
+                          </VStack>
+                        </Td>
+                      </Tr>
+                    )}
                     <Tr>
                       <Td>Unit Price</Td>
                       <Td className="text-right">
-                        <VStack spacing={0}>
+                        <VStack spacing={0} className="items-end">
                           <span>{formatter.format(line.unitPrice ?? 0)}</span>
                           {shouldConvertCurrency && (
                             <span className="text-muted-foreground text-xs">
@@ -272,7 +323,7 @@ const LineItems = ({
                     <Tr className="border-b border-border">
                       <Td>Extended Price</Td>
                       <Td className="text-right">
-                        <VStack spacing={0}>
+                        <VStack spacing={0} className="items-end">
                           <span>{formatter.format(lineTotal)}</span>
                           {shouldConvertCurrency && (
                             <span className="text-muted-foreground text-xs">
@@ -290,7 +341,7 @@ const LineItems = ({
                         Tax ({percentFormatter.format(line.taxPercent ?? 0)})
                       </Td>
                       <Td className="text-right">
-                        <VStack spacing={0}>
+                        <VStack spacing={0} className="items-end">
                           <span>{formatter.format(line.taxAmount ?? 0)}</span>
                           {shouldConvertCurrency && (
                             <span className="text-muted-foreground text-xs">
@@ -306,7 +357,7 @@ const LineItems = ({
                     <Tr key="shipping" className="border-b border-border">
                       <Td>Shipping</Td>
                       <Td className="text-right">
-                        <VStack spacing={0}>
+                        <VStack spacing={0} className="items-end">
                           <span>
                             {formatter.format(line.shippingCost ?? 0)}
                           </span>
@@ -324,7 +375,7 @@ const LineItems = ({
                     <Tr key="total" className="font-bold">
                       <Td>Total</Td>
                       <Td className="text-right">
-                        <VStack spacing={0}>
+                        <VStack spacing={0} className="items-end">
                           <span>{formatter.format(total)}</span>
                           {shouldConvertCurrency && (
                             <span className="text-muted-foreground text-xs">
