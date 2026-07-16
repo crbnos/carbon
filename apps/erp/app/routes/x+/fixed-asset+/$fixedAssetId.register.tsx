@@ -6,9 +6,14 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useNavigate } from "react-router";
 import {
   fixedAssetRegisterValidator,
-  getFixedAsset
+  getDefaultAccounts,
+  getFixedAsset,
+  getOrCreateAccountingPeriod
 } from "~/modules/accounting";
+import { postAssetRegistration } from "~/modules/accounting/accounting.server";
 import { FixedAssetRegisterForm } from "~/modules/accounting/ui/FixedAssets";
+import { getCompanySettings } from "~/modules/settings";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -39,9 +44,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
-    update: "accounting"
-  });
+  const { client, companyId, companyGroupId, userId } =
+    await requirePermissions(request, {
+      update: "accounting"
+    });
 
   const { fixedAssetId } = params;
   if (!fixedAssetId) throw notFound("fixedAssetId not found");
@@ -55,10 +61,114 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
+  const registration = validation.data;
+
+  const companySettings = await getCompanySettings(client, companyId);
+  const accountingEnabled =
+    (companySettings.data as { accountingEnabled?: boolean } | null)
+      ?.accountingEnabled ?? false;
+
+  // With accounting on, capitalize the asset with a real GL entry
+  // (Dr asset / Cr owner equity) rather than a bare status flip, so no
+  // capitalized asset exists without a journal.
+  if (accountingEnabled) {
+    const [asset, defaults, dimensionsResult, accountingPeriod] =
+      await Promise.all([
+        client
+          .from("fixedAsset")
+          .select(
+            "fixedAssetId, locationId, fixedAssetClassId, fixedAssetClass:fixedAssetClassId(assetAccountId)"
+          )
+          .eq("id", fixedAssetId)
+          .single(),
+        getDefaultAccounts(client, companyId),
+        client
+          .from("dimension")
+          .select("id, entityType")
+          .eq("companyGroupId", companyGroupId)
+          .eq("active", true),
+        getOrCreateAccountingPeriod(
+          client,
+          companyId,
+          registration.acquisitionDate,
+          "accounting"
+        )
+      ]);
+
+    if (asset.error || !asset.data) {
+      throw redirect(
+        path.to.fixedAsset(fixedAssetId),
+        await flash(request, error(asset.error, "Failed to get fixed asset"))
+      );
+    }
+    if (accountingPeriod.error || !accountingPeriod.data) {
+      throw redirect(
+        path.to.fixedAsset(fixedAssetId),
+        await flash(
+          request,
+          error(accountingPeriod.error, "Failed to get accounting period")
+        )
+      );
+    }
+
+    const assetAccountId = (
+      asset.data.fixedAssetClass as { assetAccountId: string } | null
+    )?.assetAccountId;
+    const offsetAccountId = defaults.data?.retainedEarningsAccount;
+
+    if (!assetAccountId || !offsetAccountId) {
+      throw redirect(
+        path.to.fixedAsset(fixedAssetId),
+        await flash(
+          request,
+          error(
+            defaults.error,
+            "Missing GL accounts for asset registration. Configure the asset class and default accounts."
+          )
+        )
+      );
+    }
+
+    const locationDimensionId = (dimensionsResult.data ?? []).find(
+      (d) => d.entityType === "Location"
+    )?.id;
+    const assetClassDimensionId = (dimensionsResult.data ?? []).find(
+      (d) => d.entityType === "FixedAssetClass"
+    )?.id;
+
+    try {
+      await postAssetRegistration(getDatabaseClient(), {
+        fixedAssetId,
+        fixedAssetReadableId: asset.data.fixedAssetId,
+        registration,
+        locationId: asset.data.locationId,
+        fixedAssetClassId: asset.data.fixedAssetClassId,
+        assetAccountId,
+        offsetAccountId,
+        accountingPeriodId: accountingPeriod.data,
+        locationDimensionId,
+        assetClassDimensionId,
+        companyId,
+        userId
+      });
+    } catch (err) {
+      throw redirect(
+        path.to.fixedAsset(fixedAssetId),
+        await flash(request, error(err, "Failed to register asset"))
+      );
+    }
+
+    throw redirect(
+      path.to.fixedAsset(fixedAssetId),
+      await flash(request, success("Asset registered successfully"))
+    );
+  }
+
+  // Accounting disabled — a plain status flip (no journal).
   const result = await client
     .from("fixedAsset")
     .update({
-      ...validation.data,
+      ...registration,
       status: "Active",
       updatedBy: userId
     })

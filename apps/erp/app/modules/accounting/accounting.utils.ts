@@ -1,3 +1,33 @@
+import { credit, debit } from "@carbon/utils";
+
+/**
+ * Gain/(loss) on disposal of a fixed asset = sale proceeds − net book value
+ * (NBV = acquisition cost − accumulated depreciation). GAAP requires this net
+ * gain/loss to land on a distinct non-operating P&L line rather than being
+ * comingled with the NBV write-off.
+ *
+ * It is booked to the class's `disposalAccountId`, which is an Expense-class
+ * "Gains and Losses on Disposal" account, so a loss increases the expense (a
+ * debit, positive stored amount) and a gain reduces it (a credit, negative
+ * stored amount). A zero gain/loss needs no line.
+ *
+ * Returns the raw `gainLoss` and the signed `disposalStoredAmount` ready for a
+ * `journalLine.amount`.
+ */
+export function computeDisposalGainLoss(
+  saleProceeds: number,
+  netBookValue: number
+): { gainLoss: number; disposalStoredAmount: number } {
+  const gainLoss = saleProceeds - netBookValue;
+  const disposalStoredAmount =
+    gainLoss > 0
+      ? credit("expense", gainLoss)
+      : gainLoss < 0
+        ? debit("expense", -gainLoss)
+        : 0;
+  return { gainLoss, disposalStoredAmount };
+}
+
 export const macrsPropertyClasses = [
   "3",
   "5",

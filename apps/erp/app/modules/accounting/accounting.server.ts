@@ -47,7 +47,7 @@ export async function postDisposal(
     fixedAssetClassId: string;
     assetAccountId: string;
     accumulatedDepreciationAccountId: string;
-    writeOffAccountId: string;
+    disposalAccountId: string;
     accountingPeriodId: string;
     locationDimensionId: string | undefined;
     assetClassDimensionId: string | undefined;
@@ -66,7 +66,7 @@ export async function postDisposal(
     fixedAssetClassId,
     assetAccountId,
     accumulatedDepreciationAccountId,
-    writeOffAccountId,
+    disposalAccountId,
     accountingPeriodId,
     locationDimensionId,
     assetClassDimensionId,
@@ -122,10 +122,13 @@ export async function postDisposal(
     }
 
     if (nbv > 0) {
+      // Scrap has no proceeds, so the entire net book value is a loss booked to
+      // the dedicated Gain/(Loss) on Disposal account (not comingled with the
+      // write-off account). gainLoss = 0 − nbv = −nbv → a full debit (loss).
       journalLines.push({
         journalId: journal.id,
-        accountId: writeOffAccountId,
-        description: "Write-off remaining book value",
+        accountId: disposalAccountId,
+        description: "Loss on disposal (scrap)",
         amount: toStoredAmount(nbv, 0, "Expense"),
         journalLineReference: crypto.randomUUID(),
         companyId
@@ -201,6 +204,149 @@ export async function postDisposal(
       })
       .where("id", "=", fixedAssetId)
       .execute();
+  });
+}
+
+export async function postAssetRegistration(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    fixedAssetId: string;
+    fixedAssetReadableId: string;
+    registration: {
+      acquisitionCost: number;
+      acquisitionDate: string;
+      accumulatedDepreciation: number;
+      depreciationStartDate: string;
+    };
+    locationId: string | null;
+    fixedAssetClassId: string;
+    assetAccountId: string;
+    // Equity offset for a direct (non-purchase) registration — owner equity /
+    // retained earnings. Brings the asset onto the books at cost.
+    offsetAccountId: string;
+    accountingPeriodId: string;
+    locationDimensionId: string | undefined;
+    assetClassDimensionId: string | undefined;
+    companyId: string;
+    userId: string;
+  }
+) {
+  const {
+    fixedAssetId,
+    fixedAssetReadableId,
+    registration,
+    locationId,
+    fixedAssetClassId,
+    assetAccountId,
+    offsetAccountId,
+    accountingPeriodId,
+    locationDimensionId,
+    assetClassDimensionId,
+    companyId,
+    userId
+  } = args;
+
+  const { acquisitionCost, acquisitionDate } = registration;
+  const now = new Date().toISOString();
+
+  return db.transaction().execute(async (trx) => {
+    // Post the acquisition journal FIRST, then flip the asset to Active — so a
+    // capitalized asset can never exist without its GL entry (if the journal
+    // fails the whole transaction rolls back and the asset stays Draft).
+    //   Dr  assetAccountId    acquisitionCost   (capitalize the asset)
+    //       Cr  offsetAccountId   acquisitionCost   (owner equity)
+    const journalEntryId = await getNextSequence(
+      trx,
+      "journalEntry",
+      companyId
+    );
+
+    const journal = await trx
+      .insertInto("journal")
+      .values({
+        journalEntryId,
+        accountingPeriodId,
+        companyId,
+        description: `Asset Registration: ${fixedAssetReadableId}`,
+        postingDate: acquisitionDate,
+        sourceType: "Manual",
+        status: "Posted",
+        postedAt: now,
+        postedBy: userId,
+        createdBy: userId
+      })
+      .returning(["id"])
+      .executeTakeFirstOrThrow();
+
+    const journalLineResults = await trx
+      .insertInto("journalLine")
+      .values([
+        {
+          journalId: journal.id,
+          accountId: assetAccountId,
+          description: "Capitalize fixed asset at cost",
+          amount: toStoredAmount(acquisitionCost, 0, "Asset"),
+          journalLineReference: crypto.randomUUID(),
+          companyId
+        },
+        {
+          journalId: journal.id,
+          accountId: offsetAccountId,
+          description: "Direct asset registration (owner equity)",
+          amount: toStoredAmount(0, acquisitionCost, "Equity"),
+          journalLineReference: crypto.randomUUID(),
+          companyId
+        }
+      ])
+      .returning(["id"])
+      .execute();
+
+    if (locationDimensionId && locationId) {
+      await trx
+        .insertInto("journalLineDimension")
+        .values(
+          journalLineResults.map((jl) => ({
+            journalLineId: jl.id,
+            dimensionId: locationDimensionId,
+            valueId: locationId,
+            companyId
+          }))
+        )
+        .execute();
+    }
+
+    if (assetClassDimensionId && fixedAssetClassId) {
+      await trx
+        .insertInto("journalLineDimension")
+        .values(
+          journalLineResults.map((jl) => ({
+            journalLineId: jl.id,
+            dimensionId: assetClassDimensionId,
+            valueId: fixedAssetClassId,
+            companyId
+          }))
+        )
+        .execute();
+    }
+
+    const updateResult = await trx
+      .updateTable("fixedAsset")
+      .set({
+        status: "Active",
+        acquisitionCost: registration.acquisitionCost,
+        acquisitionDate: registration.acquisitionDate,
+        accumulatedDepreciation: registration.accumulatedDepreciation,
+        depreciationStartDate: registration.depreciationStartDate,
+        updatedBy: userId
+      })
+      .where("id", "=", fixedAssetId)
+      .where("status", "=", "Draft")
+      .executeTakeFirst();
+
+    if (!updateResult.numUpdatedRows) {
+      // Lost the race (already registered/disposed) — roll back the journal.
+      throw new Error("Asset is no longer in Draft status");
+    }
   });
 }
 

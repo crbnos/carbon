@@ -5,12 +5,54 @@ import {
   calculateDepreciation,
   calculateMacrsDepreciation,
   calculateTaxDepreciation,
+  computeDisposalGainLoss,
   getLastDayOfMonth,
   getMacrsPercentage,
   getMonthsBetween,
   getMonthsElapsed,
   getNextPeriodEnd
 } from "./accounting.utils";
+
+// ---------------------------------------------------------------------------
+// Disposal gain/loss
+// ---------------------------------------------------------------------------
+
+describe("computeDisposalGainLoss", () => {
+  it("books a gain as a credit (negative stored amount) to the disposal account", () => {
+    // proceeds 1000, NBV 600 → gain 400 credited (income)
+    const { gainLoss, disposalStoredAmount } = computeDisposalGainLoss(
+      1000,
+      600
+    );
+    expect(gainLoss).toBe(400);
+    expect(disposalStoredAmount).toBe(-400);
+  });
+
+  it("books a loss as a debit (positive stored amount) to the disposal account", () => {
+    // proceeds 250, NBV 600 → loss 350 debited (expense)
+    const { gainLoss, disposalStoredAmount } = computeDisposalGainLoss(
+      250,
+      600
+    );
+    expect(gainLoss).toBe(-350);
+    expect(disposalStoredAmount).toBe(350);
+  });
+
+  it("returns a zero stored amount when proceeds equal NBV (no line needed)", () => {
+    const { gainLoss, disposalStoredAmount } = computeDisposalGainLoss(
+      600,
+      600
+    );
+    expect(gainLoss).toBe(0);
+    expect(disposalStoredAmount).toBe(0);
+  });
+
+  it("treats a scrap (zero proceeds) as a full loss of the net book value", () => {
+    const { gainLoss, disposalStoredAmount } = computeDisposalGainLoss(0, 800);
+    expect(gainLoss).toBe(-800);
+    expect(disposalStoredAmount).toBe(800);
+  });
+});
 
 // ---------------------------------------------------------------------------
 // Date helpers
