@@ -10,6 +10,7 @@ import {
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
+import { getOverReceiptViolations } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { reconcileReceiptSerialEntities } from "~/modules/inventory";
@@ -35,7 +36,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { data: lines } = await serviceRole
     .from("receiptLine")
     .select(
-      "id, itemId, storageUnitId, receivedQuantity, locationId, receiptId, requiresSerialTracking"
+      "id, itemId, storageUnitId, receivedQuantity, locationId, receiptId, requiresSerialTracking, lineId, conversionFactor"
     )
     .eq("receiptId", receiptId)
     .eq("companyId", companyId);
@@ -95,6 +96,39 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
     allViolations.push(...violations);
     Object.assign(allRuleNames, ruleNames);
+  }
+
+  // Check over-receipt against the live PO lines rather than the receipt's
+  // outstanding-quantity snapshot so concurrent receipts are counted.
+  if (receiptForSurface?.sourceDocument === "Purchase Order") {
+    const purchaseOrderLineIds = [
+      ...new Set(
+        (lines ?? [])
+          .map((l) => l.lineId)
+          .filter((id): id is string => Boolean(id))
+      )
+    ];
+    if (purchaseOrderLineIds.length > 0) {
+      const { data: purchaseOrderLines } = await serviceRole
+        .from("purchaseOrderLine")
+        .select(
+          "id, purchaseQuantity, quantityReceived, item(readableIdWithRevision)"
+        )
+        .in("id", purchaseOrderLineIds)
+        .eq("companyId", companyId);
+
+      const overReceipt = getOverReceiptViolations(
+        lines ?? [],
+        (purchaseOrderLines ?? []).map((line) => ({
+          id: line.id,
+          purchaseQuantity: line.purchaseQuantity,
+          quantityReceived: line.quantityReceived,
+          itemReadableId: line.item?.readableIdWithRevision
+        }))
+      );
+      allViolations.push(...overReceipt.violations);
+      Object.assign(allRuleNames, overReceipt.ruleNames);
+    }
   }
 
   const deduped = dedupeViolations(allViolations);

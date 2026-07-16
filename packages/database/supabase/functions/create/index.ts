@@ -893,6 +893,7 @@ serve(async (req: Request) => {
           if (
             !d.itemId ||
             !d.purchaseQuantity ||
+            d.receivedComplete ||
             d.purchaseOrderLineType === "Service" ||
             d.purchaseOrderLineType === "G/L Account"
           ) {

@@ -233,13 +233,19 @@ export const salesInvoiceLineValidator = z
         message: "Type is required"
       })
     }),
-    methodType: z
-      .enum(methodType, {
-        errorMap: (issue, ctx) => ({
-          message: "Method is required"
+    // Wrapped in zfd.text so an empty-string submission (the form always posts a
+    // hidden methodType) coerces to undefined instead of failing the enum check.
+    // Requiredness is enforced conditionally by the refine below, which exempts
+    // Fixed Asset lines.
+    methodType: zfd.text(
+      z
+        .enum(methodType, {
+          errorMap: (issue, ctx) => ({
+            message: "Method is required"
+          })
         })
-      })
-      .optional(),
+        .optional()
+    ),
     purchaseOrderId: zfd.text(z.string().optional()),
     purchaseOrderLineId: zfd.text(z.string().optional()),
     itemId: zfd.text(z.string().optional()),

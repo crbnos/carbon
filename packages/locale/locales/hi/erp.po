@@ -9773,6 +9773,9 @@ msgstr "भुगतान प्राप्त करें · {0} चाल�
 msgid "Receive to Inventory"
 msgstr "इन्वेंटरी में प्राप्त करें"
 
+msgid "Received"
+msgstr "प्राप्त"
+
 #. placeholder {0}: status?.received
 #. placeholder {1}: status?.ordered
 msgid "Received {0} of {1}"
@@ -10152,6 +10155,9 @@ msgstr "परिणाम"
 
 msgid "Results per page"
 msgstr "प्रति पृष्ठ परिणाम"
+
+msgid "Resume Receiving"
+msgstr "प्राप्ति को फिर से शुरू करें"
 
 msgid "Retained Earnings"
 msgstr "संचित मुनाफा"
@@ -11439,6 +11445,9 @@ msgstr "स्टॉक समाप्त"
 msgid "Stop raising purchase orders after this date"
 msgstr "इस तारीख के बाद क्रय आदेश जारी करना बंद करें"
 
+msgid "Stop Receiving"
+msgstr "प्राप्ति को रोकें"
+
 msgid "Storage client not available"
 msgstr "स्टोरेज क्लाइंट उपलब्ध नहीं है"
 
@@ -12391,6 +12400,16 @@ msgstr "ट्रैक किए गए इकाइयों का रिक�
 
 msgid "The reference data everything else hangs off. Loads first."
 msgstr "संदर्भ डेटा जिस पर सब कुछ निर्भर करता है। पहले लोड होता है।"
+
+#. placeholder {0}: line.quantityToReceive
+#. placeholder {1}: line.purchaseUnitOfMeasureCode ?? ""
+msgid "The remaining {0} {1} will be expected again and counted as incoming supply."
+msgstr "शेष {0} {1} फिर से अपेक्षित होगा और आने वाली आपूर्ति के रूप में गिना जाएगा।"
+
+#. placeholder {0}: line.quantityToReceive
+#. placeholder {1}: line.purchaseUnitOfMeasureCode ?? ""
+msgid "The remaining {0} {1} will no longer be expected. On-order supply and MRP will stop counting it. The ordered quantity and pricing are unchanged."
+msgstr "शेष {0} {1} अब अपेक्षित नहीं होगा। ऑन-ऑर्डर आपूर्ति और MRP इसे गिनना बंद कर देंगे। ऑर्डर की गई मात्रा और मूल्य निर्धारण अपरिवर्तित हैं।"
 
 msgid "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
 msgstr "अवशिष्ट WIP जो एक काम को बंद करने पर छोड़ गया है, उत्पादन विचरण खाते में स्वेप किया गया - एक काम के लिए कार्बन पुस्तकें का एकमात्र विचरण।"
