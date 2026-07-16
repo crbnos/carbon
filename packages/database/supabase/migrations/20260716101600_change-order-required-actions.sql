@@ -1,8 +1,7 @@
--- Configurable default/template actions for Change Orders. Mirrors
--- nonConformanceRequiredAction (Quality), but company-scoped with a composite PK
--- and no systemType/protection (all CO templates are freely deletable). New
--- change orders instantiate one changeOrderActionTask per active row (in
--- insertChangeOrder -> seedDefaultChangeOrderActions).
+-- Configurable template actions for Change Orders. Mirrors nonConformanceRequiredAction,
+-- but company-scoped with a composite PK and no systemType/protection (all CO templates
+-- are freely deletable). New change orders instantiate one changeOrderActionTask per
+-- active row (insertChangeOrder -> seedDefaultChangeOrderActions).
 
 CREATE TABLE IF NOT EXISTS "changeOrderRequiredAction" (
   "id" TEXT NOT NULL DEFAULT id('cora'),
@@ -24,6 +23,11 @@ CREATE INDEX IF NOT EXISTS "changeOrderRequiredAction_createdBy_idx" ON "changeO
 
 ALTER TABLE "changeOrderRequiredAction" DROP CONSTRAINT IF EXISTS "changeOrderRequiredAction_companyId_name_key";
 ALTER TABLE "changeOrderRequiredAction" ADD CONSTRAINT "changeOrderRequiredAction_companyId_name_key" UNIQUE ("companyId", "name");
+
+-- Single-column unique on the (globally unique) id so changeOrderActionTask.actionTypeId
+-- can FK to it despite the composite PK.
+ALTER TABLE "changeOrderRequiredAction" DROP CONSTRAINT IF EXISTS "changeOrderRequiredAction_id_key";
+ALTER TABLE "changeOrderRequiredAction" ADD CONSTRAINT "changeOrderRequiredAction_id_key" UNIQUE ("id");
 
 ALTER TABLE "public"."changeOrderRequiredAction" ENABLE ROW LEVEL SECURITY;
 
@@ -47,8 +51,8 @@ FOR DELETE USING (
   "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts_delete'))::text[])
 );
 
--- Backfill defaults for existing companies (guarded on the system user for the
--- createdBy FK; idempotent via the (companyId, name) unique constraint).
+-- Backfill defaults for existing companies (system user for the createdBy FK;
+-- idempotent via the (companyId, name) unique constraint).
 INSERT INTO "changeOrderRequiredAction" ("companyId", "name", "createdBy")
 SELECT c."id", action.name, 'system'
 FROM "company" c
@@ -64,22 +68,17 @@ CROSS JOIN (VALUES
 ON CONFLICT ("companyId", "name") DO NOTHING;
 
 -- Link each instantiated action task back to its template (mirrors
--- nonConformanceActionTask.actionTypeId). Powers the sidebar's editable Required
--- Actions multiselect: selected = the templates that have a task; deselecting
--- removes the task. `id` is globally unique (id('cora')), so a single-column FK
--- is valid despite the composite PK.
-ALTER TABLE "changeOrderRequiredAction"
-  ADD CONSTRAINT "changeOrderRequiredAction_id_key" UNIQUE ("id");
+-- nonConformanceActionTask.actionTypeId). Powers the sidebar's Required Actions
+-- multiselect: selected = the templates that have a task.
+ALTER TABLE "changeOrderActionTask" ADD COLUMN IF NOT EXISTS "actionTypeId" TEXT;
 
-ALTER TABLE "changeOrderActionTask"
-  ADD COLUMN "actionTypeId" TEXT;
-
+ALTER TABLE "changeOrderActionTask" DROP CONSTRAINT IF EXISTS "changeOrderActionTask_actionTypeId_fkey";
 ALTER TABLE "changeOrderActionTask"
   ADD CONSTRAINT "changeOrderActionTask_actionTypeId_fkey"
   FOREIGN KEY ("actionTypeId") REFERENCES "changeOrderRequiredAction"("id")
   ON UPDATE CASCADE ON DELETE SET NULL;
 
-CREATE INDEX "changeOrderActionTask_actionTypeId_idx"
+CREATE INDEX IF NOT EXISTS "changeOrderActionTask_actionTypeId_idx"
   ON "changeOrderActionTask" ("actionTypeId");
 
 -- Backfill the link for any tasks already seeded by name (per company).
