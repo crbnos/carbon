@@ -5587,7 +5587,7 @@ msgid "GL account capturing fixed-cost differences when actual lot size differs 
 msgstr "Conta GL que captura diferenças de custos fixos quando o tamanho real do lote difere do planejado."
 
 msgid "GL account credited to remove the asset's original cost when it is disposed."
-msgstr "Conta GL creditada para remover o custo original do ativo quando este é descartado."
+msgstr "Conta GL creditada para remover o custo original do ativo quando este é alienado."
 
 msgid "GL account credited when a supplier invoice is posted (AP balance)."
 msgstr "Conta GL creditada quando uma fatura do fornecedor é lançada (saldo AP)."
@@ -5599,7 +5599,7 @@ msgid "GL account credited when manufacturing overhead is absorbed into a produc
 msgstr "Conta GL creditada quando a sobrecarga de fabricação é absorvida em um trabalho de produção."
 
 msgid "GL account debited to clear accumulated depreciation when an asset is disposed."
-msgstr "Conta GL debitada para limpar a depreciação acumulada quando um ativo é descartado."
+msgstr "Conta GL debitada para limpar a depreciação acumulada quando um ativo é alienado."
 
 msgid "GL account debited when a customer invoice posts; cleared when the customer pays."
 msgstr "Conta GL debitada quando uma fatura do cliente é lançada; compensada quando o cliente paga."
@@ -11689,8 +11689,8 @@ msgstr "ID do Modelo"
 msgid "Templates"
 msgstr "Modelos"
 
-msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for the proceeds on invoicing, netting to zero over the sale cycle."
-msgstr "Conta de compensação temporária de alienação, debitada pelo valor contábil líquido do ativo no envio e creditada pelo valor recebido no faturamento, zerando ao final do ciclo de venda."
+msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for its net book value on invoicing, netting to zero over the sale cycle."
+msgstr "Conta de compensação temporária de alienação, debitada pelo valor contábil líquido do ativo no envio e creditada pelo valor contábil líquido no faturamento, zerando ao final do ciclo de venda."
 
 msgid "Terms and Privacy"
 msgstr "Termos e Privacidade"

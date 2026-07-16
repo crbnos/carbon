@@ -11689,8 +11689,8 @@ msgstr "टेम्पलेट आईडी"
 msgid "Templates"
 msgstr "टेम्पलेट्स"
 
-msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for the proceeds on invoicing, netting to zero over the sale cycle."
-msgstr "अस्थायी निपटान-समाशोधन (क्लियरिंग) खाता जो शिपमेंट पर संपत्ति के निवल बही मूल्य के लिए डेबिट किया जाता है और चालान पर प्राप्त आय के लिए क्रेडिट किया जाता है, जो बिक्री चक्र के दौरान शून्य हो जाता है।"
+msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for its net book value on invoicing, netting to zero over the sale cycle."
+msgstr "अस्थायी निपटान-समाशोधन (क्लियरिंग) खाता जो शिपमेंट पर संपत्ति के निवल बही मूल्य के लिए डेबिट किया जाता है और चालान पर निवल बही मूल्य के लिए क्रेडिट किया जाता है, जो बिक्री चक्र के दौरान शून्य हो जाता है।"
 
 msgid "Terms and Privacy"
 msgstr "शर्तें और गोपनीयता"

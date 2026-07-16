@@ -11689,8 +11689,8 @@ msgstr "ID de modèle"
 msgid "Templates"
 msgstr "Modèles"
 
-msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for the proceeds on invoicing, netting to zero over the sale cycle."
-msgstr "Compte d'attente de cession temporaire, débité de la valeur nette comptable de l'actif à l'expédition et crédité du produit de la vente à la facturation, pour un solde nul à l'issue du cycle de vente."
+msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for its net book value on invoicing, netting to zero over the sale cycle."
+msgstr "Compte d'attente de cession temporaire, débité de la valeur nette comptable de l'actif à l'expédition et crédité de la valeur nette comptable à la facturation, pour un solde nul à l'issue du cycle de vente."
 
 msgid "Terms and Privacy"
 msgstr "Conditions et Confidentialité"

@@ -11689,8 +11689,8 @@ msgstr "模板 ID"
 msgid "Templates"
 msgstr "模板"
 
-msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for the proceeds on invoicing, netting to zero over the sale cycle."
-msgstr "临时处置清算账户，发货时按资产账面净值借记，开票时按收款金额贷记，在销售周期结束时归零。"
+msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for its net book value on invoicing, netting to zero over the sale cycle."
+msgstr "临时处置清算账户，发货时按资产账面净值借记，开票时按账面净值贷记，在销售周期结束时归零。"
 
 msgid "Terms and Privacy"
 msgstr "条款和隐私"

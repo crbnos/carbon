@@ -5575,7 +5575,7 @@ msgid "GL account capturing cost differences on outside-processing operations."
 msgstr "Konto GL przechwytujące różnice kosztów na operacjach kooperacji zewnętrznej (outside-processing)."
 
 msgid "GL account capturing differences between applied and actual manufacturing overhead."
-msgstr "Konto GL przechwytujące różnice między narzuconymi i rzeczywistymi kosztami wytwarzania."
+msgstr "Konto GL przechwytujące różnice między zastosowanymi a rzeczywistymi kosztami ogólnymi produkcji."
 
 msgid "GL account capturing differences between BOM-expected and actual material consumed."
 msgstr "Konto GL przechwytujące różnice między materiałami oczekiwanymi w BOM a rzeczywiście zużytymi."
@@ -5587,7 +5587,7 @@ msgid "GL account capturing fixed-cost differences when actual lot size differs 
 msgstr "Konto GL przechwytujące różnice kosztów stałych, gdy rzeczywista wielkość partii różni się od planowanej."
 
 msgid "GL account credited to remove the asset's original cost when it is disposed."
-msgstr "Konto GL uznawane w celu usunięcia pierwotnego kosztu zasobu w momencie jego likwidacji."
+msgstr "Konto GL uznawane w celu usunięcia pierwotnego kosztu środka trwałego przy jego zbyciu."
 
 msgid "GL account credited when a supplier invoice is posted (AP balance)."
 msgstr "Konto GL uznawane, gdy faktura dostawcy jest księgowana (saldo zobowiązań)."
@@ -5617,7 +5617,7 @@ msgid "GL account for purchase tax paid to suppliers (or reclaimable)."
 msgstr "Konto GL dla podatku zakupu zapłaconego dostawcom (lub podatku podlegającego odliczeniu)."
 
 msgid "GL account for tax accrued under reverse-charge rules where the buyer self-assesses."
-msgstr "Konto GL dla podatków szacunkowych zgodnie z zasadami odwrotnego obciążenia, gdzie nabywca dokonuje samooceny."
+msgstr "Konto GL dla podatku naliczonego zgodnie z zasadami odwrotnego obciążenia, gdy nabywca rozlicza go samodzielnie."
 
 msgid "GL account for tax timing differences (e.g. accelerated tax depreciation vs. book depreciation)."
 msgstr "Konto GL dla różnic czasowych podatku (np. przyspieszona amortyzacja podatkowa kontra amortyzacja księgowa)."
@@ -5662,7 +5662,7 @@ msgid "GL account where gain or loss is booked on fixed-asset disposal."
 msgstr "Konto GL, na którym rejestruje się zysk lub stratę na zbyciu środka trwałego."
 
 msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
-msgstr "Konto GL aktywów przeciwnych, uznawane w miarę księgowania amortyzacji w każdym okresie i obciążane w pełnej wysokości, gdy środek trwały zostaje sprzedany lub zezłomowany."
+msgstr "Konto GL korygujące aktywa, uznawane w miarę księgowania amortyzacji w każdym okresie i obciążane w pełnej wysokości, gdy środek trwały zostaje sprzedany lub zezłomowany."
 
 msgid "GL contra-asset account that accumulates depreciation booked against fixed assets."
 msgstr "Konto GL aktywów przeciwnych, które gromadzi amortyzację zaksięgowaną wobec środków trwałych."
@@ -11689,8 +11689,8 @@ msgstr "Identyfikator szablonu"
 msgid "Templates"
 msgstr "Szablony"
 
-msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for the proceeds on invoicing, netting to zero over the sale cycle."
-msgstr "Tymczasowe konto rozliczeniowe zbycia, obciążane wartością księgową netto środka trwałego w momencie wysyłki i uznawane wpływami ze sprzedaży w momencie fakturowania, zerujące się w toku cyklu sprzedaży."
+msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for its net book value on invoicing, netting to zero over the sale cycle."
+msgstr "Tymczasowe konto rozliczeniowe zbycia, obciążane wartością księgową netto środka trwałego w momencie wysyłki i uznawane wartością księgową netto w momencie fakturowania, zerujące się w toku cyklu sprzedaży."
 
 msgid "Terms and Privacy"
 msgstr "Regulamin i prywatnosc"

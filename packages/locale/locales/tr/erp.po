@@ -5575,7 +5575,7 @@ msgid "GL account capturing cost differences on outside-processing operations."
 msgstr "Dış kaynaklı (taşeron) işleme operasyonlarındaki maliyet farklarını yakalayan GL hesabı."
 
 msgid "GL account capturing differences between applied and actual manufacturing overhead."
-msgstr "Uygulanan ve gerçek üretim maliyetleri arasındaki farkları yakalayan GL hesabı."
+msgstr "Uygulanan ve gerçek üretim genel giderleri arasındaki farkları yakalayan GL hesabı."
 
 msgid "GL account capturing differences between BOM-expected and actual material consumed."
 msgstr "BOM beklentilerine karşı gerçekten tüketilen malzeme arasındaki farkları yakalayan GL hesabı."
@@ -5590,7 +5590,7 @@ msgid "GL account credited to remove the asset's original cost when it is dispos
 msgstr "Varlık elden çıkarıldığında orijinal maliyetini kaldırmak için kredilendirilmiş GL hesabı."
 
 msgid "GL account credited when a supplier invoice is posted (AP balance)."
-msgstr "Bir tedarikçi faturası gönderildiğinde kredilendirilmiş GL hesabı (AP bakiyesi)."
+msgstr "Bir tedarikçi faturası muhasebeleştirildiğinde alacaklandırılan GL hesabı (AP bakiyesi)."
 
 msgid "GL account credited when labor or machine cost is absorbed into a production job."
 msgstr "İşçilik veya makine maliyeti bir üretim işine emildiğinde kredilendirilmiş GL hesabı."
@@ -5602,7 +5602,7 @@ msgid "GL account debited to clear accumulated depreciation when an asset is dis
 msgstr "Bir varlık elden çıkarıldığında birikmiş amortisman temizlemek için borçlandırılan GL hesabı."
 
 msgid "GL account debited when a customer invoice posts; cleared when the customer pays."
-msgstr "Müşteri faturası gönderildiğinde borçlandırılan GL hesabı; müşteri ödediğinde temizlenir."
+msgstr "Müşteri faturası muhasebeleştirildiğinde borçlandırılan GL hesabı; müşteri ödediğinde temizlenir."
 
 msgid "GL account debited when a fixed asset is acquired (purchase or capitalized cost)."
 msgstr "Sabit kıymet satın alındığında borçlandırılan GL hesabı (satın alma veya aktifleştirilen maliyet)."
@@ -11689,8 +11689,8 @@ msgstr "Şablon Kimliği"
 msgid "Templates"
 msgstr "Şablonlar"
 
-msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for the proceeds on invoicing, netting to zero over the sale cycle."
-msgstr "Sevkiyat sırasında bir varlığın net defter değeri için borçlandırılan ve faturalama sırasında elde edilen tutar için alacaklandırılan, satış döngüsü boyunca sıfıra netleşen geçici elden çıkarma-arınma (clearing) hesabı."
+msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for its net book value on invoicing, netting to zero over the sale cycle."
+msgstr "Sevkiyat sırasında bir varlığın net defter değeri için borçlandırılan ve faturalama sırasında net defter değeri için alacaklandırılan, satış döngüsü boyunca sıfıra netleşen geçici elden çıkarma mahsup hesabı."
 
 msgid "Terms and Privacy"
 msgstr "Şartlar ve Gizlilik"

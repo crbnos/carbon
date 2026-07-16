@@ -5677,7 +5677,7 @@ msgid "GL expense account debited each period when depreciation posts."
 msgstr "매 기간 감가상각이 전기될 때 차변에 기록되는 총계정원장 비용 계정입니다."
 
 msgid "GL expense account debited when an asset's carrying value is reduced by impairment, i.e. when its recoverable amount falls below net book value."
-msgstr "자산의 장부가액이 손상으로 인해 감소할 때, 즉 회수가능액이 순장부가치(NBV)보다 낮아질 때 차변에 기록되는 GL 비용계정."
+msgstr "자산의 장부가액이 손상으로 인해 감소할 때, 즉 회수가능액이 순장부가액(NBV)보다 낮아질 때 차변에 기록되는 GL 비용계정."
 
 msgid "GL expense account for non-inventory purchases (supplies, services)."
 msgstr "비재고성 구매(소모품, 서비스)를 위한 총계정원장 비용 계정입니다."
@@ -9959,7 +9959,7 @@ msgid "Retained Earnings (default)"
 msgstr "이익잉여금(기본값)"
 
 msgid "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
-msgstr "폐기 또는 매각을 통해 자산을 운용에서 제외하고, 순장부가치 대비 손익을 계상한 후 상태를 '처분됨'으로 설정하는 것."
+msgstr "폐기 또는 매각을 통해 자산을 운용에서 제외하고, 순장부가액 대비 손익을 계상한 후 상태를 '처분됨'으로 설정하는 것."
 
 msgid "Retry"
 msgstr "재시도"
@@ -11689,8 +11689,8 @@ msgstr "템플릿 ID"
 msgid "Templates"
 msgstr "템플릿"
 
-msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for the proceeds on invoicing, netting to zero over the sale cycle."
-msgstr "출하 시 자산의 순장부가치를 차변에 기록하고 청구 시 매각대금을 대변에 기록하여, 매각 주기 동안 잔액이 0으로 상계되는 일시적 처분정리계정."
+msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for its net book value on invoicing, netting to zero over the sale cycle."
+msgstr "출하 시 자산의 순장부가액을 차변에 기록하고 청구 시 순장부가액을 대변에 기록하여, 매각 주기 동안 잔액이 0으로 상계되는 일시적 처분정리계정."
 
 msgid "Terms and Privacy"
 msgstr "이용약관 및 개인정보처리방침"

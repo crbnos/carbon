@@ -11689,8 +11689,8 @@ msgstr "ID шаблона"
 msgid "Templates"
 msgstr "Шаблоны"
 
-msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for the proceeds on invoicing, netting to zero over the sale cycle."
-msgstr "Временный клиринговый счет выбытия, дебетуемый на сумму чистой балансовой стоимости актива при отгрузке и кредитуемый на сумму выручки при выставлении счета — обнуляется по завершении цикла продажи."
+msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for its net book value on invoicing, netting to zero over the sale cycle."
+msgstr "Временный клиринговый счет выбытия, дебетуемый на сумму чистой балансовой стоимости актива при отгрузке и кредитуемый на сумму чистой балансовой стоимости при выставлении счета — обнуляется по завершении цикла продажи."
 
 msgid "Terms and Privacy"
 msgstr "Условия и конфиденциальность"

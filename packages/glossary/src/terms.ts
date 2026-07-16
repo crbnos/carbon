@@ -740,7 +740,7 @@ export const terms = {
   },
   "asset-class-write-off-account": {
     term: msg`Write-Off Account`,
-    definition: msg`Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for the proceeds on invoicing, netting to zero over the sale cycle.`
+    definition: msg`Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for its net book value on invoicing, netting to zero over the sale cycle.`
   },
   "asset-class-write-down-account": {
     term: msg`Write-Down Account`,

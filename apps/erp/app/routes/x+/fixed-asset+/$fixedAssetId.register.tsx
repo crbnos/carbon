@@ -163,6 +163,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
       (d) => d.entityType === "FixedAssetClass"
     )?.id;
 
+    if (!locationDimensionId || !assetClassDimensionId) {
+      throw redirect(
+        path.to.fixedAsset(fixedAssetId),
+        await flash(
+          request,
+          error(null, "Missing dimensions required for asset registration")
+        )
+      );
+    }
+
     try {
       await postAssetRegistration(getDatabaseClient(), {
         fixedAssetId,

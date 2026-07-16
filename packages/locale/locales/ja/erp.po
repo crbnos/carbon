@@ -11689,8 +11689,8 @@ msgstr "テンプレートID"
 msgid "Templates"
 msgstr "テンプレート"
 
-msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for the proceeds on invoicing, netting to zero over the sale cycle."
-msgstr "出荷時に資産の正味簿価を借方記入し、請求時に売却代金を貸方記入する、販売サイクル全体を通じて残高がゼロになる一時的な処分清算勘定科目。"
+msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for its net book value on invoicing, netting to zero over the sale cycle."
+msgstr "出荷時に資産の正味簿価を借方記入し、請求時に正味簿価を貸方記入する、販売サイクル全体を通じて残高がゼロになる一時的な処分清算勘定科目。"
 
 msgid "Terms and Privacy"
 msgstr "利用規約とプライバシー"

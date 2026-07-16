@@ -11689,8 +11689,8 @@ msgstr "ID de plantilla"
 msgid "Templates"
 msgstr "Plantillas"
 
-msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for the proceeds on invoicing, netting to zero over the sale cycle."
-msgstr "Cuenta transitoria de compensación por baja o disposición que se debita por el valor contable neto de un activo al momento del envío y se acredita por los ingresos al facturar, quedando en cero a lo largo del ciclo de venta."
+msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for its net book value on invoicing, netting to zero over the sale cycle."
+msgstr "Cuenta transitoria de compensación por baja o disposición que se debita por el valor contable neto de un activo al momento del envío y se acredita por el valor contable neto al facturar, quedando en cero a lo largo del ciclo de venta."
 
 msgid "Terms and Privacy"
 msgstr "Términos y Privacidad"
