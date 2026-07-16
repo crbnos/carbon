@@ -33,7 +33,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
   ]);
 
   if (changeOrders.error) {
-    console.error(changeOrders.error);
     throw redirect(
       path.to.authenticatedRoot,
       await flash(

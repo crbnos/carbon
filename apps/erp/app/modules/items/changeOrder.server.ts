@@ -1,10 +1,13 @@
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { trigger } from "@carbon/jobs";
+import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { activateMethodVersion, upsertItemSupersession } from "~/modules/items";
 import { supersessionModes } from "./items.models";
+
+const logger = getLogger("erp", "change-orders");
 
 // =============================================================================
 // Change Orders — server-only helpers (imports @carbon/jobs).
@@ -39,7 +42,7 @@ export async function notifyChangeOrderTransition(args: {
       from: args.userId
     });
   } catch (e) {
-    console.error("Failed to trigger change order notification", e);
+    logger.error("Failed to trigger change order notification", { error: e });
   }
 }
 
@@ -248,7 +251,9 @@ async function releaseAffectedItem(
       updatedBy: userId
     });
     if (sup.error) {
-      console.error("Failed to write revision supersession", sup.error);
+      logger.error("Failed to write revision supersession", {
+        error: sup.error
+      });
     }
   }
 
