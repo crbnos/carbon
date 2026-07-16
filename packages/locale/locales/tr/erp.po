@@ -5607,9 +5607,6 @@ msgstr "Sabit kıymet satın alındığında borçlandırılan GL hesabı (satı
 msgid "GL account debited when a fixed asset is acquired (purchase or capitalized cost)."
 msgstr "Bu sınıftaki bir varlık satın alındığında borçlandırılan GL hesabı."
 
-msgid "GL account debited when an asset in this class is acquired."
-msgstr "Banka hizmet ücretleri ve benzer ücretler için GL hesabı."
-
 msgid "GL account for bank service charges and similar fees."
 msgstr "Faiz geliri veya gideri için GL hesabı."
 
@@ -5625,12 +5622,6 @@ msgstr "Vergi zamanlaması farkları için GL hesabı (örneğin hızlandırılm
 msgid "GL account for tax timing differences (e.g. accelerated tax depreciation vs. book depreciation)."
 msgstr "Bir varlık silindiğinde etkilenen GL hesabı (satış geliri olmadan maliyet kaldırıldı)."
 
-msgid "GL account hit when an asset is written off (cost removed without disposal proceeds)."
-msgstr "Bir varlığın defter değeri azaldığında etkilenen GL hesabı (değer kaybı)."
-
-msgid "GL account hit when an asset's book value is reduced (impairment)."
-msgstr "Fiziksel sayımlar sistem envanterinden farklı olduğunda etkilenen GL hesabı."
-
 msgid "GL account hit when physical counts differ from system inventory."
 msgstr "Bu şirketlerarası işlem için borçlandırılacak kaynak şirkette GL hesabı."
 
@@ -5645,6 +5636,9 @@ msgstr "Deftere kayıt sırasında sent altı yuvarlama farklarını emilen GL h
 
 msgid "GL account that captures the difference between standard cost and actual purchase cost."
 msgstr "Standart maliyet ile fiili satın alma maliyeti arasındaki farkı yakalayan GL hesabı."
+
+msgid "GL account that carries the asset's original acquisition cost. Debited on acquisition (receipt or registration); credited at full gross cost when the asset is disposed or sold."
+msgstr ""
 
 msgid "GL account that holds the value of jobs in production until they post to finished goods."
 msgstr "İşleri tamamlanmış mal olarak kaydetene kadar üretimde olan işlerin değerini tutan GL hesabı."
@@ -5667,11 +5661,8 @@ msgstr "Tedarikçilerden alınan erken ödeme indirimlerinin kaydedildiği GL he
 msgid "GL account where gain or loss is booked on fixed-asset disposal."
 msgstr "Sabit varlığın elden çıkarılması sırasında kazanç veya kaybın kaydedildiği GL hesabı."
 
-msgid "GL account where gain or loss is booked when an asset in this class is disposed."
-msgstr "Bu sınıftaki bir varlık elden çıkarıldığında kazanç veya kaybın kaydedildiği GL hesabı."
-
-msgid "GL contra-asset account credited when depreciation posts for assets in this class."
-msgstr "Bu sınıftaki varlıklar için amortisman nakledildiğinde alacaklandırılan GL contra-aktif hesabı."
+msgid "GL contra-asset account credited each period when depreciation posts. Debited in full when the asset is sold or scrapped, removing all accumulated depreciation from the books."
+msgstr ""
 
 msgid "GL contra-asset account that accumulates depreciation booked against fixed assets."
 msgstr "Sabit varlıklara karşı kaydedilen amortismanı biriken GL contra-aktif hesabı."
@@ -5684,6 +5675,9 @@ msgstr "Muhasebe yılının sonunda net gelirin kapatıldığı GL öz sermaye h
 
 msgid "GL expense account debited each period when depreciation posts."
 msgstr "Amortisman nakledildiği her dönem borçlandırılan GL gider hesabı."
+
+msgid "GL expense account debited when an asset's carrying value is reduced due to impairment — i.e. when recoverable amount falls below net book value. Separate from the Disposal Account, which is used only on full retirement or sale."
+msgstr ""
 
 msgid "GL expense account for non-inventory purchases (supplies, services)."
 msgstr "Stok dışı satın almalar (malzemeleri, hizmetleri) için GL gider hesabı."
@@ -8065,6 +8059,9 @@ msgstr "Envanter Dışı"
 msgid "Non-Inventory Tracking"
 msgstr "Envanter Dışı Takip"
 
+msgid "Non-operating P&L account that receives the explicit gain or loss when an asset is sold or scrapped. Credited for a gain (proceeds > NBV) or debited for a loss (proceeds < NBV). Maps to \"Gains and Losses on Disposal\" in the default chart of accounts."
+msgstr ""
+
 msgid "Non-Taxable Add-On Cost"
 msgstr "Vergisiz Ek Ücret"
 
@@ -9955,8 +9952,8 @@ msgstr "Biriktirilmiş kârlar"
 msgid "Retained Earnings (default)"
 msgstr "Biriktirilmiş kârlar (varsayılan)"
 
-msgid "Retiring an asset by write-off instead of sale, booking the remaining net book value as a loss — status becomes Disposed."
-msgstr "Bir varlığı satış yerine silme yoluyla kullanımdan çıkarmak, kalan net kitap değerini zarar olarak kaydetmek — durum Elden Çıkarıldı olur."
+msgid "Retiring an asset from service — either by scrapping (remaining net book value booked as a loss) or by sale (proceeds compared to NBV; gain or loss posted to the disposal account). Status becomes Disposed in both cases."
+msgstr ""
 
 msgid "Retry"
 msgstr "Tekrar Dene"
@@ -11679,6 +11676,9 @@ msgstr "Şablon Kimliği"
 
 msgid "Templates"
 msgstr "Şablonlar"
+
+msgid "Temporary disposal-clearing account used during an asset sale. Debited for the asset's net book value when it ships; credited for sale proceeds when the invoice posts — nets to zero once the sale cycle completes. Not a P&L account; gain or loss flows to the Disposal Account instead."
+msgstr ""
 
 msgid "Terms and Privacy"
 msgstr "Şartlar ve Gizlilik"

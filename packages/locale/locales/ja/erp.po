@@ -5607,9 +5607,6 @@ msgstr "固定資産を取得する際にデビットされるGLアカウント�
 msgid "GL account debited when a fixed asset is acquired (purchase or capitalized cost)."
 msgstr "このクラスの資産が取得されるときにデビットされるGLアカウント。"
 
-msgid "GL account debited when an asset in this class is acquired."
-msgstr "銀行手数料および同様の手数料のGLアカウント。"
-
 msgid "GL account for bank service charges and similar fees."
 msgstr "利息収入または利息支出のGLアカウント。"
 
@@ -5625,12 +5622,6 @@ msgstr "税務タイミングの差異のGLアカウント（加速償却対帳�
 msgid "GL account for tax timing differences (e.g. accelerated tax depreciation vs. book depreciation)."
 msgstr "資産が償却されるときに記入されるGLアカウント（処分収益なしでコストが削除された）。"
 
-msgid "GL account hit when an asset is written off (cost removed without disposal proceeds)."
-msgstr "資産の帳簿価額が減少したときに記入されるGLアカウント（減損）。"
-
-msgid "GL account hit when an asset's book value is reduced (impairment)."
-msgstr "物理的なカウントがシステムインベントリと異なる場合に記入されるGLアカウント。"
-
 msgid "GL account hit when physical counts differ from system inventory."
 msgstr "このグループ間取引のための源会社のGLアカウント。"
 
@@ -5645,6 +5636,9 @@ msgstr "転記時にセント未満の端数差異を吸収するGLアカウン�
 
 msgid "GL account that captures the difference between standard cost and actual purchase cost."
 msgstr "標準原価と実際の購入原価の差を捕捉するGLアカウント。"
+
+msgid "GL account that carries the asset's original acquisition cost. Debited on acquisition (receipt or registration); credited at full gross cost when the asset is disposed or sold."
+msgstr ""
 
 msgid "GL account that holds the value of jobs in production until they post to finished goods."
 msgstr "生産中のジョブの価値を保有し、完成品にポストされるまでのGLアカウント。"
@@ -5667,11 +5661,8 @@ msgstr "サプライヤーから得られた早期支払割引が記録される
 msgid "GL account where gain or loss is booked on fixed-asset disposal."
 msgstr "固定資産の処分時に利益または損失が記録されるGLアカウント。"
 
-msgid "GL account where gain or loss is booked when an asset in this class is disposed."
-msgstr "このクラスの資産が処分されるときに利益または損失が記録されるGLアカウント。"
-
-msgid "GL contra-asset account credited when depreciation posts for assets in this class."
-msgstr "このクラスの資産に対して減価償却が転記される場合に貸方記入されるGL反対資産勘定。"
+msgid "GL contra-asset account credited each period when depreciation posts. Debited in full when the asset is sold or scrapped, removing all accumulated depreciation from the books."
+msgstr ""
 
 msgid "GL contra-asset account that accumulates depreciation booked against fixed assets."
 msgstr "固定資産に対して記録された減価償却を累積するGL反対資産勘定。"
@@ -5684,6 +5675,9 @@ msgstr "会計年度末にネット収入が閉じられるGL株主資本勘定�
 
 msgid "GL expense account debited each period when depreciation posts."
 msgstr "減価償却が転記される各期間に借方記入されるGL支出勘定。"
+
+msgid "GL expense account debited when an asset's carrying value is reduced due to impairment — i.e. when recoverable amount falls below net book value. Separate from the Disposal Account, which is used only on full retirement or sale."
+msgstr ""
 
 msgid "GL expense account for non-inventory purchases (supplies, services)."
 msgstr "非インベントリ購入（用品、サービス）のためのGL支出勘定。"
@@ -8065,6 +8059,9 @@ msgstr "非在庫"
 msgid "Non-Inventory Tracking"
 msgstr "非在庫追跡"
 
+msgid "Non-operating P&L account that receives the explicit gain or loss when an asset is sold or scrapped. Credited for a gain (proceeds > NBV) or debited for a loss (proceeds < NBV). Maps to \"Gains and Losses on Disposal\" in the default chart of accounts."
+msgstr ""
+
 msgid "Non-Taxable Add-On Cost"
 msgstr "非課税アドオンコスト"
 
@@ -9955,8 +9952,8 @@ msgstr "利益剰余金"
 msgid "Retained Earnings (default)"
 msgstr "利益剰余金 (既定)"
 
-msgid "Retiring an asset by write-off instead of sale, booking the remaining net book value as a loss — status becomes Disposed."
-msgstr "売却ではなく償却によってアセットをリタイアし、残りの純簿価額を損失として記録する — ステータスは「処分」になります。"
+msgid "Retiring an asset from service — either by scrapping (remaining net book value booked as a loss) or by sale (proceeds compared to NBV; gain or loss posted to the disposal account). Status becomes Disposed in both cases."
+msgstr ""
 
 msgid "Retry"
 msgstr "再試行"
@@ -11679,6 +11676,9 @@ msgstr "テンプレートID"
 
 msgid "Templates"
 msgstr "テンプレート"
+
+msgid "Temporary disposal-clearing account used during an asset sale. Debited for the asset's net book value when it ships; credited for sale proceeds when the invoice posts — nets to zero once the sale cycle completes. Not a P&L account; gain or loss flows to the Disposal Account instead."
+msgstr ""
 
 msgid "Terms and Privacy"
 msgstr "利用規約とプライバシー"

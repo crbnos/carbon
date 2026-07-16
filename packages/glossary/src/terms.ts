@@ -413,7 +413,7 @@ export const terms = {
   },
   disposal: {
     term: msg`Disposal`,
-    definition: msg`Retiring an asset by write-off instead of sale, booking the remaining net book value as a loss — status becomes Disposed.`,
+    definition: msg`Retiring an asset from service — either by scrapping (remaining net book value booked as a loss) or by sale (proceeds compared to NBV; gain or loss posted to the disposal account). Status becomes Disposed in both cases.`,
     href: "/docs/reference/fixed-assets#selling-vs-disposing"
   },
 
@@ -728,11 +728,11 @@ export const terms = {
   },
   "asset-class-asset-account": {
     term: msg`Asset Account`,
-    definition: msg`GL account debited when an asset in this class is acquired.`
+    definition: msg`GL account that carries the asset's original acquisition cost. Debited on acquisition (receipt or registration); credited at full gross cost when the asset is disposed or sold.`
   },
   "asset-class-accumulated-depreciation-account": {
     term: msg`Accumulated Depreciation Account`,
-    definition: msg`GL contra-asset account credited when depreciation posts for assets in this class.`
+    definition: msg`GL contra-asset account credited each period when depreciation posts. Debited in full when the asset is sold or scrapped, removing all accumulated depreciation from the books.`
   },
   "asset-class-depreciation-expense-account": {
     term: msg`Depreciation Expense Account`,
@@ -740,15 +740,15 @@ export const terms = {
   },
   "asset-class-write-off-account": {
     term: msg`Write-Off Account`,
-    definition: msg`GL account hit when an asset is written off (cost removed without disposal proceeds).`
+    definition: msg`Temporary disposal-clearing account used during an asset sale. Debited for the asset's net book value when it ships; credited for sale proceeds when the invoice posts — nets to zero once the sale cycle completes. Not a P&L account; gain or loss flows to the Disposal Account instead.`
   },
   "asset-class-write-down-account": {
     term: msg`Write-Down Account`,
-    definition: msg`GL account hit when an asset's book value is reduced (impairment).`
+    definition: msg`GL expense account debited when an asset's carrying value is reduced due to impairment — i.e. when recoverable amount falls below net book value. Separate from the Disposal Account, which is used only on full retirement or sale.`
   },
   "asset-class-disposal-account": {
     term: msg`Disposal Account`,
-    definition: msg`GL account where gain or loss is booked when an asset in this class is disposed.`
+    definition: msg`Non-operating P&L account that receives the explicit gain or loss when an asset is sold or scrapped. Credited for a gain (proceeds > NBV) or debited for a loss (proceeds < NBV). Maps to "Gains and Losses on Disposal" in the default chart of accounts.`
   },
   "asset-class-default-tax-method": {
     term: msg`Tax Method (default)`,

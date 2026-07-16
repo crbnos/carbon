@@ -5607,9 +5607,6 @@ msgstr "GL खाता जब एक स्थिर संपत्ति प�
 msgid "GL account debited when a fixed asset is acquired (purchase or capitalized cost)."
 msgstr "GL खाता जब इस वर्ग में एक संपत्ति प्राप्त की जाती है तो डेबिट किया जाता है।"
 
-msgid "GL account debited when an asset in this class is acquired."
-msgstr "बैंक सेवा शुल्क और समान शुल्क के लिए GL खाता।"
-
 msgid "GL account for bank service charges and similar fees."
 msgstr "ब्याज आय या व्यय के लिए GL खाता।"
 
@@ -5625,12 +5622,6 @@ msgstr "कर समय अंतर के लिए GL खाता (जै�
 msgid "GL account for tax timing differences (e.g. accelerated tax depreciation vs. book depreciation)."
 msgstr "GL खाता जब एक संपत्ति को बंद किया जाता है (निपटान की आय के बिना लागत हटाई जाती है)।"
 
-msgid "GL account hit when an asset is written off (cost removed without disposal proceeds)."
-msgstr "GL खाता जब एक संपत्ति की पुस्तक मूल्य को कम किया जाता है (हानि)।"
-
-msgid "GL account hit when an asset's book value is reduced (impairment)."
-msgstr "GL खाता जब भौतिक गणना सिस्टम इन्वेंटरी से अलग होती है।"
-
 msgid "GL account hit when physical counts differ from system inventory."
 msgstr "इस अंतरकंपनी लेनदेन के लिए डेबिट करने के लिए स्रोत कंपनी में GL खाता।"
 
@@ -5645,6 +5636,9 @@ msgstr "GL खाता जो पोस्टिंग पर उप-सें�
 
 msgid "GL account that captures the difference between standard cost and actual purchase cost."
 msgstr "GL खाता जो मानक लागत और वास्तविक क्रय लागत के बीच अंतर को कैप्चर करता है।"
+
+msgid "GL account that carries the asset's original acquisition cost. Debited on acquisition (receipt or registration); credited at full gross cost when the asset is disposed or sold."
+msgstr ""
 
 msgid "GL account that holds the value of jobs in production until they post to finished goods."
 msgstr "GL खाता जो उत्पादन में कार्यों का मान रखता है जब तक वे तैयार माल को पोस्ट नहीं करते।"
@@ -5667,11 +5661,8 @@ msgstr "GL खाता जहां आपूर्तिकर्ताओं 
 msgid "GL account where gain or loss is booked on fixed-asset disposal."
 msgstr "GL खाता जहां निश्चित संपत्ति के निपटान पर लाभ या हानि दर्ज की जाती है।"
 
-msgid "GL account where gain or loss is booked when an asset in this class is disposed."
-msgstr "GL खाता जहां इस वर्ग में किसी संपत्ति के निपटान पर लाभ या हानि दर्ज की जाती है।"
-
-msgid "GL contra-asset account credited when depreciation posts for assets in this class."
-msgstr "GL विरोधी-संपत्ति खाता जब इस वर्ग की संपत्तियों के लिए मूल्यह्रास पोस्ट किया जाता है तो क्रेडिट किया जाता है।"
+msgid "GL contra-asset account credited each period when depreciation posts. Debited in full when the asset is sold or scrapped, removing all accumulated depreciation from the books."
+msgstr ""
 
 msgid "GL contra-asset account that accumulates depreciation booked against fixed assets."
 msgstr "GL विरोधी-संपत्ति खाता जो निश्चित संपत्तियों के खिलाफ बुक किए गए मूल्यह्रास को जमा करता है।"
@@ -5684,6 +5675,9 @@ msgstr "GL इक्विटी खाता जहां वित्तीय
 
 msgid "GL expense account debited each period when depreciation posts."
 msgstr "GL व्यय खाता जब मूल्यह्रास पोस्ट किया जाता है तो हर अवधि में डेबिट किया जाता है।"
+
+msgid "GL expense account debited when an asset's carrying value is reduced due to impairment — i.e. when recoverable amount falls below net book value. Separate from the Disposal Account, which is used only on full retirement or sale."
+msgstr ""
 
 msgid "GL expense account for non-inventory purchases (supplies, services)."
 msgstr "गैर-इन्वेंटरी खरीद के लिए GL व्यय खाता (आपूर्ति, सेवाएं)।"
@@ -8065,6 +8059,9 @@ msgstr "गैर-इन्वेंटरी"
 msgid "Non-Inventory Tracking"
 msgstr "गैर-इन्वेंटरी ट्रैकिंग"
 
+msgid "Non-operating P&L account that receives the explicit gain or loss when an asset is sold or scrapped. Credited for a gain (proceeds > NBV) or debited for a loss (proceeds < NBV). Maps to \"Gains and Losses on Disposal\" in the default chart of accounts."
+msgstr ""
+
 msgid "Non-Taxable Add-On Cost"
 msgstr "गैर-कर योग्य ऐड-ऑन लागत"
 
@@ -9955,8 +9952,8 @@ msgstr "संचित मुनाफा"
 msgid "Retained Earnings (default)"
 msgstr "संचित मुनाफा (डिफ़ॉल्ट)"
 
-msgid "Retiring an asset by write-off instead of sale, booking the remaining net book value as a loss — status becomes Disposed."
-msgstr "किसी परिसंपत्ति को बिक्रय के बजाय लिखने-बंद करके सेवानिवृत्त करना, शेष नेट बुक वैल्यू को हानि के रूप में दर्ज करना — स्थिति का मतलब है कि निपटारा किया गया।"
+msgid "Retiring an asset from service — either by scrapping (remaining net book value booked as a loss) or by sale (proceeds compared to NBV; gain or loss posted to the disposal account). Status becomes Disposed in both cases."
+msgstr ""
 
 msgid "Retry"
 msgstr "पुनः प्रयास करें"
@@ -11679,6 +11676,9 @@ msgstr "टेम्पलेट आईडी"
 
 msgid "Templates"
 msgstr "टेम्पलेट्स"
+
+msgid "Temporary disposal-clearing account used during an asset sale. Debited for the asset's net book value when it ships; credited for sale proceeds when the invoice posts — nets to zero once the sale cycle completes. Not a P&L account; gain or loss flows to the Disposal Account instead."
+msgstr ""
 
 msgid "Terms and Privacy"
 msgstr "शर्तें और गोपनीयता"

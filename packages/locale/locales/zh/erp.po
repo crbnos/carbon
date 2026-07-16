@@ -5607,9 +5607,6 @@ msgstr "当获得固定资产时借记的GL账户（购买或资本化成本）�
 msgid "GL account debited when a fixed asset is acquired (purchase or capitalized cost)."
 msgstr "当此类中的资产被获取时借记的GL账户。"
 
-msgid "GL account debited when an asset in this class is acquired."
-msgstr "银行服务费和类似费用的GL账户。"
-
 msgid "GL account for bank service charges and similar fees."
 msgstr "利息收入或利息费用的GL账户。"
 
@@ -5625,12 +5622,6 @@ msgstr "税务时间差异的GL账户（例如加速折税折旧与账面折旧�
 msgid "GL account for tax timing differences (e.g. accelerated tax depreciation vs. book depreciation)."
 msgstr "当资产被注销时受影响的GL账户（成本被删除而没有处置收益）。"
 
-msgid "GL account hit when an asset is written off (cost removed without disposal proceeds)."
-msgstr "当资产的账面价值被降低时受影响的GL账户（减值）。"
-
-msgid "GL account hit when an asset's book value is reduced (impairment)."
-msgstr "当实际库存与系统库存不符时受影响的GL账户。"
-
 msgid "GL account hit when physical counts differ from system inventory."
 msgstr "源公司中用于此关联方交易借记的GL账户。"
 
@@ -5645,6 +5636,9 @@ msgstr "用于吸收过账时尾差的GL账户。"
 
 msgid "GL account that captures the difference between standard cost and actual purchase cost."
 msgstr "捕获标准成本和实际采购成本之间差异的GL账户。"
+
+msgid "GL account that carries the asset's original acquisition cost. Debited on acquisition (receipt or registration); credited at full gross cost when the asset is disposed or sold."
+msgstr ""
 
 msgid "GL account that holds the value of jobs in production until they post to finished goods."
 msgstr "持有生产中的工作价值的GL账户，直到它们过帐到成品。"
@@ -5667,11 +5661,8 @@ msgstr "记录从供应商那里获取的提前付款折扣的GL账户。"
 msgid "GL account where gain or loss is booked on fixed-asset disposal."
 msgstr "固定资产处置时记录收益或损失的GL账户。"
 
-msgid "GL account where gain or loss is booked when an asset in this class is disposed."
-msgstr "此类资产处置时记录收益或损失的GL账户。"
-
-msgid "GL contra-asset account credited when depreciation posts for assets in this class."
-msgstr "当此类资产进行折旧过帐时贷记的GL反向资产账户。"
+msgid "GL contra-asset account credited each period when depreciation posts. Debited in full when the asset is sold or scrapped, removing all accumulated depreciation from the books."
+msgstr ""
 
 msgid "GL contra-asset account that accumulates depreciation booked against fixed assets."
 msgstr "累积对固定资产计提的折旧的GL反向资产账户。"
@@ -5684,6 +5675,9 @@ msgstr "财政年度末净收入关闭的GL权益账户。"
 
 msgid "GL expense account debited each period when depreciation posts."
 msgstr "折旧过帐每期借记的GL支出账户。"
+
+msgid "GL expense account debited when an asset's carrying value is reduced due to impairment — i.e. when recoverable amount falls below net book value. Separate from the Disposal Account, which is used only on full retirement or sale."
+msgstr ""
 
 msgid "GL expense account for non-inventory purchases (supplies, services)."
 msgstr "非库存购买（用品、服务）的GL支出账户。"
@@ -8065,6 +8059,9 @@ msgstr "非库存"
 msgid "Non-Inventory Tracking"
 msgstr "非库存追踪"
 
+msgid "Non-operating P&L account that receives the explicit gain or loss when an asset is sold or scrapped. Credited for a gain (proceeds > NBV) or debited for a loss (proceeds < NBV). Maps to \"Gains and Losses on Disposal\" in the default chart of accounts."
+msgstr ""
+
 msgid "Non-Taxable Add-On Cost"
 msgstr "非应税附加成本"
 
@@ -9955,8 +9952,8 @@ msgstr "留存收益"
 msgid "Retained Earnings (default)"
 msgstr "留存收益 (默认)"
 
-msgid "Retiring an asset by write-off instead of sale, booking the remaining net book value as a loss — status becomes Disposed."
-msgstr "通过注销而不是出售来停用资产，将剩余净账面价值作为损失记录 — 状态变为已处置。"
+msgid "Retiring an asset from service — either by scrapping (remaining net book value booked as a loss) or by sale (proceeds compared to NBV; gain or loss posted to the disposal account). Status becomes Disposed in both cases."
+msgstr ""
 
 msgid "Retry"
 msgstr "重试"
@@ -11679,6 +11676,9 @@ msgstr "模板 ID"
 
 msgid "Templates"
 msgstr "模板"
+
+msgid "Temporary disposal-clearing account used during an asset sale. Debited for the asset's net book value when it ships; credited for sale proceeds when the invoice posts — nets to zero once the sale cycle completes. Not a P&L account; gain or loss flows to the Disposal Account instead."
+msgstr ""
 
 msgid "Terms and Privacy"
 msgstr "条款和隐私"

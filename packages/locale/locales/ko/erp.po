@@ -5607,9 +5607,6 @@ msgstr "고객 인보이스가 전기될 때 차변에 기록되며, 고객이 �
 msgid "GL account debited when a fixed asset is acquired (purchase or capitalized cost)."
 msgstr "고정자산 취득 시(구매 또는 자본화 원가) 차변에 기록되는 총계정원장 계정입니다."
 
-msgid "GL account debited when an asset in this class is acquired."
-msgstr "이 자산 클래스의 자산을 취득할 때 차변에 기록되는 총계정원장 계정입니다."
-
 msgid "GL account for bank service charges and similar fees."
 msgstr "은행 수수료 및 유사 비용을 위한 총계정원장 계정입니다."
 
@@ -5625,12 +5622,6 @@ msgstr "매입자가 스스로 신고하는 대리납부(리버스차지) 규정
 msgid "GL account for tax timing differences (e.g. accelerated tax depreciation vs. book depreciation)."
 msgstr "세무상 시점 차이(예: 가속 세무 감가상각과 장부 감가상각의 차이)를 위한 총계정원장 계정입니다."
 
-msgid "GL account hit when an asset is written off (cost removed without disposal proceeds)."
-msgstr "자산 상각(처분 대금 없이 원가를 제거) 시 기록되는 총계정원장 계정입니다."
-
-msgid "GL account hit when an asset's book value is reduced (impairment)."
-msgstr "자산의 장부가액이 감소(손상)할 때 기록되는 총계정원장 계정입니다."
-
 msgid "GL account hit when physical counts differ from system inventory."
 msgstr "실사 수량이 시스템 재고와 다를 때 기록되는 총계정원장 계정입니다."
 
@@ -5645,6 +5636,9 @@ msgstr "전기 시 발생하는 소수점 이하 반올림 차이를 흡수하�
 
 msgid "GL account that captures the difference between standard cost and actual purchase cost."
 msgstr "표준원가와 실제 구매원가의 차이를 기록하는 총계정원장 계정입니다."
+
+msgid "GL account that carries the asset's original acquisition cost. Debited on acquisition (receipt or registration); credited at full gross cost when the asset is disposed or sold."
+msgstr ""
 
 msgid "GL account that holds the value of jobs in production until they post to finished goods."
 msgstr "생산 중인 작업의 금액을 완제품으로 전기되기 전까지 보관하는 총계정원장 계정입니다."
@@ -5667,11 +5661,8 @@ msgstr "공급업체로부터 받은 조기결제 할인이 기록되는 총계�
 msgid "GL account where gain or loss is booked on fixed-asset disposal."
 msgstr "고정자산 처분 시 손익이 계상되는 총계정원장 계정입니다."
 
-msgid "GL account where gain or loss is booked when an asset in this class is disposed."
-msgstr "이 자산 클래스의 자산이 처분될 때 손익이 계상되는 총계정원장 계정입니다."
-
-msgid "GL contra-asset account credited when depreciation posts for assets in this class."
-msgstr "이 자산 클래스의 감가상각이 전기될 때 대변에 기록되는 총계정원장 자산 차감 계정입니다."
+msgid "GL contra-asset account credited each period when depreciation posts. Debited in full when the asset is sold or scrapped, removing all accumulated depreciation from the books."
+msgstr ""
 
 msgid "GL contra-asset account that accumulates depreciation booked against fixed assets."
 msgstr "고정자산에 대해 계상된 감가상각이 누적되는 총계정원장 자산 차감 계정입니다."
@@ -5684,6 +5675,9 @@ msgstr "회계연도 말에 당기순이익이 마감되는 총계정원장 자�
 
 msgid "GL expense account debited each period when depreciation posts."
 msgstr "매 기간 감가상각이 전기될 때 차변에 기록되는 총계정원장 비용 계정입니다."
+
+msgid "GL expense account debited when an asset's carrying value is reduced due to impairment — i.e. when recoverable amount falls below net book value. Separate from the Disposal Account, which is used only on full retirement or sale."
+msgstr ""
 
 msgid "GL expense account for non-inventory purchases (supplies, services)."
 msgstr "비재고성 구매(소모품, 서비스)를 위한 총계정원장 비용 계정입니다."
@@ -8065,6 +8059,9 @@ msgstr "비재고"
 msgid "Non-Inventory Tracking"
 msgstr "비재고 추적"
 
+msgid "Non-operating P&L account that receives the explicit gain or loss when an asset is sold or scrapped. Credited for a gain (proceeds > NBV) or debited for a loss (proceeds < NBV). Maps to \"Gains and Losses on Disposal\" in the default chart of accounts."
+msgstr ""
+
 msgid "Non-Taxable Add-On Cost"
 msgstr "비과세 애드온 비용"
 
@@ -9955,8 +9952,8 @@ msgstr "이익잉여금"
 msgid "Retained Earnings (default)"
 msgstr "이익잉여금(기본값)"
 
-msgid "Retiring an asset by write-off instead of sale, booking the remaining net book value as a loss — status becomes Disposed."
-msgstr "매각이 아닌 상각으로 자산을 폐기하고 남은 순장부가액을 손실로 계상하는 것 — 상태가 처분됨으로 변경됩니다."
+msgid "Retiring an asset from service — either by scrapping (remaining net book value booked as a loss) or by sale (proceeds compared to NBV; gain or loss posted to the disposal account). Status becomes Disposed in both cases."
+msgstr ""
 
 msgid "Retry"
 msgstr "재시도"
@@ -11679,6 +11676,9 @@ msgstr "템플릿 ID"
 
 msgid "Templates"
 msgstr "템플릿"
+
+msgid "Temporary disposal-clearing account used during an asset sale. Debited for the asset's net book value when it ships; credited for sale proceeds when the invoice posts — nets to zero once the sale cycle completes. Not a P&L account; gain or loss flows to the Disposal Account instead."
+msgstr ""
 
 msgid "Terms and Privacy"
 msgstr "이용약관 및 개인정보처리방침"

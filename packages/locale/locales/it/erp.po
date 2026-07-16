@@ -5607,9 +5607,6 @@ msgstr "Conto GL addebitato quando un cespite viene acquisito (acquisto o costo 
 msgid "GL account debited when a fixed asset is acquired (purchase or capitalized cost)."
 msgstr "Conto GL addebitato quando un cespite di questa classe viene acquisito."
 
-msgid "GL account debited when an asset in this class is acquired."
-msgstr "Conto GL per le spese di servizio bancario e commissioni simili."
-
 msgid "GL account for bank service charges and similar fees."
 msgstr "Conto GL per i ricavi o le spese per interessi."
 
@@ -5625,12 +5622,6 @@ msgstr "Conto GL per le differenze temporali fiscali (ad es. ammortamento fiscal
 msgid "GL account for tax timing differences (e.g. accelerated tax depreciation vs. book depreciation)."
 msgstr "Conto GL interessato quando un cespite viene cancellato (costo rimosso senza proventi di dismissione)."
 
-msgid "GL account hit when an asset is written off (cost removed without disposal proceeds)."
-msgstr "Conto GL interessato quando il valore contabile di un cespite viene ridotto (riduzione di valore)."
-
-msgid "GL account hit when an asset's book value is reduced (impairment)."
-msgstr "Conto GL interessato quando i conteggi fisici differiscono dall'inventario del sistema."
-
 msgid "GL account hit when physical counts differ from system inventory."
 msgstr "Conto GL nella società di origine da addebitare per questa transazione intersocietaria."
 
@@ -5645,6 +5636,9 @@ msgstr "Conto GL che assorbe le differenze di arrotondamento in sub-centesimi al
 
 msgid "GL account that captures the difference between standard cost and actual purchase cost."
 msgstr "Conto GL che acquisisce la differenza tra il costo standard e il costo di acquisto effettivo."
+
+msgid "GL account that carries the asset's original acquisition cost. Debited on acquisition (receipt or registration); credited at full gross cost when the asset is disposed or sold."
+msgstr ""
 
 msgid "GL account that holds the value of jobs in production until they post to finished goods."
 msgstr "Conto GL che tiene il valore dei lavori in produzione fino a quando non vengono registrati come prodotti finiti."
@@ -5667,11 +5661,8 @@ msgstr "Conto GL dove vengono registrati gli sconti di pagamento anticipato otte
 msgid "GL account where gain or loss is booked on fixed-asset disposal."
 msgstr "Conto GL dove il guadagno o la perdita viene registrato sulla dismissione di beni fissi."
 
-msgid "GL account where gain or loss is booked when an asset in this class is disposed."
-msgstr "Conto GL dove il guadagno o la perdita viene registrato quando un bene di questa classe viene dismesso."
-
-msgid "GL contra-asset account credited when depreciation posts for assets in this class."
-msgstr "Conto GL contra-attività accreditato quando l'ammortamento è registrato per le attività di questa classe."
+msgid "GL contra-asset account credited each period when depreciation posts. Debited in full when the asset is sold or scrapped, removing all accumulated depreciation from the books."
+msgstr ""
 
 msgid "GL contra-asset account that accumulates depreciation booked against fixed assets."
 msgstr "Conto GL contra-attività che accumula l'ammortamento registrato rispetto ai beni fissi."
@@ -5684,6 +5675,9 @@ msgstr "Conto GL di patrimonio netto dove l'utile netto viene chiuso a fine anno
 
 msgid "GL expense account debited each period when depreciation posts."
 msgstr "Conto GL di spesa addebitato ogni periodo quando l'ammortamento viene registrato."
+
+msgid "GL expense account debited when an asset's carrying value is reduced due to impairment — i.e. when recoverable amount falls below net book value. Separate from the Disposal Account, which is used only on full retirement or sale."
+msgstr ""
 
 msgid "GL expense account for non-inventory purchases (supplies, services)."
 msgstr "Conto GL di spesa per acquisti non di magazzino (forniture, servizi)."
@@ -8065,6 +8059,9 @@ msgstr "Non-Inventario"
 msgid "Non-Inventory Tracking"
 msgstr "Tracciamento Non-Inventario"
 
+msgid "Non-operating P&L account that receives the explicit gain or loss when an asset is sold or scrapped. Credited for a gain (proceeds > NBV) or debited for a loss (proceeds < NBV). Maps to \"Gains and Losses on Disposal\" in the default chart of accounts."
+msgstr ""
+
 msgid "Non-Taxable Add-On Cost"
 msgstr "Costo Add-On Non Tassabile"
 
@@ -9955,8 +9952,8 @@ msgstr "Utili non distribuiti"
 msgid "Retained Earnings (default)"
 msgstr "Utili non distribuiti (predefinito)"
 
-msgid "Retiring an asset by write-off instead of sale, booking the remaining net book value as a loss — status becomes Disposed."
-msgstr "Ritirare un asset mediante cancellazione anziché vendita, registrando il valore netto contabile residuo come perdita — lo stato diventa Ceduto."
+msgid "Retiring an asset from service — either by scrapping (remaining net book value booked as a loss) or by sale (proceeds compared to NBV; gain or loss posted to the disposal account). Status becomes Disposed in both cases."
+msgstr ""
 
 msgid "Retry"
 msgstr "Riprova"
@@ -11679,6 +11676,9 @@ msgstr "ID Modello"
 
 msgid "Templates"
 msgstr "Modelli"
+
+msgid "Temporary disposal-clearing account used during an asset sale. Debited for the asset's net book value when it ships; credited for sale proceeds when the invoice posts — nets to zero once the sale cycle completes. Not a P&L account; gain or loss flows to the Disposal Account instead."
+msgstr ""
 
 msgid "Terms and Privacy"
 msgstr "Termini e Privacy"

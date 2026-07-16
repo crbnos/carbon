@@ -5607,9 +5607,6 @@ msgstr "Счет, по которому дебетуется сумма при �
 msgid "GL account debited when a fixed asset is acquired (purchase or capitalized cost)."
 msgstr "Счет, по которому дебетуется сумма при приобретении актива этого класса."
 
-msgid "GL account debited when an asset in this class is acquired."
-msgstr "Счет для банковских комиссий и аналогичных сборов."
-
 msgid "GL account for bank service charges and similar fees."
 msgstr "Счет для процентных доходов или расходов."
 
@@ -5625,12 +5622,6 @@ msgstr "Счет для различий в сроках налогооблож�
 msgid "GL account for tax timing differences (e.g. accelerated tax depreciation vs. book depreciation)."
 msgstr "Счет, на который отражается списание актива без получения доходов от его реализации."
 
-msgid "GL account hit when an asset is written off (cost removed without disposal proceeds)."
-msgstr "Счет, на который отражается снижение балансовой стоимости актива (обесценение)."
-
-msgid "GL account hit when an asset's book value is reduced (impairment)."
-msgstr "Счет, на который отражается разница между физическими остатками и данными в системе."
-
 msgid "GL account hit when physical counts differ from system inventory."
 msgstr "Счет для дебета в исходной компании при проведении межкомпанийной операции."
 
@@ -5645,6 +5636,9 @@ msgstr "Счет, на который отражаются копеечные р
 
 msgid "GL account that captures the difference between standard cost and actual purchase cost."
 msgstr "Счет GL, который фиксирует разницу между стандартной стоимостью и фактической стоимостью покупки."
+
+msgid "GL account that carries the asset's original acquisition cost. Debited on acquisition (receipt or registration); credited at full gross cost when the asset is disposed or sold."
+msgstr ""
 
 msgid "GL account that holds the value of jobs in production until they post to finished goods."
 msgstr "Счет GL, который хранит стоимость работ в производстве, пока они не будут зачислены на готовую продукцию."
@@ -5667,11 +5661,8 @@ msgstr "Счет GL, на котором фиксируются скидки н�
 msgid "GL account where gain or loss is booked on fixed-asset disposal."
 msgstr "Счет GL, на котором фиксируется прибыль или убыток при выбытии основного средства."
 
-msgid "GL account where gain or loss is booked when an asset in this class is disposed."
-msgstr "Счет GL, на котором фиксируется прибыль или убыток при выбытии актива этого класса."
-
-msgid "GL contra-asset account credited when depreciation posts for assets in this class."
-msgstr "Счет GL контра-активов, который кредитуется при проведении амортизации активов этого класса."
+msgid "GL contra-asset account credited each period when depreciation posts. Debited in full when the asset is sold or scrapped, removing all accumulated depreciation from the books."
+msgstr ""
 
 msgid "GL contra-asset account that accumulates depreciation booked against fixed assets."
 msgstr "Счет GL контра-активов, который накапливает амортизацию, записанную против основных средств."
@@ -5684,6 +5675,9 @@ msgstr "Счет GL капитала, на котором чистая приб�
 
 msgid "GL expense account debited each period when depreciation posts."
 msgstr "Счет GL расходов, который дебетуется в каждом периоде при проведении амортизации."
+
+msgid "GL expense account debited when an asset's carrying value is reduced due to impairment — i.e. when recoverable amount falls below net book value. Separate from the Disposal Account, which is used only on full retirement or sale."
+msgstr ""
 
 msgid "GL expense account for non-inventory purchases (supplies, services)."
 msgstr "Счет GL расходов для покупок, не входящих в запасы (расходные материалы, услуги)."
@@ -8065,6 +8059,9 @@ msgstr "Не в наличии"
 msgid "Non-Inventory Tracking"
 msgstr "Отслеживание вне инвентаря"
 
+msgid "Non-operating P&L account that receives the explicit gain or loss when an asset is sold or scrapped. Credited for a gain (proceeds > NBV) or debited for a loss (proceeds < NBV). Maps to \"Gains and Losses on Disposal\" in the default chart of accounts."
+msgstr ""
+
 msgid "Non-Taxable Add-On Cost"
 msgstr "Не облагаемая налогом дополнительная стоимость"
 
@@ -9955,8 +9952,8 @@ msgstr "Нераспределенная прибыль"
 msgid "Retained Earnings (default)"
 msgstr "Нераспределенная прибыль (по умолчанию)"
 
-msgid "Retiring an asset by write-off instead of sale, booking the remaining net book value as a loss — status becomes Disposed."
-msgstr "Снятие активов с учета путем списания вместо продажи, отражение оставшейся чистой балансовой стоимости как убытка — статус становится Выбыл."
+msgid "Retiring an asset from service — either by scrapping (remaining net book value booked as a loss) or by sale (proceeds compared to NBV; gain or loss posted to the disposal account). Status becomes Disposed in both cases."
+msgstr ""
 
 msgid "Retry"
 msgstr "Повторить"
@@ -11679,6 +11676,9 @@ msgstr "ID шаблона"
 
 msgid "Templates"
 msgstr "Шаблоны"
+
+msgid "Temporary disposal-clearing account used during an asset sale. Debited for the asset's net book value when it ships; credited for sale proceeds when the invoice posts — nets to zero once the sale cycle completes. Not a P&L account; gain or loss flows to the Disposal Account instead."
+msgstr ""
 
 msgid "Terms and Privacy"
 msgstr "Условия и конфиденциальность"
