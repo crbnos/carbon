@@ -584,11 +584,14 @@ serve(async (req: Request) => {
                 const saleProceeds = totalLineCostWithWeightedShipping;
 
                 if (wasShipped && invoiceLine.salesOrderLineId) {
-                  // Shipment already handled disposal — just post AR/proceeds
+                  // Shipment already removed the asset and parked its net book
+                  // value in Disposal Clearing. At invoice: book AR, DRAIN the
+                  // clearing account, and route the net gain/loss to the class's
+                  // disposal (gain/loss) P&L account. See fixed-asset-lifecycle.md.
                   const assetRecord = await client
                     .from("fixedAsset")
                     .select(
-                      "locationId, fixedAssetClassId, fixedAssetClass:fixedAssetClassId(writeOffAccountId)"
+                      "locationId, fixedAssetClassId, fixedAssetClass:fixedAssetClassId(id, disposalAccountId)"
                     )
                     .eq("id", invoiceLine.assetId)
                     .single();
@@ -596,11 +599,34 @@ serve(async (req: Request) => {
                   if (assetRecord.error)
                     throw new Error("Failed to fetch fixed asset");
 
-                  const writeOffAccountId = (
+                  const disposalAccountId = (
                     assetRecord.data.fixedAssetClass as any
-                  ).writeOffAccountId;
+                  ).disposalAccountId;
+
+                  // The NBV parked in Disposal Clearing at shipment.
+                  const disposal = await client
+                    .from("fixedAssetDisposal")
+                    .select("id, netBookValueAtDisposal")
+                    .eq("fixedAssetId", invoiceLine.assetId)
+                    .order("createdAt", { ascending: false })
+                    .limit(1)
+                    .single();
+
+                  const nbv = disposal.data
+                    ? Number(disposal.data.netBookValueAtDisposal)
+                    : 0;
+                  const gainLoss = saleProceeds - nbv;
 
                   const arJournalLineReference = nanoid();
+                  const disposalLineMeta = () =>
+                    journalLineDimensionsMeta.push({
+                      customerTypeId: customer.data.customerTypeId ?? null,
+                      itemPostingGroupId: null,
+                      itemId: null,
+                      locationId: invoiceLine.locationId ?? salesOrderLine?.locationId ?? assetRecord.data.locationId ?? null,
+                      costCenterId: null,
+                      fixedAssetClassId: (assetRecord.data.fixedAssetClass as any)?.id ?? null,
+                    });
 
                   journalLineInserts.push({
                     accountId: receivablesAccountId,
@@ -618,51 +644,56 @@ serve(async (req: Request) => {
                     intercompanyPartnerId,
                     companyId,
                   });
+                  disposalLineMeta();
 
-                  journalLineInserts.push({
-                    accountId: writeOffAccountId,
-                    description: "Disposal proceeds",
-                    amount: credit("expense", saleProceeds),
-                    quantity: invoiceLineQuantityInInventoryUnit,
-                    documentType: "Invoice",
-                    documentId: salesInvoice.data?.id ?? undefined,
-                    externalDocumentId:
-                      salesInvoice.data?.customerReference ?? undefined,
-                    documentLineReference: journalReference.to.salesInvoice(
-                      invoiceLine.salesOrderLineId
-                    ),
-                    journalLineReference: arJournalLineReference,
-                    intercompanyPartnerId,
-                    companyId,
-                  });
-
-                  for (let i = 0; i < 2; i++) {
-                    journalLineDimensionsMeta.push({
-                      customerTypeId: customer.data.customerTypeId ?? null,
-                      itemPostingGroupId: null,
-                      itemId: null,
-                      locationId: invoiceLine.locationId ?? salesOrderLine?.locationId ?? assetRecord.data.locationId ?? null,
-                      costCenterId: null,
-                      fixedAssetClassId: (assetRecord.data.fixedAssetClass as any)?.id ?? null,
+                  if (nbv > 0) {
+                    journalLineInserts.push({
+                      accountId:
+                        accountDefaults.data.assetAquisitionCostOnDisposalAccount,
+                      description: "Disposal clearing (net book value)",
+                      amount: credit("asset", nbv),
+                      quantity: invoiceLineQuantityInInventoryUnit,
+                      documentType: "Invoice",
+                      documentId: salesInvoice.data?.id ?? undefined,
+                      externalDocumentId:
+                        salesInvoice.data?.customerReference ?? undefined,
+                      documentLineReference: journalReference.to.salesInvoice(
+                        invoiceLine.salesOrderLineId
+                      ),
+                      journalLineReference: arJournalLineReference,
+                      intercompanyPartnerId,
+                      companyId,
                     });
+                    disposalLineMeta();
                   }
 
-                  // Update fixedAssetDisposal with sale proceeds
-                  const disposal = await client
-                    .from("fixedAssetDisposal")
-                    .select("id, netBookValueAtDisposal")
-                    .eq("fixedAssetId", invoiceLine.assetId)
-                    .order("createdAt", { ascending: false })
-                    .limit(1)
-                    .single();
+                  if (gainLoss !== 0) {
+                    // Gain credits (income), loss debits (expense) the disposal account.
+                    journalLineInserts.push({
+                      accountId: disposalAccountId,
+                      description: "Gain/loss on disposal",
+                      amount: credit("expense", gainLoss),
+                      quantity: invoiceLineQuantityInInventoryUnit,
+                      documentType: "Invoice",
+                      documentId: salesInvoice.data?.id ?? undefined,
+                      externalDocumentId:
+                        salesInvoice.data?.customerReference ?? undefined,
+                      documentLineReference: journalReference.to.salesInvoice(
+                        invoiceLine.salesOrderLineId
+                      ),
+                      journalLineReference: arJournalLineReference,
+                      intercompanyPartnerId,
+                      companyId,
+                    });
+                    disposalLineMeta();
+                  }
 
                   if (!disposal.error && disposal.data) {
-                    const nbv = Number(disposal.data.netBookValueAtDisposal);
                     await client
                       .from("fixedAssetDisposal")
                       .update({
                         saleProceeds,
-                        gainLoss: saleProceeds - nbv,
+                        gainLoss,
                       })
                       .eq("id", disposal.data.id);
                   }
@@ -679,7 +710,7 @@ serve(async (req: Request) => {
                   const assetRecord = await client
                     .from("fixedAsset")
                     .select(
-                      "id, status, acquisitionCost, accumulatedDepreciation, locationId, fixedAssetClass:fixedAssetClassId(id, assetAccountId, accumulatedDepreciationAccountId, writeOffAccountId)"
+                      "id, status, acquisitionCost, accumulatedDepreciation, locationId, fixedAssetClass:fixedAssetClassId(id, assetAccountId, accumulatedDepreciationAccountId, disposalAccountId)"
                     )
                     .eq("id", invoiceLine.assetId)
                     .single();
@@ -729,36 +760,11 @@ serve(async (req: Request) => {
                     });
                   }
 
-                  if (nbv > 0) {
-                    const nbvJournalLineReference = nanoid();
-                    journalLineInserts.push({
-                      accountId: assetClass.writeOffAccountId,
-                      description: "Write-off remaining book value",
-                      amount: debit("expense", nbv),
-                      quantity: 1,
-                      documentType: "Invoice",
-                      documentId: salesInvoice.data?.id ?? undefined,
-                      externalDocumentId:
-                        salesInvoice.data?.customerReference ?? undefined,
-                      documentLineReference: invoiceLine.salesOrderLineId
-                        ? journalReference.to.salesInvoice(
-                            invoiceLine.salesOrderLineId
-                          )
-                        : null,
-                      journalLineReference: nbvJournalLineReference,
-                      companyId,
-                    });
-
-                    journalLineDimensionsMeta.push({
-                      customerTypeId:
-                        customer.data.customerTypeId ?? null,
-                      itemPostingGroupId: null,
-                      itemId: null,
-                      locationId: invoiceLine.locationId ?? salesOrderLine?.locationId ?? assetRecord.data.locationId ?? null,
-                      costCenterId: null,
-                      fixedAssetClassId: (assetRecord.data.fixedAssetClass as any)?.id ?? null,
-                    });
-                  }
+                  // One-step disposal (no prior shipment): the classic combined
+                  // entry — clear accum. dep., remove the asset at cost, book AR,
+                  // and net the gain/loss to the disposal account. The NBV is never
+                  // routed through the write-off account. See fixed-asset-lifecycle.md.
+                  const gainLoss = saleProceeds - nbv;
 
                   const removeJournalLineReference = nanoid();
                   journalLineInserts.push({
@@ -809,26 +815,37 @@ serve(async (req: Request) => {
                     companyId,
                   });
 
-                  journalLineInserts.push({
-                    accountId: assetClass.writeOffAccountId,
-                    description: "Disposal proceeds",
-                    amount: credit("expense", saleProceeds),
-                    quantity: invoiceLineQuantityInInventoryUnit,
-                    documentType: "Invoice",
-                    documentId: salesInvoice.data?.id ?? undefined,
-                    externalDocumentId:
-                      salesInvoice.data?.customerReference ?? undefined,
-                    documentLineReference: invoiceLine.salesOrderLineId
-                      ? journalReference.to.salesInvoice(
-                          invoiceLine.salesOrderLineId
-                        )
-                      : null,
-                    journalLineReference: arJournalLineReference,
-                    intercompanyPartnerId,
-                    companyId,
+                  journalLineDimensionsMeta.push({
+                    customerTypeId:
+                      customer.data.customerTypeId ?? null,
+                    itemPostingGroupId: null,
+                    itemId: null,
+                    locationId: invoiceLine.locationId ?? salesOrderLine?.locationId ?? assetRecord.data.locationId ?? null,
+                    costCenterId: null,
+                    fixedAssetClassId: (assetRecord.data.fixedAssetClass as any)?.id ?? null,
                   });
 
-                  for (let i = 0; i < 2; i++) {
+                  if (gainLoss !== 0) {
+                    // Gain credits (income), loss debits (expense) the disposal account.
+                    journalLineInserts.push({
+                      accountId: assetClass.disposalAccountId,
+                      description: "Gain/loss on disposal",
+                      amount: credit("expense", gainLoss),
+                      quantity: invoiceLineQuantityInInventoryUnit,
+                      documentType: "Invoice",
+                      documentId: salesInvoice.data?.id ?? undefined,
+                      externalDocumentId:
+                        salesInvoice.data?.customerReference ?? undefined,
+                      documentLineReference: invoiceLine.salesOrderLineId
+                        ? journalReference.to.salesInvoice(
+                            invoiceLine.salesOrderLineId
+                          )
+                        : null,
+                      journalLineReference: arJournalLineReference,
+                      intercompanyPartnerId,
+                      companyId,
+                    });
+
                     journalLineDimensionsMeta.push({
                       customerTypeId:
                         customer.data.customerTypeId ?? null,

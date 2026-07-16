@@ -1,5 +1,10 @@
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
-import { toStoredAmount } from "@carbon/utils";
+import {
+  acquisitionLines,
+  type FixedAssetPostingRole,
+  toStoredAmount,
+  toStoredFixedAssetAmount
+} from "@carbon/utils";
 import { interpolateSequenceDate } from "~/utils/string";
 
 async function getNextSequence(
@@ -47,7 +52,7 @@ export async function postDisposal(
     fixedAssetClassId: string;
     assetAccountId: string;
     accumulatedDepreciationAccountId: string;
-    writeOffAccountId: string;
+    disposalAccountId: string;
     accountingPeriodId: string;
     locationDimensionId: string | undefined;
     assetClassDimensionId: string | undefined;
@@ -66,7 +71,7 @@ export async function postDisposal(
     fixedAssetClassId,
     assetAccountId,
     accumulatedDepreciationAccountId,
-    writeOffAccountId,
+    disposalAccountId,
     accountingPeriodId,
     locationDimensionId,
     assetClassDimensionId,
@@ -122,10 +127,14 @@ export async function postDisposal(
     }
 
     if (nbv > 0) {
+      // Scrap has no proceeds, so the entire net book value is a loss on
+      // disposal — post it to the class's disposal (gain/loss) P&L account, NOT
+      // the write-off account, so gain/loss carries on a clean non-operating line
+      // and writeOffAccountId stays at zero. See fixed-asset-lifecycle.md.
       journalLines.push({
         journalId: journal.id,
-        accountId: writeOffAccountId,
-        description: "Write-off remaining book value",
+        accountId: disposalAccountId,
+        description: "Loss on disposal",
         amount: toStoredAmount(nbv, 0, "Expense"),
         journalLineReference: crypto.randomUUID(),
         companyId
@@ -201,6 +210,149 @@ export async function postDisposal(
       })
       .where("id", "=", fixedAssetId)
       .execute();
+  });
+}
+
+// Capitalize a manually-registered asset. Writes the register fields, flips the
+// asset Draft → Active, and (when accounting is enabled) posts the acquisition
+// journal — Dr fixedAssetClass.assetAccountId / Cr acquisition source (GR/IR
+// clearing) at cost — so no capitalized asset exists without a GL entry. The
+// acquisition source mirrors the goods-receipt path (Dr asset / Cr GR/IR) and
+// reconciles if a purchase invoice later arrives. See fixed-asset-lifecycle.md.
+export async function postAssetAcquisition(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    fixedAssetId: string;
+    fixedAssetReadableId: string;
+    acquisitionCost: number;
+    acquisitionDate: string;
+    accumulatedDepreciation: number;
+    depreciationStartDate: string;
+    locationId: string | null;
+    fixedAssetClassId: string;
+    companyId: string;
+    userId: string;
+    // Present only when accounting is enabled and account defaults resolve.
+    accounting?: {
+      accountingPeriodId: string;
+      assetAccountId: string;
+      acquisitionSourceAccountId: string;
+      locationDimensionId: string | undefined;
+      assetClassDimensionId: string | undefined;
+    };
+  }
+) {
+  const {
+    fixedAssetId,
+    fixedAssetReadableId,
+    acquisitionCost,
+    acquisitionDate,
+    accumulatedDepreciation,
+    depreciationStartDate,
+    locationId,
+    fixedAssetClassId,
+    companyId,
+    userId,
+    accounting
+  } = args;
+
+  const now = new Date().toISOString();
+
+  return db.transaction().execute(async (trx) => {
+    const updated = await trx
+      .updateTable("fixedAsset")
+      .set({
+        acquisitionCost,
+        acquisitionDate,
+        accumulatedDepreciation,
+        depreciationStartDate,
+        status: "Active",
+        updatedBy: userId
+      })
+      .where("id", "=", fixedAssetId)
+      .where("status", "=", "Draft")
+      .executeTakeFirst();
+
+    if (Number(updated.numUpdatedRows ?? 0) === 0) {
+      throw new Error("Only Draft assets can be registered");
+    }
+
+    if (!accounting) return;
+
+    const journalEntryId = await getNextSequence(
+      trx,
+      "journalEntry",
+      companyId
+    );
+
+    const journal = await trx
+      .insertInto("journal")
+      .values({
+        journalEntryId,
+        accountingPeriodId: accounting.accountingPeriodId,
+        companyId,
+        description: `Asset Acquisition: ${fixedAssetReadableId}`,
+        postingDate: acquisitionDate,
+        sourceType: "Manual",
+        status: "Posted",
+        postedAt: now,
+        postedBy: userId,
+        createdBy: userId
+      })
+      .returning(["id"])
+      .executeTakeFirstOrThrow();
+
+    const roleAccountId: Partial<Record<FixedAssetPostingRole, string>> = {
+      asset: accounting.assetAccountId,
+      acquisitionSource: accounting.acquisitionSourceAccountId
+    };
+    const roleDescription: Partial<Record<FixedAssetPostingRole, string>> = {
+      asset: "Fixed Asset Acquisition",
+      acquisitionSource: "Acquisition source (GR/IR clearing)"
+    };
+
+    const journalLines = acquisitionLines(acquisitionCost).map((line) => ({
+      journalId: journal.id,
+      accountId: roleAccountId[line.role]!,
+      description: roleDescription[line.role] ?? "Fixed Asset Acquisition",
+      amount: toStoredFixedAssetAmount(line),
+      journalLineReference: crypto.randomUUID(),
+      companyId
+    }));
+
+    const journalLineResults = await trx
+      .insertInto("journalLine")
+      .values(journalLines)
+      .returning(["id"])
+      .execute();
+
+    if (accounting.locationDimensionId && locationId) {
+      await trx
+        .insertInto("journalLineDimension")
+        .values(
+          journalLineResults.map((jl) => ({
+            journalLineId: jl.id,
+            dimensionId: accounting.locationDimensionId!,
+            valueId: locationId,
+            companyId
+          }))
+        )
+        .execute();
+    }
+
+    if (accounting.assetClassDimensionId && fixedAssetClassId) {
+      await trx
+        .insertInto("journalLineDimension")
+        .values(
+          journalLineResults.map((jl) => ({
+            journalLineId: jl.id,
+            dimensionId: accounting.assetClassDimensionId!,
+            valueId: fixedAssetClassId,
+            companyId
+          }))
+        )
+        .execute();
+    }
   });
 }
 

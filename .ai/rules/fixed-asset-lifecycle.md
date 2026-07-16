@@ -96,7 +96,16 @@ enum value (CHECK: only Fixed Asset lines have non-NULL `assetId`). The
 **Acquire (Draft → Active).** Two paths set `acquisitionCost`,
 `depreciationStartDate` (if unset), and flip `status` to `Active`:
 1. Manual: create asset (Draft), then `$fixedAssetId.register` action with
-   `fixedAssetRegisterValidator`. State change only — **no journal**.
+   `fixedAssetRegisterValidator`. The action calls
+   `postAssetAcquisition()` (`accounting.server.ts`), which writes the register
+   fields + flips to `Active` and — when `companySettings.accountingEnabled` —
+   posts an acquisition journal in the same transaction:
+   **Dr `fixedAssetClass.assetAccountId` / Cr acquisition source** at cost, where
+   the acquisition source is `accountDefault.goodsReceivedNotInvoicedAccount`
+   (GR/IR clearing — the same account the receipt path credits, so a later
+   purchase invoice reconciles it). `sourceType` is `'Manual'` (there is no
+   `'Asset Acquisition'` enum value). No manually-registered asset exists without
+   a GL entry.
 2. Via posting: `post-receipt` / `post-purchase-invoice` process Fixed Asset PO
    lines, increment `acquisitionCost`, and post Debit `assetAccountId` / Credit
    payables.
@@ -111,22 +120,49 @@ enum value (CHECK: only Fixed Asset lines have non-NULL `assetId`). The
    (+ tax / deferred-tax lines when enabled via company settings), sets run
    `Posted`, flips asset to `Fully Depreciated` when NBV hits residual.
 
-**Dispose (Active / Fully Depreciated → Disposed).**
-1. Manual: `$fixedAssetId.dispose` → `postDisposal()`. NBV = `acquisitionCost −
-   accumulatedDepreciation`. Posts Debit accumulated depreciation, Debit
-   write-off for NBV, Credit asset at cost (`sourceType: 'Asset Disposal'`),
-   applies location/class dimensions, writes `fixedAssetDisposal`, sets
+**Dispose (Active / Fully Depreciated → Disposed).** GAAP splits the net-book-value
+removal (Balance Sheet) from the gain/loss recognition (P&L). Gain/loss on disposal
+routes to `fixedAssetClass.disposalAccountId`; **`writeOffAccountId` is no longer
+used by any disposal path** (it nets to zero). The two-step (ship → invoice) path
+parks NBV in a Balance-Sheet clearing account between legs so a shipped-but-uninvoiced
+asset has **zero P&L impact**.
+
+1. Manual scrap: `$fixedAssetId.dispose` → `postDisposal()` (route hardcodes
+   `Scrapping`, proceeds 0). NBV = `acquisitionCost − accumulatedDepreciation`.
+   Posts Debit accumulated depreciation, **Debit `disposalAccountId` for NBV (the
+   loss)**, Credit asset at cost (`sourceType: 'Asset Disposal'`), applies
+   location/class dimensions, writes `fixedAssetDisposal` (`gainLoss = −NBV`), sets
    `Disposed`.
-2. Via posting: `post-shipment` / `post-sales-invoice` dispose Fixed Asset SO
-   lines with the same GL pattern (sales-invoice path also books AR/revenue for
-   proceeds).
+2. Two-step sale — **shipment** (`post-shipment`, asset physically leaves):
+   Debit accumulated depreciation, **Debit Disposal Clearing =
+   `accountDefault.assetAquisitionCostOnDisposalAccount` for NBV** (Balance-Sheet
+   holding, account 1320), Credit asset at cost. No gain/loss, no write-off →
+   zero P&L. `fixedAssetDisposal` row gets `gainLoss = 0` (unrealized).
+3. Two-step sale — **invoice** (`post-sales-invoice`, proceeds recognized): Debit
+   AR for proceeds, **Credit Disposal Clearing for NBV (drains it)**, and net the
+   gain/loss (`proceeds − NBV`) to `disposalAccountId` (gain → credit, loss →
+   debit). Updates the disposal row `gainLoss`. A **direct invoice with no prior
+   shipment** posts the classic combined entry (Debit accum. dep., Debit AR,
+   Credit asset at cost, gain/loss → `disposalAccountId`); Disposal Clearing is
+   not used.
+
+The pure posting math is shared/tested in `@carbon/utils`
+(`fixed-asset.ts` + `fixed-asset.test.ts`): `acquisitionLines`,
+`disposalShipmentLines`, `disposalInvoiceLines`, `disposalCombinedLines`. The app
+poster uses it directly; the Deno edge functions mirror the same arithmetic inline.
 
 ## Gotchas
 
 - Tax depreciation / deferred-tax lines only post when
   `companySettings.assetTaxDepreciationEnabled` is true.
-- Register is a pure status flip; the acquisition GL entry comes only from the
-  receipt/invoice posting path, not from `register`.
+- Register now posts an acquisition journal (Dr asset / Cr GR/IR) via
+  `postAssetAcquisition()` when accounting is enabled — it is no longer a pure
+  status flip.
+- The seed (`20260525084319`) maps `writeOffAccountId`, `writeDownAccountId`, and
+  `disposalAccountId` **all to account 6320**. For the GAAP gain/loss separation to
+  be visible in reporting, point `disposalAccountId` at a distinct
+  Gain/(Loss)-on-Disposal P&L account; the posting code already keeps NBV (Balance
+  Sheet clearing) separate from gain/loss (`disposalAccountId`).
 - Depreciation is entirely manual — there is no Inngest/cron job that advances
   periods; users must create and post each `depreciationRun`.
 - `disposalMethod` (`Sale`/`Scrapping`) is set by the posting flow / asset

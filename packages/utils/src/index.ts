@@ -11,6 +11,7 @@ export * from "./date";
 export * from "./duration";
 export * from "./field-registry";
 export * from "./file";
+export * from "./fixed-asset";
 export * from "./geo";
 export * from "./headers";
 export * from "./items";

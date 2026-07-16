@@ -615,10 +615,15 @@ serve(async (req: Request) => {
 
                 if (nbv > 0) {
                   const nbvJlRef = nanoid();
+                  // Park the net book value in Disposal Clearing (a balance-sheet
+                  // holding account), NOT the write-off/disposal P&L account, so a
+                  // shipped-but-uninvoiced asset has ZERO P&L impact. The invoice
+                  // leg drains this and recognizes the gain/loss.
                   journalLineInserts.push({
-                    accountId: assetClass.writeOffAccountId,
-                    description: "Write-off remaining book value",
-                    amount: debit("expense", nbv),
+                    accountId:
+                      accountDefaults.data.assetAquisitionCostOnDisposalAccount,
+                    description: "Disposal clearing (net book value)",
+                    amount: debit("asset", nbv),
                     quantity: 1,
                     documentType: "Sales Shipment",
                     documentId: shipment.data?.id,
@@ -683,7 +688,9 @@ serve(async (req: Request) => {
                   disposalDate: today,
                   saleProceeds: 0,
                   netBookValueAtDisposal: nbv,
-                  gainLoss: -nbv,
+                  // Gain/loss is not realized until the invoice recognizes
+                  // proceeds; the NBV sits in Disposal Clearing until then.
+                  gainLoss: 0,
                   companyId,
                   createdBy: userId,
                 });
