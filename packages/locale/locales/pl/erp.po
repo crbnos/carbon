@@ -5572,64 +5572,64 @@ msgid "GL Account"
 msgstr "Konto księgi głównej"
 
 msgid "GL account capturing cost differences on outside-processing operations."
-msgstr "Konto GL przechwytujące różnice między narzuconymi i rzeczywistymi kosztami wytwarzania."
+msgstr "Konto GL przechwytujące różnice kosztów na operacjach kooperacji zewnętrznej (outside-processing)."
 
 msgid "GL account capturing differences between applied and actual manufacturing overhead."
-msgstr "Konto GL przechwytujące różnice między materiałami oczekiwanymi w BOM a rzeczywiście zużytymi."
+msgstr "Konto GL przechwytujące różnice między narzuconymi i rzeczywistymi kosztami wytwarzania."
 
 msgid "GL account capturing differences between BOM-expected and actual material consumed."
-msgstr "Konto GL przechwytujące różnice między czasem pracy/maszyny oczekiwanym w routingu a rzeczywistym."
+msgstr "Konto GL przechwytujące różnice między materiałami oczekiwanymi w BOM a rzeczywiście zużytymi."
 
 msgid "GL account capturing differences between routing-expected and actual labor/machine time."
-msgstr "Konto GL przechwytujące różnice kosztów stałych, gdy rzeczywista wielkość partii różni się od planowanej."
+msgstr "Konto GL przechwytujące różnice między czasem pracy/maszyny oczekiwanym w routingu a rzeczywistym."
 
 msgid "GL account capturing fixed-cost differences when actual lot size differs from planned."
-msgstr "Konto GL uznawane w celu usunięcia pierwotnego kosztu zasobu w momencie jego likwidacji."
+msgstr "Konto GL przechwytujące różnice kosztów stałych, gdy rzeczywista wielkość partii różni się od planowanej."
 
 msgid "GL account credited to remove the asset's original cost when it is disposed."
-msgstr "Konto GL uznawane, gdy faktura dostawcy jest księgowana (saldo zobowiązań)."
+msgstr "Konto GL uznawane w celu usunięcia pierwotnego kosztu zasobu w momencie jego likwidacji."
 
 msgid "GL account credited when a supplier invoice is posted (AP balance)."
-msgstr "Konto GL uznawane, gdy koszt pracy lub maszyny jest wchłonięty w zadanie produkcyjne."
+msgstr "Konto GL uznawane, gdy faktura dostawcy jest księgowana (saldo zobowiązań)."
 
 msgid "GL account credited when labor or machine cost is absorbed into a production job."
-msgstr "Konto GL obciążane w celu wyczyszczenia skumulowanej amortyzacji w momencie likwidacji zasobu."
+msgstr "Konto GL uznawane, gdy koszt pracy lub maszyny jest wchłonięty w zadanie produkcyjne."
 
 msgid "GL account credited when manufacturing overhead is absorbed into a production job."
 msgstr "Konto GL zarachowane, gdy koszty ogólne produkcji są absorbowane do zadania produkcyjnego."
 
 msgid "GL account debited to clear accumulated depreciation when an asset is disposed."
-msgstr "Konto GL obciążane, gdy faktura klienta jest księgowana; wyczyszczane, gdy klient płaci."
+msgstr "Konto GL obciążane w celu wyczyszczenia skumulowanej amortyzacji w momencie likwidacji zasobu."
 
 msgid "GL account debited when a customer invoice posts; cleared when the customer pays."
-msgstr "Konto GL obciążane, gdy środek trwały jest nabyty (zakup lub skapitalizowany koszt)."
+msgstr "Konto GL obciążane, gdy faktura klienta jest księgowana; wyczyszczane, gdy klient płaci."
 
 msgid "GL account debited when a fixed asset is acquired (purchase or capitalized cost)."
-msgstr "Konto GL obciążane, gdy zasób w tej klasie jest nabyty."
+msgstr "Konto GL obciążane, gdy środek trwały jest nabyty (zakup lub skapitalizowany koszt)."
 
 msgid "GL account for bank service charges and similar fees."
-msgstr "Konto GL dla przychodów lub kosztów odsetek."
+msgstr "Konto GL dla opłat za usługi bankowe i podobnych opłat."
 
 msgid "GL account for interest income or expense."
-msgstr "Konto GL dla podatku zakupu zapłaconego dostawcom (lub podatku podlegającego odliczeniu)."
+msgstr "Konto GL dla przychodów lub kosztów odsetek."
 
 msgid "GL account for purchase tax paid to suppliers (or reclaimable)."
-msgstr "Konto GL dla podatków szacunkowych zgodnie z zasadami odwrotnego obciążenia, gdzie nabywca dokonuje samooceny."
+msgstr "Konto GL dla podatku zakupu zapłaconego dostawcom (lub podatku podlegającego odliczeniu)."
 
 msgid "GL account for tax accrued under reverse-charge rules where the buyer self-assesses."
-msgstr "Konto GL dla różnic czasowych podatku (np. przyspieszona amortyzacja podatkowa kontra amortyzacja księgowa)."
+msgstr "Konto GL dla podatków szacunkowych zgodnie z zasadami odwrotnego obciążenia, gdzie nabywca dokonuje samooceny."
 
 msgid "GL account for tax timing differences (e.g. accelerated tax depreciation vs. book depreciation)."
-msgstr "Konto GL dotknięte, gdy zasób jest odpisany (koszt usunięty bez przychodów ze sprzedaży)."
+msgstr "Konto GL dla różnic czasowych podatku (np. przyspieszona amortyzacja podatkowa kontra amortyzacja księgowa)."
 
 msgid "GL account hit when physical counts differ from system inventory."
-msgstr "Konto GL w spółce źródłowej do obciążenia dla tej transakcji między spółkami."
+msgstr "Konto GL obciążane, gdy wyniki spisu z natury różnią się od stanu magazynowego w systemie."
 
 msgid "GL account in the source company to debit for this intercompany transaction."
-msgstr "Konto GL w spółce docelowej do uznania dla tej transakcji między spółkami."
+msgstr "Konto GL w spółce źródłowej do obciążenia dla tej transakcji między spółkami."
 
 msgid "GL account in the target company to credit for this intercompany transaction."
-msgstr "Konto GL, które wchłania różnice zaokrąglenia poniżej grosza przy księgowaniu."
+msgstr "Konto GL w spółce docelowej do uznania dla tej transakcji między spółkami."
 
 msgid "GL account that absorbs sub-cent rounding differences on posting."
 msgstr "Konto GL, które wchłania różnice zaokrąglenia poniżej grosza przy księgowaniu."
@@ -5637,8 +5637,8 @@ msgstr "Konto GL, które wchłania różnice zaokrąglenia poniżej grosza przy 
 msgid "GL account that captures the difference between standard cost and actual purchase cost."
 msgstr "Konto GL, które przechwytuje różnicę między kosztem standardowym a rzeczywistym kosztem zakupu."
 
-msgid "GL account that carries the asset's original acquisition cost. Debited on acquisition (receipt or registration); credited at full gross cost when the asset is disposed or sold."
-msgstr ""
+msgid "GL account that carries an asset's original acquisition cost — debited when acquired and credited at full gross cost when it is disposed or sold."
+msgstr "Konto GL, na którym ujmowany jest pierwotny koszt nabycia środka trwałego (zakup lub koszt skapitalizowany) — obciążane przy nabyciu, a uznawane pełną wartością brutto, gdy środek trwały zostaje zbyty lub sprzedany."
 
 msgid "GL account that holds the value of jobs in production until they post to finished goods."
 msgstr "Konto GL, które przechowuje wartość prac w produkcji do momentu ich zaksięgowania jako produktów gotowych."
@@ -5661,8 +5661,8 @@ msgstr "Konto GL, na którym rejestruje się rabaty na wcześniejsze płatności
 msgid "GL account where gain or loss is booked on fixed-asset disposal."
 msgstr "Konto GL, na którym rejestruje się zysk lub stratę na zbyciu środka trwałego."
 
-msgid "GL contra-asset account credited each period when depreciation posts. Debited in full when the asset is sold or scrapped, removing all accumulated depreciation from the books."
-msgstr ""
+msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
+msgstr "Konto GL aktywów przeciwnych, uznawane w miarę księgowania amortyzacji w każdym okresie i obciążane w pełnej wysokości, gdy środek trwały zostaje sprzedany lub zezłomowany."
 
 msgid "GL contra-asset account that accumulates depreciation booked against fixed assets."
 msgstr "Konto GL aktywów przeciwnych, które gromadzi amortyzację zaksięgowaną wobec środków trwałych."
@@ -5676,8 +5676,8 @@ msgstr "Konto GL kapitału, na którym dochód netto zostaje zamknięty na konie
 msgid "GL expense account debited each period when depreciation posts."
 msgstr "Konto GL wydatków obciążane każdy okres, gdy amortyzacja jest księgowana."
 
-msgid "GL expense account debited when an asset's carrying value is reduced due to impairment — i.e. when recoverable amount falls below net book value. Separate from the Disposal Account, which is used only on full retirement or sale."
-msgstr ""
+msgid "GL expense account debited when an asset's carrying value is reduced by impairment, i.e. when its recoverable amount falls below net book value."
+msgstr "Konto GL kosztów obciążane, gdy wartość bilansowa środka trwałego ulega obniżeniu w wyniku utraty wartości, tzn. gdy jego wartość odzyskiwalna spada poniżej wartości księgowej netto."
 
 msgid "GL expense account for non-inventory purchases (supplies, services)."
 msgstr "Konto GL wydatków dla zakupów spoza zapasów (materiały, usługi)."
@@ -8059,8 +8059,8 @@ msgstr "Poza zapasami"
 msgid "Non-Inventory Tracking"
 msgstr "Śledzenie poza magazynem"
 
-msgid "Non-operating P&L account that receives the explicit gain or loss when an asset is sold or scrapped. Credited for a gain (proceeds > NBV) or debited for a loss (proceeds < NBV). Maps to \"Gains and Losses on Disposal\" in the default chart of accounts."
-msgstr ""
+msgid "Non-operating P&L account that books the gain or loss when an asset is sold or scrapped — credited for a gain, debited for a loss."
+msgstr "Konto pozaoperacyjne rachunku zysków i strat, na którym księgowany jest zysk lub strata przy sprzedaży lub zezłomowaniu środka trwałego — uznawane w przypadku zysku, obciążane w przypadku straty."
 
 msgid "Non-Taxable Add-On Cost"
 msgstr "Koszt dodatkowy niepodlegający opodatkowaniu"
@@ -9958,8 +9958,8 @@ msgstr "Zyski zatrzymane"
 msgid "Retained Earnings (default)"
 msgstr "Zyski zatrzymane (domyślnie)"
 
-msgid "Retiring an asset from service — either by scrapping (remaining net book value booked as a loss) or by sale (proceeds compared to NBV; gain or loss posted to the disposal account). Status becomes Disposed in both cases."
-msgstr ""
+msgid "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
+msgstr "Wycofanie środka trwałego z użytkowania poprzez złomowanie lub sprzedaż, z zaksięgowaniem ewentualnego zysku lub straty względem wartości księgowej netto oraz zmianą statusu na Zbyty."
 
 msgid "Retry"
 msgstr "Ponów"
@@ -11689,8 +11689,8 @@ msgstr "Identyfikator szablonu"
 msgid "Templates"
 msgstr "Szablony"
 
-msgid "Temporary disposal-clearing account used during an asset sale. Debited for the asset's net book value when it ships; credited for sale proceeds when the invoice posts — nets to zero once the sale cycle completes. Not a P&L account; gain or loss flows to the Disposal Account instead."
-msgstr ""
+msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for the proceeds on invoicing, netting to zero over the sale cycle."
+msgstr "Tymczasowe konto rozliczeniowe zbycia, obciążane wartością księgową netto środka trwałego w momencie wysyłki i uznawane wpływami ze sprzedaży w momencie fakturowania, zerujące się w toku cyklu sprzedaży."
 
 msgid "Terms and Privacy"
 msgstr "Regulamin i prywatnosc"

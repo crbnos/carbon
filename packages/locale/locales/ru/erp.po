@@ -5572,64 +5572,64 @@ msgid "GL Account"
 msgstr "Счет ГЛ"
 
 msgid "GL account capturing cost differences on outside-processing operations."
-msgstr "Счет для фиксации разницы между плановыми и фактическими производственными издержками."
+msgstr "Счет для фиксации разницы затрат по операциям внешней обработки."
 
 msgid "GL account capturing differences between applied and actual manufacturing overhead."
-msgstr "Счет для фиксации разницы между материалом, указанным в BOM, и фактически использованным."
+msgstr "Счет для фиксации разницы между плановыми и фактическими производственными издержками."
 
 msgid "GL account capturing differences between BOM-expected and actual material consumed."
-msgstr "Счет для фиксации разницы между плановым и фактическим временем на операции/машину."
+msgstr "Счет для фиксации разницы между материалом, указанным в BOM, и фактически использованным."
 
 msgid "GL account capturing differences between routing-expected and actual labor/machine time."
-msgstr "Счет для фиксации разницы постоянных затрат при расхождении фактического размера партии с плановым."
+msgstr "Счет для фиксации разницы между плановым и фактическим временем на операции/машину."
 
 msgid "GL account capturing fixed-cost differences when actual lot size differs from planned."
-msgstr "Счет, на который зачисляется сумма для удаления первоначальной стоимости актива при его списании."
+msgstr "Счет для фиксации разницы постоянных затрат при расхождении фактического размера партии с плановым."
 
 msgid "GL account credited to remove the asset's original cost when it is disposed."
-msgstr "Счет, на который зачисляется сумма при регистрации счета-фактуры поставщика (остаток по счетам к оплате)."
+msgstr "Счет, на который зачисляется сумма для удаления первоначальной стоимости актива при его списании."
 
 msgid "GL account credited when a supplier invoice is posted (AP balance)."
-msgstr "Счет, на который зачисляется сумма при включении затрат на труд или машину в производственный заказ."
+msgstr "Счет, на который зачисляется сумма при регистрации счета-фактуры поставщика (остаток по счетам к оплате)."
 
 msgid "GL account credited when labor or machine cost is absorbed into a production job."
-msgstr "Счет, по которому дебетуется сумма для списания накопленной амортизации при утилизации актива."
+msgstr "Счет, на который зачисляется сумма при включении затрат на труд или машину в производственный заказ."
 
 msgid "GL account credited when manufacturing overhead is absorbed into a production job."
 msgstr "Счет главной книги, кредитуемый при поглощении производственных накладных расходов в производственный заказ."
 
 msgid "GL account debited to clear accumulated depreciation when an asset is disposed."
-msgstr "Счет, по которому дебетуется сумма при регистрации счета-фактуры клиента; сторнируется при оплате клиентом."
+msgstr "Счет, по которому дебетуется сумма для списания накопленной амортизации при утилизации актива."
 
 msgid "GL account debited when a customer invoice posts; cleared when the customer pays."
-msgstr "Счет, по которому дебетуется сумма при приобретении основного актива (покупка или капитализированные затраты)."
+msgstr "Счет, по которому дебетуется сумма при регистрации счета-фактуры клиента; сторнируется при оплате клиентом."
 
 msgid "GL account debited when a fixed asset is acquired (purchase or capitalized cost)."
-msgstr "Счет, по которому дебетуется сумма при приобретении актива этого класса."
+msgstr "Счет, по которому дебетуется сумма при приобретении основного актива (покупка или капитализированные затраты)."
 
 msgid "GL account for bank service charges and similar fees."
-msgstr "Счет для процентных доходов или расходов."
+msgstr "Счет для банковских комиссий и аналогичных сборов."
 
 msgid "GL account for interest income or expense."
-msgstr "Счет для налога на приобретение, уплаченного поставщикам (или подлежащего возврату)."
+msgstr "Счет для процентных доходов или расходов."
 
 msgid "GL account for purchase tax paid to suppliers (or reclaimable)."
-msgstr "Счет для налогов, начисленных по правилам обратного взимания, когда покупатель самостоятельно определяет налог."
+msgstr "Счет для налога на приобретение, уплаченного поставщикам (или подлежащего возврату)."
 
 msgid "GL account for tax accrued under reverse-charge rules where the buyer self-assesses."
-msgstr "Счет для различий в сроках налогообложения (например, ускоренная налоговая амортизация против бухгалтерской амортизации)."
+msgstr "Счет для налогов, начисленных по правилам обратного взимания, когда покупатель самостоятельно определяет налог."
 
 msgid "GL account for tax timing differences (e.g. accelerated tax depreciation vs. book depreciation)."
-msgstr "Счет, на который отражается списание актива без получения доходов от его реализации."
+msgstr "Счет для различий в сроках налогообложения (например, ускоренная налоговая амортизация против бухгалтерской амортизации)."
 
 msgid "GL account hit when physical counts differ from system inventory."
-msgstr "Счет для дебета в исходной компании при проведении межкомпанийной операции."
+msgstr "Счет, по которому отражаются расхождения между результатами физической инвентаризации и системными данными о запасах."
 
 msgid "GL account in the source company to debit for this intercompany transaction."
-msgstr "Счет для кредита в целевой компании при проведении межкомпанийной операции."
+msgstr "Счет для дебета в исходной компании при проведении межкомпанийной операции."
 
 msgid "GL account in the target company to credit for this intercompany transaction."
-msgstr "Счет, на который отражаются копеечные разницы округления при проведении операций."
+msgstr "Счет для кредита в целевой компании при проведении межкомпанийной операции."
 
 msgid "GL account that absorbs sub-cent rounding differences on posting."
 msgstr "Счет, на который отражаются копеечные разницы округления при проведении операций."
@@ -5637,8 +5637,8 @@ msgstr "Счет, на который отражаются копеечные р
 msgid "GL account that captures the difference between standard cost and actual purchase cost."
 msgstr "Счет GL, который фиксирует разницу между стандартной стоимостью и фактической стоимостью покупки."
 
-msgid "GL account that carries the asset's original acquisition cost. Debited on acquisition (receipt or registration); credited at full gross cost when the asset is disposed or sold."
-msgstr ""
+msgid "GL account that carries an asset's original acquisition cost — debited when acquired and credited at full gross cost when it is disposed or sold."
+msgstr "Счет ГК, на котором учитывается первоначальная стоимость приобретения актива (покупка или капитализированные затраты) — дебетуется при приобретении и кредитуется на полную первоначальную стоимость при выбытии или продаже актива."
 
 msgid "GL account that holds the value of jobs in production until they post to finished goods."
 msgstr "Счет GL, который хранит стоимость работ в производстве, пока они не будут зачислены на готовую продукцию."
@@ -5661,8 +5661,8 @@ msgstr "Счет GL, на котором фиксируются скидки н�
 msgid "GL account where gain or loss is booked on fixed-asset disposal."
 msgstr "Счет GL, на котором фиксируется прибыль или убыток при выбытии основного средства."
 
-msgid "GL contra-asset account credited each period when depreciation posts. Debited in full when the asset is sold or scrapped, removing all accumulated depreciation from the books."
-msgstr ""
+msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
+msgstr "Счет GL контра-активов, который кредитуется по мере проведения амортизации в каждом периоде и дебетуется в полном объеме при продаже или списании актива."
 
 msgid "GL contra-asset account that accumulates depreciation booked against fixed assets."
 msgstr "Счет GL контра-активов, который накапливает амортизацию, записанную против основных средств."
@@ -5676,8 +5676,8 @@ msgstr "Счет GL капитала, на котором чистая приб�
 msgid "GL expense account debited each period when depreciation posts."
 msgstr "Счет GL расходов, который дебетуется в каждом периоде при проведении амортизации."
 
-msgid "GL expense account debited when an asset's carrying value is reduced due to impairment — i.e. when recoverable amount falls below net book value. Separate from the Disposal Account, which is used only on full retirement or sale."
-msgstr ""
+msgid "GL expense account debited when an asset's carrying value is reduced by impairment, i.e. when its recoverable amount falls below net book value."
+msgstr "Счет GL расходов, который дебетуется, когда балансовая стоимость актива уменьшается из-за обесценения, то есть когда возмещаемая стоимость становится ниже чистой балансовой стоимости."
 
 msgid "GL expense account for non-inventory purchases (supplies, services)."
 msgstr "Счет GL расходов для покупок, не входящих в запасы (расходные материалы, услуги)."
@@ -8059,8 +8059,8 @@ msgstr "Не в наличии"
 msgid "Non-Inventory Tracking"
 msgstr "Отслеживание вне инвентаря"
 
-msgid "Non-operating P&L account that receives the explicit gain or loss when an asset is sold or scrapped. Credited for a gain (proceeds > NBV) or debited for a loss (proceeds < NBV). Maps to \"Gains and Losses on Disposal\" in the default chart of accounts."
-msgstr ""
+msgid "Non-operating P&L account that books the gain or loss when an asset is sold or scrapped — credited for a gain, debited for a loss."
+msgstr "Внереализационный счет отчета о прибылях и убытках, на который относится прибыль или убыток при продаже или списании актива — кредитуется при прибыли, дебетуется при убытке."
 
 msgid "Non-Taxable Add-On Cost"
 msgstr "Не облагаемая налогом дополнительная стоимость"
@@ -9958,8 +9958,8 @@ msgstr "Нераспределенная прибыль"
 msgid "Retained Earnings (default)"
 msgstr "Нераспределенная прибыль (по умолчанию)"
 
-msgid "Retiring an asset from service — either by scrapping (remaining net book value booked as a loss) or by sale (proceeds compared to NBV; gain or loss posted to the disposal account). Status becomes Disposed in both cases."
-msgstr ""
+msgid "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
+msgstr "Вывод основного средства из эксплуатации путём списания или продажи, с отражением прибыли или убытка относительно чистой балансовой стоимости и переводом статуса в «Ликвидирован»."
 
 msgid "Retry"
 msgstr "Повторить"
@@ -11689,8 +11689,8 @@ msgstr "ID шаблона"
 msgid "Templates"
 msgstr "Шаблоны"
 
-msgid "Temporary disposal-clearing account used during an asset sale. Debited for the asset's net book value when it ships; credited for sale proceeds when the invoice posts — nets to zero once the sale cycle completes. Not a P&L account; gain or loss flows to the Disposal Account instead."
-msgstr ""
+msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for the proceeds on invoicing, netting to zero over the sale cycle."
+msgstr "Временный клиринговый счет выбытия, дебетуемый на сумму чистой балансовой стоимости актива при отгрузке и кредитуемый на сумму выручки при выставлении счета — обнуляется по завершении цикла продажи."
 
 msgid "Terms and Privacy"
 msgstr "Условия и конфиденциальность"
