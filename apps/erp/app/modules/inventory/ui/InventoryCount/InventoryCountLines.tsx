@@ -29,7 +29,6 @@ import { useStorageUnits } from "~/components/Form/StorageUnit";
 import { useFilters } from "~/components/Table/components/Filter/useFilters";
 import type { InventoryCountLine } from "~/modules/inventory";
 import { inventoryItemTypes } from "~/modules/inventory";
-import type { ItemType } from "~/modules/shared";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 
@@ -153,9 +152,14 @@ const InventoryCountLines = ({
               <ItemThumbnail
                 size="md"
                 thumbnailPath={item.itemThumbnailPath}
-                // The view's `type` union is broader than ItemThumbnail's
-                // (it also allows "Fixture"); narrow for the icon lookup.
-                type={(item.type as ItemType | null) ?? undefined}
+                // The view's `type` union is broader than ItemThumbnail's — it
+                // also allows "Fixture", which the thumbnail can't render — so
+                // drop it rather than assert the type away.
+                type={
+                  item.type == null || item.type === "Fixture"
+                    ? undefined
+                    : item.type
+                }
               />
               <Hyperlink
                 to={buildItemLink(
@@ -463,15 +467,10 @@ const InventoryCountLines = ({
 
   const gridRef = useRef<HTMLDivElement>(null);
 
-  // The visible column index of the Counted Qty cell. The visible columns are
-  // item, batch/serial, storage unit, [system qty], counted qty, [variance] —
-  // no leading select column and the material filter columns are hidden — so the
-  // index is deterministic (and, unlike a DOM marker, is known even while the
-  // only line's cell is being edited). Kept in a ref for the keyboard handler.
-  const countedColumnRef = useRef(hideSystem ? "3" : "4");
-  useEffect(() => {
-    countedColumnRef.current = hideSystem ? "3" : "4";
-  }, [hideSystem]);
+  // Last-resolved Counted Qty column index, cached as a fallback. It's resolved
+  // live from the DOM on each keypress (below) so showing / hiding / reordering
+  // columns can never point navigation at the wrong cell.
+  const countedColumnRef = useRef<string | null>(null);
 
   // Focus the first not-yet-edited Counted Qty cell. The shared Table only
   // seeds its cell selection on a mouse click, so we click the cell to bootstrap
@@ -483,14 +482,6 @@ const InventoryCountLines = ({
       document.querySelector("[data-counted-qty]")
     )
       ?.closest<HTMLElement>("[data-column]")
-      ?.click();
-  }, []);
-
-  const focusCountedCell = useCallback((row: number) => {
-    gridRef.current
-      ?.querySelector<HTMLElement>(
-        `[data-row="${row}"][data-column="${countedColumnRef.current}"]`
-      )
       ?.click();
   }, []);
 
@@ -508,23 +499,6 @@ const InventoryCountLines = ({
     }
   });
 
-  // Belt-and-braces: if focus still lands on a non-Counted-Qty cell in a line
-  // (e.g. the Table selects the Item cell on a click), bounce it into that line's
-  // Counted Qty cell. Header controls (search / filter / sort) aren't line cells,
-  // so they're untouched.
-  const onGridFocusCapture = useCallback(
-    (event: React.FocusEvent) => {
-      if (isReadOnly) return;
-      const cell = (event.target as HTMLElement).closest<HTMLElement>(
-        "[data-row][data-column]"
-      );
-      if (!cell || !gridRef.current?.contains(cell)) return;
-      if (cell.getAttribute("data-column") === countedColumnRef.current) return;
-      focusCountedCell(Number(cell.getAttribute("data-row")));
-    },
-    [isReadOnly, focusCountedCell]
-  );
-
   // Land the counter in the first cell on open (Draft counts only), so the page
   // is immediately keyboard-driveable without hunting for an entry point.
   const hasAutoFocusedRef = useRef(false);
@@ -535,47 +509,80 @@ const InventoryCountLines = ({
   }, [isReadOnly, lines.length, enterGrid]);
 
   // Spreadsheet-style entry: Enter/Tab commit the current count and move to the
-  // NEXT line's Counted Qty cell; Shift+Tab moves to the PREVIOUS line. Focus is
-  // always kept in the Counted Qty column — pressing these from any other cell
-  // (or a selected-but-not-editing cell) jumps into that column rather than
-  // letting the shared Table wander sideways or wrap onto the Item cell. At the
-  // first/last line focus stays put. Runs in the capture phase (this wrapper is
-  // an ancestor of the Table's own capture listener) so stopping propagation
-  // overrides it.
-  const onGridKeyDownCapture = useCallback((event: React.KeyboardEvent) => {
-    if (event.key !== "Enter" && event.key !== "Tab") return;
-    const cell = (event.target as HTMLElement).closest<HTMLElement>(
-      "[data-row][data-column]"
-    );
-    if (!cell || !gridRef.current?.contains(cell)) return;
-    const countedColumn = countedColumnRef.current;
-    // Only drive movement from within the Counted Qty column; a keypress from
-    // any other cell falls through to the focus handler, which redirects into
-    // the column.
-    if (cell.getAttribute("data-column") !== countedColumn) return;
+  // NEXT line's Counted Qty cell; Shift+Tab moves to the PREVIOUS line. A keypress
+  // from any other cell jumps into the Counted Qty column instead of letting the
+  // shared Table wander sideways. At a boundary, Enter keeps focus on the cell
+  // while Tab is allowed to leave the grid (only the Table's own wrap is
+  // suppressed). Read-only counts are left entirely to the browser. Runs in the
+  // capture phase — this wrapper is an ancestor of the Table's own capture
+  // listener — so stopping propagation overrides it.
+  const onGridKeyDownCapture = useCallback(
+    (event: React.KeyboardEvent) => {
+      if (isReadOnly) return;
+      if (event.key !== "Enter" && event.key !== "Tab") return;
+      const cell = (event.target as HTMLElement).closest<HTMLElement>(
+        "[data-row][data-column]"
+      );
+      if (!cell || !gridRef.current?.contains(cell)) return;
 
-    event.preventDefault();
-    event.stopPropagation();
+      // Resolve the Counted Qty column live: from the cell being edited (only the
+      // Counted Qty cell is editable) or, failing that, the `data-counted-qty`
+      // marker on any non-editing line. Falls back to the last-known index.
+      const active = document.activeElement as HTMLElement | null;
+      const editingColumn =
+        active?.tagName === "INPUT"
+          ? active
+              .closest<HTMLElement>("[data-column]")
+              ?.getAttribute("data-column")
+          : null;
+      const markerColumn = gridRef.current
+        ?.querySelector("[data-counted-qty]")
+        ?.closest<HTMLElement>("[data-column]")
+        ?.getAttribute("data-column");
+      const countedColumn =
+        editingColumn ?? markerColumn ?? countedColumnRef.current;
+      if (!countedColumn) return;
+      countedColumnRef.current = countedColumn;
 
-    const row = Number(cell.getAttribute("data-row"));
+      const row = Number(cell.getAttribute("data-row"));
 
-    // Commit the entered value before leaving the cell (the editor persists on
-    // blur, not on the focus move alone).
-    const active = document.activeElement as HTMLElement | null;
-    if (active?.tagName === "INPUT") active.blur();
+      // From another column (e.g. a clicked Item cell), jump into this line's
+      // Counted Qty cell.
+      if (cell.getAttribute("data-column") !== countedColumn) {
+        event.preventDefault();
+        event.stopPropagation();
+        gridRef.current
+          ?.querySelector<HTMLElement>(
+            `[data-row="${row}"][data-column="${countedColumn}"]`
+          )
+          ?.click();
+        return;
+      }
 
-    const step = event.key === "Tab" && event.shiftKey ? -1 : 1;
-    const adjacent = gridRef.current?.querySelector<HTMLElement>(
-      `[data-row="${row + step}"][data-column="${countedColumn}"]`
-    );
-    if (adjacent) {
-      adjacent.click(); // open the next line's cell for entry
-    } else {
-      // First/last line: keep focus on the cell (not re-editing it) so it
-      // never falls out to <body> or onto a non-editable cell.
-      cell.focus();
-    }
-  }, []);
+      const step = event.key === "Tab" && event.shiftKey ? -1 : 1;
+      const adjacent = gridRef.current?.querySelector<HTMLElement>(
+        `[data-row="${row + step}"][data-column="${countedColumn}"]`
+      );
+
+      // Let Tab exit the grid at the first/last line rather than trapping focus;
+      // only suppress the Table's own row-wrapping.
+      if (event.key === "Tab" && !adjacent) {
+        event.stopPropagation();
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+      if (active?.tagName === "INPUT") active.blur(); // commit before moving
+      if (adjacent) {
+        adjacent.click(); // open the next line's cell for entry
+      } else {
+        // Enter at a boundary: keep focus on the cell rather than dropping out.
+        cell.focus();
+      }
+    },
+    [isReadOnly]
+  );
 
   const editableComponents = useMemo(
     () => ({
@@ -597,7 +604,6 @@ const InventoryCountLines = ({
     <div
       ref={gridRef}
       onKeyDownCapture={onGridKeyDownCapture}
-      onFocusCapture={onGridFocusCapture}
       className="flex h-full min-h-0 w-full flex-col"
     >
       {/* Keyboard skip-link into the grid: revealed on focus, activates the

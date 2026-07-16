@@ -343,14 +343,21 @@ export function IssueMaterialModal({
     !!material?.id &&
     hasPickingAllocation &&
     (trackingType === "Batch" || trackingType === "Serial");
-  const { data: pickedAllocation } = usePickedAllocation(
-    shouldLoadPickedAllocation ? (material?.id ?? undefined) : undefined
-  );
-  // Prefer the actual picks; fall back to the suggestion when nothing's been
-  // picked yet (allocated-but-not-picked) or when there's no picking list.
-  const seedAllocation = pickedAllocation.length
-    ? pickedAllocation
-    : suggestedAllocation;
+  const { data: pickedAllocation, resolved: pickedAllocationResolved } =
+    usePickedAllocation(
+      shouldLoadPickedAllocation ? (material?.id ?? undefined) : undefined
+    );
+  // Prefer the actual picks; fall back to the suggestion only when nothing's
+  // been picked yet (allocated-but-not-picked) or when there's no picking list.
+  // Wait for the picked-allocation request to resolve before falling back, so a
+  // faster suggestion response can't be seeded and then locked in ahead of the
+  // real picked lots.
+  const seedAllocation =
+    shouldLoadPickedAllocation && !pickedAllocationResolved
+      ? []
+      : pickedAllocation.length
+        ? pickedAllocation
+        : suggestedAllocation;
   const hasSeededSuggestionRef = useRef(false);
   useEffect(() => {
     if (hasSeededSuggestionRef.current) return;
@@ -2054,5 +2061,11 @@ function usePickedAllocation(jobMaterialId?: string) {
     }
   }, [jobMaterialId]);
 
-  return { data: fetcher.data?.data ?? [] };
+  return {
+    data: fetcher.data?.data ?? [],
+    // Has the request come back? An empty result only means "nothing picked"
+    // once this is true — before that it's still loading. Guards the seed from
+    // falling back to the suggestion before the picked lots have arrived.
+    resolved: fetcher.state === "idle" && fetcher.data !== undefined
+  };
 }
