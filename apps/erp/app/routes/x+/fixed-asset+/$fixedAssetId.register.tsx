@@ -89,6 +89,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
             "fixedAssetId, locationId, fixedAssetClassId, fixedAssetClass:fixedAssetClassId(assetAccountId, accumulatedDepreciationAccountId)"
           )
           .eq("id", fixedAssetId)
+          .eq("companyId", companyId)
           .single(),
         getDefaultAccounts(client, companyId),
         client
@@ -191,7 +192,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  // Accounting disabled — a plain status flip (no journal).
+  // Accounting disabled — a plain status flip (no journal). Select the affected
+  // row back so a concurrent update that already moved the asset out of Draft
+  // (zero rows matched) is treated as a failure rather than a false success.
   const result = await client
     .from("fixedAsset")
     .update({
@@ -200,12 +203,21 @@ export async function action({ request, params }: ActionFunctionArgs) {
       updatedBy: userId
     })
     .eq("id", fixedAssetId)
-    .eq("status", "Draft");
+    .eq("companyId", companyId)
+    .eq("status", "Draft")
+    .select("id");
 
   if (result.error) {
     throw redirect(
       path.to.fixedAsset(fixedAssetId),
       await flash(request, error(result.error, "Failed to register asset"))
+    );
+  }
+
+  if (!result.data || result.data.length === 0) {
+    throw redirect(
+      path.to.fixedAsset(fixedAssetId),
+      await flash(request, error(null, "Only Draft assets can be registered"))
     );
   }
 

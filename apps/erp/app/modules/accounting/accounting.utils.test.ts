@@ -73,6 +73,19 @@ describe("acquisitionLines", () => {
     expect(debit).toBe(100000);
     expect(credit).toBe(100000);
   });
+
+  it("allows accumulated depreciation equal to acquisition cost (NBV 0)", () => {
+    const lines = acquisitionLines(100000, 100000);
+    const { debit, credit } = totals(lines);
+    expect(debit).toBe(100000);
+    expect(credit).toBe(100000);
+  });
+
+  it("throws when accumulated depreciation exceeds acquisition cost", () => {
+    expect(() => acquisitionLines(100000, 120000)).toThrow(
+      /Accumulated depreciation cannot exceed/
+    );
+  });
 });
 
 // ---------------------------------------------------------------------------

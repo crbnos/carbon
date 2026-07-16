@@ -197,6 +197,17 @@ serve(async (req: Request) => {
         const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
           [];
 
+        // Fixed-asset disposal state changes are deferred and applied inside the
+        // same Kysely transaction as the journal posting, so a failure to update
+        // the asset/disposal rows rolls the journals back instead of leaving the
+        // ledger posted against a stale asset record.
+        const fixedAssetDisposalUpdates: {
+          disposalId: string;
+          assetId: string;
+          saleProceeds: number;
+          gainLoss: number;
+        }[] = [];
+
         const salesInvoiceLinesBySalesOrderLine = salesInvoiceLines.data.reduce<
           Record<
             string,
@@ -706,24 +717,14 @@ serve(async (req: Request) => {
                     });
                   }
 
-                  // Update fixedAssetDisposal with proceeds + final gain/loss.
-                  await client
-                    .from("fixedAssetDisposal")
-                    .update({
-                      saleProceeds,
-                      gainLoss,
-                    })
-                    .eq("id", disposal.data.id)
-                    .eq("companyId", companyId);
-
-                  await client
-                    .from("fixedAsset")
-                    .update({
-                      saleProceeds,
-                      updatedBy: userId,
-                    })
-                    .eq("id", invoiceLine.assetId)
-                    .eq("companyId", companyId);
+                  // Defer the fixedAssetDisposal + fixedAsset writes so they run
+                  // inside the same transaction as the journal posting (below).
+                  fixedAssetDisposalUpdates.push({
+                    disposalId: disposal.data.id,
+                    assetId: invoiceLine.assetId,
+                    saleProceeds,
+                    gainLoss,
+                  });
                 } else {
                   // Direct invoice (no prior shipment) — combined single-step
                   // disposal: remove the asset + its accumulated depreciation,
@@ -1226,6 +1227,30 @@ serve(async (req: Request) => {
                 documentId: salesInvoice.data?.id,
                 status: "Unmatched",
               })
+              .execute();
+          }
+
+          // Apply deferred fixed-asset disposal writes inside the transaction so
+          // any failure rolls back the journals posted above.
+          for (const upd of fixedAssetDisposalUpdates) {
+            await trx
+              .updateTable("fixedAssetDisposal")
+              .set({
+                saleProceeds: upd.saleProceeds,
+                gainLoss: upd.gainLoss,
+              })
+              .where("id", "=", upd.disposalId)
+              .where("companyId", "=", companyId)
+              .execute();
+
+            await trx
+              .updateTable("fixedAsset")
+              .set({
+                saleProceeds: upd.saleProceeds,
+                updatedBy: userId,
+              })
+              .where("id", "=", upd.assetId)
+              .where("companyId", "=", companyId)
               .execute();
           }
 

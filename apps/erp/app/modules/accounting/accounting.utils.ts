@@ -60,6 +60,15 @@ export function acquisitionLines(
   acquisitionCost: number,
   accumulatedDepreciation = 0
 ): AcquisitionLine[] {
+  // Accumulated depreciation can never exceed gross cost — that would imply a
+  // negative net book value and produce an unbalanced/absurd entry. Reject it
+  // before building any lines.
+  if (accumulatedDepreciation > acquisitionCost) {
+    throw new Error(
+      "Accumulated depreciation cannot exceed the acquisition cost"
+    );
+  }
+
   const nbv = acquisitionCost - accumulatedDepreciation;
   const lines: AcquisitionLine[] = [
     {
