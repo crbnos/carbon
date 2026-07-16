@@ -6463,6 +6463,9 @@ msgstr "アイテムスコープ"
 msgid "Item Type"
 msgstr "アイテムタイプ"
 
+msgid "Item Type (optional)"
+msgstr "アイテムタイプ（オプション）"
+
 msgid "Item types"
 msgstr "アイテムタイプ"
 
@@ -10584,9 +10587,6 @@ msgstr "選択された操作"
 msgid "Selected: {selectedSum} / remaining after split: {0}"
 msgstr "選択済み: {selectedSum} / 分割後の残数: {0}"
 
-msgid "Selecting a parent also counts everything inside it"
-msgstr "親ユニットを選択すると、その中のすべても棚卸対象になります"
-
 msgid "Self Managed"
 msgstr "自己管理"
 
@@ -11129,6 +11129,9 @@ msgstr "開始"
 msgid "Start {0} Day Free Trial"
 msgstr "{0}日間の無料トライアルを開始"
 
+msgid "Start counting"
+msgstr "カウントを開始"
+
 msgid "Start Date"
 msgstr "開始日"
 
@@ -11258,6 +11261,9 @@ msgstr "ストレージユニット"
 
 msgid "Storage Unit"
 msgstr "保管単位"
+
+msgid "Storage Unit (optional)"
+msgstr "ストレージユニット（オプション）"
 
 msgid "storage units"
 msgstr "ストレージユニット"

@@ -18,19 +18,11 @@ import type { z } from "zod";
 import {
   Boolean,
   Location,
-  MaterialType,
   Select,
-  StorageTypes,
-  StorageUnits,
+  StorageUnit,
   Submit,
-  Tags,
   TextArea
 } from "~/components/Form";
-import MaterialDimension from "~/components/Form/MaterialDimension";
-import MaterialFinish from "~/components/Form/MaterialFinish";
-import MaterialGrade from "~/components/Form/MaterialGrade";
-import Shape from "~/components/Form/Shape";
-import Substance from "~/components/Form/Substance";
 import { usePermissions } from "~/hooks";
 import {
   inventoryCountValidator,
@@ -40,13 +32,11 @@ import { path } from "~/utils/path";
 
 type InventoryCountFormProps = {
   initialValues: z.infer<typeof inventoryCountValidator>;
-  availableTags: { name: string }[];
   onClose: () => void;
 };
 
 const InventoryCountForm = ({
   initialValues,
-  availableTags,
   onClose
 }: InventoryCountFormProps) => {
   const { t } = useLingui();
@@ -54,12 +44,6 @@ const InventoryCountForm = ({
   const fetcher = useFetcher<{}>();
 
   const [locationId, setLocationId] = useState(initialValues.locationId ?? "");
-  // Drive the material cascade: finish/grade/type narrow by substance,
-  // dimension/type narrow by shape.
-  const [substanceId, setSubstanceId] = useState(
-    initialValues.materialSubstanceId ?? ""
-  );
-  const [formId, setFormId] = useState(initialValues.materialFormId ?? "");
 
   const itemTypeOptions = inventoryItemTypes.map((type) => ({
     label: type,
@@ -93,56 +77,16 @@ const InventoryCountForm = ({
                   label={t`Location`}
                   onChange={(location) => setLocationId(location?.value ?? "")}
                 />
-                <StorageUnits
+                <StorageUnit
                   name="storageUnitIds"
-                  label={t`Storage Units`}
+                  label={t`Storage Unit (optional)`}
                   locationId={locationId}
-                  helperText={t`Selecting a parent also counts everything inside it`}
                 />
-                <StorageTypes name="storageTypeIds" label={t`Storage Types`} />
                 <Select
                   name="itemType"
-                  label={t`Item Type`}
+                  label={t`Item Type (optional)`}
                   options={itemTypeOptions}
                   placeholder={t`All item types`}
-                />
-                <Tags
-                  name="tags"
-                  label={t`Tags`}
-                  availableTags={availableTags}
-                />
-                <Substance
-                  name="materialSubstanceId"
-                  label={t`Substance`}
-                  onChange={(substance) =>
-                    setSubstanceId(substance?.value ?? "")
-                  }
-                />
-                <Shape
-                  name="materialFormId"
-                  label={t`Shape`}
-                  onChange={(shape) => setFormId(shape?.value ?? "")}
-                />
-                <MaterialFinish
-                  name="finishId"
-                  label={t`Finish`}
-                  substanceId={substanceId}
-                />
-                <MaterialGrade
-                  name="gradeId"
-                  label={t`Grade`}
-                  substanceId={substanceId}
-                />
-                <MaterialDimension
-                  name="dimensionId"
-                  label={t`Dimension`}
-                  formId={formId}
-                />
-                <MaterialType
-                  name="materialTypeId"
-                  label={t`Material Type`}
-                  substanceId={substanceId}
-                  formId={formId}
                 />
                 <Boolean
                   name="isBlind"

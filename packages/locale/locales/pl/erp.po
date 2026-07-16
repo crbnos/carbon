@@ -6463,6 +6463,9 @@ msgstr "Zakres Pozycji"
 msgid "Item Type"
 msgstr "Typ przedmiotu"
 
+msgid "Item Type (optional)"
+msgstr "Typ przedmiotu (opcjonalnie)"
+
 msgid "Item types"
 msgstr "Typy przedmiotów"
 
@@ -10584,9 +10587,6 @@ msgstr "Wybrana operacja"
 msgid "Selected: {selectedSum} / remaining after split: {0}"
 msgstr "Wybrane: {selectedSum} / pozostało po podziale: {0}"
 
-msgid "Selecting a parent also counts everything inside it"
-msgstr "Wybranie jednostki nadrzędnej powoduje policzenie także wszystkiego, co się w niej znajduje"
-
 msgid "Self Managed"
 msgstr "Samodzielnie zarządzane"
 
@@ -11129,6 +11129,9 @@ msgstr "Rozpocznij"
 msgid "Start {0} Day Free Trial"
 msgstr "Rozpocznij {0}-dniowy bezpłatny okres próbny"
 
+msgid "Start counting"
+msgstr "Rozpocznij liczenie"
+
 msgid "Start Date"
 msgstr "Data początkowa"
 
@@ -11258,6 +11261,9 @@ msgstr "jednostka magazynowania"
 
 msgid "Storage Unit"
 msgstr "Jednostka magazynowa"
+
+msgid "Storage Unit (optional)"
+msgstr "Jednostka magazynowa (opcjonalnie)"
 
 msgid "storage units"
 msgstr "jednostki magazynowania"

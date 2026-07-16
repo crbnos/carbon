@@ -6463,6 +6463,9 @@ msgstr "Portée des articles"
 msgid "Item Type"
 msgstr "Type d'article"
 
+msgid "Item Type (optional)"
+msgstr "Type d'article (optionnel)"
+
 msgid "Item types"
 msgstr "Types d'articles"
 
@@ -10584,9 +10587,6 @@ msgstr "Opération sélectionnée"
 msgid "Selected: {selectedSum} / remaining after split: {0}"
 msgstr "Sélectionné : {selectedSum} / restant après division : {0}"
 
-msgid "Selecting a parent also counts everything inside it"
-msgstr "La sélection d'une unité parente compte également tout ce qu'elle contient"
-
 msgid "Self Managed"
 msgstr "Autogéré"
 
@@ -11129,6 +11129,9 @@ msgstr "Démarrer"
 msgid "Start {0} Day Free Trial"
 msgstr "Commencer l'essai gratuit de {0} jours"
 
+msgid "Start counting"
+msgstr "Commencer le comptage"
+
 msgid "Start Date"
 msgstr "Date de début"
 
@@ -11258,6 +11261,9 @@ msgstr "unité de stockage"
 
 msgid "Storage Unit"
 msgstr "Unité de stockage"
+
+msgid "Storage Unit (optional)"
+msgstr "Unité de stockage (optionnel)"
 
 msgid "storage units"
 msgstr "unités de stockage"

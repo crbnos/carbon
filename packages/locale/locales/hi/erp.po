@@ -6463,6 +6463,9 @@ msgstr "आइटम स्कोप"
 msgid "Item Type"
 msgstr "आइटम प्रकार"
 
+msgid "Item Type (optional)"
+msgstr "आइटम प्रकार (वैकल्पिक)"
+
 msgid "Item types"
 msgstr "आइटम प्रकार"
 
@@ -10584,9 +10587,6 @@ msgstr "चयनित ऑपरेशन"
 msgid "Selected: {selectedSum} / remaining after split: {0}"
 msgstr "चयनित: {selectedSum} / विभाजन के बाद शेष: {0}"
 
-msgid "Selecting a parent also counts everything inside it"
-msgstr "मूल इकाई चुनने पर उसके अंदर की हर चीज़ भी गिनी जाती है"
-
 msgid "Self Managed"
 msgstr "स्व प्रबंधित"
 
@@ -11129,6 +11129,9 @@ msgstr "शुरू करें"
 msgid "Start {0} Day Free Trial"
 msgstr "{0} दिन की निःशुल्क परीक्षण शुरू करें"
 
+msgid "Start counting"
+msgstr "गिनती शुरू करें"
+
 msgid "Start Date"
 msgstr "शुरुआत तारीख"
 
@@ -11258,6 +11261,9 @@ msgstr "भंडारण इकाई"
 
 msgid "Storage Unit"
 msgstr "भंडारण इकाई"
+
+msgid "Storage Unit (optional)"
+msgstr "स्टोरेज यूनिट (वैकल्पिक)"
 
 msgid "storage units"
 msgstr "भंडारण इकाइयां"

@@ -4,7 +4,6 @@ import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import type { TrackedEntityAttributes } from "@carbon/utils";
 import { getLocalTimeZone, now, today } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
-import { sql } from "kysely";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
 import { getNextSequence } from "~/modules/settings";
@@ -1629,14 +1628,12 @@ export async function getInventoryCountLines(
   companyId: string,
   args: GenericQueryFilters & { search: string | null }
 ) {
+  // Read from the `inventoryCountLines` view: it flattens item + material +
+  // storage-unit attributes as top-level columns so the count detail table can
+  // apply the same generic column filters the quantities screen does.
   let query = client
-    .from("inventoryCountLine")
-    .select(
-      "*, item!inner(name, readableIdWithRevision, type, itemTrackingType, unitOfMeasureCode, thumbnailPath)",
-      {
-        count: "exact"
-      }
-    )
+    .from("inventoryCountLines")
+    .select("*", { count: "exact" })
     .eq("inventoryCountId", inventoryCountId)
     .eq("companyId", companyId);
 
@@ -1647,8 +1644,7 @@ export async function getInventoryCountLines(
     // Search the item's identity (part number / name); the line's own readableId
     // is only the batch/serial and is null for most rows.
     query = query.or(
-      `name.ilike.%${search}%,readableIdWithRevision.ilike.%${search}%`,
-      { foreignTable: "item" }
+      `itemName.ilike.%${search}%,itemReadableIdWithRevision.ilike.%${search}%`
     );
   }
 
@@ -1656,7 +1652,7 @@ export async function getInventoryCountLines(
   // number for a readable count sheet and fall back to the line id for a stable,
   // deterministic order.
   query = setGenericQueryFilters(query, args, [
-    { column: "readableIdWithRevision", ascending: true, foreignTable: "item" },
+    { column: "itemReadableIdWithRevision", ascending: true },
     { column: "id", ascending: true }
   ]);
   return query;
@@ -1752,17 +1748,8 @@ export async function generateInventoryCountLines(
     companyId: string;
     locationId: string;
     createdBy: string;
-    /** Already expanded to include descendants by the caller. */
     storageUnitIds?: string[];
-    storageTypeIds?: string[];
     itemType?: string;
-    materialSubstanceId?: string;
-    materialFormId?: string;
-    finishId?: string;
-    gradeId?: string;
-    dimensionId?: string;
-    materialTypeId?: string;
-    tags?: string[];
   }
 ) {
   const {
@@ -1771,53 +1758,13 @@ export async function generateInventoryCountLines(
     locationId,
     createdBy,
     storageUnitIds,
-    storageTypeIds,
-    itemType,
-    materialSubstanceId,
-    materialFormId,
-    finishId,
-    gradeId,
-    dimensionId,
-    materialTypeId,
-    tags
+    itemType
   } = args;
 
   return db.transaction().execute(async (trx) => {
     let aggregate = trx
       .selectFrom("itemLedger")
       .innerJoin("item", "item.id", "itemLedger.itemId")
-      // Material attributes and tags hang off the item SUBTYPE tables, keyed by
-      // `item.readableId` (not `item.id`, and not `material.itemId`) — matching
-      // the join `get_inventory_quantities` uses, so a scoped count agrees with
-      // the quantities screen. Every join must be LEFT: Parts/Tools/Consumables
-      // have no `material` row and an inner join would silently drop them.
-      // Declared unconditionally to keep Kysely's builder type stable across the
-      // conditional `.where()` reassignments below; all are indexed lookups.
-      .leftJoin("material as m", (join) =>
-        join
-          .onRef("m.id", "=", "item.readableId")
-          .on("m.companyId", "=", companyId)
-      )
-      .leftJoin("part as p", (join) =>
-        join
-          .onRef("p.id", "=", "item.readableId")
-          .on("p.companyId", "=", companyId)
-      )
-      .leftJoin("tool as tl", (join) =>
-        join
-          .onRef("tl.id", "=", "item.readableId")
-          .on("tl.companyId", "=", companyId)
-      )
-      .leftJoin("consumable as c", (join) =>
-        join
-          .onRef("c.id", "=", "item.readableId")
-          .on("c.companyId", "=", companyId)
-      )
-      .leftJoin("storageUnit as su", (join) =>
-        join
-          .onRef("su.id", "=", "itemLedger.storageUnitId")
-          .on("su.companyId", "=", companyId)
-      )
       .select([
         "itemLedger.itemId as itemId",
         "itemLedger.storageUnitId as storageUnitId",
@@ -1826,14 +1773,16 @@ export async function generateInventoryCountLines(
       .select((eb) => eb.fn.sum<number>("itemLedger.quantity").as("quantity"))
       .where("itemLedger.companyId", "=", companyId)
       .where("itemLedger.locationId", "=", locationId)
-      // Status-aware on-hand: exclude Rejected stock so `systemQuantity` matches
-      // the `get_inventory_quantities` definition of quantityOnHand (which is
-      // `SUM(quantity) WHERE trackedEntityStatus IS NULL OR != 'Rejected'`) used
-      // everywhere else in the app. Non-tracked rows have a NULL status.
+      // Status-aware on-hand: exclude Rejected and Consumed lots so a count
+      // never lists stock that's been used up or scrapped. Non-tracked rows
+      // have a NULL status and are always included.
       .where((eb) =>
         eb.or([
           eb("itemLedger.trackedEntityStatus", "is", null),
-          eb("itemLedger.trackedEntityStatus", "!=", "Rejected")
+          eb("itemLedger.trackedEntityStatus", "not in", [
+            "Rejected",
+            "Consumed"
+          ])
         ])
       )
       .groupBy([
@@ -1852,55 +1801,11 @@ export async function generateInventoryCountLines(
       );
     }
 
-    const scopedStorageTypeIds = storageTypeIds?.filter(Boolean) ?? [];
-    if (scopedStorageTypeIds.length > 0) {
-      aggregate = aggregate.where(
-        sql<boolean>`su."storageTypeIds" && ${scopedStorageTypeIds}::text[]`
-      );
-    }
-
     if (itemType) {
       aggregate = aggregate.where(
         "item.type",
         "=",
         itemType as Database["public"]["Enums"]["itemType"]
-      );
-    }
-
-    if (materialSubstanceId) {
-      aggregate = aggregate.where(
-        "m.materialSubstanceId",
-        "=",
-        materialSubstanceId
-      );
-    }
-
-    if (materialFormId) {
-      aggregate = aggregate.where("m.materialFormId", "=", materialFormId);
-    }
-
-    if (finishId) {
-      aggregate = aggregate.where("m.finishId", "=", finishId);
-    }
-
-    if (gradeId) {
-      aggregate = aggregate.where("m.gradeId", "=", gradeId);
-    }
-
-    if (dimensionId) {
-      aggregate = aggregate.where("m.dimensionId", "=", dimensionId);
-    }
-
-    if (materialTypeId) {
-      aggregate = aggregate.where("m.materialTypeId", "=", materialTypeId);
-    }
-
-    // An item is exactly one subtype, so COALESCE resolves to that subtype's
-    // tag array; `&&` is the same overlap the quantities filter applies.
-    const scopedTags = tags?.filter(Boolean) ?? [];
-    if (scopedTags.length > 0) {
-      aggregate = aggregate.where(
-        sql<boolean>`COALESCE(m."tags", p."tags", tl."tags", c."tags", '{}'::text[]) && ${scopedTags}::text[]`
       );
     }
 
@@ -2000,7 +1905,7 @@ async function resnapshotInventoryCountLinesInTrx(
     .execute();
 
   // Fresh status-aware on-hand for the location, grouped by bucket (matches
-  // `generateInventoryCountLines` / `get_inventory_quantities`).
+  // `generateInventoryCountLines`): exclude Rejected and Consumed lots.
   const onHandRows = await trx
     .selectFrom("itemLedger")
     .select(["itemId", "storageUnitId", "trackedEntityId"])
@@ -2010,7 +1915,7 @@ async function resnapshotInventoryCountLinesInTrx(
     .where((eb) =>
       eb.or([
         eb("trackedEntityStatus", "is", null),
-        eb("trackedEntityStatus", "!=", "Rejected")
+        eb("trackedEntityStatus", "not in", ["Rejected", "Consumed"])
       ])
     )
     .groupBy(["itemId", "storageUnitId", "trackedEntityId"])

@@ -6463,6 +6463,9 @@ msgstr "物品范围"
 msgid "Item Type"
 msgstr "物品类型"
 
+msgid "Item Type (optional)"
+msgstr "物品类型（可选）"
+
 msgid "Item types"
 msgstr "物品类型"
 
@@ -10584,9 +10587,6 @@ msgstr "已选择的操作"
 msgid "Selected: {selectedSum} / remaining after split: {0}"
 msgstr "已选择: {selectedSum} / 分割后剩余: {0}"
 
-msgid "Selecting a parent also counts everything inside it"
-msgstr "选择上级存储单元时，也会盘点其中的所有内容"
-
 msgid "Self Managed"
 msgstr "自我管理"
 
@@ -11129,6 +11129,9 @@ msgstr "开始"
 msgid "Start {0} Day Free Trial"
 msgstr "开始 {0} 天免费试用"
 
+msgid "Start counting"
+msgstr "开始盘点"
+
 msgid "Start Date"
 msgstr "开始日期"
 
@@ -11258,6 +11261,9 @@ msgstr "存储单位"
 
 msgid "Storage Unit"
 msgstr "存储单位"
+
+msgid "Storage Unit (optional)"
+msgstr "存储单位（可选）"
 
 msgid "storage units"
 msgstr "存储单位"

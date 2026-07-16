@@ -6463,6 +6463,9 @@ msgstr "Ürün Kapsamı"
 msgid "Item Type"
 msgstr "Ürün Tipi"
 
+msgid "Item Type (optional)"
+msgstr "Madde Türü (isteğe bağlı)"
+
 msgid "Item types"
 msgstr "Ürün tipleri"
 
@@ -10584,9 +10587,6 @@ msgstr "Seçili İşlem"
 msgid "Selected: {selectedSum} / remaining after split: {0}"
 msgstr "Seçilen: {selectedSum} / bölünme sonrası kalan: {0}"
 
-msgid "Selecting a parent also counts everything inside it"
-msgstr "Bir üst birim seçildiğinde içindeki her şey de sayılır"
-
 msgid "Self Managed"
 msgstr "Kendi Yönettiği"
 
@@ -11129,6 +11129,9 @@ msgstr "Başlat"
 msgid "Start {0} Day Free Trial"
 msgstr "{0} Gün Ücretsiz Deneme Başlat"
 
+msgid "Start counting"
+msgstr "Saymaya başla"
+
 msgid "Start Date"
 msgstr "Başlangıç Tarihi"
 
@@ -11258,6 +11261,9 @@ msgstr "depolama birimi"
 
 msgid "Storage Unit"
 msgstr "Depolama Birimi"
+
+msgid "Storage Unit (optional)"
+msgstr "Depolama Birimi (isteğe bağlı)"
 
 msgid "storage units"
 msgstr "depolama birimleri"
