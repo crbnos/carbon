@@ -226,16 +226,12 @@ async function releaseAffectedItem(
     if (reveal.error) return { error: reveal.error };
   }
 
-  // Clear CO ownership on the Draft — it's now normal method history.
-  const clear = await client
-    .from("makeMethod")
-    .update({ changeOrderId: null })
-    .eq("id", draftMakeMethodId)
-    .eq("companyId", companyId);
-  if (clear.error) return { error: clear.error };
-
   // Auto supersession: Revision (oldRev→newRev) / New Part (affectedPart→newPart).
-  // Version keeps the same item — no supersession (Q2).
+  // Version keeps the same item — no supersession (Q2). This runs BEFORE clearing
+  // the CO-ownership marker so a supersession failure leaves the draft still owned
+  // by the CO (changeOrderId set) — the item is re-attempted on retry instead of
+  // the CO silently completing without its required supersession. Re-runs are
+  // safe: activate/reveal are idempotent and upsertItemSupersession is an upsert.
   if (changeType !== "Version" && newItemId) {
     const sup = await upsertItemSupersession(client, {
       itemId: sourceItemId,
@@ -254,8 +250,18 @@ async function releaseAffectedItem(
       logger.error("Failed to write revision supersession", {
         error: sup.error
       });
+      return { error: sup.error };
     }
   }
+
+  // Clear CO ownership on the Draft — the FINAL, idempotency-marking step. Once
+  // cleared the draft is normal method history and a re-run skips this item.
+  const clear = await client
+    .from("makeMethod")
+    .update({ changeOrderId: null })
+    .eq("id", draftMakeMethodId)
+    .eq("companyId", companyId);
+  if (clear.error) return { error: clear.error };
 
   return { error: null };
 }

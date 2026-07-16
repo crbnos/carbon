@@ -49,10 +49,15 @@ export function getLockVerdict(lock: {
 
 // Each kind resolves entity -> item.revisionStatus in a single nested PostgREST
 // select instead of walking the FK chain with sequential single-row queries.
+// Every base query is scoped by companyId (defense-in-depth; the id is a global
+// UUID but tenant scoping is a golden rule). The lock is advisory — RLS +
+// requirePermissions are the real boundary — so a null/unresolvable status
+// leaves the gate open by design (see checkRevisionLock).
 async function resolveRevisionStatus(
   client: SupabaseClient<Database>,
   kind: LockKind,
-  id: string
+  id: string,
+  companyId: string
 ): Promise<ItemRevisionStatus | null> {
   switch (kind) {
     case "item": {
@@ -60,6 +65,7 @@ async function resolveRevisionStatus(
         .from("item")
         .select("revisionStatus")
         .eq("id", id)
+        .eq("companyId", companyId)
         .maybeSingle();
       return item.data?.revisionStatus ?? null;
     }
@@ -68,6 +74,7 @@ async function resolveRevisionStatus(
         .from("makeMethod")
         .select("item(revisionStatus)")
         .eq("id", id)
+        .eq("companyId", companyId)
         .maybeSingle();
       return makeMethod.data?.item?.revisionStatus ?? null;
     }
@@ -78,6 +85,7 @@ async function resolveRevisionStatus(
         .from("methodMaterial")
         .select("makeMethod!methodMaterial_methodId_fkey(item(revisionStatus))")
         .eq("id", id)
+        .eq("companyId", companyId)
         .maybeSingle();
       return material.data?.makeMethod?.item?.revisionStatus ?? null;
     }
@@ -86,6 +94,7 @@ async function resolveRevisionStatus(
         .from("methodOperation")
         .select("makeMethod(item(revisionStatus))")
         .eq("id", id)
+        .eq("companyId", companyId)
         .maybeSingle();
       return operation.data?.makeMethod?.item?.revisionStatus ?? null;
     }
@@ -94,6 +103,7 @@ async function resolveRevisionStatus(
         .from("methodOperationTool")
         .select("methodOperation(makeMethod(item(revisionStatus)))")
         .eq("id", id)
+        .eq("companyId", companyId)
         .maybeSingle();
       return (
         tool.data?.methodOperation?.makeMethod?.item?.revisionStatus ?? null
@@ -104,6 +114,7 @@ async function resolveRevisionStatus(
         .from("methodOperationParameter")
         .select("methodOperation(makeMethod(item(revisionStatus)))")
         .eq("id", id)
+        .eq("companyId", companyId)
         .maybeSingle();
       return (
         parameter.data?.methodOperation?.makeMethod?.item?.revisionStatus ??
@@ -130,7 +141,7 @@ export async function getRevisionLock(
 ): Promise<RevisionLock> {
   const [revisionStatus, releaseControl] = await Promise.all([
     args.itemId
-      ? resolveRevisionStatus(client, "item", args.itemId)
+      ? resolveRevisionStatus(client, "item", args.itemId, args.companyId)
       : Promise.resolve(null),
     getReleaseControl(client, args.companyId)
   ]);
@@ -151,7 +162,7 @@ export async function checkRevisionLock(
 ): Promise<LockCheck> {
   const [revisionStatus, releaseControl] = await Promise.all([
     args.id
-      ? resolveRevisionStatus(client, args.kind, args.id)
+      ? resolveRevisionStatus(client, args.kind, args.id, args.companyId)
       : Promise.resolve(null),
     getReleaseControl(client, args.companyId)
   ]);

@@ -1005,7 +1005,15 @@ export async function updateChangeOrderAffectedItemChangeType(
     return { data: { id }, error: null };
   }
 
-  await discardChangeOrderDraft(client, affected.data, companyId);
+  // Create the replacement Draft BEFORE destroying the current one, so a failure
+  // in creation or the ref swap leaves the affected row still pointing at a valid
+  // (undeleted) draft instead of a dangling reference. The old draft is discarded
+  // only after the swap succeeds (worst case on a late failure is an orphaned
+  // draft, never a dangling ref). Capture the old refs first.
+  const previousDraft = {
+    draftMakeMethodId: affected.data.draftMakeMethodId,
+    newItemId: affected.data.newItemId
+  };
 
   const draft = await createChangeOrderDraftMethod(client, {
     changeOrderId: affected.data.changeOrderId,
@@ -1030,6 +1038,9 @@ export async function updateChangeOrderAffectedItemChangeType(
     .eq("id", id)
     .eq("companyId", companyId);
   if (updated.error) return { data: null, error: updated.error };
+
+  // Swap succeeded — now safe to discard the superseded draft.
+  await discardChangeOrderDraft(client, previousDraft, companyId);
   return { data: { id }, error: null };
 }
 
