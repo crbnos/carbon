@@ -48,7 +48,11 @@ serve(async (req: Request) => {
 
     const client = await requirePermissions(req, companyId, userId, { update: "production" });
 
-    const provider = new KyselyMasterDataProvider(db, client, companyId);
+    const provider = new KyselyMasterDataProvider(db, client, companyId, {
+      // Batch mode: share the company's static master data (processes, work
+      // centers, qualifications, shifts) across all jobs in this invocation
+      cacheCompanyData: batch.length > 1,
+    });
 
     // Jobs run sequentially IN ORDER so earlier (higher-priority) jobs claim
     // capacity first; each engine run sees the previous runs' reservations

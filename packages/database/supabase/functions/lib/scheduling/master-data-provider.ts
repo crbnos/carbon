@@ -145,14 +145,39 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
   private client: SupabaseClient<Database>;
   private companyId: string;
 
+  /**
+   * Batch mode: when several jobs are scheduled in one invocation, the
+   * company's STATIC master data (processes, work centers, qualifications,
+   * shift windows, dispatch policies) is identical for every job — cache it
+   * on first read instead of re-querying per job. Job-scoped reads
+   * (operations, dependencies) and live reservations are NEVER cached:
+   * reservations must stay DB-fresh so each job in the batch sees the
+   * previous jobs' just-persisted placements.
+   */
+  private companyCache: Map<string, Promise<unknown>> | null = null;
+
   constructor(
     db: Kysely<DB>,
     client: SupabaseClient<Database>,
-    companyId: string
+    companyId: string,
+    options?: { cacheCompanyData?: boolean }
   ) {
     this.db = db;
     this.client = client;
     this.companyId = companyId;
+    if (options?.cacheCompanyData) {
+      this.companyCache = new Map();
+    }
+  }
+
+  private cached<T>(key: string, load: () => Promise<T>): Promise<T> {
+    if (!this.companyCache) return load();
+    let hit = this.companyCache.get(key);
+    if (!hit) {
+      hit = load();
+      this.companyCache.set(key, hit);
+    }
+    return hit as Promise<T>;
   }
 
   async getJob(jobId: string): Promise<Job | undefined> {
@@ -293,6 +318,12 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
   }
 
   async getProcessesWithWorkCenters(): Promise<ProcessWorkCenters[]> {
+    return this.cached("processesWithWorkCenters", () =>
+      this.loadProcessesWithWorkCenters()
+    );
+  }
+
+  private async loadProcessesWithWorkCenters(): Promise<ProcessWorkCenters[]> {
     return await this.db
       .selectFrom("processes")
       .select(["id", "workCenters"])
@@ -301,6 +332,14 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
   }
 
   async getActiveWorkCenters(
+    locationId: string
+  ): Promise<ActiveWorkCenter[]> {
+    return this.cached(`activeWorkCenters:${locationId}`, () =>
+      this.loadActiveWorkCenters(locationId)
+    );
+  }
+
+  private async loadActiveWorkCenters(
     locationId: string
   ): Promise<ActiveWorkCenter[]> {
     return await this.db
@@ -375,6 +414,12 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
   }
 
   async getSchedulingPolicies(): Promise<SchedulingPolicyRow[]> {
+    return this.cached("schedulingPolicies", () =>
+      this.loadSchedulingPolicies()
+    );
+  }
+
+  private async loadSchedulingPolicies(): Promise<SchedulingPolicyRow[]> {
     const rows = await this.db
       .selectFrom("schedulingPolicy")
       .select(["workCenterId", "dispatchRule"])
@@ -388,6 +433,15 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
   }
 
   async getProcessRequirements(
+    processIds: string[]
+  ): Promise<ProcessRequirementRow[]> {
+    return this.cached(
+      `processRequirements:${[...processIds].sort().join(",")}`,
+      () => this.loadProcessRequirements(processIds)
+    );
+  }
+
+  private async loadProcessRequirements(
     processIds: string[]
   ): Promise<ProcessRequirementRow[]> {
     if (processIds.length === 0) {
@@ -418,6 +472,15 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
   async getQualifiedEmployees(
     abilityIds: string[]
   ): Promise<QualifiedEmployeeRow[]> {
+    return this.cached(
+      `qualifiedEmployees:${[...abilityIds].sort().join(",")}`,
+      () => this.loadQualifiedEmployees(abilityIds)
+    );
+  }
+
+  private async loadQualifiedEmployees(
+    abilityIds: string[]
+  ): Promise<QualifiedEmployeeRow[]> {
     if (abilityIds.length === 0) {
       return [];
     }
@@ -445,6 +508,15 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
   }
 
   async getEmployeeShiftWindows(
+    employeeIds: string[]
+  ): Promise<EmployeeShiftRow[]> {
+    return this.cached(
+      `employeeShiftWindows:${[...employeeIds].sort().join(",")}`,
+      () => this.loadEmployeeShiftWindows(employeeIds)
+    );
+  }
+
+  private async loadEmployeeShiftWindows(
     employeeIds: string[]
   ): Promise<EmployeeShiftRow[]> {
     if (employeeIds.length === 0) {
