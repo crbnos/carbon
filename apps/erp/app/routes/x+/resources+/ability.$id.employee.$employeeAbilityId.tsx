@@ -98,7 +98,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   await notifyScheduleInputsChanged(
     companyId,
     "ability",
-    "Operator qualification updated"
+    "Operator qualification updated",
+    abilityId
   );
 
   throw redirect(

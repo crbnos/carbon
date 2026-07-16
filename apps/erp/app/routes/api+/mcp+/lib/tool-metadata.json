@@ -1,5 +1,5 @@
 {
-  "generated": "2026-07-16T10:27:12.963Z",
+  "generated": "2026-07-16T10:37:31.949Z",
   "totalTools": 1344,
   "modules": 15,
   "tools": [
@@ -20458,11 +20458,12 @@
       "module": "production",
       "classification": "WRITE",
       "description": "notify schedule inputs changed",
-      "paramCount": 2,
+      "paramCount": 3,
       "serviceParams": [
         "companyId",
         "kind",
-        "reason"
+        "reason",
+        "entityId"
       ],
       "injectAuth": [
         "companyId"
@@ -20472,6 +20473,9 @@
         "properties": {
           "kind": {},
           "reason": {
+            "type": "string"
+          },
+          "entityId": {
             "type": "string"
           }
         },

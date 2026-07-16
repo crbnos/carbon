@@ -15,10 +15,11 @@ const WAVE_BATCH_SIZE = 500;
  * When a scheduling input changes (shift assignment, qualification, work
  * center, location timezone), stamp the company's active jobs as
  * schedule-outdated with the reason. The boards surface the reason
- * immediately; nothing is recomputed here. v1 scopes the affected set to the
- * whole company — precise per-kind scoping (only jobs touching the changed
- * ability's process, etc.) is a later refinement; over-marking is safe
- * because the wave replans in one consistent pass.
+ * immediately; nothing is recomputed here. The affected set is scoped per
+ * change kind (see compute-affected-jobs) so e.g. a qualification change in
+ * a company with no gated operations stamps nothing and no wave work runs;
+ * kinds that genuinely touch everything (location timezone, reorder) stamp
+ * company-wide.
  */
 export const markScheduleStaleFunction = inngest.createFunction(
   {
@@ -28,24 +29,90 @@ export const markScheduleStaleFunction = inngest.createFunction(
   },
   { event: "carbon/schedule.inputs.changed" },
   async ({ event, step }) => {
-    const { companyId, reason } = event.data;
+    const { companyId, kind, reason, entityId } = event.data;
     const serviceRole = getCarbonServiceRole();
 
-    return await step.run("stamp-active-jobs", async () => {
-      const result = await serviceRole
+    // Which jobs does this change actually touch?
+    // - ability (with id)      -> jobs with unfinished ops on THAT ability's process
+    // - ability/shift/employee-shift (no id) -> jobs with unfinished ops on ANY
+    //   ability-gated process (people-availability changes only matter to gated work;
+    //   a company with zero gated ops is untouched)
+    // - work-center (with id)  -> jobs with unfinished ops assigned to that work center
+    // - location/reorder       -> everything (timezone/order changes affect all placements)
+    const affectedJobIds = await step.run("compute-affected-jobs", async () => {
+      const gatedKinds = ["ability", "shift", "employee-shift"];
+
+      let processIds: string[] | null = null;
+      if (kind === "ability" && entityId) {
+        const ability = await serviceRole
+          .from("ability")
+          .select("processId")
+          .eq("id", entityId)
+          .eq("companyId", companyId)
+          .maybeSingle();
+        processIds = ability.data?.processId ? [ability.data.processId] : [];
+      } else if (gatedKinds.includes(kind)) {
+        const gated = await serviceRole
+          .from("process")
+          .select("id")
+          .eq("companyId", companyId)
+          .eq("requiresAbility", true);
+        processIds = (gated.data ?? []).map((p) => p.id);
+      }
+
+      if (processIds !== null || (kind === "work-center" && entityId)) {
+        if (processIds !== null && processIds.length === 0) {
+          return []; // nothing gated -> nothing affected
+        }
+        const ops = await fetchAllFromTable<{ jobId: string }>(
+          serviceRole,
+          "jobOperation",
+          "jobId",
+          (query) => {
+            const scoped = query
+              .eq("companyId", companyId)
+              .not("status", "in", '("Done","Canceled")');
+            return processIds !== null
+              ? scoped.in("processId", processIds)
+              : scoped.eq("workCenterId", entityId);
+          }
+        );
+        if (ops.error) {
+          throw new Error(
+            `Failed to compute affected jobs: ${ops.error.message}`
+          );
+        }
+        return [...new Set((ops.data ?? []).map((o) => o.jobId))];
+      }
+
+      return null; // company-wide (location, reorder, or no way to scope)
+    });
+
+    return await step.run("stamp-affected-jobs", async () => {
+      if (affectedJobIds !== null && affectedJobIds.length === 0) {
+        return { stamped: 0, scope: "none" };
+      }
+
+      let update = serviceRole
         .from("job")
         .update({
           scheduleOutdatedReason: reason,
           scheduleOutdatedAt: new Date().toISOString()
         })
         .eq("companyId", companyId)
-        .in("status", [...activeJobStatuses])
-        .select("id");
+        .in("status", [...activeJobStatuses]);
+      if (affectedJobIds !== null) {
+        update = update.in("id", affectedJobIds);
+      }
+      const result = await update.select("id");
 
       if (result.error) {
         throw new Error(`Failed to stamp jobs: ${result.error.message}`);
       }
-      return { stamped: result.data?.length ?? 0 };
+      return {
+        stamped: result.data?.length ?? 0,
+        scope: affectedJobIds === null ? "company" : "scoped"
+      };
     });
   }
 );
@@ -130,13 +197,21 @@ export const scheduleReplanWaveFunction = inngest.createFunction(
       }
     });
 
+    // Batch mode: one edge-function invocation schedules a CHUNK of jobs in
+    // order — the per-call HTTP overhead is paid once per chunk, not per job
+    const INVOKE_CHUNK_SIZE = 25;
+    const chunks: string[][] = [];
+    for (let i = 0; i < staleJobs.length; i += INVOKE_CHUNK_SIZE) {
+      chunks.push(staleJobs.slice(i, i + INVOKE_CHUNK_SIZE));
+    }
+
     let rescheduled = 0;
     let failed = 0;
-    for (const jobId of staleJobs) {
-      const ok = await step.run(`replan-${jobId}`, async () => {
+    for (const [index, chunk] of chunks.entries()) {
+      const ok = await step.run(`replan-chunk-${index}`, async () => {
         const { error } = await serviceRole.functions.invoke("schedule", {
           body: {
-            jobId,
+            jobIds: chunk,
             companyId,
             userId: "system",
             mode: "reschedule",
@@ -144,9 +219,10 @@ export const scheduleReplanWaveFunction = inngest.createFunction(
           }
         });
         if (error) {
-          log.error("Replan wave failed for job", {
-            jobId,
+          log.error("Replan wave chunk failed", {
             companyId,
+            chunkIndex: index,
+            jobIds: chunk,
             error: error.message ?? String(error)
           });
           return false;
@@ -154,12 +230,12 @@ export const scheduleReplanWaveFunction = inngest.createFunction(
         await serviceRole
           .from("job")
           .update({ scheduleOutdatedReason: null, scheduleOutdatedAt: null })
-          .eq("id", jobId)
+          .in("id", chunk)
           .eq("companyId", companyId);
         return true;
       });
-      if (ok) rescheduled++;
-      else failed++;
+      if (ok) rescheduled += chunk.length;
+      else failed += chunk.length;
     }
 
     if (remaining > 0) {

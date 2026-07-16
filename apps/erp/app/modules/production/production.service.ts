@@ -3898,10 +3898,16 @@ export async function notifyScheduleInputsChanged(
     | "work-center"
     | "location"
     | "reorder",
-  reason: string
+  reason: string,
+  entityId?: string
 ) {
   const { trigger } = await import("@carbon/jobs");
-  await trigger("schedule-inputs-changed", { companyId, kind, reason });
+  await trigger("schedule-inputs-changed", {
+    companyId,
+    kind,
+    reason,
+    entityId
+  });
 }
 
 export async function triggerJobSchedule(

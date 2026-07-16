@@ -14,13 +14,20 @@ import { requirePermissions } from "../lib/supabase.ts";
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
 
-const payloadValidator = z.object({
-  jobId: z.string(),
-  companyId: z.string(),
-  userId: z.string(),
-  mode: z.enum(["initial", "reschedule"]).default("initial"),
-  direction: z.enum(["backward", "forward"]).default("backward"),
-});
+const payloadValidator = z
+  .object({
+    jobId: z.string().optional(),
+    // Batch mode: schedule several jobs in ONE invocation (in array order) —
+    // saves the per-call HTTP overhead when a replan wave rebuilds a company
+    jobIds: z.array(z.string()).max(50).optional(),
+    companyId: z.string(),
+    userId: z.string(),
+    mode: z.enum(["initial", "reschedule"]).default("initial"),
+    direction: z.enum(["backward", "forward"]).default("backward"),
+  })
+  .refine((p) => p.jobId || (p.jobIds && p.jobIds.length > 0), {
+    message: "jobId or jobIds is required",
+  });
 
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -30,39 +37,51 @@ serve(async (req: Request) => {
   try {
     const payload = await req.json();
     const validatedPayload = payloadValidator.parse(payload);
-    const { jobId, companyId, userId, mode, direction } = validatedPayload;
+    const { jobId, jobIds, companyId, userId, mode, direction } =
+      validatedPayload;
 
-    console.info(`🔰 Starting ${mode} scheduling for job ${jobId}`);
+    const batch = jobIds ?? [jobId as string];
+    console.info(
+      `🔰 Starting ${mode} scheduling for ${batch.length} job(s)`
+    );
     console.info(`📋 Direction: ${direction}`);
 
     const client = await requirePermissions(req, companyId, userId, { update: "production" });
 
     const provider = new KyselyMasterDataProvider(db, client, companyId);
 
-    const engine = new SchedulingEngine({
-      client,
-      db,
-      provider,
-      jobId,
-      companyId,
-      userId,
-      mode: mode as SchedulingMode,
-      direction: direction as SchedulingDirection,
-    });
-
-    const result = await engine.run();
+    // Jobs run sequentially IN ORDER so earlier (higher-priority) jobs claim
+    // capacity first; each engine run sees the previous runs' reservations
+    let result;
+    const batchResults: { jobId: string; conflictsDetected: number }[] = [];
+    for (const id of batch) {
+      const engine = new SchedulingEngine({
+        client,
+        db,
+        provider,
+        jobId: id,
+        companyId,
+        userId,
+        mode: mode as SchedulingMode,
+        direction: direction as SchedulingDirection,
+      });
+      result = await engine.run();
+      batchResults.push({
+        jobId: id,
+        conflictsDetected: result.conflictsDetected,
+      });
+    }
 
     console.info(`✅ Scheduling complete:`);
-    console.info(`   Operations scheduled: ${result.operationsScheduled}`);
-    console.info(`   Conflicts detected: ${result.conflictsDetected}`);
+    console.info(`   Jobs scheduled: ${batchResults.length}`);
     console.info(
-      `   Work centers affected: ${result.workCentersAffected.length}`
+      `   Conflicts detected: ${batchResults.reduce((s, r) => s + r.conflictsDetected, 0)}`
     );
-    console.info(`   Assembly depth: ${result.assemblyDepth}`);
 
     return new Response(
       JSON.stringify({
         ...result,
+        batch: batchResults,
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

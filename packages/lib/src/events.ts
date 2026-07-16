@@ -246,6 +246,8 @@ export type Events = {
         | "location"
         | "reorder";
       reason: string;
+      /** The changed record (abilityId, workCenterId, ...) for precise scoping */
+      entityId?: string;
     };
   };
 
