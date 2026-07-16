@@ -1,4 +1,4 @@
-import { credit, debit } from "@carbon/utils";
+import { credit, debit, toStoredAmount } from "@carbon/utils";
 
 /**
  * Gain/(loss) on disposal of a fixed asset = sale proceeds − net book value
@@ -26,6 +26,61 @@ export function computeDisposalGainLoss(
         ? debit("expense", -gainLoss)
         : 0;
   return { gainLoss, disposalStoredAmount };
+}
+
+export type AcquisitionLineRole =
+  | "asset"
+  | "accumulatedDepreciation"
+  | "offset";
+
+export type AcquisitionLine = {
+  role: AcquisitionLineRole;
+  description: string;
+  /** Signed stored amount (debit > 0, credit < 0), ready for `journalLine.amount`. */
+  amount: number;
+};
+
+/**
+ * GL lines for bringing a fixed asset onto the books at registration.
+ *
+ * Normal case (no prior depreciation) — two lines:
+ *   Dr  assetAccountId    acquisitionCost   (capitalize at gross cost)
+ *       Cr  offsetAccountId   acquisitionCost   (owner equity)
+ *
+ * Mid-life capitalization (`accumulatedDepreciation > 0`) — three lines, so the
+ * GL asset/contra balances match the subledger's net book value instead of
+ * overstating the asset at gross with the subledger starting at NBV:
+ *   Dr  assetAccountId                     acquisitionCost           (gross cost)
+ *       Cr  accumulatedDepreciationAccountId   accumulatedDepreciation   (opening contra)
+ *       Cr  offsetAccountId                    nbv (= cost − accum dep)  (owner equity)
+ *
+ * Debits (cost) always equal credits (accum dep + nbv), so the entry balances.
+ */
+export function acquisitionLines(
+  acquisitionCost: number,
+  accumulatedDepreciation = 0
+): AcquisitionLine[] {
+  const nbv = acquisitionCost - accumulatedDepreciation;
+  const lines: AcquisitionLine[] = [
+    {
+      role: "asset",
+      description: "Capitalize fixed asset at cost",
+      amount: toStoredAmount(acquisitionCost, 0, "Asset")
+    }
+  ];
+  if (accumulatedDepreciation > 0) {
+    lines.push({
+      role: "accumulatedDepreciation",
+      description: "Opening accumulated depreciation",
+      amount: toStoredAmount(0, accumulatedDepreciation, "Asset")
+    });
+  }
+  lines.push({
+    role: "offset",
+    description: "Direct asset registration (owner equity)",
+    amount: toStoredAmount(0, nbv, "Equity")
+  });
+  return lines;
 }
 
 export const macrsPropertyClasses = [

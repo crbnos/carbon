@@ -64,6 +64,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const registration = validation.data;
 
   const companySettings = await getCompanySettings(client, companyId);
+  if (companySettings.error) {
+    throw redirect(
+      path.to.fixedAsset(fixedAssetId),
+      await flash(
+        request,
+        error(companySettings.error, "Failed to load company settings")
+      )
+    );
+  }
   const accountingEnabled =
     (companySettings.data as { accountingEnabled?: boolean } | null)
       ?.accountingEnabled ?? false;
@@ -77,7 +86,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         client
           .from("fixedAsset")
           .select(
-            "fixedAssetId, locationId, fixedAssetClassId, fixedAssetClass:fixedAssetClassId(assetAccountId)"
+            "fixedAssetId, locationId, fixedAssetClassId, fixedAssetClass:fixedAssetClassId(assetAccountId, accumulatedDepreciationAccountId)"
           )
           .eq("id", fixedAssetId)
           .single(),
@@ -110,13 +119,30 @@ export async function action({ request, params }: ActionFunctionArgs) {
         )
       );
     }
+    if (dimensionsResult.error) {
+      throw redirect(
+        path.to.fixedAsset(fixedAssetId),
+        await flash(
+          request,
+          error(dimensionsResult.error, "Failed to resolve dimensions")
+        )
+      );
+    }
 
-    const assetAccountId = (
-      asset.data.fixedAssetClass as { assetAccountId: string } | null
-    )?.assetAccountId;
+    const assetClass = asset.data.fixedAssetClass as {
+      assetAccountId: string;
+      accumulatedDepreciationAccountId: string;
+    } | null;
+    const assetAccountId = assetClass?.assetAccountId;
+    const accumulatedDepreciationAccountId =
+      assetClass?.accumulatedDepreciationAccountId;
     const offsetAccountId = defaults.data?.retainedEarningsAccount;
 
-    if (!assetAccountId || !offsetAccountId) {
+    if (
+      !assetAccountId ||
+      !accumulatedDepreciationAccountId ||
+      !offsetAccountId
+    ) {
       throw redirect(
         path.to.fixedAsset(fixedAssetId),
         await flash(
@@ -144,6 +170,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         locationId: asset.data.locationId,
         fixedAssetClassId: asset.data.fixedAssetClassId,
         assetAccountId,
+        accumulatedDepreciationAccountId,
         offsetAccountId,
         accountingPeriodId: accountingPeriod.data,
         locationDimensionId,

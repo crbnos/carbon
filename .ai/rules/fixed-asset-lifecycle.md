@@ -100,12 +100,22 @@ enum value (CHECK: only Fixed Asset lines have non-NULL `assetId`). The
 1. Manual: create asset (Draft), then `$fixedAssetId.register` action with
    `fixedAssetRegisterValidator`. When `companySettings.accountingEnabled`, the
    route posts an acquisition journal via `postAssetRegistration()` inside one
-   Kysely transaction — **Debit `assetAccountId` / Credit
-   `accountDefault.retainedEarningsAccount`** (owner equity) at cost, `sourceType`
-   `'Manual'`, description `Asset Registration: <readableId>` — and only then
-   flips the asset to `Active` (journal first, so no capitalized asset exists
-   without a GL entry; the whole transaction rolls back on failure). With
-   accounting disabled it is a bare status flip (no journal).
+   Kysely transaction (`sourceType` `'Manual'`, description
+   `Asset Registration: <readableId>`) and only then flips the asset to `Active`
+   (journal first, so no capitalized asset exists without a GL entry; the whole
+   transaction rolls back on failure). The lines come from `acquisitionLines()`
+   (`accounting.utils.ts`):
+   - **No prior depreciation** (`accumulatedDepreciation = 0`) — two lines:
+     **Debit `assetAccountId`** (gross cost) / **Credit
+     `accountDefault.retainedEarningsAccount`** (owner equity) at cost.
+   - **Mid-life capitalization** (`accumulatedDepreciation > 0`) — three lines,
+     so the GL asset/contra balances match the subledger's net book value instead
+     of overstating the asset at gross: **Debit `assetAccountId`** (gross cost) /
+     **Credit `fixedAssetClass.accumulatedDepreciationAccountId`** (opening accum
+     depreciation) / **Credit `retainedEarningsAccount`** for NBV only
+     (`cost − accumulatedDepreciation`).
+
+   With accounting disabled it is a bare status flip (no journal).
 2. Via posting: `post-receipt` / `post-purchase-invoice` process Fixed Asset PO
    lines, increment `acquisitionCost`, and post Debit `assetAccountId` / Credit
    payables.

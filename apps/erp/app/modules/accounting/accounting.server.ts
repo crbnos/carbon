@@ -1,6 +1,7 @@
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import { toStoredAmount } from "@carbon/utils";
 import { interpolateSequenceDate } from "~/utils/string";
+import { acquisitionLines } from "./accounting.utils";
 
 async function getNextSequence(
   trx: KyselyTx,
@@ -203,6 +204,7 @@ export async function postDisposal(
         updatedBy: userId
       })
       .where("id", "=", fixedAssetId)
+      .where("companyId", "=", companyId)
       .execute();
   });
 }
@@ -221,8 +223,11 @@ export async function postAssetRegistration(
     locationId: string | null;
     fixedAssetClassId: string;
     assetAccountId: string;
+    // Contra-asset account credited with any opening accumulated depreciation
+    // when the asset is capitalized mid-life (from the asset class).
+    accumulatedDepreciationAccountId: string;
     // Equity offset for a direct (non-purchase) registration — owner equity /
-    // retained earnings. Brings the asset onto the books at cost.
+    // retained earnings. Brings the asset onto the books at NBV.
     offsetAccountId: string;
     accountingPeriodId: string;
     locationDimensionId: string | undefined;
@@ -238,6 +243,7 @@ export async function postAssetRegistration(
     locationId,
     fixedAssetClassId,
     assetAccountId,
+    accumulatedDepreciationAccountId,
     offsetAccountId,
     accountingPeriodId,
     locationDimensionId,
@@ -246,15 +252,17 @@ export async function postAssetRegistration(
     userId
   } = args;
 
-  const { acquisitionCost, acquisitionDate } = registration;
+  const { acquisitionCost, acquisitionDate, accumulatedDepreciation } =
+    registration;
   const now = new Date().toISOString();
 
   return db.transaction().execute(async (trx) => {
     // Post the acquisition journal FIRST, then flip the asset to Active — so a
     // capitalized asset can never exist without its GL entry (if the journal
     // fails the whole transaction rolls back and the asset stays Draft).
-    //   Dr  assetAccountId    acquisitionCost   (capitalize the asset)
-    //       Cr  offsetAccountId   acquisitionCost   (owner equity)
+    //   Dr  assetAccountId                     acquisitionCost           (capitalize at gross cost)
+    //       Cr  accumulatedDepreciationAccountId   accumulatedDepreciation   (opening contra, mid-life only)
+    //       Cr  offsetAccountId                    nbv                       (owner equity)
     const journalEntryId = await getNextSequence(
       trx,
       "journalEntry",
@@ -280,24 +288,23 @@ export async function postAssetRegistration(
 
     const journalLineResults = await trx
       .insertInto("journalLine")
-      .values([
-        {
-          journalId: journal.id,
-          accountId: assetAccountId,
-          description: "Capitalize fixed asset at cost",
-          amount: toStoredAmount(acquisitionCost, 0, "Asset"),
-          journalLineReference: crypto.randomUUID(),
-          companyId
-        },
-        {
-          journalId: journal.id,
-          accountId: offsetAccountId,
-          description: "Direct asset registration (owner equity)",
-          amount: toStoredAmount(0, acquisitionCost, "Equity"),
-          journalLineReference: crypto.randomUUID(),
-          companyId
-        }
-      ])
+      .values(
+        acquisitionLines(acquisitionCost, accumulatedDepreciation).map(
+          (line) => ({
+            journalId: journal.id,
+            accountId:
+              line.role === "asset"
+                ? assetAccountId
+                : line.role === "accumulatedDepreciation"
+                  ? accumulatedDepreciationAccountId
+                  : offsetAccountId,
+            description: line.description,
+            amount: line.amount,
+            journalLineReference: crypto.randomUUID(),
+            companyId
+          })
+        )
+      )
       .returning(["id"])
       .execute();
 
@@ -341,6 +348,7 @@ export async function postAssetRegistration(
       })
       .where("id", "=", fixedAssetId)
       .where("status", "=", "Draft")
+      .where("companyId", "=", companyId)
       .executeTakeFirst();
 
     if (!updateResult.numUpdatedRows) {

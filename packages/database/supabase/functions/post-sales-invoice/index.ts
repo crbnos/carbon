@@ -594,6 +594,7 @@ serve(async (req: Request) => {
                       "locationId, fixedAssetClassId, fixedAssetClass:fixedAssetClassId(id, writeOffAccountId, disposalAccountId)"
                     )
                     .eq("id", invoiceLine.assetId)
+                    .eq("companyId", companyId)
                     .single();
 
                   if (assetRecord.error)
@@ -603,20 +604,25 @@ serve(async (req: Request) => {
                   const writeOffAccountId = assetClass.writeOffAccountId;
                   const disposalAccountId = assetClass.disposalAccountId;
 
-                  // NBV was recorded on the disposal row at shipment. Fall back
-                  // to proceeds (→ zero gain/loss) if the row is somehow missing.
+                  // NBV was recorded on the disposal row at shipment. The
+                  // shipment must have created it; if it is missing the ledger
+                  // would be left unbalanced, so abort rather than guess.
                   const disposal = await client
                     .from("fixedAssetDisposal")
                     .select("id, netBookValueAtDisposal")
                     .eq("fixedAssetId", invoiceLine.assetId)
+                    .eq("companyId", companyId)
                     .order("createdAt", { ascending: false })
                     .limit(1)
                     .single();
 
-                  const nbv =
-                    !disposal.error && disposal.data
-                      ? Number(disposal.data.netBookValueAtDisposal)
-                      : saleProceeds;
+                  if (disposal.error || !disposal.data) {
+                    throw new Error(
+                      `No disposal record found for asset ${invoiceLine.assetId} — shipment must create the disposal record before invoice posting`
+                    );
+                  }
+
+                  const nbv = Number(disposal.data.netBookValueAtDisposal);
                   const gainLoss = saleProceeds - nbv;
 
                   const arJournalLineReference = nanoid();
@@ -701,15 +707,14 @@ serve(async (req: Request) => {
                   }
 
                   // Update fixedAssetDisposal with proceeds + final gain/loss.
-                  if (!disposal.error && disposal.data) {
-                    await client
-                      .from("fixedAssetDisposal")
-                      .update({
-                        saleProceeds,
-                        gainLoss,
-                      })
-                      .eq("id", disposal.data.id);
-                  }
+                  await client
+                    .from("fixedAssetDisposal")
+                    .update({
+                      saleProceeds,
+                      gainLoss,
+                    })
+                    .eq("id", disposal.data.id)
+                    .eq("companyId", companyId);
 
                   await client
                     .from("fixedAsset")
@@ -717,7 +722,8 @@ serve(async (req: Request) => {
                       saleProceeds,
                       updatedBy: userId,
                     })
-                    .eq("id", invoiceLine.assetId);
+                    .eq("id", invoiceLine.assetId)
+                    .eq("companyId", companyId);
                 } else {
                   // Direct invoice (no prior shipment) — combined single-step
                   // disposal: remove the asset + its accumulated depreciation,
@@ -729,6 +735,7 @@ serve(async (req: Request) => {
                       "id, status, acquisitionCost, accumulatedDepreciation, locationId, fixedAssetClass:fixedAssetClassId(id, assetAccountId, accumulatedDepreciationAccountId, disposalAccountId)"
                     )
                     .eq("id", invoiceLine.assetId)
+                    .eq("companyId", companyId)
                     .single();
 
                   if (assetRecord.error)
@@ -852,7 +859,8 @@ serve(async (req: Request) => {
                       saleProceeds,
                       updatedBy: userId,
                     })
-                    .eq("id", invoiceLine.assetId);
+                    .eq("id", invoiceLine.assetId)
+                    .eq("companyId", companyId);
 
                   await client.from("fixedAssetDisposal").insert({
                     fixedAssetId: invoiceLine.assetId,

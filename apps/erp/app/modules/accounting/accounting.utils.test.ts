@@ -1,5 +1,7 @@
+import { toDisplayCredit, toDisplayDebit } from "@carbon/utils";
 import { describe, expect, it } from "vitest";
 import {
+  acquisitionLines,
   addOneMonth,
   buildDepreciationLines,
   calculateDepreciation,
@@ -12,6 +14,66 @@ import {
   getMonthsElapsed,
   getNextPeriodEnd
 } from "./accounting.utils";
+
+// ---------------------------------------------------------------------------
+// Acquisition (registration opening entry)
+// ---------------------------------------------------------------------------
+
+describe("acquisitionLines", () => {
+  // Map each line's role to the account class its amount is stored against, so
+  // we can assert the entry balances (display debits === display credits).
+  const roleClass = {
+    asset: "Asset",
+    accumulatedDepreciation: "Asset",
+    offset: "Equity"
+  } as const;
+
+  const totals = (lines: ReturnType<typeof acquisitionLines>) =>
+    lines.reduce(
+      (acc, line) => {
+        const cls = roleClass[line.role];
+        acc.debit += toDisplayDebit(line.amount, cls);
+        acc.credit += toDisplayCredit(line.amount, cls);
+        return acc;
+      },
+      { debit: 0, credit: 0 }
+    );
+
+  it("emits the original two-line entry when there is no prior depreciation", () => {
+    const lines = acquisitionLines(100000);
+    expect(lines).toHaveLength(2);
+    // Dr Fixed Asset at gross cost, Cr owner equity at full cost (NBV === cost)
+    expect(lines[0]).toMatchObject({ role: "asset", amount: 100000 });
+    expect(lines[1]).toMatchObject({ role: "offset", amount: 100000 });
+
+    const { debit, credit } = totals(lines);
+    expect(debit).toBe(100000);
+    expect(credit).toBe(100000);
+  });
+
+  it("defaults accumulatedDepreciation to 0 (backward compatible)", () => {
+    expect(acquisitionLines(50000)).toEqual(acquisitionLines(50000, 0));
+  });
+
+  it("emits a three-line entry crediting opening accumulated depreciation", () => {
+    // cost 100k, prior accum dep 40k → NBV 60k
+    const lines = acquisitionLines(100000, 40000);
+    expect(lines).toHaveLength(3);
+    expect(lines[0]).toMatchObject({ role: "asset", amount: 100000 });
+    // credit to a natural-debit (Asset contra) account is stored negative
+    expect(lines[1]).toMatchObject({
+      role: "accumulatedDepreciation",
+      amount: -40000
+    });
+    // owner equity is credited only the net book value, not gross cost
+    expect(lines[2]).toMatchObject({ role: "offset", amount: 60000 });
+
+    const { debit, credit } = totals(lines);
+    // Dr 100k === Cr (40k accum dep + 60k equity)
+    expect(debit).toBe(100000);
+    expect(credit).toBe(100000);
+  });
+});
 
 // ---------------------------------------------------------------------------
 // Disposal gain/loss
