@@ -1,6 +1,6 @@
 {
-  "generated": "2026-07-15T21:08:06.739Z",
-  "totalTools": 1343,
+  "generated": "2026-07-16T08:47:33.743Z",
+  "totalTools": 1344,
   "modules": 15,
   "tools": [
     {
@@ -20450,6 +20450,43 @@
         },
         "required": [
           "forecasts"
+        ]
+      }
+    },
+    {
+      "name": "production_notifyScheduleInputsChanged",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "notify schedule inputs changed",
+      "paramCount": 2,
+      "serviceParams": [
+        "companyId",
+        "kind",
+        "reason"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "ability",
+              "shift",
+              "employee-shift",
+              "work-center",
+              "location"
+            ]
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "reason"
         ]
       }
     },

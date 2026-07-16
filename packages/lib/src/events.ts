@@ -233,6 +233,16 @@ export type Events = {
     };
   };
 
+  // Scheduling inputs changed (shift/qualification/work-center/etc.) —
+  // consumed by the mark + debounced replan-wave functions
+  "carbon/schedule.inputs.changed": {
+    data: {
+      companyId: string;
+      kind: "ability" | "shift" | "employee-shift" | "work-center" | "location";
+      reason: string;
+    };
+  };
+
   // Post transaction (accounting)
   "carbon/post-transaction": {
     data: {

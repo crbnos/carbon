@@ -33,10 +33,12 @@ import {
   auditArchiveFunction,
   cleanupFunction,
   dispatchFunction,
+  markScheduleStaleFunction,
   mrpFunction,
   nightlyReplanFunction,
   notificationDigestFunction,
   notificationPurgeFunction,
+  scheduleReplanWaveFunction,
   updateExchangeRatesFunction,
   weeklyFunction
 } from "./functions/scheduled";
@@ -95,7 +97,9 @@ export const functions = [
   dispatchFunction,
   auditArchiveFunction,
   mrpFunction,
+  markScheduleStaleFunction,
   nightlyReplanFunction,
+  scheduleReplanWaveFunction,
   weeklyFunction,
   updateExchangeRatesFunction,
   notificationDigestFunction,

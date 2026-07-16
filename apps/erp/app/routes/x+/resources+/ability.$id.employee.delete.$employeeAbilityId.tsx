@@ -6,12 +6,13 @@ import type { ActionFunctionArgs } from "react-router";
 import { redirect, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import { useRouteData } from "~/hooks";
+import { notifyScheduleInputsChanged } from "~/modules/production";
 import type { Ability } from "~/modules/resources";
 import { deleteEmployeeAbility } from "~/modules/resources";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     update: "resources"
   });
 
@@ -31,6 +32,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
       )
     );
   }
+
+  await notifyScheduleInputsChanged(
+    companyId,
+    "ability",
+    "Operator qualification removed"
+  );
 
   throw redirect(
     path.to.ability(abilityId),

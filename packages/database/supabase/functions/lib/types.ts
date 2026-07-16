@@ -18970,6 +18970,8 @@ export type Database = {
           releasedDate: string | null
           salesOrderId: string | null
           salesOrderLineId: string | null
+          scheduleOutdatedAt: string | null
+          scheduleOutdatedReason: string | null
           scrapQuantity: number
           secondsToComplete: number | null
           startDate: string | null
@@ -19010,6 +19012,8 @@ export type Database = {
           releasedDate?: string | null
           salesOrderId?: string | null
           salesOrderLineId?: string | null
+          scheduleOutdatedAt?: string | null
+          scheduleOutdatedReason?: string | null
           scrapQuantity?: number
           secondsToComplete?: number | null
           startDate?: string | null
@@ -19050,6 +19054,8 @@ export type Database = {
           releasedDate?: string | null
           salesOrderId?: string | null
           salesOrderLineId?: string | null
+          scheduleOutdatedAt?: string | null
+          scheduleOutdatedReason?: string | null
           scrapQuantity?: number
           secondsToComplete?: number | null
           startDate?: string | null

@@ -6,6 +6,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData } from "react-router";
 import { getShift, shiftValidator, upsertShift } from "~/modules/people";
 import { ShiftForm } from "~/modules/people/ui/Shifts";
+import { notifyScheduleInputsChanged } from "~/modules/production";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
@@ -33,7 +34,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     create: "people"
   });
 
@@ -60,6 +61,8 @@ export async function action({ request }: ActionFunctionArgs) {
       await flash(request, error(createShift.error, "Failed to create shift"))
     );
   }
+
+  await notifyScheduleInputsChanged(companyId, "shift", "Shift hours changed");
 
   throw redirect(
     path.to.shifts,

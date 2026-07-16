@@ -6,6 +6,7 @@ import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect, useNavigate, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
+import { notifyScheduleInputsChanged } from "~/modules/production";
 import type { Ability } from "~/modules/resources";
 import {
   EmployeeAbilityForm,
@@ -61,6 +62,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
       )
     );
   }
+
+  await notifyScheduleInputsChanged(
+    companyId,
+    "ability",
+    "Operator qualification added"
+  );
 
   throw redirect(
     path.to.ability(abilityId),

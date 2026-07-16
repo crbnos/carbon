@@ -12,6 +12,7 @@ import {
   useParams
 } from "react-router";
 import { useRouteData } from "~/hooks";
+import { notifyScheduleInputsChanged } from "~/modules/production";
 import type { Ability } from "~/modules/resources";
 import {
   EmployeeAbilityForm,
@@ -93,6 +94,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
       )
     );
   }
+
+  await notifyScheduleInputsChanged(
+    companyId,
+    "ability",
+    "Operator qualification updated"
+  );
 
   throw redirect(
     path.to.ability(abilityId),

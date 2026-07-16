@@ -3884,6 +3884,20 @@ export async function upsertDemandProjections(
  * Trigger a job scheduling task via Inngest.
  * Supports both initial scheduling and rescheduling.
  */
+/**
+ * Reactive replanning: notify that a scheduling INPUT changed (shift,
+ * qualification, work center, location). Marks the company's active jobs
+ * schedule-outdated immediately and schedules a debounced replan wave.
+ */
+export async function notifyScheduleInputsChanged(
+  companyId: string,
+  kind: "ability" | "shift" | "employee-shift" | "work-center" | "location",
+  reason: string
+) {
+  const { trigger } = await import("@carbon/jobs");
+  await trigger("schedule-inputs-changed", { companyId, kind, reason });
+}
+
 export async function triggerJobSchedule(
   jobId: string,
   companyId: string,

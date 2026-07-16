@@ -4,18 +4,15 @@ import { inngest } from "../../client";
 const ACTIVE_JOB_STATUSES = ["Ready", "In Progress", "Paused"] as const;
 
 /**
- * Nightly replan: re-runs the finite scheduler for every active job.
+ * Nightly replan — NET CHANGE backstop for reactive replanning.
  *
- * Conflict flags (`jobOperation.hasConflict`/`conflictReason`) and capacity
- * reservations are snapshots written at scheduling time — they do NOT react
- * to master-data changes (operator qualifications granted/expiring, shift
- * assignments changing) or to time simply passing. Without this cron, a
- * stale conflict badge sticks to the schedule boards until someone manually
- * re-triggers scheduling for that job.
- *
- * Runs at 01:00 UTC. Within a company, jobs are rescheduled sequentially in
- * due-date order so the most urgent job claims capacity first (matching
- * backward-scheduling semantics).
+ * The debounced replan wave (schedule-inputs-changed.ts) normally reschedules
+ * stale jobs within minutes of a change. This cron is the safety net for
+ * anything the event path missed (direct DB writes, a wave that exhausted
+ * retries): it finds companies that still have schedule-outdated jobs and
+ * emits one `carbon/schedule.inputs.changed` event per company — the wave
+ * function does the actual work, with its usual per-company serialization.
+ * Companies with nothing stale cost nothing.
  */
 export const nightlyReplanFunction = inngest.createFunction(
   { id: "nightly-replan", retries: 2 },
@@ -23,84 +20,37 @@ export const nightlyReplanFunction = inngest.createFunction(
   async ({ step }) => {
     const serviceRole = getCarbonServiceRole();
 
-    const jobsByCompany = await step.run("get-active-jobs", async () => {
-      const result = await serviceRole
-        .from("job")
-        .select("id, companyId")
-        .in("status", [...ACTIVE_JOB_STATUSES])
-        .order("dueDate", { ascending: true })
-        .order("createdAt", { ascending: true });
+    const companies = await step.run(
+      "get-companies-with-stale-jobs",
+      async () => {
+        const result = await serviceRole
+          .from("job")
+          .select("companyId")
+          .in("status", [...ACTIVE_JOB_STATUSES])
+          .not("scheduleOutdatedReason", "is", null)
+          .limit(1000);
 
-      if (result.error) {
-        throw new Error(`Failed to load active jobs: ${result.error.message}`);
-      }
-
-      const byCompany: Record<string, string[]> = {};
-      for (const job of result.data ?? []) {
-        (byCompany[job.companyId] ??= []).push(job.id);
-      }
-      return byCompany;
-    });
-
-    let rescheduled = 0;
-    let failed = 0;
-    let conflicts = 0;
-
-    for (const [companyId, jobIds] of Object.entries(jobsByCompany)) {
-      const companyResult = await step.run(`replan-${companyId}`, async () => {
-        let companyRescheduled = 0;
-        let companyFailed = 0;
-        let companyConflicts = 0;
-
-        for (const jobId of jobIds) {
-          const { data, error } = await serviceRole.functions.invoke(
-            "schedule",
-            {
-              body: {
-                jobId,
-                companyId,
-                userId: "system",
-                mode: "reschedule",
-                direction: "backward"
-              }
-            }
-          );
-
-          if (error) {
-            companyFailed++;
-            console.error(
-              `Nightly replan failed for job ${jobId} (company ${companyId}): ${
-                error.message ?? String(error)
-              }`
-            );
-            continue;
-          }
-
-          companyRescheduled++;
-          companyConflicts += data?.conflictsDetected ?? 0;
+        if (result.error) {
+          throw new Error(`Failed to load stale jobs: ${result.error.message}`);
         }
+        return [...new Set((result.data ?? []).map((j) => j.companyId))];
+      }
+    );
 
-        console.info(
-          `Nightly replan for company ${companyId}: ${companyRescheduled}/${jobIds.length} jobs rescheduled, ${companyConflicts} conflicts, ${companyFailed} failures`
-        );
-
-        return {
-          rescheduled: companyRescheduled,
-          failed: companyFailed,
-          conflicts: companyConflicts
-        };
-      });
-
-      rescheduled += companyResult.rescheduled;
-      failed += companyResult.failed;
-      conflicts += companyResult.conflicts;
+    if (companies.length > 0) {
+      await step.sendEvent(
+        "fan-out-replan-waves",
+        companies.map((companyId) => ({
+          name: "carbon/schedule.inputs.changed" as const,
+          data: {
+            companyId,
+            kind: "location" as const,
+            reason: "Nightly replan (net change)"
+          }
+        }))
+      );
     }
 
-    return {
-      companies: Object.keys(jobsByCompany).length,
-      rescheduled,
-      failed,
-      conflicts
-    };
+    return { companiesWithStaleJobs: companies.length };
   }
 );

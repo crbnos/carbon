@@ -10,6 +10,7 @@ import {
   updateEmployeeJob
 } from "~/modules/people";
 import { PersonJob } from "~/modules/people/ui/Person";
+import { notifyScheduleInputsChanged } from "~/modules/production";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
@@ -61,6 +62,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
       await flash(request, error(updateJob.error, "Failed to update job"))
     );
   }
+
+  await notifyScheduleInputsChanged(
+    companyId,
+    "employee-shift",
+    "Shift assignment changed"
+  );
 
   throw redirect(
     path.to.personJob(personId),
