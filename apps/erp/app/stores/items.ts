@@ -6,6 +6,7 @@ import type { ListItem } from "~/types";
 
 export type Item = ListItem & {
   readableIdWithRevision: string;
+  readableId?: string | null;
   revision?: string | null;
   replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"];
   itemTrackingType: Database["public"]["Enums"]["itemTrackingType"];

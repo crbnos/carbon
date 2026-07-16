@@ -221,7 +221,11 @@ export function TaskItem({
   const integrations = useIntegrations();
   const permissions = usePermissions();
 
-  const { currentStatus, onOperationStatusChange } = useTaskStatus({
+  const {
+    currentStatus,
+    onOperationStatusChange,
+    isDisabled: statusDisabled
+  } = useTaskStatus({
     task,
     type,
     disabled: isDisabled
@@ -287,7 +291,7 @@ export function TaskItem({
       assigneeTable={getTable(type)}
       assigneeId={task.id!}
       assignee={task.assignee ?? undefined}
-      isDisabled={isDisabled}
+      isDisabled={statusDisabled}
       showDragHandle={showDragHandle}
       dragControls={dragControls}
       statusBadge={
@@ -513,7 +517,11 @@ export function IssueTaskStatus({
   onChange?: (status: IssueActionTask["status"]) => void;
   isDisabled?: boolean;
 }) {
-  const { currentStatus, onOperationStatusChange } = useTaskStatus({
+  const {
+    currentStatus,
+    onOperationStatusChange,
+    isDisabled: statusDisabled
+  } = useTaskStatus({
     task,
     type,
     onChange,
@@ -524,7 +532,7 @@ export function IssueTaskStatus({
     <ActionTaskStatusButton
       status={currentStatus as ActionTaskStatus}
       onChange={(next) => onOperationStatusChange(task.id!, next)}
-      isDisabled={isDisabled}
+      isDisabled={statusDisabled}
       className={className}
     />
   );

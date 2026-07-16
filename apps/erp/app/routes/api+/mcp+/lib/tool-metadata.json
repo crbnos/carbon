@@ -1,5 +1,5 @@
 {
-  "generated": "2026-07-16T16:13:02.448Z",
+  "generated": "2026-07-16T16:28:31.759Z",
   "totalTools": 1338,
   "modules": 15,
   "tools": [
@@ -427,7 +427,7 @@
               "null"
             ]
           },
-          "// Balance sheet only: append a computed \"Net Income\" equity line.\n    includeCurrentYearEarnings": {
+          "includeCurrentYearEarnings": {
             "type": "boolean"
           }
         },
@@ -6433,7 +6433,7 @@
             "type": "string"
           },
           "status": {},
-          "// When set, the transition only applies if the row is still in this status.\n    // The `.eq(\"status\", expectedStatus)` makes the read-then-write atomic, so a\n    // concurrent transition can't be clobbered (0 rows matched → `.single()`\n    // errors and the caller surfaces a failure).\n    expectedStatus": {}
+          "expectedStatus": {}
         },
         "required": [
           "id",
@@ -9294,7 +9294,7 @@
                   "null"
                 ]
               },
-              "// Combined counterparty filter (customer OR supplier ids) from the table's\n    // \"Counterparty\" filter, which sources options from both stores.\n    counterpartyIds": {
+              "counterpartyIds": {
                 "type": [
                   "array",
                   "null"
@@ -10252,7 +10252,7 @@
           "revision": {
             "type": "string"
           },
-          "// Change-order draft revisions are created inactive so they don't surface\n    // in item pickers/production until the change order is released. Manual\n    // \"New Revision\" keeps the default (active).\n    active": {
+          "active": {
             "type": "boolean"
           }
         },
@@ -16111,7 +16111,7 @@
           "jobId": {
             "type": "string"
           },
-          "// Optional - if updating an existing job\n    dueDate": {
+          "dueDate": {
             "type": [
               "string",
               "null"
@@ -16125,7 +16125,7 @@
           }
         },
         "required": [
-          "// Optional - if updating an existing job\n    dueDate",
+          "dueDate",
           "deadlineType",
           "locationId"
         ]
@@ -18733,7 +18733,7 @@
       "module": "production",
       "classification": "WRITE",
       "description": "recalculate job requirements",
-      "paramCount": 2,
+      "paramCount": 1,
       "serviceParams": [
         "client",
         "params"
@@ -18747,14 +18747,10 @@
         "properties": {
           "id": {
             "type": "string"
-          },
-          "// job id\n    companyId": {
-            "type": "string"
           }
         },
         "required": [
-          "id",
-          "// job id\n    companyId"
+          "id"
         ]
       }
     },
@@ -18763,7 +18759,7 @@
       "module": "production",
       "classification": "WRITE",
       "description": "recalculate job make method requirements",
-      "paramCount": 2,
+      "paramCount": 1,
       "serviceParams": [
         "client",
         "params"
@@ -18777,14 +18773,10 @@
         "properties": {
           "id": {
             "type": "string"
-          },
-          "// job make method id\n    companyId": {
-            "type": "string"
           }
         },
         "required": [
-          "id",
-          "// job make method id\n    companyId"
+          "id"
         ]
       }
     },
@@ -26531,7 +26523,7 @@
               },
               "status": {},
               "source": {},
-              "// might be needed later for filtering by assignee\n    assignee": {
+              "assignee": {
                 "type": "array",
                 "items": {
                   "type": "string"

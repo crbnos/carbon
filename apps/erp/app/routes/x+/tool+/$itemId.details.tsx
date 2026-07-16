@@ -66,12 +66,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   ]);
   const revisionStatus = revisionLock.revisionStatus;
   const releaseControl = revisionLock.releaseControl;
+  // Exclude CO-owned draft methods — they are edited only inside their Change
+  // Order workspace and must never be selectable on the normal item page.
+  const selectable = makeMethods.data?.filter((m) => !m.changeOrderId) ?? [];
   const makeMethod = requestedMethodId
-    ? (makeMethods.data?.find((m) => m.id === requestedMethodId) ??
-      makeMethods.data?.find((m) => m.status === "Active") ??
-      makeMethods.data?.[0])
-    : (makeMethods.data?.find((m) => m.status === "Active") ??
-      makeMethods.data?.[0]);
+    ? (selectable.find((m) => m.id === requestedMethodId) ??
+      selectable.find((m) => m.status === "Active") ??
+      selectable[0])
+    : (selectable.find((m) => m.status === "Active") ?? selectable[0]);
 
   if (!makeMethod) {
     return {

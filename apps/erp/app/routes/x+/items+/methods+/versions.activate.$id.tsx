@@ -22,6 +22,25 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return { success: false, message: "Invalid operation tool id" };
   }
 
+  // Validate redirect inputs BEFORE mutating: activation switches the live
+  // BOM/BOP, so a missing query param or referrer must fail without having
+  // already flipped the method.
+  if (!methodToReplace) {
+    return {
+      success: false,
+      message: "Method to replace is required"
+    };
+  }
+
+  const redirectPath = requestReferrer(request)?.replace(methodToReplace, id);
+
+  if (!redirectPath) {
+    return {
+      success: false,
+      message: "Failed to redirect to the correct page"
+    };
+  }
+
   const serviceRole = getCarbonServiceRole();
 
   // Release-lock gate: activating a make-method version switches the live
@@ -49,25 +68,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return {
       success: false,
       message: "Failed to activate method version"
-    };
-  }
-
-  if (!methodToReplace) {
-    return {
-      success: false,
-      message: "Method to replace is required"
-    };
-  }
-
-  const redirectPath = requestReferrer(request)?.replace(
-    methodToReplace ?? "",
-    id ?? ""
-  );
-
-  if (!redirectPath) {
-    return {
-      success: false,
-      message: "Failed to redirect to the correct page"
     };
   }
 
