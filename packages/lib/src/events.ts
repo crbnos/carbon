@@ -238,7 +238,13 @@ export type Events = {
   "carbon/schedule.inputs.changed": {
     data: {
       companyId: string;
-      kind: "ability" | "shift" | "employee-shift" | "work-center" | "location";
+      kind:
+        | "ability"
+        | "shift"
+        | "employee-shift"
+        | "work-center"
+        | "location"
+        | "reorder";
       reason: string;
     };
   };

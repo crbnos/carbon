@@ -1,5 +1,5 @@
 {
-  "generated": "2026-07-16T08:47:33.743Z",
+  "generated": "2026-07-16T10:27:12.963Z",
   "totalTools": 1344,
   "modules": 15,
   "tools": [
@@ -20470,16 +20470,7 @@
       "schema": {
         "type": "object",
         "properties": {
-          "kind": {
-            "type": "string",
-            "enum": [
-              "ability",
-              "shift",
-              "employee-shift",
-              "work-center",
-              "location"
-            ]
-          },
+          "kind": {},
           "reason": {
             "type": "string"
           }

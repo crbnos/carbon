@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { getFunctionLogger } from "../logging.ts";
 import type { Kysely } from "kysely";
 import type { DB } from "../database.ts";
 import type { Database } from "../types.ts";
@@ -49,6 +50,8 @@ import {
 } from "./work-center-selector.ts";
 
 const SCHEDULING_HORIZON_DAYS = 365;
+
+const log = getFunctionLogger("schedule");
 
 /**
  * Unified Scheduling Engine
@@ -240,7 +243,7 @@ export class SchedulingEngine {
       this.jobId
     );
     if (!assemblyTree) {
-      console.warn("No assembly tree found for job", this.jobId);
+      log.warning("No assembly tree found for job", { jobId: this.jobId });
       return;
     }
 
@@ -577,7 +580,9 @@ export class SchedulingEngine {
    */
   async selectWorkCenters(): Promise<void> {
     if (!this.workCenterSelector) {
-      console.warn("Work center selector not initialized");
+      log.warning("Work center selector not initialized", {
+        jobId: this.jobId
+      });
       return;
     }
 

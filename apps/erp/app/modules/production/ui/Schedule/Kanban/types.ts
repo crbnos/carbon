@@ -76,6 +76,7 @@ const baseItemValidator = z.object({
   thumbnailPath: z.string().optional(),
   title: z.string(),
   hasConflict: z.boolean().optional(),
+  scheduleOutdatedReason: z.string().nullable().optional(),
   conflictReason: z.string().optional()
 });
 

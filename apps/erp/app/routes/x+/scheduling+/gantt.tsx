@@ -1,4 +1,5 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { activeJobStatuses } from "@carbon/database";
 import {
   Badge,
   ClientOnly,
@@ -56,7 +57,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     .from("job")
     .select("id, jobId, status")
     .eq("companyId", companyId)
-    .in("status", ["Ready", "In Progress", "Paused"])
+    .in("status", [...activeJobStatuses])
     .order("createdAt", { ascending: false })
     .limit(100);
 

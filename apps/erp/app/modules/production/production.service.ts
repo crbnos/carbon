@@ -3891,7 +3891,13 @@ export async function upsertDemandProjections(
  */
 export async function notifyScheduleInputsChanged(
   companyId: string,
-  kind: "ability" | "shift" | "employee-shift" | "work-center" | "location",
+  kind:
+    | "ability"
+    | "shift"
+    | "employee-shift"
+    | "work-center"
+    | "location"
+    | "reorder",
   reason: string
 ) {
   const { trigger } = await import("@carbon/jobs");

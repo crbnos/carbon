@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { activeJobStatuses } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
 import {
   Alert,
@@ -409,7 +410,7 @@ function DeleteWorkCenterModal({
     const { data, error } = await carbon
       .from("jobOperation")
       .select("job(jobId, id, status)")
-      .in("job.status", ["Ready", "In Progress", "Paused"])
+      .in("job.status", [...activeJobStatuses])
       .neq("status", "Done")
       .eq("workCenterId", workCenter.id!)
       .eq("companyId", company?.id);

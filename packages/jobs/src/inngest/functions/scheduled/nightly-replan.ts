@@ -1,7 +1,6 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { activeJobStatuses, fetchAllFromTable } from "@carbon/database";
 import { inngest } from "../../client";
-
-const ACTIVE_JOB_STATUSES = ["Ready", "In Progress", "Paused"] as const;
 
 /**
  * Nightly replan — NET CHANGE backstop for reactive replanning.
@@ -23,12 +22,17 @@ export const nightlyReplanFunction = inngest.createFunction(
     const companies = await step.run(
       "get-companies-with-stale-jobs",
       async () => {
-        const result = await serviceRole
-          .from("job")
-          .select("companyId")
-          .in("status", [...ACTIVE_JOB_STATUSES])
-          .not("scheduleOutdatedReason", "is", null)
-          .limit(1000);
+        // fetchAllFromTable pages past PostgREST's 1000-row cap — a large
+        // stale backlog must not silently skip companies
+        const result = await fetchAllFromTable<{ companyId: string }>(
+          serviceRole,
+          "job",
+          "companyId",
+          (query) =>
+            query
+              .in("status", [...activeJobStatuses])
+              .not("scheduleOutdatedReason", "is", null)
+        );
 
         if (result.error) {
           throw new Error(`Failed to load stale jobs: ${result.error.message}`);

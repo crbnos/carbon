@@ -3,7 +3,10 @@ import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { scheduleJobUpdateValidator } from "~/modules/production/production.models";
-import { triggerJobSchedule } from "~/modules/production/production.service";
+import {
+  notifyScheduleInputsChanged,
+  triggerJobSchedule
+} from "~/modules/production/production.service";
 
 const logger = getLogger("erp", "dates-update");
 
@@ -57,6 +60,14 @@ export async function action({ request }: ActionFunctionArgs) {
   // Trigger background job rescheduling
   try {
     await triggerJobSchedule(validation.data.id, companyId, userId);
+    // Immediate single-job reschedule above gives instant feedback; the
+    // debounced wave then rebuilds the affected jobs coherently in
+    // dueDate -> priority order so the board's card order IS the queue order
+    await notifyScheduleInputsChanged(
+      companyId,
+      "reorder",
+      "Schedule reordered"
+    );
   } catch (rescheduleError) {
     // Log error but don't fail the request - reschedule can retry
     logger.error("Failed to trigger job reschedule", {

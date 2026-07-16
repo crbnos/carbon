@@ -267,6 +267,16 @@ export function JobCard({ item, isOverlay, progressByItemId }: JobCardProps) {
                   </TooltipContent>
                 </Tooltip>
               )}
+              {item.scheduleOutdatedReason && (
+                <Tooltip>
+                  <TooltipTrigger>
+                    <LuTriangleAlert className="h-4 w-4 text-amber-500 flex-shrink-0" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    Schedule outdated — {item.scheduleOutdatedReason}
+                  </TooltipContent>
+                </Tooltip>
+              )}
             </HStack>
             {customer && displaySettings.showCustomer && (
               <span className="text-xs text-muted-foreground line-clamp-1">

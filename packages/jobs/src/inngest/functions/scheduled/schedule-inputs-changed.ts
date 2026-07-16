@@ -1,7 +1,13 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { activeJobStatuses, fetchAllFromTable } from "@carbon/database";
+import { getLogger } from "@carbon/logger";
 import { inngest } from "../../client";
 
-const ACTIVE_JOB_STATUSES = ["Ready", "In Progress", "Paused"] as const;
+const log = getLogger("jobs", "schedule-replan");
+
+// One wave replans at most this many jobs (bounded step count per Inngest
+// run); a remainder chains a follow-up wave via a self-sent event
+const WAVE_BATCH_SIZE = 500;
 
 /**
  * Reactive replanning, part 1 — MARK (immediate, cheap).
@@ -33,7 +39,7 @@ export const markScheduleStaleFunction = inngest.createFunction(
           scheduleOutdatedAt: new Date().toISOString()
         })
         .eq("companyId", companyId)
-        .in("status", [...ACTIVE_JOB_STATUSES])
+        .in("status", [...activeJobStatuses])
         .select("id");
 
       if (result.error) {
@@ -72,22 +78,37 @@ export const scheduleReplanWaveFunction = inngest.createFunction(
     const { companyId } = event.data;
     const serviceRole = getCarbonServiceRole();
 
-    const staleJobs = await step.run("get-stale-jobs", async () => {
-      const result = await serviceRole
-        .from("job")
-        .select("id")
-        .eq("companyId", companyId)
-        .in("status", [...ACTIVE_JOB_STATUSES])
-        .not("scheduleOutdatedReason", "is", null)
-        .order("dueDate", { ascending: true })
-        .order("createdAt", { ascending: true })
-        .limit(500);
+    const { staleJobs, remaining } = await step.run(
+      "get-stale-jobs",
+      async () => {
+        // fetchAllFromTable pages past PostgREST's 1000-row cap so the batch
+        // boundary below is OURS (explicit + logged), never a silent select cap
+        const result = await fetchAllFromTable<{ id: string }>(
+          serviceRole,
+          "job",
+          "id",
+          (query) =>
+            query
+              .eq("companyId", companyId)
+              .in("status", [...activeJobStatuses])
+              .not("scheduleOutdatedReason", "is", null)
+              .order("dueDate", { ascending: true })
+              // job.priority is the planner's manual ordering from the dates
+              // board drag — within the same due date, the top card goes first
+              .order("priority", { ascending: true })
+              .order("createdAt", { ascending: true })
+        );
 
-      if (result.error) {
-        throw new Error(`Failed to load stale jobs: ${result.error.message}`);
+        if (result.error) {
+          throw new Error(`Failed to load stale jobs: ${result.error.message}`);
+        }
+        const ids = (result.data ?? []).map((j) => j.id);
+        return {
+          staleJobs: ids.slice(0, WAVE_BATCH_SIZE),
+          remaining: Math.max(ids.length - WAVE_BATCH_SIZE, 0)
+        };
       }
-      return (result.data ?? []).map((j) => j.id);
-    });
+    );
 
     if (staleJobs.length === 0) {
       return { rescheduled: 0, failed: 0 };
@@ -123,11 +144,11 @@ export const scheduleReplanWaveFunction = inngest.createFunction(
           }
         });
         if (error) {
-          console.error(
-            `Replan wave failed for job ${jobId} (company ${companyId}): ${
-              error.message ?? String(error)
-            }`
-          );
+          log.error("Replan wave failed for job", {
+            jobId,
+            companyId,
+            error: error.message ?? String(error)
+          });
           return false;
         }
         await serviceRole
@@ -141,6 +162,23 @@ export const scheduleReplanWaveFunction = inngest.createFunction(
       else failed++;
     }
 
-    return { rescheduled, failed, total: staleJobs.length };
+    if (remaining > 0) {
+      // Never a silent cap: log the carry-over and chain a follow-up wave
+      // (debounce turns this into the next batch a few minutes later)
+      log.warning("Replan wave batch full — chaining follow-up wave", {
+        companyId,
+        remaining
+      });
+      await step.sendEvent("chain-next-wave", {
+        name: "carbon/schedule.inputs.changed",
+        data: {
+          companyId,
+          kind: "reorder",
+          reason: "Replan wave continuation"
+        }
+      });
+    }
+
+    return { rescheduled, failed, total: staleJobs.length, remaining };
   }
 );

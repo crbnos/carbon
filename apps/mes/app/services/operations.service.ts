@@ -1,4 +1,5 @@
 import type { Database } from "@carbon/database";
+import { activeJobStatuses } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import {
@@ -35,7 +36,7 @@ export async function getOpenJobs(
     )
     .eq("companyId", args.companyId)
     .eq("locationId", args.locationId)
-    .in("status", ["Ready", "In Progress", "Paused"])
+    .in("status", [...activeJobStatuses])
     .order("jobId", { ascending: true });
 }
 

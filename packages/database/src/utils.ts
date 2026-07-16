@@ -6,6 +6,18 @@ import type {
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./types.ts";
 
+/**
+ * Job statuses that participate in scheduling/planning ("open" work).
+ * The DB enum can't express this business subset itself; `satisfies` binds
+ * these values to the enum so a typo or an enum rename is a compile error,
+ * and every consumer imports THIS constant instead of re-hardcoding strings.
+ */
+export const activeJobStatuses = [
+  "Ready",
+  "In Progress",
+  "Paused"
+] as const satisfies readonly Database["public"]["Enums"]["jobStatus"][];
+
 const BATCH_SIZE = 1000;
 
 export type PaginatedResult<T> =

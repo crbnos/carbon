@@ -66481,14 +66481,14 @@ export type Database = {
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["invoiceCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["invoiceCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -71336,6 +71336,7 @@ export type Database = {
           salesOrderId: string
           salesOrderLineId: string
           salesOrderReadableId: string
+          scheduleOutdatedReason: string
           status: Database["public"]["Enums"]["jobStatus"]
           tags: string[]
           thumbnailPath: string

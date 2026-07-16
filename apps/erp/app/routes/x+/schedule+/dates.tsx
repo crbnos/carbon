@@ -423,7 +423,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       laborDuration: 0,
       machineDuration: 0,
       thumbnailPath: job.thumbnailPath,
-      hasConflict: job.hasConflict
+      hasConflict: job.hasConflict,
+      scheduleOutdatedReason: job.scheduleOutdatedReason
     };
   });
 
