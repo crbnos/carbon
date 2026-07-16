@@ -18,7 +18,7 @@ export function SiteLogo() {
       aria-label="Carbon home"
       onClick={() => window.dispatchEvent(new CustomEvent("carbon:home"))}
     >
-      <img src="/carbon-word-light.svg" alt="Carbon" width={99} height={24} className="block" />
+      <img src="/saturn.png" alt="Carbon" width={28} height={28} className="block" />
     </Link>
   );
 }

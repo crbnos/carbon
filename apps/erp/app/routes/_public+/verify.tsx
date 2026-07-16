@@ -143,12 +143,12 @@ export default function VerifyRoute() {
     <>
       <div className="flex justify-center mb-8">
         <img
-          src="/carbon-mark-light.svg"
+          src="/saturn.png"
           alt={t`Carbon Logo`}
           className="w-24 dark:hidden"
         />
         <img
-          src="/carbon-mark-dark.svg"
+          src="/saturn.png"
           alt={t`Carbon Logo`}
           className="w-24 hidden dark:block"
         />

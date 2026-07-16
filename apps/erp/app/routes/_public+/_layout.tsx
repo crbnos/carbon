@@ -9,18 +9,18 @@ export default function PublicRoute() {
       <div className="container relative h-full flex-col items-center justify-center grid lg:max-w-none lg:grid-cols-2 lg:px-0">
         <div className="relative hidden h-full flex-col bg-muted p-10 lg:flex dark:border-r dark:bg-zinc-900 bg-zinc-100">
           <img
-            src="/carbon-word-light.svg"
+            src="/saturn.png"
             alt="Carbon Logo"
             className={cn(
-              "max-w-[200px] mb-3 dark:hidden z-50",
+              "w-24 mb-3 dark:hidden z-50",
               CONTROLLED_ENVIRONMENT && "grayscale"
             )}
           />
           <img
-            src="/carbon-word-dark.svg"
+            src="/saturn.png"
             alt="Carbon Logo"
             className={cn(
-              "max-w-[200px] mb-3 dark:block hidden z-50",
+              "w-24 mb-3 dark:block hidden z-50",
               CONTROLLED_ENVIRONMENT && "grayscale"
             )}
           />

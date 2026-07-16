@@ -119,12 +119,12 @@ export default function Invite() {
       <VStack spacing={4} className="max-w-lg items-center text-center">
         <div className="flex justify-center mb-8">
           <img
-            src="/carbon-mark-light.svg"
+            src="/saturn.png"
             alt={t`Carbon Logo`}
             className="w-24 dark:hidden"
           />
           <img
-            src="/carbon-mark-dark.svg"
+            src="/saturn.png"
             alt={t`Carbon Logo`}
             className="w-24 hidden dark:block"
           />
@@ -156,12 +156,12 @@ export default function Invite() {
           initial={{ opacity: 0, scale: 0.4 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 2, ease: "easeInOut" }}
-          src="/carbon-mark-light.svg"
+          src="/saturn.png"
           alt="Carbon Logo"
           className="w-24 dark:hidden"
         />
         <img
-          src="/carbon-mark-dark.svg"
+          src="/saturn.png"
           alt="Carbon Logo"
           className="w-24 hidden dark:block"
         />

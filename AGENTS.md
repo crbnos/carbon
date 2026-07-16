@@ -5,6 +5,7 @@ Carbon is a manufacturing ERP/MES/QMS. It contains apps for ERP, MES, academy, a
 ## Always
 
 - Check the Task Router below before research or coding; a single task may match multiple rows — read all relevant guides.
+- Always work on the currently checked-out branch. The user manages branch creation, switching, merging, and rebasing; do not perform those operations.
 - Use the closest package/module `AGENTS.md` for local architecture, imports, and validation commands.
 - Follow `.ai/rules/` for subsystem-specific conventions (auto-loaded via `paths:` frontmatter).
 - Read `.ai/lessons.md` before non-trivial changes to avoid known pitfalls.

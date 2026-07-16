@@ -58,14 +58,14 @@ export const links: LinksFunction = () => {
     { href: SonnerStyle, rel: "stylesheet" },
     {
       rel: "icon",
-      type: "image/svg+xml",
-      href: "/carbon-mark-light.svg",
+      type: "image/png",
+      href: "/saturn.png",
       media: "(prefers-color-scheme: light)"
     },
     {
       rel: "icon",
-      type: "image/svg+xml",
-      href: "/carbon-mark-dark.svg",
+      type: "image/png",
+      href: "/saturn.png",
       media: "(prefers-color-scheme: dark)"
     },
     {

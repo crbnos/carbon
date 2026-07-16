@@ -15,13 +15,9 @@ export default function RequestAccessRoute() {
   return (
     <>
       <div className="flex flex-col items-center justify-center">
+        <img src="/saturn.png" alt="Carbon Logo" className="w-24 mb-3" />
         <img
-          src="/carbon-mark-light.svg"
-          alt="Carbon Logo"
-          className="w-24 mb-3"
-        />
-        <img
-          src="/carbon-mark-dark.svg"
+          src="/saturn.png"
           alt="Carbon Logo"
           className="w-24 mb-3 hidden dark:block"
         />

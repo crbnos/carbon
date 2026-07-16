@@ -7,7 +7,7 @@ export function Logo() {
   return (
     <Section className="mt-[32px]">
       <Img
-        src={`${baseUrl}/carbon-word-dark-outline.png`}
+        src={`${baseUrl}/saturn.png`}
         width="auto"
         height="45"
         alt="Carbon"

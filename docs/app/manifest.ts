@@ -11,7 +11,7 @@ export default function manifest(): MetadataRoute.Manifest {
     background_color: "#F5F5F2",
     theme_color: "#F5F5F2",
     icons: [
-      { src: "/carbon-mark-light.svg", sizes: "any", type: "image/svg+xml" }
+      { src: "/saturn.png", sizes: "512x512", type: "image/png" }
     ]
   };
 }

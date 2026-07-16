@@ -179,12 +179,12 @@ export default function AuthorizeRoute() {
       <div className="flex w-[380px] flex-col items-center space-y-6">
         <div className="flex justify-center">
           <img
-            src="/carbon-mark-light.svg"
+            src="/saturn.png"
             alt="Carbon Logo"
             className="w-24 dark:hidden"
           />
           <img
-            src="/carbon-mark-dark.svg"
+            src="/saturn.png"
             alt="Carbon Logo"
             className="hidden w-24 dark:block"
           />

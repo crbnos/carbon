@@ -68,7 +68,7 @@ export function SiteFooter() {
         <div className="flex flex-col justify-between gap-10 lg:flex-row">
           {/* Brand block */}
           <div className="flex flex-col gap-[18px]">
-            <img src="/carbon-word-dark.svg" alt="Carbon" width={116} height={28} className="block" />
+            <img src="/saturn.png" alt="Carbon" width={36} height={36} className="block" />
             <div className="flex items-center gap-4">
               {SOCIAL.map((s) => (
                 <SocialIcon key={s.label} {...s} />

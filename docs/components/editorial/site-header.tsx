@@ -33,7 +33,7 @@ export function SiteHeader() {
       <div className="w-full max-w-360 mx-auto px-5 min-[476px]:px-8 md:px-5 py-[18px] min-[1000px]:py-0 min-[1000px]:pt-[26px] min-[1000px]:pb-[23px] flex items-center justify-between">
         {/* Logo */}
         <Link className="shrink-0 flex items-center gap-2.5 no-underline" aria-label="Home" href="/">
-          <img src="/carbon-mark-light.svg" alt="" width={22} height={22} className="block" />
+          <img src="/saturn.png" alt="" width={22} height={22} className="block" />
           <span className="hidden min-[480px]:inline text-ink-ui text-ed-16 font-semi tracking-[0.16px]">
             Carbon
           </span>

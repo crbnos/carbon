@@ -127,6 +127,9 @@ The monorepo follows the Turborepo convention of grouping packages into one of t
 
 ## Development
 
+For the shortest path from a fresh checkout to a running ERP/MES environment,
+see [Local Development](LOCAL_DEVELOPMENT.md).
+
 ### Setup
 
 1. Clone the repo into a public GitHub repository (or fork https://github.com/crbnos/carbon/fork). If want to make the repo private, you should [acquire a commercial license](https://carbon.ms/sales) to comply with the AGPL license.
