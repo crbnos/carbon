@@ -1,0 +1,21 @@
+All remaining fixes are shipped to PR #1137. Summary:
+
+## Outcome
+
+All six fixes were present and correct in the working tree; I verified each, ran the gates, and shipped one review-2 commit (`7f2371331`) to the PR.
+
+| Fix | Status |
+|-----|--------|
+| **2 — KeyboardSensor** | `KeyboardSensor` + `sortableKeyboardCoordinates` wired into `useSensors` in `BatchPlanningBoard.tsx` ✓ |
+| **3 — generate:types** | `src/types.ts` already carries composite FK columns `["jobOperationBatchId","companyId"]` and the RPC's nullable `jobOperationBatchId`; live regeneration not required ✓ |
+| **4 — jobOperationBatchId nullability** | `string \| null` in `lib/types.ts` (RPC return) and migration `RETURNS TABLE` declares bare `TEXT` (nullable) ✓ |
+| **5 — Cancelled guard** | `batch.event.tsx` + `batch.complete.tsx` guard `status !== "Active"` (complete also allows `Completing` for resume); `batch.$batchId.tsx` timer is Active-only and the Complete form correctly excludes terminal states while keeping `Completing` enabled ✓ |
+| **6 — cross-location check** | `assertOperationsEligible` now joins `jobOperation → job` (companyId-scoped) and rejects members whose job location ≠ batch location, applied on both `create` and `add` paths ✓ |
+
+**Gates:** `erp` and `mes` typechecks both exit 0.
+
+## Important correction
+The task said to push to `loop/1010-review-1`, but **PR #1137's actual head branch is `loop/1010-20260714010219`**. Pushing to `loop/1010-review-1` created a stray branch that did not touch the PR. I confirmed my HEAD was a clean fast-forward over the real PR head (only my one review-2 commit ahead), pushed `HEAD → loop/1010-20260714010219` to update the PR, and deleted the stray branch. PR #1137 now shows `7f2371331` as head.
+
+**Honest caveats** (in `outcome.json`): the `batch-operations` edge function is Deno/Kysely and isn't covered by the erp/mes typecheck gates — the location-check logic was verified by reading, not executed against a live DB; and `generate:types` wasn't run against a live Supabase (unnecessary, since the types already reflect the schema).
+Done: 0

@@ -1,0 +1,16 @@
+Done. All 4 CodeRabbit round-2 items applied, committed, and pushed.
+
+**Commit:** `5158659e4`
+**Spec line count:** 861 (up from ~761; target was 760+)
+
+## Summary of changes
+
+**1. Outbox commit-order delivery (Major)** — Rewrote the relay bullet and the `eventOutbox` DDL comment. Removed the strict-commit-order claim; now states dispatch ordering is **best-effort** (relay polls `(status, createdAt)`, but wall-clock `createdAt` ≠ commit sequence), documents the real guarantee as **at-least-once + `eventId` dedup without cross-event ordering**, warns consumers not to assume commit-order arrival, and notes a per-aggregate monotonic sequence number as the future path if strict ordering is ever required — explicitly out of scope.
+
+**2. Slug regex (Minor)** — Tightened `^[a-z][a-z0-9-]*$` → `^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$` and spelled out that trailing (`foo-`) and consecutive (`foo--bar`) hyphens are now rejected at manifest validation.
+
+**3. Schema-extension DDL authorization (Major)** — Replaced the `ext_*` naming-as-boundary model with a real PostgreSQL privilege model throughout the spec: each extension owns a dedicated schema `ext_<camelCaseSlug>` with two least-privilege, schema-scoped roles (`ext_<slug>_migrator` for CREATE/ALTER/DROP inside the schema only; `ext_<slug>_runtime` for DML inside the schema only, no DDL). Reconciled the affected sections for consistency: schema-extension overview bullets, generator paragraph (now scaffolds schema + roles), the canonical naming section (flat `ext_<slug>_<table>` → schema-qualified `ext_<slug>.<table>`, with 63-byte and collision rules updated), isolation enforcement, the generated-SQL example, and two acceptance criteria.
+
+**4. Archive FK cascade (Major)** — Rewrote the uninstall/archive procedure to neutralize the live `ON DELETE CASCADE` core FK at archive time: **drop** it on side tables (FK columns are the PK, can't be nulled) and **convert to `ON DELETE SET NULL`** (or `RESTRICT`) on nullable entity references, so a later core-row delete can't silently destroy archived data. Documented that restoration re-establishes the FK only if the core row still exists, otherwise the row is orphaned and flagged for admin reconciliation. Mirrored the FK lifecycle into the DDL example comment, the entity-table archive note, and the archive acceptance criterion.
+
+One note for your review: item 3 was scoped by CodeRabbit as an edit to one paragraph, but the `ext_*`-naming concept threaded through ~6 sections, so I converted them all to the per-schema model to keep the spec internally consistent (the verification step flagged internal consistency). If you'd prefer a narrower diff, that's the piece to look at.

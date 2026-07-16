@@ -373,3 +373,80 @@
 
 ### Status Quo — Waiting on Brad
 - **Next action for Brad:** Review and merge PRs #1090, #1096, #1132, #1137 → unlocks #1047 and next dispatch
+
+---
+
+## 16:15 UTC — Heartbeat (Jul 16)
+
+### This Pass
+- **PR #1157 opened** at 16:10 UTC: `fix(accounting): GAAP-correct journal entries for fixed asset registration and sale/disposal` (closes #1156). All CI ✅ green. CodeRabbit review in progress.
+- `claude -p` inner loop (pid 1760974) still running — wrapping up the #1156 build. PR already pushed.
+- **PRs #1090, #1096, #1132, #1137**: No new human reviews. All CI passing. Awaiting Brad review.
+- No mutex held.
+- Disk: 83% (6.3G free) — OK
+- RAM: 5.7Gi used / 15Gi — OK
+
+### Active PRs
+| PR | Issue | Status | CI | Notes |
+|----|-------|--------|-----|-------|
+| #1157 | #1156 Fixed-asset GAAP journals | Open | ✅ all green | CodeRabbit reviewing; awaiting human review |
+| #1090 | #1061 Avalara foundation | Open | ✅ passing | Awaiting human review |
+| #1096 | #1032 Document approvals | Open | ✅ passing | Awaiting human review |
+| #1132 | (docs) Extensibility spec | Open | ✅ passing | Awaiting human review |
+| #1137 | #1010 Job Op Batching | Open | ✅ all green | Awaiting human review |
+
+### Status Quo — Waiting on Brad
+- **Next action for Brad:** Review and merge PRs #1090, #1096, #1132, #1137, #1157 → unlocks #1047 and next dispatch
+
+---
+
+## 16:40 UTC — Heartbeat (Jul 16)
+
+### This Pass
+- **PR #1157**: CodeRabbit posted a second review round (16:28 UTC) on the updated commit (`aa8bbce64`). 14 actionable comments flagging:
+  - Locale translation issues across 12 languages (empty `msgstr` values for new fixed-asset entries, misaligned msgid/msgstr pairs in es/zh/fr/hi/it/ja/pl/pt, stale translations in de/ru/tr)
+  - Glossary definitions too verbose (one-sentence fix in `packages/glossary/src/terms.ts`)
+- Stale mutex from previous `claude -p` run (pid 1780681, dead) cleared
+- New `claude -p` inner loop dispatched (pid 1788767) for Round-2 feedback → `loop-runs/1157-review-feedback-2.log`
+- Acknowledged CR feedback via PR comment (#issuecomment-4994370477)
+- **PR #1158** (`loop/1156`) opened by inner-loop run at 16:28 UTC — duplicate of #1157 for issue #1156. Closed as duplicate; #1157 remains primary.
+- Disk: 83% (6.4G free) — OK
+- RAM: 2.2Gi used / 15Gi — OK
+
+### Active PRs
+| PR | Issue | Status | CI | Notes |
+|----|-------|--------|-----|-------|
+| #1157 | #1156 Fixed-asset GAAP journals | Open | ✅ all green | CR Round-2 feedback being addressed (claude -p pid 1788767 in flight) |
+| #1090 | #1061 Avalara foundation | Open | ✅ passing | Awaiting human review |
+| #1096 | #1032 Document approvals | Open | ✅ passing | Awaiting human review |
+| #1132 | (docs) Extensibility spec | Open | ✅ passing | Awaiting human review |
+| #1137 | #1010 Job Op Batching | Open | ✅ all green | Awaiting human review |
+
+### Status Quo — Waiting on Brad
+- **Next action for Brad:** Review and merge PRs #1090, #1096, #1132, #1137, #1157 → unlocks #1047 and next dispatch
+
+---
+
+## 18:42 UTC — Heartbeat (Jul 16)
+
+### This Pass
+- **PR #1157**: CodeRabbit Round-5 review posted at 17:17 UTC (15 actionable comments)
+  - Round-4 inner-loop run completed successfully (typecheck PASS, commit pushed)
+  - Round-5 items: de (intercompany konzernintern, reverse-charge, disposal), it (AP balance, Dismesso), ko (순장부가액 ×3 + particle), pl (applied overhead, disposal, tax accrued, contra-asset), pt (disposal alienado ×2, clearing valor faturado), tr (invoice muhasebeleştirildiğinde ×2, clearing mahsup, overhead genel giderleri)
+  - New `claude -p` inner loop dispatched (pid 1828119) → `loop-runs/1157-review-feedback-5.log`
+  - Acknowledged CR feedback via PR comment (#issuecomment-4995434220)
+- No assigned issues without open PRs
+- No stuck/crashed builds
+- Mutex held by Round-5 run
+
+### Active PRs
+| PR | Issue | Status | CI | Notes |
+|----|-------|--------|-----|-------|
+| #1157 | #1156 Fixed-asset GAAP journals | Open | ✅ all green | CR Round-5 feedback in flight (claude -p pid 1828119) |
+| #1090 | #1061 Avalara foundation | Open | ✅ passing | Awaiting human review |
+| #1096 | #1032 Document approvals | Open | ✅ passing | Awaiting human review |
+| #1132 | (docs) Extensibility spec | Open | ✅ passing | Awaiting human review |
+| #1137 | #1010 Job Op Batching | Open | ✅ all green | Awaiting human review |
+
+### Status Quo — Waiting on Brad
+- **Next action for Brad:** Review and merge PRs #1090, #1096, #1132, #1137, #1157 → unlocks #1047 and next dispatch

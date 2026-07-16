@@ -1,2 +1,0 @@
-# Carbon Agent Mutex
-unlocked

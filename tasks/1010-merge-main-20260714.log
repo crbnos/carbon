@@ -1,0 +1,29 @@
+=== Starting merge Tue Jul 14 11:28:22 PM UTC 2026 ===
+From https://github.com/crbnos/carbon
+   bebb6233a..e96491e49  featuser-select -> origin/featuser-select
+Preparing worktree (checking out 'loop/1010-20260714010219')
+HEAD is now at bd2c64730 loop(1010-review-1): [t6.s1] batch.$batchId.tsx loader now redirects with a flash error when the operations or events query errors, mirroring the batch-query handling, instead of silently treating a failed events query as no-open-timer
+--- Merging origin/main ---
+Auto-merging apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json
+CONFLICT (content): Merge conflict in apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json
+Auto-merging apps/erp/app/routes/x+/part+/$itemId.purchasing.$supplierPartId.delete.tsx
+Auto-merging packages/database/src/types.ts
+Auto-merging packages/database/supabase/functions/lib/types.ts
+Auto-merging packages/locale/locales/de/erp.po
+Auto-merging packages/locale/locales/en/erp.po
+Auto-merging packages/locale/locales/es/erp.po
+Auto-merging packages/locale/locales/fr/erp.po
+Auto-merging packages/locale/locales/hi/erp.po
+Auto-merging packages/locale/locales/it/erp.po
+Auto-merging packages/locale/locales/ja/erp.po
+Auto-merging packages/locale/locales/ko/erp.po
+Auto-merging packages/locale/locales/pl/erp.po
+Auto-merging packages/locale/locales/pt/erp.po
+Auto-merging packages/locale/locales/ru/erp.po
+Auto-merging packages/locale/locales/tr/erp.po
+Auto-merging packages/locale/locales/zh/erp.po
+Automatic merge failed; fix conflicts and then commit the result.
+Merge status: conflicts
+--- Conflict files ---
+apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json
+=== Done at Tue Jul 14 11:28:24 PM UTC 2026 ===

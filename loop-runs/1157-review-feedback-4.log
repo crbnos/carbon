@@ -1,0 +1,89 @@
+# PR #1157 — CodeRabbit Round-4 Feedback (17 threads)
+
+Branch: fix/1156-fixed-asset-gaap-journals
+Typecheck: erp + @carbon/glossary both PASS (turbo, 23s)
+
+## Item 1 — register.tsx (Major)
+`apps/erp/app/routes/x+/fixed-asset+/$fixedAssetId.register.tsx`
+- The `dimensionsResult.error` rejection was already present (lines 123-131 from a
+  prior round). Added the missing required-dimensions guard after resolving
+  `locationDimensionId` / `assetClassDimensionId`: if either is absent, redirect to
+  the asset with flash "Missing dimensions required for asset registration" — so no
+  registration journal can post without the location/asset-class dimensions.
+- Matched the existing `throw redirect(path.to.fixedAsset(...), await flash(request,
+  error(...)))` pattern used elsewhere in the route.
+
+## Item 2 — Disposal-clearing account: fixed the ROOT CAUSE (Major)
+The English glossary definition was self-contradictory: it debits NBV on shipment but
+claimed to credit "the proceeds" on invoicing — which cannot net to zero. Verified
+against the real posting code `packages/database/supabase/functions/post-sales-invoice/
+index.ts:658-663`: invoicing **credits the clearing account for NBV** (`credit("expense",
+nbv)`), not proceeds; gain/loss goes to disposalAccountId separately.
+- Fixed the source: `packages/glossary/src/terms.ts` (asset-class-write-off-account)
+  → "credited for its net book value on invoicing".
+- Propagated the msgid change to all 14 erp.po catalogs (mechanical, exact-match sed;
+  string is unique per file; not present in any mes.po).
+- Updated every locale msgstr for this entry to mirror the NBV term already used on the
+  debit side (en, es, fr, de, it, ja, zh, pl, pt, ru, hi, tr, ko). ru specifically:
+  "выручки" → "чистой балансовой стоимости".
+
+## Item 3 — de disposal-neutral terminology (Minor)
+de/erp.po: replaced sale-narrowing "veräußert/Veräußert" with catalog-canonical
+"Entsorgung/entsorgt/Entsorgt" at 5590, 5602, 5640-41 msgstr, and the status word in 9962
+("Veräußert" → "Entsorgt", matching the enum usage at line 844).
+
+## Item 4 — de reverse-charge (Minor)
+de 5620: "wenn der Käufer selbst bewertet" → "wenn der Käufer die Steuer selbst berechnet".
+
+## Item 5 — de intercompany (Minor)
+de 5629 & 5632: "konzernweite" → "konzerninterne" (group-wide → intercompany).
+
+## Item 6 — it AP balance (Minor)
+it 5593: "(saldo PA)" → "(saldo dei debiti verso fornitori)".
+
+## Item 7 — it Disposed status (Minor)
+it 9962: "impostando il suo stato su Ceduto" → "su Dismesso".
+
+## Item 8 — ko net book value (Minor)
+ko: replaced all 3 occurrences of "순장부가치" → "순장부가액" (5680, 9962, 11693). Also fixed
+the resulting Korean object particle on 11693 debit side (순장부가액 ends in a consonant →
+"을", not "를").
+
+## Item 9 — pl applied overhead (Minor)
+pl 5578 → "różnice między zastosowanymi a rzeczywistymi kosztami ogólnymi produkcji".
+
+## Item 10 — pl disposed sale-or-scrap (Minor)
+pl 5590 → "usunięcia pierwotnego kosztu środka trwałego przy jego zbyciu".
+
+## Item 11 — pl tax accrued (Minor)
+pl 5620 → "podatku naliczonego ... gdy nabywca rozlicza go samodzielnie".
+
+## Item 12 — pl contra-asset (Minor)
+pl 5665: "aktywów przeciwnych" → "korygujące aktywa". (Left 5668, a separate
+non-flagged entry, untouched.)
+
+## Item 13 — pt disposal-neutral (Minor)
+pt 5590 & 5602: "descartado" → "alienado".
+
+## Item 14 — pt avoid implying cash receipt (Minor)
+pt 11694: "valor recebido" → resolved via the item-2 root-cause fix to "valor contábil
+líquido" (NBV). This removes the "received" cash implication AND is accounting-correct
+(the credit is NBV, not proceeds), satisfying both the pt and ru reviewer threads.
+
+## Item 15 — tr overhead (Major)
+tr 5578: "üretim maliyetleri" → "üretim genel giderleri".
+
+## Item 16 — tr posted (Major)
+tr 5593 & 5605: "gönderildiğinde" (sent) → "muhasebeleştirildiğinde" (posted/recorded);
+also tidied 5593's "kredilendirilmiş" → "alacaklandırılan" (credited) for parallelism
+with the debited (borçlandırılan) line.
+
+## Item 17 — tr clearing account (Minor)
+tr 11694: "geçici elden çıkarma-arınma (clearing) hesabı" → "geçici elden çıkarma mahsup
+hesabı".
+
+## Verification
+- All .po edits are 1:1 line replacements (git --numstat shows equal add/del per file) —
+  no structural msgid/msgstr breakage.
+- Spot-checked de/pl full diffs: only intended lines changed.
+- typecheck erp + @carbon/glossary: PASS.

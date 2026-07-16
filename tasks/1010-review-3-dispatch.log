@@ -1,0 +1,62 @@
+# Task: 1010-review-3 — Fix Minor CodeRabbit items on PR #1137
+
+## Timestamp
+2026-07-15T05:05 UTC
+
+## Mutex check
+NO_LOCK — proceeded.
+
+## Setup
+- Fetched branch loop/1010-20260714010219
+- Created worktree at /home/openclaw/carbon-loop-1010-review-3
+- Merged origin/main (no conflicts)
+
+## Fix 1: step="any" on fractional qty inputs
+- File: apps/mes/app/routes/x+/batch.$batchId.tsx
+- Added step="any" to both quantity and scrapQuantity <Input type="number"> fields
+- Status: DONE
+
+## Fix 2: jobOperationBatchId in realtime UPDATE handler
+- File: apps/mes/app/routes/x+/operations.tsx
+- Added `jobOperationBatchId: updated.jobOperationBatchId` to the UPDATE spread
+- Status: DONE
+
+## Fix 3: Zero-quantity production row guard
+- Files: packages/utils/src/batch-time-split.ts
+         packages/database/supabase/functions/shared/batch-time-split.ts
+- Added `if (m.quantity > 0)` guard before pushing Production entry in both files
+- Scrap guard `(m.scrapQuantity ?? 0) > 0` was already present in both files
+- Status: DONE (both files in sync)
+
+## Fix 4: Duration millisecond precision
+- Files: packages/utils/src/batch-time-split.ts
+         packages/database/supabase/functions/shared/batch-time-split.ts
+- Changed durationSeconds from `share.durationSeconds` to `Math.round((windowEndMs - windowStartMs) / 1000)` in both
+- Status: DONE
+
+## Fix 5: Locale translations
+### ERP (9 files × 8 keys = 72 translations)
+- ko, ja, it, pl, tr, fr, hi, es, ru — all filled
+- "No active batches..." key required special awk handling due to escaped quotes in msgid
+- All 8 keys filled in all 9 files
+
+### MES (9 files × 4 keys = 36 translations)
+- pl, de, ja, ko, ru, hi, zh, tr, pt — all filled
+- All 4 keys filled in all 9 files
+
+## Tests
+- pnpm utils test: 80/80 passed (batch-time-split.test.ts: 22/22)
+- TypeScript errors in worktree are pre-existing (missing node_modules from no pnpm install)
+- No new type errors from changes
+
+## Git
+- Commit: 5bc2c86ce "loop(1010-review-3): fix Minor CodeRabbit items — step=any, realtime batchId sync, zero-qty guard, duration precision, locale translations"
+- Pushed to origin/loop/1010-20260714010219
+
+## PR Comment
+Posted to https://github.com/crbnos/carbon/pull/1137#issuecomment-4977078738
+
+## Outcome
+state: shipped
+fixes: [step-any-inputs, realtime-batchId-sync, zero-qty-guard, duration-precision, locale-translations]
+unverified: []

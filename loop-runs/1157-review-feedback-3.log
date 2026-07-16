@@ -1,0 +1,73 @@
+PR #1157 — CodeRabbit Round-3 Feedback
+Branch: fix/1156-fixed-asset-gaap-journals
+Date: 2026-07-16
+
+Summary of changes addressing all 5 actionable CodeRabbit round-3 comments.
+
+---
+
+1. accounting.utils.ts — validate accumulated depreciation ≤ acquisition cost
+   File: apps/erp/app/modules/accounting/accounting.utils.ts (acquisitionLines)
+   - Added a guard at the top of acquisitionLines() that throws
+     "Accumulated depreciation cannot exceed the acquisition cost" when
+     accumulatedDepreciation > acquisitionCost, before computing NBV or building
+     any journal lines. A negative NBV would otherwise produce an absurd /
+     unbalanced entry.
+   - The only caller (postAssetRegistration in accounting.server.ts, run inside a
+     Kysely transaction) is invoked from the register route inside try/catch, so
+     the throw rolls the transaction back and surfaces the error to the user.
+   - Added two unit tests: NBV=0 boundary (accum == cost) still balances; and the
+     over-depreciated case throws.
+
+2. register.tsx — companyId tenant scoping (2 queries)
+   File: apps/erp/app/routes/x+/fixed-asset+/$fixedAssetId.register.tsx
+   - Asset lookup (accounting-enabled path): added .eq("companyId", companyId).
+   - Accounting-disabled status-flip update: added .eq("companyId", companyId).
+
+3. register.tsx — handle zero-row update case
+   File: same as #2, accounting-disabled update path.
+   - Chained .select("id") after the .update() and now treat an empty result
+     (zero rows matched — e.g. a concurrent update already moved the asset out of
+     Draft) as a failure, redirecting with "Only Draft assets can be registered"
+     instead of flashing a false success.
+
+4. post-sales-invoice/index.ts — wrap asset record updates in the journal txn
+   File: packages/database/supabase/functions/post-sales-invoice/index.ts
+   - The two-step (ship-then-invoice) disposal path previously updated
+     fixedAssetDisposal + fixedAsset via the supabase `client` during the
+     array-building loop, BEFORE (and outside) the Kysely db.transaction() that
+     posts the journals — so a journal-posting failure left the ledger and asset
+     state inconsistent.
+   - Deferred those two writes into a new `fixedAssetDisposalUpdates` array and
+     apply them via `trx.updateTable(...)` inside the same db.transaction(),
+     right before the salesInvoice status update. Kysely throws on error, so any
+     failure now rolls back the posted journals. companyId scoping preserved.
+   - Scope note: the direct/single-step disposal path (lines ~853-874) writes
+     fixedAsset/fixedAssetDisposal via `client` too and has the same class of
+     issue, but it was NOT flagged in the round-3 comments and falls outside the
+     specified line range (710-726); left unchanged to keep the change focused.
+
+5. tr/erp.po — physical inventory-count variance GL account translation
+   File: packages/locale/locales/tr/erp.po (L5625-5626)
+   - ALREADY CORRECT. The prior commit on this branch (df19d0de4,
+     "fix(locale): correct and complete fixed-asset translations for #1157")
+     had already realigned the scrambled GL-account tooltip block. The current
+     msgstr —
+       "Fiziksel sayım sonuçları sistemdeki stok miktarından farklı olduğunda
+        etkilenen GL hesabı."
+     — accurately renders msgid "GL account hit when physical counts differ from
+     system inventory." The old (wrong) intercompany-debit string was already
+     replaced. No change needed; no other locales touched.
+
+---
+
+Verification:
+- pnpm exec vitest run accounting.utils.test.ts  -> 66 passed (incl. 2 new).
+- pnpm exec turbo run typecheck --filter=erp      -> 1 successful, no errors.
+- biome check (4 changed files)                   -> clean (only 2 pre-existing
+                                                     console.error warnings in
+                                                     post-sales-invoice).
+- No .po / locale files modified in this change.
+
+Commit: "fix(accounting): address CodeRabbit round-3 review feedback on PR #1157"
+pushed to origin/fix/1156-fixed-asset-gaap-journals.

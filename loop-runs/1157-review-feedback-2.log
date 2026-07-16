@@ -1,0 +1,19 @@
+Done. CodeRabbit round-2 feedback on PR #1157 is addressed and pushed (commit `df19d0de4`).
+
+## What I found
+The misalignment wasn't introduced by `aa8bbce64` — the "GL account…" glossary tooltip block has been a **pre-existing scramble in `main`**: each `msgstr` had drifted off its `msgid` (a non-uniform rotation with orphans, self-correcting at duplicate values). CodeRabbit flagged it because this PR touches the region. The 6 new fixed-asset definitions were also genuinely untranslated in every locale.
+
+## What I did
+- **Group 1 (glossary):** Trimmed all 6 verbose fixed-asset definitions in `terms.ts` to one crisp sentence each, then ran the idiomatic `lingui:extract` + `lingui:clean` so the `.po` msgids stayed in sync (verified idempotent — zero incidental churn).
+- **Groups 2–4 (translations):** Since a msgid's correct translation almost always already existed elsewhere in the scrambled block, I dispatched one agent per locale to **re-pair from the pool by meaning** (minimal churn) and translate the genuinely-new strings fresh, writing back by **exact-msgid match** (position-independent). Filled all empties, realigned the scrambled block, and fixed the stale de/ru/tr entries.
+
+## Verification
+Three independent per-locale QA passes caught 6 residual issues that I then corrected:
+- pl & ru physical-count entries were showing "asset write-off" text
+- de purchase-tax said "Einfuhrsteuer" (import tax) instead of Vorsteuer
+- ja intercompany entries dropped the debit/credit direction
+- zh tax-timing typo
+
+Final state: **13 locales, all 41 target entries aligned, zero empty `msgstr`**, extract+clean idempotent, glossary lint + typecheck clean. The diff is exactly `terms.ts` (6 definitions) + 13 `erp.po` catalogs (374/374 lines), nothing stray.
+
+One note for the reviewer: the ja intercompany fix and zh typo were minor accuracy touch-ups the QA pass surfaced beyond CodeRabbit's explicit list — all within the same touched block.
