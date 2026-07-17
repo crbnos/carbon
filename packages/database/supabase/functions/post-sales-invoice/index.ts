@@ -15,6 +15,7 @@ import {
   resolveInventoryAccount,
 } from "../shared/get-posting-group.ts";
 import { calculateCOGS } from "../shared/calculate-cogs.ts";
+import { getSalesInvoiceLineAmounts } from "../shared/sales-invoice-amounts.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
@@ -323,13 +324,6 @@ serve(async (req: Request) => {
             (invoiceLine.shippingCost ?? 0) +
             (invoiceLine.addOnCost ?? 0);
 
-          // nonTaxableAddOnCost is part of the invoice total (and of the
-          // salesInvoices view balance that caps payments) but is excluded
-          // from the tax basis.
-          const totalLineCost =
-            preTaxLineCost * (1 + (invoiceLine.taxPercent ?? 0)) +
-            (invoiceLine.nonTaxableAddOnCost ?? 0);
-
           // Header shipping is untaxed (matching the salesInvoices view), so
           // it is weighted by the pre-tax basis — weights sum to exactly 1.
           // When every line has a zero basis, fall back to equal weights so
@@ -344,9 +338,23 @@ serve(async (req: Request) => {
               : preTaxLineCost / totalLinesCost;
           const lineWeightedShippingCost =
             shippingCost * lineCostPercentageOfTotalCost;
-          // Convert to base currency for the GL.
-          const totalLineCostWithWeightedShipping =
-            (totalLineCost + lineWeightedShippingCost) * invoiceExchangeRate;
+
+          // Convert to base currency for the GL and split the credit side into
+          // revenue vs. the sales tax liability. `totalAmount` reproduces the
+          // historical total exactly, so the AR debit and the invoice total are
+          // unchanged — only the credit split moves.
+          const { revenueAmount, taxAmount, totalAmount } =
+            getSalesInvoiceLineAmounts({
+              quantity: invoiceLine.quantity,
+              unitPrice: invoiceLine.unitPrice,
+              shippingCost: invoiceLine.shippingCost,
+              addOnCost: invoiceLine.addOnCost,
+              nonTaxableAddOnCost: invoiceLine.nonTaxableAddOnCost,
+              taxPercent: invoiceLine.taxPercent,
+              weightedHeaderShipping: lineWeightedShippingCost,
+              exchangeRate: invoiceExchangeRate,
+            });
+          const totalLineCostWithWeightedShipping = totalAmount;
 
           const invoiceLineUnitCostInInventoryUnit =
             totalLineCostWithWeightedShipping / invoiceLine.quantity;
@@ -419,14 +427,11 @@ serve(async (req: Request) => {
 
                     journalLineReference = nanoid();
 
-                    // credit the sales account
+                    // credit the sales account with the pre-tax amount
                     journalLineInserts.push({
                       accountId: accountDefaults.data.salesAccount,
                       description: "Sales Account",
-                      amount: credit(
-                        "revenue",
-                        totalLineCostWithWeightedShipping
-                      ),
+                      amount: credit("revenue", revenueAmount),
                       quantity: invoiceLineQuantityInInventoryUnit,
                       documentType: "Invoice",
                       documentId: salesInvoice.data?.id,
@@ -437,6 +442,26 @@ serve(async (req: Request) => {
                       journalLineReference,
                       companyId,
                     });
+
+                    // credit the sales tax collected to its liability account
+                    if (taxAmount !== 0) {
+                      journalLineInserts.push({
+                        accountId:
+                          accountDefaults.data.salesTaxPayableAccount,
+                        description: "Sales Tax Payable",
+                        amount: credit("liability", taxAmount),
+                        quantity: invoiceLineQuantityInInventoryUnit,
+                        documentType: "Invoice",
+                        documentId: salesInvoice.data?.id,
+                        externalDocumentId:
+                          salesInvoice.data?.customerReference,
+                        documentLineReference: journalReference.to.salesInvoice(
+                          invoiceLine.salesOrderLineId!
+                        ),
+                        journalLineReference,
+                        companyId,
+                      });
+                    }
 
                     // debit the accounts receivable account
                     journalLineInserts.push({
@@ -457,7 +482,9 @@ serve(async (req: Request) => {
                       companyId,
                     });
 
-                    for (let i = 0; i < 2; i++) {
+                    // one meta per journal line pushed above (the tax line is
+                    // conditional) — these arrays are zipped by index later
+                    for (let i = 0; i < (taxAmount !== 0 ? 3 : 2); i++) {
                       journalLineDimensionsMeta.push({
                         customerTypeId: customer.data.customerTypeId ?? null,
                         itemPostingGroupId: lineItemPostingGroupId,
@@ -517,14 +544,11 @@ serve(async (req: Request) => {
                     // Create the normal GL entries for the invoice
                     journalLineReference = nanoid();
 
-                    // Credit the sales account
+                    // Credit the sales account with the pre-tax amount
                     journalLineInserts.push({
                       accountId: accountDefaults.data.salesAccount,
                       description: "Sales Account",
-                      amount: credit(
-                        "revenue",
-                        totalLineCostWithWeightedShipping
-                      ),
+                      amount: credit("revenue", revenueAmount),
                       quantity: invoiceLineQuantityInInventoryUnit,
                       documentType: "Invoice",
                       documentId: salesInvoice.data?.id,
@@ -537,6 +561,28 @@ serve(async (req: Request) => {
                       journalLineReference,
                       companyId,
                     });
+
+                    // Credit the sales tax collected to its liability account
+                    if (taxAmount !== 0) {
+                      journalLineInserts.push({
+                        accountId:
+                          accountDefaults.data.salesTaxPayableAccount,
+                        description: "Sales Tax Payable",
+                        amount: credit("liability", taxAmount),
+                        quantity: invoiceLineQuantityInInventoryUnit,
+                        documentType: "Invoice",
+                        documentId: salesInvoice.data?.id,
+                        externalDocumentId:
+                          salesInvoice.data?.customerReference,
+                        documentLineReference: invoiceLine.salesOrderLineId
+                          ? journalReference.to.salesInvoice(
+                              invoiceLine.salesOrderLineId
+                            )
+                          : null,
+                        journalLineReference,
+                        companyId,
+                      });
+                    }
 
                     // Debit the accounts receivable account
                     journalLineInserts.push({
@@ -564,7 +610,9 @@ serve(async (req: Request) => {
                         (cost) => cost.itemId === invoiceLine.itemId
                       )?.itemPostingGroupId ?? null;
 
-                    for (let i = 0; i < 2; i++) {
+                    // one meta per journal line pushed above (the tax line is
+                    // conditional) — these arrays are zipped by index later
+                    for (let i = 0; i < (taxAmount !== 0 ? 3 : 2); i++) {
                       journalLineDimensionsMeta.push({
                         customerTypeId: customer.data.customerTypeId ?? null,
                         itemPostingGroupId,

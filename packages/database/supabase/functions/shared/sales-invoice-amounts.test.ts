@@ -1,5 +1,25 @@
 import { expect, test } from "vitest";
+import { credit, debit } from "../lib/utils.ts";
 import { getSalesInvoiceLineAmounts } from "./sales-invoice-amounts.ts";
+
+// The credit side post-sales-invoice pushes for one line: revenue at pre-tax,
+// sales tax to its liability account, and AR debited for the whole total.
+const journalLinesFor = (input: Parameters<typeof getSalesInvoiceLineAmounts>[0]) => {
+  const { revenueAmount, taxAmount, totalAmount } =
+    getSalesInvoiceLineAmounts(input);
+  return [
+    { account: "salesAccount", amount: credit("revenue", revenueAmount) },
+    ...(taxAmount !== 0
+      ? [
+          {
+            account: "salesTaxPayableAccount",
+            amount: credit("liability", taxAmount),
+          },
+        ]
+      : []),
+    { account: "receivablesAccount", amount: debit("asset", totalAmount) },
+  ];
+};
 
 // The expression post-sales-invoice used before the revenue/tax split, kept here
 // so every test can assert the invoice total (and the AR debit) never moved.
@@ -92,6 +112,56 @@ test("a missing taxPercent is treated as zero", () => {
   const line = { quantity: 2, unitPrice: 50 };
   expect(getSalesInvoiceLineAmounts(line).taxAmount).toBe(0);
   expect(getSalesInvoiceLineAmounts(line).revenueAmount).toBe(100);
+});
+
+test("a taxed line posts $1,000 to revenue and $70 to sales tax payable", () => {
+  const lines = journalLinesFor({
+    quantity: 10,
+    unitPrice: 100,
+    taxPercent: 0.07,
+  });
+
+  expect(lines.find((l) => l.account === "salesAccount")?.amount).toBe(1000);
+  expect(
+    lines.find((l) => l.account === "salesTaxPayableAccount")?.amount
+  ).toBeCloseTo(70, 9);
+  expect(lines.find((l) => l.account === "receivablesAccount")?.amount).toBe(
+    1070
+  );
+});
+
+test("the journal balances for a taxed line with header shipping and nonTaxableAddOnCost", () => {
+  const lines = journalLinesFor({
+    quantity: 7,
+    unitPrice: 89.95,
+    shippingCost: 14.5,
+    addOnCost: 6.75,
+    nonTaxableAddOnCost: 22.4,
+    taxPercent: 0.0725,
+    weightedHeaderShipping: 40.6,
+    exchangeRate: 1.1,
+  });
+
+  // `amount` is signed by the account's natural balance, so the balance check
+  // is credit side (revenue + tax) against debit side (AR), not a sum to zero.
+  const creditSide = lines
+    .filter((l) => l.account !== "receivablesAccount")
+    .reduce((sum, l) => sum + l.amount, 0);
+  const debitSide = lines
+    .filter((l) => l.account === "receivablesAccount")
+    .reduce((sum, l) => sum + l.amount, 0);
+
+  expect(lines).toHaveLength(3);
+  expect(creditSide).toBeCloseTo(debitSide, 9);
+});
+
+test("a zero-tax line emits no tax journal line", () => {
+  const lines = journalLinesFor({ quantity: 2, unitPrice: 50, taxPercent: 0 });
+
+  expect(lines.map((l) => l.account)).toEqual([
+    "salesAccount",
+    "receivablesAccount",
+  ]);
 });
 
 test("the exchange rate is applied to revenue and tax alike", () => {
