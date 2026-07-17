@@ -14,8 +14,9 @@ and fall back to **one-shot ECS Fargate Spot tasks** only for jobs too big/long 
 Lambda's 15-min ceiling. **One image, two runtimes.** This is the cheapest option
 (~$0 idle, ~$10–30/mo typical + cents per rare overflow job), needs **no scaling to
 manage** ("don't scale it until someone complains"), and works in **GovCloud** — so
-it's a single strategy for both the shared (Vercel-serving) and per-workspace
-(ITAR) flavors. It's a new feature; this keeps the cost floor at zero.
+it's a single strategy for both environments — one **shared** deployment each
+(Vercel-serving commercial + GovCloud/ITAR), **not** per-workspace. It's a new
+feature; this keeps the cost floor at zero.
 
 The trade: a **modest refactor of the job layer** from async submit→poll to
 **synchronous invoke-and-await** (Lambda) + **RunTask** (ECS). The compute
@@ -101,15 +102,22 @@ Most jobs never touch ECS.
   a standing-container fallback).
 - **Simpler than today**, not more — no external job store needed on the hot path.
 
-### GovCloud vs standalone — same hybrid
+### Two environments — one **shared** assembler each (NOT per-workspace)
 
-Both flavors use Lambda + ECS-Spot-RunTask (Lambda is in GovCloud). Differences:
-- **Standalone (Vercel-serving):** one Lambda + one bare ECS cluster in the shared
-  account; Function URL public + bearer.
-- **GovCloud (per-workspace):** one Lambda + task-def per workspace, deployed by the
-  `ci/src/deploy.ts` fan-out (new `workspaces` columns for the Lambda ARN / Function
-  URL + `assembler_service_api_key`); or **shared within the compliance boundary**
-  since the service holds no tenant data at rest.
+**Decision (Sid, 2026-07-15): ITAR/GovCloud is NOT per-workspace.** So there is no
+`ci/src/deploy.ts` fan-out and **no new `workspaces` columns** for the assembler —
+Brad's per-workspace design is dropped. The service holds no tenant data at rest
+(files via signed URLs, Redis job records transient), so **one shared deployment per
+environment** serves all tenants in that environment:
+- **Commercial (Vercel-serving):** one Lambda + one bare ECS cluster in the shared
+  commercial account; Function URL public + bearer. `assembler.carbon.ms`.
+- **GovCloud (ITAR):** the **same** hybrid, one shared deployment in the GovCloud
+  account/region; internal or public Function URL + bearer. `assembler.itar.carbon.ms`.
+
+Both are deployed on their **own cadence** (not through the workspace fan-out). ERP/MES
+in each environment get `ASSEMBLER_SERVICE_URL` (that env's Function URL) +
+`ASSEMBLER_SERVICE_API_KEY` from env/secrets — a single value per environment, not
+per workspace.
 
 ## SST specifics
 
@@ -135,8 +143,8 @@ Both flavors use Lambda + ECS-Spot-RunTask (Lambda is in GovCloud). Differences:
   Trivy scan, push `carbon/assembler:${sha}`. Add `apps/assembler/**`,`crates/**` to
   `paths`.
 - **Deploy**: update the Lambda image (`aws lambda update-function-code
-  --image-uri …:${sha}`) + register a new task-def revision; GovCloud goes through
-  the `ci/src/deploy.ts` fan-out with `IMAGE_TAG`.
+  --image-uri …:${sha}`) + register a new task-def revision. **One shared deployment
+  per environment** on its own cadence — not the workspace fan-out.
 
 ## Security
 
@@ -210,9 +218,10 @@ URL + IAM role + env; CI updates the image. Vercel env → `ASSEMBLER_SERVICE_UR
 (FARGATE_SPOT) in the router; public-subnet VPC (no NAT). *Verify:* overflow +
 interruption-retry rows.
 
-**P4 — GovCloud.** Per-workspace Lambda/task-def via `ci/src/deploy.ts` fan-out + new
-`workspaces` columns; or one shared within the boundary. *Verify:* fan-out + skip
-convention + STEP end-to-end.
+**P4 — GovCloud (shared).** Replicate the P2/P3 stack (Lambda + ECS-Spot cluster) once
+in the GovCloud account/region — **no** fan-out, **no** `workspaces` columns. ERP/MES
+there get the GovCloud Function URL + key. *Verify:* health + bearer + STEP
+end-to-end in GovCloud.
 
 > **Approval gate:** no prod deploy until Sid confirms AWS account/region, the
 > standalone vs shared-GovCloud call, the size-route threshold, and the sync-refactor
