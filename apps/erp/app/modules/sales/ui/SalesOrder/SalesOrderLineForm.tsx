@@ -371,6 +371,36 @@ const SalesOrderLineForm = ({
     setIsPriceResolving(false);
   };
 
+  const onAssetChange = async (assetId: string) => {
+    if (!assetId) {
+      setAssetData((d) => ({ ...d, assetId: "" }));
+      return;
+    }
+    if (!carbon || !company.id) return;
+
+    const asset = await carbon
+      .from("fixedAsset")
+      .select("name, acquisitionCost, accumulatedDepreciation")
+      .eq("id", assetId)
+      .eq("companyId", company.id)
+      .single();
+
+    // Net book value = acquisition cost − accumulated depreciation (the same
+    // figure shown in FixedAssetsTable), used as the default sale unit price.
+    // NB: `Number` is the form component in this file, so rely on the numeric
+    // column types rather than the global `Number()`.
+    const netBookValue =
+      (asset.data?.acquisitionCost ?? 0) -
+      (asset.data?.accumulatedDepreciation ?? 0);
+
+    setAssetData((d) => ({
+      ...d,
+      assetId,
+      description: asset.data?.name ?? "",
+      unitPrice: netBookValue
+    }));
+  };
+
   const onLocationChange = async (newLocation: { value: string } | null) => {
     if (!carbon) throw new Error("carbon is not defined");
     if (typeof newLocation?.value !== "string")
@@ -860,10 +890,7 @@ const SalesOrderLineForm = ({
                             options={assetOptions}
                             value={assetData.assetId}
                             onChange={(selected) => {
-                              setAssetData((d) => ({
-                                ...d,
-                                assetId: (selected?.value as string) ?? ""
-                              }));
+                              onAssetChange((selected?.value as string) ?? "");
                             }}
                             termId="sales-order-line-asset"
                           />
