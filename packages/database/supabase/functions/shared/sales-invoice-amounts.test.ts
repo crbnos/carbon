@@ -171,12 +171,31 @@ test("the journal balances for a taxed line with header shipping and nonTaxableA
   );
 });
 
-test("a zero-tax line emits no tax journal line", () => {
-  const lines = journalLinesFor({ quantity: 2, unitPrice: 50, taxPercent: 0 });
+test("a zero-tax line emits exactly the pre-change journal", () => {
+  const line = {
+    quantity: 2,
+    unitPrice: 50,
+    shippingCost: 8,
+    nonTaxableAddOnCost: 12,
+    weightedHeaderShipping: 30,
+    taxPercent: 0,
+    exchangeRate: 1.15,
+  };
+  const lines = journalLinesFor(line);
 
-  expect(lines.map((l) => l.account)).toEqual([
-    "salesAccount",
-    "receivablesAccount",
+  // Untaxed invoices must post byte-identically to how they did before the
+  // split: the whole total credited to salesAccount, no tax line at all.
+  expect(lines).toEqual([
+    {
+      account: "salesAccount",
+      description: "Sales Account",
+      amount: legacyTotal(line),
+    },
+    {
+      account: "receivablesAccount",
+      description: "Accounts Receivable",
+      amount: legacyTotal(line),
+    },
   ]);
 });
 
