@@ -31,36 +31,37 @@ VALUES ('temp-staging', 'temp-staging', false, 2500000000);
 -- Served bucket holds only gated artifacts → cap at 50 MB per-bucket.
 UPDATE storage.buckets SET file_size_limit = 52428800 WHERE id = 'private';
 
--- RLS mirrors the `private` model policies (`20240630115404_model-uploads.sql`),
--- scoped to the temp-staging bucket + the `${companyId}/models/...` key layout, so
--- the same authenticated client that uploads a model can stage its raw.
+-- RLS mirrors the `private` model policies but with the current helpers
+-- (`get_companies_with_employee_role` / `_permission`, per the RLS refactor —
+-- the old `has_role`/`has_company_permission` pattern is deprecated). Scoped to
+-- the temp-staging bucket + the `${companyId}/models/...` key layout, so the same
+-- authenticated client that uploads a model can stage its raw. SELECT gates on
+-- employee role; writes gate on the parts_* permission (which already implies
+-- employee membership of that company).
 CREATE POLICY "Employees can view staged models" ON storage.objects
 FOR SELECT USING (
     bucket_id = 'temp-staging'
-    AND has_role('employee', (storage.foldername(name))[1])
+    AND (storage.foldername(name))[1] = ANY ((SELECT get_companies_with_employee_role())::text[])
     AND (storage.foldername(name))[2] = 'models'
 );
 
 CREATE POLICY "Employees with parts_create can stage models" ON storage.objects
 FOR INSERT WITH CHECK (
     bucket_id = 'temp-staging'
-    AND has_role('employee', (storage.foldername(name))[1])
-    AND has_company_permission('parts_create', (storage.foldername(name))[1])
+    AND (storage.foldername(name))[1] = ANY ((SELECT get_companies_with_employee_permission('parts_create'))::text[])
     AND (storage.foldername(name))[2] = 'models'
 );
 
 CREATE POLICY "Employees with parts_update can update staged models" ON storage.objects
 FOR UPDATE USING (
     bucket_id = 'temp-staging'
-    AND has_role('employee', (storage.foldername(name))[1])
-    AND has_company_permission('parts_update', (storage.foldername(name))[1])
+    AND (storage.foldername(name))[1] = ANY ((SELECT get_companies_with_employee_permission('parts_update'))::text[])
     AND (storage.foldername(name))[2] = 'models'
 );
 
 CREATE POLICY "Employees with parts_delete can delete staged models" ON storage.objects
 FOR DELETE USING (
     bucket_id = 'temp-staging'
-    AND has_role('employee', (storage.foldername(name))[1])
-    AND has_company_permission('parts_delete', (storage.foldername(name))[1])
+    AND (storage.foldername(name))[1] = ANY ((SELECT get_companies_with_employee_permission('parts_delete'))::text[])
     AND (storage.foldername(name))[2] = 'models'
 );
