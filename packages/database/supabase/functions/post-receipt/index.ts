@@ -23,6 +23,7 @@ import {
   resolveSamplingPlan,
   type SamplingStandard,
 } from "../shared/sampling-engine.ts";
+import { getBaseCurrencyShippingCost } from "../shared/supplier-shipping-cost.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
@@ -564,9 +565,17 @@ serve(async (req: Request) => {
         if (purchaseOrderDelivery.error)
           throw new Error("Failed to fetch purchase order delivery");
 
-        const shippingCost =
-          (purchaseOrderDelivery.data?.supplierShippingCost ?? 0) *
-          (purchaseOrder.data?.exchangeRate ?? 1);
+        // supplierShippingCost is a supplier-currency amount and exchangeRate is
+        // foreign-units-per-base, so supplier->base is a divide — the same
+        // direction post-purchase-invoice, the generated line-level shippingCost
+        // columns, and the purchaseOrders view all use. The receipt's own line
+        // costs are already base currency (receiptLine.unitPrice descends from
+        // the divided purchaseOrderLine.unitPrice), so multiplying here valued
+        // freight backwards and dumped the gap in purchaseVarianceAccount.
+        const shippingCost = getBaseCurrencyShippingCost(
+          purchaseOrderDelivery.data?.supplierShippingCost,
+          purchaseOrder.data?.exchangeRate
+        );
 
         const totalLinesCost = receiptLines.data.reduce((acc, receiptLine) => {
           const safeReceivedQuantity =

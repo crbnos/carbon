@@ -17,6 +17,7 @@ import {
   getBillableQuantity,
   getRemainingQuantityToInvoice,
 } from "../shared/short-close.ts";
+import { getBaseCurrencyShippingCost } from "../shared/supplier-shipping-cost.ts";
 import {
   getDefaultPostingGroup,
   resolveInventoryAccount,
@@ -552,14 +553,13 @@ serve(async (req: Request) => {
       if (dim.entityType) dimensionMap.set(dim.entityType, dim.id);
     }
 
-    // supplierShippingCost is a supplier-currency amount; currency.exchangeRate
-    // stores foreign-units-per-base, so supplier→base is DIVIDE (matching the
-    // purchaseInvoices view and the line-level generated columns). It is then
+    // Supplier->base is a DIVIDE (see getBaseCurrencyShippingCost). It is then
     // folded into the per-line totals BEFORE the payment-chain exchange-rate
     // multiplier so AP is credited exactly what post-payment will debit.
-    const shippingCost =
-      (purchaseInvoiceDelivery.data?.supplierShippingCost ?? 0) /
-      (purchaseInvoice.data?.exchangeRate || 1);
+    const shippingCost = getBaseCurrencyShippingCost(
+      purchaseInvoiceDelivery.data?.supplierShippingCost,
+      purchaseInvoice.data?.exchangeRate
+    );
 
     // Pre-allocation denominator for the header shipping cost. Comment lines
     // post no journal entries, so they must not absorb a share of the
