@@ -1,28 +1,23 @@
 import { expect, test } from "vitest";
-import { debit } from "../lib/utils.ts";
 import {
-  getSalesInvoiceCreditLines,
+  getSalesInvoiceJournalLines,
   getSalesInvoiceLineAmounts,
 } from "./sales-invoice-amounts.ts";
 
-// The journal post-sales-invoice pushes for one line: the credit lines the
-// shared helper returns (the same call the edge function makes), plus the AR
-// debit for the whole total, which the caller owns.
+// The exact journal post-sales-invoice pushes for one line — both credit sites
+// in the edge function build their lines from this same call, so what balances
+// here is what hits the books.
 const journalLinesFor = (
-  input: Parameters<typeof getSalesInvoiceLineAmounts>[0]
-) => {
-  const amounts = getSalesInvoiceLineAmounts(input);
-  return [
-    ...getSalesInvoiceCreditLines(amounts).map((line) => ({
+  input: Parameters<typeof getSalesInvoiceLineAmounts>[0],
+  options?: { isIntercompany?: boolean }
+) =>
+  getSalesInvoiceJournalLines(getSalesInvoiceLineAmounts(input), options).map(
+    (line) => ({
       account: line.accountKey as string,
+      description: line.description,
       amount: line.amount,
-    })),
-    {
-      account: "receivablesAccount",
-      amount: debit("asset", amounts.totalAmount),
-    },
-  ];
-};
+    })
+  );
 
 // The expression post-sales-invoice used before the revenue/tax split, kept here
 // so every test can assert the invoice total (and the AR debit) never moved.
@@ -165,6 +160,20 @@ test("a zero-tax line emits no tax journal line", () => {
     "salesAccount",
     "receivablesAccount",
   ]);
+});
+
+test("the AR debit is labelled for an intercompany invoice", () => {
+  const line = { quantity: 1, unitPrice: 100, taxPercent: 0.07 };
+
+  expect(
+    journalLinesFor(line).find((l) => l.account === "receivablesAccount")
+      ?.description
+  ).toBe("Accounts Receivable");
+  expect(
+    journalLinesFor(line, { isIntercompany: true }).find(
+      (l) => l.account === "receivablesAccount"
+    )?.description
+  ).toBe("IC Receivables");
 });
 
 test("the exchange rate is applied to revenue and tax alike", () => {

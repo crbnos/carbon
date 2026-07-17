@@ -16,7 +16,7 @@ import {
 } from "../shared/get-posting-group.ts";
 import { calculateCOGS } from "../shared/calculate-cogs.ts";
 import {
-  getSalesInvoiceCreditLines,
+  getSalesInvoiceJournalLines,
   getSalesInvoiceLineAmounts,
 } from "../shared/sales-invoice-amounts.ts";
 
@@ -430,19 +430,27 @@ serve(async (req: Request) => {
 
                     journalLineReference = nanoid();
 
-                    // credit revenue at pre-tax, and sales tax to its liability
-                    // account as a separate line (omitted when untaxed)
-                    const creditLines = getSalesInvoiceCreditLines({
-                      revenueAmount,
-                      taxAmount,
-                      totalAmount: totalLineCostWithWeightedShipping,
-                    });
+                    // revenue at pre-tax, sales tax to its liability account as
+                    // a separate line (omitted when untaxed), AR at the total
+                    const journalLines = getSalesInvoiceJournalLines(
+                      {
+                        revenueAmount,
+                        taxAmount,
+                        totalAmount: totalLineCostWithWeightedShipping,
+                      },
+                      { isIntercompany }
+                    );
 
-                    for (const creditLine of creditLines) {
+                    for (const journalLine of journalLines) {
+                      const isReceivables =
+                        journalLine.accountKey === "receivablesAccount";
+
                       journalLineInserts.push({
-                        accountId: accountDefaults.data[creditLine.accountKey],
-                        description: creditLine.description,
-                        amount: creditLine.amount,
+                        accountId: isReceivables
+                          ? receivablesAccountId
+                          : accountDefaults.data[journalLine.accountKey],
+                        description: journalLine.description,
+                        amount: journalLine.amount,
                         quantity: invoiceLineQuantityInInventoryUnit,
                         documentType: "Invoice",
                         documentId: salesInvoice.data?.id,
@@ -452,32 +460,14 @@ serve(async (req: Request) => {
                           invoiceLine.salesOrderLineId!
                         ),
                         journalLineReference,
+                        ...(isReceivables ? { intercompanyPartnerId } : {}),
                         companyId,
                       });
                     }
 
-                    // debit the accounts receivable account
-                    journalLineInserts.push({
-                      accountId: receivablesAccountId,
-                      description: isIntercompany
-                        ? "IC Receivables"
-                        : "Accounts Receivable",
-                      amount: debit("asset", totalLineCostWithWeightedShipping),
-                      quantity: invoiceLineQuantityInInventoryUnit,
-                      documentType: "Invoice",
-                      documentId: salesInvoice.data?.id,
-                      externalDocumentId: salesInvoice.data?.customerReference,
-                      documentLineReference: journalReference.to.salesInvoice(
-                        invoiceLine.salesOrderLineId!
-                      ),
-                      journalLineReference,
-                      intercompanyPartnerId,
-                      companyId,
-                    });
-
-                    // one meta per journal line pushed above (the credit lines
-                    // plus AR) — these arrays are zipped by index later
-                    for (let i = 0; i < creditLines.length + 1; i++) {
+                    // one meta per journal line pushed above — these arrays are
+                    // zipped by index later
+                    for (let i = 0; i < journalLines.length; i++) {
                       journalLineDimensionsMeta.push({
                         customerTypeId: customer.data.customerTypeId ?? null,
                         itemPostingGroupId: lineItemPostingGroupId,
@@ -537,19 +527,27 @@ serve(async (req: Request) => {
                     // Create the normal GL entries for the invoice
                     journalLineReference = nanoid();
 
-                    // Credit revenue at pre-tax, and sales tax to its liability
-                    // account as a separate line (omitted when untaxed)
-                    const creditLines = getSalesInvoiceCreditLines({
-                      revenueAmount,
-                      taxAmount,
-                      totalAmount: totalLineCostWithWeightedShipping,
-                    });
+                    // Revenue at pre-tax, sales tax to its liability account as
+                    // a separate line (omitted when untaxed), AR at the total
+                    const journalLines = getSalesInvoiceJournalLines(
+                      {
+                        revenueAmount,
+                        taxAmount,
+                        totalAmount: totalLineCostWithWeightedShipping,
+                      },
+                      { isIntercompany }
+                    );
 
-                    for (const creditLine of creditLines) {
+                    for (const journalLine of journalLines) {
+                      const isReceivables =
+                        journalLine.accountKey === "receivablesAccount";
+
                       journalLineInserts.push({
-                        accountId: accountDefaults.data[creditLine.accountKey],
-                        description: creditLine.description,
-                        amount: creditLine.amount,
+                        accountId: isReceivables
+                          ? receivablesAccountId
+                          : accountDefaults.data[journalLine.accountKey],
+                        description: journalLine.description,
+                        amount: journalLine.amount,
                         quantity: invoiceLineQuantityInInventoryUnit,
                         documentType: "Invoice",
                         documentId: salesInvoice.data?.id,
@@ -561,39 +559,19 @@ serve(async (req: Request) => {
                             )
                           : null,
                         journalLineReference,
+                        ...(isReceivables ? { intercompanyPartnerId } : {}),
                         companyId,
                       });
                     }
-
-                    // Debit the accounts receivable account
-                    journalLineInserts.push({
-                      accountId: receivablesAccountId,
-                      description: isIntercompany
-                        ? "IC Receivables"
-                        : "Accounts Receivable",
-                      amount: debit("asset", totalLineCostWithWeightedShipping),
-                      quantity: invoiceLineQuantityInInventoryUnit,
-                      documentType: "Invoice",
-                      documentId: salesInvoice.data?.id,
-                      externalDocumentId: salesInvoice.data?.customerReference,
-                      documentLineReference: invoiceLine.salesOrderLineId
-                        ? journalReference.to.salesInvoice(
-                            invoiceLine.salesOrderLineId
-                          )
-                        : null,
-                      journalLineReference,
-                      intercompanyPartnerId,
-                      companyId,
-                    });
 
                     const itemPostingGroupId =
                       itemCosts.data.find(
                         (cost) => cost.itemId === invoiceLine.itemId
                       )?.itemPostingGroupId ?? null;
 
-                    // one meta per journal line pushed above (the credit lines
-                    // plus AR) — these arrays are zipped by index later
-                    for (let i = 0; i < creditLines.length + 1; i++) {
+                    // one meta per journal line pushed above — these arrays are
+                    // zipped by index later
+                    for (let i = 0; i < journalLines.length; i++) {
                       journalLineDimensionsMeta.push({
                         customerTypeId: customer.data.customerTypeId ?? null,
                         itemPostingGroupId,

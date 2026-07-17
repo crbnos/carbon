@@ -8,7 +8,7 @@
  * `revenueAmount + taxAmount === totalAmount` holds in floating point — a journal
  * that balances to the cent is worth more than a tax line rounded independently.
  */
-import { credit } from "../lib/utils.ts";
+import { credit, debit } from "../lib/utils.ts";
 
 export interface SalesInvoiceLineAmountInput {
   quantity: number;
@@ -49,10 +49,26 @@ export type SalesInvoiceCreditAccount =
   | "salesAccount"
   | "salesTaxPayableAccount";
 
+/**
+ * The account a journal line posts to. `receivablesAccount` is resolved by the
+ * caller rather than read straight off `accountDefault` — an intercompany
+ * invoice debits the partner's receivables account instead.
+ */
+export type SalesInvoiceJournalAccount =
+  | SalesInvoiceCreditAccount
+  | "receivablesAccount";
+
 export interface SalesInvoiceCreditLine {
   accountKey: SalesInvoiceCreditAccount;
   description: string;
   /** Signed for the GL by `credit()`. */
+  amount: number;
+}
+
+export interface SalesInvoiceJournalLine {
+  accountKey: SalesInvoiceJournalAccount;
+  description: string;
+  /** Signed for the GL by `credit()` / `debit()`. */
   amount: number;
 }
 
@@ -84,6 +100,28 @@ export function getSalesInvoiceCreditLines(
   }
 
   return lines;
+}
+
+/**
+ * The whole journal one posted sales invoice line contributes: the revenue/tax
+ * credits, plus the AR debit for the unchanged invoice total. Because the debit
+ * is derived from the same `totalAmount` the credits were split out of, the
+ * entry balances by construction — the split can never silently move the total.
+ */
+export function getSalesInvoiceJournalLines(
+  amounts: SalesInvoiceLineAmounts,
+  options: { isIntercompany?: boolean } = {}
+): SalesInvoiceJournalLine[] {
+  return [
+    ...getSalesInvoiceCreditLines(amounts),
+    {
+      accountKey: "receivablesAccount",
+      description: options.isIntercompany
+        ? "IC Receivables"
+        : "Accounts Receivable",
+      amount: debit("asset", amounts.totalAmount),
+    },
+  ];
 }
 
 export function getSalesInvoiceLineAmounts(
