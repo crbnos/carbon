@@ -3460,6 +3460,12 @@ msgstr "Счет наличных денежных средств по умол�
 msgid "Default CC Recipients"
 msgstr "Получатели CC по умолчанию"
 
+msgid "Default GL account credited when a fixed-asset disposal results in a gain."
+msgstr "Счёт ГЛ по умолчанию, зачисляемый при реализации основного средства с прибылью."
+
+msgid "Default GL account debited when a fixed-asset disposal results in a loss."
+msgstr "Счёт ГЛ по умолчанию, дебетуемый при реализации основного средства с убытком."
+
 msgid "Default GL account used for cash transactions when no specific bank account is selected."
 msgstr "Счет GL по умолчанию, используемый для операций с наличными деньгами, когда не выбран конкретный банковский счет."
 
@@ -3971,9 +3977,6 @@ msgstr "Параметры отображения"
 
 msgid "Disposal"
 msgstr "Выбытие"
-
-msgid "Disposal Account"
-msgstr "Счет выбытия"
 
 msgid "Disposal Date"
 msgstr "Дата выбытия"
@@ -5466,14 +5469,17 @@ msgstr "Полностью обучен для"
 msgid "FX G/L"
 msgstr "Прибыль/убыток по курсу"
 
-msgid "Gains and Losses"
-msgstr "Прибыли и Убытки (по умолчанию)"
+msgid "Gain on Disposal"
+msgstr "Прибыль от выбытия"
 
-msgid "Gains and Losses (default)"
-msgstr "Прибыль или убыток, признанный при списании основного актива"
+msgid "Gain on Disposal (default)"
+msgstr "Прибыль от выбытия (по умолчанию)"
 
-msgid "Gains or losses recognized on disposal of fixed assets"
-msgstr "Калибр"
+msgid "Gain on Disposal Account"
+msgstr "Счёт прибыли от выбытия"
+
+msgid "Gains recognized on disposal of fixed assets"
+msgstr "Прибыль, признаваемая при выбытии основных средств"
 
 msgid "gauge"
 msgstr "Калибры"
@@ -5657,9 +5663,6 @@ msgstr "Счет GL, на котором фиксируются скидки н�
 
 msgid "GL account where early-payment discounts taken from suppliers are recorded."
 msgstr "Счет GL, на котором фиксируются скидки на досрочную оплату, полученные от поставщиков."
-
-msgid "GL account where gain or loss is booked on fixed-asset disposal."
-msgstr "Счет GL, на котором фиксируется прибыль или убыток при выбытии основного средства."
 
 msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
 msgstr "Счет GL контра-активов, который кредитуется по мере проведения амортизации в каждом периоде и дебетуется в полном объеме при продаже или списании актива."
@@ -6846,6 +6849,18 @@ msgstr "Подробное описание"
 
 msgid "Looks empty here"
 msgstr "Здесь пусто"
+
+msgid "Loss on Disposal"
+msgstr "Убыток от выбытия"
+
+msgid "Loss on Disposal (default)"
+msgstr "Убыток от выбытия (по умолчанию)"
+
+msgid "Loss on Disposal Account"
+msgstr "Счёт убытков от выбытия"
+
+msgid "Losses recognized on disposal of fixed assets"
+msgstr "Убытки, признаваемые при выбытии основных средств"
 
 msgid "Lost"
 msgstr "Потеряно"
@@ -8059,8 +8074,11 @@ msgstr "Не в наличии"
 msgid "Non-Inventory Tracking"
 msgstr "Отслеживание вне инвентаря"
 
-msgid "Non-operating P&L account that books the gain or loss when an asset is sold or scrapped — credited for a gain, debited for a loss."
-msgstr "Внереализационный счет отчета о прибылях и убытках, на который относится прибыль или убыток при продаже или списании актива — кредитуется при прибыли, дебетуется при убытке."
+msgid "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
+msgstr "Счёт прочих расходов, дебетуемый при продаже или списании актива данного класса по цене ниже его остаточной стоимости."
+
+msgid "Non-operating income account credited when an asset in this class is sold for more than its net book value."
+msgstr "Счёт прочих доходов, зачисляемый при продаже актива данного класса по цене выше его остаточной стоимости."
 
 msgid "Non-Taxable Add-On Cost"
 msgstr "Не облагаемая налогом дополнительная стоимость"

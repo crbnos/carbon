@@ -3460,6 +3460,12 @@ msgstr "Cuenta de efectivo predeterminada para transacciones en su moneda base."
 msgid "Default CC Recipients"
 msgstr "Destinatarios CC predeterminados"
 
+msgid "Default GL account credited when a fixed-asset disposal results in a gain."
+msgstr "Cuenta contable predeterminada acreditada cuando la disposición de un activo fijo genera una ganancia."
+
+msgid "Default GL account debited when a fixed-asset disposal results in a loss."
+msgstr "Cuenta contable predeterminada debitada cuando la disposición de un activo fijo genera una pérdida."
+
 msgid "Default GL account used for cash transactions when no specific bank account is selected."
 msgstr "Cuenta GL predeterminada utilizada para transacciones en efectivo cuando no se selecciona una cuenta bancaria específica."
 
@@ -3971,9 +3977,6 @@ msgstr "Configuración de pantalla"
 
 msgid "Disposal"
 msgstr "Disposición"
-
-msgid "Disposal Account"
-msgstr "Cuenta de Disposición"
 
 msgid "Disposal Date"
 msgstr "Fecha de Disposición"
@@ -5466,14 +5469,17 @@ msgstr "Completamente capacitado para"
 msgid "FX G/L"
 msgstr "FX G/L"
 
-msgid "Gains and Losses"
-msgstr "Ganancias y Pérdidas (predeterminado)"
+msgid "Gain on Disposal"
+msgstr "Ganancia en la Disposición"
 
-msgid "Gains and Losses (default)"
-msgstr "Ganancias o pérdidas reconocidas en la disposición de activos fijos"
+msgid "Gain on Disposal (default)"
+msgstr "Ganancia en la Disposición (predeterminada)"
 
-msgid "Gains or losses recognized on disposal of fixed assets"
-msgstr "Calibre"
+msgid "Gain on Disposal Account"
+msgstr "Cuenta de Ganancia en la Disposición"
+
+msgid "Gains recognized on disposal of fixed assets"
+msgstr "Ganancias reconocidas en la disposición de activos fijos"
 
 msgid "gauge"
 msgstr "Calibres"
@@ -5657,9 +5663,6 @@ msgstr "Cuenta GL donde se registran los descuentos por pago anticipado otorgado
 
 msgid "GL account where early-payment discounts taken from suppliers are recorded."
 msgstr "Cuenta GL donde se registran los descuentos por pago anticipado obtenidos de los proveedores."
-
-msgid "GL account where gain or loss is booked on fixed-asset disposal."
-msgstr "Cuenta GL donde se registra la ganancia o pérdida en la disposición de activos fijos."
 
 msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
 msgstr "Cuenta contable (GL) contraactivo que se acredita a medida que se registra la depreciación acumulada cada período y se debita en su totalidad cuando el activo se vende o se desecha."
@@ -6846,6 +6849,18 @@ msgstr "Descripción Larga"
 
 msgid "Looks empty here"
 msgstr "Se ve vacío aquí"
+
+msgid "Loss on Disposal"
+msgstr "Pérdida en la Disposición"
+
+msgid "Loss on Disposal (default)"
+msgstr "Pérdida en la Disposición (predeterminada)"
+
+msgid "Loss on Disposal Account"
+msgstr "Cuenta de Pérdida en la Disposición"
+
+msgid "Losses recognized on disposal of fixed assets"
+msgstr "Pérdidas reconocidas en la disposición de activos fijos"
 
 msgid "Lost"
 msgstr "Perdido"
@@ -8059,8 +8074,11 @@ msgstr "No Inventario"
 msgid "Non-Inventory Tracking"
 msgstr "Seguimiento sin inventario"
 
-msgid "Non-operating P&L account that books the gain or loss when an asset is sold or scrapped — credited for a gain, debited for a loss."
-msgstr "Cuenta de resultados (P&L) no operativa que registra la ganancia o pérdida cuando un activo se vende o se desecha — se acredita por una ganancia y se debita por una pérdida."
+msgid "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
+msgstr "Cuenta de gasto no operativo debitada cuando un activo de esta clase se vende o se descarta por debajo de su valor neto en libros."
+
+msgid "Non-operating income account credited when an asset in this class is sold for more than its net book value."
+msgstr "Cuenta de ingreso no operativo acreditada cuando un activo de esta clase se vende por más de su valor neto en libros."
 
 msgid "Non-Taxable Add-On Cost"
 msgstr "Costo de Complemento No Gravable"

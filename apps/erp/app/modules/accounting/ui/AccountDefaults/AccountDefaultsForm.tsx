@@ -413,11 +413,18 @@ const AccountDefaultsForm = ({
             termId: "account-default-depreciation-expense"
           },
           {
-            name: "assetGainsAndLossesAccount",
-            label: t`Gains and Losses`,
-            description: t`Gains or losses recognized on disposal of fixed assets`,
+            name: "assetGainOnDisposalAccount",
+            label: t`Gain on Disposal`,
+            description: t`Gains recognized on disposal of fixed assets`,
+            badgeType: "Revenue",
+            termId: "account-default-gain-on-disposal"
+          },
+          {
+            name: "assetLossOnDisposalAccount",
+            label: t`Loss on Disposal`,
+            description: t`Losses recognized on disposal of fixed assets`,
             badgeType: "Expense",
-            termId: "account-default-gains-and-losses"
+            termId: "account-default-loss-on-disposal"
           },
           {
             name: "serviceChargeAccount",

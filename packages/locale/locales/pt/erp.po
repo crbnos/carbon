@@ -3460,6 +3460,12 @@ msgstr "Conta de caixa padrão para transações em sua moeda base."
 msgid "Default CC Recipients"
 msgstr "Destinatários CC Padrão"
 
+msgid "Default GL account credited when a fixed-asset disposal results in a gain."
+msgstr "Conta padrão de GL creditada quando a alienação de um ativo imobilizado resulta em ganho."
+
+msgid "Default GL account debited when a fixed-asset disposal results in a loss."
+msgstr "Conta padrão de GL debitada quando a alienação de um ativo imobilizado resulta em perda."
+
 msgid "Default GL account used for cash transactions when no specific bank account is selected."
 msgstr "Conta GL padrão usada para transações em dinheiro quando nenhuma conta bancária específica é selecionada."
 
@@ -3971,9 +3977,6 @@ msgstr "Configurações de Exibição"
 
 msgid "Disposal"
 msgstr "Alienação"
-
-msgid "Disposal Account"
-msgstr "Conta de Alienação"
 
 msgid "Disposal Date"
 msgstr "Data de Alienação"
@@ -5466,14 +5469,17 @@ msgstr "Totalmente treinado para"
 msgid "FX G/L"
 msgstr "FX G/L"
 
-msgid "Gains and Losses"
-msgstr "Ganhos e Perdas (padrão)"
+msgid "Gain on Disposal"
+msgstr "Ganho na Alienação"
 
-msgid "Gains and Losses (default)"
-msgstr "Ganhos ou perdas reconhecidos na disposição de ativos fixos"
+msgid "Gain on Disposal (default)"
+msgstr "Ganho na Alienação (padrão)"
 
-msgid "Gains or losses recognized on disposal of fixed assets"
-msgstr "Bitola"
+msgid "Gain on Disposal Account"
+msgstr "Conta de Ganho na Alienação"
+
+msgid "Gains recognized on disposal of fixed assets"
+msgstr "Ganhos reconhecidos na alienação de ativos imobilizados"
 
 msgid "gauge"
 msgstr "Bitolas"
@@ -5657,9 +5663,6 @@ msgstr "Conta GL onde são registrados os descontos de pagamento antecipado conc
 
 msgid "GL account where early-payment discounts taken from suppliers are recorded."
 msgstr "Conta GL onde são registrados os descontos de pagamento antecipado obtidos dos fornecedores."
-
-msgid "GL account where gain or loss is booked on fixed-asset disposal."
-msgstr "Conta GL onde ganho ou perda é registrado na alienação de ativo fixo."
 
 msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
 msgstr "Conta GL contra-ativo creditada à medida que a depreciação é registrada a cada período e debitada integralmente quando o ativo é vendido ou sucateado."
@@ -6846,6 +6849,18 @@ msgstr "Descrição Longa"
 
 msgid "Looks empty here"
 msgstr "Parece vazio aqui"
+
+msgid "Loss on Disposal"
+msgstr "Perda na Alienação"
+
+msgid "Loss on Disposal (default)"
+msgstr "Perda na Alienação (padrão)"
+
+msgid "Loss on Disposal Account"
+msgstr "Conta de Perda na Alienação"
+
+msgid "Losses recognized on disposal of fixed assets"
+msgstr "Perdas reconhecidas na alienação de ativos imobilizados"
 
 msgid "Lost"
 msgstr "Perdido"
@@ -8059,8 +8074,11 @@ msgstr "Não-Inventário"
 msgid "Non-Inventory Tracking"
 msgstr "Rastreamento Não-Inventário"
 
-msgid "Non-operating P&L account that books the gain or loss when an asset is sold or scrapped — credited for a gain, debited for a loss."
-msgstr "Conta de resultado (DRE) não operacional que registra o ganho ou a perda quando um ativo é vendido ou sucateado — creditada em caso de ganho, debitada em caso de perda."
+msgid "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
+msgstr "Conta de despesa não operacional debitada quando um ativo desta classe é vendido ou sucatado abaixo de seu valor contábil líquido."
+
+msgid "Non-operating income account credited when an asset in this class is sold for more than its net book value."
+msgstr "Conta de receita não operacional creditada quando um ativo desta classe é vendido por mais do que seu valor contábil líquido."
 
 msgid "Non-Taxable Add-On Cost"
 msgstr "Custo de Complemento Não Tributável"

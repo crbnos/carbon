@@ -3460,6 +3460,12 @@ msgstr "您基础货币中交易的默认现金账户。"
 msgid "Default CC Recipients"
 msgstr "默认抄送收件人"
 
+msgid "Default GL account credited when a fixed-asset disposal results in a gain."
+msgstr "固定资产处置获利时贷记的默认GL账户。"
+
+msgid "Default GL account debited when a fixed-asset disposal results in a loss."
+msgstr "固定资产处置亏损时借记的默认GL账户。"
+
 msgid "Default GL account used for cash transactions when no specific bank account is selected."
 msgstr "未选择特定银行账户时用于现金交易的默认GL账户。"
 
@@ -3971,9 +3977,6 @@ msgstr "显示设置"
 
 msgid "Disposal"
 msgstr "处置"
-
-msgid "Disposal Account"
-msgstr "处置账户"
 
 msgid "Disposal Date"
 msgstr "处置日期"
@@ -5466,14 +5469,17 @@ msgstr "完全培训"
 msgid "FX G/L"
 msgstr "外汇损益"
 
-msgid "Gains and Losses"
-msgstr "收益和损失（默认）"
+msgid "Gain on Disposal"
+msgstr "处置获利"
 
-msgid "Gains and Losses (default)"
-msgstr "在处置固定资产时确认的收益或损失"
+msgid "Gain on Disposal (default)"
+msgstr "处置获利（默认）"
 
-msgid "Gains or losses recognized on disposal of fixed assets"
-msgstr "规格"
+msgid "Gain on Disposal Account"
+msgstr "处置获利账户"
+
+msgid "Gains recognized on disposal of fixed assets"
+msgstr "固定资产处置认可的获利"
 
 msgid "gauge"
 msgstr "规格"
@@ -5657,9 +5663,6 @@ msgstr "记录给予客户的提前付款折扣的GL账户。"
 
 msgid "GL account where early-payment discounts taken from suppliers are recorded."
 msgstr "记录从供应商那里获取的提前付款折扣的GL账户。"
-
-msgid "GL account where gain or loss is booked on fixed-asset disposal."
-msgstr "固定资产处置时记录收益或损失的GL账户。"
 
 msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
 msgstr "GL反向资产账户，随每期折旧过账而贷记；资产出售或报废时全额借记。"
@@ -6846,6 +6849,18 @@ msgstr "长描述"
 
 msgid "Looks empty here"
 msgstr "看起来这里是空的"
+
+msgid "Loss on Disposal"
+msgstr "处置亏损"
+
+msgid "Loss on Disposal (default)"
+msgstr "处置亏损（默认）"
+
+msgid "Loss on Disposal Account"
+msgstr "处置亏损账户"
+
+msgid "Losses recognized on disposal of fixed assets"
+msgstr "固定资产处置认可的亏损"
 
 msgid "Lost"
 msgstr "已失败"
@@ -8059,8 +8074,11 @@ msgstr "非库存"
 msgid "Non-Inventory Tracking"
 msgstr "非库存追踪"
 
-msgid "Non-operating P&L account that books the gain or loss when an asset is sold or scrapped — credited for a gain, debited for a loss."
-msgstr "记录资产出售或报废时收益或损失的非营业损益账户——产生收益时贷记，产生损失时借记。"
+msgid "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
+msgstr "资产出售或报废价格低于其净账面价值时借记的营业外支出账户。"
+
+msgid "Non-operating income account credited when an asset in this class is sold for more than its net book value."
+msgstr "资产出售价格高于其净账面价值时贷记的营业外收入账户。"
 
 msgid "Non-Taxable Add-On Cost"
 msgstr "非应税附加成本"

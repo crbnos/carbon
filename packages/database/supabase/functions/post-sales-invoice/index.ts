@@ -598,11 +598,11 @@ serve(async (req: Request) => {
                   // Shipment already removed the asset and parked its NBV in the
                   // disposal clearing account (writeOffAccountId). Here we book
                   // AR, clear the holding account back to zero, and recognize the
-                  // explicit gain/loss on disposalAccountId.
+                  // explicit gain/loss on the matching Gain/Loss on Disposal account.
                   const assetRecord = await client
                     .from("fixedAsset")
                     .select(
-                      "locationId, fixedAssetClassId, fixedAssetClass:fixedAssetClassId(id, writeOffAccountId, disposalAccountId)"
+                      "locationId, fixedAssetClassId, fixedAssetClass:fixedAssetClassId(id, writeOffAccountId, gainOnDisposalAccountId, lossOnDisposalAccountId)"
                     )
                     .eq("id", invoiceLine.assetId)
                     .eq("companyId", companyId)
@@ -613,7 +613,10 @@ serve(async (req: Request) => {
 
                   const assetClass = assetRecord.data.fixedAssetClass as any;
                   const writeOffAccountId = assetClass.writeOffAccountId;
-                  const disposalAccountId = assetClass.disposalAccountId;
+                  const gainOnDisposalAccountId =
+                    assetClass.gainOnDisposalAccountId;
+                  const lossOnDisposalAccountId =
+                    assetClass.lossOnDisposalAccountId;
 
                   // NBV was recorded on the disposal row at shipment. The
                   // shipment must have created it; if it is missing the ledger
@@ -685,15 +688,19 @@ serve(async (req: Request) => {
                   }
 
                   // Recognize the explicit gain (credit) or loss (debit) on the
-                  // non-operating Gain/(Loss) on Disposal account.
+                  // matching non-operating account: gains to the Gain on Disposal
+                  // account, losses to the Loss on Disposal account.
                   if (gainLoss !== 0) {
                     journalLineInserts.push({
-                      accountId: disposalAccountId,
+                      accountId:
+                        gainLoss > 0
+                          ? gainOnDisposalAccountId
+                          : lossOnDisposalAccountId,
                       description:
                         gainLoss > 0 ? "Gain on disposal" : "Loss on disposal",
                       amount:
                         gainLoss > 0
-                          ? credit("expense", gainLoss)
+                          ? credit("revenue", gainLoss)
                           : debit("expense", -gainLoss),
                       quantity: invoiceLineQuantityInInventoryUnit,
                       documentType: "Invoice",
@@ -729,11 +736,12 @@ serve(async (req: Request) => {
                   // Direct invoice (no prior shipment) — combined single-step
                   // disposal: remove the asset + its accumulated depreciation,
                   // book AR for proceeds, and recognize the explicit gain/loss on
-                  // disposalAccountId. No NBV write-off is comingled with proceeds.
+                  // the matching Gain/Loss on Disposal account. No NBV write-off
+                  // is comingled with proceeds.
                   const assetRecord = await client
                     .from("fixedAsset")
                     .select(
-                      "id, status, acquisitionCost, accumulatedDepreciation, locationId, fixedAssetClass:fixedAssetClassId(id, assetAccountId, accumulatedDepreciationAccountId, disposalAccountId)"
+                      "id, status, acquisitionCost, accumulatedDepreciation, locationId, fixedAssetClass:fixedAssetClassId(id, assetAccountId, accumulatedDepreciationAccountId, gainOnDisposalAccountId, lossOnDisposalAccountId)"
                     )
                     .eq("id", invoiceLine.assetId)
                     .eq("companyId", companyId)
@@ -827,16 +835,20 @@ serve(async (req: Request) => {
 
                   journalLineDimensionsMeta.push(disposalDimensionMeta());
 
-                  // Explicit gain (credit) / loss (debit) on the non-operating
-                  // Gain/(Loss) on Disposal account.
+                  // Explicit gain (credit) / loss (debit) on the matching
+                  // non-operating account — Gain on Disposal for a gain, Loss on
+                  // Disposal for a loss.
                   if (gainLoss !== 0) {
                     journalLineInserts.push({
-                      accountId: assetClass.disposalAccountId,
+                      accountId:
+                        gainLoss > 0
+                          ? assetClass.gainOnDisposalAccountId
+                          : assetClass.lossOnDisposalAccountId,
                       description:
                         gainLoss > 0 ? "Gain on disposal" : "Loss on disposal",
                       amount:
                         gainLoss > 0
-                          ? credit("expense", gainLoss)
+                          ? credit("revenue", gainLoss)
                           : debit("expense", -gainLoss),
                       quantity: 1,
                       documentType: "Invoice",

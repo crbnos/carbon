@@ -3460,6 +3460,12 @@ msgstr "Conto di cassa predefinito per le transazioni nella tua valuta di base."
 msgid "Default CC Recipients"
 msgstr "Destinatari CC predefiniti"
 
+msgid "Default GL account credited when a fixed-asset disposal results in a gain."
+msgstr "Conto di contabilità generale predefinito accreditato quando la dismissione di un cespite genera un guadagno."
+
+msgid "Default GL account debited when a fixed-asset disposal results in a loss."
+msgstr "Conto di contabilità generale predefinito addebitato quando la dismissione di un cespite genera una perdita."
+
 msgid "Default GL account used for cash transactions when no specific bank account is selected."
 msgstr "Conto GL predefinito utilizzato per le transazioni in contanti quando non è selezionato uno specifico conto bancario."
 
@@ -3971,9 +3977,6 @@ msgstr "Impostazioni di visualizzazione"
 
 msgid "Disposal"
 msgstr "Cessione"
-
-msgid "Disposal Account"
-msgstr "Conto di Cessione"
 
 msgid "Disposal Date"
 msgstr "Data di Cessione"
@@ -5466,14 +5469,17 @@ msgstr "Completamente formato per"
 msgid "FX G/L"
 msgstr "Utile/Perdita Cambi"
 
-msgid "Gains and Losses"
-msgstr "Utili e Perdite (predefinito)"
+msgid "Gain on Disposal"
+msgstr "Guadagno sulla Dismissione"
 
-msgid "Gains and Losses (default)"
-msgstr "Utili o perdite riconosciuti sulla dismissione di immobilizzazioni"
+msgid "Gain on Disposal (default)"
+msgstr "Guadagno sulla Dismissione (predefinito)"
 
-msgid "Gains or losses recognized on disposal of fixed assets"
-msgstr "Calibro"
+msgid "Gain on Disposal Account"
+msgstr "Conto Guadagno sulla Dismissione"
+
+msgid "Gains recognized on disposal of fixed assets"
+msgstr "Guadagni riconosciuti sulla dismissione dei cespiti"
 
 msgid "gauge"
 msgstr "Calibri"
@@ -5657,9 +5663,6 @@ msgstr "Conto GL dove vengono registrati gli sconti di pagamento anticipato conc
 
 msgid "GL account where early-payment discounts taken from suppliers are recorded."
 msgstr "Conto GL dove vengono registrati gli sconti di pagamento anticipato ottenuti dai fornitori."
-
-msgid "GL account where gain or loss is booked on fixed-asset disposal."
-msgstr "Conto GL dove il guadagno o la perdita viene registrato sulla dismissione di beni fissi."
 
 msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
 msgstr "Conto GL contra-attività accreditato quando l'ammortamento viene registrato in ogni periodo e addebitato per intero quando il cespite viene venduto o rottamato."
@@ -6846,6 +6849,18 @@ msgstr "Descrizione Lunga"
 
 msgid "Looks empty here"
 msgstr "Sembra vuoto qui"
+
+msgid "Loss on Disposal"
+msgstr "Perdita sulla Dismissione"
+
+msgid "Loss on Disposal (default)"
+msgstr "Perdita sulla Dismissione (predefinita)"
+
+msgid "Loss on Disposal Account"
+msgstr "Conto Perdita sulla Dismissione"
+
+msgid "Losses recognized on disposal of fixed assets"
+msgstr "Perdite riconosciute sulla dismissione dei cespiti"
 
 msgid "Lost"
 msgstr "Perso"
@@ -8059,8 +8074,11 @@ msgstr "Non-Inventario"
 msgid "Non-Inventory Tracking"
 msgstr "Tracciamento Non-Inventario"
 
-msgid "Non-operating P&L account that books the gain or loss when an asset is sold or scrapped — credited for a gain, debited for a loss."
-msgstr "Conto P&L non operativo che registra l'utile o la perdita quando un cespite viene venduto o rottamato — accreditato in caso di utile, addebitato in caso di perdita."
+msgid "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
+msgstr "Conto spese non operative addebitato quando un cespite di questa classe viene venduto o demolito al di sotto del suo valore contabile netto."
+
+msgid "Non-operating income account credited when an asset in this class is sold for more than its net book value."
+msgstr "Conto ricavi non operativi accreditato quando un cespite di questa classe viene venduto a un prezzo superiore al suo valore contabile netto."
 
 msgid "Non-Taxable Add-On Cost"
 msgstr "Costo Add-On Non Tassabile"

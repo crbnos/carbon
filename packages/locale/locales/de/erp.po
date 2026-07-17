@@ -3460,6 +3460,12 @@ msgstr "Standard-Bargeldkonto für Transaktionen in Ihrer Basiswährung."
 msgid "Default CC Recipients"
 msgstr "Standard-CC-Empfänger"
 
+msgid "Default GL account credited when a fixed-asset disposal results in a gain."
+msgstr "Standardmäßiges Sachkonto, das bei einem Gewinn aus der Veräußerung eines Anlagevermögens gutgeschrieben wird."
+
+msgid "Default GL account debited when a fixed-asset disposal results in a loss."
+msgstr "Standardmäßiges Sachkonto, das bei einem Verlust aus der Veräußerung eines Anlagevermögens belastet wird."
+
 msgid "Default GL account used for cash transactions when no specific bank account is selected."
 msgstr "Standard-GL-Konto für Bargeldtransaktionen, wenn kein spezifisches Bankkonto ausgewählt ist."
 
@@ -3971,9 +3977,6 @@ msgstr "Anzeigeeinstellungen"
 
 msgid "Disposal"
 msgstr "Entsorgung"
-
-msgid "Disposal Account"
-msgstr "Entsorgungskonto"
 
 msgid "Disposal Date"
 msgstr "Entsorgungsdatum"
@@ -5466,14 +5469,17 @@ msgstr "Vollständig geschult für"
 msgid "FX G/L"
 msgstr "FX G/L"
 
-msgid "Gains and Losses"
-msgstr "Gewinne und Verluste (Standard)"
+msgid "Gain on Disposal"
+msgstr "Gewinn aus Veräußerung"
 
-msgid "Gains and Losses (default)"
-msgstr "Gewinne oder Verluste, die bei der Veräußerung von Anlagevermögen erfasst werden"
+msgid "Gain on Disposal (default)"
+msgstr "Gewinn aus Veräußerung (Standard)"
 
-msgid "Gains or losses recognized on disposal of fixed assets"
-msgstr "Spurweite"
+msgid "Gain on Disposal Account"
+msgstr "Konto für Gewinn aus Veräußerung"
+
+msgid "Gains recognized on disposal of fixed assets"
+msgstr "Bei der Veräußerung von Anlagevermögen erfasste Gewinne"
 
 msgid "gauge"
 msgstr "Spurweiten"
@@ -5657,9 +5663,6 @@ msgstr "GL-Konto, auf dem den Kunden gewährte Frühzahlungsrabatte erfasst werd
 
 msgid "GL account where early-payment discounts taken from suppliers are recorded."
 msgstr "GL-Konto, auf dem von Lieferanten in Anspruch genommene Frühzahlungsrabatte erfasst werden."
-
-msgid "GL account where gain or loss is booked on fixed-asset disposal."
-msgstr "GL-Konto, auf dem Gewinn oder Verlust bei der Veräußerung von Anlagevermögen verbucht wird."
 
 msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
 msgstr "GL-Gegenkonto zum Anlagevermögen, das bei jeder periodischen Abschreibungsbuchung gutgeschrieben und bei Verkauf oder Verschrottung des Vermögenswerts in voller Höhe belastet wird."
@@ -6846,6 +6849,18 @@ msgstr "Lange Beschreibung"
 
 msgid "Looks empty here"
 msgstr "Sieht hier leer aus"
+
+msgid "Loss on Disposal"
+msgstr "Verlust aus Veräußerung"
+
+msgid "Loss on Disposal (default)"
+msgstr "Verlust aus Veräußerung (Standard)"
+
+msgid "Loss on Disposal Account"
+msgstr "Konto für Verlust aus Veräußerung"
+
+msgid "Losses recognized on disposal of fixed assets"
+msgstr "Bei der Veräußerung von Anlagevermögen erfasste Verluste"
 
 msgid "Lost"
 msgstr "Verloren"
@@ -8059,8 +8074,11 @@ msgstr "Nicht-Bestand"
 msgid "Non-Inventory Tracking"
 msgstr "Verfolgung ohne Bestand"
 
-msgid "Non-operating P&L account that books the gain or loss when an asset is sold or scrapped — credited for a gain, debited for a loss."
-msgstr "Betriebsfremdes GuV-Konto, auf dem der Gewinn oder Verlust verbucht wird, wenn ein Vermögenswert verkauft oder verschrottet wird — gutgeschrieben bei einem Gewinn, belastet bei einem Verlust."
+msgid "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
+msgstr "Betriebsfremdes Aufwendungskonto, das belastet wird, wenn ein Vermögenswert dieser Klasse unterhalb seines Nettobuchwerts verkauft oder verschrottet wird."
+
+msgid "Non-operating income account credited when an asset in this class is sold for more than its net book value."
+msgstr "Betriebsfremdes Ertragskonto, das gutgeschrieben wird, wenn ein Vermögenswert dieser Klasse oberhalb seines Nettobuchwerts verkauft wird."
 
 msgid "Non-Taxable Add-On Cost"
 msgstr "Nicht steuerpflichtiger Zusatzkosten"

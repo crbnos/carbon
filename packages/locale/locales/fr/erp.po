@@ -3460,6 +3460,12 @@ msgstr "Compte de trésorerie par défaut pour les transactions dans votre devis
 msgid "Default CC Recipients"
 msgstr "Destinataires CC par défaut"
 
+msgid "Default GL account credited when a fixed-asset disposal results in a gain."
+msgstr "Compte GL par défaut crédité lorsqu'une cession d'immobilisation se solde par un gain."
+
+msgid "Default GL account debited when a fixed-asset disposal results in a loss."
+msgstr "Compte GL par défaut débité lorsqu'une cession d'immobilisation se solde par une perte."
+
 msgid "Default GL account used for cash transactions when no specific bank account is selected."
 msgstr "Compte GL par défaut utilisé pour les transactions de trésorerie lorsqu'aucun compte bancaire spécifique n'est sélectionné."
 
@@ -3971,9 +3977,6 @@ msgstr "Paramètres d'affichage"
 
 msgid "Disposal"
 msgstr "Cession"
-
-msgid "Disposal Account"
-msgstr "Compte de Cession"
 
 msgid "Disposal Date"
 msgstr "Date de Cession"
@@ -5466,14 +5469,17 @@ msgstr "Entièrement formé pour"
 msgid "FX G/L"
 msgstr "G/P de change"
 
-msgid "Gains and Losses"
-msgstr "Gains et Pertes (par défaut)"
+msgid "Gain on Disposal"
+msgstr "Gain à la cession"
 
-msgid "Gains and Losses (default)"
-msgstr "Gains ou pertes comptabilisés lors de la cession d'immobilisations"
+msgid "Gain on Disposal (default)"
+msgstr "Gain à la cession (par défaut)"
 
-msgid "Gains or losses recognized on disposal of fixed assets"
-msgstr "Calibre"
+msgid "Gain on Disposal Account"
+msgstr "Compte de gain à la cession"
+
+msgid "Gains recognized on disposal of fixed assets"
+msgstr "Gains constatés à la cession d'immobilisations"
 
 msgid "gauge"
 msgstr "Calibres"
@@ -5657,9 +5663,6 @@ msgstr "Compte GL où sont enregistrées les remises de paiement anticipé accor
 
 msgid "GL account where early-payment discounts taken from suppliers are recorded."
 msgstr "Compte GL où sont enregistrées les remises de paiement anticipé obtenues des fournisseurs."
-
-msgid "GL account where gain or loss is booked on fixed-asset disposal."
-msgstr "Compte GL où le gain ou la perte est comptabilisé lors de la cession d'une immobilisation."
 
 msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
 msgstr "Compte GL contre-actif crédité à chaque comptabilisation périodique de l'amortissement et débité intégralement lorsque l'actif est vendu ou mis au rebut."
@@ -6846,6 +6849,18 @@ msgstr "Description longue"
 
 msgid "Looks empty here"
 msgstr "Ça semble vide ici"
+
+msgid "Loss on Disposal"
+msgstr "Perte à la cession"
+
+msgid "Loss on Disposal (default)"
+msgstr "Perte à la cession (par défaut)"
+
+msgid "Loss on Disposal Account"
+msgstr "Compte de perte à la cession"
+
+msgid "Losses recognized on disposal of fixed assets"
+msgstr "Pertes constatées à la cession d'immobilisations"
 
 msgid "Lost"
 msgstr "Perdu"
@@ -8059,8 +8074,11 @@ msgstr "Non-inventaire"
 msgid "Non-Inventory Tracking"
 msgstr "Suivi hors inventaire"
 
-msgid "Non-operating P&L account that books the gain or loss when an asset is sold or scrapped — credited for a gain, debited for a loss."
-msgstr "Compte de résultat hors exploitation qui comptabilise le gain ou la perte lorsqu'un actif est vendu ou mis au rebut — crédité en cas de gain, débité en cas de perte."
+msgid "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
+msgstr "Compte de charges hors exploitation débité lorsqu'un actif de cette classe est vendu ou mis au rebut en dessous de sa valeur comptable nette."
+
+msgid "Non-operating income account credited when an asset in this class is sold for more than its net book value."
+msgstr "Compte de revenus hors exploitation crédité lorsqu'un actif de cette classe est vendu pour plus que sa valeur comptable nette."
 
 msgid "Non-Taxable Add-On Cost"
 msgstr "Coût supplémentaire non imposable"

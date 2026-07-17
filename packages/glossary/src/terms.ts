@@ -586,9 +586,13 @@ export const terms = {
     term: msg`Depreciation Expense (default)`,
     definition: msg`Default GL expense account for periodic depreciation runs.`
   },
-  "account-default-gains-and-losses": {
-    term: msg`Gains and Losses (default)`,
-    definition: msg`GL account where gain or loss is booked on fixed-asset disposal.`
+  "account-default-gain-on-disposal": {
+    term: msg`Gain on Disposal (default)`,
+    definition: msg`Default GL account credited when a fixed-asset disposal results in a gain.`
+  },
+  "account-default-loss-on-disposal": {
+    term: msg`Loss on Disposal (default)`,
+    definition: msg`Default GL account debited when a fixed-asset disposal results in a loss.`
   },
   "account-default-service-charges": {
     term: msg`Service Charges (default)`,
@@ -746,9 +750,13 @@ export const terms = {
     term: msg`Write-Down Account`,
     definition: msg`GL expense account debited when an asset's carrying value is reduced by impairment, i.e. when its recoverable amount falls below net book value.`
   },
-  "asset-class-disposal-account": {
-    term: msg`Disposal Account`,
-    definition: msg`Non-operating P&L account that books the gain or loss when an asset is sold or scrapped — credited for a gain, debited for a loss.`
+  "asset-class-gain-on-disposal-account": {
+    term: msg`Gain on Disposal Account`,
+    definition: msg`Non-operating income account credited when an asset in this class is sold for more than its net book value.`
+  },
+  "asset-class-loss-on-disposal-account": {
+    term: msg`Loss on Disposal Account`,
+    definition: msg`Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value.`
   },
   "asset-class-default-tax-method": {
     term: msg`Tax Method (default)`,

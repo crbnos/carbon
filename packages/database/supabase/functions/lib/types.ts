@@ -334,7 +334,8 @@ export type Database = {
           assetAquisitionCostAccount: string
           assetAquisitionCostOnDisposalAccount: string
           assetDepreciationExpenseAccount: string
-          assetGainsAndLossesAccount: string
+          assetGainOnDisposalAccount: string
+          assetLossOnDisposalAccount: string
           bankCashAccount: string
           bankForeignCurrencyAccount: string
           bankLocalCurrencyAccount: string
@@ -386,7 +387,8 @@ export type Database = {
           assetAquisitionCostAccount: string
           assetAquisitionCostOnDisposalAccount: string
           assetDepreciationExpenseAccount: string
-          assetGainsAndLossesAccount: string
+          assetGainOnDisposalAccount: string
+          assetLossOnDisposalAccount: string
           bankCashAccount: string
           bankForeignCurrencyAccount: string
           bankLocalCurrencyAccount: string
@@ -438,7 +440,8 @@ export type Database = {
           assetAquisitionCostAccount?: string
           assetAquisitionCostOnDisposalAccount?: string
           assetDepreciationExpenseAccount?: string
-          assetGainsAndLossesAccount?: string
+          assetGainOnDisposalAccount?: string
+          assetLossOnDisposalAccount?: string
           bankCashAccount?: string
           bankForeignCurrencyAccount?: string
           bankLocalCurrencyAccount?: string
@@ -556,15 +559,29 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "accountDefault_assetGainsAndLossesAccount_fkey"
-            columns: ["assetGainsAndLossesAccount"]
+            foreignKeyName: "accountDefault_assetGainOnDisposalAccount_fkey"
+            columns: ["assetGainOnDisposalAccount"]
             isOneToOne: false
             referencedRelation: "account"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "accountDefault_assetGainsAndLossesAccount_fkey"
-            columns: ["assetGainsAndLossesAccount"]
+            foreignKeyName: "accountDefault_assetGainOnDisposalAccount_fkey"
+            columns: ["assetGainOnDisposalAccount"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountDefault_assetLossOnDisposalAccount_fkey"
+            columns: ["assetLossOnDisposalAccount"]
+            isOneToOne: false
+            referencedRelation: "account"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountDefault_assetLossOnDisposalAccount_fkey"
+            columns: ["assetLossOnDisposalAccount"]
             isOneToOne: false
             referencedRelation: "accounts"
             referencedColumns: ["id"]
@@ -12074,8 +12091,9 @@ export type Database = {
           depreciationExpenseAccountId: string
           depreciationMethod: Database["public"]["Enums"]["depreciationMethod"]
           description: string | null
-          disposalAccountId: string
+          gainOnDisposalAccountId: string
           id: string
+          lossOnDisposalAccountId: string
           macrsConvention: Database["public"]["Enums"]["macrsConvention"] | null
           macrsPropertyClass:
             | Database["public"]["Enums"]["macrsPropertyClass"]
@@ -12104,8 +12122,9 @@ export type Database = {
           depreciationExpenseAccountId: string
           depreciationMethod?: Database["public"]["Enums"]["depreciationMethod"]
           description?: string | null
-          disposalAccountId: string
+          gainOnDisposalAccountId: string
           id?: string
+          lossOnDisposalAccountId: string
           macrsConvention?:
             | Database["public"]["Enums"]["macrsConvention"]
             | null
@@ -12136,8 +12155,9 @@ export type Database = {
           depreciationExpenseAccountId?: string
           depreciationMethod?: Database["public"]["Enums"]["depreciationMethod"]
           description?: string | null
-          disposalAccountId?: string
+          gainOnDisposalAccountId?: string
           id?: string
+          lossOnDisposalAccountId?: string
           macrsConvention?:
             | Database["public"]["Enums"]["macrsConvention"]
             | null
@@ -12264,15 +12284,29 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "fixedAssetClass_disposalAccountId_fkey"
-            columns: ["disposalAccountId"]
+            foreignKeyName: "fixedAssetClass_gainOnDisposalAccountId_fkey"
+            columns: ["gainOnDisposalAccountId"]
             isOneToOne: false
             referencedRelation: "account"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "fixedAssetClass_disposalAccountId_fkey"
-            columns: ["disposalAccountId"]
+            foreignKeyName: "fixedAssetClass_gainOnDisposalAccountId_fkey"
+            columns: ["gainOnDisposalAccountId"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fixedAssetClass_lossOnDisposalAccountId_fkey"
+            columns: ["lossOnDisposalAccountId"]
+            isOneToOne: false
+            referencedRelation: "account"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fixedAssetClass_lossOnDisposalAccountId_fkey"
+            columns: ["lossOnDisposalAccountId"]
             isOneToOne: false
             referencedRelation: "accounts"
             referencedColumns: ["id"]
@@ -62743,14 +62777,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -66691,14 +66725,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]

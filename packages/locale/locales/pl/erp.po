@@ -3460,6 +3460,12 @@ msgstr "Domyślne konto gotówkowe dla transakcji w Twojej walucie bazowej."
 msgid "Default CC Recipients"
 msgstr "Domyślni odbiorcy DW"
 
+msgid "Default GL account credited when a fixed-asset disposal results in a gain."
+msgstr "Domyślne konto księgi głównej uznawane, gdy zbycie środka trwałego skutkuje zyskiem."
+
+msgid "Default GL account debited when a fixed-asset disposal results in a loss."
+msgstr "Domyślne konto księgi głównej obciążane, gdy zbycie środka trwałego skutkuje stratą."
+
 msgid "Default GL account used for cash transactions when no specific bank account is selected."
 msgstr "Domyślne konto GL używane do transakcji gotówkowych, gdy nie wybrano określonego konta bankowego."
 
@@ -3971,9 +3977,6 @@ msgstr "Ustawienia wyświetlania"
 
 msgid "Disposal"
 msgstr "Zbycie"
-
-msgid "Disposal Account"
-msgstr "Konto Zbycia"
 
 msgid "Disposal Date"
 msgstr "Data Zbycia"
@@ -5466,14 +5469,17 @@ msgstr "W pełni przeszkolony do"
 msgid "FX G/L"
 msgstr "FX Z/S"
 
-msgid "Gains and Losses"
-msgstr "Zyski i Straty (domyślnie)"
+msgid "Gain on Disposal"
+msgstr "Zysk ze zbycia"
 
-msgid "Gains and Losses (default)"
-msgstr "Zyski lub straty ujęte w momencie likwidacji środków trwałych"
+msgid "Gain on Disposal (default)"
+msgstr "Zysk ze zbycia (domyślnie)"
 
-msgid "Gains or losses recognized on disposal of fixed assets"
-msgstr "Wymiar"
+msgid "Gain on Disposal Account"
+msgstr "Konto zysku ze zbycia"
+
+msgid "Gains recognized on disposal of fixed assets"
+msgstr "Zyski ujęte przy zbyciu środków trwałych"
 
 msgid "gauge"
 msgstr "Wymiary"
@@ -5657,9 +5663,6 @@ msgstr "Konto GL, na którym rejestruje się rabaty na wcześniejsze płatności
 
 msgid "GL account where early-payment discounts taken from suppliers are recorded."
 msgstr "Konto GL, na którym rejestruje się rabaty na wcześniejsze płatności uzyskane od dostawców."
-
-msgid "GL account where gain or loss is booked on fixed-asset disposal."
-msgstr "Konto GL, na którym rejestruje się zysk lub stratę na zbyciu środka trwałego."
 
 msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
 msgstr "Konto GL korygujące aktywa, uznawane w miarę księgowania amortyzacji w każdym okresie i obciążane w pełnej wysokości, gdy środek trwały zostaje sprzedany lub zezłomowany."
@@ -6846,6 +6849,18 @@ msgstr "Długi opis"
 
 msgid "Looks empty here"
 msgstr "Wygląda na to, że tu nic nie ma"
+
+msgid "Loss on Disposal"
+msgstr "Strata ze zbycia"
+
+msgid "Loss on Disposal (default)"
+msgstr "Strata ze zbycia (domyślnie)"
+
+msgid "Loss on Disposal Account"
+msgstr "Konto straty ze zbycia"
+
+msgid "Losses recognized on disposal of fixed assets"
+msgstr "Straty ujęte przy zbyciu środków trwałych"
 
 msgid "Lost"
 msgstr "Utracone"
@@ -8059,8 +8074,11 @@ msgstr "Poza zapasami"
 msgid "Non-Inventory Tracking"
 msgstr "Śledzenie poza magazynem"
 
-msgid "Non-operating P&L account that books the gain or loss when an asset is sold or scrapped — credited for a gain, debited for a loss."
-msgstr "Konto pozaoperacyjne rachunku zysków i strat, na którym księgowany jest zysk lub strata przy sprzedaży lub zezłomowaniu środka trwałego — uznawane w przypadku zysku, obciążane w przypadku straty."
+msgid "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
+msgstr "Konto wydatków niezwiązanych z działalnością obciążane, gdy składnik aktywów z tej klasy jest sprzedany lub złomowany poniżej jego wartości netto w księgach."
+
+msgid "Non-operating income account credited when an asset in this class is sold for more than its net book value."
+msgstr "Konto przychodów niezwiązanych z działalnością uznawane, gdy składnik aktywów z tej klasy jest sprzedawany za więcej niż jego wartość netto w księgach."
 
 msgid "Non-Taxable Add-On Cost"
 msgstr "Koszt dodatkowy niepodlegający opodatkowaniu"

@@ -3460,6 +3460,12 @@ msgstr "Default cash account for transactions in your base currency."
 msgid "Default CC Recipients"
 msgstr "Default CC Recipients"
 
+msgid "Default GL account credited when a fixed-asset disposal results in a gain."
+msgstr "Default GL account credited when a fixed-asset disposal results in a gain."
+
+msgid "Default GL account debited when a fixed-asset disposal results in a loss."
+msgstr "Default GL account debited when a fixed-asset disposal results in a loss."
+
 msgid "Default GL account used for cash transactions when no specific bank account is selected."
 msgstr "Default GL account used for cash transactions when no specific bank account is selected."
 
@@ -3971,9 +3977,6 @@ msgstr "Display Settings"
 
 msgid "Disposal"
 msgstr "Disposal"
-
-msgid "Disposal Account"
-msgstr "Disposal Account"
 
 msgid "Disposal Date"
 msgstr "Disposal Date"
@@ -5466,14 +5469,17 @@ msgstr "Fully trained for"
 msgid "FX G/L"
 msgstr "FX G/L"
 
-msgid "Gains and Losses"
-msgstr "Gains and Losses"
+msgid "Gain on Disposal"
+msgstr "Gain on Disposal"
 
-msgid "Gains and Losses (default)"
-msgstr "Gains and Losses (default)"
+msgid "Gain on Disposal (default)"
+msgstr "Gain on Disposal (default)"
 
-msgid "Gains or losses recognized on disposal of fixed assets"
-msgstr "Gains or losses recognized on disposal of fixed assets"
+msgid "Gain on Disposal Account"
+msgstr "Gain on Disposal Account"
+
+msgid "Gains recognized on disposal of fixed assets"
+msgstr "Gains recognized on disposal of fixed assets"
 
 msgid "gauge"
 msgstr "gauge"
@@ -5657,9 +5663,6 @@ msgstr "GL account where early-payment discounts given to customers are recorded
 
 msgid "GL account where early-payment discounts taken from suppliers are recorded."
 msgstr "GL account where early-payment discounts taken from suppliers are recorded."
-
-msgid "GL account where gain or loss is booked on fixed-asset disposal."
-msgstr "GL account where gain or loss is booked on fixed-asset disposal."
 
 msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
 msgstr "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
@@ -6846,6 +6849,18 @@ msgstr "Long Description"
 
 msgid "Looks empty here"
 msgstr "Looks empty here"
+
+msgid "Loss on Disposal"
+msgstr "Loss on Disposal"
+
+msgid "Loss on Disposal (default)"
+msgstr "Loss on Disposal (default)"
+
+msgid "Loss on Disposal Account"
+msgstr "Loss on Disposal Account"
+
+msgid "Losses recognized on disposal of fixed assets"
+msgstr "Losses recognized on disposal of fixed assets"
 
 msgid "Lost"
 msgstr "Lost"
@@ -8059,8 +8074,11 @@ msgstr "Non-Inventory"
 msgid "Non-Inventory Tracking"
 msgstr "Non-Inventory Tracking"
 
-msgid "Non-operating P&L account that books the gain or loss when an asset is sold or scrapped — credited for a gain, debited for a loss."
-msgstr "Non-operating P&L account that books the gain or loss when an asset is sold or scrapped — credited for a gain, debited for a loss."
+msgid "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
+msgstr "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
+
+msgid "Non-operating income account credited when an asset in this class is sold for more than its net book value."
+msgstr "Non-operating income account credited when an asset in this class is sold for more than its net book value."
 
 msgid "Non-Taxable Add-On Cost"
 msgstr "Non-Taxable Add-On Cost"

@@ -48,7 +48,7 @@ export async function postDisposal(
     fixedAssetClassId: string;
     assetAccountId: string;
     accumulatedDepreciationAccountId: string;
-    disposalAccountId: string;
+    lossOnDisposalAccountId: string;
     accountingPeriodId: string;
     locationDimensionId: string | undefined;
     assetClassDimensionId: string | undefined;
@@ -67,7 +67,7 @@ export async function postDisposal(
     fixedAssetClassId,
     assetAccountId,
     accumulatedDepreciationAccountId,
-    disposalAccountId,
+    lossOnDisposalAccountId,
     accountingPeriodId,
     locationDimensionId,
     assetClassDimensionId,
@@ -124,11 +124,11 @@ export async function postDisposal(
 
     if (nbv > 0) {
       // Scrap has no proceeds, so the entire net book value is a loss booked to
-      // the dedicated Gain/(Loss) on Disposal account (not comingled with the
-      // write-off account). gainLoss = 0 − nbv = −nbv → a full debit (loss).
+      // the dedicated Loss on Disposal account (not comingled with the write-off
+      // account). gainLoss = 0 − nbv = −nbv → a full debit (loss).
       journalLines.push({
         journalId: journal.id,
-        accountId: disposalAccountId,
+        accountId: lossOnDisposalAccountId,
         description: "Loss on disposal (scrap)",
         amount: toStoredAmount(nbv, 0, "Expense"),
         journalLineReference: crypto.randomUUID(),

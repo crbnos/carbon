@@ -3460,6 +3460,12 @@ msgstr "あなたの基本通貨での取引のためのデフォルト現金勘
 msgid "Default CC Recipients"
 msgstr "デフォルトCC受信者"
 
+msgid "Default GL account credited when a fixed-asset disposal results in a gain."
+msgstr "固定資産の処分により利益が発生した場合に貸方に計上される既定の一般勘定科目。"
+
+msgid "Default GL account debited when a fixed-asset disposal results in a loss."
+msgstr "固定資産の処分により損失が発生した場合に借方に計上される既定の一般勘定科目。"
+
 msgid "Default GL account used for cash transactions when no specific bank account is selected."
 msgstr "特定の銀行口座が選択されていない場合、現金取引に使用されるデフォルトGLアカウント。"
 
@@ -3971,9 +3977,6 @@ msgstr "表示設定"
 
 msgid "Disposal"
 msgstr "処分"
-
-msgid "Disposal Account"
-msgstr "処分勘定"
 
 msgid "Disposal Date"
 msgstr "処分日"
@@ -5466,14 +5469,17 @@ msgstr "完全に訓練済み"
 msgid "FX G/L"
 msgstr "FX G/L"
 
-msgid "Gains and Losses"
-msgstr "利益と損失（デフォルト）"
+msgid "Gain on Disposal"
+msgstr "処分益"
 
-msgid "Gains and Losses (default)"
-msgstr "固定資産の処分で認識された利益または損失"
+msgid "Gain on Disposal (default)"
+msgstr "処分益（既定）"
 
-msgid "Gains or losses recognized on disposal of fixed assets"
-msgstr "ゲージ"
+msgid "Gain on Disposal Account"
+msgstr "処分益勘定科目"
+
+msgid "Gains recognized on disposal of fixed assets"
+msgstr "固定資産の処分により認識された利益"
 
 msgid "gauge"
 msgstr "ゲージ"
@@ -5657,9 +5663,6 @@ msgstr "顧客に与えられた早期支払割引が記録されるGLアカウ�
 
 msgid "GL account where early-payment discounts taken from suppliers are recorded."
 msgstr "サプライヤーから得られた早期支払割引が記録されるGLアカウント。"
-
-msgid "GL account where gain or loss is booked on fixed-asset disposal."
-msgstr "固定資産の処分時に利益または損失が記録されるGLアカウント。"
 
 msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
 msgstr "各期に減価償却が計上されるたびに貸方記入され、資産の売却または除却時に全額借方記入される、減価償却累計額に相当するGLの資産控除（コントラアセット）勘定科目。"
@@ -6846,6 +6849,18 @@ msgstr "長い説明"
 
 msgid "Looks empty here"
 msgstr "ここは空のようです"
+
+msgid "Loss on Disposal"
+msgstr "処分損"
+
+msgid "Loss on Disposal (default)"
+msgstr "処分損（既定）"
+
+msgid "Loss on Disposal Account"
+msgstr "処分損勘定科目"
+
+msgid "Losses recognized on disposal of fixed assets"
+msgstr "固定資産の処分により認識された損失"
 
 msgid "Lost"
 msgstr "失った"
@@ -8059,8 +8074,11 @@ msgstr "非在庫"
 msgid "Non-Inventory Tracking"
 msgstr "非在庫追跡"
 
-msgid "Non-operating P&L account that books the gain or loss when an asset is sold or scrapped — credited for a gain, debited for a loss."
-msgstr "資産の売却または除却時に発生した損益を計上する営業外損益勘定科目 — 利益の場合は貸方、損失の場合は借方に記入される。"
+msgid "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
+msgstr "このクラスの資産が帳簿価額を下回る価格で売却またはスクラップにされた場合に借方に計上される営業外費用勘定科目。"
+
+msgid "Non-operating income account credited when an asset in this class is sold for more than its net book value."
+msgstr "このクラスの資産が帳簿価額を上回る価格で売却された場合に貸方に計上される営業外収益勘定科目。"
 
 msgid "Non-Taxable Add-On Cost"
 msgstr "非課税アドオンコスト"

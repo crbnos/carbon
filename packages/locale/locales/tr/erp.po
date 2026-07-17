@@ -3460,6 +3460,12 @@ msgstr "Temel para biriminizde işlemler için varsayılan kasa hesabı."
 msgid "Default CC Recipients"
 msgstr "Varsayılan Bilgi Ekleyicileri"
 
+msgid "Default GL account credited when a fixed-asset disposal results in a gain."
+msgstr "Sabit bir varlığın elden çıkarılması sonucunda kar elde edildiğinde alacak kaydedilen varsayılan GL hesabı."
+
+msgid "Default GL account debited when a fixed-asset disposal results in a loss."
+msgstr "Sabit bir varlığın elden çıkarılması sonucunda zarar elde edildiğinde borç kaydedilen varsayılan GL hesabı."
+
 msgid "Default GL account used for cash transactions when no specific bank account is selected."
 msgstr "Belirli bir banka hesabı seçilmediğinde nakit işlemler için kullanılan varsayılan GL hesabı."
 
@@ -3971,9 +3977,6 @@ msgstr "Görüntü Ayarları"
 
 msgid "Disposal"
 msgstr "İmha"
-
-msgid "Disposal Account"
-msgstr "İmha Hesabı"
 
 msgid "Disposal Date"
 msgstr "İmha Tarihi"
@@ -5466,14 +5469,17 @@ msgstr "Tamamen eğitilmiş"
 msgid "FX G/L"
 msgstr "FX K/Z"
 
-msgid "Gains and Losses"
-msgstr "Kazançlar ve Zararlar (varsayılan)"
+msgid "Gain on Disposal"
+msgstr "Elden Çıkarmada Kar"
 
-msgid "Gains and Losses (default)"
-msgstr "Sabit kıymetlerin elden çıkarılması sırasında tanınan kazançlar veya zararlar"
+msgid "Gain on Disposal (default)"
+msgstr "Elden Çıkarmada Kar (varsayılan)"
 
-msgid "Gains or losses recognized on disposal of fixed assets"
-msgstr "Ölçü"
+msgid "Gain on Disposal Account"
+msgstr "Elden Çıkarmada Kar Hesabı"
+
+msgid "Gains recognized on disposal of fixed assets"
+msgstr "Sabit varlıkların elden çıkarılmasında muhasebeleştirilen karlar"
 
 msgid "gauge"
 msgstr "Ölçüler"
@@ -5657,9 +5663,6 @@ msgstr "Müşterilere verilen erken ödeme indirimlerinin kaydedildiği GL hesab
 
 msgid "GL account where early-payment discounts taken from suppliers are recorded."
 msgstr "Tedarikçilerden alınan erken ödeme indirimlerinin kaydedildiği GL hesabı."
-
-msgid "GL account where gain or loss is booked on fixed-asset disposal."
-msgstr "Sabit varlığın elden çıkarılması sırasında kazanç veya kaybın kaydedildiği GL hesabı."
 
 msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
 msgstr "Her dönem birikmiş amortisman kaydedildikçe alacaklandırılan ve varlık satıldığında veya hurdaya çıkarıldığında tamamı borçlandırılan GL karşı aktif (contra-asset) hesabı."
@@ -6846,6 +6849,18 @@ msgstr "Uzun Açıklama"
 
 msgid "Looks empty here"
 msgstr "Burada boş görünüyor"
+
+msgid "Loss on Disposal"
+msgstr "Elden Çıkarmada Zarar"
+
+msgid "Loss on Disposal (default)"
+msgstr "Elden Çıkarmada Zarar (varsayılan)"
+
+msgid "Loss on Disposal Account"
+msgstr "Elden Çıkarmada Zarar Hesabı"
+
+msgid "Losses recognized on disposal of fixed assets"
+msgstr "Sabit varlıkların elden çıkarılmasında muhasebeleştirilen zararlar"
 
 msgid "Lost"
 msgstr "Kaybedildi"
@@ -8059,8 +8074,11 @@ msgstr "Envanter Dışı"
 msgid "Non-Inventory Tracking"
 msgstr "Envanter Dışı Takip"
 
-msgid "Non-operating P&L account that books the gain or loss when an asset is sold or scrapped — credited for a gain, debited for a loss."
-msgstr "Bir varlık satıldığında veya hurdaya çıkarıldığında oluşan kâr veya zararı kaydeden faaliyet dışı gelir tablosu (P&L) hesabı — kâr için alacaklandırılır, zarar için borçlandırılır."
+msgid "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
+msgstr "Bu sınıftaki bir varlık net defter değerinin altında satıldığında veya hurda haline getirildiğinde borç kaydedilen işletme dışı gider hesabı."
+
+msgid "Non-operating income account credited when an asset in this class is sold for more than its net book value."
+msgstr "Bu sınıftaki bir varlık net defter değerinden daha fazlaya satıldığında alacak kaydedilen işletme dışı gelir hesabı."
 
 msgid "Non-Taxable Add-On Cost"
 msgstr "Vergisiz Ek Ücret"
