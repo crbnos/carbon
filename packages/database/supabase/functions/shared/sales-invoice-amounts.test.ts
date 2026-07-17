@@ -129,7 +129,7 @@ test("a taxed line posts $1,000 to revenue and $70 to sales tax payable", () => 
 });
 
 test("the journal balances for a taxed line with header shipping and nonTaxableAddOnCost", () => {
-  const lines = journalLinesFor({
+  const line = {
     quantity: 7,
     unitPrice: 89.95,
     shippingCost: 14.5,
@@ -138,7 +138,8 @@ test("the journal balances for a taxed line with header shipping and nonTaxableA
     taxPercent: 0.0725,
     weightedHeaderShipping: 40.6,
     exchangeRate: 1.1,
-  });
+  };
+  const lines = journalLinesFor(line);
 
   // `amount` is signed by the account's natural balance, so the balance check
   // is credit side (revenue + tax) against debit side (AR), not a sum to zero.
@@ -151,6 +152,23 @@ test("the journal balances for a taxed line with header shipping and nonTaxableA
 
   expect(lines).toHaveLength(3);
   expect(creditSide).toBeCloseTo(debitSide, 9);
+
+  // The debit side is what proves the split didn't quietly move the invoice:
+  // it must still be the exact pre-change total, and the two credits must add
+  // back up to it rather than merely to each other.
+  expect(debitSide).toBe(legacyTotal(line));
+  expect(creditSide).toBeCloseTo(legacyTotal(line), 9);
+
+  // Tax is charged on the taxed basis only — the $22.40 nonTaxableAddOnCost and
+  // the $40.60 of header shipping ride in revenue untaxed, at the FX rate.
+  const taxedBasis = (7 * 89.95 + 14.5 + 6.75) * 1.1;
+  expect(
+    lines.find((l) => l.account === "salesTaxPayableAccount")?.amount
+  ).toBeCloseTo(taxedBasis * 0.0725, 9);
+  expect(lines.find((l) => l.account === "salesAccount")?.amount).toBeCloseTo(
+    taxedBasis + (22.4 + 40.6) * 1.1,
+    9
+  );
 });
 
 test("a zero-tax line emits no tax journal line", () => {
