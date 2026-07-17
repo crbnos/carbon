@@ -49,10 +49,12 @@ export const changeOrderTaskStatus = [
 ] as const;
 
 // v2 per-affected-item change type. Drives the release action + which editing
-// surface is shown (see the Q2 capability matrix): Version = new method version on
-// the same item (BoM/BoP, no supersession); Revision = new revision item
-// (attributes/docs only, auto old-rev→new-rev supersession); New Part = new P/N
-// derived from + auto-superseding the affected part (BoM/BoP + attributes).
+// surface is shown: Version = new method version on the same item (BoM/BoP, no
+// supersession); Revision = new revision item (BoM/BoP + attributes/docs, auto
+// old-rev→new-rev supersession); New Part = new P/N derived from + auto-superseding
+// the affected part (BoM/BoP + attributes). BoM/BoP is editable on ANY change type
+// for a manufactured (non-Buy) draft; only Version's extra editing scope differs
+// (no attributes/docs/cutover surface).
 export const changeOrderChangeTypes = [
   "Version",
   "Revision",
