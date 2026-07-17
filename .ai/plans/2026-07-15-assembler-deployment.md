@@ -11,8 +11,8 @@ overflow for jobs past Lambda's 15-min cap. **One shared deployment per environm
 Overflow model changed RunTask → service (Sid, 2026-07-17).
 
 **Gates:**
-- P1 (Lambda **sync handler** + router) — needs Sid's go-ahead (touches the job hot
-  path; the ECS side keeps the existing async client).
+- P1 (Lambda **sync handler** + router) — ✅ go-ahead granted + implemented (Sid
+  reviewed the spec, 2026-07-17). Default-off, so the live path is unchanged until P2.
 - P2+ (prod deploy) — needs AWS account/region + hostnames/certs; run by a human
   (no creds in-session, no prod deploy without approval).
 
@@ -65,21 +65,25 @@ Legend: `[ ]` todo · verify = command + expected.
       **convert has no ladder** (single-pass lossless — nodeIds/planner need full
       geometry), so the gate is optimize-only. *Verify:* `cargo build`/`clippy` clean;
       the skip-to-coarsest triggers on a real over-budget model at deploy.
-- [~] **T1.3 Job-layer router** — split into a landed primitive + a gated rewire.
+- [x] **T1.3 Job-layer router** — primitive + rewire both landed.
       - [x] **Primitive** — `invokeAssemblerJobSync(action, jobId, body, uploadUrls)`
         in `assembler-client.ts`: `POST /v1/{action}?sync`, upload URLs minted once up
         front, terminal `{ok, job}` → `done`/`error`/`overflow` (runtime cut-off / busy
-        / 5xx → `overflow` for the router to fall back on). Keeps
-        `submitAssemblerJob`/`pollAssemblerJobOnce` for the ECS async path.
-        *Verify:* `@carbon/jobs` typecheck clean (only unrelated `fonts.data` codegen
-        error from `--ignore-scripts`).
-      - [ ] **Rewire (⛳ needs go-ahead + env)** — route `model-optimize.ts` (+
-        `assembly-convert.ts`, `assembly-plan.ts`) through Lambda-sync default vs
-        ECS-async overflow. Touches a **production hot path** (runs on every upload) +
-        adds env (`ASSEMBLER_ECS_SERVICE_URL`, a sync-mode gate) to `@carbon/env`;
-        default must stay the current async path (dev container / standing service)
-        until P2 sets the Lambda URL. *Verify:* forced-timeout routes to async / degrades
-        when unset; typecheck clean; dev behavior unchanged with sync off.
+        / 5xx → `overflow` for the router to fall back on).
+      - [x] **Router** — `runAssemblerJob(step, spec)` in `assembler-client.ts`:
+        sync-inline (Lambda, `preferSync` default) → on `overflow` re-dispatch async to
+        `ASSEMBLER_ECS_SERVICE_URL` (or fail→degrade if unset); else async submit→poll.
+        `submitAssemblerJob`/`pollAssemblerJobOnce`/`invokeAssemblerJobSync` gained a
+        `baseUrl?` override; new env `ASSEMBLER_ECS_SERVICE_URL` + `ASSEMBLER_SYNC_ENABLED`
+        (default false) in `@carbon/env`.
+      - [x] **Callers** — `model-optimize.ts` (optimize + compact) and
+        `assembly-convert.ts` routed through `runAssemblerJob`. **`assembly-plan.ts`
+        stays async by design** (routinely ~40 min > Lambda's 15-min cap; bespoke
+        `failJob`/inline-plan/re-motion logic) — it's the long-running case the ECS
+        service exists for.
+        **Default-off ⇒ zero behavior change**: with `ASSEMBLER_SYNC_ENABLED` unset,
+        every path is the current async submit→poll on the default base.
+        *Verify:* `@carbon/env` + `@carbon/jobs` typecheck green; biome clean.
 
 ## P2 — Lambda (commercial / standalone)  ⛳ needs AWS account/region + hostname
 

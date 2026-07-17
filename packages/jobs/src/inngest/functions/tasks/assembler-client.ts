@@ -1,7 +1,9 @@
 import type { Json } from "@carbon/database";
 import {
+  ASSEMBLER_ECS_SERVICE_URL,
   ASSEMBLER_SERVICE_API_KEY,
   ASSEMBLER_SERVICE_URL,
+  ASSEMBLER_SYNC_ENABLED,
   PORT_API,
   SUPABASE_URL
 } from "@carbon/env";
@@ -44,6 +46,16 @@ export function assemblerBaseUrl(): string {
     throw new Error("ASSEMBLER_SERVICE_URL is not configured");
   }
   return ASSEMBLER_SERVICE_URL;
+}
+
+/** Whether the synchronous invoke path (Lambda) is enabled for the default base. */
+export function assemblerSyncEnabled(): boolean {
+  return ASSEMBLER_SYNC_ENABLED;
+}
+
+/** The uncapped ECS overflow service URL, or `undefined` when not deployed. */
+export function assemblerEcsUrl(): string | undefined {
+  return ASSEMBLER_ECS_SERVICE_URL || undefined;
 }
 
 /**
@@ -91,9 +103,11 @@ export async function submitAssemblerJob(opts: {
   jobId: string;
   body: unknown;
   logger: { warn: (msg: string, meta?: unknown) => void };
+  /** Override the target base (e.g. the ECS overflow service). Default: `ASSEMBLER_SERVICE_URL`. */
+  baseUrl?: string;
 }): Promise<void> {
   const { action, jobId, body, logger } = opts;
-  const base = assemblerBaseUrl();
+  const base = opts.baseUrl ?? assemblerBaseUrl();
   const payload = JSON.stringify(body);
 
   for (let attempt = 0; ; attempt++) {
@@ -181,9 +195,11 @@ export async function invokeAssemblerJobSync(opts: {
   body: unknown;
   uploadUrls: Record<string, string>;
   logger: { warn: (msg: string, meta?: unknown) => void };
+  /** Override the target base. Default: `ASSEMBLER_SERVICE_URL` (the Lambda). */
+  baseUrl?: string;
 }): Promise<SyncJobOutcome> {
   const { action, jobId, body, uploadUrls } = opts;
-  const base = assemblerBaseUrl();
+  const base = opts.baseUrl ?? assemblerBaseUrl();
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     "Idempotency-Key": jobId,
@@ -268,13 +284,15 @@ export async function invokeAssemblerJobSync(opts: {
 export async function pollAssemblerJobOnce(opts: {
   jobId: string;
   mintUploadUrls: () => Promise<Record<string, string>>;
+  /** Override the target base (e.g. the ECS overflow service). Default: `ASSEMBLER_SERVICE_URL`. */
+  baseUrl?: string;
 }): Promise<
   | { status: "pending" }
   | { status: "done"; result: Json; stats: Json }
   | { status: "error"; error: string }
 > {
   const { jobId, mintUploadUrls } = opts;
-  const base = assemblerBaseUrl();
+  const base = opts.baseUrl ?? assemblerBaseUrl();
   const uploadUrls = await mintUploadUrls();
   const headers: Record<string, string> = {
     ...assemblerAuthHeaders,
@@ -321,4 +339,137 @@ export async function pollAssemblerJobOnce(opts: {
     return { status: "error", error: job.error?.message ?? "Job failed" };
   }
   return { status: "pending" };
+}
+
+// The minimal Inngest step surface the router needs; keeps this module free of a
+// version-pinned Inngest type import while staying structurally compatible with
+// the real `step` tools. `run` returns `any` because Inngest wraps the result in
+// `Jsonify<T>` (not a bare `T`) — call sites annotate the awaited value.
+type StepTools = {
+  run: (id: string, fn: () => unknown) => Promise<any>;
+  sleep: (id: string, duration: string | number) => Promise<unknown>;
+};
+
+type PollOutcome = Awaited<ReturnType<typeof pollAssemblerJobOnce>>;
+
+type AssemblerLogger = {
+  warn: (msg: string, meta?: unknown) => void;
+  info: (msg: string, meta?: unknown) => void;
+};
+
+type AssemblerJobSpec = {
+  /** Namespaces this job's Inngest step ids (a caller may run several). */
+  idPrefix: string;
+  action: "convert" | "optimize" | "plan" | "compact";
+  jobId: string;
+  /** Build the request body (signs a fresh source URL) — run inside a step. */
+  buildBody: () => Promise<unknown>;
+  /** Mint fresh signed upload URLs for the completion artifacts (late-mint). */
+  mintUploadUrls: () => Promise<Record<string, string>>;
+  maxWaitMs: number;
+  logger: AssemblerLogger;
+};
+
+/**
+ * Run an assembler action to completion the right way for the deployment:
+ *
+ *  - **sync** (Lambda) when `ASSEMBLER_SYNC_ENABLED` and the caller allows it —
+ *    one inline `?sync` invoke (upload URLs minted once up front). On `overflow`
+ *    (the runtime's wall-clock cut it off / it was busy) fall back to the async
+ *    ECS path; with no ECS service configured, fail (Inngest `onFailure`
+ *    degrades the model to its poster tier).
+ *  - **async** (submit -> long-poll) otherwise — the standing service / dev
+ *    container, unchanged. This is the default: with sync off, behavior is
+ *    exactly today's.
+ *
+ * Returns the terminal `{ result, stats }`; throws on job error / timeout.
+ */
+export async function runAssemblerJob(
+  step: StepTools,
+  spec: AssemblerJobSpec & { preferSync?: boolean }
+): Promise<{ result: Json; stats: Json }> {
+  const { idPrefix, action, jobId, buildBody, mintUploadUrls, logger } = spec;
+  const wantSync = (spec.preferSync ?? true) && assemblerSyncEnabled();
+
+  if (wantSync) {
+    const outcome: SyncJobOutcome = await step.run(
+      `${idPrefix}-sync`,
+      async () => {
+        const [body, uploadUrls] = await Promise.all([
+          buildBody(),
+          mintUploadUrls()
+        ]);
+        return invokeAssemblerJobSync({
+          action,
+          jobId,
+          body,
+          uploadUrls,
+          logger
+        });
+      }
+    );
+    if (outcome.status === "done") {
+      return { result: outcome.result, stats: outcome.stats };
+    }
+    if (outcome.status === "error") {
+      throw new Error(outcome.error);
+    }
+    // overflow — re-dispatch to the uncapped ECS service (async); if it isn't
+    // deployed, nothing can run this job, so fail loud rather than hang.
+    const ecs = assemblerEcsUrl();
+    logger.warn(`assembler ${action} overflowed the sync runtime`, {
+      jobId,
+      reason: outcome.reason,
+      overflowToEcs: Boolean(ecs)
+    });
+    if (!ecs) {
+      throw new Error(
+        `assembler ${action} exceeded the sync runtime and no ECS overflow service is configured: ${outcome.reason}`
+      );
+    }
+    return runAssemblerJobAsync(step, spec, ecs);
+  }
+
+  return runAssemblerJobAsync(step, spec);
+}
+
+/** The async submit -> long-poll path, optionally pinned to an overflow base. */
+async function runAssemblerJobAsync(
+  step: StepTools,
+  spec: AssemblerJobSpec,
+  baseUrl?: string
+): Promise<{ result: Json; stats: Json }> {
+  const {
+    idPrefix,
+    action,
+    jobId,
+    buildBody,
+    mintUploadUrls,
+    maxWaitMs,
+    logger
+  } = spec;
+
+  await step.run(`${idPrefix}-submit`, async () => {
+    const body = await buildBody();
+    await submitAssemblerJob({ action, jobId, body, logger, baseUrl });
+  });
+
+  const startedAt: number = await step.run(`${idPrefix}-poll-start`, () =>
+    Date.now()
+  );
+  let i = 0;
+  while (Date.now() - startedAt < maxWaitMs) {
+    const poll: PollOutcome = await step.run(`${idPrefix}-poll-${i}`, () =>
+      pollAssemblerJobOnce({ jobId, mintUploadUrls, baseUrl })
+    );
+    if (poll.status === "done") {
+      return { result: poll.result, stats: poll.stats };
+    }
+    if (poll.status === "error") {
+      throw new Error(poll.error);
+    }
+    await step.sleep(`${idPrefix}-gap-${i}`, POLL_GAP);
+    i++;
+  }
+  throw new Error(`assembler ${action} did not finish within ${maxWaitMs}ms`);
 }

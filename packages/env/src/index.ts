@@ -209,6 +209,20 @@ export const ASSEMBLER_SERVICE_API_KEY = getEnv("ASSEMBLER_SERVICE_API_KEY", {
   isRequired: false,
   isSecret: true
 });
+// Overflow endpoint: the long-running ECS Fargate service (async submit->poll,
+// no 15-min cap). Set only when that service is enabled; unset => overflow jobs
+// degrade rather than run. See .ai/specs/2026-07-15-assembler-deployment.md.
+export const ASSEMBLER_ECS_SERVICE_URL = getEnv("ASSEMBLER_ECS_SERVICE_URL", {
+  isRequired: false
+});
+// Gate the synchronous invoke path (the Lambda runtime freezes after the
+// response, so jobs must run inline via POST /v1/{action}?sync). Off by default:
+// dev + the standing async service keep the submit->poll path unchanged. Turned
+// on where ASSEMBLER_SERVICE_URL points at the Lambda.
+export const ASSEMBLER_SYNC_ENABLED = parseBoolean(
+  getEnv("ASSEMBLER_SYNC_ENABLED", { isRequired: false, isSecret: false }),
+  false
+);
 
 export const GOOGLE_PLACES_API_KEY = getEnv("GOOGLE_PLACES_API_KEY", {
   isRequired: false

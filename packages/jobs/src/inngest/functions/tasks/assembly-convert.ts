@@ -1,12 +1,7 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Json } from "@carbon/database";
 import { inngest } from "../../client";
-import {
-  internalizeStorageUrl,
-  POLL_GAP,
-  pollAssemblerJobOnce,
-  submitAssemblerJob
-} from "./assembler-client";
+import { internalizeStorageUrl, runAssemblerJob } from "./assembler-client";
 
 const SIGNED_URL_EXPIRY = 60 * 60; // seconds — the source (read) URL only.
 // Total wall-clock budget before giving up, bounded by time (not a poll count)
@@ -103,107 +98,80 @@ export const assemblyConvertFunction = inngest.createFunction(
     const glbPath = `${companyId}/models/${modelUploadId}/${job.id}/model.glb`;
     const graphPath = `${companyId}/models/${modelUploadId}/${job.id}/graph.json`;
 
-    // Create the convert job (idempotent on job.id). A fresh signed source URL
-    // is minted here so retries don't reuse an expired one.
-    await step.run("submit", async () => {
-      const client = getCarbonServiceRole();
-
-      // Raw source lives in `temp-staging` (2.5 GB cap); assembly artifacts
-      // (glb/graph) are written to `private`.
-      const source = await client.storage
-        .from("temp-staging")
-        .createSignedUrl(job.modelPath, SIGNED_URL_EXPIRY);
-      if (source.error) {
-        throw new Error(`Failed to sign source URL: ${source.error.message}`);
-      }
-
-      // Content identity for the service's result cache: with a contentHash a
-      // repeat convert of unchanged bytes is served without re-downloading the
-      // source. etag is content-derived; size disambiguates multipart etags.
-      // Best-effort — omitted on any failure.
-      let contentHash: string | undefined;
-      try {
-        const info = await client.storage
+    // Router: sync inline on Lambda (default when enabled) or async submit->poll
+    // on the standing service / dev container. Sync off => today's async path.
+    // Each attempt mints a fresh signed source URL (retries never reuse an
+    // expired one) and fresh signed upload URLs for both artifacts (late-mint).
+    const convert = await runAssemblerJob(step, {
+      idPrefix: "convert",
+      action: "convert",
+      jobId: job.id,
+      maxWaitMs: MAX_CONVERT_WAIT_MS,
+      logger,
+      buildBody: async () => {
+        const client = getCarbonServiceRole();
+        // Raw source lives in `temp-staging` (2.5 GB cap); assembly artifacts
+        // (glb/graph) are written to `private`.
+        const source = await client.storage
           .from("temp-staging")
-          .info(job.modelPath);
-        const etag = info.data?.etag?.replaceAll('"', "");
-        if (!info.error && etag) {
-          contentHash = `${etag}-${info.data?.size ?? 0}`;
+          .createSignedUrl(job.modelPath, SIGNED_URL_EXPIRY);
+        if (source.error) {
+          throw new Error(`Failed to sign source URL: ${source.error.message}`);
         }
-      } catch {
-        // optimization only
-      }
 
-      await submitAssemblerJob({
-        action: "convert",
-        jobId: job.id,
-        logger,
-        body: {
+        // Content identity for the service's result cache: with a contentHash a
+        // repeat convert of unchanged bytes is served without re-downloading the
+        // source. etag is content-derived; size disambiguates multipart etags.
+        // Best-effort — omitted on any failure.
+        let contentHash: string | undefined;
+        try {
+          const info = await client.storage
+            .from("temp-staging")
+            .info(job.modelPath);
+          const etag = info.data?.etag?.replaceAll('"', "");
+          if (!info.error && etag) {
+            contentHash = `${etag}-${info.data?.size ?? 0}`;
+          }
+        } catch {
+          // optimization only
+        }
+
+        return {
           source: {
             url: internalizeStorageUrl(source.data.signedUrl),
             format: "step",
             ...(contentHash ? { contentHash } : {})
           },
           // Storage paths (not URLs) — recorded in the completion pointer; the
-          // signed PUT URLs are late-minted per poll, keyed glb/graph.
+          // signed PUT URLs are late-minted, keyed glb/graph.
           outputs: {
             glb: { path: glbPath },
             graph: { path: graphPath }
           }
-        }
-      });
-      logger.info("convert submitted to assembler service", { jobId: job.id });
+        };
+      },
+      mintUploadUrls: async () => {
+        const client = getCarbonServiceRole();
+        const [glbUpload, graphUpload] = await Promise.all([
+          client.storage
+            .from("private")
+            .createSignedUploadUrl(glbPath, { upsert: true }),
+          client.storage
+            .from("private")
+            .createSignedUploadUrl(graphPath, { upsert: true })
+        ]);
+        const urls: Record<string, string> = {};
+        if (glbUpload.data)
+          urls.glb = internalizeStorageUrl(glbUpload.data.signedUrl);
+        if (graphUpload.data)
+          urls.graph = internalizeStorageUrl(graphUpload.data.signedUrl);
+        return urls;
+      }
     });
-
-    // Long-poll to completion. Each poll mints fresh signed upload URLs for both
-    // artifacts; the service PUTs them the instant the convert is done.
-    let componentCount: number | null = null;
-    let stats: Json = null;
-    let finished = false;
-    const startedAt = await step.run("convert-poll-start", () => Date.now());
-    let i = 0;
-    while (Date.now() - startedAt < MAX_CONVERT_WAIT_MS) {
-      const poll = await step.run(`poll-${i}`, () =>
-        pollAssemblerJobOnce({
-          jobId: job.id,
-          mintUploadUrls: async () => {
-            const client = getCarbonServiceRole();
-            const [glbUpload, graphUpload] = await Promise.all([
-              client.storage
-                .from("private")
-                .createSignedUploadUrl(glbPath, { upsert: true }),
-              client.storage
-                .from("private")
-                .createSignedUploadUrl(graphPath, { upsert: true })
-            ]);
-            const urls: Record<string, string> = {};
-            if (glbUpload.data)
-              urls.glb = internalizeStorageUrl(glbUpload.data.signedUrl);
-            if (graphUpload.data)
-              urls.graph = internalizeStorageUrl(graphUpload.data.signedUrl);
-            return urls;
-          }
-        })
-      );
-
-      if (poll.status === "done") {
-        const result = (poll.result ?? {}) as { componentCount?: number };
-        componentCount = result.componentCount ?? null;
-        stats = poll.stats;
-        finished = true;
-        break;
-      }
-      if (poll.status === "error") {
-        // Fail fast: onFailure releases the model + job rows.
-        throw new Error(poll.error);
-      }
-      await step.sleep(`gap-${i}`, POLL_GAP);
-      i++;
-    }
-
-    if (!finished) {
-      throw new Error("Convert did not finish in the expected time");
-    }
+    const componentCount =
+      ((convert.result ?? {}) as { componentCount?: number }).componentCount ??
+      null;
+    const stats: Json = convert.stats;
 
     await step.run("persist", async () => {
       const client = getCarbonServiceRole();

@@ -2,12 +2,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Json } from "@carbon/database";
 import { modelPathOptimizeFormat } from "@carbon/utils";
 import { inngest } from "../../client";
-import {
-  internalizeStorageUrl,
-  POLL_GAP,
-  pollAssemblerJobOnce,
-  submitAssemblerJob
-} from "./assembler-client";
+import { internalizeStorageUrl, runAssemblerJob } from "./assembler-client";
 
 const SIGNED_URL_EXPIRY = 60 * 60; // seconds — the source (read) URL only.
 const MAX_OPTIMIZE_WAIT_MS = 15 * 60 * 1000;
@@ -84,66 +79,44 @@ export const modelOptimizeFunction = inngest.createFunction(
     // Idempotent per model — a re-run attaches to the in-flight optimise.
     const jobId = `optimize-${modelUploadId}`;
 
-    await step.run("submit", async () => {
-      const client = getCarbonServiceRole();
-      // Raw source lands in `temp-staging` (2.5 GB cap); optimised artifacts are
-      // written to `private` (50 MB served cap) below.
-      const source = await client.storage
-        .from("temp-staging")
-        .createSignedUrl(model.modelPath, SIGNED_URL_EXPIRY);
-      if (source.error) {
-        throw new Error(`Failed to sign source URL: ${source.error.message}`);
-      }
-      await submitAssemblerJob({
-        action: "optimize",
-        jobId,
-        logger,
-        body: {
+    // Router: sync inline on Lambda (default when enabled) or async submit->poll
+    // on the standing service / dev container. Sync off => today's async path.
+    const optimize = await runAssemblerJob(step, {
+      idPrefix: "optimize",
+      action: "optimize",
+      jobId,
+      maxWaitMs: MAX_OPTIMIZE_WAIT_MS,
+      logger,
+      buildBody: async () => {
+        const client = getCarbonServiceRole();
+        // Raw source lands in `temp-staging` (2.5 GB cap); optimised artifacts are
+        // written to `private` (50 MB served cap) below.
+        const source = await client.storage
+          .from("temp-staging")
+          .createSignedUrl(model.modelPath, SIGNED_URL_EXPIRY);
+        if (source.error) {
+          throw new Error(`Failed to sign source URL: ${source.error.message}`);
+        }
+        return {
           source: { url: internalizeStorageUrl(source.data.signedUrl), format },
           output: { path: optimizedPath }
           // quality omitted → the service defaults apply (codec meshopt, merge on,
           // normal quant on, auto simplify tolerance, aggressive ladder to fit the
           // size + render-weight gates).
-        }
-      });
-      logger.info("model optimise submitted", { modelUploadId, format });
+        };
+      },
+      mintUploadUrls: async () => {
+        const client = getCarbonServiceRole();
+        const upload = await client.storage
+          .from("private")
+          .createSignedUploadUrl(optimizedPath, { upsert: true });
+        const urls: Record<string, string> = {};
+        if (upload.data)
+          urls.glb = internalizeStorageUrl(upload.data.signedUrl);
+        return urls;
+      }
     });
-
-    let stats: Json = null;
-    let finished = false;
-    const startedAt = await step.run("optimize-poll-start", () => Date.now());
-    let i = 0;
-    while (Date.now() - startedAt < MAX_OPTIMIZE_WAIT_MS) {
-      const poll = await step.run(`poll-${i}`, () =>
-        pollAssemblerJobOnce({
-          jobId,
-          mintUploadUrls: async () => {
-            const client = getCarbonServiceRole();
-            const upload = await client.storage
-              .from("private")
-              .createSignedUploadUrl(optimizedPath, { upsert: true });
-            const urls: Record<string, string> = {};
-            if (upload.data)
-              urls.glb = internalizeStorageUrl(upload.data.signedUrl);
-            return urls;
-          }
-        })
-      );
-      if (poll.status === "done") {
-        stats = poll.stats;
-        finished = true;
-        break;
-      }
-      if (poll.status === "error") {
-        throw new Error(poll.error);
-      }
-      await step.sleep(`gap-${i}`, POLL_GAP);
-      i++;
-    }
-
-    if (!finished) {
-      throw new Error("Model optimise did not finish in the expected time");
-    }
+    const stats: Json = optimize.stats;
 
     await step.run("persist", async () => {
       const client = getCarbonServiceRole();
@@ -186,64 +159,40 @@ export const modelOptimizeFunction = inngest.createFunction(
       const compactPath = `${companyId}/models/${modelUploadId}.${format}.zst`;
       const compactJobId = `compact-${modelUploadId}`;
       try {
-        await step.run("compact-submit", async () => {
-          const client = getCarbonServiceRole();
-          const source = await client.storage
-            .from("temp-staging")
-            .createSignedUrl(model.modelPath, SIGNED_URL_EXPIRY);
-          if (source.error) {
-            throw new Error(`sign source: ${source.error.message}`);
-          }
-          await submitAssemblerJob({
-            action: "compact",
-            jobId: compactJobId,
-            logger,
-            body: {
+        const compact = await runAssemblerJob(step, {
+          idPrefix: "compact",
+          action: "compact",
+          jobId: compactJobId,
+          maxWaitMs: MAX_OPTIMIZE_WAIT_MS,
+          logger,
+          buildBody: async () => {
+            const client = getCarbonServiceRole();
+            const source = await client.storage
+              .from("temp-staging")
+              .createSignedUrl(model.modelPath, SIGNED_URL_EXPIRY);
+            if (source.error) {
+              throw new Error(`sign source: ${source.error.message}`);
+            }
+            return {
               source: { url: internalizeStorageUrl(source.data.signedUrl) },
               mode: "zstd",
               output: { path: compactPath }
-            }
-          });
+            };
+          },
+          mintUploadUrls: async () => {
+            const client = getCarbonServiceRole();
+            const upload = await client.storage
+              .from("temp-staging")
+              .createSignedUploadUrl(compactPath, { upsert: true });
+            const urls: Record<string, string> = {};
+            if (upload.data)
+              urls.raw = internalizeStorageUrl(upload.data.signedUrl);
+            return urls;
+          }
         });
-
-        const compactStartedAt = await step.run("compact-poll-start", () =>
-          Date.now()
-        );
-        let ci = 0;
-        let compacted = false;
-        let compactedSize: number | null = null;
-        while (Date.now() - compactStartedAt < MAX_OPTIMIZE_WAIT_MS) {
-          const poll = await step.run(`compact-poll-${ci}`, () =>
-            pollAssemblerJobOnce({
-              jobId: compactJobId,
-              mintUploadUrls: async () => {
-                const client = getCarbonServiceRole();
-                const upload = await client.storage
-                  .from("temp-staging")
-                  .createSignedUploadUrl(compactPath, { upsert: true });
-                const urls: Record<string, string> = {};
-                if (upload.data)
-                  urls.raw = internalizeStorageUrl(upload.data.signedUrl);
-                return urls;
-              }
-            })
-          );
-          if (poll.status === "done") {
-            compacted = true;
-            compactedSize =
-              (poll.stats as { outputBytes?: number } | null)?.outputBytes ??
-              null;
-            break;
-          }
-          if (poll.status === "error") {
-            throw new Error(poll.error);
-          }
-          await step.sleep(`compact-gap-${ci}`, POLL_GAP);
-          ci++;
-        }
-        if (!compacted) {
-          throw new Error("compact did not finish in the expected time");
-        }
+        const compactedSize =
+          (compact.stats as { outputBytes?: number } | null)?.outputBytes ??
+          null;
 
         await step.run("compact-persist", async () => {
           const client = getCarbonServiceRole();
