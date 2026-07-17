@@ -56,10 +56,15 @@ Legend: `[ ]` todo · verify = command + expected.
       The async `/v1/jobs` path is **unchanged** (ECS service's contract + local dev).
       *Verify:* `cargo check`/`clippy -p assembler` clean; runtime (STEP→sync→upload)
       verifies at deploy (needs storage + signed URLs).
-- [ ] **T1.2 Time-budget gate** — thread a wall-clock budget (~12 min) into the
-      simplify ladder; degrade coarser as it runs down; return best-so-far before
-      15 min. File: `apps/assembler/src/actions/optimize.rs` (+ convert).
-      *Verify:* a synthetic slow job returns before the budget, coarser.
+- [x] **T1.2 Time-budget gate** — optional wall-clock budget (`quality.time_budget_secs`
+      or `ASSEMBLER_OPTIMIZE_BUDGET_SECS`, default unbounded) → absolute `deadline`
+      in `optimize::spawn` (charges download+tessellation) → the ladder **skips to the
+      coarsest rung** once spent (finer skipped rungs would fail the size gate too and
+      only burn the window). Size invariant kept: no-fit still `cannot_fit_budget`.
+      Files: `apps/assembler/src/{config.rs, main.rs, actions/optimize.rs}`.
+      **convert has no ladder** (single-pass lossless — nodeIds/planner need full
+      geometry), so the gate is optimize-only. *Verify:* `cargo build`/`clippy` clean;
+      the skip-to-coarsest triggers on a real over-budget model at deploy.
 - [ ] **T1.3 Job-layer router** — `packages/jobs/.../tasks/assembler-client.ts`:
       add `invokeLambda(spec)` (await the sync result). **Keep**
       `submitAssemblerJob`/`pollAssemblerJobOnce` — the ECS service is a normal async

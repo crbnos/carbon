@@ -441,6 +441,15 @@ pub fn optimize_opts(out: &Value, q: &Value) -> actions::optimize::Opts {
             .unwrap_or(DEFAULT_MAX_OUTPUT_BYTES) as usize,
         lin: q["linear_deflection"].as_f64().unwrap_or(0.1),
         ang: q["angular_deflection"].as_f64().unwrap_or(0.5),
+        // Per-request budget wins; else the env default (set on the Lambda path).
+        budget: q["time_budget_secs"]
+            .as_u64()
+            .filter(|&s| s > 0)
+            .or_else(config::optimize_budget_secs)
+            .map(std::time::Duration::from_secs),
+        // Turned into an absolute deadline in `optimize::spawn` (charges the
+        // download + tessellation already spent).
+        deadline: None,
     }
 }
 

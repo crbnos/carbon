@@ -13,7 +13,7 @@ use crate::jobs::{Done, Output};
 use crate::{http, AppState};
 use serde_json::json;
 use std::sync::Arc;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 pub struct OptimizeReq {
     pub source_url: String,
@@ -49,6 +49,14 @@ pub struct Opts {
     /// STEP/IGES tessellation deflection (ignored for mesh input).
     pub lin: f64,
     pub ang: f64,
+    /// Wall-clock budget for the simplify ladder (from `quality.time_budget_secs`
+    /// or `ASSEMBLER_OPTIMIZE_BUDGET_SECS`). `None` = unbounded. `spawn` turns this
+    /// into an absolute `deadline` relative to job start (so it also charges the
+    /// download + tessellation time already spent).
+    pub budget: Option<Duration>,
+    /// Absolute deadline computed in `spawn`; consumed by the ladder. Never set
+    /// from JSON.
+    pub deadline: Option<Instant>,
 }
 
 /// A typed action failure carrying the snake_case API error code.
@@ -91,7 +99,9 @@ pub fn spawn(state: &AppState, job_id: &str, req: OptimizeReq) {
         let tmp_str = tmp.to_string_lossy().to_string();
         let declared = req.format.clone();
         let ext = url_ext(&req.source_url);
-        let opts = req.opts;
+        let mut opts = req.opts;
+        // Charge the download + tessellation already spent against the budget.
+        opts.deadline = opts.budget.map(|b| started + b);
 
         let res = tokio::task::spawn_blocking(move || {
             run_optimize(&tmp_str, &declared, ext.as_deref(), &opts)
@@ -217,7 +227,25 @@ fn run_optimize(
 
     let mut best: Option<Outcome> = None;
     let mut warnings: Vec<String> = Vec::new();
-    for rung in ladder {
+    let mut i = 0;
+    while i < ladder.len() {
+        // Time-budget gate: if the wall-clock budget is spent and coarser rungs
+        // remain, jump straight to the coarsest. The skipped middle rungs are
+        // finer (larger output) than the coarsest, so if they'd fail the size gate
+        // the coarsest is the only one with a chance — running them first only
+        // burns the remaining window. Preserves the size invariant: a no-fit
+        // coarsest still fails `cannot_fit_budget` below (never stores over-cap).
+        if let Some(dl) = opts.deadline {
+            let last = ladder.len() - 1;
+            if i < last && Instant::now() >= dl {
+                warnings.push(format!(
+                    "time budget spent after rung {:?}; skipping to coarsest rung {:?}",
+                    ladder[i], ladder[last]
+                ));
+                i = last;
+            }
+        }
+        let rung = ladder[i];
         let o = optimize::Options {
             codec: opts.codec,
             simplify: rung,
@@ -257,6 +285,7 @@ fn run_optimize(
             opts.max_output
         ));
         best = Some(outcome);
+        i += 1;
     }
 
     // Nothing fit the budget even at the most aggressive rung: fail loud rather

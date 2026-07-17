@@ -35,6 +35,19 @@ pub fn max_concurrency() -> usize {
     int_env("ASSEMBLER_MAX_CONCURRENCY", 2).max(1)
 }
 
+/// Wall-clock budget (seconds) for the optimize simplify ladder. When set, a job
+/// running past it jumps straight to the coarsest rung instead of grinding every
+/// middle pass — bounding a slow job inside a caller's window (the Lambda path
+/// sets this to ~720s so it lands under the 900s hard timeout). `None`/0 =
+/// unbounded (the default; the standing ECS service has no 15-min cap). A
+/// per-request `quality.time_budget_secs` overrides this.
+pub fn optimize_budget_secs() -> Option<u64> {
+    std::env::var("ASSEMBLER_OPTIMIZE_BUDGET_SECS")
+        .ok()
+        .and_then(|s| s.parse::<u64>().ok())
+        .filter(|&s| s > 0)
+}
+
 /// Redis URL for the shared job/result store. Unset => in-process backend (the
 /// single-process default). A set-but-unreachable URL falls back to memory at
 /// boot rather than refusing to start (mirrors @carbon/kv's soft-fail).
