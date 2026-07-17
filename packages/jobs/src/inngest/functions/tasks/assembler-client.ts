@@ -18,6 +18,11 @@ import { NonRetriableError } from "inngest";
 
 // Submits are short; a tight per-request timeout catches an unreachable service.
 const REQUEST_TIMEOUT_MS = 60 * 1000;
+// A `?sync` invoke runs the whole job inline in one request (the Lambda path).
+// Must exceed the runtime's own cap (Lambda's 900s hard timeout) so the wall is
+// the runtime's, not the client's — a client cut-off before then would drop a
+// job the runtime is still finishing.
+const SYNC_TIMEOUT_MS = (15 * 60 + 60) * 1000;
 // Bounded backoff when the service 429s (all slots busy), honoring Retry-After.
 const BUSY_RETRIES = 4;
 // GET /v1/jobs/{id}?wait=N holds the request open until the job finishes (or N
@@ -149,6 +154,109 @@ export async function submitAssemblerJob(opts: {
 }
 
 export type JobResult = { result: Json; stats: Json };
+
+/**
+ * Outcome of a synchronous `?sync` invoke (the Lambda path). `done`/`error` are
+ * terminal; `overflow` means the runtime could not finish here (its wall-clock
+ * cut it off, or it signalled busy/unavailable) and the caller should re-dispatch
+ * to the standing ECS service (no 15-min cap) or let Inngest retry.
+ */
+export type SyncJobOutcome =
+  | { status: "done"; result: Json; stats: Json }
+  | { status: "error"; error: string }
+  | { status: "overflow"; reason: string };
+
+/**
+ * POST /v1/{action}?sync — run the job INLINE and return the terminal result in
+ * one request (the Lambda path: Lambda freezes after the response, so a detached
+ * 202 job would never finish). Upload URLs are minted ONCE up front (they must
+ * outlast the whole inline run, unlike the async path's fresh-per-poll URLs) and
+ * handed over in X-Carbon-Upload-Urls, so the service late-mint uploads within
+ * the request. Idempotent on `jobId`. A runtime cut-off / busy / unavailable maps
+ * to `overflow` for the router to fall back on; a genuine outage throws.
+ */
+export async function invokeAssemblerJobSync(opts: {
+  action: "convert" | "optimize" | "plan" | "compact";
+  jobId: string;
+  body: unknown;
+  uploadUrls: Record<string, string>;
+  logger: { warn: (msg: string, meta?: unknown) => void };
+}): Promise<SyncJobOutcome> {
+  const { action, jobId, body, uploadUrls } = opts;
+  const base = assemblerBaseUrl();
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    "Idempotency-Key": jobId,
+    ...assemblerAuthHeaders,
+    ...(Object.keys(uploadUrls).length > 0
+      ? { "X-Carbon-Upload-Urls": JSON.stringify(uploadUrls) }
+      : {})
+  };
+
+  let response: Response;
+  try {
+    response = await fetch(`${base}/v1/${action}?sync`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(SYNC_TIMEOUT_MS)
+    });
+  } catch (e) {
+    const err = e as Error;
+    // The runtime's own timeout should fire first; a client-side cut-off means
+    // the job outran even that window — overflow it rather than fail the run.
+    if (err.name === "TimeoutError" || err.name === "AbortError") {
+      return {
+        status: "overflow",
+        reason: `sync invoke exceeded ${SYNC_TIMEOUT_MS}ms`
+      };
+    }
+    throw new NonRetriableError(
+      `Assembler service unreachable: ${err.message}`
+    );
+  }
+
+  // A gateway/runtime cut-off (502/504) or busy/unavailable (429/503) is not a
+  // job failure — overflow to the uncapped ECS service (or Inngest retry).
+  if ([429, 502, 503, 504].includes(response.status)) {
+    return {
+      status: "overflow",
+      reason: `sync invoke returned ${response.status}`
+    };
+  }
+
+  const parsed = (await response.json().catch(() => null)) as {
+    ok?: boolean;
+    job?: {
+      status?: string;
+      result?: Json;
+      stats?: Json;
+      error?: { message?: string };
+    };
+  } | null;
+  if (!response.ok || !parsed?.job) {
+    throw new NonRetriableError(
+      `POST /v1/${action}?sync returned ${response.status}`
+    );
+  }
+  const job = parsed.job;
+  if (job.status === "succeeded") {
+    return {
+      status: "done",
+      result: job.result ?? null,
+      stats: job.stats ?? null
+    };
+  }
+  if (job.status === "failed") {
+    return { status: "error", error: job.error?.message ?? "Job failed" };
+  }
+  // A sync response is expected terminal; anything else means the runtime
+  // returned before finishing — treat as overflow.
+  return {
+    status: "overflow",
+    reason: `sync invoke returned non-terminal status '${job.status ?? "?"}'`
+  };
+}
 
 /**
  * One GET /v1/jobs/{id}?wait=N poll. Mints fresh signed upload URLs (late-mint)

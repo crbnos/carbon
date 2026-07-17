@@ -65,15 +65,21 @@ Legend: `[ ]` todo · verify = command + expected.
       **convert has no ladder** (single-pass lossless — nodeIds/planner need full
       geometry), so the gate is optimize-only. *Verify:* `cargo build`/`clippy` clean;
       the skip-to-coarsest triggers on a real over-budget model at deploy.
-- [ ] **T1.3 Job-layer router** — `packages/jobs/.../tasks/assembler-client.ts`:
-      add `invokeLambda(spec)` (await the sync result). **Keep**
-      `submitAssemblerJob`/`pollAssemblerJobOnce` — the ECS service is a normal async
-      assembler endpoint at `ASSEMBLER_ECS_SERVICE_URL`. Router: source>threshold →
-      ECS service (if URL set, else degrade); else Lambda; Lambda timeout → ECS
-      service. Update callers `model-optimize.ts`, `assembly-convert.ts`,
-      `assembly-plan.ts`. *Verify:* `pnpm --filter @carbon/jobs typecheck` clean;
-      local end-to-end via the sync path succeeds; a forced-timeout routes to the async
-      path (or degrades when the URL is unset).
+- [~] **T1.3 Job-layer router** — split into a landed primitive + a gated rewire.
+      - [x] **Primitive** — `invokeAssemblerJobSync(action, jobId, body, uploadUrls)`
+        in `assembler-client.ts`: `POST /v1/{action}?sync`, upload URLs minted once up
+        front, terminal `{ok, job}` → `done`/`error`/`overflow` (runtime cut-off / busy
+        / 5xx → `overflow` for the router to fall back on). Keeps
+        `submitAssemblerJob`/`pollAssemblerJobOnce` for the ECS async path.
+        *Verify:* `@carbon/jobs` typecheck clean (only unrelated `fonts.data` codegen
+        error from `--ignore-scripts`).
+      - [ ] **Rewire (⛳ needs go-ahead + env)** — route `model-optimize.ts` (+
+        `assembly-convert.ts`, `assembly-plan.ts`) through Lambda-sync default vs
+        ECS-async overflow. Touches a **production hot path** (runs on every upload) +
+        adds env (`ASSEMBLER_ECS_SERVICE_URL`, a sync-mode gate) to `@carbon/env`;
+        default must stay the current async path (dev container / standing service)
+        until P2 sets the Lambda URL. *Verify:* forced-timeout routes to async / degrades
+        when unset; typecheck clean; dev behavior unchanged with sync off.
 
 ## P2 — Lambda (commercial / standalone)  ⛳ needs AWS account/region + hostname
 
