@@ -2,7 +2,8 @@
 //! over HTTP/JSON, versioned under `/v1`, with one shared async job model:
 //!
 //!   POST /v1/convert | /v1/optimize | /v1/plan | /v1/compact
-//!                                                → 202 { ok, job }   (create)
+//!                                                → 202 { ok, job }   (create, async)
+//!                          ...?sync              → 200 { ok, job }   (run inline; Lambda)
 //!   GET  /v1/jobs/{id}?wait=N                     → 200 { ok, job }   (poll)
 //!   POST /v1/jobs/{id}/cancel                     → 200 { ok, job }
 //!   POST /v1/cache/invalidate                     → 200 { ok, cleared }
@@ -277,9 +278,43 @@ fn parse_body(
         .map_err(|_| ApiError::invalid("invalid JSON body"))
 }
 
+#[derive(serde::Deserialize)]
+struct CreateQuery {
+    /// `?sync` (bare / `=true` / `=1`) runs the job **inline** and returns the
+    /// terminal `{ok, job}` in one response — the Lambda path (Lambda freezes
+    /// after the response, so a detached job would never finish). Absent => the
+    /// default async 202 + poll (what the standing ECS service uses).
+    sync: Option<String>,
+}
+
+fn sync_flag(q: &CreateQuery) -> bool {
+    matches!(q.sync.as_deref(), Some("" | "true" | "1" | "yes"))
+}
+
+/// Finalize a create request. Sync mode drives the just-spawned (or already
+/// running) job to terminal inline, uploading its outputs to the caller's
+/// per-request signed URLs via the same finalize path the async poll uses, and
+/// returns the terminal `{ok, job}` (200, same envelope as `GET /v1/jobs/{id}`).
+/// Async mode returns the uniform 202 + `Location`.
+async fn respond(
+    state: &AppState,
+    headers: &HeaderMap,
+    job_id: &str,
+    action: &str,
+    sync: bool,
+) -> Result<(StatusCode, HeaderMap, Json<Value>), ApiError> {
+    if !sync {
+        return Ok(created(job_id, action, "queued"));
+    }
+    let urls = parse_upload_urls(headers)?;
+    let result = run::run_to_completion(state, job_id, &urls).await;
+    Ok((StatusCode::OK, HeaderMap::new(), Json(result)))
+}
+
 async fn create_convert(
     State(state): State<AppState>,
     headers: HeaderMap,
+    Query(q): Query<CreateQuery>,
     body: Result<Json<Value>, axum::extract::rejection::JsonRejection>,
 ) -> Result<(StatusCode, HeaderMap, Json<Value>), ApiError> {
     require_auth(&headers)?;
@@ -290,38 +325,42 @@ async fn create_convert(
         .ok_or_else(|| ApiError::invalid("missing source.url"))?;
     config::validate_url(source_url)?;
     let job_id = resolve_job_id(&headers);
+    let sync = sync_flag(&q);
 
-    if let Some(status) = state.jobs.existing_active(&job_id).await {
-        return Ok(created(&job_id, "convert", &status));
+    match state.jobs.existing_active(&job_id).await {
+        Some(status) if !sync => return Ok(created(&job_id, "convert", &status)),
+        Some(_) => {} // sync: attach to the running job, don't re-spawn
+        None => {
+            let declared_hash = req["source"]["contentHash"]
+                .as_str()
+                .map(str::trim)
+                .filter(|s| !s.is_empty() && s.len() <= 128)
+                .map(str::to_string);
+            let meta = optional_meta(&req);
+            state.jobs.set_pending(&job_id, "convert", meta).await;
+            eprintln!("[{job_id}] convert queued");
+            actions::convert::spawn(
+                &state,
+                &job_id,
+                actions::convert::ConvertReq {
+                    source_url: source_url.to_string(),
+                    declared_hash,
+                    glb_path: req["outputs"]["glb"]["path"].as_str().map(str::to_string),
+                    graph_path: req["outputs"]["graph"]["path"].as_str().map(str::to_string),
+                    lin: req["options"]["linearDeflection"].as_f64().unwrap_or(0.1),
+                    ang: req["options"]["angularDeflection"].as_f64().unwrap_or(0.5),
+                    optimize: req["options"]["optimize"].as_bool().unwrap_or(true),
+                },
+            );
+        }
     }
-
-    let declared_hash = req["source"]["contentHash"]
-        .as_str()
-        .map(str::trim)
-        .filter(|s| !s.is_empty() && s.len() <= 128)
-        .map(str::to_string);
-    let meta = optional_meta(&req);
-    state.jobs.set_pending(&job_id, "convert", meta).await;
-    eprintln!("[{job_id}] convert queued");
-    actions::convert::spawn(
-        &state,
-        &job_id,
-        actions::convert::ConvertReq {
-            source_url: source_url.to_string(),
-            declared_hash,
-            glb_path: req["outputs"]["glb"]["path"].as_str().map(str::to_string),
-            graph_path: req["outputs"]["graph"]["path"].as_str().map(str::to_string),
-            lin: req["options"]["linearDeflection"].as_f64().unwrap_or(0.1),
-            ang: req["options"]["angularDeflection"].as_f64().unwrap_or(0.5),
-            optimize: req["options"]["optimize"].as_bool().unwrap_or(true),
-        },
-    );
-    Ok(created(&job_id, "convert", "queued"))
+    respond(&state, &headers, &job_id, "convert", sync).await
 }
 
 async fn create_optimize(
     State(state): State<AppState>,
     headers: HeaderMap,
+    Query(q): Query<CreateQuery>,
     body: Result<Json<Value>, axum::extract::rejection::JsonRejection>,
 ) -> Result<(StatusCode, HeaderMap, Json<Value>), ApiError> {
     require_auth(&headers)?;
@@ -332,32 +371,34 @@ async fn create_optimize(
         .ok_or_else(|| ApiError::invalid("missing source.url"))?;
     config::validate_url(source_url)?;
     let job_id = resolve_job_id(&headers);
+    let sync = sync_flag(&q);
 
-    if let Some(status) = state.jobs.existing_active(&job_id).await {
-        return Ok(created(&job_id, "optimize", &status));
+    match state.jobs.existing_active(&job_id).await {
+        Some(status) if !sync => return Ok(created(&job_id, "optimize", &status)),
+        Some(_) => {} // sync: attach to the running job, don't re-spawn
+        None => {
+            let opts = optimize_opts(&req["output"], &req["quality"]);
+            // `auto` (the default) content-detects the format in the action.
+            let format = req["source"]["format"]
+                .as_str()
+                .unwrap_or("auto")
+                .to_string();
+            let meta = optional_meta(&req);
+            state.jobs.set_pending(&job_id, "optimize", meta).await;
+            eprintln!("[{job_id}] optimize queued (format={format})");
+            actions::optimize::spawn(
+                &state,
+                &job_id,
+                actions::optimize::OptimizeReq {
+                    source_url: source_url.to_string(),
+                    format,
+                    glb_path: req["output"]["path"].as_str().map(str::to_string),
+                    opts,
+                },
+            );
+        }
     }
-
-    let opts = optimize_opts(&req["output"], &req["quality"]);
-    // `auto` (the default) content-detects the format in the action.
-    let format = req["source"]["format"]
-        .as_str()
-        .unwrap_or("auto")
-        .to_string();
-
-    let meta = optional_meta(&req);
-    state.jobs.set_pending(&job_id, "optimize", meta).await;
-    eprintln!("[{job_id}] optimize queued (format={format})");
-    actions::optimize::spawn(
-        &state,
-        &job_id,
-        actions::optimize::OptimizeReq {
-            source_url: source_url.to_string(),
-            format,
-            glb_path: req["output"]["path"].as_str().map(str::to_string),
-            opts,
-        },
-    );
-    Ok(created(&job_id, "optimize", "queued"))
+    respond(&state, &headers, &job_id, "optimize", sync).await
 }
 
 /// The simplify ladder: `quality.ladder` (array of number|null) if present, else
@@ -416,6 +457,7 @@ fn parse_ladder(quality: &Value) -> Vec<Option<f32>> {
 async fn create_plan(
     State(state): State<AppState>,
     headers: HeaderMap,
+    Query(q): Query<CreateQuery>,
     body: Result<Json<Value>, axum::extract::rejection::JsonRejection>,
 ) -> Result<(StatusCode, HeaderMap, Json<Value>), ApiError> {
     require_auth(&headers)?;
@@ -426,42 +468,45 @@ async fn create_plan(
         .ok_or_else(|| ApiError::invalid("missing source.url"))?;
     config::validate_url(source_url)?;
     let job_id = resolve_job_id(&headers);
+    let sync = sync_flag(&q);
 
-    if let Some(status) = state.jobs.existing_active(&job_id).await {
-        return Ok(created(&job_id, "plan", &status));
+    match state.jobs.existing_active(&job_id).await {
+        Some(status) if !sync => return Ok(created(&job_id, "plan", &status)),
+        Some(_) => {} // sync: attach to the running job, don't re-spawn
+        None => {
+            let meta = optional_meta(&req);
+            let plan_path = meta
+                .as_ref()
+                .and_then(|m| m["planPath"].as_str())
+                .map(str::to_string);
+            let model_upload_id = meta
+                .as_ref()
+                .and_then(|m| m["modelUploadId"].as_str())
+                .map(str::to_string);
+            state.jobs.set_pending(&job_id, "plan", meta).await;
+            eprintln!(
+                "[{job_id}] plan queued (model={})",
+                model_upload_id.as_deref().unwrap_or("?")
+            );
+            actions::plan::spawn(
+                &state,
+                &job_id,
+                actions::plan::PlanReq {
+                    source_url: source_url.to_string(),
+                    plan_path,
+                    model_upload_id,
+                    options: req["options"].clone(),
+                },
+            );
+        }
     }
-
-    let meta = optional_meta(&req);
-    let plan_path = meta
-        .as_ref()
-        .and_then(|m| m["planPath"].as_str())
-        .map(str::to_string);
-    let model_upload_id = meta
-        .as_ref()
-        .and_then(|m| m["modelUploadId"].as_str())
-        .map(str::to_string);
-
-    state.jobs.set_pending(&job_id, "plan", meta).await;
-    eprintln!(
-        "[{job_id}] plan queued (model={})",
-        model_upload_id.as_deref().unwrap_or("?")
-    );
-    actions::plan::spawn(
-        &state,
-        &job_id,
-        actions::plan::PlanReq {
-            source_url: source_url.to_string(),
-            plan_path,
-            model_upload_id,
-            options: req["options"].clone(),
-        },
-    );
-    Ok(created(&job_id, "plan", "queued"))
+    respond(&state, &headers, &job_id, "plan", sync).await
 }
 
 async fn create_compact(
     State(state): State<AppState>,
     headers: HeaderMap,
+    Query(q): Query<CreateQuery>,
     body: Result<Json<Value>, axum::extract::rejection::JsonRejection>,
 ) -> Result<(StatusCode, HeaderMap, Json<Value>), ApiError> {
     require_auth(&headers)?;
@@ -474,24 +519,27 @@ async fn create_compact(
     let mode = actions::compact::Mode::from_str(req["mode"].as_str().unwrap_or("xbf"))
         .ok_or_else(|| ApiError::invalid("mode must be 'xbf' or 'zstd'"))?;
     let job_id = resolve_job_id(&headers);
+    let sync = sync_flag(&q);
 
-    if let Some(status) = state.jobs.existing_active(&job_id).await {
-        return Ok(created(&job_id, "compact", &status));
+    match state.jobs.existing_active(&job_id).await {
+        Some(status) if !sync => return Ok(created(&job_id, "compact", &status)),
+        Some(_) => {} // sync: attach to the running job, don't re-spawn
+        None => {
+            let meta = optional_meta(&req);
+            state.jobs.set_pending(&job_id, "compact", meta).await;
+            eprintln!("[{job_id}] compact queued");
+            actions::compact::spawn(
+                &state,
+                &job_id,
+                actions::compact::CompactReq {
+                    source_url: source_url.to_string(),
+                    mode,
+                    raw_path: req["output"]["path"].as_str().map(str::to_string),
+                },
+            );
+        }
     }
-
-    let meta = optional_meta(&req);
-    state.jobs.set_pending(&job_id, "compact", meta).await;
-    eprintln!("[{job_id}] compact queued");
-    actions::compact::spawn(
-        &state,
-        &job_id,
-        actions::compact::CompactReq {
-            source_url: source_url.to_string(),
-            mode,
-            raw_path: req["output"]["path"].as_str().map(str::to_string),
-        },
-    );
-    Ok(created(&job_id, "compact", "queued"))
+    respond(&state, &headers, &job_id, "compact", sync).await
 }
 
 fn optional_meta(req: &Value) -> Option<Value> {

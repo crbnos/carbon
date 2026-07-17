@@ -99,7 +99,7 @@ pub async fn run_job_cli() -> ! {
 
 /// Drive a spawned job to a terminal state, uploading its outputs to the given
 /// signed URLs via the same finalize path the HTTP poll uses. Shared by the CLI
-/// here and (next) the sync-HTTP Lambda handler.
+/// here and the sync-HTTP path (`?sync`, the Lambda handler in `main::respond`).
 pub async fn run_to_completion(
     state: &AppState,
     job_id: &str,

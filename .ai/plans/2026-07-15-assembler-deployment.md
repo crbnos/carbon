@@ -48,13 +48,14 @@ Legend: `[ ]` todo · verify = command + expected.
 
 ## P1 — Lambda sync handler + router  ⛳ needs go-ahead
 
-- [ ] **T1.1 Sync HTTP branch** — a `?sync` (or `wait`) flag on the create routes that,
-      after `spawn`, calls `run_to_completion` inline with the request's
-      `X-Carbon-Upload-Urls` and returns the **terminal** result in one response (no
-      202). The async `/v1/jobs` path is **unchanged** — it stays the ECS service's
-      primary contract + local dev. Files: `apps/assembler/src/main.rs`,
-      `.../actions/*`. *Verify:* `POST /v1/optimize?sync` returns the completed result
-      in one response; plain `POST` still 202s.
+- [x] **T1.1 Sync HTTP branch** — `?sync` (bare/`=true`/`=1`) flag on all 4 create
+      routes: after `spawn` (or attaching to an already-running job), calls
+      `run::run_to_completion` inline with the request's `X-Carbon-Upload-Urls` and
+      returns the **terminal** `{ok, job}` (200) in one response; plain POST still
+      202s. Added `CreateQuery`/`sync_flag`/`respond` in `apps/assembler/src/main.rs`.
+      The async `/v1/jobs` path is **unchanged** (ECS service's contract + local dev).
+      *Verify:* `cargo check`/`clippy -p assembler` clean; runtime (STEP→sync→upload)
+      verifies at deploy (needs storage + signed URLs).
 - [ ] **T1.2 Time-budget gate** — thread a wall-clock budget (~12 min) into the
       simplify ladder; degrade coarser as it runs down; return best-so-far before
       15 min. File: `apps/assembler/src/actions/optimize.rs` (+ convert).
