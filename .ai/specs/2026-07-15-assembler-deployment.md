@@ -277,3 +277,11 @@ columns. ERP/MES there get the GovCloud Function URL + key. *Verify:* health + b
   (no `run-job` CLI on the hot path — kept only for batch). Net effect: the async→sync
   refactor is now **Lambda-only** (smaller), the service is **config-gated/default-off**
   to preserve $0 idle, and Spot interruptions **self-heal** via the service scheduler.
+- 2026-07-17 — **P0 + P1 implemented** (Sid reviewed + approved). P0: LWA in the
+  Dockerfile, `run-job` CLI (now batch-only), isolated `assembler.yml` CI. P1:
+  assembler `?sync` HTTP branch + wall-clock time-budget gate (`optimize` ladder) +
+  the job-layer router `runAssemblerJob` (Lambda-sync default / ECS-async overflow,
+  `ASSEMBLER_SYNC_ENABLED` default-off) wired into `model-optimize` + `assembly-convert`
+  (`assembly-plan` stays async by design). Verified: `cargo build`/`clippy`,
+  `@carbon/{env,jobs}` typecheck, biome. **Next: P2/P3 IaC** — gated on AWS
+  account/region + hostnames/certs + the size-route threshold.
