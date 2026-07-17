@@ -87,36 +87,39 @@ Legend: `[ ]` todo · verify = command + expected.
 
 ## P2 — Lambda (commercial / standalone)  ⛳ needs AWS account/region + hostname
 
-- [ ] **T2.1 SST/IaC: `aws.lambda.Function`** (packageType Image) — `imageUri` =
-      `carbon/assembler:${IMAGE_TAG}`, `memorySize: 10240`, `timeout: 900`,
-      `ephemeralStorage: { size: 10240 }`, exec role (ECR pull, logs, signed-URL
-      egress), env (`ASSEMBLER_SERVICE_API_KEY`, `ASSEMBLER_REDIS_URL`,
-      `ASSEMBLER_ALLOWED_URL_HOSTS`, `ASSEMBLER_DEV_MODE` unset). **Not**
-      `sst.aws.Function`. File: `apps/assembler/sst.config.ts` (new standalone app).
-- [ ] **T2.2 `aws.lambda.FunctionUrl`** (auth NONE + in-app bearer, or AWS_IAM) at
-      `assembler.carbon.ms` (cert/DNS out-of-band, `dns:false`).
+> **Scaffolded** in `apps/assembler/sst.config.ts` (2026-07-17) — an **unvalidated
+> starting point**, NOT `sst deploy`-validated (no in-session AWS creds / `.sst`
+> types). Decisions are `DECISION:`-marked env placeholders. A human validates +
+> fills them at the deploy gate.
+
+- [~] **T2.1 SST/IaC: `aws.lambda.Function`** (packageType Image) — scaffolded:
+      `imageUri` = `carbon/assembler:${IMAGE_TAG}`, `memorySize: 10240`,
+      `timeout: 900`, `ephemeralStorage: 10240`, exec role (logs; ECR pull via
+      Lambda service + repo policy), shared `environment`. **Not** `sst.aws.Function`.
+      *Remaining:* deploy-validate the raw-provider shape.
+- [~] **T2.2 `aws.lambda.FunctionUrl`** — scaffolded `authorizationType: "NONE"`
+      (in-app bearer). *Remaining:* DECISION NONE vs `AWS_IAM`; hostname/cert/DNS.
 - [ ] **T2.3 CI deploy step** — on `apps/assembler/**`/`crates/**` push, `sst deploy
-      --stage prod` from `apps/assembler/` (pinned `sst@3.17.24`), then
-      `lambda update-function-code --image-uri …:${sha}`.
-- [ ] **T2.4 Consumer env** — commercial ERP/MES + Vercel get
-      `ASSEMBLER_SERVICE_URL` (Function URL) + `ASSEMBLER_SERVICE_API_KEY`.
-      *Verify (P2):* `curl https://assembler.carbon.ms/health` 200; no bearer → 401;
-      a STEP fixture optimizes end-to-end (artifact + row).
+      --stage prod` from `apps/assembler/` (pinned sst), then
+      `lambda update-function-code --image-uri …:${sha}`. *Not scaffolded* (needs
+      deploy creds/secrets).
+- [ ] **T2.4 Consumer env** — commercial ERP/MES + Vercel get `ASSEMBLER_SERVICE_URL`
+      (Function URL) + `ASSEMBLER_SERVICE_API_KEY` + `ASSEMBLER_SYNC_ENABLED=true`.
+      *Verify (P2):* `curl …/health` 200; no bearer → 401; STEP fixture end-to-end.
 
 ## P3 — ECS Spot service (default-off)  ⛳ needs size-route threshold
 
-- [ ] **T3.1 Cluster + long-running service** — `sst.aws.Cluster` +
-      `sst.aws.Service` (Fargate, 4 vCPU/16 GB, FARGATE_SPOT capacity provider,
-      `stopTimeout: 110`, same image's **default HTTP CMD**, ALB on `/health`,
-      **`desiredCount 0` behind a stage flag**). Public-subnet VPC (`nat: false`) + SG.
-      File: `apps/assembler/sst.config.ts`.
-- [ ] **T3.2 Point the router at the service** — set `ASSEMBLER_ECS_SERVICE_URL` to the
-      ALB URL; the router's overflow branch uses the **existing async
-      submit→poll** client against it (no RunTask code). Enable by bumping
-      `desiredCount` → 1. *Verify (P3):* enabled → a > threshold source routes to the
-      service, completes (no 15-min cap); an induced Spot stop → service reschedules +
-      Inngest retry succeeds (idempotent by `modelUploadId`). Disabled → job degrades,
-      $0 billing.
+- [~] **T3.1 Cluster + long-running service** — scaffolded in the same
+      `sst.config.ts` behind `ASSEMBLER_ECS_ENABLED`: `sst.aws.Vpc` (no-NAT public
+      subnet) + `sst.aws.Cluster` + `addService` (4 vCPU/16 GB, `capacity: "spot"`,
+      ALB on `/health` port 8000, `scaling.min`≥1 when deployed). *Remaining:*
+      deploy-validate SST v3 `capacity`/`Vpc nat` options; hostname/cert.
+- [ ] **T3.2 Point the router at the service** — set `ASSEMBLER_ECS_SERVICE_URL` to
+      the ALB URL; the router's overflow branch already uses it (no RunTask code).
+      Enable by setting `ASSEMBLER_ECS_ENABLED=true`. *Verify (P3):* enabled → an
+      over-threshold / overflowed job routes to the service, completes (no 15-min
+      cap); induced Spot stop → service reschedules + Inngest retry (idempotent).
+      Disabled → job degrades, $0 billing.
 
 ## P4 — GovCloud (shared, not per-workspace)  ⛳ needs ITAR account
 
