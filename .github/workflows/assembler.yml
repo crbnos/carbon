@@ -1,0 +1,106 @@
+name: Assembler Image
+
+# Isolated from deploy.yml so an assembler/crates change builds ONLY the
+# assembler image (and vice versa — erp/mes pushes never rebuild this).
+# Builds carbon/assembler:${sha} from apps/assembler/Dockerfile, which links the
+# prebuilt carbon/occt base (built here on demand — it's a ~30 min OCCT compile,
+# so it is NOT part of every run). The Lambda/ECS *deploy* is separate (P2/P3).
+#
+# Prereq: ECR repos carbon/assembler + carbon/occt exist (created out-of-band).
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "apps/assembler/**"
+      - "crates/**"
+  workflow_dispatch:
+    inputs:
+      build_occt_base:
+        description: "Also rebuild the carbon/occt base image (slow, ~30 min)"
+        type: boolean
+        default: false
+
+jobs:
+  occt-base:
+    name: OCCT base image
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.build_occt_base }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push OCCT base
+        uses: docker/build-push-action@v5
+        with:
+          context: apps/assembler
+          file: apps/assembler/occt.Dockerfile
+          push: true
+          tags: ${{ steps.login-ecr.outputs.registry }}/carbon/occt:8.0.0-p1
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
+
+  build:
+    name: Build assembler image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Context is the repo root (the cargo workspace spans crates/* + apps/assembler);
+      # the Dockerfile links the prebuilt OCCT base via the OCCT_IMAGE build-arg.
+      - name: Build and push assembler image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: apps/assembler/Dockerfile
+          build-args: |
+            OCCT_IMAGE=${{ steps.login-ecr.outputs.registry }}/carbon/occt:8.0.0-p1
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/carbon/assembler:latest
+            ${{ steps.login-ecr.outputs.registry }}/carbon/assembler:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
+
+      # Report-only for now (exit-code 0). Flip to '1' to fail the build on
+      # CRITICAL/HIGH once the base image's findings are triaged.
+      - name: Scan image (Trivy)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ steps.login-ecr.outputs.registry }}/carbon/assembler:${{ github.sha }}
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "0"

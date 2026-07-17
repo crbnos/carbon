@@ -22,11 +22,11 @@ Legend: `[ ]` todo · verify = command + expected.
 - [ ] **T0.1 Create ECR repos out-of-band** — `carbon/assembler` + `carbon/occt` in
       the target account/region (console/Terraform; nothing in-repo creates them).
       *Verify:* `aws ecr describe-repositories --repository-names carbon/assembler carbon/occt`.
-- [ ] **T0.2 CI: build + push the OCCT base** — new job (path-filter
+- [x] **T0.2 CI: build + push the OCCT base** — new job (path-filter
       `apps/assembler/occt.Dockerfile` or `workflow_dispatch`) builds it →
       `carbon/occt:8.0.0-p1` → ECR. File: `.github/workflows/deploy.yml`.
       *Verify:* image tag present in ECR.
-- [ ] **T0.3 Dockerfile: add the Lambda Web Adapter** — in the runtime stage of
+- [x] **T0.3 Dockerfile: add the Lambda Web Adapter** — in the runtime stage of
       `apps/assembler/Dockerfile`:
       `COPY --from=public.ecr.aws/awsguru/aws-lambda-adapter:0.9.1 /lambda-adapter /opt/extensions/lambda-adapter`
       and `ENV AWS_LWA_PORT=8000` (LWA defaults 8080; assembler binds 8000).
@@ -38,7 +38,7 @@ Legend: `[ ]` todo · verify = command + expected.
       Shares compute with the HTTP handlers (extract a `run_action(spec) -> Result`
       used by both). *Verify:* `assembler run-job '<spec>'` against a local STEP +
       pre-signed URLs → artifact lands, exit 0.
-- [ ] **T0.5 CI: build + push `carbon/assembler:${sha}`** — `docker/build-push-action`
+- [x] **T0.5 CI: build + push `carbon/assembler:${sha}`** — `docker/build-push-action`
       (`context: .`, `file: apps/assembler/Dockerfile`, `--build-arg
       OCCT_IMAGE=<ecr>/carbon/occt:8.0.0-p1`), **Trivy scan**, tags `:${sha}` + `:latest`.
       Add `apps/assembler/**`,`crates/**` to `paths`. File: `.github/workflows/deploy.yml`.

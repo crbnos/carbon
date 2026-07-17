@@ -118,6 +118,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/* \
     && useradd --system --uid 1001 --create-home assembler
 COPY --from=build /usr/local/bin/assembler /usr/local/bin/assembler
+# AWS Lambda Web Adapter — proxies a Lambda invoke to the HTTP server so the same
+# image runs unchanged on Lambda (default), and is inert on ECS/EC2/local. Point
+# it at our port (LWA defaults to 8080). Pin: verify against the latest release.
+COPY --from=public.ecr.aws/awsguru/aws-lambda-adapter:0.9.1 /lambda-adapter /opt/extensions/lambda-adapter
+ENV AWS_LWA_PORT=8000
 USER assembler
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
