@@ -31,7 +31,7 @@ Legend: `[ ]` todo · verify = command + expected.
       `COPY --from=public.ecr.aws/awsguru/aws-lambda-adapter:0.9.1 /lambda-adapter /opt/extensions/lambda-adapter`
       and `ENV AWS_LWA_PORT=8000` (LWA defaults 8080; assembler binds 8000).
       *Verify:* `docker build -f apps/assembler/Dockerfile --build-arg OCCT_IMAGE=carbon-occt:8.0.0-p1 -t asm .` builds; `docker run -p 8000:8000 asm` → `curl localhost:8000/health` = `{"ok":true,...}`.
-- [ ] **T0.4 Add a `run-job` CLI entrypoint** — `apps/assembler/src/main.rs`: if
+- [x] **T0.4 Add a `run-job` CLI entrypoint** — `apps/assembler/src/main.rs`: if
       `argv[1] == "run-job"`, read a job spec (JSON via arg/env: `{action, source_url,
       format, outputs, options}`), call the shared `run_optimize`/`run_convert`,
       upload to the signed URL(s), print result JSON, exit — **no HTTP server**.

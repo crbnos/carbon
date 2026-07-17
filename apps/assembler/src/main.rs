@@ -22,6 +22,7 @@ mod formats;
 mod http;
 mod jobs;
 mod progress;
+mod run;
 
 use axum::{
     extract::{Path, Query, State},
@@ -59,22 +60,34 @@ pub struct AppState {
 }
 
 fn main() {
-    tokio::runtime::Builder::new_multi_thread()
+    let rt = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .max_blocking_threads(config::blocking_threads())
         .build()
-        .expect("tokio runtime")
-        .block_on(serve());
+        .expect("tokio runtime");
+    // `assembler run-job <spec.json>` — one-shot job runner (no HTTP server), the
+    // ECS Fargate overflow / any-invoke path. Exits the process. Otherwise serve.
+    if std::env::args().nth(1).as_deref() == Some("run-job") {
+        rt.block_on(run::run_job_cli());
+    } else {
+        rt.block_on(serve());
+    }
+}
+
+/// Build the shared service state. Used by the HTTP server (`serve`) and the
+/// one-shot `run-job` CLI so both share one JobStore + cache + concurrency.
+pub async fn build_state() -> AppState {
+    AppState {
+        slots: Arc::new(Semaphore::new(config::max_concurrency())),
+        jobs: jobs::JobStore::from_env().await,
+        cache: Arc::new(cache::ResultCache::new(config::cache_bytes())),
+        progress: progress::ProgressStore::default(),
+    }
 }
 
 async fn serve() {
     let max = config::max_concurrency();
-    let state = AppState {
-        slots: Arc::new(Semaphore::new(max)),
-        jobs: jobs::JobStore::from_env().await,
-        cache: Arc::new(cache::ResultCache::new(config::cache_bytes())),
-        progress: progress::ProgressStore::default(),
-    };
+    let state = build_state().await;
     let slots = Arc::clone(&state.slots);
     let app = Router::new()
         .route("/health", get(health))
@@ -324,11 +337,36 @@ async fn create_optimize(
         return Ok(created(&job_id, "optimize", &status));
     }
 
-    // Request shape (snake_case): `{ source, output:{path,codec,max_bytes,
-    // max_render_weight_bytes}, quality:{...} }`.
-    let out = &req["output"];
-    let q = &req["quality"];
-    let opts = actions::optimize::Opts {
+    let opts = optimize_opts(&req["output"], &req["quality"]);
+    // `auto` (the default) content-detects the format in the action.
+    let format = req["source"]["format"]
+        .as_str()
+        .unwrap_or("auto")
+        .to_string();
+
+    let meta = optional_meta(&req);
+    state.jobs.set_pending(&job_id, "optimize", meta).await;
+    eprintln!("[{job_id}] optimize queued (format={format})");
+    actions::optimize::spawn(
+        &state,
+        &job_id,
+        actions::optimize::OptimizeReq {
+            source_url: source_url.to_string(),
+            format,
+            glb_path: req["output"]["path"].as_str().map(str::to_string),
+            opts,
+        },
+    );
+    Ok(created(&job_id, "optimize", "queued"))
+}
+
+/// The simplify ladder: `quality.ladder` (array of number|null) if present, else
+/// a single rung from `quality.simplify`, else an aggressive default ladder
+/// (performance-first: walk down until the output fits the size/render gates).
+/// Build the optimise `Opts` from the request/spec JSON (`output` + `quality`
+/// objects, snake_case). Shared by the HTTP handler and the `run-job` CLI.
+pub fn optimize_opts(out: &Value, q: &Value) -> actions::optimize::Opts {
+    actions::optimize::Opts {
         codec: out["codec"]
             .as_str()
             .and_then(optimize::Codec::from_str_opt)
@@ -362,32 +400,9 @@ async fn create_optimize(
             .unwrap_or(DEFAULT_MAX_OUTPUT_BYTES) as usize,
         lin: q["linear_deflection"].as_f64().unwrap_or(0.1),
         ang: q["angular_deflection"].as_f64().unwrap_or(0.5),
-    };
-    // `auto` (the default) content-detects the format in the action.
-    let format = req["source"]["format"]
-        .as_str()
-        .unwrap_or("auto")
-        .to_string();
-
-    let meta = optional_meta(&req);
-    state.jobs.set_pending(&job_id, "optimize", meta).await;
-    eprintln!("[{job_id}] optimize queued (format={format})");
-    actions::optimize::spawn(
-        &state,
-        &job_id,
-        actions::optimize::OptimizeReq {
-            source_url: source_url.to_string(),
-            format,
-            glb_path: req["output"]["path"].as_str().map(str::to_string),
-            opts,
-        },
-    );
-    Ok(created(&job_id, "optimize", "queued"))
+    }
 }
 
-/// The simplify ladder: `quality.ladder` (array of number|null) if present, else
-/// a single rung from `quality.simplify`, else an aggressive default ladder
-/// (performance-first: walk down until the output fits the size/render gates).
 fn parse_ladder(quality: &Value) -> Vec<Option<f32>> {
     if let Some(arr) = quality["ladder"].as_array() {
         return arr.iter().map(|v| v.as_f64().map(|f| f as f32)).collect();
