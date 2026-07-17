@@ -15,7 +15,10 @@ import {
   resolveInventoryAccount,
 } from "../shared/get-posting-group.ts";
 import { calculateCOGS } from "../shared/calculate-cogs.ts";
-import { getSalesInvoiceLineAmounts } from "../shared/sales-invoice-amounts.ts";
+import {
+  getSalesInvoiceCreditLines,
+  getSalesInvoiceLineAmounts,
+} from "../shared/sales-invoice-amounts.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
@@ -427,29 +430,19 @@ serve(async (req: Request) => {
 
                     journalLineReference = nanoid();
 
-                    // credit the sales account with the pre-tax amount
-                    journalLineInserts.push({
-                      accountId: accountDefaults.data.salesAccount,
-                      description: "Sales Account",
-                      amount: credit("revenue", revenueAmount),
-                      quantity: invoiceLineQuantityInInventoryUnit,
-                      documentType: "Invoice",
-                      documentId: salesInvoice.data?.id,
-                      externalDocumentId: salesInvoice.data?.customerReference,
-                      documentLineReference: journalReference.to.salesInvoice(
-                        invoiceLine.salesOrderLineId!
-                      ),
-                      journalLineReference,
-                      companyId,
+                    // credit revenue at pre-tax, and sales tax to its liability
+                    // account as a separate line (omitted when untaxed)
+                    const creditLines = getSalesInvoiceCreditLines({
+                      revenueAmount,
+                      taxAmount,
+                      totalAmount: totalLineCostWithWeightedShipping,
                     });
 
-                    // credit the sales tax collected to its liability account
-                    if (taxAmount !== 0) {
+                    for (const creditLine of creditLines) {
                       journalLineInserts.push({
-                        accountId:
-                          accountDefaults.data.salesTaxPayableAccount,
-                        description: "Sales Tax Payable",
-                        amount: credit("liability", taxAmount),
+                        accountId: accountDefaults.data[creditLine.accountKey],
+                        description: creditLine.description,
+                        amount: creditLine.amount,
                         quantity: invoiceLineQuantityInInventoryUnit,
                         documentType: "Invoice",
                         documentId: salesInvoice.data?.id,
@@ -482,9 +475,9 @@ serve(async (req: Request) => {
                       companyId,
                     });
 
-                    // one meta per journal line pushed above (the tax line is
-                    // conditional) — these arrays are zipped by index later
-                    for (let i = 0; i < (taxAmount !== 0 ? 3 : 2); i++) {
+                    // one meta per journal line pushed above (the credit lines
+                    // plus AR) — these arrays are zipped by index later
+                    for (let i = 0; i < creditLines.length + 1; i++) {
                       journalLineDimensionsMeta.push({
                         customerTypeId: customer.data.customerTypeId ?? null,
                         itemPostingGroupId: lineItemPostingGroupId,
@@ -544,31 +537,19 @@ serve(async (req: Request) => {
                     // Create the normal GL entries for the invoice
                     journalLineReference = nanoid();
 
-                    // Credit the sales account with the pre-tax amount
-                    journalLineInserts.push({
-                      accountId: accountDefaults.data.salesAccount,
-                      description: "Sales Account",
-                      amount: credit("revenue", revenueAmount),
-                      quantity: invoiceLineQuantityInInventoryUnit,
-                      documentType: "Invoice",
-                      documentId: salesInvoice.data?.id,
-                      externalDocumentId: salesInvoice.data?.customerReference,
-                      documentLineReference: invoiceLine.salesOrderLineId
-                        ? journalReference.to.salesInvoice(
-                            invoiceLine.salesOrderLineId
-                          )
-                        : null,
-                      journalLineReference,
-                      companyId,
+                    // Credit revenue at pre-tax, and sales tax to its liability
+                    // account as a separate line (omitted when untaxed)
+                    const creditLines = getSalesInvoiceCreditLines({
+                      revenueAmount,
+                      taxAmount,
+                      totalAmount: totalLineCostWithWeightedShipping,
                     });
 
-                    // Credit the sales tax collected to its liability account
-                    if (taxAmount !== 0) {
+                    for (const creditLine of creditLines) {
                       journalLineInserts.push({
-                        accountId:
-                          accountDefaults.data.salesTaxPayableAccount,
-                        description: "Sales Tax Payable",
-                        amount: credit("liability", taxAmount),
+                        accountId: accountDefaults.data[creditLine.accountKey],
+                        description: creditLine.description,
+                        amount: creditLine.amount,
                         quantity: invoiceLineQuantityInInventoryUnit,
                         documentType: "Invoice",
                         documentId: salesInvoice.data?.id,
@@ -610,9 +591,9 @@ serve(async (req: Request) => {
                         (cost) => cost.itemId === invoiceLine.itemId
                       )?.itemPostingGroupId ?? null;
 
-                    // one meta per journal line pushed above (the tax line is
-                    // conditional) — these arrays are zipped by index later
-                    for (let i = 0; i < (taxAmount !== 0 ? 3 : 2); i++) {
+                    // one meta per journal line pushed above (the credit lines
+                    // plus AR) — these arrays are zipped by index later
+                    for (let i = 0; i < creditLines.length + 1; i++) {
                       journalLineDimensionsMeta.push({
                         customerTypeId: customer.data.customerTypeId ?? null,
                         itemPostingGroupId,

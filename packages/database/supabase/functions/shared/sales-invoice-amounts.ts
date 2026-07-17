@@ -8,6 +8,8 @@
  * `revenueAmount + taxAmount === totalAmount` holds in floating point — a journal
  * that balances to the cent is worth more than a tax line rounded independently.
  */
+import { credit } from "../lib/utils.ts";
+
 export interface SalesInvoiceLineAmountInput {
   quantity: number;
   unitPrice?: number | null;
@@ -40,6 +42,48 @@ export function getPreTaxLineCost(input: SalesInvoiceLineAmountInput): number {
     (input.shippingCost ?? 0) +
     (input.addOnCost ?? 0)
   );
+}
+
+/** The `accountDefault` column a credit line posts to. */
+export type SalesInvoiceCreditAccount =
+  | "salesAccount"
+  | "salesTaxPayableAccount";
+
+export interface SalesInvoiceCreditLine {
+  accountKey: SalesInvoiceCreditAccount;
+  description: string;
+  /** Signed for the GL by `credit()`. */
+  amount: number;
+}
+
+/**
+ * The credit side of one posted sales invoice line: revenue at pre-tax, and the
+ * sales tax collected as a separate liability line. The tax line is omitted
+ * entirely when no tax was charged — a zero-amount journal line is noise.
+ *
+ * The AR debit is the caller's job and stays at `totalAmount`, so the credits
+ * returned here always sum back to the unchanged invoice total.
+ */
+export function getSalesInvoiceCreditLines(
+  amounts: SalesInvoiceLineAmounts
+): SalesInvoiceCreditLine[] {
+  const lines: SalesInvoiceCreditLine[] = [
+    {
+      accountKey: "salesAccount",
+      description: "Sales Account",
+      amount: credit("revenue", amounts.revenueAmount),
+    },
+  ];
+
+  if (amounts.taxAmount !== 0) {
+    lines.push({
+      accountKey: "salesTaxPayableAccount",
+      description: "Sales Tax Payable",
+      amount: credit("liability", amounts.taxAmount),
+    });
+  }
+
+  return lines;
 }
 
 export function getSalesInvoiceLineAmounts(

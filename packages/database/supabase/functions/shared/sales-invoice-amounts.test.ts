@@ -1,23 +1,26 @@
 import { expect, test } from "vitest";
-import { credit, debit } from "../lib/utils.ts";
-import { getSalesInvoiceLineAmounts } from "./sales-invoice-amounts.ts";
+import { debit } from "../lib/utils.ts";
+import {
+  getSalesInvoiceCreditLines,
+  getSalesInvoiceLineAmounts,
+} from "./sales-invoice-amounts.ts";
 
-// The credit side post-sales-invoice pushes for one line: revenue at pre-tax,
-// sales tax to its liability account, and AR debited for the whole total.
-const journalLinesFor = (input: Parameters<typeof getSalesInvoiceLineAmounts>[0]) => {
-  const { revenueAmount, taxAmount, totalAmount } =
-    getSalesInvoiceLineAmounts(input);
+// The journal post-sales-invoice pushes for one line: the credit lines the
+// shared helper returns (the same call the edge function makes), plus the AR
+// debit for the whole total, which the caller owns.
+const journalLinesFor = (
+  input: Parameters<typeof getSalesInvoiceLineAmounts>[0]
+) => {
+  const amounts = getSalesInvoiceLineAmounts(input);
   return [
-    { account: "salesAccount", amount: credit("revenue", revenueAmount) },
-    ...(taxAmount !== 0
-      ? [
-          {
-            account: "salesTaxPayableAccount",
-            amount: credit("liability", taxAmount),
-          },
-        ]
-      : []),
-    { account: "receivablesAccount", amount: debit("asset", totalAmount) },
+    ...getSalesInvoiceCreditLines(amounts).map((line) => ({
+      account: line.accountKey as string,
+      amount: line.amount,
+    })),
+    {
+      account: "receivablesAccount",
+      amount: debit("asset", amounts.totalAmount),
+    },
   ];
 };
 
