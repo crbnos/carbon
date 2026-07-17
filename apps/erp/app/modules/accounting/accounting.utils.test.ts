@@ -8,6 +8,7 @@ import {
   calculateMacrsDepreciation,
   calculateTaxDepreciation,
   computeDisposalGainLoss,
+  depreciationRunLineDisplay,
   getLastDayOfMonth,
   getMacrsPercentage,
   getMonthsBetween,
@@ -126,6 +127,64 @@ describe("computeDisposalGainLoss", () => {
     const { gainLoss, disposalStoredAmount } = computeDisposalGainLoss(0, 800);
     expect(gainLoss).toBe(-800);
     expect(disposalStoredAmount).toBe(800);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Depreciation-run line display (NBV After)
+// ---------------------------------------------------------------------------
+
+describe("depreciationRunLineDisplay", () => {
+  // cost 100k, 20k already depreciated, this run adds 4k → NBV after = 76k.
+  const cost = 100_000;
+  const amount = 4_000;
+  const priorAccumulated = 20_000;
+
+  it("computes accumulated-before and NBV-after for a Draft run", () => {
+    // Draft: the asset's live accumulated depreciation is still the pre-run
+    // balance (this run has not posted yet).
+    const { accumulatedDepreciationBefore, netBookValueAfter } =
+      depreciationRunLineDisplay({
+        acquisitionCost: cost,
+        accumulatedDepreciation: priorAccumulated,
+        amount,
+        isPosted: false
+      });
+    expect(accumulatedDepreciationBefore).toBe(20_000);
+    expect(netBookValueAfter).toBe(76_000);
+  });
+
+  it("shows the same figures once Posted (no double-count of the amount)", () => {
+    // After posting, postDepreciationRun has folded this run's amount into the
+    // asset's accumulated depreciation (20k + 4k = 24k). NBV After must stay
+    // 76k — the pre-posting value — not drop to 72k.
+    const { accumulatedDepreciationBefore, netBookValueAfter } =
+      depreciationRunLineDisplay({
+        acquisitionCost: cost,
+        accumulatedDepreciation: priorAccumulated + amount,
+        amount,
+        isPosted: true
+      });
+    expect(accumulatedDepreciationBefore).toBe(20_000);
+    expect(netBookValueAfter).toBe(76_000);
+  });
+
+  it("keeps the row arithmetic cost − accumulated − amount = NBV after", () => {
+    for (const isPosted of [false, true]) {
+      const accumulatedDepreciation = isPosted
+        ? priorAccumulated + amount
+        : priorAccumulated;
+      const { accumulatedDepreciationBefore, netBookValueAfter } =
+        depreciationRunLineDisplay({
+          acquisitionCost: cost,
+          accumulatedDepreciation,
+          amount,
+          isPosted
+        });
+      expect(cost - accumulatedDepreciationBefore - amount).toBe(
+        netBookValueAfter
+      );
+    }
   });
 });
 

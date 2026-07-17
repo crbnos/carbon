@@ -6,13 +6,12 @@ import { credit, debit, toStoredAmount } from "@carbon/utils";
  * gain/loss to land on a distinct non-operating P&L line rather than being
  * comingled with the NBV write-off.
  *
- * It is booked to the class's `disposalAccountId`, which is an Expense-class
- * "Gains and Losses on Disposal" account, so a loss increases the expense (a
- * debit, positive stored amount) and a gain reduces it (a credit, negative
- * stored amount). A zero gain/loss needs no line.
+ * A gain is credited to the class's `gainOnDisposalAccountId` (a Revenue account)
+ * and a loss is debited to `lossOnDisposalAccountId` (an Expense account); the
+ * posting sites pick the account by sign. A zero gain/loss needs no line.
  *
- * Returns the raw `gainLoss` and the signed `disposalStoredAmount` ready for a
- * `journalLine.amount`.
+ * Returns the raw `gainLoss` and, for the loss (expense) convention, the signed
+ * `disposalStoredAmount` ready for a `journalLine.amount`.
  */
 export function computeDisposalGainLoss(
   saleProceeds: number,
@@ -26,6 +25,31 @@ export function computeDisposalGainLoss(
         ? debit("expense", -gainLoss)
         : 0;
   return { gainLoss, disposalStoredAmount };
+}
+
+/**
+ * Display figures for one depreciation-run line: the accumulated depreciation
+ * *before* this run and the net book value *after* it.
+ *
+ * `accumulatedDepreciation` is the asset's live value. On a Draft run that is
+ * the pre-run balance; once the run is Posted, `postDepreciationRun` has already
+ * folded this run's `amount` into it. To keep the row arithmetic identical
+ * before and after posting — `cost − accumulatedBefore − amount = nbvAfter` —
+ * and to avoid double-counting the amount in NBV, subtract the run's own amount
+ * back out of the live balance for a Posted run.
+ */
+export function depreciationRunLineDisplay(args: {
+  acquisitionCost: number;
+  accumulatedDepreciation: number;
+  amount: number;
+  isPosted: boolean;
+}): { accumulatedDepreciationBefore: number; netBookValueAfter: number } {
+  const { acquisitionCost, accumulatedDepreciation, amount, isPosted } = args;
+  const accumulatedDepreciationBefore =
+    accumulatedDepreciation - (isPosted ? amount : 0);
+  const netBookValueAfter =
+    acquisitionCost - accumulatedDepreciationBefore - amount;
+  return { accumulatedDepreciationBefore, netBookValueAfter };
 }
 
 export type AcquisitionLineRole =
