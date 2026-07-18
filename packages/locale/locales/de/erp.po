@@ -756,9 +756,6 @@ msgstr "Zu {nextStatus} übergehen"
 msgid "Advanced"
 msgstr "Erweitert"
 
-msgid "Affected assemblies"
-msgstr "Betroffene Baugruppen"
-
 msgid "Affected item not found."
 msgstr "Betroffenes Element nicht gefunden."
 
@@ -7954,9 +7951,6 @@ msgstr "Keine aktiven Angebote"
 msgid "No addresses found"
 msgstr "Keine Adressen gefunden"
 
-msgid "No affected assemblies yet."
-msgstr "Noch keine betroffenen Baugruppen."
-
 msgid "No affected items to assess."
 msgstr "Keine betroffenen Elemente zu bewerten."
 
@@ -9956,9 +9950,6 @@ msgstr "Entfernen"
 #. placeholder {0}: item.label
 msgid "Remove {0}"
 msgstr "Entfernen {0}"
-
-msgid "Remove affected item"
-msgstr "Betroffenes Element entfernen"
 
 msgid "Remove condition"
 msgstr "Bedingung entfernen"

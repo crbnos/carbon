@@ -17,7 +17,10 @@ import { useEffect } from "react";
 import { LuCircleCheck } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { path } from "~/utils/path";
-import type { ChangeOrderItemDiff } from "../../changeOrder.models";
+import type {
+  ChangeOrderChangeType,
+  ChangeOrderItemDiff
+} from "../../changeOrder.models";
 import ChangeOrderDiffViewer from "./ChangeOrderDiffViewer";
 import { releaseDialogOpenAtom } from "./releaseDialog.store";
 
@@ -25,6 +28,13 @@ import { releaseDialogOpenAtom } from "./releaseDialog.store";
 export type ReleaseChange = {
   id: string;
   label: string;
+  // The item's description — rendered under the label by the overview Changes
+  // rollup (ChangeOrderChanges); the release dialog doesn't populate it.
+  name?: string | null;
+  // Change type + draft make-method version, for the ChangeTypeBadge shown in
+  // the overview Changes rollup.
+  changeType: ChangeOrderChangeType;
+  version?: number | null;
   diff?: ChangeOrderItemDiff;
 };
 

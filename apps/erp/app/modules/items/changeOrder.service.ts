@@ -47,7 +47,7 @@ export async function getChangeOrders(
   args?: GenericQueryFilters & { search: string | null }
 ) {
   let query = client
-    .from("changeOrder")
+    .from("changeOrders")
     .select("*", { count: "exact" })
     .eq("companyId", companyId);
 

@@ -376,6 +376,16 @@ export const path = {
     // drives selection — refresh + back/forward reselect it.
     changeOrderAffectedItem: (id: string, affectedId: string) =>
       generatePath(`${x}/items/change-order/${id}/${affectedId}/details`),
+    // Delete action for a supplier part managed on a CO line (Buy Revision/New
+    // Part). Create/edit are reached relatively from the SupplierParts grid.
+    changeOrderDeleteSupplierPart: (
+      id: string,
+      affectedId: string,
+      supplierPartId: string
+    ) =>
+      generatePath(
+        `${x}/items/change-order/${id}/${affectedId}/details/${supplierPartId}/delete`
+      ),
     changeOrderDetails: (id: string) =>
       generatePath(`${x}/items/change-order/${id}/details`),
     changeOrderRequiredAction: (id: string) =>

@@ -756,9 +756,6 @@ msgstr "Przejdź do {nextStatus}"
 msgid "Advanced"
 msgstr "Zaawansowane"
 
-msgid "Affected assemblies"
-msgstr "Dotknięte zespoły"
-
 msgid "Affected item not found."
 msgstr "Element dotknięty zmianą nie został znaleziony."
 
@@ -7954,9 +7951,6 @@ msgstr "Brak aktywnych ofert"
 msgid "No addresses found"
 msgstr "Nie znaleziono adresów"
 
-msgid "No affected assemblies yet."
-msgstr "Brak dotkniętych zespołów."
-
 msgid "No affected items to assess."
 msgstr "Brak elementów dotkniętych zmianą do oceny."
 
@@ -9956,9 +9950,6 @@ msgstr "Usuń"
 #. placeholder {0}: item.label
 msgid "Remove {0}"
 msgstr "Usuń {0}"
-
-msgid "Remove affected item"
-msgstr "Usuń dotknięty element"
 
 msgid "Remove condition"
 msgstr "Usuń warunek"

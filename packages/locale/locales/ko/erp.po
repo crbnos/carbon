@@ -756,9 +756,6 @@ msgstr "{nextStatus}로 진행"
 msgid "Advanced"
 msgstr "고급"
 
-msgid "Affected assemblies"
-msgstr "영향받는 어셈블리"
-
 msgid "Affected item not found."
 msgstr "영향받는 항목을 찾을 수 없습니다."
 
@@ -7954,9 +7951,6 @@ msgstr "활성 견적 없음"
 msgid "No addresses found"
 msgstr "주소가 없습니다"
 
-msgid "No affected assemblies yet."
-msgstr "영향을 받는 조립품이 아직 없습니다."
-
 msgid "No affected items to assess."
 msgstr "평가할 영향받는 항목이 없습니다."
 
@@ -9956,9 +9950,6 @@ msgstr "제거"
 #. placeholder {0}: item.label
 msgid "Remove {0}"
 msgstr "{0} 제거"
-
-msgid "Remove affected item"
-msgstr "영향받은 항목 제거"
 
 msgid "Remove condition"
 msgstr "조건 제거"

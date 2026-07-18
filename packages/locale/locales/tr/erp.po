@@ -756,9 +756,6 @@ msgstr "{nextStatus} konumuna geç"
 msgid "Advanced"
 msgstr "Gelişmiş"
 
-msgid "Affected assemblies"
-msgstr "Etkilenen montajlar"
-
 msgid "Affected item not found."
 msgstr "Etkilenen öğe bulunamadı."
 
@@ -7954,9 +7951,6 @@ msgstr "Aktif Teklif Yok"
 msgid "No addresses found"
 msgstr "Adres bulunamadı"
 
-msgid "No affected assemblies yet."
-msgstr "Henüz etkilenen montajlar yok."
-
 msgid "No affected items to assess."
 msgstr "Değerlendirilecek etkilenen öğe yok."
 
@@ -9956,9 +9950,6 @@ msgstr "Kaldır"
 #. placeholder {0}: item.label
 msgid "Remove {0}"
 msgstr "Kaldır {0}"
-
-msgid "Remove affected item"
-msgstr "Etkilenen ürünü kaldır"
 
 msgid "Remove condition"
 msgstr "Koşulu kaldır"

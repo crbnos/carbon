@@ -14,9 +14,17 @@ import {
   VStack
 } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
-import { LuCircleCheck, LuEllipsisVertical, LuTrash } from "react-icons/lu";
+import {
+  LuCircleCheck,
+  LuCircleStop,
+  LuEllipsisVertical,
+  LuLoaderCircle,
+  LuStepForward,
+  LuTrash
+} from "react-icons/lu";
 import { Link, useFetcher, useParams } from "react-router";
 import { useAuditLog } from "~/components/AuditLog";
+import Confirm from "~/components/Modals/Confirm/Confirm";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { path } from "~/utils/path";
@@ -43,6 +51,7 @@ const ChangeOrderHeader = () => {
   const { company } = useUser();
   const statusFetcher = useFetcher<{}>();
   const deleteModal = useDisclosure();
+  const cancelModal = useDisclosure();
 
   const { trigger: auditLogTrigger, drawer: auditLogDrawer } = useAuditLog({
     entityType: "changeOrder",
@@ -82,6 +91,26 @@ const ChangeOrderHeader = () => {
               </DropdownMenuTrigger>
               <DropdownMenuContent>
                 {auditLogTrigger}
+                {status === "Cancelled" && (
+                  <DropdownMenuItem
+                    disabled={
+                      statusFetcher.state !== "idle" ||
+                      !permissions.can("update", "parts")
+                    }
+                    onClick={() => {
+                      statusFetcher.submit(
+                        { id, fromStatus: status, status: "Draft" },
+                        {
+                          method: "post",
+                          action: path.to.changeOrderStatus(id)
+                        }
+                      );
+                    }}
+                  >
+                    <DropdownMenuIcon icon={<LuLoaderCircle />} />
+                    {t`Reopen`}
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem
                   destructive
                   disabled={
@@ -103,6 +132,20 @@ const ChangeOrderHeader = () => {
               (ChangeOrderStatusFlow); the header keeps only the canonical status
               badge (above) + the advance/release action. */}
 
+          {/* Cancel — a header action (opens the confirm modal) sitting beside the
+              advance/release primary action. Reopen (from Cancelled) stays in the
+              ⋮ menu. */}
+          {status !== "Cancelled" && !isLocked && (
+            <Button
+              leftIcon={<LuCircleStop />}
+              variant="secondary"
+              isDisabled={!permissions.can("update", "parts")}
+              onClick={cancelModal.onOpen}
+            >
+              {t`Cancel`}
+            </Button>
+          )}
+
           {/* Implementation → Done is a release: it opens the review + confirm
               dialog (which carries the merge resolution), not a one-click stage
               advance. The header only auto-advances the earlier stages. */}
@@ -116,7 +159,7 @@ const ChangeOrderHeader = () => {
               <input type="hidden" name="status" value={nextStatus} />
               <Button
                 type="submit"
-                leftIcon={<LuCircleCheck />}
+                rightIcon={<LuStepForward />}
                 variant="primary"
                 isDisabled={
                   statusFetcher.state !== "idle" ||
@@ -152,6 +195,24 @@ const ChangeOrderHeader = () => {
           onCancel={deleteModal.onClose}
           onSubmit={deleteModal.onClose}
         />
+      )}
+      {cancelModal.isOpen && (
+        <Confirm
+          action={path.to.changeOrderStatus(id)}
+          title={t`Cancel change order`}
+          text={t`Are you sure you want to cancel ${
+            routeData?.changeOrder?.changeOrderId ?? ""
+          }? It will be closed and read-only until you reopen it.`}
+          confirmText={t`Cancel Change Order`}
+          cancelText={t`Keep Open`}
+          confirmVariant="destructive"
+          onCancel={cancelModal.onClose}
+          onSubmit={cancelModal.onClose}
+        >
+          <input type="hidden" name="id" value={id} />
+          <input type="hidden" name="fromStatus" value={status} />
+          <input type="hidden" name="status" value="Cancelled" />
+        </Confirm>
       )}
       {auditLogDrawer}
     </>

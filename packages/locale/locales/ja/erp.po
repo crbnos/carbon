@@ -756,9 +756,6 @@ msgstr "{nextStatus}に進む"
 msgid "Advanced"
 msgstr "詳細"
 
-msgid "Affected assemblies"
-msgstr "影響を受けるアセンブリ"
-
 msgid "Affected item not found."
 msgstr "影響を受けるアイテムが見つかりません。"
 
@@ -7954,9 +7951,6 @@ msgstr "アクティブな見積がありません"
 msgid "No addresses found"
 msgstr "住所が見つかりません"
 
-msgid "No affected assemblies yet."
-msgstr "影響を受けるアセンブリはまだありません。"
-
 msgid "No affected items to assess."
 msgstr "評価する影響を受けるアイテムがありません。"
 
@@ -9956,9 +9950,6 @@ msgstr "削除"
 #. placeholder {0}: item.label
 msgid "Remove {0}"
 msgstr "{0}を削除"
-
-msgid "Remove affected item"
-msgstr "影響を受けるアイテムを削除"
 
 msgid "Remove condition"
 msgstr "条件を削除"

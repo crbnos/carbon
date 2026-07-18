@@ -435,10 +435,10 @@ VALUES ('changeOrder', 'Change Order', 'Items')
 ON CONFLICT ("table") DO NOTHING;
 
 -- -----------------------------------------------------------------------------
--- 11. Sequence seed — change notice readable id per company (CN-000001, size 6).
+-- 11. Sequence seed — change order readable id per company (ECO-000001, size 6).
 -- -----------------------------------------------------------------------------
 INSERT INTO "sequence" ("table", "name", "prefix", "suffix", "next", "size", "step", "companyId")
-SELECT 'changeOrder', 'Change Order', 'CN-', NULL, 0, 6, 1, "id"
+SELECT 'changeOrder', 'Change Order', 'ECO-', NULL, 0, 6, 1, "id"
 FROM "company"
 ON CONFLICT ("table", "companyId") DO NOTHING;
 
@@ -446,3 +446,34 @@ ON CONFLICT ("table", "companyId") DO NOTHING;
 -- 12. Realtime — the change-orders list uses useRealtime("changeOrder").
 -- -----------------------------------------------------------------------------
 ALTER PUBLICATION supabase_realtime ADD TABLE "changeOrder";
+
+-- -----------------------------------------------------------------------------
+-- 13. changeOrders view — powers the change-orders list. Rolls each CO's affected
+--     items up into an "itemIds" text[] (so the list can filter by item through
+--     the generic .overlaps() filter path) and an "affectedItems" jsonb array (so
+--     a list row can be expanded to show its affected items without a 2nd query).
+--     SECURITY_INVOKER so the underlying tables' RLS applies to the caller.
+-- -----------------------------------------------------------------------------
+DROP VIEW IF EXISTS "changeOrders";
+CREATE OR REPLACE VIEW "changeOrders" WITH (SECURITY_INVOKER=true) AS
+  SELECT
+    co.*,
+    COALESCE(ai."itemIds", ARRAY[]::text[]) AS "itemIds",
+    COALESCE(ai."affectedItems", '[]'::jsonb) AS "affectedItems"
+  FROM "changeOrder" co
+  LEFT JOIN (
+    SELECT
+      "changeOrderId",
+      array_agg(DISTINCT "itemId") AS "itemIds",
+      jsonb_agg(
+        jsonb_build_object(
+          'id', "id",
+          'itemId', "itemId",
+          'changeType', "changeType",
+          'newItemId', "newItemId"
+        )
+        ORDER BY "sortOrder", "createdAt"
+      ) AS "affectedItems"
+    FROM "changeOrderAffectedItem"
+    GROUP BY "changeOrderId"
+  ) ai ON ai."changeOrderId" = co."id";

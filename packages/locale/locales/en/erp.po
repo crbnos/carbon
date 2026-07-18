@@ -756,9 +756,6 @@ msgstr "Advance to {nextStatus}"
 msgid "Advanced"
 msgstr "Advanced"
 
-msgid "Affected assemblies"
-msgstr "Affected assemblies"
-
 msgid "Affected item not found."
 msgstr "Affected item not found."
 
@@ -7954,9 +7951,6 @@ msgstr "No Active Quotes"
 msgid "No addresses found"
 msgstr "No addresses found"
 
-msgid "No affected assemblies yet."
-msgstr "No affected assemblies yet."
-
 msgid "No affected items to assess."
 msgstr "No affected items to assess."
 
@@ -9956,9 +9950,6 @@ msgstr "Remove"
 #. placeholder {0}: item.label
 msgid "Remove {0}"
 msgstr "Remove {0}"
-
-msgid "Remove affected item"
-msgstr "Remove affected item"
 
 msgid "Remove condition"
 msgstr "Remove condition"

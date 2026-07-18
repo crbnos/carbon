@@ -756,9 +756,6 @@ msgstr "{nextStatus} को आगे बढ़ाएं"
 msgid "Advanced"
 msgstr "उन्नत"
 
-msgid "Affected assemblies"
-msgstr "प्रभावित असेंबलियां"
-
 msgid "Affected item not found."
 msgstr "प्रभावित आइटम नहीं मिला।"
 
@@ -7954,9 +7951,6 @@ msgstr "कोई सक्रिय उद्धरण नहीं"
 msgid "No addresses found"
 msgstr "कोई पता नहीं मिला"
 
-msgid "No affected assemblies yet."
-msgstr "अभी तक कोई प्रभावित असेंबली नहीं है।"
-
 msgid "No affected items to assess."
 msgstr "मूल्यांकन के लिए कोई प्रभावित आइटम नहीं।"
 
@@ -9956,9 +9950,6 @@ msgstr "हटाएं"
 #. placeholder {0}: item.label
 msgid "Remove {0}"
 msgstr "{0} को हटाएं"
-
-msgid "Remove affected item"
-msgstr "प्रभावित आइटम निकालें"
 
 msgid "Remove condition"
 msgstr "शर्त हटाएं"

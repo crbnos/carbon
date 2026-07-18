@@ -756,9 +756,6 @@ msgstr "推进到{nextStatus}"
 msgid "Advanced"
 msgstr "高级"
 
-msgid "Affected assemblies"
-msgstr "受影响的总成"
-
 msgid "Affected item not found."
 msgstr "未找到受影响的项目。"
 
@@ -7954,9 +7951,6 @@ msgstr "没有活跃报价"
 msgid "No addresses found"
 msgstr "未找到地址"
 
-msgid "No affected assemblies yet."
-msgstr "暂无受影响的装配体。"
-
 msgid "No affected items to assess."
 msgstr "没有要评估的受影响项目。"
 
@@ -9956,9 +9950,6 @@ msgstr "移除"
 #. placeholder {0}: item.label
 msgid "Remove {0}"
 msgstr "删除 {0}"
-
-msgid "Remove affected item"
-msgstr "移除受影响的项目"
 
 msgid "Remove condition"
 msgstr "移除条件"

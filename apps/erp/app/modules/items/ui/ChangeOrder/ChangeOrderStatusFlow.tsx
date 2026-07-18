@@ -1,6 +1,6 @@
 import { cn, Menubar } from "@carbon/react";
 import { LuCheck, LuCircle, LuCircleDot } from "react-icons/lu";
-import { changeOrderStatus } from "../../changeOrder.models";
+import { changeOrderStageFlow } from "../../changeOrder.models";
 import type { ChangeOrderStatus } from "../../types";
 
 // The change-order stage flow, mirroring the sales OpportunityState bar: one
@@ -13,11 +13,13 @@ export default function ChangeOrderStatusFlow({
 }: {
   status: ChangeOrderStatus;
 }) {
-  const activeIndex = changeOrderStatus.indexOf(status);
+  // -1 for a Cancelled CO (not part of the forward flow) — every stage renders
+  // inactive, which is the desired "no progress" look.
+  const activeIndex = changeOrderStageFlow.indexOf(status);
 
   return (
     <Menubar>
-      {changeOrderStatus.map((stage, index) => {
+      {changeOrderStageFlow.map((stage, index) => {
         const isCurrent = index === activeIndex;
         const isCompleted = index < activeIndex;
         const Icon = isCompleted ? LuCheck : isCurrent ? LuCircleDot : LuCircle;

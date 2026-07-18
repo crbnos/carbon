@@ -1,6 +1,7 @@
 export { default as AffectedItemDetail } from "./AffectedItemDetail";
 export type * from "./affectedItem.types";
 export { default as ChangeOrderActions } from "./ChangeOrderActions";
+export { default as ChangeOrderChanges } from "./ChangeOrderChanges";
 export * from "./ChangeOrderContent";
 export { default as ChangeOrderDiffViewer } from "./ChangeOrderDiffViewer";
 export { default as ChangeOrderExplorer } from "./ChangeOrderExplorer";

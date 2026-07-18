@@ -756,9 +756,6 @@ msgstr "Procedi a {nextStatus}"
 msgid "Advanced"
 msgstr "Avanzate"
 
-msgid "Affected assemblies"
-msgstr "Assiemi interessati"
-
 msgid "Affected item not found."
 msgstr "Elemento interessato non trovato."
 
@@ -7954,9 +7951,6 @@ msgstr "Nessuna Quotazione Attiva"
 msgid "No addresses found"
 msgstr "Nessun indirizzo trovato"
 
-msgid "No affected assemblies yet."
-msgstr "Nessun assieme interessato ancora."
-
 msgid "No affected items to assess."
 msgstr "Nessun elemento interessato da valutare."
 
@@ -9956,9 +9950,6 @@ msgstr "Rimuovi"
 #. placeholder {0}: item.label
 msgid "Remove {0}"
 msgstr "Rimuovi {0}"
-
-msgid "Remove affected item"
-msgstr "Rimuovi elemento interessato"
 
 msgid "Remove condition"
 msgstr "Rimuovi condizione"

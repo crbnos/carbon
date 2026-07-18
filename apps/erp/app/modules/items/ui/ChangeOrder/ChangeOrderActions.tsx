@@ -1,57 +1,74 @@
 import { useCarbon } from "@carbon/auth";
-import { ValidatedForm } from "@carbon/form";
-import { type JSONContent, toast, useDebounce } from "@carbon/react";
+import {
+  IconButton,
+  type JSONContent,
+  toast,
+  useDebounce
+} from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { DragControls } from "framer-motion";
 import { nanoid } from "nanoid";
-import { useState } from "react";
+import { useCallback, useState } from "react";
+import { LuTrash2 } from "react-icons/lu";
 import { useFetcher } from "react-router";
-import { z } from "zod";
 import {
   ActionTaskCard,
   type ActionTaskStatus
 } from "~/components/ActionTasks/ActionTaskCard";
 import { ActionTaskList } from "~/components/ActionTasks/ActionTaskList";
 import { ActionTaskStatusButton } from "~/components/ActionTasks/ActionTaskStatusButton";
-import { MultiSelect } from "~/components/Form";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import type { ListItem } from "~/types";
 import { getPrivateUrl, path } from "~/utils/path";
 import type { ChangeOrderActionTask } from "../../types";
 
+// Change-order actions — a thin wrapper over the shared ActionTaskList (same
+// component the Quality issue uses). Adding picks from the change order's
+// configured required-action templates via the "Add Actions" modal and writes
+// back through the reconcile route (`$id.action`), which instantiates the union
+// of the current tasks and the newly-picked templates. Each row is an ActionItem
+// (notes, status, assignee) with an inline delete. All actions live here on the
+// top-level detail route.
 export default function ChangeOrderActions({
   changeOrderId,
   actions,
-  isDisabled,
-  variant = "full"
+  isDisabled
 }: {
   changeOrderId: string;
   actions: ChangeOrderActionTask[];
   isDisabled: boolean;
-  // "full" = the shared action-task list in the middle pane. Change Orders are
-  // seeded from configured templates on create, so there is deliberately no
-  // "Add Actions" affordance here (no `onAdd` passed to the list).
-  // "summary" = the right-rail read-only list of the selected actions.
-  variant?: "full" | "summary";
 }) {
-  if (variant === "summary") {
-    return (
-      <ChangeOrderRequiredActions
-        changeOrderId={changeOrderId}
-        actions={actions}
-        isDisabled={isDisabled}
-      />
-    );
-  }
+  const routeData = useRouteData<{ requiredActions: ListItem[] }>(
+    path.to.changeOrder(changeOrderId)
+  );
+  const addFetcher = useFetcher<{ success: boolean }>();
 
-  // Actions are chosen from the right rail; with none selected there's nothing
-  // to show in the middle, so drop the card entirely (no empty shell).
-  if (actions.length === 0) return null;
+  // The reconcile route (`setChangeOrderActionTasks`) sets the exact set of
+  // tasks from the posted actionTypeIds, so adding posts the union of the current
+  // tasks' types and the newly-picked templates (removal is per-card, below).
+  const onAdd = useCallback(
+    (selectedIds: string[]) => {
+      const existing = actions
+        .map((a) => a.actionTypeId)
+        .filter((id): id is string => Boolean(id));
+      const merged = Array.from(new Set([...existing, ...selectedIds]));
+      const formData = new FormData();
+      formData.append("actionIds", merged.join(","));
+      addFetcher.submit(formData, {
+        method: "post",
+        action: path.to.changeOrderAction(changeOrderId)
+      });
+    },
+    [actions, changeOrderId, addFetcher]
+  );
 
   return (
     <ActionTaskList
       tasks={actions}
       reorderAction={path.to.changeOrderActionOrder(changeOrderId)}
+      templates={routeData?.requiredActions ?? []}
+      onAdd={onAdd}
+      isAddSubmitting={addFetcher.state !== "idle"}
       isDisabled={isDisabled}
       renderItem={(action, dragControls) => (
         <ActionItem
@@ -65,71 +82,9 @@ export default function ChangeOrderActions({
   );
 }
 
-// The right-rail "Required Actions" picker — an inline multiselect of the
-// configured templates, mirroring the Quality issue sidebar. Selecting a
-// template instantiates its action task; deselecting removes it (both reconciled
-// by the $id.action route, keyed by the task's actionTypeId).
-function ChangeOrderRequiredActions({
-  changeOrderId,
-  actions,
-  isDisabled
-}: {
-  changeOrderId: string;
-  actions: ChangeOrderActionTask[];
-  isDisabled: boolean;
-}) {
-  const { t } = useLingui();
-  const routeData = useRouteData<{ requiredActions: ListItem[] }>(
-    path.to.changeOrder(changeOrderId)
-  );
-  const fetcher = useFetcher<{ success: boolean }>();
-
-  // While a select/deselect is in flight, reflect the submitted set immediately —
-  // the `actions` prop only updates after the reconcile revalidates. Without this
-  // optimistic read the chip flickers (added → reset to stale → re-added).
-  const pending = fetcher.formData?.get("actionIds");
-  const selected =
-    pending != null
-      ? String(pending).split(",").filter(Boolean)
-      : actions
-          .map((a) => a.actionTypeId)
-          .filter((id): id is string => Boolean(id));
-
-  return (
-    <ValidatedForm
-      defaultValues={{ requiredActionIds: selected }}
-      validator={z.object({
-        requiredActionIds: z.array(z.string()).optional()
-      })}
-      className="w-full"
-    >
-      <MultiSelect
-        name="requiredActionIds"
-        label={t`Required Actions`}
-        isReadOnly={isDisabled}
-        inline
-        value={selected}
-        options={(routeData?.requiredActions ?? []).map((a) => ({
-          value: a.id,
-          label: a.name
-        }))}
-        onChange={(value) => {
-          const formData = new FormData();
-          formData.append("actionIds", value.map((v) => v.value).join(","));
-          fetcher.submit(formData, {
-            method: "post",
-            action: path.to.changeOrderAction(changeOrderId)
-          });
-        }}
-      />
-    </ValidatedForm>
-  );
-}
-
 // The CO wrapper over the shared ActionTaskCard: owns CO-specific persistence
-// (notes via supabase, status via CO routes) and passes the due date into the
-// card's slots. Actions are added/removed from the right-rail picker, so the
-// card itself has no delete affordance.
+// (notes via supabase, status + delete via CO routes) and passes the due date
+// into the card's slots.
 function ActionItem({
   changeOrderId,
   action,
@@ -149,6 +104,7 @@ function ActionItem({
   } = useUser();
   const { carbon } = useCarbon();
   const statusFetcher = useFetcher<{ success: boolean }>();
+  const deleteFetcher = useFetcher<{ success: boolean }>();
 
   const [content, setContent] = useState((action.notes ?? {}) as JSONContent);
   const status = (action.status ?? "Pending") as ActionTaskStatus;
@@ -187,6 +143,17 @@ function ActionItem({
     });
   };
 
+  const onDelete = () => {
+    if (isDisabled) return;
+    deleteFetcher.submit(
+      {},
+      {
+        method: "post",
+        action: path.to.deleteChangeOrderAction(changeOrderId, action.id)
+      }
+    );
+  };
+
   return (
     <ActionTaskCard
       title={action.name ?? ""}
@@ -211,6 +178,17 @@ function ActionItem({
           onChange={onStatusChange}
           isDisabled={isDisabled}
         />
+      }
+      headerExtras={
+        canEdit ? (
+          <IconButton
+            aria-label={t`Delete action`}
+            icon={<LuTrash2 />}
+            variant="ghost"
+            onClick={onDelete}
+            isDisabled={deleteFetcher.state !== "idle"}
+          />
+        ) : undefined
       }
       footerExtras={
         action.dueDate ? (

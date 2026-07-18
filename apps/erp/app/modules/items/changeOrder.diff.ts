@@ -485,6 +485,34 @@ async function readItemAttributes(
   };
 }
 
+// A Revision/New Part draft item starts with no supplier parts (the source's
+// aren't copied); the ones the user sets up on the CO line are surfaced as `added`
+// entries. Mirrors getSupplierParts (items.service) — active rows for the item.
+async function readDraftSupplierParts(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string
+): Promise<{
+  data: MethodDiffEntry<Row>[];
+  error: { message: string } | null;
+}> {
+  const res = await client
+    .from("supplierPart")
+    .select("*")
+    .eq("itemId", itemId)
+    .eq("companyId", companyId)
+    .eq("active", true);
+  if (res.error) return { data: [], error: res.error };
+  return {
+    data: (res.data ?? []).map((row) => ({
+      status: "added" as const,
+      before: null,
+      after: row as Row
+    })),
+    error: null
+  };
+}
+
 // Resolve item-group ids → their names for readable diff display.
 async function readPostingGroupNames(
   client: SupabaseClient<Database>,
@@ -743,6 +771,15 @@ export async function getChangeOrderDiff(
         ? baseAttributes
         : await readItemAttributes(client, draftItemId, companyId);
 
+    // Supplier parts on the draft item (Revision/New Part only; a Version shares
+    // the live item's suppliers, which are not a CO change). Surfaced as additions.
+    let supplierParts: MethodDiffEntry<Row>[] = [];
+    if (draftItemId !== affectedItem.itemId) {
+      const sp = await readDraftSupplierParts(client, draftItemId, companyId);
+      if (sp.error) return { data: { items: [] }, error: sp.error };
+      supplierParts = sp.data;
+    }
+
     const diff = diffMethod({
       baseMaterials: base.materials,
       targetMaterials: target.materials,
@@ -802,7 +839,8 @@ export async function getChangeOrderDiff(
       itemId: affectedItem.itemId,
       materials: diff.materials,
       operations: diff.operations,
-      attributes: diff.attributes
+      attributes: diff.attributes,
+      supplierParts
     });
   }
 

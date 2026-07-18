@@ -1,5 +1,6 @@
 import type { Database } from "@carbon/database";
 import type {
+  getChangeOrder,
   getChangeOrders,
   getChangeOrderTypes
 } from "./changeOrder.service";
@@ -43,7 +44,16 @@ import type {
 export type ItemRevisionStatus =
   Database["public"]["Enums"]["itemRevisionStatus"];
 
+// The single change order (base table, NOT-NULL columns) — the shape detail
+// routes and the properties/header/explorer components consume via useRouteData.
 export type ChangeOrder = NonNullable<
+  Awaited<ReturnType<typeof getChangeOrder>>["data"]
+>;
+
+// A row of the change-orders LIST — the `changeOrders` view, which additionally
+// rolls up `itemIds` (text[]) and `affectedItems` (jsonb) per CO. View columns are
+// all nullable, so this is a distinct type from the single-CO `ChangeOrder`.
+export type ChangeOrderListItem = NonNullable<
   Awaited<ReturnType<typeof getChangeOrders>>["data"]
 >[number];
 

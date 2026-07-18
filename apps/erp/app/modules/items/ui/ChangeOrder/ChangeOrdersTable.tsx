@@ -1,9 +1,11 @@
-import { MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
+import { Badge, MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
 import { flushSync } from "react-dom";
 import {
+  LuArrowRight,
+  LuBlocks,
   LuBookMarked,
   LuCalendar,
   LuCircleGauge,
@@ -20,21 +22,34 @@ import { ConfirmDelete } from "~/components/Modals";
 import { useDateFormatter, usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { useRealtime } from "~/hooks/useRealtime";
+import { useItems } from "~/stores/items";
 import { usePeople } from "~/stores/people";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import {
+  type ChangeOrderChangeType,
   changeOrderPriority,
   changeOrderStatus
 } from "../../changeOrder.models";
-import type { ChangeOrder } from "../../types";
+import type { ChangeOrderListItem } from "../../types";
 import ChangeOrderPriority from "./ChangeOrderPriority";
 import ChangeOrderStatus from "./ChangeOrderStatus";
+import ChangeTypeBadge from "./ChangeTypeBadge";
 
 type ChangeOrdersTableProps = {
-  data: ChangeOrder[];
+  data: ChangeOrderListItem[];
   types: ListItem[];
   count: number;
+};
+
+// One entry of the changeOrders view's `affectedItems` jsonb rollup — enough to
+// render the expanded row (item label + change type + OLD→NEW), resolving ids to
+// readable ids client-side via the items store.
+type AffectedItemSummary = {
+  id: string;
+  itemId: string;
+  changeType: ChangeOrderChangeType;
+  newItemId: string | null;
 };
 
 const ChangeOrdersTable = memo(
@@ -45,15 +60,25 @@ const ChangeOrdersTable = memo(
     const permissions = usePermissions();
     const deleteDisclosure = useDisclosure();
     const [selectedChangeOrder, setSelectedChangeOrder] =
-      useState<ChangeOrder | null>(null);
+      useState<ChangeOrderListItem | null>(null);
 
-    const customColumns = useCustomColumns<ChangeOrder>("changeOrder");
+    const customColumns = useCustomColumns<ChangeOrderListItem>("changeOrder");
     const [people] = usePeople();
+    const [items] = useItems();
+
+    const itemsById = useMemo(
+      () => new Map((items ?? []).map((i) => [i.id, i.readableIdWithRevision])),
+      [items]
+    );
+    const resolveItemId = useCallback(
+      (id?: string | null) => (id ? (itemsById.get(id) ?? id) : null),
+      [itemsById]
+    );
 
     useRealtime("changeOrder");
 
-    const columns = useMemo<ColumnDef<ChangeOrder>[]>(() => {
-      const defaultColumns: ColumnDef<ChangeOrder>[] = [
+    const columns = useMemo<ColumnDef<ChangeOrderListItem>[]>(() => {
+      const defaultColumns: ColumnDef<ChangeOrderListItem>[] = [
         {
           accessorKey: "changeOrderId",
           header: t`Change Order`,
@@ -111,6 +136,41 @@ const ChangeOrdersTable = memo(
           }
         },
         {
+          accessorKey: "itemIds",
+          header: t`Items`,
+          cell: ({ row }) => {
+            const ids = row.original.itemIds ?? [];
+            if (ids.length === 0)
+              return <span className="text-muted-foreground">—</span>;
+            const shown = ids.slice(0, 2);
+            const extra = ids.length - shown.length;
+            return (
+              <div className="flex items-center gap-1">
+                {shown.map((id) => (
+                  <Badge key={id} variant="outline">
+                    {resolveItemId(id)}
+                  </Badge>
+                ))}
+                {extra > 0 && <Badge variant="secondary">{`+${extra}`}</Badge>}
+              </div>
+            );
+          },
+          meta: {
+            icon: <LuBlocks />,
+            pluralHeader: t`Items`,
+            filter: {
+              type: "static",
+              options: (items ?? []).map((item) => ({
+                value: item.id,
+                label: item.readableIdWithRevision
+              })),
+              isArray: true
+            },
+            exportValue: (row: ChangeOrderListItem) =>
+              (row.itemIds ?? []).map((id) => resolveItemId(id)).join(", ")
+          }
+        },
+        {
           accessorKey: "priority",
           header: t`Priority`,
           cell: ({ row }) => (
@@ -154,10 +214,51 @@ const ChangeOrdersTable = memo(
         }
       ];
       return [...defaultColumns, ...customColumns];
-    }, [customColumns, people, types, t, formatDate]);
+    }, [customColumns, people, items, resolveItemId, types, t, formatDate]);
+
+    const canExpandRow = useCallback(
+      (row: ChangeOrderListItem) => (row.itemIds?.length ?? 0) > 0,
+      []
+    );
+
+    const renderExpandedRow = useCallback(
+      (row: ChangeOrderListItem) => {
+        const affectedItems =
+          (row.affectedItems as AffectedItemSummary[]) ?? [];
+        if (affectedItems.length === 0) return null;
+        return (
+          <div className="pl-[52px] pr-4">
+            {affectedItems.map((affected) => {
+              const newReadableId = resolveItemId(affected.newItemId);
+              return (
+                <div key={affected.id} className="flex gap-3 py-3 text-sm">
+                  <div
+                    aria-hidden
+                    className="w-5 shrink-0 border-l border-border -my-3"
+                  />
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">
+                      {resolveItemId(affected.itemId)}
+                    </span>
+                    {affected.newItemId && newReadableId && (
+                      <span className="flex items-center gap-1 text-muted-foreground">
+                        <LuArrowRight className="size-3.5 shrink-0" />
+                        <span>{newReadableId}</span>
+                      </span>
+                    )}
+                    <ChangeTypeBadge changeType={affected.changeType} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        );
+      },
+      [resolveItemId]
+    );
 
     const renderContextMenu = useCallback(
-      (row: ChangeOrder) => {
+      (row: ChangeOrderListItem) => {
         return (
           <>
             <MenuItem
@@ -190,7 +291,7 @@ const ChangeOrdersTable = memo(
 
     return (
       <>
-        <Table<ChangeOrder>
+        <Table<ChangeOrderListItem>
           data={data}
           columns={columns}
           count={count}
@@ -200,6 +301,9 @@ const ChangeOrdersTable = memo(
             )
           }
           renderContextMenu={renderContextMenu}
+          renderExpandedRow={renderExpandedRow}
+          canExpandRow={canExpandRow}
+          defaultColumnVisibility={{ itemIds: false }}
           title={t`Change Orders`}
           table="changeOrder"
           withSavedView

@@ -32,14 +32,27 @@ export const changeOrderType = [
 ] as const;
 
 // V1 stage flow (forward, one step at a time). Broadcast on Start /
-// Implementation / Done; silent on Draft / Engineering Complete.
+// Implementation / Done; silent on Draft / Engineering Complete. "Cancelled" is
+// the off-ramp: a CO can be closed from any open stage and reopened to Draft.
 export const changeOrderStatus = [
   "Draft",
   "Start",
   "Engineering Complete",
   "Implementation",
-  "Done"
+  "Done",
+  "Cancelled"
 ] as const;
+
+// The forward progress stages only (excludes the "Cancelled" off-ramp). Drives
+// the read-only status-flow progress bar so a cancelled CO doesn't render as a
+// sixth step.
+export const changeOrderStageFlow: (typeof changeOrderStatus)[number][] = [
+  "Draft",
+  "Start",
+  "Engineering Complete",
+  "Implementation",
+  "Done"
+];
 
 export const changeOrderTaskStatus = [
   "Pending",
@@ -66,18 +79,22 @@ export type ChangeOrderChangeType = (typeof changeOrderChangeTypes)[number];
 export const changeOrderPriority = nonConformancePriority;
 
 // -----------------------------------------------------------------------------
-// Stage state machine (G8 — one place). Forward-only, single step. This map only
-// encodes the allowed shape of a transition.
+// Stage state machine (G8 — one place). Forward, single step, plus the Cancel /
+// Reopen off-ramp. This map only encodes the allowed shape of a transition.
+// IMPORTANT: the forward stage is always index 0 — the header's "Advance" action
+// reads `transitions[status][0]`, so "Cancelled" must never be first.
 // -----------------------------------------------------------------------------
 export const changeOrderStatusTransitions: Record<
   (typeof changeOrderStatus)[number],
   (typeof changeOrderStatus)[number][]
 > = {
-  Draft: ["Start"],
-  Start: ["Engineering Complete"],
-  "Engineering Complete": ["Implementation"],
-  Implementation: ["Done"],
-  Done: []
+  Draft: ["Start", "Cancelled"],
+  Start: ["Engineering Complete", "Cancelled"],
+  "Engineering Complete": ["Implementation", "Cancelled"],
+  Implementation: ["Done", "Cancelled"],
+  Done: [],
+  // Reopen a closed CO back to Draft (fully editable). Done stays terminal.
+  Cancelled: ["Draft"]
 };
 
 export function isAllowedChangeOrderTransition(
@@ -104,11 +121,12 @@ export const changeOrderOpenStatuses: (typeof changeOrderStatus)[number][] = [
   "Implementation"
 ];
 
-// Locked once Done — the record is closed and part of the audit trail.
+// Locked once closed — Done (released, part of the audit trail) or Cancelled
+// (abandoned). Reopen a Cancelled CO to Draft to edit it again.
 export function isChangeOrderLocked(
   status: string | null | undefined
 ): boolean {
-  return status === "Done";
+  return status === "Done" || status === "Cancelled";
 }
 
 // Content (reason/description/products/BOM changes/actions) is editable until
@@ -237,6 +255,9 @@ export type ChangeOrderItemDiff = {
   // read-only diff viewer can render the BOP as a tree.
   operations: OperationDiffEntry[];
   attributes: MethodDiffEntry<Record<string, unknown>>[];
+  // Supplier parts on a Revision/New Part draft item. Drafts start with none
+  // (the source's suppliers aren't copied), so these surface as `added` entries.
+  supplierParts: MethodDiffEntry<Record<string, unknown>>[];
 };
 
 // -----------------------------------------------------------------------------

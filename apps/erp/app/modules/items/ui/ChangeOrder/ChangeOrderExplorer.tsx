@@ -19,6 +19,7 @@ import { useRouteData } from "~/hooks";
 import { canEditChangeOrder } from "~/modules/items";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import type { ItemType } from "~/modules/shared";
+import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import type { ChangeOrder } from "../../types";
 import AffectedItemForm from "./AffectedItemForm";
@@ -105,11 +106,20 @@ function AffectedItemRow({
   const { t } = useLingui();
   const { affectedId } = useParams();
   const deleteFetcher = useFetcher();
+  const [items] = useItems();
 
   const item = affected.affectedItem;
   const label = item.item;
   const type = (label?.type as ItemType) ?? "Part";
   const isSelected = item.id === affectedId;
+  // Revision / New Part mint a (hidden, inactive) outcome item at add time —
+  // surface its number next to the source ("GA-0029 → GA-0030") so the created
+  // part/revision is visible top-level, not only inside the line detail. The
+  // items store includes inactive items, so the minted item resolves.
+  const newItemLabel = item.newItemId
+    ? (items.find((i) => i.id === item.newItemId)?.readableIdWithRevision ??
+      null)
+    : null;
 
   return (
     <VStack spacing={0} className="border-b">
@@ -131,6 +141,14 @@ function AffectedItemRow({
                 {label?.readableIdWithRevision ??
                   label?.readableId ??
                   item.itemId}
+                {newItemLabel && (
+                  <>
+                    <span className="text-muted-foreground font-normal">
+                      {" → "}
+                    </span>
+                    {newItemLabel}
+                  </>
+                )}
               </span>
               {label?.name && (
                 <span className="text-muted-foreground text-xs truncate line-clamp-1">

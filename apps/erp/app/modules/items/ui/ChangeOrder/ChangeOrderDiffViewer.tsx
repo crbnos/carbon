@@ -12,7 +12,7 @@ import { getItemReadableId } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { LuChevronRight } from "react-icons/lu";
-import { useItems } from "~/stores";
+import { useItems, useSuppliers } from "~/stores";
 import type {
   ChangeOrderItemDiff,
   MethodDiffEntry,
@@ -68,7 +68,13 @@ const FIELD_LABELS: Record<string, string> = {
   mpn: "MPN",
   thumbnailPath: "Thumbnail",
   key: "Parameter",
-  toolId: "Tool"
+  toolId: "Tool",
+  supplierPartId: "Part #",
+  unitPrice: "Unit price",
+  minimumOrderQuantity: "Min order qty",
+  orderMultiple: "Order multiple",
+  conversionFactor: "Conversion factor",
+  supplierUnitOfMeasureCode: "Purchasing unit"
 };
 
 // Sort index for a field in the full-property list — known fields keep the order
@@ -118,6 +124,34 @@ function formatValue(field: string, value: unknown): string {
   if (field === "workInstruction" || typeof value === "object") return "Set";
   if (typeof value === "boolean") return value ? "Yes" : "No";
   return String(value);
+}
+
+// Bill of Process operations pair a time with a rate unit. Show each pair as one
+// row (e.g. "Setup time: 10 Total Minutes") instead of separate time + unit rows.
+const TIME_UNIT_GROUPS: { time: string; unit: string }[] = [
+  { time: "setupTime", unit: "setupUnit" },
+  { time: "laborTime", unit: "laborUnit" },
+  { time: "machineTime", unit: "machineUnit" }
+];
+
+// The group (if any) a field belongs to, matched by its time OR unit member.
+function timeUnitGroupFor(field: string) {
+  return TIME_UNIT_GROUPS.find((g) => g.time === field || g.unit === field);
+}
+
+// Join a time value with its unit into one label (10 + "Total Minutes" →
+// "10 Total Minutes"); "—" when both are empty.
+function combineTimeUnit(time: unknown, unit: unknown): string {
+  const parts = [time, unit]
+    .filter((v) => v !== null && v !== undefined && v !== "")
+    .map((v) => String(v));
+  return parts.length > 0 ? parts.join(" ") : "—";
+}
+
+// The Kit flag only distinguishes Kit vs Subassembly on a Make-to-Order
+// component; for any other method type it's meaningless, so hide it from the diff.
+function hideKit(field: string, methodType: unknown): boolean {
+  return field === "kit" && methodType !== "Make to Order";
 }
 
 // Every meaningful, non-empty business field of a row, minus the noise set and any
@@ -240,9 +274,28 @@ function AllPropertyRows({
   if (!row) return null;
   const fields = meaningfulFields(row, skip);
   if (fields.length === 0) return null;
-  return fields.map((f) => (
-    <ValueRow key={f} field={f} value={row[f]} variant={variant} />
-  ));
+  const emitted = new Set<string>();
+  const rows: ReactNode[] = [];
+  for (const f of fields) {
+    if (emitted.has(f)) continue;
+    if (hideKit(f, row.methodType)) continue;
+    const group = timeUnitGroupFor(f);
+    if (group) {
+      emitted.add(group.time);
+      emitted.add(group.unit);
+      rows.push(
+        <ValueRow
+          key={group.time}
+          field={group.time}
+          value={combineTimeUnit(row[group.time], row[group.unit])}
+          variant={variant}
+        />
+      );
+      continue;
+    }
+    rows.push(<ValueRow key={f} field={f} value={row[f]} variant={variant} />);
+  }
+  return rows;
 }
 
 // The status color for a node title: green (added) / red + strikethrough
@@ -316,14 +369,75 @@ function TreeNode({
 // the header text back as a property row.
 const MATERIAL_LABEL_FIELDS = new Set(["itemId"]);
 const OPERATION_LABEL_FIELDS = new Set(["description"]);
+// supplierId is the supplier-part node's label; itemId/active/tags are noise.
+const SUPPLIER_PART_LABEL_FIELDS = new Set([
+  "supplierId",
+  "itemId",
+  "active",
+  "tags"
+]);
 
-function modifiedFieldRows(entry: MethodDiffEntry<Row>): ReactNode {
-  if (!entry.changedFields) return null;
-  return Object.entries(entry.changedFields).map(
-    ([field, { before, after }]) => (
-      <FieldRow key={field} field={field} before={before} after={after} />
-    )
-  );
+// Sourcing only means anything on a "Buy and Make" item (mirrors
+// SourcingTypeProperty, which renders null otherwise) — hide it for everything
+// else. Material rows gate on the COMPONENT item; attributes on the draft item.
+const MATERIAL_LABEL_AND_SOURCING_FIELDS = new Set([
+  ...MATERIAL_LABEL_FIELDS,
+  "sourcingType"
+]);
+const SOURCING_ONLY_FIELDS = new Set(["sourcingType"]);
+
+// The property-skip set for a material row: the label fields, plus sourcingType
+// unless the component item is "Buy and Make" (resolved from the items store).
+function materialSkipFields(row: Row | null, items: Items): Set<string> {
+  const itemId = (row?.itemId as string | undefined) ?? "";
+  const isBuyAndMake =
+    items.find((i) => i.id === itemId)?.replenishmentSystem === "Buy and Make";
+  return isBuyAndMake
+    ? MATERIAL_LABEL_FIELDS
+    : MATERIAL_LABEL_AND_SOURCING_FIELDS;
+}
+
+// Whether an attributes diff entry belongs to a "Buy and Make" item — the
+// entry's before/after carry the full item attribute row.
+function attributeIsBuyAndMake(entry: MethodDiffEntry<Row>): boolean {
+  const row = (entry.after ?? entry.before) as Row | null;
+  return row?.replenishmentSystem === "Buy and Make";
+}
+
+function modifiedFieldRows(
+  entry: MethodDiffEntry<Row>,
+  skip: Set<string> = EMPTY_SKIP
+): ReactNode {
+  const changed = entry.changedFields;
+  if (!changed) return null;
+  // Full base/target rows carry every value, so a time/unit group can show its
+  // companion even when only one of the two members changed.
+  const before = (entry.before ?? {}) as Row;
+  const after = (entry.after ?? {}) as Row;
+  const methodType = after.methodType ?? before.methodType;
+  const emitted = new Set<string>();
+  const rows: ReactNode[] = [];
+
+  for (const [field, { before: b, after: a }] of Object.entries(changed)) {
+    if (skip.has(field) || emitted.has(field)) continue;
+    if (hideKit(field, methodType)) continue;
+    const group = timeUnitGroupFor(field);
+    if (group) {
+      emitted.add(group.time);
+      emitted.add(group.unit);
+      rows.push(
+        <FieldRow
+          key={group.time}
+          field={group.time}
+          before={combineTimeUnit(before[group.time], before[group.unit])}
+          after={combineTimeUnit(after[group.time], after[group.unit])}
+        />
+      );
+      continue;
+    }
+    rows.push(<FieldRow key={field} field={field} before={b} after={a} />);
+  }
+  return rows;
 }
 
 // The body of a top-level node (or child node): the changed old→new pairs when
@@ -335,7 +449,7 @@ function EntryBody({
   entry: MethodDiffEntry<Row>;
   skip: Set<string>;
 }): ReactNode {
-  if (entry.status === "modified") return modifiedFieldRows(entry);
+  if (entry.status === "modified") return modifiedFieldRows(entry, skip);
   if (entry.status === "added")
     return (
       <AllPropertyRows row={entry.after as Row} variant="new" skip={skip} />
@@ -352,7 +466,7 @@ function EntryBody({
 // collapsible or renders as a bare leaf.
 function entryHasBody(entry: MethodDiffEntry<Row>, skip: Set<string>): boolean {
   if (entry.status === "modified")
-    return Object.keys(entry.changedFields ?? {}).length > 0;
+    return Object.keys(entry.changedFields ?? {}).some((f) => !skip.has(f));
   if (entry.status === "added")
     return meaningfulFields((entry.after as Row) ?? {}, skip).length > 0;
   if (entry.status === "removed")
@@ -376,13 +490,35 @@ function MaterialEntry({
     getItemReadableId(items, itemId) ||
     itemId ||
     "Material";
+  const skip = materialSkipFields(row, items);
   return (
     <TreeNode
       label={label}
       status={entry.status}
-      collapsible={entryHasBody(entry, MATERIAL_LABEL_FIELDS)}
+      collapsible={entryHasBody(entry, skip)}
     >
-      <EntryBody entry={entry} skip={MATERIAL_LABEL_FIELDS} />
+      <EntryBody entry={entry} skip={skip} />
+    </TreeNode>
+  );
+}
+
+function SupplierPartEntry({
+  entry,
+  suppliersById
+}: {
+  entry: MethodDiffEntry<Row>;
+  suppliersById: Map<string, string>;
+}) {
+  const row = (entry.after ?? entry.before) as Row | null;
+  const supplierId = (row?.supplierId as string | undefined) ?? "";
+  const label = suppliersById.get(supplierId) || supplierId || "Supplier";
+  return (
+    <TreeNode
+      label={label}
+      status={entry.status}
+      collapsible={entryHasBody(entry, SUPPLIER_PART_LABEL_FIELDS)}
+    >
+      <EntryBody entry={entry} skip={SUPPLIER_PART_LABEL_FIELDS} />
     </TreeNode>
   );
 }
@@ -492,26 +628,96 @@ function Section({
 }
 
 export default function ChangeOrderDiffViewer({
-  diff
+  diff,
+  // When `bare`, drop the bordered wrapper + the internal "Changes" label — the
+  // caller (the affected-item "Changes" card) supplies the frame + title. The
+  // release dialog keeps the default framed look.
+  bare = false
 }: {
   diff?: ChangeOrderItemDiff;
+  bare?: boolean;
 }) {
   const [items] = useItems();
-
-  const materials = (diff?.materials ?? []).filter(
-    (m) => m.status !== "unchanged"
+  const [suppliers] = useSuppliers();
+  const suppliersById = new Map(
+    (suppliers ?? []).map((s) => [s.id, s.name] as const)
   );
+
+  const materials = (diff?.materials ?? []).filter((m) => {
+    if (m.status === "unchanged") return false;
+    // A modified row whose only change is a hidden field (sourcing on a
+    // non-Buy-and-Make component) reads as unchanged — drop it entirely.
+    if (m.status !== "modified") return true;
+    return entryHasBody(
+      m,
+      materialSkipFields((m.after ?? m.before) as Row | null, items)
+    );
+  });
   const operations = (diff?.operations ?? []).filter(
     (o) => o.status !== "unchanged" || operationHasChildChanges(o)
   );
-  const attributes = (diff?.attributes ?? []).filter(
-    (a) => a.status !== "unchanged"
+  const attributes = (diff?.attributes ?? []).filter((a) => {
+    if (a.status === "unchanged") return false;
+    const skip = attributeIsBuyAndMake(a) ? EMPTY_SKIP : SOURCING_ONLY_FIELDS;
+    return Object.keys(a.changedFields ?? {}).some((f) => !skip.has(f));
+  });
+  const supplierParts = (diff?.supplierParts ?? []).filter(
+    (s) => s.status !== "unchanged"
   );
 
   const isEmpty =
     materials.length === 0 &&
     operations.length === 0 &&
-    attributes.length === 0;
+    attributes.length === 0 &&
+    supplierParts.length === 0;
+
+  const body = isEmpty ? (
+    <span className="text-sm text-muted-foreground italic">
+      <Trans>No changes yet.</Trans>
+    </span>
+  ) : (
+    <VStack spacing={8} className="w-full">
+      {materials.length > 0 && (
+        <Section title={<Trans>Bill of Materials</Trans>} termId="bom">
+          {materials.map((m, i) => (
+            <MaterialEntry key={`mat-${i}`} entry={m} items={items} />
+          ))}
+        </Section>
+      )}
+      {operations.length > 0 && (
+        <Section title={<Trans>Bill of Process</Trans>} termId="routing">
+          {operations.map((o, i) => (
+            <OperationEntry key={`op-${i}`} entry={o} />
+          ))}
+        </Section>
+      )}
+      {attributes.length > 0 && (
+        <Section title={<Trans>Properties</Trans>}>
+          {attributes.map((a, i) => (
+            <VStack key={`attr-${i}`} spacing={1} className="w-full">
+              {modifiedFieldRows(
+                a,
+                attributeIsBuyAndMake(a) ? EMPTY_SKIP : SOURCING_ONLY_FIELDS
+              )}
+            </VStack>
+          ))}
+        </Section>
+      )}
+      {supplierParts.length > 0 && (
+        <Section title={<Trans>Supplier Parts</Trans>}>
+          {supplierParts.map((s, i) => (
+            <SupplierPartEntry
+              key={`sp-${i}`}
+              entry={s}
+              suppliersById={suppliersById}
+            />
+          ))}
+        </Section>
+      )}
+    </VStack>
+  );
+
+  if (bare) return body;
 
   return (
     <div className="w-full rounded-lg border border-border p-3">
@@ -522,37 +728,7 @@ export default function ChangeOrderDiffViewer({
           </span>
         </LabelWithHelp>
       </div>
-      {isEmpty ? (
-        <span className="text-sm text-muted-foreground italic">
-          <Trans>No changes yet.</Trans>
-        </span>
-      ) : (
-        <VStack spacing={8} className="w-full">
-          {materials.length > 0 && (
-            <Section title={<Trans>Bill of Materials</Trans>} termId="bom">
-              {materials.map((m, i) => (
-                <MaterialEntry key={`mat-${i}`} entry={m} items={items} />
-              ))}
-            </Section>
-          )}
-          {operations.length > 0 && (
-            <Section title={<Trans>Bill of Process</Trans>} termId="routing">
-              {operations.map((o, i) => (
-                <OperationEntry key={`op-${i}`} entry={o} />
-              ))}
-            </Section>
-          )}
-          {attributes.length > 0 && (
-            <Section title={<Trans>Properties</Trans>}>
-              {attributes.map((a, i) => (
-                <VStack key={`attr-${i}`} spacing={1} className="w-full">
-                  {modifiedFieldRows(a)}
-                </VStack>
-              ))}
-            </Section>
-          )}
-        </VStack>
-      )}
+      {body}
     </div>
   );
 }

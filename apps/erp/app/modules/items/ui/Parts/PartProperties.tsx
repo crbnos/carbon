@@ -71,9 +71,9 @@ type PartPropertiesProps = {
   // fixed-width sidebar chrome and flow with the parent container.
   embedded?: boolean;
   // Which slice to render. "all" (default, the part sidebar) shows everything;
-  // "properties" omits the image + files; "files" shows only the image + files.
-  // Lets a caller (the CO card) split the panel across tabs.
-  section?: "all" | "properties" | "files";
+  // "properties" omits the image + files. Lets a caller (the CO card) render
+  // just the attribute fields and delegate files/CAD to ItemDocuments + CadModel.
+  section?: "all" | "properties";
   // Field presentation. "sidebar" (default) = the compact inline click-to-edit
   // rows of the part detail sidebar. "form" = standard labeled form fields (used
   // by the CO card). Only affects presentation — persistence is unchanged.
@@ -270,16 +270,6 @@ const PartProperties = ({
       </Suspense>
     </VStack>
   );
-
-  // Files-only slice (a dedicated tab in the CO card): just the image + files.
-  if (section === "files") {
-    return (
-      <VStack spacing={4} className="w-full px-1 py-2 text-sm">
-        {thumbnail}
-        {filesBlock}
-      </VStack>
-    );
-  }
 
   const formLayout = layout === "form";
   // Blocks that hold a wide control (textarea / badge list / custom fields)
@@ -750,51 +740,56 @@ const PartProperties = ({
           />
         </ValidatedForm>
       )}
-      {routeData?.partSummary?.replenishmentSystem?.includes("Buy") && (
-        <ValidatedForm
-          defaultValues={{
-            requiresInspection:
-              routeData?.partSummary?.requiresInspection ?? false
-          }}
-          validator={z.object({
-            requiresInspection: zfd.checkbox()
-          })}
-          className="w-full"
-          isReadOnly={isReadOnly}
-        >
-          <Boolean
-            label={t`Requires Inspection`}
-            name="requiresInspection"
-            variant="small"
-            onChange={(value) => {
-              onUpdate("requiresInspection", value ? "on" : "off");
+      {/* Requires Inspection + Manufacturer Part Number are purchasing
+          attributes — hidden on the CO affected-item card; they stay editable on
+          the part page (non-embedded), same as Active/Tags above. */}
+      {!embedded &&
+        routeData?.partSummary?.replenishmentSystem?.includes("Buy") && (
+          <ValidatedForm
+            defaultValues={{
+              requiresInspection:
+                routeData?.partSummary?.requiresInspection ?? false
             }}
-          />
-        </ValidatedForm>
-      )}
-      {routeData?.partSummary?.replenishmentSystem?.includes("Buy") && (
-        <ValidatedForm
-          defaultValues={{
-            mpn: routeData?.partSummary?.mpn ?? undefined
-          }}
-          validator={z.object({
-            mpn: z.string().optional()
-          })}
-          className="w-full"
-          isReadOnly={isReadOnly}
-        >
-          <InputControlled
-            label={t`Manufacturer Part Number`}
-            name="mpn"
-            inline={inlineLayout}
-            size="sm"
-            value={routeData?.partSummary?.mpn ?? ""}
-            onBlur={(e) => {
-              onUpdate("mpn", e.target.value ?? null);
+            validator={z.object({
+              requiresInspection: zfd.checkbox()
+            })}
+            className="w-full"
+            isReadOnly={isReadOnly}
+          >
+            <Boolean
+              label={t`Requires Inspection`}
+              name="requiresInspection"
+              variant="small"
+              onChange={(value) => {
+                onUpdate("requiresInspection", value ? "on" : "off");
+              }}
+            />
+          </ValidatedForm>
+        )}
+      {!embedded &&
+        routeData?.partSummary?.replenishmentSystem?.includes("Buy") && (
+          <ValidatedForm
+            defaultValues={{
+              mpn: routeData?.partSummary?.mpn ?? undefined
             }}
-          />
-        </ValidatedForm>
-      )}
+            validator={z.object({
+              mpn: z.string().optional()
+            })}
+            className="w-full"
+            isReadOnly={isReadOnly}
+          >
+            <InputControlled
+              label={t`Manufacturer Part Number`}
+              name="mpn"
+              inline={inlineLayout}
+              size="sm"
+              value={routeData?.partSummary?.mpn ?? ""}
+              onBlur={(e) => {
+                onUpdate("mpn", e.target.value ?? null);
+              }}
+            />
+          </ValidatedForm>
+        )}
       {routeDataFromRoute?.supersession?.successor && (
         <div className="w-full">
           <h3 className="text-xs text-muted-foreground mb-1">

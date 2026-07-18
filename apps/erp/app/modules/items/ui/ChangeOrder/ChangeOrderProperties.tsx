@@ -4,7 +4,6 @@ import {
   Select,
   ValidatedForm
 } from "@carbon/form";
-import type { JSONContent } from "@carbon/react";
 import {
   Button,
   HStack,
@@ -25,7 +24,6 @@ import { Assignee, EmployeeAvatar } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { Combobox } from "~/components/Form";
 import { usePermissions, useRouteData } from "~/hooks";
-import type { ChangeOrderActionTask } from "~/modules/items";
 import type { action } from "~/routes/x+/items+/change-order+/update";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
@@ -36,11 +34,8 @@ import {
 } from "../../changeOrder.models";
 import type { ChangeOrder } from "../../types";
 import type { AffectedItemDraft } from "./affectedItem.types";
-import ChangeOrderActions from "./ChangeOrderActions";
-import { ChangeOrderContentSection } from "./ChangeOrderContent";
 import ChangeOrderReleaseMerge from "./ChangeOrderReleaseMerge";
 import ImpactPanel, { type ChangeOrderImpactItem } from "./ImpactPanel";
-import ItemLink from "./ItemLink";
 
 // One CO-centric section — the xxs uppercase heading + content used by the
 // PurchaseOrder / SalesOrder / Quote property sidebars. Sections are separated by
@@ -69,10 +64,11 @@ function PropertiesSection({
 
 // Properties panel (right panel) of the change-order workspace: all CO-centric
 // content (not tied to any single affected item), as one consistent sidebar —
-// Release (at Implementation), the editable property fields, Details (reason +
-// description), Actions, and Impact. Self-contained: reads everything from the
-// $id route loader so ResizablePanels can render it with only a `key` (mirrors
-// SalesOrderProperties). Owns its own width / scroll / border / padding.
+// Release (at Implementation), the editable property fields, and Impact. (Reason
+// for change, description, and the action tasks live on the top-level detail
+// route.) Self-contained: reads everything from the $id route loader so
+// ResizablePanels can render it with only a `key` (mirrors SalesOrderProperties).
+// Owns its own width / scroll / border / padding.
 const ChangeOrderProperties = () => {
   const { id } = useParams();
   if (!id) throw new Error("id not found");
@@ -84,13 +80,7 @@ const ChangeOrderProperties = () => {
     changeOrder: ChangeOrder;
     types: ListItem[];
     affectedItems: AffectedItemDraft[];
-    actions: ChangeOrderActionTask[];
     impactUsedIn: ChangeOrderImpactItem[];
-    affectedAssemblies: {
-      id: string;
-      readableIdWithRevision: string | null;
-      name: string | null;
-    }[];
     nonConformanceOptions: {
       id: string;
       nonConformanceId: string;
@@ -106,9 +96,7 @@ const ChangeOrderProperties = () => {
   const changeOrder = routeData?.changeOrder;
   const types = routeData?.types ?? [];
   const affectedItems = routeData?.affectedItems ?? [];
-  const actions = routeData?.actions ?? [];
   const impactUsedIn = routeData?.impactUsedIn ?? [];
-  const affectedAssemblies = routeData?.affectedAssemblies ?? [];
   const nonConformanceOptions = routeData?.nonConformanceOptions ?? [];
   const linkedNonConformance = routeData?.linkedNonConformance ?? null;
   const isLocked = isChangeOrderLocked(changeOrder?.status);
@@ -141,6 +129,8 @@ const ChangeOrderProperties = () => {
   const changes = affectedItems.map((a) => ({
     id: a.affectedItem.id,
     label: a.affectedItem.item?.readableIdWithRevision ?? a.affectedItem.itemId,
+    changeType: a.affectedItem.changeType,
+    version: a.makeMethod?.version,
     diff: a.diff
   }));
 
@@ -342,86 +332,10 @@ const ChangeOrderProperties = () => {
         <EmployeeAvatar employeeId={changeOrder?.createdBy ?? ""} size="xxs" />
       </VStack>
 
-      {/* Affected assemblies — read-only, derived from the distinct assemblies
-          referenced by this change order's BOM-change rows (computed in the
-          $id loader). */}
-      <VStack spacing={2}>
-        <h3 className="text-xs text-muted-foreground">
-          <Trans>Affected assemblies</Trans>
-        </h3>
-        {affectedAssemblies.length === 0 ? (
-          <span className="text-xs text-muted-foreground italic">
-            <Trans>No affected assemblies yet.</Trans>
-          </span>
-        ) : (
-          <VStack spacing={1}>
-            {affectedAssemblies.map((assembly) => (
-              <ItemLink
-                key={assembly.id}
-                itemId={assembly.id}
-                type={null}
-                className="text-sm text-primary"
-              >
-                {assembly.readableIdWithRevision ??
-                  assembly.name ??
-                  assembly.id}
-              </ItemLink>
-            ))}
-          </VStack>
-        )}
-      </VStack>
-
       <Separator />
 
-      {/* Details — the narrative of the change. Reason + Description are both
-          free-text, so they live in one section as labeled sub-fields. */}
-      <PropertiesSection title={<Trans>Details</Trans>}>
-        <VStack spacing={4} className="w-full">
-          <VStack spacing={1} className="w-full">
-            <h3 className="text-xs text-muted-foreground">
-              <Trans>Reason for change</Trans>
-            </h3>
-            <ChangeOrderContentSection
-              key={`${id}-reason`}
-              embedded
-              id={id}
-              title=""
-              field="reasonForChange"
-              content={changeOrder?.reasonForChange as JSONContent}
-              isDisabled={isLocked}
-            />
-          </VStack>
-          <VStack spacing={1} className="w-full">
-            <h3 className="text-xs text-muted-foreground">
-              <Trans>Description</Trans>
-            </h3>
-            <ChangeOrderContentSection
-              key={`${id}-description`}
-              embedded
-              id={id}
-              title=""
-              field="description"
-              content={changeOrder?.description as JSONContent}
-              isDisabled={isLocked}
-            />
-          </VStack>
-        </VStack>
-      </PropertiesSection>
-
-      <Separator />
-
-      {/* Actions — an editable "Required Actions" multiselect matching the
-          Quality issue sidebar; it renders its own label, so no section
-          heading. Selecting/deselecting a template adds/removes its task. */}
-      <ChangeOrderActions
-        variant="summary"
-        changeOrderId={id}
-        actions={actions}
-        isDisabled={isLocked}
-      />
-
-      <Separator />
-
+      {/* Reason for change, description, and the action tasks now live on the
+          top-level detail route ($id.details), not here. */}
       <PropertiesSection title={<Trans>Impact</Trans>}>
         <ImpactPanel embedded items={impactUsedIn} />
       </PropertiesSection>

@@ -12,14 +12,14 @@
  * live on a REAL CO-owned Draft `makeMethod` (`makeMethod.changeOrderId` set),
  * NOT in staging tables. Three change types are exercised:
  *   - Version  → a new Draft method version on the SAME item (copied from the
- *                Active method, then edited). CN-000001 is the worked example: it
+ *                Active method, then edited). ECO-000001 is the worked example: it
  *                swaps bracket PRT-001186.A → PRT-001186.B across four assemblies
  *                (delete the bracketA BOM line on the draft + add bracketB) and
  *                declares one manual changeOrderSupersession (bracketA → bracketB).
  *   - Revision → a new inactive revision item (active:false, changeOrderId set)
- *                with the method copied into its Draft (CN-000004, SA-0065).
+ *                with the method copied into its Draft (ECO-000004, SA-0065).
  *   - New Part → a new inactive part number (new readableId) with the method
- *                copied into its Draft (CN-000004, derived from GA-0044).
+ *                copied into its Draft (ECO-000004, derived from GA-0044).
  *
  * The pg connection needs SUPABASE_DB_URL, which lives in the repo-root
  * `.env.local` (not `.env`). Both are loaded below.
@@ -127,13 +127,13 @@ const JOB_ID = "J-CO-001";
 const SO_ID = "SO-CO-001";
 const NCR_ID = "NCR-CO-001";
 const CHANGE_ORDER_IDS = [
-  "CN-000001",
-  "CN-000002",
-  "CN-000003",
-  "CN-000004",
-  "CN-000005",
-  "CN-000006",
-  "CN-000007"
+  "ECO-000001",
+  "ECO-000002",
+  "ECO-000003",
+  "ECO-000004",
+  "ECO-000005",
+  "ECO-000006",
+  "ECO-000007"
 ];
 
 // ---------------------------------------------------------------------------
@@ -1048,7 +1048,7 @@ async function seed() {
         [salesOrderId, veh1.itemId, companyId, userId]
       );
 
-      // --- NCR (linked from CN-000001) ---
+      // --- NCR (linked from ECO-000001) ---
       console.log("7. Creating NCR...");
       const ncrRes = await client.query(
         `INSERT INTO "nonConformance" (
@@ -1070,9 +1070,9 @@ async function seed() {
       // --- Change orders ---
       console.log("8. Creating change orders...");
 
-      // CN-000001 — Implementation
+      // ECO-000001 — Implementation
       const co1 = await createChangeOrder(ctx, {
-        changeOrderId: "CN-000001",
+        changeOrderId: "ECO-000001",
         name: "Sync 3 Derailleur Mount",
         status: "Implementation",
         changeOrderTypeId: cotDesign,
@@ -1134,9 +1134,9 @@ async function seed() {
         2
       );
 
-      // CN-000002 — Engineering Complete
+      // ECO-000002 — Engineering Complete
       const co2 = await createChangeOrder(ctx, {
-        changeOrderId: "CN-000002",
+        changeOrderId: "ECO-000002",
         name: "VEH3 Battery Lock Update",
         status: "Engineering Complete",
         changeOrderTypeId: cotDesign,
@@ -1151,9 +1151,9 @@ async function seed() {
       await deleteDraftMaterial(ctx, co2Affected.draftMakeMethodId, fst100);
       await addBomLine(ctx, co2Affected.draftMakeMethodId, brg200, 1, 1);
 
-      // CN-000003 — Start
+      // ECO-000003 — Start
       const co3 = await createChangeOrder(ctx, {
-        changeOrderId: "CN-000003",
+        changeOrderId: "ECO-000003",
         name: "Cargo Box Bracket Redesign",
         status: "Start",
         changeOrderTypeId: cotDesign,
@@ -1166,9 +1166,9 @@ async function seed() {
       const co3Affected = await addAffectedItem(ctx, co3, sa0065, "Version", 0);
       await deleteDraftMaterial(ctx, co3Affected.draftMakeMethodId, fst101);
 
-      // CN-000004 — Start. Demonstrates the Revision + New Part change types.
+      // ECO-000004 — Start. Demonstrates the Revision + New Part change types.
       const co4 = await createChangeOrder(ctx, {
-        changeOrderId: "CN-000004",
+        changeOrderId: "ECO-000004",
         name: "Cable Routing Doc Update + FFF Replacement",
         status: "Start",
         changeOrderTypeId: cotDesign,
@@ -1198,9 +1198,9 @@ async function seed() {
         1
       );
 
-      // CN-000005 — Done (already-applied CO)
+      // ECO-000005 — Done (already-applied CO)
       const co5 = await createChangeOrder(ctx, {
-        changeOrderId: "CN-000005",
+        changeOrderId: "ECO-000005",
         name: "Saddle Supersession Royal MW",
         status: "Done",
         changeOrderTypeId: cotObsolescence,
@@ -1220,19 +1220,19 @@ async function seed() {
         1
       );
 
-      // CN-000006 — Draft (Unassigned, blank)
+      // ECO-000006 — Draft (Unassigned, blank)
       await createChangeOrder(ctx, {
-        changeOrderId: "CN-000006",
+        changeOrderId: "ECO-000006",
         name: "Luxembourg Handlebar Stem",
         status: "Draft",
         changeOrderTypeId: cotCost,
         assignee: null
       });
 
-      // CN-000007 — Start. One affected item (VEH0000001, a top-level product not
+      // ECO-000007 — Start. One affected item (VEH0000001, a top-level product not
       // touched by another open CO): add a Locking Washer to its staged BOM.
       const co7 = await createChangeOrder(ctx, {
-        changeOrderId: "CN-000007",
+        changeOrderId: "ECO-000007",
         name: "Fork Crown Reinforcement",
         status: "Start",
         changeOrderTypeId: cotDesign,

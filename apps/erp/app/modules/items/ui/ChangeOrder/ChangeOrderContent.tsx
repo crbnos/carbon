@@ -16,10 +16,12 @@ import { useState } from "react";
 import { usePermissions, useUser } from "~/hooks";
 import { getPrivateUrl } from "~/utils/path";
 
-// The two rich-text columns on the changeOrder header. Both are stored as JSON
-// and read/written the same way; the debounced writer targets the matching
-// column directly through the request-scoped supabase client (mirrors
-// IssueContent). Phase 1 keeps these inline — later phases add sections below.
+// The two rich-text columns on the changeOrder header (reasonForChange +
+// description). Both are stored as JSON and read/written the same way; the
+// debounced writer targets the matching column directly through the
+// request-scoped supabase client (mirrors IssueContent). Rendered as full Cards
+// on the top-level CO detail route; `embedded` drops the Card chrome for callers
+// that supply their own frame.
 export function ChangeOrderContentSection({
   id,
   title,

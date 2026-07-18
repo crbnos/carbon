@@ -756,9 +756,6 @@ msgstr "Avancer vers {nextStatus}"
 msgid "Advanced"
 msgstr "Avancé"
 
-msgid "Affected assemblies"
-msgstr "Assemblages affectés"
-
 msgid "Affected item not found."
 msgstr "Article affecté non trouvé."
 
@@ -7954,9 +7951,6 @@ msgstr "Aucun devis actif"
 msgid "No addresses found"
 msgstr "Aucune adresse trouvée"
 
-msgid "No affected assemblies yet."
-msgstr "Aucun assemblage affecté pour le moment."
-
 msgid "No affected items to assess."
 msgstr "Aucun article affecté à évaluer."
 
@@ -9956,9 +9950,6 @@ msgstr "Supprimer"
 #. placeholder {0}: item.label
 msgid "Remove {0}"
 msgstr "Supprimer {0}"
-
-msgid "Remove affected item"
-msgstr "Supprimer l'article affecté"
 
 msgid "Remove condition"
 msgstr "Supprimer la condition"

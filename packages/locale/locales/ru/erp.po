@@ -756,9 +756,6 @@ msgstr "Перейти к {nextStatus}"
 msgid "Advanced"
 msgstr "Дополнительно"
 
-msgid "Affected assemblies"
-msgstr "Затронутые сборки"
-
 msgid "Affected item not found."
 msgstr "Затронутый элемент не найден."
 
@@ -7954,9 +7951,6 @@ msgstr "Нет активных предложений"
 msgid "No addresses found"
 msgstr "Адреса не найдены"
 
-msgid "No affected assemblies yet."
-msgstr "Нет затронутых сборок."
-
 msgid "No affected items to assess."
 msgstr "Нет затронутых элементов для оценки."
 
@@ -9956,9 +9950,6 @@ msgstr "Удалить"
 #. placeholder {0}: item.label
 msgid "Remove {0}"
 msgstr "Удалить {0}"
-
-msgid "Remove affected item"
-msgstr "Удалить затронутый элемент"
 
 msgid "Remove condition"
 msgstr "Удалить условие"

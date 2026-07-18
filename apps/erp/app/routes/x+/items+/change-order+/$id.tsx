@@ -246,14 +246,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     })
   );
 
-  // Affected assemblies (Properties sidebar): in the top-to-bottom model the
-  // affected items themselves are the changed products.
-  const affectedAssemblies = affectedRows.map((r) => ({
-    id: r.itemId,
-    readableIdWithRevision: r.item?.readableIdWithRevision ?? null,
-    name: r.item?.name ?? null
-  }));
-
   // Minimal, explicit option shape (cheap type — avoids widening the loader's
   // instantiation surface with the full issues-view row).
   const nonConformanceOptions: {
@@ -279,7 +271,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     diff: diff.data ?? { items: [] },
     actions: actions.data ?? [],
     requiredActions,
-    affectedAssemblies,
     impactUsedIn,
     nonConformanceOptions,
     linkedNonConformance: linkedNonConformance
