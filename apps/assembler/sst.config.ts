@@ -113,7 +113,8 @@ export default $config({
     // console adds this automatically; the raw provider does not. (Only for NONE;
     // an AWS_IAM URL would drop this and rely on SigV4 instead.)
     new aws.lambda.Permission("AssemblerUrlPublic", {
-      functionName: fn.name,
+      // NB: aws.lambda.Permission uses `function` (unlike FunctionUrl's `functionName`).
+      function: fn.name,
       action: "lambda:InvokeFunctionUrl",
       principal: "*",
       functionUrlAuthType: "NONE",
