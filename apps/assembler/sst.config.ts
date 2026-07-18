@@ -108,6 +108,17 @@ export default $config({
       authorizationType: "NONE",
     });
 
+    // authType NONE alone still 403s — a Function URL needs an explicit
+    // resource-based policy granting anonymous `lambda:InvokeFunctionUrl`. The
+    // console adds this automatically; the raw provider does not. (Only for NONE;
+    // an AWS_IAM URL would drop this and rely on SigV4 instead.)
+    new aws.lambda.Permission("AssemblerUrlPublic", {
+      functionName: fn.name,
+      action: "lambda:InvokeFunctionUrl",
+      principal: "*",
+      functionUrlAuthType: "NONE",
+    });
+
     // ---------------------------------------------------------------------------
     // Runtime B — ECS Fargate Spot service (overflow, DEFAULT-OFF)
     // ---------------------------------------------------------------------------
