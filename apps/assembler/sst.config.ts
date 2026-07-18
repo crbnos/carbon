@@ -1,6 +1,6 @@
 /// <reference path="./.sst/platform/config.d.ts" />
 
-// Assembler service infrastructure (SST v3 / Pulumi). ONE shared deployment per
+// Assembler service infrastructure (SST v4 Ion / Pulumi-based). ONE shared deployment per
 // environment (commercial + GovCloud/ITAR), NOT per-workspace — point the env at
 // the target account/region and deploy on its own cadence.
 //
@@ -56,8 +56,8 @@ export default $config({
     // ---------------------------------------------------------------------------
     // Runtime A — Lambda (default, $0 idle)
     // ---------------------------------------------------------------------------
-    // SST v3's `sst.aws.Function` has no prebuilt-container-image support, so use
-    // the raw provider (SST v3 is Pulumi-based; raw `aws.*` composes fine).
+    // SST's `sst.aws.Function` has no prebuilt-container-image support, so use the
+    // raw provider (SST v4 Ion is Pulumi-based; raw `aws.*` composes fine).
     const lambdaRole = new aws.iam.Role("AssemblerLambdaRole", {
       assumeRolePolicy: JSON.stringify({
         Version: "2012-10-17",
@@ -86,7 +86,9 @@ export default $config({
       memorySize: 10240, // 10 GB — max; the assembler is memory-heavy on big meshes
       timeout: 900, // 900s hard cap (not raisable) — the time-budget gate keeps jobs under it
       ephemeralStorage: { size: 10240 }, // 10 GB /tmp for the source download + temp GLBs
-      architectures: ["x86_64"],
+      // MUST match the built image's platform. arm64 (Graviton) is cheaper + builds
+      // natively on Apple-Silicon dev machines; x86_64 matches the amd64 CI build.
+      architectures: [process.env.ASSEMBLER_LAMBDA_ARCH ?? "x86_64"],
       environment: { variables: environment as Record<string, string> },
     });
 
