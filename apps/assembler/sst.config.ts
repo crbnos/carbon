@@ -83,9 +83,17 @@ export default $config({
       packageType: "Image",
       imageUri: image,
       role: lambdaRole.arn,
-      memorySize: 10240, // 10 GB — max; the assembler is memory-heavy on big meshes
+      // Assembler is memory-heavy on big meshes → 10 GB (the max) in prod. New AWS
+      // accounts cap Lambda memory at 3008 MB until a Service Quotas increase, so
+      // this is overridable (set ASSEMBLER_LAMBDA_MEMORY_MB=3008 for staging before
+      // the quota bump). CPU scales with memory, so lower memory = slower jobs.
+      memorySize: Number(process.env.ASSEMBLER_LAMBDA_MEMORY_MB ?? "10240"),
       timeout: 900, // 900s hard cap (not raisable) — the time-budget gate keeps jobs under it
-      ephemeralStorage: { size: 10240 }, // 10 GB /tmp for the source download + temp GLBs
+      // /tmp for the source download + temp GLBs. Default max is 10 GB, but keep it
+      // in step with the memory tier on a fresh account (also overridable).
+      ephemeralStorage: {
+        size: Number(process.env.ASSEMBLER_LAMBDA_TMP_MB ?? "10240"),
+      },
       // MUST match the built image's platform. arm64 (Graviton) is cheaper + builds
       // natively on Apple-Silicon dev machines; x86_64 matches the amd64 CI build.
       architectures: [process.env.ASSEMBLER_LAMBDA_ARCH ?? "x86_64"],
