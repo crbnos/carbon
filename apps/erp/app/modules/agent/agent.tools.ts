@@ -13,6 +13,7 @@ import {
   navigateBlock
 } from "./agent.blocks";
 import { readDoc, searchDocs } from "./agent.kb";
+import { findPages } from "./agent.pages";
 
 // v1 is READ-ONLY. The safety guarantee lives here, once: the agent can only see and
 // call tools in this READ-classified index. A non-READ or unknown name simply isn't in
@@ -132,9 +133,15 @@ export function createAgentTools(ctx: ExecutorContext) {
       inputSchema: buttonBlock,
       execute: async () => ({ shown: true })
     }),
+    find_page: tool({
+      description:
+        "Find an app page to send the user to. Query by what the user wants (e.g. 'getting started', 'jobs', 'settings', 'a specific part'). Returns candidate pages, each with a `key`, a label, a sample `url`, and `arity` (how many args it needs — usually 1 id for a record page, 0 for a list/module page). Pick the best `key`, then call navigate.",
+      inputSchema: z.object({ query: z.string() }),
+      execute: async ({ query }) => ({ pages: findPages(query) })
+    }),
     navigate: tool({
       description:
-        "Take the user to a record's page. Provide `entity` (one of: part, job, salesOrder, purchaseOrder, quote, supplier, customer) and its `id` (the real id from a read tool, NOT a made-up value). The app builds the correct URL — never guess paths. Fires once.",
+        "Take the user to a page found via find_page. Pass `key` (from find_page) and, if that page has arity > 0, `params` — the positional args it needs, in order (usually one record id you looked up with a read tool, NOT a made-up value). For an arity-0 page, omit params. Never invent a key; only use one find_page returned. Fires once.",
       inputSchema: navigateBlock,
       execute: async () => ({ navigated: true })
     })

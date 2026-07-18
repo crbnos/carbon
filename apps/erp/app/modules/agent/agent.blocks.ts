@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { path } from "~/utils/path";
 
 // Input schemas for the agent's UI-block tools. Each schema IS the block's data shape,
 // validated by the AI SDK when the model calls the tool.
@@ -15,27 +14,15 @@ export const choiceBlock = z.object({
 export const linkBlock = z.object({ label: z.string(), url: z.string() });
 export const buttonBlock = z.object({ label: z.string(), message: z.string() });
 
-// navigate never takes a freehand path — the model picks a known entity + a real id
-// (from a read tool) and we build the actual route via `path.to` (the single source of
-// truth for URLs). This is the ONE curated allowlist of navigable record types; the enum
-// and the client-side path builder both derive from it, so there's nothing to keep in sync.
-export const NAVIGABLE = {
-  part: path.to.part,
-  job: path.to.job,
-  salesOrder: path.to.salesOrder,
-  purchaseOrder: path.to.purchaseOrder,
-  quote: path.to.quote,
-  supplier: path.to.supplier,
-  customer: path.to.customer
-} as const;
-
-export type NavigableEntity = keyof typeof NAVIGABLE;
-
+// navigate never takes a freehand URL. The model discovers a page with `find_page` and sends
+// back its `key` (a `path.to` key) plus any `params` (e.g. a record id it looked up). The
+// client resolves that key against the generated page manifest (agent.pages.ts) — an unknown
+// key or one outside the safe /x page set simply no-ops. See agent.pages.ts for the allowlist.
 export const navigateBlock = z.object({
-  entity: z.enum(
-    Object.keys(NAVIGABLE) as [NavigableEntity, ...NavigableEntity[]]
-  ),
-  id: z.string().min(1), // reject empty ids → path.to.x("") would build a broken "/x/part" route
+  key: z.string().min(1),
+  // Positional args the page needs, in order — usually a single record id. Omit for a page
+  // that takes none (a list/module page).
+  params: z.array(z.string()).optional(),
   label: z.string().optional()
 });
 

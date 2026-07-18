@@ -1,10 +1,17 @@
 import Markdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-// Open every link in a new tab.
 const markdownComponents: Components = {
+  // Open every link in a new tab.
   a: ({ node, ...props }) => (
     <a {...props} target="_blank" rel="noopener noreferrer" />
+  ),
+  // Wrap wide tables so only the TABLE scrolls sideways — otherwise it stretches
+  // the whole message column and the entire chat panel scrolls horizontally.
+  table: ({ node, ...props }) => (
+    <div className="my-2 max-w-full overflow-x-auto">
+      <table {...props} />
+    </div>
   )
 };
 

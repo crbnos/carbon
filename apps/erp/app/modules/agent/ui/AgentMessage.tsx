@@ -11,14 +11,16 @@ const RUNNING_LABEL: Record<string, string> = {
   read_doc: "Reading a doc",
   search_tools: "Finding the right tool",
   describe_tool: "Inspecting a tool",
-  call_tool: "Looking up data"
+  call_tool: "Looking up data",
+  find_page: "Finding the page"
 };
 const DONE_LABEL: Record<string, string> = {
   search_docs: "Searched the docs",
   read_doc: "Read a doc",
   search_tools: "Found a tool",
   describe_tool: "Inspected a tool",
-  call_tool: "Looked up data"
+  call_tool: "Looked up data",
+  find_page: "Found the page"
 };
 
 // Plain, quiet italic line per tool call — no box, no icon.
@@ -45,7 +47,9 @@ export function AgentMessage({
 }) {
   const isUser = message.role === "user";
   return (
-    <div className={isUser ? "self-end max-w-[85%]" : "self-start w-full"}>
+    <div
+      className={isUser ? "self-end max-w-[85%]" : "self-start w-full min-w-0"}
+    >
       <div
         className={
           isUser

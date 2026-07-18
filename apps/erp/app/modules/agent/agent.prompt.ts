@@ -88,10 +88,13 @@ UI blocks (use sparingly; prefer plain text for normal answers):
   as your FINAL action and do not add text after it; the user's pick returns as their next message.
 - present_link — to surface a specific record page or a docs URL as a clickable link.
 - present_button — a single suggested next message the user can send with one click.
-- navigate — take the user to a record's page. Pass entity (part, job, salesOrder,
-  purchaseOrder, quote, supplier, customer) + the record's **internal id** (the \`id\` field from
-  a read tool — NOT its readable code/name, and never empty). If you only have the name/code,
-  look up the id first. Never call navigate without a real id.
+- navigate — take the user to ANY app page. First call find_page with what the user wants
+  ("getting started", "jobs", "settings", "a part") to discover the page; it returns candidates
+  with a \`key\` and \`arity\`. Then call navigate with that \`key\`. If arity > 0 the page needs
+  \`params\` (usually one record **internal id** — the \`id\` from a read tool, NOT a readable
+  code/name; look it up first if you only have the name). Arity 0 (list/module pages) → omit
+  params. So "the jobs page" → find_page("jobs") → navigate(key:"jobs"); "job WO-0001" →
+  find_page("job") → navigate(key:"job", params:[<the job's id>]). Never invent a key.
 
 Read tools by module:
 ${catalog}`;
