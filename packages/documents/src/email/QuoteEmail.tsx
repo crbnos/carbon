@@ -12,6 +12,7 @@ import {
   Text
 } from "@react-email/components";
 import type { CompanySettings, Email } from "../types";
+import ExternalNotes from "./components/ExternalNotes";
 import {
   Button,
   EmailThemeProvider,
@@ -110,6 +111,7 @@ const QuoteEmail = ({
               </Text>
             )}
           </Section>
+          <ExternalNotes content={quote.externalNotes} />
           <Section className="bg-gray-50 rounded-lg text-xs">
             <Row>
               <Column className="p-5" colSpan={2}>
