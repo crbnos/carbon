@@ -99,10 +99,12 @@ Legend: `[ ]` todo · verify = command + expected.
       *Remaining:* deploy-validate the raw-provider shape.
 - [~] **T2.2 `aws.lambda.FunctionUrl`** — scaffolded `authorizationType: "NONE"`
       (in-app bearer). *Remaining:* DECISION NONE vs `AWS_IAM`; hostname/cert/DNS.
-- [ ] **T2.3 CI deploy step** — on `apps/assembler/**`/`crates/**` push, `sst deploy
-      --stage prod` from `apps/assembler/` (pinned sst), then
-      `lambda update-function-code --image-uri …:${sha}`. *Not scaffolded* (needs
-      deploy creds/secrets).
+- [~] **T2.3 CI deploy step** — scaffolded as a **manual-only** `deploy` job in
+      `.github/workflows/assembler.yml` (gated on the `deploy` dispatch input; never
+      auto-fires on a main push). AWS creds + Pulumi 3.212.0 + `working-directory:
+      apps/assembler`, `IMAGE_TAG=${sha}`. The `sst deploy` command is a fail-loud
+      `exit 1` stub. *Remaining:* wire the sst toolchain for the standalone app + fill
+      the DECISION secrets, then replace the stub + (optionally) auto-run on main.
 - [ ] **T2.4 Consumer env** — commercial ERP/MES + Vercel get `ASSEMBLER_SERVICE_URL`
       (Function URL) + `ASSEMBLER_SERVICE_API_KEY` + `ASSEMBLER_SYNC_ENABLED=true`.
       *Verify (P2):* `curl …/health` 200; no bearer → 401; STEP fixture end-to-end.
