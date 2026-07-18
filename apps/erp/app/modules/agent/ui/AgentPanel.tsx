@@ -12,16 +12,22 @@ import { LuHistory, LuPlus, LuX } from "react-icons/lu";
 import { StickToBottom } from "use-stick-to-bottom";
 import { useAgentStore } from "~/stores/agent";
 import { path } from "~/utils/path";
+import { isUiBlockTool } from "../agent.blocks";
 import { useBrowsingContext } from "../hooks/useBrowsingContext";
-import { AgentContextChip } from "./AgentContextChip";
+import { AgentActionsProvider } from "./AgentActionsContext";
 import { AgentInput } from "./AgentInput";
 import { AgentMessageList } from "./AgentMessageList";
 import { AgentThreadList } from "./AgentThreadList";
+import { AgentBlockViewer } from "./dev/AgentBlockViewer";
 
 type DbPart = {
   orderIndex: number;
   type: string;
   textContent: string | null;
+  toolName: string | null;
+  toolCallId: string | null;
+  toolInput: unknown;
+  toolOutput: unknown;
 };
 type DbMessage = { id: string; role: string; parts?: DbPart[] };
 
@@ -30,15 +36,16 @@ export function AgentPanel() {
   const threadId = useAgentStore((s) => s.threadId);
   const setThread = useAgentStore((s) => s.setThread);
 
+  // Sent with every turn so the agent can resolve "this record" — background only,
+  // not surfaced in the UI.
   const context = useBrowsingContext();
-  const [contextEnabled, setContextEnabled] = useState(true);
   const [showHistory, setShowHistory] = useState(false);
 
   // Refs so the transport closure always reads the latest values.
   const threadIdRef = useRef<string | null>(threadId);
   threadIdRef.current = threadId;
-  const contextRef = useRef(contextEnabled ? context : null);
-  contextRef.current = contextEnabled ? context : null;
+  const contextRef = useRef<typeof context | null>(context);
+  contextRef.current = context;
 
   const transport = useMemo(
     () =>
@@ -119,11 +126,23 @@ export function AgentPanel() {
         parts: (m.parts ?? [])
           .slice()
           .sort((a, b) => a.orderIndex - b.orderIndex)
-          .filter((p) => p.type === "text" && p.textContent)
-          .map((p) => ({
-            type: "text" as const,
-            text: p.textContent as string
-          }))
+          .map((p) => {
+            if (p.type === "text" && p.textContent) {
+              return { type: "text", text: p.textContent };
+            }
+            // Rebuild UI-block tool parts so blocks show (inert) in history.
+            if (p.type === "tool" && p.toolName && isUiBlockTool(p.toolName)) {
+              return {
+                type: `tool-${p.toolName}`,
+                toolCallId: p.toolCallId ?? `hist-${p.orderIndex}`,
+                state: "output-available",
+                input: p.toolInput,
+                output: p.toolOutput
+              };
+            }
+            return null;
+          })
+          .filter(Boolean)
       }))
       .filter((m) => m.parts.length > 0);
     setMessages(ui as unknown as UIMessage[]);
@@ -139,13 +158,15 @@ export function AgentPanel() {
       }`}
     >
       <div className="flex items-center justify-between px-3 h-11 border-b shrink-0">
-        <span className="text-sm font-semibold">Assistant</span>
+        <span className="text-sm font-semibold">Carbon Agent</span>
         <div className="flex items-center gap-1">
+          <AgentBlockViewer setMessages={setMessages} />
           <IconButton
             aria-label="New chat"
             icon={<LuPlus />}
             variant="ghost"
             size="sm"
+            isDisabled={messages.length === 0}
             onClick={handleNewThread}
           />
           <Popover open={showHistory} onOpenChange={setShowHistory}>
@@ -171,28 +192,24 @@ export function AgentPanel() {
         </div>
       </div>
 
-      <StickToBottom
-        className="flex-1 overflow-y-auto"
-        resize="smooth"
-        initial="smooth"
+      <AgentActionsProvider
+        value={{ sendMessage: (text) => void handleSend(text) }}
       >
-        <StickToBottom.Content>
-          <AgentMessageList
-            messages={messages}
-            threadId={threadId}
-            error={error}
-            isStreaming={isStreaming}
-          />
-        </StickToBottom.Content>
-      </StickToBottom>
-      {contextEnabled && context.label && (
-        <div className="px-3 pt-2 shrink-0">
-          <AgentContextChip
-            label={context.label}
-            onRemove={() => setContextEnabled(false)}
-          />
-        </div>
-      )}
+        <StickToBottom
+          className="flex-1 overflow-y-auto"
+          resize="smooth"
+          initial="smooth"
+        >
+          <StickToBottom.Content>
+            <AgentMessageList
+              messages={messages}
+              threadId={threadId}
+              error={error}
+              isStreaming={isStreaming}
+            />
+          </StickToBottom.Content>
+        </StickToBottom>
+      </AgentActionsProvider>
       <div className="p-3 shrink-0">
         <AgentInput
           disabled={isStreaming}

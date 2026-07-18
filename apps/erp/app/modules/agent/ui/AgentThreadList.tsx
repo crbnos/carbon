@@ -56,7 +56,12 @@ export function AgentThreadList({
                 >
                   <div className="truncate">{t.title ?? "Untitled chat"}</div>
                   <div className="text-xs text-muted-foreground">
-                    {new Date(t.createdAt).toLocaleDateString()}
+                    {new Date(t.createdAt).toLocaleString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                      hour: "numeric",
+                      minute: "2-digit"
+                    })}
                   </div>
                 </button>
               </li>

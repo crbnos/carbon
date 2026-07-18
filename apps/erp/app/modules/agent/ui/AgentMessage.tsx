@@ -1,6 +1,10 @@
 import { getToolName, isToolUIPart, type UIMessage } from "ai";
 import { AgentFeedback } from "./AgentFeedback";
 import { AgentTextPart } from "./AgentTextPart";
+import { AgentBlockButton } from "./blocks/AgentBlockButton";
+import { AgentBlockChoice } from "./blocks/AgentBlockChoice";
+import { AgentBlockLink } from "./blocks/AgentBlockLink";
+import { AgentNavigate } from "./blocks/AgentNavigate";
 
 const RUNNING_LABEL: Record<string, string> = {
   search_docs: "Searching the docs",
@@ -53,6 +57,36 @@ export function AgentMessage({
           if (part.type === "text") {
             return <AgentTextPart key={i} text={part.text} isUser={isUser} />;
           }
+          // UI-block tools → rich blocks (rendered from part.input):
+          if (part.type === "tool-present_choice") {
+            return <AgentBlockChoice key={i} input={part.input} />;
+          }
+          // Wrap in a block so multiple blocks stack vertically (inline <a>/button
+          // would otherwise flow onto the same row).
+          if (part.type === "tool-present_link") {
+            return (
+              <div key={i} className="my-1">
+                <AgentBlockLink input={part.input} />
+              </div>
+            );
+          }
+          if (part.type === "tool-present_button") {
+            return (
+              <div key={i} className="my-1">
+                <AgentBlockButton input={part.input} />
+              </div>
+            );
+          }
+          if (part.type === "tool-navigate") {
+            return (
+              <AgentNavigate
+                key={i}
+                input={part.input}
+                toolCallId={part.toolCallId}
+              />
+            );
+          }
+          // Read tools → the quiet italic step line:
           if (isToolUIPart(part)) {
             return (
               <AgentToolStep

@@ -1,9 +1,10 @@
 import type { Database } from "@carbon/database";
 import { Ratelimit, redis } from "@carbon/kv";
-import { anthropicChatModel } from "@carbon/utils";
+import { anthropicChatModel, anthropicTitleModel } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   convertToModelMessages,
+  generateText,
   getToolName,
   isToolUIPart,
   type ModelMessage,
@@ -11,12 +12,48 @@ import {
   streamText,
   type UIMessage
 } from "ai";
+import { isEphemeralTool, isUiBlockTool } from "./agent.blocks";
 import type { BrowsingContext } from "./agent.models";
 import { buildSystemPrompt } from "./agent.prompt";
 import { anthropic } from "./agent.provider";
 import { createAgentTools } from "./agent.tools";
 
-const MAX_STEPS = 8;
+const MAX_STEPS = 20;
+
+// Sliding window: send the model only the most recent messages whose combined size stays
+// under this character budget (a rough token proxy — ~4 chars/token), dropping the oldest.
+// Keeps the conversation from growing unbounded toward the context window. Whole messages
+// are kept/dropped so tool-call/result pairs stay intact.
+const HISTORY_CHAR_BUDGET = 100_000; // ~25k tokens of history
+
+function messageSize(m: UIMessage): number {
+  let n = 0;
+  for (const part of m.parts) {
+    if (part.type === "text") n += part.text.length;
+    else if (isToolUIPart(part)) {
+      n +=
+        JSON.stringify(part.input ?? "").length +
+        JSON.stringify(part.output ?? "").length;
+    }
+  }
+  return n;
+}
+
+function windowByChars(messages: UIMessage[], budget: number): UIMessage[] {
+  const kept: UIMessage[] = [];
+  let total = 0;
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const size = messageSize(messages[i]);
+    // Always keep the most recent message, even if it alone exceeds the budget.
+    if (kept.length > 0 && total + size > budget) break;
+    kept.unshift(messages[i]);
+    total += size;
+  }
+  // Anthropic requires the first message to be a user message; dropping the oldest
+  // turns can leave an assistant at the front, so trim any leading non-user messages.
+  while (kept.length > 1 && kept[0].role !== "user") kept.shift();
+  return kept;
+}
 
 const agentRatelimit = new Ratelimit({
   redis,
@@ -178,7 +215,7 @@ export function streamChat(
   };
 
   const modelMessages = injectContext(
-    convertToModelMessages(args.messages),
+    convertToModelMessages(windowByChars(args.messages, HISTORY_CHAR_BUDGET)),
     args.context
   );
 
@@ -195,6 +232,10 @@ export function streamChat(
     messages: modelMessages,
     tools: createAgentTools(ctx),
     stopWhen: stepCountIs(MAX_STEPS),
+    // On the final allowed step, forbid tools so the model must write an answer with what
+    // it has — instead of ending on a dangling tool call and returning no text.
+    prepareStep: ({ stepNumber }) =>
+      stepNumber >= MAX_STEPS - 1 ? { toolChoice: "none" } : undefined,
     onFinish: (event) => {
       inputTokens = event.totalUsage.inputTokens ?? 0;
       outputTokens = event.totalUsage.outputTokens ?? 0;
@@ -212,8 +253,68 @@ export function streamChat(
         outputTokens,
         finishReason
       });
+      await maybeTitleThread(client, {
+        threadId: args.threadId,
+        companyId: args.companyId
+      });
     }
   });
+}
+
+/**
+ * Auto-name the thread with a cheap model. Titles after the 1st user message (so it's
+ * named immediately), then re-titles once more after the 3rd — by which point a real
+ * topic has emerged past the opening "hi"/"hello".
+ */
+async function maybeTitleThread(
+  client: SupabaseClient<Database>,
+  args: { threadId: string; companyId: string }
+) {
+  const { count } = await client
+    .from("agentMessage")
+    .select("id", { count: "exact", head: true })
+    .eq("threadId", args.threadId)
+    .eq("companyId", args.companyId)
+    .eq("role", "user");
+  if (count !== 1 && count !== 3) return;
+
+  const { data: msgs } = await client
+    .from("agentMessage")
+    .select("role, agentMessagePart(orderIndex, type, textContent)")
+    .eq("threadId", args.threadId)
+    .eq("companyId", args.companyId)
+    .order("createdAt", { ascending: true })
+    .limit(8);
+  if (!msgs) return;
+
+  const transcript = msgs
+    .map((m) => {
+      const text = (m.agentMessagePart ?? [])
+        .filter((p) => p.type === "text" && p.textContent)
+        .sort((a, b) => a.orderIndex - b.orderIndex)
+        .map((p) => p.textContent)
+        .join(" ");
+      return text ? `${m.role}: ${text}` : "";
+    })
+    .filter(Boolean)
+    .join("\n");
+  if (!transcript) return;
+
+  const { text } = await generateText({
+    model: anthropic(anthropicTitleModel),
+    prompt: `Give this chat a concise 3-6 word title describing what the user wants. No quotes, no trailing punctuation. If there's no clear topic yet, reply exactly "New chat".\n\n${transcript}`
+  });
+  const title = text
+    .trim()
+    .replace(/^["']|["']$/g, "")
+    .slice(0, 80);
+  if (!title) return;
+
+  await client
+    .from("agentThread")
+    .update({ title })
+    .eq("id", args.threadId)
+    .eq("companyId", args.companyId);
 }
 
 async function persistAssistantTurn(
@@ -254,13 +355,15 @@ async function persistAssistantTurn(
         textContent: part.text
       });
     } else if (isToolUIPart(part)) {
+      const name = getToolName(part);
+      if (isEphemeralTool(name)) continue; // e.g. navigate — never persisted, never replayed
       parts.push({
         messageId: message.id,
         companyId: args.companyId,
         orderIndex: order++,
         type: "tool",
-        toolName: getToolName(part),
-        toolClassification: "READ",
+        toolName: name,
+        toolClassification: isUiBlockTool(name) ? null : "READ",
         toolCallId: part.toolCallId,
         toolInput: (part.input ?? null) as never,
         toolOutput: (part.state === "output-error"

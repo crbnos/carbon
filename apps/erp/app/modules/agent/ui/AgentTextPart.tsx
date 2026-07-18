@@ -15,7 +15,12 @@ export function AgentTextPart({
   text: string;
   isUser: boolean;
 }) {
-  if (isUser) return <span className="whitespace-pre-wrap">{text}</span>;
+  if (isUser)
+    return (
+      <span className="whitespace-pre-wrap selection:text-foreground selection:bg-background!">
+        {text}
+      </span>
+    );
   return (
     <div className="prose prose-sm dark:prose-invert max-w-none [&_p]:my-1 [&_ul]:my-1 [&_pre]:text-xs [&_code]:text-xs">
       <Markdown remarkPlugins={[remarkGfm]} components={markdownComponents}>

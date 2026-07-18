@@ -2,6 +2,7 @@ import { IconButton } from "@carbon/react";
 import { useLayoutEffect, useRef, useState } from "react";
 import { LuArrowUp, LuSquare } from "react-icons/lu";
 
+const MIN_HEIGHT = 54; // ~50% taller than a single row
 const MAX_HEIGHT = 160;
 
 export function AgentInput({
@@ -23,7 +24,7 @@ export function AgentInput({
     const el = ref.current;
     if (!el) return;
     el.style.height = "auto";
-    el.style.height = `${Math.min(el.scrollHeight, MAX_HEIGHT)}px`;
+    el.style.height = `${Math.min(Math.max(el.scrollHeight, MIN_HEIGHT), MAX_HEIGHT)}px`;
   }, [value]);
 
   function submit() {

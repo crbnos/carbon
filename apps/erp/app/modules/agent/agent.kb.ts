@@ -23,7 +23,7 @@ const files = import.meta.glob("./kb/**/*.md", {
   eager: true
 }) as Record<string, string>;
 
-/** Keyword search over the doc manifest; returns the best matches (slug + title + description). */
+/** Keyword search over each doc's metadata AND full body; returns the best matches. */
 export function searchDocs({
   query,
   limit = 5
@@ -35,9 +35,14 @@ export function searchDocs({
   if (terms.length === 0) return [];
   return docs
     .map((d) => {
-      const hay =
+      const meta =
         `${d.title} ${d.description} ${d.keywords.join(" ")} ${d.headings.join(" ")}`.toLowerCase();
-      const score = terms.reduce((s, t) => s + (hay.includes(t) ? 1 : 0), 0);
+      const body = (files[`./kb/${d.slug}.md`] ?? "").toLowerCase();
+      // Metadata hits weigh more than body hits, but a body-only term still counts.
+      const score = terms.reduce(
+        (s, t) => s + (meta.includes(t) ? 2 : body.includes(t) ? 1 : 0),
+        0
+      );
       return { d, score };
     })
     .filter((x) => x.score > 0)

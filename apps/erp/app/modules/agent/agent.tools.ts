@@ -6,6 +6,12 @@ import {
 } from "~/routes/api+/mcp+/lib/direct-executor";
 import { isMcpBlockedTool } from "~/routes/api+/mcp+/lib/mcp-blocked-tools";
 import toolMetadata from "~/routes/api+/mcp+/lib/tool-metadata.json";
+import {
+  buttonBlock,
+  choiceBlock,
+  linkBlock,
+  navigateBlock
+} from "./agent.blocks";
 import { readDoc, searchDocs } from "./agent.kb";
 
 // v1 is READ-ONLY. The safety guarantee lives here, once: the agent can only see and
@@ -104,6 +110,33 @@ export function createAgentTools(ctx: ExecutorContext) {
           args as Record<string, unknown> | undefined
         );
       }
+    }),
+
+    // UI-block tools — presentation only (no data touched), safe in read-only v1.
+    // The tool INPUT is the block the client renders; the ack lets the model continue.
+    present_choice: tool({
+      description:
+        "Ask the user to pick from a set of options. Use when you need the user to choose or disambiguate. Call this as your final action; the user's pick arrives as their next message. Do not add text after it.",
+      inputSchema: choiceBlock,
+      execute: async () => ({ shown: true })
+    }),
+    present_link: tool({
+      description:
+        "Show a labelled link the user can open (a Carbon record page or a docs URL).",
+      inputSchema: linkBlock,
+      execute: async () => ({ shown: true })
+    }),
+    present_button: tool({
+      description:
+        "Show a single suggested action button. When clicked it sends `message` as the user's next message.",
+      inputSchema: buttonBlock,
+      execute: async () => ({ shown: true })
+    }),
+    navigate: tool({
+      description:
+        "Take the user to a record's page. Provide `entity` (one of: part, job, salesOrder, purchaseOrder, quote, supplier, customer) and its `id` (the real id from a read tool, NOT a made-up value). The app builds the correct URL — never guess paths. Fires once.",
+      inputSchema: navigateBlock,
+      execute: async () => ({ navigated: true })
     })
   };
 }
