@@ -752,6 +752,9 @@ msgstr "दायरे पर सहमति दें"
 msgid "Agree who owns what and set a working rhythm"
 msgstr "सहमत हों कि कौन क्या मालिक है और एक कार्य लय निर्धारित करें"
 
+msgid "AI Agent"
+msgstr ""
+
 msgid "AI Tokens"
 msgstr "एआई टोकन"
 

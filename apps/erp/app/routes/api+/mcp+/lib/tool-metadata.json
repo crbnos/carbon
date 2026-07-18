@@ -1,6 +1,6 @@
 {
-  "generated": "2026-07-17T03:40:11.270Z",
-  "totalTools": 1335,
+  "generated": "2026-07-18T09:42:52.681Z",
+  "totalTools": 1336,
   "modules": 15,
   "tools": [
     {
@@ -38690,6 +38690,33 @@
         },
         "required": [
           "accountsReceivableAddress"
+        ]
+      }
+    },
+    {
+      "name": "settings_updateAiAgentEnabledSetting",
+      "module": "settings",
+      "classification": "WRITE",
+      "description": "update ai agent enabled setting",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "aiAgentEnabled"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "aiAgentEnabled": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "aiAgentEnabled"
         ]
       }
     },

@@ -752,6 +752,9 @@ msgstr "Einigen Sie sich auf den Umfang"
 msgid "Agree who owns what and set a working rhythm"
 msgstr "Vereinbaren Sie, wer wofür verantwortlich ist, und legen Sie einen Arbeitsrhythmus fest"
 
+msgid "AI Agent"
+msgstr ""
+
 msgid "AI Tokens"
 msgstr "KI-Token"
 

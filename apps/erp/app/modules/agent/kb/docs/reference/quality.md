@@ -1,0 +1,35 @@
+# Quality
+
+> Issues and corrective-action workflows, plus incoming inspection that gates received goods.
+
+Carbon's quality module turns on two things: **issues** you raise against a defect and drive to closure, and **inbound inspection** that holds received goods until they're checked. Both leave a trail back to the document that went wrong.
+
+## Issues
+
+An **issue**, a non-conformance or NCR, records something that went wrong and the work to resolve it. It moves through three states: **Registered**, **In Progress**, **Closed** (closed is terminal and locked). Each carries a **priority** (Low / Medium / High / Critical), a **source** (Internal or External), a type, and links to whatever it concerns: a job operation, a purchase or sales order line, a receipt, a supplier.
+
+Issues open from several places: by hand, from the shop floor in MES, from Slack, or **automatically** when an inbound inspection is rejected.
+
+### Workflows and actions
+
+An issue can run a configurable workflow, often an **8D**. The workflow attaches **required actions** and **approvals** as tasks; each task advances *Pending → In Progress → Completed* as the team works it. Adding a **Material Review Board** approval gates closing the issue: it can't close until a **disposition** is chosen for the affected material — *Return to Supplier*, *Rework*, *Scrap*, or *Use As Is*.
+
+There's no dedicated supplier scorecard in Carbon. **Supplier quality is a derived metric**, counted from the issues linked to each supplier. The data comes from the issues themselves, not a separate record.
+
+## Inbound inspection
+
+When goods arrive for an item that **requires inspection**, posting the receipt opens an inbound inspection and holds the received units **On Hold**. They're not available stock yet. Inspection is lot-based, with sample sizes drawn from AQL standards (ANSI / ISO).
+
+Dispositioning the lot decides what happens: **Accept** passes it and the units become available; **Reject** fails it, marks the units rejected, and opens an issue automatically; **Partial** clears some and holds the rest.
+
+Inbound inspection only fires on **purchase-order receipts** of items flagged to require it. Until a lot is dispositioned, its units sit On Hold: received, but not yet stock you can sell or consume.
+
+## Also in quality
+
+The module also covers **gauges and calibration** (with calibration-due tracking), **controlled documents** (versioned procedures and work instructions, with one active version at a time), **inspection documents** (ballooned FAI drawings and their characteristics), and a **risk register**.
+
+## Related
+
+  - Receive, match, bill Where inbound inspection sits in the receiving flow.
+  - Receipts How received goods are posted — and held for inspection.
+  - Approvals A quality document can require sign-off before it goes Active.

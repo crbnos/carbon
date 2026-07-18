@@ -14,6 +14,10 @@ export const path = {
   to: {
     api: {
       abilities: `${api}/resources/abilities`,
+      agentChat: `${api}/agent/chat`,
+      agentThreads: `${api}/agent/threads`,
+      agentThread: (id: string) => `${api}/agent/thread/${id}`,
+      agentFeedback: `${api}/agent/feedback`,
       accounts: `${api}/accounting/accounts`,
       assetClasses: `${api}/accounting/asset-classes`,
       assign: `${api}/assign`,
@@ -612,6 +616,7 @@ export const path = {
     mcpDocs: "https://docs.carbon.ms/mcp",
     apiKey: (id: string) => generatePath(`${x}/settings/api-keys/${id}`),
     apiKeys: `${x}/settings/api-keys`,
+    aiAgentSettings: `${x}/settings/ai-agent`,
     attributeCategory: (id: string) =>
       generatePath(`${x}/people/attributes/${id}`),
     attributeCategoryList: (id: string) =>

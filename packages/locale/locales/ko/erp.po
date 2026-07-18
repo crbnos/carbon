@@ -752,6 +752,9 @@ msgstr "범위에 합의"
 msgid "Agree who owns what and set a working rhythm"
 msgstr "역할 분담에 합의하고 업무 리듬을 설정하세요"
 
+msgid "AI Agent"
+msgstr ""
+
 msgid "AI Tokens"
 msgstr "AI 토큰"
 

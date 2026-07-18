@@ -752,6 +752,9 @@ msgstr "就范围达成一致"
 msgid "Agree who owns what and set a working rhythm"
 msgstr "同意谁拥有什么并设定工作节奏"
 
+msgid "AI Agent"
+msgstr ""
+
 msgid "AI Tokens"
 msgstr "AI 代币"
 

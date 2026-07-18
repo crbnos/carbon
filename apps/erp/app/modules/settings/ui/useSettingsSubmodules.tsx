@@ -19,6 +19,7 @@ import {
   LuPrinter,
   LuSheet,
   LuShoppingCart,
+  LuSparkles,
   LuUsers,
   LuWebhook,
   LuWorkflow,
@@ -72,6 +73,12 @@ export default function useSettingsSubmodules() {
             to: path.to.documentTemplates,
             role: "employee",
             icon: <LuFileText />
+          },
+          {
+            name: t`AI Agent`,
+            to: path.to.aiAgentSettings,
+            role: "employee",
+            icon: <LuSparkles />
           },
           {
             name: t`Logos`,

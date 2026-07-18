@@ -752,6 +752,9 @@ msgstr "Согласовать область охвата"
 msgid "Agree who owns what and set a working rhythm"
 msgstr "Согласуйте, кто за что отвечает, и установите рабочий ритм"
 
+msgid "AI Agent"
+msgstr ""
+
 msgid "AI Tokens"
 msgstr "Токены ИИ"
 

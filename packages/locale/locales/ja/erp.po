@@ -752,6 +752,9 @@ msgstr "スコープに同意する"
 msgid "Agree who owns what and set a working rhythm"
 msgstr "誰が何を所有するかを合意し、作業リズムを設定する"
 
+msgid "AI Agent"
+msgstr ""
+
 msgid "AI Tokens"
 msgstr "AIトークン"
 

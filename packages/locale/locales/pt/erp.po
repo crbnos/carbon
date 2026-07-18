@@ -752,6 +752,9 @@ msgstr "Concordar sobre o escopo"
 msgid "Agree who owns what and set a working rhythm"
 msgstr "Concordar quem é responsável por quê e estabelecer um ritmo de trabalho"
 
+msgid "AI Agent"
+msgstr ""
+
 msgid "AI Tokens"
 msgstr "Tokens de IA"
 

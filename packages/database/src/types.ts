@@ -1699,6 +1699,294 @@ export type Database = {
           },
         ]
       }
+      agentMessage: {
+        Row: {
+          companyId: string
+          context: Json | null
+          createdAt: string
+          feedback: string | null
+          feedbackNote: string | null
+          finishReason: string | null
+          id: string
+          inputTokens: number | null
+          outputTokens: number | null
+          role: string
+          threadId: string
+        }
+        Insert: {
+          companyId: string
+          context?: Json | null
+          createdAt?: string
+          feedback?: string | null
+          feedbackNote?: string | null
+          finishReason?: string | null
+          id?: string
+          inputTokens?: number | null
+          outputTokens?: number | null
+          role: string
+          threadId: string
+        }
+        Update: {
+          companyId?: string
+          context?: Json | null
+          createdAt?: string
+          feedback?: string | null
+          feedbackNote?: string | null
+          finishReason?: string | null
+          id?: string
+          inputTokens?: number | null
+          outputTokens?: number | null
+          role?: string
+          threadId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agentMessage_threadId_companyId_fkey"
+            columns: ["threadId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "agentThread"
+            referencedColumns: ["id", "companyId"]
+          },
+        ]
+      }
+      agentMessagePart: {
+        Row: {
+          companyId: string
+          createdAt: string
+          errorMessage: string | null
+          id: string
+          messageId: string
+          orderIndex: number
+          textContent: string | null
+          toolCallId: string | null
+          toolClassification: string | null
+          toolDurationMs: number | null
+          toolInput: Json | null
+          toolName: string | null
+          toolOutput: Json | null
+          toolState: string | null
+          type: string
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          errorMessage?: string | null
+          id?: string
+          messageId: string
+          orderIndex?: number
+          textContent?: string | null
+          toolCallId?: string | null
+          toolClassification?: string | null
+          toolDurationMs?: number | null
+          toolInput?: Json | null
+          toolName?: string | null
+          toolOutput?: Json | null
+          toolState?: string | null
+          type: string
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          errorMessage?: string | null
+          id?: string
+          messageId?: string
+          orderIndex?: number
+          textContent?: string | null
+          toolCallId?: string | null
+          toolClassification?: string | null
+          toolDurationMs?: number | null
+          toolInput?: Json | null
+          toolName?: string | null
+          toolOutput?: Json | null
+          toolState?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agentMessagePart_messageId_companyId_fkey"
+            columns: ["messageId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "agentMessage"
+            referencedColumns: ["id", "companyId"]
+          },
+        ]
+      }
+      agentThread: {
+        Row: {
+          archivedAt: string | null
+          companyId: string
+          createdAt: string
+          createdBy: string
+          id: string
+          lastContext: Json | null
+          modelId: string
+          title: string | null
+          updatedAt: string | null
+          updatedBy: string | null
+          userId: string
+        }
+        Insert: {
+          archivedAt?: string | null
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          id?: string
+          lastContext?: Json | null
+          modelId?: string
+          title?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+          userId: string
+        }
+        Update: {
+          archivedAt?: string | null
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          id?: string
+          lastContext?: Json | null
+          modelId?: string
+          title?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+          userId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agentThread_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agentThread_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agentThread_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "agentThread_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "agentThread_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agentThread_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agentThread_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agentThread_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agentThread_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "agentThread_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agentThread_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agentThread_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agentThread_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agentThread_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "agentThread_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agentThread_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agentThread_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agentThread_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agentThread_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
       apiKey: {
         Row: {
           companyId: string
@@ -4943,6 +5231,7 @@ export type Database = {
           accountsPayableEmail: string | null
           accountsReceivableAddress: boolean | null
           accountsReceivableEmail: string | null
+          aiAgentEnabled: boolean
           assetTaxDepreciationEnabled: boolean
           assetTaxRate: number | null
           consoleEnabled: boolean
@@ -4986,6 +5275,7 @@ export type Database = {
           accountsPayableEmail?: string | null
           accountsReceivableAddress?: boolean | null
           accountsReceivableEmail?: string | null
+          aiAgentEnabled?: boolean
           assetTaxDepreciationEnabled?: boolean
           assetTaxRate?: number | null
           consoleEnabled?: boolean
@@ -5029,6 +5319,7 @@ export type Database = {
           accountsPayableEmail?: string | null
           accountsReceivableAddress?: boolean | null
           accountsReceivableEmail?: string | null
+          aiAgentEnabled?: boolean
           assetTaxDepreciationEnabled?: boolean
           assetTaxRate?: number | null
           consoleEnabled?: boolean
@@ -62777,14 +63068,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -66163,6 +66454,13 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
+            columns: ["shipmentCountryCode"]
+            isOneToOne: false
+            referencedRelation: "country"
+            referencedColumns: ["alpha2"]
+          },
+          {
+            foreignKeyName: "address_countryCode_fkey"
             columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
@@ -66171,13 +66469,6 @@ export type Database = {
           {
             foreignKeyName: "address_countryCode_fkey"
             columns: ["invoiceCountryCode"]
-            isOneToOne: false
-            referencedRelation: "country"
-            referencedColumns: ["alpha2"]
-          },
-          {
-            foreignKeyName: "address_countryCode_fkey"
-            columns: ["shipmentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]

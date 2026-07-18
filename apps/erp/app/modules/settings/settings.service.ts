@@ -1064,6 +1064,17 @@ export async function updateAccountsReceivableAddressSetting(
     .eq("id", companyId);
 }
 
+export async function updateAiAgentEnabledSetting(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  aiAgentEnabled: boolean
+) {
+  return client
+    .from("companySettings")
+    .update(sanitize({ aiAgentEnabled }))
+    .eq("id", companyId);
+}
+
 export async function updateAccountsPayableEmail(
   client: SupabaseClient<Database>,
   companyId: string,
