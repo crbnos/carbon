@@ -4609,7 +4609,7 @@ msgstr "Введите номер партии перед установкой �
 
 #. placeholder {0}: target.maxQuantity - 1
 msgid "Enter a quantity between 1 and {0}."
-msgstr ""
+msgstr "Введите количество от 1 до {0}."
 
 msgid "Enter and approve vendor bills against a PO (three-way match)"
 msgstr "Ввести и утвердить счета поставщиков по сравнению с ПО (трёхсторонняя сверка)"

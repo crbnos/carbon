@@ -4609,7 +4609,7 @@ msgstr "Geben Sie eine Chargennummer ein, bevor Sie das Ablaufdatum festlegen"
 
 #. placeholder {0}: target.maxQuantity - 1
 msgid "Enter a quantity between 1 and {0}."
-msgstr ""
+msgstr "Geben Sie eine Menge zwischen 1 und {0} ein."
 
 msgid "Enter and approve vendor bills against a PO (three-way match)"
 msgstr "Lieferantenrechnungen gegen eine Bestellung eingeben und genehmigen (dreigliedriger Abgleich)"

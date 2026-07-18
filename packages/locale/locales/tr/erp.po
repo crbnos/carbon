@@ -4609,7 +4609,7 @@ msgstr "Son kullanma tarihini ayarlamadan önce bir parti numarası girin"
 
 #. placeholder {0}: target.maxQuantity - 1
 msgid "Enter a quantity between 1 and {0}."
-msgstr ""
+msgstr "1 ile {0} arasında bir miktar girin."
 
 msgid "Enter and approve vendor bills against a PO (three-way match)"
 msgstr "Satıcı faturalarını bir PO'ya karşı girin ve onaylayın (üç yönlü eşleştirme)"

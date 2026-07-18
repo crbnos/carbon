@@ -4609,7 +4609,7 @@ msgstr "유효기한을 설정하기 전에 배치 번호를 입력하세요"
 
 #. placeholder {0}: target.maxQuantity - 1
 msgid "Enter a quantity between 1 and {0}."
-msgstr ""
+msgstr "1과 {0} 사이의 수량을 입력하세요."
 
 msgid "Enter and approve vendor bills against a PO (three-way match)"
 msgstr "구매주문(PO)에 대한 공급업체 청구서를 입력하고 승인하세요(3자 대조)"

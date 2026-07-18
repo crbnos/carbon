@@ -4609,7 +4609,7 @@ msgstr "Ingrese un número de lote antes de establecer la fecha de vencimiento"
 
 #. placeholder {0}: target.maxQuantity - 1
 msgid "Enter a quantity between 1 and {0}."
-msgstr ""
+msgstr "Ingrese una cantidad entre 1 y {0}."
 
 msgid "Enter and approve vendor bills against a PO (three-way match)"
 msgstr "Ingresar y aprobar facturas de proveedores contra una OC (coincidencia de tres vías)"

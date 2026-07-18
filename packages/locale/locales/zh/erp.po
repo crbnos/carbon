@@ -4609,7 +4609,7 @@ msgstr "在设置过期日期前请输入批号"
 
 #. placeholder {0}: target.maxQuantity - 1
 msgid "Enter a quantity between 1 and {0}."
-msgstr ""
+msgstr "请输入 1 至 {0} 之间的数量。"
 
 msgid "Enter and approve vendor bills against a PO (three-way match)"
 msgstr "输入并批准针对采购订单的供应商账单（三方匹配）"

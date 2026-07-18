@@ -61,6 +61,18 @@ export async function assignEntitiesToIssueItem(args: {
         throw new Error("Cannot move entities between different NCRs");
       }
 
+      // Re-check the lock inside the transaction: the route check is a separate
+      // read and could race with a concurrent close.
+      const parent = await trx
+        .selectFrom("nonConformance")
+        .select(["status"])
+        .where("id", "=", source.nonConformanceId)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst();
+      if (isIssueLocked(parent?.status)) {
+        throw new Error("Cannot modify a closed issue. Reopen it first.");
+      }
+
       const existingLinks = await trx
         .selectFrom("nonConformanceItemTrackedEntity")
         .select(["quantity"])
@@ -704,7 +716,81 @@ export async function closeIssue(
       const readableNc = issue.nonConformanceId ?? nonConformanceId;
       const locationId = issue.locationId;
 
-      for (const row of plan) {
+      // The preflight plan above was read outside this transaction and can be
+      // stale (a concurrent split/move changes rows and link quantities). Re-read
+      // the plan under a row lock and re-validate the correctness-critical
+      // invariants before posting, so a race rolls back instead of posting a
+      // ledger off stale quantities. `forUpdate` on the item rows serializes
+      // against split/move, which update the same rows.
+      const itemRows = await trx
+        .selectFrom("nonConformanceItem")
+        .select(["id", "itemId", "disposition", "quantity"])
+        .where("nonConformanceId", "=", nonConformanceId)
+        .where("companyId", "=", companyId)
+        .orderBy("createdAt", "asc")
+        .forUpdate()
+        .execute();
+
+      const linkRows = await trx
+        .selectFrom("nonConformanceItemTrackedEntity as link")
+        .innerJoin("trackedEntity as te", (join) =>
+          join
+            .onRef("te.id", "=", "link.trackedEntityId")
+            .onRef("te.companyId", "=", "link.companyId")
+        )
+        .select([
+          "link.nonConformanceItemId as nonConformanceItemId",
+          "link.id as id",
+          "link.trackedEntityId as trackedEntityId",
+          "link.quantity as quantity",
+          "te.status as trackedEntityStatus"
+        ])
+        .where("link.nonConformanceId", "=", nonConformanceId)
+        .where("link.companyId", "=", companyId)
+        .execute();
+
+      const linksByItem = new Map<string, DispositionLink[]>();
+      for (const link of linkRows) {
+        const arr = linksByItem.get(link.nonConformanceItemId) ?? [];
+        arr.push({
+          id: link.id,
+          trackedEntityId: link.trackedEntityId,
+          quantity: Number(link.quantity ?? 0),
+          trackedEntityStatus: link.trackedEntityStatus ?? null
+        });
+        linksByItem.set(link.nonConformanceItemId, arr);
+      }
+
+      const freshPlan: DispositionRow[] = itemRows.map((row) => ({
+        id: row.id,
+        itemId: row.itemId,
+        disposition: row.disposition,
+        quantity: Number(row.quantity ?? 0),
+        links: linksByItem.get(row.id) ?? []
+      }));
+
+      for (const row of freshPlan) {
+        if (row.links.length === 0) continue;
+        if (!row.disposition || row.disposition === "Pending") {
+          throw new Error("Disposition changed while closing; please retry.");
+        }
+        const sum = row.links.reduce((acc, l) => acc + l.quantity, 0);
+        if (Math.abs(sum - row.quantity) > 1e-6) {
+          throw new Error("Quantities changed while closing; please retry.");
+        }
+        for (const link of row.links) {
+          if (
+            !link.trackedEntityStatus ||
+            link.trackedEntityStatus === "Consumed"
+          ) {
+            throw new Error(
+              "A tracked entity changed while closing; please retry."
+            );
+          }
+        }
+      }
+
+      for (const row of freshPlan) {
         if (row.links.length === 0) continue;
 
         const activity = await trx
