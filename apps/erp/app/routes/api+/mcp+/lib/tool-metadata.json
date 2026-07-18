@@ -1,5 +1,5 @@
 {
-  "generated": "2026-07-18T06:22:36.532Z",
+  "generated": "2026-07-18T06:27:52.835Z",
   "totalTools": 1338,
   "modules": 15,
   "tools": [
@@ -1580,7 +1580,7 @@
       "module": "accounting",
       "classification": "WRITE",
       "description": "update default income accounts",
-      "paramCount": 26,
+      "paramCount": 27,
       "serviceParams": [
         "client",
         "defaultAccounts"
@@ -1637,7 +1637,10 @@
           "assetDepreciationExpenseAccount": {
             "type": "string"
           },
-          "assetGainsAndLossesAccount": {
+          "assetGainOnDisposalAccount": {
+            "type": "string"
+          },
+          "assetLossOnDisposalAccount": {
             "type": "string"
           },
           "serviceChargeAccount": {
@@ -1686,7 +1689,8 @@
           "indirectCostAccount",
           "maintenanceAccount",
           "assetDepreciationExpenseAccount",
-          "assetGainsAndLossesAccount",
+          "assetGainOnDisposalAccount",
+          "assetLossOnDisposalAccount",
           "serviceChargeAccount",
           "interestAccount",
           "supplierPaymentDiscountAccount",

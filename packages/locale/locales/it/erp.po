@@ -3548,6 +3548,12 @@ msgstr "Conto di cassa predefinito per le transazioni nella tua valuta di base."
 msgid "Default CC Recipients"
 msgstr "Destinatari CC predefiniti"
 
+msgid "Default GL account credited when a fixed-asset disposal results in a gain."
+msgstr "Conto di contabilità generale predefinito accreditato quando la dismissione di un cespite genera un guadagno."
+
+msgid "Default GL account debited when a fixed-asset disposal results in a loss."
+msgstr "Conto di contabilità generale predefinito addebitato quando la dismissione di un cespite genera una perdita."
+
 msgid "Default GL account used for cash transactions when no specific bank account is selected."
 msgstr "Conto GL predefinito utilizzato per le transazioni in contanti quando non è selezionato uno specifico conto bancario."
 
@@ -4077,9 +4083,6 @@ msgstr "Impostazioni di visualizzazione"
 
 msgid "Disposal"
 msgstr "Cessione"
-
-msgid "Disposal Account"
-msgstr "Conto di Cessione"
 
 msgid "Disposal Date"
 msgstr "Data di Cessione"
@@ -5590,14 +5593,17 @@ msgstr "Completamente formato per"
 msgid "FX G/L"
 msgstr "Utile/Perdita Cambi"
 
-msgid "Gains and Losses"
-msgstr "Utili e Perdite (predefinito)"
+msgid "Gain on Disposal"
+msgstr "Guadagno sulla Dismissione"
 
-msgid "Gains and Losses (default)"
-msgstr "Utili o perdite riconosciuti sulla dismissione di immobilizzazioni"
+msgid "Gain on Disposal (default)"
+msgstr "Guadagno sulla Dismissione (predefinito)"
 
-msgid "Gains or losses recognized on disposal of fixed assets"
-msgstr "Calibro"
+msgid "Gain on Disposal Account"
+msgstr "Conto Guadagno sulla Dismissione"
+
+msgid "Gains recognized on disposal of fixed assets"
+msgstr "Guadagni riconosciuti sulla dismissione dei cespiti"
 
 msgid "gauge"
 msgstr "Calibri"
@@ -5696,79 +5702,73 @@ msgid "GL Account"
 msgstr "Conto Contabile"
 
 msgid "GL account capturing cost differences on outside-processing operations."
-msgstr "Conto GL che cattura le differenze tra i costi indiretti di produzione applicati e effettivi."
+msgstr "Conto GL che cattura le differenze di costo sulle operazioni di lavorazione esterna."
 
 msgid "GL account capturing differences between applied and actual manufacturing overhead."
-msgstr "Conto GL che cattura le differenze tra il materiale previsto dalla BOM e il materiale effettivamente consumato."
+msgstr "Conto GL che cattura le differenze tra i costi indiretti di produzione applicati e effettivi."
 
 msgid "GL account capturing differences between BOM-expected and actual material consumed."
-msgstr "Conto GL che cattura le differenze tra il tempo di lavoro/macchina previsto dal routing e quello effettivo."
+msgstr "Conto GL che cattura le differenze tra il materiale previsto dalla BOM e il materiale effettivamente consumato."
 
 msgid "GL account capturing differences between routing-expected and actual labor/machine time."
-msgstr "Conto GL che cattura le differenze di costo fisso quando la dimensione del lotto effettiva differisce da quella prevista."
+msgstr "Conto GL che cattura le differenze tra il tempo di lavoro/macchina previsto dal routing e quello effettivo."
 
 msgid "GL account capturing fixed-cost differences when actual lot size differs from planned."
-msgstr "Conto GL accreditato per rimuovere il costo originale del cespite al momento della dismissione."
+msgstr "Conto GL che cattura le differenze di costo fisso quando la dimensione del lotto effettiva differisce da quella prevista."
 
 msgid "GL account credited to remove the asset's original cost when it is disposed."
-msgstr "Conto GL accreditato quando una fattura fornitore viene registrata (saldo PA)."
+msgstr "Conto GL accreditato per rimuovere il costo originale del cespite al momento della dismissione."
 
 msgid "GL account credited when a supplier invoice is posted (AP balance)."
-msgstr "Conto GL accreditato quando il costo del lavoro o della macchina viene assorbito in un ordine di produzione."
+msgstr "Conto GL accreditato quando una fattura fornitore viene registrata (saldo dei debiti verso fornitori)."
 
 msgid "GL account credited when labor or machine cost is absorbed into a production job."
-msgstr "Conto GL addebitato per cancellare l'ammortamento cumulato quando un cespite viene dismesso."
+msgstr "Conto GL accreditato quando il costo del lavoro o della macchina viene assorbito in un ordine di produzione."
 
 msgid "GL account credited when manufacturing overhead is absorbed into a production job."
 msgstr "Conto di contabilità generale accreditato quando i costi generali di produzione vengono assorbiti in un ordine di produzione."
 
 msgid "GL account debited to clear accumulated depreciation when an asset is disposed."
-msgstr "Conto GL addebitato quando una fattura cliente viene registrata; cancellato quando il cliente paga."
+msgstr "Conto GL addebitato per cancellare l'ammortamento cumulato quando un cespite viene dismesso."
 
 msgid "GL account debited when a customer invoice posts; cleared when the customer pays."
-msgstr "Conto GL addebitato quando un cespite viene acquisito (acquisto o costo capitalizzato)."
+msgstr "Conto GL addebitato quando una fattura cliente viene registrata; cancellato quando il cliente paga."
 
 msgid "GL account debited when a fixed asset is acquired (purchase or capitalized cost)."
-msgstr "Conto GL addebitato quando un cespite di questa classe viene acquisito."
-
-msgid "GL account debited when an asset in this class is acquired."
-msgstr "Conto GL per le spese di servizio bancario e commissioni simili."
+msgstr "Conto GL addebitato quando un cespite viene acquisito (acquisto o costo capitalizzato)."
 
 msgid "GL account for bank service charges and similar fees."
-msgstr "Conto GL per i ricavi o le spese per interessi."
+msgstr "Conto GL per le commissioni per servizi bancari e le spese simili."
 
 msgid "GL account for interest income or expense."
-msgstr "Conto GL per l'imposta sugli acquisti pagata ai fornitori (o recuperabile)."
+msgstr "Conto GL per i ricavi o le spese per interessi."
 
 msgid "GL account for purchase tax paid to suppliers (or reclaimable)."
-msgstr "Conto GL per le imposte dovute secondo le regole di inversione del soggetto passivo dove l'acquirente effettua l'autovalutazione."
+msgstr "Conto GL per l'imposta sugli acquisti pagata ai fornitori (o recuperabile)."
 
 msgid "GL account for tax accrued under reverse-charge rules where the buyer self-assesses."
-msgstr "Conto GL per le differenze temporali fiscali (ad es. ammortamento fiscale accelerato vs. ammortamento contabile)."
+msgstr "Conto GL per le imposte dovute secondo le regole di inversione del soggetto passivo dove l'acquirente effettua l'autovalutazione."
 
 msgid "GL account for tax timing differences (e.g. accelerated tax depreciation vs. book depreciation)."
-msgstr "Conto GL interessato quando un cespite viene cancellato (costo rimosso senza proventi di dismissione)."
-
-msgid "GL account hit when an asset is written off (cost removed without disposal proceeds)."
-msgstr "Conto GL interessato quando il valore contabile di un cespite viene ridotto (riduzione di valore)."
-
-msgid "GL account hit when an asset's book value is reduced (impairment)."
-msgstr "Conto GL interessato quando i conteggi fisici differiscono dall'inventario del sistema."
+msgstr "Conto GL per le differenze temporali fiscali (ad es. ammortamento fiscale accelerato vs. ammortamento contabile)."
 
 msgid "GL account hit when physical counts differ from system inventory."
-msgstr "Conto GL nella società di origine da addebitare per questa transazione intersocietaria."
+msgstr "Conto GL interessato quando i conteggi fisici differiscono dall'inventario di sistema."
 
 msgid "GL account in the source company to debit for this intercompany transaction."
-msgstr "Conto GL nella società target da accreditare per questa transazione intersocietaria."
+msgstr "Conto GL nella società di origine da addebitare per questa transazione intersocietaria."
 
 msgid "GL account in the target company to credit for this intercompany transaction."
-msgstr "Conto GL che assorbe le differenze di arrotondamento in sub-centesimi alla registrazione."
+msgstr "Conto GL nella società target da accreditare per questa transazione intersocietaria."
 
 msgid "GL account that absorbs sub-cent rounding differences on posting."
 msgstr "Conto GL che assorbe le differenze di arrotondamento in sub-centesimi alla registrazione."
 
 msgid "GL account that captures the difference between standard cost and actual purchase cost."
 msgstr "Conto GL che acquisisce la differenza tra il costo standard e il costo di acquisto effettivo."
+
+msgid "GL account that carries an asset's original acquisition cost — debited when acquired and credited at full gross cost when it is disposed or sold."
+msgstr "Conto GL che riporta il costo di acquisizione originale di un cespite — addebitato all'acquisizione e accreditato per l'intero costo lordo quando viene dismesso o venduto."
 
 msgid "GL account that holds the value of jobs in production until they post to finished goods."
 msgstr "Conto GL che tiene il valore dei lavori in produzione fino a quando non vengono registrati come prodotti finiti."
@@ -5788,14 +5788,8 @@ msgstr "Conto GL dove vengono registrati gli sconti di pagamento anticipato conc
 msgid "GL account where early-payment discounts taken from suppliers are recorded."
 msgstr "Conto GL dove vengono registrati gli sconti di pagamento anticipato ottenuti dai fornitori."
 
-msgid "GL account where gain or loss is booked on fixed-asset disposal."
-msgstr "Conto GL dove il guadagno o la perdita viene registrato sulla dismissione di beni fissi."
-
-msgid "GL account where gain or loss is booked when an asset in this class is disposed."
-msgstr "Conto GL dove il guadagno o la perdita viene registrato quando un bene di questa classe viene dismesso."
-
-msgid "GL contra-asset account credited when depreciation posts for assets in this class."
-msgstr "Conto GL contra-attività accreditato quando l'ammortamento è registrato per le attività di questa classe."
+msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
+msgstr "Conto GL contra-attività accreditato quando l'ammortamento viene registrato in ogni periodo e addebitato per intero quando il cespite viene venduto o rottamato."
 
 msgid "GL contra-asset account that accumulates depreciation booked against fixed assets."
 msgstr "Conto GL contra-attività che accumula l'ammortamento registrato rispetto ai beni fissi."
@@ -5808,6 +5802,9 @@ msgstr "Conto GL di patrimonio netto dove l'utile netto viene chiuso a fine anno
 
 msgid "GL expense account debited each period when depreciation posts."
 msgstr "Conto GL di spesa addebitato ogni periodo quando l'ammortamento viene registrato."
+
+msgid "GL expense account debited when an asset's carrying value is reduced by impairment, i.e. when its recoverable amount falls below net book value."
+msgstr "Conto GL di spesa addebitato quando il valore contabile di un cespite viene ridotto per svalutazione, ossia quando il suo valore recuperabile scende al di sotto del valore netto contabile."
 
 msgid "GL expense account for non-inventory purchases (supplies, services)."
 msgstr "Conto GL di spesa per acquisti non di magazzino (forniture, servizi)."
@@ -6985,6 +6982,18 @@ msgstr "Descrizione Lunga"
 
 msgid "Looks empty here"
 msgstr "Sembra vuoto qui"
+
+msgid "Loss on Disposal"
+msgstr "Perdita sulla Dismissione"
+
+msgid "Loss on Disposal (default)"
+msgstr "Perdita sulla Dismissione (predefinita)"
+
+msgid "Loss on Disposal Account"
+msgstr "Conto Perdita sulla Dismissione"
+
+msgid "Losses recognized on disposal of fixed assets"
+msgstr "Perdite riconosciute sulla dismissione dei cespiti"
 
 msgid "Lost"
 msgstr "Perso"
@@ -8233,6 +8242,12 @@ msgstr "Non-Inventario"
 
 msgid "Non-Inventory Tracking"
 msgstr "Tracciamento Non-Inventario"
+
+msgid "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
+msgstr "Conto spese non operative addebitato quando un cespite di questa classe viene venduto o demolito al di sotto del suo valore contabile netto."
+
+msgid "Non-operating income account credited when an asset in this class is sold for more than its net book value."
+msgstr "Conto ricavi non operativi accreditato quando un cespite di questa classe viene venduto a un prezzo superiore al suo valore contabile netto."
 
 msgid "Non-Taxable Add-On Cost"
 msgstr "Costo Add-On Non Tassabile"
@@ -10175,8 +10190,8 @@ msgstr "Utili non distribuiti"
 msgid "Retained Earnings (default)"
 msgstr "Utili non distribuiti (predefinito)"
 
-msgid "Retiring an asset by write-off instead of sale, booking the remaining net book value as a loss — status becomes Disposed."
-msgstr "Ritirare un asset mediante cancellazione anziché vendita, registrando il valore netto contabile residuo come perdita — lo stato diventa Ceduto."
+msgid "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
+msgstr "Il ritiro di un cespite dal servizio tramite rottamazione o vendita, registrando l'eventuale utile o perdita rispetto al valore netto contabile e impostando il suo stato su Dismesso."
 
 msgid "Retry"
 msgstr "Riprova"
@@ -11914,6 +11929,9 @@ msgstr "ID Modello"
 
 msgid "Templates"
 msgstr "Modelli"
+
+msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for its net book value on invoicing, netting to zero over the sale cycle."
+msgstr "Conto GL temporaneo di compensazione dismissioni, addebitato per il valore netto contabile del cespite alla spedizione e accreditato per il valore netto contabile alla fatturazione, azzerandosi nel corso del ciclo di vendita."
 
 msgid "Terms and Privacy"
 msgstr "Termini e Privacy"

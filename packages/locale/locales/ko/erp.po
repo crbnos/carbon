@@ -3548,6 +3548,12 @@ msgstr "기준 통화 거래에 사용할 기본 현금 계정입니다."
 msgid "Default CC Recipients"
 msgstr "기본 참조(CC) 수신자"
 
+msgid "Default GL account credited when a fixed-asset disposal results in a gain."
+msgstr "고정자산 처분으로 이익이 발생할 때 입금되는 기본 GL 계정입니다."
+
+msgid "Default GL account debited when a fixed-asset disposal results in a loss."
+msgstr "고정자산 처분으로 손실이 발생할 때 차감되는 기본 GL 계정입니다."
+
 msgid "Default GL account used for cash transactions when no specific bank account is selected."
 msgstr "특정 은행 계좌가 선택되지 않았을 때 현금 거래에 사용되는 기본 총계정원장 계정입니다."
 
@@ -4077,9 +4083,6 @@ msgstr "표시 설정"
 
 msgid "Disposal"
 msgstr "처분"
-
-msgid "Disposal Account"
-msgstr "처분 계정"
 
 msgid "Disposal Date"
 msgstr "처분일"
@@ -5590,14 +5593,17 @@ msgstr "다음에 대해 완전히 교육됨"
 msgid "FX G/L"
 msgstr "외환 손익"
 
-msgid "Gains and Losses"
-msgstr "손익"
+msgid "Gain on Disposal"
+msgstr "처분 이익"
 
-msgid "Gains and Losses (default)"
-msgstr "손익(기본값)"
+msgid "Gain on Disposal (default)"
+msgstr "처분 이익 (기본값)"
 
-msgid "Gains or losses recognized on disposal of fixed assets"
-msgstr "고정자산 처분 시 인식되는 손익"
+msgid "Gain on Disposal Account"
+msgstr "처분 이익 계정"
+
+msgid "Gains recognized on disposal of fixed assets"
+msgstr "고정자산 처분 시 인식된 이익"
 
 msgid "gauge"
 msgstr "측정기"
@@ -5720,7 +5726,7 @@ msgid "GL account credited when labor or machine cost is absorbed into a product
 msgstr "노무비 또는 기계비가 생산 작업에 흡수될 때 대변에 기록되는 총계정원장 계정입니다."
 
 msgid "GL account credited when manufacturing overhead is absorbed into a production job."
-msgstr "제조 간접비가 생산 작업에 흡수될 때 외상으로 처리되는 총계정원장 계정"
+msgstr "제조간접비가 생산 작업에 흡수될 때 대변에 기록되는 총계정원장 계정입니다."
 
 msgid "GL account debited to clear accumulated depreciation when an asset is disposed."
 msgstr "자산 처분 시 감가상각누계액을 정산하기 위해 차변에 기록되는 총계정원장 계정입니다."
@@ -5730,9 +5736,6 @@ msgstr "고객 인보이스가 전기될 때 차변에 기록되며, 고객이 �
 
 msgid "GL account debited when a fixed asset is acquired (purchase or capitalized cost)."
 msgstr "고정자산 취득 시(구매 또는 자본화 원가) 차변에 기록되는 총계정원장 계정입니다."
-
-msgid "GL account debited when an asset in this class is acquired."
-msgstr "이 자산 클래스의 자산을 취득할 때 차변에 기록되는 총계정원장 계정입니다."
 
 msgid "GL account for bank service charges and similar fees."
 msgstr "은행 수수료 및 유사 비용을 위한 총계정원장 계정입니다."
@@ -5749,12 +5752,6 @@ msgstr "매입자가 스스로 신고하는 대리납부(리버스차지) 규정
 msgid "GL account for tax timing differences (e.g. accelerated tax depreciation vs. book depreciation)."
 msgstr "세무상 시점 차이(예: 가속 세무 감가상각과 장부 감가상각의 차이)를 위한 총계정원장 계정입니다."
 
-msgid "GL account hit when an asset is written off (cost removed without disposal proceeds)."
-msgstr "자산 상각(처분 대금 없이 원가를 제거) 시 기록되는 총계정원장 계정입니다."
-
-msgid "GL account hit when an asset's book value is reduced (impairment)."
-msgstr "자산의 장부가액이 감소(손상)할 때 기록되는 총계정원장 계정입니다."
-
 msgid "GL account hit when physical counts differ from system inventory."
 msgstr "실사 수량이 시스템 재고와 다를 때 기록되는 총계정원장 계정입니다."
 
@@ -5769,6 +5766,9 @@ msgstr "전기 시 발생하는 소수점 이하 반올림 차이를 흡수하�
 
 msgid "GL account that captures the difference between standard cost and actual purchase cost."
 msgstr "표준원가와 실제 구매원가의 차이를 기록하는 총계정원장 계정입니다."
+
+msgid "GL account that carries an asset's original acquisition cost — debited when acquired and credited at full gross cost when it is disposed or sold."
+msgstr "자산의 최초 취득원가를 기록하는 총계정원장(GL) 계정 — 취득 시 차변에 기록되고, 처분 또는 매각 시 총원가(gross) 전액이 대변에 기록된다."
 
 msgid "GL account that holds the value of jobs in production until they post to finished goods."
 msgstr "생산 중인 작업의 금액을 완제품으로 전기되기 전까지 보관하는 총계정원장 계정입니다."
@@ -5788,14 +5788,8 @@ msgstr "고객에게 제공한 조기결제 할인이 기록되는 총계정원�
 msgid "GL account where early-payment discounts taken from suppliers are recorded."
 msgstr "공급업체로부터 받은 조기결제 할인이 기록되는 총계정원장 계정입니다."
 
-msgid "GL account where gain or loss is booked on fixed-asset disposal."
-msgstr "고정자산 처분 시 손익이 계상되는 총계정원장 계정입니다."
-
-msgid "GL account where gain or loss is booked when an asset in this class is disposed."
-msgstr "이 자산 클래스의 자산이 처분될 때 손익이 계상되는 총계정원장 계정입니다."
-
-msgid "GL contra-asset account credited when depreciation posts for assets in this class."
-msgstr "이 자산 클래스의 감가상각이 전기될 때 대변에 기록되는 총계정원장 자산 차감 계정입니다."
+msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
+msgstr "매 기간 감가상각이 계상될 때 대변에 기록되고, 자산이 매각되거나 폐기될 때 전액 차변에 기록되는 감가상각누계액에 해당하는 GL 차감계정(자산 차감계정)."
 
 msgid "GL contra-asset account that accumulates depreciation booked against fixed assets."
 msgstr "고정자산에 대해 계상된 감가상각이 누적되는 총계정원장 자산 차감 계정입니다."
@@ -5808,6 +5802,9 @@ msgstr "회계연도 말에 당기순이익이 마감되는 총계정원장 자�
 
 msgid "GL expense account debited each period when depreciation posts."
 msgstr "매 기간 감가상각이 전기될 때 차변에 기록되는 총계정원장 비용 계정입니다."
+
+msgid "GL expense account debited when an asset's carrying value is reduced by impairment, i.e. when its recoverable amount falls below net book value."
+msgstr "자산의 장부가액이 손상으로 인해 감소할 때, 즉 회수가능액이 순장부가액(NBV)보다 낮아질 때 차변에 기록되는 GL 비용계정."
 
 msgid "GL expense account for non-inventory purchases (supplies, services)."
 msgstr "비재고성 구매(소모품, 서비스)를 위한 총계정원장 비용 계정입니다."
@@ -6985,6 +6982,18 @@ msgstr "상세 설명"
 
 msgid "Looks empty here"
 msgstr "이곳은 비어 있는 것 같습니다"
+
+msgid "Loss on Disposal"
+msgstr "처분 손실"
+
+msgid "Loss on Disposal (default)"
+msgstr "처분 손실 (기본값)"
+
+msgid "Loss on Disposal Account"
+msgstr "처분 손실 계정"
+
+msgid "Losses recognized on disposal of fixed assets"
+msgstr "고정자산 처분 시 인식된 손실"
 
 msgid "Lost"
 msgstr "실주"
@@ -8233,6 +8242,12 @@ msgstr "비재고"
 
 msgid "Non-Inventory Tracking"
 msgstr "비재고 추적"
+
+msgid "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
+msgstr "이 자산군에 속한 자산이 순장부가액보다 낮은 가격으로 판매되거나 폐기될 때 차감되는 영업외비용 계정입니다."
+
+msgid "Non-operating income account credited when an asset in this class is sold for more than its net book value."
+msgstr "이 자산군에 속한 자산이 순장부가액보다 높은 가격으로 판매될 때 입금되는 영업외수익 계정입니다."
 
 msgid "Non-Taxable Add-On Cost"
 msgstr "비과세 애드온 비용"
@@ -10175,8 +10190,8 @@ msgstr "이익잉여금"
 msgid "Retained Earnings (default)"
 msgstr "이익잉여금(기본값)"
 
-msgid "Retiring an asset by write-off instead of sale, booking the remaining net book value as a loss — status becomes Disposed."
-msgstr "매각이 아닌 상각으로 자산을 폐기하고 남은 순장부가액을 손실로 계상하는 것 — 상태가 처분됨으로 변경됩니다."
+msgid "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
+msgstr "폐기 또는 매각을 통해 자산을 운용에서 제외하고, 순장부가액 대비 손익을 계상한 후 상태를 '처분됨'으로 설정하는 것."
 
 msgid "Retry"
 msgstr "재시도"
@@ -11914,6 +11929,9 @@ msgstr "템플릿 ID"
 
 msgid "Templates"
 msgstr "템플릿"
+
+msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for its net book value on invoicing, netting to zero over the sale cycle."
+msgstr "출하 시 자산의 순장부가액을 차변에 기록하고 청구 시 순장부가액을 대변에 기록하여, 매각 주기 동안 잔액이 0으로 상계되는 일시적 처분정리계정."
 
 msgid "Terms and Privacy"
 msgstr "이용약관 및 개인정보처리방침"

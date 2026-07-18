@@ -3548,6 +3548,12 @@ msgstr "Default cash account for transactions in your base currency."
 msgid "Default CC Recipients"
 msgstr "Default CC Recipients"
 
+msgid "Default GL account credited when a fixed-asset disposal results in a gain."
+msgstr "Default GL account credited when a fixed-asset disposal results in a gain."
+
+msgid "Default GL account debited when a fixed-asset disposal results in a loss."
+msgstr "Default GL account debited when a fixed-asset disposal results in a loss."
+
 msgid "Default GL account used for cash transactions when no specific bank account is selected."
 msgstr "Default GL account used for cash transactions when no specific bank account is selected."
 
@@ -4077,9 +4083,6 @@ msgstr "Display Settings"
 
 msgid "Disposal"
 msgstr "Disposal"
-
-msgid "Disposal Account"
-msgstr "Disposal Account"
 
 msgid "Disposal Date"
 msgstr "Disposal Date"
@@ -5590,14 +5593,17 @@ msgstr "Fully trained for"
 msgid "FX G/L"
 msgstr "FX G/L"
 
-msgid "Gains and Losses"
-msgstr "Gains and Losses"
+msgid "Gain on Disposal"
+msgstr "Gain on Disposal"
 
-msgid "Gains and Losses (default)"
-msgstr "Gains and Losses (default)"
+msgid "Gain on Disposal (default)"
+msgstr "Gain on Disposal (default)"
 
-msgid "Gains or losses recognized on disposal of fixed assets"
-msgstr "Gains or losses recognized on disposal of fixed assets"
+msgid "Gain on Disposal Account"
+msgstr "Gain on Disposal Account"
+
+msgid "Gains recognized on disposal of fixed assets"
+msgstr "Gains recognized on disposal of fixed assets"
 
 msgid "gauge"
 msgstr "gauge"
@@ -5731,9 +5737,6 @@ msgstr "GL account debited when a customer invoice posts; cleared when the custo
 msgid "GL account debited when a fixed asset is acquired (purchase or capitalized cost)."
 msgstr "GL account debited when a fixed asset is acquired (purchase or capitalized cost)."
 
-msgid "GL account debited when an asset in this class is acquired."
-msgstr "GL account debited when an asset in this class is acquired."
-
 msgid "GL account for bank service charges and similar fees."
 msgstr "GL account for bank service charges and similar fees."
 
@@ -5749,12 +5752,6 @@ msgstr "GL account for tax accrued under reverse-charge rules where the buyer se
 msgid "GL account for tax timing differences (e.g. accelerated tax depreciation vs. book depreciation)."
 msgstr "GL account for tax timing differences (e.g. accelerated tax depreciation vs. book depreciation)."
 
-msgid "GL account hit when an asset is written off (cost removed without disposal proceeds)."
-msgstr "GL account hit when an asset is written off (cost removed without disposal proceeds)."
-
-msgid "GL account hit when an asset's book value is reduced (impairment)."
-msgstr "GL account hit when an asset's book value is reduced (impairment)."
-
 msgid "GL account hit when physical counts differ from system inventory."
 msgstr "GL account hit when physical counts differ from system inventory."
 
@@ -5769,6 +5766,9 @@ msgstr "GL account that absorbs sub-cent rounding differences on posting."
 
 msgid "GL account that captures the difference between standard cost and actual purchase cost."
 msgstr "GL account that captures the difference between standard cost and actual purchase cost."
+
+msgid "GL account that carries an asset's original acquisition cost — debited when acquired and credited at full gross cost when it is disposed or sold."
+msgstr "GL account that carries an asset's original acquisition cost — debited when acquired and credited at full gross cost when it is disposed or sold."
 
 msgid "GL account that holds the value of jobs in production until they post to finished goods."
 msgstr "GL account that holds the value of jobs in production until they post to finished goods."
@@ -5788,14 +5788,8 @@ msgstr "GL account where early-payment discounts given to customers are recorded
 msgid "GL account where early-payment discounts taken from suppliers are recorded."
 msgstr "GL account where early-payment discounts taken from suppliers are recorded."
 
-msgid "GL account where gain or loss is booked on fixed-asset disposal."
-msgstr "GL account where gain or loss is booked on fixed-asset disposal."
-
-msgid "GL account where gain or loss is booked when an asset in this class is disposed."
-msgstr "GL account where gain or loss is booked when an asset in this class is disposed."
-
-msgid "GL contra-asset account credited when depreciation posts for assets in this class."
-msgstr "GL contra-asset account credited when depreciation posts for assets in this class."
+msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
+msgstr "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
 
 msgid "GL contra-asset account that accumulates depreciation booked against fixed assets."
 msgstr "GL contra-asset account that accumulates depreciation booked against fixed assets."
@@ -5808,6 +5802,9 @@ msgstr "GL equity account where net income closes at fiscal year-end."
 
 msgid "GL expense account debited each period when depreciation posts."
 msgstr "GL expense account debited each period when depreciation posts."
+
+msgid "GL expense account debited when an asset's carrying value is reduced by impairment, i.e. when its recoverable amount falls below net book value."
+msgstr "GL expense account debited when an asset's carrying value is reduced by impairment, i.e. when its recoverable amount falls below net book value."
 
 msgid "GL expense account for non-inventory purchases (supplies, services)."
 msgstr "GL expense account for non-inventory purchases (supplies, services)."
@@ -6985,6 +6982,18 @@ msgstr "Long Description"
 
 msgid "Looks empty here"
 msgstr "Looks empty here"
+
+msgid "Loss on Disposal"
+msgstr "Loss on Disposal"
+
+msgid "Loss on Disposal (default)"
+msgstr "Loss on Disposal (default)"
+
+msgid "Loss on Disposal Account"
+msgstr "Loss on Disposal Account"
+
+msgid "Losses recognized on disposal of fixed assets"
+msgstr "Losses recognized on disposal of fixed assets"
 
 msgid "Lost"
 msgstr "Lost"
@@ -8233,6 +8242,12 @@ msgstr "Non-Inventory"
 
 msgid "Non-Inventory Tracking"
 msgstr "Non-Inventory Tracking"
+
+msgid "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
+msgstr "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
+
+msgid "Non-operating income account credited when an asset in this class is sold for more than its net book value."
+msgstr "Non-operating income account credited when an asset in this class is sold for more than its net book value."
 
 msgid "Non-Taxable Add-On Cost"
 msgstr "Non-Taxable Add-On Cost"
@@ -10175,8 +10190,8 @@ msgstr "Retained Earnings"
 msgid "Retained Earnings (default)"
 msgstr "Retained Earnings (default)"
 
-msgid "Retiring an asset by write-off instead of sale, booking the remaining net book value as a loss — status becomes Disposed."
-msgstr "Retiring an asset by write-off instead of sale, booking the remaining net book value as a loss — status becomes Disposed."
+msgid "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
+msgstr "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
 
 msgid "Retry"
 msgstr "Retry"
@@ -11914,6 +11929,9 @@ msgstr "Template ID"
 
 msgid "Templates"
 msgstr "Templates"
+
+msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for its net book value on invoicing, netting to zero over the sale cycle."
+msgstr "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for its net book value on invoicing, netting to zero over the sale cycle."
 
 msgid "Terms and Privacy"
 msgstr "Terms and Privacy"

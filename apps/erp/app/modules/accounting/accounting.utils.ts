@@ -1,3 +1,121 @@
+import { credit, debit, toStoredAmount } from "@carbon/utils";
+
+/**
+ * Gain/(loss) on disposal of a fixed asset = sale proceeds − net book value
+ * (NBV = acquisition cost − accumulated depreciation). GAAP requires this net
+ * gain/loss to land on a distinct non-operating P&L line rather than being
+ * comingled with the NBV write-off.
+ *
+ * A gain is credited to the class's `gainOnDisposalAccountId` (a Revenue account)
+ * and a loss is debited to `lossOnDisposalAccountId` (an Expense account); the
+ * posting sites pick the account by sign. A zero gain/loss needs no line.
+ *
+ * Returns the raw `gainLoss` and, for the loss (expense) convention, the signed
+ * `disposalStoredAmount` ready for a `journalLine.amount`.
+ */
+export function computeDisposalGainLoss(
+  saleProceeds: number,
+  netBookValue: number
+): { gainLoss: number; disposalStoredAmount: number } {
+  const gainLoss = saleProceeds - netBookValue;
+  const disposalStoredAmount =
+    gainLoss > 0
+      ? credit("expense", gainLoss)
+      : gainLoss < 0
+        ? debit("expense", -gainLoss)
+        : 0;
+  return { gainLoss, disposalStoredAmount };
+}
+
+/**
+ * Display figures for one depreciation-run line: the accumulated depreciation
+ * *before* this run and the net book value *after* it.
+ *
+ * `accumulatedDepreciation` is the asset's live value. On a Draft run that is
+ * the pre-run balance; once the run is Posted, `postDepreciationRun` has already
+ * folded this run's `amount` into it. To keep the row arithmetic identical
+ * before and after posting — `cost − accumulatedBefore − amount = nbvAfter` —
+ * and to avoid double-counting the amount in NBV, subtract the run's own amount
+ * back out of the live balance for a Posted run.
+ */
+export function depreciationRunLineDisplay(args: {
+  acquisitionCost: number;
+  accumulatedDepreciation: number;
+  amount: number;
+  isPosted: boolean;
+}): { accumulatedDepreciationBefore: number; netBookValueAfter: number } {
+  const { acquisitionCost, accumulatedDepreciation, amount, isPosted } = args;
+  const accumulatedDepreciationBefore =
+    accumulatedDepreciation - (isPosted ? amount : 0);
+  const netBookValueAfter =
+    acquisitionCost - accumulatedDepreciationBefore - amount;
+  return { accumulatedDepreciationBefore, netBookValueAfter };
+}
+
+export type AcquisitionLineRole =
+  | "asset"
+  | "accumulatedDepreciation"
+  | "offset";
+
+export type AcquisitionLine = {
+  role: AcquisitionLineRole;
+  description: string;
+  /** Signed stored amount (debit > 0, credit < 0), ready for `journalLine.amount`. */
+  amount: number;
+};
+
+/**
+ * GL lines for bringing a fixed asset onto the books at registration.
+ *
+ * Normal case (no prior depreciation) — two lines:
+ *   Dr  assetAccountId    acquisitionCost   (capitalize at gross cost)
+ *       Cr  offsetAccountId   acquisitionCost   (owner equity)
+ *
+ * Mid-life capitalization (`accumulatedDepreciation > 0`) — three lines, so the
+ * GL asset/contra balances match the subledger's net book value instead of
+ * overstating the asset at gross with the subledger starting at NBV:
+ *   Dr  assetAccountId                     acquisitionCost           (gross cost)
+ *       Cr  accumulatedDepreciationAccountId   accumulatedDepreciation   (opening contra)
+ *       Cr  offsetAccountId                    nbv (= cost − accum dep)  (owner equity)
+ *
+ * Debits (cost) always equal credits (accum dep + nbv), so the entry balances.
+ */
+export function acquisitionLines(
+  acquisitionCost: number,
+  accumulatedDepreciation = 0
+): AcquisitionLine[] {
+  // Accumulated depreciation can never exceed gross cost — that would imply a
+  // negative net book value and produce an unbalanced/absurd entry. Reject it
+  // before building any lines.
+  if (accumulatedDepreciation > acquisitionCost) {
+    throw new Error(
+      "Accumulated depreciation cannot exceed the acquisition cost"
+    );
+  }
+
+  const nbv = acquisitionCost - accumulatedDepreciation;
+  const lines: AcquisitionLine[] = [
+    {
+      role: "asset",
+      description: "Capitalize fixed asset at cost",
+      amount: toStoredAmount(acquisitionCost, 0, "Asset")
+    }
+  ];
+  if (accumulatedDepreciation > 0) {
+    lines.push({
+      role: "accumulatedDepreciation",
+      description: "Opening accumulated depreciation",
+      amount: toStoredAmount(0, accumulatedDepreciation, "Asset")
+    });
+  }
+  lines.push({
+    role: "offset",
+    description: "Direct asset registration (owner equity)",
+    amount: toStoredAmount(0, nbv, "Equity")
+  });
+  return lines;
+}
+
 export const macrsPropertyClasses = [
   "3",
   "5",

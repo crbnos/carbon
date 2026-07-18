@@ -133,7 +133,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       assetAccountId: assetClass.assetAccountId,
       accumulatedDepreciationAccountId:
         assetClass.accumulatedDepreciationAccountId,
-      writeOffAccountId: assetClass.writeOffAccountId,
+      lossOnDisposalAccountId: assetClass.lossOnDisposalAccountId,
       accountingPeriodId: accountingPeriod.data!,
       locationDimensionId,
       assetClassDimensionId,

@@ -3548,6 +3548,12 @@ msgstr "您基础货币中交易的默认现金账户。"
 msgid "Default CC Recipients"
 msgstr "默认抄送收件人"
 
+msgid "Default GL account credited when a fixed-asset disposal results in a gain."
+msgstr "固定资产处置获利时贷记的默认GL账户。"
+
+msgid "Default GL account debited when a fixed-asset disposal results in a loss."
+msgstr "固定资产处置亏损时借记的默认GL账户。"
+
 msgid "Default GL account used for cash transactions when no specific bank account is selected."
 msgstr "未选择特定银行账户时用于现金交易的默认GL账户。"
 
@@ -4077,9 +4083,6 @@ msgstr "显示设置"
 
 msgid "Disposal"
 msgstr "处置"
-
-msgid "Disposal Account"
-msgstr "处置账户"
 
 msgid "Disposal Date"
 msgstr "处置日期"
@@ -5590,14 +5593,17 @@ msgstr "完全培训"
 msgid "FX G/L"
 msgstr "外汇损益"
 
-msgid "Gains and Losses"
-msgstr "收益和损失（默认）"
+msgid "Gain on Disposal"
+msgstr "处置获利"
 
-msgid "Gains and Losses (default)"
-msgstr "在处置固定资产时确认的收益或损失"
+msgid "Gain on Disposal (default)"
+msgstr "处置获利（默认）"
 
-msgid "Gains or losses recognized on disposal of fixed assets"
-msgstr "规格"
+msgid "Gain on Disposal Account"
+msgstr "处置获利账户"
+
+msgid "Gains recognized on disposal of fixed assets"
+msgstr "固定资产处置认可的获利"
 
 msgid "gauge"
 msgstr "规格"
@@ -5696,79 +5702,73 @@ msgid "GL Account"
 msgstr "总账账户"
 
 msgid "GL account capturing cost differences on outside-processing operations."
-msgstr "捕获应用和实际制造间接费用差异的GL账户。"
+msgstr "捕获委外加工作业成本差异的GL账户。"
 
 msgid "GL account capturing differences between applied and actual manufacturing overhead."
-msgstr "捕获物料清单预期和实际消耗材料差异的GL账户。"
+msgstr "捕获应用和实际制造间接费用差异的GL账户。"
 
 msgid "GL account capturing differences between BOM-expected and actual material consumed."
-msgstr "捕获工艺路线预期和实际劳动/机器时间差异的GL账户。"
+msgstr "捕获物料清单预期和实际消耗材料差异的GL账户。"
 
 msgid "GL account capturing differences between routing-expected and actual labor/machine time."
-msgstr "当实际批量大小与计划不同时捕获固定成本差异的GL账户。"
+msgstr "捕获工艺路线预期和实际劳动/机器时间差异的GL账户。"
 
 msgid "GL account capturing fixed-cost differences when actual lot size differs from planned."
-msgstr "在处置资产时记入贷方以删除资产原始成本的GL账户。"
+msgstr "当实际批量大小与计划不同时捕获固定成本差异的GL账户。"
 
 msgid "GL account credited to remove the asset's original cost when it is disposed."
-msgstr "当供应商发票过账时记入贷方的GL账户（应付账款余额）。"
+msgstr "在处置资产时记入贷方以删除资产原始成本的GL账户。"
 
 msgid "GL account credited when a supplier invoice is posted (AP balance)."
-msgstr "当劳动力或机器成本被吸收到生产工作中时记入贷方的GL账户。"
+msgstr "当供应商发票过账时记入贷方的GL账户（应付账款余额）。"
 
 msgid "GL account credited when labor or machine cost is absorbed into a production job."
-msgstr "在处置资产时借记以清除累积折旧的GL账户。"
+msgstr "当劳动力或机器成本被吸收到生产工作中时记入贷方的GL账户。"
 
 msgid "GL account credited when manufacturing overhead is absorbed into a production job."
 msgstr "当制造费用被吸收到生产作业中时被贷记的总分类账科目。"
 
 msgid "GL account debited to clear accumulated depreciation when an asset is disposed."
-msgstr "当客户发票过账时借记的GL账户；当客户支付时清除。"
+msgstr "在处置资产时借记以清除累积折旧的GL账户。"
 
 msgid "GL account debited when a customer invoice posts; cleared when the customer pays."
-msgstr "当获得固定资产时借记的GL账户（购买或资本化成本）。"
+msgstr "当客户发票过账时借记的GL账户；当客户支付时清除。"
 
 msgid "GL account debited when a fixed asset is acquired (purchase or capitalized cost)."
-msgstr "当此类中的资产被获取时借记的GL账户。"
-
-msgid "GL account debited when an asset in this class is acquired."
-msgstr "银行服务费和类似费用的GL账户。"
+msgstr "当获得固定资产时借记的GL账户（购买或资本化成本）。"
 
 msgid "GL account for bank service charges and similar fees."
-msgstr "利息收入或利息费用的GL账户。"
+msgstr "用于银行服务费及类似费用的GL账户。"
 
 msgid "GL account for interest income or expense."
-msgstr "支付给供应商的购买税的GL账户（或可收回）。"
+msgstr "利息收入或利息费用的GL账户。"
 
 msgid "GL account for purchase tax paid to suppliers (or reclaimable)."
-msgstr "在买方自我评估的反向征收规则下应计税款的GL账户。"
+msgstr "支付给供应商的购买税的GL账户（或可收回）。"
 
 msgid "GL account for tax accrued under reverse-charge rules where the buyer self-assesses."
-msgstr "税务时间差异的GL账户（例如加速折税折旧与账面折旧）。"
+msgstr "在买方自我评估的反向征收规则下应计税款的GL账户。"
 
 msgid "GL account for tax timing differences (e.g. accelerated tax depreciation vs. book depreciation)."
-msgstr "当资产被注销时受影响的GL账户（成本被删除而没有处置收益）。"
-
-msgid "GL account hit when an asset is written off (cost removed without disposal proceeds)."
-msgstr "当资产的账面价值被降低时受影响的GL账户（减值）。"
-
-msgid "GL account hit when an asset's book value is reduced (impairment)."
-msgstr "当实际库存与系统库存不符时受影响的GL账户。"
+msgstr "税务时间差异的GL账户（例如加速税务折旧与账面折旧的差异）。"
 
 msgid "GL account hit when physical counts differ from system inventory."
-msgstr "源公司中用于此关联方交易借记的GL账户。"
+msgstr "当实物盘点数量与系统库存不符时受影响的GL账户。"
 
 msgid "GL account in the source company to debit for this intercompany transaction."
-msgstr "目标公司中用于此关联方交易贷记的GL账户。"
+msgstr "源公司中用于此关联方交易借记的GL账户。"
 
 msgid "GL account in the target company to credit for this intercompany transaction."
-msgstr "用于吸收过账时尾差的GL账户。"
+msgstr "目标公司中用于此关联方交易贷记的GL账户。"
 
 msgid "GL account that absorbs sub-cent rounding differences on posting."
 msgstr "用于吸收过账时尾差的GL账户。"
 
 msgid "GL account that captures the difference between standard cost and actual purchase cost."
 msgstr "捕获标准成本和实际采购成本之间差异的GL账户。"
+
+msgid "GL account that carries an asset's original acquisition cost — debited when acquired and credited at full gross cost when it is disposed or sold."
+msgstr "记录资产原始购置成本的GL账户——获取时借记，处置或出售时按全额原始成本贷记。"
 
 msgid "GL account that holds the value of jobs in production until they post to finished goods."
 msgstr "持有生产中的工作价值的GL账户，直到它们过帐到成品。"
@@ -5788,14 +5788,8 @@ msgstr "记录给予客户的提前付款折扣的GL账户。"
 msgid "GL account where early-payment discounts taken from suppliers are recorded."
 msgstr "记录从供应商那里获取的提前付款折扣的GL账户。"
 
-msgid "GL account where gain or loss is booked on fixed-asset disposal."
-msgstr "固定资产处置时记录收益或损失的GL账户。"
-
-msgid "GL account where gain or loss is booked when an asset in this class is disposed."
-msgstr "此类资产处置时记录收益或损失的GL账户。"
-
-msgid "GL contra-asset account credited when depreciation posts for assets in this class."
-msgstr "当此类资产进行折旧过帐时贷记的GL反向资产账户。"
+msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
+msgstr "GL反向资产账户，随每期折旧过账而贷记；资产出售或报废时全额借记。"
 
 msgid "GL contra-asset account that accumulates depreciation booked against fixed assets."
 msgstr "累积对固定资产计提的折旧的GL反向资产账户。"
@@ -5808,6 +5802,9 @@ msgstr "财政年度末净收入关闭的GL权益账户。"
 
 msgid "GL expense account debited each period when depreciation posts."
 msgstr "折旧过帐每期借记的GL支出账户。"
+
+msgid "GL expense account debited when an asset's carrying value is reduced by impairment, i.e. when its recoverable amount falls below net book value."
+msgstr "当资产账面价值因减值而降低时借记的GL支出账户，即可收回金额低于账面净值时。"
 
 msgid "GL expense account for non-inventory purchases (supplies, services)."
 msgstr "非库存购买（用品、服务）的GL支出账户。"
@@ -6985,6 +6982,18 @@ msgstr "长描述"
 
 msgid "Looks empty here"
 msgstr "看起来这里是空的"
+
+msgid "Loss on Disposal"
+msgstr "处置亏损"
+
+msgid "Loss on Disposal (default)"
+msgstr "处置亏损（默认）"
+
+msgid "Loss on Disposal Account"
+msgstr "处置亏损账户"
+
+msgid "Losses recognized on disposal of fixed assets"
+msgstr "固定资产处置认可的亏损"
 
 msgid "Lost"
 msgstr "已失败"
@@ -8233,6 +8242,12 @@ msgstr "非库存"
 
 msgid "Non-Inventory Tracking"
 msgstr "非库存追踪"
+
+msgid "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
+msgstr "资产出售或报废价格低于其净账面价值时借记的营业外支出账户。"
+
+msgid "Non-operating income account credited when an asset in this class is sold for more than its net book value."
+msgstr "资产出售价格高于其净账面价值时贷记的营业外收入账户。"
 
 msgid "Non-Taxable Add-On Cost"
 msgstr "非应税附加成本"
@@ -10175,8 +10190,8 @@ msgstr "留存收益"
 msgid "Retained Earnings (default)"
 msgstr "留存收益 (默认)"
 
-msgid "Retiring an asset by write-off instead of sale, booking the remaining net book value as a loss — status becomes Disposed."
-msgstr "通过注销而不是出售来停用资产，将剩余净账面价值作为损失记录 — 状态变为已处置。"
+msgid "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
+msgstr "通过报废或出售将资产退出使用，将收益或损失计入账面净值，并将其状态设为已处置。"
 
 msgid "Retry"
 msgstr "重试"
@@ -11914,6 +11929,9 @@ msgstr "模板 ID"
 
 msgid "Templates"
 msgstr "模板"
+
+msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for its net book value on invoicing, netting to zero over the sale cycle."
+msgstr "临时处置清算账户，发货时按资产账面净值借记，开票时按账面净值贷记，在销售周期结束时归零。"
 
 msgid "Terms and Privacy"
 msgstr "条款和隐私"

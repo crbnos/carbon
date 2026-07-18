@@ -3548,6 +3548,12 @@ msgstr "あなたの基本通貨での取引のためのデフォルト現金勘
 msgid "Default CC Recipients"
 msgstr "デフォルトCC受信者"
 
+msgid "Default GL account credited when a fixed-asset disposal results in a gain."
+msgstr "固定資産の処分により利益が発生した場合に貸方に計上される既定の一般勘定科目。"
+
+msgid "Default GL account debited when a fixed-asset disposal results in a loss."
+msgstr "固定資産の処分により損失が発生した場合に借方に計上される既定の一般勘定科目。"
+
 msgid "Default GL account used for cash transactions when no specific bank account is selected."
 msgstr "特定の銀行口座が選択されていない場合、現金取引に使用されるデフォルトGLアカウント。"
 
@@ -4077,9 +4083,6 @@ msgstr "表示設定"
 
 msgid "Disposal"
 msgstr "処分"
-
-msgid "Disposal Account"
-msgstr "処分勘定"
 
 msgid "Disposal Date"
 msgstr "処分日"
@@ -5590,14 +5593,17 @@ msgstr "完全に訓練済み"
 msgid "FX G/L"
 msgstr "FX G/L"
 
-msgid "Gains and Losses"
-msgstr "利益と損失（デフォルト）"
+msgid "Gain on Disposal"
+msgstr "処分益"
 
-msgid "Gains and Losses (default)"
-msgstr "固定資産の処分で認識された利益または損失"
+msgid "Gain on Disposal (default)"
+msgstr "処分益（既定）"
 
-msgid "Gains or losses recognized on disposal of fixed assets"
-msgstr "ゲージ"
+msgid "Gain on Disposal Account"
+msgstr "処分益勘定科目"
+
+msgid "Gains recognized on disposal of fixed assets"
+msgstr "固定資産の処分により認識された利益"
 
 msgid "gauge"
 msgstr "ゲージ"
@@ -5696,79 +5702,73 @@ msgid "GL Account"
 msgstr "GLアカウント"
 
 msgid "GL account capturing cost differences on outside-processing operations."
-msgstr "適用された製造間接費と実際の製造間接費の差異をキャプチャするGLアカウント。"
+msgstr "外注加工作業のコスト差異を捕捉するGLアカウント。"
 
 msgid "GL account capturing differences between applied and actual manufacturing overhead."
-msgstr "BOM予想と実際に消費された材料の差異をキャプチャするGLアカウント。"
+msgstr "適用された製造間接費と実際の製造間接費の差異をキャプチャするGLアカウント。"
 
 msgid "GL account capturing differences between BOM-expected and actual material consumed."
-msgstr "ルーティング予想と実際の労働/機械時間の差異をキャプチャするGLアカウント。"
+msgstr "BOM予想と実際に消費された材料の差異をキャプチャするGLアカウント。"
 
 msgid "GL account capturing differences between routing-expected and actual labor/machine time."
-msgstr "実際のロットサイズが計画と異なる場合の固定費用差異をキャプチャするGLアカウント。"
+msgstr "ルーティング予想と実際の労働/機械時間の差異をキャプチャするGLアカウント。"
 
 msgid "GL account capturing fixed-cost differences when actual lot size differs from planned."
-msgstr "資産の処分時に元の費用を削除するために貸方記入されるGLアカウント。"
+msgstr "実際のロットサイズが計画と異なる場合の固定費用差異をキャプチャするGLアカウント。"
 
 msgid "GL account credited to remove the asset's original cost when it is disposed."
-msgstr "仕入先請求書が転記されたときに貸方記入されるGLアカウント（AP残高）。"
+msgstr "資産の処分時に元の費用を削除するために貸方記入されるGLアカウント。"
 
 msgid "GL account credited when a supplier invoice is posted (AP balance)."
-msgstr "労働またはマシンコストが生産ジョブに吸収されるときに貸方記入されるGLアカウント。"
+msgstr "仕入先請求書が転記されたときに貸方記入されるGLアカウント（AP残高）。"
 
 msgid "GL account credited when labor or machine cost is absorbed into a production job."
-msgstr "資産の処分時に累積減価償却費をクリアするためにデビットされるGLアカウント。"
+msgstr "労働またはマシンコストが生産ジョブに吸収されるときに貸方記入されるGLアカウント。"
 
 msgid "GL account credited when manufacturing overhead is absorbed into a production job."
 msgstr "製造間接費が生産ジョブに吸収される場合にクレジットされるGLアカウント。"
 
 msgid "GL account debited to clear accumulated depreciation when an asset is disposed."
-msgstr "顧客請求書が転記されるときにデビットされるGLアカウント。顧客が支払うときにクリアされます。"
+msgstr "資産の処分時に累積減価償却費をクリアするためにデビットされるGLアカウント。"
 
 msgid "GL account debited when a customer invoice posts; cleared when the customer pays."
-msgstr "固定資産を取得する際にデビットされるGLアカウント（購入または資本化費用）。"
+msgstr "顧客請求書が転記されるときにデビットされるGLアカウント。顧客が支払うときにクリアされます。"
 
 msgid "GL account debited when a fixed asset is acquired (purchase or capitalized cost)."
-msgstr "このクラスの資産が取得されるときにデビットされるGLアカウント。"
-
-msgid "GL account debited when an asset in this class is acquired."
-msgstr "銀行手数料および同様の手数料のGLアカウント。"
+msgstr "固定資産を取得する際にデビットされるGLアカウント（購入または資本化費用）。"
 
 msgid "GL account for bank service charges and similar fees."
-msgstr "利息収入または利息支出のGLアカウント。"
+msgstr "銀行手数料および類似の費用のためのGLアカウント。"
 
 msgid "GL account for interest income or expense."
-msgstr "仕入先に支払った購入税のGLアカウント（または回収可能）。"
+msgstr "利息収入または利息支出のGLアカウント。"
 
 msgid "GL account for purchase tax paid to suppliers (or reclaimable)."
-msgstr "買い手が自己評価するリバースチャージルールの下で発生する税金のGLアカウント。"
+msgstr "仕入先に支払った購入税のGLアカウント（または回収可能）。"
 
 msgid "GL account for tax accrued under reverse-charge rules where the buyer self-assesses."
-msgstr "税務タイミングの差異のGLアカウント（加速償却対帳簿価額償却など）。"
+msgstr "買い手が自己評価するリバースチャージルールの下で発生する税金のGLアカウント。"
 
 msgid "GL account for tax timing differences (e.g. accelerated tax depreciation vs. book depreciation)."
-msgstr "資産が償却されるときに記入されるGLアカウント（処分収益なしでコストが削除された）。"
-
-msgid "GL account hit when an asset is written off (cost removed without disposal proceeds)."
-msgstr "資産の帳簿価額が減少したときに記入されるGLアカウント（減損）。"
-
-msgid "GL account hit when an asset's book value is reduced (impairment)."
-msgstr "物理的なカウントがシステムインベントリと異なる場合に記入されるGLアカウント。"
+msgstr "税務タイミングの差異のGLアカウント（加速償却対帳簿価額償却など）。"
 
 msgid "GL account hit when physical counts differ from system inventory."
-msgstr "このグループ間取引のための源会社のGLアカウント。"
+msgstr "実地棚卸数量がシステム在庫と異なる場合に影響を受けるGLアカウント。"
 
 msgid "GL account in the source company to debit for this intercompany transaction."
-msgstr "このグループ間取引のための対象会社のGLアカウント。"
+msgstr "この会社間取引において、発生元会社で借方（デビット）に計上するGLアカウント。"
 
 msgid "GL account in the target company to credit for this intercompany transaction."
-msgstr "転記時にセント未満の端数差異を吸収するGLアカウント。"
+msgstr "この会社間取引において、対象会社で貸方（クレジット）に計上するGLアカウント。"
 
 msgid "GL account that absorbs sub-cent rounding differences on posting."
 msgstr "転記時にセント未満の端数差異を吸収するGLアカウント。"
 
 msgid "GL account that captures the difference between standard cost and actual purchase cost."
 msgstr "標準原価と実際の購入原価の差を捕捉するGLアカウント。"
+
+msgid "GL account that carries an asset's original acquisition cost — debited when acquired and credited at full gross cost when it is disposed or sold."
+msgstr "資産の当初取得原価を計上する総勘定元帳（GL）勘定科目 — 取得時に借方記入され、処分または売却時に総額（グロス）で貸方記入される。"
 
 msgid "GL account that holds the value of jobs in production until they post to finished goods."
 msgstr "生産中のジョブの価値を保有し、完成品にポストされるまでのGLアカウント。"
@@ -5788,14 +5788,8 @@ msgstr "顧客に与えられた早期支払割引が記録されるGLアカウ�
 msgid "GL account where early-payment discounts taken from suppliers are recorded."
 msgstr "サプライヤーから得られた早期支払割引が記録されるGLアカウント。"
 
-msgid "GL account where gain or loss is booked on fixed-asset disposal."
-msgstr "固定資産の処分時に利益または損失が記録されるGLアカウント。"
-
-msgid "GL account where gain or loss is booked when an asset in this class is disposed."
-msgstr "このクラスの資産が処分されるときに利益または損失が記録されるGLアカウント。"
-
-msgid "GL contra-asset account credited when depreciation posts for assets in this class."
-msgstr "このクラスの資産に対して減価償却が転記される場合に貸方記入されるGL反対資産勘定。"
+msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
+msgstr "各期に減価償却が計上されるたびに貸方記入され、資産の売却または除却時に全額借方記入される、減価償却累計額に相当するGLの資産控除（コントラアセット）勘定科目。"
 
 msgid "GL contra-asset account that accumulates depreciation booked against fixed assets."
 msgstr "固定資産に対して記録された減価償却を累積するGL反対資産勘定。"
@@ -5808,6 +5802,9 @@ msgstr "会計年度末にネット収入が閉じられるGL株主資本勘定�
 
 msgid "GL expense account debited each period when depreciation posts."
 msgstr "減価償却が転記される各期間に借方記入されるGL支出勘定。"
+
+msgid "GL expense account debited when an asset's carrying value is reduced by impairment, i.e. when its recoverable amount falls below net book value."
+msgstr "資産の帳簿価額が減損により減少した場合、すなわち回収可能価額が正味簿価（NBV）を下回った場合に借方記入されるGL費用勘定科目。"
 
 msgid "GL expense account for non-inventory purchases (supplies, services)."
 msgstr "非インベントリ購入（用品、サービス）のためのGL支出勘定。"
@@ -6985,6 +6982,18 @@ msgstr "長い説明"
 
 msgid "Looks empty here"
 msgstr "ここは空のようです"
+
+msgid "Loss on Disposal"
+msgstr "処分損"
+
+msgid "Loss on Disposal (default)"
+msgstr "処分損（既定）"
+
+msgid "Loss on Disposal Account"
+msgstr "処分損勘定科目"
+
+msgid "Losses recognized on disposal of fixed assets"
+msgstr "固定資産の処分により認識された損失"
 
 msgid "Lost"
 msgstr "失った"
@@ -8233,6 +8242,12 @@ msgstr "非在庫"
 
 msgid "Non-Inventory Tracking"
 msgstr "非在庫追跡"
+
+msgid "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
+msgstr "このクラスの資産が帳簿価額を下回る価格で売却またはスクラップにされた場合に借方に計上される営業外費用勘定科目。"
+
+msgid "Non-operating income account credited when an asset in this class is sold for more than its net book value."
+msgstr "このクラスの資産が帳簿価額を上回る価格で売却された場合に貸方に計上される営業外収益勘定科目。"
 
 msgid "Non-Taxable Add-On Cost"
 msgstr "非課税アドオンコスト"
@@ -10175,8 +10190,8 @@ msgstr "利益剰余金"
 msgid "Retained Earnings (default)"
 msgstr "利益剰余金 (既定)"
 
-msgid "Retiring an asset by write-off instead of sale, booking the remaining net book value as a loss — status becomes Disposed."
-msgstr "売却ではなく償却によってアセットをリタイアし、残りの純簿価額を損失として記録する — ステータスは「処分」になります。"
+msgid "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
+msgstr "除却または売却により資産を稼働から除外し、正味簿価に対する損益を計上したうえで、そのステータスを「処分済み」に設定すること。"
 
 msgid "Retry"
 msgstr "再試行"
@@ -11914,6 +11929,9 @@ msgstr "テンプレートID"
 
 msgid "Templates"
 msgstr "テンプレート"
+
+msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for its net book value on invoicing, netting to zero over the sale cycle."
+msgstr "出荷時に資産の正味簿価を借方記入し、請求時に正味簿価を貸方記入する、販売サイクル全体を通じて残高がゼロになる一時的な処分清算勘定科目。"
 
 msgid "Terms and Privacy"
 msgstr "利用規約とプライバシー"

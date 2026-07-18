@@ -325,8 +325,11 @@ export const defaultIncomeAcountValidator = z.object({
   assetDepreciationExpenseAccount: z.string().min(1, {
     message: "Depreciation expense account is required"
   }),
-  assetGainsAndLossesAccount: z.string().min(1, {
-    message: "Gains and losses account is required"
+  assetGainOnDisposalAccount: z.string().min(1, {
+    message: "Gain on disposal account is required"
+  }),
+  assetLossOnDisposalAccount: z.string().min(1, {
+    message: "Loss on disposal account is required"
   }),
   serviceChargeAccount: z.string().min(1, {
     message: "Service charge account is required"
@@ -651,9 +654,12 @@ export const fixedAssetClassValidator = z.object({
   writeDownAccountId: z
     .string()
     .min(1, { message: "Write-down account is required" }),
-  disposalAccountId: z
+  gainOnDisposalAccountId: z
     .string()
-    .min(1, { message: "Disposal account is required" }),
+    .min(1, { message: "Gain on disposal account is required" }),
+  lossOnDisposalAccountId: z
+    .string()
+    .min(1, { message: "Loss on disposal account is required" }),
   taxDepreciationMethod: z.preprocess(
     (val) => (val === "" ? null : val),
     z.enum(taxDepreciationMethods).nullable().optional()

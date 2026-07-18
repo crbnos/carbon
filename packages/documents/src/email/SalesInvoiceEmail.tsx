@@ -19,6 +19,7 @@ import {
   getTotal
 } from "../utils/sales-invoice";
 import { getCurrencyFormatter } from "../utils/shared";
+import ExternalNotes from "./components/ExternalNotes";
 import {
   EmailThemeProvider,
   getEmailInlineStyles,
@@ -115,6 +116,7 @@ const SalesInvoiceEmail = ({
               questions.
             </Text>
           </Section>
+          <ExternalNotes content={salesInvoice.externalNotes} />
           <Section className={`bg-gray-50 rounded-lg text-xs`}>
             <Row>
               <Column className="p-5" colSpan={2}>
