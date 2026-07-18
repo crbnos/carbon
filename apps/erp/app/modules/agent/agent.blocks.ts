@@ -35,7 +35,7 @@ export const navigateBlock = z.object({
   entity: z.enum(
     Object.keys(NAVIGABLE) as [NavigableEntity, ...NavigableEntity[]]
   ),
-  id: z.string(),
+  id: z.string().min(1), // reject empty ids → path.to.x("") would build a broken "/x/part" route
   label: z.string().optional()
 });
 

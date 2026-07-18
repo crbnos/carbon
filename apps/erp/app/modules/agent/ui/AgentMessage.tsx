@@ -82,6 +82,7 @@ export function AgentMessage({
               <AgentNavigate
                 key={i}
                 input={part.input}
+                state={part.state}
                 toolCallId={part.toolCallId}
               />
             );

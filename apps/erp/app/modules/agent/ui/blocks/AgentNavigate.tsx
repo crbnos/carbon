@@ -8,19 +8,23 @@ const fired = new Set<string>();
 
 export function AgentNavigate({
   input,
+  state,
   toolCallId
 }: {
   input: unknown;
+  state: string;
   toolCallId: string;
 }) {
   const navigate = useNavigate();
   useEffect(() => {
     if (fired.has(toolCallId)) return;
-    // Safeguard: only a validated, allowlisted entity resolves; anything else no-ops.
+    // Only act once the input has FULLY streamed in. Firing during "input-streaming"
+    // uses a truncated id (e.g. "6uApsOM" of "6uApsOMhi3YiEVlme6o3I") → a dead route.
+    if (state !== "input-available" && state !== "output-available") return;
     const parsed = navigateBlock.safeParse(input);
     if (!parsed.success) return;
     fired.add(toolCallId);
     navigate(NAVIGABLE[parsed.data.entity](parsed.data.id));
-  }, [input, toolCallId, navigate]);
+  }, [input, state, toolCallId, navigate]);
   return null;
 }

@@ -1,25 +1,28 @@
-function timeGreeting(): string {
+function timeOfDay(): string {
   const h = new Date().getHours();
-  if (h < 12) return "Good morning";
-  if (h < 18) return "Good afternoon";
-  return "Good evening";
+  if (h < 12) return "morning";
+  if (h < 18) return "afternoon";
+  return "evening";
 }
 
-const OPENERS = [
-  "What can I help you with in Carbon today?",
-  "What are you working on? I can look things up across Carbon.",
-  "Ask me anything about Carbon — jobs, orders, inventory, and more.",
-  "How can I help you get things done today?",
-  "Need to find something? I can search the docs and your data.",
-  "What would you like to know?",
-  "I’m here to help — what’s on your plate?",
-  "Looking for something specific? Just ask.",
-  "Let’s get to work — what do you need?",
-  "What can I dig up for you today?"
+// A pool of complete greetings with varied tone — some time-aware, most casual/direct.
+// One is picked at random per panel open, so it doesn't always sound the same.
+const GREETINGS: Array<() => string> = [
+  () => `Good ${timeOfDay()}! What can I help you with in Carbon today?`,
+  () => `Good ${timeOfDay()} — what are you working on?`,
+  () => "Hey! How can I help?",
+  () => "Hi there 👋 What do you need?",
+  () => "Hey, what's on your plate today?",
+  () => "How's it going? Ask me anything about Carbon.",
+  () => "What can I dig up for you?",
+  () => "Ready when you are — what do you need?",
+  () => "What would you like to know?",
+  () => "Need to find something in Carbon? Just ask.",
+  () => "Looking for something specific?",
+  () => "Let's get to work — what's up?"
 ];
 
-/** A friendly, time-aware greeting picked at random. */
+/** A random, tonally-varied greeting. */
 export function pickGreeting(): string {
-  const opener = OPENERS[Math.floor(Math.random() * OPENERS.length)];
-  return `${timeGreeting()}! ${opener}`;
+  return GREETINGS[Math.floor(Math.random() * GREETINGS.length)]();
 }
