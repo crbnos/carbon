@@ -1057,12 +1057,14 @@ export async function endProductionEvent(
     id: string;
     endTime: string;
     employeeId: string;
+    companyId: string;
   }
 ) {
   return client
     .from("productionEvent")
     .update({ endTime: data.endTime, updatedBy: data.employeeId })
     .eq("id", data.id)
+    .eq("companyId", data.companyId)
     .select("*");
 }
 
@@ -1187,6 +1189,68 @@ export async function startProductionEvent(
   }
 
   return client.from("productionEvent").insert(data).select("*");
+}
+
+// Starts an aggregate batch timer: a single productionEvent tagged with
+// jobOperationBatchId. The carried jobOperationId is a representative member
+// (the column is NOT NULL); completion slices this event across all members.
+export async function startBatchProductionEvent(
+  client: SupabaseClient<Database>,
+  data: {
+    jobOperationBatchId: string;
+    jobOperationId: string;
+    type: z.infer<typeof productionEventValidator>["type"];
+    workCenterId?: string;
+    startTime: string;
+    employeeId: string;
+    companyId: string;
+    createdBy: string;
+  }
+) {
+  return client.from("productionEvent").insert(data).select("*");
+}
+
+export async function getJobOperationBatch(
+  client: SupabaseClient<Database>,
+  batchId: string,
+  companyId: string
+) {
+  return client
+    .from("jobOperationBatch")
+    .select("*, process(id, name), workCenter(id, name)")
+    .eq("id", batchId)
+    .eq("companyId", companyId)
+    .single();
+}
+
+// Member operations of a batch, with enough job/item context to render each
+// row on the MES batch card and Complete Batch form.
+export async function getJobOperationsByBatch(
+  client: SupabaseClient<Database>,
+  batchId: string,
+  companyId: string
+) {
+  return client
+    .from("jobOperation")
+    .select(
+      "id, description, operationQuantity, quantityComplete, workCenterId, processId, status, jobId, job(jobId, itemReadableId)"
+    )
+    .eq("jobOperationBatchId", batchId)
+    .eq("companyId", companyId);
+}
+
+// The aggregate batch timers (tagged with jobOperationBatchId). A row with a
+// startTime and no endTime is a running timer; the card ticks off its startTime.
+export async function getBatchProductionEvents(
+  client: SupabaseClient<Database>,
+  batchId: string,
+  companyId: string
+) {
+  return client
+    .from("productionEvent")
+    .select("id, type, startTime, endTime, duration, employeeId")
+    .eq("jobOperationBatchId", batchId)
+    .eq("companyId", companyId);
 }
 
 type JobMethod = {

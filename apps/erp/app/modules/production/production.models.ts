@@ -256,6 +256,41 @@ export const jobCompleteValidator = z.object({
   leftoverReceiveQuantity: zfd.numeric(z.number().min(0).optional())
 });
 
+// Job Operation Batching — a jobOperationBatch is a lightweight join over N real
+// jobOperation rows on the same batchable process. Batchability itself lives on
+// process.batchable (see resources.models.ts); these validators cover the batch
+// membership/lifecycle mutations and the MES completion form.
+export const jobOperationBatchStatus = [
+  "Active",
+  "Completing",
+  "Completed",
+  "Cancelled"
+] as const;
+
+export const jobOperationBatchValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  processId: z.string().min(1, { message: "Process is required" }),
+  locationId: z.string().min(1, { message: "Location is required" }),
+  workCenterId: zfd.text(z.string().optional()),
+  notes: zfd.text(z.string().optional())
+});
+
+// Per-member produced quantity confirmation at batch completion. Pre-filled with
+// the member operation's planned quantity; optional scrap. Produced quantity is
+// entered per member (never one total split across heterogeneous parts).
+export const batchCompleteMemberValidator = z.object({
+  jobOperationId: z.string().min(1),
+  quantity: z.number().min(0),
+  scrapQuantity: z.number().min(0).optional()
+});
+
+export const batchCompleteValidator = z.object({
+  jobOperationBatchId: z.string().min(1),
+  members: z.array(batchCompleteMemberValidator).min(1, {
+    message: "A batch must have at least one member"
+  })
+});
+
 export const salesOrderToJobValidator = baseJobValidator
   .extend({
     quoteId: zfd.text(z.string().optional()),

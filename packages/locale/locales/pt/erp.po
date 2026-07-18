@@ -1678,6 +1678,9 @@ msgstr "Número de lote"
 msgid "Batch Number"
 msgstr "Número do Lote"
 
+msgid "Batch Planning"
+msgstr ""
+
 msgid "Batch Properties"
 msgstr "Propriedades em Lote"
 
@@ -1689,6 +1692,12 @@ msgstr "Rastreamento de lote"
 
 msgid "Batch Tracking"
 msgstr "Rastreamento em Lote"
+
+msgid "Batchable"
+msgstr ""
+
+msgid "Batchable — multiple jobs can run on this process at the same time"
+msgstr ""
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
@@ -1925,6 +1934,9 @@ msgstr "Cancelado"
 
 msgid "Cancelled"
 msgstr "Cancelado"
+
+msgid "Candidate Operations"
+msgstr ""
 
 msgid "Cannot add parameters to unsaved operation"
 msgstr "Não é possível adicionar parâmetros a uma operação não salva"
@@ -7501,6 +7513,9 @@ msgstr "Novo Atributo"
 msgid "New Attribute Category"
 msgstr "Nova Categoria de Atributo"
 
+msgid "New batch"
+msgstr ""
+
 msgid "New Consumable"
 msgstr "Novo Consumível"
 
@@ -7803,6 +7818,9 @@ msgstr "Nenhuma ação necessária"
 msgid "No actions selected"
 msgstr "Nenhuma ação selecionada"
 
+msgid "No active batches. Drag an operation onto \"New batch\" to start one."
+msgstr ""
+
 msgid "No active jobs found for this sales order. The order will be cancelled directly."
 msgstr "Nenhum trabalho ativo encontrado para este pedido de venda. O pedido será cancelado diretamente."
 
@@ -7830,6 +7848,9 @@ msgstr "Nenhum filtro disponível"
 
 msgid "No available tracked entities found"
 msgstr "Nenhuma entidade rastreada disponível encontrada"
+
+msgid "No batchable operations"
+msgstr ""
 
 msgid "No BOM input has a shelf-life policy"
 msgstr "Nenhuma entrada de BOM tem uma política de vida útil"
@@ -7932,6 +7953,9 @@ msgstr "Nenhuma correspondência"
 
 msgid "No matches for \"{query}\". Try a different search term."
 msgstr "Nenhuma correspondência para \"{query}\". Tente um termo de pesquisa diferente."
+
+msgid "No material properties"
+msgstr ""
 
 msgid "No new notifications"
 msgstr "Sem notificações novas"

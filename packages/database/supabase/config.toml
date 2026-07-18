@@ -163,6 +163,11 @@ enabled = true
 verify_jwt = true
 
 
+[functions.batch-operations]
+enabled = true
+verify_jwt = true
+
+
 [functions.pick]
 enabled = true
 verify_jwt = true

@@ -64,7 +64,8 @@ export async function action({ request }: ActionFunctionArgs) {
     const endEvent = await endProductionEvent(client, {
       id,
       endTime: now(timezone ?? getLocalTimeZone()).toAbsoluteString(),
-      employeeId: userId
+      employeeId: userId,
+      companyId
     });
     if (endEvent.error) {
       return data(

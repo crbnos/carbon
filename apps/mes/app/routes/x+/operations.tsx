@@ -258,6 +258,7 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
           operationQuantity: op.operationQuantity,
           targetQuantity: op.targetQuantity ?? op.operationQuantity,
           jobReadableId: op.jobReadableId,
+          jobOperationBatchId: op.jobOperationBatchId,
           itemReadableId: op.itemReadableId,
           itemDescription: op.itemDescription,
           salesOrderReadableId: op.salesOrderReadableId,
@@ -706,7 +707,8 @@ function useProgressByOperation(
                         return {
                           ...item,
                           columnId: updated.workCenterId,
-                          priority: updated.priority
+                          priority: updated.priority,
+                          jobOperationBatchId: updated.jobOperationBatchId
                         };
                       }
                       return item;

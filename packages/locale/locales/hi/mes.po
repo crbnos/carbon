@@ -197,6 +197,9 @@ msgstr "पूर्ण करें"
 msgid "Complete All"
 msgstr "सभी को पूर्ण करें"
 
+msgid "Complete Batch"
+msgstr "बैच पूर्ण करें"
+
 msgid "Completed"
 msgstr "पूर्ण"
 
@@ -314,6 +317,9 @@ msgstr "ईमेल पता"
 
 msgid "Empty work centers"
 msgstr "खाली कार्य केंद्र"
+
+msgid "End Batch"
+msgstr "बैच समाप्त करें"
 
 msgid "End Operations"
 msgstr "संचालन समाप्त करें"
@@ -822,11 +828,17 @@ msgstr "इन्वेंटरी हटाएं"
 msgid "Remove part"
 msgstr "भाग हटाएं"
 
+msgid "Retry Completion"
+msgstr ""
+
 msgid "Rework"
 msgstr "रीवर्क"
 
 msgid "Rework created successfully"
 msgstr "रीवर्क सफलतापूर्वक बनाया गया"
+
+msgid "Running"
+msgstr "चल रहा है"
 
 msgid "Sales Order"
 msgstr "बिक्रय आदेश"
@@ -977,6 +989,9 @@ msgstr "उपयोग किए गए स्पेयर पार्ट्�
 
 msgid "Start"
 msgstr "शुरू करें"
+
+msgid "Start Batch"
+msgstr "बैच प्रारंभ करें"
 
 msgid "Station User"
 msgstr "स्टेशन उपयोगकर्ता"

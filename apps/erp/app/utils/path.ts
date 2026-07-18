@@ -1546,6 +1546,7 @@ export const path = {
     deletePrinterRoute: (id: string) =>
       generatePath(`${x}/settings/printing/${id}/delete`),
     production: `${x}/production`,
+    batchPlanning: `${x}/production/batches`,
     productionPlanning: `${x}/production/planning`,
     productionPlanningItem: (itemId: string) =>
       generatePath(`${x}/production/planning/${itemId}`),

@@ -1678,6 +1678,9 @@ msgstr "Numer partii"
 msgid "Batch Number"
 msgstr "Numer partii"
 
+msgid "Batch Planning"
+msgstr "Planowanie wsadowe"
+
 msgid "Batch Properties"
 msgstr "Właściwości partii"
 
@@ -1689,6 +1692,12 @@ msgstr "Śledzenie partii"
 
 msgid "Batch Tracking"
 msgstr "Śledzenie partii"
+
+msgid "Batchable"
+msgstr "Wsadowalny"
+
+msgid "Batchable — multiple jobs can run on this process at the same time"
+msgstr "Wsadowalny — wiele zleceń może być realizowanych w tym procesie jednocześnie"
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
@@ -1925,6 +1934,9 @@ msgstr "Anulowano"
 
 msgid "Cancelled"
 msgstr "Anulowano"
+
+msgid "Candidate Operations"
+msgstr "Operacje kandydujące"
 
 msgid "Cannot add parameters to unsaved operation"
 msgstr "Nie można dodać parametrów do niezapisanej operacji"
@@ -7501,6 +7513,9 @@ msgstr "Nowy atrybut"
 msgid "New Attribute Category"
 msgstr "Nowa Kategoria Atrybutu"
 
+msgid "New batch"
+msgstr "Nowy wsád"
+
 msgid "New Consumable"
 msgstr "Nowy materiał zużywalny"
 
@@ -7803,6 +7818,9 @@ msgstr "Brak wymaganych działań"
 msgid "No actions selected"
 msgstr "Nie wybrano żadnych akcji"
 
+msgid "No active batches. Drag an operation onto \"New batch\" to start one."
+msgstr "Brak aktywnych wsadów. Przeciągnij operację na \"Nowy wsad\" aby rozpocząć."
+
 msgid "No active jobs found for this sales order. The order will be cancelled directly."
 msgstr "Nie znaleziono aktywnych zadań dla tego zamówienia sprzedaży. Zamówienie zostanie anulowane bezpośrednio."
 
@@ -7830,6 +7848,9 @@ msgstr "Brak dostępnych filtrów"
 
 msgid "No available tracked entities found"
 msgstr "Nie znaleziono dostępnych śledzonych jednostek"
+
+msgid "No batchable operations"
+msgstr "Brak operacji wsadowalnych"
 
 msgid "No BOM input has a shelf-life policy"
 msgstr "Żadne wejście BOM nie ma polityki przydatności do spożycia"
@@ -7932,6 +7953,9 @@ msgstr "Brak wyników"
 
 msgid "No matches for \"{query}\". Try a different search term."
 msgstr "Brak wyników dla „{query}\". Spróbuj innego terminu wyszukiwania."
+
+msgid "No material properties"
+msgstr "Brak właściwości materiału"
 
 msgid "No new notifications"
 msgstr "Brak nowych powiadomień"

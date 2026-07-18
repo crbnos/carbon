@@ -197,6 +197,9 @@ msgstr "完成"
 msgid "Complete All"
 msgstr "全部完成"
 
+msgid "Complete Batch"
+msgstr "完成批次"
+
 msgid "Completed"
 msgstr "已完成"
 
@@ -314,6 +317,9 @@ msgstr "电子邮箱"
 
 msgid "Empty work centers"
 msgstr "空的工作中心"
+
+msgid "End Batch"
+msgstr "结束批次"
 
 msgid "End Operations"
 msgstr "结束工序"
@@ -822,11 +828,17 @@ msgstr "移除库存"
 msgid "Remove part"
 msgstr "移除零件"
 
+msgid "Retry Completion"
+msgstr ""
+
 msgid "Rework"
 msgstr "返工"
 
 msgid "Rework created successfully"
 msgstr "返工创建成功"
+
+msgid "Running"
+msgstr "运行中"
 
 msgid "Sales Order"
 msgstr "销售订单"
@@ -977,6 +989,9 @@ msgstr "已使用备件"
 
 msgid "Start"
 msgstr "开始"
+
+msgid "Start Batch"
+msgstr "开始批次"
 
 msgid "Station User"
 msgstr "工位用户"

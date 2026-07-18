@@ -154,6 +154,78 @@ export const productionEventValidator = z.object({
   trackedEntityId: zfd.text(z.string().optional())
 });
 
+// Batch timers are recorded ONCE against the whole batch (tagged with
+// jobOperationBatchId) and sliced across members at completion. The aggregate
+// row still needs a real jobOperationId (NOT NULL column), so a representative
+// member is carried through — it is deleted and replaced by per-member slices
+// when the batch completes.
+export const batchProductionEventValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  jobOperationBatchId: z.string().min(1, { message: "Batch is required" }),
+  jobOperationId: z
+    .string()
+    .min(1, { message: "Job Operation ID is required" }),
+  timezone: zfd.text(z.string()),
+  action: z.enum(productionEventAction, {
+    errorMap: () => ({ message: "Action is required" })
+  }),
+  type: z.enum(productionEventType, {
+    errorMap: () => ({ message: "Type is required" })
+  }),
+  workCenterId: zfd.text(z.string().optional())
+});
+
+export const batchCompleteMemberValidator = z.object({
+  jobOperationId: z.string().min(1),
+  quantity: z.number().min(0),
+  scrapQuantity: z.number().min(0).optional()
+});
+
+// The Complete Batch form submits its per-member quantities as a JSON array in
+// a single hidden field (variable member count), parsed + validated here.
+export const batchCompleteValidator = z.object({
+  jobOperationBatchId: z.string().min(1, { message: "Batch is required" }),
+  members: zfd.text(z.string()).transform((value, ctx) => {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(value);
+    } catch {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Members must be valid JSON"
+      });
+      return z.NEVER;
+    }
+    const result = z
+      .array(batchCompleteMemberValidator)
+      .min(1, { message: "At least one member is required" })
+      .safeParse(parsed);
+    if (!result.success) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Invalid batch members"
+      });
+      return z.NEVER;
+    }
+    return result.data;
+  })
+});
+
+// Maps the Complete Batch form's per-member rows into the `members` payload the
+// batchCompleteValidator expects. `scrapQuantity` is omitted unless a positive
+// scrap was entered, so members without scrap don't produce empty scrap rows.
+export function toBatchCompleteMembers(
+  rows: { jobOperationId: string; quantity: number; scrapQuantity?: number }[]
+) {
+  return rows.map((row) => ({
+    jobOperationId: row.jobOperationId,
+    quantity: row.quantity,
+    ...(row.scrapQuantity && row.scrapQuantity > 0
+      ? { scrapQuantity: row.scrapQuantity }
+      : {})
+  }));
+}
+
 export const finishValidator = z.object({
   jobOperationId: z.string(),
   setupProductionEventId: zfd.text(z.string().optional()),

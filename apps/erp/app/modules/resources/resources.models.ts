@@ -1,6 +1,9 @@
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { processTypes, standardFactorType } from "../shared";
+// Import constants from the models file directly (not the `../shared` barrel),
+// which also re-exports shared.service/shared.server — those transitively pull in
+// the Lingui-macro glossary and break plain unit tests of this module.
+import { processTypes, standardFactorType } from "../shared/shared.models";
 
 export const abilityCurveValidator = z.object({
   data: z
@@ -300,7 +303,8 @@ export const processValidator = z
     workCenters: z
       .array(z.string().min(1, { message: "Invalid work center" }))
       .optional(),
-    completeAllOnScan: zfd.checkbox()
+    completeAllOnScan: zfd.checkbox(),
+    batchable: zfd.checkbox()
   })
   .refine((data) => {
     if (data.processType !== "Outside" && !data.workCenters) {

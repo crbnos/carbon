@@ -1678,6 +1678,9 @@ msgstr "배치 번호"
 msgid "Batch Number"
 msgstr "배치 번호"
 
+msgid "Batch Planning"
+msgstr "일괄 계획"
+
 msgid "Batch Properties"
 msgstr "배치 속성"
 
@@ -1689,6 +1692,12 @@ msgstr "배치 추적"
 
 msgid "Batch Tracking"
 msgstr "배치 추적"
+
+msgid "Batchable"
+msgstr "일괄 처리 가능"
+
+msgid "Batchable — multiple jobs can run on this process at the same time"
+msgstr "일괄 처리 가능 — 여러 작업이 이 공정에서 동시에 실행될 수 있습니다"
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
@@ -1925,6 +1934,9 @@ msgstr "취소됨"
 
 msgid "Cancelled"
 msgstr "취소됨"
+
+msgid "Candidate Operations"
+msgstr "후보 공정"
 
 msgid "Cannot add parameters to unsaved operation"
 msgstr "저장되지 않은 공정작업에는 파라미터를 추가할 수 없습니다"
@@ -7501,6 +7513,9 @@ msgstr "신규 속성"
 msgid "New Attribute Category"
 msgstr "신규 속성 카테고리"
 
+msgid "New batch"
+msgstr "새 배치"
+
 msgid "New Consumable"
 msgstr "신규 소모품"
 
@@ -7803,6 +7818,9 @@ msgstr "조치가 필요하지 않습니다"
 msgid "No actions selected"
 msgstr "선택된 조치가 없습니다"
 
+msgid "No active batches. Drag an operation onto \"New batch\" to start one."
+msgstr "활성 배치가 없습니다. 공정을 \"새 배치\"로 드래그하여 시작하세요."
+
 msgid "No active jobs found for this sales order. The order will be cancelled directly."
 msgstr "이 판매주문에 대한 진행 중인 작업이 없습니다. 주문이 바로 취소됩니다."
 
@@ -7830,6 +7848,9 @@ msgstr "사용 가능한 필터가 없습니다"
 
 msgid "No available tracked entities found"
 msgstr "사용 가능한 추적 개체가 없습니다"
+
+msgid "No batchable operations"
+msgstr "일괄 처리 가능한 공정 없음"
 
 msgid "No BOM input has a shelf-life policy"
 msgstr "BOM 투입 항목 중 유효기간 정책이 설정된 항목이 없습니다"
@@ -7932,6 +7953,9 @@ msgstr "일치하는 항목 없음"
 
 msgid "No matches for \"{query}\". Try a different search term."
 msgstr "\"{query}\"에 대해 일치하는 항목이 없습니다. 다른 검색어를 시도해 보세요."
+
+msgid "No material properties"
+msgstr "재료 속성 없음"
 
 msgid "No new notifications"
 msgstr "새 알림이 없습니다"

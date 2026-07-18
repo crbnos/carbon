@@ -108,8 +108,18 @@ export function ItemCard({
     ? Array.from(progressByItemId[item.id].employees!)
     : undefined;
 
+  // Batched operations run together on one machine; the whole batch is executed
+  // as a unit, so a batched card links to the batch page instead of the single op.
+  const isBatched = !!item.jobOperationBatchId;
+
   return (
-    <Link to={path.to.operation(item.id)}>
+    <Link
+      to={
+        isBatched
+          ? path.to.batch(item.jobOperationBatchId!)
+          : path.to.operation(item.id)
+      }
+    >
       <Card
         className={cn(
           "max-w-[330px]",
@@ -130,9 +140,12 @@ export function ItemCard({
                 {item.itemDescription || item.itemReadableId}
               </span>
             </div>
-            <Heading size="h4" className="text-foreground">
-              {item.targetQuantity}
-            </Heading>
+            <div className="flex flex-col items-end gap-1">
+              {isBatched && <Badge variant="blue">BAT</Badge>}
+              <Heading size="h4" className="text-foreground">
+                {item.targetQuantity}
+              </Heading>
+            </div>
           </div>
 
           {showProgress &&

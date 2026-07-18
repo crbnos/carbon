@@ -1678,6 +1678,9 @@ msgstr "Batch number"
 msgid "Batch Number"
 msgstr "Batch Number"
 
+msgid "Batch Planning"
+msgstr "Batch Planning"
+
 msgid "Batch Properties"
 msgstr "Batch Properties"
 
@@ -1689,6 +1692,12 @@ msgstr "Batch tracking"
 
 msgid "Batch Tracking"
 msgstr "Batch Tracking"
+
+msgid "Batchable"
+msgstr "Batchable"
+
+msgid "Batchable — multiple jobs can run on this process at the same time"
+msgstr "Batchable — multiple jobs can run on this process at the same time"
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
@@ -1925,6 +1934,9 @@ msgstr "Canceled"
 
 msgid "Cancelled"
 msgstr "Cancelled"
+
+msgid "Candidate Operations"
+msgstr "Candidate Operations"
 
 msgid "Cannot add parameters to unsaved operation"
 msgstr "Cannot add parameters to unsaved operation"
@@ -7501,6 +7513,9 @@ msgstr "New Attribute"
 msgid "New Attribute Category"
 msgstr "New Attribute Category"
 
+msgid "New batch"
+msgstr "New batch"
+
 msgid "New Consumable"
 msgstr "New Consumable"
 
@@ -7803,6 +7818,9 @@ msgstr "No action needed"
 msgid "No actions selected"
 msgstr "No actions selected"
 
+msgid "No active batches. Drag an operation onto \"New batch\" to start one."
+msgstr "No active batches. Drag an operation onto \"New batch\" to start one."
+
 msgid "No active jobs found for this sales order. The order will be cancelled directly."
 msgstr "No active jobs found for this sales order. The order will be cancelled directly."
 
@@ -7830,6 +7848,9 @@ msgstr "No available filters"
 
 msgid "No available tracked entities found"
 msgstr "No available tracked entities found"
+
+msgid "No batchable operations"
+msgstr "No batchable operations"
 
 msgid "No BOM input has a shelf-life policy"
 msgstr "No BOM input has a shelf-life policy"
@@ -7932,6 +7953,9 @@ msgstr "No matches"
 
 msgid "No matches for \"{query}\". Try a different search term."
 msgstr "No matches for \"{query}\". Try a different search term."
+
+msgid "No material properties"
+msgstr "No material properties"
 
 msgid "No new notifications"
 msgstr "No new notifications"

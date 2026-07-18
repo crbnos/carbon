@@ -1678,6 +1678,9 @@ msgstr "Numéro de lot"
 msgid "Batch Number"
 msgstr "Numéro de lot"
 
+msgid "Batch Planning"
+msgstr "Planification par lots"
+
 msgid "Batch Properties"
 msgstr "Propriétés de lot"
 
@@ -1689,6 +1692,12 @@ msgstr "Suivi des lots"
 
 msgid "Batch Tracking"
 msgstr "Suivi par lot"
+
+msgid "Batchable"
+msgstr "Regroupable"
+
+msgid "Batchable — multiple jobs can run on this process at the same time"
+msgstr "Regroupable — plusieurs travaux peuvent s'exécuter sur ce processus en même temps"
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
@@ -1925,6 +1934,9 @@ msgstr "Annulé"
 
 msgid "Cancelled"
 msgstr "Annulé"
+
+msgid "Candidate Operations"
+msgstr "Opérations candidates"
 
 msgid "Cannot add parameters to unsaved operation"
 msgstr "Impossible d'ajouter des paramètres à une opération non enregistrée"
@@ -7501,6 +7513,9 @@ msgstr "Nouvel Attribut"
 msgid "New Attribute Category"
 msgstr "Nouvelle Catégorie d'Attribut"
 
+msgid "New batch"
+msgstr "Nouveau lot"
+
 msgid "New Consumable"
 msgstr "Nouveau consommable"
 
@@ -7803,6 +7818,9 @@ msgstr "Aucune action requise"
 msgid "No actions selected"
 msgstr "Aucune action sélectionnée"
 
+msgid "No active batches. Drag an operation onto \"New batch\" to start one."
+msgstr "Aucun lot actif. Faites glisser une opération sur \"Nouveau lot\" pour en démarrer un."
+
 msgid "No active jobs found for this sales order. The order will be cancelled directly."
 msgstr "Aucune tâche active trouvée pour cette commande client. La commande sera annulée directement."
 
@@ -7830,6 +7848,9 @@ msgstr "Aucun filtre disponible"
 
 msgid "No available tracked entities found"
 msgstr "Aucune entité suivie disponible trouvée"
+
+msgid "No batchable operations"
+msgstr "Aucune opération regroupable"
 
 msgid "No BOM input has a shelf-life policy"
 msgstr "Aucune entrée de nomenclature n'a de politique de durée de vie"
@@ -7932,6 +7953,9 @@ msgstr "Aucune correspondance"
 
 msgid "No matches for \"{query}\". Try a different search term."
 msgstr "Aucune correspondance pour « {query} ». Essayez un terme de recherche différent."
+
+msgid "No material properties"
+msgstr "Aucune propriété de matériau"
 
 msgid "No new notifications"
 msgstr "Aucune nouvelle notification"

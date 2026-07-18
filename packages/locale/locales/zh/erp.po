@@ -1678,6 +1678,9 @@ msgstr "批号"
 msgid "Batch Number"
 msgstr "批号"
 
+msgid "Batch Planning"
+msgstr ""
+
 msgid "Batch Properties"
 msgstr "批量属性"
 
@@ -1689,6 +1692,12 @@ msgstr "批次追踪"
 
 msgid "Batch Tracking"
 msgstr "批次追踪"
+
+msgid "Batchable"
+msgstr ""
+
+msgid "Batchable — multiple jobs can run on this process at the same time"
+msgstr ""
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
@@ -1925,6 +1934,9 @@ msgstr "已取消"
 
 msgid "Cancelled"
 msgstr "已取消"
+
+msgid "Candidate Operations"
+msgstr ""
 
 msgid "Cannot add parameters to unsaved operation"
 msgstr "无法向未保存的操作添加参数"
@@ -7501,6 +7513,9 @@ msgstr "新属性"
 msgid "New Attribute Category"
 msgstr "新属性类别"
 
+msgid "New batch"
+msgstr ""
+
 msgid "New Consumable"
 msgstr "新消耗品"
 
@@ -7803,6 +7818,9 @@ msgstr "无需操作"
 msgid "No actions selected"
 msgstr "未选择任何操作"
 
+msgid "No active batches. Drag an operation onto \"New batch\" to start one."
+msgstr ""
+
 msgid "No active jobs found for this sales order. The order will be cancelled directly."
 msgstr "未找到此销售订单的活跃工作。订单将直接取消。"
 
@@ -7830,6 +7848,9 @@ msgstr "没有可用的筛选器"
 
 msgid "No available tracked entities found"
 msgstr "未找到可用的追踪实体"
+
+msgid "No batchable operations"
+msgstr ""
 
 msgid "No BOM input has a shelf-life policy"
 msgstr "没有物料清单输入具有保质期政策"
@@ -7932,6 +7953,9 @@ msgstr "没有匹配项"
 
 msgid "No matches for \"{query}\". Try a different search term."
 msgstr "没有匹配\"{query}\"的结果。请尝试不同的搜索词。"
+
+msgid "No material properties"
+msgstr ""
 
 msgid "No new notifications"
 msgstr "没有新通知"

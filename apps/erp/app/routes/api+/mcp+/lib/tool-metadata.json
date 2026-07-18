@@ -21779,6 +21779,110 @@
       }
     },
     {
+      "name": "production_getJobOperationBatches",
+      "module": "production",
+      "classification": "READ",
+      "description": "get job operation batches",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "locationId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "locationId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "locationId"
+        ]
+      }
+    },
+    {
+      "name": "production_getJobOperationsByBatch",
+      "module": "production",
+      "classification": "READ",
+      "description": "get job operations by batch",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "batchIds"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "batchIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "batchIds"
+        ]
+      }
+    },
+    {
+      "name": "production_getBatchableOperations",
+      "module": "production",
+      "classification": "READ",
+      "description": "get batchable operations",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "locationId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "locationId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "locationId"
+        ]
+      }
+    },
+    {
+      "name": "production_batchOperations",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "batch operations",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "params"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "params": {}
+        },
+        "required": [
+          "params"
+        ]
+      }
+    },
+    {
       "name": "purchasing_closePurchaseOrder",
       "module": "purchasing",
       "classification": "WRITE",

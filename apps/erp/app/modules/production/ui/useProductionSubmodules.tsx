@@ -2,6 +2,7 @@ import { useLingui } from "@lingui/react/macro";
 import {
   LuChartLine,
   LuCirclePlay,
+  LuLayers,
   LuListChecks,
   LuSquareChartGantt,
   LuSquareKanban,
@@ -52,6 +53,11 @@ export default function useProductionSubmodules() {
           name: t`Schedule`,
           to: path.to.scheduleDates,
           icon: <LuSquareKanban />
+        },
+        {
+          name: t`Batch Planning`,
+          to: path.to.batchPlanning,
+          icon: <LuLayers />
         }
       ]
     },

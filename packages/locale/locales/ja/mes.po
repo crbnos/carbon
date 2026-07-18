@@ -197,6 +197,9 @@ msgstr "完了"
 msgid "Complete All"
 msgstr "すべて完了"
 
+msgid "Complete Batch"
+msgstr "バッチ完了"
+
 msgid "Completed"
 msgstr "完了済み"
 
@@ -314,6 +317,9 @@ msgstr "メールアドレス"
 
 msgid "Empty work centers"
 msgstr "空の作業センター"
+
+msgid "End Batch"
+msgstr "バッチ終了"
 
 msgid "End Operations"
 msgstr "工程を終了"
@@ -822,11 +828,17 @@ msgstr "在庫削除"
 msgid "Remove part"
 msgstr "パーツを削除"
 
+msgid "Retry Completion"
+msgstr ""
+
 msgid "Rework"
 msgstr "リワーク"
 
 msgid "Rework created successfully"
 msgstr "リワーク作成に成功しました"
+
+msgid "Running"
+msgstr "実行中"
 
 msgid "Sales Order"
 msgstr "受注"
@@ -977,6 +989,9 @@ msgstr "使用済みスペアパーツ"
 
 msgid "Start"
 msgstr "開始"
+
+msgid "Start Batch"
+msgstr "バッチ開始"
 
 msgid "Station User"
 msgstr "ステーションユーザー"

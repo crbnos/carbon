@@ -197,6 +197,9 @@ msgstr "Завершить"
 msgid "Complete All"
 msgstr "Завершить все"
 
+msgid "Complete Batch"
+msgstr "Завершить партию"
+
 msgid "Completed"
 msgstr "Завершено"
 
@@ -314,6 +317,9 @@ msgstr "Электронная почта"
 
 msgid "Empty work centers"
 msgstr "Пустые рабочие центры"
+
+msgid "End Batch"
+msgstr "Закончить партию"
 
 msgid "End Operations"
 msgstr "Завершить операции"
@@ -822,11 +828,17 @@ msgstr "Списать запас"
 msgid "Remove part"
 msgstr "Удалить деталь"
 
+msgid "Retry Completion"
+msgstr ""
+
 msgid "Rework"
 msgstr "Переделка"
 
 msgid "Rework created successfully"
 msgstr "Переработка успешно создана"
+
+msgid "Running"
+msgstr "Выполняется"
 
 msgid "Sales Order"
 msgstr "Заказ на продажу"
@@ -977,6 +989,9 @@ msgstr "Использованные запасные части"
 
 msgid "Start"
 msgstr "Старт"
+
+msgid "Start Batch"
+msgstr "Начать партию"
 
 msgid "Station User"
 msgstr "Пользователь станции"
