@@ -31,18 +31,28 @@ stops a release; the copy says as much: *"Where the affected items are used acro
 nothing here blocks releasing."*
 </Callout>
 
-## Review the diff, then release
+## Review the changes, then release
 
-Release lives on the change order at **"Implementation"**. The **"Release change order"** dialog lays out
-every affected item's changes as a read-only diff before you commit — *"Review each item's changes, then
-confirm — releasing can't be undone."*
+You don't have to wait for release to see what a change order does. The overview page carries a **Changes**
+card, between the description and the action tasks, that rolls up **every** affected item's diff as you author
+it — each item labeled with its change type, its diff rendered read-only. It's the same view the release dialog
+shows, available the whole time so you can check your work before you commit. An item with nothing edited yet
+reads *"No changes yet."*
 
-The diff compares each item's edited draft against the method it was snapshotted from, across three axes:
+Release itself lives on the change order at **"Implementation"**. The **"Release change order"** dialog lays out
+that same per-item diff one more time before you commit — *"Review each item's changes, then confirm —
+releasing can't be undone."*
 
-- **Materials** — added, removed, and modified BoM lines, field by field.
-- **Operations** — added, removed, and modified BoP operations and their steps, parameters, and tools.
-- **Attributes** — changed item fields (name, description, unit of measure, tracking type, replenishment
+Each item's diff compares its edited draft against the method it was snapshotted from, across four sections:
+
+- **Bill of Materials** — added, removed, and modified BoM lines, field by field.
+- **Bill of Process** — added, removed, and modified operations and their steps, parameters, and tools.
+- **Properties** — changed item fields (name, description, unit of measure, tracking type, replenishment
   system, and the rest), one row per changed column.
+- **Supplier Parts** — for a purchased Revision or New Part, the [suppliers you set up on the
+  line](/docs/reference/change-orders/change-types#supplier-parts-on-a-purchased-line), each listed as an
+  addition with its part number, unit price, min order qty, order multiple, conversion factor, and purchasing
+  unit. A draft starts with none, so every supplier you add shows here.
 
 <Callout type="info" title="The diff is exact because the draft is real.">
 There's no shadow copy of your edits to drift out of sync. You edited an actual draft method, so the diff is

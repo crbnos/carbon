@@ -72,12 +72,23 @@ For the bracket we want the wall change to carry a new drawing revision and phas
 **Revision**. You thicken the wall in the attributes, drop the extra fastener line from the BoM, and attach
 the updated drawing — all on the draft.
 
+<Callout tone="amber" badge="PURCHASED PARTS NEED A SUPPLIER" title="A bought revision releases un-buyable unless you set its supplier up first.">
+If the revised part were purchased instead of made, its line would carry a **Supplier Parts** grid. The draft
+starts with none, because the old revision's suppliers aren't copied over. Leave it empty and the new part
+releases with nowhere to buy it — no purchase order can reference it. So for a **Buy** revision you add the
+supplier, part number, price, and order quantities on the line before you release.
+</Callout>
+
 ## Review the diff
 
 Advance the change order through its stages: **Draft**, then **"Start"**, then **"Engineering Complete"**,
 then **"Implementation"**. It only moves forward, one step at a time, and **"Start"**, **"Implementation"**,
 and **"Done"** each notify the team. There's no separate approval step to configure — the stages are the
 workflow, and the change order is its own gate.
+
+You don't have to reach Implementation to see what you've done. The overview page carries a **Changes** card
+that rolls up every affected item's diff as you edit — the dropped fastener, the thicker wall, any supplier you
+added — so the review is available the whole time, not just at the gate.
 
 At **"Implementation"** the **"Release"** action opens. It doesn't just apply the change: it shows you every
 affected item's change as a read-only diff first. Materials added and removed, operations and their steps

@@ -45,6 +45,21 @@ adding a Buy item coerces its change type to **Revision** (attributes and docume
 restricted to Parts and Tools.
 </Callout>
 
+## Supplier parts on a purchased line
+
+A **Revision** or **New Part** whose draft item is purchased (**Buy** or **Buy and Make**) gets a **Supplier
+Parts** grid on its line, right alongside the properties editor. You use it to set up how the new part or
+revision is bought: **Supplier**, **Supplier ID** (the supplier's own part number), **Unit Price**, **Unit of
+Measure**, **Minimum Order Quantity**, and **Conversion Factor**. Add, edit, and delete rows here the same way
+you would on a live part.
+
+<Callout type="warning" title="Set suppliers up before you release, or the released part can't be bought.">
+A draft item starts with **no** supplier parts — the source item's suppliers aren't copied onto the draft. If a
+purchased Revision or New Part releases with an empty grid, the new part is stocked but has no way to buy it,
+so a purchase order can't reference it. Fill the grid on the line first. The suppliers you add show up in the
+change order's [changes](/docs/reference/change-orders/lifecycle#review-the-changes-then-release) as additions.
+</Callout>
+
 ## Related
 
 <Cards>
