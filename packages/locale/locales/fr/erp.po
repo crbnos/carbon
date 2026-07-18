@@ -1061,6 +1061,10 @@ msgstr "Êtes-vous sûr de vouloir activer le processus : {name} ? Il réappara�
 msgid "Are you sure you want to activate this gauge?."
 msgstr "Êtes-vous sûr de vouloir activer cette jauge ?."
 
+#. placeholder {0}: routeData?.changeOrder?.changeOrderId ?? ""
+msgid "Are you sure you want to cancel {0}? It will be closed and read-only until you reopen it."
+msgstr ""
+
 #. placeholder {0}: routeData?.rfqSummary ?.rfqId!
 msgid "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
 msgstr "Êtes-vous sûr de vouloir annuler {0} ? Cela annulera également tous les devis fournisseurs associés."
@@ -1932,6 +1936,12 @@ msgstr "Impossible de télécharger ce fichier"
 msgid "Cancel"
 msgstr "Annuler"
 
+msgid "Cancel change order"
+msgstr ""
+
+msgid "Cancel Change Order"
+msgstr ""
+
 msgid "Cancel Job"
 msgstr "Annuler le travail"
 
@@ -2102,9 +2112,6 @@ msgstr "Ordre de modification"
 
 msgid "Change Order Actions"
 msgstr "Actions d'ordre de modification"
-
-msgid "Change Order Categories"
-msgstr "Catégories d'ordres de modification"
 
 msgid "Change Order Types"
 msgstr "Types d'ordres de modification"
@@ -3013,8 +3020,8 @@ msgstr "Créé par"
 msgid "Created change order action"
 msgstr "Action d'ordre de modification créée"
 
-msgid "Created change order category"
-msgstr "Catégorie d'ordre de modification créée"
+msgid "Created change order type"
+msgstr ""
 
 msgid "Created consumable"
 msgstr "Consommable créé"
@@ -3628,6 +3635,9 @@ msgstr "Supprimer {periodLabel}"
 msgid "Delete {storageUnitName}"
 msgstr "Supprimer {storageUnitName}"
 
+msgid "Delete action"
+msgstr ""
+
 msgid "Delete Action"
 msgstr "Supprimer l'action"
 
@@ -3877,6 +3887,9 @@ msgstr "Supprimer le transfert"
 
 msgid "Delete Transfer Line"
 msgstr "Supprimer la ligne de transfert"
+
+msgid "Delete Type"
+msgstr ""
 
 msgid "Delete Unit of Measure"
 msgstr "Supprimer l'unité de mesure"
@@ -4319,8 +4332,8 @@ msgstr "Modifier l'ordre de modification"
 msgid "Edit Change Order Action"
 msgstr "Modifier l'action d'ordre de modification"
 
-msgid "Edit Change Order Category"
-msgstr "Modifier la catégorie d'ordre de modification"
+msgid "Edit Change Order Type"
+msgstr ""
 
 msgid "Edit column visibility"
 msgstr "Modifier la visibilité des colonnes"
@@ -4570,6 +4583,9 @@ msgstr "Modifier le transfert"
 
 msgid "Edit Transfer Line"
 msgstr "Modifier la ligne de transfert"
+
+msgid "Edit Type"
+msgstr ""
 
 msgid "Edit Unit of Measure"
 msgstr "Modifier l'unité de mesure"
@@ -6668,6 +6684,9 @@ msgstr "Conserver les paramètres actuels"
 msgid "Keep existing pricing, only add new items"
 msgstr "Conserver la tarification existante, ajouter uniquement les nouveaux articles"
 
+msgid "Keep Open"
+msgstr ""
+
 msgid "Key"
 msgstr "Clé"
 
@@ -7618,8 +7637,8 @@ msgstr "Nouvelle demande de modification"
 msgid "New Change Order Action"
 msgstr "Nouvelle action d'ordre de modification"
 
-msgid "New Change Order Category"
-msgstr "Nouvelle catégorie de demande de modification"
+msgid "New Change Order Type"
+msgstr ""
 
 msgid "New Consumable"
 msgstr "Nouveau consommable"
@@ -8730,6 +8749,9 @@ msgstr "Numéro de pièce"
 msgid "Part or Tool"
 msgstr "Pièce ou outil"
 
+msgid "Part Supersession"
+msgstr ""
+
 msgid "Partial"
 msgstr "Partiel"
 
@@ -9692,9 +9714,6 @@ msgstr "Raison"
 
 msgid "Reason Account"
 msgstr "Compte de raison"
-
-msgid "Reason for change"
-msgstr "Raison du changement"
 
 msgid "Reason for Change"
 msgstr "Raison du changement"
@@ -10682,9 +10701,6 @@ msgstr "Sélectionner une équipe"
 msgid "Select all"
 msgstr "Sélectionner tout"
 
-msgid "Select an affected item, or add one on the left."
-msgstr "Sélectionnez un article affecté ou en ajouter un à gauche."
-
 msgid "Select an assignee"
 msgstr "Sélectionner un assigné"
 
@@ -11341,6 +11357,9 @@ msgstr "Démarrer"
 #. placeholder {0}: plan.stripeTrialPeriodDays
 msgid "Start {0} Day Free Trial"
 msgstr "Commencer l'essai gratuit de {0} jours"
+
+msgid "Start counting"
+msgstr "Commencer le comptage"
 
 msgid "Start Date"
 msgstr "Date de début"

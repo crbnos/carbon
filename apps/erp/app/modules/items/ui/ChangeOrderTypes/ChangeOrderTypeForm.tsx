@@ -44,10 +44,10 @@ const ChangeOrderTypeForm = ({
 
     if (fetcher.state === "loading" && fetcher.data?.data) {
       onClose?.();
-      toast.success(t`Created change order category`);
+      toast.success(t`Created change order type`);
     } else if (fetcher.state === "idle" && fetcher.data?.error) {
       toast.error(
-        `Failed to create change order category: ${fetcher.data.error.message}`
+        `Failed to create change order type: ${fetcher.data.error.message}`
       );
     }
   }, [fetcher.data, fetcher.state, onClose, type, t]);
@@ -81,15 +81,15 @@ const ChangeOrderTypeForm = ({
             <ModalDrawerHeader>
               <ModalDrawerTitle>
                 {isEditing
-                  ? t`Edit Change Order Category`
-                  : t`New Change Order Category`}
+                  ? t`Edit Change Order Type`
+                  : t`New Change Order Type`}
               </ModalDrawerTitle>
             </ModalDrawerHeader>
             <ModalDrawerBody>
               <Hidden name="id" />
               <Hidden name="type" value={type} />
               <VStack spacing={4}>
-                <Input name="name" label={t`Category`} />
+                <Input name="name" label={t`Type`} />
               </VStack>
             </ModalDrawerBody>
             <ModalDrawerFooter>

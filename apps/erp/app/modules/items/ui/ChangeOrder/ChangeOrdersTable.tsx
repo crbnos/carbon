@@ -9,6 +9,7 @@ import {
   LuCircleGauge,
   LuGitPullRequestArrow,
   LuPencil,
+  LuSignal,
   LuTrash,
   LuUser
 } from "react-icons/lu";
@@ -22,8 +23,12 @@ import { useRealtime } from "~/hooks/useRealtime";
 import { usePeople } from "~/stores/people";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
-import { changeOrderStatus } from "../../changeOrder.models";
+import {
+  changeOrderPriority,
+  changeOrderStatus
+} from "../../changeOrder.models";
 import type { ChangeOrder } from "../../types";
+import ChangeOrderPriority from "./ChangeOrderPriority";
 import ChangeOrderStatus from "./ChangeOrderStatus";
 
 type ChangeOrdersTableProps = {
@@ -101,6 +106,23 @@ const ChangeOrdersTable = memo(
               options: types.map((type) => ({
                 label: type.name,
                 value: type.id
+              }))
+            }
+          }
+        },
+        {
+          accessorKey: "priority",
+          header: t`Priority`,
+          cell: ({ row }) => (
+            <ChangeOrderPriority priority={row.original.priority} />
+          ),
+          meta: {
+            icon: <LuSignal />,
+            filter: {
+              type: "static",
+              options: changeOrderPriority.map((priority) => ({
+                label: priority,
+                value: priority
               }))
             }
           }

@@ -13,6 +13,7 @@ Tracks item quantities across locations and storage units. Manages receipts, shi
 - **Warehouse Transfer** — moves inventory between locations (inter-location).
 - **Picking List** — generated pick instructions with FEFO/FIFO ordering and tracked entity allocation.
 - **Kanban** — pull-based replenishment signal between storage units.
+- **Inventory Count** — physical/cycle count. Created with an optional scope (`storageUnitIds` + `itemType`) recorded in the header's `scope` JSONB (written at create; not yet read back). `generateInventoryCountLines` snapshots on-hand into `inventoryCountLine` rows, **excluding Rejected AND Consumed tracked lots**. The count **detail** table filters lines by item type / storage unit / storage type / tags / material attributes via the `inventoryCountLines` **view** (line → item → subtype tables → storageUnit, flattened) — the same generic column-filter set the quantities screen uses. There is no material-attribute scope at create time.
 
 ## Safety
 
@@ -67,6 +68,7 @@ pnpm exec turbo run typecheck --filter=erp   # the app's package name is "erp", 
 - `generatePickingList` / `getPickingListAvailability` / `getPickingSchedule` — picking operations
 - `getDefaultStorageUnitOrStorageUnitWithHighestQuantity` — picking defaults
 - `getTrackedEntities` / `getTrackedEntityExpirations` / `getShelfLifeForItems` — tracking and expiry
+- `generateInventoryCountLines` — Kysely; aggregates `itemLedger` on-hand into `inventoryCountLine` rows, scoped by the optional `storageUnitIds` + `itemType`. Excludes `Rejected` and `Consumed` tracked lots (status-aware, matching `quantityOnHand`); non-tracked rows (NULL status) always included. `getInventoryCountLines` reads the `inventoryCountLines` view (joins item + subtype tables on `id = item."readableId"` — the same predicate `get_inventory_quantities` uses, all LEFT — + `storageUnit`) so the detail table can apply generic column filters on flat columns.
 
 ## Key Exports
 

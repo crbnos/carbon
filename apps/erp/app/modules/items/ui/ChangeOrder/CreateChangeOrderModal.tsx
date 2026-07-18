@@ -1,6 +1,7 @@
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { useEffect, useRef } from "react";
 import { useFetcher } from "react-router";
+import { useUser } from "~/hooks";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import ChangeOrderForm from "./ChangeOrderForm";
@@ -21,6 +22,7 @@ const CreateChangeOrderModal = ({
   onClose
 }: CreateChangeOrderModalProps) => {
   const typesFetcher = useFetcher<{ types: ListItem[] }>();
+  const user = useUser();
 
   // Load categories once when the modal mounts (it mounts only while open).
   const loadedRef = useRef(false);
@@ -37,7 +39,7 @@ const CreateChangeOrderModal = ({
     reasonForChange: "",
     description: "",
     changeOrderTypeId: "",
-    assignee: "",
+    assignee: user.id,
     priority: "Medium" as const,
     openDate: today(getLocalTimeZone()).toString(),
     dueDate: "",

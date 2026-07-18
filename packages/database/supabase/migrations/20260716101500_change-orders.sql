@@ -131,9 +131,17 @@ INSERT INTO "changeOrderType" ("name", "companyId", "createdBy")
 SELECT co_types.name, c."id", 'system'
 FROM "company" c
 CROSS JOIN (VALUES
-  ('Design improvement'),
-  ('Obsolescence'),
-  ('Cost reduction')
+  ('Design Improvement'),
+  ('Cost Reduction'),
+  ('Quality / Reliability Improvement'),
+  ('Supplier / Sourcing Change'),
+  ('Material or Component Change'),
+  ('Obsolescence / End-of-Life'),
+  ('Regulatory / Compliance'),
+  ('Safety'),
+  ('Manufacturing / Producibility'),
+  ('Customer Request'),
+  ('Documentation Error / Correction')
 ) AS co_types(name);
 
 -- -----------------------------------------------------------------------------

@@ -371,10 +371,11 @@ export const path = {
       generatePath(
         `${x}/items/change-order/${id}/affected/${affectedId}/cutover`
       ),
-    // The selected affected item drives the middle pane via the URL (not client
-    // state), so refresh + back/forward reselect it — mirrors the PO line detail.
+    // Each affected item is its own line-item detail route (mirrors the sales
+    // order line detail `${x}/sales-order/${orderId}/${lineId}/details`). The URL
+    // drives selection — refresh + back/forward reselect it.
     changeOrderAffectedItem: (id: string, affectedId: string) =>
-      generatePath(`${x}/items/change-order/${id}/details/${affectedId}`),
+      generatePath(`${x}/items/change-order/${id}/${affectedId}/details`),
     changeOrderDetails: (id: string) =>
       generatePath(`${x}/items/change-order/${id}/details`),
     changeOrderRequiredAction: (id: string) =>
@@ -1335,7 +1336,10 @@ export const path = {
       generatePath(`${x}/people/attributes/list/${id}/new`),
     newBatch: `${x}/inventory/batches/new`,
     newBulkJob: `${x}/job/bulk/new`,
-    newChangeOrder: `${x}/items/change-order/new`,
+    // Create form lives at its own top-level route (like /x/part/new and
+    // /x/sales-order/new) so it renders with the app sidebar rather than nested
+    // under the Items module layout.
+    newChangeOrder: `${x}/change-order/new`,
     // One-click create-a-CO-for-this-item (POST) — used by the part version
     // dropdown and the new-revision modal.
     newChangeOrderFromItem: (itemId: string) =>

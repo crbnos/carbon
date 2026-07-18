@@ -1061,6 +1061,10 @@ msgstr "Вы уверены, что хотите активировать про
 msgid "Are you sure you want to activate this gauge?."
 msgstr "Вы уверены, что хотите активировать этот прибор?."
 
+#. placeholder {0}: routeData?.changeOrder?.changeOrderId ?? ""
+msgid "Are you sure you want to cancel {0}? It will be closed and read-only until you reopen it."
+msgstr ""
+
 #. placeholder {0}: routeData?.rfqSummary ?.rfqId!
 msgid "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
 msgstr "Вы уверены, что хотите отменить {0}? Это также отменит все связанные предложения поставщиков."
@@ -1932,6 +1936,12 @@ msgstr "Не удается загрузить этот файл"
 msgid "Cancel"
 msgstr "Отмена"
 
+msgid "Cancel change order"
+msgstr ""
+
+msgid "Cancel Change Order"
+msgstr ""
+
 msgid "Cancel Job"
 msgstr "Отменить задание"
 
@@ -2102,9 +2112,6 @@ msgstr "Приказ об изменении"
 
 msgid "Change Order Actions"
 msgstr "Действия приказа об изменении"
-
-msgid "Change Order Categories"
-msgstr "Категории приказов об изменении"
 
 msgid "Change Order Types"
 msgstr "Типы приказов об изменении"
@@ -3013,8 +3020,8 @@ msgstr "Создано"
 msgid "Created change order action"
 msgstr "Создано действие приказа об изменении"
 
-msgid "Created change order category"
-msgstr "Создана категория приказа об изменении"
+msgid "Created change order type"
+msgstr ""
 
 msgid "Created consumable"
 msgstr "Расходный материал создан"
@@ -3628,6 +3635,9 @@ msgstr "Удалить {periodLabel}"
 msgid "Delete {storageUnitName}"
 msgstr "Удалить {storageUnitName}"
 
+msgid "Delete action"
+msgstr ""
+
 msgid "Delete Action"
 msgstr "Удалить действие"
 
@@ -3877,6 +3887,9 @@ msgstr "Удалить передачу"
 
 msgid "Delete Transfer Line"
 msgstr "Удалить строку передачи"
+
+msgid "Delete Type"
+msgstr ""
 
 msgid "Delete Unit of Measure"
 msgstr "Удалить единицу измерения"
@@ -4319,8 +4332,8 @@ msgstr "Редактировать приказ об изменении"
 msgid "Edit Change Order Action"
 msgstr "Редактировать действие приказа об изменении"
 
-msgid "Edit Change Order Category"
-msgstr "Редактировать категорию приказа об изменении"
+msgid "Edit Change Order Type"
+msgstr ""
 
 msgid "Edit column visibility"
 msgstr "Изменить видимость столбцов"
@@ -4570,6 +4583,9 @@ msgstr "Редактировать передачу"
 
 msgid "Edit Transfer Line"
 msgstr "Редактировать строку передачи"
+
+msgid "Edit Type"
+msgstr ""
 
 msgid "Edit Unit of Measure"
 msgstr "Редактировать единицу измерения"
@@ -6668,6 +6684,9 @@ msgstr "Сохранить текущие"
 msgid "Keep existing pricing, only add new items"
 msgstr "Сохранить существующие цены, добавить только новые товары"
 
+msgid "Keep Open"
+msgstr ""
+
 msgid "Key"
 msgstr "Ключ"
 
@@ -7618,8 +7637,8 @@ msgstr "Новый приказ на изменение"
 msgid "New Change Order Action"
 msgstr "Новое действие приказа об изменении"
 
-msgid "New Change Order Category"
-msgstr "Новая категория приказа на изменение"
+msgid "New Change Order Type"
+msgstr ""
 
 msgid "New Consumable"
 msgstr "Новый расходный материал"
@@ -8730,6 +8749,9 @@ msgstr "Номер детали"
 msgid "Part or Tool"
 msgstr "Деталь или инструмент"
 
+msgid "Part Supersession"
+msgstr ""
+
 msgid "Partial"
 msgstr "Частичный"
 
@@ -9692,9 +9714,6 @@ msgstr "Причина"
 
 msgid "Reason Account"
 msgstr "Счет причины"
-
-msgid "Reason for change"
-msgstr "Причина изменения"
 
 msgid "Reason for Change"
 msgstr "Причина изменения"
@@ -10682,9 +10701,6 @@ msgstr "Выберите команду"
 msgid "Select all"
 msgstr "Выбрать все"
 
-msgid "Select an affected item, or add one on the left."
-msgstr "Выберите затронутый элемент или добавьте один слева."
-
 msgid "Select an assignee"
 msgstr "Выберите исполнителя"
 
@@ -11341,6 +11357,9 @@ msgstr "Начать"
 #. placeholder {0}: plan.stripeTrialPeriodDays
 msgid "Start {0} Day Free Trial"
 msgstr "Начать {0}-дневный бесплатный пробный период"
+
+msgid "Start counting"
+msgstr "Начать подсчёт"
 
 msgid "Start Date"
 msgstr "Дата начала"

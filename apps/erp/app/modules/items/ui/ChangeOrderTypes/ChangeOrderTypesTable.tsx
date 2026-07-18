@@ -26,7 +26,7 @@ const ChangeOrderTypesTable = memo(
       return [
         {
           accessorKey: "name",
-          header: t`Category`,
+          header: t`Type`,
           cell: ({ row }) => (
             <Hyperlink to={row.original.id}>
               <Enumerable value={row.original.name} />
@@ -52,7 +52,7 @@ const ChangeOrderTypesTable = memo(
               }}
             >
               <MenuIcon icon={<LuPencil />} />
-              {t`Edit Category`}
+              {t`Edit Type`}
             </MenuItem>
             <MenuItem
               destructive
@@ -66,7 +66,7 @@ const ChangeOrderTypesTable = memo(
               }}
             >
               <MenuIcon icon={<LuTrash />} />
-              {t`Delete Category`}
+              {t`Delete Type`}
             </MenuItem>
           </>
         );
@@ -82,13 +82,13 @@ const ChangeOrderTypesTable = memo(
         primaryAction={
           permissions.can("create", "parts") && (
             <New
-              label={t`Category`}
+              label={t`Type`}
               to={`${path.to.newChangeOrderType}?${params.toString()}`}
             />
           )
         }
         renderContextMenu={renderContextMenu}
-        title={t`Change Order Categories`}
+        title={t`Change Order Types`}
       />
     );
   }

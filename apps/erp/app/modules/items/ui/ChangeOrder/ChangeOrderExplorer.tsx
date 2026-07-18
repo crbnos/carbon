@@ -15,30 +15,39 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { LuCirclePlus, LuEllipsisVertical, LuTrash } from "react-icons/lu";
 import { Link, useFetcher, useParams } from "react-router";
 import { ItemThumbnail, MethodItemTypeIcon } from "~/components";
+import { useRouteData } from "~/hooks";
+import { canEditChangeOrder } from "~/modules/items";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import type { ItemType } from "~/modules/shared";
 import { path } from "~/utils/path";
+import type { ChangeOrder } from "../../types";
 import AffectedItemForm from "./AffectedItemForm";
 import type { AffectedItemDraft } from "./affectedItem.types";
 
-// Left pane of the change-order workspace — deliberately the same layout as the
-// Purchase Order explorer (PurchaseOrderExplorer / PurchaseOrderLineItem): a
-// full-bleed list of rows (thumbnail + id + description, hover ⋮ menu) over a
-// bottom "Add" button. Selection lives in the URL (the affectedId route param).
-export default function AffectedItemsSidebar({
-  changeOrderId,
-  affectedItems,
-  isDisabled
-}: {
-  changeOrderId: string;
-  affectedItems: AffectedItemDraft[];
-  isDisabled: boolean;
-}) {
+// Explorer (left panel) of the change-order workspace — deliberately the same
+// layout as the Purchase Order explorer (PurchaseOrderExplorer /
+// PurchaseOrderLineItem): a full-bleed list of rows (thumbnail + id +
+// description, hover ⋮ menu) over a bottom "Add" button. Selection lives in the
+// URL (the affectedId route param). Self-contained: reads the affected items and
+// lock state from the $id route loader, so ResizablePanels can render it with no
+// props (mirrors SalesOrderExplorer).
+export default function ChangeOrderExplorer() {
+  const { id } = useParams();
+  if (!id) throw new Error("id not found");
+
+  const routeData = useRouteData<{
+    changeOrder: ChangeOrder;
+    affectedItems: AffectedItemDraft[];
+  }>(path.to.changeOrder(id));
+
+  const affectedItems = routeData?.affectedItems ?? [];
+  const isDisabled = !canEditChangeOrder(routeData?.changeOrder?.status);
+
   const disclosure = useDisclosure();
 
   return (
     <>
-      <aside className="w-64 flex-shrink-0 bg-card h-full border-r border-border text-sm flex flex-col justify-between">
+      <div className="w-full h-full text-sm flex flex-col justify-between">
         <VStack
           spacing={0}
           className="flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
@@ -51,7 +60,7 @@ export default function AffectedItemsSidebar({
             affectedItems.map((affected) => (
               <AffectedItemRow
                 key={affected.affectedItem.id}
-                changeOrderId={changeOrderId}
+                changeOrderId={id}
                 affected={affected}
                 isDisabled={isDisabled}
               />
@@ -71,11 +80,11 @@ export default function AffectedItemsSidebar({
             </Button>
           </div>
         )}
-      </aside>
+      </div>
 
       {disclosure.isOpen && (
         <AffectedItemForm
-          changeOrderId={changeOrderId}
+          changeOrderId={id}
           blacklist={affectedItems.map((a) => a.affectedItem.itemId)}
           onClose={disclosure.onClose}
         />

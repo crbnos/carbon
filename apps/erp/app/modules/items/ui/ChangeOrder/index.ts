@@ -1,17 +1,15 @@
 export { default as AffectedItemDetail } from "./AffectedItemDetail";
-export { default as AffectedItemsSidebar } from "./AffectedItemsSidebar";
 export type * from "./affectedItem.types";
 export { default as ChangeOrderActions } from "./ChangeOrderActions";
 export * from "./ChangeOrderContent";
 export { default as ChangeOrderDiffViewer } from "./ChangeOrderDiffViewer";
+export { default as ChangeOrderExplorer } from "./ChangeOrderExplorer";
 export { default as ChangeOrderForm } from "./ChangeOrderForm";
 export { default as ChangeOrderHeader } from "./ChangeOrderHeader";
 export { default as ChangeOrderProperties } from "./ChangeOrderProperties";
-export { default as ChangeOrderRail } from "./ChangeOrderRail";
 export { default as ChangeOrderReleaseMerge } from "./ChangeOrderReleaseMerge";
 export { default as ChangeOrderStatus } from "./ChangeOrderStatus";
 export { default as ChangeOrdersTable } from "./ChangeOrdersTable";
-export { default as ChangeOrderWorkspace } from "./ChangeOrderWorkspace";
 export { default as CreateChangeOrderModal } from "./CreateChangeOrderModal";
 export type { ChangeOrderImpactItem } from "./ImpactPanel";
 export { default as ImpactPanel } from "./ImpactPanel";

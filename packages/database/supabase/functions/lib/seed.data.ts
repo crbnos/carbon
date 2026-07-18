@@ -174,13 +174,21 @@ export const nonConformanceTypes = [
   { name: "Customer Complaint", createdBy: "system" }
 ] as const;
 
-// Change Order categories (the changeOrderType lookup). Kept in sync with the
+// Change Order types (the changeOrderType lookup). Kept in sync with the
 // one-time seed in the change-orders migration so new companies get the same
-// default categories the migration gave existing ones.
+// default types the migration gave existing ones.
 export const changeOrderTypes = [
-  { name: "Design improvement", createdBy: "system" },
-  { name: "Obsolescence", createdBy: "system" },
-  { name: "Cost reduction", createdBy: "system" }
+  { name: "Design Improvement", createdBy: "system" },
+  { name: "Cost Reduction", createdBy: "system" },
+  { name: "Quality / Reliability Improvement", createdBy: "system" },
+  { name: "Supplier / Sourcing Change", createdBy: "system" },
+  { name: "Material or Component Change", createdBy: "system" },
+  { name: "Obsolescence / End-of-Life", createdBy: "system" },
+  { name: "Regulatory / Compliance", createdBy: "system" },
+  { name: "Safety", createdBy: "system" },
+  { name: "Manufacturing / Producibility", createdBy: "system" },
+  { name: "Customer Request", createdBy: "system" },
+  { name: "Documentation Error / Correction", createdBy: "system" }
 ] as const;
 
 export const nonConformanceRequiredActions = [

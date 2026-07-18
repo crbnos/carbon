@@ -5,6 +5,7 @@ import type { JSONContent } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData, useParams } from "react-router";
+import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import {
   getChangeOrder,
   getChangeOrderActions,
@@ -27,7 +28,11 @@ import {
 } from "~/modules/items";
 import { getRevisionLock } from "~/modules/items/items.server";
 import type { AffectedItemDraft } from "~/modules/items/ui/ChangeOrder";
-import { ChangeOrderHeader } from "~/modules/items/ui/ChangeOrder";
+import {
+  ChangeOrderExplorer,
+  ChangeOrderHeader,
+  ChangeOrderProperties
+} from "~/modules/items/ui/ChangeOrder";
 import { getIssue, getIssues } from "~/modules/quality";
 import { getLocationsList } from "~/modules/resources";
 import type { MethodItemType, MethodType } from "~/modules/shared";
@@ -290,17 +295,32 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export default function ChangeOrderIdRoute() {
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
-  // Surfaced to child routes + header/properties via useRouteData.
+  // Surfaced to child routes + header/explorer/properties via useRouteData.
   useLoaderData<typeof loader>();
 
   return (
-    // The 3-pane workspace (rendered by the $id.details child via
-    // ChangeOrderWorkspace) owns the columns — left affected-items list, middle
-    // selected-item detail, right CO-centric rail — so the container is just the
-    // header plus a full-width Outlet.
-    <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full">
-      <ChangeOrderHeader />
-      <Outlet />
-    </div>
+    // Standard 3-pane detail workspace (matches sales-order / job): the explorer
+    // is the affected-items list, the content is the selected affected item's
+    // detail (the $id.details Outlet, with the CO-wide stage flow + actions on
+    // top), and the properties panel holds the CO-centric fields, details,
+    // actions, impact, and the release dialog.
+    <PanelProvider>
+      <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full">
+        <ChangeOrderHeader />
+        <div className="flex h-[calc(100dvh-99px)] overflow-hidden w-full">
+          <div className="flex flex-grow overflow-hidden">
+            <ResizablePanels
+              explorer={<ChangeOrderExplorer />}
+              content={
+                <div className="h-[calc(100dvh-99px)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
+                  <Outlet />
+                </div>
+              }
+              properties={<ChangeOrderProperties key={id} />}
+            />
+          </div>
+        </div>
+      </div>
+    </PanelProvider>
   );
 }

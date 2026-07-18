@@ -1061,6 +1061,10 @@ msgstr "İş akışını etkinleştirmek istediğinizden emin misiniz: {name}? T
 msgid "Are you sure you want to activate this gauge?."
 msgstr "Bu kalibratörü etkinleştirmek istediğinizden emin misiniz?."
 
+#. placeholder {0}: routeData?.changeOrder?.changeOrderId ?? ""
+msgid "Are you sure you want to cancel {0}? It will be closed and read-only until you reopen it."
+msgstr ""
+
 #. placeholder {0}: routeData?.rfqSummary ?.rfqId!
 msgid "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
 msgstr "{0}'yi iptal etmek istediğinizden emin misiniz? Bu aynı zamanda tüm ilgili tedarikçi tekliflerini de iptal edecektir."
@@ -1932,6 +1936,12 @@ msgstr "Bu dosya indirilemiyor"
 msgid "Cancel"
 msgstr "İptal"
 
+msgid "Cancel change order"
+msgstr ""
+
+msgid "Cancel Change Order"
+msgstr ""
+
 msgid "Cancel Job"
 msgstr "İşi İptal Et"
 
@@ -2102,9 +2112,6 @@ msgstr "Değişiklik Emri"
 
 msgid "Change Order Actions"
 msgstr "Değişiklik Emri İşlemleri"
-
-msgid "Change Order Categories"
-msgstr "Değişiklik Emri Kategorileri"
 
 msgid "Change Order Types"
 msgstr "Değişiklik Emri Türleri"
@@ -3013,8 +3020,8 @@ msgstr "Oluşturan"
 msgid "Created change order action"
 msgstr "Oluşturulan değişiklik emri işlemi"
 
-msgid "Created change order category"
-msgstr "Oluşturulan değişiklik emri kategorisi"
+msgid "Created change order type"
+msgstr ""
 
 msgid "Created consumable"
 msgstr "Tüketilebilir malzeme oluşturuldu"
@@ -3628,6 +3635,9 @@ msgstr "{periodLabel} öğesini sil"
 msgid "Delete {storageUnitName}"
 msgstr "Delete {storageUnitName}"
 
+msgid "Delete action"
+msgstr ""
+
 msgid "Delete Action"
 msgstr "İşlemi Sil"
 
@@ -3877,6 +3887,9 @@ msgstr "Transferi Sil"
 
 msgid "Delete Transfer Line"
 msgstr "Transfer Satırını Sil"
+
+msgid "Delete Type"
+msgstr ""
 
 msgid "Delete Unit of Measure"
 msgstr "Ölçü Birimini Sil"
@@ -4319,8 +4332,8 @@ msgstr "Değişiklik Emrini Düzenle"
 msgid "Edit Change Order Action"
 msgstr "Değişiklik Emri İşlemini Düzenle"
 
-msgid "Edit Change Order Category"
-msgstr "Değişiklik Emri Kategorisini Düzenle"
+msgid "Edit Change Order Type"
+msgstr ""
 
 msgid "Edit column visibility"
 msgstr "Sütun görünürlüğünü düzenle"
@@ -4570,6 +4583,9 @@ msgstr "Transferi Düzenle"
 
 msgid "Edit Transfer Line"
 msgstr "Transfer Satırını Düzenle"
+
+msgid "Edit Type"
+msgstr ""
 
 msgid "Edit Unit of Measure"
 msgstr "Birim Ölçü Düzenle"
@@ -6668,6 +6684,9 @@ msgstr "Mevcut Tut"
 msgid "Keep existing pricing, only add new items"
 msgstr "Mevcut fiyatlandırmayı koru, yalnızca yeni öğeler ekle"
 
+msgid "Keep Open"
+msgstr ""
+
 msgid "Key"
 msgstr "Anahtar"
 
@@ -7618,8 +7637,8 @@ msgstr "Yeni Değişiklik Emri"
 msgid "New Change Order Action"
 msgstr "Yeni Değişiklik Emri İşlemi"
 
-msgid "New Change Order Category"
-msgstr "Yeni Değişiklik Emri Kategorisi"
+msgid "New Change Order Type"
+msgstr ""
 
 msgid "New Consumable"
 msgstr "Yeni Sarf Malzemesi"
@@ -8730,6 +8749,9 @@ msgstr "Parça Numarası"
 msgid "Part or Tool"
 msgstr "Parça veya Araç"
 
+msgid "Part Supersession"
+msgstr ""
+
 msgid "Partial"
 msgstr "Kısmi"
 
@@ -9692,9 +9714,6 @@ msgstr "Neden"
 
 msgid "Reason Account"
 msgstr "Neden Hesabı"
-
-msgid "Reason for change"
-msgstr "Değişiklik nedeni"
 
 msgid "Reason for Change"
 msgstr "Değişiklik Nedeni"
@@ -10682,9 +10701,6 @@ msgstr "Bir ekip seçin"
 msgid "Select all"
 msgstr "Tümünü seç"
 
-msgid "Select an affected item, or add one on the left."
-msgstr "Etkilenen bir ürünü seçin veya solda bir tane ekleyin."
-
 msgid "Select an assignee"
 msgstr "Atanayı seçin"
 
@@ -11341,6 +11357,9 @@ msgstr "Başlat"
 #. placeholder {0}: plan.stripeTrialPeriodDays
 msgid "Start {0} Day Free Trial"
 msgstr "{0} Gün Ücretsiz Deneme Başlat"
+
+msgid "Start counting"
+msgstr "Saymaya başla"
 
 msgid "Start Date"
 msgstr "Başlangıç Tarihi"

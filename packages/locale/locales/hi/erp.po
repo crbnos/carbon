@@ -1061,6 +1061,10 @@ msgstr "क्या आप सुनिश्चित हैं कि आप 
 msgid "Are you sure you want to activate this gauge?."
 msgstr "क्या आप सुनिश्चित हैं कि आप इस गेज को सक्रिय करना चाहते हैं?"
 
+#. placeholder {0}: routeData?.changeOrder?.changeOrderId ?? ""
+msgid "Are you sure you want to cancel {0}? It will be closed and read-only until you reopen it."
+msgstr ""
+
 #. placeholder {0}: routeData?.rfqSummary ?.rfqId!
 msgid "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
 msgstr "क्या आप सुनिश्चित हैं कि आप {0} को रद्द करना चाहते हैं? यह सभी संबंधित आपूर्तिकर्ता उद्धरणों को भी रद्द कर देगा।"
@@ -1932,6 +1936,12 @@ msgstr "इस फ़ाइल को डाउनलोड नहीं कर 
 msgid "Cancel"
 msgstr "रद्द करें"
 
+msgid "Cancel change order"
+msgstr ""
+
+msgid "Cancel Change Order"
+msgstr ""
+
 msgid "Cancel Job"
 msgstr "नौकरी रद्द करें"
 
@@ -2102,9 +2112,6 @@ msgstr "परिवर्तन आदेश"
 
 msgid "Change Order Actions"
 msgstr "परिवर्तन आदेश कार्रवाई"
-
-msgid "Change Order Categories"
-msgstr "परिवर्तन आदेश श्रेणियां"
 
 msgid "Change Order Types"
 msgstr "परिवर्तन आदेश प्रकार"
@@ -3013,8 +3020,8 @@ msgstr "द्वारा बनाया गया"
 msgid "Created change order action"
 msgstr "बनाई गई परिवर्तन आदेश कार्रवाई"
 
-msgid "Created change order category"
-msgstr "परिवर्तन आदेश श्रेणी बनाई गई"
+msgid "Created change order type"
+msgstr ""
 
 msgid "Created consumable"
 msgstr "उपभोग्य बनाया गया"
@@ -3628,6 +3635,9 @@ msgstr "{periodLabel} हटाएँ"
 msgid "Delete {storageUnitName}"
 msgstr "Delete {storageUnitName} को हटाएं"
 
+msgid "Delete action"
+msgstr ""
+
 msgid "Delete Action"
 msgstr "कार्रवाई हटाएं"
 
@@ -3877,6 +3887,9 @@ msgstr "स्थानांतरण हटाएं"
 
 msgid "Delete Transfer Line"
 msgstr "स्थानांतरण लाइन हटाएं"
+
+msgid "Delete Type"
+msgstr ""
 
 msgid "Delete Unit of Measure"
 msgstr "माप की इकाई हटाएं"
@@ -4319,8 +4332,8 @@ msgstr "परिवर्तन आदेश संपादित करें
 msgid "Edit Change Order Action"
 msgstr "परिवर्तन आदेश कार्रवाई संपादित करें"
 
-msgid "Edit Change Order Category"
-msgstr "परिवर्तन आदेश श्रेणी संपादित करें"
+msgid "Edit Change Order Type"
+msgstr ""
 
 msgid "Edit column visibility"
 msgstr "कॉलम दृश्यता संपादित करें"
@@ -4570,6 +4583,9 @@ msgstr "ट्रांसफर संपादित करें"
 
 msgid "Edit Transfer Line"
 msgstr "स्थानांतरण लाइन संपादित करें"
+
+msgid "Edit Type"
+msgstr ""
 
 msgid "Edit Unit of Measure"
 msgstr "माप की इकाई संपादित करें"
@@ -6668,6 +6684,9 @@ msgstr "वर्तमान रखें"
 msgid "Keep existing pricing, only add new items"
 msgstr "मौजूदा मूल्य निर्धारण रखें, केवल नई वस्तुएं जोड़ें"
 
+msgid "Keep Open"
+msgstr ""
+
 msgid "Key"
 msgstr "कुंजी"
 
@@ -7618,8 +7637,8 @@ msgstr "नया परिवर्तन आदेश"
 msgid "New Change Order Action"
 msgstr "नई परिवर्तन आदेश कार्रवाई"
 
-msgid "New Change Order Category"
-msgstr "नई परिवर्तन आदेश श्रेणी"
+msgid "New Change Order Type"
+msgstr ""
 
 msgid "New Consumable"
 msgstr "नया उपभोग्य"
@@ -8730,6 +8749,9 @@ msgstr "भाग संख्या"
 msgid "Part or Tool"
 msgstr "भाग या उपकरण"
 
+msgid "Part Supersession"
+msgstr ""
+
 msgid "Partial"
 msgstr "आंशिक"
 
@@ -9692,9 +9714,6 @@ msgstr "कारण"
 
 msgid "Reason Account"
 msgstr "कारण खाता"
-
-msgid "Reason for change"
-msgstr "परिवर्तन का कारण"
 
 msgid "Reason for Change"
 msgstr "परिवर्तन का कारण"
@@ -10682,9 +10701,6 @@ msgstr "एक टीम चुनें"
 msgid "Select all"
 msgstr "सभी का चयन करें"
 
-msgid "Select an affected item, or add one on the left."
-msgstr "एक प्रभावित आइटम चुनें, या बाईं ओर एक जोड़ें।"
-
 msgid "Select an assignee"
 msgstr "एक असाइनी चुनें"
 
@@ -11341,6 +11357,9 @@ msgstr "शुरू करें"
 #. placeholder {0}: plan.stripeTrialPeriodDays
 msgid "Start {0} Day Free Trial"
 msgstr "{0} दिन की निःशुल्क परीक्षण शुरू करें"
+
+msgid "Start counting"
+msgstr "गिनती शुरू करें"
 
 msgid "Start Date"
 msgstr "शुरुआत तारीख"

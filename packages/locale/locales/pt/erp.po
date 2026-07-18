@@ -1061,6 +1061,10 @@ msgstr "Tem a certeza de que deseja ativar o processo: {name}? Ele aparecerá no
 msgid "Are you sure you want to activate this gauge?."
 msgstr "Tem certeza de que deseja ativar este medidor?."
 
+#. placeholder {0}: routeData?.changeOrder?.changeOrderId ?? ""
+msgid "Are you sure you want to cancel {0}? It will be closed and read-only until you reopen it."
+msgstr ""
+
 #. placeholder {0}: routeData?.rfqSummary ?.rfqId!
 msgid "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
 msgstr "Tem a certeza de que deseja cancelar {0}? Isto também cancelará todas as cotações de fornecedores relacionadas."
@@ -1932,6 +1936,12 @@ msgstr "Não é possível baixar este arquivo"
 msgid "Cancel"
 msgstr "Cancelar"
 
+msgid "Cancel change order"
+msgstr ""
+
+msgid "Cancel Change Order"
+msgstr ""
+
 msgid "Cancel Job"
 msgstr "Cancelar Trabalho"
 
@@ -2102,9 +2112,6 @@ msgstr "Ordem de Alteração"
 
 msgid "Change Order Actions"
 msgstr "Ações de Ordem de Mudança"
-
-msgid "Change Order Categories"
-msgstr "Categorias de Ordem de Alteração"
 
 msgid "Change Order Types"
 msgstr "Tipos de Ordem de Alteração"
@@ -3013,8 +3020,8 @@ msgstr "Criado por"
 msgid "Created change order action"
 msgstr "Ação de ordem de mudança criada"
 
-msgid "Created change order category"
-msgstr "Categoria de ordem de alteração criada"
+msgid "Created change order type"
+msgstr ""
 
 msgid "Created consumable"
 msgstr "Consumível criado"
@@ -3628,6 +3635,9 @@ msgstr "Deletar {periodLabel}"
 msgid "Delete {storageUnitName}"
 msgstr "Eliminar {storageUnitName}"
 
+msgid "Delete action"
+msgstr ""
+
 msgid "Delete Action"
 msgstr "Excluir Ação"
 
@@ -3877,6 +3887,9 @@ msgstr "Excluir Transferência"
 
 msgid "Delete Transfer Line"
 msgstr "Eliminar Linha de Transferência"
+
+msgid "Delete Type"
+msgstr ""
 
 msgid "Delete Unit of Measure"
 msgstr "Excluir unidade de medida"
@@ -4319,8 +4332,8 @@ msgstr "Editar Ordem de Alteração"
 msgid "Edit Change Order Action"
 msgstr "Editar Ação de Ordem de Mudança"
 
-msgid "Edit Change Order Category"
-msgstr "Editar Categoria de Ordem de Alteração"
+msgid "Edit Change Order Type"
+msgstr ""
 
 msgid "Edit column visibility"
 msgstr "Editar visibilidade da coluna"
@@ -4570,6 +4583,9 @@ msgstr "Editar Transferência"
 
 msgid "Edit Transfer Line"
 msgstr "Editar Linha de Transferência"
+
+msgid "Edit Type"
+msgstr ""
 
 msgid "Edit Unit of Measure"
 msgstr "Editar Unidade de Medida"
@@ -6668,6 +6684,9 @@ msgstr "Manter Atual"
 msgid "Keep existing pricing, only add new items"
 msgstr "Manter preços existentes, adicionar apenas novos itens"
 
+msgid "Keep Open"
+msgstr ""
+
 msgid "Key"
 msgstr "Chave"
 
@@ -7618,8 +7637,8 @@ msgstr "Nova Ordem de Mudança"
 msgid "New Change Order Action"
 msgstr "Nova Ação de Ordem de Mudança"
 
-msgid "New Change Order Category"
-msgstr "Nova Categoria de Ordem de Mudança"
+msgid "New Change Order Type"
+msgstr ""
 
 msgid "New Consumable"
 msgstr "Novo Consumível"
@@ -8730,6 +8749,9 @@ msgstr "Número da Peça"
 msgid "Part or Tool"
 msgstr "Peça ou Ferramenta"
 
+msgid "Part Supersession"
+msgstr ""
+
 msgid "Partial"
 msgstr "Parcial"
 
@@ -9692,9 +9714,6 @@ msgstr "Motivo"
 
 msgid "Reason Account"
 msgstr "Conta de Motivo"
-
-msgid "Reason for change"
-msgstr "Motivo da alteração"
 
 msgid "Reason for Change"
 msgstr "Motivo da Mudança"
@@ -10682,9 +10701,6 @@ msgstr "Selecione uma equipe"
 msgid "Select all"
 msgstr "Selecionar tudo"
 
-msgid "Select an affected item, or add one on the left."
-msgstr "Selecione um item afetado ou adicione um à esquerda."
-
 msgid "Select an assignee"
 msgstr "Selecione um responsável"
 
@@ -11341,6 +11357,9 @@ msgstr "Iniciar"
 #. placeholder {0}: plan.stripeTrialPeriodDays
 msgid "Start {0} Day Free Trial"
 msgstr "Iniciar Teste Gratuito de {0} Dias"
+
+msgid "Start counting"
+msgstr "Iniciar contagem"
 
 msgid "Start Date"
 msgstr "Data de Início"

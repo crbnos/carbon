@@ -1061,6 +1061,10 @@ msgstr "您确定要激活流程：{name}？它将再次出现在下拉菜单中
 msgid "Are you sure you want to activate this gauge?."
 msgstr "您确定要激活此量规吗？"
 
+#. placeholder {0}: routeData?.changeOrder?.changeOrderId ?? ""
+msgid "Are you sure you want to cancel {0}? It will be closed and read-only until you reopen it."
+msgstr ""
+
 #. placeholder {0}: routeData?.rfqSummary ?.rfqId!
 msgid "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
 msgstr "您确定要取消 {0} 吗？这也将取消所有相关的供应商报价。"
@@ -1932,6 +1936,12 @@ msgstr "无法下载此文件"
 msgid "Cancel"
 msgstr "取消"
 
+msgid "Cancel change order"
+msgstr ""
+
+msgid "Cancel Change Order"
+msgstr ""
+
 msgid "Cancel Job"
 msgstr "取消工作"
 
@@ -2102,9 +2112,6 @@ msgstr "变更单"
 
 msgid "Change Order Actions"
 msgstr "变更单操作"
-
-msgid "Change Order Categories"
-msgstr "变更单类别"
 
 msgid "Change Order Types"
 msgstr "变更单类型"
@@ -3013,8 +3020,8 @@ msgstr "由...创建"
 msgid "Created change order action"
 msgstr "已创建变更单操作"
 
-msgid "Created change order category"
-msgstr "已创建变更单类别"
+msgid "Created change order type"
+msgstr ""
 
 msgid "Created consumable"
 msgstr "已创建易耗品"
@@ -3628,6 +3635,9 @@ msgstr "删除{periodLabel}"
 msgid "Delete {storageUnitName}"
 msgstr "删除 {storageUnitName}"
 
+msgid "Delete action"
+msgstr ""
+
 msgid "Delete Action"
 msgstr "删除操作"
 
@@ -3877,6 +3887,9 @@ msgstr "删除转移"
 
 msgid "Delete Transfer Line"
 msgstr "删除转移行"
+
+msgid "Delete Type"
+msgstr ""
 
 msgid "Delete Unit of Measure"
 msgstr "删除计量单位"
@@ -4319,8 +4332,8 @@ msgstr "编辑变更单"
 msgid "Edit Change Order Action"
 msgstr "编辑变更单操作"
 
-msgid "Edit Change Order Category"
-msgstr "编辑变更单类别"
+msgid "Edit Change Order Type"
+msgstr ""
 
 msgid "Edit column visibility"
 msgstr "编辑列可见性"
@@ -4570,6 +4583,9 @@ msgstr "编辑转移"
 
 msgid "Edit Transfer Line"
 msgstr "编辑转移行"
+
+msgid "Edit Type"
+msgstr ""
 
 msgid "Edit Unit of Measure"
 msgstr "编辑计量单位"
@@ -6668,6 +6684,9 @@ msgstr "保持当前"
 msgid "Keep existing pricing, only add new items"
 msgstr "保留现有定价，仅添加新项目"
 
+msgid "Keep Open"
+msgstr ""
+
 msgid "Key"
 msgstr "钥匙"
 
@@ -7618,8 +7637,8 @@ msgstr "新建变更单"
 msgid "New Change Order Action"
 msgstr "新变更单操作"
 
-msgid "New Change Order Category"
-msgstr "新建变更单类别"
+msgid "New Change Order Type"
+msgstr ""
 
 msgid "New Consumable"
 msgstr "新消耗品"
@@ -8730,6 +8749,9 @@ msgstr "零件编号"
 msgid "Part or Tool"
 msgstr "零件或工具"
 
+msgid "Part Supersession"
+msgstr ""
+
 msgid "Partial"
 msgstr "部分"
 
@@ -9692,9 +9714,6 @@ msgstr "原因"
 
 msgid "Reason Account"
 msgstr "原因账户"
-
-msgid "Reason for change"
-msgstr "更改原因"
 
 msgid "Reason for Change"
 msgstr "变更原因"
@@ -10682,9 +10701,6 @@ msgstr "选择一个团队"
 msgid "Select all"
 msgstr "全选"
 
-msgid "Select an affected item, or add one on the left."
-msgstr "选择受影响的项目，或在左侧添加一个。"
-
 msgid "Select an assignee"
 msgstr "选择受理人"
 
@@ -11341,6 +11357,9 @@ msgstr "开始"
 #. placeholder {0}: plan.stripeTrialPeriodDays
 msgid "Start {0} Day Free Trial"
 msgstr "开始 {0} 天免费试用"
+
+msgid "Start counting"
+msgstr "开始盘点"
 
 msgid "Start Date"
 msgstr "开始日期"

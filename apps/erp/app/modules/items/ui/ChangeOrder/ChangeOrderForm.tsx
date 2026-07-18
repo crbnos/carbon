@@ -27,6 +27,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
 import type { FetcherWithComponents } from "react-router";
 import type { z } from "zod";
+import { Enumerable } from "~/components/Enumerable";
 import {
   CustomFormFields,
   Employee,
@@ -43,6 +44,7 @@ import {
   changeOrderPriority,
   changeOrderValidator
 } from "../../changeOrder.models";
+import ChangeOrderPriority from "./ChangeOrderPriority";
 
 type ChangeOrderFormValues = z.infer<typeof changeOrderValidator>;
 
@@ -98,13 +100,17 @@ const ChangeOrderForm = ({
       <Hidden name="changeOrderId" />
 
       <VStack spacing={4}>
-        <div className="grid w-full gap-4 grid-cols-1 md:grid-cols-2">
+        <div
+          className={`grid w-full gap-4 grid-cols-1 ${
+            isModal ? "" : "md:grid-cols-2"
+          }`}
+        >
           <Input name="name" label={t`Name`} />
           <Combobox
             name="changeOrderTypeId"
             label={t`Category`}
             options={types.map((coType) => ({
-              label: coType.name,
+              label: <Enumerable value={coType.name} />,
               value: coType.id
             }))}
           />
@@ -117,7 +123,7 @@ const ChangeOrderForm = ({
             name="priority"
             label={t`Priority`}
             options={changeOrderPriority.map((priority) => ({
-              label: priority,
+              label: <ChangeOrderPriority priority={priority} />,
               value: priority
             }))}
           />

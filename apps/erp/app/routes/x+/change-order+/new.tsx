@@ -7,6 +7,7 @@ import { getLocalTimeZone, today } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData } from "react-router";
+import { useUser } from "~/hooks";
 import {
   addChangeOrderAffectedItem,
   changeOrderValidator,
@@ -20,7 +21,8 @@ import { path } from "~/utils/path";
 
 export const handle: Handle = {
   breadcrumb: msg`Change Orders`,
-  to: path.to.changeOrders
+  to: path.to.changeOrders,
+  module: "items"
 };
 
 // The reason/description form fields arrive as plain text; the columns are
@@ -122,6 +124,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function ChangeOrderNewRoute() {
   const { types } = useLoaderData<typeof loader>();
+  const user = useUser();
 
   const initialValues = {
     id: undefined,
@@ -130,7 +133,7 @@ export default function ChangeOrderNewRoute() {
     reasonForChange: "",
     description: "",
     changeOrderTypeId: "",
-    assignee: "",
+    assignee: user.id,
     priority: "Medium" as const,
     openDate: today(getLocalTimeZone()).toString(),
     dueDate: "",

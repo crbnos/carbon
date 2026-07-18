@@ -1,4 +1,4 @@
-import { MenuIcon, MenuItem } from "@carbon/react";
+import { Checkbox, MenuIcon, MenuItem } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -39,7 +39,7 @@ const ChangeOrderRequiredActionsTable = memo(
         {
           accessorKey: "active",
           header: t`Active`,
-          cell: ({ row }) => (row.original.active ? t`Yes` : t`No`)
+          cell: ({ row }) => <Checkbox checked={row.original.active} />
         }
       ];
     }, [t]);

@@ -1061,6 +1061,10 @@ msgstr "공정 {name}을(를) 활성화하시겠습니까? 드롭다운에 다�
 msgid "Are you sure you want to activate this gauge?."
 msgstr "이 측정기를 활성화하시겠습니까?"
 
+#. placeholder {0}: routeData?.changeOrder?.changeOrderId ?? ""
+msgid "Are you sure you want to cancel {0}? It will be closed and read-only until you reopen it."
+msgstr ""
+
 #. placeholder {0}: routeData?.rfqSummary ?.rfqId!
 msgid "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
 msgstr "{0}을(를) 취소하시겠습니까? 관련된 모든 공급업체 견적도 함께 취소됩니다."
@@ -1932,6 +1936,12 @@ msgstr "이 파일을 다운로드할 수 없습니다"
 msgid "Cancel"
 msgstr "취소"
 
+msgid "Cancel change order"
+msgstr ""
+
+msgid "Cancel Change Order"
+msgstr ""
+
 msgid "Cancel Job"
 msgstr "작업 취소"
 
@@ -2102,9 +2112,6 @@ msgstr "변경주문"
 
 msgid "Change Order Actions"
 msgstr "변경 주문 작업"
-
-msgid "Change Order Categories"
-msgstr "변경주문 카테고리"
 
 msgid "Change Order Types"
 msgstr "변경주문 유형"
@@ -3013,8 +3020,8 @@ msgstr "생성자"
 msgid "Created change order action"
 msgstr "변경 주문 작업 생성됨"
 
-msgid "Created change order category"
-msgstr "변경주문 카테고리가 생성되었습니다."
+msgid "Created change order type"
+msgstr ""
 
 msgid "Created consumable"
 msgstr "소모품 생성됨"
@@ -3628,6 +3635,9 @@ msgstr "{periodLabel} 삭제"
 msgid "Delete {storageUnitName}"
 msgstr "{storageUnitName} 삭제"
 
+msgid "Delete action"
+msgstr ""
+
 msgid "Delete Action"
 msgstr "작업 삭제"
 
@@ -3877,6 +3887,9 @@ msgstr "이동 삭제"
 
 msgid "Delete Transfer Line"
 msgstr "이동 라인 삭제"
+
+msgid "Delete Type"
+msgstr ""
 
 msgid "Delete Unit of Measure"
 msgstr "측정 단위 삭제"
@@ -4319,8 +4332,8 @@ msgstr "변경주문 편집"
 msgid "Edit Change Order Action"
 msgstr "변경 주문 작업 편집"
 
-msgid "Edit Change Order Category"
-msgstr "변경주문 카테고리 편집"
+msgid "Edit Change Order Type"
+msgstr ""
 
 msgid "Edit column visibility"
 msgstr "열 표시 여부 수정"
@@ -4570,6 +4583,9 @@ msgstr "이동 수정"
 
 msgid "Edit Transfer Line"
 msgstr "이동 라인 수정"
+
+msgid "Edit Type"
+msgstr ""
 
 msgid "Edit Unit of Measure"
 msgstr "측정 단위 수정"
@@ -6668,6 +6684,9 @@ msgstr "현재 값 유지"
 msgid "Keep existing pricing, only add new items"
 msgstr "기존 가격은 유지하고 새 품목만 추가"
 
+msgid "Keep Open"
+msgstr ""
+
 msgid "Key"
 msgstr "키"
 
@@ -7618,8 +7637,8 @@ msgstr "새 변경 주문"
 msgid "New Change Order Action"
 msgstr "새 변경 주문 작업"
 
-msgid "New Change Order Category"
-msgstr "새 변경 주문 카테고리"
+msgid "New Change Order Type"
+msgstr ""
 
 msgid "New Consumable"
 msgstr "신규 소모품"
@@ -8730,6 +8749,9 @@ msgstr "부품 번호"
 msgid "Part or Tool"
 msgstr "부품 또는 도구"
 
+msgid "Part Supersession"
+msgstr ""
+
 msgid "Partial"
 msgstr "부분"
 
@@ -9692,9 +9714,6 @@ msgstr "사유"
 
 msgid "Reason Account"
 msgstr "사유 계정"
-
-msgid "Reason for change"
-msgstr "변경 이유"
 
 msgid "Reason for Change"
 msgstr "변경 이유"
@@ -10682,9 +10701,6 @@ msgstr "팀 선택"
 msgid "Select all"
 msgstr "전체 선택"
 
-msgid "Select an affected item, or add one on the left."
-msgstr "영향받은 항목을 선택하거나 왼쪽에 추가하세요."
-
 msgid "Select an assignee"
 msgstr "담당자 선택"
 
@@ -11341,6 +11357,9 @@ msgstr "시작"
 #. placeholder {0}: plan.stripeTrialPeriodDays
 msgid "Start {0} Day Free Trial"
 msgstr "{0}일 무료 체험 시작"
+
+msgid "Start counting"
+msgstr "실사 시작"
 
 msgid "Start Date"
 msgstr "시작일"
