@@ -1060,7 +1060,7 @@ msgstr "您确定要激活此量规吗？"
 
 #. placeholder {0}: routeData?.changeOrder?.changeOrderId ?? ""
 msgid "Are you sure you want to cancel {0}? It will be closed and read-only until you reopen it."
-msgstr ""
+msgstr "您确定要取消 {0} 吗?在您重新打开之前，它将被关闭并处于只读状态。"
 
 #. placeholder {0}: routeData?.rfqSummary ?.rfqId!
 msgid "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
@@ -1934,10 +1934,10 @@ msgid "Cancel"
 msgstr "取消"
 
 msgid "Cancel change order"
-msgstr ""
+msgstr "取消变更单"
 
 msgid "Cancel Change Order"
-msgstr ""
+msgstr "取消变更单"
 
 msgid "Cancel Job"
 msgstr "取消工作"
@@ -3018,7 +3018,7 @@ msgid "Created change order action"
 msgstr "已创建变更单操作"
 
 msgid "Created change order type"
-msgstr ""
+msgstr "已创建变更单类型"
 
 msgid "Created consumable"
 msgstr "已创建易耗品"
@@ -3639,7 +3639,7 @@ msgid "Delete {storageUnitName}"
 msgstr "删除 {storageUnitName}"
 
 msgid "Delete action"
-msgstr ""
+msgstr "删除操作"
 
 msgid "Delete Action"
 msgstr "删除操作"
@@ -3892,7 +3892,7 @@ msgid "Delete Transfer Line"
 msgstr "删除转移行"
 
 msgid "Delete Type"
-msgstr ""
+msgstr "删除类型"
 
 msgid "Delete Unit of Measure"
 msgstr "删除计量单位"
@@ -4333,7 +4333,7 @@ msgid "Edit Change Order Action"
 msgstr "编辑变更单操作"
 
 msgid "Edit Change Order Type"
-msgstr ""
+msgstr "编辑变更单类型"
 
 msgid "Edit column visibility"
 msgstr "编辑列可见性"
@@ -4585,7 +4585,7 @@ msgid "Edit Transfer Line"
 msgstr "编辑转移行"
 
 msgid "Edit Type"
-msgstr ""
+msgstr "编辑类型"
 
 msgid "Edit Unit of Measure"
 msgstr "编辑计量单位"
@@ -6679,7 +6679,7 @@ msgid "Keep existing pricing, only add new items"
 msgstr "保留现有定价，仅添加新项目"
 
 msgid "Keep Open"
-msgstr ""
+msgstr "保持开放"
 
 msgid "Key"
 msgstr "钥匙"
@@ -7644,7 +7644,7 @@ msgid "New Change Order Action"
 msgstr "新变更单操作"
 
 msgid "New Change Order Type"
-msgstr ""
+msgstr "新建变更单类型"
 
 msgid "New Consumable"
 msgstr "新消耗品"
@@ -8759,7 +8759,7 @@ msgid "Part or Tool"
 msgstr "零件或工具"
 
 msgid "Part Supersession"
-msgstr ""
+msgstr "零件取代"
 
 msgid "Partial"
 msgstr "部分"

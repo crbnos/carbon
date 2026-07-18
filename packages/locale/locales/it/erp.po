@@ -1060,7 +1060,7 @@ msgstr "Sei sicuro di voler attivare questo calibro?."
 
 #. placeholder {0}: routeData?.changeOrder?.changeOrderId ?? ""
 msgid "Are you sure you want to cancel {0}? It will be closed and read-only until you reopen it."
-msgstr ""
+msgstr "Sei sicuro di voler cancellare {0}? Sarà chiuso e in sola lettura fino a quando non lo riapri."
 
 #. placeholder {0}: routeData?.rfqSummary ?.rfqId!
 msgid "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
@@ -1934,10 +1934,10 @@ msgid "Cancel"
 msgstr "Annulla"
 
 msgid "Cancel change order"
-msgstr ""
+msgstr "Annulla ordine di modifica"
 
 msgid "Cancel Change Order"
-msgstr ""
+msgstr "Annulla Ordine di Modifica"
 
 msgid "Cancel Job"
 msgstr "Annulla Lavoro"
@@ -3018,7 +3018,7 @@ msgid "Created change order action"
 msgstr "Azione dell'ordine di modifica creata"
 
 msgid "Created change order type"
-msgstr ""
+msgstr "Tipo di ordine di modifica creato"
 
 msgid "Created consumable"
 msgstr "Consumabile creato"
@@ -3639,7 +3639,7 @@ msgid "Delete {storageUnitName}"
 msgstr "Elimina {storageUnitName}"
 
 msgid "Delete action"
-msgstr ""
+msgstr "Elimina azione"
 
 msgid "Delete Action"
 msgstr "Elimina azione"
@@ -3892,7 +3892,7 @@ msgid "Delete Transfer Line"
 msgstr "Elimina Riga di Trasferimento"
 
 msgid "Delete Type"
-msgstr ""
+msgstr "Elimina Tipo"
 
 msgid "Delete Unit of Measure"
 msgstr "Elimina unità di misura"
@@ -4333,7 +4333,7 @@ msgid "Edit Change Order Action"
 msgstr "Modifica azione dell'ordine di modifica"
 
 msgid "Edit Change Order Type"
-msgstr ""
+msgstr "Modifica Tipo di Ordine di Modifica"
 
 msgid "Edit column visibility"
 msgstr "Modifica visibilità colonna"
@@ -4585,7 +4585,7 @@ msgid "Edit Transfer Line"
 msgstr "Modifica Riga Trasferimento"
 
 msgid "Edit Type"
-msgstr ""
+msgstr "Modifica Tipo"
 
 msgid "Edit Unit of Measure"
 msgstr "Modifica Unità di Misura"
@@ -6679,7 +6679,7 @@ msgid "Keep existing pricing, only add new items"
 msgstr "Mantieni i prezzi esistenti, aggiungi solo i nuovi articoli"
 
 msgid "Keep Open"
-msgstr ""
+msgstr "Mantieni Aperto"
 
 msgid "Key"
 msgstr "Chiave"
@@ -7644,7 +7644,7 @@ msgid "New Change Order Action"
 msgstr "Nuova azione dell'ordine di modifica"
 
 msgid "New Change Order Type"
-msgstr ""
+msgstr "Nuovo Tipo di Ordine di Modifica"
 
 msgid "New Consumable"
 msgstr "Nuovo Consumabile"
@@ -8759,7 +8759,7 @@ msgid "Part or Tool"
 msgstr "Componente o strumento"
 
 msgid "Part Supersession"
-msgstr ""
+msgstr "Sostituzione Pezzo"
 
 msgid "Partial"
 msgstr "Parziale"

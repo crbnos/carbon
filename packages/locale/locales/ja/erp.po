@@ -1060,7 +1060,7 @@ msgstr "このゲージを有効化してもよろしいですか？"
 
 #. placeholder {0}: routeData?.changeOrder?.changeOrderId ?? ""
 msgid "Are you sure you want to cancel {0}? It will be closed and read-only until you reopen it."
-msgstr ""
+msgstr "{0}をキャンセルしてもよろしいですか？閉じられて、再度開くまで読み取り専用になります。"
 
 #. placeholder {0}: routeData?.rfqSummary ?.rfqId!
 msgid "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
@@ -1934,10 +1934,10 @@ msgid "Cancel"
 msgstr "キャンセル"
 
 msgid "Cancel change order"
-msgstr ""
+msgstr "変更指示をキャンセル"
 
 msgid "Cancel Change Order"
-msgstr ""
+msgstr "変更指示をキャンセル"
 
 msgid "Cancel Job"
 msgstr "ジョブをキャンセル"
@@ -3018,7 +3018,7 @@ msgid "Created change order action"
 msgstr "変更オーダーアクションを作成"
 
 msgid "Created change order type"
-msgstr ""
+msgstr "変更指示タイプを作成"
 
 msgid "Created consumable"
 msgstr "消耗品を作成しました"
@@ -3639,7 +3639,7 @@ msgid "Delete {storageUnitName}"
 msgstr "{storageUnitName}を削除"
 
 msgid "Delete action"
-msgstr ""
+msgstr "アクションを削除"
 
 msgid "Delete Action"
 msgstr "アクションを削除"
@@ -3892,7 +3892,7 @@ msgid "Delete Transfer Line"
 msgstr "転送ラインを削除"
 
 msgid "Delete Type"
-msgstr ""
+msgstr "タイプを削除"
 
 msgid "Delete Unit of Measure"
 msgstr "測定単位を削除"
@@ -4333,7 +4333,7 @@ msgid "Edit Change Order Action"
 msgstr "変更オーダーアクションを編集"
 
 msgid "Edit Change Order Type"
-msgstr ""
+msgstr "変更指示タイプを編集"
 
 msgid "Edit column visibility"
 msgstr "列の表示/非表示を編集"
@@ -4585,7 +4585,7 @@ msgid "Edit Transfer Line"
 msgstr "転送ラインを編集"
 
 msgid "Edit Type"
-msgstr ""
+msgstr "タイプを編集"
 
 msgid "Edit Unit of Measure"
 msgstr "計測単位を編集"
@@ -6679,7 +6679,7 @@ msgid "Keep existing pricing, only add new items"
 msgstr "既存の価格を保持し、新しい項目のみを追加"
 
 msgid "Keep Open"
-msgstr ""
+msgstr "開いたままにする"
 
 msgid "Key"
 msgstr "キー"
@@ -7644,7 +7644,7 @@ msgid "New Change Order Action"
 msgstr "新しい変更オーダーアクション"
 
 msgid "New Change Order Type"
-msgstr ""
+msgstr "新しい変更指示タイプ"
 
 msgid "New Consumable"
 msgstr "新しい消耗品"
@@ -8759,7 +8759,7 @@ msgid "Part or Tool"
 msgstr "部品またはツール"
 
 msgid "Part Supersession"
-msgstr ""
+msgstr "パーツの廃止予定"
 
 msgid "Partial"
 msgstr "部分的"

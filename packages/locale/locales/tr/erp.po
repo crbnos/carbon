@@ -1060,7 +1060,7 @@ msgstr "Bu kalibratörü etkinleştirmek istediğinizden emin misiniz?."
 
 #. placeholder {0}: routeData?.changeOrder?.changeOrderId ?? ""
 msgid "Are you sure you want to cancel {0}? It will be closed and read-only until you reopen it."
-msgstr ""
+msgstr "{0} öğesini iptal etmek istediğinizden emin misiniz? Yeniden açana kadar kapalı ve salt okunur durumda olacaktır."
 
 #. placeholder {0}: routeData?.rfqSummary ?.rfqId!
 msgid "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
@@ -1934,10 +1934,10 @@ msgid "Cancel"
 msgstr "İptal"
 
 msgid "Cancel change order"
-msgstr ""
+msgstr "Değişiklik emrini iptal et"
 
 msgid "Cancel Change Order"
-msgstr ""
+msgstr "Değişiklik Emrini İptal Et"
 
 msgid "Cancel Job"
 msgstr "İşi İptal Et"
@@ -3018,7 +3018,7 @@ msgid "Created change order action"
 msgstr "Oluşturulan değişiklik emri işlemi"
 
 msgid "Created change order type"
-msgstr ""
+msgstr "Oluşturulan değişiklik emri türü"
 
 msgid "Created consumable"
 msgstr "Tüketilebilir malzeme oluşturuldu"
@@ -3639,7 +3639,7 @@ msgid "Delete {storageUnitName}"
 msgstr "Delete {storageUnitName}"
 
 msgid "Delete action"
-msgstr ""
+msgstr "Eylemi sil"
 
 msgid "Delete Action"
 msgstr "İşlemi Sil"
@@ -3892,7 +3892,7 @@ msgid "Delete Transfer Line"
 msgstr "Transfer Satırını Sil"
 
 msgid "Delete Type"
-msgstr ""
+msgstr "Türü Sil"
 
 msgid "Delete Unit of Measure"
 msgstr "Ölçü Birimini Sil"
@@ -4333,7 +4333,7 @@ msgid "Edit Change Order Action"
 msgstr "Değişiklik Emri İşlemini Düzenle"
 
 msgid "Edit Change Order Type"
-msgstr ""
+msgstr "Değişiklik Emri Türünü Düzenle"
 
 msgid "Edit column visibility"
 msgstr "Sütun görünürlüğünü düzenle"
@@ -4585,7 +4585,7 @@ msgid "Edit Transfer Line"
 msgstr "Transfer Satırını Düzenle"
 
 msgid "Edit Type"
-msgstr ""
+msgstr "Türü Düzenle"
 
 msgid "Edit Unit of Measure"
 msgstr "Birim Ölçü Düzenle"
@@ -6679,7 +6679,7 @@ msgid "Keep existing pricing, only add new items"
 msgstr "Mevcut fiyatlandırmayı koru, yalnızca yeni öğeler ekle"
 
 msgid "Keep Open"
-msgstr ""
+msgstr "Açık Tut"
 
 msgid "Key"
 msgstr "Anahtar"
@@ -7644,7 +7644,7 @@ msgid "New Change Order Action"
 msgstr "Yeni Değişiklik Emri İşlemi"
 
 msgid "New Change Order Type"
-msgstr ""
+msgstr "Yeni Değişiklik Emri Türü"
 
 msgid "New Consumable"
 msgstr "Yeni Sarf Malzemesi"
@@ -8759,7 +8759,7 @@ msgid "Part or Tool"
 msgstr "Parça veya Araç"
 
 msgid "Part Supersession"
-msgstr ""
+msgstr "Parça Yerini Alma"
 
 msgid "Partial"
 msgstr "Kısmi"

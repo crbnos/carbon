@@ -1060,7 +1060,7 @@ msgstr "이 측정기를 활성화하시겠습니까?"
 
 #. placeholder {0}: routeData?.changeOrder?.changeOrderId ?? ""
 msgid "Are you sure you want to cancel {0}? It will be closed and read-only until you reopen it."
-msgstr ""
+msgstr "{0}을(를) 취소하시겠습니까? 취소되면 다시 열 때까지 닫힌 상태로 읽기 전용이 됩니다."
 
 #. placeholder {0}: routeData?.rfqSummary ?.rfqId!
 msgid "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
@@ -1934,10 +1934,10 @@ msgid "Cancel"
 msgstr "취소"
 
 msgid "Cancel change order"
-msgstr ""
+msgstr "변경 주문 취소"
 
 msgid "Cancel Change Order"
-msgstr ""
+msgstr "변경 주문 취소"
 
 msgid "Cancel Job"
 msgstr "작업 취소"
@@ -3018,7 +3018,7 @@ msgid "Created change order action"
 msgstr "변경 주문 작업 생성됨"
 
 msgid "Created change order type"
-msgstr ""
+msgstr "생성된 변경 주문 유형"
 
 msgid "Created consumable"
 msgstr "소모품 생성됨"
@@ -3639,7 +3639,7 @@ msgid "Delete {storageUnitName}"
 msgstr "{storageUnitName} 삭제"
 
 msgid "Delete action"
-msgstr ""
+msgstr "작업 삭제"
 
 msgid "Delete Action"
 msgstr "작업 삭제"
@@ -3892,7 +3892,7 @@ msgid "Delete Transfer Line"
 msgstr "이동 라인 삭제"
 
 msgid "Delete Type"
-msgstr ""
+msgstr "유형 삭제"
 
 msgid "Delete Unit of Measure"
 msgstr "측정 단위 삭제"
@@ -4333,7 +4333,7 @@ msgid "Edit Change Order Action"
 msgstr "변경 주문 작업 편집"
 
 msgid "Edit Change Order Type"
-msgstr ""
+msgstr "변경 주문 유형 편집"
 
 msgid "Edit column visibility"
 msgstr "열 표시 여부 수정"
@@ -4585,7 +4585,7 @@ msgid "Edit Transfer Line"
 msgstr "이동 라인 수정"
 
 msgid "Edit Type"
-msgstr ""
+msgstr "유형 편집"
 
 msgid "Edit Unit of Measure"
 msgstr "측정 단위 수정"
@@ -6679,7 +6679,7 @@ msgid "Keep existing pricing, only add new items"
 msgstr "기존 가격은 유지하고 새 품목만 추가"
 
 msgid "Keep Open"
-msgstr ""
+msgstr "열린 상태 유지"
 
 msgid "Key"
 msgstr "키"
@@ -7644,7 +7644,7 @@ msgid "New Change Order Action"
 msgstr "새 변경 주문 작업"
 
 msgid "New Change Order Type"
-msgstr ""
+msgstr "새 변경 주문 유형"
 
 msgid "New Consumable"
 msgstr "신규 소모품"
@@ -8759,7 +8759,7 @@ msgid "Part or Tool"
 msgstr "부품 또는 도구"
 
 msgid "Part Supersession"
-msgstr ""
+msgstr "부품 대체"
 
 msgid "Partial"
 msgstr "부분"
