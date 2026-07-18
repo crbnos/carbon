@@ -149,6 +149,37 @@ export async function assignEntitiesToIssueItem(args: {
 // function (packages/database/supabase/functions/issue/index.ts, case
 // "trackedEntitiesToOperation"). They can't share code across the app/Deno
 // boundary today — keep the two in sync if the genealogy shape changes.
+
+// The storage unit a tracked entity currently holds stock in, derived from its
+// item-ledger rows by net on-hand per bin. Batch-split ledger entries MUST be
+// booked against this bin (not NULL), or per-storage-unit on-hand views (picking,
+// available-tracked-entities) won't net to zero. Mirrors the MES helper
+// packages/database/supabase/functions/issue/resolve-tracked-entity-bin.ts —
+// keep the two in sync. Returns the bin with the highest positive net; falls
+// back to any bin the entity appears in when nothing nets positive.
+function resolveHoldingStorageUnit(
+  rows: { storageUnitId: string | null; quantity: number | string | null }[]
+): string | null {
+  const netByBin = new Map<string, number>();
+  for (const row of rows) {
+    if (!row.storageUnitId) continue;
+    netByBin.set(
+      row.storageUnitId,
+      (netByBin.get(row.storageUnitId) ?? 0) + Number(row.quantity ?? 0)
+    );
+  }
+  let bestBin: string | null = null;
+  let bestQty = 0;
+  for (const [bin, qty] of netByBin) {
+    if (qty > bestQty) {
+      bestQty = qty;
+      bestBin = bin;
+    }
+  }
+  if (bestBin) return bestBin;
+  return rows.find((row) => row.storageUnitId)?.storageUnitId ?? null;
+}
+
 async function subdivideBatchEntity(
   trx: KyselyTx,
   args: {
@@ -295,12 +326,23 @@ async function subdivideBatchEntity(
     ])
     .execute();
 
+  // The bin the source lot actually holds stock in — split ledger entries book
+  // against it so per-storage-unit on-hand stays consistent (see helper note).
+  const sourceLedgerRows = await trx
+    .selectFrom("itemLedger")
+    .select(["storageUnitId", "quantity"])
+    .where("trackedEntityId", "=", source.id)
+    .where("companyId", "=", companyId)
+    .execute();
+  const storageUnitId = resolveHoldingStorageUnit(sourceLedgerRows);
+
   await trx
     .insertInto("itemLedger")
     .values([
       {
         itemId,
         locationId,
+        storageUnitId,
         entryType: "Negative Adjmt." as const,
         documentType: "Batch Split" as const,
         documentId: activity.id,
@@ -313,6 +355,7 @@ async function subdivideBatchEntity(
       {
         itemId,
         locationId,
+        storageUnitId,
         entryType: "Positive Adjmt." as const,
         documentType: "Batch Split" as const,
         documentId: activity.id,
@@ -325,6 +368,7 @@ async function subdivideBatchEntity(
       {
         itemId,
         locationId,
+        storageUnitId,
         entryType: "Positive Adjmt." as const,
         documentType: "Batch Split" as const,
         documentId: activity.id,
