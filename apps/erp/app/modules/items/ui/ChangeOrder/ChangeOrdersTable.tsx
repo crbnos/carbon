@@ -30,7 +30,7 @@ import {
   type ChangeOrderChangeType,
   changeOrderPriority,
   changeOrderStatus
-} from "../../changeOrder.models";
+} from "../../items.models";
 import type { ChangeOrderListItem } from "../../types";
 import ChangeOrderPriority from "./ChangeOrderPriority";
 import ChangeOrderStatus from "./ChangeOrderStatus";

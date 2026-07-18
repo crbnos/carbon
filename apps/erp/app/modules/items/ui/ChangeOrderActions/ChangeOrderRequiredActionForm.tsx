@@ -20,7 +20,7 @@ import type { z } from "zod";
 import { Boolean, Hidden, Input, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
-import { changeOrderRequiredActionValidator } from "../../changeOrder.models";
+import { changeOrderRequiredActionValidator } from "../../items.models";
 
 type ChangeOrderRequiredActionFormProps = {
   initialValues: z.infer<typeof changeOrderRequiredActionValidator>;

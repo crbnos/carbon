@@ -3,8 +3,8 @@ import { Plural, Trans } from "@lingui/react/macro";
 import { LuGitPullRequestArrow } from "react-icons/lu";
 import { Link } from "react-router";
 import { path } from "~/utils/path";
-import { changeOrderOpenStatuses } from "../../changeOrder.models";
-import type { ChangeOrderForItem } from "../../changeOrder.reads";
+import { changeOrderOpenStatuses } from "../../items.models";
+import type { ChangeOrderForItem } from "../../items.service";
 
 type ItemOpenChangeOrderAlertProps = {
   changeOrders: ChangeOrderForItem[];

@@ -2,9 +2,7 @@ import type { Database } from "@carbon/database";
 import type {
   getChangeOrder,
   getChangeOrders,
-  getChangeOrderTypes
-} from "./changeOrder.service";
-import type {
+  getChangeOrderTypes,
   getConfigurationParameters,
   getConfigurationRules,
   getConsumable,

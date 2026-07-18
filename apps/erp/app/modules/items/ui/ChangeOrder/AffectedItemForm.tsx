@@ -16,7 +16,7 @@ import { useEffect } from "react";
 import { useFetcher, useNavigate } from "react-router";
 import { Hidden, Item, Submit } from "~/components/Form";
 import { path } from "~/utils/path";
-import { changeOrderAffectedItemValidator } from "../../changeOrder.models";
+import { changeOrderAffectedItemValidator } from "../../items.models";
 
 // The "Add affected item" modal, opened from the sidebar's bottom button —
 // mirrors the PO "Add Line Item" flow (bottom button → modal). On success it

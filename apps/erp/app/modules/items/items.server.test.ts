@@ -4,6 +4,18 @@ import { describe, expect, it, vi } from "vitest";
 // can be tested without dragging in the app's full module graph.
 vi.mock("~/modules/settings", () => ({ getCompanySettings: vi.fn() }));
 
+// items.server pulls the items module graph (via ~/modules/items), which
+// transitively loads @carbon/glossary — whose module-load-time Lingui `msg`
+// macro isn't transformed under plain vitest and throws. Stub it; the verdict
+// logic under test needs none of it.
+vi.mock("@carbon/glossary", () => ({
+  terms: {},
+  getEntry: vi.fn(),
+  lookupEntry: vi.fn(),
+  hasEntry: vi.fn(),
+  termSlug: vi.fn()
+}));
+
 const { getLockVerdict, LOCKED_REVISION_MESSAGE } = await import(
   "./items.server"
 );

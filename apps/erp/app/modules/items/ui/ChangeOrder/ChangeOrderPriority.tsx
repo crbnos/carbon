@@ -2,7 +2,7 @@ import { BsExclamationSquareFill } from "react-icons/bs";
 import { HighPriorityIcon } from "~/assets/icons/HighPriorityIcon";
 import { LowPriorityIcon } from "~/assets/icons/LowPriorityIcon";
 import { MediumPriorityIcon } from "~/assets/icons/MediumPriorityIcon";
-import type { changeOrderPriority } from "../../changeOrder.models";
+import type { changeOrderPriority } from "../../items.models";
 
 type ChangeOrderPriorityProps = {
   priority?: (typeof changeOrderPriority)[number] | null;

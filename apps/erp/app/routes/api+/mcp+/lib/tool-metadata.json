@@ -1,6 +1,6 @@
 {
-  "generated": "2026-07-18T06:27:52.835Z",
-  "totalTools": 1338,
+  "generated": "2026-07-18T07:01:41.866Z",
+  "totalTools": 1374,
   "modules": 15,
   "tools": [
     {
@@ -14685,6 +14685,1104 @@
         },
         "required": [
           "supplierPartId"
+        ]
+      }
+    },
+    {
+      "name": "items_getChangeOrder",
+      "module": "items",
+      "classification": "READ",
+      "description": "get change order",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "changeOrderId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "changeOrderId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "changeOrderId"
+        ]
+      }
+    },
+    {
+      "name": "items_getChangeOrders",
+      "module": "items",
+      "classification": "READ",
+      "description": "get change orders",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "args": {
+            "type": "object",
+            "properties": {
+              "limit": {
+                "type": "integer",
+                "default": 100
+              },
+              "offset": {
+                "type": "integer",
+                "default": 0
+              },
+              "search": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "items_insertChangeOrder",
+      "module": "items",
+      "classification": "WRITE",
+      "description": "insert change order",
+      "paramCount": 12,
+      "serviceParams": [
+        "client",
+        "input"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "changeOrderId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "priority": {
+            "type": "string"
+          },
+          "changeOrderTypeId": {
+            "type": "string"
+          },
+          "nonConformanceId": {
+            "type": "string"
+          },
+          "openDate": {
+            "type": "string"
+          },
+          "reasonForChange": {},
+          "description": {},
+          "dueDate": {
+            "type": "string"
+          },
+          "assignee": {
+            "type": "string"
+          },
+          "customFields": {}
+        },
+        "required": [
+          "name",
+          "openDate"
+        ]
+      }
+    },
+    {
+      "name": "items_updateChangeOrder",
+      "module": "items",
+      "classification": "WRITE",
+      "description": "update change order",
+      "paramCount": 13,
+      "serviceParams": [
+        "client",
+        "input"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "changeOrderId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "priority": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "changeOrderTypeId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "nonConformanceId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "openDate": {
+            "type": "string"
+          },
+          "reasonForChange": {},
+          "description": {},
+          "dueDate": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "assignee": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "customFields": {}
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "items_deleteChangeOrder",
+      "module": "items",
+      "classification": "DESTRUCTIVE",
+      "description": "delete change order",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "changeOrderId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "changeOrderId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "changeOrderId"
+        ]
+      }
+    },
+    {
+      "name": "items_updateChangeOrderStatus",
+      "module": "items",
+      "classification": "WRITE",
+      "description": "update change order status",
+      "paramCount": 4,
+      "serviceParams": [
+        "client",
+        "update"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "fromStatus": {
+            "type": "string"
+          },
+          "toStatus": {
+            "type": "string"
+          },
+          "assignee": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "fromStatus",
+          "toStatus"
+        ]
+      }
+    },
+    {
+      "name": "items_getChangeOrderTypes",
+      "module": "items",
+      "classification": "READ",
+      "description": "get change order types",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "args": {
+            "type": "object",
+            "properties": {
+              "limit": {
+                "type": "integer",
+                "default": 100
+              },
+              "offset": {
+                "type": "integer",
+                "default": 0
+              },
+              "search": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "items_getChangeOrderTypesList",
+      "module": "items",
+      "classification": "READ",
+      "description": "get change order types list",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "items_getChangeOrderType",
+      "module": "items",
+      "classification": "READ",
+      "description": "get change order type",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "items_upsertChangeOrderType",
+      "module": "items",
+      "classification": "WRITE",
+      "description": "upsert change order type",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "changeOrderType"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "changeOrderType": {}
+        },
+        "required": [
+          "changeOrderType"
+        ]
+      }
+    },
+    {
+      "name": "items_deleteChangeOrderType",
+      "module": "items",
+      "classification": "DESTRUCTIVE",
+      "description": "delete change order type",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "items_getTopLevelProductsForItems",
+      "module": "items",
+      "classification": "READ",
+      "description": "get top level products for items",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "itemIds",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "itemIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "itemIds"
+        ]
+      }
+    },
+    {
+      "name": "items_mintPlaceholderPart",
+      "module": "items",
+      "classification": "WRITE",
+      "description": "mint placeholder part",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "input"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "readableId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "unitOfMeasureCode": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "readableId",
+          "name"
+        ]
+      }
+    },
+    {
+      "name": "items_createChangeOrderDraftMethod",
+      "module": "items",
+      "classification": "WRITE",
+      "description": "create change order draft method",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "input"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "changeOrderId": {
+            "type": "string"
+          },
+          "itemId": {
+            "type": "string"
+          },
+          "changeType": {}
+        },
+        "required": [
+          "changeOrderId",
+          "itemId",
+          "changeType"
+        ]
+      }
+    },
+    {
+      "name": "items_addChangeOrderAffectedItem",
+      "module": "items",
+      "classification": "WRITE",
+      "description": "add change order affected item",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "input"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "changeOrderId": {
+            "type": "string"
+          },
+          "itemId": {
+            "type": "string"
+          },
+          "changeType": {}
+        },
+        "required": [
+          "changeOrderId",
+          "itemId",
+          "changeType"
+        ]
+      }
+    },
+    {
+      "name": "items_updateChangeOrderAffectedItemChangeType",
+      "module": "items",
+      "classification": "WRITE",
+      "description": "update change order affected item change type",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "input"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "changeType": {}
+        },
+        "required": [
+          "id",
+          "changeType"
+        ]
+      }
+    },
+    {
+      "name": "items_updateChangeOrderAffectedItemCutover",
+      "module": "items",
+      "classification": "WRITE",
+      "description": "update change order affected item cutover",
+      "paramCount": 4,
+      "serviceParams": [
+        "client",
+        "input"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "supersessionMode": {},
+          "discontinuationDate": {
+            "type": "string"
+          },
+          "successorEffectivityDate": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "supersessionMode"
+        ]
+      }
+    },
+    {
+      "name": "items_getChangeOrderAffectedItems",
+      "module": "items",
+      "classification": "READ",
+      "description": "get change order affected items",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "changeOrderId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "changeOrderId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "changeOrderId"
+        ]
+      }
+    },
+    {
+      "name": "items_removeChangeOrderAffectedItem",
+      "module": "items",
+      "classification": "WRITE",
+      "description": "remove change order affected item",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "items_findChangeOrdersForItem",
+      "module": "items",
+      "classification": "READ",
+      "description": "find change orders for item",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string"
+          },
+          "statuses": {
+            "type": "array",
+            "items": {}
+          }
+        },
+        "required": [
+          "itemId"
+        ]
+      }
+    },
+    {
+      "name": "items_getChangeOrdersForNonConformance",
+      "module": "items",
+      "classification": "READ",
+      "description": "get change orders for non conformance",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "nonConformanceId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "nonConformanceId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "nonConformanceId"
+        ]
+      }
+    },
+    {
+      "name": "items_findOtherOpenChangeOrdersForItem",
+      "module": "items",
+      "classification": "READ",
+      "description": "find other open change orders for item",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string"
+          },
+          "excludeChangeOrderId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "itemId",
+          "excludeChangeOrderId"
+        ]
+      }
+    },
+    {
+      "name": "items_getItemChangeOrderData",
+      "module": "items",
+      "classification": "READ",
+      "description": "get item change order data",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "itemId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "itemId"
+        ]
+      }
+    },
+    {
+      "name": "items_getChangeOrderActions",
+      "module": "items",
+      "classification": "READ",
+      "description": "get change order actions",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "changeOrderId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "changeOrderId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "changeOrderId"
+        ]
+      }
+    },
+    {
+      "name": "items_updateChangeOrderActionStatus",
+      "module": "items",
+      "classification": "WRITE",
+      "description": "update change order action status",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "input"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "status"
+        ]
+      }
+    },
+    {
+      "name": "items_deleteChangeOrderAction",
+      "module": "items",
+      "classification": "DESTRUCTIVE",
+      "description": "delete change order action",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "items_updateChangeOrderActionOrder",
+      "module": "items",
+      "classification": "WRITE",
+      "description": "update change order action order",
+      "paramCount": 2,
+      "serviceParams": [
+        "db",
+        "updates"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "sortOrder": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "sortOrder"
+        ]
+      }
+    },
+    {
+      "name": "items_getChangeOrderRequiredActions",
+      "module": "items",
+      "classification": "READ",
+      "description": "get change order required actions",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "args": {
+            "type": "object",
+            "properties": {
+              "limit": {
+                "type": "integer",
+                "default": 100
+              },
+              "offset": {
+                "type": "integer",
+                "default": 0
+              },
+              "search": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "items_getChangeOrderRequiredActionsList",
+      "module": "items",
+      "classification": "READ",
+      "description": "get change order required actions list",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "items_getChangeOrderRequiredAction",
+      "module": "items",
+      "classification": "READ",
+      "description": "get change order required action",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "items_upsertChangeOrderRequiredAction",
+      "module": "items",
+      "classification": "WRITE",
+      "description": "upsert change order required action",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "input"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "active": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "active"
+        ]
+      }
+    },
+    {
+      "name": "items_deleteChangeOrderRequiredAction",
+      "module": "items",
+      "classification": "DESTRUCTIVE",
+      "description": "delete change order required action",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "items_setChangeOrderActionTasks",
+      "module": "items",
+      "classification": "WRITE",
+      "description": "set change order action tasks",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "input"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "changeOrderId": {
+            "type": "string"
+          },
+          "requiredActionIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "changeOrderId",
+          "requiredActionIds"
+        ]
+      }
+    },
+    {
+      "name": "items_seedDefaultChangeOrderActions",
+      "module": "items",
+      "classification": "WRITE",
+      "description": "seed default change order actions",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "input"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "changeOrderId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "changeOrderId"
+        ]
+      }
+    },
+    {
+      "name": "items_diffMethod",
+      "module": "items",
+      "classification": "WRITE",
+      "description": "diff method",
+      "paramCount": 1,
+      "serviceParams": [
+        "input"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "input": {}
+        },
+        "required": [
+          "input"
+        ]
+      }
+    },
+    {
+      "name": "items_getChangeOrderDiff",
+      "module": "items",
+      "classification": "READ",
+      "description": "get change order diff",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "changeOrderId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "changeOrderId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "changeOrderId"
         ]
       }
     },

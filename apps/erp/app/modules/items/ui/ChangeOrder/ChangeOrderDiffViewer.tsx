@@ -18,7 +18,7 @@ import type {
   MethodDiffEntry,
   MethodDiffStatus,
   OperationDiffEntry
-} from "../../changeOrder.models";
+} from "../../items.models";
 import { DiffBadge } from "./diff-ui";
 
 // -----------------------------------------------------------------------------

@@ -32,7 +32,7 @@ import {
   type changeOrderStatus,
   changeOrderStatusTransitions,
   isChangeOrderLocked
-} from "../../changeOrder.models";
+} from "../../items.models";
 import type { ChangeOrder } from "../../types";
 import ChangeOrderStatus from "./ChangeOrderStatus";
 import { releaseDialogOpenAtom } from "./releaseDialog.store";

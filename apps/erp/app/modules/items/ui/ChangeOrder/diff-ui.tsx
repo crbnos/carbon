@@ -1,7 +1,7 @@
 import { Badge, HStack } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import type { ReactNode } from "react";
-import type { MethodDiffEntry } from "../../changeOrder.models";
+import type { MethodDiffEntry } from "../../items.models";
 
 // -----------------------------------------------------------------------------
 // Shared Change Order diff-UI helpers.

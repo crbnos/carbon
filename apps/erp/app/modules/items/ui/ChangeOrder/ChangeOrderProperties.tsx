@@ -28,10 +28,7 @@ import type { action } from "~/routes/x+/items+/change-order+/update";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
-import {
-  changeOrderPriority,
-  isChangeOrderLocked
-} from "../../changeOrder.models";
+import { changeOrderPriority, isChangeOrderLocked } from "../../items.models";
 import type { ChangeOrder } from "../../types";
 import type { AffectedItemDraft } from "./affectedItem.types";
 import ChangeOrderReleaseMerge from "./ChangeOrderReleaseMerge";

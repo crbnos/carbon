@@ -1,14 +1,19 @@
 import { describe, expect, it, vi } from "vitest";
 
-// changeOrder.diff imports the change-order service for getChangeOrderDiff. The
-// pure diffMethod under test needs none of it, and the real service module drags
-// in the full change-order module graph (service + Lingui macros) which explodes
-// under plain vitest. Stub it so the dynamic import stays lightweight.
-vi.mock("./changeOrder.service", () => ({
-  getChangeOrderAffectedItems: vi.fn()
+// diffMethod now lives in items.service. Importing the real module drags in the
+// items.service graph, which transitively loads @carbon/glossary — whose
+// module-load-time Lingui `msg` macro isn't transformed under plain vitest and
+// throws. The pure diffMethod under test needs none of it, so stub glossary; the
+// diffMethod under test stays the genuine implementation.
+vi.mock("@carbon/glossary", () => ({
+  terms: {},
+  getEntry: vi.fn(),
+  lookupEntry: vi.fn(),
+  hasEntry: vi.fn(),
+  termSlug: vi.fn()
 }));
 
-const { diffMethod } = await import("./changeOrder.diff");
+const { diffMethod } = await import("./items.service");
 
 // A minimal live methodMaterial row (only the fields diffMethod compares + id).
 function baseMaterial(over: Record<string, unknown> = {}) {

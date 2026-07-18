@@ -13,7 +13,7 @@ import {
   applyChangeOrder,
   changeOrderStageEvent,
   notifyChangeOrderTransition
-} from "~/modules/items/changeOrder.server";
+} from "~/modules/items/items.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
 

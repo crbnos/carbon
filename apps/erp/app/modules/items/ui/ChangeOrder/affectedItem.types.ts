@@ -1,9 +1,9 @@
 import type { JSONContent } from "@carbon/react";
 import type { MethodItemType, MethodType } from "../../../shared";
-import type { ChangeOrderItemDiff } from "../../changeOrder.models";
-import type { ChangeOrderAffectedItemWithLabel } from "../../changeOrder.service";
+import type { ChangeOrderItemDiff } from "../../items.models";
 import type { getRevisionLock } from "../../items.server";
 import type {
+  ChangeOrderAffectedItemWithLabel,
   getConfigurationParameters,
   getConfigurationRules,
   getMethodMaterialsByMakeMethod,

@@ -1,6 +1,6 @@
 import type { BadgeProps } from "@carbon/react";
 import { Badge } from "@carbon/react";
-import type { ChangeOrderChangeType } from "../../changeOrder.models";
+import type { ChangeOrderChangeType } from "../../items.models";
 
 // A single badge summarizing an affected item's change type + draft version,
 // replacing the old two-badge "[Version] [V2]" pair:

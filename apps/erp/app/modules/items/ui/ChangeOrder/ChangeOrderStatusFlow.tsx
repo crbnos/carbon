@@ -1,6 +1,6 @@
 import { cn, Menubar } from "@carbon/react";
 import { LuCheck, LuCircle, LuCircleDot } from "react-icons/lu";
-import { changeOrderStageFlow } from "../../changeOrder.models";
+import { changeOrderStageFlow } from "../../items.models";
 import type { ChangeOrderStatus } from "../../types";
 
 // The change-order stage flow, mirroring the sales OpportunityState bar: one

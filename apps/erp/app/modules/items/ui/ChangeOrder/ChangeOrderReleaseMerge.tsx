@@ -20,7 +20,7 @@ import { path } from "~/utils/path";
 import type {
   ChangeOrderChangeType,
   ChangeOrderItemDiff
-} from "../../changeOrder.models";
+} from "../../items.models";
 import ChangeOrderDiffViewer from "./ChangeOrderDiffViewer";
 import { releaseDialogOpenAtom } from "./releaseDialog.store";
 

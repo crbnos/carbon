@@ -14,14 +14,15 @@ import { useFetcher } from "react-router";
 import { CadModel, DeferredFiles } from "~/components";
 import { DatePicker, Hidden, Select, Submit } from "~/components/Form";
 import { path } from "~/utils/path";
+import type { SupersessionMode } from "../../items.models";
 import {
   changeOrderAffectedItemChangeTypeValidator,
   changeOrderAffectedItemCutoverValidator,
-  changeOrderChangeTypes
-} from "../../changeOrder.models";
-import type { ChangeOrderAffectedItemWithLabel } from "../../changeOrder.service";
-import type { SupersessionMode } from "../../items.models";
-import { supersessionModeMeta, supersessionModes } from "../../items.models";
+  changeOrderChangeTypes,
+  supersessionModeMeta,
+  supersessionModes
+} from "../../items.models";
+import type { ChangeOrderAffectedItemWithLabel } from "../../items.service";
 import {
   BillOfMaterial,
   BillOfProcess,
