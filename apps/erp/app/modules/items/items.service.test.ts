@@ -133,6 +133,34 @@ describe("diffMethod — materials", () => {
     });
     expect(materials[0].status).toBe("unchanged");
   });
+
+  // N→1 consolidation: an assembly's draft BOM drops 3 components and adds one
+  // new part. The diff must read as 3 removed + 1 added (no supersession) — the
+  // shape the consolidation feature surfaces on the assembly's Changes card.
+  it("consolidation: 3 base materials removed, 1 new part added", () => {
+    const { materials } = diffMethod({
+      ...EMPTY,
+      baseMaterials: [
+        baseMaterial({ id: "mm_1", itemId: "P1", order: 1 }),
+        baseMaterial({ id: "mm_2", itemId: "P2", order: 2 }),
+        baseMaterial({ id: "mm_3", itemId: "P3", order: 3 })
+      ],
+      targetMaterials: [
+        stagedMaterial({
+          id: "cosm_new",
+          sourceMaterialId: null,
+          itemId: "P_NEW",
+          order: 1
+        })
+      ]
+    });
+    expect(materials.filter((m) => m.status === "removed")).toHaveLength(3);
+    expect(materials.filter((m) => m.status === "added")).toHaveLength(1);
+    expect(materials.filter((m) => m.status === "modified")).toHaveLength(0);
+    expect(materials.find((m) => m.status === "added")?.after?.itemId).toBe(
+      "P_NEW"
+    );
+  });
 });
 
 describe("diffMethod — operations", () => {

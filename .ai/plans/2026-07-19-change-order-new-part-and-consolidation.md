@@ -17,7 +17,7 @@
 > the per-task green boundary is 1+2+5, not each alone.
 - [x] Task 6: UI — Add Affected Item modal: change-type Select drives existing-part picker vs create-new-part form
 - [ ] Task 7: UI — assembly BOM picker includes CO New Part drafts + removed-line where-used
-- [ ] Task 8: Tests + seed — consolidation diff coverage, seed relabel
+- [x] Task 8: Tests + seed — consolidation diff coverage, seed relabel
 - [ ] Task 9: Browser verification (end-to-end) via /test
 - [ ] Task 10: Docs — items AGENTS.md CO section
 

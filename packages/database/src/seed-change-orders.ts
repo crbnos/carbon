@@ -666,8 +666,11 @@ async function addAffectedItem(
     newItemId = created.itemId;
   }
 
-  // DB enum value is 'New Part' (with a space); the TS union uses 'NewPart'.
-  const changeTypeValue = changeType === "NewPart" ? "New Part" : changeType;
+  // The seed's "NewPart" scenario derives a new part from a source + writes a
+  // supersession — that is the 1:1 replacement, now named 'Replacement Part' (the
+  // net-new 'New Part' has no predecessor and isn't seeded here).
+  const changeTypeValue =
+    changeType === "NewPart" ? "Replacement Part" : changeType;
 
   const aiRes = await client.query(
     `INSERT INTO "changeOrderAffectedItem" (
