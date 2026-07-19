@@ -193,7 +193,8 @@ const MakeMethodTools = ({
     }
 
     // Only Draft versions can be overwritten - Active and Archived are read-only.
-    // Exclude CO-owned drafts (changeOrderId set) — hidden until release.
+    // Exclude CO-owned drafts (changeOrderId set) — a CO's draft is authored via
+    // its own BOM/BOP surfaces, not clobbered wholesale by this copy-method tool.
     const availableVersions =
       data?.filter((m) => m.status === "Draft" && !m.changeOrderId) ?? [];
 

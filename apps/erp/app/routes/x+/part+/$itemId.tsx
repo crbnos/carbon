@@ -105,9 +105,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const methodTree = getMakeMethods(client, itemId, companyId).then(
     async (makeMethods) => {
-      // Exclude CO-owned drafts (changeOrderId set) — hidden until release.
-      const selectable =
-        makeMethods.data?.filter((m) => !m.changeOrderId) ?? [];
+      // Include CO-owned drafts so a revision/new-part item created by an open
+      // Change Order shows its method tree on the item master, in sync with the
+      // CO (same makeMethod). Active is still preferred as the default below.
+      const selectable = makeMethods.data ?? [];
       const makeMethod = requestedMethodId
         ? (selectable.find((m) => m.id === requestedMethodId) ??
           selectable.find((m) => m.status === "Active") ??
