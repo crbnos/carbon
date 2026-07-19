@@ -16,10 +16,18 @@
 > can only be green once the array (T2) and the badge (T5) both include the new value —
 > the per-task green boundary is 1+2+5, not each alone.
 - [x] Task 6: UI — Add Affected Item modal: change-type Select drives existing-part picker vs create-new-part form
-- [ ] Task 7: UI — assembly BOM picker includes CO New Part drafts + removed-line where-used
+- [~] Task 7: UI — BOM picker includes CO New Part drafts (DONE, no code — picker already `includeInactive`) + removed-line where-used (PENDING — see note)
 - [x] Task 8: Tests + seed — consolidation diff coverage, seed relabel
 - [ ] Task 9: Browser verification (end-to-end) via /test
-- [ ] Task 10: Docs — items AGENTS.md CO section
+- [x] Task 10: Docs — items AGENTS.md CO section
+
+> Task 7 note: step 1 (BOM picker can select the inactive New Part draft) needs no
+> code — `BillOfMaterial.tsx` already renders the material `<Item>` picker with
+> `includeInactive`, and `Item.tsx` shows inactive items when set. Step 2 (a
+> "used in N other assemblies" indicator on removed diff lines) is a surfacing
+> nicety needing a loader decision (per-removed-component `getPartUsedIn` is a
+> heavier query) — deferred pending the checkpoint. Where-used is already reachable
+> on each part's detail page.
 
 ## Dependencies
 - Task 1 blocks all (regenerated `changeOrderChangeType` type).
