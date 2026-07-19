@@ -677,6 +677,18 @@ export default function ChangeOrderDiffViewer({
     </span>
   ) : (
     <VStack spacing={8} className="w-full">
+      {attributes.length > 0 && (
+        <Section title={<Trans>Properties</Trans>}>
+          {attributes.map((a, i) => (
+            <VStack key={`attr-${i}`} spacing={1} className="w-full">
+              {modifiedFieldRows(
+                a,
+                attributeIsBuyAndMake(a) ? EMPTY_SKIP : SOURCING_ONLY_FIELDS
+              )}
+            </VStack>
+          ))}
+        </Section>
+      )}
       {materials.length > 0 && (
         <Section title={<Trans>Bill of Materials</Trans>} termId="bom">
           {materials.map((m, i) => (
@@ -688,18 +700,6 @@ export default function ChangeOrderDiffViewer({
         <Section title={<Trans>Bill of Process</Trans>} termId="routing">
           {operations.map((o, i) => (
             <OperationEntry key={`op-${i}`} entry={o} />
-          ))}
-        </Section>
-      )}
-      {attributes.length > 0 && (
-        <Section title={<Trans>Properties</Trans>}>
-          {attributes.map((a, i) => (
-            <VStack key={`attr-${i}`} spacing={1} className="w-full">
-              {modifiedFieldRows(
-                a,
-                attributeIsBuyAndMake(a) ? EMPTY_SKIP : SOURCING_ONLY_FIELDS
-              )}
-            </VStack>
           ))}
         </Section>
       )}

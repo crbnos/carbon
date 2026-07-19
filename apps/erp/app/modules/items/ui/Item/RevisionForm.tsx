@@ -40,7 +40,6 @@ const RevisionForm = ({
     | { success: false; message: string }
     | { success: true; link: string; newItemId?: string }
   >();
-  const changeOrderFetcher = useFetcher();
   const navigate = useNavigate();
 
   const isEditing = initialValues.id !== undefined;
@@ -59,18 +58,12 @@ const RevisionForm = ({
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
+    // The "open a change order" path posts straight to the create+attach route
+    // (see the form action below), which redirects to the new CO — so it never
+    // returns here. This only handles the plain new-revision submit.
     if (fetcher.data?.success) {
       onClose();
-      // "Open a change order" hands off to the single create+attach route
-      // (new-from-item) — no CO logic lives here.
-      if (openChangeOrder && fetcher.data.newItemId) {
-        changeOrderFetcher.submit(null, {
-          method: "post",
-          action: path.to.newChangeOrderFromItem(fetcher.data.newItemId)
-        });
-      } else {
-        navigate(fetcher.data.link);
-      }
+      navigate(fetcher.data.link);
     }
     if (fetcher.data?.success === false) {
       toast.error(fetcher.data.message);
@@ -92,7 +85,9 @@ const RevisionForm = ({
             action={
               isEditing
                 ? path.to.revision(initialValues.id!)
-                : path.to.newRevision
+                : openChangeOrder && initialValues.copyFromId
+                  ? path.to.newChangeOrderFromItem(initialValues.copyFromId)
+                  : path.to.newRevision
             }
             defaultValues={initialValues}
             fetcher={fetcher}
@@ -136,8 +131,12 @@ const RevisionForm = ({
                     name="openChangeOrder"
                     label={t`Open a change order`}
                     description={t`Create a change order for the new revision and open it`}
+                    bordered
                     onChange={setOpenChangeOrder}
                   />
+                )}
+                {openChangeOrder && (
+                  <Hidden name="changeType" value="Revision" />
                 )}
               </VStack>
             </ModalDrawerBody>

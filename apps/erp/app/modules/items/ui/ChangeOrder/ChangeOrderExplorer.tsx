@@ -14,7 +14,7 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { LuCirclePlus, LuEllipsisVertical, LuTrash } from "react-icons/lu";
 import { Link, useFetcher, useParams } from "react-router";
-import { ItemThumbnail, MethodItemTypeIcon } from "~/components";
+import { Empty, ItemThumbnail, MethodItemTypeIcon } from "~/components";
 import { useRouteData } from "~/hooks";
 import { canEditChangeOrder } from "~/modules/items";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
@@ -28,10 +28,11 @@ import type { AffectedItemDraft } from "./affectedItem.types";
 // Explorer (left panel) of the change-order workspace — deliberately the same
 // layout as the Purchase Order explorer (PurchaseOrderExplorer /
 // PurchaseOrderLineItem): a full-bleed list of rows (thumbnail + id +
-// description, hover ⋮ menu) over a bottom "Add" button. Selection lives in the
-// URL (the affectedId route param). Self-contained: reads the affected items and
-// lock state from the $id route loader, so ResizablePanels can render it with no
-// props (mirrors SalesOrderExplorer).
+// description, hover ⋮ menu) over a bottom "Add" button, with the shared `Empty`
+// component for the no-items state (mirrors the Sales / Purchase Order explorers).
+// Selection lives in the URL (the affectedId route param). Self-contained: reads
+// the affected items and lock state from the $id route loader, so ResizablePanels
+// can render it with no props (mirrors SalesOrderExplorer).
 export default function ChangeOrderExplorer() {
   const { id } = useParams();
   if (!id) throw new Error("id not found");
@@ -54,9 +55,17 @@ export default function ChangeOrderExplorer() {
           className="flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
         >
           {affectedItems.length === 0 ? (
-            <span className="text-sm text-muted-foreground italic p-4">
-              <Trans>No affected items yet — add a part or tool below.</Trans>
-            </span>
+            <Empty>
+              {!isDisabled && (
+                <Button
+                  leftIcon={<LuCirclePlus />}
+                  variant="secondary"
+                  onClick={disclosure.onOpen}
+                >
+                  <Trans>Add Affected Item</Trans>
+                </Button>
+              )}
+            </Empty>
           ) : (
             affectedItems.map((affected) => (
               <AffectedItemRow

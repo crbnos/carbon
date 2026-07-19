@@ -1,5 +1,5 @@
 {
-  "generated": "2026-07-18T07:01:41.866Z",
+  "generated": "2026-07-19T03:20:59.588Z",
   "totalTools": 1374,
   "modules": 15,
   "tools": [
@@ -15143,7 +15143,7 @@
       "module": "items",
       "classification": "WRITE",
       "description": "create change order draft method",
-      "paramCount": 3,
+      "paramCount": 4,
       "serviceParams": [
         "client",
         "input"
@@ -15162,7 +15162,10 @@
           "itemId": {
             "type": "string"
           },
-          "changeType": {}
+          "changeType": {},
+          "revision": {
+            "type": "string"
+          }
         },
         "required": [
           "changeOrderId",
@@ -15176,7 +15179,7 @@
       "module": "items",
       "classification": "WRITE",
       "description": "add change order affected item",
-      "paramCount": 3,
+      "paramCount": 4,
       "serviceParams": [
         "client",
         "input"
@@ -15195,7 +15198,10 @@
           "itemId": {
             "type": "string"
           },
-          "changeType": {}
+          "changeType": {},
+          "revision": {
+            "type": "string"
+          }
         },
         "required": [
           "changeOrderId",

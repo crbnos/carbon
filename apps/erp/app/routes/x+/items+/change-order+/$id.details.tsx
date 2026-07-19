@@ -49,13 +49,13 @@ export default function ChangeOrderDetailsRoute() {
   return (
     <VStack spacing={2} className="p-2">
       <ChangeOrderStatusFlow status={changeOrder.status} />
+      <ChangeOrderChanges changes={changes} />
       <ChangeOrderContent
         id={id}
         reasonForChange={changeOrder.reasonForChange as JSONContent}
         description={changeOrder.description as JSONContent}
         isDisabled={isDisabled}
       />
-      <ChangeOrderChanges changes={changes} />
       <ChangeOrderActions
         changeOrderId={id}
         actions={routeData?.actions ?? []}

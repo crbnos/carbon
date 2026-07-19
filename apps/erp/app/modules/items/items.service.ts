@@ -5384,8 +5384,10 @@ export async function mintPlaceholderPart(
 // v2 — CO-owned Draft make-method orchestration (affected items).
 //
 // A CO's edits for one affected item live on a REAL Draft makeMethod owned by
-// the CO (makeMethod.changeOrderId set) and hidden from version lists until
-// release. Creating an affected item spins that draft per the change type:
+// the CO (makeMethod.changeOrderId set). That draft is shown/edited both in the
+// CO workspace and on the affected item's own master page (same rows, in sync);
+// changeOrderId is cleared at release. Creating an affected item spins that
+// draft per the change type:
 //   Version  → new Draft method version on the SAME item (BoM/BoP edits).
 //   Revision → new inactive revision item + its Draft method (attrs/docs).
 //   New Part → new inactive part number (new readableId) + copied Draft method.
@@ -5492,11 +5494,16 @@ export async function createChangeOrderDraftMethod(
     changeOrderId: string;
     itemId: string;
     changeType: ChangeOrderChangeType;
+    // Optional revision label for the Revision path — when the caller already
+    // knows the target revision (e.g. the value typed in the new-revision
+    // modal). Omitted → the next revision is auto-computed.
+    revision?: string;
     companyId: string;
     userId: string;
   }
 ): Promise<DraftMethodResult> {
-  const { changeOrderId, itemId, changeType, companyId, userId } = input;
+  const { changeOrderId, itemId, changeType, revision, companyId, userId } =
+    input;
 
   const base = await getActiveMakeMethodId(client, itemId, companyId);
 
@@ -5574,27 +5581,32 @@ export async function createChangeOrderDraftMethod(
     if (source.error || !source.data) {
       return { data: null, error: { message: "Item not found" } };
     }
-    // Next revision string across the item's readableId siblings.
-    const siblings = await client
-      .from("item")
-      .select("revision")
-      .eq("readableId", source.data.readableId)
-      .eq("companyId", companyId)
-      .eq("type", source.data.type)
-      .order("revision", { ascending: false });
-    const maxRevision = siblings.data?.[0]?.revision ?? "0";
-    const nextRevision = getNextRevision(maxRevision);
+    // Honor a caller-supplied revision label (e.g. the value typed in the
+    // new-revision modal); otherwise auto-pick the next revision string across
+    // the item's readableId siblings.
+    let nextRevision = revision?.trim();
+    if (!nextRevision) {
+      const siblings = await client
+        .from("item")
+        .select("revision")
+        .eq("readableId", source.data.readableId)
+        .eq("companyId", companyId)
+        .eq("type", source.data.type)
+        .order("revision", { ascending: false });
+      const maxRevision = siblings.data?.[0]?.revision ?? "0";
+      nextRevision = getNextRevision(maxRevision);
+    }
 
-    const revision = await createRevision(client, {
+    const created = await createRevision(client, {
       item: source.data,
       revision: nextRevision,
       createdBy: userId,
       active: false
     });
-    if (revision.error || !revision.data) {
-      return { data: null, error: revision.error };
+    if (created.error || !created.data) {
+      return { data: null, error: created.error };
     }
-    const newItemId = revision.data.id;
+    const newItemId = created.data.id;
     const draftId = await getDraftMakeMethodIdForItem(
       client,
       newItemId,
@@ -5757,6 +5769,9 @@ export async function addChangeOrderAffectedItem(
     changeOrderId: string;
     itemId: string;
     changeType: ChangeOrderChangeType;
+    // Forwarded to the Revision draft path so a Revision affected item can take
+    // an explicit revision label (e.g. from the new-revision modal).
+    revision?: string;
     companyId: string;
     userId: string;
   }
@@ -5764,7 +5779,8 @@ export async function addChangeOrderAffectedItem(
   data: { id: string; draftMakeMethodId: string | null } | null;
   error: ChangeOrderError | null;
 }> {
-  const { changeOrderId, itemId, changeType, companyId, userId } = input;
+  const { changeOrderId, itemId, changeType, revision, companyId, userId } =
+    input;
 
   // A purchased (Buy) item has no BoM/BoP, so a Version change is a no-op —
   // default it to a Revision (part-data/docs), the meaningful change for Buy.
@@ -5812,6 +5828,7 @@ export async function addChangeOrderAffectedItem(
     changeOrderId,
     itemId,
     changeType: effectiveChangeType,
+    revision,
     companyId,
     userId
   });

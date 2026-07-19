@@ -81,6 +81,11 @@ type PartPropertiesProps = {
   // Read-only: every field/control is non-editable (used when the change order
   // is released/locked). Defaults to editable.
   isReadOnly?: boolean;
+  // Lock only the Part Number field (leaving Name + the other attributes
+  // editable). Used on a change-order Revision line: a revision keeps the source
+  // part number, so it must not be edited — but the rest of the attributes still
+  // can be. (New Part gets a fresh number and stays editable.)
+  lockPartNumber?: boolean;
 };
 
 const PartProperties = ({
@@ -88,7 +93,8 @@ const PartProperties = ({
   embedded,
   section = "all",
   layout = "sidebar",
-  isReadOnly = false
+  isReadOnly = false,
+  lockPartNumber = false
 }: PartPropertiesProps) => {
   // Inline click-to-edit only in the sidebar layout; the form layout renders
   // each field as a standard labeled control.
@@ -288,14 +294,13 @@ const PartProperties = ({
         partId: z.string()
       })}
       className={cn("w-full", !formLayout && "-mt-2")}
-      isReadOnly={isReadOnly}
+      isReadOnly={isReadOnly || lockPartNumber}
     >
       <span className="text-sm">
         <InputControlled
           label={formLayout ? t`Part Number` : ""}
           name="partId"
           inline={inlineLayout}
-          size="sm"
           value={routeData?.partSummary?.readableId ?? ""}
           onBlur={(e) => {
             onUpdate("partId", e.target.value ?? null);
@@ -321,7 +326,6 @@ const PartProperties = ({
           label={formLayout ? t`Name` : ""}
           name="name"
           inline={inlineLayout}
-          size="sm"
           characterLimit={40}
           value={routeData?.partSummary?.name ?? ""}
           onBlur={(e) => {

@@ -2,16 +2,18 @@ import type { BadgeProps } from "@carbon/react";
 import { Badge } from "@carbon/react";
 import type { ChangeOrderChangeType } from "../../items.models";
 
-// A single badge summarizing an affected item's change type + draft version,
-// replacing the old two-badge "[Version] [V2]" pair:
-//   Version  → "Version 2"   Revision → "Revision 2"   New Part → "New"
+// A single badge summarizing an affected item's change type:
+//   Version → "Version 2"   Revision → "New Revision"   New Part → "New"
 // Shown on the line-detail card header and each explorer row so both read
-// identically. When there's no draft make method yet, the number is omitted.
+// identically. Only a Version shows a number, and it's the meaningful new
+// method version; a Revision mints a brand-new item whose method restarts at
+// v1, so that number is noise — say "New Revision" instead.
 export function changeTypeBadgeLabel(
   changeType: ChangeOrderChangeType,
   version?: number | null
 ): string {
   if (changeType === "New Part") return "New";
+  if (changeType === "Revision") return "New Revision";
   return version != null ? `${changeType} ${version}` : changeType;
 }
 

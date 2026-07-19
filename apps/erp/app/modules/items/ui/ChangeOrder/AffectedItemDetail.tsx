@@ -48,9 +48,10 @@ const changeTypeOptions = changeOrderChangeTypes.map((c) => ({
 // The affected-item line detail: everything about the ONE selected affected item,
 // unwrapped from a single card into as many standalone cards as the change needs
 // (no tabs). Change Type comes first (carrying the item identity + remove), then
-// the item attribute cards (Properties, Files + CAD Model for Revision / New
-// Part), the method cards (BillOfMaterial / BillOfProcess, which self-card), Part
-// Supersession (cutover), and the read-only Changes diff.
+// the read-only Changes diff right under it, Properties, Supplier Parts, the
+// method cards (BillOfMaterial / BillOfProcess, which self-card), then Files +
+// CAD Model (Revision / New Part) after the method cards, and Part Supersession
+// (cutover).
 export default function AffectedItemDetail({
   changeOrderId,
   affected,
@@ -143,6 +144,19 @@ export default function AffectedItemDetail({
         </CardContent>
       </Card>
 
+      {/* Changes — the read-only end-state diff, surfaced at the top right under
+          the item header. */}
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            <Trans>Changes</Trans>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ChangeOrderDiffViewer bare diff={affected.diff} />
+        </CardContent>
+      </Card>
+
       {/* Properties — item attributes (Revision / New Part only). */}
       {showAttributes && (
         <Card>
@@ -159,6 +173,9 @@ export default function AffectedItemDetail({
                 section="properties"
                 data={affected.partData}
                 isReadOnly={isDisabled}
+                // A revision keeps the source part number — lock it so it can't
+                // be edited (New Part gets a fresh number and stays editable).
+                lockPartNumber={changeType === "Revision"}
               />
             ) : (
               <p className="text-sm text-muted-foreground py-2">
@@ -168,45 +185,6 @@ export default function AffectedItemDetail({
           </CardContent>
         </Card>
       )}
-
-      {/* Files + CAD Model — attachments on the draft item (Revision / New Part
-          only). Same components as the part detail page: ItemDocuments (which
-          self-cards + lists the model row) and the CadModel viewer/uploader. */}
-      {showAttributes &&
-        (partData ? (
-          <>
-            <DeferredFiles resolve={partData.files}>
-              {(resolvedFiles) => (
-                <ItemDocuments
-                  files={resolvedFiles}
-                  itemId={partData.itemId}
-                  modelUpload={partData.partSummary ?? undefined}
-                  type="Part"
-                  isReadOnly={isDisabled}
-                />
-              )}
-            </DeferredFiles>
-            <CadModel
-              isReadOnly={isDisabled}
-              metadata={{ itemId: partData.itemId }}
-              modelPath={partData.partSummary?.modelPath ?? null}
-              title={t`CAD Model`}
-            />
-          </>
-        ) : (
-          <Card>
-            <CardHeader>
-              <CardTitle>
-                <Trans>Files</Trans>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground py-2">
-                <Trans>No files for this item.</Trans>
-              </p>
-            </CardContent>
-          </Card>
-        ))}
 
       {/* Supplier Parts — purchasing setup for a Buy draft item (renders its own
           card + the Outlet hosting the create/edit drawer child routes). */}
@@ -266,6 +244,46 @@ export default function AffectedItemDetail({
           </Card>
         ))}
 
+      {/* Files + CAD Model — attachments on the draft item (Revision / New Part
+          only), after the method cards. Same components as the part detail page:
+          ItemDocuments (which self-cards + lists the model row) and the CadModel
+          viewer/uploader. */}
+      {showAttributes &&
+        (partData ? (
+          <>
+            <DeferredFiles resolve={partData.files}>
+              {(resolvedFiles) => (
+                <ItemDocuments
+                  files={resolvedFiles}
+                  itemId={partData.itemId}
+                  modelUpload={partData.partSummary ?? undefined}
+                  type="Part"
+                  isReadOnly={isDisabled}
+                />
+              )}
+            </DeferredFiles>
+            <CadModel
+              isReadOnly={isDisabled}
+              metadata={{ itemId: partData.itemId }}
+              modelPath={partData.partSummary?.modelPath ?? null}
+              title={t`CAD Model`}
+            />
+          </>
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                <Trans>Files</Trans>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground py-2">
+                <Trans>No files for this item.</Trans>
+              </p>
+            </CardContent>
+          </Card>
+        ))}
+
       {/* Part Supersession — cutover config (non-Version). */}
       {showCutover && (
         <Card>
@@ -283,18 +301,6 @@ export default function AffectedItemDetail({
           </CardContent>
         </Card>
       )}
-
-      {/* Changes — the read-only end-state diff. */}
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            <Trans>Changes</Trans>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ChangeOrderDiffViewer bare diff={affected.diff} />
-        </CardContent>
-      </Card>
     </VStack>
   );
 }

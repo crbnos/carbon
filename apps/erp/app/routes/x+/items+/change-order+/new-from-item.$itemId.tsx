@@ -6,6 +6,8 @@ import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import {
   addChangeOrderAffectedItem,
+  type ChangeOrderChangeType,
+  changeOrderChangeTypes,
   getItem,
   insertChangeOrder
 } from "~/modules/items";
@@ -15,6 +17,11 @@ import { path, requestReferrer } from "~/utils/path";
 // as its first affected item, then open the CO. Change-order creation lives only
 // here (and new.tsx) — this route is the single home for the create+attach flow,
 // so no CO logic leaks into the revision/part routes that link to it.
+//
+// The optional `changeType` + `revision` POST fields let callers request a
+// specific kind of change (the new-revision modal posts `Revision` plus the
+// typed revision label); with no body it defaults to a `Version` change (the
+// parts-table "Create Change Order" action).
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await requirePermissions(request, {
@@ -23,6 +30,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { itemId } = params;
   if (!itemId) throw new Error("itemId not found");
+
+  const formData = await request.formData();
+  const changeTypeRaw = formData.get("changeType");
+  const changeType: ChangeOrderChangeType = changeOrderChangeTypes.includes(
+    changeTypeRaw as ChangeOrderChangeType
+  )
+    ? (changeTypeRaw as ChangeOrderChangeType)
+    : "Version";
+  const revisionRaw = formData.get("revision");
+  const revision =
+    typeof revisionRaw === "string" && revisionRaw.trim()
+      ? revisionRaw.trim()
+      : undefined;
 
   const backTo = requestReferrer(request) ?? path.to.changeOrders;
 
@@ -46,7 +66,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const add = await addChangeOrderAffectedItem(client, {
     changeOrderId: co.data.id,
     itemId,
-    changeType: "Version",
+    changeType,
+    revision,
     companyId,
     userId
   });
