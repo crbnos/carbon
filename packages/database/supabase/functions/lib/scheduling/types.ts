@@ -151,8 +151,9 @@ export type WorkCenterSelection = {
 };
 
 export type PlannedReservation = {
-  resourceKind: "WorkCenter" | "OperatorPool";
-  resourceId: string; // workCenter.id or ability.id
+  /** "OperatorPool" is legacy — read-tolerated, never written anymore. */
+  resourceKind: "WorkCenter" | "OperatorPool" | "Employee";
+  resourceId: string; // workCenter.id, ability.id (legacy), or employee id
   operationId: string;
   startAt: Date;
   endAt: Date;

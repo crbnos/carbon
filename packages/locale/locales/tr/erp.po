@@ -8443,6 +8443,9 @@ msgstr "Operatör Havuzu"
 msgid "Operator Pool Reservation"
 msgstr "Operatör Havuzu Rezervasyonu"
 
+msgid "Operator Reservation"
+msgstr "Operatör Rezervasyonu"
+
 msgid "Operators"
 msgstr "Operatörler"
 

@@ -47,7 +47,8 @@ export type CrossJobOperation = {
 };
 
 export type LiveReservation = {
-  resourceKind: "WorkCenter" | "OperatorPool";
+  /** "OperatorPool" is legacy — read-tolerated, never written anymore. */
+  resourceKind: "WorkCenter" | "OperatorPool" | "Employee";
   resourceId: string;
   startAt: Date;
   endAt: Date;
@@ -404,7 +405,7 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
       .execute();
 
     return rows.map((r) => ({
-      resourceKind: r.resourceKind as "WorkCenter" | "OperatorPool",
+      resourceKind: r.resourceKind as LiveReservation["resourceKind"],
       resourceId: r.resourceId,
       startAt: new Date(r.startAt as unknown as string),
       endAt: new Date(r.endAt as unknown as string),

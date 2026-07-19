@@ -8443,6 +8443,9 @@ msgstr "운영자 풀"
 msgid "Operator Pool Reservation"
 msgstr "운영자 풀 예약"
 
+msgid "Operator Reservation"
+msgstr "작업자 예약"
+
 msgid "Operators"
 msgstr "작업자"
 

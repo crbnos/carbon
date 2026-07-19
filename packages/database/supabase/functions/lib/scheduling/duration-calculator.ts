@@ -109,6 +109,28 @@ export function calculateDurationHours(operation: BaseOperation): number {
 }
 
 /**
+ * Hours a person is hands-on at the START of the operation: setup + labor.
+ * The machine runs the remaining max(0, machine - labor) unattended. When
+ * labor >= machine this equals calculateDurationHours (fully attended).
+ */
+export function calculateAttendedHours(operation: BaseOperation): number {
+  const quantity = operation.operationQuantity || 1;
+
+  const setupHours = convertToHours(
+    operation.setupTime,
+    operation.setupUnit,
+    quantity
+  );
+  const laborHours = convertToHours(
+    operation.laborTime,
+    operation.laborUnit,
+    quantity
+  );
+
+  return setupHours + laborHours;
+}
+
+/**
  * Calculate the total duration of an operation in working days
  * Rounds up to at least 1 day
  */

@@ -8443,6 +8443,9 @@ msgstr "操作员池"
 msgid "Operator Pool Reservation"
 msgstr "操作员池预留"
 
+msgid "Operator Reservation"
+msgstr "操作员预留"
+
 msgid "Operators"
 msgstr "操作员"
 

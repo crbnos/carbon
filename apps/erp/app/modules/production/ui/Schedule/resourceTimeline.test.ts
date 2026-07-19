@@ -77,6 +77,42 @@ describe("buildResourceTimeline", () => {
     expect(laneIds).toEqual(["CNC Router", "Weld Cell 1", "Welding operators"]);
   });
 
+  it("named-operator (Employee) lanes render by person name between machines and pools", () => {
+    const result = buildResourceTimeline({
+      reservations: [
+        reservation({
+          id: "res-pool",
+          resourceKind: "OperatorPool",
+          resourceId: "ab-1",
+          resourceName: "Welding"
+        }),
+        reservation({
+          id: "res-emp",
+          resourceKind: "Employee",
+          resourceId: "emp-1",
+          resourceName: "Sam Smith"
+        }),
+        reservation({ id: "res-a" }) // CNC Router (WorkCenter)
+      ]
+    });
+
+    const laneMessages = result.events
+      .filter((e) => e.parentId === "resources-root")
+      .map((e) => e.data.message);
+    // person lane keeps the raw name — no "operators" suffix
+    expect(laneMessages).toEqual([
+      "CNC Router",
+      "Sam Smith",
+      "Welding operators"
+    ]);
+
+    const personLane = result.events.find(
+      (e) => e.id === "lane:Employee:emp-1"
+    )!;
+    expect(personLane.data.style?.icon).toBe("wait");
+    expect(personLane.children).toEqual(["res-emp"]);
+  });
+
   it("keeps the events array depth-first so every subtree is contiguous", () => {
     const result = buildResourceTimeline({
       reservations: [

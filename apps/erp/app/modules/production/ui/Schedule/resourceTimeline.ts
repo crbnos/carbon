@@ -15,7 +15,7 @@ import type { TimelineNodeDetail } from "./timeline";
 
 export type ResourceTimelineReservation = {
   id: string;
-  resourceKind: "WorkCenter" | "OperatorPool";
+  resourceKind: "WorkCenter" | "OperatorPool" | "Employee";
   resourceId: string;
   resourceName: string;
   startAt: string;
@@ -42,7 +42,7 @@ const ROOT_ID = "resources-root";
 
 type Lane = {
   id: string;
-  resourceKind: "WorkCenter" | "OperatorPool";
+  resourceKind: "WorkCenter" | "OperatorPool" | "Employee";
   resourceName: string;
   reservations: ResourceTimelineReservation[];
 };
@@ -96,9 +96,10 @@ export function buildResourceTimeline(input: {
     }
     lane.reservations.push(r);
   }
+  const kindRank = { WorkCenter: 0, Employee: 1, OperatorPool: 2 } as const;
   const lanes = Array.from(laneByKey.values()).sort((a, b) => {
     if (a.resourceKind !== b.resourceKind) {
-      return a.resourceKind === "WorkCenter" ? -1 : 1;
+      return kindRank[a.resourceKind] - kindRank[b.resourceKind];
     }
     return a.resourceName.localeCompare(b.resourceName);
   });
@@ -125,9 +126,9 @@ export function buildResourceTimeline(input: {
     const laneEnd = Math.max(...sorted.map((r) => Date.parse(r.endAt)));
     const laneConflict = sorted.some((r) => r.hasConflict);
     const laneTitle =
-      lane.resourceKind === "WorkCenter"
-        ? lane.resourceName
-        : `${lane.resourceName} operators`;
+      lane.resourceKind === "OperatorPool"
+        ? `${lane.resourceName} operators` // legacy ability-pool rows
+        : lane.resourceName; // work center, or a named person (Employee)
 
     const laneEvent: GanttEvent = {
       id: lane.id,

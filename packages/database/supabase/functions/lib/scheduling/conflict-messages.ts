@@ -1,8 +1,9 @@
 /**
  * Cause-specific conflict messages for placements that finish after the job's
- * due date. The selector knows WHY an operation is late (queued behind other
- * jobs, waiting on a predecessor, no runway, outside turnaround) — these
- * helpers turn that into a message a scheduler can act on.
+ * due date. The allocator knows WHY an operation is late (queued behind other
+ * jobs on the machine or in the operator pool, waiting on a predecessor, no
+ * runway, outside turnaround) — these helpers turn that into a message a
+ * scheduler can act on.
  *
  * Pure module (no provider/database imports) so it stays type-checkable under
  * `deno test lib/scheduling/`. Strings are stored in the DB
@@ -10,7 +11,28 @@
  * English by design, not i18n'd.
  */
 
+/**
+ * Which finite resource pushed an operation's start past its earliest
+ * feasible start, and who held it. Built by the slot allocator: `resource`
+ * is the check that failed on the LAST probe before the successful
+ * placement (the binding constraint), `blockers`/`ownJobAhead` describe
+ * that resource's reservations in the wait region.
+ */
+export type WaitAttribution = {
+  resource: "machine" | "operator";
+  /** Other jobs' reservations in the wait region ("queued behind J000001 (3 ops)"), or null. */
+  blockers: string | null;
+  /** Untagged (this job's own in-run) reservations overlap the wait region. */
+  ownJobAhead: boolean;
+};
+
 export type LatePlacementCause =
+  /** Waited for the work center, busy with other jobs' operations. */
+  | { kind: "machine-queue"; blockers: string }
+  /** Waited for the work center, busy with this job's earlier operations. */
+  | { kind: "machine-own-job" }
+  /** Waited for the work center (machine-bound, no attributable reservation). */
+  | { kind: "machine-wait" }
   /** Waited for a qualified operator busy on other jobs' operations. */
   | { kind: "operator-queue"; blockers: string }
   /** Waited for a qualified operator busy on this job's earlier operations. */
@@ -27,19 +49,27 @@ export type LatePlacementCause =
 /**
  * Classify why a placed operation finishes late. `waitedMs` is how long the
  * operation sat between its earliest feasible start and its actual start;
+ * `wait` is the allocator's attribution of that delay (null when the wait
+ * came from a shift gap the walk snapped over, not a failed resource check);
  * `dominantDep` is set when a predecessor's in-run placement (not "now" or
  * the backward-pass start date) was the binding lower bound on the start.
  */
 export function classifyLatePlacement(args: {
   waitedMs: number;
-  blockers: string | null;
-  ownJobAhead: boolean;
+  wait: WaitAttribution | null;
   dominantDep: { description: string | null } | null;
 }): LatePlacementCause {
-  const { waitedMs, blockers, ownJobAhead, dominantDep } = args;
+  const { waitedMs, wait, dominantDep } = args;
   if (waitedMs > 0) {
-    if (blockers) return { kind: "operator-queue", blockers };
-    if (ownJobAhead) return { kind: "own-job-queue" };
+    if (wait?.resource === "machine") {
+      if (wait.blockers) return { kind: "machine-queue", blockers: wait.blockers };
+      if (wait.ownJobAhead) return { kind: "machine-own-job" };
+      return { kind: "machine-wait" };
+    }
+    // Operator-bound wait — or a shift-gap snap (wait === null), which for a
+    // gated op means nobody qualified was on shift in the gap
+    if (wait?.blockers) return { kind: "operator-queue", blockers: wait.blockers };
+    if (wait?.ownJobAhead) return { kind: "own-job-queue" };
     return { kind: "operator-wait" };
   }
   if (dominantDep) {
@@ -76,6 +106,18 @@ export function composePlacementNote(
   waitedMs: number
 ): string | null {
   switch (cause.kind) {
+    case "machine-queue":
+      return `Waited ${formatWaitDuration(waitedMs)} for the work center — ${
+        cause.blockers
+      }`;
+    case "machine-own-job":
+      return `Waited ${formatWaitDuration(
+        waitedMs
+      )} for the work center — busy with earlier operations in this job`;
+    case "machine-wait":
+      return `Waited ${formatWaitDuration(
+        waitedMs
+      )} for the work center to be available`;
     case "operator-queue":
       return `Waited ${formatWaitDuration(waitedMs)} for a qualified operator — ${
         cause.blockers
@@ -105,6 +147,12 @@ export function composeLateConflict(
 ): string {
   const late = `Finishes ${finishDate} but the job is due ${jobDueDate}`;
   switch (cause.kind) {
+    case "machine-queue":
+      return `${late} — waited for the work center, ${cause.blockers}`;
+    case "machine-own-job":
+      return `${late} — waited for the work center, busy with earlier operations in this job`;
+    case "machine-wait":
+      return `${late} — waited for the work center to be available`;
     case "operator-queue":
       return `${late} — waited for a qualified operator, ${cause.blockers}`;
     case "own-job-queue":

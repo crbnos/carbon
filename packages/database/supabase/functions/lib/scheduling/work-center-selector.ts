@@ -1,4 +1,7 @@
-import { calculateDurationHours } from "./duration-calculator.ts";
+import {
+  calculateAttendedHours,
+  calculateDurationHours,
+} from "./duration-calculator.ts";
 import {
   classifyLatePlacement,
   composeLateConflict,
@@ -12,10 +15,11 @@ import {
   type QualifiedEmployee,
 } from "./operator-eligibility.ts";
 import {
+  allocateAttendedOperation,
   allocateOperation,
-  formatBlockingJobs,
+  type AttendedAllocationSuccess,
+  type EligibleMember,
   isConflict,
-  type OperatorPool,
   type ReservationInterval,
   type ResourceCapacityData,
 } from "./slot-allocator.ts";
@@ -50,7 +54,12 @@ export type FiniteSchedulingContext = {
   /** processId -> required ability (only processes with requiresAbility = true) */
   requirementByProcess: Map<string, ProcessRequirement>;
   employeesByAbility: Map<string, PoolEmployee[]>;
-  poolReservationsByAbility: Map<string, ReservationInterval[]>;
+  /**
+   * Named-person bookings (Employee-kind reservations) keyed by employee id,
+   * spanning ALL abilities — one person can never be in two places at once.
+   * Mutated in-run as attended segments are committed.
+   */
+  reservationsByEmployee: Map<string, ReservationInterval[]>;
   dependencies: JobOperationDependency[];
   now: Date;
   horizonDays: number;
@@ -68,10 +77,12 @@ export type FiniteSchedulingContext = {
 };
 
 /**
- * Work Center Selector — placement. Work centers never limit concurrency
- * (anyone qualified can work at a station); the only finite resource is
- * PEOPLE: ability-gated operations wait for a qualified person to be on
- * shift and unreserved.
+ * Work Center Selector — placement. Two finite resources gate every
+ * placement: the work center itself (capacity 1 — one operation at a time,
+ * held for the op's full span) and, for ability-gated operations, PEOPLE —
+ * named qualified persons booked only for the ATTENDED window (setup +
+ * labor) at the start, relaying across shifts; the unattended remainder
+ * runs lights-out on calendar time.
  */
 export class WorkCenterSelector {
   private provider: MasterDataProvider;
@@ -152,12 +163,13 @@ export class WorkCenterSelector {
 
   /**
    * Select work centers for multiple operations: for each operation, walk
-   * forward to the first interval where (when the process requires an
-   * ability) a qualified person is on shift and unreserved — machines never
-   * constrain; ungated ops place at their earliest start. Pick the candidate
-   * work center with the earliest finish (tie → least reserved time, for
-   * load-spreading of the ASSIGNMENT, not gating). Conflicts surface on the
-   * selection, never fail hard.
+   * forward to the first span where the work center is free (capacity 1)
+   * AND (when the process requires an ability) the attended window can be
+   * staffed by qualified, un-booked people (relay across shifts; pause when
+   * nobody is free). Pick the candidate work center with the earliest
+   * finish — a busy machine yields a later finish, so this load-balances
+   * across candidates naturally (tie → least reserved time, preferring the
+   * emptier machine). Conflicts surface on the selection, never fail hard.
    */
   selectWorkCentersForOperations(
     operations: ScheduledOperation[],
@@ -346,87 +358,105 @@ export class WorkCenterSelector {
       // The operation's requirement comes from its PROCESS (single ability)
       const requirement =
         ctx.requirementByProcess.get(op.processId) ?? null;
-      const pool = requirement
-        ? this.buildOperatorPool(requirement, earliestStart, ctx)
+      const members = requirement
+        ? this.buildEligibleMembers(requirement, earliestStart, ctx)
         : null;
 
       const durationHours =
         op.durationHours ??
         calculateDurationHours({ ...op, priority: op.priority ?? undefined });
+      // Hands-on window (setup + labor); the rest of the span runs lights-out
+      const attendedHours = Math.min(
+        calculateAttendedHours({ ...op, priority: op.priority ?? undefined }),
+        durationHours
+      );
 
       let best: {
         wcId: string;
-        slot: { start: Date; end: Date };
+        slot: AttendedAllocationSuccess;
         reservedMs: number;
         capacity: ResourceCapacityData;
       } | null = null;
       let firstConflict: string | null = null;
 
-      for (const wcId of candidates) {
-        const capacity = ctx.capacityByWorkCenter.get(wcId);
-        if (!capacity) continue;
+      if (requirement && members && members.length === 0 && attendedHours > 0) {
+        // Nobody qualified can ever free up — named conflict, no walk needed
+        firstConflict = `No qualified operator for ${requirement.abilityName}`;
+      } else {
+        for (const wcId of candidates) {
+          const capacity = ctx.capacityByWorkCenter.get(wcId);
+          if (!capacity) continue;
 
-        const result = allocateOperation({
-          durationHours,
-          earliestStart,
-          horizonEnd,
-          capacity,
-          operatorPool: pool,
-          timeZone: ctx.timeZone,
-        });
-
-        if (isConflict(result)) {
-          if (!firstConflict) {
-            firstConflict = result.conflict;
+          let slot: AttendedAllocationSuccess;
+          if (requirement) {
+            const result = allocateAttendedOperation({
+              attendedHours,
+              totalHours: durationHours,
+              earliestStart,
+              horizonEnd,
+              capacity,
+              members: members ?? [],
+              busyByEmployee: ctx.reservationsByEmployee,
+              timeZone: ctx.timeZone,
+            });
+            if (isConflict(result)) {
+              if (!firstConflict) {
+                firstConflict = result.conflict;
+              }
+              continue;
+            }
+            slot = result;
+          } else {
+            const result = allocateOperation({
+              durationHours,
+              earliestStart,
+              horizonEnd,
+              capacity,
+              timeZone: ctx.timeZone,
+            });
+            if (isConflict(result)) {
+              if (!firstConflict) {
+                firstConflict = result.conflict;
+              }
+              continue;
+            }
+            // Normalize the machine-only result to the attended shape
+            slot = {
+              start: result.start,
+              attendedEnd: result.end,
+              end: result.end,
+              segments: [],
+              wait: result.wait,
+            };
           }
-          continue;
-        }
 
-        const reservedMs = capacity.reservations.reduce(
-          (sum, r) => sum + (r.endAt.getTime() - r.startAt.getTime()),
-          0
-        );
+          const reservedMs = capacity.reservations.reduce(
+            (sum, r) => sum + (r.endAt.getTime() - r.startAt.getTime()),
+            0
+          );
 
-        if (
-          !best ||
-          result.end.getTime() < best.slot.end.getTime() ||
-          (result.end.getTime() === best.slot.end.getTime() &&
-            reservedMs < best.reservedMs)
-        ) {
-          best = { wcId, slot: result, reservedMs, capacity };
+          if (
+            !best ||
+            slot.end.getTime() < best.slot.end.getTime() ||
+            (slot.end.getTime() === best.slot.end.getTime() &&
+              reservedMs < best.reservedMs)
+          ) {
+            best = { wcId, slot, reservedMs, capacity };
+          }
         }
       }
 
       if (best) {
         const { wcId, slot, capacity } = best;
 
-        // Who is ahead of us in the queue? Machines don't limit concurrency,
-        // so a wait can only come from the OPERATOR pool: other jobs'
-        // pool reservations in the region between when we could have started
-        // and when we actually did. Captured before this op's own interval
-        // is committed.
-        const poolReservations = pool?.reservations ?? [];
-        const blockers = formatBlockingJobs(
-          poolReservations,
-          earliestStart,
-          slot.start
-        );
-        // Untagged pool reservations in the wait region are this job's own
-        // earlier gated operations (in-run pushes carry no job id)
-        const ownJobAhead = poolReservations.some(
-          (r) =>
-            !r.readableJobId &&
-            r.startAt.getTime() < slot.start.getTime() &&
-            r.endAt.getTime() > earliestMs
-        );
-
-        // Why does this op start when it does? Classified once; feeds the
+        // Why does this op start when it does? The allocator attributed the
+        // wait to the binding resource (machine queue vs operator pool) on
+        // the chosen candidate's walk. Classified once; feeds the
         // always-stored placement note AND the late-only conflict message.
         const waitedMs = slot.start.getTime() - earliestMs;
         const cause = classifyLatePlacement({
           waitedMs,
-          blockers,
-          ownJobAhead,
+          wait: slot.wait,
           dominantDep: dominantDepId
             ? { description: descriptionById.get(dominantDepId) ?? null }
             : null,
@@ -444,18 +474,22 @@ export class WorkCenterSelector {
           scheduleNote: composePlacementNote(cause, waitedMs),
           workHours: durationHours,
         });
-        if (requirement) {
+        // Book the named people for their attended segments — in-run (so no
+        // later op double-books them, on ANY ability) and persisted
+        for (const segment of slot.segments) {
           const list =
-            ctx.poolReservationsByAbility.get(requirement.abilityId) ?? [];
-          list.push({ startAt: slot.start, endAt: slot.end });
-          ctx.poolReservationsByAbility.set(requirement.abilityId, list);
+            ctx.reservationsByEmployee.get(segment.employeeId) ?? [];
+          list.push({ startAt: segment.startAt, endAt: segment.endAt });
+          ctx.reservationsByEmployee.set(segment.employeeId, list);
           this.plannedReservations.push({
-            resourceKind: "OperatorPool",
-            resourceId: requirement.abilityId,
+            resourceKind: "Employee",
+            resourceId: segment.employeeId,
             operationId: op.id,
-            startAt: slot.start,
-            endAt: slot.end,
-            workHours: durationHours,
+            startAt: segment.startAt,
+            endAt: segment.endAt,
+            workHours:
+              (segment.endAt.getTime() - segment.startAt.getTime()) /
+              3_600_000,
           });
         }
         placedEndByOperation.set(op.id, slot.end);
@@ -503,31 +537,20 @@ export class WorkCenterSelector {
     return selections;
   }
 
-  private buildOperatorPool(
+  /**
+   * Qualified people for the requirement, eligibility-checked as of the
+   * operation's start (active, training complete, not expired). Their
+   * cross-ability bookings live in ctx.reservationsByEmployee.
+   */
+  private buildEligibleMembers(
     requirement: ProcessRequirement,
     earliestStart: Date,
     ctx: FiniteSchedulingContext
-  ): OperatorPool {
+  ): EligibleMember[] {
     const employees = ctx.employeesByAbility.get(requirement.abilityId) ?? [];
-
-    const members = employees
+    return employees
       .filter((e) => isEligibleOperator(e, earliestStart, ctx.timeZone))
       .map((e) => ({ employeeId: e.employeeId, windows: e.windows }));
-
-    // Return the SAME array instance stored in the context so in-run pushes
-    // are visible to later allocations
-    let reservations = ctx.poolReservationsByAbility.get(requirement.abilityId);
-    if (!reservations) {
-      reservations = [];
-      ctx.poolReservationsByAbility.set(requirement.abilityId, reservations);
-    }
-
-    return {
-      abilityId: requirement.abilityId,
-      abilityName: requirement.abilityName,
-      members,
-      reservations,
-    };
   }
 }
 

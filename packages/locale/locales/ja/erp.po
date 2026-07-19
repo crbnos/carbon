@@ -8443,6 +8443,9 @@ msgstr "オペレータープール"
 msgid "Operator Pool Reservation"
 msgstr "オペレータープール予約"
 
+msgid "Operator Reservation"
+msgstr "オペレーター予約"
+
 msgid "Operators"
 msgstr "オペレーター"
 

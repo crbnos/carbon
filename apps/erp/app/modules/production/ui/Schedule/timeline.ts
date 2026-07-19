@@ -43,7 +43,7 @@ export type TimelineOperation = {
 export type TimelineReservation = {
   id: string;
   operationId: string;
-  resourceKind: "WorkCenter" | "OperatorPool";
+  resourceKind: "WorkCenter" | "OperatorPool" | "Employee";
   resourceName: string;
   startAt: string;
   endAt: string;
@@ -81,7 +81,7 @@ export type TimelineNodeDetail = {
   workCenterName?: string | null;
   assigneeName?: string | null;
   employeeName?: string | null;
-  resourceKind?: "WorkCenter" | "OperatorPool";
+  resourceKind?: "WorkCenter" | "OperatorPool" | "Employee";
   conflictReason?: string | null;
   /** Why the row starts when it does (queue, predecessor, operator) */
   scheduleNote?: string | null;

@@ -428,9 +428,9 @@ export class SchedulingEngine {
   /**
    * Build the finite-capacity context: live reservations, per-process ability
    * requirements, and qualified-operator availability. Work centers are
-   * never a concurrency limit (anyone qualified can work at a station) —
-   * availability
-   * constraints come from qualified PEOPLE's shifts. Runs just before
+   * finite (capacity 1 — one operation at a time, gated by actual
+   * reservations); ability-gated operations additionally wait for a
+   * qualified person to be on shift and unreserved. Runs just before
    * selection so the rebuilt dependency DAG is final.
    */
   private async buildFiniteContext(): Promise<FiniteSchedulingContext | null> {
@@ -474,8 +474,8 @@ export class SchedulingEngine {
       now.getTime() + (SCHEDULING_HORIZON_DAYS + 7) * 24 * 3_600_000
     );
 
-    // Work centers: no concurrency limit, always open across the horizon;
-    // reservations are kept for reporting/attribution, not gating
+    // Work centers: capacity 1, always open across the horizon; the
+    // reservations GATE placement (one op at a time) and feed attribution
     const capacityByWorkCenter = new Map<string, ResourceCapacityData>();
     for (const wcId of workCenterIds) {
       capacityByWorkCenter.set(wcId, {
@@ -544,26 +544,30 @@ export class SchedulingEngine {
       employeesByAbility.set(e.abilityId, list);
     }
 
-    const poolReservationsByAbility = new Map<
+    // Named-person bookings across ALL abilities, keyed by employee id.
+    // Legacy OperatorPool rows are ignored deliberately: they can't be
+    // attributed to a person, and they stop existing after each job's next
+    // replan (the reactive stale-wave refreshes everything).
+    const reservationsByEmployee = new Map<
       string,
       { startAt: Date; endAt: Date; readableJobId?: string }[]
     >();
     for (const r of liveReservations) {
-      if (r.resourceKind !== "OperatorPool") continue;
-      const list = poolReservationsByAbility.get(r.resourceId) ?? [];
+      if (r.resourceKind !== "Employee") continue;
+      const list = reservationsByEmployee.get(r.resourceId) ?? [];
       list.push({
         startAt: r.startAt,
         endAt: r.endAt,
         readableJobId: r.readableJobId,
       });
-      poolReservationsByAbility.set(r.resourceId, list);
+      reservationsByEmployee.set(r.resourceId, list);
     }
 
     return {
       capacityByWorkCenter,
       requirementByProcess,
       employeesByAbility,
-      poolReservationsByAbility,
+      reservationsByEmployee,
       dependencies: this.dependencies,
       now,
       horizonDays: SCHEDULING_HORIZON_DAYS,

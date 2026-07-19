@@ -8443,6 +8443,9 @@ msgstr "Operator Pool"
 msgid "Operator Pool Reservation"
 msgstr "Operator Pool Reservation"
 
+msgid "Operator Reservation"
+msgstr "Operator Reservation"
+
 msgid "Operators"
 msgstr "Operators"
 

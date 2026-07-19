@@ -49,15 +49,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const rows = reservations.data ?? [];
 
-  // Resolve resource names: work centers + abilities (operator pools)
+  // Resolve resource names: work centers + named operators + legacy
+  // ability (operator pool) rows
   const workCenterIds = new Set<string>();
   const abilityIds = new Set<string>();
+  const employeeIds = new Set<string>();
   for (const r of rows) {
     if (r.resourceKind === "WorkCenter") workCenterIds.add(r.resourceId);
+    else if (r.resourceKind === "Employee") employeeIds.add(r.resourceId);
     else abilityIds.add(r.resourceId);
   }
 
-  const [workCenters, abilities] = await Promise.all([
+  const [workCenters, abilities, operators] = await Promise.all([
     workCenterIds.size > 0
       ? client
           .from("workCenter")
@@ -69,7 +72,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
           .from("ability")
           .select("id, name")
           .in("id", Array.from(abilityIds))
-      : Promise.resolve({ data: [] as { id: string; name: string }[] })
+      : Promise.resolve({ data: [] as { id: string; name: string }[] }),
+    employeeIds.size > 0
+      ? client
+          .from("user")
+          .select("id, fullName")
+          .in("id", Array.from(employeeIds))
+      : Promise.resolve({
+          data: [] as { id: string; fullName: string | null }[]
+        })
   ]);
 
   const workCenterNames = new Map(
@@ -77,6 +88,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
   );
   const abilityNames = new Map(
     (abilities.data ?? []).map((a) => [a.id, a.name])
+  );
+  const operatorNames = new Map(
+    (operators.data ?? []).map((u) => [u.id, u.fullName])
   );
 
   const timeline = buildResourceTimeline({
@@ -87,7 +101,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
       resourceName:
         r.resourceKind === "WorkCenter"
           ? (workCenterNames.get(r.resourceId) ?? "Work Center")
-          : (abilityNames.get(r.resourceId) ?? "Operator Pool"),
+          : r.resourceKind === "Employee"
+            ? (operatorNames.get(r.resourceId) ?? "Operator")
+            : (abilityNames.get(r.resourceId) ?? "Operator Pool"),
       startAt: r.startAt,
       endAt: r.endAt,
       jobId: r.jobId,
@@ -106,7 +122,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   ).size;
 
   return {
-    resourceCount: workCenterIds.size + abilityIds.size,
+    resourceCount: workCenterIds.size + abilityIds.size + employeeIds.size,
     reservationCount: rows.length,
     jobCount,
     conflictCount,

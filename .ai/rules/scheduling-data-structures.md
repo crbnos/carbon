@@ -72,11 +72,15 @@ selectWorkCenters → calculatePriorities → persistChanges`.
   `ability.processId`, qualified employees with their shift windows from
   `employeeShift` ⋈ `shift` — no shift assignment = always available) and,
   per op, walks **forward** from max(backward start, now, in-run predecessor
-  finish) to the first feasible interval. Work centers do NOT limit
-  concurrency (no capacity check); for ability-gated processes ≥1 qualified
-  employee is on shift and unreserved (`slot-allocator.ts`; the accumulation
-  windows for gated ops are the union of the pool members' shift windows, so
-  work pauses while nobody qualified is on shift). Picks the earliest-finish
+  finish) to the first feasible interval. Two finite resources gate the
+  placement: the work center itself (capacity 1 — one op at a time, decided
+  by actual `capacityReservation` intervals, no concurrency knob) AND, for
+  ability-gated processes, ≥1 qualified employee on shift and unreserved
+  (`slot-allocator.ts`; the accumulation windows for gated ops are the union
+  of the pool members' shift windows, so work pauses while nobody qualified
+  is on shift; ungated ops need only the machine). The allocator attributes
+  each wait to its binding resource (machine queue vs operator pool) for the
+  schedule note / conflict message. Picks the earliest-finish
   candidate (tie → least reserved). Placement overwrites `startDate`/`dueDate`;
   placements past the backward due date set `hasConflict`/`conflictReason`
   but keep the placement. In `mode: "reschedule"` selection is **sticky**: an

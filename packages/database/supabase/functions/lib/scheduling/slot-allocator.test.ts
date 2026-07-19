@@ -5,10 +5,13 @@ import {
 import { expandCalendar } from "./calendar-utils.ts";
 import {
   type AllocationResult,
+  type AllocationSuccess,
+  allocateAttendedOperation,
   allocateOperation,
+  type AttendedAllocationSuccess,
+  type EligibleMember,
   formatBlockingJobs,
   isConflict,
-  type OperatorPool,
   type ReservationInterval,
   type ResourceCapacityData,
 } from "./slot-allocator.ts";
@@ -19,7 +22,7 @@ const utc = (iso: string) => new Date(iso);
 const RANGE_START = utc("2026-01-05T00:00:00Z");
 const HORIZON = utc("2026-01-19T00:00:00Z");
 
-// Mon-Fri 08:00-16:00 UTC — a pool member's shift pattern
+// Mon-Fri 08:00-16:00 UTC — a person's shift pattern
 const weekdayShifts = [1, 2, 3, 4, 5].map((dayOfWeek) => ({
   dayOfWeek,
   startTime: "08:00",
@@ -29,7 +32,7 @@ const weekdayWindows = expandCalendar(weekdayShifts, RANGE_START, HORIZON);
 const alwaysOpen = [{ start: RANGE_START, end: HORIZON }];
 
 function makeCapacity(
-  reservations: { startAt: Date; endAt: Date }[] = []
+  reservations: ReservationInterval[] = []
 ): ResourceCapacityData {
   return {
     workCenter: { id: "wc1" },
@@ -38,26 +41,27 @@ function makeCapacity(
   };
 }
 
-function makePool(
-  members: OperatorPool["members"],
-  reservations: OperatorPool["reservations"] = []
-): OperatorPool {
-  return {
-    abilityId: "ab1",
-    abilityName: "Welding",
-    members,
-    reservations,
-  };
+function member(employeeId: string, windows = alwaysOpen): EligibleMember {
+  return { employeeId, windows };
 }
 
-function expectSlot(r: AllocationResult): { start: Date; end: Date } {
+function expectSlot(r: AllocationResult): AllocationSuccess {
   assert(!isConflict(r), `expected slot, got conflict: ${JSON.stringify(r)}`);
   return r;
 }
 
-Deno.test("work centers never limit concurrency — ungated ops overlap freely", () => {
+function expectAttended(
+  r: AttendedAllocationSuccess | { conflict: string }
+): AttendedAllocationSuccess {
+  assert(!isConflict(r), `expected slot, got conflict: ${JSON.stringify(r)}`);
+  return r;
+}
+
+// --- machine gating (ungated operations) ------------------------------------
+
+Deno.test("work center capacity is 1 — ungated ops queue back to back", () => {
   const capacity = makeCapacity();
-  const placed: { start: Date; end: Date }[] = [];
+  const placed: AllocationSuccess[] = [];
 
   for (let i = 0; i < 3; i++) {
     const slot = expectSlot(
@@ -72,15 +76,26 @@ Deno.test("work centers never limit concurrency — ungated ops overlap freely",
     capacity.reservations.push({ startAt: slot.start, endAt: slot.end });
   }
 
-  // Anyone qualified can work at a station: all three place at the earliest
-  // start, fully overlapping — only the operator pool ever serializes work
-  for (const slot of placed) {
-    assertEquals(slot.start.toISOString(), "2026-01-05T08:00:00.000Z");
-    assertEquals(slot.end.toISOString(), "2026-01-05T12:00:00.000Z");
-  }
+  // One operation at a time: each op starts when the previous one ends
+  assertEquals(placed[0].start.toISOString(), "2026-01-05T08:00:00.000Z");
+  assertEquals(placed[0].end.toISOString(), "2026-01-05T12:00:00.000Z");
+  assertEquals(placed[1].start.toISOString(), "2026-01-05T12:00:00.000Z");
+  assertEquals(placed[1].end.toISOString(), "2026-01-05T16:00:00.000Z");
+  assertEquals(placed[2].start.toISOString(), "2026-01-05T16:00:00.000Z");
+  assertEquals(placed[2].end.toISOString(), "2026-01-05T20:00:00.000Z");
+
+  // The first op didn't wait; the queued ones attribute their wait to the
+  // machine, held by untagged (same-job in-run) reservations
+  assertEquals(placed[0].wait, null);
+  assertEquals(placed[1].wait, {
+    resource: "machine",
+    blockers: null,
+    ownJobAhead: true,
+  });
+  assertEquals(placed[2].wait?.resource, "machine");
 });
 
-Deno.test("existing work-center reservations do not delay ungated ops", () => {
+Deno.test("an existing work-center reservation delays an ungated op until it ends", () => {
   const capacity = makeCapacity([
     {
       startAt: utc("2026-01-05T06:00:00Z"),
@@ -97,8 +112,52 @@ Deno.test("existing work-center reservations do not delay ungated ops", () => {
     })
   );
 
-  // Machine "busy" is not a constraint — the op starts at its earliest start
-  assertEquals(slot.start.toISOString(), "2026-01-05T08:00:00.000Z");
+  assertEquals(slot.start.toISOString(), "2026-01-05T18:00:00.000Z");
+  assertEquals(slot.wait?.resource, "machine");
+});
+
+Deno.test("machine nextTryAfter hops to the earliest overlapping reservation end", () => {
+  const capacity = makeCapacity([
+    {
+      startAt: utc("2026-01-05T08:00:00Z"),
+      endAt: utc("2026-01-05T10:00:00Z"),
+    },
+    {
+      startAt: utc("2026-01-05T09:00:00Z"),
+      endAt: utc("2026-01-05T14:00:00Z"),
+    },
+  ]);
+
+  const slot = expectSlot(
+    allocateOperation({
+      durationHours: 2,
+      earliestStart: utc("2026-01-05T08:00:00Z"),
+      horizonEnd: HORIZON,
+      capacity,
+    })
+  );
+
+  assertEquals(slot.start.toISOString(), "2026-01-05T14:00:00.000Z");
+  assertEquals(slot.end.toISOString(), "2026-01-05T16:00:00.000Z");
+});
+
+Deno.test("conflict when the machine is booked through the horizon (ungated)", () => {
+  const capacity = makeCapacity([
+    { startAt: RANGE_START, endAt: HORIZON, readableJobId: "J000009" },
+  ]);
+
+  const result = allocateOperation({
+    durationHours: 2,
+    earliestStart: utc("2026-01-05T08:00:00Z"),
+    horizonEnd: HORIZON,
+    capacity,
+  });
+
+  assert(isConflict(result));
+  assertEquals(
+    result.conflict,
+    "No work center capacity available before 2026-01-19"
+  );
 });
 
 Deno.test("conflict when the horizon is exhausted", () => {
@@ -112,144 +171,346 @@ Deno.test("conflict when the horizon is exhausted", () => {
   assert(isConflict(result));
 });
 
-Deno.test("gated operation waits for the member's shift and pauses off-shift", () => {
-  // Qualified welder works Mon-Fri 08:00-16:00; op needs 10h starting Saturday
-  const pool = makePool([{ employeeId: "emp1", windows: weekdayWindows }]);
+// --- attended windows, relay, lights-out (gated operations) -----------------
 
-  const slot = expectSlot(
-    allocateOperation({
-      durationHours: 10,
-      earliestStart: utc("2026-01-10T00:00:00Z"), // Saturday
-      horizonEnd: HORIZON,
-      capacity: makeCapacity(),
-      operatorPool: pool,
-    })
-  );
-
-  // Starts Monday 08:00, 8h Monday + 2h Tuesday
-  assertEquals(slot.start.toISOString(), "2026-01-12T08:00:00.000Z");
-  assertEquals(slot.end.toISOString(), "2026-01-13T10:00:00.000Z");
-});
-
-Deno.test("gated operation with a shiftless member runs around the clock", () => {
-  const pool = makePool([{ employeeId: "emp1", windows: alwaysOpen }]);
-
-  const slot = expectSlot(
-    allocateOperation({
-      durationHours: 10,
-      earliestStart: utc("2026-01-10T00:00:00Z"), // Saturday — no shift needed
-      horizonEnd: HORIZON,
-      capacity: makeCapacity(),
-      operatorPool: pool,
-    })
-  );
-
-  assertEquals(slot.start.toISOString(), "2026-01-10T00:00:00.000Z");
-  assertEquals(slot.end.toISOString(), "2026-01-10T10:00:00.000Z");
-});
-
-Deno.test("zero qualified members is an immediate skill conflict", () => {
-  const result = allocateOperation({
-    durationHours: 1,
-    earliestStart: utc("2026-01-05T08:00:00Z"),
-    horizonEnd: HORIZON,
-    capacity: makeCapacity(),
-    operatorPool: makePool([]),
-  });
-
-  assert(isConflict(result));
-  assertEquals(result.conflict, "No qualified operator for Welding");
-});
-
-Deno.test("a busy pool defers the operation until the reservation ends", () => {
-  // One welder, already reserved 08:00-12:00 Monday by another job
-  const pool = makePool(
-    [{ employeeId: "emp1", windows: weekdayWindows }],
-    [
-      {
-        startAt: utc("2026-01-05T08:00:00Z"),
-        endAt: utc("2026-01-05T12:00:00Z"),
-      },
-    ]
-  );
-
-  const slot = expectSlot(
-    allocateOperation({
-      durationHours: 2,
-      earliestStart: utc("2026-01-05T08:00:00Z"),
-      horizonEnd: HORIZON,
-      capacity: makeCapacity(),
-      operatorPool: pool,
-    })
-  );
-
-  assertEquals(slot.start.toISOString(), "2026-01-05T12:00:00.000Z");
-});
-
-Deno.test("two members on different shifts extend the working windows", () => {
-  // Early shift Mon 00:00-08:00, late shift Mon 08:00-16:00 — union covers 00:00-16:00
-  const early = expandCalendar(
-    [{ dayOfWeek: 1, startTime: "00:00", endTime: "08:00" }],
-    RANGE_START,
-    HORIZON
-  );
-  const late = expandCalendar(
-    [{ dayOfWeek: 1, startTime: "08:00", endTime: "16:00" }],
-    RANGE_START,
-    HORIZON
-  );
-  const pool = makePool([
-    { employeeId: "empEarly", windows: early },
-    { employeeId: "empLate", windows: late },
-  ]);
-
-  const slot = expectSlot(
-    allocateOperation({
-      durationHours: 12,
-      earliestStart: utc("2026-01-05T00:00:00Z"),
-      horizonEnd: HORIZON,
-      capacity: makeCapacity(),
-      operatorPool: pool,
-    })
-  );
-
-  // 12h fits inside Monday 00:00-16:00 because someone is always on shift
-  assertEquals(slot.start.toISOString(), "2026-01-05T00:00:00.000Z");
-  assertEquals(slot.end.toISOString(), "2026-01-05T12:00:00.000Z");
-});
-
-Deno.test("pool concurrency: one member on shift cannot cover two overlapping ops", () => {
-  const sharedReservations: { startAt: Date; endAt: Date }[] = [];
-  const pool = makePool(
-    [{ employeeId: "emp1", windows: weekdayWindows }],
-    sharedReservations
-  );
+Deno.test("one person tends two machines — attended windows interleave, both run in parallel", () => {
   const capacityA = makeCapacity();
-  const capacityB = makeCapacity(); // different machine, same welder pool
+  const capacityB = makeCapacity();
+  const sam = member("emp-sam");
+  const busy = new Map<string, ReservationInterval[]>();
 
-  const first = expectSlot(
-    allocateOperation({
-      durationHours: 4,
+  // 5 min labor + 55 min unattended run = 1h total on each machine
+  const a = expectAttended(
+    allocateAttendedOperation({
+      attendedHours: 5 / 60,
+      totalHours: 1,
       earliestStart: utc("2026-01-05T08:00:00Z"),
       horizonEnd: HORIZON,
       capacity: capacityA,
-      operatorPool: pool,
+      members: [sam],
+      busyByEmployee: busy,
     })
   );
-  sharedReservations.push({ startAt: first.start, endAt: first.end });
+  capacityA.reservations.push({ startAt: a.start, endAt: a.end });
+  busy.set(
+    "emp-sam",
+    a.segments.map((s) => ({ startAt: s.startAt, endAt: s.endAt }))
+  );
 
-  const second = expectSlot(
-    allocateOperation({
-      durationHours: 4,
+  const b = expectAttended(
+    allocateAttendedOperation({
+      attendedHours: 5 / 60,
+      totalHours: 1,
       earliestStart: utc("2026-01-05T08:00:00Z"),
       horizonEnd: HORIZON,
       capacity: capacityB,
-      operatorPool: pool,
+      members: [sam],
+      busyByEmployee: busy,
     })
   );
 
-  // Second op must wait for the welder even though its machine is free
-  assertEquals(second.start.toISOString(), first.end.toISOString());
+  // Machine A runs 08:00-09:00; Sam is free from 08:05 so machine B runs
+  // 08:05-09:05 — both machines live with one person
+  assertEquals(a.start.toISOString(), "2026-01-05T08:00:00.000Z");
+  assertEquals(a.attendedEnd.toISOString(), "2026-01-05T08:05:00.000Z");
+  assertEquals(a.end.toISOString(), "2026-01-05T09:00:00.000Z");
+  assertEquals(b.start.toISOString(), "2026-01-05T08:05:00.000Z");
+  assertEquals(b.attendedEnd.toISOString(), "2026-01-05T08:10:00.000Z");
+  assertEquals(b.end.toISOString(), "2026-01-05T09:05:00.000Z");
+  assertEquals(b.segments, [
+    {
+      employeeId: "emp-sam",
+      startAt: utc("2026-01-05T08:05:00Z"),
+      endAt: utc("2026-01-05T08:10:00Z"),
+    },
+  ]);
+  assertEquals(b.wait?.resource, "operator");
+});
+
+Deno.test("relay: attended work hands off at the shift boundary", () => {
+  const sam = member("emp-sam", [
+    { start: utc("2026-01-05T08:00:00Z"), end: utc("2026-01-05T16:00:00Z") },
+  ]);
+  const dave = member("emp-dave", [
+    { start: utc("2026-01-05T16:00:00Z"), end: utc("2026-01-06T00:00:00Z") },
+  ]);
+
+  const r = expectAttended(
+    allocateAttendedOperation({
+      attendedHours: 12,
+      totalHours: 12,
+      earliestStart: utc("2026-01-05T08:00:00Z"),
+      horizonEnd: HORIZON,
+      capacity: makeCapacity(),
+      members: [sam, dave],
+      busyByEmployee: new Map(),
+    })
+  );
+
+  // Sam 08-16, Dave 16-20 — continuous progress across the boundary
+  assertEquals(r.segments, [
+    {
+      employeeId: "emp-sam",
+      startAt: utc("2026-01-05T08:00:00Z"),
+      endAt: utc("2026-01-05T16:00:00Z"),
+    },
+    {
+      employeeId: "emp-dave",
+      startAt: utc("2026-01-05T16:00:00Z"),
+      endAt: utc("2026-01-05T20:00:00Z"),
+    },
+  ]);
+  assertEquals(r.end.toISOString(), "2026-01-05T20:00:00.000Z");
+});
+
+Deno.test("pause: single person, attended work spans two shifts, machine held across the gap", () => {
+  const sam = member("emp-sam", weekdayWindows);
+
+  const r = expectAttended(
+    allocateAttendedOperation({
+      attendedHours: 12,
+      totalHours: 12,
+      earliestStart: utc("2026-01-05T08:00:00Z"),
+      horizonEnd: HORIZON,
+      capacity: makeCapacity(),
+      members: [sam],
+      busyByEmployee: new Map(),
+    })
+  );
+
+  // 8h Monday + 4h Tuesday; nobody booked overnight but the op (and machine
+  // span) stretches across the gap
+  assertEquals(r.segments, [
+    {
+      employeeId: "emp-sam",
+      startAt: utc("2026-01-05T08:00:00Z"),
+      endAt: utc("2026-01-05T16:00:00Z"),
+    },
+    {
+      employeeId: "emp-sam",
+      startAt: utc("2026-01-06T08:00:00Z"),
+      endAt: utc("2026-01-06T12:00:00Z"),
+    },
+  ]);
+  assertEquals(r.end.toISOString(), "2026-01-06T12:00:00.000Z");
+  assertEquals(r.attendedEnd.toISOString(), r.end.toISOString());
+});
+
+Deno.test("lights-out: the unattended remainder runs on calendar time overnight", () => {
+  const sam = member("emp-sam", weekdayWindows);
+
+  // Loaded Mon 15:00 with 5 min labor; 20h machine run continues after
+  // Sam's shift ends at 16:00
+  const r = expectAttended(
+    allocateAttendedOperation({
+      attendedHours: 5 / 60,
+      totalHours: 20 + 5 / 60,
+      earliestStart: utc("2026-01-05T15:00:00Z"),
+      horizonEnd: HORIZON,
+      capacity: makeCapacity(),
+      members: [sam],
+      busyByEmployee: new Map(),
+    })
+  );
+
+  assertEquals(r.start.toISOString(), "2026-01-05T15:00:00.000Z");
+  assertEquals(r.attendedEnd.toISOString(), "2026-01-05T15:05:00.000Z");
+  assertEquals(r.end.toISOString(), "2026-01-06T11:05:00.000Z");
+});
+
+Deno.test("zero attended hours: no person booked, machine-only placement", () => {
+  const r = expectAttended(
+    allocateAttendedOperation({
+      attendedHours: 0,
+      totalHours: 2,
+      earliestStart: utc("2026-01-05T08:00:00Z"),
+      horizonEnd: HORIZON,
+      capacity: makeCapacity(),
+      members: [member("emp-sam", weekdayWindows)],
+      busyByEmployee: new Map(),
+    })
+  );
+
+  assertEquals(r.segments, []);
+  assertEquals(r.start.toISOString(), "2026-01-05T08:00:00.000Z");
+  assertEquals(r.end.toISOString(), "2026-01-05T10:00:00.000Z");
+  assertEquals(r.wait, null);
+});
+
+Deno.test("no eligible people is an immediate conflict", () => {
+  const result = allocateAttendedOperation({
+    attendedHours: 1,
+    totalHours: 1,
+    earliestStart: utc("2026-01-05T08:00:00Z"),
+    horizonEnd: HORIZON,
+    capacity: makeCapacity(),
+    members: [],
+    busyByEmployee: new Map(),
+  });
+
+  assert(isConflict(result));
+  assertEquals(result.conflict, "No qualified operator available");
+});
+
+Deno.test("cross-ability double-booking: a person busy via another booking is unavailable", () => {
+  const sam = member("emp-sam");
+  const busy = new Map<string, ReservationInterval[]>([
+    [
+      "emp-sam",
+      [
+        {
+          startAt: utc("2026-01-05T08:00:00Z"),
+          endAt: utc("2026-01-05T12:00:00Z"),
+          readableJobId: "J000009",
+        },
+      ],
+    ],
+  ]);
+
+  const r = expectAttended(
+    allocateAttendedOperation({
+      attendedHours: 2,
+      totalHours: 2,
+      earliestStart: utc("2026-01-05T08:00:00Z"),
+      horizonEnd: HORIZON,
+      capacity: makeCapacity(),
+      members: [sam],
+      busyByEmployee: busy,
+    })
+  );
+
+  assertEquals(r.start.toISOString(), "2026-01-05T12:00:00.000Z");
+  assertEquals(r.wait, {
+    resource: "operator",
+    blockers: "queued behind J000009 (1 op)",
+    ownJobAhead: false,
+  });
+});
+
+Deno.test("machine busy blocks the attended start — attribution machine", () => {
+  const capacity = makeCapacity([
+    {
+      startAt: utc("2026-01-05T08:00:00Z"),
+      endAt: utc("2026-01-05T10:00:00Z"),
+      readableJobId: "J000009",
+    },
+  ]);
+
+  const r = expectAttended(
+    allocateAttendedOperation({
+      attendedHours: 2,
+      totalHours: 2,
+      earliestStart: utc("2026-01-05T08:00:00Z"),
+      horizonEnd: HORIZON,
+      capacity,
+      members: [member("emp-sam")],
+      busyByEmployee: new Map(),
+    })
+  );
+
+  assertEquals(r.start.toISOString(), "2026-01-05T10:00:00.000Z");
+  assertEquals(r.wait, {
+    resource: "machine",
+    blockers: "queued behind J000009 (1 op)",
+    ownJobAhead: false,
+  });
+});
+
+Deno.test("interleaving: machine frees first, operator binds last — attribution follows the last blocker", () => {
+  const capacity = makeCapacity([
+    {
+      startAt: utc("2026-01-05T08:00:00Z"),
+      endAt: utc("2026-01-05T10:00:00Z"),
+      readableJobId: "J000009",
+    },
+  ]);
+  const busy = new Map<string, ReservationInterval[]>([
+    [
+      "emp-sam",
+      [
+        {
+          startAt: utc("2026-01-05T09:00:00Z"),
+          endAt: utc("2026-01-05T13:00:00Z"),
+          readableJobId: "J000010",
+        },
+      ],
+    ],
+  ]);
+
+  const r = expectAttended(
+    allocateAttendedOperation({
+      attendedHours: 2,
+      totalHours: 2,
+      earliestStart: utc("2026-01-05T08:00:00Z"),
+      horizonEnd: HORIZON,
+      capacity,
+      members: [member("emp-sam")],
+      busyByEmployee: busy,
+    })
+  );
+
+  assertEquals(r.start.toISOString(), "2026-01-05T13:00:00.000Z");
+  assertEquals(r.wait, {
+    resource: "operator",
+    blockers: "queued behind J000010 (1 op)",
+    ownJobAhead: false,
+  });
+});
+
+Deno.test("attended op conflicts when the machine is booked through the horizon", () => {
+  const capacity = makeCapacity([
+    { startAt: RANGE_START, endAt: HORIZON, readableJobId: "J000009" },
+  ]);
+
+  const result = allocateAttendedOperation({
+    attendedHours: 1,
+    totalHours: 2,
+    earliestStart: utc("2026-01-05T08:00:00Z"),
+    horizonEnd: HORIZON,
+    capacity,
+    members: [member("emp-sam")],
+    busyByEmployee: new Map(),
+  });
+
+  assert(isConflict(result));
+  assertEquals(
+    result.conflict,
+    "No slot with both an open work center and a qualified operator available before 2026-01-19"
+  );
+});
+
+Deno.test("least-loaded available person takes over when the incumbent is absent", () => {
+  // Two people around the clock; Alex already carries 4h of bookings, Zoe 0.
+  // A fresh op should go to Zoe (least loaded), not Alex, not id-order.
+  const alex = member("emp-alex");
+  const zoe = member("emp-zoe");
+  const busy = new Map<string, ReservationInterval[]>([
+    [
+      "emp-alex",
+      [
+        {
+          startAt: utc("2026-01-05T00:00:00Z"),
+          endAt: utc("2026-01-05T04:00:00Z"),
+          readableJobId: "J000001",
+        },
+      ],
+    ],
+  ]);
+
+  const r = expectAttended(
+    allocateAttendedOperation({
+      attendedHours: 1,
+      totalHours: 1,
+      earliestStart: utc("2026-01-05T08:00:00Z"),
+      horizonEnd: HORIZON,
+      capacity: makeCapacity(),
+      members: [alex, zoe],
+      busyByEmployee: busy,
+    })
+  );
+
+  assertEquals(r.segments.length, 1);
+  assertEquals(r.segments[0].employeeId, "emp-zoe");
 });
 
 // --- formatBlockingJobs -----------------------------------------------------
@@ -348,33 +609,5 @@ Deno.test("formatBlockingJobs ranks by op count then job id, capping at 3", () =
       utc("2026-01-05T16:00:00Z")
     ),
     "queued behind J000002 (2 ops), J000001 (1 op), J000003 (1 op), +1 more"
-  );
-});
-
-Deno.test("delayed placement names the job whose POOL reservation forced the wait", () => {
-  // Another job holds the only qualified operator 06:00-18:00 (shiftless
-  // member = 24/7 availability); our op could start at 08:00
-  const capacity = makeCapacity();
-  const pool = makePool(
-    [{ employeeId: "emp-1", windows: alwaysOpen }],
-    [interval("2026-01-05T06:00:00Z", "2026-01-05T18:00:00Z", "J000001")]
-  );
-  const earliestStart = utc("2026-01-05T08:00:00Z");
-
-  const slot = expectSlot(
-    allocateOperation({
-      durationHours: 2,
-      earliestStart,
-      horizonEnd: HORIZON,
-      capacity,
-      operatorPool: pool,
-    })
-  );
-
-  // The selector composes the past-due message from exactly this call
-  assertEquals(slot.start.toISOString(), "2026-01-05T18:00:00.000Z");
-  assertEquals(
-    formatBlockingJobs(pool.reservations, earliestStart, slot.start),
-    "queued behind J000001 (1 op)"
   );
 });

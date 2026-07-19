@@ -49,12 +49,18 @@ export function TimelineDetail({
     assembly: t`Assembly`,
     operation: t`Operation`,
     reservation:
-      detail.resourceKind === "OperatorPool"
-        ? t`Operator Pool Reservation`
-        : t`Work Center Reservation`,
+      detail.resourceKind === "Employee"
+        ? t`Operator Reservation`
+        : detail.resourceKind === "OperatorPool"
+          ? t`Operator Pool Reservation`
+          : t`Work Center Reservation`,
     productionEvent: t`Production Event`,
     resource:
-      detail.resourceKind === "OperatorPool" ? t`Operator Pool` : t`Work Center`
+      detail.resourceKind === "Employee"
+        ? t`Operator`
+        : detail.resourceKind === "OperatorPool"
+          ? t`Operator Pool`
+          : t`Work Center`
   };
 
   const linkedJobId = detail.jobId ?? jobId;

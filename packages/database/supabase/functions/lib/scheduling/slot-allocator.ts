@@ -1,22 +1,28 @@
 /**
- * Slot allocator — places one operation into the earliest feasible interval.
- * Work centers do NOT limit concurrency: anyone qualified can work at a
- * station, so the only finite resource is PEOPLE. When the operation's
- * process requires an ability, work accumulates only while at least one
- * qualified pool member is on shift AND not already reserved elsewhere;
- * operations without an ability requirement place at their earliest start
- * unconditionally. Pure given preloaded data: no DB access, fully testable
- * with fixtures.
+ * Slot allocator — places one operation into the earliest feasible interval
+ * on a work center. Work centers are always finite with capacity 1: one
+ * operation at a time, decided purely by actual reservation intervals.
+ *
+ * Labor is attended-window based: a person is hands-on only for the ATTENDED
+ * portion (setup + labor) at the start of the operation; the remaining
+ * machine run accumulates on calendar time with nobody present (lights-out).
+ * Attended time accumulates whenever ANY eligible person is on shift and not
+ * already booked; each contiguous stretch is booked to a specific person and
+ * the work hands off at shift boundaries (relay). When nobody is available
+ * the work pauses — the machine stays occupied — and resumes with the next
+ * free qualified person. Pure given preloaded data: no DB access, fully
+ * testable with fixtures.
  */
 
 import {
   type CalendarWindow,
-  countOverlaps,
   coversInstant,
   findSlot,
-  unionWindows,
 } from "./calendar-utils.ts";
+import type { WaitAttribution } from "./conflict-messages.ts";
 import { toIsoDateInTimeZone } from "./date-utils.ts";
+
+const HOUR_MS = 3_600_000;
 
 export type ReservationInterval = {
   startAt: Date;
@@ -36,23 +42,44 @@ export type ResourceCapacityData = {
   reservations: ReservationInterval[]; // other jobs + earlier ops this run
 };
 
-export type PoolMember = {
+/** A qualified person the caller has already eligibility-filtered. */
+export type EligibleMember = {
   employeeId: string;
   windows: CalendarWindow[]; // from the person's shifts; 24/7 when unassigned
 };
 
-export type OperatorPool = {
-  abilityId: string;
-  abilityName: string;
-  members: PoolMember[]; // eligibility already applied by the caller
-  reservations: ReservationInterval[]; // existing OperatorPool reservations
+/** One person's contiguous stretch of hands-on work on an operation. */
+export type AttendedSegment = {
+  employeeId: string;
+  startAt: Date;
+  endAt: Date;
 };
 
-export type AllocationSuccess = { start: Date; end: Date };
+export type AllocationSuccess = {
+  start: Date;
+  end: Date;
+  /** Why the start sits past `earliestStart`; null when nothing waited. */
+  wait: WaitAttribution | null;
+};
+
+export type AttendedAllocationSuccess = {
+  /** First attended instant (op start; == earliest feasible when no wait). */
+  start: Date;
+  /** When hands-on work completes (== start when attendedHours is 0). */
+  attendedEnd: Date;
+  /** attendedEnd + the unattended remainder on calendar time. */
+  end: Date;
+  /** Person-by-person booking of the attended window; empty when 0h. */
+  segments: AttendedSegment[];
+  wait: WaitAttribution | null;
+};
+
 export type AllocationConflict = { conflict: string };
 export type AllocationResult = AllocationSuccess | AllocationConflict;
 
-export function isConflict(r: AllocationResult): r is AllocationConflict {
+export function isConflict(
+  r: AllocationResult | AttendedAllocationSuccess | AllocationConflict
+): r is AllocationConflict {
   return "conflict" in r;
 }
 
@@ -100,102 +127,300 @@ export function formatBlockingJobs(
 }
 
 /**
- * Pool freeness of [start, end): at every instant covered by a member's
- * shift window, the number of concurrent pool reservations must stay below
- * the number of members on shift. Instants no member covers are non-working
- * time for this operation (the accumulation windows exclude them), so they
- * need no operator.
+ * Machine freeness of [start, end): capacity is 1, so any overlapping
+ * reservation makes the interval busy. Returns the earliest overlapping
+ * reservation end as the retry hint.
  */
-function poolIsFree(
-  pool: OperatorPool,
+function machineIsFree(
+  capacity: ResourceCapacityData,
   start: Date,
   end: Date
 ): { free: boolean; nextTryAfter?: Date } {
   const s = start.getTime();
   const e = end.getTime();
-
-  // coverage can only change at member-window or reservation boundaries
-  const samplePoints = new Set<number>([s]);
-  for (const m of pool.members) {
-    for (const w of m.windows) {
-      const ws = w.start.getTime();
-      const we = w.end.getTime();
-      if (ws > s && ws < e) samplePoints.add(ws);
-      if (we > s && we < e) samplePoints.add(we);
+  let earliestEnd: number | null = null;
+  for (const r of capacity.reservations) {
+    if (r.startAt.getTime() < e && r.endAt.getTime() > s) {
+      const re = r.endAt.getTime();
+      if (earliestEnd === null || re < earliestEnd) {
+        earliestEnd = re;
+      }
     }
   }
-  for (const r of pool.reservations) {
-    const rs = r.startAt.getTime();
-    const re = r.endAt.getTime();
-    if (rs > s && rs < e) samplePoints.add(rs);
-    if (re > s && re < e) samplePoints.add(re);
-  }
-
-  for (const point of samplePoints) {
-    const onShift = pool.members.filter((m) =>
-      coversInstant(m.windows, point)
-    ).length;
-    if (onShift === 0) continue; // gap — no work accumulates here
-    const at = new Date(point);
-    const busy = countOverlaps(pool.reservations, at, new Date(point + 1));
-    if (busy >= onShift) {
-      const candidates = pool.reservations
-        .filter((r) => r.startAt.getTime() <= point && r.endAt.getTime() > point)
-        .map((r) => r.endAt.getTime());
-      const nextTry = candidates.length > 0 ? Math.min(...candidates) : null;
-      return {
-        free: false,
-        nextTryAfter: nextTry !== null ? new Date(nextTry) : undefined,
-      };
-    }
+  if (earliestEnd !== null) {
+    return { free: false, nextTryAfter: new Date(earliestEnd) };
   }
   return { free: true };
 }
 
+/** A member is available at instant t when on shift and not already booked. */
+function memberAvailableAt(
+  member: EligibleMember,
+  busy: ReservationInterval[],
+  t: number
+): boolean {
+  if (!coversInstant(member.windows, t)) return false;
+  return !busy.some(
+    (r) => r.startAt.getTime() <= t && r.endAt.getTime() > t
+  );
+}
+
 /**
- * Allocate one operation. Walks forward from `earliestStart` to the first
- * interval where the work center is free AND (when the process requires an
- * ability) a qualified pool member is on shift and unreserved. For gated
- * operations the accumulation windows are the UNION of the pool members'
- * shift windows — work pauses while nobody qualified is on shift.
+ * Accumulate `attendedHours` of hands-on work starting no earlier than
+ * `from`, booking whoever is available per stretch (relay). Availability can
+ * only change at member window or busy-interval boundaries, so the walk is
+ * event-driven over those points. Continuity: the incumbent keeps the work
+ * while available; otherwise the least-loaded available member takes over
+ * (tie → employeeId, for determinism). Returns null when the horizon
+ * exhausts before the attended work completes.
+ */
+function simulateAttended(args: {
+  from: Date;
+  attendedHours: number;
+  members: EligibleMember[];
+  busyByEmployee: Map<string, ReservationInterval[]>;
+  horizonEnd: Date;
+}): { segments: AttendedSegment[]; start: Date; attendedEnd: Date } | null {
+  const { from, attendedHours, members, busyByEmployee, horizonEnd } = args;
+  if (attendedHours <= 0) {
+    return { segments: [], start: from, attendedEnd: from };
+  }
+
+  const fromMs = from.getTime();
+  const horizonMs = horizonEnd.getTime();
+  const busyOf = (id: string) => busyByEmployee.get(id) ?? [];
+  const busyLoadMs = new Map<string, number>();
+  for (const m of members) {
+    busyLoadMs.set(
+      m.employeeId,
+      busyOf(m.employeeId).reduce(
+        (sum, r) => sum + (r.endAt.getTime() - r.startAt.getTime()),
+        0
+      )
+    );
+  }
+
+  // Availability change points: window and busy boundaries in (from, horizon)
+  const boundaries = new Set<number>([fromMs]);
+  for (const m of members) {
+    for (const w of m.windows) {
+      const ws = w.start.getTime();
+      const we = w.end.getTime();
+      if (ws > fromMs && ws < horizonMs) boundaries.add(ws);
+      if (we > fromMs && we < horizonMs) boundaries.add(we);
+    }
+    for (const r of busyOf(m.employeeId)) {
+      const rs = r.startAt.getTime();
+      const re = r.endAt.getTime();
+      if (rs > fromMs && rs < horizonMs) boundaries.add(rs);
+      if (re > fromMs && re < horizonMs) boundaries.add(re);
+    }
+  }
+  const points = Array.from(boundaries).sort((a, b) => a - b);
+  points.push(horizonMs);
+
+  // Round to whole ms so fractional hours (5 min = 1/12 h) don't drift a
+  // millisecond under floating point
+  const attendedMs = Math.round(attendedHours * HOUR_MS);
+  let accumulatedMs = 0;
+  const segments: AttendedSegment[] = [];
+  let incumbent: string | null = null;
+
+  for (let i = 0; i < points.length - 1; i++) {
+    const stretchStart = points[i];
+    const stretchEnd = points[i + 1];
+    if (stretchStart >= horizonMs) break;
+
+    const available = members.filter((m) =>
+      memberAvailableAt(m, busyOf(m.employeeId), stretchStart)
+    );
+    if (available.length === 0) continue; // pause — nobody free here
+
+    const person: EligibleMember =
+      (incumbent && available.find((m) => m.employeeId === incumbent)) ||
+      available.reduce((best, m) => {
+        const load = busyLoadMs.get(m.employeeId) ?? 0;
+        const bestLoad = busyLoadMs.get(best.employeeId) ?? 0;
+        if (load < bestLoad) return m;
+        if (load === bestLoad && m.employeeId < best.employeeId) return m;
+        return best;
+      });
+
+    const takeMs = Math.min(stretchEnd - stretchStart, attendedMs - accumulatedMs);
+    const segEnd = stretchStart + takeMs;
+    const last = segments[segments.length - 1];
+    if (
+      last &&
+      last.employeeId === person.employeeId &&
+      last.endAt.getTime() === stretchStart
+    ) {
+      last.endAt = new Date(segEnd);
+    } else {
+      segments.push({
+        employeeId: person.employeeId,
+        startAt: new Date(stretchStart),
+        endAt: new Date(segEnd),
+      });
+    }
+    accumulatedMs += takeMs;
+    incumbent = person.employeeId;
+
+    if (accumulatedMs >= attendedMs) {
+      return {
+        segments,
+        start: segments[0].startAt,
+        attendedEnd: new Date(segEnd),
+      };
+    }
+  }
+  return null; // horizon exhausted before attended work completed
+}
+
+/**
+ * Allocate a person-gated operation: the machine is held for the whole span
+ * while people are booked only for the attended window (relay across
+ * shifts). Walks forward from `earliestStart`; each machine collision hops
+ * to the blocking reservation's end and the attended simulation re-runs.
+ */
+export function allocateAttendedOperation(args: {
+  attendedHours: number;
+  totalHours: number; // >= attendedHours; remainder runs unattended
+  earliestStart: Date;
+  horizonEnd: Date; // never walk unbounded
+  capacity: ResourceCapacityData;
+  members: EligibleMember[]; // eligibility already applied by the caller
+  busyByEmployee: Map<string, ReservationInterval[]>;
+  /** IANA zone used to word dates in conflict messages (factory time) */
+  timeZone?: string;
+}): AttendedAllocationSuccess | AllocationConflict {
+  const {
+    attendedHours,
+    totalHours,
+    earliestStart,
+    horizonEnd,
+    capacity,
+    members,
+    busyByEmployee,
+  } = args;
+  const timeZone = args.timeZone ?? "UTC";
+
+  // No eligible people can never free up — immediate skill conflict (the
+  // selector normally pre-empts this with a message naming the ability)
+  if (attendedHours > 0 && members.length === 0) {
+    return { conflict: "No qualified operator available" };
+  }
+
+  const remainderMs = Math.round(Math.max(0, totalHours - attendedHours) * HOUR_MS);
+  const exhausted = {
+    conflict:
+      attendedHours > 0
+        ? `No slot with both an open work center and a qualified operator available before ${
+            toIsoDateInTimeZone(horizonEnd, timeZone)
+          }`
+        : `No work center capacity available before ${
+            toIsoDateInTimeZone(horizonEnd, timeZone)
+          }`,
+  };
+
+  let cursor = earliestStart;
+  let machineHopped = false;
+
+  for (let guard = 0; guard < 100_000; guard++) {
+    if (cursor.getTime() >= horizonEnd.getTime()) {
+      return exhausted; // machine hops walked past the horizon
+    }
+    const sim = simulateAttended({
+      from: cursor,
+      attendedHours,
+      members,
+      busyByEmployee,
+      horizonEnd,
+    });
+    if (!sim) {
+      return {
+        conflict: `No qualified operator availability before ${
+          toIsoDateInTimeZone(horizonEnd, timeZone)
+        }`,
+      };
+    }
+
+    const end = new Date(sim.attendedEnd.getTime() + remainderMs);
+    if (end.getTime() > horizonEnd.getTime()) {
+      return exhausted; // later starts only finish later — no point walking on
+    }
+
+    const machine = machineIsFree(capacity, sim.start, end);
+    if (!machine.free) {
+      machineHopped = true;
+      const next = machine.nextTryAfter;
+      cursor =
+        next && next.getTime() > cursor.getTime()
+          ? next
+          : new Date(cursor.getTime() + 60_000); // defensive forward progress
+      continue;
+    }
+
+    const waitedMs = sim.start.getTime() - earliestStart.getTime();
+    let wait: WaitAttribution | null = null;
+    if (waitedMs > 0) {
+      // Last blocker wins: if people pushed the start past the final machine
+      // hop (sim.start > cursor), the operator side was binding; otherwise
+      // the machine queue was.
+      const resource: "machine" | "operator" =
+        sim.start.getTime() > cursor.getTime() || !machineHopped
+          ? "operator"
+          : "machine";
+      const source =
+        resource === "machine"
+          ? capacity.reservations
+          : members.flatMap((m) => busyByEmployee.get(m.employeeId) ?? []);
+      wait = {
+        resource,
+        blockers: formatBlockingJobs(source, earliestStart, sim.start),
+        ownJobAhead: source.some(
+          (r) =>
+            !r.readableJobId &&
+            r.startAt.getTime() < sim.start.getTime() &&
+            r.endAt.getTime() > earliestStart.getTime()
+        ),
+      };
+    }
+
+    return {
+      start: sim.start,
+      attendedEnd: sim.attendedEnd,
+      end,
+      segments: sim.segments,
+      wait,
+    };
+  }
+  return exhausted;
+}
+
+/**
+ * Allocate an UNGATED operation (no required ability): only the machine
+ * gates. Walks forward from `earliestStart` to the first interval where the
+ * work center is free (capacity 1) for the full duration.
  */
 export function allocateOperation(args: {
   durationHours: number;
   earliestStart: Date;
   horizonEnd: Date; // never walk unbounded
   capacity: ResourceCapacityData;
-  operatorPool?: OperatorPool | null;
   /** IANA zone used to word dates in conflict messages (factory time) */
   timeZone?: string;
 }): AllocationResult {
   const { durationHours, earliestStart, horizonEnd, capacity } = args;
-  const pool = args.operatorPool ?? null;
   const timeZone = args.timeZone ?? "UTC";
 
-  // A pool with zero eligible members can never free up — immediate skill conflict
-  if (pool && pool.members.length === 0) {
-    return {
-      conflict: `No qualified operator for ${pool.abilityName}`,
-    };
-  }
-
-  // Accumulation windows: the pool's on-shift time for gated operations,
-  // else the work center's always-open horizon. Clip to the horizon.
-  const baseWindows = pool
-    ? unionWindows(pool.members.map((m) => m.windows))
-    : capacity.windows;
-  const windows = baseWindows.filter(
+  const windows = capacity.windows.filter(
     (w) => w.start.getTime() < horizonEnd.getTime()
   );
   if (windows.length === 0) {
     return {
-      conflict: pool
-        ? `No qualified operator on shift for ${pool.abilityName} before ${
-            toIsoDateInTimeZone(horizonEnd, timeZone)
-          }`
-        : `No working time available at work center before ${
-            toIsoDateInTimeZone(horizonEnd, timeZone)
-          }`,
+      conflict: `No working time available at work center before ${
+        toIsoDateInTimeZone(horizonEnd, timeZone)
+      }`,
     };
   }
 
@@ -207,24 +432,36 @@ export function allocateOperation(args: {
       if (end.getTime() > horizonEnd.getTime()) {
         return { free: false }; // past the horizon; findSlot will exhaust
       }
-      // Work centers do NOT limit concurrency — anyone qualified can work
-      // at a station, so the only finite resource is the operator pool.
-      // Ungated operations (no required ability) place at their earliest
-      // start unconditionally.
-      return pool ? poolIsFree(pool, start, end) : { free: true };
+      return machineIsFree(capacity, start, end);
     },
   });
 
   if (!slot) {
-    const cause = pool
-      ? "No qualified operator availability"
-      : "No working time";
     return {
-      conflict: `${cause} available before ${
+      conflict: `No work center capacity available before ${
         toIsoDateInTimeZone(horizonEnd, timeZone)
       }`,
     };
   }
 
-  return slot;
+  const waitedMs = slot.start.getTime() - earliestStart.getTime();
+  let wait: WaitAttribution | null = null;
+  if (waitedMs > 0) {
+    wait = {
+      resource: "machine",
+      blockers: formatBlockingJobs(
+        capacity.reservations,
+        earliestStart,
+        slot.start
+      ),
+      ownJobAhead: capacity.reservations.some(
+        (r) =>
+          !r.readableJobId &&
+          r.startAt.getTime() < slot.start.getTime() &&
+          r.endAt.getTime() > earliestStart.getTime()
+      ),
+    };
+  }
+
+  return { start: slot.start, end: slot.end, wait };
 }

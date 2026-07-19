@@ -546,6 +546,30 @@ describe("buildJobTimeline", () => {
     expect(result.detailsById["res-2"].resourceKind).toBe("OperatorPool");
   });
 
+  it("renders named-operator (Employee) reservation rows like pool rows", () => {
+    const result = buildJobTimeline({
+      job,
+      operations: [op({})],
+      reservations: [
+        reservation({}),
+        reservation({
+          id: "res-emp",
+          resourceKind: "Employee",
+          resourceName: "Sam Smith"
+        })
+      ],
+      productionEvents: []
+    });
+
+    const operation = result.events.find((e) => e.id === "op-1")!;
+    const person = result.events.find((e) => e.id === "res-emp")!;
+
+    expect(operation.children).toEqual(["res-1", "res-emp"]);
+    expect(person.data.message).toBe("Sam Smith");
+    expect(person.data.style?.icon).toBe("wait");
+    expect(result.detailsById["res-emp"].resourceKind).toBe("Employee");
+  });
+
   it("renders open production events up to now as partial, with person accessory", () => {
     const now = new Date("2026-07-10T12:00:00.000Z");
     const events: TimelineProductionEvent[] = [
