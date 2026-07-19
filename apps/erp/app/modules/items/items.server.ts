@@ -281,7 +281,16 @@ export async function applyChangeOrder(
     return { data: null, error: affectedItems.error };
   }
 
-  for (const affected of affectedItems.data ?? []) {
+  // Release New Part (net-new) items first, so a parent assembly whose draft BOM
+  // references a new part resolves to an already-active item when its own method
+  // activates. Stable sort preserves the sortOrder/createdAt order within groups.
+  const ordered = [...(affectedItems.data ?? [])].sort(
+    (a, b) =>
+      (a.changeType === "New Part" ? 0 : 1) -
+      (b.changeType === "New Part" ? 0 : 1)
+  );
+
+  for (const affected of ordered) {
     const result = await releaseAffectedItem(client, {
       changeOrderId,
       companyId,
@@ -322,12 +331,14 @@ export async function applyChangeOrder(
 // -----------------------------------------------------------------------------
 // releaseAffectedItem (v2) — dispatch by change type. The CO-owned Draft make
 // method already holds the edited BOM/BOP, so release just:
-//   Version  → activate the Draft on the SAME item (prior Active → Archived);
-//              no new item, no supersession (Q2).
-//   Revision → activate the Draft + reveal the new revision item + auto
-//              oldRev→newRev supersession.
-//   New Part → activate the Draft + reveal the new part + auto affectedPart→
-//              newPart supersession.
+//   Version          → activate the Draft on the SAME item (prior Active →
+//                      Archived); no new item, no supersession.
+//   Revision         → activate the Draft + reveal the new revision item + auto
+//                      oldRev→newRev supersession.
+//   Replacement Part → activate the Draft + reveal the new part + auto
+//                      affected→new supersession.
+//   New Part         → activate the Draft + reveal the net-new part; NO
+//                      supersession (no predecessor).
 // Idempotent: once the Draft's changeOrderId is cleared it counts as released.
 // -----------------------------------------------------------------------------
 async function releaseAffectedItem(
@@ -398,13 +409,18 @@ async function releaseAffectedItem(
     if (reveal.error) return { error: reveal.error };
   }
 
-  // Auto supersession: Revision (oldRev→newRev) / New Part (affectedPart→newPart).
-  // Version keeps the same item — no supersession (Q2). This runs BEFORE clearing
-  // the CO-ownership marker so a supersession failure leaves the draft still owned
-  // by the CO (changeOrderId set) — the item is re-attempted on retry instead of
-  // the CO silently completing without its required supersession. Re-runs are
-  // safe: activate/reveal are idempotent and upsertItemSupersession is an upsert.
-  if (changeType !== "Version" && newItemId) {
+  // Auto supersession: Revision (oldRev→newRev) / Replacement Part (affected→new).
+  // Version edits the SAME item, and a net-new New Part has NO predecessor — so
+  // neither writes a supersession (they still reveal their item above). This runs
+  // BEFORE clearing the CO-ownership marker so a supersession failure leaves the
+  // draft still owned by the CO (changeOrderId set) — the item is re-attempted on
+  // retry instead of the CO silently completing without its required supersession.
+  // Re-runs are safe: activate/reveal are idempotent and upsertItemSupersession is
+  // an upsert.
+  if (
+    (changeType === "Revision" || changeType === "Replacement Part") &&
+    newItemId
+  ) {
     const sup = await upsertItemSupersession(client, {
       itemId: sourceItemId,
       successorItemId: newItemId,

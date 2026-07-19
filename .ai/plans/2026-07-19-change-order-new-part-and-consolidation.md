@@ -8,7 +8,7 @@
 - [x] Task 1: Enum migration (rename `New Part`→`Replacement Part`, add net-new `New Part`) + regenerate types
 - [x] Task 2: Models — change-type array + new-part add validator
 - [x] Task 3: Service — Replacement Part branch rename + net-new New Part draft branch + add-affected-item mint path + switch guard
-- [ ] Task 4: Release — supersession gating + New-Part-before-assembly ordering
+- [x] Task 4: Release — supersession gating + New-Part-before-assembly ordering
 - [x] Task 5: UI — labels, badge, change-type picker, attribute/cutover gating
 
 > Deviation: Tasks 1, 2, 5 committed together as one commit. The enum rename ripples
