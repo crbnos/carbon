@@ -15,7 +15,7 @@
 > into `ChangeTypeBadge`'s exhaustive `Record<ChangeOrderChangeType,…>`, so the tree
 > can only be green once the array (T2) and the badge (T5) both include the new value —
 > the per-task green boundary is 1+2+5, not each alone.
-- [ ] Task 6: UI — Add Affected Item modal: change-type Select drives existing-part picker vs create-new-part form
+- [x] Task 6: UI — Add Affected Item modal: change-type Select drives existing-part picker vs create-new-part form
 - [ ] Task 7: UI — assembly BOM picker includes CO New Part drafts + removed-line where-used
 - [ ] Task 8: Tests + seed — consolidation diff coverage, seed relabel
 - [ ] Task 9: Browser verification (end-to-end) via /test
