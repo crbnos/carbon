@@ -141,12 +141,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         };
       }
 
-      // Revision / New Part edit the item's attributes + files on the draft
-      // item — load the same bundle the part detail route feeds PartProperties,
-      // embedded on the CO card. Parts only (Tool attribute editing is a
-      // follow-up); Version has no attribute editing (Q2 matrix).
+      // Revision / Replacement Part / New Part edit the item's attributes + files
+      // on the draft item — load the same bundle the part detail route feeds
+      // PartProperties, embedded on the CO card. Parts only (Tool attribute
+      // editing is a follow-up); Version has no attribute editing (Q2 matrix).
       const needsAttributes =
         (affectedItem.changeType === "Revision" ||
+          affectedItem.changeType === "Replacement Part" ||
           affectedItem.changeType === "New Part") &&
         affectedItem.item?.type === "Part";
       let partData = null;

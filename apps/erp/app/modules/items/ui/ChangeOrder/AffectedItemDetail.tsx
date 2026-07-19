@@ -77,23 +77,38 @@ export default function AffectedItemDetail({
     (affected.partData?.partSummary?.replenishmentSystem ??
       label?.replenishmentSystem) !== "Buy";
   // BoM/BoP is now editable for ANY change type on a manufactured draft — Version,
-  // Revision, and New Part alike (client ask: allow editing BoM/BoP on revisions).
+  // Revision, Replacement Part, and New Part alike (client ask: allow editing
+  // BoM/BoP on revisions; a net-new New Part authors its recipe from scratch).
   const showBomBop = draftIsManufactured;
-  const showAttributes = changeType === "Revision" || changeType === "New Part";
-  // Supplier-part management for a purchasable draft item (Revision / New Part
-  // on a Part) — so a Buy new part doesn't release un-purchasable. The grid's
-  // create/edit drawers are child routes of the line detail; data comes from
-  // partData.supplierParts (already loaded by the $id loader).
+  // Attribute editing (Properties card) applies to every type that mints/derives
+  // a real item: Revision, Replacement Part, and net-new New Part. Version edits
+  // the same item's method only.
+  const showAttributes =
+    changeType === "Revision" ||
+    changeType === "Replacement Part" ||
+    changeType === "New Part";
+  // Supplier-part management for a purchasable draft item (Revision / Replacement
+  // Part / New Part on a Part) — so a Buy draft doesn't release un-purchasable.
+  // The grid's create/edit drawers are child routes of the line detail; data
+  // comes from partData.supplierParts (already loaded by the $id loader).
   const showSupplierParts =
     showAttributes &&
     affected.partData !== null &&
     ["Buy", "Buy and Make"].includes(
       affected.partData.partSummary?.replenishmentSystem ?? ""
     );
-  const showCutover = changeType !== "Version";
+  // Cutover config exists only when there is a predecessor to supersede — Revision
+  // (oldRev→newRev) and Replacement Part (affected→new). A net-new New Part has no
+  // predecessor, and Version edits the same item, so neither shows cutover.
+  const showCutover = changeType !== "Version" && changeType !== "New Part";
   // A purchased item under a type that would otherwise expose BoM/BoP: explain it.
-  // (Revisions of a purchased item are attrs/docs/cutover only — no note needed.)
-  const showBuyNote = !draftIsManufactured && changeType !== "Revision";
+  // The attr-editing types (Revision / Replacement Part / New Part) are attrs/docs
+  // for a Buy item — no note needed.
+  const showBuyNote =
+    !draftIsManufactured &&
+    changeType !== "Revision" &&
+    changeType !== "Replacement Part" &&
+    changeType !== "New Part";
 
   return (
     <VStack spacing={4} className="w-full">
@@ -173,9 +188,7 @@ export default function AffectedItemDetail({
                 section="properties"
                 data={affected.partData}
                 isReadOnly={isDisabled}
-                // A revision keeps the source part number — lock it so it can't
-                // be edited (New Part gets a fresh number and stays editable).
-                lockPartNumber={changeType === "Revision"}
+                changeType={changeType}
               />
             ) : (
               <p className="text-sm text-muted-foreground py-2">
@@ -325,10 +338,17 @@ function ChangeTypeControl({
   const [selected, setSelected] = useState<string>(affected.changeType);
   const hasChanged = selected !== affected.changeType;
   // Version = a manufacturing-method change, meaningless for a Buy item — don't
-  // offer it there (Buy items default to Revision on add).
-  const options = isManufactured
-    ? changeTypeOptions
-    : changeTypeOptions.filter((o) => o.value !== "Version");
+  // offer it there (Buy items default to Revision on add). New Part is net-new by
+  // construction — it can't be switched to/from, so it's never a switcher option.
+  const options = (
+    isManufactured
+      ? changeTypeOptions
+      : changeTypeOptions.filter((o) => o.value !== "Version")
+  ).filter((o) => o.value !== "New Part");
+
+  // A New Part affected item shows its type read-only (no switcher): converting a
+  // net-new part into a predecessor-bound type (or vice-versa) is contradictory.
+  if (affected.changeType === "New Part") return null;
 
   return (
     <ValidatedForm

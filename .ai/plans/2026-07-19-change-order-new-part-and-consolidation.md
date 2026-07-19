@@ -5,11 +5,16 @@
 **Branch:** feat/change-orders-top-to-bottom (current — continue here)
 
 ## Progress
-- [ ] Task 1: Enum migration (rename `New Part`→`Replacement Part`, add net-new `New Part`) + regenerate types
-- [ ] Task 2: Models — change-type array + new-part add validator
+- [x] Task 1: Enum migration (rename `New Part`→`Replacement Part`, add net-new `New Part`) + regenerate types
+- [x] Task 2: Models — change-type array + new-part add validator
 - [ ] Task 3: Service — Replacement Part branch rename + net-new New Part draft branch + add-affected-item mint path + switch guard
 - [ ] Task 4: Release — supersession gating + New-Part-before-assembly ordering
-- [ ] Task 5: UI — labels, badge, change-type picker, attribute/cutover gating
+- [x] Task 5: UI — labels, badge, change-type picker, attribute/cutover gating
+
+> Deviation: Tasks 1, 2, 5 committed together as one commit. The enum rename ripples
+> into `ChangeTypeBadge`'s exhaustive `Record<ChangeOrderChangeType,…>`, so the tree
+> can only be green once the array (T2) and the badge (T5) both include the new value —
+> the per-task green boundary is 1+2+5, not each alone.
 - [ ] Task 6: UI — Add Affected Item modal: change-type Select drives existing-part picker vs create-new-part form
 - [ ] Task 7: UI — assembly BOM picker includes CO New Part drafts + removed-line where-used
 - [ ] Task 8: Tests + seed — consolidation diff coverage, seed relabel

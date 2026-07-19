@@ -26,6 +26,18 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { id, changeType } = validation.data;
 
+  // A New Part is net-new by construction — it can't be switched to (or away
+  // from) another type. Belt-and-suspenders with the service-level guard.
+  if (changeType === "New Part") {
+    return data(
+      { success: false },
+      await flash(
+        request,
+        error(null, "New Part change type cannot be switched")
+      )
+    );
+  }
+
   const update = await updateChangeOrderAffectedItemChangeType(client, {
     id,
     changeType,

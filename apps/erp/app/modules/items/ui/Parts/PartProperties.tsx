@@ -42,6 +42,7 @@ import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
 import {
+  type ChangeOrderChangeType,
   itemReplenishmentSystems,
   itemTrackingTypes
 } from "../../items.models";
@@ -81,11 +82,11 @@ type PartPropertiesProps = {
   // Read-only: every field/control is non-editable (used when the change order
   // is released/locked). Defaults to editable.
   isReadOnly?: boolean;
-  // Lock only the Part Number field (leaving Name + the other attributes
-  // editable). Used on a change-order Revision line: a revision keeps the source
-  // part number, so it must not be edited — but the rest of the attributes still
-  // can be. (New Part gets a fresh number and stays editable.)
-  lockPartNumber?: boolean;
+  // The change-order change type this card is embedded for (a CO line). A
+  // `Revision` keeps the source part number, so the Part Number field is locked
+  // (Name + the other attributes stay editable); `New Part` gets a fresh number
+  // and stays editable.
+  changeType?: ChangeOrderChangeType;
 };
 
 const PartProperties = ({
@@ -94,11 +95,13 @@ const PartProperties = ({
   section = "all",
   layout = "sidebar",
   isReadOnly = false,
-  lockPartNumber = false
+  changeType
 }: PartPropertiesProps) => {
   // Inline click-to-edit only in the sidebar layout; the form layout renders
   // each field as a standard labeled control.
   const inlineLayout = layout === "sidebar";
+  // A revision keeps the source part number — lock that field (only) for it.
+  const lockPartNumber = changeType === "Revision";
   const { t } = useLingui();
   const params = useParams();
   const itemId = data?.itemId ?? params.itemId;

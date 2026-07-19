@@ -1029,15 +1029,23 @@ export const changeOrderTaskStatus = [
 ] as const;
 
 // v2 per-affected-item change type. Drives the release action + which editing
-// surface is shown: Version = new method version on the same item (BoM/BoP, no
-// supersession); Revision = new revision item (BoM/BoP + attributes/docs, auto
-// old-rev→new-rev supersession); New Part = new P/N derived from + auto-superseding
-// the affected part (BoM/BoP + attributes). BoM/BoP is editable on ANY change type
-// for a manufactured (non-Buy) draft; only Version's extra editing scope differs
-// (no attributes/docs/cutover surface).
+// surface is shown. Two axes — is there a predecessor, and same part number?
+//   Version          = new method version on the SAME item (BoM/BoP, no supersession)
+//   Revision         = new revision item, same #, new rev (BoM/BoP + attrs, auto
+//                      old-rev→new-rev supersession)
+//   Replacement Part = new P/N derived from + auto-superseding the affected part
+//                      (BoM/BoP + attrs) — the 1:1 replacement, renamed from the old
+//                      "New Part"
+//   New Part         = net-new part, NO predecessor, NO supersession — introduced by
+//                      the CO (Make or Buy). Used to introduce a part under change
+//                      control, incl. the consolidated "1" in an N→1 assembly BOM
+//                      change.
+// BoM/BoP is editable on ANY change type for a manufactured (non-Buy) draft; only
+// Version's extra editing scope differs (no attributes/docs/cutover surface).
 export const changeOrderChangeTypes = [
   "Version",
   "Revision",
+  "Replacement Part",
   "New Part"
 ] as const;
 export type ChangeOrderChangeType = (typeof changeOrderChangeTypes)[number];
@@ -1149,6 +1157,18 @@ export const changeOrderAffectedItemValidator = z.object({
   changeOrderId: z.string().min(1, { message: "Change order is required" }),
   itemId: z.string().min(1, { message: "Item is required" }),
   changeType: z.enum(changeOrderChangeTypes).default("Version")
+});
+
+// Add-affected-item path for a net-new "New Part" (no existing itemId): the CO
+// mints a brand-new inactive Part/Tool and adds it as a New Part affected item.
+export const changeOrderNewPartValidator = z.object({
+  changeOrderId: z.string().min(1, { message: "Change order is required" }),
+  readableId: z.string().min(1, { message: "Part number is required" }),
+  name: z.string().min(1, { message: "Name is required" }),
+  itemType: z.enum(["Part", "Tool"], {
+    errorMap: () => ({ message: "Type must be Part or Tool" })
+  }),
+  replenishmentSystem: z.enum(["Buy", "Make", "Buy and Make"]).default("Make")
 });
 
 // Switch the change type on an existing affected item (rebuilds its CO-owned
