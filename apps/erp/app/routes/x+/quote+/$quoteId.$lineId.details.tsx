@@ -312,6 +312,7 @@ export default function QuoteLine() {
   const initialValues = {
     ...line,
     id: line.id ?? undefined,
+    itemType: (line.itemType as "Part") ?? undefined,
     quoteId: line.quoteId ?? "",
     customerPartId: line.customerPartId ?? "",
     customerPartRevision: line.customerPartRevision ?? "",

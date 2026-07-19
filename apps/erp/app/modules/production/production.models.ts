@@ -715,18 +715,6 @@ export const jobMaterialValidator = baseMaterialValidator
   )
   .refine(
     (data) => {
-      if (data.itemType === "Tool") {
-        return !!data.itemId;
-      }
-      return true;
-    },
-    {
-      message: "Tool ID is required",
-      path: ["itemId"]
-    }
-  )
-  .refine(
-    (data) => {
       if (data.itemType === "Consumable") {
         return !!data.itemId;
       }
@@ -765,18 +753,6 @@ export const jobMaterialValidatorForReleasedJob = baseMaterialValidator
     },
     {
       message: "Material ID is required",
-      path: ["itemId"]
-    }
-  )
-  .refine(
-    (data) => {
-      if (data.itemType === "Tool") {
-        return !!data.itemId;
-      }
-      return true;
-    },
-    {
-      message: "Tool ID is required",
       path: ["itemId"]
     }
   )

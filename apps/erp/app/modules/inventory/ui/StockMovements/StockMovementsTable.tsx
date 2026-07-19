@@ -338,7 +338,7 @@ const StockMovementsTable = memo(
         }}
         renderExpandedRow={renderExpandedRow}
         canExpandRow={canExpandRow}
-        title={t`Stock Movements`}
+        title={t`Inventory Movements`}
         table="itemLedger"
         withSavedView
       />

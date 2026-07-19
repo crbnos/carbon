@@ -137,6 +137,9 @@ msgstr "{variances, plural, one {# line differs from the expected quantity} othe
 msgid "/month/user"
 msgstr "/month/user"
 
+msgid "% of Total"
+msgstr "% of Total"
+
 #. placeholder {0}: numberFormatter.format(redirectedTotal)
 #. placeholder {1}: redirectedParts.join(", ")
 msgid "↩ {0} redirected from superseded {1}"
@@ -333,6 +336,9 @@ msgstr "A sales RFQ (a customer asks you to quote) or a purchasing RFQ (you ask 
 
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
+
+msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
+msgstr "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
 
 msgid "A set of companies under one owner that share group-scoped configuration — the chart of accounts, currencies, and dimensions — so the same accounting setup spans every company in the group."
 msgstr "A set of companies under one owner that share group-scoped configuration — the chart of accounts, currencies, and dimensions — so the same accounting setup spans every company in the group."
@@ -781,6 +787,9 @@ msgstr "All Items"
 
 msgid "All jobs completed"
 msgstr "All jobs completed"
+
+msgid "All Locations"
+msgstr "All Locations"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "All members of selected groups and selected individuals will be able to approve requests"
@@ -1591,9 +1600,6 @@ msgstr "Awaiting approval"
 msgid "Back"
 msgstr "Back"
 
-msgid "Back Home"
-msgstr "Back Home"
-
 msgid "Back to traceability"
 msgstr "Back to traceability"
 
@@ -1826,6 +1832,12 @@ msgstr "By Document Date"
 
 msgid "By Due Date"
 msgstr "By Due Date"
+
+msgid "By Item"
+msgstr "By Item"
+
+msgid "By Location"
+msgstr "By Location"
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
@@ -2257,6 +2269,9 @@ msgstr "Company Name"
 msgid "Company policy asks for a different person to inspect inbound items than the one who received them."
 msgstr "Company policy asks for a different person to inspect inbound items than the one who received them."
 
+msgid "Company-wide — includes all locations"
+msgstr "Company-wide — includes all locations"
+
 msgid "Compare and Order"
 msgstr "Compare and Order"
 
@@ -2639,6 +2654,9 @@ msgstr "Copy link to part"
 msgid "Copy link to procedure"
 msgstr "Copy link to procedure"
 
+msgid "Copy link to service"
+msgstr "Copy link to service"
+
 msgid "Copy link to tool"
 msgstr "Copy link to tool"
 
@@ -2686,6 +2704,12 @@ msgstr "Copy Quote"
 
 msgid "Copy Quote number"
 msgstr "Copy Quote number"
+
+msgid "Copy service number"
+msgstr "Copy service number"
+
+msgid "Copy service unique identifier"
+msgstr "Copy service unique identifier"
 
 msgid "Copy this item's pricing to another scope."
 msgstr "Copy this item's pricing to another scope."
@@ -2983,6 +3007,9 @@ msgstr "Created required action"
 
 msgid "Created scrap reason"
 msgstr "Created scrap reason"
+
+msgid "Created service"
+msgstr "Created service"
 
 msgid "Created shipping method"
 msgstr "Created shipping method"
@@ -3433,6 +3460,12 @@ msgstr "Default cash account for transactions in your base currency."
 msgid "Default CC Recipients"
 msgstr "Default CC Recipients"
 
+msgid "Default GL account credited when a fixed-asset disposal results in a gain."
+msgstr "Default GL account credited when a fixed-asset disposal results in a gain."
+
+msgid "Default GL account debited when a fixed-asset disposal results in a loss."
+msgstr "Default GL account debited when a fixed-asset disposal results in a loss."
+
 msgid "Default GL account used for cash transactions when no specific bank account is selected."
 msgstr "Default GL account used for cash transactions when no specific bank account is selected."
 
@@ -3694,6 +3727,9 @@ msgstr "Delete Sales Order"
 msgid "Delete Schedule"
 msgstr "Delete Schedule"
 
+msgid "Delete Service"
+msgstr "Delete Service"
+
 msgid "Delete Shift"
 msgstr "Delete Shift"
 
@@ -3941,9 +3977,6 @@ msgstr "Display Settings"
 
 msgid "Disposal"
 msgstr "Disposal"
-
-msgid "Disposal Account"
-msgstr "Disposal Account"
 
 msgid "Disposal Date"
 msgstr "Disposal Date"
@@ -4370,6 +4403,9 @@ msgstr "Edit Scheduled Maintenance"
 msgid "Edit Sequence"
 msgstr "Edit Sequence"
 
+msgid "Edit Service"
+msgstr "Edit Service"
+
 msgid "Edit Shift"
 msgstr "Edit Shift"
 
@@ -4441,12 +4477,6 @@ msgstr "Edit Webhook"
 
 msgid "Edit Work Center"
 msgstr "Edit Work Center"
-
-msgid "Effective From"
-msgstr "Effective From"
-
-msgid "Effective To"
-msgstr "Effective To"
 
 msgid "Email"
 msgstr "Email"
@@ -4998,6 +5028,10 @@ msgid "Failed to create process: {0}"
 msgstr "Failed to create process: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create service: {0}"
+msgstr "Failed to create service: {0}"
+
+#. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create shipping method: {0}"
 msgstr "Failed to create shipping method: {0}"
 
@@ -5435,14 +5469,17 @@ msgstr "Fully trained for"
 msgid "FX G/L"
 msgstr "FX G/L"
 
-msgid "Gains and Losses"
-msgstr "Gains and Losses"
+msgid "Gain on Disposal"
+msgstr "Gain on Disposal"
 
-msgid "Gains and Losses (default)"
-msgstr "Gains and Losses (default)"
+msgid "Gain on Disposal (default)"
+msgstr "Gain on Disposal (default)"
 
-msgid "Gains or losses recognized on disposal of fixed assets"
-msgstr "Gains or losses recognized on disposal of fixed assets"
+msgid "Gain on Disposal Account"
+msgstr "Gain on Disposal Account"
+
+msgid "Gains recognized on disposal of fixed assets"
+msgstr "Gains recognized on disposal of fixed assets"
 
 msgid "gauge"
 msgstr "gauge"
@@ -5576,9 +5613,6 @@ msgstr "GL account debited when a customer invoice posts; cleared when the custo
 msgid "GL account debited when a fixed asset is acquired (purchase or capitalized cost)."
 msgstr "GL account debited when a fixed asset is acquired (purchase or capitalized cost)."
 
-msgid "GL account debited when an asset in this class is acquired."
-msgstr "GL account debited when an asset in this class is acquired."
-
 msgid "GL account for bank service charges and similar fees."
 msgstr "GL account for bank service charges and similar fees."
 
@@ -5594,12 +5628,6 @@ msgstr "GL account for tax accrued under reverse-charge rules where the buyer se
 msgid "GL account for tax timing differences (e.g. accelerated tax depreciation vs. book depreciation)."
 msgstr "GL account for tax timing differences (e.g. accelerated tax depreciation vs. book depreciation)."
 
-msgid "GL account hit when an asset is written off (cost removed without disposal proceeds)."
-msgstr "GL account hit when an asset is written off (cost removed without disposal proceeds)."
-
-msgid "GL account hit when an asset's book value is reduced (impairment)."
-msgstr "GL account hit when an asset's book value is reduced (impairment)."
-
 msgid "GL account hit when physical counts differ from system inventory."
 msgstr "GL account hit when physical counts differ from system inventory."
 
@@ -5614,6 +5642,9 @@ msgstr "GL account that absorbs sub-cent rounding differences on posting."
 
 msgid "GL account that captures the difference between standard cost and actual purchase cost."
 msgstr "GL account that captures the difference between standard cost and actual purchase cost."
+
+msgid "GL account that carries an asset's original acquisition cost — debited when acquired and credited at full gross cost when it is disposed or sold."
+msgstr "GL account that carries an asset's original acquisition cost — debited when acquired and credited at full gross cost when it is disposed or sold."
 
 msgid "GL account that holds the value of jobs in production until they post to finished goods."
 msgstr "GL account that holds the value of jobs in production until they post to finished goods."
@@ -5633,14 +5664,8 @@ msgstr "GL account where early-payment discounts given to customers are recorded
 msgid "GL account where early-payment discounts taken from suppliers are recorded."
 msgstr "GL account where early-payment discounts taken from suppliers are recorded."
 
-msgid "GL account where gain or loss is booked on fixed-asset disposal."
-msgstr "GL account where gain or loss is booked on fixed-asset disposal."
-
-msgid "GL account where gain or loss is booked when an asset in this class is disposed."
-msgstr "GL account where gain or loss is booked when an asset in this class is disposed."
-
-msgid "GL contra-asset account credited when depreciation posts for assets in this class."
-msgstr "GL contra-asset account credited when depreciation posts for assets in this class."
+msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
+msgstr "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
 
 msgid "GL contra-asset account that accumulates depreciation booked against fixed assets."
 msgstr "GL contra-asset account that accumulates depreciation booked against fixed assets."
@@ -5653,6 +5678,9 @@ msgstr "GL equity account where net income closes at fiscal year-end."
 
 msgid "GL expense account debited each period when depreciation posts."
 msgstr "GL expense account debited each period when depreciation posts."
+
+msgid "GL expense account debited when an asset's carrying value is reduced by impairment, i.e. when its recoverable amount falls below net book value."
+msgstr "GL expense account debited when an asset's carrying value is reduced by impairment, i.e. when its recoverable amount falls below net book value."
 
 msgid "GL expense account for non-inventory purchases (supplies, services)."
 msgstr "GL expense account for non-inventory purchases (supplies, services)."
@@ -6243,6 +6271,9 @@ msgstr "Inventory History"
 msgid "Inventory Job Notifications"
 msgstr "Inventory Job Notifications"
 
+msgid "Inventory Movements"
+msgstr "Inventory Movements"
+
 msgid "Inventory Qty"
 msgstr "Inventory Qty"
 
@@ -6251,6 +6282,9 @@ msgstr "Inventory Tracking"
 
 msgid "Inventory Unit of Measure"
 msgstr "Inventory Unit of Measure"
+
+msgid "Inventory Valuation"
+msgstr "Inventory Valuation"
 
 msgid "Invite"
 msgstr "Invite"
@@ -6377,6 +6411,9 @@ msgstr "Item"
 
 msgid "Item {scannedItem} is not the same as the item {expectedItem}"
 msgstr "Item {scannedItem} is not the same as the item {expectedItem}"
+
+msgid "Item / Location"
+msgstr "Item / Location"
 
 msgid "Item filters"
 msgstr "Item filters"
@@ -6761,6 +6798,9 @@ msgstr "location"
 msgid "Location"
 msgstr "Location"
 
+msgid "Location / Item"
+msgstr "Location / Item"
+
 msgid "Location Name"
 msgstr "Location Name"
 
@@ -6809,6 +6849,18 @@ msgstr "Long Description"
 
 msgid "Looks empty here"
 msgstr "Looks empty here"
+
+msgid "Loss on Disposal"
+msgstr "Loss on Disposal"
+
+msgid "Loss on Disposal (default)"
+msgstr "Loss on Disposal (default)"
+
+msgid "Loss on Disposal Account"
+msgstr "Loss on Disposal Account"
+
+msgid "Losses recognized on disposal of fixed assets"
+msgstr "Losses recognized on disposal of fixed assets"
 
 msgid "Lost"
 msgstr "Lost"
@@ -7359,6 +7411,9 @@ msgstr "Move to Trash"
 msgid "Moved {0} to {1} bucket"
 msgstr "Moved {0} to {1} bucket"
 
+msgid "Movements"
+msgstr "Movements"
+
 msgid "MRP (planning)"
 msgstr "MRP (planning)"
 
@@ -7637,6 +7692,9 @@ msgstr "New Sales Order Line"
 
 msgid "New Scheduled Maintenance"
 msgstr "New Scheduled Maintenance"
+
+msgid "New Service"
+msgstr "New Service"
 
 msgid "New Shift"
 msgstr "New Shift"
@@ -8015,6 +8073,12 @@ msgstr "Non-Inventory"
 
 msgid "Non-Inventory Tracking"
 msgstr "Non-Inventory Tracking"
+
+msgid "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
+msgstr "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
+
+msgid "Non-operating income account credited when an asset in this class is sold for more than its net book value."
+msgstr "Non-operating income account credited when an asset in this class is sold for more than its net book value."
 
 msgid "Non-Taxable Add-On Cost"
 msgstr "Non-Taxable Add-On Cost"
@@ -9265,6 +9329,9 @@ msgstr "QR Code to start the next operation for this kanban"
 msgid "Qty"
 msgstr "Qty"
 
+msgid "Qty On Hand"
+msgstr "Qty On Hand"
+
 msgid "Qty to Order"
 msgstr "Qty to Order"
 
@@ -9538,6 +9605,9 @@ msgstr "Receive Payment · {0} invoices"
 msgid "Receive to Inventory"
 msgstr "Receive to Inventory"
 
+msgid "Received"
+msgstr "Received"
+
 #. placeholder {0}: status?.received
 #. placeholder {1}: status?.ordered
 msgid "Received {0} of {1}"
@@ -9563,6 +9633,9 @@ msgstr "Recent payments"
 
 msgid "Recently Created"
 msgstr "Recently Created"
+
+msgid "Reconcile"
+msgstr "Reconcile"
 
 msgid "Reconciling a purchase order against what was received and invoiced — implicit in Carbon, via the line quantities and GR/IR balance."
 msgstr "Reconciling a purchase order against what was received and invoiced — implicit in Carbon, via the line quantities and GR/IR balance."
@@ -9894,14 +9967,17 @@ msgstr "Results"
 msgid "Results per page"
 msgstr "Results per page"
 
+msgid "Resume Receiving"
+msgstr "Resume Receiving"
+
 msgid "Retained Earnings"
 msgstr "Retained Earnings"
 
 msgid "Retained Earnings (default)"
 msgstr "Retained Earnings (default)"
 
-msgid "Retiring an asset by write-off instead of sale, booking the remaining net book value as a loss — status becomes Disposed."
-msgstr "Retiring an asset by write-off instead of sale, booking the remaining net book value as a loss — status becomes Disposed."
+msgid "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
+msgstr "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
 
 msgid "Retry"
 msgstr "Retry"
@@ -10610,11 +10686,17 @@ msgstr "Service Charges"
 msgid "Service Charges (default)"
 msgstr "Service Charges (default)"
 
+msgid "Service Details"
+msgstr "Service Details"
+
 msgid "Service ID"
 msgstr "Service ID"
 
 msgid "services"
 msgstr "services"
+
+msgid "Services"
+msgstr "Services"
 
 msgid "Set a target"
 msgstr "Set a target"
@@ -10953,9 +11035,6 @@ msgstr "Solutions Engineer"
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 
-msgid "Something went wrong"
-msgstr "Something went wrong"
-
 msgid "Something went wrong. Please try again."
 msgstr "Something went wrong. Please try again."
 
@@ -11065,6 +11144,9 @@ msgstr "Start"
 msgid "Start {0} Day Free Trial"
 msgstr "Start {0} Day Free Trial"
 
+msgid "Start counting"
+msgstr "Start counting"
+
 msgid "Start Date"
 msgstr "Start Date"
 
@@ -11140,9 +11222,6 @@ msgstr "steps"
 msgid "Steps"
 msgstr "Steps"
 
-msgid "Stock Movements"
-msgstr "Stock Movements"
-
 msgid "Stock Transfer ID"
 msgstr "Stock Transfer ID"
 
@@ -11170,6 +11249,9 @@ msgstr "Stockout"
 
 msgid "Stop raising purchase orders after this date"
 msgstr "Stop raising purchase orders after this date"
+
+msgid "Stop Receiving"
+msgstr "Stop Receiving"
 
 msgid "Storage client not available"
 msgstr "Storage client not available"
@@ -11624,6 +11706,9 @@ msgstr "Template ID"
 
 msgid "Templates"
 msgstr "Templates"
+
+msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for its net book value on invoicing, netting to zero over the sale cycle."
+msgstr "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for its net book value on invoicing, netting to zero over the sale cycle."
 
 msgid "Terms and Privacy"
 msgstr "Terms and Privacy"
@@ -12121,6 +12206,16 @@ msgstr "The recorded genealogy of tracked entities — which inputs were consume
 msgid "The reference data everything else hangs off. Loads first."
 msgstr "The reference data everything else hangs off. Loads first."
 
+#. placeholder {0}: line.quantityToReceive
+#. placeholder {1}: line.purchaseUnitOfMeasureCode ?? ""
+msgid "The remaining {0} {1} will be expected again and counted as incoming supply."
+msgstr "The remaining {0} {1} will be expected again and counted as incoming supply."
+
+#. placeholder {0}: line.quantityToReceive
+#. placeholder {1}: line.purchaseUnitOfMeasureCode ?? ""
+msgid "The remaining {0} {1} will no longer be expected. On-order supply and MRP will stop counting it. The ordered quantity and pricing are unchanged."
+msgstr "The remaining {0} {1} will no longer be expected. On-order supply and MRP will stop counting it. The ordered quantity and pricing are unchanged."
+
 msgid "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
 msgstr "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
 
@@ -12464,6 +12559,9 @@ msgstr "Tie shipments through to an invoice with no re-keying"
 msgid "Tie-Out"
 msgstr "Tie-Out"
 
+msgid "Tie-Out unavailable"
+msgstr "Tie-Out unavailable"
+
 msgid "Tightened"
 msgstr "Tightened"
 
@@ -12598,6 +12696,12 @@ msgstr "Total quantity on hand for the item across all storage units at this loc
 
 msgid "Total quantity required across all active jobs and sales orders at this location — not just this job."
 msgstr "Total quantity required across all active jobs and sales orders at this location — not just this job."
+
+msgid "Total Value"
+msgstr "Total Value"
+
+msgid "Total Variance"
+msgstr "Total Variance"
 
 msgid "Total:"
 msgstr "Total:"
@@ -13014,6 +13118,9 @@ msgstr "Use ... to get the next material ID"
 msgid "Use ... to get the next part ID"
 msgstr "Use ... to get the next part ID"
 
+msgid "Use ... to get the next service ID"
+msgstr "Use ... to get the next service ID"
+
 msgid "Use ... to get the next tool ID"
 msgstr "Use ... to get the next tool ID"
 
@@ -13031,12 +13138,6 @@ msgstr "Used in the navigation and on documents like sales orders"
 
 msgid "Used in the navigation in dark mode"
 msgstr "Used in the navigation in dark mode"
-
-msgid "Used on builds on/after this date (blank = always)"
-msgstr "Used on builds on/after this date (blank = always)"
-
-msgid "Used on builds on/before this date (blank = always)"
-msgstr "Used on builds on/before this date (blank = always)"
 
 msgid "Used on the home screen and digital quotes"
 msgstr "Used on the home screen and digital quotes"
@@ -13104,6 +13205,9 @@ msgstr "Validated"
 msgid "Validating job..."
 msgstr "Validating job..."
 
+msgid "Valuation"
+msgstr "Valuation"
+
 msgid "Value"
 msgstr "Value"
 
@@ -13118,6 +13222,9 @@ msgstr "Value-added-tax registration number; required on EU invoices for reverse
 
 msgid "Values"
 msgstr "Values"
+
+msgid "Values apply today's unit costs to historical quantities."
+msgstr "Values apply today's unit costs to historical quantities."
 
 msgid "Variance"
 msgstr "Variance"

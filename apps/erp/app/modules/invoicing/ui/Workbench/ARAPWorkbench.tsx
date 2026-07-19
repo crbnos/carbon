@@ -2,16 +2,16 @@ import {
   Button,
   cn,
   DatePicker,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
   HStack,
   Popover,
   PopoverContent,
   PopoverHeader,
   PopoverTrigger,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -502,22 +502,33 @@ export function ARAPWorkbench({
           </TooltipContent>
         </Tooltip>
       ) : null}
-      <Select
-        value={agingMethod}
-        onValueChange={(value) => setParams({ agingMethod: value })}
-      >
-        <SelectTrigger size="sm" className="w-[180px]">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="dueDate">
-            <Trans>By Due Date</Trans>
-          </SelectItem>
-          <SelectItem value="documentDate">
-            <Trans>By Document Date</Trans>
-          </SelectItem>
-        </SelectContent>
-      </Select>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="secondary" rightIcon={<LuChevronDown />}>
+            {agingMethod === "dueDate" ? (
+              <Trans>By Due Date</Trans>
+            ) : (
+              <Trans>By Document Date</Trans>
+            )}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-48">
+          <DropdownMenuRadioGroup value={agingMethod}>
+            <DropdownMenuRadioItem
+              value="dueDate"
+              onClick={() => setParams({ agingMethod: "dueDate" })}
+            >
+              <Trans>By Due Date</Trans>
+            </DropdownMenuRadioItem>
+            <DropdownMenuRadioItem
+              value="documentDate"
+              onClick={() => setParams({ agingMethod: "documentDate" })}
+            >
+              <Trans>By Document Date</Trans>
+            </DropdownMenuRadioItem>
+          </DropdownMenuRadioGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
       <span className="text-sm text-muted-foreground whitespace-nowrap">
         <Trans>As of:</Trans>
       </span>

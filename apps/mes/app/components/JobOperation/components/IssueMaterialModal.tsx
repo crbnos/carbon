@@ -73,7 +73,7 @@ import type { JobMaterial, TrackedInput } from "~/services/types";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 
-type TrackingType = "Serial" | "Batch" | "Inventory" | null;
+type TrackingType = "Serial" | "Batch" | "Inventory" | "Non-Inventory" | null;
 
 interface ItemDetails {
   id: string;
@@ -307,9 +307,18 @@ export function IssueMaterialModal({
   // Tab state
   const [activeTab, setActiveTab] = useState("scan");
 
-  // When no picking list has allocated this tracked material, suggest the same
-  // lots a picking list would (netting + the item's pickMethod sort) and pre-fill
-  // the selection. The suggestion is a default only — fully editable below.
+  // Pre-fill the selection with the picking list's recommendation (a default
+  // only — fully editable below). Two sources feed it, in priority order:
+  //   1. the exact lots a picking list already PICKED for this material
+  //      (`pickedAllocation`, from pickingListLineTrackedEntity), and
+  //   2. the on-the-fly pickMethod suggestion of what to pick
+  //      (`suggestedAllocation`, netted + FEFO/FIFO sorted).
+  // A material can be on a picking list (quantityToPick > 0) with nothing picked
+  // yet — e.g. a multi-line list where other lines were picked first. In that
+  // state `pickedAllocation` is empty, so we must still surface the suggestion
+  // rather than leaving the operator with the default first lot. Hence the
+  // suggestion is ALWAYS loaded and used as the fallback, not gated off whenever
+  // a picking allocation merely exists.
   const pickedOverlay = material as
     | { quantityToPick?: number | null; quantityPicked?: number | null }
     | undefined;
@@ -320,7 +329,6 @@ export function IssueMaterialModal({
     !!material &&
     !!selectedItemId &&
     !!locationId &&
-    !hasPickingAllocation &&
     (trackingType === "Batch" || trackingType === "Serial");
   const { data: suggestedAllocation } = useSuggestedAllocation(
     shouldSuggestAllocation
@@ -331,20 +339,25 @@ export function IssueMaterialModal({
         }
       : undefined
   );
-  // When a picking list HAS allocated this material, seed the exact lots it
-  // picked (from pickingListLineTrackedEntity) rather than a fresh suggestion.
   const shouldLoadPickedAllocation =
     !!material?.id &&
     hasPickingAllocation &&
     (trackingType === "Batch" || trackingType === "Serial");
-  const { data: pickedAllocation } = usePickedAllocation(
-    shouldLoadPickedAllocation ? (material?.id ?? undefined) : undefined
-  );
-  // One source feeds the seeding + add-row logic below: the picked lots when a
-  // picking list exists, otherwise the on-the-fly suggestion.
-  const seedAllocation = hasPickingAllocation
-    ? pickedAllocation
-    : suggestedAllocation;
+  const { data: pickedAllocation, resolved: pickedAllocationResolved } =
+    usePickedAllocation(
+      shouldLoadPickedAllocation ? (material?.id ?? undefined) : undefined
+    );
+  // Prefer the actual picks; fall back to the suggestion only when nothing's
+  // been picked yet (allocated-but-not-picked) or when there's no picking list.
+  // Wait for the picked-allocation request to resolve before falling back, so a
+  // faster suggestion response can't be seeded and then locked in ahead of the
+  // real picked lots.
+  const seedAllocation =
+    shouldLoadPickedAllocation && !pickedAllocationResolved
+      ? []
+      : pickedAllocation.length
+        ? pickedAllocation
+        : suggestedAllocation;
   const hasSeededSuggestionRef = useRef(false);
   useEffect(() => {
     if (hasSeededSuggestionRef.current) return;
@@ -1033,8 +1046,12 @@ export function IssueMaterialModal({
                 </AlertDescription>
               </Alert>
             </ModalBody>
-          ) : trackingType === "Inventory" || trackingType === null ? (
-            // Inventory item - use ValidatedForm
+          ) : trackingType === "Inventory" ||
+            trackingType === "Non-Inventory" ||
+            trackingType === null ? (
+            // Untracked item (Inventory or Non-Inventory, e.g. consumables and
+            // services) - use ValidatedForm; the issue edge function skips the
+            // itemLedger for Non-Inventory items but still posts the WIP cost
             <ValidatedForm
               method="post"
               action={path.to.issue}
@@ -1094,32 +1111,34 @@ export function IssueMaterialModal({
                     </div>
                   )}
 
-                  {showContent && trackingType === "Inventory" && (
-                    <>
-                      {!material?.id && (
-                        <div>
-                          <label className="block text-sm font-medium mb-1">
-                            Adjustment Type
-                          </label>
-                          <Select
-                            name="adjustmentType"
-                            defaultValue="Negative Adjmt."
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Positive Adjmt.">
-                                Add to Inventory
-                              </SelectItem>
-                              <SelectItem value="Negative Adjmt.">
-                                Pull from Inventory
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      )}
-                      {/*
+                  {showContent &&
+                    (trackingType === "Inventory" ||
+                      trackingType === "Non-Inventory") && (
+                      <>
+                        {!material?.id && (
+                          <div>
+                            <label className="block text-sm font-medium mb-1">
+                              Adjustment Type
+                            </label>
+                            <Select
+                              name="adjustmentType"
+                              defaultValue="Negative Adjmt."
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Positive Adjmt.">
+                                  Add to Inventory
+                                </SelectItem>
+                                <SelectItem value="Negative Adjmt.">
+                                  Pull from Inventory
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+                        {/*
                         Use the form-aware `<Number>` (FormNumberInput) so
                         `name="quantity"` lands on react-aria's NumberField
                         and a hidden form input is rendered with the numeric
@@ -1129,13 +1148,13 @@ export function IssueMaterialModal({
                         the server's zod schema rejected it, and the action
                         returned a 400 the modal silently swallowed.
                       */}
-                      <FormNumberInput
-                        name="quantity"
-                        label="Quantity"
-                        minValue={0.01}
-                      />
-                    </>
-                  )}
+                        <FormNumberInput
+                          name="quantity"
+                          label="Quantity"
+                          minValue={0.01}
+                        />
+                      </>
+                    )}
                 </div>
               </ModalBody>
               <ModalFooter>
@@ -2042,5 +2061,11 @@ function usePickedAllocation(jobMaterialId?: string) {
     }
   }, [jobMaterialId]);
 
-  return { data: fetcher.data?.data ?? [] };
+  return {
+    data: fetcher.data?.data ?? [],
+    // Has the request come back? An empty result only means "nothing picked"
+    // once this is true — before that it's still loading. Guards the seed from
+    // falling back to the suggestion before the picked lots have arrived.
+    resolved: fetcher.state === "idle" && fetcher.data !== undefined
+  };
 }

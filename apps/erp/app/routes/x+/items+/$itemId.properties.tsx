@@ -21,7 +21,7 @@ import {
   getTool
 } from "~/modules/items";
 import { getLocationsList } from "~/modules/resources";
-import { getTagsList, methodItemType } from "~/modules/shared";
+import { getTagsList } from "~/modules/shared";
 import type { ListItem } from "~/types";
 
 type CommonFields = {
@@ -59,9 +59,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const url = new URL(request.url);
   const typeParam = url.searchParams.get("type");
-  const type = (methodItemType as readonly string[]).includes(typeParam ?? "")
-    ? (typeParam as (typeof methodItemType)[number])
-    : "Part";
+  // Own-key check: `in` also accepts inherited keys, so e.g. ?type=toString
+  // would pass and crash on the destructure below.
+  const type =
+    typeParam && Object.prototype.hasOwnProperty.call(typeConfig, typeParam)
+      ? (typeParam as keyof typeof typeConfig)
+      : "Part";
 
   const { tagTable, getSummary } = typeConfig[type];
   const needsMakeMethods = type === "Part" || type === "Tool";

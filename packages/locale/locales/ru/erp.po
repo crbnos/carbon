@@ -137,6 +137,9 @@ msgstr "{variances, plural, one {# строка отличается от ожи
 msgid "/month/user"
 msgstr "/месяц/пользователь"
 
+msgid "% of Total"
+msgstr "% от всего"
+
 #. placeholder {0}: numberFormatter.format(redirectedTotal)
 #. placeholder {1}: redirectedParts.join(", ")
 msgid "↩ {0} redirected from superseded {1}"
@@ -333,6 +336,9 @@ msgstr "Запрос коммерческого предложения прод�
 
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "Отдельный график для налоговой отчетности, когда налоговые правила требуют метода, отличного от бухгалтерской амортизации."
+
+msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
+msgstr "Услуга — это платная деятельность, которая покупается или выполняется — она никогда не отправляется, не принимается и не хранится на складе"
 
 msgid "A set of companies under one owner that share group-scoped configuration — the chart of accounts, currencies, and dimensions — so the same accounting setup spans every company in the group."
 msgstr "Набор компаний под одним владельцем, которые совместно используют конфигурацию уровня группы — план счетов, валюты и аналитики — так что одна и та же настройка учёта распространяется на каждую компанию в группе."
@@ -781,6 +787,9 @@ msgstr "Все элементы"
 
 msgid "All jobs completed"
 msgstr "Все работы завершены"
+
+msgid "All Locations"
+msgstr "Все местоположения"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "Все члены выбранных групп и выбранные лица смогут одобрять запросы"
@@ -1591,9 +1600,6 @@ msgstr "Ожидает утверждения"
 msgid "Back"
 msgstr "Назад"
 
-msgid "Back Home"
-msgstr "Вернуться домой"
-
 msgid "Back to traceability"
 msgstr "Вернуться к отслеживанию"
 
@@ -1826,6 +1832,12 @@ msgstr "По дате документа"
 
 msgid "By Due Date"
 msgstr "По дате платежа"
+
+msgid "By Item"
+msgstr "По товару"
+
+msgid "By Location"
+msgstr "По местоположению"
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "Подписываясь, вы соглашаетесь с <0>Условиями обслуживания</0> и <1>Политикой конфиденциальности.</1>"
@@ -2257,6 +2269,9 @@ msgstr "Название компании"
 msgid "Company policy asks for a different person to inspect inbound items than the one who received them."
 msgstr "Политика компании требует, чтобы входящие товары проверял другой сотрудник, а не тот, кто их получил."
 
+msgid "Company-wide — includes all locations"
+msgstr "Во всей компании — включает все местоположения"
+
 msgid "Compare and Order"
 msgstr "Сравнить и заказать"
 
@@ -2639,6 +2654,9 @@ msgstr "Скопировать ссылку на деталь"
 msgid "Copy link to procedure"
 msgstr "Скопировать ссылку на процедуру"
 
+msgid "Copy link to service"
+msgstr "Копировать ссылку на услугу"
+
 msgid "Copy link to tool"
 msgstr "Скопировать ссылку на инструмент"
 
@@ -2686,6 +2704,12 @@ msgstr "Копировать предложение"
 
 msgid "Copy Quote number"
 msgstr "Копировать номер предложения"
+
+msgid "Copy service number"
+msgstr "Копировать номер услуги"
+
+msgid "Copy service unique identifier"
+msgstr "Копировать уникальный идентификатор услуги"
 
 msgid "Copy this item's pricing to another scope."
 msgstr "Скопируйте цены этого товара в другую область."
@@ -2983,6 +3007,9 @@ msgstr "Требуемое действие создано"
 
 msgid "Created scrap reason"
 msgstr "Причина брака создана"
+
+msgid "Created service"
+msgstr "Услуга создана"
 
 msgid "Created shipping method"
 msgstr "Способ доставки создан"
@@ -3433,6 +3460,12 @@ msgstr "Счет наличных денежных средств по умол�
 msgid "Default CC Recipients"
 msgstr "Получатели CC по умолчанию"
 
+msgid "Default GL account credited when a fixed-asset disposal results in a gain."
+msgstr "Счёт ГЛ по умолчанию, зачисляемый при реализации основного средства с прибылью."
+
+msgid "Default GL account debited when a fixed-asset disposal results in a loss."
+msgstr "Счёт ГЛ по умолчанию, дебетуемый при реализации основного средства с убытком."
+
 msgid "Default GL account used for cash transactions when no specific bank account is selected."
 msgstr "Счет GL по умолчанию, используемый для операций с наличными деньгами, когда не выбран конкретный банковский счет."
 
@@ -3694,6 +3727,9 @@ msgstr "Удалить заказ продажи"
 msgid "Delete Schedule"
 msgstr "Удалить расписание"
 
+msgid "Delete Service"
+msgstr "Удалить услугу"
+
 msgid "Delete Shift"
 msgstr "Удалить смену"
 
@@ -3941,9 +3977,6 @@ msgstr "Параметры отображения"
 
 msgid "Disposal"
 msgstr "Выбытие"
-
-msgid "Disposal Account"
-msgstr "Счет выбытия"
 
 msgid "Disposal Date"
 msgstr "Дата выбытия"
@@ -4370,6 +4403,9 @@ msgstr "Редактировать плановое обслуживание"
 msgid "Edit Sequence"
 msgstr "Редактировать последовательность"
 
+msgid "Edit Service"
+msgstr "Редактировать услугу"
+
 msgid "Edit Shift"
 msgstr "Редактировать смену"
 
@@ -4441,12 +4477,6 @@ msgstr "Редактировать Webhook"
 
 msgid "Edit Work Center"
 msgstr "Редактировать рабочий центр"
-
-msgid "Effective From"
-msgstr "Действительно с"
-
-msgid "Effective To"
-msgstr "Действительно до"
 
 msgid "Email"
 msgstr "Электронная почта"
@@ -4998,6 +5028,10 @@ msgid "Failed to create process: {0}"
 msgstr "Ошибка при создании процесса: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create service: {0}"
+msgstr "Ошибка при создании услуги: {0}"
+
+#. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create shipping method: {0}"
 msgstr "Не удалось создать способ доставки: {0}"
 
@@ -5435,14 +5469,17 @@ msgstr "Полностью обучен для"
 msgid "FX G/L"
 msgstr "Прибыль/убыток по курсу"
 
-msgid "Gains and Losses"
-msgstr "Прибыли и Убытки (по умолчанию)"
+msgid "Gain on Disposal"
+msgstr "Прибыль от выбытия"
 
-msgid "Gains and Losses (default)"
-msgstr "Прибыль или убыток, признанный при списании основного актива"
+msgid "Gain on Disposal (default)"
+msgstr "Прибыль от выбытия (по умолчанию)"
 
-msgid "Gains or losses recognized on disposal of fixed assets"
-msgstr "Калибр"
+msgid "Gain on Disposal Account"
+msgstr "Счёт прибыли от выбытия"
+
+msgid "Gains recognized on disposal of fixed assets"
+msgstr "Прибыль, признаваемая при выбытии основных средств"
 
 msgid "gauge"
 msgstr "Калибры"
@@ -5541,79 +5578,73 @@ msgid "GL Account"
 msgstr "Счет ГЛ"
 
 msgid "GL account capturing cost differences on outside-processing operations."
-msgstr "Счет для фиксации разницы между плановыми и фактическими производственными издержками."
+msgstr "Счет для фиксации разницы затрат по операциям внешней обработки."
 
 msgid "GL account capturing differences between applied and actual manufacturing overhead."
-msgstr "Счет для фиксации разницы между материалом, указанным в BOM, и фактически использованным."
+msgstr "Счет для фиксации разницы между плановыми и фактическими производственными издержками."
 
 msgid "GL account capturing differences between BOM-expected and actual material consumed."
-msgstr "Счет для фиксации разницы между плановым и фактическим временем на операции/машину."
+msgstr "Счет для фиксации разницы между материалом, указанным в BOM, и фактически использованным."
 
 msgid "GL account capturing differences between routing-expected and actual labor/machine time."
-msgstr "Счет для фиксации разницы постоянных затрат при расхождении фактического размера партии с плановым."
+msgstr "Счет для фиксации разницы между плановым и фактическим временем на операции/машину."
 
 msgid "GL account capturing fixed-cost differences when actual lot size differs from planned."
-msgstr "Счет, на который зачисляется сумма для удаления первоначальной стоимости актива при его списании."
+msgstr "Счет для фиксации разницы постоянных затрат при расхождении фактического размера партии с плановым."
 
 msgid "GL account credited to remove the asset's original cost when it is disposed."
-msgstr "Счет, на который зачисляется сумма при регистрации счета-фактуры поставщика (остаток по счетам к оплате)."
+msgstr "Счет, на который зачисляется сумма для удаления первоначальной стоимости актива при его списании."
 
 msgid "GL account credited when a supplier invoice is posted (AP balance)."
-msgstr "Счет, на который зачисляется сумма при включении затрат на труд или машину в производственный заказ."
+msgstr "Счет, на который зачисляется сумма при регистрации счета-фактуры поставщика (остаток по счетам к оплате)."
 
 msgid "GL account credited when labor or machine cost is absorbed into a production job."
-msgstr "Счет, по которому дебетуется сумма для списания накопленной амортизации при утилизации актива."
+msgstr "Счет, на который зачисляется сумма при включении затрат на труд или машину в производственный заказ."
 
 msgid "GL account credited when manufacturing overhead is absorbed into a production job."
 msgstr "Счет главной книги, кредитуемый при поглощении производственных накладных расходов в производственный заказ."
 
 msgid "GL account debited to clear accumulated depreciation when an asset is disposed."
-msgstr "Счет, по которому дебетуется сумма при регистрации счета-фактуры клиента; сторнируется при оплате клиентом."
+msgstr "Счет, по которому дебетуется сумма для списания накопленной амортизации при утилизации актива."
 
 msgid "GL account debited when a customer invoice posts; cleared when the customer pays."
-msgstr "Счет, по которому дебетуется сумма при приобретении основного актива (покупка или капитализированные затраты)."
+msgstr "Счет, по которому дебетуется сумма при регистрации счета-фактуры клиента; сторнируется при оплате клиентом."
 
 msgid "GL account debited when a fixed asset is acquired (purchase or capitalized cost)."
-msgstr "Счет, по которому дебетуется сумма при приобретении актива этого класса."
-
-msgid "GL account debited when an asset in this class is acquired."
-msgstr "Счет для банковских комиссий и аналогичных сборов."
+msgstr "Счет, по которому дебетуется сумма при приобретении основного актива (покупка или капитализированные затраты)."
 
 msgid "GL account for bank service charges and similar fees."
-msgstr "Счет для процентных доходов или расходов."
+msgstr "Счет для банковских комиссий и аналогичных сборов."
 
 msgid "GL account for interest income or expense."
-msgstr "Счет для налога на приобретение, уплаченного поставщикам (или подлежащего возврату)."
+msgstr "Счет для процентных доходов или расходов."
 
 msgid "GL account for purchase tax paid to suppliers (or reclaimable)."
-msgstr "Счет для налогов, начисленных по правилам обратного взимания, когда покупатель самостоятельно определяет налог."
+msgstr "Счет для налога на приобретение, уплаченного поставщикам (или подлежащего возврату)."
 
 msgid "GL account for tax accrued under reverse-charge rules where the buyer self-assesses."
-msgstr "Счет для различий в сроках налогообложения (например, ускоренная налоговая амортизация против бухгалтерской амортизации)."
+msgstr "Счет для налогов, начисленных по правилам обратного взимания, когда покупатель самостоятельно определяет налог."
 
 msgid "GL account for tax timing differences (e.g. accelerated tax depreciation vs. book depreciation)."
-msgstr "Счет, на который отражается списание актива без получения доходов от его реализации."
-
-msgid "GL account hit when an asset is written off (cost removed without disposal proceeds)."
-msgstr "Счет, на который отражается снижение балансовой стоимости актива (обесценение)."
-
-msgid "GL account hit when an asset's book value is reduced (impairment)."
-msgstr "Счет, на который отражается разница между физическими остатками и данными в системе."
+msgstr "Счет для различий в сроках налогообложения (например, ускоренная налоговая амортизация против бухгалтерской амортизации)."
 
 msgid "GL account hit when physical counts differ from system inventory."
-msgstr "Счет для дебета в исходной компании при проведении межкомпанийной операции."
+msgstr "Счет, по которому отражаются расхождения между результатами физической инвентаризации и системными данными о запасах."
 
 msgid "GL account in the source company to debit for this intercompany transaction."
-msgstr "Счет для кредита в целевой компании при проведении межкомпанийной операции."
+msgstr "Счет для дебета в исходной компании при проведении межкомпанийной операции."
 
 msgid "GL account in the target company to credit for this intercompany transaction."
-msgstr "Счет, на который отражаются копеечные разницы округления при проведении операций."
+msgstr "Счет для кредита в целевой компании при проведении межкомпанийной операции."
 
 msgid "GL account that absorbs sub-cent rounding differences on posting."
 msgstr "Счет, на который отражаются копеечные разницы округления при проведении операций."
 
 msgid "GL account that captures the difference between standard cost and actual purchase cost."
 msgstr "Счет GL, который фиксирует разницу между стандартной стоимостью и фактической стоимостью покупки."
+
+msgid "GL account that carries an asset's original acquisition cost — debited when acquired and credited at full gross cost when it is disposed or sold."
+msgstr "Счет ГК, на котором учитывается первоначальная стоимость приобретения актива (покупка или капитализированные затраты) — дебетуется при приобретении и кредитуется на полную первоначальную стоимость при выбытии или продаже актива."
 
 msgid "GL account that holds the value of jobs in production until they post to finished goods."
 msgstr "Счет GL, который хранит стоимость работ в производстве, пока они не будут зачислены на готовую продукцию."
@@ -5633,14 +5664,8 @@ msgstr "Счет GL, на котором фиксируются скидки н�
 msgid "GL account where early-payment discounts taken from suppliers are recorded."
 msgstr "Счет GL, на котором фиксируются скидки на досрочную оплату, полученные от поставщиков."
 
-msgid "GL account where gain or loss is booked on fixed-asset disposal."
-msgstr "Счет GL, на котором фиксируется прибыль или убыток при выбытии основного средства."
-
-msgid "GL account where gain or loss is booked when an asset in this class is disposed."
-msgstr "Счет GL, на котором фиксируется прибыль или убыток при выбытии актива этого класса."
-
-msgid "GL contra-asset account credited when depreciation posts for assets in this class."
-msgstr "Счет GL контра-активов, который кредитуется при проведении амортизации активов этого класса."
+msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
+msgstr "Счет GL контра-активов, который кредитуется по мере проведения амортизации в каждом периоде и дебетуется в полном объеме при продаже или списании актива."
 
 msgid "GL contra-asset account that accumulates depreciation booked against fixed assets."
 msgstr "Счет GL контра-активов, который накапливает амортизацию, записанную против основных средств."
@@ -5653,6 +5678,9 @@ msgstr "Счет GL капитала, на котором чистая приб�
 
 msgid "GL expense account debited each period when depreciation posts."
 msgstr "Счет GL расходов, который дебетуется в каждом периоде при проведении амортизации."
+
+msgid "GL expense account debited when an asset's carrying value is reduced by impairment, i.e. when its recoverable amount falls below net book value."
+msgstr "Счет GL расходов, который дебетуется, когда балансовая стоимость актива уменьшается из-за обесценения, то есть когда возмещаемая стоимость становится ниже чистой балансовой стоимости."
 
 msgid "GL expense account for non-inventory purchases (supplies, services)."
 msgstr "Счет GL расходов для покупок, не входящих в запасы (расходные материалы, услуги)."
@@ -6243,6 +6271,9 @@ msgstr "История инвентаря"
 msgid "Inventory Job Notifications"
 msgstr "Уведомления о завершении работ по инвентаризации"
 
+msgid "Inventory Movements"
+msgstr "Движения по товарно-материальным ценностям"
+
 msgid "Inventory Qty"
 msgstr "Кол-во в инвентаре"
 
@@ -6251,6 +6282,9 @@ msgstr "Отслеживание запасов"
 
 msgid "Inventory Unit of Measure"
 msgstr "Единица измерения запасов"
+
+msgid "Inventory Valuation"
+msgstr "Оценка товарно-материального запаса"
 
 msgid "Invite"
 msgstr "Пригласить"
@@ -6377,6 +6411,9 @@ msgstr "Товар"
 
 msgid "Item {scannedItem} is not the same as the item {expectedItem}"
 msgstr "Товар {scannedItem} не совпадает с товаром {expectedItem}"
+
+msgid "Item / Location"
+msgstr "Товар / Местоположение"
 
 msgid "Item filters"
 msgstr "Фильтры товаров"
@@ -6761,6 +6798,9 @@ msgstr "расположение"
 msgid "Location"
 msgstr "Местоположение"
 
+msgid "Location / Item"
+msgstr "Местоположение / Товар"
+
 msgid "Location Name"
 msgstr "Название местоположения"
 
@@ -6809,6 +6849,18 @@ msgstr "Подробное описание"
 
 msgid "Looks empty here"
 msgstr "Здесь пусто"
+
+msgid "Loss on Disposal"
+msgstr "Убыток от выбытия"
+
+msgid "Loss on Disposal (default)"
+msgstr "Убыток от выбытия (по умолчанию)"
+
+msgid "Loss on Disposal Account"
+msgstr "Счёт убытков от выбытия"
+
+msgid "Losses recognized on disposal of fixed assets"
+msgstr "Убытки, признаваемые при выбытии основных средств"
 
 msgid "Lost"
 msgstr "Потеряно"
@@ -7359,6 +7411,9 @@ msgstr "Переместить в корзину"
 msgid "Moved {0} to {1} bucket"
 msgstr "Перемещено {0} в хранилище {1}"
 
+msgid "Movements"
+msgstr "Движения"
+
 msgid "MRP (planning)"
 msgstr "MRP (планирование)"
 
@@ -7637,6 +7692,9 @@ msgstr "Новая строка заказа продажи"
 
 msgid "New Scheduled Maintenance"
 msgstr "Новое плановое обслуживание"
+
+msgid "New Service"
+msgstr "Новая услуга"
 
 msgid "New Shift"
 msgstr "Новая смена"
@@ -8015,6 +8073,12 @@ msgstr "Не в наличии"
 
 msgid "Non-Inventory Tracking"
 msgstr "Отслеживание вне инвентаря"
+
+msgid "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
+msgstr "Счёт прочих расходов, дебетуемый при продаже или списании актива данного класса по цене ниже его остаточной стоимости."
+
+msgid "Non-operating income account credited when an asset in this class is sold for more than its net book value."
+msgstr "Счёт прочих доходов, зачисляемый при продаже актива данного класса по цене выше его остаточной стоимости."
 
 msgid "Non-Taxable Add-On Cost"
 msgstr "Не облагаемая налогом дополнительная стоимость"
@@ -9265,6 +9329,9 @@ msgstr "QR-код для начала следующей операции для
 msgid "Qty"
 msgstr "Кол-во"
 
+msgid "Qty On Hand"
+msgstr "Кол-во в наличии"
+
 msgid "Qty to Order"
 msgstr "Кол-во для заказа"
 
@@ -9538,6 +9605,9 @@ msgstr "Получить платеж · {0} счетов"
 msgid "Receive to Inventory"
 msgstr "Получить в инвентарь"
 
+msgid "Received"
+msgstr "Получено"
+
 #. placeholder {0}: status?.received
 #. placeholder {1}: status?.ordered
 msgid "Received {0} of {1}"
@@ -9563,6 +9633,9 @@ msgstr "Недавние платежи"
 
 msgid "Recently Created"
 msgstr "Недавно созданные"
+
+msgid "Reconcile"
+msgstr "Согласовать"
 
 msgid "Reconciling a purchase order against what was received and invoiced — implicit in Carbon, via the line quantities and GR/IR balance."
 msgstr "Период восстановления"
@@ -9894,14 +9967,17 @@ msgstr "Результаты"
 msgid "Results per page"
 msgstr "Результатов на странице"
 
+msgid "Resume Receiving"
+msgstr "Возобновить получение"
+
 msgid "Retained Earnings"
 msgstr "Нераспределенная прибыль"
 
 msgid "Retained Earnings (default)"
 msgstr "Нераспределенная прибыль (по умолчанию)"
 
-msgid "Retiring an asset by write-off instead of sale, booking the remaining net book value as a loss — status becomes Disposed."
-msgstr "Снятие активов с учета путем списания вместо продажи, отражение оставшейся чистой балансовой стоимости как убытка — статус становится Выбыл."
+msgid "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
+msgstr "Вывод основного средства из эксплуатации путём списания или продажи, с отражением прибыли или убытка относительно чистой балансовой стоимости и переводом статуса в «Ликвидирован»."
 
 msgid "Retry"
 msgstr "Повторить"
@@ -10610,11 +10686,17 @@ msgstr "Сборы за услуги"
 msgid "Service Charges (default)"
 msgstr "Сборы за услуги (по умолчанию)"
 
+msgid "Service Details"
+msgstr "Сведения об услуге"
+
 msgid "Service ID"
 msgstr "ID обслуживания"
 
 msgid "services"
 msgstr "услуги"
+
+msgid "Services"
+msgstr "Услуги"
 
 msgid "Set a target"
 msgstr "Установить цель"
@@ -10953,9 +11035,6 @@ msgstr "Инженер решений"
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "Некоторые строки, извлеченные из PDF, не удалось автоматически сопоставить с элементами вашего инвентаря. Проверьте и сопоставьте каждую строку ниже."
 
-msgid "Something went wrong"
-msgstr "Что-то пошло не так"
-
 msgid "Something went wrong. Please try again."
 msgstr "Что-то пошло не так. Пожалуйста, попробуйте еще раз."
 
@@ -11065,6 +11144,9 @@ msgstr "Начать"
 msgid "Start {0} Day Free Trial"
 msgstr "Начать {0}-дневный бесплатный пробный период"
 
+msgid "Start counting"
+msgstr "Начать подсчёт"
+
 msgid "Start Date"
 msgstr "Дата начала"
 
@@ -11140,9 +11222,6 @@ msgstr "шаги"
 msgid "Steps"
 msgstr "Шаги"
 
-msgid "Stock Movements"
-msgstr "Движения запасов"
-
 msgid "Stock Transfer ID"
 msgstr "ID передачи запасов"
 
@@ -11170,6 +11249,9 @@ msgstr "Отсутствие запасов"
 
 msgid "Stop raising purchase orders after this date"
 msgstr "Прекратить создание заказов на покупку после этой даты"
+
+msgid "Stop Receiving"
+msgstr "Остановить получение"
 
 msgid "Storage client not available"
 msgstr "Клиент хранилища недоступен"
@@ -11624,6 +11706,9 @@ msgstr "ID шаблона"
 
 msgid "Templates"
 msgstr "Шаблоны"
+
+msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for its net book value on invoicing, netting to zero over the sale cycle."
+msgstr "Временный клиринговый счет выбытия, дебетуемый на сумму чистой балансовой стоимости актива при отгрузке и кредитуемый на сумму чистой балансовой стоимости при выставлении счета — обнуляется по завершении цикла продажи."
 
 msgid "Terms and Privacy"
 msgstr "Условия и конфиденциальность"
@@ -12121,6 +12206,16 @@ msgstr "Записанная генеалогия отслеживаемых о�
 msgid "The reference data everything else hangs off. Loads first."
 msgstr "Справочные данные, на которые опирается всё остальное. Загружаются первыми."
 
+#. placeholder {0}: line.quantityToReceive
+#. placeholder {1}: line.purchaseUnitOfMeasureCode ?? ""
+msgid "The remaining {0} {1} will be expected again and counted as incoming supply."
+msgstr "Оставшиеся {0} {1} будут ожидаться вновь и учитываться как входящие поставки."
+
+#. placeholder {0}: line.quantityToReceive
+#. placeholder {1}: line.purchaseUnitOfMeasureCode ?? ""
+msgid "The remaining {0} {1} will no longer be expected. On-order supply and MRP will stop counting it. The ordered quantity and pricing are unchanged."
+msgstr "Оставшиеся {0} {1} больше не будут ожидаться. Входящие поставки и MRP прекратят их учет. Заказанное количество и цены остаются неизменными."
+
 msgid "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
 msgstr "Остаточное незавершенное производство, оставленное заданием при закрытии, перемещено на счет производственного отклонения — единственное отклонение, которое Carbon регистрирует для задания."
 
@@ -12464,6 +12559,9 @@ msgstr "Связать отправки с счетом без повторно�
 msgid "Tie-Out"
 msgstr "Сверка"
 
+msgid "Tie-Out unavailable"
+msgstr "Сверка недоступна"
+
 msgid "Tightened"
 msgstr "Ужесточенный"
 
@@ -12598,6 +12696,12 @@ msgstr "Общее наличное количество позиции по в�
 
 msgid "Total quantity required across all active jobs and sales orders at this location — not just this job."
 msgstr "Общее требуемое количество по всем активным заданиям и заказам на продажу в этом местоположении — не только по этому заданию."
+
+msgid "Total Value"
+msgstr "Общая стоимость"
+
+msgid "Total Variance"
+msgstr "Общее отклонение"
 
 msgid "Total:"
 msgstr "Итого:"
@@ -13014,6 +13118,9 @@ msgstr "Используйте ... для получения следующег�
 msgid "Use ... to get the next part ID"
 msgstr "Используйте ... для получения следующего ID детали"
 
+msgid "Use ... to get the next service ID"
+msgstr "Используйте ... для получения следующего ID услуги"
+
 msgid "Use ... to get the next tool ID"
 msgstr "Используйте ... для получения следующего ID инструмента"
 
@@ -13031,12 +13138,6 @@ msgstr "Используется в навигации и в документа�
 
 msgid "Used in the navigation in dark mode"
 msgstr "Используется в навигации в темном режиме"
-
-msgid "Used on builds on/after this date (blank = always)"
-msgstr "Используется при сборках на/после этой даты (пусто = всегда)"
-
-msgid "Used on builds on/before this date (blank = always)"
-msgstr "Используется при сборках на/до этой даты (пусто = всегда)"
 
 msgid "Used on the home screen and digital quotes"
 msgstr "Используется на главном экране и в цифровых предложениях"
@@ -13104,6 +13205,9 @@ msgstr "Проверено"
 msgid "Validating job..."
 msgstr "Проверка задания..."
 
+msgid "Valuation"
+msgstr "Оценка"
+
 msgid "Value"
 msgstr "Значение"
 
@@ -13118,6 +13222,9 @@ msgstr "Номер регистрации налога на добавленну
 
 msgid "Values"
 msgstr "Значения"
+
+msgid "Values apply today's unit costs to historical quantities."
+msgstr "Значения применяют текущие цены за единицу к историческим количествам."
 
 msgid "Variance"
 msgstr "Расхождение"

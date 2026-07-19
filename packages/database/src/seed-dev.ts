@@ -467,9 +467,9 @@ async function seedDev() {
             "name", "depreciationMethod", "usefulLifeMonths", "residualValuePercent",
             "assetAccountId", "accumulatedDepreciationAccountId",
             "depreciationExpenseAccountId", "writeOffAccountId",
-            "writeDownAccountId", "disposalAccountId",
+            "writeDownAccountId", "gainOnDisposalAccountId", "lossOnDisposalAccountId",
             "companyId", "createdBy"
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'system')`,
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'system')`,
           [
             fac.name,
             fac.depreciationMethod,
@@ -480,7 +480,8 @@ async function seedDev() {
             accountIdByKey[fac.depreciationExpenseAccount],
             accountIdByKey[fac.writeOffAccount],
             accountIdByKey[fac.writeDownAccount],
-            accountIdByKey[fac.disposalAccount],
+            accountIdByKey[fac.gainOnDisposalAccount],
+            accountIdByKey[fac.lossOnDisposalAccount],
             companyId
           ]
         );

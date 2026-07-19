@@ -137,6 +137,9 @@ msgstr "{variances, plural, one {# riga differisce dalla quantità prevista} oth
 msgid "/month/user"
 msgstr "/mese/utente"
 
+msgid "% of Total"
+msgstr "% del Totale"
+
 #. placeholder {0}: numberFormatter.format(redirectedTotal)
 #. placeholder {1}: redirectedParts.join(", ")
 msgid "↩ {0} redirected from superseded {1}"
@@ -333,6 +336,9 @@ msgstr "Un RFQ di vendita (un cliente ti chiede di quotare) o un RFQ di acquisto
 
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "Un calendario separato per la dichiarazione dei redditi quando le regole fiscali richiedono un metodo diverso dall'ammortamento contabile."
+
+msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
+msgstr "Un servizio è un'attività fatturabile che viene acquistata o eseguita — non viene mai spedita, ricevuta o stoccata"
 
 msgid "A set of companies under one owner that share group-scoped configuration — the chart of accounts, currencies, and dimensions — so the same accounting setup spans every company in the group."
 msgstr "Un insieme di aziende sotto un unico proprietario che condividono una configurazione a livello di gruppo — il piano dei conti, le valute e le dimensioni — in modo che la stessa configurazione contabile si applichi a ogni azienda del gruppo."
@@ -781,6 +787,9 @@ msgstr "Tutti gli articoli"
 
 msgid "All jobs completed"
 msgstr "Tutti i lavori completati"
+
+msgid "All Locations"
+msgstr "Tutte le Ubicazioni"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "Tutti i membri dei gruppi selezionati e gli individui selezionati potranno approvare le richieste"
@@ -1591,9 +1600,6 @@ msgstr "In attesa di approvazione"
 msgid "Back"
 msgstr "Indietro"
 
-msgid "Back Home"
-msgstr "Torna a casa"
-
 msgid "Back to traceability"
 msgstr "Torna alla tracciabilità"
 
@@ -1826,6 +1832,12 @@ msgstr "Per Data Documento"
 
 msgid "By Due Date"
 msgstr "Per Data di Scadenza"
+
+msgid "By Item"
+msgstr "Per Articolo"
+
+msgid "By Location"
+msgstr "Per Ubicazione"
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "Accedendo, accetti i <0>Termini di Servizio</0> e l'<1>Informativa sulla Privacy.</1>"
@@ -2257,6 +2269,9 @@ msgstr "Nome Azienda"
 msgid "Company policy asks for a different person to inspect inbound items than the one who received them."
 msgstr "La politica aziendale richiede che una persona diversa ispezionare gli articoli in entrata rispetto a quella che li ha ricevuti."
 
+msgid "Company-wide — includes all locations"
+msgstr "A livello aziendale — include tutte le sedi"
+
 msgid "Compare and Order"
 msgstr "Confronta e Ordina"
 
@@ -2639,6 +2654,9 @@ msgstr "Copia il collegamento alla parte"
 msgid "Copy link to procedure"
 msgstr "Copia collegamento alla procedura"
 
+msgid "Copy link to service"
+msgstr "Copia link al servizio"
+
 msgid "Copy link to tool"
 msgstr "Copia il collegamento dello strumento"
 
@@ -2686,6 +2704,12 @@ msgstr "Copia Preventivo"
 
 msgid "Copy Quote number"
 msgstr "Copia numero preventivo"
+
+msgid "Copy service number"
+msgstr "Copia numero servizio"
+
+msgid "Copy service unique identifier"
+msgstr "Copia identificatore univoco del servizio"
 
 msgid "Copy this item's pricing to another scope."
 msgstr "Copia il prezzo di questo articolo in un altro ambito."
@@ -2983,6 +3007,9 @@ msgstr "Azione richiesta creata"
 
 msgid "Created scrap reason"
 msgstr "Motivo di scarto creato"
+
+msgid "Created service"
+msgstr "Servizio creato"
 
 msgid "Created shipping method"
 msgstr "Metodo di spedizione creato"
@@ -3433,6 +3460,12 @@ msgstr "Conto di cassa predefinito per le transazioni nella tua valuta di base."
 msgid "Default CC Recipients"
 msgstr "Destinatari CC predefiniti"
 
+msgid "Default GL account credited when a fixed-asset disposal results in a gain."
+msgstr "Conto di contabilità generale predefinito accreditato quando la dismissione di un cespite genera un guadagno."
+
+msgid "Default GL account debited when a fixed-asset disposal results in a loss."
+msgstr "Conto di contabilità generale predefinito addebitato quando la dismissione di un cespite genera una perdita."
+
 msgid "Default GL account used for cash transactions when no specific bank account is selected."
 msgstr "Conto GL predefinito utilizzato per le transazioni in contanti quando non è selezionato uno specifico conto bancario."
 
@@ -3694,6 +3727,9 @@ msgstr "Elimina Ordine di Vendita"
 msgid "Delete Schedule"
 msgstr "Elimina Pianificazione"
 
+msgid "Delete Service"
+msgstr "Elimina Servizio"
+
 msgid "Delete Shift"
 msgstr "Elimina Turno"
 
@@ -3941,9 +3977,6 @@ msgstr "Impostazioni di visualizzazione"
 
 msgid "Disposal"
 msgstr "Cessione"
-
-msgid "Disposal Account"
-msgstr "Conto di Cessione"
 
 msgid "Disposal Date"
 msgstr "Data di Cessione"
@@ -4370,6 +4403,9 @@ msgstr "Modifica Manutenzione Programmata"
 msgid "Edit Sequence"
 msgstr "Modifica Sequenza"
 
+msgid "Edit Service"
+msgstr "Modifica Servizio"
+
 msgid "Edit Shift"
 msgstr "Modifica Turno"
 
@@ -4441,12 +4477,6 @@ msgstr "Modifica Webhook"
 
 msgid "Edit Work Center"
 msgstr "Modifica Centro di Lavoro"
-
-msgid "Effective From"
-msgstr "Effettivo Da"
-
-msgid "Effective To"
-msgstr "Effettivo Fino A"
 
 msgid "Email"
 msgstr "Email"
@@ -4998,6 +5028,10 @@ msgid "Failed to create process: {0}"
 msgstr "Impossibile creare il processo: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create service: {0}"
+msgstr "Impossibile creare il servizio: {0}"
+
+#. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create shipping method: {0}"
 msgstr "Impossibile creare il metodo di spedizione: {0}"
 
@@ -5435,14 +5469,17 @@ msgstr "Completamente formato per"
 msgid "FX G/L"
 msgstr "Utile/Perdita Cambi"
 
-msgid "Gains and Losses"
-msgstr "Utili e Perdite (predefinito)"
+msgid "Gain on Disposal"
+msgstr "Guadagno sulla Dismissione"
 
-msgid "Gains and Losses (default)"
-msgstr "Utili o perdite riconosciuti sulla dismissione di immobilizzazioni"
+msgid "Gain on Disposal (default)"
+msgstr "Guadagno sulla Dismissione (predefinito)"
 
-msgid "Gains or losses recognized on disposal of fixed assets"
-msgstr "Calibro"
+msgid "Gain on Disposal Account"
+msgstr "Conto Guadagno sulla Dismissione"
+
+msgid "Gains recognized on disposal of fixed assets"
+msgstr "Guadagni riconosciuti sulla dismissione dei cespiti"
 
 msgid "gauge"
 msgstr "Calibri"
@@ -5541,79 +5578,73 @@ msgid "GL Account"
 msgstr "Conto Contabile"
 
 msgid "GL account capturing cost differences on outside-processing operations."
-msgstr "Conto GL che cattura le differenze tra i costi indiretti di produzione applicati e effettivi."
+msgstr "Conto GL che cattura le differenze di costo sulle operazioni di lavorazione esterna."
 
 msgid "GL account capturing differences between applied and actual manufacturing overhead."
-msgstr "Conto GL che cattura le differenze tra il materiale previsto dalla BOM e il materiale effettivamente consumato."
+msgstr "Conto GL che cattura le differenze tra i costi indiretti di produzione applicati e effettivi."
 
 msgid "GL account capturing differences between BOM-expected and actual material consumed."
-msgstr "Conto GL che cattura le differenze tra il tempo di lavoro/macchina previsto dal routing e quello effettivo."
+msgstr "Conto GL che cattura le differenze tra il materiale previsto dalla BOM e il materiale effettivamente consumato."
 
 msgid "GL account capturing differences between routing-expected and actual labor/machine time."
-msgstr "Conto GL che cattura le differenze di costo fisso quando la dimensione del lotto effettiva differisce da quella prevista."
+msgstr "Conto GL che cattura le differenze tra il tempo di lavoro/macchina previsto dal routing e quello effettivo."
 
 msgid "GL account capturing fixed-cost differences when actual lot size differs from planned."
-msgstr "Conto GL accreditato per rimuovere il costo originale del cespite al momento della dismissione."
+msgstr "Conto GL che cattura le differenze di costo fisso quando la dimensione del lotto effettiva differisce da quella prevista."
 
 msgid "GL account credited to remove the asset's original cost when it is disposed."
-msgstr "Conto GL accreditato quando una fattura fornitore viene registrata (saldo PA)."
+msgstr "Conto GL accreditato per rimuovere il costo originale del cespite al momento della dismissione."
 
 msgid "GL account credited when a supplier invoice is posted (AP balance)."
-msgstr "Conto GL accreditato quando il costo del lavoro o della macchina viene assorbito in un ordine di produzione."
+msgstr "Conto GL accreditato quando una fattura fornitore viene registrata (saldo dei debiti verso fornitori)."
 
 msgid "GL account credited when labor or machine cost is absorbed into a production job."
-msgstr "Conto GL addebitato per cancellare l'ammortamento cumulato quando un cespite viene dismesso."
+msgstr "Conto GL accreditato quando il costo del lavoro o della macchina viene assorbito in un ordine di produzione."
 
 msgid "GL account credited when manufacturing overhead is absorbed into a production job."
 msgstr "Conto di contabilità generale accreditato quando i costi generali di produzione vengono assorbiti in un ordine di produzione."
 
 msgid "GL account debited to clear accumulated depreciation when an asset is disposed."
-msgstr "Conto GL addebitato quando una fattura cliente viene registrata; cancellato quando il cliente paga."
+msgstr "Conto GL addebitato per cancellare l'ammortamento cumulato quando un cespite viene dismesso."
 
 msgid "GL account debited when a customer invoice posts; cleared when the customer pays."
-msgstr "Conto GL addebitato quando un cespite viene acquisito (acquisto o costo capitalizzato)."
+msgstr "Conto GL addebitato quando una fattura cliente viene registrata; cancellato quando il cliente paga."
 
 msgid "GL account debited when a fixed asset is acquired (purchase or capitalized cost)."
-msgstr "Conto GL addebitato quando un cespite di questa classe viene acquisito."
-
-msgid "GL account debited when an asset in this class is acquired."
-msgstr "Conto GL per le spese di servizio bancario e commissioni simili."
+msgstr "Conto GL addebitato quando un cespite viene acquisito (acquisto o costo capitalizzato)."
 
 msgid "GL account for bank service charges and similar fees."
-msgstr "Conto GL per i ricavi o le spese per interessi."
+msgstr "Conto GL per le commissioni per servizi bancari e le spese simili."
 
 msgid "GL account for interest income or expense."
-msgstr "Conto GL per l'imposta sugli acquisti pagata ai fornitori (o recuperabile)."
+msgstr "Conto GL per i ricavi o le spese per interessi."
 
 msgid "GL account for purchase tax paid to suppliers (or reclaimable)."
-msgstr "Conto GL per le imposte dovute secondo le regole di inversione del soggetto passivo dove l'acquirente effettua l'autovalutazione."
+msgstr "Conto GL per l'imposta sugli acquisti pagata ai fornitori (o recuperabile)."
 
 msgid "GL account for tax accrued under reverse-charge rules where the buyer self-assesses."
-msgstr "Conto GL per le differenze temporali fiscali (ad es. ammortamento fiscale accelerato vs. ammortamento contabile)."
+msgstr "Conto GL per le imposte dovute secondo le regole di inversione del soggetto passivo dove l'acquirente effettua l'autovalutazione."
 
 msgid "GL account for tax timing differences (e.g. accelerated tax depreciation vs. book depreciation)."
-msgstr "Conto GL interessato quando un cespite viene cancellato (costo rimosso senza proventi di dismissione)."
-
-msgid "GL account hit when an asset is written off (cost removed without disposal proceeds)."
-msgstr "Conto GL interessato quando il valore contabile di un cespite viene ridotto (riduzione di valore)."
-
-msgid "GL account hit when an asset's book value is reduced (impairment)."
-msgstr "Conto GL interessato quando i conteggi fisici differiscono dall'inventario del sistema."
+msgstr "Conto GL per le differenze temporali fiscali (ad es. ammortamento fiscale accelerato vs. ammortamento contabile)."
 
 msgid "GL account hit when physical counts differ from system inventory."
-msgstr "Conto GL nella società di origine da addebitare per questa transazione intersocietaria."
+msgstr "Conto GL interessato quando i conteggi fisici differiscono dall'inventario di sistema."
 
 msgid "GL account in the source company to debit for this intercompany transaction."
-msgstr "Conto GL nella società target da accreditare per questa transazione intersocietaria."
+msgstr "Conto GL nella società di origine da addebitare per questa transazione intersocietaria."
 
 msgid "GL account in the target company to credit for this intercompany transaction."
-msgstr "Conto GL che assorbe le differenze di arrotondamento in sub-centesimi alla registrazione."
+msgstr "Conto GL nella società target da accreditare per questa transazione intersocietaria."
 
 msgid "GL account that absorbs sub-cent rounding differences on posting."
 msgstr "Conto GL che assorbe le differenze di arrotondamento in sub-centesimi alla registrazione."
 
 msgid "GL account that captures the difference between standard cost and actual purchase cost."
 msgstr "Conto GL che acquisisce la differenza tra il costo standard e il costo di acquisto effettivo."
+
+msgid "GL account that carries an asset's original acquisition cost — debited when acquired and credited at full gross cost when it is disposed or sold."
+msgstr "Conto GL che riporta il costo di acquisizione originale di un cespite — addebitato all'acquisizione e accreditato per l'intero costo lordo quando viene dismesso o venduto."
 
 msgid "GL account that holds the value of jobs in production until they post to finished goods."
 msgstr "Conto GL che tiene il valore dei lavori in produzione fino a quando non vengono registrati come prodotti finiti."
@@ -5633,14 +5664,8 @@ msgstr "Conto GL dove vengono registrati gli sconti di pagamento anticipato conc
 msgid "GL account where early-payment discounts taken from suppliers are recorded."
 msgstr "Conto GL dove vengono registrati gli sconti di pagamento anticipato ottenuti dai fornitori."
 
-msgid "GL account where gain or loss is booked on fixed-asset disposal."
-msgstr "Conto GL dove il guadagno o la perdita viene registrato sulla dismissione di beni fissi."
-
-msgid "GL account where gain or loss is booked when an asset in this class is disposed."
-msgstr "Conto GL dove il guadagno o la perdita viene registrato quando un bene di questa classe viene dismesso."
-
-msgid "GL contra-asset account credited when depreciation posts for assets in this class."
-msgstr "Conto GL contra-attività accreditato quando l'ammortamento è registrato per le attività di questa classe."
+msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
+msgstr "Conto GL contra-attività accreditato quando l'ammortamento viene registrato in ogni periodo e addebitato per intero quando il cespite viene venduto o rottamato."
 
 msgid "GL contra-asset account that accumulates depreciation booked against fixed assets."
 msgstr "Conto GL contra-attività che accumula l'ammortamento registrato rispetto ai beni fissi."
@@ -5653,6 +5678,9 @@ msgstr "Conto GL di patrimonio netto dove l'utile netto viene chiuso a fine anno
 
 msgid "GL expense account debited each period when depreciation posts."
 msgstr "Conto GL di spesa addebitato ogni periodo quando l'ammortamento viene registrato."
+
+msgid "GL expense account debited when an asset's carrying value is reduced by impairment, i.e. when its recoverable amount falls below net book value."
+msgstr "Conto GL di spesa addebitato quando il valore contabile di un cespite viene ridotto per svalutazione, ossia quando il suo valore recuperabile scende al di sotto del valore netto contabile."
 
 msgid "GL expense account for non-inventory purchases (supplies, services)."
 msgstr "Conto GL di spesa per acquisti non di magazzino (forniture, servizi)."
@@ -6243,6 +6271,9 @@ msgstr "Cronologia Inventario"
 msgid "Inventory Job Notifications"
 msgstr "Notifiche Lavoro Inventario"
 
+msgid "Inventory Movements"
+msgstr "Movimenti di magazzino"
+
 msgid "Inventory Qty"
 msgstr "Quantità Inventario"
 
@@ -6251,6 +6282,9 @@ msgstr "Tracciamento Inventario"
 
 msgid "Inventory Unit of Measure"
 msgstr "Unità di Misura Inventario"
+
+msgid "Inventory Valuation"
+msgstr "Valutazione Inventario"
 
 msgid "Invite"
 msgstr "Invita"
@@ -6377,6 +6411,9 @@ msgstr "Articolo"
 
 msgid "Item {scannedItem} is not the same as the item {expectedItem}"
 msgstr "L'articolo {scannedItem} non è lo stesso dell'articolo {expectedItem}"
+
+msgid "Item / Location"
+msgstr "Articolo / Ubicazione"
 
 msgid "Item filters"
 msgstr "Filtri articoli"
@@ -6761,6 +6798,9 @@ msgstr "ubicazione"
 msgid "Location"
 msgstr "Ubicazione"
 
+msgid "Location / Item"
+msgstr "Ubicazione / Articolo"
+
 msgid "Location Name"
 msgstr "Nome Ubicazione"
 
@@ -6809,6 +6849,18 @@ msgstr "Descrizione Lunga"
 
 msgid "Looks empty here"
 msgstr "Sembra vuoto qui"
+
+msgid "Loss on Disposal"
+msgstr "Perdita sulla Dismissione"
+
+msgid "Loss on Disposal (default)"
+msgstr "Perdita sulla Dismissione (predefinita)"
+
+msgid "Loss on Disposal Account"
+msgstr "Conto Perdita sulla Dismissione"
+
+msgid "Losses recognized on disposal of fixed assets"
+msgstr "Perdite riconosciute sulla dismissione dei cespiti"
 
 msgid "Lost"
 msgstr "Perso"
@@ -7359,6 +7411,9 @@ msgstr "Sposta nel Cestino"
 msgid "Moved {0} to {1} bucket"
 msgstr "Spostato {0} nel bucket {1}"
 
+msgid "Movements"
+msgstr "Movimenti"
+
 msgid "MRP (planning)"
 msgstr "MRP (pianificazione)"
 
@@ -7637,6 +7692,9 @@ msgstr "Nuova Riga Ordine Vendita"
 
 msgid "New Scheduled Maintenance"
 msgstr "Nuova Manutenzione Programmata"
+
+msgid "New Service"
+msgstr "Nuovo Servizio"
 
 msgid "New Shift"
 msgstr "Nuovo Turno"
@@ -8015,6 +8073,12 @@ msgstr "Non-Inventario"
 
 msgid "Non-Inventory Tracking"
 msgstr "Tracciamento Non-Inventario"
+
+msgid "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
+msgstr "Conto spese non operative addebitato quando un cespite di questa classe viene venduto o demolito al di sotto del suo valore contabile netto."
+
+msgid "Non-operating income account credited when an asset in this class is sold for more than its net book value."
+msgstr "Conto ricavi non operativi accreditato quando un cespite di questa classe viene venduto a un prezzo superiore al suo valore contabile netto."
 
 msgid "Non-Taxable Add-On Cost"
 msgstr "Costo Add-On Non Tassabile"
@@ -9265,6 +9329,9 @@ msgstr "Codice QR per avviare l'operazione successiva per questo kanban"
 msgid "Qty"
 msgstr "Qtà"
 
+msgid "Qty On Hand"
+msgstr "Qtà a Magazzino"
+
 msgid "Qty to Order"
 msgstr "Qtà da ordinare"
 
@@ -9538,6 +9605,9 @@ msgstr "Ricevi Pagamento · {0} fatture"
 msgid "Receive to Inventory"
 msgstr "Ricevi in Inventario"
 
+msgid "Received"
+msgstr "Ricevuto"
+
 #. placeholder {0}: status?.received
 #. placeholder {1}: status?.ordered
 msgid "Received {0} of {1}"
@@ -9563,6 +9633,9 @@ msgstr "Pagamenti recenti"
 
 msgid "Recently Created"
 msgstr "Creato di recente"
+
+msgid "Reconcile"
+msgstr "Riconcilia"
 
 msgid "Reconciling a purchase order against what was received and invoiced — implicit in Carbon, via the line quantities and GR/IR balance."
 msgstr "Periodo di Recupero"
@@ -9894,14 +9967,17 @@ msgstr "Risultati"
 msgid "Results per page"
 msgstr "Risultati per pagina"
 
+msgid "Resume Receiving"
+msgstr "Riprendi ricezione"
+
 msgid "Retained Earnings"
 msgstr "Utili non distribuiti"
 
 msgid "Retained Earnings (default)"
 msgstr "Utili non distribuiti (predefinito)"
 
-msgid "Retiring an asset by write-off instead of sale, booking the remaining net book value as a loss — status becomes Disposed."
-msgstr "Ritirare un asset mediante cancellazione anziché vendita, registrando il valore netto contabile residuo come perdita — lo stato diventa Ceduto."
+msgid "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
+msgstr "Il ritiro di un cespite dal servizio tramite rottamazione o vendita, registrando l'eventuale utile o perdita rispetto al valore netto contabile e impostando il suo stato su Dismesso."
 
 msgid "Retry"
 msgstr "Riprova"
@@ -10610,11 +10686,17 @@ msgstr "Spese di servizio"
 msgid "Service Charges (default)"
 msgstr "Spese di servizio (predefinito)"
 
+msgid "Service Details"
+msgstr "Dettagli Servizio"
+
 msgid "Service ID"
 msgstr "ID Servizio"
 
 msgid "services"
 msgstr "servizi"
+
+msgid "Services"
+msgstr "Servizi"
 
 msgid "Set a target"
 msgstr "Imposta un obiettivo"
@@ -10953,9 +11035,6 @@ msgstr "Solutions Engineer"
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "Alcune righe estratte dal PDF non potevano essere mappate automaticamente ai tuoi articoli di inventario. Rivedi e mappa ogni riga di seguito."
 
-msgid "Something went wrong"
-msgstr "Qualcosa è andato storto"
-
 msgid "Something went wrong. Please try again."
 msgstr "Qualcosa è andato storto. Riprova."
 
@@ -11065,6 +11144,9 @@ msgstr "Avvia"
 msgid "Start {0} Day Free Trial"
 msgstr "Inizia la prova gratuita di {0} giorni"
 
+msgid "Start counting"
+msgstr "Inizia il conteggio"
+
 msgid "Start Date"
 msgstr "Data di inizio"
 
@@ -11140,9 +11222,6 @@ msgstr "passaggi"
 msgid "Steps"
 msgstr "Passaggi"
 
-msgid "Stock Movements"
-msgstr "Movimenti di Magazzino"
-
 msgid "Stock Transfer ID"
 msgstr "ID Trasferimento Magazzino"
 
@@ -11170,6 +11249,9 @@ msgstr "Esaurimento scorte"
 
 msgid "Stop raising purchase orders after this date"
 msgstr "Smetti di creare ordini di acquisto dopo questa data"
+
+msgid "Stop Receiving"
+msgstr "Interrompi ricezione"
 
 msgid "Storage client not available"
 msgstr "Client di archiviazione non disponibile"
@@ -11624,6 +11706,9 @@ msgstr "ID Modello"
 
 msgid "Templates"
 msgstr "Modelli"
+
+msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for its net book value on invoicing, netting to zero over the sale cycle."
+msgstr "Conto GL temporaneo di compensazione dismissioni, addebitato per il valore netto contabile del cespite alla spedizione e accreditato per il valore netto contabile alla fatturazione, azzerandosi nel corso del ciclo di vendita."
 
 msgid "Terms and Privacy"
 msgstr "Termini e Privacy"
@@ -12121,6 +12206,16 @@ msgstr "La genealogia registrata delle entità monitorate - quali input sono sta
 msgid "The reference data everything else hangs off. Loads first."
 msgstr "I dati di riferimento su cui tutto il resto si basa. Caricati per primi."
 
+#. placeholder {0}: line.quantityToReceive
+#. placeholder {1}: line.purchaseUnitOfMeasureCode ?? ""
+msgid "The remaining {0} {1} will be expected again and counted as incoming supply."
+msgstr "I rimanenti {0} {1} saranno previsti di nuovo e conteggiati come fornitura in arrivo."
+
+#. placeholder {0}: line.quantityToReceive
+#. placeholder {1}: line.purchaseUnitOfMeasureCode ?? ""
+msgid "The remaining {0} {1} will no longer be expected. On-order supply and MRP will stop counting it. The ordered quantity and pricing are unchanged."
+msgstr "I rimanenti {0} {1} non saranno più previsti. La fornitura ordinata e l'MRP smetteranno di contarla. La quantità ordinata e i prezzi rimangono invariati."
+
 msgid "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
 msgstr "Il WIP residuo che un lavoro ha lasciato alla chiusura, spazzato via in un conto di varianza di produzione - l'unica varianza che Carbon registra per un lavoro."
 
@@ -12464,6 +12559,9 @@ msgstr "Collegare le spedizioni a una fattura senza reinserimento dati"
 msgid "Tie-Out"
 msgstr "Riconciliazione"
 
+msgid "Tie-Out unavailable"
+msgstr "Riconciliazione non disponibile"
+
 msgid "Tightened"
 msgstr "Stretto"
 
@@ -12598,6 +12696,12 @@ msgstr "Quantità totale disponibile dell'articolo su tutte le unità di stoccag
 
 msgid "Total quantity required across all active jobs and sales orders at this location — not just this job."
 msgstr "Quantità totale richiesta su tutti i lavori attivi e gli ordini di vendita in questa posizione, non solo questo lavoro."
+
+msgid "Total Value"
+msgstr "Valore Totale"
+
+msgid "Total Variance"
+msgstr "Varianza Totale"
 
 msgid "Total:"
 msgstr "Totale:"
@@ -13014,6 +13118,9 @@ msgstr "Usa ... per ottenere il prossimo ID materiale"
 msgid "Use ... to get the next part ID"
 msgstr "Usa ... per ottenere l'ID parte successivo"
 
+msgid "Use ... to get the next service ID"
+msgstr "Usa ... per ottenere il prossimo ID servizio"
+
 msgid "Use ... to get the next tool ID"
 msgstr "Usa ... per ottenere il prossimo ID strumento"
 
@@ -13031,12 +13138,6 @@ msgstr "Utilizzato nella navigazione e nei documenti come ordini di vendita"
 
 msgid "Used in the navigation in dark mode"
 msgstr "Utilizzato nella navigazione in modalità scura"
-
-msgid "Used on builds on/after this date (blank = always)"
-msgstr "Utilizzato su build in/dopo questa data (vuoto = sempre)"
-
-msgid "Used on builds on/before this date (blank = always)"
-msgstr "Utilizzato su build in/prima di questa data (vuoto = sempre)"
 
 msgid "Used on the home screen and digital quotes"
 msgstr "Utilizzato nella schermata iniziale e nelle quotazioni digitali"
@@ -13104,6 +13205,9 @@ msgstr "Convalidato"
 msgid "Validating job..."
 msgstr "Convalida processo..."
 
+msgid "Valuation"
+msgstr "Valutazione"
+
 msgid "Value"
 msgstr "Valore"
 
@@ -13118,6 +13222,9 @@ msgstr "Numero di registrazione dell'imposta sul valore aggiunto; richiesto sull
 
 msgid "Values"
 msgstr "Valori"
+
+msgid "Values apply today's unit costs to historical quantities."
+msgstr "I valori applicano i costi unitari odierni alle quantità storiche."
 
 msgid "Variance"
 msgstr "Varianza"

@@ -80,6 +80,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const updatedSupplierPart = await upsertSupplierPart(client, {
     id: supplierPartId,
     ...d,
+    companyId,
     updatedBy: userId,
     customFields: setCustomFields(formData)
   });

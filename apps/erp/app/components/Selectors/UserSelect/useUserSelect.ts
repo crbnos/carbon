@@ -1,6 +1,5 @@
 import { getLogger } from "@carbon/logger";
 import { useDisclosure, useOutsideClick } from "@carbon/react";
-import type { PostgrestError } from "@supabase/supabase-js";
 import debounce from "lodash/debounce";
 import words from "lodash/words";
 import type { AriaAttributes, ChangeEvent, KeyboardEvent } from "react";
@@ -12,17 +11,31 @@ import {
   useRef,
   useState
 } from "react";
-import { useFetcher } from "react-router";
-import type { Group, User } from "~/modules/users";
+import type {
+  User,
+  UserSelectGroup,
+  UserSelectGroupMembers
+} from "~/modules/users";
 import { path } from "~/utils/path";
+import {
+  cachedApiQuery,
+  getCompanyId,
+  userSelectGroupsQuery,
+  userSelectMembersQuery,
+  userSelectResolveQuery,
+  userSelectSearchQuery
+} from "~/utils/react-query";
 
 import type {
+  GroupNode,
   IndividualOrGroup,
-  OptionGroup,
+  SelectionGroupWithOptions,
   SelectionItemsById,
   TreeNode,
   UserSelectionGenericQueryFilters,
-  UserSelectProps
+  UserSelectProps,
+  UserSelectViewModel,
+  UserWithOptions
 } from "./types";
 
 const defaultProps = {
@@ -48,6 +61,8 @@ const defaultProps = {
 
 const logger = getLogger("erp", "user-select");
 
+const PAGE_SIZE = 25;
+
 export default function useUserSelect(props: UserSelectProps) {
   /* Inner Props */
   const innerProps = useMemo(
@@ -58,17 +73,6 @@ export default function useUserSelect(props: UserSelectProps) {
     [props]
   );
 
-  /* Data Fetching */
-  const groupsFetcher = useFetcher<{
-    groups: Group[];
-    errors?: PostgrestError;
-  }>();
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    groupsFetcher.load(path.to.api.groupsByType(innerProps.type));
-  }, [innerProps.type]);
-
   /* Refs */
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -76,27 +80,36 @@ export default function useUserSelect(props: UserSelectProps) {
   const popoverRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<Element>(null);
   const focusableNodes = useRef<Record<string, TreeNode>>({});
+  const uidToGroupId = useRef<Record<string, string>>({});
+  const resolveRequested = useRef<Set<string>>(new Set());
   const instanceId = useId();
 
   /* Disclosures */
   const dropdown = useDisclosure();
 
-  /* Fetch States */
+  /* Data */
+  const [topLevelGroups, setTopLevelGroups] = useState<UserSelectGroup[]>([]);
+  const [hasMore, setHasMore] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [membersById, setMembersById] = useState<
+    Record<string, UserSelectGroupMembers>
+  >({});
   const [loadingGroups, setLoadingGroups] = useState<Record<string, boolean>>(
     {}
   );
-  const [fetchedMembers, setFetchedMembers] = useState<Record<string, User[]>>(
-    {}
+  const [expandedUids, setExpandedUids] = useState<Set<string>>(new Set());
+  const [searchResults, setSearchResults] = useState<{
+    groups: UserSelectGroup[];
+    users: User[];
+  } | null>(null);
+  const [searching, setSearching] = useState(false);
+  const [errors, setErrors] = useState<{ message: string } | undefined>(
+    undefined
   );
-  const searchCache = useRef<Record<string, User[]>>({});
 
   /* Input */
   const [controlledValue, setControlledValue] = useState("");
-
-  /* Output */
-  const [filteredOptionGroups, setFilteredOptionGroups] = useState<
-    OptionGroup[]
-  >([]);
 
   /* Focus */
   const [focusedId, setFocusedId] = useState<string | null>(null);
@@ -109,166 +122,245 @@ export default function useUserSelect(props: UserSelectProps) {
         : {}
     );
 
-  // Convert the tree from the server into a format that is easier to work with
-  const optionGroups = useMemo<OptionGroup[]>(() => {
-    const makeGroupItems = (
-      group: Group,
-      groupId: string
-    ): IndividualOrGroup[] => {
-      const result: IndividualOrGroup[] = [];
+  /* Data fetching */
 
-      if (!innerProps.usersOnly) {
-        result.push({
-          ...group.data,
-          uid: getOptionId(groupId, group.data.id),
-          label: group.data.name || "",
-          children: group.children
+  const loadPage = useCallback(
+    async (offset: number, append: boolean) => {
+      const companyId = getCompanyId();
+      const type = innerProps.type ?? null;
+      if (append) {
+        setLoadingMore(true);
+      } else {
+        setInitialLoading(true);
+      }
+      try {
+        const data = await cachedApiQuery<{
+          groups: UserSelectGroup[];
+          hasMore: boolean;
+        }>(
+          userSelectGroupsQuery(companyId, type, offset),
+          path.to.api.userSelectGroups(innerProps.type, offset, PAGE_SIZE)
+        );
+        setTopLevelGroups((prev) => {
+          const base = append ? prev : [];
+          const seen = new Set(base.map((g) => g.id));
+          return base.concat(data.groups.filter((g) => !seen.has(g.id)));
         });
-
-        const subgroups = group.children.map((subgroup) => ({
-          ...subgroup.data,
-          uid: getOptionId(groupId, subgroup.data.id),
-          label: subgroup.data.name || "",
-          children: subgroup.children
-        }));
-
-        result.push(...subgroups);
-      }
-
-      const users = (
-        fetchedMembers[group.data.id] ||
-        group.data.users ||
-        []
-      ).map((user) => {
-        return {
-          ...user,
-          uid: getOptionId(groupId, user.id),
-          label: user.fullName || ""
-        };
-      });
-
-      result.push(...users);
-
-      return result;
-    };
-
-    return !groupsFetcher.data || !groupsFetcher.data.groups
-      ? []
-      : groupsFetcher.data.groups.reduce<OptionGroup[]>((acc, group) => {
-          if (
-            !innerProps.usersOnly ||
-            (group.data.users && group.data.users.length) ||
-            (fetchedMembers[group.data.id] &&
-              fetchedMembers[group.data.id].length)
-          ) {
-            const uid = getGroupId(instanceId, group.data.id);
-            return acc.concat({
-              uid,
-              expanded: false,
-              items: makeGroupItems(group as Group, uid),
-              name: group.data.name || ""
-            });
-          }
-          return acc;
-        }, []);
-  }, [groupsFetcher.data, innerProps.usersOnly, instanceId, fetchedMembers]);
-
-  /* Pre-populate controlled component after data loads */
-  useEffect(() => {
-    if (innerProps.value && optionGroups && optionGroups.length > 0) {
-      const flattened = optionGroups.reduce<IndividualOrGroup[]>(
-        (acc, group) => acc.concat(group.items),
-        []
-      );
-      const values = Array.isArray(innerProps.value)
-        ? innerProps.value
-        : [innerProps.value];
-
-      const newSelections: SelectionItemsById = {};
-      const missingUserIds: string[] = [];
-
-      values.forEach((val) => {
-        if (!selectionItemsById[val]) {
-          const found = flattened.find((item) => item.id === val);
-          if (found) {
-            newSelections[val] = found;
-          } else if (typeof val === "string" && !val.startsWith("group_")) {
-            missingUserIds.push(val);
-          }
-        }
-      });
-
-      if (Object.keys(newSelections).length > 0) {
-        setSelectionItemsById((prev) => ({ ...prev, ...newSelections }));
-      }
-
-      if (missingUserIds.length > 0) {
-        const fetchMissing = async () => {
-          try {
-            const res = await fetch(path.to.api.usersBatch(missingUserIds));
-            const data = await res.json();
-            if (data.users && data.users.length > 0) {
-              setSelectionItemsById((prev) => {
-                const next = { ...prev };
-                data.users.forEach((u: User) => {
-                  if (!next[u.id]) {
-                    next[u.id] = {
-                      ...u,
-                      uid: getOptionId("preselected", u.id),
-                      label: u.fullName || ""
-                    };
-                  }
-                });
-                return next;
-              });
-            }
-          } catch (err) {
-            logger.error("Failed to fetch preselected users", { error: err });
-          }
-        };
-        fetchMissing();
-      }
-    }
-  }, [optionGroups, innerProps.value, selectionItemsById]);
-
-  const makeFilteredOptionGroups = useCallback(
-    (query?: string): OptionGroup[] =>
-      optionGroups.reduce((acc, group) => {
-        if (query?.trim()) {
-          const matches = group.items.filter((item) =>
-            stringContainsTerm(item.label, query)
-          );
-          if (matches && matches.length) {
-            return acc.concat({
-              ...group,
-              expanded: true,
-              items: matches
-            });
-          } else {
-            return acc;
-          }
+        setHasMore(data.hasMore);
+        setErrors(undefined);
+      } catch (err) {
+        logger.error("Failed to load groups", { error: err });
+        setErrors({ message: "Failed to load groups" });
+      } finally {
+        if (append) {
+          setLoadingMore(false);
         } else {
-          return acc.concat(group);
+          setInitialLoading(false);
         }
-      }, [] as OptionGroup[]),
-    [optionGroups]
+      }
+    },
+    [innerProps.type]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reset + first page on type change only
   useEffect(() => {
-    // Preserve each group's expanded state so it doesn't collapse when its
-    // lazily-fetched members arrive.
-    setFilteredOptionGroups((previousGroups) => {
-      const expandedByUid = new Map(
-        previousGroups.map((group) => [group.uid, group.expanded])
+    setTopLevelGroups([]);
+    setHasMore(false);
+    setMembersById({});
+    setExpandedUids(new Set());
+    setSearchResults(null);
+    loadPage(0, false);
+  }, [innerProps.type]);
+
+  const loadMore = useCallback(() => {
+    if (loadingMore || initialLoading || !hasMore) return;
+    loadPage(topLevelGroups.length, true);
+  }, [loadingMore, initialLoading, hasMore, topLevelGroups.length, loadPage]);
+
+  const fetchMembers = useCallback(
+    async (groupId: string): Promise<UserSelectGroupMembers | null> => {
+      const companyId = getCompanyId();
+      setLoadingGroups((prev) =>
+        prev[groupId] ? prev : { ...prev, [groupId]: true }
       );
-      return makeFilteredOptionGroups().map((group) =>
-        expandedByUid.has(group.uid)
-          ? { ...group, expanded: expandedByUid.get(group.uid)! }
-          : group
-      );
+      try {
+        const data = await cachedApiQuery<UserSelectGroupMembers>(
+          userSelectMembersQuery(companyId, groupId),
+          path.to.api.userSelectGroupMembers(groupId)
+        );
+        setMembersById((prev) => ({ ...prev, [groupId]: data }));
+        return data;
+      } catch (err) {
+        logger.error("Failed to fetch group members", { error: err });
+        return null;
+      } finally {
+        setLoadingGroups((prev) => ({ ...prev, [groupId]: false }));
+      }
+    },
+    []
+  );
+
+  const prefetchGroup = useCallback(
+    (groupId: string) => {
+      if (!groupId || membersById[groupId] || loadingGroups[groupId]) return;
+      void fetchMembers(groupId);
+    },
+    [membersById, loadingGroups, fetchMembers]
+  );
+
+  /* View model — the lazily-built tree (or flat search results) */
+
+  const viewModel = useMemo<UserSelectViewModel>(() => {
+    uidToGroupId.current = {};
+    const { usersOnly, queryFilters } = innerProps;
+    const allowedIds = queryFilters?.allowedIds;
+
+    const toUserOption = (user: User, parentUid: string): UserWithOptions => ({
+      ...user,
+      uid: getOptionId(parentUid, user.id),
+      label: user.fullName || ""
     });
-  }, [optionGroups, makeFilteredOptionGroups, setFilteredOptionGroups]);
+
+    const q = controlledValue.trim();
+
+    if (q.length >= 2 && searchResults) {
+      const groups: SelectionGroupWithOptions[] = usersOnly
+        ? []
+        : searchResults.groups.map((g) => ({
+            ...g,
+            users: [],
+            memberCount: g.userCount,
+            uid: getOptionId("search", g.id),
+            label: g.name || ""
+          }));
+      const users = searchResults.users
+        .filter((u) => !allowedIds?.length || allowedIds.includes(u.id))
+        .map((u) => toUserOption(u, "search"));
+      return { mode: "search", groups, users, searching };
+    }
+
+    const isVisibleGroup = (g: UserSelectGroup) =>
+      !usersOnly || g.userCount + g.groupCount > 0;
+
+    const buildNode = (
+      group: UserSelectGroup,
+      parentUid: string,
+      ancestry: Set<string>
+    ): GroupNode => {
+      const uid = getGroupUid(parentUid, group.id);
+      uidToGroupId.current[uid] = group.id;
+      const expanded = expandedUids.has(uid);
+      const raw = membersById[group.id];
+      let members: GroupNode["members"] = null;
+      if (raw) {
+        const nextAncestry = new Set(ancestry).add(group.id);
+        members = {
+          groups: raw.groups
+            .filter((cg) => !nextAncestry.has(cg.id))
+            .filter(isVisibleGroup)
+            .map((cg) => buildNode(cg, uid, nextAncestry)),
+          users: raw.users
+            .filter((u) => !allowedIds?.length || allowedIds.includes(u.id))
+            .map((u) => toUserOption(u, uid))
+        };
+      }
+      return {
+        uid,
+        group,
+        expanded,
+        loading: !!loadingGroups[group.id],
+        members
+      };
+    };
+
+    let top = topLevelGroups.filter(isVisibleGroup);
+    if (q.length === 1) {
+      top = top.filter((g) => stringContainsTerm(g.name || "", q));
+    }
+
+    return {
+      mode: "browse",
+      nodes: top.map((g) => buildNode(g, instanceId, new Set())),
+      hasMore,
+      loadingMore
+    };
+  }, [
+    innerProps,
+    controlledValue,
+    searchResults,
+    searching,
+    topLevelGroups,
+    membersById,
+    expandedUids,
+    loadingGroups,
+    hasMore,
+    loadingMore,
+    instanceId
+  ]);
+
+  /* Resolve preselected ids (users AND groups) not yet known locally */
+
+  useEffect(() => {
+    const value = innerProps.value;
+    if (value === undefined || value === null) return;
+    const values = (Array.isArray(value) ? value : [value]).filter(Boolean);
+    const missing = values.filter(
+      (val) => !selectionItemsById[val] && !resolveRequested.current.has(val)
+    );
+    if (missing.length === 0) return;
+    missing.forEach((val) => {
+      resolveRequested.current.add(val);
+    });
+
+    const companyId = getCompanyId();
+    cachedApiQuery<{
+      users: User[];
+      groups: { id: string; name: string }[];
+    }>(
+      userSelectResolveQuery(companyId, missing),
+      path.to.api.userSelectResolve(missing)
+    )
+      .then((data) => {
+        setSelectionItemsById((prev) => {
+          let changed = false;
+          const next = { ...prev };
+          data.users.forEach((u) => {
+            if (!next[u.id]) {
+              next[u.id] = {
+                ...u,
+                uid: getOptionId("preselected", u.id),
+                label: u.fullName || ""
+              };
+              changed = true;
+            }
+          });
+          data.groups.forEach((g) => {
+            if (!next[g.id]) {
+              next[g.id] = {
+                id: g.id,
+                name: g.name,
+                isEmployeeTypeGroup: false,
+                isCustomerOrgGroup: false,
+                isCustomerTypeGroup: false,
+                isSupplierOrgGroup: false,
+                isSupplierTypeGroup: false,
+                userCount: 0,
+                groupCount: 0,
+                users: [],
+                memberCount: 0,
+                uid: getOptionId("preselected", g.id),
+                label: g.name || ""
+              };
+              changed = true;
+            }
+          });
+          return changed ? next : prev;
+        });
+      })
+      .catch((err) =>
+        logger.error("Failed to resolve preselected values", { error: err })
+      );
+  }, [innerProps.value, selectionItemsById]);
 
   /* Event Handlers */
 
@@ -292,11 +384,10 @@ export default function useUserSelect(props: UserSelectProps) {
     }
   }, []);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const clear = useCallback(() => {
-    setFilteredOptionGroups(makeFilteredOptionGroups());
     setControlledValue("");
-  }, [makeFilteredOptionGroups, setControlledValue, setFilteredOptionGroups]);
+    setSearchResults(null);
+  }, []);
 
   const resetFocus = useCallback(() => {
     setFocusedId(null);
@@ -306,64 +397,30 @@ export default function useUserSelect(props: UserSelectProps) {
     }
   }, [focusInput]);
 
-  const prefetchGroup = useCallback(
-    (uid: string) => {
-      const groupId = uid.split("_")[1];
-      if (groupId && !fetchedMembers[groupId] && !loadingGroups[groupId]) {
-        setLoadingGroups((prev) => ({ ...prev, [groupId]: true }));
-        fetch(path.to.api.groupMembers(groupId))
-          .then((res) => res.json())
-          .then((data) => {
-            if (data.users) {
-              let users = data.users as User[];
-              const { queryFilters } = innerProps;
-              if (queryFilters?.allowedIds?.length) {
-                users = users.filter((u) =>
-                  queryFilters.allowedIds!.includes(u.id)
-                );
-              }
-              setFetchedMembers((prev) => ({ ...prev, [groupId]: users }));
-            }
-          })
-          .catch((err) =>
-            logger.error("Failed to prefetch group", { error: err })
-          )
-          .finally(() => {
-            setLoadingGroups((prev) => ({ ...prev, [groupId]: false }));
-          });
-      }
-    },
-    [fetchedMembers, loadingGroups, innerProps]
-  );
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onGroupExpand = useCallback(
     (uid: string) => {
-      setFilteredOptionGroups((previousGroups) =>
-        previousGroups.map((group) =>
-          group.uid === uid ? { ...group, expanded: true } : group
-        )
-      );
-      prefetchGroup(uid);
+      setExpandedUids((prev) => {
+        const next = new Set(prev);
+        next.add(uid);
+        return next;
+      });
+      const groupId = uidToGroupId.current[uid];
+      if (groupId) prefetchGroup(groupId);
     },
-    [setFilteredOptionGroups, prefetchGroup]
+    [prefetchGroup]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  const onGroupCollapse = useCallback(
-    (uid: string) =>
-      setFilteredOptionGroups((previousGroups) =>
-        previousGroups.map((group) =>
-          group.uid === uid ? { ...group, expanded: false } : group
-        )
-      ),
-    [setFilteredOptionGroups]
-  );
+  const onGroupCollapse = useCallback((uid: string) => {
+    setExpandedUids((prev) => {
+      const next = new Set(prev);
+      next.delete(uid);
+      return next;
+    });
+  }, []);
 
   const isExpanded = useCallback(
-    (uid: string) =>
-      filteredOptionGroups.some((g) => g.uid === uid && g.expanded),
-    [filteredOptionGroups]
+    (uid: string) => expandedUids.has(uid),
+    [expandedUids]
   );
 
   const getFirstNode = useCallback(() => {
@@ -419,7 +476,7 @@ export default function useUserSelect(props: UserSelectProps) {
   );
 
   const hasChildren = useCallback((id: string) => {
-    return focusableNodes.current[id].expandable ?? false;
+    return focusableNodes.current[id]?.expandable ?? false;
   }, []);
 
   const scrollTo = useCallback((elementId: string, delay: boolean) => {
@@ -437,15 +494,36 @@ export default function useUserSelect(props: UserSelectProps) {
   }, []);
 
   const getSelectionById = useCallback(
-    (uid: string) => {
-      for (const group of filteredOptionGroups) {
-        const result = group.items.find((item) => item.uid === uid);
-        if (result) return result;
+    (uid: string): IndividualOrGroup | undefined => {
+      if (viewModel.mode === "search") {
+        return (
+          viewModel.groups.find((g) => g.uid === uid) ??
+          viewModel.users.find((u) => u.uid === uid)
+        );
       }
 
-      return undefined;
+      let found: IndividualOrGroup | undefined;
+      const walk = (nodes: GroupNode[]) => {
+        for (const node of nodes) {
+          if (found) return;
+          if (node.uid === uid) {
+            found = toGroupSelection(node.group, node.uid);
+            return;
+          }
+          if (node.members) {
+            const user = node.members.users.find((u) => u.uid === uid);
+            if (user) {
+              found = user;
+              return;
+            }
+            walk(node.members.groups);
+          }
+        }
+      };
+      walk(viewModel.nodes);
+      return found;
     },
-    [filteredOptionGroups]
+    [viewModel]
   );
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
@@ -490,78 +568,45 @@ export default function useUserSelect(props: UserSelectProps) {
     ]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const debouncedInputChange = useMemo(() => {
-    const { queryFilters } = innerProps;
+    const { queryFilters, type } = innerProps;
     return debounce(async (search: string) => {
       const q = search.trim();
-      if (q.length >= 2) {
-        const cacheKey = `${q}|${queryFilters?.excludeSelf ?? ""}|${queryFilters?.allowedIds?.join(",") ?? ""}`;
-        if (searchCache.current[cacheKey]) {
-          const searchResults = searchCache.current[cacheKey].map(
-            (user: User) => ({
-              ...user,
-              uid: getOptionId("search", user.id),
-              label: user.fullName || ""
-            })
-          );
-
-          setFilteredOptionGroups([
-            {
-              uid: "search_results",
-              expanded: true,
-              items: searchResults,
-              name: "Search Results"
-            }
-          ]);
-          resetFocus();
-          return;
-        }
-
-        try {
-          let searchUrl = path.to.api.usersSearch(q);
-          if (queryFilters?.excludeSelf) {
-            searchUrl += "&excludeSelf=true";
-          }
-          if (queryFilters?.allowedIds?.length) {
-            searchUrl += `&allowedIds=${queryFilters.allowedIds.join(",")}`;
-          }
-
-          const res = await fetch(searchUrl);
-          const data = await res.json();
-          if (data.users && data.users.length > 0) {
-            searchCache.current[cacheKey] = data.users;
-            const searchResults = data.users.map((user: User) => ({
-              ...user,
-              uid: getOptionId("search", user.id),
-              label: user.fullName || ""
-            }));
-
-            setFilteredOptionGroups([
-              {
-                uid: "search_results",
-                expanded: true,
-                items: searchResults,
-                name: "Search Results"
-              }
-            ]);
-          } else {
-            setFilteredOptionGroups([]);
-          }
-        } catch (e) {
-          logger.error("Failed to search users", { error: e });
-        }
-      } else {
-        setFilteredOptionGroups(makeFilteredOptionGroups(search));
+      if (q.length < 2) {
+        setSearchResults(null);
+        setSearching(false);
+        resetFocus();
+        return;
       }
-      resetFocus();
+
+      const companyId = getCompanyId();
+      const filtersKey = `${queryFilters?.excludeSelf ?? ""}|${queryFilters?.allowedIds?.join(",") ?? ""}`;
+      let searchUrl = path.to.api.userSelectSearch(q, type);
+      if (queryFilters?.excludeSelf) {
+        searchUrl += "&excludeSelf=true";
+      }
+      if (queryFilters?.allowedIds?.length) {
+        searchUrl += `&allowedIds=${queryFilters.allowedIds.join(",")}`;
+      }
+
+      setSearching(true);
+      try {
+        const data = await cachedApiQuery<{
+          groups: UserSelectGroup[];
+          users: User[];
+        }>(
+          userSelectSearchQuery(companyId, type ?? null, q, filtersKey),
+          searchUrl
+        );
+        setSearchResults(data);
+      } catch (e) {
+        logger.error("Failed to search users", { error: e });
+      } finally {
+        setSearching(false);
+        resetFocus();
+      }
     }, 240);
-  }, [
-    makeFilteredOptionGroups,
-    resetFocus,
-    setFilteredOptionGroups,
-    innerProps
-  ]);
+  }, [resetFocus, innerProps]);
 
   const onInputFocus = useCallback(() => {
     dropdown.onOpen();
@@ -641,6 +686,9 @@ export default function useUserSelect(props: UserSelectProps) {
     (selectionItem: IndividualOrGroup) => {
       if (selectionItem === undefined) return;
       const { id } = selectionItem;
+      // Keep the hydration effect from re-resolving an id the user just
+      // removed while the wrapper's value prop is still one render behind.
+      resolveRequested.current.add(id);
       setSelectionItemsById((previousSelections) => {
         if (id in previousSelections) {
           // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
@@ -718,15 +766,34 @@ export default function useUserSelect(props: UserSelectProps) {
     ]
   );
 
+  /**
+   * Replace a selected group with its direct members (users + child groups).
+   * Members are fetched on demand if not already loaded.
+   */
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onExplode = useCallback(
     (selectionItem: IndividualOrGroup) => {
       if (!("users" in selectionItem)) return;
+      const { id } = selectionItem;
+      const { queryFilters } = innerProps;
 
-      const { id, users, children } = selectionItem;
+      // The wrapper's value prop lags one render behind the onChange below;
+      // without this the hydration effect resolves the exploded group id and
+      // re-adds it as a ghost chip.
+      resolveRequested.current.add(id);
 
-      setSelectionItemsById((prevSelectionItems) => {
-        if (id in prevSelectionItems) {
+      void (async () => {
+        const members = membersById[id] ?? (await fetchMembers(id));
+        if (!members) return;
+
+        const allowedIds = queryFilters?.allowedIds;
+        const users = members.users.filter(
+          (u) => !allowedIds?.length || allowedIds.includes(u.id)
+        );
+
+        setSelectionItemsById((prevSelectionItems) => {
+          if (!(id in prevSelectionItems)) return prevSelectionItems;
+
           // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
           const { [id]: removed, ...newSelectionItems } = prevSelectionItems;
 
@@ -738,22 +805,19 @@ export default function useUserSelect(props: UserSelectProps) {
             };
           });
 
-          children?.forEach((group) => {
-            newSelectionItems[group.data.id] = {
-              ...group.data,
-              uid: getOptionId(id, group.data.id),
-              label: group.data.name || ""
-            };
+          members.groups.forEach((group) => {
+            newSelectionItems[group.id] = toGroupSelection(
+              group,
+              getOptionId(id, group.id)
+            );
           });
 
           onChange(Object.values(newSelectionItems));
           return newSelectionItems;
-        }
-
-        return prevSelectionItems;
-      });
+        });
+      })();
     },
-    [onChange, setSelectionItemsById]
+    [membersById, fetchMembers, innerProps, onChange, setSelectionItemsById]
   );
 
   const onKeyDown = useCallback(
@@ -765,12 +829,12 @@ export default function useUserSelect(props: UserSelectProps) {
       switch (event.key) {
         case "ArrowLeft":
           if (focusedId) {
-            if (hasParent(focusedId)) {
+            if (hasChildren(focusedId) && isExpanded(focusedId)) {
+              onGroupCollapse(focusedId);
+            } else if (hasParent(focusedId)) {
               const { parentId } = focusableNodes.current[focusedId];
               onGroupCollapse(parentId!);
               setFocus(parentId!);
-            } else {
-              onGroupCollapse(focusedId);
             }
             break;
           } else {
@@ -794,10 +858,19 @@ export default function useUserSelect(props: UserSelectProps) {
           commit();
           return;
         case "Enter":
-          if (focusedId && hasParent(focusedId)) {
-            onSelect(getSelectionById(focusedId));
-            clear();
-            commit();
+          if (focusedId) {
+            if (hasChildren(focusedId) && innerProps.usersOnly) {
+              // groups aren't selectable in usersOnly mode — toggle expansion
+              if (isExpanded(focusedId)) {
+                onGroupCollapse(focusedId);
+              } else {
+                onGroupExpand(focusedId);
+              }
+            } else {
+              onSelect(getSelectionById(focusedId));
+              clear();
+              commit();
+            }
             break;
           }
           break;
@@ -810,7 +883,13 @@ export default function useUserSelect(props: UserSelectProps) {
           break;
         case " ": // space
           if (focusedId) {
-            if (hasParent(focusedId)) {
+            if (hasChildren(focusedId) && innerProps.usersOnly) {
+              if (isExpanded(focusedId)) {
+                onGroupCollapse(focusedId);
+              } else {
+                onGroupExpand(focusedId);
+              }
+            } else {
               onToggle(getSelectionById(focusedId));
             }
             break;
@@ -849,6 +928,7 @@ export default function useUserSelect(props: UserSelectProps) {
       hasChildren,
       isExpanded,
       innerProps.disabled,
+      innerProps.usersOnly,
       clear,
       onGroupCollapse,
       onGroupExpand,
@@ -902,9 +982,9 @@ export default function useUserSelect(props: UserSelectProps) {
 
   return {
     aria,
-    groups: filteredOptionGroups,
-    errors: groupsFetcher.data?.errors,
-    loading: groupsFetcher.state === "loading",
+    viewModel,
+    errors,
+    loading: initialLoading,
     loadingGroups,
     selectionItemsById,
     // focus
@@ -924,6 +1004,8 @@ export default function useUserSelect(props: UserSelectProps) {
       buttonRef,
       focusableNodes
     },
+    // pagination
+    loadMore,
     // event handlers
     onClearInput,
     onKeyDown,
@@ -947,8 +1029,22 @@ function getOptionId(groupId: string, optionId: string) {
   return `${groupId}_${optionId}_option`;
 }
 
-function getGroupId(instanceId: string, groupId: string) {
-  return `${instanceId}_${groupId}_group`;
+function getGroupUid(parentUid: string, groupId: string) {
+  return `${parentUid}_${groupId}_group`;
+}
+
+/** Build the selection item for a group (users stays [] until exploded). */
+function toGroupSelection(
+  group: UserSelectGroup,
+  uid: string
+): SelectionGroupWithOptions {
+  return {
+    ...group,
+    users: [],
+    memberCount: group.userCount + group.groupCount,
+    uid,
+    label: group.name || ""
+  };
 }
 
 function checked(item: IndividualOrGroup): IndividualOrGroup {
@@ -959,10 +1055,7 @@ function checked(item: IndividualOrGroup): IndividualOrGroup {
 }
 
 export function isGroup(item: IndividualOrGroup) {
-  return (
-    ("users" in item && item.users?.length > 0) ||
-    ("children" in item && item?.children?.length)
-  );
+  return "users" in item;
 }
 
 function toggleChecked(item: IndividualOrGroup): IndividualOrGroup {

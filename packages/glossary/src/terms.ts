@@ -413,7 +413,7 @@ export const terms = {
   },
   disposal: {
     term: msg`Disposal`,
-    definition: msg`Retiring an asset by write-off instead of sale, booking the remaining net book value as a loss — status becomes Disposed.`,
+    definition: msg`Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed.`,
     href: "/docs/reference/fixed-assets#selling-vs-disposing"
   },
 
@@ -586,9 +586,13 @@ export const terms = {
     term: msg`Depreciation Expense (default)`,
     definition: msg`Default GL expense account for periodic depreciation runs.`
   },
-  "account-default-gains-and-losses": {
-    term: msg`Gains and Losses (default)`,
-    definition: msg`GL account where gain or loss is booked on fixed-asset disposal.`
+  "account-default-gain-on-disposal": {
+    term: msg`Gain on Disposal (default)`,
+    definition: msg`Default GL account credited when a fixed-asset disposal results in a gain.`
+  },
+  "account-default-loss-on-disposal": {
+    term: msg`Loss on Disposal (default)`,
+    definition: msg`Default GL account debited when a fixed-asset disposal results in a loss.`
   },
   "account-default-service-charges": {
     term: msg`Service Charges (default)`,
@@ -728,11 +732,11 @@ export const terms = {
   },
   "asset-class-asset-account": {
     term: msg`Asset Account`,
-    definition: msg`GL account debited when an asset in this class is acquired.`
+    definition: msg`GL account that carries an asset's original acquisition cost — debited when acquired and credited at full gross cost when it is disposed or sold.`
   },
   "asset-class-accumulated-depreciation-account": {
     term: msg`Accumulated Depreciation Account`,
-    definition: msg`GL contra-asset account credited when depreciation posts for assets in this class.`
+    definition: msg`GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped.`
   },
   "asset-class-depreciation-expense-account": {
     term: msg`Depreciation Expense Account`,
@@ -740,15 +744,19 @@ export const terms = {
   },
   "asset-class-write-off-account": {
     term: msg`Write-Off Account`,
-    definition: msg`GL account hit when an asset is written off (cost removed without disposal proceeds).`
+    definition: msg`Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for its net book value on invoicing, netting to zero over the sale cycle.`
   },
   "asset-class-write-down-account": {
     term: msg`Write-Down Account`,
-    definition: msg`GL account hit when an asset's book value is reduced (impairment).`
+    definition: msg`GL expense account debited when an asset's carrying value is reduced by impairment, i.e. when its recoverable amount falls below net book value.`
   },
-  "asset-class-disposal-account": {
-    term: msg`Disposal Account`,
-    definition: msg`GL account where gain or loss is booked when an asset in this class is disposed.`
+  "asset-class-gain-on-disposal-account": {
+    term: msg`Gain on Disposal Account`,
+    definition: msg`Non-operating income account credited when an asset in this class is sold for more than its net book value.`
+  },
+  "asset-class-loss-on-disposal-account": {
+    term: msg`Loss on Disposal Account`,
+    definition: msg`Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value.`
   },
   "asset-class-default-tax-method": {
     term: msg`Tax Method (default)`,

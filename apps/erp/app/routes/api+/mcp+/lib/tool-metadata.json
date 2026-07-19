@@ -1,6 +1,6 @@
 {
-  "generated": "2026-07-14T01:23:55.918Z",
-  "totalTools": 1327,
+  "generated": "2026-07-17T03:40:11.270Z",
+  "totalTools": 1335,
   "modules": 15,
   "tools": [
     {
@@ -1580,7 +1580,7 @@
       "module": "accounting",
       "classification": "WRITE",
       "description": "update default income accounts",
-      "paramCount": 26,
+      "paramCount": 27,
       "serviceParams": [
         "client",
         "defaultAccounts"
@@ -1637,7 +1637,10 @@
           "assetDepreciationExpenseAccount": {
             "type": "string"
           },
-          "assetGainsAndLossesAccount": {
+          "assetGainOnDisposalAccount": {
+            "type": "string"
+          },
+          "assetLossOnDisposalAccount": {
             "type": "string"
           },
           "serviceChargeAccount": {
@@ -1686,7 +1689,8 @@
           "indirectCostAccount",
           "maintenanceAccount",
           "assetDepreciationExpenseAccount",
-          "assetGainsAndLossesAccount",
+          "assetGainOnDisposalAccount",
+          "assetLossOnDisposalAccount",
           "serviceChargeAccount",
           "interestAccount",
           "supplierPaymentDiscountAccount",
@@ -4430,6 +4434,93 @@
         "required": [
           "locationId",
           "args"
+        ]
+      }
+    },
+    {
+      "name": "inventory_getInventoryValuation",
+      "module": "inventory",
+      "classification": "READ",
+      "description": "get inventory valuation",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "asOfDate": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "locationId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "inventory_getInventoryValuationTieOut",
+      "module": "inventory",
+      "classification": "READ",
+      "description": "get inventory valuation tie out",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "asOfDate"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "asOfDate": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "inventory_createInventoryReconciliationJournal",
+      "module": "inventory",
+      "classification": "WRITE",
+      "description": "create inventory reconciliation journal",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "db",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "asOfDate": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "asOfDate"
         ]
       }
     },
@@ -12531,7 +12622,7 @@
       "module": "items",
       "classification": "READ",
       "description": "get services",
-      "paramCount": 6,
+      "paramCount": 5,
       "serviceParams": [
         "client",
         "companyId",
@@ -12555,12 +12646,6 @@
                 "default": 0
               },
               "search": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              },
-              "type": {
                 "type": [
                   "string",
                   "null"
@@ -13909,7 +13994,7 @@
       "module": "items",
       "classification": "WRITE",
       "description": "upsert method material",
-      "paramCount": 1,
+      "paramCount": 4,
       "serviceParams": [
         "client",
         "methodMaterial"
@@ -13922,10 +14007,22 @@
       "schema": {
         "type": "object",
         "properties": {
-          "methodMaterial": {}
+          "id": {
+            "type": "string"
+          },
+          "makeMethodId": {
+            "type": "string"
+          },
+          "order": {
+            "type": "number"
+          },
+          "itemType": {
+            "type": "string"
+          }
         },
         "required": [
-          "methodMaterial"
+          "id",
+          "makeMethodId"
         ]
       }
     },
@@ -23984,6 +24081,43 @@
         "required": [
           "id",
           "sortOrder"
+        ]
+      }
+    },
+    {
+      "name": "purchasing_shortClosePurchaseOrderLine",
+      "module": "purchasing",
+      "classification": "WRITE",
+      "description": "short close purchase order line",
+      "paramCount": 3,
+      "serviceParams": [
+        "db",
+        "{\n    lineId,\n    purchaseOrderId,\n    companyId,\n    userId,\n    intent\n  }"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "lineId": {
+            "type": "string"
+          },
+          "purchaseOrderId": {
+            "type": "string"
+          },
+          "intent": {
+            "type": "string",
+            "enum": [
+              "close",
+              "reopen"
+            ]
+          }
+        },
+        "required": [
+          "lineId",
+          "purchaseOrderId",
+          "intent"
         ]
       }
     },
@@ -35349,7 +35483,7 @@
       "module": "sales",
       "classification": "WRITE",
       "description": "upsert quote line",
-      "paramCount": 4,
+      "paramCount": 5,
       "serviceParams": [
         "client",
         "quotationLine"
@@ -35366,6 +35500,9 @@
             "type": "string"
           },
           "quoteId": {
+            "type": "string"
+          },
+          "itemType": {
             "type": "string"
           },
           "itemId": {
@@ -35493,7 +35630,14 @@
               "quantity": {
                 "type": "number"
               },
-              "categoryMarkups": {}
+              "categoryMarkups": {},
+              "priceSource": {
+                "type": "string",
+                "enum": [
+                  "system",
+                  "manual"
+                ]
+              }
             },
             "required": [
               "quoteLineId",
@@ -40812,6 +40956,135 @@
         },
         "required": [
           "groupIds"
+        ]
+      }
+    },
+    {
+      "name": "users_getUserSelectGroups",
+      "module": "users",
+      "classification": "READ",
+      "description": "get user select groups",
+      "paramCount": 4,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "search": {
+            "type": "string"
+          },
+          "limit": {
+            "type": "number"
+          },
+          "offset": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "limit",
+          "offset"
+        ]
+      }
+    },
+    {
+      "name": "users_getUserSelectGroupMembers",
+      "module": "users",
+      "classification": "READ",
+      "description": "get user select group members",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "groupId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "groupId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "groupId"
+        ]
+      }
+    },
+    {
+      "name": "users_searchUsersForSelect",
+      "module": "users",
+      "classification": "READ",
+      "description": "search users for select",
+      "paramCount": 4,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "q": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "excludeSelf": {
+            "type": "boolean"
+          },
+          "allowedIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "q"
+        ]
+      }
+    },
+    {
+      "name": "users_resolveUserSelectIds",
+      "module": "users",
+      "classification": "WRITE",
+      "description": "resolve user select ids",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "ids"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "ids"
         ]
       }
     },

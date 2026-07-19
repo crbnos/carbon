@@ -3,14 +3,20 @@ import { format } from "https://deno.land/std@0.205.0/datetime/mod.ts";
 import { z } from "https://deno.land/x/zod@v3.21.4/mod.ts";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { corsHeaders } from "../lib/headers.ts";
+import { getFunctionLogger } from "../lib/logging.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import type { Database } from "../lib/types.ts";
+import { getCurrentAccountingPeriod } from "../shared/get-accounting-period.ts";
+import { getDefaultPostingGroup } from "../shared/get-posting-group.ts";
+import {
+  bookAdjustment,
+  createAdjustmentJournal
+} from "../shared/post-adjustment.ts";
 import { planInventoryCountPost } from "./plan-post.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
-
-type ItemLedgerInsert = Database["public"]["Tables"]["itemLedger"]["Insert"];
+const logger = getFunctionLogger("post-inventory-count");
 
 // Base for post-blocking validation errors. Carries the offending line ids so
 // the response can hand them to the UI to highlight the rows.
@@ -40,10 +46,12 @@ class SerialQuantityError extends InvalidLinesError {
 // reviewed — `counted - systemQuantity` (the FROZEN snapshot on the line), NOT
 // `counted - live on-hand`. This preserves any stock movements that posted between
 // the snapshot and the post (a receipt/shipment isn't clobbered; the correction is
-// applied on top of it). Like `insertManualInventoryAdjustment`, this writes to the
-// item ledger only (on-hand is derived from `itemLedger`); no GL journal lines.
+// applied on top of it). Each variance books through the shared posting core:
+// item ledger + cost layers + (when companySettings.accountingEnabled) a GL
+// journal against the inventory adjustment variance account.
 // (Rectify re-snapshots `systemQuantity` to current live on-hand first, so for a
-// correction the same formula resolves to "set to counted".)
+// correction the same formula resolves to "set to counted". A correction is a
+// NEW movement valued at posting-time cost — the original journal is immutable.)
 const payloadValidator = z.object({
   type: z.literal("post"),
   inventoryCountId: z.string(),
@@ -99,7 +107,7 @@ serve(async (req: Request) => {
     const items = itemIds.length
       ? await client
           .from("item")
-          .select("id, itemTrackingType")
+          .select("id, itemTrackingType, replenishmentSystem")
           .in("id", itemIds)
           .eq("companyId", companyId)
       : null;
@@ -107,6 +115,44 @@ serve(async (req: Request) => {
 
     const trackingTypeByItem = new Map<string, string | null>(
       (items?.data ?? []).map((item) => [item.id, item.itemTrackingType])
+    );
+    // Explicit row types: supabase-js generic inference fails under deno
+    // check for these selects (same pre-existing limitation as the maps above).
+    type CountItemRow = {
+      id: string;
+      replenishmentSystem:
+        | Database["public"]["Enums"]["itemReplenishmentSystem"]
+        | null;
+    };
+    type CountItemCostRow = {
+      itemId: string;
+      costingMethod: Database["public"]["Enums"]["itemCostingMethod"];
+      unitCost: number | null;
+      standardCost: number | null;
+      itemPostingGroupId: string | null;
+    };
+    const replenishmentByItem = new Map(
+      ((items?.data ?? []) as CountItemRow[]).map((item) => [
+        item.id,
+        item.replenishmentSystem
+      ])
+    );
+
+    const itemCosts = itemIds.length
+      ? await client
+          .from("itemCost")
+          .select(
+            "itemId, costingMethod, unitCost, standardCost, itemPostingGroupId"
+          )
+          .in("itemId", itemIds)
+          .eq("companyId", companyId)
+      : null;
+    if (itemCosts?.error) throw new Error(itemCosts.error.message);
+    const itemCostByItem = new Map(
+      ((itemCosts?.data ?? []) as CountItemCostRow[]).map((cost) => [
+        cost.itemId,
+        cost
+      ])
     );
     const serialInvalidLineIds = countedLines
       .filter((line) => {
@@ -121,6 +167,72 @@ serve(async (req: Request) => {
 
     // Reconcile against the frozen snapshot — no live on-hand read needed.
     const { planned } = planInventoryCountPost(countedLines);
+
+    // The accountingEnabled flag gates ALL journal writes; cost layers are
+    // maintained either way. Resolve settings + period BEFORE the transaction
+    // (REST hops mid-transaction park the size-1 pool in idle-in-transaction).
+    const accountingSettings = await client
+      .from("companySettings")
+      .select("accountingEnabled")
+      .eq("id", companyId)
+      .single();
+    // Fail closed: a failed settings read must not silently post without GL.
+    if (accountingSettings.error) {
+      throw new Error("Failed to fetch company settings");
+    }
+    const accountingEnabled =
+      accountingSettings.data?.accountingEnabled ?? false;
+    const accountDefaults = accountingEnabled
+      ? await getDefaultPostingGroup(client, companyId)
+      : null;
+    if (
+      accountingEnabled &&
+      (accountDefaults?.error || !accountDefaults?.data)
+    ) {
+      throw new Error("Error getting account defaults");
+    }
+    const accountingPeriodId = accountingEnabled
+      ? await getCurrentAccountingPeriod(client, companyId, db)
+      : null;
+
+    // Active dimensions for the company group (post-shipment precedent) —
+    // journal lines get Item / ItemPostingGroup / Location tags.
+    const dimensionMap: Record<string, string> = {};
+    if (accountingEnabled) {
+      const companyRecord = await client
+        .from("company")
+        .select("companyGroupId")
+        .eq("id", companyId)
+        .single();
+      if (companyRecord.error) throw new Error("Failed to fetch company");
+      const dimensions = await client
+        .from("dimension")
+        .select("id, entityType")
+        .eq("companyGroupId", companyRecord.data.companyGroupId)
+        .eq("active", true)
+        .in("entityType", ["Item", "ItemPostingGroup", "Location"]);
+      // Fail closed: journal lines must not silently lose dimension tags.
+      if (dimensions.error) throw new Error("Failed to fetch dimensions");
+      for (const dim of dimensions.data ?? []) {
+        if (dim.entityType) dimensionMap[dim.entityType] = dim.id;
+      }
+    }
+
+    const accounting =
+      accountingEnabled && accountDefaults?.data && accountingPeriodId
+        ? {
+            accountingPeriodId,
+            accountDefaults: {
+              rawMaterialsAccount: accountDefaults.data.rawMaterialsAccount,
+              finishedGoodsAccount: accountDefaults.data.finishedGoodsAccount,
+              inventoryAdjustmentVarianceAccount:
+                accountDefaults.data.inventoryAdjustmentVarianceAccount
+            },
+            description: comment,
+            userId,
+            dimensions: dimensionMap
+          }
+        : null;
 
     await db.transaction().execute(async (trx) => {
       // Concurrency guard: lock the header and re-assert it is still Pending so
@@ -140,35 +252,65 @@ serve(async (req: Request) => {
         throw new Error("Inventory count is no longer pending");
       }
 
-      // Post the reviewed variance for each line as an inventory adjustment.
+      // ONE journal per count post: created lazily on the first variance that
+      // carries value, then shared by every line's journal-line pair.
+      let sharedJournalId: string | null = null;
+      const accountingForLines = accounting
+        ? {
+            ...accounting,
+            getJournalId: async () => {
+              if (!sharedJournalId) {
+                sharedJournalId = await createAdjustmentJournal(trx, {
+                  companyId,
+                  accountingPeriodId: accounting.accountingPeriodId,
+                  description: accounting.description,
+                  postingDate: today,
+                  userId
+                });
+              }
+              return sharedJournalId;
+            }
+          }
+        : null;
+
+      // Post the reviewed variance for each line as an inventory adjustment,
+      // booked through the shared core (ledger + cost layers + journal).
       for (const { line, delta } of planned) {
         if (delta === 0) continue;
 
-        const ledgerEntry: ItemLedgerInsert = {
-          postingDate: today,
-          itemId: line.itemId,
-          quantity: delta,
-          locationId: line.locationId,
-          storageUnitId: line.storageUnitId,
-          trackedEntityId: line.trackedEntityId,
-          entryType: delta > 0 ? "Positive Adjmt." : "Negative Adjmt.",
-          documentType: "Inventory Count",
-          documentId: inventoryCountId,
-          // In-place rectify: if this line already posted a movement (the count
-          // was rectified), link the new fix movement back to that prior one so
-          // both stay visible and linked in the movements screens. Null on the
-          // first post.
-          correctionOfItemLedgerId: line.postedItemLedgerId ?? null,
-          comment,
-          companyId,
-          createdBy: userId
-        };
+        const itemCost = itemCostByItem.get(line.itemId);
+        if (!itemCost) {
+          throw new Error(`Missing item cost for item ${line.itemId}`);
+        }
 
-        const inserted = await trx
-          .insertInto("itemLedger")
-          .values(ledgerEntry)
-          .returning(["id"])
-          .executeTakeFirstOrThrow();
+        const booked = await bookAdjustment(trx, {
+          ledger: {
+            postingDate: today,
+            itemId: line.itemId,
+            quantity: delta,
+            locationId: line.locationId,
+            storageUnitId: line.storageUnitId,
+            trackedEntityId: line.trackedEntityId,
+            entryType: delta > 0 ? "Positive Adjmt." : "Negative Adjmt.",
+            documentType: "Inventory Count",
+            documentId: inventoryCountId,
+            // In-place rectify: if this line already posted a movement (the count
+            // was rectified), link the new fix movement back to that prior one so
+            // both stay visible and linked in the movements screens. Null on the
+            // first post.
+            correctionOfItemLedgerId: line.postedItemLedgerId ?? null,
+            comment,
+            companyId,
+            createdBy: userId
+          },
+          item: {
+            itemTrackingType: trackingTypeByItem.get(line.itemId) ?? null,
+            replenishmentSystem: replenishmentByItem.get(line.itemId) ?? null,
+            itemPostingGroupId: itemCost.itemPostingGroupId
+          },
+          itemCost,
+          accounting: accountingForLines
+        });
 
         // Tracked lines: apply the same delta to the entity's quantity (not a
         // set-to-counted) so movements since the snapshot aren't overwritten.
@@ -183,7 +325,7 @@ serve(async (req: Request) => {
 
         await trx
           .updateTable("inventoryCountLine")
-          .set({ postedItemLedgerId: inserted.id })
+          .set({ postedItemLedgerId: booked.itemLedgerId })
           .where("id", "=", line.id)
           .where("companyId", "=", companyId)
           .execute();
@@ -217,7 +359,9 @@ serve(async (req: Request) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" }
     });
   } catch (err) {
-    console.error("Error in post-inventory-count:", err);
+    logger.error("post-inventory-count failed", {
+      error: String((err as Error).stack ?? err)
+    });
     // The post is a single atomic transaction, so a failure has already rolled
     // back any ledger writes and the status change — the count is left exactly
     // as it was (Pending). We do NOT touch the status here: reverting a failed

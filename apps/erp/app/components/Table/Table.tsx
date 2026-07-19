@@ -531,6 +531,14 @@ const Table = <T extends object>({
   const [isEditing, setIsEditing] = useState(false);
   const [selectedCell, setSelectedCell] = useState<Position>(null);
 
+  // forceEditMode follows the document's state (e.g. Rectify flips a Posted
+  // count back to Draft via revalidation, without remounting the table) — and
+  // the Edit/Lock toggle is hidden while it's set, so a stale editMode would
+  // strand the table with no way to recover. Keep them in sync.
+  useEffect(() => {
+    setEditMode(forceEditMode);
+  }, [forceEditMode]);
+
   /* Aggregate Functions */
   const [columnAggregates, setColumnAggregates] = useState<
     Record<string, AggregateFunction>
@@ -624,10 +632,24 @@ const Table = <T extends object>({
     [table]
   );
 
+  // Excel-like keyboard model, attached in the CAPTURE phase so navigation
+  // keys are handled before the cell editor sees them (react-aria's
+  // NumberField swallows Enter without propagation and steps the value on
+  // ArrowUp/Down — capture lets the table own those keys while editing).
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLDivElement>) => {
       if (!selectedCell) return;
+      // Don't hijack keys aimed at a portaled overlay (a cell editor's
+      // combobox/date popover, a row context menu) — those own their keys.
+      if (event.nativeEvent.isComposing) return;
+      const target = event.target as HTMLElement | null;
+      if (
+        target?.closest(
+          "[data-radix-popper-content-wrapper],[role=menu],[role=listbox],[role=dialog]"
+        )
+      )
+        return;
 
       const { code, shiftKey } = event;
 
@@ -694,8 +716,25 @@ const Table = <T extends object>({
         return [x1, y1];
       };
 
+      // Commit any in-flight edit before navigating away. Editors commit
+      // their value on blur — without this, the navigation's preventDefault
+      // keeps focus on the input until it unmounts and the blur never fires,
+      // silently dropping the typed value.
+      const commitActiveEdit = () => {
+        if (
+          isEditing &&
+          document.activeElement instanceof HTMLElement &&
+          document.activeElement !== document.body
+        ) {
+          document.activeElement.blur();
+        }
+      };
+
       if (code in commandCodes) {
         event.preventDefault();
+        // Keep the key away from the editor entirely (react-aria would
+        // otherwise run its own Enter commit on the input).
+        if (isEditing) event.stopPropagation();
 
         if (
           !isEditing &&
@@ -710,6 +749,9 @@ const Table = <T extends object>({
         let direction = commandCodes[code];
         if (shiftKey) direction = [-direction[0], -direction[1]];
         const [x1, y1] = navigate(direction, code === "Tab");
+
+        commitActiveEdit();
+
         setSelectedCell({
           row: y1,
           column: x1
@@ -718,10 +760,12 @@ const Table = <T extends object>({
           setIsEditing(false);
         }
       } else if (code in navigationCodes) {
-        // arrow key navigation should't work if we're editing
-        if (isEditing) return;
         event.preventDefault();
+        // Excel-like: while editing, an arrow commits the edit and moves the
+        // selection — it must not step the value or move the text cursor.
+        if (isEditing) event.stopPropagation();
         const [x1, y1] = navigate(navigationCodes[code], code === "Tab");
+        commitActiveEdit();
         setIsEditing(false);
         setSelectedCell({
           row: y1,
@@ -951,7 +995,7 @@ const Table = <T extends object>({
         )}
         style={{ contain: "strict" }}
         ref={tableContainerRef}
-        onKeyDown={editMode ? onKeyDown : undefined}
+        onKeyDownCapture={editMode ? onKeyDown : undefined}
       >
         <div className="flex max-w-full h-full">
           {rows.length === 0 ? (

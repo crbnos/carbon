@@ -6,6 +6,7 @@ import type {
   ApprovalDocumentType,
   approvalRequestValidator,
   approvalRuleValidator,
+  itemType,
   methodItemType,
   methodType,
   operationParameterValidator,
@@ -94,6 +95,8 @@ export enum DataType {
 }
 
 export type MethodItemType = (typeof methodItemType)[number];
+
+export type ItemType = (typeof itemType)[number];
 export type MethodType = (typeof methodType)[number];
 export type SourcingType = (typeof sourcingType)[number];
 

@@ -32,6 +32,7 @@ import {
   InventoryCountLines,
   InventoryCountStatus
 } from "~/modules/inventory";
+import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import InventoryCountHistory from "./InventoryCountHistory";
 
@@ -42,6 +43,12 @@ type InventoryCountDetailsProps = {
   summary: { uncounted: number; variances: number };
   // Ledger adjustments this count has posted (empty for a never-posted Draft).
   movements: StockMovement[];
+  // Option lists for the count-line column filters (same set as quantities).
+  forms: ListItem[];
+  substances: ListItem[];
+  tags: string[];
+  storageTypes: { id: string; name: string }[];
+  storageUnits: { id: string; name: string }[];
 };
 
 const InventoryCountDetails = ({
@@ -49,7 +56,12 @@ const InventoryCountDetails = ({
   lines,
   count,
   summary,
-  movements
+  movements,
+  forms,
+  substances,
+  tags,
+  storageTypes,
+  storageUnits
 }: InventoryCountDetailsProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
@@ -188,6 +200,11 @@ const InventoryCountDetails = ({
           titleBadge={<InventoryCountStatus status={status} />}
           primaryAction={actions}
           invalidLineIds={invalidLineIds}
+          forms={forms}
+          substances={substances}
+          tags={tags}
+          storageTypes={storageTypes}
+          storageUnits={storageUnits}
         />
       </div>
 

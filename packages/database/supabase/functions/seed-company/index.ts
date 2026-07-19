@@ -382,6 +382,7 @@ serve(async (req: Request) => {
         supplierWriteOffAccount: "salesAccount",
         realizedExchangeGainAccount: "salesAccount",
         realizedExchangeLossAccount: "interestAccount",
+        assetGainOnDisposalAccount: "assetLossOnDisposalAccount",
         supplierPrepaymentAccount: "receivablesAccount",
         rawMaterialsAccount: "workInProgressAccount",
         finishedGoodsAccount: "rawMaterialsAccount",
@@ -423,7 +424,8 @@ serve(async (req: Request) => {
               accountIdByKey[fac.depreciationExpenseAccount]!,
             writeOffAccountId: accountIdByKey[fac.writeOffAccount]!,
             writeDownAccountId: accountIdByKey[fac.writeDownAccount]!,
-            disposalAccountId: accountIdByKey[fac.disposalAccount]!,
+            gainOnDisposalAccountId: accountIdByKey[fac.gainOnDisposalAccount]!,
+            lossOnDisposalAccountId: accountIdByKey[fac.lossOnDisposalAccount]!,
             companyId,
             createdBy: userId,
           }))

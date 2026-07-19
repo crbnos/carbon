@@ -715,6 +715,68 @@ export async function action({ request }: ActionFunctionArgs) {
 
         return toolItemUpdates;
       }
+    case "serviceId":
+      if (items.length > 1) {
+        return {
+          error: { message: "Cannot update multiple items" },
+          data: null
+        };
+      }
+      const [serviceItem] = items as string[];
+      const serviceData = await client
+        .from("item")
+        .select("readableId, type")
+        .eq("id", serviceItem)
+        .eq("type", "Service")
+        .eq("companyId", companyId)
+        .single();
+
+      if (serviceData.error) {
+        return serviceData;
+      }
+      if (serviceData.data?.type !== "Service") {
+        return { error: { message: "Item is not a service" }, data: null };
+      }
+
+      const currentServiceId = serviceData.data?.readableId;
+
+      const relatedServices = await client
+        .from("item")
+        .select("id")
+        .eq("readableId", currentServiceId)
+        .eq("type", "Service")
+        .eq("companyId", companyId);
+      if (relatedServices.error) {
+        return relatedServices;
+      }
+      const relatedServiceIds = relatedServices.data?.map((item) => item.id);
+      if (relatedServiceIds) {
+        const [serviceItemUpdates, serviceUpdate] = await Promise.all([
+          client
+            .from("item")
+            .update({
+              readableId: value as string,
+              updatedBy: userId,
+              updatedAt: new Date().toISOString()
+            })
+            .in("id", relatedServiceIds as string[])
+            .eq("companyId", companyId),
+          client
+            .from("service")
+            .update({
+              id: value,
+              updatedBy: userId,
+              updatedAt: new Date().toISOString()
+            })
+            .eq("id", currentServiceId)
+            .eq("companyId", companyId)
+        ]);
+        if (serviceUpdate.error) {
+          return serviceUpdate;
+        }
+
+        return serviceItemUpdates;
+      }
     default:
       return { error: { message: "Invalid field" }, data: null };
   }

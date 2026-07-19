@@ -11,8 +11,10 @@ paths:
 Fixed assets are acquired, depreciated, and disposed through the accounting
 module. They integrate with purchasing (acquisition via PO receipt / purchase
 invoice) and sales (disposal via shipment / sales invoice). All GL postings flow
-through `journal` / `journalLine` with `journalEntrySourceType` values
-`'Asset Depreciation'` and `'Asset Disposal'`.
+through `journal` / `journalLine`. `journalEntrySourceType` is
+`'Asset Depreciation'` for depreciation runs and `'Asset Disposal'` for the
+manual scrap; the two-step sale reuses the document source types (`'Sales
+Shipment'` / `'Sales Invoice'`) and manual registration uses `'Manual'`.
 
 Schema lives in three migrations (newest wins):
 `20260524143826_fixed-asset-enums.sql`, `20260524143827_fixed-assets.sql`,
@@ -96,7 +98,24 @@ enum value (CHECK: only Fixed Asset lines have non-NULL `assetId`). The
 **Acquire (Draft → Active).** Two paths set `acquisitionCost`,
 `depreciationStartDate` (if unset), and flip `status` to `Active`:
 1. Manual: create asset (Draft), then `$fixedAssetId.register` action with
-   `fixedAssetRegisterValidator`. State change only — **no journal**.
+   `fixedAssetRegisterValidator`. When `companySettings.accountingEnabled`, the
+   route posts an acquisition journal via `postAssetRegistration()` inside one
+   Kysely transaction (`sourceType` `'Manual'`, description
+   `Asset Registration: <readableId>`) and only then flips the asset to `Active`
+   (journal first, so no capitalized asset exists without a GL entry; the whole
+   transaction rolls back on failure). The lines come from `acquisitionLines()`
+   (`accounting.utils.ts`):
+   - **No prior depreciation** (`accumulatedDepreciation = 0`) — two lines:
+     **Debit `assetAccountId`** (gross cost) / **Credit
+     `accountDefault.retainedEarningsAccount`** (owner equity) at cost.
+   - **Mid-life capitalization** (`accumulatedDepreciation > 0`) — three lines,
+     so the GL asset/contra balances match the subledger's net book value instead
+     of overstating the asset at gross: **Debit `assetAccountId`** (gross cost) /
+     **Credit `fixedAssetClass.accumulatedDepreciationAccountId`** (opening accum
+     depreciation) / **Credit `retainedEarningsAccount`** for NBV only
+     (`cost − accumulatedDepreciation`).
+
+   With accounting disabled it is a bare status flip (no journal).
 2. Via posting: `post-receipt` / `post-purchase-invoice` process Fixed Asset PO
    lines, increment `acquisitionCost`, and post Debit `assetAccountId` / Credit
    payables.
@@ -111,22 +130,43 @@ enum value (CHECK: only Fixed Asset lines have non-NULL `assetId`). The
    (+ tax / deferred-tax lines when enabled via company settings), sets run
    `Posted`, flips asset to `Fully Depreciated` when NBV hits residual.
 
-**Dispose (Active / Fully Depreciated → Disposed).**
-1. Manual: `$fixedAssetId.dispose` → `postDisposal()`. NBV = `acquisitionCost −
-   accumulatedDepreciation`. Posts Debit accumulated depreciation, Debit
-   write-off for NBV, Credit asset at cost (`sourceType: 'Asset Disposal'`),
-   applies location/class dimensions, writes `fixedAssetDisposal`, sets
-   `Disposed`.
-2. Via posting: `post-shipment` / `post-sales-invoice` dispose Fixed Asset SO
-   lines with the same GL pattern (sales-invoice path also books AR/revenue for
-   proceeds).
+**Dispose (Active / Fully Depreciated → Disposed).** GAAP: remove cost + accum
+depreciation, recognize proceeds, and book the net **gain/(loss) = proceeds −
+NBV** to a distinct non-operating line — never comingled with revenue. Carbon
+uses `disposalAccountId` for that gain/loss and `writeOffAccountId` as a
+**disposal clearing / holding account** in the two-step (ship → invoice) flow.
+1. Manual scrap: `$fixedAssetId.dispose` → `postDisposal()` (hardcodes
+   `Scrapping`). NBV = `acquisitionCost − accumulatedDepreciation`; proceeds = 0,
+   so the entire NBV is a loss. Posts Debit accumulated depreciation, **Debit
+   `disposalAccountId` for the full NBV loss**, Credit asset at cost
+   (`sourceType: 'Asset Disposal'`), applies location/class dimensions, writes
+   `fixedAssetDisposal` (`gainLoss = −NBV`), sets `Disposed`.
+2. Via posting (two-step sale):
+   - **`post-shipment`** (asset physically leaves): Debit accumulated
+     depreciation, **Debit `writeOffAccountId` (disposal clearing) for NBV** — a
+     balance-sheet holding, not a P&L loss — Credit asset at cost. Writes
+     `fixedAssetDisposal` with `saleProceeds = 0`, `gainLoss = 0` (unknown until
+     invoiced). **No interim P&L impact.**
+   - **`post-sales-invoice`** (proceeds recognized): Debit AR for proceeds,
+     **Credit `writeOffAccountId` for NBV** (clears the clearing account back to
+     zero), then books the explicit gain/loss to `disposalAccountId` — Credit for
+     a gain, Debit for a loss. Updates the disposal row `gainLoss = proceeds −
+     NBV`. Over a completed cycle `writeOffAccountId` nets to **zero** and
+     `disposalAccountId` carries only the gain/loss.
+   - Direct sales invoice (no prior shipment) posts the combined single-step
+     disposal: Debit accum depreciation, Credit asset at cost, Debit AR for
+     proceeds, and the gain/loss to `disposalAccountId` (no clearing round-trip).
 
 ## Gotchas
 
 - Tax depreciation / deferred-tax lines only post when
   `companySettings.assetTaxDepreciationEnabled` is true.
-- Register is a pure status flip; the acquisition GL entry comes only from the
-  receipt/invoice posting path, not from `register`.
+- Register posts an acquisition journal (Dr `assetAccountId` / Cr
+  `retainedEarningsAccount`) when accounting is enabled, then flips status; it is
+  a bare status flip only when accounting is disabled.
+- `writeOffAccountId` is the **disposal clearing / holding account** (parks NBV
+  between shipment and invoice, nets to zero); `disposalAccountId` carries the
+  net gain/(loss). `writeDownAccountId` remains unused (reserved for impairment).
 - Depreciation is entirely manual — there is no Inngest/cron job that advances
   periods; users must create and post each `depreciationRun`.
 - `disposalMethod` (`Sale`/`Scrapping`) is set by the posting flow / asset
