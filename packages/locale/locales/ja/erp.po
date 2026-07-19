@@ -7963,9 +7963,6 @@ msgstr "住所が見つかりません"
 msgid "No affected items to assess."
 msgstr "評価する影響を受けるアイテムがありません。"
 
-msgid "No affected items yet — add a part or tool below."
-msgstr "影響を受けるアイテムはまだありません。下記から部品またはツールを追加してください。"
-
 msgid "No affected items."
 msgstr "影響を受けるアイテムがありません。"
 

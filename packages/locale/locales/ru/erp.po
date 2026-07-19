@@ -7963,9 +7963,6 @@ msgstr "Адреса не найдены"
 msgid "No affected items to assess."
 msgstr "Нет затронутых элементов для оценки."
 
-msgid "No affected items yet — add a part or tool below."
-msgstr "Нет затронутых элементов — добавьте деталь или инструмент ниже."
-
 msgid "No affected items."
 msgstr "Нет затронутых элементов."
 

@@ -7963,9 +7963,6 @@ msgstr "Nenhum endereço encontrado"
 msgid "No affected items to assess."
 msgstr "Nenhum item afetado para avaliar."
 
-msgid "No affected items yet — add a part or tool below."
-msgstr "Nenhum item afetado ainda — adicione uma peça ou ferramenta abaixo."
-
 msgid "No affected items."
 msgstr "Nenhum item afetado."
 

@@ -7963,9 +7963,6 @@ msgstr "No se encontraron direcciones"
 msgid "No affected items to assess."
 msgstr "No hay elementos afectados para evaluar."
 
-msgid "No affected items yet — add a part or tool below."
-msgstr "Sin elementos afectados aún — añade una pieza o herramienta abajo."
-
 msgid "No affected items."
 msgstr "Sin elementos afectados."
 

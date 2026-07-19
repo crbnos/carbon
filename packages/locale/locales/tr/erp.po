@@ -7963,9 +7963,6 @@ msgstr "Adres bulunamadı"
 msgid "No affected items to assess."
 msgstr "Değerlendirilecek etkilenen öğe yok."
 
-msgid "No affected items yet — add a part or tool below."
-msgstr "Henüz etkilenen öğe yok — aşağıya bir parça veya araç ekleyin."
-
 msgid "No affected items."
 msgstr "Etkilenen öğe yok."
 

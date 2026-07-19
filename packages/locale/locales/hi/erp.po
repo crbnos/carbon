@@ -7963,9 +7963,6 @@ msgstr "कोई पता नहीं मिला"
 msgid "No affected items to assess."
 msgstr "मूल्यांकन के लिए कोई प्रभावित आइटम नहीं।"
 
-msgid "No affected items yet — add a part or tool below."
-msgstr "अभी तक कोई प्रभावित आइटम नहीं — नीचे एक भाग या उपकरण जोड़ें।"
-
 msgid "No affected items."
 msgstr "कोई प्रभावित आइटम नहीं।"
 

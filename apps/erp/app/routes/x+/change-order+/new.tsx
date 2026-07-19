@@ -43,8 +43,21 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const types = await getChangeOrderTypesList(client, companyId);
 
+  // "Create Change Order" from an Issue (NCR) links here with the source in the
+  // query string. Pre-link the non-conformance so the created CO references it
+  // (changeOrder.nonConformanceId) — the create action reads this off the form.
+  const url = new URL(request.url);
+  const sourceType = url.searchParams.get("sourceType");
+  const sourceId = url.searchParams.get("sourceId") ?? undefined;
+  const name = url.searchParams.get("name") ?? undefined;
+
+  const nonConformanceId =
+    sourceType === "nonConformance" ? sourceId : undefined;
+
   return {
-    types: types.data ?? []
+    types: types.data ?? [],
+    nonConformanceId: nonConformanceId ?? "",
+    name: name ?? ""
   };
 }
 
@@ -123,13 +136,13 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function ChangeOrderNewRoute() {
-  const { types } = useLoaderData<typeof loader>();
+  const { types, nonConformanceId, name } = useLoaderData<typeof loader>();
   const user = useUser();
 
   const initialValues = {
     id: undefined,
     changeOrderId: undefined,
-    name: "",
+    name,
     reasonForChange: "",
     description: "",
     changeOrderTypeId: "",
@@ -137,7 +150,7 @@ export default function ChangeOrderNewRoute() {
     priority: "Medium" as const,
     openDate: today(getLocalTimeZone()).toString(),
     dueDate: "",
-    nonConformanceId: "",
+    nonConformanceId,
     affectedItemIds: []
   };
 

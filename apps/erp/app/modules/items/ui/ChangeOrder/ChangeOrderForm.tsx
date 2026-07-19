@@ -48,9 +48,6 @@ type ChangeOrderFormValues = z.infer<typeof changeOrderValidator>;
 type ChangeOrderFormProps = {
   initialValues: ChangeOrderFormValues;
   types: ListItem[];
-  // Phase 4 links a Non-Conformance; a lightweight list is passed so the
-  // create form can associate one up-front. Optional — omit for Minimal.
-  nonConformances?: ListItem[];
   // "page" (default) renders in a Card on the create route; "modal" renders in a
   // ModalDrawer launched from an item detail page (item pre-selected as affected).
   type?: "page" | "modal";
@@ -62,7 +59,6 @@ type ChangeOrderFormProps = {
 const ChangeOrderForm = ({
   initialValues,
   types,
-  nonConformances = [],
   type = "page",
   open,
   onClose,
@@ -95,6 +91,9 @@ const ChangeOrderForm = ({
     <>
       <Hidden name="id" />
       <Hidden name="changeOrderId" />
+      {/* Linked NCR is set by the source (e.g. "Create Change Order" from an
+          Issue) and carried silently — not a user-editable field. */}
+      <Hidden name="nonConformanceId" />
 
       <VStack spacing={4}>
         <div
@@ -126,16 +125,6 @@ const ChangeOrderForm = ({
           />
           <DatePicker name="openDate" label={t`Open Date`} />
           <DatePicker name="dueDate" label={t`Due Date`} />
-          {nonConformances.length > 0 && (
-            <Combobox
-              name="nonConformanceId"
-              label={t`Linked NCR`}
-              options={nonConformances.map((nc) => ({
-                label: nc.name,
-                value: nc.id
-              }))}
-            />
-          )}
           <CustomFormFields table="changeOrder" />
         </div>
         {!isEditing && (

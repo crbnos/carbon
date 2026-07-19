@@ -7963,9 +7963,6 @@ msgstr "未找到地址"
 msgid "No affected items to assess."
 msgstr "没有要评估的受影响项目。"
 
-msgid "No affected items yet — add a part or tool below."
-msgstr "还没有受影响的项目 — 请在下方添加零件或工具。"
-
 msgid "No affected items."
 msgstr "没有受影响的项目。"
 

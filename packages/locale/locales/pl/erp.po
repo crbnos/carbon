@@ -7963,9 +7963,6 @@ msgstr "Nie znaleziono adresów"
 msgid "No affected items to assess."
 msgstr "Brak elementów dotkniętych zmianą do oceny."
 
-msgid "No affected items yet — add a part or tool below."
-msgstr "Brak jeszcze elementów dotkniętych zmianą — dodaj poniżej część lub narzędzie."
-
 msgid "No affected items."
 msgstr "Brak elementów dotkniętych zmianą."
 
