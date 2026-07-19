@@ -5635,8 +5635,39 @@ export async function createChangeOrderDraftMethod(
     };
   }
 
-  // New Part — a new part number derived from + (at release) superseding the
-  // affected part. ECO scope is Parts + Tools (Materials/Consumables/Services
+  if (changeType === "New Part") {
+    // Net-new part — no predecessor, no supersession. addChangeOrderAffectedItem
+    // already minted the item (inactive, CO-stamped); here `itemId` IS that new
+    // item. Its insert trigger created a Draft makeMethod (status default 'Draft');
+    // stamp it CO-owned so it hides from version lists until release (parity with
+    // Revision). No source to copy from → empty draft, no baseMakeMethodId.
+    const draftId = await getDraftMakeMethodIdForItem(
+      client,
+      itemId,
+      companyId
+    );
+    if (draftId) {
+      const stamp = await client
+        .from("makeMethod")
+        .update({ changeOrderId })
+        .eq("id", draftId)
+        .eq("companyId", companyId);
+      if (stamp.error) return { data: null, error: stamp.error };
+    }
+    return {
+      data: {
+        draftMakeMethodId: draftId,
+        baseMakeMethodId: null,
+        newItemId: itemId
+      },
+      error: null
+    };
+  }
+
+  // Replacement Part — a new part number derived from + (at release) superseding
+  // the affected part. This is the only remaining change type here: Version /
+  // Revision / New Part all returned above, so `changeType` is narrowed to
+  // "Replacement Part". ECO scope is Parts + Tools (Materials/Consumables/Services
   // excluded); reject other types rather than mint a malformed row.
   const source = await getItem(client, itemId);
   if (source.error || !source.data) {
@@ -5767,11 +5798,22 @@ export async function addChangeOrderAffectedItem(
   client: SupabaseClient<Database>,
   input: {
     changeOrderId: string;
-    itemId: string;
+    // The existing affected item (Version / Revision / Replacement Part). Omitted
+    // for the net-new New Part path, where `newPart` is supplied and the item is
+    // minted here.
+    itemId?: string;
     changeType: ChangeOrderChangeType;
     // Forwarded to the Revision draft path so a Revision affected item can take
     // an explicit revision label (e.g. from the new-revision modal).
     revision?: string;
+    // Net-new "New Part": mint a brand-new inactive Part/Tool and add it as a New
+    // Part affected item (no existing itemId, no predecessor/supersession).
+    newPart?: {
+      readableId: string;
+      name: string;
+      itemType: "Part" | "Tool";
+      replenishmentSystem: "Buy" | "Make" | "Buy and Make";
+    };
     companyId: string;
     userId: string;
   }
@@ -5779,13 +5821,64 @@ export async function addChangeOrderAffectedItem(
   data: { id: string; draftMakeMethodId: string | null } | null;
   error: ChangeOrderError | null;
 }> {
-  const { changeOrderId, itemId, changeType, revision, companyId, userId } =
+  const { changeOrderId, changeType, revision, newPart, companyId, userId } =
     input;
+  let itemId = input.itemId;
+  let effectiveChangeType: ChangeOrderChangeType = changeType;
+
+  if (newPart) {
+    // Net-new part introduced by the CO — mint an inactive Part/Tool + its type
+    // row, CO-stamped. The minted id becomes the affected item (no predecessor).
+    if (newPart.itemType !== "Part" && newPart.itemType !== "Tool") {
+      return {
+        data: null,
+        error: { message: "New Part is only supported for Parts and Tools" }
+      };
+    }
+    const defaultMethodType =
+      newPart.replenishmentSystem === "Make"
+        ? "Make to Order"
+        : newPart.replenishmentSystem === "Buy"
+          ? "Purchase to Order"
+          : "Pull from Inventory";
+    const minted = await client
+      .from("item")
+      .insert({
+        readableId: newPart.readableId,
+        revision: "0",
+        name: newPart.name,
+        type: newPart.itemType,
+        replenishmentSystem: newPart.replenishmentSystem,
+        defaultMethodType,
+        itemTrackingType: "Inventory",
+        unitOfMeasureCode: "EA",
+        active: false,
+        revisionStatus: "Design",
+        changeOrderId,
+        companyId,
+        createdBy: userId
+      })
+      .select("id")
+      .single();
+    if (minted.error || !minted.data) {
+      return { data: null, error: minted.error };
+    }
+    itemId = minted.data.id;
+    const typeTable = newPart.itemType === "Part" ? "part" : "tool";
+    const typeRow = await client
+      .from(typeTable)
+      .insert({ id: newPart.readableId, companyId, createdBy: userId });
+    if (typeRow.error) return { data: null, error: typeRow.error };
+    effectiveChangeType = "New Part";
+  }
+
+  if (!itemId) {
+    return { data: null, error: { message: "Item is required" } };
+  }
 
   // A purchased (Buy) item has no BoM/BoP, so a Version change is a no-op —
   // default it to a Revision (part-data/docs), the meaningful change for Buy.
-  let effectiveChangeType = changeType;
-  if (changeType === "Version") {
+  if (!newPart && changeType === "Version") {
     const item = await client
       .from("item")
       .select("replenishmentSystem")
@@ -5884,6 +5977,14 @@ export async function updateChangeOrderAffectedItemChangeType(
     .single();
   if (affected.error || !affected.data) {
     return { data: null, error: { message: "Affected item not found" } };
+  }
+  // A New Part is net-new by construction — it cannot be switched to another type,
+  // nor can an existing-part change become net-new. Reject both directions.
+  if (changeType === "New Part" || affected.data.changeType === "New Part") {
+    return {
+      data: null,
+      error: { message: "New Part change type cannot be switched" }
+    };
   }
   if (affected.data.changeType === changeType) {
     return { data: { id }, error: null };

@@ -1,5 +1,5 @@
 {
-  "generated": "2026-07-19T03:20:59.588Z",
+  "generated": "2026-07-19T04:57:07.260Z",
   "totalTools": 1374,
   "modules": 15,
   "tools": [
@@ -15179,7 +15179,7 @@
       "module": "items",
       "classification": "WRITE",
       "description": "add change order affected item",
-      "paramCount": 4,
+      "paramCount": 5,
       "serviceParams": [
         "client",
         "input"
@@ -15201,11 +15201,42 @@
           "changeType": {},
           "revision": {
             "type": "string"
+          },
+          "newPart": {
+            "type": "object",
+            "properties": {
+              "readableId": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "itemType": {
+                "type": "string",
+                "enum": [
+                  "Part",
+                  "Tool"
+                ]
+              },
+              "replenishmentSystem": {
+                "type": "string",
+                "enum": [
+                  "Buy",
+                  "Make",
+                  "Buy and Make"
+                ]
+              }
+            },
+            "required": [
+              "readableId",
+              "name",
+              "itemType",
+              "replenishmentSystem"
+            ]
           }
         },
         "required": [
           "changeOrderId",
-          "itemId",
           "changeType"
         ]
       }
