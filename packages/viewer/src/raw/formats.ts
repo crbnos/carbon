@@ -3,7 +3,21 @@
 // pulling three/occt into the eager bundle.
 
 export const OCCT_EXTS = ["step", "stp", "iges", "igs", "brep", "brp"];
-export const RAW_RENDERABLE_EXTS = ["glb", "gltf", "stl", ...OCCT_EXTS];
+/** Mesh formats three-stdlib loads directly (no WASM). */
+export const MESH_EXTS = [
+  "glb",
+  "gltf",
+  "stl",
+  "obj",
+  "ply",
+  "dae",
+  "fbx",
+  "3ds",
+  "3mf",
+  "amf",
+  "off"
+];
+export const RAW_RENDERABLE_EXTS = [...MESH_EXTS, ...OCCT_EXTS];
 
 export function rawExtension(filename: string): string {
   const base = filename.split("?")[0] ?? "";

@@ -36,8 +36,22 @@ export async function loadRawModel(source: RawSource): Promise<Object3D> {
   }
   if (ext === "glb" || ext === "gltf") return loadGltf(source);
   const bytes = await readBytes(source);
-  if (ext === "stl") return loadStl(bytes);
-  return loadOcct(bytes, ext);
+  switch (ext) {
+    case "stl":
+      return loadStl(bytes);
+    case "obj":
+    case "ply":
+    case "dae":
+    case "fbx":
+    case "3ds":
+    case "3mf":
+    case "amf":
+      return loadMesh(bytes, ext);
+    case "off":
+      return loadOff(bytes);
+    default:
+      return loadOcct(bytes, ext);
+  }
 }
 
 async function readBytes(source: RawSource): Promise<ArrayBuffer> {
@@ -65,6 +79,89 @@ async function loadStl(bytes: ArrayBuffer): Promise<Object3D> {
   const { STLLoader } = await import("three-stdlib");
   const geometry = new STLLoader().parse(bytes);
   if (!geometry.attributes.normal) geometry.computeVertexNormals();
+  return new Mesh(geometry, defaultMaterial());
+}
+
+/** The three-stdlib mesh loaders (no WASM): obj/ply/dae/fbx/3ds/3mf/amf. Their
+ *  own materials are kept when the format carries them; bare geometry gets the
+ *  default part material and computed normals. */
+async function loadMesh(bytes: ArrayBuffer, ext: string): Promise<Object3D> {
+  const stdlib = await import("three-stdlib");
+  const text = () => new TextDecoder().decode(bytes);
+  let object: Object3D;
+  switch (ext) {
+    case "obj":
+      object = new stdlib.OBJLoader().parse(text());
+      break;
+    case "ply": {
+      const geometry = new stdlib.PLYLoader().parse(bytes);
+      if (!geometry.attributes.normal) geometry.computeVertexNormals();
+      const material = defaultMaterial();
+      if (geometry.attributes.color) material.vertexColors = true;
+      return new Mesh(geometry, material);
+    }
+    case "dae":
+      object = new stdlib.ColladaLoader().parse(text(), "").scene;
+      break;
+    case "fbx":
+      object = new stdlib.FBXLoader().parse(bytes, "");
+      break;
+    case "3ds":
+      object = new stdlib.TDSLoader().parse(bytes, "");
+      break;
+    case "3mf":
+      object = new stdlib.ThreeMFLoader().parse(bytes);
+      break;
+    case "amf":
+      object = new stdlib.AMFLoader().parse(bytes);
+      break;
+    default:
+      throw new Error(`unsupported mesh format: ${ext}`);
+  }
+  object.traverse((child) => {
+    const mesh = child as Mesh;
+    if (!mesh.isMesh || !mesh.geometry) return;
+    if (!mesh.geometry.attributes.normal) mesh.geometry.computeVertexNormals();
+    if (!mesh.material) mesh.material = defaultMaterial();
+  });
+  return object;
+}
+
+/** OFF (Object File Format): tiny text format, hand-parsed — no loader ships in
+ *  three-stdlib. Polygon faces are fan-triangulated. */
+async function loadOff(bytes: ArrayBuffer): Promise<Object3D> {
+  const tokens = new TextDecoder()
+    .decode(bytes)
+    .split("\n")
+    .map((line) => line.replace(/#.*$/, "").trim())
+    .filter(Boolean)
+    .join(" ")
+    .split(/\s+/);
+  let i = 0;
+  if (tokens[i] === "OFF") i++;
+  const nVerts = Number(tokens[i++]);
+  const nFaces = Number(tokens[i++]);
+  i++; // edge count, unused
+  if (!Number.isFinite(nVerts) || !Number.isFinite(nFaces)) {
+    throw new Error("invalid OFF file");
+  }
+  const positions = new Float32Array(nVerts * 3);
+  for (let v = 0; v < nVerts * 3; v++) positions[v] = Number(tokens[i++]);
+  const indices: number[] = [];
+  for (let f = 0; f < nFaces; f++) {
+    const count = Number(tokens[i++]);
+    const face: number[] = [];
+    for (let c = 0; c < count; c++) face.push(Number(tokens[i++]));
+    for (let t = 1; t + 1 < face.length; t++) {
+      const [a, b, c] = [face[0], face[t], face[t + 1]];
+      if (a === undefined || b === undefined || c === undefined) continue;
+      indices.push(a, b, c);
+    }
+  }
+  const geometry = new BufferGeometry();
+  geometry.setAttribute("position", new BufferAttribute(positions, 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
   return new Mesh(geometry, defaultMaterial());
 }
 
