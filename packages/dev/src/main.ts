@@ -5,6 +5,7 @@ import { initWorktree } from "./commands/init.js";
 import { listWorktrees } from "./commands/list.js";
 import { migrate } from "./commands/migrate.js";
 import { newWorktree } from "./commands/new.js";
+import { reload } from "./commands/reload.js";
 import { removeWorktreeCmd } from "./commands/remove.js";
 import { reset } from "./commands/reset.js";
 import { status } from "./commands/status.js";
@@ -117,6 +118,21 @@ const main = defineCommand({
     status: defineCommand({
       meta: { description: "Show port assignment + container health" },
       run: () => status()
+    }),
+    reload: defineCommand({
+      meta: {
+        description:
+          "Recreate specific compose services to apply docker-compose/.env.local edits (memory, env, image, ports) WITHOUT restarting the app dev servers — `crbn reload <service...>` (e.g. storage kong)"
+      },
+      args: {
+        service: {
+          type: "positional",
+          required: true,
+          description: "Service name(s) to recreate, e.g. storage kong"
+        }
+      },
+      run: ({ rawArgs }) =>
+        reload(rawArgs.filter((a) => a && !a.startsWith("-")))
     }),
     migrate: defineCommand({
       meta: {

@@ -51,7 +51,17 @@ export let loader = async ({ request, params }: LoaderFunctionArgs) => {
   if (!fileType) {
     return new Response(null, { status: 400 });
   }
-  const contentType = supportedFileTypes[fileType];
+  // Retained CAD raws are stored zstd-compressed (`raw.step.zst`, …) to keep
+  // them from lingering as the fat upload. Decompress on the way out so a
+  // download yields the original, openable file. The content-type + extension
+  // come from the underlying format, not the `.zst` wrapper.
+  const isZst = fileType === "zst";
+  const effectiveType = isZst
+    ? path.slice(0, -4).split(".").pop()?.toLowerCase()
+    : fileType;
+  const contentType = effectiveType
+    ? supportedFileTypes[effectiveType]
+    : undefined;
 
   // Authorize against the companyId as a full path segment (prefix or
   // slash-bounded), not a loose substring — `.includes(companyId)` lets
@@ -93,6 +103,22 @@ export let loader = async ({ request, params }: LoaderFunctionArgs) => {
 
   if (contentType) {
     headers.set("Content-Type", contentType);
+  }
+
+  if (isZst) {
+    // Stream the storage object through a zstd decompress transform (Node
+    // >=22.15/24) rather than buffering the whole file — the decompressed source
+    // can be large, and this keeps memory flat.
+    const { createZstdDecompress } = await import("node:zlib");
+    const { Readable } = await import("node:stream");
+    const source = Readable.fromWeb(
+      fileData.stream() as import("node:stream/web").ReadableStream
+    );
+    const decompressed = source.pipe(createZstdDecompress());
+    return new Response(
+      Readable.toWeb(decompressed) as unknown as ReadableStream,
+      { status: 200, headers }
+    );
   }
 
   return new Response(fileData, { status: 200, headers });

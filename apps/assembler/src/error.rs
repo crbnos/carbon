@@ -1,5 +1,5 @@
-//! Error contract — `{ok:false, error, code}` with the status codes from
-//! `app/errors.py` / `app/main.py`.
+//! Error contract — uniform `{ ok:false, error: { code, message } }` envelope
+//! with the status codes from `app/errors.py` / `app/main.py`.
 
 use axum::{http::StatusCode, response::IntoResponse, Json};
 use serde_json::json;
@@ -19,10 +19,10 @@ impl ApiError {
         }
     }
     pub fn invalid(message: impl Into<String>) -> Self {
-        ApiError::new(400, "INVALID_INPUT", message)
+        ApiError::new(400, "invalid_input", message)
     }
     pub fn unauthorized(message: impl Into<String>) -> Self {
-        ApiError::new(401, "UNAUTHORIZED", message)
+        ApiError::new(401, "unauthorized", message)
     }
 }
 
@@ -46,7 +46,7 @@ impl IntoResponse for ApiError {
         let status = StatusCode::from_u16(self.status).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
         let mut resp = (
             status,
-            Json(json!({"ok": false, "error": self.message, "code": self.code})),
+            Json(json!({"ok": false, "error": {"code": self.code, "message": self.message}})),
         )
             .into_response();
         // 429s tell callers when to come back so their retries don't hammer

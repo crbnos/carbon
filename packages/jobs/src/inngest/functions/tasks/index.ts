@@ -7,6 +7,7 @@ export {
   companyRestoreFunction,
   companyRestoreRevertFunction
 } from "./company-restore";
+export { modelOptimizeFunction } from "./model-optimize";
 export { modelThumbnailFunction } from "./model-thumbnail";
 export { onboardFunction } from "./onboard";
 export { postTransactionFunction } from "./post-transaction";

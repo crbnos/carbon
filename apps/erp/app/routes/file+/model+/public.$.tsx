@@ -7,6 +7,7 @@ import type { LoaderFunctionArgs } from "react-router";
 const logger = getLogger("erp", "public");
 
 const supportedFileTypes: Record<string, string> = {
+  glb: "model/gltf-binary",
   pdf: "application/pdf",
   jpg: "image/jpeg",
   jpeg: "image/jpeg",

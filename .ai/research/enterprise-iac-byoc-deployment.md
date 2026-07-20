@@ -123,6 +123,28 @@ Open question parked with the operator work: in-cluster Postgres (CloudNativePG 
 
 Phasing matters: Phase 1 is sellable on its own ("we deploy Carbon in your account"), and each phase de-risks the next.
 
+## 5b. Support-access plane (NetBird) — vendor-operated connectivity
+
+Decided 2026-07-18: BYOC deployments are **vendor-operated** ("Model B") — Carbon runs upgrades and carries the pager; the customer owns the account and the data. That requires a support-access path into customer VPCs that survives enterprise security review, without ever making the overlay an app dependency.
+
+**Control plane.** Decided 2026-07-18: **NetBird Cloud** (managed), not self-hosted. Rationale: zero control-plane ops while the team is small, and the cloud-only MSP feature is purpose-built for the Model B shape — multiple customer networks under one account with per-tenant switching. The data plane is end-to-end encrypted WireGuard either way; NetBird's cloud sees coordination metadata (peers, topology, connection events), never traffic. **Customers are never NetBird users** — they only contribute *peers* via setup keys; the only humans in the system are Carbon engineers. Delete the default allow-all policy on day one; every policy explicit. Escape hatches, kept open by NetBird being open source (BSD-3): a sovereignty-demanding deal runs `supportAccess: disabled` (SSM-only support), and a later wholesale move to a self-hosted control plane is re-registering peers, not a redesign. The ITAR/GovCloud install should be treated as supportAccess-disabled from day one — a third-party control plane holding connection metadata is unlikely to clear ITAR review; SSM is the support path there.
+
+**Customer side (part of the artifact set).** Two NetBird routing-peer containers (agent, `NET_ADMIN`) — an ECS service in phase 1, an operator-managed Deployment in phase 3 — registered with a per-customer setup key minted by the Carbon control plane. They advertise only the app subnets (or narrower resources), masquerade on, and dial **out** on 443 to the NetBird endpoints (documented in the egress allowlist alongside registry + telemetry). Security groups add a second gate: routing-peer SG → specific ports only. `CarbonInstall.supportAccess: enabled|disabled` scales the peers to zero — the customer's kill switch. ITAR/air-gap installs run permanently disabled; nothing in the stack depends on the overlay. SSM Session Manager via a customer-granted narrow IAM role remains the AWS-native parallel path for shell access; NetBird provides network reach (internal ALBs, DB, dashboards). Both audited.
+
+**Isolation model.** Per customer: a NetBird Network (v0.35+) with their VPC subnets as resources — resources are invisible to any peer until a policy explicitly grants access (zero-trust default; legacy network routes bypass ACLs unless configured, so use Networks, not routes). Groups: `eng-oncall`, plus a per-customer `access-{customer}` group used as both policy source and route-distribution group. No standing memberships.
+
+**Access workflow (time-boxed).**
+1. Engineer requests access to an install in the fleet dashboard (incident/ticket reference).
+2. Approval → control plane calls the NetBird API: adds the engineer to `access-{customer}` with a TTL.
+3. Routes and policy propagate in seconds; engineer reaches the internal ALB / observability endpoints over p2p WireGuard (Carbon-hosted relay as fallback).
+4. TTL expiry removes the membership; routes vanish. NetBird activity events are the audit trail; streaming into the customer's SIEM is a later enterprise option.
+
+**Overlapping CIDRs.** Customer VPC ranges will collide (10.0.0.0/16 is everyone's default). Routes are only distributed while a grant is active, so serial access is conflict-free; simultaneous overlapping grants fall back to client-side route selection (client ≥ 0.27.4). Transparent remapping is an open upstream feature (netbird#4664) — don't design around it. Bootstrap docs should nudge customers toward distinct CIDRs when they have flexibility.
+
+**Failure surface.** If the NetBird control plane is down: established tunnels keep working, new grants fail, and the customer stack is unaffected (the overlay is never in the app path). Run management with a Postgres backend, 2 tasks, backups. Setup keys revoke per customer (blocks new registrations); existing peers removable via API.
+
+**Dogfood path.** Carbon's own staging/prod accounts are customers #0 and #1 of this exact pattern (`access-staging`, `access-prod`). The GovCloud install's SSH access migrates to routing peer + SSM once edge-function baking lands (§4b already kills the SSH sync).
+
 ## 6. Gaps to close (found in the audit)
 
 | Gap | Detail | Severity for BYOC |
@@ -139,7 +161,7 @@ Phasing matters: Phase 1 is sellable on its own ("we deploy Carbon in your accou
 ## 7. Open questions for Brad
 
 1. ~~Data-tier ambition~~ — resolved: the extension audit is a phase-1 prerequisite; v1 ships on RDS Multi-AZ (§4b). EC2 + EBS remains only as the fallback if the audit slips a deal timeline.
-2. Who operates Phase 1 deployments — us (managed-in-their-account, needs cross-account role from day one) or the customer (pure Terraform handoff)?
+2. ~~Who operates Phase 1 deployments~~ — resolved (2026-07-18): **vendor-operated ("Model B")** — Carbon operates installs in the customer's account; support access via the self-hosted NetBird plane (§5b) + optional customer-granted SSM role.
 3. Does any near-term deal require non-AWS (Azure/GCP)? If yes, that pulls the Helm-chart question forward; if no, AWS-only v1.
 4. Blue/green for the app tier: adopt native ECS blue/green with bake/rollback as the default enterprise strategy, or keep plain rolling (current SST behavior)?
 5. Is Inngest self-hosted (already proven in Swarm) the standard for enterprise, or does any deal tolerate Inngest Cloud egress?
@@ -148,4 +170,7 @@ Phasing matters: Phase 1 is sellable on its own ("we deploy Carbon in your accou
 
 - ECS blue/green (built-in, July 2025): https://aws.amazon.com/blogs/aws/accelerate-safe-software-releases-with-new-built-in-blue-green-deployments-in-amazon-ecs/ ; https://docs.aws.amazon.com/AmazonECS/latest/developerguide/deployment-type-blue-green.html ; https://www.infoq.com/news/2025/07/aws-blue-green-ecs/
 - Inngest self-hosting (external Postgres/Redis): https://www.inngest.com/docs/self-hosting
+- NetBird Networks / routing peers (zero-trust resource visibility): https://docs.netbird.io/manage/networks/how-routing-peers-work
+- NetBird overlapping routes (client-side selection): https://docs.netbird.io/manage/network-routes/overlapping-routes ; transparent remap upstream: https://github.com/netbirdio/netbird/issues/4664
+- NetBird self-hosted vs cloud (single-account mode; MSP is cloud-only): https://docs.netbird.io/about-netbird/self-hosted-vs-cloud ; https://forum.netbird.io/t/multi-tenant-question-regarding-users-with-the-same-email-domain/410
 - In-repo: `sst.config.ts`, `ci/src/deploy.ts`, `ci/src/migrations.ts`, `contrib/deploying/simple-docker-caddy/docker-compose.prod.yml`, `.github/workflows/{deploy,supabase,functions,inngest}.yml`, `packages/env/src/index.ts`, extension grep over `packages/database/supabase/migrations/`

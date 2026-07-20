@@ -68,7 +68,10 @@ port = 54324
 [storage]
 enabled = true
 # The maximum file size allowed (e.g. "5MB", "500KB").
-file_size_limit = "50MiB"
+# Must be >= the largest app-level limit (CAD_MODEL_UPLOAD = 512MB in
+# packages/utils FILE_SIZE_LIMIT_MB); otherwise Storage 413s CAD uploads the UI
+# accepts. Per-type limits are enforced client-side and per-bucket.
+file_size_limit = "2500MB"
 
 [auth]
 enabled = true

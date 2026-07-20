@@ -17,6 +17,7 @@ import {
 import { RootErrorBoundary } from "@carbon/react/ErrorBoundary";
 import type { Theme } from "@carbon/utils";
 import { getPreferenceHeaders, modeValidator, themes } from "@carbon/utils";
+import { faviconLinks } from "@carbon/utils/favicon";
 import { I18nProvider } from "@react-aria/i18n";
 import { Analytics } from "@vercel/analytics/react";
 import type React from "react";
@@ -49,36 +50,7 @@ export const links: Route.LinksFunction = () => [
   { rel: "stylesheet", href: Tailwind },
   { rel: "stylesheet", href: Background },
   { rel: "stylesheet", href: NProgress },
-  {
-    rel: "icon",
-    type: "image/svg+xml",
-    href: "/carbon-mark-light.svg",
-    media: "(prefers-color-scheme: light)"
-  },
-  {
-    rel: "icon",
-    type: "image/svg+xml",
-    href: "/carbon-mark-dark.svg",
-    media: "(prefers-color-scheme: dark)"
-  },
-  {
-    rel: "icon",
-    type: "image/png",
-    sizes: "32x32",
-    href: "/favicon-32x32.png"
-  },
-  {
-    rel: "icon",
-    type: "image/png",
-    sizes: "16x16",
-    href: "/favicon-16x16.png"
-  },
-  {
-    rel: "apple-touch-icon",
-    sizes: "180x180",
-    href: "/apple-touch-icon.png"
-  },
-  { rel: "manifest", href: "/site.webmanifest" }
+  ...faviconLinks
 ];
 
 export const meta: MetaFunction = () => {

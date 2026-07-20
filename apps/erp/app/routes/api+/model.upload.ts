@@ -40,6 +40,9 @@ export async function action({ request }: ActionFunctionArgs) {
     modelPath,
     name,
     size,
+    // Frozen as-uploaded bytes: `size` is later overwritten with the compacted
+    // (.zst) stored size, but the viewer's reduction badge compares the original.
+    originalSize: size,
     companyId,
     createdBy: userId
   });
@@ -81,9 +84,16 @@ export async function action({ request }: ActionFunctionArgs) {
     modelId
   });
 
-  // Conversion to assembly-instruction artifacts (GLB + graph) is lazy:
-  // triggered when an assembly instruction is created for this model, not
-  // on upload — most uploaded models never become assemblies.
+  // Eager optimisation: the assembler's /v1/optimize turns a mesh model into a
+  // compact optimised GLB. The job derives the format from the stored file and
+  // skips non-mesh inputs, so trigger unconditionally. Independent of the lazy
+  // assembly-convert path — most uploads never become assemblies but should
+  // still be optimised.
+  await trigger("model-optimize", {
+    modelUploadId: modelId,
+    companyId,
+    userId
+  });
 
   return {
     success: true

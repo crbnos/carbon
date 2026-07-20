@@ -27526,6 +27526,12 @@ export type Database = {
           id: string
           modelPath: string
           name: string | null
+          optimizedAt: string | null
+          optimizedModelPath: string | null
+          optimizedSize: number | null
+          optimizeError: string | null
+          optimizeStatus: Database["public"]["Enums"]["modelProcessingStatus"]
+          originalSize: number | null
           processedAt: string | null
           processingError: string | null
           processingStatus: Database["public"]["Enums"]["modelProcessingStatus"]
@@ -27545,6 +27551,12 @@ export type Database = {
           id?: string
           modelPath: string
           name?: string | null
+          optimizedAt?: string | null
+          optimizedModelPath?: string | null
+          optimizedSize?: number | null
+          optimizeError?: string | null
+          optimizeStatus?: Database["public"]["Enums"]["modelProcessingStatus"]
+          originalSize?: number | null
           processedAt?: string | null
           processingError?: string | null
           processingStatus?: Database["public"]["Enums"]["modelProcessingStatus"]
@@ -27564,6 +27576,12 @@ export type Database = {
           id?: string
           modelPath?: string
           name?: string | null
+          optimizedAt?: string | null
+          optimizedModelPath?: string | null
+          optimizedSize?: number | null
+          optimizeError?: string | null
+          optimizeStatus?: Database["public"]["Enums"]["modelProcessingStatus"]
+          originalSize?: number | null
           processedAt?: string | null
           processingError?: string | null
           processingStatus?: Database["public"]["Enums"]["modelProcessingStatus"]
@@ -67660,13 +67678,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
-            isOneToOne: false
-            referencedRelation: "country"
-            referencedColumns: ["alpha2"]
-          },
-          {
-            foreignKeyName: "address_countryCode_fkey"
             columns: ["shipmentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
@@ -67675,6 +67686,13 @@ export type Database = {
           {
             foreignKeyName: "address_countryCode_fkey"
             columns: ["invoiceCountryCode"]
+            isOneToOne: false
+            referencedRelation: "country"
+            referencedColumns: ["alpha2"]
+          },
+          {
+            foreignKeyName: "address_countryCode_fkey"
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]

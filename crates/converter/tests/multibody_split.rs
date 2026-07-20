@@ -40,7 +40,10 @@ fn splits_a_flat_two_solid_product_into_two_components() {
     assert_eq!(parts.len(), 2);
 
     // Distinct identity per solid
-    let ids: Vec<&str> = parts.iter().map(|p| p["nodeId"].as_str().unwrap()).collect();
+    let ids: Vec<&str> = parts
+        .iter()
+        .map(|p| p["nodeId"].as_str().unwrap())
+        .collect();
     assert_ne!(ids[0], ids[1], "solids must get distinct nodeIds");
     let hashes: Vec<&str> = parts
         .iter()

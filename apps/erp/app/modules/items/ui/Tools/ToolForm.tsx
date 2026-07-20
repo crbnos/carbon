@@ -43,7 +43,13 @@ import {
   UnitOfMeasure
 } from "~/components/Form";
 import { ReplenishmentSystemIcon, TrackingTypeIcon } from "~/components/Icons";
-import { useNextItemId, usePermissions, useUser } from "~/hooks";
+import { ModelUploadProgress } from "~/components/ModelUploadProgress";
+import {
+  useModelUpload,
+  useNextItemId,
+  usePermissions,
+  useUser
+} from "~/hooks";
 import { path } from "~/utils/path";
 import {
   itemReplenishmentSystems,
@@ -75,6 +81,7 @@ const ToolForm = ({ initialValues, type = "card", onClose }: ToolFormProps) => {
   const [modelIsUploading, setModelIsUploading] = useState(false);
   const [modelFile, setModelFile] = useState<File | null>(null);
   const { carbon } = useCarbon();
+  const { upload, runUpload } = useModelUpload();
   const {
     company: { id: companyId }
   } = useUser();
@@ -89,8 +96,10 @@ const ToolForm = ({ initialValues, type = "card", onClose }: ToolFormProps) => {
     const fileExtension = file.name.split(".").pop();
     const fileName = `${companyId}/models/${modelId}.${fileExtension}`;
 
-    const [fileUpload, recordInsert] = await Promise.all([
-      carbon.storage.from("private").upload(fileName, file),
+    // Resumable (TUS) upload — a standard buffered upload times out on multi-GB
+    // CAD files. Runs in parallel with the record insert.
+    const [{ error: uploadError }, recordInsert] = await Promise.all([
+      runUpload({ bucket: "temp-staging", path: fileName, file }),
       carbon.from("modelUpload").insert({
         id: modelId,
         modelPath: fileName,
@@ -101,7 +110,7 @@ const ToolForm = ({ initialValues, type = "card", onClose }: ToolFormProps) => {
       })
     ]);
 
-    if (fileUpload.error || recordInsert.error) {
+    if (uploadError || recordInsert.error) {
       toast.error(t`Failed to upload model`);
     } else {
       setModelUploadId(modelId);
@@ -353,7 +362,13 @@ const ToolForm = ({ initialValues, type = "card", onClose }: ToolFormProps) => {
                   }`}
                 >
                   <input id="model-upload" {...getInputProps()} />
-                  {modelFile ? (
+                  {upload !== null ? (
+                    <ModelUploadProgress
+                      percent={upload.percent}
+                      uploaded={upload.uploaded}
+                      total={upload.total}
+                    />
+                  ) : modelFile ? (
                     <>
                       <p className="text-sm font-semibold text-card-foreground">
                         {modelFile.name}

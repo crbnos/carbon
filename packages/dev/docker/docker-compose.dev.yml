@@ -184,8 +184,14 @@ services:
     deploy:
       resources:
         limits:
-          memory: ${MEM_STORAGE:-192m}
-          cpus: ${CPU_STORAGE:-0.25}
+          # GB-scale CAD: temp-staging allows 2.5 GB objects. Serving a 1.85 GB
+          # object, storage-api is CPU-bound (reads/hashes the whole file before
+          # streaming) — at the old 0.25-core limit it never produced a byte
+          # before the client timed out. Give it real cores + headroom RAM. Limits
+          # are ceilings (idle ~160 MB / ~0%), only used when serving a big file.
+          # Paired with kong `proxy_buffering off` so the response streams.
+          memory: ${MEM_STORAGE:-2g}
+          cpus: ${CPU_STORAGE:-2}
     depends_on:
       postgres:
         condition: service_healthy
@@ -195,7 +201,11 @@ services:
       POSTGREST_URL: http://postgrest:3000
       PGRST_JWT_SECRET: ${SUPABASE_JWT_SECRET}
       DATABASE_URL: postgres://supabase_storage_admin:postgres@postgres:5432/postgres
-      FILE_SIZE_LIMIT: 52428800
+      # 2.5 GB global storage ceiling (must be >= the largest per-bucket limit;
+      # effective per-bucket = min(this, bucket limit)). Per-bucket limits then
+      # differentiate: `private` = 50 MB (served artifacts), `temp-staging` =
+      # 2.5 GB (raw CAD). Keep in sync with config.toml [storage].
+      FILE_SIZE_LIMIT: 2500000000
       STORAGE_BACKEND: file
       FILE_STORAGE_BACKEND_PATH: /var/lib/storage
       TENANT_ID: stub
@@ -327,6 +337,11 @@ services:
       KONG_DNS_ORDER: LAST,A,CNAME
       KONG_PLUGINS: request-transformer,cors,key-auth,acl,basic-auth
       KONG_NGINX_WORKER_PROCESSES: ${KONG_WORKERS:-1}
+      # Stream proxied responses instead of buffering them. Default nginx
+      # `proxy_buffering on` buffers the whole upstream response (to RAM then a
+      # temp file capped at 1 GB) before sending — so a >1 GB storage download
+      # (2.5 GB temp-staging cap) stalls/aborts. `off` streams upstream→client.
+      KONG_NGINX_PROXY_PROXY_BUFFERING: "off"
     volumes:
       - ./packages/dev/docker/kong.yml:/home/kong/kong.yml:ro
 
