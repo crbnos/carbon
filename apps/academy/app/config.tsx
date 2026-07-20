@@ -531,6 +531,15 @@ export const modules: Config = [
                 description:
                   "Learn how to use Carbon's product configurator to create complex, configurable products.",
                 duration: 328
+              },
+              {
+                id: "engineering-change-orders",
+                loomUrl:
+                  "https://www.loom.com/share/0aa0ab77ef014a52a3c617ff0939d4a2",
+                name: "Engineering Change Orders",
+                description:
+                  "Learn how to use engineering change orders to manage and track changes to items, methods, and bills in a controlled, auditable way.",
+                duration: 260
               }
             ],
             supplemental: []
