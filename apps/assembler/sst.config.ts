@@ -15,11 +15,10 @@
 //
 // Spec: .ai/specs/2026-07-15-assembler-deployment.md
 //
-// ⚠️ UNVALIDATED SCAFFOLD — this has NOT been `sst deploy`-validated in-session
-// (no AWS creds, no `.sst/platform` types generated). Before the first deploy a
-// human MUST: (1) fill the decisions marked `DECISION:` below, (2) `sst deploy`
-// to a throwaway stage and reconcile any SST v3 API drift (esp. Service `capacity`
-// / Vpc `nat` / FunctionUrl shape), (3) verify the acceptance rows in the spec.
+// The Lambda + APIGW half is deploy-validated on staging. The ECS half is
+// typechecked against the generated platform types but has never been
+// deployed (gated off by default); fill the `DECISION:` markers and validate
+// on a throwaway stage before first enabling it.
 
 export default $config({
   app(input) {
@@ -163,11 +162,9 @@ export default $config({
       // Public-subnet VPC, NO NAT — the service only needs egress to storage over
       // the public internet (signed URLs), which a public subnet + IGW gives for
       // free. DECISION: reuse the ERP/MES VPC instead if same-account/same-region.
-      const vpc = new sst.aws.Vpc("AssemblerVpc", {
-        // DECISION: verify the SST v3 Vpc option to drop NAT (cost). As of v3 this
-        // is `nat: "ec2" | "managed" | { ... }` — omitting NAT keeps only public
-        // subnets. Confirm against the installed SST version at deploy.
-      });
+      // No `nat` arg => no NAT gateway (verified against the platform types);
+      // tasks get public IPs + IGW egress for the signed-URL storage I/O.
+      const vpc = new sst.aws.Vpc("AssemblerVpc");
       const cluster = new sst.aws.Cluster("AssemblerCluster", { vpc });
 
       // cluster.addService is deprecated — Service takes the cluster directly.
@@ -181,8 +178,7 @@ export default $config({
         cpu: "4 vCPU",
         memory: "16 GB", // DECISION: the big-job tier; size to the largest expected model
         image,
-        // DECISION: Fargate Spot capacity (50-70% off). Verify the SST v3 Service
-        // option — `capacity: "spot"` at time of writing.
+        // Fargate Spot: 50-70% off; interruptions self-heal via the scheduler.
         capacity: "spot",
         scaling: {
           // Default-off is expressed by not deploying the service at all (the
@@ -206,7 +202,6 @@ export default $config({
             { listen: "443/https", forward: "8000/http" },
           ],
         },
-        port: 8000,
         environment: environment as Record<string, string>,
         transform: {
           loadBalancer: { idleTimeout: 600 },
