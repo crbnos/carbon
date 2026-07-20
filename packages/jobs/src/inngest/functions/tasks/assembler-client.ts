@@ -3,6 +3,7 @@ import {
   ASSEMBLER_ECS_SERVICE_URL,
   ASSEMBLER_SERVICE_API_KEY,
   ASSEMBLER_SERVICE_URL,
+  ASSEMBLER_STORAGE_PUBLIC_URL,
   PORT_API,
   SUPABASE_URL
 } from "@carbon/env";
@@ -66,26 +67,45 @@ export function assemblerEcsUrl(): string | undefined {
  * `PORT_API`, and prod's proxy handles large transfers) or on a non-`.dev` host.
  */
 export function internalizeStorageUrl(url: string): string {
-  if (!PORT_API || !SUPABASE_URL) return url;
-  // The rewrite only helps when the assembler itself runs on THIS host (it can
-  // then hit kong directly). A remote assembler (the staging Lambda, ECS) must
-  // receive the public URL — localhost would resolve to the remote box itself.
-  // Deriving this from ASSEMBLER_SERVICE_URL beats hand-editing the crbn-owned
-  // PORT_API out of .env.local (which crbn up regenerates anyway).
-  try {
-    const assemblerHost = new URL(assemblerBaseUrl()).hostname;
-    if (assemblerHost !== "localhost" && assemblerHost !== "127.0.0.1") {
-      return url;
-    }
-  } catch {
-    return url; // no/invalid assembler URL -> nothing consumes the rewrite
-  }
+  if (!SUPABASE_URL) return url;
   let publicHost: string;
   try {
     publicHost = new URL(SUPABASE_URL).host;
   } catch {
     return url;
   }
+
+  // Which host the assembler runs on decides the rewrite. Derived from
+  // ASSEMBLER_SERVICE_URL rather than hand-editing the crbn-owned PORT_API out
+  // of .env.local (which crbn up regenerates anyway).
+  let assemblerIsLocal = true;
+  try {
+    const h = new URL(assemblerBaseUrl()).hostname;
+    assemblerIsLocal = h === "localhost" || h === "127.0.0.1";
+  } catch {
+    return url; // no/invalid assembler URL -> nothing consumes the rewrite
+  }
+
+  if (!assemblerIsLocal) {
+    // Remote assembler (the staging Lambda / ECS). The local portless `.dev`
+    // hostnames resolve only on THIS machine (/etc/hosts + local CA), so a
+    // remote worker can't fetch them — substitute the public tunnel origin when
+    // one is configured (dev pairing); otherwise pass through untouched
+    // (prod/preview storage is genuinely public).
+    if (!ASSEMBLER_STORAGE_PUBLIC_URL) return url;
+    try {
+      const parsed = new URL(url);
+      if (parsed.host !== publicHost) return url;
+      const pub = new URL(ASSEMBLER_STORAGE_PUBLIC_URL);
+      parsed.protocol = pub.protocol;
+      parsed.host = pub.host;
+      return parsed.toString();
+    } catch {
+      return url;
+    }
+  }
+
+  if (!PORT_API) return url;
   if (!/\.dev(?::\d+)?$/.test(publicHost)) return url;
   try {
     const parsed = new URL(url);

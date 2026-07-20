@@ -215,6 +215,15 @@ export const ASSEMBLER_SERVICE_API_KEY = getEnv("ASSEMBLER_SERVICE_API_KEY", {
 export const ASSEMBLER_ECS_SERVICE_URL = getEnv("ASSEMBLER_ECS_SERVICE_URL", {
   isRequired: false
 });
+// Dev-only: a public origin (e.g. an ngrok tunnel to local kong) substituted
+// into assembler-bound signed storage URLs when the assembler is REMOTE (the
+// staging Lambda). The local portless `.dev` hostnames resolve only on this
+// machine (/etc/hosts + local CA), so a remote worker can't reach them. Unset
+// in prod/preview (storage is genuinely public there).
+export const ASSEMBLER_STORAGE_PUBLIC_URL = getEnv(
+  "ASSEMBLER_STORAGE_PUBLIC_URL",
+  { isRequired: false, isSecret: false }
+);
 
 export const GOOGLE_PLACES_API_KEY = getEnv("GOOGLE_PLACES_API_KEY", {
   isRequired: false
