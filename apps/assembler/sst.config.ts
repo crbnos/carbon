@@ -150,6 +150,30 @@ export default $config({
       sourceArn: api.executionArn.apply((arn) => `${arn}/*/*`),
     });
 
+    // Custom domain (e.g. assembler.carbon.ms) — repo convention: the ACM cert
+    // (REGIONAL, same region as the API) and the DNS record are managed
+    // out-of-band; point a CNAME at the `apiDomainTarget` output. Skipped when
+    // the two env inputs are absent (staging uses the default execute-api URL).
+    const domainName = process.env.ASSEMBLER_DOMAIN;
+    const certArn = process.env.ASSEMBLER_CERT_ARN;
+    let apiDomainTarget: $util.Output<string> | undefined;
+    if (domainName && certArn) {
+      const domain = new aws.apigatewayv2.DomainName("AssemblerDomain", {
+        domainName,
+        domainNameConfiguration: {
+          certificateArn: certArn,
+          endpointType: "REGIONAL",
+          securityPolicy: "TLS_1_2",
+        },
+      });
+      new aws.apigatewayv2.ApiMapping("AssemblerDomainMapping", {
+        apiId: api.id,
+        domainName: domain.id,
+        stage: "$default",
+      });
+      apiDomainTarget = domain.domainNameConfiguration.targetDomainName;
+    }
+
     // ---------------------------------------------------------------------------
     // Runtime B — ECS Fargate Spot service (overflow, DEFAULT-OFF)
     // ---------------------------------------------------------------------------
@@ -218,10 +242,11 @@ export default $config({
     }
 
     // Outputs — wire these into the consumers' env at the human deploy step:
-    //   ASSEMBLER_SERVICE_URL      <- apiUrl     (default; async submit->poll)
-    //   ASSEMBLER_ECS_SERVICE_URL  <- serviceUrl (overflow, when enabled)
+    //   ASSEMBLER_SERVICE_URL <- https://<ASSEMBLER_DOMAIN> when set, else apiUrl
+    //   apiDomainTarget       <- CNAME target for the out-of-band DNS record
     return {
       apiUrl: api.apiEndpoint,
+      apiDomainTarget,
       serviceUrl,
     };
   },
