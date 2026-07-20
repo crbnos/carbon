@@ -16,7 +16,6 @@ import { sql } from "kysely";
 import type { z } from "zod";
 import { getNextSequence } from "~/modules/settings";
 import {
-  createApprovalRequest,
   getApprovalRuleByAmount,
   getApproverUserIdsForRule,
   hasPendingApproval,
@@ -3364,6 +3363,7 @@ export async function saveJournalEntryWithLines(
 
 export async function postJournalEntry(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   id: string,
   userId: string
 ) {
@@ -3444,30 +3444,52 @@ export async function postJournalEntry(
   if (approvalRequired) {
     const alreadyPending = await hasPendingApproval(client, "journalEntry", id);
     if (!alreadyPending) {
-      // Park the entry. Guarded on Draft so a concurrent post can't double-park.
-      // The journal UPDATE RLS policy (USING status IN Draft/Posted) permits
-      // Draft -> Pending Approval, then edit-locks the parked row.
-      const parked = await client
-        .from("journal")
-        .update({
-          status: "Pending Approval" as const,
-          preparedBy: userId,
-          updatedBy: userId
-        })
-        .eq("id", id)
-        .eq("status", "Draft")
-        .select("id")
-        .single();
-      if (parked.error) return parked;
+      // Park the entry and record the approval request atomically. Both writes
+      // run in a single Kysely transaction (service-role, RLS bypassed — the
+      // callers already gate on accounting_update). If the approvalRequest
+      // insert fails, the park rolls back and the journal stays Draft, so we
+      // never strand a journal in "Pending Approval" with no request row —
+      // which the journal UPDATE RLS policy (USING status IN Draft/Posted)
+      // would then edit-lock, making it permanently unpostable. The Draft
+      // guard keeps a concurrent post from double-parking (zero rows -> throw
+      // -> rollback -> surfaced as an error, matching the prior .single()).
+      try {
+        await db.transaction().execute(async (trx) => {
+          await trx
+            .updateTable("journal")
+            .set({
+              status: "Pending Approval",
+              preparedBy: userId,
+              updatedBy: userId
+            })
+            .where("id", "=", id)
+            .where("status", "=", "Draft")
+            .returning("id")
+            .executeTakeFirstOrThrow();
 
-      await createApprovalRequest(client, {
-        documentType: "journalEntry",
-        documentId: id,
-        companyId,
-        requestedBy: userId,
-        createdBy: userId,
-        amount: baseAmount
-      });
+          await trx
+            .insertInto("approvalRequest")
+            .values({
+              documentType: "journalEntry",
+              documentId: id,
+              requestedBy: userId,
+              amount: baseAmount,
+              companyId,
+              createdBy: userId
+            })
+            .execute();
+        });
+      } catch (err) {
+        return {
+          data: null,
+          error: {
+            message:
+              err instanceof Error
+                ? err.message
+                : "Failed to submit journal entry for approval"
+          }
+        };
+      }
 
       const rule = await getApprovalRuleByAmount(
         client,

@@ -20,15 +20,14 @@ type ApprovalRequestRow = {
   lastRemindedAt: string | null;
 };
 
-type ApprovalReminderEvent = {
-  name: "carbon/notify";
-  data: {
-    event: NotificationEvent;
-    companyId: string;
-    documentId: string;
-    documentType: ApprovalDocumentType;
-    recipient: { type: "users"; userIds: string[] };
-  };
+// A single due reminder, collected in a read-only step and JSON-serialized back
+// out so the (non-idempotent) send + stamp can run in their own memoized steps.
+type ReminderDescriptor = {
+  requestId: string;
+  companyId: string;
+  documentId: string;
+  documentType: ApprovalDocumentType;
+  userIds: string[];
 };
 
 // Mirror of `getApprovalRuleByAmount`: the matching tier is the enabled rule
@@ -77,12 +76,16 @@ async function resolveApproverUserIds(
   return defaultId ? [...new Set([...ids, defaultId])] : [...new Set(ids)];
 }
 
-async function escalateCompany(
+// Read-only: resolve which pending requests are due for a reminder today. The
+// actual notify send and the lastRemindedAt stamp are deliberately kept OUT of
+// here so they can each run in their own memoized Inngest step (see below) —
+// this function may be re-run freely on retry without side effects.
+async function collectCompanyReminders(
   client: ReturnType<typeof getCarbonServiceRole>,
   companyId: string,
   now: Date,
   startOfToday: Date
-): Promise<{ remindersSent: number }> {
+): Promise<ReminderDescriptor[]> {
   // All enabled rules for the company — we need the full set to resolve the
   // matching tier before checking whether that tier opts into escalation.
   const { data: rulesData, error: rulesError } = await client
@@ -97,7 +100,7 @@ async function escalateCompany(
 
   const rules = (rulesData as ApprovalRuleRow[]) ?? [];
   if (rules.length === 0) {
-    return { remindersSent: 0 };
+    return [];
   }
 
   const rulesByDocumentType = new Map<
@@ -125,11 +128,10 @@ async function escalateCompany(
 
   const requests = (requestsData as ApprovalRequestRow[]) ?? [];
   if (requests.length === 0) {
-    return { remindersSent: 0 };
+    return [];
   }
 
-  const events: ApprovalReminderEvent[] = [];
-  const dueRequestIds: string[] = [];
+  const reminders: ReminderDescriptor[] = [];
 
   for (const request of requests) {
     const matched = resolveMatchingRule(
@@ -157,46 +159,27 @@ async function escalateCompany(
     const userIds = await resolveApproverUserIds(client, matched);
     if (userIds.length === 0) continue;
 
-    events.push({
-      name: "carbon/notify",
-      data: {
-        event: NotificationEvent.ApprovalRequested,
-        companyId,
-        documentId: request.documentId,
-        documentType: request.documentType,
-        recipient: { type: "users", userIds }
-      }
+    reminders.push({
+      requestId: request.id,
+      companyId,
+      documentId: request.documentId,
+      documentType: request.documentType,
+      userIds
     });
-    dueRequestIds.push(request.id);
   }
 
-  if (events.length === 0) {
-    return { remindersSent: 0 };
-  }
-
-  await inngest.send(events);
-
-  const nowIso = now.toISOString();
-  const { error: updateError } = await (client.from as any)("approvalRequest")
-    .update({ lastRemindedAt: nowIso })
-    .in("id", dueRequestIds)
-    .eq("companyId", companyId);
-
-  if (updateError) {
-    console.error(
-      `approval-escalation: failed to stamp lastRemindedAt for company ${companyId}`,
-      updateError
-    );
-  }
-
-  return { remindersSent: events.length };
+  return reminders;
 }
 
 export const approvalEscalationFunction = inngest.createFunction(
   { id: "approval-escalation", retries: 2 },
   { cron: "0 5 * * *" },
   async ({ step }) => {
-    const results = await step.run("escalate-approvals", async () => {
+    // Step 1 — collect (read-only, idempotent). The wall-clock timestamps are
+    // captured HERE, inside the step, so their memoized values stay stable if a
+    // later step fails and the function replays (top-level `new Date()` would
+    // drift across replays and corrupt the once-per-day id/stamp).
+    const collected = await step.run("collect-reminders", async () => {
       const client = getCarbonServiceRole();
 
       const now = new Date();
@@ -212,35 +195,99 @@ export const approvalEscalationFunction = inngest.createFunction(
         throw new Error(`Failed to fetch companies: ${companiesError.message}`);
       }
 
-      const summary = {
-        companiesProcessed: 0,
-        remindersSent: 0,
-        errors: 0
-      };
+      const reminders: ReminderDescriptor[] = [];
+      let companiesProcessed = 0;
+      let errors = 0;
 
       for (const company of (companies as { id: string }[]) ?? []) {
         try {
-          const { remindersSent } = await escalateCompany(
+          const companyReminders = await collectCompanyReminders(
             client,
             company.id,
             now,
             startOfToday
           );
-          summary.companiesProcessed++;
-          summary.remindersSent += remindersSent;
+          reminders.push(...companyReminders);
+          companiesProcessed++;
         } catch (error) {
           console.error(
             `Failed to escalate approvals for company ${company.id}`,
             error
           );
-          summary.errors++;
+          errors++;
         }
       }
 
-      console.log("Approval escalation task completed", summary);
-      return summary;
+      return {
+        reminders,
+        nowIso: now.toISOString(),
+        startOfTodayIso: startOfToday.toISOString(),
+        companiesProcessed,
+        errors
+      };
     });
 
-    return results;
+    const { reminders, nowIso, startOfTodayIso, companiesProcessed, errors } =
+      collected;
+
+    if (reminders.length === 0) {
+      const summary = { companiesProcessed, remindersSent: 0, errors };
+      console.log("Approval escalation task completed", summary);
+      return summary;
+    }
+
+    // Step 2 — send (not idempotent, so isolated in its own memoized step: once
+    // this step succeeds a later failure/replay returns its cached result and
+    // never re-sends). The stable per-request/day event `id` is a second guard —
+    // Inngest drops any duplicate carrying the same id within its dedup window.
+    const events = reminders.map((reminder) => ({
+      id: `approval-reminder:${reminder.requestId}:${startOfTodayIso}`,
+      name: "carbon/notify" as const,
+      data: {
+        event: NotificationEvent.ApprovalRequested,
+        companyId: reminder.companyId,
+        documentId: reminder.documentId,
+        documentType: reminder.documentType,
+        recipient: { type: "users" as const, userIds: reminder.userIds }
+      }
+    }));
+    await step.sendEvent("send-reminders", events);
+
+    // Step 3 — stamp lastRemindedAt so the once-per-day guard holds. Runs after
+    // the memoized send, so re-running it never re-notifies.
+    await step.run("stamp-reminded", async () => {
+      const client = getCarbonServiceRole();
+
+      const requestIdsByCompany = new Map<string, string[]>();
+      for (const reminder of reminders) {
+        const bucket = requestIdsByCompany.get(reminder.companyId) ?? [];
+        bucket.push(reminder.requestId);
+        requestIdsByCompany.set(reminder.companyId, bucket);
+      }
+
+      for (const [companyId, requestIds] of requestIdsByCompany) {
+        const { error: updateError } = await (client.from as any)(
+          "approvalRequest"
+        )
+          .update({ lastRemindedAt: nowIso })
+          .in("id", requestIds)
+          .eq("companyId", companyId);
+
+        if (updateError) {
+          console.error(
+            `approval-escalation: failed to stamp lastRemindedAt for company ${companyId}`,
+            updateError
+          );
+        }
+      }
+    });
+
+    const summary = {
+      companiesProcessed,
+      remindersSent: reminders.length,
+      errors
+    };
+    console.log("Approval escalation task completed", summary);
+    return summary;
   }
 );

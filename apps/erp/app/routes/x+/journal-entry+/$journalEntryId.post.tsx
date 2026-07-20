@@ -4,6 +4,7 @@ import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { postJournalEntry } from "~/modules/accounting";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -15,7 +16,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { journalEntryId } = params;
   if (!journalEntryId) throw new Error("Could not find journalEntryId");
 
-  const result = await postJournalEntry(client, journalEntryId, userId);
+  const result = await postJournalEntry(
+    client,
+    getDatabaseClient(),
+    journalEntryId,
+    userId
+  );
 
   if (result.error) {
     throw redirect(

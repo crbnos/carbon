@@ -139,8 +139,11 @@ const NoSelfApprovalToggle = ({
     }
     if (fetcher.data?.success === false && fetcher.data?.message) {
       toast.error(fetcher.data.message);
+      // The optimistic flip didn't persist — restore the actual saved value so
+      // the switch doesn't misrepresent state until a full reload.
+      setEnabled(enforceNoSelfApproval);
     }
-  }, [fetcher.data?.message, fetcher.data?.success]);
+  }, [fetcher.data?.message, fetcher.data?.success, enforceNoSelfApproval]);
 
   return (
     <Card className="w-full">

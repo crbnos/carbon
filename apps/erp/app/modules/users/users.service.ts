@@ -546,7 +546,8 @@ export type UserAccessReportRow = {
 
 /**
  * Per-user effective-permission report for a single company — the quarterly
- * access-review artifact. One row per active employee, with the sorted list of
+ * access-review artifact. One row per employee (active AND inactive, so a
+ * review can confirm terminated employees lost access), with the sorted list of
  * `${module}_${action}` keys the user effectively holds for THIS company (the
  * permission's companyId array includes `companyId` or the `"0"` all-companies
  * wildcard). Assembled in JS; returns the standard `{ data, error }` shape.
@@ -558,8 +559,7 @@ export async function getUserAccessReport(
   const employees = await client
     .from("employees")
     .select("id, name, email, employeeTypeId, active, status")
-    .eq("companyId", companyId)
-    .eq("active", true);
+    .eq("companyId", companyId);
 
   if (employees.error) {
     return { data: null, error: employees.error };
