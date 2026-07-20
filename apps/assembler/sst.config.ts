@@ -7,8 +7,8 @@
 // Two runtimes, ONE image (`carbon/assembler:${IMAGE_TAG}`, same default HTTP
 // entrypoint):
 //   A. Lambda (default, $0 idle) — the app runs via the Lambda Web Adapter baked
-//      into the Dockerfile (AWS_LWA_PORT=8000). Jobs run inline (POST ?sync); the
-//      time-budget gate keeps them under the 900s hard timeout.
+//      into the Dockerfile (PORT=8000). Create self-invokes an Event-type worker
+//      invocation; the auto time-budget gate keeps jobs under the 900s hard cap.
 //   B. ECS Fargate Spot service (overflow, DEFAULT-OFF) — the same image as a warm
 //      HTTP backend behind an ALB; async submit->poll, no 15-min cap. Enabled only
 //      when ASSEMBLER_ECS_ENABLED=true ("don't scale until someone complains").
@@ -82,14 +82,14 @@ export default $config({
       // Async job model on Lambda: create returns 202 and fires the compute as
       // an Event-type SELF-invocation (its own 900s window); polls read the
       // shared Redis job store. Requires REDIS_URL.
-      // Assembler is memory-heavy on big meshes → 10 GB (the max) in prod. New AWS
-      // accounts cap Lambda memory at 3008 MB until a Service Quotas increase, so
-      // this is overridable (set ASSEMBLER_LAMBDA_MEMORY_MB=3008 for staging before
-      // the quota bump). CPU scales with memory, so lower memory = slower jobs.
-      memorySize: Number(process.env.ASSEMBLER_LAMBDA_MEMORY_MB ?? "10240"),
+      // Default 3008 MB: the cap on accounts without a Service Quotas increase,
+      // so a fresh deploy works out of the box. Lambda's platform max is 10240 —
+      // raise via ASSEMBLER_LAMBDA_MEMORY_MB once the quota bump lands (CPU
+      // scales with memory, so bigger = faster on heavy meshes).
+      memorySize: Number(process.env.ASSEMBLER_LAMBDA_MEMORY_MB ?? "3008"),
       timeout: 900, // 900s hard cap (not raisable) — the time-budget gate keeps jobs under it
-      // /tmp for the source download + temp GLBs. Default max is 10 GB, but keep it
-      // in step with the memory tier on a fresh account (also overridable).
+      // /tmp for the source download + temp GLBs — 10 GB is GA on all accounts
+      // (no quota), so keep the max regardless of the memory tier.
       ephemeralStorage: {
         size: Number(process.env.ASSEMBLER_LAMBDA_TMP_MB ?? "10240"),
       },
