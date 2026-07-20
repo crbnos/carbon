@@ -1,10 +1,13 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getOnshapeClient } from "@carbon/ee/onshape";
+import { getLogger } from "@carbon/logger";
 import type {
   LoaderFunctionArgs,
   ShouldRevalidateFunction
 } from "react-router";
 import { getReadableIdWithRevision } from "~/utils/string";
+
+const logger = getLogger("erp", "integrations-onshape-d-did-v-vid-e-eid-bom");
 
 export const shouldRevalidate: ShouldRevalidateFunction = () => {
   return false;
@@ -183,7 +186,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       error: "No BOM data found"
     };
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     return {
       data: [],
       error: error instanceof Error ? error.message : String(error)

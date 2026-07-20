@@ -127,7 +127,12 @@ export default function ConsumablePurchasingRoute() {
           supplierParts.map((s) => s.supplierId).filter(Boolean) as string[]
         }
       />
-      <SupplierParts supplierParts={supplierParts} />
+      <SupplierParts
+        supplierParts={supplierParts}
+        deleteSupplierPath={(id) =>
+          path.to.deleteConsumableSupplier(itemId, id)
+        }
+      />
       {["Batch", "Serial"].includes(
         consumableData?.consumableSummary?.itemTrackingType ?? ""
       ) && (

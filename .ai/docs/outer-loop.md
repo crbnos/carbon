@@ -22,7 +22,7 @@ OpenClaw runtime (heartbeat · webhooks · cron · sandbox · SQLite)
 ## Wake Loop (every 30 min)
 
 1. **Reconcile leases** — `agent:working` issues with no live build → stale → follow the Crash Recovery protocol below (never delete the branch)
-2. **PR feedback** (highest priority) — unresolved review comments → re-enter inner loop on same branch
+2. **PR feedback** (highest priority) — unresolved review comments → re-enter inner loop on same branch. **Respond immediately on `pull_request_review` / `pull_request_review_comment` webhook — don't wait for heartbeat.** Human org-member comments always act; CodeRabbit Major+ act; CodeRabbit Trivial/Nitpick skip.
 3. **Assigned work** — pick top issue by priority → run the pre-dispatch gate (below) → synthesize Binding → dispatch conductor
 4. **Slack ingest** — tagged in a thread → read context, create issue, self-assign
 5. **Idle** → groom one backlog issue (comment spec + acceptance criteria, never build)
@@ -84,7 +84,7 @@ crbn up --minimal --run 'pnpm --filter @carbon/harness loop <binding-path> --cwd
 
 | `outcome.json` | What it means | Orchestrator action |
 |---|---|---|
-| `state: shipped`, no `unverified` | Fully proven, PR open | Mark PR **ready for review** (`gh pr ready`) + request review from `bradbarbin` (`gh pr edit --add-reviewer bradbarbin`); comment PR link on issue; drop `agent:working` |
+| `state: shipped`, no `unverified` | Fully proven, PR open | Comment PR link on issue, drop `agent:working` |
 | `state: shipped` + `unverified` | Work kept & judge-approved; behavior proof was impossible (test data, environment). PR is a **draft** labeled `agent:needs-verification` | Comment PR link + the `unverified` gaps on the issue; label issue `agent:needs-verification`, **not** `agent:blocked` |
 | `state: plateau/blocked/error` + `prUrl` | Partial salvage draft PR (`[partial]`, `Related to #<n>`) — committed work survived | Comment PR link + reason; label `agent:blocked`; the branch/PR carry the work forward |
 | `state: plateau/blocked/error`, no `prUrl` | No committed work was produced (or PR creation failed — the pushed branch still exists) | Label `agent:blocked` with the reason; mention the branch if it exists on origin |
@@ -104,11 +104,10 @@ dead, no `outcome.json`):
    work — they stay until their PR closes.
 2. Check origin: `git ls-remote origin "refs/heads/loop/<id>"`.
    - **Branch exists** → re-dispatch the SAME binding in a worktree based on
-     it: `crbn new loop/<id> --base origin/loop/<id> --yes`, then the normal
-     harness command. The loop **resumes** — the committed `outcome.json`
-     carries the plan and task statuses, so concluded tasks are skipped for
-     free and only pending/failed ones run. `openPr` is idempotent — same
-     branch, same PR.
+     it: `crbn new loop/<id> --base origin/loop/<id> --yes`, then
+     `git merge origin/main` (always merge before starting), then the normal
+     harness command. The loop re-plans, sees the committed progress, and
+     continues from where it died. `openPr` is idempotent — same branch, same PR.
    - **No branch** → nothing was produced; re-dispatch fresh (base `origin/main`).
 3. Before re-dispatching after a second consecutive crash, capture evidence
    instead of retrying blind: post the tail (~50 lines) of the dispatch
@@ -135,7 +134,7 @@ dead, no `outcome.json`):
 
 ## Related Files
 
-- **Conductor skill:** `.ai/skills/conductor/SKILL.md`
+- **Conductor skill:** `.claude/skills/conductor/SKILL.md`
 - **Harness:** `packages/harness/`
 - **Agent labels workflow:** `.github/scripts/setup-agent-labels.sh`
 - **Operating prompt:** lives on the OpenClaw box (not in this repo)

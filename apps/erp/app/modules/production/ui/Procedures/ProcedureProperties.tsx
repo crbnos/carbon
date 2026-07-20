@@ -172,6 +172,7 @@ const ProcedureProperties = () => {
         <span className="text-sm tracking-tight">
           <Select
             label={t`Status`}
+            termId="procedure-status"
             name="status"
             inline={(value) => (
               <ProcedureStatus

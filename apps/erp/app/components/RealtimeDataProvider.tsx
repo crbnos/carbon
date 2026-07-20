@@ -2,6 +2,7 @@
 
 import { useCarbon } from "@carbon/auth";
 import { type Database, fetchAllFromTable } from "@carbon/database";
+import { getLogger } from "@carbon/logger";
 import { useInterval, useRealtimeChannel } from "@carbon/react";
 import { useEffect } from "react";
 import { useUser } from "~/hooks";
@@ -14,6 +15,8 @@ import {
 } from "~/stores";
 import type { Item } from "~/stores/items";
 import type { ListItem } from "~/types";
+
+const logger = getLogger("erp", "realtime-data-provider");
 
 // IndexedDB entries are keyed per company (`customers:<companyId>`) — a global
 // key let one company's cached list hydrate the pickers after switching to
@@ -121,6 +124,8 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
       await Promise.all([
         fetchAllFromTable<{
           id: string;
+          readableId: string;
+          revision: string;
           readableIdWithRevision: string;
           unitOfMeasureCode: string;
           name: string;
@@ -131,7 +136,7 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
         }>(
           carbon,
           "item",
-          "id, readableIdWithRevision, unitOfMeasureCode, name, type, replenishmentSystem, active, itemTrackingType",
+          "id, readableId, revision, readableIdWithRevision, unitOfMeasureCode, name, type, replenishmentSystem, active, itemTrackingType",
           (query) =>
             query
               .eq("companyId", companyId)
@@ -225,7 +230,7 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
   // biome-ignore lint/correctness/useExhaustiveDependencies: hydrate closes over setters + idb
   useEffect(() => {
     if (!companyId) return;
-    hydrate().catch((err) => console.error("hydrate failed:", err));
+    hydrate().catch((err) => logger.error("hydrate failed", { error: err }));
   }, [companyId, carbon, accessToken]);
 
   useInterval(fetchQuantities, companyId ? 10 * 60 * 1000 : null);
@@ -258,6 +263,8 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
                     {
                       id: inserted.id,
                       name: inserted.name,
+                      readableId: inserted.readableId,
+                      revision: inserted.revision,
                       readableIdWithRevision: inserted.readableIdWithRevision,
                       description: inserted.description,
                       replenishmentSystem: inserted.replenishmentSystem,
@@ -282,6 +289,8 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
                       if (i.id === updated.id) {
                         return {
                           ...i,
+                          readableId: updated.readableId,
+                          revision: updated.revision,
                           readableIdWithRevision:
                             updated.readableIdWithRevision,
                           name: updated.name,

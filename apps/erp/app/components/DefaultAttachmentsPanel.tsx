@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { getLogger } from "@carbon/logger";
 import {
   Card,
   CardContent,
@@ -34,6 +35,8 @@ import { useDateFormatter, useUser } from "~/hooks";
 import { getDocumentType } from "~/modules/shared";
 import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
+
+const logger = getLogger("erp", "defaultattachmentspanel");
 
 type Props = {
   files: FileObject[];
@@ -99,7 +102,7 @@ export default function DefaultAttachmentsPanel({
         document.body.removeChild(a);
       } catch (err) {
         toast.error(t`Error downloading file`);
-        console.error(err);
+        logger.error("Error", { error: err });
       }
     },
     [fullPath, t]

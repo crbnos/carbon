@@ -67,7 +67,6 @@ import {
 import { ConfigurationEditor } from "~/components/Configurator/ConfigurationEditor";
 import type { Configuration } from "~/components/Configurator/types";
 import {
-  DatePicker,
   DefaultMethodType,
   Hidden,
   Item,
@@ -103,6 +102,8 @@ import type {
   MakeMethod
 } from "../../types";
 import { getLinkToItemDetails } from "./ItemForm";
+import type { ReleaseLockProps } from "./ReleaseLockAlert";
+import ReleaseLockAlert, { getReleaseLockFlags } from "./ReleaseLockAlert";
 
 type Material = z.infer<typeof methodMaterialValidator> & {
   description: string;
@@ -129,7 +130,8 @@ type BillOfMaterialProps = {
   parameters?: ConfigurationParameter[];
   configurationRules?: ConfigurationRule[];
   replenishmentSystem?: string;
-};
+  parentItemId?: string;
+} & ReleaseLockProps;
 
 type OrderState = {
   [key: string]: number;
@@ -164,13 +166,21 @@ const BillOfMaterial = ({
   materials: initialMaterials,
   operations,
   parameters,
-  replenishmentSystem
+  replenishmentSystem,
+  parentItemId,
+  revisionStatus,
+  releaseControl
 }: BillOfMaterialProps) => {
   const permissions = usePermissions();
   const { t } = useLingui();
+  const { isProductionRevision, isReleaseLocked } = getReleaseLockFlags({
+    revisionStatus,
+    releaseControl
+  });
   const isReadOnly =
     permissions.can("update", "parts") === false ||
-    makeMethod.status !== "Draft";
+    makeMethod.status !== "Draft" ||
+    isReleaseLocked;
 
   const addItemButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -382,7 +392,6 @@ const BillOfMaterial = ({
         onToggleItem={onToggleItem}
         onRemoveItem={onRemoveItem}
         handleDrag={onCloseOnDrag}
-        className="my-2 "
         renderExtra={(item) => (
           <div key={`${isOpen}`}>
             <motion.button
@@ -469,6 +478,7 @@ const BillOfMaterial = ({
                             rulesByField={rulesByField}
                             onConfigure={onConfigure}
                             replenishmentSystem={replenishmentSystem}
+                            parentItemId={parentItemId}
                             setOrderState={setOrderState}
                             setSelectedItemId={setSelectedItemId}
                             setTemporaryItems={setTemporaryItems}
@@ -511,7 +521,26 @@ const BillOfMaterial = ({
       <HStack className="justify-between">
         <CardHeader>
           <CardTitle className="flex flex-row items-center gap-2">
-            <Trans>Bill of Material</Trans> {isReadOnly && <LuLock />}
+            <Trans>Bill of Material</Trans>
+            {isReadOnly && (
+              <Tooltip>
+                <TooltipTrigger tabIndex={-1} className="text-muted-foreground">
+                  <LuLock />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  {makeMethod.status !== "Draft" ? (
+                    <Trans>
+                      This method version is read-only. Create a new version
+                      from the method menu to make changes.
+                    </Trans>
+                  ) : (
+                    <Trans>
+                      You don't have permission to edit this bill of material.
+                    </Trans>
+                  )}
+                </TooltipContent>
+              </Tooltip>
+            )}
           </CardTitle>
         </CardHeader>
 
@@ -558,6 +587,9 @@ const BillOfMaterial = ({
         </CardAction>
       </HStack>
       <CardContent>
+        {isProductionRevision && (
+          <ReleaseLockAlert isLocked={isReleaseLocked} className="mb-4" />
+        )}
         <SortableList
           isReadOnly={isReadOnly}
           items={materials}
@@ -590,6 +622,7 @@ function MaterialForm({
   rulesByField,
   onConfigure,
   replenishmentSystem,
+  parentItemId: propParentItemId,
   setOrderState,
   setSelectedItemId,
   setTemporaryItems,
@@ -603,6 +636,7 @@ function MaterialForm({
   temporaryItems: TemporaryItems;
   rulesByField: Map<string, ConfigurationRule>;
   replenishmentSystem?: string;
+  parentItemId?: string;
   setSelectedItemId: Dispatch<SetStateAction<string | null>>;
   setTemporaryItems: Dispatch<SetStateAction<TemporaryItems>>;
   setOrderState: Dispatch<SetStateAction<OrderState>>;
@@ -617,6 +651,7 @@ function MaterialForm({
     message: string;
   }>();
   const params = useParams();
+  const parentItemId = propParentItemId ?? params.itemId;
   const { company, defaults } = useUser();
   const [locationId, setLocationId] = useState<string | undefined>(
     defaults.locationId ?? undefined
@@ -706,7 +741,7 @@ function MaterialForm({
 
   const onItemChange = async (itemId: string) => {
     if (!carbon) return;
-    if (itemId === params.itemId) {
+    if (itemId === parentItemId) {
       toast.error(t`An item cannot be added to itself.`);
       return;
     }
@@ -783,9 +818,9 @@ function MaterialForm({
         )}
       </div>
 
-      <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
+      <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3 items-start">
         <Item
-          blacklist={[params.itemId!]}
+          blacklist={[parentItemId!]}
           name="itemId"
           label={itemType}
           includeInactive
@@ -856,16 +891,6 @@ function MaterialForm({
                   })
               : undefined
           }
-        />
-        <DatePicker
-          name="effectiveFrom"
-          label={t`Effective From`}
-          helperText={t`Used on builds on/after this date (blank = always)`}
-        />
-        <DatePicker
-          name="effectiveTo"
-          label={t`Effective To`}
-          helperText={t`Used on builds on/before this date (blank = always)`}
         />
       </div>
       {itemData.itemReplenishmentSystem === "Buy and Make" && (
@@ -1150,11 +1175,30 @@ function MaterialForm({
                     }));
                   }}
                 >
-                  <DropdownMenuRadioItem value="Subassembly">
-                    <Trans>Subassembly</Trans>
+                  <DropdownMenuRadioItem
+                    value="Subassembly"
+                    className="items-start"
+                  >
+                    <div className="flex flex-col gap-0.5">
+                      <span>
+                        <Trans>Subassembly</Trans>
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        <Trans>Built and costed as its own method</Trans>
+                      </span>
+                    </div>
                   </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="Kit">
-                    <Trans>Kit</Trans>
+                  <DropdownMenuRadioItem value="Kit" className="items-start">
+                    <div className="flex flex-col gap-0.5">
+                      <span>
+                        <Trans>Kit</Trans>
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        <Trans>
+                          Picked and consumed as separate components
+                        </Trans>
+                      </span>
+                    </div>
                   </DropdownMenuRadioItem>
                 </DropdownMenuRadioGroup>
               </DropdownMenuContent>

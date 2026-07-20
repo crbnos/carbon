@@ -1,5 +1,8 @@
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { ERP_URL } from "~/utils/path";
+
+const log = getLogger("mes");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const path = params["*"];
@@ -19,7 +22,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
     return response;
   } catch (error) {
-    console.error("Proxy request failed:", error);
+    log.error("Proxy request failed", { error });
     return new Response("Proxy request failed", { status: 500 });
   }
 }

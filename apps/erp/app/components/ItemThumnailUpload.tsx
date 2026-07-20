@@ -1,4 +1,5 @@
 import { SUPABASE_URL, useCarbon } from "@carbon/auth";
+import { getLogger } from "@carbon/logger";
 import { Button, File as FileUpload, HStack, toast } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
@@ -6,14 +7,18 @@ import type { ChangeEvent } from "react";
 import { useCallback, useEffect, useState } from "react";
 import { useUser } from "~/hooks";
 import { getPrivateUrl } from "~/utils/path";
+
+const logger = getLogger("erp", "itemthumnailupload");
 export function ItemThumbnailUpload({
   path,
   itemId,
-  modelId
+  modelId,
+  isReadOnly = false
 }: {
   path?: string | null;
   itemId: string;
   modelId?: string | null;
+  isReadOnly?: boolean;
 }) {
   const { t } = useLingui();
   const { company } = useUser();
@@ -145,7 +150,7 @@ export function ItemThumbnailUpload({
             toast.success(t`Thumbnail uploaded`);
           }
         } catch (error) {
-          console.error("Image processing error:", error);
+          logger.error("Image processing error", { error: error });
           toast.error(t`Failed to resize image`);
         }
       }
@@ -168,27 +173,29 @@ export function ItemThumbnailUpload({
           </span>
         </div>
       )}
-      <HStack className="absolute bottom-2 right-2">
-        {thumbnailPath && (
-          <Button
+      {!isReadOnly && (
+        <HStack className="absolute bottom-2 right-2">
+          {thumbnailPath && (
+            <Button
+              variant="secondary"
+              className="bg-card opacity-100"
+              size="sm"
+              onClick={onFileRemove}
+            >
+              <Trans>Remove</Trans>
+            </Button>
+          )}
+          <FileUpload
+            accept="image/*"
             variant="secondary"
-            className="bg-card opacity-100"
             size="sm"
-            onClick={onFileRemove}
+            className="bg-card opacity-100"
+            onChange={onFileChange}
           >
-            <Trans>Remove</Trans>
-          </Button>
-        )}
-        <FileUpload
-          accept="image/*"
-          variant="secondary"
-          size="sm"
-          className="bg-card opacity-100"
-          onChange={onFileChange}
-        >
-          <Trans>Upload</Trans>
-        </FileUpload>
-      </HStack>
+            <Trans>Upload</Trans>
+          </FileUpload>
+        </HStack>
+      )}
     </div>
   );
 }

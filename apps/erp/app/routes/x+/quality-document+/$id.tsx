@@ -5,6 +5,7 @@ import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
 import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
+import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
 import { msg } from "@lingui/core/macro";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -30,8 +31,10 @@ import {
   rejectRequest
 } from "~/modules/shared";
 import { getDatabaseClient } from "~/services/database.server";
-import type { Handle } from "~/utils/handle";
+import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "id");
 
 type ApprovalContext = {
   approvalRequest: { id: string } | null;
@@ -98,8 +101,10 @@ async function getQualityDocumentApprovalContext(
 }
 
 export const handle: Handle = {
-  breadcrumb: msg`Policy & Procedure`,
-  to: path.to.qualityDocuments,
+  breadcrumb: detailBreadcrumb(
+    { breadcrumb: msg`Policy & Procedure`, to: path.to.qualityDocuments },
+    (data) => data?.document?.name
+  ),
   module: "quality"
 };
 
@@ -194,7 +199,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
         from: userId
       });
     } catch (e) {
-      console.error("Failed to trigger approval decision notification", e);
+      logger.error("Failed to trigger approval decision notification", {
+        error: e
+      });
     }
   }
 

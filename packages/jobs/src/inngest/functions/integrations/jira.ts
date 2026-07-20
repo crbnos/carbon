@@ -12,12 +12,13 @@ export { syncIssueFromJiraSchema };
 export const jiraSyncFunction = inngest.createFunction(
   { id: "sync-issue-from-jira", retries: 1 },
   { event: "carbon/jira-sync" },
-  async ({ event, step }) => {
+  async ({ event, step, logger }) => {
     const jira = getJiraClient();
     const payload = syncIssueFromJiraSchema.parse(event.data);
 
-    console.info(`Jira webhook received`);
-    console.info(`Event type: ${payload.event.webhookEvent}`);
+    logger.info("Jira webhook received", {
+      eventType: payload.event.webhookEvent
+    });
 
     // Only handle issue_updated events
     if (

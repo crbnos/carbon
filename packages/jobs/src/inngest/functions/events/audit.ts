@@ -15,9 +15,12 @@ import type {
   AuditDiff,
   CreateAuditLogEntry
 } from "@carbon/database/audit.types";
+import { getLogger } from "@carbon/logger";
 import { groupBy } from "@carbon/utils";
 import { z } from "zod";
 import { inngest } from "../../client";
+
+const log = getLogger("jobs", "audit");
 
 const AuditRecordSchema = z.object({
   event: z.object({
@@ -155,10 +158,10 @@ export const auditFunction = inngest.createFunction(
     retries: 3
   },
   { event: "carbon/event-audit" },
-  async ({ event, step }) => {
+  async ({ event, step, logger }) => {
     const payload = AuditPayloadSchema.parse(event.data);
 
-    console.log(`Processing ${payload.records.length} audit log events`);
+    logger.info(`Processing ${payload.records.length} audit log events`);
 
     const results = {
       inserted: 0,
@@ -176,7 +179,7 @@ export const auditFunction = inngest.createFunction(
       AuditRecord[]
     ][]) {
       if (!companyId || companyId === "undefined") {
-        console.log(`Skipping ${records.length} records: missing companyId`);
+        logger.info(`Skipping ${records.length} records: missing companyId`);
         results.skipped += records.length;
         continue;
       }
@@ -194,7 +197,7 @@ export const auditFunction = inngest.createFunction(
         if (
           !(company as { auditLogEnabled: boolean } | null)?.auditLogEnabled
         ) {
-          console.log(
+          logger.info(
             `Skipping ${records.length} records: audit logging disabled for company ${companyId}`
           );
           stepResults.skipped += records.length;
@@ -207,13 +210,13 @@ export const auditFunction = inngest.createFunction(
           const tableName = record.event.table;
 
           if (!isAuditableTable(tableName)) {
-            console.log(`Skipping: table "${tableName}" is not auditable`);
+            logger.info(`Skipping: table "${tableName}" is not auditable`);
             stepResults.skipped++;
             continue;
           }
 
           if (record.event.operation === "TRUNCATE") {
-            console.log(
+            logger.info(
               `Skipping: TRUNCATE on "${tableName}" is not meaningful`
             );
             stepResults.skipped++;
@@ -240,7 +243,7 @@ export const auditFunction = inngest.createFunction(
               );
 
               if (!diff) {
-                console.log(
+                logger.info(
                   `Skipping: no meaningful diff for UPDATE on "${tableName}" record ${record.event.recordId}`
                 );
                 stepResults.skipped++;
@@ -256,7 +259,7 @@ export const auditFunction = inngest.createFunction(
             const entityConfigs = getEntityConfigsForTable(tableName);
 
             if (entityConfigs.length === 0) {
-              console.log(
+              logger.info(
                 `Skipping: no entity config found for table "${tableName}"`
               );
               stepResults.skipped++;
@@ -272,7 +275,7 @@ export const auditFunction = inngest.createFunction(
                 record.event.operation === "INSERT" &&
                 !isRootTable(tableConfig)
               ) {
-                console.log(
+                logger.info(
                   `Skipping: INSERT on non-root table "${tableName}" for entity "${entityType}"`
                 );
                 continue;
@@ -317,7 +320,7 @@ export const auditFunction = inngest.createFunction(
                 const entityId = recordData?.[tableConfig.entityIdColumn];
 
                 if (!entityId) {
-                  console.log(
+                  logger.info(
                     `Skipping: could not resolve entity ID from column "${tableConfig.entityIdColumn}" for "${tableName}" record ${record.event.recordId}`
                   );
                   continue;
@@ -362,7 +365,7 @@ export const auditFunction = inngest.createFunction(
                   });
                   entriesCreatedForRecord++;
                 } else {
-                  console.log(
+                  logger.info(
                     `Skipping: no parent entity found via junction "${junction}" for "${tableName}" record ${record.event.recordId} (entity: ${entityType})`
                   );
                 }
@@ -370,13 +373,13 @@ export const auditFunction = inngest.createFunction(
             }
 
             if (entriesCreatedForRecord === 0) {
-              console.log(
+              logger.info(
                 `Skipping: could not resolve any entity for "${tableName}" record ${record.event.recordId}`
               );
               stepResults.skipped++;
             }
           } catch (error) {
-            console.error(`Failed to process audit record:`, {
+            logger.error("Failed to process audit record", {
               error,
               record
             });
@@ -399,7 +402,7 @@ export const auditFunction = inngest.createFunction(
           });
 
           if (error) {
-            console.error(`Failed to insert audit log entries:`, { error });
+            logger.error("Failed to insert audit log entries", { error });
             stepResults.failed += entries.length;
           } else {
             stepResults.inserted += insertedCount ?? entries.length;
@@ -414,7 +417,7 @@ export const auditFunction = inngest.createFunction(
       results.failed += companyResult.failed;
     }
 
-    console.log("Audit function completed", results);
+    logger.info("Audit function completed", results);
 
     return results;
   }
@@ -504,7 +507,9 @@ async function applyFkSnapshots(
         lookup.set(`${table}::${rowId}`, snapshot);
       }
     } catch (err) {
-      console.error(`FK snapshot lookup failed for table "${table}":`, err);
+      log.error(`FK snapshot lookup failed for table "${table}"`, {
+        error: err
+      });
     }
   }
 

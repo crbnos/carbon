@@ -5,9 +5,12 @@ import {
   evaluateLinesForSurface,
   isBlocked
 } from "@carbon/ee/storage-rules.server";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { issueTrackedEntityValidator } from "~/services/models";
+
+const log = getLogger("mes");
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -111,7 +114,7 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   if (issue.error) {
-    console.error(issue.error);
+    log.error("Failed to issue material", { error: issue.error });
     return data(
       { success: false, message: "Failed to issue material" },
       { status: 400 }

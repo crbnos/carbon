@@ -1,7 +1,10 @@
 import type { Database, Json } from "@carbon/database";
+import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { SUPABASE_URL } from "../config/env";
 import type { Permission } from "../types";
+
+const log = getLogger("auth");
 
 export async function getClaims(
   client: SupabaseClient<Database>,
@@ -60,7 +63,7 @@ export async function getCompaniesForUser(
     .eq("userId", userId);
 
   if (error) {
-    console.error(error, `Failed to get companies for user ${userId}`);
+    log.error("Failed to get companies for user", { userId, error });
     return [];
   }
 

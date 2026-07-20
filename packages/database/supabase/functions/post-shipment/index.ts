@@ -10,7 +10,10 @@ import { TrackedEntityAttributes, credit, debit, journalReference } from "../lib
 import { calculateCOGS } from "../shared/calculate-cogs.ts";
 import { getCurrentAccountingPeriod } from "../shared/get-accounting-period.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
-import { getDefaultPostingGroup } from "../shared/get-posting-group.ts";
+import {
+  getDefaultPostingGroup,
+  resolveInventoryAccount,
+} from "../shared/get-posting-group.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
@@ -79,7 +82,7 @@ serve(async (req: Request) => {
     const [items, itemCosts, jobs] = await Promise.all([
       client
         .from("item")
-        .select("id, itemTrackingType")
+        .select("id, itemTrackingType, replenishmentSystem")
         .in("id", itemIds)
         .eq("companyId", companyId),
       client
@@ -328,9 +331,11 @@ serve(async (req: Request) => {
                 }
               }
 
+              const shipmentLineItem = items.data.find(
+                (item) => item.id === shipmentLine.itemId
+              );
               const itemTrackingType =
-                items.data.find((item) => item.id === shipmentLine.itemId)
-                  ?.itemTrackingType ?? "Inventory";
+                shipmentLineItem?.itemTrackingType ?? "Inventory";
 
               // Default shippedQuantity to 0 if not defined or NaN
               const shippedQuantity =
@@ -441,9 +446,13 @@ serve(async (req: Request) => {
                   companyId,
                 });
 
+                const inventoryAccount = resolveInventoryAccount(
+                  shipmentLineItem?.replenishmentSystem ?? null,
+                  accountDefaults.data
+                );
                 journalLineInserts.push({
-                  accountId: accountDefaults.data.inventoryAccount,
-                  description: "Inventory Account",
+                  accountId: inventoryAccount.account,
+                  description: inventoryAccount.description,
                   amount: 0,
                   quantity: shippedQuantity,
                   documentType: "Sales Shipment",
@@ -608,7 +617,11 @@ serve(async (req: Request) => {
                   const nbvJlRef = nanoid();
                   journalLineInserts.push({
                     accountId: assetClass.writeOffAccountId,
-                    description: "Write-off remaining book value",
+                    // writeOffAccountId is used here as a disposal clearing /
+                    // holding account: the NBV parks here (a balance-sheet
+                    // holding, not a P&L loss) until the invoice recognizes
+                    // proceeds and clears it back to zero — no interim full loss.
+                    description: "Transfer net book value to disposal clearing",
                     amount: debit("expense", nbv),
                     quantity: 1,
                     documentType: "Sales Shipment",
@@ -674,7 +687,10 @@ serve(async (req: Request) => {
                   disposalDate: today,
                   saleProceeds: 0,
                   netBookValueAtDisposal: nbv,
-                  gainLoss: -nbv,
+                  // Gain/loss is unknown until proceeds are invoiced; the NBV is
+                  // held in the disposal clearing account, not expensed, so we
+                  // record 0 here (the invoice sets the real gain/loss).
+                  gainLoss: 0,
                   companyId,
                   createdBy: userId,
                 });
@@ -795,7 +811,9 @@ serve(async (req: Request) => {
 
               const areAllLinesShipped = salesOrderLines.every(
                 (line) =>
-                  line.salesOrderLineType === "Comment" || line.sentComplete
+                  line.salesOrderLineType === "Comment" ||
+                  line.salesOrderLineType === "Service" ||
+                  line.sentComplete
               );
 
               let status: Database["public"]["Tables"]["salesOrder"]["Row"]["status"] =
@@ -2237,7 +2255,9 @@ serve(async (req: Request) => {
 
               const areAllLinesShipped = salesOrderLines.every(
                 (line) =>
-                  line.salesOrderLineType === "Comment" || line.sentComplete
+                  line.salesOrderLineType === "Comment" ||
+                  line.salesOrderLineType === "Service" ||
+                  line.sentComplete
               );
 
               let status: Database["public"]["Tables"]["salesOrder"]["Row"]["status"] =

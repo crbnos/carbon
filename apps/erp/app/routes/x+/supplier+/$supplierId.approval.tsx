@@ -4,6 +4,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
+import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import type { ActionFunctionArgs } from "react-router";
@@ -21,6 +22,8 @@ import {
 } from "~/modules/shared";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "supplierid-approval");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -93,7 +96,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
           from: userId
         });
       } catch (e) {
-        console.error("Failed to trigger approval notification", e);
+        logger.error("Failed to trigger approval notification", { error: e });
       }
     }
 
@@ -222,7 +225,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
         from: userId
       });
     } catch (e) {
-      console.error("Failed to trigger approval decision notification", e);
+      logger.error("Failed to trigger approval decision notification", {
+        error: e
+      });
     }
   }
 

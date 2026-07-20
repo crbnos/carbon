@@ -1,6 +1,14 @@
 import type { Database } from "@carbon/database";
 import type {
   getActiveProductionEvents,
+  getAssemblyComponentMappings,
+  getAssemblyInstruction,
+  getAssemblyInstructionStepMaterials,
+  getAssemblyInstructionStepRequirements,
+  getAssemblyInstructionSteps,
+  getAssemblyInstructions,
+  getAssemblyStandardNotes,
+  getAssemblyUnits,
   getFailureMode,
   getFailureModes,
   getJob,
@@ -180,4 +188,38 @@ export type ProductionPlanningItem = NonNullable<
 
 export type ScrapReason = NonNullable<
   Awaited<ReturnType<typeof getScrapReasons>>["data"]
+>[number];
+
+// --- Assembly Instructions ---------------------------------------------
+
+export type AssemblyInstruction = NonNullable<
+  Awaited<ReturnType<typeof getAssemblyInstruction>>["data"]
+>;
+
+export type AssemblyInstructionListItem = NonNullable<
+  Awaited<ReturnType<typeof getAssemblyInstructions>>["data"]
+>[number];
+
+export type AssemblyInstructionStepRow = NonNullable<
+  Awaited<ReturnType<typeof getAssemblyInstructionSteps>>["data"]
+>[number];
+
+export type AssemblyStepRequirement = NonNullable<
+  Awaited<ReturnType<typeof getAssemblyInstructionStepRequirements>>["data"]
+>[number];
+
+export type AssemblyStepMaterial = NonNullable<
+  Awaited<ReturnType<typeof getAssemblyInstructionStepMaterials>>["data"]
+>[number];
+
+export type AssemblyStandardNote = NonNullable<
+  Awaited<ReturnType<typeof getAssemblyStandardNotes>>["data"]
+>[number];
+
+export type AssemblyUnit = NonNullable<
+  Awaited<ReturnType<typeof getAssemblyUnits>>["data"]
+>[number];
+
+export type AssemblyComponentMapping = NonNullable<
+  Awaited<ReturnType<typeof getAssemblyComponentMappings>>["data"]
 >[number];

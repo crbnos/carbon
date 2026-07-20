@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import {
   Card,
@@ -40,6 +41,8 @@ import { getDocumentType } from "~/modules/shared";
 import type { StorageItem } from "~/types";
 import { getPrivateUrl, path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
+
+const logger = getLogger("erp", "maintenancedispatchnotes");
 
 export function MaintenanceDispatchNotes({
   id,
@@ -251,7 +254,7 @@ function MaintenanceFilesContent({
         document.body.removeChild(a);
       } catch (error) {
         toast.error(t`Error downloading file`);
-        console.error(error);
+        logger.error("Error", { error: error });
       }
     },
     [getFilePath, t]

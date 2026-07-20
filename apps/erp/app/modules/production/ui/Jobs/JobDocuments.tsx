@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { getLogger } from "@carbon/logger";
 import {
   Card,
   CardAction,
@@ -26,7 +27,7 @@ import {
   toast,
   VStack
 } from "@carbon/react";
-import { convertKbToString } from "@carbon/utils";
+import { convertKbToString, MODEL_RAW_KEEP_MAX_BYTES } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { FileObject } from "@supabase/storage-js";
 import type { ChangeEvent } from "react";
@@ -42,6 +43,8 @@ import { getDocumentType } from "~/modules/shared";
 import type { ModelUpload } from "~/types";
 import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
+
+const logger = getLogger("erp", "production", "job-documents");
 
 const useJobDocuments = ({
   jobId,
@@ -112,7 +115,7 @@ const useJobDocuments = ({
         return;
       }
 
-      const url = path.to.file.previewFile(`private/${model.modelPath}`);
+      const url = path.to.file.previewFile(`temp-staging/${model.modelPath}`);
       try {
         const response = await fetch(url);
         const blob = await response.blob();
@@ -126,7 +129,7 @@ const useJobDocuments = ({
         document.body.removeChild(a);
       } catch (error) {
         toast.error(t`Error downloading file`);
-        console.error(error);
+        logger.error("Failed to process file operation", { error });
       }
     },
 
@@ -153,7 +156,7 @@ const useJobDocuments = ({
         document.body.removeChild(a);
       } catch (error) {
         toast.error(t`Error downloading file`);
-        console.error(error);
+        logger.error("Failed to process file operation", { error });
       }
     },
 
@@ -300,7 +303,7 @@ const useJobDocuments = ({
         revalidator.revalidate();
       } catch (error) {
         toast.error(t`Error moving file`);
-        console.error(error);
+        logger.error("Failed to process file operation", { error });
       }
     },
     [carbon, itemId, getPath, revalidator, t]
@@ -403,66 +406,67 @@ const JobDocuments = ({
               </Tr>
             </Thead>
             <Tbody>
-              {modelUpload?.modelName && (
-                <Tr>
-                  <Td>
-                    <HStack>
-                      <DocumentIcon type="Model" />
-                      <VStack>
-                        <Hyperlink
-                          target="_blank"
-                          to={getModelPath(modelUpload)}
-                        >
-                          {modelUpload.modelName}
-                        </Hyperlink>
-                      </VStack>
-                    </HStack>
-                  </Td>
-                  <Td>
-                    {modelUpload.modelSize
-                      ? convertKbToString(
-                          Math.floor((modelUpload.modelSize ?? 0) / 1024)
-                        )
-                      : "--"}
-                  </Td>
-                  <Td>
-                    <Enumerable value="Job" />
-                  </Td>
-                  <Td className="text-xs font-mono">--</Td>
-                  <Td>
-                    <div className="flex justify-end w-full">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <IconButton
-                            aria-label={t`More`}
-                            icon={<LuEllipsisVertical />}
-                            variant="secondary"
-                          />
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                          <DropdownMenuItem asChild>
-                            <Link to={getModelPath(modelUpload)}>
-                              <Trans>View</Trans>
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => downloadModel(modelUpload)}
+              {modelUpload?.modelName &&
+                (modelUpload.modelSize ?? 0) <= MODEL_RAW_KEEP_MAX_BYTES && (
+                  <Tr>
+                    <Td>
+                      <HStack>
+                        <DocumentIcon type="Model" />
+                        <VStack>
+                          <Hyperlink
+                            target="_blank"
+                            to={getModelPath(modelUpload)}
                           >
-                            Download
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            destructive
-                            disabled={!canDelete || isReadOnly}
-                            onClick={() => deleteModel()}
-                          >
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </Td>
-                </Tr>
-              )}
+                            {modelUpload.modelName}
+                          </Hyperlink>
+                        </VStack>
+                      </HStack>
+                    </Td>
+                    <Td>
+                      {modelUpload.modelSize
+                        ? convertKbToString(
+                            Math.floor((modelUpload.modelSize ?? 0) / 1024)
+                          )
+                        : "--"}
+                    </Td>
+                    <Td>
+                      <Enumerable value="Job" />
+                    </Td>
+                    <Td className="text-xs font-mono">--</Td>
+                    <Td>
+                      <div className="flex justify-end w-full">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <IconButton
+                              aria-label={t`More`}
+                              icon={<LuEllipsisVertical />}
+                              variant="secondary"
+                            />
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent>
+                            <DropdownMenuItem asChild>
+                              <Link to={getModelPath(modelUpload)}>
+                                <Trans>View</Trans>
+                              </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => downloadModel(modelUpload)}
+                            >
+                              Download
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              destructive
+                              disabled={!canDelete || isReadOnly}
+                              onClick={() => deleteModel()}
+                            >
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </Td>
+                  </Tr>
+                )}
               {allFiles.map((file) => {
                 const type = getDocumentType(file.name);
                 return (

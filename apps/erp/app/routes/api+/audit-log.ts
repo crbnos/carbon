@@ -4,7 +4,10 @@ import {
   isAuditLogEnabled,
   syncAuditSubscriptions
 } from "@carbon/database/audit";
+import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
+
+const logger = getLogger("erp", "audit-log");
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -53,7 +56,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
     return Response.json({ entries });
   } catch (err) {
-    console.error("Failed to fetch audit log:", err);
+    logger.error("Failed to fetch audit log", { error: err });
     return Response.json({ entries: [] });
   }
 }

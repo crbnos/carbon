@@ -4,6 +4,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { trigger } from "@carbon/jobs";
+import { getLogger } from "@carbon/logger";
 import { supportedModelTypes } from "@carbon/utils";
 import { generateObject } from "ai";
 import { nanoid } from "nanoid";
@@ -25,6 +26,8 @@ const quoteDragValidator = z.object({
   path: z.string(),
   lineId: z.string().optional()
 });
+
+const logger = getLogger("erp", "quote", "drag");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -87,7 +90,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       readableId = parsedFilename.partId;
       revision = parsedFilename.revision || "0";
     } catch (error) {
-      console.error(error);
+      logger.error("Failed to parse part filename", { error });
     }
 
     let suffix = 1;
@@ -227,10 +230,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
 
     if (modelRecord.error) {
-      console.error(
-        `Failed to create model record for ${fileName}:`,
-        modelRecord.error
-      );
+      logger.error("Failed to create model record", {
+        fileName,
+        error: modelRecord.error
+      });
       return false;
     }
 
@@ -255,27 +258,40 @@ export async function action({ request, params }: ActionFunctionArgs) {
     const [lineUpdate] = await Promise.all(updates);
 
     if (lineUpdate.error) {
-      console.error(
-        `Failed to link model to sales order line:`,
-        lineUpdate.error
-      );
+      logger.error("Failed to link model to sales order line", {
+        error: lineUpdate.error
+      });
     }
 
-    // Move the file to the new path
-    const move = await client.storage
-      .from("private")
-      .move(documentPath, newPath);
-
-    if (move.error) {
+    // Relocate the raw across buckets: attachments live in `private`, but raw
+    // models must land in `temp-staging` (2.5 GB) for the optimise/assembly jobs
+    // to read (Supabase has no cross-bucket move).
+    const raw = await client.storage.from("private").download(documentPath);
+    if (raw.error) {
       throw redirect(
         path.to.quote(quoteId),
-        await flash(request, error(move.error, "Failed to move file"))
+        await flash(request, error(raw.error, "Failed to read model file"))
       );
     }
+    const staged = await client.storage
+      .from("temp-staging")
+      .upload(newPath, raw.data, { upsert: true });
+    if (staged.error) {
+      throw redirect(
+        path.to.quote(quoteId),
+        await flash(request, error(staged.error, "Failed to stage model file"))
+      );
+    }
+    await client.storage.from("private").remove([documentPath]);
 
     await trigger("model-thumbnail", {
       companyId,
       modelId
+    });
+    await trigger("model-optimize", {
+      modelUploadId: modelId,
+      companyId,
+      userId
     });
   } else {
     newPath = `${companyId}/opportunity-line/${targetLineId}/${fileName}`;

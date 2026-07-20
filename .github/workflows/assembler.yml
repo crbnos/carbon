@@ -1,0 +1,180 @@
+name: Assembler Image
+
+# Isolated from deploy.yml so an assembler/crates change builds ONLY the
+# assembler image (and vice versa — erp/mes pushes never rebuild this).
+# Builds carbon/assembler:${sha} from apps/assembler/Dockerfile, which links the
+# prebuilt carbon/occt base (built here on demand — it's a ~30 min OCCT compile,
+# so it is NOT part of every run). The Lambda/ECS *deploy* is separate (P2/P3).
+#
+# Prereq: ECR repos carbon/assembler + carbon/occt exist (created out-of-band).
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "apps/assembler/**"
+      - "crates/**"
+  workflow_dispatch:
+    inputs:
+      build_occt_base:
+        description: "Also rebuild the carbon/occt base image (slow, ~30 min)"
+        type: boolean
+        default: false
+      deploy:
+        description: "Deploy the Lambda (+ optional ECS service) after building"
+        type: boolean
+        default: false
+      stage:
+        description: "SST stage to deploy (e.g. prod, govcloud)"
+        type: string
+        default: "prod"
+
+jobs:
+  occt-base:
+    name: OCCT base image
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.build_occt_base }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push OCCT base
+        uses: docker/build-push-action@v5
+        with:
+          context: apps/assembler
+          file: apps/assembler/occt.Dockerfile
+          push: true
+          tags: ${{ steps.login-ecr.outputs.registry }}/carbon/occt:8.0.0-p1
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
+
+  build:
+    name: Build assembler image
+    # Disabled by default: the push trigger only fires once the repo variable
+    # ASSEMBLER_CI_ENABLED is set to 'true' (Settings -> Variables). Until the
+    # ECR repos + AWS secrets exist in the CI account, an automatic build on a
+    # main merge would just fail red. Manual workflow_dispatch always works —
+    # running it by hand is intentional.
+    if: github.event_name == 'workflow_dispatch' || vars.ASSEMBLER_CI_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Context is the repo root (the cargo workspace spans crates/* + apps/assembler);
+      # the Dockerfile links the prebuilt OCCT base via the OCCT_IMAGE build-arg.
+      - name: Build and push assembler image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: apps/assembler/Dockerfile
+          build-args: |
+            OCCT_IMAGE=${{ steps.login-ecr.outputs.registry }}/carbon/occt:8.0.0-p1
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/carbon/assembler:latest
+            ${{ steps.login-ecr.outputs.registry }}/carbon/assembler:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
+
+      # Report-only for now (exit-code 0). Flip to '1' to fail the build on
+      # CRITICAL/HIGH once the base image's findings are triaged.
+      - name: Scan image (Trivy)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ steps.login-ecr.outputs.registry }}/carbon/assembler:${{ github.sha }}
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "0"
+
+  # P2/P3 deploy — MANUAL ONLY, never auto-fires. Gated on the explicit `deploy`
+  # dispatch input so a main push only builds the image (above); the Lambda/ECS
+  # rollout happens when a human triggers it AFTER filling the DECISION: env in
+  # apps/assembler/sst.config.ts and adding the deploy secrets. This is an
+  # UNVALIDATED scaffold (see the sst.config.ts header) — validate against a
+  # throwaway stage first.
+  deploy:
+    name: Deploy assembler (Lambda + optional ECS service)
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.deploy }}
+    needs: build
+    runs-on: ubuntu-latest
+    env:
+      IMAGE_TAG: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      # SST v3 is Pulumi-based; pin the same engine version deploy.yml uses.
+      - name: Install compatible Pulumi version
+        run: |
+          curl -fsSL https://get.pulumi.com | sh -s -- --version 3.212.0
+          echo "$HOME/.pulumi/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Deploys apps/assembler/sst.config.ts. The image was pushed by `build`
+      # above (carbon/assembler:${github.sha}); IMAGE_TAG points the Lambda + ECS
+      # task at it. Consumers' ASSEMBLER_SERVICE_URL / ASSEMBLER_ECS_SERVICE_URL /
+      # ASSEMBLER_SYNC_ENABLED are wired from the stack outputs after this runs.
+      - name: Deploy (sst)
+        working-directory: apps/assembler
+        env:
+          AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          ASSEMBLER_SERVICE_API_KEY: ${{ secrets.ASSEMBLER_SERVICE_API_KEY }}
+          # DECISION: fill the rest from secrets before enabling —
+          #   ASSEMBLER_ALLOWED_URL_HOSTS, ASSEMBLER_REDIS_URL,
+          #   ASSEMBLER_ECS_ENABLED (default off), ASSEMBLER_SERVICE_HOSTNAME,
+          #   ASSEMBLER_SERVICE_CERT_ARN, ASSEMBLER_ECS_MIN/MAX.
+        # TODO(P2/P3): the standalone SST app needs an sst toolchain in
+        # apps/assembler (or run via the root's sst). Wire the actual command once
+        # the toolchain + stage naming are settled.
+        run: |
+          echo "TODO: npx sst deploy --stage ${{ inputs.stage }}"
+          echo "Scaffold only — filling DECISION env + sst toolchain is the human deploy step."
+          exit 1

@@ -376,7 +376,7 @@ export const companyRestoreFunction = inngest.createFunction(
     }
   },
   { event: "carbon/company-restore" },
-  async ({ event, step }) => {
+  async ({ event, step, logger }) => {
     const { companyId, userId, filePath, restoreRunId, label, includeStorage } =
       event.data;
 
@@ -388,7 +388,7 @@ export const companyRestoreFunction = inngest.createFunction(
       // must not wipe again.
       const existing = await readRestoreMarker(client, companyId, restoreRunId);
       if (existing && existing.metadata.status === "ready") {
-        console.log("Restore already applied, skipping", { restoreRunId });
+        logger.info("Restore already applied, skipping", { restoreRunId });
         return { restoreRunId, skipped: true };
       }
 
@@ -539,7 +539,7 @@ export const companyRestoreFunction = inngest.createFunction(
               (done, total) => report({ phase: "files", done, total })
             );
           } catch (storageErr) {
-            console.warn("Restore: file restore failed (data is intact)", {
+            logger.warn("Restore: file restore failed (data is intact)", {
               restoreRunId,
               error:
                 storageErr instanceof Error
@@ -557,7 +557,7 @@ export const companyRestoreFunction = inngest.createFunction(
           patch: { status: "ready", rows }
         });
 
-        console.log("Company restore complete — pending keep/revert", {
+        logger.info("Company restore complete — pending keep/revert", {
           companyId,
           restoreRunId,
           rows,
@@ -573,7 +573,7 @@ export const companyRestoreFunction = inngest.createFunction(
           restoreRunId,
           patch: { status: "failed", error: message }
         });
-        console.error("Company restore failed", {
+        logger.error("Company restore failed", {
           companyId,
           restoreRunId,
           error: message
@@ -598,7 +598,7 @@ export const companyRestoreFinalizeFunction = inngest.createFunction(
     }
   },
   { event: "carbon/company-restore-finalize" },
-  async ({ event, step }) => {
+  async ({ event, step, logger }) => {
     const { companyId, restoreRunId } = event.data;
 
     return await step.run("finalize-restore", async () => {
@@ -611,7 +611,7 @@ export const companyRestoreFinalizeFunction = inngest.createFunction(
       }
       await deleteRestoreMarker(client, companyId, restoreRunId);
 
-      console.log("Company restore kept", { companyId, restoreRunId });
+      logger.info("Company restore kept", { companyId, restoreRunId });
       return { restoreRunId, kept: true };
     });
   }
@@ -631,7 +631,7 @@ export const companyRestoreRevertFunction = inngest.createFunction(
     }
   },
   { event: "carbon/company-restore-revert" },
-  async ({ event, step }) => {
+  async ({ event, step, logger }) => {
     const { companyId, restoreRunId } = event.data;
 
     return await step.run("revert-restore", async () => {
@@ -641,7 +641,7 @@ export const companyRestoreRevertFunction = inngest.createFunction(
       const marker = await readRestoreMarker(client, companyId, restoreRunId);
       const snapshotPath = marker?.metadata.snapshotPath;
       if (!snapshotPath) {
-        console.log("Nothing to revert — no snapshot on marker", {
+        logger.info("Nothing to revert — no snapshot on marker", {
           restoreRunId
         });
         return { restoreRunId, reverted: false };
@@ -691,7 +691,7 @@ export const companyRestoreRevertFunction = inngest.createFunction(
         await removeStoragePrefix(client, companyId, backupDir(snapshotPath));
         await deleteRestoreMarker(client, companyId, restoreRunId);
 
-        console.log("Company restore reverted", {
+        logger.info("Company restore reverted", {
           companyId,
           restoreRunId,
           rows
@@ -706,7 +706,7 @@ export const companyRestoreRevertFunction = inngest.createFunction(
           restoreRunId,
           patch: { status: "failed", error: `Revert failed: ${message}` }
         });
-        console.error("Company restore revert failed", {
+        logger.error("Company restore revert failed", {
           companyId,
           restoreRunId,
           error: message

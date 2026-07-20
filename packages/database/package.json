@@ -33,6 +33,7 @@
     "db:migrate:new": "supabase migration new",
     "db:seed": "tsx src/seed.ts",
     "db:seed:dev": "tsx src/seed-dev.ts",
+    "seed:change-orders": "tsx src/seed-change-orders.ts",
     "deploy": "supabase link --project-ref $SUPABASE_PROJECT_ID && supabase db push",
     "lint": "biome lint --write ",
     "typecheck": "tsgo --noEmit"

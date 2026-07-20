@@ -20,7 +20,7 @@ export function GanttChart({ steps }: { steps: StepDef[] }) {
   if (timeline.bars.length === 0) return null;
 
   return (
-    <div className="rounded-2xl border bg-card shadow-button-base p-5 sm:p-6 overflow-x-auto">
+    <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 overflow-x-auto">
       <div className="min-w-[620px]">
         {!timeline.hasDates ? (
           <div className="flex items-center justify-end mb-3">

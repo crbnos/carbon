@@ -105,9 +105,6 @@ msgstr "認証エラー"
 msgid "available"
 msgstr "利用可能"
 
-msgid "Back Home"
-msgstr "ホームに戻る"
-
 msgid "Batch"
 msgstr "バッチ"
 
@@ -327,9 +324,6 @@ msgstr "{0} のPINを入力"
 
 msgid "Error"
 msgstr "エラー"
-
-msgid "Error!"
-msgstr "エラー!"
 
 msgid "Estimated"
 msgstr "見積"
@@ -616,6 +610,9 @@ msgstr "影響なし"
 msgid "No maintenance scheduled for today"
 msgstr "本日のメンテナンス予定はありません"
 
+msgid "No matches. Type to create one."
+msgstr "一致するものがありません。入力して新しく作成してください。"
+
 msgid "No materials"
 msgstr "材料なし"
 
@@ -763,6 +760,9 @@ msgstr "前へ"
 
 msgid "Preventive"
 msgstr "予防保全"
+
+msgid "Previous"
+msgstr "前へ"
 
 msgid "Print"
 msgstr "印刷"
@@ -968,9 +968,6 @@ msgstr "{stationName} としてサインイン中"
 
 msgid "Size"
 msgstr "サイズ"
-
-msgid "Something went wrong"
-msgstr "エラーが発生しました"
 
 msgid "Source"
 msgstr "ソース"

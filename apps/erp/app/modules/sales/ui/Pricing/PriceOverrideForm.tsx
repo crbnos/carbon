@@ -16,6 +16,9 @@ import {
   HStack,
   IconButton,
   LabelWithHelp,
+  Modal,
+  ModalBody,
+  ModalContent,
   ModalDrawer,
   ModalDrawerBody,
   ModalDrawerContent,
@@ -23,6 +26,9 @@ import {
   ModalDrawerHeader,
   ModalDrawerProvider,
   ModalDrawerTitle,
+  ModalFooter,
+  ModalHeader,
+  ModalTitle,
   Skeleton,
   Switch,
   Tooltip,
@@ -266,6 +272,10 @@ function PriceBreaks({
   const formatter = useCurrencyFormatter();
 
   const [historyBreakId, setHistoryBreakId] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<{
+    index: number;
+    quantity: number;
+  } | null>(null);
   const fetcher = useFetcher<{ entries: AuditLogEntry[] }>();
   const lastFetchedRef = useRef<string | null>(null);
 
@@ -380,7 +390,12 @@ function PriceBreaks({
                       </DropdownMenuItem>
                     ) : null}
                     <DropdownMenuItem
-                      onClick={() => removeRow(row.index)}
+                      onClick={() =>
+                        setPendingDelete({
+                          index: row.index,
+                          quantity: row.original.quantity
+                        })
+                      }
                       destructive
                     >
                       <DropdownMenuIcon icon={<LuTrash />} />
@@ -431,15 +446,7 @@ function PriceBreaks({
         }
       }
     ],
-    [
-      isDisabled,
-      removeRow,
-      formatter,
-      t,
-      toggleActive,
-      activeCount,
-      canShowHistory
-    ]
+    [isDisabled, formatter, t, toggleActive, activeCount, canShowHistory]
   );
 
   return (
@@ -492,6 +499,41 @@ function PriceBreaks({
           </DrawerContent>
         </Drawer>
       )}
+      <Modal
+        open={pendingDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingDelete(null);
+        }}
+      >
+        <ModalContent>
+          <ModalHeader>
+            <ModalTitle>
+              <Trans>Delete Price Break</Trans>
+            </ModalTitle>
+          </ModalHeader>
+          <ModalBody>
+            <p className="text-sm text-muted-foreground">
+              {pendingDelete
+                ? t`Delete the price break for quantity ${pendingDelete.quantity}? This can't be undone.`
+                : null}
+            </p>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="secondary" onClick={() => setPendingDelete(null)}>
+              <Trans>Cancel</Trans>
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (pendingDelete) removeRow(pendingDelete.index);
+                setPendingDelete(null);
+              }}
+            >
+              <Trans>Delete</Trans>
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </div>
   );
 }

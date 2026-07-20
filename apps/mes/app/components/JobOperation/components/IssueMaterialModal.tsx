@@ -65,14 +65,15 @@ import { useFetcher } from "react-router";
 import { PrintButton } from "~/components";
 import type {
   getBatchNumbersForItem,
-  getSerialNumbersForItem
+  getSerialNumbersForItem,
+  SuggestedAllocationLot
 } from "~/services/inventory.service";
 import { convertEntityValidator, issueValidator } from "~/services/models";
 import type { JobMaterial, TrackedInput } from "~/services/types";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 
-type TrackingType = "Serial" | "Batch" | "Inventory" | null;
+type TrackingType = "Serial" | "Batch" | "Inventory" | "Non-Inventory" | null;
 
 interface ItemDetails {
   id: string;
@@ -306,6 +307,93 @@ export function IssueMaterialModal({
   // Tab state
   const [activeTab, setActiveTab] = useState("scan");
 
+  // Pre-fill the selection with the picking list's recommendation (a default
+  // only — fully editable below). Two sources feed it, in priority order:
+  //   1. the exact lots a picking list already PICKED for this material
+  //      (`pickedAllocation`, from pickingListLineTrackedEntity), and
+  //   2. the on-the-fly pickMethod suggestion of what to pick
+  //      (`suggestedAllocation`, netted + FEFO/FIFO sorted).
+  // A material can be on a picking list (quantityToPick > 0) with nothing picked
+  // yet — e.g. a multi-line list where other lines were picked first. In that
+  // state `pickedAllocation` is empty, so we must still surface the suggestion
+  // rather than leaving the operator with the default first lot. Hence the
+  // suggestion is ALWAYS loaded and used as the fallback, not gated off whenever
+  // a picking allocation merely exists.
+  const pickedOverlay = material as
+    | { quantityToPick?: number | null; quantityPicked?: number | null }
+    | undefined;
+  const hasPickingAllocation =
+    Number(pickedOverlay?.quantityToPick ?? 0) > 0 ||
+    Number(pickedOverlay?.quantityPicked ?? 0) > 0;
+  const shouldSuggestAllocation =
+    !!material &&
+    !!selectedItemId &&
+    !!locationId &&
+    (trackingType === "Batch" || trackingType === "Serial");
+  const { data: suggestedAllocation } = useSuggestedAllocation(
+    shouldSuggestAllocation
+      ? {
+          itemId: selectedItemId,
+          locationId: locationId as string,
+          quantity: initialQuantity
+        }
+      : undefined
+  );
+  const shouldLoadPickedAllocation =
+    !!material?.id &&
+    hasPickingAllocation &&
+    (trackingType === "Batch" || trackingType === "Serial");
+  const { data: pickedAllocation, resolved: pickedAllocationResolved } =
+    usePickedAllocation(
+      shouldLoadPickedAllocation ? (material?.id ?? undefined) : undefined
+    );
+  // Prefer the actual picks; fall back to the suggestion only when nothing's
+  // been picked yet (allocated-but-not-picked) or when there's no picking list.
+  // Wait for the picked-allocation request to resolve before falling back, so a
+  // faster suggestion response can't be seeded and then locked in ahead of the
+  // real picked lots.
+  const seedAllocation =
+    shouldLoadPickedAllocation && !pickedAllocationResolved
+      ? []
+      : pickedAllocation.length
+        ? pickedAllocation
+        : suggestedAllocation;
+  const hasSeededSuggestionRef = useRef(false);
+  useEffect(() => {
+    if (hasSeededSuggestionRef.current) return;
+    if (!seedAllocation.length) return;
+    if (trackingType === "Batch") {
+      // Don't clobber a selection the operator already started if the (async)
+      // suggestion arrives after they picked.
+      if (selectedBatchNumbers.some((b) => b.id)) return;
+      setSelectedBatchNumbers(
+        seedAllocation.map((lot, index) => ({
+          index,
+          id: lot.trackedEntityId,
+          quantity: lot.quantity
+        }))
+      );
+      setActiveTab("select");
+      hasSeededSuggestionRef.current = true;
+    } else if (trackingType === "Serial") {
+      if (selectedSerialNumbers.some((s) => s.id)) return;
+      setSelectedSerialNumbers((prev) =>
+        prev.map((row, i) =>
+          seedAllocation[i]
+            ? { ...row, id: seedAllocation[i].trackedEntityId }
+            : row
+        )
+      );
+      setActiveTab("select");
+      hasSeededSuggestionRef.current = true;
+    }
+  }, [
+    seedAllocation,
+    trackingType,
+    selectedBatchNumbers,
+    selectedSerialNumbers
+  ]);
+
   // Expiry override state. Surfaced when a selected serial/batch is expired.
   // Server enforces the actual company policy (Warn / Block / BlockWithOverride);
   // this UI lets the operator type a reason that the server records when the
@@ -440,10 +528,20 @@ export function IssueMaterialModal({
 
   const addSerialNumber = useCallback(() => {
     setSelectedSerialNumbers((prev) => {
-      const newIndex = prev.length;
-      return [...prev, { index: newIndex, id: "" }];
+      // Pre-fill the new row with the next unused serial. Prefer the remaining
+      // pick-method-ordered suggestion (FEFO/FIFO/LIFO), so added rows stay
+      // consistent with the seeded ones; only fall back to the picker's default
+      // FEFO/FIFO order once the suggestion is exhausted. Editable either way.
+      const used = new Set(prev.map((s) => s.id).filter(Boolean));
+      const fromSuggestion = seedAllocation.find(
+        (lot) => !used.has(lot.trackedEntityId)
+      );
+      const next = fromSuggestion
+        ? serialOptions.find((o) => o.value === fromSuggestion.trackedEntityId)
+        : serialOptions.find((o) => !used.has(o.value) && !o.isExpired);
+      return [...prev, { index: prev.length, id: next?.value ?? "" }];
     });
-  }, []);
+  }, [serialOptions, seedAllocation]);
 
   const removeSerialNumber = useCallback((indexToRemove: number) => {
     setSelectedSerialNumbers((prev) => {
@@ -480,10 +578,27 @@ export function IssueMaterialModal({
 
   const addBatchNumber = useCallback(() => {
     setSelectedBatchNumbers((prev) => {
-      const newIndex = prev.length;
-      return [...prev, { index: newIndex, id: "", quantity: 1 }];
+      // Pre-fill the new row with the next unused batch. Prefer the remaining
+      // pick-method-ordered suggestion (FEFO/FIFO/LIFO) so added rows match the
+      // seeded ones; fall back to the picker's default FEFO/FIFO order once the
+      // suggestion is exhausted. Default qty is clamped to the lot's on-hand.
+      const used = new Set(prev.map((b) => b.id).filter(Boolean));
+      const fromSuggestion = seedAllocation.find(
+        (lot) => !used.has(lot.trackedEntityId)
+      );
+      const next = fromSuggestion
+        ? batchOptions.find((o) => o.value === fromSuggestion.trackedEntityId)
+        : batchOptions.find((o) => !used.has(o.value) && !o.isExpired);
+      return [
+        ...prev,
+        {
+          index: prev.length,
+          id: next?.value ?? "",
+          quantity: next ? Math.min(1, next.availableQuantity) : 1
+        }
+      ];
     });
-  }, []);
+  }, [batchOptions, seedAllocation]);
 
   const removeBatchNumber = useCallback((indexToRemove: number) => {
     setSelectedBatchNumbers((prev) => {
@@ -931,8 +1046,12 @@ export function IssueMaterialModal({
                 </AlertDescription>
               </Alert>
             </ModalBody>
-          ) : trackingType === "Inventory" || trackingType === null ? (
-            // Inventory item - use ValidatedForm
+          ) : trackingType === "Inventory" ||
+            trackingType === "Non-Inventory" ||
+            trackingType === null ? (
+            // Untracked item (Inventory or Non-Inventory, e.g. consumables and
+            // services) - use ValidatedForm; the issue edge function skips the
+            // itemLedger for Non-Inventory items but still posts the WIP cost
             <ValidatedForm
               method="post"
               action={path.to.issue}
@@ -992,32 +1111,34 @@ export function IssueMaterialModal({
                     </div>
                   )}
 
-                  {showContent && trackingType === "Inventory" && (
-                    <>
-                      {!material?.id && (
-                        <div>
-                          <label className="block text-sm font-medium mb-1">
-                            Adjustment Type
-                          </label>
-                          <Select
-                            name="adjustmentType"
-                            defaultValue="Negative Adjmt."
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Positive Adjmt.">
-                                Add to Inventory
-                              </SelectItem>
-                              <SelectItem value="Negative Adjmt.">
-                                Pull from Inventory
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      )}
-                      {/*
+                  {showContent &&
+                    (trackingType === "Inventory" ||
+                      trackingType === "Non-Inventory") && (
+                      <>
+                        {!material?.id && (
+                          <div>
+                            <label className="block text-sm font-medium mb-1">
+                              Adjustment Type
+                            </label>
+                            <Select
+                              name="adjustmentType"
+                              defaultValue="Negative Adjmt."
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Positive Adjmt.">
+                                  Add to Inventory
+                                </SelectItem>
+                                <SelectItem value="Negative Adjmt.">
+                                  Pull from Inventory
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+                        {/*
                         Use the form-aware `<Number>` (FormNumberInput) so
                         `name="quantity"` lands on react-aria's NumberField
                         and a hidden form input is rendered with the numeric
@@ -1027,13 +1148,13 @@ export function IssueMaterialModal({
                         the server's zod schema rejected it, and the action
                         returned a 400 the modal silently swallowed.
                       */}
-                      <FormNumberInput
-                        name="quantity"
-                        label="Quantity"
-                        minValue={0.01}
-                      />
-                    </>
-                  )}
+                        <FormNumberInput
+                          name="quantity"
+                          label="Quantity"
+                          minValue={0.01}
+                        />
+                      </>
+                    )}
                 </div>
               </ModalBody>
               <ModalFooter>
@@ -1897,4 +2018,54 @@ function useBatchNumbers(itemId?: string) {
   }, [itemId, batchNumbersFetcher.load]);
 
   return { data: batchNumbersFetcher.data };
+}
+
+// Hook for the on-the-fly picking-list-style allocation suggestion.
+// Loads only when args are provided (tracked item, no picking allocation).
+function useSuggestedAllocation(args?: {
+  itemId: string;
+  locationId: string;
+  quantity: number;
+}) {
+  const fetcher = useFetcher<{ data: SuggestedAllocationLot[]; error: null }>();
+  const key =
+    args && args.itemId && args.locationId && args.quantity > 0
+      ? `${args.itemId}:${args.locationId}:${args.quantity}`
+      : undefined;
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on args identity
+  useEffect(() => {
+    if (args && key) {
+      fetcher.load(
+        path.to.api.suggestedAllocation(
+          args.itemId,
+          args.locationId,
+          args.quantity
+        )
+      );
+    }
+  }, [key]);
+
+  return { data: fetcher.data?.data ?? [] };
+}
+
+// Hook for the lots a picking list already picked for this job material. Loads
+// only when a picking allocation exists (jobMaterialId provided).
+function usePickedAllocation(jobMaterialId?: string) {
+  const fetcher = useFetcher<{ data: SuggestedAllocationLot[]; error: null }>();
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on jobMaterialId
+  useEffect(() => {
+    if (jobMaterialId) {
+      fetcher.load(path.to.api.pickedAllocation(jobMaterialId));
+    }
+  }, [jobMaterialId]);
+
+  return {
+    data: fetcher.data?.data ?? [],
+    // Has the request come back? An empty result only means "nothing picked"
+    // once this is true — before that it's still loading. Guards the seed from
+    // falling back to the suggestion before the picked lots have arrived.
+    resolved: fetcher.state === "idle" && fetcher.data !== undefined
+  };
 }

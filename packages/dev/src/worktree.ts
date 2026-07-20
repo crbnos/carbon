@@ -22,7 +22,8 @@ export const PORT_NAMES = [
   "PORT_INBUCKET",
   "PORT_INNGEST",
   "PORT_ERP",
-  "PORT_MES"
+  "PORT_MES",
+  "PORT_ASSEMBLER"
 ] as const;
 type PortName = (typeof PORT_NAMES)[number];
 
@@ -60,6 +61,23 @@ export function resolveSlug(worktreeRoot: string): string {
 
 export function persistSlug(worktreeRoot: string, slug: string) {
   writeFileSync(join(worktreeRoot, SLUG_FILE), `${slug}\n`);
+}
+
+// Canonical, branch-derived slug: "<repoBase>-<branch>" — the same directory
+// name `crbn new` derives (new.ts). Path-independent, so a worktree created by
+// Conductor (a codename dir like `moscow`) or a bare `git worktree add` gets the
+// SAME slug a native `crbn` worktree would, instead of `basename` colliding with
+// the main checkout's `carbon`. Falls back to the worktree dir basename when the
+// branch is missing / HEAD-detached.
+export function canonicalSlug(opts: {
+  worktreeRoot: string;
+  mainRoot: string;
+  branch: string;
+}): string {
+  const repoBase = basename(opts.mainRoot).replace(/-[a-z0-9-]+$/i, "");
+  return opts.branch
+    ? slugify(`${repoBase}-${opts.branch}`)
+    : slugify(basename(opts.worktreeRoot));
 }
 
 export async function getWorktreeRoot(): Promise<string> {

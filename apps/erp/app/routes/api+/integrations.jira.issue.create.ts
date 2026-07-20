@@ -6,9 +6,12 @@ import {
   linkActionToJiraIssue,
   tiptapToAdf
 } from "@carbon/ee/jira.server";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunction, LoaderFunction } from "react-router";
 import { data } from "react-router";
 import { getIssueAction } from "~/modules/quality/quality.service";
+
+const logger = getLogger("erp", "integrations-jira-issue-create");
 
 const jira = getJiraClient();
 
@@ -48,7 +51,7 @@ export const action: ActionFunction = async ({ request }) => {
       try {
         adfDescription = tiptapToAdf(notes as any);
       } catch (e) {
-        console.error("Failed to convert notes to ADF:", e);
+        logger.error("Failed to convert notes to ADF", { error: e });
       }
     }
 
@@ -112,7 +115,7 @@ export const action: ActionFunction = async ({ request }) => {
 
     return { success: true, message: "Jira issue created" };
   } catch (error) {
-    console.error("Jira issue action error:", error);
+    logger.error("Jira issue action error", { error: error });
     return data(
       { success: false, message: "Failed to create issue" },
       { status: 400 }

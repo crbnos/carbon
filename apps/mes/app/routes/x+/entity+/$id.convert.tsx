@@ -1,9 +1,12 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { convertEntityValidator } from "~/services/models";
+
+const log = getLogger("mes");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -48,7 +51,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
 
   if (convert.error) {
-    console.error(convert.error);
+    log.error("Failed to convert entity", { error: convert.error });
     return data(
       { success: false, message: "Failed to convert entity" },
       { status: 400 }

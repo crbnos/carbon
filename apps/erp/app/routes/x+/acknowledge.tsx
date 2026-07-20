@@ -1,7 +1,10 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { userFlagValidator } from "~/modules/users";
+
+const logger = getLogger("erp", "acknowledge");
 
 export async function action({ request }: ActionFunctionArgs) {
   const { client, userId } = await requirePermissions(request, {});
@@ -49,7 +52,7 @@ export async function action({ request }: ActionFunctionArgs) {
       .single();
 
     if (readError) {
-      console.error(
+      logger.error(
         `[acknowledge] Failed to read flags for user ${userId}:`,
         readError
       );
@@ -65,7 +68,7 @@ export async function action({ request }: ActionFunctionArgs) {
       .eq("id", userId);
 
     if (updateResult.error) {
-      console.error(
+      logger.error(
         `[acknowledge] Failed to write flag "${flag}" for user ${userId}:`,
         updateResult.error
       );

@@ -1,5 +1,8 @@
 import type { Database } from "@carbon/database";
+import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
+
+const logger = getLogger("erp", "mcp");
 
 export interface McpContext {
   client: SupabaseClient<Database>;
@@ -44,21 +47,16 @@ export function withErrorHandling<T extends Record<string, unknown>>(
 ) {
   return async (params: T) => {
     try {
-      console.log(
-        `[withErrorHandling] Executing handler for: ${fallbackMessage}`
-      );
+      logger.info("Executing handler", { fallbackMessage });
       const result = await handler(params);
-      console.log(`[withErrorHandling] Handler completed successfully`);
+      logger.info("Handler completed successfully");
       return result;
     } catch (error) {
-      console.error(
-        `[withErrorHandling] Error in handler (${fallbackMessage}):`,
-        error
-      );
-      console.error(
-        `[withErrorHandling] Error stack:`,
-        error instanceof Error ? error.stack : "No stack"
-      );
+      logger.error("Error in handler", {
+        fallbackMessage,
+        error,
+        stack: error instanceof Error ? error.stack : "No stack"
+      });
       return {
         content: [
           {

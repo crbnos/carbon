@@ -5,6 +5,7 @@ import { flash } from "@carbon/auth/session.server";
 import { PurchaseOrderEmail } from "@carbon/documents/email";
 import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
+import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
 import { PO_EMAIL_ATTACHMENT_LIMIT_MB } from "@carbon/utils";
 import { renderAsync } from "@react-email/components";
@@ -37,6 +38,8 @@ import { getUser } from "~/modules/users/users.server";
 import { loader as pdfLoader } from "~/routes/file+/purchase-order+/$orderId[.]pdf";
 import { path, requestReferrer } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
+
+const logger = getLogger("erp", "orderid-finalize");
 
 export async function action(args: ActionFunctionArgs) {
   const { request, params } = args;
@@ -158,7 +161,7 @@ export async function action(args: ActionFunctionArgs) {
             from: userId
           });
         } catch (e) {
-          console.error("Failed to trigger approval notification", e);
+          logger.error("Failed to trigger approval notification", { error: e });
         }
       }
     }
@@ -197,7 +200,9 @@ export async function action(args: ActionFunctionArgs) {
     );
 
     if (priceUpdate.error) {
-      console.error("Failed to update purchased prices:", priceUpdate.error);
+      logger.error("Failed to update purchased prices", {
+        error: priceUpdate.error
+      });
       // Don't fail the entire finalization, just log the error
     }
   }

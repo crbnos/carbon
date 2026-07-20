@@ -1,8 +1,11 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { isIssueLocked } from "~/modules/quality";
 import { requireUnlockedBulk } from "~/utils/lockedGuard.server";
+
+const logger = getLogger("erp", "update");
 
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
@@ -48,7 +51,7 @@ export async function action({ request }: ActionFunctionArgs) {
         .in("id", ids as string[]);
 
       if (update.error) {
-        console.error(update.error);
+        logger.error(update.error);
         return {
           error: { message: "Failed to update issue" },
           data: null

@@ -1,4 +1,5 @@
 /// <reference path="./autodesk.d.ts" />
+import { getLogger } from "@carbon/logger";
 import {
   createContext,
   useCallback,
@@ -9,6 +10,8 @@ import {
 } from "react";
 import { useMount } from "./hooks";
 import { cn } from "./utils/cn";
+
+const log = getLogger("react", "autodesk-viewer");
 
 export type AutodeskToken = {
   token: string;
@@ -40,7 +43,7 @@ function AutodeskProvider({ children, tokenEndpoint }: AutodeskProviderProps) {
       setToken(newToken);
       return newToken;
     } catch (error) {
-      console.error("Failed to refresh Autodesk token:", error);
+      log.error("Failed to refresh Autodesk token", { error });
       return "";
     }
   }, [tokenEndpoint]);
@@ -143,7 +146,7 @@ const AutodeskViewer: React.FC<AutodeskViewerProps> = ({
         errorMessage: string,
         errorDetails: any
       ) => {
-        console.error({
+        log.error("Autodesk document load failed", {
           code: errorCode,
           message: errorMessage,
           errors: errorDetails
@@ -209,7 +212,7 @@ export async function getAccessToken(endpoint: string): Promise<string> {
     const data = await response.json();
     return data.token;
   } catch (error) {
-    console.error("Error getting Autodesk access token:", error);
+    log.error("Failed to get Autodesk access token", { error });
     throw error;
   }
 }

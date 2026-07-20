@@ -5,8 +5,30 @@
   "files": {
     "includes": [
       "./**/src/**/*.ts*",
+      "./database/supabase/functions/**/*.ts",
       "_./database/src/swagger-docs-schema.ts",
       "_./database/src/types.ts"
     ]
-  }
+  },
+  "overrides": [
+    {
+      // Supabase edge functions run on Deno, not Node — they use Deno globals,
+      // their own import style, and were never Biome-formatted. Bring them into
+      // the lint surface for `noConsole` ONLY (inherited from root as a warning),
+      // and switch off formatting/assist + the Node-oriented error rules that
+      // would otherwise fail CI on this never-linted code.
+      "includes": ["database/supabase/functions/**/*.ts"],
+      "formatter": { "enabled": false },
+      "assist": { "enabled": false },
+      "linter": {
+        "rules": {
+          "correctness": {
+            "noUndeclaredVariables": "off",
+            "noUnusedVariables": "off"
+          },
+          "style": { "useImportType": "off" }
+        }
+      }
+    }
+  ]
 }

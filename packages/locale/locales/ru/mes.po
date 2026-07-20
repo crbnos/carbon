@@ -105,9 +105,6 @@ msgstr "Ошибка аутентификации"
 msgid "available"
 msgstr "доступно"
 
-msgid "Back Home"
-msgstr "Вернуться домой"
-
 msgid "Batch"
 msgstr "Партия"
 
@@ -327,9 +324,6 @@ msgstr "Введите PIN для {0}"
 
 msgid "Error"
 msgstr "Ошибка"
-
-msgid "Error!"
-msgstr "Ошибка!"
 
 msgid "Estimated"
 msgstr "План"
@@ -616,6 +610,9 @@ msgstr "Без влияния"
 msgid "No maintenance scheduled for today"
 msgstr "На сегодня обслуживание не запланировано"
 
+msgid "No matches. Type to create one."
+msgstr "Совпадений не найдено. Введите текст для создания."
+
 msgid "No materials"
 msgstr "Нет материалов"
 
@@ -763,6 +760,9 @@ msgstr "Назад"
 
 msgid "Preventive"
 msgstr "Профилактическое"
+
+msgid "Previous"
+msgstr "Предыдущий"
 
 msgid "Print"
 msgstr "Печать"
@@ -968,9 +968,6 @@ msgstr "Вход выполнен как {stationName}"
 
 msgid "Size"
 msgstr "Размер"
-
-msgid "Something went wrong"
-msgstr "Что-то пошло не так"
 
 msgid "Source"
 msgstr "Источник"

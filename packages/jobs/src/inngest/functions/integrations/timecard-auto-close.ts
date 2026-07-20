@@ -5,11 +5,11 @@ export const timeCardAutoCloseFunction = inngest.createFunction(
   { id: "timecard-auto-close", retries: 2 },
   // Run every Sunday at 11pm UTC (after weekly task at 9pm)
   { cron: "0 23 * * 0" },
-  async ({ step }) => {
+  async ({ step, logger }) => {
     const serviceRole = getCarbonServiceRole();
 
     await step.run("auto-close-timecards", async () => {
-      console.log(`Starting timecard auto-close: ${new Date().toISOString()}`);
+      logger.info(`Starting timecard auto-close: ${new Date().toISOString()}`);
 
       try {
         // 1. Get all companies with time clock enabled
@@ -19,11 +19,13 @@ export const timeCardAutoCloseFunction = inngest.createFunction(
           .eq("timeCardEnabled", true);
 
         if (companiesError) {
-          console.error(`Failed to fetch companies: ${companiesError.message}`);
+          logger.error("Failed to fetch companies", {
+            error: companiesError
+          });
           return;
         }
 
-        console.log(
+        logger.info(
           `Found ${companies?.length || 0} companies with time clock enabled`
         );
 
@@ -38,15 +40,16 @@ export const timeCardAutoCloseFunction = inngest.createFunction(
             .is("clockOut", null);
 
           if (entriesError) {
-            console.error(
-              `Failed to fetch open entries for company ${company.id}: ${entriesError.message}`
+            logger.error(
+              `Failed to fetch open entries for company ${company.id}`,
+              { error: entriesError }
             );
             continue;
           }
 
           if (!openEntries || openEntries.length === 0) continue;
 
-          console.log(
+          logger.info(
             `Company ${company.id}: ${openEntries.length} open entries`
           );
 
@@ -109,27 +112,25 @@ export const timeCardAutoCloseFunction = inngest.createFunction(
               .eq("id", entry.id);
 
             if (updateError) {
-              console.error(
-                `Failed to auto-close entry ${entry.id}: ${updateError.message}`
-              );
+              logger.error(`Failed to auto-close entry ${entry.id}`, {
+                error: updateError
+              });
             } else {
               totalClosed++;
-              console.log(
+              logger.info(
                 `Auto-closed entry ${entry.id} for employee ${entry.employeeId}`
               );
             }
           }
         }
 
-        console.log(
+        logger.info(
           `Timecard auto-close completed: ${totalClosed} entries closed`
         );
       } catch (err) {
-        console.error(
-          `Unexpected error in timecard auto-close: ${
-            err instanceof Error ? err.message : String(err)
-          }`
-        );
+        logger.error("Unexpected error in timecard auto-close", {
+          error: err
+        });
       }
     });
   }

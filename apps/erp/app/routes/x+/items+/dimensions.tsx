@@ -1,6 +1,7 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { getLogger } from "@carbon/logger";
 import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
@@ -11,6 +12,8 @@ import { getCompanySettings } from "~/modules/settings/settings.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
+
+const logger = getLogger("erp", "dimensions");
 
 export const handle: Handle = {
   breadcrumb: msg`Dimensions`,
@@ -41,7 +44,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   });
 
   if (materialDimensions.error) {
-    console.error(materialDimensions.error);
+    logger.error(materialDimensions.error);
     throw redirect(
       path.to.items,
       await flash(request, error(null, "Error loading material dimensions"))

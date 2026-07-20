@@ -1,6 +1,8 @@
 import type { Database, Json } from "@carbon/database";
+import type { periodCloseStatuses } from "./accounting.models";
 import type {
   getAccount,
+  getAccountingPeriods,
   getAccountsList,
   getCostCenters,
   getCostCentersTree,
@@ -9,7 +11,8 @@ import type {
   getDimensions,
   getJournalEntries,
   getJournalEntry,
-  getPaymentTerms
+  getPaymentTerms,
+  getPeriodCloseReadiness
 } from "./accounting.service";
 
 export type Account = NonNullable<
@@ -403,6 +406,16 @@ export type JournalEntryListItem = NonNullable<
 >[number];
 
 export type JournalEntryLine = JournalEntry["journalLine"][number];
+
+export type AccountingPeriodListItem = NonNullable<
+  Awaited<ReturnType<typeof getAccountingPeriods>>["data"]
+>[number];
+
+export type PeriodCloseStatus = (typeof periodCloseStatuses)[number];
+
+export type PeriodCloseReadiness = NonNullable<
+  Awaited<ReturnType<typeof getPeriodCloseReadiness>>["data"]
+>;
 
 /**
  * Row shape of the journalLines view (journalLine joined to its journal

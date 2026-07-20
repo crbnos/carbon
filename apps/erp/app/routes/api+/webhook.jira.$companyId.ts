@@ -1,8 +1,11 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { syncIssueFromJiraSchema, trigger } from "@carbon/jobs";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { getIntegration } from "../../modules/settings";
+
+const logger = getLogger("erp", "webhook-jira-companyid");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { companyId } = params;
@@ -64,7 +67,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     await trigger("sync-issue-from-jira", parsed.data);
     return { success: true };
   } catch (err) {
-    console.error(err);
+    logger.error("Error", { error: err });
     return data({ success: false }, { status: 500 });
   }
 }

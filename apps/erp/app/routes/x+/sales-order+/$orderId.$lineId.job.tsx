@@ -3,11 +3,14 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { insertJob, salesOrderToJobValidator } from "~/modules/production";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "orderid-lineid-job");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -48,7 +51,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   );
 
   if (createJob.error || !createJob.data) {
-    console.error(createJob.error);
+    logger.error("Error", { error: createJob.error });
     throw redirect(
       path.to.salesOrderLine(orderId, lineId),
       await flash(request, error(createJob.error, "Failed to insert job"))

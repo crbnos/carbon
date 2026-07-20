@@ -15,7 +15,7 @@ export const rescheduleJobFunction = inngest.createFunction(
     }
   },
   { event: "carbon/reschedule-job" },
-  async ({ event, step }) => {
+  async ({ event, step, logger }) => {
     const serviceRole = getCarbonServiceRole();
     const {
       jobId,
@@ -26,7 +26,7 @@ export const rescheduleJobFunction = inngest.createFunction(
     } = event.data;
 
     const result = await step.run("schedule-job", async () => {
-      console.info(
+      logger.info(
         `${mode === "initial" ? "Scheduling" : "Rescheduling"} job ${jobId}`
       );
 
@@ -45,7 +45,7 @@ export const rescheduleJobFunction = inngest.createFunction(
           throw new Error(error.message || `Failed to ${mode} schedule job`);
         }
 
-        console.info(
+        logger.info(
           `${mode === "initial" ? "Scheduled" : "Rescheduled"}: ` +
             `${data.operationsScheduled} ops, ` +
             `${data.workCentersAffected.length} WCs, ` +
@@ -60,10 +60,9 @@ export const rescheduleJobFunction = inngest.createFunction(
           assemblyDepth: data.assemblyDepth
         };
       } catch (error) {
-        console.error(
-          `${mode === "initial" ? "Scheduling" : "Rescheduling"} failed: ${
-            error instanceof Error ? error.message : String(error)
-          }`
+        logger.error(
+          `${mode === "initial" ? "Scheduling" : "Rescheduling"} failed`,
+          { error }
         );
         throw error; // Let Inngest handle retries
       }

@@ -9,7 +9,7 @@ import { QuickBooksDesktop } from "./quickbooks-desktop/config";
 // import { Radan } from "./radan/config";
 import { Sage } from "./sage/config";
 import { Slack } from "./slack/config";
-
+import type { QuickInstallConnector } from "./types";
 import { Xero } from "./xero/config";
 import { Zapier } from "./zapier/config";
 
@@ -25,7 +25,8 @@ export type {
   IntegrationSetting,
   IntegrationSettingGroup,
   IntegrationSettingOption,
-  OAuthConfig
+  OAuthConfig,
+  QuickInstallConnector
 } from "./types";
 
 export const integrations = [
@@ -64,3 +65,10 @@ export { Xero } from "./xero/config";
 export const getIntegrationConfigById = (id: IntegrationID) => {
   return integrations.find((integration) => integration.id === id);
 };
+
+/**
+ * Quick-install connectors are external link-outs with no DB state.
+ * Each user connects individually. Currently empty — the section is hidden
+ * until a connector is added.
+ */
+export const quickInstallConnectors: QuickInstallConnector[] = [];

@@ -1,9 +1,12 @@
+import { getLogger } from "@carbon/logger";
 import { notificationRegistry } from "./registry";
 import type {
   CompanyIntegration,
   NotificationContext,
   NotificationEvent
 } from "./types";
+
+const logger = getLogger("ee", "notifications");
 
 export class NotificationPipeline {
   constructor(private context: NotificationContext) {}
@@ -22,9 +25,9 @@ export class NotificationPipeline {
         async (integration) => {
           const service = notificationRegistry.getService(integration.id);
           if (!service) {
-            console.warn(
-              `Notification service ${integration.id} not found in registry`
-            );
+            logger.warn("Notification service not found in registry", {
+              integrationId: integration.id
+            });
             return;
           }
 
@@ -33,17 +36,17 @@ export class NotificationPipeline {
               serviceRole: this.context.serviceRole || this.context.client
             });
           } catch (error) {
-            console.error(
-              `Failed to send notification via ${integration.id}:`,
+            logger.error("Failed to send notification via integration", {
+              integrationId: integration.id,
               error
-            );
+            });
           }
         }
       );
 
       await Promise.all(sendPromises);
     } catch (error) {
-      console.error("Failed to send notification:", error);
+      logger.error("Failed to send notification", { error });
     }
   }
 

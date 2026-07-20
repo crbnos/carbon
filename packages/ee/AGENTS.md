@@ -39,8 +39,8 @@ pnpm --filter @carbon/ee typecheck   # tsgo --noEmit
 
 ## Cross-References
 
-- `.ai/rules/accounting-sync-handlers.md` — full sync architecture
-- `.ai/rules/billing-system.md` — plan/edition gating details
+- `.claude/rules/accounting-sync-handlers.md` — full sync architecture
+- `.claude/rules/billing-system.md` — plan/edition gating details
 - `packages/stripe/` — Stripe billing (Cloud only)
 - `packages/lib/src/trigger.ts` — `trigger("sync-external-accounting", ...)` dispatch
 - `packages/jobs/src/inngest/functions/integrations/` — Inngest sync entry points

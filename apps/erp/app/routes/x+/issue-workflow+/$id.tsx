@@ -2,7 +2,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-
+import { getLogger } from "@carbon/logger";
 import { ScrollArea } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -20,12 +20,16 @@ import {
   upsertIssueWorkflow
 } from "~/modules/quality";
 import IssueWorkflowForm from "~/modules/quality/ui/IssueWorkflows/IssueWorkflowForm";
-import type { Handle } from "~/utils/handle";
+import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
+const logger = getLogger("erp", "id");
+
 export const handle: Handle = {
-  breadcrumb: msg`Issue Workflows`,
-  to: path.to.issueWorkflows,
+  breadcrumb: detailBreadcrumb(
+    { breadcrumb: msg`Issue Workflows`, to: path.to.issueWorkflows },
+    (data) => data?.workflow?.name
+  ),
   module: "quality"
 };
 
@@ -83,7 +87,7 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   if (updateIssueWorkflow.error) {
-    console.error(updateIssueWorkflow.error);
+    logger.error(updateIssueWorkflow.error);
     return data(
       {},
       await flash(

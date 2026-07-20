@@ -30,9 +30,10 @@ pnpm --filter @carbon/dev typecheck   # tsgo --noEmit
 
 ## Key Patterns
 
-- **Commands**: `up`, `down`, `new`, `remove`, `list`, `status`, `reset`, `migrate`, `copy` (env sync)
+- **Commands**: `up`, `down` (`--purge` releases the slot), `new`, `init`, `remove`, `list`, `status`, `reset`, `migrate`, `copy` (env sync), `reload` (`crbn reload <service...>` → `docker compose up -d --force-recreate` a subset, applying compose/`.env.local` edits without restarting the app dev servers)
 - **Stack boot** (`commands/up.ts`): Docker Compose → wait Postgres → migrations → regen types → spawn apps → portless aliases
-- **Worktree** (`worktree.ts`): `resolveSlug()`, `getWorktreeRoot()`, `projectName()`, `ensureSlugAvailable()`
+- **Provision** (`commands/init.ts`): `crbn init` provisions an already-created worktree (canonical slug + env sync + skills) to match a `crbn checkout`; shared by `new`, the bash `checkout` post-create hook, and Conductor's `setup` (`.conductor/settings.toml`). It does NOT boot the stack — `crbn up` still mints ports/`.env.local`.
+- **Worktree** (`worktree.ts`): `resolveSlug()`, `canonicalSlug()` (branch-derived `<repoBase>-<branch>`), `getWorktreeRoot()`, `projectName()`, `ensureSlugAvailable()`
 - **Services**: `compose.ts` (Docker), `migrations.ts` (Postgres/Supabase), `portless.ts` (`.dev` URLs), `apps.ts` (dev servers)
 - **Env**: `env.ts` — `renderEnv()`, `writeEnv()`, `syncAppPortlessConfigs()`
 - **`--run` flag**: scopes stack lifetime to a command (for headless/CI builds); `--volumes` cleans up Docker volumes on teardown

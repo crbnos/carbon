@@ -1,9 +1,13 @@
 import { notFound } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { getLogger } from "@carbon/logger";
 import { supportedModelTypes } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 
+const logger = getLogger("erp", "public");
+
 const supportedFileTypes: Record<string, string> = {
+  glb: "model/gltf-binary",
   pdf: "application/pdf",
   jpg: "image/jpeg",
   jpeg: "image/jpeg",
@@ -47,7 +51,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
   async function downloadFile() {
     const result = await client.storage.from("private").download(`${path}`);
     if (result.error) {
-      console.error(result.error);
+      logger.error(result.error);
       return null;
     }
     return result.data;

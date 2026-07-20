@@ -1,9 +1,11 @@
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { getLogger } from "@carbon/logger";
 import { getPurchaseOrderStatus } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import type {
+  PostgrestResponse,
   PostgrestSingleResponse,
   SupabaseClient
 } from "@supabase/supabase-js";
@@ -41,6 +43,8 @@ import type {
   supplierValidator
 } from "./purchasing.models";
 import type { PurchaseOrder, PurchasingRFQ, SupplierQuote } from "./types";
+
+const logger = getLogger("erp", "purchasing-service");
 
 export async function closePurchaseOrder(
   client: SupabaseClient<Database>,
@@ -642,10 +646,7 @@ export async function getSupplierInteractionDocuments(
     .list(`${companyId}/supplier-interaction/${interactionId}`);
 
   if (result.error) {
-    console.error(
-      "Failed to list supplier interaction documents",
-      result.error
-    );
+    logger.error("Failed to list supplier interaction documents", result.error);
     return [];
   }
 
@@ -664,7 +665,7 @@ export async function getSupplierInteractionLineDocuments(
     .list(`${companyId}/supplier-interaction-line/${lineId}`);
 
   if (result.error) {
-    console.error(
+    logger.error(
       "Failed to list supplier interaction line documents",
       result.error
     );
@@ -1793,6 +1794,90 @@ export async function updatePurchaseOrderLineOrder(
   });
 }
 
+/**
+ * Short-close ("stop receiving") or reopen a purchase order line whose
+ * remaining quantity will never arrive. Sets `receivedComplete` without
+ * touching quantities or pricing, then recomputes the header status from the
+ * line completeness flags. Open-PO supply queries (get_inventory_quantities,
+ * openPurchaseOrderLines) exclude `receivedComplete` lines, so the undelivered
+ * remainder stops counting as incoming stock.
+ *
+ * Closing also caps the billable quantity at what was received (the convert
+ * and post-purchase-invoice functions apply the same rule), so a line whose
+ * received quantity is already fully invoiced gets `invoicedComplete` too —
+ * otherwise the order could never reach Completed. Reopening restores the
+ * natural rule (fully invoiced = ordered quantity).
+ */
+export async function shortClosePurchaseOrderLine(
+  db: Kysely<KyselyDatabase>,
+  {
+    lineId,
+    purchaseOrderId,
+    companyId,
+    userId,
+    intent
+  }: {
+    lineId: string;
+    purchaseOrderId: string;
+    companyId: string;
+    userId: string;
+    intent: "close" | "reopen";
+  }
+) {
+  return db.transaction().execute(async (trx) => {
+    const line = await trx
+      .selectFrom("purchaseOrderLine")
+      .select(["purchaseQuantity", "quantityReceived", "quantityInvoiced"])
+      .where("id", "=", lineId)
+      .where("purchaseOrderId", "=", purchaseOrderId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+
+    if (!line) throw new Error("Purchase order line not found");
+
+    // NUMERIC columns come back from the pg driver as strings
+    const ordered = Number(line.purchaseQuantity ?? 0);
+    const received = Number(line.quantityReceived ?? 0);
+    const invoiced = Number(line.quantityInvoiced ?? 0);
+
+    const invoicedComplete =
+      intent === "close" ? invoiced >= received : invoiced >= ordered;
+
+    await trx
+      .updateTable("purchaseOrderLine")
+      .set({
+        receivedComplete: intent === "close",
+        invoicedComplete,
+        updatedBy: userId,
+        updatedAt: new Date().toISOString()
+      })
+      .where("id", "=", lineId)
+      .where("purchaseOrderId", "=", purchaseOrderId)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    const lines = await trx
+      .selectFrom("purchaseOrderLine")
+      .select(["purchaseOrderLineType", "invoicedComplete", "receivedComplete"])
+      .where("purchaseOrderId", "=", purchaseOrderId)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    const { status } = getPurchaseOrderStatus(lines);
+
+    await trx
+      .updateTable("purchaseOrder")
+      .set({
+        status,
+        updatedBy: userId,
+        updatedAt: new Date().toISOString()
+      })
+      .where("id", "=", purchaseOrderId)
+      .where("companyId", "=", companyId)
+      .execute();
+  });
+}
+
 export async function upsertPurchaseOrderPayment(
   client: SupabaseClient<Database>,
   purchaseOrderPayment:
@@ -2358,17 +2443,32 @@ export async function getPurchasingRFQLines(
     .order("order", { ascending: true });
 }
 
+type PurchasingRfqSupplierWithSupplier =
+  Database["public"]["Tables"]["purchasingRfqSupplier"]["Row"] & {
+    supplier: { id: string; name: string };
+  };
+
+type LinkedSupplierQuote = {
+  supplierQuoteId: string;
+  supplierQuote:
+    | (Database["public"]["Tables"]["supplierQuote"]["Row"] & {
+        supplier: Database["public"]["Tables"]["supplier"]["Row"] | null;
+      })
+    | null;
+};
+
 export async function getPurchasingRFQSuppliers(
   client: SupabaseClient<Database>,
   purchasingRfqId: string
-) {
-  // @ts-expect-error TS2589 — supabase select-string instantiation depth;
-  // the cliff shifted here when the quickbooks-desktop connection modules
-  // joined the program (same class as the suppression that previously
-  // lived in SalesInvoiceForm.tsx)
+): Promise<PostgrestResponse<PurchasingRfqSupplierWithSupplier>> {
+  // @ts-ignore TS2589 — supabase select-string instantiation depth exceeds
+  // tsgo's limit; the cliff also shifted here when the quickbooks-desktop
+  // connection modules joined the program (same class as the suppression that
+  // previously lived in SalesInvoiceForm.tsx). ts-ignore, not ts-expect-error,
+  // so it satisfies both tsc and tsgo.
   return client
     .from("purchasingRfqSupplier")
-    .select("*, supplier:supplierId(id, name)")
+    .select("*, supplier(id, name)")
     .eq("purchasingRfqId", purchasingRfqId);
 }
 
@@ -2614,13 +2714,14 @@ export async function updatePurchasingRFQStatus(
 export async function getLinkedSupplierQuotes(
   client: SupabaseClient<Database>,
   purchasingRfqId: string
-) {
+): Promise<PostgrestResponse<LinkedSupplierQuote>> {
+  // @ts-ignore - nested select instantiation exceeds tsgo depth limit
   return client
     .from("purchasingRfqToSupplierQuote")
     .select(
       `
       supplierQuoteId,
-      supplierQuote:supplierQuoteId (*, supplier:supplierId (*))
+      supplierQuote:supplierQuoteId (*, supplier(*))
     `
     )
     .eq("purchasingRfqId", purchasingRfqId);
@@ -2673,7 +2774,7 @@ export async function getLinkedPurchasingRfqsForInteraction(
 export async function getSiblingQuotesForQuote(
   client: SupabaseClient<Database>,
   supplierQuoteId: string
-) {
+): Promise<PostgrestResponse<LinkedSupplierQuote>> {
   // First get all RFQ IDs linked to this quote
   const { data: linkedRfqs, error: rfqError } = await client
     .from("purchasingRfqToSupplierQuote")
@@ -2681,18 +2782,22 @@ export async function getSiblingQuotesForQuote(
     .eq("supplierQuoteId", supplierQuoteId);
 
   if (rfqError || !linkedRfqs || linkedRfqs.length === 0) {
-    return { data: [], error: rfqError };
+    return {
+      data: [],
+      error: rfqError
+    } as unknown as PostgrestResponse<LinkedSupplierQuote>;
   }
 
   const rfqIds = linkedRfqs.map((r) => r.purchasingRfqId);
 
   // Get all quotes linked to any of these RFQs (excluding current quote)
+  // @ts-ignore - nested select instantiation exceeds tsgo depth limit
   return client
     .from("purchasingRfqToSupplierQuote")
     .select(
       `
       supplierQuoteId,
-      supplierQuote:supplierQuoteId (*, supplier:supplierId (*))
+      supplierQuote:supplierQuoteId (*, supplier(*))
     `
     )
     .in("purchasingRfqId", rfqIds)
@@ -2720,15 +2825,17 @@ export async function getSupplierQuotesForComparison(
   purchasingRfqId: string
 ) {
   // 1. Get all supplier quote IDs linked to this RFQ with supplier info
-  const { data: links, error: linksError } = await client
+  // @ts-ignore - nested select instantiation exceeds tsgo depth limit
+  const linksResult: PostgrestResponse<LinkedSupplierQuote> = await client
     .from("purchasingRfqToSupplierQuote")
     .select(
       `
       supplierQuoteId,
-      supplierQuote:supplierQuoteId (*, supplier:supplierId (*))
+      supplierQuote:supplierQuoteId (*, supplier(*))
     `
     )
     .eq("purchasingRfqId", purchasingRfqId);
+  const { data: links, error: linksError } = linksResult;
 
   if (linksError || !links?.length) {
     return { data: { quotes: [], lines: [], prices: [] }, error: linksError };
@@ -2781,10 +2888,11 @@ export async function getSupplierQuotesForComparison(
 export async function getPurchasingRFQSuppliersWithLinks(
   client: SupabaseClient<Database>,
   purchasingRfqId: string
-) {
+): Promise<PostgrestResponse<PurchasingRfqSupplierWithSupplier>> {
+  // @ts-ignore - nested select instantiation exceeds tsgo depth limit
   return client
     .from("purchasingRfqSupplier")
-    .select("*, supplier:supplierId(id, name)")
+    .select("*, supplier(id, name)")
     .eq("purchasingRfqId", purchasingRfqId);
 }
 

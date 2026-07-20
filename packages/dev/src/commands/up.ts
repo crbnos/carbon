@@ -8,9 +8,12 @@ import { currentBranch } from "../git.js";
 import { onShutdown } from "../helpers.js";
 import { pickApps, pickBorrowSlug } from "../prompts.js";
 import {
+  assemblerDepsBuilt,
+  assertAssemblerDepsBuilt,
   installDeps,
   installSkills,
   spawnApps,
+  spawnAssembler,
   spawnStripeListener,
   syncEnvSymlinks
 } from "../services/apps.js";
@@ -155,9 +158,24 @@ export async function up(opts: UpOpts = {}) {
   const allApps = opts.all === true;
   const selectedApps = appsRequested
     ? allApps
-      ? APP_CHOICES.map((c) => c.value)
+      ? // --all includes the assembler, but only when its one-time native OCCT
+        // build exists — otherwise skip it (with a note) rather than hard-failing
+        // the whole --all on a machine that hasn't built it. An explicit pick of
+        // the assembler still fails fast below.
+        APP_CHOICES.map((c) => c.value).filter((v) => {
+          if (v !== "assembler") return true;
+          if (assemblerDepsBuilt()) return true;
+          log.warn(
+            "assembler skipped from --all: its OCCT build isn't present " +
+              "(apps/assembler/scripts/build-occt.sh)"
+          );
+          return false;
+        })
       : await pickApps()
     : [];
+  // Fail before booting anything heavy (docker, migrations) if the assembler is
+  // selected without its one-time OCCT build.
+  if (selectedApps.includes("assembler")) assertAssemblerDepsBuilt();
   const slug = resolveSlug(root);
 
   // Resolve borrowed slot before ensureSlugAvailable (borrowing doesn't start
@@ -194,7 +212,9 @@ export async function up(opts: UpOpts = {}) {
     await waitForServices(ctx);
   }
   await runDatabaseMigrations(ctx, { shouldMigrate, shouldRegen });
-  await seedSmokeTestUser(ctx);
+  // Skip when migrations are skipped: the `user` table may not exist yet, and
+  // seeding would fail with `relation "user" does not exist`.
+  if (shouldMigrate) await seedSmokeTestUser(ctx);
   if (portless) {
     await setupPortless(ctx, selectedApps);
     await ensureHostsFile();
@@ -205,14 +225,27 @@ export async function up(opts: UpOpts = {}) {
     log.info("stripe listener spawned (CARBON_EDITION=cloud)");
   }
 
-  box(
-    summaryLines(
-      ctx.ports,
-      selectedApps,
-      portless ? ctx.branchPrefix : undefined
-    ).join("\n"),
-    `Carbon dev — ${slug}`
+  if (selectedApps.includes("assembler")) {
+    spawnAssembler({ root, ports: ctx.ports });
+  }
+
+  const summary = summaryLines(
+    ctx.ports,
+    selectedApps,
+    portless ? ctx.branchPrefix : undefined
   );
+  // `box()` derives its padding from `process.stdout.columns`; some
+  // non-interactive terminals (e.g. Conductor's run pane) report a width of 0,
+  // which makes @clack compute a negative `String.repeat` count and throw. This
+  // is only the cosmetic end-of-boot summary and it runs *before* the apps are
+  // spawned, so never let it abort startup — fall back to plain lines if the box
+  // can't be drawn.
+  try {
+    box(summary.join("\n"), `Carbon dev — ${slug}`);
+  } catch {
+    log.info(`Carbon dev — ${slug}`);
+    for (const line of summary) log.message(line);
+  }
 
   // Startup done — hand teardown ownership to the app supervisor (or, for
   // services-only, to a later manual `crbn down`).
@@ -588,7 +621,8 @@ async function runAppsThenTeardown(
   portless: boolean,
   stripeChild?: ExecaChildProcess
 ) {
-  await spawnApps({ root, apps: selectedApps, ports, portless });
+  const reactRouterApps = selectedApps.filter((id) => id !== "assembler");
+  await spawnApps({ root, apps: reactRouterApps, ports, portless });
 
   // Apps exit on Ctrl+C; auto-`down` so compose stack isn't orphaned.
   // Swallow further signals so a second Ctrl+C during teardown doesn't

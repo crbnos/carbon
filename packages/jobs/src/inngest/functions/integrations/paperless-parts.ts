@@ -114,12 +114,13 @@ const integrationSchema = z.object({
 export const paperlessPartsFunction = inngest.createFunction(
   { id: "paperless-parts", retries: 1 },
   { event: "carbon/paperless-parts" },
-  async ({ event, step }) => {
+  async ({ event, step, logger }) => {
     const payload = paperlessPartsSchema.parse(event.data);
     let result: { success: boolean; message: string };
 
-    console.info(`Paperless Parts webhook received: ${payload.payload.type}`);
-    console.info(`Payload:`, payload);
+    logger.info(`Paperless Parts webhook received: ${payload.payload.type}`, {
+      payload
+    });
 
     const carbon = getCarbonServiceRole();
     const paperless = await getPaperlessParts(payload.apiKey);
@@ -163,21 +164,21 @@ export const paperlessPartsFunction = inngest.createFunction(
 
     switch (payload.payload.type) {
       case "quote.created":
-        console.info(`Processing quote created event`);
+        logger.info(`Processing quote created event`);
         result = {
           success: true,
           message: "Quote created event processed successfully"
         };
         break;
       case "quote.status_changed":
-        console.info(`Processing quote status changed event`);
+        logger.info(`Processing quote status changed event`);
         result = {
           success: true,
           message: "Quote status changed event processed successfully"
         };
         break;
       case "quote.sent":
-        console.info(`Processing quote sent event`);
+        logger.info(`Processing quote sent event`);
         const quotePayload = payload.payload.data;
 
         const ppQuoteNumber = quotePayload.number;
@@ -212,7 +213,7 @@ export const paperlessPartsFunction = inngest.createFunction(
           .maybeSingle();
 
         if (existingQuoteMapping?.data?.entityId) {
-          console.log(
+          logger.info(
             "Quote already exists",
             existingQuoteMapping.data.entityId
           );
@@ -419,9 +420,9 @@ export const paperlessPartsFunction = inngest.createFunction(
             defaultTrackingType: trackingType,
             billOfProcessBlackList
           });
-          console.log("Quote lines successfully created");
+          logger.info("Quote lines successfully created");
         } catch (error) {
-          console.error("Failed to insert quote lines:", error);
+          logger.error("Failed to insert quote lines:", error);
           await deleteQuote(carbon, quoteId);
           result = {
             success: false,
@@ -430,7 +431,7 @@ export const paperlessPartsFunction = inngest.createFunction(
           break;
         }
 
-        console.info("New Carbon quote created from Paperless Parts");
+        logger.info("New Carbon quote created from Paperless Parts");
 
         result = {
           success: true,
@@ -439,7 +440,7 @@ export const paperlessPartsFunction = inngest.createFunction(
         break;
       case "order.status_changed":
       case "order.created":
-        console.info(`Processing order created event`);
+        logger.info(`Processing order created event`);
 
         const orderPayload = payload.payload.data;
         const orderNumber = orderPayload.number;
@@ -467,7 +468,7 @@ export const paperlessPartsFunction = inngest.createFunction(
           .maybeSingle();
 
         if (existingOrderMapping?.data?.entityId) {
-          console.log(
+          logger.info(
             "Order already exists",
             existingOrderMapping.data.entityId
           );
@@ -480,7 +481,7 @@ export const paperlessPartsFunction = inngest.createFunction(
             .eq("id", existingOrderMapping.data.entityId);
 
           if (update.error) {
-            console.log("Failed to update sales order", update.error);
+            logger.info("Failed to update sales order", update.error);
             result = {
               success: false,
               message: "Failed to update sales order"
@@ -623,7 +624,7 @@ export const paperlessPartsFunction = inngest.createFunction(
           .select("id, salesOrderId");
 
         if (salesOrderInsert.error) {
-          console.log("Failed to create sales order", salesOrderInsert.error);
+          logger.info("Failed to create sales order", salesOrderInsert.error);
           result = {
             success: false,
             message: "Failed to create sales order"
@@ -632,7 +633,7 @@ export const paperlessPartsFunction = inngest.createFunction(
         }
         const salesOrderId = salesOrderInsert.data?.[0]?.id;
         if (!salesOrderId) {
-          console.log("Failed to get sales order ID");
+          logger.info("Failed to get sales order ID");
           result = {
             success: false,
             message: "Failed to get sales order ID"
@@ -681,7 +682,7 @@ export const paperlessPartsFunction = inngest.createFunction(
         ]);
 
         if (orderShipment.error) {
-          console.log("Failed to create shipment", orderShipment.error);
+          logger.info("Failed to create shipment", orderShipment.error);
           await deleteSalesOrder(carbon, salesOrderId);
           result = {
             success: false,
@@ -690,7 +691,7 @@ export const paperlessPartsFunction = inngest.createFunction(
           break;
         }
         if (orderPayment.error) {
-          console.log("Failed to create payment", orderPayment.error);
+          logger.info("Failed to create payment", orderPayment.error);
           await deleteSalesOrder(carbon, salesOrderId);
           result = {
             success: false,
@@ -712,9 +713,9 @@ export const paperlessPartsFunction = inngest.createFunction(
             defaultTrackingType: trackingType,
             billOfProcessBlackList
           });
-          console.log("Order lines successfully created");
+          logger.info("Order lines successfully created");
         } catch (error) {
-          console.error("Failed to insert order lines:", error);
+          logger.error("Failed to insert order lines:", error);
           await deleteSalesOrder(carbon, salesOrderId);
           result = {
             success: false,
@@ -723,7 +724,7 @@ export const paperlessPartsFunction = inngest.createFunction(
           break;
         }
 
-        console.info("New Carbon sales order created from Paperless Parts");
+        logger.info("New Carbon sales order created from Paperless Parts");
 
         result = {
           success: true,
@@ -731,28 +732,28 @@ export const paperlessPartsFunction = inngest.createFunction(
         };
         break;
       case "integration_action.requested":
-        console.info(`Processing integration action requested event`);
+        logger.info(`Processing integration action requested event`);
         result = {
           success: true,
           message: "Integration action requested event processed successfully"
         };
         break;
       case "integration.turned_on":
-        console.info(`Processing integration turned on event`);
+        logger.info(`Processing integration turned on event`);
         result = {
           success: true,
           message: "Integration turned on event processed successfully"
         };
         break;
       case "integration.turned_off":
-        console.info(`Processing integration turned off event`);
+        logger.info(`Processing integration turned off event`);
         result = {
           success: true,
           message: "Integration turned off event processed successfully"
         };
         break;
       default:
-        console.error(`Unsupported event type: ${payload.payload}`);
+        logger.error(`Unsupported event type: ${payload.payload}`);
         result = {
           success: false,
           message: `Unsupported event type`
@@ -761,9 +762,9 @@ export const paperlessPartsFunction = inngest.createFunction(
     }
 
     if (result.success) {
-      console.info(`Successfully processed ${payload.payload.type} event`);
+      logger.info(`Successfully processed ${payload.payload.type} event`);
     } else {
-      console.error(
+      logger.error(
         `Failed to process ${payload.payload.type} event: ${result.message}`
       );
     }

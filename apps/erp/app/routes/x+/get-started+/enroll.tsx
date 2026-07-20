@@ -5,6 +5,7 @@ import { flash } from "@carbon/auth/session.server";
 import { ImplementationHubEmail } from "@carbon/documents/email";
 import { ERP_URL } from "@carbon/env";
 import { trigger } from "@carbon/jobs";
+import { getLogger } from "@carbon/logger";
 import {
   enrollImplementation,
   getImplementationHub
@@ -13,6 +14,8 @@ import { render } from "@react-email/components";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "get-started");
 
 // Self-serve: enroll the CURRENT company into the Implementation Hub. Anyone
 // who can update company settings can enroll their own company — Carbon staff
@@ -60,7 +63,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
     const adminTypeIds = (adminTypes.data ?? []).map((t) => t.id);
     if (adminTypeIds.length === 0) {
-      console.log(
+      logger.info(
         "No Admin employee type found for company; skipping enrollment notification"
       );
     } else {
@@ -96,18 +99,17 @@ export async function action({ request }: ActionFunctionArgs) {
             companyId
           });
         } catch (emailErr) {
-          console.error(
-            `Failed to send Implementation Hub email to admin id:${admin.id ?? "unknown"}`,
-            emailErr
-          );
+          logger.error("Failed to send Implementation Hub email to admin", {
+            adminId: admin.id ?? "unknown",
+            error: emailErr
+          });
         }
       }
     }
   } catch (notifyErr) {
-    console.error(
-      "Failed to notify admins of Implementation Hub enrollment",
-      notifyErr
-    );
+    logger.error("Failed to notify admins of Implementation Hub enrollment", {
+      error: notifyErr
+    });
   }
 
   throw redirect(path.to.getStarted);

@@ -1,9 +1,12 @@
 import { NODE_ENV } from "@carbon/env";
+import { getLogger } from "@carbon/logger";
 import type { RealtimeChannel, SupabaseClient } from "@supabase/supabase-js";
 import { REALTIME_SUBSCRIBE_STATES } from "@supabase/supabase-js";
 import { useCallback, useEffect, useRef } from "react";
 import { useCarbon } from "../CarbonContext";
 import { toast } from "../Toast";
+
+const log = getLogger("react", "realtime-channel");
 
 function formatSubscribeErr(err: unknown): string {
   if (err == null) return "No error details";
@@ -78,7 +81,7 @@ export const useRealtimeChannel = <TDeps extends any[]>(
           )
         ]);
       } catch (error) {
-        console.error(`Error removing channel ${topic}:`, error);
+        log.error("Error removing channel", { topic, error });
       } finally {
         channelRef.current = null;
         isTearingDownRef.current = false;
@@ -132,12 +135,14 @@ export const useRealtimeChannel = <TDeps extends any[]>(
           ) {
             // Persistent loading toast — sticks with a spinner until reconnect
             // succeeds. Reuses the same id so repeated CHANNEL_ERRORs don't
-            // stack. Underlying error stored in console only; users see a
-            // calm "reconnecting" indicator, not an alarming red toast.
+            // stack. Underlying error only logged; users see a calm
+            // "reconnecting" indicator, not an alarming red toast.
             if (err) {
-              console.warn(
-                `Realtime ${topic} ${status}: ${formatSubscribeErr(err)}`
-              );
+              log.warning("Realtime subscribe error", {
+                topic,
+                status,
+                error: formatSubscribeErr(err)
+              });
             }
             const opts = {
               id: lastErrorToastIdRef.current ?? undefined,
@@ -169,10 +174,10 @@ export const useRealtimeChannel = <TDeps extends any[]>(
           }
         });
       } catch (error) {
-        console.error(
-          `Failed to subscribe to realtime channel ${topic}:`,
+        log.error("Failed to subscribe to realtime channel", {
+          topic,
           error
-        );
+        });
         if (notifyOnSubscribeError) {
           toast.error(`Realtime setup failed (${topic})`, {
             description:

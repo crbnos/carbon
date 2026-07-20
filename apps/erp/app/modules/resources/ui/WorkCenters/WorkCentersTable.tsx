@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { getLogger } from "@carbon/logger";
 import {
   Alert,
   AlertDescription,
@@ -50,6 +51,8 @@ import type { WorkCenter } from "~/modules/resources";
 import { usePeople } from "~/stores";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "workcenterstable");
 
 type WorkCentersTableProps = {
   data: WorkCenter[];
@@ -411,7 +414,7 @@ function DeleteWorkCenterModal({
       .eq("workCenterId", workCenter.id!)
       .eq("companyId", company?.id);
     if (error) {
-      console.error(error);
+      logger.error(error);
     }
 
     if (data) {

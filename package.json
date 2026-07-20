@@ -44,6 +44,7 @@
     "db:migrate:new": "pnpm --filter @carbon/database db:migrate:new",
     "db:seed": "turbo run db:seed --no-cache",
     "db:seed:dev": "pnpm --filter @carbon/database db:seed:dev --",
+    "db:seed:change-orders": "pnpm --filter @carbon/database seed:change-orders --",
     "db:types": "tsx scripts/generate-db-types.ts",
     "deploy": "turbo run deploy",
     "dev": "crbn up --no-portless",
@@ -63,9 +64,7 @@
     "install-skills": "bash .ai/scripts/install-skills.sh",
     "prepare": "pnpm exec husky install; if [ -f .ai/scripts/install-skills.sh ]; then bash .ai/scripts/install-skills.sh; fi",
     "test": "turbo run test",
-    "tool:new": "tsx scripts/create-tool.ts",
     "translate": "pnpm run lingui:extract && pnpm exec linguito translate --llm && pnpm lingui:clean",
-    "agent:new": "tsx scripts/create-agent.ts",
     "typecheck": "turbo run typecheck --filter='*'",
     "typegen": "turbo run typegen"
   },

@@ -55,6 +55,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  // Note: for Non-Inventory (Service) jobs, complete_job_to_inventory itself
+  // fulfills the linked sales-order line — completion is also reachable via
+  // the sync_finish_job_operation interceptor, so the SQL function is the
+  // single choke point for fulfillment.
+
   throw redirect(
     requestReferrer(request) ?? path.to.job(jobId),
     await flash(request, success("Job completed successfully"))

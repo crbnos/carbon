@@ -105,9 +105,6 @@ msgstr "Błąd uwierzytelniania"
 msgid "available"
 msgstr "dostępne"
 
-msgid "Back Home"
-msgstr "Wróć do domu"
-
 msgid "Batch"
 msgstr "Partia"
 
@@ -327,9 +324,6 @@ msgstr "Wprowadź PIN dla {0}"
 
 msgid "Error"
 msgstr "Błąd"
-
-msgid "Error!"
-msgstr "Błąd!"
 
 msgid "Estimated"
 msgstr "Szacowane"
@@ -616,6 +610,9 @@ msgstr "Brak wpływu"
 msgid "No maintenance scheduled for today"
 msgstr "Brak zaplanowanego utrzymania ruchu na dziś"
 
+msgid "No matches. Type to create one."
+msgstr "Brak wyników. Wpisz, aby utworzyć nowy."
+
 msgid "No materials"
 msgstr "Brak materiałów"
 
@@ -763,6 +760,9 @@ msgstr "Poprzedni"
 
 msgid "Preventive"
 msgstr "Prewencyjne"
+
+msgid "Previous"
+msgstr "Poprzedni"
 
 msgid "Print"
 msgstr "Drukuj"
@@ -968,9 +968,6 @@ msgstr "Zalogowany jako {stationName}"
 
 msgid "Size"
 msgstr "Rozmiar"
-
-msgid "Something went wrong"
-msgstr "Coś poszło nie tak"
 
 msgid "Source"
 msgstr "Źródło"

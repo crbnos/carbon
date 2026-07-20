@@ -1,3 +1,4 @@
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { RESEND_DOMAIN } from "@carbon/env";
 import { NonRetriableError, serializeError } from "inngest";
 import { Resend } from "resend";
@@ -9,7 +10,7 @@ export const sendEmailFunction = inngest.createFunction(
     retries: 3
   },
   { event: "carbon/send-email" },
-  async ({ event, step }) => {
+  async ({ event, step, logger }) => {
     const payload = event.data;
 
     // Resend rejects the request if `to` or `cc` contain null/undefined
@@ -40,7 +41,7 @@ export const sendEmailFunction = inngest.createFunction(
 
     const result = await step.run("send-email", async () => {
       if (process.env.DISABLE_RESEND) {
-        console.info(`Resend disabled — skipping send to`, toRecipients);
+        logger.info("Resend disabled — skipping send", { toRecipients });
         return null;
       }
 
@@ -57,7 +58,7 @@ export const sendEmailFunction = inngest.createFunction(
         to: toRecipients
       };
 
-      console.info(`Resend Email Job`);
+      logger.info("Resend Email Job");
       const response = await resend.emails.send(email);
       if (response.error) {
         if (response.error.name === "validation_error") {
@@ -69,6 +70,27 @@ export const sendEmailFunction = inngest.createFunction(
       }
       return response.data;
     });
+
+    // Count the delivery for recurring notifications (result is null when
+    // Resend is disabled). Throwing here is retry-safe: the memoized send step
+    // won't re-send, and the memoized Resend id makes the increment idempotent.
+    const tracking = payload.tracking;
+    if (tracking && result) {
+      await step.run("record-delivery", async () => {
+        const client = getCarbonServiceRole();
+        const { error } = await client.rpc("increment_notification_delivery", {
+          p_company_id: payload.companyId,
+          p_delivery_id: result.id,
+          p_document_ids: tracking.documentIds,
+          p_event: tracking.event,
+          p_user_id: tracking.userId
+        });
+        if (error) {
+          console.error("Failed to record notification delivery", error);
+          throw error;
+        }
+      });
+    }
 
     return { result, success: true };
   }

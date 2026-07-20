@@ -62,8 +62,7 @@ import {
 } from "~/hooks";
 import type { SalesInvoice } from "~/modules/invoicing";
 import { salesInvoiceLineValidator } from "~/modules/invoicing";
-import type { MethodItemType } from "~/modules/shared";
-import { methodType } from "~/modules/shared";
+import { type ItemType, itemType, methodType } from "~/modules/shared";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import { isSalesInvoiceLocked } from "../../invoicing.models";
@@ -102,8 +101,8 @@ const SalesInvoiceLineForm = ({
   const isLocked = isSalesInvoiceLocked(routeData?.salesInvoice?.status);
   const isEditable = !isLocked;
 
-  const [itemType, setItemType] = useState<MethodItemType>(
-    initialValues.invoiceLineType as MethodItemType
+  const [lineType, setLineType] = useState<ItemType>(
+    initialValues.invoiceLineType as ItemType
   );
   const [locationId, setLocationId] = useState(defaults.locationId ?? "");
   const [itemData, setItemData] = useState<{
@@ -226,9 +225,9 @@ const SalesInvoiceLineForm = ({
         ? !permissions.can("update", "purchasing")
         : !permissions.can("create", "purchasing");
 
-  const onTypeChange = (t: MethodItemType | "Item") => {
-    if (t === itemType) return;
-    setItemType(t as MethodItemType);
+  const onTypeChange = (t: ItemType | "Item") => {
+    if (t === lineType) return;
+    setLineType(t as ItemType);
     setItemData({
       itemId: "",
       methodType: "",
@@ -245,14 +244,13 @@ const SalesInvoiceLineForm = ({
 
   const onItemChange = async (itemId: string) => {
     if (!carbon) throw new Error("Carbon client not found");
-    switch (itemType) {
+    switch (lineType) {
       // @ts-expect-error
       case "Item":
       case "Consumable":
       case "Material":
       case "Part":
       case "Tool":
-      // @ts-expect-error
       case "Service":
       // @ts-expect-error
       case "Fixture":
@@ -315,13 +313,13 @@ const SalesInvoiceLineForm = ({
         }));
 
         if (item.data?.type) {
-          setItemType(item.data.type as MethodItemType);
+          setLineType(item.data.type as ItemType);
         }
 
         break;
       default:
         throw new Error(
-          `Invalid invoice line type: ${itemType} is not implemented`
+          `Invalid invoice line type: ${lineType} is not implemented`
         );
     }
   };
@@ -469,7 +467,7 @@ const SalesInvoiceLineForm = ({
                 />
 
                 <TabsContent value="item">
-                  <Hidden name="invoiceLineType" value={itemType} />
+                  <Hidden name="invoiceLineType" value={lineType} />
                   <Hidden name="description" value={itemData.description} />
                   <Hidden
                     name="unitOfMeasureCode"
@@ -491,9 +489,9 @@ const SalesInvoiceLineForm = ({
                     <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
                       <Item
                         name="itemId"
-                        label={itemType}
-                        // @ts-ignore
-                        type={itemType}
+                        label={lineType}
+                        type={lineType}
+                        validItemTypes={[...itemType]}
                         locationId={locationId}
                         onChange={(value) => {
                           onItemChange(value?.value as string);
@@ -524,7 +522,7 @@ const SalesInvoiceLineForm = ({
                         "Consumable",
                         "Service",
                         "Fixture"
-                      ].includes(itemType) && (
+                      ].includes(lineType) && (
                         <>
                           <div className="space-y-2">
                             <SelectControlled
@@ -586,20 +584,22 @@ const SalesInvoiceLineForm = ({
                             value={locationId}
                             onChange={onLocationChange}
                           />
-                          <StorageUnit
-                            name="storageUnitId"
-                            label={t`Storage Unit`}
-                            locationId={locationId}
-                            value={itemData.storageUnitId ?? undefined}
-                            onChange={(newValue) => {
-                              if (newValue) {
-                                setItemData((d) => ({
-                                  ...d,
-                                  storageUnitId: newValue?.id
-                                }));
-                              }
-                            }}
-                          />
+                          {lineType !== "Service" && (
+                            <StorageUnit
+                              name="storageUnitId"
+                              label={t`Storage Unit`}
+                              locationId={locationId}
+                              value={itemData.storageUnitId ?? undefined}
+                              onChange={(newValue) => {
+                                if (newValue) {
+                                  setItemData((d) => ({
+                                    ...d,
+                                    storageUnitId: newValue?.id
+                                  }));
+                                }
+                              }}
+                            />
+                          )}
                         </>
                       )}
                       <CustomFormFields table="salesInvoiceLine" />
@@ -613,7 +613,7 @@ const SalesInvoiceLineForm = ({
                       "Consumable",
                       "Service",
                       "Fixture"
-                    ].includes(itemType) && (
+                    ].includes(lineType) && (
                       <div className="w-full">
                         <div className="w-full border border-border rounded-md shadow-sm p-4 flex flex-col gap-4 mt-4">
                           <HStack

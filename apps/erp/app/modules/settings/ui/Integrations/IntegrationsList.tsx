@@ -1,4 +1,4 @@
-import type { Integration } from "@carbon/ee";
+import type { Integration, QuickInstallConnector } from "@carbon/ee";
 import {
   Select,
   SelectContent,
@@ -24,15 +24,18 @@ import { useAnyVisible } from "~/hooks/useAnyVisible";
 import { usePlanGate } from "~/hooks/usePlanGate";
 import type { IntegrationHealth } from "./IntegrationCard";
 import { IntegrationCard } from "./IntegrationCard";
+import { QuickInstall } from "./QuickInstall";
 
 type IntegrationsListProps = {
   availableIntegrations: Integration[];
   integrations: Array<IntegrationHealth>;
+  quickInstallConnectors?: QuickInstallConnector[];
 };
 
 const IntegrationsList = ({
   integrations,
-  availableIntegrations
+  availableIntegrations,
+  quickInstallConnectors = []
 }: IntegrationsListProps) => {
   const { t } = useLingui();
   const [params] = useUrlParams();
@@ -80,6 +83,7 @@ const IntegrationsList = ({
 
   return (
     <div className="flex flex-col gap-4">
+      <QuickInstall connectors={quickInstallConnectors} />
       <div className="flex flex-row gap-2 pt-4 px-4">
         <div>
           <SearchFilter param="search" size="sm" placeholder={t`Search`} />

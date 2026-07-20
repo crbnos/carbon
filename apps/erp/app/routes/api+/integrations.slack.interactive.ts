@@ -7,6 +7,7 @@ import {
   getCarbonEmployeeFromSlackId,
   getSlackIntegrationByTeamId
 } from "@carbon/ee/slack.server";
+import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
@@ -17,6 +18,8 @@ import {
   insertIssue
 } from "~/modules/quality/quality.service";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "slack", "interactive");
 
 const slackInteractivePayloadSchema = z.object({
   type: z.string(),
@@ -64,10 +67,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
 
     if (!payload.success) {
-      console.error(
-        "Slack payload validation error:",
-        JSON.stringify(payload.error)
-      );
+      logger.error("Slack payload validation error", { error: payload.error });
       return data(
         {
           response_type: "ephemeral",
@@ -92,7 +92,9 @@ export async function action({ request }: ActionFunctionArgs) {
     );
 
     if (!integration.data?.[0] || integration.error) {
-      console.error("Failed to get Slack integration", integration.error);
+      logger.error("Failed to get Slack integration", {
+        error: integration.error
+      });
       return {
         response_type: "ephemeral",
         text: "Slack integration not found for this workspace."
@@ -103,7 +105,7 @@ export async function action({ request }: ActionFunctionArgs) {
     const slackToken = (metadata as any)?.access_token as string;
 
     if (!slackToken) {
-      console.error("Slack token not found");
+      logger.error("Slack token not found");
       return {
         response_type: "ephemeral",
         text: "Slack token not found. Please reconfigure the integration."
@@ -136,7 +138,7 @@ export async function action({ request }: ActionFunctionArgs) {
         };
     }
   } catch (error) {
-    console.error("Slack interactive error:", error);
+    logger.error("Slack interactive error", { error });
     return data(
       {
         response_type: "ephemeral",
@@ -357,7 +359,7 @@ async function handleCreateNcrShortcut(
 
     return { ok: true };
   } catch (error) {
-    console.error("Error opening Issue modal:", error);
+    logger.error("Error opening Issue modal", { error });
     return {
       response_type: "ephemeral",
       text: "Failed to open Issue form. Please try again."
@@ -406,7 +408,7 @@ async function handleViewSubmission(
     );
 
     if (employee.error || !employee.data) {
-      console.error(employee.error);
+      logger.error("Failed to get employee", { error: employee.error });
       throw new Error("Failed to get employee");
     }
 
@@ -424,7 +426,7 @@ async function handleViewSubmission(
     });
 
     if (createResult.error || !createResult.data) {
-      console.error(createResult.error);
+      logger.error("Failed to create issue", { error: createResult.error });
       throw new Error("Failed to create issue");
     }
 
@@ -460,18 +462,18 @@ async function handleViewSubmission(
     ]);
 
     if (tasksResult.error) {
-      console.error("Error creating tasks:", tasksResult.error);
+      logger.error("Error creating tasks", { error: tasksResult.error });
     }
 
     if (threadResult.error) {
-      console.error("Error creating thread:", threadResult.error);
+      logger.error("Error creating thread", { error: threadResult.error });
     }
 
     return {
       response_action: "clear"
     };
   } catch (error) {
-    console.error("Error creating Issue:", error);
+    logger.error("Error creating Issue", { error });
 
     return {
       response_action: "errors",

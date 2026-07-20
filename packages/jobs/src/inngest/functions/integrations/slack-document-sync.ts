@@ -12,14 +12,17 @@ import {
   type NonConformanceData
 } from "@carbon/ee/slack/messages";
 import { VERCEL_URL } from "@carbon/env";
+import { getLogger } from "@carbon/logger";
 import { WebClient } from "@slack/web-api";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { inngest } from "../../client";
 
+const log = getLogger("jobs", "slack-document-sync");
+
 export const slackDocumentCreatedFunction = inngest.createFunction(
   { id: "slack-document-created", retries: 1 },
   { event: "carbon/slack-document-created" },
-  async ({ event, step }) => {
+  async ({ event, step, logger }) => {
     const { documentType, documentId, companyId, channelId, threadTs } =
       event.data as {
         documentType: DocumentType;
@@ -66,7 +69,7 @@ export const slackDocumentCreatedFunction = inngest.createFunction(
 
       return { success: true };
     } catch (error) {
-      console.error(`Error posting ${documentType} to Slack:`, error);
+      logger.error(`Error posting ${documentType} to Slack`, { error });
       throw error;
     }
   }
@@ -75,7 +78,7 @@ export const slackDocumentCreatedFunction = inngest.createFunction(
 export const slackDocumentStatusUpdateFunction = inngest.createFunction(
   { id: "slack-document-status-update", retries: 1 },
   { event: "carbon/slack-document-status-update" },
-  async ({ event, step }) => {
+  async ({ event, step, logger }) => {
     const {
       documentType,
       documentId,
@@ -153,10 +156,9 @@ export const slackDocumentStatusUpdateFunction = inngest.createFunction(
 
       return { success: true };
     } catch (error) {
-      console.error(
-        `Error posting ${documentType} status update to Slack:`,
+      logger.error(`Error posting ${documentType} status update to Slack`, {
         error
-      );
+      });
       throw error;
     }
   }
@@ -165,7 +167,7 @@ export const slackDocumentStatusUpdateFunction = inngest.createFunction(
 export const slackDocumentTaskUpdateFunction = inngest.createFunction(
   { id: "slack-document-task-update", retries: 1 },
   { event: "carbon/slack-document-task-update" },
-  async ({ event, step }) => {
+  async ({ event, step, logger }) => {
     const {
       documentType,
       documentId,
@@ -246,10 +248,9 @@ export const slackDocumentTaskUpdateFunction = inngest.createFunction(
 
       return { success: true };
     } catch (error) {
-      console.error(
-        `Error posting ${documentType} task update to Slack:`,
+      logger.error(`Error posting ${documentType} task update to Slack`, {
         error
-      );
+      });
       throw error;
     }
   }
@@ -258,7 +259,7 @@ export const slackDocumentTaskUpdateFunction = inngest.createFunction(
 export const slackDocumentAssignmentUpdateFunction = inngest.createFunction(
   { id: "slack-document-assignment-update", retries: 1 },
   { event: "carbon/slack-document-assignment-update" },
-  async ({ event, step }) => {
+  async ({ event, step, logger }) => {
     const {
       documentType,
       documentId,
@@ -333,10 +334,9 @@ export const slackDocumentAssignmentUpdateFunction = inngest.createFunction(
 
       return { success: true };
     } catch (error) {
-      console.error(
-        `Error posting ${documentType} assignment update to Slack:`,
+      logger.error(`Error posting ${documentType} assignment update to Slack`, {
         error
-      );
+      });
       throw error;
     }
   }
@@ -445,7 +445,7 @@ async function getDocumentData(
     case "receipt":
     case "shipment":
     default:
-      console.warn(`Document type ${documentType} not yet implemented`);
+      log.warning(`Document type ${documentType} not yet implemented`);
       return null;
   }
 }

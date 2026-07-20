@@ -10,6 +10,7 @@ import { flash } from "@carbon/auth/session.server";
 import { InviteEmail } from "@carbon/documents/email";
 import { validationError, validator } from "@carbon/form";
 import { sendEmail } from "@carbon/lib/resend.server";
+import { getLogger } from "@carbon/logger";
 import { render } from "@react-email/components";
 import { nanoid } from "nanoid";
 import type {
@@ -25,7 +26,9 @@ import {
 } from "~/modules/users";
 import { createEmployeeAccount } from "~/modules/users/users.server";
 import { path } from "~/utils/path";
-import { getCompanyId } from "~/utils/react-query";
+import { getCompanyId, invalidateUserSelectQueries } from "~/utils/react-query";
+
+const logger = getLogger("erp", "employees-new");
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -76,7 +79,7 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   if (!result.success) {
-    console.error(result);
+    logger.error(result);
     throw redirect(
       path.to.employeeAccounts,
       await flash(
@@ -125,13 +128,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  const companyId = getCompanyId();
-  window.clientCache?.invalidateQueries({
-    predicate: (query) => {
-      const queryKey = query.queryKey as string[];
-      return queryKey[0] === "groupsByType" && queryKey[1] === companyId;
-    }
-  });
+  invalidateUserSelectQueries(getCompanyId());
   return await serverAction();
 }
 

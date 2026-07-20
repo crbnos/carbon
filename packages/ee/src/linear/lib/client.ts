@@ -1,8 +1,12 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { getLogger } from "@carbon/logger";
 import axios, { type AxiosInstance } from "axios";
 import { getLinearIntegration } from "./service";
 import type { LinearIssue, LinearTeam, LinearUser } from "./types";
 import type { LinearWorkStateType } from "./utils";
+
+const logger = getLogger("ee", "linear");
+
 export class LinearClient {
   instance: AxiosInstance;
 
@@ -65,7 +69,7 @@ export class LinearClient {
 
       return response.data.data.teams.nodes.map((el) => el);
     } catch (error) {
-      console.error("Error listing Linear teams:", error);
+      logger.error("Error listing Linear teams", { error });
       return [];
     }
   }
@@ -89,7 +93,7 @@ export class LinearClient {
 
       return response.data.data.searchIssues.nodes.map((el) => el);
     } catch (error) {
-      console.error("Error listing Linear issues:", error);
+      logger.error("Error listing Linear issues", { error });
       return [];
     }
   }
@@ -111,7 +115,7 @@ export class LinearClient {
 
       return response.data.data.issues.nodes.at(0) || null;
     } catch (error) {
-      console.error("Error getting Linear issue by ID:", error);
+      logger.error("Error getting Linear issue by ID", { error });
       return null;
     }
   }
@@ -155,7 +159,7 @@ export class LinearClient {
 
       return response.data.data.team.members.nodes.map((el) => el);
     } catch (error) {
-      console.error("Error listing Linear team members:", error);
+      logger.error("Error listing Linear team members", { error });
       return [];
     }
   }
@@ -242,7 +246,7 @@ export class LinearClient {
 
       return response.data.data.issueUpdate.issue;
     } catch (error) {
-      console.error("Error updating Linear issue:", error);
+      logger.error("Error updating Linear issue", { error });
     }
   }
 
@@ -303,7 +307,7 @@ export class LinearClient {
 
       return res.data.data.attachments.nodes.map((el) => el);
     } catch (error) {
-      console.error("Error listing Linear attachments:", error);
+      logger.error("Error listing Linear attachments", { error });
       return [];
     }
   }
@@ -332,7 +336,7 @@ export class LinearClient {
 
       return response.data.data.attachmentDelete.success;
     } catch (error) {
-      console.error("Error removing Linear attachment:", error);
+      logger.error("Error removing Linear attachment", { error });
       return false;
     }
   }

@@ -2,6 +2,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import {
@@ -10,6 +11,8 @@ import {
 } from "~/modules/resources";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path, requestReferrer } from "~/utils/path";
+
+const logger = getLogger("erp", "dispatchid-item-itemid-delete");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -44,7 +47,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
 
   if (result.error) {
-    console.error(result.error);
+    logger.error(result.error);
     throw redirect(
       requestReferrer(request) ?? path.to.maintenanceDispatch(dispatchId),
       await flash(request, error(result.error, "Failed to remove item"))

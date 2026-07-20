@@ -2,6 +2,7 @@ import type { Database, Json } from "@carbon/database";
 import { getIntegrationConfigById, type IntegrationID } from "@carbon/ee";
 import { getIntegrationServerHooks } from "@carbon/ee/hooks.server";
 import { redis } from "@carbon/kv";
+import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { Integration } from "~/modules/settings/types";
@@ -9,6 +10,7 @@ import { sanitize } from "~/utils/supabase";
 import type { customFieldValidator } from "./settings.models";
 
 const INTEGRATION_CACHE_TTL = 3600;
+const logger = getLogger("erp", "settings");
 
 export async function clearCustomFieldsCache(companyId?: string) {
   const keys = companyId ? `customFields:${companyId}:*` : "customFields:*";
@@ -30,7 +32,7 @@ export async function clearCompanyIntegrationCache(
     // Clear both old and new key formats
     await redis.del(cacheKey, `json:${cacheKey}`);
   } catch (error) {
-    console.error("Redis cache invalidation error:", error);
+    logger.error("Redis cache invalidation error", { error });
   }
 }
 
@@ -47,11 +49,13 @@ export async function clearAllIntegrationCaches(): Promise<void> {
 
     const allKeys = [...oldKeys, ...newKeys];
     if (allKeys.length > 0) {
-      console.log(`Clearing ${allKeys.length} integration cache entries`);
+      logger.info("Clearing integration cache entries", {
+        count: allKeys.length
+      });
       await redis.del(...allKeys);
     }
   } catch (error) {
-    console.error("Error clearing all integration caches:", error);
+    logger.error("Error clearing all integration caches", { error });
   }
 }
 
@@ -116,10 +120,10 @@ export async function getCompanyIntegrations(
       try {
         return JSON.parse(cached);
       } catch (parseError) {
-        console.error(
-          `JSON parse error for prefixed cache key json:${cacheKey}:`,
-          parseError
-        );
+        logger.error("JSON parse error for prefixed cache key", {
+          cacheKey: `json:${cacheKey}`,
+          error: parseError
+        });
         await redis.del(`json:${cacheKey}`);
       }
     }
@@ -128,7 +132,8 @@ export async function getCompanyIntegrations(
     cached = await redis.get(cacheKey);
     if (cached !== null && cached !== undefined) {
       // Log the type and content for debugging
-      console.log(`Cache hit for ${cacheKey}:`, {
+      logger.info("Cache hit", {
+        cacheKey,
         type: typeof cached,
         isArray: Array.isArray(cached),
         value: cached,
@@ -147,29 +152,31 @@ export async function getCompanyIntegrations(
         try {
           return JSON.parse(cached);
         } catch (parseError) {
-          console.error(
-            `JSON parse error for cache key ${cacheKey}:`,
-            parseError
-          );
-          console.error("Cached value that failed to parse:", cached);
+          logger.error("JSON parse error for cache key", {
+            cacheKey,
+            error: parseError,
+            cached
+          });
           await redis.del(cacheKey);
         }
       } else {
-        console.warn(
-          `Unexpected cache format for key ${cacheKey}:`,
-          typeof cached,
+        logger.warning("Unexpected cache format for key", {
+          cacheKey,
+          type: typeof cached,
           cached
-        );
+        });
         await redis.del(cacheKey);
       }
     }
   } catch (error) {
-    console.error("Redis cache read error:", error);
+    logger.error("Redis cache read error", { error });
     // Clear the corrupted cache entry
     try {
       await redis.del(cacheKey);
     } catch (deleteError) {
-      console.error("Failed to delete corrupted cache entry:", deleteError);
+      logger.error("Failed to delete corrupted cache entry", {
+        error: deleteError
+      });
     }
   }
 
@@ -195,10 +202,10 @@ export async function getCompanyIntegrations(
         serializedData
       );
     } else {
-      console.error("Failed to serialize integrations data for cache");
+      logger.error("Failed to serialize integrations data for cache");
     }
   } catch (error) {
-    console.error("Redis cache write error:", error);
+    logger.error("Redis cache write error", { error });
   }
 
   return integrations as CompanyIntegration[];

@@ -8,11 +8,15 @@ import {
   isBlocked
 } from "@carbon/ee/storage-rules.server";
 import { trigger } from "@carbon/jobs";
+import { getLogger } from "@carbon/logger";
 import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
+import { getOverReceiptViolations } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { reconcileReceiptSerialEntities } from "~/modules/inventory";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "receiptid-post");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
@@ -32,7 +36,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { data: lines } = await serviceRole
     .from("receiptLine")
     .select(
-      "id, itemId, storageUnitId, receivedQuantity, locationId, receiptId, requiresSerialTracking"
+      "id, itemId, storageUnitId, receivedQuantity, locationId, receiptId, requiresSerialTracking, lineId, conversionFactor"
     )
     .eq("receiptId", receiptId)
     .eq("companyId", companyId);
@@ -92,6 +96,39 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
     allViolations.push(...violations);
     Object.assign(allRuleNames, ruleNames);
+  }
+
+  // Check over-receipt against the live PO lines rather than the receipt's
+  // outstanding-quantity snapshot so concurrent receipts are counted.
+  if (receiptForSurface?.sourceDocument === "Purchase Order") {
+    const purchaseOrderLineIds = [
+      ...new Set(
+        (lines ?? [])
+          .map((l) => l.lineId)
+          .filter((id): id is string => Boolean(id))
+      )
+    ];
+    if (purchaseOrderLineIds.length > 0) {
+      const { data: purchaseOrderLines } = await serviceRole
+        .from("purchaseOrderLine")
+        .select(
+          "id, purchaseQuantity, quantityReceived, item(readableIdWithRevision)"
+        )
+        .in("id", purchaseOrderLineIds)
+        .eq("companyId", companyId);
+
+      const overReceipt = getOverReceiptViolations(
+        lines ?? [],
+        (purchaseOrderLines ?? []).map((line) => ({
+          id: line.id,
+          purchaseQuantity: line.purchaseQuantity,
+          quantityReceived: line.quantityReceived,
+          itemReadableId: line.item?.readableIdWithRevision
+        }))
+      );
+      allViolations.push(...overReceipt.violations);
+      Object.assign(allRuleNames, overReceipt.ruleNames);
+    }
   }
 
   const deduped = dedupeViolations(allViolations);
@@ -190,7 +227,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
 
       if (leadTimeUpdate.error) {
-        console.error(
+        logger.error(
           "Failed to update lead time on receipt posting:",
           leadTimeUpdate.error
         );
@@ -223,7 +260,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         }
       }
     } catch (e) {
-      console.error("Auto-print failed:", e);
+      logger.error("Auto-print failed", { error: e });
     }
   } catch (thrown) {
     // Re-throw redirects — don't swallow them

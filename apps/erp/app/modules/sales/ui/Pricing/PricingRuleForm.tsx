@@ -280,7 +280,7 @@ const PricingRuleForm = ({ initialValues, onClose }: PricingRuleFormProps) => {
                 <Number
                   name="priority"
                   label={t`Priority`}
-                  helperText={t`Higher priority wins ties and applies first for markups`}
+                  termId="pricing-rule-priority"
                   minValue={0}
                   step={1}
                 />

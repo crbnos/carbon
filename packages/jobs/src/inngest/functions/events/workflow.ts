@@ -19,11 +19,11 @@ export const workflowFunction = inngest.createFunction(
     }
   },
   { event: "carbon/event-workflow" },
-  async ({ event, step }) => {
+  async ({ event, step, logger }) => {
     const payload = workflowPayloadSchema.parse(event.data);
 
     await step.run("trigger-workflow", async () => {
-      console.log(`Triggering workflow ${payload.workflowId}`);
+      logger.info(`Triggering workflow ${payload.workflowId}`);
       // Here you would trigger another business logic function
       // e.g., await inngest.send({ name: payload.workflowId, data: payload.data });
     });

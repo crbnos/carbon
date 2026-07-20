@@ -6,9 +6,11 @@ import {
   flashResultContext
 } from "@carbon/auth/middleware/flash.server";
 import { validator } from "@carbon/form";
+import { requestIdMiddleware } from "@carbon/logger/middleware.server";
 import { Button, Heading, Toaster, useMode } from "@carbon/react";
 import type { Theme } from "@carbon/utils";
 import { modeValidator, themes } from "@carbon/utils";
+import { faviconLinks } from "@carbon/utils/favicon";
 import { Analytics } from "@vercel/analytics/react";
 import type React from "react";
 import type {
@@ -33,43 +35,14 @@ import NProgress from "~/styles/nprogress.css?url";
 import Tailwind from "~/styles/tailwind.css?url";
 import { getTheme } from "./services/theme.server";
 
-export const middleware = [flashMiddleware];
+export const middleware = [requestIdMiddleware, flashMiddleware];
 export const clientMiddleware = [flashClientMiddleware];
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: Tailwind },
   { rel: "stylesheet", href: Background },
   { rel: "stylesheet", href: NProgress },
-  {
-    rel: "icon",
-    type: "image/svg+xml",
-    href: "/carbon-mark-light.svg",
-    media: "(prefers-color-scheme: light)"
-  },
-  {
-    rel: "icon",
-    type: "image/svg+xml",
-    href: "/carbon-mark-dark.svg",
-    media: "(prefers-color-scheme: dark)"
-  },
-  {
-    rel: "icon",
-    type: "image/png",
-    sizes: "32x32",
-    href: "/favicon-32x32.png"
-  },
-  {
-    rel: "icon",
-    type: "image/png",
-    sizes: "16x16",
-    href: "/favicon-16x16.png"
-  },
-  {
-    rel: "apple-touch-icon",
-    sizes: "180x180",
-    href: "/apple-touch-icon.png"
-  },
-  { rel: "manifest", href: "/site.webmanifest" }
+  ...faviconLinks
 ];
 
 export const meta: MetaFunction = () => {
@@ -83,6 +56,8 @@ export const meta: MetaFunction = () => {
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const {
     CARBON_EDITION,
+    LOG_LEVEL,
+    NODE_ENV,
     POSTHOG_API_HOST,
     POSTHOG_PROJECT_PUBLIC_KEY,
     SUPABASE_URL,
@@ -93,6 +68,8 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     {
       env: {
         CARBON_EDITION,
+        LOG_LEVEL,
+        NODE_ENV,
         POSTHOG_API_HOST,
         POSTHOG_PROJECT_PUBLIC_KEY,
         SUPABASE_URL,
@@ -192,7 +169,7 @@ function Document({
         <Toaster position="bottom-right" visibleToasts={5} />
         <ScrollRestoration />
         <Scripts />
-        {!CONTROLLED_ENVIRONMENT && <Analytics />}
+        {!CONTROLLED_ENVIRONMENT && import.meta.env.PROD && <Analytics />}
       </body>
     </html>
   );

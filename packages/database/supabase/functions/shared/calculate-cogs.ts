@@ -63,8 +63,22 @@ export async function calculateCOGS(
         .where("itemId", "=", itemId)
         .where("companyId", "=", companyId)
         .where("remainingQuantity", ">", 0)
+        // adjustment child rows are consumed with their parent, not as layers
+        .where("adjustment", "=", false)
+        .where("appliesToCostLedgerId", "is", null)
+        // 'Purchase Order' rows are planning/cost-history artifacts, not layers
+        .where((eb) =>
+          eb.or([
+            eb("documentType", "is", null),
+            eb("documentType", "!=", "Purchase Order"),
+          ])
+        )
         .orderBy("postingDate", orderDirection)
         .orderBy("createdAt", orderDirection)
+        // Lock the layers for this transaction — two concurrent consumers
+        // would otherwise both read the same remainingQuantity and consume
+        // the layer twice (lost update).
+        .forUpdate()
         .execute();
 
       let remainingToConsume = quantity;
@@ -98,7 +112,40 @@ export async function calculateCOGS(
             remainingQuantity: layerRemaining - quantityFromLayer,
           })
           .where("id", "=", layer.id)
+          .where("companyId", "=", companyId)
           .execute();
+
+        // Consume the layer's cost-adjustment children (invoice-vs-receipt
+        // price corrections) alongside the parent: each adjusted unit carries
+        // a per-unit bump of child.cost / child.quantity.
+        const children = await trx
+          .selectFrom("costLedger")
+          .selectAll()
+          .where("appliesToCostLedgerId", "=", layer.id)
+          .where("companyId", "=", companyId)
+          .where("remainingQuantity", ">", 0)
+          .orderBy("createdAt", "asc")
+          .forUpdate()
+          .execute();
+
+        let unappliedQuantity = quantityFromLayer;
+        for (const child of children) {
+          if (unappliedQuantity <= 0) break;
+          const childQty = Number(child.remainingQuantity);
+          const perUnitBump =
+            Number(child.quantity) > 0
+              ? Number(child.cost) / Number(child.quantity)
+              : 0;
+          const applyQty = Math.min(childQty, unappliedQuantity);
+          totalCost += applyQty * perUnitBump;
+          unappliedQuantity -= applyQty;
+          await trx
+            .updateTable("costLedger")
+            .set({ remainingQuantity: childQty - applyQty })
+            .where("id", "=", child.id)
+            .where("companyId", "=", companyId)
+            .execute();
+        }
       }
 
       // Fallback: insufficient layers (negative inventory scenario)

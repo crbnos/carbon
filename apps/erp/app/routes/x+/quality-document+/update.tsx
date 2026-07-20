@@ -2,6 +2,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import { trigger } from "@carbon/jobs";
+import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ActionFunctionArgs } from "react-router";
@@ -15,6 +16,8 @@ import {
   hasPendingApproval,
   isApprovalRequired
 } from "~/modules/shared";
+
+const logger = getLogger("erp", "update");
 
 type DocRow = { id: string; status: string | null };
 
@@ -85,7 +88,7 @@ async function processToActive(
           from: userId
         });
       } catch (e) {
-        console.error("Failed to trigger approval notification", e);
+        logger.error("Failed to trigger approval notification", { error: e });
       }
     }
 

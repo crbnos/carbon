@@ -39,7 +39,8 @@ import { Hyperlink, MethodIcon } from "~/components";
 import { Confirm } from "~/components/Modals";
 import { LevelLine } from "~/components/TreeView";
 import { usePermissions } from "~/hooks";
-import type { MethodItemType } from "~/modules/shared";
+import { getNextRevision } from "~/modules/items";
+import type { ItemType } from "~/modules/shared";
 import { path } from "~/utils/path";
 import { getReadableIdWithRevision } from "~/utils/string";
 import { getPathToMakeMethod } from "../Methods/utils";
@@ -58,6 +59,7 @@ export function UsedInSkeleton() {
 
 export type UsedInKey =
   | Database["public"]["Enums"]["itemType"]
+  | "assemblyInstructions"
   | "issues"
   | "jobMaterials"
   | "jobs"
@@ -80,7 +82,7 @@ export type UsedInNode = {
     documentReadableId: string;
     documentId?: string;
     documentParentId?: string;
-    itemType?: MethodItemType;
+    itemType?: ItemType;
     methodType?: string;
     revision?: string;
     version?: number;
@@ -370,27 +372,6 @@ export function RevisionsItem({
   );
 }
 
-function getNextRevision(maxRevision: string) {
-  if (/^\d+$/.test(maxRevision)) {
-    return (parseInt(maxRevision) + 1).toString();
-  } else if (/^[A-Z]{1,2}$/.test(maxRevision)) {
-    // Handle single letter case
-    if (maxRevision.length === 1) {
-      return maxRevision === "Z"
-        ? "AA"
-        : String.fromCharCode(maxRevision.charCodeAt(0) + 1);
-    }
-    // Handle double letter case
-    const firstChar = maxRevision[0];
-    const secondChar = maxRevision[1];
-    if (secondChar === "Z") {
-      return String.fromCharCode(firstChar.charCodeAt(0) + 1) + "A";
-    }
-    return firstChar + String.fromCharCode(secondChar.charCodeAt(0) + 1);
-  }
-  return maxRevision;
-}
-
 export function UsedInItem({
   node,
   itemReadableIdWithRevision,
@@ -513,6 +494,8 @@ function getUseInLink(
   itemReadableIdWithRevision: string
 ) {
   switch (key) {
+    case "assemblyInstructions":
+      return path.to.assemblyInstruction(child.id);
     case "Part":
       return path.to.partDetails(child.id);
     case "Material":

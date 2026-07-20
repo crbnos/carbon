@@ -1,4 +1,5 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
@@ -7,6 +8,8 @@ import {
   plannedOrderValidator,
   upsertPurchaseOrderLine
 } from "~/modules/purchasing";
+
+const logger = getLogger("erp", "purchasing", "planning");
 
 const itemsValidator = z
   .object({
@@ -171,7 +174,7 @@ export async function action({ request }: ActionFunctionArgs) {
         ]);
 
         if (suppliers.error) {
-          console.error("Failed to fetch suppliers:", suppliers.error);
+          logger.error("Failed to fetch suppliers", { error: suppliers.error });
           return data(
             {
               success: false,
@@ -182,7 +185,9 @@ export async function action({ request }: ActionFunctionArgs) {
         }
 
         if (supplierParts.error) {
-          console.error("Failed to fetch supplier parts:", supplierParts.error);
+          logger.error("Failed to fetch supplier parts", {
+            error: supplierParts.error
+          });
           return data(
             {
               success: false,
@@ -194,7 +199,7 @@ export async function action({ request }: ActionFunctionArgs) {
         }
 
         if (periods.error) {
-          console.error("Failed to fetch periods:", periods.error);
+          logger.error("Failed to fetch periods", { error: periods.error });
           return data(
             {
               success: false,
@@ -205,7 +210,7 @@ export async function action({ request }: ActionFunctionArgs) {
         }
 
         if (company.error) {
-          console.error("Failed to fetch company:", company.error);
+          logger.error("Failed to fetch company", { error: company.error });
           return data(
             {
               success: false,
@@ -430,7 +435,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
           if (insertForecasts.error) {
             const errorMsg = `Failed to insert supply forecasts: ${insertForecasts.error.message}`;
-            console.error(errorMsg);
+            logger.error(errorMsg);
             errors.push(errorMsg);
           }
         }
@@ -476,7 +481,7 @@ export async function action({ request }: ActionFunctionArgs) {
           errors: errors.length > 0 ? errors : undefined
         };
       } catch (error) {
-        console.error("Unexpected error processing purchase orders:", error);
+        logger.error("Unexpected error processing purchase orders", { error });
         return data(
           {
             success: false,

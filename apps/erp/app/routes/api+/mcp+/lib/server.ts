@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { getLogger } from "@carbon/logger";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { McpContext } from "./types";
 import { z } from "zod";
@@ -6,6 +7,8 @@ import { withErrorHandling, READ_ONLY_ANNOTATIONS, WRITE_ANNOTATIONS } from "./t
 import toolMetadata from "./tool-metadata.json";
 import { isMcpBlockedTool } from "./mcp-blocked-tools";
 import { executeFunction } from "./direct-executor";
+
+const logger = getLogger("erp", "mcp");
 
 function getServerInstructions(): string {
   const today = new Date().toISOString().split("T")[0];
@@ -76,19 +79,19 @@ export function createMcpServer(ctx: McpContext): McpServer {
     withErrorHandling(async (params: any) => {
       const { name } = params;
       
-      console.log("[MCP Server] describe_tool invoked for:", name);
-      
+      logger.info("describe_tool invoked", { name });
+
       // Find the tool in metadata
       const tool = toolMetadata.tools.find(t => t.name === name);
       if (!tool) {
-        console.error("[MCP Server] Tool not found:", name);
+        logger.error("Tool not found", { name });
         return {
           content: [{ type: "text" as const, text: `Tool '${name}' not found` }],
           isError: true
         };
       }
-      
-      console.log("[MCP Server] Found tool:", tool.name, "in module:", tool.module);
+
+      logger.info("Found tool", { name: tool.name, module: tool.module });
       
       // Tool schemas are provided via metadata, no need to load modules
       
@@ -133,7 +136,7 @@ export function createMcpServer(ctx: McpContext): McpServer {
         }
       }
       
-      console.log("[MCP Server] call_tool invoked:", { name, arguments: args });
+      logger.info("call_tool invoked", { name, arguments: args });
 
       if (isMcpBlockedTool(name)) {
         return {
@@ -148,7 +151,7 @@ export function createMcpServer(ctx: McpContext): McpServer {
       // Use direct executor instead of MCP protocol
       const result = await executeFunction(name, ctx, args);
       
-      console.log("[MCP Server] Execution result:", {
+      logger.info("Execution result", {
         success: result.success,
         hasData: !!result.data,
         error: result.error
@@ -162,11 +165,12 @@ export function createMcpServer(ctx: McpContext): McpServer {
         if (result.data && typeof result.data === 'object' && 'data' in result.data) {
           // Supabase format: { data: [...], error: null, count: ... }
           const supabaseData = result.data.data;
-          console.log("[MCP Server] Detected Supabase response format");
-          console.log("[MCP Server] Data array length:", Array.isArray(supabaseData) ? supabaseData.length : 'not array');
-          
+          logger.info("Detected Supabase response format", {
+            dataLength: Array.isArray(supabaseData) ? supabaseData.length : "not array"
+          });
+
           if (result.data.error) {
-            console.error("[MCP Server] Supabase error:", result.data.error);
+            logger.error("Supabase error", { error: result.data.error });
             return {
               content: [{ type: "text" as const, text: `Database error: ${JSON.stringify(result.data.error)}` }],
               isError: true
@@ -176,19 +180,19 @@ export function createMcpServer(ctx: McpContext): McpServer {
           output = JSON.stringify(supabaseData, null, 2);
         } else if (result.data) {
           output = JSON.stringify(result.data, null, 2);
-          console.log("[MCP Server] Using result.data for output");
+          logger.info("Using result.data for output");
         } else {
           output = "Operation completed successfully";
-          console.log("[MCP Server] No data in result, using default message");
+          logger.info("No data in result, using default message");
         }
-        
-        console.log("[MCP Server] Returning output (truncated):", output.substring(0, 200));
-        
+
+        logger.info("Returning output", { output: output.substring(0, 200) });
+
         return {
           content: [{ type: "text" as const, text: output }]
         };
       } else {
-        console.error("[MCP Server] Tool execution failed:", result.error);
+        logger.error("Tool execution failed", { error: result.error });
         return {
           content: [{ type: "text" as const, text: `Error: ${result.error}` }],
           isError: true
@@ -214,10 +218,10 @@ export function createMcpServer(ctx: McpContext): McpServer {
     withErrorHandling(async (params: any) => {
       const { query, module, classification, limit = 20, offset = 0 } = params;
       
-      console.log("[MCP Server] search_tools invoked:", { query, module, classification, limit, offset });
-      
+      logger.info("search_tools invoked", { query, module, classification, limit, offset });
+
       let results = toolMetadata.tools;
-      console.log("[MCP Server] Total tools available:", results.length);
+      logger.info("Total tools available", { count: results.length });
       
       // Apply filters
       if (module) {
@@ -238,8 +242,8 @@ export function createMcpServer(ctx: McpContext): McpServer {
       const foundTools = results.slice(offset, offset + limit);
       const toolNames = foundTools.map(t => t.name);
       
-      console.log("[MCP Server] Found tools after filtering:", results.length);
-      console.log("[MCP Server] Returning tools:", toolNames);
+      logger.info("Found tools after filtering", { count: results.length });
+      logger.info("Returning tools", { toolNames });
       
       // Build response
       let output = `Found ${results.length} tools`;

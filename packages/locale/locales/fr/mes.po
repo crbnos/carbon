@@ -105,9 +105,6 @@ msgstr "Erreur d'authentification"
 msgid "available"
 msgstr "disponible"
 
-msgid "Back Home"
-msgstr "Retour à la maison"
-
 msgid "Batch"
 msgstr "Lot"
 
@@ -327,9 +324,6 @@ msgstr "Saisir le NIP pour {0}"
 
 msgid "Error"
 msgstr "Erreur"
-
-msgid "Error!"
-msgstr "Erreur !"
 
 msgid "Estimated"
 msgstr "Estimé"
@@ -616,6 +610,9 @@ msgstr "Aucun impact"
 msgid "No maintenance scheduled for today"
 msgstr "Aucune maintenance planifiée pour aujourd'hui"
 
+msgid "No matches. Type to create one."
+msgstr "Aucune correspondance. Tapez pour en créer une."
+
 msgid "No materials"
 msgstr "Aucun matériau"
 
@@ -763,6 +760,9 @@ msgstr "Précédent"
 
 msgid "Preventive"
 msgstr "Préventif"
+
+msgid "Previous"
+msgstr "Précédent"
 
 msgid "Print"
 msgstr "Imprimer"
@@ -968,9 +968,6 @@ msgstr "Connecté en tant que {stationName}"
 
 msgid "Size"
 msgstr "Taille"
-
-msgid "Something went wrong"
-msgstr "Une erreur s'est produite"
 
 msgid "Source"
 msgstr "Source"

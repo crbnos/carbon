@@ -105,9 +105,6 @@ msgstr "Kimlik Doğrulama Hatası"
 msgid "available"
 msgstr "mevcut"
 
-msgid "Back Home"
-msgstr "Ana Sayfaya Dön"
-
 msgid "Batch"
 msgstr "Parti"
 
@@ -327,9 +324,6 @@ msgstr "PIN'i {0} için girin"
 
 msgid "Error"
 msgstr "Hata"
-
-msgid "Error!"
-msgstr "Hata!"
 
 msgid "Estimated"
 msgstr "Tahmini"
@@ -616,6 +610,9 @@ msgstr "Etki Yok"
 msgid "No maintenance scheduled for today"
 msgstr "Bugün planlanmış bakım yok"
 
+msgid "No matches. Type to create one."
+msgstr "Eşleşme yok. Bir tane oluşturmak için yazın."
+
 msgid "No materials"
 msgstr "Malzeme yok"
 
@@ -763,6 +760,9 @@ msgstr "Önceki"
 
 msgid "Preventive"
 msgstr "Önleyici"
+
+msgid "Previous"
+msgstr "Önceki"
 
 msgid "Print"
 msgstr "Yazdır"
@@ -968,9 +968,6 @@ msgstr "Oturum açıldı olarak {stationName}"
 
 msgid "Size"
 msgstr "Boyut"
-
-msgid "Something went wrong"
-msgstr "Bir şeyler yanlış gitti"
 
 msgid "Source"
 msgstr "Kaynak"

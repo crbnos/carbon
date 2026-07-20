@@ -1,10 +1,13 @@
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
+import { getLogger } from "@carbon/logger";
 import { sql } from "kysely";
 import type {
   AuthProvider,
   OAuthClientOptions,
   ProviderCredentials
 } from "./types";
+
+const logger = getLogger("ee", "accounting");
 
 /**
  * Execute a database operation with sync triggers disabled.
@@ -407,7 +410,7 @@ export function throwXeroApiError(
     logDetails.rawResponse = details.rawResponse;
   }
 
-  console.error(`[Xero API Error] ${operation}`, logDetails);
+  logger.error("Xero API error", { operation, ...logDetails });
 
   throw error;
 }
@@ -472,7 +475,7 @@ export function createOAuthClient({
       return newCreds;
     },
     async refresh() {
-      console.log("Refreshing OAuth tokens", creds);
+      logger.info("Refreshing OAuth tokens", { creds });
       if (!creds?.refreshToken) {
         throw new Error("No refresh token available");
       }
@@ -493,7 +496,10 @@ export function createOAuthClient({
       });
 
       if (response.error || !response.data) {
-        console.log(response.data);
+        logger.error("Token refresh failed", {
+          error: response.error,
+          data: response.data
+        });
         throw new Error(`Token refresh failed: ${response.error}`);
       }
 

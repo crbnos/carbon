@@ -5,6 +5,7 @@ import { setCompanyId } from "@carbon/auth/company.server";
 import { updateCompanySession } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { redis } from "@carbon/kv";
+import { getLogger } from "@carbon/logger";
 import { getLocalTimeZone } from "@internationalized/date";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
@@ -17,6 +18,8 @@ import {
 } from "~/modules/settings";
 import { getPermissionCacheKey } from "~/modules/users/users.server";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "settings", "company");
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -33,7 +36,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const companyInsert = await insertCompany(client, validation.data);
   if (companyInsert.error) {
-    console.error(companyInsert.error);
+    logger.error("Failed to insert company", { error: companyInsert.error });
     throw new Error("Fatal: failed to insert company");
   }
 
@@ -44,7 +47,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const seed = await seedCompany(client, companyId, userId);
   if (seed.error) {
-    console.error(seed.error);
+    logger.error("Failed to seed company", { error: seed.error });
     throw new Error("Fatal: failed to seed company");
   }
 
@@ -60,7 +63,7 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   if (locationInsert.error) {
-    console.error(locationInsert.error);
+    logger.error("Failed to insert location", { error: locationInsert.error });
     throw new Error("Fatal: failed to insert location");
   }
 
@@ -79,7 +82,7 @@ export async function action({ request }: ActionFunctionArgs) {
   ]);
 
   if (job.error) {
-    console.error(job.error);
+    logger.error("Failed to insert job", { error: job.error });
     throw new Error("Fatal: failed to insert job");
   }
 

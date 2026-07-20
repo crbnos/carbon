@@ -14,20 +14,23 @@ import { AnimatePresence, motion } from "framer-motion";
 import { LuBox, LuDroplet, LuFilter, LuLayers, LuWrench } from "react-icons/lu";
 import { MultiSelect } from "~/components/Form";
 import { useItemPostingGroups } from "~/components/Form/ItemPostingGroup";
-import { itemTypes } from "~/modules/inventory/inventory.models";
+import { inventoryItemTypes } from "~/modules/inventory/inventory.models";
 
-const ITEM_TYPE_ICON: Record<(typeof itemTypes)[number], JSX.Element> = {
-  Part: <LuBox />,
-  Material: <LuLayers />,
-  Tool: <LuWrench />,
-  Consumable: <LuDroplet />
-};
+const ITEM_TYPE_ICON: Record<(typeof inventoryItemTypes)[number], JSX.Element> =
+  {
+    Part: <LuBox />,
+    Material: <LuLayers />,
+    Tool: <LuWrench />,
+    Consumable: <LuDroplet />
+  };
 
-const ITEM_TYPE_OPTIONS: ChoiceSelectOption<string>[] = itemTypes.map((t) => ({
-  value: t,
-  title: t,
-  icon: ITEM_TYPE_ICON[t]
-}));
+const ITEM_TYPE_OPTIONS: ChoiceSelectOption<string>[] = inventoryItemTypes.map(
+  (t) => ({
+    value: t,
+    title: t,
+    icon: ITEM_TYPE_ICON[t]
+  })
+);
 
 function ItemTypesField() {
   const { t } = useLingui();

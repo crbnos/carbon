@@ -3,6 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import { trigger } from "@carbon/jobs";
+import { getLogger } from "@carbon/logger";
 import { Loading } from "@carbon/react";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -25,6 +26,8 @@ import {
   upsertPurchaseOrderLine
 } from "~/modules/purchasing";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "kanban");
 
 async function handleKanban({
   client,
@@ -111,7 +114,7 @@ async function handleKanban({
 
     const id = createdJob.data?.id;
     if (createdJob.error || !id) {
-      console.error(createdJob.error);
+      logger.error("Kanban operation failed", { error: createdJob.error });
       return {
         data: null,
         error: "Failed to create job"
@@ -135,7 +138,7 @@ async function handleKanban({
     ]);
 
     if (associateKanban.error) {
-      console.error(associateKanban.error);
+      logger.error("Kanban operation failed", { error: associateKanban.error });
       return {
         data: null,
         error: "Failed to associate kanban with job"
@@ -173,7 +176,7 @@ async function handleKanban({
           .eq("id", id)
       ]);
     } else if (upsertMethod.error) {
-      console.error(upsertMethod.error);
+      logger.error("Kanban operation failed", { error: upsertMethod.error });
     }
 
     const jobId = id;
@@ -235,7 +238,9 @@ async function handleKanban({
       });
 
       if (newPurchaseOrder.error || !newPurchaseOrder.data) {
-        console.error(newPurchaseOrder.error);
+        logger.error("Kanban operation failed", {
+          error: newPurchaseOrder.error
+        });
         return {
           data: null,
           error: "Failed to create purchase order"
@@ -274,7 +279,7 @@ async function handleKanban({
     const itemReplenishment = item?.data?.itemReplenishment;
 
     if (item.error) {
-      console.error(item.error);
+      logger.error("Kanban operation failed", { error: item.error });
       return {
         data: null,
         error: "Failed to get item"
@@ -308,7 +313,9 @@ async function handleKanban({
     });
 
     if (createPurchaseOrderLine.error) {
-      console.error(createPurchaseOrderLine.error);
+      logger.error("Kanban operation failed", {
+        error: createPurchaseOrderLine.error
+      });
       return {
         data: null,
         error: "Failed to create purchase order line"

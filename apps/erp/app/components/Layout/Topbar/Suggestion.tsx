@@ -5,6 +5,7 @@ import {
   TextAreaControlled,
   ValidatedForm
 } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import {
   Badge,
   BadgeCloseButton,
@@ -30,6 +31,8 @@ import { useUser } from "~/hooks";
 import { suggestionValidator } from "~/modules/shared";
 import type { action } from "~/routes/x+/resources+/suggestions.new";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "suggestion");
 
 const Picker = React.lazy(() => import("@emoji-mart/react"));
 
@@ -95,7 +98,7 @@ const Suggestion = () => {
         });
 
       if (imageUpload.error) {
-        console.error(imageUpload.error);
+        logger.error(imageUpload.error);
         toast.error(t`Failed to upload image`);
       }
 

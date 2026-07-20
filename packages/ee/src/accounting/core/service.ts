@@ -1,4 +1,5 @@
 import type { Database } from "@carbon/database";
+import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import z from "zod";
 import type { AccountingProvider } from "../providers";
@@ -64,10 +65,10 @@ export function resolveSyncConfig(metadata: unknown): GlobalSyncConfig {
 
     const parsed = storedEntityConfigSchema.safeParse(fragment);
     if (!parsed.success) {
-      console.warn(
-        `Ignoring invalid stored sync config for entity "${entityType}":`,
-        parsed.error.issues
-      );
+      logger.warning("Ignoring invalid stored sync config for entity", {
+        entityType,
+        issues: parsed.error.issues
+      });
       continue;
     }
 
@@ -79,6 +80,8 @@ export function resolveSyncConfig(metadata: unknown): GlobalSyncConfig {
 
   return resolved;
 }
+
+const logger = getLogger("ee", "accounting");
 
 export const getAccountingIntegration = async <T extends ProviderID>(
   client: SupabaseClient<Database>,
@@ -96,13 +99,11 @@ export const getAccountingIntegration = async <T extends ProviderID>(
     )
     .single();
 
-  console.log(
-    "Fetched integration for",
+  logger.info("Fetched integration", {
     provider,
-    "and ID",
     companyOrTenantId,
     integration
-  );
+  });
 
   if (integration.error || !integration.data) {
     throw new Error(
@@ -115,7 +116,7 @@ export const getAccountingIntegration = async <T extends ProviderID>(
   );
 
   if (!config.success) {
-    console.dir(config.error, { depth: null });
+    logger.error("Invalid provider config", { error: config.error });
     throw new Error("Invalid provider config");
   }
 
@@ -163,7 +164,7 @@ export function getProviderIntegration(
     try {
       credentials = parseStoredCredentials(config.credentials);
     } catch (error) {
-      console.error(`Invalid stored ${provider} credentials:`, error);
+      logger.error("Invalid stored provider credentials", { provider, error });
     }
   }
 
@@ -185,13 +186,14 @@ export function getProviderIntegration(
   const onTokenRefresh = async (auth: ProviderCredentials) => {
     try {
       if (auth.type !== "oauth2") {
-        console.error(
-          `Unexpected ${auth.type} credentials in ${provider} token refresh`
-        );
+        logger.error("Unexpected credentials in provider token refresh", {
+          provider,
+          type: auth.type
+        });
         return;
       }
 
-      console.log("Refreshing tokens for", provider, "integration");
+      logger.info("Refreshing tokens for integration", { provider });
       // Writes always use the new shape: provider-specific fields live under
       // providerMetadata (carried over from the stored credentials)
       const update: ProviderCredentials = {
@@ -210,10 +212,10 @@ export function getProviderIntegration(
         .eq("companyId", companyId)
         .eq("id", provider);
     } catch (error) {
-      console.error(
-        `Failed to update ${provider} integration metadata:`,
+      logger.error("Failed to update integration metadata", {
+        provider,
         error
-      );
+      });
     }
   };
 
@@ -251,11 +253,7 @@ export function getProviderIntegration(
         defaultSalesAccountCode: config?.defaultSalesAccountCode,
         defaultPurchaseAccountCode: config?.defaultPurchaseAccountCode
       };
-      console.log(
-        "[getProviderIntegration] Creating XeroProvider with settings:",
-        settings
-      );
-      console.log("[getProviderIntegration] Full config received:", config);
+      logger.info("Creating XeroProvider", { settings, config });
       return new XeroProvider({
         companyId,
         tenantId,

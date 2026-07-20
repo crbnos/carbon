@@ -2,6 +2,7 @@ import { assertIsPost, error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { deletePurchaseOrder, getPurchaseOrder } from "~/modules/purchasing";
@@ -10,8 +11,9 @@ import {
   canCancelRequest,
   getLatestApprovalRequestForDocument
 } from "~/modules/shared";
-
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "orderid-delete");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -123,7 +125,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const remove = await deletePurchaseOrder(client, orderId);
 
   if (remove.error) {
-    console.error("Failed to delete purchase order:", remove.error);
+    logger.error("Failed to delete purchase order:", remove.error);
 
     throw redirect(
       path.to.purchaseOrders,

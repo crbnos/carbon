@@ -1,5 +1,6 @@
 import { useFormContext } from "@carbon/form";
 import type { TermId } from "@carbon/glossary";
+import { getLogger } from "@carbon/logger";
 import {
   DatePicker as DatePickerBase,
   FormControl,
@@ -15,6 +16,8 @@ import { useEffect, useState } from "react";
 import { flushSync } from "react-dom";
 import { useField } from "../hooks";
 import { useFormStateContext } from "../internal/formStateContext";
+
+const log = getLogger("form");
 
 type DatePickerProps = {
   name: string;
@@ -49,7 +52,7 @@ const safeParseDate = (value: string | undefined): CalendarDate | undefined => {
       return parseDate(iso);
     }
   } catch (e) {
-    console.error("DatePicker: Failed to parse date string:", value, e);
+    log.error("Failed to parse date string", { value, error: e });
   }
   return undefined;
 };

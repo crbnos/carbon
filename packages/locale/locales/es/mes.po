@@ -105,9 +105,6 @@ msgstr "Error de autenticación"
 msgid "available"
 msgstr "disponible"
 
-msgid "Back Home"
-msgstr "Volver a casa"
-
 msgid "Batch"
 msgstr "Lote"
 
@@ -327,9 +324,6 @@ msgstr "Ingrese el PIN para {0}"
 
 msgid "Error"
 msgstr "Error"
-
-msgid "Error!"
-msgstr "¡Error!"
 
 msgid "Estimated"
 msgstr "Estimado"
@@ -616,6 +610,9 @@ msgstr "Sin impacto"
 msgid "No maintenance scheduled for today"
 msgstr "No hay mantenimiento programado para hoy"
 
+msgid "No matches. Type to create one."
+msgstr "Sin coincidencias. Escribe para crear una."
+
 msgid "No materials"
 msgstr "Sin materiales"
 
@@ -763,6 +760,9 @@ msgstr "Anterior"
 
 msgid "Preventive"
 msgstr "Preventivo"
+
+msgid "Previous"
+msgstr "Anterior"
 
 msgid "Print"
 msgstr "Imprimir"
@@ -968,9 +968,6 @@ msgstr "Conectado como {stationName}"
 
 msgid "Size"
 msgstr "Tamaño"
-
-msgid "Something went wrong"
-msgstr "Algo salió mal"
 
 msgid "Source"
 msgstr "Origen"

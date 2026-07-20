@@ -1,10 +1,13 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
+import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { adfToTiptap } from "./richtext";
 import type { JiraCredentials, JiraIssue, JiraIssueMapping } from "./types";
 import { JiraIssueMappingSchema } from "./types";
 import { mapJiraStatusToCarbonStatus } from "./utils";
+
+const logger = getLogger("ee", "jira");
 
 /**
  * Get the Jira integration for a company.
@@ -97,7 +100,9 @@ export async function linkActionToJiraIssue(
     try {
       notes = adfToTiptap(input.issue.fields.description);
     } catch (e) {
-      console.error("Failed to convert Jira description to Tiptap:", e);
+      logger.error("Failed to convert Jira description to Tiptap", {
+        error: e
+      });
     }
   }
 

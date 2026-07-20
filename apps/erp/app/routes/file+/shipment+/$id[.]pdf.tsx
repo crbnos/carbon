@@ -7,6 +7,7 @@ import {
   templateShowsThumbnails,
   toDocumentTemplate
 } from "@carbon/documents/template";
+import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import { getPreferenceHeaders } from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
@@ -37,6 +38,8 @@ import {
 } from "~/modules/settings";
 import { getBase64ImageFromSupabase } from "~/modules/shared";
 
+const logger = getLogger("erp", "shipment", "pdf");
+
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     view: "inventory"
@@ -52,22 +55,24 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   ]);
 
   if (company.error) {
-    console.error(company.error);
+    logger.error("Failed to load company", { error: company.error });
   }
 
   if (shipment.error) {
-    console.error(shipment.error);
+    logger.error("Failed to load shipment", { error: shipment.error });
   }
 
   if (shipmentLines.error) {
-    console.error(shipmentLines.error);
+    logger.error("Failed to load shipmentLines", {
+      error: shipmentLines.error
+    });
   }
 
   const serviceRole = getCarbonServiceRole();
   const terms = await getSalesTerms(serviceRole, companyId);
 
   if (terms.error) {
-    console.error(terms.error);
+    logger.error("Failed to load terms", { error: terms.error });
   }
 
   if (
@@ -134,7 +139,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       ]);
 
       if (customer.error) {
-        console.error(customer.error);
+        logger.error("Failed to load customer", { error: customer.error });
         throw new Error("Failed to load customer");
       }
 
@@ -227,7 +232,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         .single();
 
       if (salesInvoice.error) {
-        console.error(salesInvoice.error);
+        logger.error("Failed to load salesInvoice", {
+          error: salesInvoice.error
+        });
         throw new Error("Failed to load sales invoice");
       }
 
@@ -255,7 +262,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       ]);
 
       if (customer.error) {
-        console.error(customer.error);
+        logger.error("Failed to load customer", { error: customer.error });
         throw new Error("Failed to load customer");
       }
 
@@ -371,7 +378,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       ]);
 
       if (supplier.error) {
-        console.error(supplier.error);
+        logger.error("Failed to load supplier", { error: supplier.error });
         throw new Error("Failed to load supplier");
       }
 
@@ -466,7 +473,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       );
 
       if (warehouseTransfer.error) {
-        console.error(warehouseTransfer.error);
+        logger.error("Failed to load warehouseTransfer", {
+          error: warehouseTransfer.error
+        });
         throw new Error("Failed to load warehouse transfer");
       }
 

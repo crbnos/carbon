@@ -1,4 +1,7 @@
+import { getLogger } from "@carbon/logger";
 import { Email } from "./config";
+
+const logger = getLogger("ee", "email");
 
 /**
  * Server-side healthcheck for the Email integration.
@@ -62,7 +65,7 @@ export async function emailHealthcheck(
 
     return false;
   } catch (error) {
-    console.error("Email integration healthcheck failed", error);
+    logger.error("Email integration healthcheck failed", { error });
     return false;
   }
 }

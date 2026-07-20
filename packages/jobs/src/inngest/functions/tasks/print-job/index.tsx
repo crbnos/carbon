@@ -1,6 +1,7 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import { BINDERY_PRESS_API_KEY } from "@carbon/env";
+import { getLogger } from "@carbon/logger";
 import type { DocumentTypeId } from "@carbon/printing";
 import {
   createPrintJob,
@@ -14,6 +15,9 @@ import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { NonRetriableError } from "inngest";
 import { inngest } from "../../../client";
+
+const log = getLogger("jobs", "print-job");
+
 import type { GeneratedContent, PrintableDocumentItem } from "./renderers";
 import { renderItemBuiltIn, renderItemWithTemplate } from "./renderers";
 import {
@@ -252,7 +256,7 @@ async function processDocumentType(
     });
 
     if (job.error || !job.data) {
-      console.error(`Failed to create print job: ${job.error?.message}`);
+      log.error("Failed to create print job", { error: job.error });
       continue;
     }
 
@@ -305,7 +309,7 @@ async function processDocumentType(
         renderError instanceof Error
           ? renderError.message
           : String(renderError);
-      console.error(`Rendering failed for job ${jobId}: ${message}`);
+      log.error(`Rendering failed for job ${jobId}`, { error: message });
       await updatePrintJobStatus(client, jobId, companyId, "failed", {
         error: `Rendering failed: ${message}`
       });

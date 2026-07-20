@@ -17,21 +17,30 @@ const descriptionValidator = z.object({
 type ItemDescriptionProps = {
   value: string;
   onChange: (value: string | null) => void;
+  // Match the parent panel's field idiom: `true` (default) = click-to-edit
+  // preview for the sidebar; `false` = an always-open textarea for the form.
+  inline?: boolean;
+  // Read-only: render the value as a static preview, no textarea / edit control.
+  isReadOnly?: boolean;
 };
 
 /**
- * Inline long description for item Properties panels. Textarea-based so the
- * multi-line content reads naturally: while not editing it shows a clamped
- * preview (line-clamp-3) that reveals the full text on hover via
- * TruncatedTooltipText; clicking the edit button swaps in a textarea that
- * persists onBlur through the same bulkUpdateItems path. Controlled `value`
- * keeps the field in sync (no stale text).
+ * Long description for item Properties panels; persists onBlur through the same
+ * bulkUpdateItems path. Sidebar (`inline`) shows a clamped preview
+ * (line-clamp-3, full text on hover) that swaps to a textarea on click; the form
+ * (`inline={false}`) renders the textarea directly. Controlled `value` keeps the
+ * field in sync (no stale text).
  */
-const ItemDescription = ({ value, onChange }: ItemDescriptionProps) => {
+const ItemDescription = ({
+  value,
+  onChange,
+  inline = true,
+  isReadOnly = false
+}: ItemDescriptionProps) => {
   const { t } = useLingui();
   const [isEditing, setIsEditing] = useState(false);
 
-  if (isEditing) {
+  if (!isReadOnly && (!inline || isEditing)) {
     return (
       <ValidatedForm
         defaultValues={{ description: value ?? undefined }}
@@ -39,14 +48,14 @@ const ItemDescription = ({ value, onChange }: ItemDescriptionProps) => {
         className="w-full"
       >
         <TextAreaControlled
-          autoFocus
+          autoFocus={inline}
           label={t`Long Description`}
           name="description"
           rows={3}
           value={value ?? ""}
           onBlur={(e) => {
             onChange(e.target.value ?? null);
-            setIsEditing(false);
+            if (inline) setIsEditing(false);
           }}
           className="text-muted-foreground"
         />
@@ -66,13 +75,15 @@ const ItemDescription = ({ value, onChange }: ItemDescriptionProps) => {
             {value}
           </TruncatedTooltipText>
         )}
-        <IconButton
-          icon={value ? <LuSettings2 /> : <LuPlus />}
-          aria-label={value ? "Edit" : "Add"}
-          size="sm"
-          variant="secondary"
-          onClick={() => setIsEditing(true)}
-        />
+        {!isReadOnly && (
+          <IconButton
+            icon={value ? <LuSettings2 /> : <LuPlus />}
+            aria-label={value ? "Edit" : "Add"}
+            size="sm"
+            variant="secondary"
+            onClick={() => setIsEditing(true)}
+          />
+        )}
       </HStack>
     </VStack>
   );

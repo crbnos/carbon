@@ -1,8 +1,11 @@
 import { VerificationEmail } from "@carbon/documents/email";
 import { redis } from "@carbon/kv";
 import { sendEmail } from "@carbon/lib/resend.server";
+import { getLogger } from "@carbon/logger";
 import { render } from "@react-email/components";
 import { RESEND_DOMAIN } from "../config/env";
+
+const log = getLogger("auth");
 
 export async function sendVerificationCode(email: string) {
   try {
@@ -21,7 +24,7 @@ export async function sendVerificationCode(email: string) {
       600
     );
     if (!stored) {
-      console.error(
+      log.error(
         "Failed to store verification code (Redis unavailable); not sending email"
       );
       return false;
@@ -41,11 +44,11 @@ export async function sendVerificationCode(email: string) {
       subject: "Verify your email address",
       html
     });
-    console.log(result);
+    log.debug("Verification email sent", { result });
 
     return !result.error;
   } catch (error) {
-    console.error("Failed to send verification code:", error);
+    log.error("Failed to send verification code", { error });
     return false;
   }
 }
@@ -66,7 +69,7 @@ export async function verifyEmailCode(email: string, code: string) {
 
     return true;
   } catch (error) {
-    console.error("Failed to verify email code:", error);
+    log.error("Failed to verify email code", { error });
     return false;
   }
 }

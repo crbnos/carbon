@@ -1,5 +1,6 @@
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
+import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type z from "zod";
 import type { AccountingProvider } from "../providers";
@@ -33,6 +34,8 @@ import type {
   SyncOperationTriggerSchema
 } from "./models";
 import { AccountingApiError, withTriggersDisabled } from "./utils";
+
+const logger = getLogger("ee", "accounting");
 
 // /********************************************************\
 // *                  Provider Types Start                  *
@@ -915,7 +918,7 @@ export abstract class BaseEntitySyncer<
     type: AccountingEntityType,
     localId: string
   ): Promise<string> {
-    console.log(`[BaseSyncer] Resolving dependency: ${type} ${localId}`);
+    logger.info("Resolving dependency", { type, localId });
 
     // 1. Instantiate the dependency's Syncer
     // Dynamic import to avoid circular dependency
@@ -938,15 +941,15 @@ export abstract class BaseEntitySyncer<
     // Note: This requires getRemoteId to be exposed on the syncer instance
     const existingRemoteId = await (syncer as any).getRemoteId(localId);
     if (existingRemoteId) {
-      console.log(
-        `[BaseSyncer] Dependency ${type} ${localId} already synced: ${existingRemoteId}`
-      );
+      logger.info("Dependency already synced", {
+        type,
+        localId,
+        existingRemoteId
+      });
       return existingRemoteId;
     }
 
-    console.log(
-      `[BaseSyncer] Dependency not found. Triggering sync for ${type} ${localId}`
-    );
+    logger.info("Dependency not found, triggering sync", { type, localId });
 
     // 3. Force a Push
     const result = await syncer.pushToAccounting(localId);
@@ -967,9 +970,11 @@ export abstract class BaseEntitySyncer<
       );
     }
 
-    console.log(
-      `[BaseSyncer] Dependency ${type} ${localId} synced successfully: ${result.remoteId}`
-    );
+    logger.info("Dependency synced successfully", {
+      type,
+      localId,
+      remoteId: result.remoteId
+    });
     return result.remoteId;
   }
 
@@ -993,7 +998,7 @@ export abstract class BaseEntitySyncer<
     };
 
     if (status === "success") {
-      console.log("[SyncLog]", logEntry);
+      logger.info("Sync log", logEntry);
     } else {
       // Enhanced error logging with structured details
       const errorDetails: Record<string, unknown> = { ...logEntry };
@@ -1019,7 +1024,7 @@ export abstract class BaseEntitySyncer<
         errorDetails.error = error;
       }
 
-      console.error("[SyncLog] ERROR", errorDetails);
+      logger.error("Sync log error", errorDetails);
     }
   }
 

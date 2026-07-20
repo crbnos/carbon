@@ -2,7 +2,7 @@ import { Badge, cn, HStack } from "@carbon/react";
 import { LuDownload } from "react-icons/lu";
 import { DocumentPreview } from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
-import type { MethodItemType } from "~/modules/shared";
+import type { ItemType } from "~/modules/shared";
 import { getDocumentType } from "~/modules/shared";
 import type { ItemFile } from "../../types";
 import { useItemDocuments } from "./ItemDocuments";
@@ -10,7 +10,7 @@ import { useItemDocuments } from "./ItemDocuments";
 type FileBadgeProps = {
   file: ItemFile;
   itemId: string;
-  itemType: MethodItemType;
+  itemType: ItemType;
   className?: string;
 };
 

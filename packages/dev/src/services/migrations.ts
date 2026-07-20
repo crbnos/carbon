@@ -166,8 +166,7 @@ export async function applyMigrations(
           preferLocal: true
         });
         if (retry.exitCode === 0) {
-          const applied = /Applying migration/i.test(retry.stdout ?? "");
-          return { applied };
+          return { applied: didApplyMigrations(retry) };
         }
         process.stderr.write(retry.stderr?.toString() ?? "");
         process.stdout.write(retry.stdout?.toString() ?? "");
@@ -180,10 +179,14 @@ export async function applyMigrations(
     process.stdout.write(r.stdout?.toString() ?? "");
     throw new Error(`supabase ${args.join(" ")} failed (exit ${r.exitCode})`);
   }
-  // supabase prints "Applying migration <ts>_<name>.sql..." per applied
-  // migration; absent that, the schema was already current.
-  const applied = /Applying migration/i.test(r.stdout ?? "");
-  return { applied };
+  return { applied: didApplyMigrations(r) };
+}
+
+// supabase prints "Applying migration <ts>_<name>.sql..." per applied
+// migration — on STDERR (stdout says "Local database is up to date." even
+// while applying), so both streams must be checked.
+function didApplyMigrations(r: { stdout?: string; stderr?: string }): boolean {
+  return /Applying migration/i.test(`${r.stderr ?? ""}\n${r.stdout ?? ""}`);
 }
 
 // Find migration versions in DB that have no corresponding local file and

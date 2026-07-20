@@ -1,7 +1,10 @@
 import { hashOAuthSecret } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { z } from "zod";
+
+const logger = getLogger("erp", "register");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -104,7 +107,7 @@ export async function action({ request }: ActionFunctionArgs) {
   ]);
 
   if (insertResult.error) {
-    console.error(
+    logger.error(
       "[OAuth Register] Failed to create client:",
       insertResult.error
     );

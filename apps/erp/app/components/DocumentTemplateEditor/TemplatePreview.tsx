@@ -1,6 +1,9 @@
+import { getLogger } from "@carbon/logger";
 import { Spinner } from "@carbon/react";
 import { useEffect, useRef, useState } from "react";
 import { useDocumentTemplate, useEditorStore } from "./context";
+
+const logger = getLogger("erp", "templatepreview");
 
 const PREVIEW_DEBOUNCE_MS = 500;
 
@@ -53,7 +56,7 @@ export function TemplatePreview({ previewPath }: { previewPath: string }) {
         urlRef.current = nextUrl;
         setUrl(nextUrl);
       } catch (error) {
-        if (!controller.signal.aborted) console.error(error);
+        if (!controller.signal.aborted) logger.error("Error", { error: error });
       } finally {
         if (!controller.signal.aborted) setIsLoading(false);
       }

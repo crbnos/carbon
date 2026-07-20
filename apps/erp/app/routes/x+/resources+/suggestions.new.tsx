@@ -2,10 +2,13 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
+import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
 import type { ActionFunctionArgs } from "react-router";
 import { getCompany } from "~/modules/settings";
 import { suggestionValidator } from "~/modules/shared";
+
+const logger = getLogger("erp", "suggestions-new");
 
 export async function action({ request }: ActionFunctionArgs) {
   const { userId, companyId } = await requirePermissions(request, {});
@@ -66,7 +69,7 @@ export async function action({ request }: ActionFunctionArgs) {
         from: formUserId || userId
       });
     } catch (err) {
-      console.error("Failed to trigger suggestion notification", err);
+      logger.error("Failed to trigger suggestion notification", { error: err });
     }
   }
 

@@ -1,7 +1,10 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getUserClaims } from "@carbon/auth/users.server";
+import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
+
+const logger = getLogger("erp", "search");
 
 // Map entity types to the permission module required to view them
 const entityPermissionMap: Record<string, string> = {
@@ -83,7 +86,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     });
 
     if (error) {
-      console.error("Search error:", error);
+      logger.error("Search error", { error: error });
       return Response.json({ results: [] } satisfies SearchResponse);
     }
 
@@ -91,7 +94,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       results: (data ?? []) as SearchResult[]
     } satisfies SearchResponse);
   } catch (err) {
-    console.error("Search error:", err);
+    logger.error("Search error", { error: err });
     return Response.json({ results: [] } satisfies SearchResponse);
   }
 }

@@ -15,7 +15,7 @@ import { inngest } from "../../client";
 export const onboardFunction = inngest.createFunction(
   { id: "onboard", retries: 3 },
   { event: "carbon/onboard" },
-  async ({ event, step }) => {
+  async ({ event, step, logger }) => {
     const { type, companyId, userId, plan } = event.data;
 
     const carbon = getCarbonServiceRole();
@@ -31,12 +31,12 @@ export const onboardFunction = inngest.createFunction(
         ]);
 
         if (company.error) {
-          console.error("Could not find company", company.error);
+          logger.error("Could not find company", company.error);
           throw new Error(company.error.message);
         }
 
         if (user.error) {
-          console.error("Could not find user", user.error);
+          logger.error("Could not find user", user.error);
           throw new Error(user.error.message);
         }
 
@@ -47,7 +47,7 @@ export const onboardFunction = inngest.createFunction(
     switch (type) {
       case "lead":
         await step.run("create-resend-contact", async () => {
-          console.log(
+          logger.info(
             "Processing lead case for user:",
             userId,
             "company:",
@@ -62,9 +62,9 @@ export const onboardFunction = inngest.createFunction(
               unsubscribed: false,
               audienceId: process.env.RESEND_AUDIENCE_ID!
             });
-            console.log("Successfully created resend contact for:", user.email);
+            logger.info("Successfully created resend contact for:", user.email);
           } catch (error) {
-            console.error("Error creating resend contact", error);
+            logger.error("Error creating resend contact", error);
           }
         });
 
@@ -94,15 +94,15 @@ export const onboardFunction = inngest.createFunction(
               temperature: 0.2
             });
             type = (object as any).type as "Warm" | "Cold";
-            console.log("Generated type:", type);
+            logger.info("Generated type:", type);
           } catch (error) {
-            console.error("Error generating type", error);
+            logger.error("Error generating type", error);
           }
           return type;
         });
 
         await step.run("send-slack-lead-notification", async () => {
-          console.log("Attempting to send Slack message to #leads channel");
+          logger.info("Attempting to send Slack message to #leads channel");
           try {
             const slackResult = await slack.sendMessage({
               channel: "#leads",
@@ -124,9 +124,9 @@ export const onboardFunction = inngest.createFunction(
                 }
               ]
             });
-            console.log("Successfully sent Slack message:", slackResult);
+            logger.info("Successfully sent Slack message:", slackResult);
           } catch (error) {
-            console.error("Error sending Slack message:", error);
+            logger.error("Error sending Slack message:", error);
           }
         });
 
@@ -154,14 +154,14 @@ export const onboardFunction = inngest.createFunction(
                 } as any)
                 .eq("id", userId);
 
-              console.log("User update result:", updateResult);
+              logger.info("User update result:", updateResult);
               if (updateResult.error) {
-                console.error(
+                logger.error(
                   "Error updating user external ID:",
                   updateResult.error
                 );
               } else {
-                console.log("Successfully updated user external ID");
+                logger.info("Successfully updated user external ID");
               }
 
               if (leadType === "Warm") {
@@ -194,21 +194,21 @@ export const onboardFunction = inngest.createFunction(
                   } as any)
                   .eq("id", companyId);
 
-                console.log("Company update result:", updateResult);
+                logger.info("Company update result:", updateResult);
                 if (updateResult.error) {
-                  console.error(
+                  logger.error(
                     "Error updating company external ID:",
                     updateResult.error
                   );
                 } else {
-                  console.log("Successfully updated company external ID");
+                  logger.info("Successfully updated company external ID");
                 }
               }
             } catch (error) {
-              console.error("Error adding lead to CRM:", error);
+              logger.error("Error adding lead to CRM:", error);
             }
           } else {
-            console.log("TWENTY_API_KEY not found, skipping CRM integration");
+            logger.info("TWENTY_API_KEY not found, skipping CRM integration");
           }
         });
 
@@ -240,7 +240,7 @@ export const onboardFunction = inngest.createFunction(
               ]
             });
           } catch (error) {
-            console.error("Error sending Slack message:", error);
+            logger.error("Error sending Slack message:", error);
           }
         });
 
@@ -251,7 +251,7 @@ export const onboardFunction = inngest.createFunction(
                 customerStatus: ["PILOT_FREE_TRIAL"]
               });
             } catch (error) {
-              console.error("Error updating twenty customer status:", error);
+              logger.error("Error updating twenty customer status:", error);
             }
           }
         });

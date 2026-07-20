@@ -1,9 +1,12 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
+
+const log = getLogger("mes");
 
 const addAndIssueValidator = z.object({
   itemId: z.string().min(1),
@@ -74,7 +77,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
 
     if (issue.error) {
-      console.error(issue.error);
+      log.error("Failed to issue for maintenance dispatch", {
+        error: issue.error
+      });
       return data(
         { success: false, message: "Failed to issue tracked items" },
         { status: 400 }
@@ -95,7 +100,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
 
     if (issue.error) {
-      console.error(issue.error);
+      log.error("Failed to issue for maintenance dispatch", {
+        error: issue.error
+      });
       return data(
         { success: false, message: "Failed to issue from inventory" },
         { status: 400 }

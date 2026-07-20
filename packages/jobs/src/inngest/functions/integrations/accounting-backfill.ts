@@ -28,6 +28,7 @@ import {
   type SyncDirection,
   type XeroProvider
 } from "@carbon/ee/accounting";
+import { getLogger } from "@carbon/logger";
 import { PostgresDriver } from "kysely";
 import z from "zod";
 import { inngest } from "../../client";
@@ -37,6 +38,8 @@ import {
   getSyncOperationActor,
   type SyncOperationRequest
 } from "./accounting-sync-operations";
+
+const log = getLogger("jobs", "accounting-backfill");
 
 // ============================================================
 // HELPERS
@@ -58,7 +61,7 @@ async function withRateLimitRetry<T>(
   } catch (error) {
     if (error instanceof RatelimitError) {
       const { retryAfterSeconds, limitType, details } = error.rateLimitInfo;
-      console.warn(`[RATE LIMIT] ${operationName} hit rate limit`, {
+      log.warning(`[RATE LIMIT] ${operationName} hit rate limit`, {
         limitType,
         retryAfterSeconds,
         ...details
@@ -67,7 +70,7 @@ async function withRateLimitRetry<T>(
         `rate-limit-wait-${operationName}`,
         `${retryAfterSeconds}s`
       );
-      console.info(
+      log.info(
         `[RATE LIMIT] Retrying ${operationName} after ${retryAfterSeconds}s wait`
       );
       return await operation();
@@ -151,7 +154,7 @@ export const accountingBackfillFunction = inngest.createFunction(
     };
 
     // Log the sync directions for visibility
-    console.info("[BACKFILL] Starting with entity sync directions:", {
+    log.info("[BACKFILL] Starting with entity sync directions:", {
       customer: {
         enabled: customerConfig?.enabled,
         direction: customerConfig?.direction,
@@ -192,7 +195,7 @@ export const accountingBackfillFunction = inngest.createFunction(
       let page = 1;
       let hasMore = true;
 
-      console.info("[PULL] Starting contact pull phase", {
+      log.info("[PULL] Starting contact pull phase", {
         pullCustomers,
         pullVendors
       });
@@ -218,135 +221,130 @@ export const accountingBackfillFunction = inngest.createFunction(
             const pool = getPostgresConnectionPool(5);
             const kysely = getPostgresClient(pool, PostgresDriver);
 
-            try {
-              console.info(`[PULL] Fetching contacts page ${currentPage}`);
-              const response = await withRateLimitRetry(
+            log.info(`[PULL] Fetching contacts page ${currentPage}`);
+            const response = await withRateLimitRetry(
+              () =>
+                pullProvider.listContacts({
+                  page: currentPage,
+                  summaryOnly: true
+                }),
+              `listContacts page ${currentPage}`,
+              step
+            );
+
+            log.info(`[PULL] Contacts page ${currentPage} response`, {
+              count: response.contacts.length,
+              hasMore: response.hasMore,
+              contacts: response.contacts.map((c) => ({
+                id: c.ContactID,
+                name: c.Name,
+                isCustomer: c.IsCustomer,
+                isSupplier: c.IsSupplier
+              }))
+            });
+
+            if (response.contacts.length === 0) {
+              return {
+                hasMore: false,
+                pulled: { customers: 0, vendors: 0 }
+              };
+            }
+
+            let customersPulled = 0;
+            let vendorsPulled = 0;
+
+            const requests: SyncOperationRequest[] = [];
+
+            if (pullCustomers) {
+              for (const contact of response.contacts.filter(
+                (c) => c.IsCustomer
+              )) {
+                requests.push({
+                  entityType: "customer",
+                  entityId: contact.ContactID,
+                  direction: "pull-from-accounting"
+                });
+              }
+            }
+
+            if (pullVendors) {
+              for (const contact of response.contacts.filter(
+                (c) => c.IsSupplier
+              )) {
+                requests.push({
+                  entityType: "vendor",
+                  entityId: contact.ContactID,
+                  direction: "pull-from-accounting"
+                });
+              }
+            }
+
+            if (requests.length > 0) {
+              const outcomes = await enqueueSyncOperations(pullClient, {
+                companyId: payload.companyId,
+                integration: payload.provider,
+                trigger: "backfill",
+                createdBy: getSyncOperationActor(pullIntegration),
+                scope: backfillRunId,
+                requests
+              });
+
+              const enqueueErrors = outcomes.filter(
+                (o) => o.outcome === "error"
+              );
+              if (enqueueErrors.length > 0) {
+                log.error(
+                  `[PULL] Failed to enqueue ${enqueueErrors.length} contact operations`
+                );
+              }
+
+              const drained = await withRateLimitRetry(
                 () =>
-                  pullProvider.listContacts({
-                    page: currentPage,
-                    summaryOnly: true
+                  drainSyncOperations({
+                    client: pullClient,
+                    database: kysely,
+                    companyId: payload.companyId,
+                    integration: payload.provider,
+                    provider: pullProvider,
+                    integrationMetadata: pullIntegration.metadata
                   }),
-                `listContacts page ${currentPage}`,
+                `drain contacts page ${currentPage}`,
                 step
               );
 
-              console.info(`[PULL] Contacts page ${currentPage} response`, {
-                count: response.contacts.length,
-                hasMore: response.hasMore,
-                contacts: response.contacts.map((c) => ({
-                  id: c.ContactID,
-                  name: c.Name,
-                  isCustomer: c.IsCustomer,
-                  isSupplier: c.IsSupplier
-                }))
-              });
-
-              if (response.contacts.length === 0) {
-                return {
-                  hasMore: false,
-                  pulled: { customers: 0, vendors: 0 }
-                };
-              }
-
-              let customersPulled = 0;
-              let vendorsPulled = 0;
-
-              const requests: SyncOperationRequest[] = [];
-
-              if (pullCustomers) {
-                for (const contact of response.contacts.filter(
-                  (c) => c.IsCustomer
-                )) {
-                  requests.push({
-                    entityType: "customer",
-                    entityId: contact.ContactID,
-                    direction: "pull-from-accounting"
-                  });
+              for (const group of drained.groups) {
+                if (group.direction !== "pull-from-accounting") continue;
+                if (group.entityType === "customer") {
+                  customersPulled += group.result.successCount;
+                }
+                if (group.entityType === "vendor") {
+                  vendorsPulled += group.result.successCount;
                 }
               }
 
-              if (pullVendors) {
-                for (const contact of response.contacts.filter(
-                  (c) => c.IsSupplier
-                )) {
-                  requests.push({
-                    entityType: "vendor",
-                    entityId: contact.ContactID,
-                    direction: "pull-from-accounting"
-                  });
+              log.info(
+                `[PULL] Page ${currentPage}: pulled ${customersPulled} customers, ${vendorsPulled} vendors`,
+                {
+                  results: drained.groups.flatMap((g) =>
+                    g.result.results.map((r) => ({
+                      status: r.status,
+                      action: r.action,
+                      localId: r.localId,
+                      remoteId: r.remoteId,
+                      error: r.error
+                    }))
+                  )
                 }
-              }
-
-              if (requests.length > 0) {
-                const outcomes = await enqueueSyncOperations(pullClient, {
-                  companyId: payload.companyId,
-                  integration: payload.provider,
-                  trigger: "backfill",
-                  createdBy: getSyncOperationActor(pullIntegration),
-                  scope: backfillRunId,
-                  requests
-                });
-
-                const enqueueErrors = outcomes.filter(
-                  (o) => o.outcome === "error"
-                );
-                if (enqueueErrors.length > 0) {
-                  console.error(
-                    `[PULL] Failed to enqueue ${enqueueErrors.length} contact operations`,
-                    enqueueErrors
-                  );
-                }
-
-                const drained = await withRateLimitRetry(
-                  () =>
-                    drainSyncOperations({
-                      client: pullClient,
-                      database: kysely,
-                      companyId: payload.companyId,
-                      integration: payload.provider,
-                      provider: pullProvider,
-                      integrationMetadata: pullIntegration.metadata
-                    }),
-                  `drain contacts page ${currentPage}`,
-                  step
-                );
-
-                for (const group of drained.groups) {
-                  if (group.direction !== "pull-from-accounting") continue;
-                  if (group.entityType === "customer") {
-                    customersPulled += group.result.successCount;
-                  }
-                  if (group.entityType === "vendor") {
-                    vendorsPulled += group.result.successCount;
-                  }
-                }
-
-                console.info(
-                  `[PULL] Page ${currentPage}: pulled ${customersPulled} customers, ${vendorsPulled} vendors`,
-                  {
-                    results: drained.groups.flatMap((g) =>
-                      g.result.results.map((r) => ({
-                        status: r.status,
-                        action: r.action,
-                        localId: r.localId,
-                        remoteId: r.remoteId,
-                        error: r.error
-                      }))
-                    )
-                  }
-                );
-              }
-
-              return {
-                hasMore: response.hasMore,
-                pulled: {
-                  customers: customersPulled,
-                  vendors: vendorsPulled
-                }
-              };
-            } finally {
-              await pool.end();
+              );
             }
+
+            return {
+              hasMore: response.hasMore,
+              pulled: {
+                customers: customersPulled,
+                vendors: vendorsPulled
+              }
+            };
           }
         );
 
@@ -362,7 +360,7 @@ export const accountingBackfillFunction = inngest.createFunction(
         }
       }
     } else {
-      console.info(
+      log.info(
         "[PULL] Skipping contact pull - not enabled or direction is push-only"
       );
     }
@@ -380,7 +378,7 @@ export const accountingBackfillFunction = inngest.createFunction(
       let page = 1;
       let hasMore = true;
 
-      console.info("[PULL] Starting items pull phase");
+      log.info("[PULL] Starting items pull phase");
 
       while (hasMore) {
         const currentPage = page;
@@ -403,99 +401,92 @@ export const accountingBackfillFunction = inngest.createFunction(
             const pool = getPostgresConnectionPool(5);
             const kysely = getPostgresClient(pool, PostgresDriver);
 
-            try {
-              console.info(`[PULL] Fetching items page ${currentPage}`);
-              const response = await withRateLimitRetry(
-                () => pullProvider.listItems({ page: currentPage }),
-                `listItems page ${currentPage}`,
-                step
-              );
+            log.info(`[PULL] Fetching items page ${currentPage}`);
+            const response = await withRateLimitRetry(
+              () => pullProvider.listItems({ page: currentPage }),
+              `listItems page ${currentPage}`,
+              step
+            );
 
-              console.info(`[PULL] Items page ${currentPage} response`, {
-                count: response.items.length,
-                hasMore: response.hasMore,
-                items: response.items.map((i) => ({
-                  id: i.ItemID,
-                  code: i.Code,
-                  name: i.Name
-                }))
-              });
+            log.info(`[PULL] Items page ${currentPage} response`, {
+              count: response.items.length,
+              hasMore: response.hasMore,
+              items: response.items.map((i) => ({
+                id: i.ItemID,
+                code: i.Code,
+                name: i.Name
+              }))
+            });
 
-              if (response.items.length === 0) {
-                return { hasMore: false, pulled: { items: 0 } };
-              }
-
-              const requests: SyncOperationRequest[] = response.items.map(
-                (item) => ({
-                  entityType: "item",
-                  entityId: item.ItemID,
-                  direction: "pull-from-accounting"
-                })
-              );
-
-              const outcomes = await enqueueSyncOperations(pullClient, {
-                companyId: payload.companyId,
-                integration: payload.provider,
-                trigger: "backfill",
-                createdBy: getSyncOperationActor(pullIntegration),
-                scope: backfillRunId,
-                requests
-              });
-
-              const enqueueErrors = outcomes.filter(
-                (o) => o.outcome === "error"
-              );
-              if (enqueueErrors.length > 0) {
-                console.error(
-                  `[PULL] Failed to enqueue ${enqueueErrors.length} item operations`,
-                  enqueueErrors
-                );
-              }
-
-              const drained = await withRateLimitRetry(
-                () =>
-                  drainSyncOperations({
-                    client: pullClient,
-                    database: kysely,
-                    companyId: payload.companyId,
-                    integration: payload.provider,
-                    provider: pullProvider,
-                    integrationMetadata: pullIntegration.metadata
-                  }),
-                `drain items page ${currentPage}`,
-                step
-              );
-
-              const itemsPulled = drained.groups
-                .filter(
-                  (g) =>
-                    g.entityType === "item" &&
-                    g.direction === "pull-from-accounting"
-                )
-                .reduce((acc, g) => acc + g.result.successCount, 0);
-
-              console.info(
-                `[PULL] Page ${currentPage}: pulled ${itemsPulled} items`,
-                {
-                  results: drained.groups.flatMap((g) =>
-                    g.result.results.map((r) => ({
-                      status: r.status,
-                      action: r.action,
-                      localId: r.localId,
-                      remoteId: r.remoteId,
-                      error: r.error
-                    }))
-                  )
-                }
-              );
-
-              return {
-                hasMore: response.hasMore,
-                pulled: { items: itemsPulled }
-              };
-            } finally {
-              await pool.end();
+            if (response.items.length === 0) {
+              return { hasMore: false, pulled: { items: 0 } };
             }
+
+            const requests: SyncOperationRequest[] = response.items.map(
+              (item) => ({
+                entityType: "item",
+                entityId: item.ItemID,
+                direction: "pull-from-accounting"
+              })
+            );
+
+            const outcomes = await enqueueSyncOperations(pullClient, {
+              companyId: payload.companyId,
+              integration: payload.provider,
+              trigger: "backfill",
+              createdBy: getSyncOperationActor(pullIntegration),
+              scope: backfillRunId,
+              requests
+            });
+
+            const enqueueErrors = outcomes.filter((o) => o.outcome === "error");
+            if (enqueueErrors.length > 0) {
+              log.error(
+                `[PULL] Failed to enqueue ${enqueueErrors.length} item operations`
+              );
+            }
+
+            const drained = await withRateLimitRetry(
+              () =>
+                drainSyncOperations({
+                  client: pullClient,
+                  database: kysely,
+                  companyId: payload.companyId,
+                  integration: payload.provider,
+                  provider: pullProvider,
+                  integrationMetadata: pullIntegration.metadata
+                }),
+              `drain items page ${currentPage}`,
+              step
+            );
+
+            const itemsPulled = drained.groups
+              .filter(
+                (g) =>
+                  g.entityType === "item" &&
+                  g.direction === "pull-from-accounting"
+              )
+              .reduce((acc, g) => acc + g.result.successCount, 0);
+
+            log.info(
+              `[PULL] Page ${currentPage}: pulled ${itemsPulled} items`,
+              {
+                results: drained.groups.flatMap((g) =>
+                  g.result.results.map((r) => ({
+                    status: r.status,
+                    action: r.action,
+                    localId: r.localId,
+                    remoteId: r.remoteId,
+                    error: r.error
+                  }))
+                )
+              }
+            );
+
+            return {
+              hasMore: response.hasMore,
+              pulled: { items: itemsPulled }
+            };
           }
         );
 
@@ -509,7 +500,7 @@ export const accountingBackfillFunction = inngest.createFunction(
         }
       }
     } else {
-      console.info(
+      log.info(
         "[PULL] Skipping items pull - not enabled or direction is push-only"
       );
     }
@@ -528,7 +519,7 @@ export const accountingBackfillFunction = inngest.createFunction(
       let hasMore = true;
       let batchIndex = 0;
 
-      console.info("[PUSH] Starting customers push phase");
+      log.info("[PUSH] Starting customers push phase");
 
       while (hasMore) {
         const currentBatchIndex = batchIndex;
@@ -551,99 +542,92 @@ export const accountingBackfillFunction = inngest.createFunction(
             const pool = getPostgresConnectionPool(5);
             const kysely = getPostgresClient(pool, PostgresDriver);
 
-            try {
-              const mappingService = createMappingService(
-                kysely,
-                payload.companyId
-              );
+            const mappingService = createMappingService(
+              kysely,
+              payload.companyId
+            );
 
-              const unsyncedIds = await mappingService.getUnsyncedEntityIds(
-                "customer",
-                "customer",
-                pushProvider.id,
-                payload.batchSize
-              );
+            const unsyncedIds = await mappingService.getUnsyncedEntityIds(
+              "customer",
+              "customer",
+              pushProvider.id,
+              payload.batchSize
+            );
 
-              if (unsyncedIds.length === 0) {
-                return {
-                  successCount: 0,
-                  hasMore: false
-                };
-              }
-
-              const outcomes = await enqueueSyncOperations(pushClient, {
-                companyId: payload.companyId,
-                integration: payload.provider,
-                trigger: "backfill",
-                createdBy: getSyncOperationActor(pushIntegration),
-                scope: backfillRunId,
-                requests: unsyncedIds.map((id) => ({
-                  entityType: "customer",
-                  entityId: id,
-                  direction: "push-to-accounting"
-                }))
-              });
-
-              const enqueueErrors = outcomes.filter(
-                (o) => o.outcome === "error"
-              );
-              if (enqueueErrors.length > 0) {
-                console.error(
-                  `[PUSH] Failed to enqueue ${enqueueErrors.length} customer operations`,
-                  enqueueErrors
-                );
-              }
-
-              const drained = await withRateLimitRetry(
-                () =>
-                  drainSyncOperations({
-                    client: pushClient,
-                    database: kysely,
-                    companyId: payload.companyId,
-                    integration: payload.provider,
-                    provider: pushProvider,
-                    integrationMetadata: pushIntegration.metadata
-                  }),
-                `drain customers push batch ${currentBatchIndex}`,
-                step
-              );
-
-              const successCount = drained.groups
-                .filter(
-                  (g) =>
-                    g.entityType === "customer" &&
-                    g.direction === "push-to-accounting"
-                )
-                .reduce((acc, g) => acc + g.result.successCount, 0);
-
-              console.info(
-                `[PUSH] Pushed ${successCount}/${unsyncedIds.length} customer entities`,
-                {
-                  entityIds: unsyncedIds,
-                  results: drained.groups.flatMap((g) =>
-                    g.result.results.map((r) => ({
-                      status: r.status,
-                      action: r.action,
-                      localId: r.localId,
-                      remoteId: r.remoteId,
-                      error: r.error
-                    }))
-                  )
-                }
-              );
-
+            if (unsyncedIds.length === 0) {
               return {
-                successCount,
-                // Failed pushes stay unmapped and come straight back from
-                // getUnsyncedEntityIds, but their idempotency key (same
-                // backfill run) absorbs the re-enqueue — stop when the drain
-                // claimed nothing so the loop cannot spin without progress
-                hasMore:
-                  unsyncedIds.length >= payload.batchSize && drained.claimed > 0
+                successCount: 0,
+                hasMore: false
               };
-            } finally {
-              await pool.end();
             }
+
+            const outcomes = await enqueueSyncOperations(pushClient, {
+              companyId: payload.companyId,
+              integration: payload.provider,
+              trigger: "backfill",
+              createdBy: getSyncOperationActor(pushIntegration),
+              scope: backfillRunId,
+              requests: unsyncedIds.map((id) => ({
+                entityType: "customer",
+                entityId: id,
+                direction: "push-to-accounting"
+              }))
+            });
+
+            const enqueueErrors = outcomes.filter((o) => o.outcome === "error");
+            if (enqueueErrors.length > 0) {
+              log.error(
+                `[PUSH] Failed to enqueue ${enqueueErrors.length} customer operations`
+              );
+            }
+
+            const drained = await withRateLimitRetry(
+              () =>
+                drainSyncOperations({
+                  client: pushClient,
+                  database: kysely,
+                  companyId: payload.companyId,
+                  integration: payload.provider,
+                  provider: pushProvider,
+                  integrationMetadata: pushIntegration.metadata
+                }),
+              `drain customers push batch ${currentBatchIndex}`,
+              step
+            );
+
+            const successCount = drained.groups
+              .filter(
+                (g) =>
+                  g.entityType === "customer" &&
+                  g.direction === "push-to-accounting"
+              )
+              .reduce((acc, g) => acc + g.result.successCount, 0);
+
+            log.info(
+              `[PUSH] Pushed ${successCount}/${unsyncedIds.length} customer entities`,
+              {
+                entityIds: unsyncedIds,
+                results: drained.groups.flatMap((g) =>
+                  g.result.results.map((r) => ({
+                    status: r.status,
+                    action: r.action,
+                    localId: r.localId,
+                    remoteId: r.remoteId,
+                    error: r.error
+                  }))
+                )
+              }
+            );
+
+            return {
+              successCount,
+              // Failed pushes stay unmapped and come straight back from
+              // getUnsyncedEntityIds, but their idempotency key (same
+              // backfill run) absorbs the re-enqueue — stop when the drain
+              // claimed nothing so the loop cannot spin without progress
+              hasMore:
+                unsyncedIds.length >= payload.batchSize && drained.claimed > 0
+            };
           }
         );
 
@@ -657,7 +641,7 @@ export const accountingBackfillFunction = inngest.createFunction(
         }
       }
     } else {
-      console.info(
+      log.info(
         "[PUSH] Skipping customers push - not enabled or direction is pull-only"
       );
     }
@@ -672,7 +656,7 @@ export const accountingBackfillFunction = inngest.createFunction(
       let hasMore = true;
       let batchIndex = 0;
 
-      console.info("[PUSH] Starting vendors push phase");
+      log.info("[PUSH] Starting vendors push phase");
 
       while (hasMore) {
         const currentBatchIndex = batchIndex;
@@ -695,96 +679,89 @@ export const accountingBackfillFunction = inngest.createFunction(
             const pool = getPostgresConnectionPool(5);
             const kysely = getPostgresClient(pool, PostgresDriver);
 
-            try {
-              const mappingService = createMappingService(
-                kysely,
-                payload.companyId
-              );
+            const mappingService = createMappingService(
+              kysely,
+              payload.companyId
+            );
 
-              const unsyncedIds = await mappingService.getUnsyncedEntityIds(
-                "vendor",
-                "supplier",
-                pushProvider.id,
-                payload.batchSize
-              );
+            const unsyncedIds = await mappingService.getUnsyncedEntityIds(
+              "vendor",
+              "supplier",
+              pushProvider.id,
+              payload.batchSize
+            );
 
-              if (unsyncedIds.length === 0) {
-                return {
-                  successCount: 0,
-                  hasMore: false
-                };
-              }
-
-              const outcomes = await enqueueSyncOperations(pushClient, {
-                companyId: payload.companyId,
-                integration: payload.provider,
-                trigger: "backfill",
-                createdBy: getSyncOperationActor(pushIntegration),
-                scope: backfillRunId,
-                requests: unsyncedIds.map((id) => ({
-                  entityType: "vendor",
-                  entityId: id,
-                  direction: "push-to-accounting"
-                }))
-              });
-
-              const enqueueErrors = outcomes.filter(
-                (o) => o.outcome === "error"
-              );
-              if (enqueueErrors.length > 0) {
-                console.error(
-                  `[PUSH] Failed to enqueue ${enqueueErrors.length} vendor operations`,
-                  enqueueErrors
-                );
-              }
-
-              const drained = await withRateLimitRetry(
-                () =>
-                  drainSyncOperations({
-                    client: pushClient,
-                    database: kysely,
-                    companyId: payload.companyId,
-                    integration: payload.provider,
-                    provider: pushProvider,
-                    integrationMetadata: pushIntegration.metadata
-                  }),
-                `drain vendors push batch ${currentBatchIndex}`,
-                step
-              );
-
-              const successCount = drained.groups
-                .filter(
-                  (g) =>
-                    g.entityType === "vendor" &&
-                    g.direction === "push-to-accounting"
-                )
-                .reduce((acc, g) => acc + g.result.successCount, 0);
-
-              console.info(
-                `[PUSH] Pushed ${successCount}/${unsyncedIds.length} vendor entities`,
-                {
-                  entityIds: unsyncedIds,
-                  results: drained.groups.flatMap((g) =>
-                    g.result.results.map((r) => ({
-                      status: r.status,
-                      action: r.action,
-                      localId: r.localId,
-                      remoteId: r.remoteId,
-                      error: r.error
-                    }))
-                  )
-                }
-              );
-
+            if (unsyncedIds.length === 0) {
               return {
-                successCount,
-                // Same progress guard as the customer push loop
-                hasMore:
-                  unsyncedIds.length >= payload.batchSize && drained.claimed > 0
+                successCount: 0,
+                hasMore: false
               };
-            } finally {
-              await pool.end();
             }
+
+            const outcomes = await enqueueSyncOperations(pushClient, {
+              companyId: payload.companyId,
+              integration: payload.provider,
+              trigger: "backfill",
+              createdBy: getSyncOperationActor(pushIntegration),
+              scope: backfillRunId,
+              requests: unsyncedIds.map((id) => ({
+                entityType: "vendor",
+                entityId: id,
+                direction: "push-to-accounting"
+              }))
+            });
+
+            const enqueueErrors = outcomes.filter((o) => o.outcome === "error");
+            if (enqueueErrors.length > 0) {
+              log.error(
+                `[PUSH] Failed to enqueue ${enqueueErrors.length} vendor operations`
+              );
+            }
+
+            const drained = await withRateLimitRetry(
+              () =>
+                drainSyncOperations({
+                  client: pushClient,
+                  database: kysely,
+                  companyId: payload.companyId,
+                  integration: payload.provider,
+                  provider: pushProvider,
+                  integrationMetadata: pushIntegration.metadata
+                }),
+              `drain vendors push batch ${currentBatchIndex}`,
+              step
+            );
+
+            const successCount = drained.groups
+              .filter(
+                (g) =>
+                  g.entityType === "vendor" &&
+                  g.direction === "push-to-accounting"
+              )
+              .reduce((acc, g) => acc + g.result.successCount, 0);
+
+            log.info(
+              `[PUSH] Pushed ${successCount}/${unsyncedIds.length} vendor entities`,
+              {
+                entityIds: unsyncedIds,
+                results: drained.groups.flatMap((g) =>
+                  g.result.results.map((r) => ({
+                    status: r.status,
+                    action: r.action,
+                    localId: r.localId,
+                    remoteId: r.remoteId,
+                    error: r.error
+                  }))
+                )
+              }
+            );
+
+            return {
+              successCount,
+              // Same progress guard as the customer push loop
+              hasMore:
+                unsyncedIds.length >= payload.batchSize && drained.claimed > 0
+            };
           }
         );
 
@@ -797,7 +774,7 @@ export const accountingBackfillFunction = inngest.createFunction(
         }
       }
     } else {
-      console.info(
+      log.info(
         "[PUSH] Skipping vendors push - not enabled or direction is pull-only"
       );
     }
@@ -812,7 +789,7 @@ export const accountingBackfillFunction = inngest.createFunction(
       let hasMore = true;
       let batchIndex = 0;
 
-      console.info("[PUSH] Starting items push phase");
+      log.info("[PUSH] Starting items push phase");
 
       while (hasMore) {
         const currentBatchIndex = batchIndex;
@@ -835,96 +812,89 @@ export const accountingBackfillFunction = inngest.createFunction(
             const pool = getPostgresConnectionPool(5);
             const kysely = getPostgresClient(pool, PostgresDriver);
 
-            try {
-              const mappingService = createMappingService(
-                kysely,
-                payload.companyId
-              );
+            const mappingService = createMappingService(
+              kysely,
+              payload.companyId
+            );
 
-              const unsyncedIds = await mappingService.getUnsyncedEntityIds(
-                "item",
-                "item",
-                pushProvider.id,
-                payload.batchSize
-              );
+            const unsyncedIds = await mappingService.getUnsyncedEntityIds(
+              "item",
+              "item",
+              pushProvider.id,
+              payload.batchSize
+            );
 
-              if (unsyncedIds.length === 0) {
-                return {
-                  successCount: 0,
-                  hasMore: false
-                };
-              }
-
-              const outcomes = await enqueueSyncOperations(pushClient, {
-                companyId: payload.companyId,
-                integration: payload.provider,
-                trigger: "backfill",
-                createdBy: getSyncOperationActor(pushIntegration),
-                scope: backfillRunId,
-                requests: unsyncedIds.map((id) => ({
-                  entityType: "item",
-                  entityId: id,
-                  direction: "push-to-accounting"
-                }))
-              });
-
-              const enqueueErrors = outcomes.filter(
-                (o) => o.outcome === "error"
-              );
-              if (enqueueErrors.length > 0) {
-                console.error(
-                  `[PUSH] Failed to enqueue ${enqueueErrors.length} item operations`,
-                  enqueueErrors
-                );
-              }
-
-              const drained = await withRateLimitRetry(
-                () =>
-                  drainSyncOperations({
-                    client: pushClient,
-                    database: kysely,
-                    companyId: payload.companyId,
-                    integration: payload.provider,
-                    provider: pushProvider,
-                    integrationMetadata: pushIntegration.metadata
-                  }),
-                `drain items push batch ${currentBatchIndex}`,
-                step
-              );
-
-              const successCount = drained.groups
-                .filter(
-                  (g) =>
-                    g.entityType === "item" &&
-                    g.direction === "push-to-accounting"
-                )
-                .reduce((acc, g) => acc + g.result.successCount, 0);
-
-              console.info(
-                `[PUSH] Pushed ${successCount}/${unsyncedIds.length} item entities`,
-                {
-                  entityIds: unsyncedIds,
-                  results: drained.groups.flatMap((g) =>
-                    g.result.results.map((r) => ({
-                      status: r.status,
-                      action: r.action,
-                      localId: r.localId,
-                      remoteId: r.remoteId,
-                      error: r.error
-                    }))
-                  )
-                }
-              );
-
+            if (unsyncedIds.length === 0) {
               return {
-                successCount,
-                // Same progress guard as the customer push loop
-                hasMore:
-                  unsyncedIds.length >= payload.batchSize && drained.claimed > 0
+                successCount: 0,
+                hasMore: false
               };
-            } finally {
-              await pool.end();
             }
+
+            const outcomes = await enqueueSyncOperations(pushClient, {
+              companyId: payload.companyId,
+              integration: payload.provider,
+              trigger: "backfill",
+              createdBy: getSyncOperationActor(pushIntegration),
+              scope: backfillRunId,
+              requests: unsyncedIds.map((id) => ({
+                entityType: "item",
+                entityId: id,
+                direction: "push-to-accounting"
+              }))
+            });
+
+            const enqueueErrors = outcomes.filter((o) => o.outcome === "error");
+            if (enqueueErrors.length > 0) {
+              log.error(
+                `[PUSH] Failed to enqueue ${enqueueErrors.length} item operations`
+              );
+            }
+
+            const drained = await withRateLimitRetry(
+              () =>
+                drainSyncOperations({
+                  client: pushClient,
+                  database: kysely,
+                  companyId: payload.companyId,
+                  integration: payload.provider,
+                  provider: pushProvider,
+                  integrationMetadata: pushIntegration.metadata
+                }),
+              `drain items push batch ${currentBatchIndex}`,
+              step
+            );
+
+            const successCount = drained.groups
+              .filter(
+                (g) =>
+                  g.entityType === "item" &&
+                  g.direction === "push-to-accounting"
+              )
+              .reduce((acc, g) => acc + g.result.successCount, 0);
+
+            log.info(
+              `[PUSH] Pushed ${successCount}/${unsyncedIds.length} item entities`,
+              {
+                entityIds: unsyncedIds,
+                results: drained.groups.flatMap((g) =>
+                  g.result.results.map((r) => ({
+                    status: r.status,
+                    action: r.action,
+                    localId: r.localId,
+                    remoteId: r.remoteId,
+                    error: r.error
+                  }))
+                )
+              }
+            );
+
+            return {
+              successCount,
+              // Same progress guard as the customer push loop
+              hasMore:
+                unsyncedIds.length >= payload.batchSize && drained.claimed > 0
+            };
           }
         );
 
@@ -937,7 +907,7 @@ export const accountingBackfillFunction = inngest.createFunction(
         }
       }
     } else {
-      console.info(
+      log.info(
         "[PUSH] Skipping items push - not enabled or direction is pull-only"
       );
     }
@@ -948,7 +918,7 @@ export const accountingBackfillFunction = inngest.createFunction(
     result.totalPushed =
       result.customers.pushed + result.vendors.pushed + result.items.pushed;
 
-    console.info(
+    log.info(
       `[COMPLETE] Backfill finished. Pulled: ${result.totalPulled}, Pushed: ${result.totalPushed}`
     );
 

@@ -1,5 +1,6 @@
 import { IntegrationForm } from "./IntegrationForm";
 import IntegrationsList from "./IntegrationsList";
+import { QuickInstall } from "./QuickInstall";
 import { SyncActivity } from "./SyncActivity";
 
 // AccountMapping, PostingSyncSettings and QbdConnectionCard are
@@ -9,4 +10,4 @@ import { SyncActivity } from "./SyncActivity";
 // same cliff SyncActivity's ee imports hit (see the note in
 // SyncActivity.tsx). Their only consumer, the integrations.$id route,
 // imports them directly from their files.
-export { IntegrationForm, IntegrationsList, SyncActivity };
+export { IntegrationForm, IntegrationsList, QuickInstall, SyncActivity };

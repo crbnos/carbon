@@ -4,6 +4,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { Hidden, ValidatedForm } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
+import { getLogger } from "@carbon/logger";
 import {
   Alert,
   AlertTitle,
@@ -47,6 +48,8 @@ import {
 import { getItemStorageUnitQuantities } from "~/modules/items";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "id-scan-lineid");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
@@ -169,7 +172,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         });
       }
     } catch (e) {
-      console.error("Auto-print for split entity failed:", e);
+      logger.error("Auto-print for split entity failed", { error: e });
     }
   }
 

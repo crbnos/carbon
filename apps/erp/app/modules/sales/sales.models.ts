@@ -4,6 +4,7 @@ import { address, contact } from "~/types/validators";
 import { currencyCodes } from "../accounting";
 import {
   incoterms,
+  itemType,
   methodItemType,
   methodOperationOrders,
   methodType,
@@ -326,6 +327,7 @@ export const quoteLineCategoryMarkupsValidator = z
 export const quoteLineValidator = z.object({
   id: zfd.text(z.string().optional()),
   quoteId: z.string(),
+  itemType: z.enum(itemType).optional(),
   itemId: z.string().min(1, { message: "Part is required" }),
   status: z.enum(quoteLineStatusType, {
     errorMap: () => ({ message: "Status is required" })
@@ -400,18 +402,6 @@ export const quoteMaterialValidator = z
     },
     {
       message: "Material ID is required",
-      path: ["itemId"]
-    }
-  )
-  .refine(
-    (data) => {
-      if (data.itemType === "Tool") {
-        return !!data.itemId;
-      }
-      return true;
-    },
-    {
-      message: "Tool ID is required",
       path: ["itemId"]
     }
   )
@@ -656,7 +646,7 @@ export const quoteShipmentValidator = z.object({
 
 export const salesOrderLineType = [
   "Part",
-  // "Service",
+  "Service",
   "Material",
   "Tool",
   "Consumable",
@@ -763,11 +753,17 @@ export const salesOrderLineValidator = z
     description: zfd.text(z.string().optional()),
     itemId: zfd.text(z.string().optional()),
     locationId: z.string().min(0, { message: "Location is required" }),
-    methodType: z
-      .enum(methodType, {
-        errorMap: () => ({ message: "Method is required" })
-      })
-      .optional(),
+    // Wrapped in zfd.text so an empty-string submission (the form always posts a
+    // hidden methodType) coerces to undefined instead of failing the enum check.
+    // Requiredness is enforced conditionally by the refine below, which exempts
+    // Comment and Fixed Asset lines.
+    methodType: zfd.text(
+      z
+        .enum(methodType, {
+          errorMap: () => ({ message: "Method is required" })
+        })
+        .optional()
+    ),
     modelUploadId: zfd.text(z.string().optional()),
     promisedDate: zfd.text(z.string().optional()),
     saleQuantity: zfd.numeric(z.number().optional()),

@@ -31,7 +31,7 @@ import {
   getProviderIntegration,
   type SyncOperationTrigger
 } from "@carbon/ee/accounting";
-
+import { getLogger } from "@carbon/logger";
 import { groupBy } from "@carbon/utils";
 import { PostgresDriver } from "kysely";
 import { inngest } from "../../client";
@@ -42,6 +42,8 @@ import {
   getSyncOperationActor,
   type SyncOperationRequest
 } from "./accounting-sync-operations";
+
+const log = getLogger("jobs", "sync-external-accounting");
 
 const PayloadSchema = AccountingSyncSchema.extend({
   syncDirection: AccountingSyncSchema.shape.syncDirection
@@ -71,188 +73,180 @@ export const syncExternalAccountingFunction = inngest.createFunction(
     // reuse the same event id (absorbed), later deliveries get fresh keys
     const enqueueScope = event.id ?? runId;
 
+    // NOTE: the pool from getPostgresConnectionPool is a process-lifetime
+    // singleton (see lib/postgres) — do NOT end it per invocation.
     const pool = getPostgresConnectionPool(10);
     const kysely = getPostgresClient(pool, PostgresDriver);
 
-    try {
-      // Step 1: resolve each entity's effective direction and enqueue one
-      // ledger operation per entity + direction
-      type EnqueueStepSummary = {
-        enqueued: number;
-        cooldownSkipped: number;
-        disabled: string[];
-        errors: { entityId: string; error: string }[];
-      };
+    // Step 1: resolve each entity's effective direction and enqueue one
+    // ledger operation per entity + direction
+    type EnqueueStepSummary = {
+      enqueued: number;
+      cooldownSkipped: number;
+      disabled: string[];
+      errors: { entityId: string; error: string }[];
+    };
 
-      const enqueueSummary = (await step.run(
-        "enqueue-sync-operations",
-        async () => {
-          const integration = await getAccountingIntegration(
-            client,
-            payload.companyId,
-            payload.provider
-          );
+    const enqueueSummary = (await step.run(
+      "enqueue-sync-operations",
+      async () => {
+        const integration = await getAccountingIntegration(
+          client,
+          payload.companyId,
+          payload.provider
+        );
 
-          const provider = getProviderIntegration(
-            client,
-            payload.companyId,
-            integration.id,
-            integration.metadata
-          );
+        const provider = getProviderIntegration(
+          client,
+          payload.companyId,
+          integration.id,
+          integration.metadata
+        );
 
-          const mappingService = createMappingService(
-            kysely,
-            payload.companyId
-          );
+        const mappingService = createMappingService(kysely, payload.companyId);
 
-          const requests: SyncOperationRequest[] = [];
-          const disabled: string[] = [];
+        const requests: SyncOperationRequest[] = [];
+        const disabled: string[] = [];
 
-          const group = groupBy(payload.entities, (e) => e.entityType);
+        const group = groupBy(payload.entities, (e) => e.entityType);
 
-          for (const [entityType, entities] of Object.entries(group)) {
-            const type = entityType as AccountingEntityType;
-            const entityConfig = provider.getSyncConfig(type);
+        for (const [entityType, entities] of Object.entries(group)) {
+          const type = entityType as AccountingEntityType;
+          const entityConfig = provider.getSyncConfig(type);
 
-            if (!entityConfig?.enabled) {
-              console.info(`Sync disabled for ${entityType}, skipping`);
-              disabled.push(entityType);
-              continue;
-            }
+          if (!entityConfig?.enabled) {
+            log.info(`Sync disabled for ${entityType}, skipping`);
+            disabled.push(entityType);
+            continue;
+          }
 
-            // Determine the effective sync direction
-            const effectiveDirection =
-              payload.syncDirection === "two-way"
-                ? entityConfig.direction // Use the entity's configured direction
-                : payload.syncDirection;
+          // Determine the effective sync direction
+          const effectiveDirection =
+            payload.syncDirection === "two-way"
+              ? entityConfig.direction // Use the entity's configured direction
+              : payload.syncDirection;
 
-            for (const entity of entities) {
-              if (effectiveDirection === "push-to-accounting") {
+          for (const entity of entities) {
+            if (effectiveDirection === "push-to-accounting") {
+              requests.push({
+                entityType: type,
+                entityId: entity.entityId,
+                direction: "push-to-accounting"
+              });
+            } else if (effectiveDirection === "pull-from-accounting") {
+              requests.push({
+                entityType: type,
+                entityId: entity.entityId,
+                direction: "pull-from-accounting"
+              });
+            } else {
+              // Two-way: determine the direction per entity based on
+              // whether a mapping exists and which system owns the record
+              const mapping = await mappingService.getByEntity(
+                type,
+                entity.entityId,
+                provider.id
+              );
+
+              if (mapping && entityConfig.owner === "accounting") {
+                requests.push({
+                  entityType: type,
+                  entityId: mapping.externalId,
+                  direction: "pull-from-accounting"
+                });
+              } else {
+                // No mapping exists (likely a Carbon-only entity that
+                // needs pushing) or Carbon owns the record
                 requests.push({
                   entityType: type,
                   entityId: entity.entityId,
                   direction: "push-to-accounting"
                 });
-              } else if (effectiveDirection === "pull-from-accounting") {
-                requests.push({
-                  entityType: type,
-                  entityId: entity.entityId,
-                  direction: "pull-from-accounting"
-                });
-              } else {
-                // Two-way: determine the direction per entity based on
-                // whether a mapping exists and which system owns the record
-                const mapping = await mappingService.getByEntity(
-                  type,
-                  entity.entityId,
-                  provider.id
-                );
-
-                if (mapping && entityConfig.owner === "accounting") {
-                  requests.push({
-                    entityType: type,
-                    entityId: mapping.externalId,
-                    direction: "pull-from-accounting"
-                  });
-                } else {
-                  // No mapping exists (likely a Carbon-only entity that
-                  // needs pushing) or Carbon owns the record
-                  requests.push({
-                    entityType: type,
-                    entityId: entity.entityId,
-                    direction: "push-to-accounting"
-                  });
-                }
               }
             }
           }
-
-          const outcomes = await enqueueSyncOperations(client, {
-            companyId: payload.companyId,
-            integration: payload.provider,
-            trigger: getLedgerTrigger(payload.syncType),
-            createdBy: getSyncOperationActor(integration),
-            scope: enqueueScope,
-            requests
-          });
-
-          const summary: EnqueueStepSummary = {
-            enqueued: 0,
-            cooldownSkipped: 0,
-            disabled,
-            errors: []
-          };
-
-          for (const outcome of outcomes) {
-            if (outcome.outcome === "enqueued") {
-              summary.enqueued++;
-            } else if (outcome.outcome === "cooldown") {
-              summary.cooldownSkipped++;
-            } else {
-              summary.errors.push({
-                entityId: outcome.entityId,
-                error: outcome.error ?? "Failed to enqueue sync operation"
-              });
-            }
-          }
-
-          return summary;
         }
-      )) as EnqueueStepSummary;
 
-      console.info("Enqueued sync operations", enqueueSummary);
-
-      // Step 2: drain — claim Pending operations (including UI retries and
-      // stale In Flight rows) and run the entity syncers. A throw re-runs
-      // the step; claim/complete are idempotent so retries cannot duplicate
-      // work.
-      const drainSummary = (await step.run(
-        "drain-sync-operations",
-        async () => {
-          const integration = await getAccountingIntegration(
-            client,
-            payload.companyId,
-            payload.provider
-          );
-
-          const provider = getProviderIntegration(
-            client,
-            payload.companyId,
-            integration.id,
-            integration.metadata
-          );
-
-          return drainSyncOperations({
-            client,
-            database: kysely,
-            companyId: payload.companyId,
-            integration: payload.provider,
-            provider,
-            integrationMetadata: integration.metadata
-          });
-        }
-      )) as DrainSummary;
-
-      for (const group of drainSummary.groups) {
-        console.info("Sync result:", {
-          entityType: group.entityType,
-          direction: group.direction,
-          result: group.result
+        const outcomes = await enqueueSyncOperations(client, {
+          companyId: payload.companyId,
+          integration: payload.provider,
+          trigger: getLedgerTrigger(payload.syncType),
+          createdBy: getSyncOperationActor(integration),
+          scope: enqueueScope,
+          requests
         });
-      }
 
-      return {
-        success: drainSummary.groups.map((g) => g.result),
-        enqueue: enqueueSummary,
-        drain: {
-          claimed: drainSummary.claimed,
-          completed: drainSummary.completed,
-          failed: drainSummary.failed,
-          skipped: drainSummary.skipped
+        const summary: EnqueueStepSummary = {
+          enqueued: 0,
+          cooldownSkipped: 0,
+          disabled,
+          errors: []
+        };
+
+        for (const outcome of outcomes) {
+          if (outcome.outcome === "enqueued") {
+            summary.enqueued++;
+          } else if (outcome.outcome === "cooldown") {
+            summary.cooldownSkipped++;
+          } else {
+            summary.errors.push({
+              entityId: outcome.entityId,
+              error: outcome.error ?? "Failed to enqueue sync operation"
+            });
+          }
         }
-      };
-    } finally {
-      await pool.end();
+
+        return summary;
+      }
+    )) as EnqueueStepSummary;
+
+    log.info("Enqueued sync operations", { enqueueSummary });
+
+    // Step 2: drain — claim Pending operations (including UI retries and
+    // stale In Flight rows) and run the entity syncers. A throw re-runs
+    // the step; claim/complete are idempotent so retries cannot duplicate
+    // work.
+    const drainSummary = (await step.run("drain-sync-operations", async () => {
+      const integration = await getAccountingIntegration(
+        client,
+        payload.companyId,
+        payload.provider
+      );
+
+      const provider = getProviderIntegration(
+        client,
+        payload.companyId,
+        integration.id,
+        integration.metadata
+      );
+
+      return drainSyncOperations({
+        client,
+        database: kysely,
+        companyId: payload.companyId,
+        integration: payload.provider,
+        provider,
+        integrationMetadata: integration.metadata
+      });
+    })) as DrainSummary;
+
+    for (const group of drainSummary.groups) {
+      log.info("Sync result", {
+        entityType: group.entityType,
+        direction: group.direction,
+        result: group.result
+      });
     }
+
+    return {
+      success: drainSummary.groups.map((g) => g.result),
+      enqueue: enqueueSummary,
+      drain: {
+        claimed: drainSummary.claimed,
+        completed: drainSummary.completed,
+        failed: drainSummary.failed,
+        skipped: drainSummary.skipped
+      }
+    };
   }
 );

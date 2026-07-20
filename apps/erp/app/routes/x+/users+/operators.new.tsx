@@ -3,6 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { ValidatedForm, validationError, validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import {
   HStack,
   IconButton,
@@ -26,6 +27,8 @@ import { Input, Location, Submit } from "~/components/Form";
 import { useUser } from "~/hooks";
 import { createOperatorValidator } from "~/modules/users/users.models";
 import { createConsoleOperator } from "~/modules/users/users.server";
+
+const logger = getLogger("erp", "operators-new");
 
 function generatePin(): string {
   return Math.floor(1000 + Math.random() * 9000).toString();
@@ -105,7 +108,7 @@ export async function action({ request }: ActionFunctionArgs) {
       .eq("companyId", companyId);
 
     if (pinUpdate.error) {
-      console.error("Failed to set PIN for operator:", pinUpdate.error);
+      logger.error("Failed to set PIN for operator:", pinUpdate.error);
     }
   }
 

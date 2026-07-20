@@ -494,6 +494,35 @@ export async function calculateQuoteLinePrices(
     defaultMarkups[key] = value * 100;
   }
 
+  // Defaults are "enabled" only when at least one category markup is positive;
+  // an all-zero/empty default means the feature is off. Mirrors
+  // getEffectiveDefaultMarkups in apps/erp/app/modules/sales/sales.utils.ts —
+  // keep both in sync (the edge runtime cannot import app code).
+  const defaultsEnabled = Object.values(defaultMarkups).some((v) => v > 0);
+  const effectiveDefaults = defaultsEnabled ? defaultMarkups : {};
+
+  // Rows whose price was stated by a person or an external system
+  // (priceSource = 'manual') are never recomputed. Mirrors decideRecalcPricing
+  // in sales.utils.ts.
+  const existingPricesResult = await client
+    .from("quoteLinePrice")
+    .select("quantity, priceSource")
+    .eq("quoteLineId", quoteLineId)
+    .eq("companyId", companyId);
+  // A failed read must abort: treating it as "no manual rows" would let the
+  // delete/replace below wipe manually priced rows.
+  if (existingPricesResult.error)
+    throw new Error("Failed to get existing quote line prices");
+  const manualQuantities = new Set(
+    (existingPricesResult.data ?? [])
+      .filter(
+        (row) =>
+          row.priceSource === "manual" &&
+          quantities.some((qty) => Number(qty) === Number(row.quantity))
+      )
+      .map((row) => Number(row.quantity))
+  );
+
   // 2. Fix Buy material costs with supplier price breaks
   const buyMaterials = await client
     .from("quoteMaterial")
@@ -737,54 +766,77 @@ export async function calculateQuoteLinePrices(
   }
 
   // 6. Compute prices for each quantity
-  const priceRows = quantities.map((qty) => {
-    const categoryCosts: Record<CostCategoryKey, number> = {
-      materialCost: 0,
-      partCost: 0,
-      toolCost: 0,
-      consumableCost: 0,
-      serviceCost: 0,
-      laborCost: 0,
-      machineCost: 0,
-      overheadCost: 0,
-      outsideCost: 0,
-    };
+  const priceRows = quantities
+    .filter((qty) => !manualQuantities.has(Number(qty)))
+    .map((qty) => {
+      const categoryCosts: Record<CostCategoryKey, number> = {
+        materialCost: 0,
+        partCost: 0,
+        toolCost: 0,
+        consumableCost: 0,
+        serviceCost: 0,
+        laborCost: 0,
+        machineCost: 0,
+        overheadCost: 0,
+        outsideCost: 0,
+      };
 
-    for (const key of costCategoryKeys) {
-      categoryCosts[key] = effects[key].reduce(
-        (acc, effect) => acc + effect(qty),
-        0
-      );
-      // Convert to per-unit cost
-      if (qty > 0) {
-        categoryCosts[key] = categoryCosts[key] / qty;
+      for (const key of costCategoryKeys) {
+        categoryCosts[key] = effects[key].reduce(
+          (acc, effect) => acc + effect(qty),
+          0
+        );
+        // Convert to per-unit cost
+        if (qty > 0) {
+          categoryCosts[key] = categoryCosts[key] / qty;
+        }
       }
-    }
 
-    // Apply markups
-    const unitPrice = costCategoryKeys.reduce((sum, key) => {
-      const cost = categoryCosts[key] ?? 0;
-      const markup = defaultMarkups[key] ?? 0;
-      return sum + cost * (1 + markup / 100);
-    }, 0);
+      // Apply markups
+      const unitPrice = costCategoryKeys.reduce((sum, key) => {
+        const cost = categoryCosts[key] ?? 0;
+        const markup = effectiveDefaults[key] ?? 0;
+        return sum + cost * (1 + markup / 100);
+      }, 0);
 
-    const roundedUnitPrice = Number(unitPrice.toFixed(precision));
+      const roundedUnitPrice = Number(unitPrice.toFixed(precision));
 
-    return {
-      quoteId,
-      quoteLineId,
-      quantity: qty,
-      unitPrice: roundedUnitPrice,
-      categoryMarkups: defaultMarkups,
-      exchangeRate,
-      createdBy: userId,
-      leadTime: 0,
-      discountPercent: 0,
-    };
-  });
+      return {
+        quoteId,
+        quoteLineId,
+        companyId,
+        quantity: qty,
+        unitPrice: roundedUnitPrice,
+        categoryMarkups: effectiveDefaults,
+        priceSource: "system",
+        exchangeRate,
+        createdBy: userId,
+        leadTime: 0,
+        discountPercent: 0,
+      };
+    });
 
-  // 7. Delete existing and insert quoteLinePrice rows
-  await client.from("quoteLinePrice").delete().eq("quoteLineId", quoteLineId);
-  const insertResult = await client.from("quoteLinePrice").insert(priceRows);
-  if (insertResult.error) throw new Error("Failed to insert quote line prices");
+  // 7. Replace system-priced rows; manual rows for current quantities are
+  // preserved untouched. Manual rows for removed quantity breaks are deleted
+  // along with the system rows.
+  let deleteQuery = client
+    .from("quoteLinePrice")
+    .delete()
+    .eq("quoteLineId", quoteLineId)
+    .eq("companyId", companyId);
+  if (manualQuantities.size > 0) {
+    deleteQuery = deleteQuery.not(
+      "quantity",
+      "in",
+      `(${[...manualQuantities].join(",")})`
+    );
+  }
+  const deleteResult = await deleteQuery;
+  if (deleteResult.error) throw new Error("Failed to delete quote line prices");
+
+  if (priceRows.length > 0) {
+    const insertResult = await client.from("quoteLinePrice").insert(priceRows);
+    if (insertResult.error)
+      throw new Error("Failed to insert quote line prices");
+  }
 }

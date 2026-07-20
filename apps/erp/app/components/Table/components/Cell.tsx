@@ -1,3 +1,4 @@
+import { getLogger } from "@carbon/logger";
 import { cn, Td } from "@carbon/react";
 import type { Cell as CellType, Column } from "@tanstack/react-table";
 import { flexRender } from "@tanstack/react-table";
@@ -7,6 +8,8 @@ import { LuPencil } from "react-icons/lu";
 import type { EditableTableCellComponent } from "~/components/Editable";
 import { useMovingCellRef } from "~/hooks";
 import { getAccessorKey } from "../utils";
+
+const logger = getLogger("erp", "cell");
 
 type CellProps<T> = {
   cell: CellType<T, unknown>;
@@ -69,11 +72,13 @@ const Cell = <T extends object>({
         isEditMode && !hasEditableTableCellComponent && "bg-muted/50",
         isEditMode && "border-border border-r",
         hasError && "ring-inset ring-2 ring-red-500",
-        // Only ring editable cells — a ring on a read-only cell wrongly signals
-        // it can be edited.
+        // Selection is always visible (Excel-like), or keyboard navigation
+        // has no landmark. Editable cells get the full-strength ring +
+        // background; read-only cells a muted ring so the selection doesn't
+        // signal "you can type here".
+        isSelected && "!ring-inset !ring-2",
         isSelected &&
-          hasEditableTableCellComponent &&
-          "!ring-inset !ring-2 !ring-ring",
+          (hasEditableTableCellComponent ? "!ring-ring" : "!ring-ring/40"),
         isSelected && hasEditableTableCellComponent && "!bg-background",
         "transition-[left,right,box-shadow] duration-200",
         isPinned && "bg-card"
@@ -100,7 +105,7 @@ const Cell = <T extends object>({
                 row: cell.row.original,
                 onUpdate: onUpdate
                   ? onUpdate
-                  : () => console.error("No update function provided"),
+                  : () => logger.error("No update function provided"),
                 onError: () => {
                   setHasError(true);
                 }

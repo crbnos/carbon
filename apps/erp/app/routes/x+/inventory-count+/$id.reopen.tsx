@@ -9,7 +9,8 @@ import {
 } from "~/modules/inventory";
 import { path } from "~/utils/path";
 
-// Reopen (Pending -> Draft): unlocks the count for further edits before posting.
+// Reopen (Pending -> Draft): returns the count to entry so lines can be edited
+// again before posting.
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await requirePermissions(request, {

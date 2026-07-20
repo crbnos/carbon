@@ -1,3 +1,4 @@
+import { getLogger } from "@carbon/logger";
 import { ProviderID } from "../../core/models";
 import type {
   AccountingEntityType,
@@ -15,6 +16,8 @@ import {
   throwXeroApiError
 } from "../../core/utils";
 import type { Xero } from "./models";
+
+const logger = getLogger("ee", "accounting", "xero");
 
 export interface ListContactsOptions {
   page?: number;
@@ -112,7 +115,7 @@ export class XeroProvider implements BaseProvider {
   constructor(public config: Omit<XeroProviderConfig, "id">) {
     this.syncConfig = config.syncConfig;
     this._settings = config.settings ?? {};
-    console.log("[XeroProvider] Initialized with settings:", this._settings);
+    logger.info("XeroProvider initialized", { settings: this._settings });
     this.http = new HTTPClient("https://api.xero.com/api.xro/2.0");
     this.auth = createOAuthClient({
       clientId: config.clientId,
@@ -207,7 +210,7 @@ export class XeroProvider implements BaseProvider {
       const response = await this.request("GET", `/Organisation`);
       return !response.error;
     } catch (error) {
-      console.error("Xero validate error:", error);
+      logger.error("Xero validate error", { error });
       return false;
     }
   }
@@ -256,7 +259,7 @@ export class XeroProvider implements BaseProvider {
     );
 
     if (response.error) {
-      console.error("Failed to fetch Xero accounts:", response);
+      logger.error("Failed to fetch Xero accounts", { response });
       return [];
     }
 

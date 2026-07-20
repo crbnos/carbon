@@ -218,14 +218,14 @@ export const currencyValidator = z.object({
 });
 
 export const defaultBalanceSheetAccountValidator = z.object({
-  inventoryAccount: z.string().min(1, {
-    message: "Inventory account is required"
+  rawMaterialsAccount: z.string().min(1, {
+    message: "Raw materials account is required"
+  }),
+  finishedGoodsAccount: z.string().min(1, {
+    message: "Finished goods account is required"
   }),
   goodsReceivedNotInvoicedAccount: z.string().min(1, {
     message: "GR/IR clearing account is required"
-  }),
-  inventoryShippedNotInvoicedAccount: z.string().min(1, {
-    message: "Inventory shipped not invoiced account is required"
   }),
   workInProgressAccount: z.string().min(1, {
     message: "Work in progress account is required"
@@ -256,6 +256,9 @@ export const defaultBalanceSheetAccountValidator = z.object({
   }),
   prepaymentAccount: z.string().min(1, {
     message: "Prepayment account is required"
+  }),
+  supplierPrepaymentAccount: z.string().min(1, {
+    message: "Supplier prepayment account is required"
   }),
   payablesAccount: z.string().min(1, {
     message: "Payables account is required"
@@ -312,6 +315,7 @@ export const defaultIncomeAcountValidator = z.object({
   laborAbsorptionAccount: z.string().min(1, {
     message: "Labor absorption account is required"
   }),
+  overheadAbsorptionAccount: z.string().optional(),
   indirectCostAccount: z.string().min(1, {
     message: "Indirect cost account is required"
   }),
@@ -321,8 +325,11 @@ export const defaultIncomeAcountValidator = z.object({
   assetDepreciationExpenseAccount: z.string().min(1, {
     message: "Depreciation expense account is required"
   }),
-  assetGainsAndLossesAccount: z.string().min(1, {
-    message: "Gains and losses account is required"
+  assetGainOnDisposalAccount: z.string().min(1, {
+    message: "Gain on disposal account is required"
+  }),
+  assetLossOnDisposalAccount: z.string().min(1, {
+    message: "Loss on disposal account is required"
   }),
   serviceChargeAccount: z.string().min(1, {
     message: "Service charge account is required"
@@ -481,6 +488,68 @@ export const journalEntrySourceTypes = [
 
 export const journalEntryStatuses = ["Draft", "Posted", "Reversed"] as const;
 
+export const periodCloseStatuses = ["Open", "Locked", "Closed"] as const;
+
+export const accountingPeriodTransitionValidator = z.object({
+  intent: z.enum(["lock", "unlock", "close", "reopen"]),
+  periodId: z.string().min(1, { message: "Period is required" })
+});
+
+export const generateFiscalYearPeriodsValidator = z.object({
+  intent: z.literal("generate"),
+  fiscalYear: zfd.numeric(z.number().int().min(2000).max(2200))
+});
+
+// --- NetSuite-style period close checklist ---------------------------------
+export const periodCloseTaskTypes = ["Auto", "Action", "Manual"] as const;
+export const periodCloseTaskSeverities = ["Blocker", "Warning"] as const;
+export const periodCloseTaskStatuses = ["Open", "Done", "Skipped"] as const;
+
+// Complete an Action/Manual checklist task (Auto tasks are system-evaluated).
+export const closeTaskCompleteValidator = z.object({
+  intent: z.literal("completeTask"),
+  taskId: z.string().min(1, { message: "Task is required" }),
+  notes: zfd.text(z.string().optional())
+});
+
+// Skip a Warning/Manual task — a non-empty reason is always required, and the
+// service additionally rejects skipping Blocker tasks.
+export const closeTaskSkipValidator = z.object({
+  intent: z.literal("skipTask"),
+  taskId: z.string().min(1, { message: "Task is required" }),
+  skippedReason: z
+    .string()
+    .trim()
+    .min(1, { message: "A reason is required to skip a task" })
+});
+
+// Add an ad-hoc task to a single period's checklist (definitionId stays null).
+export const addCloseTaskValidator = z.object({
+  intent: z.literal("addTask"),
+  periodId: z.string().min(1, { message: "Period is required" }),
+  name: z.string().min(1, { message: "Name is required" }),
+  taskType: z.enum(periodCloseTaskTypes, {
+    errorMap: () => ({ message: "Task type is required" })
+  }),
+  required: zfd.checkbox(),
+  assigneeId: zfd.text(z.string().optional())
+});
+
+// Create/update a company-level close task definition (template row).
+export const periodCloseTaskDefinitionValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  name: z.string().min(1, { message: "Name is required" }),
+  taskType: z.enum(periodCloseTaskTypes, {
+    errorMap: () => ({ message: "Task type is required" })
+  }),
+  autoCheckKey: zfd.text(z.string().optional()),
+  sortOrder: zfd.numeric(z.number().int().min(0)),
+  required: zfd.checkbox(),
+  severity: zfd.text(z.enum(periodCloseTaskSeverities).optional()),
+  active: zfd.checkbox(),
+  defaultAssigneeId: zfd.text(z.string().optional())
+});
+
 export const journalEntryValidator = z.object({
   id: zfd.text(z.string().optional()),
   description: z.string().optional(),
@@ -585,9 +654,12 @@ export const fixedAssetClassValidator = z.object({
   writeDownAccountId: z
     .string()
     .min(1, { message: "Write-down account is required" }),
-  disposalAccountId: z
+  gainOnDisposalAccountId: z
     .string()
-    .min(1, { message: "Disposal account is required" }),
+    .min(1, { message: "Gain on disposal account is required" }),
+  lossOnDisposalAccountId: z
+    .string()
+    .min(1, { message: "Loss on disposal account is required" }),
   taxDepreciationMethod: z.preprocess(
     (val) => (val === "" ? null : val),
     z.enum(taxDepreciationMethods).nullable().optional()

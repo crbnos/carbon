@@ -6,6 +6,7 @@ import {
   templateShowsThumbnails,
   toDocumentTemplate
 } from "@carbon/documents/template";
+import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import { getPreferenceHeaders } from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
@@ -29,6 +30,8 @@ import {
   resolveSections
 } from "~/modules/settings";
 import { getBase64ImageFromSupabase } from "~/modules/shared";
+
+const logger = getLogger("erp", "quote", "pdf");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, companyGroupId } = await requirePermissions(
@@ -74,23 +77,27 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   ]);
 
   if (company.error) {
-    console.error(company.error);
+    logger.error("Failed to load company", { error: company.error });
   }
 
   if (quote.error) {
-    console.error(quote.error);
+    logger.error("Failed to load quote", { error: quote.error });
   }
 
   if (quoteLines.error) {
-    console.error(quoteLines.error);
+    logger.error("Failed to load quoteLines", { error: quoteLines.error });
   }
 
   if (quoteLinePrices.error) {
-    console.error(quoteLinePrices.error);
+    logger.error("Failed to load quoteLinePrices", {
+      error: quoteLinePrices.error
+    });
   }
 
   if (quoteLocations.error) {
-    console.error(quoteLocations.error);
+    logger.error("Failed to load quoteLocations", {
+      error: quoteLocations.error
+    });
   }
 
   if (company.error || quote.error || quoteLocations.error) {

@@ -27,7 +27,7 @@ function parseDateToISO8601(value: unknown): string | null {
 export const extractDocumentFunction = inngest.createFunction(
   { id: "extract-document", retries: 2 },
   { event: "carbon/extract-document" },
-  async ({ event, step }) => {
+  async ({ event, step, logger }) => {
     const { documentExtractionId, companyId } = event.data;
 
     await step.run("extract-and-save", async () => {
@@ -42,7 +42,7 @@ export const extractDocumentFunction = inngest.createFunction(
         .single();
 
       if (fetchErr || !extraction) {
-        console.error("Failed to fetch extraction record", { fetchErr });
+        logger.error("Failed to fetch extraction record", { fetchErr });
         throw new Error("Extraction record not found");
       }
 
@@ -99,7 +99,7 @@ export const extractDocumentFunction = inngest.createFunction(
         ) => {
           into.push(...(rows ?? []).slice(0, CANDIDATE_LIMIT));
           if ((rows?.length ?? 0) > CANDIDATE_LIMIT) {
-            console.warn(
+            logger.warn(
               `${label} candidate list truncated to ${CANDIDATE_LIMIT} for company ${companyId}`
             );
           }
@@ -245,7 +245,7 @@ export const extractDocumentFunction = inngest.createFunction(
           .eq("id", documentExtractionId)
           .eq("companyId", companyId);
       } catch (err) {
-        console.error("Extraction failed", { err });
+        logger.error("Extraction failed", { err });
         await client
           .from("documentExtraction")
           .update({

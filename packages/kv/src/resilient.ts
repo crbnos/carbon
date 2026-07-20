@@ -1,7 +1,10 @@
+import { getLogger } from "@carbon/logger";
 import type Redis from "ioredis";
 
 export const REDIS_TIMEOUT_MS = 2000;
 const LOG_THROTTLE_MS = 10_000;
+
+const log = getLogger("kv");
 
 let lastLoggedAt = 0;
 let unavailable = false;
@@ -9,13 +12,10 @@ let unavailable = false;
 export function logUnavailable(err: unknown): void {
   const now = Date.now();
   if (!unavailable || now - lastLoggedAt >= LOG_THROTTLE_MS) {
-    console.error(
-      JSON.stringify({
-        event: "redis.degraded",
-        message: "Redis is unavailable, running in degraded mode",
-        cause: err instanceof Error ? err.message : String(err)
-      })
-    );
+    log.error("Redis is unavailable, running in degraded mode", {
+      event: "redis.degraded",
+      cause: err instanceof Error ? err.message : String(err)
+    });
     lastLoggedAt = now;
   }
   unavailable = true;
@@ -23,12 +23,7 @@ export function logUnavailable(err: unknown): void {
 
 function logReconnected(): void {
   if (unavailable) {
-    console.info(
-      JSON.stringify({
-        event: "redis.recovered",
-        message: "Redis reconnected"
-      })
-    );
+    log.info("Redis reconnected", { event: "redis.recovered" });
     unavailable = false;
   }
 }

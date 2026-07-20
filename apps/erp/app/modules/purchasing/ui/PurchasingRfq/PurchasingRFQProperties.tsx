@@ -55,6 +55,25 @@ const PurchasingRFQProperties = () => {
     );
   }, [allSuppliers]);
 
+  const renderSuppliersInlinePreview = useCallback(
+    (value: string[], _options: unknown, maxPreview = 5) => (
+      <AvatarGroup limit={maxPreview} className="relative z-10">
+        <AvatarGroupList>
+          {value.map((supplier, index: number) => (
+            <Avatar
+              key={index}
+              name={
+                allSuppliers.find((s) => s.id === supplier)?.name ?? supplier
+              }
+            />
+          ))}
+        </AvatarGroupList>
+        <AvatarOverflowIndicator />
+      </AvatarGroup>
+    ),
+    [allSuppliers]
+  );
+
   // Get current supplier IDs from the RFQ
   const currentSupplierIds = useMemo(() => {
     return (
@@ -221,7 +240,7 @@ const PurchasingRFQProperties = () => {
           label={t`Suppliers`}
           options={supplierOptions}
           value={currentSupplierIds}
-          inline={SuppliersInlinePreview}
+          inline={renderSuppliersInlinePreview}
           isReadOnly={isDisabled}
           disabled={isDisabled}
           onChange={(selected) => {
@@ -337,27 +356,6 @@ const PurchasingRFQProperties = () => {
         onUpdate={onUpdateCustomFields}
       />
     </VStack>
-  );
-};
-
-const SuppliersInlinePreview = (
-  value: string[],
-  options: { value: string; label: string; helper?: string }[],
-  maxPreview = 5
-) => {
-  const [suppliers] = useSuppliers();
-  return (
-    <AvatarGroup limit={maxPreview} className="relative z-10">
-      <AvatarGroupList>
-        {value.map((supplier, index: number) => (
-          <Avatar
-            key={index}
-            name={suppliers.find((s) => s.id === supplier)?.name ?? supplier}
-          />
-        ))}
-      </AvatarGroupList>
-      <AvatarOverflowIndicator />
-    </AvatarGroup>
   );
 };
 

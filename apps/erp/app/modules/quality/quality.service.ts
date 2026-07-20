@@ -1,5 +1,6 @@
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable } from "@carbon/database";
+import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import { parseDate } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -7,6 +8,8 @@ import type { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
+
+const logger = getLogger("erp", "quality");
 
 import {
   listBalloons,
@@ -1664,7 +1667,9 @@ export async function insertIssue(
       }))
     );
     if (itemInsert.error) {
-      console.error(itemInsert);
+      logger.error("Failed to insert non-conformance item", {
+        error: itemInsert.error
+      });
     }
   }
 
@@ -1694,7 +1699,9 @@ export async function insertIssue(
             }
           ]);
         if (jobOperationInsert.error) {
-          console.error(jobOperationInsert);
+          logger.error("Failed to insert non-conformance job operation", {
+            error: jobOperationInsert.error
+          });
         }
       }
     }
@@ -1710,7 +1717,9 @@ export async function insertIssue(
       }
     ]);
     if (customerInsert.error) {
-      console.error(customerInsert);
+      logger.error("Failed to insert non-conformance customer", {
+        error: customerInsert.error
+      });
     }
   }
 
@@ -1734,7 +1743,9 @@ export async function insertIssue(
           }
         ]);
       if (salesOrderLineInsert.error) {
-        console.error(salesOrderLineInsert);
+        logger.error("Failed to insert non-conformance sales order line", {
+          error: salesOrderLineInsert.error
+        });
       }
     }
   }
@@ -1758,7 +1769,9 @@ export async function insertIssue(
           }
         ]);
       if (nonConformanceSupplierInsert.error) {
-        console.error(nonConformanceSupplierInsert);
+        logger.error("Failed to insert non-conformance supplier", {
+          error: nonConformanceSupplierInsert.error
+        });
       }
     }
   }
@@ -1849,7 +1862,9 @@ export async function upsertIssue(
           }))
         );
         if (itemInsert.error) {
-          console.error(itemInsert);
+          logger.error("Failed to insert non-conformance item", {
+            error: itemInsert.error
+          });
         }
       }
       if (jobOperationId) {
@@ -1878,7 +1893,9 @@ export async function upsertIssue(
                 }
               ]);
             if (jobOperationInsert.error) {
-              console.error(jobOperationInsert);
+              logger.error("Failed to insert non-conformance job operation", {
+                error: jobOperationInsert.error
+              });
             }
           }
         }
@@ -1896,7 +1913,9 @@ export async function upsertIssue(
           ]);
 
         if (customerInsert.error) {
-          console.error(customerInsert);
+          logger.error("Failed to insert non-conformance customer", {
+            error: customerInsert.error
+          });
         }
       }
       if (salesOrderLineId) {
@@ -1921,7 +1940,9 @@ export async function upsertIssue(
             ]);
 
           if (salesOrderLineInsert.error) {
-            console.error(salesOrderLineInsert);
+            logger.error("Failed to insert non-conformance sales order line", {
+              error: salesOrderLineInsert.error
+            });
           }
         }
       }
@@ -1945,7 +1966,9 @@ export async function upsertIssue(
             ]);
 
           if (nonConformanceSupplierInsert.error) {
-            console.error(nonConformanceSupplierInsert);
+            logger.error("Failed to insert non-conformance supplier", {
+              error: nonConformanceSupplierInsert.error
+            });
           }
         }
       }

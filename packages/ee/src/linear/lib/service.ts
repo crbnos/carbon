@@ -1,10 +1,13 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
+import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type z from "zod";
 import { markdownToTiptap } from "./richtext";
 import { LinearIssueSchema } from "./types";
 import { mapLinearStatusToCarbonStatus } from "./utils";
+
+const logger = getLogger("ee", "linear");
 
 export async function getLinearIntegration(
   client: SupabaseClient<Database>,
@@ -38,7 +41,9 @@ export async function linkActionToLinearIssue(
     try {
       notes = markdownToTiptap(data.description);
     } catch (e) {
-      console.error("Failed to convert Linear description to Tiptap:", e);
+      logger.error("Failed to convert Linear description to Tiptap", {
+        error: e
+      });
     }
   }
 

@@ -6,6 +6,8 @@
 export {
   accountDefaults,
   accounts,
+  changeOrderRequiredActions,
+  changeOrderTypes,
   currencies,
   customerStatuses,
   dimensions,
@@ -16,6 +18,7 @@ export {
   nonConformanceRequiredActions,
   nonConformanceTypes,
   paymentTerms,
+  periodCloseTaskDefinitions,
   scrapReasons,
   sequences,
   unitOfMeasures,

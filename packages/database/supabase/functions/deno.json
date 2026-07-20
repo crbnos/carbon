@@ -3,6 +3,8 @@
   "imports": {
     "kysely": "npm:kysely@0.26.3",
     "pg": "https://deno.land/x/postgres@v0.17.0/mod.ts",
-    "@supabase/supabase-js": "npm:@supabase/supabase-js@2.33.1"
+    "@supabase/supabase-js": "npm:@supabase/supabase-js@2.33.1",
+    "@logtape/logtape": "jsr:@logtape/logtape@2.2.3",
+    "@logtape/redaction": "jsr:@logtape/redaction@2.2.3"
   }
 }

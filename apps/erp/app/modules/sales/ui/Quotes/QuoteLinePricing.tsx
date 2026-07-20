@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { getLogger } from "@carbon/logger";
 import {
   Button,
   Card,
@@ -63,6 +64,8 @@ import type {
   QuotationLine,
   QuotationPrice
 } from "../../types";
+
+const logger = getLogger("erp", "sales", "quote-line-pricing");
 
 const categoryLabels: Record<CostCategoryKey, string> = {
   materialCost: "Material",
@@ -232,7 +235,9 @@ const QuoteLinePricing = ({
         .eq("id", lineId);
 
       if (costUpdate?.error) {
-        console.error(costUpdate.error);
+        logger.error("Failed to update quote line pricing", {
+          error: costUpdate.error
+        });
         toast.error(t`Failed to update quote line`);
       }
     },
@@ -265,7 +270,9 @@ const QuoteLinePricing = ({
         .eq("id", lineId);
 
       if (costUpdate?.error) {
-        console.error(costUpdate.error);
+        logger.error("Failed to update quote line pricing", {
+          error: costUpdate.error
+        });
         toast.error("Failed to update quote line");
       }
     },
@@ -293,7 +300,9 @@ const QuoteLinePricing = ({
         .eq("id", lineId);
 
       if (costUpdate?.error) {
-        console.error(costUpdate.error);
+        logger.error("Failed to update quote line pricing", {
+          error: costUpdate.error
+        });
         toast.error("Failed to update quote line");
       }
     },
@@ -409,7 +418,9 @@ const QuoteLinePricing = ({
         .single();
 
       if (costUpdate?.error) {
-        console.error(costUpdate.error);
+        logger.error("Failed to update quote line pricing", {
+          error: costUpdate.error
+        });
         toast.error(t`Failed to update item cost`);
       }
     },
@@ -435,22 +446,29 @@ const QuoteLinePricing = ({
           [quantity]: {
             ...prev.prices[quantity],
             categoryMarkups: newMarkups,
+            priceSource: "system",
             unitPrice
           }
         }
       }));
 
+      // Editing a per-category markup is explicit cost-plus intent: the row
+      // goes back to system pricing so BOM changes reprice it from these
+      // markups.
       const priceUpdate = await carbon
         ?.from("quoteLinePrice")
         .update({
           categoryMarkups: newMarkups,
+          priceSource: "system",
           unitPrice
         })
         .eq("quoteLineId", lineId)
         .eq("quantity", quantity);
 
       if (priceUpdate?.error) {
-        console.error(priceUpdate.error);
+        logger.error("Failed to update quote line pricing", {
+          error: priceUpdate.error
+        });
         toast.error(t`Failed to update category markups`);
       }
     },
@@ -494,7 +512,16 @@ const QuoteLinePricing = ({
         // Round the value to the precision of the quote line
         roundedValue = Number(value.toFixed(unitPricePrecision));
       }
-      newPrices[quantity] = { ...newPrices[quantity], [key]: roundedValue };
+      newPrices[quantity] = {
+        ...newPrices[quantity],
+        [key]: roundedValue,
+        // A direct price / virtual-markup edit makes this a manual price:
+        // priceSource 'manual' tells every recalc to preserve it, and clearing
+        // the stored per-category markups keeps the display consistent.
+        ...(key === "unitPrice"
+          ? { categoryMarkups: {}, priceSource: "manual" }
+          : {})
+      };
 
       setEditableFields((prev) => ({
         ...prev,
@@ -506,13 +533,18 @@ const QuoteLinePricing = ({
           ?.from("quoteLinePrice")
           .update({
             [key]: roundedValue,
+            ...(key === "unitPrice"
+              ? { categoryMarkups: {}, priceSource: "manual" }
+              : {}),
             quoteLineId: lineId,
             quantity
           })
           .eq("quoteLineId", lineId)
           .eq("quantity", quantity);
         if (update?.error) {
-          console.error(update.error);
+          logger.error("Failed to update quote line pricing", {
+            error: update.error
+          });
           toast.error("Failed to update quote line");
         }
       } else {
@@ -523,7 +555,9 @@ const QuoteLinePricing = ({
         });
 
         if (insert?.error) {
-          console.error(insert.error);
+          logger.error("Failed to update quote line pricing", {
+            error: insert.error
+          });
           toast.error(t`Failed to insert quote line`);
         }
       }

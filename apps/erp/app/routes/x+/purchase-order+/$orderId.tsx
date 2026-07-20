@@ -5,6 +5,7 @@ import { flash } from "@carbon/auth/session.server";
 import { PurchaseOrderEmail } from "@carbon/documents/email";
 import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
+import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
 import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
@@ -44,13 +45,17 @@ import {
 import { getUser } from "~/modules/users/users.server";
 import { loader as pdfLoader } from "~/routes/file+/purchase-order+/$orderId[.]pdf";
 import { getDatabaseClient } from "~/services/database.server";
-import type { Handle } from "~/utils/handle";
+import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
 
+const logger = getLogger("erp", "purchase-order");
+
 export const handle: Handle = {
-  breadcrumb: msg`Orders`,
-  to: path.to.purchaseOrders,
+  breadcrumb: detailBreadcrumb(
+    { breadcrumb: msg`Orders`, to: path.to.purchaseOrders },
+    (data) => data?.purchaseOrder?.purchaseOrderId
+  ),
   module: "purchasing"
 };
 
@@ -151,7 +156,9 @@ export async function action(args: ActionFunctionArgs) {
         from: userId
       });
     } catch (e) {
-      console.error("Failed to trigger approval decision notification", e);
+      logger.error("Failed to trigger approval decision notification", {
+        error: e
+      });
     }
   }
 
@@ -184,9 +191,9 @@ export async function action(args: ActionFunctionArgs) {
       });
     }
   } catch (e) {
-    console.error(
+    logger.error(
       "Failed to trigger lower-tier spend notification for purchase order",
-      e
+      { error: e }
     );
   }
 
@@ -234,7 +241,7 @@ export async function action(args: ActionFunctionArgs) {
         }
       } catch (err) {
         // Log but don't fail the approval - PDF generation is not critical
-        console.error("Failed to generate PDF after approval:", err);
+        logger.error("Failed to generate PDF after approval", { error: err });
       }
 
       // Send email notification if requested
@@ -320,7 +327,7 @@ export async function action(args: ActionFunctionArgs) {
             });
           }
         } catch (err) {
-          console.error("Failed to send email after approval:", err);
+          logger.error("Failed to send email after approval", { error: err });
         }
       }
 
@@ -345,10 +352,9 @@ export async function action(args: ActionFunctionArgs) {
         );
 
         if (priceUpdate.error) {
-          console.error(
-            "Failed to update purchased prices:",
-            priceUpdate.error
-          );
+          logger.error("Failed to update purchased prices", {
+            error: priceUpdate.error
+          });
         }
       }
     }

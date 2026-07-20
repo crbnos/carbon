@@ -1,6 +1,7 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import {
@@ -11,9 +12,11 @@ import {
   updatePurchasingRFQStatus,
   upsertSupplierQuoteLine
 } from "~/modules/purchasing";
-import type { MethodItemType } from "~/modules/shared";
-import { methodItemType } from "~/modules/shared";
+import type { ItemType } from "~/modules/shared";
+import { itemType } from "~/modules/shared";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "rfqid-convert");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -89,7 +92,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
 
     if (quoteResult.error || !quoteResult.data) {
-      console.error("Failed to create supplier quote:", quoteResult.error);
+      logger.error("Failed to create supplier quote", {
+        error: quoteResult.error
+      });
       continue;
     }
 
@@ -100,7 +105,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     for (const line of lines) {
       // Skip lines without an itemId since supplierQuoteLine.itemId is NOT NULL
       if (!line.itemId) {
-        console.warn("Skipping line without itemId:", line.id);
+        logger.warning("Skipping line without itemId", { error: line.id });
         continue;
       }
 
@@ -109,10 +114,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
       await upsertSupplierQuoteLine(client, {
         supplierQuoteId,
-        supplierQuoteLineType: methodItemType.includes(
-          line.itemType as MethodItemType
-        )
-          ? (line.itemType as MethodItemType)
+        supplierQuoteLineType: itemType.includes(line.itemType as ItemType)
+          ? (line.itemType as ItemType)
           : "Part",
         itemId: line.itemId,
         description: line.description ?? "",

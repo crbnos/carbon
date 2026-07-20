@@ -1,11 +1,14 @@
 import { openai } from "@ai-sdk/openai";
 import { notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getLogger } from "@carbon/logger";
 import { generateObject } from "ai";
 import type { ActionFunctionArgs } from "react-router";
 import type { ZodSchema } from "zod";
 import { z } from "zod";
 import { fieldMappings, importSchemas } from "~/modules/shared";
+
+const logger = getLogger("erp", "table-columns");
 
 const inputSchema = z.object({
   fileColumns: z.array(z.string())
@@ -97,7 +100,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
     return { ...matched, ...object };
   } catch (error) {
-    console.error(error);
+    logger.error("Error", { error: error });
     return matched;
   }
 }

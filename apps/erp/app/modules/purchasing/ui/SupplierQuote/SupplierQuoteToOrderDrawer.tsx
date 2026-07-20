@@ -18,6 +18,9 @@ import {
   Td,
   Th,
   Thead,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   Tr,
   VStack
 } from "@carbon/react";
@@ -99,6 +102,7 @@ const SupplierQuoteToOrderDrawer = ({
 
   const navigation = useNavigation();
   const isSubmitting = navigation.state !== "idle";
+  const hasSelectedLines = Object.keys(selectedLines).length > 0;
 
   return (
     <Drawer
@@ -121,13 +125,24 @@ const SupplierQuoteToOrderDrawer = ({
             action={path.to.convertSupplierQuoteToOrder(quote.id!)}
             method="post"
           >
-            <Button
-              type="submit"
-              isDisabled={isSubmitting}
-              isLoading={isSubmitting}
-            >
-              Convert
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span>
+                  <Button
+                    type="submit"
+                    isDisabled={isSubmitting || !hasSelectedLines}
+                    isLoading={isSubmitting}
+                  >
+                    {t`Convert`}
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              {!hasSelectedLines && (
+                <TooltipContent>
+                  {t`Select at least one line to convert`}
+                </TooltipContent>
+              )}
+            </Tooltip>
             <input
               type="hidden"
               name="selectedLines"
@@ -246,6 +261,7 @@ const LinePricingOptions = ({
   presentationCurrencyFormatter,
   setSelectedLines
 }: LinePricingOptionsProps) => {
+  const { t } = useLingui();
   const [selectedValue, setSelectedValue] = useState("");
   const [showOverride, setShowOverride] = useState(false);
   const [overridePricing, setOverridePricing] = useState<SelectedLine>({
@@ -400,6 +416,8 @@ const LinePricingOptions = ({
                 <Td>
                   <NumberField
                     className="w-[120px]"
+                    aria-label={t`Quantity`}
+                    minValue={0}
                     value={overridePricing.quantity}
                     onChange={(quantity) =>
                       setOverridePricing((v) => ({
@@ -417,6 +435,8 @@ const LinePricingOptions = ({
                 <Td>
                   <NumberField
                     className="w-[120px]"
+                    aria-label={t`Unit Price`}
+                    minValue={0}
                     value={overridePricing.supplierUnitPrice}
                     formatOptions={{
                       style: "currency",
@@ -439,6 +459,8 @@ const LinePricingOptions = ({
                 <Td>
                   <NumberField
                     className="w-[120px]"
+                    aria-label={t`Shipping`}
+                    minValue={0}
                     value={overridePricing.supplierShippingCost}
                     formatOptions={{
                       style: "currency",
@@ -462,6 +484,8 @@ const LinePricingOptions = ({
                 <Td>
                   <NumberField
                     className="w-[120px]"
+                    aria-label={t`Lead Time`}
+                    minValue={0}
                     formatOptions={{
                       style: "unit",
                       unit: "day",
@@ -484,6 +508,8 @@ const LinePricingOptions = ({
                 <Td>
                   <NumberField
                     className="w-[120px]"
+                    aria-label={t`Tax`}
+                    minValue={0}
                     value={overridePricing.supplierTaxAmount}
                     formatOptions={{
                       style: "currency",
@@ -516,15 +542,22 @@ const LinePricingOptions = ({
         </Table>
       </RadioGroup>
       {!showOverride && (
-        <Button
-          variant="secondary"
-          onClick={() => {
-            setShowOverride(true);
-            setSelectedValue("custom");
-          }}
-        >
-          Add Adjustment
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setShowOverride(true);
+                setSelectedValue("custom");
+              }}
+            >
+              {t`Add Adjustment`}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            {t`Add a custom pricing row to override quantity, price, shipping, lead time, and tax`}
+          </TooltipContent>
+        </Tooltip>
       )}
     </VStack>
   );

@@ -1,5 +1,6 @@
 import { useCarbon } from "@carbon/auth";
 import { SelectControlled, ValidatedForm } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import {
   Button,
   cn,
@@ -67,6 +68,8 @@ import type {
   QuotationShipment
 } from "../../types";
 import { useOpportunityDocuments } from "../Opportunity/OpportunityDocuments";
+
+const logger = getLogger("erp", "quotetoorderdrawer");
 
 type QuoteToOrderDrawerProps = {
   isOpen: boolean;
@@ -141,7 +144,7 @@ const QuoteToOrderDrawer = ({
         .eq("id", quoteData?.opportunity?.id!);
 
       if (error) {
-        console.error("Error updating opportunity:", error);
+        logger.error("Error updating opportunity:", error);
         toast.error(t`Failed to update opportunity with purchase order`);
       } else {
         setTimeout(() => {

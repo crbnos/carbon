@@ -8,6 +8,19 @@ export type IntegrationAction = {
 };
 
 /**
+ * A quick-install connector: an external link-out with no DB state, shown
+ * above the integrations grid. Each user connects individually.
+ */
+export type QuickInstallConnector = {
+  id: string;
+  name: string;
+  description: string;
+  badge: string;
+  installUrl: string;
+  logo: React.FC<React.ComponentProps<"svg">>;
+};
+
+/**
  * Enhanced option type for select fields.
  * Supports both simple strings (backwards compatible) and objects with label/description.
  */

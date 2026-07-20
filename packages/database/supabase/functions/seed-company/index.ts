@@ -11,12 +11,15 @@ import {
   failureModes,
   fiscalYearSettings,
   fixedAssetClasses,
+  changeOrderRequiredActions,
+  changeOrderTypes,
   gaugeTypes,
   groupCompanyTemplate,
   groups,
   nonConformanceRequiredActions,
   nonConformanceTypes,
   paymentTerms,
+  periodCloseTaskDefinitions,
   scrapReasons,
   sequences,
   unitOfMeasures,
@@ -291,9 +294,41 @@ serve(async (req: Request) => {
         )
         .execute();
 
+      // change-order default types (the changeOrderType lookup). New on this
+      // branch and not yet in the cloud-generated Kysely types, so the insert
+      // goes through a cast (mirrors changeOrderRequiredAction below).
+      await (trx as any)
+        .insertInto("changeOrderType")
+        .values(changeOrderTypes.map((ct) => ({ ...ct, companyId })))
+        .execute();
+
+      // change-order default actions (system template rows). New on this branch
+      // and not yet in the cloud-generated Kysely types, so the insert goes
+      // through a cast (mirrors periodCloseTaskDefinition below).
+      await (trx as any)
+        .insertInto("changeOrderRequiredAction")
+        .values(
+          changeOrderRequiredActions.map((ca) => ({ ...ca, companyId }))
+        )
+        .execute();
+
       await trx
         .insertInto("sequence")
         .values(sequences.map((s) => ({ ...s, companyId })))
+        .execute();
+
+      // period-close checklist definitions (system template rows). The table is
+      // new on this branch and not yet in the cloud-generated Kysely types, so
+      // the insert goes through a cast (mirrors accounting.service.ts).
+      await (trx as any)
+        .insertInto("periodCloseTaskDefinition")
+        .values(
+          periodCloseTaskDefinitions.map((d) => ({
+            ...d,
+            companyId,
+            createdBy: "system",
+          }))
+        )
         .execute();
 
       // Shared tables: only seed for new groups (existing groups already have these)
@@ -352,17 +387,25 @@ serve(async (req: Request) => {
         resolvedDefaults[key] = accountIdByKey[number] ?? null;
       }
 
-      // The four AR/AP defaults are NOT NULL in the schema. If a customized COA
+      // These defaults are NOT NULL in the schema. If a customized COA
       // on an existing group is missing one of their accounts
-      // (6050/4130/4120/7060), the lookup yields null and the insert below would
-      // violate the not-null constraint. Fall back to an existing default of the
-      // same nature so the insert can't fail — mirrors the COALESCE backfill in
-      // 20260630093809_ar-ap-payments.sql.
+      // (6050/4130/4120/7060/1150/1210/1220), the lookup yields null and the
+      // insert below would violate the not-null constraint. Fall back to an
+      // existing default of the same nature so the insert can't fail — mirrors
+      // the COALESCE backfills in 20260630093809_ar-ap-payments.sql,
+      // 20260711155312_supplier-prepayment-account.sql, and
+      // 20260713190909_raw-materials-finished-goods-accounts.sql.
+      // Order matters: rawMaterialsAccount resolves before finishedGoodsAccount
+      // chains onto it.
       const arApDefaultFallbacks: Record<string, string> = {
         customerWriteOffAccount: "salesDiscountAccount",
         supplierWriteOffAccount: "salesAccount",
         realizedExchangeGainAccount: "salesAccount",
         realizedExchangeLossAccount: "interestAccount",
+        assetGainOnDisposalAccount: "assetLossOnDisposalAccount",
+        supplierPrepaymentAccount: "receivablesAccount",
+        rawMaterialsAccount: "workInProgressAccount",
+        finishedGoodsAccount: "rawMaterialsAccount",
       };
       for (const [key, fallbackKey] of Object.entries(arApDefaultFallbacks)) {
         if (!resolvedDefaults[key]) {
@@ -401,7 +444,8 @@ serve(async (req: Request) => {
               accountIdByKey[fac.depreciationExpenseAccount]!,
             writeOffAccountId: accountIdByKey[fac.writeOffAccount]!,
             writeDownAccountId: accountIdByKey[fac.writeDownAccount]!,
-            disposalAccountId: accountIdByKey[fac.disposalAccount]!,
+            gainOnDisposalAccountId: accountIdByKey[fac.gainOnDisposalAccount]!,
+            lossOnDisposalAccountId: accountIdByKey[fac.lossOnDisposalAccount]!,
             companyId,
             createdBy: userId,
           }))

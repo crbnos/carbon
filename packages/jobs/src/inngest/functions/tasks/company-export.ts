@@ -295,7 +295,7 @@ export const companyExportFunction = inngest.createFunction(
     concurrency: { key: "event.data.companyId", limit: 1 }
   },
   { event: "carbon/company-export" },
-  async ({ event, step }) => {
+  async ({ event, step, logger }) => {
     const { companyId, userId, label, includeStorage } = event.data;
 
     return await step.run("export-company", async () => {
@@ -358,7 +358,7 @@ export const companyExportFunction = inngest.createFunction(
         // never shows a half-written backup as ready.
         await writeBackupManifest(client, companyId, name, manifest);
 
-        console.log("Company export complete", {
+        logger.info("Company export complete", {
           companyId,
           name,
           tables: manifest.tables.length,

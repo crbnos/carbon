@@ -118,21 +118,35 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
     }
 
-    // Move the file to the new path
-    const move = await client.storage
-      .from("private")
-      .move(documentPath, newPath);
-
-    if (move.error) {
+    // Relocate the raw across buckets: attachments live in `private`, but raw
+    // models must land in `temp-staging` (2.5 GB) for the optimise/assembly jobs
+    // to read (Supabase has no cross-bucket move).
+    const raw = await client.storage.from("private").download(documentPath);
+    if (raw.error) {
       throw redirect(
         path.to.salesRfqDetails(rfqId),
-        await flash(request, error(move.error, "Failed to move file"))
+        await flash(request, error(raw.error, "Failed to read model file"))
       );
     }
+    const staged = await client.storage
+      .from("temp-staging")
+      .upload(newPath, raw.data, { upsert: true });
+    if (staged.error) {
+      throw redirect(
+        path.to.salesRfqDetails(rfqId),
+        await flash(request, error(staged.error, "Failed to stage model file"))
+      );
+    }
+    await client.storage.from("private").remove([documentPath]);
 
     await trigger("model-thumbnail", {
       companyId,
       modelId
+    });
+    await trigger("model-optimize", {
+      modelUploadId: modelId,
+      companyId,
+      userId
     });
   } else {
     newPath = `${companyId}/opportunity-line/${targetLineId}/${fileName}`;

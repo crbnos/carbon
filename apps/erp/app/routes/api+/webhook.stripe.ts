@@ -1,4 +1,5 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getLogger } from "@carbon/logger";
 import {
   getStripeCustomerId,
   processStripeEvent,
@@ -7,6 +8,8 @@ import {
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "webhook-stripe");
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { companyId } = await requirePermissions(request, {});
@@ -24,7 +27,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const signature = request.headers.get("stripe-signature");
 
   if (!signature) {
-    console.error("No signature");
+    logger.error("No signature");
     return data({ error: "No signature" }, { status: 400 });
   }
 
@@ -32,7 +35,7 @@ export async function action({ request }: ActionFunctionArgs) {
     await processStripeEvent({ body, signature });
     return { success: true };
   } catch (error) {
-    console.error("Stripe webhook error:", error);
+    logger.error("Stripe webhook error", { error: error });
     return data({ error: "Webhook processing failed" }, { status: 400 });
   }
 }

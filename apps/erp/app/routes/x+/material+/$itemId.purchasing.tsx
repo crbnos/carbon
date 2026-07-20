@@ -132,7 +132,10 @@ export default function MaterialPurchasingRoute() {
           supplierParts.map((s) => s.supplierId).filter(Boolean) as string[]
         }
       />
-      <SupplierParts supplierParts={supplierParts} />
+      <SupplierParts
+        supplierParts={supplierParts}
+        deleteSupplierPath={(id) => path.to.deleteMaterialSupplier(itemId, id)}
+      />
       {["Batch", "Serial"].includes(
         materialData?.materialSummary?.itemTrackingType ?? ""
       ) && (

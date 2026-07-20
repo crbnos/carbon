@@ -50,7 +50,7 @@ function useModuleDefinitions(): ModuleDefinition[] {
       key: "accounting",
       permission: "accounting",
       name: t`Accounting`,
-      to: path.to.chartOfAccounts,
+      to: path.to.accounting,
       icon: LuLandmark
     },
     {

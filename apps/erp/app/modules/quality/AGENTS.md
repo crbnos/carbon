@@ -87,6 +87,6 @@ import { inspectionDocumentValidator, riskRegisterValidator } from "~/modules/qu
 
 ## Rules References
 
-- `.ai/rules/issue-module.md` — NCR status lifecycle, workflow tasks, associations, and route structure
-- `.ai/rules/risk-register-module.md` — risk register schema, enums, and entity integration
-- `.ai/rules/inbound-inspection-system.md` — receipt inspection flow, sampling engine, and disposition
+- `.claude/rules/issue-module.md` — NCR status lifecycle, workflow tasks, associations, and route structure
+- `.claude/rules/risk-register-module.md` — risk register schema, enums, and entity integration
+- `.claude/rules/inbound-inspection-system.md` — receipt inspection flow, sampling engine, and disposition

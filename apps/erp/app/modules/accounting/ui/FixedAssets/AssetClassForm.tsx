@@ -162,10 +162,16 @@ const AssetClassForm = ({
                   classes={["Expense"]}
                 />
                 <Account
-                  name="disposalAccountId"
-                  label={t`Disposal Account`}
-                  termId="asset-class-disposal-account"
+                  name="gainOnDisposalAccountId"
+                  label={t`Gain on Disposal Account`}
+                  termId="asset-class-gain-on-disposal-account"
                   classes={["Revenue", "Expense"]}
+                />
+                <Account
+                  name="lossOnDisposalAccountId"
+                  label={t`Loss on Disposal Account`}
+                  termId="asset-class-loss-on-disposal-account"
+                  classes={["Expense"]}
                 />
 
                 {taxDepreciationEnabled && (

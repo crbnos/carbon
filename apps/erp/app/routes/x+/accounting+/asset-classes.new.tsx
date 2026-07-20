@@ -89,9 +89,10 @@ export default function NewAssetClassRoute() {
       defaults?.accumulatedDepreciationAccount ?? "",
     depreciationExpenseAccountId:
       defaults?.assetDepreciationExpenseAccount ?? "",
-    writeOffAccountId: defaults?.assetGainsAndLossesAccount ?? "",
-    writeDownAccountId: defaults?.assetGainsAndLossesAccount ?? "",
-    disposalAccountId: defaults?.assetGainsAndLossesAccount ?? ""
+    writeOffAccountId: defaults?.assetLossOnDisposalAccount ?? "",
+    writeDownAccountId: defaults?.assetLossOnDisposalAccount ?? "",
+    gainOnDisposalAccountId: defaults?.assetGainOnDisposalAccount ?? "",
+    lossOnDisposalAccountId: defaults?.assetLossOnDisposalAccount ?? ""
   };
 
   return (

@@ -36,11 +36,12 @@ All from `src/index.ts` (single file):
 - **Auth:** `SESSION_SECRET`, `SESSION_MAX_AGE`, `RATE_LIMIT`, `AUTH_PROVIDERS`, `isAuthProviderEnabled()`
 - **Edition:** `CarbonEdition` (Community/Cloud/Enterprise/Test), `CONTROLLED_ENVIRONMENT` (ITAR flag)
 - **URLs:** `getAppUrl()`, `getMESUrl()`, `getBrowserEnv()`
+- **Logging:** `LOG_LEVEL` (optional, non-secret, browser-safe — consumed by `@carbon/logger`)
 - **Integrations:** Stripe, Resend, Slack, Xero, Jira, OnShape, QuickBooks keys (all optional)
 
 ## Cross-References
 
-- `.ai/rules/environment-configuration.md` — full env architecture, `.env` vs `.env.local`, URL resolution
+- `.claude/rules/environment-configuration.md` — full env architecture, `.env` vs `.env.local`, URL resolution
 - `packages/auth/` — re-exports all of `@carbon/env`; auth code imports from here
 - `packages/config/` — build tooling only, not runtime env (separate concern)
 - `scripts/setup-env-files.ts` — symlinks root `.env` into apps and packages

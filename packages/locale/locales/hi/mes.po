@@ -105,9 +105,6 @@ msgstr "प्रमाणीकरण त्रुटि"
 msgid "available"
 msgstr "उपलब्ध"
 
-msgid "Back Home"
-msgstr "घर वापस"
-
 msgid "Batch"
 msgstr "बैच"
 
@@ -327,9 +324,6 @@ msgstr "{0} के लिए PIN दर्ज करें"
 
 msgid "Error"
 msgstr "त्रुटि"
-
-msgid "Error!"
-msgstr "त्रुटि!"
 
 msgid "Estimated"
 msgstr "अनुमानित"
@@ -616,6 +610,9 @@ msgstr "कोई प्रभाव नहीं"
 msgid "No maintenance scheduled for today"
 msgstr "आज के लिए कोई रखरखाव निर्धारित नहीं है"
 
+msgid "No matches. Type to create one."
+msgstr "कोई मेल नहीं। एक बनाने के लिए टाइप करें।"
+
 msgid "No materials"
 msgstr "कोई सामग्री नहीं"
 
@@ -763,6 +760,9 @@ msgstr "पिछला"
 
 msgid "Preventive"
 msgstr "निवारक"
+
+msgid "Previous"
+msgstr "पिछला"
 
 msgid "Print"
 msgstr "प्रिंट करें"
@@ -968,9 +968,6 @@ msgstr "के रूप में साइन इन किया गया {s
 
 msgid "Size"
 msgstr "आकार"
-
-msgid "Something went wrong"
-msgstr "कुछ गलत हो गया"
 
 msgid "Source"
 msgstr "स्रोत"
