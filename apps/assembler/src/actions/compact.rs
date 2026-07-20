@@ -45,14 +45,9 @@ pub struct CompactReq {
     pub raw_path: Option<String>,
 }
 
-/// zstd level for the retained artifact. Background job, so favour ratio, but not
-/// the glacial max — STEP/xbf/glTF text all compress well at a mid level.
-fn zstd_level() -> i32 {
-    std::env::var("ASSEMBLER_ZSTD_LEVEL")
-        .ok()
-        .and_then(|s| s.parse().ok())
-        .unwrap_or(12)
-}
+/// zstd level for the retained artifact. Background job, so favour ratio, but
+/// not the glacial max — STEP/xbf/glTF text all compress well at this mid level.
+const ZSTD_LEVEL: i32 = 12;
 
 pub fn spawn(state: &AppState, job_id: &str, req: CompactReq) {
     let jobs = state.jobs.clone();
@@ -76,7 +71,7 @@ pub fn spawn(state: &AppState, job_id: &str, req: CompactReq) {
         }
         let src_str = src.to_string_lossy().to_string();
         let mode = req.mode;
-        let level = zstd_level();
+        let level = ZSTD_LEVEL;
 
         let res = tokio::task::spawn_blocking(move || compress(&src_str, mode, level)).await;
         let _ = tokio::fs::remove_file(&src).await;

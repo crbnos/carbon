@@ -49,8 +49,8 @@ pub struct Opts {
     /// STEP/IGES tessellation deflection (ignored for mesh input).
     pub lin: f64,
     pub ang: f64,
-    /// Wall-clock budget for the simplify ladder (from `quality.time_budget_secs`
-    /// or `ASSEMBLER_OPTIMIZE_BUDGET_SECS`). `None` = unbounded. `spawn` turns this
+    /// Wall-clock budget for the simplify ladder (`quality.time_budget_secs`,
+    /// else auto: 720s on Lambda). `None` = unbounded. `spawn` turns this
     /// into an absolute `deadline` relative to job start (so it also charges the
     /// download + tessellation time already spent).
     pub budget: Option<Duration>,

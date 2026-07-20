@@ -3,7 +3,7 @@
 //! `Local` (default): `tokio::spawn` in this process — correct for the ECS
 //! service, local dev, and the CLI, where the process outlives the request.
 //!
-//! `Lambda` (`ASSEMBLER_DISPATCH=lambda`): a Lambda instance FREEZES after the
+//! `Lambda` (auto-detected via `AWS_LAMBDA_FUNCTION_NAME`): an instance FREEZES after the
 //! HTTP response, so an in-process spawn would never finish. Instead the create
 //! handler fires the job as a separate **Event-type self-invocation** of this
 //! same function (own 900s window). The Lambda Web Adapter delivers that

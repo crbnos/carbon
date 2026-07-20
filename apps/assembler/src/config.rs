@@ -9,42 +9,46 @@ fn int_env(name: &str, default: usize) -> usize {
         .unwrap_or(default)
 }
 
-/// Max source-download size (bytes). 0 disables the limit (the default) — the
-/// download streams to a temp file, and the storage bucket already bounds upload
-/// size, so no in-service cap is enforced unless one is explicitly configured.
+// Fixed, sane defaults — deliberately NOT env-tunable. Every knob here had a
+// plausible-sounding env var and no deployment that ever needed a different
+// value; unused knobs are just misconfiguration surface. Revisit a constant
+// when a real deployment proves it wrong, not before.
+
+/// Max source-download size: unlimited. The download streams to a temp file and
+/// the storage bucket already bounds upload size — no in-service cap.
 pub fn max_source_bytes() -> usize {
-    int_env("ASSEMBLER_MAX_SOURCE_MB", 0) * 1024 * 1024
+    0
 }
 
+/// Assembly part-instance ceiling (guards the planner's O(parts²) sweeps).
 pub fn max_parts() -> usize {
-    int_env("ASSEMBLER_MAX_PARTS", 5000)
+    5000
 }
 
-/// How long shutdown waits for running plan tasks after the HTTP listener
-/// drains. Match the orchestrator's termination grace period.
+/// How long shutdown waits for running tasks after the HTTP listener drains.
+/// Matches the orchestrator's termination grace period.
 pub fn shutdown_grace() -> std::time::Duration {
-    std::time::Duration::from_secs(int_env("ASSEMBLER_SHUTDOWN_GRACE_S", 600) as u64)
+    std::time::Duration::from_secs(600)
 }
 
-/// Result-cache budget (bytes). 0 disables the cache.
+/// Result-cache budget.
 pub fn cache_bytes() -> usize {
-    int_env("ASSEMBLER_CACHE_MB", 512) * 1024 * 1024
+    512 * 1024 * 1024
 }
 
+/// Concurrent heavy jobs per instance. Env-tunable: this is a real ops knob —
+/// the ECS service tier sizes it to the task's vCPUs; Lambda runs one job per
+/// worker invocation anyway.
 pub fn max_concurrency() -> usize {
     int_env("ASSEMBLER_MAX_CONCURRENCY", 2).max(1)
 }
 
 /// Wall-clock budget (seconds) for the optimize simplify ladder. When active, a
 /// job running past it jumps straight to the coarsest rung instead of grinding
-/// every middle pass. Defaults: 720s on Lambda (auto-detected — lands under the
-/// 900s hard timeout), unbounded elsewhere (the standing service has no cap).
-/// `ASSEMBLER_OPTIMIZE_BUDGET_SECS` overrides (0 = explicitly unbounded), and a
-/// per-request `quality.time_budget_secs` overrides that.
+/// every middle pass. Auto-derived: 720s on Lambda (lands under the 900s hard
+/// timeout), unbounded elsewhere (the standing service has no cap). Per-request
+/// `quality.time_budget_secs` overrides.
 pub fn optimize_budget_secs() -> Option<u64> {
-    if let Ok(s) = std::env::var("ASSEMBLER_OPTIMIZE_BUDGET_SECS") {
-        return s.parse::<u64>().ok().filter(|&s| s > 0);
-    }
     std::env::var("AWS_LAMBDA_FUNCTION_NAME")
         .is_ok()
         .then_some(720)
@@ -67,25 +71,25 @@ pub fn redis_url() -> Option<String> {
 /// TTL (seconds) for a Redis job-status entry — long enough to outlive any poll
 /// window, short enough that abandoned jobs self-evict. Default 24h.
 pub fn job_ttl_secs() -> u64 {
-    int_env("ASSEMBLER_JOB_TTL_SECS", 86400) as u64
+    86400
 }
 
 /// TTL (seconds) for a Redis content-hash result-pointer entry. Default 24h.
 pub fn result_ttl_secs() -> u64 {
-    int_env("ASSEMBLER_RESULT_TTL_SECS", 86400) as u64
+    86400
 }
 
 /// TTL (seconds) for a computed-but-unuploaded plan held in Redis for hand-off
 /// (compute -> the poll that uploads it). Short: a plan not drained within this
 /// window is abandoned and the job re-plans. Default 5 min.
 pub fn pending_ttl_secs() -> u64 {
-    int_env("ASSEMBLER_PENDING_TTL_SECS", 300) as u64
+    300
 }
 
 /// Server-side cap on the `?wait=` long-poll hold (seconds). Kept under typical
 /// proxy/LB idle timeouts so a held request never trips them.
 pub fn max_long_poll_secs() -> u64 {
-    int_env("ASSEMBLER_MAX_LONG_POLL_S", 25) as u64
+    25
 }
 
 /// Cap on tokio's blocking pool — the implicit convert queue. OCCT scales to
@@ -95,7 +99,7 @@ pub fn max_long_poll_secs() -> u64 {
 /// tokio::fs ops from starving behind long converts.
 pub fn blocking_threads() -> usize {
     let cores = std::thread::available_parallelism().map_or(8, |n| n.get());
-    int_env("ASSEMBLER_BLOCKING_THREADS", cores + 2).max(2)
+    (cores + 2).max(2)
 }
 
 pub fn allowed_url_hosts() -> Vec<String> {
