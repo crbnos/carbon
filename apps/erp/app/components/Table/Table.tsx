@@ -72,6 +72,7 @@ import type {
   EditableTableCellComponent,
   Position
 } from "~/components/Editable";
+import { useUrlParams } from "~/hooks";
 import { useSavedViews } from "~/hooks/useSavedViews";
 import type { fieldMappings } from "~/modules/shared";
 import {
@@ -942,10 +943,21 @@ const Table = <T extends object>({
   };
 
   const navigation = useNavigation();
+  const [params] = useUrlParams();
   const { hasFilters, clearFilters } = useFilters();
   const isLoading = useSpinDelay(navigation.state === "loading", {
     delay: 300
   });
+
+  // Genuinely-empty table: no rows and nothing narrowing them
+  // (filters/sorts/search). Single source of truth — passed to TableHeader so
+  // the top toolbar and the bottom pagination footer hide together, leaving only
+  // the title bar + primary action.
+  const isTableEmpty =
+    data.length === 0 &&
+    !hasFilters &&
+    params.getAll("sort").filter(Boolean).length === 0 &&
+    !params.get("search")?.trim();
 
   return (
     <VStack
@@ -969,6 +981,7 @@ const Table = <T extends object>({
         data={data}
         editMode={editMode}
         filters={filters}
+        isEmpty={isTableEmpty}
         importCSV={importCSV}
         pagination={pagination}
         primaryAction={primaryAction}
@@ -1313,7 +1326,7 @@ const Table = <T extends object>({
           )}
         </div>
       </div>
-      {withPagination && <Pagination {...pagination} />}
+      {withPagination && !isTableEmpty && <Pagination {...pagination} />}
     </VStack>
   );
 };

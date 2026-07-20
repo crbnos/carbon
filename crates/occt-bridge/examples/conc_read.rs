@@ -35,9 +35,15 @@ fn run(path: &Arc<String>, threads: usize, iters: usize) -> (f64, u64) {
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
-    let path = Arc::new(args.get(1).cloned().expect("usage: conc_read <file.step> [iters]"));
+    let path = Arc::new(
+        args.get(1)
+            .cloned()
+            .expect("usage: conc_read <file.step> [iters]"),
+    );
     let iters: usize = args.get(2).and_then(|s| s.parse().ok()).unwrap_or(100);
-    let cores = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(8);
+    let cores = std::thread::available_parallelism()
+        .map(|n| n.get())
+        .unwrap_or(8);
 
     // Warm globals single-threaded (mirrors the call_once init path).
     let _ = occt_bridge::read_step(path.as_str(), 0.1, 0.5);

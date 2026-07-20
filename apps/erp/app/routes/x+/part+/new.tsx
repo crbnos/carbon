@@ -56,6 +56,11 @@ export async function action({ request }: ActionFunctionArgs) {
       companyId,
       modelId: validation.data.modelUploadId
     });
+    await trigger("model-optimize", {
+      modelUploadId: validation.data.modelUploadId,
+      companyId,
+      userId
+    });
   }
 
   const itemId = createPart.data?.id;

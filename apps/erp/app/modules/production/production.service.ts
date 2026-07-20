@@ -4266,7 +4266,7 @@ export async function deleteAssemblyInstruction(
 async function notifyAssemblerInvalidate(modelUploadId: string) {
   if (!ASSEMBLER_SERVICE_URL) return;
   try {
-    await fetch(`${ASSEMBLER_SERVICE_URL}/cache/invalidate`, {
+    await fetch(`${ASSEMBLER_SERVICE_URL}/v1/cache/invalidate`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -5818,7 +5818,10 @@ export async function syncAssemblyInstructionToOperation(
       .where("assemblyInstructionStepId", "is not", null)
       .execute();
     const targetIdBySourceId = new Map(
-      existingSynced.map((step) => [step.assemblyInstructionStepId as string, step.id])
+      existingSynced.map((step) => [
+        step.assemblyInstructionStepId as string,
+        step.id
+      ])
     );
 
     const now = new Date().toISOString();
@@ -5944,7 +5947,9 @@ export async function syncAssemblyInstructionToOperation(
         .where("stepId", "in", syncedTargetIds)
         .where("modelUploadId", "=", instruction.modelUploadId)
         .execute();
-      const stepsWithModel = new Set(existingSlides.map((slide) => slide.stepId));
+      const stepsWithModel = new Set(
+        existingSlides.map((slide) => slide.stepId)
+      );
       const slideRows = syncedTargetIds
         .filter((stepId) => !stepsWithModel.has(stepId))
         .map((stepId) => ({

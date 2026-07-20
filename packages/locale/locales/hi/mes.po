@@ -610,6 +610,9 @@ msgstr "कोई प्रभाव नहीं"
 msgid "No maintenance scheduled for today"
 msgstr "आज के लिए कोई रखरखाव निर्धारित नहीं है"
 
+msgid "No matches. Type to create one."
+msgstr "कोई मेल नहीं। एक बनाने के लिए टाइप करें।"
+
 msgid "No materials"
 msgstr "कोई सामग्री नहीं"
 

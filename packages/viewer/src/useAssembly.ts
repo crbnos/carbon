@@ -24,7 +24,9 @@ export type UseAssemblyResult = {
  */
 export function useAssembly(
   glbUrl: string | null,
-  graphUrl: string | null
+  graphUrl: string | null,
+  /** Bump to force a re-fetch of the same URL (the "retry" action). */
+  reloadKey: number = 0
 ): UseAssemblyResult {
   const [scene, setScene] = useState<Group | null>(null);
   const [graph, setGraph] = useState<AssemblyGraph | null>(null);
@@ -77,7 +79,7 @@ export function useAssembly(
       cancelled = true;
       if (loadedScene) disposeObject(loadedScene);
     };
-  }, [glbUrl]);
+  }, [glbUrl, reloadKey]);
 
   useEffect(() => {
     if (!graphUrl) {

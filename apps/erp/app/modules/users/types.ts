@@ -44,6 +44,8 @@ export type Group = {
     isSupplierTypeGroup: boolean;
     name: string;
     users: User[];
+    // Transitive member count, attached by the groups API when `counts=true`.
+    memberCount?: number;
   };
   children: Group[];
 };

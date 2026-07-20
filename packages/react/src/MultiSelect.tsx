@@ -323,19 +323,19 @@ function VirtualizedCommand({
               >
                 <div className="flex items-center justify-start gap-2">
                   {isSelected ? (
-                    <FaSquareCheck className="mr-1.5 text-primary" />
+                    <FaSquareCheck className="mr-1.5 text-primary shrink-0" />
                   ) : (
-                    <FaRegSquare className="mr-1.5 text-muted-foreground" />
+                    <FaRegSquare className="mr-1.5 text-muted-foreground shrink-0" />
                   )}
                   {option.helper ? (
-                    <div className="flex flex-col">
+                    <div className="flex flex-col min-w-0">
                       <p className="line-clamp-1">{option.label}</p>
                       <p className="text-xs text-muted-foreground line-clamp-1">
                         {option.helper}
                       </p>
                     </div>
                   ) : (
-                    <span className="line-clamp-1">{option.label}</span>
+                    <span className="line-clamp-1 min-w-0">{option.label}</span>
                   )}
                 </div>
               </CommandItem>

@@ -12,11 +12,13 @@ const logger = getLogger("erp", "itemthumnailupload");
 export function ItemThumbnailUpload({
   path,
   itemId,
-  modelId
+  modelId,
+  isReadOnly = false
 }: {
   path?: string | null;
   itemId: string;
   modelId?: string | null;
+  isReadOnly?: boolean;
 }) {
   const { t } = useLingui();
   const { company } = useUser();
@@ -171,27 +173,29 @@ export function ItemThumbnailUpload({
           </span>
         </div>
       )}
-      <HStack className="absolute bottom-2 right-2">
-        {thumbnailPath && (
-          <Button
+      {!isReadOnly && (
+        <HStack className="absolute bottom-2 right-2">
+          {thumbnailPath && (
+            <Button
+              variant="secondary"
+              className="bg-card opacity-100"
+              size="sm"
+              onClick={onFileRemove}
+            >
+              <Trans>Remove</Trans>
+            </Button>
+          )}
+          <FileUpload
+            accept="image/*"
             variant="secondary"
-            className="bg-card opacity-100"
             size="sm"
-            onClick={onFileRemove}
+            className="bg-card opacity-100"
+            onChange={onFileChange}
           >
-            <Trans>Remove</Trans>
-          </Button>
-        )}
-        <FileUpload
-          accept="image/*"
-          variant="secondary"
-          size="sm"
-          className="bg-card opacity-100"
-          onChange={onFileChange}
-        >
-          <Trans>Upload</Trans>
-        </FileUpload>
-      </HStack>
+            <Trans>Upload</Trans>
+          </FileUpload>
+        </HStack>
+      )}
     </div>
   );
 }

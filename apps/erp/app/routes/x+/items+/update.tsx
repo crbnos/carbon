@@ -4,95 +4,15 @@ import { getLogger } from "@carbon/logger";
 import { getMaterialDescription, getMaterialId } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import type { InventoryItemType } from "~/modules/items";
+import { deriveItemMethodUpdate } from "~/modules/items";
 import {
   cascadeItemTrackingType,
   updateItemMethodAndSourcing
 } from "~/modules/items/items.service";
 import { getCompanySettings } from "~/modules/settings";
-import type { MethodType, SourcingType } from "~/modules/shared";
 import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "update");
-
-type ItemReplenishmentSystem =
-  Database["public"]["Enums"]["itemReplenishmentSystem"];
-
-/**
- * Maps an inline edit of one of the three interlocked item-level fields
- * (replenishmentSystem, defaultMethodType, sourcingType) to the columns that
- * should be written on the item and the values that should be mirrored down to
- * its method materials. Pure — no DB access — so the relationships between the
- * fields live in one readable place instead of being scattered across branches.
- */
-function deriveItemMethodUpdate(
-  field: "replenishmentSystem" | "defaultMethodType" | "sourcingType",
-  value: string
-): {
-  itemUpdate: {
-    replenishmentSystem?: ItemReplenishmentSystem;
-    defaultMethodType?: MethodType;
-    sourcingType?: SourcingType;
-  };
-  cascade: { sourcingType?: SourcingType; methodType?: MethodType };
-} {
-  switch (field) {
-    case "replenishmentSystem": {
-      const replenishmentSystem = value as ItemReplenishmentSystem;
-      // Picking a concrete replenishment system pins the default method type.
-      if (value !== "Buy and Make") {
-        const defaultMethodType: MethodType =
-          value === "Make"
-            ? "Make to Order"
-            : value === "Buy"
-              ? "Purchase to Order"
-              : "Pull from Inventory";
-        return {
-          itemUpdate: { replenishmentSystem, defaultMethodType },
-          cascade: { methodType: defaultMethodType }
-        };
-      }
-      return { itemUpdate: { replenishmentSystem }, cascade: {} };
-    }
-    case "defaultMethodType": {
-      const defaultMethodType = value as MethodType;
-      // A concrete method type pins the replenishment system to match.
-      if (value !== "Pull from Inventory") {
-        const replenishmentSystem: ItemReplenishmentSystem =
-          value === "Make to Order"
-            ? "Make"
-            : value === "Purchase to Order"
-              ? "Buy"
-              : "Buy and Make";
-        return {
-          itemUpdate: { defaultMethodType, replenishmentSystem },
-          cascade: { methodType: defaultMethodType }
-        };
-      }
-      return {
-        itemUpdate: { defaultMethodType },
-        cascade: { methodType: defaultMethodType }
-      };
-    }
-    case "sourcingType": {
-      const sourcingType = value as SourcingType;
-      // Sourcing drives method type: Drop Ship → Purchase to Order, Ship from
-      // Inventory → Pull from Inventory, Specified → leave method type as-is.
-      const methodType: MethodType | undefined =
-        value === "Drop Ship"
-          ? "Purchase to Order"
-          : value === "Ship from Inventory"
-            ? "Pull from Inventory"
-            : undefined;
-      return {
-        itemUpdate: {
-          sourcingType,
-          ...(methodType ? { defaultMethodType: methodType } : {})
-        },
-        cascade: { sourcingType, methodType }
-      };
-    }
-  }
-}
 
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
@@ -132,7 +52,11 @@ export async function action({ request }: ActionFunctionArgs) {
           userId
         });
       } catch (err) {
-        logger.error("Error", { error: err });
+        logger.error("Failed to cascade item tracking type", {
+          field,
+          itemIds: items,
+          error: err
+        });
         return {
           error: { message: "Failed to cascade tracking flags" },
           data: null
@@ -170,7 +94,12 @@ export async function action({ request }: ActionFunctionArgs) {
           cascade
         });
       } catch (err) {
-        logger.error("Error", { error: err });
+        logger.error("Failed to update item method/sourcing", {
+          field,
+          value,
+          itemIds: items,
+          error: err
+        });
         return { error: { message: "Failed to update item" }, data: null };
       }
       return { data: null, error: null };

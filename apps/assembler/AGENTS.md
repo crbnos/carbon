@@ -143,10 +143,18 @@ and plan jobs, then force-exits after `ASSEMBLER_SHUTDOWN_GRACE_S`.
 
 ## Not yet done
 
-- **meshopt compression** — the converter serves an uncompressed (contract-valid)
-  GLB. In-process `meshopt` + `EXT_meshopt_compression` is a follow-up.
 - **CI + registry** — no workflow yet builds/publishes the `carbon-occt` base or
   the `carbon-assembler` image, or deploys the container.
+
+## meshopt / Draco compression
+
+`meshopt` + `EXT_meshopt_compression` (and optional `KHR_draco_mesh_compression`)
+live in the **`/v1/optimize`** action (`crates/optimize`), NOT the converter. The
+**convert** action still serves an uncompressed, contract-valid, lossless GLB (it
+feeds the animated assembly viewer); optimise produces the separate compact
+preview GLB. Gotcha grounded in `crates/optimize`: the meshopt vertex codec
+requires every attribute stride be a multiple of 4 — i16 VEC3 normals are padded
+to i16 VEC4 (8 bytes), or the spec JS decoder rejects the output.
 
 ## Never
 

@@ -46,6 +46,7 @@ import {
   LuGitBranch,
   LuGitFork,
   LuGitMerge,
+  LuGitPullRequestArrow,
   LuStar,
   LuTriangleAlert
 } from "react-icons/lu";
@@ -60,6 +61,7 @@ import {
   makeMethodVersionValidator
 } from "../../items.models";
 import type { MakeMethod } from "../../types";
+import { CreateChangeOrderModal } from "../ChangeOrder";
 import { getPathToMakeMethod } from "../Methods/utils";
 import { getLinkToItemDetails } from "./ItemForm";
 import MakeMethodVersionStatus from "./MakeMethodVersionStatus";
@@ -102,7 +104,10 @@ const MakeMethodTools = ({
   const saveMethodModal = useDisclosure();
   const [hasMethodParts, setHasMethodParts] = useState(true);
   const newVersionModal = useDisclosure();
+  const changeOrderModal = useDisclosure();
   const activeMethodModal = useDisclosure();
+  const canCreateChangeOrder =
+    (type === "Part" || type === "Tool") && permissions.can("create", "parts");
   const itemLink = type && itemId ? getLinkToItemDetails(type, itemId) : null;
 
   const activeMethod =
@@ -178,7 +183,7 @@ const MakeMethodTools = ({
     if (!carbon) return;
     const { data, error } = await carbon
       .from("makeMethod")
-      .select("id, version, status")
+      .select("id, version, status, changeOrderId")
       .eq("itemId", targetItemId)
       .eq("companyId", companyId)
       .order("version", { ascending: false });
@@ -187,9 +192,11 @@ const MakeMethodTools = ({
       toast.error(error.message);
     }
 
-    // Only Draft versions can be overwritten - Active and Archived are read-only
+    // Only Draft versions can be overwritten - Active and Archived are read-only.
+    // Exclude CO-owned drafts (changeOrderId set) — a CO's draft is authored via
+    // its own BOM/BOP surfaces, not clobbered wholesale by this copy-method tool.
     const availableVersions =
-      data?.filter(({ status }) => status === "Draft") ?? [];
+      data?.filter((m) => m.status === "Draft" && !m.changeOrderId) ?? [];
 
     setTargetMakeMethods(
       availableVersions.map(({ id, version, status }) => ({
@@ -334,6 +341,12 @@ const MakeMethodTools = ({
                     <DropdownMenuItem onClick={newVersionModal.onOpen}>
                       <DropdownMenuIcon icon={<LuCirclePlus />} />
                       New Version
+                    </DropdownMenuItem>
+                  )}
+                  {canCreateChangeOrder && (
+                    <DropdownMenuItem onClick={changeOrderModal.onOpen}>
+                      <DropdownMenuIcon icon={<LuGitPullRequestArrow />} />
+                      New Change Order
                     </DropdownMenuItem>
                   )}
                 </>
@@ -620,6 +633,13 @@ const MakeMethodTools = ({
             setSelectedVersion(activeMethod);
           }}
           onCancel={activeMethodModal.onClose}
+        />
+      )}
+
+      {changeOrderModal.isOpen && (
+        <CreateChangeOrderModal
+          itemId={itemId}
+          onClose={changeOrderModal.onClose}
         />
       )}
     </Fragment>

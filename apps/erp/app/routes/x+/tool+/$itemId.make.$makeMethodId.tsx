@@ -17,6 +17,7 @@ import {
   getMethodMaterialsByMakeMethod,
   getMethodOperationsByMakeMethodId
 } from "~/modules/items";
+import { getRevisionLock } from "~/modules/items/items.server";
 import {
   BillOfMaterial,
   BillOfProcess,
@@ -35,12 +36,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!itemId) throw new Error("Could not find itemId");
   if (!makeMethodId) throw new Error("Could not find makeMethodId");
 
-  const [makeMethod, methodMaterials, methodOperations, tags] =
+  const [makeMethod, methodMaterials, methodOperations, tags, revisionLock] =
     await Promise.all([
       getMakeMethodById(client, makeMethodId, companyId),
       getMethodMaterialsByMakeMethod(client, makeMethodId),
       getMethodOperationsByMakeMethodId(client, makeMethodId),
-      getTagsList(client, companyId, "operation")
+      getTagsList(client, companyId, "operation"),
+      getRevisionLock(client, { itemId, companyId })
     ]);
 
   if (makeMethod.error) {
@@ -98,7 +100,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       })) ?? [],
     model: getModelByItemId(client, makeMethod.data.itemId),
     makeMethods: getMakeMethods(client, makeMethod.data.itemId, companyId),
-    tags: tags.data ?? []
+    tags: tags.data ?? [],
+    revisionStatus: revisionLock.revisionStatus,
+    releaseControl: revisionLock.releaseControl
   };
 }
 
@@ -106,8 +110,15 @@ export default function ToolMakeMethodPage() {
   const { t } = useLingui();
   const loaderData = useLoaderData<typeof loader>();
   const permissions = usePermissions();
-  const { makeMethod, makeMethods, methodMaterials, methodOperations, tags } =
-    loaderData;
+  const {
+    makeMethod,
+    makeMethods,
+    methodMaterials,
+    methodOperations,
+    tags,
+    revisionStatus,
+    releaseControl
+  } = loaderData;
 
   const { itemId, makeMethodId } = useParams();
   if (!itemId) throw new Error("Could not find itemId");
@@ -139,6 +150,8 @@ export default function ToolMakeMethodPage() {
         materials={methodMaterials}
         operations={methodOperations}
         replenishmentSystem={toolData?.toolSummary?.replenishmentSystem}
+        revisionStatus={revisionStatus}
+        releaseControl={releaseControl}
       />
       <BillOfProcess
         key={`bop:${makeMethodId}`}
@@ -147,6 +160,8 @@ export default function ToolMakeMethodPage() {
         // @ts-expect-error
         operations={methodOperations}
         tags={tags}
+        revisionStatus={revisionStatus}
+        releaseControl={releaseControl}
       />
       <Suspense fallback={null}>
         <Await resolve={loaderData.model}>

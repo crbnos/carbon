@@ -82,6 +82,7 @@ import {
   Empty,
   TimeTypeIcon
 } from "~/components";
+import { AssemblyStepsSource } from "~/components/AssemblyStepsSource";
 import { ConfigurationEditor } from "~/components/Configurator/ConfigurationEditor";
 import type { Configuration } from "~/components/Configurator/types";
 import {
@@ -107,11 +108,10 @@ import { getUnitHint } from "~/components/Form/UnitHint";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { ProcedureStepTypeIcon } from "~/components/Icons";
 import { ConfirmDelete } from "~/components/Modals";
-import type { Item, SortableItemRenderProps } from "~/components/SortableList";
-import { AssemblyStepsSource } from "~/components/AssemblyStepsSource";
 import { SlidesEditor, uploadStepSlideModel } from "~/components/SlidesEditor";
-import { StepLinkEditor } from "~/components/StepLinkEditor";
+import type { Item, SortableItemRenderProps } from "~/components/SortableList";
 import { SortableList, SortableListItem } from "~/components/SortableList";
+import { StepLinkEditor } from "~/components/StepLinkEditor";
 import { useDateFormatter, usePermissions, useUser } from "~/hooks";
 import { useTags } from "~/hooks/useTags";
 import type {
@@ -146,6 +146,8 @@ import type {
   ConfigurationRule,
   MakeMethod
 } from "../../types";
+import type { ReleaseLockProps } from "./ReleaseLockAlert";
+import ReleaseLockAlert, { getReleaseLockFlags } from "./ReleaseLockAlert";
 
 type Operation = z.infer<typeof methodOperationValidator> & {
   workInstruction: JSONContent | null;
@@ -177,7 +179,8 @@ type BillOfProcessProps = {
   })[];
   parameters?: ConfigurationParameter[];
   tags: { name: string }[];
-};
+  selectedMaterialId?: string;
+} & ReleaseLockProps;
 
 type PendingWorkInstructions = {
   [key: string]: JSONContent;
@@ -226,13 +229,21 @@ const BillOfProcess = ({
   materials,
   operations: initialOperations,
   parameters,
-  tags
+  tags,
+  selectedMaterialId,
+  revisionStatus,
+  releaseControl
 }: BillOfProcessProps) => {
   const permissions = usePermissions();
   const { t } = useLingui();
+  const { isProductionRevision, isReleaseLocked } = getReleaseLockFlags({
+    revisionStatus,
+    releaseControl
+  });
   const isReadOnly =
     permissions.can("update", "parts") === false ||
-    makeMethod.status !== "Draft";
+    makeMethod.status !== "Draft" ||
+    isReleaseLocked;
 
   const makeMethodId = makeMethod.id;
 
@@ -851,7 +862,8 @@ const BillOfProcess = ({
     configuratorDisclosure.onOpen();
   };
 
-  const { materialId } = useParams();
+  const { materialId: paramMaterialId } = useParams();
+  const materialId = selectedMaterialId ?? paramMaterialId;
 
   const rulesByField = new Map(
     configurationRules?.map((rule) => [rule.field, rule]) ?? []
@@ -905,6 +917,9 @@ const BillOfProcess = ({
         </CardAction>
       </HStack>
       <CardContent>
+        {isProductionRevision && (
+          <ReleaseLockAlert isLocked={isReleaseLocked} className="mb-4" />
+        )}
         <SortableList
           isReadOnly={isReadOnly}
           items={items}
@@ -2631,11 +2646,7 @@ function AttributesListItem({
               materials={materials}
               isDisabled={isDisabled}
             />
-            <StepTools
-              step={attribute}
-              tools={tools}
-              isDisabled={isDisabled}
-            />
+            <StepTools step={attribute} tools={tools} isDisabled={isDisabled} />
             <HStack className="w-full justify-end" spacing={2}>
               <Button variant="secondary" onClick={disclosure.onClose}>
                 Cancel
@@ -2920,8 +2931,11 @@ function StepTools({
       (
         tl.methodOperationStepIds ??
         (
-          (tl as { methodOperationToolStep?: { methodOperationStepId: string }[] })
-            .methodOperationToolStep ?? []
+          (
+            tl as {
+              methodOperationToolStep?: { methodOperationStepId: string }[];
+            }
+          ).methodOperationToolStep ?? []
         ).map((s) => s.methodOperationStepId)
       ).some((stepId) => stepId === step.id)
     )
@@ -3436,8 +3450,11 @@ function OperationPreview({
     const ids: string[] =
       tl.methodOperationStepIds ??
       (
-        (tl as { methodOperationToolStep?: { methodOperationStepId: string }[] })
-          .methodOperationToolStep ?? []
+        (
+          tl as {
+            methodOperationToolStep?: { methodOperationStepId: string }[];
+          }
+        ).methodOperationToolStep ?? []
       ).map((s) => s.methodOperationStepId);
     return ids.length === 0 || (!!step.id && ids.includes(step.id));
   });
