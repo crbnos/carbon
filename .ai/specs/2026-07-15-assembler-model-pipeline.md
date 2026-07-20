@@ -199,11 +199,10 @@ first-seconds-preview: the trigger derives format from the stored file
 
 Accepted-format coverage to build, in cost order:
 
-| Phase | Formats | How |
+| Phase | Formats | Status |
 |---|---|---|
-| **F1** | iges, brep | OCCT readers (IGESControl/BRepTools) via occt-bridge — kernel already linked; registry stubs waiting |
-| **F1** | obj, ply, off, bim | plain parsers → the existing `*_to_glb` ingest (mirrors `stl_to_glb`); bim is JSON |
-| **F2** | 3mf, amf | zip/XML parsers (Rust crates exist) |
+| **F1** ✅ 2026-07-18 | iges, brep (OCCT readers, shared `doc_to_tree` walk) + obj, ply, off, bim (parsers → `build_triangle_glb`, `crates/optimize/src/ingest.rs`) | implemented; IGES/BREP runtime proof at staging (no hermetic fixtures) |
+| **F2** ✅ 2026-07-18 | 3mf (zip + build/components + 4x3 transforms), amf (XML, zip-unwrapped; constellations not applied) | implemented (zip 8 + quick-xml deps) |
 | **F3 (on demand)** | fbx, dae, 3ds, 3dm | each needs a real import dep (assimp binding / opennurbs) — only on customer evidence |
 
 ifc/fcstd stay out (dropped from the accept list 2026-07-18).
