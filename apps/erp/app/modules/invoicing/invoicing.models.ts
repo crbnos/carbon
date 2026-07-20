@@ -20,6 +20,7 @@ export const purchaseInvoiceStatusType = [
   "Draft",
   // "Return",
   "Pending",
+  "Pending Approval",
   "Partially Paid",
   "Open",
   "Debit Note Issued",
@@ -318,7 +319,12 @@ export const salesInvoiceLineValidator = z
 // ----------------------------------------------------------------------
 
 export const memoDirection = ["Credit", "Debit"] as const;
-export const memoStatus = ["Draft", "Posted", "Voided"] as const;
+export const memoStatus = [
+  "Draft",
+  "Pending Approval",
+  "Posted",
+  "Voided"
+] as const;
 
 export type MemoDirection = (typeof memoDirection)[number];
 export type MemoStatusType = (typeof memoStatus)[number];
@@ -353,7 +359,12 @@ export const memoValidator = z
 // ----------------------------------------------------------------------
 
 export const paymentType = ["Receipt", "Disbursement"] as const;
-export const paymentStatus = ["Draft", "Posted", "Voided"] as const;
+export const paymentStatus = [
+  "Draft",
+  "Pending Approval",
+  "Posted",
+  "Voided"
+] as const;
 
 export type PaymentType = (typeof paymentType)[number];
 export type PaymentStatusType = (typeof paymentStatus)[number];

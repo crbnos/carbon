@@ -1070,6 +1070,59 @@ export const path = {
       }
     },
     fiscalYears: `${x}/accounting/years`,
+    legal: {
+      termsAndConditions: "https://carbon.ms/terms",
+      privacyPolicy: "https://carbon.ms/privacy"
+    },
+    onboarding: {
+      company: `${onboarding}/company`,
+      industry: `${onboarding}/industry`,
+      location: `${onboarding}/location`,
+      plan: `${onboarding}/plan`,
+      root: `${onboarding}`,
+      theme: `${onboarding}/theme`,
+      user: `${onboarding}/user`
+    },
+    authenticatedRoot: x,
+    selectCompany,
+    acknowledge: `${x}/acknowledge`,
+    accessReport: `${x}/settings/access-report`,
+    sodReport: `${x}/settings/sod-report`,
+    approvalRules: `${x}/settings/approval-rules`,
+    approvalRule: (id: string) =>
+      generatePath(`${x}/settings/approval-rules/${id}`),
+    newApprovalRule: (documentType?: string) =>
+      documentType
+        ? `${x}/settings/approval-rules/new?type=${documentType}`
+        : `${x}/settings/approval-rules/new`,
+    deleteApprovalRule: (id: string) =>
+      generatePath(`${x}/settings/approval-rules/${id}/delete`),
+    abilities: `${x}/resources/abilities`,
+    ability: (id: string) => generatePath(`${x}/resources/ability/${id}`),
+    account: `${x}/account`,
+    accountPersonal: `${x}/account/personal`,
+    accountPassword: `${x}/account/password`,
+    accounting: `${x}/accounting`,
+    accountingDefaults: `${x}/accounting/defaults`,
+    accountingJournals: `${x}/accounting/journals`,
+    accountingSettings: `${x}/settings/accounting`,
+    journalEntry: (id: string) => generatePath(`${x}/journal-entry/${id}`),
+    journalEntryDetails: (id: string) =>
+      generatePath(`${x}/journal-entry/${id}/details`),
+    newJournalEntry: `${x}/accounting/journals/new`,
+    postJournalEntry: (id: string) =>
+      generatePath(`${x}/journal-entry/${id}/post`),
+    reverseJournalEntry: (id: string) =>
+      generatePath(`${x}/journal-entry/${id}/reverse`),
+    journalLineDimensions: (lineId: string) =>
+      `/api/accounting/journal-line-dimensions/${lineId}`,
+    accountingGroupsBankAccounts: `${x}/accounting/groups/bank-accounts`,
+    accountingGroupsFixedAssets: `${x}/accounting/groups/fixed-assets`,
+    accountingGroupsInventory: `${x}/accounting/groups/inventory`,
+    accountingGroupsPurchasing: `${x}/accounting/groups/purchasing`,
+    accountingGroupsSales: `${x}/accounting/groups/sales`,
+    accountingRoot: `${x}/accounting`,
+    fixedAssets: `${x}/accounting/fixed-assets`,
     fixedAsset: (id: string) => generatePath(`${x}/fixed-asset/${id}`),
     fixedAssetDetails: (id: string) =>
       generatePath(`${x}/fixed-asset/${id}/details`),

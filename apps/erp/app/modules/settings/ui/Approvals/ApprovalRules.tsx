@@ -6,16 +6,27 @@ import {
   CardHeader,
   CardTitle,
   Heading,
+  HStack,
   ScrollArea,
+  Switch,
+  toast,
   VStack
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
-import { memo, useMemo } from "react";
+import {
+  memo,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState
+} from "react";
 import { LuPlus } from "react-icons/lu";
-import { Link } from "react-router";
+import { Link, useFetcher } from "react-router";
 import { Empty } from "~/components";
 import { usePermissions } from "~/hooks";
 import {
+  type ApprovalDocumentType,
   type ApprovalRule,
   approvalDocumentTypesWithAmounts
 } from "~/modules/shared";
@@ -26,21 +37,151 @@ type ApprovalRulesProps = {
   poRules: ApprovalRule[];
   qdRules: ApprovalRule[];
   supplierRules: ApprovalRule[];
+  jeRules: ApprovalRule[];
+  paymentRules: ApprovalRule[];
+  purchaseInvoiceRules: ApprovalRule[];
+  memoRules: ApprovalRule[];
+  enforceNoSelfApproval: boolean;
+};
+
+// A rule's ceiling is the next-higher tier's minimum (null for the top tier).
+const makeNextTierFloor = (rules: ApprovalRule[]) => {
+  const floors = Array.from(
+    new Set(rules.map((r) => r.lowerBoundAmount ?? 0))
+  ).sort((a, b) => a - b);
+  return (lowerBoundAmount: number): number | null =>
+    floors.find((f) => f > lowerBoundAmount) ?? null;
+};
+
+// Amount-tiered card (Purchase Order pattern): a company can configure multiple
+// rules per document type keyed by a dollar floor, each with a "New Rule" button.
+const AmountTieredRuleCard = ({
+  documentType,
+  title,
+  description,
+  rules,
+  canCreate
+}: {
+  documentType: ApprovalDocumentType;
+  title: ReactNode;
+  description: ReactNode;
+  rules: ApprovalRule[];
+  canCreate: boolean;
+}) => {
+  const nextTierFloor = useMemo(() => makeNextTierFloor(rules), [rules]);
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="text-lg">{title}</CardTitle>
+            <CardDescription className="text-sm">{description}</CardDescription>
+          </div>
+          {canCreate && (
+            <Button variant="primary" leftIcon={<LuPlus />} asChild>
+              <Link to={path.to.newApprovalRule(documentType)}>
+                <Trans>New Rule</Trans>
+              </Link>
+            </Button>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent>
+        {rules.length === 0 ? (
+          <Empty className="my-4" />
+        ) : (
+          <VStack spacing={3} className="items-stretch">
+            {rules
+              .filter((r) => r.id)
+              .map((rule) => (
+                <ApprovalRuleCard
+                  key={rule.id}
+                  rule={rule}
+                  documentType={documentType}
+                  upperBound={nextTierFloor(rule.lowerBoundAmount ?? 0)}
+                />
+              ))}
+          </VStack>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
+// Company-wide toggle: when on, a document's requester can never approve their
+// own request. Disabling permits self-approval and is surfaced as a standing
+// exception in the Segregation of Duties report.
+const NoSelfApprovalToggle = ({
+  enforceNoSelfApproval,
+  canUpdate
+}: {
+  enforceNoSelfApproval: boolean;
+  canUpdate: boolean;
+}) => {
+  const fetcher = useFetcher<{ success: boolean; message: string }>();
+  const [enabled, setEnabled] = useState(enforceNoSelfApproval);
+
+  const handleToggle = useCallback(
+    (checked: boolean) => {
+      setEnabled(checked);
+      fetcher.submit(
+        { intent: "enforceNoSelfApproval", enabled: checked.toString() },
+        { method: "POST" }
+      );
+    },
+    [fetcher]
+  );
+
+  useEffect(() => {
+    if (fetcher.data?.success === true && fetcher.data?.message) {
+      toast.success(fetcher.data.message);
+    }
+    if (fetcher.data?.success === false && fetcher.data?.message) {
+      toast.error(fetcher.data.message);
+    }
+  }, [fetcher.data?.message, fetcher.data?.success]);
+
+  return (
+    <Card className="w-full">
+      <CardHeader>
+        <HStack className="justify-between items-center">
+          <div>
+            <CardTitle>
+              <Trans>Prevent Self-Approval</Trans>
+            </CardTitle>
+            <CardDescription>
+              <Trans>
+                Block the person who submitted a document from approving it.
+                Disabling this permits self-approval and is flagged as a
+                standing exception in the Segregation of Duties report.
+              </Trans>
+            </CardDescription>
+          </div>
+          <Switch
+            checked={enabled}
+            onCheckedChange={handleToggle}
+            disabled={!canUpdate || fetcher.state !== "idle"}
+          />
+        </HStack>
+      </CardHeader>
+    </Card>
+  );
 };
 
 const ApprovalRules = memo(
-  ({ poRules, qdRules, supplierRules }: ApprovalRulesProps) => {
+  ({
+    poRules,
+    qdRules,
+    supplierRules,
+    jeRules,
+    paymentRules,
+    purchaseInvoiceRules,
+    memoRules,
+    enforceNoSelfApproval
+  }: ApprovalRulesProps) => {
     const permissions = usePermissions();
     const canCreate = permissions.can("update", "settings");
-
-    // A rule's ceiling is the next-higher tier's minimum (null for the top tier).
-    const nextTierFloor = useMemo(() => {
-      const floors = Array.from(
-        new Set(poRules.map((r) => r.lowerBoundAmount ?? 0))
-      ).sort((a, b) => a - b);
-      return (lowerBoundAmount: number): number | null =>
-        floors.find((f) => f > lowerBoundAmount) ?? null;
-    }, [poRules]);
 
     return (
       <ScrollArea className="h-full w-full">
@@ -52,48 +193,23 @@ const ApprovalRules = memo(
           </div>
 
           <VStack spacing={4}>
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-lg">
-                      <Trans>Purchase Orders</Trans>
-                    </CardTitle>
-                    <CardDescription className="text-sm">
-                      <Trans>
-                        Require approval for purchase orders based on amount
-                        thresholds
-                      </Trans>
-                    </CardDescription>
-                  </div>
-                  {canCreate && (
-                    <Button variant="primary" leftIcon={<LuPlus />} asChild>
-                      <Link to={path.to.newApprovalRule("purchaseOrder")}>
-                        <Trans>New Rule</Trans>
-                      </Link>
-                    </Button>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent>
-                {poRules.length === 0 ? (
-                  <Empty className="my-4" />
-                ) : (
-                  <VStack spacing={3} className="items-stretch">
-                    {poRules
-                      .filter((r) => r.id)
-                      .map((rule) => (
-                        <ApprovalRuleCard
-                          key={rule.id}
-                          rule={rule}
-                          documentType="purchaseOrder"
-                          upperBound={nextTierFloor(rule.lowerBoundAmount ?? 0)}
-                        />
-                      ))}
-                  </VStack>
-                )}
-              </CardContent>
-            </Card>
+            <NoSelfApprovalToggle
+              enforceNoSelfApproval={enforceNoSelfApproval}
+              canUpdate={canCreate}
+            />
+
+            <AmountTieredRuleCard
+              documentType="purchaseOrder"
+              title={<Trans>Purchase Orders</Trans>}
+              description={
+                <Trans>
+                  Require approval for purchase orders based on amount
+                  thresholds
+                </Trans>
+              }
+              rules={poRules}
+              canCreate={canCreate}
+            />
 
             <Card>
               <CardHeader>
@@ -180,6 +296,57 @@ const ApprovalRules = memo(
                 )}
               </CardContent>
             </Card>
+
+            <AmountTieredRuleCard
+              documentType="journalEntry"
+              title={<Trans>Journal Entries</Trans>}
+              description={
+                <Trans>
+                  Require approval for manual journal entries based on amount
+                  thresholds
+                </Trans>
+              }
+              rules={jeRules}
+              canCreate={canCreate}
+            />
+
+            <AmountTieredRuleCard
+              documentType="payment"
+              title={<Trans>Payments</Trans>}
+              description={
+                <Trans>
+                  Require approval for payments based on amount thresholds
+                </Trans>
+              }
+              rules={paymentRules}
+              canCreate={canCreate}
+            />
+
+            <AmountTieredRuleCard
+              documentType="purchaseInvoice"
+              title={<Trans>Purchase Invoices</Trans>}
+              description={
+                <Trans>
+                  Require approval for purchase invoices based on amount
+                  thresholds
+                </Trans>
+              }
+              rules={purchaseInvoiceRules}
+              canCreate={canCreate}
+            />
+
+            <AmountTieredRuleCard
+              documentType="memo"
+              title={<Trans>Credit/Debit Memos</Trans>}
+              description={
+                <Trans>
+                  Require approval for credit and debit memos based on amount
+                  thresholds
+                </Trans>
+              }
+              rules={memoRules}
+              canCreate={canCreate}
+            />
           </VStack>
         </div>
       </ScrollArea>

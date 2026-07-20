@@ -404,6 +404,9 @@ msgstr "स्वीकृति"
 msgid "Acceptance passed"
 msgstr "स्वीकृति पारित"
 
+msgid "Access Report"
+msgstr ""
+
 msgid "Account"
 msgstr "खाता"
 
@@ -1764,6 +1767,9 @@ msgstr "सामग्री के बिल"
 msgid "Blind Count"
 msgstr "ब्लाइंड काउंट"
 
+msgid "Block the person who submitted a document from approving it. Disabling this permits self-approval and is flagged as a standing exception in the Segregation of Duties report."
+msgstr ""
+
 msgid "Block with an error"
 msgstr "त्रुटि के साथ ब्लॉक करें"
 
@@ -2514,6 +2520,9 @@ msgstr "पुष्टि की गई आने वाली स्टॉक 
 msgid "Confirms every posted journal entry in the period has equal debits and credits. If any entry is out of balance the trial balance won't tie out, so it must be corrected before the period can close."
 msgstr "पुष्टि करता है कि अवधि में हर पोस्ट की गई जर्नल प्रविष्टि में बराबर डेबिट और क्रेडिट हैं। यदि कोई प्रविष्टि असंतुलित है तो ट्रायल बैलेंस मेल नहीं खाएगा, इसलिए अवधि बंद होने से पहले इसे ठीक किया जाना चाहिए।"
 
+msgid "Conflict"
+msgstr ""
+
 msgid "Connect Carbon to your accounting, project management, and CAD tools and much more."
 msgstr "Carbon को अपने लेखांकन, परियोजना प्रबंधन, और CAD उपकरणों और बहुत कुछ से जोड़ें।"
 
@@ -3147,6 +3156,8 @@ msgstr "जब विनिर्माण लागत को WIP में अ
 
 msgid "Credit Memo"
 msgstr "क्रेडिट मेमो"
+msgid "Credit/Debit Memos"
+msgstr ""
 
 msgid "Credits & Debits"
 msgstr "क्रेडिट और डेबिट"
@@ -4854,6 +4865,9 @@ msgstr "परियोजना नेताओं को बढ़ाएं"
 msgid "Escalation"
 msgstr "संवर्धन"
 
+msgid "Escalation Days"
+msgstr ""
+
 msgid "Est. Duration"
 msgstr "अनुमानित अवधि"
 
@@ -6241,6 +6255,9 @@ msgstr "अप्रत्यक्ष सामग्री और सेवा
 
 msgid "Indirect Materials & Services (default)"
 msgstr "अप्रत्यक्ष सामग्री और सेवाएं (डिफ़ॉल्ट)"
+
+msgid "Info"
+msgstr ""
 
 msgid "Infrastructure"
 msgstr "बुनियादी ढांचा"
@@ -9142,6 +9159,9 @@ msgstr "वर्तमान सप्ताह"
 msgid "Prev"
 msgstr "पिछला"
 
+msgid "Prevent Self-Approval"
+msgstr ""
+
 msgid "Preventive action"
 msgstr "उपलब्ध इन्वेंटरी मूल्यांकन के लिए प्राथमिक खाता"
 
@@ -9422,9 +9442,6 @@ msgstr "क्रय आदेश"
 msgid "Purchase Order Amount"
 msgstr "क्रय आदेश राशि"
 
-msgid "Purchase Order approval rule"
-msgstr "क्रय आदेश अनुमोदन नियम"
-
 msgid "Purchase Order ID"
 msgstr "क्रय आदेश ID"
 
@@ -9539,9 +9556,6 @@ msgstr "उद्धरण से नकद तक"
 
 msgid "Quality"
 msgstr "गुणवत्ता"
-
-msgid "Quality Document approval rule"
-msgstr "गुणवत्ता दस्तावेज़ अनुमोदन नियम"
 
 msgid "Quality Documents"
 msgstr "गुणवत्ता दस्तावेज़"
@@ -9684,6 +9698,9 @@ msgstr "कच्चा माल (डिफ़ॉल्ट)"
 
 msgid "Re-keying between quoting, the floor, and finance"
 msgstr "उद्धरण, फर्श और वित्त के बीच पुनः-कुंजीकरण"
+
+msgid "Re-notify approvers daily once a request has been pending this many days. Leave empty to disable escalation."
+msgstr ""
 
 msgid "Reactivate"
 msgstr "पुनः सक्रिय करें"
@@ -10076,6 +10093,18 @@ msgstr "अनुरोधित तारीख"
 
 msgid "Require approval before suppliers can be set to Active"
 msgstr "आपूर्तिकर्ताओं को सक्रिय पर सेट करने से पहले अनुमोदन की आवश्यकता है"
+
+msgid "Require approval for credit and debit memos based on amount thresholds"
+msgstr ""
+
+msgid "Require approval for manual journal entries based on amount thresholds"
+msgstr ""
+
+msgid "Require approval for payments based on amount thresholds"
+msgstr ""
+
+msgid "Require approval for purchase invoices based on amount thresholds"
+msgstr ""
 
 msgid "Require approval for purchase orders based on amount thresholds"
 msgstr "राशि सीमा के आधार पर क्रय आदेशों के लिए अनुमोदन की आवश्यकता है"
@@ -10664,6 +10693,9 @@ msgstr "अनुभाग"
 msgid "Segments that drive customer pricing and terms"
 msgstr "ऐसे सेगमेंट जो ग्राहक मूल्य निर्धारण और शर्तों को चलाते हैं"
 
+msgid "Segregation of Duties"
+msgstr ""
+
 msgid "Select"
 msgstr "चुनें"
 
@@ -11243,6 +11275,9 @@ msgstr "कोर दैनिक प्रवाह को अंत से अ
 msgid "so you can assign it here."
 msgstr "ताकि आप इसे यहां असाइन कर सकें।"
 
+msgid "SoD Report"
+msgstr ""
+
 msgid "Solutions Engineer"
 msgstr "समाधान इंजीनियर"
 
@@ -11529,6 +11564,9 @@ msgstr "उप-अनुबंध विचलन"
 
 msgid "Subcontracting Variance (default)"
 msgstr "उप-अनुबंध विचलन (डिफ़ॉल्ट)"
+
+msgid "Subject"
+msgstr ""
 
 msgid "Subledger"
 msgstr "सहायक बहीखाता"

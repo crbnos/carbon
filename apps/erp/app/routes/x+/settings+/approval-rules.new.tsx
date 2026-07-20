@@ -24,7 +24,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const documentType: ApprovalDocumentType | null =
     typeParam === "purchaseOrder" ||
     typeParam === "qualityDocument" ||
-    typeParam === "supplier"
+    typeParam === "supplier" ||
+    typeParam === "journalEntry" ||
+    typeParam === "payment" ||
+    typeParam === "purchaseInvoice" ||
+    typeParam === "memo"
       ? typeParam
       : null;
 
@@ -58,7 +62,8 @@ export async function action({ request }: ActionFunctionArgs) {
     enabled: validation.data.enabled,
     approverGroupIds: validation.data.approverGroupIds || [],
     defaultApproverId: validation.data.defaultApproverId,
-    lowerBoundAmount: validation.data.lowerBoundAmount ?? 0
+    lowerBoundAmount: validation.data.lowerBoundAmount ?? 0,
+    escalationDays: validation.data.escalationDays
   });
 
   if (result.error) {

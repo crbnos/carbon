@@ -106,7 +106,8 @@ export async function action(args: ActionFunctionArgs) {
     {
       amount: approvalRequest.data.amount,
       documentType: approvalRequest.data.documentType,
-      companyId: approvalRequest.data.companyId
+      companyId: approvalRequest.data.companyId,
+      requestedBy: approvalRequest.data.requestedBy
     },
     userId
   );
@@ -449,7 +450,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       {
         amount: approvalRequest.data.amount,
         documentType: approvalRequest.data.documentType,
-        companyId: approvalRequest.data.companyId
+        companyId: approvalRequest.data.companyId,
+        requestedBy
       },
       userId
     );

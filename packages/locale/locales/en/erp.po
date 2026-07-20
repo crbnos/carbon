@@ -404,6 +404,9 @@ msgstr "Acceptance"
 msgid "Acceptance passed"
 msgstr "Acceptance passed"
 
+msgid "Access Report"
+msgstr "Access Report"
+
 msgid "Account"
 msgstr "Account"
 
@@ -1764,6 +1767,9 @@ msgstr "Bills of material"
 msgid "Blind Count"
 msgstr "Blind Count"
 
+msgid "Block the person who submitted a document from approving it. Disabling this permits self-approval and is flagged as a standing exception in the Segregation of Duties report."
+msgstr "Block the person who submitted a document from approving it. Disabling this permits self-approval and is flagged as a standing exception in the Segregation of Duties report."
+
 msgid "Block with an error"
 msgstr "Block with an error"
 
@@ -2514,6 +2520,9 @@ msgstr "Confirmed outgoing stock — sales orders & job materials (bars below ze
 msgid "Confirms every posted journal entry in the period has equal debits and credits. If any entry is out of balance the trial balance won't tie out, so it must be corrected before the period can close."
 msgstr "Confirms every posted journal entry in the period has equal debits and credits. If any entry is out of balance the trial balance won't tie out, so it must be corrected before the period can close."
 
+msgid "Conflict"
+msgstr "Conflict"
+
 msgid "Connect Carbon to your accounting, project management, and CAD tools and much more."
 msgstr "Connect Carbon to your accounting, project management, and CAD tools and much more."
 
@@ -3147,6 +3156,8 @@ msgstr "Credit accounts used when manufacturing costs are absorbed into WIP"
 
 msgid "Credit Memo"
 msgstr "Credit Memo"
+msgid "Credit/Debit Memos"
+msgstr "Credit/Debit Memos"
 
 msgid "Credits & Debits"
 msgstr "Credits & Debits"
@@ -4854,6 +4865,9 @@ msgstr "Escalate to the project leads"
 msgid "Escalation"
 msgstr "Escalation"
 
+msgid "Escalation Days"
+msgstr "Escalation Days"
+
 msgid "Est. Duration"
 msgstr "Est. Duration"
 
@@ -6241,6 +6255,9 @@ msgstr "Indirect Materials & Services"
 
 msgid "Indirect Materials & Services (default)"
 msgstr "Indirect Materials & Services (default)"
+
+msgid "Info"
+msgstr "Info"
 
 msgid "Infrastructure"
 msgstr "Infrastructure"
@@ -9142,6 +9159,9 @@ msgstr "Present Week"
 msgid "Prev"
 msgstr "Prev"
 
+msgid "Prevent Self-Approval"
+msgstr "Prevent Self-Approval"
+
 msgid "Preventive action"
 msgstr "Preventive action"
 
@@ -9422,9 +9442,6 @@ msgstr "Purchase Order"
 msgid "Purchase Order Amount"
 msgstr "Purchase Order Amount"
 
-msgid "Purchase Order approval rule"
-msgstr "Purchase Order approval rule"
-
 msgid "Purchase Order ID"
 msgstr "Purchase Order ID"
 
@@ -9539,9 +9556,6 @@ msgstr "quality"
 
 msgid "Quality"
 msgstr "Quality"
-
-msgid "Quality Document approval rule"
-msgstr "Quality Document approval rule"
 
 msgid "Quality Documents"
 msgstr "Quality Documents"
@@ -9684,6 +9698,9 @@ msgstr "Raw Materials (default)"
 
 msgid "Re-keying between quoting, the floor, and finance"
 msgstr "Re-keying between quoting, the floor, and finance"
+
+msgid "Re-notify approvers daily once a request has been pending this many days. Leave empty to disable escalation."
+msgstr "Re-notify approvers daily once a request has been pending this many days. Leave empty to disable escalation."
 
 msgid "Reactivate"
 msgstr "Reactivate"
@@ -10076,6 +10093,18 @@ msgstr "Requested Date"
 
 msgid "Require approval before suppliers can be set to Active"
 msgstr "Require approval before suppliers can be set to Active"
+
+msgid "Require approval for credit and debit memos based on amount thresholds"
+msgstr "Require approval for credit and debit memos based on amount thresholds"
+
+msgid "Require approval for manual journal entries based on amount thresholds"
+msgstr "Require approval for manual journal entries based on amount thresholds"
+
+msgid "Require approval for payments based on amount thresholds"
+msgstr "Require approval for payments based on amount thresholds"
+
+msgid "Require approval for purchase invoices based on amount thresholds"
+msgstr "Require approval for purchase invoices based on amount thresholds"
 
 msgid "Require approval for purchase orders based on amount thresholds"
 msgstr "Require approval for purchase orders based on amount thresholds"
@@ -10664,6 +10693,9 @@ msgstr "Section"
 msgid "Segments that drive customer pricing and terms"
 msgstr "Segments that drive customer pricing and terms"
 
+msgid "Segregation of Duties"
+msgstr "Segregation of Duties"
+
 msgid "Select"
 msgstr "Select"
 
@@ -11243,6 +11275,9 @@ msgstr "Smoke-test the core daily flows end to end"
 msgid "so you can assign it here."
 msgstr "so you can assign it here."
 
+msgid "SoD Report"
+msgstr "SoD Report"
+
 msgid "Solutions Engineer"
 msgstr "Solutions Engineer"
 
@@ -11529,6 +11564,9 @@ msgstr "Subcontracting Variance"
 
 msgid "Subcontracting Variance (default)"
 msgstr "Subcontracting Variance (default)"
+
+msgid "Subject"
+msgstr "Subject"
 
 msgid "Subledger"
 msgstr "Subledger"

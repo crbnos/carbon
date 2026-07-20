@@ -1,6 +1,8 @@
 import type { Database, Json } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import type { PeriodPostingSource } from "@carbon/utils";
+import { trigger } from "@carbon/jobs";
+import { NotificationEvent } from "@carbon/notifications";
 import {
   fiscalYearAndPeriodFor,
   getDateNYearsAgo,
@@ -13,6 +15,13 @@ import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import type { z } from "zod";
 import { getNextSequence } from "~/modules/settings";
+import {
+  createApprovalRequest,
+  getApprovalRuleByAmount,
+  getApproverUserIdsForRule,
+  hasPendingApproval,
+  isApprovalRequired
+} from "~/modules/shared";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
@@ -3417,7 +3426,81 @@ export async function postJournalEntry(
     return { data: null, error: period.error };
   }
 
-  // 3. Flip status — lines are already in journalLine, no copying needed
+  // 3. Approval gate. This lives in the service (not the route) so the MCP path
+  // (accounting_postJournalEntry -> direct-executor) is covered too. If a
+  // matching enabled rule exists and the entry isn't already parked, park it in
+  // "Pending Approval", record the request (amount = total debits, the base
+  // amount), notify approvers, and return without posting. With no rule the
+  // behavior below is byte-identical to before this change.
+  const companyId = entry.data.companyId;
+  const baseAmount = totalDebit;
+  const approvalRequired = await isApprovalRequired(
+    client,
+    "journalEntry",
+    companyId,
+    baseAmount
+  );
+
+  if (approvalRequired) {
+    const alreadyPending = await hasPendingApproval(client, "journalEntry", id);
+    if (!alreadyPending) {
+      // Park the entry. Guarded on Draft so a concurrent post can't double-park.
+      // The journal UPDATE RLS policy (USING status IN Draft/Posted) permits
+      // Draft -> Pending Approval, then edit-locks the parked row.
+      const parked = await client
+        .from("journal")
+        .update({
+          status: "Pending Approval" as const,
+          preparedBy: userId,
+          updatedBy: userId
+        })
+        .eq("id", id)
+        .eq("status", "Draft")
+        .select("id")
+        .single();
+      if (parked.error) return parked;
+
+      await createApprovalRequest(client, {
+        documentType: "journalEntry",
+        documentId: id,
+        companyId,
+        requestedBy: userId,
+        createdBy: userId,
+        amount: baseAmount
+      });
+
+      const rule = await getApprovalRuleByAmount(
+        client,
+        "journalEntry",
+        companyId,
+        baseAmount
+      );
+      const approverIds = rule.data
+        ? await getApproverUserIdsForRule(client, rule.data)
+        : [];
+      if (approverIds.length > 0) {
+        try {
+          await trigger("notify", {
+            event: NotificationEvent.ApprovalRequested,
+            companyId,
+            documentId: id,
+            documentType: "journalEntry",
+            recipient: { type: "users", userIds: approverIds },
+            from: userId
+          });
+        } catch (e) {
+          console.error("Failed to trigger approval notification", e);
+        }
+      }
+    }
+
+    // Parked (either just now or already) — surface success, not an error, so
+    // the MCP tool returns "submitted for approval" rather than failing.
+    return { data: { id }, error: null };
+  }
+
+  // 4. No rule → post immediately (unchanged behavior). Lines are already in
+  // journalLine, no copying needed.
   return client
     .from("journal")
     .update({

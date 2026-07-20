@@ -404,6 +404,9 @@ msgstr "受け入れ"
 msgid "Acceptance passed"
 msgstr "受け入れ完了"
 
+msgid "Access Report"
+msgstr ""
+
 msgid "Account"
 msgstr "アカウント"
 
@@ -1764,6 +1767,9 @@ msgstr "部品表"
 msgid "Blind Count"
 msgstr "ブラインドカウント"
 
+msgid "Block the person who submitted a document from approving it. Disabling this permits self-approval and is flagged as a standing exception in the Segregation of Duties report."
+msgstr ""
+
 msgid "Block with an error"
 msgstr "エラーでブロック"
 
@@ -2514,6 +2520,9 @@ msgstr "確認された出荷在庫 — 販売注文とジョブ材料（ゼロ�
 msgid "Confirms every posted journal entry in the period has equal debits and credits. If any entry is out of balance the trial balance won't tie out, so it must be corrected before the period can close."
 msgstr "当期中に転記されたすべての仕訳が借方と貸方で一致していることを確認します。仕訳が不均衡な場合、試算表が合致しないため、当期を終了する前に修正する必要があります。"
 
+msgid "Conflict"
+msgstr ""
+
 msgid "Connect Carbon to your accounting, project management, and CAD tools and much more."
 msgstr "Carbonを会計、プロジェクト管理、CADツールなど、さまざまなツールに接続できます。"
 
@@ -3147,6 +3156,8 @@ msgstr "製造原価がWIPに吸収される場合に使用されるクレジッ
 
 msgid "Credit Memo"
 msgstr "貸方メモ"
+msgid "Credit/Debit Memos"
+msgstr ""
 
 msgid "Credits & Debits"
 msgstr "クレジット＆デビット"
@@ -4854,6 +4865,9 @@ msgstr "プロジェクトリーダーにエスカレートする"
 msgid "Escalation"
 msgstr "エスカレーション"
 
+msgid "Escalation Days"
+msgstr ""
+
 msgid "Est. Duration"
 msgstr "推定期間"
 
@@ -6241,6 +6255,9 @@ msgstr "間接材料とサービス"
 
 msgid "Indirect Materials & Services (default)"
 msgstr "間接材料とサービス（デフォルト）"
+
+msgid "Info"
+msgstr ""
 
 msgid "Infrastructure"
 msgstr "インフラストラクチャ"
@@ -9142,6 +9159,9 @@ msgstr "今週"
 msgid "Prev"
 msgstr "前へ"
 
+msgid "Prevent Self-Approval"
+msgstr ""
+
 msgid "Preventive action"
 msgstr "手持ち在庫評価の主要アカウント"
 
@@ -9422,9 +9442,6 @@ msgstr "発注書"
 msgid "Purchase Order Amount"
 msgstr "購買注文金額"
 
-msgid "Purchase Order approval rule"
-msgstr "購買注文承認ルール"
-
 msgid "Purchase Order ID"
 msgstr "購買注文ID"
 
@@ -9539,9 +9556,6 @@ msgstr "見積から現金まで"
 
 msgid "Quality"
 msgstr "品質"
-
-msgid "Quality Document approval rule"
-msgstr "品質文書承認ルール"
 
 msgid "Quality Documents"
 msgstr "品質文書"
@@ -9684,6 +9698,9 @@ msgstr "原材料（デフォルト）"
 
 msgid "Re-keying between quoting, the floor, and finance"
 msgstr "見積、現場、財務間での再入力"
+
+msgid "Re-notify approvers daily once a request has been pending this many days. Leave empty to disable escalation."
+msgstr ""
 
 msgid "Reactivate"
 msgstr "再度有効化"
@@ -10076,6 +10093,18 @@ msgstr "リクエスト日"
 
 msgid "Require approval before suppliers can be set to Active"
 msgstr "サプライヤーをアクティブに設定する前に承認が必要です"
+
+msgid "Require approval for credit and debit memos based on amount thresholds"
+msgstr ""
+
+msgid "Require approval for manual journal entries based on amount thresholds"
+msgstr ""
+
+msgid "Require approval for payments based on amount thresholds"
+msgstr ""
+
+msgid "Require approval for purchase invoices based on amount thresholds"
+msgstr ""
 
 msgid "Require approval for purchase orders based on amount thresholds"
 msgstr "金額閾値に基づいて購買注文の承認を要求する"
@@ -10664,6 +10693,9 @@ msgstr "セクション"
 msgid "Segments that drive customer pricing and terms"
 msgstr "顧客の価格設定と条件を決定するセグメント"
 
+msgid "Segregation of Duties"
+msgstr ""
+
 msgid "Select"
 msgstr "選択"
 
@@ -11243,6 +11275,9 @@ msgstr "コア日次フローのスモークテストを端から端まで実施
 msgid "so you can assign it here."
 msgstr "ここで割り当てることができます。"
 
+msgid "SoD Report"
+msgstr ""
+
 msgid "Solutions Engineer"
 msgstr "ソリューションズエンジニア"
 
@@ -11529,6 +11564,9 @@ msgstr "外注差異"
 
 msgid "Subcontracting Variance (default)"
 msgstr "外注差異（デフォルト）"
+
+msgid "Subject"
+msgstr ""
 
 msgid "Subledger"
 msgstr "補助元帳"

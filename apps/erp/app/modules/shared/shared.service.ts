@@ -1,6 +1,8 @@
 import type { Database, Tables } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
+import { trigger } from "@carbon/jobs";
+import { NotificationEvent } from "@carbon/notifications";
 import { getPurchaseOrderStatus, supportedModelTypes } from "@carbon/utils";
 import type {
   PostgrestSingleResponse,
@@ -134,7 +136,41 @@ export async function approveRequest(
         if (!supplierUpdate) {
           throw new Error("Failed to update supplier status");
         }
+      } else if (documentType === "journalEntry") {
+        // Post the parked journal entry. It was balance-validated when it was
+        // parked and is edit-locked while Pending Approval (the journal UPDATE
+        // RLS policy only permits Draft/Posted rows), so the balance is
+        // invariant here. The status -> Posted flip fires the
+        // journal_check_period_open trigger, which re-validates the accounting
+        // period in-transaction and rolls the whole approval back if the period
+        // is closed. preparedBy was stamped at park time; approvedBy is the
+        // second-eyes approver.
+        const jeUpdate = await trx
+          .updateTable("journal")
+          .set({
+            status: "Posted",
+            postedAt: now,
+            postedBy: userId,
+            approvedBy: userId,
+            approvalRequestId: id,
+            updatedBy: userId,
+            updatedAt: now
+          })
+          .where("id", "=", documentId)
+          .where("status", "=", "Pending Approval")
+          .returning(["id"])
+          .executeTakeFirst();
+
+        if (!jeUpdate) {
+          throw new Error(
+            "Failed to post journal entry - it may no longer be in 'Pending Approval' state"
+          );
+        }
       }
+      // payment / purchaseInvoice / memo: the document transition is owned by
+      // the edge function (post-payment / post-purchase-invoice / post-memo),
+      // which the route invokes after this request is marked Approved. Nothing
+      // to mutate on the document here.
 
       return updatedApproval;
     });
@@ -152,11 +188,37 @@ export async function approveRequest(
   }
 }
 
+/**
+ * Reads the company's no-self-approval enforcement flag. Defaults to enforcing
+ * (true) when the setting can't be read, so a missing/failed lookup fails safe.
+ */
+export async function getEnforceNoSelfApproval(
+  client: SupabaseClient<Database>,
+  companyId: string
+): Promise<boolean> {
+  const settings = await client
+    .from("companySettings")
+    .select("enforceNoSelfApproval")
+    .eq("id", companyId)
+    .single();
+  return settings.data?.enforceNoSelfApproval ?? true;
+}
+
 export async function canApproveRequest(
   client: SupabaseClient<Database>,
   approvalRequest: ApprovalRequestForApproveCheck,
   userId: string
 ): Promise<boolean> {
+  // No-self-approval (all document types, including POs): a requester can never
+  // approve their own document while the company enforces it (default on).
+  // This is the system-wide control auditors test first (AS 2401).
+  if (
+    approvalRequest.requestedBy === userId &&
+    (await getEnforceNoSelfApproval(client, approvalRequest.companyId))
+  ) {
+    return false;
+  }
+
   const rules = await getApprovalRulesForApprover(
     client,
     approvalRequest.documentType,
@@ -215,6 +277,15 @@ export async function canApproveRequestInWindow(
   approvalRequest: ApprovalRequestForApproveCheck,
   userId: string
 ): Promise<boolean> {
+  // No-self-approval (mirrors canApproveRequest) so "assigned to me" lists and
+  // window checks never surface a request the user submitted themselves.
+  if (
+    approvalRequest.requestedBy === userId &&
+    (await getEnforceNoSelfApproval(client, approvalRequest.companyId))
+  ) {
+    return false;
+  }
+
   const rule = await getApprovalRuleByAmount(
     client,
     approvalRequest.documentType,
@@ -263,7 +334,7 @@ export async function cancelApprovalRequest(
 ) {
   const existing = await client
     .from("approvalRequest")
-    .select("id, status, requestedBy")
+    .select("id, status, requestedBy, documentType, documentId")
     .eq("id", id)
     .single();
 
@@ -285,7 +356,7 @@ export async function cancelApprovalRequest(
     };
   }
 
-  return client
+  const cancelled = await client
     .from("approvalRequest")
     .update({
       status: "Cancelled",
@@ -295,6 +366,42 @@ export async function cancelApprovalRequest(
     .eq("id", id)
     .select("id")
     .single();
+
+  if (cancelled.error) return cancelled;
+
+  // Withdrawing returns the four financial documents to Draft so the requester
+  // can edit and resubmit. This must run with a service-role client (the caller
+  // uses one) because a parked journal entry is edit-locked by RLS. Guarded on
+  // the parked status so we never clobber a document that already moved on.
+  const { documentType, documentId } = existing.data;
+  const now = new Date().toISOString();
+  if (documentType === "journalEntry") {
+    await client
+      .from("journal")
+      .update({ status: "Draft", updatedBy: userId, updatedAt: now })
+      .eq("id", documentId)
+      .eq("status", "Pending Approval");
+  } else if (documentType === "payment") {
+    await client
+      .from("payment")
+      .update({ status: "Draft", updatedBy: userId, updatedAt: now })
+      .eq("id", documentId)
+      .eq("status", "Pending Approval");
+  } else if (documentType === "memo") {
+    await client
+      .from("memo")
+      .update({ status: "Draft", updatedBy: userId, updatedAt: now })
+      .eq("id", documentId)
+      .eq("status", "Pending Approval");
+  } else if (documentType === "purchaseInvoice") {
+    await client
+      .from("purchaseInvoice")
+      .update({ status: "Draft", updatedBy: userId, updatedAt: now })
+      .eq("id", documentId)
+      .eq("status", "Pending Approval");
+  }
+
+  return cancelled;
 }
 
 export async function canViewApprovalRequest(
@@ -311,7 +418,8 @@ export async function canViewApprovalRequest(
     {
       amount: approvalRequest.amount,
       documentType: approvalRequest.documentType,
-      companyId: approvalRequest.companyId
+      companyId: approvalRequest.companyId,
+      requestedBy: approvalRequest.requestedBy
     },
     userId
   );
@@ -335,6 +443,58 @@ export async function createApprovalRequest(
     ])
     .select("id")
     .single();
+}
+
+/**
+ * Creates an approval request for a document and notifies the matched rule's
+ * approvers (in-app/email/Slack via the existing ApprovalRequested event). The
+ * caller is responsible for flipping the document into "Pending Approval" — the
+ * status column lives on a per-document table. Notification failures never block.
+ */
+export async function createApprovalRequestAndNotify(
+  client: SupabaseClient<Database>,
+  input: {
+    documentType: (typeof approvalDocumentType)[number];
+    documentId: string;
+    companyId: string;
+    requestedBy: string;
+    amount: number;
+  }
+) {
+  const created = await createApprovalRequest(client, {
+    documentType: input.documentType,
+    documentId: input.documentId,
+    companyId: input.companyId,
+    requestedBy: input.requestedBy,
+    createdBy: input.requestedBy,
+    amount: input.amount
+  });
+
+  const rule = await getApprovalRuleByAmount(
+    client,
+    input.documentType,
+    input.companyId,
+    input.amount
+  );
+  const approverIds = rule.data
+    ? await getApproverUserIdsForRule(client, rule.data)
+    : [];
+  if (approverIds.length > 0) {
+    try {
+      await trigger("notify", {
+        event: NotificationEvent.ApprovalRequested,
+        companyId: input.companyId,
+        documentId: input.documentId,
+        documentType: input.documentType,
+        recipient: { type: "users", userIds: approverIds },
+        from: input.requestedBy
+      });
+    } catch (e) {
+      console.error("Failed to trigger approval notification", e);
+    }
+  }
+
+  return created;
 }
 
 export async function deleteApprovalRule(
@@ -646,7 +806,8 @@ export async function getApprovalsForUser(
       {
         amount: approval.amount,
         documentType: approval.documentType,
-        companyId: approval.companyId
+        companyId: approval.companyId,
+        requestedBy: approval.requestedBy
       },
       userId
     );
@@ -855,6 +1016,9 @@ export async function getPendingApprovalsForApprover(
     .select("*")
     .eq("companyId", companyId)
     .eq("status", "Pending")
+    // Never surface a user's own requests in their "assigned to me" approvals
+    // list — they can never approve them (no-self-approval).
+    .neq("requestedBy", userId)
     .order("requestedAt", { ascending: false });
 
   if (allPending.error || !allPending.data) {
@@ -884,7 +1048,8 @@ export async function getPendingApprovalsForApprover(
       {
         amount: approval.amount,
         documentType: approval.documentType,
-        companyId: approval.companyId
+        companyId: approval.companyId,
+        requestedBy: approval.requestedBy
       },
       userId
     );
@@ -1213,6 +1378,69 @@ export async function rejectRequest(
         }
       }
 
+      // The four financial documents return to Draft on rejection (guarded so
+      // a concurrent transition can't be clobbered). From Draft the requester
+      // can edit and resubmit.
+      if (documentType === "journalEntry") {
+        const jeUpdate = await trx
+          .updateTable("journal")
+          .set({ status: "Draft", updatedBy: userId, updatedAt: now })
+          .where("id", "=", documentId)
+          .where("status", "=", "Pending Approval")
+          .returning(["id"])
+          .executeTakeFirst();
+        if (!jeUpdate) {
+          throw new Error(
+            "Failed to return journal entry to Draft - it may no longer be in 'Pending Approval' state"
+          );
+        }
+      }
+
+      if (documentType === "payment") {
+        const paymentUpdate = await trx
+          .updateTable("payment")
+          .set({ status: "Draft", updatedBy: userId, updatedAt: now })
+          .where("id", "=", documentId)
+          .where("status", "=", "Pending Approval")
+          .returning(["id"])
+          .executeTakeFirst();
+        if (!paymentUpdate) {
+          throw new Error(
+            "Failed to return payment to Draft - it may no longer be in 'Pending Approval' state"
+          );
+        }
+      }
+
+      if (documentType === "memo") {
+        const memoUpdate = await trx
+          .updateTable("memo")
+          .set({ status: "Draft", updatedBy: userId, updatedAt: now })
+          .where("id", "=", documentId)
+          .where("status", "=", "Pending Approval")
+          .returning(["id"])
+          .executeTakeFirst();
+        if (!memoUpdate) {
+          throw new Error(
+            "Failed to return memo to Draft - it may no longer be in 'Pending Approval' state"
+          );
+        }
+      }
+
+      if (documentType === "purchaseInvoice") {
+        const invoiceUpdate = await trx
+          .updateTable("purchaseInvoice")
+          .set({ status: "Draft", updatedBy: userId, updatedAt: now })
+          .where("id", "=", documentId)
+          .where("status", "=", "Pending Approval")
+          .returning(["id"])
+          .executeTakeFirst();
+        if (!invoiceUpdate) {
+          throw new Error(
+            "Failed to return purchase invoice to Draft - it may no longer be in 'Pending Approval' state"
+          );
+        }
+      }
+
       return updatedApproval;
     });
 
@@ -1247,6 +1475,17 @@ export async function upsertApprovalRule(
       };
     }
 
+    if (rule.enabled) {
+      const duplicate = await getDuplicateEnabledRule(
+        client,
+        existing.data.companyId,
+        rule.documentType,
+        rule.lowerBoundAmount ?? 0,
+        rule.id
+      );
+      if (duplicate) return duplicate;
+    }
+
     return client
       .from("approvalRule")
       .update(sanitize(rule))
@@ -1256,7 +1495,51 @@ export async function upsertApprovalRule(
       .single();
   }
 
+  if (rule.enabled) {
+    const duplicate = await getDuplicateEnabledRule(
+      client,
+      rule.companyId,
+      rule.documentType,
+      rule.lowerBoundAmount ?? 0
+    );
+    if (duplicate) return duplicate;
+  }
+
   return client.from("approvalRule").insert([rule]).select("id").single();
+}
+
+/**
+ * Enforces one enabled rule per (documentType, floor) at the app layer with a
+ * friendly message; the partial unique index approvalRule_type_floor_enabled_idx
+ * backs it at the DB level. Returns an error result when a conflicting enabled
+ * rule exists, or null when the floor is free.
+ */
+async function getDuplicateEnabledRule(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  documentType: (typeof approvalDocumentType)[number],
+  lowerBoundAmount: number,
+  excludeId?: string
+): Promise<{ data: null; error: { message: string } } | null> {
+  let query = client
+    .from("approvalRule")
+    .select("id")
+    .eq("companyId", companyId)
+    .eq("documentType", documentType)
+    .eq("lowerBoundAmount", lowerBoundAmount)
+    .eq("enabled", true);
+  if (excludeId) query = query.neq("id", excludeId);
+
+  const existing = await query.limit(1);
+  if ((existing.data?.length ?? 0) > 0) {
+    return {
+      data: null,
+      error: {
+        message: `An enabled rule with this minimum amount already exists for this document type`
+      }
+    };
+  }
+  return null;
 }
 
 export async function upsertSavedView(

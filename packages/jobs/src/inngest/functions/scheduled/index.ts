@@ -1,3 +1,4 @@
+export { approvalEscalationFunction } from "./approval-escalation";
 export { auditArchiveFunction } from "./audit-archive";
 export { cleanupFunction } from "./cleanup";
 export { dispatchFunction } from "./dispatch";

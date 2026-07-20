@@ -149,6 +149,7 @@ export const PURCHASE_INVOICE_STATUS_COLOR_MAP = {
   Draft: "gray",
   Open: "blue",
   Pending: "orange",
+  "Pending Approval": "yellow",
   "Partially Paid": "orange",
   Overdue: "red",
   Voided: "red",
@@ -186,7 +187,8 @@ export const ISSUE_STATUS_COLOR_MAP = {
 export const JOURNAL_ENTRY_STATUS_COLOR_MAP = {
   Draft: "gray",
   Posted: "green",
-  Reversed: "red"
+  Reversed: "red",
+  "Pending Approval": "yellow"
 } as const satisfies Record<string, StatusColor>;
 
 export const PERIOD_CLOSE_STATUS_COLOR_MAP = {

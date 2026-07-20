@@ -539,6 +539,35 @@ serve(async (req: Request) => {
 
     if (purchaseInvoice.error)
       throw new Error("Failed to fetch purchaseInvoice");
+
+    // Status guard (the post branch previously had none). Accept only Draft,
+    // the route-transient Pending, or an approved Pending Approval. Anything
+    // else (Open, Paid, Voided, ...) is already posted or terminal and must not
+    // be re-posted. A parked "Pending Approval" invoice is only postable once
+    // its latest approval request is Approved.
+    {
+      const invoiceStatus = purchaseInvoice.data.status;
+      if (invoiceStatus === "Pending Approval") {
+        const { data: latestRequest } = await client
+          .from("approvalRequest")
+          .select("status")
+          .eq("documentType", "purchaseInvoice")
+          .eq("documentId", invoiceId)
+          .eq("companyId", companyId)
+          .order("requestedAt", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (latestRequest?.status !== "Approved") {
+          throw new Error(
+            "Cannot post purchase invoice: pending approval has not been approved"
+          );
+        }
+      } else if (invoiceStatus !== "Draft" && invoiceStatus !== "Pending") {
+        throw new Error(
+          `Cannot post purchase invoice in status ${invoiceStatus} (only Draft, Pending, or approved Pending Approval)`
+        );
+      }
+    }
     if (purchaseInvoiceLines.error)
       throw new Error("Failed to fetch receipt lines");
     if (purchaseInvoiceDelivery.error)

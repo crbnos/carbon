@@ -134,11 +134,11 @@ const ApprovalRuleForm = ({
                 helperText={t`Enable this rule to automatically require approval for matching documents`}
                 variant="large"
               />
-              {/* <FormNumber
+              <FormNumber
                 name="escalationDays"
                 label={t`Escalation Days`}
-                helperText="Automatically escalate approval requests after this many days. Leave empty to disable escalation."
-              /> */}
+                helperText={t`Re-notify approvers daily once a request has been pending this many days. Leave empty to disable escalation.`}
+              />
             </VStack>
           </DrawerBody>
           <DrawerFooter>

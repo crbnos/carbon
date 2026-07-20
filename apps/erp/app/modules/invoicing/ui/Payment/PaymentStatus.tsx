@@ -13,6 +13,8 @@ const PaymentStatus = ({ status }: PaymentStatusProps) => {
       return <Status color="green">{status}</Status>;
     case "Voided":
       return <Status color="red">{status}</Status>;
+    case "Pending Approval":
+      return <Status color="yellow">{status}</Status>;
     default:
       return null;
   }

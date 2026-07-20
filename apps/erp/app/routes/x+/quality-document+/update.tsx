@@ -148,7 +148,8 @@ async function cancelPendingApprovalsForArchiveOrDraft(
         {
           amount: req.amount,
           documentType: req.documentType,
-          companyId: req.companyId
+          companyId: req.companyId,
+          requestedBy: req.requestedBy
         },
         userId
       );

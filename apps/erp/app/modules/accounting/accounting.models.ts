@@ -486,7 +486,12 @@ export const journalEntrySourceTypes = [
   "Debit Memo"
 ] as const;
 
-export const journalEntryStatuses = ["Draft", "Posted", "Reversed"] as const;
+export const journalEntryStatuses = [
+  "Draft",
+  "Posted",
+  "Reversed",
+  "Pending Approval"
+] as const;
 
 export const periodCloseStatuses = ["Open", "Locked", "Closed"] as const;
 

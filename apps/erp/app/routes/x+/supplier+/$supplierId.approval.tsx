@@ -114,7 +114,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
       {
         amount: null,
         documentType: "supplier",
-        companyId
+        companyId,
+        // No pending request here — this is a generic "can this user approve
+        // suppliers" capability check, so there is no requester to compare against.
+        requestedBy: ""
       },
       userId
     );
@@ -175,7 +178,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     {
       amount: approvalRequest.data.amount,
       documentType: approvalRequest.data.documentType,
-      companyId: approvalRequest.data.companyId
+      companyId: approvalRequest.data.companyId,
+      requestedBy: approvalRequest.data.requestedBy
     },
     userId
   );

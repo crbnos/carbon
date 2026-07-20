@@ -404,6 +404,9 @@ msgstr "Accettazione"
 msgid "Acceptance passed"
 msgstr "Accettazione superata"
 
+msgid "Access Report"
+msgstr ""
+
 msgid "Account"
 msgstr "Conto"
 
@@ -1764,6 +1767,9 @@ msgstr "Distinte base"
 msgid "Blind Count"
 msgstr "Conteggio Cieco"
 
+msgid "Block the person who submitted a document from approving it. Disabling this permits self-approval and is flagged as a standing exception in the Segregation of Duties report."
+msgstr ""
+
 msgid "Block with an error"
 msgstr "Blocca con un errore"
 
@@ -2514,6 +2520,9 @@ msgstr "Stock in uscita confermato — ordini di vendita e materiali di lavoro (
 msgid "Confirms every posted journal entry in the period has equal debits and credits. If any entry is out of balance the trial balance won't tie out, so it must be corrected before the period can close."
 msgstr "Conferma che ogni registrazione contabile registrata nel periodo abbia debiti e crediti uguali. Se una registrazione è squilibrata, il bilancio di prova non sarà bilanciato, quindi deve essere corretta prima che il periodo possa chiudersi."
 
+msgid "Conflict"
+msgstr ""
+
 msgid "Connect Carbon to your accounting, project management, and CAD tools and much more."
 msgstr "Connetti Carbon ai tuoi strumenti di contabilità, gestione dei progetti, CAD e molto altro."
 
@@ -3147,6 +3156,8 @@ msgstr "Conti di credito utilizzati quando i costi di produzione vengono assorbi
 
 msgid "Credit Memo"
 msgstr "Nota di Credito"
+msgid "Credit/Debit Memos"
+msgstr ""
 
 msgid "Credits & Debits"
 msgstr "Crediti e Debiti"
@@ -4854,6 +4865,9 @@ msgstr "Escalare ai responsabili del progetto"
 msgid "Escalation"
 msgstr "Escalation"
 
+msgid "Escalation Days"
+msgstr ""
+
 msgid "Est. Duration"
 msgstr "Durata stimata"
 
@@ -6241,6 +6255,9 @@ msgstr "Materiali e Servizi Indiretti"
 
 msgid "Indirect Materials & Services (default)"
 msgstr "Materiali e Servizi Indiretti (predefinito)"
+
+msgid "Info"
+msgstr ""
 
 msgid "Infrastructure"
 msgstr "Infrastruttura"
@@ -9142,6 +9159,9 @@ msgstr "Settimana corrente"
 msgid "Prev"
 msgstr "Prec"
 
+msgid "Prevent Self-Approval"
+msgstr ""
+
 msgid "Preventive action"
 msgstr "Conto principale per la valutazione dell'inventario disponibile"
 
@@ -9422,9 +9442,6 @@ msgstr "Ordine di Acquisto"
 msgid "Purchase Order Amount"
 msgstr "Importo Ordine di Acquisto"
 
-msgid "Purchase Order approval rule"
-msgstr "Regola di approvazione dell'ordine di acquisto"
-
 msgid "Purchase Order ID"
 msgstr "ID Ordine di Acquisto"
 
@@ -9539,9 +9556,6 @@ msgstr "Quotazione a Pagamento"
 
 msgid "Quality"
 msgstr "Qualità"
-
-msgid "Quality Document approval rule"
-msgstr "Regola di approvazione documento di qualità"
 
 msgid "Quality Documents"
 msgstr "Documenti di Qualità"
@@ -9684,6 +9698,9 @@ msgstr "Materie Prime (predefinito)"
 
 msgid "Re-keying between quoting, the floor, and finance"
 msgstr "Reinserimento dati tra preventivazione, produzione e finanza"
+
+msgid "Re-notify approvers daily once a request has been pending this many days. Leave empty to disable escalation."
+msgstr ""
 
 msgid "Reactivate"
 msgstr "Riattiva"
@@ -10076,6 +10093,18 @@ msgstr "Data Richiesta"
 
 msgid "Require approval before suppliers can be set to Active"
 msgstr "Richiedi approvazione prima che i fornitori possano essere impostati su Attivo"
+
+msgid "Require approval for credit and debit memos based on amount thresholds"
+msgstr ""
+
+msgid "Require approval for manual journal entries based on amount thresholds"
+msgstr ""
+
+msgid "Require approval for payments based on amount thresholds"
+msgstr ""
+
+msgid "Require approval for purchase invoices based on amount thresholds"
+msgstr ""
 
 msgid "Require approval for purchase orders based on amount thresholds"
 msgstr "Richiedi approvazione per gli ordini di acquisto in base alle soglie di importo"
@@ -10664,6 +10693,9 @@ msgstr "Sezione"
 msgid "Segments that drive customer pricing and terms"
 msgstr "Segmenti che determinano i prezzi e le condizioni dei clienti"
 
+msgid "Segregation of Duties"
+msgstr ""
+
 msgid "Select"
 msgstr "Seleziona"
 
@@ -11243,6 +11275,9 @@ msgstr "Smoke-test dei flussi giornalieri principali da inizio a fine"
 msgid "so you can assign it here."
 msgstr "così puoi assegnarlo qui."
 
+msgid "SoD Report"
+msgstr ""
+
 msgid "Solutions Engineer"
 msgstr "Solutions Engineer"
 
@@ -11529,6 +11564,9 @@ msgstr "Varianza di Terziarizzazione"
 
 msgid "Subcontracting Variance (default)"
 msgstr "Varianza di Terziarizzazione (predefinita)"
+
+msgid "Subject"
+msgstr ""
 
 msgid "Subledger"
 msgstr "Sottolibro"

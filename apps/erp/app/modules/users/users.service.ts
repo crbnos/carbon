@@ -533,3 +533,95 @@ export async function upsertGroupMembers(
 
   return client.from("membership").insert([...memberGroups, ...memberUsers]);
 }
+
+export type UserAccessReportRow = {
+  userId: string;
+  name: string;
+  email: string;
+  employeeType: string;
+  active: boolean;
+  status: string;
+  permissions: string[];
+};
+
+/**
+ * Per-user effective-permission report for a single company — the quarterly
+ * access-review artifact. One row per active employee, with the sorted list of
+ * `${module}_${action}` keys the user effectively holds for THIS company (the
+ * permission's companyId array includes `companyId` or the `"0"` all-companies
+ * wildcard). Assembled in JS; returns the standard `{ data, error }` shape.
+ */
+export async function getUserAccessReport(
+  client: SupabaseClient<Database>,
+  companyId: string
+): Promise<{ data: UserAccessReportRow[] | null; error: unknown }> {
+  const employees = await client
+    .from("employees")
+    .select("id, name, email, employeeTypeId, active, status")
+    .eq("companyId", companyId)
+    .eq("active", true);
+
+  if (employees.error) {
+    return { data: null, error: employees.error };
+  }
+
+  const employeeTypes = await client
+    .from("employeeType")
+    .select("id, name")
+    .eq("companyId", companyId);
+
+  if (employeeTypes.error) {
+    return { data: null, error: employeeTypes.error };
+  }
+
+  const employeeTypeNameById = new Map(
+    (employeeTypes.data ?? []).map((type) => [type.id, type.name])
+  );
+
+  const userIds = (employees.data ?? [])
+    .map((employee) => employee.id)
+    .filter((id): id is string => Boolean(id));
+
+  const permissionsByUser = new Map<string, string[]>();
+
+  if (userIds.length > 0) {
+    const userPermissions = await client
+      .from("userPermission")
+      .select("id, permissions")
+      .in("id", userIds);
+
+    if (userPermissions.error) {
+      return { data: null, error: userPermissions.error };
+    }
+
+    for (const row of userPermissions.data ?? []) {
+      const held: string[] = [];
+      const perms = (row.permissions ?? {}) as Record<string, unknown>;
+      for (const [key, value] of Object.entries(perms)) {
+        if (!Array.isArray(value)) continue;
+        if (value.includes(companyId) || value.includes("0")) {
+          held.push(key);
+        }
+      }
+      held.sort();
+      permissionsByUser.set(row.id, held);
+    }
+  }
+
+  const rows: UserAccessReportRow[] = (employees.data ?? []).map(
+    (employee) => ({
+      userId: employee.id ?? "",
+      name: employee.name ?? "",
+      email: employee.email ?? "",
+      employeeType: employee.employeeTypeId
+        ? (employeeTypeNameById.get(employee.employeeTypeId) ??
+          employee.employeeTypeId)
+        : "",
+      active: employee.active ?? false,
+      status: employee.status ?? "",
+      permissions: permissionsByUser.get(employee.id ?? "") ?? []
+    })
+  );
+
+  return { data: rows, error: null };
+}

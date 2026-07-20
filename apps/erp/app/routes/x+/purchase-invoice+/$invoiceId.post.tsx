@@ -2,6 +2,11 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { ActionFunctionArgs } from "react-router";
 import { getCompanySettings } from "~/modules/settings";
+import {
+  createApprovalRequestAndNotify,
+  hasPendingApproval,
+  isApprovalRequired
+} from "~/modules/shared";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
@@ -13,6 +18,51 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const formData = await request.formData();
   const skipReceiptPost = formData.get("skipReceiptPost") === "true";
+
+  // Approval gate. purchaseInvoices.totalAmount is already in base currency
+  // (includes tax + shipping). Park a Draft invoice in "Pending Approval" and
+  // request approval when a matching enabled rule exists; the approve flow
+  // re-enters this action from "Pending Approval", skipping the gate below.
+  const invoiceForApproval = await client
+    .from("purchaseInvoices")
+    .select("baseStatus, totalAmount")
+    .eq("id", invoiceId)
+    .single();
+  if (
+    invoiceForApproval.data &&
+    invoiceForApproval.data.baseStatus === "Draft"
+  ) {
+    const baseAmount = Number(invoiceForApproval.data.totalAmount ?? 0);
+    if (
+      await isApprovalRequired(client, "purchaseInvoice", companyId, baseAmount)
+    ) {
+      if (!(await hasPendingApproval(client, "purchaseInvoice", invoiceId))) {
+        const parked = await client
+          .from("purchaseInvoice")
+          .update({ status: "Pending Approval", updatedBy: userId })
+          .eq("id", invoiceId)
+          .eq("companyId", companyId)
+          .eq("status", "Draft");
+        if (parked.error) {
+          return {
+            success: false,
+            message: "Failed to submit purchase invoice for approval"
+          };
+        }
+        await createApprovalRequestAndNotify(getCarbonServiceRole(), {
+          documentType: "purchaseInvoice",
+          documentId: invoiceId,
+          companyId,
+          requestedBy: userId,
+          amount: baseAmount
+        });
+      }
+      return {
+        success: true,
+        message: "Purchase invoice submitted for approval"
+      };
+    }
+  }
 
   const setPendingState = await client
     .from("purchaseInvoice")

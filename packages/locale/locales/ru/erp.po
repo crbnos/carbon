@@ -404,6 +404,9 @@ msgstr "Приемка"
 msgid "Acceptance passed"
 msgstr "Приемка пройдена"
 
+msgid "Access Report"
+msgstr ""
+
 msgid "Account"
 msgstr "Счет"
 
@@ -1764,6 +1767,9 @@ msgstr "Спецификации материалов"
 msgid "Blind Count"
 msgstr "Слепой подсчет"
 
+msgid "Block the person who submitted a document from approving it. Disabling this permits self-approval and is flagged as a standing exception in the Segregation of Duties report."
+msgstr ""
+
 msgid "Block with an error"
 msgstr "Заблокировать с ошибкой"
 
@@ -2514,6 +2520,9 @@ msgstr "Подтвержденный исходящий запас — зака�
 msgid "Confirms every posted journal entry in the period has equal debits and credits. If any entry is out of balance the trial balance won't tie out, so it must be corrected before the period can close."
 msgstr "Проверяет, что каждая опубликованная запись в журнале за период имеет равные дебеты и кредиты. Если какая-либо запись не сбалансирована, пробный баланс не совпадёт, поэтому её необходимо исправить перед закрытием периода."
 
+msgid "Conflict"
+msgstr ""
+
 msgid "Connect Carbon to your accounting, project management, and CAD tools and much more."
 msgstr "Подключите Carbon к своим инструментам бухгалтерского учета, управления проектами, CAD и многому другому."
 
@@ -3147,6 +3156,8 @@ msgstr "Кредитовые счета, используемые при пог�
 
 msgid "Credit Memo"
 msgstr "Кредит-нота"
+msgid "Credit/Debit Memos"
+msgstr ""
 
 msgid "Credits & Debits"
 msgstr "Кредиты и дебеты"
@@ -4854,6 +4865,9 @@ msgstr "Передайте проблему руководителям прое�
 msgid "Escalation"
 msgstr "Эскалация"
 
+msgid "Escalation Days"
+msgstr ""
+
 msgid "Est. Duration"
 msgstr "Прибл. Длительность"
 
@@ -6241,6 +6255,9 @@ msgstr "Косвенные материалы и услуги"
 
 msgid "Indirect Materials & Services (default)"
 msgstr "Косвенные материалы и услуги (по умолчанию)"
+
+msgid "Info"
+msgstr ""
 
 msgid "Infrastructure"
 msgstr "Инфраструктура"
@@ -9142,6 +9159,9 @@ msgstr "Текущая неделя"
 msgid "Prev"
 msgstr "Пред"
 
+msgid "Prevent Self-Approval"
+msgstr ""
+
 msgid "Preventive action"
 msgstr "Основной счет для оценки имеющегося запаса"
 
@@ -9422,9 +9442,6 @@ msgstr "Заказ на покупку"
 msgid "Purchase Order Amount"
 msgstr "Сумма заказа на покупку"
 
-msgid "Purchase Order approval rule"
-msgstr "Правило утверждения заказа на покупку"
-
 msgid "Purchase Order ID"
 msgstr "Номер заказа на покупку"
 
@@ -9539,9 +9556,6 @@ msgstr "От предложения к платежу"
 
 msgid "Quality"
 msgstr "Качество"
-
-msgid "Quality Document approval rule"
-msgstr "Правило утверждения документа качества"
 
 msgid "Quality Documents"
 msgstr "Документы качества"
@@ -9684,6 +9698,9 @@ msgstr "Сырьё и материалы (по умолчанию)"
 
 msgid "Re-keying between quoting, the floor, and finance"
 msgstr "Повторный ввод данных между расчётом, цехом и финансами"
+
+msgid "Re-notify approvers daily once a request has been pending this many days. Leave empty to disable escalation."
+msgstr ""
 
 msgid "Reactivate"
 msgstr "Переактивировать"
@@ -10076,6 +10093,18 @@ msgstr "Запрашиваемая дата"
 
 msgid "Require approval before suppliers can be set to Active"
 msgstr "Требуется одобрение перед тем, как поставщики смогут быть установлены в статус Активный"
+
+msgid "Require approval for credit and debit memos based on amount thresholds"
+msgstr ""
+
+msgid "Require approval for manual journal entries based on amount thresholds"
+msgstr ""
+
+msgid "Require approval for payments based on amount thresholds"
+msgstr ""
+
+msgid "Require approval for purchase invoices based on amount thresholds"
+msgstr ""
 
 msgid "Require approval for purchase orders based on amount thresholds"
 msgstr "Требовать утверждение для заказов на покупку на основе пороговых значений сумм"
@@ -10664,6 +10693,9 @@ msgstr "Раздел"
 msgid "Segments that drive customer pricing and terms"
 msgstr "Сегменты, которые определяют цены и условия для клиентов"
 
+msgid "Segregation of Duties"
+msgstr ""
+
 msgid "Select"
 msgstr "Выбрать"
 
@@ -11243,6 +11275,9 @@ msgstr "Дымовое тестирование основных ежеднев�
 msgid "so you can assign it here."
 msgstr "чтобы вы могли назначить его здесь."
 
+msgid "SoD Report"
+msgstr ""
+
 msgid "Solutions Engineer"
 msgstr "Инженер решений"
 
@@ -11529,6 +11564,9 @@ msgstr "Отклонение по субподряду"
 
 msgid "Subcontracting Variance (default)"
 msgstr "Отклонение по субподряду (по умолчанию)"
+
+msgid "Subject"
+msgstr ""
 
 msgid "Subledger"
 msgstr "Вспомогательная книга"

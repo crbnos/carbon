@@ -40,7 +40,7 @@ type MemoRow = {
   id: string;
   memoId: string;
   direction: "Credit" | "Debit";
-  status: "Draft" | "Posted" | "Voided";
+  status: "Draft" | "Pending Approval" | "Posted" | "Voided";
   customerId: string | null;
   supplierId: string | null;
   memoDate: string;

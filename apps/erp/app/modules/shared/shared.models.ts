@@ -14,7 +14,11 @@ export const approvalDecisionValidator = z.object({
 export const approvalDocumentType = [
   "purchaseOrder",
   "qualityDocument",
-  "supplier"
+  "supplier",
+  "journalEntry",
+  "payment",
+  "purchaseInvoice",
+  "memo"
 ] as const;
 
 export type ApprovalDocumentType =
@@ -23,11 +27,21 @@ export type ApprovalDocumentType =
 export const approvalDocumentTypeLabel: Record<ApprovalDocumentType, string> = {
   purchaseOrder: "Purchase Order",
   qualityDocument: "Quality Document",
-  supplier: "Supplier"
+  supplier: "Supplier",
+  journalEntry: "Journal Entry",
+  payment: "Payment",
+  purchaseInvoice: "Purchase Invoice",
+  memo: "Credit/Debit Memo"
 };
 
+// All four financial document types are amount-tiered, like purchase orders:
+// a company can configure multiple rules per type keyed by a dollar floor.
 export const approvalDocumentTypesWithAmounts: ApprovalDocumentType[] = [
-  "purchaseOrder"
+  "purchaseOrder",
+  "journalEntry",
+  "payment",
+  "purchaseInvoice",
+  "memo"
 ] as const;
 
 export const approvalFiltersValidator = z.object({
@@ -60,6 +74,7 @@ export const approvalRuleValidator = z.object({
   ),
   defaultApproverId: zfd.text(z.string().optional()),
   lowerBoundAmount: zfd.numeric(z.number().gt(0).default(0)).optional(),
+  escalationDays: zfd.numeric(z.number().int().gt(0).optional()),
   enabled: zfd.checkbox()
 });
 

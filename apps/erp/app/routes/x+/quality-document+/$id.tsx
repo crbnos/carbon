@@ -82,7 +82,8 @@ async function getQualityDocumentApprovalContext(
     {
       amount: req.amount,
       documentType: req.documentType,
-      companyId: req.companyId
+      companyId: req.companyId,
+      requestedBy: req.requestedBy
     },
     userId
   );
@@ -148,7 +149,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     {
       amount: approvalRequest.data.amount,
       documentType: approvalRequest.data.documentType,
-      companyId: approvalRequest.data.companyId
+      companyId: approvalRequest.data.companyId,
+      requestedBy: approvalRequest.data.requestedBy
     },
     userId
   );

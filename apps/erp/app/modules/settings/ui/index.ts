@@ -10,5 +10,6 @@ export * from "./CustomFields";
 export * from "./Integrations";
 export * from "./Printing";
 export * from "./Sequences";
+export * from "./SodReport";
 export * from "./Theme";
 export { useSettingsSubmodules };
