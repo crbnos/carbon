@@ -8,12 +8,28 @@ import {
   LuTrash2
 } from "react-icons/lu";
 import type { ModelMetrics } from "./ModelCanvas";
+import { isRawRenderable } from "./raw/formats";
 
 // The three.js renderer is code-split: a page with a model ships only this tier
 // selector until the viewer scrolls into view, then loads three.js on demand.
 const ModelCanvas = lazy(() =>
   import("./ModelCanvas").then((m) => ({ default: m.ModelCanvas }))
 );
+
+// Build-time switch for the in-browser raw-CAD (WASM) fallback tier: renders the
+// user's original upload (GLB/STL directly; STEP/IGES via occt-import-js) when
+// no assembler artifact exists. ON by default; a deployment that relies purely on
+// assembler artifacts opts out with VITE_CAD_VIEWER_USE_SERVER=true, and the
+// exact `import.meta.env.X` form is statically replaced by Vite so the whole
+// tier — occt WASM included — is then dead-code-eliminated from the build.
+const WASM_RAW_ENABLED = import.meta.env.VITE_CAD_VIEWER_USE_SERVER !== "true";
+const RawModelCanvas = WASM_RAW_ENABLED
+  ? lazy(() =>
+      import("./raw/RawModelCanvas").then((m) => ({
+        default: m.RawModelCanvas
+      }))
+    )
+  : null;
 
 export type ModelPreviewProps = {
   /** True while a server GLB might still arrive (upload / optimise in flight).
@@ -27,6 +43,12 @@ export type ModelPreviewProps = {
   glbUrl?: string | null;
   /** Static poster image (thumbnail PNG) shown before any 3D loads. */
   thumbnailUrl?: string | null;
+  /** The raw uploaded file's auth-proxied URL — the WASM fallback tier renders
+   *  it in-browser when no assembler artifact exists (build-flag gated). */
+  rawUrl?: string | null;
+  /** A just-dropped local File for the same tier — instant preview while the
+   *  upload / optimise is still in flight. */
+  rawFile?: File | null;
   /** Filename for the download-GLB action (defaults to the URL basename). */
   downloadName?: string;
   /** Re-run optimise when the model settled with no GLB (shows a Retry button). */
@@ -51,6 +73,8 @@ export function ModelPreview({
   optimizedUrl = null,
   glbUrl = null,
   thumbnailUrl = null,
+  rawUrl = null,
+  rawFile = null,
   downloadName,
   onRetry,
   mode = "dark",
@@ -72,6 +96,15 @@ export function ModelPreview({
   const showLodLayer = Boolean(lodUrl && interactiveUrl && !fullLoaded);
   const mainUrl = interactiveUrl ?? lodUrl;
   const hasServerModel = Boolean(mainUrl);
+  // Raw (WASM) fallback tier — only when compiled in, no artifact exists, and
+  // the raw source's format is one the in-browser loaders speak.
+  const rawFilename = rawFile?.name ?? rawUrl?.split("?")[0] ?? "";
+  const useRawTier = Boolean(
+    !hasServerModel &&
+      RawModelCanvas &&
+      (rawFile || rawUrl) &&
+      isRawRenderable(rawFilename)
+  );
 
   return (
     <div
@@ -83,7 +116,7 @@ export function ModelPreview({
         className
       )}
     >
-      {hasServerModel ? (
+      {hasServerModel || useRawTier ? (
         <>
           {/* Tier 0: instant poster — thumbnail image while the 3D boots. */}
           {thumbnailUrl && !fullLoaded && (
@@ -107,19 +140,33 @@ export function ModelPreview({
                   />
                 </div>
               )}
-              {/* Tier 1: the full model, cross-faded in once loaded. */}
+              {/* Tier 1: the full model, cross-faded in once loaded. The raw
+                  (WASM) tier plugs in here through the same canvas + chrome. */}
               <div
                 className="absolute inset-0 transition-opacity duration-300"
                 style={{ opacity: fullLoaded || !showLodLayer ? 1 : 0 }}
               >
-                <ModelCanvas
-                  glbUrl={mainUrl}
-                  mode={mode}
-                  interactive={interactive}
-                  resetSignal={resetSignal}
-                  onLoaded={() => setFullLoaded(true)}
-                  onMetrics={setMetrics}
-                />
+                {useRawTier && RawModelCanvas ? (
+                  <RawModelCanvas
+                    url={rawUrl}
+                    file={rawFile}
+                    filename={rawFilename}
+                    mode={mode}
+                    interactive={interactive}
+                    resetSignal={resetSignal}
+                    onLoaded={() => setFullLoaded(true)}
+                    onMetrics={setMetrics}
+                  />
+                ) : (
+                  <ModelCanvas
+                    glbUrl={mainUrl}
+                    mode={mode}
+                    interactive={interactive}
+                    resetSignal={resetSignal}
+                    onLoaded={() => setFullLoaded(true)}
+                    onMetrics={setMetrics}
+                  />
+                )}
               </div>
             </Suspense>
           )}

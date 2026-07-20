@@ -1,4 +1,5 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { LoaderFunctionArgs } from "react-router";
 
 // Resolves a model's optimised / preview artifact storage paths for the
@@ -17,11 +18,28 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const model = await client
     .from("modelUpload")
     .select(
-      "size, optimizedSize, optimizedModelPath, glbPath, thumbnailPath, optimizeStatus"
+      "size, optimizedSize, optimizedModelPath, glbPath, thumbnailPath, optimizeStatus, modelPath"
     )
     .eq("id", modelUploadId)
     .eq("companyId", companyId)
     .maybeSingle();
+
+  // Raw-source pointer for the viewer's WASM fallback tier (renders the original
+  // upload when no artifact exists). `.zst`-compacted raws are skipped — they
+  // only exist after a successful optimise, which means an artifact exists too.
+  // Bucket split: current uploads land in `temp-staging`; pre-assembler rows
+  // lived in `private` — probe temp-staging and fall back.
+  let rawPath: string | null = null;
+  let rawBucket = "temp-staging";
+  const modelPath = model.data?.modelPath ?? null;
+  if (modelPath && !modelPath.toLowerCase().endsWith(".zst")) {
+    rawPath = modelPath;
+    const staged = await getCarbonServiceRole()
+      .storage.from("temp-staging")
+      .info(modelPath)
+      .catch(() => ({ data: null, error: true as const }));
+    if (staged.error || !staged.data) rawBucket = "private";
+  }
 
   return {
     optimizedModelPath: model.data?.optimizedModelPath ?? null,
@@ -29,6 +47,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     lodPath: null as string | null,
     glbPath: model.data?.glbPath ?? null,
     thumbnailPath: model.data?.thumbnailPath ?? null,
+    rawPath,
+    rawBucket,
     // Lets the client stop polling once optimisation lands (or fails).
     optimizeStatus: model.data?.optimizeStatus ?? null,
     // Raw source vs optimised bytes — the viewer shows the reduction.

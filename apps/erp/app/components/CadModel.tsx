@@ -29,7 +29,7 @@ import { useDropzone } from "react-dropzone";
 import { LuCloudUpload, LuZap } from "react-icons/lu";
 import { useFetcher, useRevalidator } from "react-router";
 import { useModelUpload, useUser } from "~/hooks";
-import { getPrivateUrl, path } from "~/utils/path";
+import { getPrivateUrl, getRawModelUrl, path } from "~/utils/path";
 import { ModelUploadProgress } from "./ModelUploadProgress";
 
 const SIZE_LIMIT = getFileSizeLimit("CAD_MODEL_UPLOAD");
@@ -39,6 +39,10 @@ type ModelArtifacts = {
   lodPath: string | null;
   glbPath: string | null;
   thumbnailPath: string | null;
+  /** Raw upload (non-`.zst`) for the viewer's WASM fallback tier, with its
+   *  resolved bucket (temp-staging for current uploads, private for old rows). */
+  rawPath: string | null;
+  rawBucket: string;
   optimizeStatus:
     | "Idle"
     | "Queued"
@@ -343,6 +347,12 @@ const CadModel = ({
                 lodUrl={
                   artifacts?.lodPath ? getPrivateUrl(artifacts.lodPath) : null
                 }
+                rawUrl={
+                  artifacts?.rawPath
+                    ? getRawModelUrl(artifacts.rawBucket, artifacts.rawPath)
+                    : null
+                }
+                rawFile={file}
                 thumbnailUrl={
                   artifacts?.thumbnailPath
                     ? getPrivateUrl(artifacts.thumbnailPath)

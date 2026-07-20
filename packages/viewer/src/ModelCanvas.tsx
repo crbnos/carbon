@@ -25,6 +25,11 @@ export type ModelMetrics = {
 export type ModelCanvasProps = {
   /** URL of a meshopt-compressed GLB (the assembler's optimised / LOD artifact). */
   glbUrl: string | null;
+  /** Alternative source: an async factory producing a ready Object3D (the raw
+   *  WASM fallback tier). Used when `glbUrl` is null; the factory lives in the
+   *  caller's lazy chunk so this component stays lean. Re-created factory =
+   *  reload (memoize it). */
+  loadObject?: (() => Promise<Object3D>) | null;
   mode?: "dark" | "light";
   /** Orientation cube in the top-right (default true). */
   viewCube?: boolean;
@@ -57,6 +62,7 @@ const MAX_MEASURE_TRIS = 1_500_000;
  */
 export function ModelCanvas({
   glbUrl,
+  loadObject = null,
   mode = "dark",
   viewCube = true,
   autoFrame = true,
@@ -67,7 +73,9 @@ export function ModelCanvas({
   className
 }: ModelCanvasProps) {
   const [reloadKey, setReloadKey] = useState(0);
-  const { scene, isLoading, error } = useAssembly(glbUrl, null, reloadKey);
+  const assembly = useAssembly(glbUrl, null, reloadKey);
+  const raw = useLoadedObject(glbUrl ? null : loadObject, reloadKey);
+  const { scene, isLoading, error } = glbUrl ? assembly : raw;
 
   const onLoadedRef = useRef(onLoaded);
   onLoadedRef.current = onLoaded;
@@ -137,6 +145,48 @@ export function ModelCanvas({
       )}
     </div>
   );
+}
+
+/** Drive an async Object3D factory with the same {scene,isLoading,error} shape
+ *  `useAssembly` returns, so either source plugs into the same render path. */
+function useLoadedObject(
+  loadObject: (() => Promise<Object3D>) | null,
+  reloadKey: number
+): { scene: Object3D | null; isLoading: boolean; error: string | null } {
+  const [state, setState] = useState<{
+    scene: Object3D | null;
+    isLoading: boolean;
+    error: string | null;
+  }>({ scene: null, isLoading: Boolean(loadObject), error: null });
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reloadKey re-runs the load on retry without being read inside
+  useEffect(() => {
+    if (!loadObject) {
+      setState({ scene: null, isLoading: false, error: null });
+      return;
+    }
+    let cancelled = false;
+    setState({ scene: null, isLoading: true, error: null });
+    loadObject().then(
+      (scene) => {
+        if (!cancelled) setState({ scene, isLoading: false, error: null });
+      },
+      (e: unknown) => {
+        if (!cancelled) {
+          setState({
+            scene: null,
+            isLoading: false,
+            error: e instanceof Error ? e.message : String(e)
+          });
+        }
+      }
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [loadObject, reloadKey]);
+
+  return state;
 }
 
 function ModelScene({

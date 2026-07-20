@@ -2040,6 +2040,13 @@ export const getPrivateUrl = (path: string) => {
   return `/file/preview/private/${path}`;
 };
 
+/** Raw model source for the viewer's WASM fallback tier — bucket varies by era
+ *  (current uploads: temp-staging; pre-assembler rows: private), resolved by the
+ *  model.artifacts loader. */
+export const getRawModelUrl = (bucket: string, path: string) => {
+  return `/file/preview/${bucket}/${path}`;
+};
+
 export const getPublicModelUrl = (path: string) => {
   return `/file/model/public/${path}`;
 };

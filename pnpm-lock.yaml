@@ -546,6 +546,12 @@ importers:
         specifier: 'catalog:'
         version: 7.2.0
 
+  apps/assembler:
+    devDependencies:
+      sst:
+        specifier: 4.6.9
+        version: 4.6.9
+
   apps/erp:
     dependencies:
       '@ai-sdk-tools/agents':
@@ -3470,6 +3476,9 @@ importers:
       '@react-three/fiber':
         specifier: 8.18.0
         version: 8.18.0(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.163.0)
+      occt-import-js:
+        specifier: 0.0.23
+        version: 0.0.23
       react-icons:
         specifier: 'catalog:'
         version: 5.6.0(react@18.3.1)
@@ -14018,6 +14027,9 @@ packages:
 
   obug@2.1.1:
     resolution: {integrity: sha512-uTqF9MuPraAQ+IsnPf366RG4cP9RtUi7MLO1N3KEc+wb0a6yKpeL0lmk2IB1jY5KHPAlTc6T/JRdC/YqxHNwkQ==}
+
+  occt-import-js@0.0.23:
+    resolution: {integrity: sha512-RFfYQXYFX5C1mB1Aywm0ShcUKzXOr/VzTnlzhBSDJOR6YCAPt1HYCzeXWg1vwwjn/cUxwqRNhhtf1dlewoZYCQ==}
 
   oidc-token-hash@5.2.0:
     resolution: {integrity: sha512-6gj2m8cJZ+iSW8bm0FXdGF0YhIQbKrfP4yWTNzxc31U6MOjfEmB1rHvlYvxI1B7t7BCi1F2vYTT6YhtQRG4hxw==}
@@ -28637,6 +28649,8 @@ snapshots:
   observable-fns@0.6.1: {}
 
   obug@2.1.1: {}
+
+  occt-import-js@0.0.23: {}
 
   oidc-token-hash@5.2.0: {}
 
