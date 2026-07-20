@@ -50,10 +50,14 @@ pub fn optimize_budget_secs() -> Option<u64> {
 
 /// Redis URL for the shared job/result store. REQUIRED — the store refuses to
 /// boot without it (see `JobStore::from_env`); job state must be shared so any
-/// replica / Lambda invocation can answer a poll.
+/// replica / Lambda invocation can answer a poll. `ASSEMBLER_REDIS_URL` wins
+/// (prod, where the assembler's Redis must be reachable from Lambda and may
+/// differ from the app's), falling back to the stack-wide `REDIS_URL` so local
+/// dev reuses the crbn stack's Redis with zero extra config.
 pub fn redis_url() -> Option<String> {
-    std::env::var("ASSEMBLER_REDIS_URL")
-        .ok()
+    ["ASSEMBLER_REDIS_URL", "REDIS_URL"]
+        .iter()
+        .find_map(|k| std::env::var(k).ok())
         .map(|s| s.trim().to_string())
         .filter(|s| !s.is_empty())
 }

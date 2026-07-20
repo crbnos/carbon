@@ -83,7 +83,9 @@ impl JobStore {
     /// strand cross-instance polls and hide the misconfiguration).
     pub async fn from_env() -> Self {
         let Some(url) = config::redis_url() else {
-            eprintln!("assembler: ASSEMBLER_REDIS_URL is required and not set; refusing to start");
+            eprintln!(
+                "assembler: Redis is required (set ASSEMBLER_REDIS_URL or REDIS_URL); refusing to start"
+            );
             std::process::exit(1);
         };
         match connect(&url).await {
