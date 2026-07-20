@@ -29,7 +29,10 @@ export const getCustomFields = (
 // "field[1]", ...). Used where the value is read outside the zod validator (e.g. the
 // tier-agnostic operationToolValidator) — the validator itself decodes brackets via
 // objectFromPathEntries, but formData.getAll does not.
-export const getFormDataArray = (formData: FormData, name: string): string[] => {
+export const getFormDataArray = (
+  formData: FormData,
+  name: string
+): string[] => {
   const out: string[] = [];
   const prefix = `${name}[`;
   for (const [key, value] of formData.entries()) {

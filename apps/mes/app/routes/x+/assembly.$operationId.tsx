@@ -1,8 +1,8 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { getUserClaims } from "@carbon/auth/users.server";
 import { flash } from "@carbon/auth/session.server";
+import { getUserClaims } from "@carbon/auth/users.server";
 import type { ComponentProps } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useParams } from "react-router";
@@ -115,14 +115,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     )
   ).filter((id): id is string => !!id);
 
-  const [quantities, workCenter, kanban, slideModelUploads] = await Promise.all([
-    getProductionQuantitiesForJobOperation(serviceRole, operationId),
-    getWorkCenter(serviceRole, op.workCenterId),
-    job.data.id ? getKanbanByJobId(serviceRole, job.data.id) : null,
-    slideModelIds.length > 0
-      ? getModelUploadsByIds(serviceRole, slideModelIds)
-      : null
-  ]);
+  const [quantities, workCenter, kanban, slideModelUploads] = await Promise.all(
+    [
+      getProductionQuantitiesForJobOperation(serviceRole, operationId),
+      getWorkCenter(serviceRole, op.workCenterId),
+      job.data.id ? getKanbanByJobId(serviceRole, job.data.id) : null,
+      slideModelIds.length > 0
+        ? getModelUploadsByIds(serviceRole, slideModelIds)
+        : null
+    ]
+  );
 
   const productionQuantities = (quantities.data ?? []).reduce(
     (acc, curr) => {
@@ -246,5 +248,7 @@ export default function AssemblyRoute() {
   const procedure = data.procedure as unknown as ComponentProps<
     typeof AssemblyView
   >["procedure"];
-  return <AssemblyView {...data} procedure={procedure} operationId={operationId} />;
+  return (
+    <AssemblyView {...data} procedure={procedure} operationId={operationId} />
+  );
 }

@@ -8,7 +8,9 @@ import { setJobOperationToolStepLink } from "~/modules/production";
 // Toggle a tool↔step link from the step editor's "Tools" picker (job tier).
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, { update: "production" });
+  const { client } = await requirePermissions(request, {
+    update: "production"
+  });
 
   const formData = await request.formData();
   const jobOperationToolId = String(formData.get("toolId") ?? "");

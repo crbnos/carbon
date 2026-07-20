@@ -112,9 +112,7 @@ function useSlideModels(slides: EditorSlide[]) {
         .select("id, name, thumbnailPath, processingStatus")
         .in("id", idsKey.split(","));
       if (cancelled || !data) return;
-      setModels(
-        Object.fromEntries(data.map((model) => [model.id, model]))
-      );
+      setModels(Object.fromEntries(data.map((model) => [model.id, model])));
     };
     load();
     const interval = hasPending ? setInterval(load, 8000) : undefined;
@@ -263,7 +261,9 @@ export function SlidesEditor({
                   ) : (
                     <>
                       <img
-                        src={slide.imagePath ? getPrivateUrl(slide.imagePath) : ""}
+                        src={
+                          slide.imagePath ? getPrivateUrl(slide.imagePath) : ""
+                        }
                         alt={slide.caption ?? "Slide"}
                         className={cn(
                           "w-full rounded-md bg-muted/40 object-contain",

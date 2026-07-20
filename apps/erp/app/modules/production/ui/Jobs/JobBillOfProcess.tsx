@@ -102,6 +102,7 @@ import {
   TimeTypeIcon
 } from "~/components";
 import Activity from "~/components/Activity";
+import { AssemblyStepsSource } from "~/components/AssemblyStepsSource";
 import {
   Hidden,
   InputControlled,
@@ -126,11 +127,10 @@ import UnitOfMeasure, {
 import { ProcedureStepTypeIcon } from "~/components/Icons";
 import InfiniteScroll from "~/components/InfiniteScroll";
 import { ConfirmDelete } from "~/components/Modals";
-import { AssemblyStepsSource } from "~/components/AssemblyStepsSource";
 import { SlidesEditor, uploadStepSlideModel } from "~/components/SlidesEditor";
-import { StepLinkEditor } from "~/components/StepLinkEditor";
 import type { Item, SortableItemRenderProps } from "~/components/SortableList";
 import { SortableList, SortableListItem } from "~/components/SortableList";
+import { StepLinkEditor } from "~/components/StepLinkEditor";
 import {
   useDateFormatter,
   usePermissions,
@@ -1765,9 +1765,7 @@ function JobStepParts({
 
   const linkedPartIds = (materials ?? [])
     .filter((m) =>
-      (m.jobMaterialStep ?? []).some(
-        (s) => s.jobOperationStepId === step.id
-      )
+      (m.jobMaterialStep ?? []).some((s) => s.jobOperationStepId === step.id)
     )
     .map((m) => m.id);
 

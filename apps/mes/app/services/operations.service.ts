@@ -623,7 +623,10 @@ export async function getJobMaterialsByOperationId(
   const stepLinks = await client
     .from("jobMaterialStep")
     .select("jobMaterialId, jobOperationStepId")
-    .in("jobMaterialId", (materials.data ?? []).map((m) => m.id ?? ""));
+    .in(
+      "jobMaterialId",
+      (materials.data ?? []).map((m) => m.id ?? "")
+    );
   const stepIdsByMaterialId = new Map<string, string[]>();
   for (const r of stepLinks.data ?? []) {
     const list = stepIdsByMaterialId.get(r.jobMaterialId) ?? [];
@@ -1124,7 +1127,12 @@ export async function insertAttributeRecord(
 // operator data. Gated at the route on the Production DELETE permission.
 export async function completeAllStepsForUnit(
   client: SupabaseClient<Database>,
-  args: { operationId: string; index: number; companyId: string; createdBy: string }
+  args: {
+    operationId: string;
+    index: number;
+    companyId: string;
+    createdBy: string;
+  }
 ): Promise<{ data: { count: number } | null; error: PostgrestError | null }> {
   const steps = await client
     .from("jobOperationStep")
@@ -1133,8 +1141,7 @@ export async function completeAllStepsForUnit(
   if (steps.error) return { data: null, error: steps.error };
 
   const missing = (steps.data ?? []).filter(
-    (s) =>
-      !(s.jobOperationStepRecord ?? []).some((r) => r.index === args.index)
+    (s) => !(s.jobOperationStepRecord ?? []).some((r) => r.index === args.index)
   );
   if (missing.length === 0) return { data: { count: 0 }, error: null };
 
