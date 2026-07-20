@@ -48,9 +48,9 @@ pub fn optimize_budget_secs() -> Option<u64> {
         .filter(|&s| s > 0)
 }
 
-/// Redis URL for the shared job/result store. Unset => in-process backend (the
-/// single-process default). A set-but-unreachable URL falls back to memory at
-/// boot rather than refusing to start (mirrors @carbon/kv's soft-fail).
+/// Redis URL for the shared job/result store. REQUIRED — the store refuses to
+/// boot without it (see `JobStore::from_env`); job state must be shared so any
+/// replica / Lambda invocation can answer a poll.
 pub fn redis_url() -> Option<String> {
     std::env::var("ASSEMBLER_REDIS_URL")
         .ok()

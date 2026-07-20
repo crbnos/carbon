@@ -2,11 +2,12 @@
 //! An action handler creates a job (POST /v1/{action}) and the caller long-polls
 //! GET /v1/jobs/{id}?wait=. One lifecycle, one poll, for all actions.
 //!
-//! Backend-selectable at boot (`ASSEMBLER_REDIS_URL`):
-//!   - `Memory` (default): process-local DashMaps — single-process behavior.
-//!   - `Redis`: status + pointers (never artifact bytes) live in Redis, so a
-//!     restart or a sibling replica can still answer the poll — the service is
-//!     stateless. A set-but-unreachable URL falls back to memory at boot.
+//! Redis-backed, and Redis is REQUIRED (`ASSEMBLER_REDIS_URL`): status +
+//! pointers (never artifact bytes) live in Redis, so a restart, a sibling
+//! replica, or a different Lambda invocation can still answer the poll — the
+//! service is stateless. Boot fails loudly when Redis is missing/unreachable;
+//! a silent in-memory fallback would strand cross-instance polls (Lambda
+//! dispatch depends on shared state) and hide the misconfiguration.
 //!
 //! Completion artifacts are PUT to caller-signed URLs handed in on each poll
 //! (late-mint offload) and only a `{result, stats}` POINTER is stored — artifact
@@ -22,9 +23,8 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::Notify;
 
-/// One job's persisted state. Serializable so the Redis backend stores it as a
-/// JSON blob and the memory backend keeps the same shape. `result`/`stats` hold
-/// the completion POINTER (paths + counts) — never the artifact bytes.
+/// One job's persisted state, stored in Redis as a JSON blob. `result`/`stats`
+/// hold the completion POINTER (paths + counts) — never the artifact bytes.
 #[derive(Clone, Serialize, Deserialize)]
 struct JobRecord {
     action: String, // convert | optimize | plan
@@ -54,38 +54,16 @@ pub struct Done {
     pub stats: Value,
 }
 
-#[derive(Clone)]
-enum Backend {
-    Memory {
-        jobs: Arc<DashMap<String, JobRecord>>,
-        results: Arc<DashMap<String, Value>>,
-    },
-    Redis {
-        conn: redis::aio::ConnectionManager,
-    },
-}
-
-/// A finished job's artifacts held until a long-poll hands over fresh signed
-/// upload URLs (late-mint offload). Never touches Redis on the memory backend;
-/// on Redis it's stored under a short TTL so ANY replica's poll can drain it.
-struct Pending {
-    outputs: Vec<Output>,
-    done: Done,
-    /// Content-hash result-cache key `(model, contentHash, optsHash)` — the
-    /// pointer is cached only once the artifact is durably uploaded.
-    cache: Option<(String, u128, u64)>,
-}
-
 /// Shared job + content-hash result store. Cloned into every handler via
 /// `AppState`; inner state is `Arc`/manager-cloned so clones share one store.
+/// Computed-but-unuploaded artifacts (the late-mint hand-off) live in Redis
+/// under a short TTL so ANY replica's/invocation's poll can drain them.
 #[derive(Clone)]
 pub struct JobStore {
-    backend: Backend,
+    conn: redis::aio::ConnectionManager,
     /// Per-job in-process wakeups so a same-replica long-poll returns the instant
     /// the worker finishes (cross-replica completion caught by the Redis re-check).
     notifiers: Arc<DashMap<String, Arc<Notify>>>,
-    /// Computed-but-not-yet-uploaded artifacts, keyed by job id.
-    pending: Arc<DashMap<String, Pending>>,
 }
 
 /// Outcome of a finalize attempt during a long-poll.
@@ -100,75 +78,53 @@ pub enum Finalize {
 }
 
 impl JobStore {
-    /// Build from env: Redis when `ASSEMBLER_REDIS_URL` is set and reachable,
-    /// else in-memory. Never refuses to boot.
+    /// Build from env. Redis is REQUIRED — a missing or unreachable
+    /// `ASSEMBLER_REDIS_URL` refuses to boot (fail loud; a memory fallback would
+    /// strand cross-instance polls and hide the misconfiguration).
     pub async fn from_env() -> Self {
-        let notifiers = Arc::new(DashMap::new());
-        if let Some(url) = config::redis_url() {
-            match connect(&url).await {
-                Ok(conn) => {
-                    eprintln!("assembler: redis job store enabled");
-                    return JobStore {
-                        backend: Backend::Redis { conn },
-                        notifiers,
-                        pending: Arc::new(DashMap::new()),
-                    };
-                }
-                Err(e) => {
-                    eprintln!(
-                        "assembler: ASSEMBLER_REDIS_URL unreachable ({e}); falling back to in-memory store"
-                    );
+        let Some(url) = config::redis_url() else {
+            eprintln!("assembler: ASSEMBLER_REDIS_URL is required and not set; refusing to start");
+            std::process::exit(1);
+        };
+        match connect(&url).await {
+            Ok(conn) => {
+                eprintln!("assembler: redis job store connected");
+                JobStore {
+                    conn,
+                    notifiers: Arc::new(DashMap::new()),
                 }
             }
-        } else {
-            eprintln!("assembler: in-memory job store (ASSEMBLER_REDIS_URL unset)");
-        }
-        JobStore {
-            backend: Backend::Memory {
-                jobs: Arc::new(DashMap::new()),
-                results: Arc::new(DashMap::new()),
-            },
-            notifiers,
-            pending: Arc::new(DashMap::new()),
+            Err(e) => {
+                eprintln!("assembler: ASSEMBLER_REDIS_URL unreachable ({e}); refusing to start");
+                std::process::exit(1);
+            }
         }
     }
 
     // --- job status (pointer, not artifact bytes) --------------------------
 
     async fn read(&self, id: &str) -> Option<JobRecord> {
-        match &self.backend {
-            Backend::Memory { jobs, .. } => jobs.get(id).map(|j| j.clone()),
-            Backend::Redis { conn } => {
-                let mut c = conn.clone();
-                match c.get::<_, Option<String>>(job_key(id)).await {
-                    Ok(Some(s)) => serde_json::from_str(&s).ok(),
-                    Ok(None) => None,
-                    Err(e) => {
-                        eprintln!("assembler: redis job read failed: {e}");
-                        None
-                    }
-                }
+        let mut c = self.conn.clone();
+        match c.get::<_, Option<String>>(job_key(id)).await {
+            Ok(Some(s)) => serde_json::from_str(&s).ok(),
+            Ok(None) => None,
+            Err(e) => {
+                eprintln!("assembler: redis job read failed: {e}");
+                None
             }
         }
     }
 
     async fn write(&self, id: &str, rec: &JobRecord) {
-        match &self.backend {
-            Backend::Memory { jobs, .. } => {
-                jobs.insert(id.to_string(), rec.clone());
-            }
-            Backend::Redis { conn } => {
-                let Ok(payload) = serde_json::to_string(rec) else {
-                    return;
-                };
-                let mut c = conn.clone();
-                if let Err(e) = c
-                    .set_ex::<_, _, ()>(job_key(id), payload, config::job_ttl_secs())
-                    .await
-                {
-                    eprintln!("assembler: redis job write failed: {e}");
-                }
-            }
+        let Ok(payload) = serde_json::to_string(rec) else {
+            return;
+        };
+        let mut c = self.conn.clone();
+        if let Err(e) = c
+            .set_ex::<_, _, ()>(job_key(id), payload, config::job_ttl_secs())
+            .await
+        {
+            eprintln!("assembler: redis job write failed: {e}");
         }
     }
 
@@ -232,7 +188,7 @@ impl JobStore {
         if matches!(rec.status.as_str(), "pending" | "running" | "uploading") {
             rec.status = "canceled".into();
             self.write(id, &rec).await;
-            self.pending.remove(id);
+            self.pending_remove(id).await;
             self.wake(id);
         }
         Some(Self::render(id, &rec))
@@ -324,9 +280,8 @@ impl JobStore {
 
     // --- late-mint hand-off -------------------------------------------------
 
-    /// Hold computed-but-unuploaded artifacts for hand-off. Memory keeps them
-    /// in-process; Redis stores them (bytes + pointer) under a short TTL so ANY
-    /// replica's poll can drain them.
+    /// Hold computed-but-unuploaded artifacts for hand-off, stored in Redis
+    /// (bytes + pointer) under a short TTL so ANY replica's poll can drain them.
     pub async fn pending_put(
         &self,
         id: &str,
@@ -334,47 +289,33 @@ impl JobStore {
         done: Done,
         cache: Option<(String, u128, u64)>,
     ) {
-        match &self.backend {
-            Backend::Memory { .. } => {
-                self.pending.insert(
-                    id.to_string(),
-                    Pending {
-                        outputs,
-                        done,
-                        cache,
-                    },
-                );
-            }
-            Backend::Redis { conn } => {
-                let manifest: Vec<Value> = outputs
-                    .iter()
-                    .map(|o| json!({ "name": o.name, "contentType": o.content_type }))
-                    .collect();
-                let done_json = json!({ "result": done.result, "stats": done.stats }).to_string();
-                let mut c = conn.clone();
-                let mut pipe = redis::pipe();
-                pipe.hset(
-                    pending_key(id),
-                    "manifest",
-                    Value::from(manifest).to_string(),
-                )
-                .ignore()
-                .hset(pending_key(id), "done", done_json)
+        let manifest: Vec<Value> = outputs
+            .iter()
+            .map(|o| json!({ "name": o.name, "contentType": o.content_type }))
+            .collect();
+        let done_json = json!({ "result": done.result, "stats": done.stats }).to_string();
+        let mut c = self.conn.clone();
+        let mut pipe = redis::pipe();
+        pipe.hset(
+            pending_key(id),
+            "manifest",
+            Value::from(manifest).to_string(),
+        )
+        .ignore()
+        .hset(pending_key(id), "done", done_json)
+        .ignore();
+        for o in &outputs {
+            pipe.hset(pending_key(id), format!("b:{}", o.name), o.bytes.clone())
                 .ignore();
-                for o in &outputs {
-                    pipe.hset(pending_key(id), format!("b:{}", o.name), o.bytes.clone())
-                        .ignore();
-                }
-                if let Some((m, ch, op)) = &cache {
-                    pipe.hset(pending_key(id), "cache", format!("{m}|{ch:032x}|{op}"))
-                        .ignore();
-                }
-                pipe.expire(pending_key(id), config::pending_ttl_secs() as i64)
-                    .ignore();
-                if let Err(e) = pipe.query_async::<()>(&mut c).await {
-                    eprintln!("assembler: redis pending_put failed: {e}");
-                }
-            }
+        }
+        if let Some((m, ch, op)) = &cache {
+            pipe.hset(pending_key(id), "cache", format!("{m}|{ch:032x}|{op}"))
+                .ignore();
+        }
+        pipe.expire(pending_key(id), config::pending_ttl_secs() as i64)
+            .ignore();
+        if let Err(e) = pipe.query_async::<()>(&mut c).await {
+            eprintln!("assembler: redis pending_put failed: {e}");
         }
     }
 
@@ -382,64 +323,49 @@ impl JobStore {
         &self,
         id: &str,
     ) -> Option<(Vec<Output>, Done, Option<(String, u128, u64)>)> {
-        match &self.backend {
-            Backend::Memory { .. } => self
-                .pending
-                .get(id)
-                .map(|p| (p.outputs.clone(), p.done.clone(), p.cache.clone())),
-            Backend::Redis { conn } => {
-                let mut c = conn.clone();
-                let res: redis::RedisResult<(Option<String>, Option<String>, Option<String>)> =
-                    redis::pipe()
-                        .hget(pending_key(id), "manifest")
-                        .hget(pending_key(id), "done")
-                        .hget(pending_key(id), "cache")
-                        .query_async(&mut c)
-                        .await;
-                let (manifest_s, done_s, cache_s) = match res {
-                    Ok(t) => t,
-                    Err(e) => {
-                        eprintln!("assembler: redis pending_take failed: {e}");
-                        return None;
-                    }
-                };
-                let manifest: Vec<Value> = serde_json::from_str(&manifest_s?).ok()?;
-                let mut outputs = Vec::with_capacity(manifest.len());
-                for m in &manifest {
-                    let name = m["name"].as_str()?.to_string();
-                    let content_type = m["contentType"]
-                        .as_str()
-                        .unwrap_or("application/octet-stream")
-                        .to_string();
-                    let bytes: Option<Vec<u8>> =
-                        c.hget(pending_key(id), format!("b:{name}")).await.ok()?;
-                    outputs.push(Output {
-                        name,
-                        content_type,
-                        bytes: bytes?,
-                    });
-                }
-                let done_v: Value = serde_json::from_str(&done_s?).ok()?;
-                let done = Done {
-                    result: done_v["result"].clone(),
-                    stats: done_v["stats"].clone(),
-                };
-                Some((outputs, done, cache_s.and_then(parse_cache)))
+        let mut c = self.conn.clone();
+        let res: redis::RedisResult<(Option<String>, Option<String>, Option<String>)> =
+            redis::pipe()
+                .hget(pending_key(id), "manifest")
+                .hget(pending_key(id), "done")
+                .hget(pending_key(id), "cache")
+                .query_async(&mut c)
+                .await;
+        let (manifest_s, done_s, cache_s) = match res {
+            Ok(t) => t,
+            Err(e) => {
+                eprintln!("assembler: redis pending_take failed: {e}");
+                return None;
             }
+        };
+        let manifest: Vec<Value> = serde_json::from_str(&manifest_s?).ok()?;
+        let mut outputs = Vec::with_capacity(manifest.len());
+        for m in &manifest {
+            let name = m["name"].as_str()?.to_string();
+            let content_type = m["contentType"]
+                .as_str()
+                .unwrap_or("application/octet-stream")
+                .to_string();
+            let bytes: Option<Vec<u8>> =
+                c.hget(pending_key(id), format!("b:{name}")).await.ok()?;
+            outputs.push(Output {
+                name,
+                content_type,
+                bytes: bytes?,
+            });
         }
+        let done_v: Value = serde_json::from_str(&done_s?).ok()?;
+        let done = Done {
+            result: done_v["result"].clone(),
+            stats: done_v["stats"].clone(),
+        };
+        Some((outputs, done, cache_s.and_then(parse_cache)))
     }
 
     async fn pending_remove(&self, id: &str) {
-        match &self.backend {
-            Backend::Memory { .. } => {
-                self.pending.remove(id);
-            }
-            Backend::Redis { conn } => {
-                let mut c = conn.clone();
-                if let Err(e) = c.del::<_, ()>(pending_key(id)).await {
-                    eprintln!("assembler: redis pending_remove failed: {e}");
-                }
-            }
+        let mut c = self.conn.clone();
+        if let Err(e) = c.del::<_, ()>(pending_key(id)).await {
+            eprintln!("assembler: redis pending_remove failed: {e}");
         }
     }
 
@@ -477,18 +403,13 @@ impl JobStore {
 
     pub async fn result_get(&self, model: &str, content: u128, opts: u64) -> Option<Done> {
         let key = result_key(model, content, opts);
-        let raw: Option<Value> = match &self.backend {
-            Backend::Memory { results, .. } => results.get(&key).map(|v| v.clone()),
-            Backend::Redis { conn } => {
-                let mut c = conn.clone();
-                match c.get::<_, Option<String>>(&key).await {
-                    Ok(Some(s)) => serde_json::from_str(&s).ok(),
-                    Ok(None) => None,
-                    Err(e) => {
-                        eprintln!("assembler: redis result read failed: {e}");
-                        None
-                    }
-                }
+        let mut c = self.conn.clone();
+        let raw: Option<Value> = match c.get::<_, Option<String>>(&key).await {
+            Ok(Some(s)) => serde_json::from_str(&s).ok(),
+            Ok(None) => None,
+            Err(e) => {
+                eprintln!("assembler: redis result read failed: {e}");
+                None
             }
         };
         raw.map(|v| Done {
@@ -499,22 +420,15 @@ impl JobStore {
 
     async fn result_put(&self, model: &str, content: u128, opts: u64, pointer: Value) {
         let key = result_key(model, content, opts);
-        match &self.backend {
-            Backend::Memory { results, .. } => {
-                results.insert(key, pointer);
-            }
-            Backend::Redis { conn } => {
-                let Ok(payload) = serde_json::to_string(&pointer) else {
-                    return;
-                };
-                let mut c = conn.clone();
-                if let Err(e) = c
-                    .set_ex::<_, _, ()>(&key, payload, config::result_ttl_secs())
-                    .await
-                {
-                    eprintln!("assembler: redis result write failed: {e}");
-                }
-            }
+        let Ok(payload) = serde_json::to_string(&pointer) else {
+            return;
+        };
+        let mut c = self.conn.clone();
+        if let Err(e) = c
+            .set_ex::<_, _, ()>(&key, payload, config::result_ttl_secs())
+            .await
+        {
+            eprintln!("assembler: redis result write failed: {e}");
         }
     }
 
@@ -522,44 +436,29 @@ impl JobStore {
     /// model so the next job re-derives. Returns how many entries were cleared.
     pub async fn invalidate_model(&self, model: &str) -> usize {
         let prefix = format!("asm:result:{model}:");
-        match &self.backend {
-            Backend::Memory { results, .. } => {
-                let keys: Vec<String> = results
-                    .iter()
-                    .filter(|e| e.key().starts_with(&prefix))
-                    .map(|e| e.key().clone())
-                    .collect();
-                for k in &keys {
-                    results.remove(k);
+        let pattern = format!("{prefix}*");
+        let mut scan = self.conn.clone();
+        let mut keys: Vec<String> = Vec::new();
+        match scan.scan_match::<_, String>(&pattern).await {
+            Ok(mut iter) => {
+                while let Some(k) = iter.next_item().await {
+                    keys.push(k);
                 }
-                keys.len()
             }
-            Backend::Redis { conn } => {
-                let pattern = format!("{prefix}*");
-                let mut scan = conn.clone();
-                let mut keys: Vec<String> = Vec::new();
-                match scan.scan_match::<_, String>(&pattern).await {
-                    Ok(mut iter) => {
-                        while let Some(k) = iter.next_item().await {
-                            keys.push(k);
-                        }
-                    }
-                    Err(e) => {
-                        eprintln!("assembler: redis invalidate scan failed: {e}");
-                        return 0;
-                    }
-                }
-                if keys.is_empty() {
-                    return 0;
-                }
-                let mut c = conn.clone();
-                if let Err(e) = c.del::<_, ()>(&keys).await {
-                    eprintln!("assembler: redis invalidate del failed: {e}");
-                    return 0;
-                }
-                keys.len()
+            Err(e) => {
+                eprintln!("assembler: redis invalidate scan failed: {e}");
+                return 0;
             }
         }
+        if keys.is_empty() {
+            return 0;
+        }
+        let mut c = self.conn.clone();
+        if let Err(e) = c.del::<_, ()>(&keys).await {
+            eprintln!("assembler: redis invalidate del failed: {e}");
+            return 0;
+        }
+        keys.len()
     }
 }
 

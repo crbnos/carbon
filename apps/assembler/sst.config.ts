@@ -44,7 +44,7 @@ export default $config({
       ASSEMBLER_SERVICE_API_KEY: process.env.ASSEMBLER_SERVICE_API_KEY,
       // SSRF allow-list (prod: set it; DEV_MODE stays unset => default-deny).
       ASSEMBLER_ALLOWED_URL_HOSTS: process.env.ASSEMBLER_ALLOWED_URL_HOSTS,
-      // Result-cache / job store. Unset => in-process (fine for single-replica).
+      // Job/result store — REQUIRED; the assembler refuses to boot without it.
       ASSEMBLER_REDIS_URL: process.env.ASSEMBLER_REDIS_URL,
       ASSEMBLER_MAX_CONCURRENCY: process.env.ASSEMBLER_MAX_CONCURRENCY,
       // Lambda path only: keep the optimize ladder under the 900s wall (degrade to
