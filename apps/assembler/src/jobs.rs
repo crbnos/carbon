@@ -175,6 +175,11 @@ impl JobStore {
 
     pub async fn set_status(&self, id: &str, status: &str) {
         if let Some(mut rec) = self.read(id).await {
+            // Canceled is terminal: a compute task that raced past its
+            // is_canceled check must not resurrect the job.
+            if rec.status == "canceled" {
+                return;
+            }
             rec.status = status.to_string();
             self.write(id, &rec).await;
         }
@@ -184,6 +189,9 @@ impl JobStore {
     /// to late-mint — an inline result or a cache hit whose artifact exists).
     pub async fn set_done(&self, id: &str, done: Done) {
         if let Some(mut rec) = self.read(id).await {
+            if rec.status == "canceled" {
+                return;
+            }
             rec.status = "done".into();
             rec.result = Some(done.result);
             rec.stats = Some(done.stats);
@@ -196,6 +204,9 @@ impl JobStore {
 
     pub async fn set_error(&self, id: &str, code: &str, message: String) {
         if let Some(mut rec) = self.read(id).await {
+            if rec.status == "canceled" {
+                return;
+            }
             rec.status = "error".into();
             rec.error = Some(json!({ "code": code, "message": message }));
             self.write(id, &rec).await;
@@ -212,6 +223,8 @@ impl JobStore {
             rec.status = "canceled".into();
             self.write(id, &rec).await;
             self.pending_remove(id).await;
+            // Wake the event-driven waiter immediately (terminal state).
+            self.send_callback(id).await;
             self.wake(id);
         }
         Some(Self::render(id, &rec))
@@ -355,6 +368,11 @@ impl JobStore {
         done: Done,
         cache: Option<(String, u128, u64)>,
     ) {
+        // A cancel that landed mid-compute wins: drop the result, upload nothing.
+        if self.is_canceled(id).await {
+            eprintln!("[{id}] finished after cancel; result dropped");
+            return;
+        }
         self.pending_put(id, outputs, done, cache).await;
         self.set_status(id, "uploading").await;
         let urls = self.read(id).await.and_then(|r| r.upload_urls);

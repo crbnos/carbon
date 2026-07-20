@@ -278,6 +278,9 @@ export async function pollAssemblerJobOnce(opts: {
   if (job.status === "failed") {
     return { status: "error", error: job.error?.message ?? "Job failed" };
   }
+  if (job.status === "canceled") {
+    return { status: "error", error: "Job canceled" };
+  }
   return { status: "pending" };
 }
 
@@ -396,7 +399,9 @@ export async function runAssemblerJob(
     if (data?.status === "succeeded") {
       return { result: data.result ?? null, stats: data.stats ?? null };
     }
-    throw new Error(data?.error?.message ?? `assembler ${action} failed`);
+    throw new Error(
+      data?.error?.message ?? `assembler ${action} ${data?.status ?? "failed"}`
+    );
   }
 
   // Timeout: the callback was lost (worker couldn't reach the app, or the job
