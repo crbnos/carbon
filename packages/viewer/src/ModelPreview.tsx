@@ -284,7 +284,7 @@ const MM_PER_IN = 25.4;
 /** Dimensions + surface area / volume, with an mm/in toggle. Model space is mm. */
 function ModelMetricsPanel({ metrics }: { metrics: ModelMetrics }) {
   const [unit, setUnit] = useState<UnitSystem>("imperial");
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const imperial = unit === "imperial";
 
   const fmt = useMemo(
