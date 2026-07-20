@@ -94,6 +94,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Audit log system | `.ai/rules/audit-log-system.md` |
 | Shipments / receipts UI | `.ai/rules/shipments-receipts-ui-patterns.md` |
 | AI chat / SDK | `.ai/rules/chat-ai-sdk-info.md` |
+| Favicon / tab icon (single source) | `.ai/rules/favicon-system.md` |
 | **Integrations** | |
 | Jira integration | `.ai/rules/jira-integration.md` |
 | Linear integration | `.ai/rules/linear-integration.md` |
