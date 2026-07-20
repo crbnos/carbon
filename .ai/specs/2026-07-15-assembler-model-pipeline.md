@@ -187,11 +187,31 @@ identity` bypasses zstd.
    for `model-optimize`, delete deps, merge viewers.
 6. **IGES/BREP** — OCCT reader dispatch alongside `convert_step`.
 
+## GLB-always roadmap (decided 2026-07-18, Sid)
+
+**Doctrine: when the assembler is enabled, EVERY accepted upload format is
+optimised into GLB and the viewer uses that artifact.** The browser WASM raw
+tier stays exactly as built — the bridge for optimise-in-flight, assembler-off,
+and job-failure states — but is never the steady state for any format. Each
+format added server-side automatically demotes its WASM path to
+first-seconds-preview: the trigger derives format from the stored file
+(`optimizableModelFormat` widens in lockstep) and `model.reoptimize` backfills.
+
+Accepted-format coverage to build, in cost order:
+
+| Phase | Formats | How |
+|---|---|---|
+| **F1** | iges, brep | OCCT readers (IGESControl/BRepTools) via occt-bridge — kernel already linked; registry stubs waiting |
+| **F1** | obj, ply, off, bim | plain parsers → the existing `*_to_glb` ingest (mirrors `stl_to_glb`); bim is JSON |
+| **F2** | 3mf, amf | zip/XML parsers (Rust crates exist) |
+| **F3 (on demand)** | fbx, dae, 3ds, 3dm | each needs a real import dep (assimp binding / opennurbs) — only on customer evidence |
+
+ifc/fcstd stay out (dropped from the accept list 2026-07-18).
+
 ## Open / deferred
 
 - Content-addressed dedup by `geometry_hash` (share artifacts across item revisions)
   — noted, not scoped here.
-- Hard mesh formats (FBX/DAE/3DS/3DM) and building formats (IFC/BIM/FCSTD) — out.
 - Surfacing optimized size in **doc-list tables** (needs summary-view recreation) —
   viewer badge is done; tables deferred.
 
