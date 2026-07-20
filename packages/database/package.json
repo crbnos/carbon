@@ -13,7 +13,8 @@
     "tsup": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:",
-    "uuid": "9.0.0"
+    "uuid": "9.0.0",
+    "vitest": "catalog:"
   },
   "exports": {
     ".": "./src/index.ts",
@@ -36,6 +37,7 @@
     "seed:change-orders": "tsx src/seed-change-orders.ts",
     "deploy": "supabase link --project-ref $SUPABASE_PROJECT_ID && supabase db push",
     "lint": "biome lint --write ",
+    "test": "vitest run",
     "typecheck": "tsgo --noEmit"
   },
   "sideEffects": false,
