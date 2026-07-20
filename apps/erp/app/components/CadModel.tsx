@@ -50,7 +50,9 @@ type ModelArtifacts = {
     | "Success"
     | "Failed"
     | null;
-  /** Stored raw bytes — the compacted (`.zst`) size once compaction runs. */
+  /** As-uploaded raw bytes (originalSize; older rows fall back to the stored
+   *  size) — the loader resolves this so the reduction badge never compares
+   *  against the compacted `.zst`. */
   size: number | null;
   /** Optimized GLB bytes — surfaced next to `size` to show the reduction. */
   optimizedSize: number | null;

@@ -18,7 +18,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const model = await client
     .from("modelUpload")
     .select(
-      "size, optimizedSize, optimizedModelPath, glbPath, thumbnailPath, optimizeStatus, modelPath"
+      "size, originalSize, optimizedSize, optimizedModelPath, glbPath, thumbnailPath, optimizeStatus, modelPath"
     )
     .eq("id", modelUploadId)
     .eq("companyId", companyId)
@@ -51,8 +51,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     rawBucket,
     // Lets the client stop polling once optimisation lands (or fails).
     optimizeStatus: model.data?.optimizeStatus ?? null,
-    // Raw source vs optimised bytes — the viewer shows the reduction.
-    size: model.data?.size ?? null,
+    // The reduction badge compares as-uploaded vs optimised bytes. `size` is
+    // the STORED raw (rewritten to the .zst size after compaction), so prefer
+    // the frozen originalSize; older rows fall back to size.
+    size: model.data?.originalSize ?? model.data?.size ?? null,
     optimizedSize: model.data?.optimizedSize ?? null
   };
 }

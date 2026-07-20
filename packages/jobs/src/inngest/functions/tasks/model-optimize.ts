@@ -211,11 +211,21 @@ export const modelOptimizeFunction = inngest.createFunction(
           const client = getCarbonServiceRole();
           // Repoint modelPath at the compacted raw and record its (compressed)
           // stored size so the files list reflects what's actually on disk, then
-          // drop the fat original.
+          // drop the fat original. Freeze the as-uploaded bytes into
+          // originalSize first (rows from before the column exist with null) —
+          // the viewer's reduction badge compares the ORIGINAL, not the .zst.
+          const existing = await client
+            .from("modelUpload")
+            .select("size, originalSize")
+            .eq("id", modelUploadId)
+            .maybeSingle();
           await client
             .from("modelUpload")
             .update({
               modelPath: compactPath,
+              ...(existing.data && existing.data.originalSize == null
+                ? { originalSize: existing.data.size }
+                : {}),
               ...(compactedSize != null ? { size: compactedSize } : {})
             })
             .eq("id", modelUploadId);

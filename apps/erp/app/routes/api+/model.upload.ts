@@ -40,6 +40,9 @@ export async function action({ request }: ActionFunctionArgs) {
     modelPath,
     name,
     size,
+    // Frozen as-uploaded bytes: `size` is later overwritten with the compacted
+    // (.zst) stored size, but the viewer's reduction badge compares the original.
+    originalSize: size,
     companyId,
     createdBy: userId
   });
