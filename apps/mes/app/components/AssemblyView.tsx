@@ -1,3 +1,4 @@
+import type { Json } from "@carbon/database";
 import {
   Accordion,
   AccordionContent,
@@ -24,7 +25,6 @@ import {
   ModalHeader,
   ModalOverlay,
   ModalTitle,
-  ModelViewer,
   Separator,
   SidebarTrigger,
   Spinner,
@@ -36,7 +36,6 @@ import {
   useRealtimeChannel,
   useRouteData
 } from "@carbon/react";
-import type { Json } from "@carbon/database";
 import { formatDurationMilliseconds } from "@carbon/utils";
 import type {
   AssemblyStep,
@@ -45,6 +44,7 @@ import type {
   Motion
 } from "@carbon/viewer";
 import { AssemblyPlayer } from "@carbon/viewer";
+import { ModelPreview } from "@carbon/viewer/model-preview";
 import { getLocalTimeZone } from "@internationalized/date";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -492,9 +492,9 @@ export function AssemblyView({
   // Operator toggle for the reference-image annotation pins (always-on vs tap-to-hide).
   const [showPins, setShowPins] = useState(true);
   // Steps-bar filter: which steps the segmented bar shows for the current unit.
-  const [stepFilter, setStepFilter] = useState<"all" | "completed" | "incomplete">(
-    "all"
-  );
+  const [stepFilter, setStepFilter] = useState<
+    "all" | "completed" | "incomplete"
+  >("all");
   // For non-tracked material inline issue
   const [selectedMaterial, setSelectedMaterial] = useState<any | null>(null);
 
@@ -728,10 +728,15 @@ export function AssemblyView({
   const slideMedia = stepSlides.map((slide) => {
     if (slide.modelUploadId) {
       const model = slideModels?.[slide.modelUploadId] ?? null;
-      const modelFile = model?.glbPath ?? model?.modelPath ?? null;
+      // ModelPreview loads the assembler-converted GLB fast tier when present and
+      // falls back to parsing the raw upload client-side (WASM tier).
+      const glbUrl = model?.glbPath ? getPrivateUrl(model.glbPath) : null;
+      const rawUrl = model?.modelPath ? getPrivateUrl(model.modelPath) : null;
       return {
         kind: "model" as const,
-        url: modelFile ? getPrivateUrl(modelFile) : null,
+        url: glbUrl ?? rawUrl,
+        glbUrl,
+        rawUrl,
         thumbnail: model?.thumbnailPath
           ? getPrivateUrl(model.thumbnailPath)
           : null
@@ -862,7 +867,6 @@ export function AssemblyView({
             </>
           ) : null}
         </div>
-
 
         <div className="flex-1" />
 
@@ -1186,10 +1190,9 @@ export function AssemblyView({
 
           {tab === "model" && modelPath ? (
             <div className="min-h-0 flex-1">
-              <ModelViewer
-                file={null}
+              <ModelPreview
                 key={`model-${modelPath}`}
-                url={`/file/preview/private/${modelPath}`}
+                rawUrl={`/file/preview/private/${modelPath}`}
                 mode={mode}
                 className="rounded-none"
               />
@@ -1237,10 +1240,18 @@ export function AssemblyView({
                   // button and no annotation pins (pins are image-only).
                   <div className="relative mx-auto h-[55vh] max-h-[65vh] w-full overflow-hidden rounded-lg border border-border bg-muted/40">
                     {selectedModelUrl ? (
-                      <ModelViewer
-                        file={null}
+                      <ModelPreview
                         key={`slide-model-${selectedModelUrl}`}
-                        url={selectedModelUrl}
+                        glbUrl={
+                          selectedMedia?.kind === "model"
+                            ? selectedMedia.glbUrl
+                            : null
+                        }
+                        rawUrl={
+                          selectedMedia?.kind === "model"
+                            ? selectedMedia.rawUrl
+                            : null
+                        }
                         mode={mode}
                         className="h-full w-full rounded-lg"
                       />
@@ -1743,16 +1754,18 @@ export function AssemblyView({
               {/* Manager-only override: record every remaining step for this unit at once.
                   Shown only to users with the Production DELETE permission, and only when
                   there are unrecorded steps left. */}
-              {canOverrideComplete && steps.length > 0 && doneCount < steps.length && (
-                <ActionSheetButton
-                  icon={<LuListChecks className="size-4 shrink-0" />}
-                  label="Complete all steps"
-                  onClick={() => {
-                    actionsSheet.onClose();
-                    completeAllModal.onOpen();
-                  }}
-                />
-              )}
+              {canOverrideComplete &&
+                steps.length > 0 &&
+                doneCount < steps.length && (
+                  <ActionSheetButton
+                    icon={<LuListChecks className="size-4 shrink-0" />}
+                    label="Complete all steps"
+                    onClick={() => {
+                      actionsSheet.onClose();
+                      completeAllModal.onOpen();
+                    }}
+                  />
+                )}
             </div>
           </BottomSheetBody>
         </BottomSheetContent>
@@ -2039,8 +2052,16 @@ function MaterialRow({
   const issueStatus = fullyIssued
     ? { icon: LuCircleCheck, className: "text-emerald-500", label: "Issued" }
     : partiallyIssued
-      ? { icon: LuCircleDot, className: "text-amber-500", label: "Partially issued" }
-      : { icon: LuCircle, className: "text-muted-foreground/50", label: "Not issued" };
+      ? {
+          icon: LuCircleDot,
+          className: "text-amber-500",
+          label: "Partially issued"
+        }
+      : {
+          icon: LuCircle,
+          className: "text-muted-foreground/50",
+          label: "Not issued"
+        };
   const StatusIcon = issueStatus.icon;
 
   const usedHere =
@@ -2100,7 +2121,9 @@ function MaterialRow({
         )}
         {isTracked && (
           <div className="flex flex-wrap items-center justify-end gap-1">
-            {material.requiresSerialTracking && <Badge variant="blue">S/N</Badge>}
+            {material.requiresSerialTracking && (
+              <Badge variant="blue">S/N</Badge>
+            )}
             {material.requiresBatchTracking && (
               <Badge variant="purple">Batch</Badge>
             )}
