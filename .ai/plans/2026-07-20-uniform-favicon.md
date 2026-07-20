@@ -50,7 +50,7 @@ source + the raw-PDF limitation in a rule.
 
 ## Progress
 - [x] Task 1: Add shared `faviconLinks` to `@carbon/utils` (+ subpath export)
-- [ ] Task 2: Point the four React Router roots at `faviconLinks`
+- [x] Task 2: Point the four React Router roots at `faviconLinks`
 - [ ] Task 3: Make `docs` consume `faviconLinks` and delete the competing `icon.svg`
 - [ ] Task 4: Fix `apps/academy/public/site.webmanifest` name/short_name
 - [ ] Task 5: Add `.ai/rules/favicon-system.md`
