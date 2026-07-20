@@ -35,6 +35,16 @@ export const assemblerAuthHeaders: Record<string, string> =
     ? { Authorization: `Bearer ${ASSEMBLER_SERVICE_API_KEY}` }
     : {};
 
+/**
+ * The assembler feature flag IS the config: unset `ASSEMBLER_SERVICE_URL` means
+ * the whole pipeline is off. Gate the Inngest functions on this so triggered
+ * events skip cleanly (rows stay untouched, the viewer falls back to the raw
+ * model tier) instead of failing runs and stamping rows `Failed`.
+ */
+export function assemblerEnabled(): boolean {
+  return Boolean(ASSEMBLER_SERVICE_URL);
+}
+
 export function assemblerBaseUrl(): string {
   if (!ASSEMBLER_SERVICE_URL) {
     throw new Error("ASSEMBLER_SERVICE_URL is not configured");

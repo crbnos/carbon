@@ -2,7 +2,11 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Json } from "@carbon/database";
 import { modelPathOptimizeFormat } from "@carbon/utils";
 import { inngest } from "../../client";
-import { internalizeStorageUrl, runAssemblerJob } from "./assembler-client";
+import {
+  assemblerEnabled,
+  internalizeStorageUrl,
+  runAssemblerJob
+} from "./assembler-client";
 
 const SIGNED_URL_EXPIRY = 60 * 60; // seconds — the source (read) URL only.
 const MAX_OPTIMIZE_WAIT_MS = 15 * 60 * 1000;
@@ -36,6 +40,15 @@ export const modelOptimizeFunction = inngest.createFunction(
   { event: "carbon/model-optimize" },
   async ({ event, step, logger }) => {
     const { modelUploadId, companyId } = event.data;
+
+    // Feature-gated: no assembler configured -> skip before touching the row,
+    // so the viewer just serves the raw model tier (optimizeStatus stays null).
+    if (!assemblerEnabled()) {
+      logger.info("model optimise skipped — assembler is not configured", {
+        modelUploadId
+      });
+      return { modelUploadId, status: "Skipped" as const };
+    }
 
     const model = await step.run("queue", async () => {
       const client = getCarbonServiceRole();

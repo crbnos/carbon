@@ -1,7 +1,11 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Json } from "@carbon/database";
 import { inngest } from "../../client";
-import { internalizeStorageUrl, runAssemblerJob } from "./assembler-client";
+import {
+  assemblerEnabled,
+  internalizeStorageUrl,
+  runAssemblerJob
+} from "./assembler-client";
 
 const SIGNED_URL_EXPIRY = 60 * 60; // seconds — the source (read) URL only.
 // Total wall-clock budget before giving up, bounded by time (not a poll count)
@@ -50,6 +54,16 @@ export const assemblyConvertFunction = inngest.createFunction(
   { event: "carbon/assembly-convert" },
   async ({ event, step, logger }) => {
     const { modelUploadId, companyId, userId } = event.data;
+
+    // Feature-gated: no assembler configured -> skip before creating the plan
+    // job row or flipping processingStatus, so the UI never shows a stuck
+    // "Processing" and the viewer serves the unconverted model.
+    if (!assemblerEnabled()) {
+      logger.info("assembly convert skipped — assembler is not configured", {
+        modelUploadId
+      });
+      return;
+    }
 
     const job = await step.run("queue", async () => {
       const client = getCarbonServiceRole();

@@ -3,6 +3,7 @@ import type { Json } from "@carbon/database";
 import type { AssemblyPlan } from "@carbon/viewer/steps";
 import { inngest } from "../../client";
 import {
+  assemblerEnabled,
   internalizeStorageUrl,
   POLL_GAP,
   pollAssemblerJobOnce,
@@ -71,6 +72,29 @@ export const assemblyPlanFunction = inngest.createFunction(
       planJobId,
       reDetectUnits
     } = event.data;
+
+    // Feature-gated. Plan is an explicit user action ("Generate Steps"), so a
+    // pre-created Queued row is failed with a clear reason instead of hanging.
+    if (!assemblerEnabled()) {
+      if (planJobId) {
+        await step.run("mark-unconfigured", async () => {
+          const client = getCarbonServiceRole();
+          await client
+            .from("assemblyPlanJob")
+            .update({
+              status: "Failed",
+              error: "Assembler service is not configured",
+              updatedAt: new Date().toISOString()
+            })
+            .eq("id", planJobId)
+            .eq("companyId", companyId);
+        });
+      }
+      logger.info("assembly plan skipped — assembler is not configured", {
+        modelUploadId
+      });
+      return { jobId: planJobId ?? null, status: "Skipped" as const };
+    }
 
     const job = await step.run("queue", async () => {
       const client = getCarbonServiceRole();
