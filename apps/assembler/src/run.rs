@@ -49,13 +49,21 @@ pub async fn run_job_cli() -> ! {
     let urls = upload_urls(&spec);
 
     let state = build_state().await;
-    state.jobs.set_pending(&job_id, &action, None).await;
+    let callback = spec["callback_url"].as_str().map(str::to_string);
+    state
+        .jobs
+        .set_pending(&job_id, &action, None, urls.clone(), callback)
+        .await;
 
     if let Err(m) = spawn_from_spec(&state, &job_id, &action, &spec) {
         fail(&m);
     }
 
     let result = run_to_completion(&state, &job_id, &urls).await;
+    // The CLI owns the process lifetime — (re)deliver the completion callback
+    // before exiting (no-op if none / already delivered semantics are idempotent
+    // for the receiver).
+    state.jobs.send_callback(&job_id).await;
     println!("{result}");
     let ok = matches!(result["job"]["status"].as_str(), Some("succeeded"));
     std::process::exit(if ok { 0 } else { 1 });

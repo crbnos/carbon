@@ -1,10 +1,13 @@
+import { createHmac } from "node:crypto";
 import type { Json } from "@carbon/database";
 import {
   ASSEMBLER_ECS_SERVICE_URL,
   ASSEMBLER_SERVICE_API_KEY,
   ASSEMBLER_SERVICE_URL,
   ASSEMBLER_STORAGE_PUBLIC_URL,
+  ERP_URL,
   PORT_API,
+  SESSION_SECRET,
   SUPABASE_URL
 } from "@carbon/env";
 import { NonRetriableError } from "inngest";
@@ -285,6 +288,10 @@ export async function pollAssemblerJobOnce(opts: {
 type StepTools = {
   run: (id: string, fn: () => unknown) => Promise<any>;
   sleep: (id: string, duration: string | number) => Promise<unknown>;
+  waitForEvent: (
+    id: string,
+    opts: { event: string; timeout: string | number; if?: string }
+  ) => Promise<any | null>;
 };
 
 type PollOutcome = Awaited<ReturnType<typeof pollAssemblerJobOnce>>;
@@ -307,16 +314,32 @@ type AssemblerJobSpec = {
   logger: AssemblerLogger;
 };
 
+/** Mirrors `assemblerCallbackToken` in the ERP callback route — both sides
+ * derive the per-job token from SESSION_SECRET so no state is stored. */
+function callbackToken(jobId: string): string {
+  return createHmac("sha256", SESSION_SECRET ?? "")
+    .update(`assembler-callback:${jobId}`)
+    .digest("hex");
+}
+
+/** The completion-webhook URL minted into the job spec at submit. */
+function callbackUrl(jobId: string): string {
+  return `${ERP_URL}/api/assembler/callback?token=${callbackToken(jobId)}`;
+}
+
 /**
- * Run an assembler action to completion: submit -> long-poll, the one contract
- * every deployment speaks (Lambda self-invoke worker, the ECS service, the dev
- * container). Upload URLs are handed over twice, covering both runtimes:
+ * Run an assembler action to completion — event-driven, no polling:
  *
- *  - **at submit** — on Lambda the detached worker invocation uploads artifacts
- *    directly with these (no serving instance survives to answer a late-mint
- *    poll with the bytes in hand);
- *  - **per poll** (late-mint) — the ECS/dev path PUTs with seconds-old tokens,
- *    and it's the retry path if the worker's submit-time URLs expired.
+ *  1. submit: body carries a minted `callback_url` + the signed upload URLs
+ *     (X-Carbon-Upload-Urls), so the job can finalize AND notify the moment
+ *     compute ends, on every runtime (Lambda worker, ECS, local).
+ *  2. `waitForEvent("carbon/assembler-job-done", jobId match)` — the callback
+ *     route fires it; the run wakes instantly. Zero poll invocations, which on
+ *     Lambda were ~half the per-job cost (a 25s long-poll holds a full-memory
+ *     invocation just to wait).
+ *  3. Safety net: on timeout (lost callback — e.g. the app was unreachable from
+ *     the worker) ONE late-mint poll resolves the job from the store — which
+ *     also drains any still-pending upload with fresh URLs.
  *
  * Returns the terminal `{ result, stats }`; throws on job error / timeout.
  */
@@ -343,29 +366,53 @@ export async function runAssemblerJob(
     await submitAssemblerJob({
       action,
       jobId,
-      body,
+      body: {
+        ...(body as Record<string, unknown>),
+        callback_url: callbackUrl(jobId)
+      },
       logger,
       baseUrl,
       uploadUrls
     });
   });
 
-  const startedAt: number = await step.run(`${idPrefix}-poll-start`, () =>
-    Date.now()
+  const done = await step.waitForEvent(`${idPrefix}-wait`, {
+    event: "carbon/assembler-job-done",
+    timeout: maxWaitMs,
+    if: `async.data.jobId == "${jobId}"`
+  });
+
+  if (done) {
+    const data = (
+      done as {
+        data?: {
+          status?: string;
+          result?: Json;
+          stats?: Json;
+          error?: { message?: string } | null;
+        };
+      }
+    ).data;
+    if (data?.status === "succeeded") {
+      return { result: data.result ?? null, stats: data.stats ?? null };
+    }
+    throw new Error(data?.error?.message ?? `assembler ${action} failed`);
+  }
+
+  // Timeout: the callback was lost (worker couldn't reach the app, or the job
+  // is genuinely still running/stuck). One late-mint poll resolves from the
+  // store — and finalizes any parked upload with fresh URLs.
+  logger.warn(`assembler ${action} completion event timed out; polling once`, {
+    jobId
+  });
+  const poll: PollOutcome = await step.run(`${idPrefix}-fallback-poll`, () =>
+    pollAssemblerJobOnce({ jobId, mintUploadUrls, baseUrl })
   );
-  let i = 0;
-  while (Date.now() - startedAt < maxWaitMs) {
-    const poll: PollOutcome = await step.run(`${idPrefix}-poll-${i}`, () =>
-      pollAssemblerJobOnce({ jobId, mintUploadUrls, baseUrl })
-    );
-    if (poll.status === "done") {
-      return { result: poll.result, stats: poll.stats };
-    }
-    if (poll.status === "error") {
-      throw new Error(poll.error);
-    }
-    await step.sleep(`${idPrefix}-gap-${i}`, POLL_GAP);
-    i++;
+  if (poll.status === "done") {
+    return { result: poll.result, stats: poll.stats };
+  }
+  if (poll.status === "error") {
+    throw new Error(poll.error);
   }
   throw new Error(`assembler ${action} did not finish within ${maxWaitMs}ms`);
 }

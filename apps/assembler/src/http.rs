@@ -187,3 +187,24 @@ pub async fn upload(
     }
     Ok(())
 }
+
+/// POST a JSON body (the completion-callback delivery). Short timeout; the
+/// caller owns retries.
+pub async fn post_json(url: &str, body: &serde_json::Value) -> Result<(), ApiError> {
+    let resp = client()
+        .post(url)
+        .header("Content-Type", "application/json")
+        .body(body.to_string())
+        .timeout(std::time::Duration::from_secs(10))
+        .send()
+        .await
+        .map_err(|e| ApiError::new(502, "CALLBACK_FAILED", format!("callback POST failed: {e}")))?;
+    if !resp.status().is_success() {
+        return Err(ApiError::new(
+            502,
+            "CALLBACK_FAILED",
+            format!("callback POST returned {}", resp.status()),
+        ));
+    }
+    Ok(())
+}

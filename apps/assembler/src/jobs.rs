@@ -37,6 +37,16 @@ struct JobRecord {
     error: Option<Value>, // { code, message }
     #[serde(skip_serializing_if = "Option::is_none")]
     meta: Option<Value>,
+    /// Signed PUT URLs handed over AT SUBMIT (name → URL). Lets the job finalize
+    /// the moment compute ends — no poll needed to deliver upload URLs. Fresh
+    /// per-poll URLs remain the retry path if these expired. Never rendered.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    upload_urls: Option<HashMap<String, String>>,
+    /// Completion webhook minted by the caller at submit: the terminal job
+    /// envelope is POSTed here (fire-with-retries) so the caller's workflow
+    /// wakes on an event instead of polling. Never rendered.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    callback_url: Option<String>,
 }
 
 /// One artifact awaiting a late-minted upload URL (name → bytes + content type).
@@ -139,7 +149,14 @@ impl JobStore {
             .map(|j| external_status(&j.status).to_string())
     }
 
-    pub async fn set_pending(&self, id: &str, action: &str, meta: Option<Value>) {
+    pub async fn set_pending(
+        &self,
+        id: &str,
+        action: &str,
+        meta: Option<Value>,
+        upload_urls: HashMap<String, String>,
+        callback_url: Option<String>,
+    ) {
         self.write(
             id,
             &JobRecord {
@@ -149,6 +166,8 @@ impl JobStore {
                 stats: None,
                 error: None,
                 meta,
+                upload_urls: (!upload_urls.is_empty()).then_some(upload_urls),
+                callback_url,
             },
         )
         .await;
@@ -171,6 +190,7 @@ impl JobStore {
             rec.error = None;
             self.write(id, &rec).await;
         }
+        self.send_callback(id).await;
         self.wake(id);
     }
 
@@ -180,6 +200,7 @@ impl JobStore {
             rec.error = Some(json!({ "code": code, "message": message }));
             self.write(id, &rec).await;
         }
+        self.send_callback(id).await;
         self.wake(id);
     }
 
@@ -319,6 +340,65 @@ impl JobStore {
         if let Err(e) = pipe.query_async::<()>(&mut c).await {
             eprintln!("assembler: redis pending_put failed: {e}");
         }
+    }
+
+    /// Complete a computed job: hold the artifacts for upload, and — when the
+    /// submit handed over upload URLs — finalize immediately (upload + publish
+    /// the terminal pointer + fire the completion callback), so no poll is ever
+    /// needed on the happy path. Without submit-time URLs the job parks in
+    /// `uploading` and a late-mint poll drains it (the legacy/retry path).
+    /// Replaces the pending_put + set_status("uploading") + wake trio in actions.
+    pub async fn finish(
+        &self,
+        id: &str,
+        outputs: Vec<Output>,
+        done: Done,
+        cache: Option<(String, u128, u64)>,
+    ) {
+        self.pending_put(id, outputs, done, cache).await;
+        self.set_status(id, "uploading").await;
+        let urls = self.read(id).await.and_then(|r| r.upload_urls);
+        if let Some(urls) = urls {
+            // Uploaded => try_finalize -> set_done, which delivers the completion
+            // callback inline (the calling task owns the invocation lifetime on
+            // the server path; the Lambda worker re-checks after
+            // run_to_completion). Retry/NotPending: submit-time URLs failed —
+            // a late-mint poll retries with fresh ones.
+            let _ = self.try_finalize(id, &urls).await;
+        }
+        self.wake(id);
+    }
+
+    /// POST the terminal job envelope to the submit-time callback URL, if any.
+    /// Bounded retries; failure is logged only — the caller's waitForEvent
+    /// timeout + fallback poll covers a lost callback.
+    pub async fn send_callback(&self, id: &str) {
+        let Some(rec) = self.read(id).await else {
+            return;
+        };
+        let Some(url) = rec.callback_url.clone() else {
+            return;
+        };
+        if !matches!(rec.status.as_str(), "done" | "error" | "canceled") {
+            return;
+        }
+        let body = Self::render(id, &rec);
+        for attempt in 1..=3u32 {
+            match http::post_json(&url, &body).await {
+                Ok(()) => {
+                    eprintln!("[{id}] completion callback delivered");
+                    return;
+                }
+                Err(e) => {
+                    eprintln!(
+                        "[{id}] completion callback attempt {attempt} failed: {}",
+                        e.message
+                    );
+                    tokio::time::sleep(Duration::from_secs(attempt as u64)).await;
+                }
+            }
+        }
+        eprintln!("[{id}] completion callback undelivered; caller falls back to poll");
     }
 
     async fn pending_take(

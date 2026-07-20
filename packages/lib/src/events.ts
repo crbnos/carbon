@@ -113,6 +113,17 @@ export type Events = {
   };
 
   // Eager model optimisation on upload (mesh inputs → compact optimised GLB)
+  "carbon/assembler-job-done": {
+    data: {
+      /** The assembler job id the waiting run matches on. */
+      jobId: string;
+      /** Terminal public status: succeeded | failed | canceled. */
+      status: string;
+      result: unknown;
+      stats: unknown;
+      error: { code?: string; message?: string } | null;
+    };
+  };
   "carbon/model-optimize": {
     data: {
       modelUploadId: string;

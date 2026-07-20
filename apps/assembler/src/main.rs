@@ -264,6 +264,26 @@ fn gen_id() -> String {
     format!("job_{}_{nanos}_{n}", std::process::id())
 }
 
+
+/// Submit-time completion plumbing: the caller's `callback_url` (body) and
+/// upload URLs (X-Carbon-Upload-Urls header) are stored ON the job so it can
+/// finalize + notify the moment compute ends — no poll on the happy path.
+/// Both are caller-supplied URLs -> SSRF-validated like every other URL.
+fn submit_plumbing(
+    headers: &HeaderMap,
+    req: &Value,
+) -> Result<(HashMap<String, String>, Option<String>), ApiError> {
+    let urls = parse_upload_urls(headers)?;
+    let callback = match req["callback_url"].as_str().filter(|s| !s.is_empty()) {
+        Some(u) => {
+            config::validate_url(u)?;
+            Some(u.to_string())
+        }
+        None => None,
+    };
+    Ok((urls, callback))
+}
+
 /// The uniform 202 create response: `{ ok, job }` + a `Location` to poll.
 fn created(job_id: &str, action: &str, status: &str) -> (StatusCode, HeaderMap, Json<Value>) {
     let mut hm = HeaderMap::new();
@@ -393,6 +413,11 @@ async fn worker_events(
     }
 
     let result = run::run_to_completion(&state, &job_id, &urls).await;
+    // The worker invocation owns the Lambda lifetime: the action task's inline
+    // callback send may be killed by the post-response freeze, so (re)send here
+    // before returning. Duplicate deliveries are harmless — the receiver's
+    // waitForEvent consumes the first matching event.
+    state.jobs.send_callback(&job_id).await;
     eprintln!(
         "[{job_id}] worker finished: {}",
         result["job"]["status"].as_str().unwrap_or("?")
@@ -415,6 +440,7 @@ async fn create_convert(
     config::validate_url(source_url)?;
     let job_id = resolve_job_id(&headers);
     let sync = sync_flag(&q);
+    let (submit_urls, callback_url) = submit_plumbing(&headers, &req)?;
 
     match state.jobs.existing_active(&job_id).await {
         Some(status) if !sync => return Ok(created(&job_id, "convert", &status)),
@@ -422,7 +448,7 @@ async fn create_convert(
         None if dispatch::from_env() == dispatch::Dispatch::Lambda => {
             state
                 .jobs
-                .set_pending(&job_id, "convert", optional_meta(&req))
+                .set_pending(&job_id, "convert", optional_meta(&req), submit_urls.clone(), callback_url.clone())
                 .await;
             lambda_dispatch(&state, &headers, &job_id, "convert", &req).await?;
         }
@@ -433,7 +459,7 @@ async fn create_convert(
                 .filter(|s| !s.is_empty() && s.len() <= 128)
                 .map(str::to_string);
             let meta = optional_meta(&req);
-            state.jobs.set_pending(&job_id, "convert", meta).await;
+            state.jobs.set_pending(&job_id, "convert", meta, submit_urls.clone(), callback_url.clone()).await;
             eprintln!("[{job_id}] convert queued");
             actions::convert::spawn(
                 &state,
@@ -468,6 +494,7 @@ async fn create_optimize(
     config::validate_url(source_url)?;
     let job_id = resolve_job_id(&headers);
     let sync = sync_flag(&q);
+    let (submit_urls, callback_url) = submit_plumbing(&headers, &req)?;
 
     match state.jobs.existing_active(&job_id).await {
         Some(status) if !sync => return Ok(created(&job_id, "optimize", &status)),
@@ -475,7 +502,7 @@ async fn create_optimize(
         None if dispatch::from_env() == dispatch::Dispatch::Lambda => {
             state
                 .jobs
-                .set_pending(&job_id, "optimize", optional_meta(&req))
+                .set_pending(&job_id, "optimize", optional_meta(&req), submit_urls.clone(), callback_url.clone())
                 .await;
             lambda_dispatch(&state, &headers, &job_id, "optimize", &req).await?;
         }
@@ -487,7 +514,7 @@ async fn create_optimize(
                 .unwrap_or("auto")
                 .to_string();
             let meta = optional_meta(&req);
-            state.jobs.set_pending(&job_id, "optimize", meta).await;
+            state.jobs.set_pending(&job_id, "optimize", meta, submit_urls.clone(), callback_url.clone()).await;
             eprintln!("[{job_id}] optimize queued (format={format})");
             actions::optimize::spawn(
                 &state,
@@ -581,6 +608,7 @@ async fn create_plan(
     config::validate_url(source_url)?;
     let job_id = resolve_job_id(&headers);
     let sync = sync_flag(&q);
+    let (submit_urls, callback_url) = submit_plumbing(&headers, &req)?;
 
     match state.jobs.existing_active(&job_id).await {
         Some(status) if !sync => return Ok(created(&job_id, "plan", &status)),
@@ -588,7 +616,7 @@ async fn create_plan(
         None if dispatch::from_env() == dispatch::Dispatch::Lambda => {
             state
                 .jobs
-                .set_pending(&job_id, "plan", optional_meta(&req))
+                .set_pending(&job_id, "plan", optional_meta(&req), submit_urls.clone(), callback_url.clone())
                 .await;
             lambda_dispatch(&state, &headers, &job_id, "plan", &req).await?;
         }
@@ -602,7 +630,7 @@ async fn create_plan(
                 .as_ref()
                 .and_then(|m| m["modelUploadId"].as_str())
                 .map(str::to_string);
-            state.jobs.set_pending(&job_id, "plan", meta).await;
+            state.jobs.set_pending(&job_id, "plan", meta, submit_urls.clone(), callback_url.clone()).await;
             eprintln!(
                 "[{job_id}] plan queued (model={})",
                 model_upload_id.as_deref().unwrap_or("?")
@@ -639,6 +667,7 @@ async fn create_compact(
         .ok_or_else(|| ApiError::invalid("mode must be 'xbf' or 'zstd'"))?;
     let job_id = resolve_job_id(&headers);
     let sync = sync_flag(&q);
+    let (submit_urls, callback_url) = submit_plumbing(&headers, &req)?;
 
     match state.jobs.existing_active(&job_id).await {
         Some(status) if !sync => return Ok(created(&job_id, "compact", &status)),
@@ -646,13 +675,13 @@ async fn create_compact(
         None if dispatch::from_env() == dispatch::Dispatch::Lambda => {
             state
                 .jobs
-                .set_pending(&job_id, "compact", optional_meta(&req))
+                .set_pending(&job_id, "compact", optional_meta(&req), submit_urls.clone(), callback_url.clone())
                 .await;
             lambda_dispatch(&state, &headers, &job_id, "compact", &req).await?;
         }
         None => {
             let meta = optional_meta(&req);
-            state.jobs.set_pending(&job_id, "compact", meta).await;
+            state.jobs.set_pending(&job_id, "compact", meta, submit_urls.clone(), callback_url.clone()).await;
             eprintln!("[{job_id}] compact queued");
             actions::compact::spawn(
                 &state,

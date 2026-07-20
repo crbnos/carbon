@@ -178,9 +178,7 @@ async fn complete(
     ];
     // Convert output paths are job-scoped, so no result-pointer cache (the bytes
     // are cached in-process instead); artifacts always re-upload.
-    jobs.pending_put(job_id, outputs, done, None).await;
-    jobs.set_status(job_id, "uploading").await;
-    jobs.wake(job_id);
+    jobs.finish(job_id, outputs, done, None).await;
 }
 
 /// Meshopt geometry optimisation + EXT_meshopt encode on the convert output.

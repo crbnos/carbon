@@ -120,9 +120,7 @@ pub fn spawn(state: &AppState, job_id: &str, req: CompactReq) {
             content_type: "application/zstd".into(),
             bytes: out.bytes,
         }];
-        jobs.pending_put(&job_id, outputs, done, None).await;
-        jobs.set_status(&job_id, "uploading").await;
-        jobs.wake(&job_id);
+        jobs.finish(&job_id, outputs, done, None).await;
     });
 }
 

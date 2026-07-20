@@ -164,9 +164,7 @@ pub fn spawn(state: &AppState, job_id: &str, req: OptimizeReq) {
             content_type: "model/gltf-binary".into(),
             bytes: outcome.glb,
         }];
-        jobs.pending_put(&job_id, outputs, done, None).await;
-        jobs.set_status(&job_id, "uploading").await;
-        jobs.wake(&job_id);
+        jobs.finish(&job_id, outputs, done, None).await;
     });
 }
 

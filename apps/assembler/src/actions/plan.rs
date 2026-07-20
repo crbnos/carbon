@@ -126,9 +126,7 @@ pub fn spawn(state: &AppState, job_id: &str, req: PlanReq) {
                             content_type: "application/json".into(),
                             bytes,
                         }];
-                        jobs.pending_put(&job_id, outputs, done, cache).await;
-                        jobs.set_status(&job_id, "uploading").await;
-                        jobs.wake(&job_id);
+                        jobs.finish(&job_id, outputs, done, cache).await;
                     }
                     // Inline: return the plan in the result for the app to persist.
                     None => {
