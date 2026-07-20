@@ -87,6 +87,12 @@ function resolve(
         return path.to.qualityDocument(documentId);
       if (documentType === "supplier")
         return path.to.supplierApproval(documentId);
+      if (documentType === "journalEntry")
+        return path.to.journalEntry(documentId);
+      if (documentType === "payment") return path.to.payment(documentId);
+      if (documentType === "purchaseInvoice")
+        return path.to.purchaseInvoice(documentId);
+      if (documentType === "memo") return path.to.memo(documentId);
       return null;
     default:
       return null;

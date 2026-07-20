@@ -202,9 +202,15 @@ serve(async (req: Request) => {
     // --------------------------------------------------------------
     // POST
     // --------------------------------------------------------------
-    if (memo.data.status !== "Draft") {
+    // Draft posts normally; a memo parked in "Pending Approval" may only be
+    // posted once its approval request is Approved (re-checked under the row
+    // lock inside the transaction below to avoid a flip-to-Draft TOCTOU).
+    if (
+      memo.data.status !== "Draft" &&
+      memo.data.status !== "Pending Approval"
+    ) {
       throw new Error(
-        `Cannot post memo in status ${memo.data.status} (only Draft)`
+        `Cannot post memo in status ${memo.data.status} (only Draft or approved Pending Approval)`
       );
     }
     if (memo.data.exchangeRate <= 0) {
@@ -348,9 +354,27 @@ serve(async (req: Request) => {
         .executeTakeFirst();
       if (!locked) throw new Error("Memo not found");
       if (locked.status !== "Draft") {
-        throw new Error(
-          `Cannot post memo in status ${locked.status} (only Draft)`
-        );
+        // The only other postable status is an approved "Pending Approval".
+        if (locked.status === "Pending Approval") {
+          const latestRequest = await trx
+            .selectFrom("approvalRequest")
+            .select(["status"])
+            .where("documentType", "=", "memo")
+            .where("documentId", "=", memoId)
+            .where("companyId", "=", companyId)
+            .orderBy("requestedAt", "desc")
+            .limit(1)
+            .executeTakeFirst();
+          if (latestRequest?.status !== "Approved") {
+            throw new Error(
+              "Cannot post memo: pending approval has not been approved"
+            );
+          }
+        } else {
+          throw new Error(
+            `Cannot post memo in status ${locked.status} (only Draft or approved Pending Approval)`
+          );
+        }
       }
 
       let journalId: string | null = null;

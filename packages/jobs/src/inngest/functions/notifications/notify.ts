@@ -44,6 +44,656 @@ async function getCompanyIntegrations(
     .eq("companyId", companyId);
 }
 
+async function getDescription(
+  client: ReturnType<typeof getCarbonServiceRole>,
+  type: NotificationEvent,
+  documentId: string,
+  documentType?: ApprovalDocumentType
+): Promise<string | null> {
+  switch (type) {
+    case NotificationEvent.SalesRfqReady:
+    case NotificationEvent.SalesRfqAssignment: {
+      const salesRfq = await client
+        .from("salesRfq")
+        .select("*")
+        .eq("id", documentId)
+        .single();
+
+      if (salesRfq.error) {
+        console.error("Failed to get salesRfq", salesRfq.error);
+        throw salesRfq.error;
+      }
+
+      if (type === NotificationEvent.SalesRfqReady) {
+        return `RFQ ${salesRfq?.data?.rfqId} is ready for quote`;
+      } else if (type === NotificationEvent.SalesRfqAssignment) {
+        return `RFQ ${salesRfq?.data?.rfqId} assigned to you`;
+      }
+      return null;
+    }
+
+    case NotificationEvent.QuoteAssignment: {
+      const quote = await client
+        .from("quote")
+        .select("*")
+        .eq("id", documentId)
+        .single();
+      if (quote.error) {
+        console.error("Failed to get quote", quote.error);
+        throw quote.error;
+      }
+      return `Quote ${quote?.data?.quoteId} assigned to you`;
+    }
+
+    case NotificationEvent.QuoteExpired: {
+      const expiredQuote = await client
+        .from("quote")
+        .select("*")
+        .eq("id", documentId)
+        .single();
+      if (expiredQuote.error) {
+        console.error("Failed to get quote", expiredQuote.error);
+        throw expiredQuote.error;
+      }
+      return `Quote ${expiredQuote?.data?.quoteId} has expired`;
+    }
+
+    case NotificationEvent.SalesOrderAssignment: {
+      const salesOrder = await client
+        .from("salesOrder")
+        .select("*")
+        .eq("id", documentId)
+        .single();
+
+      if (salesOrder.error) {
+        console.error("Failed to get salesOrder", salesOrder.error);
+        throw salesOrder.error;
+      }
+
+      return `Sales Order ${salesOrder?.data?.salesOrderId} assigned to you`;
+    }
+
+    case NotificationEvent.MaintenanceDispatchCreated: {
+      const maintenanceDispatchCreated = await client
+        .from("maintenanceDispatch")
+        .select("*")
+        .eq("id", documentId)
+        .single();
+
+      if (maintenanceDispatchCreated.error) {
+        console.error(
+          "Failed to get maintenanceDispatchCreated",
+          maintenanceDispatchCreated.error
+        );
+        throw maintenanceDispatchCreated.error;
+      }
+
+      return `New maintenance dispatch ${maintenanceDispatchCreated?.data?.maintenanceDispatchId} created`;
+    }
+
+    case NotificationEvent.MaintenanceDispatchAssignment: {
+      const maintenanceDispatch = await client
+        .from("maintenanceDispatch")
+        .select("*, workCenter(id, name)")
+        .eq("id", documentId)
+        .single();
+
+      if (maintenanceDispatch.error) {
+        console.error(
+          "Failed to get maintenanceDispatch",
+          maintenanceDispatch.error
+        );
+        throw maintenanceDispatch.error;
+      }
+
+      const workCenterName =
+        maintenanceDispatch.data?.workCenter?.name ?? "Unknown";
+      const dispatchId =
+        maintenanceDispatch.data?.maintenanceDispatchId ?? documentId;
+      return `Maintenance dispatch ${dispatchId} for ${workCenterName} assigned to you`;
+    }
+
+    case NotificationEvent.NonConformanceAssignment: {
+      const nonConformance = await client
+        .from("nonConformance")
+        .select("*")
+        .eq("id", documentId)
+        .single();
+
+      if (nonConformance.error) {
+        console.error("Failed to get nonConformance", nonConformance.error);
+        throw nonConformance.error;
+      }
+
+      return `Issue ${nonConformance?.data?.nonConformanceId} assigned to you`;
+    }
+
+    case NotificationEvent.JobAssignment: {
+      const job = await client
+        .from("job")
+        .select("*")
+        .eq("id", documentId)
+        .single();
+
+      if (job.error) {
+        console.error("Failed to get job", job.error);
+        throw job.error;
+      }
+
+      return `Job ${job?.data?.jobId} assigned to you`;
+    }
+
+    case NotificationEvent.JobCompleted: {
+      const completedJob = await client
+        .from("job")
+        .select("*")
+        .eq("id", documentId)
+        .single();
+
+      if (completedJob.error) {
+        console.error("Failed to get job", completedJob.error);
+        throw completedJob.error;
+      }
+
+      return `Job ${completedJob?.data?.jobId} is complete!`;
+    }
+
+    case NotificationEvent.JobOperationAssignment:
+    case NotificationEvent.JobOperationMessage: {
+      const [, operationId] = documentId.split(":");
+      const jobOperation = await client
+        .from("jobOperation")
+        .select("*, job(id, jobId)")
+        .eq("id", operationId!)
+        .single();
+
+      if (jobOperation.error) {
+        console.error("Failed to get jobOperation", jobOperation.error);
+        throw jobOperation.error;
+      }
+
+      if (type === NotificationEvent.JobOperationAssignment) {
+        return `New job operation assigned to you on ${jobOperation?.data?.job?.jobId}`;
+      } else if (type === NotificationEvent.JobOperationMessage) {
+        return `New message on ${jobOperation?.data?.job?.jobId} operation: ${jobOperation?.data?.description}`;
+      }
+      return null;
+    }
+
+    case NotificationEvent.ProcedureAssignment: {
+      const procedure = await client
+        .from("procedure")
+        .select("*")
+        .eq("id", documentId)
+        .single();
+
+      if (procedure.error) {
+        console.error("Failed to get procedure", procedure.error);
+        throw procedure.error;
+      }
+
+      return `Procedure ${procedure?.data?.name} version ${procedure?.data?.version} assigned to you`;
+    }
+
+    case NotificationEvent.DigitalQuoteResponse: {
+      const digitalQuote = await client
+        .from("quote")
+        .select("*")
+        .eq("id", documentId)
+        .single();
+
+      if (digitalQuote.error) {
+        console.error("Failed to get digital quote", digitalQuote.error);
+        throw digitalQuote.error;
+      }
+
+      if (digitalQuote.data.digitalQuoteAcceptedBy) {
+        return `Digital Quote ${digitalQuote?.data?.quoteId} was completed by ${digitalQuote.data.digitalQuoteAcceptedBy}`;
+      }
+
+      if (digitalQuote.data.digitalQuoteRejectedBy) {
+        return `Digital Quote ${digitalQuote?.data?.quoteId} was rejected by ${digitalQuote.data.digitalQuoteRejectedBy}`;
+      }
+
+      return `Digital Quote ${digitalQuote?.data?.quoteId} was accepted`;
+    }
+
+    case NotificationEvent.GaugeCalibrationExpired: {
+      const gaugeCalibration = await client
+        .from("gaugeCalibrationRecord")
+        .select("*")
+        .eq("id", documentId)
+        .single();
+
+      if (gaugeCalibration.error) {
+        console.error("Failed to get gaugeCalibration", gaugeCalibration.error);
+        throw gaugeCalibration.error;
+      }
+
+      return `Gauge ${gaugeCalibration?.data?.gaugeId} is out of calibration`;
+    }
+
+    case NotificationEvent.StockTransferAssignment: {
+      const stockTransfer = await client
+        .from("stockTransfer")
+        .select("*")
+        .eq("id", documentId)
+        .single();
+
+      if (stockTransfer.error) {
+        console.error("Failed to get stockTransfer", stockTransfer.error);
+        throw stockTransfer.error;
+      }
+
+      return `Stock Transfer ${stockTransfer?.data?.stockTransferId} assigned to you`;
+    }
+
+    case NotificationEvent.PickingListAssignment: {
+      const pickingList = await client
+        .from("pickingList")
+        .select("*")
+        .eq("id", documentId)
+        .single();
+
+      if (pickingList.error) {
+        console.error("Failed to get pickingList", pickingList.error);
+        throw pickingList.error;
+      }
+
+      return `Picking List ${pickingList?.data?.pickingListId} assigned to you`;
+    }
+
+    case NotificationEvent.TrainingAssignment: {
+      const trainingAssignment = await client
+        .from("trainingAssignment")
+        .select("*, training(id, name)")
+        .eq("id", documentId)
+        .single();
+
+      if (trainingAssignment.error) {
+        console.error(
+          "Failed to get trainingAssignment",
+          trainingAssignment.error
+        );
+        throw trainingAssignment.error;
+      }
+
+      return `Training "${trainingAssignment?.data?.training?.name}" assigned to you`;
+    }
+
+    case NotificationEvent.ResourceTrainingAssignment: {
+      const training = await client
+        .from("training")
+        .select("name")
+        .eq("id", documentId)
+        .single();
+
+      if (training.error) {
+        console.error("Failed to get training", training.error);
+        throw training.error;
+      }
+
+      return `Training "${training?.data?.name}" assigned to you`;
+    }
+
+    case NotificationEvent.PurchaseOrderAssignment: {
+      const purchaseOrder = await client
+        .from("purchaseOrder")
+        .select("*")
+        .eq("id", documentId)
+        .single();
+
+      if (purchaseOrder.error) {
+        console.error("Failed to get purchaseOrder", purchaseOrder.error);
+        throw purchaseOrder.error;
+      }
+
+      return `Purchase Order ${purchaseOrder?.data?.purchaseOrderId} assigned to you`;
+    }
+
+    case NotificationEvent.PurchaseInvoiceAssignment: {
+      const purchaseInvoice = await client
+        .from("purchaseInvoice")
+        .select("*")
+        .eq("id", documentId)
+        .single();
+
+      if (purchaseInvoice.error) {
+        console.error("Failed to get purchaseInvoice", purchaseInvoice.error);
+        throw purchaseInvoice.error;
+      }
+
+      return `Purchase Invoice ${purchaseInvoice?.data?.invoiceId} assigned to you`;
+    }
+
+    case NotificationEvent.SuggestionResponse: {
+      const suggestion = await client
+        .from("suggestion")
+        .select("*, user(id, fullName)")
+        .eq("id", documentId)
+        .single();
+
+      if (suggestion.error) {
+        console.error("Failed to get suggestion", suggestion.error);
+        throw suggestion.error;
+      }
+
+      const submittedBy = suggestion.data.user?.fullName || "Anonymous";
+      return `New suggestion submitted by ${submittedBy}`;
+    }
+
+    case NotificationEvent.RiskAssignment: {
+      const risk = await client
+        .from("riskRegister")
+        .select("*")
+        .eq("id", documentId)
+        .single();
+
+      if (risk.error) {
+        console.error("Failed to get risk", risk.error);
+        throw risk.error;
+      }
+
+      return `Risk "${risk?.data?.title}" assigned to you`;
+    }
+
+    case NotificationEvent.SupplierQuoteAssignment: {
+      const supplierQuoteAssignment = await client
+        .from("supplierQuote")
+        .select("*")
+        .eq("id", documentId)
+        .single();
+
+      if (supplierQuoteAssignment.error) {
+        console.error(
+          "Failed to get supplier quote",
+          supplierQuoteAssignment.error
+        );
+        throw supplierQuoteAssignment.error;
+      }
+
+      return `Supplier Quote ${supplierQuoteAssignment?.data?.supplierQuoteId} assigned to you`;
+    }
+
+    case NotificationEvent.SupplierQuoteResponse: {
+      const supplierQuote = await client
+        .from("supplierQuote")
+        .select("*")
+        .eq("id", documentId)
+        .single();
+
+      if (supplierQuote.error) {
+        console.error("Failed to get supplier quote", supplierQuote.error);
+        throw supplierQuote.error;
+      }
+
+      const externalNotes = supplierQuote.data.externalNotes as Record<
+        string,
+        unknown
+      > | null;
+      const respondedBy =
+        (externalNotes?.lastSubmittedBy as string | undefined) || "Supplier";
+      return `Supplier Quote ${supplierQuote?.data?.supplierQuoteId} was submitted by ${respondedBy}`;
+    }
+
+    case NotificationEvent.ApprovalRequested: {
+      if (documentType === "purchaseOrder") {
+        const purchaseOrderResult = await client
+          .from("purchaseOrder")
+          .select("purchaseOrderId")
+          .eq("id", documentId)
+          .single();
+
+        if (purchaseOrderResult.error || !purchaseOrderResult.data) {
+          console.error(
+            "Failed to retrieve purchase order for approval notification",
+            purchaseOrderResult.error
+          );
+          return "Purchase order requires your approval";
+        }
+
+        return `Purchase order ${purchaseOrderResult.data.purchaseOrderId} requires your approval`;
+      }
+
+      if (documentType === "qualityDocument") {
+        const qualityDocumentResult = await client
+          .from("qualityDocument")
+          .select("name")
+          .eq("id", documentId)
+          .single();
+
+        if (qualityDocumentResult.error || !qualityDocumentResult.data) {
+          console.error(
+            "Failed to retrieve quality document for approval notification",
+            qualityDocumentResult.error
+          );
+          return "Quality document requires your approval";
+        }
+
+        const qualityDocumentName =
+          qualityDocumentResult.data.name ?? "Untitled";
+        return `Quality document "${qualityDocumentName}" requires your approval`;
+      }
+
+      if (documentType === "journalEntry") {
+        const journalEntryResult = await client
+          .from("journal")
+          .select("journalEntryId")
+          .eq("id", documentId)
+          .single();
+
+        if (journalEntryResult.error || !journalEntryResult.data) {
+          console.error(
+            "Failed to retrieve journal entry for approval notification",
+            journalEntryResult.error
+          );
+          return "Journal entry requires your approval";
+        }
+
+        return `Journal entry ${journalEntryResult.data.journalEntryId} requires your approval`;
+      }
+
+      if (documentType === "payment") {
+        const paymentResult = await client
+          .from("payment")
+          .select("paymentId")
+          .eq("id", documentId)
+          .single();
+
+        if (paymentResult.error || !paymentResult.data) {
+          console.error(
+            "Failed to retrieve payment for approval notification",
+            paymentResult.error
+          );
+          return "Payment requires your approval";
+        }
+
+        return `Payment ${paymentResult.data.paymentId} requires your approval`;
+      }
+
+      if (documentType === "purchaseInvoice") {
+        const purchaseInvoiceResult = await client
+          .from("purchaseInvoice")
+          .select("invoiceId")
+          .eq("id", documentId)
+          .single();
+
+        if (purchaseInvoiceResult.error || !purchaseInvoiceResult.data) {
+          console.error(
+            "Failed to retrieve purchase invoice for approval notification",
+            purchaseInvoiceResult.error
+          );
+          return "Purchase invoice requires your approval";
+        }
+
+        return `Purchase invoice ${purchaseInvoiceResult.data.invoiceId} requires your approval`;
+      }
+
+      if (documentType === "memo") {
+        const memoResult = await client
+          .from("memo")
+          .select("memoId")
+          .eq("id", documentId)
+          .single();
+
+        if (memoResult.error || !memoResult.data) {
+          console.error(
+            "Failed to retrieve memo for approval notification",
+            memoResult.error
+          );
+          return "Memo requires your approval";
+        }
+
+        return `Memo ${memoResult.data.memoId} requires your approval`;
+      }
+      return `Approval requested`;
+    }
+
+    case NotificationEvent.ApprovalApproved: {
+      if (documentType === "purchaseOrder") {
+        const poApproved = await client
+          .from("purchaseOrder")
+          .select("purchaseOrderId")
+          .eq("id", documentId)
+          .single();
+        if (poApproved.error || !poApproved.data) {
+          return "Your purchase order was approved";
+        }
+        return `Purchase order ${poApproved.data.purchaseOrderId} was approved`;
+      }
+      if (documentType === "qualityDocument") {
+        const qdApproved = await client
+          .from("qualityDocument")
+          .select("name")
+          .eq("id", documentId)
+          .single();
+        if (qdApproved.error || !qdApproved.data) {
+          return "Your quality document was approved";
+        }
+        return `Quality document "${qdApproved.data.name ?? "Untitled"}" was approved`;
+      }
+      if (documentType === "journalEntry") {
+        const journalEntryApproved = await client
+          .from("journal")
+          .select("journalEntryId")
+          .eq("id", documentId)
+          .single();
+        if (journalEntryApproved.error || !journalEntryApproved.data) {
+          return "Your journal entry was approved";
+        }
+        return `Journal entry ${journalEntryApproved.data.journalEntryId} was approved`;
+      }
+      if (documentType === "payment") {
+        const paymentApproved = await client
+          .from("payment")
+          .select("paymentId")
+          .eq("id", documentId)
+          .single();
+        if (paymentApproved.error || !paymentApproved.data) {
+          return "Your payment was approved";
+        }
+        return `Payment ${paymentApproved.data.paymentId} was approved`;
+      }
+      if (documentType === "purchaseInvoice") {
+        const purchaseInvoiceApproved = await client
+          .from("purchaseInvoice")
+          .select("invoiceId")
+          .eq("id", documentId)
+          .single();
+        if (purchaseInvoiceApproved.error || !purchaseInvoiceApproved.data) {
+          return "Your purchase invoice was approved";
+        }
+        return `Purchase invoice ${purchaseInvoiceApproved.data.invoiceId} was approved`;
+      }
+      if (documentType === "memo") {
+        const memoApproved = await client
+          .from("memo")
+          .select("memoId")
+          .eq("id", documentId)
+          .single();
+        if (memoApproved.error || !memoApproved.data) {
+          return "Your memo was approved";
+        }
+        return `Memo ${memoApproved.data.memoId} was approved`;
+      }
+      return "Your approval request was approved";
+    }
+
+    case NotificationEvent.ApprovalRejected: {
+      if (documentType === "purchaseOrder") {
+        const poRejected = await client
+          .from("purchaseOrder")
+          .select("purchaseOrderId")
+          .eq("id", documentId)
+          .single();
+        if (poRejected.error || !poRejected.data) {
+          return "Your purchase order was rejected";
+        }
+        return `Purchase order ${poRejected.data.purchaseOrderId} was rejected`;
+      }
+      if (documentType === "qualityDocument") {
+        const qdRejected = await client
+          .from("qualityDocument")
+          .select("name")
+          .eq("id", documentId)
+          .single();
+        if (qdRejected.error || !qdRejected.data) {
+          return "Your quality document was rejected";
+        }
+        return `Quality document "${qdRejected.data.name ?? "Untitled"}" was rejected`;
+      }
+      if (documentType === "journalEntry") {
+        const journalEntryRejected = await client
+          .from("journal")
+          .select("journalEntryId")
+          .eq("id", documentId)
+          .single();
+        if (journalEntryRejected.error || !journalEntryRejected.data) {
+          return "Your journal entry was rejected";
+        }
+        return `Journal entry ${journalEntryRejected.data.journalEntryId} was rejected`;
+      }
+      if (documentType === "payment") {
+        const paymentRejected = await client
+          .from("payment")
+          .select("paymentId")
+          .eq("id", documentId)
+          .single();
+        if (paymentRejected.error || !paymentRejected.data) {
+          return "Your payment was rejected";
+        }
+        return `Payment ${paymentRejected.data.paymentId} was rejected`;
+      }
+      if (documentType === "purchaseInvoice") {
+        const purchaseInvoiceRejected = await client
+          .from("purchaseInvoice")
+          .select("invoiceId")
+          .eq("id", documentId)
+          .single();
+        if (purchaseInvoiceRejected.error || !purchaseInvoiceRejected.data) {
+          return "Your purchase invoice was rejected";
+        }
+        return `Purchase invoice ${purchaseInvoiceRejected.data.invoiceId} was rejected`;
+      }
+      if (documentType === "memo") {
+        const memoRejected = await client
+          .from("memo")
+          .select("memoId")
+          .eq("id", documentId)
+          .single();
+        if (memoRejected.error || !memoRejected.data) {
+          return "Your memo was rejected";
+        }
+        return `Memo ${memoRejected.data.memoId} was rejected`;
+      }
+      return "Your approval request was rejected";
+    }
+
+    default:
+      return null;
+  }
+}
+
 // Per-event default destinations. Callers can override by passing
 // `destinations` in the payload; otherwise these defaults apply.
 // InApp is always added separately and cannot be opted out of.

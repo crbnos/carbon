@@ -1,5 +1,6 @@
 import useUsersSubmodules from "./useUsersSubmodules";
 
+export * from "./AccessReport";
 export * from "./Customers";
 export * from "./components";
 export * from "./Employees";

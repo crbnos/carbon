@@ -231,7 +231,9 @@ export class BillSyncer extends BaseEntitySyncer<
         supplierExternalId: row.supplierId
           ? (supplierExternalIds.get(row.supplierId) ?? null)
           : null,
-        status: row.status,
+        // A "Pending Approval" invoice is pre-post (not yet a real bill), so it
+        // presents to the external provider as a Draft.
+        status: row.status === "Pending Approval" ? "Draft" : row.status,
         dateIssued: row.dateIssued,
         dateDue: row.dateDue,
         datePaid: row.datePaid,

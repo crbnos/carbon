@@ -4,6 +4,13 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
+import {
+  hasPendingApproval,
+  isApprovalRequired,
+  notifyApprovers,
+  parkDocumentForApproval
+} from "~/modules/shared";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -17,6 +24,56 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const serviceRole = getCarbonServiceRole();
+
+  // Approval gate. Base amount = totalAmount * exchangeRate (the convention
+  // post-payment itself uses). If a matching enabled rule exists and the payment
+  // isn't already parked, park it in "Pending Approval" and request approval
+  // instead of posting; the edge function only posts an approved Pending Approval.
+  const payment = await serviceRole
+    .from("payment")
+    .select("status, totalAmount, exchangeRate")
+    .eq("id", paymentId)
+    .eq("companyId", companyId)
+    .single();
+  if (payment.data && payment.data.status === "Draft") {
+    const baseAmount =
+      Number(payment.data.totalAmount) * Number(payment.data.exchangeRate);
+    if (
+      await isApprovalRequired(serviceRole, "payment", companyId, baseAmount)
+    ) {
+      if (!(await hasPendingApproval(serviceRole, "payment", paymentId))) {
+        const parked = await parkDocumentForApproval(getDatabaseClient(), {
+          table: "payment",
+          documentType: "payment",
+          documentId: paymentId,
+          companyId,
+          requestedBy: userId,
+          amount: baseAmount
+        });
+        if (parked.error) {
+          throw redirect(
+            path.to.payment(paymentId),
+            await flash(
+              request,
+              error(parked.error, "Failed to submit payment")
+            )
+          );
+        }
+        await notifyApprovers(serviceRole, {
+          documentType: "payment",
+          documentId: paymentId,
+          companyId,
+          requestedBy: userId,
+          amount: baseAmount
+        });
+      }
+      throw redirect(
+        path.to.payment(paymentId),
+        await flash(request, success("Payment submitted for approval"))
+      );
+    }
+  }
+
   try {
     const result = await serviceRole.functions.invoke("post-payment", {
       body: {

@@ -39,6 +39,10 @@ export type ApprovalRequestForApproveCheck = {
   amount: number | null;
   documentType: ApprovalDocumentType;
   companyId: string;
+  // The user who submitted the request. Present so the engine can enforce
+  // no-self-approval (a requester may never approve their own document when
+  // companySettings.enforceNoSelfApproval is on).
+  requestedBy: string;
 };
 
 export type ApprovalRequestForCancelCheck = {

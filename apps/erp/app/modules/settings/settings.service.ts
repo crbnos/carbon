@@ -19,6 +19,7 @@ import type { JSONContent } from "@carbon/react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { plmReleaseControl as plmReleaseControlOptions } from "~/modules/items/items.models";
+import { getApprovalRules, getApproverUserIdsForRule } from "~/modules/shared";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { interpolateSequenceDate } from "~/utils/string";
@@ -1397,4 +1398,189 @@ export async function upsertWebhook(
     return client.from("webhook").insert(webhook).select("id").single();
   }
   return client.from("webhook").update(sanitize(webhook)).eq("id", webhook.id);
+}
+
+export type SodConflict = {
+  type: string;
+  severity: "warning" | "info";
+  subject: string;
+  detail: string;
+};
+
+/**
+ * Segregation-of-duties detective report. Evaluates a seeded conflict matrix
+ * (a typed constant, NOT a DB table) over `userPermission` (flat
+ * `${module}_${action}` → companyId[] keys, `"0"` = all companies) and approval
+ * rule membership, and surfaces standing exceptions (no JE rule configured,
+ * self-approval enforcement disabled). Returns the standard `{ data, error }`.
+ */
+export async function getSodConflicts(
+  client: SupabaseClient<Database>,
+  companyId: string
+): Promise<{ data: SodConflict[] | null; error: unknown }> {
+  const [settings, rules, employees] = await Promise.all([
+    getCompanySettings(client, companyId),
+    getApprovalRules(client, companyId),
+    client
+      .from("employees")
+      .select("id, name")
+      .eq("companyId", companyId)
+      .eq("active", true)
+  ]);
+
+  if (settings.error) return { data: null, error: settings.error };
+  if (rules.error) return { data: null, error: rules.error };
+  if (employees.error) return { data: null, error: employees.error };
+
+  const employeeIds = (employees.data ?? [])
+    .map((employee) => employee.id)
+    .filter((id): id is string => Boolean(id));
+
+  // userPermission is keyed by user id, not companyId, so it must be scoped to
+  // the company's employees explicitly.
+  const permissions = employeeIds.length
+    ? await client
+        .from("userPermission")
+        .select("id, permissions")
+        .in("id", employeeIds)
+    : { data: [], error: null };
+
+  if (permissions.error) return { data: null, error: permissions.error };
+
+  const nameByUserId = new Map(
+    (employees.data ?? []).map((employee) => [
+      employee.id ?? "",
+      employee.name ?? employee.id ?? ""
+    ])
+  );
+  const nameOf = (userId: string) => nameByUserId.get(userId) ?? userId;
+
+  // module_action → Set of userIds holding it for THIS company
+  const heldByUser = new Map<string, Set<string>>();
+  for (const row of permissions.data ?? []) {
+    const set = new Set<string>();
+    const perms = (row.permissions ?? {}) as Record<string, unknown>;
+    for (const [key, value] of Object.entries(perms)) {
+      if (!Array.isArray(value)) continue;
+      if (value.includes(companyId) || value.includes("0")) set.add(key);
+    }
+    heldByUser.set(row.id, set);
+  }
+  const holds = (userId: string, key: string) =>
+    heldByUser.get(userId)?.has(key) ?? false;
+
+  const enabledRules = (rules.data ?? []).filter((rule) => rule.enabled);
+  const jeRules = enabledRules.filter(
+    (rule) => rule.documentType === "journalEntry"
+  );
+  const paymentRules = enabledRules.filter(
+    (rule) => rule.documentType === "payment"
+  );
+
+  const approverSet = async (
+    subset: typeof enabledRules
+  ): Promise<Set<string>> => {
+    const expanded = await Promise.all(
+      subset.map((rule) => getApproverUserIdsForRule(client, rule))
+    );
+    return new Set(expanded.flat());
+  };
+
+  const [jeApprovers, paymentApprovers, anyApprovers] = await Promise.all([
+    approverSet(jeRules),
+    approverSet(paymentRules),
+    approverSet(enabledRules)
+  ]);
+
+  const enforceNoSelfApproval = settings.data?.enforceNoSelfApproval ?? true;
+
+  const conflicts: SodConflict[] = [];
+
+  // Deterministic per-user ordering by display name.
+  const sortedUserIds = [...employeeIds].sort((a, b) =>
+    nameOf(a).localeCompare(nameOf(b))
+  );
+
+  // 1. JE self-approval capability: accounting_update AND JE rule approver.
+  const jeSeverity: SodConflict["severity"] = enforceNoSelfApproval
+    ? "info"
+    : "warning";
+  for (const userId of sortedUserIds) {
+    if (holds(userId, "accounting_update") && jeApprovers.has(userId)) {
+      conflicts.push({
+        type: "Journal entry preparer is also an approver",
+        severity: jeSeverity,
+        subject: nameOf(userId),
+        detail: enforceNoSelfApproval
+          ? "Holds accounting update and is an approver on an enabled journal entry rule. The runtime no-self-approval block mitigates this; monitor via the access review."
+          : "Holds accounting update and is an approver on an enabled journal entry rule, and self-approval enforcement is OFF — this user can approve their own journal entries."
+      });
+    }
+  }
+
+  // 2. Supplier maintenance + payment approver.
+  for (const userId of sortedUserIds) {
+    if (holds(userId, "purchasing_create") && paymentApprovers.has(userId)) {
+      conflicts.push({
+        type: "Supplier maintenance and payment approval",
+        severity: "warning",
+        subject: nameOf(userId),
+        detail:
+          "Can create purchasing records (suppliers) and is an approver on an enabled payment rule."
+      });
+    }
+  }
+
+  // 3. Rule configuration + approver on any enabled rule.
+  for (const userId of sortedUserIds) {
+    if (holds(userId, "settings_update") && anyApprovers.has(userId)) {
+      conflicts.push({
+        type: "Approval rule configuration and approver",
+        severity: "warning",
+        subject: nameOf(userId),
+        detail:
+          "Can edit approval rules (settings update) and is an approver on an enabled rule — can grant themselves approval authority."
+      });
+    }
+  }
+
+  // 4. Sequence editing + posting.
+  for (const userId of sortedUserIds) {
+    if (
+      holds(userId, "settings_update") &&
+      holds(userId, "accounting_update")
+    ) {
+      conflicts.push({
+        type: "Sequence configuration and posting",
+        severity: "warning",
+        subject: nameOf(userId),
+        detail:
+          "Holds settings update (sequence editing) and accounting update (posting)."
+      });
+    }
+  }
+
+  // 5. No enabled journal-entry rule configured (opt-in visibility).
+  if (jeRules.length === 0) {
+    conflicts.push({
+      type: "No journal entry approval rule configured",
+      severity: "warning",
+      subject: "Company",
+      detail:
+        "This company has no enabled journal entry approval rule; manual journal entries post without approval."
+    });
+  }
+
+  // 6. Self-approval enforcement disabled (standing exception).
+  if (!enforceNoSelfApproval) {
+    conflicts.push({
+      type: "Self-approval enforcement disabled",
+      severity: "warning",
+      subject: "Company",
+      detail:
+        "enforceNoSelfApproval is OFF — requesters who are also approvers can approve their own documents."
+    });
+  }
+
+  return { data: conflicts, error: null };
 }

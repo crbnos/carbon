@@ -15,6 +15,7 @@ import type {
   DimensionWithValues,
   JournalLineDimensionValue
 } from "~/modules/accounting/ui/JournalEntries/types";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -97,7 +98,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   if (intent === "post") {
-    const postResult = await postJournalEntry(client, journalEntryId, userId);
+    const postResult = await postJournalEntry(
+      client,
+      getDatabaseClient(),
+      journalEntryId,
+      userId
+    );
     if (postResult.error) {
       return data(
         {},

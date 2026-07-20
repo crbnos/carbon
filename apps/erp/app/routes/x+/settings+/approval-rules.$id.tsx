@@ -83,7 +83,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     enabled: validation.data.enabled,
     approverGroupIds: validation.data.approverGroupIds || [],
     defaultApproverId: validation.data.defaultApproverId,
-    lowerBoundAmount: validation.data.lowerBoundAmount ?? 0
+    lowerBoundAmount: validation.data.lowerBoundAmount ?? 0,
+    escalationDays: validation.data.escalationDays
   });
 
   if (result.error) {

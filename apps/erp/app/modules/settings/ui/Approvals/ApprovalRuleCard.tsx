@@ -145,11 +145,7 @@ const ApprovalRuleCard = memo(
         <ConfirmDelete
           action={path.to.deleteApprovalRule(rule.id)}
           isOpen={deleteDisclosure.isOpen}
-          name={
-            documentType === "purchaseOrder"
-              ? t`Purchase Order approval rule`
-              : t`Quality Document approval rule`
-          }
+          name={`${approvalDocumentTypeLabel[documentType]} approval rule`}
           text={t`Are you sure you want to delete this approval rule? This cannot be undone.`}
           onCancel={deleteDisclosure.onClose}
           onSubmit={handleDeleteConfirm}

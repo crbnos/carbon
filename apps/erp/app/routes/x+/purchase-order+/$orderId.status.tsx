@@ -122,7 +122,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
           {
             amount: latestApproval.amount,
             documentType: latestApproval.documentType,
-            companyId: latestApproval.companyId
+            companyId: latestApproval.companyId,
+            requestedBy: latestApproval.requestedBy
           },
           userId
         );

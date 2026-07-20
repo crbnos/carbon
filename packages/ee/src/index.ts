@@ -1,3 +1,7 @@
+import { ClaudeMCP } from "./claude-mcp/config";
+
+export type { QuickInstallConnector } from "./claude-mcp/config";
+
 import { Email } from "./email/config";
 import { ExchangeRates } from "./exchange-rates/config";
 import { Jira } from "./jira/config";
@@ -65,7 +69,6 @@ export const getIntegrationConfigById = (id: IntegrationID) => {
 
 /**
  * Quick-install connectors are external link-outs with no DB state.
- * Each user connects individually. Currently empty — the section is hidden
- * until a connector is added.
+ * Each user connects individually (e.g. Claude MCP).
  */
-export const quickInstallConnectors: QuickInstallConnector[] = [];
+export const quickInstallConnectors = [ClaudeMCP];

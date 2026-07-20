@@ -214,9 +214,15 @@ serve(async (req: Request) => {
     // --------------------------------------------------------------
     // POST
     // --------------------------------------------------------------
-    if (payment.data.status !== "Draft") {
+    // Draft posts normally; a payment parked in "Pending Approval" may only be
+    // posted once its approval request is Approved (re-checked under the row
+    // lock inside the transaction below to avoid a flip-to-Draft TOCTOU).
+    if (
+      payment.data.status !== "Draft" &&
+      payment.data.status !== "Pending Approval"
+    ) {
       throw new Error(
-        `Cannot post payment in status ${payment.data.status} (only Draft)`
+        `Cannot post payment in status ${payment.data.status} (only Draft or approved Pending Approval)`
       );
     }
     if (payment.data.exchangeRate <= 0) {
@@ -448,9 +454,29 @@ serve(async (req: Request) => {
         .executeTakeFirst();
       if (!lockedPayment) throw new Error("Payment not found");
       if (lockedPayment.status !== "Draft") {
-        throw new Error(
-          `Cannot post payment in status ${lockedPayment.status} (only Draft)`
-        );
+        // The only other postable status is an approved "Pending Approval".
+        // Verify the latest approval request is Approved while holding the row
+        // lock, so a concurrent withdraw/reject can't race the post.
+        if (lockedPayment.status === "Pending Approval") {
+          const latestRequest = await trx
+            .selectFrom("approvalRequest")
+            .select(["status"])
+            .where("documentType", "=", "payment")
+            .where("documentId", "=", paymentId)
+            .where("companyId", "=", companyId)
+            .orderBy("requestedAt", "desc")
+            .limit(1)
+            .executeTakeFirst();
+          if (latestRequest?.status !== "Approved") {
+            throw new Error(
+              "Cannot post payment: pending approval has not been approved"
+            );
+          }
+        } else {
+          throw new Error(
+            `Cannot post payment in status ${lockedPayment.status} (only Draft or approved Pending Approval)`
+          );
+        }
       }
 
       // Lock + read the target invoices in one shot. Holding the row locks for

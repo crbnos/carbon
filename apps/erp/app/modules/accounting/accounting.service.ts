@@ -1,6 +1,8 @@
 import type { Database, Json } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import type { PeriodPostingSource } from "@carbon/utils";
+import { trigger } from "@carbon/jobs";
+import { NotificationEvent } from "@carbon/notifications";
 import {
   fiscalYearAndPeriodFor,
   getDateNYearsAgo,
@@ -13,6 +15,12 @@ import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import type { z } from "zod";
 import { getNextSequence } from "~/modules/settings";
+import {
+  getApprovalRuleByAmount,
+  getApproverUserIdsForRule,
+  hasPendingApproval,
+  isApprovalRequired
+} from "~/modules/shared";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
@@ -3355,6 +3363,7 @@ export async function saveJournalEntryWithLines(
 
 export async function postJournalEntry(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   id: string,
   userId: string
 ) {
@@ -3417,7 +3426,103 @@ export async function postJournalEntry(
     return { data: null, error: period.error };
   }
 
-  // 3. Flip status — lines are already in journalLine, no copying needed
+  // 3. Approval gate. This lives in the service (not the route) so the MCP path
+  // (accounting_postJournalEntry -> direct-executor) is covered too. If a
+  // matching enabled rule exists and the entry isn't already parked, park it in
+  // "Pending Approval", record the request (amount = total debits, the base
+  // amount), notify approvers, and return without posting. With no rule the
+  // behavior below is byte-identical to before this change.
+  const companyId = entry.data.companyId;
+  const baseAmount = totalDebit;
+  const approvalRequired = await isApprovalRequired(
+    client,
+    "journalEntry",
+    companyId,
+    baseAmount
+  );
+
+  if (approvalRequired) {
+    const alreadyPending = await hasPendingApproval(client, "journalEntry", id);
+    if (!alreadyPending) {
+      // Park the entry and record the approval request atomically. Both writes
+      // run in a single Kysely transaction (service-role, RLS bypassed — the
+      // callers already gate on accounting_update). If the approvalRequest
+      // insert fails, the park rolls back and the journal stays Draft, so we
+      // never strand a journal in "Pending Approval" with no request row —
+      // which the journal UPDATE RLS policy (USING status IN Draft/Posted)
+      // would then edit-lock, making it permanently unpostable. The Draft
+      // guard keeps a concurrent post from double-parking (zero rows -> throw
+      // -> rollback -> surfaced as an error, matching the prior .single()).
+      try {
+        await db.transaction().execute(async (trx) => {
+          await trx
+            .updateTable("journal")
+            .set({
+              status: "Pending Approval",
+              preparedBy: userId,
+              updatedBy: userId
+            })
+            .where("id", "=", id)
+            .where("status", "=", "Draft")
+            .returning("id")
+            .executeTakeFirstOrThrow();
+
+          await trx
+            .insertInto("approvalRequest")
+            .values({
+              documentType: "journalEntry",
+              documentId: id,
+              requestedBy: userId,
+              amount: baseAmount,
+              companyId,
+              createdBy: userId
+            })
+            .execute();
+        });
+      } catch (err) {
+        return {
+          data: null,
+          error: {
+            message:
+              err instanceof Error
+                ? err.message
+                : "Failed to submit journal entry for approval"
+          }
+        };
+      }
+
+      const rule = await getApprovalRuleByAmount(
+        client,
+        "journalEntry",
+        companyId,
+        baseAmount
+      );
+      const approverIds = rule.data
+        ? await getApproverUserIdsForRule(client, rule.data)
+        : [];
+      if (approverIds.length > 0) {
+        try {
+          await trigger("notify", {
+            event: NotificationEvent.ApprovalRequested,
+            companyId,
+            documentId: id,
+            documentType: "journalEntry",
+            recipient: { type: "users", userIds: approverIds },
+            from: userId
+          });
+        } catch (e) {
+          console.error("Failed to trigger approval notification", e);
+        }
+      }
+    }
+
+    // Parked (either just now or already) — surface success, not an error, so
+    // the MCP tool returns "submitted for approval" rather than failing.
+    return { data: { id }, error: null };
+  }
+
+  // 4. No rule → post immediately (unchanged behavior). Lines are already in
+  // journalLine, no copying needed.
   return client
     .from("journal")
     .update({

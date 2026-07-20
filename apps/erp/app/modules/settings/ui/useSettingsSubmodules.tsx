@@ -17,7 +17,9 @@ import {
   LuLayoutDashboard,
   LuNetwork,
   LuPrinter,
+  LuScale,
   LuSheet,
+  LuShieldCheck,
   LuShoppingCart,
   LuUsers,
   LuWebhook,
@@ -150,6 +152,12 @@ export default function useSettingsSubmodules() {
         name: t`System`,
         routes: [
           {
+            name: t`Access Report`,
+            to: path.to.accessReport,
+            role: "employee",
+            icon: <LuShieldCheck />
+          },
+          {
             name: t`API Keys`,
             to: path.to.apiKeys,
             role: "employee",
@@ -190,6 +198,12 @@ export default function useSettingsSubmodules() {
             to: path.to.sequences,
             role: "employee",
             icon: <LuSheet />
+          },
+          {
+            name: t`SoD Report`,
+            to: path.to.sodReport,
+            role: "employee",
+            icon: <LuScale />
           },
           {
             name: t`Webhooks`,

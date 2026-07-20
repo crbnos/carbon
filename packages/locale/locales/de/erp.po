@@ -404,6 +404,9 @@ msgstr "Akzeptanz"
 msgid "Acceptance passed"
 msgstr "Akzeptanz bestanden"
 
+msgid "Access Report"
+msgstr ""
+
 msgid "Account"
 msgstr "Konto"
 
@@ -457,6 +460,7 @@ msgstr "Abrechnungsperiode"
 
 msgid "Accounting Periods"
 msgstr "Abrechnungsperioden"
+msgstr ""
 
 msgid "Accounting: GL, AR, AP, and month-end close"
 msgstr "Buchhaltung: Hauptbuch, Debitorenbuchhaltung, Kreditorenbuchhaltung und Monatsabschluss"
@@ -1764,6 +1768,9 @@ msgstr "Stücklisten"
 msgid "Blind Count"
 msgstr "Blinde Inventur"
 
+msgid "Block the person who submitted a document from approving it. Disabling this permits self-approval and is flagged as a standing exception in the Segregation of Duties report."
+msgstr ""
+
 msgid "Block with an error"
 msgstr "Mit Fehler blockieren"
 
@@ -1980,6 +1987,7 @@ msgstr "Werkzeuge können nicht zu nicht gespeicherten Vorgängen hinzugefügt w
 
 msgid "Cannot close yet"
 msgstr "Kann noch nicht geschlossen werden"
+msgstr ""
 
 msgid "Cannot convert RFQ to quote"
 msgstr "RFQ kann nicht in Angebot umgewandelt werden"
@@ -2233,6 +2241,7 @@ msgstr "Schließen"
 
 msgid "Close {periodLabel}"
 msgstr "{periodLabel} schließen"
+msgstr ""
 
 msgid "Close Date"
 msgstr "Schließungsdatum"
@@ -2242,6 +2251,13 @@ msgstr "Zeitraum schließen"
 
 msgid "Close Status"
 msgstr "Schließstatus"
+msgstr ""
+
+msgid "Close Status"
+msgstr ""
+
+msgid "Close Date"
+msgstr "Schließungsdatum"
 
 msgid "Closed"
 msgstr "Geschlossen"
@@ -2504,6 +2520,7 @@ msgstr "Passwort bestätigen"
 
 msgid "Confirm Skip"
 msgstr "Überspringen bestätigen"
+msgstr ""
 
 msgid "Confirmed incoming stock — purchase & production orders (bars above zero)."
 msgstr "Bestätigter eingehender Bestand — Kauf- und Produktionsaufträge (Balken über Null)."
@@ -2513,6 +2530,9 @@ msgstr "Bestätigter ausgehender Bestand — Verkaufsaufträge & Auftragsmateria
 
 msgid "Confirms every posted journal entry in the period has equal debits and credits. If any entry is out of balance the trial balance won't tie out, so it must be corrected before the period can close."
 msgstr "Bestätigt, dass jeder gebuchte Journaleintrag in der Periode gleiche Belastungen und Gutschriften hat. Wenn ein Eintrag nicht ausgeglichen ist, stimmt die Probebilanz nicht überein, daher muss er korrigiert werden, bevor die Periode geschlossen werden kann."
+
+msgid "Conflict"
+msgstr ""
 
 msgid "Connect Carbon to your accounting, project management, and CAD tools and much more."
 msgstr "Verbinden Sie Carbon mit Ihren Buchhaltungs-, Projektmanagement- und CAD-Tools und vielem mehr."
@@ -3147,6 +3167,8 @@ msgstr "Aktienkonten, die verwendet werden, wenn Herstellungskosten in laufende 
 
 msgid "Credit Memo"
 msgstr "Gutschrift"
+msgid "Credit/Debit Memos"
+msgstr ""
 
 msgid "Credits & Debits"
 msgstr "Gutschriften & Belastungen"
@@ -4858,6 +4880,9 @@ msgstr "Eskalieren Sie an die Projektleiter"
 msgid "Escalation"
 msgstr "Eskalation"
 
+msgid "Escalation Days"
+msgstr ""
+
 msgid "Est. Duration"
 msgstr "Geschätzte Dauer"
 
@@ -4896,6 +4921,7 @@ msgstr "Jeder Test im Umfang wird in Ihrem konfigurierten System mit Ihren Daten
 
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "Jede erforderliche Aufgabe muss erledigt oder übersprungen werden, bevor der Zeitraum geschlossen werden kann."
+msgstr ""
 
 msgid "Every row was imported successfully."
 msgstr "Jede Zeile wurde erfolgreich importiert."
@@ -6246,6 +6272,9 @@ msgstr "Indirekte Materialien & Dienstleistungen"
 msgid "Indirect Materials & Services (default)"
 msgstr "Indirekte Materialien & Dienstleistungen (Standard)"
 
+msgid "Info"
+msgstr ""
+
 msgid "Infrastructure"
 msgstr "Infrastruktur"
 
@@ -7203,6 +7232,7 @@ msgstr "Als erledigt markieren"
 
 msgid "Mark Done"
 msgstr "Erledigt markieren"
+msgstr ""
 
 msgid "Mark Light Mode"
 msgstr "Marke Hellmodus"
@@ -9146,6 +9176,9 @@ msgstr "Aktuelle Woche"
 msgid "Prev"
 msgstr "Zurück"
 
+msgid "Prevent Self-Approval"
+msgstr ""
+
 msgid "Preventive action"
 msgstr "Hauptkonto für Bestandsbewertung"
 
@@ -9426,9 +9459,6 @@ msgstr "Bestellung"
 msgid "Purchase Order Amount"
 msgstr "Bestellmenge"
 
-msgid "Purchase Order approval rule"
-msgstr "Genehmigungsregel für Bestellung"
-
 msgid "Purchase Order ID"
 msgstr "Bestellnummer"
 
@@ -9543,9 +9573,6 @@ msgstr "Angebot bis Zahlungseingang"
 
 msgid "Quality"
 msgstr "Qualität"
-
-msgid "Quality Document approval rule"
-msgstr "Genehmigungsregel für Qualitätsdokument"
 
 msgid "Quality Documents"
 msgstr "Qualitätsdokumente"
@@ -9689,6 +9716,9 @@ msgstr "Rohstoffe (Standard)"
 msgid "Re-keying between quoting, the floor, and finance"
 msgstr "Erneute Eingabe zwischen Angebotserstellung, Produktion und Finanzen"
 
+msgid "Re-notify approvers daily once a request has been pending this many days. Leave empty to disable escalation."
+msgstr ""
+
 msgid "Reactivate"
 msgstr "Reaktivieren"
 
@@ -9730,6 +9760,7 @@ msgstr "Grund für Ablehnung (Optional)"
 
 msgid "Reason for skipping (required)"
 msgstr "Grund für das Überspringen (erforderlich)"
+msgstr ""
 
 msgid "Reasons"
 msgstr "Gründe"
@@ -10080,6 +10111,18 @@ msgstr "Angeforderte Datum"
 
 msgid "Require approval before suppliers can be set to Active"
 msgstr "Genehmigung erforderlich, bevor Lieferanten auf Aktiv gesetzt werden können"
+
+msgid "Require approval for credit and debit memos based on amount thresholds"
+msgstr ""
+
+msgid "Require approval for manual journal entries based on amount thresholds"
+msgstr ""
+
+msgid "Require approval for payments based on amount thresholds"
+msgstr ""
+
+msgid "Require approval for purchase invoices based on amount thresholds"
+msgstr ""
 
 msgid "Require approval for purchase orders based on amount thresholds"
 msgstr "Genehmigung für Bestellungen basierend auf Schwellenwertbeträgen erforderlich"
@@ -10668,6 +10711,9 @@ msgstr "Abschnitt"
 msgid "Segments that drive customer pricing and terms"
 msgstr "Segmente, die Kundenpreise und -bedingungen bestimmen"
 
+msgid "Segregation of Duties"
+msgstr ""
+
 msgid "Select"
 msgstr "Auswählen"
 
@@ -11222,6 +11268,7 @@ msgstr "Größen"
 
 msgid "Skip"
 msgstr "Überspringen"
+msgstr ""
 
 msgid "Skip Existing"
 msgstr "Vorhandene überspringen"
@@ -11246,6 +11293,9 @@ msgstr "Smoke-Test der täglichen Kernabläufe von Anfang bis Ende"
 
 msgid "so you can assign it here."
 msgstr "damit Sie es hier zuweisen können."
+
+msgid "SoD Report"
+msgstr ""
 
 msgid "Solutions Engineer"
 msgstr "Lösungsingenieur"
@@ -11533,6 +11583,9 @@ msgstr "Fremdvergabe-Abweichung"
 
 msgid "Subcontracting Variance (default)"
 msgstr "Fremdvergabe-Abweichung (Standard)"
+
+msgid "Subject"
+msgstr ""
 
 msgid "Subledger"
 msgstr "Nebenbuch"
@@ -11843,6 +11896,7 @@ msgstr "Zielversion"
 
 msgid "Task"
 msgstr "Aufgabe"
+msgstr ""
 
 msgid "tasks"
 msgstr "Aufgaben"

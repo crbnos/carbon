@@ -1884,6 +1884,7 @@ export type Database = {
           documentId: string
           documentType: Database["public"]["Enums"]["approvalDocumentType"]
           id: string
+          lastRemindedAt: string | null
           requestedAt: string
           requestedBy: string
           status: Database["public"]["Enums"]["approvalStatus"]
@@ -1901,6 +1902,7 @@ export type Database = {
           documentId: string
           documentType: Database["public"]["Enums"]["approvalDocumentType"]
           id?: string
+          lastRemindedAt?: string | null
           requestedAt?: string
           requestedBy: string
           status?: Database["public"]["Enums"]["approvalStatus"]
@@ -1918,6 +1920,7 @@ export type Database = {
           documentId?: string
           documentType?: Database["public"]["Enums"]["approvalDocumentType"]
           id?: string
+          lastRemindedAt?: string | null
           requestedAt?: string
           requestedBy?: string
           status?: Database["public"]["Enums"]["approvalStatus"]
@@ -6223,6 +6226,7 @@ export type Database = {
           digitalQuoteIncludesPurchaseOrders: boolean
           digitalQuoteNotificationGroup: string[]
           enforceInspectionFourEyes: boolean
+          enforceNoSelfApproval: boolean
           gaugeCalibrationExpiredNotificationGroup: string[]
           id: string
           inventoryJobCompletedNotificationGroup: string[]
@@ -6267,6 +6271,7 @@ export type Database = {
           digitalQuoteIncludesPurchaseOrders?: boolean
           digitalQuoteNotificationGroup?: string[]
           enforceInspectionFourEyes?: boolean
+          enforceNoSelfApproval?: boolean
           gaugeCalibrationExpiredNotificationGroup?: string[]
           id: string
           inventoryJobCompletedNotificationGroup?: string[]
@@ -6311,6 +6316,7 @@ export type Database = {
           digitalQuoteIncludesPurchaseOrders?: boolean
           digitalQuoteNotificationGroup?: string[]
           enforceInspectionFourEyes?: boolean
+          enforceNoSelfApproval?: boolean
           gaugeCalibrationExpiredNotificationGroup?: string[]
           id?: string
           inventoryJobCompletedNotificationGroup?: string[]
@@ -22417,6 +22423,8 @@ export type Database = {
       journal: {
         Row: {
           accountingPeriodId: string | null
+          approvalRequestId: string | null
+          approvedBy: string | null
           companyId: string
           createdAt: string
           createdBy: string | null
@@ -22427,6 +22435,7 @@ export type Database = {
           postedAt: string | null
           postedBy: string | null
           postingDate: string
+          preparedBy: string | null
           reversalOfId: string | null
           reversedById: string | null
           sourceType:
@@ -22439,6 +22448,8 @@ export type Database = {
         }
         Insert: {
           accountingPeriodId?: string | null
+          approvalRequestId?: string | null
+          approvedBy?: string | null
           companyId: string
           createdAt?: string
           createdBy?: string | null
@@ -22449,6 +22460,7 @@ export type Database = {
           postedAt?: string | null
           postedBy?: string | null
           postingDate?: string
+          preparedBy?: string | null
           reversalOfId?: string | null
           reversedById?: string | null
           sourceType?:
@@ -22461,6 +22473,8 @@ export type Database = {
         }
         Update: {
           accountingPeriodId?: string | null
+          approvalRequestId?: string | null
+          approvedBy?: string | null
           companyId?: string
           createdAt?: string
           createdBy?: string | null
@@ -22471,6 +22485,7 @@ export type Database = {
           postedAt?: string | null
           postedBy?: string | null
           postingDate?: string
+          preparedBy?: string | null
           reversalOfId?: string | null
           reversedById?: string | null
           sourceType?:
@@ -74023,7 +74038,14 @@ export type Database = {
         | "Other Expense"
         | "Tax"
         | "Investments"
-      approvalDocumentType: "purchaseOrder" | "qualityDocument" | "supplier"
+      approvalDocumentType:
+        | "purchaseOrder"
+        | "qualityDocument"
+        | "supplier"
+        | "journalEntry"
+        | "payment"
+        | "purchaseInvoice"
+        | "memo"
       approvalStatus: "Pending" | "Approved" | "Rejected" | "Cancelled"
       assemblyInstructionStatus: "Draft" | "Published" | "Archived"
       assemblyNoteSeverity: "Info" | "Caution" | "Warning"
@@ -74318,7 +74340,7 @@ export type Database = {
         | "Payment"
         | "Credit Memo"
         | "Debit Memo"
-      journalEntryStatus: "Draft" | "Posted" | "Reversed"
+      journalEntryStatus: "Draft" | "Posted" | "Reversed" | "Pending Approval"
       journalLineDocumentType:
         | "Receipt"
         | "Invoice"
@@ -74368,7 +74390,7 @@ export type Database = {
       maintenanceSource: "Scheduled" | "Reactive" | "Non-Conformance"
       makeMethodStatus: "Draft" | "Active" | "Archived"
       memoDirection: "Credit" | "Debit"
-      memoStatus: "Draft" | "Posted" | "Voided"
+      memoStatus: "Draft" | "Posted" | "Voided" | "Pending Approval"
       methodOperationOrder: "After Previous" | "With Previous"
       methodType: "Purchase to Order" | "Pull from Inventory" | "Make to Order"
       modelProcessingStatus:
@@ -74434,7 +74456,7 @@ export type Database = {
         | "Service"
         | "Consumable"
         | "Fixture"
-      paymentStatus: "Draft" | "Posted" | "Voided"
+      paymentStatus: "Draft" | "Posted" | "Voided" | "Pending Approval"
       paymentTermCalculationMethod: "Net" | "End of Month" | "Day of Month"
       paymentType: "Receipt" | "Disbursement"
       periodCloseStatus: "Open" | "Locked" | "Closed"
@@ -74468,6 +74490,7 @@ export type Database = {
         | "Partially Paid"
         | "Overdue"
         | "Voided"
+        | "Pending Approval"
       purchaseOrderLineType:
         | "Comment"
         | "G/L Account"
@@ -75370,7 +75393,15 @@ export const Constants = {
         "Tax",
         "Investments",
       ],
-      approvalDocumentType: ["purchaseOrder", "qualityDocument", "supplier"],
+      approvalDocumentType: [
+        "purchaseOrder",
+        "qualityDocument",
+        "supplier",
+        "journalEntry",
+        "payment",
+        "purchaseInvoice",
+        "memo",
+      ],
       approvalStatus: ["Pending", "Approved", "Rejected", "Cancelled"],
       assemblyInstructionStatus: ["Draft", "Published", "Archived"],
       assemblyNoteSeverity: ["Info", "Caution", "Warning"],
@@ -75694,7 +75725,7 @@ export const Constants = {
         "Credit Memo",
         "Debit Memo",
       ],
-      journalEntryStatus: ["Draft", "Posted", "Reversed"],
+      journalEntryStatus: ["Draft", "Posted", "Reversed", "Pending Approval"],
       journalLineDocumentType: [
         "Receipt",
         "Invoice",
@@ -75749,7 +75780,7 @@ export const Constants = {
       maintenanceSource: ["Scheduled", "Reactive", "Non-Conformance"],
       makeMethodStatus: ["Draft", "Active", "Archived"],
       memoDirection: ["Credit", "Debit"],
-      memoStatus: ["Draft", "Posted", "Voided"],
+      memoStatus: ["Draft", "Posted", "Voided", "Pending Approval"],
       methodOperationOrder: ["After Previous", "With Previous"],
       methodType: ["Purchase to Order", "Pull from Inventory", "Make to Order"],
       modelProcessingStatus: [
@@ -75821,7 +75852,7 @@ export const Constants = {
         "Consumable",
         "Fixture",
       ],
-      paymentStatus: ["Draft", "Posted", "Voided"],
+      paymentStatus: ["Draft", "Posted", "Voided", "Pending Approval"],
       paymentTermCalculationMethod: ["Net", "End of Month", "Day of Month"],
       paymentType: ["Receipt", "Disbursement"],
       periodCloseStatus: ["Open", "Locked", "Closed"],
@@ -75856,6 +75887,7 @@ export const Constants = {
         "Partially Paid",
         "Overdue",
         "Voided",
+        "Pending Approval",
       ],
       purchaseOrderLineType: [
         "Comment",

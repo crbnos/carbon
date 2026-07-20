@@ -404,6 +404,9 @@ msgstr "验收"
 msgid "Acceptance passed"
 msgstr "验收通过"
 
+msgid "Access Report"
+msgstr ""
+
 msgid "Account"
 msgstr "账户"
 
@@ -457,6 +460,7 @@ msgstr "会计期间"
 
 msgid "Accounting Periods"
 msgstr "会计期间"
+msgstr ""
 
 msgid "Accounting: GL, AR, AP, and month-end close"
 msgstr "会计：总账、应收账款、应付账款和月末结账"
@@ -1764,6 +1768,9 @@ msgstr "物料清单"
 msgid "Blind Count"
 msgstr "盲点库存"
 
+msgid "Block the person who submitted a document from approving it. Disabling this permits self-approval and is flagged as a standing exception in the Segregation of Duties report."
+msgstr ""
+
 msgid "Block with an error"
 msgstr "用错误阻止"
 
@@ -1980,6 +1987,7 @@ msgstr "无法向未保存的操作添加工具"
 
 msgid "Cannot close yet"
 msgstr "无法关闭"
+msgstr ""
 
 msgid "Cannot convert RFQ to quote"
 msgstr "无法将RFQ转换为报价"
@@ -2233,6 +2241,7 @@ msgstr "关闭"
 
 msgid "Close {periodLabel}"
 msgstr "关闭{periodLabel}"
+msgstr ""
 
 msgid "Close Date"
 msgstr "关闭日期"
@@ -2242,6 +2251,13 @@ msgstr "关闭期间"
 
 msgid "Close Status"
 msgstr "关闭状态"
+msgstr ""
+
+msgid "Close Status"
+msgstr ""
+
+msgid "Close Date"
+msgstr "关闭日期"
 
 msgid "Closed"
 msgstr "已关闭"
@@ -2504,6 +2520,7 @@ msgstr "确认密码"
 
 msgid "Confirm Skip"
 msgstr "确认跳过"
+msgstr ""
 
 msgid "Confirmed incoming stock — purchase & production orders (bars above zero)."
 msgstr "确认的入库存货 — 采购和生产订单（零以上的条形图）。"
@@ -2513,6 +2530,9 @@ msgstr "确认的出库存货 — 销售订单和工作物料（零以下的条�
 
 msgid "Confirms every posted journal entry in the period has equal debits and credits. If any entry is out of balance the trial balance won't tie out, so it must be corrected before the period can close."
 msgstr "确认期间内每笔已过账日记账条目都有相等的借贷金额。如果任何条目不平衡，试算平衡表将无法对账，因此必须在期间结束前进行更正。"
+
+msgid "Conflict"
+msgstr ""
 
 msgid "Connect Carbon to your accounting, project management, and CAD tools and much more."
 msgstr "将 Carbon 连接到您的会计、项目管理和 CAD 工具等更多应用。"
@@ -3147,6 +3167,8 @@ msgstr "制造成本吸收到在产品中时使用的贷方科目"
 
 msgid "Credit Memo"
 msgstr "贷方备忘录"
+msgid "Credit/Debit Memos"
+msgstr ""
 
 msgid "Credits & Debits"
 msgstr "贷项和借项"
@@ -4858,6 +4880,9 @@ msgstr "升级到项目负责人"
 msgid "Escalation"
 msgstr "升级"
 
+msgid "Escalation Days"
+msgstr ""
+
 msgid "Est. Duration"
 msgstr "预计时长"
 
@@ -4896,6 +4921,7 @@ msgstr "您配置的系统中的每项范围内测试都通过了，使用您的
 
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "期间关闭前，每项必需任务都必须完成或跳过。"
+msgstr ""
 
 msgid "Every row was imported successfully."
 msgstr "每一行都已成功导入。"
@@ -6246,6 +6272,9 @@ msgstr "间接材料和服务"
 msgid "Indirect Materials & Services (default)"
 msgstr "间接材料和服务（默认）"
 
+msgid "Info"
+msgstr ""
+
 msgid "Infrastructure"
 msgstr "基础设施"
 
@@ -7203,6 +7232,7 @@ msgstr "标记为完成"
 
 msgid "Mark Done"
 msgstr "标记为完成"
+msgstr ""
 
 msgid "Mark Light Mode"
 msgstr "标记浅色模式"
@@ -9146,6 +9176,9 @@ msgstr "本周"
 msgid "Prev"
 msgstr "上一页"
 
+msgid "Prevent Self-Approval"
+msgstr ""
+
 msgid "Preventive action"
 msgstr "现有库存估值的主要账户"
 
@@ -9426,9 +9459,6 @@ msgstr "采购订单"
 msgid "Purchase Order Amount"
 msgstr "采购订单金额"
 
-msgid "Purchase Order approval rule"
-msgstr "采购订单审批规则"
-
 msgid "Purchase Order ID"
 msgstr "采购订单ID"
 
@@ -9543,9 +9573,6 @@ msgstr "报价到现金"
 
 msgid "Quality"
 msgstr "质量"
-
-msgid "Quality Document approval rule"
-msgstr "质量文件审批规则"
 
 msgid "Quality Documents"
 msgstr "质量文件"
@@ -9689,6 +9716,9 @@ msgstr "原材料（默认）"
 msgid "Re-keying between quoting, the floor, and finance"
 msgstr "在报价、车间和财务之间重复输入数据"
 
+msgid "Re-notify approvers daily once a request has been pending this many days. Leave empty to disable escalation."
+msgstr ""
+
 msgid "Reactivate"
 msgstr "重新激活"
 
@@ -9730,6 +9760,7 @@ msgstr "拒绝原因（可选）"
 
 msgid "Reason for skipping (required)"
 msgstr "跳过原因（必填）"
+msgstr ""
 
 msgid "Reasons"
 msgstr "原因"
@@ -10080,6 +10111,18 @@ msgstr "请求日期"
 
 msgid "Require approval before suppliers can be set to Active"
 msgstr "在供应商可以设置为活跃之前需要批准"
+
+msgid "Require approval for credit and debit memos based on amount thresholds"
+msgstr ""
+
+msgid "Require approval for manual journal entries based on amount thresholds"
+msgstr ""
+
+msgid "Require approval for payments based on amount thresholds"
+msgstr ""
+
+msgid "Require approval for purchase invoices based on amount thresholds"
+msgstr ""
 
 msgid "Require approval for purchase orders based on amount thresholds"
 msgstr "根据金额阈值要求采购订单获得批准"
@@ -10668,6 +10711,9 @@ msgstr "部分"
 msgid "Segments that drive customer pricing and terms"
 msgstr "驱动客户定价和条款的细分市场"
 
+msgid "Segregation of Duties"
+msgstr ""
+
 msgid "Select"
 msgstr "选择"
 
@@ -11222,6 +11268,7 @@ msgstr "尺寸"
 
 msgid "Skip"
 msgstr "跳过"
+msgstr ""
 
 msgid "Skip Existing"
 msgstr "跳过现有"
@@ -11246,6 +11293,9 @@ msgstr "端到端烟雾测试核心日常流程"
 
 msgid "so you can assign it here."
 msgstr "这样你可以在这里分配它。"
+
+msgid "SoD Report"
+msgstr ""
 
 msgid "Solutions Engineer"
 msgstr "解决方案工程师"
@@ -11533,6 +11583,9 @@ msgstr "外包差异"
 
 msgid "Subcontracting Variance (default)"
 msgstr "外包差异（默认）"
+
+msgid "Subject"
+msgstr ""
 
 msgid "Subledger"
 msgstr "子分类账"
@@ -11843,6 +11896,7 @@ msgstr "目标版本"
 
 msgid "Task"
 msgstr "任务"
+msgstr ""
 
 msgid "tasks"
 msgstr "任务"

@@ -92,6 +92,7 @@ const QuoteForm = ({ initialValues }: QuoteFormProps) => {
         });
       });
 
+      // @ts-ignore Supabase composite key issue
       const { data, error } = await carbon
         .from("customer")
         .select(

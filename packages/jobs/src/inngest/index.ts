@@ -30,6 +30,7 @@ import {
   sendSlackFunction
 } from "./functions/notifications";
 import {
+  approvalEscalationFunction,
   auditArchiveFunction,
   cleanupFunction,
   dispatchFunction,
@@ -92,6 +93,7 @@ export const functions = [
   printJobFunction,
   printJobDeliverFunction,
   // Scheduled
+  approvalEscalationFunction,
   cleanupFunction,
   dispatchFunction,
   auditArchiveFunction,

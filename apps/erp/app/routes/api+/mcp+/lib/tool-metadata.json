@@ -2676,6 +2676,7 @@
       "paramCount": 1,
       "serviceParams": [
         "client",
+        "db",
         "id",
         "userId"
       ],
@@ -40245,6 +40246,24 @@
       }
     },
     {
+      "name": "settings_getSodConflicts",
+      "module": "settings",
+      "classification": "READ",
+      "description": "get sod conflicts",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
       "name": "shared_approveRequest",
       "module": "shared",
       "classification": "WRITE",
@@ -40273,6 +40292,24 @@
         "required": [
           "id"
         ]
+      }
+    },
+    {
+      "name": "shared_getEnforceNoSelfApproval",
+      "module": "shared",
+      "classification": "READ",
+      "description": "get enforce no self approval",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
       }
     },
     {
@@ -40418,6 +40455,52 @@
         },
         "required": [
           "request"
+        ]
+      }
+    },
+    {
+      "name": "shared_parkDocumentForApproval",
+      "module": "shared",
+      "classification": "WRITE",
+      "description": "park document for approval",
+      "paramCount": 1,
+      "serviceParams": [
+        "db",
+        "input"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "input": {}
+        },
+        "required": [
+          "input"
+        ]
+      }
+    },
+    {
+      "name": "shared_notifyApprovers",
+      "module": "shared",
+      "classification": "WRITE",
+      "description": "notify approvers",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "input"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "input": {}
+        },
+        "required": [
+          "input"
         ]
       }
     },
@@ -42519,6 +42602,24 @@
           "groupId",
           "selections"
         ]
+      }
+    },
+    {
+      "name": "users_getUserAccessReport",
+      "module": "users",
+      "classification": "READ",
+      "description": "get user access report",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
       }
     }
   ]
