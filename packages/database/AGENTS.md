@@ -42,10 +42,10 @@ pnpm --filter @carbon/database typecheck
 
 ## Cross-References
 
-- `.ai/rules/conventions-database.md` — table template, column types, migration checklist
-- `.ai/rules/database-patterns.md` — client factories, services, Kysely transactions
-- `.ai/rules/database-migration-patterns.md` — SQL conventions, enums, triggers, RLS for tables without `companyId`
-- `.ai/rules/event-system.md` — trigger dispatch, PGMQ queue, handler types
+- `.claude/rules/conventions-database.md` — table template, column types, migration checklist
+- `.claude/rules/database-patterns.md` — client factories, services, Kysely transactions
+- `.claude/rules/database-migration-patterns.md` — SQL conventions, enums, triggers, RLS for tables without `companyId`
+- `.claude/rules/event-system.md` — trigger dispatch, PGMQ queue, handler types
 - `packages/auth/` — Supabase client factories (`getCarbon`, `getCarbonServiceRole`)
 - `packages/jobs/` — Inngest event handlers that consume the event queue
 - `supabase/functions/lib/logging.ts` — Deno-native logger (`getFunctionLogger`) mirroring `@carbon/logger`; use it instead of `console.*` in edge functions (`@logtape/*` via `deno.json` jsr imports)

@@ -387,7 +387,7 @@ Format: `Context → Problem → Rule → Applies to`
 
 **Rule:** Gate edge-function changes on the DELTA of errors attributed to the touched file: `deno check <file> 2>&1 | sed 's/\x1b\[[0-9;]*m//g' | grep -c "<file>:"` must not exceed the committed baseline (copy the HEAD version beside it to measure, e.g. `git show HEAD:<path> > <dir>/index.orig.ts`, check, delete). New code should contribute zero; annotate supabase-js callbacks with explicit row types instead of leaving implicit-any. Pure logic goes in a small module importing only `lib/types.ts` so `deno test` type-checks clean.
 
-**Applies to:** `packages/database/supabase/functions/**` verification; `.ai/skills/check-and-commit` runs touching edge functions.
+**Applies to:** `packages/database/supabase/functions/**` verification; `.claude/skills/check-and-commit` runs touching edge functions.
 
 ## Forking a SQL function migration silently drops sibling branches added since your fork base
 

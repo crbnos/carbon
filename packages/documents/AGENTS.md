@@ -39,7 +39,7 @@ pnpm --filter @carbon/documents build       # generates fonts.data.ts
 
 ## Cross-References
 
-- `.ai/rules/pdf-generation-patterns.md` — full authoring guide
-- `.ai/rules/document-template-customizer.md` — block template engine
-- `.ai/rules/printing-system.md` — print queue / ZPL side
+- `.claude/rules/pdf-generation-patterns.md` — full authoring guide
+- `.claude/rules/document-template-customizer.md` — block template engine
+- `.claude/rules/printing-system.md` — print queue / ZPL side
 - `apps/erp/app/routes/file+/` — PDF serving routes

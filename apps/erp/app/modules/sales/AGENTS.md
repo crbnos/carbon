@@ -83,5 +83,5 @@ import { resolvePrice, applyPriceRules, getCustomer } from "~/modules/sales";
 
 ## Rules References
 
-- `.ai/rules/quote-discount-system.md` — pricing architecture, discount vs markup, price trace
-- `.ai/rules/customer-supplier-database-schema.md` — customer/supplier data model
+- `.claude/rules/quote-discount-system.md` — pricing architecture, discount vs markup, price trace
+- `.claude/rules/customer-supplier-database-schema.md` — customer/supplier data model

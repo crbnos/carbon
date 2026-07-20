@@ -57,7 +57,7 @@ checkpoint; a crashed process loses at most one uncommitted edit.
 
 **Design docs:**
 - `.ai/docs/outer-loop.md` — orchestrator architecture, wake loop, safety
-- `.ai/skills/conductor/SKILL.md` — the inner-loop skill (what Claude Code follows during a build)
+- `.claude/skills/conductor/SKILL.md` — the inner-loop skill (what Claude Code follows during a build)
 
 ## Runtime Layout
 

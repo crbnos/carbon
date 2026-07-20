@@ -141,5 +141,5 @@ Change-order code follows the one-service/models/server-per-module convention �
 
 ## Rules References
 
-- `.ai/rules/material-tables.md` — material taxonomy schema, linkage, and the `material.id = item.readableId` gotcha
-- `.ai/rules/method-material-sourcing.md` — how methods determine Buy/Make/Pull sourcing and cascade rules
+- `.claude/rules/material-tables.md` — material taxonomy schema, linkage, and the `material.id = item.readableId` gotcha
+- `.claude/rules/method-material-sourcing.md` — how methods determine Buy/Make/Pull sourcing and cascade rules

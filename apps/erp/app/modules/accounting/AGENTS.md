@@ -9,7 +9,7 @@ Chart of accounts, journal entries, general ledger, fiscal periods, currencies, 
 - **Fiscal Year Settings** — configurable start month for fiscal and tax years. Accounting periods auto-created via `getOrCreateAccountingPeriod`.
 - **Dimensions** — analytical tags on journal lines (Location, Department, Project, etc.). Entity-type dimensions resolve values from their source table; Custom dimensions use `dimensionValue`.
 - **Cost Centers** — hierarchical organizational units for cost allocation via `parentCostCenterId`.
-- **Fixed Assets** — capital assets with depreciation. Supports straight-line, declining balance, MACRS, and units-of-production methods. Depreciation runs generate journal entries. See `.ai/rules/fixed-asset-lifecycle.md`.
+- **Fixed Assets** — capital assets with depreciation. Supports straight-line, declining balance, MACRS, and units-of-production methods. Depreciation runs generate journal entries. See `.claude/rules/fixed-asset-lifecycle.md`.
 - **Intercompany** — transactions between companies in a group. `runIntercompanyMatching` pairs them; `generateEliminations` creates reversing entries for consolidation.
 - **Net Income** — computed equity line on the balance sheet, never a posted account. Uses synthetic `NET_INCOME_ACCOUNT_ID` constant.
 
@@ -98,5 +98,5 @@ import { getCurrencyByCode, getPaymentTermsList, getDefaultAccounts } from "~/mo
 
 ## Rules References
 
-- `.ai/rules/accounting-sync-handlers.md` — Xero sync architecture, entity syncers, Inngest functions
-- `.ai/rules/fixed-asset-lifecycle.md` — asset statuses, depreciation methods, disposal flow
+- `.claude/rules/accounting-sync-handlers.md` — Xero sync architecture, entity syncers, Inngest functions
+- `.claude/rules/fixed-asset-lifecycle.md` — asset statuses, depreciation methods, disposal flow

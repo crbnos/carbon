@@ -8,7 +8,7 @@ Purchase orders, supplier management, supplier quotes/interactions, RFQs, and pr
 - **Supplier Interaction** — umbrella entity linking a supplier quote to RFQs, POs, and documents. A supplier quote always lives under an interaction.
 - **Supplier Quote** — vendor-side pricing with line-level price breaks (`supplierQuoteLinePrice`). Can be finalized (`finalizeSupplierQuote`) and converted to POs via the `convert` edge function.
 - **RFQ (Request for Quotation)** — solicits pricing from multiple suppliers. Links to supplier quotes via `purchasingRfqToSupplierQuote`. Statuses managed by `updatePurchasingRFQStatus`.
-- **Conversion Factor** — when a supplier's UoM differs from stocking UoM, `conversionFactor` on `purchaseOrderLine` scales quantities at receipt: `inventoryQty = purchaseQty × conversionFactor`. See `.ai/rules/purchasing-conversion-factors.md`.
+- **Conversion Factor** — when a supplier's UoM differs from stocking UoM, `conversionFactor` on `purchaseOrderLine` scales quantities at receipt: `inventoryQty = purchaseQty × conversionFactor`. See `.claude/rules/purchasing-conversion-factors.md`.
 - **Purchasing Planning** — MRP-driven planned orders surfaced via `getPurchasingPlanning` (calls `get_purchasing_planning` RPC).
 
 ## Safety
@@ -82,6 +82,6 @@ import { purchaseOrderValidator, supplierValidator } from "~/modules/purchasing"
 
 ## Rules References
 
-- `.ai/rules/purchasing-conversion-factors.md` — UoM conversion on PO lines (factor math, gotchas)
-- `.ai/rules/method-material-sourcing.md` — how method materials determine sourcing type (Buy/Make/Pull)
-- `.ai/rules/conventions-services.md` — service function shape and naming
+- `.claude/rules/purchasing-conversion-factors.md` — UoM conversion on PO lines (factor math, gotchas)
+- `.claude/rules/method-material-sourcing.md` — how method materials determine sourcing type (Buy/Make/Pull)
+- `.claude/rules/conventions-services.md` — service function shape and naming
