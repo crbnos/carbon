@@ -49,6 +49,10 @@ export async function loadRawModel(source: RawSource): Promise<Object3D> {
       return loadMesh(bytes, ext);
     case "off":
       return loadOff(bytes);
+    case "bim":
+      return loadDotbim(bytes);
+    case "3dm":
+      return loadRhino(bytes);
     default:
       return loadOcct(bytes, ext);
   }
@@ -220,6 +224,138 @@ async function loadOcct(bytes: ArrayBuffer, ext: string): Promise<Object3D> {
       );
     }
     group.add(new Mesh(geometry, material));
+  }
+  return group;
+}
+
+/** dotbim (.bim): plain JSON — shared meshes instanced by elements carrying a
+ *  translation + quaternion + color. Hand-parsed; no dependency. */
+async function loadDotbim(bytes: ArrayBuffer): Promise<Object3D> {
+  type DotbimElement = {
+    mesh_id: number;
+    vector?: { x: number; y: number; z: number };
+    rotation?: { qx: number; qy: number; qz: number; qw: number };
+    color?: { r: number; g: number; b: number; a: number };
+  };
+  type DotbimFile = {
+    meshes?: { mesh_id: number; coordinates: number[]; indices: number[] }[];
+    elements?: DotbimElement[];
+  };
+  const parsed = JSON.parse(new TextDecoder().decode(bytes)) as DotbimFile;
+  if (!parsed.meshes?.length) throw new Error("invalid dotbim file");
+
+  const geometries = new Map<number, BufferGeometry>();
+  for (const m of parsed.meshes) {
+    const geometry = new BufferGeometry();
+    geometry.setAttribute(
+      "position",
+      new BufferAttribute(new Float32Array(m.coordinates), 3)
+    );
+    geometry.setIndex(new BufferAttribute(new Uint32Array(m.indices), 1));
+    geometry.computeVertexNormals();
+    geometries.set(m.mesh_id, geometry);
+  }
+
+  const group = new Group();
+  const elements: DotbimElement[] = parsed.elements?.length
+    ? parsed.elements
+    : [...geometries.keys()].map((mesh_id) => ({ mesh_id }));
+  for (const el of elements) {
+    const geometry = geometries.get(el.mesh_id);
+    if (!geometry) continue;
+    const material = defaultMaterial();
+    if (el.color) {
+      material.color = new Color(
+        el.color.r / 255,
+        el.color.g / 255,
+        el.color.b / 255
+      );
+      if (el.color.a < 255) {
+        material.transparent = true;
+        material.opacity = el.color.a / 255;
+      }
+    }
+    const mesh = new Mesh(geometry, material);
+    if (el.rotation) {
+      mesh.quaternion.set(
+        el.rotation.qx,
+        el.rotation.qy,
+        el.rotation.qz,
+        el.rotation.qw
+      );
+    }
+    if (el.vector) mesh.position.set(el.vector.x, el.vector.y, el.vector.z);
+    group.add(mesh);
+  }
+  return group;
+}
+
+/** Rhino .3dm via the official rhino3dm WASM. Direct module use (no worker /
+ *  library-path dance): meshes are taken as-is; Breps and Extrusions contribute
+ *  their embedded render meshes. Curves/points/annotations are skipped. */
+async function loadRhino(bytes: ArrayBuffer): Promise<Object3D> {
+  const [{ default: rhino3dm }, { default: wasmUrl }] = await Promise.all([
+    import("rhino3dm"),
+    import("rhino3dm/rhino3dm.wasm?url")
+  ]);
+  // The shipped .d.ts types the factory as zero-arg, but it's an emscripten
+  // module factory — it accepts the standard init object; locateFile points the
+  // loader at Vite's hashed .wasm asset URL.
+  const factory = rhino3dm as unknown as (opts: {
+    locateFile: (path: string) => string;
+  }) => ReturnType<typeof rhino3dm>;
+  const rhino = await factory({ locateFile: () => wasmUrl });
+  const doc = rhino.File3dm.fromByteArray(new Uint8Array(bytes));
+  if (!doc) throw new Error("could not read 3dm file");
+
+  const { BufferGeometryLoader } = await import("three");
+  const geometryLoader = new BufferGeometryLoader();
+  const group = new Group();
+  const addRhinoMesh = (rhinoMesh: { toThreejsJSON: () => object }) => {
+    const geometry = geometryLoader.parse(rhinoMesh.toThreejsJSON());
+    if (!geometry.attributes.normal) geometry.computeVertexNormals();
+    group.add(new Mesh(geometry, defaultMaterial()));
+  };
+
+  const objects = doc.objects();
+  for (let i = 0; i < objects.count; i++) {
+    const geometry = objects.get(i)?.geometry();
+    if (!geometry) continue;
+    switch (geometry.objectType) {
+      case rhino.ObjectType.Mesh:
+        addRhinoMesh(geometry as unknown as { toThreejsJSON: () => object });
+        break;
+      case rhino.ObjectType.Brep: {
+        const brep = geometry as unknown as {
+          faces: () => {
+            count: number;
+            get: (i: number) => {
+              getMesh: (t: unknown) => { toThreejsJSON: () => object } | null;
+            };
+          };
+        };
+        const faces = brep.faces();
+        for (let f = 0; f < faces.count; f++) {
+          const mesh = faces.get(f).getMesh(rhino.MeshType.Any);
+          if (mesh) addRhinoMesh(mesh);
+        }
+        break;
+      }
+      case rhino.ObjectType.Extrusion: {
+        const mesh = (
+          geometry as unknown as {
+            getMesh: (t: unknown) => { toThreejsJSON: () => object } | null;
+          }
+        ).getMesh(rhino.MeshType.Any);
+        if (mesh) addRhinoMesh(mesh);
+        break;
+      }
+      default:
+        break;
+    }
+  }
+  if (group.children.length === 0) {
+    throw new Error("3dm file contains no renderable meshes");
   }
   return group;
 }

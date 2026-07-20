@@ -44,6 +44,11 @@ export function modelPathOptimizeFormat(modelPath: string) {
   return optimizableModelFormat(ext);
 }
 
+// Every format here is renderable in the browser (viewer raw tier: three-stdlib
+// loaders + occt/rhino3dm WASM). ifc and fcstd were dropped 2026-07-18: nothing
+// in the stack can preview them (each needs its own heavy WASM dep) and both
+// export STEP natively — accepting them just produced a dead upload. glb added
+// (was oddly absent while gltf/stl were accepted and the optimiser supports it).
 export const supportedModelTypes = [
   "3dm",
   "3ds",
@@ -53,9 +58,8 @@ export const supportedModelTypes = [
   "brep",
   "dae",
   "fbx",
-  "fcstd",
+  "glb",
   "gltf",
-  "ifc",
   "iges",
   "obj",
   "off",

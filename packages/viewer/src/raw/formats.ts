@@ -15,9 +15,13 @@ export const MESH_EXTS = [
   "3ds",
   "3mf",
   "amf",
-  "off"
+  "off",
+  // dotbim: plain JSON meshes, hand-parsed.
+  "bim"
 ];
-export const RAW_RENDERABLE_EXTS = [...MESH_EXTS, ...OCCT_EXTS];
+/** Rhino .3dm via the official rhino3dm WASM (lazy, ~4MB, only for .3dm). */
+export const RHINO_EXTS = ["3dm"];
+export const RAW_RENDERABLE_EXTS = [...MESH_EXTS, ...RHINO_EXTS, ...OCCT_EXTS];
 
 export function rawExtension(filename: string): string {
   const base = filename.split("?")[0] ?? "";
