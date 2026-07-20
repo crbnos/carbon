@@ -1,15 +1,17 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 
 /**
- * Cancels a stuck convert or plan job for the instruction's model by failing
- * its Processing rows, so the retry/generate buttons re-enable. This releases
- * the UI state only — an Inngest run that is genuinely still working isn't
- * killed, but a later completion just overwrites the failed marker, which is
- * harmless. The common case is a job orphaned by a geometry-service outage.
+ * Cancels a running/stuck convert or plan job: fails its Processing rows (the
+ * retry/generate buttons re-enable) AND cancels the job on the assembler —
+ * which marks it terminal (the compute result is dropped, never uploaded) and
+ * fires the completion callback, so the waiting Inngest run wakes and fails
+ * fast with a non-retriable "canceled" instead of retrying or later
+ * overwriting these rows with a success.
  */
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -64,6 +66,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return data(
       { success: false },
       await flash(request, error(cancelled.error, "Could not cancel the job"))
+    );
+  }
+
+  // Best-effort: tell the assembler. Without this the job keeps computing and
+  // its success callback would resurrect the run; with it the store marks the
+  // job canceled (terminal), drops the result, and notifies the waiter.
+  if (ASSEMBLER_SERVICE_URL && cancelled.data.length > 0) {
+    await Promise.allSettled(
+      cancelled.data.map((job) =>
+        fetch(`${ASSEMBLER_SERVICE_URL}/v1/jobs/${job.id}/cancel`, {
+          method: "POST",
+          headers: ASSEMBLER_SERVICE_API_KEY
+            ? { Authorization: `Bearer ${ASSEMBLER_SERVICE_API_KEY}` }
+            : {},
+          signal: AbortSignal.timeout(5000)
+        })
+      )
     );
   }
 

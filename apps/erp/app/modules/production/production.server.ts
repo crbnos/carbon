@@ -6,10 +6,17 @@ import { path } from "~/utils/path";
 
 // The geometry (assembler) service backs model conversion and motion planning.
 // When it's unreachable those actions can't run, so loaders probe its health and
-// the UI soft-gates the assembler-dependent controls. Result cached briefly so a
+// the UI soft-gates the assembler-dependent controls. Result cached so a
 // navigation burst doesn't fan out one probe per route.
-const ASSEMBLER_HEALTH_TTL_MS = 15_000;
-const ASSEMBLER_HEALTH_TIMEOUT_MS = 2_000;
+//
+// The default deployment is a scale-to-zero Lambda: a cold /health takes ~2-5s
+// to init, so the probe timeout must outlast a cold start (the old 2s abort
+// read every cold service as down). Healthy sticks longer than unhealthy —
+// a failed probe usually WARMED the service (the request went through; we just
+// stopped waiting), so re-probe quickly instead of pinning "down" for 15s.
+const ASSEMBLER_HEALTHY_TTL_MS = 60_000;
+const ASSEMBLER_UNHEALTHY_TTL_MS = 5_000;
+const ASSEMBLER_HEALTH_TIMEOUT_MS = 10_000;
 let assemblerHealthCache: { healthy: boolean; expires: number } | null = null;
 
 export async function isAssemblerServiceHealthy(): Promise<boolean> {
@@ -40,7 +47,8 @@ export async function isAssemblerServiceHealthy(): Promise<boolean> {
 
   assemblerHealthCache = {
     healthy,
-    expires: now + ASSEMBLER_HEALTH_TTL_MS
+    expires:
+      now + (healthy ? ASSEMBLER_HEALTHY_TTL_MS : ASSEMBLER_UNHEALTHY_TTL_MS)
   };
   return healthy;
 }

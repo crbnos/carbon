@@ -15,6 +15,8 @@ import * as dotenv from "dotenv";
 import {
   accountDefaults,
   accounts,
+  changeOrderRequiredActions,
+  changeOrderTypes,
   currencies,
   customerStatuses,
   defaultLocation,
@@ -358,11 +360,27 @@ async function seedDev() {
         );
       }
 
+      // Seed change order categories
+      for (const cot of changeOrderTypes) {
+        await client.query(
+          `INSERT INTO "changeOrderType" (name, "companyId", "createdBy") VALUES ($1, $2, 'system')`,
+          [cot.name, companyId]
+        );
+      }
+
       // Seed non-conformance required actions
       for (const nca of nonConformanceRequiredActions) {
         await client.query(
           `INSERT INTO "nonConformanceRequiredAction" (name, "systemType", "companyId", "createdBy") VALUES ($1, $2, $3, 'system')`,
           [nca.name, "systemType" in nca ? nca.systemType : null, companyId]
+        );
+      }
+
+      // Seed change order default actions
+      for (const ca of changeOrderRequiredActions) {
+        await client.query(
+          `INSERT INTO "changeOrderRequiredAction" (name, "companyId", "createdBy") VALUES ($1, $2, 'system')`,
+          [ca.name, companyId]
         );
       }
 

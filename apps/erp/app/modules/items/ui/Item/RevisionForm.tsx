@@ -13,10 +13,10 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useFetcher, useNavigate } from "react-router";
 import type { z } from "zod";
-import { Hidden, Input, Submit } from "~/components/Form";
+import { Boolean, Hidden, Input, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import { revisionValidator } from "../../items.models";
@@ -37,7 +37,8 @@ const RevisionForm = ({
   const { t } = useLingui();
   const permissions = usePermissions();
   const fetcher = useFetcher<
-    { success: false; message: string } | { success: true; link: string }
+    | { success: false; message: string }
+    | { success: true; link: string; newItemId?: string }
   >();
   const navigate = useNavigate();
 
@@ -46,8 +47,20 @@ const RevisionForm = ({
     ? !permissions.can("update", "parts")
     : !permissions.can("create", "parts");
 
+  const [openChangeOrder, setOpenChangeOrder] = useState(false);
+  // Offer the "open a change order" shortcut only when creating a new revision of
+  // a make part/tool (CO affected items are Parts/Tools; the CO route coerces
+  // Buy items to a Revision change type).
+  const canOpenChangeOrder =
+    !isEditing &&
+    !hasSizesInsteadOfRevisions &&
+    (initialValues.type === "Part" || initialValues.type === "Tool");
+
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
+    // The "open a change order" path posts straight to the create+attach route
+    // (see the form action below), which redirects to the new CO — so it never
+    // returns here. This only handles the plain new-revision submit.
     if (fetcher.data?.success) {
       onClose();
       navigate(fetcher.data.link);
@@ -72,7 +85,9 @@ const RevisionForm = ({
             action={
               isEditing
                 ? path.to.revision(initialValues.id!)
-                : path.to.newRevision
+                : openChangeOrder && initialValues.copyFromId
+                  ? path.to.newChangeOrderFromItem(initialValues.copyFromId)
+                  : path.to.newRevision
             }
             defaultValues={initialValues}
             fetcher={fetcher}
@@ -111,6 +126,18 @@ const RevisionForm = ({
                       : t`The revision number of the part`
                   }
                 />
+                {canOpenChangeOrder && (
+                  <Boolean
+                    name="openChangeOrder"
+                    label={t`Open a change order`}
+                    description={t`Create a change order for the new revision and open it`}
+                    bordered
+                    onChange={setOpenChangeOrder}
+                  />
+                )}
+                {openChangeOrder && (
+                  <Hidden name="changeType" value="Revision" />
+                )}
               </VStack>
             </ModalDrawerBody>
             <ModalDrawerFooter>

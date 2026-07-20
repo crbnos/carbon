@@ -8,6 +8,15 @@ export enum NotificationEvent {
   ApprovalApproved = "approval-approved",
   ApprovalRejected = "approval-rejected",
   ApprovalRequested = "approval-requested",
+  ChangeOrderApproved = "change-order-approved",
+  ChangeOrderRejected = "change-order-rejected",
+  ChangeOrderReleased = "change-order-released",
+  ChangeOrderSubmittedForReview = "change-order-submitted-for-review",
+  // Stage-broadcast events (V1 standalone Change Orders module) — fired to the
+  // company team on entry to Start / Implementation / Done.
+  ChangeOrderStarted = "change-order-started",
+  ChangeOrderImplementation = "change-order-implementation",
+  ChangeOrderDone = "change-order-done",
   DigitalQuoteResponse = "digital-quote-response",
   GaugeCalibrationExpired = "gauge-calibration-expired",
   JobAssignment = "job-assignment",
@@ -131,6 +140,13 @@ export function getNotificationTopic(
     case NotificationEvent.ApprovalApproved:
     case NotificationEvent.ApprovalRejected:
     case NotificationEvent.ApprovalRequested:
+    case NotificationEvent.ChangeOrderApproved:
+    case NotificationEvent.ChangeOrderRejected:
+    case NotificationEvent.ChangeOrderReleased:
+    case NotificationEvent.ChangeOrderSubmittedForReview:
+    case NotificationEvent.ChangeOrderStarted:
+    case NotificationEvent.ChangeOrderImplementation:
+    case NotificationEvent.ChangeOrderDone:
       return NotificationTopic.Approval;
     default:
       return NotificationTopic.General;
@@ -201,6 +217,20 @@ export function getNotificationEmailHeading(event: NotificationEvent): string {
       return "Your request was approved";
     case NotificationEvent.ApprovalRejected:
       return "Your request was rejected";
+    case NotificationEvent.ChangeOrderSubmittedForReview:
+      return "Change order ready for review";
+    case NotificationEvent.ChangeOrderApproved:
+      return "Change order approved";
+    case NotificationEvent.ChangeOrderRejected:
+      return "Change order rejected";
+    case NotificationEvent.ChangeOrderReleased:
+      return "Change order released";
+    case NotificationEvent.ChangeOrderStarted:
+      return "Change order started";
+    case NotificationEvent.ChangeOrderImplementation:
+      return "Change order in implementation";
+    case NotificationEvent.ChangeOrderDone:
+      return "Change order complete";
     default:
       return "You have a new notification";
   }
@@ -215,6 +245,15 @@ export function getNotificationEmailCtaLabel(event: NotificationEvent): string {
     case NotificationEvent.ApprovalApproved:
     case NotificationEvent.ApprovalRejected:
       return "View decision";
+    case NotificationEvent.ChangeOrderSubmittedForReview:
+      return "Review change order";
+    case NotificationEvent.ChangeOrderApproved:
+    case NotificationEvent.ChangeOrderRejected:
+    case NotificationEvent.ChangeOrderReleased:
+    case NotificationEvent.ChangeOrderStarted:
+    case NotificationEvent.ChangeOrderImplementation:
+    case NotificationEvent.ChangeOrderDone:
+      return "View change order";
     case NotificationEvent.JobCompleted:
       return "View job";
     case NotificationEvent.SuggestionResponse:

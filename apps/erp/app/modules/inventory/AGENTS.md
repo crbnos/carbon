@@ -87,5 +87,5 @@ import { inventoryAdjustmentValidator, receiptValidator } from "~/modules/invent
 
 ## Rules References
 
-- `.ai/rules/inventory-system.md` — comprehensive guide to inventory code, RPCs, storage units, and gotchas
-- `.ai/rules/traceability-model.md` — serial/batch lineage graph model (trackedEntity/trackedActivity)
+- `.claude/rules/inventory-system.md` — comprehensive guide to inventory code, RPCs, storage units, and gotchas
+- `.claude/rules/traceability-model.md` — serial/batch lineage graph model (trackedEntity/trackedActivity)

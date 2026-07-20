@@ -610,6 +610,9 @@ msgstr "无影响"
 msgid "No maintenance scheduled for today"
 msgstr "今天没有计划的维护"
 
+msgid "No matches. Type to create one."
+msgstr "没有匹配项。输入以创建一个。"
+
 msgid "No materials"
 msgstr "无物料"
 

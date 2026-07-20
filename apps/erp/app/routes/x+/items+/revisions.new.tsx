@@ -43,27 +43,24 @@ export async function action({ request }: ActionFunctionArgs) {
     return { success: false, error: "Failed to create revision" };
   }
 
-  switch (currentItem.data.type) {
-    case "Part":
-      return { success: true, link: path.to.partDetails(result.data.id) };
-    case "Material":
-      return {
-        success: true,
-        link: path.to.materialDetails(result.data.id)
-      };
-    case "Tool":
-      return { success: true, link: path.to.toolDetails(result.data.id) };
-    case "Consumable":
-      return {
-        success: true,
-        link: path.to.consumableDetails(result.data.id)
-      };
-    case "Service":
-      return {
-        success: true,
-        link: path.to.serviceDetails(result.data.id)
-      };
-    default:
-      return { success: true, link: path.to.items };
-  }
+  const link = (() => {
+    switch (currentItem.data.type) {
+      case "Part":
+        return path.to.partDetails(result.data.id);
+      case "Material":
+        return path.to.materialDetails(result.data.id);
+      case "Tool":
+        return path.to.toolDetails(result.data.id);
+      case "Consumable":
+        return path.to.consumableDetails(result.data.id);
+      case "Service":
+        return path.to.serviceDetails(result.data.id);
+      default:
+        return path.to.items;
+    }
+  })();
+
+  // newItemId lets the caller (e.g. the new-revision modal's "open change order"
+  // option) act on the created revision without parsing it out of `link`.
+  return { success: true, link, newItemId: result.data.id };
 }

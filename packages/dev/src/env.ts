@@ -1,4 +1,4 @@
-import { existsSync, unlinkSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "pathe";
 import { APP_CHOICES } from "./constants.js";
 import { type JwtCreds, type PortMap, SHARED_REDIS_PORT } from "./worktree.js";
@@ -108,8 +108,48 @@ export function renderEnv(opts: {
   return lines.join("\n");
 }
 
+/**
+ * The `#force` escape hatch: a line in the user-owned `.env` ending with a
+ * `#force` comment pins that key — the generated `.env.local` omits it, so the
+ * `.env` value wins even though `.env.local` normally overrides `.env` (Vite
+ * load order). Survives regeneration by construction: the marker lives in
+ * `.env`, which crbn never writes. e.g. point the local stack at a remote
+ * assembler:  `ASSEMBLER_SERVICE_URL=https://xxx.execute-api.…  #force`
+ */
+const FORCE_MARKER = /#\s*force\s*$/i;
+const ENV_KEY = /^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=/;
+
+export function forcedKeys(dotEnvText: string): Set<string> {
+  const keys = new Set<string>();
+  for (const line of dotEnvText.split("\n")) {
+    if (!FORCE_MARKER.test(line)) continue;
+    const key = line.match(ENV_KEY)?.[1];
+    if (key) keys.add(key);
+  }
+  return keys;
+}
+
+export function omitForcedKeys(content: string, dotEnvText: string): string {
+  const forced = forcedKeys(dotEnvText);
+  if (forced.size === 0) return content;
+  return content
+    .split("\n")
+    .map((line) => {
+      const key = line.match(ENV_KEY)?.[1];
+      return key && forced.has(key)
+        ? `# ${key} omitted — #force'd in .env`
+        : line;
+    })
+    .join("\n");
+}
+
 export function writeEnv(worktreeRoot: string, content: string) {
-  writeFileSync(join(worktreeRoot, ".env.local"), content);
+  const dotEnvPath = join(worktreeRoot, ".env");
+  const dotEnv = existsSync(dotEnvPath) ? readFileSync(dotEnvPath, "utf8") : "";
+  writeFileSync(
+    join(worktreeRoot, ".env.local"),
+    omitForcedKeys(content, dotEnv)
+  );
 }
 
 export function syncAppPortlessConfigs(worktreeRoot: string) {

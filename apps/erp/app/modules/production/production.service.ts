@@ -4022,7 +4022,7 @@ export async function deleteAssemblyInstruction(
 async function notifyAssemblerInvalidate(modelUploadId: string) {
   if (!ASSEMBLER_SERVICE_URL) return;
   try {
-    await fetch(`${ASSEMBLER_SERVICE_URL}/cache/invalidate`, {
+    await fetch(`${ASSEMBLER_SERVICE_URL}/v1/cache/invalidate`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

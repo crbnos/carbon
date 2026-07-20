@@ -15,6 +15,11 @@ export {
   indexAssemblyGraph
 } from "./graph";
 export {
+  ModelCanvas,
+  type ModelCanvasProps,
+  type ModelMetrics
+} from "./ModelCanvas";
+export {
   buildStepClip,
   displayMotionForStep,
   type MotionKeyframeOptions,

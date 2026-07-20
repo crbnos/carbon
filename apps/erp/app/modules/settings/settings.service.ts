@@ -18,6 +18,7 @@ import {
 import type { JSONContent } from "@carbon/react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
+import type { plmReleaseControl as plmReleaseControlOptions } from "~/modules/items/items.models";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { interpolateSequenceDate } from "~/utils/string";
@@ -1007,6 +1008,17 @@ export async function updateMetricSettings(
   return client
     .from("companySettings")
     .update(sanitize({ useMetric }))
+    .eq("id", companyId);
+}
+
+export async function updatePlmReleaseControlSetting(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  plmReleaseControl: (typeof plmReleaseControlOptions)[number]
+) {
+  return client
+    .from("companySettings")
+    .update(sanitize({ plmReleaseControl }))
     .eq("id", companyId);
 }
 

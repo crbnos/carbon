@@ -44,7 +44,11 @@ const Users = ({
     setSelections(
       verbose
         ? items.map((item) =>
-            "users" in item ? `group_${item.id}` : `user_${item.id}`
+            // Groups load without members, so the object has no `users` key at
+            // runtime — discriminate on a field only groups carry.
+            "isEmployeeTypeGroup" in item
+              ? `group_${item.id}`
+              : `user_${item.id}`
           )
         : items.map((item) => item.id)
     );

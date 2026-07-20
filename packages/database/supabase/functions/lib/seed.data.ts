@@ -174,6 +174,23 @@ export const nonConformanceTypes = [
   { name: "Customer Complaint", createdBy: "system" }
 ] as const;
 
+// Change Order types (the changeOrderType lookup). Kept in sync with the
+// one-time seed in the change-orders migration so new companies get the same
+// default types the migration gave existing ones.
+export const changeOrderTypes = [
+  { name: "Design Improvement", createdBy: "system" },
+  { name: "Cost Reduction", createdBy: "system" },
+  { name: "Quality / Reliability Improvement", createdBy: "system" },
+  { name: "Supplier / Sourcing Change", createdBy: "system" },
+  { name: "Material or Component Change", createdBy: "system" },
+  { name: "Obsolescence / End-of-Life", createdBy: "system" },
+  { name: "Regulatory / Compliance", createdBy: "system" },
+  { name: "Safety", createdBy: "system" },
+  { name: "Manufacturing / Producibility", createdBy: "system" },
+  { name: "Customer Request", createdBy: "system" },
+  { name: "Documentation Error / Correction", createdBy: "system" }
+] as const;
+
 export const nonConformanceRequiredActions = [
   { name: "Corrective Action", systemType: "Corrective" as const, createdBy: "system" },
   { name: "Preventive Action", systemType: "Preventive" as const, createdBy: "system" },
@@ -187,6 +204,19 @@ export const nonConformanceRequiredActions = [
   { name: "Incoming Materials", createdBy: "system" },
   { name: "Process", createdBy: "system" },
   { name: "Documentation", createdBy: "system" }
+] as const;
+
+// Default change-order actions (the changeOrderRequiredAction templates). Kept in
+// sync with the one-time backfill in the change-order-required-actions migration so
+// new companies get the same defaults existing ones were backfilled with.
+export const changeOrderRequiredActions = [
+  { name: "Engineering Review", createdBy: "system" },
+  { name: "Update Drawings / CAD", createdBy: "system" },
+  { name: "Update BOM / Routing", createdBy: "system" },
+  { name: "Cost Impact Review", createdBy: "system" },
+  { name: "Quality Review", createdBy: "system" },
+  { name: "Inventory Disposition (rework / scrap / use-as-is)", createdBy: "system" },
+  { name: "Notify Affected Parties", createdBy: "system" }
 ] as const;
 
 export const sequences = [
@@ -248,6 +278,15 @@ export const sequences = [
     table: "nonConformance",
     name: "Issue",
     prefix: "NCR",
+    suffix: null,
+    next: 0,
+    size: 6,
+    step: 1
+  },
+  {
+    table: "changeOrder",
+    name: "Change Order",
+    prefix: "ECO-",
     suffix: null,
     next: 0,
     size: 6,

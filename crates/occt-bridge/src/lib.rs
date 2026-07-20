@@ -41,6 +41,24 @@ pub mod ffi {
         /// (unreadable STEP, transfer failure, no shapes).
         fn read_step(path: &str, linear_deflection: f64, angular_deflection: f64) -> Tree;
 
+        /// Read + tessellate an IGES file — the XDE twin of `read_step` (same
+        /// XCAF transfer, same walk → same `Tree` shape).
+        fn read_iges(path: &str, linear_deflection: f64, angular_deflection: f64) -> Tree;
+
+        /// Read + tessellate a bare `.brep` shape file, wrapped in a fresh XCAF
+        /// doc so the identical walk applies (no names/colors/structure in BREP).
+        fn read_brep(path: &str, linear_deflection: f64, angular_deflection: f64) -> Tree;
+
+        /// Read a STEP file, transfer to XCAF, and store it as a BinXCAF (`.xbf`)
+        /// document: lossless B-rep + assembly tree + names + colors, far smaller
+        /// and faster to parse than ASCII STEP. Returns false on any failure.
+        fn step_to_xbf(step_path: &str, xbf_path: &str) -> bool;
+
+        /// Read a BinXCAF (`.xbf`) document and tessellate exactly like
+        /// `read_step` (same walk → identical `Tree`). `ok=false` with `error`
+        /// on failure.
+        fn read_xbf(path: &str, linear_deflection: f64, angular_deflection: f64) -> Tree;
+
         /// Test fixture generator: write `boxes` disjoint solids as ONE
         /// product (flat multi-body, no assembly tree) to a STEP file.
         /// Hermetic tests use this instead of committed fixture files.
@@ -48,4 +66,4 @@ pub mod ffi {
     }
 }
 
-pub use ffi::{read_step, write_test_step, RawNode, Tree};
+pub use ffi::{read_brep, read_iges, read_step, read_xbf, step_to_xbf, write_test_step, RawNode, Tree};

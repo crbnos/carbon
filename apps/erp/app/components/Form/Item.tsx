@@ -38,6 +38,7 @@ import ToolForm from "~/modules/items/ui/Tools/ToolForm";
 import type { ItemType, MethodItemType } from "~/modules/shared";
 import { itemType, methodItemType } from "~/modules/shared";
 import { useItems } from "~/stores";
+import { latestRevisionByReadableId } from "~/stores/items";
 import { path } from "~/utils/path";
 import { MethodItemTypeIcon } from "../Icons";
 import { ItemLifecycleBadge } from "../ItemLifecycleBadge";
@@ -48,6 +49,10 @@ type ItemSelectProps = Omit<ComboboxProps, "options" | "type" | "inline"> & {
   isReadOnly?: boolean;
   blacklist?: string[];
   includeInactive?: boolean;
+  // Collapse options to a single row per part (the latest revision), matching the
+  // parts/materials list views. Off by default so pickers that legitimately need a
+  // specific revision (BOM, sales/job lines) keep every revision.
+  latestRevisionOnly?: boolean;
   inline?: boolean;
   isConfigured?: boolean;
   locationId?: string;
@@ -114,51 +119,55 @@ const Item = ({
   const [items] = useItems();
 
   const options = useMemo(() => {
-    let results = items
-      .filter((item) => {
-        // Filter by type
-        // @ts-expect-error
-        if (validItemTypes && !validItemTypes.includes(item.type)) return false;
+    let filtered = items.filter((item) => {
+      // Filter by type
+      // @ts-expect-error
+      if (validItemTypes && !validItemTypes.includes(item.type)) return false;
 
-        if (type !== "Item" && type !== item.type) return false;
+      if (type !== "Item" && type !== item.type) return false;
 
-        // Filter by active status
-        // Filter by active status
-        if (!props.includeInactive && !item.active) return false;
+      // Filter by active status
+      if (!props.includeInactive && !item.active) return false;
 
-        // Filter by replenishment system
-        if (props.replenishmentSystem) {
-          const systemMatches =
-            item.replenishmentSystem === props.replenishmentSystem ||
-            item.replenishmentSystem === "Buy and Make" ||
-            props.replenishmentSystem === item.replenishmentSystem;
+      // Filter by replenishment system
+      if (props.replenishmentSystem) {
+        const systemMatches =
+          item.replenishmentSystem === props.replenishmentSystem ||
+          item.replenishmentSystem === "Buy and Make" ||
+          props.replenishmentSystem === item.replenishmentSystem;
 
-          if (!systemMatches) return false;
-        }
+        if (!systemMatches) return false;
+      }
 
-        return true;
-      })
-      .map((item) => {
-        const scopedQuantity = props.locationId
-          ? item.quantityByLocation?.[props.locationId]
-          : item.quantityOnHand;
-        return {
-          value: item.id,
-          label: item.supersessionMode ? (
-            <span className="flex items-center gap-1.5">
-              {item.readableIdWithRevision}
-              <ItemLifecycleBadge mode={item.supersessionMode} />
-            </span>
-          ) : (
-            item.readableIdWithRevision
-          ),
-          helper: item.name,
-          helperRight:
-            scopedQuantity !== undefined
-              ? `${scopedQuantity} ${item.unitOfMeasureCode}`
-              : undefined
-        };
-      });
+      return true;
+    });
+
+    // Collapse to a single current revision per part.
+    if (props.latestRevisionOnly) {
+      filtered = latestRevisionByReadableId(filtered);
+    }
+
+    let results = filtered.map((item) => {
+      const scopedQuantity = props.locationId
+        ? item.quantityByLocation?.[props.locationId]
+        : item.quantityOnHand;
+      return {
+        value: item.id,
+        label: item.supersessionMode ? (
+          <span className="flex items-center gap-1.5">
+            {item.readableIdWithRevision}
+            <ItemLifecycleBadge mode={item.supersessionMode} />
+          </span>
+        ) : (
+          item.readableIdWithRevision
+        ),
+        helper: item.name,
+        helperRight:
+          scopedQuantity !== undefined
+            ? `${scopedQuantity} ${item.unitOfMeasureCode}`
+            : undefined
+      };
+    });
 
     if (props.whitelist) {
       results = results.filter((item) => props.whitelist?.includes(item.value));
@@ -173,6 +182,7 @@ const Item = ({
     items,
     props?.includeInactive,
     props.blacklist,
+    props.latestRevisionOnly,
     props.locationId,
     props.replenishmentSystem,
     props.whitelist,

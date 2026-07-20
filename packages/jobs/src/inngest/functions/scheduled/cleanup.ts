@@ -1,6 +1,12 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { NotificationEvent } from "@carbon/notifications";
+import { MODEL_RAW_KEEP_MAX_BYTES } from "@carbon/utils";
 import { inngest } from "../../client";
+
+// Raw CAD in `temp-staging` is transient — the optimise/assembly jobs read it,
+// then only the gated GLB is kept in `private`. Prune raws over the served cap
+// older than this so huge sources never linger; small raws stay (downloadable).
+const STAGED_RAW_TTL_DAYS = 7;
 
 type NotifyEvent = {
   name: "carbon/notify";
@@ -309,6 +315,55 @@ export const cleanupFunction = inngest.createFunction(
       logger.info("Print job cleanup completed");
 
       logger.info(`Cleanup tasks completed: ${new Date().toISOString()}`);
+    });
+
+    await step.run("prune-staged-raw-models", async () => {
+      logger.info("Pruning stale large staged raw models...");
+      const cutoff = new Date(
+        Date.now() - STAGED_RAW_TTL_DAYS * 24 * 60 * 60 * 1000
+      ).toISOString();
+
+      const stale = await serviceRole
+        .schema("storage")
+        .from("objects")
+        .select("name, metadata")
+        .eq("bucket_id", "temp-staging")
+        .lt("created_at", cutoff)
+        .limit(1000);
+
+      if (stale.error) {
+        logger.error("Error listing stale staged raws", { error: stale.error });
+        return;
+      }
+
+      // Prune only UNCOMPACTED fat raws — a successful optimise replaces its raw
+      // with a compacted `raw.<ext>.zst` (the permanent lazy-plan source, never
+      // pruned even when its compressed size still exceeds the cap). A leftover
+      // non-`.zst` raw over the cap means optimise never completed, so it's dead
+      // weight past the TTL.
+      const big = (stale.data ?? [])
+        .filter(
+          (o) =>
+            !o.name?.toLowerCase().endsWith(".zst") &&
+            Number((o.metadata as { size?: number } | null)?.size ?? 0) >
+              MODEL_RAW_KEEP_MAX_BYTES
+        )
+        .map((o) => o.name)
+        .filter((n): n is string => Boolean(n));
+
+      if (big.length === 0) {
+        logger.info("No large staged raws to prune");
+        return;
+      }
+
+      const removed = await serviceRole.storage
+        .from("temp-staging")
+        .remove(big);
+      if (removed.error) {
+        logger.error("Error pruning staged raws", { error: removed.error });
+      } else {
+        logger.info("Pruned large staged raw models", { count: big.length });
+      }
     });
   }
 );

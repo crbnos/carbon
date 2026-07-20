@@ -83,6 +83,32 @@ export async function restartServices(
   });
 }
 
+// `docker compose up -d --force-recreate` a subset of services — reapplies
+// compose/.env.local changes (image, env, memory, ports) to just those
+// containers, leaving the rest of the stack (and the app dev servers) running.
+// Unlike `restart`, this picks up edits to the compose file.
+export async function recreateServices(
+  root: string,
+  slug: string,
+  services: string[]
+) {
+  if (services.length === 0) return;
+  await execStrict(
+    "docker",
+    devArgs(
+      root,
+      slug,
+      "--env-file",
+      ".env.local",
+      "up",
+      "-d",
+      "--force-recreate",
+      ...services
+    ),
+    root
+  );
+}
+
 // Pull all images before `up -d` so `bootStack` doesn't block silently behind
 // a multi-GB download. `--progress=plain` emits parseable per-line status to
 // stderr (`<service> Pulling`, `<service> Pulled`); we stream the latest line

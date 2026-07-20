@@ -51,7 +51,7 @@ pnpm --filter @carbon/jobs dev:jobs   # Start local Inngest dev server
 
 ## Cross-References
 
-- `.ai/rules/event-system.md` — full event architecture, PGMQ, triggers, handler details
+- `.claude/rules/event-system.md` — full event architecture, PGMQ, triggers, handler details
 - `packages/database/src/event.ts` — event Zod schemas, subscription CRUD helpers
 - `packages/database/src/audit.config.ts` — audit entity definitions
 - `packages/lib/` — Inngest client, event types, trigger helpers (source of truth)

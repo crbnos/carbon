@@ -1,0 +1,19 @@
+import { msg } from "@lingui/core/macro";
+import type { MetaFunction } from "react-router";
+import { Outlet } from "react-router";
+import type { Handle } from "~/utils/handle";
+import { path } from "~/utils/path";
+
+export const meta: MetaFunction = () => {
+  return [{ title: "Carbon | Change Orders" }];
+};
+
+export const handle: Handle = {
+  breadcrumb: msg`Change Orders`,
+  to: path.to.changeOrders,
+  module: "items"
+};
+
+export default function ChangeOrdersRoute() {
+  return <Outlet />;
+}

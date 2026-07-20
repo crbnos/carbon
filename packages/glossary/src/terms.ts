@@ -69,6 +69,10 @@ export const terms = {
     definition: msg`Called a method in Carbon — the components plus operations that produce a part.`,
     href: "/docs/reference/methods"
   },
+  "change-order": {
+    term: msg`Change order`,
+    definition: msg`An engineering change: the affected items whose methods are revised on a draft and released together, superseding the versions they replace.`
+  },
   wip: {
     term: msg`Work in process (WIP)`,
     definition: msg`Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock.`,
@@ -1063,6 +1067,11 @@ export const terms = {
     term: msg`Supersession Mode`,
     definition: msg`Controls how planning handles a discontinued item: Consume First exhausts on-hand before switching to the successor, Prefer New redirects new demand to the successor immediately, Stock Only keeps only a minimum service reserve, and No Stock drops the item from planning entirely.`,
     aliases: ["phase-out", "spares-only", "obsolete"]
+  },
+  "change-order-change-type": {
+    term: msg`Change Type`,
+    definition: msg`What kind of change this is: Version updates how the part is made, Revision edits its details and documents, and New Part replaces it with a new part number.`,
+    aliases: ["version", "revision", "new-part"]
   },
 
   // ── Items: Pick method / shelf life (PickMethodForm) ────────────────────

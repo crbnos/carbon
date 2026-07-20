@@ -363,7 +363,9 @@ export function addOneMonth(dateStr: string): Date {
 }
 
 export function getLastDayOfMonth(year: number, month: number): string {
-  const d = new Date(year, month + 1, 0);
+  // Construct in UTC — a local-time Date serialized via toISOString() rolls
+  // back a day in east-of-UTC (positive-offset) timezones (e.g. Feb 28 → Feb 27).
+  const d = new Date(Date.UTC(year, month + 1, 0));
   return d.toISOString().split("T")[0];
 }
 

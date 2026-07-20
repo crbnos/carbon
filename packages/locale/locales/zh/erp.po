@@ -38,6 +38,10 @@ msgstr "\"{taskName}\"已完成——其所有{0}个设置地图项目都已配�
 msgid "(excluded for this customer)"
 msgstr "(已为此客户排除)"
 
+#. placeholder {0}: open.length
+msgid "{0, plural, one {This part is on 1 open change order} other {This part is on # open change orders}}"
+msgstr "{0, plural, one {此部件在1个开放的变更单上} other {此部件在#个开放的变更单上}}"
+
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
 msgstr "{0}个有余额的客户"
@@ -210,6 +214,9 @@ msgstr "90天"
 
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "Carbon 运行的数据迁移 — 您加载自己的数据"
+
+msgid "A change order tracks a controlled engineering or manufacturing change through review and implementation."
+msgstr "变更单跟踪受控的工程或制造变更，从审查到实施。"
 
 msgid "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 msgstr "持有已收但未开票商品价值的结算账户；供应商发票将其结清。"
@@ -502,6 +509,9 @@ msgstr "收购成本"
 msgid "Acquisition Date"
 msgstr "收购日期"
 
+msgid "Action"
+msgstr "操作"
+
 msgid "Action Status"
 msgstr "操作状态"
 
@@ -592,6 +602,9 @@ msgstr "添加操作"
 msgid "Add Adjustment"
 msgstr "添加调整"
 
+msgid "Add Affected Item"
+msgstr "添加受影响项目"
+
 msgid "Add any notes about your decision..."
 msgstr "添加关于您的决定的任何备注..."
 
@@ -670,9 +683,6 @@ msgstr "添加问题"
 msgid "Add Receipt"
 msgstr "添加收据"
 
-msgid "Add Required Actions"
-msgstr "添加必需的操作"
-
 msgid "Add Requirement"
 msgstr "添加要求"
 
@@ -719,6 +729,9 @@ msgstr "附加费"
 msgid "Add-On Cost"
 msgstr "附加成本"
 
+msgid "Added"
+msgstr "已添加"
+
 msgid "Added for this customer"
 msgstr "为此客户添加"
 
@@ -737,8 +750,14 @@ msgstr "地址第2行"
 msgid "Adjustment Type"
 msgstr "调整类型"
 
+msgid "Advance to {nextStatus}"
+msgstr "推进到{nextStatus}"
+
 msgid "Advanced"
 msgstr "高级"
+
+msgid "Affected item not found."
+msgstr "未找到受影响的项目。"
 
 msgid "After"
 msgstr "之后"
@@ -848,6 +867,9 @@ msgstr "资本化项目的会计记录，您要贬值而不是支出；草稿→
 
 msgid "An asset's acquisition cost minus accumulated depreciation — what it's still worth on the books, and the figure it's disposed at."
 msgstr "资产的收购成本减去累计折旧—仍在账簿上的价值和处置的金额。"
+
+msgid "An engineering change: the affected items whose methods are revised on a draft and released together, superseding the versions they replace."
+msgstr "工程变更：受影响项目的方法在草稿中进行修改，并一起发布，替代它们替换的版本。"
 
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "一个集成或自定义更改——实际上是自定义的小部分。"
@@ -1036,6 +1058,10 @@ msgstr "您确定要激活流程：{name}？它将再次出现在下拉菜单中
 msgid "Are you sure you want to activate this gauge?."
 msgstr "您确定要激活此量规吗？"
 
+#. placeholder {0}: routeData?.changeOrder?.changeOrderId ?? ""
+msgid "Are you sure you want to cancel {0}? It will be closed and read-only until you reopen it."
+msgstr "您确定要取消 {0} 吗?在您重新打开之前，它将被关闭并处于只读状态。"
+
 #. placeholder {0}: routeData?.rfqSummary ?.rfqId!
 msgid "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
 msgstr "您确定要取消 {0} 吗？这也将取消所有相关的供应商报价。"
@@ -1125,6 +1151,14 @@ msgstr "您确定要删除账户：{0}{1}吗？此操作无法撤销。"
 #. placeholder {0}: apiKey.name
 msgid "Are you sure you want to delete the API key: {0}? This cannot be undone."
 msgstr "您确定要删除 API 密钥：{0}？此操作无法撤销。"
+
+#. placeholder {0}: requiredAction.name
+msgid "Are you sure you want to delete the change order action: {0}? This cannot be undone."
+msgstr "您确定要删除变更单操作：{0}？这无法撤销。"
+
+#. placeholder {0}: changeOrderType.name
+msgid "Are you sure you want to delete the change order category: {0}? This cannot be undone."
+msgstr "您确定要删除变更单类别：{0}吗？此操作无法撤消。"
 
 msgid "Are you sure you want to delete the contractor: {name}? This cannot be undone."
 msgstr "您确定要删除承包商：{name}？此操作无法撤销。"
@@ -1283,6 +1317,9 @@ msgstr "您确定要删除webhook: {0}吗？此操作无法撤销。"
 
 msgid "Are you sure you want to delete this approval rule? This cannot be undone."
 msgstr "你确定要删除此审批规则吗？此操作无法撤销。"
+
+msgid "Are you sure you want to delete this change order?"
+msgstr "您确定要删除此变更单吗？"
 
 msgid "Are you sure you want to delete this gauge?"
 msgstr "你确定要删除此量规吗？"
@@ -1896,6 +1933,12 @@ msgstr "无法下载此文件"
 msgid "Cancel"
 msgstr "取消"
 
+msgid "Cancel change order"
+msgstr "取消变更单"
+
+msgid "Cancel Change Order"
+msgstr "取消变更单"
+
 msgid "Cancel Job"
 msgstr "取消工作"
 
@@ -2058,11 +2101,29 @@ msgstr "冠军"
 msgid "Change"
 msgstr "更改"
 
+msgid "Change order"
+msgstr "变更单"
+
+msgid "Change Order"
+msgstr "变更单"
+
+msgid "Change Order Actions"
+msgstr "变更单操作"
+
+msgid "Change Order Types"
+msgstr "变更单类型"
+
+msgid "Change Orders"
+msgstr "变更单"
+
 msgid "Change status"
 msgstr "更改状态"
 
 msgid "Change the item type (e.g. Part, Material, Tool, etc.)"
 msgstr "更改项目类型（例如零件、材料、工具等）"
+
+msgid "Change type"
+msgstr "变更类型"
 
 msgid "Change Type"
 msgstr "更改类型"
@@ -2078,6 +2139,9 @@ msgstr "更改此项将覆盖现有方法"
 
 msgid "Changing this will update the part ID"
 msgstr "更改此项将更新零件ID"
+
+msgid "Changing type resets this item's draft edits."
+msgstr "更改类型将重置此项目的草稿编辑。"
 
 msgid "Chart of accounts"
 msgstr "会计科目表"
@@ -2414,6 +2478,9 @@ msgstr "确认"
 msgid "Confirm {0}"
 msgstr "确认 {0}"
 
+msgid "Confirm & release"
+msgstr "确认并发布"
+
 msgid "Confirm and sign the scope"
 msgstr "确认并签署范围"
 
@@ -2552,6 +2619,9 @@ msgstr "控制器，会计"
 msgid "Controls how planning handles a discontinued item: Consume First exhausts on-hand before switching to the successor, Prefer New redirects new demand to the successor immediately, Stock Only keeps only a minimum service reserve, and No Stock drops the item from planning entirely."
 msgstr "控制规划如何处理已停产的物料：优先消耗会在切换到替代物料前耗尽现有库存，优先新品会立即将新需求重定向到替代物料，仅库存会仅保留最少的服务库存，无库存会将物料从规划中完全删除。"
 
+msgid "Controls whether the bill of material and bill of process of a released (Production) revision can be edited outside a change order."
+msgstr "控制已发布（生产）版本的物料清单和工艺清单是否可以在变更单外部编辑。"
+
 msgid "Convention"
 msgstr "惯例"
 
@@ -2632,6 +2702,9 @@ msgstr "复制工作单号"
 
 msgid "Copy link"
 msgstr "复制链接"
+
+msgid "Copy link to change order"
+msgstr "复制变更单链接"
 
 msgid "Copy link to consumable"
 msgstr "复制消耗品链接"
@@ -2851,6 +2924,9 @@ msgstr "创建 {0} 个值"
 msgid "Create & Snapshot"
 msgstr "创建并快照"
 
+msgid "Create a change order for the new revision and open it"
+msgstr "为新修订版本创建变更单并打开它"
+
 msgid "Create a new kanban card for scan-based replenishment."
 msgstr "为扫描式补货创建新的看板卡。"
 
@@ -2877,6 +2953,9 @@ msgstr "创建并批准采购订单"
 
 msgid "Create audit trail entries"
 msgstr "创建审计跟踪条目"
+
+msgid "Create Change Order"
+msgstr "创建变更单"
 
 msgid "Create Issue"
 msgstr "创建问题"
@@ -2934,6 +3013,12 @@ msgstr "创建于"
 
 msgid "Created By"
 msgstr "由...创建"
+
+msgid "Created change order action"
+msgstr "已创建变更单操作"
+
+msgid "Created change order type"
+msgstr "已创建变更单类型"
 
 msgid "Created consumable"
 msgstr "已创建易耗品"
@@ -3553,6 +3638,12 @@ msgstr "删除{periodLabel}"
 msgid "Delete {storageUnitName}"
 msgstr "删除 {storageUnitName}"
 
+msgid "Delete action"
+msgstr "删除操作"
+
+msgid "Delete Action"
+msgstr "删除操作"
+
 msgid "Delete API Key"
 msgstr "删除 API 密钥"
 
@@ -3567,6 +3658,9 @@ msgstr "删除属性"
 
 msgid "Delete Category"
 msgstr "删除分类"
+
+msgid "Delete Change Order"
+msgstr "删除变更单"
 
 msgid "Delete Consumable"
 msgstr "删除耗材"
@@ -3797,6 +3891,9 @@ msgstr "删除转移"
 msgid "Delete Transfer Line"
 msgstr "删除转移行"
 
+msgid "Delete Type"
+msgstr "删除类型"
+
 msgid "Delete Unit of Measure"
 msgstr "删除计量单位"
 
@@ -3887,6 +3984,9 @@ msgstr "描述"
 msgid "Description (optional)"
 msgstr "描述（可选）"
 
+msgid "Description of Change"
+msgstr "变更说明"
+
 msgid "Description of Issue"
 msgstr "问题描述"
 
@@ -3931,6 +4031,9 @@ msgstr "已禁用"
 
 msgid "Discard"
 msgstr "丢弃"
+
+msgid "Discontinuation date"
+msgstr "停用日期"
 
 msgid "Discontinuation Date"
 msgstr "停产日期"
@@ -4199,6 +4302,9 @@ msgstr "编辑<0>问题</0>工作流"
 msgid "Edit Account"
 msgstr "编辑账户"
 
+msgid "Edit Action"
+msgstr "编辑操作"
+
 msgid "Edit API Key"
 msgstr "编辑 API 密钥"
 
@@ -4219,6 +4325,15 @@ msgstr "编辑属性类别"
 
 msgid "Edit Category"
 msgstr "编辑分类"
+
+msgid "Edit Change Order"
+msgstr "编辑变更单"
+
+msgid "Edit Change Order Action"
+msgstr "编辑变更单操作"
+
+msgid "Edit Change Order Type"
+msgstr "编辑变更单类型"
 
 msgid "Edit column visibility"
 msgstr "编辑列可见性"
@@ -4469,6 +4584,9 @@ msgstr "编辑转移"
 msgid "Edit Transfer Line"
 msgstr "编辑转移行"
 
+msgid "Edit Type"
+msgstr "编辑类型"
+
 msgid "Edit Unit of Measure"
 msgstr "编辑计量单位"
 
@@ -4586,6 +4704,9 @@ msgstr "上一季度末"
 msgid "End Time"
 msgstr "结束时间"
 
+msgid "Enforce — edits are blocked"
+msgstr "强制执行—编辑被阻止"
+
 msgid "Enforce per-item validation and guidelines across receipts, shipments, transfers, and adjustments."
 msgstr "在收据、发货、转移和调整中强制执行按项目验证和指南。"
 
@@ -4612,6 +4733,10 @@ msgstr "将此公司注册到实施中心"
 
 msgid "Enter a batch number before setting the expiration date"
 msgstr "在设置过期日期前请输入批号"
+
+#. placeholder {0}: target.maxQuantity - 1
+msgid "Enter a quantity between 1 and {0}."
+msgstr "请输入 1 至 {0} 之间的数量。"
 
 msgid "Enter and approve vendor bills against a PO (three-way match)"
 msgstr "输入并批准针对采购订单的供应商账单（三方匹配）"
@@ -6007,6 +6132,9 @@ msgstr "II（正常默认值）"
 msgid "III (tightened)"
 msgstr "III（紧化的）"
 
+msgid "Impact"
+msgstr "影响"
+
 msgid "Imperial"
 msgstr "英制"
 
@@ -6554,6 +6682,9 @@ msgstr "保持当前"
 msgid "Keep existing pricing, only add new items"
 msgstr "保留现有定价，仅添加新项目"
 
+msgid "Keep Open"
+msgstr "保持开放"
+
 msgid "Key"
 msgstr "钥匙"
 
@@ -6658,6 +6789,9 @@ msgstr "保留任何相关收据不变"
 msgid "Leave blank for built-in"
 msgstr "留空以使用内置"
 
+msgid "Leave blank to use the next revision automatically"
+msgstr "留空以自动使用下一版本"
+
 msgid "Leave empty for exact match"
 msgstr "留空以精确匹配"
 
@@ -6752,6 +6886,9 @@ msgstr "关联 Linear 问题"
 #. placeholder {1}: r.quantity
 msgid "Linked entity quantity ({0}) does not match row quantity ({1})."
 msgstr "关联实体数量 ({0}) 与行数量 ({1}) 不匹配。"
+
+msgid "Linked Issue"
+msgstr "关联问题"
 
 msgid "Linked PO"
 msgstr "关联采购订单"
@@ -7355,6 +7492,9 @@ msgstr "从工作中移除模型"
 msgid "Model removed from line"
 msgstr "模型已从行中移除"
 
+msgid "Modified"
+msgstr "已修改"
+
 msgid "Module"
 msgstr "模块"
 
@@ -7503,6 +7643,15 @@ msgstr "新属性"
 
 msgid "New Attribute Category"
 msgstr "新属性类别"
+
+msgid "New Change Order"
+msgstr "新建变更单"
+
+msgid "New Change Order Action"
+msgstr "新变更单操作"
+
+msgid "New Change Order Type"
+msgstr "新建变更单类型"
 
 msgid "New Consumable"
 msgstr "新消耗品"
@@ -7818,6 +7967,12 @@ msgstr "没有活跃报价"
 msgid "No addresses found"
 msgstr "未找到地址"
 
+msgid "No affected items to assess."
+msgstr "没有要评估的受影响项目。"
+
+msgid "No affected items."
+msgstr "没有受影响的项目。"
+
 msgid "No applications. Payment will be on-account."
 msgstr "无应用。付款将按账户处理。"
 
@@ -7842,6 +7997,9 @@ msgstr "未找到校准记录"
 
 msgid "No changes recorded"
 msgstr "未记录任何更改"
+
+msgid "No changes yet."
+msgstr "还没有变更。"
 
 msgid "No comments yet. Be the first to add a comment."
 msgstr "还没有评论。成为第一个添加评论的人。"
@@ -7870,11 +8028,17 @@ msgstr "未安排休息日"
 msgid "No default attachments yet."
 msgstr "还没有默认附件。"
 
+msgid "No draft make method for this item yet."
+msgstr "此项目还没有草稿制造方法。"
+
 msgid "No draft versions available"
 msgstr "没有可用的草稿版本"
 
 msgid "No due date"
 msgstr "无截止日期"
+
+msgid "No editable properties for this item."
+msgstr "此项目没有可编辑的属性。"
 
 msgid "No employees assigned yet. Add groups to see status."
 msgstr "还未分配员工。添加组以查看状态。"
@@ -7899,6 +8063,9 @@ msgstr "未找到字段。"
 
 msgid "No files"
 msgstr "没有文件"
+
+msgid "No files for this item."
+msgstr "此项目没有文件。"
 
 msgid "No files uploaded"
 msgstr "未上传任何文件"
@@ -7935,6 +8102,9 @@ msgstr "没有匹配项"
 
 msgid "No matches for \"{query}\". Try a different search term."
 msgstr "没有匹配\"{query}\"的结果。请尝试不同的搜索词。"
+
+msgid "No matches. Type to create one."
+msgstr "无匹配项。输入内容以创建一个。"
 
 msgid "No new notifications"
 msgstr "没有新通知"
@@ -8101,6 +8271,9 @@ msgstr "不是表格而是总账余额：当发出工作物料时成本积累，
 msgid "Not enough jobs to cover quantity"
 msgstr "工作数量不足以覆盖数量"
 
+msgid "Not referenced anywhere yet."
+msgstr "还没有在任何地方被引用。"
+
 msgid "Not Required"
 msgstr "不需要"
 
@@ -8151,6 +8324,9 @@ msgstr "OEM (原始设备制造商)"
 
 msgid "of"
 msgstr "的"
+
+msgid "Off — released revisions stay editable"
+msgstr "关闭 — 已发布的版本保持可编辑"
 
 msgid "OK"
 msgstr "确定"
@@ -8239,6 +8415,9 @@ msgstr "哎呀！您尝试访问的链接无效。"
 msgid "Open"
 msgstr "打开"
 
+msgid "Open a change order"
+msgstr "打开变更单"
+
 msgid "Open Actions"
 msgstr "开放操作"
 
@@ -8253,6 +8432,9 @@ msgstr "未结应收"
 
 msgid "Open Audit Log"
 msgstr "打开审计日志"
+
+msgid "Open change orders affecting this part"
+msgstr "影响此零件的未结变更单"
 
 msgid "Open Date"
 msgstr "开放日期"
@@ -8507,6 +8689,9 @@ msgstr "用源方法覆盖报价方法"
 msgid "Overwrite the target manufacturing method with the quote method"
 msgstr "用报价方法覆盖目标制造方法"
 
+msgid "Owner"
+msgstr "所有者"
+
 msgid "Owner (cost center)"
 msgstr "主成本中心"
 
@@ -8570,6 +8755,12 @@ msgstr "零件ID"
 
 msgid "Part is configured for manufacturing"
 msgstr "零件已配置用于制造"
+
+msgid "Part Number"
+msgstr "零件编号"
+
+msgid "Part Supersession"
+msgstr "零件取代"
 
 msgid "Partial"
 msgstr "部分"
@@ -9534,6 +9725,9 @@ msgstr "原因"
 msgid "Reason Account"
 msgstr "原因账户"
 
+msgid "Reason for Change"
+msgstr "变更原因"
+
 msgid "Reason for declining (Optional)"
 msgstr "拒绝原因（可选）"
 
@@ -9736,11 +9930,26 @@ msgstr "相对时间线 · 日期待确认"
 msgid "Release"
 msgstr "释放"
 
+msgid "Release change order"
+msgstr "发布变更单"
+
+msgid "Release control"
+msgstr "发布控制"
+
+msgid "Release Control"
+msgstr "发布控制"
+
 msgid "Release Job"
 msgstr "发布工作"
 
 msgid "Released"
 msgstr "已发布"
+
+msgid "Released revision"
+msgstr "已发布的版本"
+
+msgid "Released revision is locked"
+msgstr "已发布的版本已锁定"
 
 msgid "Remaining"
 msgstr "剩余"
@@ -9787,6 +9996,9 @@ msgstr "删除按列排序"
 
 msgid "Remove this storage type from all referencing storage units and delete it. This cannot be undone."
 msgstr "从所有引用此存储类型的存储单元中移除它并将其删除。此操作无法撤销。"
+
+msgid "Removed"
+msgstr "已移除"
 
 msgid "Rendering label preview..."
 msgstr "正在渲染标签预览..."
@@ -10009,6 +10221,9 @@ msgstr "反向收费销售税 (默认)"
 msgid "Reverse the related journal entries"
 msgstr "反转相关日记账分录"
 
+msgid "Review each item's changes, then confirm — releasing can't be undone."
+msgstr "审查每个项目的更改，然后确认 — 发布无法撤销。"
+
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "审查期间的资产负债表和损益表，并确认数字正确。这是手动签核 — 审查后标记为完成。"
 
@@ -10021,6 +10236,9 @@ msgstr "修订版"
 #. placeholder {0}: revision.revision
 msgid "Revision {0}"
 msgstr "修订版本 {0}"
+
+msgid "Revisions"
+msgstr "版本"
 
 msgid "Revoke"
 msgstr "撤销"
@@ -11364,6 +11582,9 @@ msgstr "成功复制报价"
 msgid "Successfully created a new revision"
 msgstr "成功创建新版本"
 
+msgid "Successor effectivity"
+msgstr "后续生效性"
+
 msgid "Successor Effectivity Date"
 msgstr "后继产品生效日期"
 
@@ -12435,6 +12656,9 @@ msgstr "此信息将用于文档标题"
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "此信息将对所有用户可见，请谨慎分享。"
 
+msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
+msgstr "这是一个采购项目 — 它没有BoM/BoP；只有其属性和文档可以更改。"
+
 msgid "This is a unique identifier for the webhook"
 msgstr "这是webhook的唯一标识符"
 
@@ -12492,6 +12716,12 @@ msgstr "此期间未过账任何日记账分录，可以永久删除。此操作
 msgid "This Quarter"
 msgstr "本季度"
 
+msgid "This revision is released (Production). Changes should normally flow through a change order."
+msgstr "此版本已发布（生产）。更改应通常通过变更订单流转。"
+
+msgid "This revision is released (Production). Open a change order to modify it."
+msgstr "此版本已发布（生产）。打开变更订单进行修改。"
+
 msgid "This sales order has associated jobs. Choose what to do with them."
 msgstr "此销售订单有关联的工作。选择如何处理它们。"
 
@@ -12533,6 +12763,9 @@ msgstr "这将用此修订版本替换其他修订版本的所有方法材料。
 
 msgid "This will replace all method materials of other sizes with this size."
 msgstr "这将用此尺寸替换其他尺寸的所有方法材料。"
+
+msgid "This will set the current version of the make method to Active, making it read-only."
+msgstr "这将把制造方法的当前版本设置为活跃状态，使其变为只读。"
 
 msgid "This will write off the remaining book value of the asset."
 msgstr "这将注销资产的剩余净账面价值。"
@@ -13496,6 +13729,9 @@ msgstr "仓库, 运营"
 msgid "Warn"
 msgstr "警告"
 
+msgid "Warn — edits succeed with a warning"
+msgstr "警告 — 编辑成功，但显示警告"
+
 msgid "Warn but allow"
 msgstr "警告但允许"
 
@@ -13626,6 +13862,9 @@ msgstr "{translatedTerm}是什么?"
 
 msgid "What it is"
 msgstr "它是什么"
+
+msgid "What kind of change this is: Version updates how the part is made, Revision edits its details and documents, and New Part replaces it with a new part number."
+msgstr "这是什么样的更改：版本更新零件的制造方式，修订编辑其详细信息和文档，新零件用新零件号替换它。"
 
 msgid "What kind of output this entry records — Production (good units), Scrap (unrecoverable), or Rework (sent back for correction); reveals Scrap Reason when Scrap."
 msgstr "此条目记录的输出类型 — 生产(合格单位)、报废(无法恢复)或返工(送回纠正);当报废时显示报废原因。"
@@ -13785,6 +14024,9 @@ msgstr "此项目的新库存在收据时默认登陆到哪里;收据上每行�
 
 msgid "Where stock lives and how it ships."
 msgstr "库存存放位置及其发货方式。"
+
+msgid "Where the affected items are used across the system. Informational — nothing here blocks releasing."
+msgstr "受影响的项目在整个系统中的使用位置。仅供参考 — 此处没有任何内容阻止发布。"
 
 msgid "Where this entry originated (manual entry, posting from sales/purchasing, recurring template, etc.)."
 msgstr "此条目的来源(手动输入、来自销售/采购的过账、重复模板等)。"
@@ -14069,6 +14311,9 @@ msgstr "您已打卡 {hoursElapsed} 小时。您忘记打卡下班了吗？"
 
 msgid "Your books and how money flows."
 msgstr "您的账簿和资金流向。"
+
+msgid "Your changes go into a new draft version released with this change order."
+msgstr "您的更改将进入随此变更单发布的新草稿版本。"
 
 msgid "Your Console PIN"
 msgstr "您的控制台PIN"

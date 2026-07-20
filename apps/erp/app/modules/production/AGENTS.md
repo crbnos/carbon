@@ -102,6 +102,6 @@ import { jobValidator, isJobLocked, jobStatus } from "~/modules/production";
 
 ## Rules References
 
-- `.ai/rules/scheduling-data-structures.md` — scheduling engine architecture, trigger chain, RPCs
-- `.ai/rules/mrp-system.md` — MRP run flow, planning data model, and planning UI
-- `.ai/rules/method-material-sourcing.md` — how material methodType drives procurement
+- `.claude/rules/scheduling-data-structures.md` — scheduling engine architecture, trigger chain, RPCs
+- `.claude/rules/mrp-system.md` — MRP run flow, planning data model, and planning UI
+- `.claude/rules/method-material-sourcing.md` — how material methodType drives procurement

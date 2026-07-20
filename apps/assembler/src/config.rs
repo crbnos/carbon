@@ -2,41 +2,62 @@
 
 use crate::error::ApiError;
 
-fn int_env(name: &str, default: usize) -> usize {
-    std::env::var(name)
-        .ok()
-        .and_then(|s| s.parse().ok())
-        .unwrap_or(default)
-}
+// Fixed, sane defaults — deliberately NOT env-tunable. Every knob here had a
+// plausible-sounding env var and no deployment that ever needed a different
+// value; unused knobs are just misconfiguration surface. Revisit a constant
+// when a real deployment proves it wrong, not before.
 
+/// Max source-download size: unlimited. The download streams to a temp file and
+/// the storage bucket already bounds upload size — no in-service cap.
 pub fn max_source_bytes() -> usize {
-    int_env("ASSEMBLER_MAX_SOURCE_MB", 250) * 1024 * 1024
+    0
 }
 
+/// Assembly part-instance ceiling (guards the planner's O(parts²) sweeps).
 pub fn max_parts() -> usize {
-    int_env("ASSEMBLER_MAX_PARTS", 5000)
+    5000
 }
 
-/// How long shutdown waits for running plan tasks after the HTTP listener
-/// drains. Match the orchestrator's termination grace period.
+/// How long shutdown waits for running tasks after the HTTP listener drains.
+/// Matches the orchestrator's termination grace period.
 pub fn shutdown_grace() -> std::time::Duration {
-    std::time::Duration::from_secs(int_env("ASSEMBLER_SHUTDOWN_GRACE_S", 600) as u64)
+    std::time::Duration::from_secs(600)
 }
 
-/// Result-cache budget (bytes). 0 disables the cache.
+/// Result-cache budget.
 pub fn cache_bytes() -> usize {
-    int_env("ASSEMBLER_CACHE_MB", 512) * 1024 * 1024
+    512 * 1024 * 1024
 }
 
+/// Concurrent heavy jobs per instance — one per core, derived. Each job is
+/// CPU-bound (rayon sweeps saturate cores), so more slots than cores just
+/// thrashes; the semaphore also backs the 429-busy response and shutdown drain.
+/// Lambda runs one job per worker invocation regardless.
 pub fn max_concurrency() -> usize {
-    int_env("ASSEMBLER_MAX_CONCURRENCY", 2).max(1)
+    std::thread::available_parallelism()
+        .map(|n| n.get())
+        .unwrap_or(2)
 }
 
-/// Redis URL for the shared job/result store. Unset => in-process backend (the
-/// single-process default). A set-but-unreachable URL falls back to memory at
-/// boot rather than refusing to start (mirrors @carbon/kv's soft-fail).
+/// Wall-clock budget (seconds) for the optimize simplify ladder. When active, a
+/// job running past it jumps straight to the coarsest rung instead of grinding
+/// every middle pass. Auto-derived: 720s on Lambda (lands under the 900s hard
+/// timeout), unbounded elsewhere (the standing service has no cap). Per-request
+/// `quality.time_budget_secs` overrides.
+pub fn optimize_budget_secs() -> Option<u64> {
+    std::env::var("AWS_LAMBDA_FUNCTION_NAME")
+        .is_ok()
+        .then_some(720)
+}
+
+/// Redis URL for the shared job/result store. REQUIRED — the store refuses to
+/// boot without it (see `JobStore::from_env`); job state must be shared so any
+/// replica / Lambda invocation can answer a poll. One `REDIS_URL` for the
+/// (prod, where the assembler's Redis must be reachable from Lambda and may
+/// differ from the app's), falling back to the stack-wide `REDIS_URL` so local
+/// dev reuses the crbn stack's Redis with zero extra config.
 pub fn redis_url() -> Option<String> {
-    std::env::var("ASSEMBLER_REDIS_URL")
+    std::env::var("REDIS_URL")
         .ok()
         .map(|s| s.trim().to_string())
         .filter(|s| !s.is_empty())
@@ -45,25 +66,25 @@ pub fn redis_url() -> Option<String> {
 /// TTL (seconds) for a Redis job-status entry — long enough to outlive any poll
 /// window, short enough that abandoned jobs self-evict. Default 24h.
 pub fn job_ttl_secs() -> u64 {
-    int_env("ASSEMBLER_JOB_TTL_SECS", 86400) as u64
+    86400
 }
 
 /// TTL (seconds) for a Redis content-hash result-pointer entry. Default 24h.
 pub fn result_ttl_secs() -> u64 {
-    int_env("ASSEMBLER_RESULT_TTL_SECS", 86400) as u64
+    86400
 }
 
 /// TTL (seconds) for a computed-but-unuploaded plan held in Redis for hand-off
 /// (compute -> the poll that uploads it). Short: a plan not drained within this
 /// window is abandoned and the job re-plans. Default 5 min.
 pub fn pending_ttl_secs() -> u64 {
-    int_env("ASSEMBLER_PENDING_TTL_SECS", 300) as u64
+    300
 }
 
 /// Server-side cap on the `?wait=` long-poll hold (seconds). Kept under typical
 /// proxy/LB idle timeouts so a held request never trips them.
 pub fn max_long_poll_secs() -> u64 {
-    int_env("ASSEMBLER_MAX_LONG_POLL_S", 25) as u64
+    25
 }
 
 /// Cap on tokio's blocking pool — the implicit convert queue. OCCT scales to
@@ -73,16 +94,7 @@ pub fn max_long_poll_secs() -> u64 {
 /// tokio::fs ops from starving behind long converts.
 pub fn blocking_threads() -> usize {
     let cores = std::thread::available_parallelism().map_or(8, |n| n.get());
-    int_env("ASSEMBLER_BLOCKING_THREADS", cores + 2).max(2)
-}
-
-pub fn allowed_url_hosts() -> Vec<String> {
-    std::env::var("ASSEMBLER_ALLOWED_URL_HOSTS")
-        .unwrap_or_default()
-        .split(',')
-        .map(|s| s.trim().to_lowercase())
-        .filter(|s| !s.is_empty())
-        .collect()
+    (cores + 2).max(2)
 }
 
 pub fn require_https() -> bool {
@@ -104,18 +116,11 @@ pub fn validate_url(url: &str) -> Result<(), ApiError> {
             "unsupported URL scheme: {scheme}"
         )));
     }
-    let allowed = allowed_url_hosts();
-    if !allowed.is_empty() {
-        let host = parsed.host_str().unwrap_or("").to_lowercase();
-        if !allowed.contains(&host) {
-            return Err(ApiError::invalid("URL host is not allowed"));
-        }
-    } else if require_https() {
-        // No explicit allowlist, and not dev mode: default-deny SSRF against
-        // internal targets by rejecting private/loopback/link-local IP literals.
-        // (Dev fetches source URLs from local storage over portless, so this
-        // only applies when ASSEMBLER_DEV_MODE != "true".) Set
-        // ASSEMBLER_ALLOWED_URL_HOSTS in production for a positive allowlist.
+    if require_https() {
+        // Not dev mode: default-deny SSRF against internal targets by rejecting
+        // private/loopback/link-local IP literals. Sufficient because every URL
+        // reaching here was minted by our own bearer-authenticated jobs layer —
+        // a positive hostname allowlist added config surface, not security.
         if let Some(host) = parsed.host_str() {
             let literal = host.trim_start_matches('[').trim_end_matches(']');
             if let Ok(ip) = literal.parse::<std::net::IpAddr>() {

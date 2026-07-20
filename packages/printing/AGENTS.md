@@ -54,7 +54,7 @@ import { PrintingProvider, PrintButton } from "@carbon/printing/ui";
 
 ## Cross-References
 
-- `.ai/rules/printing-system.md` — full architecture, request flow, gotchas
+- `.claude/rules/printing-system.md` — full architecture, request flow, gotchas
 - `@carbon/documents` — PDF (`@react-pdf/renderer`) and ZPL renderers
 - `packages/jobs/src/inngest/functions/tasks/print-job/` — Inngest generate/deliver functions
 - `apps/{erp,mes}/app/routes/x+/print.tsx` — manual print route

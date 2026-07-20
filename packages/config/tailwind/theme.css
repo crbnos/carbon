@@ -140,7 +140,6 @@
   /* ErrorBoundary (VOID//SYS) effects */
   --animate-scan: scan 6s linear infinite;
   --animate-flicker: flicker 1.6s steps(1, end) infinite;
-  --animate-marquee: marquee 24s linear infinite;
 
   --container-2xl: 1400px;
 }
@@ -196,14 +195,5 @@
   24%,
   55% {
     opacity: 0.25;
-  }
-}
-
-@keyframes marquee {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-100%);
   }
 }
