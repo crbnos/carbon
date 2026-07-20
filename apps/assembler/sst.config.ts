@@ -196,9 +196,7 @@ export default $config({
         cluster,
         // Must match the image platform, same as the Lambda architectures arg.
         architecture:
-          (process.env.ASSEMBLER_LAMBDA_ARCH ?? "x86_64") === "arm64"
-            ? "arm64"
-            : "x86_64",
+          process.env.ASSEMBLER_LAMBDA_ARCH === "arm64" ? "arm64" : "x86_64",
         cpu: "4 vCPU",
         memory: "16 GB", // DECISION: the big-job tier; size to the largest expected model
         image,
