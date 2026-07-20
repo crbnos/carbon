@@ -1,27 +1,63 @@
 # Heartbeat — Carbon Agent Wake Loop
 
-The wake loop is implemented as OpenClaw cron jobs. CARBON_AGENT.md is the operating manual.
+## 05:40 UTC — Wake: Started work on #1115
 
-## Cron Jobs
+**Work picked up:**
+- #1115 (Select in add question modal in training is broken) — fixed and PR opened
 
-### carbon-agent-heartbeat (every 30 min)
-- **ID:** b17e876e-b319-4700-bfd4-f2dfed993c83
-- **Type:** Isolated agentTurn (2h timeout)
-- **Does:** One wake pass — mutex → reconcile → PR feedback → build → groom → GC
-- **Architecture:** OpenClaw orchestrates; Claude Code (`claude -p`) builds
-- **Delivery:** none (logs to daily notes)
-- **CRITICAL:** Checks BOTH `gh issue list` AND `gh pr list --assignee` because `gh issue list` excludes PRs. Human-opened PRs assigned to carbon-agent are only visible via `gh pr list --assignee`.
+**PR #1172 created:**
+- Fixed broken "Correct Answer" select in training question form
+- Changed from `Select` to `SelectControlled` for externally-controlled select
+- Typecheck and lint pass
 
-### carbon-agent-watchdog (every 2h)
-- **ID:** ae38ca3f-f990-4094-b1eb-85be430c850f
-- **Type:** Isolated agentTurn (2 min timeout)
-- **Does:** Health check — verifies heartbeat is running, no stuck state, disk OK
-- **Alerts:** Sends to main session if unhealthy
+**Other PRs status:**
+- PR #1165 (GL posting fix): `BLOCKED` (needs review), checks passing — awaiting human review
+- PR #1137 (Job Operation Batching): `DIRTY`, needs rebase — merge blocked by conflicts
+- PR #1132 (Extensibility spec): `BLOCKED` (needs review), checks passing — awaiting human review
+- PR #1096 (Approvals): `BLOCKED`, checks FAILING (Lint, Typecheck) — needs fixes
+- PR #1090 (Avalara): `DIRTY`, needs rebase — merge blocked by conflicts
 
-### carbon-gc (every 4h)
-- **ID:** 33ecad2e-7a89-4f00-9af1-3f3f76b8a859
-- **Does:** Prune finished loop runs, docker volumes, orphaned worktrees
+**Groomed issues still available (but have dependency blockers):**
+- #1059 (Accounting: integration surface) — depends on blocked #1032, #1047
+- #1058 (Accounting: intercompany maturity) — depends on #1050 (FX machinery)
+- #1057 (Accounting: cutover tooling) — depends on multiple blocked issues
+- #1039 (Accounting: close automation) — depends on blocked issues
 
-### daily-budget-reset (midnight UTC)
-- **ID:** 5cf61bcc-d45d-4458-b977-7f70a94de6fe
-- **Does:** Clear daily $ spent counter
+**Assigned issues:**
+- #1161 (GL posting fix) — `agent:groomed` + `agent:blocked`, PR #1165 open
+- #1061 (Avalara integration) — `agent:needs-verification`, PR #1090 open
+- #1047 (Accounting hardening) — `agent:blocked`
+- #1032 (Document approvals) — `agent:groomed` + `agent:needs-verification`, PR #1096 open
+- No `priority:high` issues.
+
+**Resources:** Disk 83% used (6.3G free). Redis healthy.
+
+## 05:36 UTC — Wake: HEARTBEAT_OK
+
+**Resilience checks:** No build processes. No lockfile. No `agent:working` leases. 1 Docker container (redis).
+
+**PR sweep:**
+- Agent has 5 open PRs (#1165, #1137, #1132, #1096, #1090)
+- PR #1165 (GL posting fix): `BLOCKED` (needs review), checks passing — awaiting human review
+- PR #1137 (Job Operation Batching): `DIRTY`, needs rebase — merge blocked by conflicts, review required
+- PR #1132 (Extensibility spec): `BLOCKED` (needs review), checks passing — awaiting human review
+- PR #1096 (Approvals): `BLOCKED`, checks FAILING (Lint, Typecheck) — needs fixes
+- PR #1090 (Avalara): `DIRTY`, needs rebase — merge blocked by conflicts, review required
+- No PRs assigned to agent by others
+
+**Unblocked work available:**
+- #1059 (Accounting: integration surface) — `agent:groomed`, unassigned — **available**
+- #1058 (Accounting: intercompany maturity) — `agent:groomed`, unassigned — **available**
+- #1057 (Accounting: cutover tooling) — `agent:groomed`, unassigned — **available**
+- #1039 (Accounting: close automation) — `agent:groomed`, unassigned — **available**
+
+**Assigned issues:**
+- #1161 (GL posting fix) — `agent:groomed` + `agent:blocked`, PR #1165 open (checks passing)
+- #1061 (Avalara integration) — `agent:needs-verification`, PR #1090 open (needs rebase)
+- #1047 (Accounting hardening) — `agent:blocked`
+- #1032 (Document approvals) — `agent:groomed` + `agent:needs-verification`, PR #1096 open (checks failing)
+- No `priority:high` issues.
+
+**Resources:** Disk 83% used (6.3G free). No immediate action needed. Redis healthy. Main worktree only. No Carbon containers running.
+
+**GC:** No orphaned worktrees, no agent:working leases to reap.
