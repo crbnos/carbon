@@ -1,8 +1,7 @@
 // The raw (WASM) fallback tier: renders the user's original upload through the
 // SAME ModelCanvas as the artifact tiers — one renderer, one set of chrome.
-// Lazy-imported by ModelPreview only when the WASM tier is compiled in (VITE_CAD_VIEWER_USE_SERVER unset), so this
-// file (and the occt-import-js WASM it pulls for STEP/IGES/BREP) never ships
-// otherwise.
+// Lazy chunk: ships only when the tier is compiled in (VITE_CAD_VIEWER_USE_SERVER
+// unset) and mounts, occt-import-js WASM included.
 
 import { useMemo } from "react";
 import { ModelCanvas, type ModelCanvasProps } from "../ModelCanvas";

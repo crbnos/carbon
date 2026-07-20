@@ -1,6 +1,7 @@
 //! Async job store shared by every heavy action (convert / optimize / plan).
-//! An action handler creates a job (POST /v1/{action}) and the caller long-polls
-//! GET /v1/jobs/{id}?wait=. One lifecycle, one poll, for all actions.
+//! One lifecycle for all actions: create -> compute -> finalize (submit-time
+//! URLs) -> completion callback; GET /v1/jobs/{id}?wait= serves status and the
+//! late-mint fallback.
 //!
 //! Redis-backed, and Redis is REQUIRED (`REDIS_URL`): status +
 //! pointers (never artifact bytes) live in Redis, so a restart, a sibling
@@ -9,9 +10,8 @@
 //! a silent in-memory fallback would strand cross-instance polls (Lambda
 //! dispatch depends on shared state) and hide the misconfiguration.
 //!
-//! Completion artifacts are PUT to caller-signed URLs handed in on each poll
-//! (late-mint offload) and only a `{result, stats}` POINTER is stored — artifact
-//! bytes never enter Redis or linger in memory beyond the pending hand-off.
+//! Artifacts are PUT to caller-signed URLs; only a `{result, stats}` POINTER is
+//! stored — artifact bytes never enter Redis beyond the pending hand-off.
 
 use crate::{cache::CODE_VERSION, config, http};
 use dashmap::DashMap;

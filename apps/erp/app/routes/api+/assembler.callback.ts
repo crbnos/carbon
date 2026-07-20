@@ -3,15 +3,10 @@ import { SESSION_SECRET } from "@carbon/env";
 import { inngest } from "@carbon/lib/inngest";
 import type { ActionFunctionArgs } from "react-router";
 
-// Completion webhook for the assembler service. The submit step mints this
-// route's URL (with a per-job HMAC token) into the job spec; when the job hits
-// a terminal state the service POSTs the job envelope here, and we wake the
-// waiting Inngest run by firing `carbon/assembler-job-done`. Replaces polling:
-// the run's step.waitForEvent matches on data.jobId.
-//
-// Auth is the token, not a session — the caller is the assembler, not a user.
-// Duplicate deliveries are fine (waitForEvent consumes the first match; extra
-// events are inert), so this route is deliberately idempotent + boring.
+// Completion webhook for the assembler: the terminal job envelope lands here
+// and wakes the waiting run via `carbon/assembler-job-done`. Auth is the
+// per-job HMAC token (the caller is the assembler, not a user); duplicate
+// deliveries are inert (waitForEvent consumes the first match).
 
 export function assemblerCallbackToken(jobId: string): string {
   return createHmac("sha256", SESSION_SECRET ?? "")

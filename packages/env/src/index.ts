@@ -198,9 +198,8 @@ export const MES_URL =
 export const ASSEMBLER_SERVICE_URL = getEnv("ASSEMBLER_SERVICE_URL", {
   isRequired: false
 });
-// Dev-only: the local kong port (`crbn up` writes it to .env.local). Lets
-// host-side jobs rewrite storage signed URLs to hit kong directly instead of the
-// public `portless` `.dev` proxy, which times out on large transfers. Unset in prod.
+// Dev-only (crbn-written): local kong port for the storage-URL rewrite in
+// internalizeStorageUrl. Unset in prod.
 export const PORT_API = getEnv("PORT_API", {
   isRequired: false,
   isSecret: false
@@ -209,11 +208,9 @@ export const ASSEMBLER_SERVICE_API_KEY = getEnv("ASSEMBLER_SERVICE_API_KEY", {
   isRequired: false,
   isSecret: true
 });
-// Dev-only: a public origin (e.g. an ngrok tunnel to local kong) substituted
-// into assembler-bound signed storage URLs when the assembler is REMOTE (the
-// staging Lambda). The local portless `.dev` hostnames resolve only on this
-// machine (/etc/hosts + local CA), so a remote worker can't reach them. Unset
-// in prod/preview (storage is genuinely public there).
+// Dev-only: public tunnel origin substituted into assembler-bound storage URLs
+// when the assembler is remote (local `.dev` hosts resolve only on this
+// machine). Unset in prod/preview.
 export const ASSEMBLER_STORAGE_PUBLIC_URL = getEnv(
   "ASSEMBLER_STORAGE_PUBLIC_URL",
   { isRequired: false, isSecret: false }

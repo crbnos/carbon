@@ -10,10 +10,10 @@
 //!   GET  /v1                                      → discovery
 //!   GET  /health                                  → liveness (unauth)
 //!
-//! Every heavy action creates a job (holding a concurrency slot) and the caller
-//! long-polls one uniform job endpoint. Completion artifacts are late-mint
-//! uploaded to signed URLs handed over on each poll. Wires the `converter` and
-//! `planner` crates via `actions::*`.
+//! Every heavy action creates a job (holding a concurrency slot). Artifacts
+//! upload via submit-time signed URLs and completion POSTs to a submit-time
+//! callback URL; the poll endpoint remains for status + as the late-mint
+//! fallback. Wires the `converter` and `planner` crates via `actions::*`.
 
 mod actions;
 mod cache;

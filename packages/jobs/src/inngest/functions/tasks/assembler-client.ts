@@ -11,14 +11,10 @@ import {
 } from "@carbon/env";
 import { NonRetriableError } from "inngest";
 
-// Shared client for the assembler service's `/v1` action-RPC API. Every heavy
-// action (convert / optimize / plan) creates an async job and the caller
-// long-polls one uniform endpoint:
-//   POST /v1/{action}   (Idempotency-Key: jobId)      -> 202 { ok, job }
-//   GET  /v1/jobs/{id}?wait=N                          -> 200 { ok, job }
-// Completion artifacts are late-mint uploaded to signed URLs handed over on each
-// poll via the X-Carbon-Upload-Urls header. See
-// .ai/specs/2026-07-04-animated-work-instructions-contracts.md.
+// Shared client for the assembler service's `/v1` action-RPC API. Submit
+// creates a job (202) with upload URLs + a completion-callback URL in the
+// request; the run then waits on the callback's event, with a single late-mint
+// poll as the timeout fallback. See .ai/specs/2026-07-15-assembler-deployment.md.
 
 // Submits are short; a tight per-request timeout catches an unreachable service.
 const REQUEST_TIMEOUT_MS = 60 * 1000;
@@ -56,12 +52,11 @@ export function assemblerBaseUrl(): string {
 }
 
 /**
- * The assembler runs on the host and pulls (and pushes) storage objects over
- * HTTP. In dev `SUPABASE_URL` is the public `portless` `.dev` proxy, which times
- * out on large (multi-GB) transfers and uses a self-signed TLS cert the Rust
- * client rejects. When the local kong port is known (`PORT_API`, dev only),
- * rewrite a storage signed URL to hit kong directly. No-op in prod (no
- * `PORT_API`, and prod's proxy handles large transfers) or on a non-`.dev` host.
+ * Dev-only URL surgery on assembler-bound signed storage URLs. The portless
+ * `.dev` proxy exists only on this machine (/etc/hosts + local CA), so: a LOCAL
+ * assembler gets a direct `localhost:<kong>` rewrite (the proxy also times out
+ * on multi-GB transfers), and a REMOTE assembler (staging Lambda) gets the
+ * public tunnel origin when one is configured. No-op in prod/preview.
  */
 export function internalizeStorageUrl(url: string): string {
   if (!SUPABASE_URL) return url;
@@ -84,11 +79,6 @@ export function internalizeStorageUrl(url: string): string {
   }
 
   if (!assemblerIsLocal) {
-    // Remote assembler (the staging Lambda / ECS). The local portless `.dev`
-    // hostnames resolve only on THIS machine (/etc/hosts + local CA), so a
-    // remote worker can't fetch them — substitute the public tunnel origin when
-    // one is configured (dev pairing); otherwise pass through untouched
-    // (prod/preview storage is genuinely public).
     if (!ASSEMBLER_STORAGE_PUBLIC_URL) return url;
     try {
       const parsed = new URL(url);
@@ -134,12 +124,8 @@ export async function submitAssemblerJob(opts: {
   logger: { warn: (msg: string, meta?: unknown) => void };
   /** Override the target base (e.g. the ECS overflow service). Default: `ASSEMBLER_SERVICE_URL`. */
   baseUrl?: string;
-  /**
-   * Signed upload URLs handed over AT SUBMIT (long-expiry). On the Lambda
-   * deployment the detached worker invocation uploads artifacts directly with
-   * these — no serving instance survives to answer a late-mint poll with bytes.
-   * The per-poll late-mint stays as the fallback (ECS/dev), so pass both.
-   */
+  /** Signed upload URLs handed over AT SUBMIT, so the job can finalize the
+   * moment compute ends — the Lambda worker has no instance left to poll. */
   uploadUrls?: Record<string, string>;
 }): Promise<void> {
   const { action, jobId, body, logger } = opts;
@@ -325,20 +311,11 @@ function callbackUrl(jobId: string): string {
 }
 
 /**
- * Run an assembler action to completion — event-driven, no polling:
- *
- *  1. submit: body carries a minted `callback_url` + the signed upload URLs
- *     (X-Carbon-Upload-Urls), so the job can finalize AND notify the moment
- *     compute ends, on every runtime (Lambda worker, ECS, local).
- *  2. `waitForEvent("carbon/assembler-job-done", jobId match)` — the callback
- *     route fires it; the run wakes instantly. Zero poll invocations, which on
- *     Lambda were ~half the per-job cost (a 25s long-poll holds a full-memory
- *     invocation just to wait).
- *  3. Safety net: on timeout (lost callback — e.g. the app was unreachable from
- *     the worker) ONE late-mint poll resolves the job from the store — which
- *     also drains any still-pending upload with fresh URLs.
- *
- * Returns the terminal `{ result, stats }`; throws on job error / timeout.
+ * Run an assembler action to completion — event-driven: submit (with upload
+ * URLs + a minted callback URL) -> waitForEvent on the callback's event ->
+ * on timeout, ONE late-mint poll (covers a lost callback and drains any
+ * still-pending upload with fresh URLs). Returns terminal `{ result, stats }`;
+ * throws on job error / timeout.
  */
 export async function runAssemblerJob(
   step: StepTools,
