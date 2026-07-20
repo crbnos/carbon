@@ -52,14 +52,13 @@ pub fn optimize_budget_secs() -> Option<u64> {
 
 /// Redis URL for the shared job/result store. REQUIRED — the store refuses to
 /// boot without it (see `JobStore::from_env`); job state must be shared so any
-/// replica / Lambda invocation can answer a poll. `ASSEMBLER_REDIS_URL` wins
+/// replica / Lambda invocation can answer a poll. One `REDIS_URL` for the
 /// (prod, where the assembler's Redis must be reachable from Lambda and may
 /// differ from the app's), falling back to the stack-wide `REDIS_URL` so local
 /// dev reuses the crbn stack's Redis with zero extra config.
 pub fn redis_url() -> Option<String> {
-    ["ASSEMBLER_REDIS_URL", "REDIS_URL"]
-        .iter()
-        .find_map(|k| std::env::var(k).ok())
+    std::env::var("REDIS_URL")
+        .ok()
         .map(|s| s.trim().to_string())
         .filter(|s| !s.is_empty())
 }
@@ -98,15 +97,6 @@ pub fn blocking_threads() -> usize {
     (cores + 2).max(2)
 }
 
-pub fn allowed_url_hosts() -> Vec<String> {
-    std::env::var("ASSEMBLER_ALLOWED_URL_HOSTS")
-        .unwrap_or_default()
-        .split(',')
-        .map(|s| s.trim().to_lowercase())
-        .filter(|s| !s.is_empty())
-        .collect()
-}
-
 pub fn require_https() -> bool {
     std::env::var("ASSEMBLER_DEV_MODE").as_deref() != Ok("true")
 }
@@ -126,18 +116,11 @@ pub fn validate_url(url: &str) -> Result<(), ApiError> {
             "unsupported URL scheme: {scheme}"
         )));
     }
-    let allowed = allowed_url_hosts();
-    if !allowed.is_empty() {
-        let host = parsed.host_str().unwrap_or("").to_lowercase();
-        if !allowed.contains(&host) {
-            return Err(ApiError::invalid("URL host is not allowed"));
-        }
-    } else if require_https() {
-        // No explicit allowlist, and not dev mode: default-deny SSRF against
-        // internal targets by rejecting private/loopback/link-local IP literals.
-        // (Dev fetches source URLs from local storage over portless, so this
-        // only applies when ASSEMBLER_DEV_MODE != "true".) Set
-        // ASSEMBLER_ALLOWED_URL_HOSTS in production for a positive allowlist.
+    if require_https() {
+        // Not dev mode: default-deny SSRF against internal targets by rejecting
+        // private/loopback/link-local IP literals. Sufficient because every URL
+        // reaching here was minted by our own bearer-authenticated jobs layer —
+        // a positive hostname allowlist added config surface, not security.
         if let Some(host) = parsed.host_str() {
             let literal = host.trim_start_matches('[').trim_end_matches(']');
             if let Ok(ip) = literal.parse::<std::net::IpAddr>() {

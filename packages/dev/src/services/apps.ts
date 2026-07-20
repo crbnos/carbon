@@ -280,13 +280,13 @@ export function spawnAssembler(opts: {
   const appEnv = spawnAppEnv(root, "assembler");
   // ASSEMBLER_DEV_MODE=true also disables TLS verification in the service, so
   // portless's self-signed CA needs no extra trust wiring. Passing
-  // ASSEMBLER_REDIS_URL flips the service to the stateless Redis-backed job +
+  // REDIS_URL points the service at the stateless Redis-backed job +
   // result store; unset (no worktree REDIS_URL) => in-memory, single-process.
   const extraEnv: NodeJS.ProcessEnv = {
-    ASSEMBLER_BIND: `127.0.0.1:${port}`,
+    PORT: String(port),
     ASSEMBLER_SERVICE_API_KEY: "dev-local-key",
     ASSEMBLER_DEV_MODE: "true",
-    ...(appEnv.REDIS_URL ? { ASSEMBLER_REDIS_URL: appEnv.REDIS_URL } : {})
+    ...(appEnv.REDIS_URL ? { REDIS_URL: appEnv.REDIS_URL } : {})
   };
   process.stderr.write(
     `${prefix}${pc.dim(

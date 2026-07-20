@@ -11,7 +11,7 @@
 //! worker runs the exact `spawn` + `run_to_completion` path the CLI uses, and
 //! job state flows through the shared Redis `JobStore` so any instance's poll
 //! can answer. Requires `lambda:InvokeFunction` on itself (exec role) and
-//! `ASSEMBLER_REDIS_URL` (a Memory store is invisible across instances).
+//! `REDIS_URL` (a Memory store is invisible across instances).
 //!
 //! The Invoke call is SigV4-signed by hand: it is a single fixed-shape POST,
 //! the aws-sdk dependency tree needs a newer rustc than this workspace pins,

@@ -2,7 +2,7 @@
 //! An action handler creates a job (POST /v1/{action}) and the caller long-polls
 //! GET /v1/jobs/{id}?wait=. One lifecycle, one poll, for all actions.
 //!
-//! Redis-backed, and Redis is REQUIRED (`ASSEMBLER_REDIS_URL`): status +
+//! Redis-backed, and Redis is REQUIRED (`REDIS_URL`): status +
 //! pointers (never artifact bytes) live in Redis, so a restart, a sibling
 //! replica, or a different Lambda invocation can still answer the poll — the
 //! service is stateless. Boot fails loudly when Redis is missing/unreachable;
@@ -89,12 +89,12 @@ pub enum Finalize {
 
 impl JobStore {
     /// Build from env. Redis is REQUIRED — a missing or unreachable
-    /// `ASSEMBLER_REDIS_URL` refuses to boot (fail loud; a memory fallback would
+    /// `REDIS_URL` refuses to boot (fail loud; a memory fallback would
     /// strand cross-instance polls and hide the misconfiguration).
     pub async fn from_env() -> Self {
         let Some(url) = config::redis_url() else {
             eprintln!(
-                "assembler: Redis is required (set ASSEMBLER_REDIS_URL or REDIS_URL); refusing to start"
+                "assembler: Redis is required (set REDIS_URL); refusing to start"
             );
             std::process::exit(1);
         };
@@ -107,7 +107,7 @@ impl JobStore {
                 }
             }
             Err(e) => {
-                eprintln!("assembler: ASSEMBLER_REDIS_URL unreachable ({e}); refusing to start");
+                eprintln!("assembler: REDIS_URL unreachable ({e}); refusing to start");
                 std::process::exit(1);
             }
         }

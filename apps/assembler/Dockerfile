@@ -131,7 +131,8 @@ COPY --from=build /usr/local/bin/assembler /usr/local/bin/assembler
 # image runs unchanged on Lambda (default), and is inert on ECS/EC2/local. Point
 # it at our port (LWA defaults to 8080). Pin: verify against the latest release.
 COPY --from=public.ecr.aws/awsguru/aws-lambda-adapter:0.9.1 /lambda-adapter /opt/extensions/lambda-adapter
-ENV AWS_LWA_PORT=8000
+# Both the app and the Lambda Web Adapter read PORT (LWA falls back to it).
+ENV PORT=8000
 # Non-HTTP (Event) invokes — the self-dispatch worker path — are POSTed by the
 # adapter to this app route instead of being translated as HTTP requests.
 ENV AWS_LWA_PASS_THROUGH_PATH=/events

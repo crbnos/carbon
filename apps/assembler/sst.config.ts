@@ -42,10 +42,8 @@ export default $config({
     const environment: Record<string, string | undefined> = {
       // Bearer key checked in-app on every non-/health route.
       ASSEMBLER_SERVICE_API_KEY: process.env.ASSEMBLER_SERVICE_API_KEY,
-      // SSRF allow-list (prod: set it; DEV_MODE stays unset => default-deny).
-      ASSEMBLER_ALLOWED_URL_HOSTS: process.env.ASSEMBLER_ALLOWED_URL_HOSTS,
       // Job/result store — REQUIRED; the assembler refuses to boot without it.
-      ASSEMBLER_REDIS_URL: process.env.ASSEMBLER_REDIS_URL,
+      REDIS_URL: process.env.REDIS_URL,
       // Optimize time budget + dispatch mode are AUTO-DETECTED in-service from
       // AWS_LAMBDA_FUNCTION_NAME (720s ladder budget on Lambda; self-invoke
       // dispatch) — no env needed here.
@@ -83,7 +81,7 @@ export default $config({
       role: lambdaRole.arn,
       // Async job model on Lambda: create returns 202 and fires the compute as
       // an Event-type SELF-invocation (its own 900s window); polls read the
-      // shared Redis job store. Requires ASSEMBLER_REDIS_URL.
+      // shared Redis job store. Requires REDIS_URL.
       // Assembler is memory-heavy on big meshes → 10 GB (the max) in prod. New AWS
       // accounts cap Lambda memory at 3008 MB until a Service Quotas increase, so
       // this is overridable (set ASSEMBLER_LAMBDA_MEMORY_MB=3008 for staging before

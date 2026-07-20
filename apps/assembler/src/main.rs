@@ -124,7 +124,9 @@ async fn serve() {
         config::result_ttl_secs(),
     );
 
-    let addr = std::env::var("ASSEMBLER_BIND").unwrap_or_else(|_| "0.0.0.0:8000".into());
+    // Standard PORT convention — the Lambda Web Adapter reads the same variable.
+    let port = std::env::var("PORT").unwrap_or_else(|_| "8000".into());
+    let addr = format!("0.0.0.0:{port}");
     let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
     eprintln!("assembler (rust) listening on {addr}");
 
