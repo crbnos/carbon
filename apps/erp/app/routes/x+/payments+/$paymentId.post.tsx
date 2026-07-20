@@ -5,10 +5,12 @@ import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import {
-  createApprovalRequestAndNotify,
   hasPendingApproval,
-  isApprovalRequired
+  isApprovalRequired,
+  notifyApprovers,
+  parkDocumentForApproval
 } from "~/modules/shared";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -40,12 +42,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
       await isApprovalRequired(serviceRole, "payment", companyId, baseAmount)
     ) {
       if (!(await hasPendingApproval(serviceRole, "payment", paymentId))) {
-        const parked = await serviceRole
-          .from("payment")
-          .update({ status: "Pending Approval", updatedBy: userId })
-          .eq("id", paymentId)
-          .eq("companyId", companyId)
-          .eq("status", "Draft");
+        const parked = await parkDocumentForApproval(getDatabaseClient(), {
+          table: "payment",
+          documentType: "payment",
+          documentId: paymentId,
+          companyId,
+          requestedBy: userId,
+          amount: baseAmount
+        });
         if (parked.error) {
           throw redirect(
             path.to.payment(paymentId),
@@ -55,7 +59,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
             )
           );
         }
-        await createApprovalRequestAndNotify(serviceRole, {
+        await notifyApprovers(serviceRole, {
           documentType: "payment",
           documentId: paymentId,
           companyId,

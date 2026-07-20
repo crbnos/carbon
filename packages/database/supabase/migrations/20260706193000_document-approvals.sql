@@ -37,6 +37,27 @@ ALTER TABLE "journal"
 CREATE INDEX IF NOT EXISTS "journal_preparedBy_idx" ON "journal" ("preparedBy");
 CREATE INDEX IF NOT EXISTS "journal_approvedBy_idx" ON "journal" ("approvedBy");
 
+-- FK: journal.approvalRequestId -> approvalRequest.id (mirrors preparedBy/
+-- approvedBy, which are FK-constrained to "user"). Added NOT VALID so no scan/
+-- lock of existing journal rows, then validated in a separate step. Guarded so
+-- the migration stays idempotent (ADD CONSTRAINT has no IF NOT EXISTS).
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'journal_approvalRequestId_fkey'
+  ) THEN
+    ALTER TABLE "journal"
+      ADD CONSTRAINT "journal_approvalRequestId_fkey"
+      FOREIGN KEY ("approvalRequestId") REFERENCES "approvalRequest"("id")
+      NOT VALID;
+  END IF;
+END $$;
+
+-- Validating an already-valid constraint is a no-op, so this stays idempotent.
+ALTER TABLE "journal" VALIDATE CONSTRAINT "journal_approvalRequestId_fkey";
+
+CREATE INDEX IF NOT EXISTS "journal_approvalRequestId_idx" ON "journal" ("approvalRequestId");
+
 -- Self-approval enforcement. Defaults on: a requester can never approve their
 -- own document. Turning it off is a standing exception surfaced in the SoD report.
 ALTER TABLE "companySettings"

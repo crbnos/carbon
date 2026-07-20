@@ -2256,6 +2256,9 @@ msgstr ""
 msgid "Close Status"
 msgstr ""
 
+msgid "Close Date"
+msgstr "关闭日期"
+
 msgid "Closed"
 msgstr "已关闭"
 
@@ -3442,9 +3445,6 @@ msgstr "签发日期"
 
 msgid "Date Paid"
 msgstr "支付日期"
-
-msgid "Date Range"
-msgstr ""
 
 msgid "Dates"
 msgstr "日期"
@@ -7971,9 +7971,6 @@ msgstr "未添加任何能力"
 
 msgid "No Access"
 msgstr "无权限"
-
-msgid "No accounting periods yet"
-msgstr ""
 
 msgid "No action needed"
 msgstr "无需操作"

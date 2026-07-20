@@ -445,31 +445,72 @@ export async function createApprovalRequest(
     .single();
 }
 
-/**
- * Creates an approval request for a document and notifies the matched rule's
- * approvers (in-app/email/Slack via the existing ApprovalRequested event). The
- * caller is responsible for flipping the document into "Pending Approval" — the
- * status column lives on a per-document table. Notification failures never block.
- */
-export async function createApprovalRequestAndNotify(
-  client: SupabaseClient<Database>,
-  input: {
-    documentType: (typeof approvalDocumentType)[number];
-    documentId: string;
-    companyId: string;
-    requestedBy: string;
-    amount: number;
-  }
-) {
-  const created = await createApprovalRequest(client, {
-    documentType: input.documentType,
-    documentId: input.documentId,
-    companyId: input.companyId,
-    requestedBy: input.requestedBy,
-    createdBy: input.requestedBy,
-    amount: input.amount
-  });
+type ApprovalDocumentInput = {
+  documentType: (typeof approvalDocumentType)[number];
+  documentId: string;
+  companyId: string;
+  requestedBy: string;
+  amount: number;
+};
 
+/**
+ * Park a Draft financial document into "Pending Approval" and record its
+ * approval request atomically, in a single Kysely transaction (service-role,
+ * RLS bypassed). If the approvalRequest insert fails the park rolls back, so a
+ * document is never stranded in "Pending Approval" with no request row — a state
+ * the per-document UPDATE RLS policies would then edit-lock, making it
+ * permanently unpostable. The Draft guard (zero rows -> throw -> rollback) also
+ * stops a concurrent submit from double-parking. Notifying approvers is a
+ * separate, post-commit step (`notifyApprovers`): a best-effort side effect must
+ * never roll back a valid park. Returns `{ error }` (never throws) to match the
+ * calling routes' conventions.
+ */
+export async function parkDocumentForApproval(
+  db: Kysely<KyselyDatabase>,
+  input: ApprovalDocumentInput & {
+    table: "payment" | "purchaseInvoice" | "memo";
+  }
+): Promise<{ error: unknown }> {
+  try {
+    await db.transaction().execute(async (trx) => {
+      await trx
+        .updateTable(input.table)
+        .set({ status: "Pending Approval", updatedBy: input.requestedBy })
+        .where("id", "=", input.documentId)
+        .where("companyId", "=", input.companyId)
+        .where("status", "=", "Draft")
+        .returning("id")
+        .executeTakeFirstOrThrow();
+
+      await trx
+        .insertInto("approvalRequest")
+        .values({
+          documentType: input.documentType,
+          documentId: input.documentId,
+          requestedBy: input.requestedBy,
+          amount: input.amount,
+          companyId: input.companyId,
+          createdBy: input.requestedBy
+        })
+        .execute();
+    });
+    return { error: null };
+  } catch (err) {
+    return { error: err };
+  }
+}
+
+/**
+ * Notify the approvers matched by amount for a just-parked document (in-app/
+ * email/Slack via the existing ApprovalRequested event). Split out from the
+ * request insert so the insert can run inside the `parkDocumentForApproval`
+ * transaction while notification — a side effect that must never roll back a
+ * valid park — runs after commit. Failures are logged, never thrown.
+ */
+export async function notifyApprovers(
+  client: SupabaseClient<Database>,
+  input: ApprovalDocumentInput
+) {
   const rule = await getApprovalRuleByAmount(
     client,
     input.documentType,
@@ -479,22 +520,19 @@ export async function createApprovalRequestAndNotify(
   const approverIds = rule.data
     ? await getApproverUserIdsForRule(client, rule.data)
     : [];
-  if (approverIds.length > 0) {
-    try {
-      await trigger("notify", {
-        event: NotificationEvent.ApprovalRequested,
-        companyId: input.companyId,
-        documentId: input.documentId,
-        documentType: input.documentType,
-        recipient: { type: "users", userIds: approverIds },
-        from: input.requestedBy
-      });
-    } catch (e) {
-      console.error("Failed to trigger approval notification", e);
-    }
+  if (approverIds.length === 0) return;
+  try {
+    await trigger("notify", {
+      event: NotificationEvent.ApprovalRequested,
+      companyId: input.companyId,
+      documentId: input.documentId,
+      documentType: input.documentType,
+      recipient: { type: "users", userIds: approverIds },
+      from: input.requestedBy
+    });
+  } catch (e) {
+    console.error("Failed to trigger approval notification", e);
   }
-
-  return created;
 }
 
 export async function deleteApprovalRule(

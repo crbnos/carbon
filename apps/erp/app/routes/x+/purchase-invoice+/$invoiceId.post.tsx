@@ -3,10 +3,12 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { ActionFunctionArgs } from "react-router";
 import { getCompanySettings } from "~/modules/settings";
 import {
-  createApprovalRequestAndNotify,
   hasPendingApproval,
-  isApprovalRequired
+  isApprovalRequired,
+  notifyApprovers,
+  parkDocumentForApproval
 } from "~/modules/shared";
+import { getDatabaseClient } from "~/services/database.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
@@ -37,19 +39,21 @@ export async function action({ request, params }: ActionFunctionArgs) {
       await isApprovalRequired(client, "purchaseInvoice", companyId, baseAmount)
     ) {
       if (!(await hasPendingApproval(client, "purchaseInvoice", invoiceId))) {
-        const parked = await client
-          .from("purchaseInvoice")
-          .update({ status: "Pending Approval", updatedBy: userId })
-          .eq("id", invoiceId)
-          .eq("companyId", companyId)
-          .eq("status", "Draft");
+        const parked = await parkDocumentForApproval(getDatabaseClient(), {
+          table: "purchaseInvoice",
+          documentType: "purchaseInvoice",
+          documentId: invoiceId,
+          companyId,
+          requestedBy: userId,
+          amount: baseAmount
+        });
         if (parked.error) {
           return {
             success: false,
             message: "Failed to submit purchase invoice for approval"
           };
         }
-        await createApprovalRequestAndNotify(getCarbonServiceRole(), {
+        await notifyApprovers(getCarbonServiceRole(), {
           documentType: "purchaseInvoice",
           documentId: invoiceId,
           companyId,

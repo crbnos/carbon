@@ -2256,6 +2256,9 @@ msgstr ""
 msgid "Close Status"
 msgstr ""
 
+msgid "Close Date"
+msgstr "Kapatma Tarihi"
+
 msgid "Closed"
 msgstr "Kapalı"
 
@@ -3442,9 +3445,6 @@ msgstr "Düzenleme Tarihi"
 
 msgid "Date Paid"
 msgstr "Ödeme Tarihi"
-
-msgid "Date Range"
-msgstr ""
 
 msgid "Dates"
 msgstr "Tarihler"
@@ -7971,9 +7971,6 @@ msgstr "Ek yetenek eklenmedi"
 
 msgid "No Access"
 msgstr "Erişim Yok"
-
-msgid "No accounting periods yet"
-msgstr ""
 
 msgid "No action needed"
 msgstr "Yapılacak işlem yok"

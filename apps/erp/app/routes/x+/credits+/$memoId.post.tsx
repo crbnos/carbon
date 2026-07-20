@@ -5,10 +5,12 @@ import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import {
-  createApprovalRequestAndNotify,
   hasPendingApproval,
-  isApprovalRequired
+  isApprovalRequired,
+  notifyApprovers,
+  parkDocumentForApproval
 } from "~/modules/shared";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -36,19 +38,21 @@ export async function action({ request, params }: ActionFunctionArgs) {
       Number(memo.data.amount) * Number(memo.data.exchangeRate);
     if (await isApprovalRequired(serviceRole, "memo", companyId, baseAmount)) {
       if (!(await hasPendingApproval(serviceRole, "memo", memoId))) {
-        const parked = await serviceRole
-          .from("memo")
-          .update({ status: "Pending Approval", updatedBy: userId })
-          .eq("id", memoId)
-          .eq("companyId", companyId)
-          .eq("status", "Draft");
+        const parked = await parkDocumentForApproval(getDatabaseClient(), {
+          table: "memo",
+          documentType: "memo",
+          documentId: memoId,
+          companyId,
+          requestedBy: userId,
+          amount: baseAmount
+        });
         if (parked.error) {
           throw redirect(
             path.to.memo(memoId),
             await flash(request, error(parked.error, "Failed to submit memo"))
           );
         }
-        await createApprovalRequestAndNotify(serviceRole, {
+        await notifyApprovers(serviceRole, {
           documentType: "memo",
           documentId: memoId,
           companyId,

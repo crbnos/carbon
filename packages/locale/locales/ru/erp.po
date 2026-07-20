@@ -2256,6 +2256,9 @@ msgstr ""
 msgid "Close Status"
 msgstr ""
 
+msgid "Close Date"
+msgstr "Дата закрытия"
+
 msgid "Closed"
 msgstr "Закрыто"
 
@@ -3442,9 +3445,6 @@ msgstr "Дата выпуска"
 
 msgid "Date Paid"
 msgstr "Дата оплаты"
-
-msgid "Date Range"
-msgstr ""
 
 msgid "Dates"
 msgstr "Даты"
@@ -7971,9 +7971,6 @@ msgstr "Нет добавленных навыков"
 
 msgid "No Access"
 msgstr "Нет доступа"
-
-msgid "No accounting periods yet"
-msgstr ""
 
 msgid "No action needed"
 msgstr "Никаких действий не требуется"

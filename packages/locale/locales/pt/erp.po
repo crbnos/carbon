@@ -2256,6 +2256,9 @@ msgstr ""
 msgid "Close Status"
 msgstr ""
 
+msgid "Close Date"
+msgstr "Data de Encerramento"
+
 msgid "Closed"
 msgstr "Fechado"
 
@@ -3442,9 +3445,6 @@ msgstr "Data de Emissão"
 
 msgid "Date Paid"
 msgstr "Data de Pagamento"
-
-msgid "Date Range"
-msgstr ""
 
 msgid "Dates"
 msgstr "Datas"
@@ -7971,9 +7971,6 @@ msgstr "Nenhuma habilidade adicionada"
 
 msgid "No Access"
 msgstr "Sem Acesso"
-
-msgid "No accounting periods yet"
-msgstr ""
 
 msgid "No action needed"
 msgstr "Nenhuma ação necessária"

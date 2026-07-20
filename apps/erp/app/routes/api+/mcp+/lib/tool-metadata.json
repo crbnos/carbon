@@ -40459,41 +40459,48 @@
       }
     },
     {
-      "name": "shared_createApprovalRequestAndNotify",
+      "name": "shared_parkDocumentForApproval",
       "module": "shared",
       "classification": "WRITE",
-      "description": "create approval request and notify",
-      "paramCount": 4,
+      "description": "park document for approval",
+      "paramCount": 1,
+      "serviceParams": [
+        "db",
+        "input"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "input": {}
+        },
+        "required": [
+          "input"
+        ]
+      }
+    },
+    {
+      "name": "shared_notifyApprovers",
+      "module": "shared",
+      "classification": "WRITE",
+      "description": "notify approvers",
+      "paramCount": 1,
       "serviceParams": [
         "client",
         "input"
       ],
       "injectAuth": [
-        "companyId",
-        "createdBy",
-        "updatedBy"
+        "companyId"
       ],
       "schema": {
         "type": "object",
         "properties": {
-          "documentType": {
-            "type": "string"
-          },
-          "documentId": {
-            "type": "string"
-          },
-          "requestedBy": {
-            "type": "string"
-          },
-          "amount": {
-            "type": "number"
-          }
+          "input": {}
         },
         "required": [
-          "documentType",
-          "documentId",
-          "requestedBy",
-          "amount"
+          "input"
         ]
       }
     },
