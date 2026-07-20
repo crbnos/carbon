@@ -67,6 +67,19 @@ export function assemblerEcsUrl(): string | undefined {
  */
 export function internalizeStorageUrl(url: string): string {
   if (!PORT_API || !SUPABASE_URL) return url;
+  // The rewrite only helps when the assembler itself runs on THIS host (it can
+  // then hit kong directly). A remote assembler (the staging Lambda, ECS) must
+  // receive the public URL — localhost would resolve to the remote box itself.
+  // Deriving this from ASSEMBLER_SERVICE_URL beats hand-editing the crbn-owned
+  // PORT_API out of .env.local (which crbn up regenerates anyway).
+  try {
+    const assemblerHost = new URL(assemblerBaseUrl()).hostname;
+    if (assemblerHost !== "localhost" && assemblerHost !== "127.0.0.1") {
+      return url;
+    }
+  } catch {
+    return url; // no/invalid assembler URL -> nothing consumes the rewrite
+  }
   let publicHost: string;
   try {
     publicHost = new URL(SUPABASE_URL).host;
