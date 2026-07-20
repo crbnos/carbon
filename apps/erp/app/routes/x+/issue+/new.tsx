@@ -171,11 +171,23 @@ export async function action({ request }: ActionFunctionArgs) {
   // `client` update is RLS-scoped, so it only lands if they can edit the CO.
   const changeOrderId = url.searchParams.get("changeOrderId");
   if (changeOrderId) {
-    await updateChangeOrder(client, {
+    const linkResult = await updateChangeOrder(client, {
       id: changeOrderId,
       nonConformanceId: ncrId,
       updatedBy: userId
     });
+    if (linkResult.error) {
+      throw redirect(
+        path.to.changeOrder(changeOrderId),
+        await flash(
+          request,
+          error(
+            linkResult.error,
+            "Issue created but failed to link to change order"
+          )
+        )
+      );
+    }
     throw redirect(path.to.changeOrder(changeOrderId));
   }
 

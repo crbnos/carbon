@@ -6881,7 +6881,7 @@ msgid "Linked entity quantity ({0}) does not match row quantity ({1})."
 msgstr "Ilość połączonej jednostki ({0}) nie odpowiada ilości wiersza ({1})."
 
 msgid "Linked Issue"
-msgstr "Powiązane zagadnienie"
+msgstr "Powiązany problem"
 
 msgid "Linked PO"
 msgstr "Powiązane PO"
