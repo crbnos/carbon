@@ -150,14 +150,14 @@ export default $config({
       sourceArn: api.executionArn.apply((arn) => `${arn}/*/*`),
     });
 
-    // Custom domain (e.g. assembler.carbon.ms) — repo convention: the ACM cert
-    // (REGIONAL, same region as the API) and the DNS record are managed
-    // out-of-band; point a CNAME at the `apiDomainTarget` output. Skipped when
-    // the two env inputs are absent (staging uses the default execute-api URL).
-    const domainName = process.env.ASSEMBLER_DOMAIN;
+    // Custom domain — repo convention: the ACM cert (REGIONAL, same region as
+    // the API) and the DNS record (Cloudflare, proxy OFF) are managed
+    // out-of-band; point a CNAME at the `apiDomainTarget` output. Gated on the
+    // cert: no ASSEMBLER_CERT_ARN => skipped (staging keeps the execute-api URL).
+    const domainName = process.env.ASSEMBLER_DOMAIN ?? "assembler.carbon.ms";
     const certArn = process.env.ASSEMBLER_CERT_ARN;
     let apiDomainTarget: $util.Output<string> | undefined;
-    if (domainName && certArn) {
+    if (certArn) {
       const domain = new aws.apigatewayv2.DomainName("AssemblerDomain", {
         domainName,
         domainNameConfiguration: {
