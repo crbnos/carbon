@@ -66,6 +66,12 @@ jobs:
 
   build:
     name: Build assembler image
+    # Disabled by default: the push trigger only fires once the repo variable
+    # ASSEMBLER_CI_ENABLED is set to 'true' (Settings -> Variables). Until the
+    # ECR repos + AWS secrets exist in the CI account, an automatic build on a
+    # main merge would just fail red. Manual workflow_dispatch always works —
+    # running it by hand is intentional.
+    if: github.event_name == 'workflow_dispatch' || vars.ASSEMBLER_CI_ENABLED == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
