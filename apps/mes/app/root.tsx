@@ -16,12 +16,8 @@ import {
 } from "@carbon/react";
 import { RootErrorBoundary } from "@carbon/react/ErrorBoundary";
 import type { Theme } from "@carbon/utils";
-import {
-  faviconLinks,
-  getPreferenceHeaders,
-  modeValidator,
-  themes
-} from "@carbon/utils";
+import { getPreferenceHeaders, modeValidator, themes } from "@carbon/utils";
+import { faviconLinks } from "@carbon/utils/favicon";
 import { I18nProvider } from "@react-aria/i18n";
 import { Analytics } from "@vercel/analytics/react";
 import type React from "react";
