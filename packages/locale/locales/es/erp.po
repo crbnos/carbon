@@ -6880,8 +6880,8 @@ msgstr "Vincular problema de Linear"
 msgid "Linked entity quantity ({0}) does not match row quantity ({1})."
 msgstr "La cantidad de entidad vinculada ({0}) no coincide con la cantidad de fila ({1})."
 
-msgid "Linked NCR"
-msgstr "NCR vinculado"
+msgid "Linked Issue"
+msgstr "Problema vinculado"
 
 msgid "Linked PO"
 msgstr "PO vinculada"

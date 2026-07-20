@@ -6880,8 +6880,8 @@ msgstr "Linear イシューをリンク"
 msgid "Linked entity quantity ({0}) does not match row quantity ({1})."
 msgstr "リンクされたエンティティの数量({0})が行の数量({1})と一致しません。"
 
-msgid "Linked NCR"
-msgstr "リンクされたNCR"
+msgid "Linked Issue"
+msgstr "リンク済み問題"
 
 msgid "Linked PO"
 msgstr "リンク済みPO"

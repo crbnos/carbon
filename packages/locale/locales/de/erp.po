@@ -6880,8 +6880,8 @@ msgstr "Linear-Problem verknüpfen"
 msgid "Linked entity quantity ({0}) does not match row quantity ({1})."
 msgstr "Verknüpfte Entitätsmenge ({0}) stimmt nicht mit der Zeilenmenge ({1}) überein."
 
-msgid "Linked NCR"
-msgstr "Verknüpfte Nichtkonformität"
+msgid "Linked Issue"
+msgstr "Verknüpftes Problem"
 
 msgid "Linked PO"
 msgstr "Verknüpfte Bestellung"

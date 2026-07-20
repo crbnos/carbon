@@ -6880,8 +6880,8 @@ msgstr "Связать проблему Linear"
 msgid "Linked entity quantity ({0}) does not match row quantity ({1})."
 msgstr "Количество связанной сущности ({0}) не совпадает с количеством строки ({1})."
 
-msgid "Linked NCR"
-msgstr "Связанное NCR"
+msgid "Linked Issue"
+msgstr "Связанная проблема"
 
 msgid "Linked PO"
 msgstr "Связанный ПО"

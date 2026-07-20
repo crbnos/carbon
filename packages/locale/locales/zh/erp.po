@@ -6880,8 +6880,8 @@ msgstr "关联 Linear 问题"
 msgid "Linked entity quantity ({0}) does not match row quantity ({1})."
 msgstr "关联实体数量 ({0}) 与行数量 ({1}) 不匹配。"
 
-msgid "Linked NCR"
-msgstr "关联的不符合项报告"
+msgid "Linked Issue"
+msgstr "关联问题"
 
 msgid "Linked PO"
 msgstr "关联采购订单"

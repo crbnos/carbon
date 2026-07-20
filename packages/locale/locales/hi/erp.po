@@ -6880,8 +6880,8 @@ msgstr "Linear समस्या को लिंक करें"
 msgid "Linked entity quantity ({0}) does not match row quantity ({1})."
 msgstr "लिंक किया गया इकाई मात्रा ({0}) पंक्ति मात्रा ({1}) से मेल नहीं खाती।"
 
-msgid "Linked NCR"
-msgstr "जुड़ा हुआ NCR"
+msgid "Linked Issue"
+msgstr "जुड़ी समस्या"
 
 msgid "Linked PO"
 msgstr "लिंक्ड PO"

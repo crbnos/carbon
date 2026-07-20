@@ -6880,8 +6880,8 @@ msgstr "Linear sorununu bağla"
 msgid "Linked entity quantity ({0}) does not match row quantity ({1})."
 msgstr "Bağlantılı varlık miktarı ({0}) satır miktarıyla eşleşmiyor ({1})."
 
-msgid "Linked NCR"
-msgstr "Bağlantılı NCR"
+msgid "Linked Issue"
+msgstr "Bağlı Sorun"
 
 msgid "Linked PO"
 msgstr "Bağlantılı Sipariş"

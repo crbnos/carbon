@@ -294,4 +294,17 @@ describe("diffMethod — attributes", () => {
     expect(attributes).toHaveLength(1);
     expect(attributes[0].status).toBe("unchanged");
   });
+
+  it("surfaces the whole attribute set as added for a net-new item (New Part)", () => {
+    const target = { name: "Widget", description: "brand new" };
+    const { attributes } = diffMethod({
+      ...EMPTY,
+      baseAttributes: null,
+      targetAttributes: target
+    });
+    expect(attributes).toHaveLength(1);
+    expect(attributes[0].status).toBe("added");
+    expect(attributes[0].before).toBeNull();
+    expect(attributes[0].after).toEqual(target);
+  });
 });

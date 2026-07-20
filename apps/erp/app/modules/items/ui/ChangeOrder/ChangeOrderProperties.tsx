@@ -18,11 +18,11 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { useCallback, useEffect } from "react";
 import { LuLink } from "react-icons/lu";
-import { Link, useFetcher, useParams } from "react-router";
+import { Link, useFetcher, useNavigate, useParams } from "react-router";
 import { z } from "zod";
 import { Assignee, EmployeeAvatar } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
-import { Combobox } from "~/components/Form";
+import { Combobox, CreatableCombobox } from "~/components/Form";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { action } from "~/routes/x+/items+/change-order+/update";
 import type { ListItem } from "~/types";
@@ -71,6 +71,7 @@ const ChangeOrderProperties = () => {
   if (!id) throw new Error("id not found");
 
   const { t } = useLingui();
+  const navigate = useNavigate();
   const permissions = usePermissions();
 
   const routeData = useRouteData<{
@@ -273,7 +274,7 @@ const ChangeOrderProperties = () => {
 
       <VStack spacing={2}>
         <h3 className="text-xs text-muted-foreground">
-          <Trans>Linked NCR</Trans>
+          <Trans>Linked Issue</Trans>
         </h3>
         <ValidatedForm
           defaultValues={{
@@ -282,10 +283,21 @@ const ChangeOrderProperties = () => {
           validator={z.object({ nonConformanceId: z.string().optional() })}
           className="w-full"
         >
-          <Combobox
+          <CreatableCombobox
             name="nonConformanceId"
             label=""
             isReadOnly={!canUpdate || isLocked}
+            // Typing a new name creates the issue via the full new-issue form
+            // (with the name prefilled + this CO passed as context) rather than
+            // guessing the required type/location/priority; on save it links the
+            // new issue back to this change order and returns here.
+            onCreateOption={(name) =>
+              navigate(
+                `${path.to.newIssue}?name=${encodeURIComponent(
+                  name
+                )}&changeOrderId=${id}`
+              )
+            }
             inline={(value) => {
               // Chip shows just the NCR id/number — the full name is shown in the
               // link below, so repeating it here only overflows the chip.

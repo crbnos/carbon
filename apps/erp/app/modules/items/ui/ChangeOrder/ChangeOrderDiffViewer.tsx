@@ -659,7 +659,10 @@ export default function ChangeOrderDiffViewer({
   const attributes = (diff?.attributes ?? []).filter((a) => {
     if (a.status === "unchanged") return false;
     const skip = attributeIsBuyAndMake(a) ? EMPTY_SKIP : SOURCING_ONLY_FIELDS;
-    return Object.keys(a.changedFields ?? {}).some((f) => !skip.has(f));
+    // Modified attributes diff per-field; an added/removed one (a New Part, with
+    // no predecessor) carries its full property row — keep it if that row has any
+    // non-hidden field to show.
+    return entryHasBody(a, skip);
   });
   const supplierParts = (diff?.supplierParts ?? []).filter(
     (s) => s.status !== "unchanged"
@@ -681,10 +684,15 @@ export default function ChangeOrderDiffViewer({
         <Section title={<Trans>Properties</Trans>}>
           {attributes.map((a, i) => (
             <VStack key={`attr-${i}`} spacing={1} className="w-full">
-              {modifiedFieldRows(
-                a,
-                attributeIsBuyAndMake(a) ? EMPTY_SKIP : SOURCING_ONLY_FIELDS
-              )}
+              {/* EntryBody dispatches by status: a modified attribute renders
+                  old→new field pairs; a New Part's added attribute renders the
+                  full property list in green. */}
+              <EntryBody
+                entry={a}
+                skip={
+                  attributeIsBuyAndMake(a) ? EMPTY_SKIP : SOURCING_ONLY_FIELDS
+                }
+              />
             </VStack>
           ))}
         </Section>

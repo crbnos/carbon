@@ -6858,6 +6858,13 @@ function diffAttributes(
 ): MethodDiffEntry<Row>[] {
   const b = base ?? {};
   const t = target ?? {};
+  // Net-new item (a New Part has no predecessor): surface every attribute as an
+  // addition — the whole item is new — mirroring how a BOM/BOP with no base
+  // method renders all of its rows as `added`. The viewer draws the full property
+  // list in green rather than per-field old→new pairs.
+  if (!base && target) {
+    return [{ status: "added", before: null, after: target }];
+  }
   // Compare only the columns the CO staged (target), minus audit/linkage — the
   // live source select carries extra columns (e.g. modelUploadId) the staged row
   // doesn't mirror, and comparing those against `undefined` would be spurious.
@@ -7362,9 +7369,15 @@ export async function getChangeOrderDiff(
       correlate(bKids.tools, tKids.tools, "toolId", CHILD_SOURCE_KEY);
     }
 
+    // A New Part is net-new: no predecessor item, so `newItemId === itemId`.
+    // Its whole attribute set + supplier parts are additions, not old→new edits.
+    const isNewPart = affectedItem.changeType === "New Part";
+
     // Attribute diff: base = source item columns; target = the draft item's
     // columns. For a Version the draft is on the same item, so there is no
-    // attribute change (Q2) and both sides read the same row.
+    // attribute change (Q2) and both sides read the same row. For a New Part
+    // there is no predecessor, so we pass a null base to surface every attribute
+    // as an addition (see diffAttributes).
     const draftItemId = affectedItem.newItemId ?? affectedItem.itemId;
     const baseAttributes = await readItemAttributes(
       client,
@@ -7376,10 +7389,12 @@ export async function getChangeOrderDiff(
         ? baseAttributes
         : await readItemAttributes(client, draftItemId, companyId);
 
-    // Supplier parts on the draft item (Revision/New Part only; a Version shares
-    // the live item's suppliers, which are not a CO change). Surfaced as additions.
+    // Supplier parts on the draft item (Revision/Replacement Part/New Part; a
+    // Version shares the live item's suppliers, which are not a CO change).
+    // Surfaced as additions. A New Part's draft item IS its own item
+    // (draftItemId === itemId), so gate on the change type too.
     let supplierParts: MethodDiffEntry<Row>[] = [];
-    if (draftItemId !== affectedItem.itemId) {
+    if (draftItemId !== affectedItem.itemId || isNewPart) {
       const sp = await readDraftSupplierParts(client, draftItemId, companyId);
       if (sp.error) return { data: { items: [] }, error: sp.error };
       supplierParts = sp.data;
@@ -7390,7 +7405,7 @@ export async function getChangeOrderDiff(
       targetMaterials: target.materials,
       baseOperations: base.operations,
       targetOperations: target.operations,
-      baseAttributes,
+      baseAttributes: isNewPart ? null : baseAttributes,
       targetAttributes,
       baseOperationChildren: base.children,
       targetOperationChildren: target.children
@@ -7418,24 +7433,40 @@ export async function getChangeOrderDiff(
     await stampOperationRefNames(client, diff.operations, companyId);
 
     // Resolve the item-group id → name so the attribute diff reads "Group A →
-    // Group B" instead of opaque ids.
+    // Group B" instead of opaque ids. A modified attribute carries the id in
+    // `changedFields`; an added/removed one (a New Part) carries it on the raw
+    // before/after row that the full-property list renders directly.
     const groupIds = diff.attributes.flatMap((a) => {
+      const ids: string[] = [];
       const cf = a.changedFields?.itemPostingGroupId;
-      return cf
-        ? [cf.before, cf.after].filter(
-            (v): v is string => typeof v === "string"
-          )
-        : [];
+      if (cf) {
+        if (typeof cf.before === "string") ids.push(cf.before);
+        if (typeof cf.after === "string") ids.push(cf.after);
+      }
+      for (const row of [a.before, a.after]) {
+        const gid = (row as { itemPostingGroupId?: unknown } | null)
+          ?.itemPostingGroupId;
+        if (typeof gid === "string") ids.push(gid);
+      }
+      return ids;
     });
     if (groupIds.length > 0) {
       const names = await readPostingGroupNames(client, groupIds, companyId);
       for (const a of diff.attributes) {
         const cf = a.changedFields?.itemPostingGroupId;
-        if (!cf) continue;
-        if (typeof cf.before === "string")
-          cf.before = names.get(cf.before) ?? cf.before;
-        if (typeof cf.after === "string")
-          cf.after = names.get(cf.after) ?? cf.after;
+        if (cf) {
+          if (typeof cf.before === "string")
+            cf.before = names.get(cf.before) ?? cf.before;
+          if (typeof cf.after === "string")
+            cf.after = names.get(cf.after) ?? cf.after;
+        }
+        for (const row of [a.before, a.after]) {
+          const r = row as { itemPostingGroupId?: unknown } | null;
+          if (r && typeof r.itemPostingGroupId === "string") {
+            r.itemPostingGroupId =
+              names.get(r.itemPostingGroupId) ?? r.itemPostingGroupId;
+          }
+        }
       }
     }
 

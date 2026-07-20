@@ -6880,8 +6880,8 @@ msgstr "Linear 이슈 연결"
 msgid "Linked entity quantity ({0}) does not match row quantity ({1})."
 msgstr "연결된 개체 수량({0})이 행 수량({1})과 일치하지 않습니다."
 
-msgid "Linked NCR"
-msgstr "연결된 NCR"
+msgid "Linked Issue"
+msgstr "연결된 이슈"
 
 msgid "Linked PO"
 msgstr "연결된 구매주문"

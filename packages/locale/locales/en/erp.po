@@ -6880,8 +6880,8 @@ msgstr "Link Linear Issue"
 msgid "Linked entity quantity ({0}) does not match row quantity ({1})."
 msgstr "Linked entity quantity ({0}) does not match row quantity ({1})."
 
-msgid "Linked NCR"
-msgstr "Linked NCR"
+msgid "Linked Issue"
+msgstr "Linked Issue"
 
 msgid "Linked PO"
 msgstr "Linked PO"
