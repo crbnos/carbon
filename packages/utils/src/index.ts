@@ -9,7 +9,6 @@ export * from "./const";
 export * from "./country";
 export * from "./date";
 export * from "./duration";
-export * from "./favicon";
 export * from "./field-registry";
 export * from "./file";
 export * from "./geo";
