@@ -759,9 +759,6 @@ msgstr "उन्नत"
 msgid "Affected item not found."
 msgstr "प्रभावित आइटम नहीं मिला।"
 
-msgid "Affected Parts & Tools"
-msgstr "प्रभावित पार्ट्स और उपकरण"
-
 msgid "After"
 msgstr "के बाद"
 
@@ -6785,6 +6782,9 @@ msgstr "किसी भी संबंधित रसीदों को अ�
 msgid "Leave blank for built-in"
 msgstr "बिल्ट-इन के लिए खाली छोड़ें"
 
+msgid "Leave blank to use the next revision automatically"
+msgstr ""
+
 msgid "Leave empty for exact match"
 msgstr "सटीक मिलान के लिए खाली छोड़ें"
 
@@ -8751,9 +8751,6 @@ msgstr "भाग विनिर्माण के लिए कॉन्फ�
 
 msgid "Part Number"
 msgstr "भाग संख्या"
-
-msgid "Part or Tool"
-msgstr "भाग या उपकरण"
 
 msgid "Part Supersession"
 msgstr "भाग प्रतिस्थापन"
@@ -12760,6 +12757,9 @@ msgstr "यह अन्य संशोधनों की सभी विध�
 msgid "This will replace all method materials of other sizes with this size."
 msgstr "यह अन्य आकारों की सभी विधि सामग्रियों को इस आकार से बदल देगा।"
 
+msgid "This will set the current version of the make method to Active, making it read-only."
+msgstr ""
+
 msgid "This will write off the remaining book value of the asset."
 msgstr "यह संपत्ति के शेष बही मूल्य को लिख देगा।"
 
@@ -14304,6 +14304,9 @@ msgstr "आप {hoursElapsed} घंटे के लिए क्लॉक इ�
 
 msgid "Your books and how money flows."
 msgstr "आपकी किताबें और पैसा कैसे बहता है।"
+
+msgid "Your changes go into a new draft version released with this change order."
+msgstr ""
 
 msgid "Your Console PIN"
 msgstr "आपका कंसोल PIN"

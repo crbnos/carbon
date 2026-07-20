@@ -759,9 +759,6 @@ msgstr "詳細"
 msgid "Affected item not found."
 msgstr "影響を受けるアイテムが見つかりません。"
 
-msgid "Affected Parts & Tools"
-msgstr "影響を受ける部品・工具"
-
 msgid "After"
 msgstr "後"
 
@@ -6785,6 +6782,9 @@ msgstr "関連するすべての領収書はそのままにしておく"
 msgid "Leave blank for built-in"
 msgstr "組み込みの場合は空白のままにしてください"
 
+msgid "Leave blank to use the next revision automatically"
+msgstr ""
+
 msgid "Leave empty for exact match"
 msgstr "正確な一致のために空のままにしてください"
 
@@ -8751,9 +8751,6 @@ msgstr "部品は製造用に構成されています"
 
 msgid "Part Number"
 msgstr "部品番号"
-
-msgid "Part or Tool"
-msgstr "部品またはツール"
 
 msgid "Part Supersession"
 msgstr "パーツの廃止予定"
@@ -12760,6 +12757,9 @@ msgstr "これにより、他のリビジョンのすべてのメソッドマテ
 msgid "This will replace all method materials of other sizes with this size."
 msgstr "これにより、他のサイズのすべてのメソッドマテリアルがこのサイズに置き換わります。"
 
+msgid "This will set the current version of the make method to Active, making it read-only."
+msgstr ""
+
 msgid "This will write off the remaining book value of the asset."
 msgstr "これはアセットの残りの帳簿価額を償却します。"
 
@@ -14304,6 +14304,9 @@ msgstr "あなたは{hoursElapsed}時間クロックインしています。ク�
 
 msgid "Your books and how money flows."
 msgstr "あなたの帳簿とお金の流れ。"
+
+msgid "Your changes go into a new draft version released with this change order."
+msgstr ""
 
 msgid "Your Console PIN"
 msgstr "あなたのコンソールPIN"

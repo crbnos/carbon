@@ -51,6 +51,7 @@ import {
   type itemPostingGroupValidator,
   type itemPurchasingValidator,
   type itemSupersessionValidator,
+  type itemTrackingTypes,
   type itemUnitSalePriceValidator,
   type itemValidator,
   type MethodDiffEntry,
@@ -5443,7 +5444,15 @@ async function getActiveMakeMethodId(
   client: SupabaseClient<Database>,
   itemId: string,
   companyId: string
-): Promise<{ id: string; version: number; maxVersion: number } | null> {
+): Promise<{
+  id: string;
+  version: number;
+  maxVersion: number;
+  // `status` of the chosen method. Since `chosen = active ?? rows[0]`, a value of
+  // "Draft" means the item has NO Active method — its current method is still an
+  // un-activated draft (the common case for a Make item that never spun a v2).
+  status: string;
+} | null> {
   const methods = await client
     .from("makeMethod")
     .select("id, version, status")
@@ -5456,7 +5465,12 @@ async function getActiveMakeMethodId(
   const chosen = active ?? rows[0];
   // rows are ordered by version DESC, so rows[0] holds the highest version.
   const maxVersion = rows[0].version ?? chosen.version ?? 1;
-  return { id: chosen.id, version: chosen.version ?? 1, maxVersion };
+  return {
+    id: chosen.id,
+    version: chosen.version ?? 1,
+    maxVersion,
+    status: chosen.status
+  };
 }
 
 // Fetch the (single) Draft make method for a freshly-created item — the trigger
@@ -5514,6 +5528,15 @@ export async function createChangeOrderDraftMethod(
         error: { message: "Item has no make method to version" }
       };
     }
+    // If the item's current method is still an un-activated Draft (no Active
+    // version — the common case for a Make item that never spun a v2), promote it
+    // to Active as we create the CO's new draft, mirroring the make-method-tools
+    // "New Version" flow. Otherwise the CO draft (numbered above the base) would
+    // outrank the base draft in `activeMakeMethods` — which falls back to the
+    // highest-version draft when there is no Active — and `get-method` would hand
+    // the CO's UNRELEASED edits to jobs/quotes. Freezing the base as Active keeps
+    // production on the current method until the CO is released.
+    const activeVersionId = base.status === "Draft" ? base.id : undefined;
     // New Draft version on the same item, then copy the BoM/BoP rows (the
     // canonical new-version flow: header insert + copyMakeMethod). Number it
     // above ALL existing versions (maxVersion + 1), not the Active one, so a
@@ -5524,6 +5547,7 @@ export async function createChangeOrderDraftMethod(
     for (let attempt = 0; attempt < 3; attempt++) {
       const res = await upsertMakeMethodVersion(client, {
         copyFromId: base.id,
+        activeVersionId,
         version: nextVersion,
         companyId,
         createdBy: userId
@@ -5813,6 +5837,7 @@ export async function addChangeOrderAffectedItem(
       name: string;
       itemType: "Part" | "Tool";
       replenishmentSystem: "Buy" | "Make" | "Buy and Make";
+      itemTrackingType?: (typeof itemTrackingTypes)[number];
     };
     companyId: string;
     userId: string;
@@ -5850,7 +5875,7 @@ export async function addChangeOrderAffectedItem(
         type: newPart.itemType,
         replenishmentSystem: newPart.replenishmentSystem,
         defaultMethodType,
-        itemTrackingType: "Inventory",
+        itemTrackingType: newPart.itemTrackingType ?? "Inventory",
         unitOfMeasureCode: "EA",
         active: false,
         revisionStatus: "Design",

@@ -1,5 +1,5 @@
 {
-  "generated": "2026-07-19T04:57:07.260Z",
+  "generated": "2026-07-20T01:28:23.555Z",
   "totalTools": 1374,
   "modules": 15,
   "tools": [
@@ -15203,36 +15203,7 @@
             "type": "string"
           },
           "newPart": {
-            "type": "object",
-            "properties": {
-              "readableId": {
-                "type": "string"
-              },
-              "name": {
-                "type": "string"
-              },
-              "itemType": {
-                "type": "string",
-                "enum": [
-                  "Part",
-                  "Tool"
-                ]
-              },
-              "replenishmentSystem": {
-                "type": "string",
-                "enum": [
-                  "Buy",
-                  "Make",
-                  "Buy and Make"
-                ]
-              }
-            },
-            "required": [
-              "readableId",
-              "name",
-              "itemType",
-              "replenishmentSystem"
-            ]
+            "type": "string"
           }
         },
         "required": [

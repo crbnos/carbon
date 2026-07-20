@@ -93,6 +93,8 @@ export const path = {
       itemDrawing: `${api}/item/drawing`,
       itemForecast: (itemId: string, locationId: string) =>
         generatePath(`${api}/items/${itemId}/${locationId}/forecast`),
+      itemMakeMethodStatus: (itemId: string) =>
+        generatePath(`${api}/items/${itemId}/make-method-status`),
       itemMpns: `${api}/items/mpns`,
       itemPostingGroups: `${api}/items/groups`,
       itemRecipeProcesses: (itemId: string) =>

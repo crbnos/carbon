@@ -1156,19 +1156,24 @@ export const changeOrderAffectedItemValidator = z.object({
   id: zfd.text(z.string().optional()),
   changeOrderId: z.string().min(1, { message: "Change order is required" }),
   itemId: z.string().min(1, { message: "Item is required" }),
-  changeType: z.enum(changeOrderChangeTypes).default("Version")
+  changeType: z.enum(changeOrderChangeTypes).default("Version"),
+  // Optional revision label for a Revision change (e.g. "A"). Blank → the next
+  // revision is auto-computed server-side (createChangeOrderDraftMethod).
+  revision: zfd.text(z.string().optional())
 });
 
 // Add-affected-item path for a net-new "New Part" (no existing itemId): the CO
-// mints a brand-new inactive Part/Tool and adds it as a New Part affected item.
+// mints a brand-new inactive Part and adds it as a New Part affected item. Always
+// a Part (no Part/Tool choice in the modal).
 export const changeOrderNewPartValidator = z.object({
   changeOrderId: z.string().min(1, { message: "Change order is required" }),
+  // The route branches on this raw FormData value; also seeds the change-type
+  // Select so it reads "New Part" after the form remounts (see AffectedItemForm).
+  changeType: z.enum(changeOrderChangeTypes).default("New Part"),
   readableId: z.string().min(1, { message: "Part number is required" }),
   name: z.string().min(1, { message: "Name is required" }),
-  itemType: z.enum(["Part", "Tool"], {
-    errorMap: () => ({ message: "Type must be Part or Tool" })
-  }),
-  replenishmentSystem: z.enum(["Buy", "Make", "Buy and Make"]).default("Make")
+  replenishmentSystem: z.enum(["Buy", "Make", "Buy and Make"]).default("Make"),
+  itemTrackingType: z.enum(itemTrackingTypes).default("Inventory")
 });
 
 // Switch the change type on an existing affected item (rebuilds its CO-owned

@@ -27,12 +27,24 @@ export async function action({ request }: ActionFunctionArgs) {
     if (validation.error) {
       return validationError(validation.error);
     }
-    const { changeOrderId, readableId, name, itemType, replenishmentSystem } =
-      validation.data;
+    const {
+      changeOrderId,
+      readableId,
+      name,
+      replenishmentSystem,
+      itemTrackingType
+    } = validation.data;
     const add = await addChangeOrderAffectedItem(client, {
       changeOrderId,
       changeType: "New Part",
-      newPart: { readableId, name, itemType, replenishmentSystem },
+      // A net-new affected item is always a Part.
+      newPart: {
+        readableId,
+        name,
+        itemType: "Part",
+        replenishmentSystem,
+        itemTrackingType
+      },
       companyId,
       userId
     });
@@ -56,12 +68,14 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const { changeOrderId, itemId, changeType } = validation.data;
+  const { changeOrderId, itemId, changeType, revision } = validation.data;
 
   const add = await addChangeOrderAffectedItem(client, {
     changeOrderId,
     itemId,
     changeType,
+    // Only a Revision change consumes an explicit revision label.
+    revision: changeType === "Revision" ? revision : undefined,
     companyId,
     userId
   });

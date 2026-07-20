@@ -243,26 +243,31 @@ export default function ToolDetailsRoute() {
       )}
       {permissions.is("employee") && methodData && (
         <>
-          <Suspense fallback={<Menubar />}>
-            <Await resolve={toolData?.makeMethods}>
-              {(makeMethods) => (
-                <MakeMethodTools
-                  itemId={methodData.makeMethod.itemId}
-                  makeMethods={makeMethods?.data ?? []}
-                  type="Tool"
-                  currentMethodId={methodData.makeMethod.id}
+          {["Make", "Buy and Make"].includes(
+            toolData.toolSummary?.replenishmentSystem ?? ""
+          ) && (
+            <>
+              <Suspense fallback={<Menubar />}>
+                <Await resolve={toolData?.makeMethods}>
+                  {(makeMethods) => (
+                    <MakeMethodTools
+                      itemId={methodData.makeMethod.itemId}
+                      makeMethods={makeMethods?.data ?? []}
+                      type="Tool"
+                      currentMethodId={methodData.makeMethod.id}
+                    />
+                  )}
+                </Await>
+              </Suspense>
+              {manufacturingInitialValues && (
+                <ItemManufacturingForm
+                  key={itemId}
+                  // @ts-ignore
+                  initialValues={manufacturingInitialValues}
+                  withConfiguration={false}
                 />
               )}
-            </Await>
-          </Suspense>
-
-          {manufacturingInitialValues && (
-            <ItemManufacturingForm
-              key={itemId}
-              // @ts-ignore
-              initialValues={manufacturingInitialValues}
-              withConfiguration={false}
-            />
+            </>
           )}
           <ItemNotes
             id={toolData.toolSummary?.id ?? null}

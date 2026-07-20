@@ -229,7 +229,14 @@ const ChangeOrdersTable = memo(
         return (
           <div className="pl-[52px] pr-4">
             {affectedItems.map((affected) => {
-              const newReadableId = resolveItemId(affected.newItemId);
+              // A New Part is net-new (newItemId === itemId) — show a single id,
+              // not "X → X". Only Revision/Replacement Part mint a distinct
+              // successor worth arrowing to.
+              const hasDistinctSuccessor =
+                !!affected.newItemId && affected.newItemId !== affected.itemId;
+              const newReadableId = hasDistinctSuccessor
+                ? resolveItemId(affected.newItemId)
+                : null;
               return (
                 <div key={affected.id} className="flex gap-3 py-3 text-sm">
                   <div
@@ -240,7 +247,7 @@ const ChangeOrdersTable = memo(
                     <span className="font-medium">
                       {resolveItemId(affected.itemId)}
                     </span>
-                    {affected.newItemId && newReadableId && (
+                    {newReadableId && (
                       <span className="flex items-center gap-1 text-muted-foreground">
                         <LuArrowRight className="size-3.5 shrink-0" />
                         <span>{newReadableId}</span>

@@ -759,9 +759,6 @@ msgstr "Erweitert"
 msgid "Affected item not found."
 msgstr "Betroffenes Element nicht gefunden."
 
-msgid "Affected Parts & Tools"
-msgstr "Betroffene Teile & Werkzeuge"
-
 msgid "After"
 msgstr "Nach"
 
@@ -6785,6 +6782,9 @@ msgstr "Alle zugehörigen Belege unverändert lassen"
 msgid "Leave blank for built-in"
 msgstr "Leer lassen für integriert"
 
+msgid "Leave blank to use the next revision automatically"
+msgstr ""
+
 msgid "Leave empty for exact match"
 msgstr "Leer lassen für exakte Übereinstimmung"
 
@@ -8751,9 +8751,6 @@ msgstr "Teil ist für die Herstellung konfiguriert"
 
 msgid "Part Number"
 msgstr "Teilenummer"
-
-msgid "Part or Tool"
-msgstr "Teil oder Werkzeug"
 
 msgid "Part Supersession"
 msgstr "Teilersatz"
@@ -12760,6 +12757,9 @@ msgstr "Dies ersetzt alle Methodenmaterialien anderer Revisionen durch diese Rev
 msgid "This will replace all method materials of other sizes with this size."
 msgstr "Dies ersetzt alle Methodenmaterialien anderer Größen durch diese Größe."
 
+msgid "This will set the current version of the make method to Active, making it read-only."
+msgstr ""
+
 msgid "This will write off the remaining book value of the asset."
 msgstr "Dies schreibt den verbleibenden Buchwert des Vermögenswerts ab."
 
@@ -14304,6 +14304,9 @@ msgstr "Du bist seit {hoursElapsed} Stunden angemeldet. Hast du vergessen, dich 
 
 msgid "Your books and how money flows."
 msgstr "Ihre Bücher und wie Geld fließt."
+
+msgid "Your changes go into a new draft version released with this change order."
+msgstr ""
 
 msgid "Your Console PIN"
 msgstr "Ihre Konsolen-PIN"

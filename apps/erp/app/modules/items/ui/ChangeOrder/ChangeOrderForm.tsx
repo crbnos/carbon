@@ -24,7 +24,6 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useMemo } from "react";
 import type { FetcherWithComponents } from "react-router";
 import type { z } from "zod";
 import { Enumerable } from "~/components/Enumerable";
@@ -33,11 +32,9 @@ import {
   Employee,
   Hidden,
   Input,
-  MultiSelect,
   Submit
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { useItems } from "~/stores";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import { changeOrderPriority, changeOrderValidator } from "../../items.models";
@@ -69,24 +66,6 @@ const ChangeOrderForm = ({
   const isEditing = initialValues.id !== undefined;
   const isModal = type === "modal";
 
-  const [items] = useItems();
-  // Affected items are Parts/Tools only (matches CO affected-item scope); the
-  // service coerces Buy items to Revision. Include all active revisions so a
-  // pre-selected non-latest revision still resolves to a visible option.
-  const itemOptions = useMemo(
-    () =>
-      items
-        .filter(
-          (item) =>
-            item.active && (item.type === "Part" || item.type === "Tool")
-        )
-        .map((item) => ({
-          value: item.id,
-          label: item.readableIdWithRevision
-        })),
-    [items]
-  );
-
   const fields = (
     <>
       <Hidden name="id" />
@@ -94,6 +73,19 @@ const ChangeOrderForm = ({
       {/* Linked NCR is set by the source (e.g. "Create Change Order" from an
           Issue) and carried silently — not a user-editable field. */}
       <Hidden name="nonConformanceId" />
+      {/* Affected Parts are added on the CO detail page (top-to-bottom flow), not
+          chosen here. The create form only carries any pre-selected item (e.g.
+          when opened from a part page via CreateChangeOrderModal) as hidden
+          inputs so it's still attached on create. */}
+      {!isEditing &&
+        (initialValues.affectedItemIds ?? []).map((itemId) => (
+          <input
+            key={itemId}
+            type="hidden"
+            name="affectedItemIds"
+            value={itemId}
+          />
+        ))}
 
       <VStack spacing={4}>
         <div
@@ -127,13 +119,6 @@ const ChangeOrderForm = ({
           <DatePicker name="dueDate" label={t`Due Date`} />
           <CustomFormFields table="changeOrder" />
         </div>
-        {!isEditing && (
-          <MultiSelect
-            name="affectedItemIds"
-            label={t`Affected Parts & Tools`}
-            options={itemOptions}
-          />
-        )}
       </VStack>
     </>
   );

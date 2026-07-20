@@ -7,7 +7,7 @@ import { path } from "~/utils/path";
 import ChangeOrderForm from "./ChangeOrderForm";
 
 type CreateChangeOrderModalProps = {
-  // The item to pre-select as the first affected Part/Tool.
+  // The Part to pre-select as the first affected item.
   itemId: string;
   onClose: () => void;
 };

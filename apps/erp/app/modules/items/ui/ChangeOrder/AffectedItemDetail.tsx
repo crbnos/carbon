@@ -48,10 +48,10 @@ const changeTypeOptions = changeOrderChangeTypes.map((c) => ({
 // The affected-item line detail: everything about the ONE selected affected item,
 // unwrapped from a single card into as many standalone cards as the change needs
 // (no tabs). Change Type comes first (carrying the item identity + remove), then
-// the read-only Changes diff right under it, Properties, Supplier Parts, the
-// method cards (BillOfMaterial / BillOfProcess, which self-card), then Files +
-// CAD Model (Revision / New Part) after the method cards, and Part Supersession
-// (cutover).
+// Part Supersession (cutover) right under it, the read-only Changes diff,
+// Properties, Supplier Parts, the method cards (BillOfMaterial / BillOfProcess,
+// which self-card), then Files + CAD Model (Revision / New Part) after the method
+// cards.
 export default function AffectedItemDetail({
   changeOrderId,
   affected,
@@ -158,6 +158,25 @@ export default function AffectedItemDetail({
           </VStack>
         </CardContent>
       </Card>
+
+      {/* Part Supersession — cutover config (types with a predecessor to
+          supersede), surfaced right under the Change Type card. */}
+      {showCutover && (
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <Trans>Part Supersession</Trans>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <CutoverControl
+              changeOrderId={changeOrderId}
+              affected={affectedItem}
+              isDisabled={isDisabled}
+            />
+          </CardContent>
+        </Card>
+      )}
 
       {/* Changes — the read-only end-state diff, surfaced at the top right under
           the item header. */}
@@ -296,24 +315,6 @@ export default function AffectedItemDetail({
             </CardContent>
           </Card>
         ))}
-
-      {/* Part Supersession — cutover config (non-Version). */}
-      {showCutover && (
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              <Trans>Part Supersession</Trans>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <CutoverControl
-              changeOrderId={changeOrderId}
-              affected={affectedItem}
-              isDisabled={isDisabled}
-            />
-          </CardContent>
-        </Card>
-      )}
     </VStack>
   );
 }

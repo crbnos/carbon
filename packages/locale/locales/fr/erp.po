@@ -759,9 +759,6 @@ msgstr "Avancé"
 msgid "Affected item not found."
 msgstr "Article affecté non trouvé."
 
-msgid "Affected Parts & Tools"
-msgstr "Pièces et outils affectés"
-
 msgid "After"
 msgstr "Après"
 
@@ -6785,6 +6782,9 @@ msgstr "Laisser les reçus connexes intacts"
 msgid "Leave blank for built-in"
 msgstr "Laisser vide pour utiliser le modèle intégré"
 
+msgid "Leave blank to use the next revision automatically"
+msgstr ""
+
 msgid "Leave empty for exact match"
 msgstr "Laisser vide pour une correspondance exacte"
 
@@ -8751,9 +8751,6 @@ msgstr "La pièce est configurée pour la fabrication"
 
 msgid "Part Number"
 msgstr "Numéro de pièce"
-
-msgid "Part or Tool"
-msgstr "Pièce ou outil"
 
 msgid "Part Supersession"
 msgstr "Remplacement de pièce"
@@ -12760,6 +12757,9 @@ msgstr "Cela remplacera tous les matériaux de méthode des autres révisions pa
 msgid "This will replace all method materials of other sizes with this size."
 msgstr "Cela remplacera tous les matériaux de méthode d'autres tailles par cette taille."
 
+msgid "This will set the current version of the make method to Active, making it read-only."
+msgstr ""
+
 msgid "This will write off the remaining book value of the asset."
 msgstr "Ceci annulera la valeur nette comptable restante de l'actif."
 
@@ -14304,6 +14304,9 @@ msgstr "Vous êtes connecté depuis {hoursElapsed} heures. Avez-vous oublié de 
 
 msgid "Your books and how money flows."
 msgstr "Vos livres et la circulation de l'argent."
+
+msgid "Your changes go into a new draft version released with this change order."
+msgstr ""
 
 msgid "Your Console PIN"
 msgstr "Votre PIN Console"

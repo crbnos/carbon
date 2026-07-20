@@ -759,9 +759,6 @@ msgstr "고급"
 msgid "Affected item not found."
 msgstr "영향받는 항목을 찾을 수 없습니다."
 
-msgid "Affected Parts & Tools"
-msgstr "영향을 받는 부품 및 공구"
-
 msgid "After"
 msgstr "이후"
 
@@ -6785,6 +6782,9 @@ msgstr "관련 입고는 그대로 둡니다"
 msgid "Leave blank for built-in"
 msgstr "내장 값을 사용하려면 비워두세요"
 
+msgid "Leave blank to use the next revision automatically"
+msgstr ""
+
 msgid "Leave empty for exact match"
 msgstr "정확히 일치시키려면 비워두세요"
 
@@ -8751,9 +8751,6 @@ msgstr "제조용으로 설정된 품목입니다"
 
 msgid "Part Number"
 msgstr "부품 번호"
-
-msgid "Part or Tool"
-msgstr "부품 또는 도구"
 
 msgid "Part Supersession"
 msgstr "부품 대체"
@@ -12760,6 +12757,9 @@ msgstr "다른 리비전의 모든 방법 자재가 이 리비전으로 교체�
 msgid "This will replace all method materials of other sizes with this size."
 msgstr "다른 사이즈의 모든 방법 자재가 이 사이즈로 교체됩니다."
 
+msgid "This will set the current version of the make method to Active, making it read-only."
+msgstr ""
+
 msgid "This will write off the remaining book value of the asset."
 msgstr "자산의 남은 장부가액이 상각 처리됩니다."
 
@@ -14304,6 +14304,9 @@ msgstr "{hoursElapsed}시간 동안 출근 상태입니다. 퇴근 처리를 잊
 
 msgid "Your books and how money flows."
 msgstr "귀사의 장부와 자금 흐름."
+
+msgid "Your changes go into a new draft version released with this change order."
+msgstr ""
 
 msgid "Your Console PIN"
 msgstr "콘솔 PIN"

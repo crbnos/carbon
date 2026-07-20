@@ -759,9 +759,6 @@ msgstr "高级"
 msgid "Affected item not found."
 msgstr "未找到受影响的项目。"
 
-msgid "Affected Parts & Tools"
-msgstr "受影响的零件和工具"
-
 msgid "After"
 msgstr "之后"
 
@@ -6785,6 +6782,9 @@ msgstr "保留任何相关收据不变"
 msgid "Leave blank for built-in"
 msgstr "留空以使用内置"
 
+msgid "Leave blank to use the next revision automatically"
+msgstr ""
+
 msgid "Leave empty for exact match"
 msgstr "留空以精确匹配"
 
@@ -8751,9 +8751,6 @@ msgstr "零件已配置用于制造"
 
 msgid "Part Number"
 msgstr "零件编号"
-
-msgid "Part or Tool"
-msgstr "零件或工具"
 
 msgid "Part Supersession"
 msgstr "零件取代"
@@ -12760,6 +12757,9 @@ msgstr "这将用此修订版本替换其他修订版本的所有方法材料。
 msgid "This will replace all method materials of other sizes with this size."
 msgstr "这将用此尺寸替换其他尺寸的所有方法材料。"
 
+msgid "This will set the current version of the make method to Active, making it read-only."
+msgstr ""
+
 msgid "This will write off the remaining book value of the asset."
 msgstr "这将注销资产的剩余净账面价值。"
 
@@ -14304,6 +14304,9 @@ msgstr "您已打卡 {hoursElapsed} 小时。您忘记打卡下班了吗？"
 
 msgid "Your books and how money flows."
 msgstr "您的账簿和资金流向。"
+
+msgid "Your changes go into a new draft version released with this change order."
+msgstr ""
 
 msgid "Your Console PIN"
 msgstr "您的控制台PIN"

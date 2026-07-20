@@ -121,14 +121,17 @@ function AffectedItemRow({
   const label = item.item;
   const type = (label?.type as ItemType) ?? "Part";
   const isSelected = item.id === affectedId;
-  // Revision / New Part mint a (hidden, inactive) outcome item at add time —
-  // surface its number next to the source ("GA-0029 → GA-0030") so the created
-  // part/revision is visible top-level, not only inside the line detail. The
-  // items store includes inactive items, so the minted item resolves.
-  const newItemLabel = item.newItemId
-    ? (items.find((i) => i.id === item.newItemId)?.readableIdWithRevision ??
-      null)
-    : null;
+  // Revision / Replacement Part mint a DISTINCT (hidden, inactive) successor item
+  // at add time — surface its number next to the source ("GA-0029 → GA-0030") so
+  // the created part/revision is visible top-level, not only inside the line
+  // detail. A New Part is net-new (no predecessor: its newItemId IS itemId), so
+  // there's nothing to point at — show a single id, not "X → X". The items store
+  // includes inactive items, so the minted item resolves.
+  const newItemLabel =
+    item.newItemId && item.newItemId !== item.itemId
+      ? (items.find((i) => i.id === item.newItemId)?.readableIdWithRevision ??
+        null)
+      : null;
 
   return (
     <VStack spacing={0} className="border-b">

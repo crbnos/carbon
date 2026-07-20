@@ -759,9 +759,6 @@ msgstr "Gelişmiş"
 msgid "Affected item not found."
 msgstr "Etkilenen öğe bulunamadı."
 
-msgid "Affected Parts & Tools"
-msgstr "Etkilenen Parçalar ve Araçlar"
-
 msgid "After"
 msgstr "Sonra"
 
@@ -6785,6 +6782,9 @@ msgstr "İlgili tüm makbuzları dokunulmamış bırakır"
 msgid "Leave blank for built-in"
 msgstr "Yerleşik için boş bırakın"
 
+msgid "Leave blank to use the next revision automatically"
+msgstr ""
+
 msgid "Leave empty for exact match"
 msgstr "Tam eşleşme için boş bırakın"
 
@@ -8751,9 +8751,6 @@ msgstr "Parça üretim için yapılandırılmış"
 
 msgid "Part Number"
 msgstr "Parça Numarası"
-
-msgid "Part or Tool"
-msgstr "Parça veya Araç"
 
 msgid "Part Supersession"
 msgstr "Parça Yerini Alma"
@@ -12760,6 +12757,9 @@ msgstr "Bu, diğer revizyonlardaki tüm yöntem malzemelerini bu revizyonla değ
 msgid "This will replace all method materials of other sizes with this size."
 msgstr "Bu, diğer boyutlardaki tüm yöntem malzemelerini bu boyutuyla değiştirecektir."
 
+msgid "This will set the current version of the make method to Active, making it read-only."
+msgstr ""
+
 msgid "This will write off the remaining book value of the asset."
 msgstr "Bu, varlığın kalan net defter değerini silebilir."
 
@@ -14304,6 +14304,9 @@ msgstr "Ne kadar süredir giriş yaptınız? Çıkış yapmayı unuttunuz mu?"
 
 msgid "Your books and how money flows."
 msgstr "Muhasebe defterleriniz ve paranın akışı."
+
+msgid "Your changes go into a new draft version released with this change order."
+msgstr ""
 
 msgid "Your Console PIN"
 msgstr "Konsol PIN'iniz"

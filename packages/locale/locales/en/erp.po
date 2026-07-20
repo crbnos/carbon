@@ -759,9 +759,6 @@ msgstr "Advanced"
 msgid "Affected item not found."
 msgstr "Affected item not found."
 
-msgid "Affected Parts & Tools"
-msgstr "Affected Parts & Tools"
-
 msgid "After"
 msgstr "After"
 
@@ -6785,6 +6782,9 @@ msgstr "Leave any related receipts untouched"
 msgid "Leave blank for built-in"
 msgstr "Leave blank for built-in"
 
+msgid "Leave blank to use the next revision automatically"
+msgstr "Leave blank to use the next revision automatically"
+
 msgid "Leave empty for exact match"
 msgstr "Leave empty for exact match"
 
@@ -8751,9 +8751,6 @@ msgstr "Part is configured for manufacturing"
 
 msgid "Part Number"
 msgstr "Part Number"
-
-msgid "Part or Tool"
-msgstr "Part or Tool"
 
 msgid "Part Supersession"
 msgstr "Part Supersession"
@@ -12760,6 +12757,9 @@ msgstr "This will replace all method materials of other revisions with this revi
 msgid "This will replace all method materials of other sizes with this size."
 msgstr "This will replace all method materials of other sizes with this size."
 
+msgid "This will set the current version of the make method to Active, making it read-only."
+msgstr "This will set the current version of the make method to Active, making it read-only."
+
 msgid "This will write off the remaining book value of the asset."
 msgstr "This will write off the remaining book value of the asset."
 
@@ -14308,6 +14308,9 @@ msgstr "You've been clocked in for {hoursElapsed} hours. Did you forget to clock
 
 msgid "Your books and how money flows."
 msgstr "Your books and how money flows."
+
+msgid "Your changes go into a new draft version released with this change order."
+msgstr "Your changes go into a new draft version released with this change order."
 
 msgid "Your Console PIN"
 msgstr "Your Console PIN"
