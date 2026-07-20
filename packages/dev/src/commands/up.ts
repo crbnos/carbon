@@ -218,14 +218,23 @@ export async function up(opts: UpOpts = {}) {
     spawnAssembler({ root, ports: ctx.ports });
   }
 
-  box(
-    summaryLines(
-      ctx.ports,
-      selectedApps,
-      portless ? ctx.branchPrefix : undefined
-    ).join("\n"),
-    `Carbon dev — ${slug}`
+  const summary = summaryLines(
+    ctx.ports,
+    selectedApps,
+    portless ? ctx.branchPrefix : undefined
   );
+  // `box()` derives its padding from `process.stdout.columns`; some
+  // non-interactive terminals (e.g. Conductor's run pane) report a width of 0,
+  // which makes @clack compute a negative `String.repeat` count and throw. This
+  // is only the cosmetic end-of-boot summary and it runs *before* the apps are
+  // spawned, so never let it abort startup — fall back to plain lines if the box
+  // can't be drawn.
+  try {
+    box(summary.join("\n"), `Carbon dev — ${slug}`);
+  } catch {
+    log.info(`Carbon dev — ${slug}`);
+    for (const line of summary) log.message(line);
+  }
 
   // Startup done — hand teardown ownership to the app supervisor (or, for
   // services-only, to a later manual `crbn down`).
