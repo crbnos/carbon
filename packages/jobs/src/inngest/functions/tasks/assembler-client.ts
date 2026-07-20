@@ -399,6 +399,10 @@ export async function runAssemblerJob(
     if (data?.status === "succeeded") {
       return { result: data.result ?? null, stats: data.stats ?? null };
     }
+    // A user cancel is intentional — retrying would resurrect the canceled job.
+    if (data?.status === "canceled") {
+      throw new NonRetriableError(`assembler ${action} canceled`);
+    }
     throw new Error(
       data?.error?.message ?? `assembler ${action} ${data?.status ?? "failed"}`
     );
@@ -417,6 +421,9 @@ export async function runAssemblerJob(
     return { result: poll.result, stats: poll.stats };
   }
   if (poll.status === "error") {
+    if (poll.error === "Job canceled") {
+      throw new NonRetriableError(`assembler ${action} canceled`);
+    }
     throw new Error(poll.error);
   }
   throw new Error(`assembler ${action} did not finish within ${maxWaitMs}ms`);
