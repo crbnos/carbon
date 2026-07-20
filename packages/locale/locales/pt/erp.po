@@ -460,6 +460,7 @@ msgstr "Período contábil"
 
 msgid "Accounting Periods"
 msgstr "Períodos Contábeis"
+msgstr ""
 
 msgid "Accounting: GL, AR, AP, and month-end close"
 msgstr "Contabilidade: GL, AR, AP e encerramento mensal"
@@ -1986,6 +1987,7 @@ msgstr "Não é possível adicionar ferramentas a uma operação não salva"
 
 msgid "Cannot close yet"
 msgstr "Não é possível fechar ainda"
+msgstr ""
 
 msgid "Cannot convert RFQ to quote"
 msgstr "Não é possível converter RFQ para cotação"
@@ -2239,6 +2241,7 @@ msgstr "Fechar"
 
 msgid "Close {periodLabel}"
 msgstr "Fechar {periodLabel}"
+msgstr ""
 
 msgid "Close Date"
 msgstr "Data de Encerramento"
@@ -2248,6 +2251,10 @@ msgstr "Fechar Período"
 
 msgid "Close Status"
 msgstr "Status de Fechamento"
+msgstr ""
+
+msgid "Close Status"
+msgstr ""
 
 msgid "Closed"
 msgstr "Fechado"
@@ -2510,6 +2517,7 @@ msgstr "Confirmar Senha"
 
 msgid "Confirm Skip"
 msgstr "Confirmar Salto"
+msgstr ""
 
 msgid "Confirmed incoming stock — purchase & production orders (bars above zero)."
 msgstr "Estoque de entrada confirmado — pedidos de compra e produção (barras acima de zero)."
@@ -3434,6 +3442,9 @@ msgstr "Data de Emissão"
 
 msgid "Date Paid"
 msgstr "Data de Pagamento"
+
+msgid "Date Range"
+msgstr ""
 
 msgid "Dates"
 msgstr "Datas"
@@ -4906,6 +4917,7 @@ msgstr "Todos os testes no escopo passam no seu sistema configurado, com seus da
 
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "Toda tarefa obrigatória deve ser Concluída ou Saltada antes que o período possa ser fechado."
+msgstr ""
 
 msgid "Every row was imported successfully."
 msgstr "Cada linha foi importada com sucesso."
@@ -7216,6 +7228,7 @@ msgstr "Marcar como concluído"
 
 msgid "Mark Done"
 msgstr "Marcar Como Concluído"
+msgstr ""
 
 msgid "Mark Light Mode"
 msgstr "Marca Modo Claro"
@@ -7958,6 +7971,9 @@ msgstr "Nenhuma habilidade adicionada"
 
 msgid "No Access"
 msgstr "Sem Acesso"
+
+msgid "No accounting periods yet"
+msgstr ""
 
 msgid "No action needed"
 msgstr "Nenhuma ação necessária"
@@ -9743,6 +9759,7 @@ msgstr "Motivo da recusa (Opcional)"
 
 msgid "Reason for skipping (required)"
 msgstr "Motivo para saltar (obrigatório)"
+msgstr ""
 
 msgid "Reasons"
 msgstr "Razões"
@@ -11250,6 +11267,7 @@ msgstr "Tamanhos"
 
 msgid "Skip"
 msgstr "Saltar"
+msgstr ""
 
 msgid "Skip Existing"
 msgstr "Ignorar Existentes"
@@ -11877,6 +11895,7 @@ msgstr "Versão de Destino"
 
 msgid "Task"
 msgstr "Tarefa"
+msgstr ""
 
 msgid "tasks"
 msgstr "tarefas"

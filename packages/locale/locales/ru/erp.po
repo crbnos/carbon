@@ -460,6 +460,7 @@ msgstr "Учетный период"
 
 msgid "Accounting Periods"
 msgstr "Периоды бухгалтерского учета"
+msgstr ""
 
 msgid "Accounting: GL, AR, AP, and month-end close"
 msgstr "Бухгалтерия: ГЛ, АР, АП и закрытие месяца"
@@ -1986,6 +1987,7 @@ msgstr "Невозможно добавить инструменты к несо
 
 msgid "Cannot close yet"
 msgstr "Пока нельзя закрыть"
+msgstr ""
 
 msgid "Cannot convert RFQ to quote"
 msgstr "Невозможно преобразовать RFQ в предложение"
@@ -2239,6 +2241,7 @@ msgstr "Закрыть"
 
 msgid "Close {periodLabel}"
 msgstr "Закрыть {periodLabel}"
+msgstr ""
 
 msgid "Close Date"
 msgstr "Дата закрытия"
@@ -2248,6 +2251,10 @@ msgstr "Закрыть период"
 
 msgid "Close Status"
 msgstr "Статус закрытия"
+msgstr ""
+
+msgid "Close Status"
+msgstr ""
 
 msgid "Closed"
 msgstr "Закрыто"
@@ -2510,6 +2517,7 @@ msgstr "Подтвердить пароль"
 
 msgid "Confirm Skip"
 msgstr "Подтвердить пропуск"
+msgstr ""
 
 msgid "Confirmed incoming stock — purchase & production orders (bars above zero)."
 msgstr "Подтвержденный входящий запас — заказы на покупку и производство (столбцы выше нуля)."
@@ -3434,6 +3442,9 @@ msgstr "Дата выпуска"
 
 msgid "Date Paid"
 msgstr "Дата оплаты"
+
+msgid "Date Range"
+msgstr ""
 
 msgid "Dates"
 msgstr "Даты"
@@ -4906,6 +4917,7 @@ msgstr "Все тесты в области действия проходят в
 
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "Каждая требуемая задача должна быть завершена или пропущена перед закрытием периода."
+msgstr ""
 
 msgid "Every row was imported successfully."
 msgstr "Каждая строка была успешно импортирована."
@@ -7216,6 +7228,7 @@ msgstr "Отметить выполненным"
 
 msgid "Mark Done"
 msgstr "Отметить как выполнено"
+msgstr ""
 
 msgid "Mark Light Mode"
 msgstr "Логотип в светлом режиме"
@@ -7958,6 +7971,9 @@ msgstr "Нет добавленных навыков"
 
 msgid "No Access"
 msgstr "Нет доступа"
+
+msgid "No accounting periods yet"
+msgstr ""
 
 msgid "No action needed"
 msgstr "Никаких действий не требуется"
@@ -9743,6 +9759,7 @@ msgstr "Причина отказа (Необязательно)"
 
 msgid "Reason for skipping (required)"
 msgstr "Причина пропуска (требуется)"
+msgstr ""
 
 msgid "Reasons"
 msgstr "Причины"
@@ -11250,6 +11267,7 @@ msgstr "Размеры"
 
 msgid "Skip"
 msgstr "Пропустить"
+msgstr ""
 
 msgid "Skip Existing"
 msgstr "Пропустить существующие"
@@ -11877,6 +11895,7 @@ msgstr "Целевая версия"
 
 msgid "Task"
 msgstr "Задача"
+msgstr ""
 
 msgid "tasks"
 msgstr "задачи"

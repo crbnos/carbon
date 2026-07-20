@@ -460,6 +460,7 @@ msgstr "Abrechnungsperiode"
 
 msgid "Accounting Periods"
 msgstr "Abrechnungsperioden"
+msgstr ""
 
 msgid "Accounting: GL, AR, AP, and month-end close"
 msgstr "Buchhaltung: Hauptbuch, Debitorenbuchhaltung, Kreditorenbuchhaltung und Monatsabschluss"
@@ -1986,6 +1987,7 @@ msgstr "Werkzeuge können nicht zu nicht gespeicherten Vorgängen hinzugefügt w
 
 msgid "Cannot close yet"
 msgstr "Kann noch nicht geschlossen werden"
+msgstr ""
 
 msgid "Cannot convert RFQ to quote"
 msgstr "RFQ kann nicht in Angebot umgewandelt werden"
@@ -2239,6 +2241,7 @@ msgstr "Schließen"
 
 msgid "Close {periodLabel}"
 msgstr "{periodLabel} schließen"
+msgstr ""
 
 msgid "Close Date"
 msgstr "Schließungsdatum"
@@ -2248,6 +2251,10 @@ msgstr "Zeitraum schließen"
 
 msgid "Close Status"
 msgstr "Schließstatus"
+msgstr ""
+
+msgid "Close Status"
+msgstr ""
 
 msgid "Closed"
 msgstr "Geschlossen"
@@ -2510,6 +2517,7 @@ msgstr "Passwort bestätigen"
 
 msgid "Confirm Skip"
 msgstr "Überspringen bestätigen"
+msgstr ""
 
 msgid "Confirmed incoming stock — purchase & production orders (bars above zero)."
 msgstr "Bestätigter eingehender Bestand — Kauf- und Produktionsaufträge (Balken über Null)."
@@ -3434,6 +3442,9 @@ msgstr "Ausstellungsdatum"
 
 msgid "Date Paid"
 msgstr "Zahlungsdatum"
+
+msgid "Date Range"
+msgstr ""
 
 msgid "Dates"
 msgstr "Daten"
@@ -4906,6 +4917,7 @@ msgstr "Jeder Test im Umfang wird in Ihrem konfigurierten System mit Ihren Daten
 
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "Jede erforderliche Aufgabe muss erledigt oder übersprungen werden, bevor der Zeitraum geschlossen werden kann."
+msgstr ""
 
 msgid "Every row was imported successfully."
 msgstr "Jede Zeile wurde erfolgreich importiert."
@@ -7216,6 +7228,7 @@ msgstr "Als erledigt markieren"
 
 msgid "Mark Done"
 msgstr "Erledigt markieren"
+msgstr ""
 
 msgid "Mark Light Mode"
 msgstr "Marke Hellmodus"
@@ -7958,6 +7971,9 @@ msgstr "Keine Fähigkeiten hinzugefügt"
 
 msgid "No Access"
 msgstr "Kein Zugriff"
+
+msgid "No accounting periods yet"
+msgstr ""
 
 msgid "No action needed"
 msgstr "Keine Aktion erforderlich"
@@ -9743,6 +9759,7 @@ msgstr "Grund für Ablehnung (Optional)"
 
 msgid "Reason for skipping (required)"
 msgstr "Grund für das Überspringen (erforderlich)"
+msgstr ""
 
 msgid "Reasons"
 msgstr "Gründe"
@@ -11250,6 +11267,7 @@ msgstr "Größen"
 
 msgid "Skip"
 msgstr "Überspringen"
+msgstr ""
 
 msgid "Skip Existing"
 msgstr "Vorhandene überspringen"
@@ -11877,6 +11895,7 @@ msgstr "Zielversion"
 
 msgid "Task"
 msgstr "Aufgabe"
+msgstr ""
 
 msgid "tasks"
 msgstr "Aufgaben"
