@@ -27,10 +27,15 @@ pub enum Dispatch {
     Lambda,
 }
 
+/// Auto-detected: the Lambda runtime always sets `AWS_LAMBDA_FUNCTION_NAME`,
+/// and there is no legitimate cross-configuration (local dispatch inside Lambda
+/// dies at the post-response freeze; lambda dispatch outside has no invoke
+/// permission). Deriving it removes the knob AND its failure mode.
 pub fn from_env() -> Dispatch {
-    match std::env::var("ASSEMBLER_DISPATCH").as_deref() {
-        Ok("lambda") => Dispatch::Lambda,
-        _ => Dispatch::Local,
+    if std::env::var("AWS_LAMBDA_FUNCTION_NAME").is_ok() {
+        Dispatch::Lambda
+    } else {
+        Dispatch::Local
     }
 }
 

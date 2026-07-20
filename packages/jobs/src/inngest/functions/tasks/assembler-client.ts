@@ -1,7 +1,6 @@
 import { createHmac } from "node:crypto";
 import type { Json } from "@carbon/database";
 import {
-  ASSEMBLER_ECS_SERVICE_URL,
   ASSEMBLER_SERVICE_API_KEY,
   ASSEMBLER_SERVICE_URL,
   ASSEMBLER_STORAGE_PUBLIC_URL,
@@ -54,11 +53,6 @@ export function assemblerBaseUrl(): string {
     throw new Error("ASSEMBLER_SERVICE_URL is not configured");
   }
   return ASSEMBLER_SERVICE_URL;
-}
-
-/** The uncapped ECS overflow service URL, or `undefined` when not deployed. */
-export function assemblerEcsUrl(): string | undefined {
-  return ASSEMBLER_ECS_SERVICE_URL || undefined;
 }
 
 /**

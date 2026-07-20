@@ -47,10 +47,9 @@ export default $config({
       // Job/result store — REQUIRED; the assembler refuses to boot without it.
       ASSEMBLER_REDIS_URL: process.env.ASSEMBLER_REDIS_URL,
       ASSEMBLER_MAX_CONCURRENCY: process.env.ASSEMBLER_MAX_CONCURRENCY,
-      // Lambda path only: keep the optimize ladder under the 900s wall (degrade to
-      // the coarsest rung once spent). The ECS service leaves this unset (no cap).
-      ASSEMBLER_OPTIMIZE_BUDGET_SECS:
-        process.env.ASSEMBLER_OPTIMIZE_BUDGET_SECS ?? "720",
+      // Optimize time budget + dispatch mode are AUTO-DETECTED in-service from
+      // AWS_LAMBDA_FUNCTION_NAME (720s ladder budget on Lambda; self-invoke
+      // dispatch) — no env needed here.
     };
 
     // ---------------------------------------------------------------------------
@@ -100,14 +99,7 @@ export default $config({
       // MUST match the built image's platform. arm64 (Graviton) is cheaper + builds
       // natively on Apple-Silicon dev machines; x86_64 matches the amd64 CI build.
       architectures: [process.env.ASSEMBLER_LAMBDA_ARCH ?? "x86_64"],
-      environment: {
-        variables: {
-          ...(environment as Record<string, string>),
-          // Lambda-only: local tokio::spawn dies at freeze; dispatch each job as
-          // a self-invocation instead. The ECS service keeps the default (local).
-          ASSEMBLER_DISPATCH: "lambda",
-        },
-      },
+      environment: { variables: environment as Record<string, string> },
     });
 
     // The create handler invokes this same function (Event type) to run the job.

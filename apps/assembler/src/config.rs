@@ -35,17 +35,19 @@ pub fn max_concurrency() -> usize {
     int_env("ASSEMBLER_MAX_CONCURRENCY", 2).max(1)
 }
 
-/// Wall-clock budget (seconds) for the optimize simplify ladder. When set, a job
-/// running past it jumps straight to the coarsest rung instead of grinding every
-/// middle pass — bounding a slow job inside a caller's window (the Lambda path
-/// sets this to ~720s so it lands under the 900s hard timeout). `None`/0 =
-/// unbounded (the default; the standing ECS service has no 15-min cap). A
-/// per-request `quality.time_budget_secs` overrides this.
+/// Wall-clock budget (seconds) for the optimize simplify ladder. When active, a
+/// job running past it jumps straight to the coarsest rung instead of grinding
+/// every middle pass. Defaults: 720s on Lambda (auto-detected — lands under the
+/// 900s hard timeout), unbounded elsewhere (the standing service has no cap).
+/// `ASSEMBLER_OPTIMIZE_BUDGET_SECS` overrides (0 = explicitly unbounded), and a
+/// per-request `quality.time_budget_secs` overrides that.
 pub fn optimize_budget_secs() -> Option<u64> {
-    std::env::var("ASSEMBLER_OPTIMIZE_BUDGET_SECS")
-        .ok()
-        .and_then(|s| s.parse::<u64>().ok())
-        .filter(|&s| s > 0)
+    if let Ok(s) = std::env::var("ASSEMBLER_OPTIMIZE_BUDGET_SECS") {
+        return s.parse::<u64>().ok().filter(|&s| s > 0);
+    }
+    std::env::var("AWS_LAMBDA_FUNCTION_NAME")
+        .is_ok()
+        .then_some(720)
 }
 
 /// Redis URL for the shared job/result store. REQUIRED — the store refuses to

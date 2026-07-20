@@ -209,12 +209,6 @@ export const ASSEMBLER_SERVICE_API_KEY = getEnv("ASSEMBLER_SERVICE_API_KEY", {
   isRequired: false,
   isSecret: true
 });
-// Overflow endpoint: the long-running ECS Fargate service (async submit->poll,
-// no 15-min cap). Set only when that service is enabled; unset => overflow jobs
-// degrade rather than run. See .ai/specs/2026-07-15-assembler-deployment.md.
-export const ASSEMBLER_ECS_SERVICE_URL = getEnv("ASSEMBLER_ECS_SERVICE_URL", {
-  isRequired: false
-});
 // Dev-only: a public origin (e.g. an ngrok tunnel to local kong) substituted
 // into assembler-bound signed storage URLs when the assembler is REMOTE (the
 // staging Lambda). The local portless `.dev` hostnames resolve only on this
