@@ -6783,7 +6783,7 @@ msgid "Leave blank for built-in"
 msgstr "Leer lassen für integriert"
 
 msgid "Leave blank to use the next revision automatically"
-msgstr ""
+msgstr "Lassen Sie das Feld leer, um die nächste Revision automatisch zu verwenden"
 
 msgid "Leave empty for exact match"
 msgstr "Leer lassen für exakte Übereinstimmung"
@@ -12758,7 +12758,7 @@ msgid "This will replace all method materials of other sizes with this size."
 msgstr "Dies ersetzt alle Methodenmaterialien anderer Größen durch diese Größe."
 
 msgid "This will set the current version of the make method to Active, making it read-only."
-msgstr ""
+msgstr "Dadurch wird die aktuelle Version der Herstellungsmethode auf Aktiv gesetzt und schreibgeschützt."
 
 msgid "This will write off the remaining book value of the asset."
 msgstr "Dies schreibt den verbleibenden Buchwert des Vermögenswerts ab."
@@ -14306,7 +14306,7 @@ msgid "Your books and how money flows."
 msgstr "Ihre Bücher und wie Geld fließt."
 
 msgid "Your changes go into a new draft version released with this change order."
-msgstr ""
+msgstr "Ihre Änderungen werden in eine neue Entwurfsversion aufgenommen, die mit dieser Änderungsorder freigegeben wird."
 
 msgid "Your Console PIN"
 msgstr "Ihre Konsolen-PIN"

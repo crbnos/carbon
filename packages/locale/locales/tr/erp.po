@@ -6783,7 +6783,7 @@ msgid "Leave blank for built-in"
 msgstr "Yerleşik için boş bırakın"
 
 msgid "Leave blank to use the next revision automatically"
-msgstr ""
+msgstr "Sonraki revizyonu otomatik olarak kullanmak için boş bırakın"
 
 msgid "Leave empty for exact match"
 msgstr "Tam eşleşme için boş bırakın"
@@ -12758,7 +12758,7 @@ msgid "This will replace all method materials of other sizes with this size."
 msgstr "Bu, diğer boyutlardaki tüm yöntem malzemelerini bu boyutuyla değiştirecektir."
 
 msgid "This will set the current version of the make method to Active, making it read-only."
-msgstr ""
+msgstr "Bu, üretim yönteminin mevcut sürümünü Etkin olarak ayarlayacak ve salt okunur hale getirecektir."
 
 msgid "This will write off the remaining book value of the asset."
 msgstr "Bu, varlığın kalan net defter değerini silebilir."
@@ -14306,7 +14306,7 @@ msgid "Your books and how money flows."
 msgstr "Muhasebe defterleriniz ve paranın akışı."
 
 msgid "Your changes go into a new draft version released with this change order."
-msgstr ""
+msgstr "Değişiklikleriniz bu değişiklik emri ile yayınlanan yeni bir taslak sürüme girecektir."
 
 msgid "Your Console PIN"
 msgstr "Konsol PIN'iniz"

@@ -6783,7 +6783,7 @@ msgid "Leave blank for built-in"
 msgstr "留空以使用内置"
 
 msgid "Leave blank to use the next revision automatically"
-msgstr ""
+msgstr "留空以自动使用下一版本"
 
 msgid "Leave empty for exact match"
 msgstr "留空以精确匹配"
@@ -12758,7 +12758,7 @@ msgid "This will replace all method materials of other sizes with this size."
 msgstr "这将用此尺寸替换其他尺寸的所有方法材料。"
 
 msgid "This will set the current version of the make method to Active, making it read-only."
-msgstr ""
+msgstr "这将把制造方法的当前版本设置为活跃状态，使其变为只读。"
 
 msgid "This will write off the remaining book value of the asset."
 msgstr "这将注销资产的剩余净账面价值。"
@@ -14306,7 +14306,7 @@ msgid "Your books and how money flows."
 msgstr "您的账簿和资金流向。"
 
 msgid "Your changes go into a new draft version released with this change order."
-msgstr ""
+msgstr "您的更改将进入随此变更单发布的新草稿版本。"
 
 msgid "Your Console PIN"
 msgstr "您的控制台PIN"

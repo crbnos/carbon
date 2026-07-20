@@ -6783,7 +6783,7 @@ msgid "Leave blank for built-in"
 msgstr "Оставьте пустым для встроенного"
 
 msgid "Leave blank to use the next revision automatically"
-msgstr ""
+msgstr "Оставьте пусто для использования следующей редакции автоматически"
 
 msgid "Leave empty for exact match"
 msgstr "Оставьте пустым для точного совпадения"
@@ -12758,7 +12758,7 @@ msgid "This will replace all method materials of other sizes with this size."
 msgstr "Это заменит все материалы методов других размеров на этот размер."
 
 msgid "This will set the current version of the make method to Active, making it read-only."
-msgstr ""
+msgstr "Это установит текущую версию способа изготовления на активную, сделав её доступной только для чтения."
 
 msgid "This will write off the remaining book value of the asset."
 msgstr "Это спишет оставшуюся чистую балансовую стоимость актива."
@@ -14306,7 +14306,7 @@ msgid "Your books and how money flows."
 msgstr "Ваши книги и движение денежных средств."
 
 msgid "Your changes go into a new draft version released with this change order."
-msgstr ""
+msgstr "Ваши изменения переходят в новую черновую версию, выпущенную с этим приказом об изменении."
 
 msgid "Your Console PIN"
 msgstr "Ваш PIN консоли"

@@ -6783,7 +6783,7 @@ msgid "Leave blank for built-in"
 msgstr "組み込みの場合は空白のままにしてください"
 
 msgid "Leave blank to use the next revision automatically"
-msgstr ""
+msgstr "空白のままにして、次のリビジョンを自動的に使用します"
 
 msgid "Leave empty for exact match"
 msgstr "正確な一致のために空のままにしてください"
@@ -12758,7 +12758,7 @@ msgid "This will replace all method materials of other sizes with this size."
 msgstr "これにより、他のサイズのすべてのメソッドマテリアルがこのサイズに置き換わります。"
 
 msgid "This will set the current version of the make method to Active, making it read-only."
-msgstr ""
+msgstr "これにより、製造方法の現在のバージョンがアクティブに設定され、読み取り専用になります。"
 
 msgid "This will write off the remaining book value of the asset."
 msgstr "これはアセットの残りの帳簿価額を償却します。"
@@ -14306,7 +14306,7 @@ msgid "Your books and how money flows."
 msgstr "あなたの帳簿とお金の流れ。"
 
 msgid "Your changes go into a new draft version released with this change order."
-msgstr ""
+msgstr "変更は、このチェンジオーダーとともにリリースされる新しいドラフトバージョンに入ります。"
 
 msgid "Your Console PIN"
 msgstr "あなたのコンソールPIN"

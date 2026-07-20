@@ -6783,7 +6783,7 @@ msgid "Leave blank for built-in"
 msgstr "बिल्ट-इन के लिए खाली छोड़ें"
 
 msgid "Leave blank to use the next revision automatically"
-msgstr ""
+msgstr "अगले संशोधन को स्वचालित रूप से उपयोग करने के लिए खाली छोड़ें"
 
 msgid "Leave empty for exact match"
 msgstr "सटीक मिलान के लिए खाली छोड़ें"
@@ -12758,7 +12758,7 @@ msgid "This will replace all method materials of other sizes with this size."
 msgstr "यह अन्य आकारों की सभी विधि सामग्रियों को इस आकार से बदल देगा।"
 
 msgid "This will set the current version of the make method to Active, making it read-only."
-msgstr ""
+msgstr "यह make विधि के वर्तमान संस्करण को सक्रिय के रूप में सेट करेगा, जिससे यह केवल-पढ़ने योग्य हो जाएगा।"
 
 msgid "This will write off the remaining book value of the asset."
 msgstr "यह संपत्ति के शेष बही मूल्य को लिख देगा।"
@@ -14306,7 +14306,7 @@ msgid "Your books and how money flows."
 msgstr "आपकी किताबें और पैसा कैसे बहता है।"
 
 msgid "Your changes go into a new draft version released with this change order."
-msgstr ""
+msgstr "आपके परिवर्तन इस परिवर्तन आदेश के साथ जारी एक नए ड्राफ्ट संस्करण में जाते हैं।"
 
 msgid "Your Console PIN"
 msgstr "आपका कंसोल PIN"

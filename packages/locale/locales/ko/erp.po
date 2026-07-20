@@ -6783,7 +6783,7 @@ msgid "Leave blank for built-in"
 msgstr "내장 값을 사용하려면 비워두세요"
 
 msgid "Leave blank to use the next revision automatically"
-msgstr ""
+msgstr "다음 리비전을 자동으로 사용하려면 공백으로 두세요"
 
 msgid "Leave empty for exact match"
 msgstr "정확히 일치시키려면 비워두세요"
@@ -12758,7 +12758,7 @@ msgid "This will replace all method materials of other sizes with this size."
 msgstr "다른 사이즈의 모든 방법 자재가 이 사이즈로 교체됩니다."
 
 msgid "This will set the current version of the make method to Active, making it read-only."
-msgstr ""
+msgstr "제조 방법의 현재 버전을 활성으로 설정하여 읽기 전용으로 만듭니다."
 
 msgid "This will write off the remaining book value of the asset."
 msgstr "자산의 남은 장부가액이 상각 처리됩니다."
@@ -14306,7 +14306,7 @@ msgid "Your books and how money flows."
 msgstr "귀사의 장부와 자금 흐름."
 
 msgid "Your changes go into a new draft version released with this change order."
-msgstr ""
+msgstr "변경 사항이 이 변경 주문과 함께 릴리스되는 새로운 초안 버전으로 이동합니다."
 
 msgid "Your Console PIN"
 msgstr "콘솔 PIN"
