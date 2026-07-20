@@ -83,6 +83,9 @@ export default $config({
       packageType: "Image",
       imageUri: image,
       role: lambdaRole.arn,
+      // Async job model on Lambda: create returns 202 and fires the compute as
+      // an Event-type SELF-invocation (its own 900s window); polls read the
+      // shared Redis job store. Requires ASSEMBLER_REDIS_URL.
       // Assembler is memory-heavy on big meshes → 10 GB (the max) in prod. New AWS
       // accounts cap Lambda memory at 3008 MB until a Service Quotas increase, so
       // this is overridable (set ASSEMBLER_LAMBDA_MEMORY_MB=3008 for staging before
@@ -97,27 +100,66 @@ export default $config({
       // MUST match the built image's platform. arm64 (Graviton) is cheaper + builds
       // natively on Apple-Silicon dev machines; x86_64 matches the amd64 CI build.
       architectures: [process.env.ASSEMBLER_LAMBDA_ARCH ?? "x86_64"],
-      environment: { variables: environment as Record<string, string> },
+      environment: {
+        variables: {
+          ...(environment as Record<string, string>),
+          // Lambda-only: local tokio::spawn dies at freeze; dispatch each job as
+          // a self-invocation instead. The ECS service keeps the default (local).
+          ASSEMBLER_DISPATCH: "lambda",
+        },
+      },
     });
 
-    const fnUrl = new aws.lambda.FunctionUrl("AssemblerUrl", {
-      functionName: fn.name,
-      // DECISION: in-app bearer (authorizationType NONE) vs AWS_IAM. NONE keeps the
-      // caller simple (Inngest sends the bearer); IAM needs SigV4 signing on every
-      // call. Defaulting to NONE + in-app bearer per the spec.
-      authorizationType: "NONE",
+    // The create handler invokes this same function (Event type) to run the job.
+    new aws.iam.RolePolicy("AssemblerSelfInvoke", {
+      role: lambdaRole.id,
+      policy: fn.arn.apply((arn) =>
+        JSON.stringify({
+          Version: "2012-10-17",
+          Statement: [
+            { Effect: "Allow", Action: "lambda:InvokeFunction", Resource: arn },
+          ],
+        })
+      ),
     });
 
-    // authType NONE alone still 403s — a Function URL needs an explicit
-    // resource-based policy granting anonymous `lambda:InvokeFunctionUrl`. The
-    // console adds this automatically; the raw provider does not. (Only for NONE;
-    // an AWS_IAM URL would drop this and rely on SigV4 instead.)
-    new aws.lambda.Permission("AssemblerUrlPublic", {
-      // NB: aws.lambda.Permission uses `function` (unlike FunctionUrl's `functionName`).
+    // Public front door: API Gateway HTTP API (not a Function URL — those can't
+    // carry a custom domain and this org's guardrail denies their anonymous
+    // invoke; APIGW's service-principal invoke is allowed, TLS is built in, and
+    // a custom domain attaches later via aws.apigatewayv2.DomainName + ACM).
+    // Every request is short (create -> 202, poll ?wait<=25s) so the 30s
+    // integration cap never binds; the compute runs in the self-invoked worker.
+    // Only /health and /v1/* are routed — the /events worker inlet is
+    // unreachable from outside. In-app bearer stays the real auth gate.
+    const api = new aws.apigatewayv2.Api("AssemblerApi", {
+      protocolType: "HTTP",
+    });
+    const integration = new aws.apigatewayv2.Integration("AssemblerIntegration", {
+      apiId: api.id,
+      integrationType: "AWS_PROXY",
+      integrationUri: fn.invokeArn,
+      payloadFormatVersion: "2.0",
+    });
+    for (const [name, routeKey] of [
+      ["AssemblerRouteHealth", "GET /health"],
+      ["AssemblerRouteV1", "ANY /v1/{proxy+}"],
+    ] as const) {
+      new aws.apigatewayv2.Route(name, {
+        apiId: api.id,
+        routeKey,
+        target: integration.id.apply((id) => `integrations/${id}`),
+      });
+    }
+    new aws.apigatewayv2.Stage("AssemblerStage", {
+      apiId: api.id,
+      name: "$default",
+      autoDeploy: true,
+    });
+    new aws.lambda.Permission("AssemblerApiInvoke", {
       function: fn.name,
-      action: "lambda:InvokeFunctionUrl",
-      principal: "*",
-      functionUrlAuthType: "NONE",
+      action: "lambda:InvokeFunction",
+      principal: "apigateway.amazonaws.com",
+      sourceArn: api.executionArn.apply((arn) => `${arn}/*/*`),
     });
 
     // ---------------------------------------------------------------------------
@@ -185,11 +227,10 @@ export default $config({
     }
 
     // Outputs — wire these into the consumers' env at the human deploy step:
-    //   ASSEMBLER_SERVICE_URL      <- lambdaUrl  (default, sync)
+    //   ASSEMBLER_SERVICE_URL      <- apiUrl     (default; async submit->poll)
     //   ASSEMBLER_ECS_SERVICE_URL  <- serviceUrl (overflow, when enabled)
-    //   ASSEMBLER_SYNC_ENABLED=true (so the router uses the Lambda sync path)
     return {
-      lambdaUrl: fnUrl.functionUrl,
+      apiUrl: api.apiEndpoint,
       serviceUrl,
     };
   },

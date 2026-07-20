@@ -267,6 +267,26 @@ columns. ERP/MES there get the GovCloud Function URL + key. *Verify:* health + b
 
 ## Changelog
 
+- 2026-07-18 — **async everywhere; the sync path is dead** (Sid, after staging
+  fights: org RCP denies anonymous Function URLs, Function URLs can't carry a
+  domain, CloudFront/APIGW cap long requests at 30–60s). New Lambda model:
+  create → 202 + **Event-type self-invocation** runs the job in its own 900s
+  window (`ASSEMBLER_DISPATCH=lambda`; LWA pass-through delivers the event to
+  `POST /events`, which reuses the CLI's `spawn_from_spec` + `run_to_completion`);
+  job state + hand-off live in the **shared Redis JobStore** (now TLS-capable for
+  Upstash), so any instance's poll answers. Artifacts upload **directly from the
+  worker** via upload URLs handed over at submit (X-Carbon-Upload-Urls on create;
+  long-expiry) — bytes never sit in Redis; per-poll late-mint stays as the
+  ECS/dev/retry path. Front door is now **API Gateway HTTP API** (~$0, TLS
+  built-in, custom domain later, only `/health` + `/v1/*` routed; every request
+  is short so the 30s cap never binds). Self-invoke is a hand-rolled SigV4 POST
+  (aws-sdk needs rustc 1.94 > workspace's 1.90); signing key verified against
+  AWS's documented example. TS: `runAssemblerJob` is now purely async
+  (submit passes upload URLs; sync client + `ASSEMBLER_SYNC_ENABLED` removed).
+  The `?sync` HTTP branch remains for dev/CLI convenience but is off the
+  production path. **New prod requirement: `ASSEMBLER_REDIS_URL` (serverless
+  Redis, e.g. Upstash) on the Lambda.**
+
 - 2026-07-15 — written. Pivoted from the two-always-on-Fargate-services draft to
   **Lambda-default + ECS-Spot-RunTask overflow** (cheaper, no scaling, GovCloud-wide)
   after fact-checking Lambda/LWA/Fargate-Spot/SST against AWS+SST docs. Not yet

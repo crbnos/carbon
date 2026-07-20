@@ -3,7 +3,6 @@ import {
   ASSEMBLER_ECS_SERVICE_URL,
   ASSEMBLER_SERVICE_API_KEY,
   ASSEMBLER_SERVICE_URL,
-  ASSEMBLER_SYNC_ENABLED,
   PORT_API,
   SUPABASE_URL
 } from "@carbon/env";
@@ -20,11 +19,6 @@ import { NonRetriableError } from "inngest";
 
 // Submits are short; a tight per-request timeout catches an unreachable service.
 const REQUEST_TIMEOUT_MS = 60 * 1000;
-// A `?sync` invoke runs the whole job inline in one request (the Lambda path).
-// Must exceed the runtime's own cap (Lambda's 900s hard timeout) so the wall is
-// the runtime's, not the client's — a client cut-off before then would drop a
-// job the runtime is still finishing.
-const SYNC_TIMEOUT_MS = (15 * 60 + 60) * 1000;
 // Bounded backoff when the service 429s (all slots busy), honoring Retry-After.
 const BUSY_RETRIES = 4;
 // GET /v1/jobs/{id}?wait=N holds the request open until the job finishes (or N
@@ -46,11 +40,6 @@ export function assemblerBaseUrl(): string {
     throw new Error("ASSEMBLER_SERVICE_URL is not configured");
   }
   return ASSEMBLER_SERVICE_URL;
-}
-
-/** Whether the synchronous invoke path (Lambda) is enabled for the default base. */
-export function assemblerSyncEnabled(): boolean {
-  return ASSEMBLER_SYNC_ENABLED;
 }
 
 /** The uncapped ECS overflow service URL, or `undefined` when not deployed. */
@@ -105,6 +94,13 @@ export async function submitAssemblerJob(opts: {
   logger: { warn: (msg: string, meta?: unknown) => void };
   /** Override the target base (e.g. the ECS overflow service). Default: `ASSEMBLER_SERVICE_URL`. */
   baseUrl?: string;
+  /**
+   * Signed upload URLs handed over AT SUBMIT (long-expiry). On the Lambda
+   * deployment the detached worker invocation uploads artifacts directly with
+   * these — no serving instance survives to answer a late-mint poll with bytes.
+   * The per-poll late-mint stays as the fallback (ECS/dev), so pass both.
+   */
+  uploadUrls?: Record<string, string>;
 }): Promise<void> {
   const { action, jobId, body, logger } = opts;
   const base = opts.baseUrl ?? assemblerBaseUrl();
@@ -118,7 +114,10 @@ export async function submitAssemblerJob(opts: {
         headers: {
           "Content-Type": "application/json",
           "Idempotency-Key": jobId,
-          ...assemblerAuthHeaders
+          ...assemblerAuthHeaders,
+          ...(opts.uploadUrls && Object.keys(opts.uploadUrls).length > 0
+            ? { "X-Carbon-Upload-Urls": JSON.stringify(opts.uploadUrls) }
+            : {})
         },
         body: payload,
         signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
@@ -168,111 +167,6 @@ export async function submitAssemblerJob(opts: {
 }
 
 export type JobResult = { result: Json; stats: Json };
-
-/**
- * Outcome of a synchronous `?sync` invoke (the Lambda path). `done`/`error` are
- * terminal; `overflow` means the runtime could not finish here (its wall-clock
- * cut it off, or it signalled busy/unavailable) and the caller should re-dispatch
- * to the standing ECS service (no 15-min cap) or let Inngest retry.
- */
-export type SyncJobOutcome =
-  | { status: "done"; result: Json; stats: Json }
-  | { status: "error"; error: string }
-  | { status: "overflow"; reason: string };
-
-/**
- * POST /v1/{action}?sync — run the job INLINE and return the terminal result in
- * one request (the Lambda path: Lambda freezes after the response, so a detached
- * 202 job would never finish). Upload URLs are minted ONCE up front (they must
- * outlast the whole inline run, unlike the async path's fresh-per-poll URLs) and
- * handed over in X-Carbon-Upload-Urls, so the service late-mint uploads within
- * the request. Idempotent on `jobId`. A runtime cut-off / busy / unavailable maps
- * to `overflow` for the router to fall back on; a genuine outage throws.
- */
-export async function invokeAssemblerJobSync(opts: {
-  action: "convert" | "optimize" | "plan" | "compact";
-  jobId: string;
-  body: unknown;
-  uploadUrls: Record<string, string>;
-  logger: { warn: (msg: string, meta?: unknown) => void };
-  /** Override the target base. Default: `ASSEMBLER_SERVICE_URL` (the Lambda). */
-  baseUrl?: string;
-}): Promise<SyncJobOutcome> {
-  const { action, jobId, body, uploadUrls } = opts;
-  const base = opts.baseUrl ?? assemblerBaseUrl();
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    "Idempotency-Key": jobId,
-    ...assemblerAuthHeaders,
-    ...(Object.keys(uploadUrls).length > 0
-      ? { "X-Carbon-Upload-Urls": JSON.stringify(uploadUrls) }
-      : {})
-  };
-
-  let response: Response;
-  try {
-    response = await fetch(`${base}/v1/${action}?sync`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(SYNC_TIMEOUT_MS)
-    });
-  } catch (e) {
-    const err = e as Error;
-    // The runtime's own timeout should fire first; a client-side cut-off means
-    // the job outran even that window — overflow it rather than fail the run.
-    if (err.name === "TimeoutError" || err.name === "AbortError") {
-      return {
-        status: "overflow",
-        reason: `sync invoke exceeded ${SYNC_TIMEOUT_MS}ms`
-      };
-    }
-    throw new NonRetriableError(
-      `Assembler service unreachable: ${err.message}`
-    );
-  }
-
-  // A gateway/runtime cut-off (502/504) or busy/unavailable (429/503) is not a
-  // job failure — overflow to the uncapped ECS service (or Inngest retry).
-  if ([429, 502, 503, 504].includes(response.status)) {
-    return {
-      status: "overflow",
-      reason: `sync invoke returned ${response.status}`
-    };
-  }
-
-  const parsed = (await response.json().catch(() => null)) as {
-    ok?: boolean;
-    job?: {
-      status?: string;
-      result?: Json;
-      stats?: Json;
-      error?: { message?: string };
-    };
-  } | null;
-  if (!response.ok || !parsed?.job) {
-    throw new NonRetriableError(
-      `POST /v1/${action}?sync returned ${response.status}`
-    );
-  }
-  const job = parsed.job;
-  if (job.status === "succeeded") {
-    return {
-      status: "done",
-      result: job.result ?? null,
-      stats: job.stats ?? null
-    };
-  }
-  if (job.status === "failed") {
-    return { status: "error", error: job.error?.message ?? "Job failed" };
-  }
-  // A sync response is expected terminal; anything else means the runtime
-  // returned before finishing — treat as overflow.
-  return {
-    status: "overflow",
-    reason: `sync invoke returned non-terminal status '${job.status ?? "?"}'`
-  };
-}
 
 /**
  * One GET /v1/jobs/{id}?wait=N poll. Mints fresh signed upload URLs (late-mint)
@@ -371,70 +265,19 @@ type AssemblerJobSpec = {
 };
 
 /**
- * Run an assembler action to completion the right way for the deployment:
+ * Run an assembler action to completion: submit -> long-poll, the one contract
+ * every deployment speaks (Lambda self-invoke worker, the ECS service, the dev
+ * container). Upload URLs are handed over twice, covering both runtimes:
  *
- *  - **sync** (Lambda) when `ASSEMBLER_SYNC_ENABLED` and the caller allows it —
- *    one inline `?sync` invoke (upload URLs minted once up front). On `overflow`
- *    (the runtime's wall-clock cut it off / it was busy) fall back to the async
- *    ECS path; with no ECS service configured, fail (Inngest `onFailure`
- *    degrades the model to its poster tier).
- *  - **async** (submit -> long-poll) otherwise — the standing service / dev
- *    container, unchanged. This is the default: with sync off, behavior is
- *    exactly today's.
+ *  - **at submit** — on Lambda the detached worker invocation uploads artifacts
+ *    directly with these (no serving instance survives to answer a late-mint
+ *    poll with the bytes in hand);
+ *  - **per poll** (late-mint) — the ECS/dev path PUTs with seconds-old tokens,
+ *    and it's the retry path if the worker's submit-time URLs expired.
  *
  * Returns the terminal `{ result, stats }`; throws on job error / timeout.
  */
 export async function runAssemblerJob(
-  step: StepTools,
-  spec: AssemblerJobSpec & { preferSync?: boolean }
-): Promise<{ result: Json; stats: Json }> {
-  const { idPrefix, action, jobId, buildBody, mintUploadUrls, logger } = spec;
-  const wantSync = (spec.preferSync ?? true) && assemblerSyncEnabled();
-
-  if (wantSync) {
-    const outcome: SyncJobOutcome = await step.run(
-      `${idPrefix}-sync`,
-      async () => {
-        const [body, uploadUrls] = await Promise.all([
-          buildBody(),
-          mintUploadUrls()
-        ]);
-        return invokeAssemblerJobSync({
-          action,
-          jobId,
-          body,
-          uploadUrls,
-          logger
-        });
-      }
-    );
-    if (outcome.status === "done") {
-      return { result: outcome.result, stats: outcome.stats };
-    }
-    if (outcome.status === "error") {
-      throw new Error(outcome.error);
-    }
-    // overflow — re-dispatch to the uncapped ECS service (async); if it isn't
-    // deployed, nothing can run this job, so fail loud rather than hang.
-    const ecs = assemblerEcsUrl();
-    logger.warn(`assembler ${action} overflowed the sync runtime`, {
-      jobId,
-      reason: outcome.reason,
-      overflowToEcs: Boolean(ecs)
-    });
-    if (!ecs) {
-      throw new Error(
-        `assembler ${action} exceeded the sync runtime and no ECS overflow service is configured: ${outcome.reason}`
-      );
-    }
-    return runAssemblerJobAsync(step, spec, ecs);
-  }
-
-  return runAssemblerJobAsync(step, spec);
-}
-
-/** The async submit -> long-poll path, optionally pinned to an overflow base. */
-async function runAssemblerJobAsync(
   step: StepTools,
   spec: AssemblerJobSpec,
   baseUrl?: string
@@ -450,8 +293,18 @@ async function runAssemblerJobAsync(
   } = spec;
 
   await step.run(`${idPrefix}-submit`, async () => {
-    const body = await buildBody();
-    await submitAssemblerJob({ action, jobId, body, logger, baseUrl });
+    const [body, uploadUrls] = await Promise.all([
+      buildBody(),
+      mintUploadUrls()
+    ]);
+    await submitAssemblerJob({
+      action,
+      jobId,
+      body,
+      logger,
+      baseUrl,
+      uploadUrls
+    });
   });
 
   const startedAt: number = await step.run(`${idPrefix}-poll-start`, () =>

@@ -51,10 +51,35 @@ pub async fn run_job_cli() -> ! {
     let state = build_state().await;
     state.jobs.set_pending(&job_id, &action, None).await;
 
-    match action.as_str() {
+    if let Err(m) = spawn_from_spec(&state, &job_id, &action, &spec) {
+        fail(&m);
+    }
+
+    let result = run_to_completion(&state, &job_id, &urls).await;
+    println!("{result}");
+    let ok = matches!(result["job"]["status"].as_str(), Some("succeeded"));
+    std::process::exit(if ok { 0 } else { 1 });
+}
+
+/// Start the action described by a run-job spec (same field shapes as the HTTP
+/// create bodies, plus `action`/`job_id` at the top level). Shared by the CLI
+/// and the Lambda self-invoke worker (`POST /events`). The job must already be
+/// `set_pending`; the caller decides how to drain it (CLI/worker:
+/// `run_to_completion`; a poll from any replica also works via Redis).
+pub fn spawn_from_spec(
+    state: &AppState,
+    job_id: &str,
+    action: &str,
+    spec: &Value,
+) -> Result<(), String> {
+    let source_url = spec["source"]["url"]
+        .as_str()
+        .unwrap_or_default()
+        .to_string();
+    match action {
         "optimize" => actions::optimize::spawn(
-            &state,
-            &job_id,
+            state,
+            job_id,
             actions::optimize::OptimizeReq {
                 source_url,
                 format: spec["source"]["format"]
@@ -66,8 +91,8 @@ pub async fn run_job_cli() -> ! {
             },
         ),
         "convert" => actions::convert::spawn(
-            &state,
-            &job_id,
+            state,
+            job_id,
             actions::convert::ConvertReq {
                 source_url,
                 declared_hash: spec["source"]["contentHash"].as_str().map(str::to_string),
@@ -79,22 +104,37 @@ pub async fn run_job_cli() -> ! {
             },
         ),
         "plan" => actions::plan::spawn(
-            &state,
-            &job_id,
+            state,
+            job_id,
             actions::plan::PlanReq {
                 source_url,
-                plan_path: spec["output"]["path"].as_str().map(str::to_string),
-                model_upload_id: spec["model_upload_id"].as_str().map(str::to_string),
+                plan_path: spec["output"]["path"]
+                    .as_str()
+                    .or_else(|| spec["meta"]["planPath"].as_str())
+                    .map(str::to_string),
+                model_upload_id: spec["model_upload_id"]
+                    .as_str()
+                    .or_else(|| spec["meta"]["modelUploadId"].as_str())
+                    .map(str::to_string),
                 options: spec["options"].clone(),
             },
         ),
-        other => fail(&format!("unsupported action: {other}")),
+        "compact" => {
+            let mode = actions::compact::Mode::from_str(spec["mode"].as_str().unwrap_or("xbf"))
+                .ok_or("mode must be 'xbf' or 'zstd'")?;
+            actions::compact::spawn(
+                state,
+                job_id,
+                actions::compact::CompactReq {
+                    source_url,
+                    mode,
+                    raw_path: spec["output"]["path"].as_str().map(str::to_string),
+                },
+            )
+        }
+        other => return Err(format!("unsupported action: {other}")),
     }
-
-    let result = run_to_completion(&state, &job_id, &urls).await;
-    println!("{result}");
-    let ok = matches!(result["job"]["status"].as_str(), Some("succeeded"));
-    std::process::exit(if ok { 0 } else { 1 });
+    Ok(())
 }
 
 /// Drive a spawned job to a terminal state, uploading its outputs to the given
@@ -123,7 +163,7 @@ pub async fn run_to_completion(
     }
 }
 
-fn upload_urls(spec: &Value) -> HashMap<String, String> {
+pub fn upload_urls(spec: &Value) -> HashMap<String, String> {
     let mut out = HashMap::new();
     if let Some(map) = spec["upload_urls"].as_object() {
         for (name, url) in map {

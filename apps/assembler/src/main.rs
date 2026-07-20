@@ -18,6 +18,7 @@
 mod actions;
 mod cache;
 mod config;
+mod dispatch;
 mod error;
 mod formats;
 mod http;
@@ -100,6 +101,11 @@ async fn serve() {
         .route("/v1/jobs/:job_id", get(get_job))
         .route("/v1/jobs/:job_id/cancel", post(cancel_job))
         .route("/v1/cache/invalidate", post(cache_invalidate))
+        // Lambda self-invoke worker inlet: the Web Adapter delivers non-HTTP
+        // (Event) payloads here (AWS_LWA_PASS_THROUGH_PATH). Not part of the
+        // public API — the API Gateway routes only /health and /v1/*, and the
+        // spec's embedded token is verified in-handler.
+        .route("/events", post(worker_events))
         // Negotiated response compression (zstd, gzip fallback). Content-encoding
         // is chosen from the request's `Accept-Encoding`, so the server never
         // sends an encoding the client didn't advertise — a caller bypasses it
@@ -311,6 +317,89 @@ async fn respond(
     Ok((StatusCode::OK, HeaderMap::new(), Json(result)))
 }
 
+/// Lambda-mode create path: instead of spawning in-process (this instance
+/// freezes after the response), fire the job as an Event-type self-invocation
+/// carrying a run-job spec — the request body plus `action`/`job_id`, the
+/// submit-time signed upload URLs, and the bearer for the worker inlet. A failed
+/// dispatch fails the job loudly (never a forever-"pending" record).
+async fn lambda_dispatch(
+    state: &AppState,
+    headers: &HeaderMap,
+    job_id: &str,
+    action: &str,
+    req: &Value,
+) -> Result<(), ApiError> {
+    let urls = parse_upload_urls(headers)?;
+    let mut spec = req.clone();
+    spec["action"] = action.into();
+    spec["job_id"] = job_id.into();
+    if !urls.is_empty() {
+        spec["upload_urls"] = json!(urls);
+    }
+    if let Ok(k) = std::env::var("ASSEMBLER_SERVICE_API_KEY") {
+        if !k.is_empty() {
+            spec["token"] = k.into();
+        }
+    }
+    if let Err(m) = dispatch::self_invoke(&spec).await {
+        state
+            .jobs
+            .set_error(job_id, "dispatch_failed", m.clone())
+            .await;
+        return Err(ApiError::new(503, "dispatch_failed", m));
+    }
+    eprintln!("[{job_id}] {action} dispatched to worker invocation");
+    Ok(())
+}
+
+/// Worker inlet for the Lambda self-invoke (LWA pass-through). Runs the spec's
+/// action to completion in THIS invocation — its own 900s window — uploading via
+/// the submit-time URLs; state lives in the shared (Redis) JobStore so any
+/// instance's poll can answer. Async-retry deliveries are deduped by job status:
+/// pending → run; uploading → finalize only; running/terminal → no-op.
+async fn worker_events(
+    State(state): State<AppState>,
+    body: Result<Json<Value>, axum::extract::rejection::JsonRejection>,
+) -> Result<Json<Value>, ApiError> {
+    let spec = parse_body(body)?;
+    if let Ok(key) = std::env::var("ASSEMBLER_SERVICE_API_KEY") {
+        if !key.is_empty() && !constant_eq(spec["token"].as_str().unwrap_or(""), &key) {
+            return Err(ApiError::unauthorized("invalid worker token"));
+        }
+    }
+    let action = spec["action"].as_str().unwrap_or_default().to_string();
+    let job_id = spec["job_id"].as_str().unwrap_or_default().to_string();
+    if job_id.is_empty() {
+        return Err(ApiError::invalid("missing job_id"));
+    }
+    let urls = run::upload_urls(&spec);
+
+    match state.jobs.existing_active(&job_id).await.as_deref() {
+        Some("pending") => {
+            if let Err(m) = run::spawn_from_spec(&state, &job_id, &action, &spec) {
+                state.jobs.set_error(&job_id, "invalid_input", m.clone()).await;
+                return Err(ApiError::invalid(m));
+            }
+            eprintln!("[{job_id}] worker running {action}");
+        }
+        Some("uploading") => {
+            eprintln!("[{job_id}] worker resuming finalize");
+        }
+        other => {
+            // running (another live worker owns it) or terminal/unknown: no-op.
+            eprintln!("[{job_id}] worker no-op (status {other:?})");
+            return Ok(Json(json!({ "ok": true, "noop": true })));
+        }
+    }
+
+    let result = run::run_to_completion(&state, &job_id, &urls).await;
+    eprintln!(
+        "[{job_id}] worker finished: {}",
+        result["job"]["status"].as_str().unwrap_or("?")
+    );
+    Ok(Json(result))
+}
+
 async fn create_convert(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -330,6 +419,13 @@ async fn create_convert(
     match state.jobs.existing_active(&job_id).await {
         Some(status) if !sync => return Ok(created(&job_id, "convert", &status)),
         Some(_) => {} // sync: attach to the running job, don't re-spawn
+        None if dispatch::from_env() == dispatch::Dispatch::Lambda => {
+            state
+                .jobs
+                .set_pending(&job_id, "convert", optional_meta(&req))
+                .await;
+            lambda_dispatch(&state, &headers, &job_id, "convert", &req).await?;
+        }
         None => {
             let declared_hash = req["source"]["contentHash"]
                 .as_str()
@@ -376,6 +472,13 @@ async fn create_optimize(
     match state.jobs.existing_active(&job_id).await {
         Some(status) if !sync => return Ok(created(&job_id, "optimize", &status)),
         Some(_) => {} // sync: attach to the running job, don't re-spawn
+        None if dispatch::from_env() == dispatch::Dispatch::Lambda => {
+            state
+                .jobs
+                .set_pending(&job_id, "optimize", optional_meta(&req))
+                .await;
+            lambda_dispatch(&state, &headers, &job_id, "optimize", &req).await?;
+        }
         None => {
             let opts = optimize_opts(&req["output"], &req["quality"]);
             // `auto` (the default) content-detects the format in the action.
@@ -482,6 +585,13 @@ async fn create_plan(
     match state.jobs.existing_active(&job_id).await {
         Some(status) if !sync => return Ok(created(&job_id, "plan", &status)),
         Some(_) => {} // sync: attach to the running job, don't re-spawn
+        None if dispatch::from_env() == dispatch::Dispatch::Lambda => {
+            state
+                .jobs
+                .set_pending(&job_id, "plan", optional_meta(&req))
+                .await;
+            lambda_dispatch(&state, &headers, &job_id, "plan", &req).await?;
+        }
         None => {
             let meta = optional_meta(&req);
             let plan_path = meta
@@ -533,6 +643,13 @@ async fn create_compact(
     match state.jobs.existing_active(&job_id).await {
         Some(status) if !sync => return Ok(created(&job_id, "compact", &status)),
         Some(_) => {} // sync: attach to the running job, don't re-spawn
+        None if dispatch::from_env() == dispatch::Dispatch::Lambda => {
+            state
+                .jobs
+                .set_pending(&job_id, "compact", optional_meta(&req))
+                .await;
+            lambda_dispatch(&state, &headers, &job_id, "compact", &req).await?;
+        }
         None => {
             let meta = optional_meta(&req);
             state.jobs.set_pending(&job_id, "compact", meta).await;

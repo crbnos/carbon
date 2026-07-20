@@ -132,6 +132,9 @@ COPY --from=build /usr/local/bin/assembler /usr/local/bin/assembler
 # it at our port (LWA defaults to 8080). Pin: verify against the latest release.
 COPY --from=public.ecr.aws/awsguru/aws-lambda-adapter:0.9.1 /lambda-adapter /opt/extensions/lambda-adapter
 ENV AWS_LWA_PORT=8000
+# Non-HTTP (Event) invokes — the self-dispatch worker path — are POSTed by the
+# adapter to this app route instead of being translated as HTTP requests.
+ENV AWS_LWA_PASS_THROUGH_PATH=/events
 USER assembler
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
