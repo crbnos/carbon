@@ -21,6 +21,8 @@ pub enum Format {
     Obj,
     Ply,
     Off,
+    /// dotbim (`.bim`) — JSON meshes + instanced elements.
+    Bim,
 }
 
 /// How the source is turned into a mesh: OCCT tessellation (exact B-rep) or a
@@ -34,7 +36,7 @@ pub enum Loader {
 /// Every supported input token (canonical names + aliases), for the
 /// `unsupported_format` error payload.
 pub const SUPPORTED: &[&str] = &[
-    "step", "stp", "iges", "igs", "brep", "xbf", "glb", "gltf", "stl", "obj", "ply", "off",
+    "step", "stp", "iges", "igs", "brep", "xbf", "glb", "gltf", "stl", "obj", "ply", "off", "bim",
 ];
 
 /// Canonical formats, in registry order — the `GET /v1` discovery listing.
@@ -49,6 +51,7 @@ pub const ALL: &[Format] = &[
     Format::Obj,
     Format::Ply,
     Format::Off,
+    Format::Bim,
 ];
 
 impl Format {
@@ -64,6 +67,7 @@ impl Format {
             Format::Obj => "obj",
             Format::Ply => "ply",
             Format::Off => "off",
+            Format::Bim => "bim",
         }
     }
 
@@ -112,6 +116,7 @@ impl Format {
             "obj" => Some(Format::Obj),
             "ply" => Some(Format::Ply),
             "off" => Some(Format::Off),
+            "bim" => Some(Format::Bim),
             _ => None,
         }
     }
@@ -182,6 +187,14 @@ pub fn sniff(head: &[u8], size: u64, ext: Option<&str>) -> Option<Format> {
     }
     if is_gltf_json(trimmed) {
         return Some(Format::Gltf);
+    }
+    // dotbim: JSON with a schema_version + meshes (glTF JSON is caught above by
+    // its "asset" key, so no collision).
+    if trimmed.starts_with('{')
+        && trimmed.contains("\"schema_version\"")
+        && trimmed.contains("\"meshes\"")
+    {
+        return Some(Format::Bim);
     }
 
     // 2. Binary STL: the size formula BEFORE the ASCII "solid" prefix — a binary

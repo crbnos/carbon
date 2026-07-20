@@ -16,6 +16,8 @@ use std::borrow::Cow;
 use std::mem::size_of;
 
 mod codec;
+mod ingest;
+pub use ingest::{bim_to_glb, obj_to_glb, off_to_glb, ply_to_glb};
 pub use codec::Codec;
 
 #[derive(Debug, Clone)]
@@ -111,7 +113,7 @@ pub struct OptimizeError {
 }
 
 impl OptimizeError {
-    fn new(m: impl Into<String>) -> Self {
+    pub(crate) fn new(m: impl Into<String>) -> Self {
         OptimizeError { message: m.into() }
     }
 }
@@ -888,7 +890,7 @@ fn parse_ascii_stl(bytes: &[u8]) -> Result<(Vec<[f32; 3]>, Vec<[f32; 3]>), Optim
 
 /// Build an uncompressed GLB from a flat triangle list (3N vertices, sequential
 /// indices). `positions.len()` must equal `normals.len()` and be a multiple of 3.
-fn build_triangle_glb(
+pub(crate) fn build_triangle_glb(
     positions: &[[f32; 3]],
     normals: &[[f32; 3]],
 ) -> Result<Vec<u8>, OptimizeError> {

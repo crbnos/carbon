@@ -106,6 +106,12 @@ pub fn build_tree(
     } else {
         occt_bridge::read_step(path, linear_deflection, angular_deflection)
     };
+    tree_to_root(tree)
+}
+
+/// Shared post-processing for every OCCT reader: raw `Tree` → node tree with
+/// nodeIds + world bboxes. Keeps STEP/XBF/IGES/BREP byte-identical downstream.
+fn tree_to_root(tree: occt_bridge::Tree) -> Result<AssemblyNode, ConvertError> {
     if !tree.ok {
         return Err(ConvertError::new("READ_FAILED", tree.error.clone()));
     }
@@ -125,6 +131,50 @@ pub fn step_to_xbf(step_path: &str, xbf_path: &str) -> Result<(), ConvertError> 
         ));
     }
     Ok(())
+}
+
+/// Convert an IGES file to graph.json + GLB. OCCT's XDE reader normalizes to mm
+/// (same `xstep.cascade.unit` static as STEP), so `sourceUnit` is `mm`.
+pub fn convert_iges(
+    iges_path: &str,
+    linear_deflection: f64,
+    angular_deflection: f64,
+) -> Result<Conversion, ConvertError> {
+    let root = tree_to_root(occt_bridge::read_iges(
+        iges_path,
+        linear_deflection,
+        angular_deflection,
+    ))?;
+    finish_conversion(root, "mm")
+}
+
+/// Convert a bare `.brep` shape file to graph.json + GLB. BREP carries no units
+/// (values are model-space, conventionally mm) and no structure/names/colors.
+pub fn convert_brep(
+    brep_path: &str,
+    linear_deflection: f64,
+    angular_deflection: f64,
+) -> Result<Conversion, ConvertError> {
+    let root = tree_to_root(occt_bridge::read_brep(
+        brep_path,
+        linear_deflection,
+        angular_deflection,
+    ))?;
+    finish_conversion(root, "mm")
+}
+
+fn finish_conversion(root: AssemblyNode, source_unit: &str) -> Result<Conversion, ConvertError> {
+    let component_count = count_leaves(&root);
+    let triangles = count_triangles(&root);
+    let graph = build_graph(&root, source_unit);
+    let glb = crate::glb::write_glb(&root);
+    Ok(Conversion {
+        graph,
+        glb,
+        root,
+        component_count,
+        triangles,
+    })
 }
 
 /// Convert a BinXCAF (`.xbf`) document to graph.json + GLB. Geometry is already

@@ -10,17 +10,38 @@ export const convertKbToString = (kb: number) => {
   return `${gb.toFixed(2)} GB`;
 };
 
-// Mesh formats the assembler's /v1/optimize can ingest today: STEP (it
-// tessellates), the compacted BinXCAF (`xbf`) retained-raw form, or a glTF/GLB
-// container. Others (stl/obj/iges/…) aren't optimised on upload yet. Returns the
-// service `format` string, or null if not optimisable.
+// Formats the assembler's /v1/optimize can ingest: exact B-rep sources OCCT
+// tessellates (step/iges/brep + the compacted BinXCAF `xbf` retained-raw form)
+// and mesh sources it parses directly (glb/gltf/stl/obj/ply/off/bim). Widen this
+// in lockstep with the assembler's format registry — each addition makes that
+// format optimise on upload (GLB-always doctrine); the remaining mesh formats
+// (fbx/dae/3ds/3mf/amf/3dm) render via the viewer's WASM raw tier only. Returns
+// the service `format` string, or null if not optimisable.
 export function optimizableModelFormat(
   ext: string
-): "step" | "xbf" | "gltf" | "glb" | "stl" | null {
+):
+  | "step"
+  | "iges"
+  | "brep"
+  | "xbf"
+  | "gltf"
+  | "glb"
+  | "stl"
+  | "obj"
+  | "ply"
+  | "off"
+  | "bim"
+  | null {
   switch (ext.toLowerCase()) {
     case "step":
     case "stp":
       return "step";
+    case "iges":
+    case "igs":
+      return "iges";
+    case "brep":
+    case "brp":
+      return "brep";
     case "xbf":
       return "xbf";
     case "gltf":
@@ -29,6 +50,14 @@ export function optimizableModelFormat(
       return "glb";
     case "stl":
       return "stl";
+    case "obj":
+      return "obj";
+    case "ply":
+      return "ply";
+    case "off":
+      return "off";
+    case "bim":
+      return "bim";
     default:
       return null;
   }

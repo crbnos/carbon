@@ -24,6 +24,9 @@
 #include <Poly_Triangle.hxx>
 #include <Poly_Triangulation.hxx>
 #include <Quantity_ColorRGBA.hxx>
+#include <BRepTools.hxx>
+#include <BRep_Builder.hxx>
+#include <IGESCAFControl_Reader.hxx>
 #include <STEPCAFControl_Reader.hxx>
 #include <STEPControl_Controller.hxx>
 #include <STEPControl_Writer.hxx>
@@ -501,6 +504,76 @@ Tree read_step(rust::Str path, double linear_deflection, double angular_deflecti
       fprintf(stderr, "OCCT read+transfer=%lldms walk+mesh=%lldms\n",
               (long long)ms(t0, t2), (long long)ms(t2, t3));
     }
+  } catch (Standard_Failure &e) {
+    t.error = std::string("OCCT error: ") + e.GetMessageString();
+  } catch (...) {
+    t.error = "unknown OCCT error";
+  }
+  return t;
+}
+
+// IGES → XCAF doc, mirroring read_step_to_doc (IGESCAFControl_Reader is the
+// XDE twin of the STEP one; same statics, same transfer target).
+static Handle(TDocStd_Document) read_iges_to_doc(const std::string &p,
+                                                 std::string &error) {
+  ensure_step_init();
+  IGESCAFControl_Reader reader;
+  reader.SetColorMode(true);
+  reader.SetNameMode(true);
+  reader.SetLayerMode(false);
+  if (reader.ReadFile(p.c_str()) != IFSelect_RetDone) {
+    error = "could not read IGES file";
+    return nullptr;
+  }
+  Handle(TDocStd_Document) doc = new TDocStd_Document(TCollection_ExtendedString("BinXCAF"));
+  if (!reader.Transfer(doc)) {
+    error = "IGES transfer to XCAF failed";
+    return nullptr;
+  }
+  return doc;
+}
+
+Tree read_iges(rust::Str path, double linear_deflection, double angular_deflection) {
+  Tree t;
+  t.ok = false;
+  t.root_index = 0;
+  try {
+    std::string p(path);
+    std::string err;
+    Handle(TDocStd_Document) doc = read_iges_to_doc(p, err);
+    if (doc.IsNull()) {
+      t.error = err;
+      return t;
+    }
+    t = doc_to_tree(doc, linear_deflection, angular_deflection);
+  } catch (Standard_Failure &e) {
+    t.error = std::string("OCCT error: ") + e.GetMessageString();
+  } catch (...) {
+    t.error = "unknown OCCT error";
+  }
+  return t;
+}
+
+Tree read_brep(rust::Str path, double linear_deflection, double angular_deflection) {
+  // A .brep file is a bare shape (no product structure, names, or colors).
+  // Wrap it in a fresh XCAF doc so the exact same doc_to_tree walk applies —
+  // one tessellation path for every OCCT-loaded format.
+  Tree t;
+  t.ok = false;
+  t.root_index = 0;
+  try {
+    std::string p(path);
+    TopoDS_Shape shape;
+    BRep_Builder builder;
+    if (!BRepTools::Read(shape, p.c_str(), builder)) {
+      t.error = "could not read BREP file";
+      return t;
+    }
+    Handle(TDocStd_Document) doc =
+        new TDocStd_Document(TCollection_ExtendedString("BinXCAF"));
+    Handle(XCAFDoc_ShapeTool) shapeTool = XCAFDoc_DocumentTool::ShapeTool(doc->Main());
+    shapeTool->AddShape(shape);
+    t = doc_to_tree(doc, linear_deflection, angular_deflection);
   } catch (Standard_Failure &e) {
     t.error = std::string("OCCT error: ") + e.GetMessageString();
   } catch (...) {

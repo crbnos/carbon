@@ -361,13 +361,32 @@ fn load_source(path: &str, format: Format, head: &[u8], opts: &Opts) -> Result<S
                 .map_err(|e| ActionErr::new("invalid_input", format!("mmap temp glb: {e}")))?;
             Ok(Src::MappedTemp(glb_map, temp_path))
         }
-        // Detected + advertised, loader not yet wired (IGES/BREP → OCCT reader,
-        // OBJ/PLY/OFF → mesh parsers). Fail clearly rather than silently no-op.
-        Format::Iges | Format::Brep | Format::Obj | Format::Ply | Format::Off => {
-            Err(ActionErr::new(
-                "unsupported_format",
-                format!("loader for '{}' is not yet implemented", format.name()),
-            ))
+        // Plain mesh formats: parse → triangle-soup GLB (the optimiser's weld
+        // pass reconstructs sharing) → the bounded GLB path.
+        Format::Obj | Format::Ply | Format::Off | Format::Bim => {
+            let bytes =
+                std::fs::read(path).map_err(|e| ActionErr::new("invalid_input", e.to_string()))?;
+            let glb = match format {
+                Format::Obj => optimize::obj_to_glb(&bytes),
+                Format::Ply => optimize::ply_to_glb(&bytes),
+                Format::Off => optimize::off_to_glb(&bytes),
+                _ => optimize::bim_to_glb(&bytes),
+            }
+            .map_err(|e| ActionErr::new("invalid_input", e.message))?;
+            Ok(Src::Owned(glb))
+        }
+        // Exact B-rep sources tessellated by OCCT, same walk as STEP.
+        Format::Iges => {
+            let glb = converter::convert::convert_iges(path, opts.lin, opts.ang)
+                .map_err(|e| ActionErr::new("tessellation_failed", e.message))?
+                .glb;
+            Ok(Src::Owned(glb))
+        }
+        Format::Brep => {
+            let glb = converter::convert::convert_brep(path, opts.lin, opts.ang)
+                .map_err(|e| ActionErr::new("tessellation_failed", e.message))?
+                .glb;
+            Ok(Src::Owned(glb))
         }
     }
 }
