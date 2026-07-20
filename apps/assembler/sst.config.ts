@@ -107,7 +107,7 @@ export default $config({
           Statement: [
             { Effect: "Allow", Action: "lambda:InvokeFunction", Resource: arn },
           ],
-        })
+        }),
       ),
     });
 
@@ -122,12 +122,15 @@ export default $config({
     const api = new aws.apigatewayv2.Api("AssemblerApi", {
       protocolType: "HTTP",
     });
-    const integration = new aws.apigatewayv2.Integration("AssemblerIntegration", {
-      apiId: api.id,
-      integrationType: "AWS_PROXY",
-      integrationUri: fn.invokeArn,
-      payloadFormatVersion: "2.0",
-    });
+    const integration = new aws.apigatewayv2.Integration(
+      "AssemblerIntegration",
+      {
+        apiId: api.id,
+        integrationType: "AWS_PROXY",
+        integrationUri: fn.invokeArn,
+        payloadFormatVersion: "2.0",
+      },
+    );
     for (const [name, routeKey] of [
       ["AssemblerRouteHealth", "GET /health"],
       ["AssemblerRouteV1", "ANY /v1/{proxy+}"],
@@ -214,7 +217,9 @@ export default $config({
           domain: {
             // DECISION: hostname + ACM cert (e.g. assembler-svc.carbon.ms). Internal
             // vs public+bearer is a decision; public+bearer here to match the Lambda.
-            name: process.env.ASSEMBLER_SERVICE_HOSTNAME ?? "assembler-svc.carbon.ms",
+            name:
+              process.env.ASSEMBLER_SERVICE_HOSTNAME ??
+              "assembler-svc.carbon.ms",
             dns: false,
             cert: process.env.ASSEMBLER_SERVICE_CERT_ARN,
           },
