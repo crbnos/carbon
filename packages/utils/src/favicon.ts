@@ -8,35 +8,9 @@
  * via the `@carbon/utils/favicon` subpath, which must stay dependency-free.
  */
 export const faviconLinks = [
-  {
-    rel: "icon",
-    type: "image/svg+xml",
-    href: "/carbon-mark-light.svg",
-    media: "(prefers-color-scheme: light)"
-  },
-  {
-    rel: "icon",
-    type: "image/svg+xml",
-    href: "/carbon-mark-dark.svg",
-    media: "(prefers-color-scheme: dark)"
-  },
-  {
-    rel: "icon",
-    type: "image/png",
-    sizes: "32x32",
-    href: "/favicon-32x32.png"
-  },
-  {
-    rel: "icon",
-    type: "image/png",
-    sizes: "16x16",
-    href: "/favicon-16x16.png"
-  },
-  // Legacy / non-SVG fallback. `sizes: "any"` stops Chrome double-fetching it
-  // alongside the SVG icons. This is the SAME file the browser auto-requests at
-  // /favicon.ico for non-HTML pages (e.g. raw PDF routes), so declaring it here
-  // makes the HTML-declared set match what PDF/non-HTML tabs already fall back to.
-  { rel: "icon", href: "/favicon.ico", sizes: "any" },
-  { rel: "apple-touch-icon", sizes: "180x180", href: "/apple-touch-icon.png" },
-  { rel: "manifest", href: "/site.webmanifest" }
+  // Tab icon for modern browsers — one vector file, crisp at every size.
+  // `?v=` busts the browser's aggressive favicon cache when the mark changes.
+  { rel: "icon", type: "image/svg+xml", href: "/carbon-mark-dark.svg?v=3" },
+  // Legacy browsers + non-HTML pages (e.g. raw PDF tabs auto-fetch /favicon.ico).
+  { rel: "icon", href: "/favicon.ico?v=3", sizes: "any" }
 ] as const;
