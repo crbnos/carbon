@@ -46,7 +46,6 @@ export default $config({
       ASSEMBLER_ALLOWED_URL_HOSTS: process.env.ASSEMBLER_ALLOWED_URL_HOSTS,
       // Job/result store — REQUIRED; the assembler refuses to boot without it.
       ASSEMBLER_REDIS_URL: process.env.ASSEMBLER_REDIS_URL,
-      ASSEMBLER_MAX_CONCURRENCY: process.env.ASSEMBLER_MAX_CONCURRENCY,
       // Optimize time budget + dispatch mode are AUTO-DETECTED in-service from
       // AWS_LAMBDA_FUNCTION_NAME (720s ladder budget on Lambda; self-invoke
       // dispatch) — no env needed here.

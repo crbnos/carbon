@@ -2,13 +2,6 @@
 
 use crate::error::ApiError;
 
-fn int_env(name: &str, default: usize) -> usize {
-    std::env::var(name)
-        .ok()
-        .and_then(|s| s.parse().ok())
-        .unwrap_or(default)
-}
-
 // Fixed, sane defaults — deliberately NOT env-tunable. Every knob here had a
 // plausible-sounding env var and no deployment that ever needed a different
 // value; unused knobs are just misconfiguration surface. Revisit a constant
@@ -36,11 +29,14 @@ pub fn cache_bytes() -> usize {
     512 * 1024 * 1024
 }
 
-/// Concurrent heavy jobs per instance. Env-tunable: this is a real ops knob —
-/// the ECS service tier sizes it to the task's vCPUs; Lambda runs one job per
-/// worker invocation anyway.
+/// Concurrent heavy jobs per instance — one per core, derived. Each job is
+/// CPU-bound (rayon sweeps saturate cores), so more slots than cores just
+/// thrashes; the semaphore also backs the 429-busy response and shutdown drain.
+/// Lambda runs one job per worker invocation regardless.
 pub fn max_concurrency() -> usize {
-    int_env("ASSEMBLER_MAX_CONCURRENCY", 2).max(1)
+    std::thread::available_parallelism()
+        .map(|n| n.get())
+        .unwrap_or(2)
 }
 
 /// Wall-clock budget (seconds) for the optimize simplify ladder. When active, a
