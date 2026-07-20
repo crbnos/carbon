@@ -6,7 +6,7 @@ import { DM_Sans, Fira_Code } from "next/font/google";
 import type { ReactNode } from "react";
 import { ScrollToTop } from "@/components/scroll-to-top";
 import { SiteFooter } from "@/components/site-footer";
-import { faviconLinks } from "@carbon/utils/favicon";
+import { faviconLinks } from "@carbon/utils";
 import { ogImage, SEO, SITE } from "@/lib/seo";
 
 // next/font self-hosts DM Sans + Fira Code at build time: no render-blocking request

@@ -25,8 +25,11 @@ import {
   useDisclosure,
   useMode
 } from "@carbon/react";
-import { getPreferenceHeaders, modeValidator } from "@carbon/utils";
-import { faviconLinks } from "@carbon/utils/favicon";
+import {
+  faviconLinks,
+  getPreferenceHeaders,
+  modeValidator
+} from "@carbon/utils";
 import { I18nProvider } from "@react-aria/i18n";
 import { Analytics } from "@vercel/analytics/react";
 import { motion } from "framer-motion";
