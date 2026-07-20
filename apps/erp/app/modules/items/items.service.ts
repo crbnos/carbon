@@ -4000,18 +4000,20 @@ export async function duplicateMethodOperationStep(
     return { data: null, error: slides.error };
   }
   if (slides.data && slides.data.length > 0) {
-    const slideInsert = await client.from("methodOperationStepSlide").insert(
-      slides.data.map((s) => ({
-        stepId: newStepId,
-        imagePath: s.imagePath,
-        caption: s.caption,
-        sortOrder: s.sortOrder,
-        size: s.size,
-        annotations: s.annotations,
-        companyId: args.companyId,
-        createdBy: args.createdBy
-      }))
-    );
+    const slideRows = slides.data.map((s) => ({
+      stepId: newStepId,
+      imagePath: s.imagePath,
+      modelUploadId: s.modelUploadId,
+      caption: s.caption,
+      sortOrder: s.sortOrder,
+      size: s.size,
+      annotations: s.annotations,
+      companyId: args.companyId,
+      createdBy: args.createdBy
+    }));
+    const slideInsert = await client
+      .from("methodOperationStepSlide")
+      .insert(slideRows);
     if (slideInsert.error) {
       return { data: null, error: slideInsert.error };
     }

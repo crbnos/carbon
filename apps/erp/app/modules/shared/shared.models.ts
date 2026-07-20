@@ -340,32 +340,46 @@ export const slideAnnotationValidator = z.object({
 });
 export type SlideAnnotation = z.infer<typeof slideAnnotationValidator>;
 
-// A reference image ("slide") attached to an operation step. Authored on the method and
-// copied to job/quote by get-method. One image per slide; caption + order optional.
+// A reference "slide" attached to an operation step — either an image (`imagePath`) or a
+// 3D model (`modelUploadId` → modelUpload; STEP sources are converted to GLB by the
+// assembler service). Authored on the method and copied to job/quote by get-method.
+// A create must carry one of the two; updates may omit both (sanitize() drops absent
+// fields so a caption/size-only save never wipes the content). Pins are image-only.
 // `annotations` arrives over FormData as a JSON string and is parsed into an array here.
-export const operationStepSlideValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  stepId: z.string().min(1, { message: "Step is required" }),
-  imagePath: z.string().min(1, { message: "Image is required" }),
-  caption: zfd.text(z.string().optional()),
-  sortOrder: zfd.numeric(z.number().min(0).optional()),
-  size: zfd.text(z.enum(slideSizes).optional()),
-  // Absent = "not changed" (preserve on update / default on insert); a JSON string (incl.
-  // "[]" to clear) = the new pin set. Returning undefined when absent lets sanitize() drop
-  // it so a caption/size-only save never wipes existing annotations.
-  annotations: zfd.text(z.string().optional()).transform((value, ctx) => {
-    if (!value) return undefined;
-    try {
-      return z.array(slideAnnotationValidator).parse(JSON.parse(value));
-    } catch {
+export const operationStepSlideValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    stepId: z.string().min(1, { message: "Step is required" }),
+    imagePath: zfd.text(z.string().optional()),
+    modelUploadId: zfd.text(z.string().optional()),
+    caption: zfd.text(z.string().optional()),
+    sortOrder: zfd.numeric(z.number().min(0).optional()),
+    size: zfd.text(z.enum(slideSizes).optional()),
+    // Absent = "not changed" (preserve on update / default on insert); a JSON string (incl.
+    // "[]" to clear) = the new pin set. Returning undefined when absent lets sanitize() drop
+    // it so a caption/size-only save never wipes existing annotations.
+    annotations: zfd.text(z.string().optional()).transform((value, ctx) => {
+      if (!value) return undefined;
+      try {
+        return z.array(slideAnnotationValidator).parse(JSON.parse(value));
+      } catch {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Invalid annotations"
+        });
+        return z.NEVER;
+      }
+    })
+  })
+  .superRefine((slide, ctx) => {
+    if (!slide.id && !slide.imagePath && !slide.modelUploadId) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Invalid annotations"
+        message: "An image or model is required",
+        path: ["imagePath"]
       });
-      return z.NEVER;
     }
-  })
-});
+  });
 
 export const operationToolValidator = z.object({
   id: zfd.text(z.string().optional()),

@@ -107,7 +107,9 @@ export type Note = NonNullable<
 export type OperationStepSlide = {
   id: string;
   stepId: string;
-  imagePath: string;
+  // A slide is image XOR model: exactly one of imagePath / modelUploadId is set.
+  imagePath: string | null;
+  modelUploadId: string | null;
   caption: string | null;
   sortOrder: number;
   size: SlideSize | null;

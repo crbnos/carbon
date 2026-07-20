@@ -127,6 +127,8 @@ export const path = {
         ),
       modelConvertStatus: (modelUploadId: string) =>
         generatePath(`${api}/model/convert-status/${modelUploadId}`),
+      assemblyForItem: (itemId: string) =>
+        generatePath(`${api}/production/assembly-for-item/${itemId}`),
       modelUpload: `${api}/model/upload`,
       onShapeBom: (documentId: string, versionId: string, elementId: string) =>
         generatePath(
@@ -550,6 +552,8 @@ export const path = {
       generatePath(`${x}/assembly/${id}/model/invalidate`),
     assemblyPlanRerun: (id: string) =>
       generatePath(`${x}/assembly/${id}/plan/rerun`),
+    assemblySyncBop: (id: string) =>
+      generatePath(`${x}/assembly/${id}/sync-bop`),
     deleteAssemblyInstruction: (id: string) =>
       generatePath(`${x}/assembly/delete/${id}`),
     newAssemblyInstruction: `${x}/production/assemblies/new`,

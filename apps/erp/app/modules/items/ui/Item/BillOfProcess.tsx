@@ -108,7 +108,8 @@ import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { ProcedureStepTypeIcon } from "~/components/Icons";
 import { ConfirmDelete } from "~/components/Modals";
 import type { Item, SortableItemRenderProps } from "~/components/SortableList";
-import { SlidesEditor } from "~/components/SlidesEditor";
+import { AssemblyStepsSource } from "~/components/AssemblyStepsSource";
+import { SlidesEditor, uploadStepSlideModel } from "~/components/SlidesEditor";
 import { StepLinkEditor } from "~/components/StepLinkEditor";
 import { SortableList, SortableListItem } from "~/components/SortableList";
 import { useDateFormatter, usePermissions, useUser } from "~/hooks";
@@ -674,6 +675,14 @@ const BillOfProcess = ({
         ),
         content: (
           <div className="flex w-full flex-col py-4">
+            {item.data.operationKind === "Assembly" && !!item.id && (
+              <AssemblyStepsSource
+                itemId={makeMethod.itemId}
+                targetKind="method"
+                operationId={item.id}
+                isDisabled={isReadOnly}
+              />
+            )}
             <AttributesForm
               steps={steps}
               tools={tools}
@@ -1854,10 +1863,12 @@ function AttributesForm({
 
   // Slides chosen while creating a step are buffered here (the step has no id yet);
   // they're attached to the new step right after it's created. See the effect below.
+  // A buffered slide is image XOR model (imagePath / modelUploadId).
   const [draftSlides, setDraftSlides] = useState<
     {
       id: string;
-      imagePath: string;
+      imagePath: string | null;
+      modelUploadId: string | null;
       caption: string;
       size: SlideSize;
       annotations: SlideAnnotation[];
@@ -1865,6 +1876,7 @@ function AttributesForm({
   >([]);
   const [draftUploading, setDraftUploading] = useState(false);
   const draftFileInputRef = useRef<HTMLInputElement>(null);
+  const draftModelInputRef = useRef<HTMLInputElement>(null);
 
   // Parts (this operation's BOM materials) the operator can assign to a step. Parts picked
   // while CREATING a step are buffered here and attached right after the step is created.
@@ -1939,6 +1951,36 @@ function AttributesForm({
         {
           id: nanoid(),
           imagePath: result.data.path,
+          modelUploadId: null,
+          caption: "",
+          size: "medium",
+          annotations: []
+        }
+      ]);
+    } finally {
+      setDraftUploading(false);
+    }
+  };
+
+  // Upload a chosen 3D model, register it as a modelUpload (which also kicks the
+  // assembler's STEP → GLB conversion), and buffer it as a draft model slide.
+  const onAddDraftModel = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !carbon) return;
+    setDraftUploading(true);
+    try {
+      const modelUploadId = await uploadStepSlideModel(carbon, companyId, file);
+      if (!modelUploadId) {
+        toast.error(t`Failed to upload model`);
+        return;
+      }
+      setDraftSlides((prev) => [
+        ...prev,
+        {
+          id: nanoid(),
+          imagePath: null,
+          modelUploadId,
           caption: "",
           size: "medium",
           annotations: []
@@ -1957,18 +1999,20 @@ function AttributesForm({
     if (!newStepId || draftSlides.length === 0 || !carbon) return;
     let cancelled = false;
     (async () => {
-      const { error } = await carbon.from("methodOperationStepSlide").insert(
-        draftSlides.map((slide, index) => ({
-          stepId: newStepId,
-          imagePath: slide.imagePath,
-          caption: slide.caption || null,
-          sortOrder: index + 1,
-          size: slide.size,
-          annotations: slide.annotations,
-          companyId,
-          createdBy: user.id
-        }))
-      );
+      const slideRows = draftSlides.map((slide, index) => ({
+        stepId: newStepId,
+        imagePath: slide.imagePath,
+        modelUploadId: slide.modelUploadId,
+        caption: slide.caption || null,
+        sortOrder: index + 1,
+        size: slide.size,
+        annotations: slide.annotations,
+        companyId,
+        createdBy: user.id
+      }));
+      const { error } = await carbon
+        .from("methodOperationStepSlide")
+        .insert(slideRows);
       if (cancelled) return;
       if (error) {
         toast.error(t`Failed to save slides`);
@@ -2167,6 +2211,7 @@ function AttributesForm({
                 slides={draftSlides.map((slide) => ({
                   key: slide.id,
                   imagePath: slide.imagePath,
+                  modelUploadId: slide.modelUploadId,
                   caption: slide.caption,
                   size: slide.size,
                   annotations: slide.annotations
@@ -2175,6 +2220,8 @@ function AttributesForm({
                 busy={draftUploading}
                 fileInputRef={draftFileInputRef}
                 onFileChange={onAddDraftSlide}
+                modelInputRef={draftModelInputRef}
+                onModelFileChange={onAddDraftModel}
                 onRemove={(index) =>
                   setDraftSlides((prev) => prev.filter((_, i) => i !== index))
                 }
@@ -2928,11 +2975,15 @@ function StepSlides({
     company: { id: companyId }
   } = useUser();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const modelInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
 
   const slides = ((step.methodOperationStepSlide ?? []) as OperationStepSlide[])
     .slice()
     .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+
+  const nextSortOrder = () =>
+    slides.reduce((m, s) => Math.max(m, s.sortOrder ?? 0), 0) + 1;
 
   const onAddFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -2952,10 +3003,7 @@ function StepSlides({
       const fd = new FormData();
       fd.append("stepId", step.id);
       fd.append("imagePath", result.data.path);
-      fd.append(
-        "sortOrder",
-        String(slides.reduce((m, s) => Math.max(m, s.sortOrder ?? 0), 0) + 1)
-      );
+      fd.append("sortOrder", String(nextSortOrder()));
       fetcher.submit(fd, {
         method: "post",
         action: path.to.newMethodOperationStepSlide
@@ -2965,9 +3013,36 @@ function StepSlides({
     }
   };
 
-  // Update one slide: always carries the required fields (id → the route updates rather than
-  // inserts; stepId/imagePath satisfy the validator) plus whatever changed. Fields not sent
-  // are preserved, so a caption edit never wipes size/annotations and vice-versa.
+  // Upload a 3D model and attach it to the step as a model slide. The model-upload
+  // API also starts the assembler's STEP → GLB conversion.
+  const onAddModelFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !carbon || !step.id) return;
+    setUploading(true);
+    try {
+      const modelUploadId = await uploadStepSlideModel(carbon, companyId, file);
+      if (!modelUploadId) {
+        toast.error(t`Failed to upload model`);
+        return;
+      }
+      const fd = new FormData();
+      fd.append("stepId", step.id);
+      fd.append("modelUploadId", modelUploadId);
+      fd.append("sortOrder", String(nextSortOrder()));
+      fetcher.submit(fd, {
+        method: "post",
+        action: path.to.newMethodOperationStepSlide
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // Update one slide: always carries the required fields (id → the route updates rather
+  // than inserts; stepId + the slide's content field satisfy the validator) plus whatever
+  // changed. Fields not sent are preserved, so a caption edit never wipes size/annotations
+  // and vice-versa.
   function saveSlide(
     slide: OperationStepSlide,
     fields: Record<string, string>
@@ -2975,7 +3050,8 @@ function StepSlides({
     const fd = new FormData();
     fd.append("id", slide.id);
     fd.append("stepId", slide.stepId);
-    fd.append("imagePath", slide.imagePath);
+    if (slide.imagePath) fd.append("imagePath", slide.imagePath);
+    if (slide.modelUploadId) fd.append("modelUploadId", slide.modelUploadId);
     fd.append("sortOrder", String(slide.sortOrder ?? 1));
     for (const [key, value] of Object.entries(fields)) fd.append(key, value);
     captionFetcher.submit(fd, {
@@ -2989,6 +3065,7 @@ function StepSlides({
       slides={slides.map((s) => ({
         key: s.id,
         imagePath: s.imagePath,
+        modelUploadId: s.modelUploadId,
         caption: s.caption,
         size: s.size,
         annotations: s.annotations
@@ -2997,6 +3074,8 @@ function StepSlides({
       busy={uploading || fetcher.state !== "idle"}
       fileInputRef={fileInputRef}
       onFileChange={onAddFile}
+      modelInputRef={modelInputRef}
+      onModelFileChange={onAddModelFile}
       onRemove={(index) => {
         const slide = slides[index];
         if (!slide) return;
@@ -3346,7 +3425,10 @@ function OperationPreview({
   const slides = [...(step.methodOperationStepSlide ?? [])].sort(
     (a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0)
   );
-  const image = slides[0] ? getPrivateUrl(slides[0].imagePath) : null;
+  // First IMAGE slide for the preview panel — model slides render only in the MES
+  // assembly view; here they'd have no picture to show.
+  const firstImagePath = slides.find((s) => s.imagePath)?.imagePath;
+  const image = firstImagePath ? getPrivateUrl(firstImagePath) : null;
 
   // Tools scoped to this step + operation-level (no links) tools shown on every step
   // (tool ↔ step is many-to-many).
@@ -3357,7 +3439,7 @@ function OperationPreview({
         (tl as { methodOperationToolStep?: { methodOperationStepId: string }[] })
           .methodOperationToolStep ?? []
       ).map((s) => s.methodOperationStepId);
-    return ids.length === 0 || ids.includes(step.id);
+    return ids.length === 0 || (!!step.id && ids.includes(step.id));
   });
 
   const descriptionHtml =

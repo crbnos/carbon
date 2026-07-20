@@ -3,17 +3,20 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getUserClaims } from "@carbon/auth/users.server";
 import { flash } from "@carbon/auth/session.server";
+import type { ComponentProps } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useParams } from "react-router";
 import { AssemblyView } from "~/components/AssemblyView";
 import { getCompanySettings } from "~/services/inventory.service";
 import {
+  getAssemblyPlaybackByOperationId,
   getJobByOperationId,
   getJobMakeMethod,
   getJobMaterialsByOperationId,
   getJobOperationById,
   getJobOperationProcedure,
   getKanbanByJobId,
+  getModelUploadsByIds,
   getNcrsByJobOperationId,
   getNonConformanceActions,
   getProductionEventsForJobOperation,
@@ -84,7 +87,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     tools,
     ncrs,
     events,
-    nonConformanceActions
+    nonConformanceActions,
+    assemblyPlayback
   ] = await Promise.all([
     getThumbnailPathByItemId(serviceRole, op.itemId),
     getTrackedEntitiesByMakeMethodId(serviceRole, op.jobMakeMethodId),
@@ -97,13 +101,27 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       itemId: op.itemId,
       processId: op.processId,
       companyId
-    })
+    }),
+    getAssemblyPlaybackByOperationId(serviceRole, operationId)
   ]);
 
-  const [quantities, workCenter, kanban] = await Promise.all([
+  // 3D model slides reference modelUpload rows; resolve their render metadata
+  // (glbPath / modelPath / thumbnail) in one query.
+  const slideModelIds = Array.from(
+    new Set(
+      procedure.attributes.flatMap((step) =>
+        (step.jobOperationStepSlide ?? []).map((slide) => slide.modelUploadId)
+      )
+    )
+  ).filter((id): id is string => !!id);
+
+  const [quantities, workCenter, kanban, slideModelUploads] = await Promise.all([
     getProductionQuantitiesForJobOperation(serviceRole, operationId),
     getWorkCenter(serviceRole, op.workCenterId),
-    job.data.id ? getKanbanByJobId(serviceRole, job.data.id) : null
+    job.data.id ? getKanbanByJobId(serviceRole, job.data.id) : null,
+    slideModelIds.length > 0
+      ? getModelUploadsByIds(serviceRole, slideModelIds)
+      : null
   ]);
 
   const productionQuantities = (quantities.data ?? []).reduce(
@@ -209,7 +227,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     modelPath:
       (op as { itemModelPath?: string | null }).itemModelPath ??
       (job.data as { modelPath?: string | null }).modelPath ??
-      null
+      null,
+    slideModels: Object.fromEntries(
+      (slideModelUploads?.data ?? []).map((model) => [model.id, model])
+    ),
+    assemblyPlayback
   };
 }
 
@@ -218,5 +240,11 @@ export default function AssemblyRoute() {
   if (!operationId) throw new Error("Operation ID is required");
 
   const data = useLoaderData<typeof loader>();
-  return <AssemblyView {...data} operationId={operationId} />;
+  // The generated DB types leave JSONB columns as `Json`; the slide annotations
+  // are written exclusively by the ERP editors through slideAnnotationValidator,
+  // so the view's narrowed pin type is the real runtime shape.
+  const procedure = data.procedure as unknown as ComponentProps<
+    typeof AssemblyView
+  >["procedure"];
+  return <AssemblyView {...data} procedure={procedure} operationId={operationId} />;
 }

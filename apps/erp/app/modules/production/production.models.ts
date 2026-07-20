@@ -1166,6 +1166,16 @@ export const assemblyInstructionValidator = z.object({
   itemId: zfd.text(z.string().optional())
 });
 
+// Assembly → BOP sync: which operation receives the instruction's steps. "method"
+// targets the item's (Draft) make-method operation; "job" targets a live job's
+// operation directly.
+export const syncAssemblyToBopValidator = z.object({
+  targetKind: z.enum(["method", "job"], {
+    errorMap: () => ({ message: "Target is required" })
+  }),
+  operationId: z.string().min(1, { message: "Operation is required" })
+});
+
 export type AssemblyModelState =
   | "converted" // GLB + graph artifacts exist — ready for the viewer
   | "processing" // conversion job is queued or running

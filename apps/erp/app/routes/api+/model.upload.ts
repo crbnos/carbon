@@ -2,6 +2,7 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { trigger } from "@carbon/jobs";
 import type { ActionFunctionArgs } from "react-router";
+import { isAssemblerServiceHealthy } from "~/modules/production/production.server";
 
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
@@ -13,6 +14,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const name = formData.get("name") as string;
   const modelPath = formData.get("modelPath") as string;
   const size = parseInt(formData.get("size") as string);
+  const convert = formData.get("convert") === "true";
 
   const itemId = formData.get("itemId") as string | null;
   const salesRfqLineId = formData.get("salesRfqLineId") as string | null;
@@ -81,9 +83,26 @@ export async function action({ request }: ActionFunctionArgs) {
     modelId
   });
 
-  // Conversion to assembly-instruction artifacts (GLB + graph) is lazy:
-  // triggered when an assembly instruction is created for this model, not
-  // on upload — most uploaded models never become assemblies.
+  // Conversion to assembly-instruction artifacts (GLB + graph) is lazy by
+  // default: most uploaded models never become assemblies. Callers that will
+  // render the model on the shop floor (e.g. BOP step model slides) opt in
+  // with `convert` so the assembler service produces the fast-loading GLB up
+  // front. Best-effort: STEP-only, skipped when the assembler is down — the
+  // viewer falls back to parsing the raw model client-side.
+  const isStep = [".step", ".stp"].some((ext) =>
+    modelPath.toLowerCase().endsWith(ext)
+  );
+  if (convert && isStep && (await isAssemblerServiceHealthy())) {
+    try {
+      await trigger("assembly-convert", {
+        companyId,
+        modelUploadId: modelId,
+        userId
+      });
+    } catch (err) {
+      console.error("Failed to start model conversion", err);
+    }
+  }
 
   return {
     success: true

@@ -3099,18 +3099,20 @@ export async function duplicateJobOperationStep(
     return { data: null, error: slides.error };
   }
   if (slides.data && slides.data.length > 0) {
-    const slideInsert = await client.from("jobOperationStepSlide").insert(
-      slides.data.map((s) => ({
-        stepId: newStepId,
-        imagePath: s.imagePath,
-        caption: s.caption,
-        sortOrder: s.sortOrder,
-        size: s.size,
-        annotations: s.annotations,
-        companyId: args.companyId,
-        createdBy: args.createdBy
-      }))
-    );
+    const slideRows = slides.data.map((s) => ({
+      stepId: newStepId,
+      imagePath: s.imagePath,
+      modelUploadId: s.modelUploadId,
+      caption: s.caption,
+      sortOrder: s.sortOrder,
+      size: s.size,
+      annotations: s.annotations,
+      companyId: args.companyId,
+      createdBy: args.createdBy
+    }));
+    const slideInsert = await client
+      .from("jobOperationStepSlide")
+      .insert(slideRows);
     if (slideInsert.error) {
       return { data: null, error: slideInsert.error };
     }
@@ -5691,6 +5693,307 @@ type GenerateStepsResult =
       modelUploadId?: string;
       message?: string;
     };
+
+// Minimal tiptap document wrapping a plain-text instruction, for source steps that
+// have text but no rich description.
+function plainTextToTiptap(text: string) {
+  return {
+    type: "doc",
+    content: [{ type: "paragraph", content: [{ type: "text", text }] }]
+  };
+}
+
+/**
+ * Assembly → BOP sync: copy a Published instruction's steps into a BOP operation
+ * as real method/job operation steps (the typed fields mirror by design), link
+ * each step's BOM parts via the material↔step join table, attach the
+ * instruction's 3D model as a model slide on every synced step, and point the
+ * operation at the instruction. Re-runnable: rows carry an
+ * `assemblyInstructionStepId` provenance marker, so a re-sync updates matched
+ * steps in place (keeping their ids — slides, records, and links survive),
+ * inserts new ones, and deletes synced steps whose source step is gone.
+ * Hand-authored steps (NULL marker) are never touched. One transaction: a
+ * half-synced BOP would be a real bug. Guards (Draft method / unlocked job,
+ * permissions) belong to the route — Kysely bypasses RLS.
+ */
+export async function syncAssemblyInstructionToOperation(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    assemblyInstructionId: string;
+    target: { kind: "method" | "job"; operationId: string };
+    companyId: string;
+    userId: string;
+  }
+) {
+  const { assemblyInstructionId, target, companyId, userId } = args;
+  const isMethod = target.kind === "method";
+  const stepTable = isMethod
+    ? ("methodOperationStep" as const)
+    : ("jobOperationStep" as const);
+  const slideTable = isMethod
+    ? ("methodOperationStepSlide" as const)
+    : ("jobOperationStepSlide" as const);
+
+  return db.transaction().execute(async (trx) => {
+    const instruction = await trx
+      .selectFrom("assemblyInstruction")
+      .select(["id", "status", "itemId", "modelUploadId"])
+      .where("id", "=", assemblyInstructionId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (!instruction) throw new Error("Assembly instruction not found");
+    if (instruction.status !== "Published") {
+      throw new Error("Only a Published assembly instruction can be synced");
+    }
+
+    const sourceSteps = await trx
+      .selectFrom("assemblyInstructionStep")
+      .select([
+        "id",
+        "title",
+        "type",
+        "description",
+        "instructionText",
+        "required",
+        "unitOfMeasureCode",
+        "minValue",
+        "maxValue",
+        "listValues",
+        "fileTypes",
+        "sortOrder"
+      ])
+      .where("assemblyInstructionId", "=", instruction.id)
+      .where("companyId", "=", companyId)
+      .orderBy("sortOrder", "asc")
+      .execute();
+    if (sourceSteps.length === 0) {
+      throw new Error("The assembly instruction has no steps to sync");
+    }
+
+    const sourceMaterials = await trx
+      .selectFrom("assemblyInstructionStepMaterial")
+      .select(["stepId", "itemId"])
+      .where("companyId", "=", companyId)
+      .where(
+        "stepId",
+        "in",
+        sourceSteps.map((step) => step.id)
+      )
+      .execute();
+    const materialsByStep = new Map<string, string[]>();
+    for (const material of sourceMaterials) {
+      const list = materialsByStep.get(material.stepId) ?? [];
+      list.push(material.itemId);
+      materialsByStep.set(material.stepId, list);
+    }
+
+    // The target operation's own BOM lines, keyed by item — instruction step
+    // materials are itemIds; the link table wants the material row on THIS
+    // operation (a link to another operation's material never shows in the MES).
+    const operationMaterials = isMethod
+      ? await trx
+          .selectFrom("methodMaterial")
+          .select(["id", "itemId"])
+          .where("methodOperationId", "=", target.operationId)
+          .where("companyId", "=", companyId)
+          .execute()
+      : await trx
+          .selectFrom("jobMaterial")
+          .select(["id", "itemId"])
+          .where("jobOperationId", "=", target.operationId)
+          .where("companyId", "=", companyId)
+          .execute();
+    const materialIdByItemId = new Map<string, string>();
+    for (const material of operationMaterials) {
+      if (material.itemId && !materialIdByItemId.has(material.itemId)) {
+        materialIdByItemId.set(material.itemId, material.id);
+      }
+    }
+
+    const existingSynced = await trx
+      .selectFrom(stepTable)
+      .select(["id", "assemblyInstructionStepId"])
+      .where("operationId", "=", target.operationId)
+      .where("companyId", "=", companyId)
+      .where("assemblyInstructionStepId", "is not", null)
+      .execute();
+    const targetIdBySourceId = new Map(
+      existingSynced.map((step) => [step.assemblyInstructionStepId as string, step.id])
+    );
+
+    const now = new Date().toISOString();
+    let created = 0;
+    let updated = 0;
+    const syncedTargetIds: string[] = [];
+    const linkPairs: { materialId: string; stepId: string }[] = [];
+    let partsUnmatched = 0;
+
+    for (const [index, source] of sourceSteps.entries()) {
+      const payload = {
+        name: source.title || `Step ${index + 1}`,
+        type: source.type ?? "Task",
+        description:
+          source.description ??
+          (source.instructionText
+            ? plainTextToTiptap(source.instructionText)
+            : null),
+        required: source.required ?? false,
+        unitOfMeasureCode: source.unitOfMeasureCode,
+        minValue: source.minValue,
+        maxValue: source.maxValue,
+        listValues: source.listValues,
+        fileTypes: source.fileTypes,
+        sortOrder: source.sortOrder ?? index + 1
+      };
+
+      const existingId = targetIdBySourceId.get(source.id);
+      let targetStepId: string;
+      if (existingId) {
+        await trx
+          .updateTable(stepTable)
+          .set({ ...payload, updatedBy: userId, updatedAt: now })
+          .where("id", "=", existingId)
+          .where("companyId", "=", companyId)
+          .execute();
+        targetStepId = existingId;
+        updated++;
+      } else {
+        const inserted = await trx
+          .insertInto(stepTable)
+          .values({
+            ...payload,
+            operationId: target.operationId,
+            assemblyInstructionStepId: source.id,
+            companyId,
+            createdBy: userId
+          })
+          .returning("id")
+          .executeTakeFirstOrThrow();
+        targetStepId = inserted.id;
+        created++;
+      }
+      syncedTargetIds.push(targetStepId);
+
+      for (const itemId of materialsByStep.get(source.id) ?? []) {
+        const materialId = materialIdByItemId.get(itemId);
+        if (materialId) {
+          linkPairs.push({ materialId, stepId: targetStepId });
+        } else {
+          partsUnmatched++;
+        }
+      }
+    }
+
+    // Synced steps whose source step no longer exists — deleting cascades their
+    // slides and material/tool step links.
+    const sourceIds = new Set(sourceSteps.map((step) => step.id));
+    const staleIds = existingSynced
+      .filter(
+        (step) => !sourceIds.has(step.assemblyInstructionStepId as string)
+      )
+      .map((step) => step.id);
+    if (staleIds.length > 0) {
+      await trx
+        .deleteFrom(stepTable)
+        .where("id", "in", staleIds)
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+
+    // Refresh part links on the synced steps only (hand-authored steps keep theirs).
+    if (isMethod) {
+      await trx
+        .deleteFrom("methodMaterialStep")
+        .where("methodOperationStepId", "in", syncedTargetIds)
+        .execute();
+      if (linkPairs.length > 0) {
+        await trx
+          .insertInto("methodMaterialStep")
+          .values(
+            linkPairs.map((pair) => ({
+              methodMaterialId: pair.materialId,
+              methodOperationStepId: pair.stepId
+            }))
+          )
+          .execute();
+      }
+    } else {
+      await trx
+        .deleteFrom("jobMaterialStep")
+        .where("jobOperationStepId", "in", syncedTargetIds)
+        .execute();
+      if (linkPairs.length > 0) {
+        await trx
+          .insertInto("jobMaterialStep")
+          .values(
+            linkPairs.map((pair) => ({
+              jobMaterialId: pair.materialId,
+              jobOperationStepId: pair.stepId
+            }))
+          )
+          .execute();
+      }
+    }
+
+    // Attach the instruction's 3D model as a model slide on each synced step that
+    // doesn't already have it (updates keep their step ids, so slides persist).
+    if (instruction.modelUploadId) {
+      const existingSlides = await trx
+        .selectFrom(slideTable)
+        .select(["stepId"])
+        .where("stepId", "in", syncedTargetIds)
+        .where("modelUploadId", "=", instruction.modelUploadId)
+        .execute();
+      const stepsWithModel = new Set(existingSlides.map((slide) => slide.stepId));
+      const slideRows = syncedTargetIds
+        .filter((stepId) => !stepsWithModel.has(stepId))
+        .map((stepId) => ({
+          stepId,
+          modelUploadId: instruction.modelUploadId,
+          sortOrder: 1,
+          companyId,
+          createdBy: userId
+        }));
+      if (slideRows.length > 0) {
+        await trx.insertInto(slideTable).values(slideRows).execute();
+      }
+    }
+
+    // Point the operation at its instruction (also how a future re-sync UI knows
+    // what this operation was synced from).
+    if (isMethod) {
+      await trx
+        .updateTable("methodOperation")
+        .set({
+          assemblyInstructionId: instruction.id,
+          updatedBy: userId,
+          updatedAt: now
+        })
+        .where("id", "=", target.operationId)
+        .where("companyId", "=", companyId)
+        .execute();
+    } else {
+      await trx
+        .updateTable("jobOperation")
+        .set({
+          assemblyInstructionId: instruction.id,
+          updatedBy: userId,
+          updatedAt: now
+        })
+        .where("id", "=", target.operationId)
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+
+    return {
+      created,
+      updated,
+      deleted: staleIds.length,
+      partsLinked: linkPairs.length,
+      partsUnmatched
+    };
+  });
+}
 
 /**
  * Creates draft steps from the motion plan: walks the planned assembly

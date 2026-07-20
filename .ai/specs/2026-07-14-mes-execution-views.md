@@ -216,13 +216,45 @@ Slides are authored on the **method** (template) and copied to the **job/quote**
 Three tables mirroring the step-copy chain: `methodOperationStepSlide` (authored in ERP),
 `jobOperationStepSlide` (copied per job), `quoteOperationStepSlide` (copied per quote). Columns:
 `id` (`id('slide')`), `stepId` FK → matching `*OperationStep` `ON DELETE CASCADE`, `imagePath`
-(private-bucket storage path), `caption` (nullable), `sortOrder` (double precision), `size`
-(display size, default `medium`), `annotations` (JSONB, default `[]`), `companyId`, standard
+(private-bucket storage path; **nullable** since the step-model-slides migration), `modelUploadId`
+(nullable FK → `modelUpload` `ON DELETE CASCADE` — a slide is image XOR model, enforced by a
+CHECK), `caption` (nullable), `sortOrder` (double precision), `size` (display size, default
+`medium`), `annotations` (JSONB, default `[]`; image slides only), `companyId`, standard
 audit columns. RLS: identical policies to the parent step tables.
+
+**3D model slides** (added 2026-07-19, `20260719221229_step-model-slides.sql`): a slide can be
+a 3D model instead of a picture. The editors upload the file to `{companyId}/models/…` in the
+`private` bucket and register it via `/api/model/upload` with `convert` — which fires the
+`assembly-convert` Inngest task (assembler service STEP → GLB) when the source is STEP and the
+assembler is healthy. The MES assembly view renders model slides with `ModelViewer`, preferring
+`modelUpload.glbPath` and falling back to the raw `modelPath` (parsed client-side), so the
+feature degrades gracefully when the assembler is not deployed. get-method copies
+`modelUploadId` verbatim alongside `imagePath`.
+
+**Assembly → BOP sync** (added 2026-07-20, `20260720025847_assembly-bop-sync.sql`): a
+Published `assemblyInstruction`'s steps can be copied into a BOP operation ("Sync to BOP"
+on the instruction header) — target is a Draft method operation (jobs inherit via
+get-method) or an unlocked job operation. Synced steps carry an
+`assemblyInstructionStepId` provenance marker so re-sync updates/deletes only its own
+steps, per-step BOM parts become material↔step links, and the instruction's model is
+attached as a model slide per step. See `syncAssemblyInstructionToOperation`
+(production.service.ts).
+
+**Step-aware 3D playback in the MES assembly view** (added 2026-07-20): when the job
+operation carries `assemblyInstructionId` and the model has converted artifacts, the
+loader resolves `getAssemblyPlaybackByOperationId` and the view mounts the animated
+`AssemblyPlayer` (`@carbon/viewer`) pinned to the operator's current step — mapped via
+the step's `assemblyInstructionStepId` marker. It is the default media for mapped steps
+(a ▶ 3D carousel entry); picture and static-model slides remain selectable. get-method
+carries `assemblyInstructionId` onto job operations, so jobs made from a synced method
+get playback automatically. This supersedes the earlier note that the animated player
+stays out of the assembly view.
 
 ### Non-goals
 - Replacing the rich-text `description` (prose stays; slides are separate reference media).
-- Video / 3D model slides (the CAD model already has its own tab/panel).
+- Video slides. (3D model slides shipped 2026-07-19 — see above; originally a non-goal.)
+- Animated per-step assembly playback (`AssemblyPlayer` / `assemblyInstruction`) inside the
+  assembly view — model slides are static/orbitable models per step.
 - Operator-captured photos at run time (that's the existing **File** step-record type).
 
 ### Acceptance criteria

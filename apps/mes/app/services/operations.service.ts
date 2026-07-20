@@ -409,6 +409,64 @@ export async function getJobOperationProcedure(
   };
 }
 
+// Render/display metadata for 3D model slides: glbPath when the assembler service
+// has converted a STEP source (fast to load), modelPath as the raw fallback the
+// viewer parses client-side, thumbnailPath for the carousel.
+export async function getModelUploadsByIds(
+  client: SupabaseClient<Database>,
+  ids: string[]
+) {
+  return client
+    .from("modelUpload")
+    .select("id, name, modelPath, thumbnailPath, glbPath, processingStatus")
+    .in("id", ids);
+}
+
+// Step-aware 3D playback for the assembly view: when the operation is linked to a
+// (synced) assembly instruction whose model has converted artifacts, return the
+// GLB + graph paths and the instruction's animated steps. The view maps the
+// operator's current BOP step to its instruction step via the
+// assemblyInstructionStepId provenance marker and drives the AssemblyPlayer to it.
+// Null when there's no link or no converted artifacts (the static slides remain).
+export async function getAssemblyPlaybackByOperationId(
+  client: SupabaseClient<Database>,
+  operationId: string
+) {
+  const operation = await client
+    .from("jobOperation")
+    .select("assemblyInstructionId")
+    .eq("id", operationId)
+    .single();
+  const instructionId = operation.data?.assemblyInstructionId;
+  if (!instructionId) return null;
+
+  const instruction = await client
+    .from("assemblyInstruction")
+    .select("id, modelUpload(glbPath, graphPath)")
+    .eq("id", instructionId)
+    .single();
+  const model = instruction.data?.modelUpload as {
+    glbPath: string | null;
+    graphPath: string | null;
+  } | null;
+  if (!model?.glbPath || !model?.graphPath) return null;
+
+  const steps = await client
+    .from("assemblyInstructionStep")
+    .select(
+      "id, title, instructionText, componentNodeIds, motion, camera, fastener, durationSeconds, warnings"
+    )
+    .eq("assemblyInstructionId", instructionId)
+    .order("sortOrder", { ascending: true });
+
+  if (!steps.data || steps.data.length === 0) return null;
+  return {
+    glbPath: model.glbPath,
+    graphPath: model.graphPath,
+    steps: steps.data
+  };
+}
+
 export async function getJobAttributesByOperationId(
   client: SupabaseClient<Database>,
   operationId: string

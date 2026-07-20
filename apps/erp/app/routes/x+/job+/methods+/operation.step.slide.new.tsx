@@ -24,19 +24,29 @@ export async function action({ request }: ActionFunctionArgs) {
 
   // Same route handles create (upload) and edit (caption/size/annotations): an `id` means
   // update the existing slide, otherwise insert. On update we send ONLY the fields actually
-  // submitted — upsert runs sanitize() (undefined → dropped), so a caption-only save never
-  // wipes size/annotations. stepId (a jobOperationStep id) and imagePath are always present.
-  const { id, stepId, imagePath, caption, sortOrder, size, annotations } =
-    validation.data;
+  // submitted — upsert runs sanitize() (undefined → null), so a caption-only save never
+  // wipes size/annotations. stepId (a jobOperationStep id) is always present; the slide's
+  // content is imagePath (image slide) XOR modelUploadId (3D model slide).
+  const {
+    id,
+    stepId,
+    imagePath,
+    modelUploadId,
+    caption,
+    sortOrder,
+    size,
+    annotations
+  } = validation.data;
   const upsert = await upsertJobOperationStepSlide(
     client,
     id
       ? {
           id,
           stepId,
-          imagePath,
           updatedBy: userId,
           updatedAt: new Date().toISOString(),
+          ...(imagePath !== undefined ? { imagePath } : {}),
+          ...(modelUploadId !== undefined ? { modelUploadId } : {}),
           ...(caption !== undefined ? { caption } : {}),
           ...(sortOrder !== undefined ? { sortOrder } : {}),
           ...(size !== undefined ? { size } : {}),
@@ -45,6 +55,7 @@ export async function action({ request }: ActionFunctionArgs) {
       : {
           stepId,
           imagePath,
+          modelUploadId,
           caption,
           sortOrder,
           size,

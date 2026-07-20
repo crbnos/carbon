@@ -43,18 +43,28 @@ export async function action({ request }: ActionFunctionArgs) {
   //
   // On update we send ONLY the fields that were actually submitted: upsert runs sanitize(),
   // which turns any `undefined` into `null`, so including an omitted optional field (e.g. on
-  // a caption-only save) would wipe size/annotations. stepId/imagePath are always present.
-  const { id, stepId, imagePath, caption, sortOrder, size, annotations } =
-    validation.data;
+  // a caption-only save) would wipe size/annotations. stepId is always present; the slide's
+  // content is imagePath (image slide) XOR modelUploadId (3D model slide).
+  const {
+    id,
+    stepId,
+    imagePath,
+    modelUploadId,
+    caption,
+    sortOrder,
+    size,
+    annotations
+  } = validation.data;
   const upsert = await upsertMethodOperationStepSlide(
     client,
     id
       ? {
           id,
           stepId,
-          imagePath,
           updatedBy: userId,
           updatedAt: new Date().toISOString(),
+          ...(imagePath !== undefined ? { imagePath } : {}),
+          ...(modelUploadId !== undefined ? { modelUploadId } : {}),
           ...(caption !== undefined ? { caption } : {}),
           ...(sortOrder !== undefined ? { sortOrder } : {}),
           ...(size !== undefined ? { size } : {}),
@@ -63,6 +73,7 @@ export async function action({ request }: ActionFunctionArgs) {
       : {
           stepId,
           imagePath,
+          modelUploadId,
           caption,
           sortOrder,
           size,

@@ -8,6 +8,7 @@ import {
   BottomSheetBody,
   BottomSheetContent,
   Button,
+  ClientOnly,
   cn,
   DropdownMenu,
   DropdownMenuContent,
@@ -26,6 +27,7 @@ import {
   ModelViewer,
   Separator,
   SidebarTrigger,
+  Spinner,
   Status,
   TruncatedTooltipText,
   useDisclosure,
@@ -34,10 +36,19 @@ import {
   useRealtimeChannel,
   useRouteData
 } from "@carbon/react";
+import type { Json } from "@carbon/database";
 import { formatDurationMilliseconds } from "@carbon/utils";
+import type {
+  AssemblyStep,
+  CameraPose,
+  Fastener,
+  Motion
+} from "@carbon/viewer";
+import { AssemblyPlayer } from "@carbon/viewer";
 import { getLocalTimeZone } from "@internationalized/date";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  LuBox,
   LuCheck,
   LuCircle,
   LuCircleCheck,
@@ -110,10 +121,24 @@ type SlideAnnotation = {
 
 type Slide = {
   id: string;
-  imagePath: string;
+  // A slide is image XOR model: exactly one of imagePath / modelUploadId is set.
+  imagePath: string | null;
+  modelUploadId?: string | null;
   caption?: string | null;
   sortOrder?: number | null;
   annotations?: SlideAnnotation[] | null;
+};
+
+// Render metadata for a 3D model slide (resolved by the loader from modelUpload).
+// glbPath is the assembler-converted artifact (fast to load); modelPath is the raw
+// upload the viewer parses client-side when no conversion exists (yet).
+type SlideModel = {
+  id: string;
+  name: string | null;
+  modelPath: string | null;
+  thumbnailPath: string | null;
+  glbPath: string | null;
+  processingStatus?: string | null;
 };
 
 type Step = {
@@ -126,9 +151,54 @@ type Step = {
   minValue?: number | null;
   maxValue?: number | null;
   listValues?: string[] | null;
+  // Assembly → BOP sync provenance: the assemblyInstructionStep this step was
+  // synced from. Maps the operator's current step to the animated 3D playback.
+  assemblyInstructionStepId?: string | null;
   jobOperationStepRecord?: StepRecord[];
   jobOperationStepSlide?: Slide[];
 };
+
+// The linked instruction's animated steps + converted artifacts (loader-resolved
+// when the operation carries an assemblyInstructionId and the model is converted).
+type AssemblyPlayback = {
+  glbPath: string;
+  graphPath: string;
+  steps: {
+    id: string;
+    title: string | null;
+    instructionText: string | null;
+    componentNodeIds: string[] | null;
+    motion: Json;
+    camera: Json | null;
+    fastener: Json | null;
+    durationSeconds: number | null;
+    warnings: Json | null;
+  }[];
+};
+
+const playerMotionTypes = ["linear", "L", "helix", "path", "none"];
+
+// DB row → @carbon/viewer AssemblyStep (mirrors JobOperation/components/Assembly.tsx).
+function toViewerStep(step: AssemblyPlayback["steps"][number]): AssemblyStep {
+  const motion = step.motion as Motion | null;
+  const warnings = step.warnings as { flagged?: boolean } | null;
+  return {
+    id: step.id,
+    title: step.title,
+    instructionText: step.instructionText,
+    componentNodeIds: step.componentNodeIds ?? [],
+    motion:
+      motion &&
+      typeof motion === "object" &&
+      playerMotionTypes.includes(motion.type)
+        ? motion
+        : { type: "none" },
+    camera: (step.camera as CameraPose | null) ?? null,
+    fastener: (step.fastener as Fastener | null) ?? null,
+    durationSeconds: step.durationSeconds,
+    flagged: warnings?.flagged === true ? true : undefined
+  };
+}
 
 type ProductionEvent = {
   id: string;
@@ -202,6 +272,8 @@ type Props = {
   jobId?: string | null;
   canOverrideComplete?: boolean;
   modelPath?: string | null;
+  slideModels?: Record<string, SlideModel> | null;
+  assemblyPlayback?: AssemblyPlayback | null;
 };
 
 // Real Carbon item types, in display order. Fasteners is NOT a Carbon concept.
@@ -388,7 +460,9 @@ export function AssemblyView({
   kanban,
   jobId,
   canOverrideComplete = false,
-  modelPath
+  modelPath,
+  slideModels,
+  assemblyPlayback
 }: Props) {
   const user = useUser();
   const mode = useMode();
@@ -412,7 +486,9 @@ export function AssemblyView({
   const imageViewer = useDisclosure();
   // Which reference image fills the main panel: a step photo (index) or the
   // finished-product image ("finished").
-  const [selected, setSelected] = useState<number | "finished">("finished");
+  const [selected, setSelected] = useState<number | "finished" | "playback">(
+    "finished"
+  );
   // Operator toggle for the reference-image annotation pins (always-on vs tap-to-hide).
   const [showPins, setShowPins] = useState(true);
   // Steps-bar filter: which steps the segmented bar shows for the current unit.
@@ -646,12 +722,55 @@ export function AssemblyView({
   const stepSlides = (step?.jobOperationStepSlide ?? [])
     .slice()
     .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
-  const stepImages = stepSlides.map((s) => getPrivateUrl(s.imagePath));
+  // Per-slide media: an image slide renders as a picture (with pins); a 3D model
+  // slide renders in the ModelViewer — preferring the assembler-converted GLB and
+  // falling back to the raw uploaded model, parsed client-side.
+  const slideMedia = stepSlides.map((slide) => {
+    if (slide.modelUploadId) {
+      const model = slideModels?.[slide.modelUploadId] ?? null;
+      const modelFile = model?.glbPath ?? model?.modelPath ?? null;
+      return {
+        kind: "model" as const,
+        url: modelFile ? getPrivateUrl(modelFile) : null,
+        thumbnail: model?.thumbnailPath
+          ? getPrivateUrl(model.thumbnailPath)
+          : null
+      };
+    }
+    return {
+      kind: "image" as const,
+      url: slide.imagePath ? getPrivateUrl(slide.imagePath) : null,
+      thumbnail: slide.imagePath ? getPrivateUrl(slide.imagePath) : null
+    };
+  });
   const assemblyImage = thumbnailPath ? getPrivateUrl(thumbnailPath) : null;
+  const selectedMedia =
+    typeof selected === "number" ? (slideMedia[selected] ?? null) : null;
+  const selectedModelUrl =
+    selectedMedia?.kind === "model" ? selectedMedia.url : null;
   const mainImage =
     selected === "finished"
       ? assemblyImage
-      : (stepImages[selected] ?? assemblyImage);
+      : selectedMedia?.kind === "image"
+        ? (selectedMedia.url ?? assemblyImage)
+        : assemblyImage;
+
+  // Step-aware 3D playback: when this BOP step was synced from an assembly
+  // instruction (assemblyInstructionStepId marker) and the instruction's model
+  // has converted artifacts, drive the animated player to exactly this step —
+  // parts installed so far, the incoming part's motion, the planner's camera.
+  const viewerSteps = useMemo(
+    () => (assemblyPlayback?.steps ?? []).map(toViewerStep),
+    [assemblyPlayback]
+  );
+  const playbackIndex = useMemo(() => {
+    if (!assemblyPlayback || !step?.assemblyInstructionStepId) return null;
+    const index = assemblyPlayback.steps.findIndex(
+      (playbackStep) => playbackStep.id === step.assemblyInstructionStepId
+    );
+    return index >= 0 ? index : null;
+  }, [assemblyPlayback, step]);
+  const playbackAvailable = playbackIndex !== null && viewerSteps.length > 0;
   const selectedCaption =
     typeof selected === "number"
       ? (stepSlides[selected]?.caption ?? null)
@@ -677,13 +796,15 @@ export function AssemblyView({
     pinSeqByToolId.set(pin.toolId, seq);
   });
 
-  // On step change, default the main panel to the step's first slide so reference art
-  // shows immediately; only fall back to the finished-assembly image when the step has
-  // no slides.
+  // On step change, default the main panel to the animated step playback when this
+  // step maps to an instruction step; otherwise the step's first slide, and only
+  // fall back to the finished-assembly image when the step has neither.
   // biome-ignore lint/correctness/useExhaustiveDependencies: keyed off the current step
   useEffect(() => {
-    setSelected(stepSlides.length > 0 ? 0 : "finished");
-  }, [currentStep, stepSlides.length]);
+    setSelected(
+      playbackAvailable ? "playback" : stepSlides.length > 0 ? 0 : "finished"
+    );
+  }, [currentStep, stepSlides.length, playbackAvailable]);
 
   function goToStep(n: number) {
     setSearchParams(
@@ -1082,7 +1203,55 @@ export function AssemblyView({
           ) : (
             <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
               <div className="flex shrink-0 flex-col gap-2 border-b border-border p-4">
-                {mainImage ? (
+                {selected === "playback" &&
+                playbackAvailable &&
+                assemblyPlayback ? (
+                  // Animated instruction playback pinned to the operator's current
+                  // step. The player owns orbit/zoom; replay via the step's motion.
+                  <div className="relative mx-auto h-[55vh] max-h-[65vh] w-full overflow-hidden rounded-lg border border-border bg-muted/40">
+                    <ClientOnly
+                      fallback={
+                        <div className="flex h-full w-full items-center justify-center">
+                          <Spinner className="h-8 w-8" />
+                        </div>
+                      }
+                    >
+                      {() => (
+                        <AssemblyPlayer
+                          glbUrl={getPrivateUrl(assemblyPlayback.glbPath)}
+                          graphUrl={getPrivateUrl(assemblyPlayback.graphPath)}
+                          steps={viewerSteps}
+                          activeStepIndex={playbackIndex ?? 0}
+                          playStepNonce={currentStep}
+                          autoPlay
+                          readOnly
+                          mode={mode}
+                          className="h-full"
+                        />
+                      )}
+                    </ClientOnly>
+                  </div>
+                ) : selectedMedia?.kind === "model" ? (
+                  // 3D model slide: the interactive viewer replaces the picture. The
+                  // viewer has its own orbit/zoom controls, so no fullscreen overlay
+                  // button and no annotation pins (pins are image-only).
+                  <div className="relative mx-auto h-[55vh] max-h-[65vh] w-full overflow-hidden rounded-lg border border-border bg-muted/40">
+                    {selectedModelUrl ? (
+                      <ModelViewer
+                        file={null}
+                        key={`slide-model-${selectedModelUrl}`}
+                        url={selectedModelUrl}
+                        mode={mode}
+                        className="h-full w-full rounded-lg"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-muted-foreground">
+                        <LuBox className="size-8" />
+                        <span className="text-xs">Model unavailable</span>
+                      </div>
+                    )}
+                  </div>
+                ) : mainImage ? (
                   // Both step slides and the finished-item image fill the panel (large by
                   // default). Height follows the image's own aspect ratio (capped at 65vh);
                   // the details column scrolls if it overflows.
@@ -1144,29 +1313,61 @@ export function AssemblyView({
                   </p>
                 )}
 
-                {/* Slots = this step's slides · "Completed item" = the finished product. */}
+                {/* Slots = animated step playback (when synced) · this step's slides ·
+                    "Completed item" = the finished product. */}
                 <div className="flex shrink-0 items-center gap-2">
-                  {stepSlides.map((slide, i) => (
+                  {playbackAvailable && (
                     <button
-                      key={slide.id}
                       type="button"
-                      aria-label={slide.caption || `Slide ${i + 1}`}
-                      title={slide.caption ?? undefined}
-                      onClick={() => setSelected(i)}
+                      aria-label="Animated assembly step"
+                      title="Animated assembly step"
+                      onClick={() => setSelected("playback")}
                       className={cn(
-                        "flex h-12 w-16 shrink-0 items-center justify-center overflow-hidden rounded-md border-2 bg-muted/40",
-                        selected === i
+                        "relative flex h-12 w-16 shrink-0 items-center justify-center overflow-hidden rounded-md border-2 bg-muted/40",
+                        selected === "playback"
                           ? "border-foreground"
                           : "border-transparent"
                       )}
                     >
-                      <img
-                        src={stepImages[i]}
-                        alt=""
-                        className="h-full w-full object-contain"
-                      />
+                      <LuPlay className="size-5 text-muted-foreground" />
+                      <span className="pointer-events-none absolute bottom-0.5 right-0.5 rounded bg-background/80 px-0.5 text-[8px] font-semibold text-muted-foreground">
+                        3D
+                      </span>
                     </button>
-                  ))}
+                  )}
+                  {stepSlides.map((slide, i) => {
+                    const media = slideMedia[i];
+                    return (
+                      <button
+                        key={slide.id}
+                        type="button"
+                        aria-label={slide.caption || `Slide ${i + 1}`}
+                        title={slide.caption ?? undefined}
+                        onClick={() => setSelected(i)}
+                        className={cn(
+                          "relative flex h-12 w-16 shrink-0 items-center justify-center overflow-hidden rounded-md border-2 bg-muted/40",
+                          selected === i
+                            ? "border-foreground"
+                            : "border-transparent"
+                        )}
+                      >
+                        {media?.thumbnail ? (
+                          <img
+                            src={media.thumbnail}
+                            alt=""
+                            className="h-full w-full object-contain"
+                          />
+                        ) : (
+                          <LuBox className="size-5 text-muted-foreground" />
+                        )}
+                        {media?.kind === "model" && (
+                          <span className="pointer-events-none absolute bottom-0.5 right-0.5 rounded bg-background/80 px-0.5 text-[8px] font-semibold text-muted-foreground">
+                            3D
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
                   <div className="flex-1" />
                   <Button
                     variant={selected === "finished" ? "primary" : "outline"}

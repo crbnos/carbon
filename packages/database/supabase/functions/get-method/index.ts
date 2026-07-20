@@ -70,7 +70,9 @@ async function copyStepSlides(
 
   const { data: srcSlides } = await client
     .from(sourceTable)
-    .select("stepId, imagePath, caption, sortOrder, size, annotations")
+    .select(
+      "stepId, imagePath, modelUploadId, caption, sortOrder, size, annotations",
+    )
     .in("stepId", sourceStepIds);
 
   const inserts = (srcSlides ?? []).flatMap((sl) => {
@@ -80,6 +82,7 @@ async function copyStepSlides(
     return [{
       stepId: newStepId,
       imagePath: sl.imagePath,
+      modelUploadId: sl.modelUploadId,
       caption: sl.caption,
       sortOrder: sl.sortOrder,
       size: sl.size,
@@ -726,6 +729,9 @@ serve(async (req: Request) => {
                 operationOrder,
                 operationType,
                 operationKind: op.operationKind,
+                // Carry the Assembly → BOP sync link so the MES can drive the
+                // animated instruction player on jobs made from a synced method.
+                assemblyInstructionId: op.assemblyInstructionId,
                 operationSupplierProcessId: op.operationSupplierProcessId,
                 ...getOutsideOperationRates(
                   processId,
@@ -1495,6 +1501,9 @@ serve(async (req: Request) => {
                 operationOrder: op.operationOrder,
                 operationType: op.operationType,
                 operationKind: op.operationKind,
+                // Carry the Assembly → BOP sync link so the MES can drive the
+                // animated instruction player on jobs made from a synced method.
+                assemblyInstructionId: op.assemblyInstructionId,
                 operationUnitCost: op.operationUnitCost ?? 0,
                 operationSupplierProcessId: op.operationSupplierProcessId,
                 ...getOutsideOperationRates(
@@ -4951,6 +4960,9 @@ serve(async (req: Request) => {
                 operationOrder: op.operationOrder,
                 operationType: op.operationType,
                 operationKind: op.operationKind,
+                // Carry the Assembly → BOP sync link so the MES can drive the
+                // animated instruction player on jobs made from a synced method.
+                assemblyInstructionId: op.assemblyInstructionId,
                 operationSupplierProcessId: op.operationSupplierProcessId,
                 operationMinimumCost: op.operationMinimumCost ?? 0,
                 operationLeadTime: op.operationLeadTime ?? 0,
