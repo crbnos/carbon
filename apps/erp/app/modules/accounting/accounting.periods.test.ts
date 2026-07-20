@@ -717,7 +717,8 @@ describe("postJournalEntry — period gate wiring", () => {
       { data: { id: "P2", status: "Active", closeStatus: "Closed" } }
     ]);
 
-    const result = await postJournalEntry(client, "J1", "U1");
+    const { db } = makeKyselyRecorder();
+    const result = await postJournalEntry(client, db, "J1", "U1");
 
     expect(result.data).toBeNull();
     expect(result.error?.message).toMatch(/closed/i);
@@ -730,7 +731,8 @@ describe("postJournalEntry — period gate wiring", () => {
       { data: { id: "J1" }, error: null }
     ]);
 
-    const result = await postJournalEntry(client, "J1", "U1");
+    const { db } = makeKyselyRecorder();
+    const result = await postJournalEntry(client, db, "J1", "U1");
 
     expect(result.error).toBeNull();
     expect(result.data).toEqual({ id: "J1" });
