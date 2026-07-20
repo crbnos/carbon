@@ -185,8 +185,13 @@ impl JobStore {
         }
     }
 
-    /// Publish a terminal `done` pointer directly (for actions with no artifact
-    /// to late-mint — an inline result or a cache hit whose artifact exists).
+    /// Publish a terminal `done` pointer. Deliberately does NOT deliver the
+    /// completion callback: this runs on the poll path too (a late-mint
+    /// `try_finalize` inside GET /v1/jobs), where awaiting callback retries
+    /// would blow the poll's own timeout — and the poller already receives the
+    /// result synchronously. Owners that need the notification send it
+    /// explicitly: `finish()` on the direct-upload path, the plan action's
+    /// inline/cache-hit publishes, and the worker/CLI after run_to_completion.
     pub async fn set_done(&self, id: &str, done: Done) {
         if let Some(mut rec) = self.read(id).await {
             if rec.status == "canceled" {
@@ -198,7 +203,6 @@ impl JobStore {
             rec.error = None;
             self.write(id, &rec).await;
         }
-        self.send_callback(id).await;
         self.wake(id);
     }
 
@@ -377,12 +381,14 @@ impl JobStore {
         self.set_status(id, "uploading").await;
         let urls = self.read(id).await.and_then(|r| r.upload_urls);
         if let Some(urls) = urls {
-            // Uploaded => try_finalize -> set_done, which delivers the completion
-            // callback inline (the calling task owns the invocation lifetime on
-            // the server path; the Lambda worker re-checks after
-            // run_to_completion). Retry/NotPending: submit-time URLs failed —
-            // a late-mint poll retries with fresh ones.
-            let _ = self.try_finalize(id, &urls).await;
+            if let Finalize::Uploaded = self.try_finalize(id, &urls).await {
+                // Terminal — deliver the callback from the action task, which
+                // owns the process lifetime on the server path (the Lambda
+                // worker re-sends after run_to_completion regardless).
+                // Retry/NotPending: submit-time URLs failed; a late-mint poll
+                // retries with fresh ones.
+                self.send_callback(id).await;
+            }
         }
         self.wake(id);
     }

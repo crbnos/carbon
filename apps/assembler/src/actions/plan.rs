@@ -53,6 +53,7 @@ pub fn spawn(state: &AppState, job_id: &str, req: PlanReq) {
                 let _ = tokio::fs::remove_file(&tmp).await;
                 eprintln!("[{job_id}] plan cache hit");
                 jobs.set_done(&job_id, done).await;
+                jobs.send_callback(&job_id).await;
                 return;
             }
         }
@@ -139,6 +140,7 @@ pub fn spawn(state: &AppState, job_id: &str, req: PlanReq) {
                             stats,
                         };
                         jobs.set_done(&job_id, done).await;
+                jobs.send_callback(&job_id).await;
                     }
                 }
             }
