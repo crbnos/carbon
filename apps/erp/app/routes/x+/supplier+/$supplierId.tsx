@@ -15,12 +15,14 @@ import {
 import SupplierHeader from "~/modules/purchasing/ui/Supplier/SupplierHeader";
 import SupplierSidebar from "~/modules/purchasing/ui/Supplier/SupplierSidebar";
 import { getTagsList } from "~/modules/shared";
-import type { Handle } from "~/utils/handle";
+import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
-  breadcrumb: msg`Suppliers`,
-  to: path.to.suppliers
+  breadcrumb: detailBreadcrumb(
+    { breadcrumb: msg`Suppliers`, to: path.to.suppliers },
+    (data) => data?.supplier?.name
+  )
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

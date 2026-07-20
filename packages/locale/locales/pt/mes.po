@@ -610,6 +610,9 @@ msgstr "Sem Impacto"
 msgid "No maintenance scheduled for today"
 msgstr "Nenhuma manutenção programada para hoje"
 
+msgid "No matches. Type to create one."
+msgstr "Nenhuma correspondência. Digite para criar uma."
+
 msgid "No materials"
 msgstr "Nenhum material"
 

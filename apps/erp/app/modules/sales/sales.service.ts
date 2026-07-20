@@ -5538,6 +5538,12 @@ export async function upsertSalesOrderLine(
     .insert([
       {
         ...salesOrderLine,
+        // methodType is NOT NULL DEFAULT 'Pull from Inventory', but the validator
+        // legitimately omits it for Fixed Asset / Comment lines. Because the key is
+        // still present (as undefined) in the spread, PostgREST lists the column and
+        // inserts NULL rather than applying the DB default — a not-null violation.
+        // Supply the column default explicitly so those line types insert cleanly.
+        methodType: salesOrderLine.methodType ?? "Pull from Inventory",
         setupPrice: salesOrderLine.setupPrice ?? 0,
         unitPrice: salesOrderLine.unitPrice ?? 0,
         shippingCost: salesOrderLine.shippingCost ?? 0,

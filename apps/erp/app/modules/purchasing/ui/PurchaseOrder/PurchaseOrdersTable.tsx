@@ -1,4 +1,5 @@
 import {
+  BarProgress,
   Checkbox,
   DropdownMenuContent,
   DropdownMenuGroup,
@@ -23,6 +24,7 @@ import {
   LuCreditCard,
   LuDollarSign,
   LuHandCoins,
+  LuPackageCheck,
   LuPencil,
   LuQrCode,
   LuStar,
@@ -143,6 +145,29 @@ const PurchaseOrdersTable = memo(
             },
             pluralHeader: t`Statuses`,
             icon: <LuStar />
+          }
+        },
+        {
+          id: "received",
+          header: t`Received`,
+          cell: ({ row }) => {
+            const receivable = row.original.receivableQuantity ?? 0;
+            const received = row.original.receivedQuantity ?? 0;
+            if (receivable <= 0) return null;
+            return (
+              <BarProgress
+                progress={(received / receivable) * 100}
+                value={`${received}/${receivable}`}
+              />
+            );
+          },
+          meta: {
+            filterHeader: t`Received`,
+            icon: <LuPackageCheck />,
+            exportValue: (row: PurchaseOrder) =>
+              (row.receivableQuantity ?? 0) > 0
+                ? `${row.receivedQuantity ?? 0}/${row.receivableQuantity}`
+                : null
           }
         },
         {

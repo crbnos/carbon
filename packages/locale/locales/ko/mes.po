@@ -610,6 +610,9 @@ msgstr "영향 없음"
 msgid "No maintenance scheduled for today"
 msgstr "오늘 예정된 유지보수가 없습니다"
 
+msgid "No matches. Type to create one."
+msgstr "일치하는 항목이 없습니다. 입력하여 새로 만드세요."
+
 msgid "No materials"
 msgstr "자재 없음"
 

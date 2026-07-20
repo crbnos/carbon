@@ -14,6 +14,10 @@ import {
 } from "../shared/purchase-cost-adjustment.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
 import {
+  getBillableQuantity,
+  getRemainingQuantityToInvoice,
+} from "../shared/short-close.ts";
+import {
   getDefaultPostingGroup,
   resolveInventoryAccount,
 } from "../shared/get-posting-group.ts";
@@ -154,9 +158,9 @@ serve(async (req: Request) => {
       const purchaseOrderLinesVoid =
         affectedPurchaseOrderIdsVoid.length > 0
           ? await client
-              .from("purchaseOrderLine")
-              .select("*")
-              .in("purchaseOrderId", affectedPurchaseOrderIdsVoid)
+            .from("purchaseOrderLine")
+            .select("*")
+            .in("purchaseOrderId", affectedPurchaseOrderIdsVoid)
           : { data: [] as Database["public"]["Tables"]["purchaseOrderLine"]["Row"][], error: null };
 
       if (purchaseOrderLinesVoid.error)
@@ -192,11 +196,13 @@ serve(async (req: Request) => {
           const newQuantityInvoiced = Math.max(
             0,
             (purchaseOrderLine.quantityInvoiced ?? 0) -
-              invoicedQuantityInPurchaseUnit
+            invoicedQuantityInPurchaseUnit
           );
 
+          // Short-close aware: compare against the billable (received)
+          // quantity for short-closed lines, not the ordered quantity.
           const invoicedComplete =
-            newQuantityInvoiced >= purchaseOrderLine.purchaseQuantity;
+            newQuantityInvoiced >= getBillableQuantity(purchaseOrderLine);
 
           acc[invoiceLine.purchaseOrderLineId] = {
             quantityInvoiced: newQuantityInvoiced,
@@ -253,7 +259,7 @@ serve(async (req: Request) => {
         Database["public"]["Tables"]["journalLine"]["Insert"],
         "journalId"
       >[] = accountingEnabled
-        ? originalJournalLines.data.map((entry) => ({
+          ? originalJournalLines.data.map((entry) => ({
             accountId: entry.accountId,
             accrual: entry.accrual,
             description: `VOID: ${entry.description}`,
@@ -266,7 +272,7 @@ serve(async (req: Request) => {
             journalLineReference: entry.journalLineReference,
             companyId,
           }))
-        : [];
+          : [];
 
       const reversingItemLedger: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
         originalItemLedger.data.map((entry) => ({
@@ -280,8 +286,8 @@ serve(async (req: Request) => {
             entry.entryType === "Positive Adjmt."
               ? "Negative Adjmt."
               : entry.entryType === "Negative Adjmt."
-              ? "Positive Adjmt."
-              : entry.entryType,
+                ? "Positive Adjmt."
+                : entry.entryType,
           documentType: entry.documentType,
           documentId: entry.documentId,
           externalDocumentId: entry.externalDocumentId,
@@ -714,11 +720,12 @@ serve(async (req: Request) => {
         const newQuantityInvoiced =
           (purchaseOrderLine.quantityInvoiced ?? 0) + invoiceLine.quantity;
 
+        // Short-close aware: a line whose receiving was stopped is fully
+        // invoiced once the received (not ordered) quantity is billed.
         const invoicedComplete =
           purchaseOrderLine.invoicedComplete ||
           invoiceLine.quantity >=
-            (purchaseOrderLine.quantityToInvoice ??
-              purchaseOrderLine.purchaseQuantity);
+          getRemainingQuantityToInvoice(purchaseOrderLine);
 
         return {
           ...acc,
@@ -803,10 +810,10 @@ serve(async (req: Request) => {
         invoiceLine.invoiceLineType === "Comment"
           ? 0
           : totalLinesCost === 0
-          ? postableLineCount === 0
-            ? 0
-            : 1 / postableLineCount
-          : totalLineCost / totalLinesCost;
+            ? postableLineCount === 0
+              ? 0
+              : 1 / postableLineCount
+            : totalLineCost / totalLinesCost;
       const lineWeightedShippingCost =
         shippingCost * lineCostPercentageOfTotalCost;
       // Line cost and weighted shipping are both base currency here; the
@@ -977,8 +984,8 @@ serve(async (req: Request) => {
               // determine the journal lines that should be reversed
               const existingJournalLines = invoiceLine.purchaseOrderLineId
                 ? journalLinesByPurchaseOrderLine[
-                    invoiceLine.purchaseOrderLineId
-                  ] ?? []
+                invoiceLine.purchaseOrderLineId
+                ] ?? []
                 : [];
 
               let previousJournalId: number | null = null;
@@ -1046,8 +1053,8 @@ serve(async (req: Request) => {
                     const quantityAvailableToReverseForEntry =
                       quantityAlreadyReversed > quantityCounted
                         ? entry[0].quantity +
-                          quantityCounted -
-                          quantityAlreadyReversed
+                        quantityCounted -
+                        quantityAlreadyReversed
                         : entry[0].quantity;
 
                     const quantityRequiredToReverse =
@@ -1143,15 +1150,15 @@ serve(async (req: Request) => {
                   const receiptLayers =
                     receiptIds.length > 0
                       ? await client
-                          .from("costLedger")
-                          .select("id, quantity, remainingQuantity")
-                          .eq("documentType", "Purchase Receipt")
-                          .in("documentId", receiptIds)
-                          .eq("itemId", invoiceLine.itemId!)
-                          .eq("adjustment", false)
-                          .eq("companyId", companyId)
-                          .order("postingDate", { ascending: true })
-                          .order("createdAt", { ascending: true })
+                        .from("costLedger")
+                        .select("id, quantity, remainingQuantity")
+                        .eq("documentType", "Purchase Receipt")
+                        .in("documentId", receiptIds)
+                        .eq("itemId", invoiceLine.itemId!)
+                        .eq("adjustment", false)
+                        .eq("companyId", companyId)
+                        .order("postingDate", { ascending: true })
+                        .order("createdAt", { ascending: true })
                       : { data: [], error: null };
                   if (receiptLayers.error) {
                     throw new Error("Failed to fetch receipt cost layers");
@@ -1369,8 +1376,8 @@ serve(async (req: Request) => {
                     externalDocumentId: purchaseInvoice.data?.supplierReference,
                     documentLineReference: invoiceLine.purchaseOrderLineId
                       ? journalReference.to.purchaseInvoice(
-                          invoiceLine.purchaseOrderLineId
-                        )
+                        invoiceLine.purchaseOrderLineId
+                      )
                       : null,
                     journalLineReference,
                     companyId,
@@ -1389,8 +1396,8 @@ serve(async (req: Request) => {
                     externalDocumentId: purchaseInvoice.data?.supplierReference,
                     documentLineReference: invoiceLine.purchaseOrderLineId
                       ? journalReference.to.purchaseInvoice(
-                          invoiceLine.purchaseOrderLineId
-                        )
+                        invoiceLine.purchaseOrderLineId
+                      )
                       : null,
                     journalLineReference,
                     companyId,
@@ -1409,8 +1416,8 @@ serve(async (req: Request) => {
                   externalDocumentId: purchaseInvoice.data?.supplierReference,
                   documentLineReference: invoiceLine.purchaseOrderLineId
                     ? journalReference.to.purchaseInvoice(
-                        invoiceLine.purchaseOrderLineId
-                      )
+                      invoiceLine.purchaseOrderLineId
+                    )
                     : null,
                   journalLineReference,
                   companyId,
@@ -1470,7 +1477,7 @@ serve(async (req: Request) => {
               // Receipt was already posted — reverse the GR/IR accrual
               const existingJournalLines =
                 journalLinesByPurchaseOrderLine[
-                  invoiceLine.purchaseOrderLineId
+                invoiceLine.purchaseOrderLineId
                 ] ?? [];
 
               let receiptCost = 0;
@@ -1595,8 +1602,8 @@ serve(async (req: Request) => {
                 externalDocumentId: purchaseInvoice.data?.supplierReference,
                 documentLineReference: invoiceLine.purchaseOrderLineId
                   ? journalReference.to.purchaseInvoice(
-                      invoiceLine.purchaseOrderLineId
-                    )
+                    invoiceLine.purchaseOrderLineId
+                  )
                   : null,
                 journalLineReference,
                 companyId,
@@ -1612,8 +1619,8 @@ serve(async (req: Request) => {
                 externalDocumentId: purchaseInvoice.data?.supplierReference,
                 documentLineReference: invoiceLine.purchaseOrderLineId
                   ? journalReference.to.purchaseInvoice(
-                      invoiceLine.purchaseOrderLineId
-                    )
+                    invoiceLine.purchaseOrderLineId
+                  )
                   : null,
                 journalLineReference,
                 companyId,
@@ -1688,8 +1695,8 @@ serve(async (req: Request) => {
               externalDocumentId: purchaseInvoice.data?.supplierReference,
               documentLineReference: invoiceLine.purchaseOrderLineId
                 ? journalReference.to.purchaseInvoice(
-                    invoiceLine.purchaseOrderLineId
-                  )
+                  invoiceLine.purchaseOrderLineId
+                )
                 : null,
               journalLineReference,
               companyId,
@@ -1705,8 +1712,8 @@ serve(async (req: Request) => {
               externalDocumentId: purchaseInvoice.data?.supplierReference,
               documentLineReference: invoiceLine.purchaseOrderLineId
                 ? journalReference.to.purchaseInvoice(
-                    invoiceLine.purchaseOrderLineId
-                  )
+                  invoiceLine.purchaseOrderLineId
+                )
                 : null,
               journalLineReference,
               companyId,

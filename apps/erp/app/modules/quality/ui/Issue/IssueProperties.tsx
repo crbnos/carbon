@@ -18,7 +18,7 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect } from "react";
 import { LuCopy, LuKeySquare, LuLink } from "react-icons/lu";
-import { useFetcher, useParams } from "react-router";
+import { Link, useFetcher, useParams } from "react-router";
 import { z } from "zod";
 import {
   Assignee,
@@ -29,6 +29,8 @@ import { Enumerable } from "~/components/Enumerable";
 import { Tags } from "~/components/Form";
 import CustomFormInlineFields from "~/components/Form/CustomFormInlineFields";
 import { usePermissions, useRouteData } from "~/hooks";
+import type { ChangeOrderStatus as ChangeOrderStatusType } from "~/modules/items";
+import { ChangeOrderStatus } from "~/modules/items/ui/ChangeOrder";
 import type { action } from "~/routes/x+/items+/update";
 import type { ListItem, StorageItem } from "~/types";
 import { path } from "~/utils/path";
@@ -56,7 +58,15 @@ const IssueProperties = () => {
     requiredActions: ListItem[];
     files: Promise<StorageItem[]>;
     tags: { name: string }[];
+    changeOrders: {
+      id: string;
+      changeOrderId: string;
+      name: string;
+      status: ChangeOrderStatusType;
+    }[];
   }>(path.to.issue(id));
+
+  const changeOrders = routeData?.changeOrders ?? [];
 
   const optimisticAssignment = useOptimisticAssignment({
     id: id,
@@ -543,6 +553,28 @@ const IssueProperties = () => {
         tags={routeData?.nonConformance?.tags ?? []}
         onUpdate={onUpdateCustomFields}
       />
+
+      {changeOrders.length > 0 && (
+        <VStack spacing={2}>
+          <h3 className="text-xs text-muted-foreground">
+            <Trans>Change Orders</Trans>
+          </h3>
+          <VStack spacing={1}>
+            {changeOrders.map((co) => (
+              <Link
+                key={co.id}
+                to={path.to.changeOrder(co.id)}
+                className="flex items-center justify-between gap-2 w-full hover:bg-accent/50 rounded-md px-2 -mx-2 py-1 transition-colors"
+              >
+                <span className="text-sm text-primary hover:underline truncate">
+                  {co.changeOrderId}
+                </span>
+                <ChangeOrderStatus status={co.status} />
+              </Link>
+            ))}
+          </VStack>
+        </VStack>
+      )}
     </VStack>
   );
 };

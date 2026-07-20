@@ -1,5 +1,7 @@
+import type { PostgrestError } from "@supabase/supabase-js";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
+import { nonConformancePriority } from "../quality/quality.models";
 import {
   methodItemType,
   methodOperationOrders,
@@ -58,6 +60,90 @@ export const itemReplenishmentSystems = [
   "Make",
   "Buy and Make"
 ] as const;
+
+// Maps an edit of ONE of the three interlocked item-level fields
+// (replenishmentSystem, defaultMethodType, sourcingType) to the columns that must
+// change together on the item, plus the values to mirror down to method materials.
+// Pure — no DB access — so the interlock rule lives in ONE place, shared by the
+// inline item-update route (x+/items+/update.tsx) and the change-order attributes
+// editor. Keeping them in sync via a hand-copied mapping is exactly the drift this
+// avoids.
+export function deriveItemMethodUpdate(
+  field: "replenishmentSystem" | "defaultMethodType" | "sourcingType",
+  value: string
+): {
+  itemUpdate: {
+    replenishmentSystem?: (typeof itemReplenishmentSystems)[number];
+    defaultMethodType?: (typeof methodType)[number];
+    sourcingType?: (typeof sourcingType)[number];
+  };
+  cascade: {
+    sourcingType?: (typeof sourcingType)[number];
+    methodType?: (typeof methodType)[number];
+  };
+} {
+  switch (field) {
+    case "replenishmentSystem": {
+      const replenishmentSystem =
+        value as (typeof itemReplenishmentSystems)[number];
+      // Picking a concrete replenishment system pins the default method type.
+      if (value !== "Buy and Make") {
+        const defaultMethodType: (typeof methodType)[number] =
+          value === "Make"
+            ? "Make to Order"
+            : value === "Buy"
+              ? "Purchase to Order"
+              : "Pull from Inventory";
+        return {
+          itemUpdate: { replenishmentSystem, defaultMethodType },
+          cascade: { methodType: defaultMethodType }
+        };
+      }
+      return { itemUpdate: { replenishmentSystem }, cascade: {} };
+    }
+    case "defaultMethodType": {
+      const defaultMethodType = value as (typeof methodType)[number];
+      // A concrete method type pins the replenishment system to match.
+      if (value !== "Pull from Inventory") {
+        const replenishmentSystem: (typeof itemReplenishmentSystems)[number] =
+          value === "Make to Order"
+            ? "Make"
+            : value === "Purchase to Order"
+              ? "Buy"
+              : "Buy and Make";
+        return {
+          itemUpdate: { defaultMethodType, replenishmentSystem },
+          cascade: { methodType: defaultMethodType }
+        };
+      }
+      return {
+        itemUpdate: { defaultMethodType },
+        cascade: { methodType: defaultMethodType }
+      };
+    }
+    case "sourcingType": {
+      const sourcingTypeValue = value as (typeof sourcingType)[number];
+      // Sourcing drives method type: Drop Ship → Purchase to Order, Ship from
+      // Inventory → Pull from Inventory, Specified → leave method type as-is.
+      const derivedMethodType: (typeof methodType)[number] | undefined =
+        value === "Drop Ship"
+          ? "Purchase to Order"
+          : value === "Ship from Inventory"
+            ? "Pull from Inventory"
+            : undefined;
+      return {
+        itemUpdate: {
+          sourcingType: sourcingTypeValue,
+          ...(derivedMethodType ? { defaultMethodType: derivedMethodType } : {})
+        },
+        cascade: {
+          sourcingType: sourcingTypeValue,
+          methodType: derivedMethodType
+        }
+      };
+    }
+  }
+}
 
 export const shelfLifeModes = [
   "NotManaged",
@@ -583,6 +669,34 @@ export const supersessionModes = [
   "No Stock"
 ] as const;
 
+export type SupersessionMode = (typeof supersessionModes)[number];
+
+// Single source of truth for how each supersession mode is presented — the same
+// color + description is reused everywhere the mode shows up (the item
+// supersession picker, the item lifecycle badge, and the change-order cutover),
+// so they never drift.
+export const supersessionModeMeta: Record<
+  SupersessionMode,
+  { color: "green" | "blue" | "orange" | "red"; description: string }
+> = {
+  "Consume First": {
+    color: "green",
+    description: "Use remaining stock before switching to the successor"
+  },
+  "Prefer New": {
+    color: "blue",
+    description: "Default to the successor; old part as fallback only"
+  },
+  "Stock Only": {
+    color: "orange",
+    description: "Hold a minimum reserve for service; no production use"
+  },
+  "No Stock": {
+    color: "red",
+    description: "Fully obsolete — do not plan or stock"
+  }
+};
+
 export const itemSupersessionValidator = z
   .object({
     itemId: z.string().min(1, { message: "Item ID is required" }),
@@ -847,4 +961,301 @@ export const unitOfMeasureValidator = z.object({
   id: zfd.text(z.string().optional()),
   code: z.string().min(1, { message: "Code is required" }).max(10),
   name: z.string().min(1, { message: "Name is required" }).max(50)
+});
+
+export const itemRevisionStatus = [
+  "Design",
+  "Prototype",
+  "Production",
+  "Obsolete"
+] as const;
+
+// companySettings.plmReleaseControl
+export const plmReleaseControl = ["off", "warn", "enforce"] as const;
+
+// Error shape returned by the change order service functions: either a real
+// Supabase PostgrestError or a hand-built message (sequence/lookup failures that
+// don't originate from a query). One alias so callers get a consistent contract.
+export type ChangeOrderError = PostgrestError | { message: string };
+
+// =============================================================================
+// Change Orders — validators, enums, and the stage state machine.
+//
+// A sub-area of the Items module, modeled on Quality. The header evolves the
+// existing `changeOrder` table. v2: a CO's per-affected-item edits live on a
+// REAL CO-owned Draft make method (no staged mirror tables); the change type
+// drives the release action. Validators here cover the header, affected items +
+// change type, cutover, manual supersession, and freeform actions.
+// =============================================================================
+
+// changeOrder.type — the legacy category enum on the header. Retained (the
+// column still exists); the primary "Category" is `changeOrderTypeId` (a row in
+// the changeOrderType lookup, reseeded to Design improvement / Obsolescence /
+// Cost reduction).
+export const changeOrderType = [
+  "Engineering",
+  "Manufacturing",
+  "Documentation"
+] as const;
+
+// V1 stage flow (forward, one step at a time). Broadcast on Start /
+// Implementation / Done; silent on Draft / Engineering Complete. "Cancelled" is
+// the off-ramp: a CO can be closed from any open stage and reopened to Draft.
+export const changeOrderStatus = [
+  "Draft",
+  "Start",
+  "Engineering Complete",
+  "Implementation",
+  "Done",
+  "Cancelled"
+] as const;
+
+// The forward progress stages only (excludes the "Cancelled" off-ramp). Drives
+// the read-only status-flow progress bar so a cancelled CO doesn't render as a
+// sixth step.
+export const changeOrderStageFlow: (typeof changeOrderStatus)[number][] = [
+  "Draft",
+  "Start",
+  "Engineering Complete",
+  "Implementation",
+  "Done"
+];
+
+export const changeOrderTaskStatus = [
+  "Pending",
+  "In Progress",
+  "Completed",
+  "Skipped"
+] as const;
+
+// v2 per-affected-item change type. Drives the release action + which editing
+// surface is shown. Two axes — is there a predecessor, and same part number?
+//   Version          = new method version on the SAME item (BoM/BoP, no supersession)
+//   Revision         = new revision item, same #, new rev (BoM/BoP + attrs, auto
+//                      old-rev→new-rev supersession)
+//   Replacement Part = new P/N derived from + auto-superseding the affected part
+//                      (BoM/BoP + attrs) — the 1:1 replacement, renamed from the old
+//                      "New Part"
+//   New Part         = net-new part, NO predecessor, NO supersession — introduced by
+//                      the CO (Make or Buy). Used to introduce a part under change
+//                      control, incl. the consolidated "1" in an N→1 assembly BOM
+//                      change.
+// BoM/BoP is editable on ANY change type for a manufactured (non-Buy) draft; only
+// Version's extra editing scope differs (no attributes/docs/cutover surface).
+export const changeOrderChangeTypes = [
+  "Version",
+  "Revision",
+  "Replacement Part",
+  "New Part"
+] as const;
+export type ChangeOrderChangeType = (typeof changeOrderChangeTypes)[number];
+
+// changeOrder.priority reuses quality's nonConformancePriority DB enum.
+export const changeOrderPriority = nonConformancePriority;
+
+// -----------------------------------------------------------------------------
+// Stage state machine (G8 — one place). Forward, single step, plus the Cancel /
+// Reopen off-ramp. This map only encodes the allowed shape of a transition.
+// IMPORTANT: the forward stage is always index 0 — the header's "Advance" action
+// reads `transitions[status][0]`, so "Cancelled" must never be first.
+// -----------------------------------------------------------------------------
+export const changeOrderStatusTransitions: Record<
+  (typeof changeOrderStatus)[number],
+  (typeof changeOrderStatus)[number][]
+> = {
+  Draft: ["Start", "Cancelled"],
+  Start: ["Engineering Complete", "Cancelled"],
+  "Engineering Complete": ["Implementation", "Cancelled"],
+  Implementation: ["Done", "Cancelled"],
+  Done: [],
+  // Reopen a closed CO back to Draft (fully editable). Done stays terminal.
+  Cancelled: ["Draft"]
+};
+
+export function isAllowedChangeOrderTransition(
+  from: string | null | undefined,
+  to: string | null | undefined
+): boolean {
+  if (!from || !to || from === to) return false;
+  const allowed =
+    changeOrderStatusTransitions[from as (typeof changeOrderStatus)[number]];
+  if (!allowed) return false;
+  return (allowed as readonly string[]).includes(to);
+}
+
+// The stages that broadcast a team notification on entry.
+export const changeOrderBroadcastStages: (typeof changeOrderStatus)[number][] =
+  ["Start", "Implementation", "Done"];
+
+// "Open" = every stage before the record is closed at Done. Used by the item
+// open-CO alert and the single-open-CO guard.
+export const changeOrderOpenStatuses: (typeof changeOrderStatus)[number][] = [
+  "Draft",
+  "Start",
+  "Engineering Complete",
+  "Implementation"
+];
+
+// Locked once closed — Done (released, part of the audit trail) or Cancelled
+// (abandoned). Reopen a Cancelled CO to Draft to edit it again.
+export function isChangeOrderLocked(
+  status: string | null | undefined
+): boolean {
+  return status === "Done" || status === "Cancelled";
+}
+
+// Content (reason/description/products/BOM changes/actions) is editable until
+// the CO is closed.
+export function canEditChangeOrder(status: string | null | undefined): boolean {
+  return !isChangeOrderLocked(status);
+}
+
+// -----------------------------------------------------------------------------
+// Header
+// -----------------------------------------------------------------------------
+export const changeOrderValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  changeOrderId: zfd.text(z.string().optional()),
+  name: z.string().min(1, { message: "Name is required" }),
+  reasonForChange: zfd.text(z.string().optional()),
+  description: zfd.text(z.string().optional()),
+  type: z.enum(changeOrderType).optional(),
+  priority: z.enum(nonConformancePriority).optional(),
+  changeOrderTypeId: zfd.text(z.string().optional()),
+  nonConformanceId: zfd.text(z.string().optional()),
+  openDate: z.string().min(1, { message: "Open date is required" }),
+  dueDate: zfd.text(z.string().optional()),
+  assignee: zfd.text(z.string().optional()),
+  // Optional affected Parts/Tools to attach at create time — each is added as a
+  // Version affected item (Buy items coerced to Revision service-side). More can
+  // be added later on the CO detail. Only consumed by the create action.
+  affectedItemIds: zfd.repeatableOfType(z.string()).optional()
+});
+
+// Status transition (used by the $id.status route). fromStatus drives a
+// compare-and-swap so a stale/concurrent transition is rejected.
+export const changeOrderStatusValidator = z.object({
+  id: z.string().min(1, { message: "Id is required" }),
+  fromStatus: z.enum(changeOrderStatus),
+  status: z.enum(changeOrderStatus),
+  assignee: zfd.text(z.string().optional())
+});
+
+// =============================================================================
+// Top-to-bottom change content (v2) — affected items + per-item change type +
+// cutover + manual supersession. The user selects affected parts first; each
+// part's edits live on a REAL CO-owned Draft make method edited via the normal
+// BillOfMaterial/BillOfProcess/PartProperties editors (no staged mirror tables).
+// All validators are flat objects (no discriminated unions / heavy generics) to
+// stay clear of TS2589 when threaded through @carbon/form's `validator()`.
+// =============================================================================
+
+// Affected item — the part the user selects to change. Adding one creates a
+// CO-owned Draft make method per the change type (service side).
+export const changeOrderAffectedItemValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  changeOrderId: z.string().min(1, { message: "Change order is required" }),
+  itemId: z.string().min(1, { message: "Item is required" }),
+  changeType: z.enum(changeOrderChangeTypes).default("Version"),
+  // Optional revision label for a Revision change (e.g. "A"). Blank → the next
+  // revision is auto-computed server-side (createChangeOrderDraftMethod).
+  revision: zfd.text(z.string().optional())
+});
+
+// Add-affected-item path for a net-new "New Part" (no existing itemId): the CO
+// mints a brand-new inactive Part and adds it as a New Part affected item. Always
+// a Part (no Part/Tool choice in the modal).
+export const changeOrderNewPartValidator = z.object({
+  changeOrderId: z.string().min(1, { message: "Change order is required" }),
+  // The route branches on this raw FormData value; also seeds the change-type
+  // Select so it reads "New Part" after the form remounts (see AffectedItemForm).
+  changeType: z.enum(changeOrderChangeTypes).default("New Part"),
+  readableId: z.string().min(1, { message: "Part number is required" }),
+  name: z.string().min(1, { message: "Name is required" }),
+  replenishmentSystem: z.enum(["Buy", "Make", "Buy and Make"]).default("Make"),
+  itemTrackingType: z.enum(itemTrackingTypes).default("Inventory")
+});
+
+// Switch the change type on an existing affected item (rebuilds its CO-owned
+// Draft make method for the new type — see updateChangeOrderAffectedItemChangeType).
+export const changeOrderAffectedItemChangeTypeValidator = z.object({
+  id: z.string().min(1, { message: "Id is required" }),
+  changeType: z.enum(changeOrderChangeTypes)
+});
+
+// Per-item revision cutover config (Q3): existence of the oldRev→newRev
+// supersession is automatic at release; the user only tunes mode + dates here.
+export const changeOrderAffectedItemCutoverValidator = z.object({
+  id: z.string().min(1, { message: "Id is required" }),
+  supersessionMode: z.enum(supersessionModes),
+  discontinuationDate: zfd.text(z.string().optional()),
+  successorEffectivityDate: zfd.text(z.string().optional())
+});
+
+// Action task status transition (Start / Complete / Reopen). Actions are
+// instantiated from templates (see changeOrderRequiredAction); there's no
+// freeform-create validator.
+export const changeOrderActionStatusValidator = z.object({
+  id: z.string().min(1, { message: "Id is required" }),
+  status: z.enum(changeOrderTaskStatus)
+});
+
+// Configurable default actions (changeOrderRequiredAction templates) — the
+// per-company set a new change order is seeded from. Configured like Issue Types.
+export const changeOrderRequiredActionValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  name: z.string().min(1, { message: "Name is required" }),
+  active: zfd.checkbox()
+});
+
+// -----------------------------------------------------------------------------
+// Diff types (Q5 git-style) — one shape reused for the pre-release "tips"
+// (staged-vs-live) and the post-release revision redline (oldRev-vs-newRev).
+// -----------------------------------------------------------------------------
+export type MethodDiffStatus = "added" | "removed" | "modified" | "unchanged";
+
+export type MethodDiffEntry<T> = {
+  status: MethodDiffStatus;
+  before: T | null;
+  after: T | null;
+  // Field-level changes for a "modified" entry: { field: { before, after } }.
+  changedFields?: Record<string, { before: unknown; after: unknown }>;
+};
+
+// One operation's child-level diff (steps / parameters / tools), each bucket
+// classified added/removed/modified/unchanged. Defined here (not in
+// changeOrder.diff.ts) so ChangeOrderItemDiff can carry the operation tree
+// without a circular import; changeOrder.diff.ts re-exports these for its own
+// callers.
+export type OperationChildrenDiff = {
+  steps: MethodDiffEntry<Record<string, unknown>>[];
+  parameters: MethodDiffEntry<Record<string, unknown>>[];
+  tools: MethodDiffEntry<Record<string, unknown>>[];
+};
+
+// An operation diff entry, optionally carrying its child-level diff. A superset
+// of MethodDiffEntry, so consumers typed against the base entry keep working.
+export type OperationDiffEntry = MethodDiffEntry<Record<string, unknown>> & {
+  children?: OperationChildrenDiff;
+};
+
+export type ChangeOrderItemDiff = {
+  affectedItemId: string;
+  itemId: string;
+  materials: MethodDiffEntry<Record<string, unknown>>[];
+  // Operations carry the optional child (steps/parameters/tools) diff so the
+  // read-only diff viewer can render the BOP as a tree.
+  operations: OperationDiffEntry[];
+  attributes: MethodDiffEntry<Record<string, unknown>>[];
+  // Supplier parts on a Revision/New Part draft item. Drafts start with none
+  // (the source's suppliers aren't copied), so these surface as `added` entries.
+  supplierParts: MethodDiffEntry<Record<string, unknown>>[];
+};
+
+// -----------------------------------------------------------------------------
+// Change Order Types (the "Category" lookup — configured like Issue Types)
+// -----------------------------------------------------------------------------
+export const changeOrderTypeValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  name: z.string().min(1, { message: "Name is required" })
 });

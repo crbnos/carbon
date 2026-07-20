@@ -14,6 +14,7 @@ import type { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
+import type { nonConformancePriority } from "../quality/quality.models";
 import type {
   operationParameterValidator,
   operationStepValidator,
@@ -27,6 +28,13 @@ import {
   type SupplierPriceMap
 } from "../shared";
 import {
+  type ChangeOrderChangeType,
+  type ChangeOrderError,
+  type ChangeOrderItemDiff,
+  changeOrderOpenStatuses,
+  type changeOrderStatus,
+  type changeOrderTaskStatus,
+  type changeOrderType,
   type configurationParameterGroupOrderValidator,
   type configurationParameterGroupValidator,
   type configurationParameterOrderValidator,
@@ -36,14 +44,18 @@ import {
   type customerPartValidator,
   type getMethodValidator,
   ItemTrackingType,
+  isAllowedChangeOrderTransition,
   type itemCostValidator,
   type itemManufacturingValidator,
   type itemPlanningValidator,
   type itemPostingGroupValidator,
   type itemPurchasingValidator,
   type itemSupersessionValidator,
+  type itemTrackingTypes,
   type itemUnitSalePriceValidator,
   type itemValidator,
+  type MethodDiffEntry,
+  type MethodDiffStatus,
   type makeMethodVersionValidator,
   type materialDimensionValidator,
   type materialFinishValidator,
@@ -54,6 +66,8 @@ import {
   type materialValidator,
   type methodMaterialValidator,
   type methodOperationValidator,
+  type OperationChildrenDiff,
+  type OperationDiffEntry,
   type partValidator,
   type pickMethodSortMethods,
   type pickMethodValidator,
@@ -136,15 +150,42 @@ export async function copyMakeMethod(
   });
 }
 
+// Copy a source item's item group (itemPostingGroupId, stored on itemCost) onto a
+// freshly-created target item whose itemCost row was just auto-created with
+// defaults by the item-insert trigger. No-op when the source has no group set.
+export async function copyItemPostingGroup(
+  client: SupabaseClient<Database>,
+  args: { sourceItemId: string; targetItemId: string; companyId: string | null }
+) {
+  if (!args.companyId) return;
+  const source = await client
+    .from("itemCost")
+    .select("itemPostingGroupId")
+    .eq("itemId", args.sourceItemId)
+    .eq("companyId", args.companyId)
+    .maybeSingle();
+  const groupId = source.data?.itemPostingGroupId ?? null;
+  if (!groupId) return;
+  await client
+    .from("itemCost")
+    .update({ itemPostingGroupId: groupId })
+    .eq("itemId", args.targetItemId)
+    .eq("companyId", args.companyId);
+}
+
 export async function createRevision(
   client: SupabaseClient<Database>,
   args: {
     item: NonNullable<Awaited<ReturnType<typeof getItem>>["data"]>;
     revision: string;
     createdBy: string;
+    // Change-order draft revisions are created inactive so they don't surface
+    // in item pickers/production until the change order is released. Manual
+    // "New Revision" keeps the default (active).
+    active?: boolean;
   }
 ) {
-  const { item, revision, createdBy } = args;
+  const { item, revision, createdBy, active = true } = args;
   const itemInsert = await client
     .from("item")
     .insert({
@@ -156,7 +197,14 @@ export async function createRevision(
       defaultMethodType: item.defaultMethodType,
       itemTrackingType: item.itemTrackingType,
       unitOfMeasureCode: item.unitOfMeasureCode,
-      active: true,
+      // A revision starts as a faithful copy of the source's attributes so the
+      // only differences the user (and the CO diff) sees are ones they made.
+      description: item.description,
+      sourcingType: item.sourcingType,
+      requiresInspection: item.requiresInspection,
+      thumbnailPath: item.thumbnailPath,
+      mpn: item.mpn,
+      active,
       modelUploadId: item.modelUploadId,
       companyId: item.companyId,
       createdBy: createdBy
@@ -167,6 +215,14 @@ export async function createRevision(
   if (itemInsert.error) {
     return itemInsert;
   }
+
+  // Carry the source's item group (itemPostingGroupId lives on itemCost, which
+  // the item-insert trigger auto-creates with defaults) onto the new revision.
+  await copyItemPostingGroup(client, {
+    sourceItemId: item.id,
+    targetItemId: itemInsert.data.id,
+    companyId: item.companyId
+  });
 
   if (item.replenishmentSystem !== "Buy") {
     await client.functions.invoke("get-method", {
@@ -181,6 +237,26 @@ export async function createRevision(
   }
 
   return itemInsert;
+}
+
+// getNextRevision — numeric → +1, A → …→ Z → AA, AA → AB, etc.
+export function getNextRevision(maxRevision: string): string {
+  if (/^\d+$/.test(maxRevision)) {
+    return (parseInt(maxRevision) + 1).toString();
+  } else if (/^[A-Z]{1,2}$/.test(maxRevision)) {
+    if (maxRevision.length === 1) {
+      return maxRevision === "Z"
+        ? "AA"
+        : String.fromCharCode(maxRevision.charCodeAt(0) + 1);
+    }
+    const firstChar = maxRevision[0];
+    const secondChar = maxRevision[1];
+    if (secondChar === "Z") {
+      return String.fromCharCode(firstChar.charCodeAt(0) + 1) + "A";
+    }
+    return firstChar + String.fromCharCode(secondChar.charCodeAt(0) + 1);
+  }
+  return maxRevision;
 }
 
 export async function deleteConfigurationParameter(
@@ -476,6 +552,7 @@ export async function getConsumablesList(
       .order("name")
   );
 }
+
 export async function getItem(client: SupabaseClient<Database>, id: string) {
   return client.from("item").select("*").eq("id", id).single();
 }
@@ -4811,4 +4888,2597 @@ export async function getSupplierPartPriceBreaks(
     quantity: pb.quantity,
     unitPrice: pb.unitPrice
   }));
+}
+// =============================================================================
+// Change Orders — header CRUD, stage transitions, list, and CO Types config.
+// =============================================================================
+
+// -----------------------------------------------------------------------------
+// Reads
+// -----------------------------------------------------------------------------
+export async function getChangeOrder(
+  client: SupabaseClient<Database>,
+  changeOrderId: string,
+  companyId: string
+) {
+  return client
+    .from("changeOrder")
+    .select("*")
+    .eq("id", changeOrderId)
+    .eq("companyId", companyId)
+    .single();
+}
+
+export async function getChangeOrders(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("changeOrders")
+    .select("*", { count: "exact" })
+    .eq("companyId", companyId);
+
+  if (args?.search) {
+    query = query.or(
+      `changeOrderId.ilike.%${args.search}%,name.ilike.%${args.search}%`
+    );
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "changeOrderId", ascending: false }
+    ]);
+  }
+
+  return query;
+}
+
+// -----------------------------------------------------------------------------
+// Header CRUD
+// -----------------------------------------------------------------------------
+export async function insertChangeOrder(
+  client: SupabaseClient<Database>,
+  input: {
+    companyId: string;
+    createdBy: string;
+    changeOrderId?: string;
+    name: string;
+    type?: (typeof changeOrderType)[number];
+    priority?: (typeof nonConformancePriority)[number];
+    changeOrderTypeId?: string;
+    nonConformanceId?: string;
+    openDate: string;
+    reasonForChange?: Json;
+    description?: Json;
+    dueDate?: string;
+    assignee?: string;
+    customFields?: Json;
+  }
+): Promise<{
+  data: { id: string; changeOrderId: string } | null;
+  error: ChangeOrderError | null;
+}> {
+  let changeOrderId: string;
+  if (input.changeOrderId) {
+    changeOrderId = input.changeOrderId;
+  } else {
+    const seq = await client.rpc("get_next_sequence", {
+      sequence_name: "changeOrder",
+      company_id: input.companyId
+    });
+    if (seq.error || !seq.data) {
+      return {
+        data: null,
+        error: seq.error ?? {
+          message: "Failed to generate changeOrder sequence"
+        }
+      };
+    }
+    changeOrderId = seq.data;
+  }
+
+  const result = await client
+    .from("changeOrder")
+    .insert({
+      changeOrderId,
+      name: input.name,
+      type: input.type ?? "Engineering",
+      priority: input.priority ?? null,
+      changeOrderTypeId: input.changeOrderTypeId ?? null,
+      nonConformanceId: input.nonConformanceId ?? null,
+      openDate: input.openDate,
+      reasonForChange: input.reasonForChange ?? {},
+      description: input.description ?? {},
+      dueDate: input.dueDate ?? null,
+      assignee: input.assignee ?? null,
+      customFields: input.customFields,
+      companyId: input.companyId,
+      createdBy: input.createdBy
+    })
+    .select("id, changeOrderId")
+    .single();
+
+  if (result.error || !result.data) {
+    return { data: null, error: result.error };
+  }
+
+  // No default actions are seeded on create — the CO starts with zero required
+  // actions selected; the user picks them afterward from the rail's Required
+  // Actions multiselect (reconciled by setChangeOrderActionTasks).
+
+  return {
+    data: { id: result.data.id, changeOrderId: result.data.changeOrderId },
+    error: null
+  };
+}
+
+export async function updateChangeOrder(
+  client: SupabaseClient<Database>,
+  input: {
+    id: string;
+    updatedBy: string;
+    changeOrderId?: string;
+    name?: string;
+    type?: (typeof changeOrderType)[number];
+    priority?: (typeof nonConformancePriority)[number] | null;
+    changeOrderTypeId?: string | null;
+    nonConformanceId?: string | null;
+    openDate?: string;
+    reasonForChange?: Json;
+    description?: Json;
+    dueDate?: string | null;
+    assignee?: string | null;
+    customFields?: Json;
+  }
+): Promise<{
+  data: { id: string } | null;
+  error: ChangeOrderError | null;
+}> {
+  const { id, ...rest } = input;
+  const result = await client
+    .from("changeOrder")
+    .update(sanitize(rest))
+    .eq("id", id)
+    .select("id")
+    .single();
+
+  if (result.error) return { data: null, error: result.error };
+  return { data: { id: result.data.id }, error: null };
+}
+
+export async function deleteChangeOrder(
+  client: SupabaseClient<Database>,
+  changeOrderId: string,
+  companyId: string
+) {
+  // Discard each affected item's CO-owned Draft first (the Draft make method for
+  // a Version, or the revealed inactive item for a Revision/New Part). These are
+  // NOT FK children of the change order, so the cascade below won't remove them —
+  // only the changeOrderAffectedItem rows cascade. Without this, deleting a CO
+  // orphans its drafts (mirrors removeChangeOrderAffectedItem's cleanup).
+  const affected = await client
+    .from("changeOrderAffectedItem")
+    .select("draftMakeMethodId, newItemId")
+    .eq("changeOrderId", changeOrderId)
+    .eq("companyId", companyId);
+  if (!affected.error && affected.data) {
+    for (const item of affected.data) {
+      await discardChangeOrderDraft(client, item, companyId);
+    }
+  }
+
+  // Remaining children (affected items, action tasks) cascade via ON DELETE CASCADE.
+  return client
+    .from("changeOrder")
+    .delete()
+    .eq("id", changeOrderId)
+    .eq("companyId", companyId);
+}
+
+// -----------------------------------------------------------------------------
+// Stage transition — the single guarded writer (G8), a compare-and-swap (G2).
+// Forward-only (isAllowedChangeOrderTransition).
+// -----------------------------------------------------------------------------
+export async function updateChangeOrderStatus(
+  client: SupabaseClient<Database>,
+  update: {
+    id: string;
+    companyId: string;
+    fromStatus: (typeof changeOrderStatus)[number];
+    toStatus: (typeof changeOrderStatus)[number];
+    assignee?: string | null;
+    updatedBy: string;
+  }
+): Promise<{
+  data: { id: string; status: (typeof changeOrderStatus)[number] } | null;
+  error: { message: string } | null;
+}> {
+  const { id, companyId, fromStatus, toStatus, ...rest } = update;
+
+  if (!isAllowedChangeOrderTransition(fromStatus, toStatus)) {
+    return {
+      data: null,
+      error: {
+        message: `Cannot change status from ${fromStatus} to ${toStatus}`
+      }
+    };
+  }
+
+  // Build the update explicitly rather than sanitize({...rest}): sanitize coerces
+  // every `undefined` field to null, which would wipe an existing assignee on a
+  // transition where the caller passes it as undefined. Only set an optional
+  // field when the caller provided a value.
+  const payload: {
+    status: (typeof changeOrderStatus)[number];
+    updatedBy: string;
+    assignee?: string | null;
+  } = { status: toStatus, updatedBy: rest.updatedBy };
+  if (rest.assignee !== undefined) payload.assignee = rest.assignee;
+
+  const result = await client
+    .from("changeOrder")
+    .update(payload)
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .eq("status", fromStatus)
+    .select("id, status")
+    .maybeSingle();
+
+  if (result.error) return { data: null, error: result.error };
+  if (!result.data) {
+    return {
+      data: null,
+      error: {
+        message:
+          "The change order was updated by someone else. Refresh and try again."
+      }
+    };
+  }
+  return { data: result.data, error: null };
+}
+
+// -----------------------------------------------------------------------------
+// Change Order Types (the "Category" lookup — configured like Issue Types)
+// -----------------------------------------------------------------------------
+export async function getChangeOrderTypes(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("changeOrderType")
+    .select("*", { count: "exact" })
+    .eq("companyId", companyId);
+
+  if (args?.search) {
+    query = query.ilike("name", `%${args.search}%`);
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "name", ascending: true }
+    ]);
+  }
+
+  return query;
+}
+
+export async function getChangeOrderTypesList(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("changeOrderType")
+    .select("id, name")
+    .eq("companyId", companyId)
+    .order("name", { ascending: true });
+}
+
+export async function getChangeOrderType(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("changeOrderType").select("*").eq("id", id).single();
+}
+
+export async function upsertChangeOrderType(
+  client: SupabaseClient<Database>,
+  changeOrderType:
+    | {
+        name: string;
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      }
+    | {
+        id: string;
+        name: string;
+        updatedBy: string;
+        customFields?: Json;
+      }
+) {
+  if ("createdBy" in changeOrderType) {
+    return client
+      .from("changeOrderType")
+      .insert([changeOrderType])
+      .select("id")
+      .single();
+  }
+  return client
+    .from("changeOrderType")
+    .update(sanitize(changeOrderType))
+    .eq("id", changeOrderType.id)
+    .select("id")
+    .single();
+}
+
+export async function deleteChangeOrderType(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("changeOrderType").delete().eq("id", id);
+}
+
+// =============================================================================
+// Phase 2 — Products Affected
+// =============================================================================
+
+// Joins to `item` throughout Phase 2 are done as separate FLAT scalar selects +
+// a JS stitch rather than PostgREST embeds: an embedded select instantiates
+// PostgREST's deeply-recursive relation parser, and across the module that
+// pushed TS's global instantiation budget over the edge (TS2589 in unrelated
+// files). Flat selects barely instantiate.
+
+// Climb the BOM (methodMaterial → makeMethod → item) from a set of start items up
+// to the top-level products — items that are used by nothing. Returns each product
+// with `sourceItemIds`: which of the start items (the targeted assemblies) rolled up
+// into it (provenance, for the "affected by" display). Flat queries (no PostgREST
+// embeds — TS2589 budget); a per-item origin set that only grows drives a fixpoint,
+// so a corrupt/cyclic BOM can't loop forever and provenance fully propagates.
+// `nodeBudget` is a pure infinite-loop backstop, not a depth limit.
+export async function getTopLevelProductsForItems(
+  client: SupabaseClient<Database>,
+  itemIds: string[],
+  companyId: string
+): Promise<{
+  data: Array<{ productId: string; sourceItemIds: string[] }>;
+  error: { message: string } | null;
+}> {
+  const start = [...new Set(itemIds.filter(Boolean))];
+  if (start.length === 0) return { data: [], error: null };
+
+  // origins[item] = the start items (targeted assemblies) that reach it.
+  const origins = new Map<string, Set<string>>();
+  for (const s of start) origins.set(s, new Set([s]));
+  // parentsCache[item] = its immediate parent items (one level up), fetched once.
+  const parentsCache = new Map<string, Set<string>>();
+  const roots = new Map<string, Set<string>>();
+
+  const fetchParents = async (ids: string[]) => {
+    const unknown = ids.filter((id) => !parentsCache.has(id));
+    if (unknown.length === 0) return;
+    for (const id of unknown) parentsCache.set(id, new Set());
+
+    const materials = await client
+      .from("methodMaterial")
+      .select("itemId, makeMethodId")
+      .in("itemId", unknown)
+      .eq("companyId", companyId);
+    if (materials.error) throw materials.error;
+
+    const makeMethodIds = [
+      ...new Set((materials.data ?? []).map((m) => m.makeMethodId))
+    ];
+    const parentByMethod = new Map<string, string>();
+    if (makeMethodIds.length > 0) {
+      const methods = await client
+        .from("makeMethod")
+        .select("id, itemId")
+        .in("id", makeMethodIds)
+        .eq("companyId", companyId);
+      if (methods.error) throw methods.error;
+      for (const mm of methods.data ?? []) parentByMethod.set(mm.id, mm.itemId);
+    }
+    for (const row of materials.data ?? []) {
+      const parent = parentByMethod.get(row.makeMethodId);
+      if (parent) parentsCache.get(row.itemId)?.add(parent);
+    }
+  };
+
+  let queue = [...start];
+  let nodeBudget = 20000;
+  try {
+    while (queue.length > 0 && nodeBudget > 0) {
+      const batch = [...new Set(queue)];
+      queue = [];
+      nodeBudget -= batch.length;
+      await fetchParents(batch);
+
+      for (const id of batch) {
+        const parents = parentsCache.get(id);
+        const idOrigins = origins.get(id) ?? new Set<string>();
+
+        if (!parents || parents.size === 0) {
+          // used by nothing → a top-level product; record its origins
+          if (!roots.has(id)) roots.set(id, new Set());
+          const rootOrigins = roots.get(id)!;
+          for (const o of idOrigins) rootOrigins.add(o);
+          continue;
+        }
+
+        for (const parent of parents) {
+          if (!origins.has(parent)) origins.set(parent, new Set());
+          const target = origins.get(parent)!;
+          const before = target.size;
+          for (const o of idOrigins) target.add(o);
+          // Re-enqueue when the parent's origin set grew (monotonic, finite → the
+          // loop terminates even on cyclic data) so provenance fully propagates.
+          if (target.size > before) queue.push(parent);
+        }
+      }
+    }
+  } catch (err) {
+    return { data: [], error: { message: (err as Error).message } };
+  }
+
+  return {
+    data: [...roots.entries()].map(([productId, srcs]) => ({
+      productId,
+      sourceItemIds: [...srcs]
+    })),
+    error: null
+  };
+}
+
+// G3 — forward-reference to a not-yet-synced part. Mints a REAL item row
+// (active=false, revisionStatus='Design') through the standard item shape so
+// `changeOrderStagedMaterial.itemId` is always non-null and no placeholder branch
+// is threaded downstream. Onshape sync reconciles by matching readableId+company
+// (flip active, fill details). A cancelled CO can leave an inactive stub — it's
+// filterable and tied to the CO, far cheaper than nullable-threading everywhere.
+export async function mintPlaceholderPart(
+  client: SupabaseClient<Database>,
+  input: {
+    readableId: string;
+    name: string;
+    companyId: string;
+    createdBy: string;
+    unitOfMeasureCode?: string;
+  }
+): Promise<{
+  data: { id: string } | null;
+  error: ChangeOrderError | null;
+}> {
+  const item = await client
+    .from("item")
+    .insert({
+      readableId: input.readableId,
+      revision: "0",
+      name: input.name,
+      type: "Part",
+      replenishmentSystem: "Buy",
+      defaultMethodType: "Pull from Inventory",
+      itemTrackingType: "Inventory",
+      unitOfMeasureCode: input.unitOfMeasureCode ?? "EA",
+      active: false,
+      revisionStatus: "Design",
+      companyId: input.companyId,
+      createdBy: input.createdBy
+    })
+    .select("id")
+    .single();
+
+  if (item.error || !item.data) return { data: null, error: item.error };
+
+  const part = await client.from("part").insert({
+    id: input.readableId,
+    companyId: input.companyId,
+    createdBy: input.createdBy
+  });
+  if (part.error) return { data: null, error: part.error };
+
+  return { data: { id: item.data.id }, error: null };
+}
+
+// =============================================================================
+// v2 — CO-owned Draft make-method orchestration (affected items).
+//
+// A CO's edits for one affected item live on a REAL Draft makeMethod owned by
+// the CO (makeMethod.changeOrderId set). That draft is shown/edited both in the
+// CO workspace and on the affected item's own master page (same rows, in sync);
+// changeOrderId is cleared at release. Creating an affected item spins that
+// draft per the change type:
+//   Version  → new Draft method version on the SAME item (BoM/BoP edits).
+//   Revision → new inactive revision item + its Draft method (attrs/docs).
+//   New Part → new inactive part number (new readableId) + copied Draft method.
+// All three keep the user client (the release path uses the same client for the
+// same privileged method helpers — see applyChangeOrder / changeOrder.server).
+// =============================================================================
+
+// Mint the next readableId for a CO-derived New Part, following the SAME numbering
+// scheme as the source part — so "GA-0029" yields "GA-0030", not a bare number.
+// Server-side mirror of useNextItemId: split the source readableId into its
+// non-numeric prefix + trailing number, ask the matching sequence RPC for the
+// current MAX with that shape, then increment + zero-pad to the same width.
+// Falls back to a plain numeric id when the source has no prefix.
+async function getNextItemIdFromSource(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  itemType: Database["public"]["Enums"]["itemType"],
+  sourceReadableId: string
+): Promise<string> {
+  const prefix = sourceReadableId.match(/^(.*?)\d+$/)?.[1] ?? "";
+
+  const rpc = prefix
+    ? await client.rpc("get_next_prefixed_sequence", {
+        company_id: companyId,
+        item_type: itemType,
+        prefix
+      })
+    : await client.rpc("get_next_numeric_sequence", {
+        company_id: companyId,
+        item_type: itemType
+      });
+
+  const current = rpc.data;
+  const sequence = current?.slice(prefix.length) ?? "";
+  const currentSequence = parseInt(sequence, 10);
+  if (!current || Number.isNaN(currentSequence)) {
+    return `${prefix}${(1).toString().padStart(9, "0")}`;
+  }
+  // Preserve the source's digit width (mirrors useNextItemId's pad math).
+  const tail = current.split(`${currentSequence}`)?.[1]?.length ?? 0;
+  const width = Math.max(sequence.length - tail, 1);
+  return `${prefix}${(currentSequence + 1).toString().padStart(width, "0")}`;
+}
+
+// Resolve the current Active make method id for an item (the base the draft is
+// copied from + the merge base at release). Falls back to the highest version.
+// Also returns `maxVersion` = the highest version number across ALL of the
+// item's methods (Draft/Active/Archived) — a new draft must be numbered above
+// this, not above the Active one, so parallel COs on the same item don't collide
+// on the `(itemId, version)` unique constraint (a hidden CO draft already holds
+// Active+1).
+async function getActiveMakeMethodId(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string
+): Promise<{
+  id: string;
+  version: number;
+  maxVersion: number;
+  // `status` of the chosen method. Since `chosen = active ?? rows[0]`, a value of
+  // "Draft" means the item has NO Active method — its current method is still an
+  // un-activated draft (the common case for a Make item that never spun a v2).
+  status: string;
+} | null> {
+  const methods = await client
+    .from("makeMethod")
+    .select("id, version, status")
+    .eq("itemId", itemId)
+    .eq("companyId", companyId)
+    .order("version", { ascending: false });
+  const rows = methods.data ?? [];
+  if (rows.length === 0) return null;
+  const active = rows.find((r) => r.status === "Active");
+  const chosen = active ?? rows[0];
+  // rows are ordered by version DESC, so rows[0] holds the highest version.
+  const maxVersion = rows[0].version ?? chosen.version ?? 1;
+  return {
+    id: chosen.id,
+    version: chosen.version ?? 1,
+    maxVersion,
+    status: chosen.status
+  };
+}
+
+// Fetch the (single) Draft make method for a freshly-created item — the trigger
+// creates one and createRevision/copyItem populate it.
+async function getDraftMakeMethodIdForItem(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string
+): Promise<string | null> {
+  const draft = await client
+    .from("makeMethod")
+    .select("id")
+    .eq("itemId", itemId)
+    .eq("companyId", companyId)
+    .eq("status", "Draft")
+    .order("version", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return draft.data?.id ?? null;
+}
+
+type DraftMethodResult = {
+  data: {
+    draftMakeMethodId: string | null;
+    baseMakeMethodId: string | null;
+    newItemId: string | null;
+  } | null;
+  error: ChangeOrderError | null;
+};
+
+// Create the CO-owned Draft make method for an affected item per its change type.
+export async function createChangeOrderDraftMethod(
+  client: SupabaseClient<Database>,
+  input: {
+    changeOrderId: string;
+    itemId: string;
+    changeType: ChangeOrderChangeType;
+    // Optional revision label for the Revision path — when the caller already
+    // knows the target revision (e.g. the value typed in the new-revision
+    // modal). Omitted → the next revision is auto-computed.
+    revision?: string;
+    companyId: string;
+    userId: string;
+  }
+): Promise<DraftMethodResult> {
+  const { changeOrderId, itemId, changeType, revision, companyId, userId } =
+    input;
+
+  const base = await getActiveMakeMethodId(client, itemId, companyId);
+
+  if (changeType === "Version") {
+    if (!base) {
+      return {
+        data: null,
+        error: { message: "Item has no make method to version" }
+      };
+    }
+    // If the item's current method is still an un-activated Draft (no Active
+    // version — the common case for a Make item that never spun a v2), promote it
+    // to Active as we create the CO's new draft, mirroring the make-method-tools
+    // "New Version" flow. Otherwise the CO draft (numbered above the base) would
+    // outrank the base draft in `activeMakeMethods` — which falls back to the
+    // highest-version draft when there is no Active — and `get-method` would hand
+    // the CO's UNRELEASED edits to jobs/quotes. Freezing the base as Active keeps
+    // production on the current method until the CO is released.
+    const activeVersionId = base.status === "Draft" ? base.id : undefined;
+    // New Draft version on the same item, then copy the BoM/BoP rows (the
+    // canonical new-version flow: header insert + copyMakeMethod). Number it
+    // above ALL existing versions (maxVersion + 1), not the Active one, so a
+    // second CO on the same part doesn't collide on (itemId, version). Retry on
+    // a concurrent unique-violation by recomputing the next free version.
+    let draftId: string | null = null;
+    let nextVersion = base.maxVersion + 1;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const res = await upsertMakeMethodVersion(client, {
+        copyFromId: base.id,
+        activeVersionId,
+        version: nextVersion,
+        companyId,
+        createdBy: userId
+      });
+      if (!res.error && res.data) {
+        draftId = res.data.id;
+        break;
+      }
+      // 23505 = unique_violation (makeMethod_unique_itemId_version); a parallel
+      // CO grabbed this number first — recompute the next free version + retry.
+      if (res.error?.code === "23505") {
+        const latest = await getActiveMakeMethodId(client, itemId, companyId);
+        nextVersion = (latest?.maxVersion ?? nextVersion) + 1;
+        continue;
+      }
+      return {
+        data: null,
+        error: res.error ?? { message: "Failed to create draft version" }
+      };
+    }
+    if (!draftId) {
+      return {
+        data: null,
+        error: { message: "Failed to create draft version" }
+      };
+    }
+    // @ts-expect-error TS2345 - getMethodValidator flags default via edge fn
+    const copy = await copyMakeMethod(client, {
+      sourceId: base.id,
+      targetId: draftId,
+      companyId,
+      userId
+    });
+    if (copy.error) {
+      return { data: null, error: { message: "Failed to copy make method" } };
+    }
+    const stamp = await client
+      .from("makeMethod")
+      .update({ changeOrderId })
+      .eq("id", draftId)
+      .eq("companyId", companyId);
+    if (stamp.error) return { data: null, error: stamp.error };
+    return {
+      data: {
+        draftMakeMethodId: draftId,
+        baseMakeMethodId: base.id,
+        newItemId: null
+      },
+      error: null
+    };
+  }
+
+  if (changeType === "Revision") {
+    const source = await getItem(client, itemId);
+    if (source.error || !source.data) {
+      return { data: null, error: { message: "Item not found" } };
+    }
+    // Honor a caller-supplied revision label (e.g. the value typed in the
+    // new-revision modal); otherwise auto-pick the next revision string across
+    // the item's readableId siblings.
+    let nextRevision = revision?.trim();
+    if (!nextRevision) {
+      const siblings = await client
+        .from("item")
+        .select("revision")
+        .eq("readableId", source.data.readableId)
+        .eq("companyId", companyId)
+        .eq("type", source.data.type)
+        .order("revision", { ascending: false });
+      const maxRevision = siblings.data?.[0]?.revision ?? "0";
+      nextRevision = getNextRevision(maxRevision);
+    }
+
+    const created = await createRevision(client, {
+      item: source.data,
+      revision: nextRevision,
+      createdBy: userId,
+      active: false
+    });
+    if (created.error || !created.data) {
+      return { data: null, error: created.error };
+    }
+    const newItemId = created.data.id;
+    const draftId = await getDraftMakeMethodIdForItem(
+      client,
+      newItemId,
+      companyId
+    );
+    const stampItem = await client
+      .from("item")
+      .update({ changeOrderId })
+      .eq("id", newItemId)
+      .eq("companyId", companyId);
+    if (stampItem.error) return { data: null, error: stampItem.error };
+    if (draftId) {
+      await client
+        .from("makeMethod")
+        .update({ changeOrderId })
+        .eq("id", draftId)
+        .eq("companyId", companyId);
+    }
+    return {
+      data: {
+        draftMakeMethodId: draftId,
+        baseMakeMethodId: base?.id ?? null,
+        newItemId
+      },
+      error: null
+    };
+  }
+
+  if (changeType === "New Part") {
+    // Net-new part — no predecessor, no supersession. addChangeOrderAffectedItem
+    // already minted the item (inactive, CO-stamped); here `itemId` IS that new
+    // item. Its insert trigger created a Draft makeMethod (status default 'Draft');
+    // stamp it CO-owned so it hides from version lists until release (parity with
+    // Revision). No source to copy from → empty draft, no baseMakeMethodId.
+    const draftId = await getDraftMakeMethodIdForItem(
+      client,
+      itemId,
+      companyId
+    );
+    if (draftId) {
+      const stamp = await client
+        .from("makeMethod")
+        .update({ changeOrderId })
+        .eq("id", draftId)
+        .eq("companyId", companyId);
+      if (stamp.error) return { data: null, error: stamp.error };
+    }
+    return {
+      data: {
+        draftMakeMethodId: draftId,
+        baseMakeMethodId: null,
+        newItemId: itemId
+      },
+      error: null
+    };
+  }
+
+  // Replacement Part — a new part number derived from + (at release) superseding
+  // the affected part. This is the only remaining change type here: Version /
+  // Revision / New Part all returned above, so `changeType` is narrowed to
+  // "Replacement Part". ECO scope is Parts + Tools (Materials/Consumables/Services
+  // excluded); reject other types rather than mint a malformed row.
+  const source = await getItem(client, itemId);
+  if (source.error || !source.data) {
+    return { data: null, error: { message: "Item not found" } };
+  }
+  if (source.data.type !== "Part" && source.data.type !== "Tool") {
+    return {
+      data: null,
+      error: {
+        message: `New Part is only supported for Parts and Tools (got ${source.data.type})`
+      }
+    };
+  }
+  const newReadableId = await getNextItemIdFromSource(
+    client,
+    companyId,
+    source.data.type,
+    source.data.readableId
+  );
+  const newItem = await client
+    .from("item")
+    .insert({
+      readableId: newReadableId,
+      revision: "0",
+      name: source.data.name,
+      type: source.data.type,
+      replenishmentSystem: source.data.replenishmentSystem,
+      defaultMethodType: source.data.defaultMethodType,
+      itemTrackingType: source.data.itemTrackingType,
+      unitOfMeasureCode: source.data.unitOfMeasureCode,
+      // Faithfully copy the source's attributes so the CO diff shows only the
+      // user's edits, not gaps left by an incomplete copy.
+      description: source.data.description,
+      sourcingType: source.data.sourcingType,
+      requiresInspection: source.data.requiresInspection,
+      thumbnailPath: source.data.thumbnailPath,
+      mpn: source.data.mpn,
+      active: false,
+      revisionStatus: "Design",
+      changeOrderId,
+      companyId,
+      createdBy: userId
+    })
+    .select("id")
+    .single();
+  if (newItem.error || !newItem.data) {
+    return { data: null, error: newItem.error };
+  }
+  const newItemId = newItem.data.id;
+  const typeTable = source.data.type === "Part" ? "part" : "tool";
+  const typeRow = await client
+    .from(typeTable)
+    .insert({ id: newReadableId, companyId, createdBy: userId });
+  if (typeRow.error) return { data: null, error: typeRow.error };
+
+  // Carry the source's item group (on itemCost) onto the new part.
+  await copyItemPostingGroup(client, {
+    sourceItemId: itemId,
+    targetItemId: newItemId,
+    companyId
+  });
+
+  // Copy the affected part's method into the new item's (trigger-created) draft.
+  // @ts-expect-error TS2345 - getMethodValidator flags default via edge fn
+  const copy = await copyItem(client, {
+    sourceId: itemId,
+    targetId: newItemId,
+    companyId,
+    userId
+  });
+  if (copy.error) {
+    return { data: null, error: { message: "Failed to copy make method" } };
+  }
+  const draftId = await getDraftMakeMethodIdForItem(
+    client,
+    newItemId,
+    companyId
+  );
+  if (draftId) {
+    await client
+      .from("makeMethod")
+      .update({ changeOrderId })
+      .eq("id", draftId)
+      .eq("companyId", companyId);
+  }
+  return {
+    data: {
+      draftMakeMethodId: draftId,
+      baseMakeMethodId: base?.id ?? null,
+      newItemId
+    },
+    error: null
+  };
+}
+
+// Discard an affected item's CO-owned Draft (used on change-type switch + when
+// removing the affected item). Deletes the new item for Revision/New Part
+// (cascades its method rows) or the Draft method for Version.
+async function discardChangeOrderDraft(
+  client: SupabaseClient<Database>,
+  affected: {
+    draftMakeMethodId: string | null;
+    newItemId: string | null;
+  },
+  companyId: string
+): Promise<void> {
+  if (affected.newItemId) {
+    await client
+      .from("item")
+      .delete()
+      .eq("id", affected.newItemId)
+      .eq("companyId", companyId);
+    return;
+  }
+  if (affected.draftMakeMethodId) {
+    await client
+      .from("makeMethod")
+      .delete()
+      .eq("id", affected.draftMakeMethodId)
+      .eq("companyId", companyId);
+  }
+}
+
+// Add an affected item to a CO: insert the row, then spin its CO-owned Draft
+// make method per the change type and write the draft refs back. Rolls the row
+// back if draft creation fails (edge-fn calls can't share one txn — G2).
+export async function addChangeOrderAffectedItem(
+  client: SupabaseClient<Database>,
+  input: {
+    changeOrderId: string;
+    // The existing affected item (Version / Revision / Replacement Part). Omitted
+    // for the net-new New Part path, where `newPart` is supplied and the item is
+    // minted here.
+    itemId?: string;
+    changeType: ChangeOrderChangeType;
+    // Forwarded to the Revision draft path so a Revision affected item can take
+    // an explicit revision label (e.g. from the new-revision modal).
+    revision?: string;
+    // Net-new "New Part": mint a brand-new inactive Part/Tool and add it as a New
+    // Part affected item (no existing itemId, no predecessor/supersession).
+    newPart?: {
+      readableId: string;
+      name: string;
+      itemType: "Part" | "Tool";
+      replenishmentSystem: "Buy" | "Make" | "Buy and Make";
+      itemTrackingType?: (typeof itemTrackingTypes)[number];
+    };
+    companyId: string;
+    userId: string;
+  }
+): Promise<{
+  data: { id: string; draftMakeMethodId: string | null } | null;
+  error: ChangeOrderError | null;
+}> {
+  const { changeOrderId, changeType, revision, newPart, companyId, userId } =
+    input;
+  let itemId = input.itemId;
+  let effectiveChangeType: ChangeOrderChangeType = changeType;
+
+  if (newPart) {
+    // Net-new part introduced by the CO — mint an inactive Part/Tool + its type
+    // row, CO-stamped. The minted id becomes the affected item (no predecessor).
+    if (newPart.itemType !== "Part" && newPart.itemType !== "Tool") {
+      return {
+        data: null,
+        error: { message: "New Part is only supported for Parts and Tools" }
+      };
+    }
+    const defaultMethodType =
+      newPart.replenishmentSystem === "Make"
+        ? "Make to Order"
+        : newPart.replenishmentSystem === "Buy"
+          ? "Purchase to Order"
+          : "Pull from Inventory";
+    const minted = await client
+      .from("item")
+      .insert({
+        readableId: newPart.readableId,
+        revision: "0",
+        name: newPart.name,
+        type: newPart.itemType,
+        replenishmentSystem: newPart.replenishmentSystem,
+        defaultMethodType,
+        itemTrackingType: newPart.itemTrackingType ?? "Inventory",
+        unitOfMeasureCode: "EA",
+        active: false,
+        revisionStatus: "Design",
+        changeOrderId,
+        companyId,
+        createdBy: userId
+      })
+      .select("id")
+      .single();
+    if (minted.error || !minted.data) {
+      return { data: null, error: minted.error };
+    }
+    itemId = minted.data.id;
+    const typeTable = newPart.itemType === "Part" ? "part" : "tool";
+    const typeRow = await client
+      .from(typeTable)
+      .insert({ id: newPart.readableId, companyId, createdBy: userId });
+    if (typeRow.error) return { data: null, error: typeRow.error };
+    effectiveChangeType = "New Part";
+  }
+
+  if (!itemId) {
+    return { data: null, error: { message: "Item is required" } };
+  }
+
+  // A purchased (Buy) item has no BoM/BoP, so a Version change is a no-op —
+  // default it to a Revision (part-data/docs), the meaningful change for Buy.
+  if (!newPart && changeType === "Version") {
+    const item = await client
+      .from("item")
+      .select("replenishmentSystem")
+      .eq("id", itemId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (item.data?.replenishmentSystem === "Buy") {
+      effectiveChangeType = "Revision";
+    }
+  }
+
+  const last = await client
+    .from("changeOrderAffectedItem")
+    .select("sortOrder")
+    .eq("changeOrderId", changeOrderId)
+    .eq("companyId", companyId)
+    .order("sortOrder", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const sortOrder = (last.data?.sortOrder ?? -1) + 1;
+
+  const inserted = await client
+    .from("changeOrderAffectedItem")
+    .insert({
+      changeOrderId,
+      itemId,
+      changeType: effectiveChangeType,
+      sortOrder,
+      companyId,
+      createdBy: userId
+    })
+    .select("id")
+    .single();
+  if (inserted.error || !inserted.data) {
+    return { data: null, error: inserted.error };
+  }
+  const affectedItemId = inserted.data.id;
+
+  const draft = await createChangeOrderDraftMethod(client, {
+    changeOrderId,
+    itemId,
+    changeType: effectiveChangeType,
+    revision,
+    companyId,
+    userId
+  });
+  if (draft.error || !draft.data) {
+    await client
+      .from("changeOrderAffectedItem")
+      .delete()
+      .eq("id", affectedItemId)
+      .eq("companyId", companyId);
+    return { data: null, error: draft.error };
+  }
+
+  await client
+    .from("changeOrderAffectedItem")
+    .update({
+      draftMakeMethodId: draft.data.draftMakeMethodId,
+      baseMakeMethodId: draft.data.baseMakeMethodId,
+      newItemId: draft.data.newItemId,
+      updatedBy: userId
+    })
+    .eq("id", affectedItemId)
+    .eq("companyId", companyId);
+
+  return {
+    data: {
+      id: affectedItemId,
+      draftMakeMethodId: draft.data.draftMakeMethodId
+    },
+    error: null
+  };
+}
+
+// Switch an affected item's change type: discard its current draft and rebuild
+// for the new type (Q2 — the editable surface differs per type, so edits reset).
+export async function updateChangeOrderAffectedItemChangeType(
+  client: SupabaseClient<Database>,
+  input: {
+    id: string;
+    changeType: ChangeOrderChangeType;
+    companyId: string;
+    userId: string;
+  }
+): Promise<{ data: { id: string } | null; error: ChangeOrderError | null }> {
+  const { id, changeType, companyId, userId } = input;
+
+  const affected = await client
+    .from("changeOrderAffectedItem")
+    .select(
+      "id, changeOrderId, itemId, changeType, draftMakeMethodId, newItemId"
+    )
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .single();
+  if (affected.error || !affected.data) {
+    return { data: null, error: { message: "Affected item not found" } };
+  }
+  // A New Part is net-new by construction — it cannot be switched to another type,
+  // nor can an existing-part change become net-new. Reject both directions.
+  if (changeType === "New Part" || affected.data.changeType === "New Part") {
+    return {
+      data: null,
+      error: { message: "New Part change type cannot be switched" }
+    };
+  }
+  if (affected.data.changeType === changeType) {
+    return { data: { id }, error: null };
+  }
+
+  // Create the replacement Draft BEFORE destroying the current one, so a failure
+  // in creation or the ref swap leaves the affected row still pointing at a valid
+  // (undeleted) draft instead of a dangling reference. The old draft is discarded
+  // only after the swap succeeds (worst case on a late failure is an orphaned
+  // draft, never a dangling ref). Capture the old refs first.
+  const previousDraft = {
+    draftMakeMethodId: affected.data.draftMakeMethodId,
+    newItemId: affected.data.newItemId
+  };
+
+  const draft = await createChangeOrderDraftMethod(client, {
+    changeOrderId: affected.data.changeOrderId,
+    itemId: affected.data.itemId,
+    changeType,
+    companyId,
+    userId
+  });
+  if (draft.error || !draft.data) {
+    return { data: null, error: draft.error };
+  }
+
+  const updated = await client
+    .from("changeOrderAffectedItem")
+    .update({
+      changeType,
+      draftMakeMethodId: draft.data.draftMakeMethodId,
+      baseMakeMethodId: draft.data.baseMakeMethodId,
+      newItemId: draft.data.newItemId,
+      updatedBy: userId
+    })
+    .eq("id", id)
+    .eq("companyId", companyId);
+  if (updated.error) return { data: null, error: updated.error };
+
+  // Swap succeeded — now safe to discard the superseded draft.
+  await discardChangeOrderDraft(client, previousDraft, companyId);
+  return { data: { id }, error: null };
+}
+
+// Update the per-item revision cutover config (mode + dates). The existence of
+// the oldRev→newRev supersession is automatic at release; this only tunes it.
+export async function updateChangeOrderAffectedItemCutover(
+  client: SupabaseClient<Database>,
+  input: {
+    id: string;
+    supersessionMode: Database["public"]["Enums"]["supersessionMode"];
+    discontinuationDate?: string;
+    successorEffectivityDate?: string;
+    userId: string;
+  }
+) {
+  const { id, userId, ...rest } = input;
+  return client
+    .from("changeOrderAffectedItem")
+    .update({
+      ...sanitize(rest),
+      updatedBy: userId,
+      updatedAt: new Date().toISOString()
+    })
+    .eq("id", id)
+    .select("id")
+    .single();
+}
+
+// =============================================================================
+// Affected-item + supersession reads/writes (label-stitched). Flat selects + JS
+// stitch (no composite-FK PostgREST embeds — the erp TS2589 budget).
+// =============================================================================
+
+// The minimal item label rendered next to each affected item / supersession.
+export type ChangeOrderStagingItemLabel = {
+  id: string;
+  readableId: string;
+  readableIdWithRevision: string | null;
+  name: string;
+  type: Database["public"]["Enums"]["itemType"];
+  active: boolean;
+  revisionStatus: Database["public"]["Enums"]["itemRevisionStatus"];
+  replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"];
+};
+
+type ChangeOrderAffectedItemRow =
+  Database["public"]["Tables"]["changeOrderAffectedItem"]["Row"];
+
+export type ChangeOrderAffectedItemWithLabel = ChangeOrderAffectedItemRow & {
+  item: ChangeOrderStagingItemLabel | null;
+};
+
+const ITEM_LABEL_COLUMNS =
+  "id, readableId, readableIdWithRevision, name, type, active, revisionStatus, replenishmentSystem";
+
+// Fetch minimal item labels for a set of ids, indexed by item id.
+async function stitchItemLabels(
+  client: SupabaseClient<Database>,
+  itemIds: string[],
+  companyId: string
+): Promise<{
+  labels: Map<string, ChangeOrderStagingItemLabel>;
+  error: { message: string } | null;
+}> {
+  const uniqueIds = [...new Set(itemIds)];
+  const labels = new Map<string, ChangeOrderStagingItemLabel>();
+  if (uniqueIds.length === 0) return { labels, error: null };
+
+  const items = await client
+    .from("item")
+    .select(ITEM_LABEL_COLUMNS)
+    .in("id", uniqueIds)
+    .eq("companyId", companyId);
+
+  if (items.error) return { labels, error: items.error };
+  for (const it of items.data ?? [])
+    labels.set(it.id, it as ChangeOrderStagingItemLabel);
+
+  return { labels, error: null };
+}
+
+// The affected items of a CO, each stitched to a minimal item label.
+export async function getChangeOrderAffectedItems(
+  client: SupabaseClient<Database>,
+  changeOrderId: string,
+  companyId: string
+): Promise<{
+  data: ChangeOrderAffectedItemWithLabel[];
+  error: { message: string } | null;
+}> {
+  const affected = await client
+    .from("changeOrderAffectedItem")
+    .select("*")
+    .eq("changeOrderId", changeOrderId)
+    .eq("companyId", companyId)
+    .order("sortOrder", { ascending: true })
+    .order("createdAt", { ascending: true });
+
+  if (affected.error) return { data: [], error: affected.error };
+  const rows = affected.data ?? [];
+  if (rows.length === 0) return { data: [], error: null };
+
+  const { labels, error } = await stitchItemLabels(
+    client,
+    rows.map((r) => r.itemId),
+    companyId
+  );
+  if (error) return { data: [], error };
+
+  return {
+    data: rows.map((r) => ({ ...r, item: labels.get(r.itemId) ?? null })),
+    error: null
+  };
+}
+
+// Remove an affected item + discard its CO-owned Draft (delete the new item for
+// Revision/New Part, or the Draft method for Version) so no orphan draft leaks.
+export async function removeChangeOrderAffectedItem(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  const affected = await client
+    .from("changeOrderAffectedItem")
+    .select("draftMakeMethodId, newItemId")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (!affected.error && affected.data) {
+    await discardChangeOrderDraft(client, affected.data, companyId);
+  }
+  return client
+    .from("changeOrderAffectedItem")
+    .delete()
+    .eq("id", id)
+    .eq("companyId", companyId);
+}
+
+// =============================================================================
+// Change Orders — item traceability reads (part/tool ↔ CO) and the linked-NCR
+// reverse view. Split out of changeOrder.service.ts to keep each file focused
+// and under the module's 1000-line budget (G4).
+// =============================================================================
+
+// G6 — the SINGLE canonical "change orders referencing this item" query,
+// parameterized by status. The item-detail history (all COs), the open-CO alert
+// (open statuses), and the single-open-CO guard all call this — no forked
+// implementations. Spans every way a CO references an item in the top-to-bottom
+// model: an affected item the user selected to change, a staged BOM component,
+// a manual supersession (predecessor or successor), and the reverse link from a
+// released revision (`item.changeOrderId`). Scoped by readableId so it matches
+// the part across all its revisions. Flat queries + JS union (no embeds —
+// TS2589 budget).
+export type ChangeOrderForItem = {
+  id: string;
+  changeOrderId: string;
+  name: string;
+  status: Database["public"]["Enums"]["changeOrderStatus"];
+  changeOrderTypeId: string | null;
+  createdAt: string;
+};
+
+export async function findChangeOrdersForItem(
+  client: SupabaseClient<Database>,
+  args: {
+    itemId: string;
+    companyId: string;
+    statuses?: Database["public"]["Enums"]["changeOrderStatus"][];
+  }
+): Promise<{ data: ChangeOrderForItem[]; error: { message: string } | null }> {
+  const { itemId, companyId, statuses } = args;
+
+  // Resolve every revision (item row) sharing this part's readableId.
+  const item = await client
+    .from("item")
+    .select("readableId")
+    .eq("id", itemId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (item.error) return { data: [], error: item.error };
+  if (!item.data?.readableId) return { data: [], error: null };
+
+  const siblings = await client
+    .from("item")
+    .select("id, changeOrderId")
+    .eq("readableId", item.data.readableId)
+    .eq("companyId", companyId);
+  if (siblings.error) return { data: [], error: siblings.error };
+  const itemIds = (siblings.data ?? []).map((s) => s.id);
+  if (itemIds.length === 0) return { data: [], error: null };
+
+  // Collect referencing changeOrderIds from every relation. v2: instead of a
+  // staged-material mirror, "this item is a component in a CO's edited BOM" is
+  // found via methodMaterial rows on CO-owned draft methods (makeMethod with a
+  // non-null changeOrderId).
+  const [affected, componentMaterials, predecessors, successors] =
+    await Promise.all([
+      client
+        .from("changeOrderAffectedItem")
+        .select("changeOrderId")
+        .in("itemId", itemIds)
+        .eq("companyId", companyId),
+      client
+        .from("methodMaterial")
+        .select("makeMethodId")
+        .in("itemId", itemIds)
+        .eq("companyId", companyId),
+      client
+        .from("changeOrderSupersession")
+        .select("changeOrderId")
+        .in("predecessorItemId", itemIds)
+        .eq("companyId", companyId),
+      client
+        .from("changeOrderSupersession")
+        .select("changeOrderId")
+        .in("successorItemId", itemIds)
+        .eq("companyId", companyId)
+    ]);
+  if (affected.error) return { data: [], error: affected.error };
+  if (componentMaterials.error)
+    return { data: [], error: componentMaterials.error };
+  if (predecessors.error) return { data: [], error: predecessors.error };
+  if (successors.error) return { data: [], error: successors.error };
+
+  // Resolve which of those make methods are CO-owned drafts.
+  const makeMethodIds = [
+    ...new Set(
+      (componentMaterials.data ?? []).map((m) => m.makeMethodId).filter(Boolean)
+    )
+  ] as string[];
+  const coOwnedMethods = makeMethodIds.length
+    ? await client
+        .from("makeMethod")
+        .select("changeOrderId")
+        .in("id", makeMethodIds)
+        .not("changeOrderId", "is", null)
+        .eq("companyId", companyId)
+    : { data: [], error: null };
+  if (coOwnedMethods.error) return { data: [], error: coOwnedMethods.error };
+
+  const coIds = new Set<string>();
+  for (const a of affected.data ?? []) coIds.add(a.changeOrderId);
+  for (const m of coOwnedMethods.data ?? []) {
+    if (m.changeOrderId) coIds.add(m.changeOrderId);
+  }
+  for (const p of predecessors.data ?? []) coIds.add(p.changeOrderId);
+  for (const s of successors.data ?? []) coIds.add(s.changeOrderId);
+
+  // Reverse link: a released revision points at the CO that created it.
+  for (const s of siblings.data ?? []) {
+    if (s.changeOrderId) coIds.add(s.changeOrderId);
+  }
+
+  if (coIds.size === 0) return { data: [], error: null };
+
+  let query = client
+    .from("changeOrder")
+    .select("id, changeOrderId, name, status, changeOrderTypeId, createdAt")
+    .in("id", [...coIds])
+    .eq("companyId", companyId);
+  if (statuses && statuses.length > 0) query = query.in("status", statuses);
+  query = query.order("createdAt", { ascending: false });
+
+  const result = await query;
+  if (result.error) return { data: [], error: result.error };
+  return { data: result.data ?? [], error: null };
+}
+
+// Reverse of the Linked-NCR cross-link (4a): every change order that references
+// a given non-conformance. Read-only, minimal columns; rendered on the Issue
+// detail. Flat select (no embeds — TS2589 budget).
+export async function getChangeOrdersForNonConformance(
+  client: SupabaseClient<Database>,
+  nonConformanceId: string,
+  companyId: string
+) {
+  return client
+    .from("changeOrder")
+    .select("id, changeOrderId, name, status")
+    .eq("nonConformanceId", nonConformanceId)
+    .eq("companyId", companyId)
+    .order("createdAt", { ascending: false });
+}
+
+// Single-open-CO-per-part guard (V1 — no parallel change orders): the OTHER
+// open change orders that already reference a part, excluding the current CO.
+// Reuses the canonical G6 query at the open-status filter. A non-empty result
+// means adding the part here would create a parallel open CO — the routes (and
+// the staging service) reject it.
+export async function findOtherOpenChangeOrdersForItem(
+  client: SupabaseClient<Database>,
+  args: { itemId: string; companyId: string; excludeChangeOrderId: string }
+): Promise<ChangeOrderForItem[]> {
+  const { data } = await findChangeOrdersForItem(client, {
+    itemId: args.itemId,
+    companyId: args.companyId,
+    statuses: changeOrderOpenStatuses
+  });
+  return data.filter((co) => co.id !== args.excludeChangeOrderId);
+}
+
+// Loader data for the "Change Orders" history section + open-CO alert on an
+// item detail page (part/tool/material) — the CO history for the item plus the
+// type lookup used to label rows. One shared source so the detail routes don't
+// each re-implement the pair of reads.
+export async function getItemChangeOrderData(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string
+) {
+  const [changeOrders, changeOrderTypes] = await Promise.all([
+    findChangeOrdersForItem(client, { itemId, companyId }),
+    getChangeOrderTypesList(client, companyId)
+  ]);
+  return {
+    changeOrders: changeOrders.data,
+    changeOrderTypes: changeOrderTypes.data ?? []
+  };
+}
+
+// =============================================================================
+// Change Orders — Actions (freeform tasks; reuse changeOrderActionTask). Any
+// user, any stage; non-gating. Split out of changeOrder.service.ts to keep
+// each file focused and under the module's 1000-line budget (G4).
+// =============================================================================
+export async function getChangeOrderActions(
+  client: SupabaseClient<Database>,
+  changeOrderId: string,
+  companyId: string
+) {
+  return client
+    .from("changeOrderActionTask")
+    .select("*")
+    .eq("changeOrderId", changeOrderId)
+    .eq("companyId", companyId)
+    .order("sortOrder", { ascending: true })
+    .order("createdAt", { ascending: true });
+}
+
+export async function updateChangeOrderActionStatus(
+  client: SupabaseClient<Database>,
+  input: {
+    id: string;
+    status: (typeof changeOrderTaskStatus)[number];
+    userId: string;
+  }
+) {
+  const today = new Date().toISOString().split("T")[0];
+  return client
+    .from("changeOrderActionTask")
+    .update({
+      status: input.status,
+      completedDate: input.status === "Completed" ? today : null,
+      updatedBy: input.userId
+    })
+    .eq("id", input.id)
+    .select("id")
+    .single();
+}
+
+export async function deleteChangeOrderAction(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("changeOrderActionTask").delete().eq("id", id);
+}
+
+// Bulk reorder (drag-sort) — a multi-row write, so Kysely (route passes
+// getDatabaseClient()).
+export async function updateChangeOrderActionOrder(
+  db: Kysely<KyselyDatabase>,
+  updates: { id: string; sortOrder: number; updatedBy: string }[]
+) {
+  return db.transaction().execute(async (trx) => {
+    for (const { id, sortOrder, updatedBy } of updates) {
+      await trx
+        .updateTable("changeOrderActionTask")
+        .set({ sortOrder, updatedBy })
+        .where("id", "=", id)
+        .execute();
+    }
+  });
+}
+
+// =============================================================================
+// Change Order Required Actions (the configurable default-action templates the
+// config CRUD page manages, and the source new change orders are seeded from).
+// =============================================================================
+export async function getChangeOrderRequiredActions(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("changeOrderRequiredAction")
+    .select("*", { count: "exact" })
+    .eq("companyId", companyId);
+
+  if (args?.search) {
+    query = query.ilike("name", `%${args.search}%`);
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "name", ascending: true }
+    ]);
+  }
+
+  return query;
+}
+
+export async function getChangeOrderRequiredActionsList(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("changeOrderRequiredAction")
+    .select("id, name")
+    .eq("companyId", companyId)
+    .eq("active", true)
+    .order("name", { ascending: true });
+}
+
+export async function getChangeOrderRequiredAction(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client
+    .from("changeOrderRequiredAction")
+    .select("*")
+    .eq("id", id)
+    .single();
+}
+
+export async function upsertChangeOrderRequiredAction(
+  client: SupabaseClient<Database>,
+  input: {
+    id?: string;
+    name: string;
+    active: boolean;
+    companyId: string;
+    userId: string;
+  }
+) {
+  if (input.id) {
+    return client
+      .from("changeOrderRequiredAction")
+      .update({
+        name: input.name,
+        active: input.active,
+        updatedBy: input.userId
+      })
+      .eq("id", input.id)
+      .select("id")
+      .single();
+  }
+
+  return client
+    .from("changeOrderRequiredAction")
+    .insert({
+      name: input.name,
+      active: input.active,
+      companyId: input.companyId,
+      createdBy: input.userId
+    })
+    .select("id")
+    .single();
+}
+
+export async function deleteChangeOrderRequiredAction(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("changeOrderRequiredAction").delete().eq("id", id);
+}
+
+// Reconcile a change order's action tasks to a chosen set of required-action
+// templates — the sidebar's editable "Required Actions" multiselect (mirrors
+// Quality's requiredActionIds field). Templates newly selected are instantiated
+// (appended); templates deselected have their task removed. Tasks with no
+// template link (actionTypeId IS NULL) are left untouched.
+export async function setChangeOrderActionTasks(
+  client: SupabaseClient<Database>,
+  input: {
+    changeOrderId: string;
+    requiredActionIds: string[];
+    companyId: string;
+    userId: string;
+  }
+) {
+  const existing = await client
+    .from("changeOrderActionTask")
+    .select("id, actionTypeId, sortOrder")
+    .eq("changeOrderId", input.changeOrderId)
+    .eq("companyId", input.companyId);
+  if (existing.error) return existing;
+
+  const rows = existing.data ?? [];
+  const desired = new Set(input.requiredActionIds);
+  const linked = new Set(
+    rows.map((r) => r.actionTypeId).filter((id): id is string => Boolean(id))
+  );
+
+  const toRemove = rows
+    .filter((r) => r.actionTypeId && !desired.has(r.actionTypeId))
+    .map((r) => r.id);
+  if (toRemove.length > 0) {
+    const del = await client
+      .from("changeOrderActionTask")
+      .delete()
+      .in("id", toRemove);
+    if (del.error) return del;
+  }
+
+  const toAddIds = input.requiredActionIds.filter((id) => !linked.has(id));
+  if (toAddIds.length > 0) {
+    const templates = await client
+      .from("changeOrderRequiredAction")
+      .select("id, name")
+      .in("id", toAddIds)
+      .eq("companyId", input.companyId);
+    if (templates.error) return templates;
+
+    const base = rows.reduce((max, r) => Math.max(max, r.sortOrder ?? 0), 0);
+    const ins = await client.from("changeOrderActionTask").insert(
+      (templates.data ?? []).map((template, index) => ({
+        changeOrderId: input.changeOrderId,
+        actionTypeId: template.id,
+        name: template.name,
+        status: "Pending" as const,
+        sortOrder: base + index + 1,
+        companyId: input.companyId,
+        createdBy: input.userId
+      }))
+    );
+    if (ins.error) return ins;
+  }
+
+  return { data: null, error: null };
+}
+
+// Instantiate one changeOrderActionTask per active template onto a new change
+// order. Called by insertChangeOrder; non-gating, so callers ignore a soft
+// failure rather than roll back the change order.
+export async function seedDefaultChangeOrderActions(
+  client: SupabaseClient<Database>,
+  input: { changeOrderId: string; companyId: string; userId: string }
+) {
+  const templates = await getChangeOrderRequiredActionsList(
+    client,
+    input.companyId
+  );
+  if (templates.error || !templates.data?.length) return templates;
+
+  return client.from("changeOrderActionTask").insert(
+    templates.data.map((template, index) => ({
+      changeOrderId: input.changeOrderId,
+      actionTypeId: template.id,
+      name: template.name,
+      status: "Pending" as const,
+      sortOrder: index + 1,
+      companyId: input.companyId,
+      createdBy: input.userId
+    }))
+  );
+}
+
+// =============================================================================
+// Change Orders — the reusable method-diff engine (Q5 git-style end-state).
+//
+// `diffMethod` is a PURE function (no DB access, unit-testable): it compares two
+// method snapshots (a `base` = the current live method, a `target` = the CO's
+// staged desired end-state) and classifies every material / operation as
+// added / removed / modified / unchanged, plus a column-by-column attribute diff.
+// The same shape is reused for the pre-release "tips" (staged-vs-live) and the
+// post-release oldRev↔newRev redline (Task 17).
+//
+// `getChangeOrderDiff` is the DB-facing wrapper: for each affected item it reads
+// the current source method live + the staged rows, runs `diffMethod`, and also
+// returns the manual supersession declarations. Reads are flat selects + JS
+// stitch (no composite-FK PostgREST embeds — the erp TS2589 budget; see lessons).
+// =============================================================================
+
+// A plain record — DB rows are passed straight through; the engine is generic
+// over the shape and only reads the compared field subset + the identity keys.
+type Row = Record<string, unknown>;
+
+// Materials are matched by identity: a staged/target row's `sourceMaterialId`
+// links it to a base row's `id`. Operations use `sourceOperationId`. Operation
+// CHILDREN (steps / parameters / tools) use `sourceId` (the staged child's
+// pointer at the live child it was copied from; NULL ⇒ added child line).
+const MATERIAL_SOURCE_KEY = "sourceMaterialId";
+const OPERATION_SOURCE_KEY = "sourceOperationId";
+const CHILD_SOURCE_KEY = "sourceId";
+
+// Never compared — audit / linkage / tenancy columns. The compared set for every
+// staged entity is derived as (staged row keys − this set), so adding a mirrored
+// business column to a staged table automatically includes it in the diff; only
+// genuine noise columns need listing here.
+const IGNORED_FIELDS = new Set<string>([
+  "id",
+  "companyId",
+  "changeOrderId",
+  "affectedItemId",
+  "sourceMaterialId",
+  "sourceOperationId",
+  "sourceId",
+  "stagedOperationId",
+  // v2: base and draft rows live on different real methods/operations, so these
+  // linkage columns always differ and must never count as a business change.
+  "makeMethodId",
+  "operationId",
+  // The customFields JSON bag differs as a copy artifact (null vs {}), surfacing
+  // a meaningless "— → Set" on unrelated edits — never diff it as a whole column.
+  "customFields",
+  "createdAt",
+  "createdBy",
+  "updatedAt",
+  "updatedBy"
+]);
+
+// Loose equality tolerant of the numeric-string ↔ number skew that Supabase
+// returns for NUMERIC columns (a live `quantity` may be `"1"` while a staged one
+// is `1`). null and undefined are the same "empty" value. JSON/array columns
+// (workInstruction, step description, listValues/fileTypes) are separate object
+// instances on the live vs staged side, so they're compared structurally — a
+// reference check would report every non-null one as changed.
+function valuesEqual(a: unknown, b: unknown): boolean {
+  if (a === b) return true;
+  if (a == null && b == null) return true;
+  if (a == null || b == null) return false;
+  if (typeof a === "number" || typeof b === "number") {
+    const na = typeof a === "number" ? a : Number(a);
+    const nb = typeof b === "number" ? b : Number(b);
+    if (!Number.isNaN(na) && !Number.isNaN(nb)) return na === nb;
+  }
+  if (typeof a === "object" && typeof b === "object") {
+    return JSON.stringify(a) === JSON.stringify(b);
+  }
+  return false;
+}
+
+// The business columns to compare for a matched (base, target) pair: every key
+// the CO actually STAGED (the target row), minus the audit/linkage/tenancy set.
+// Deriving from the staged row — not a hand-maintained per-entity list, and not
+// the union with the live row — is what keeps the diff in lockstep with the
+// mirrored schema: staging copies exactly the changeable columns, live rows carry
+// extra columns (makeMethodId, …) that must NOT be compared against `undefined`.
+function comparedFields(target: Row): string[] {
+  return Object.keys(target).filter((k) => !IGNORED_FIELDS.has(k));
+}
+
+// Build the field-level change map for a matched (base, target) pair. Returns
+// undefined when nothing changed.
+function diffFields(
+  base: Row,
+  target: Row
+): Record<string, { before: unknown; after: unknown }> | undefined {
+  const changed: Record<string, { before: unknown; after: unknown }> = {};
+  for (const field of comparedFields(target)) {
+    if (!valuesEqual(base[field], target[field])) {
+      changed[field] = {
+        before: base[field] ?? null,
+        after: target[field] ?? null
+      };
+    }
+  }
+  return Object.keys(changed).length > 0 ? changed : undefined;
+}
+
+// Match target rows to base rows by the given source-pointer key, then classify.
+//   - base row with no target pointing at it            ⇒ removed
+//   - target row with a null/absent source pointer      ⇒ added
+//   - target whose source pointer references a base row  ⇒ modified | unchanged
+function diffRows(
+  base: Row[],
+  target: Row[],
+  sourceKey: string
+): MethodDiffEntry<Row>[] {
+  const entries: MethodDiffEntry<Row>[] = [];
+
+  // Index base rows by their id for O(1) lookup, and track which get matched.
+  const baseById = new Map<string, Row>();
+  for (const row of base) {
+    const id = row.id;
+    if (typeof id === "string") baseById.set(id, row);
+  }
+  const matchedBaseIds = new Set<string>();
+
+  for (const targetRow of target) {
+    const sourceId = targetRow[sourceKey];
+    const baseRow =
+      typeof sourceId === "string" ? baseById.get(sourceId) : undefined;
+
+    if (!baseRow) {
+      // No live counterpart — a newly-added line.
+      entries.push({ status: "added", before: null, after: targetRow });
+      continue;
+    }
+
+    matchedBaseIds.add(baseRow.id as string);
+    const changedFields = diffFields(baseRow, targetRow);
+    const status: MethodDiffStatus = changedFields ? "modified" : "unchanged";
+    entries.push({
+      status,
+      before: baseRow,
+      after: targetRow,
+      ...(changedFields ? { changedFields } : {})
+    });
+  }
+
+  // Any base row nothing pointed at was dropped from the staged end-state.
+  for (const baseRow of base) {
+    const id = baseRow.id;
+    if (typeof id === "string" && !matchedBaseIds.has(id)) {
+      entries.push({ status: "removed", before: baseRow, after: null });
+    }
+  }
+
+  return entries;
+}
+
+// -----------------------------------------------------------------------------
+// Operation children (steps / parameters / tools)
+// -----------------------------------------------------------------------------
+
+// The three staged child buckets for a single operation, keyed by the staged
+// operation's id. Both the live (base) children and the staged (target) children
+// share this shape.
+export type OperationChildren = {
+  steps: Row[];
+  parameters: Row[];
+  tools: Row[];
+};
+
+// OperationChildrenDiff and OperationDiffEntry now live in changeOrder.models
+// (imported + re-exported above) so ChangeOrderItemDiff can reference them
+// without a circular import. Their shape is unchanged (Row = Record<string,
+// unknown>, the same as MethodDiffEntry's generic here).
+
+// Base/target children keyed by operation id. For target (staged) operations the
+// key is the staged operation's own id; for base (live) operations it's the live
+// operation's id. Matching a staged operation to its base children goes through
+// the operation's `sourceOperationId`.
+export type ChildrenByOperationId = Record<string, OperationChildren>;
+
+function emptyChildren(): OperationChildren {
+  return { steps: [], parameters: [], tools: [] };
+}
+
+// Diff one operation's children. `base`/`target` are the live/staged child
+// buckets; each bucket is matched by `sourceId` over its own compare-field set.
+function diffOperationChildren(
+  base: OperationChildren,
+  target: OperationChildren
+): OperationChildrenDiff {
+  return {
+    steps: diffRows(base.steps, target.steps, CHILD_SOURCE_KEY),
+    parameters: diffRows(base.parameters, target.parameters, CHILD_SOURCE_KEY),
+    tools: diffRows(base.tools, target.tools, CHILD_SOURCE_KEY)
+  };
+}
+
+// Diff operations AND, when child buckets are supplied, attach a per-operation
+// child diff. Matches operations exactly like diffRows (by `sourceOperationId`);
+// for each entry it pairs the base children (via the matched base operation id)
+// with the target children (via the staged operation id) and runs
+// `diffOperationChildren`. When no child maps are supplied it degrades to the
+// plain operation diff (identical to `diffRows`), so existing callers/tests are
+// unaffected.
+function diffOperations(
+  base: Row[],
+  target: Row[],
+  baseChildren?: ChildrenByOperationId,
+  targetChildren?: ChildrenByOperationId
+): OperationDiffEntry[] {
+  const entries = diffRows(
+    base,
+    target,
+    OPERATION_SOURCE_KEY
+  ) as OperationDiffEntry[];
+
+  if (!baseChildren && !targetChildren) return entries;
+
+  for (const entry of entries) {
+    const baseId = (entry.before as { id?: string } | null)?.id;
+    const targetId = (entry.after as { id?: string } | null)?.id;
+    const baseKids = (baseId && baseChildren?.[baseId]) || emptyChildren();
+    const targetKids =
+      (targetId && targetChildren?.[targetId]) || emptyChildren();
+    entry.children = diffOperationChildren(baseKids, targetKids);
+  }
+
+  return entries;
+}
+
+// Column-by-column diff of two attribute objects. Every key present in either
+// object (minus the ignored audit/linkage set) is compared; each changed column
+// becomes one MethodDiffEntry whose `changedFields` holds the single field. When
+// nothing changed a single "unchanged" entry is returned so callers can render
+// "no attribute changes" uniformly.
+function diffAttributes(
+  base: Row | null,
+  target: Row | null
+): MethodDiffEntry<Row>[] {
+  const b = base ?? {};
+  const t = target ?? {};
+  // Net-new item (a New Part has no predecessor): surface every attribute as an
+  // addition — the whole item is new — mirroring how a BOM/BOP with no base
+  // method renders all of its rows as `added`. The viewer draws the full property
+  // list in green rather than per-field old→new pairs.
+  if (!base && target) {
+    return [{ status: "added", before: null, after: target }];
+  }
+  // Compare only the columns the CO staged (target), minus audit/linkage — the
+  // live source select carries extra columns (e.g. modelUploadId) the staged row
+  // doesn't mirror, and comparing those against `undefined` would be spurious.
+  const keys = target ? comparedFields(target) : [];
+
+  const entries: MethodDiffEntry<Row>[] = [];
+  for (const key of keys) {
+    if (valuesEqual(b[key], t[key])) continue;
+    entries.push({
+      status: "modified",
+      before: base,
+      after: target,
+      changedFields: {
+        [key]: { before: b[key] ?? null, after: t[key] ?? null }
+      }
+    });
+  }
+
+  if (entries.length === 0) {
+    return [{ status: "unchanged", before: base, after: target }];
+  }
+  return entries;
+}
+
+// -----------------------------------------------------------------------------
+// The pure diff engine
+// -----------------------------------------------------------------------------
+
+export type DiffMethodInput = {
+  baseMaterials: Row[];
+  targetMaterials: Row[];
+  baseOperations: Row[];
+  targetOperations: Row[];
+  baseAttributes?: Row | null;
+  targetAttributes?: Row | null;
+  // Optional per-operation children (steps/parameters/tools), keyed by operation
+  // id (live op id for base, staged op id for target). When omitted, operation
+  // entries carry no `children` and the result is identical to the pre-Task-16
+  // shape.
+  baseOperationChildren?: ChildrenByOperationId;
+  targetOperationChildren?: ChildrenByOperationId;
+};
+
+export type DiffMethodResult = {
+  materials: MethodDiffEntry<Row>[];
+  // Operations may carry an optional child-level diff (see OperationDiffEntry).
+  // OperationDiffEntry is a superset of MethodDiffEntry<Row>, so consumers typed
+  // against MethodDiffEntry<Row>[] keep working.
+  operations: OperationDiffEntry[];
+  attributes: MethodDiffEntry<Row>[];
+};
+
+// PURE. Compares two method snapshots. No DB access — the caller supplies plain
+// rows (live method rows as `base`, CO-staged rows as `target`), and optionally
+// the per-operation child buckets to also diff steps/parameters/tools.
+export function diffMethod(input: DiffMethodInput): DiffMethodResult {
+  return {
+    materials: diffRows(
+      input.baseMaterials,
+      input.targetMaterials,
+      MATERIAL_SOURCE_KEY
+    ),
+    operations: diffOperations(
+      input.baseOperations,
+      input.targetOperations,
+      input.baseOperationChildren,
+      input.targetOperationChildren
+    ),
+    attributes: diffAttributes(
+      input.baseAttributes ?? null,
+      input.targetAttributes ?? null
+    )
+  };
+}
+
+// -----------------------------------------------------------------------------
+// DB-facing wrapper
+// -----------------------------------------------------------------------------
+
+export type ChangeOrderDiff = {
+  items: ChangeOrderItemDiff[];
+};
+
+// Editable item attribute columns compared for the attribute diff. `mpn` lives on
+// item; the item group (itemPostingGroupId) lives on itemCost and is merged in
+// separately by readItemAttributes. `active` is intentionally excluded — a CO
+// draft is created inactive until release, so it always differs (not a real edit).
+const ITEM_ATTRIBUTE_COLUMNS =
+  "name, description, unitOfMeasureCode, itemTrackingType, defaultMethodType, replenishmentSystem, sourcingType, requiresInspection, thumbnailPath, mpn";
+
+// Read one make method's materials + operations + per-operation children (real
+// method tables — the v2 substrate). Empty for a null makeMethodId (e.g. a Buy
+// item with no method, or before a draft exists).
+async function readMethodRows(
+  client: SupabaseClient<Database>,
+  makeMethodId: string | null,
+  companyId: string
+): Promise<{
+  materials: Row[];
+  operations: Row[];
+  children: ChildrenByOperationId;
+  error: { message: string } | null;
+}> {
+  const empty = { materials: [], operations: [], children: {}, error: null };
+  if (!makeMethodId) return empty;
+
+  const [materials, operations] = await Promise.all([
+    client
+      .from("methodMaterial")
+      .select("*")
+      .eq("makeMethodId", makeMethodId)
+      .eq("companyId", companyId)
+      .order("order", { ascending: true }),
+    client
+      .from("methodOperation")
+      .select("*")
+      .eq("makeMethodId", makeMethodId)
+      .eq("companyId", companyId)
+      .order("order", { ascending: true })
+  ]);
+  if (materials.error) return { ...empty, error: materials.error };
+  if (operations.error) return { ...empty, error: operations.error };
+
+  const ops = (operations.data ?? []) as Row[];
+  const children: ChildrenByOperationId = {};
+  const opIds = ops
+    .map((o) => o.id)
+    .filter((id): id is string => typeof id === "string");
+
+  if (opIds.length > 0) {
+    const [steps, parameters, tools] = await Promise.all([
+      client
+        .from("methodOperationStep")
+        .select("*")
+        .in("operationId", opIds)
+        .eq("companyId", companyId),
+      client
+        .from("methodOperationParameter")
+        .select("*")
+        .in("operationId", opIds)
+        .eq("companyId", companyId),
+      client
+        .from("methodOperationTool")
+        .select("*")
+        .in("operationId", opIds)
+        .eq("companyId", companyId)
+    ]);
+    if (steps.error) return { ...empty, error: steps.error };
+    if (parameters.error) return { ...empty, error: parameters.error };
+    if (tools.error) return { ...empty, error: tools.error };
+
+    for (const id of opIds)
+      children[id] = { steps: [], parameters: [], tools: [] };
+    for (const r of (steps.data ?? []) as Row[]) {
+      const op = r.operationId;
+      if (typeof op === "string") children[op]?.steps.push(r);
+    }
+    for (const r of (parameters.data ?? []) as Row[]) {
+      const op = r.operationId;
+      if (typeof op === "string") children[op]?.parameters.push(r);
+    }
+    for (const r of (tools.data ?? []) as Row[]) {
+      const op = r.operationId;
+      if (typeof op === "string") children[op]?.tools.push(r);
+    }
+  }
+
+  return {
+    materials: (materials.data ?? []) as Row[],
+    operations: ops,
+    children,
+    error: null
+  };
+}
+
+// The v2 draft method is created by copying the base method, so it initially
+// mirrors the base 1:1 with NO back-pointer ids. We reconstruct the source
+// pointers the pure engine expects by matching each target row to a base row on
+// a natural key (materials → component itemId, operations → order, children →
+// name/key/toolId), first-unmatched-wins. An unmatched target row is an add; an
+// unmatched base row is a remove.
+function correlate(
+  base: Row[],
+  target: Row[],
+  keyField: string,
+  sourceKey: string
+): void {
+  const usedBaseIds = new Set<string>();
+  for (const t of target) {
+    const key = t[keyField];
+    const match = base.find(
+      (b) =>
+        b[keyField] === key &&
+        typeof b.id === "string" &&
+        !usedBaseIds.has(b.id)
+    );
+    if (match && typeof match.id === "string") {
+      usedBaseIds.add(match.id);
+      t[sourceKey] = match.id;
+    } else {
+      t[sourceKey] = null;
+    }
+  }
+}
+
+async function readItemAttributes(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string
+): Promise<Row | null> {
+  const [item, cost] = await Promise.all([
+    client
+      .from("item")
+      .select(ITEM_ATTRIBUTE_COLUMNS)
+      .eq("id", itemId)
+      .eq("companyId", companyId)
+      .maybeSingle(),
+    // The item group lives on itemCost, not item — merge it in so it diffs too.
+    client
+      .from("itemCost")
+      .select("itemPostingGroupId")
+      .eq("itemId", itemId)
+      .eq("companyId", companyId)
+      .maybeSingle()
+  ]);
+  if (!item.data) return null;
+  return {
+    ...(item.data as Row),
+    itemPostingGroupId: cost.data?.itemPostingGroupId ?? null
+  };
+}
+
+// A Revision/New Part draft item starts with no supplier parts (the source's
+// aren't copied); the ones the user sets up on the CO line are surfaced as `added`
+// entries. Mirrors getSupplierParts (items.service) — active rows for the item.
+async function readDraftSupplierParts(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string
+): Promise<{
+  data: MethodDiffEntry<Row>[];
+  error: { message: string } | null;
+}> {
+  const res = await client
+    .from("supplierPart")
+    .select("*")
+    .eq("itemId", itemId)
+    .eq("companyId", companyId)
+    .eq("active", true);
+  if (res.error) return { data: [], error: res.error };
+  return {
+    data: (res.data ?? []).map((row) => ({
+      status: "added" as const,
+      before: null,
+      after: row as Row
+    })),
+    error: null
+  };
+}
+
+// Resolve item-group ids → their names for readable diff display.
+async function readPostingGroupNames(
+  client: SupabaseClient<Database>,
+  ids: string[],
+  companyId: string
+): Promise<Map<string, string>> {
+  const map = new Map<string, string>();
+  const unique = [...new Set(ids)].filter((id) => id.length > 0);
+  if (unique.length === 0) return map;
+  const groups = await client
+    .from("itemPostingGroup")
+    .select("id, name")
+    .in("id", unique)
+    .eq("companyId", companyId);
+  for (const g of groups.data ?? []) {
+    if (g.id && g.name) map.set(g.id, g.name);
+  }
+  return map;
+}
+
+// Resolve component item UUIDs → human-readable ids (e.g. `P000123.A`). The diff
+// viewer labels each BOM line by its component; a `methodMaterial` row carries only
+// the item UUID, and the client `useItems` store can miss a just-minted/placeholder
+// component. Resolving here (server-side, guaranteed present) makes the label
+// store-independent. Flat select scoped by companyId.
+async function readItemReadableIds(
+  client: SupabaseClient<Database>,
+  itemIds: string[],
+  companyId: string
+): Promise<Map<string, string>> {
+  const map = new Map<string, string>();
+  const unique = [...new Set(itemIds)].filter((id) => id.length > 0);
+  if (unique.length === 0) return map;
+  const items = await client
+    .from("item")
+    .select("id, readableIdWithRevision")
+    .in("id", unique)
+    .eq("companyId", companyId);
+  for (const row of items.data ?? []) {
+    if (row.id && row.readableIdWithRevision)
+      map.set(row.id, row.readableIdWithRevision);
+  }
+  return map;
+}
+
+// Stamp the resolved readable id onto each material diff row (before + after) under
+// `itemReadableId`, so the read-only viewer can label the line without a store
+// lookup. Applied AFTER diffMethod so it never counts as a business-field change.
+function stampMaterialReadableIds(
+  materials: MethodDiffEntry<Row>[],
+  readableIds: Map<string, string>
+): void {
+  for (const entry of materials) {
+    for (const row of [entry.before, entry.after]) {
+      const itemId = (row as { itemId?: string } | null)?.itemId;
+      if (row && typeof itemId === "string") {
+        const readable = readableIds.get(itemId);
+        if (readable) (row as Row).itemReadableId = readable;
+      }
+    }
+  }
+}
+
+// A methodOperationTool row references a Tool item by `toolId` (a UUID). Stamp the
+// resolved readable id onto each tool child row (before + after) under
+// `toolReadableId` so the viewer labels the tool by its readable id, not the UUID.
+function stampToolReadableIds(
+  operations: OperationDiffEntry[],
+  readableIds: Map<string, string>
+): void {
+  for (const op of operations) {
+    for (const entry of op.children?.tools ?? []) {
+      for (const row of [entry.before, entry.after]) {
+        const toolId = (row as { toolId?: string } | null)?.toolId;
+        if (row && typeof toolId === "string") {
+          const readable = readableIds.get(toolId);
+          if (readable) (row as Row).toolReadableId = readable;
+        }
+      }
+    }
+  }
+}
+
+// Operation rows reference a process / work center / procedure / supplier process
+// by UUID. Resolve those to human names and rewrite them IN PLACE — both the
+// changedFields (old→new) and the before/after rows (add/remove property lists) —
+// so the diff and merge UIs read "CNC Milling", not a raw id. Display-only, applied
+// AFTER diffMethod (so it never counts as a business-field change); the release
+// apply re-reads rows by id, so mutating these display rows is safe.
+const OPERATION_REF_FIELDS = [
+  "processId",
+  "workCenterId",
+  "procedureId",
+  "operationSupplierProcessId"
+] as const;
+const OPERATION_REF_FIELD_SET = new Set<string>(OPERATION_REF_FIELDS);
+
+async function stampOperationRefNames(
+  client: SupabaseClient<Database>,
+  operations: OperationDiffEntry[],
+  companyId: string
+): Promise<void> {
+  // Gather every referenced id per field, from both the rows and changedFields.
+  const collected: Record<string, Set<string>> = {
+    processId: new Set(),
+    workCenterId: new Set(),
+    procedureId: new Set(),
+    operationSupplierProcessId: new Set()
+  };
+  const addFrom = (row: Row | null) => {
+    if (!row) return;
+    for (const f of OPERATION_REF_FIELDS) {
+      const v = row[f];
+      if (typeof v === "string" && v) collected[f].add(v);
+    }
+  };
+  for (const op of operations) {
+    addFrom(op.before as Row | null);
+    addFrom(op.after as Row | null);
+    for (const [f, cf] of Object.entries(op.changedFields ?? {})) {
+      if (!OPERATION_REF_FIELD_SET.has(f)) continue;
+      if (typeof cf.before === "string" && cf.before)
+        collected[f].add(cf.before);
+      if (typeof cf.after === "string" && cf.after) collected[f].add(cf.after);
+    }
+  }
+
+  const names = new Map<string, string>(); // id → display name (any ref type)
+  const load = async (
+    table: "process" | "workCenter" | "procedure",
+    ids: Set<string>
+  ) => {
+    const unique = [...ids];
+    if (unique.length === 0) return;
+    const rows = await client
+      .from(table)
+      .select("id, name")
+      .in("id", unique)
+      .eq("companyId", companyId);
+    for (const r of rows.data ?? []) {
+      if (r.id && r.name) names.set(r.id, r.name);
+    }
+  };
+
+  // A supplier process has no name of its own — resolve it to its process name
+  // (its underlying process ids join the process lookup below).
+  const supplierProcessIds = [...collected.operationSupplierProcessId];
+  const supplierProcessToProcess = new Map<string, string>();
+  if (supplierProcessIds.length > 0) {
+    const sp = await client
+      .from("supplierProcess")
+      .select("id, processId")
+      .in("id", supplierProcessIds)
+      .eq("companyId", companyId);
+    for (const r of sp.data ?? []) {
+      if (r.id && r.processId) {
+        supplierProcessToProcess.set(r.id, r.processId);
+        collected.processId.add(r.processId);
+      }
+    }
+  }
+
+  await Promise.all([
+    load("process", collected.processId),
+    load("workCenter", collected.workCenterId),
+    load("procedure", collected.procedureId)
+  ]);
+  for (const [spId, processId] of supplierProcessToProcess) {
+    const name = names.get(processId);
+    if (name) names.set(spId, name);
+  }
+
+  const rewrite = (row: Row | null) => {
+    if (!row) return;
+    for (const f of OPERATION_REF_FIELDS) {
+      const v = row[f];
+      if (typeof v === "string" && names.has(v)) row[f] = names.get(v);
+    }
+  };
+  for (const op of operations) {
+    rewrite(op.before as Row | null);
+    rewrite(op.after as Row | null);
+    for (const [f, cf] of Object.entries(op.changedFields ?? {})) {
+      if (!OPERATION_REF_FIELD_SET.has(f)) continue;
+      if (typeof cf.before === "string" && names.has(cf.before))
+        cf.before = names.get(cf.before);
+      if (typeof cf.after === "string" && names.has(cf.after))
+        cf.after = names.get(cf.after);
+    }
+  }
+}
+
+// For every affected item: read the base (source Active) method as `base` and the
+// CO-owned Draft method as `target` (both REAL method tables), correlate by
+// natural keys, run the pure `diffMethod`, and collect. Also returns the manual
+// supersession declarations. Flat selects scoped by companyId (no embeds).
+export async function getChangeOrderDiff(
+  client: SupabaseClient<Database>,
+  changeOrderId: string,
+  companyId: string
+): Promise<{ data: ChangeOrderDiff; error: { message: string } | null }> {
+  const affected = await getChangeOrderAffectedItems(
+    client,
+    changeOrderId,
+    companyId
+  );
+  if (affected.error) return { data: { items: [] }, error: affected.error };
+
+  const items: ChangeOrderItemDiff[] = [];
+
+  for (const affectedItem of affected.data) {
+    const base = await readMethodRows(
+      client,
+      affectedItem.baseMakeMethodId,
+      companyId
+    );
+    if (base.error) return { data: { items: [] }, error: base.error };
+    const target = await readMethodRows(
+      client,
+      affectedItem.draftMakeMethodId,
+      companyId
+    );
+    if (target.error) return { data: { items: [] }, error: target.error };
+
+    // Reconstruct source pointers by natural key.
+    correlate(base.materials, target.materials, "itemId", MATERIAL_SOURCE_KEY);
+    correlate(
+      base.operations,
+      target.operations,
+      "order",
+      OPERATION_SOURCE_KEY
+    );
+    for (const top of target.operations) {
+      const baseOpId = top[OPERATION_SOURCE_KEY];
+      const topId = top.id;
+      if (typeof baseOpId !== "string" || typeof topId !== "string") continue;
+      const bKids = base.children[baseOpId];
+      const tKids = target.children[topId];
+      if (!bKids || !tKids) continue;
+      correlate(bKids.steps, tKids.steps, "name", CHILD_SOURCE_KEY);
+      correlate(bKids.parameters, tKids.parameters, "key", CHILD_SOURCE_KEY);
+      correlate(bKids.tools, tKids.tools, "toolId", CHILD_SOURCE_KEY);
+    }
+
+    // A New Part is net-new: no predecessor item, so `newItemId === itemId`.
+    // Its whole attribute set + supplier parts are additions, not old→new edits.
+    const isNewPart = affectedItem.changeType === "New Part";
+
+    // Attribute diff: base = source item columns; target = the draft item's
+    // columns. For a Version the draft is on the same item, so there is no
+    // attribute change (Q2) and both sides read the same row. For a New Part
+    // there is no predecessor, so we pass a null base to surface every attribute
+    // as an addition (see diffAttributes).
+    const draftItemId = affectedItem.newItemId ?? affectedItem.itemId;
+    const baseAttributes = await readItemAttributes(
+      client,
+      affectedItem.itemId,
+      companyId
+    );
+    const targetAttributes =
+      draftItemId === affectedItem.itemId
+        ? baseAttributes
+        : await readItemAttributes(client, draftItemId, companyId);
+
+    // Supplier parts on the draft item (Revision/Replacement Part/New Part; a
+    // Version shares the live item's suppliers, which are not a CO change).
+    // Surfaced as additions. A New Part's draft item IS its own item
+    // (draftItemId === itemId), so gate on the change type too.
+    let supplierParts: MethodDiffEntry<Row>[] = [];
+    if (draftItemId !== affectedItem.itemId || isNewPart) {
+      const sp = await readDraftSupplierParts(client, draftItemId, companyId);
+      if (sp.error) return { data: { items: [] }, error: sp.error };
+      supplierParts = sp.data;
+    }
+
+    const diff = diffMethod({
+      baseMaterials: base.materials,
+      targetMaterials: target.materials,
+      baseOperations: base.operations,
+      targetOperations: target.operations,
+      baseAttributes: isNewPart ? null : baseAttributes,
+      targetAttributes,
+      baseOperationChildren: base.children,
+      targetOperationChildren: target.children
+    });
+
+    // Label BOM lines by their component's readable id and BOP tools by the tool
+    // item's readable id (both reference item UUIDs) — store-independent. One
+    // batch resolve over every referenced item id.
+    const componentIds = [...base.materials, ...target.materials]
+      .map((m) => m.itemId)
+      .filter((id): id is string => typeof id === "string");
+    const toolIds = diff.operations.flatMap((op) =>
+      (op.children?.tools ?? [])
+        .flatMap((tool) => [tool.before, tool.after])
+        .map((row) => (row as { toolId?: string } | null)?.toolId)
+        .filter((id): id is string => typeof id === "string")
+    );
+    const readableIds = await readItemReadableIds(
+      client,
+      [...componentIds, ...toolIds],
+      companyId
+    );
+    stampMaterialReadableIds(diff.materials, readableIds);
+    stampToolReadableIds(diff.operations, readableIds);
+    await stampOperationRefNames(client, diff.operations, companyId);
+
+    // Resolve the item-group id → name so the attribute diff reads "Group A →
+    // Group B" instead of opaque ids. A modified attribute carries the id in
+    // `changedFields`; an added/removed one (a New Part) carries it on the raw
+    // before/after row that the full-property list renders directly.
+    const groupIds = diff.attributes.flatMap((a) => {
+      const ids: string[] = [];
+      const cf = a.changedFields?.itemPostingGroupId;
+      if (cf) {
+        if (typeof cf.before === "string") ids.push(cf.before);
+        if (typeof cf.after === "string") ids.push(cf.after);
+      }
+      for (const row of [a.before, a.after]) {
+        const gid = (row as { itemPostingGroupId?: unknown } | null)
+          ?.itemPostingGroupId;
+        if (typeof gid === "string") ids.push(gid);
+      }
+      return ids;
+    });
+    if (groupIds.length > 0) {
+      const names = await readPostingGroupNames(client, groupIds, companyId);
+      for (const a of diff.attributes) {
+        const cf = a.changedFields?.itemPostingGroupId;
+        if (cf) {
+          if (typeof cf.before === "string")
+            cf.before = names.get(cf.before) ?? cf.before;
+          if (typeof cf.after === "string")
+            cf.after = names.get(cf.after) ?? cf.after;
+        }
+        for (const row of [a.before, a.after]) {
+          const r = row as { itemPostingGroupId?: unknown } | null;
+          if (r && typeof r.itemPostingGroupId === "string") {
+            r.itemPostingGroupId =
+              names.get(r.itemPostingGroupId) ?? r.itemPostingGroupId;
+          }
+        }
+      }
+    }
+
+    items.push({
+      affectedItemId: affectedItem.id,
+      itemId: affectedItem.itemId,
+      materials: diff.materials,
+      operations: diff.operations,
+      attributes: diff.attributes,
+      supplierParts
+    });
+  }
+
+  return { data: { items }, error: null };
 }

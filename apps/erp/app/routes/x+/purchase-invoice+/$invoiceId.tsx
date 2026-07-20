@@ -20,12 +20,14 @@ import {
   getSupplierInteraction,
   getSupplierInteractionDocuments
 } from "~/modules/purchasing/purchasing.service";
-import type { Handle } from "~/utils/handle";
+import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
-  breadcrumb: msg`Purchasing Invoices`,
-  to: path.to.invoicingPurchasing
+  breadcrumb: detailBreadcrumb(
+    { breadcrumb: msg`Purchasing Invoices`, to: path.to.invoicingPurchasing },
+    (data) => data?.purchaseInvoice?.invoiceId
+  )
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

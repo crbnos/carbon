@@ -1,10 +1,11 @@
-import { assertIsPost, error } from "@carbon/auth";
+import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { upsertMethodOperationParameter } from "~/modules/items";
+import { checkRevisionLock } from "~/modules/items/items.server";
 import { operationParameterValidator } from "~/modules/shared";
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -20,6 +21,16 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (validation.error) {
     return validationError(validation.error);
+  }
+
+  // Release-lock gate: enforce -> block; warn -> proceed + flash; off -> no-op.
+  const lock = await checkRevisionLock(client, {
+    kind: "operation",
+    id: validation.data.operationId,
+    companyId
+  });
+  if (!lock.ok) {
+    return data({ id: null }, await flash(request, error(null, lock.message)));
   }
 
   const insert = await upsertMethodOperationParameter(client, {
@@ -49,6 +60,13 @@ export async function action({ request }: ActionFunctionArgs) {
         request,
         error(insert.error, "Failed to insert method operation parameter")
       )
+    );
+  }
+
+  if (lock.warn) {
+    return data(
+      { id: methodOperationParameterId },
+      await flash(request, success(lock.message))
     );
   }
 

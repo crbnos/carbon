@@ -5,14 +5,17 @@ import {
   LuAxis3D,
   LuBeef,
   LuDessert,
+  LuGitPullRequestArrow,
   LuGlassWater,
   LuGroup,
   LuHammer,
   LuHeadphones,
+  LuListChecks,
   LuPizza,
   LuPuzzle,
   LuRuler,
-  LuShapes
+  LuShapes,
+  LuTags
 } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
 import { useSavedViews } from "~/hooks/useSavedViews";
@@ -25,7 +28,7 @@ export default function useItemsSubmodules() {
   const { addSavedViewsToRoutes } = useSavedViews();
   const itemsRoutes: AuthenticatedRouteGroup[] = [
     {
-      name: t`Manage`,
+      name: t`Items`,
       routes: [
         {
           name: t`Parts`,
@@ -56,6 +59,29 @@ export default function useItemsSubmodules() {
           to: path.to.services,
           icon: <LuHeadphones />,
           table: "service"
+        }
+      ]
+    },
+    {
+      name: t`Change Orders`,
+      routes: [
+        {
+          name: t`Change Orders`,
+          to: path.to.changeOrders,
+          icon: <LuGitPullRequestArrow />,
+          table: "changeOrder"
+        },
+        {
+          name: t`Change Order Types`,
+          to: path.to.changeOrderTypes,
+          icon: <LuTags />,
+          role: "employee"
+        },
+        {
+          name: t`Change Order Actions`,
+          to: path.to.changeOrderRequiredActions,
+          icon: <LuListChecks />,
+          role: "employee"
         }
       ]
     },

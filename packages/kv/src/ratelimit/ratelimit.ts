@@ -134,12 +134,21 @@ export class Ratelimit {
         throw new Error("Unexpected reset value of 0");
       }
 
+      // Wait until the window resets (or the deadline), then retry. A window
+      // boundary already having passed (wait <= 0) is a reason to retry
+      // immediately, not to give up — only the deadline ends the loop. The
+      // previous `wait <= 0` early-return made this flaky under real timers:
+      // for the sliding window `reset` is the end of the current window, so if
+      // time crossed that boundary between `limit()` and here, `wait` went
+      // negative and we bailed with `success: false` after a single attempt.
       const wait = Math.min(res.reset, deadline) - Date.now();
-      if (wait <= 0 || Date.now() >= deadline) {
-        return res;
+      if (wait > 0) {
+        await new Promise((r) => setTimeout(r, wait));
       }
 
-      await new Promise((r) => setTimeout(r, wait));
+      if (Date.now() >= deadline) {
+        return res;
+      }
     }
   }
 

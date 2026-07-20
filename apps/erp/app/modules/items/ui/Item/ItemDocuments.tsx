@@ -45,13 +45,18 @@ type ItemDocumentsProps = {
   itemId: string;
   modelUpload?: ModelUpload;
   type: ItemType;
+  // Read-only: hide the upload affordances and disable delete. Used when the
+  // owning record is closed (e.g. a completed/cancelled change order). Defaults
+  // to editable so the part detail page is unchanged.
+  isReadOnly?: boolean;
 };
 
 const ItemDocuments = ({
   files,
   itemId,
   modelUpload,
-  type
+  type,
+  isReadOnly = false
 }: ItemDocumentsProps) => {
   const { t } = useLingui();
   const { formatDate } = useDateFormatter();
@@ -98,9 +103,13 @@ const ItemDocuments = ({
             <Trans>Files</Trans>
           </CardTitle>
         </CardHeader>
-        <CardAction>
-          <ItemDocumentForm type={type} itemId={itemId} />
-        </CardAction>
+        {!isReadOnly && (
+          <CardAction>
+            <HStack>
+              <ItemDocumentForm type={type} itemId={itemId} />
+            </HStack>
+          </CardAction>
+        )}
       </HStack>
       <CardContent>
         <Table>
@@ -161,7 +170,7 @@ const ItemDocuments = ({
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             destructive
-                            disabled={!canDelete}
+                            disabled={isReadOnly || !canDelete}
                             onClick={() => deleteModel()}
                           >
                             Delete
@@ -233,7 +242,7 @@ const ItemDocuments = ({
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             destructive
-                            disabled={!canDelete}
+                            disabled={isReadOnly || !canDelete}
                             onClick={() => deleteFile(file)}
                           >
                             Delete
@@ -257,7 +266,7 @@ const ItemDocuments = ({
             )}
           </Tbody>
         </Table>
-        <FileDropzone onDrop={onDrop} />
+        {!isReadOnly && <FileDropzone onDrop={onDrop} />}
       </CardContent>
     </Card>
   );

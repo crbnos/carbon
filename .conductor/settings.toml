@@ -6,12 +6,20 @@
 file_include_globs = ".env"
 
 [scripts]
-# Conductor creates the git worktree itself; `crbn init` then provisions it the
-# same way `crbn checkout` does: a deterministic branch-derived slug
-# (`.carbon-worktree`), `.env` synced from main, and .ai skills linked. This
-# replaces the old `echo "$CONDUCTOR_WORKSPACE_NAME" > .carbon-worktree`, which
+# Conductor runs `setup` to completion BEFORE it kicks off the initial agent
+# chat, so anything the agent needs at session start must be provisioned here.
+#
+# `crbn init` provisions the git worktree (which Conductor creates) the same way
+# `crbn checkout` does: a deterministic branch-derived slug (`.carbon-worktree`),
+# `.env` synced from main, and `.ai` rules/skills linked into `.claude/`+`.codex/`.
+# It replaces the old `echo "$CONDUCTOR_WORKSPACE_NAME" > .carbon-worktree`, which
 # produced non-unique slugs that collided with the main checkout's `carbon`.
-setup = "pnpm install && ./packages/dev/bin/crbn init"
+#
+# `install-skills` runs last, explicitly: the `.claude/`+`.codex/` skill symlinks
+# are gitignored (absent in a fresh worktree), and both the `pnpm install` prepare
+# hook and `crbn init`'s link step are best-effort/non-fatal. Running it here as
+# its own step guarantees the skills are linked before the chat starts.
+setup = "pnpm install && ./packages/dev/bin/crbn init && pnpm run install-skills"
 # Each worktree gets its own ports/DB/redis-slot (the crbn slot registry), so
 # multiple workspaces can run their stacks at once.
 run_mode = "concurrent"

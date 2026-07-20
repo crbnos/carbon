@@ -14,7 +14,11 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { LuEllipsisVertical, LuTrash } from "react-icons/lu";
+import {
+  LuEllipsisVertical,
+  LuGitPullRequestArrow,
+  LuTrash
+} from "react-icons/lu";
 import { Link, useParams } from "react-router";
 import { useAuditLog } from "~/components/AuditLog";
 import { DetailsTopbar } from "~/components/Layout";
@@ -22,6 +26,7 @@ import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { path } from "~/utils/path";
 import type { Tool } from "../../types";
+import { CreateChangeOrderModal } from "../ChangeOrder";
 import { getItemLifecycleStatus } from "../Item/ItemSupersessionForm";
 import { useToolNavigation } from "./useToolNavigation";
 
@@ -34,6 +39,7 @@ const ToolHeader = () => {
   const { company } = useUser();
   const permissions = usePermissions();
   const deleteModal = useDisclosure();
+  const changeOrderModal = useDisclosure();
   const { trigger: auditLogTrigger, drawer: auditLogDrawer } = useAuditLog({
     entityType: "item",
     entityId: itemId,
@@ -86,6 +92,14 @@ const ToolHeader = () => {
                 {auditLogTrigger}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
+                  disabled={!permissions.can("create", "parts")}
+                  onClick={changeOrderModal.onOpen}
+                >
+                  <DropdownMenuIcon icon={<LuGitPullRequestArrow />} />
+                  <Trans>Create Change Order</Trans>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
                   disabled={
                     !permissions.can("delete", "parts") ||
                     !permissions.is("employee")
@@ -118,6 +132,12 @@ const ToolHeader = () => {
           />
         )}
       </div>
+      {changeOrderModal.isOpen && (
+        <CreateChangeOrderModal
+          itemId={itemId}
+          onClose={changeOrderModal.onClose}
+        />
+      )}
       {auditLogDrawer}
     </>
   );

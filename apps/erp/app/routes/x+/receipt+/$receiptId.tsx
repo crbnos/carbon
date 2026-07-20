@@ -14,12 +14,14 @@ import {
   getShelfLifeForItems
 } from "~/modules/inventory";
 import { getCompanySettings } from "~/modules/settings";
-import type { Handle } from "~/utils/handle";
+import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
-  breadcrumb: msg`Receipts`,
-  to: path.to.receipts
+  breadcrumb: detailBreadcrumb(
+    { breadcrumb: msg`Receipts`, to: path.to.receipts },
+    (data) => data?.receipt?.receiptId
+  )
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

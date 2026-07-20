@@ -102,6 +102,8 @@ import type {
   MakeMethod
 } from "../../types";
 import { getLinkToItemDetails } from "./ItemForm";
+import type { ReleaseLockProps } from "./ReleaseLockAlert";
+import ReleaseLockAlert, { getReleaseLockFlags } from "./ReleaseLockAlert";
 
 type Material = z.infer<typeof methodMaterialValidator> & {
   description: string;
@@ -128,7 +130,8 @@ type BillOfMaterialProps = {
   parameters?: ConfigurationParameter[];
   configurationRules?: ConfigurationRule[];
   replenishmentSystem?: string;
-};
+  parentItemId?: string;
+} & ReleaseLockProps;
 
 type OrderState = {
   [key: string]: number;
@@ -163,13 +166,21 @@ const BillOfMaterial = ({
   materials: initialMaterials,
   operations,
   parameters,
-  replenishmentSystem
+  replenishmentSystem,
+  parentItemId,
+  revisionStatus,
+  releaseControl
 }: BillOfMaterialProps) => {
   const permissions = usePermissions();
   const { t } = useLingui();
+  const { isProductionRevision, isReleaseLocked } = getReleaseLockFlags({
+    revisionStatus,
+    releaseControl
+  });
   const isReadOnly =
     permissions.can("update", "parts") === false ||
-    makeMethod.status !== "Draft";
+    makeMethod.status !== "Draft" ||
+    isReleaseLocked;
 
   const addItemButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -467,6 +478,7 @@ const BillOfMaterial = ({
                             rulesByField={rulesByField}
                             onConfigure={onConfigure}
                             replenishmentSystem={replenishmentSystem}
+                            parentItemId={parentItemId}
                             setOrderState={setOrderState}
                             setSelectedItemId={setSelectedItemId}
                             setTemporaryItems={setTemporaryItems}
@@ -575,6 +587,9 @@ const BillOfMaterial = ({
         </CardAction>
       </HStack>
       <CardContent>
+        {isProductionRevision && (
+          <ReleaseLockAlert isLocked={isReleaseLocked} className="mb-4" />
+        )}
         <SortableList
           isReadOnly={isReadOnly}
           items={materials}
@@ -607,6 +622,7 @@ function MaterialForm({
   rulesByField,
   onConfigure,
   replenishmentSystem,
+  parentItemId: propParentItemId,
   setOrderState,
   setSelectedItemId,
   setTemporaryItems,
@@ -620,6 +636,7 @@ function MaterialForm({
   temporaryItems: TemporaryItems;
   rulesByField: Map<string, ConfigurationRule>;
   replenishmentSystem?: string;
+  parentItemId?: string;
   setSelectedItemId: Dispatch<SetStateAction<string | null>>;
   setTemporaryItems: Dispatch<SetStateAction<TemporaryItems>>;
   setOrderState: Dispatch<SetStateAction<OrderState>>;
@@ -634,6 +651,7 @@ function MaterialForm({
     message: string;
   }>();
   const params = useParams();
+  const parentItemId = propParentItemId ?? params.itemId;
   const { company, defaults } = useUser();
   const [locationId, setLocationId] = useState<string | undefined>(
     defaults.locationId ?? undefined
@@ -723,7 +741,7 @@ function MaterialForm({
 
   const onItemChange = async (itemId: string) => {
     if (!carbon) return;
-    if (itemId === params.itemId) {
+    if (itemId === parentItemId) {
       toast.error(t`An item cannot be added to itself.`);
       return;
     }
@@ -800,9 +818,9 @@ function MaterialForm({
         )}
       </div>
 
-      <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
+      <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3 items-start">
         <Item
-          blacklist={[params.itemId!]}
+          blacklist={[parentItemId!]}
           name="itemId"
           label={itemType}
           includeInactive

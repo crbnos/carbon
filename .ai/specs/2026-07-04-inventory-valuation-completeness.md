@@ -104,6 +104,12 @@ Lines are proposed only where `NRV < carrying unit cost` (item level — the ASC
 
 ### 4. Quantity-adjustment GL posting
 
+> **Superseded/expanded 2026-07-14** by
+> `.ai/specs/2026-07-14-inventory-adjustment-gl-posting.md`: posting is unified
+> into a `post-inventory-adjustment` edge function (Kysely transaction) used by
+> ERP + MES + `post-inventory-count` — not a service-level leg as sketched
+> below. Accounts and valuation rules below still hold.
+
 `insertManualInventoryAdjustment` gains a posting leg (service-level, so the MCP path is covered too, per the document-approvals spec's lesson that route-level gates are bypassable):
 
 - **Negative adjustment**: consume layers via `calculateCOGS` → `Dr inventoryAdjustmentVarianceAccount (5310) / Cr inventoryAccount` at consumed-layer cost; costLedger rows decrement `remainingQuantity` as usual.
@@ -366,4 +372,9 @@ No new blocking questions surfaced while writing; judgment calls (direct write-d
 
 ## Changelog
 
+- 2026-07-14: §4 (quantity-adjustment GL) superseded/expanded by
+  `.ai/specs/2026-07-14-inventory-adjustment-gl-posting.md` — unified
+  `post-inventory-adjustment` edge function (Brad's decision), count/Rectify
+  posting, and a tie-out Reconcile action (draft adjusting journal); accounts
+  (5310) and valuation rules unchanged.
 - 2026-07-04: Created — readiness finding GAP-3, tracking issue crbnos/carbon#1040. Grounded in code exploration (`itemCost`/cost layers/`calculate-cogs`, `post-receipt`/`post-purchase-invoice`/`post-production-event`/`close-job` posting paths, `20260315000000` chart reset) and `.ai/research/public-company-compliance.md` (ASC 330 / IAS 2). NRV auto-proposal + per-book reversal split resolved by Brad pre-writing.

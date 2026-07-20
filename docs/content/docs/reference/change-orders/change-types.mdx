@@ -1,0 +1,72 @@
+---
+title: Change types
+description: Version, Revision, and New Part — the per-affected-item choice that decides what you can edit and what release creates.
+---
+
+Change type is set per affected item (default **Version**) and is the most load-bearing field on the whole
+change order. It decides two things at once: what you're allowed to edit on the draft, and what release
+creates from it.
+
+## The three types
+
+| Change type | You edit | Release creates | Auto-supersession |
+| --- | --- | --- | --- |
+| Version | BoM and BoP on the **same item** | A new **method version**; the prior Active version is archived | None |
+| Revision | Attributes, documents, BoM and BoP | A new **item revision** (same Part ID, next revision letter) | Old revision → new revision |
+| New Part | Attributes, BoM and BoP | A brand-new **part number** derived from the affected part | Affected part → new part |
+
+<Callout type="info" title="A Version bumps the method, not the item.">
+Don't conflate the two. A **Version** produces a new recipe version on the *same* item row, so existing stock
+and item history are untouched and nothing is superseded. A **Revision** and a **New Part** each mint a *new*
+item row and leave the old one intact — which is why they auto-write a <Term>supersession</Term> so planning
+knows to phase over. See [Supersession & cutover](/docs/reference/change-orders/supersession).
+</Callout>
+
+## When to use which
+
+- **Version** — the design is the same part, made a little differently. A tweaked operation, a swapped
+  component, a corrected quantity. There's no drawing-revision story and no reason to phase over stock.
+- **Revision** — the part is formally revising (new drawing revision, new dimension) and you want old and new
+  to coexist while stock phases over. This is the everyday engineering-change case.
+- **New Part** — the change is significant enough to warrant a new part number, derived from the old one, with
+  the old part superseded by it.
+
+## What each type gates
+
+Change type also controls the editable surface on the affected item:
+
+- **Version** exposes the **Bill of Material** and **Bill of Process** editors on the draft method.
+- **Revision** and **New Part** add **Part Properties** (attributes) and documents on top of BoM and BoP,
+  because they're producing a genuinely new item, not just a new recipe.
+
+<Callout type="warning" title="Purchased items and New Part have limits.">
+A purchased (**Buy**) item has no bill of materials or process, so a **Version** is meaningless for it —
+adding a Buy item coerces its change type to **Revision** (attributes and documents only). **New Part** is
+restricted to Parts and Tools.
+</Callout>
+
+## Supplier parts on a purchased line
+
+A **Revision** or **New Part** whose draft item is purchased (**Buy** or **Buy and Make**) gets a **Supplier
+Parts** grid on its line, right alongside the properties editor. You use it to set up how the new part or
+revision is bought: **Supplier**, **Supplier ID** (the supplier's own part number), **Unit Price**, **Unit of
+Measure**, **Minimum Order Quantity**, and **Conversion Factor**. Add, edit, and delete rows here the same way
+you would on a live part.
+
+<Callout type="warning" title="Set suppliers up before you release, or the released part can't be bought.">
+A draft item starts with **no** supplier parts — the source item's suppliers aren't copied onto the draft. If a
+purchased Revision or New Part releases with an empty grid, the new part is stocked but has no way to buy it,
+so a purchase order can't reference it. Fill the grid on the line first. The suppliers you add show up in the
+change order's [changes](/docs/reference/change-orders/lifecycle#review-the-changes-then-release) as additions.
+</Callout>
+
+## Related
+
+<Cards>
+  <Card title="Lifecycle & release" href="/docs/reference/change-orders/lifecycle">
+    What release does with each change type.
+  </Card>
+  <Card title="Methods & sourcing" href="/docs/reference/methods">
+    Method versions and the Draft/Active/Archived states a change order drives.
+  </Card>
+</Cards>

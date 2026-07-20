@@ -4,6 +4,8 @@ import type {
   getInventoryCountLines,
   getInventoryCounts,
   getInventoryItems,
+  getInventoryValuation,
+  getInventoryValuationTieOut,
   getItemLedgerPage,
   getKanbans,
   getReceiptLines,
@@ -27,6 +29,14 @@ export type BatchProperty = NonNullable<
 
 export type InventoryItem = NonNullable<
   Awaited<ReturnType<typeof getInventoryItems>>["data"]
+>[number];
+
+export type InventoryValuationRow = NonNullable<
+  Awaited<ReturnType<typeof getInventoryValuation>>["data"]
+>[number];
+
+export type InventoryTieOutRow = NonNullable<
+  Awaited<ReturnType<typeof getInventoryValuationTieOut>>["data"]
 >[number];
 
 export type ItemLedger = NonNullable<

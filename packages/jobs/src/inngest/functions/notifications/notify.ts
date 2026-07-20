@@ -62,6 +62,22 @@ const defaultDestinations: Partial<
     NotificationDestination.Email,
     NotificationDestination.Slack
   ],
+  [NotificationEvent.ChangeOrderApproved]: [
+    NotificationDestination.Email,
+    NotificationDestination.Slack
+  ],
+  [NotificationEvent.ChangeOrderRejected]: [
+    NotificationDestination.Email,
+    NotificationDestination.Slack
+  ],
+  [NotificationEvent.ChangeOrderReleased]: [
+    NotificationDestination.Email,
+    NotificationDestination.Slack
+  ],
+  [NotificationEvent.ChangeOrderSubmittedForReview]: [
+    NotificationDestination.Email,
+    NotificationDestination.Slack
+  ],
   [NotificationEvent.DigitalQuoteResponse]: [
     NotificationDestination.Email,
     NotificationDestination.Slack

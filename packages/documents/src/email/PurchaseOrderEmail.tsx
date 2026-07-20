@@ -18,6 +18,7 @@ import {
   getTotal
 } from "../utils/purchase-order";
 import { getCurrencyFormatter } from "../utils/shared";
+import ExternalNotes from "./components/ExternalNotes";
 import {
   EmailThemeProvider,
   getEmailInlineStyles,
@@ -126,6 +127,7 @@ const PurchaseOrderEmail = ({
               any questions.
             </Text>
           </Section>
+          <ExternalNotes content={purchaseOrder.externalNotes} />
           <Section className="bg-gray-50 rounded-lg text-xs">
             <Row>
               <Column className="p-5" colSpan={2}>

@@ -4,6 +4,7 @@
   "pages": [
     "items",
     "methods",
+    "change-orders",
     "routings",
     "work-centers",
     "maintenance",

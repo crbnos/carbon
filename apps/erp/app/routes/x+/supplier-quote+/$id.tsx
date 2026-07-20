@@ -23,12 +23,14 @@ import {
 } from "~/modules/purchasing/ui/SupplierQuote";
 import SupplierQuoteExplorer from "~/modules/purchasing/ui/SupplierQuote/SupplierQuoteExplorer";
 import { getCompanySettings } from "~/modules/settings";
-import type { Handle } from "~/utils/handle";
+import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
-  breadcrumb: msg`Supplier Quotes`,
-  to: path.to.supplierQuotes,
+  breadcrumb: detailBreadcrumb(
+    { breadcrumb: msg`Supplier Quotes`, to: path.to.supplierQuotes },
+    (data) => data?.quote?.supplierQuoteId
+  ),
   module: "purchasing"
 };
 

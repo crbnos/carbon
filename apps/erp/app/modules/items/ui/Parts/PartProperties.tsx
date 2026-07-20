@@ -3,6 +3,7 @@ import { InputControlled, Select, ValidatedForm } from "@carbon/form";
 import {
   Badge,
   Button,
+  cn,
   HStack,
   Tooltip,
   TooltipContent,
@@ -41,6 +42,7 @@ import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
 import {
+  type ChangeOrderChangeType,
   itemReplenishmentSystems,
   itemTrackingTypes
 } from "../../items.models";
@@ -53,20 +55,53 @@ import type {
 } from "../../types";
 import { FileBadge, ItemDescription, SourcingTypeProperty } from "../Item";
 
-type PartPropertiesProps = {
-  data?: {
-    itemId: string;
-    locations: ListItem[];
-    partSummary: PartSummary;
-    files: Promise<ItemFile[]>;
-    supplierParts: SupplierPart[];
-    pickMethods: PickMethod[];
-    makeMethods: Promise<PostgrestResponse<MakeMethod>>;
-    tags: { name: string }[];
-  };
+export type PartPropertiesData = {
+  itemId: string;
+  locations: ListItem[];
+  partSummary: PartSummary;
+  files: Promise<ItemFile[]>;
+  supplierParts: SupplierPart[];
+  pickMethods: PickMethod[];
+  makeMethods: Promise<PostgrestResponse<MakeMethod>>;
+  tags: { name: string }[];
 };
 
-const PartProperties = ({ data }: PartPropertiesProps) => {
+type PartPropertiesProps = {
+  data?: PartPropertiesData;
+  // When embedded (e.g. inside a change-order affected-item card) drop the
+  // fixed-width sidebar chrome and flow with the parent container.
+  embedded?: boolean;
+  // Which slice to render. "all" (default, the part sidebar) shows everything;
+  // "properties" omits the image + files. Lets a caller (the CO card) render
+  // just the attribute fields and delegate files/CAD to ItemDocuments + CadModel.
+  section?: "all" | "properties";
+  // Field presentation. "sidebar" (default) = the compact inline click-to-edit
+  // rows of the part detail sidebar. "form" = standard labeled form fields (used
+  // by the CO card). Only affects presentation — persistence is unchanged.
+  layout?: "sidebar" | "form";
+  // Read-only: every field/control is non-editable (used when the change order
+  // is released/locked). Defaults to editable.
+  isReadOnly?: boolean;
+  // The change-order change type this card is embedded for (a CO line). A
+  // `Revision` keeps the source part number, so the Part Number field is locked
+  // (Name + the other attributes stay editable); `New Part` gets a fresh number
+  // and stays editable.
+  changeType?: ChangeOrderChangeType;
+};
+
+const PartProperties = ({
+  data,
+  embedded,
+  section = "all",
+  layout = "sidebar",
+  isReadOnly = false,
+  changeType
+}: PartPropertiesProps) => {
+  // Inline click-to-edit only in the sidebar layout; the form layout renders
+  // each field as a standard labeled control.
+  const inlineLayout = layout === "sidebar";
+  // A revision keeps the source part number — lock that field (only) for it.
+  const lockPartNumber = changeType === "Revision";
   const { t } = useLingui();
   const params = useParams();
   const itemId = data?.itemId ?? params.itemId;
@@ -196,137 +231,215 @@ const PartProperties = ({ data }: PartPropertiesProps) => {
 
   const [suppliers] = useSuppliers();
 
-  return (
-    <VStack
-      spacing={4}
-      className="w-96 bg-card h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border px-4 py-2 text-sm"
+  // Image + files, factored so they can render inline ("all") or as the sole
+  // content of the "files" section without duplicating the markup.
+  const thumbnail = (
+    <ItemThumbnailUpload
+      path={routeData?.partSummary?.thumbnailPath}
+      itemId={itemId}
+      modelId={routeData?.partSummary?.modelId}
+      isReadOnly={isReadOnly}
+    />
+  );
+  const filesBlock = (
+    <VStack spacing={2}>
+      <HStack className="w-full justify-between">
+        <h3 className="text-xs text-muted-foreground">
+          <Trans>Files</Trans>
+        </h3>
+      </HStack>
+      {routeData?.partSummary?.modelId && (
+        <Link
+          className="group flex items-center gap-1"
+          to={path.to.file.cadModel(routeData?.partSummary.modelId)}
+          target="_blank"
+        >
+          <Badge variant="secondary">
+            <LuMove3D className="w-3 h-3 mr-1 text-emerald-500" />
+            <Trans>3D Model</Trans>
+          </Badge>
+          <span className="group-hover:opacity-100 opacity-0 transition-opacity duration-200 w-4 h-4 text-foreground">
+            <LuExternalLink />
+          </span>
+        </Link>
+      )}
+      <Suspense fallback={null}>
+        <Await resolve={routeData?.files}>
+          {(files) =>
+            files?.map((file) => (
+              <FileBadge
+                key={file.id}
+                file={file}
+                itemId={itemId}
+                itemType="Part"
+              />
+            ))
+          }
+        </Await>
+      </Suspense>
+    </VStack>
+  );
+
+  const formLayout = layout === "form";
+  // Blocks that hold a wide control (textarea / badge list / custom fields)
+  // shouldn't be squeezed into a single grid column — span the full row.
+  const spanFull = formLayout ? "sm:col-span-2" : undefined;
+
+  // Part ID (readable id) + name — both editable inline, same as the part
+  // detail page. On the CO card these edit the draft item. Extracted so the
+  // form + sidebar layouts share the same fields.
+  const partIdField = (
+    <ValidatedForm
+      defaultValues={{
+        partId: routeData?.partSummary?.readableIdWithRevision ?? undefined
+      }}
+      validator={z.object({
+        partId: z.string()
+      })}
+      className={cn("w-full", !formLayout && "-mt-2")}
+      isReadOnly={isReadOnly || lockPartNumber}
     >
-      <VStack spacing={2}>
-        <HStack className="w-full justify-between">
-          <h3 className="text-xxs text-foreground/70 uppercase font-light tracking-wide">
-            <Trans>Properties</Trans>
-          </h3>
-          <HStack spacing={1}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  aria-label={t`Link`}
-                  size="sm"
-                  className="p-1"
-                  onClick={() =>
-                    copyToClipboard(
-                      window.location.origin + path.to.part(itemId)
-                    )
-                  }
-                >
-                  <LuLink className="w-3 h-3" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <span>
-                  <Trans>Copy link to part</Trans>
-                </span>
-              </TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  aria-label={t`Copy`}
-                  size="sm"
-                  className="p-1"
-                  onClick={() => copyToClipboard(itemId)}
-                >
-                  <LuKeySquare className="w-3 h-3" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <span>
-                  <Trans>Copy part unique identifier</Trans>
-                </span>
-              </TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  aria-label={t`Copy`}
-                  size="sm"
-                  className="p-1"
-                  onClick={() =>
-                    copyToClipboard(
-                      routeData?.partSummary?.readableIdWithRevision ?? ""
-                    )
-                  }
-                >
-                  <LuCopy className="w-3 h-3" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <span>
-                  <Trans>Copy part number</Trans>
-                </span>
-              </TooltipContent>
-            </Tooltip>
-          </HStack>
-        </HStack>
-        <VStack spacing={1} className="pt-2">
-          <ValidatedForm
-            defaultValues={{
-              partId:
-                routeData?.partSummary?.readableIdWithRevision ?? undefined
-            }}
-            validator={z.object({
-              partId: z.string()
-            })}
-            className="w-full -mt-2"
-          >
-            <span className="text-sm">
-              <InputControlled
-                label=""
-                name="partId"
-                inline
-                size="sm"
-                value={routeData?.partSummary?.readableId ?? ""}
-                onBlur={(e) => {
-                  onUpdate("partId", e.target.value ?? null);
-                }}
-                className="text-muted-foreground"
-              />
-            </span>
-          </ValidatedForm>
-          <ValidatedForm
-            defaultValues={{
-              name: routeData?.partSummary?.name ?? undefined
-            }}
-            validator={z.object({
-              name: z.string()
-            })}
-            className="w-full -mt-2"
-          >
-            <span className="text-xs text-muted-foreground">
-              <InputControlled
-                label=""
-                name="name"
-                inline
-                size="sm"
-                characterLimit={40}
-                value={routeData?.partSummary?.name ?? ""}
-                onBlur={(e) => {
-                  onUpdate("name", e.target.value ?? null);
-                }}
-                className="text-muted-foreground"
-              />
-            </span>
-          </ValidatedForm>
-        </VStack>
-        <ItemThumbnailUpload
-          path={routeData?.partSummary?.thumbnailPath}
-          itemId={itemId}
-          modelId={routeData?.partSummary?.modelId}
+      <span className="text-sm">
+        <InputControlled
+          label={formLayout ? t`Part Number` : ""}
+          name="partId"
+          inline={inlineLayout}
+          value={routeData?.partSummary?.readableId ?? ""}
+          onBlur={(e) => {
+            onUpdate("partId", e.target.value ?? null);
+          }}
+          className="text-muted-foreground"
         />
-      </VStack>
+      </span>
+    </ValidatedForm>
+  );
+  const nameField = (
+    <ValidatedForm
+      defaultValues={{
+        name: routeData?.partSummary?.name ?? undefined
+      }}
+      validator={z.object({
+        name: z.string()
+      })}
+      className={cn("w-full", !formLayout && "-mt-2")}
+      isReadOnly={isReadOnly}
+    >
+      <span className="text-xs text-muted-foreground">
+        <InputControlled
+          label={formLayout ? t`Name` : ""}
+          name="name"
+          inline={inlineLayout}
+          characterLimit={40}
+          value={routeData?.partSummary?.name ?? ""}
+          onBlur={(e) => {
+            onUpdate("name", e.target.value ?? null);
+          }}
+          className="text-muted-foreground"
+        />
+      </span>
+    </ValidatedForm>
+  );
+
+  return (
+    <div
+      className={cn(
+        "text-sm w-full",
+        formLayout
+          ? "grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 items-start"
+          : "flex flex-col items-start space-y-4",
+        embedded
+          ? "px-1 py-2"
+          : "w-96 bg-card h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border px-4 py-2"
+      )}
+    >
+      {formLayout ? (
+        <>
+          {partIdField}
+          {nameField}
+        </>
+      ) : (
+        <VStack spacing={2}>
+          {/* On the CO affected-item card the tab already reads "Properties" and
+              the card title carries the item id — so drop the redundant heading +
+              copy affordances there. Part page (non-embedded) is unchanged. */}
+          {!embedded && (
+            <HStack className="w-full justify-between">
+              <h3 className="text-xxs text-foreground/70 uppercase font-light tracking-wide">
+                <Trans>Properties</Trans>
+              </h3>
+              <HStack spacing={1}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      aria-label={t`Link`}
+                      size="sm"
+                      className="p-1"
+                      onClick={() =>
+                        copyToClipboard(
+                          window.location.origin + path.to.part(itemId)
+                        )
+                      }
+                    >
+                      <LuLink className="w-3 h-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <span>
+                      <Trans>Copy link to part</Trans>
+                    </span>
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      aria-label={t`Copy`}
+                      size="sm"
+                      className="p-1"
+                      onClick={() => copyToClipboard(itemId)}
+                    >
+                      <LuKeySquare className="w-3 h-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <span>
+                      <Trans>Copy part unique identifier</Trans>
+                    </span>
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      aria-label={t`Copy`}
+                      size="sm"
+                      className="p-1"
+                      onClick={() =>
+                        copyToClipboard(
+                          routeData?.partSummary?.readableIdWithRevision ?? ""
+                        )
+                      }
+                    >
+                      <LuCopy className="w-3 h-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <span>
+                      <Trans>Copy part number</Trans>
+                    </span>
+                  </TooltipContent>
+                </Tooltip>
+              </HStack>
+            </HStack>
+          )}
+          <VStack spacing={1} className="pt-2">
+            {partIdField}
+            {nameField}
+          </VStack>
+          {section === "all" && thumbnail}
+        </VStack>
+      )}
 
       {/* <VStack spacing={2}>
         <h3 className="text-xs text-muted-foreground">Assignee</h3>
@@ -347,11 +460,12 @@ const PartProperties = ({ data }: PartPropertiesProps) => {
           itemPostingGroupId: z.string().nullable().optional()
         })}
         className="w-full"
+        isReadOnly={isReadOnly}
       >
         <ItemPostingGroup
           label={t`Item Group`}
           name="itemPostingGroupId"
-          inline
+          inline={inlineLayout}
           isClearable
           onChange={(value) => {
             onUpdate("itemPostingGroupId", value?.value ?? null);
@@ -368,23 +482,28 @@ const PartProperties = ({ data }: PartPropertiesProps) => {
           replenishmentSystem: z.string()
         })}
         className="w-full"
+        isReadOnly={isReadOnly}
       >
         <Select
           name="replenishmentSystem"
           label={t`Replenishment`}
           termId="replenishment-system"
-          inline={(value) => (
-            <Badge variant="secondary">
-              <ReplenishmentSystemIcon type={value} className="mr-2" />
-              <span>
-                {value === "Buy"
-                  ? t`Buy`
-                  : value === "Make"
-                    ? t`Make`
-                    : t`Buy and Make`}
-              </span>
-            </Badge>
-          )}
+          inline={
+            inlineLayout
+              ? (value) => (
+                  <Badge variant="secondary">
+                    <ReplenishmentSystemIcon type={value} className="mr-2" />
+                    <span>
+                      {value === "Buy"
+                        ? t`Buy`
+                        : value === "Make"
+                          ? t`Make`
+                          : t`Buy and Make`}
+                    </span>
+                  </Badge>
+                )
+              : undefined
+          }
           options={itemReplenishmentSystems.map((system) => ({
             value: system,
             label: (
@@ -413,25 +532,30 @@ const PartProperties = ({ data }: PartPropertiesProps) => {
           itemTrackingType: z.string()
         })}
         className="w-full"
+        isReadOnly={isReadOnly}
       >
         <Select
           name="itemTrackingType"
           label={t`Tracking Type`}
           termId="item-tracking-type"
-          inline={(value) => (
-            <Badge variant="secondary">
-              <TrackingTypeIcon type={value} className="mr-2" />
-              <span>
-                {value === "Inventory"
-                  ? t`Inventory`
-                  : value === "Non-Inventory"
-                    ? t`Non-Inventory`
-                    : value === "Serial"
-                      ? t`Serial`
-                      : t`Batch`}
-              </span>
-            </Badge>
-          )}
+          inline={
+            inlineLayout
+              ? (value) => (
+                  <Badge variant="secondary">
+                    <TrackingTypeIcon type={value} className="mr-2" />
+                    <span>
+                      {value === "Inventory"
+                        ? t`Inventory`
+                        : value === "Non-Inventory"
+                          ? t`Non-Inventory`
+                          : value === "Serial"
+                            ? t`Serial`
+                            : t`Batch`}
+                    </span>
+                  </Badge>
+                )
+              : undefined
+          }
           options={itemTrackingTypes.map((type) => ({
             value: type,
             label: (
@@ -462,23 +586,28 @@ const PartProperties = ({ data }: PartPropertiesProps) => {
           defaultMethodType: z.string()
         })}
         className="w-full"
+        isReadOnly={isReadOnly}
       >
         <Select
           name="defaultMethodType"
           label={t`Default Method Type`}
           termId="item-default-method-type"
-          inline={(value) => (
-            <Badge variant="secondary">
-              <MethodIcon type={value} className="mr-2" />
-              <span>
-                {value === "Purchase to Order"
-                  ? t`Purchase to Order`
-                  : value === "Pull from Inventory"
-                    ? t`Pull from Inventory`
-                    : t`Make to Order`}
-              </span>
-            </Badge>
-          )}
+          inline={
+            inlineLayout
+              ? (value) => (
+                  <Badge variant="secondary">
+                    <MethodIcon type={value} className="mr-2" />
+                    <span>
+                      {value === "Purchase to Order"
+                        ? t`Purchase to Order`
+                        : value === "Pull from Inventory"
+                          ? t`Pull from Inventory`
+                          : t`Make to Order`}
+                    </span>
+                  </Badge>
+                )
+              : undefined
+          }
           options={methodType
             .filter((type) => {
               const replenishment = routeData?.partSummary?.replenishmentSystem;
@@ -508,6 +637,8 @@ const PartProperties = ({ data }: PartPropertiesProps) => {
       <SourcingTypeProperty
         replenishmentSystem={routeData?.partSummary?.replenishmentSystem}
         value={routeData?.partSummary?.sourcingType}
+        inline={inlineLayout}
+        isReadOnly={isReadOnly}
         onChange={(value) => onUpdate("sourcingType", value)}
       />
 
@@ -522,23 +653,28 @@ const PartProperties = ({ data }: PartPropertiesProps) => {
             .min(1, { message: "Unit of Measure is required" })
         })}
         className="w-full"
+        isReadOnly={isReadOnly}
       >
         <UnitOfMeasure
           label={t`Unit of Measure`}
           name="unitOfMeasureCode"
-          inline
+          inline={inlineLayout}
           onChange={(value) => {
             onUpdate("unitOfMeasureCode", value?.value ?? null);
           }}
         />
       </ValidatedForm>
 
-      <ItemDescription
-        value={routeData?.partSummary?.description ?? ""}
-        onChange={(value) => onUpdate("description", value)}
-      />
+      <div className={cn("w-full", spanFull)}>
+        <ItemDescription
+          value={routeData?.partSummary?.description ?? ""}
+          inline={inlineLayout}
+          isReadOnly={isReadOnly}
+          onChange={(value) => onUpdate("description", value)}
+        />
+      </div>
 
-      <VStack spacing={2}>
+      <VStack spacing={2} className={spanFull}>
         <HStack className="w-full justify-between">
           <h3 className="text-xs text-muted-foreground">
             <Trans>Methods</Trans>
@@ -588,67 +724,79 @@ const PartProperties = ({ data }: PartPropertiesProps) => {
           />
         ))}
       </VStack>
-      <ValidatedForm
-        defaultValues={{
-          active: routeData?.partSummary?.active ?? undefined
-        }}
-        validator={z.object({
-          active: zfd.checkbox()
-        })}
-        className="w-full"
-      >
-        <Boolean
-          label={t`Active`}
-          name="active"
-          variant="small"
-          onChange={(value) => {
-            onUpdate("active", value ? "on" : "off");
-          }}
-        />
-      </ValidatedForm>
-      {routeData?.partSummary?.replenishmentSystem?.includes("Buy") && (
+      {/* Active is a lifecycle flag the change order controls at release — not a
+          user-editable attribute in the CO card. Keep it on the part page only. */}
+      {!embedded && (
         <ValidatedForm
           defaultValues={{
-            requiresInspection:
-              routeData?.partSummary?.requiresInspection ?? false
+            active: routeData?.partSummary?.active ?? undefined
           }}
           validator={z.object({
-            requiresInspection: zfd.checkbox()
+            active: zfd.checkbox()
           })}
           className="w-full"
+          isReadOnly={isReadOnly}
         >
           <Boolean
-            label={t`Requires Inspection`}
-            name="requiresInspection"
+            label={t`Active`}
+            name="active"
             variant="small"
             onChange={(value) => {
-              onUpdate("requiresInspection", value ? "on" : "off");
+              onUpdate("active", value ? "on" : "off");
             }}
           />
         </ValidatedForm>
       )}
-      {routeData?.partSummary?.replenishmentSystem?.includes("Buy") && (
-        <ValidatedForm
-          defaultValues={{
-            mpn: routeData?.partSummary?.mpn ?? undefined
-          }}
-          validator={z.object({
-            mpn: z.string().optional()
-          })}
-          className="w-full"
-        >
-          <InputControlled
-            label={t`Manufacturer Part Number`}
-            name="mpn"
-            inline
-            size="sm"
-            value={routeData?.partSummary?.mpn ?? ""}
-            onBlur={(e) => {
-              onUpdate("mpn", e.target.value ?? null);
+      {/* Requires Inspection + Manufacturer Part Number are purchasing
+          attributes — hidden on the CO affected-item card; they stay editable on
+          the part page (non-embedded), same as Active/Tags above. */}
+      {!embedded &&
+        routeData?.partSummary?.replenishmentSystem?.includes("Buy") && (
+          <ValidatedForm
+            defaultValues={{
+              requiresInspection:
+                routeData?.partSummary?.requiresInspection ?? false
             }}
-          />
-        </ValidatedForm>
-      )}
+            validator={z.object({
+              requiresInspection: zfd.checkbox()
+            })}
+            className="w-full"
+            isReadOnly={isReadOnly}
+          >
+            <Boolean
+              label={t`Requires Inspection`}
+              name="requiresInspection"
+              variant="small"
+              onChange={(value) => {
+                onUpdate("requiresInspection", value ? "on" : "off");
+              }}
+            />
+          </ValidatedForm>
+        )}
+      {!embedded &&
+        routeData?.partSummary?.replenishmentSystem?.includes("Buy") && (
+          <ValidatedForm
+            defaultValues={{
+              mpn: routeData?.partSummary?.mpn ?? undefined
+            }}
+            validator={z.object({
+              mpn: z.string().optional()
+            })}
+            className="w-full"
+            isReadOnly={isReadOnly}
+          >
+            <InputControlled
+              label={t`Manufacturer Part Number`}
+              name="mpn"
+              inline={inlineLayout}
+              size="sm"
+              value={routeData?.partSummary?.mpn ?? ""}
+              onBlur={(e) => {
+                onUpdate("mpn", e.target.value ?? null);
+              }}
+            />
+          </ValidatedForm>
+        )}
       {routeDataFromRoute?.supersession?.successor && (
         <div className="w-full">
           <h3 className="text-xs text-muted-foreground mb-1">
@@ -688,72 +836,46 @@ const PartProperties = ({ data }: PartPropertiesProps) => {
           )}
         </div>
       )}
-      <ValidatedForm
-        defaultValues={{
-          tags: routeData?.partSummary?.tags ?? []
-        }}
-        validator={z.object({
-          tags: z.array(z.string()).optional()
-        })}
-        className="w-full"
-      >
-        <Tags
-          availableTags={routeData?.tags ?? []}
-          label={t`Tags`}
-          name="tags"
+      {/* Tags live on the part row, keyed by readableId — shared across all
+          revisions. Editing them on a CO draft isn't isolated (it'd change the
+          live part now) and can't be diffed per-revision, so hide them here.
+          They remain editable on the part page. */}
+      {!embedded && (
+        <ValidatedForm
+          defaultValues={{
+            tags: routeData?.partSummary?.tags ?? []
+          }}
+          validator={z.object({
+            tags: z.array(z.string()).optional()
+          })}
+          className="w-full"
+          isReadOnly={isReadOnly}
+        >
+          <Tags
+            availableTags={routeData?.tags ?? []}
+            label={t`Tags`}
+            name="tags"
+            table="part"
+            inline
+            onChange={onUpdateTags}
+          />
+        </ValidatedForm>
+      )}
+
+      <div className={cn("w-full", spanFull)}>
+        <CustomFormInlineFields
+          customFields={
+            (routeData?.partSummary?.customFields ?? {}) as Record<string, Json>
+          }
           table="part"
-          inline
-          onChange={onUpdateTags}
+          tags={routeData?.partSummary?.tags ?? []}
+          isDisabled={isReadOnly}
+          onUpdate={onUpdateCustomFields}
         />
-      </ValidatedForm>
+      </div>
 
-      <CustomFormInlineFields
-        customFields={
-          (routeData?.partSummary?.customFields ?? {}) as Record<string, Json>
-        }
-        table="part"
-        tags={routeData?.partSummary?.tags ?? []}
-        onUpdate={onUpdateCustomFields}
-      />
-
-      <VStack spacing={2}>
-        <HStack className="w-full justify-between">
-          <h3 className="text-xs text-muted-foreground">
-            <Trans>Files</Trans>
-          </h3>
-        </HStack>
-        {routeData?.partSummary?.modelId && (
-          <Link
-            className="group flex items-center gap-1"
-            to={path.to.file.cadModel(routeData?.partSummary.modelId)}
-            target="_blank"
-          >
-            <Badge variant="secondary">
-              <LuMove3D className="w-3 h-3 mr-1 text-emerald-500" />
-              <Trans>3D Model</Trans>
-            </Badge>
-            <span className="group-hover:opacity-100 opacity-0 transition-opacity duration-200 w-4 h-4 text-foreground">
-              <LuExternalLink />
-            </span>
-          </Link>
-        )}
-
-        <Suspense fallback={null}>
-          <Await resolve={routeData?.files}>
-            {(files) =>
-              files?.map((file) => (
-                <FileBadge
-                  key={file.id}
-                  file={file}
-                  itemId={itemId}
-                  itemType="Part"
-                />
-              ))
-            }
-          </Await>
-        </Suspense>
-      </VStack>
-    </VStack>
+      {section === "all" && filesBlock}
+    </div>
   );
 };
 
