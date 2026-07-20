@@ -357,7 +357,351 @@ pub fn ply_to_glb(bytes: &[u8]) -> Result<Vec<u8>, OptimizeError> {
     soup_to_glb(&vertices, &triangles, "PLY")
 }
 
+/// 3MF: a zip whose `3D/3dmodel.model` entry is the model XML — objects hold
+/// meshes (and/or components referencing other objects with a 4x3 transform);
+/// `<build>` items place objects. Transforms are baked in; units scaled to mm.
+pub fn threemf_to_glb(bytes: &[u8]) -> Result<Vec<u8>, OptimizeError> {
+    let mut archive = zip::ZipArchive::new(std::io::Cursor::new(bytes))
+        .map_err(|_| OptimizeError::new("3MF is not a valid zip archive"))?;
+    let model_name = (0..archive.len())
+        .filter_map(|i| archive.by_index(i).ok().map(|f| f.name().to_string()))
+        .find(|n| n == "3D/3dmodel.model" || n.ends_with(".model"))
+        .ok_or_else(|| OptimizeError::new("3MF has no 3dmodel.model entry"))?;
+    let mut xml = Vec::new();
+    {
+        use std::io::Read;
+        let mut entry = archive
+            .by_name(&model_name)
+            .map_err(|_| OptimizeError::new("3MF model entry unreadable"))?;
+        entry
+            .read_to_end(&mut xml)
+            .map_err(|_| OptimizeError::new("3MF model entry unreadable"))?;
+    }
+    parse_3mf_model(&xml)
+}
+
+fn parse_3mf_model(xml: &[u8]) -> Result<Vec<u8>, OptimizeError> {
+    use quick_xml::events::Event;
+
+    struct ObjectData {
+        vertices: Vec<[f32; 3]>,
+        triangles: Vec<[usize; 3]>,
+        components: Vec<(String, [f32; 12])>,
+    }
+    let mut objects: std::collections::HashMap<String, ObjectData> =
+        std::collections::HashMap::new();
+    let mut build: Vec<(String, [f32; 12])> = Vec::new();
+    let mut unit_scale = 1.0f32; // millimeter default
+
+    let mut reader = quick_xml::Reader::from_reader(xml);
+    reader.config_mut().trim_text(true);
+    let mut current: Option<String> = None;
+    let mut buf = Vec::new();
+    loop {
+        let event = reader
+            .read_event_into(&mut buf)
+            .map_err(|e| OptimizeError::new(format!("3MF XML error: {e}")))?;
+        match &event {
+            Event::Start(e) | Event::Empty(e) => {
+                let attr = |name: &str| -> Option<String> {
+                    e.attributes().flatten().find_map(|a| {
+                        (a.key.as_ref() == name.as_bytes())
+                            .then(|| String::from_utf8_lossy(&a.value).into_owned())
+                    })
+                };
+                match e.local_name().as_ref() {
+                    b"model" => {
+                        unit_scale = unit_to_mm(attr("unit").as_deref().unwrap_or("millimeter"))?;
+                    }
+                    b"object" => {
+                        if let Some(id) = attr("id") {
+                            objects.insert(
+                                id.clone(),
+                                ObjectData {
+                                    vertices: Vec::new(),
+                                    triangles: Vec::new(),
+                                    components: Vec::new(),
+                                },
+                            );
+                            current = Some(id);
+                        }
+                    }
+                    b"vertex" => {
+                        let Some(obj) = current.as_ref().and_then(|id| objects.get_mut(id)) else {
+                            continue;
+                        };
+                        let coord = |n: &str| -> f32 {
+                            attr(n).and_then(|v| v.parse().ok()).unwrap_or(0.0)
+                        };
+                        obj.vertices.push([coord("x"), coord("y"), coord("z")]);
+                    }
+                    b"triangle" => {
+                        let Some(obj) = current.as_ref().and_then(|id| objects.get_mut(id)) else {
+                            continue;
+                        };
+                        let idx = |n: &str| -> Option<usize> { attr(n)?.parse().ok() };
+                        if let (Some(v1), Some(v2), Some(v3)) = (idx("v1"), idx("v2"), idx("v3")) {
+                            if v1 >= obj.vertices.len()
+                                || v2 >= obj.vertices.len()
+                                || v3 >= obj.vertices.len()
+                            {
+                                return Err(OptimizeError::new("3MF triangle index out of range"));
+                            }
+                            obj.triangles.push([v1, v2, v3]);
+                        }
+                    }
+                    b"component" => {
+                        let Some(obj) = current.as_ref().and_then(|id| objects.get_mut(id)) else {
+                            continue;
+                        };
+                        if let Some(refid) = attr("objectid") {
+                            obj.components
+                                .push((refid, parse_3mf_transform(attr("transform").as_deref())));
+                        }
+                    }
+                    b"item" => {
+                        if let Some(id) = attr("objectid") {
+                            build.push((id, parse_3mf_transform(attr("transform").as_deref())));
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            Event::End(e) => {
+                if e.local_name().as_ref() == b"object" {
+                    current = None;
+                }
+            }
+            Event::Eof => break,
+            _ => {}
+        }
+        buf.clear();
+    }
+
+    // No <build> section: render every object once.
+    if build.is_empty() {
+        build = objects.keys().map(|id| (id.clone(), IDENTITY_4X3)).collect();
+    }
+
+    let mut positions: Vec<[f32; 3]> = Vec::new();
+    let mut normals: Vec<[f32; 3]> = Vec::new();
+    // Recursively emit an object (mesh + components) under an accumulated transform.
+    fn emit(
+        id: &str,
+        transform: [f32; 12],
+        objects: &std::collections::HashMap<
+            String,
+            (Vec<[f32; 3]>, Vec<[usize; 3]>, Vec<(String, [f32; 12])>),
+        >,
+        depth: usize,
+        positions: &mut Vec<[f32; 3]>,
+        normals: &mut Vec<[f32; 3]>,
+    ) {
+        if depth > 16 {
+            return; // cycle guard
+        }
+        let Some((vertices, triangles, components)) = objects.get(id) else {
+            return;
+        };
+        for tri in triangles {
+            let p: Vec<[f32; 3]> = tri
+                .iter()
+                .map(|&i| apply_4x3(transform, vertices[i]))
+                .collect();
+            let n = face_normal(p[0], p[1], p[2]);
+            positions.extend_from_slice(&p);
+            normals.extend_from_slice(&[n, n, n]);
+        }
+        for (refid, child) in components {
+            emit(
+                refid,
+                compose_4x3(transform, *child),
+                objects,
+                depth + 1,
+                positions,
+                normals,
+            );
+        }
+    }
+    let plain: std::collections::HashMap<_, _> = objects
+        .into_iter()
+        .map(|(id, o)| (id, (o.vertices, o.triangles, o.components)))
+        .collect();
+    for (id, transform) in &build {
+        emit(id, *transform, &plain, 0, &mut positions, &mut normals);
+    }
+    if positions.is_empty() {
+        return Err(OptimizeError::new("3MF contains no renderable geometry"));
+    }
+    for p in &mut positions {
+        for c in p.iter_mut() {
+            *c *= unit_scale;
+        }
+    }
+    build_triangle_glb(&positions, &normals)
+}
+
+/// AMF: XML (optionally zip-wrapped, same-name entry). Objects hold vertex
+/// coordinates + volume triangles. Constellations (instance placements) are not
+/// applied — objects render once, which matches how slicers treat plain parts.
+pub fn amf_to_glb(bytes: &[u8]) -> Result<Vec<u8>, OptimizeError> {
+    let xml: Vec<u8> = if bytes.starts_with(b"PK\x03\x04") {
+        use std::io::Read;
+        let mut archive = zip::ZipArchive::new(std::io::Cursor::new(bytes))
+            .map_err(|_| OptimizeError::new("AMF zip is invalid"))?;
+        let name = (0..archive.len())
+            .filter_map(|i| archive.by_index(i).ok().map(|f| f.name().to_string()))
+            .find(|n| n.to_lowercase().ends_with(".amf"))
+            .ok_or_else(|| OptimizeError::new("AMF zip has no .amf entry"))?;
+        let mut out = Vec::new();
+        archive
+            .by_name(&name)
+            .map_err(|_| OptimizeError::new("AMF entry unreadable"))?
+            .read_to_end(&mut out)
+            .map_err(|_| OptimizeError::new("AMF entry unreadable"))?;
+        out
+    } else {
+        bytes.to_vec()
+    };
+
+    use quick_xml::events::Event;
+    let mut reader = quick_xml::Reader::from_reader(xml.as_slice());
+    reader.config_mut().trim_text(true);
+
+    let mut unit_scale = 1.0f32;
+    let mut vertices: Vec<[f32; 3]> = Vec::new();
+    let mut triangles: Vec<[usize; 3]> = Vec::new();
+    // Per-object vertex offset: AMF triangle indices are object-local.
+    let mut object_base = 0usize;
+    let mut coord = [0.0f32; 3];
+    let mut tri = [0usize; 3];
+    let mut text_target: Option<usize> = None; // 0-2 into coord, 3-5 into tri
+    let mut buf = Vec::new();
+    loop {
+        let event = reader
+            .read_event_into(&mut buf)
+            .map_err(|e| OptimizeError::new(format!("AMF XML error: {e}")))?;
+        match &event {
+            Event::Start(e) | Event::Empty(e) => match e.local_name().as_ref() {
+                b"amf" => {
+                    let unit = e.attributes().flatten().find_map(|a| {
+                        (a.key.as_ref() == b"unit")
+                            .then(|| String::from_utf8_lossy(&a.value).into_owned())
+                    });
+                    unit_scale = unit_to_mm(unit.as_deref().unwrap_or("millimeter"))?;
+                }
+                b"object" => object_base = vertices.len(),
+                b"x" => text_target = Some(0),
+                b"y" => text_target = Some(1),
+                b"z" => text_target = Some(2),
+                b"v1" => text_target = Some(3),
+                b"v2" => text_target = Some(4),
+                b"v3" => text_target = Some(5),
+                _ => {}
+            },
+            Event::Text(t) => {
+                if let Some(slot) = text_target {
+                    let text = t.decode().unwrap_or_default();
+                    let text = text.trim();
+                    if slot < 3 {
+                        coord[slot] = text.parse().unwrap_or(0.0);
+                    } else {
+                        tri[slot - 3] = text.parse().unwrap_or(0);
+                    }
+                }
+            }
+            Event::End(e) => {
+                text_target = None;
+                match e.local_name().as_ref() {
+                    b"coordinates" => {
+                        vertices.push([
+                            coord[0] * unit_scale,
+                            coord[1] * unit_scale,
+                            coord[2] * unit_scale,
+                        ]);
+                        coord = [0.0; 3];
+                    }
+                    b"triangle" => {
+                        let t = [
+                            object_base + tri[0],
+                            object_base + tri[1],
+                            object_base + tri[2],
+                        ];
+                        if t.iter().any(|&i| i >= vertices.len()) {
+                            return Err(OptimizeError::new("AMF triangle index out of range"));
+                        }
+                        triangles.push(t);
+                        tri = [0; 3];
+                    }
+                    _ => {}
+                }
+            }
+            Event::Eof => break,
+            _ => {}
+        }
+        buf.clear();
+    }
+    soup_to_glb(&vertices, &triangles, "AMF")
+}
+
 // ---- shared helpers ----------------------------------------------------------
+
+/// 3MF/AMF unit attribute → mm scale factor.
+fn unit_to_mm(unit: &str) -> Result<f32, OptimizeError> {
+    match unit {
+        "micron" => Ok(0.001),
+        "millimeter" => Ok(1.0),
+        "centimeter" => Ok(10.0),
+        "inch" => Ok(25.4),
+        "foot" => Ok(304.8),
+        "meter" => Ok(1000.0),
+        other => Err(OptimizeError::new(format!("unknown unit: {other}"))),
+    }
+}
+
+/// Row-major 4x3 affine (the 3MF `transform` attribute: 9 rotation/scale values
+/// then the translation row), identity when absent/malformed.
+const IDENTITY_4X3: [f32; 12] = [1., 0., 0., 0., 1., 0., 0., 0., 1., 0., 0., 0.];
+
+fn parse_3mf_transform(attr: Option<&str>) -> [f32; 12] {
+    let Some(attr) = attr else {
+        return IDENTITY_4X3;
+    };
+    let values: Vec<f32> = attr
+        .split_whitespace()
+        .filter_map(|t| t.parse().ok())
+        .collect();
+    match <[f32; 12]>::try_from(values) {
+        Ok(m) => m,
+        Err(_) => IDENTITY_4X3,
+    }
+}
+
+/// 3MF row-vector convention: p' = p·M + t.
+fn apply_4x3(m: [f32; 12], p: [f32; 3]) -> [f32; 3] {
+    [
+        p[0] * m[0] + p[1] * m[3] + p[2] * m[6] + m[9],
+        p[0] * m[1] + p[1] * m[4] + p[2] * m[7] + m[10],
+        p[0] * m[2] + p[1] * m[5] + p[2] * m[8] + m[11],
+    ]
+}
+
+/// Compose parent ∘ child for the row-vector convention (apply child first).
+fn compose_4x3(parent: [f32; 12], child: [f32; 12]) -> [f32; 12] {
+    let mut out = [0.0f32; 12];
+    for row in 0..3 {
+        for col in 0..3 {
+            out[row * 3 + col] = child[row * 3] * parent[col]
+                + child[row * 3 + 1] * parent[3 + col]
+                + child[row * 3 + 2] * parent[6 + col];
+        }
+    }
+    let t = apply_4x3(parent, [child[9], child[10], child[11]]);
+    out[9] = t[0];
+    out[10] = t[1];
+    out[11] = t[2];
+    out
+}
 
 fn fan_triangulate(face: &[usize], out: &mut Vec<[usize; 3]>) {
     for t in 1..face.len().saturating_sub(1) {
@@ -546,6 +890,52 @@ mod tests {
         });
         let glb = bim_to_glb(bim.to_string().as_bytes()).unwrap();
         assert_eq!(tri_count(&glb), 2);
+    }
+
+    #[test]
+    fn threemf_build_item_and_component() {
+        // One triangle object; a second object referencing it as a component with
+        // a translation; the build places the second → still 1 emitted instance
+        // chain = 1 triangle from the component path.
+        let model = r#"<?xml version="1.0"?>
+<model unit="millimeter" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02">
+ <resources>
+  <object id="1" type="model"><mesh>
+   <vertices><vertex x="0" y="0" z="0"/><vertex x="1" y="0" z="0"/><vertex x="0" y="1" z="0"/></vertices>
+   <triangles><triangle v1="0" v2="1" v3="2"/></triangles>
+  </mesh></object>
+  <object id="2" type="model"><components>
+   <component objectid="1" transform="1 0 0 0 1 0 0 0 1 5 0 0"/>
+  </components></object>
+ </resources>
+ <build><item objectid="2"/></build>
+</model>"#;
+        let mut zip_bytes = Vec::new();
+        {
+            let mut writer = zip::ZipWriter::new(std::io::Cursor::new(&mut zip_bytes));
+            writer
+                .start_file::<_, ()>("3D/3dmodel.model", zip::write::FileOptions::default())
+                .unwrap();
+            std::io::Write::write_all(&mut writer, model.as_bytes()).unwrap();
+            writer.finish().unwrap();
+        }
+        let glb = threemf_to_glb(&zip_bytes).unwrap();
+        assert_eq!(tri_count(&glb), 1);
+    }
+
+    #[test]
+    fn amf_plain_xml() {
+        let amf = r#"<?xml version="1.0"?>
+<amf unit="millimeter"><object id="0"><mesh>
+ <vertices>
+  <vertex><coordinates><x>0</x><y>0</y><z>0</z></coordinates></vertex>
+  <vertex><coordinates><x>1</x><y>0</y><z>0</z></coordinates></vertex>
+  <vertex><coordinates><x>0</x><y>1</y><z>0</z></coordinates></vertex>
+ </vertices>
+ <volume><triangle><v1>0</v1><v2>1</v2><v3>2</v3></triangle></volume>
+</mesh></object></amf>"#;
+        let glb = amf_to_glb(amf.as_bytes()).unwrap();
+        assert_eq!(tri_count(&glb), 1);
     }
 
     #[test]

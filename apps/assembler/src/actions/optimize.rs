@@ -363,14 +363,16 @@ fn load_source(path: &str, format: Format, head: &[u8], opts: &Opts) -> Result<S
         }
         // Plain mesh formats: parse → triangle-soup GLB (the optimiser's weld
         // pass reconstructs sharing) → the bounded GLB path.
-        Format::Obj | Format::Ply | Format::Off | Format::Bim => {
+        Format::Obj | Format::Ply | Format::Off | Format::Bim | Format::ThreeMf | Format::Amf => {
             let bytes =
                 std::fs::read(path).map_err(|e| ActionErr::new("invalid_input", e.to_string()))?;
             let glb = match format {
                 Format::Obj => optimize::obj_to_glb(&bytes),
                 Format::Ply => optimize::ply_to_glb(&bytes),
                 Format::Off => optimize::off_to_glb(&bytes),
-                _ => optimize::bim_to_glb(&bytes),
+                Format::Bim => optimize::bim_to_glb(&bytes),
+                Format::ThreeMf => optimize::threemf_to_glb(&bytes),
+                _ => optimize::amf_to_glb(&bytes),
             }
             .map_err(|e| ActionErr::new("invalid_input", e.message))?;
             Ok(Src::Owned(glb))

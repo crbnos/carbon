@@ -12,10 +12,10 @@ export const convertKbToString = (kb: number) => {
 
 // Formats the assembler's /v1/optimize can ingest: exact B-rep sources OCCT
 // tessellates (step/iges/brep + the compacted BinXCAF `xbf` retained-raw form)
-// and mesh sources it parses directly (glb/gltf/stl/obj/ply/off/bim). Widen this
-// in lockstep with the assembler's format registry — each addition makes that
-// format optimise on upload (GLB-always doctrine); the remaining mesh formats
-// (fbx/dae/3ds/3mf/amf/3dm) render via the viewer's WASM raw tier only. Returns
+// and mesh sources it parses directly (glb/gltf/stl/obj/ply/off/bim/3mf/amf).
+// Widen this in lockstep with the assembler's format registry — each addition
+// makes that format optimise on upload (GLB-always doctrine); the remaining mesh
+// formats (fbx/dae/3ds/3dm) render via the viewer's WASM raw tier only. Returns
 // the service `format` string, or null if not optimisable.
 export function optimizableModelFormat(
   ext: string
@@ -31,6 +31,8 @@ export function optimizableModelFormat(
   | "ply"
   | "off"
   | "bim"
+  | "3mf"
+  | "amf"
   | null {
   switch (ext.toLowerCase()) {
     case "step":
@@ -58,6 +60,10 @@ export function optimizableModelFormat(
       return "off";
     case "bim":
       return "bim";
+    case "3mf":
+      return "3mf";
+    case "amf":
+      return "amf";
     default:
       return null;
   }

@@ -17,6 +17,8 @@ serde_json.workspace = true
 base64 = "0.22"
 struson = "0.6"
 draco-bridge = { path = "../draco-bridge" }
+zip = { version = "8.6.0", default-features = false, features = ["deflate"] }
+quick-xml = "0.41.0"
 
 [dev-dependencies]
 memmap2 = "0.9"

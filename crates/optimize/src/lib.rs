@@ -17,7 +17,7 @@ use std::mem::size_of;
 
 mod codec;
 mod ingest;
-pub use ingest::{bim_to_glb, obj_to_glb, off_to_glb, ply_to_glb};
+pub use ingest::{amf_to_glb, bim_to_glb, obj_to_glb, off_to_glb, ply_to_glb, threemf_to_glb};
 pub use codec::Codec;
 
 #[derive(Debug, Clone)]

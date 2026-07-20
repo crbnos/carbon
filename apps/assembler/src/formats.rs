@@ -23,6 +23,10 @@ pub enum Format {
     Off,
     /// dotbim (`.bim`) — JSON meshes + instanced elements.
     Bim,
+    /// 3MF (zip container, `3D/3dmodel.model` XML).
+    ThreeMf,
+    /// AMF (XML, optionally zip-wrapped).
+    Amf,
 }
 
 /// How the source is turned into a mesh: OCCT tessellation (exact B-rep) or a
@@ -36,7 +40,7 @@ pub enum Loader {
 /// Every supported input token (canonical names + aliases), for the
 /// `unsupported_format` error payload.
 pub const SUPPORTED: &[&str] = &[
-    "step", "stp", "iges", "igs", "brep", "xbf", "glb", "gltf", "stl", "obj", "ply", "off", "bim",
+    "step", "stp", "iges", "igs", "brep", "xbf", "glb", "gltf", "stl", "obj", "ply", "off", "bim", "3mf", "amf",
 ];
 
 /// Canonical formats, in registry order — the `GET /v1` discovery listing.
@@ -52,6 +56,8 @@ pub const ALL: &[Format] = &[
     Format::Ply,
     Format::Off,
     Format::Bim,
+    Format::ThreeMf,
+    Format::Amf,
 ];
 
 impl Format {
@@ -68,6 +74,8 @@ impl Format {
             Format::Ply => "ply",
             Format::Off => "off",
             Format::Bim => "bim",
+            Format::ThreeMf => "3mf",
+            Format::Amf => "amf",
         }
     }
 
@@ -117,6 +125,8 @@ impl Format {
             "ply" => Some(Format::Ply),
             "off" => Some(Format::Off),
             "bim" => Some(Format::Bim),
+            "3mf" => Some(Format::ThreeMf),
+            "amf" => Some(Format::Amf),
             _ => None,
         }
     }
@@ -190,6 +200,11 @@ pub fn sniff(head: &[u8], size: u64, ext: Option<&str>) -> Option<Format> {
     }
     // dotbim: JSON with a schema_version + meshes (glTF JSON is caught above by
     // its "asset" key, so no collision).
+    // AMF: XML root element (the zip-wrapped variant falls back to the ext hint,
+    // like 3MF — a bare PK header is indistinguishable from any other zip).
+    if trimmed.starts_with("<?xml") && text.contains("<amf") {
+        return Some(Format::Amf);
+    }
     if trimmed.starts_with('{')
         && trimmed.contains("\"schema_version\"")
         && trimmed.contains("\"meshes\"")
