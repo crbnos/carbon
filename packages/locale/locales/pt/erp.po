@@ -1463,6 +1463,9 @@ msgstr "Peça a um administrador com permissão {0} para adicionar o primeiro {1
 msgid "Assemblies"
 msgstr "Montagens"
 
+msgid "Assembly Instruction"
+msgstr ""
+
 msgid "Assembly Instructions"
 msgstr "Instruções de Montagem"
 
@@ -11508,6 +11511,12 @@ msgstr "passos"
 
 msgid "Steps"
 msgstr "Etapas"
+
+msgid "Steps are inherited from the assembly instruction."
+msgstr ""
+
+msgid "Steps are inherited from the inspection document."
+msgstr ""
 
 msgid "Stock Transfer ID"
 msgstr "ID de Transferência de Estoque"

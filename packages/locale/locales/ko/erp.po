@@ -1463,6 +1463,9 @@ msgstr "{0} 권한이 있는 관리자에게 첫 {1} 추가를 요청하세요."
 msgid "Assemblies"
 msgstr "조립품"
 
+msgid "Assembly Instruction"
+msgstr ""
+
 msgid "Assembly Instructions"
 msgstr "조립 지침"
 
@@ -11508,6 +11511,12 @@ msgstr "단계"
 
 msgid "Steps"
 msgstr "단계"
+
+msgid "Steps are inherited from the assembly instruction."
+msgstr ""
+
+msgid "Steps are inherited from the inspection document."
+msgstr ""
 
 msgid "Stock Transfer ID"
 msgstr "재고 이동 ID"

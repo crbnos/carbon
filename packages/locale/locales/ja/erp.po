@@ -1463,6 +1463,9 @@ msgstr "{0}権限を持つ管理者に最初の{1}を追加するよう依頼し
 msgid "Assemblies"
 msgstr "アセンブリ"
 
+msgid "Assembly Instruction"
+msgstr ""
+
 msgid "Assembly Instructions"
 msgstr "組立指示"
 
@@ -11508,6 +11511,12 @@ msgstr "ステップ"
 
 msgid "Steps"
 msgstr "ステップ"
+
+msgid "Steps are inherited from the assembly instruction."
+msgstr ""
+
+msgid "Steps are inherited from the inspection document."
+msgstr ""
 
 msgid "Stock Transfer ID"
 msgstr "在庫移動ID"

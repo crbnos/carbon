@@ -1463,6 +1463,9 @@ msgstr "请求具有{0}权限的管理员添加第一个{1}。"
 msgid "Assemblies"
 msgstr "装配件"
 
+msgid "Assembly Instruction"
+msgstr ""
+
 msgid "Assembly Instructions"
 msgstr "装配说明"
 
@@ -11508,6 +11511,12 @@ msgstr "步骤"
 
 msgid "Steps"
 msgstr "步骤"
+
+msgid "Steps are inherited from the assembly instruction."
+msgstr ""
+
+msgid "Steps are inherited from the inspection document."
+msgstr ""
 
 msgid "Stock Transfer ID"
 msgstr "库存转移ID"

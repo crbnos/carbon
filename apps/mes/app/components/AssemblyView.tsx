@@ -50,6 +50,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   LuBox,
   LuCheck,
+  LuChevronLeft,
+  LuChevronRight,
   LuCircle,
   LuCircleCheck,
   LuCircleDot,
@@ -128,6 +130,23 @@ type Slide = {
   sortOrder?: number | null;
   annotations?: SlideAnnotation[] | null;
 };
+
+// The assembler serves an optimised GLB per model (no client-side tessellation).
+// Derive its private preview URL from the raw modelPath
+// `${co}/models/${id}.ext[.zst]` → `${co}/models/${id}/optimized.glb`. Mirrors
+// the helper in JobOperation.tsx — the raw upload alone no longer renders (the
+// pipeline compacts it to `.zst` and the WASM tier is build-flag gated off).
+function optimizedModelPreviewUrl(rawModelPath: string | null): string | null {
+  if (!rawModelPath) return null;
+  const slash = rawModelPath.lastIndexOf("/");
+  if (slash < 0) return null;
+  const dir = rawModelPath.slice(0, slash);
+  let base = rawModelPath.slice(slash + 1);
+  if (base.toLowerCase().endsWith(".zst")) base = base.slice(0, -4);
+  const id = base.replace(/\.[^.]+$/, "");
+  if (!id) return null;
+  return `/file/preview/private/${dir}/${id}/optimized.glb`;
+}
 
 // Render metadata for a 3D model slide (resolved by the loader from modelUpload).
 // glbPath is the assembler-converted artifact (fast to load); modelPath is the raw
@@ -483,6 +502,9 @@ export function AssemblyView({
   const actionsSheet = useDisclosure();
   const completeAllModal = useDisclosure();
   const completeAllFetcher = useFetcher<{ success?: boolean }>();
+  // Silent auto-completion of a single unit once its final step is recorded
+  // (multi-quantity assembly builds one at a time — see the effect below).
+  const completeUnitFetcher = useFetcher<{ id?: string }>();
   const imageViewer = useDisclosure();
   // Which reference image fills the main panel: a step photo (index) or the
   // finished-product image ("finished").
@@ -670,20 +692,29 @@ export function AssemblyView({
   // the parent is untracked).
   const unitEntities = axisEntities.slice(0, unitCount);
 
+  // Units already built. Drives the quantity progress indicator and, for untracked
+  // parents, the default landing unit (the next one still to build).
+  const quantityComplete = Math.max(
+    0,
+    Math.round(operation?.quantityComplete ?? 0)
+  );
+
   // Resolve the current unit: by tracked entity from the URL when present, else by the
   // ?unit index — untracked parents have no entity to key off. (FIX-3 / FIX-4)
   const unitParam = Number.parseInt(searchParams.get("unit") ?? "", 10);
+  const hasUnitParam =
+    Number.isInteger(unitParam) && unitParam >= 0 && unitParam < units.length;
   const currentUnitIndex = (() => {
     if (trackedEntityId) {
       const i = units.findIndex((u) => u.entity?.id === trackedEntityId);
       if (i >= 0) return i;
     }
-    if (
-      Number.isInteger(unitParam) &&
-      unitParam >= 0 &&
-      unitParam < units.length
-    )
-      return unitParam;
+    if (hasUnitParam) return unitParam;
+    // No explicit unit: land on the next unit still to build (quantityComplete)
+    // rather than an already-finished unit 0. Untracked parents page purely by
+    // index, so this is safe; tracked parents resolve by entity above.
+    if (!isTracked)
+      return Math.min(quantityComplete, Math.max(0, units.length - 1));
     return 0;
   })();
   const currentUnit = units[currentUnitIndex] ?? units[0];
@@ -723,14 +754,17 @@ export function AssemblyView({
     .slice()
     .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
   // Per-slide media: an image slide renders as a picture (with pins); a 3D model
-  // slide renders in the ModelViewer — preferring the assembler-converted GLB and
-  // falling back to the raw uploaded model, parsed client-side.
+  // slide renders in ModelPreview — preferring the assembler-converted GLB (glbPath,
+  // else the optimised GLB derived from the raw path) and keeping the raw upload
+  // only as a last-resort fallback.
   const slideMedia = stepSlides.map((slide) => {
     if (slide.modelUploadId) {
       const model = slideModels?.[slide.modelUploadId] ?? null;
       // ModelPreview loads the assembler-converted GLB fast tier when present and
       // falls back to parsing the raw upload client-side (WASM tier).
-      const glbUrl = model?.glbPath ? getPrivateUrl(model.glbPath) : null;
+      const glbUrl = model?.glbPath
+        ? getPrivateUrl(model.glbPath)
+        : optimizedModelPreviewUrl(model?.modelPath ?? null);
       const rawUrl = model?.modelPath ? getPrivateUrl(model.modelPath) : null;
       return {
         kind: "model" as const,
@@ -822,6 +856,170 @@ export function AssemblyView({
     );
   }
 
+  // ── Auto-advance + labor automation ──────────────────────────────────────
+  // Reduce keystrokes on the shop floor: the moment the step the operator is
+  // looking at flips to "done" (a record just landed — Mark done, Record, a
+  // measurement, a file upload — all revalidate `isStepDone`), advance to the
+  // next step and kick off the labor clock. Gated on the step index being
+  // unchanged so navigating BACK to an already-done step never bounces forward.
+  const laborFetcher = useFetcher();
+  const openLaborEvent = openByType("Labor");
+  const currentStepDone = step ? isStepDone(step) : false;
+  const stepDoneRef = useRef({ step: currentStep, done: currentStepDone });
+  // biome-ignore lint/correctness/useExhaustiveDependencies: transition-detect on the current step only
+  useEffect(() => {
+    const prev = stepDoneRef.current;
+    stepDoneRef.current = { step: currentStep, done: currentStepDone };
+    const justCompleted =
+      prev.step === currentStep && !prev.done && currentStepDone;
+    if (!justCompleted) return;
+
+    // Start the labor clock on the first completion when nothing is running yet.
+    // Skip it on the completion that finishes the whole operation — the stop
+    // effect below handles that and a zero-length event helps no one.
+    if (
+      operation &&
+      !openLaborEvent &&
+      !allStepsRecorded &&
+      laborFetcher.state === "idle"
+    ) {
+      const fd = new FormData();
+      fd.set("jobOperationId", operation.id);
+      fd.set("timezone", getLocalTimeZone());
+      fd.set("type", "Labor");
+      fd.set("action", "Start");
+      if (operation.workCenterId)
+        fd.set("workCenterId", operation.workCenterId);
+      const entityId = isTracked ? currentEntity?.id : undefined;
+      if (entityId) fd.set("trackedEntityId", entityId);
+      laborFetcher.submit(fd, {
+        method: "post",
+        action: path.to.productionEvent
+      });
+    }
+
+    if (!isLastStep) goToStep(currentStep + 1);
+  }, [currentStep, currentStepDone, isLastStep, allStepsRecorded]);
+
+  // Stop the labor clock automatically once every step is recorded for this unit.
+  const allDoneRef = useRef(allStepsRecorded);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: transition-detect on all-complete
+  useEffect(() => {
+    const wasAllDone = allDoneRef.current;
+    allDoneRef.current = allStepsRecorded;
+    if (
+      !wasAllDone &&
+      allStepsRecorded &&
+      operation &&
+      openLaborEvent &&
+      laborFetcher.state === "idle"
+    ) {
+      const fd = new FormData();
+      fd.set("jobOperationId", operation.id);
+      fd.set("timezone", getLocalTimeZone());
+      fd.set("type", "Labor");
+      fd.set("action", "End");
+      fd.set("id", openLaborEvent.id);
+      laborFetcher.submit(fd, {
+        method: "post",
+        action: path.to.productionEvent
+      });
+    }
+  }, [allStepsRecorded]);
+
+  // ── Auto-complete one unit + roll to the next ────────────────────────────
+  // Assembly builds one unit at a time. For a multi-quantity operation, the
+  // moment every step is recorded for the current unit we silently log a single
+  // completed quantity (POST /x/complete, quantity 1) and return to step 1 of
+  // the next unit — until the whole quantity is built, where the final
+  // completion finishes the operation server-side (willBeFinished → redirect).
+  // Single-quantity operations keep the manual "Complete" flow untouched.
+  const isMultiQuantity = unitCount > 1;
+  const unitsRemaining = unitCount - quantityComplete;
+  const autoCompleteSubmittedRef = useRef(false);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: transition-detect on all-complete
+  useEffect(() => {
+    if (!isMultiQuantity || unitsRemaining <= 0) return;
+    // Only auto-complete the unit currently being built. Guards against
+    // re-completing an already-finished unit whose step records still read
+    // "done" if the operator navigates back to it.
+    if (currentUnitIndex < quantityComplete) return;
+    if (!allStepsRecorded) {
+      // On a not-yet-finished unit — arm for its eventual completion.
+      autoCompleteSubmittedRef.current = false;
+      return;
+    }
+    if (autoCompleteSubmittedRef.current) return;
+    if (!operation || completeUnitFetcher.state !== "idle") return;
+    autoCompleteSubmittedRef.current = true;
+
+    const fd = new FormData();
+    fd.set("jobOperationId", operation.id);
+    fd.set("quantity", "1");
+    if (requiresSerialTracking) fd.set("trackingType", "Serial");
+    else if (requiresBatchTracking) fd.set("trackingType", "Batch");
+    if (isTracked && currentEntity?.id)
+      fd.set("trackedEntityId", currentEntity.id);
+    // Link the open production events so the completion is attributed to them.
+    const setup = openByType("Setup");
+    const labor = openByType("Labor");
+    const machine = openByType("Machine");
+    if (setup?.id) fd.set("setupProductionEventId", setup.id);
+    if (labor?.id) fd.set("laborProductionEventId", labor.id);
+    if (machine?.id) fd.set("machineProductionEventId", machine.id);
+    completeUnitFetcher.submit(fd, {
+      method: "post",
+      action: path.to.complete
+    });
+
+    // Untracked parents track the unit-being-built by quantityComplete (they page
+    // purely by index), so drop any explicit ?unit and let currentUnitIndex fall
+    // back to quantityComplete — which the completion rolls forward. Serial/batch
+    // completions redirect to a fresh entity instead, so leave their params be.
+    if (!isTracked && hasUnitParam) {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          next.delete("unit");
+          return next;
+        },
+        { replace: true, preventScrollReset: true }
+      );
+    }
+  }, [allStepsRecorded, isMultiQuantity, unitsRemaining]);
+
+  // Return to step 1 on a new unit. Whenever the active unit changes — the
+  // auto-complete rolls quantityComplete forward (untracked), a serial/batch
+  // completion redirects to a fresh entity, or the operator pages units by hand —
+  // jump to that unit's first step still to record (step 1 for a fresh unit). This
+  // is what returns the operator to the top after finishing a unit's last step.
+  const lastUnitRef = useRef(currentUnitIndex);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: transition-detect on the unit index
+  useEffect(() => {
+    if (lastUnitRef.current === currentUnitIndex) return;
+    lastUnitRef.current = currentUnitIndex;
+    const firstIncomplete = steps.findIndex((s) => !isStepDone(s));
+    goToStep(firstIncomplete >= 0 ? firstIncomplete : 0);
+  }, [currentUnitIndex]);
+
+  // On first open (no explicit ?step in the URL), land on the first step that
+  // isn't done for this unit rather than always step 1 — the operator resumes
+  // where they left off. Resolves once, as soon as steps are available; an
+  // explicit ?step (a shared/bookmarked link) is always respected.
+  const initialStepResolvedRef = useRef(false);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: one-shot once steps load
+  useEffect(() => {
+    if (initialStepResolvedRef.current) return;
+    if (searchParams.get("step") != null) {
+      initialStepResolvedRef.current = true;
+      return;
+    }
+    if (steps.length === 0) return; // wait for steps to load
+    initialStepResolvedRef.current = true;
+    const firstIncomplete = steps.findIndex((s) => !isStepDone(s));
+    if (firstIncomplete > 0) goToStep(firstIncomplete);
+  }, [steps.length]);
+
   function navigateEntity(entity: { id: string }) {
     const url = new URL(window.location.href);
     url.searchParams.set("trackedEntityId", entity.id);
@@ -829,30 +1027,48 @@ export function AssemblyView({
     navigate(url.pathname + url.search);
   }
 
-  // Navigate to a unit by its axis position. Tracked units key off their entity (the
-  // loader refetches that entity's materials); untracked units key off ?unit (no entity
-  // to scan — FIX-3/FIX-4), which the loader resolves without a tracked entity.
+  // Navigate to a unit by its axis position (the prev/next pager). Tracked units key
+  // off their entity so the loader refetches that entity's materials; untracked units
+  // key off ?unit (no entity to scan — FIX-3/FIX-4). The unit-change effect above then
+  // moves the step cursor to that unit's first incomplete step.
+  function goToUnit(n: number) {
+    const clamped = Math.max(0, Math.min(n, Math.max(0, unitCount - 1)));
+    if (clamped === currentUnitIndex) return;
+    const entity = units[clamped]?.entity;
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (isTracked && entity?.id) {
+          next.set("trackedEntityId", entity.id);
+          next.delete("unit");
+        } else {
+          next.set("unit", String(clamped));
+          next.delete("trackedEntityId");
+        }
+        return next;
+      },
+      { replace: true, preventScrollReset: true }
+    );
+  }
+
   const companyLogo =
     mode === "dark" ? user.company.logoDarkIcon : user.company.logoLightIcon;
 
   return (
     <div className="relative flex h-screen w-full flex-col overflow-hidden bg-background text-foreground">
       {/* ── HEADER ── */}
-      <header className="flex h-[52px] shrink-0 items-center bg-card border-b border-border pl-1">
-        <SidebarTrigger />
-        <div className="hidden h-full shrink-0 items-center border-l border-border px-4 sm:flex">
-          {companyLogo ? (
+      <header className="flex h-[52px] shrink-0 items-center bg-card border-b border-border">
+        {/* Full-height segment matching the Flag issue / Complete / timer buttons. */}
+        <SidebarTrigger className="h-full w-auto shrink-0 rounded-none border-r border-border px-2 hover:bg-accent md:px-4" />
+        {companyLogo ? (
+          <div className="hidden h-full shrink-0 items-center border-r border-border px-4 sm:flex">
             <img
               src={companyLogo}
               alt={`${user.company.name} logo`}
               className="h-7 w-auto max-w-[140px] object-contain"
             />
-          ) : (
-            <span className="whitespace-nowrap text-base font-medium tracking-tight text-foreground/90">
-              {user.company.name}
-            </span>
-          )}
-        </div>
+          </div>
+        ) : null}
 
         <div className="flex h-full min-w-0 items-center gap-2 border-r border-border px-3 md:px-5">
           <span className="truncate text-sm font-semibold">
@@ -870,39 +1086,37 @@ export function AssemblyView({
 
         <div className="flex-1" />
 
-        <div className="flex h-full shrink-0 items-center gap-1 border-l border-border px-2 md:gap-2 md:px-4">
-          <Button
-            variant="outline"
-            size="lg"
-            leftIcon={<LuFlag />}
-            className="hidden lg:flex"
-            onClick={qualityModal.onOpen}
+        {/* Full-height segmented actions — same treatment as the timer button:
+            flush, no rounded corners, a left-border divider, hover highlight. */}
+        <button
+          type="button"
+          onClick={qualityModal.onOpen}
+          className="hidden h-full shrink-0 items-center gap-1 border-l border-border px-2 text-sm font-medium transition-colors hover:bg-accent active:scale-[0.98] md:gap-2 md:px-4 lg:flex"
+        >
+          <LuFlag className="size-4" />
+          Flag issue
+        </button>
+        {operation ? (
+          <button
+            type="button"
+            onClick={completeModal.onOpen}
+            className="flex h-full shrink-0 items-center gap-1 border-l border-border px-2 text-sm font-medium transition-colors hover:bg-accent active:scale-[0.98] md:gap-2 md:px-4"
           >
-            Flag issue
-          </Button>
-          {operation ? (
-            <Button
-              variant="primary"
-              size="lg"
-              leftIcon={<LuCheck />}
-              onClick={completeModal.onOpen}
-            >
-              <span className="hidden sm:inline">Complete</span>
-              <span className="sm:hidden">Done</span>
-            </Button>
-          ) : null}
-          {operation ? (
-            <Button
-              variant="ghost"
-              size="md"
-              isIcon
-              aria-label="More actions"
-              onClick={actionsSheet.onOpen}
-            >
-              <LuEllipsisVertical />
-            </Button>
-          ) : null}
-        </div>
+            <LuCheck className="size-4" />
+            <span className="hidden sm:inline">Complete</span>
+            <span className="sm:hidden">Done</span>
+          </button>
+        ) : null}
+        {operation ? (
+          <button
+            type="button"
+            aria-label="More actions"
+            onClick={actionsSheet.onOpen}
+            className="flex h-full shrink-0 items-center justify-center border-l border-border px-2 transition-colors hover:bg-accent active:scale-[0.98] md:px-4"
+          >
+            <LuEllipsisVertical className="size-4" />
+          </button>
+        ) : null}
 
         {operation ? (
           <TimerControl
@@ -993,6 +1207,35 @@ export function AssemblyView({
           <span className="whitespace-nowrap text-xs tabular-nums text-muted-foreground">
             {currentStep + 1} / {steps.length}
           </span>
+          {/* Unit pager (always visible; the left-panel Quantity bar is lg+ only).
+              Assembly builds one at a time, but the operator can page back to review
+              or fix a prior unit's step records — mirrors the operation view. */}
+          {isMultiQuantity && (
+            <div className="flex items-center gap-0.5">
+              <IconButton
+                aria-label="Previous unit"
+                variant="ghost"
+                size="sm"
+                icon={<LuChevronLeft />}
+                isDisabled={currentUnitIndex <= 0}
+                onClick={() => goToUnit(currentUnitIndex - 1)}
+              />
+              <Badge
+                variant="secondary"
+                className="whitespace-nowrap tabular-nums"
+              >
+                Unit {Math.min(currentUnitIndex + 1, unitCount)} / {unitCount}
+              </Badge>
+              <IconButton
+                aria-label="Next unit"
+                variant="ghost"
+                size="sm"
+                icon={<LuChevronRight />}
+                isDisabled={currentUnitIndex >= unitCount - 1}
+                onClick={() => goToUnit(currentUnitIndex + 1)}
+              />
+            </div>
+          )}
         </div>
       )}
 
@@ -1058,6 +1301,28 @@ export function AssemblyView({
                 selected={selectedWorkType === "Machine"}
                 onSelect={() => setSelectedWorkType("Machine")}
               />
+            )}
+            {/* Quantity progress — units completed of the operation quantity.
+                Only shown when building more than one (single-qty stays lean). */}
+            {isMultiQuantity && (
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-muted-foreground">
+                    Quantity
+                  </span>
+                  <span className="text-[10px] tabular-nums text-muted-foreground">
+                    {Math.min(quantityComplete, unitCount)}/{unitCount}
+                  </span>
+                </div>
+                <div className="h-1 w-full overflow-hidden rounded-full bg-border">
+                  <div
+                    className="h-full rounded-full bg-emerald-500 transition-all"
+                    style={{
+                      width: `${unitCount ? (Math.min(quantityComplete, unitCount) / unitCount) * 100 : 0}%`
+                    }}
+                  />
+                </div>
+              </div>
             )}
             {/* Steps done count */}
             {steps.length > 0 && (
@@ -1192,6 +1457,7 @@ export function AssemblyView({
             <div className="min-h-0 flex-1">
               <ModelPreview
                 key={`model-${modelPath}`}
+                glbUrl={optimizedModelPreviewUrl(modelPath)}
                 rawUrl={`/file/preview/private/${modelPath}`}
                 mode={mode}
                 className="rounded-none"
@@ -1227,6 +1493,7 @@ export function AssemblyView({
                           activeStepIndex={playbackIndex ?? 0}
                           playStepNonce={currentStep}
                           autoPlay
+                          loop
                           readOnly
                           mode={mode}
                           className="h-full"
@@ -1943,48 +2210,50 @@ function TimerControl({
   const elapsed = pendingAction === "End" ? 0 : liveElapsed;
 
   return (
-    <div className="flex h-full shrink-0 items-center gap-1 border-l border-border px-2 md:gap-2 md:px-4">
-      <span className="hidden flex-col items-end leading-none sm:flex">
-        <span className="text-sm font-medium tabular-nums">
-          {formatElapsed(elapsed)}
-        </span>
-        <span className="text-[9px] uppercase tracking-wider text-muted-foreground">
-          {workType}
-        </span>
-      </span>
-      <fetcher.Form method="post" action={path.to.productionEvent}>
-        <input type="hidden" name="jobOperationId" value={operation.id} />
-        <input type="hidden" name="timezone" value={getLocalTimeZone()} />
-        <input type="hidden" name="type" value={workType} />
+    // The entire time display is the start/stop trigger — a big, obvious tap
+    // target on the shop floor beats a small icon button.
+    <fetcher.Form
+      method="post"
+      action={path.to.productionEvent}
+      className="h-full shrink-0"
+    >
+      <input type="hidden" name="jobOperationId" value={operation.id} />
+      <input type="hidden" name="timezone" value={getLocalTimeZone()} />
+      <input type="hidden" name="type" value={workType} />
+      <input type="hidden" name="action" value={openEvent ? "End" : "Start"} />
+      {operation.workCenterId ? (
         <input
           type="hidden"
-          name="action"
-          value={openEvent ? "End" : "Start"}
+          name="workCenterId"
+          value={operation.workCenterId}
         />
-        {operation.workCenterId ? (
-          <input
-            type="hidden"
-            name="workCenterId"
-            value={operation.workCenterId}
-          />
-        ) : null}
-        {openEvent ? (
-          <input type="hidden" name="id" value={openEvent.id} />
-        ) : null}
-        {trackedEntityId ? (
-          <input type="hidden" name="trackedEntityId" value={trackedEntityId} />
-        ) : null}
-        <Button
-          type="submit"
-          variant="ghost"
-          size="md"
-          isIcon
-          aria-label={active ? "Pause timer" : "Start timer"}
-        >
-          {active ? <LuPause /> : <LuPlay />}
-        </Button>
-      </fetcher.Form>
-    </div>
+      ) : null}
+      {openEvent ? (
+        <input type="hidden" name="id" value={openEvent.id} />
+      ) : null}
+      {trackedEntityId ? (
+        <input type="hidden" name="trackedEntityId" value={trackedEntityId} />
+      ) : null}
+      <button
+        type="submit"
+        aria-label={active ? "Pause timer" : "Start timer"}
+        className="flex h-full shrink-0 items-center gap-1 border-l border-border px-2 transition-colors hover:bg-accent active:scale-[0.98] md:gap-2 md:px-4"
+      >
+        <span className="hidden flex-col items-end leading-none sm:flex">
+          <span className="text-sm font-medium tabular-nums">
+            {formatElapsed(elapsed)}
+          </span>
+          <span className="text-[9px] uppercase tracking-wider text-muted-foreground">
+            {workType}
+          </span>
+        </span>
+        {active ? (
+          <LuPause className="size-4" />
+        ) : (
+          <LuPlay className="size-4" />
+        )}
+      </button>
+    </fetcher.Form>
   );
 }
 
@@ -2383,8 +2652,7 @@ function TimerRow({
       aria-pressed={selected}
       className={cn(
         "flex w-full flex-col gap-1 rounded-md px-1.5 py-1 text-left transition-colors",
-        onSelect && "hover:bg-muted/60",
-        selected && "bg-foreground/10"
+        onSelect && "hover:bg-muted/60"
       )}
     >
       <div className="flex items-center justify-between gap-1">

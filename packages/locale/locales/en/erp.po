@@ -1463,6 +1463,9 @@ msgstr "Ask an admin with {0} permission to add the first {1}."
 msgid "Assemblies"
 msgstr "Assemblies"
 
+msgid "Assembly Instruction"
+msgstr "Assembly Instruction"
+
 msgid "Assembly Instructions"
 msgstr "Assembly Instructions"
 
@@ -11508,6 +11511,12 @@ msgstr "steps"
 
 msgid "Steps"
 msgstr "Steps"
+
+msgid "Steps are inherited from the assembly instruction."
+msgstr "Steps are inherited from the assembly instruction."
+
+msgid "Steps are inherited from the inspection document."
+msgstr "Steps are inherited from the inspection document."
 
 msgid "Stock Transfer ID"
 msgstr "Stock Transfer ID"

@@ -1463,6 +1463,9 @@ msgstr "{0} अनुमति वाले व्यवस्थापक स�
 msgid "Assemblies"
 msgstr "असेंबलीज"
 
+msgid "Assembly Instruction"
+msgstr ""
+
 msgid "Assembly Instructions"
 msgstr "असेंबली निर्देश"
 
@@ -11508,6 +11511,12 @@ msgstr "कदम"
 
 msgid "Steps"
 msgstr "चरण"
+
+msgid "Steps are inherited from the assembly instruction."
+msgstr ""
+
+msgid "Steps are inherited from the inspection document."
+msgstr ""
 
 msgid "Stock Transfer ID"
 msgstr "स्टॉक ट्रांसफर आईडी"

@@ -1463,6 +1463,9 @@ msgstr "Demandez à un administrador disposant de la permission {0} d'ajouter le
 msgid "Assemblies"
 msgstr "Assemblages"
 
+msgid "Assembly Instruction"
+msgstr ""
+
 msgid "Assembly Instructions"
 msgstr "Instructions d'assemblage"
 
@@ -11508,6 +11511,12 @@ msgstr "étapes"
 
 msgid "Steps"
 msgstr "Étapes"
+
+msgid "Steps are inherited from the assembly instruction."
+msgstr ""
+
+msgid "Steps are inherited from the inspection document."
+msgstr ""
 
 msgid "Stock Transfer ID"
 msgstr "ID de transfert de stock"

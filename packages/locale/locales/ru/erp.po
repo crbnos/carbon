@@ -1463,6 +1463,9 @@ msgstr "Попросите администратора с разрешение�
 msgid "Assemblies"
 msgstr "Сборки"
 
+msgid "Assembly Instruction"
+msgstr ""
+
 msgid "Assembly Instructions"
 msgstr "Инструкции по сборке"
 
@@ -11508,6 +11511,12 @@ msgstr "шаги"
 
 msgid "Steps"
 msgstr "Шаги"
+
+msgid "Steps are inherited from the assembly instruction."
+msgstr ""
+
+msgid "Steps are inherited from the inspection document."
+msgstr ""
 
 msgid "Stock Transfer ID"
 msgstr "ID передачи запасов"
