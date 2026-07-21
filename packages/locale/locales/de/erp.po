@@ -980,6 +980,9 @@ msgstr "Genehmigungsanforderungen"
 msgid "Approval Rules"
 msgstr "Genehmigungsregeln"
 
+msgid "Approvals"
+msgstr "Genehmigungen"
+
 msgid "Approve"
 msgstr "Genehmigen"
 
@@ -4448,6 +4451,9 @@ msgstr "Gültig ab"
 msgid "Effective To"
 msgstr "Gültig bis"
 
+msgid "email"
+msgstr "E-Mail"
+
 msgid "Email"
 msgstr "E-Mail"
 
@@ -5476,6 +5482,9 @@ msgstr "Messinstrumente"
 
 msgid "Genealogy"
 msgstr "Hauptbuch"
+
+msgid "General"
+msgstr "Allgemein"
 
 msgid "General ledger"
 msgstr "GL-Konto, das Kostenunterschiede bei Fremdbearbeitungsvorgängen erfasst."

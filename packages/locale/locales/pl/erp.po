@@ -980,6 +980,9 @@ msgstr "Wymagania zatwierdzenia"
 msgid "Approval Rules"
 msgstr "Reguły zatwierdzania"
 
+msgid "Approvals"
+msgstr "Zatwierdzenia"
+
 msgid "Approve"
 msgstr "Zatwierdź"
 
@@ -4448,6 +4451,9 @@ msgstr "Obowiązuje od"
 msgid "Effective To"
 msgstr "Ważne do"
 
+msgid "email"
+msgstr "email"
+
 msgid "Email"
 msgstr "E-mail"
 
@@ -5476,6 +5482,9 @@ msgstr "Mierniki"
 
 msgid "Genealogy"
 msgstr "Księga Główna"
+
+msgid "General"
+msgstr "Ogólne"
 
 msgid "General ledger"
 msgstr "Konto GL przechwytujące różnice kosztów w operacjach obróbki zewnętrznej."

@@ -980,6 +980,9 @@ msgstr "Requisiti di Approvazione"
 msgid "Approval Rules"
 msgstr "Regole di Approvazione"
 
+msgid "Approvals"
+msgstr "Approvazioni"
+
 msgid "Approve"
 msgstr "Approva"
 
@@ -4448,6 +4451,9 @@ msgstr "Effettivo Da"
 msgid "Effective To"
 msgstr "Effettivo Fino A"
 
+msgid "email"
+msgstr "email"
+
 msgid "Email"
 msgstr "Email"
 
@@ -5476,6 +5482,9 @@ msgstr "Calibri"
 
 msgid "Genealogy"
 msgstr "Libro Mastro"
+
+msgid "General"
+msgstr "Generale"
 
 msgid "General ledger"
 msgstr "Conto GL che cattura le differenze di costo sulle operazioni di lavorazione esterna."

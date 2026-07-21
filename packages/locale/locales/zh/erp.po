@@ -980,6 +980,9 @@ msgstr "批准要求"
 msgid "Approval Rules"
 msgstr "审批规则"
 
+msgid "Approvals"
+msgstr "审批"
+
 msgid "Approve"
 msgstr "批准"
 
@@ -4448,6 +4451,9 @@ msgstr "生效日期"
 msgid "Effective To"
 msgstr "有效期至"
 
+msgid "email"
+msgstr "邮件"
+
 msgid "Email"
 msgstr "电子邮件"
 
@@ -5476,6 +5482,9 @@ msgstr "量规"
 
 msgid "Genealogy"
 msgstr "总分类账"
+
+msgid "General"
+msgstr "常规"
 
 msgid "General ledger"
 msgstr "捕获外协加工操作成本差异的GL账户。"

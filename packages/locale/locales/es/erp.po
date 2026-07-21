@@ -980,6 +980,9 @@ msgstr "Requisitos de Aprobación"
 msgid "Approval Rules"
 msgstr "Reglas de Aprobación"
 
+msgid "Approvals"
+msgstr "Aprobaciones"
+
 msgid "Approve"
 msgstr "Aprobar"
 
@@ -4448,6 +4451,9 @@ msgstr "Efectivo Desde"
 msgid "Effective To"
 msgstr "Efectivo Hasta"
 
+msgid "email"
+msgstr "Correo electrónico"
+
 msgid "Email"
 msgstr "Correo electrónico"
 
@@ -5476,6 +5482,9 @@ msgstr "Medidores"
 
 msgid "Genealogy"
 msgstr "Libro Mayor"
+
+msgid "General"
+msgstr "General"
 
 msgid "General ledger"
 msgstr "Cuenta GL que captura diferencias de costos en operaciones de procesamiento externo."

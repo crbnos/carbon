@@ -980,6 +980,9 @@ msgstr "Exigences d'approbation"
 msgid "Approval Rules"
 msgstr "Règles d'approbation"
 
+msgid "Approvals"
+msgstr "Approbations"
+
 msgid "Approve"
 msgstr "Approuver"
 
@@ -4448,6 +4451,9 @@ msgstr "À partir de"
 msgid "Effective To"
 msgstr "Effectif jusqu'au"
 
+msgid "email"
+msgstr "email"
+
 msgid "Email"
 msgstr "E-mail"
 
@@ -5476,6 +5482,9 @@ msgstr "Jauges"
 
 msgid "Genealogy"
 msgstr "Grand Livre"
+
+msgid "General"
+msgstr "Général"
 
 msgid "General ledger"
 msgstr "Compte GL capturant les différences de coûts sur les opérations de sous-traitance."

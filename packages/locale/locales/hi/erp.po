@@ -980,6 +980,9 @@ msgstr "अनुमोदन आवश्यकताएं"
 msgid "Approval Rules"
 msgstr "अनुमोदन नियम"
 
+msgid "Approvals"
+msgstr "अनुमोदन"
+
 msgid "Approve"
 msgstr "मंजूरी दें"
 
@@ -4448,6 +4451,9 @@ msgstr "प्रभावी से"
 msgid "Effective To"
 msgstr "प्रभावी तक"
 
+msgid "email"
+msgstr "ईमेल"
+
 msgid "Email"
 msgstr "ईमेल"
 
@@ -5476,6 +5482,9 @@ msgstr "गेज"
 
 msgid "Genealogy"
 msgstr "सामान्य बहीखाता"
+
+msgid "General"
+msgstr "सामान्य"
 
 msgid "General ledger"
 msgstr "GL खाता बाहरी प्रसंस्करण संचालन पर लागत अंतर को कैप्चर करता है।"

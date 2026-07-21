@@ -980,6 +980,9 @@ msgstr "Требования к утверждению"
 msgid "Approval Rules"
 msgstr "Правила утверждения"
 
+msgid "Approvals"
+msgstr "Утверждения"
+
 msgid "Approve"
 msgstr "Одобрить"
 
@@ -4448,6 +4451,9 @@ msgstr "Действительно с"
 msgid "Effective To"
 msgstr "Действительно до"
 
+msgid "email"
+msgstr "Электронная почта"
+
 msgid "Email"
 msgstr "Электронная почта"
 
@@ -5476,6 +5482,9 @@ msgstr "Датчики"
 
 msgid "Genealogy"
 msgstr "Главная Бухгалтерская Книга"
+
+msgid "General"
+msgstr "Общие"
 
 msgid "General ledger"
 msgstr "Счет для фиксации разницы в стоимости при внешней переработке."

@@ -980,6 +980,9 @@ msgstr "承認要件"
 msgid "Approval Rules"
 msgstr "承認ルール"
 
+msgid "Approvals"
+msgstr "承認"
+
 msgid "Approve"
 msgstr "承認"
 
@@ -4448,6 +4451,9 @@ msgstr "有効期間開始"
 msgid "Effective To"
 msgstr "有効期限"
 
+msgid "email"
+msgstr "メール"
+
 msgid "Email"
 msgstr "メール"
 
@@ -5476,6 +5482,9 @@ msgstr "ゲージ"
 
 msgid "Genealogy"
 msgstr "総勘定元帳"
+
+msgid "General"
+msgstr "一般"
 
 msgid "General ledger"
 msgstr "外部処理操作のコスト差異をキャプチャするGLアカウント。"

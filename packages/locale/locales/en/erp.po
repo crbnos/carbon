@@ -980,6 +980,9 @@ msgstr "Approval Requirements"
 msgid "Approval Rules"
 msgstr "Approval Rules"
 
+msgid "Approvals"
+msgstr "Approvals"
+
 msgid "Approve"
 msgstr "Approve"
 
@@ -4448,6 +4451,9 @@ msgstr "Effective From"
 msgid "Effective To"
 msgstr "Effective To"
 
+msgid "email"
+msgstr "email"
+
 msgid "Email"
 msgstr "Email"
 
@@ -5476,6 +5482,9 @@ msgstr "Gauges"
 
 msgid "Genealogy"
 msgstr "Genealogy"
+
+msgid "General"
+msgstr "General"
 
 msgid "General ledger"
 msgstr "General ledger"

@@ -980,6 +980,9 @@ msgstr "승인 요구사항"
 msgid "Approval Rules"
 msgstr "승인 규칙"
 
+msgid "Approvals"
+msgstr "승인"
+
 msgid "Approve"
 msgstr "승인"
 
@@ -4448,6 +4451,9 @@ msgstr "적용 시작일"
 msgid "Effective To"
 msgstr "적용 종료일"
 
+msgid "email"
+msgstr "이메일"
+
 msgid "Email"
 msgstr "이메일"
 
@@ -5476,6 +5482,9 @@ msgstr "측정기"
 
 msgid "Genealogy"
 msgstr "계보"
+
+msgid "General"
+msgstr "일반"
 
 msgid "General ledger"
 msgstr "총계정원장"

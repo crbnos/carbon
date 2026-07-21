@@ -980,6 +980,9 @@ msgstr "Onay Gereksinimleri"
 msgid "Approval Rules"
 msgstr "Onay Kuralları"
 
+msgid "Approvals"
+msgstr "Onaylar"
+
 msgid "Approve"
 msgstr "Onayla"
 
@@ -4448,6 +4451,9 @@ msgstr "Geçerlilik Başlangıcı"
 msgid "Effective To"
 msgstr "Geçerli Olacağı Tarih"
 
+msgid "email"
+msgstr "e-posta"
+
 msgid "Email"
 msgstr "E-posta"
 
@@ -5476,6 +5482,9 @@ msgstr "Kalibratörler"
 
 msgid "Genealogy"
 msgstr "Genel Muhasebe Defteri"
+
+msgid "General"
+msgstr "Genel"
 
 msgid "General ledger"
 msgstr "Dış işlem operasyonlarında maliyet farklarını yakalayan GL hesabı."
