@@ -15,7 +15,6 @@ import { useState } from "react";
 import {
   LuBlocks,
   LuEllipsisVertical,
-  LuListChecks,
   LuPanelLeft,
   LuPanelRight,
   LuRefreshCw,
@@ -37,7 +36,6 @@ import { path } from "~/utils/path";
 import type { assemblyInstructionStatuses } from "../../production.models";
 import type { AssemblyInstruction } from "../../types";
 import AssemblyInstructionStatus from "./AssemblyInstructionStatus";
-import AssemblySyncModal from "./AssemblySyncModal";
 
 const itemTypesWithDetails = ["Part", "Material", "Tool", "Consumable"];
 
@@ -55,7 +53,6 @@ const AssemblyInstructionHeader = () => {
   const { formatRelativeTime } = useDateFormatter();
   const { toggleExplorer, toggleProperties } = usePanels();
   const deleteDisclosure = useDisclosure();
-  const syncDisclosure = useDisclosure();
 
   const nameFetcher = useFetcher<{}>();
   const statusFetcher = useFetcher<{}>();
@@ -192,23 +189,14 @@ const AssemblyInstructionHeader = () => {
           </Button>
         )}
         {instruction?.status === "Published" && (
-          <>
-            <Button
-              leftIcon={<LuListChecks />}
-              isDisabled={!canUpdate}
-              onClick={syncDisclosure.onOpen}
-            >
-              Sync to BOP
-            </Button>
-            <Button
-              variant="secondary"
-              isDisabled={!canUpdate}
-              isLoading={statusFetcher.state !== "idle"}
-              onClick={() => onStatusChange("Archived")}
-            >
-              Archive
-            </Button>
-          </>
+          <Button
+            variant="secondary"
+            isDisabled={!canUpdate}
+            isLoading={statusFetcher.state !== "idle"}
+            onClick={() => onStatusChange("Archived")}
+          >
+            Archive
+          </Button>
         )}
         {instruction?.status === "Archived" && (
           <Button
@@ -227,12 +215,6 @@ const AssemblyInstructionHeader = () => {
           variant="ghost"
         />
       </div>
-      {syncDisclosure.isOpen && (
-        <AssemblySyncModal
-          instructionId={id}
-          onClose={syncDisclosure.onClose}
-        />
-      )}
       {deleteDisclosure.isOpen && (
         <ConfirmDelete
           action={path.to.deleteAssemblyInstruction(id)}

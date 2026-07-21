@@ -117,6 +117,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         ...operation,
         description: operation.description ?? "",
         procedureId: operation.procedureId ?? undefined,
+        assemblyInstructionId: operation.assemblyInstructionId ?? undefined,
+        inspectionDocumentId: operation.inspectionDocumentId ?? undefined,
         operationSupplierProcessId:
           operation.operationSupplierProcessId ?? undefined,
         operationMinimumCost: operation.operationMinimumCost ?? 0,

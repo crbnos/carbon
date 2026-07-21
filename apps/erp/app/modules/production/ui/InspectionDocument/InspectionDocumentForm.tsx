@@ -11,7 +11,7 @@ import {
 } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { Hidden, Input, Item, Submit } from "~/components/Form";
-import { inspectionDocumentValidator } from "~/modules/quality/quality.models";
+import { inspectionDocumentValidator } from "~/modules/production/production.models";
 import { path } from "~/utils/path";
 
 type InspectionDocumentFormProps = {

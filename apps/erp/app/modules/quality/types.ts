@@ -1,15 +1,11 @@
 import type { Database } from "@carbon/database";
 import type { nonConformanceAssociationType } from "./quality.models";
 import type {
-  getBalloons,
   getGaugeCalibrationRecords,
   getGauges,
   getGaugeTypes,
   getInboundInspection,
   getInboundInspections,
-  getInspectionDocument,
-  getInspectionDocuments,
-  getInspectionFeatures,
   getIssueActionTasks,
   getIssueApprovalTasks,
   getIssueAssociations,
@@ -27,38 +23,6 @@ import type {
   getRequiredActions,
   getRisks
 } from "./quality.service";
-
-export type InspectionDocument = NonNullable<
-  Awaited<ReturnType<typeof getInspectionDocuments>>["data"]
->[number];
-
-export type InspectionDocumentDetail = NonNullable<
-  Awaited<ReturnType<typeof getInspectionDocument>>["data"]
->;
-
-export type Balloon = NonNullable<
-  Awaited<ReturnType<typeof getBalloons>>["data"]
->[number];
-
-export type InspectionFeature = NonNullable<
-  Awaited<ReturnType<typeof getInspectionFeatures>>["data"]
->[number];
-
-export type BalloonFeature = {
-  id: string;
-  balloonNumber: number;
-  description: string;
-  nominalValue: number | null;
-  tolerancePlus: number | null;
-  toleranceMinus: number | null;
-  unitOfMeasureCode: string | null;
-};
-
-export type InspectionDocumentContent = {
-  pdfUrl: string | null;
-  drawingNumber: string | null;
-  features: BalloonFeature[];
-};
 
 export type Gauge = NonNullable<
   Awaited<ReturnType<typeof getGauges>>["data"]

@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 /**
- * POST `/api/quality/inspection-document/:inspectionDocumentId/balloon-analyze` — request body
+ * POST `/api/production/inspection-document/:inspectionDocumentId/balloon-analyze` — request body
  * uses `balloonRegionAnalysisRequestSchema`. Successful JSON body includes `analysis`
  * matching `balloonRegionAnalysisResultSchema`:
  *
@@ -15,7 +15,7 @@ import { z } from "zod";
  * Server-only vision + prompts: `inspectionBalloonAnalyze.server.ts` (not exported from `index.ts`).
  */
 
-/** POST body for `/api/quality/inspection-document/:id/balloon-analyze` */
+/** POST body for `/api/production/inspection-document/:id/balloon-analyze` */
 export const balloonRegionAnalysisRequestSchema = z.object({
   /** Base64-encoded image bytes (no `data:` prefix). */
   imageBase64: z.string().min(1).max(28_000_000),

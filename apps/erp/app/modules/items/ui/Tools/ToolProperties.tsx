@@ -567,6 +567,7 @@ const ToolProperties = ({ data }: ToolPropertiesProps) => {
           onChange={(value) => {
             onUpdate("active", value ? "on" : "off");
           }}
+          bordered
         />
       </ValidatedForm>
       {routeData?.toolSummary?.replenishmentSystem?.includes("Buy") && (
@@ -587,6 +588,7 @@ const ToolProperties = ({ data }: ToolPropertiesProps) => {
             onChange={(value) => {
               onUpdate("requiresInspection", value ? "on" : "off");
             }}
+            bordered
           />
         </ValidatedForm>
       )}

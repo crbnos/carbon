@@ -35,6 +35,12 @@ import type {
   operationStepValidator,
   operationToolValidator
 } from "../shared";
+import { normalizeOperationSourceIds } from "../shared";
+import {
+  listBalloons,
+  listInspectionFeatures,
+  mapBalloonIdsToFeatureIdsForDocument
+} from "./inspectionDocumentDb";
 import type {
   assemblyInstructionStatuses,
   assemblyNoteSeverities,
@@ -42,6 +48,7 @@ import type {
   assemblyStepStatuses,
   deadlineTypes,
   failureModeValidator,
+  inspectionDocumentValidator,
   jobMaterialValidator,
   jobOperationStatus,
   jobOperationValidator,
@@ -80,6 +87,8 @@ import type {
   JobMaterialPurchaseOrderLine,
   JobMaterialSupplyJobLine
 } from "./types";
+
+export { mapBalloonIdsToFeatureIdsForDocument };
 
 const logger = getLogger("erp", "production");
 
@@ -2964,17 +2973,18 @@ export async function upsertJobOperation(
         customFields?: Json;
       })
 ) {
-  if ("updatedBy" in jobOperation) {
+  const normalized = normalizeOperationSourceIds(jobOperation);
+  if ("updatedBy" in normalized) {
     return client
       .from("jobOperation")
-      .update(sanitize(jobOperation))
-      .eq("id", jobOperation.id)
+      .update(sanitize(normalized))
+      .eq("id", normalized.id)
       .select("id")
       .single();
   }
   const operationInsert = await client
     .from("jobOperation")
-    .insert([jobOperation])
+    .insert([normalized])
     .select("id")
     .single();
 
@@ -2984,14 +2994,14 @@ export async function upsertJobOperation(
   const operationId = operationInsert.data?.id;
   if (!operationId) return operationInsert;
 
-  if (jobOperation.procedureId) {
+  if (normalized.procedureId && "createdBy" in normalized) {
     const { error } = await client.functions.invoke("get-method", {
       body: {
         type: "procedureToOperation",
-        sourceId: jobOperation.procedureId,
+        sourceId: normalized.procedureId,
         targetId: operationId,
-        companyId: jobOperation.companyId,
-        userId: jobOperation.createdBy
+        companyId: normalized.companyId,
+        userId: normalized.createdBy
       }
     });
     if (error) {
@@ -4101,6 +4111,19 @@ export async function getAssemblyInstructions(
   }
 
   return query.order("updatedAt", { ascending: false, nullsFirst: false });
+}
+
+export async function getAssemblyInstructionsForItem(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string
+) {
+  return client
+    .from("assemblyInstruction")
+    .select("id, name, version, status")
+    .eq("companyId", companyId)
+    .eq("itemId", itemId)
+    .order("updatedAt", { ascending: false, nullsFirst: false });
 }
 
 /**
@@ -5720,19 +5743,14 @@ export async function syncAssemblyInstructionToOperation(
   db: Kysely<KyselyDatabase>,
   args: {
     assemblyInstructionId: string;
-    target: { kind: "method" | "job"; operationId: string };
+    operationId: string;
     companyId: string;
     userId: string;
   }
 ) {
-  const { assemblyInstructionId, target, companyId, userId } = args;
-  const isMethod = target.kind === "method";
-  const stepTable = isMethod
-    ? ("methodOperationStep" as const)
-    : ("jobOperationStep" as const);
-  const slideTable = isMethod
-    ? ("methodOperationStepSlide" as const)
-    : ("jobOperationStepSlide" as const);
+  const { assemblyInstructionId, operationId, companyId, userId } = args;
+  const stepTable = "jobOperationStep" as const;
+  const slideTable = "jobOperationStepSlide" as const;
 
   return db.transaction().execute(async (trx) => {
     const instruction = await trx
@@ -5790,19 +5808,12 @@ export async function syncAssemblyInstructionToOperation(
     // The target operation's own BOM lines, keyed by item — instruction step
     // materials are itemIds; the link table wants the material row on THIS
     // operation (a link to another operation's material never shows in the MES).
-    const operationMaterials = isMethod
-      ? await trx
-          .selectFrom("methodMaterial")
-          .select(["id", "itemId"])
-          .where("methodOperationId", "=", target.operationId)
-          .where("companyId", "=", companyId)
-          .execute()
-      : await trx
-          .selectFrom("jobMaterial")
-          .select(["id", "itemId"])
-          .where("jobOperationId", "=", target.operationId)
-          .where("companyId", "=", companyId)
-          .execute();
+    const operationMaterials = await trx
+      .selectFrom("jobMaterial")
+      .select(["id", "itemId"])
+      .where("jobOperationId", "=", operationId)
+      .where("companyId", "=", companyId)
+      .execute();
     const materialIdByItemId = new Map<string, string>();
     for (const material of operationMaterials) {
       if (material.itemId && !materialIdByItemId.has(material.itemId)) {
@@ -5813,7 +5824,7 @@ export async function syncAssemblyInstructionToOperation(
     const existingSynced = await trx
       .selectFrom(stepTable)
       .select(["id", "assemblyInstructionStepId"])
-      .where("operationId", "=", target.operationId)
+      .where("operationId", "=", operationId)
       .where("companyId", "=", companyId)
       .where("assemblyInstructionStepId", "is not", null)
       .execute();
@@ -5865,7 +5876,7 @@ export async function syncAssemblyInstructionToOperation(
           .insertInto(stepTable)
           .values({
             ...payload,
-            operationId: target.operationId,
+            operationId,
             assemblyInstructionStepId: source.id,
             companyId,
             createdBy: userId
@@ -5904,38 +5915,20 @@ export async function syncAssemblyInstructionToOperation(
     }
 
     // Refresh part links on the synced steps only (hand-authored steps keep theirs).
-    if (isMethod) {
+    await trx
+      .deleteFrom("jobMaterialStep")
+      .where("jobOperationStepId", "in", syncedTargetIds)
+      .execute();
+    if (linkPairs.length > 0) {
       await trx
-        .deleteFrom("methodMaterialStep")
-        .where("methodOperationStepId", "in", syncedTargetIds)
+        .insertInto("jobMaterialStep")
+        .values(
+          linkPairs.map((pair) => ({
+            jobMaterialId: pair.materialId,
+            jobOperationStepId: pair.stepId
+          }))
+        )
         .execute();
-      if (linkPairs.length > 0) {
-        await trx
-          .insertInto("methodMaterialStep")
-          .values(
-            linkPairs.map((pair) => ({
-              methodMaterialId: pair.materialId,
-              methodOperationStepId: pair.stepId
-            }))
-          )
-          .execute();
-      }
-    } else {
-      await trx
-        .deleteFrom("jobMaterialStep")
-        .where("jobOperationStepId", "in", syncedTargetIds)
-        .execute();
-      if (linkPairs.length > 0) {
-        await trx
-          .insertInto("jobMaterialStep")
-          .values(
-            linkPairs.map((pair) => ({
-              jobMaterialId: pair.materialId,
-              jobOperationStepId: pair.stepId
-            }))
-          )
-          .execute();
-      }
     }
 
     // Attach the instruction's 3D model as a model slide on each synced step that
@@ -5964,31 +5957,18 @@ export async function syncAssemblyInstructionToOperation(
       }
     }
 
-    // Point the operation at its instruction (also how a future re-sync UI knows
+    // Point the operation at its instruction (also how the re-sync UI knows
     // what this operation was synced from).
-    if (isMethod) {
-      await trx
-        .updateTable("methodOperation")
-        .set({
-          assemblyInstructionId: instruction.id,
-          updatedBy: userId,
-          updatedAt: now
-        })
-        .where("id", "=", target.operationId)
-        .where("companyId", "=", companyId)
-        .execute();
-    } else {
-      await trx
-        .updateTable("jobOperation")
-        .set({
-          assemblyInstructionId: instruction.id,
-          updatedBy: userId,
-          updatedAt: now
-        })
-        .where("id", "=", target.operationId)
-        .where("companyId", "=", companyId)
-        .execute();
-    }
+    await trx
+      .updateTable("jobOperation")
+      .set({
+        assemblyInstructionId: instruction.id,
+        updatedBy: userId,
+        updatedAt: now
+      })
+      .where("id", "=", operationId)
+      .where("companyId", "=", companyId)
+      .execute();
 
     return {
       created,
@@ -6355,4 +6335,559 @@ export async function getJobMaterialSupplyJobLines(
     itemId: job.itemId,
     status: job.status
   }));
+}
+
+// ─── Inspection Documents ─────────────────────────────────────────────────────
+
+function toStoragePath(pdfUrl?: string | null) {
+  if (!pdfUrl) return null;
+  const previewPrefix = "/file/preview/private/";
+  if (pdfUrl.startsWith(previewPrefix)) {
+    return pdfUrl.slice(previewPrefix.length);
+  }
+  return pdfUrl;
+}
+
+function toPreviewUrl(storagePath?: string | null) {
+  if (!storagePath) return null;
+  return storagePath.startsWith("/file/preview/private/")
+    ? storagePath
+    : `/file/preview/private/${storagePath}`;
+}
+
+function fileNameFromPath(storagePath?: string | null) {
+  if (!storagePath) return "drawing.pdf";
+  return storagePath.split("/").at(-1) ?? "drawing.pdf";
+}
+
+function mapInspectionDocument(row: Record<string, unknown>) {
+  const drawingNumber = (row.drawingNumber as string | null) ?? null;
+  return {
+    id: String(row.id),
+    name: String(drawingNumber ?? row.fileName ?? "Untitled Diagram"),
+    companyId: String(row.companyId),
+    partId: (row.partId as string | null) ?? null,
+    createdBy: String(row.createdBy),
+    updatedBy: (row.updatedBy as string | null) ?? null,
+    createdAt: String(row.createdAt),
+    updatedAt: (row.updatedAt as string | null) ?? null,
+    content: {
+      drawingNumber,
+      pdfUrl: toPreviewUrl((row.storagePath as string | null) ?? null),
+      annotations: [],
+      features: []
+    }
+  };
+}
+
+export async function getInspectionDocuments(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: { search: string | null } & GenericQueryFilters
+) {
+  const documentClient = client as unknown as {
+    from: (table: string) => {
+      select: (
+        columns: string,
+        options?: { count?: "exact" | "planned" | "estimated"; head?: boolean }
+      ) => any;
+    };
+  };
+
+  let query = documentClient
+    .from("inspectionDocuments")
+    .select("*", { count: "exact" })
+    .eq("companyId", companyId);
+
+  if (args?.search) {
+    query = query.or(
+      `drawingNumber.ilike.%${args.search}%,fileName.ilike.%${args.search}%,partReadableId.ilike.%${args.search}%`
+    );
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "drawingNumber", ascending: true }
+    ]);
+  }
+
+  const result = await query;
+
+  return {
+    data: (result.data ?? []).map((row: Record<string, unknown>) =>
+      mapInspectionDocument(row)
+    ),
+    count: result.count ?? 0,
+    error: result.error
+  };
+}
+
+export async function getInspectionDocumentsForItem(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string
+) {
+  return client
+    .from("inspectionDocument")
+    .select("id, fileName, drawingNumber, version")
+    .eq("companyId", companyId)
+    .eq("partId", itemId)
+    .order("updatedAt", { ascending: false, nullsFirst: false });
+}
+
+export async function getInspectionDocument(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  const documentClient = client as unknown as {
+    from: (table: string) => {
+      select: (columns: string) => {
+        eq: (
+          column: string,
+          value: unknown
+        ) => {
+          single: () => Promise<{
+            data: Record<string, unknown> | null;
+            error: unknown;
+          }>;
+        };
+      };
+    };
+  };
+
+  const result = await documentClient
+    .from("inspectionDocument")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  return {
+    data: result.data ? mapInspectionDocument(result.data) : null,
+    error: result.error
+  };
+}
+
+export async function upsertInspectionDocument(
+  client: SupabaseClient<Database>,
+  diagram:
+    | (Omit<z.infer<typeof inspectionDocumentValidator>, "id"> & {
+        id?: undefined;
+        companyId: string;
+        createdBy: string;
+        updatedBy?: string;
+        pageCount?: number;
+        defaultPageWidth?: number;
+        defaultPageHeight?: number;
+      })
+    | (Omit<z.infer<typeof inspectionDocumentValidator>, "id"> & {
+        id: string;
+        companyId: string;
+        createdBy: string;
+        updatedBy?: string;
+        pageCount?: number;
+        defaultPageWidth?: number;
+        defaultPageHeight?: number;
+      })
+) {
+  const {
+    id,
+    partId,
+    drawingNumber,
+    pdfUrl,
+    pageCount,
+    defaultPageWidth,
+    defaultPageHeight,
+    companyId,
+    createdBy,
+    updatedBy
+  } = diagram;
+
+  const documentClient = client as unknown as {
+    from: (table: string) => {
+      select: (columns: string) => {
+        eq: (
+          column: string,
+          value: unknown
+        ) => {
+          single: () => Promise<{
+            data: Record<string, unknown> | null;
+            error: unknown;
+          }>;
+        };
+      };
+      update: (payload: Record<string, unknown>) => {
+        eq: (
+          column: string,
+          value: unknown
+        ) => {
+          eq: (
+            column: string,
+            value: unknown
+          ) => {
+            select: (columns: string) => {
+              single: () => Promise<{
+                data: { id: string } | null;
+                error: unknown;
+              }>;
+            };
+          };
+        };
+      };
+      insert: (payload: Record<string, unknown>) => {
+        select: (columns: string) => {
+          single: () => Promise<{
+            data: { id: string } | null;
+            error: unknown;
+          }>;
+        };
+      };
+    };
+  };
+
+  const storagePath = toStoragePath(pdfUrl);
+
+  if (id) {
+    if (!companyId) {
+      return {
+        data: null,
+        error: {
+          message: "companyId is required to update inspection document"
+        }
+      };
+    }
+
+    const existingResult = await documentClient
+      .from("inspectionDocument")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    const existing = existingResult.data;
+    if (!existing) {
+      return {
+        data: null,
+        error: {
+          message: "Inspection document not found"
+        }
+      };
+    }
+    if (String(existing.companyId ?? "") !== companyId) {
+      return {
+        data: null,
+        error: {
+          message: "Inspection document does not belong to this company"
+        }
+      };
+    }
+
+    const updatePayload: Record<string, unknown> = {
+      updatedBy: updatedBy ?? createdBy,
+      updatedAt: new Date().toISOString()
+    };
+    if (drawingNumber !== undefined) {
+      updatePayload.drawingNumber = drawingNumber ?? null;
+    }
+    if (partId !== undefined) {
+      updatePayload.partId = partId;
+    }
+
+    if (storagePath) {
+      updatePayload.storagePath = storagePath;
+      updatePayload.fileName = fileNameFromPath(storagePath);
+    }
+    if (pageCount && pageCount > 0) {
+      updatePayload.pageCount = pageCount;
+    }
+    if (defaultPageWidth && defaultPageWidth > 0) {
+      updatePayload.defaultPageWidth = defaultPageWidth;
+    }
+    if (defaultPageHeight && defaultPageHeight > 0) {
+      updatePayload.defaultPageHeight = defaultPageHeight;
+    }
+
+    return documentClient
+      .from("inspectionDocument")
+      .update(updatePayload)
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .select("id")
+      .single();
+  }
+
+  if (!companyId) {
+    return {
+      data: null,
+      error: { message: "companyId is required to create inspection document" }
+    };
+  }
+
+  return documentClient
+    .from("inspectionDocument")
+    .insert({
+      companyId,
+      partId,
+      drawingNumber: drawingNumber ?? null,
+      version: 0,
+      ...(storagePath
+        ? {
+            storagePath,
+            fileName: fileNameFromPath(storagePath),
+            uploadedBy: createdBy
+          }
+        : {}),
+      ...(pageCount && pageCount > 0 ? { pageCount } : {}),
+      ...(defaultPageWidth && defaultPageWidth > 0 ? { defaultPageWidth } : {}),
+      ...(defaultPageHeight && defaultPageHeight > 0
+        ? { defaultPageHeight }
+        : {}),
+      createdBy
+    })
+    .select("id")
+    .single();
+}
+
+export async function deleteInspectionDocument(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  const documentClient = client as unknown as {
+    from: (table: string) => {
+      select: (columns: string) => {
+        eq: (
+          column: string,
+          value: unknown
+        ) => {
+          single: () => Promise<{
+            data: Record<string, unknown> | null;
+            error: unknown;
+          }>;
+        };
+      };
+      delete: () => {
+        eq: (
+          column: string,
+          value: unknown
+        ) => Promise<{
+          error: unknown;
+        }>;
+      };
+    };
+  };
+
+  const existingResult = await documentClient
+    .from("inspectionDocument")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (!existingResult.data) {
+    return {
+      data: null,
+      error: { message: "Inspection document not found" }
+    };
+  }
+
+  const storagePath =
+    (existingResult.data.storagePath as string | null) ?? null;
+
+  const deleteResult = await documentClient
+    .from("inspectionDocument")
+    .delete()
+    .eq("id", id);
+
+  if (deleteResult.error) {
+    return { data: null, error: deleteResult.error };
+  }
+
+  return {
+    data: { storagePath },
+    error: null
+  };
+}
+
+function mapInspectionFeature(row: Record<string, unknown>) {
+  const balloonIdRaw = row.balloonId ?? row.balloon_id;
+  return {
+    id: String(row.id),
+    inspectionDocumentId: String(row.inspectionDocumentId),
+    companyId: String(row.companyId),
+    pageNumber: Number(row.pageNumber),
+    label: String(row.label),
+    description: (row.description as string | null) ?? null,
+    nominalValue: (row.nominalValue as string | null) ?? null,
+    tolerancePlus: (row.tolerancePlus as string | null) ?? null,
+    toleranceMinus: (row.toleranceMinus as string | null) ?? null,
+    unit: (row.unit as string | null) ?? null,
+    type: (row.type as string) ?? "Measurement",
+    balloonId:
+      typeof balloonIdRaw === "string"
+        ? balloonIdRaw
+        : balloonIdRaw != null
+          ? String(balloonIdRaw)
+          : null,
+    createdBy: String(row.createdBy),
+    updatedBy: (row.updatedBy as string | null) ?? null,
+    createdAt: String(row.createdAt),
+    updatedAt: (row.updatedAt as string | null) ?? null
+  };
+}
+
+function mapBalloon(row: Record<string, unknown>) {
+  return {
+    id: String(row.id),
+    inspectionDocumentId: String(row.inspectionDocumentId),
+    companyId: String(row.companyId),
+    inspectionFeatureId: String(row.inspectionFeatureId),
+    pageNumber: Number(row.pageNumber),
+    regionX: Number(row.regionX),
+    regionY: Number(row.regionY),
+    regionWidth: Number(row.regionWidth),
+    regionHeight: Number(row.regionHeight),
+    xCoordinate: Number(row.xCoordinate),
+    yCoordinate: Number(row.yCoordinate),
+    createdBy: String(row.createdBy),
+    updatedBy: (row.updatedBy as string | null) ?? null,
+    createdAt: String(row.createdAt),
+    updatedAt: (row.updatedAt as string | null) ?? null,
+    balloonAnchorId: String(row.id)
+  };
+}
+
+export async function getInspectionFeatures(
+  client: SupabaseClient<Database>,
+  inspectionDocumentId: string
+) {
+  const [featuresResult, balloonsResult] = await Promise.all([
+    getInspectionFeaturesRaw(client, inspectionDocumentId),
+    getBalloons(client, inspectionDocumentId)
+  ]);
+
+  if (featuresResult.error) {
+    return { data: null, error: featuresResult.error };
+  }
+  if (balloonsResult.error) {
+    return { data: null, error: balloonsResult.error };
+  }
+
+  const balloonByFeatureId = new Map(
+    (balloonsResult.data ?? []).map((b) => [b.inspectionFeatureId, b.id])
+  );
+
+  return {
+    data: (featuresResult.data ?? []).map((row) =>
+      mapInspectionFeature({
+        ...row,
+        balloonId: balloonByFeatureId.get(String(row.id)) ?? null
+      })
+    ),
+    error: null
+  };
+}
+
+async function getInspectionFeaturesRaw(
+  client: SupabaseClient<Database>,
+  inspectionDocumentId: string
+) {
+  return listInspectionFeatures(client, inspectionDocumentId);
+}
+
+export async function getBalloons(
+  client: SupabaseClient<Database>,
+  inspectionDocumentId: string
+) {
+  const result = await listBalloons(client, inspectionDocumentId);
+
+  return {
+    data: (result.data ?? []).map((row) =>
+      mapBalloon(row as unknown as Record<string, unknown>)
+    ),
+    error: result.error
+  };
+}
+
+export async function getInspectionPlan(
+  client: SupabaseClient<Database>,
+  inspectionDocumentId: string
+) {
+  const [featuresResult, balloonsResult] = await Promise.all([
+    getInspectionFeaturesRaw(client, inspectionDocumentId),
+    getBalloons(client, inspectionDocumentId)
+  ]);
+
+  if (featuresResult.error) {
+    return { data: null, error: featuresResult.error };
+  }
+  if (balloonsResult.error) {
+    return { data: null, error: balloonsResult.error };
+  }
+
+  const balloonByFeatureId = new Map(
+    (balloonsResult.data ?? []).map((b) => [b.inspectionFeatureId, b])
+  );
+
+  return {
+    data: (featuresResult.data ?? []).map((row) => {
+      const b = balloonByFeatureId.get(row.id);
+      const featureId = row.id;
+      return {
+        /** Feature id (primary key for plan rows). */
+        id: featureId,
+        featureId,
+        /** Balloon id when placed; null for table-only characteristics. */
+        balloonId: b?.id ?? null,
+        inspectionDocumentId: row.inspectionDocumentId,
+        pageNumber: b?.pageNumber ?? row.pageNumber,
+        characteristic: row.label,
+        description: row.description,
+        nominalValue: row.nominalValue,
+        tolerancePlus: row.tolerancePlus,
+        toleranceMinus: row.toleranceMinus,
+        unit: row.unit,
+        regionX: b ? b.regionX : null,
+        regionY: b ? b.regionY : null,
+        regionWidth: b ? b.regionWidth : null,
+        regionHeight: b ? b.regionHeight : null,
+        xCoordinate: b ? b.xCoordinate : null,
+        yCoordinate: b ? b.yCoordinate : null
+      };
+    }),
+    error: null
+  };
+}
+
+export async function saveInspectionDocumentAtomic(
+  client: SupabaseClient<Database>,
+  args: {
+    inspectionDocumentId: string;
+    companyId: string;
+    userId: string;
+    pdfUrl?: string | null;
+    pageCount?: number;
+    defaultPageWidth?: number;
+    defaultPageHeight?: number;
+    features: unknown;
+    balloons: unknown;
+  }
+) {
+  return (
+    client as unknown as {
+      rpc: (
+        fn: string,
+        args: Record<string, unknown>
+      ) => Promise<{
+        data: unknown;
+        error: unknown;
+      }>;
+    }
+  ).rpc("save_inspection_document_atomic", {
+    p_inspection_document_id: args.inspectionDocumentId,
+    p_company_id: args.companyId,
+    p_user_id: args.userId,
+    p_pdf_url: args.pdfUrl ?? null,
+    p_page_count: args.pageCount ?? null,
+    p_default_page_width: args.defaultPageWidth ?? null,
+    p_default_page_height: args.defaultPageHeight ?? null,
+    p_features: args.features,
+    p_balloons: args.balloons
+  });
 }

@@ -218,6 +218,36 @@ export const operationTypes = [
 
 export type OperationType = (typeof operationTypes)[number];
 
+// Each operation type has exactly one instruction-source pointer: Process →
+// procedureId, Assembly → assemblyInstructionId, Inspection →
+// inspectionDocumentId. Writes go through this so a stale pointer can't survive
+// a type change (sanitize() only nullifies present-undefined keys — it never
+// clears an omitted field). See .ai/specs/2026-07-21-operation-instruction-sources.md.
+export function normalizeOperationSourceIds<
+  T extends {
+    operationType?: string;
+    procedureId?: string | null;
+    assemblyInstructionId?: string | null;
+    inspectionDocumentId?: string | null;
+  }
+>(operation: T): T {
+  return {
+    ...operation,
+    procedureId:
+      operation.operationType === "Process"
+        ? operation.procedureId || null
+        : null,
+    assemblyInstructionId:
+      operation.operationType === "Assembly"
+        ? operation.assemblyInstructionId || null
+        : null,
+    inspectionDocumentId:
+      operation.operationType === "Inspection"
+        ? operation.inspectionDocumentId || null
+        : null
+  };
+}
+
 export const procedureStepType = [
   "Task",
   "Value",

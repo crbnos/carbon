@@ -92,6 +92,7 @@ const InventoryCountForm = ({
                   name="isBlind"
                   label={t`Blind Count`}
                   description={t`Hide system quantities until the review step`}
+                  bordered
                 />
                 <TextArea name="notes" label={t`Notes`} />
               </VStack>

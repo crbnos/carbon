@@ -101,6 +101,7 @@ const CustomerTaxForm = ({ initialValues }: CustomerTaxFormProps) => {
                 label={t`Tax Exempt`}
                 termId="tax-exempt"
                 onChange={(value) => setTaxExempt(value)}
+                bordered
               />
             </div>
             {taxExempt && (

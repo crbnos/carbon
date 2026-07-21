@@ -1,4 +1,5 @@
 import { useLingui } from "@lingui/react/macro";
+import { IoBalloonOutline } from "react-icons/io5";
 import {
   LuChartLine,
   LuCirclePlay,
@@ -70,6 +71,12 @@ export default function useProductionSubmodules() {
           icon: <LuListChecks />,
           table: "procedure",
           role: "employee"
+        },
+        {
+          name: t`Inspection Documents`,
+          to: path.to.inspectionDocuments,
+          icon: <IoBalloonOutline />,
+          permission: "quality"
         }
       ]
     },
@@ -89,6 +96,8 @@ export default function useProductionSubmodules() {
 
   const isRouteVisible = (route: AuthenticatedRouteGroup["routes"][number]) => {
     if (route.role && !permissions.is(route.role)) return false;
+    if (route.permission && !permissions.can("view", route.permission))
+      return false;
     if (!isInternal && internalOnlyRoutes.has(route.to)) return false;
     return true;
   };

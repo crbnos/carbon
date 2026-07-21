@@ -14,6 +14,7 @@ import {
   Box3,
   Color,
   LoopOnce,
+  LoopRepeat,
   type Material,
   Mesh,
   type MeshBasicMaterial,
@@ -113,6 +114,12 @@ export type AssemblyPlayerProps = {
    */
   autoPlay?: boolean;
   /**
+   * Loops the active step's insertion animation continuously instead of playing
+   * it once and holding the seated pose. Used by MES playback, where the operator
+   * stays on one step and the motion should keep replaying.
+   */
+  loop?: boolean;
+  /**
    * Named subassembly units (authored "plan as one component" groups). A step whose
    * components are exactly one of these is titled by the unit's name rather than by
    * listing every component inside it.
@@ -171,6 +178,7 @@ export const AssemblyPlayer = forwardRef<
     defaultFutureMode = "ghost",
     componentPickerActive = false,
     autoPlay = true,
+    loop = false,
     units,
     suppressFallbackMotions = false,
     mode = "dark",
@@ -466,6 +474,7 @@ export const AssemblyPlayer = forwardRef<
               steps={displaySteps}
               activeStepIndex={clampedIndex}
               isPlaying={isPlaying}
+              loop={loop}
               futureMode={futureMode}
               highlightedNodeIds={highlightedNodeIds}
               hiddenNodeIds={hiddenNodeIds}
@@ -796,6 +805,7 @@ function AssemblyScene({
   steps,
   activeStepIndex,
   isPlaying,
+  loop,
   futureMode,
   highlightedNodeIds,
   hiddenNodeIds,
@@ -824,6 +834,8 @@ function AssemblyScene({
   steps: AssemblyStep[];
   activeStepIndex: number;
   isPlaying: boolean;
+  /** Loop the active step's animation continuously (MES playback) */
+  loop: boolean;
   futureMode: FutureComponentsMode;
   highlightedNodeIds?: string[];
   hiddenNodeIds?: string[];
@@ -1248,8 +1260,13 @@ function AssemblyScene({
       }));
 
     const action = mixer.clipAction(clip);
-    action.setLoop(LoopOnce, 1);
-    action.clampWhenFinished = true;
+    // MES playback loops the current step's insertion so it animates
+    // continuously; the editor plays it once and holds the seated pose.
+    action.setLoop(
+      loop ? LoopRepeat : LoopOnce,
+      loop ? Number.POSITIVE_INFINITY : 1
+    );
+    action.clampWhenFinished = !loop;
     action.play();
     if (seek !== null) {
       action.time = Math.min(seek, clip.duration);
@@ -1281,6 +1298,7 @@ function AssemblyScene({
     clipKey,
     activeStepIndex,
     isEditingActive,
+    loop,
     seekRef,
     playheadRef
   ]);
@@ -1403,14 +1421,16 @@ function AssemblyScene({
     const segment = segments[activeStepIndex] ?? 0;
     const clamped = Math.min(localElapsedRef.current, segment);
     playheadRef.current = (startTimes[activeStepIndex] ?? 0) + clamped;
-    if (
-      isPlaying &&
-      !finishedRef.current &&
-      segment > 0 &&
-      localElapsedRef.current >= segment
-    ) {
-      finishedRef.current = true;
-      onStepFinished?.();
+    if (isPlaying && segment > 0 && localElapsedRef.current >= segment) {
+      if (loop) {
+        // Continuously replay the current step: wrap the local playhead so the
+        // seated fade re-runs each cycle; the mixer (LoopRepeat) already loops
+        // the mesh clip.
+        localElapsedRef.current -= segment;
+      } else if (!finishedRef.current) {
+        finishedRef.current = true;
+        onStepFinished?.();
+      }
     }
   });
 

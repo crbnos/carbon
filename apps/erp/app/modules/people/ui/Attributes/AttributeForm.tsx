@@ -132,6 +132,7 @@ const AttributeForm = ({
                 label={t`Self Managed`}
                 termId="attribute-self-managed"
                 description={t`Users can update this value for themselves`}
+                bordered
               />
             </VStack>
           </DrawerBody>

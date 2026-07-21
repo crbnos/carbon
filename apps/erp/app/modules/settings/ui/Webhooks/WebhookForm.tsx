@@ -127,7 +127,7 @@ const WebhookForm = ({
 
               <Separator />
 
-              <Boolean name="active" label={t`Active`} />
+              <Boolean name="active" label={t`Active`} bordered />
             </VStack>
           </DrawerBody>
           <DrawerFooter>

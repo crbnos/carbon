@@ -46,6 +46,8 @@ export const path = {
       accounts: `${api}/accounting/accounts`,
       assemblyForItem: (itemId: string) =>
         generatePath(`${api}/production/assembly-for-item/${itemId}`),
+      assemblyInstructions: (itemId: string) =>
+        generatePath(`${api}/production/assembly-instructions/${itemId}`),
       assetClasses: `${api}/accounting/asset-classes`,
       assign: `${api}/assign`,
       batchNumbers: (itemId: string) =>
@@ -86,8 +88,10 @@ export const path = {
         generatePath(`${api}/ai/csv/${table}/columns`),
       inspectionDocumentBalloonAnalyze: (inspectionDocumentId: string) =>
         generatePath(
-          `${api}/quality/inspection-document/${inspectionDocumentId}/balloon-analyze`
+          `${api}/production/inspection-document/${inspectionDocumentId}/balloon-analyze`
         ),
+      inspectionDocuments: (itemId: string) =>
+        generatePath(`${api}/production/inspection-documents/${itemId}`),
       item: (type: string) => generatePath(`${api}/item/${type}`),
       itemConfigurable: `${api}/items/configurable`,
       itemCostRecalculate: (itemId: string) =>
@@ -1124,7 +1128,7 @@ export const path = {
     incomeStatementLedger: (id: string) =>
       generatePath(`${x}/accounting/income-statement/${id}`),
     inspectionDocument: (id: string) => generatePath(`${x}/inspection/${id}`),
-    inspectionDocuments: `${x}/quality/inspection`,
+    inspectionDocuments: `${x}/production/inspection`,
     integration: (id: string) =>
       generatePath(`${x}/settings/integrations/${id}`),
     integrationDeactivate: (id: string) =>
@@ -1419,7 +1423,7 @@ export const path = {
     newGaugeType: `${x}/quality/gauge-types/new`,
     newGroup: `${x}/users/groups/new`,
     newHoliday: `${x}/people/holidays/new`,
-    newInspectionDocument: `${x}/quality/inspection/new`,
+    newInspectionDocument: `${x}/production/inspection/new`,
     newIntercompanyTransaction: `${x}/accounting/intercompany/new`,
     newInventoryCount: `${x}/inventory/inventory-count/new`,
     newInvestigationType: `${x}/quality/investigation-types/new`,

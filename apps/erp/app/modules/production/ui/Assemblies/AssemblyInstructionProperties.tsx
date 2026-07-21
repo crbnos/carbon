@@ -493,6 +493,7 @@ function StepForm({
           name="required"
           label="Required"
           description="Operators must record this step to complete the operation"
+          bordered
         />
 
         <h4 className="w-full pt-1 text-xxs font-medium uppercase tracking-wide text-muted-foreground">

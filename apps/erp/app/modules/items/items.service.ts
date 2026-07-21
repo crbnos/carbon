@@ -24,6 +24,7 @@ import type {
 import {
   lookupBuyPriceFromMap,
   type MethodType,
+  normalizeOperationSourceIds,
   type PriceBreak,
   type SourcingType,
   type SupplierPriceMap
@@ -3969,13 +3970,13 @@ export async function upsertMethodOperation(
   if ("createdBy" in methodOperation) {
     return client
       .from("methodOperation")
-      .insert([methodOperation])
+      .insert([normalizeOperationSourceIds(methodOperation)])
       .select("id")
       .single();
   }
   return client
     .from("methodOperation")
-    .update(sanitize(methodOperation))
+    .update(sanitize(normalizeOperationSourceIds(methodOperation)))
     .eq("id", methodOperation.id)
     .select("id")
     .single();

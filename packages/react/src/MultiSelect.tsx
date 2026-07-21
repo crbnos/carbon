@@ -4,20 +4,18 @@ import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import { forwardRef, useId, useMemo, useRef, useState } from "react";
 import { FaRegSquare, FaSquareCheck } from "react-icons/fa6";
 import { LuCirclePlus, LuSettings2, LuX } from "react-icons/lu";
-import { RxMagnifyingGlass } from "react-icons/rx";
-import { Badge, BadgeCloseButton } from "./Badge";
-import { Button } from "./Button";
 import {
   Command,
   CommandEmpty,
   CommandGroup,
   CommandInput,
   CommandItem,
-  multiSelectTriggerVariants
+  CommandTrigger
 } from "./Command";
 import { HStack } from "./HStack";
 import { IconButton } from "./IconButton";
 import { Popover, PopoverContent, PopoverTrigger } from "./Popover";
+import { TruncatedTooltipText } from "./TruncatedTooltipText";
 import { cn } from "./utils/cn";
 import { reactNodeToString } from "./utils/react";
 
@@ -73,12 +71,13 @@ const MultiSelect = forwardRef<HTMLButtonElement, MultiSelectProps>(
 
     const id = useId();
 
-    const handleUnselect = (item: string) => {
-      onChange(value.filter((i) => i !== item));
-    };
-
     const hasSelections = value.length > 0;
     const isInlinePreview = !!inline;
+
+    const selectedLabels = value
+      .map((item) => options.find((option) => option.value === item)?.label)
+      .filter((label): label is string => Boolean(label));
+    const selectedLabelText = selectedLabels.join(", ");
 
     return (
       <HStack
@@ -118,72 +117,31 @@ const MultiSelect = forwardRef<HTMLButtonElement, MultiSelectProps>(
                 onClick={() => setOpen(true)}
               />
             ) : (
-              <Button
+              <CommandTrigger
                 aria-controls={id}
                 aria-expanded={open}
                 role="combobox"
-                tabIndex={0}
-                variant="secondary"
-                className={cn(
-                  multiSelectTriggerVariants({ size, hasSelections }),
-                  "bg-transparent px-2 hover:scale-100 focus-visible:scale-100",
-                  className
-                )}
-                isDisabled={isReadOnly}
+                size={size}
+                className={cn("min-w-[160px]", className)}
+                ref={ref}
+                disabled={isReadOnly}
                 onClick={() => {
                   if (!isReadOnly) setOpen(!open);
                 }}
-                onKeyDown={(e) => {
-                  if ((e.key === "Enter" || e.key === " ") && !isReadOnly) {
-                    setOpen(!open);
-                  }
-                }}
-                asChild
               >
-                <div>
-                  {hasSelections ? (
-                    <div className="flex gap-1 flex-wrap">
-                      {value.map((item) => (
-                        <Badge
-                          key={item}
-                          variant="secondary"
-                          className="border border-card"
-                        >
-                          {
-                            options.find((option) => option.value === item)
-                              ?.label
-                          }
-                          <BadgeCloseButton
-                            disabled={isReadOnly}
-                            type="button"
-                            tabIndex={-1}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" && !isReadOnly) {
-                                handleUnselect(item);
-                              }
-                            }}
-                            onMouseDown={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                            }}
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              if (!isReadOnly) handleUnselect(item);
-                            }}
-                          />
-                        </Badge>
-                      ))}
-                    </div>
-                  ) : (
-                    <span className="text-muted-foreground">
-                      {placeholder ?? t`Select`}
-                    </span>
-                  )}
-
-                  <RxMagnifyingGlass className="h-4 w-4 shrink-0 opacity-50" />
-                </div>
-              </Button>
+                {hasSelections ? (
+                  <TruncatedTooltipText
+                    className="block min-w-0 flex-1 truncate text-left"
+                    tooltip={selectedLabelText}
+                  >
+                    {selectedLabelText}
+                  </TruncatedTooltipText>
+                ) : (
+                  <span className="!text-muted-foreground">
+                    {placeholder ?? t`Select`}
+                  </span>
+                )}
+              </CommandTrigger>
             )}
           </PopoverTrigger>
           <PopoverContent

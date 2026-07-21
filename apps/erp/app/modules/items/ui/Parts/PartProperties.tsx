@@ -744,6 +744,7 @@ const PartProperties = ({
             onChange={(value) => {
               onUpdate("active", value ? "on" : "off");
             }}
+            bordered
           />
         </ValidatedForm>
       )}
@@ -770,6 +771,7 @@ const PartProperties = ({
               onChange={(value) => {
                 onUpdate("requiresInspection", value ? "on" : "off");
               }}
+              bordered
             />
           </ValidatedForm>
         )}

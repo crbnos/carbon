@@ -30,6 +30,7 @@ import Abilities from "./Abilities";
 import Ability from "./Ability";
 import Account, { AccountControlled } from "./Account";
 import AddressAutocomplete from "./AddressAutocomplete";
+import AssemblyInstruction from "./AssemblyInstruction";
 import AssetClass, { useAssetClasses } from "./AssetClass";
 import Color from "./Color";
 import ConversionFactor from "./ConversionFactor";
@@ -50,6 +51,7 @@ import EmojiPicker from "./EmojiPicker";
 import Employee from "./Employee";
 import Employees from "./Employees";
 import { useEmptyState } from "./emptyStates";
+import InspectionDocument from "./InspectionDocument";
 import Item, { useConfigurableItems } from "./Item";
 import ItemPostingGroup from "./ItemPostingGroup";
 import Items from "./Items";
@@ -98,6 +100,7 @@ export {
   AddressAutocomplete,
   Array,
   ArrayNumeric,
+  AssemblyInstruction,
   Boolean,
   Color,
   Combobox,
@@ -128,6 +131,7 @@ export {
   Hidden,
   Input,
   InputControlled,
+  InspectionDocument,
   Item,
   ItemPostingGroup,
   Items,

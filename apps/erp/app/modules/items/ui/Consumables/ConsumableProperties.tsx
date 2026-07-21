@@ -463,6 +463,7 @@ const ConsumableProperties = ({ data }: ConsumablePropertiesProps) => {
           onChange={(value) => {
             onUpdate("active", value ? "on" : "off");
           }}
+          bordered
         />
       </ValidatedForm>
       {routeData?.consumableSummary?.replenishmentSystem?.includes("Buy") && (
@@ -483,6 +484,7 @@ const ConsumableProperties = ({ data }: ConsumablePropertiesProps) => {
             onChange={(value) => {
               onUpdate("requiresInspection", value ? "on" : "off");
             }}
+            bordered
           />
         </ValidatedForm>
       )}

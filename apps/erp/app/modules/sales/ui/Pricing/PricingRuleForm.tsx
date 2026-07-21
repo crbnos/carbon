@@ -154,7 +154,7 @@ const PricingRuleForm = ({ initialValues, onClose }: PricingRuleFormProps) => {
                   />
                 )}
 
-                <BooleanField name="active" label={t`Active`} />
+                <BooleanField name="active" label={t`Active`} bordered />
 
                 <p className="text-sm font-medium text-muted-foreground pt-2">
                   {t`Scope`}

@@ -4,7 +4,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { deleteInspectionDocument } from "~/modules/quality";
+import { deleteInspectionDocument } from "~/modules/production";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {

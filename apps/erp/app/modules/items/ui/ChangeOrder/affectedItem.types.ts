@@ -46,6 +46,8 @@ export type DraftOperationMapped = Omit<
   DraftOperation,
   | "description"
   | "procedureId"
+  | "assemblyInstructionId"
+  | "inspectionDocumentId"
   | "operationSupplierProcessId"
   | "operationMinimumCost"
   | "operationLeadTime"
@@ -56,6 +58,8 @@ export type DraftOperationMapped = Omit<
 > & {
   description: string;
   procedureId: string | undefined;
+  assemblyInstructionId: string | undefined;
+  inspectionDocumentId: string | undefined;
   operationSupplierProcessId: string | undefined;
   operationMinimumCost: number;
   operationLeadTime: number;

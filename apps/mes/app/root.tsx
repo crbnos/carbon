@@ -212,7 +212,7 @@ function Document({
             }}
           />
         ) : null}
-        <Toaster position="bottom-right" visibleToasts={5} />
+        <Toaster position="bottom-left" visibleToasts={5} />
         <ScrollRestoration />
         <Scripts />
         {!CONTROLLED_ENVIRONMENT && import.meta.env.PROD && <Analytics />}

@@ -21,6 +21,7 @@ import type {
   operationStepValidator,
   operationToolValidator
 } from "../shared";
+import { normalizeOperationSourceIds } from "../shared";
 import {
   lookupBuyPriceFromMap,
   upsertExternalLink
@@ -4755,13 +4756,13 @@ export async function upsertQuoteOperation(
   if ("createdBy" in operation) {
     return client
       .from("quoteOperation")
-      .insert([operation])
+      .insert([normalizeOperationSourceIds(operation)])
       .select("id")
       .single();
   }
   return client
     .from("quoteOperation")
-    .update(sanitize(operation))
+    .update(sanitize(normalizeOperationSourceIds(operation)))
     .eq("id", operation.id)
     .select("id")
     .single();

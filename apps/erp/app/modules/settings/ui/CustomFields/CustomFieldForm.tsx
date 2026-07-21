@@ -134,7 +134,7 @@ const CustomFieldForm = ({
                 />
               )}
 
-              <Boolean name="required" label={t`Required`} />
+              <Boolean name="required" label={t`Required`} bordered />
             </VStack>
           </DrawerBody>
           <DrawerFooter>

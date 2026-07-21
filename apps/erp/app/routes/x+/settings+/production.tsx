@@ -230,6 +230,7 @@ export default function ProductionSettingsRoute() {
                   name="autoStartOperationTimer"
                   label={t`Auto-start timer on open`}
                   description={t`When on, opening an operation starts its timer automatically.`}
+                  bordered
                 />
               </div>
             </CardContent>

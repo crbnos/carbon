@@ -353,6 +353,38 @@ uninstall_proxy_daemon() {
   ok "LaunchDaemon removed"
 }
 
+# Install Draco (mesh compression) for the optional `assembler` geometry
+# service. The `draco-bridge` crate compiles a C++ shim against Draco's headers
+# and `build.rs` expects the Homebrew keg at /opt/homebrew/opt/draco on macOS.
+# Idempotent — skips when already installed. Best-effort: the rest of the stack
+# runs without the assembler, so a failure here only warns.
+install_draco() {
+  hdr "Installing Draco (assembler build dep)"
+  case "$(uname -s)" in
+    Darwin*)
+      if [[ -d "$(brew --prefix 2>/dev/null)/opt/draco/include/draco" ]]; then
+        info "draco already installed"
+        return 0
+      fi
+      if ! command -v brew >/dev/null 2>&1; then
+        warn "Homebrew not found — install draco manually (\`brew install draco\`) if you need the assembler."
+        return 0
+      fi
+      if brew install draco; then
+        ok "draco installed via brew"
+      else
+        warn "\`brew install draco\` failed — the assembler won't build until it's installed."
+      fi
+      ;;
+    Linux*)
+      info "On Linux install draco via your package manager (e.g. \`apt install libdraco-dev\`) if you need the assembler."
+      ;;
+    *)
+      info "skipping draco install on this platform"
+      ;;
+  esac
+}
+
 install() {
   case "$(uname -s)" in
     MINGW*|MSYS*|CYGWIN*|Linux*|Darwin*) ;;
@@ -407,6 +439,8 @@ install() {
   fi
 
   install_proxy_daemon || true
+
+  install_draco || true
 
   hdr "Activate"
   printf '  Open a new shell, or run:\n\n'

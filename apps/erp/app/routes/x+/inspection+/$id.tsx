@@ -12,14 +12,16 @@ import {
   getBalloons,
   getInspectionDocument,
   getInspectionFeatures
-} from "~/modules/quality";
-import type { InspectionDocumentContent } from "~/modules/quality/types";
+} from "~/modules/production";
+import type { InspectionDocumentContent } from "~/modules/production/types";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 const InspectionDocumentEditor = lazy(
   () =>
-    import("~/modules/quality/ui/InspectionDocument/InspectionDocumentEditor")
+    import(
+      "~/modules/production/ui/InspectionDocument/InspectionDocumentEditor"
+    )
 );
 
 export const handle: Handle = {

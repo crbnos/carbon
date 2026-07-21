@@ -83,6 +83,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         ...o,
         description: o.description ?? "",
         procedureId: o.procedureId ?? undefined,
+        assemblyInstructionId: o.assemblyInstructionId ?? undefined,
+        inspectionDocumentId: o.inspectionDocumentId ?? undefined,
         workCenterId: o.workCenterId ?? undefined,
         laborRate: o.laborRate ?? 0,
         machineRate: o.machineRate ?? 0,
@@ -103,7 +105,7 @@ export default function QuoteMakeMethodRoute() {
   if (!methodId) throw new Error("Could not find methodId");
 
   const loaderData = useLoaderData<typeof loader>();
-  const { materials, operations, tags } = loaderData;
+  const { makeMethod, materials, operations, tags } = loaderData;
 
   return (
     <VStack spacing={2}>
@@ -119,6 +121,7 @@ export default function QuoteMakeMethodRoute() {
       <QuoteBillOfProcess
         key={`bop:${methodId}`}
         quoteMakeMethodId={methodId}
+        itemId={makeMethod.itemId ?? ""}
         materials={materials}
         // @ts-expect-error
         operations={operations}

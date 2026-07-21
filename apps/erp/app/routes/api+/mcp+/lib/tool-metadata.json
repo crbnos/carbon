@@ -1,6 +1,6 @@
 {
-  "generated": "2026-07-21T01:46:51.922Z",
-  "totalTools": 1387,
+  "generated": "2026-07-21T04:49:21.325Z",
+  "totalTools": 1389,
   "modules": 15,
   "tools": [
     {
@@ -21942,6 +21942,32 @@
       }
     },
     {
+      "name": "production_getAssemblyInstructionsForItem",
+      "module": "production",
+      "classification": "READ",
+      "description": "get assembly instructions for item",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "itemId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "itemId"
+        ]
+      }
+    },
+    {
       "name": "production_getModelForItem",
       "module": "production",
       "classification": "READ",
@@ -23197,29 +23223,13 @@
           "assemblyInstructionId": {
             "type": "string"
           },
-          "target": {
-            "type": "object",
-            "properties": {
-              "kind": {
-                "type": "string",
-                "enum": [
-                  "method",
-                  "job"
-                ]
-              },
-              "operationId": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "kind",
-              "operationId"
-            ]
+          "operationId": {
+            "type": "string"
           }
         },
         "required": [
           "assemblyInstructionId",
-          "target"
+          "operationId"
         ]
       }
     },
@@ -23333,6 +23343,282 @@
         "required": [
           "materials",
           "locationId"
+        ]
+      }
+    },
+    {
+      "name": "production_getInspectionDocuments",
+      "module": "production",
+      "classification": "READ",
+      "description": "get inspection documents",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "search": {
+            "type": "object",
+            "properties": {
+              "limit": {
+                "type": "integer",
+                "default": 100
+              },
+              "offset": {
+                "type": "integer",
+                "default": 0
+              }
+            }
+          }
+        },
+        "required": [
+          "search"
+        ]
+      }
+    },
+    {
+      "name": "production_getInspectionDocumentsForItem",
+      "module": "production",
+      "classification": "READ",
+      "description": "get inspection documents for item",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "itemId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "itemId"
+        ]
+      }
+    },
+    {
+      "name": "production_getInspectionDocument",
+      "module": "production",
+      "classification": "READ",
+      "description": "get inspection document",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "production_upsertInspectionDocument",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "upsert inspection document",
+      "paramCount": 7,
+      "serviceParams": [
+        "client",
+        "diagram"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "partId": {
+            "type": "string"
+          },
+          "drawingNumber": {
+            "type": "string"
+          },
+          "pdfUrl": {
+            "type": "string"
+          },
+          "annotations": {
+            "type": "string"
+          },
+          "features": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "partId"
+        ]
+      }
+    },
+    {
+      "name": "production_deleteInspectionDocument",
+      "module": "production",
+      "classification": "DESTRUCTIVE",
+      "description": "delete inspection document",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "production_getInspectionFeatures",
+      "module": "production",
+      "classification": "READ",
+      "description": "get inspection features",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "inspectionDocumentId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "inspectionDocumentId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "inspectionDocumentId"
+        ]
+      }
+    },
+    {
+      "name": "production_getBalloons",
+      "module": "production",
+      "classification": "READ",
+      "description": "get balloons",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "inspectionDocumentId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "inspectionDocumentId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "inspectionDocumentId"
+        ]
+      }
+    },
+    {
+      "name": "production_getInspectionPlan",
+      "module": "production",
+      "classification": "READ",
+      "description": "get inspection plan",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "inspectionDocumentId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "inspectionDocumentId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "inspectionDocumentId"
+        ]
+      }
+    },
+    {
+      "name": "production_saveInspectionDocumentAtomic",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "save inspection document atomic",
+      "paramCount": 7,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "inspectionDocumentId": {
+            "type": "string"
+          },
+          "pdfUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "pageCount": {
+            "type": "number"
+          },
+          "defaultPageWidth": {
+            "type": "number"
+          },
+          "defaultPageHeight": {
+            "type": "number"
+          },
+          "features": {},
+          "balloons": {}
+        },
+        "required": [
+          "inspectionDocumentId",
+          "features",
+          "balloons"
         ]
       }
     },
@@ -29109,256 +29395,6 @@
         },
         "required": [
           "likelihood"
-        ]
-      }
-    },
-    {
-      "name": "quality_getInspectionDocuments",
-      "module": "quality",
-      "classification": "READ",
-      "description": "get inspection documents",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "companyId",
-        "args"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "search": {
-            "type": "object",
-            "properties": {
-              "limit": {
-                "type": "integer",
-                "default": 100
-              },
-              "offset": {
-                "type": "integer",
-                "default": 0
-              }
-            }
-          }
-        },
-        "required": [
-          "search"
-        ]
-      }
-    },
-    {
-      "name": "quality_getInspectionDocument",
-      "module": "quality",
-      "classification": "READ",
-      "description": "get inspection document",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "id"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id"
-        ]
-      }
-    },
-    {
-      "name": "quality_upsertInspectionDocument",
-      "module": "quality",
-      "classification": "WRITE",
-      "description": "upsert inspection document",
-      "paramCount": 7,
-      "serviceParams": [
-        "client",
-        "diagram"
-      ],
-      "injectAuth": [
-        "companyId",
-        "createdBy",
-        "updatedBy"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "partId": {
-            "type": "string"
-          },
-          "drawingNumber": {
-            "type": "string"
-          },
-          "pdfUrl": {
-            "type": "string"
-          },
-          "annotations": {
-            "type": "string"
-          },
-          "features": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "partId"
-        ]
-      }
-    },
-    {
-      "name": "quality_deleteInspectionDocument",
-      "module": "quality",
-      "classification": "DESTRUCTIVE",
-      "description": "delete inspection document",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "id"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id"
-        ]
-      }
-    },
-    {
-      "name": "quality_getInspectionFeatures",
-      "module": "quality",
-      "classification": "READ",
-      "description": "get inspection features",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "inspectionDocumentId"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "inspectionDocumentId": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "inspectionDocumentId"
-        ]
-      }
-    },
-    {
-      "name": "quality_getBalloons",
-      "module": "quality",
-      "classification": "READ",
-      "description": "get balloons",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "inspectionDocumentId"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "inspectionDocumentId": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "inspectionDocumentId"
-        ]
-      }
-    },
-    {
-      "name": "quality_getInspectionPlan",
-      "module": "quality",
-      "classification": "READ",
-      "description": "get inspection plan",
-      "paramCount": 1,
-      "serviceParams": [
-        "client",
-        "inspectionDocumentId"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "inspectionDocumentId": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "inspectionDocumentId"
-        ]
-      }
-    },
-    {
-      "name": "quality_saveInspectionDocumentAtomic",
-      "module": "quality",
-      "classification": "WRITE",
-      "description": "save inspection document atomic",
-      "paramCount": 7,
-      "serviceParams": [
-        "client",
-        "args"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "inspectionDocumentId": {
-            "type": "string"
-          },
-          "pdfUrl": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "pageCount": {
-            "type": "number"
-          },
-          "defaultPageWidth": {
-            "type": "number"
-          },
-          "defaultPageHeight": {
-            "type": "number"
-          },
-          "features": {},
-          "balloons": {}
-        },
-        "required": [
-          "inspectionDocumentId",
-          "features",
-          "balloons"
         ]
       }
     },

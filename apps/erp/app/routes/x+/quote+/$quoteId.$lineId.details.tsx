@@ -355,6 +355,7 @@ export default function QuoteLine() {
           <QuoteBillOfProcess
             key={`bop:${methodData.rootMethodId}`}
             quoteMakeMethodId={methodData.rootMethodId}
+            itemId={line?.itemId ?? ""}
             // @ts-expect-error
             operations={methodData.methodOperations}
             tags={methodData.tags ?? []}

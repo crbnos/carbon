@@ -21139,6 +21139,7 @@ export type Database = {
           dueDate: string | null
           hasConflict: boolean | null
           id: string
+          inspectionDocumentId: string | null
           jobId: string
           jobMakeMethodId: string | null
           laborRate: number
@@ -21187,6 +21188,7 @@ export type Database = {
           dueDate?: string | null
           hasConflict?: boolean | null
           id?: string
+          inspectionDocumentId?: string | null
           jobId: string
           jobMakeMethodId?: string | null
           laborRate?: number
@@ -21235,6 +21237,7 @@ export type Database = {
           dueDate?: string | null
           hasConflict?: boolean | null
           id?: string
+          inspectionDocumentId?: string | null
           jobId?: string
           jobMakeMethodId?: string | null
           laborRate?: number
@@ -21376,6 +21379,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "jobOperation_inspectionDocumentId_fkey"
+            columns: ["inspectionDocumentId"]
+            isOneToOne: false
+            referencedRelation: "inspectionDocument"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperation_inspectionDocumentId_fkey"
+            columns: ["inspectionDocumentId"]
+            isOneToOne: false
+            referencedRelation: "inspectionDocuments"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "jobOperation_jobId_fkey"
@@ -27082,6 +27099,7 @@ export type Database = {
           customFields: Json | null
           description: string
           id: string
+          inspectionDocumentId: string | null
           laborTime: number
           laborUnit: Database["public"]["Enums"]["factor"]
           machineTime: number
@@ -27112,6 +27130,7 @@ export type Database = {
           customFields?: Json | null
           description: string
           id?: string
+          inspectionDocumentId?: string | null
           laborTime?: number
           laborUnit?: Database["public"]["Enums"]["factor"]
           machineTime?: number
@@ -27142,6 +27161,7 @@ export type Database = {
           customFields?: Json | null
           description?: string
           id?: string
+          inspectionDocumentId?: string | null
           laborTime?: number
           laborUnit?: Database["public"]["Enums"]["factor"]
           machineTime?: number
@@ -27234,6 +27254,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "methodOperation_inspectionDocumentId_fkey"
+            columns: ["inspectionDocumentId"]
+            isOneToOne: false
+            referencedRelation: "inspectionDocument"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodOperation_inspectionDocumentId_fkey"
+            columns: ["inspectionDocumentId"]
+            isOneToOne: false
+            referencedRelation: "inspectionDocuments"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "methodOperation_methodId_fkey"
@@ -41150,12 +41184,14 @@ export type Database = {
       }
       quoteOperation: {
         Row: {
+          assemblyInstructionId: string | null
           companyId: string
           createdAt: string
           createdBy: string
           customFields: Json | null
           description: string | null
           id: string
+          inspectionDocumentId: string | null
           laborRate: number
           laborTime: number
           laborUnit: Database["public"]["Enums"]["factor"]
@@ -41184,12 +41220,14 @@ export type Database = {
           workInstruction: Json
         }
         Insert: {
+          assemblyInstructionId?: string | null
           companyId: string
           createdAt?: string
           createdBy: string
           customFields?: Json | null
           description?: string | null
           id?: string
+          inspectionDocumentId?: string | null
           laborRate?: number
           laborTime?: number
           laborUnit?: Database["public"]["Enums"]["factor"]
@@ -41218,12 +41256,14 @@ export type Database = {
           workInstruction?: Json
         }
         Update: {
+          assemblyInstructionId?: string | null
           companyId?: string
           createdAt?: string
           createdBy?: string
           customFields?: Json | null
           description?: string | null
           id?: string
+          inspectionDocumentId?: string | null
           laborRate?: number
           laborTime?: number
           laborUnit?: Database["public"]["Enums"]["factor"]
@@ -41252,6 +41292,13 @@ export type Database = {
           workInstruction?: Json
         }
         Relationships: [
+          {
+            foreignKeyName: "quoteOperation_assemblyInstructionId_fkey"
+            columns: ["assemblyInstructionId"]
+            isOneToOne: false
+            referencedRelation: "assemblyInstruction"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "quoteOperation_companyId_fkey"
             columns: ["companyId"]
@@ -41314,6 +41361,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "quoteOperation_inspectionDocumentId_fkey"
+            columns: ["inspectionDocumentId"]
+            isOneToOne: false
+            referencedRelation: "inspectionDocument"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteOperation_inspectionDocumentId_fkey"
+            columns: ["inspectionDocumentId"]
+            isOneToOne: false
+            referencedRelation: "inspectionDocuments"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "quoteOperation_operationSupplierProcessId_fkey"

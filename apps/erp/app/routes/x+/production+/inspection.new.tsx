@@ -4,9 +4,9 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useNavigate } from "react-router";
-import { upsertInspectionDocument } from "~/modules/quality";
-import { inspectionDocumentValidator } from "~/modules/quality/quality.models";
-import { InspectionDocumentForm } from "~/modules/quality/ui/InspectionDocument";
+import { upsertInspectionDocument } from "~/modules/production";
+import { inspectionDocumentValidator } from "~/modules/production/production.models";
+import { InspectionDocumentForm } from "~/modules/production/ui/InspectionDocument";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {

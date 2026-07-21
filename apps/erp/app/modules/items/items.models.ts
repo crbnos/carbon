@@ -487,6 +487,8 @@ export const methodOperationValidator = z
     processId: z.string().min(1, { message: "Process is required" }),
     workCenterId: zfd.text(z.string().optional()),
     procedureId: zfd.text(z.string().optional()),
+    assemblyInstructionId: zfd.text(z.string().optional()),
+    inspectionDocumentId: zfd.text(z.string().optional()),
     description: zfd.text(
       z.string().min(0, { message: "Description is required" })
     ),
@@ -539,8 +541,10 @@ export const methodOperationValidator = z
   )
   .refine(
     (data) => {
-      if (data.operationType !== "Outside Processing") {
-        return !!data.laborUnit;
+      // Machine only applies to Process operations — Assembly and Inspection
+      // are setup + labor work.
+      if (data.operationType === "Process") {
+        return !!data.machineUnit;
       }
       return true;
     },
@@ -575,7 +579,7 @@ export const methodOperationValidator = z
   )
   .refine(
     (data) => {
-      if (data.operationType !== "Outside Processing") {
+      if (data.operationType === "Process") {
         return Number.isFinite(data.machineTime);
       }
       return true;

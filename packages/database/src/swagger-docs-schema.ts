@@ -11059,6 +11059,12 @@ export default {
             $ref: "#/parameters/rowFilter.quoteOperation.procedureId"
           },
           {
+            $ref: "#/parameters/rowFilter.quoteOperation.assemblyInstructionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperation.inspectionDocumentId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -11214,6 +11220,12 @@ export default {
             $ref: "#/parameters/rowFilter.quoteOperation.procedureId"
           },
           {
+            $ref: "#/parameters/rowFilter.quoteOperation.assemblyInstructionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperation.inspectionDocumentId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -11321,6 +11333,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteOperation.procedureId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperation.assemblyInstructionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperation.inspectionDocumentId"
           },
           {
             $ref: "#/parameters/body.quoteOperation"
@@ -39400,6 +39418,9 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperation.assemblyInstructionId"
           },
           {
+            $ref: "#/parameters/rowFilter.jobOperation.inspectionDocumentId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -39597,6 +39618,9 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperation.assemblyInstructionId"
           },
           {
+            $ref: "#/parameters/rowFilter.jobOperation.inspectionDocumentId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -39746,6 +39770,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.jobOperation.assemblyInstructionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperation.inspectionDocumentId"
           },
           {
             $ref: "#/parameters/body.jobOperation"
@@ -60496,6 +60523,9 @@ export default {
             $ref: "#/parameters/rowFilter.methodOperation.assemblyInstructionId"
           },
           {
+            $ref: "#/parameters/rowFilter.methodOperation.inspectionDocumentId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -60639,6 +60669,9 @@ export default {
             $ref: "#/parameters/rowFilter.methodOperation.assemblyInstructionId"
           },
           {
+            $ref: "#/parameters/rowFilter.methodOperation.inspectionDocumentId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -60734,6 +60767,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.methodOperation.assemblyInstructionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperation.inspectionDocumentId"
           },
           {
             $ref: "#/parameters/body.methodOperation"
@@ -97985,6 +98021,18 @@ export default {
             "Note:\nThis is a Foreign Key to `procedure.id`.<fk table='procedure' column='id'/>",
           format: "text",
           type: "string"
+        },
+        assemblyInstructionId: {
+          description:
+            "Note:\nThis is a Foreign Key to `assemblyInstruction.id`.<fk table='assemblyInstruction' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        inspectionDocumentId: {
+          description:
+            "Note:\nThis is a Foreign Key to `inspectionDocument.id`.<fk table='inspectionDocument' column='id'/>",
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -111781,6 +111829,12 @@ export default {
             "Note:\nThis is a Foreign Key to `assemblyInstruction.id`.<fk table='assemblyInstruction' column='id'/>",
           format: "text",
           type: "string"
+        },
+        inspectionDocumentId: {
+          description:
+            "Note:\nThis is a Foreign Key to `inspectionDocument.id`.<fk table='inspectionDocument' column='id'/>",
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -121713,6 +121767,12 @@ export default {
         assemblyInstructionId: {
           description:
             "Note:\nThis is a Foreign Key to `assemblyInstruction.id`.<fk table='assemblyInstruction' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        inspectionDocumentId: {
+          description:
+            "Note:\nThis is a Foreign Key to `inspectionDocument.id`.<fk table='inspectionDocument' column='id'/>",
           format: "text",
           type: "string"
         }
@@ -138022,6 +138082,18 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.quoteOperation.assemblyInstructionId": {
+      name: "assemblyInstructionId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.quoteOperation.inspectionDocumentId": {
+      name: "inspectionDocumentId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.notification": {
       name: "notification",
       description: "notification",
@@ -153378,6 +153450,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.jobOperation.inspectionDocumentId": {
+      name: "inspectionDocumentId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.userAttributeCategory": {
       name: "userAttributeCategory",
       description: "userAttributeCategory",
@@ -164567,6 +164645,12 @@ export default {
     },
     "rowFilter.methodOperation.assemblyInstructionId": {
       name: "assemblyInstructionId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.methodOperation.inspectionDocumentId": {
+      name: "inspectionDocumentId",
       required: false,
       in: "query",
       type: "string"

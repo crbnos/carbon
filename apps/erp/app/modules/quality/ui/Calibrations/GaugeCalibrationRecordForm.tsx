@@ -298,16 +298,19 @@ const GaugeCalibrationRecordForm = ({
                   name="requiresAction"
                   label={t`Requires Action`}
                   termId="calibration-requires-action"
+                  bordered
                 />
                 <Boolean
                   name="requiresAdjustment"
                   label={t`Requires Adjustment`}
                   termId="calibration-requires-adjustment"
+                  bordered
                 />
                 <Boolean
                   name="requiresRepair"
                   label={t`Requires Repair`}
                   termId="calibration-requires-repair"
+                  bordered
                 />
                 <Number
                   name="temperature"

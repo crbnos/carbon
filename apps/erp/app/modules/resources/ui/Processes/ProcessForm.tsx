@@ -1,4 +1,4 @@
-import { ValidatedForm } from "@carbon/form";
+import { useControlField, ValidatedForm } from "@carbon/form";
 import {
   Button,
   DropdownMenu,
@@ -31,7 +31,7 @@ import {
 } from "react-icons/lu";
 import { useFetcher, useNavigate } from "react-router";
 import type { z } from "zod";
-import { SupplierAvatar } from "~/components";
+import { OperationTypeIcon, SupplierAvatar } from "~/components";
 import {
   Boolean,
   CustomFormFields,
@@ -124,12 +124,17 @@ const ProcessForm = ({
                   termId="process-type"
                   options={operationTypes.map((pt) => ({
                     value: pt,
-                    label: pt
+                    label: (
+                      <span className="flex items-center gap-2">
+                        <OperationTypeIcon type={pt} />
+                        <span>{pt}</span>
+                      </span>
+                    )
                   }))}
                 />
-                {/* The type is a default for new operations, not a capability
-                    gate — a process can have work centers AND supplier links
-                    regardless of type. */}
+                {/* Work centers apply to any type (the type is just a default
+                    for new operations), but supplier links only make sense for
+                    Outside Processing — SupplierProcesses gates itself on it. */}
                 <StandardFactor
                   name="defaultStandardFactor"
                   label={t`Default Unit`}
@@ -146,6 +151,7 @@ const ProcessForm = ({
                   name="completeAllOnScan"
                   label={t`Complete all quantities on barcode scan`}
                   termId="process-complete-all-on-scan"
+                  bordered
                 />
                 <CustomFormFields table="process" />
               </VStack>
@@ -176,6 +182,10 @@ function SupplierProcesses({ processId }: { processId?: string }) {
   const navigate = useNavigate();
   const isEditing = processId !== undefined;
   const newSupplierProcessModal = useDisclosure();
+  const [processType] = useControlField<string>("processType");
+
+  // Suppliers only apply to outside-processing operations.
+  if (processType !== "Outside Processing") return null;
 
   return (
     <>

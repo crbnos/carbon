@@ -3,15 +3,15 @@ import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, useLoaderData } from "react-router";
-import { getInspectionDocuments } from "~/modules/quality";
-import { InspectionDocumentTable } from "~/modules/quality/ui/InspectionDocument";
+import { getInspectionDocuments } from "~/modules/production";
+import { InspectionDocumentTable } from "~/modules/production/ui/InspectionDocument";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
-  breadcrumb: msg`Quality`,
-  to: path.to.quality
+  breadcrumb: msg`Inspection Documents`,
+  to: path.to.inspectionDocuments
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {

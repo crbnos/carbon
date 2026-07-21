@@ -37,6 +37,14 @@ export const accountsQuery = (companyId: string | null) => ({
   staleTime: RefreshRate.Low
 });
 
+export const assemblyInstructionsQuery = (
+  itemId: string,
+  companyId: string | null
+) => ({
+  queryKey: ["assemblyInstructions", itemId, companyId ?? "null"],
+  staleTime: RefreshRate.Low
+});
+
 export const countriesQuery = () => ({
   queryKey: ["countries"],
   staleTime: RefreshRate.Never
@@ -70,6 +78,14 @@ export const configurableItemsQuery = (companyId: string | null) => ({
 export const docsQuery = () => ({
   queryKey: ["docs"],
   staleTime: RefreshRate.Never
+});
+
+export const inspectionDocumentsQuery = (
+  itemId: string,
+  companyId: string | null
+) => ({
+  queryKey: ["inspectionDocuments", itemId, companyId ?? "null"],
+  staleTime: RefreshRate.Low
 });
 
 export const itemPostingGroupsQuery = (companyId: string | null) => ({

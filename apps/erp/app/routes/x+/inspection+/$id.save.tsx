@@ -2,7 +2,7 @@ import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { saveInspectionDocumentAtomic } from "~/modules/quality";
+import { saveInspectionDocumentAtomic } from "~/modules/production";
 import {
   type InspectionSaveBalloonsGeometryPayload,
   type InspectionSaveFeaturesPayload,
@@ -10,13 +10,13 @@ import {
   mergeInspectionFeaturesPayload,
   resolveInspectionFeaturePayloadIds,
   translateLegacyInspectionSavePayload
-} from "~/modules/quality/inspectionDocumentSave.server";
+} from "~/modules/production/inspectionDocumentSave.server";
 import {
   inspectionSaveAnchorsPayloadValidator,
   inspectionSaveBalloonsGeometryPayloadValidator,
   inspectionSaveBalloonsPayloadValidator,
   inspectionSaveFeaturesPayloadValidator
-} from "~/modules/quality/quality.models";
+} from "~/modules/production/production.models";
 
 function getErrorMessage(error: unknown, fallback: string) {
   if (error instanceof Error) return error.message;

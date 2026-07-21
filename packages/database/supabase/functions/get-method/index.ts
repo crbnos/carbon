@@ -355,6 +355,9 @@ serve(async (req: Request) => {
 
                 if (
                   parts.steps &&
+                  // Assembly ops inherit steps from the linked instruction —
+                  // never copy (possibly stale) template steps alongside it.
+                  !operation.assemblyInstructionId &&
                   Array.isArray(methodOperationStep) &&
                   methodOperationStep.length > 0
                 ) {
@@ -397,6 +400,13 @@ serve(async (req: Request) => {
         }
         const itemId = sourceId;
         const isConfigured = !!configuration;
+        // Assembly ops whose steps were materialized from an instruction —
+        // their material ↔ step links are flushed after the traversal has
+        // inserted every node's jobMaterial rows.
+        const assemblyOperationsToLink: Array<{
+          operationId: string;
+          assemblyInstructionId: string;
+        }> = [];
 
         const [makeMethod, jobMakeMethod, workCenters, supplierProcesses, job] =
           await Promise.all([
@@ -739,6 +749,7 @@ serve(async (req: Request) => {
                 // Carry the Assembly → BOP sync link so the MES can drive the
                 // animated instruction player on jobs made from a synced method.
                 assemblyInstructionId: op.assemblyInstructionId,
+                inspectionDocumentId: op.inspectionDocumentId,
                 operationSupplierProcessId: op.operationSupplierProcessId,
                 ...getOutsideOperationRates(
                   processId,
@@ -833,7 +844,22 @@ serve(async (req: Request) => {
                         .execute();
                     }
 
-                    if (
+                    if (operation.assemblyInstructionId) {
+                      // Assembly ops inherit their steps from the linked
+                      // instruction (the method only carries the pointer);
+                      // material ↔ step links are flushed after the
+                      // jobMaterial rows exist.
+                      await insertAssemblyDataForJobOperation(trx, client, {
+                        operationId,
+                        assemblyInstructionId: operation.assemblyInstructionId,
+                        companyId,
+                        userId,
+                      });
+                      assemblyOperationsToLink.push({
+                        operationId,
+                        assemblyInstructionId: operation.assemblyInstructionId,
+                      });
+                    } else if (
                       (!node.data.isRoot || parts.steps) &&
                       Array.isArray(methodOperationStep) &&
                       methodOperationStep.length > 0
@@ -1310,6 +1336,13 @@ serve(async (req: Request) => {
             jobMakeMethod.data.id,
             job.data?.quantity ?? 1
           );
+
+          await linkAssemblyStepMaterialsForJobOperations(
+            trx,
+            client,
+            assemblyOperationsToLink,
+            companyId
+          );
         });
 
         break;
@@ -1322,6 +1355,13 @@ serve(async (req: Request) => {
         }
         const itemId = sourceId;
         const isConfigured = !!configuration;
+        // Assembly ops whose steps were materialized from an instruction —
+        // material ↔ step links flush after the traversal inserts the
+        // jobMaterial rows.
+        const assemblyOperationsToLink: Array<{
+          operationId: string;
+          assemblyInstructionId: string;
+        }> = [];
 
         const [makeMethod, jobMakeMethod, workCenters, supplierProcesses] =
           await Promise.all([
@@ -1510,6 +1550,7 @@ serve(async (req: Request) => {
                 // Carry the Assembly → BOP sync link so the MES can drive the
                 // animated instruction player on jobs made from a synced method.
                 assemblyInstructionId: op.assemblyInstructionId,
+                inspectionDocumentId: op.inspectionDocumentId,
                 operationUnitCost: op.operationUnitCost ?? 0,
                 operationSupplierProcessId: op.operationSupplierProcessId,
                 ...getOutsideOperationRates(
@@ -1577,7 +1618,22 @@ serve(async (req: Request) => {
                         .execute();
                     }
 
-                    if (
+                    if (operation.assemblyInstructionId) {
+                      // Assembly ops inherit their steps from the linked
+                      // instruction (the method only carries the pointer);
+                      // material ↔ step links are flushed after the
+                      // jobMaterial rows exist.
+                      await insertAssemblyDataForJobOperation(trx, client, {
+                        operationId,
+                        assemblyInstructionId: operation.assemblyInstructionId,
+                        companyId,
+                        userId,
+                      });
+                      assemblyOperationsToLink.push({
+                        operationId,
+                        assemblyInstructionId: operation.assemblyInstructionId,
+                      });
+                    } else if (
                       parts.steps &&
                       Array.isArray(methodOperationStep) &&
                       methodOperationStep.length > 0
@@ -1925,6 +1981,13 @@ serve(async (req: Request) => {
             jobMakeMethod.data.id,
             parentEstimatedQuantity
           );
+
+          await linkAssemblyStepMaterialsForJobOperations(
+            trx,
+            client,
+            assemblyOperationsToLink,
+            companyId
+          );
         });
         break;
       }
@@ -2253,6 +2316,8 @@ serve(async (req: Request) => {
                 quoteMakeMethodId: parentQuoteMakeMethodId!,
                 processId,
                 procedureId,
+                assemblyInstructionId: op.assemblyInstructionId,
+                inspectionDocumentId: op.inspectionDocumentId,
                 workCenterId,
                 description,
                 setupTime,
@@ -2806,6 +2871,8 @@ serve(async (req: Request) => {
                 quoteMakeMethodId: parentQuoteMakeMethodId!,
                 processId: op.processId,
                 procedureId: op.procedureId,
+                assemblyInstructionId: op.assemblyInstructionId,
+                inspectionDocumentId: op.inspectionDocumentId,
                 workCenterId: op.workCenterId,
                 description: op.description,
                 setupTime: op.setupTime,
@@ -2895,6 +2962,9 @@ serve(async (req: Request) => {
 
                     if (
                       parts.steps &&
+                      // Assembly ops inherit steps from the linked instruction —
+                      // never copy (possibly stale) template steps alongside it.
+                      !operation.assemblyInstructionId &&
                       Array.isArray(methodOperationStep) &&
                       methodOperationStep.length > 0
                     ) {
@@ -3207,6 +3277,8 @@ serve(async (req: Request) => {
               makeMethodId: op.makeMethodId!,
               processId: op.processId!,
               procedureId: op.procedureId,
+              assemblyInstructionId: op.assemblyInstructionId,
+              inspectionDocumentId: op.inspectionDocumentId,
               workCenterId: op.workCenterId,
               description: op.description ?? "",
               setupTime: op.setupTime ?? 0,
@@ -3298,6 +3370,9 @@ serve(async (req: Request) => {
 
                   if (
                     parts.steps &&
+                    // Assembly ops inherit steps from the linked instruction —
+                    // never copy materialized steps back onto a template.
+                    !operation.assemblyInstructionId &&
                     Array.isArray(jobOperationStep) &&
                     jobOperationStep.length > 0
                   ) {
@@ -3520,6 +3595,8 @@ serve(async (req: Request) => {
               makeMethodId: op.makeMethodId!,
               processId: op.processId!,
               procedureId: op.procedureId,
+              assemblyInstructionId: op.assemblyInstructionId,
+              inspectionDocumentId: op.inspectionDocumentId,
               // workCenterId: op.workCenterId,
               description: op.description ?? "",
               setupTime: op.setupTime ?? 0,
@@ -3612,6 +3689,9 @@ serve(async (req: Request) => {
 
                   if (
                     parts.steps &&
+                    // Assembly ops inherit steps from the linked instruction —
+                    // never copy materialized steps back onto a template.
+                    !operation.assemblyInstructionId &&
                     Array.isArray(jobOperationStep) &&
                     jobOperationStep.length > 0
                   ) {
@@ -3814,6 +3894,9 @@ serve(async (req: Request) => {
 
                 if (
                   parts.steps &&
+                  // Assembly ops inherit steps from the linked instruction —
+                  // never copy (possibly stale) template steps alongside it.
+                  !operation.assemblyInstructionId &&
                   Array.isArray(methodOperationStep) &&
                   methodOperationStep.length > 0
                 ) {
@@ -4167,6 +4250,8 @@ serve(async (req: Request) => {
               makeMethodId: op.makeMethodId!,
               processId: op.processId!,
               procedureId: op.procedureId,
+              assemblyInstructionId: op.assemblyInstructionId,
+              inspectionDocumentId: op.inspectionDocumentId,
               workCenterId: op.workCenterId,
               description: op.description ?? "",
               setupTime: op.setupTime ?? 0,
@@ -4258,6 +4343,9 @@ serve(async (req: Request) => {
 
                   if (
                     parts.steps &&
+                    // Assembly ops inherit steps from the linked instruction —
+                    // never copy (possibly stale) quote steps alongside it.
+                    !operation.assemblyInstructionId &&
                     Array.isArray(quoteOperationStep) &&
                     quoteOperationStep.length > 0
                   ) {
@@ -4479,6 +4567,8 @@ serve(async (req: Request) => {
               makeMethodId: op.makeMethodId!,
               processId: op.processId!,
               procedureId: op.procedureId,
+              assemblyInstructionId: op.assemblyInstructionId,
+              inspectionDocumentId: op.inspectionDocumentId,
               workCenterId: op.workCenterId,
               description: op.description ?? "",
               setupTime: op.setupTime ?? 0,
@@ -4570,6 +4660,9 @@ serve(async (req: Request) => {
 
                   if (
                     parts.steps &&
+                    // Assembly ops inherit steps from the linked instruction —
+                    // never copy (possibly stale) quote steps alongside it.
+                    !operation.assemblyInstructionId &&
                     Array.isArray(quoteOperationStep) &&
                     quoteOperationStep.length > 0
                   ) {
@@ -4617,6 +4710,12 @@ serve(async (req: Request) => {
         if (!quoteId || !quoteLineId) {
           throw new Error("Invalid sourceId");
         }
+        // Assembly ops whose steps were materialized from an instruction —
+        // material ↔ step links flush after the jobMaterial rows exist.
+        const assemblyOperationsToLink: Array<{
+          operationId: string;
+          assemblyInstructionId: string;
+        }> = [];
 
         const [
           job,
@@ -4962,6 +5061,7 @@ serve(async (req: Request) => {
                 // Carry the Assembly → BOP sync link so the MES can drive the
                 // animated instruction player on jobs made from a synced method.
                 assemblyInstructionId: op.assemblyInstructionId,
+                inspectionDocumentId: op.inspectionDocumentId,
                 operationSupplierProcessId: op.operationSupplierProcessId,
                 operationMinimumCost: op.operationMinimumCost ?? 0,
                 operationLeadTime: op.operationLeadTime ?? 0,
@@ -5041,7 +5141,22 @@ serve(async (req: Request) => {
                       .execute();
                   }
 
-                  if (
+                  if (operation.assemblyInstructionId) {
+                    // Assembly ops inherit their steps from the linked
+                    // instruction (the quote only carries the pointer);
+                    // material ↔ step links are flushed after the jobMaterial
+                    // rows exist.
+                    await insertAssemblyDataForJobOperation(trx, client, {
+                      operationId,
+                      assemblyInstructionId: operation.assemblyInstructionId,
+                      companyId,
+                      userId,
+                    });
+                    assemblyOperationsToLink.push({
+                      operationId,
+                      assemblyInstructionId: operation.assemblyInstructionId,
+                    });
+                  } else if (
                     parts.steps &&
                     Array.isArray(quoteOperationStep) &&
                     quoteOperationStep.length > 0
@@ -5076,6 +5191,15 @@ serve(async (req: Request) => {
             }
           }
           } // end if (parts.billOfProcess)
+
+          // Materials were inserted before operations in this direction, so the
+          // assembly material ↔ step links can flush immediately.
+          await linkAssemblyStepMaterialsForJobOperations(
+            trx,
+            client,
+            assemblyOperationsToLink,
+            companyId
+          );
         });
 
         break;
@@ -5274,6 +5398,8 @@ serve(async (req: Request) => {
                   : quoteMakeMethodIdToQuoteMakeMethodId[op.quoteMakeMethodId!],
               processId: op.processId,
               procedureId: op.procedureId,
+              assemblyInstructionId: op.assemblyInstructionId,
+              inspectionDocumentId: op.inspectionDocumentId,
               workCenterId: op.workCenterId,
               description: op.description,
               setupTime: op.setupTime,
@@ -5775,6 +5901,8 @@ serve(async (req: Request) => {
                       ],
                 processId: op.processId,
                 procedureId: op.procedureId,
+                assemblyInstructionId: op.assemblyInstructionId,
+                inspectionDocumentId: op.inspectionDocumentId,
                 workCenterId: op.workCenterId,
                 description: op.description,
                 setupTime: op.setupTime,
@@ -6239,6 +6367,152 @@ async function insertProcedureDataForJobOperation(
     })
     .where("id", "=", operationId)
     .execute();
+}
+
+// Assembly analog of insertProcedureDataForJobOperation: an Assembly operation
+// inherits its steps from the linked assembly instruction at job-creation time
+// (the method/quote only carry the pointer). Mirrors the payload of
+// syncAssemblyInstructionToOperation (production.service.ts) — including the
+// assemblyInstructionStepId provenance marker, so the job-side re-sync
+// reconciles these rows instead of duplicating them — and attaches the
+// instruction's 3D model as a model slide on every step.
+// Material ↔ step links are flushed separately by
+// linkAssemblyStepMaterialsForJobOperations AFTER the direction's jobMaterial
+// rows exist (operations are inserted before materials in every direction).
+async function insertAssemblyDataForJobOperation(
+  trx: Transaction<DB>,
+  client: SupabaseClient<Database>,
+  args: {
+    operationId: string;
+    assemblyInstructionId: string;
+    companyId: string;
+    userId: string;
+  }
+) {
+  const { operationId, assemblyInstructionId, companyId, userId } = args;
+  const instruction = await client
+    .from("assemblyInstruction")
+    .select("id, modelUploadId, assemblyInstructionStep(*)")
+    .eq("id", assemblyInstructionId)
+    .eq("companyId", companyId)
+    .single();
+
+  if (instruction.error) return;
+
+  const sourceSteps = (instruction.data?.assemblyInstructionStep ?? []).sort(
+    (a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0)
+  );
+  if (sourceSteps.length === 0) return;
+
+  const insertedSteps = await trx
+    .insertInto("jobOperationStep")
+    .values(
+      sourceSteps.map((source, index) => ({
+        operationId,
+        name: source.title || `Step ${index + 1}`,
+        type: source.type ?? "Task",
+        description: toTiptapDoc(source.description ?? source.instructionText),
+        required: source.required ?? false,
+        unitOfMeasureCode: source.unitOfMeasureCode,
+        minValue: source.minValue,
+        maxValue: source.maxValue,
+        listValues: source.listValues,
+        fileTypes: source.fileTypes,
+        sortOrder: source.sortOrder ?? index + 1,
+        assemblyInstructionStepId: source.id,
+        companyId,
+        createdBy: userId,
+      }))
+    )
+    .returning(["id"])
+    .execute();
+
+  if (instruction.data?.modelUploadId) {
+    await trx
+      .insertInto("jobOperationStepSlide")
+      .values(
+        insertedSteps.map((step) => ({
+          stepId: step.id,
+          modelUploadId: instruction.data.modelUploadId,
+          sortOrder: 1,
+          companyId,
+          createdBy: userId,
+        }))
+      )
+      .execute();
+  }
+}
+
+// Post-materials pass: link the assembly-materialized job steps to the job's
+// materials, resolving the instruction's per-step itemIds against the
+// operation's own make method (same resolution the app-side sync performs).
+// Must read jobOperation/jobOperationStep/jobMaterial through the TRANSACTION —
+// those rows are uncommitted at this point.
+async function linkAssemblyStepMaterialsForJobOperations(
+  trx: Transaction<DB>,
+  client: SupabaseClient<Database>,
+  operations: Array<{ operationId: string; assemblyInstructionId: string }>,
+  companyId: string
+) {
+  for (const { operationId } of operations) {
+    const operation = await trx
+      .selectFrom("jobOperation")
+      .select(["jobMakeMethodId"])
+      .where("id", "=", operationId)
+      .executeTakeFirst();
+    if (!operation?.jobMakeMethodId) continue;
+
+    const steps = await trx
+      .selectFrom("jobOperationStep")
+      .select(["id", "assemblyInstructionStepId"])
+      .where("operationId", "=", operationId)
+      .where("assemblyInstructionStepId", "is not", null)
+      .execute();
+    if (steps.length === 0) continue;
+
+    const sourceStepIds = steps.map(
+      (step) => step.assemblyInstructionStepId as string
+    );
+    const stepMaterials = await client
+      .from("assemblyInstructionStepMaterial")
+      .select("stepId, itemId")
+      .in("stepId", sourceStepIds)
+      .eq("companyId", companyId);
+    if (stepMaterials.error || (stepMaterials.data ?? []).length === 0) {
+      continue;
+    }
+
+    const jobMaterials = await trx
+      .selectFrom("jobMaterial")
+      .select(["id", "itemId"])
+      .where("jobMakeMethodId", "=", operation.jobMakeMethodId)
+      .where("companyId", "=", companyId)
+      .execute();
+    const materialIdByItemId = new Map(
+      jobMaterials.map((material) => [material.itemId, material.id])
+    );
+    const jobStepBySourceStep = new Map(
+      steps.map((step) => [step.assemblyInstructionStepId as string, step.id])
+    );
+
+    const linkRows = (stepMaterials.data ?? []).flatMap((link) => {
+      const jobOperationStepId = jobStepBySourceStep.get(link.stepId);
+      const jobMaterialId = link.itemId
+        ? materialIdByItemId.get(link.itemId)
+        : undefined;
+      return jobOperationStepId && jobMaterialId
+        ? [{ jobMaterialId, jobOperationStepId }]
+        : [];
+    });
+
+    if (linkRows.length > 0) {
+      await trx
+        .insertInto("jobMaterialStep")
+        .values(linkRows)
+        .onConflict((oc) => oc.doNothing())
+        .execute();
+    }
+  }
 }
 
 async function hydrateConfiguration(
