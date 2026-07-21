@@ -533,10 +533,7 @@ function useGroupedSubmodules() {
             iconElement: route.icon
           }))
       };
-    } else if (
-      moduleName in ungroupedSubmodules ||
-      moduleName === "my account"
-    ) {
+    } else if (moduleName in ungroupedSubmodules) {
       acc = {
         ...acc,
         [module.name]: ungroupedSubmodules[moduleName].links.map((link) => ({

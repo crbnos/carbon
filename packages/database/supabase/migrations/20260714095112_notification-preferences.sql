@@ -1,11 +1,7 @@
--- Per-user, per-company notification channel opt-outs.
--- Semantics: absence of a row = enabled. A row with "enabled" = false is an
--- opt-out for that (topic, channel). Rows with "enabled" = true (from
--- toggling off then on) behave identically to no row.
--- Deliberately NO composite ("id","companyId") PK and NO createdBy audit
--- columns: this is a user-owned preference row following the
--- "userModulePreference" precedent (20260512174538_menu-customization.sql),
--- not a business entity.
+-- Per-user, per-company notification channel opt-outs. Absence of a row =
+-- enabled; "enabled" = false is an opt-out for that (topic, channel).
+-- User-owned preference rows (like "userModulePreference"): no composite
+-- companyId PK, no audit columns.
 CREATE TABLE IF NOT EXISTS "notificationPreference" (
   "id" TEXT NOT NULL DEFAULT xid(),
   "userId" TEXT NOT NULL,
@@ -27,11 +23,23 @@ ALTER TABLE "notificationPreference" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "SELECT" ON "notificationPreference"
   FOR SELECT USING ("userId" = auth.uid()::text);
 
+-- Writes also require membership in the target company.
 CREATE POLICY "INSERT" ON "notificationPreference"
-  FOR INSERT WITH CHECK ("userId" = auth.uid()::text);
+  FOR INSERT WITH CHECK (
+    "userId" = auth.uid()::text
+    AND "companyId" IN (
+      SELECT "companyId" FROM "userToCompany" WHERE "userId" = auth.uid()::text
+    )
+  );
 
 CREATE POLICY "UPDATE" ON "notificationPreference"
-  FOR UPDATE USING ("userId" = auth.uid()::text);
+  FOR UPDATE USING ("userId" = auth.uid()::text)
+  WITH CHECK (
+    "userId" = auth.uid()::text
+    AND "companyId" IN (
+      SELECT "companyId" FROM "userToCompany" WHERE "userId" = auth.uid()::text
+    )
+  );
 
 CREATE POLICY "DELETE" ON "notificationPreference"
   FOR DELETE USING ("userId" = auth.uid()::text);

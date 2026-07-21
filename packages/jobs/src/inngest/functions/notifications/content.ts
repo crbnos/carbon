@@ -27,6 +27,16 @@ export function buildNotificationLink(
   return `${ERP_URL}/api/link?${params.toString()}`;
 }
 
+// Routed through /api/link so the company-switch flow runs before landing on
+// the settings page.
+export function buildNotificationSettingsLink(companyId: string): string {
+  const params = new URLSearchParams({
+    page: "notification-settings",
+    companyId
+  });
+  return `${ERP_URL}/api/link?${params.toString()}`;
+}
+
 // One document inside a digest-shaped notification. documentId + description
 // drive the in-app child rows; the rest renders in the digest email.
 export type DigestItem = {
@@ -1167,6 +1177,7 @@ export async function getNotificationContent(
 // Template dispatch: add a case to give a notification type its own email;
 // everything else renders the generic NotificationEmail card.
 export function getNotificationEmailComponent(args: {
+  companyId: string;
   content: NotificationContent;
   ctaLabel: string;
   ctaUrl: string;
@@ -1195,7 +1206,7 @@ export function getNotificationEmailComponent(args: {
         preview: args.heading,
         recipientName: args.recipientName,
         reference: args.content.reference,
-        settingsUrl: `${ERP_URL}/x/account/notifications`
+        settingsUrl: buildNotificationSettingsLink(args.companyId)
       });
   }
 }

@@ -31,8 +31,7 @@ interface Props {
   ctaLabel?: string;
   ctaUrl?: string;
   details?: NotificationDetail[];
-  // Absolute URL of the user's notification-settings page. When present it
-  // renders the "Manage notification settings" footer.
+  // When set, renders the "Manage notification settings" footer.
   settingsUrl?: string;
 }
 

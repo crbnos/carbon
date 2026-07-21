@@ -103,15 +103,21 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const documentType = url.searchParams.get(
     "documentType"
   ) as ApprovalDocumentType | null;
+  const page = url.searchParams.get("page");
 
   const companyId = url.searchParams.get("companyId");
 
-  if (!event || !documentId) {
-    throw redirect(path.to.authenticatedRoot);
+  let redirectTo: string;
+  if (page === "notification-settings") {
+    // Email footer link — no document, but the company-switch below still applies.
+    redirectTo = path.to.notificationSettings;
+  } else {
+    if (!event || !documentId) {
+      throw redirect(path.to.authenticatedRoot);
+    }
+    const link = resolve(event, documentId, documentType ?? undefined);
+    redirectTo = link ?? path.to.authenticatedRoot;
   }
-
-  const link = resolve(event, documentId, documentType ?? undefined);
-  const redirectTo = link ?? path.to.authenticatedRoot;
 
   // The notification points at a document in a specific company, but the
   // recipient may currently be viewing a different one. If the linked company

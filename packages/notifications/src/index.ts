@@ -56,10 +56,9 @@ export enum NotificationTopic {
   Training = "training"
 }
 
-// Ordered list of topics shown on the user notification-settings page
-// (/x/account/notifications). Every NotificationTopic must appear here —
-// getNotificationTopicLabel's exhaustive switch enforces the pairing.
-export const USER_FACING_NOTIFICATION_TOPICS: NotificationTopic[] = [
+// Display order for the notification-settings page (/x/account/notifications);
+// labels live in that route so Lingui extracts them.
+export const USER_FACING_NOTIFICATION_TOPICS = [
   NotificationTopic.Approval,
   NotificationTopic.Job,
   NotificationTopic.Sales,
@@ -71,39 +70,7 @@ export const USER_FACING_NOTIFICATION_TOPICS: NotificationTopic[] = [
   NotificationTopic.Training,
   NotificationTopic.Suggestion,
   NotificationTopic.General
-];
-
-// Human-readable label for a topic row on the notification-settings page.
-export function getNotificationTopicLabel(topic: NotificationTopic): string {
-  switch (topic) {
-    case NotificationTopic.Approval:
-      return "Approvals";
-    case NotificationTopic.General:
-      return "General";
-    case NotificationTopic.Inventory:
-      return "Inventory";
-    case NotificationTopic.Job:
-      return "Jobs";
-    case NotificationTopic.Maintenance:
-      return "Maintenance";
-    case NotificationTopic.Purchasing:
-      return "Purchasing";
-    case NotificationTopic.Quality:
-      return "Quality";
-    case NotificationTopic.Quote:
-      return "Quotes";
-    case NotificationTopic.Sales:
-      return "Sales";
-    case NotificationTopic.Suggestion:
-      return "Suggestions";
-    case NotificationTopic.Training:
-      return "Training";
-    default: {
-      const exhaustive: never = topic;
-      return exhaustive;
-    }
-  }
-}
+] as const satisfies readonly NotificationTopic[];
 
 // A labeled fact attached to a notification (e.g. Customer / Acme Corp),
 // rendered in the email, Slack text, and notification.payload.details.

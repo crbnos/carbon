@@ -1,6 +1,6 @@
 # User-Level Notification Preferences
 
-> Status: draft
+> Status: implemented
 > Author: naveen (with Claude)
 > Date: 2026-07-14
 > Research: `.ai/research/user-notification-preferences.md` (codebase map), `.ai/research/user-notification-preferences-competitors.md` (industry survey)
@@ -180,3 +180,4 @@ export const notificationPreferenceValidator = z.object({
 ## Changelog
 
 - 2026-07-14: Created after resolving all 5 open questions with the user (grill interview). Research: codebase map + competitor survey linked in header.
+- 2026-07-21: Implemented on branch `naveen/user-notification-settings`; moved to `implemented/`. Follow-up deferred: digest-shaped emails (weekly reminder template) do not yet carry the manage-settings footer link.

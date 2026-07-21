@@ -1,10 +1,11 @@
-import { assertIsPost, error, success } from "@carbon/auth";
+import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { companyHasPlan } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
 import {
-  getNotificationTopicLabel,
+  NotificationTopic,
   USER_FACING_NOTIFICATION_TOPICS
 } from "@carbon/notifications";
 import {
@@ -16,7 +17,7 @@ import {
   Switch
 } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useFetchers, useLoaderData, useSubmit } from "react-router";
 import {
@@ -37,7 +38,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const [preferences, slackIntegration, emailPlanEnabled] = await Promise.all([
     getNotificationPreferences(client, userId, companyId),
-    client
+    // Service role: companyIntegration SELECT requires settings_view, which
+    // regular employees don't have.
+    getCarbonServiceRole()
       .from("companyIntegration")
       .select("active")
       .eq("companyId", companyId)
@@ -83,10 +86,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  return data(
-    {},
-    await flash(request, success("Updated notification preferences"))
-  );
+  return {};
 }
 
 export default function AccountNotifications() {
@@ -94,25 +94,46 @@ export default function AccountNotifications() {
     useLoaderData<typeof loader>();
   const submit = useSubmit();
   const fetchers = useFetchers();
+  const { t } = useLingui();
 
-  // A (topic, channel) is enabled unless an enabled=false row exists. An
-  // in-flight toggle for the same cell wins (optimistic).
-  const isEnabled = (topic: string, channel: "email" | "slack") => {
+  // Labels live here rather than @carbon/notifications so Lingui extracts them.
+  const topicLabels: Record<NotificationTopic, string> = {
+    [NotificationTopic.Approval]: t`Approvals`,
+    [NotificationTopic.General]: t`General`,
+    [NotificationTopic.Inventory]: t`Inventory`,
+    [NotificationTopic.Job]: t`Jobs`,
+    [NotificationTopic.Maintenance]: t`Maintenance`,
+    [NotificationTopic.Purchasing]: t`Purchasing`,
+    [NotificationTopic.Quality]: t`Quality`,
+    [NotificationTopic.Quote]: t`Quotes`,
+    [NotificationTopic.Sales]: t`Sales`,
+    [NotificationTopic.Suggestion]: t`Suggestions`,
+    [NotificationTopic.Training]: t`Training`
+  };
+
+  // Absence of a row = enabled; in-flight toggles win over loader data.
+  const isEnabled = (topic: NotificationTopic, channel: "email" | "slack") => {
+    let pending: boolean | undefined;
     for (const fetcher of fetchers) {
       if (
         fetcher.formData?.get("topic") === topic &&
         fetcher.formData?.get("channel") === channel
       ) {
-        return fetcher.formData.get("enabled") === "true";
+        pending = fetcher.formData.get("enabled") === "true";
       }
     }
+    if (pending !== undefined) return pending;
     const row = preferences.find(
       (p) => p.topic === topic && p.channel === channel
     );
     return row ? row.enabled : true;
   };
 
-  const toggle = (topic: string, channel: "email" | "slack", next: boolean) => {
+  const toggle = (
+    topic: NotificationTopic,
+    channel: "email" | "slack",
+    next: boolean
+  ) => {
     submit(
       { topic, channel, enabled: String(next) },
       { method: "post", navigate: false }
@@ -167,9 +188,7 @@ export default function AccountNotifications() {
           <tbody>
             {USER_FACING_NOTIFICATION_TOPICS.map((topic) => (
               <tr key={topic} className="border-b border-border last:border-0">
-                <td className="text-sm py-3">
-                  {getNotificationTopicLabel(topic)}
-                </td>
+                <td className="text-sm py-3">{topicLabels[topic]}</td>
                 <td className="py-3 w-24">
                   <div className="flex justify-center">
                     <Switch
@@ -177,7 +196,7 @@ export default function AccountNotifications() {
                       onCheckedChange={(checked) =>
                         toggle(topic, "email", checked)
                       }
-                      aria-label={`${getNotificationTopicLabel(topic)} email`}
+                      aria-label={`${topicLabels[topic]} ${t`email`}`}
                     />
                   </div>
                 </td>
@@ -189,7 +208,7 @@ export default function AccountNotifications() {
                         onCheckedChange={(checked) =>
                           toggle(topic, "slack", checked)
                         }
-                        aria-label={`${getNotificationTopicLabel(topic)} Slack`}
+                        aria-label={`${topicLabels[topic]} ${t`Slack`}`}
                       />
                     </div>
                   </td>
