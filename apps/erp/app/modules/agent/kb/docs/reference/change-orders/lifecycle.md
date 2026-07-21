@@ -79,3 +79,11 @@ merge-conflict step to resolve.
 
   - Supersession & cutover How a released revision phases over downstream.
   - Revise a part The release flow told as a story.
+
+## Troubleshooting
+
+### "Cannot modify a completed change order."
+The change order is at **"Done"** (or cancelled) and is a locked, read-only historical record — nothing reopens it. To make further changes to the same parts, raise a new change order; the released methods and items are its starting point.
+
+### Release button not available
+The **"Release"** action only appears at the **"Implementation"** stage. If the user can't find it, check the change order's current stage — it must be advanced (one stage at a time, no skipping) to Implementation first.

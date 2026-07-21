@@ -42,3 +42,14 @@ There's no path from a quote straight to a production job. A job is raised from 
 
   - Sales orders What a quote becomes once it's accepted.
   - Quote to cash The full narrative: quote, order, ship, invoice, paid.
+
+## Troubleshooting
+
+### "Cannot modify a locked quote. Reopen it first."
+A quote locks the moment it leaves **Draft** — any other status (Sent, Ordered, Lost, and so on) is read-only. Use the quote's reopen action to bring it back to Draft (which bumps the revision) before editing.
+
+### "An item cannot be added to itself."
+In the quote line's bill of materials, the item being made was selected as one of its own components. Pick a different item for the sub-assembly or material line.
+
+### "Failed to convert quote to order"
+The conversion action failed after line selection. Have the user retry with the lines re-selected; if it persists, check that the selected lines have valid quantities and pricing, and ask for the full error text.

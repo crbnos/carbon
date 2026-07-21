@@ -46,3 +46,14 @@ A fixed asset is **not** the same record as a work center. The machine you sched
   - Manufacturing accounting The narrative: putting a machine on the books and writing it down.
   - Accounting Where an asset's acquisition, depreciation, and disposal entries land.
   - Work centers The same machine as a production resource — a separate record.
+
+## Troubleshooting
+
+### "Fixed Asset invoice line … has no asset selected"
+A purchase invoice line of type *Fixed Asset* has no asset record linked. Open the line and select (or create) the fixed asset before posting the invoice.
+
+### "Asset is no longer in Draft status"
+The register action found the asset already activated — usually someone else registered it between page load and save. Reload the asset; if it's Active, the registration already happened.
+
+### Depreciation or receipt posting fails with a period error
+Asset postings land in an accounting period like everything else. "Accounting period is closed/locked" means the run's period needs reopening — see `docs/reference/accounting`.

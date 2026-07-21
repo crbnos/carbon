@@ -213,7 +213,16 @@
         "Accounts come from one place",
         "Dimensions",
         "Periods",
-        "Related"
+        "Related",
+        "Troubleshooting",
+        "\"Accounting period is closed. Reopen it before posting.\"",
+        "\"Accounting period is locked. Unlock it before posting operational documents.\"",
+        "\"Cannot delete journal …: accounting period is closed\"",
+        "\"Posted journal … is immutable and cannot be deleted; reverse it instead\"",
+        "\"Posted journal … is immutable; only the Posted -> Reversed transition is permitted\"",
+        "\"Journal line … is immutable because journal … is posted\"",
+        "\"Cannot post to a group account\"",
+        "\"Account not found\""
       ]
     },
     {
@@ -292,7 +301,10 @@
         "Review the changes, then release",
         "What release does",
         "Parallel change orders on the same part",
-        "Related"
+        "Related",
+        "Troubleshooting",
+        "\"Cannot modify a completed change order.\"",
+        "Release button not available"
       ]
     },
     {
@@ -339,7 +351,11 @@
         "Acquiring",
         "Depreciating",
         "Selling vs. disposing",
-        "Related"
+        "Related",
+        "Troubleshooting",
+        "\"Fixed Asset invoice line … has no asset selected\"",
+        "\"Asset is no longer in Draft status\"",
+        "Depreciation or receipt posting fails with a period error"
       ]
     },
     {
@@ -352,7 +368,13 @@
         "On hand is a ledger",
         "Movements",
         "Value",
-        "Related"
+        "Related",
+        "Troubleshooting",
+        "\"Insufficient quantity for negative adjustment\"",
+        "\"Serial number not found\"",
+        "\"Multiple tracked entities in this storage unit — select a specific row to adjust\"",
+        "\"Cannot edit expiry of a consumed tracked entity\"",
+        "Storage unit hierarchy errors"
       ]
     },
     {
@@ -365,7 +387,18 @@
         "Status lifecycle",
         "Posting",
         "Payment",
-        "Related"
+        "Related",
+        "Troubleshooting",
+        "\"Can only void posted purchase invoices\"",
+        "\"Purchase invoice is already voided\"",
+        "\"Cannot void a purchase invoice with payments applied. Reverse the payment first.\"",
+        "\"Cannot delete purchase invoice with status … Only Draft invoices can be deleted.\"",
+        "\"Cannot modify a confirmed purchase invoice.\" / \"Cannot modify a locked sales invoice.\"",
+        "\"Applications can only be edited while the payment is Draft\"",
+        "\"A receipt can only be applied to sales invoices\" / \"A disbursement can only be applied to purchase invoices\"",
+        "\"A payment can only be applied to its own customer's invoices\"",
+        "\"Only posted credits can be applied\"",
+        "\"Applied amount must be greater than 0\""
       ]
     },
     {
@@ -389,7 +422,13 @@
         "Time and output",
         "Procedures",
         "Make to order vs. make to stock",
-        "Related"
+        "Related",
+        "Troubleshooting",
+        "\"Manufacturing is blocked\"",
+        "\"Cannot modify a locked job. Reopen it first.\"",
+        "\"No location found\"",
+        "\"Tracked entity not found\"",
+        "\"Failed to schedule job\""
       ]
     },
     {
@@ -416,7 +455,12 @@
         "Method type vs replenishment system",
         "Kit or subassembly",
         "Get Method",
-        "Related"
+        "Related",
+        "Troubleshooting",
+        "\"An item cannot be added to itself.\"",
+        "\"Method tree not found\"",
+        "\"Cannot override method of configured item\"",
+        "\"Failed to get make methods\""
       ]
     },
     {
@@ -430,7 +474,12 @@
         "Reorder policy",
         "From suggestion to order",
         "Planning vs scheduling",
-        "Related"
+        "Related",
+        "Troubleshooting",
+        "\"Manufacturing is blocked for item …\"",
+        "\"Manufacturing requires configuration for item …\"",
+        "\"Failed to create job method for item …\"",
+        "\"Failed to load any locations\""
       ]
     },
     {
@@ -438,7 +487,21 @@
       "title": "Purchase orders",
       "description": "A commitment to a supplier: what to receive, and what you'll be billed for.",
       "keywords": ["purchase", "orders", "docs", "reference"],
-      "headings": ["Line fields", "Types", "Status", "Related"]
+      "headings": [
+        "Line fields",
+        "Types",
+        "Status",
+        "Related",
+        "Troubleshooting",
+        "\"Cannot modify a confirmed purchase order.\" / \"Cannot delete lines on a confirmed purchase order.\"",
+        "\"Cannot finalize: supplier is not approved (Active)\"",
+        "\"You are not authorized to finalize this purchase order\"",
+        "\"Receiving can only be closed or reopened on a released purchase order\"",
+        "\"This line cannot be received\"",
+        "\"This line has no outstanding quantity to receive\"",
+        "\"Receiving is already closed for this line\" / \"Receiving is not closed for this line\"",
+        "\"Failed to finalize purchase order\""
+      ]
     },
     {
       "slug": "docs/reference/quality",
@@ -450,7 +513,14 @@
         "Workflows and actions",
         "Inbound inspection",
         "Also in quality",
-        "Related"
+        "Related",
+        "Troubleshooting",
+        "\"Cannot modify a closed issue. Reopen it first.\"",
+        "\"Cannot move entities between different NCRs\"",
+        "\"No linked entities to split\"",
+        "\"Split quantity exceeds the linked entity quantity\"",
+        "\"Duplicate entity in split selection\"",
+        "\"Failed to accept lot\" / \"Failed to reject lot\""
       ]
     },
     {
@@ -463,7 +533,11 @@
         "Status lifecycle",
         "Digital quotes",
         "Becoming an order",
-        "Related"
+        "Related",
+        "Troubleshooting",
+        "\"Cannot modify a locked quote. Reopen it first.\"",
+        "\"An item cannot be added to itself.\"",
+        "\"Failed to convert quote to order\""
       ]
     },
     {
@@ -471,7 +545,19 @@
       "title": "Receipts",
       "description": "Goods coming in: receiving against a purchase order and posting to inventory.",
       "keywords": ["receipts", "docs", "reference"],
-      "headings": ["Fields", "Status", "Related"]
+      "headings": [
+        "Fields",
+        "Status",
+        "Related",
+        "Troubleshooting",
+        "\"Receipt is empty\"",
+        "\"Batch number is required\"",
+        "\"Serial numbers are missing\"",
+        "\"Can only void posted receipts\"",
+        "\"Cannot void a receipt created by a purchase invoice. Void the invoice instead.\"",
+        "\"Cannot delete a posted receipt\"",
+        "\"Failed to post receipt\""
+      ]
     },
     {
       "slug": "docs/reference/reordering",
@@ -492,7 +578,16 @@
       "title": "Sales orders",
       "description": "A confirmed customer commitment: what to ship and invoice, tracked line by line.",
       "keywords": ["sales", "orders", "docs", "reference"],
-      "headings": ["Line fields", "Status", "Related"]
+      "headings": [
+        "Line fields",
+        "Status",
+        "Related",
+        "Troubleshooting",
+        "\"Cannot modify a confirmed sales order.\" / \"Cannot modify a locked sales order. Reopen it first.\"",
+        "\"Cannot add lines to a locked sales order. Reopen it first.\" / \"Cannot delete lines on a locked sales order. Reopen it first.\"",
+        "\"No jobs were created\"",
+        "\"Failed to insert job\""
+      ]
     },
     {
       "slug": "docs/reference/shelf-life",
@@ -506,7 +601,11 @@
         "What happens to expired stock",
         "Company settings",
         "Where you set it",
-        "Related"
+        "Related",
+        "Troubleshooting",
+        "\"Cannot consume expired tracked entity\" / \"Cannot consume expired tracked entities\"",
+        "\"Cannot post shipment with expired batch\"",
+        "\"Cannot edit expiry of a consumed tracked entity\""
       ]
     },
     {
@@ -514,7 +613,21 @@
       "title": "Shipments",
       "description": "Goods going out — one posting model serving sales orders, returns, and transfers.",
       "keywords": ["shipments", "docs", "reference"],
-      "headings": ["Fields", "Status", "Related"]
+      "headings": [
+        "Fields",
+        "Status",
+        "Related",
+        "Troubleshooting",
+        "\"Shipment is empty\"",
+        "\"Tracked entity is not available\"",
+        "\"Serial numbers are missing or unavailable\"",
+        "\"Cannot post shipment with expired batch\"",
+        "\"Posted shipment with expired batch\"",
+        "\"Batch has insufficient quantity\"",
+        "\"Can only void posted shipments\"",
+        "\"Cannot delete a posted shipment\"",
+        "\"Failed to post shipment\""
+      ]
     },
     {
       "slug": "docs/reference/storage-rules",
@@ -529,7 +642,8 @@
         "Scope and assignment",
         "Rule fields",
         "Where to manage them",
-        "Related"
+        "Related",
+        "Troubleshooting"
       ]
     },
     {
@@ -537,7 +651,15 @@
       "title": "Suppliers & customers",
       "description": "The parties you buy from and sell to, and the ways their records differ.",
       "keywords": ["suppliers", "customers", "docs", "reference", "and"],
-      "headings": ["Suppliers", "Customers", "What they share", "Related"]
+      "headings": [
+        "Suppliers",
+        "Customers",
+        "What they share",
+        "Related",
+        "Troubleshooting",
+        "\"Cannot edit a protected customer type\" / \"Cannot edit a protected supplier type\"",
+        "\"Cannot finalize: supplier is not approved (Active)\""
+      ]
     },
     {
       "slug": "docs/reference/traceability",

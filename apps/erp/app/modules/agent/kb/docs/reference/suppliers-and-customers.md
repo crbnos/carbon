@@ -25,3 +25,11 @@ Both records carry the same satellite shape: **contacts**, **locations/addresses
   - Quote to cash How a customer's quote becomes an order.
   - RFQ to bill How a supplier quote becomes a purchase order.
   - Approvals A new supplier can be held at Pending until approved.
+
+## Troubleshooting
+
+### "Cannot edit a protected customer type" / "Cannot edit a protected supplier type"
+System-defined types are protected and can't be renamed or deleted. Create a new custom type instead and assign parties to it.
+
+### "Cannot finalize: supplier is not approved (Active)"
+Raised when finalizing a purchase order for a supplier whose status isn't **Active** (it's *Pending*, *Inactive*, or *Rejected*). Approve/activate the supplier, then finalize the order — see `docs/reference/purchase-orders`.

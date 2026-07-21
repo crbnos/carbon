@@ -50,3 +50,31 @@ The status is computed from the state of its lines, never set by hand.
     Orders at or above a set amount wait for sign-off before they can be sent.
   </Card>
 </Cards>
+
+<AgentContext>
+## Troubleshooting
+
+### "Cannot modify a confirmed purchase order." / "Cannot delete lines on a confirmed purchase order."
+A purchase order is locked at **"To Receive"**, **"To Receive and Invoice"**, **"To Invoice"**, **"Completed"**, and **"Closed"** — from release onward. Only Draft (and pre-release) orders are freely editable. Reopen the order to make structural changes.
+
+### "Cannot finalize: supplier is not approved (Active)"
+The company requires approved suppliers, and this order's supplier is *Pending*, *Inactive*, or *Rejected*. Set the supplier's status to **Active** (or get it approved), then finalize again.
+
+### "You are not authorized to finalize this purchase order"
+The order belongs to a different company than the one the user is signed into. Switch to the owning company.
+
+### "Receiving can only be closed or reopened on a released purchase order"
+Short-closing a line only applies once the order is released (at "To Receive", "To Receive and Invoice", "To Invoice", or "Completed"). Release the order first.
+
+### "This line cannot be received"
+The line is a comment or G/L account line — only item lines carry a receivable quantity.
+
+### "This line has no outstanding quantity to receive"
+The line is already fully received; there's nothing left to short-close. Reopen receiving on the line if more goods are expected.
+
+### "Receiving is already closed for this line" / "Receiving is not closed for this line"
+The close/reopen action was applied twice. The line is already in the requested state — refresh the page to see the current state.
+
+### "Failed to finalize purchase order"
+Generic wrapper. Common underlying causes: no PO number sequence configured for the company, or a PDF/email step failing (separate "Failed to generate PDF" / "Failed to send email" messages). Ask for the full error text and check the supplier contact's email if sending failed.
+</AgentContext>

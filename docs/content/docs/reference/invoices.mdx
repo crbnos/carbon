@@ -53,3 +53,39 @@ Payment in Carbon is **field-based**: an invoice carries its own status, paid da
     Where a posted invoice's ledger entries land.
   </Card>
 </Cards>
+
+<AgentContext>
+## Troubleshooting
+
+Exact errors users hit when posting, voiding, deleting, or paying invoices.
+
+### "Can only void posted purchase invoices"
+Voiding applies only after posting. A Draft invoice can simply be edited or deleted.
+
+### "Purchase invoice is already voided"
+No action needed — the invoice was already reversed.
+
+### "Cannot void a purchase invoice with payments applied. Reverse the payment first."
+The invoice has settled payments against it. Reverse (or unapply) those payments, then void the invoice.
+
+### "Cannot delete purchase invoice with status … Only Draft invoices can be deleted."
+A database guard (same wording for sales invoices). Once an invoice leaves Draft it can't be deleted — void a posted invoice instead, which writes reversing entries.
+
+### "Cannot modify a confirmed purchase invoice." / "Cannot modify a locked sales invoice."
+Invoices lock the moment they leave Draft; posted numbers can't be edited in place. To change a posted invoice, void it and raise a new one (or issue a credit/debit note).
+
+### "Applications can only be edited while the payment is Draft"
+Once a payment is posted, its invoice applications are frozen. Reverse the payment and re-enter it to change how it's applied.
+
+### "A receipt can only be applied to sales invoices" / "A disbursement can only be applied to purchase invoices"
+Payment direction mismatch: a customer payment (receipt) settles sales invoices, a supplier payment (disbursement) settles purchase invoices. Check the payment's type.
+
+### "A payment can only be applied to its own customer's invoices"
+The invoice belongs to a different customer (or, for the supplier-side variant, a different supplier) than the payment. Apply the payment only to that party's invoices.
+
+### "Only posted credits can be applied"
+The credit memo being applied is still Draft (or voided). Post the credit memo first.
+
+### "Applied amount must be greater than 0"
+Enter a positive amount when applying a payment or credit.
+</AgentContext>

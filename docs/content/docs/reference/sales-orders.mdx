@@ -47,3 +47,19 @@ The order list can read **In Progress** even while the stored status is *To Ship
     A make-to-order line becomes a job that builds the item.
   </Card>
 </Cards>
+
+<AgentContext>
+## Troubleshooting
+
+### "Cannot modify a confirmed sales order." / "Cannot modify a locked sales order. Reopen it first."
+A sales order is locked at **"To Ship and Invoice"**, **"To Ship"**, **"To Invoice"**, **"Completed"**, **"Cancelled"**, and **"Closed"** — that is, from confirmation onward. Only a **Draft** order is freely editable. Reopen the order to Draft to change it (fulfillment that already happened stays on the books).
+
+### "Cannot add lines to a locked sales order. Reopen it first." / "Cannot delete lines on a locked sales order. Reopen it first."
+Same lock as above, hit from the line editor. Reopen the order to Draft before adding or removing lines.
+
+### "No jobs were created"
+The convert-lines-to-jobs action found no eligible lines — none of the selected lines is fulfilled by making (Make method). Check each line's method; *Pull from Inventory* and *Purchase to Order* lines never produce jobs.
+
+### "Failed to insert job"
+Converting a line to a job failed. Usual causes: the item has no active make method, or no valid location is set. Check the item's method status and the order's location, then retry.
+</AgentContext>
