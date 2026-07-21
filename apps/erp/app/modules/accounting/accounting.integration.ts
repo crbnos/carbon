@@ -133,10 +133,15 @@ export function paginateByAccountNumber<T extends { accountNumber: string }>(
   opts: { cursor?: string | null; limit: number }
 ): { page: T[]; nextCursor: string | null } {
   const after = decodeCursor(opts.cursor);
+  // Filter must use the SAME comparator as the sort, or a page boundary can
+  // skip/duplicate rows when account numbers are non-numeric (mixed case /
+  // punctuation), where localeCompare and JS `>` disagree.
   const sorted = rows
     .slice()
     .sort((a, b) => a.accountNumber.localeCompare(b.accountNumber))
-    .filter((row) => (after ? row.accountNumber > after : true));
+    .filter((row) =>
+      after ? row.accountNumber.localeCompare(after) > 0 : true
+    );
 
   const page = sorted.slice(0, opts.limit);
   const hasMore = sorted.length > opts.limit;

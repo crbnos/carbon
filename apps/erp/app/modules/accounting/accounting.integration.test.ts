@@ -112,6 +112,31 @@ describe("paginateByAccountNumber", () => {
     expect(page).toHaveLength(4);
     expect(nextCursor).toBeNull();
   });
+
+  it("pages mixed-case account numbers with no skip or duplicate (comparator match)", () => {
+    // localeCompare and JS `>` disagree on case; the filter must match the sort.
+    const mixed = [
+      { accountNumber: "B200" },
+      { accountNumber: "a050" },
+      { accountNumber: "A100" }
+    ];
+    const seen: string[] = [];
+    let cursor: string | null | undefined;
+    for (let i = 0; i < 5; i++) {
+      const { page, nextCursor } = paginateByAccountNumber(mixed, {
+        cursor,
+        limit: 1
+      });
+      seen.push(...page.map((r) => r.accountNumber));
+      if (!nextCursor) break;
+      cursor = nextCursor;
+    }
+    const expected = mixed
+      .map((r) => r.accountNumber)
+      .sort((a, b) => a.localeCompare(b));
+    expect(seen).toEqual(expected);
+    expect(new Set(seen).size).toBe(mixed.length); // no duplicates
+  });
 });
 
 describe("toTrialBalanceRow", () => {

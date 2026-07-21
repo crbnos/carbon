@@ -36,8 +36,16 @@ export const webhookFunction = inngest.createFunction(
     const payload = webhookPayloadSchema.parse(event.data);
     const { registrationId, topic, signingSecret } = payload.config;
 
-    // Curated + HMAC-signed accounting webhook.
-    if (registrationId && topic && signingSecret) {
+    // Curated + HMAC-signed accounting webhook. A registrationId marks a signed
+    // subscription: if its topic/secret are missing, FAIL loudly rather than
+    // silently falling through to the legacy raw-diff path (which would leak the
+    // full row diff, unsigned). Legacy subscriptions carry no registrationId.
+    if (registrationId) {
+      if (!topic || !signingSecret) {
+        throw new Error(
+          `Signed webhook registration ${registrationId} is missing topic or signingSecret`
+        );
+      }
       await step.run("send-signed-webhook", async () => {
         const msgId = String(payload.msgId ?? registrationId);
         const envelope = buildWebhookEnvelope(msgId, topic, payload.data);
