@@ -6187,7 +6187,7 @@ msgid "In stock"
 msgstr "有库存"
 
 msgid "In stock only"
-msgstr ""
+msgstr "仅显示有库存"
 
 msgid "In the loop together"
 msgstr "一起保持沟通"
@@ -13493,7 +13493,7 @@ msgid "Variance in outside processing costs"
 msgstr "外部加工成本的差异"
 
 msgid "Variance only"
-msgstr ""
+msgstr "仅显示有差异"
 
 msgid "VAT Number"
 msgstr "增值税号"

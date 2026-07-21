@@ -6187,7 +6187,7 @@ msgid "In stock"
 msgstr "En stock"
 
 msgid "In stock only"
-msgstr ""
+msgstr "Solo en stock"
 
 msgid "In the loop together"
 msgstr "En el ciclo juntos"
@@ -13493,7 +13493,7 @@ msgid "Variance in outside processing costs"
 msgstr "Varianza en los costos de procesamiento externo"
 
 msgid "Variance only"
-msgstr ""
+msgstr "Solo con variación"
 
 msgid "VAT Number"
 msgstr "Número de IVA"

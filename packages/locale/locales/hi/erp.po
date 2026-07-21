@@ -6187,7 +6187,7 @@ msgid "In stock"
 msgstr "स्टॉक में"
 
 msgid "In stock only"
-msgstr ""
+msgstr "केवल स्टॉक में"
 
 msgid "In the loop together"
 msgstr "एक साथ लूप में"
@@ -13493,7 +13493,7 @@ msgid "Variance in outside processing costs"
 msgstr "बाहरी प्रसंस्करण लागत में विचरण"
 
 msgid "Variance only"
-msgstr ""
+msgstr "केवल विचरण"
 
 msgid "VAT Number"
 msgstr "VAT संख्या"

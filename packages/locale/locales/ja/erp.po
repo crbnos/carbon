@@ -6187,7 +6187,7 @@ msgid "In stock"
 msgstr "在庫あり"
 
 msgid "In stock only"
-msgstr ""
+msgstr "在庫ありのみ"
 
 msgid "In the loop together"
 msgstr "一緒にループの中にいる"
@@ -13493,7 +13493,7 @@ msgid "Variance in outside processing costs"
 msgstr "外部処理コストの差異"
 
 msgid "Variance only"
-msgstr ""
+msgstr "差異のみ"
 
 msgid "VAT Number"
 msgstr "VAT番号"
