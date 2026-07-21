@@ -80533,10 +80533,10 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.showCustomerReadableId"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.aiAgentEnabled"
+            $ref: "#/parameters/rowFilter.companySettings.plmReleaseControl"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.plmReleaseControl"
+            $ref: "#/parameters/rowFilter.companySettings.aiAgentEnabled"
           },
           {
             $ref: "#/parameters/select"
@@ -80721,10 +80721,10 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.showCustomerReadableId"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.aiAgentEnabled"
+            $ref: "#/parameters/rowFilter.companySettings.plmReleaseControl"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.plmReleaseControl"
+            $ref: "#/parameters/rowFilter.companySettings.aiAgentEnabled"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -80863,10 +80863,10 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.showCustomerReadableId"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.aiAgentEnabled"
+            $ref: "#/parameters/rowFilter.companySettings.plmReleaseControl"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.plmReleaseControl"
+            $ref: "#/parameters/rowFilter.companySettings.aiAgentEnabled"
           },
           {
             $ref: "#/parameters/body.companySettings"
@@ -97439,7 +97439,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -97488,7 +97488,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -130716,8 +130716,8 @@ export default {
         "assetTaxDepreciationEnabled",
         "showSupplierReadableId",
         "showCustomerReadableId",
-        "aiAgentEnabled",
-        "plmReleaseControl"
+        "plmReleaseControl",
+        "aiAgentEnabled"
       ],
       properties: {
         id: {
@@ -130944,15 +130944,15 @@ export default {
           format: "boolean",
           type: "boolean"
         },
-        aiAgentEnabled: {
-          default: true,
-          format: "boolean",
-          type: "boolean"
-        },
         plmReleaseControl: {
           default: "enforce",
           format: "text",
           type: "string"
+        },
+        aiAgentEnabled: {
+          default: true,
+          format: "boolean",
+          type: "boolean"
         }
       },
       type: "object"
@@ -174787,14 +174787,14 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.companySettings.aiAgentEnabled": {
-      name: "aiAgentEnabled",
+    "rowFilter.companySettings.plmReleaseControl": {
+      name: "plmReleaseControl",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.companySettings.plmReleaseControl": {
-      name: "plmReleaseControl",
+    "rowFilter.companySettings.aiAgentEnabled": {
+      name: "aiAgentEnabled",
       required: false,
       in: "query",
       type: "string"
