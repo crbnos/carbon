@@ -44922,7 +44922,6 @@ export type Database = {
           customFields: Json | null
           fromDate: string | null
           id: string
-          itemId: string | null
           serviceType: Database["public"]["Enums"]["serviceType"]
           tags: string[] | null
           toDate: string | null
@@ -44938,8 +44937,7 @@ export type Database = {
           customFields?: Json | null
           fromDate?: string | null
           id?: string
-          itemId?: string | null
-          serviceType: Database["public"]["Enums"]["serviceType"]
+          serviceType?: Database["public"]["Enums"]["serviceType"]
           tags?: string[] | null
           toDate?: string | null
           updatedAt?: string | null
@@ -44954,7 +44952,6 @@ export type Database = {
           customFields?: Json | null
           fromDate?: string | null
           id?: string
-          itemId?: string | null
           serviceType?: Database["public"]["Enums"]["serviceType"]
           tags?: string[] | null
           toDate?: string | null
@@ -45059,48 +45056,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "service_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "consumables"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "service_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "item"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "service_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "materials"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "service_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "parts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "service_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "services"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "service_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "tools"
-            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "service_updatedBy_fkey"
@@ -66474,6 +66429,13 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
+            columns: ["invoiceCountryCode"]
+            isOneToOne: false
+            referencedRelation: "country"
+            referencedColumns: ["alpha2"]
+          },
+          {
+            foreignKeyName: "address_countryCode_fkey"
             columns: ["shipmentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
@@ -66482,13 +66444,6 @@ export type Database = {
           {
             foreignKeyName: "address_countryCode_fkey"
             columns: ["customerCountryCode"]
-            isOneToOne: false
-            referencedRelation: "country"
-            referencedColumns: ["alpha2"]
-          },
-          {
-            foreignKeyName: "address_countryCode_fkey"
-            columns: ["invoiceCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -72053,6 +72008,42 @@ export type Database = {
           thumbnailPath: string
           unitOfMeasureCode: string
           unitPrice: number
+        }[]
+      }
+      get_service_details: {
+        Args: { item_id: string }
+        Returns: {
+          active: boolean
+          assignee: string
+          companyId: string
+          createdAt: string
+          createdBy: string
+          customFields: Json
+          defaultMethodType: Database["public"]["Enums"]["methodType"]
+          description: string
+          id: string
+          itemPostingGroupId: string
+          itemTrackingType: Database["public"]["Enums"]["itemTrackingType"]
+          modelId: string
+          modelName: string
+          modelPath: string
+          modelSize: number
+          mpn: string
+          name: string
+          notes: Json
+          readableId: string
+          readableIdWithRevision: string
+          replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
+          requiresInspection: boolean
+          revision: string
+          revisions: Json
+          sourcingType: Database["public"]["Enums"]["sourcingType"]
+          tags: string[]
+          thumbnailPath: string
+          unitOfMeasure: string
+          unitOfMeasureCode: string
+          updatedAt: string
+          updatedBy: string
         }[]
       }
       get_supplier_ids_with_supplier_permission: {
