@@ -1,4 +1,10 @@
-import { cn, useDisclosure, useShortcutKeys, VStack } from "@carbon/react";
+import {
+  cn,
+  ShortcutKey,
+  useDisclosure,
+  useShortcutKeys,
+  VStack
+} from "@carbon/react";
 import {
   closestCenter,
   DndContext,
@@ -242,6 +248,16 @@ const NavigationSearchButton = ({ isOpen = false }: { isOpen?: boolean }) => {
         >
           <Trans>Search</Trans>
         </span>
+        {/* ⌘K hint — only meaningful when expanded (the shortcut itself is wired
+            via useShortcutKeys above, same as the old topbar search). */}
+        <ShortcutKey
+          shortcut={searchShortcut}
+          variant="small"
+          className={cn(
+            "pointer-events-none absolute right-3 top-1/2 mx-0 -translate-y-1/2",
+            "opacity-0 transition-opacity duration-100 group-data-[state=expanded]:opacity-100"
+          )}
+        />
       </button>
       <SearchModal />
     </>

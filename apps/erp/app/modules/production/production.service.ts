@@ -5755,14 +5755,11 @@ export async function syncAssemblyInstructionToOperation(
   return db.transaction().execute(async (trx) => {
     const instruction = await trx
       .selectFrom("assemblyInstruction")
-      .select(["id", "status", "itemId", "modelUploadId"])
+      .select(["id", "itemId", "modelUploadId"])
       .where("id", "=", assemblyInstructionId)
       .where("companyId", "=", companyId)
       .executeTakeFirst();
     if (!instruction) throw new Error("Assembly instruction not found");
-    if (instruction.status !== "Published") {
-      throw new Error("Only a Published assembly instruction can be synced");
-    }
 
     const sourceSteps = await trx
       .selectFrom("assemblyInstructionStep")

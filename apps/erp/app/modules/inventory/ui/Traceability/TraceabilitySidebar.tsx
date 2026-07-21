@@ -145,7 +145,7 @@ export function TraceabilitySidebar({
   const hasMultiSelect = selectedIds && selectedIds.length > 1;
 
   return (
-    <aside className="w-[426px] flex-shrink-0 bg-sidebar h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border text-sm">
+    <aside className="w-[426px] flex-shrink-0 bg-card h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border text-sm">
       {hasMultiSelect && (
         <div className="flex items-center justify-between gap-2 bg-muted/40 mx-3 mt-3 rounded-md px-2 py-1">
           <div className="flex items-center gap-2 min-w-0">
