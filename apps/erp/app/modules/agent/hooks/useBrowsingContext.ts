@@ -1,16 +1,5 @@
 import { useLocation, useParams } from "react-router";
-
-/**
- * Page/record context the agent is given each turn. Only identifiers + a human label
- * are sent — never full record data; the agent fetches details on demand via read tools.
- */
-export type BrowsingContext = {
-  route: string;
-  object?: string;
-  id?: string;
-  type?: "record" | "list";
-  label: string;
-};
+import type { BrowsingContext } from "../types";
 
 function titleCase(value: string): string {
   return value

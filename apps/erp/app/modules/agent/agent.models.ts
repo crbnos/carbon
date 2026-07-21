@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { zfd } from "zod-form-data";
+import type { BrowsingContext } from "./types";
 
 export const browsingContext = z.object({
   route: z.string(),
@@ -7,8 +8,7 @@ export const browsingContext = z.object({
   id: z.string().optional(),
   type: z.enum(["record", "list"]).optional(),
   label: z.string()
-});
-export type BrowsingContext = z.infer<typeof browsingContext>;
+}) satisfies z.ZodType<BrowsingContext>;
 
 export const chatRequest = z.object({
   threadId: z.string().optional(),

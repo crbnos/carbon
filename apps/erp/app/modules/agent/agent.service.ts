@@ -13,10 +13,10 @@ import {
   type UIMessage
 } from "ai";
 import { isEphemeralTool, isUiBlockTool } from "./agent.blocks";
-import type { BrowsingContext } from "./agent.models";
 import { buildSystemPrompt } from "./agent.prompt";
 import { anthropic } from "./agent.provider";
 import { createAgentTools } from "./agent.tools";
+import type { BrowsingContext } from "./types";
 
 const MAX_STEPS = 20;
 
