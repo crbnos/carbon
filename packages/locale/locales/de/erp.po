@@ -1814,10 +1814,10 @@ msgid "Bucket"
 msgstr "Bucket"
 
 msgid "Budget vs Actual"
-msgstr ""
+msgstr "Budget vs. Ist"
 
 msgid "Budgets"
-msgstr ""
+msgstr "Budgets"
 
 msgid "Buffer stock the demand-based policy holds back to absorb consumption spikes within the accumulation period."
 msgstr "Pufferlagerbestand, den die nachfragbasierte Richtlinie während des Ansammlungszeitraums zurückhält, um Verbrauchsspitzen zu absorbieren."
