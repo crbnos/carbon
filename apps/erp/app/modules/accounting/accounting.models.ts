@@ -751,3 +751,113 @@ export const fixedAssetUsageLogValidator = z.object({
 export const fixedAssetDisposalValidator = z.object({
   disposalDate: z.string().min(1, { message: "Disposal date is required" })
 });
+
+// -- Integration Surface (v1 API) Models --
+// These validate JSON request bodies / query params (not FormData), so they use
+// plain zod rather than zfd. See .ai/specs/2026-07-04-integration-surface.md.
+
+// Webhook topic catalog (v1). Grouped by the table whose event feeds them.
+export const webhookTopics = [
+  "journal_entry.posted",
+  "journal_entry.reversed",
+  "period.locked",
+  "period.closed",
+  "period.reopened",
+  "approval.decided"
+] as const;
+
+export type WebhookTopic = (typeof webhookTopics)[number];
+
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+export const webhookRegistrationValidator = z.object({
+  // HTTPS-only: webhook payloads carry financial identifiers.
+  url: z
+    .string()
+    .url({ message: "A valid URL is required" })
+    .refine((u) => u.startsWith("https://"), {
+      message: "Webhook URL must use https"
+    }),
+  topics: z
+    .array(z.enum(webhookTopics))
+    .min(1, { message: "At least one topic is required" }),
+  description: z.string().optional()
+});
+
+export type WebhookRegistrationInput = z.infer<
+  typeof webhookRegistrationValidator
+>;
+
+// Trial-balance query params. `dimension` and `groupBy` are accepted here for
+// forward-compatibility but rejected at the route until the record-integrity
+// book/dimension model lands.
+export const trialBalanceQueryValidator = z
+  .object({
+    periodId: z.string().optional(),
+    startDate: z
+      .string()
+      .regex(ISO_DATE, { message: "startDate must be ISO (YYYY-MM-DD)" })
+      .optional(),
+    endDate: z
+      .string()
+      .regex(ISO_DATE, { message: "endDate must be ISO (YYYY-MM-DD)" })
+      .optional(),
+    bookId: z.string().optional(),
+    dimension: z.array(z.string()).optional(),
+    groupBy: z.string().optional(),
+    cursor: z.string().optional(),
+    limit: z.coerce.number().int().min(1).max(1000).default(500)
+  })
+  .refine((q) => q.periodId || (q.startDate && q.endDate), {
+    message: "Provide periodId, or both startDate and endDate"
+  });
+
+export type TrialBalanceQuery = z.infer<typeof trialBalanceQueryValidator>;
+
+// One imported journal line. Addresses accounts by number (the stable key every
+// bolt-on stores); dimensions map dimension key -> value key.
+export const journalEntryImportLineValidator = z
+  .object({
+    accountNumber: z.string().min(1, { message: "accountNumber is required" }),
+    description: z.string().optional(),
+    debit: z.number().min(0).default(0),
+    credit: z.number().min(0).default(0),
+    dimensions: z.record(z.string()).optional()
+  })
+  .refine((l) => !(l.debit > 0 && l.credit > 0), {
+    message: "A line cannot have both debit and credit",
+    path: ["credit"]
+  })
+  .refine((l) => l.debit > 0 || l.credit > 0, {
+    message: "Either debit or credit is required",
+    path: ["debit"]
+  });
+
+export const journalEntryImportEntryValidator = z.object({
+  externalId: z.string().optional(),
+  postingDate: z
+    .string()
+    .regex(ISO_DATE, { message: "postingDate must be ISO (YYYY-MM-DD)" }),
+  description: z.string().optional(),
+  bookId: z.string().nullish(),
+  autoSubmit: z.boolean().default(true),
+  lines: z
+    .array(journalEntryImportLineValidator)
+    .min(1, { message: "At least one line is required" })
+    .max(500, { message: "An entry cannot exceed 500 lines" })
+});
+
+export type JournalEntryImportEntry = z.infer<
+  typeof journalEntryImportEntryValidator
+>;
+
+export const journalEntryImportValidator = z.object({
+  entries: z
+    .array(journalEntryImportEntryValidator)
+    .min(1, { message: "At least one entry is required" })
+    .max(100, { message: "A request cannot exceed 100 entries" })
+});
+
+export type JournalEntryImportInput = z.infer<
+  typeof journalEntryImportValidator
+>;

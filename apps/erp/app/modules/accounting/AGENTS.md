@@ -88,6 +88,37 @@ pnpm --filter @carbon/erp test -- --testPathPattern=accounting
 import { getCurrencyByCode, getPaymentTermsList, getDefaultAccounts } from "~/modules/accounting";
 ```
 
+## Integration Surface (v1 API)
+
+External REST surface for accounting integrations (spec:
+`.ai/specs/2026-07-04-integration-surface.md`, tracking #1059). Phase 1 (built):
+
+- `accounting.integration.ts` — pure, DB-independent helpers (unit-tested in
+  `accounting.integration.test.ts`): `hashRequestBody` (idempotency fingerprint,
+  order-independent), `encodeCursor`/`decodeCursor` + `paginateByAccountNumber`
+  (keyset pagination over `accountNumber`), `validateImportEntryBalance`
+  (balance-to-the-cent), `toTrialBalanceRow` (stable-identifier envelope row).
+- `accounting.models.ts` — JSON-body zod validators (plain zod, not zfd):
+  `journalEntryImportValidator`, `trialBalanceQueryValidator`,
+  `webhookRegistrationValidator`, `webhookTopics` catalog.
+- `openapi.ts` — hand-maintained OpenAPI 3.1 document, served at
+  `/api/v1/openapi.json` (`routes/api+/v1+/openapi[.]json.ts`, rate-limited).
+- `routes/api+/v1+/accounting.trial-balance.ts` — `accounting_view`-scoped TB
+  over `getTrialBalance`; `bookId`/`dimension`/`groupBy` return 400 (Phase 2).
+- Webhooks: curated + HMAC-signed envelopes live in
+  `packages/jobs/src/inngest/functions/events/webhook-signing.ts`; the handler
+  branches on `config.registrationId` (legacy raw-diff path preserved).
+- Migration `20260721143512_integration-surface.sql` adds `apiIdempotencyKey`
+  (service-role-only RLS), `webhookRegistration` (+ secret-free
+  `webhookRegistrations` view), `journal.externalId`/`sourceSystem`/
+  `sourceApiKeyId`, and event triggers on `journal`/`accountingPeriod`/
+  `approvalRequest`.
+
+Phase 2 (deferred — need a landed sibling spec + regenerated DB types): the JE
+import route/`importJournalEntries` service (needs the document-approvals
+`journalEntry` gate), the JE population export (needs record-integrity
+`journal.bookId` + export columns), and webhook registration CRUD routes.
+
 ## Related Modules
 
 - **purchasing** — purchase invoices post to AP; receipts create inventory GL entries
