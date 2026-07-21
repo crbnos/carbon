@@ -5382,9 +5382,6 @@ msgstr "ड्राइंग से सुझाए गए फीचर मा�
 msgid "Features"
 msgstr "विशेषताएं"
 
-msgid "Feedback"
-msgstr "प्रतिक्रिया"
-
 msgid "Fees"
 msgstr "शुल्क"
 
@@ -6098,9 +6095,6 @@ msgstr "मैं अभी भी काम कर रहा हूँ"
 
 msgid "ID"
 msgstr "आईडी"
-
-msgid "Ideas, suggestions or problems with this page?"
-msgstr "इस पृष्ठ के बारे में विचार, सुझाव या समस्याएं?"
 
 msgid "Ideas, suggestions or problems?"
 msgstr "विचार, सुझाव या समस्याएं?"

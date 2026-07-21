@@ -5382,9 +5382,6 @@ msgstr "도면에서 제안된 기능 값"
 msgid "Features"
 msgstr "기능"
 
-msgid "Feedback"
-msgstr "피드백"
-
 msgid "Fees"
 msgstr "수수료"
 
@@ -6098,9 +6095,6 @@ msgstr "아직 작업 중입니다"
 
 msgid "ID"
 msgstr "ID"
-
-msgid "Ideas, suggestions or problems with this page?"
-msgstr "이 페이지에 대한 아이디어, 제안, 또는 문제가 있으신가요?"
 
 msgid "Ideas, suggestions or problems?"
 msgstr "아이디어, 제안, 또는 문제가 있으신가요?"

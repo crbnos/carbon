@@ -5382,9 +5382,6 @@ msgstr "Valeurs de caractéristiques suggérées à partir du dessin"
 msgid "Features"
 msgstr "Fonctionnalités"
 
-msgid "Feedback"
-msgstr "Commentaires"
-
 msgid "Fees"
 msgstr "Frais"
 
@@ -6098,9 +6095,6 @@ msgstr "Je travaille toujours"
 
 msgid "ID"
 msgstr "ID"
-
-msgid "Ideas, suggestions or problems with this page?"
-msgstr "Des idées, des suggestions ou des problèmes avec cette page ?"
 
 msgid "Ideas, suggestions or problems?"
 msgstr "Des idées, des suggestions ou des problèmes ?"

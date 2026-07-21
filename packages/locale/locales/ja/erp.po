@@ -5382,9 +5382,6 @@ msgstr "図面から提案された機能値"
 msgid "Features"
 msgstr "機能"
 
-msgid "Feedback"
-msgstr "フィードバック"
-
 msgid "Fees"
 msgstr "手数料"
 
@@ -6098,9 +6095,6 @@ msgstr "まだ働いています"
 
 msgid "ID"
 msgstr "ID"
-
-msgid "Ideas, suggestions or problems with this page?"
-msgstr "このページについてのアイデア、提案、または問題はありますか？"
 
 msgid "Ideas, suggestions or problems?"
 msgstr "アイデア、提案、または問題はありますか？"

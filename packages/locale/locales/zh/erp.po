@@ -5382,9 +5382,6 @@ msgstr "从绘图中建议的特征值"
 msgid "Features"
 msgstr "功能"
 
-msgid "Feedback"
-msgstr "反馈"
-
 msgid "Fees"
 msgstr "费用"
 
@@ -6098,9 +6095,6 @@ msgstr "我仍在工作"
 
 msgid "ID"
 msgstr "ID"
-
-msgid "Ideas, suggestions or problems with this page?"
-msgstr "有什么想法、建议或问题吗？"
 
 msgid "Ideas, suggestions or problems?"
 msgstr "想法、建议或问题？"

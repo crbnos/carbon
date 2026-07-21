@@ -5382,9 +5382,6 @@ msgstr "Valores de recurso sugeridos do desenho"
 msgid "Features"
 msgstr "Recursos"
 
-msgid "Feedback"
-msgstr "Comentários"
-
 msgid "Fees"
 msgstr "Taxas"
 
@@ -6098,9 +6095,6 @@ msgstr "Ainda estou trabalhando"
 
 msgid "ID"
 msgstr "ID"
-
-msgid "Ideas, suggestions or problems with this page?"
-msgstr "Ideias, sugestões ou problemas com esta página?"
 
 msgid "Ideas, suggestions or problems?"
 msgstr "Ideias, sugestões ou problemas?"

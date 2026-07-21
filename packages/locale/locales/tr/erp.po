@@ -5382,9 +5382,6 @@ msgstr "Çizimden önerilen özellik değerleri"
 msgid "Features"
 msgstr "Özellikler"
 
-msgid "Feedback"
-msgstr "Geri bildirim"
-
 msgid "Fees"
 msgstr "Ücretler"
 
@@ -6098,9 +6095,6 @@ msgstr "Hala Çalışıyorum"
 
 msgid "ID"
 msgstr "Kimlik"
-
-msgid "Ideas, suggestions or problems with this page?"
-msgstr "Bu sayfa hakkında fikirleriniz, önerileriniz veya sorunlarınız mı var?"
 
 msgid "Ideas, suggestions or problems?"
 msgstr "Fikirler, öneriler veya sorunlar?"

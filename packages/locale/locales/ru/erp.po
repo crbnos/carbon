@@ -5382,9 +5382,6 @@ msgstr "Значения функции предложены на основе �
 msgid "Features"
 msgstr "Функции"
 
-msgid "Feedback"
-msgstr "Обратная связь"
-
 msgid "Fees"
 msgstr "Сборы"
 
@@ -6098,9 +6095,6 @@ msgstr "Я всё ещё работаю"
 
 msgid "ID"
 msgstr "ID"
-
-msgid "Ideas, suggestions or problems with this page?"
-msgstr "Идеи, предложения или проблемы на этой странице?"
 
 msgid "Ideas, suggestions or problems?"
 msgstr "Идеи, предложения или проблемы?"

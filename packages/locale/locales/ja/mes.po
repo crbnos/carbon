@@ -96,9 +96,6 @@ msgstr "自分に割当"
 msgid "Assignee"
 msgstr "担当者"
 
-msgid "Attach File"
-msgstr "ファイルを添付"
-
 msgid "Authentication Error"
 msgstr "認証エラー"
 
@@ -359,9 +356,6 @@ msgstr "ファイルのアップロードに失敗しました: {0}"
 msgid "Failed to upload image"
 msgstr "画像のアップロードに失敗しました"
 
-msgid "Feedback"
-msgstr "フィードバック"
-
 msgid "File size exceeds 10MB limit"
 msgstr "ファイルサイズが10MBの制限を超えています"
 
@@ -390,9 +384,6 @@ msgstr "退勤打刻を忘れましたか？"
 msgid "Go back to operation"
 msgstr "操作に戻る"
 
-msgid "Have a technical issue? Contact <0>Carbon Support.</0>"
-msgstr "技術的な問題がありますか？<0>Carbonサポート</0>にお問い合わせください。"
-
 msgid "How many were actually picked?"
 msgstr "実際にはいくつ選ばれましたか？"
 
@@ -401,9 +392,6 @@ msgstr "理解した上で払出なしで完了します"
 
 msgid "I'm Still Working"
 msgstr "まだ作業中です"
-
-msgid "Ideas, suggestions or problems with this page?"
-msgstr "このページについてのアイデア、提案、または問題はありますか？"
 
 msgid "Ideas, suggestions or problems?"
 msgstr "アイデア、提案、または問題はありますか？"

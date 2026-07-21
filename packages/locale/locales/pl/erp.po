@@ -5382,9 +5382,6 @@ msgstr "Wartości funkcji sugerowane z rysunku"
 msgid "Features"
 msgstr "Funkcje"
 
-msgid "Feedback"
-msgstr "Opinia"
-
 msgid "Fees"
 msgstr "Opłaty"
 
@@ -6098,9 +6095,6 @@ msgstr "Wciąż pracuję"
 
 msgid "ID"
 msgstr "ID"
-
-msgid "Ideas, suggestions or problems with this page?"
-msgstr "Pomysły, sugestie lub problemy na tej stronie?"
 
 msgid "Ideas, suggestions or problems?"
 msgstr "Pomysly, sugestie lub problemy?"

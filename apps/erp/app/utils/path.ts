@@ -871,7 +871,6 @@ export const path = {
     failureMode: (id: string) =>
       generatePath(`${x}/resources/failure-modes/${id}`),
     failureModes: `${x}/resources/failure-modes`,
-    feedback: `${x}/feedback`,
     file: {
       cadModel: (id: string) => generatePath(`${file}/model/${id}`),
       jobTraveler: (id: string) => generatePath(`${file}/traveler/${id}.pdf`),

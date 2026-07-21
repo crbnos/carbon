@@ -96,9 +96,6 @@ msgstr "Assigned to Me"
 msgid "Assignee"
 msgstr "Assignee"
 
-msgid "Attach File"
-msgstr "Attach File"
-
 msgid "Authentication Error"
 msgstr "Authentication Error"
 
@@ -359,9 +356,6 @@ msgstr "Failed to upload file: {0}"
 msgid "Failed to upload image"
 msgstr "Failed to upload image"
 
-msgid "Feedback"
-msgstr "Feedback"
-
 msgid "File size exceeds 10MB limit"
 msgstr "File size exceeds 10MB limit"
 
@@ -390,9 +384,6 @@ msgstr "Forgot to Clock Out?"
 msgid "Go back to operation"
 msgstr "Go back to operation"
 
-msgid "Have a technical issue? Contact <0>Carbon Support.</0>"
-msgstr "Have a technical issue? Contact <0>Carbon Support.</0>"
-
 msgid "How many were actually picked?"
 msgstr "How many were actually picked?"
 
@@ -401,9 +392,6 @@ msgstr "I understand and want to complete without issuing"
 
 msgid "I'm Still Working"
 msgstr "I'm Still Working"
-
-msgid "Ideas, suggestions or problems with this page?"
-msgstr "Ideas, suggestions or problems with this page?"
 
 msgid "Ideas, suggestions or problems?"
 msgstr "Ideas, suggestions or problems?"
