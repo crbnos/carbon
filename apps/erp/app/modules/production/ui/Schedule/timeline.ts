@@ -432,6 +432,17 @@ export function buildJobTimeline(input: {
       ? Math.max(span.start - Date.parse(earliestStartAt), 0)
       : 0;
 
+    // Who is booked by name for the attended window(s) — in booking order,
+    // deduped (a shift relay books the same op to two people back to back)
+    const operatorNames = [
+      ...new Set(
+        (reservationsByOperation.get(op.id) ?? [])
+          .filter((r) => r.resourceKind === "Employee")
+          .sort((a, b) => Date.parse(a.startAt) - Date.parse(b.startAt))
+          .map((r) => r.resourceName)
+      )
+    ];
+
     const opEvent: GanttEvent = {
       id: op.id,
       parentId: parent.id,
@@ -486,6 +497,7 @@ export function buildJobTimeline(input: {
       status: op.status,
       workCenterName: op.workCenterName,
       assigneeName: op.assigneeName,
+      employeeName: operatorNames.length > 0 ? operatorNames.join(", ") : null,
       conflictReason: op.hasConflict ? op.conflictReason : null,
       scheduleNote,
       waitMs,

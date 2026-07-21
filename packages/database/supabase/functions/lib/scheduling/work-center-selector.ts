@@ -64,6 +64,13 @@ export type FiniteSchedulingContext = {
   now: Date;
   horizonDays: number;
   /**
+   * End of the precomputed availability windows (work-center + shift). The
+   * per-op walk must not search past this: beyond it there are no windows,
+   * so a feasible far-future placement would read as a spurious
+   * "no capacity" conflict.
+   */
+  windowsEnd: Date;
+  /**
    * IANA time zone of the job's location. Lateness is judged and message
    * dates are worded in the FACTORY's calendar day, not UTC's.
    */
@@ -351,8 +358,13 @@ export class WorkCenterSelector {
         }
       }
       const earliestStart = new Date(earliestMs);
+      // Cap at the precomputed windows: walking past them finds nothing and
+      // would flag feasible far-future ops as capacity conflicts
       const horizonEnd = new Date(
-        earliestMs + ctx.horizonDays * 24 * 3_600_000
+        Math.min(
+          earliestMs + ctx.horizonDays * 24 * 3_600_000,
+          ctx.windowsEnd.getTime()
+        )
       );
 
       // The operation's requirement comes from its PROCESS (single ability)

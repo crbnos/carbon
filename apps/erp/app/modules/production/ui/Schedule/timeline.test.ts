@@ -570,6 +570,56 @@ describe("buildJobTimeline", () => {
     expect(result.detailsById["res-emp"].resourceKind).toBe("Employee");
   });
 
+  it("lists booked operators on the operation detail, in booking order, deduped", () => {
+    const result = buildJobTimeline({
+      job,
+      operations: [op({})],
+      reservations: [
+        reservation({}),
+        // relay: second person's stretch listed first in input — order must
+        // follow startAt, not input order
+        reservation({
+          id: "res-emp-2",
+          resourceKind: "Employee",
+          resourceName: "Night Nick",
+          startAt: "2026-07-10T16:00:00.000Z",
+          endAt: "2026-07-10T21:00:00.000Z"
+        }),
+        reservation({
+          id: "res-emp-1",
+          resourceKind: "Employee",
+          resourceName: "Day Dana",
+          startAt: "2026-07-10T08:00:00.000Z",
+          endAt: "2026-07-10T16:00:00.000Z"
+        }),
+        // pause + resume next day: same person twice → deduped
+        reservation({
+          id: "res-emp-3",
+          resourceKind: "Employee",
+          resourceName: "Night Nick",
+          startAt: "2026-07-11T16:00:00.000Z",
+          endAt: "2026-07-11T18:00:00.000Z"
+        })
+      ],
+      productionEvents: []
+    });
+
+    expect(result.detailsById["op-1"].employeeName).toBe(
+      "Day Dana, Night Nick"
+    );
+  });
+
+  it("leaves the operation detail employeeName null when nobody is booked", () => {
+    const result = buildJobTimeline({
+      job,
+      operations: [op({})],
+      reservations: [reservation({})],
+      productionEvents: []
+    });
+
+    expect(result.detailsById["op-1"].employeeName).toBeNull();
+  });
+
   it("renders open production events up to now as partial, with person accessory", () => {
     const now = new Date("2026-07-10T12:00:00.000Z");
     const events: TimelineProductionEvent[] = [

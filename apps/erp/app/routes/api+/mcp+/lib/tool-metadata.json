@@ -1,5 +1,5 @@
 {
-  "generated": "2026-07-16T10:37:31.949Z",
+  "generated": "2026-07-21T14:25:44.798Z",
   "totalTools": 1344,
   "modules": 15,
   "tools": [
@@ -15480,7 +15480,7 @@
       "description": "update employee job",
       "paramCount": 2,
       "serviceParams": [
-        "client",
+        "db",
         "employeeId",
         "employeeJob"
       ],

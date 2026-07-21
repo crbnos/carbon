@@ -1,5 +1,20 @@
 import type { Database } from "../types.ts";
 
+/**
+ * Job statuses whose reservations hold finite capacity. Mirrors
+ * `activeJobStatuses` in packages/database/src/utils.ts (not importable
+ * here — Deno can't resolve that module's npm type imports); `satisfies`
+ * binds both to the same enum so drift is a compile error. Draft/Planned
+ * jobs can carry reservations (method edits trigger a scheduling run) but
+ * are invisible on the boards and skipped by replan waves — capacity
+ * commitment starts at release.
+ */
+export const capacityHoldingJobStatuses = [
+  "Ready",
+  "In Progress",
+  "Paused",
+] as const satisfies readonly Database["public"]["Enums"]["jobStatus"][];
+
 export type DeadlineType = Database["public"]["Enums"]["deadlineType"];
 export type FactorUnit = Database["public"]["Enums"]["factor"];
 export type MethodOperationOrder =
@@ -51,6 +66,9 @@ export type BaseOperation = {
   status?: JobOperationStatus;
   order?: number;
   workCenterId?: string | null;
+  /** Row creation time — FIFO dispatch key. Present on DB-sourced ops
+   * (getOperations selects all columns); absent on synthetic ops. */
+  createdAt?: string | Date | null;
 };
 
 export type Operation = Omit<

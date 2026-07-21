@@ -110,11 +110,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // for assignees and timecards
   const workCenterIds = new Set<string>();
   const abilityIds = new Set<string>();
+  const userIds = new Set<string>();
   for (const r of reservations.data ?? []) {
     if (r.resourceKind === "WorkCenter") workCenterIds.add(r.resourceId);
+    else if (r.resourceKind === "Employee") userIds.add(r.resourceId);
     else abilityIds.add(r.resourceId);
   }
-  const userIds = new Set<string>();
   for (const o of operations.data ?? []) {
     if (o.assignee) userIds.add(o.assignee);
   }
@@ -211,7 +212,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
       resourceName:
         r.resourceKind === "WorkCenter"
           ? (workCenterNames.get(r.resourceId) ?? "Work Center")
-          : (abilityNames.get(r.resourceId) ?? "Operator Pool"),
+          : r.resourceKind === "Employee"
+            ? (userNames.get(r.resourceId) ?? "Operator")
+            : (abilityNames.get(r.resourceId) ?? "Operator Pool"),
       startAt: r.startAt,
       endAt: r.endAt,
       earliestStartAt: r.earliestStartAt,

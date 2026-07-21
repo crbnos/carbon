@@ -4,7 +4,12 @@ import type { DB } from "../database.ts";
 import { getJobMethodTree, type JobMethodTreeItem } from "../methods.ts";
 import type { Database } from "../types.ts";
 import { toIsoDate } from "./date-utils.ts";
-import type { BaseOperation, Job, JobOperationDependency } from "./types.ts";
+import {
+  capacityHoldingJobStatuses,
+  type BaseOperation,
+  type Job,
+  type JobOperationDependency,
+} from "./types.ts";
 
 export type JobMaterialWithMakeMethod = {
   jobMaterialMakeMethodId: string | null;
@@ -44,6 +49,16 @@ export type CrossJobOperation = {
   deadlineType: Database["public"]["Enums"]["deadlineType"] | null;
   jobPriority: number | null;
   workCenterId: string | null;
+  // Dispatch-rule inputs: FIFO needs createdAt; SPT/WSPT/CR/MinSlack need
+  // the time fields to derive durationHours
+  createdAt: Date | string | null;
+  setupTime: number | null;
+  setupUnit: Database["public"]["Enums"]["factor"] | null;
+  laborTime: number | null;
+  laborUnit: Database["public"]["Enums"]["factor"] | null;
+  machineTime: number | null;
+  machineUnit: Database["public"]["Enums"]["factor"] | null;
+  operationQuantity: number | null;
 };
 
 export type LiveReservation = {
@@ -370,7 +385,16 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
         "j.deadlineType",
         "j.priority as jobPriority",
         "jo.workCenterId",
+        "jo.createdAt",
+        "jo.setupTime",
+        "jo.setupUnit",
+        "jo.laborTime",
+        "jo.laborUnit",
+        "jo.machineTime",
+        "jo.machineUnit",
+        "jo.operationQuantity",
       ])
+      .where("jo.companyId", "=", this.companyId)
       .where("jo.workCenterId", "in", workCenterIds)
       .where("jo.status", "not in", ["Done", "Canceled"])
       // Ops can outlive their job's lifecycle (cancelling a job does not
@@ -398,10 +422,11 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
       .where("cr.scenarioId", "is", null)
       .where("cr.jobId", "!=", excludeJobId)
       .where("cr.endAt", ">", fromDate.toISOString())
-      // Reservations are only deleted when their job is rescheduled, so a
-      // cancelled/completed/closed job's rows linger — they must not hold
-      // capacity against live jobs
-      .where("j.status", "not in", ["Cancelled", "Completed", "Closed"])
+      // Reservations are only deleted when their job is rescheduled, so
+      // rows from jobs outside these statuses linger (terminal jobs) or
+      // pre-date release (Draft/Planned) — neither may hold capacity
+      // against live jobs
+      .where("j.status", "in", [...capacityHoldingJobStatuses])
       .execute();
 
     return rows.map((r) => ({

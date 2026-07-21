@@ -8,6 +8,7 @@ import type {
   LoaderFunctionArgs
 } from "react-router";
 import { redirect, useLoaderData, useNavigate } from "react-router";
+import { notifyScheduleInputsChanged } from "~/modules/production";
 import {
   ensureProcessAbility,
   getProcess,
@@ -58,6 +59,10 @@ export async function action({ request }: ActionFunctionArgs) {
   const { id, ...d } = validation.data;
   if (!id) throw notFound("Process ID was not found");
 
+  const existingProcess = await getProcess(client, id);
+  const previouslyRequiredAbility =
+    existingProcess.data?.requiresAbility ?? false;
+
   const createProcess = await upsertProcess(client, {
     id,
     ...d,
@@ -76,6 +81,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
+  let abilityId: string | undefined;
   if (d.requiresAbility) {
     const abilityResult = await ensureProcessAbility(client, {
       processId: id,
@@ -84,6 +90,14 @@ export async function action({ request }: ActionFunctionArgs) {
       userId
     });
     if (abilityResult.error) {
+      // Don't leave an unschedulable process behind: requiresAbility=true
+      // without its backing ability gates scheduling on a qualification
+      // nobody can hold
+      await client
+        .from("process")
+        .update({ requiresAbility: previouslyRequiredAbility })
+        .eq("id", id)
+        .eq("companyId", companyId);
       throw redirect(
         path.to.processes,
         await flash(
@@ -92,6 +106,27 @@ export async function action({ request }: ActionFunctionArgs) {
         )
       );
     }
+    abilityId = abilityResult.data?.id;
+  } else if (previouslyRequiredAbility) {
+    const ability = await client
+      .from("ability")
+      .select("id")
+      .eq("processId", id)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    abilityId = ability.data?.id;
+  }
+
+  const requiresAbility = d.requiresAbility ?? false;
+  if (requiresAbility !== previouslyRequiredAbility && abilityId) {
+    await notifyScheduleInputsChanged(
+      companyId,
+      "ability",
+      requiresAbility
+        ? `Process "${d.name}" now requires an ability`
+        : `Process "${d.name}" no longer requires an ability`,
+      abilityId
+    );
   }
 
   return modal ? createProcess : redirect(path.to.processes);

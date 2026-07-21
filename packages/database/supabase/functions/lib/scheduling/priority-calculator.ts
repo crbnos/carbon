@@ -237,6 +237,9 @@ export function toOperationWithJobInfo(
     jobPriority,
     workCenterId: operation.workCenterId ?? null,
     durationHours: operation.durationHours ?? null,
+    createdAt: operation.createdAt
+      ? new Date(operation.createdAt).toISOString()
+      : null,
   };
 }
 

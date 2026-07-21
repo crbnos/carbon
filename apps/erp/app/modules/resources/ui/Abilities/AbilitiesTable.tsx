@@ -59,11 +59,17 @@ const AbilitiesTable = memo(({ data, count }: AbilitiesTableProps) => {
       {
         id: "qualifiedEmployees",
         header: t`Qualified Employees`,
-        cell: ({ row }) => (
-          <span className="tabular-nums">
-            {(row.original.employeeAbility ?? []).length}
-          </span>
-        ),
+        cell: ({ row }) => {
+          // Qualified = active (query-filtered) ∧ training completed ∧ not
+          // expired — counting assigned-but-untrained people here would
+          // overstate real capacity
+          const today = new Date().toISOString().slice(0, 10);
+          const qualified = (row.original.employeeAbility ?? []).filter(
+            (ea) =>
+              ea.trainingCompleted && (!ea.expiresAt || ea.expiresAt >= today)
+          ).length;
+          return <span className="tabular-nums">{qualified}</span>;
+        },
         meta: {
           icon: <LuUsers />
         }

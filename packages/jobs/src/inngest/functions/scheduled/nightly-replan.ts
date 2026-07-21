@@ -42,14 +42,19 @@ export const nightlyReplanFunction = inngest.createFunction(
     );
 
     if (companies.length > 0) {
+      // continuation: true — the stale jobs are already stamped, so the mark
+      // function must not run (a company-wide kind would re-stamp EVERY
+      // active job and turn one stale job into a full-company replan). The
+      // wave drains exactly the stamped set.
       await step.sendEvent(
         "fan-out-replan-waves",
         companies.map((companyId) => ({
           name: "carbon/schedule.inputs.changed" as const,
           data: {
             companyId,
-            kind: "location" as const,
-            reason: "Nightly replan (net change)"
+            kind: "reorder" as const,
+            reason: "Nightly replan (net change)",
+            continuation: true
           }
         }))
       );

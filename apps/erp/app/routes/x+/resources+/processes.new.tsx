@@ -62,6 +62,14 @@ export async function action({ request }: ActionFunctionArgs) {
       userId
     });
     if (abilityResult.error) {
+      // Don't leave an unschedulable process behind: requiresAbility=true
+      // without its backing ability gates scheduling on a qualification
+      // nobody can hold
+      await client
+        .from("process")
+        .update({ requiresAbility: false })
+        .eq("id", createProcess.data.id)
+        .eq("companyId", companyId);
       return modal
         ? abilityResult
         : redirect(

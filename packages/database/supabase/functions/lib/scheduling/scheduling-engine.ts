@@ -14,6 +14,7 @@ import {
   unionWindows,
 } from "./calendar-utils.ts";
 import { calculateOperationDates } from "./date-calculator.ts";
+import { calculateDurationHours } from "./duration-calculator.ts";
 import {
   buildOperationDependencies,
   dependenciesToRecords,
@@ -337,44 +338,45 @@ export class SchedulingEngine {
       .filter((op) => op.reworkId)
       .map((op) => op.id!);
 
-    let deleteQuery = this.db
-      .deleteFrom("jobOperationDependency")
-      .where("jobId", "=", this.jobId);
-
-    if (reworkOpIds.length > 0) {
-      deleteQuery = deleteQuery
-        .where("operationId", "not in", reworkOpIds)
-        .where("dependsOnId", "not in", reworkOpIds);
-    }
-
-    await deleteQuery.execute();
-
-    // Insert new dependencies
     const records = dependenciesToRecords(
       allDependencies,
       this.jobId,
       this.companyId
     );
 
-    if (records.length > 0) {
-      for (const record of records) {
-        await this.db
-          .insertInto("jobOperationDependency")
-          .values(record)
-          .execute();
-      }
-    }
+    // One transaction: a partial rebuild (edges deleted but not re-inserted)
+    // would corrupt the dependency graph for the next scheduling run
+    await this.db.transaction().execute(async (trx) => {
+      let deleteQuery = trx
+        .deleteFrom("jobOperationDependency")
+        .where("jobId", "=", this.jobId);
 
-    // Update operations with no dependencies to Ready status
-    for (const [opId, deps] of allDependencies) {
-      if (deps.size === 0) {
-        await this.db
-          .updateTable("jobOperation")
-          .set({ status: "Ready" })
-          .where("id", "=", opId)
+      if (reworkOpIds.length > 0) {
+        deleteQuery = deleteQuery
+          .where("operationId", "not in", reworkOpIds)
+          .where("dependsOnId", "not in", reworkOpIds);
+      }
+
+      await deleteQuery.execute();
+
+      if (records.length > 0) {
+        await trx
+          .insertInto("jobOperationDependency")
+          .values(records)
           .execute();
       }
-    }
+
+      // Update operations with no dependencies to Ready status
+      for (const [opId, deps] of allDependencies) {
+        if (deps.size === 0) {
+          await trx
+            .updateTable("jobOperation")
+            .set({ status: "Ready" })
+            .where("id", "=", opId)
+            .execute();
+        }
+      }
+    });
 
     // Store dependencies for date calculation (non-rework edges rebuilt above)
     this.dependencies = records.map((r) => ({
@@ -571,6 +573,7 @@ export class SchedulingEngine {
       dependencies: this.dependencies,
       now,
       horizonDays: SCHEDULING_HORIZON_DAYS,
+      windowsEnd: rangeEnd,
       timeZone: this.job?.timezone ?? "UTC",
       // Reschedules (incl. the nightly replan) keep operations on their
       // assigned work center — machines only get (re)picked at initial
@@ -685,6 +688,12 @@ export class SchedulingEngine {
     // Build a set of operation IDs from the database query
     const dbOpIds = new Set(allWcOps.map((op) => op.id).filter(Boolean));
 
+    // Dispatch-rule inputs: FIFO keys on createdAt, SPT/WSPT/CR/MinSlack on
+    // durationHours — without them every rule silently degrades to the
+    // legacy tie-break chain
+    const toIsoOrNull = (value: Date | string | null | undefined) =>
+      value ? new Date(value).toISOString() : null;
+
     // Start with operations from DB (other jobs at same work centers)
     const mergedOps: OperationWithJobInfo[] = allWcOps
       .filter((wcOp) => wcOp.id)
@@ -701,6 +710,8 @@ export class SchedulingEngine {
             deadlineType: wcOp.deadlineType ?? "No Deadline",
             jobPriority: wcOp.jobPriority ?? 99,
             workCenterId: scheduled.workCenterId ?? null,
+            durationHours: scheduled.durationHours ?? null,
+            createdAt: toIsoOrNull(wcOp.createdAt),
           };
         }
         // Operation from another job - use DB data
@@ -712,6 +723,18 @@ export class SchedulingEngine {
           deadlineType: wcOp.deadlineType ?? "No Deadline",
           jobPriority: wcOp.jobPriority ?? 99,
           workCenterId: wcOp.workCenterId ?? null,
+          durationHours: calculateDurationHours({
+            jobId: "",
+            processId: null,
+            setupTime: wcOp.setupTime ?? undefined,
+            setupUnit: wcOp.setupUnit ?? undefined,
+            laborTime: wcOp.laborTime ?? undefined,
+            laborUnit: wcOp.laborUnit ?? undefined,
+            machineTime: wcOp.machineTime ?? undefined,
+            machineUnit: wcOp.machineUnit ?? undefined,
+            operationQuantity: wcOp.operationQuantity,
+          }),
+          createdAt: toIsoOrNull(wcOp.createdAt),
         };
       });
 
@@ -727,6 +750,8 @@ export class SchedulingEngine {
           deadlineType: op.deadlineType ?? this.job?.deadlineType ?? "No Deadline",
           jobPriority: this.job?.priority ?? 99,
           workCenterId: op.workCenterId,
+          durationHours: op.durationHours ?? null,
+          createdAt: toIsoOrNull(op.createdAt),
         });
       }
     }
@@ -806,86 +831,93 @@ export class SchedulingEngine {
    * Persist all changes to the database
    */
   async persistChanges(): Promise<void> {
-    for (const op of this.scheduledOperations.values()) {
-      const originalOp = this.operations.find((o) => o.id === op.id);
-      const isManuallyScheduled = originalOp?.manuallyScheduled ?? false;
-
-      if (isManuallyScheduled) {
-        await this.db
-          .updateTable("jobOperation")
-          .set({
-            startDate: op.startDate,
-            priority: op.priority ?? undefined,
-            workCenterId: op.workCenterId,
-            hasConflict: op.hasConflict,
-            conflictReason: op.conflictReason,
-            updatedAt: new Date().toISOString(),
-            updatedBy: this.userId,
-          })
-          .where("id", "=", op.id)
-          .execute();
-      } else {
-        await this.db
-          .updateTable("jobOperation")
-          .set({
-            startDate: op.startDate,
-            dueDate: op.dueDate,
-            priority: op.priority ?? undefined,
-            workCenterId: op.workCenterId,
-            hasConflict: op.hasConflict,
-            conflictReason: op.conflictReason,
-            updatedAt: new Date().toISOString(),
-            updatedBy: this.userId,
-          })
-          .where("id", "=", op.id)
-          .execute();
-      }
-    }
-
-    // Rebuild this job's live capacity reservations from this run's
-    // placements (reservations are authoritative across jobs and runs)
-    await this.db
-      .deleteFrom("capacityReservation")
-      .where("jobId", "=", this.jobId)
-      .where("companyId", "=", this.companyId)
-      .where("scenarioId", "is", null)
-      .execute();
-
     // Zero-duration operations (all times = 0) place a start === end slot,
     // which occupies no capacity and violates the endAt > startAt check.
     const planned = (
       this.workCenterSelector?.getPlannedReservations() ?? []
     ).filter((p) => p.endAt.getTime() > p.startAt.getTime());
-    if (planned.length > 0) {
-      await this.db
-        .insertInto("capacityReservation")
-        .values(
-          planned.map((p) => ({
-            resourceKind: p.resourceKind,
-            resourceId: p.resourceId,
-            operationId: p.operationId,
-            jobId: this.jobId,
-            companyId: this.companyId,
-            startAt: p.startAt.toISOString(),
-            endAt: p.endAt.toISOString(),
-            earliestStartAt: p.earliestStartAt?.toISOString() ?? null,
-            scheduleNote: p.scheduleNote ?? null,
-            workHours: p.workHours ?? null,
-            createdBy: this.userId,
-          }))
-        )
-        .execute();
-    }
-    this.reservationsWritten = planned.length;
 
-    // Update job status if initial scheduling
-    if (this.mode === "initial") {
-      await this.db
-        .updateTable("job")
-        .set({ status: "Ready" })
-        .where("id", "=", this.jobId)
+    // One transaction: a partial write (reservations deleted but not
+    // re-inserted) would free this job's capacity to other jobs' replans
+    // while its operations already carry the new plan.
+    await this.db.transaction().execute(async (trx) => {
+      for (const op of this.scheduledOperations.values()) {
+        const originalOp = this.operations.find((o) => o.id === op.id);
+        const isManuallyScheduled = originalOp?.manuallyScheduled ?? false;
+
+        if (isManuallyScheduled) {
+          await trx
+            .updateTable("jobOperation")
+            .set({
+              startDate: op.startDate,
+              priority: op.priority ?? undefined,
+              workCenterId: op.workCenterId,
+              hasConflict: op.hasConflict,
+              conflictReason: op.conflictReason,
+              updatedAt: new Date().toISOString(),
+              updatedBy: this.userId,
+            })
+            .where("id", "=", op.id)
+            .execute();
+        } else {
+          await trx
+            .updateTable("jobOperation")
+            .set({
+              startDate: op.startDate,
+              dueDate: op.dueDate,
+              priority: op.priority ?? undefined,
+              workCenterId: op.workCenterId,
+              hasConflict: op.hasConflict,
+              conflictReason: op.conflictReason,
+              updatedAt: new Date().toISOString(),
+              updatedBy: this.userId,
+            })
+            .where("id", "=", op.id)
+            .execute();
+        }
+      }
+
+      // Rebuild this job's live capacity reservations from this run's
+      // placements (reservations are authoritative across jobs and runs)
+      await trx
+        .deleteFrom("capacityReservation")
+        .where("jobId", "=", this.jobId)
+        .where("companyId", "=", this.companyId)
+        .where("scenarioId", "is", null)
         .execute();
-    }
+
+      if (planned.length > 0) {
+        await trx
+          .insertInto("capacityReservation")
+          .values(
+            planned.map((p) => ({
+              resourceKind: p.resourceKind,
+              resourceId: p.resourceId,
+              operationId: p.operationId,
+              jobId: this.jobId,
+              companyId: this.companyId,
+              startAt: p.startAt.toISOString(),
+              endAt: p.endAt.toISOString(),
+              earliestStartAt: p.earliestStartAt?.toISOString() ?? null,
+              scheduleNote: p.scheduleNote ?? null,
+              workHours: p.workHours ?? null,
+              createdBy: this.userId,
+            }))
+          )
+          .execute();
+      }
+
+      // Update job status if initial scheduling
+      if (this.mode === "initial") {
+        await trx
+          .updateTable("job")
+          .set({ status: "Ready" })
+          .where("id", "=", this.jobId)
+          .execute();
+      }
+    });
+
+    this.reservationsWritten = planned.length;
   }
 
   /**

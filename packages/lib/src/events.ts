@@ -248,6 +248,12 @@ export type Events = {
       reason: string;
       /** The changed record (abilityId, workCenterId, ...) for precise scoping */
       entityId?: string;
+      /**
+       * Set by the replan wave when chaining a follow-up batch. The remaining
+       * jobs are already stamped stale, so the mark function must skip this
+       * event — re-marking would stamp the whole company and loop forever.
+       */
+      continuation?: boolean;
     };
   };
 

@@ -5,6 +5,7 @@ import { validationError, validator } from "@carbon/form";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, redirect, useNavigate, useParams } from "react-router";
+import { notifyScheduleInputsChanged } from "~/modules/production";
 import {
   EmployeeAbilityForm,
   employeeAbilityCellValidator,
@@ -65,6 +66,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
       await flash(request, error(upsert.error, "Failed to add ability"))
     );
   }
+
+  await notifyScheduleInputsChanged(
+    companyId,
+    "ability",
+    "Operator qualification added",
+    abilityId
+  );
 
   throw redirect(
     path.to.personDetails(personId),

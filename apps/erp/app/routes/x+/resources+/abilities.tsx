@@ -36,7 +36,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   });
 
   if (abilities.error) {
-    redirect(
+    throw redirect(
       path.to.resources,
       await flash(request, error(abilities.error, "Failed to fetch abilities"))
     );

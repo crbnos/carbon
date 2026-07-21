@@ -1,4 +1,5 @@
 import type { Database, Json } from "@carbon/database";
+import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { DataType } from "~/modules/shared";
@@ -553,7 +554,7 @@ export async function updateAttributeSortOrder(
 }
 
 export async function updateEmployeeJob(
-  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   employeeId: string,
   employeeJob: z.infer<typeof employeeJobValidator> & {
     companyId: string;
@@ -561,34 +562,44 @@ export async function updateEmployeeJob(
     customFields?: Json;
   }
 ) {
-  const update = await client
-    .from("employeeJob")
-    .update(sanitize(employeeJob))
-    .eq("id", employeeId)
-    .eq("companyId", employeeJob.companyId);
-  if (update.error) return update;
+  // One Kysely transaction: the employeeJob update and the employeeShift
+  // sync commit or roll back together. Kysely also bypasses RLS, so the
+  // sync no longer silently no-ops for users without people_create/
+  // people_delete — the route's people_update check is the auth gate.
+  try {
+    await db.transaction().execute(async (trx) => {
+      await trx
+        .updateTable("employeeJob")
+        .set(sanitize(employeeJob))
+        .where("id", "=", employeeId)
+        .where("companyId", "=", employeeJob.companyId)
+        .execute();
 
-  // The scheduler reads shift assignments from employeeShift (see
-  // getEmployeeShiftWindows in the schedule engine), NOT from
-  // employeeJob.shiftId — keep them in sync so assigning a shift here
-  // actually constrains ability-gated scheduling.
-  const clearShifts = await client
-    .from("employeeShift")
-    .delete()
-    .eq("employeeId", employeeId)
-    .eq("companyId", employeeJob.companyId);
-  if (clearShifts.error) return clearShifts;
+      // The scheduler reads shift assignments from employeeShift (see
+      // getEmployeeShiftWindows in the schedule engine), NOT from
+      // employeeJob.shiftId — keep them in sync so assigning a shift here
+      // actually constrains ability-gated scheduling.
+      await trx
+        .deleteFrom("employeeShift")
+        .where("employeeId", "=", employeeId)
+        .where("companyId", "=", employeeJob.companyId)
+        .execute();
 
-  if (employeeJob.shiftId) {
-    const assignShift = await client.from("employeeShift").insert({
-      employeeId,
-      shiftId: employeeJob.shiftId,
-      companyId: employeeJob.companyId
+      if (employeeJob.shiftId) {
+        await trx
+          .insertInto("employeeShift")
+          .values({
+            employeeId,
+            shiftId: employeeJob.shiftId,
+            companyId: employeeJob.companyId
+          })
+          .execute();
+      }
     });
-    if (assignShift.error) return assignShift;
+    return { data: null, error: null };
+  } catch (err) {
+    return { data: null, error: err as Error };
   }
-
-  return update;
 }
 
 export async function upsertDepartment(

@@ -207,7 +207,7 @@ export async function getAbilities(
 ) {
   let query = client
     .from("ability")
-    .select(`*, employeeAbility(employeeId)`, {
+    .select(`*, employeeAbility(employeeId, trainingCompleted, expiresAt)`, {
       count: "exact"
     })
     .eq("companyId", companyId)
@@ -240,17 +240,22 @@ export async function getAbility(
   client: SupabaseClient<Database>,
   abilityId: string
 ) {
-  return client
-    .from("ability")
-    .select(
-      `*, employeeAbility(id, employeeId, lastTrainingDate, trainingDays, trainingCompleted, expiresAt, active)`,
-      {
-        count: "exact"
-      }
-    )
-    .eq("id", abilityId)
-    .eq("active", true)
-    .single();
+  return (
+    client
+      .from("ability")
+      .select(
+        `*, employeeAbility(id, employeeId, lastTrainingDate, trainingDays, trainingCompleted, expiresAt, active)`,
+        {
+          count: "exact"
+        }
+      )
+      .eq("id", abilityId)
+      .eq("active", true)
+      // deleteEmployeeAbility is a soft delete — inactive rows would otherwise
+      // reappear in the roster after "Remove Employee"
+      .eq("employeeAbility.active", true)
+      .single()
+  );
 }
 
 export async function getContractor(

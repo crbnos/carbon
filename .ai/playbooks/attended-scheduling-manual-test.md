@@ -74,10 +74,10 @@ capacity.
 
 | Person | Shift | Qualified for |
 |---|---|---|
-| Sam | Day | CNC Machining + Assembly (the dual-skill person — key for B and C tests) |
-| Dave | Night | CNC Machining (the relay partner for A4) |
-| Alex | Day | Assembly |
-| Riley | **no shift** | CNC Machining (deliberately shiftless — exercises the 24/7 fallback in C14) |
+| Chase Foster | Day | CNC Route + Final Assemble (the dual-skill person — key for B and C tests) |
+| Naveen Kumar | Night | CNC Route (the relay partner for A4) |
+| Sid Rathi | Day | Final Assemble |
+| Anshul Sharma | **no shift** | CNC Route (deliberately shiftless — exercises the 24/7 fallback in C14) |
 
 ### Processes and work centers
 
@@ -87,10 +87,10 @@ in-training or expired roster entry does not count as qualified).
 
 | Process | Requires Ability | Work centers | Who to qualify |
 |---|---|---|---|
-| CNC Machining | ON | Mill 1, Mill 2 | Sam, Dave, Riley |
-| Assembly | ON | Bench | Sam, Alex |
-| Deburr | **OFF** | Deburr Station | nobody (ungated — no people ever needed) |
-| Welding | ON | Weld Cell | **NOBODY** (deliberately empty roster — drives the C12 conflict) |
+| CNC Route ("CNC Machining") | ON | CNC Router, CNC Router 2 ("Mill 1/2") | Chase, Naveen, Anshul |
+| Final Assemble ("Assembly") | ON | Final Assembly ("Bench") | Chase, Sid |
+| Deburr | **OFF** | Finishing Bench | nobody (ungated — no people ever needed) |
+| Welding | ON | Welding | **NOBODY** (deliberately empty roster — drives the C12 conflict) |
 
 ### Items (one method op each unless noted; times as setup / labor / machine)
 
@@ -108,6 +108,47 @@ materials never constrain scheduling, only capacity does.
 | NO-WELDER | Welding | 0 / 1 h / 1 h | zero qualified people → conflict |
 | CHAIN | CNC 0/1h/1h → (After Previous) Assembly 0/2h/0 | | op-to-op dependency + inherited delay |
 | OUTSIDE | CNC 0/5min/1h → Anodize (Outside processing, 48 h) → Assembly 0/1h/0 | | outside-processing span, no reservations |
+
+## Run sheet — concrete job fields per test (company 49LVCXaYjc2rfwPP3bqqDT)
+
+Cast (matches the DB): **Chase Foster** — Day, dual-skill machinist lead;
+**Naveen Kumar** — Night, relay partner; **Sid Rathi** — Day, assembler;
+**Anshul Sharma** — no shift, the deliberate 24/7 case for C14.
+Process mapping: CNC Machining → **CNC Route** (CNC Router + CNC Router 2),
+Assembly → **Final Assemble**, Deburr/Welding as named, Anodize →
+**Anodize (outsourced)**.
+
+Every job: **Quantity 1** (times are Total units — quantity-independent),
+**Deadline Type: Hard Deadline** (deadlineType only sets queue priority, in
+`priority-calculator.ts`; keep it uniform so board order is the only priority
+lever), release ~09:00 local. Lateness is a **calendar-date** comparison
+(`placedEndDate > jobDueDate`, `work-center-selector.ts`) — finishing 23:00 on
+the due date is on time; conflicts fire only when the finish rolls past it.
+
+| Test | Job(s) | Due date | Prep before release |
+|---|---|---|---|
+| A1 | LIGHTS-OUT ×1 | tomorrow | both routers active |
+| A2 | LIGHTS-OUT ×1 | tomorrow (→ late, machine-queue note) | deactivate Router 2 |
+| A3 | FULL-ATTEND ×1 | tomorrow (on time — test is the pause) | expire Naveen + Anshul on CNC (Chase sole machinist) |
+| A4 | reschedule A3's job (or fresh FULL-ATTEND) | tomorrow | un-expire Naveen |
+| A5 | NO-HUMAN ×1 | tomorrow | — |
+| A6 | HAND-WORK ×1 | tomorrow | — |
+| B7 | TENDED-SHORT ×2 back-to-back | tomorrow | Router 2 active; Chase sole machinist |
+| B8 | TENDED-SHORT ×2 | tomorrow | deactivate Router 2 |
+| B9 | UNGATED ×3 | tomorrow | — |
+| C10 | FULL-ATTEND-4H ×2 | tomorrow | both routers; Chase sole machinist |
+| C11 | FULL-ATTEND-4H then HAND-WORK | tomorrow | Chase added to Final Assemble roster; Sid expired (restore + reschedule for part 2) |
+| C12 | NO-WELDER ×1 | tomorrow | — (empty roster is the trigger) |
+| C13 | TENDED-SHORT ×1 (NOT NO-HUMAN — it books nobody, can't conflict) | tomorrow | expire all CNC entries; then future-date them + reschedule |
+| C14 | FULL-ATTEND ×1 | tomorrow | only Anshul (shiftless) CNC-qualified |
+| D15 | CHAIN ×1 | **today**, release after ~14:00 (op 2 rolls past 16:00 shift end to tomorrow → inherited delay) | — |
+| D16 | LIGHTS-OUT ×1 | **today**, release 09:00 (finishes ~05:05 tomorrow → no-runway; no need to bump to 30 h) | machine free |
+| D17 | OUTSIDE ×1 | tomorrow (2-day anodize → outside-processing conflict) | Anodize name fixed + re-imported |
+| D18 | pin a CNC op to Router 1, then TENDED-SHORT ×2 | tomorrow | — |
+| E20–23 | reuse existing jobs | — | per test text |
+
+**Cancel/complete each group's jobs before the next group** — leftover
+reservations queue later tests and shift every expected clock time.
 
 ## Invariants and inspection queries
 
@@ -165,7 +206,7 @@ release it around 09:00.
 machine on calendar time — it runs straight through the night because the
 unattended remainder ignores shifts). The bookings inspector shows exactly two
 rows: a WorkCenter row on a mill for the full 20 h 05 m span, and an Employee row
-for **Sam, 09:00–09:05 only** (the attended window). No wait ghost, no schedule
+for **Chase, 09:00–09:05 only** (the attended window). No wait ghost, no schedule
 note — nothing was waited for. This is the headline feature: 5 minutes of human
 time buys 20 hours of machine output.
 
@@ -178,22 +219,22 @@ jobId} (1 op)"** — machine wording, correctly attributing the wait to the mach
 queue, not to labor. The job timeline draws a **wait ghost** covering the waited
 stretch before the op bar.
 
-**A3 — pause when the only person's shift ends.** Make Sam the only CNC person:
-expire Dave's and Riley's roster entries (set training expiry in the past).
-Release a FULL-ATTEND job (12 h with `labor = machine`, so Sam must be present
+**A3 — pause when the only person's shift ends.** Make Chase the only CNC person:
+expire Naveen's and Anshul's roster entries (set training expiry in the past).
+Release a FULL-ATTEND job (12 h with `labor = machine`, so Chase must be present
 the whole time) around 09:00.
-*Expect:* Sam is booked 09:00–16:00 (7 h of the 12), then the op **pauses
+*Expect:* Chase is booked 09:00–16:00 (7 h of the 12), then the op **pauses
 overnight** — the machine reservation continues unbroken (the workpiece is still
 in the machine, nothing else can take it) but there is **no Employee reservation
-between 16:00 and 08:00**. Sam resumes 08:00–13:00 next day (remaining 5 h).
+between 16:00 and 08:00**. Chase resumes 08:00–13:00 next day (remaining 5 h).
 The op's elapsed span reads as ~12 h of work spread across ~1.2 days. Verify the
 Employee rows never extend one minute past 16:00 — the engine must never assume
 overtime.
 
-**A4 — shift relay.** Restore Dave's CNC qualification (clear the expiry), then
+**A4 — shift relay.** Restore Naveen's CNC qualification (clear the expiry), then
 reschedule the A3 job (drag its card on the dates board) or release a fresh
 FULL-ATTEND job.
-*Expect:* the relay kicks in — **Sam 09:00–16:00, then Dave 16:00–21:00**, op
+*Expect:* the relay kicks in — **Chase 09:00–16:00, then Naveen 16:00–21:00**, op
 done at 21:00 **the same day** instead of 13:00 the next day. The bookings
 inspector shows two Employee rows with different `resourceId`s that meet exactly
 at the 16:00 shift boundary, no gap and no overlap. This is the
@@ -209,21 +250,21 @@ there, so no phantom operator hold.
 
 **A6 — labor-bound op (old behavior preserved).** Release a HAND-WORK job
 (Assembly, 4 h labor, 0 machine).
-*Expect:* the person (Sam or Alex) is booked for the **entire 4 h** — attended
+*Expect:* the person (Chase or Sid) is booked for the **entire 4 h** — attended
 window = 4 h, remainder = 0. Pure hand work degenerates to exactly the old hold-
 the-person-throughout behavior; nothing regressed for labor-only shops.
 
 ## B — one person, many machines
 
-**B7 — parallel mills, staggered loads (the marquee test).** Make Sam the sole
-CNC-qualified person (Dave/Riley expired). Both mills active. Release two
+**B7 — parallel mills, staggered loads (the marquee test).** Make Chase the sole
+CNC-qualified person (Naveen/Anshul expired). Both mills active. Release two
 TENDED-SHORT jobs (0 setup, 5 min labor, 1 h machine) back to back around 09:00.
-*Expect:* job A takes Mill 1 with Sam booked 09:00–09:05, machine running to
-10:00. Job B takes **Mill 2** with Sam booked **09:05–09:10** (immediately after
+*Expect:* job A takes Mill 1 with Chase booked 09:00–09:05, machine running to
+10:00. Job B takes **Mill 2** with Chase booked **09:05–09:10** (immediately after
 he finishes loading Mill 1), machine running to 10:05. Both machines run **in
-parallel**; Sam's two Employee reservations are back-to-back 5-minute windows
+parallel**; Chase's two Employee reservations are back-to-back 5-minute windows
 that never overlap. Job B's schedule note uses **operator** wording ("Waited 5m
-for a qualified operator — …") because what it waited for was Sam, not a machine.
+for a qualified operator — …") because what it waited for was Chase, not a machine.
 Under the old pool model Mill 2 would have sat dark until 10:00.
 
 **B8 — same jobs, one machine: attribution flips.** Deactivate Mill 2 (or
@@ -242,34 +283,34 @@ run on calendar time and no Employee reservations exist for any of them.
 
 ## C — people constraints
 
-**C10 — operator is the bottleneck across machines.** Sam sole machinist, both
+**C10 — operator is the bottleneck across machines.** Chase sole machinist, both
 mills active. Create an item with `labor = machine = 4 h` (a 4-hour fully-
 attended variant of FULL-ATTEND) and release two jobs of it at 09:00.
-*Expect:* job 1 gets Mill 1 with Sam 09:00–13:00. Job 2's mill (Mill 2) is
-**free the whole time**, but Sam isn't — so it starts at **13:00** on the free
+*Expect:* job 1 gets Mill 1 with Chase 09:00–13:00. Job 2's mill (Mill 2) is
+**free the whole time**, but Chase isn't — so it starts at **13:00** on the free
 mill, with an operator-queue note ("Waited 4h for a qualified operator — queued
-behind J{job1}"). If Dave is qualified, expect a relay tail instead of the op
+behind J{job1}"). If Naveen is qualified, expect a relay tail instead of the op
 pausing at 16:00.
 
-**C11 — cross-ability double-booking is dead (regression).** Sam dual-skill
-(CNC + Assembly), Alex expired. Release a 4 h fully-attended CNC job (Sam
+**C11 — cross-ability double-booking is dead (regression).** Chase dual-skill
+(CNC + Assembly), Sid expired. Release a 4 h fully-attended CNC job (Chase
 09:00–13:00), then release a HAND-WORK job (Assembly, 4 h labor).
-*Expect:* the Assembly op **waits for Sam** and starts 13:00 — even though the
-Bench is free and the two ops need *different abilities*, Sam is one person.
+*Expect:* the Assembly op **waits for Chase** and starts 13:00 — even though the
+Bench is free and the two ops need *different abilities*, Chase is one person.
 Hours 13:00–16:00 book on day one and the remaining 1 h relays to 08:00–09:00
 next day. Run the Employee-overlap invariant SQL: **0 rows** — under the old
-anonymous pool model this exact scenario double-booked Sam. Then restore Alex's
+anonymous pool model this exact scenario double-booked Chase. Then restore Sid's
 Assembly qualification and reschedule: the Assembly op now runs **in parallel**
-via Alex, starting 09:00. Both behaviors must hold.
+via Sid, starting 09:00. Both behaviors must hold.
 
 **C12 — zero qualified people → conflict, then reactive recovery.** Release a
 NO-WELDER job (Welding process, empty roster).
 *Expect:* the op gets a placement conflict — red flag on the dates board with
 reason **"No qualified operator for Welding"**; the job still shows (scheduling
-never hard-fails). Now qualify Sam for Welding: the affected jobs get the amber
+never hard-fails). Now qualify Chase for Welding: the affected jobs get the amber
 **"Schedule outdated"** stale badge, and a debounced replan wave fires **~3
 minutes after your last edit** (watch the Inngest dev UI). After the wave the
-badge clears and the op is scheduled with Sam booked for the 1 h attended window.
+badge clears and the op is scheduled with Chase booked for the 1 h attended window.
 
 **C13 — expiry semantics.** Expire **all** CNC roster entries (past expiry
 dates) and release a CNC job.
@@ -280,9 +321,9 @@ the op's start date (approved default) — a qualification expiring next month
 doesn't block work today.
 
 **C14 — shiftless person = 24/7 availability (documented default).** Expire
-Sam/Dave, leave only Riley (who has **no shift assigned**) CNC-qualified.
+Chase/Naveen, leave only Anshul (who has **no shift assigned**) CNC-qualified.
 Release a FULL-ATTEND job.
-*Expect:* Riley can be booked at any hour, including overnight — no shift
+*Expect:* Anshul can be booked at any hour, including overnight — no shift
 assignment means "always available" by design. This is the documented sharp
 edge: real shops must assign shifts to every scheduling-relevant person, or the
 engine will happily plan them at 3 a.m.
@@ -360,14 +401,14 @@ lock — any qualified person can still start the op on the floor.
 ## Proof-of-feature comparisons (the "was this worth building" checks)
 
 - **B7 vs old behavior** — two mills running in parallel off one person's
-  back-to-back 5-minute loads. The old pool model held Sam for the full hour and
+  back-to-back 5-minute loads. The old pool model held Chase for the full hour and
   kept Mill 2 dark.
 - **A1** — a 20 h run finishing overnight with only 5 minutes of booked human
   time. The old model paused the run at 16:00 and resumed Monday.
 - **A4 vs A3** — the relay turns a 1.2-day single-person op into a same-day
   two-person op (~16 h saved) with zero configuration.
 - **C11** — cross-ability double-booking is provably dead (Employee-overlap SQL
-  returns 0 where the pool model booked Sam twice).
+  returns 0 where the pool model booked Chase twice).
 
 Run **both invariant SQLs after every group** — a double-booking that appears
 only after a particular sequence of replans is exactly the kind of bug this
