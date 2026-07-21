@@ -3198,32 +3198,71 @@ export async function generatePickingList(
 
   const plId = headerInsert.data.id;
 
-  // 3. Get jobMaterial records for those operations with quantityToIssue > 0
-  const materials = await client
+  // 3. Map each operation to its work center (for the lineside destination)
+  // and find the earliest selected operation of each make method (lowest
+  // "order", id tie-break) — materials with no operation assignment attach to
+  // it, mirroring get_picking_schedule's first-operation attribution.
+  const operations = await client
+    .from("jobOperation")
+    .select("id, workCenterId, jobMakeMethodId, order")
+    .in("id", args.jobOperationIds);
+
+  if (operations.error) {
+    await client.from("pickingList").delete().eq("id", plId);
+    return { data: null, error: operations.error };
+  }
+
+  const workCenterByOperation = new Map<string, string | null>();
+  const firstSelectedOpByMakeMethod = new Map<
+    string,
+    { id: string; order: number }
+  >();
+  for (const op of operations.data ?? []) {
+    workCenterByOperation.set(op.id, op.workCenterId ?? null);
+    if (op.jobMakeMethodId) {
+      const order = Number(op.order ?? 0);
+      const current = firstSelectedOpByMakeMethod.get(op.jobMakeMethodId);
+      if (
+        !current ||
+        order < current.order ||
+        (order === current.order && op.id < current.id)
+      ) {
+        firstSelectedOpByMakeMethod.set(op.jobMakeMethodId, {
+          id: op.id,
+          order
+        });
+      }
+    }
+  }
+  const makeMethodIds = Array.from(firstSelectedOpByMakeMethod.keys());
+
+  // 4. Get jobMaterial records with quantityToIssue > 0: those assigned to the
+  // selected operations, plus unassigned ones (jobOperationId NULL — demanded
+  // at every operation of their method in MES) on the selected make methods.
+  const quoted = (ids: string[]) => ids.map((id) => `"${id}"`).join(",");
+  let materialsQuery = client
     .from("jobMaterial")
     .select(
-      "id, jobId, jobOperationId, itemId, quantityToIssue, storageUnitId, requiresSerialTracking, requiresBatchTracking"
+      "id, jobId, jobOperationId, jobMakeMethodId, itemId, quantityToIssue, storageUnitId, requiresSerialTracking, requiresBatchTracking"
     )
-    .in("jobOperationId", args.jobOperationIds)
+    .eq("companyId", args.companyId)
     .gt("quantityToIssue", 0);
+  materialsQuery =
+    makeMethodIds.length > 0
+      ? materialsQuery.or(
+          `jobOperationId.in.(${quoted(args.jobOperationIds)}),and(jobOperationId.is.null,jobMakeMethodId.in.(${quoted(makeMethodIds)}))`
+        )
+      : materialsQuery.in("jobOperationId", args.jobOperationIds);
+  const materials = await materialsQuery;
 
   if (materials.error) {
     await client.from("pickingList").delete().eq("id", plId);
     return { data: null, error: materials.error };
   }
 
-  // Map each operation to its work center, then lazily resolve (and cache) the
-  // lineside destination per work center. A pick is a transfer from the
-  // warehouse source to this lineside shelf; production later consumes from it.
-  const operations = await client
-    .from("jobOperation")
-    .select("id, workCenterId")
-    .in("id", args.jobOperationIds);
-
-  const workCenterByOperation = new Map<string, string | null>();
-  for (const op of operations.data ?? []) {
-    workCenterByOperation.set(op.id, op.workCenterId ?? null);
-  }
+  // Lazily resolve (and cache) the lineside destination per work center. A
+  // pick is a transfer from the warehouse source to this lineside shelf;
+  // production later consumes from it.
 
   const linesideByWorkCenter = new Map<string, string | null>();
   const resolveLineside = async (
@@ -3263,11 +3302,18 @@ export async function generatePickingList(
     const quantityToIssue = Number(mat.quantityToIssue ?? 0);
     if (quantityToIssue <= 0) continue;
 
-    const opWorkCenterId = mat.jobOperationId
-      ? (workCenterByOperation.get(mat.jobOperationId) ?? null)
+    // Unassigned materials attach to the earliest selected operation of their
+    // make method; its work center drives the lineside destination.
+    const effectiveOperationId =
+      mat.jobOperationId ??
+      firstSelectedOpByMakeMethod.get(mat.jobMakeMethodId)?.id ??
+      null;
+
+    const opWorkCenterId = effectiveOperationId
+      ? (workCenterByOperation.get(effectiveOperationId) ?? null)
       : null;
 
-    // 4. Resolve the destination: the operation's work-center lineside shelf.
+    // 5. Resolve the destination: the operation's work-center lineside shelf.
     const toStorageUnitId = await resolveLineside(opWorkCenterId);
 
     // On-hand of this item per bin at the location (computed once, reused below
@@ -3290,7 +3336,7 @@ export async function generatePickingList(
       continue;
     }
 
-    // 5. Determine the source (warehouse) shelf. Use the jobMaterial's shelf
+    // 6. Determine the source (warehouse) shelf. Use the jobMaterial's shelf
     // only when it's a warehouse (non-lineside) shelf; otherwise resolve a
     // warehouse source by on-hand — never rob another work center's lineside.
     // A null source = a shortage the kitter/planner must resolve.
@@ -3310,7 +3356,7 @@ export async function generatePickingList(
       pickingListId: plId,
       jobId: mat.jobId,
       jobMaterialId: mat.id,
-      jobOperationId: mat.jobOperationId,
+      jobOperationId: effectiveOperationId,
       itemId: mat.itemId,
       quantityToPick: quantityToIssue,
       storageUnitId: sourceStorageUnitId,

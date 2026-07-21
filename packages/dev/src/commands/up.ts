@@ -530,10 +530,19 @@ async function runDatabaseMigrations(
           {
             title: "Regenerate types & swagger",
             task: async () => {
-              if (!migrationsApplied) return "skipped (no new migrations)";
+              // Always regenerate types: the on-disk types must match the DB
+              // schema, which can be out of sync even when no NEW migration ran
+              // this boot — the schema is already applied to this worktree's DB
+              // after a branch switch, stash-pop, or reverted generated files.
+              // Gating on `migrationsApplied` left stale types in those cases.
               await execa("pnpm", ["db:types"], { cwd: ctx.root });
-              await execa("pnpm", ["generate:swagger"], { cwd: ctx.root });
-              return "types + swagger refreshed";
+              // Swagger only changes with the schema and is heavier, so keep it
+              // gated on a migration having actually applied this boot.
+              if (migrationsApplied) {
+                await execa("pnpm", ["generate:swagger"], { cwd: ctx.root });
+                return "types + swagger refreshed";
+              }
+              return "types refreshed";
             }
           }
         ]
