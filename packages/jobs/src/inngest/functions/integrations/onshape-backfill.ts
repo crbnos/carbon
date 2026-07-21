@@ -496,6 +496,7 @@ export const onshapeBackfillFunction = inngest.createFunction(
       // stays short and a retry resumes at the first unfinished item. A step
       // that exhausts its own retries throws a catchable error here; count it
       // and keep going unless failures look systemic.
+      const optimizeModelUploadIds: string[] = [];
       const syncedModelUploadIds: string[] = [];
       for (const [workIndex, workItem] of pageResult.workItems.entries()) {
         try {
@@ -508,6 +509,11 @@ export const onshapeBackfillFunction = inngest.createFunction(
             totals.skippedTooLarge++;
           } else {
             totals.synced++;
+          }
+          // Every attached model is a RAW export — the assembler compresses it
+          // into the viewer GLB via model-optimize.
+          if (attached.modelUploadId) {
+            optimizeModelUploadIds.push(attached.modelUploadId);
           }
           // Fallback only: models whose Onshape-rendered thumbnail was stored
           // during the sync don't need the screenshot pipeline.
@@ -531,6 +537,21 @@ export const onshapeBackfillFunction = inngest.createFunction(
             );
           }
         }
+      }
+
+      if (optimizeModelUploadIds.length > 0) {
+        // Same event the manual upload route fires: assembler → meshopt GLB.
+        await step.sendEvent(
+          `model-optimize-${pageIndex}`,
+          optimizeModelUploadIds.map((modelUploadId) => ({
+            name: "carbon/model-optimize" as const,
+            data: {
+              modelUploadId,
+              companyId: payload.companyId,
+              userId: payload.userId
+            }
+          }))
+        );
       }
 
       if (syncedModelUploadIds.length > 0) {

@@ -1,24 +1,17 @@
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdtemp, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { Database } from "@carbon/database";
 import type { OnshapeClient, OnshapeTranslation } from "@carbon/ee/onshape";
-import {
-  getOnshapeClient,
-  OnshapeAssetTooLargeError
-} from "@carbon/ee/onshape";
+import { getOnshapeClient } from "@carbon/ee/onshape";
 import { getFileSizeLimit } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   type AttachOnshapeAssetsResult,
   attachModelThumbnail,
   attachOnshapeAssetsToItem,
-  type OnshapeAssetFile
+  type OnshapeModelFile
 } from "./onshape-attach";
-import {
-  compressGltfToViewerGlb,
-  resolveGltfpackPath
-} from "./onshape-compress-model";
 
 // Export→download→attach for ONE released Onshape element. Wires the OnshapeClient
 // export methods (@carbon/ee) to the Carbon-side attach helper. Flow: create
@@ -54,18 +47,13 @@ const POLL_MAX_ATTEMPTS = 40;
 const POLL_INITIAL_DELAY_MS = 2000;
 const POLL_MAX_DELAY_MS = 15000;
 
-// Size caps for the attached files — the SAME limits Carbon enforces on manual
-// uploads (CadModel.tsx / document upload), since synced assets land in the
-// same storage bucket and the same browser viewer. Models that cannot be
-// compressed under the cap are skipped (drawing PDFs still attach — they are
-// separate elements).
-const MODEL_MAX_BYTES = getFileSizeLimit("CAD_MODEL_UPLOAD").bytes;
+// Size caps — the SAME limits Carbon enforces on manual uploads (CadModel.tsx /
+// document upload), since synced assets land in the same buckets. The raw model
+// cap is the temp-staging cap (2.5GB); exports past it are skipped permanently
+// (drawing PDFs still attach — they are separate elements). Output size is the
+// assembler's problem, not ours.
+const RAW_MODEL_MAX_BYTES = getFileSizeLimit("CAD_MODEL_UPLOAD").bytes;
 const DOCUMENT_MAX_BYTES = getFileSizeLimit("DOCUMENT_UPLOAD").bytes;
-
-// Cap for the INTERMEDIATE GLTF download. It is streamed to disk (never
-// buffered) and deleted after compression, so it can be far larger than the
-// attach caps; a real whole-vehicle export was 1.7GB.
-const GLTF_INTERMEDIATE_MAX_BYTES = 4 * 1024 * 1024 * 1024;
 
 async function waitForTranslation(
   client: OnshapeClient,
@@ -112,26 +100,20 @@ async function downloadTranslationBytes(
   return new Uint8Array(buffer);
 }
 
-// The one and only model export path: export GLTF from Onshape, stream it to
-// disk (a whole-vehicle export can be >1.5GB — it is never buffered in
-// memory), compress it to a Draco GLB the viewer renders (full fidelity
-// first, 50%/25% simplification if needed), and attach that. STEP export was
-// deliberately dropped: real assemblies produce multi-GB STEP files, and
-// Onshape stays the CAD system of record — Carbon only needs a
-// viewer-renderable mesh. Throws OnshapeAssetTooLargeError when compression
-// is unavailable (no native gltfpack — set GLTFPACK_PATH) or the compressed
-// output still exceeds the cap; callers treat both as a permanent skip.
-async function exportCompressedGlbModel(
+// The one and only model export path: export GLTF from Onshape and stream it
+// to disk (a whole-vehicle export can be >1.5GB — it is never buffered in
+// memory). The raw export is attached as-is; the assembler pipeline
+// ("carbon/model-optimize", fired by the caller) turns it into the
+// meshopt-compressed viewer GLB, so no local compression happens here. STEP
+// export was deliberately dropped: real assemblies produce multi-GB STEP
+// files, and Onshape stays the CAD system of record. Throws
+// OnshapeAssetTooLargeError (from the download helper) past the raw cap;
+// callers treat that as a permanent skip.
+async function exportRawGltfModel(
   client: OnshapeClient,
-  input: SyncOnshapeElementInput
-): Promise<OnshapeAssetFile> {
-  const gltfpackPath = await resolveGltfpackPath();
-  if (!gltfpackPath) {
-    throw new OnshapeAssetTooLargeError(
-      `Model sync requires native gltfpack for GLTF→GLB compression and none is available (set GLTFPACK_PATH)`
-    );
-  }
-
+  input: SyncOnshapeElementInput,
+  scratchDir: string
+): Promise<OnshapeModelFile> {
   const gltfTranslation =
     input.modelElementKind === "assembly"
       ? await client.createAssemblyTranslation(
@@ -158,40 +140,19 @@ async function exportCompressedGlbModel(
     );
   }
 
-  const scratchDir = await mkdtemp(join(tmpdir(), "onshape-glb-"));
-  try {
-    const gltfPath = join(scratchDir, "model.gltf");
-    await client.downloadExternalDataToFile(
-      resultDocumentId,
-      foreignId,
-      gltfPath,
-      { maxBytes: GLTF_INTERMEDIATE_MAX_BYTES }
-    );
-
-    const glbPath = join(scratchDir, "model.glb");
-    const compressed = await compressGltfToViewerGlb(
-      gltfpackPath,
-      gltfPath,
-      glbPath,
-      MODEL_MAX_BYTES
-    );
-    if (!compressed) {
-      throw new OnshapeAssetTooLargeError(
-        `Compressed GLB for ${baseName} still exceeds the model size limit`
-      );
-    }
-    console.log(
-      `syncOnshapeElementAssetsToItem: compressed ${baseName} to a ${Math.round(
-        compressed.outputBytes / (1024 * 1024)
-      )}MB GLB (simplify=${compressed.simplifyRatio ?? "none"})`
-    );
-    return {
-      fileName: `${baseName}.glb`,
-      bytes: new Uint8Array(await readFile(glbPath))
-    };
-  } finally {
-    await rm(scratchDir, { recursive: true, force: true });
-  }
+  const gltfPath = join(scratchDir, "model.gltf");
+  await client.downloadExternalDataToFile(
+    resultDocumentId,
+    foreignId,
+    gltfPath,
+    { maxBytes: RAW_MODEL_MAX_BYTES }
+  );
+  const { size } = await stat(gltfPath);
+  return {
+    fileName: `${baseName}.gltf`,
+    localPath: gltfPath,
+    size
+  };
 }
 
 export async function syncOnshapeElementAssetsToItem(
@@ -204,72 +165,78 @@ export async function syncOnshapeElementAssetsToItem(
   }
   const client = onshape.client;
 
-  // GLTF → Draco-compressed GLB is the only model export (STEP was
-  // deliberately dropped — see exportCompressedGlbModel). Throws
-  // OnshapeAssetTooLargeError when the model can't be compressed under the
-  // cap; callers treat that as a permanent skip.
-  const model = await exportCompressedGlbModel(client, input);
-  const baseName = model.fileName.replace(/\.glb$/, "");
+  const scratchDir = await mkdtemp(join(tmpdir(), "onshape-gltf-"));
+  try {
+    // Raw GLTF is the only model export (STEP was deliberately dropped — see
+    // exportRawGltfModel). The assembler pipeline does the compression; the
+    // caller fires "carbon/model-optimize" for the returned modelUploadId.
+    // Throws OnshapeAssetTooLargeError past the raw cap; callers treat that as
+    // a permanent skip.
+    const model = await exportRawGltfModel(client, input, scratchDir);
+    const baseName = model.fileName.replace(/\.gltf$/, "");
 
-  // Drawings -> PDF (optional; same translation flow, not yet exercised against
-  // a live DRAWING element).
-  const documents: { fileName: string; bytes: Uint8Array }[] = [];
-  for (const drawingElementId of input.drawingElementIds ?? []) {
-    const pdfTranslation = await client.createDrawingTranslation(
-      input.documentId,
-      input.versionId,
-      drawingElementId,
-      { formatName: "PDF", storeInDocument: false }
-    );
-    const pdfDone = await waitForTranslation(client, pdfTranslation.id);
-    const pdfBytes = await downloadTranslationBytes(
-      client,
-      pdfDone,
-      DOCUMENT_MAX_BYTES
-    );
-    documents.push({
-      fileName: `${baseName}-${drawingElementId}.pdf`,
-      bytes: pdfBytes
-    });
-  }
-
-  const attached = await attachOnshapeAssetsToItem(carbon, {
-    companyId: input.companyId,
-    createdBy: input.userId,
-    itemId: input.itemId,
-    sourceDocument: input.sourceDocument,
-    model,
-    documents
-  });
-
-  // Thumbnail: prefer Onshape's server-rendered element thumbnail — one small
-  // API call for an exact shaded render of the released geometry, instead of
-  // the model-thumbnail pipeline screenshotting the full decoded mesh in a
-  // headless browser (the very operation that struggles with big assemblies).
-  // Best-effort: on failure the caller falls back to the model-thumbnail event.
-  let thumbnailAttached = false;
-  if (attached.modelUploadId) {
-    try {
-      const thumbnail = await client.getElementThumbnail(
+    // Drawings -> PDF (optional; same translation flow, not yet exercised
+    // against a live DRAWING element).
+    const documents: { fileName: string; bytes: Uint8Array }[] = [];
+    for (const drawingElementId of input.drawingElementIds ?? []) {
+      const pdfTranslation = await client.createDrawingTranslation(
         input.documentId,
         input.versionId,
-        input.modelElementId
+        drawingElementId,
+        { formatName: "PDF", storeInDocument: false }
       );
-      await attachModelThumbnail(carbon, {
-        companyId: input.companyId,
-        modelUploadId: attached.modelUploadId,
-        pngBytes: new Uint8Array(thumbnail)
+      const pdfDone = await waitForTranslation(client, pdfTranslation.id);
+      const pdfBytes = await downloadTranslationBytes(
+        client,
+        pdfDone,
+        DOCUMENT_MAX_BYTES
+      );
+      documents.push({
+        fileName: `${baseName}-${drawingElementId}.pdf`,
+        bytes: pdfBytes
       });
-      thumbnailAttached = true;
-    } catch (thumbnailError) {
-      console.warn(
-        `syncOnshapeElementAssetsToItem: Onshape thumbnail fetch failed for ${baseName}; falling back to the model-thumbnail job`,
-        thumbnailError
-      );
     }
-  }
 
-  return { ...attached, thumbnailAttached };
+    const attached = await attachOnshapeAssetsToItem(carbon, {
+      companyId: input.companyId,
+      createdBy: input.userId,
+      itemId: input.itemId,
+      sourceDocument: input.sourceDocument,
+      model,
+      documents
+    });
+
+    // Thumbnail: prefer Onshape's server-rendered element thumbnail — one small
+    // API call for an exact shaded render of the released geometry, instead of
+    // the model-thumbnail pipeline screenshotting the full decoded mesh in a
+    // headless browser (the very operation that struggles with big assemblies).
+    // Best-effort: on failure the caller falls back to the model-thumbnail event.
+    let thumbnailAttached = false;
+    if (attached.modelUploadId) {
+      try {
+        const thumbnail = await client.getElementThumbnail(
+          input.documentId,
+          input.versionId,
+          input.modelElementId
+        );
+        await attachModelThumbnail(carbon, {
+          companyId: input.companyId,
+          modelUploadId: attached.modelUploadId,
+          pngBytes: new Uint8Array(thumbnail)
+        });
+        thumbnailAttached = true;
+      } catch (thumbnailError) {
+        console.warn(
+          `syncOnshapeElementAssetsToItem: Onshape thumbnail fetch failed for ${baseName}; falling back to the model-thumbnail job`,
+          thumbnailError
+        );
+      }
+    }
+
+    return { ...attached, thumbnailAttached };
+  } finally {
+    await rm(scratchDir, { recursive: true, force: true });
+  }
 }
 
 export interface SyncOnshapeDrawingInput {
