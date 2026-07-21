@@ -83,7 +83,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
         .filter(
           (r) => r.periodNumber >= fromPeriod && r.periodNumber <= toPeriod
         )
-        .reduce((sum, r) => sum + r.actual, 0);
+        .reduce(
+          (sum, r) => sum + (isDebitNormal(r.class) ? 1 : -1) * r.actual,
+          0
+        );
     }
   }
 

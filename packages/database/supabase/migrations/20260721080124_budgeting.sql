@@ -233,6 +233,8 @@ BEGIN
      AND jld."dimensionId" = (SELECT "id" FROM "costCenterDim")
     WHERE jl."companyId" = p_company_id
       AND jl."accountId" IS NOT NULL
+      -- Seed from posted actuals only (exclude Draft journals).
+      AND j."status" != 'Draft'
     GROUP BY jl."accountId", sp."periodNumber", jld."valueId"
   ),
   "shaped" AS (
@@ -340,6 +342,9 @@ BEGIN
     JOIN "periods" p ON p."id" = j."accountingPeriodId"
     WHERE jl."companyId" = p_company_id
       AND jl."accountId" IS NOT NULL
+      -- Exclude Draft journals so Actual ties to the trial balance / income
+      -- statement (repo standard, 20260711011724_exclude-draft-journals.sql).
+      AND j."status" != 'Draft'
       AND (
         (p_untagged AND NOT EXISTS (
           SELECT 1 FROM "journalLineDimension" jld
