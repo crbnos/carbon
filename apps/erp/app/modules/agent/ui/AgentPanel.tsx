@@ -8,8 +8,8 @@ import {
 import { DefaultChatTransport, type UIMessage } from "ai";
 import posthog from "posthog-js";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { LuHistory, LuPlus, LuX } from "react-icons/lu";
-import { StickToBottom } from "use-stick-to-bottom";
+import { LuArrowDown, LuHistory, LuPlus, LuX } from "react-icons/lu";
+import { StickToBottom, useStickToBottomContext } from "use-stick-to-bottom";
 import { useAgentStore } from "~/stores/agent";
 import { path } from "~/utils/path";
 import { isUiBlockTool } from "../agent.blocks";
@@ -30,6 +30,27 @@ type DbPart = {
   toolOutput: unknown;
 };
 type DbMessage = { id: string; role: string; parts?: DbPart[] };
+
+// Floating "scroll to bottom" affordance — only shown when the user has
+// scrolled up. Must live inside <StickToBottom> to read its context.
+function ScrollToBottomButton() {
+  const { isAtBottom, scrollToBottom } = useStickToBottomContext();
+
+  if (isAtBottom) return null;
+
+  return (
+    <div className="sticky bottom-0 left-0 flex justify-center pointer-events-none">
+      <IconButton
+        aria-label="Scroll to bottom"
+        icon={<LuArrowDown />}
+        variant="secondary"
+        size="sm"
+        onClick={() => scrollToBottom()}
+        className="pointer-events-auto mb-3 rounded-full shadow-md border animate-in fade-in zoom-in-95 duration-150"
+      />
+    </div>
+  );
+}
 
 export function AgentPanel() {
   const closeAgent = useAgentStore((s) => s.closeAgent);
@@ -196,7 +217,7 @@ export function AgentPanel() {
         value={{ sendMessage: (text) => void handleSend(text) }}
       >
         <StickToBottom
-          className="flex-1 overflow-y-auto"
+          className="relative flex-1 overflow-y-auto"
           resize="smooth"
           initial="smooth"
         >
@@ -208,6 +229,7 @@ export function AgentPanel() {
               isStreaming={isStreaming}
             />
           </StickToBottom.Content>
+          <ScrollToBottomButton />
         </StickToBottom>
       </AgentActionsProvider>
       <div className="p-3 shrink-0">
