@@ -66,7 +66,7 @@ export function AgentPanel() {
       }`}
     >
       <div className="flex items-center justify-between px-3 h-11 border-b shrink-0">
-        <span className="text-sm font-semibold">Ask Docs</span>
+        <span className="text-sm font-semibold">Ask a question</span>
         <div className="flex items-center gap-1">
           <AgentBlockViewer setMessages={setMessages} />
           <IconButton

@@ -1454,9 +1454,6 @@ msgstr "По возрастанию"
 msgid "Ask an admin with {0} permission to add the first {1}."
 msgstr "Попросите администратора с разрешением {0} добавить первый {1}."
 
-msgid "Ask Docs"
-msgstr ""
-
 msgid "Assemblies"
 msgstr "Сборки"
 

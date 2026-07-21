@@ -17,13 +17,13 @@ export default function AskDocs() {
 
   return (
     <Button
-      aria-label="Ask Docs (⌘L)"
+      aria-label="Question (⌘L)"
       variant="secondary"
       leftIcon={<LuCircleHelp />}
       className="hover:scale-100"
       onClick={() => toggleAgent()}
     >
-      <Trans>Ask Docs</Trans>
+      <Trans>Question</Trans>
     </Button>
   );
 }
