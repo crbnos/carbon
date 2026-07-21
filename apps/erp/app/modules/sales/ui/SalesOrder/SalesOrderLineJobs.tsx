@@ -431,8 +431,8 @@ function JobDetails({ job }: { job: Job }) {
                         {operation.description}
                       </h3>
                       <HStack spacing={1}>
-                        {operation.operationType === "Outside" ? (
-                          <Badge>Outside</Badge>
+                        {operation.operationType === "Outside Processing" ? (
+                          <Badge>Outside Processing</Badge>
                         ) : (
                           <>
                             {(operation?.setupTime ?? 0) > 0 && (
@@ -467,7 +467,7 @@ function JobDetails({ job }: { job: Job }) {
                         )}
                       </HStack>
                     </HStack>
-                    {operation.operationType === "Outside" ? (
+                    {operation.operationType === "Outside Processing" ? (
                       <SupplierProcessPreview
                         processId={operation.processId}
                         supplierProcessId={

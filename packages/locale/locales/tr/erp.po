@@ -669,7 +669,7 @@ msgid "Add Partner"
 msgstr "Ortak Ekle"
 
 msgid "Add parts"
-msgstr ""
+msgstr "Parça ekle"
 
 msgid "Add Permissions"
 msgstr "İzin Ekle"
@@ -711,7 +711,7 @@ msgid "Add Step"
 msgstr "Adım Ekle"
 
 msgid "Add steps to preview the operator view."
-msgstr ""
+msgstr "Operatör görünümünü önizlemek için adımlar ekleyin."
 
 msgid "Add Supplier"
 msgstr "Tedarikçi Ekle"
@@ -726,7 +726,7 @@ msgid "Add to stock for future use"
 msgstr "Gelecekteki kullanım için stoğa ekle"
 
 msgid "Add tools"
-msgstr ""
+msgstr "Araç ekle"
 
 #. placeholder {0}: copy.noun
 msgid "Add your first {0}"
@@ -1605,10 +1605,10 @@ msgid "Auto-numbering formats for orders, jobs, parts, and more"
 msgstr "Siparişler, işler, parçalar ve daha fazlası için otomatik numaralandırma formatları"
 
 msgid "Auto-start the operator's timer when they open an operation in the MES so time logs are captured from the start."
-msgstr ""
+msgstr "Operatörün bir işlemi MES'te açtığında zamanlayıcıyı otomatik olarak başlat, böylece zaman günlükleri baştan itibaren kaydedilsin."
 
 msgid "Auto-start timer on open"
-msgstr ""
+msgstr "Açıldığında zamanlayıcıyı otomatik olarak başlat"
 
 msgid "Auto-suggest purchases from demand and reorder points"
 msgstr "Talep ve yeniden sipariş noktalarından otomatik satın alma önerileri"
@@ -2018,7 +2018,7 @@ msgid "Cannot upload to parts bucket without item ID"
 msgstr "Öğe kimliği olmadan parçalar klasörüne yüklenemez"
 
 msgid "Caption"
-msgstr ""
+msgstr "Başlık"
 
 msgid "Carbon"
 msgstr "Karbon"
@@ -2205,6 +2205,9 @@ msgstr "Sınıf"
 
 msgid "Class (inherited)"
 msgstr "Sınıf (Devralınan)"
+
+msgid "Classifies a routing operation: Process, Assembly, and Inspection operations run on your own shop floor in the MES — Assembly gets the guided assembly view and Inspection a quality check — while an Outside Processing operation is subcontracted to a supplier and creates a purchase order; the process carries the same type and defaults it on new operations."
+msgstr "Bir rota işlemini sınıflandırır: Proses, Montaj ve Muayene işlemleri MES'te kendi atölyenizde çalışır — Montaj kılavuzlu montaj görünümü ve Muayene kalite kontrolü alır — Dış İşleme işlemi ise bir tedarikçiye yaptırılır ve satın alma siparişi oluşturur; işlem aynı türü taşır ve yeni işlemlerde bunu varsayılan olarak ayarlar."
 
 msgid "Clean and approve the migrated data"
 msgstr "Geçirilen verileri temizleyin ve onaylayın"
@@ -2671,7 +2674,7 @@ msgid "Convert to Quote"
 msgstr "Teklif Oluştur"
 
 msgid "Converting…"
-msgstr ""
+msgstr "Dönüştürülüyor…"
 
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "Bir tedarikçinin satın alma birimini bir PO, makbuz veya fatura satırında envanter biriminize dönüştürür — 12'lik kutularda satın alın, birimlerde stok yapın."
@@ -5314,13 +5317,13 @@ msgid "Failed to save diagram"
 msgstr "Şemayı kaydetme başarısız oldu"
 
 msgid "Failed to save parts"
-msgstr ""
+msgstr "Parça kaydedilemedi"
 
 msgid "Failed to save slides"
-msgstr ""
+msgstr "Slayt kaydedilemedi"
 
 msgid "Failed to save tools"
-msgstr ""
+msgstr "Araç kaydedilemedi"
 
 msgid "Failed to update batch property"
 msgstr "Toplu özelliği güncelleme başarısız oldu"
@@ -8170,7 +8173,7 @@ msgid "No part ID"
 msgstr "Parça kimliği yok"
 
 msgid "No parts"
-msgstr ""
+msgstr "Parça yok"
 
 msgid "No payables"
 msgstr "Ödeme yükümlülüğü yok"
@@ -8206,7 +8209,7 @@ msgid "No receivables"
 msgstr "Alacak yok"
 
 msgid "No reference image"
-msgstr ""
+msgstr "Referans resim yok"
 
 msgid "No remaining entities to inspect."
 msgstr "İncelenecek kalan varlık yok."
@@ -8245,10 +8248,10 @@ msgid "No time entries for this week"
 msgstr "Bu hafta için zaman girişi yok"
 
 msgid "No tools"
-msgstr ""
+msgstr "Araç yok"
 
 msgid "No tools for this step"
-msgstr ""
+msgstr "Bu adım için araç yok"
 
 msgid "No transactions in this period"
 msgstr "Bu dönemde işlem yok"
@@ -8547,14 +8550,11 @@ msgstr "İşletme Giderleri"
 msgid "Operation"
 msgstr "Operasyon"
 
-msgid "Operation Kind"
-msgstr ""
-
 msgid "Operation Order"
 msgstr "Operasyon Sırası"
 
 msgid "Operation Timer"
-msgstr ""
+msgstr "İşlem Zamanlayıcısı"
 
 msgid "Operation Type"
 msgstr "Operasyon Türü"
@@ -9018,7 +9018,7 @@ msgid "Pieces/Minute"
 msgstr "Parça/Dakika"
 
 msgid "Pin"
-msgstr ""
+msgstr "Sabitle"
 
 msgid "Pinned"
 msgstr "Sabitlenmiş"
@@ -9222,7 +9222,7 @@ msgid "Previous page"
 msgstr "Önceki sayfa"
 
 msgid "Previous step"
-msgstr ""
+msgstr "Önceki adım"
 
 msgid "Price break actions"
 msgstr "Fiyat kırılımı işlemleri"
@@ -10043,10 +10043,10 @@ msgid "Remove pair"
 msgstr "Çifti kaldır"
 
 msgid "Remove part"
-msgstr ""
+msgstr "Parçayı kaldır"
 
 msgid "Remove slide"
-msgstr ""
+msgstr "Slaytı kaldır"
 
 msgid "Remove sort by column"
 msgstr "Sıralamayı kaldır"
@@ -10055,7 +10055,7 @@ msgid "Remove this storage type from all referencing storage units and delete it
 msgstr "Bu depolama türünü tüm referans veren depolama birimlerinden kaldırır ve siler. Bu geri alınamaz."
 
 msgid "Remove tool"
-msgstr ""
+msgstr "Aracı kaldır"
 
 msgid "Removed"
 msgstr "Kaldırıldı"
@@ -10711,7 +10711,7 @@ msgid "Search operators..."
 msgstr "Operatörleri ara..."
 
 msgid "Search parts..."
-msgstr ""
+msgstr "Parça ara..."
 
 msgid "Search processes..."
 msgstr "Süreçleri ara..."
@@ -10723,7 +10723,7 @@ msgid "Search suppliers..."
 msgstr "Tedarikçileri ara..."
 
 msgid "Search tools..."
-msgstr ""
+msgstr "Araç ara..."
 
 msgid "Search..."
 msgstr "Ara..."
@@ -13999,7 +13999,7 @@ msgid "When on, employees can edit this attribute's value on their own profile; 
 msgstr "Etkinleştirildiğinde, çalışanlar bu özniteliğin değerini kendi profillerinde düzenleyebilir; aksi takdirde yalnızca yöneticiler bunu yapabilir."
 
 msgid "When on, opening an operation starts its timer automatically."
-msgstr ""
+msgstr "Açık olduğunda, bir işlemi açmak zamanlayıcıyı otomatik olarak başlatır."
 
 msgid "When on, pricing rules (volume discounts, promotions) still apply on top of this override; when off, this override is the final price."
 msgstr "Etkinleştirildiğinde, fiyatlandırma kuralları (hacim indirimler, promosyonlar) hala bu geçersiz kılmanın üstüne uygulanır; devre dışı bırakıldığında, bu geçersiz kılma nihai fiyattır."
@@ -14127,8 +14127,8 @@ msgstr "Sayacın, seçilen süreç başladığında mı yoksa tamamlandığında
 msgid "Whether this lot/serial passes inspection (Pass) or fails (Fail); a Fail blocks the stock from being received into available inventory."
 msgstr "Bu lotun/serinin muayeneyi geçip geçmediği (Pass) veya geçemediği (Fail); bir Fail, stoğun kullanılabilir envantere alınmasını engeller."
 
-msgid "Whether this process runs on internal work centers (Inside), outside suppliers (Outside), or both (Both); reveals different downstream fields and changes how planning routes work for this process."
-msgstr "Bu sürecin dahili iş merkezlerinde (Inside), dış tedarikçilerde (Outside) veya her ikisinde (Both) mi çalıştığı; farklı alt akış alanlarını gösterir ve planlamanın bu süreç için rotaları nasıl oluşturduğunu değiştirir."
+msgid "Whether this process runs on internal work centers (Process, Assembly, or Inspection) or at outside suppliers (Outside Processing); reveals different downstream fields, changes how planning routes work for this process, and defaults the operation type on new operations."
+msgstr "Bu işlemin dahili iş merkezlerinde (Proses, Montaj veya Muayene) mı yoksa dış tedarikçilerde (Dış İşleme) mi çalışıp çalışmadığı; farklı aşağı yönlü alanları ortaya koymakta, bu işlem için planlama rotalarının nasıl çalıştığını değiştirmekte ve yeni işlemlerde işlem türünü varsayılan olarak ayarlamaktadır."
 
 msgid "Whether this work blocks production (Down), degrades it (Impact), is on a planned downtime window (Planned), or has no production impact (No Impact); informs scheduling and customer-facing downtime communication."
 msgstr "Bu işin üretimi bloklayıp (Aşağı), onu bozultuyor (Etki), planlanmış bir kapalı kalma penceresinde (Planlanmış) bulunuyor veya hiçbir üretim etkisi yok (Etki Yok); zamanlama ve müşteriye yönelik kapalı kalma iletişimini bilgilendirir."

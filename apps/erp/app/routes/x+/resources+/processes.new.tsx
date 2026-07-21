@@ -75,7 +75,7 @@ export default function NewProcessRoute() {
 
   const initialValues = {
     name: "",
-    processType: "Inside" as const,
+    processType: "Process" as const,
     defaultStandardFactor: "Minutes/Piece" as const,
     completeAllOnScan: false
   };

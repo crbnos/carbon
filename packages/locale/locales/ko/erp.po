@@ -669,7 +669,7 @@ msgid "Add Partner"
 msgstr "파트너 추가"
 
 msgid "Add parts"
-msgstr ""
+msgstr "부품 추가"
 
 msgid "Add Permissions"
 msgstr "권한 추가"
@@ -711,7 +711,7 @@ msgid "Add Step"
 msgstr "단계 추가"
 
 msgid "Add steps to preview the operator view."
-msgstr ""
+msgstr "운영자 보기를 미리 보기 위해 단계를 추가하세요."
 
 msgid "Add Supplier"
 msgstr "공급업체 추가"
@@ -726,7 +726,7 @@ msgid "Add to stock for future use"
 msgstr "향후 사용을 위해 재고에 추가"
 
 msgid "Add tools"
-msgstr ""
+msgstr "도구 추가"
 
 #. placeholder {0}: copy.noun
 msgid "Add your first {0}"
@@ -1605,10 +1605,10 @@ msgid "Auto-numbering formats for orders, jobs, parts, and more"
 msgstr "주문, 작업, 품목 등에 대한 자동 번호 매기기 형식"
 
 msgid "Auto-start the operator's timer when they open an operation in the MES so time logs are captured from the start."
-msgstr ""
+msgstr "운영자가 MES에서 작업을 열 때 타이머를 자동으로 시작하여 시간 로그가 처음부터 기록되도록 합니다."
 
 msgid "Auto-start timer on open"
-msgstr ""
+msgstr "열 때 타이머 자동 시작"
 
 msgid "Auto-suggest purchases from demand and reorder points"
 msgstr "수요와 재주문점을 기반으로 구매를 자동 제안"
@@ -2018,7 +2018,7 @@ msgid "Cannot upload to parts bucket without item ID"
 msgstr "품목 ID 없이는 품목 버킷에 업로드할 수 없습니다"
 
 msgid "Caption"
-msgstr ""
+msgstr "캡션"
 
 msgid "Carbon"
 msgstr "Carbon"
@@ -2205,6 +2205,9 @@ msgstr "클래스"
 
 msgid "Class (inherited)"
 msgstr "클래스(상속됨)"
+
+msgid "Classifies a routing operation: Process, Assembly, and Inspection operations run on your own shop floor in the MES — Assembly gets the guided assembly view and Inspection a quality check — while an Outside Processing operation is subcontracted to a supplier and creates a purchase order; the process carries the same type and defaults it on new operations."
+msgstr "라우팅 작업을 분류합니다: 프로세스, 어셈블리, 검사 작업은 MES의 자체 작업장에서 실행됩니다 — 어셈블리는 안내식 어셈블리 보기를 받고 검사는 품질 확인을 수행합니다 — 외부 처리 작업은 공급업체에 외주되며 구매 주문을 생성합니다; 프로세스는 동일한 유형을 가지며 새 작업에 기본값을 설정합니다."
 
 msgid "Clean and approve the migrated data"
 msgstr "마이그레이션된 데이터를 정리하고 승인하세요"
@@ -2671,7 +2674,7 @@ msgid "Convert to Quote"
 msgstr "견적으로 전환"
 
 msgid "Converting…"
-msgstr ""
+msgstr "변환 중…"
 
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "구매주문, 입고, 청구서 라인에서 공급업체의 구매 단위를 귀사의 재고 단위로 변환합니다 — 12개들이 카톤으로 구매하고 낱개로 재고 관리."
@@ -5314,13 +5317,13 @@ msgid "Failed to save diagram"
 msgstr "다이어그램을 저장하지 못했습니다"
 
 msgid "Failed to save parts"
-msgstr ""
+msgstr "부품 저장 실패"
 
 msgid "Failed to save slides"
-msgstr ""
+msgstr "슬라이드 저장 실패"
 
 msgid "Failed to save tools"
-msgstr ""
+msgstr "도구 저장 실패"
 
 msgid "Failed to update batch property"
 msgstr "배치 속성을 업데이트하지 못했습니다"
@@ -8170,7 +8173,7 @@ msgid "No part ID"
 msgstr "품목 ID 없음"
 
 msgid "No parts"
-msgstr ""
+msgstr "부품 없음"
 
 msgid "No payables"
 msgstr "매입채무가 없습니다"
@@ -8206,7 +8209,7 @@ msgid "No receivables"
 msgstr "매출채권이 없습니다"
 
 msgid "No reference image"
-msgstr ""
+msgstr "참조 이미지 없음"
 
 msgid "No remaining entities to inspect."
 msgstr "검사할 개체가 남아 있지 않습니다."
@@ -8245,10 +8248,10 @@ msgid "No time entries for this week"
 msgstr "이번 주 시간 기록이 없습니다"
 
 msgid "No tools"
-msgstr ""
+msgstr "도구 없음"
 
 msgid "No tools for this step"
-msgstr ""
+msgstr "이 단계에 도구 없음"
 
 msgid "No transactions in this period"
 msgstr "이 기간에 거래가 없습니다"
@@ -8547,14 +8550,11 @@ msgstr "영업비용"
 msgid "Operation"
 msgstr "공정작업"
 
-msgid "Operation Kind"
-msgstr ""
-
 msgid "Operation Order"
 msgstr "공정작업 순서"
 
 msgid "Operation Timer"
-msgstr ""
+msgstr "작업 타이머"
 
 msgid "Operation Type"
 msgstr "공정작업 유형"
@@ -9018,7 +9018,7 @@ msgid "Pieces/Minute"
 msgstr "개/분"
 
 msgid "Pin"
-msgstr ""
+msgstr "핀"
 
 msgid "Pinned"
 msgstr "고정됨"
@@ -9222,7 +9222,7 @@ msgid "Previous page"
 msgstr "이전 페이지"
 
 msgid "Previous step"
-msgstr ""
+msgstr "이전 단계"
 
 msgid "Price break actions"
 msgstr "가격 구간 작업"
@@ -10043,10 +10043,10 @@ msgid "Remove pair"
 msgstr "쌍 제거"
 
 msgid "Remove part"
-msgstr ""
+msgstr "부품 제거"
 
 msgid "Remove slide"
-msgstr ""
+msgstr "슬라이드 제거"
 
 msgid "Remove sort by column"
 msgstr "열 정렬 제거"
@@ -10055,7 +10055,7 @@ msgid "Remove this storage type from all referencing storage units and delete it
 msgstr "이 저장 유형을 참조하는 모든 저장 단위에서 제거하고 삭제합니다. 이 작업은 되돌릴 수 없습니다."
 
 msgid "Remove tool"
-msgstr ""
+msgstr "도구 제거"
 
 msgid "Removed"
 msgstr "제거됨"
@@ -10711,7 +10711,7 @@ msgid "Search operators..."
 msgstr "작업자 검색..."
 
 msgid "Search parts..."
-msgstr ""
+msgstr "부품 검색..."
 
 msgid "Search processes..."
 msgstr "공정 검색..."
@@ -10723,7 +10723,7 @@ msgid "Search suppliers..."
 msgstr "공급업체 검색..."
 
 msgid "Search tools..."
-msgstr ""
+msgstr "도구 검색..."
 
 msgid "Search..."
 msgstr "검색..."
@@ -13999,7 +13999,7 @@ msgid "When on, employees can edit this attribute's value on their own profile; 
 msgstr "켜면 직원이 자신의 프로필에서 이 속성 값을 직접 수정할 수 있습니다. 끄면 관리자만 수정할 수 있습니다."
 
 msgid "When on, opening an operation starts its timer automatically."
-msgstr ""
+msgstr "켜져 있을 때, 작업을 열면 타이머가 자동으로 시작됩니다."
 
 msgid "When on, pricing rules (volume discounts, promotions) still apply on top of this override; when off, this override is the final price."
 msgstr "켜면 가격 규칙(수량 할인, 프로모션)이 이 재정의 위에 계속 적용됩니다. 끄면 이 재정의가 최종 가격이 됩니다."
@@ -14127,8 +14127,8 @@ msgstr "선택한 공정이 시작될 때 시간을 측정할지, 완료될 때 
 msgid "Whether this lot/serial passes inspection (Pass) or fails (Fail); a Fail blocks the stock from being received into available inventory."
 msgstr "이 로트/일련번호가 검사를 통과(합격)했는지 불합격했는지 여부로, 불합격 시 해당 재고는 사용 가능 재고로 입고되지 못합니다."
 
-msgid "Whether this process runs on internal work centers (Inside), outside suppliers (Outside), or both (Both); reveals different downstream fields and changes how planning routes work for this process."
-msgstr "이 공정이 내부 작업장(내부), 외부 공급업체(외부), 또는 둘 다(둘 다)에서 실행되는지 여부로, 이에 따라 하위 필드가 달라지고 계획에서 이 공정의 라우팅 방식이 변경됩니다."
+msgid "Whether this process runs on internal work centers (Process, Assembly, or Inspection) or at outside suppliers (Outside Processing); reveals different downstream fields, changes how planning routes work for this process, and defaults the operation type on new operations."
+msgstr "이 프로세스가 내부 작업 센터(프로세스, 어셈블리 또는 검사)에서 실행되는지 외부 공급업체(외부 처리)에서 실행되는지 여부; 다양한 다운스트림 필드를 표시하고, 이 프로세스에 대해 계획 경로가 작동하는 방식을 변경하며, 새 작업에서 작업 유형의 기본값을 설정합니다."
 
 msgid "Whether this work blocks production (Down), degrades it (Impact), is on a planned downtime window (Planned), or has no production impact (No Impact); informs scheduling and customer-facing downtime communication."
 msgstr "이 작업이 생산을 중단시키는지(가동중단), 저하시키는지(영향), 계획된 가동중단 구간에 해당하는지(계획됨), 또는 생산에 영향이 없는지(영향 없음) 여부로, 일정 계획 및 고객 대상 가동중단 커뮤니케이션에 활용됩니다."

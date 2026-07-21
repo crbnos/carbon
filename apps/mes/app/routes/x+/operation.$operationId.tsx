@@ -77,7 +77,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // Redirect guard (ADR-0005): each view has its own route. If this operation is an
   // Assembly, send it to the assembly route. Inspection falls through to the Operation
   // view until its route ships (Phase 3) — never redirect it here, or we'd loop.
-  if (resolveOperationView(op?.operationKind) === "assembly") {
+  if (resolveOperationView(op?.operationType) === "assembly") {
     throw redirect(path.to.assembly(operationId) + url.search);
   }
 

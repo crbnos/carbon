@@ -6,7 +6,6 @@ import {
   methodItemType,
   methodOperationOrders,
   methodType,
-  operationKinds,
   operationTypes,
   procedureStepType,
   standardFactorType
@@ -293,7 +292,6 @@ export const baseJobOperationValidator = z.object({
       message: "Operation type is required"
     })
   }),
-  operationKind: z.enum(operationKinds).optional().default("Operation"),
   processId: z.string().min(1, { message: "Process is required" }),
   procedureId: zfd.text(z.string().optional()),
   description: zfd.text(
@@ -334,7 +332,7 @@ export const jobOperationValidator = baseJobOperationValidator
   )
   .refine(
     (data) => {
-      if (data.operationType === "Outside") {
+      if (data.operationType === "Outside Processing") {
         return Number.isFinite(data.operationMinimumCost);
       }
       return true;
@@ -346,7 +344,7 @@ export const jobOperationValidator = baseJobOperationValidator
   )
   .refine(
     (data) => {
-      if (data.operationType === "Outside") {
+      if (data.operationType === "Outside Processing") {
         return Number.isFinite(data.operationUnitCost);
       }
       return true;
@@ -358,7 +356,7 @@ export const jobOperationValidator = baseJobOperationValidator
   )
   .refine(
     (data) => {
-      if (data.operationType === "Outside") {
+      if (data.operationType === "Outside Processing") {
         return Number.isFinite(data.operationLeadTime);
       }
       return true;
@@ -370,7 +368,7 @@ export const jobOperationValidator = baseJobOperationValidator
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return !!data.setupUnit;
       }
       return true;
@@ -382,7 +380,7 @@ export const jobOperationValidator = baseJobOperationValidator
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return !!data.laborUnit;
       }
       return true;
@@ -394,7 +392,7 @@ export const jobOperationValidator = baseJobOperationValidator
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return !!data.laborUnit;
       }
       return true;
@@ -406,7 +404,7 @@ export const jobOperationValidator = baseJobOperationValidator
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return Number.isFinite(data.setupTime);
       }
       return true;
@@ -418,7 +416,7 @@ export const jobOperationValidator = baseJobOperationValidator
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return Number.isFinite(data.laborTime);
       }
       return true;
@@ -430,7 +428,7 @@ export const jobOperationValidator = baseJobOperationValidator
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return Number.isFinite(data.machineTime);
       }
       return true;
@@ -442,7 +440,7 @@ export const jobOperationValidator = baseJobOperationValidator
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return Number.isFinite(data.machineRate);
       }
       return true;
@@ -454,7 +452,7 @@ export const jobOperationValidator = baseJobOperationValidator
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return Number.isFinite(data.overheadRate);
       }
       return true;
@@ -466,7 +464,7 @@ export const jobOperationValidator = baseJobOperationValidator
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return Number.isFinite(data.laborRate);
       }
       return true;
@@ -485,7 +483,7 @@ export const jobOperationValidatorForReleasedJob = baseJobOperationValidator
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return !!data.workCenterId;
       }
       return true;
@@ -497,7 +495,7 @@ export const jobOperationValidatorForReleasedJob = baseJobOperationValidator
   )
   .refine(
     (data) => {
-      if (data.operationType === "Outside") {
+      if (data.operationType === "Outside Processing") {
         return Number.isFinite(data.operationMinimumCost);
       }
       return true;
@@ -509,7 +507,7 @@ export const jobOperationValidatorForReleasedJob = baseJobOperationValidator
   )
   .refine(
     (data) => {
-      if (data.operationType === "Outside") {
+      if (data.operationType === "Outside Processing") {
         return Number.isFinite(data.operationUnitCost);
       }
       return true;
@@ -521,7 +519,7 @@ export const jobOperationValidatorForReleasedJob = baseJobOperationValidator
   )
   .refine(
     (data) => {
-      if (data.operationType === "Outside") {
+      if (data.operationType === "Outside Processing") {
         return Number.isFinite(data.operationLeadTime);
       }
       return true;
@@ -533,7 +531,7 @@ export const jobOperationValidatorForReleasedJob = baseJobOperationValidator
   )
   .refine(
     (data) => {
-      if (data.operationType === "Outside") {
+      if (data.operationType === "Outside Processing") {
         return !!data.operationSupplierProcessId;
       }
       return true;
@@ -545,7 +543,7 @@ export const jobOperationValidatorForReleasedJob = baseJobOperationValidator
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return !!data.setupUnit;
       }
       return true;
@@ -557,7 +555,7 @@ export const jobOperationValidatorForReleasedJob = baseJobOperationValidator
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return !!data.laborUnit;
       }
       return true;
@@ -569,7 +567,7 @@ export const jobOperationValidatorForReleasedJob = baseJobOperationValidator
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return !!data.laborUnit;
       }
       return true;
@@ -581,7 +579,7 @@ export const jobOperationValidatorForReleasedJob = baseJobOperationValidator
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return Number.isFinite(data.setupTime);
       }
       return true;
@@ -593,7 +591,7 @@ export const jobOperationValidatorForReleasedJob = baseJobOperationValidator
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return Number.isFinite(data.laborTime);
       }
       return true;
@@ -605,7 +603,7 @@ export const jobOperationValidatorForReleasedJob = baseJobOperationValidator
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return Number.isFinite(data.machineTime);
       }
       return true;
@@ -617,7 +615,7 @@ export const jobOperationValidatorForReleasedJob = baseJobOperationValidator
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return Number.isFinite(data.machineRate);
       }
       return true;
@@ -629,7 +627,7 @@ export const jobOperationValidatorForReleasedJob = baseJobOperationValidator
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return Number.isFinite(data.overheadRate);
       }
       return true;
@@ -641,7 +639,7 @@ export const jobOperationValidatorForReleasedJob = baseJobOperationValidator
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return Number.isFinite(data.laborRate);
       }
       return true;

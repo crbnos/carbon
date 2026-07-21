@@ -419,7 +419,7 @@ serve(async (req: Request) => {
         if (jobOperations.error) throw new Error(jobOperations.error.message);
 
         const outsideOperations = jobOperations.data?.filter(
-          (d) => d.operationType === "Outside"
+          (d) => d.operationType === "Outside Processing"
         );
 
         if (outsideOperations.length > 0) {

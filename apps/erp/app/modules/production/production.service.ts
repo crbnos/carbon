@@ -1635,7 +1635,7 @@ export async function getOutsideOperationsByJobId(
     .select("id, description")
     .eq("jobId", jobId)
     .eq("companyId", companyId)
-    .eq("operationType", "Outside");
+    .eq("operationType", "Outside Processing");
 }
 
 export async function getProcedure(

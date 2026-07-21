@@ -80,7 +80,11 @@ export const useSupplierProcesses = (args: { processId?: string }) => {
     useFetcher<Awaited<ReturnType<typeof getSupplierProcessesByProcess>>>();
 
   useMount(() => {
-    fetcher.load(path.to.api.supplierProcesses(processId));
+    // No process selected yet — loading with an empty id 404s the fetcher and
+    // trips the route error boundary.
+    if (processId) {
+      fetcher.load(path.to.api.supplierProcesses(processId));
+    }
   });
 
   const supplierProcesses = useMemo(

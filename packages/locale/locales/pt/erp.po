@@ -669,7 +669,7 @@ msgid "Add Partner"
 msgstr "Adicionar Parceiro"
 
 msgid "Add parts"
-msgstr ""
+msgstr "Adicionar peças"
 
 msgid "Add Permissions"
 msgstr "Adicionar Permissões"
@@ -711,7 +711,7 @@ msgid "Add Step"
 msgstr "Adicionar Etapa"
 
 msgid "Add steps to preview the operator view."
-msgstr ""
+msgstr "Adicione etapas para visualizar a visualização do operador."
 
 msgid "Add Supplier"
 msgstr "Adicionar Fornecedor"
@@ -726,7 +726,7 @@ msgid "Add to stock for future use"
 msgstr "Adicionar ao estoque para uso futuro"
 
 msgid "Add tools"
-msgstr ""
+msgstr "Adicionar ferramentas"
 
 #. placeholder {0}: copy.noun
 msgid "Add your first {0}"
@@ -1605,10 +1605,10 @@ msgid "Auto-numbering formats for orders, jobs, parts, and more"
 msgstr "Formatos de numeração automática para pedidos, trabalhos, peças e muito mais"
 
 msgid "Auto-start the operator's timer when they open an operation in the MES so time logs are captured from the start."
-msgstr ""
+msgstr "Auto-iniciar o cronômetro do operador quando ele abrir uma operação no MES para que os registros de tempo sejam capturados desde o início."
 
 msgid "Auto-start timer on open"
-msgstr ""
+msgstr "Auto-iniciar cronômetro ao abrir"
 
 msgid "Auto-suggest purchases from demand and reorder points"
 msgstr "Sugerir automaticamente compras a partir da demanda e pontos de reabastecimento"
@@ -2018,7 +2018,7 @@ msgid "Cannot upload to parts bucket without item ID"
 msgstr "Não é possível fazer upload para o bucket de peças sem ID do item"
 
 msgid "Caption"
-msgstr ""
+msgstr "Legenda"
 
 msgid "Carbon"
 msgstr "Carbon"
@@ -2205,6 +2205,9 @@ msgstr "Classe"
 
 msgid "Class (inherited)"
 msgstr "Classe (herdada)"
+
+msgid "Classifies a routing operation: Process, Assembly, and Inspection operations run on your own shop floor in the MES — Assembly gets the guided assembly view and Inspection a quality check — while an Outside Processing operation is subcontracted to a supplier and creates a purchase order; the process carries the same type and defaults it on new operations."
+msgstr "Classifica uma operação de roteamento: operações de Processo, Montagem e Inspeção são executadas em seu próprio chão de fábrica no MES — Montagem obtém a visualização de montagem orientada e Inspeção uma verificação de qualidade — enquanto uma operação de Processamento Externo é subcontratada para um fornecedor e cria uma ordem de compra; o processo carrega o mesmo tipo e o define como padrão em novas operações."
 
 msgid "Clean and approve the migrated data"
 msgstr "Limpar e aprovar os dados migrados"
@@ -2671,7 +2674,7 @@ msgid "Convert to Quote"
 msgstr "Converter para Cotação"
 
 msgid "Converting…"
-msgstr ""
+msgstr "Convertendo…"
 
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "Converte a unidade de compra de um fornecedor para sua unidade de inventário em uma linha de pedido, recebimento ou fatura — compre em caixas de 12, estoque em unidades."
@@ -5314,13 +5317,13 @@ msgid "Failed to save diagram"
 msgstr "Falha ao salvar diagrama"
 
 msgid "Failed to save parts"
-msgstr ""
+msgstr "Falha ao salvar peças"
 
 msgid "Failed to save slides"
-msgstr ""
+msgstr "Falha ao salvar slides"
 
 msgid "Failed to save tools"
-msgstr ""
+msgstr "Falha ao salvar ferramentas"
 
 msgid "Failed to update batch property"
 msgstr "Falha ao atualizar propriedade de lote"
@@ -8170,7 +8173,7 @@ msgid "No part ID"
 msgstr "Sem ID de peça"
 
 msgid "No parts"
-msgstr ""
+msgstr "Nenhuma peça"
 
 msgid "No payables"
 msgstr "Sem contas a pagar"
@@ -8206,7 +8209,7 @@ msgid "No receivables"
 msgstr "Sem recebíveis"
 
 msgid "No reference image"
-msgstr ""
+msgstr "Nenhuma imagem de referência"
 
 msgid "No remaining entities to inspect."
 msgstr "Nenhuma entidade restante para inspecionar."
@@ -8245,10 +8248,10 @@ msgid "No time entries for this week"
 msgstr "Sem registros de tempo para esta semana"
 
 msgid "No tools"
-msgstr ""
+msgstr "Nenhuma ferramenta"
 
 msgid "No tools for this step"
-msgstr ""
+msgstr "Nenhuma ferramenta para esta etapa"
 
 msgid "No transactions in this period"
 msgstr "Nenhuma transação neste período"
@@ -8547,14 +8550,11 @@ msgstr "Despesas Operacionais"
 msgid "Operation"
 msgstr "Operação"
 
-msgid "Operation Kind"
-msgstr ""
-
 msgid "Operation Order"
 msgstr "Ordem da Operação"
 
 msgid "Operation Timer"
-msgstr ""
+msgstr "Cronômetro de Operação"
 
 msgid "Operation Type"
 msgstr "Tipo de Operação"
@@ -9018,7 +9018,7 @@ msgid "Pieces/Minute"
 msgstr "Peças/Minuto"
 
 msgid "Pin"
-msgstr ""
+msgstr "Fixar"
 
 msgid "Pinned"
 msgstr "Fixado"
@@ -9222,7 +9222,7 @@ msgid "Previous page"
 msgstr "Página anterior"
 
 msgid "Previous step"
-msgstr ""
+msgstr "Etapa anterior"
 
 msgid "Price break actions"
 msgstr "Ações de quebra de preço"
@@ -10043,10 +10043,10 @@ msgid "Remove pair"
 msgstr "Remover par"
 
 msgid "Remove part"
-msgstr ""
+msgstr "Remover peça"
 
 msgid "Remove slide"
-msgstr ""
+msgstr "Remover slide"
 
 msgid "Remove sort by column"
 msgstr "Remover ordenação por coluna"
@@ -10055,7 +10055,7 @@ msgid "Remove this storage type from all referencing storage units and delete it
 msgstr "Remova este tipo de armazenamento de todas as unidades de armazenamento que o referenciam e o delete. Isto não pode ser desfeito."
 
 msgid "Remove tool"
-msgstr ""
+msgstr "Remover ferramenta"
 
 msgid "Removed"
 msgstr "Removido"
@@ -10711,7 +10711,7 @@ msgid "Search operators..."
 msgstr "Pesquisar operadores..."
 
 msgid "Search parts..."
-msgstr ""
+msgstr "Pesquisar peças..."
 
 msgid "Search processes..."
 msgstr "Pesquisar processos..."
@@ -10723,7 +10723,7 @@ msgid "Search suppliers..."
 msgstr "Pesquisar fornecedores..."
 
 msgid "Search tools..."
-msgstr ""
+msgstr "Pesquisar ferramentas..."
 
 msgid "Search..."
 msgstr "Pesquisar..."
@@ -13999,7 +13999,7 @@ msgid "When on, employees can edit this attribute's value on their own profile; 
 msgstr "Quando ativado, os funcionários podem editar o valor deste atributo em seu próprio perfil; caso contrário, apenas os administradores podem fazê-lo."
 
 msgid "When on, opening an operation starts its timer automatically."
-msgstr ""
+msgstr "Quando ativado, abrir uma operação inicia seu cronômetro automaticamente."
 
 msgid "When on, pricing rules (volume discounts, promotions) still apply on top of this override; when off, this override is the final price."
 msgstr "Quando ativado, as regras de preço (descontos por volume, promoções) ainda se aplicam sobre esta substituição; quando desativado, esta substituição é o preço final."
@@ -14127,8 +14127,8 @@ msgstr "Se o cronômetro inicia quando o processo escolhido começa ou quando el
 msgid "Whether this lot/serial passes inspection (Pass) or fails (Fail); a Fail blocks the stock from being received into available inventory."
 msgstr "Se este lote/série passa na inspeção (Pass) ou falha (Fail); um Fail impede que o estoque seja recebido no inventário disponível."
 
-msgid "Whether this process runs on internal work centers (Inside), outside suppliers (Outside), or both (Both); reveals different downstream fields and changes how planning routes work for this process."
-msgstr "Se este processo é executado em centros de trabalho internos (Inside), fornecedores externos (Outside) ou ambos (Both); revela diferentes campos posteriores e altera como o planejamento roteia este processo."
+msgid "Whether this process runs on internal work centers (Process, Assembly, or Inspection) or at outside suppliers (Outside Processing); reveals different downstream fields, changes how planning routes work for this process, and defaults the operation type on new operations."
+msgstr "Se este processo é executado em centros de trabalho internos (Processo, Montagem ou Inspeção) ou em fornecedores externos (Processamento Externo); revela diferentes campos subsequentes, muda como as rotas de planejamento funcionam para este processo e define o tipo de operação padrão em novas operações."
 
 msgid "Whether this work blocks production (Down), degrades it (Impact), is on a planned downtime window (Planned), or has no production impact (No Impact); informs scheduling and customer-facing downtime communication."
 msgstr "Se este trabalho bloqueia a produção (Inativo), a degrada (Impacto), fica em uma janela de tempo de inatividade planejada (Planejado) ou não tem impacto na produção (Sem Impacto); informa o agendamento e a comunicação de inatividade orientada ao cliente."

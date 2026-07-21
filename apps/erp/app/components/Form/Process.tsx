@@ -72,7 +72,7 @@ const Process = ({
           }}
           initialValues={{
             name: created,
-            processType: "Inside",
+            processType: "Process",
             defaultStandardFactor: "Minutes/Piece",
             completeAllOnScan: false,
             workCenters: []

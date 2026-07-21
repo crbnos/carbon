@@ -2111,8 +2111,7 @@ export async function createPartFromComponent(
           operations.push({
             order: operation.position ?? index + 1,
             operationOrder: "After Previous",
-            operationType:
-              process.processType === "Inside" ? "Inside" : "Outside",
+            operationType: process.processType,
             description:
               operation.operation_definition_name ??
               operation.name ??
@@ -2588,7 +2587,10 @@ async function getOrCreateProcess(
     .from("process")
     .insert({
       name: operationName,
-      processType: operation.is_outside_service === true ? "Outside" : "Inside",
+      processType:
+        operation.is_outside_service === true
+          ? "Outside Processing"
+          : "Process",
       companyId,
       createdBy,
       defaultStandardFactor: "Minutes/Piece"
@@ -3122,8 +3124,7 @@ export async function insertQuoteLines(
                       quoteMakeMethodId,
                       processId: process.id,
                       order: operation.position ?? operationOrder++,
-                      operationType:
-                        process.processType === "Inside" ? "Inside" : "Outside",
+                      operationType: process.processType,
                       description:
                         operationName ?? `Operation ${operationOrder}`,
                       setupTime: (operation.setup_time ?? 0) * 60,

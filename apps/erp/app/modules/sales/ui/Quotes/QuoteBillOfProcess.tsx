@@ -180,7 +180,7 @@ function makeItem(
         <h3 className="font-semibold truncate cursor-pointer">
           {operation.description}
         </h3>
-        {operation.operationType === "Outside" && (
+        {operation.operationType === "Outside Processing" && (
           <SupplierProcessPreview
             processId={operation.processId}
             supplierProcessId={operation.operationSupplierProcessId}
@@ -192,8 +192,8 @@ function makeItem(
     order: operation.operationOrder,
     details: (
       <HStack spacing={1}>
-        {operation.operationType === "Outside" ? (
-          <Badge>Outside</Badge>
+        {operation.operationType === "Outside Processing" ? (
+          <Badge>Outside Processing</Badge>
         ) : (
           <>
             {(operation?.setupTime ?? 0) > 0 && (
@@ -237,8 +237,7 @@ const initialOperation: Omit<
   operationUnitCost: 0,
   operationLeadTime: 0,
   operationOrder: "After Previous",
-  operationType: "Inside",
-  operationKind: "Operation",
+  operationType: "Process",
   overheadRate: 0,
   processId: "",
   procedureId: "",
@@ -583,7 +582,7 @@ const QuoteBillOfProcess = ({
         disabled:
           item.id in temporaryItems ||
           hasProcedure ||
-          item.data.operationType === "Outside",
+          item.data.operationType === "Outside Processing",
         label: (
           <span className="flex items-center gap-2">
             <span>
@@ -647,7 +646,7 @@ const QuoteBillOfProcess = ({
         disabled:
           item.id in temporaryItems ||
           hasProcedure ||
-          item.data.operationType === "Outside",
+          item.data.operationType === "Outside Processing",
         label: (
           <span className="flex items-center gap-2">
             <span>
@@ -690,7 +689,7 @@ const QuoteBillOfProcess = ({
         disabled:
           item.id in temporaryItems ||
           hasProcedure ||
-          item.data.operationType === "Outside",
+          item.data.operationType === "Outside Processing",
         label: (
           <span className="flex items-center gap-2">
             <span>
@@ -732,7 +731,8 @@ const QuoteBillOfProcess = ({
       {
         id: 4,
         disabled:
-          item.id in temporaryItems || item.data.operationType === "Outside",
+          item.id in temporaryItems ||
+          item.data.operationType === "Outside Processing",
         label: (
           <span className="flex items-center gap-2">
             <span>
@@ -1833,7 +1833,7 @@ function OperationForm({
     machineUnitHint: getUnitHint(item.data.machineUnit),
     operationMinimumCost: item.data.operationMinimumCost ?? 0,
     operationLeadTime: item.data.operationLeadTime ?? 0,
-    operationType: item.data.operationType ?? "Inside",
+    operationType: item.data.operationType ?? "Process",
     operationUnitCost: item.data.operationUnitCost ?? 0,
     overheadRate: item.data.overheadRate ?? 0,
     processId: item.data.processId ?? "",
@@ -1902,8 +1902,9 @@ function OperationForm({
               return (acc += sp.leadTime ?? 0);
             }, 0) / supplierProcesses.data.length
           : p.operationLeadTime,
-      operationType:
-        process.data?.processType === "Outside" ? "Outside" : "Inside"
+      // processType and operationType share one enum — the process's type is the
+      // default operation type.
+      operationType: process.data?.processType ?? "Process"
     }));
   };
 
@@ -1979,18 +1980,10 @@ function OperationForm({
             onProcessChange(value?.value as string);
           }}
         />
-        <Select
-          name="operationOrder"
-          label={t`Operation Order`}
-          placeholder={t`Operation Order`}
-          options={methodOperationOrders.map((o) => ({
-            value: o,
-            label: o
-          }))}
-        />
         <SelectControlled
           name="operationType"
           label={t`Operation Type`}
+          termId="operation-type"
           placeholder={t`Operation Type`}
           options={operationTypes.map((o) => ({
             value: o,
@@ -1998,27 +1991,26 @@ function OperationForm({
           }))}
           value={processData.operationType}
           onChange={(value) => {
+            const next = (value?.value as string) ?? "Process";
             setProcessData((d) => ({
               ...d,
-              setupUnit: "Total Minutes",
-              laborUnit: "Minutes/Piece",
-              machineUnit: "Minutes/Piece",
-              operationType: value?.value as string
+              operationType: next,
+              // Crossing the in-house <-> Outside Processing boundary changes the
+              // meaningful time units; reset to defaults. Switching between in-house
+              // types keeps whatever units the user picked.
+              ...((next === "Outside Processing") !==
+              (d.operationType === "Outside Processing")
+                ? {
+                    setupUnit: "Total Minutes",
+                    laborUnit: "Minutes/Piece",
+                    machineUnit: "Minutes/Piece"
+                  }
+                : {})
             }));
           }}
         />
 
-        <InputControlled
-          name="description"
-          label={t`Description`}
-          value={processData.description}
-          onChange={(newValue) => {
-            setProcessData((d) => ({ ...d, description: newValue }));
-          }}
-          className="col-span-2"
-        />
-
-        {processData.operationType === "Outside" ? (
+        {processData.operationType === "Outside Processing" ? (
           <>
             <SupplierProcess
               name="operationSupplierProcessId"
@@ -2090,9 +2082,29 @@ function OperationForm({
             termId="work-center"
           />
         )}
+
+        <InputControlled
+          name="description"
+          label={t`Description`}
+          value={processData.description}
+          onChange={(newValue) => {
+            setProcessData((d) => ({ ...d, description: newValue }));
+          }}
+          className="col-span-2"
+        />
+
+        <Select
+          name="operationOrder"
+          label={t`Operation Order`}
+          placeholder={t`Operation Order`}
+          options={methodOperationOrders.map((o) => ({
+            value: o,
+            label: o
+          }))}
+        />
       </div>
 
-      {processData.operationType === "Inside" && (
+      {processData.operationType !== "Outside Processing" && (
         <>
           <div className="border border-border rounded-md shadow-sm p-4 flex flex-col gap-4">
             <HStack

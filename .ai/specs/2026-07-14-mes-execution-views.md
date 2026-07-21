@@ -29,15 +29,18 @@ A single step of a job's routing (the live name for "BOP" — bill of process). 
 operator executes. Each `jobOperation` is copied from a `methodOperation` template by the
 `get-method` edge function when a job is created.
 
-### operationKind
-A per-operation classification that decides **which execution view** an operator sees. Enum
-members: `Operation | Assembly | Inspection`, NOT NULL default `Operation` (preserves today's
-behavior). The member `Operation` maps 1:1 to the Operation view. Orthogonal to tracking type and
-distinct from `operationType` (Inside/Outside), which it must not overload. Stored on
-`methodOperation` (template) and copied to `jobOperation` / `quoteOperation`. The stored field is
-the source of truth. Auto-suggest *writes a default* at `methodOperation` author time (computed
-from BOM/BOP signals, overridable in the BOP editor); `get-method` never re-runs it — it copies
-the stored value verbatim.
+### operationType (formerly operationKind — superseded)
+> Superseded by [2026-07-20-operation-type-consolidation.md](2026-07-20-operation-type-consolidation.md):
+> `operationKind` was collapsed into a single `operationType` enum
+> (`Process | Assembly | Inspection | Outside Processing`, NOT NULL default `Process`),
+> shared with `process.processType`. The per-operation classification that decides
+> **which execution view** an operator sees: `Assembly` → assembly view, `Inspection` →
+> inspection view (falls through to Operation until Phase 3), everything else →
+> Operation view. Subcontract logic keys on `= 'Outside Processing'`; in-house logic on
+> `<> 'Outside Processing'`. Orthogonal to tracking type. Stored on `methodOperation`
+> (template) and copied verbatim to `jobOperation` / `quoteOperation` by `get-method`.
+> The process's own type is the authoring default (picking a process seeds the
+> operation's type).
 
 ### tracking type
 The item's `itemTrackingType` — `Serial | Batch | Inventory | Non-Inventory`. Decides **per-unit
@@ -185,16 +188,15 @@ Serial/batch **scan-at-step** falls out for free: the per-step material list dri
 - **Realtime refresh** of BOP steps on a live job without closing (realtime channel on
   `jobOperationStep`/`jobOperationStepRecord` → revalidate in JobBillOfProcess).
 
-### Operation Type + Kind merge (authoring UI ✅, column collapse deferred)
-Design agreed: a single operation field `Standard | Assembly | Inspection | Outside Processing`
-(Batch dropped — that's the tracking type's job), keeping `process.processType`
-(Inside/Outside/both). The method BOP editor ships a unified **Type** picker
-(`operationClassifications` + `classificationFromTypeKind`/`typeKindFromClassification` in
-`operationKind.ts`) that maps to the existing `operationType` + `operationKind` columns via
-hidden inputs, so costing (`=== "Outside"`) and the MES view router are untouched. Deferred
-follow-up: mirror the picker in Job + Quote BOP editors; physically collapse the columns (enum
-migration, retire `operationKind`, rewrite the ~29 `=== "Outside"` sites) — needs DB apply and
-costing/MRP regression.
+### Operation Type + Kind merge ✅ (columns physically collapsed)
+Done — see [2026-07-20-operation-type-consolidation.md](2026-07-20-operation-type-consolidation.md).
+One enum `Process | Assembly | Inspection | Outside Processing` on `operationType`
+(operations AND `process.processType` — same Postgres type; the old `processType` and
+`operationKind` enums are gone). All three BOP editors (Item, Job, Quote) share the same
+single **Operation Type** picker; the classification shim (`operationClassifications` +
+mapping helpers) was deleted; every `=== "Outside"` site was rewritten to
+`=== 'Outside Processing'` and every `=== "Inside"` site to `!== 'Outside Processing'`.
+"Standard" was renamed to "Process"; "Batch" stays dropped (tracking type's job).
 
 ---
 
@@ -274,10 +276,13 @@ stays out of the assembly view.
 Each execution view gets its own route:
 
 ```
-/x/operation/:id    → JobOperation    (operationKind = Operation, the default)
-/x/assembly/:id     → AssemblyView    (operationKind = Assembly)
-/x/inspection/:id   → InspectionView  (operationKind = Inspection — Phase 3)
+/x/operation/:id    → JobOperation    (operationType = Process / Outside Processing, the default)
+/x/assembly/:id     → AssemblyView    (operationType = Assembly)
+/x/inspection/:id   → InspectionView  (operationType = Inspection — Phase 3)
 ```
+(Originally keyed on `operationKind`; re-keyed on the consolidated `operationType` —
+see 2026-07-20-operation-type-consolidation.md. The value reaches the routes via
+`get_job_operation_by_id`.)
 
 Each route's loader returns **one** shape and renders **one** view. Every route opens with a
 **redirect guard**: it reads the operation's `operationKind` and, if the kind doesn't belong to
@@ -367,8 +372,8 @@ omitting either silently breaks propagation.
 
 ## 7. Remaining work (Phase 4 roadmap)
 
-- Job/Quote BOP editors: mirror the unified Type picker; physical `operationType`+`operationKind`
-  column collapse (enum migration + rewrite ~29 `=== "Outside"` sites).
+- ~~Job/Quote BOP editors: mirror the unified Type picker; physical `operationType`+`operationKind`
+  column collapse~~ ✅ Done — 2026-07-20-operation-type-consolidation.md.
 - Production: shortage flag → close without consuming stock → auto-raise a future job; passive
   step timer (cycle time); manager complete-all override; step overview screen.
 - Content authoring: image resize/grid in the editor; annotation; tool hotspots.

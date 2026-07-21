@@ -94,7 +94,7 @@ export default function ProcessRoute() {
   const initialValues = {
     id: process.id!,
     name: process.name!,
-    processType: process.processType ?? "Inside",
+    processType: process.processType ?? "Process",
     defaultStandardFactor: process.defaultStandardFactor ?? "Minutes/Piece",
     workCenters: process.workCenters ?? [],
     // @ts-ignore

@@ -46,7 +46,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     makeMethod.data?.id
       ? client
           .from("methodOperation")
-          .select("id, description, operationKind")
+          .select("id, description, operationType")
           .eq("makeMethodId", makeMethod.data.id)
           .order("order", { ascending: true })
       : Promise.resolve({ data: [], error: null }),
@@ -65,7 +65,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     openJobs.length > 0
       ? await client
           .from("jobOperation")
-          .select("id, description, operationKind, jobId")
+          .select("id, description, operationType, jobId")
           .in(
             "jobId",
             openJobs.map((job) => job.id)

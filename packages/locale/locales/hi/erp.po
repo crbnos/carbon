@@ -669,7 +669,7 @@ msgid "Add Partner"
 msgstr "पार्टनर जोड़ें"
 
 msgid "Add parts"
-msgstr ""
+msgstr "पुर्जे जोड़ें"
 
 msgid "Add Permissions"
 msgstr "अनुमतियां जोड़ें"
@@ -711,7 +711,7 @@ msgid "Add Step"
 msgstr "स्टेप जोड़ें"
 
 msgid "Add steps to preview the operator view."
-msgstr ""
+msgstr "ऑपरेटर व्यू की प्रीव्यू के लिए कदम जोड़ें।"
 
 msgid "Add Supplier"
 msgstr "आपूर्तिकर्ता जोड़ें"
@@ -726,7 +726,7 @@ msgid "Add to stock for future use"
 msgstr "भविष्य के उपयोग के लिए स्टॉक में जोड़ें"
 
 msgid "Add tools"
-msgstr ""
+msgstr "उपकरण जोड़ें"
 
 #. placeholder {0}: copy.noun
 msgid "Add your first {0}"
@@ -1605,10 +1605,10 @@ msgid "Auto-numbering formats for orders, jobs, parts, and more"
 msgstr "ऑर्डर, जॉब, पार्ट्स और अन्य के लिए ऑटो-नंबरिंग फॉर्मेट"
 
 msgid "Auto-start the operator's timer when they open an operation in the MES so time logs are captured from the start."
-msgstr ""
+msgstr "जब ऑपरेटर MES में एक ऑपरेशन खोलते हैं तो उनके टाइमर को स्वचालित रूप से शुरू करें ताकि समय लॉग शुरू से ही कैप्चर किए जाएं।"
 
 msgid "Auto-start timer on open"
-msgstr ""
+msgstr "खोलने पर टाइमर को स्वचालित रूप से शुरू करें"
 
 msgid "Auto-suggest purchases from demand and reorder points"
 msgstr "मांग और पुनः ऑर्डर बिंदुओं से स्वचालित रूप से खरीद सुझाएं"
@@ -2018,7 +2018,7 @@ msgid "Cannot upload to parts bucket without item ID"
 msgstr "आइटम आईडी के बिना पार्ट्स बकेट में अपलोड नहीं कर सकते"
 
 msgid "Caption"
-msgstr ""
+msgstr "कैप्शन"
 
 msgid "Carbon"
 msgstr "कार्बन"
@@ -2205,6 +2205,9 @@ msgstr "वर्ग"
 
 msgid "Class (inherited)"
 msgstr "वर्ग (विरासत में मिला)"
+
+msgid "Classifies a routing operation: Process, Assembly, and Inspection operations run on your own shop floor in the MES — Assembly gets the guided assembly view and Inspection a quality check — while an Outside Processing operation is subcontracted to a supplier and creates a purchase order; the process carries the same type and defaults it on new operations."
+msgstr "एक रूटिंग ऑपरेशन को वर्गीकृत करता है: प्रक्रिया, असेंबली, और निरीक्षण ऑपरेशन MES में आपके खुद के शॉप फ्लोर पर चलते हैं - असेंबली को निर्देशित असेंबली दृश्य मिलता है और निरीक्षण को गुणवत्ता जांच - जबकि एक बाहरी प्रसंस्करण ऑपरेशन एक आपूर्तिकर्ता को आउटसोर्स किया जाता है और एक खरीद आदेश बनाता है; प्रक्रिया समान प्रकार को लागू करती है और इसे नए ऑपरेशन पर डिफ़ॉल्ट करती है।"
 
 msgid "Clean and approve the migrated data"
 msgstr "माइग्रेट किए गए डेटा को साफ करें और मंजूरी दें"
@@ -2671,7 +2674,7 @@ msgid "Convert to Quote"
 msgstr "उद्धरण में परिवर्तित करें"
 
 msgid "Converting…"
-msgstr ""
+msgstr "परिवर्तित कर रहे हैं…"
 
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "एक आपूर्तिकर्ता की खरीद इकाई को PO, प्राप्ति, या बिल लाइन पर आपकी इन्वेंटरी इकाई में परिवर्तित करता है — 12 के कार्टन में खरीदें, व्यक्तिगत में स्टॉक करें।"
@@ -5314,13 +5317,13 @@ msgid "Failed to save diagram"
 msgstr "आरेख सहेजने में विफल"
 
 msgid "Failed to save parts"
-msgstr ""
+msgstr "पुर्जों को सहेजने में विफल"
 
 msgid "Failed to save slides"
-msgstr ""
+msgstr "स्लाइड्स को सहेजने में विफल"
 
 msgid "Failed to save tools"
-msgstr ""
+msgstr "उपकरणों को सहेजने में विफल"
 
 msgid "Failed to update batch property"
 msgstr "बैच प्रॉपर्टी अपडेट करने में विफल"
@@ -8170,7 +8173,7 @@ msgid "No part ID"
 msgstr "कोई भाग ID नहीं"
 
 msgid "No parts"
-msgstr ""
+msgstr "कोई पुर्जे नहीं"
 
 msgid "No payables"
 msgstr "कोई देय नहीं"
@@ -8206,7 +8209,7 @@ msgid "No receivables"
 msgstr "कोई प्राप्य नहीं"
 
 msgid "No reference image"
-msgstr ""
+msgstr "कोई संदर्भ छवि नहीं"
 
 msgid "No remaining entities to inspect."
 msgstr "निरीक्षण के लिए कोई शेष इकाई नहीं है।"
@@ -8245,10 +8248,10 @@ msgid "No time entries for this week"
 msgstr "इस सप्ताह के लिए कोई समय प्रविष्टि नहीं"
 
 msgid "No tools"
-msgstr ""
+msgstr "कोई उपकरण नहीं"
 
 msgid "No tools for this step"
-msgstr ""
+msgstr "इस कदम के लिए कोई उपकरण नहीं"
 
 msgid "No transactions in this period"
 msgstr "इस अवधि में कोई लेनदेन नहीं"
@@ -8547,14 +8550,11 @@ msgstr "परिचालन व्यय"
 msgid "Operation"
 msgstr "ऑपरेशन"
 
-msgid "Operation Kind"
-msgstr ""
-
 msgid "Operation Order"
 msgstr "ऑपरेशन क्रम"
 
 msgid "Operation Timer"
-msgstr ""
+msgstr "ऑपरेशन टाइमर"
 
 msgid "Operation Type"
 msgstr "ऑपरेशन प्रकार"
@@ -9018,7 +9018,7 @@ msgid "Pieces/Minute"
 msgstr "Pieces/Minute"
 
 msgid "Pin"
-msgstr ""
+msgstr "पिन"
 
 msgid "Pinned"
 msgstr "पिन किया गया"
@@ -9222,7 +9222,7 @@ msgid "Previous page"
 msgstr "पिछला पृष्ठ"
 
 msgid "Previous step"
-msgstr ""
+msgstr "पिछला कदम"
 
 msgid "Price break actions"
 msgstr "मूल्य विराम क्रियाएं"
@@ -10043,10 +10043,10 @@ msgid "Remove pair"
 msgstr "जोड़ी हटाएं"
 
 msgid "Remove part"
-msgstr ""
+msgstr "पुर्जा हटाएँ"
 
 msgid "Remove slide"
-msgstr ""
+msgstr "स्लाइड हटाएँ"
 
 msgid "Remove sort by column"
 msgstr "कॉलम द्वारा सॉर्ट हटाएं"
@@ -10055,7 +10055,7 @@ msgid "Remove this storage type from all referencing storage units and delete it
 msgstr "इस स्टोरेज प्रकार को सभी संदर्भित स्टोरेज इकाइयों से हटाएं और इसे हटाएं। यह पूर्ववत नहीं किया जा सकता।"
 
 msgid "Remove tool"
-msgstr ""
+msgstr "उपकरण हटाएँ"
 
 msgid "Removed"
 msgstr "हटाया गया"
@@ -10711,7 +10711,7 @@ msgid "Search operators..."
 msgstr "ऑपरेटर खोजें..."
 
 msgid "Search parts..."
-msgstr ""
+msgstr "पुर्जे खोजें..."
 
 msgid "Search processes..."
 msgstr "प्रक्रियाओं को खोजें..."
@@ -10723,7 +10723,7 @@ msgid "Search suppliers..."
 msgstr "आपूर्तिकर्ताओं को खोजें..."
 
 msgid "Search tools..."
-msgstr ""
+msgstr "उपकरण खोजें..."
 
 msgid "Search..."
 msgstr "खोजें..."
@@ -13999,7 +13999,7 @@ msgid "When on, employees can edit this attribute's value on their own profile; 
 msgstr "जब सक्षम हो, तो कर्मचारी अपनी स्वयं की प्रोफ़ाइल पर इस विशेषता का मान संपादित कर सकते हैं; अन्यथा केवल व्यवस्थापक ऐसा कर सकते हैं।"
 
 msgid "When on, opening an operation starts its timer automatically."
-msgstr ""
+msgstr "जब चालू हो, तो एक ऑपरेशन खोलने से इसका टाइमर स्वचालित रूप से शुरू हो जाता है।"
 
 msgid "When on, pricing rules (volume discounts, promotions) still apply on top of this override; when off, this override is the final price."
 msgstr "जब सक्षम हो, तो मूल्य निर्धारण नियम (वॉल्यूम डिस्काउंट, प्रचार) इस ओवरराइड के शीर्ष पर लागू होते रहते हैं; जब अक्षम हो, तो यह ओवरराइड अंतिम मूल्य है।"
@@ -14127,8 +14127,8 @@ msgstr "क्या घड़ी तब शुरू होती है जब
 msgid "Whether this lot/serial passes inspection (Pass) or fails (Fail); a Fail blocks the stock from being received into available inventory."
 msgstr "क्या यह लॉट/सीरियल निरीक्षण पास करता है (Pass) या विफल होता है (Fail); एक Fail स्टॉक को उपलब्ध इन्वेंट्री में प्राप्त होने से रोकता है।"
 
-msgid "Whether this process runs on internal work centers (Inside), outside suppliers (Outside), or both (Both); reveals different downstream fields and changes how planning routes work for this process."
-msgstr "क्या यह प्रक्रिया आंतरिक कार्य केंद्रों (Inside), बाहरी आपूर्तिकर्ताओं (Outside), या दोनों (Both) पर चलती है; विभिन्न डाउनस्ट्रीम फ़ील्ड दिखाती है और बदलती है कि इस प्रक्रिया के लिए योजना रूटिंग कैसे काम करती है।"
+msgid "Whether this process runs on internal work centers (Process, Assembly, or Inspection) or at outside suppliers (Outside Processing); reveals different downstream fields, changes how planning routes work for this process, and defaults the operation type on new operations."
+msgstr "क्या यह प्रक्रिया आंतरिक कार्य केंद्रों (प्रक्रिया, असेंबली, या निरीक्षण) पर चलती है या बाहरी आपूर्तिकर्ताओं (बाहरी प्रसंस्करण) पर; विभिन्न डाउनस्ट्रीम फ़ील्ड्स को प्रकट करता है, इस प्रक्रिया के लिए योजना मार्गों का काम करने का तरीका बदलता है, और नए ऑपरेशन पर ऑपरेशन प्रकार को डिफ़ॉल्ट करता है।"
 
 msgid "Whether this work blocks production (Down), degrades it (Impact), is on a planned downtime window (Planned), or has no production impact (No Impact); informs scheduling and customer-facing downtime communication."
 msgstr "यह कार्य उत्पादन को अवरुद्ध करता है (डाउन), इसे नीचा दिखाता है (प्रभाव), एक नियोजित डाउनटाइम विंडो (योजनाबद्ध) में है, या कोई उत्पादन प्रभाव नहीं है (कोई प्रभाव नहीं); शेड्यूलिंग और ग्राहक-सामना डाउनटाइम संचार को सूचित करता है।"

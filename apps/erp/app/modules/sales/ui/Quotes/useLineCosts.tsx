@@ -149,7 +149,7 @@ export function useLineCosts({
       }
 
       data.operations?.forEach((operation: QuotationOperation) => {
-        if (operation.operationType === "Inside") {
+        if (operation.operationType !== "Outside Processing") {
           if (operation.setupTime) {
             // normalize production standard to hours
             let hoursPerUnit = 0;
@@ -357,7 +357,7 @@ export function useLineCosts({
               return fixedHours * (operation.overheadRate ?? 0);
             }
           });
-        } else if (operation.operationType === "Outside") {
+        } else {
           effects.outsideCost.push((quantity) => {
             const unitCost =
               operation.operationUnitCost * data.quantity * quantity;

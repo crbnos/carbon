@@ -664,7 +664,7 @@ export async function calculateQuoteLinePrices(
     }
 
     for (const operation of node.operations) {
-      if (operation.operationType === "Inside") {
+      if (operation.operationType !== "Outside Processing") {
         if (operation.setupTime) {
           const { fixedHours, hoursPerUnit } = normalizeTimeToHours(
             operation.setupTime,
@@ -745,7 +745,7 @@ export async function calculateQuoteLinePrices(
             return fixedHours * (operation.overheadRate ?? 0);
           }
         });
-      } else if (operation.operationType === "Outside") {
+      } else if (operation.operationType === "Outside Processing") {
         effects.outsideCost.push((quantity) => {
           const unitCost =
             operation.operationUnitCost * node.quantity * quantity;

@@ -57,7 +57,7 @@ export function OperationsBlock({
       {jobOperations
         .sort((a, b) => a.order - b.order)
         .map((operation, index) => {
-          const isInside = operation.operationType === "Inside";
+          const isInside = operation.operationType !== "Outside Processing";
           const setupQrCode =
             operation.setupTime > 0
               ? generateQRCode(`${getStartPath(operation.id)}?type=Setup`, 10)

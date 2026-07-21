@@ -4108,7 +4108,7 @@ async function buildCostEffects(
     );
 
     for (const op of nodeOps) {
-      if (op.operationType === "Inside") {
+      if (op.operationType !== "Outside Processing") {
         if (op.setupTime) {
           const { fixedHours, hoursPerUnit } = normalizeTime(
             op.setupTime,
@@ -4165,7 +4165,7 @@ async function buildCostEffects(
           }
           return fh * (op.overheadRate ?? 0);
         });
-      } else if (op.operationType === "Outside") {
+      } else {
         effects.outsideCost.push((outerQty) => {
           const cost = op.operationUnitCost * qty * outerQty;
           return Math.max(op.operationMinimumCost, cost);

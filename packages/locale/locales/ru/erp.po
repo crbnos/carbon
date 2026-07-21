@@ -669,7 +669,7 @@ msgid "Add Partner"
 msgstr "Добавить партнера"
 
 msgid "Add parts"
-msgstr ""
+msgstr "Добавить детали"
 
 msgid "Add Permissions"
 msgstr "Добавить разрешения"
@@ -711,7 +711,7 @@ msgid "Add Step"
 msgstr "Добавить шаг"
 
 msgid "Add steps to preview the operator view."
-msgstr ""
+msgstr "Добавьте шаги для предварительного просмотра представления оператора."
 
 msgid "Add Supplier"
 msgstr "Добавить поставщика"
@@ -726,7 +726,7 @@ msgid "Add to stock for future use"
 msgstr "Добавить в запас для будущего использования"
 
 msgid "Add tools"
-msgstr ""
+msgstr "Добавить инструменты"
 
 #. placeholder {0}: copy.noun
 msgid "Add your first {0}"
@@ -1605,10 +1605,10 @@ msgid "Auto-numbering formats for orders, jobs, parts, and more"
 msgstr "Форматы автонумерации для заказов, работ, деталей и многого другого"
 
 msgid "Auto-start the operator's timer when they open an operation in the MES so time logs are captured from the start."
-msgstr ""
+msgstr "Автоматически запускать таймер оператора при открытии операции в MES, чтобы логи времени записывались с начала."
 
 msgid "Auto-start timer on open"
-msgstr ""
+msgstr "Автоматически запустить таймер при открытии"
 
 msgid "Auto-suggest purchases from demand and reorder points"
 msgstr "Автоматически предлагать покупки на основе спроса и точек переупорядочения"
@@ -2018,7 +2018,7 @@ msgid "Cannot upload to parts bucket without item ID"
 msgstr "Невозможно загрузить в корзину деталей без ID элемента"
 
 msgid "Caption"
-msgstr ""
+msgstr "Заголовок"
 
 msgid "Carbon"
 msgstr "Углерод"
@@ -2205,6 +2205,9 @@ msgstr "Класс"
 
 msgid "Class (inherited)"
 msgstr "Класс (унаследованный)"
+
+msgid "Classifies a routing operation: Process, Assembly, and Inspection operations run on your own shop floor in the MES — Assembly gets the guided assembly view and Inspection a quality check — while an Outside Processing operation is subcontracted to a supplier and creates a purchase order; the process carries the same type and defaults it on new operations."
+msgstr "Классифицирует операцию маршрута: операции Process, Assembly и Inspection выполняются на собственном производстве в MES — Assembly получает управляемое представление сборки, а Inspection выполняет проверку качества — в то время как операция Outside Processing субподряжается поставщику и создает заказ на покупку; процесс имеет тот же тип и использует его по умолчанию для новых операций."
 
 msgid "Clean and approve the migrated data"
 msgstr "Очистить и утвердить перенесенные данные"
@@ -2671,7 +2674,7 @@ msgid "Convert to Quote"
 msgstr "Преобразовать в предложение"
 
 msgid "Converting…"
-msgstr ""
+msgstr "Преобразование…"
 
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "Преобразует единицу покупки поставщика в единицу инвентаря в строке заказа на покупку, квитанции или счета — покупайте в картонах по 12 штук, запасайте в единицах."
@@ -5314,13 +5317,13 @@ msgid "Failed to save diagram"
 msgstr "Не удалось сохранить диаграмму"
 
 msgid "Failed to save parts"
-msgstr ""
+msgstr "Ошибка при сохранении деталей"
 
 msgid "Failed to save slides"
-msgstr ""
+msgstr "Ошибка при сохранении слайдов"
 
 msgid "Failed to save tools"
-msgstr ""
+msgstr "Ошибка при сохранении инструментов"
 
 msgid "Failed to update batch property"
 msgstr "Не удалось обновить свойство партии"
@@ -8170,7 +8173,7 @@ msgid "No part ID"
 msgstr "Нет ID детали"
 
 msgid "No parts"
-msgstr ""
+msgstr "Нет деталей"
 
 msgid "No payables"
 msgstr "Нет кредиторской задолженности"
@@ -8206,7 +8209,7 @@ msgid "No receivables"
 msgstr "Нет дебиторской задолженности"
 
 msgid "No reference image"
-msgstr ""
+msgstr "Нет эталонного изображения"
 
 msgid "No remaining entities to inspect."
 msgstr "Нет оставшихся объектов для проверки."
@@ -8245,10 +8248,10 @@ msgid "No time entries for this week"
 msgstr "Нет записей о времени на эту неделю"
 
 msgid "No tools"
-msgstr ""
+msgstr "Нет инструментов"
 
 msgid "No tools for this step"
-msgstr ""
+msgstr "Нет инструментов для этого шага"
 
 msgid "No transactions in this period"
 msgstr "Нет транзакций в этом периоде"
@@ -8547,14 +8550,11 @@ msgstr "Операционные расходы"
 msgid "Operation"
 msgstr "Операция"
 
-msgid "Operation Kind"
-msgstr ""
-
 msgid "Operation Order"
 msgstr "Порядок операции"
 
 msgid "Operation Timer"
-msgstr ""
+msgstr "Таймер операции"
 
 msgid "Operation Type"
 msgstr "Тип операции"
@@ -9018,7 +9018,7 @@ msgid "Pieces/Minute"
 msgstr "Деталей/Минуту"
 
 msgid "Pin"
-msgstr ""
+msgstr "Закрепить"
 
 msgid "Pinned"
 msgstr "Закреплено"
@@ -9222,7 +9222,7 @@ msgid "Previous page"
 msgstr "Предыдущая страница"
 
 msgid "Previous step"
-msgstr ""
+msgstr "Предыдущий шаг"
 
 msgid "Price break actions"
 msgstr "Действия ценовой скидки"
@@ -10043,10 +10043,10 @@ msgid "Remove pair"
 msgstr "Удалить пару"
 
 msgid "Remove part"
-msgstr ""
+msgstr "Удалить деталь"
 
 msgid "Remove slide"
-msgstr ""
+msgstr "Удалить слайд"
 
 msgid "Remove sort by column"
 msgstr "Удалить сортировку по столбцу"
@@ -10055,7 +10055,7 @@ msgid "Remove this storage type from all referencing storage units and delete it
 msgstr "Удалите этот тип хранилища из всех ссылающихся на него единиц хранения и удалите его. Это невозможно отменить."
 
 msgid "Remove tool"
-msgstr ""
+msgstr "Удалить инструмент"
 
 msgid "Removed"
 msgstr "Удалено"
@@ -10711,7 +10711,7 @@ msgid "Search operators..."
 msgstr "Поиск операторов..."
 
 msgid "Search parts..."
-msgstr ""
+msgstr "Поиск деталей..."
 
 msgid "Search processes..."
 msgstr "Поиск процессов..."
@@ -10723,7 +10723,7 @@ msgid "Search suppliers..."
 msgstr "Поиск поставщиков..."
 
 msgid "Search tools..."
-msgstr ""
+msgstr "Поиск инструментов..."
 
 msgid "Search..."
 msgstr "Поиск..."
@@ -13999,7 +13999,7 @@ msgid "When on, employees can edit this attribute's value on their own profile; 
 msgstr "Когда включено, сотрудники могут редактировать значение этого атрибута в своем профиле; в противном случае это могут делать только администраторы."
 
 msgid "When on, opening an operation starts its timer automatically."
-msgstr ""
+msgstr "Когда включено, открытие операции автоматически запускает ее таймер."
 
 msgid "When on, pricing rules (volume discounts, promotions) still apply on top of this override; when off, this override is the final price."
 msgstr "Когда включено, правила цены (скидки по объемам, акции) по-прежнему применяются сверх этого переопределения; когда отключено, это переопределение — финальная цена."
@@ -14127,8 +14127,8 @@ msgstr "Запускается ли отсчёт времени в начале 
 msgid "Whether this lot/serial passes inspection (Pass) or fails (Fail); a Fail blocks the stock from being received into available inventory."
 msgstr "Проходит ли эта партия/серийный номер проверку (Pass) или не проходит (Fail); Fail блокирует приём запасов в доступные складские остатки."
 
-msgid "Whether this process runs on internal work centers (Inside), outside suppliers (Outside), or both (Both); reveals different downstream fields and changes how planning routes work for this process."
-msgstr "Выполняется ли этот процесс на внутренних рабочих центрах (Inside), у внешних поставщиков (Outside) или и там, и там (Both); открывает разные последующие поля и меняет, как планирование строит маршруты для этого процесса."
+msgid "Whether this process runs on internal work centers (Process, Assembly, or Inspection) or at outside suppliers (Outside Processing); reveals different downstream fields, changes how planning routes work for this process, and defaults the operation type on new operations."
+msgstr "Определяет, выполняется ли этот процесс на внутренних рабочих центрах (Process, Assembly или Inspection) или у внешних поставщиков (Outside Processing); раскрывает различные нижестоящие поля, изменяет способ работы планирования маршрутов для этого процесса и устанавливает тип операции по умолчанию для новых операций."
 
 msgid "Whether this work blocks production (Down), degrades it (Impact), is on a planned downtime window (Planned), or has no production impact (No Impact); informs scheduling and customer-facing downtime communication."
 msgstr "Блокирует ли эта работа производство (Вниз), его деградирует (Воздействие), находится в окне планового простоя (Плановое) или не оказывает влияния на производство (Без воздействия); информирует планирование и общение об простое, обращенное к клиентам."

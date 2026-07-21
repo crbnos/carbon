@@ -75,7 +75,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // Redirect guard (ADR-0005): only Assembly operations render here. Anything else goes
   // back to the operation route (which renders its own view, or redirects again). Guards
   // only redirect kinds they don't serve, so no loop.
-  if (resolveOperationView(op.operationKind) !== "assembly") {
+  if (resolveOperationView(op.operationType) !== "assembly") {
     throw redirect(path.to.operation(operationId) + url.search);
   }
 

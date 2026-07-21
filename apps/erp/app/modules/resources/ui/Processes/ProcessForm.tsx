@@ -22,7 +22,7 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import {
   LuCirclePlus,
   LuEllipsisVertical,
@@ -47,7 +47,7 @@ import { usePermissions } from "~/hooks";
 import { SupplierProcessForm } from "~/modules/purchasing/ui/Supplier";
 
 import { processValidator } from "~/modules/resources";
-import { processTypes } from "~/modules/shared";
+import { operationTypes } from "~/modules/shared";
 import { path } from "~/utils/path";
 
 type ProcessFormProps = {
@@ -82,8 +82,6 @@ const ProcessForm = ({
   const isDisabled = isEditing
     ? !permissions.can("update", "resources")
     : !permissions.can("create", "resources");
-
-  const [processType, setProcessType] = useState(initialValues.processType);
 
   return (
     <ModalDrawerProvider type={type}>
@@ -124,34 +122,26 @@ const ProcessForm = ({
                   name="processType"
                   label={t`Process Type`}
                   termId="process-type"
-                  options={processTypes.map((pt) => ({
+                  options={operationTypes.map((pt) => ({
                     value: pt,
                     label: pt
                   }))}
-                  onChange={(newValue) => {
-                    setProcessType(
-                      newValue?.value as (typeof processTypes)[number]
-                    );
-                  }}
                 />
-                {processType !== "Outside" && (
-                  <>
-                    <StandardFactor
-                      name="defaultStandardFactor"
-                      label={t`Default Unit`}
-                      termId="process-default-unit"
-                      value={initialValues.defaultStandardFactor}
-                    />
-                    <WorkCenters
-                      name="workCenters"
-                      label={t`Work Centers`}
-                      termId="work-center"
-                    />
-                  </>
-                )}
-                {processType !== "Inside" && (
-                  <SupplierProcesses processId={initialValues.id} />
-                )}
+                {/* The type is a default for new operations, not a capability
+                    gate — a process can have work centers AND supplier links
+                    regardless of type. */}
+                <StandardFactor
+                  name="defaultStandardFactor"
+                  label={t`Default Unit`}
+                  termId="process-default-unit"
+                  value={initialValues.defaultStandardFactor}
+                />
+                <WorkCenters
+                  name="workCenters"
+                  label={t`Work Centers`}
+                  termId="work-center"
+                />
+                <SupplierProcesses processId={initialValues.id} />
                 <Boolean
                   name="completeAllOnScan"
                   label={t`Complete all quantities on barcode scan`}

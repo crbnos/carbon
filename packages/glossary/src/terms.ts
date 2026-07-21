@@ -69,6 +69,10 @@ export const terms = {
     definition: msg`Called a method in Carbon — the components plus operations that produce a part.`,
     href: "/docs/reference/methods"
   },
+  "operation-type": {
+    term: msg`Operation Type`,
+    definition: msg`Classifies a routing operation: Process, Assembly, and Inspection operations run on your own shop floor in the MES — Assembly gets the guided assembly view and Inspection a quality check — while an Outside Processing operation is subcontracted to a supplier and creates a purchase order; the process carries the same type and defaults it on new operations.`
+  },
   "change-order": {
     term: msg`Change order`,
     definition: msg`An engineering change: the affected items whose methods are revised on a draft and released together, superseding the versions they replace.`
@@ -1663,7 +1667,7 @@ export const terms = {
   // ── Resources: Processes (ProcessForm) ──────────────────────────────────
   "process-type": {
     term: msg`Process Type`,
-    definition: msg`Whether this process runs on internal work centers (Inside), outside suppliers (Outside), or both (Both); reveals different downstream fields and changes how planning routes work for this process.`
+    definition: msg`Whether this process runs on internal work centers (Process, Assembly, or Inspection) or at outside suppliers (Outside Processing); reveals different downstream fields, changes how planning routes work for this process, and defaults the operation type on new operations.`
   },
   "process-default-unit": {
     term: msg`Default Unit`,

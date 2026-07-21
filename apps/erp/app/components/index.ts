@@ -23,6 +23,7 @@ import {
   MethodItemTypeIcon,
   ModuleIcon,
   OperationStatusIcon,
+  OperationTypeIcon,
   SourcingTypeIcon,
   TimeTypeIcon,
   TrackingTypeIcon
@@ -71,6 +72,7 @@ export {
   ModuleIcon,
   New,
   OperationStatusIcon,
+  OperationTypeIcon,
   PeriodSelector,
   PrintButton,
   RealtimeDataProvider,

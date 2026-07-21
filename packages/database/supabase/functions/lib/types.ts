@@ -21148,7 +21148,6 @@ export type Database = {
           machineTime: number
           machineUnit: Database["public"]["Enums"]["factor"]
           manuallyScheduled: boolean
-          operationKind: Database["public"]["Enums"]["operationKind"]
           operationLeadTime: number
           operationMinimumCost: number
           operationOrder: Database["public"]["Enums"]["methodOperationOrder"]
@@ -21197,7 +21196,6 @@ export type Database = {
           machineTime?: number
           machineUnit?: Database["public"]["Enums"]["factor"]
           manuallyScheduled?: boolean
-          operationKind?: Database["public"]["Enums"]["operationKind"]
           operationLeadTime?: number
           operationMinimumCost?: number
           operationOrder?: Database["public"]["Enums"]["methodOperationOrder"]
@@ -21246,7 +21244,6 @@ export type Database = {
           machineTime?: number
           machineUnit?: Database["public"]["Enums"]["factor"]
           manuallyScheduled?: boolean
-          operationKind?: Database["public"]["Enums"]["operationKind"]
           operationLeadTime?: number
           operationMinimumCost?: number
           operationOrder?: Database["public"]["Enums"]["methodOperationOrder"]
@@ -27090,7 +27087,6 @@ export type Database = {
           machineTime: number
           machineUnit: Database["public"]["Enums"]["factor"]
           makeMethodId: string
-          operationKind: Database["public"]["Enums"]["operationKind"]
           operationLeadTime: number | null
           operationMinimumCost: number | null
           operationOrder: Database["public"]["Enums"]["methodOperationOrder"]
@@ -27121,7 +27117,6 @@ export type Database = {
           machineTime?: number
           machineUnit?: Database["public"]["Enums"]["factor"]
           makeMethodId: string
-          operationKind?: Database["public"]["Enums"]["operationKind"]
           operationLeadTime?: number | null
           operationMinimumCost?: number | null
           operationOrder?: Database["public"]["Enums"]["methodOperationOrder"]
@@ -27152,7 +27147,6 @@ export type Database = {
           machineTime?: number
           machineUnit?: Database["public"]["Enums"]["factor"]
           makeMethodId?: string
-          operationKind?: Database["public"]["Enums"]["operationKind"]
           operationLeadTime?: number | null
           operationMinimumCost?: number | null
           operationOrder?: Database["public"]["Enums"]["methodOperationOrder"]
@@ -35504,7 +35498,7 @@ export type Database = {
           defaultStandardFactor: Database["public"]["Enums"]["factor"]
           id: string
           name: string
-          processType: Database["public"]["Enums"]["processType"]
+          processType: Database["public"]["Enums"]["operationType"]
           tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
@@ -35519,7 +35513,7 @@ export type Database = {
           defaultStandardFactor: Database["public"]["Enums"]["factor"]
           id?: string
           name: string
-          processType?: Database["public"]["Enums"]["processType"]
+          processType?: Database["public"]["Enums"]["operationType"]
           tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -35534,7 +35528,7 @@ export type Database = {
           defaultStandardFactor?: Database["public"]["Enums"]["factor"]
           id?: string
           name?: string
-          processType?: Database["public"]["Enums"]["processType"]
+          processType?: Database["public"]["Enums"]["operationType"]
           tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -41168,7 +41162,6 @@ export type Database = {
           machineRate: number | null
           machineTime: number
           machineUnit: Database["public"]["Enums"]["factor"]
-          operationKind: Database["public"]["Enums"]["operationKind"]
           operationLeadTime: number
           operationMinimumCost: number
           operationOrder: Database["public"]["Enums"]["methodOperationOrder"]
@@ -41203,7 +41196,6 @@ export type Database = {
           machineRate?: number | null
           machineTime?: number
           machineUnit?: Database["public"]["Enums"]["factor"]
-          operationKind?: Database["public"]["Enums"]["operationKind"]
           operationLeadTime?: number
           operationMinimumCost?: number
           operationOrder?: Database["public"]["Enums"]["methodOperationOrder"]
@@ -41238,7 +41230,6 @@ export type Database = {
           machineRate?: number | null
           machineTime?: number
           machineUnit?: Database["public"]["Enums"]["factor"]
-          operationKind?: Database["public"]["Enums"]["operationKind"]
           operationLeadTime?: number
           operationMinimumCost?: number
           operationOrder?: Database["public"]["Enums"]["methodOperationOrder"]
@@ -63910,7 +63901,7 @@ export type Database = {
           defaultStandardFactor: Database["public"]["Enums"]["factor"] | null
           id: string | null
           name: string | null
-          processType: Database["public"]["Enums"]["processType"] | null
+          processType: Database["public"]["Enums"]["operationType"] | null
           suppliers: Json | null
           tags: string[] | null
           updatedAt: string | null
@@ -68436,14 +68427,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["shipmentCountryCode"]
+            columns: ["invoiceCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["invoiceCountryCode"]
+            columns: ["shipmentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -68998,14 +68989,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -73172,11 +73163,11 @@ export type Database = {
           machineTime: number
           machineUnit: Database["public"]["Enums"]["factor"]
           operationDueDate: string
-          operationKind: Database["public"]["Enums"]["operationKind"]
           operationOrder: number
           operationOrderType: Database["public"]["Enums"]["methodOperationOrder"]
           operationQuantity: number
           operationStatus: Database["public"]["Enums"]["jobOperationStatus"]
+          operationType: Database["public"]["Enums"]["operationType"]
           parentMaterialId: string
           processId: string
           quantityComplete: number
@@ -73444,6 +73435,7 @@ export type Database = {
           makeMethodId: string
           materialMakeMethodId: string
           methodMaterialId: string
+          methodOperationStepIds: Json
           methodType: Database["public"]["Enums"]["methodType"]
           operationId: string
           order: number
@@ -75182,8 +75174,11 @@ export type Database = {
         | "Completed"
         | "Skipped"
       oeeImpact: "Down" | "Planned" | "Impact" | "No Impact"
-      operationKind: "Operation" | "Assembly" | "Inspection"
-      operationType: "Inside" | "Outside"
+      operationType:
+        | "Process"
+        | "Assembly"
+        | "Inspection"
+        | "Outside Processing"
       payableLineType:
         | "Comment"
         | "G/L Account"
@@ -75215,7 +75210,6 @@ export type Database = {
         | "File"
         | "Task"
         | "Inspection"
-      processType: "Inside" | "Outside" | "Inside and Outside"
       productionEventType: "Setup" | "Labor" | "Machine"
       productionQuantityType: "Rework" | "Scrap" | "Production"
       purchaseInvoiceStatus:
@@ -76569,8 +76563,12 @@ export const Constants = {
         "Skipped",
       ],
       oeeImpact: ["Down", "Planned", "Impact", "No Impact"],
-      operationKind: ["Operation", "Assembly", "Inspection"],
-      operationType: ["Inside", "Outside"],
+      operationType: [
+        "Process",
+        "Assembly",
+        "Inspection",
+        "Outside Processing",
+      ],
       payableLineType: [
         "Comment",
         "G/L Account",
@@ -76604,7 +76602,6 @@ export const Constants = {
         "Task",
         "Inspection",
       ],
-      processType: ["Inside", "Outside", "Inside and Outside"],
       productionEventType: ["Setup", "Labor", "Machine"],
       productionQuantityType: ["Rework", "Scrap", "Production"],
       purchaseInvoiceStatus: [

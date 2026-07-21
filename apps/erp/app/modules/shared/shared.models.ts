@@ -202,11 +202,21 @@ export const noteValidator = z.object({
   note: z.string().min(1, { message: "Note is required" })
 });
 
-export const operationTypes = ["Inside", "Outside"] as const;
+// The single operation classification, shared by operations (methodOperation /
+// quoteOperation / jobOperation) and by processes (process.processType) — one
+// Postgres enum backs both so they can never drift. Subcontract logic keys on
+// === "Outside Processing"; in-house logic keys on !== "Outside Processing"
+// (never an enumeration of the in-house values) so future in-house types inherit
+// costing/scheduling/PO behavior unchanged.
+// See .ai/specs/2026-07-20-operation-type-consolidation.md.
+export const operationTypes = [
+  "Process",
+  "Assembly",
+  "Inspection",
+  "Outside Processing"
+] as const;
 
-// `operationKinds` lives in ./operationKind (re-exported via the shared barrel) so it can
-// stay self-contained for the backfill script. See
-// .ai/specs/2026-07-14-mes-execution-views.md §2.
+export type OperationType = (typeof operationTypes)[number];
 
 export const procedureStepType = [
   "Task",
@@ -218,12 +228,6 @@ export const procedureStepType = [
   "List",
   "File",
   "Inspection"
-] as const;
-
-export const processTypes = [
-  "Inside",
-  "Outside",
-  "Inside and Outside"
 ] as const;
 
 export const feedbackValidator = z.object({

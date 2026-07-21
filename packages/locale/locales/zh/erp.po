@@ -669,7 +669,7 @@ msgid "Add Partner"
 msgstr "添加合作伙伴"
 
 msgid "Add parts"
-msgstr ""
+msgstr "添加零件"
 
 msgid "Add Permissions"
 msgstr "添加权限"
@@ -711,7 +711,7 @@ msgid "Add Step"
 msgstr "添加步骤"
 
 msgid "Add steps to preview the operator view."
-msgstr ""
+msgstr "添加步骤以预览操作员视图。"
 
 msgid "Add Supplier"
 msgstr "添加供应商"
@@ -726,7 +726,7 @@ msgid "Add to stock for future use"
 msgstr "添加到库存以供将来使用"
 
 msgid "Add tools"
-msgstr ""
+msgstr "添加工具"
 
 #. placeholder {0}: copy.noun
 msgid "Add your first {0}"
@@ -1605,10 +1605,10 @@ msgid "Auto-numbering formats for orders, jobs, parts, and more"
 msgstr "订单、工作、零件等的自动编号格式"
 
 msgid "Auto-start the operator's timer when they open an operation in the MES so time logs are captured from the start."
-msgstr ""
+msgstr "当操作员在MES中打开操作时自动启动计时器，以便从一开始就捕获时间日志。"
 
 msgid "Auto-start timer on open"
-msgstr ""
+msgstr "打开时自动启动计时器"
 
 msgid "Auto-suggest purchases from demand and reorder points"
 msgstr "根据需求和重新订购点自动建议采购"
@@ -2018,7 +2018,7 @@ msgid "Cannot upload to parts bucket without item ID"
 msgstr "无法在没有项目ID的情况下上传到零件存储桶"
 
 msgid "Caption"
-msgstr ""
+msgstr "标题"
 
 msgid "Carbon"
 msgstr "Carbon"
@@ -2205,6 +2205,9 @@ msgstr "类别"
 
 msgid "Class (inherited)"
 msgstr "类（继承）"
+
+msgid "Classifies a routing operation: Process, Assembly, and Inspection operations run on your own shop floor in the MES — Assembly gets the guided assembly view and Inspection a quality check — while an Outside Processing operation is subcontracted to a supplier and creates a purchase order; the process carries the same type and defaults it on new operations."
+msgstr "对工艺操作进行分类：流程、组装和检测操作在MES中的您自己的车间运行——组装获得引导的组装视图，检测获得质量检查——而外部加工操作则分包给供应商并创建采购订单；流程承载相同的类型，并在新操作上默认设置该类型。"
 
 msgid "Clean and approve the migrated data"
 msgstr "清理并批准迁移的数据"
@@ -2671,7 +2674,7 @@ msgid "Convert to Quote"
 msgstr "转换为报价"
 
 msgid "Converting…"
-msgstr ""
+msgstr "转换中…"
 
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "将供应商的采购单位转换为采购订单、收据或发票行中的库存单位 — 以12个纸箱购买，以单位储存。"
@@ -5314,13 +5317,13 @@ msgid "Failed to save diagram"
 msgstr "保存图表失败"
 
 msgid "Failed to save parts"
-msgstr ""
+msgstr "保存零件失败"
 
 msgid "Failed to save slides"
-msgstr ""
+msgstr "保存幻灯片失败"
 
 msgid "Failed to save tools"
-msgstr ""
+msgstr "保存工具失败"
 
 msgid "Failed to update batch property"
 msgstr "批处理属性更新失败"
@@ -8170,7 +8173,7 @@ msgid "No part ID"
 msgstr "无零件ID"
 
 msgid "No parts"
-msgstr ""
+msgstr "没有零件"
 
 msgid "No payables"
 msgstr "无应付款"
@@ -8206,7 +8209,7 @@ msgid "No receivables"
 msgstr "无应收账款"
 
 msgid "No reference image"
-msgstr ""
+msgstr "没有参考图像"
 
 msgid "No remaining entities to inspect."
 msgstr "没有剩余的实体可检查。"
@@ -8245,10 +8248,10 @@ msgid "No time entries for this week"
 msgstr "本周没有时间条目"
 
 msgid "No tools"
-msgstr ""
+msgstr "没有工具"
 
 msgid "No tools for this step"
-msgstr ""
+msgstr "此步骤没有工具"
 
 msgid "No transactions in this period"
 msgstr "此期间无交易"
@@ -8547,14 +8550,11 @@ msgstr "运营费用"
 msgid "Operation"
 msgstr "操作"
 
-msgid "Operation Kind"
-msgstr ""
-
 msgid "Operation Order"
 msgstr "操作顺序"
 
 msgid "Operation Timer"
-msgstr ""
+msgstr "操作计时器"
 
 msgid "Operation Type"
 msgstr "操作类型"
@@ -9018,7 +9018,7 @@ msgid "Pieces/Minute"
 msgstr "件/分钟"
 
 msgid "Pin"
-msgstr ""
+msgstr "固定"
 
 msgid "Pinned"
 msgstr "已固定"
@@ -9222,7 +9222,7 @@ msgid "Previous page"
 msgstr "上一页"
 
 msgid "Previous step"
-msgstr ""
+msgstr "上一步"
 
 msgid "Price break actions"
 msgstr "价格阶梯操作"
@@ -10043,10 +10043,10 @@ msgid "Remove pair"
 msgstr "移除配对"
 
 msgid "Remove part"
-msgstr ""
+msgstr "移除零件"
 
 msgid "Remove slide"
-msgstr ""
+msgstr "移除幻灯片"
 
 msgid "Remove sort by column"
 msgstr "删除按列排序"
@@ -10055,7 +10055,7 @@ msgid "Remove this storage type from all referencing storage units and delete it
 msgstr "从所有引用此存储类型的存储单元中移除它并将其删除。此操作无法撤销。"
 
 msgid "Remove tool"
-msgstr ""
+msgstr "移除工具"
 
 msgid "Removed"
 msgstr "已移除"
@@ -10711,7 +10711,7 @@ msgid "Search operators..."
 msgstr "搜索运算符..."
 
 msgid "Search parts..."
-msgstr ""
+msgstr "搜索零件..."
 
 msgid "Search processes..."
 msgstr "搜索流程..."
@@ -10723,7 +10723,7 @@ msgid "Search suppliers..."
 msgstr "搜索供应商..."
 
 msgid "Search tools..."
-msgstr ""
+msgstr "搜索工具..."
 
 msgid "Search..."
 msgstr "搜索..."
@@ -13999,7 +13999,7 @@ msgid "When on, employees can edit this attribute's value on their own profile; 
 msgstr "启用后,员工可以在自己的个人资料中编辑此属性的值;否则,仅管理员可以这样做。"
 
 msgid "When on, opening an operation starts its timer automatically."
-msgstr ""
+msgstr "打开时，打开操作会自动启动其计时器。"
 
 msgid "When on, pricing rules (volume discounts, promotions) still apply on top of this override; when off, this override is the final price."
 msgstr "启用后,定价规则(批量折扣、促销)仍适用于此覆盖;禁用时,此覆盖是最终价格。"
@@ -14127,8 +14127,8 @@ msgstr "计时是在所选工序开始时启动，还是在其完成时启动。
 msgid "Whether this lot/serial passes inspection (Pass) or fails (Fail); a Fail blocks the stock from being received into available inventory."
 msgstr "此批次/序列是否通过检验 (Pass) 或未通过 (Fail)；Fail 会阻止库存被收入可用库存。"
 
-msgid "Whether this process runs on internal work centers (Inside), outside suppliers (Outside), or both (Both); reveals different downstream fields and changes how planning routes work for this process."
-msgstr "此工序是在内部工作中心 (Inside)、外部供应商 (Outside) 还是两者 (Both) 上运行；会显示不同的下游字段，并改变计划如何为此工序安排路线。"
+msgid "Whether this process runs on internal work centers (Process, Assembly, or Inspection) or at outside suppliers (Outside Processing); reveals different downstream fields, changes how planning routes work for this process, and defaults the operation type on new operations."
+msgstr "该流程是在内部工作中心（流程、组装或检测）还是在外部供应商处运行（外部加工）；显示不同的下游字段，更改此流程的规划路由工作方式，并默认设置新操作的操作类型。"
 
 msgid "Whether this work blocks production (Down), degrades it (Impact), is on a planned downtime window (Planned), or has no production impact (No Impact); informs scheduling and customer-facing downtime communication."
 msgstr "此工作是否阻止生产(关闭)、降低生产(影响)、处于计划停机时间窗口(计划)或没有生产影响(无影响);告知计划和面向客户的停机通信。"

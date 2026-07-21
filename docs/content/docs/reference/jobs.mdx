@@ -57,12 +57,12 @@ The job's <Term id="routing">routing</Term> is copied into job-specific **operat
   <Status name="Canceled" terminal>Won't run.</Status>
 </StatusFlow>
 
-### Inside and outside
+### Operation type
 
-Each operation is **Inside** or **Outside**. An Inside operation runs on one of your work centers and prices against its rates. An **<Term id="outside-operation">outside</Term>** operation is subcontracted: instead of a work center it points at a supplier process, copies that supplier's cost and lead time, and drives an outside-processing <Term id="purchase-order">purchase order</Term>.
+Each operation carries an <Term id="operation-type">operation type</Term>: **Process**, **Assembly**, **Inspection**, or **Outside Processing**. The first three run in-house on one of your work centers and price against its rates — Assembly operations get the guided assembly view on the shop floor, and Inspection operations a quality check. An **<Term id="outside-operation">Outside Processing</Term>** operation is subcontracted: instead of a work center it points at a supplier process, copies that supplier's cost and lead time, and drives an outside-processing <Term id="purchase-order">purchase order</Term>. The process you pick carries the same type and defaults it on new operations.
 
 <Callout type="warn">
-An outside operation's cost and lead time are copied when you set the supplier process, not linked live. If the supplier's pricing changes, re-select the supplier process to refresh it.
+An Outside Processing operation's cost and lead time are copied when you set the supplier process, not linked live. If the supplier's pricing changes, re-select the supplier process to refresh it.
 </Callout>
 
 ### Sequencing

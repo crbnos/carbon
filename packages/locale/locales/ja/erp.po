@@ -669,7 +669,7 @@ msgid "Add Partner"
 msgstr "パートナーを追加"
 
 msgid "Add parts"
-msgstr ""
+msgstr "部品を追加"
 
 msgid "Add Permissions"
 msgstr "権限を追加"
@@ -711,7 +711,7 @@ msgid "Add Step"
 msgstr "ステップを追加"
 
 msgid "Add steps to preview the operator view."
-msgstr ""
+msgstr "オペレータビューをプレビューするステップを追加してください。"
 
 msgid "Add Supplier"
 msgstr "サプライヤーを追加"
@@ -726,7 +726,7 @@ msgid "Add to stock for future use"
 msgstr "将来の使用のためにストックに追加"
 
 msgid "Add tools"
-msgstr ""
+msgstr "ツールを追加"
 
 #. placeholder {0}: copy.noun
 msgid "Add your first {0}"
@@ -1605,10 +1605,10 @@ msgid "Auto-numbering formats for orders, jobs, parts, and more"
 msgstr "注文、ジョブ、部品などの自動採番形式"
 
 msgid "Auto-start the operator's timer when they open an operation in the MES so time logs are captured from the start."
-msgstr ""
+msgstr "オペレータがMESの操作を開くときに自動的にタイマーを開始し、時間ログが最初からキャプチャされるようにします。"
 
 msgid "Auto-start timer on open"
-msgstr ""
+msgstr "開くときにタイマーを自動開始"
 
 msgid "Auto-suggest purchases from demand and reorder points"
 msgstr "需要に基づいて購買を自動提案し、再注文ポイントを設定"
@@ -2018,7 +2018,7 @@ msgid "Cannot upload to parts bucket without item ID"
 msgstr "アイテムIDなしでパーツバケットにアップロードできません"
 
 msgid "Caption"
-msgstr ""
+msgstr "キャプション"
 
 msgid "Carbon"
 msgstr "カーボン"
@@ -2205,6 +2205,9 @@ msgstr "クラス"
 
 msgid "Class (inherited)"
 msgstr "クラス（継承）"
+
+msgid "Classifies a routing operation: Process, Assembly, and Inspection operations run on your own shop floor in the MES — Assembly gets the guided assembly view and Inspection a quality check — while an Outside Processing operation is subcontracted to a supplier and creates a purchase order; the process carries the same type and defaults it on new operations."
+msgstr "ルーティング操作を分類します：Process、Assembly、およびInspection操作はMESの自分のショップフロアで実行されます—Assemblyはガイド付きアセンブリビューを取得し、Inspectionは品質チェック—一方、Outside Processing操作はサプライヤーに下請けに出され、購買注文を作成します。プロセスは同じタイプを持ち、新しい操作のデフォルトになります。"
 
 msgid "Clean and approve the migrated data"
 msgstr "移行されたデータをクリーンアップして承認する"
@@ -2671,7 +2674,7 @@ msgid "Convert to Quote"
 msgstr "見積に変換"
 
 msgid "Converting…"
-msgstr ""
+msgstr "変換中…"
 
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "サプライヤーの購入単位をPO、領収書、または請求書行のインベントリ単位に変換します — 12個の箱で購入、個別にストック。"
@@ -5314,13 +5317,13 @@ msgid "Failed to save diagram"
 msgstr "図の保存に失敗しました"
 
 msgid "Failed to save parts"
-msgstr ""
+msgstr "部品の保存に失敗しました"
 
 msgid "Failed to save slides"
-msgstr ""
+msgstr "スライドの保存に失敗しました"
 
 msgid "Failed to save tools"
-msgstr ""
+msgstr "ツールの保存に失敗しました"
 
 msgid "Failed to update batch property"
 msgstr "バッチプロパティの更新に失敗しました"
@@ -8170,7 +8173,7 @@ msgid "No part ID"
 msgstr "パーツIDなし"
 
 msgid "No parts"
-msgstr ""
+msgstr "部品がありません"
 
 msgid "No payables"
 msgstr "支払い義務なし"
@@ -8206,7 +8209,7 @@ msgid "No receivables"
 msgstr "売掛金がありません"
 
 msgid "No reference image"
-msgstr ""
+msgstr "参照画像がありません"
 
 msgid "No remaining entities to inspect."
 msgstr "検査する残りのエンティティはありません。"
@@ -8245,10 +8248,10 @@ msgid "No time entries for this week"
 msgstr "今週のタイムエントリがありません"
 
 msgid "No tools"
-msgstr ""
+msgstr "ツールがありません"
 
 msgid "No tools for this step"
-msgstr ""
+msgstr "このステップのツールがありません"
 
 msgid "No transactions in this period"
 msgstr "この期間に取引がありません"
@@ -8547,14 +8550,11 @@ msgstr "営業費"
 msgid "Operation"
 msgstr "操作"
 
-msgid "Operation Kind"
-msgstr ""
-
 msgid "Operation Order"
 msgstr "操作順序"
 
 msgid "Operation Timer"
-msgstr ""
+msgstr "操作タイマー"
 
 msgid "Operation Type"
 msgstr "操作タイプ"
@@ -9018,7 +9018,7 @@ msgid "Pieces/Minute"
 msgstr "個/分"
 
 msgid "Pin"
-msgstr ""
+msgstr "ピン"
 
 msgid "Pinned"
 msgstr "ピン留め"
@@ -9222,7 +9222,7 @@ msgid "Previous page"
 msgstr "前のページ"
 
 msgid "Previous step"
-msgstr ""
+msgstr "前のステップ"
 
 msgid "Price break actions"
 msgstr "価格ブレークアクション"
@@ -10043,10 +10043,10 @@ msgid "Remove pair"
 msgstr "ペアを削除"
 
 msgid "Remove part"
-msgstr ""
+msgstr "部品を削除"
 
 msgid "Remove slide"
-msgstr ""
+msgstr "スライドを削除"
 
 msgid "Remove sort by column"
 msgstr "列でソートを削除"
@@ -10055,7 +10055,7 @@ msgid "Remove this storage type from all referencing storage units and delete it
 msgstr "このストレージタイプをすべての参照ストレージユニットから削除し、削除します。これは元に戻すことはできません。"
 
 msgid "Remove tool"
-msgstr ""
+msgstr "ツールを削除"
 
 msgid "Removed"
 msgstr "削除済み"
@@ -10711,7 +10711,7 @@ msgid "Search operators..."
 msgstr "オペレーターを検索..."
 
 msgid "Search parts..."
-msgstr ""
+msgstr "部品を検索..."
 
 msgid "Search processes..."
 msgstr "プロセスを検索..."
@@ -10723,7 +10723,7 @@ msgid "Search suppliers..."
 msgstr "サプライヤーを検索..."
 
 msgid "Search tools..."
-msgstr ""
+msgstr "ツールを検索..."
 
 msgid "Search..."
 msgstr "検索..."
@@ -13999,7 +13999,7 @@ msgid "When on, employees can edit this attribute's value on their own profile; 
 msgstr "有効にすると、従業員は自分のプロフィールでこのアトリビュートの値を編集できます。そうでない場合は、管理者のみが編集できます。"
 
 msgid "When on, opening an operation starts its timer automatically."
-msgstr ""
+msgstr "有効の場合、操作を開くとそのタイマーが自動的に開始されます。"
 
 msgid "When on, pricing rules (volume discounts, promotions) still apply on top of this override; when off, this override is the final price."
 msgstr "有効にすると、価格設定ルール(ボリュームディスカウント、プロモーション)がこのオーバーライドの上に引き続き適用されます。無効にすると、このオーバーライドが最終価格です。"
@@ -14127,8 +14127,8 @@ msgstr "選択したプロセスの開始時にカウントを開始するか、
 msgid "Whether this lot/serial passes inspection (Pass) or fails (Fail); a Fail blocks the stock from being received into available inventory."
 msgstr "このロット/シリアルが検査に合格（Pass）するか不合格（Fail）になるか。Fail の場合、在庫が利用可能在庫として受け入れられなくなります。"
 
-msgid "Whether this process runs on internal work centers (Inside), outside suppliers (Outside), or both (Both); reveals different downstream fields and changes how planning routes work for this process."
-msgstr "このプロセスを内部ワークセンター（Inside）、外部サプライヤー（Outside）、またはその両方（Both）のいずれで実行するか。下流の異なるフィールドが表示され、このプロセスの計画ルーティング方法が変わります。"
+msgid "Whether this process runs on internal work centers (Process, Assembly, or Inspection) or at outside suppliers (Outside Processing); reveals different downstream fields, changes how planning routes work for this process, and defaults the operation type on new operations."
+msgstr "このプロセスが内部ワークセンター（Process、Assembly、またはInspection）で実行されるか、外部サプライヤー（Outside Processing）で実行されるか。異なるダウンストリームフィールドを表示し、このプロセスの計画ルートの動作方法を変更し、新しい操作のデフォルト操作タイプを設定します。"
 
 msgid "Whether this work blocks production (Down), degrades it (Impact), is on a planned downtime window (Planned), or has no production impact (No Impact); informs scheduling and customer-facing downtime communication."
 msgstr "この作業が生産をブロックするか(ダウン)、それを低下させるか(影響)、計画されたダウンタイムウィンドウ(計画)にあるか、または生産への影響がない(影響なし)。スケジューリングとカスタマーフェーシングダウンタイム通信に通知します。"

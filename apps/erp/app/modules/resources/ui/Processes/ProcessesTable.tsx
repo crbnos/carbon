@@ -64,7 +64,7 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
         accessorKey: "name",
         header: t`Process`,
         cell: ({ row }) =>
-          row.original.processType === "Outside" ||
+          row.original.processType === "Outside Processing" ||
           ((row.original.workCenters as any[]) ?? []).length > 0 ? (
             <Hyperlink to={row.original.id!}>
               <Enumerable
@@ -88,8 +88,8 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
         accessorKey: "processType",
         header: t`Process Type`,
         cell: (item) =>
-          item.getValue() === "Outside" ? (
-            <Badge>Outside</Badge>
+          item.getValue() === "Outside Processing" ? (
+            <Badge>Outside Processing</Badge>
           ) : (
             <Badge variant="secondary">{item.getValue<string>()}</Badge>
           ),

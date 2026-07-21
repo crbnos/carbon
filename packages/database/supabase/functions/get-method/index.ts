@@ -42,6 +42,14 @@ import {
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
 
+// Stored configurator rules are user-authored JS that may still return legacy "Inside"/"Outside" operationType values.
+const normalizeOperationType = (value: unknown) =>
+  (value === "Inside"
+    ? "Process"
+    : value === "Outside"
+      ? "Outside Processing"
+      : value) as Database["public"]["Enums"]["operationType"];
+
 // Copy an operation step's reference slides (grandchild) when a method/job/quote is
 // copied. Source slides are queried by their (old) step ids and remapped onto the freshly
 // inserted step ids — a bulk insert preserves order, so insertedStepIds[i] ↔ sourceSteps[i].
@@ -727,8 +735,7 @@ serve(async (req: Request) => {
                 ...getLaborAndOverheadRates(processId, op.workCenterId),
                 order: op.order,
                 operationOrder,
-                operationType,
-                operationKind: op.operationKind,
+                operationType: normalizeOperationType(operationType),
                 // Carry the Assembly → BOP sync link so the MES can drive the
                 // animated instruction player on jobs made from a synced method.
                 assemblyInstructionId: op.assemblyInstructionId,
@@ -1500,7 +1507,6 @@ serve(async (req: Request) => {
                 order: op.order,
                 operationOrder: op.operationOrder,
                 operationType: op.operationType,
-                operationKind: op.operationKind,
                 // Carry the Assembly → BOP sync link so the MES can drive the
                 // animated instruction player on jobs made from a synced method.
                 assemblyInstructionId: op.assemblyInstructionId,
@@ -2258,8 +2264,7 @@ serve(async (req: Request) => {
                 ...getLaborAndOverheadRates(processId, op.workCenterId),
                 order: op.order,
                 operationOrder,
-                operationType,
-                operationKind: op.operationKind,
+                operationType: normalizeOperationType(operationType),
                 operationSupplierProcessId: op.operationSupplierProcessId,
                 operationUnitCost: op.operationUnitCost ?? 0,
                 ...getOutsideOperationRates(
@@ -2813,7 +2818,6 @@ serve(async (req: Request) => {
                 order: op.order,
                 operationOrder: op.operationOrder,
                 operationType: op.operationType,
-                operationKind: op.operationKind,
                 operationUnitCost: op.operationUnitCost ?? 0,
                 operationSupplierProcessId: op.operationSupplierProcessId,
                 ...getOutsideOperationRates(
@@ -3213,8 +3217,7 @@ serve(async (req: Request) => {
               machineUnit: op.machineUnit ?? "Minutes/Piece",
               order: op.order ?? 1,
               operationOrder: op.operationOrder ?? "After Previous",
-              operationType: op.operationType ?? "Inside",
-              operationKind: op.operationKind ?? "Operation",
+              operationType: op.operationType ?? "Process",
               operationMinimumCost: op.operationMinimumCost ?? 0,
               operationLeadTime: op.operationLeadTime ?? 0,
               operationUnitCost: op.operationUnitCost ?? 0,
@@ -3527,11 +3530,10 @@ serve(async (req: Request) => {
               machineUnit: op.machineUnit ?? "Minutes/Piece",
               order: op.order ?? 1,
               operationOrder: op.operationOrder ?? "After Previous",
-              operationType: op.operationType ?? "Inside",
+              operationType: op.operationType ?? "Process",
               operationMinimumCost: op.operationMinimumCost ?? 0,
               operationLeadTime: op.operationLeadTime ?? 0,
               operationUnitCost: op.operationUnitCost ?? 0,
-              operationKind: op.operationKind ?? "Operation",
               operationSupplierProcessId: op.operationSupplierProcessId,
               tags: op.tags ?? [],
               workInstruction: parts.workInstructions ? op.workInstruction : {},
@@ -4175,8 +4177,7 @@ serve(async (req: Request) => {
               machineUnit: op.machineUnit ?? "Minutes/Piece",
               order: op.order ?? 1,
               operationOrder: op.operationOrder ?? "After Previous",
-              operationType: op.operationType ?? "Inside",
-              operationKind: op.operationKind ?? "Operation",
+              operationType: op.operationType ?? "Process",
               operationMinimumCost: op.operationMinimumCost ?? 0,
               operationLeadTime: op.operationLeadTime ?? 0,
               operationUnitCost: op.operationUnitCost ?? 0,
@@ -4488,8 +4489,7 @@ serve(async (req: Request) => {
               machineUnit: op.machineUnit ?? "Minutes/Piece",
               order: op.order ?? 1,
               operationOrder: op.operationOrder ?? "After Previous",
-              operationType: op.operationType ?? "Inside",
-              operationKind: op.operationKind ?? "Operation",
+              operationType: op.operationType ?? "Process",
               operationMinimumCost: op.operationMinimumCost ?? 0,
               operationLeadTime: op.operationLeadTime ?? 0,
               operationUnitCost: op.operationUnitCost ?? 0,
@@ -4959,7 +4959,6 @@ serve(async (req: Request) => {
                 order: op.order,
                 operationOrder: op.operationOrder,
                 operationType: op.operationType,
-                operationKind: op.operationKind,
                 // Carry the Assembly → BOP sync link so the MES can drive the
                 // animated instruction player on jobs made from a synced method.
                 assemblyInstructionId: op.assemblyInstructionId,
@@ -5288,7 +5287,6 @@ serve(async (req: Request) => {
               order: op.order,
               operationOrder: op.operationOrder,
               operationType: op.operationType,
-              operationKind: op.operationKind,
               operationSupplierProcessId: op.operationSupplierProcessId,
               operationMinimumCost: op.operationMinimumCost ?? 0,
               operationLeadTime: op.operationLeadTime ?? 0,
@@ -5790,7 +5788,6 @@ serve(async (req: Request) => {
                 order: op.order,
                 operationOrder: op.operationOrder,
                 operationType: op.operationType,
-                operationKind: op.operationKind,
                 operationSupplierProcessId: op.operationSupplierProcessId,
                 operationMinimumCost: op.operationMinimumCost ?? 0,
                 operationLeadTime: op.operationLeadTime ?? 0,

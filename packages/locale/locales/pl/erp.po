@@ -669,7 +669,7 @@ msgid "Add Partner"
 msgstr "Dodaj partnera"
 
 msgid "Add parts"
-msgstr ""
+msgstr "Dodaj części"
 
 msgid "Add Permissions"
 msgstr "Dodaj uprawnienia"
@@ -711,7 +711,7 @@ msgid "Add Step"
 msgstr "Dodaj krok"
 
 msgid "Add steps to preview the operator view."
-msgstr ""
+msgstr "Dodaj kroki, aby wyświetlić podgląd widoku operatora."
 
 msgid "Add Supplier"
 msgstr "Dodaj dostawcę"
@@ -726,7 +726,7 @@ msgid "Add to stock for future use"
 msgstr "Dodaj do zapasów do przyszłego użytku"
 
 msgid "Add tools"
-msgstr ""
+msgstr "Dodaj narzędzia"
 
 #. placeholder {0}: copy.noun
 msgid "Add your first {0}"
@@ -1605,10 +1605,10 @@ msgid "Auto-numbering formats for orders, jobs, parts, and more"
 msgstr "Formaty automatycznego numerowania dla zamówień, zadań, części i nie tylko"
 
 msgid "Auto-start the operator's timer when they open an operation in the MES so time logs are captured from the start."
-msgstr ""
+msgstr "Automatycznie uruchom timer operatora po otwarciu operacji w MES, aby dzienniki czasu były rejestrowane od początku."
 
 msgid "Auto-start timer on open"
-msgstr ""
+msgstr "Automatycznie uruchom timer przy otwarciu"
 
 msgid "Auto-suggest purchases from demand and reorder points"
 msgstr "Automatycznie sugeruj zakupy na podstawie popytu i punktów ponownego zamówienia"
@@ -2018,7 +2018,7 @@ msgid "Cannot upload to parts bucket without item ID"
 msgstr "Nie można przesłać do zasobnika części bez identyfikatora elementu"
 
 msgid "Caption"
-msgstr ""
+msgstr "Podpis"
 
 msgid "Carbon"
 msgstr "Carbon"
@@ -2205,6 +2205,9 @@ msgstr "Klasa"
 
 msgid "Class (inherited)"
 msgstr "Klasa (odziedziczona)"
+
+msgid "Classifies a routing operation: Process, Assembly, and Inspection operations run on your own shop floor in the MES — Assembly gets the guided assembly view and Inspection a quality check — while an Outside Processing operation is subcontracted to a supplier and creates a purchase order; the process carries the same type and defaults it on new operations."
+msgstr "Klasyfikuje operację routingu: operacje Proces, Montaż i Inspeksja działają na Twojej hali produkcyjnej w MES — Montaż wyświetla widok montażu z przewodnikiem, a Inspeksja sprawdzenie jakości — natomiast operacja Obróbka na zewnątrz jest zlecana dostawcy i tworzy zamówienie zakupu; proces nosi ten sam typ i ustawia go domyślnie dla nowych operacji."
 
 msgid "Clean and approve the migrated data"
 msgstr "Wyczyść i zatwierdź migrowane dane"
@@ -2671,7 +2674,7 @@ msgid "Convert to Quote"
 msgstr "Konwertuj na Ofertę"
 
 msgid "Converting…"
-msgstr ""
+msgstr "Konwertowanie…"
 
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "Konwertuje jednostkę zakupu dostawcy na jednostkę zapasów w wierszu zamówienia, paragonu lub faktury — kup w kartonach po 12 sztuk, magazyn w jednostkach."
@@ -5314,13 +5317,13 @@ msgid "Failed to save diagram"
 msgstr "Nie udało się zapisać diagramu"
 
 msgid "Failed to save parts"
-msgstr ""
+msgstr "Nie udało się zapisać części"
 
 msgid "Failed to save slides"
-msgstr ""
+msgstr "Nie udało się zapisać slajdów"
 
 msgid "Failed to save tools"
-msgstr ""
+msgstr "Nie udało się zapisać narzędzi"
 
 msgid "Failed to update batch property"
 msgstr "Nie udało się zaktualizować właściwości partii"
@@ -8170,7 +8173,7 @@ msgid "No part ID"
 msgstr "Brak identyfikatora części"
 
 msgid "No parts"
-msgstr ""
+msgstr "Brak części"
 
 msgid "No payables"
 msgstr "Brak zobowiązań"
@@ -8206,7 +8209,7 @@ msgid "No receivables"
 msgstr "Brak należności"
 
 msgid "No reference image"
-msgstr ""
+msgstr "Brak obrazu referencyjnego"
 
 msgid "No remaining entities to inspect."
 msgstr "Brak pozostałych jednostek do sprawdzenia."
@@ -8245,10 +8248,10 @@ msgid "No time entries for this week"
 msgstr "Brak wpisów czasu pracy w tym tygodniu"
 
 msgid "No tools"
-msgstr ""
+msgstr "Brak narzędzi"
 
 msgid "No tools for this step"
-msgstr ""
+msgstr "Brak narzędzi dla tego kroku"
 
 msgid "No transactions in this period"
 msgstr "Brak transakcji w tym okresie"
@@ -8547,14 +8550,11 @@ msgstr "Koszty Operacyjne"
 msgid "Operation"
 msgstr "Operacja"
 
-msgid "Operation Kind"
-msgstr ""
-
 msgid "Operation Order"
 msgstr "Kolejność operacji"
 
 msgid "Operation Timer"
-msgstr ""
+msgstr "Timer operacji"
 
 msgid "Operation Type"
 msgstr "Typ operacji"
@@ -9018,7 +9018,7 @@ msgid "Pieces/Minute"
 msgstr "Sztuk/Minutę"
 
 msgid "Pin"
-msgstr ""
+msgstr "Przypnij"
 
 msgid "Pinned"
 msgstr "Przypięte"
@@ -9222,7 +9222,7 @@ msgid "Previous page"
 msgstr "Poprzednia strona"
 
 msgid "Previous step"
-msgstr ""
+msgstr "Poprzedni krok"
 
 msgid "Price break actions"
 msgstr "Akcje podziału ceny"
@@ -10043,10 +10043,10 @@ msgid "Remove pair"
 msgstr "Usuń parę"
 
 msgid "Remove part"
-msgstr ""
+msgstr "Usuń część"
 
 msgid "Remove slide"
-msgstr ""
+msgstr "Usuń slajd"
 
 msgid "Remove sort by column"
 msgstr "Usuń sortowanie według kolumny"
@@ -10055,7 +10055,7 @@ msgid "Remove this storage type from all referencing storage units and delete it
 msgstr "Usuń ten typ magazynu ze wszystkich jednostek magazynowych, które się do niego odwołują, i usuń go. Tej operacji nie można cofnąć."
 
 msgid "Remove tool"
-msgstr ""
+msgstr "Usuń narzędzie"
 
 msgid "Removed"
 msgstr "Usunięte"
@@ -10711,7 +10711,7 @@ msgid "Search operators..."
 msgstr "Wyszukaj operatory..."
 
 msgid "Search parts..."
-msgstr ""
+msgstr "Wyszukaj części..."
 
 msgid "Search processes..."
 msgstr "Szukaj procesów..."
@@ -10723,7 +10723,7 @@ msgid "Search suppliers..."
 msgstr "Szukaj dostawców..."
 
 msgid "Search tools..."
-msgstr ""
+msgstr "Wyszukaj narzędzia..."
 
 msgid "Search..."
 msgstr "Szukaj..."
@@ -13999,7 +13999,7 @@ msgid "When on, employees can edit this attribute's value on their own profile; 
 msgstr "Gdy włączone, pracownicy mogą edytować wartość tego atrybutu w swoim własnym profilu; w przeciwnym razie mogą to zrobić tylko administratorzy."
 
 msgid "When on, opening an operation starts its timer automatically."
-msgstr ""
+msgstr "Po włączeniu otwarcie operacji automatycznie uruchamia jej timer."
 
 msgid "When on, pricing rules (volume discounts, promotions) still apply on top of this override; when off, this override is the final price."
 msgstr "Gdy włączone, zasady ustalania cen (rabaty objętościowe, promocje) nadal mają zastosowanie na podstawie tego zastąpienia; gdy wyłączone, to zastąpienie jest ceną ostateczną."
@@ -14127,8 +14127,8 @@ msgstr "Czy licznik czasu rozpoczyna się, gdy wybrany proces się zaczyna, czy 
 msgid "Whether this lot/serial passes inspection (Pass) or fails (Fail); a Fail blocks the stock from being received into available inventory."
 msgstr "Czy ta partia/numer seryjny przechodzi kontrolę (Pass), czy ją oblewa (Fail); Fail blokuje przyjęcie zapasów do dostępnego magazynu."
 
-msgid "Whether this process runs on internal work centers (Inside), outside suppliers (Outside), or both (Both); reveals different downstream fields and changes how planning routes work for this process."
-msgstr "Czy ten proces jest wykonywany w wewnętrznych gniazdach roboczych (Inside), u zewnętrznych dostawców (Outside) czy w obu (Both); ujawnia różne pola podrzędne i zmienia sposób, w jaki planowanie wyznacza marszruty dla tego procesu."
+msgid "Whether this process runs on internal work centers (Process, Assembly, or Inspection) or at outside suppliers (Outside Processing); reveals different downstream fields, changes how planning routes work for this process, and defaults the operation type on new operations."
+msgstr "Czy ten proces odbywa się w wewnętrznych centrach pracy (Proces, Montaż lub Inspeksja) czy u zewnętrznych dostawców (Obróbka na zewnątrz); ujawnia różne pola podrzędne, zmienia sposób działania tras planowania dla tego procesu i ustawia domyślnie typ operacji dla nowych operacji."
 
 msgid "Whether this work blocks production (Down), degrades it (Impact), is on a planned downtime window (Planned), or has no production impact (No Impact); informs scheduling and customer-facing downtime communication."
 msgstr "Czy ta praca blokuje produkcję (W dół), ją degraduje (Wpływ), znajduje się w planowanym oknie czasu przestoju (Zaplanowane) lub nie ma wpływu na produkcję (Brak Wpływu); informuje planowanie i komunikację o przestojach skierowaną do klientów."

@@ -294,7 +294,8 @@ const JobEstimatesVsActuals = ({
                   const actual = getActualTime(operation);
                   const notes = getJobOperationNotes(operation);
 
-                  const isOutside = operation.operationType === "Outside";
+                  const isOutside =
+                    operation.operationType === "Outside Processing";
                   if (isOutside) return null;
 
                   return (

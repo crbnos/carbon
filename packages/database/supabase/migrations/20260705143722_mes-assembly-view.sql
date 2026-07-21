@@ -1,36 +1,17 @@
--- ===== 20260616132744_operation-kind.sql =====
--- Per-operation classification (operationKind) that drives the MES view router.
--- See .ai/specs/2026-07-14-mes-execution-views.md (§5.1 view routing). Tracking type
--- stays orthogonal. NOTE: the inspection-plan link (inspectionDocumentId) is deliberately
--- deferred to the Inspection workstream (Phase 3) so this keystone migration does not
--- depend on the inspection tables — see §5.4 of that spec.
+-- ===== 20260616132744_operation-view-rpc.sql =====
+-- Surface the operation's classification (operationType) through the MES operation
+-- RPC so the execution-view router can read it. See
+-- .ai/specs/2026-07-20-operation-type-consolidation.md and
+-- .ai/specs/2026-07-14-mes-execution-views.md (§5.1 view routing). At this point in
+-- history operationType is still the legacy Inside/Outside enum; the
+-- operation-type-consolidation migration converts it to
+-- Process/Assembly/Inspection/Outside Processing and re-binds this function to the
+-- new type. Tracking type stays orthogonal. NOTE: the inspection-plan link
+-- (inspectionDocumentId) is deliberately deferred to the Inspection workstream
+-- (Phase 3) so this keystone migration does not depend on the inspection tables —
+-- see §5.4 of the execution-views spec.
 
--- 1. Classification enum. 'Operation' preserves today's behavior (the safe default).
--- Guarded so re-running against a DB that already has the type (a shared dev
--- volume whose bookkeeping was pruned by the branch-switch migration repair) is a
--- no-op instead of a hard failure.
-DO $$ BEGIN
-  CREATE TYPE "operationKind" AS ENUM (
-    'Operation',
-    'Assembly',
-    'Inspection'
-  );
-EXCEPTION
-  WHEN duplicate_object THEN null;
-END $$;
-
--- 2. Add operationKind to the three operation tables.
-ALTER TABLE "methodOperation"
-  ADD COLUMN IF NOT EXISTS "operationKind" "operationKind" NOT NULL DEFAULT 'Operation';
-
-ALTER TABLE "jobOperation"
-  ADD COLUMN IF NOT EXISTS "operationKind" "operationKind" NOT NULL DEFAULT 'Operation';
-
-ALTER TABLE "quoteOperation"
-  ADD COLUMN IF NOT EXISTS "operationKind" "operationKind" NOT NULL DEFAULT 'Operation';
-
--- 3. Expose operationKind through the MES operation RPC so the view router can read it.
---    Mirrors 20260531084723_rework-serial-flow.sql; only the trailing column is new.
+-- Mirrors 20260531084723_rework-serial-flow.sql; only the trailing column is new.
 DROP FUNCTION IF EXISTS get_job_operation_by_id(TEXT);
 CREATE OR REPLACE FUNCTION get_job_operation_by_id(operation_id TEXT)
 RETURNS TABLE (
@@ -70,7 +51,7 @@ RETURNS TABLE (
   "workInstruction" JSON,
   "operationDueDate" DATE,
   "reworkId" TEXT,
-  "operationKind" "operationKind"
+  "operationType" "operationType"
 ) AS $$
 BEGIN
   RETURN QUERY
@@ -111,7 +92,7 @@ BEGIN
     jo."workInstruction",
     jo."dueDate" AS "operationDueDate",
     jo."reworkId",
-    jo."operationKind"
+    jo."operationType"
   FROM "jobOperation" jo
   JOIN "job" j ON j.id = jo."jobId"
   LEFT JOIN "jobMakeMethod" jmm ON jo."jobMakeMethodId" = jmm.id
@@ -281,386 +262,17 @@ CREATE INDEX IF NOT EXISTS "methodOperationTool_methodOperationStepId_idx" ON "m
 CREATE INDEX IF NOT EXISTS "jobOperationTool_jobOperationStepId_idx" ON "jobOperationTool" ("jobOperationStepId");
 CREATE INDEX IF NOT EXISTS "quoteOperationTool_quoteOperationStepId_idx" ON "quoteOperationTool" ("quoteOperationStepId");
 
--- ===== 20260628161500_method-tree-step-link.sql =====
--- Surface methodMaterial.methodOperationStepId on the method tree so get-method can copy
--- the part↔step link to jobOperationStep when a job/quote is created (Phase 2). Mirrors how
--- the tree already exposes "operationId" (= methodMaterial.methodOperationId). Recreated from
--- 20260618171234_material-supersession.sql with one new column added after "operationId".
--- Return signature changes, so DROP first (CREATE OR REPLACE can't alter OUT columns).
-
-DROP FUNCTION IF EXISTS get_method_tree(TEXT);
-
-CREATE OR REPLACE FUNCTION get_method_tree(uid TEXT)
-RETURNS TABLE (
-    "methodMaterialId" TEXT,
-    "makeMethodId" TEXT,
-    "materialMakeMethodId" TEXT,
-    "itemId" TEXT,
-    "itemReadableId" TEXT,
-    "itemType" TEXT,
-    "description" TEXT,
-    "unitOfMeasureCode" TEXT,
-    "unitCost" NUMERIC,
-    "quantity" NUMERIC,
-    "methodType" "methodType",
-    "itemTrackingType" TEXT,
-    "parentMaterialId" TEXT,
-    "order" DOUBLE PRECISION,
-    "operationId" TEXT,
-    "methodOperationStepId" TEXT,
-    "isRoot" BOOLEAN,
-    "kit" BOOLEAN,
-    "revision" TEXT,
-    "externalId" JSONB,
-    "version" NUMERIC,
-    "storageUnitIds" JSONB,
-    "isPickDescendant" BOOLEAN,
-    "replenishmentSystem" "itemReplenishmentSystem",
-    "effectiveFrom" DATE,
-    "effectiveTo" DATE
-) AS $$
-WITH RECURSIVE material AS (
-    SELECT
-        "id",
-        "makeMethodId",
-        "methodType",
-        COALESCE(
-            "materialMakeMethodId",
-            CASE WHEN "methodType" = 'Pull from Inventory' THEN (
-                SELECT amm.id FROM "activeMakeMethods" amm WHERE amm."itemId" = "methodMaterial"."itemId" LIMIT 1
-            ) END
-        ) AS "materialMakeMethodId",
-        "itemId",
-        "itemType",
-        "quantity",
-        "makeMethodId" AS "parentMaterialId",
-        NULL AS "operationId",
-        NULL AS "methodOperationStepId",
-        COALESCE("order", 1) AS "order",
-        "kit",
-        "storageUnitIds",
-        false AS "isPickDescendant",
-        "effectiveFrom",
-        "effectiveTo"
-    FROM
-        "methodMaterial"
-    WHERE
-        "makeMethodId" = uid
-    UNION
-    SELECT
-        child."id",
-        child."makeMethodId",
-        child."methodType",
-        COALESCE(
-            child."materialMakeMethodId",
-            CASE WHEN child."methodType" = 'Pull from Inventory' THEN (
-                SELECT amm.id FROM "activeMakeMethods" amm WHERE amm."itemId" = child."itemId" LIMIT 1
-            ) END
-        ) AS "materialMakeMethodId",
-        child."itemId",
-        child."itemType",
-        child."quantity",
-        parent."id" AS "parentMaterialId",
-        child."methodOperationId" AS "operationId",
-        child."methodOperationStepId" AS "methodOperationStepId",
-        child."order",
-        child."kit",
-        child."storageUnitIds",
-        (parent."methodType" = 'Pull from Inventory' OR parent."isPickDescendant") AS "isPickDescendant",
-        child."effectiveFrom",
-        child."effectiveTo"
-    FROM
-        "methodMaterial" child
-        INNER JOIN material parent ON parent."materialMakeMethodId" = child."makeMethodId"
-)
-SELECT
-  material.id as "methodMaterialId",
-  material."makeMethodId",
-  material."materialMakeMethodId",
-  material."itemId",
-  item."readableIdWithRevision" AS "itemReadableId",
-  material."itemType",
-  item."name" AS "description",
-  item."unitOfMeasureCode",
-  cost."unitCost",
-  material."quantity",
-  material."methodType",
-  item."itemTrackingType",
-  material."parentMaterialId",
-  material."order",
-  material."operationId",
-  material."methodOperationStepId",
-  false AS "isRoot",
-  material."kit",
-  item."revision",
-  (
-    SELECT COALESCE(
-      jsonb_object_agg(
-        eim."integration",
-        CASE
-          WHEN eim."metadata" IS NOT NULL THEN eim."metadata"
-          ELSE to_jsonb(eim."externalId")
-        END
-      ) FILTER (WHERE eim."externalId" IS NOT NULL),
-      '{}'::jsonb
-    )
-    FROM "externalIntegrationMapping" eim
-    WHERE eim."entityType" = 'item' AND eim."entityId" = item.id
-  ) AS "externalId",
-  mm2."version",
-  material."storageUnitIds",
-  material."isPickDescendant",
-  item."replenishmentSystem",
-  material."effectiveFrom",
-  material."effectiveTo"
-FROM material
-INNER JOIN item
-  ON material."itemId" = item.id
-INNER JOIN "itemCost" cost
-  ON item.id = cost."itemId"
-INNER JOIN "makeMethod" mm
-  ON material."makeMethodId" = mm.id
-LEFT JOIN "makeMethod" mm2
-  ON material."materialMakeMethodId" = mm2.id
-UNION
-SELECT
-  mm."id" AS "methodMaterialId",
-  NULL AS "makeMethodId",
-  mm.id AS "materialMakeMethodId",
-  mm."itemId",
-  item."readableIdWithRevision" AS "itemReadableId",
-  item."type"::text,
-  item."name" AS "description",
-  item."unitOfMeasureCode",
-  cost."unitCost",
-  1 AS "quantity",
-  'Make to Order' AS "methodType",
-  item."itemTrackingType",
-  NULL AS "parentMaterialId",
-  CAST(1 AS DOUBLE PRECISION) AS "order",
-  NULL AS "operationId",
-  NULL AS "methodOperationStepId",
-  true AS "isRoot",
-  false AS "kit",
-  item."revision",
-  (
-    SELECT COALESCE(
-      jsonb_object_agg(
-        eim."integration",
-        CASE
-          WHEN eim."metadata" IS NOT NULL THEN eim."metadata"
-          ELSE to_jsonb(eim."externalId")
-        END
-      ) FILTER (WHERE eim."externalId" IS NOT NULL),
-      '{}'::jsonb
-    )
-    FROM "externalIntegrationMapping" eim
-    WHERE eim."entityType" = 'item' AND eim."entityId" = item.id
-  ) AS "externalId",
-  mm."version",
-  '{}'::JSONB AS "storageUnitIds",
-  false AS "isPickDescendant",
-  item."replenishmentSystem",
-  NULL::DATE AS "effectiveFrom",
-  NULL::DATE AS "effectiveTo"
-FROM "makeMethod" mm
-INNER JOIN item
-  ON mm."itemId" = item.id
-INNER JOIN "itemCost" cost
-  ON item.id = cost."itemId"
-WHERE mm.id = uid
-ORDER BY "order"
-$$ LANGUAGE sql STABLE;
-
--- ===== 20260628163000_method-tree-step-base.sql =====
--- Fix: the base CTE of get_method_tree (top-level materials of the queried make method)
--- hardcoded methodOperationStepId to NULL — so a part assigned to a step on the ROOT
--- assembly's BoM never reached get-method. Carry the real column in the base term too.
--- Body-only change (signature unchanged from 20260628161500), so CREATE OR REPLACE is safe.
--- operationId is intentionally left NULL in the base term (unchanged existing behavior);
--- the MES filter keys off jobOperationStepId, not jobOperationId.
-
-CREATE OR REPLACE FUNCTION get_method_tree(uid TEXT)
-RETURNS TABLE (
-    "methodMaterialId" TEXT,
-    "makeMethodId" TEXT,
-    "materialMakeMethodId" TEXT,
-    "itemId" TEXT,
-    "itemReadableId" TEXT,
-    "itemType" TEXT,
-    "description" TEXT,
-    "unitOfMeasureCode" TEXT,
-    "unitCost" NUMERIC,
-    "quantity" NUMERIC,
-    "methodType" "methodType",
-    "itemTrackingType" TEXT,
-    "parentMaterialId" TEXT,
-    "order" DOUBLE PRECISION,
-    "operationId" TEXT,
-    "methodOperationStepId" TEXT,
-    "isRoot" BOOLEAN,
-    "kit" BOOLEAN,
-    "revision" TEXT,
-    "externalId" JSONB,
-    "version" NUMERIC,
-    "storageUnitIds" JSONB,
-    "isPickDescendant" BOOLEAN,
-    "replenishmentSystem" "itemReplenishmentSystem",
-    "effectiveFrom" DATE,
-    "effectiveTo" DATE
-) AS $$
-WITH RECURSIVE material AS (
-    SELECT
-        "id",
-        "makeMethodId",
-        "methodType",
-        COALESCE(
-            "materialMakeMethodId",
-            CASE WHEN "methodType" = 'Pull from Inventory' THEN (
-                SELECT amm.id FROM "activeMakeMethods" amm WHERE amm."itemId" = "methodMaterial"."itemId" LIMIT 1
-            ) END
-        ) AS "materialMakeMethodId",
-        "itemId",
-        "itemType",
-        "quantity",
-        "makeMethodId" AS "parentMaterialId",
-        NULL AS "operationId",
-        "methodOperationStepId",
-        COALESCE("order", 1) AS "order",
-        "kit",
-        "storageUnitIds",
-        false AS "isPickDescendant",
-        "effectiveFrom",
-        "effectiveTo"
-    FROM
-        "methodMaterial"
-    WHERE
-        "makeMethodId" = uid
-    UNION
-    SELECT
-        child."id",
-        child."makeMethodId",
-        child."methodType",
-        COALESCE(
-            child."materialMakeMethodId",
-            CASE WHEN child."methodType" = 'Pull from Inventory' THEN (
-                SELECT amm.id FROM "activeMakeMethods" amm WHERE amm."itemId" = child."itemId" LIMIT 1
-            ) END
-        ) AS "materialMakeMethodId",
-        child."itemId",
-        child."itemType",
-        child."quantity",
-        parent."id" AS "parentMaterialId",
-        child."methodOperationId" AS "operationId",
-        child."methodOperationStepId" AS "methodOperationStepId",
-        child."order",
-        child."kit",
-        child."storageUnitIds",
-        (parent."methodType" = 'Pull from Inventory' OR parent."isPickDescendant") AS "isPickDescendant",
-        child."effectiveFrom",
-        child."effectiveTo"
-    FROM
-        "methodMaterial" child
-        INNER JOIN material parent ON parent."materialMakeMethodId" = child."makeMethodId"
-)
-SELECT
-  material.id as "methodMaterialId",
-  material."makeMethodId",
-  material."materialMakeMethodId",
-  material."itemId",
-  item."readableIdWithRevision" AS "itemReadableId",
-  material."itemType",
-  item."name" AS "description",
-  item."unitOfMeasureCode",
-  cost."unitCost",
-  material."quantity",
-  material."methodType",
-  item."itemTrackingType",
-  material."parentMaterialId",
-  material."order",
-  material."operationId",
-  material."methodOperationStepId",
-  false AS "isRoot",
-  material."kit",
-  item."revision",
-  (
-    SELECT COALESCE(
-      jsonb_object_agg(
-        eim."integration",
-        CASE
-          WHEN eim."metadata" IS NOT NULL THEN eim."metadata"
-          ELSE to_jsonb(eim."externalId")
-        END
-      ) FILTER (WHERE eim."externalId" IS NOT NULL),
-      '{}'::jsonb
-    )
-    FROM "externalIntegrationMapping" eim
-    WHERE eim."entityType" = 'item' AND eim."entityId" = item.id
-  ) AS "externalId",
-  mm2."version",
-  material."storageUnitIds",
-  material."isPickDescendant",
-  item."replenishmentSystem",
-  material."effectiveFrom",
-  material."effectiveTo"
-FROM material
-INNER JOIN item
-  ON material."itemId" = item.id
-INNER JOIN "itemCost" cost
-  ON item.id = cost."itemId"
-INNER JOIN "makeMethod" mm
-  ON material."makeMethodId" = mm.id
-LEFT JOIN "makeMethod" mm2
-  ON material."materialMakeMethodId" = mm2.id
-UNION
-SELECT
-  mm."id" AS "methodMaterialId",
-  NULL AS "makeMethodId",
-  mm.id AS "materialMakeMethodId",
-  mm."itemId",
-  item."readableIdWithRevision" AS "itemReadableId",
-  item."type"::text,
-  item."name" AS "description",
-  item."unitOfMeasureCode",
-  cost."unitCost",
-  1 AS "quantity",
-  'Make to Order' AS "methodType",
-  item."itemTrackingType",
-  NULL AS "parentMaterialId",
-  CAST(1 AS DOUBLE PRECISION) AS "order",
-  NULL AS "operationId",
-  NULL AS "methodOperationStepId",
-  true AS "isRoot",
-  false AS "kit",
-  item."revision",
-  (
-    SELECT COALESCE(
-      jsonb_object_agg(
-        eim."integration",
-        CASE
-          WHEN eim."metadata" IS NOT NULL THEN eim."metadata"
-          ELSE to_jsonb(eim."externalId")
-        END
-      ) FILTER (WHERE eim."externalId" IS NOT NULL),
-      '{}'::jsonb
-    )
-    FROM "externalIntegrationMapping" eim
-    WHERE eim."entityType" = 'item' AND eim."entityId" = item.id
-  ) AS "externalId",
-  mm."version",
-  '{}'::JSONB AS "storageUnitIds",
-  false AS "isPickDescendant",
-  item."replenishmentSystem",
-  NULL::DATE AS "effectiveFrom",
-  NULL::DATE AS "effectiveTo"
-FROM "makeMethod" mm
-INNER JOIN item
-  ON mm."itemId" = item.id
-INNER JOIN "itemCost" cost
-  ON item.id = cost."itemId"
-WHERE mm.id = uid
-ORDER BY "order"
-$$ LANGUAGE sql STABLE;
+-- ===== 20260628161500_method-tree-step-link.sql / 20260628163000_method-tree-step-base.sql =====
+-- (definitions removed in the operation-type consolidation)
+-- These sub-migrations redefined get_method_tree to surface the scalar
+-- methodMaterial.methodOperationStepId. The defs were LANGUAGE sql (bodies are
+-- validated at CREATE) and referenced the effectivity columns that main's
+-- 20260714084035_remove-bom-line-effectivity.sql drops — on any remote that has
+-- already applied that migration, re-creating those bodies hard-fails. Since this
+-- file is a squash, the intermediate definitions are transient anyway: the final
+-- get_method_tree (join-table step links, no effectivity) is landed once, in
+-- 20260721004140_operation-type-consolidation.sql, which is timestamped after
+-- every definition on main.
 
 -- ===== 20260701151200_auto-start-operation-timer.sql =====
 -- Passive operation timer (MES): opt-in per company. When ON, the MES assembly view
@@ -729,51 +341,51 @@ ALTER TABLE "quoteOperationStepSlide"
 -- material OR the step removes the link row (a link is meaningless without either side).
 --
 -- The old scalar columns are backfilled here and dropped in the paired migration
--- 20260702143500 (after get_method_tree stops referencing methodMaterial.methodOperationStepId).
+-- 20260702143500 (below).
 
 -- Materials ---------------------------------------------------------------------------------
-CREATE TABLE "methodMaterialStep" (
+CREATE TABLE IF NOT EXISTS "methodMaterialStep" (
   "methodMaterialId" TEXT NOT NULL REFERENCES "methodMaterial"("id") ON DELETE CASCADE,
   "methodOperationStepId" TEXT NOT NULL REFERENCES "methodOperationStep"("id") ON DELETE CASCADE,
   PRIMARY KEY ("methodMaterialId", "methodOperationStepId")
 );
-CREATE INDEX "methodMaterialStep_methodOperationStepId_idx" ON "methodMaterialStep" ("methodOperationStepId");
+CREATE INDEX IF NOT EXISTS "methodMaterialStep_methodOperationStepId_idx" ON "methodMaterialStep" ("methodOperationStepId");
 
-CREATE TABLE "jobMaterialStep" (
+CREATE TABLE IF NOT EXISTS "jobMaterialStep" (
   "jobMaterialId" TEXT NOT NULL REFERENCES "jobMaterial"("id") ON DELETE CASCADE,
   "jobOperationStepId" TEXT NOT NULL REFERENCES "jobOperationStep"("id") ON DELETE CASCADE,
   PRIMARY KEY ("jobMaterialId", "jobOperationStepId")
 );
-CREATE INDEX "jobMaterialStep_jobOperationStepId_idx" ON "jobMaterialStep" ("jobOperationStepId");
+CREATE INDEX IF NOT EXISTS "jobMaterialStep_jobOperationStepId_idx" ON "jobMaterialStep" ("jobOperationStepId");
 
-CREATE TABLE "quoteMaterialStep" (
+CREATE TABLE IF NOT EXISTS "quoteMaterialStep" (
   "quoteMaterialId" TEXT NOT NULL REFERENCES "quoteMaterial"("id") ON DELETE CASCADE,
   "quoteOperationStepId" TEXT NOT NULL REFERENCES "quoteOperationStep"("id") ON DELETE CASCADE,
   PRIMARY KEY ("quoteMaterialId", "quoteOperationStepId")
 );
-CREATE INDEX "quoteMaterialStep_quoteOperationStepId_idx" ON "quoteMaterialStep" ("quoteOperationStepId");
+CREATE INDEX IF NOT EXISTS "quoteMaterialStep_quoteOperationStepId_idx" ON "quoteMaterialStep" ("quoteOperationStepId");
 
 -- Tools -------------------------------------------------------------------------------------
-CREATE TABLE "methodOperationToolStep" (
+CREATE TABLE IF NOT EXISTS "methodOperationToolStep" (
   "methodOperationToolId" TEXT NOT NULL REFERENCES "methodOperationTool"("id") ON DELETE CASCADE,
   "methodOperationStepId" TEXT NOT NULL REFERENCES "methodOperationStep"("id") ON DELETE CASCADE,
   PRIMARY KEY ("methodOperationToolId", "methodOperationStepId")
 );
-CREATE INDEX "methodOperationToolStep_methodOperationStepId_idx" ON "methodOperationToolStep" ("methodOperationStepId");
+CREATE INDEX IF NOT EXISTS "methodOperationToolStep_methodOperationStepId_idx" ON "methodOperationToolStep" ("methodOperationStepId");
 
-CREATE TABLE "jobOperationToolStep" (
+CREATE TABLE IF NOT EXISTS "jobOperationToolStep" (
   "jobOperationToolId" TEXT NOT NULL REFERENCES "jobOperationTool"("id") ON DELETE CASCADE,
   "jobOperationStepId" TEXT NOT NULL REFERENCES "jobOperationStep"("id") ON DELETE CASCADE,
   PRIMARY KEY ("jobOperationToolId", "jobOperationStepId")
 );
-CREATE INDEX "jobOperationToolStep_jobOperationStepId_idx" ON "jobOperationToolStep" ("jobOperationStepId");
+CREATE INDEX IF NOT EXISTS "jobOperationToolStep_jobOperationStepId_idx" ON "jobOperationToolStep" ("jobOperationStepId");
 
-CREATE TABLE "quoteOperationToolStep" (
+CREATE TABLE IF NOT EXISTS "quoteOperationToolStep" (
   "quoteOperationToolId" TEXT NOT NULL REFERENCES "quoteOperationTool"("id") ON DELETE CASCADE,
   "quoteOperationStepId" TEXT NOT NULL REFERENCES "quoteOperationStep"("id") ON DELETE CASCADE,
   PRIMARY KEY ("quoteOperationToolId", "quoteOperationStepId")
 );
-CREATE INDEX "quoteOperationToolStep_quoteOperationStepId_idx" ON "quoteOperationToolStep" ("quoteOperationStepId");
+CREATE INDEX IF NOT EXISTS "quoteOperationToolStep_quoteOperationStepId_idx" ON "quoteOperationToolStep" ("quoteOperationStepId");
 
 -- RLS -- reach companyId through the parent (tool/material). SELECT: any employee of the
 -- parent's company. Writes: the parent's module permission (job->production, method->parts,
@@ -781,6 +393,10 @@ CREATE INDEX "quoteOperationToolStep_quoteOperationStepId_idx" ON "quoteOperatio
 
 -- methodMaterialStep (parts)
 ALTER TABLE "public"."methodMaterialStep" ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "SELECT" ON "public"."methodMaterialStep";
+DROP POLICY IF EXISTS "INSERT" ON "public"."methodMaterialStep";
+DROP POLICY IF EXISTS "UPDATE" ON "public"."methodMaterialStep";
+DROP POLICY IF EXISTS "DELETE" ON "public"."methodMaterialStep";
 CREATE POLICY "SELECT" ON "public"."methodMaterialStep" FOR SELECT USING (
   EXISTS (SELECT 1 FROM "methodMaterial" p WHERE p."id" = "methodMaterialId"
     AND p."companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])));
@@ -796,6 +412,10 @@ CREATE POLICY "DELETE" ON "public"."methodMaterialStep" FOR DELETE USING (
 
 -- jobMaterialStep (production)
 ALTER TABLE "public"."jobMaterialStep" ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "SELECT" ON "public"."jobMaterialStep";
+DROP POLICY IF EXISTS "INSERT" ON "public"."jobMaterialStep";
+DROP POLICY IF EXISTS "UPDATE" ON "public"."jobMaterialStep";
+DROP POLICY IF EXISTS "DELETE" ON "public"."jobMaterialStep";
 CREATE POLICY "SELECT" ON "public"."jobMaterialStep" FOR SELECT USING (
   EXISTS (SELECT 1 FROM "jobMaterial" p WHERE p."id" = "jobMaterialId"
     AND p."companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])));
@@ -811,6 +431,10 @@ CREATE POLICY "DELETE" ON "public"."jobMaterialStep" FOR DELETE USING (
 
 -- quoteMaterialStep (sales)
 ALTER TABLE "public"."quoteMaterialStep" ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "SELECT" ON "public"."quoteMaterialStep";
+DROP POLICY IF EXISTS "INSERT" ON "public"."quoteMaterialStep";
+DROP POLICY IF EXISTS "UPDATE" ON "public"."quoteMaterialStep";
+DROP POLICY IF EXISTS "DELETE" ON "public"."quoteMaterialStep";
 CREATE POLICY "SELECT" ON "public"."quoteMaterialStep" FOR SELECT USING (
   EXISTS (SELECT 1 FROM "quoteMaterial" p WHERE p."id" = "quoteMaterialId"
     AND p."companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])));
@@ -826,6 +450,10 @@ CREATE POLICY "DELETE" ON "public"."quoteMaterialStep" FOR DELETE USING (
 
 -- methodOperationToolStep (parts)
 ALTER TABLE "public"."methodOperationToolStep" ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "SELECT" ON "public"."methodOperationToolStep";
+DROP POLICY IF EXISTS "INSERT" ON "public"."methodOperationToolStep";
+DROP POLICY IF EXISTS "UPDATE" ON "public"."methodOperationToolStep";
+DROP POLICY IF EXISTS "DELETE" ON "public"."methodOperationToolStep";
 CREATE POLICY "SELECT" ON "public"."methodOperationToolStep" FOR SELECT USING (
   EXISTS (SELECT 1 FROM "methodOperationTool" p WHERE p."id" = "methodOperationToolId"
     AND p."companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])));
@@ -841,6 +469,10 @@ CREATE POLICY "DELETE" ON "public"."methodOperationToolStep" FOR DELETE USING (
 
 -- jobOperationToolStep (production)
 ALTER TABLE "public"."jobOperationToolStep" ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "SELECT" ON "public"."jobOperationToolStep";
+DROP POLICY IF EXISTS "INSERT" ON "public"."jobOperationToolStep";
+DROP POLICY IF EXISTS "UPDATE" ON "public"."jobOperationToolStep";
+DROP POLICY IF EXISTS "DELETE" ON "public"."jobOperationToolStep";
 CREATE POLICY "SELECT" ON "public"."jobOperationToolStep" FOR SELECT USING (
   EXISTS (SELECT 1 FROM "jobOperationTool" p WHERE p."id" = "jobOperationToolId"
     AND p."companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])));
@@ -856,6 +488,10 @@ CREATE POLICY "DELETE" ON "public"."jobOperationToolStep" FOR DELETE USING (
 
 -- quoteOperationToolStep (sales)
 ALTER TABLE "public"."quoteOperationToolStep" ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "SELECT" ON "public"."quoteOperationToolStep";
+DROP POLICY IF EXISTS "INSERT" ON "public"."quoteOperationToolStep";
+DROP POLICY IF EXISTS "UPDATE" ON "public"."quoteOperationToolStep";
+DROP POLICY IF EXISTS "DELETE" ON "public"."quoteOperationToolStep";
 CREATE POLICY "SELECT" ON "public"."quoteOperationToolStep" FOR SELECT USING (
   EXISTS (SELECT 1 FROM "quoteOperationTool" p WHERE p."id" = "quoteOperationToolId"
     AND p."companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])));
@@ -870,212 +506,43 @@ CREATE POLICY "DELETE" ON "public"."quoteOperationToolStep" FOR DELETE USING (
     AND p."companyId" = ANY ((SELECT get_companies_with_employee_permission('sales_delete'))::text[])));
 
 -- Backfill existing single-FK assignments into the join tables (no data loss).
-INSERT INTO "methodMaterialStep" ("methodMaterialId", "methodOperationStepId")
-  SELECT "id", "methodOperationStepId" FROM "methodMaterial" WHERE "methodOperationStepId" IS NOT NULL;
-INSERT INTO "jobMaterialStep" ("jobMaterialId", "jobOperationStepId")
-  SELECT "id", "jobOperationStepId" FROM "jobMaterial" WHERE "jobOperationStepId" IS NOT NULL;
-INSERT INTO "quoteMaterialStep" ("quoteMaterialId", "quoteOperationStepId")
-  SELECT "id", "quoteOperationStepId" FROM "quoteMaterial" WHERE "quoteOperationStepId" IS NOT NULL;
-INSERT INTO "methodOperationToolStep" ("methodOperationToolId", "methodOperationStepId")
-  SELECT "id", "methodOperationStepId" FROM "methodOperationTool" WHERE "methodOperationStepId" IS NOT NULL;
-INSERT INTO "jobOperationToolStep" ("jobOperationToolId", "jobOperationStepId")
-  SELECT "id", "jobOperationStepId" FROM "jobOperationTool" WHERE "jobOperationStepId" IS NOT NULL;
-INSERT INTO "quoteOperationToolStep" ("quoteOperationToolId", "quoteOperationStepId")
-  SELECT "id", "quoteOperationStepId" FROM "quoteOperationTool" WHERE "quoteOperationStepId" IS NOT NULL;
+-- Guarded on the scalar columns still existing: on a re-run after 20260702143500
+-- (below) has dropped them, the backfill is a no-op instead of a hard failure.
+DO $$ BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'methodMaterial'
+      AND column_name = 'methodOperationStepId'
+  ) THEN
+    INSERT INTO "methodMaterialStep" ("methodMaterialId", "methodOperationStepId")
+      SELECT "id", "methodOperationStepId" FROM "methodMaterial" WHERE "methodOperationStepId" IS NOT NULL
+      ON CONFLICT DO NOTHING;
+    INSERT INTO "jobMaterialStep" ("jobMaterialId", "jobOperationStepId")
+      SELECT "id", "jobOperationStepId" FROM "jobMaterial" WHERE "jobOperationStepId" IS NOT NULL
+      ON CONFLICT DO NOTHING;
+    INSERT INTO "quoteMaterialStep" ("quoteMaterialId", "quoteOperationStepId")
+      SELECT "id", "quoteOperationStepId" FROM "quoteMaterial" WHERE "quoteOperationStepId" IS NOT NULL
+      ON CONFLICT DO NOTHING;
+    INSERT INTO "methodOperationToolStep" ("methodOperationToolId", "methodOperationStepId")
+      SELECT "id", "methodOperationStepId" FROM "methodOperationTool" WHERE "methodOperationStepId" IS NOT NULL
+      ON CONFLICT DO NOTHING;
+    INSERT INTO "jobOperationToolStep" ("jobOperationToolId", "jobOperationStepId")
+      SELECT "id", "jobOperationStepId" FROM "jobOperationTool" WHERE "jobOperationStepId" IS NOT NULL
+      ON CONFLICT DO NOTHING;
+    INSERT INTO "quoteOperationToolStep" ("quoteOperationToolId", "quoteOperationStepId")
+      SELECT "id", "quoteOperationStepId" FROM "quoteOperationTool" WHERE "quoteOperationStepId" IS NOT NULL
+      ON CONFLICT DO NOTHING;
+  END IF;
+END $$;
 
 -- ===== 20260702143500_method-tree-step-many-drop-scalar.sql =====
--- Paired with 20260702143000. Now that methodMaterialStep exists and is backfilled, switch
--- get_method_tree to surface methodOperationStepIds as a JSONB ARRAY (aggregated from the join
--- table) instead of the single methodOperationStepId TEXT, then drop the six scalar columns.
---
--- get-method copies the array to job/quote by remapping each id via methodStepsToJobSteps.
--- Return signature changes (TEXT -> JSONB), so DROP FUNCTION first.
-
-DROP FUNCTION IF EXISTS get_method_tree(TEXT);
-
-CREATE OR REPLACE FUNCTION get_method_tree(uid TEXT)
-RETURNS TABLE (
-    "methodMaterialId" TEXT,
-    "makeMethodId" TEXT,
-    "materialMakeMethodId" TEXT,
-    "itemId" TEXT,
-    "itemReadableId" TEXT,
-    "itemType" TEXT,
-    "description" TEXT,
-    "unitOfMeasureCode" TEXT,
-    "unitCost" NUMERIC,
-    "quantity" NUMERIC,
-    "methodType" "methodType",
-    "itemTrackingType" TEXT,
-    "parentMaterialId" TEXT,
-    "order" DOUBLE PRECISION,
-    "operationId" TEXT,
-    "methodOperationStepIds" JSONB,
-    "isRoot" BOOLEAN,
-    "kit" BOOLEAN,
-    "revision" TEXT,
-    "externalId" JSONB,
-    "version" NUMERIC,
-    "storageUnitIds" JSONB,
-    "isPickDescendant" BOOLEAN,
-    "replenishmentSystem" "itemReplenishmentSystem",
-    "effectiveFrom" DATE,
-    "effectiveTo" DATE
-) AS $$
-WITH RECURSIVE material AS (
-    SELECT
-        "id",
-        "makeMethodId",
-        "methodType",
-        COALESCE(
-            "materialMakeMethodId",
-            CASE WHEN "methodType" = 'Pull from Inventory' THEN (
-                SELECT amm.id FROM "activeMakeMethods" amm WHERE amm."itemId" = "methodMaterial"."itemId" LIMIT 1
-            ) END
-        ) AS "materialMakeMethodId",
-        "itemId",
-        "itemType",
-        "quantity",
-        "makeMethodId" AS "parentMaterialId",
-        NULL AS "operationId",
-        COALESCE("order", 1) AS "order",
-        "kit",
-        "storageUnitIds",
-        false AS "isPickDescendant",
-        "effectiveFrom",
-        "effectiveTo"
-    FROM
-        "methodMaterial"
-    WHERE
-        "makeMethodId" = uid
-    UNION
-    SELECT
-        child."id",
-        child."makeMethodId",
-        child."methodType",
-        COALESCE(
-            child."materialMakeMethodId",
-            CASE WHEN child."methodType" = 'Pull from Inventory' THEN (
-                SELECT amm.id FROM "activeMakeMethods" amm WHERE amm."itemId" = child."itemId" LIMIT 1
-            ) END
-        ) AS "materialMakeMethodId",
-        child."itemId",
-        child."itemType",
-        child."quantity",
-        parent."id" AS "parentMaterialId",
-        child."methodOperationId" AS "operationId",
-        child."order",
-        child."kit",
-        child."storageUnitIds",
-        (parent."methodType" = 'Pull from Inventory' OR parent."isPickDescendant") AS "isPickDescendant",
-        child."effectiveFrom",
-        child."effectiveTo"
-    FROM
-        "methodMaterial" child
-        INNER JOIN material parent ON parent."materialMakeMethodId" = child."makeMethodId"
-)
-SELECT
-  material.id as "methodMaterialId",
-  material."makeMethodId",
-  material."materialMakeMethodId",
-  material."itemId",
-  item."readableIdWithRevision" AS "itemReadableId",
-  material."itemType",
-  item."name" AS "description",
-  item."unitOfMeasureCode",
-  cost."unitCost",
-  material."quantity",
-  material."methodType",
-  item."itemTrackingType",
-  material."parentMaterialId",
-  material."order",
-  material."operationId",
-  (
-    SELECT COALESCE(jsonb_agg(mms."methodOperationStepId"), '[]'::jsonb)
-    FROM "methodMaterialStep" mms
-    WHERE mms."methodMaterialId" = material.id
-  ) AS "methodOperationStepIds",
-  false AS "isRoot",
-  material."kit",
-  item."revision",
-  (
-    SELECT COALESCE(
-      jsonb_object_agg(
-        eim."integration",
-        CASE
-          WHEN eim."metadata" IS NOT NULL THEN eim."metadata"
-          ELSE to_jsonb(eim."externalId")
-        END
-      ) FILTER (WHERE eim."externalId" IS NOT NULL),
-      '{}'::jsonb
-    )
-    FROM "externalIntegrationMapping" eim
-    WHERE eim."entityType" = 'item' AND eim."entityId" = item.id
-  ) AS "externalId",
-  mm2."version",
-  material."storageUnitIds",
-  material."isPickDescendant",
-  item."replenishmentSystem",
-  material."effectiveFrom",
-  material."effectiveTo"
-FROM material
-INNER JOIN item
-  ON material."itemId" = item.id
-INNER JOIN "itemCost" cost
-  ON item.id = cost."itemId"
-INNER JOIN "makeMethod" mm
-  ON material."makeMethodId" = mm.id
-LEFT JOIN "makeMethod" mm2
-  ON material."materialMakeMethodId" = mm2.id
-UNION
-SELECT
-  mm."id" AS "methodMaterialId",
-  NULL AS "makeMethodId",
-  mm.id AS "materialMakeMethodId",
-  mm."itemId",
-  item."readableIdWithRevision" AS "itemReadableId",
-  item."type"::text,
-  item."name" AS "description",
-  item."unitOfMeasureCode",
-  cost."unitCost",
-  1 AS "quantity",
-  'Make to Order' AS "methodType",
-  item."itemTrackingType",
-  NULL AS "parentMaterialId",
-  CAST(1 AS DOUBLE PRECISION) AS "order",
-  NULL AS "operationId",
-  '[]'::jsonb AS "methodOperationStepIds",
-  true AS "isRoot",
-  false AS "kit",
-  item."revision",
-  (
-    SELECT COALESCE(
-      jsonb_object_agg(
-        eim."integration",
-        CASE
-          WHEN eim."metadata" IS NOT NULL THEN eim."metadata"
-          ELSE to_jsonb(eim."externalId")
-        END
-      ) FILTER (WHERE eim."externalId" IS NOT NULL),
-      '{}'::jsonb
-    )
-    FROM "externalIntegrationMapping" eim
-    WHERE eim."entityType" = 'item' AND eim."entityId" = item.id
-  ) AS "externalId",
-  mm."version",
-  '{}'::JSONB AS "storageUnitIds",
-  false AS "isPickDescendant",
-  item."replenishmentSystem",
-  NULL::DATE AS "effectiveFrom",
-  NULL::DATE AS "effectiveTo"
-FROM "makeMethod" mm
-INNER JOIN item
-  ON mm."itemId" = item.id
-INNER JOIN "itemCost" cost
-  ON item.id = cost."itemId"
-WHERE mm.id = uid
-ORDER BY "order"
-$$ LANGUAGE sql STABLE;
+-- Paired with 20260702143000. Now that methodMaterialStep exists and is backfilled,
+-- drop the six scalar columns. The matching get_method_tree redefinition (surfacing
+-- methodOperationStepIds JSONB aggregated from the join tables) lives in
+-- 20260721004140_operation-type-consolidation.sql — see the note at 20260628161500
+-- above for why no definition is created here. The pre-existing definition does not
+-- reference these scalar columns (they were added by this branch), so dropping them
+-- with that definition still in place is safe.
 
 -- Drop the now-superseded scalar columns (data already backfilled into the join tables).
 ALTER TABLE "methodMaterial" DROP COLUMN IF EXISTS "methodOperationStepId";

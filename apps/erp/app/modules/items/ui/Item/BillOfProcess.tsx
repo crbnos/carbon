@@ -123,15 +123,13 @@ import type {
   SlideSize
 } from "~/modules/shared";
 import {
-  classificationFromTypeKind,
   methodOperationOrders,
-  operationClassifications,
   operationParameterValidator,
   operationStepValidator,
   operationToolValidator,
+  operationTypes,
   procedureStepType,
-  standardFactorType,
-  typeKindFromClassification
+  standardFactorType
 } from "~/modules/shared";
 import type { action as editMethodOperationParameterAction } from "~/routes/x+/items+/methods+/operation.parameter.$id";
 import type { action as newMethodOperationParameterAction } from "~/routes/x+/items+/methods+/operation.parameter.new";
@@ -208,8 +206,7 @@ const initialOperation: Omit<
   machineTime: 0,
   machineUnit: "Minutes/Piece",
   operationOrder: "After Previous",
-  operationType: "Inside",
-  operationKind: "Operation",
+  operationType: "Process",
   processId: "",
   procedureId: "",
   setupTime: 0,
@@ -575,7 +572,7 @@ const BillOfProcess = ({
         disabled:
           item.id in temporaryItems ||
           hasProcedure ||
-          item.data.operationType === "Outside",
+          item.data.operationType === "Outside Processing",
         content: (
           <div className="flex flex-col">
             <div>
@@ -615,7 +612,7 @@ const BillOfProcess = ({
         disabled:
           item.id in temporaryItems ||
           hasProcedure ||
-          item.data.operationType === "Outside",
+          item.data.operationType === "Outside Processing",
         label: (
           <span className="flex items-center gap-2">
             <span>Parameters</span>
@@ -661,7 +658,7 @@ const BillOfProcess = ({
         disabled:
           item.id in temporaryItems ||
           hasProcedure ||
-          item.data.operationType === "Outside",
+          item.data.operationType === "Outside Processing",
         label: (
           <span className="flex items-center gap-2">
             <span>Steps</span>
@@ -686,7 +683,7 @@ const BillOfProcess = ({
         ),
         content: (
           <div className="flex w-full flex-col py-4">
-            {item.data.operationKind === "Assembly" && !!item.id && (
+            {item.data.operationType === "Assembly" && !!item.id && (
               <AssemblyStepsSource
                 itemId={makeMethod.itemId}
                 targetKind="method"
@@ -716,7 +713,8 @@ const BillOfProcess = ({
       {
         id: 4,
         disabled:
-          item.id in temporaryItems || item.data.operationType === "Outside",
+          item.id in temporaryItems ||
+          item.data.operationType === "Outside Processing",
         label: (
           <span className="flex items-center gap-2">
             <span>Tools</span>
@@ -1012,7 +1010,6 @@ function OperationForm({
     machineUnit: string;
     machineUnitHint: string;
     operationType: string;
-    operationKind: string;
     operationOrder: string;
     processId: string;
     procedureId: string;
@@ -1032,8 +1029,7 @@ function OperationForm({
     machineUnit: item.data.machineUnit ?? "Hours/Piece",
     machineUnitHint: getUnitHint(item.data.machineUnit),
     operationOrder: item.data.operationOrder ?? "After Previous",
-    operationType: item.data.operationType ?? "Inside",
-    operationKind: item.data.operationKind ?? "Operation",
+    operationType: item.data.operationType ?? "Process",
     processId: item.data.processId ?? "",
     procedureId: item.data.procedureId ?? "",
     workCenterId: item.data.workCenterId ?? "",
@@ -1063,8 +1059,9 @@ function OperationForm({
       laborUnitHint: getUnitHint(process.data?.defaultStandardFactor),
       machineUnit: process.data?.defaultStandardFactor ?? "Hours/Piece",
       machineUnitHint: getUnitHint(process.data?.defaultStandardFactor),
-      operationType:
-        process.data?.processType === "Outside" ? "Outside" : "Inside",
+      // processType and operationType share one enum — the process's type is the
+      // default operation type.
+      operationType: process.data?.processType ?? "Process",
       operationMinimumCost:
         supplierProcesses.data && supplierProcesses.data.length > 0
           ? supplierProcesses.data.reduce((acc, sp) => {
@@ -1149,64 +1146,26 @@ function OperationForm({
           }}
         />
 
-        <Select
-          name="operationOrder"
-          label={t`Operation Order`}
-          placeholder={t`Operation Order`}
-          options={methodOperationOrders.map((o) => ({
-            value: o,
-            label: o
-          }))}
-          onChange={(value) => {
-            setProcessData((d) => ({
-              ...d,
-              operationOrder: value?.value as string
-            }));
-          }}
-          isConfigured={rulesByField.has(key("operationOrder"))}
-          onConfigure={
-            configurable && !temporaryItems[item.id]
-              ? () => {
-                  onConfigure({
-                    label: t`Operation Order`,
-                    field: key("operationOrder"),
-                    code: rulesByField.get(key("operationOrder"))?.code,
-                    defaultValue: processData.operationOrder,
-                    returnType: {
-                      type: "enum",
-                      listOptions: ["After Previous", "With Previous"]
-                    }
-                  });
-                }
-              : undefined
-          }
-        />
-
-        {/* Unified Type+Kind picker (Brad's merge): one field collapsing operationType
-            (Inside/Outside) + operationKind (Operation/Assembly/Inspection). The two
-            underlying columns are still submitted via the hidden inputs below, so costing
-            and the MES view router are unchanged. */}
         <SelectControlled
-          name="operationClassification"
-          label={t`Type`}
-          placeholder={t`Type`}
-          options={operationClassifications.map((o) => ({
+          name="operationType"
+          label={t`Operation Type`}
+          termId="operation-type"
+          placeholder={t`Operation Type`}
+          options={operationTypes.map((o) => ({
             value: o,
             label: o
           }))}
-          value={classificationFromTypeKind(
-            processData.operationType,
-            processData.operationKind
-          )}
+          value={processData.operationType}
           onChange={(value) => {
-            const next = typeKindFromClassification(value?.value as string);
+            const next = (value?.value as string) ?? "Process";
             setProcessData((d) => ({
               ...d,
-              operationType: next.operationType,
-              operationKind: next.operationKind,
-              // Switching inside<->outside changes the meaningful time units; reset to
-              // defaults (matches the previous Operation Type behavior).
-              ...(next.operationType !== d.operationType
+              operationType: next,
+              // Crossing the in-house <-> Outside Processing boundary changes the
+              // meaningful time units; reset to defaults. Switching between in-house
+              // types keeps whatever units the user picked.
+              ...((next === "Outside Processing") !==
+              (d.operationType === "Outside Processing")
                 ? {
                     setupUnit: "Total Minutes",
                     laborUnit: "Minutes/Piece",
@@ -1216,44 +1175,8 @@ function OperationForm({
             }));
           }}
         />
-        <input
-          type="hidden"
-          name="operationType"
-          value={processData.operationType}
-        />
-        <input
-          type="hidden"
-          name="operationKind"
-          value={processData.operationKind}
-        />
 
-        <InputControlled
-          name="description"
-          label={t`Description`}
-          value={processData.description}
-          onChange={(newValue) => {
-            setProcessData((d) => ({ ...d, description: newValue }));
-          }}
-          className="col-span-2"
-          isConfigured={rulesByField.has(key("description"))}
-          onConfigure={
-            configurable && !temporaryItems[item.id]
-              ? () => {
-                  onConfigure({
-                    label: t`Description`,
-                    field: key("description"),
-                    code: rulesByField.get(key("description"))?.code,
-                    defaultValue: processData.description,
-                    returnType: {
-                      type: "text"
-                    }
-                  });
-                }
-              : undefined
-          }
-        />
-
-        {processData.operationType === "Outside" ? (
+        {processData.operationType === "Outside Processing" ? (
           <>
             <SupplierProcess
               name="operationSupplierProcessId"
@@ -1340,9 +1263,68 @@ function OperationForm({
             />
           </>
         )}
+
+        <InputControlled
+          name="description"
+          label={t`Description`}
+          value={processData.description}
+          onChange={(newValue) => {
+            setProcessData((d) => ({ ...d, description: newValue }));
+          }}
+          className="col-span-2"
+          isConfigured={rulesByField.has(key("description"))}
+          onConfigure={
+            configurable && !temporaryItems[item.id]
+              ? () => {
+                  onConfigure({
+                    label: t`Description`,
+                    field: key("description"),
+                    code: rulesByField.get(key("description"))?.code,
+                    defaultValue: processData.description,
+                    returnType: {
+                      type: "text"
+                    }
+                  });
+                }
+              : undefined
+          }
+        />
+
+        <Select
+          name="operationOrder"
+          label={t`Operation Order`}
+          placeholder={t`Operation Order`}
+          options={methodOperationOrders.map((o) => ({
+            value: o,
+            label: o
+          }))}
+          onChange={(value) => {
+            setProcessData((d) => ({
+              ...d,
+              operationOrder: value?.value as string
+            }));
+          }}
+          isConfigured={rulesByField.has(key("operationOrder"))}
+          onConfigure={
+            configurable && !temporaryItems[item.id]
+              ? () => {
+                  onConfigure({
+                    label: t`Operation Order`,
+                    field: key("operationOrder"),
+                    code: rulesByField.get(key("operationOrder"))?.code,
+                    defaultValue: processData.operationOrder,
+                    returnType: {
+                      type: "enum",
+                      listOptions: ["After Previous", "With Previous"]
+                    }
+                  });
+                }
+              : undefined
+          }
+        />
       </div>
 
-      {processData.operationType === "Inside" && (
+      {processData.operationType !== "Outside Processing" && (
         <>
           <div className="border border-border rounded-md shadow-sm p-4 flex flex-col gap-4">
             <HStack
@@ -3820,7 +3802,7 @@ function makeItem(
         <h3 className="font-semibold truncate cursor-pointer">
           {operation.description}
         </h3>
-        {operation.operationType === "Outside" && (
+        {operation.operationType === "Outside Processing" && (
           <SupplierProcessPreview
             processId={operation.processId}
             supplierProcessId={operation.operationSupplierProcessId}
@@ -3832,8 +3814,8 @@ function makeItem(
     order: operation.operationOrder,
     details: (
       <HStack spacing={1}>
-        {operation.operationType === "Outside" ? (
-          <Badge>Outside</Badge>
+        {operation.operationType === "Outside Processing" ? (
+          <Badge>Outside Processing</Badge>
         ) : (
           <>
             {(operation?.setupTime ?? 0) > 0 && (

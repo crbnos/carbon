@@ -123,7 +123,7 @@ function calculateOperationUnitCost(
   op: BomOperation,
   batchSize: number
 ): number {
-  if (op.operationType === "Outside") {
+  if (op.operationType === "Outside Processing") {
     return Math.max(op.operationMinimumCost, op.operationUnitCost);
   }
 

@@ -21,7 +21,7 @@ import { path } from "~/utils/path";
 type TargetOperation = {
   id: string;
   description: string | null;
-  operationKind: string | null;
+  operationType: string | null;
 };
 
 type SyncTargets = {
@@ -93,8 +93,8 @@ export default function AssemblySyncModal({
         {prefix ? `${prefix} · ` : ""}
         {operation.description || "Operation"}
       </span>
-      {operation.operationKind && operation.operationKind !== "Operation" && (
-        <Badge variant="secondary">{operation.operationKind}</Badge>
+      {operation.operationType && operation.operationType !== "Process" && (
+        <Badge variant="secondary">{operation.operationType}</Badge>
       )}
     </button>
   );

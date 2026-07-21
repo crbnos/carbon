@@ -6,7 +6,6 @@ import {
   methodItemType,
   methodOperationOrders,
   methodType,
-  operationKinds,
   operationTypes,
   sourcingType,
   standardFactorType
@@ -485,7 +484,6 @@ export const methodOperationValidator = z
         message: "Operation type is required"
       })
     }),
-    operationKind: z.enum(operationKinds).optional().default("Operation"),
     processId: z.string().min(1, { message: "Process is required" }),
     workCenterId: zfd.text(z.string().optional()),
     procedureId: zfd.text(z.string().optional()),
@@ -517,7 +515,7 @@ export const methodOperationValidator = z
   })
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return !!data.setupUnit;
       }
       return true;
@@ -529,7 +527,7 @@ export const methodOperationValidator = z
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return !!data.laborUnit;
       }
       return true;
@@ -541,7 +539,7 @@ export const methodOperationValidator = z
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return !!data.laborUnit;
       }
       return true;
@@ -553,7 +551,7 @@ export const methodOperationValidator = z
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return Number.isFinite(data.setupTime);
       }
       return true;
@@ -565,7 +563,7 @@ export const methodOperationValidator = z
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return Number.isFinite(data.laborTime);
       }
       return true;
@@ -577,7 +575,7 @@ export const methodOperationValidator = z
   )
   .refine(
     (data) => {
-      if (data.operationType === "Inside") {
+      if (data.operationType !== "Outside Processing") {
         return Number.isFinite(data.machineTime);
       }
       return true;
