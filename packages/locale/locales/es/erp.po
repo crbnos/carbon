@@ -13494,6 +13494,7 @@ msgstr "Varianza en los costos de procesamiento externo"
 
 msgid "Variance only"
 msgstr "Solo con variación"
+msgstr "Solo varianza"
 
 msgid "VAT Number"
 msgstr "Número de IVA"

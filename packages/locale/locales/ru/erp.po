@@ -13494,6 +13494,7 @@ msgstr "Расхождение в затратах на внешнюю обра�
 
 msgid "Variance only"
 msgstr "Только с расхождениями"
+msgstr "Только отклонения"
 
 msgid "VAT Number"
 msgstr "Номер НДС"

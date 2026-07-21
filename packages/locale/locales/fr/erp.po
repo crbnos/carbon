@@ -13494,6 +13494,7 @@ msgstr "Écart dans les coûts de traitement externe"
 
 msgid "Variance only"
 msgstr "Écart uniquement"
+msgstr "Écarts uniquement"
 
 msgid "VAT Number"
 msgstr "Numéro de TVA"

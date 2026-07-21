@@ -6188,6 +6188,7 @@ msgstr "在庫あり"
 
 msgid "In stock only"
 msgstr "在庫ありのみ"
+msgstr "在庫のみ"
 
 msgid "In the loop together"
 msgstr "一緒にループの中にいる"

@@ -6188,6 +6188,7 @@ msgstr "Stokta"
 
 msgid "In stock only"
 msgstr "Sadece stokta olanlar"
+msgstr "Yalnızca stokta"
 
 msgid "In the loop together"
 msgstr "Birlikte döngüde"
@@ -13494,6 +13495,7 @@ msgstr "Dış işleme maliyetlerinde varyans"
 
 msgid "Variance only"
 msgstr "Sadece farkı olanlar"
+msgstr "Yalnızca fark"
 
 msgid "VAT Number"
 msgstr "KDV Numarası"

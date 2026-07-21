@@ -13494,6 +13494,7 @@ msgstr "बाहरी प्रसंस्करण लागत में �
 
 msgid "Variance only"
 msgstr "केवल विचरण"
+msgstr "केवल भिन्नता"
 
 msgid "VAT Number"
 msgstr "VAT संख्या"

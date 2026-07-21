@@ -6188,6 +6188,7 @@ msgstr "재고 있음"
 
 msgid "In stock only"
 msgstr "재고가 있는 항목만"
+msgstr "재고만"
 
 msgid "In the loop together"
 msgstr "함께 정보 공유하기"
@@ -13494,6 +13495,7 @@ msgstr "외주 가공비 차이"
 
 msgid "Variance only"
 msgstr "차이가 있는 항목만"
+msgstr "편차만"
 
 msgid "VAT Number"
 msgstr "VAT 번호"
