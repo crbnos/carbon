@@ -59,24 +59,30 @@ export function AgentMessage({
       >
         {message.parts.map((part, i) => {
           if (part.type === "text") {
-            return <AgentTextPart key={i} text={part.text} isUser={isUser} />;
+            return (
+              <AgentTextPart
+                key={part.type + i}
+                text={part.text}
+                isUser={isUser}
+              />
+            );
           }
           // UI-block tools → rich blocks (rendered from part.input):
           if (part.type === "tool-present_choice") {
-            return <AgentBlockChoice key={i} input={part.input} />;
+            return <AgentBlockChoice key={part.type + i} input={part.input} />;
           }
           // Wrap in a block so multiple blocks stack vertically (inline <a>/button
           // would otherwise flow onto the same row).
           if (part.type === "tool-present_link") {
             return (
-              <div key={i} className="my-1">
+              <div key={part.type + i} className="my-1">
                 <AgentBlockLink input={part.input} />
               </div>
             );
           }
           if (part.type === "tool-present_button") {
             return (
-              <div key={i} className="my-1">
+              <div key={part.type + i} className="my-1">
                 <AgentBlockButton input={part.input} />
               </div>
             );
@@ -84,7 +90,7 @@ export function AgentMessage({
           if (part.type === "tool-navigate") {
             return (
               <AgentNavigate
-                key={i}
+                key={part.type + i}
                 input={part.input}
                 state={part.state}
                 toolCallId={part.toolCallId}
@@ -95,7 +101,7 @@ export function AgentMessage({
           if (isToolUIPart(part)) {
             return (
               <AgentToolStep
-                key={i}
+                key={part.type + i}
                 name={getToolName(part)}
                 state={part.state}
               />

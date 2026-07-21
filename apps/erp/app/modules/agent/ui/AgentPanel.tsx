@@ -1,35 +1,20 @@
-import { useChat } from "@ai-sdk/react";
 import {
   IconButton,
   Popover,
   PopoverContent,
   PopoverTrigger
 } from "@carbon/react";
-import { DefaultChatTransport, type UIMessage } from "ai";
 import posthog from "posthog-js";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { LuArrowDown, LuHistory, LuPlus, LuX } from "react-icons/lu";
 import { StickToBottom, useStickToBottomContext } from "use-stick-to-bottom";
 import { useAgentStore } from "~/stores/agent";
-import { path } from "~/utils/path";
-import { isUiBlockTool } from "../agent.blocks";
-import { useBrowsingContext } from "../hooks/useBrowsingContext";
+import { useAgentThread } from "../hooks/useAgentThread";
 import { AgentActionsProvider } from "./AgentActionsContext";
 import { AgentInput } from "./AgentInput";
 import { AgentMessageList } from "./AgentMessageList";
 import { AgentThreadList } from "./AgentThreadList";
 import { AgentBlockViewer } from "./dev/AgentBlockViewer";
-
-type DbPart = {
-  orderIndex: number;
-  type: string;
-  textContent: string | null;
-  toolName: string | null;
-  toolCallId: string | null;
-  toolInput: unknown;
-  toolOutput: unknown;
-};
-type DbMessage = { id: string; role: string; parts?: DbPart[] };
 
 // Floating "scroll to bottom" affordance — only shown when the user has
 // scrolled up. Must live inside <StickToBottom> to read its context.
@@ -55,121 +40,23 @@ function ScrollToBottomButton() {
 export function AgentPanel() {
   const closeAgent = useAgentStore((s) => s.closeAgent);
   const threadId = useAgentStore((s) => s.threadId);
-  const setThread = useAgentStore((s) => s.setThread);
-
-  // Sent with every turn so the agent can resolve "this record" — background only,
-  // not surfaced in the UI.
-  const context = useBrowsingContext();
   const [showHistory, setShowHistory] = useState(false);
 
-  // Refs so the transport closure always reads the latest values.
-  const threadIdRef = useRef<string | null>(threadId);
-  threadIdRef.current = threadId;
-  const contextRef = useRef<typeof context | null>(context);
-  contextRef.current = context;
-
-  const transport = useMemo(
-    () =>
-      new DefaultChatTransport({
-        api: path.to.api.agentChat,
-        prepareSendMessagesRequest: ({ messages }) => ({
-          body: {
-            messages,
-            threadId: threadIdRef.current,
-            context: contextRef.current
-          }
-        })
-      }),
-    []
-  );
-
-  const { messages, sendMessage, setMessages, status, stop, error } = useChat({
-    transport
-  });
+  const {
+    messages,
+    error,
+    isStreaming,
+    send,
+    stop,
+    loadThread,
+    newThread,
+    setMessages
+  } = useAgentThread();
 
   useEffect(() => {
     posthog.capture("agent_opened");
   }, []);
 
-  // Fire agent_stream_completed when a streaming turn returns to idle.
-  const prevStatus = useRef(status);
-  useEffect(() => {
-    if (
-      (prevStatus.current === "streaming" ||
-        prevStatus.current === "submitted") &&
-      status === "ready"
-    ) {
-      posthog.capture("agent_stream_completed", {
-        messageCount: messages.length
-      });
-    }
-    prevStatus.current = status;
-  }, [status, messages.length]);
-
-  async function handleSend(text: string) {
-    posthog.capture("agent_message_sent", {
-      hasContext: !!contextRef.current
-    });
-    // Pre-create the thread so the server and client agree on its id.
-    if (!threadIdRef.current) {
-      const res = await fetch(path.to.api.agentThreads, {
-        method: "POST",
-        body: new FormData()
-      });
-      const data = (await res.json()) as { threadId?: string };
-      if (data.threadId) {
-        threadIdRef.current = data.threadId;
-        setThread(data.threadId);
-      }
-    }
-    sendMessage({ text });
-  }
-
-  // No navigation — just reset in place so the panel never flickers closed.
-  function handleNewThread() {
-    setMessages([]);
-    setThread(null);
-    threadIdRef.current = null;
-    setShowHistory(false);
-  }
-
-  async function loadThread(id: string) {
-    setShowHistory(false);
-    setThread(id);
-    threadIdRef.current = id;
-    const res = await fetch(path.to.api.agentThread(id));
-    const data = (await res.json()) as { messages?: DbMessage[] };
-    const ui = (data.messages ?? [])
-      .filter((m) => m.role === "user" || m.role === "assistant")
-      .map((m) => ({
-        id: m.id,
-        role: m.role as "user" | "assistant",
-        parts: (m.parts ?? [])
-          .slice()
-          .sort((a, b) => a.orderIndex - b.orderIndex)
-          .map((p) => {
-            if (p.type === "text" && p.textContent) {
-              return { type: "text", text: p.textContent };
-            }
-            // Rebuild UI-block tool parts so blocks show (inert) in history.
-            if (p.type === "tool" && p.toolName && isUiBlockTool(p.toolName)) {
-              return {
-                type: `tool-${p.toolName}`,
-                toolCallId: p.toolCallId ?? `hist-${p.orderIndex}`,
-                state: "output-available",
-                input: p.toolInput,
-                output: p.toolOutput
-              };
-            }
-            return null;
-          })
-          .filter(Boolean)
-      }))
-      .filter((m) => m.parts.length > 0);
-    setMessages(ui as unknown as UIMessage[]);
-  }
-
-  const isStreaming = status === "streaming" || status === "submitted";
   const expanded = messages.length > 0;
 
   return (
@@ -188,7 +75,10 @@ export function AgentPanel() {
             variant="ghost"
             size="sm"
             isDisabled={messages.length === 0}
-            onClick={handleNewThread}
+            onClick={() => {
+              newThread();
+              setShowHistory(false);
+            }}
           />
           <Popover open={showHistory} onOpenChange={setShowHistory}>
             <PopoverTrigger asChild>
@@ -200,7 +90,12 @@ export function AgentPanel() {
               />
             </PopoverTrigger>
             <PopoverContent align="end" className="w-72 p-0">
-              <AgentThreadList onSelect={loadThread} />
+              <AgentThreadList
+                onSelect={(id) => {
+                  setShowHistory(false);
+                  loadThread(id);
+                }}
+              />
             </PopoverContent>
           </Popover>
           <IconButton
@@ -213,9 +108,7 @@ export function AgentPanel() {
         </div>
       </div>
 
-      <AgentActionsProvider
-        value={{ sendMessage: (text) => void handleSend(text) }}
-      >
+      <AgentActionsProvider value={{ sendMessage: (text) => void send(text) }}>
         <StickToBottom
           className="relative flex-1 overflow-y-auto"
           resize="smooth"
@@ -236,7 +129,7 @@ export function AgentPanel() {
         <AgentInput
           disabled={isStreaming}
           isStreaming={isStreaming}
-          onSend={handleSend}
+          onSend={send}
           onStop={stop}
         />
       </div>
