@@ -78,10 +78,21 @@ async function migrateAgainstRunningDb(
           {
             title: "Regenerate types & swagger",
             task: async () => {
-              if (!applied) return "skipped (no new migrations)";
+              // Always regenerate types: the on-disk types must match the DB
+              // schema, and that can be out of sync even when no NEW migration
+              // ran this invocation — schema already applied after a branch
+              // switch, a stash-pop, a conflict resolved by keeping the old
+              // types, or a prior run whose generated files were reverted.
+              // Gating this on `applied` left stale types in exactly those
+              // cases (the DB is up to date but the checked-in types are not).
               await execa("pnpm", ["db:types"], { cwd: root });
-              await execa("pnpm", ["generate:swagger"], { cwd: root });
-              return "types + swagger refreshed";
+              // Swagger only changes when the schema changed and is heavier, so
+              // keep it gated on a migration having actually applied.
+              if (applied) {
+                await execa("pnpm", ["generate:swagger"], { cwd: root });
+                return "types + swagger refreshed";
+              }
+              return "types refreshed";
             }
           }
         ]
@@ -135,13 +146,11 @@ async function migrateStandalone(
     await bootStack(root, slug, { services: ["postgres"] });
     await waitForPostgres(portDb);
 
-    let applied = false;
     await tasks([
       {
         title: "Apply database migrations",
         task: async () => {
           const r = await applyMigrations(root, portDb);
-          applied = r.applied;
           return r.applied ? "migrations applied" : "schema already up to date";
         }
       },
@@ -150,7 +159,10 @@ async function migrateStandalone(
             {
               title: "Regenerate types",
               task: async () => {
-                if (!applied) return "skipped (no new migrations)";
+                // Always regenerate — the on-disk types must match the DB even
+                // when no NEW migration ran this invocation (schema already
+                // applied from a branch switch, stash-pop, or reverted
+                // generated files). Gating on `applied` left stale types there.
                 await execa("pnpm", ["db:types"], { cwd: root });
                 return "types refreshed";
               }

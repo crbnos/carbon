@@ -55,7 +55,7 @@ import {
   formatDurationMilliseconds,
   getItemReadableId
 } from "@carbon/utils";
-import { ModelCanvas } from "@carbon/viewer/canvas";
+import { ModelPreview } from "@carbon/viewer/model-preview";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestSingleResponse } from "@supabase/supabase-js";
 import { Suspense, useEffect, useMemo, useState } from "react";
@@ -115,7 +115,7 @@ import type {
   TrackedInput
 } from "~/services/types";
 import { useItems } from "~/stores";
-import { path } from "~/utils/path";
+import { getPrivateUrl, getRawModelUrl, path } from "~/utils/path";
 import ItemThumbnail from "../ItemThumbnail";
 import { OperationChat } from "./components/Chat";
 import {
@@ -139,24 +139,10 @@ import {
 } from "./components/Step";
 import { TableSkeleton } from "./components/TableSkeleton";
 import { useFiles } from "./hooks/useFiles";
+import { useModelArtifacts } from "./hooks/useModelArtifacts";
 import { useOperation } from "./hooks/useOperation";
 
 const log = getLogger("mes", "job-operation");
-
-// The new pipeline serves an optimised GLB per model (no client-side
-// tessellation). Derive its private preview URL from the raw modelPath
-// `${co}/models/${id}.ext[.zst]` → `${co}/models/${id}/optimized.glb`.
-function optimizedModelPreviewUrl(rawModelPath: string | null): string | null {
-  if (!rawModelPath) return null;
-  const slash = rawModelPath.lastIndexOf("/");
-  if (slash < 0) return null;
-  const dir = rawModelPath.slice(0, slash);
-  let base = rawModelPath.slice(slash + 1);
-  if (base.toLowerCase().endsWith(".zst")) base = base.slice(0, -4);
-  const id = base.replace(/\.[^.]+$/, "");
-  if (!id) return null;
-  return `/file/preview/private/${dir}/${id}/optimized.glb`;
-}
 
 type JobOperationProps = {
   events: ProductionEvent[];
@@ -334,6 +320,9 @@ export const JobOperation = ({
           modelSize: operation.itemModelSize ?? job.modelSize
         }
       : null;
+
+  const modelPath = operation.itemModelPath ?? job.modelPath ?? null;
+  const { artifacts, pending: modelPending } = useModelArtifacts(modelPath);
 
   const fetcher = useFetcher<Result>();
 
@@ -1764,25 +1753,41 @@ export const JobOperation = ({
         </TabsContent>
         <TabsContent value="model">
           <div className="w-full h-[calc(100dvh-var(--header-height)*2)] p-0">
-            {(() => {
-              const glbUrl = optimizedModelPreviewUrl(
-                operation.itemModelPath ?? job.modelPath
-              );
-              return glbUrl ? (
-                <ModelCanvas
-                  key={glbUrl}
-                  glbUrl={glbUrl}
-                  mode={mode}
-                  className="rounded-none"
-                />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center">
-                  <p className="text-sm text-muted-foreground">
-                    3D preview unavailable
-                  </p>
-                </div>
-              );
-            })()}
+            {modelPath ? (
+              <ModelPreview
+                key={modelPath}
+                awaitingModel={modelPending}
+                optimizedUrl={
+                  artifacts?.optimizedModelPath
+                    ? getPrivateUrl(artifacts.optimizedModelPath)
+                    : null
+                }
+                glbUrl={
+                  artifacts?.glbPath ? getPrivateUrl(artifacts.glbPath) : null
+                }
+                lodUrl={
+                  artifacts?.lodPath ? getPrivateUrl(artifacts.lodPath) : null
+                }
+                rawUrl={
+                  artifacts?.rawPath
+                    ? getRawModelUrl(artifacts.rawBucket, artifacts.rawPath)
+                    : null
+                }
+                thumbnailUrl={
+                  artifacts?.thumbnailPath
+                    ? getPrivateUrl(artifacts.thumbnailPath)
+                    : null
+                }
+                mode={mode}
+                className="rounded-none"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center">
+                <p className="text-sm text-muted-foreground">
+                  3D preview unavailable
+                </p>
+              </div>
+            )}
           </div>
         </TabsContent>
         <TabsContent value="procedure" className="flex flex-grow">

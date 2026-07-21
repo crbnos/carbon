@@ -328,6 +328,7 @@ function PickLineItem({
   const quantityPicked = Number(line.quantityPicked ?? 0);
   const isTracked =
     item?.itemTrackingType === "Serial" || item?.itemTrackingType === "Batch";
+  const isBatch = item?.itemTrackingType === "Batch";
   // Only lots actually PICKED (quantityPicked > 0) count as picked, not mere
   // allocations.
   const pickedLots = (
@@ -465,6 +466,20 @@ function PickLineItem({
             </TooltipContent>
           </Tooltip>
         ) : null}
+        {pickedLots.length > 0 && (
+          <HStack spacing={1} className="max-w-[280px] flex-wrap justify-end">
+            {pickedLots.map((lot) => (
+              <Badge
+                key={lot.trackedEntityId}
+                variant="secondary"
+                className="font-mono tabular-nums normal-case"
+              >
+                {lot.trackedEntity?.readableId ?? lot.trackedEntityId}
+                {isBatch && ` × ${Number(lot.quantityPicked ?? 0)}`}
+              </Badge>
+            ))}
+          </HStack>
+        )}
         <div className="hidden sm:block">{quantityBadge}</div>
         {isLocked ? (
           isCancelled ? (

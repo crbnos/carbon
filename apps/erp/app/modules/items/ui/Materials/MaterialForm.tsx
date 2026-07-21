@@ -322,6 +322,7 @@ const MaterialForm = ({
                   name="postingGroupId"
                   label={t`Item Group`}
                   termId="item-group"
+                  isOptional
                   isClearable
                 />
                 <Array name="sizes" label={t`Sizes`} termId="material-sizes" />
@@ -331,7 +332,11 @@ const MaterialForm = ({
                 <CustomFormFields table="material" tags={initialValues.tags} />
               </div>
               <div className="mt-4 w-full">
-                <TextArea name="description" label={t`Long Description`} />
+                <TextArea
+                  name="description"
+                  label={t`Long Description`}
+                  isOptional
+                />
               </div>
             </ModalCardBody>
             <ModalCardFooter>

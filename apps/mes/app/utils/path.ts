@@ -19,6 +19,8 @@ export const path = {
       batchNumbers: (itemId: string) =>
         generatePath(`${api}/batch-numbers?itemId=${itemId}`),
       failureModes: `${api}/failure-modes`,
+      modelArtifacts: (modelUploadId: string) =>
+        generatePath(`${api}/model/artifacts/${modelUploadId}`),
       pickedAllocation: (jobMaterialId: string) =>
         generatePath(`${api}/picked-allocation?jobMaterialId=${jobMaterialId}`),
       qualityIssueTypes: `${api}/quality-issue-types`,
@@ -193,6 +195,12 @@ export const removeSubdomain = (url?: string): string => {
 
 export const getPrivateUrl = (path: string) => {
   return `/file/preview/private/${path}`;
+};
+
+// Raw model source for the viewer's WASM fallback tier — the bucket varies
+// (temp-staging for current uploads, private for pre-assembler rows).
+export const getRawModelUrl = (bucket: string, path: string) => {
+  return `/file/preview/${bucket}/${path}`;
 };
 
 export const getStoragePath = (bucket: string, path: string) => {
