@@ -751,3 +751,32 @@ export const fixedAssetUsageLogValidator = z.object({
 export const fixedAssetDisposalValidator = z.object({
   disposalDate: z.string().min(1, { message: "Disposal date is required" })
 });
+
+// Statutory gapless-series substrate for customer-facing documents. The series
+// counter (`next`) is system-managed by get_next_legal_series_number at posting
+// time, never form-supplied, so it is not part of this validator. Series
+// selection / issuance wiring lives in the e-invoicing spec (#1054); this is the
+// CRUD contract for the accounting-settings surface.
+export const legalSeriesDocumentTypes = ["salesInvoice", "creditMemo"] as const;
+
+export const legalSeriesValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  countryCode: z
+    .string()
+    .length(2, { message: "Country must be a 2-letter ISO code" })
+    .toUpperCase(),
+  documentType: z.enum(legalSeriesDocumentTypes, {
+    errorMap: () => ({ message: "Document type is required" })
+  }),
+  code: z.string().min(1, { message: "Series code is required" }),
+  name: z.string().min(1, { message: "Name is required" }),
+  prefix: z.string().min(1, { message: "Prefix is required" }),
+  size: zfd.numeric(
+    z.number().int().min(1, { message: "Size must be at least 1" })
+  ),
+  validFrom: z.string().min(1, { message: "Valid-from date is required" }),
+  validTo: zfd.text(z.string().optional()),
+  registrationRef: zfd.text(z.string().optional()),
+  isDefault: zfd.checkbox(),
+  isActive: zfd.checkbox()
+});
