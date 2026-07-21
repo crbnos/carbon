@@ -459,7 +459,6 @@ msgid "Accounting period"
 msgstr "Período contable"
 
 msgid "Accounting Periods"
-msgstr "Períodos Contables"
 msgstr ""
 
 msgid "Accounting: GL, AR, AP, and month-end close"
@@ -1986,7 +1985,6 @@ msgid "Cannot add tools to unsaved operation"
 msgstr "No se pueden agregar herramientas a una operación sin guardar"
 
 msgid "Cannot close yet"
-msgstr "No se puede cerrar aún"
 msgstr ""
 
 msgid "Cannot convert RFQ to quote"
@@ -2240,7 +2238,6 @@ msgid "Close"
 msgstr "Cerrar"
 
 msgid "Close {periodLabel}"
-msgstr "Cerrar {periodLabel}"
 msgstr ""
 
 msgid "Close Date"
@@ -2250,14 +2247,7 @@ msgid "Close Period"
 msgstr "Cerrar Período"
 
 msgid "Close Status"
-msgstr "Estado de Cierre"
 msgstr ""
-
-msgid "Close Status"
-msgstr ""
-
-msgid "Close Date"
-msgstr "Fecha de Cierre"
 
 msgid "Closed"
 msgstr "Cerrado"
@@ -2519,7 +2509,6 @@ msgid "Confirm Password"
 msgstr "Confirmar Contraseña"
 
 msgid "Confirm Skip"
-msgstr "Confirmar Omisión"
 msgstr ""
 
 msgid "Confirmed incoming stock — purchase & production orders (bars above zero)."
@@ -3167,6 +3156,7 @@ msgstr "Cuentas de crédito utilizadas cuando los costos de fabricación se abso
 
 msgid "Credit Memo"
 msgstr "Nota de Crédito"
+
 msgid "Credit/Debit Memos"
 msgstr ""
 
@@ -4916,7 +4906,6 @@ msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "Todas las pruebas dentro del alcance se aprueban en su sistema configurado, con sus datos."
 
 msgid "Every required task must be Done or Skipped before the period can be closed."
-msgstr "Todas las tareas requeridas deben estar Completadas u Omitidas antes de que se pueda cerrar el período."
 msgstr ""
 
 msgid "Every row was imported successfully."
@@ -7227,7 +7216,6 @@ msgid "Mark done"
 msgstr "Marcar como hecho"
 
 msgid "Mark Done"
-msgstr "Marcar como Completado"
 msgstr ""
 
 msgid "Mark Light Mode"
@@ -9755,7 +9743,6 @@ msgid "Reason for declining (Optional)"
 msgstr "Motivo de rechazo (Opcional)"
 
 msgid "Reason for skipping (required)"
-msgstr "Razón para omitir (requerido)"
 msgstr ""
 
 msgid "Reasons"
@@ -11263,7 +11250,6 @@ msgid "Sizes"
 msgstr "Tamaños"
 
 msgid "Skip"
-msgstr "Omitir"
 msgstr ""
 
 msgid "Skip Existing"
@@ -11891,7 +11877,6 @@ msgid "Target Version"
 msgstr "Versión Destino"
 
 msgid "Task"
-msgstr "Tarea"
 msgstr ""
 
 msgid "tasks"

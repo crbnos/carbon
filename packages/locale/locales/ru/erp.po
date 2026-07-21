@@ -459,7 +459,6 @@ msgid "Accounting period"
 msgstr "Учетный период"
 
 msgid "Accounting Periods"
-msgstr "Периоды бухгалтерского учета"
 msgstr ""
 
 msgid "Accounting: GL, AR, AP, and month-end close"
@@ -1986,7 +1985,6 @@ msgid "Cannot add tools to unsaved operation"
 msgstr "Невозможно добавить инструменты к несохраненной операции"
 
 msgid "Cannot close yet"
-msgstr "Пока нельзя закрыть"
 msgstr ""
 
 msgid "Cannot convert RFQ to quote"
@@ -2240,7 +2238,6 @@ msgid "Close"
 msgstr "Закрыть"
 
 msgid "Close {periodLabel}"
-msgstr "Закрыть {periodLabel}"
 msgstr ""
 
 msgid "Close Date"
@@ -2250,14 +2247,7 @@ msgid "Close Period"
 msgstr "Закрыть период"
 
 msgid "Close Status"
-msgstr "Статус закрытия"
 msgstr ""
-
-msgid "Close Status"
-msgstr ""
-
-msgid "Close Date"
-msgstr "Дата закрытия"
 
 msgid "Closed"
 msgstr "Закрыто"
@@ -2519,7 +2509,6 @@ msgid "Confirm Password"
 msgstr "Подтвердить пароль"
 
 msgid "Confirm Skip"
-msgstr "Подтвердить пропуск"
 msgstr ""
 
 msgid "Confirmed incoming stock — purchase & production orders (bars above zero)."
@@ -3167,6 +3156,7 @@ msgstr "Кредитовые счета, используемые при пог�
 
 msgid "Credit Memo"
 msgstr "Кредит-нота"
+
 msgid "Credit/Debit Memos"
 msgstr ""
 
@@ -4916,7 +4906,6 @@ msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "Все тесты в области действия проходят в вашей настроенной системе с вашими данными."
 
 msgid "Every required task must be Done or Skipped before the period can be closed."
-msgstr "Каждая требуемая задача должна быть завершена или пропущена перед закрытием периода."
 msgstr ""
 
 msgid "Every row was imported successfully."
@@ -7227,7 +7216,6 @@ msgid "Mark done"
 msgstr "Отметить выполненным"
 
 msgid "Mark Done"
-msgstr "Отметить как выполнено"
 msgstr ""
 
 msgid "Mark Light Mode"
@@ -9755,7 +9743,6 @@ msgid "Reason for declining (Optional)"
 msgstr "Причина отказа (Необязательно)"
 
 msgid "Reason for skipping (required)"
-msgstr "Причина пропуска (требуется)"
 msgstr ""
 
 msgid "Reasons"
@@ -11263,7 +11250,6 @@ msgid "Sizes"
 msgstr "Размеры"
 
 msgid "Skip"
-msgstr "Пропустить"
 msgstr ""
 
 msgid "Skip Existing"
@@ -11891,7 +11877,6 @@ msgid "Target Version"
 msgstr "Целевая версия"
 
 msgid "Task"
-msgstr "Задача"
 msgstr ""
 
 msgid "tasks"

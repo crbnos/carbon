@@ -1,12 +1,12 @@
 import type { ComboboxProps } from "@carbon/form";
 import { CreatableCombobox } from "@carbon/form";
-import { useDisclosure, useMount } from "@carbon/react";
-import { useMemo, useRef } from "react";
-import { useFetcher } from "react-router";
-import type { getSupplierProcessesByProcess } from "~/modules/purchasing";
+import { useDisclosure } from "@carbon/react";
+import { useQuery } from "@tanstack/react-query";
+import { useRef } from "react";
 import { SupplierProcessForm } from "~/modules/purchasing/ui/Supplier";
 import { useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
+import { cachedApiQuery, supplierProcessesQuery } from "~/utils/react-query";
 import { useEmptyState } from "./emptyStates";
 
 type SupplierProcessSelectProps = Omit<ComboboxProps, "options"> & {
@@ -76,19 +76,21 @@ export default SupplierProcess;
 
 export const useSupplierProcesses = (args: { processId?: string }) => {
   const { processId } = args;
-  const fetcher =
-    useFetcher<Awaited<ReturnType<typeof getSupplierProcessesByProcess>>>();
 
-  useMount(() => {
-    fetcher.load(path.to.api.supplierProcesses(processId));
+  const query = supplierProcessesQuery(processId ?? "");
+
+  const { data } = useQuery({
+    queryKey: query.queryKey,
+    queryFn: () =>
+      cachedApiQuery<{ data: { id: string; supplierId: string }[] }>(
+        query,
+        path.to.api.supplierProcesses(processId)
+      ),
+    enabled: !!processId,
+    staleTime: query.staleTime
   });
 
-  const supplierProcesses = useMemo(
-    () => (fetcher.data?.data ? fetcher.data?.data : []),
-    [fetcher.data]
-  );
-
-  return supplierProcesses;
+  return data?.data ?? [];
 };
 
 export const SupplierProcessPreview = ({

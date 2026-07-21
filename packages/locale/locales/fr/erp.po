@@ -459,7 +459,6 @@ msgid "Accounting period"
 msgstr "Période comptable"
 
 msgid "Accounting Periods"
-msgstr "Périodes comptables"
 msgstr ""
 
 msgid "Accounting: GL, AR, AP, and month-end close"
@@ -1986,7 +1985,6 @@ msgid "Cannot add tools to unsaved operation"
 msgstr "Impossible d'ajouter des outils à une opération non enregistrée"
 
 msgid "Cannot close yet"
-msgstr "Impossible de fermer pour l'instant"
 msgstr ""
 
 msgid "Cannot convert RFQ to quote"
@@ -2240,7 +2238,6 @@ msgid "Close"
 msgstr "Fermer"
 
 msgid "Close {periodLabel}"
-msgstr "Fermer {periodLabel}"
 msgstr ""
 
 msgid "Close Date"
@@ -2250,14 +2247,7 @@ msgid "Close Period"
 msgstr "Fermer la période"
 
 msgid "Close Status"
-msgstr "État de fermeture"
 msgstr ""
-
-msgid "Close Status"
-msgstr ""
-
-msgid "Close Date"
-msgstr "Date de fermeture"
 
 msgid "Closed"
 msgstr "Fermé"
@@ -2519,7 +2509,6 @@ msgid "Confirm Password"
 msgstr "Confirmer le mot de passe"
 
 msgid "Confirm Skip"
-msgstr "Confirmer le saut"
 msgstr ""
 
 msgid "Confirmed incoming stock — purchase & production orders (bars above zero)."
@@ -3167,6 +3156,7 @@ msgstr "Comptes de crédit utilisés quand les coûts de fabrication sont absorb
 
 msgid "Credit Memo"
 msgstr "Note de crédit"
+
 msgid "Credit/Debit Memos"
 msgstr ""
 
@@ -4916,7 +4906,6 @@ msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "Tous les tests dans le périmètre réussissent dans votre système configuré, avec vos données."
 
 msgid "Every required task must be Done or Skipped before the period can be closed."
-msgstr "Chaque tâche requise doit être terminée ou ignorée avant que la période puisse être fermée."
 msgstr ""
 
 msgid "Every row was imported successfully."
@@ -7227,7 +7216,6 @@ msgid "Mark done"
 msgstr "Marquer comme terminé"
 
 msgid "Mark Done"
-msgstr "Marquer comme terminé"
 msgstr ""
 
 msgid "Mark Light Mode"
@@ -9755,7 +9743,6 @@ msgid "Reason for declining (Optional)"
 msgstr "Raison du refus (Facultatif)"
 
 msgid "Reason for skipping (required)"
-msgstr "Motif du saut (requis)"
 msgstr ""
 
 msgid "Reasons"
@@ -11263,7 +11250,6 @@ msgid "Sizes"
 msgstr "Tailles"
 
 msgid "Skip"
-msgstr "Ignorer"
 msgstr ""
 
 msgid "Skip Existing"
@@ -11891,7 +11877,6 @@ msgid "Target Version"
 msgstr "Version cible"
 
 msgid "Task"
-msgstr "Tâche"
 msgstr ""
 
 msgid "tasks"

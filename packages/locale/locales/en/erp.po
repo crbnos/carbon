@@ -458,6 +458,9 @@ msgstr "Accounting is enabled"
 msgid "Accounting period"
 msgstr "Accounting period"
 
+msgid "Accounting Periods"
+msgstr "Accounting Periods"
+
 msgid "Accounting: GL, AR, AP, and month-end close"
 msgstr "Accounting: GL, AR, AP, and month-end close"
 
@@ -1981,6 +1984,9 @@ msgstr "Cannot add steps to unsaved operation"
 msgid "Cannot add tools to unsaved operation"
 msgstr "Cannot add tools to unsaved operation"
 
+msgid "Cannot close yet"
+msgstr "Cannot close yet"
+
 msgid "Cannot convert RFQ to quote"
 msgstr "Cannot convert RFQ to quote"
 
@@ -2231,8 +2237,17 @@ msgstr "Clocked in since {0}"
 msgid "Close"
 msgstr "Close"
 
+msgid "Close {periodLabel}"
+msgstr "Close {periodLabel}"
+
 msgid "Close Date"
 msgstr "Close Date"
+
+msgid "Close Period"
+msgstr "Close Period"
+
+msgid "Close Status"
+msgstr "Close Status"
 
 msgid "Closed"
 msgstr "Closed"
@@ -2492,6 +2507,9 @@ msgstr "Confirm Mapping"
 
 msgid "Confirm Password"
 msgstr "Confirm Password"
+
+msgid "Confirm Skip"
+msgstr "Confirm Skip"
 
 msgid "Confirmed incoming stock — purchase & production orders (bars above zero)."
 msgstr "Confirmed incoming stock — purchase & production orders (bars above zero)."
@@ -3138,6 +3156,7 @@ msgstr "Credit accounts used when manufacturing costs are absorbed into WIP"
 
 msgid "Credit Memo"
 msgstr "Credit Memo"
+
 msgid "Credit/Debit Memos"
 msgstr "Credit/Debit Memos"
 
@@ -4885,6 +4904,9 @@ msgstr "Every condition must match"
 
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "Every in-scope test passes in your configured system, with your data."
+
+msgid "Every required task must be Done or Skipped before the period can be closed."
+msgstr "Every required task must be Done or Skipped before the period can be closed."
 
 msgid "Every row was imported successfully."
 msgstr "Every row was imported successfully."
@@ -7192,6 +7214,9 @@ msgstr "Mark Dark Mode"
 
 msgid "Mark done"
 msgstr "Mark done"
+
+msgid "Mark Done"
+msgstr "Mark Done"
 
 msgid "Mark Light Mode"
 msgstr "Mark Light Mode"
@@ -9717,6 +9742,9 @@ msgstr "Reason for Change"
 msgid "Reason for declining (Optional)"
 msgstr "Reason for declining (Optional)"
 
+msgid "Reason for skipping (required)"
+msgstr "Reason for skipping (required)"
+
 msgid "Reasons"
 msgstr "Reasons"
 
@@ -11221,6 +11249,9 @@ msgstr "Size"
 msgid "Sizes"
 msgstr "Sizes"
 
+msgid "Skip"
+msgstr "Skip"
+
 msgid "Skip Existing"
 msgstr "Skip Existing"
 
@@ -11844,6 +11875,9 @@ msgstr "Target one or more items."
 
 msgid "Target Version"
 msgstr "Target Version"
+
+msgid "Task"
+msgstr "Task"
 
 msgid "tasks"
 msgstr "tasks"

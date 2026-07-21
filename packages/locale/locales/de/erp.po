@@ -459,7 +459,6 @@ msgid "Accounting period"
 msgstr "Abrechnungsperiode"
 
 msgid "Accounting Periods"
-msgstr "Abrechnungsperioden"
 msgstr ""
 
 msgid "Accounting: GL, AR, AP, and month-end close"
@@ -1986,7 +1985,6 @@ msgid "Cannot add tools to unsaved operation"
 msgstr "Werkzeuge können nicht zu nicht gespeicherten Vorgängen hinzugefügt werden"
 
 msgid "Cannot close yet"
-msgstr "Kann noch nicht geschlossen werden"
 msgstr ""
 
 msgid "Cannot convert RFQ to quote"
@@ -2240,7 +2238,6 @@ msgid "Close"
 msgstr "Schließen"
 
 msgid "Close {periodLabel}"
-msgstr "{periodLabel} schließen"
 msgstr ""
 
 msgid "Close Date"
@@ -2250,14 +2247,7 @@ msgid "Close Period"
 msgstr "Zeitraum schließen"
 
 msgid "Close Status"
-msgstr "Schließstatus"
 msgstr ""
-
-msgid "Close Status"
-msgstr ""
-
-msgid "Close Date"
-msgstr "Schließungsdatum"
 
 msgid "Closed"
 msgstr "Geschlossen"
@@ -2519,7 +2509,6 @@ msgid "Confirm Password"
 msgstr "Passwort bestätigen"
 
 msgid "Confirm Skip"
-msgstr "Überspringen bestätigen"
 msgstr ""
 
 msgid "Confirmed incoming stock — purchase & production orders (bars above zero)."
@@ -3167,6 +3156,7 @@ msgstr "Aktienkonten, die verwendet werden, wenn Herstellungskosten in laufende 
 
 msgid "Credit Memo"
 msgstr "Gutschrift"
+
 msgid "Credit/Debit Memos"
 msgstr ""
 
@@ -4916,7 +4906,6 @@ msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "Jeder Test im Umfang wird in Ihrem konfigurierten System mit Ihren Daten bestanden."
 
 msgid "Every required task must be Done or Skipped before the period can be closed."
-msgstr "Jede erforderliche Aufgabe muss erledigt oder übersprungen werden, bevor der Zeitraum geschlossen werden kann."
 msgstr ""
 
 msgid "Every row was imported successfully."
@@ -7227,7 +7216,6 @@ msgid "Mark done"
 msgstr "Als erledigt markieren"
 
 msgid "Mark Done"
-msgstr "Erledigt markieren"
 msgstr ""
 
 msgid "Mark Light Mode"
@@ -9755,7 +9743,6 @@ msgid "Reason for declining (Optional)"
 msgstr "Grund für Ablehnung (Optional)"
 
 msgid "Reason for skipping (required)"
-msgstr "Grund für das Überspringen (erforderlich)"
 msgstr ""
 
 msgid "Reasons"
@@ -11263,7 +11250,6 @@ msgid "Sizes"
 msgstr "Größen"
 
 msgid "Skip"
-msgstr "Überspringen"
 msgstr ""
 
 msgid "Skip Existing"
@@ -11891,7 +11877,6 @@ msgid "Target Version"
 msgstr "Zielversion"
 
 msgid "Task"
-msgstr "Aufgabe"
 msgstr ""
 
 msgid "tasks"

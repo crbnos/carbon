@@ -459,7 +459,6 @@ msgid "Accounting period"
 msgstr "लेखांकन अवधि"
 
 msgid "Accounting Periods"
-msgstr "लेखांकन अवधि"
 msgstr ""
 
 msgid "Accounting: GL, AR, AP, and month-end close"
@@ -1986,7 +1985,6 @@ msgid "Cannot add tools to unsaved operation"
 msgstr "असहेजे ऑपरेशन में उपकरण नहीं जोड़ सकते"
 
 msgid "Cannot close yet"
-msgstr "अभी बंद नहीं कर सकते"
 msgstr ""
 
 msgid "Cannot convert RFQ to quote"
@@ -2240,7 +2238,6 @@ msgid "Close"
 msgstr "बंद करें"
 
 msgid "Close {periodLabel}"
-msgstr "{periodLabel} बंद करें"
 msgstr ""
 
 msgid "Close Date"
@@ -2250,14 +2247,7 @@ msgid "Close Period"
 msgstr "अवधि बंद करें"
 
 msgid "Close Status"
-msgstr "स्थिति बंद करें"
 msgstr ""
-
-msgid "Close Status"
-msgstr ""
-
-msgid "Close Date"
-msgstr "बंद करने की तारीख"
 
 msgid "Closed"
 msgstr "बंद"
@@ -2519,7 +2509,6 @@ msgid "Confirm Password"
 msgstr "पासवर्ड की पुष्टि करें"
 
 msgid "Confirm Skip"
-msgstr "छोड़ने की पुष्टि करें"
 msgstr ""
 
 msgid "Confirmed incoming stock — purchase & production orders (bars above zero)."
@@ -3167,6 +3156,7 @@ msgstr "जब विनिर्माण लागत को WIP में अ
 
 msgid "Credit Memo"
 msgstr "क्रेडिट मेमो"
+
 msgid "Credit/Debit Memos"
 msgstr ""
 
@@ -4916,7 +4906,6 @@ msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "आपकी कॉन्फ़िगर की गई सिस्टम में, आपके डेटा के साथ, हर स्कोप में आने वाला टेस्ट पास होता है।"
 
 msgid "Every required task must be Done or Skipped before the period can be closed."
-msgstr "अवधि बंद करने से पहले प्रत्येक आवश्यक कार्य को पूर्ण या छोड़ा जाना चाहिए।"
 msgstr ""
 
 msgid "Every row was imported successfully."
@@ -7227,7 +7216,6 @@ msgid "Mark done"
 msgstr "पूर्ण चिह्नित करें"
 
 msgid "Mark Done"
-msgstr "पूर्ण के रूप में चिह्नित करें"
 msgstr ""
 
 msgid "Mark Light Mode"
@@ -9755,7 +9743,6 @@ msgid "Reason for declining (Optional)"
 msgstr "अस्वीकार करने का कारण (वैकल्पिक)"
 
 msgid "Reason for skipping (required)"
-msgstr "छोड़ने का कारण (आवश्यक)"
 msgstr ""
 
 msgid "Reasons"
@@ -11263,7 +11250,6 @@ msgid "Sizes"
 msgstr "आकार"
 
 msgid "Skip"
-msgstr "छोड़ें"
 msgstr ""
 
 msgid "Skip Existing"
@@ -11891,7 +11877,6 @@ msgid "Target Version"
 msgstr "लक्ष्य संस्करण"
 
 msgid "Task"
-msgstr "कार्य"
 msgstr ""
 
 msgid "tasks"

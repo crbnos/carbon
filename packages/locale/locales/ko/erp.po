@@ -404,6 +404,9 @@ msgstr "승인"
 msgid "Acceptance passed"
 msgstr "승인 통과"
 
+msgid "Access Report"
+msgstr ""
+
 msgid "Account"
 msgstr "계정"
 
@@ -1764,6 +1767,9 @@ msgstr "자재명세서"
 msgid "Blind Count"
 msgstr "블라인드 실사"
 
+msgid "Block the person who submitted a document from approving it. Disabling this permits self-approval and is flagged as a standing exception in the Segregation of Duties report."
+msgstr ""
+
 msgid "Block with an error"
 msgstr "오류로 차단"
 
@@ -2514,6 +2520,9 @@ msgstr "확정된 출고 재고 — 판매주문 및 작업 자재(0 이하 막�
 msgid "Confirms every posted journal entry in the period has equal debits and credits. If any entry is out of balance the trial balance won't tie out, so it must be corrected before the period can close."
 msgstr "기간 내 모든 전기된 분개의 차변과 대변이 일치하는지 확인합니다. 어떤 분개라도 불균형이면 시산표가 맞지 않으므로 기간을 종료하기 전에 수정해야 합니다."
 
+msgid "Conflict"
+msgstr ""
+
 msgid "Connect Carbon to your accounting, project management, and CAD tools and much more."
 msgstr "Carbon을 회계, 프로젝트 관리, CAD 도구 등과 연동하세요."
 
@@ -3147,6 +3156,9 @@ msgstr "제조 비용이 진행 중인 작업(WIP)에 흡수될 때 사용되는
 
 msgid "Credit Memo"
 msgstr "대변전표"
+
+msgid "Credit/Debit Memos"
+msgstr ""
 
 msgid "Credits & Debits"
 msgstr "대변 및 차변"
@@ -4854,6 +4866,9 @@ msgstr "프로젝트 책임자에게 에스컬레이션"
 msgid "Escalation"
 msgstr "에스컬레이션"
 
+msgid "Escalation Days"
+msgstr ""
+
 msgid "Est. Duration"
 msgstr "예상 소요시간"
 
@@ -6241,6 +6256,9 @@ msgstr "간접 자재 및 서비스"
 
 msgid "Indirect Materials & Services (default)"
 msgstr "간접 자재 및 서비스(기본값)"
+
+msgid "Info"
+msgstr ""
 
 msgid "Infrastructure"
 msgstr "인프라"
@@ -9142,6 +9160,9 @@ msgstr "현재 주"
 msgid "Prev"
 msgstr "이전"
 
+msgid "Prevent Self-Approval"
+msgstr ""
+
 msgid "Preventive action"
 msgstr "예방 조치"
 
@@ -9422,9 +9443,6 @@ msgstr "구매주문"
 msgid "Purchase Order Amount"
 msgstr "구매주문 금액"
 
-msgid "Purchase Order approval rule"
-msgstr "구매주문 승인 규칙"
-
 msgid "Purchase Order ID"
 msgstr "구매주문 ID"
 
@@ -9539,9 +9557,6 @@ msgstr "품질"
 
 msgid "Quality"
 msgstr "품질"
-
-msgid "Quality Document approval rule"
-msgstr "품질 문서 승인 규칙"
 
 msgid "Quality Documents"
 msgstr "품질 문서"
@@ -9684,6 +9699,9 @@ msgstr "원자재 (기본값)"
 
 msgid "Re-keying between quoting, the floor, and finance"
 msgstr "견적, 현장, 재무 간 데이터 재입력"
+
+msgid "Re-notify approvers daily once a request has been pending this many days. Leave empty to disable escalation."
+msgstr ""
 
 msgid "Reactivate"
 msgstr "재활성화"
@@ -10076,6 +10094,18 @@ msgstr "요청일"
 
 msgid "Require approval before suppliers can be set to Active"
 msgstr "공급업체를 활성 상태로 설정하기 전에 승인 필요"
+
+msgid "Require approval for credit and debit memos based on amount thresholds"
+msgstr ""
+
+msgid "Require approval for manual journal entries based on amount thresholds"
+msgstr ""
+
+msgid "Require approval for payments based on amount thresholds"
+msgstr ""
+
+msgid "Require approval for purchase invoices based on amount thresholds"
+msgstr ""
 
 msgid "Require approval for purchase orders based on amount thresholds"
 msgstr "금액 기준에 따라 구매주문에 승인 필요"
@@ -10664,6 +10694,9 @@ msgstr "섹션"
 msgid "Segments that drive customer pricing and terms"
 msgstr "고객 가격 및 조건을 결정하는 세그먼트"
 
+msgid "Segregation of Duties"
+msgstr ""
+
 msgid "Select"
 msgstr "선택"
 
@@ -11243,6 +11276,9 @@ msgstr "핵심 일일 업무 흐름을 처음부터 끝까지 스모크 테스�
 msgid "so you can assign it here."
 msgstr "그러면 여기서 배정할 수 있습니다."
 
+msgid "SoD Report"
+msgstr ""
+
 msgid "Solutions Engineer"
 msgstr "솔루션 엔지니어"
 
@@ -11529,6 +11565,9 @@ msgstr "외주 차이"
 
 msgid "Subcontracting Variance (default)"
 msgstr "외주 차이(기본값)"
+
+msgid "Subject"
+msgstr ""
 
 msgid "Subledger"
 msgstr "보조원장"

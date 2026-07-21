@@ -459,7 +459,6 @@ msgid "Accounting period"
 msgstr "会計期間"
 
 msgid "Accounting Periods"
-msgstr "会計期間"
 msgstr ""
 
 msgid "Accounting: GL, AR, AP, and month-end close"
@@ -1986,7 +1985,6 @@ msgid "Cannot add tools to unsaved operation"
 msgstr "保存されていない操作にツールを追加できません"
 
 msgid "Cannot close yet"
-msgstr "まだ閉じることができません"
 msgstr ""
 
 msgid "Cannot convert RFQ to quote"
@@ -2240,7 +2238,6 @@ msgid "Close"
 msgstr "閉じる"
 
 msgid "Close {periodLabel}"
-msgstr "{periodLabel}を閉じる"
 msgstr ""
 
 msgid "Close Date"
@@ -2250,14 +2247,7 @@ msgid "Close Period"
 msgstr "期間を閉じる"
 
 msgid "Close Status"
-msgstr "閉鎖ステータス"
 msgstr ""
-
-msgid "Close Status"
-msgstr ""
-
-msgid "Close Date"
-msgstr "終了日"
 
 msgid "Closed"
 msgstr "クローズ"
@@ -2519,7 +2509,6 @@ msgid "Confirm Password"
 msgstr "パスワードを確認"
 
 msgid "Confirm Skip"
-msgstr "スキップを確認"
 msgstr ""
 
 msgid "Confirmed incoming stock — purchase & production orders (bars above zero)."
@@ -3167,6 +3156,7 @@ msgstr "製造原価がWIPに吸収される場合に使用されるクレジッ
 
 msgid "Credit Memo"
 msgstr "貸方メモ"
+
 msgid "Credit/Debit Memos"
 msgstr ""
 
@@ -4916,7 +4906,6 @@ msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "スコープ内のすべてのテストが、設定されたシステムで、あなたのデータを使用して合格します。"
 
 msgid "Every required task must be Done or Skipped before the period can be closed."
-msgstr "期間を閉じる前に、すべての必須タスクが完了またはスキップされている必要があります。"
 msgstr ""
 
 msgid "Every row was imported successfully."
@@ -7227,7 +7216,6 @@ msgid "Mark done"
 msgstr "完了にマーク"
 
 msgid "Mark Done"
-msgstr "完了としてマーク"
 msgstr ""
 
 msgid "Mark Light Mode"
@@ -9755,7 +9743,6 @@ msgid "Reason for declining (Optional)"
 msgstr "辞退する理由（オプション）"
 
 msgid "Reason for skipping (required)"
-msgstr "スキップの理由（必須）"
 msgstr ""
 
 msgid "Reasons"
@@ -11263,7 +11250,6 @@ msgid "Sizes"
 msgstr "サイズ"
 
 msgid "Skip"
-msgstr "スキップ"
 msgstr ""
 
 msgid "Skip Existing"
@@ -11891,7 +11877,6 @@ msgid "Target Version"
 msgstr "ターゲットバージョン"
 
 msgid "Task"
-msgstr "タスク"
 msgstr ""
 
 msgid "tasks"

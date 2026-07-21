@@ -39,6 +39,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
+  // Invalidate all supplierProcesses queries since we don't have
+  // the processId available in params (only supplierId and id)
   window.clientCache?.invalidateQueries({
     queryKey: ["supplierProcesses"]
   });

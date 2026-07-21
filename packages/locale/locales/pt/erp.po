@@ -459,7 +459,6 @@ msgid "Accounting period"
 msgstr "Período contábil"
 
 msgid "Accounting Periods"
-msgstr "Períodos Contábeis"
 msgstr ""
 
 msgid "Accounting: GL, AR, AP, and month-end close"
@@ -1986,7 +1985,6 @@ msgid "Cannot add tools to unsaved operation"
 msgstr "Não é possível adicionar ferramentas a uma operação não salva"
 
 msgid "Cannot close yet"
-msgstr "Não é possível fechar ainda"
 msgstr ""
 
 msgid "Cannot convert RFQ to quote"
@@ -2240,7 +2238,6 @@ msgid "Close"
 msgstr "Fechar"
 
 msgid "Close {periodLabel}"
-msgstr "Fechar {periodLabel}"
 msgstr ""
 
 msgid "Close Date"
@@ -2250,14 +2247,7 @@ msgid "Close Period"
 msgstr "Fechar Período"
 
 msgid "Close Status"
-msgstr "Status de Fechamento"
 msgstr ""
-
-msgid "Close Status"
-msgstr ""
-
-msgid "Close Date"
-msgstr "Data de Encerramento"
 
 msgid "Closed"
 msgstr "Fechado"
@@ -2519,7 +2509,6 @@ msgid "Confirm Password"
 msgstr "Confirmar Senha"
 
 msgid "Confirm Skip"
-msgstr "Confirmar Salto"
 msgstr ""
 
 msgid "Confirmed incoming stock — purchase & production orders (bars above zero)."
@@ -3167,6 +3156,7 @@ msgstr "Contas de crédito usadas quando custos de fabricação são absorvidos 
 
 msgid "Credit Memo"
 msgstr "Memorando de Crédito"
+
 msgid "Credit/Debit Memos"
 msgstr ""
 
@@ -4916,7 +4906,6 @@ msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "Todos os testes no escopo passam no seu sistema configurado, com seus dados."
 
 msgid "Every required task must be Done or Skipped before the period can be closed."
-msgstr "Toda tarefa obrigatória deve ser Concluída ou Saltada antes que o período possa ser fechado."
 msgstr ""
 
 msgid "Every row was imported successfully."
@@ -7227,7 +7216,6 @@ msgid "Mark done"
 msgstr "Marcar como concluído"
 
 msgid "Mark Done"
-msgstr "Marcar Como Concluído"
 msgstr ""
 
 msgid "Mark Light Mode"
@@ -9755,7 +9743,6 @@ msgid "Reason for declining (Optional)"
 msgstr "Motivo da recusa (Opcional)"
 
 msgid "Reason for skipping (required)"
-msgstr "Motivo para saltar (obrigatório)"
 msgstr ""
 
 msgid "Reasons"
@@ -11263,7 +11250,6 @@ msgid "Sizes"
 msgstr "Tamanhos"
 
 msgid "Skip"
-msgstr "Saltar"
 msgstr ""
 
 msgid "Skip Existing"
@@ -11891,7 +11877,6 @@ msgid "Target Version"
 msgstr "Versão de Destino"
 
 msgid "Task"
-msgstr "Tarefa"
 msgstr ""
 
 msgid "tasks"

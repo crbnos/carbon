@@ -66,7 +66,7 @@ export async function clientAction({
   serverAction,
   params
 }: ClientActionFunctionArgs) {
-  const formData = await request.clone().formData(); // if we. don't clone it we can't access it in the action
+  const formData = await request.clone().formData();
   const validation = await validator(supplierProcessValidator).validate(
     formData
   );
@@ -75,11 +75,11 @@ export async function clientAction({
     return validationError(validation.error);
   }
 
+  // Invalidate supplier processes cache for this process
   if (validation.data.processId) {
-    window.clientCache?.setQueryData(
-      supplierProcessesQuery(validation.data.processId).queryKey,
-      null
-    );
+    window.clientCache?.invalidateQueries({
+      queryKey: supplierProcessesQuery(validation.data.processId).queryKey
+    });
   }
   return await serverAction();
 }

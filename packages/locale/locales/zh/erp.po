@@ -459,7 +459,6 @@ msgid "Accounting period"
 msgstr "会计期间"
 
 msgid "Accounting Periods"
-msgstr "会计期间"
 msgstr ""
 
 msgid "Accounting: GL, AR, AP, and month-end close"
@@ -1986,7 +1985,6 @@ msgid "Cannot add tools to unsaved operation"
 msgstr "无法向未保存的操作添加工具"
 
 msgid "Cannot close yet"
-msgstr "无法关闭"
 msgstr ""
 
 msgid "Cannot convert RFQ to quote"
@@ -2240,7 +2238,6 @@ msgid "Close"
 msgstr "关闭"
 
 msgid "Close {periodLabel}"
-msgstr "关闭{periodLabel}"
 msgstr ""
 
 msgid "Close Date"
@@ -2250,14 +2247,7 @@ msgid "Close Period"
 msgstr "关闭期间"
 
 msgid "Close Status"
-msgstr "关闭状态"
 msgstr ""
-
-msgid "Close Status"
-msgstr ""
-
-msgid "Close Date"
-msgstr "关闭日期"
 
 msgid "Closed"
 msgstr "已关闭"
@@ -2519,7 +2509,6 @@ msgid "Confirm Password"
 msgstr "确认密码"
 
 msgid "Confirm Skip"
-msgstr "确认跳过"
 msgstr ""
 
 msgid "Confirmed incoming stock — purchase & production orders (bars above zero)."
@@ -3167,6 +3156,7 @@ msgstr "制造成本吸收到在产品中时使用的贷方科目"
 
 msgid "Credit Memo"
 msgstr "贷方备忘录"
+
 msgid "Credit/Debit Memos"
 msgstr ""
 
@@ -4916,7 +4906,6 @@ msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "您配置的系统中的每项范围内测试都通过了，使用您的数据。"
 
 msgid "Every required task must be Done or Skipped before the period can be closed."
-msgstr "期间关闭前，每项必需任务都必须完成或跳过。"
 msgstr ""
 
 msgid "Every row was imported successfully."
@@ -7227,7 +7216,6 @@ msgid "Mark done"
 msgstr "标记为完成"
 
 msgid "Mark Done"
-msgstr "标记为完成"
 msgstr ""
 
 msgid "Mark Light Mode"
@@ -9755,7 +9743,6 @@ msgid "Reason for declining (Optional)"
 msgstr "拒绝原因（可选）"
 
 msgid "Reason for skipping (required)"
-msgstr "跳过原因（必填）"
 msgstr ""
 
 msgid "Reasons"
@@ -11263,7 +11250,6 @@ msgid "Sizes"
 msgstr "尺寸"
 
 msgid "Skip"
-msgstr "跳过"
 msgstr ""
 
 msgid "Skip Existing"
@@ -11891,7 +11877,6 @@ msgid "Target Version"
 msgstr "目标版本"
 
 msgid "Task"
-msgstr "任务"
 msgstr ""
 
 msgid "tasks"
