@@ -1704,6 +1704,7 @@ export type Database = {
           companyId: string
           context: Json | null
           createdAt: string
+          createdBy: string
           feedback: string | null
           feedbackNote: string | null
           finishReason: string | null
@@ -1712,11 +1713,14 @@ export type Database = {
           outputTokens: number | null
           role: string
           threadId: string
+          updatedAt: string | null
+          updatedBy: string | null
         }
         Insert: {
           companyId: string
           context?: Json | null
           createdAt?: string
+          createdBy: string
           feedback?: string | null
           feedbackNote?: string | null
           finishReason?: string | null
@@ -1725,11 +1729,14 @@ export type Database = {
           outputTokens?: number | null
           role: string
           threadId: string
+          updatedAt?: string | null
+          updatedBy?: string | null
         }
         Update: {
           companyId?: string
           context?: Json | null
           createdAt?: string
+          createdBy?: string
           feedback?: string | null
           feedbackNote?: string | null
           finishReason?: string | null
@@ -1738,8 +1745,45 @@ export type Database = {
           outputTokens?: number | null
           role?: string
           threadId?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "agentMessage_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agentMessage_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agentMessage_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agentMessage_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agentMessage_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
           {
             foreignKeyName: "agentMessage_threadId_companyId_fkey"
             columns: ["threadId", "companyId"]
@@ -1747,12 +1791,48 @@ export type Database = {
             referencedRelation: "agentThread"
             referencedColumns: ["id", "companyId"]
           },
+          {
+            foreignKeyName: "agentMessage_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agentMessage_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agentMessage_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agentMessage_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agentMessage_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
         ]
       }
       agentMessagePart: {
         Row: {
           companyId: string
           createdAt: string
+          createdBy: string
           errorMessage: string | null
           id: string
           messageId: string
@@ -1766,10 +1846,13 @@ export type Database = {
           toolOutput: Json | null
           toolState: string | null
           type: string
+          updatedAt: string | null
+          updatedBy: string | null
         }
         Insert: {
           companyId: string
           createdAt?: string
+          createdBy: string
           errorMessage?: string | null
           id?: string
           messageId: string
@@ -1783,10 +1866,13 @@ export type Database = {
           toolOutput?: Json | null
           toolState?: string | null
           type: string
+          updatedAt?: string | null
+          updatedBy?: string | null
         }
         Update: {
           companyId?: string
           createdAt?: string
+          createdBy?: string
           errorMessage?: string | null
           id?: string
           messageId?: string
@@ -1800,14 +1886,86 @@ export type Database = {
           toolOutput?: Json | null
           toolState?: string | null
           type?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "agentMessagePart_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agentMessagePart_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agentMessagePart_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agentMessagePart_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agentMessagePart_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
           {
             foreignKeyName: "agentMessagePart_messageId_companyId_fkey"
             columns: ["messageId", "companyId"]
             isOneToOne: false
             referencedRelation: "agentMessage"
             referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "agentMessagePart_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agentMessagePart_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agentMessagePart_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agentMessagePart_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agentMessagePart_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
           },
         ]
       }

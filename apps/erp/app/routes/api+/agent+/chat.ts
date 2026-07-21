@@ -66,6 +66,7 @@ export async function action({ request }: ActionFunctionArgs) {
     await saveUserMessage(client, {
       threadId,
       companyId,
+      userId,
       text,
       context: parsed.context
     });

@@ -48,29 +48,33 @@ CREATE TABLE "agentMessage" (
     "finishReason" TEXT,
     "inputTokens" INTEGER,
     "outputTokens" INTEGER,
+    "createdBy" TEXT NOT NULL REFERENCES "user"("id"),
     "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    "updatedBy" TEXT REFERENCES "user"("id"),
+    "updatedAt" TIMESTAMP WITH TIME ZONE,
 
     PRIMARY KEY ("id", "companyId"),
     FOREIGN KEY ("threadId", "companyId") REFERENCES "agentThread"("id", "companyId") ON DELETE CASCADE
 );
 CREATE INDEX "agentMessage_threadId_idx" ON "agentMessage" ("threadId", "createdAt");
+CREATE INDEX "agentMessage_createdBy_idx" ON "agentMessage" ("createdBy");
 
 ALTER TABLE "public"."agentMessage" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "SELECT" ON "public"."agentMessage" FOR SELECT USING (
   "companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])
-  AND EXISTS (SELECT 1 FROM "agentThread" t
+  AND EXISTS (SELECT 1 FROM "public"."agentThread" t
               WHERE t."id" = "agentMessage"."threadId" AND t."companyId" = "agentMessage"."companyId"
               AND t."userId" = auth.uid()::text)
 );
 CREATE POLICY "INSERT" ON "public"."agentMessage" FOR INSERT WITH CHECK (
   "companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])
-  AND EXISTS (SELECT 1 FROM "agentThread" t
+  AND EXISTS (SELECT 1 FROM "public"."agentThread" t
               WHERE t."id" = "agentMessage"."threadId" AND t."companyId" = "agentMessage"."companyId"
               AND t."userId" = auth.uid()::text)
 );
 CREATE POLICY "UPDATE" ON "public"."agentMessage" FOR UPDATE USING (
   "companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])
-  AND EXISTS (SELECT 1 FROM "agentThread" t
+  AND EXISTS (SELECT 1 FROM "public"."agentThread" t
               WHERE t."id" = "agentMessage"."threadId" AND t."companyId" = "agentMessage"."companyId"
               AND t."userId" = auth.uid()::text)
 );
@@ -92,31 +96,35 @@ CREATE TABLE "agentMessagePart" (
       ('pending','running','success','error','awaiting_confirmation','rejected')),
     "toolDurationMs" INTEGER,
     "errorMessage" TEXT,
+    "createdBy" TEXT NOT NULL REFERENCES "user"("id"),
     "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    "updatedBy" TEXT REFERENCES "user"("id"),
+    "updatedAt" TIMESTAMP WITH TIME ZONE,
 
     PRIMARY KEY ("id", "companyId"),
     FOREIGN KEY ("messageId", "companyId") REFERENCES "agentMessage"("id", "companyId") ON DELETE CASCADE
 );
 CREATE UNIQUE INDEX "agentMessagePart_order_idx" ON "agentMessagePart" ("messageId", "orderIndex");
+CREATE INDEX "agentMessagePart_createdBy_idx" ON "agentMessagePart" ("createdBy");
 
 ALTER TABLE "public"."agentMessagePart" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "SELECT" ON "public"."agentMessagePart" FOR SELECT USING (
   "companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])
-  AND EXISTS (SELECT 1 FROM "agentMessage" m JOIN "agentThread" t
+  AND EXISTS (SELECT 1 FROM "public"."agentMessage" m JOIN "public"."agentThread" t
               ON t."id" = m."threadId" AND t."companyId" = m."companyId"
               WHERE m."id" = "agentMessagePart"."messageId" AND m."companyId" = "agentMessagePart"."companyId"
               AND t."userId" = auth.uid()::text)
 );
 CREATE POLICY "INSERT" ON "public"."agentMessagePart" FOR INSERT WITH CHECK (
   "companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])
-  AND EXISTS (SELECT 1 FROM "agentMessage" m JOIN "agentThread" t
+  AND EXISTS (SELECT 1 FROM "public"."agentMessage" m JOIN "public"."agentThread" t
               ON t."id" = m."threadId" AND t."companyId" = m."companyId"
               WHERE m."id" = "agentMessagePart"."messageId" AND m."companyId" = "agentMessagePart"."companyId"
               AND t."userId" = auth.uid()::text)
 );
 CREATE POLICY "UPDATE" ON "public"."agentMessagePart" FOR UPDATE USING (
   "companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])
-  AND EXISTS (SELECT 1 FROM "agentMessage" m JOIN "agentThread" t
+  AND EXISTS (SELECT 1 FROM "public"."agentMessage" m JOIN "public"."agentThread" t
               ON t."id" = m."threadId" AND t."companyId" = m."companyId"
               WHERE m."id" = "agentMessagePart"."messageId" AND m."companyId" = "agentMessagePart"."companyId"
               AND t."userId" = auth.uid()::text)

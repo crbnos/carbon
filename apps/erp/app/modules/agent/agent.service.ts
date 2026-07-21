@@ -96,6 +96,7 @@ export async function saveUserMessage(
   args: {
     threadId: string;
     companyId: string;
+    userId: string;
     text: string;
     context?: BrowsingContext | null;
   }
@@ -106,7 +107,8 @@ export async function saveUserMessage(
       threadId: args.threadId,
       companyId: args.companyId,
       role: "user",
-      context: args.context ?? null
+      context: args.context ?? null,
+      createdBy: args.userId
     })
     .select("id")
     .single();
@@ -117,7 +119,8 @@ export async function saveUserMessage(
     companyId: args.companyId,
     orderIndex: 0,
     type: "text",
-    textContent: args.text
+    textContent: args.text,
+    createdBy: args.userId
   });
   // supabase-js has no multi-statement transaction; compensate by deleting the parent
   // so a failed part insert never leaves an empty, unrecoverable message bubble.
@@ -264,6 +267,7 @@ export function streamChat(
         await persistAssistantTurn(client, {
           threadId: args.threadId,
           companyId: args.companyId,
+          userId: args.userId,
           message: responseMessage,
           inputTokens,
           outputTokens,
@@ -351,6 +355,7 @@ async function persistAssistantTurn(
   args: {
     threadId: string;
     companyId: string;
+    userId: string;
     message: UIMessage;
     inputTokens: number;
     outputTokens: number;
@@ -365,7 +370,8 @@ async function persistAssistantTurn(
       role: "assistant",
       finishReason: args.finishReason,
       inputTokens: args.inputTokens,
-      outputTokens: args.outputTokens
+      outputTokens: args.outputTokens,
+      createdBy: args.userId
     })
     .select("id")
     .single();
@@ -381,7 +387,8 @@ async function persistAssistantTurn(
         companyId: args.companyId,
         orderIndex: order++,
         type: "text",
-        textContent: part.text
+        textContent: part.text,
+        createdBy: args.userId
       });
     } else if (isToolUIPart(part)) {
       const name = getToolName(part);
@@ -398,7 +405,8 @@ async function persistAssistantTurn(
         toolOutput: (part.state === "output-error"
           ? { error: part.errorText }
           : (part.output ?? null)) as never,
-        toolState: part.state === "output-available" ? "success" : "error"
+        toolState: part.state === "output-available" ? "success" : "error",
+        createdBy: args.userId
       });
     }
   }

@@ -18907,7 +18907,16 @@ export default {
             $ref: "#/parameters/rowFilter.agentMessage.outputTokens"
           },
           {
+            $ref: "#/parameters/rowFilter.agentMessage.createdBy"
+          },
+          {
             $ref: "#/parameters/rowFilter.agentMessage.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessage.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessage.updatedAt"
           },
           {
             $ref: "#/parameters/select"
@@ -18999,7 +19008,16 @@ export default {
             $ref: "#/parameters/rowFilter.agentMessage.outputTokens"
           },
           {
+            $ref: "#/parameters/rowFilter.agentMessage.createdBy"
+          },
+          {
             $ref: "#/parameters/rowFilter.agentMessage.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessage.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessage.updatedAt"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -19045,7 +19063,16 @@ export default {
             $ref: "#/parameters/rowFilter.agentMessage.outputTokens"
           },
           {
+            $ref: "#/parameters/rowFilter.agentMessage.createdBy"
+          },
+          {
             $ref: "#/parameters/rowFilter.agentMessage.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessage.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessage.updatedAt"
           },
           {
             $ref: "#/parameters/body.agentMessage"
@@ -48451,7 +48478,16 @@ export default {
             $ref: "#/parameters/rowFilter.agentMessagePart.errorMessage"
           },
           {
+            $ref: "#/parameters/rowFilter.agentMessagePart.createdBy"
+          },
+          {
             $ref: "#/parameters/rowFilter.agentMessagePart.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.updatedAt"
           },
           {
             $ref: "#/parameters/select"
@@ -48555,7 +48591,16 @@ export default {
             $ref: "#/parameters/rowFilter.agentMessagePart.errorMessage"
           },
           {
+            $ref: "#/parameters/rowFilter.agentMessagePart.createdBy"
+          },
+          {
             $ref: "#/parameters/rowFilter.agentMessagePart.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.updatedAt"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -48613,7 +48658,16 @@ export default {
             $ref: "#/parameters/rowFilter.agentMessagePart.errorMessage"
           },
           {
+            $ref: "#/parameters/rowFilter.agentMessagePart.createdBy"
+          },
+          {
             $ref: "#/parameters/rowFilter.agentMessagePart.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.agentMessagePart.updatedAt"
           },
           {
             $ref: "#/parameters/body.agentMessagePart"
@@ -97439,7 +97493,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -97488,7 +97542,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -101297,7 +101351,14 @@ export default {
       type: "object"
     },
     agentMessage: {
-      required: ["id", "threadId", "companyId", "role", "createdAt"],
+      required: [
+        "id",
+        "threadId",
+        "companyId",
+        "role",
+        "createdBy",
+        "createdAt"
+      ],
       properties: {
         id: {
           default: "public.id('agm'::text)",
@@ -101341,8 +101402,24 @@ export default {
           format: "integer",
           type: "integer"
         },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
         createdAt: {
           default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
           format: "timestamp with time zone",
           type: "string"
         }
@@ -115108,6 +115185,7 @@ export default {
         "companyId",
         "orderIndex",
         "type",
+        "createdBy",
         "createdAt"
       ],
       properties: {
@@ -115169,8 +115247,24 @@ export default {
           format: "text",
           type: "string"
         },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
         createdAt: {
           default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
           format: "timestamp with time zone",
           type: "string"
         }
@@ -141864,8 +141958,26 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.agentMessage.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.agentMessage.createdAt": {
       name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.agentMessage.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.agentMessage.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"
@@ -157172,8 +157284,26 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.agentMessagePart.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.agentMessagePart.createdAt": {
       name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.agentMessagePart.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.agentMessagePart.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"
