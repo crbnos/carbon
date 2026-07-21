@@ -1,4 +1,5 @@
 import BudgetForm from "./BudgetForm";
+import { BudgetMatrix } from "./BudgetMatrix";
 import { BudgetsTable } from "./BudgetsTable";
 
-export { BudgetForm, BudgetsTable };
+export { BudgetForm, BudgetMatrix, BudgetsTable };

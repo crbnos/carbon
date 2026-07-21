@@ -1813,6 +1813,12 @@ msgstr "Procurar biblioteca"
 msgid "Bucket"
 msgstr "Bucket"
 
+msgid "Budget vs Actual"
+msgstr ""
+
+msgid "Budgets"
+msgstr ""
+
 msgid "Buffer stock the demand-based policy holds back to absorb consumption spikes within the accumulation period."
 msgstr "Estoque amortecedor que a política baseada em demanda mantém para absorver picos de consumo dentro do período de acumulação."
 

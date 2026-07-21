@@ -1813,6 +1813,12 @@ msgstr "Обзор библиотеки"
 msgid "Bucket"
 msgstr "Хранилище"
 
+msgid "Budget vs Actual"
+msgstr ""
+
+msgid "Budgets"
+msgstr ""
+
 msgid "Buffer stock the demand-based policy holds back to absorb consumption spikes within the accumulation period."
 msgstr "Страховой запас, который политика на основе спроса удерживает для поглощения скачков потребления в течение периода накопления."
 

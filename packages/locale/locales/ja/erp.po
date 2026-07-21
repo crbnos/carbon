@@ -1813,6 +1813,12 @@ msgstr "ライブラリを参照"
 msgid "Bucket"
 msgstr "バケット"
 
+msgid "Budget vs Actual"
+msgstr ""
+
+msgid "Budgets"
+msgstr ""
+
 msgid "Buffer stock the demand-based policy holds back to absorb consumption spikes within the accumulation period."
 msgstr "蓄積期間内で消費スパイクを吸収するために需要ベースのポリシーが保有するバッファストック。"
 
