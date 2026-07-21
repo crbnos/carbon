@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { renderEnv } from "./env.js";
+import { forcedKeys, omitForcedKeys, renderEnv } from "./env.js";
 import type { JwtCreds, PortMap } from "./worktree.js";
 
 const ports: PortMap = {
@@ -159,5 +159,37 @@ describe("renderEnv (portless enabled)", () => {
       branchPrefix: "s"
     });
     expect(out.endsWith("\n")).toBe(true);
+  });
+});
+
+describe("#force escape hatch", () => {
+  it("collects keys marked with a trailing #force comment", () => {
+    const dotEnv = [
+      "OPENAI_API_KEY=sk-123",
+      "ASSEMBLER_SERVICE_URL=https://xxx.execute-api.us-east-1.amazonaws.com #force",
+      "ASSEMBLER_SERVICE_API_KEY=abc  # FORCE",
+      "# a comment mentioning force",
+      "NOT_FORCED=1 # forceful suffix means nothing"
+    ].join("\n");
+    expect(forcedKeys(dotEnv)).toEqual(
+      new Set(["ASSEMBLER_SERVICE_URL", "ASSEMBLER_SERVICE_API_KEY"])
+    );
+  });
+
+  it("omits forced keys from the generated .env.local content", () => {
+    const dotEnv = "ASSEMBLER_SERVICE_URL=https://remote #force\n";
+    const content = [
+      "ASSEMBLER_SERVICE_URL=https://assembler.s.dev",
+      "ASSEMBLER_SERVICE_API_KEY=dev-local-key"
+    ].join("\n");
+    const out = omitForcedKeys(content, dotEnv);
+    expect(out).not.toContain("ASSEMBLER_SERVICE_URL=");
+    expect(out).toContain("ASSEMBLER_SERVICE_API_KEY=dev-local-key");
+    expect(out).toContain("omitted");
+  });
+
+  it("no markers -> content untouched", () => {
+    const content = "A=1\nB=2";
+    expect(omitForcedKeys(content, "A=1\nB=2")).toBe(content);
   });
 });

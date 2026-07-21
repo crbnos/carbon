@@ -1,9 +1,11 @@
 import { defineCommand, runMain } from "citty";
 import { copy, envSync } from "./commands/copy.js";
 import { down } from "./commands/down.js";
+import { initWorktree } from "./commands/init.js";
 import { listWorktrees } from "./commands/list.js";
 import { migrate } from "./commands/migrate.js";
 import { newWorktree } from "./commands/new.js";
+import { reload } from "./commands/reload.js";
 import { removeWorktreeCmd } from "./commands/remove.js";
 import { reset } from "./commands/reset.js";
 import { status } from "./commands/status.js";
@@ -98,9 +100,16 @@ const main = defineCommand({
           type: "boolean",
           default: false,
           description: "Also remove Docker volumes (the stack's data is wiped)"
+        },
+        purge: {
+          type: "boolean",
+          default: false,
+          description:
+            "Full teardown for archive/removal: remove volumes, flush redis, and release the port slot"
         }
       },
-      run: ({ args }) => down({ volumes: args.volumes === true })
+      run: ({ args }) =>
+        down({ volumes: args.volumes === true, purge: args.purge === true })
     }),
     reset: defineCommand({
       meta: { description: "Wipe volumes + flush redis db, then `up`" },
@@ -109,6 +118,21 @@ const main = defineCommand({
     status: defineCommand({
       meta: { description: "Show port assignment + container health" },
       run: () => status()
+    }),
+    reload: defineCommand({
+      meta: {
+        description:
+          "Recreate specific compose services to apply docker-compose/.env.local edits (memory, env, image, ports) WITHOUT restarting the app dev servers — `crbn reload <service...>` (e.g. storage kong)"
+      },
+      args: {
+        service: {
+          type: "positional",
+          required: true,
+          description: "Service name(s) to recreate, e.g. storage kong"
+        }
+      },
+      run: ({ rawArgs }) =>
+        reload(rawArgs.filter((a) => a && !a.startsWith("-")))
     }),
     migrate: defineCommand({
       meta: {
@@ -173,6 +197,21 @@ const main = defineCommand({
           copyEnv: args["copy-env"] !== false,
           yes: args.yes === true
         })
+    }),
+    init: defineCommand({
+      meta: {
+        description:
+          "Provision the current worktree (slug + env sync + skills) to match a `crbn checkout`"
+      },
+      args: {
+        "copy-env": {
+          type: "boolean",
+          default: true,
+          description:
+            "Sync .env from the main checkout (--no-copy-env to skip)"
+        }
+      },
+      run: ({ args }) => initWorktree({ copyEnv: args["copy-env"] !== false })
     }),
     list: defineCommand({
       meta: { description: "List worktrees with stack status" },

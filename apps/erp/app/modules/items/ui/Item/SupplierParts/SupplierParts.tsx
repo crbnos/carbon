@@ -29,18 +29,22 @@ type SupplierPartsProps = {
   supplierParts: Part[];
   compact?: boolean;
   deleteSupplierPath?: (id: string) => string;
+  // Suppresses the add row + delete column regardless of permissions — for
+  // read-only contexts like a locked (Done/Cancelled) change order.
+  isReadOnly?: boolean;
 };
 
 const SupplierParts = ({
   supplierParts,
   compact = false,
-  deleteSupplierPath
+  deleteSupplierPath,
+  isReadOnly = false
 }: SupplierPartsProps) => {
   const navigate = useNavigate();
   const { t } = useLingui();
   const permissions = usePermissions();
-  const canEdit = permissions.can("update", "parts");
-  const canDelete = permissions.can("delete", "parts");
+  const canEdit = permissions.can("update", "parts") && !isReadOnly;
+  const canDelete = permissions.can("delete", "parts") && !isReadOnly;
   const formatter = useCurrencyFormatter();
   const customColumns = useCustomColumns<Part>("supplierPart");
   const [suppliers] = useSuppliers();

@@ -230,7 +230,6 @@ import {
   ModalDrawerTypeProvider,
   useModalDrawerType
 } from "./ModalDrawer";
-import { ModelViewer } from "./ModelViewer";
 import type { MultiSelectProps } from "./MultiSelect";
 import { MultiSelect } from "./MultiSelect";
 import type { NumberFieldProps } from "./Number";
@@ -525,7 +524,6 @@ export {
   ModalPortal,
   ModalTitle,
   ModalTrigger,
-  ModelViewer,
   MultiSelect,
   NumberDecrementStepper,
   NumberField,

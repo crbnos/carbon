@@ -24,7 +24,10 @@ export type PurchaseOrderAttachment = FileObject; // TODO: remove
 
 export type PurchaseOrder = NonNullable<
   Awaited<ReturnType<typeof getPurchaseOrders>>["data"]
->[number];
+>[number] & {
+  receivableQuantity?: number | null;
+  receivedQuantity?: number | null;
+};
 
 export type PurchaseOrderDelivery = NonNullable<
   Awaited<ReturnType<typeof getPurchaseOrderDelivery>>["data"]

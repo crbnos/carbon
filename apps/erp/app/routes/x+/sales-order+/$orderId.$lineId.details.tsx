@@ -251,12 +251,14 @@ export default function EditSalesOrderLineRoute() {
         </Suspense>
       )}
 
-      <SalesOrderLineShipments
-        salesOrder={orderData.salesOrder}
-        line={line}
-        opportunity={orderData.opportunity}
-        shipments={shipments}
-      />
+      {line.salesOrderLineType !== "Service" && (
+        <SalesOrderLineShipments
+          salesOrder={orderData.salesOrder}
+          line={line}
+          opportunity={orderData.opportunity}
+          shipments={shipments}
+        />
+      )}
 
       <DeferredFiles resolve={files}>
         {(resolvedFiles) => (

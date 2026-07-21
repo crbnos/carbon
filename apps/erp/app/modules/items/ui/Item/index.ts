@@ -16,6 +16,7 @@ import ItemSupersessionForm, {
 } from "./ItemSupersessionForm";
 import MakeMethodTools from "./MakeMethodTools";
 import PickMethodForm from "./PickMethodForm";
+import ReleaseLockAlert from "./ReleaseLockAlert";
 import { SelectedItemProperties } from "./SelectedItemProperties";
 import { SourcingTypeProperty } from "./SourcingTypeProperty";
 import SupplierPartForm from "./SupplierPartForm";
@@ -40,6 +41,7 @@ export {
   ItemSalePriceForm,
   MakeMethodTools,
   PickMethodForm,
+  ReleaseLockAlert,
   SelectedItemProperties,
   SourcingTypeProperty,
   SupplierPartForm,

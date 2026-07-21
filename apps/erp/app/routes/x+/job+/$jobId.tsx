@@ -32,7 +32,7 @@ import {
 } from "~/modules/production/ui/Jobs";
 import type { JobOrderStatusData } from "~/modules/production/ui/Jobs/JobBoMExplorer";
 import { getTagsList } from "~/modules/shared";
-import type { Handle } from "~/utils/handle";
+import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 // Resolves each job material's procurement status for the BoM explorer badge:
@@ -65,8 +65,10 @@ async function getJobOrderStatus(
 }
 
 export const handle: Handle = {
-  breadcrumb: msg`Jobs`,
-  to: path.to.jobs,
+  breadcrumb: detailBreadcrumb(
+    { breadcrumb: msg`Jobs`, to: path.to.jobs },
+    (data) => data?.job?.jobId
+  ),
   module: "production"
 };
 

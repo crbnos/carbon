@@ -90,5 +90,5 @@ import { getLocationsList, getWorkCentersList, getProcessesList } from "~/module
 
 ## Rules References
 
-- `.ai/rules/mes-job-operation-ui.md` — work center and process usage in MES context
-- `.ai/rules/scheduling-data-structures.md` — work center capacity and scheduling structures
+- `.claude/rules/mes-job-operation-ui.md` — work center and process usage in MES context
+- `.claude/rules/scheduling-data-structures.md` — work center capacity and scheduling structures

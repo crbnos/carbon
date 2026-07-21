@@ -1,8 +1,12 @@
 {
   "name": "@carbon/viewer",
   "dependencies": {
+    "@carbon/react": "workspace:*",
     "@react-three/drei": "9.122.0",
     "@react-three/fiber": "8.18.0",
+    "occt-import-js": "0.0.23",
+    "rhino3dm": "8.17.0",
+    "react-icons": "catalog:",
     "three": "0.163.0",
     "three-mesh-bvh": "0.7.8",
     "three-stdlib": "2.36.1"
@@ -19,7 +23,9 @@
   },
   "exports": {
     ".": "./src/index.ts",
-    "./steps": "./src/steps.ts"
+    "./steps": "./src/steps.ts",
+    "./canvas": "./src/ModelCanvas.tsx",
+    "./model-preview": "./src/ModelPreview.tsx"
   },
   "peerDependencies": {
     "react": "catalog:",

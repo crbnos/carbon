@@ -307,6 +307,26 @@ $ pnpm dev                # equivalent to `crbn up` — picker lets you choose E
 
 Academy and starter still run on classic localhost ports via `pnpm dev:academy` / `pnpm dev:starter` (they are not part of the per-worktree stack).
 
+### Logging in
+
+For local development you don't need email or OAuth configured. `crbn up` seeds a
+smoke-test user (`test@carbon.ms`) and writes `DEV_BYPASS_EMAIL=test@carbon.ms`
+into `.env.local` for you. When that bypass email is set, signing in with it skips
+the magic link and logs you straight into the ERP:
+
+1. Open the ERP at the URL from the `crbn up` summary (e.g. `https://<worktree>.erp.dev/login`).
+2. Type `test@carbon.ms` into the email field.
+3. Click **Sign in with Email**.
+
+You'll land on the authenticated dashboard (`/x`) — no inbox check required. The
+same session cookie works for the MES app at `https://<worktree>.mes.dev`.
+
+> The bypass only applies to the exact address in `DEV_BYPASS_EMAIL` and only when
+> that user is active — it's a dev convenience, not present in production. Any other
+> email falls back to the normal magic-link / verification flow (which needs Resend
+> configured). To sign in as your own account instead, use the magic link and read it
+> from the local mail catcher at `https://<worktree>.mail.dev`.
+
 ### Code Formatting
 
 This project uses [Biome](https://biomejs.dev/) for code formatting and linting. To set up automatic formatting on save in VS Code:

@@ -10,10 +10,17 @@ const file = `/file`;
 
 export const path = {
   to: {
+    accountSettings: `${ERP_URL}/x/account`,
+    acknowledge: `${x}/acknowledge`,
+    active: `${x}/active`,
+    addAndIssueMaintenanceDispatchItem: (dispatchId: string) =>
+      generatePath(`${x}/dispatch/${dispatchId}/add-and-issue`),
     api: {
       batchNumbers: (itemId: string) =>
         generatePath(`${api}/batch-numbers?itemId=${itemId}`),
       failureModes: `${api}/failure-modes`,
+      modelArtifacts: (modelUploadId: string) =>
+        generatePath(`${api}/model/artifacts/${modelUploadId}`),
       pickedAllocation: (jobMaterialId: string) =>
         generatePath(`${api}/picked-allocation?jobMaterialId=${jobMaterialId}`),
       qualityIssueTypes: `${api}/quality-issue-types`,
@@ -28,6 +35,19 @@ export const path = {
           `${api}/suggested-allocation?itemId=${itemId}&locationId=${locationId}&quantity=${quantity}`
         )
     },
+    assigned: `${x}/assigned`,
+    authenticatedRoot: x,
+    callback: "/callback",
+    companySwitch: (companyId: string) =>
+      generatePath(`${x}/company/switch/${companyId}`),
+    complete: `${x}/complete`,
+    consolePinIn: `${x}/console/pin-in`,
+    consolePinOut: `${x}/console/pin-out`,
+    consoleToggle: `${x}/console/toggle`,
+    convertEntity: (id: string) => generatePath(`${x}/entity/${id}/convert`),
+    endOperation: (id: string) => generatePath(`${x}/end/${id}`),
+    endShift: `${x}/end-shift`,
+    feedback: `${x}/feedback`,
     file: {
       jobTraveler: (id: string) => `${getAppUrl()}${file}/traveler/${id}.pdf`,
       operationLabelsPdf: (
@@ -66,23 +86,9 @@ export const path = {
 
         return generatePath(url);
       },
+      previewFile: (path: string) => generatePath(`${file}/preview/${path}`),
       previewImage: (bucket: string, path: string) =>
         generatePath(`${file}/preview/image?file=${bucket}/${path}`),
-      previewFile: (path: string) => generatePath(`${file}/preview/${path}`),
-      trackedEntityLabelZpl: (
-        id: string,
-        { labelSize }: { labelSize?: string } = {}
-      ) => {
-        let url = `${file}/entity/${id}/labels.zpl`;
-        const params = new URLSearchParams();
-
-        if (labelSize) params.append("labelSize", labelSize);
-
-        const queryString = params.toString();
-        if (queryString) url += `?${queryString}`;
-
-        return generatePath(url);
-      },
       trackedEntityLabelPdf: (
         id: string,
         { labelSize }: { labelSize?: string } = {}
@@ -96,52 +102,58 @@ export const path = {
         if (queryString) url += `?${queryString}`;
 
         return generatePath(url);
+      },
+      trackedEntityLabelZpl: (
+        id: string,
+        { labelSize }: { labelSize?: string } = {}
+      ) => {
+        let url = `${file}/entity/${id}/labels.zpl`;
+        const params = new URLSearchParams();
+
+        if (labelSize) params.append("labelSize", labelSize);
+
+        const queryString = params.toString();
+        if (queryString) url += `?${queryString}`;
+
+        return generatePath(url);
       }
     },
-    accountSettings: `${ERP_URL}/x/account`,
-    acknowledge: `${x}/acknowledge`,
-    active: `${x}/active`,
-    assigned: `${x}/assigned`,
-    authenticatedRoot: x,
-    callback: "/callback",
-    companySwitch: (companyId: string) =>
-      generatePath(`${x}/company/switch/${companyId}`),
-    complete: `${x}/complete`,
-    consolePinIn: `${x}/console/pin-in`,
-    consolePinOut: `${x}/console/pin-out`,
-    consoleToggle: `${x}/console/toggle`,
-    convertEntity: (id: string) => generatePath(`${x}/entity/${id}/convert`),
-    endShift: `${x}/end-shift`,
-    endOperation: (id: string) => generatePath(`${x}/end/${id}`),
-    feedback: `${x}/feedback`,
     finish: `${x}/finish`,
     health: "/health",
-    kanbanComplete: (id: string) => `${ERP_URL}/api/kanban/complete/${id}`,
     inspectionSteps: `${x}/steps/inspection`,
     inventoryAdjustment: `${x}/adjustment`,
-    jobDag: (id: string) => generatePath(`${x}/job/${id}`),
-    jobs: `${x}/jobs`,
     issue: `${x}/issue`,
     issueTrackedEntity: `${x}/issue-tracked-entity`,
-    qualityIssueNew: `${x}/quality-issue/new`,
+    itemMaster: (itemId: string, type: string) =>
+      `${getAppUrl()}${x}/${type.toLowerCase()}/${itemId}/details`,
+    jobDag: (id: string) => generatePath(`${x}/job/${id}`),
+    jobDetail: (id: string) => `${getAppUrl()}${x}/job/${id}/details`,
+    jobs: `${x}/jobs`,
+    kanbanComplete: (id: string) => `${ERP_URL}/api/kanban/complete/${id}`,
     location: `${x}/location`,
-    manualPrint: `${x}/print`,
     login: "/login",
     logout: "/logout",
     maintenance: `${x}/maintenance`,
     maintenanceDetail: (id: string) => generatePath(`${x}/dispatch/${id}`),
     maintenanceDispatchItem: (id: string) =>
       generatePath(`${x}/dispatch/${id}/item`),
-    addAndIssueMaintenanceDispatchItem: (dispatchId: string) =>
-      generatePath(`${x}/dispatch/${dispatchId}/add-and-issue`),
     maintenanceEvent: `${x}/maintenance-event`,
+    manualPrint: `${x}/print`,
     messagingNotify: `${x}/proxy/api/messaging/notify`,
     newMaintenanceDispatch: `${x}/dispatch/new`,
     onboarding: `${ERP_URL}/onboarding`,
-    printingSettings: `${ERP_URL}/x/settings/printing`,
     operation: (id: string) => generatePath(`${x}/operation/${id}`),
     operations: `${x}/operations?saved=1`,
+    picking: `${x}/picking`,
+    pickingDetail: (id: string) => generatePath(`${x}/picking/${id}`),
+    pickingLineQuantity: (id: string) =>
+      generatePath(`${x}/picking/${id}/line/quantity`),
+    pickingStatus: (id: string) => generatePath(`${x}/picking/${id}/status`),
+    pickingTracked: (id: string, lineId: string) =>
+      generatePath(`${x}/picking/${id}/tracked/${lineId}`),
+    printingSettings: `${ERP_URL}/x/settings/printing`,
     productionEvent: `${x}/event`,
+    qualityIssueNew: `${x}/quality-issue/new`,
     recent: `${x}/recent`,
     record: `${x}/record`,
     recordDelete: (id: string) => generatePath(`${x}/record/${id}/delete`),
@@ -150,33 +162,23 @@ export const path = {
     rework: `${x}/rework`,
     reworkTargets: (operationId: string) =>
       generatePath(`${x}/rework-targets/${operationId}`),
-    triggerRework: `${x}/trigger-rework`,
     root: "/",
     scrap: `${x}/scrap`,
-    scrapReasons: `${api}/scrap-reasons`,
     scrapEntity: (operationId: string, id: string, parentId?: string) => {
       const basePath = generatePath(`${x}/entity/${operationId}/${id}/scrap`);
       return parentId ? `${basePath}?parentId=${parentId}` : basePath;
     },
+    scrapReasons: `${api}/scrap-reasons`,
     startOperation: (id: string) => generatePath(`${x}/start/${id}`),
+    suggestion: `${x}/suggestion`,
     switchCompany: (companyId: string) =>
       generatePath(`${x}/company/switch/${companyId}`),
-    suggestion: `${x}/suggestion`,
-    timecard: `${api}/timecard`,
     timeCardPage: `${x}/timecard`,
+    timecard: `${api}/timecard`,
+    triggerRework: `${x}/trigger-rework`,
     unconsume: `${x}/unconsume`,
-    picking: `${x}/picking`,
-    pickingDetail: (id: string) => generatePath(`${x}/picking/${id}`),
-    pickingLineQuantity: (id: string) =>
-      generatePath(`${x}/picking/${id}/line/quantity`),
-    pickingTracked: (id: string, lineId: string) =>
-      generatePath(`${x}/picking/${id}/tracked/${lineId}`),
-    pickingStatus: (id: string) => generatePath(`${x}/picking/${id}/status`),
     workCenter: (workCenter: string) =>
-      generatePath(`${x}/operations/${workCenter}`),
-    itemMaster: (itemId: string, type: string) =>
-      `${getAppUrl()}${x}/${type.toLowerCase()}/${itemId}/details`,
-    jobDetail: (id: string) => `${getAppUrl()}${x}/job/${id}/details`
+      generatePath(`${x}/operations/${workCenter}`)
   }
 } as const;
 
@@ -191,6 +193,12 @@ export const removeSubdomain = (url?: string): string => {
 
 export const getPrivateUrl = (path: string) => {
   return `/file/preview/private/${path}`;
+};
+
+// Raw model source for the viewer's WASM fallback tier — the bucket varies
+// (temp-staging for current uploads, private for pre-assembler rows).
+export const getRawModelUrl = (bucket: string, path: string) => {
+  return `/file/preview/${bucket}/${path}`;
 };
 
 export const getStoragePath = (bucket: string, path: string) => {

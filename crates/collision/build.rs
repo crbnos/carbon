@@ -39,7 +39,13 @@ fn main() {
     let mut build = cxx_build::bridge("src/lib.rs");
     build
         .file("src/shim.cc")
-        .std("c++14")
+        // C++17 is load-bearing on x86: with AVX (x86-64-v3 below) Eigen's
+        // fixed-size types are alignas(32), and pre-17 `new` ignores
+        // over-alignment — heap-allocated FCL structures then trip Eigen's
+        // "data is not aligned" assert (SIGABRT in prod Lambda). C++17
+        // aligned-new allocates them correctly; the FCL .a is built C++17 in
+        // the Dockerfile for the same reason.
+        .std("c++17")
         .include(format!("{fcl}/include"))
         .include(format!("{ccd}/include"))
         .include(format!("{eigen}/include/eigen3"))

@@ -8,12 +8,14 @@ import {
   getWarehouseTransfer,
   getWarehouseTransferLines
 } from "~/modules/inventory";
-import type { Handle } from "~/utils/handle";
+import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
-  breadcrumb: msg`Warehouse Transfer`,
-  to: path.to.warehouseTransfers
+  breadcrumb: detailBreadcrumb(
+    { breadcrumb: msg`Warehouse Transfer`, to: path.to.warehouseTransfers },
+    (data) => data?.warehouseTransfer?.transferId
+  )
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

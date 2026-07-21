@@ -71,6 +71,9 @@ type HeaderProps<T> = {
   data: object[];
   editMode: boolean;
   filters: ColumnFilter[];
+  // True when the table has no rows and no active filter/sort/search — hides the
+  // toolbar row. Computed once by Table (single source) and passed down.
+  isEmpty: boolean;
   importCSV?: {
     table: keyof typeof fieldMappings;
     label: string;
@@ -105,6 +108,7 @@ const TableHeader = <T extends object>({
   data,
   editMode,
   filters,
+  isEmpty,
   importCSV,
   primaryAction,
   pagination,
@@ -281,106 +285,112 @@ const TableHeader = <T extends object>({
           </HStack>
         )
       )}
-      <HStack
-        className={cn(
-          compact
-            ? "px-4 py-2 justify-between bg-card border-b border-border w-full"
-            : "px-4 md:px-0 justify-between bg-card w-full"
-        )}
-      >
-        <HStack>
-          {withSelectableRows &&
-            selectedRows.length > 0 &&
-            typeof renderActions === "function" && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    className="pl-2 pr-1"
-                    leftIcon={<LuCheck />}
-                    variant="secondary"
-                  >
-                    <Badge variant="secondary">
-                      <span>{selectedRows.length}</span>
-                    </Badge>
-                  </Button>
-                </DropdownMenuTrigger>
-                {renderActions(selectedRows)}
-              </DropdownMenu>
-            )}
-          {withSearch && (
-            <SearchFilter param="search" size="sm" placeholder={t`Search`} />
+      {!isEmpty && (
+        <HStack
+          className={cn(
+            compact
+              ? "px-4 py-2 justify-between bg-card border-b border-border w-full"
+              : "px-4 md:px-0 justify-between bg-card w-full"
           )}
-          {!!filters?.length && <Filter filters={filters} />}
-        </HStack>
-        <HStack>
-          {sort === undefined ? <Sort sortKeyToLabel={sortKeyToLabel} /> : sort}
-
-          <Columns
-            columnOrder={columnOrder}
-            columns={columns}
-            setColumnOrder={setColumnOrder}
-            withSelectableRows={withSelectableRows}
-          />
-
-          {canSaveView && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <IconButton
-                  aria-label={hasView ? t`Edit View` : t`Save View`}
-                  variant={
-                    savedViewDisclosure.isOpen || hasView ? "active" : "ghost"
-                  }
-                  icon={<LuLayers />}
-                  onClick={savedViewDisclosure.onToggle}
-                />
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>
-                  {hasView ? (
-                    <Trans>Edit View</Trans>
-                  ) : (
-                    <Trans>Save View</Trans>
-                  )}
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          )}
-
-          <Download
-            data={data}
-            columnAccessors={columnAccessors}
-            exportValues={exportValues}
-            exportOnlyColumns={exportOnlyColumns}
-            columnOrder={columnOrder}
-            columnVisibility={columnVisibility}
-          />
-
-          {withPagination &&
-            (pagination.canNextPage || pagination.canPreviousPage) && (
-              <PaginationButtons {...pagination} condensed />
+        >
+          <HStack>
+            {withSelectableRows &&
+              selectedRows.length > 0 &&
+              typeof renderActions === "function" && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      className="pl-2 pr-1"
+                      leftIcon={<LuCheck />}
+                      variant="secondary"
+                    >
+                      <Badge variant="secondary">
+                        <span>{selectedRows.length}</span>
+                      </Badge>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  {renderActions(selectedRows)}
+                </DropdownMenu>
+              )}
+            {withSearch && (
+              <SearchFilter param="search" size="sm" placeholder={t`Search`} />
             )}
-
-          {withInlineEditing &&
-            !forceEditMode &&
-            (editMode ? (
-              <Button
-                leftIcon={<LuLock />}
-                variant="secondary"
-                onClick={() => setEditMode(false)}
-              >
-                <Trans>Lock</Trans>
-              </Button>
+            {!!filters?.length && <Filter filters={filters} />}
+          </HStack>
+          <HStack>
+            {sort === undefined ? (
+              <Sort sortKeyToLabel={sortKeyToLabel} />
             ) : (
-              <Button
-                leftIcon={<LuFilePen />}
-                variant="secondary"
-                onClick={() => setEditMode(true)}
-              >
-                <Trans>Edit</Trans>
-              </Button>
-            ))}
+              sort
+            )}
+
+            <Columns
+              columnOrder={columnOrder}
+              columns={columns}
+              setColumnOrder={setColumnOrder}
+              withSelectableRows={withSelectableRows}
+            />
+
+            {canSaveView && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <IconButton
+                    aria-label={hasView ? t`Edit View` : t`Save View`}
+                    variant={
+                      savedViewDisclosure.isOpen || hasView ? "active" : "ghost"
+                    }
+                    icon={<LuLayers />}
+                    onClick={savedViewDisclosure.onToggle}
+                  />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>
+                    {hasView ? (
+                      <Trans>Edit View</Trans>
+                    ) : (
+                      <Trans>Save View</Trans>
+                    )}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            )}
+
+            <Download
+              data={data}
+              columnAccessors={columnAccessors}
+              exportValues={exportValues}
+              exportOnlyColumns={exportOnlyColumns}
+              columnOrder={columnOrder}
+              columnVisibility={columnVisibility}
+            />
+
+            {withPagination &&
+              (pagination.canNextPage || pagination.canPreviousPage) && (
+                <PaginationButtons {...pagination} condensed />
+              )}
+
+            {withInlineEditing &&
+              !forceEditMode &&
+              (editMode ? (
+                <Button
+                  leftIcon={<LuLock />}
+                  variant="secondary"
+                  onClick={() => setEditMode(false)}
+                >
+                  <Trans>Lock</Trans>
+                </Button>
+              ) : (
+                <Button
+                  leftIcon={<LuFilePen />}
+                  variant="secondary"
+                  onClick={() => setEditMode(true)}
+                >
+                  <Trans>Edit</Trans>
+                </Button>
+              ))}
+          </HStack>
         </HStack>
-      </HStack>
+      )}
       {currentFilters.length > 0 && (
         <HStack
           className={cn(

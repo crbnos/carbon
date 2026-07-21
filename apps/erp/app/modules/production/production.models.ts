@@ -711,18 +711,6 @@ export const jobMaterialValidator = baseMaterialValidator
   )
   .refine(
     (data) => {
-      if (data.itemType === "Tool") {
-        return !!data.itemId;
-      }
-      return true;
-    },
-    {
-      message: "Tool ID is required",
-      path: ["itemId"]
-    }
-  )
-  .refine(
-    (data) => {
       if (data.itemType === "Consumable") {
         return !!data.itemId;
       }
@@ -759,18 +747,6 @@ export const jobMaterialValidatorForReleasedJob = baseMaterialValidator
     },
     {
       message: "Material ID is required",
-      path: ["itemId"]
-    }
-  )
-  .refine(
-    (data) => {
-      if (data.itemType === "Tool") {
-        return !!data.itemId;
-      }
-      return true;
-    },
-    {
-      message: "Tool ID is required",
       path: ["itemId"]
     }
   )
@@ -1207,9 +1183,12 @@ export function getAssemblyModelState(
   ) {
     return "converted";
   }
-  const isStep = [".step", ".stp"].some((ext) =>
-    (model.modelPath ?? "").toLowerCase().endsWith(ext)
-  );
+  // The retained raw is zstd-compacted in place after a successful optimise
+  // (`x.step` -> `x.step.zst`), so peel the `.zst` wrapper before the extension
+  // check — the compacted file is still a valid STEP the converter reads
+  // transparently.
+  const base = (model.modelPath ?? "").toLowerCase().replace(/\.zst$/, "");
+  const isStep = [".step", ".stp"].some((ext) => base.endsWith(ext));
   if (!isStep) return "none";
   if (
     model.processingStatus === "Queued" ||

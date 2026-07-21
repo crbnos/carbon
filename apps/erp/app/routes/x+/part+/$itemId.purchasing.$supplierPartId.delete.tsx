@@ -20,7 +20,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // whether it fires flips with Database type size, so tolerate both states
   const result = await client
     .from("supplierPart")
-    .select("id, supplierId, supplier:supplierId(name)")
+    .select("id, supplierId, supplier(name)")
     .eq("id", supplierPartId)
     .eq("companyId", companyId)
     .single();

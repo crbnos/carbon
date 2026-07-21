@@ -44,8 +44,28 @@ export type Group = {
     isSupplierTypeGroup: boolean;
     name: string;
     users: User[];
+    // Transitive member count, attached by the groups API when `counts=true`.
+    memberCount?: number;
   };
   children: Group[];
+};
+
+export type UserSelectGroup = {
+  id: string;
+  name: string;
+  isEmployeeTypeGroup: boolean;
+  isCustomerOrgGroup: boolean;
+  isCustomerTypeGroup: boolean;
+  isSupplierOrgGroup: boolean;
+  isSupplierTypeGroup: boolean;
+  userCount: number;
+  groupCount: number;
+  isRoot?: boolean; // present on list results, absent on member child groups
+};
+
+export type UserSelectGroupMembers = {
+  groups: UserSelectGroup[];
+  users: User[];
 };
 
 export type CompanyPermission = {

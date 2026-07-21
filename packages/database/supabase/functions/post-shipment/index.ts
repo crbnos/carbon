@@ -617,7 +617,11 @@ serve(async (req: Request) => {
                   const nbvJlRef = nanoid();
                   journalLineInserts.push({
                     accountId: assetClass.writeOffAccountId,
-                    description: "Write-off remaining book value",
+                    // writeOffAccountId is used here as a disposal clearing /
+                    // holding account: the NBV parks here (a balance-sheet
+                    // holding, not a P&L loss) until the invoice recognizes
+                    // proceeds and clears it back to zero — no interim full loss.
+                    description: "Transfer net book value to disposal clearing",
                     amount: debit("expense", nbv),
                     quantity: 1,
                     documentType: "Sales Shipment",
@@ -683,7 +687,10 @@ serve(async (req: Request) => {
                   disposalDate: today,
                   saleProceeds: 0,
                   netBookValueAtDisposal: nbv,
-                  gainLoss: -nbv,
+                  // Gain/loss is unknown until proceeds are invoiced; the NBV is
+                  // held in the disposal clearing account, not expensed, so we
+                  // record 0 here (the invoice sets the real gain/loss).
+                  gainLoss: 0,
                   companyId,
                   createdBy: userId,
                 });
@@ -804,7 +811,9 @@ serve(async (req: Request) => {
 
               const areAllLinesShipped = salesOrderLines.every(
                 (line) =>
-                  line.salesOrderLineType === "Comment" || line.sentComplete
+                  line.salesOrderLineType === "Comment" ||
+                  line.salesOrderLineType === "Service" ||
+                  line.sentComplete
               );
 
               let status: Database["public"]["Tables"]["salesOrder"]["Row"]["status"] =
@@ -2246,7 +2255,9 @@ serve(async (req: Request) => {
 
               const areAllLinesShipped = salesOrderLines.every(
                 (line) =>
-                  line.salesOrderLineType === "Comment" || line.sentComplete
+                  line.salesOrderLineType === "Comment" ||
+                  line.salesOrderLineType === "Service" ||
+                  line.sentComplete
               );
 
               let status: Database["public"]["Tables"]["salesOrder"]["Row"]["status"] =

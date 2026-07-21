@@ -1,10 +1,12 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { Hidden, Select, Submit, ValidatedForm, validator } from "@carbon/form";
 import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
   Heading,
@@ -15,14 +17,17 @@ import {
   VStack
 } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useFetcher, useLoaderData } from "react-router";
+import { plmReleaseControl } from "~/modules/items";
 import {
   getCompanySettings,
+  plmReleaseControlValidator,
   updateMaterialGeneratedIdsSetting,
-  updateMetricSettings
+  updateMetricSettings,
+  updatePlmReleaseControlSetting
 } from "~/modules/settings";
 
 import type { Handle } from "~/utils/handle";
@@ -78,14 +83,42 @@ export async function action({ request }: ActionFunctionArgs) {
         return { success: false, message: result.error.message };
       return { success: true, message: "Material units setting updated" };
     }
+
+    case "plmReleaseControl": {
+      const validation = await validator(plmReleaseControlValidator).validate(
+        formData
+      );
+      if (validation.error) {
+        return { success: false, message: "Invalid form data" };
+      }
+
+      const result = await updatePlmReleaseControlSetting(
+        client,
+        companyId,
+        validation.data.plmReleaseControl
+      );
+      if (result.error)
+        return { success: false, message: result.error.message };
+      return { success: true, message: "Release control setting updated" };
+    }
   }
 
   return { success: false, message: "Invalid form data" };
 }
 
 export default function ItemsSettingsRoute() {
+  const { t } = useLingui();
   const { companySettings } = useLoaderData<typeof loader>();
   const fetcher = useFetcher<typeof action>();
+
+  const releaseControlLabels: Record<
+    (typeof plmReleaseControl)[number],
+    string
+  > = {
+    off: t`Off — released revisions stay editable`,
+    warn: t`Warn — edits succeed with a warning`,
+    enforce: t`Enforce — edits are blocked`
+  };
 
   const isToggling = fetcher.state !== "idle";
 
@@ -206,6 +239,47 @@ export default function ItemsSettingsRoute() {
               />
             </HStack>
           </CardContent>
+        </Card>
+        <Card>
+          <ValidatedForm
+            method="post"
+            validator={plmReleaseControlValidator}
+            defaultValues={{
+              plmReleaseControl: companySettings.plmReleaseControl ?? "enforce"
+            }}
+            fetcher={fetcher}
+          >
+            <CardHeader>
+              <CardTitle>
+                <Trans>Release Control</Trans>
+              </CardTitle>
+              <CardDescription>
+                <Trans>
+                  Controls whether the bill of material and bill of process of a
+                  released (Production) revision can be edited outside a change
+                  order.
+                </Trans>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Hidden name="intent" value="plmReleaseControl" />
+              <div className="flex flex-col gap-2 max-w-[400px]">
+                <Select
+                  name="plmReleaseControl"
+                  label={t`Release control`}
+                  options={plmReleaseControl.map((option) => ({
+                    value: option,
+                    label: releaseControlLabels[option]
+                  }))}
+                />
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Submit>
+                <Trans>Save</Trans>
+              </Submit>
+            </CardFooter>
+          </ValidatedForm>
         </Card>
       </VStack>
     </ScrollArea>

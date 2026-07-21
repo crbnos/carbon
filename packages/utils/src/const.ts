@@ -12,9 +12,14 @@ export function isInternalEmail(email: string | null | undefined): boolean {
 }
 
 export const FILE_SIZE_LIMIT_MB = {
-  CAD_MODEL_UPLOAD: 120,
+  CAD_MODEL_UPLOAD: 2560, // 2.5 GB — matches temp-staging bucket cap
   DOCUMENT_UPLOAD: 50
 } as const;
+
+// Raw CAD source is kept in `temp-staging` and shown as a downloadable file in the
+// documents list only when <= this (the served-bucket cap). Larger raws are hidden
+// from the files list and TTL-pruned from staging — only the optimised GLB is kept.
+export const MODEL_RAW_KEEP_MAX_BYTES = 50 * 1024 * 1024;
 
 export const PO_EMAIL_ATTACHMENT_LIMIT_MB = 25;
 export const PO_EMAIL_ATTACHMENT_WARN_MB = 20;

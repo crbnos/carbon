@@ -15,10 +15,6 @@ export type BomChild = {
   methodType: MethodType;
   // Set when this child was substituted by supersession (the original/old item).
   redirectedFromItemId?: string;
-  // BOM line-item effectivity ("YYYY-MM-DD"); NULL = always effective. The line
-  // is only exploded for builds whose period falls within [from, to].
-  effectiveFrom?: string | null;
-  effectiveTo?: string | null;
 };
 
 type DemandContributorBase = {
@@ -47,7 +43,7 @@ export type BomExplosionInput = {
   bomByItem: Map<string, BomChild[]>;
   replenishmentSystemByItem: Map<string, ReplenishmentSystem>;
   leadTimeByItem: Map<string, number>;
-  periods: { id: string; startDate?: string }[];
+  periods: { id: string }[];
   onHandByLocationItem: Map<string, number>;
   jobSupplyByLocationPeriodItem: Map<string, number>;
   topLevelContributors: Map<string, DemandContributor[]>;
@@ -175,17 +171,6 @@ export function explodeBom(input: BomExplosionInput): BomExplosionOutput {
 
         const children = bomByItem.get(itemId) ?? [];
         for (const child of children) {
-          // BOM line-item effectivity: skip a line whose effective range does
-          // not cover this build period (string "YYYY-MM-DD" comparison).
-          const buildDate = period.startDate;
-          if (
-            buildDate &&
-            ((child.effectiveFrom && buildDate < child.effectiveFrom) ||
-              (child.effectiveTo && buildDate > child.effectiveTo))
-          ) {
-            continue;
-          }
-
           const childEffRepSys = effectiveReplenishment(
             replenishmentSystemByItem.get(child.itemId)
           );

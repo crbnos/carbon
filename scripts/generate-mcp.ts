@@ -295,7 +295,13 @@ function parseInlineObjectType(typeStr: string): Record<string, unknown> {
   const fields = splitObjectFields(inner);
 
   for (const field of fields) {
-    const f = field.trim();
+    // Strip `//` line comments so an inline comment above a field (common in
+    // service arg type literals) never gets absorbed into the property key.
+    const f = field
+      .split("\n")
+      .map((line) => line.replace(/\/\/.*$/, ""))
+      .join("\n")
+      .trim();
     if (!f) continue;
 
     const optional = f.includes("?:");

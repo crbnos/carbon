@@ -14,7 +14,10 @@ import {
   useParams
 } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
-import { getItemFiles } from "~/modules/items";
+import {
+  getChangeOrdersForNonConformance,
+  getItemFiles
+} from "~/modules/items";
 import {
   getIssue,
   getIssueAssociations,
@@ -30,12 +33,14 @@ import {
 import IssueHeader from "~/modules/quality/ui/Issue/IssueHeader";
 import IssueProperties from "~/modules/quality/ui/Issue/IssueProperties";
 import { getTagsList } from "~/modules/shared";
-import type { Handle } from "~/utils/handle";
+import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
-  breadcrumb: msg`Issues`,
-  to: path.to.issues,
+  breadcrumb: detailBreadcrumb(
+    { breadcrumb: msg`Issues`, to: path.to.issues },
+    (data) => data?.nonConformance?.nonConformanceId
+  ),
   module: "quality"
 };
 
@@ -53,13 +58,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     nonConformanceTypes,
     requiredActions,
     suppliers,
-    tags
+    tags,
+    changeOrders
   ] = await Promise.all([
     getIssue(client, id),
     getIssueTypesList(client, companyId),
     getRequiredActionsList(client, companyId),
     getIssueSuppliers(client, id, companyId),
-    getTagsList(client, companyId, "nonConformance")
+    getTagsList(client, companyId, "nonConformance"),
+    // Reverse Linked-NCR cross-link (4a): COs referencing this issue.
+    getChangeOrdersForNonConformance(client, id, companyId)
   ]);
 
   if (nonConformance.error) {
@@ -76,7 +84,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     nonConformanceTypes: nonConformanceTypes.data ?? [],
     requiredActions: requiredActions.data ?? [],
     suppliers: suppliers.data ?? [],
-    tags: tags.data ?? []
+    tags: tags.data ?? [],
+    changeOrders: changeOrders.data ?? []
   };
 }
 

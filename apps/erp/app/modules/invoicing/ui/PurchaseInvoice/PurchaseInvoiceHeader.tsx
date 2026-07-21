@@ -174,12 +174,13 @@ const PurchaseInvoiceHeader = () => {
       .from("purchaseInvoiceLine")
       .select("itemId, description, quantity, conversionFactor")
       .eq("invoiceId", invoiceId)
+      // Services are never received, so they never generate a receipt — mirror
+      // the post-purchase-invoice edge function and exclude them here.
       .in("invoiceLineType", [
         "Part",
         "Material",
         "Tool",
         "Consumable",
-        "Service",
         "Fixture"
       ])
       .is("purchaseOrderLineId", null);

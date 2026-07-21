@@ -36,13 +36,20 @@ fn client() -> &'static reqwest::Client {
 /// Stream the source to disk, hashing as it flows — one pass, no full-body RAM
 /// buffer, and the content hash comes out free for the result-cache key.
 /// `progress` (when given) is ticked with bytes done/total for live status.
+///
+/// Transparent zstd: a source whose first bytes are the zstd magic
+/// (`28 B5 2F FD`) is streamed through a decoder, so a stored `.zst` (e.g. the
+/// compacted `raw.xbf.zst`) lands on disk as the real STEP/XBF/mesh and every
+/// action consumes it unchanged. The hash + size guard are over the
+/// DECOMPRESSED bytes, so the result-cache key tracks geometry, not container.
 pub async fn download_hashed(
     url: &str,
     dest: &std::path::Path,
     progress: Option<&crate::progress::JobProgress>,
 ) -> Result<u128, ApiError> {
+    use async_compression::tokio::bufread::ZstdDecoder;
     use futures_util::StreamExt;
-    use tokio::io::AsyncWriteExt;
+    use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt};
 
     let limit = config::max_source_bytes();
     let resp = client().get(url).send().await.map_err(|e| {
@@ -59,18 +66,50 @@ pub async fn download_hashed(
             format!("could not download source: {}", resp.status()),
         ));
     }
-    if let Some(len) = resp.content_length() {
-        if len as usize > limit {
-            return Err(ApiError::new(
-                413,
-                "LIMIT_EXCEEDED",
-                "source file exceeds the size limit",
-            ));
-        }
-        if let Some(p) = progress {
+    // content-length is the on-the-wire (possibly compressed) size — advisory for
+    // progress only; the real cap is the decompressed `written` counter below.
+    if let Some(p) = progress {
+        if let Some(len) = resp.content_length() {
             p.total.store(len, std::sync::atomic::Ordering::Relaxed);
         }
     }
+
+    let read_err = |e: std::io::Error, dest: &std::path::Path| {
+        let dest = dest.to_path_buf();
+        async move {
+            let _ = tokio::fs::remove_file(&dest).await;
+            ApiError::new(
+                422,
+                "READ_FAILED",
+                format!("could not download source: {e}"),
+            )
+        }
+    };
+
+    // reqwest byte stream → AsyncBufRead, so the 4-byte magic can be peeked
+    // without consuming and the whole thing optionally piped through zstd.
+    let byte_stream = resp
+        .bytes_stream()
+        .map(|r| r.map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e)));
+    let mut buf_reader = tokio::io::BufReader::new(tokio_util::io::StreamReader::new(byte_stream));
+    let is_zstd = {
+        let head = buf_reader.fill_buf().await.map_err(|e| {
+            ApiError::new(
+                422,
+                "READ_FAILED",
+                format!("could not download source: {e}"),
+            )
+        })?;
+        head.len() >= 4 && head[0..4] == [0x28, 0xB5, 0x2F, 0xFD]
+    };
+    // multiple_members: tolerate a source written as concatenated zstd frames.
+    let mut input: std::pin::Pin<Box<dyn tokio::io::AsyncRead + Send>> = if is_zstd {
+        let mut dec = ZstdDecoder::new(buf_reader);
+        dec.multiple_members(true);
+        Box::pin(dec)
+    } else {
+        Box::pin(buf_reader)
+    };
 
     let mut file = tokio::fs::File::create(dest).await.map_err(|e| {
         ApiError::new(
@@ -81,23 +120,17 @@ pub async fn download_hashed(
     })?;
     let mut hasher = xxhash_rust::xxh3::Xxh3::new();
     let mut written = 0usize;
-    let mut stream = resp.bytes_stream();
-    while let Some(chunk) = stream.next().await {
-        // Any mid-stream failure must remove the partial temp file — leaving it
-        // leaks disk (callers don't clean up on error).
-        let chunk = match chunk {
-            Ok(c) => c,
-            Err(e) => {
-                let _ = tokio::fs::remove_file(dest).await;
-                return Err(ApiError::new(
-                    422,
-                    "READ_FAILED",
-                    format!("could not download source: {e}"),
-                ));
-            }
+    let mut buf = vec![0u8; 256 * 1024];
+    loop {
+        // A decode error (corrupt/truncated zstd) surfaces here as an io::Error —
+        // fail loud rather than store a partial file.
+        let n = match input.read(&mut buf).await {
+            Ok(0) => break,
+            Ok(n) => n,
+            Err(e) => return Err(read_err(e, dest).await),
         };
-        written += chunk.len();
-        if written > limit {
+        written += n;
+        if limit > 0 && written > limit {
             let _ = tokio::fs::remove_file(dest).await;
             return Err(ApiError::new(
                 413,
@@ -109,8 +142,8 @@ pub async fn download_hashed(
             p.done
                 .store(written as u64, std::sync::atomic::Ordering::Relaxed);
         }
-        hasher.update(&chunk);
-        if let Err(e) = file.write_all(&chunk).await {
+        hasher.update(&buf[..n]);
+        if let Err(e) = file.write_all(&buf[..n]).await {
             let _ = tokio::fs::remove_file(dest).await;
             return Err(ApiError::new(
                 500,
@@ -150,6 +183,27 @@ pub async fn upload(
             502,
             "UPLOAD_FAILED",
             format!("could not upload artifact: {status} {detail}"),
+        ));
+    }
+    Ok(())
+}
+
+/// POST a JSON body (the completion-callback delivery). Short timeout; the
+/// caller owns retries.
+pub async fn post_json(url: &str, body: &serde_json::Value) -> Result<(), ApiError> {
+    let resp = client()
+        .post(url)
+        .header("Content-Type", "application/json")
+        .body(body.to_string())
+        .timeout(std::time::Duration::from_secs(10))
+        .send()
+        .await
+        .map_err(|e| ApiError::new(502, "CALLBACK_FAILED", format!("callback POST failed: {e}")))?;
+    if !resp.status().is_success() {
+        return Err(ApiError::new(
+            502,
+            "CALLBACK_FAILED",
+            format!("callback POST returned {}", resp.status()),
         ));
     }
     Ok(())

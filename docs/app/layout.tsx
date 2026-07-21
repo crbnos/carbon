@@ -6,6 +6,7 @@ import { DM_Sans, Fira_Code } from "next/font/google";
 import type { ReactNode } from "react";
 import { ScrollToTop } from "@/components/scroll-to-top";
 import { SiteFooter } from "@/components/site-footer";
+import { faviconLinks } from "@carbon/utils/favicon";
 import { ogImage, SEO, SITE } from "@/lib/seo";
 
 // next/font self-hosts DM Sans + Fira Code at build time: no render-blocking request
@@ -44,7 +45,7 @@ export const metadata: Metadata = {
     "MCP"
   ],
   authors: [{ name: "Carbon" }],
-  // Favicon comes from the app/icon.svg file convention.
+  // Favicons are declared as theme-aware <link> tags in the <head> below.
   openGraph: {
     title: SEO.site.title,
     description: SEO.site.description,
@@ -119,36 +120,9 @@ export default function Layout({ children }: { children: ReactNode }) {
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: jsonLd }}
         />
-        <link
-          rel="icon"
-          type="image/svg+xml"
-          href="/carbon-mark-light.svg"
-          media="(prefers-color-scheme: light)"
-        />
-        <link
-          rel="icon"
-          type="image/svg+xml"
-          href="/carbon-mark-dark.svg"
-          media="(prefers-color-scheme: dark)"
-        />
-        <link
-          rel="icon"
-          type="image/png"
-          sizes="32x32"
-          href="/favicon-32x32.png"
-        />
-        <link
-          rel="icon"
-          type="image/png"
-          sizes="16x16"
-          href="/favicon-16x16.png"
-        />
-        <link
-          rel="apple-touch-icon"
-          sizes="180x180"
-          href="/apple-touch-icon.png"
-        />
-        <link rel="manifest" href="/site.webmanifest" />
+        {faviconLinks.map((link) => (
+          <link key={`${link.rel}-${link.href}`} {...link} />
+        ))}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           rel="preconnect"

@@ -25,7 +25,6 @@ import {
   Heading,
   HStack,
   IconButton,
-  ModelViewer,
   ScrollArea,
   Separator,
   SidebarTrigger,
@@ -54,8 +53,10 @@ import {
   convertDateStringToIsoString,
   convertKbToString,
   formatDurationMilliseconds,
-  getItemReadableId
+  getItemReadableId,
+  MODEL_RAW_KEEP_MAX_BYTES
 } from "@carbon/utils";
+import { ModelPreview } from "@carbon/viewer/model-preview";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestSingleResponse } from "@supabase/supabase-js";
 import { Suspense, useEffect, useMemo, useState } from "react";
@@ -115,7 +116,7 @@ import type {
   TrackedInput
 } from "~/services/types";
 import { useItems } from "~/stores";
-import { path } from "~/utils/path";
+import { getPrivateUrl, getRawModelUrl, path } from "~/utils/path";
 import ItemThumbnail from "../ItemThumbnail";
 import { OperationChat } from "./components/Chat";
 import {
@@ -139,6 +140,7 @@ import {
 } from "./components/Step";
 import { TableSkeleton } from "./components/TableSkeleton";
 import { useFiles } from "./hooks/useFiles";
+import { useModelArtifacts } from "./hooks/useModelArtifacts";
 import { useOperation } from "./hooks/useOperation";
 
 const log = getLogger("mes", "job-operation");
@@ -319,6 +321,9 @@ export const JobOperation = ({
           modelSize: operation.itemModelSize ?? job.modelSize
         }
       : null;
+
+  const modelPath = operation.itemModelPath ?? job.modelPath ?? null;
+  const { artifacts, pending: modelPending } = useModelArtifacts(modelPath);
 
   const fetcher = useFetcher<Result>();
 
@@ -1749,15 +1754,42 @@ export const JobOperation = ({
         </TabsContent>
         <TabsContent value="model">
           <div className="w-full h-[calc(100dvh-var(--header-height)*2)] p-0">
-            <ModelViewer
-              file={null}
-              key={`model-${operation.itemModelPath ?? job.modelPath}`}
-              url={`/file/preview/private/${
-                operation.itemModelPath ?? job.modelPath
-              }`}
-              mode={mode}
-              className="rounded-none"
-            />
+            {modelPath ? (
+              <ModelPreview
+                key={modelPath}
+                awaitingModel={modelPending}
+                optimizedUrl={
+                  artifacts?.optimizedModelPath
+                    ? getPrivateUrl(artifacts.optimizedModelPath)
+                    : null
+                }
+                glbUrl={
+                  artifacts?.glbPath ? getPrivateUrl(artifacts.glbPath) : null
+                }
+                lodUrl={
+                  artifacts?.lodPath ? getPrivateUrl(artifacts.lodPath) : null
+                }
+                rawUrl={
+                  artifacts?.rawPath &&
+                  (artifacts.size ?? 0) <= MODEL_RAW_KEEP_MAX_BYTES
+                    ? getRawModelUrl(artifacts.rawBucket, artifacts.rawPath)
+                    : null
+                }
+                thumbnailUrl={
+                  artifacts?.thumbnailPath
+                    ? getPrivateUrl(artifacts.thumbnailPath)
+                    : null
+                }
+                mode={mode}
+                className="rounded-none"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center">
+                <p className="text-sm text-muted-foreground">
+                  3D preview unavailable
+                </p>
+              </div>
+            )}
           </div>
         </TabsContent>
         <TabsContent value="procedure" className="flex flex-grow">

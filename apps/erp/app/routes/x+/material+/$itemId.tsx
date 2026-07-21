@@ -31,12 +31,14 @@ import {
   MaterialProperties
 } from "~/modules/items/ui/Materials";
 import { getTagsList } from "~/modules/shared";
-import type { Handle } from "~/utils/handle";
+import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
-  breadcrumb: msg`Materials`,
-  to: path.to.materials,
+  breadcrumb: detailBreadcrumb(
+    { breadcrumb: msg`Materials`, to: path.to.materials },
+    (data) => data?.materialSummary?.readableIdWithRevision
+  ),
   module: "items"
 };
 

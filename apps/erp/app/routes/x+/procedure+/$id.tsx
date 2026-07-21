@@ -24,12 +24,14 @@ import ProcedureHeader from "~/modules/production/ui/Procedures/ProcedureHeader"
 import ProcedureProperties from "~/modules/production/ui/Procedures/ProcedureProperties";
 import { getTagsList } from "~/modules/shared";
 import type { action } from "~/routes/x+/procedure+/update";
-import type { Handle } from "~/utils/handle";
+import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { getPrivateUrl, path } from "~/utils/path";
 
 export const handle: Handle = {
-  breadcrumb: msg`Procedures`,
-  to: path.to.procedures,
+  breadcrumb: detailBreadcrumb(
+    { breadcrumb: msg`Procedures`, to: path.to.procedures },
+    (data) => data?.procedure?.name
+  ),
   module: "production"
 };
 

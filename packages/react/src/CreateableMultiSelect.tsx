@@ -189,11 +189,11 @@ const CreatableMultiSelect = forwardRef<
             align="end"
             onWheel={(e) => e.stopPropagation()}
             onTouchMove={(e) => e.stopPropagation()}
-            className="min-w-[var(--radix-popover-trigger-width)] max-w-[min(560px,calc(100vw-2rem))] p-1"
+            className="min-w-[max(var(--radix-popover-trigger-width),11rem)] max-w-[min(560px,calc(100vw-2rem))] p-1"
             style={{
               width: dropdownContentWidthCh
-                ? `min(560px, max(var(--radix-popover-trigger-width), ${dropdownContentWidthCh}ch))`
-                : "var(--radix-popover-trigger-width)"
+                ? `min(560px, max(var(--radix-popover-trigger-width), 11rem, ${dropdownContentWidthCh}ch))`
+                : "max(var(--radix-popover-trigger-width), 11rem)"
             }}
           >
             {emptyMessage && options.length === 0 ? (
@@ -309,7 +309,7 @@ function VirtualizedCommand({
           height: `${Math.min(filteredOptions.length, 6) * itemHeight + 4}px`
         }}
       >
-        <CommandEmpty>{t`No option found.`}</CommandEmpty>
+        <CommandEmpty>{t`No matches. Type to create one.`}</CommandEmpty>
         <CommandGroup
           style={{
             height: `${virtualizer.getTotalSize()}px`,

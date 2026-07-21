@@ -39,7 +39,7 @@ const New = ({ label, to, variant = "primary" }: NewProps) => {
           variant={variant}
           ref={buttonRef}
         >
-          <Link to={to} prefetch="intent">
+          <Link to={to}>
             {translatedLabel ? `${t`Add`} ${translatedLabel}` : t`Add`}
           </Link>
         </Button>

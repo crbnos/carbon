@@ -10,6 +10,7 @@
 #include <mutex>
 #include <cstdio>
 #include <cstdlib>
+#include <BinXCAFDrivers.hxx>
 #include <BRepMesh_IncrementalMesh.hxx>
 #include <BRepPrimAPI_MakeBox.hxx>
 #include <BRep_Builder.hxx>
@@ -18,9 +19,14 @@
 #include <GProp_GProps.hxx>
 #include <IFSelect_ReturnStatus.hxx>
 #include <Interface_Static.hxx>
+#include <PCDM_ReaderStatus.hxx>
+#include <PCDM_StoreStatus.hxx>
 #include <Poly_Triangle.hxx>
 #include <Poly_Triangulation.hxx>
 #include <Quantity_ColorRGBA.hxx>
+#include <BRepTools.hxx>
+#include <BRep_Builder.hxx>
+#include <IGESCAFControl_Reader.hxx>
 #include <STEPCAFControl_Reader.hxx>
 #include <STEPControl_Controller.hxx>
 #include <STEPControl_Writer.hxx>
@@ -31,6 +37,7 @@
 #include <TDF_LabelSequence.hxx>
 #include <TDF_Tool.hxx>
 #include <TDataStd_Name.hxx>
+#include <TDocStd_Application.hxx>
 #include <TDocStd_Document.hxx>
 #include <TopAbs_Orientation.hxx>
 #include <TopAbs_ShapeEnum.hxx>
@@ -380,6 +387,98 @@ class Builder {
   }
 };
 
+// OCCT STEP reading is thread-safe under a strict contract: one reader per
+// thread AND no per-request mutation of the process-wide Interface_Static /
+// no concurrent STEPControl_Controller::Init(). So warm both ONCE here,
+// single-threaded; concurrent reads then only touch their own local reader
+// instance and read (never write) the shared config.
+static void ensure_step_init() {
+  static std::once_flag occt_init;
+  std::call_once(occt_init, [] {
+    STEPControl_Controller::Init();
+    Interface_Static::SetCVal("xstep.cascade.unit", "MM");
+  });
+}
+
+// One process-wide XCAF application with the BinXCAF (`.xbf`) storage/retrieval
+// drivers registered — required to SaveAs/Open XCAF documents. TDocStd_Application
+// is internally guarded, so a single shared instance is fine across threads.
+static const Handle(TDocStd_Application) & xcaf_app() {
+  static Handle(TDocStd_Application) app = [] {
+    Handle(TDocStd_Application) a = new TDocStd_Application();
+    BinXCAFDrivers::DefineFormat(a);
+    return a;
+  }();
+  return app;
+}
+
+// Read + transfer a STEP file into a fresh XCAF document. Returns null and sets
+// `error` on failure (unreadable STEP, transfer failure).
+static Handle(TDocStd_Document) read_step_to_doc(const std::string &p,
+                                                 std::string &error) {
+  ensure_step_init();
+  STEPCAFControl_Reader reader;
+  reader.SetColorMode(true);
+  reader.SetNameMode(true);
+  reader.SetLayerMode(false);
+  reader.SetMatMode(false);
+  if (reader.ReadFile(p.c_str()) != IFSelect_RetDone) {
+    error = "could not read STEP file";
+    return nullptr;
+  }
+  Handle(TDocStd_Document) doc = new TDocStd_Document(TCollection_ExtendedString("BinXCAF"));
+  if (!reader.Transfer(doc)) {
+    error = "STEP transfer to XCAF failed";
+    return nullptr;
+  }
+  return doc;
+}
+
+// Walk an XCAF document's free shapes into the flat node `Tree` — the single
+// tessellation path shared by STEP and XBF loaders, so both yield identical
+// nodeIds + geometry.
+static Tree doc_to_tree(const Handle(TDocStd_Document) &doc, double lin, double ang) {
+  Tree t;
+  t.ok = false;
+  t.root_index = 0;
+  Handle(XCAFDoc_ShapeTool) shapeTool = XCAFDoc_DocumentTool::ShapeTool(doc->Main());
+  TDF_LabelSequence freeShapes;
+  shapeTool->GetFreeShapes(freeShapes);
+  if (freeShapes.Length() == 0) {
+    t.error = "document contains no shapes";
+    return t;
+  }
+
+  Builder b(lin, ang, shapeTool);
+  std::vector<uint64_t> roots;
+  for (int i = 1; i <= freeShapes.Length(); ++i) {
+    roots.push_back(b.build(freeShapes.Value(i), TDF_Label(), false, TopLoc_Location(), false));
+  }
+  uint64_t root_index;
+  if (roots.size() == 1) {
+    root_index = roots[0];
+  } else {
+    RawNode r;
+    r.name = "ROOT";
+    r.product_name = "ROOT";
+    for (double x : IDENTITY_4X4) r.transform.push_back(x);
+    r.is_assembly = true;
+    r.has_mesh = false;
+    r.is_proxy = false;
+    r.has_color = false;
+    r.has_volume = false;
+    r.volume = 0.0;
+    for (auto c : roots) r.children.push_back(c);
+    b.nodes.push_back(r);
+    root_index = b.nodes.size() - 1;
+  }
+
+  for (auto &n : b.nodes) t.nodes.push_back(n);
+  t.root_index = root_index;
+  t.ok = true;
+  return t;
+}
+
 Tree read_step(rust::Str path, double linear_deflection, double angular_deflection) {
   Tree t;
   t.ok = false;
@@ -391,73 +490,132 @@ Tree read_step(rust::Str path, double linear_deflection, double angular_deflecti
   };
   try {
     auto t0 = now();
-    // OCCT STEP reading is thread-safe under a strict contract: one reader per
-    // thread AND no per-request mutation of the process-wide Interface_Static /
-    // no concurrent STEPControl_Controller::Init(). So warm both ONCE here,
-    // single-threaded; concurrent read_step calls then only touch their own
-    // local reader instance and read (never write) the shared config.
-    static std::once_flag occt_init;
-    std::call_once(occt_init, [] {
-      STEPControl_Controller::Init();
-      Interface_Static::SetCVal("xstep.cascade.unit", "MM");
-    });
-    STEPCAFControl_Reader reader;
-    reader.SetColorMode(true);
-    reader.SetNameMode(true);
-    reader.SetLayerMode(false);
-    reader.SetMatMode(false);
     std::string p(path);
-    if (reader.ReadFile(p.c_str()) != IFSelect_RetDone) {
-      t.error = "could not read STEP file";
-      return t;
-    }
-    auto t1 = now();
-    Handle(TDocStd_Document) doc = new TDocStd_Document(TCollection_ExtendedString("BinXCAF"));
-    if (!reader.Transfer(doc)) {
-      t.error = "STEP transfer to XCAF failed";
+    std::string err;
+    Handle(TDocStd_Document) doc = read_step_to_doc(p, err);
+    if (doc.IsNull()) {
+      t.error = err;
       return t;
     }
     auto t2 = now();
-    Handle(XCAFDoc_ShapeTool) shapeTool = XCAFDoc_DocumentTool::ShapeTool(doc->Main());
-    TDF_LabelSequence freeShapes;
-    shapeTool->GetFreeShapes(freeShapes);
-    if (freeShapes.Length() == 0) {
-      t.error = "STEP file contains no shapes";
-      return t;
-    }
-
-    Builder b(linear_deflection, angular_deflection, shapeTool);
-    std::vector<uint64_t> roots;
-    for (int i = 1; i <= freeShapes.Length(); ++i) {
-      roots.push_back(b.build(freeShapes.Value(i), TDF_Label(), false, TopLoc_Location(), false));
-    }
+    t = doc_to_tree(doc, linear_deflection, angular_deflection);
     if (prof) {
       auto t3 = now();
-      fprintf(stderr, "OCCT read=%lldms transfer=%lldms walk+mesh=%lldms\n",
-              (long long)ms(t0, t1), (long long)ms(t1, t2), (long long)ms(t2, t3));
+      fprintf(stderr, "OCCT read+transfer=%lldms walk+mesh=%lldms\n",
+              (long long)ms(t0, t2), (long long)ms(t2, t3));
     }
-    uint64_t root_index;
-    if (roots.size() == 1) {
-      root_index = roots[0];
-    } else {
-      RawNode r;
-      r.name = "ROOT";
-      r.product_name = "ROOT";
-      for (double x : IDENTITY_4X4) r.transform.push_back(x);
-      r.is_assembly = true;
-      r.has_mesh = false;
-      r.is_proxy = false;
-      r.has_color = false;
-      r.has_volume = false;
-      r.volume = 0.0;
-      for (auto c : roots) r.children.push_back(c);
-      b.nodes.push_back(r);
-      root_index = b.nodes.size() - 1;
-    }
+  } catch (Standard_Failure &e) {
+    t.error = std::string("OCCT error: ") + e.GetMessageString();
+  } catch (...) {
+    t.error = "unknown OCCT error";
+  }
+  return t;
+}
 
-    for (auto &n : b.nodes) t.nodes.push_back(n);
-    t.root_index = root_index;
-    t.ok = true;
+// IGES → XCAF doc, mirroring read_step_to_doc (IGESCAFControl_Reader is the
+// XDE twin of the STEP one; same statics, same transfer target).
+static Handle(TDocStd_Document) read_iges_to_doc(const std::string &p,
+                                                 std::string &error) {
+  ensure_step_init();
+  IGESCAFControl_Reader reader;
+  reader.SetColorMode(true);
+  reader.SetNameMode(true);
+  reader.SetLayerMode(false);
+  if (reader.ReadFile(p.c_str()) != IFSelect_RetDone) {
+    error = "could not read IGES file";
+    return nullptr;
+  }
+  Handle(TDocStd_Document) doc = new TDocStd_Document(TCollection_ExtendedString("BinXCAF"));
+  if (!reader.Transfer(doc)) {
+    error = "IGES transfer to XCAF failed";
+    return nullptr;
+  }
+  return doc;
+}
+
+Tree read_iges(rust::Str path, double linear_deflection, double angular_deflection) {
+  Tree t;
+  t.ok = false;
+  t.root_index = 0;
+  try {
+    std::string p(path);
+    std::string err;
+    Handle(TDocStd_Document) doc = read_iges_to_doc(p, err);
+    if (doc.IsNull()) {
+      t.error = err;
+      return t;
+    }
+    t = doc_to_tree(doc, linear_deflection, angular_deflection);
+  } catch (Standard_Failure &e) {
+    t.error = std::string("OCCT error: ") + e.GetMessageString();
+  } catch (...) {
+    t.error = "unknown OCCT error";
+  }
+  return t;
+}
+
+Tree read_brep(rust::Str path, double linear_deflection, double angular_deflection) {
+  // A .brep file is a bare shape (no product structure, names, or colors).
+  // Wrap it in a fresh XCAF doc so the exact same doc_to_tree walk applies —
+  // one tessellation path for every OCCT-loaded format.
+  Tree t;
+  t.ok = false;
+  t.root_index = 0;
+  try {
+    std::string p(path);
+    TopoDS_Shape shape;
+    BRep_Builder builder;
+    if (!BRepTools::Read(shape, p.c_str(), builder)) {
+      t.error = "could not read BREP file";
+      return t;
+    }
+    Handle(TDocStd_Document) doc =
+        new TDocStd_Document(TCollection_ExtendedString("BinXCAF"));
+    Handle(XCAFDoc_ShapeTool) shapeTool = XCAFDoc_DocumentTool::ShapeTool(doc->Main());
+    shapeTool->AddShape(shape);
+    t = doc_to_tree(doc, linear_deflection, angular_deflection);
+  } catch (Standard_Failure &e) {
+    t.error = std::string("OCCT error: ") + e.GetMessageString();
+  } catch (...) {
+    t.error = "unknown OCCT error";
+  }
+  return t;
+}
+
+bool step_to_xbf(rust::Str step_path, rust::Str xbf_path) {
+  try {
+    std::string sp(step_path);
+    std::string error;
+    Handle(TDocStd_Document) doc = read_step_to_doc(sp, error);
+    if (doc.IsNull()) {
+      fprintf(stderr, "step_to_xbf: %s\n", error.c_str());
+      return false;
+    }
+    std::string xp(xbf_path);
+    PCDM_StoreStatus st = xcaf_app()->SaveAs(doc, TCollection_ExtendedString(xp.c_str()));
+    return st == PCDM_SS_OK;
+  } catch (Standard_Failure &e) {
+    fprintf(stderr, "step_to_xbf: OCCT error: %s\n", e.GetMessageString());
+    return false;
+  } catch (...) {
+    fprintf(stderr, "step_to_xbf: unknown OCCT error\n");
+    return false;
+  }
+}
+
+Tree read_xbf(rust::Str path, double linear_deflection, double angular_deflection) {
+  Tree t;
+  t.ok = false;
+  t.root_index = 0;
+  try {
+    std::string p(path);
+    Handle(TDocStd_Document) doc;
+    PCDM_ReaderStatus rs = xcaf_app()->Open(TCollection_ExtendedString(p.c_str()), doc);
+    if (rs != PCDM_RS_OK || doc.IsNull()) {
+      t.error = "could not open XBF document";
+      return t;
+    }
+    t = doc_to_tree(doc, linear_deflection, angular_deflection);
   } catch (Standard_Failure &e) {
     t.error = std::string("OCCT error: ") + e.GetMessageString();
   } catch (...) {
@@ -472,11 +630,7 @@ Tree read_step(rust::Str path, double linear_deflection, double angular_deflecti
 // instead of committing fixture files.
 bool write_test_step(rust::Str path, uint32_t boxes) {
   try {
-    static std::once_flag occt_init;
-    std::call_once(occt_init, [] {
-      STEPControl_Controller::Init();
-      Interface_Static::SetCVal("xstep.cascade.unit", "MM");
-    });
+    ensure_step_init();
     TopoDS_Shape shape;
     if (boxes <= 1) {
       shape = BRepPrimAPI_MakeBox(10.0, 10.0, 10.0).Shape();
