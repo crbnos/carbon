@@ -1,5 +1,6 @@
 import type { Database } from "@carbon/database";
 import { Ratelimit, redis } from "@carbon/kv";
+import { getLogger } from "@carbon/logger";
 import { anthropicChatModel, anthropicTitleModel } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
@@ -17,6 +18,8 @@ import { buildSystemPrompt } from "./agent.prompt";
 import { anthropic } from "./agent.provider";
 import { createAgentTools } from "./agent.tools";
 import type { BrowsingContext } from "./types";
+
+const log = getLogger("erp", "agent");
 
 const MAX_STEPS = 20;
 
@@ -109,13 +112,23 @@ export async function saveUserMessage(
     .single();
   if (error || !message) return { data: message, error };
 
-  await client.from("agentMessagePart").insert({
+  const { error: partError } = await client.from("agentMessagePart").insert({
     messageId: message.id,
     companyId: args.companyId,
     orderIndex: 0,
     type: "text",
     textContent: args.text
   });
+  // supabase-js has no multi-statement transaction; compensate by deleting the parent
+  // so a failed part insert never leaves an empty, unrecoverable message bubble.
+  if (partError) {
+    await client
+      .from("agentMessage")
+      .delete()
+      .eq("id", message.id)
+      .eq("companyId", args.companyId);
+    return { data: null, error: partError };
+  }
   return { data: message, error: null };
 }
 
@@ -245,18 +258,34 @@ export function streamChat(
 
   return result.toUIMessageStreamResponse({
     onFinish: async ({ responseMessage }) => {
-      await persistAssistantTurn(client, {
-        threadId: args.threadId,
-        companyId: args.companyId,
-        message: responseMessage,
-        inputTokens,
-        outputTokens,
-        finishReason
-      });
-      await maybeTitleThread(client, {
-        threadId: args.threadId,
-        companyId: args.companyId
-      });
+      // This callback runs after the stream is handed to the client, so a throw here is
+      // otherwise swallowed silently — log both steps so a persistence failure is diagnosable.
+      try {
+        await persistAssistantTurn(client, {
+          threadId: args.threadId,
+          companyId: args.companyId,
+          message: responseMessage,
+          inputTokens,
+          outputTokens,
+          finishReason
+        });
+      } catch (error) {
+        log.error("Failed to persist assistant turn", {
+          error,
+          threadId: args.threadId
+        });
+      }
+      try {
+        await maybeTitleThread(client, {
+          threadId: args.threadId,
+          companyId: args.companyId
+        });
+      } catch (error) {
+        log.error("Failed to title thread", {
+          error,
+          threadId: args.threadId
+        });
+      }
     }
   });
 }
@@ -374,6 +403,18 @@ async function persistAssistantTurn(
     }
   }
   if (parts.length > 0) {
-    await client.from("agentMessagePart").insert(parts);
+    const { error: partsError } = await client
+      .from("agentMessagePart")
+      .insert(parts);
+    // No multi-statement transaction in supabase-js: roll back the parent message so a
+    // failed parts insert never persists an empty assistant bubble with no recoverable content.
+    if (partsError) {
+      await client
+        .from("agentMessage")
+        .delete()
+        .eq("id", message.id)
+        .eq("companyId", args.companyId);
+      throw partsError;
+    }
   }
 }

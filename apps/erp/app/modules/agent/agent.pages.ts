@@ -13,9 +13,17 @@ export type NavigablePage = {
 };
 
 // Routes we never land a user on, even under /x: these mutate or are transient actions,
-// not viewable pages. We err toward excluding.
+// not viewable pages. We err toward excluding. The verb list is grounded in the app's
+// actual action-only route files (no default export) — see the trailing segments of
+// `apps/erp/app/routes/x+/**` handlers. Only unambiguous action verbs are listed; nouns
+// that also name real pages (order, status, operation, payment, …) are deliberately left
+// out so we don't hide viewable pages.
+//
+// NOTE: this is still a denylist, so a brand-new action verb leaks until added here. The
+// fail-closed fix is a build-time manifest of routes that actually export a page component;
+// until that exists, keep this list in sync when adding action-only routes.
 const ACTION =
-  /(^|\/)(new|edit|delete|remove|duplicate|import|export|deactivate|activate)($|\/|\?)/i;
+  /(^|\/)(new|edit|delete|remove|duplicate|import|export|activate|deactivate|update|post|unpost|void|finalize|cancel|complete|confirm|convert|favorite|unfavorite|acknowledge|assign|unassign|approve|reject|submit|reopen|restore|archive|unarchive|split|adjust|save|send|release|receive|delivery)($|\/|\?)/i;
 
 function humanize(key: string): string {
   return key

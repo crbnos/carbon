@@ -11,7 +11,22 @@ export const choiceBlock = z.object({
   allowFreeText: z.boolean().optional(),
   freeTextPlaceholder: z.string().optional()
 });
-export const linkBlock = z.object({ label: z.string(), url: z.string() });
+// Only allow safe link targets: absolute http(s) URLs or root-relative in-app paths.
+// Blocks javascript:/data:/vbscript: and other script-bearing schemes the model could emit.
+const safeUrl = z.string().refine(
+  (u) => {
+    if (u.startsWith("/")) return true; // in-app relative link
+    try {
+      const { protocol } = new URL(u);
+      return protocol === "http:" || protocol === "https:";
+    } catch {
+      return false;
+    }
+  },
+  { message: "Unsafe or invalid URL" }
+);
+
+export const linkBlock = z.object({ label: z.string(), url: safeUrl });
 export const buttonBlock = z.object({ label: z.string(), message: z.string() });
 
 // navigate never takes a freehand URL. The model discovers a page with `find_page` and sends

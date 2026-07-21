@@ -107,7 +107,7 @@ export function AgentBlockChoice({ input }: { input: unknown }) {
           <button
             type="button"
             aria-label="Send"
-            disabled={answered || !freeText.trim()}
+            disabled={answered || !canConfirm}
             onClick={() => (isMulti ? confirmMulti() : send(freeText))}
             className="rounded-md p-1 hover:bg-muted disabled:opacity-40"
           >

@@ -120,15 +120,21 @@ export function useAgentThread() {
         method: "POST",
         body: new FormData()
       })
-        .then((res) => res.json() as Promise<{ threadId?: string }>)
+        .then((res) => {
+          if (!res.ok) throw new Error(`Thread create failed: ${res.status}`);
+          return res.json() as Promise<{ threadId?: string }>;
+        })
         .then((data) => {
           const id = data.threadId ?? null;
-          if (id) {
+          // Don't clobber a thread that loadThread/newThread selected while this
+          // create was in flight — only adopt the new id if nothing was set meanwhile.
+          if (id && !threadIdRef.current) {
             threadIdRef.current = id;
             setThread(id);
           }
-          return id;
+          return threadIdRef.current ?? id;
         })
+        .catch(() => null)
         .finally(() => {
           createInFlight.current = null;
         });
@@ -136,18 +142,29 @@ export function useAgentThread() {
     return createInFlight.current;
   }
 
+  // Guards the async gap between the isStreaming check and sendMessage, so rapid
+  // clicks can't fire duplicate turns before the stream status flips.
+  const isPreparingRef = useRef(false);
   async function send(text: string) {
     // One turn at a time: ignore sends (from the input or a block action) mid-stream.
-    if (isStreamingRef.current) return;
-    posthog.capture("agent_message_sent", { hasContext: !!contextRef.current });
-    await ensureThread();
-    sendMessage({ text });
+    if (isStreamingRef.current || isPreparingRef.current) return;
+    isPreparingRef.current = true;
+    try {
+      posthog.capture("agent_message_sent", {
+        hasContext: !!contextRef.current
+      });
+      await ensureThread();
+      sendMessage({ text });
+    } finally {
+      isPreparingRef.current = false;
+    }
   }
 
   async function loadThread(id: string) {
     setThread(id);
     threadIdRef.current = id;
     const res = await fetch(path.to.api.agentThread(id));
+    if (!res.ok) return;
     const data = (await res.json()) as { messages?: DbMessage[] };
     setMessages(reconstructMessages(data.messages ?? []));
   }
