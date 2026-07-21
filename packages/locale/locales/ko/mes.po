@@ -108,6 +108,9 @@ msgstr "사용 가능"
 msgid "Batch"
 msgstr "배치"
 
+msgid "Batch / Serial"
+msgstr ""
+
 msgid "Batch is not available"
 msgstr "배치를 사용할 수 없습니다"
 
@@ -784,6 +787,9 @@ msgstr "공정 파라미터"
 
 msgid "Processes"
 msgstr "공정"
+
+msgid "Produced"
+msgstr ""
 
 msgid "Progress"
 msgstr "진행 상황"

@@ -103,6 +103,7 @@ import { useDateFormatter, useUrlParams, useUser } from "~/hooks";
 import type { productionEventType } from "~/services/models";
 import { getFileType } from "~/services/operations.service";
 import type {
+  ConsumedTrackedEntity,
   Job,
   JobMakeMethod,
   JobMaterial,
@@ -172,6 +173,9 @@ type JobOperationProps = {
   job: Job;
   thumbnailPath: string | null;
   trackedEntities: TrackedEntity[];
+  // Batches/serials actually consumed on this job (net of un-issues) — shown on
+  // material rows and offered when creating a quality issue.
+  consumedEntities: ConsumedTrackedEntity[];
   workCenter: Promise<
     PostgrestSingleResponse<{
       name: string;
@@ -211,6 +215,36 @@ function PickedBadge({
   );
 }
 
+/**
+ * The consumed batch/serial numbers for one material row. Renders nothing when
+ * no tracked entity has been consumed for it — untracked materials unchanged.
+ */
+function ConsumedBatchBadges({
+  entities
+}: {
+  entities: ConsumedTrackedEntity[];
+}) {
+  if (entities.length === 0) return null;
+  return (
+    <HStack spacing={0} className="gap-1 flex-wrap pt-1">
+      {entities.map((entity) => (
+        <Badge
+          key={entity.id}
+          variant="outline"
+          className="gap-1 shrink-0 font-mono"
+          title="Consumed batch / serial"
+        >
+          <LuQrCode className="size-3" />
+          {entity.readableId ?? entity.id}
+          {entity.quantity !== 1 && (
+            <span className="text-muted-foreground">×{entity.quantity}</span>
+          )}
+        </Badge>
+      ))}
+    </HStack>
+  );
+}
+
 export const JobOperation = ({
   events,
   expiredEntityPolicy = "Block",
@@ -224,6 +258,7 @@ export const JobOperation = ({
   procedure,
   thumbnailPath,
   trackedEntities,
+  consumedEntities,
   workCenter
 }: JobOperationProps) => {
   const { t } = useLingui();
@@ -248,6 +283,43 @@ export const JobOperation = ({
 
   const [items] = useItems();
   const { downloadFile, downloadModel, getFilePath } = useFiles(job);
+
+  const consumedByMaterial = useMemo(() => {
+    const map = new Map<string, ConsumedTrackedEntity[]>();
+    for (const entity of consumedEntities) {
+      if (!entity.jobMaterialId) continue;
+      const existing = map.get(entity.jobMaterialId) ?? [];
+      existing.push(entity);
+      map.set(entity.jobMaterialId, existing);
+    }
+    return map;
+  }, [consumedEntities]);
+
+  // Batches/serials an operator can attach to a quality issue: the produced
+  // entities of this make method plus every consumed material lot on the job.
+  const qualityIssueEntityOptions = useMemo(() => {
+    const options: { value: string; label: string }[] = [];
+    const seen = new Set<string>();
+    for (const entity of trackedEntities) {
+      if (seen.has(entity.id)) continue;
+      seen.add(entity.id);
+      options.push({
+        value: entity.id,
+        label: `${entity.readableId ?? entity.id} — ${t`Produced`}`
+      });
+    }
+    for (const entity of consumedEntities) {
+      if (seen.has(entity.id)) continue;
+      seen.add(entity.id);
+      options.push({
+        value: entity.id,
+        label: entity.itemReadableId
+          ? `${entity.readableId ?? entity.id} — ${entity.itemReadableId}`
+          : (entity.readableId ?? entity.id)
+      });
+    }
+    return options;
+  }, [trackedEntities, consumedEntities, t]);
 
   const attributeRecordModal = useDisclosure();
   const attributeRecordDeleteModal = useDisclosure();
@@ -1091,6 +1163,15 @@ export const JobOperation = ({
                                               <span className="text-muted-foreground text-sm">
                                                 {material.description}
                                               </span>
+                                              <ConsumedBatchBadges
+                                                entities={
+                                                  material.id
+                                                    ? (consumedByMaterial.get(
+                                                        material.id
+                                                      ) ?? [])
+                                                    : []
+                                                }
+                                              />
                                             </VStack>
                                             {material.requiresBatchTracking ? (
                                               <Badge variant="secondary">
@@ -1289,6 +1370,15 @@ export const JobOperation = ({
                                                     <span className="text-muted-foreground text-xs">
                                                       {kittedChild.description}
                                                     </span>
+                                                    <ConsumedBatchBadges
+                                                      entities={
+                                                        kittedChild.id
+                                                          ? (consumedByMaterial.get(
+                                                              kittedChild.id
+                                                            ) ?? [])
+                                                          : []
+                                                      }
+                                                    />
                                                   </VStack>
                                                   {kittedChild.requiresBatchTracking ? (
                                                     <Badge variant="secondary">
@@ -2547,6 +2637,7 @@ export const JobOperation = ({
         trackedEntityId={
           parentIsSerial || parentIsBatch ? trackedEntityId : undefined
         }
+        trackedEntityOptions={qualityIssueEntityOptions}
         isOpen={qualityIssueModal.isOpen}
         onClose={qualityIssueModal.onClose}
       />

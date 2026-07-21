@@ -108,6 +108,9 @@ msgstr "available"
 msgid "Batch"
 msgstr "Batch"
 
+msgid "Batch / Serial"
+msgstr "Batch / Serial"
+
 msgid "Batch is not available"
 msgstr "Batch is not available"
 
@@ -784,6 +787,9 @@ msgstr "Process Parameters"
 
 msgid "Processes"
 msgstr "Processes"
+
+msgid "Produced"
+msgstr "Produced"
 
 msgid "Progress"
 msgstr "Progress"

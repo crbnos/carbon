@@ -881,6 +881,107 @@ export async function getTrackedInputs(
   };
 }
 
+export type ConsumedTrackedEntity = {
+  id: string;
+  readableId: string | null;
+  itemId: string | null;
+  itemReadableId: string | null;
+  jobMaterialId: string | null;
+  quantity: number;
+};
+
+// Every job-material consumption (tracked lots issued to an operation) writes a
+// `trackedActivity` of type Consume/Unconsume tagged with the job in its
+// attributes — regardless of whether the PRODUCED item is tracked. That makes
+// this the uniform source for "which batches were used on this job", unlike the
+// lineage-based getTrackedInputs above, which requires a tracked output entity.
+export async function getConsumedTrackedEntitiesForJob(
+  client: SupabaseClient<Database>,
+  jobId: string,
+  companyId: string
+): Promise<{ data: ConsumedTrackedEntity[]; error: unknown | null }> {
+  const activities = await client
+    .from("trackedActivity")
+    .select("id, type, attributes")
+    .eq("companyId", companyId)
+    .in("type", ["Consume", "Unconsume"])
+    .eq("attributes->>Job", jobId);
+
+  if (activities.error) return { data: [], error: activities.error };
+  if (activities.data.length === 0) return { data: [], error: null };
+
+  const inputs = await client
+    .from("trackedActivityInput")
+    .select("trackedActivityId, trackedEntityId, quantity")
+    .eq("companyId", companyId)
+    .in(
+      "trackedActivityId",
+      activities.data.map((a) => a.id)
+    );
+
+  if (inputs.error) return { data: [], error: inputs.error };
+
+  const activityById = new Map(activities.data.map((a) => [a.id, a]));
+
+  // Net Consume minus Unconsume per entity so un-issued lots drop back out.
+  const netByEntity = new Map<
+    string,
+    { quantity: number; jobMaterialId: string | null }
+  >();
+  for (const input of inputs.data ?? []) {
+    const activity = activityById.get(input.trackedActivityId);
+    if (!activity) continue;
+    const sign = activity.type === "Unconsume" ? -1 : 1;
+    const current = netByEntity.get(input.trackedEntityId) ?? {
+      quantity: 0,
+      jobMaterialId: null
+    };
+    current.quantity += sign * Number(input.quantity ?? 0);
+    current.jobMaterialId =
+      current.jobMaterialId ??
+      ((activity.attributes as TrackedActivityAttributes)?.["Job Material"] as
+        | string
+        | undefined) ??
+      null;
+    netByEntity.set(input.trackedEntityId, current);
+  }
+
+  const consumedIds = Array.from(netByEntity.entries())
+    .filter(([, v]) => v.quantity > 0)
+    .map(([id]) => id);
+  if (consumedIds.length === 0) return { data: [], error: null };
+
+  const entities = await client
+    .from("trackedEntity")
+    .select(
+      "id, readableId, itemId, sourceDocument, sourceDocumentId, sourceDocumentReadableId"
+    )
+    .in("id", consumedIds);
+
+  if (entities.error) return { data: [], error: entities.error };
+
+  return {
+    data: (entities.data ?? []).map((entity) => {
+      const net = netByEntity.get(entity.id);
+      return {
+        id: entity.id,
+        readableId: entity.readableId,
+        // Split lots (partial consumption remainders) carry a null itemId but
+        // record their item in sourceDocument='Item' / sourceDocumentId.
+        itemId:
+          entity.itemId ??
+          (entity.sourceDocument === "Item" ? entity.sourceDocumentId : null),
+        // Denormalized item.readableIdWithRevision — labels the lot's item
+        // without another join.
+        itemReadableId: entity.sourceDocumentReadableId,
+        jobMaterialId: net?.jobMaterialId ?? null,
+        quantity: net?.quantity ?? 0
+      };
+    }),
+    error: null
+  };
+}
+
 export async function getThumbnailPathByItemId(
   client: SupabaseClient<Database>,
   itemId: string

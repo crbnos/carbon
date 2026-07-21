@@ -7,6 +7,7 @@ import { redirect, useLoaderData, useParams } from "react-router";
 import { JobOperation } from "~/components/JobOperation";
 import { getCompanySettings } from "~/services/inventory.service";
 import {
+  getConsumedTrackedEntitiesForJob,
   getJobByOperationId,
   getJobFiles,
   getJobMakeMethod,
@@ -77,7 +78,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     jobMakeMethod,
     kanban,
     bomIdMap,
-    companySettings
+    companySettings,
+    consumedEntities
   ] = await Promise.all([
     getThumbnailPathByItemId(serviceRole, operation.data?.[0].itemId),
     getTrackedEntitiesByMakeMethodId(
@@ -87,7 +89,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getJobMakeMethod(serviceRole, operation.data?.[0].jobMakeMethodId),
     getKanbanByJobId(serviceRole, job.data.id),
     getJobMethodBomIdMap(serviceRole, job.data.id!),
-    getCompanySettings(serviceRole, companyId)
+    getCompanySettings(serviceRole, companyId),
+    getConsumedTrackedEntitiesForJob(serviceRole, job.data.id!, companyId)
   ]);
 
   const inventoryShelfLife = (companySettings.data?.inventoryShelfLife ??
@@ -141,6 +144,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         jobMakeMethod.data?.requiresSerialTracking ?? false
     }),
     trackedEntities: trackedEntities.data ?? [],
+    consumedEntities: consumedEntities.data ?? [],
     nonConformanceActions: getNonConformanceActions(serviceRole, {
       itemId: operation.data?.[0].itemId,
       processId: operation.data?.[0].processId,
@@ -181,6 +185,7 @@ export default function OperationRoute() {
     procedure,
     thumbnailPath,
     trackedEntities,
+    consumedEntities,
     workCenter,
     nonConformanceActions
   } = useLoaderData<typeof loader>();
@@ -195,6 +200,7 @@ export default function OperationRoute() {
       materials={materials}
       method={jobMakeMethod}
       trackedEntities={trackedEntities}
+      consumedEntities={consumedEntities}
       nonConformanceActions={nonConformanceActions}
       operation={operation}
       procedure={procedure}

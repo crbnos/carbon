@@ -94,6 +94,8 @@ export type TrackedInput = NonNullable<
   Awaited<ReturnType<typeof getTrackedInputs>>["data"]
 >[number];
 
+export type { ConsumedTrackedEntity } from "./operations.service";
+
 export type WorkCenter = NonNullable<
   Awaited<ReturnType<typeof getJobOperationsByWorkCenter>>["data"]
 >[number];

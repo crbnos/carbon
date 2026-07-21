@@ -320,8 +320,6 @@ async function linkIssueDispositionContext(
     quantity
   } = args;
 
-  if (!itemId) return { error: null };
-
   const trackedEntities = await getTrackedEntitiesForIssue(client, {
     companyId,
     jobMakeMethodId,
@@ -331,6 +329,12 @@ async function linkIssueDispositionContext(
   if (trackedEntities.error) {
     return { error: trackedEntities.error };
   }
+
+  // When the operator picked a specific batch/serial (which can be a CONSUMED
+  // material lot, not just the produced entity), the defective item is the
+  // lot's own item — fall back to the job's item otherwise.
+  const issueItemId = trackedEntities.data[0]?.itemId ?? itemId;
+  if (!issueItemId) return { error: null };
 
   const itemQuantity =
     trackedEntities.data.length > 0
@@ -344,7 +348,7 @@ async function linkIssueDispositionContext(
     .from("nonConformanceItem")
     .insert({
       nonConformanceId,
-      itemId,
+      itemId: issueItemId,
       quantity: itemQuantity,
       disposition: "Pending",
       companyId,
@@ -400,7 +404,7 @@ async function getTrackedEntitiesForIssue(
     trackedEntityId?: string;
   }
 ): Promise<{
-  data: { id: string; quantity: number | null }[];
+  data: { id: string; quantity: number | null; itemId: string | null }[];
   error: unknown | null;
 }> {
   if (!args.trackedEntityId) {
@@ -409,7 +413,7 @@ async function getTrackedEntitiesForIssue(
 
   const entity = await client
     .from("trackedEntity")
-    .select("id, quantity")
+    .select("id, quantity, itemId, sourceDocument, sourceDocumentId")
     .eq("id", args.trackedEntityId)
     .eq("companyId", args.companyId)
     .maybeSingle();
@@ -425,5 +429,23 @@ async function getTrackedEntitiesForIssue(
     };
   }
 
-  return { data: [entity.data], error: null };
+  // Split lots (partial-consumption remainders) have a null itemId but keep the
+  // item in sourceDocument='Item' / sourceDocumentId — resolve it so the issue's
+  // nonConformanceItem points at the real material, not the job's output item.
+  const resolvedItemId =
+    entity.data.itemId ??
+    (entity.data.sourceDocument === "Item"
+      ? entity.data.sourceDocumentId
+      : null);
+
+  return {
+    data: [
+      {
+        id: entity.data.id,
+        quantity: entity.data.quantity,
+        itemId: resolvedItemId
+      }
+    ],
+    error: null
+  };
 }

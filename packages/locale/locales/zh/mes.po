@@ -108,6 +108,9 @@ msgstr "可用"
 msgid "Batch"
 msgstr "批次"
 
+msgid "Batch / Serial"
+msgstr ""
+
 msgid "Batch is not available"
 msgstr "批次不可用"
 
@@ -784,6 +787,9 @@ msgstr "工艺参数"
 
 msgid "Processes"
 msgstr "工艺"
+
+msgid "Produced"
+msgstr ""
 
 msgid "Progress"
 msgstr "进度"

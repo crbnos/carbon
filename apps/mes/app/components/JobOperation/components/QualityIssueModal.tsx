@@ -22,11 +22,16 @@ import { path } from "~/utils/path";
 export function QualityIssueModal({
   operationId,
   trackedEntityId,
+  trackedEntityOptions,
   isOpen,
   onClose
 }: {
   operationId: string;
   trackedEntityId?: string;
+  // Selectable batches/serials for this operation: consumed material lots plus
+  // the produced entities. When present the operator picks one; the legacy
+  // hidden auto-link is the fallback.
+  trackedEntityOptions?: { value: string; label: string }[];
   isOpen: boolean;
   onClose: () => void;
 }) {
@@ -36,6 +41,7 @@ export function QualityIssueModal({
     useFetcher<PostgrestResponse<{ id: string; name: string }>>();
 
   const issueTypes = issueTypeFetcher.data?.data ?? [];
+  const hasEntityOptions = (trackedEntityOptions?.length ?? 0) > 0;
 
   useEffect(() => {
     if (isOpen) {
@@ -80,7 +86,7 @@ export function QualityIssueModal({
           </ModalHeader>
           <ModalBody>
             <Hidden name="jobOperationId" value={operationId} />
-            {trackedEntityId && (
+            {!hasEntityOptions && trackedEntityId && (
               <Hidden name="trackedEntityId" value={trackedEntityId} />
             )}
             <VStack spacing={4}>
@@ -93,6 +99,15 @@ export function QualityIssueModal({
                   label: type.name
                 }))}
               />
+              {hasEntityOptions && (
+                <Select
+                  name="trackedEntityId"
+                  label={t`Batch / Serial`}
+                  size="lg"
+                  isOptional
+                  options={trackedEntityOptions ?? []}
+                />
+              )}
               <Select
                 name="priority"
                 label={t`Priority`}
