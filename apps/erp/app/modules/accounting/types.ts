@@ -1,5 +1,8 @@
 import type { Database, Json } from "@carbon/database";
-import type { periodCloseStatuses } from "./accounting.models";
+import type {
+  budgetStatusType,
+  periodCloseStatuses
+} from "./accounting.models";
 import type {
   getAccount,
   getAccountingPeriods,
@@ -47,6 +50,47 @@ export type CostCenter = NonNullable<
 export type CostCenterTreeNode = NonNullable<
   Awaited<ReturnType<typeof getCostCentersTree>>["data"]
 >[number];
+
+// Budgeting Phase 1 — hand-written because the budget/budgetLine tables and the
+// budgetVsActual RPC are absent from the cloud-generated DB types (accessed via
+// `(client as any)` casts in the service). Spec .ai/specs/2026-07-02-budgeting.md
+export type BudgetStatus = (typeof budgetStatusType)[number];
+
+export type Budget = {
+  id: string;
+  companyId: string;
+  name: string;
+  description: string | null;
+  fiscalYear: number;
+  status: BudgetStatus;
+  approvedBy: string | null;
+  approvedAt: string | null;
+  createdBy: string;
+  createdAt: string;
+  updatedBy: string | null;
+  updatedAt: string | null;
+};
+
+export type BudgetLine = {
+  id: string;
+  companyId: string;
+  budgetId: string;
+  accountId: string;
+  accountingPeriodId: string;
+  costCenterId: string | null;
+  amount: number;
+};
+
+export type BudgetVsActualRow = {
+  accountId: string;
+  number: string;
+  name: string;
+  class: AccountClass | null;
+  incomeBalance: AccountIncomeBalance | null;
+  periodNumber: number;
+  budget: number;
+  actual: number;
+};
 
 export type Currency = NonNullable<
   Awaited<ReturnType<typeof getCurrencies>>["data"]

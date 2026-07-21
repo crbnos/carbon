@@ -40,6 +40,9 @@ import type {
 } from "./accounting.models";
 import type {
   AccountLedgerLine,
+  Budget,
+  BudgetLine,
+  BudgetVsActualRow,
   Transaction,
   TranslatedBalance
 } from "./types";
@@ -2245,6 +2248,268 @@ export async function upsertCostCenter(
     .eq("id", costCenter.id)
     .select("id")
     .single();
+}
+
+// Budgeting Phase 1 — spec .ai/specs/2026-07-02-budgeting.md.
+// The budget/budgetLine tables and the budgetVsActual/copy/seed RPCs are absent
+// from the cloud-generated DB types, so access goes through `(client as any)`
+// (established pattern, e.g. `(client as any).from("itemSamplingPlan")`).
+
+export async function deleteBudget(
+  client: SupabaseClient<Database>,
+  budgetId: string,
+  companyId: string
+) {
+  return (client as any)
+    .from("budget")
+    .delete()
+    .eq("id", budgetId)
+    .eq("companyId", companyId)
+    .eq("status", "Draft");
+}
+
+export async function getBudget(
+  client: SupabaseClient<Database>,
+  budgetId: string,
+  companyId: string
+): Promise<{ data: Budget | null; error: PostgrestError | null }> {
+  return (client as any)
+    .from("budget")
+    .select("*")
+    .eq("id", budgetId)
+    .eq("companyId", companyId)
+    .single();
+}
+
+export async function getBudgets(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: GenericQueryFilters & { search: string | null }
+) {
+  let query = (client as any)
+    .from("budget")
+    .select("*", { count: "exact" })
+    .eq("companyId", companyId);
+
+  if (args?.search) {
+    query = query.ilike("name", `%${args.search}%`);
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "fiscalYear", ascending: false },
+      { column: "name", ascending: true }
+    ]);
+  }
+
+  return query as unknown as Promise<{
+    data: Budget[] | null;
+    count: number | null;
+    error: PostgrestError | null;
+  }>;
+}
+
+export async function getBudgetsList(
+  client: SupabaseClient<Database>,
+  companyId: string
+): Promise<{
+  data: Pick<Budget, "id" | "name" | "fiscalYear" | "status">[] | null;
+  error: PostgrestError | null;
+}> {
+  return (client as any)
+    .from("budget")
+    .select("id, name, fiscalYear, status")
+    .eq("companyId", companyId)
+    .order("fiscalYear", { ascending: false })
+    .order("name");
+}
+
+export async function upsertBudget(
+  client: SupabaseClient<Database>,
+  budget:
+    | {
+        name: string;
+        description?: string;
+        fiscalYear: number;
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      }
+    | {
+        id: string;
+        name: string;
+        description?: string;
+        fiscalYear: number;
+        companyId: string;
+        updatedBy: string;
+        customFields?: Json;
+      }
+): Promise<{
+  data: { id: string } | null;
+  error: PostgrestError | { message: string } | null;
+}> {
+  if ("createdBy" in budget) {
+    // Ensure the fiscal year's periods exist before the matrix needs them.
+    const periods = await (client as any)
+      .from("accountingPeriod")
+      .select("id")
+      .eq("companyId", budget.companyId)
+      .eq("fiscalYear", budget.fiscalYear)
+      .limit(1);
+    if (periods.error) return { data: null, error: periods.error };
+    if (!periods.data || periods.data.length === 0) {
+      const generated = await createFiscalYearPeriods(client, {
+        companyId: budget.companyId,
+        fiscalYear: budget.fiscalYear,
+        userId: budget.createdBy
+      });
+      if (generated.error) return { data: null, error: generated.error };
+    }
+
+    return (client as any)
+      .from("budget")
+      .insert([budget])
+      .select("id")
+      .single();
+  }
+  const { id, ...update } = budget;
+  return (client as any)
+    .from("budget")
+    .update(sanitize(update))
+    .eq("id", id)
+    .eq("companyId", budget.companyId)
+    .eq("status", "Draft")
+    .select("id")
+    .single();
+}
+
+export async function approveBudget(
+  client: SupabaseClient<Database>,
+  args: { budgetId: string; companyId: string; userId: string }
+) {
+  return (client as any)
+    .from("budget")
+    .update({
+      status: "Approved",
+      approvedBy: args.userId,
+      approvedAt: new Date().toISOString(),
+      updatedBy: args.userId,
+      updatedAt: new Date().toISOString()
+    })
+    .eq("id", args.budgetId)
+    .eq("companyId", args.companyId)
+    .eq("status", "Draft")
+    .select("id")
+    .single();
+}
+
+export async function archiveBudget(
+  client: SupabaseClient<Database>,
+  args: { budgetId: string; companyId: string; userId: string }
+) {
+  return (client as any)
+    .from("budget")
+    .update({
+      status: "Archived",
+      updatedBy: args.userId,
+      updatedAt: new Date().toISOString()
+    })
+    .eq("id", args.budgetId)
+    .eq("companyId", args.companyId)
+    .eq("status", "Approved")
+    .select("id")
+    .single();
+}
+
+export async function getBudgetLines(
+  client: SupabaseClient<Database>,
+  budgetId: string,
+  companyId: string
+): Promise<{ data: BudgetLine[] | null; error: PostgrestError | null }> {
+  return (client as any)
+    .from("budgetLine")
+    .select(
+      "id, budgetId, companyId, accountId, accountingPeriodId, costCenterId, amount"
+    )
+    .eq("budgetId", budgetId)
+    .eq("companyId", companyId);
+}
+
+export async function copyBudgetLines(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    sourceBudgetId: string;
+    targetBudgetId: string;
+    adjustmentFactor: number;
+    userId: string;
+  }
+) {
+  return (client as any).rpc("copyBudgetLines", {
+    p_company_id: args.companyId,
+    p_source_budget_id: args.sourceBudgetId,
+    p_target_budget_id: args.targetBudgetId,
+    p_adjustment_factor: args.adjustmentFactor,
+    p_created_by: args.userId
+  });
+}
+
+export async function seedBudgetLinesFromActuals(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    sourceFiscalYear: number;
+    targetBudgetId: string;
+    adjustmentFactor: number;
+    spread: "source" | "even";
+    userId: string;
+  }
+) {
+  return (client as any).rpc("seedBudgetLinesFromActuals", {
+    p_company_id: args.companyId,
+    p_source_fiscal_year: args.sourceFiscalYear,
+    p_target_budget_id: args.targetBudgetId,
+    p_adjustment_factor: args.adjustmentFactor,
+    p_spread: args.spread,
+    p_created_by: args.userId
+  });
+}
+
+export async function getBudgetVsActual(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    budgetId: string;
+    costCenterId?: string | null;
+    rollup?: boolean;
+    untagged?: boolean;
+  }
+): Promise<{ data: BudgetVsActualRow[] | null; error: PostgrestError | null }> {
+  return (client as any).rpc("budgetVsActual", {
+    p_company_id: args.companyId,
+    p_budget_id: args.budgetId,
+    p_cost_center_id: args.costCenterId ?? undefined,
+    p_rollup: args.rollup ?? true,
+    p_untagged: args.untagged ?? false
+  });
+}
+
+export async function getAccountingPeriodsForFiscalYear(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  fiscalYear: number
+): Promise<{
+  data:
+    | { id: string; periodNumber: number; startDate: string; endDate: string }[]
+    | null;
+  error: PostgrestError | null;
+}> {
+  return (client as any)
+    .from("accountingPeriod")
+    .select("id, periodNumber, startDate, endDate")
+    .eq("companyId", companyId)
+    .eq("fiscalYear", fiscalYear)
+    .order("periodNumber");
 }
 
 export async function getDimensions(

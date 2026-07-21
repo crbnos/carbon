@@ -274,6 +274,8 @@ export const path = {
     approvalRule: (id: string) =>
       generatePath(`${x}/settings/approval-rules/${id}`),
     approvalRules: `${x}/settings/approval-rules`,
+    approveBudget: (id: string) =>
+      generatePath(`${x}/accounting/budgets/approve/${id}`),
     assemblyInstruction: (id: string) => generatePath(`${x}/assembly/${id}`),
     assemblyInstructionStatus: (id: string) =>
       generatePath(`${x}/assembly/${id}/status`),
@@ -332,6 +334,9 @@ export const path = {
     batchPropertyOrder: (itemId: string) =>
       generatePath(`${x}/inventory/batch-property/${itemId}/property/order`),
     billing: `${x}/settings/billing`,
+    budget: (id: string) => generatePath(`${x}/accounting/budgets/${id}`),
+    budgets: `${x}/accounting/budgets`,
+    budgetVsActual: `${x}/accounting/budget-vs-actual`,
     bulkEditPermissions: `${x}/users/bulk-edit-permissions`,
     bulkUpdateIssue: `${x}/issue/update`,
     bulkUpdateIssueWorkflow: `${x}/issue-workflow/update`,
@@ -546,6 +551,8 @@ export const path = {
       generatePath(
         `${x}/inventory/batch-property/${itemId}/property/delete/${id}`
       ),
+    deleteBudget: (id: string) =>
+      generatePath(`${x}/accounting/budgets/delete/${id}`),
     deleteChangeOrder: (id: string) =>
       generatePath(`${x}/items/change-order/delete/${id}`),
     deleteChangeOrderAction: (id: string, actionId: string) =>
@@ -833,6 +840,8 @@ export const path = {
     download: (token: string) => `/download/${token}`,
     downloadError: (reason: string) => `/download/error?reason=${reason}`,
     duplicatePriceList: `${x}/sales/price-list/duplicate`,
+    editBudget: (id: string) =>
+      generatePath(`${x}/accounting/budgets/edit/${id}`),
     editMaintenanceDispatchEvent: (dispatchId: string, eventId: string) =>
       generatePath(`${x}/maintenance/${dispatchId}/event/${eventId}`),
     employeeAbility: (abilityId: string, id: string) =>
@@ -1350,6 +1359,7 @@ export const path = {
     newAttributeForCategory: (id: string) =>
       generatePath(`${x}/people/attributes/list/${id}/new`),
     newBatch: `${x}/inventory/batches/new`,
+    newBudget: `${x}/accounting/budgets/new`,
     newBulkJob: `${x}/job/bulk/new`,
     // Create form lives at its own top-level route (like /x/part/new and
     // /x/sales-order/new) so it renders with the app sidebar rather than nested

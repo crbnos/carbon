@@ -422,6 +422,28 @@ export const costCenterValidator = z.object({
   ownerId: z.string().min(1, { message: "Owner is required" })
 });
 
+// Budgeting Phase 1 — spec .ai/specs/2026-07-02-budgeting.md
+export const budgetStatusType = ["Draft", "Approved", "Archived"] as const;
+
+export const budgetValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  name: z.string().min(1, { message: "Name is required" }),
+  description: zfd.text(z.string().optional()),
+  fiscalYear: zfd.numeric(
+    z.number().int().min(2000, { message: "Fiscal year is required" }).max(2200)
+  ),
+  // The source* fields apply only on create (the edit form hides them).
+  source: z.enum(["none", "budget", "actuals"]).optional(),
+  sourceBudgetId: zfd.text(z.string().optional()),
+  sourceFiscalYear: zfd.numeric(z.number().int().optional()),
+  adjustmentFactor: zfd.numeric(z.number().positive().optional()),
+  spread: z.enum(["source", "even"]).optional()
+});
+
+export const budgetStatusTransitionValidator = z.object({
+  intent: z.enum(["approve", "archive"])
+});
+
 export const intercompanyTransactionStatuses = [
   "Unmatched",
   "Matched",
