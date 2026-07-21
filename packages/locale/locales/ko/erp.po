@@ -1454,6 +1454,9 @@ msgstr "오름차순"
 msgid "Ask an admin with {0} permission to add the first {1}."
 msgstr "{0} 권한이 있는 관리자에게 첫 {1} 추가를 요청하세요."
 
+msgid "Ask Docs"
+msgstr ""
+
 msgid "Assemblies"
 msgstr "조립품"
 

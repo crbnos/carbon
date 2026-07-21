@@ -3,6 +3,7 @@ import { useLingui } from "@lingui/react/macro";
 import { LuSquarePen } from "react-icons/lu";
 import { usePermissions, useUser } from "~/hooks";
 import AvatarMenu from "../../AvatarMenu";
+import AskDocs from "./AskDocs";
 import Breadcrumbs from "./Breadcrumbs";
 import CompanySwitcher from "./CompanySwitcher";
 import CreateMenu from "./CreateMenu";
@@ -28,6 +29,9 @@ const Topbar = () => {
         {permissions.is("employee") ? <Search /> : <div />}
       </div>
       <HStack spacing={1} className="flex-1 justify-end py-2">
+        <div className="hidden sm:block">
+          <AskDocs />
+        </div>
         <div className="hidden sm:block">
           <Suggestion />
         </div>

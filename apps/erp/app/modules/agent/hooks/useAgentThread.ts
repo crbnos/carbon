@@ -1,7 +1,7 @@
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import posthog from "posthog-js";
-import { useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useAgentStore } from "~/stores/agent";
 import { path } from "~/utils/path";
 import { isUiBlockTool } from "../agent.blocks";
@@ -160,21 +160,39 @@ export function useAgentThread() {
     }
   }
 
-  async function loadThread(id: string) {
-    setThread(id);
-    threadIdRef.current = id;
-    const res = await fetch(path.to.api.agentThread(id));
-    if (!res.ok) return;
-    const data = (await res.json()) as { messages?: DbMessage[] };
-    setMessages(reconstructMessages(data.messages ?? []));
-  }
-
   // Reset in place (no navigation) so the panel never flickers closed.
-  function newThread() {
+  const newThread = useCallback(() => {
     setMessages([]);
     setThread(null);
     threadIdRef.current = null;
-  }
+  }, [setMessages, setThread]);
+
+  const loadThread = useCallback(
+    async (id: string) => {
+      setThread(id);
+      threadIdRef.current = id;
+      const res = await fetch(path.to.api.agentThread(id));
+      if (!res.ok) {
+        // Stale/archived thread (e.g. a persisted id resumed from a previous
+        // session) — fall back to a fresh chat so sends don't post to a dead thread.
+        newThread();
+        return;
+      }
+      const data = (await res.json()) as { messages?: DbMessage[] };
+      setMessages(reconstructMessages(data.messages ?? []));
+    },
+    [newThread, setMessages, setThread]
+  );
+
+  // Resume the last chat when the panel opens: if it mounted with a persisted thread
+  // id (restored from sessionStorage), load that thread's history. A new chat
+  // (threadId null) stays blank — so the agent resumes until the user starts a new one.
+  const didResume = useRef(false);
+  useEffect(() => {
+    if (didResume.current) return;
+    didResume.current = true;
+    if (threadIdRef.current) void loadThread(threadIdRef.current);
+  }, [loadThread]);
 
   return {
     messages,

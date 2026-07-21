@@ -1,7 +1,7 @@
 import type { Database } from "@carbon/database";
 import { Ratelimit, redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
-import { anthropicChatModel, anthropicTitleModel } from "@carbon/utils";
+import { agentChatModel, agentTitleModel } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   convertToModelMessages,
@@ -15,7 +15,7 @@ import {
 } from "ai";
 import { isEphemeralTool, isUiBlockTool } from "./agent.blocks";
 import { buildSystemPrompt } from "./agent.prompt";
-import { anthropic } from "./agent.provider";
+import { agentModel } from "./agent.provider";
 import { createAgentTools } from "./agent.tools";
 import type { BrowsingContext } from "./types";
 
@@ -243,7 +243,7 @@ export function streamChat(
   let finishReason = "stop";
 
   const result = streamText({
-    model: anthropic(anthropicChatModel),
+    model: agentModel(agentChatModel),
     system: buildSystemPrompt(),
     messages: modelMessages,
     tools: createAgentTools(ctx),
@@ -334,7 +334,7 @@ async function maybeTitleThread(
   if (!transcript) return;
 
   const { text } = await generateText({
-    model: anthropic(anthropicTitleModel),
+    model: agentModel(agentTitleModel),
     prompt: `Give this chat a concise 3-6 word title describing what the user wants. No quotes, no trailing punctuation. If there's no clear topic yet, reply exactly "New chat".\n\n${transcript}`
   });
   const title = text

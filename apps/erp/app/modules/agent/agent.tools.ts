@@ -12,6 +12,7 @@ import {
   linkBlock,
   navigateBlock
 } from "./agent.blocks";
+import { AGENT_DATA_TOOLS_ENABLED } from "./agent.config";
 import { readDoc, searchDocs } from "./agent.kb";
 import { findPages } from "./agent.pages";
 
@@ -23,6 +24,11 @@ const readTools = toolMetadata.tools.filter((t) => t.classification === "READ");
 const readToolByName = new Map(readTools.map((t) => [t.name, t]));
 
 export function createAgentTools(ctx: ExecutorContext) {
+  // v1 is docs-only (see agent.config.ts): the live-data tools are wired up but gated
+  // off. When disabled they're simply omitted from the tool set, so the model never
+  // sees them and can't fan out large row payloads into context.
+  const dataTools = AGENT_DATA_TOOLS_ENABLED ? createDataTools(ctx) : {};
+
   return {
     search_docs: tool({
       description:
@@ -41,6 +47,47 @@ export function createAgentTools(ctx: ExecutorContext) {
       execute: async ({ url }) => readDoc({ url })
     }),
 
+    ...dataTools,
+
+    // UI-block tools — presentation only (no data touched), safe in read-only v1.
+    // The tool INPUT is the block the client renders; the ack lets the model continue.
+    present_choice: tool({
+      description:
+        "Ask the user to pick from a set of options. Use when you need the user to choose or disambiguate. Call this as your final action; the user's pick arrives as their next message. Do not add text after it.",
+      inputSchema: choiceBlock,
+      execute: async () => ({ shown: true })
+    }),
+    present_link: tool({
+      description:
+        "Show a labelled link the user can open (a Carbon record page or a docs URL).",
+      inputSchema: linkBlock,
+      execute: async () => ({ shown: true })
+    }),
+    present_button: tool({
+      description:
+        "Show a single suggested action button. When clicked it sends `message` as the user's next message.",
+      inputSchema: buttonBlock,
+      execute: async () => ({ shown: true })
+    }),
+    find_page: tool({
+      description:
+        "Find an app page to send the user to. Query by what the user wants (e.g. 'getting started', 'jobs', 'settings', 'a specific part'). Returns candidate pages, each with a `key`, a label, a sample `url`, and `arity` (how many args it needs — usually 1 id for a record page, 0 for a list/module page). Pick the best `key`, then call navigate.",
+      inputSchema: z.object({ query: z.string() }),
+      execute: async ({ query }) => ({ pages: findPages(query) })
+    }),
+    navigate: tool({
+      description:
+        "Take the user to a page found via find_page. Pass `key` (from find_page) and, if that page has arity > 0, `params` — the positional args it needs, in order (usually one record id you looked up with a read tool, NOT a made-up value). For an arity-0 page, omit params. Never invent a key; only use one find_page returned. Fires once.",
+      inputSchema: navigateBlock,
+      execute: async () => ({ navigated: true })
+    })
+  };
+}
+
+// Live-data ERP tools. Gated behind AGENT_DATA_TOOLS_ENABLED (off in v1). Kept intact
+// so the agent-with-actions milestone can re-enable them behind an enforcement gate.
+function createDataTools(ctx: ExecutorContext) {
+  return {
     search_tools: tool({
       description:
         "Discover READ-only ERP tools by keyword and/or module (e.g. sales, inventory, production).",
@@ -111,39 +158,6 @@ export function createAgentTools(ctx: ExecutorContext) {
           args as Record<string, unknown> | undefined
         );
       }
-    }),
-
-    // UI-block tools — presentation only (no data touched), safe in read-only v1.
-    // The tool INPUT is the block the client renders; the ack lets the model continue.
-    present_choice: tool({
-      description:
-        "Ask the user to pick from a set of options. Use when you need the user to choose or disambiguate. Call this as your final action; the user's pick arrives as their next message. Do not add text after it.",
-      inputSchema: choiceBlock,
-      execute: async () => ({ shown: true })
-    }),
-    present_link: tool({
-      description:
-        "Show a labelled link the user can open (a Carbon record page or a docs URL).",
-      inputSchema: linkBlock,
-      execute: async () => ({ shown: true })
-    }),
-    present_button: tool({
-      description:
-        "Show a single suggested action button. When clicked it sends `message` as the user's next message.",
-      inputSchema: buttonBlock,
-      execute: async () => ({ shown: true })
-    }),
-    find_page: tool({
-      description:
-        "Find an app page to send the user to. Query by what the user wants (e.g. 'getting started', 'jobs', 'settings', 'a specific part'). Returns candidate pages, each with a `key`, a label, a sample `url`, and `arity` (how many args it needs — usually 1 id for a record page, 0 for a list/module page). Pick the best `key`, then call navigate.",
-      inputSchema: z.object({ query: z.string() }),
-      execute: async ({ query }) => ({ pages: findPages(query) })
-    }),
-    navigate: tool({
-      description:
-        "Take the user to a page found via find_page. Pass `key` (from find_page) and, if that page has arity > 0, `params` — the positional args it needs, in order (usually one record id you looked up with a read tool, NOT a made-up value). For an arity-0 page, omit params. Never invent a key; only use one find_page returned. Fires once.",
-      inputSchema: navigateBlock,
-      execute: async () => ({ navigated: true })
     })
   };
 }

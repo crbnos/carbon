@@ -48,7 +48,7 @@ import { PrimaryNavigation, Topbar } from "~/components/Layout";
 import { TimeCardWarning } from "~/components/TimeCardWarning";
 import TrainingPanel from "~/components/TrainingPanel";
 import { useTrainingPanel } from "~/hooks/useTrainingPanel";
-import { AgentBubble } from "~/modules/agent/ui/AgentBubble";
+import { AgentRoot } from "~/modules/agent/ui/AgentRoot";
 import { getOpenClockEntry } from "~/modules/people";
 import {
   getCompanies,
@@ -299,7 +299,7 @@ export default function AuthenticatedRoute() {
                   isOpen={isOpen}
                   onDismiss={dismiss}
                 />
-                <AgentBubble />
+                <AgentRoot />
                 {companySettings?.timeCardEnabled && (
                   <Suspense fallback={null}>
                     <Await resolve={openClockEntry}>
