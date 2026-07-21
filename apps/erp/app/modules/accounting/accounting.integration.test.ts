@@ -4,6 +4,7 @@ import {
   decodeCursor,
   encodeCursor,
   hashRequestBody,
+  paginateByAccountNumber,
   toTrialBalanceRow,
   validateImportEntryBalance
 } from "./accounting.integration";
@@ -80,6 +81,36 @@ describe("validateImportEntryBalance", () => {
       ]
     });
     expect(errors).toHaveLength(0);
+  });
+});
+
+describe("paginateByAccountNumber", () => {
+  const rows = [
+    { accountNumber: "3000" },
+    { accountNumber: "1000" },
+    { accountNumber: "2000" },
+    { accountNumber: "4000" }
+  ];
+
+  it("sorts by accountNumber and honors limit + nextCursor", () => {
+    const { page, nextCursor } = paginateByAccountNumber(rows, { limit: 2 });
+    expect(page.map((r) => r.accountNumber)).toEqual(["1000", "2000"]);
+    expect(decodeCursor(nextCursor)).toBe("2000");
+  });
+
+  it("resumes after the cursor", () => {
+    const { page, nextCursor } = paginateByAccountNumber(rows, {
+      cursor: encodeCursor("2000"),
+      limit: 2
+    });
+    expect(page.map((r) => r.accountNumber)).toEqual(["3000", "4000"]);
+    expect(nextCursor).toBeNull(); // last page
+  });
+
+  it("returns null cursor when everything fits on one page", () => {
+    const { page, nextCursor } = paginateByAccountNumber(rows, { limit: 10 });
+    expect(page).toHaveLength(4);
+    expect(nextCursor).toBeNull();
   });
 });
 

@@ -123,6 +123,31 @@ function num(value: number | string | null): number {
   return Number.isFinite(n) ? n : 0;
 }
 
+/**
+ * Keyset pagination over `accountNumber`. Sorts ascending, drops rows at or
+ * before the decoded cursor, takes `limit`, and returns the next cursor when
+ * more rows remain. Deterministic and DB-independent.
+ */
+export function paginateByAccountNumber<T extends { accountNumber: string }>(
+  rows: T[],
+  opts: { cursor?: string | null; limit: number }
+): { page: T[]; nextCursor: string | null } {
+  const after = decodeCursor(opts.cursor);
+  const sorted = rows
+    .slice()
+    .sort((a, b) => a.accountNumber.localeCompare(b.accountNumber))
+    .filter((row) => (after ? row.accountNumber > after : true));
+
+  const page = sorted.slice(0, opts.limit);
+  const hasMore = sorted.length > opts.limit;
+  const nextCursor =
+    hasMore && page.length > 0
+      ? encodeCursor(page[page.length - 1]!.accountNumber)
+      : null;
+
+  return { page, nextCursor };
+}
+
 export function toTrialBalanceRow(
   row: TrialBalanceRpcRow,
   currencyCode: string
