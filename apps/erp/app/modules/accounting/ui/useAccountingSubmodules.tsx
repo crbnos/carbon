@@ -16,7 +16,9 @@ import {
   LuLayers,
   LuScale,
   LuSheet,
-  LuTrendingUp
+  LuTarget,
+  LuTrendingUp,
+  LuWallet
 } from "react-icons/lu";
 import { usePermissions, useRouteData, useSettings } from "~/hooks";
 import type { AuthenticatedRouteGroup, Role } from "~/types";
@@ -27,6 +29,8 @@ const accountingOnlyRoutes = new Set<string>([
   path.to.balanceSheet,
   path.to.incomeStatement,
   path.to.trialBalance,
+  path.to.budgetVsActual,
+  path.to.budgets,
   path.to.intercompany,
   path.to.accountingJournals,
   path.to.accountingPeriods,
@@ -58,6 +62,12 @@ export default function useAccountingSubmodules() {
             to: path.to.trialBalance,
             role: "employee",
             icon: <LuFileSpreadsheet />
+          },
+          {
+            name: t`Budget vs Actual`,
+            to: path.to.budgetVsActual,
+            role: "employee",
+            icon: <LuTarget />
           }
         ]
       },
@@ -75,6 +85,12 @@ export default function useAccountingSubmodules() {
             to: path.to.accountingJournals,
             role: "employee",
             icon: <LuBookOpen />
+          },
+          {
+            name: t`Budgets`,
+            to: path.to.budgets,
+            role: "employee",
+            icon: <LuWallet />
           },
           {
             name: t`Accounting Periods`,

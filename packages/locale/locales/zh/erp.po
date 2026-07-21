@@ -1813,6 +1813,12 @@ msgstr "浏览库"
 msgid "Bucket"
 msgstr "存储桶"
 
+msgid "Budget vs Actual"
+msgstr "预算与实际"
+
+msgid "Budgets"
+msgstr "预算"
+
 msgid "Buffer stock the demand-based policy holds back to absorb consumption spikes within the accumulation period."
 msgstr "需求政策为吸收累积期内的消费高峰而保留的缓冲库存。"
 

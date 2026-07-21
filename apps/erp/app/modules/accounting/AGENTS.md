@@ -9,6 +9,7 @@ Chart of accounts, journal entries, general ledger, fiscal periods, currencies, 
 - **Fiscal Year Settings** — configurable start month for fiscal and tax years. Accounting periods auto-created via `getOrCreateAccountingPeriod`.
 - **Dimensions** — analytical tags on journal lines (Location, Department, Project, etc.). Entity-type dimensions resolve values from their source table; Custom dimensions use `dimensionValue`.
 - **Cost Centers** — hierarchical organizational units for cost allocation via `parentCostCenterId`.
+- **Budgeting** (Phase 1) — a `budget` header is a named plan for one `fiscalYear` (multiple per year act as versions); `budgetLine` holds one upsertable cell per `(budget, account, accountingPeriod, costCenter?)` with a GL-signed `amount`. Lifecycle `Draft → Approved → Archived`; lines are writable only while `Draft` (enforced by the `budgetLine_check_editable` trigger — copy to a new Draft to revise). Amounts store GL-signed (positive = debit) but the matrix UI / Budget vs Actual report normalize to natural sign per account class. Seeding (`copyBudgetLines`, `seedBudgetLinesFromActuals`) and the `budgetVsActual` report are SQL functions (SECURITY INVOKER) called via `client.rpc`. Reuses `accounting_*` permissions. Tables are absent from the cloud-generated types → accessed via `(client as any)`.
 - **Fixed Assets** — capital assets with depreciation. Supports straight-line, declining balance, MACRS, and units-of-production methods. Depreciation runs generate journal entries. See `.claude/rules/fixed-asset-lifecycle.md`.
 - **Intercompany** — transactions between companies in a group. `runIntercompanyMatching` pairs them; `generateEliminations` creates reversing entries for consolidation.
 - **Net Income** — computed equity line on the balance sheet, never a posted account. Uses synthetic `NET_INCOME_ACCOUNT_ID` constant.
@@ -55,6 +56,7 @@ pnpm --filter @carbon/erp test -- --testPathPattern=accounting
 | `currency` / `currencyCode` / `exchangeRateHistory` | Multi-currency with historical rates |
 | `paymentTerm` | Payment terms (Net 30, 2/10 Net 30, etc.) |
 | `costCenter` | Hierarchical cost allocation units |
+| `budget` / `budgetLine` | GL budgeting: named per-fiscal-year plans + per-cell amounts (account × period × cost center). `budgetStatus` Draft→Approved→Archived; `budgetLine` immutable once the parent is Approved (trigger). Cell uniqueness via `budgetLine_cell_key` (`NULLS NOT DISTINCT`). |
 | `dimension` / `dimensionValue` | Analytical dimensions and custom values |
 | `fixedAsset` / `fixedAssetClass` | Capital assets with depreciation configuration |
 | `depreciationRun` / `depreciationRunLine` | Batch depreciation processing |
@@ -79,6 +81,9 @@ pnpm --filter @carbon/erp test -- --testPathPattern=accounting
 - `translateCompanyBalances` — balance translation for multi-currency consolidation
 - `getDimensions` / `getActiveDimensionsWithValues` / `saveJournalLineDimensions` — dimension management
 - `getCostCenters` / `getCostCentersTree` — cost center hierarchy
+- `getBudgets` / `getBudget` / `getBudgetsList` / `upsertBudget` (ensures the FY's periods exist on create) / `approveBudget` / `archiveBudget` / `deleteBudget` — budget header lifecycle
+- `getBudgetLines` / `copyBudgetLines` / `seedBudgetLinesFromActuals` (RPCs) / `getAccountingPeriodsForFiscalYear` — budget matrix data + seeding
+- `getBudgetVsActual` — Budget vs Actual report via the `budgetVsActual` RPC (budget vs GL actuals by account × period, cost-center rollup)
 - `getFixedAssets` / `insertFixedAsset` / `insertDepreciationRun` — fixed asset lifecycle
 - `createIntercompanyTransaction` / `runIntercompanyMatching` / `generateEliminations` — IC processing
 

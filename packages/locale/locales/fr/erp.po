@@ -1813,6 +1813,12 @@ msgstr "Parcourir la bibliothèque"
 msgid "Bucket"
 msgstr "Compartiment"
 
+msgid "Budget vs Actual"
+msgstr "Budget vs Réalisé"
+
+msgid "Budgets"
+msgstr "Budgets"
+
 msgid "Buffer stock the demand-based policy holds back to absorb consumption spikes within the accumulation period."
 msgstr "Stock tampon que la politique basée sur la demande conserve pour absorber les pics de consommation au cours de la période d'accumulation."
 

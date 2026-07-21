@@ -29,6 +29,7 @@ const importCsvValidator = z.object({
     "tool",
     "workCenter",
     "process",
+    "budgetLine",
   ]),
   filePath: z.string(),
   columnMappings: z.record(z.string()),
@@ -2279,6 +2280,143 @@ serve(async (req: Request) => {
           companyId,
           userId,
           summary,
+        });
+        break;
+      }
+      case "budgetLine": {
+        // Enum fields (`budget`, `costCenter`) arrive pre-resolved to ids by the
+        // mapping step (like workCenter's locationId). Amounts in the file are
+        // natural-signed per account class; stored GL-signed (positive = debit).
+        const isDebitNormal = (cls: string | null | undefined) =>
+          cls === "Asset" || cls === "Expense";
+
+        const budgetIds = new Set(
+          mappedRecords.map((r) => r.budget).filter(Boolean)
+        );
+        const budgets = budgetIds.size
+          ? await db
+              .selectFrom("budget" as any)
+              .select(["id", "fiscalYear", "status"] as any)
+              .where("companyId", "=", companyId)
+              .where("id", "in", [...budgetIds])
+              .execute()
+          : [];
+        const budgetById = new Map(budgets.map((b: any) => [b.id, b]));
+
+        // The chart of accounts is scoped by companyGroupId, not companyId.
+        const company = await db
+          .selectFrom("company")
+          .select(["companyGroupId"])
+          .where("id", "=", companyId)
+          .executeTakeFirst();
+        const companyGroupId = company?.companyGroupId;
+
+        const accountNumbers = new Set(
+          mappedRecords
+            .map((r) => (r.accountNumber ?? "").trim())
+            .filter(Boolean)
+        );
+        const accounts =
+          companyGroupId && accountNumbers.size
+            ? await db
+                .selectFrom("account")
+                .select(["id", "number", "class"])
+                .where("companyGroupId", "=", companyGroupId)
+                .where("number", "in", [...accountNumbers])
+                .execute()
+            : [];
+        const accountByNumber = new Map(
+          accounts.map((a: any) => [a.number, a])
+        );
+
+        const fiscalYears = new Set(
+          [...budgetById.values()].map((b: any) => b.fiscalYear)
+        );
+        const periods = fiscalYears.size
+          ? await db
+              .selectFrom("accountingPeriod" as any)
+              .select(["id", "fiscalYear", "periodNumber"] as any)
+              .where("companyId", "=", companyId)
+              .where("fiscalYear", "in", [...fiscalYears])
+              .execute()
+          : [];
+        const periodByYearAndNumber = new Map(
+          periods.map((p: any) => [`${p.fiscalYear}:${p.periodNumber}`, p.id])
+        );
+
+        await db.transaction().execute(async (trx) => {
+          for (const [rowIndex, record] of mappedRecords.entries()) {
+            const budget = budgetById.get(record.budget) as any;
+            if (!budget) {
+              summary.errors.push({ row: rowIndex, reason: "Unknown budget" });
+              continue;
+            }
+            if (budget.status !== "Draft") {
+              summary.errors.push({
+                row: rowIndex,
+                reason: `Budget is ${budget.status} — only Draft budgets can be imported into`,
+              });
+              continue;
+            }
+            const account = accountByNumber.get((record.accountNumber ?? "").trim());
+            if (!account) {
+              summary.errors.push({
+                row: rowIndex,
+                reason: `Unknown account number: ${record.accountNumber}`,
+              });
+              continue;
+            }
+            const costCenterId = record.costCenter || null;
+
+            for (let periodNumber = 1; periodNumber <= 12; periodNumber++) {
+              const raw = record[`period${periodNumber}`];
+              if (raw === undefined || raw === null || String(raw).trim() === "") {
+                continue;
+              }
+              const amount = parseFloat(String(raw).replace(/[$,]/g, ""));
+              if (Number.isNaN(amount)) {
+                summary.errors.push({
+                  row: rowIndex,
+                  reason: `Invalid amount in period ${periodNumber}: ${raw}`,
+                });
+                continue;
+              }
+              const accountingPeriodId = periodByYearAndNumber.get(
+                `${budget.fiscalYear}:${periodNumber}`
+              );
+              if (!accountingPeriodId) {
+                summary.errors.push({
+                  row: rowIndex,
+                  reason: `No accounting period ${periodNumber} for fiscal year ${budget.fiscalYear}`,
+                });
+                continue;
+              }
+
+              const stored = isDebitNormal(account.class) ? amount : -amount;
+
+              await trx
+                .insertInto("budgetLine" as any)
+                .values({
+                  budgetId: budget.id,
+                  companyId,
+                  accountId: account.id,
+                  accountingPeriodId,
+                  costCenterId,
+                  amount: stored,
+                  createdBy: userId,
+                  createdAt: new Date().toISOString(),
+                } as any)
+                .onConflict((oc: any) =>
+                  oc.constraint("budgetLine_cell_key").doUpdateSet({
+                    amount: stored,
+                    updatedBy: userId,
+                    updatedAt: new Date().toISOString(),
+                  })
+                )
+                .execute();
+              summary.inserted++;
+            }
+          }
         });
         break;
       }

@@ -1470,6 +1470,62 @@ export const fieldMappings = {
       }
     }
   },
+  budgetLine: {
+    budget: {
+      label: "Budget",
+      required: true,
+      type: "enum",
+      enumData: {
+        description: "The budget to import lines into (must be Draft)",
+        fetcher: async (
+          client: SupabaseClient<Database>,
+          companyId: string
+        ) => {
+          return (client as any)
+            .from("budget")
+            .select("id, name")
+            .eq("companyId", companyId)
+            .eq("status", "Draft")
+            .order("name");
+        }
+      }
+    },
+    accountNumber: {
+      label: "Account Number",
+      required: true,
+      type: "string"
+    },
+    costCenter: {
+      label: "Cost Center",
+      required: false,
+      type: "enum",
+      enumData: {
+        description: "Optional cost center for these amounts",
+        fetcher: async (
+          client: SupabaseClient<Database>,
+          companyId: string
+        ) => {
+          return client
+            .from("costCenter")
+            .select("id, name")
+            .eq("companyId", companyId)
+            .order("name");
+        }
+      }
+    },
+    period1: { label: "Period 1", required: false, type: "number" },
+    period2: { label: "Period 2", required: false, type: "number" },
+    period3: { label: "Period 3", required: false, type: "number" },
+    period4: { label: "Period 4", required: false, type: "number" },
+    period5: { label: "Period 5", required: false, type: "number" },
+    period6: { label: "Period 6", required: false, type: "number" },
+    period7: { label: "Period 7", required: false, type: "number" },
+    period8: { label: "Period 8", required: false, type: "number" },
+    period9: { label: "Period 9", required: false, type: "number" },
+    period10: { label: "Period 10", required: false, type: "number" },
+    period11: { label: "Period 11", required: false, type: "number" },
+    period12: { label: "Period 12", required: false, type: "number" }
+  },
   process: {
     id: {
       label: "Unique ID",
@@ -1600,7 +1656,8 @@ export const importPermissions: Record<keyof typeof fieldMappings, string> = {
   consumable: "parts",
   workCenter: "production",
   process: "production",
-  fixedAsset: "accounting"
+  fixedAsset: "accounting",
+  budgetLine: "accounting"
 };
 
 // Zod fragments for the method imports. Every method cell is an optional string at
@@ -2205,5 +2262,31 @@ export const importSchemas: Record<
       .string()
       .optional()
       .describe("The location ID where the asset is located")
+  }),
+  budgetLine: z.object({
+    budget: z
+      .string()
+      .min(1, { message: "Budget is required" })
+      .describe("The budget to import lines into (must be Draft)"),
+    accountNumber: z
+      .string()
+      .min(1, { message: "Account Number is required" })
+      .describe("The GL account number for these amounts"),
+    costCenter: z
+      .string()
+      .optional()
+      .describe("Optional cost center for these amounts"),
+    period1: z.string().optional().describe("Amount for period 1"),
+    period2: z.string().optional().describe("Amount for period 2"),
+    period3: z.string().optional().describe("Amount for period 3"),
+    period4: z.string().optional().describe("Amount for period 4"),
+    period5: z.string().optional().describe("Amount for period 5"),
+    period6: z.string().optional().describe("Amount for period 6"),
+    period7: z.string().optional().describe("Amount for period 7"),
+    period8: z.string().optional().describe("Amount for period 8"),
+    period9: z.string().optional().describe("Amount for period 9"),
+    period10: z.string().optional().describe("Amount for period 10"),
+    period11: z.string().optional().describe("Amount for period 11"),
+    period12: z.string().optional().describe("Amount for period 12")
   })
 } as const;

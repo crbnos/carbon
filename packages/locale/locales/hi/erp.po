@@ -1813,6 +1813,12 @@ msgstr "लाइब्रेरी ब्राउज़ करें"
 msgid "Bucket"
 msgstr "बकेट"
 
+msgid "Budget vs Actual"
+msgstr "बजट बनाम वास्तविक"
+
+msgid "Budgets"
+msgstr "बजट"
+
 msgid "Buffer stock the demand-based policy holds back to absorb consumption spikes within the accumulation period."
 msgstr "बफर स्टॉक जिसे मांग-आधारित नीति संचय अवधि के भीतर खपत स्पाइक्स को अवशोषित करने के लिए वापस रखती है।"
 

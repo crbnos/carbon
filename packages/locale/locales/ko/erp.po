@@ -1813,6 +1813,12 @@ msgstr "라이브러리 둘러보기"
 msgid "Bucket"
 msgstr "버킷"
 
+msgid "Budget vs Actual"
+msgstr "예산 vs 실제"
+
+msgid "Budgets"
+msgstr "예산"
+
 msgid "Buffer stock the demand-based policy holds back to absorb consumption spikes within the accumulation period."
 msgstr "누적 기간 내 소비 급증을 흡수하기 위해 수요 기반 정책이 확보해두는 완충 재고입니다."
 

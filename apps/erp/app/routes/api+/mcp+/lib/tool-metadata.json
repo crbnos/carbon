@@ -1,6 +1,6 @@
 {
-  "generated": "2026-07-21T01:23:07.289Z",
-  "totalTools": 1374,
+  "generated": "2026-07-21T08:15:39.671Z",
+  "totalTools": 1386,
   "modules": 15,
   "tools": [
     {
@@ -1996,6 +1996,356 @@
         "required": [
           "name",
           "ownerId"
+        ]
+      }
+    },
+    {
+      "name": "accounting_deleteBudget",
+      "module": "accounting",
+      "classification": "DESTRUCTIVE",
+      "description": "delete budget",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "budgetId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "budgetId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "budgetId"
+        ]
+      }
+    },
+    {
+      "name": "accounting_getBudget",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get budget",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "budgetId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "budgetId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "budgetId"
+        ]
+      }
+    },
+    {
+      "name": "accounting_getBudgets",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get budgets",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "args": {
+            "type": "object",
+            "properties": {
+              "limit": {
+                "type": "integer",
+                "default": 100
+              },
+              "offset": {
+                "type": "integer",
+                "default": 0
+              },
+              "search": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "accounting_getBudgetsList",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get budgets list",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "accounting_upsertBudget",
+      "module": "accounting",
+      "classification": "WRITE",
+      "description": "upsert budget",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "budget"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "budget": {}
+        },
+        "required": [
+          "budget"
+        ]
+      }
+    },
+    {
+      "name": "accounting_approveBudget",
+      "module": "accounting",
+      "classification": "WRITE",
+      "description": "approve budget",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "budgetId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "budgetId"
+        ]
+      }
+    },
+    {
+      "name": "accounting_archiveBudget",
+      "module": "accounting",
+      "classification": "WRITE",
+      "description": "archive budget",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "budgetId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "budgetId"
+        ]
+      }
+    },
+    {
+      "name": "accounting_getBudgetLines",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get budget lines",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "budgetId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "budgetId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "budgetId"
+        ]
+      }
+    },
+    {
+      "name": "accounting_copyBudgetLines",
+      "module": "accounting",
+      "classification": "WRITE",
+      "description": "copy budget lines",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "sourceBudgetId": {
+            "type": "string"
+          },
+          "targetBudgetId": {
+            "type": "string"
+          },
+          "adjustmentFactor": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "sourceBudgetId",
+          "targetBudgetId",
+          "adjustmentFactor"
+        ]
+      }
+    },
+    {
+      "name": "accounting_seedBudgetLinesFromActuals",
+      "module": "accounting",
+      "classification": "WRITE",
+      "description": "seed budget lines from actuals",
+      "paramCount": 4,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "sourceFiscalYear": {
+            "type": "number"
+          },
+          "targetBudgetId": {
+            "type": "string"
+          },
+          "adjustmentFactor": {
+            "type": "number"
+          },
+          "spread": {
+            "type": "string",
+            "enum": [
+              "source",
+              "even"
+            ]
+          }
+        },
+        "required": [
+          "sourceFiscalYear",
+          "targetBudgetId",
+          "adjustmentFactor",
+          "spread"
+        ]
+      }
+    },
+    {
+      "name": "accounting_getBudgetVsActual",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get budget vs actual",
+      "paramCount": 4,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "budgetId": {
+            "type": "string"
+          },
+          "costCenterId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "rollup": {
+            "type": "boolean"
+          },
+          "untagged": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "budgetId"
+        ]
+      }
+    },
+    {
+      "name": "accounting_getAccountingPeriodsForFiscalYear",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get accounting periods for fiscal year",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "fiscalYear"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "fiscalYear": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "fiscalYear"
         ]
       }
     },
