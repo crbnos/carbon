@@ -42,7 +42,7 @@ pnpm --filter @carbon/jobs dev:jobs   # Start local Inngest dev server
 
 | Handler | Event | Purpose |
 |---------|-------|---------|
-| WEBHOOK | `carbon/event-webhook` | POST to configured URL |
+| WEBHOOK | `carbon/event-webhook` | POST to configured URL. When `config.registrationId` is present, sends a curated + HMAC-signed envelope (`webhook-signing.ts`); otherwise the legacy raw-diff payload (unchanged). |
 | SYNC | `carbon/event-sync` | Accounting sync (Xero) |
 | SEARCH | `carbon/event-search` | Upsert/delete search index |
 | AUDIT | `carbon/event-audit` | Per-company audit log |
