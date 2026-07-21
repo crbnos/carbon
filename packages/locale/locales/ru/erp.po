@@ -10699,6 +10699,15 @@ msgstr "Выберите строку предложения"
 msgid "Select a reason for why the quote was not created."
 msgstr "Выберите причину, по которой предложение не было создано."
 
+msgid "Select a shape first to see available options"
+msgstr "Сначала выберите форму, чтобы увидеть доступные варианты"
+
+msgid "Select a substance and shape first to see available options"
+msgstr "Сначала выберите вещество и форму, чтобы увидеть доступные варианты"
+
+msgid "Select a substance first to see available options"
+msgstr "Сначала выберите вещество, чтобы увидеть доступные варианты"
+
 msgid "Select a team"
 msgstr "Выберите команду"
 

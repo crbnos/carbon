@@ -10699,6 +10699,15 @@ msgstr "Wählen Sie eine Angebotszeile aus"
 msgid "Select a reason for why the quote was not created."
 msgstr "Wählen Sie einen Grund aus, warum das Angebot nicht erstellt wurde."
 
+msgid "Select a shape first to see available options"
+msgstr "Wählen Sie zunächst eine Form aus, um verfügbare Optionen anzuzeigen"
+
+msgid "Select a substance and shape first to see available options"
+msgstr "Wählen Sie zunächst einen Stoff und eine Form aus, um verfügbare Optionen anzuzeigen"
+
+msgid "Select a substance first to see available options"
+msgstr "Wählen Sie zunächst einen Stoff aus, um verfügbare Optionen anzuzeigen"
+
 msgid "Select a team"
 msgstr "Wählen Sie ein Team"
 

@@ -10699,6 +10699,15 @@ msgstr "Seleccionar una línea de cotización"
 msgid "Select a reason for why the quote was not created."
 msgstr "Selecciona una razón por la que la cotización no fue creada."
 
+msgid "Select a shape first to see available options"
+msgstr "Selecciona primero una forma para ver las opciones disponibles"
+
+msgid "Select a substance and shape first to see available options"
+msgstr "Selecciona primero una sustancia y una forma para ver las opciones disponibles"
+
+msgid "Select a substance first to see available options"
+msgstr "Selecciona primero una sustancia para ver las opciones disponibles"
+
 msgid "Select a team"
 msgstr "Selecciona un equipo"
 

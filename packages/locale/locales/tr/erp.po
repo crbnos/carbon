@@ -10699,6 +10699,15 @@ msgstr "Bir fiyat teklifi satırı seçin"
 msgid "Select a reason for why the quote was not created."
 msgstr "Teklifin neden oluşturulmadığına dair bir sebep seçin."
 
+msgid "Select a shape first to see available options"
+msgstr "Mevcut seçenekleri görmek için önce bir şekil seçin"
+
+msgid "Select a substance and shape first to see available options"
+msgstr "Mevcut seçenekleri görmek için önce bir madde ve şekil seçin"
+
+msgid "Select a substance first to see available options"
+msgstr "Mevcut seçenekleri görmek için önce bir madde seçin"
+
 msgid "Select a team"
 msgstr "Bir ekip seçin"
 

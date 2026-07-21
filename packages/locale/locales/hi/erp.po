@@ -10699,6 +10699,15 @@ msgstr "एक उद्धरण लाइन चुनें"
 msgid "Select a reason for why the quote was not created."
 msgstr "उद्धरण क्यों नहीं बनाया गया इसका कारण चुनें।"
 
+msgid "Select a shape first to see available options"
+msgstr "उपलब्ध विकल्प देखने के लिए पहले एक आकार चुनें"
+
+msgid "Select a substance and shape first to see available options"
+msgstr "उपलब्ध विकल्प देखने के लिए पहले एक पदार्थ और आकार चुनें"
+
+msgid "Select a substance first to see available options"
+msgstr "उपलब्ध विकल्प देखने के लिए पहले एक पदार्थ चुनें"
+
 msgid "Select a team"
 msgstr "एक टीम चुनें"
 

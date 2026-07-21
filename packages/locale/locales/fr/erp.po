@@ -10699,6 +10699,15 @@ msgstr "Sélectionner une ligne de devis"
 msgid "Select a reason for why the quote was not created."
 msgstr "Sélectionnez une raison pour laquelle le devis n'a pas été créé."
 
+msgid "Select a shape first to see available options"
+msgstr "Sélectionnez d'abord une forme pour voir les options disponibles"
+
+msgid "Select a substance and shape first to see available options"
+msgstr "Sélectionnez d'abord une substance et une forme pour voir les options disponibles"
+
+msgid "Select a substance first to see available options"
+msgstr "Sélectionnez d'abord une substance pour voir les options disponibles"
+
 msgid "Select a team"
 msgstr "Sélectionner une équipe"
 

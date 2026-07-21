@@ -10699,6 +10699,15 @@ msgstr "选择报价行"
 msgid "Select a reason for why the quote was not created."
 msgstr "选择未创建报价的原因。"
 
+msgid "Select a shape first to see available options"
+msgstr "请先选择形状以查看可用选项"
+
+msgid "Select a substance and shape first to see available options"
+msgstr "请先选择物质和形状以查看可用选项"
+
+msgid "Select a substance first to see available options"
+msgstr "请先选择物质以查看可用选项"
+
 msgid "Select a team"
 msgstr "选择一个团队"
 

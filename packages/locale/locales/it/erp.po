@@ -10699,6 +10699,15 @@ msgstr "Seleziona una riga di preventivo"
 msgid "Select a reason for why the quote was not created."
 msgstr "Seleziona un motivo per cui l'offerta non è stata creata."
 
+msgid "Select a shape first to see available options"
+msgstr "Seleziona prima una forma per visualizzare le opzioni disponibili"
+
+msgid "Select a substance and shape first to see available options"
+msgstr "Seleziona prima una sostanza e una forma per visualizzare le opzioni disponibili"
+
+msgid "Select a substance first to see available options"
+msgstr "Seleziona prima una sostanza per visualizzare le opzioni disponibili"
+
 msgid "Select a team"
 msgstr "Seleziona un team"
 

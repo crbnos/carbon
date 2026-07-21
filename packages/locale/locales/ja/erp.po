@@ -10699,6 +10699,15 @@ msgstr "見積行を選択"
 msgid "Select a reason for why the quote was not created."
 msgstr "見積が作成されなかった理由を選択してください。"
 
+msgid "Select a shape first to see available options"
+msgstr "形状を先に選択すると、利用可能なオプションが表示されます。"
+
+msgid "Select a substance and shape first to see available options"
+msgstr "物質と形状を先に選択すると、利用可能なオプションが表示されます。"
+
+msgid "Select a substance first to see available options"
+msgstr "物質を先に選択すると、利用可能なオプションが表示されます。"
+
 msgid "Select a team"
 msgstr "チームを選択"
 

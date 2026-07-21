@@ -10699,6 +10699,15 @@ msgstr "견적 라인 선택"
 msgid "Select a reason for why the quote was not created."
 msgstr "견적이 생성되지 않은 사유를 선택하세요."
 
+msgid "Select a shape first to see available options"
+msgstr "먼저 형상을 선택하면 사용 가능한 옵션이 표시됩니다"
+
+msgid "Select a substance and shape first to see available options"
+msgstr "먼저 재질과 형상을 선택하면 사용 가능한 옵션이 표시됩니다"
+
+msgid "Select a substance first to see available options"
+msgstr "먼저 재질을 선택하면 사용 가능한 옵션이 표시됩니다"
+
 msgid "Select a team"
 msgstr "팀 선택"
 

@@ -10699,6 +10699,15 @@ msgstr "Selecione uma linha de cotação"
 msgid "Select a reason for why the quote was not created."
 msgstr "Selecione um motivo pelo qual a cotação não foi criada."
 
+msgid "Select a shape first to see available options"
+msgstr "Selecione uma forma primeiro para ver as opções disponíveis"
+
+msgid "Select a substance and shape first to see available options"
+msgstr "Selecione uma substância e forma primeiro para ver as opções disponíveis"
+
+msgid "Select a substance first to see available options"
+msgstr "Selecione uma substância primeiro para ver as opções disponíveis"
+
 msgid "Select a team"
 msgstr "Selecione uma equipe"
 
