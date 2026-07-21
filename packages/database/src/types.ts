@@ -26509,11 +26509,15 @@ export type Database = {
           materialMakeMethodId: string | null
           methodOperationId: string | null
           methodType: Database["public"]["Enums"]["methodType"]
+          methodTypeOverridden: boolean
           order: number
           productionQuantity: number | null
           quantity: number
+          replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
+          replenishmentSystemOverridden: boolean
           scrapQuantity: number
           sourcingType: Database["public"]["Enums"]["sourcingType"]
+          sourcingTypeOverridden: boolean
           storageUnitIds: Json
           tags: string[] | null
           unitOfMeasureCode: string
@@ -26533,11 +26537,15 @@ export type Database = {
           materialMakeMethodId?: string | null
           methodOperationId?: string | null
           methodType?: Database["public"]["Enums"]["methodType"]
+          methodTypeOverridden?: boolean
           order?: number
           productionQuantity?: number | null
           quantity: number
+          replenishmentSystem?: Database["public"]["Enums"]["itemReplenishmentSystem"]
+          replenishmentSystemOverridden?: boolean
           scrapQuantity?: number
           sourcingType?: Database["public"]["Enums"]["sourcingType"]
+          sourcingTypeOverridden?: boolean
           storageUnitIds?: Json
           tags?: string[] | null
           unitOfMeasureCode: string
@@ -26557,11 +26565,15 @@ export type Database = {
           materialMakeMethodId?: string | null
           methodOperationId?: string | null
           methodType?: Database["public"]["Enums"]["methodType"]
+          methodTypeOverridden?: boolean
           order?: number
           productionQuantity?: number | null
           quantity?: number
+          replenishmentSystem?: Database["public"]["Enums"]["itemReplenishmentSystem"]
+          replenishmentSystemOverridden?: boolean
           scrapQuantity?: number
           sourcingType?: Database["public"]["Enums"]["sourcingType"]
+          sourcingTypeOverridden?: boolean
           storageUnitIds?: Json
           tags?: string[] | null
           unitOfMeasureCode?: string
@@ -64292,14 +64304,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -67678,6 +67690,13 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
+            columns: ["invoiceCountryCode"]
+            isOneToOne: false
+            referencedRelation: "country"
+            referencedColumns: ["alpha2"]
+          },
+          {
+            foreignKeyName: "address_countryCode_fkey"
             columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
@@ -67686,13 +67705,6 @@ export type Database = {
           {
             foreignKeyName: "address_countryCode_fkey"
             columns: ["shipmentCountryCode"]
-            isOneToOne: false
-            referencedRelation: "country"
-            referencedColumns: ["alpha2"]
-          },
-          {
-            foreignKeyName: "address_countryCode_fkey"
-            columns: ["invoiceCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]

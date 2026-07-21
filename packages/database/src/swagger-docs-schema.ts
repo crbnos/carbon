@@ -13048,6 +13048,18 @@ export default {
             $ref: "#/parameters/rowFilter.methodMaterial.sourcingType"
           },
           {
+            $ref: "#/parameters/rowFilter.methodMaterial.replenishmentSystem"
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodMaterial.replenishmentSystemOverridden"
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodMaterial.methodTypeOverridden"
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodMaterial.sourcingTypeOverridden"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -13173,6 +13185,18 @@ export default {
             $ref: "#/parameters/rowFilter.methodMaterial.sourcingType"
           },
           {
+            $ref: "#/parameters/rowFilter.methodMaterial.replenishmentSystem"
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodMaterial.replenishmentSystemOverridden"
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodMaterial.methodTypeOverridden"
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodMaterial.sourcingTypeOverridden"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -13250,6 +13274,18 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.methodMaterial.sourcingType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodMaterial.replenishmentSystem"
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodMaterial.replenishmentSystemOverridden"
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodMaterial.methodTypeOverridden"
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodMaterial.sourcingTypeOverridden"
           },
           {
             $ref: "#/parameters/body.methodMaterial"
@@ -97660,7 +97696,11 @@ export default {
         "scrapQuantity",
         "kit",
         "storageUnitIds",
-        "sourcingType"
+        "sourcingType",
+        "replenishmentSystem",
+        "replenishmentSystemOverridden",
+        "methodTypeOverridden",
+        "sourcingTypeOverridden"
       ],
       properties: {
         id: {
@@ -97776,6 +97816,27 @@ export default {
           enum: ["Specified", "Drop Ship", "Ship from Inventory"],
           format: 'public."sourcingType"',
           type: "string"
+        },
+        replenishmentSystem: {
+          default: "Buy",
+          enum: ["Buy", "Make", "Buy and Make"],
+          format: 'public."itemReplenishmentSystem"',
+          type: "string"
+        },
+        replenishmentSystemOverridden: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        methodTypeOverridden: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        sourcingTypeOverridden: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
         }
       },
       type: "object"
@@ -137685,6 +137746,30 @@ export default {
     },
     "rowFilter.methodMaterial.sourcingType": {
       name: "sourcingType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.methodMaterial.replenishmentSystem": {
+      name: "replenishmentSystem",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.methodMaterial.replenishmentSystemOverridden": {
+      name: "replenishmentSystemOverridden",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.methodMaterial.methodTypeOverridden": {
+      name: "methodTypeOverridden",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.methodMaterial.sourcingTypeOverridden": {
+      name: "sourcingTypeOverridden",
       required: false,
       in: "query",
       type: "string"
