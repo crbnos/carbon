@@ -6186,6 +6186,9 @@ msgstr "in selected period"
 msgid "In stock"
 msgstr "In stock"
 
+msgid "In stock only"
+msgstr "In stock only"
+
 msgid "In the loop together"
 msgstr "In the loop together"
 
@@ -13488,6 +13491,9 @@ msgstr "Variance from physical inventory count adjustments"
 
 msgid "Variance in outside processing costs"
 msgstr "Variance in outside processing costs"
+
+msgid "Variance only"
+msgstr "Variance only"
 
 msgid "VAT Number"
 msgstr "VAT Number"

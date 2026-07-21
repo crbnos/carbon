@@ -6186,6 +6186,9 @@ msgstr "選択された期間内"
 msgid "In stock"
 msgstr "在庫あり"
 
+msgid "In stock only"
+msgstr ""
+
 msgid "In the loop together"
 msgstr "一緒にループの中にいる"
 
@@ -13488,6 +13491,9 @@ msgstr "物理的在庫数カウント調整からの差異"
 
 msgid "Variance in outside processing costs"
 msgstr "外部処理コストの差異"
+
+msgid "Variance only"
+msgstr ""
 
 msgid "VAT Number"
 msgstr "VAT番号"

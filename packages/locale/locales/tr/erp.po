@@ -6186,6 +6186,9 @@ msgstr "seçilen dönemde"
 msgid "In stock"
 msgstr "Stokta"
 
+msgid "In stock only"
+msgstr ""
+
 msgid "In the loop together"
 msgstr "Birlikte döngüde"
 
@@ -13488,6 +13491,9 @@ msgstr "Fiziksel envanter sayısı ayarlamalarından varyans"
 
 msgid "Variance in outside processing costs"
 msgstr "Dış işleme maliyetlerinde varyans"
+
+msgid "Variance only"
+msgstr ""
 
 msgid "VAT Number"
 msgstr "KDV Numarası"
