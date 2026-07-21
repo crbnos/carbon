@@ -4,6 +4,8 @@ Recurring patterns and mistakes to avoid. Review at session start for relevant t
 
 Format: `Context → Problem → Rule → Applies to`
 
+**Pattern for adding lessons:** When you encounter the same mistake 2+ times, add an entry here. Then ask: could a lint rule, type check, or automated gate catch this? If yes, propose the infrastructure.
+
 ---
 
 ## ioredis retryStrategy returning null kills auto-recovery

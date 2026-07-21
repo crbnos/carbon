@@ -6,8 +6,9 @@ paths:
 
 # Coding Conventions (General)
 
-Cross-cutting conventions for the whole repo. For deep dives, load the focused
-rules — this file does not repeat them:
+Cross-cutting conventions for the whole repo. **Start with the harness principles** in [harness-principles.md](harness-principles.md) — JIT context loading, precedent-first construction, evidence matching, and authority boundaries.
+
+For deep dives, load the focused rules — this file does not repeat them:
 
 | Topic | Rule |
 |-------|------|

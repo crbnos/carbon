@@ -10,18 +10,26 @@ Carbon is a manufacturing ERP/MES/QMS. It contains apps for ERP, MES, academy, a
 - Read `.ai/lessons.md` before non-trivial changes to avoid known pitfalls.
 - Preserve behavior unless the user or a spec explicitly asks for a behavior change.
 - Keep changes minimal, focused, and integrated through real call sites.
-- Use existing components — grep `packages/react/src/` and `apps/erp/app/components/` before writing UI.
+- Use existing components — grep `packages/react/src/` and `apps/erp/app/components/` before writing UI (cite the precedent file you adapted).
 - Enter plan mode for non-trivial tasks (3+ steps or architectural decisions).
 - Use subagents liberally to keep the main context window clean.
 - Run `pnpm run generate:types` after schema/migration changes, BEFORE typechecking.
 - Never claim work is complete without running verification commands. Evidence before assertions — run the command, read the output, then state the result.
+- Match proof to claim type (see `.ai/rules/harness-principles.md` for the evidence matching table).
 
 ## Ask First
 
-- Ask before reducing scope, changing architecture, changing public contracts, or adding production dependencies.
-- Ask before changing database schema in production-critical tables.
-- Ask before modifying authentication, RBAC, or multi-tenancy logic.
-- Ask before touching multiple modules in a way not covered by an existing spec.
+These decisions require explicit human approval. Never make them autonomously:
+
+- **Scope reduction** — dropping features, simplifying acceptance criteria, or "we'll handle later"
+- **Architecture changes** — new patterns, state management approaches, data flow changes
+- **Public contracts** — API signatures, database schema, RPC parameters, exported types
+- **Production dependencies** — new packages in `dependencies` (dev dependencies are okay)
+- **Auth/RBAC/multi-tenancy** — permission checks, RLS policies, `companyId` handling
+- **Production-critical schema** — tables with financial data, audit trails, or business-critical workflows
+- **Cross-module changes** — touching 3+ modules not covered by an existing spec
+
+When in doubt, surface the decision with your recommendation for approval rather than guessing.
 
 ## Never
 
@@ -101,6 +109,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Redis (shared dev) | `.ai/rules/dev-shared-redis.md` |
 | **Architecture** | |
 | General coding conventions | `.ai/rules/coding-conventions.md` |
+| Core working principles (JIT context, precedent-first, evidence matching) | `.ai/rules/harness-principles.md` |
 | Project overview | `.ai/rules/project-overview.md` |
 | Customer/supplier DB schema | `.ai/rules/customer-supplier-database-schema.md` |
 | User/employee/job relationships | `.ai/rules/user-employee-job-relationships.md` |
@@ -114,6 +123,8 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Writing a new spec | `.ai/skills/spec-writing/SKILL.md` |
 | **Workflows** | |
 | Skills index — pipelines + all skills | `.ai/skills/README.md` |
+| Verification workflow (evidence matching) | `.ai/rules/workflow-verification.md` |
+| Core working principles | `.ai/rules/harness-principles.md` |
 | Competitor research for a feature | `.ai/skills/research/SKILL.md` |
 | Feature pipeline (research→spec→plan→execute) | `.ai/skills/feature/SKILL.md` |
 | Stress-test a plan or design (grill interview) | `.ai/skills/grill/SKILL.md` |
@@ -124,6 +135,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Bug fix: end-to-end pipeline (diagnose → fix → verify → commit) | `.ai/skills/fix/SKILL.md` |
 | Pre-commit verification gate | `.ai/skills/check-and-commit/SKILL.md` |
 | Feature build (doer→gate→judge loop) | `.ai/skills/conductor/SKILL.md` |
+| Evidence-based verification | `.ai/skills/verify/SKILL.md` |
 | Browser-verify a feature | `.ai/skills/test/SKILL.md` |
 | Repo audit → handoff plans | `.ai/skills/improve/SKILL.md` |
 | Review your own branch before PR | `.ai/skills/self-review/SKILL.md` |
@@ -157,8 +169,20 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 
 ### Self-Improvement Loop
 
-- After corrections, update `.ai/lessons.md` with the `Context → Problem → Rule → Applies to` format.
-- Review lessons at the start of each session when relevant to the task.
+Corrections and mistakes are education for the codebase infrastructure. The pattern:
+
+1. **Fix the immediate issue** — get the build green first
+2. **Diagnose root cause** — why did it happen? (missing test? unclear rule? false assumption?)
+3. **Assess recurrence** — if 2+ occurrences, add lesson to `.ai/lessons.md`
+4. **Propose infrastructure** — could a lint rule, type check, or automated gate have caught this?
+
+Examples of corrections that became infrastructure:
+- Missing `companyId` scoping → added rule + expect all services to scope queries
+- Composite FK breaks PostgREST embed → added lesson + documented the pattern
+- Stale generated types → made `generate:types` a required step before typecheck
+
+After corrections, update `.ai/lessons.md` with the `Context → Problem → Rule → Applies to` format.
+Review lessons at the start of each session when relevant to the task.
 
 ## Architecture Quick Reference
 

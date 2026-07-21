@@ -15,6 +15,11 @@ live in `packages/harness` (see its `AGENTS.md`).
 **Announce at start:** "Using the conductor skill — autonomous loop on
 {work item}."
 
+**Harness Principles:** All conductor runs follow the core principles in
+`.ai/rules/harness-principles.md` — JIT context loading, precedent-first
+construction, evidence matching, and authority boundaries. The evidence
+matching protocol below is the canonical proof guide for any conductor run.
+
 ## Autonomous decision protocol — no mid-loop questions
 
 The loop never waits on a human. Concretely:

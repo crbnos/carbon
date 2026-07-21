@@ -6,10 +6,21 @@ paths:
 
 # Carbon Conventions Index
 
-Quick-reference pointer for Carbon-specific patterns. Load the focused rule for
-the area you're touching — it has the full detail, this file does not repeat it.
+Quick-reference pointer for Carbon-specific patterns. **Start with the harness
+principles** in [harness-principles.md](harness-principles.md) — JIT context
+loading, precedent-first construction, evidence matching, and authority boundaries.
 
-## Convention rules
+Load the focused rule for the area you're touching — it has the full detail,
+this file does not repeat it.
+
+## Working Principles (How to Approach Work)
+
+| Area | Rule | Load when |
+|------|------|-----------|
+| JIT context, precedent-first, evidence matching, authority boundaries | [harness-principles.md](harness-principles.md) | Starting any task |
+| Evidence-based completion (proof matching claim type) | [workflow-verification.md](workflow-verification.md) | Declaring work complete |
+
+## Technical Conventions
 
 | Area | Rule | Load when |
 |------|------|-----------|

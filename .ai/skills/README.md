@@ -4,6 +4,14 @@ Source of truth for agent skills. Installed as symlinks into `.claude/skills/`
 and `.codex/skills/` by `.ai/scripts/install-skills.sh` (runs on `pnpm prepare`;
 manually: `pnpm install-skills`). Authoring rules: `writing-skills/SKILL.md`.
 
+## Core Principles
+
+All skills follow the harness-engineering principles in `.ai/rules/harness-principles.md`:
+- JIT context loading (load only what the task needs)
+- Precedent-first construction (adapt, don't invent)
+- Evidence matching (proof strength matches claim type)
+- Infrastructure learning loop (corrections become permanent safeguards)
+
 ## Pipelines
 
 **Feature** (phased, human gates at spec + plan):
@@ -60,6 +68,7 @@ in root-cause, BLOCKED in fix) always surface to the human.
 | `improve` | Senior-advisor audit; plans for other agents to execute | `.ai/plans/improve/` |
 | `test` | Drive changed flows in the browser; cache playbooks | pass/fail + `.ai/playbooks/{slug}.md` |
 | `smoke-test` | Do all core modules load? | pass/fail table |
+| `verify` | Evidence-based completion check — match proof to claim type | verified/flagged state |
 | `auth` | Authenticate agent-browser against local dev | authed session (building block) |
 | `error` | Capture screenshot + snapshot on browser failure | `.ai/scratch/e2e/…` (building block) |
 | `create-agents-md` | Generate/refresh a grounded AGENTS.md | `AGENTS.md` |
