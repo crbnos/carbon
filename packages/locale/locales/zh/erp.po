@@ -1997,6 +1997,9 @@ msgstr "无法上传 — 供应商互动尚未创建"
 msgid "Cannot upload to parts bucket without item ID"
 msgstr "无法在没有项目ID的情况下上传到零件存储桶"
 
+msgid "Capacity"
+msgstr "产能"
+
 msgid "Carbon"
 msgstr "Carbon"
 
@@ -5841,6 +5844,9 @@ msgstr "授予能力"
 
 msgid "Group"
 msgstr "组"
+
+msgid "Group by"
+msgstr "分组依据"
 
 msgid "Group Members"
 msgstr "群组成员"
@@ -12690,6 +12696,9 @@ msgstr "时间卡已禁用"
 
 msgid "Timecards are enabled"
 msgstr "时间卡已启用"
+
+msgid "Timeline"
+msgstr "时间线"
 
 msgid "Timezone"
 msgstr "时区"

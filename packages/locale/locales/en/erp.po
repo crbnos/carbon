@@ -1997,6 +1997,9 @@ msgstr "Cannot upload — supplier interaction not yet created"
 msgid "Cannot upload to parts bucket without item ID"
 msgstr "Cannot upload to parts bucket without item ID"
 
+msgid "Capacity"
+msgstr "Capacity"
+
 msgid "Carbon"
 msgstr "Carbon"
 
@@ -5841,6 +5844,9 @@ msgstr "Grants Ability"
 
 msgid "Group"
 msgstr "Group"
+
+msgid "Group by"
+msgstr "Group by"
 
 msgid "Group Members"
 msgstr "Group Members"
@@ -12690,6 +12696,9 @@ msgstr "Timecards are disabled"
 
 msgid "Timecards are enabled"
 msgstr "Timecards are enabled"
+
+msgid "Timeline"
+msgstr "Timeline"
 
 msgid "Timezone"
 msgstr "Timezone"

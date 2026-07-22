@@ -1997,6 +1997,9 @@ msgstr "अपलोड नहीं कर सकते — आपूर्त�
 msgid "Cannot upload to parts bucket without item ID"
 msgstr "आइटम आईडी के बिना पार्ट्स बकेट में अपलोड नहीं कर सकते"
 
+msgid "Capacity"
+msgstr "क्षमता"
+
 msgid "Carbon"
 msgstr "कार्बन"
 
@@ -5841,6 +5844,9 @@ msgstr "क्षमता प्रदान करता है"
 
 msgid "Group"
 msgstr "समूह"
+
+msgid "Group by"
+msgstr "के आधार पर समूह बनाएँ"
 
 msgid "Group Members"
 msgstr "समूह सदस्य"
@@ -12690,6 +12696,9 @@ msgstr "टाइमकार्ड अक्षम हैं"
 
 msgid "Timecards are enabled"
 msgstr "टाइमकार्ड सक्षम हैं"
+
+msgid "Timeline"
+msgstr "समय रेखा"
 
 msgid "Timezone"
 msgstr "समय क्षेत्र"

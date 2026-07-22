@@ -1997,6 +1997,9 @@ msgstr "No se puede cargar — la interacción con el proveedor aún no se ha cr
 msgid "Cannot upload to parts bucket without item ID"
 msgstr "No se puede cargar en el depósito de piezas sin ID de artículo"
 
+msgid "Capacity"
+msgstr "Capacidad"
+
 msgid "Carbon"
 msgstr "Carbon"
 
@@ -5841,6 +5844,9 @@ msgstr "Otorga capacidad"
 
 msgid "Group"
 msgstr "Grupo"
+
+msgid "Group by"
+msgstr "Agrupar por"
 
 msgid "Group Members"
 msgstr "Miembros del Grupo"
@@ -12690,6 +12696,9 @@ msgstr "Las tarjetas de tiempo están deshabilitadas"
 
 msgid "Timecards are enabled"
 msgstr "Las tarjetas de tiempo están habilitadas"
+
+msgid "Timeline"
+msgstr "Cronograma"
 
 msgid "Timezone"
 msgstr "Zona horaria"

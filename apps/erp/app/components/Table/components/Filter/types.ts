@@ -25,6 +25,8 @@ export type ColumnFilterData =
       type: "static";
       options: Option[];
       isArray?: boolean;
+      /** Radio semantics: applying an option replaces the previous one */
+      isExclusive?: boolean;
     }
   | {
       type: "fetcher";

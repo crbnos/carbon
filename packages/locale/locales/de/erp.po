@@ -1997,6 +1997,9 @@ msgstr "Hochladen nicht möglich — Lieferanteninteraktion noch nicht erstellt"
 msgid "Cannot upload to parts bucket without item ID"
 msgstr "Kann nicht in den Teile-Bucket ohne Element-ID hochgeladen werden"
 
+msgid "Capacity"
+msgstr "Kapazität"
+
 msgid "Carbon"
 msgstr "Carbon"
 
@@ -5841,6 +5844,9 @@ msgstr "Gewährt Fähigkeit"
 
 msgid "Group"
 msgstr "Gruppe"
+
+msgid "Group by"
+msgstr "Gruppieren nach"
 
 msgid "Group Members"
 msgstr "Gruppenmitglieder"
@@ -12690,6 +12696,9 @@ msgstr "Zeiterfassungen sind deaktiviert"
 
 msgid "Timecards are enabled"
 msgstr "Zeitkarten sind aktiviert"
+
+msgid "Timeline"
+msgstr "Zeitstrahl"
 
 msgid "Timezone"
 msgstr "Zeitzone"

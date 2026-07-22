@@ -1997,6 +1997,9 @@ msgstr "Impossible de télécharger — l'interaction fournisseur n'a pas encore
 msgid "Cannot upload to parts bucket without item ID"
 msgstr "Impossible de télécharger vers le compartiment des pièces sans ID d'article"
 
+msgid "Capacity"
+msgstr "Capacité"
+
 msgid "Carbon"
 msgstr "Carbone"
 
@@ -5841,6 +5844,9 @@ msgstr "Confère une capacité"
 
 msgid "Group"
 msgstr "Groupe"
+
+msgid "Group by"
+msgstr "Grouper par"
 
 msgid "Group Members"
 msgstr "Membres du groupe"
@@ -12690,6 +12696,9 @@ msgstr "Les feuilles de temps sont désactivées"
 
 msgid "Timecards are enabled"
 msgstr "Les feuilles de temps sont activées"
+
+msgid "Timeline"
+msgstr "Chronologie"
 
 msgid "Timezone"
 msgstr "Fuseau horaire"

@@ -1997,6 +1997,9 @@ msgstr "アップロードできません — サプライヤーインタラク�
 msgid "Cannot upload to parts bucket without item ID"
 msgstr "アイテムIDなしでパーツバケットにアップロードできません"
 
+msgid "Capacity"
+msgstr "容量"
+
 msgid "Carbon"
 msgstr "カーボン"
 
@@ -5841,6 +5844,9 @@ msgstr "能力を付与"
 
 msgid "Group"
 msgstr "グループ"
+
+msgid "Group by"
+msgstr "グループ化"
 
 msgid "Group Members"
 msgstr "グループメンバー"
@@ -12690,6 +12696,9 @@ msgstr "タイムカードは無効です"
 
 msgid "Timecards are enabled"
 msgstr "タイムカードが有効です"
+
+msgid "Timeline"
+msgstr "タイムライン"
 
 msgid "Timezone"
 msgstr "タイムゾーン"

@@ -2,9 +2,17 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { activeJobStatuses } from "@carbon/database";
 import {
   Badge,
+  Button,
   ClientOnly,
   Combobox,
   cn,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuIcon,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
   HStack,
   ResizableHandle,
   ResizablePanel,
@@ -13,11 +21,19 @@ import {
 } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { LuTriangleAlert } from "react-icons/lu";
+import { useMemo } from "react";
+import {
+  LuBoxes,
+  LuChevronDown,
+  LuFactory,
+  LuTriangleAlert
+} from "react-icons/lu";
 import type { LoaderFunctionArgs, Location } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
 import { Empty } from "~/components";
 import { Gantt } from "~/components/Gantt";
+import { ActiveFilters, Filter } from "~/components/Table/components/Filter";
+import type { ColumnFilter } from "~/components/Table/components/Filter/types";
 import { useDateFormatter } from "~/hooks";
 import { useReplaceLocation } from "~/hooks/useReplaceLocation";
 import {
@@ -28,7 +44,10 @@ import {
 import JobStatus from "~/modules/production/ui/Jobs/JobStatus";
 import { ScheduleNavigation } from "~/modules/production/ui/Schedule/Kanban/ScheuleNavigation";
 import { TimelineDetail } from "~/modules/production/ui/Schedule/TimelineDetail";
-import type { TimelineNodeDetail } from "~/modules/production/ui/Schedule/timeline";
+import type {
+  TimelineGroupBy,
+  TimelineNodeDetail
+} from "~/modules/production/ui/Schedule/timeline";
 import { buildJobTimeline } from "~/modules/production/ui/Schedule/timeline";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -38,8 +57,8 @@ import {
 } from "~/utils/resizable-panels";
 
 export const handle: Handle = {
-  breadcrumb: msg`Production`,
-  to: path.to.production,
+  breadcrumb: msg`Timeline`,
+  to: path.to.scheduleGantt(),
   module: "production"
 };
 
@@ -50,6 +69,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const url = new URL(request.url);
   const requestedJobId = url.searchParams.get("jobId");
+  // View option (like the dates board's week/month): work-center grouping is
+  // the default; "?view=assembly" switches to the BOM view
+  const groupBy: TimelineGroupBy =
+    url.searchParams.get("view") === "assembly" ? "assembly" : "workCenter";
+  // Standard filter params, e.g. "filter=workCenter:in:wc1,wc2"
+  const workCenterFilter = new Set<string>();
+  for (const f of url.searchParams.getAll("filter")) {
+    const [key, , value] = f.split(":");
+    if (key === "workCenter" && value) {
+      for (const v of value.split(",")) {
+        workCenterFilter.add(v);
+      }
+    }
+  }
 
   const resizeSettings = await getResizableGanttSettings(request);
 
@@ -77,6 +110,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       conflictCount: 0,
       trace: null,
       detailsById: {} as Record<string, TimelineNodeDetail>,
+      groupBy,
+      workCenterOptions: [] as { value: string; label: string }[],
       resizeSettings
     };
   }
@@ -102,6 +137,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       conflictCount: 0,
       trace: null,
       detailsById: {} as Record<string, TimelineNodeDetail>,
+      groupBy,
+      workCenterOptions: [] as { value: string; label: string }[],
       resizeSettings
     };
   }
@@ -118,6 +155,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
   for (const o of operations.data ?? []) {
     if (o.assignee) userIds.add(o.assignee);
+    // Ops' stations may not appear in any reservation yet — the filter
+    // options and group labels still need their names
+    if (o.workCenterId) workCenterIds.add(o.workCenterId);
   }
   for (const e of productionEvents.data ?? []) {
     if (e.employeeId) userIds.add(e.employeeId);
@@ -178,13 +218,37 @@ export async function loader({ request }: LoaderFunctionArgs) {
     (parentMaterials.data ?? []).map((m) => [m.id, m.order])
   );
 
+  const allOperations = operations.data ?? [];
+  const workCenterOptions = [
+    ...new Map(
+      allOperations
+        .filter((o) => o.workCenterId)
+        .map((o) => [
+          o.workCenterId as string,
+          {
+            value: o.workCenterId as string,
+            label:
+              workCenterNames.get(o.workCenterId as string) ?? "Work Center"
+          }
+        ])
+    ).values()
+  ].sort((a, b) => a.label.localeCompare(b.label));
+
+  const visibleOperations =
+    workCenterFilter.size > 0
+      ? allOperations.filter(
+          (o) => o.workCenterId && workCenterFilter.has(o.workCenterId)
+        )
+      : allOperations;
+  const visibleOperationIds = new Set(visibleOperations.map((o) => o.id));
+
   const timeline = buildJobTimeline({
     job: {
       id: job.data.id,
       readableId: job.data.jobId,
       status: job.data.status
     },
-    operations: (operations.data ?? []).map((o) => ({
+    operations: visibleOperations.map((o) => ({
       id: o.id,
       description: o.description,
       order: o.order ?? 0,
@@ -195,6 +259,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       conflictReason: o.conflictReason,
       assigneeName: o.assignee ? (userNames.get(o.assignee) ?? null) : null,
       workCenterName: o.workCenter?.name ?? null,
+      workCenterId: o.workCenterId ?? null,
       makeMethodId: o.jobMakeMethod?.id ?? null,
       makeMethodParentMaterialId: o.jobMakeMethod?.parentMaterialId ?? null,
       makeMethodParentMakeMethodId: o.jobMakeMethod?.parentMaterialId
@@ -205,30 +270,37 @@ export async function loader({ request }: LoaderFunctionArgs) {
         : null,
       makeMethodItemReadableId: o.jobMakeMethod?.item?.readableId ?? null
     })),
-    reservations: (reservations.data ?? []).map((r) => ({
-      id: r.id,
-      operationId: r.operationId,
-      resourceKind: r.resourceKind,
-      resourceName:
-        r.resourceKind === "WorkCenter"
-          ? (workCenterNames.get(r.resourceId) ?? "Work Center")
-          : r.resourceKind === "Employee"
-            ? (userNames.get(r.resourceId) ?? "Operator")
-            : (abilityNames.get(r.resourceId) ?? "Operator Pool"),
-      startAt: r.startAt,
-      endAt: r.endAt,
-      earliestStartAt: r.earliestStartAt,
-      scheduleNote: r.scheduleNote,
-      workHours: r.workHours
-    })),
-    productionEvents: (productionEvents.data ?? []).map((e) => ({
-      id: e.id,
-      operationId: e.jobOperationId,
-      type: e.type,
-      employeeName: e.employeeId ? (userNames.get(e.employeeId) ?? null) : null,
-      startTime: e.startTime,
-      endTime: e.endTime
-    }))
+    reservations: (reservations.data ?? [])
+      .filter((r) => visibleOperationIds.has(r.operationId))
+      .map((r) => ({
+        id: r.id,
+        operationId: r.operationId,
+        resourceKind: r.resourceKind,
+        resourceName:
+          r.resourceKind === "WorkCenter"
+            ? (workCenterNames.get(r.resourceId) ?? "Work Center")
+            : r.resourceKind === "Employee"
+              ? (userNames.get(r.resourceId) ?? "Operator")
+              : (abilityNames.get(r.resourceId) ?? "Operator Pool"),
+        startAt: r.startAt,
+        endAt: r.endAt,
+        earliestStartAt: r.earliestStartAt,
+        scheduleNote: r.scheduleNote,
+        workHours: r.workHours
+      })),
+    productionEvents: (productionEvents.data ?? [])
+      .filter((e) => visibleOperationIds.has(e.jobOperationId))
+      .map((e) => ({
+        id: e.id,
+        operationId: e.jobOperationId,
+        type: e.type,
+        employeeName: e.employeeId
+          ? (userNames.get(e.employeeId) ?? null)
+          : null,
+        startTime: e.startTime,
+        endTime: e.endTime
+      })),
+    groupBy
   });
 
   return {
@@ -244,6 +316,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       rootStartedAt: timeline.windowStart
     },
     detailsById: timeline.detailsById,
+    groupBy,
+    workCenterOptions,
     resizeSettings
   };
 }
@@ -262,6 +336,8 @@ export default function GanttView() {
     conflictCount,
     trace,
     detailsById,
+    groupBy,
+    workCenterOptions,
     resizeSettings
   } = useLoaderData<typeof loader>();
   const { t } = useLingui();
@@ -270,6 +346,33 @@ export default function GanttView() {
 
   const { location, replaceSearchParam } = useReplaceLocation();
   const selectedSpanId = getSpanId(location);
+
+  const setView = (view: string) => {
+    if (view === groupBy) return;
+    const params = new URLSearchParams(location.search);
+    if (view === "assembly") {
+      params.set("view", "assembly");
+    } else {
+      params.delete("view");
+    }
+    // The selected span's node may not exist in the other grouping
+    params.delete("span");
+    navigate(`${location.pathname}?${params.toString()}`);
+  };
+
+  const filters = useMemo<ColumnFilter[]>(
+    () => [
+      {
+        accessorKey: "workCenter",
+        header: t`Work Center`,
+        filter: {
+          type: "static",
+          options: workCenterOptions
+        }
+      }
+    ],
+    [t, workCenterOptions]
+  );
 
   const changeToSpan = useDebounce((selectedSpan: string) => {
     replaceSearchParam("span", selectedSpan);
@@ -291,9 +394,49 @@ export default function GanttView() {
             options={jobOptions}
             placeholder={t`Select a job`}
             onChange={(jobId) => {
-              if (jobId) navigate(path.to.scheduleGantt(jobId));
+              if (jobId) {
+                const params = new URLSearchParams(location.search);
+                params.set("jobId", jobId);
+                params.delete("span");
+                navigate(`${location.pathname}?${params.toString()}`);
+              }
             }}
           />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                size="sm"
+                variant="secondary"
+                leftIcon={
+                  groupBy === "workCenter" ? <LuFactory /> : <LuBoxes />
+                }
+                rightIcon={<LuChevronDown />}
+              >
+                {groupBy === "workCenter" ? t`Work Centers` : t`Assemblies`}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-48">
+              <DropdownMenuRadioGroup value={groupBy} onValueChange={setView}>
+                <DropdownMenuLabel>
+                  <Trans>Group by</Trans>
+                </DropdownMenuLabel>
+                <DropdownMenuRadioItem value="workCenter">
+                  <DropdownMenuIcon icon={<LuFactory />} />
+                  <Trans>Work Centers</Trans>
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="assembly">
+                  <DropdownMenuIcon icon={<LuBoxes />} />
+                  <Trans>Assemblies</Trans>
+                </DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          {workCenterOptions.length > 0 && (
+            <>
+              <Filter filters={filters} />
+              <ActiveFilters filters={filters} />
+            </>
+          )}
           {jobStatus && <div className="h-4 w-px bg-border" />}
           <JobStatus status={jobStatus} />
           {jobDueDate && (
@@ -373,8 +516,17 @@ export default function GanttView() {
                 >
                   <Gantt
                     selectedId={selectedSpanId}
-                    key={`${selectedJobId}-${trace.events[0]?.id ?? "-"}`}
+                    key={`${selectedJobId}-${groupBy}-${trace.events.length}-${trace.events[0]?.id ?? "-"}`}
                     events={trace.events}
+                    // One row per workstation by default; the chevron expands
+                    // to the individual operations
+                    collapsedIds={
+                      groupBy === "workCenter"
+                        ? trace.events
+                            .filter((e) => e.id.startsWith("wc:"))
+                            .map((e) => e.id)
+                        : undefined
+                    }
                     onSelectedIdChanged={(selectedSpan) => {
                       if (!selectedSpan) {
                         replaceSearchParam("span");

@@ -62,6 +62,9 @@ import { eventBackgroundClassName, SpanTitle } from "./components/SpanTitle";
 type GanttProps = {
   events: GanttEvent[];
   selectedId?: string;
+  /** Nodes to render collapsed on first render (initial state only — pass a
+   * fresh `key` to re-apply when the tree's shape changes) */
+  collapsedIds?: string[];
   parentReadableId?: string;
   onSelectedIdChanged: (selectedId: string | undefined) => void;
   totalDuration: number;
@@ -72,6 +75,7 @@ type GanttProps = {
 const Gantt = ({
   events,
   selectedId,
+  collapsedIds,
   parentReadableId,
   onSelectedIdChanged,
   totalDuration,
@@ -102,7 +106,7 @@ const Gantt = ({
   } = useTree({
     tree: events,
     selectedId,
-    // collapsedIds,
+    collapsedIds,
     onSelectedIdChanged,
     estimatedRowHeight: () => 32,
     parentRef,

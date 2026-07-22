@@ -1997,6 +1997,9 @@ msgstr "Невозможно загрузить — взаимодействие
 msgid "Cannot upload to parts bucket without item ID"
 msgstr "Невозможно загрузить в корзину деталей без ID элемента"
 
+msgid "Capacity"
+msgstr "Емкость"
+
 msgid "Carbon"
 msgstr "Углерод"
 
@@ -5841,6 +5844,9 @@ msgstr "Предоставляет способность"
 
 msgid "Group"
 msgstr "Группа"
+
+msgid "Group by"
+msgstr "Группировать по"
 
 msgid "Group Members"
 msgstr "Члены группы"
@@ -12690,6 +12696,9 @@ msgstr "Табели учета отключены"
 
 msgid "Timecards are enabled"
 msgstr "Табели учета рабочего времени включены"
+
+msgid "Timeline"
+msgstr "Временная шкала"
 
 msgid "Timezone"
 msgstr "Часовой пояс"

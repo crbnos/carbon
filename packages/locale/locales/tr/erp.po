@@ -1997,6 +1997,9 @@ msgstr "Yüklenemiyor — tedarikçi etkileşimi henüz oluşturulmadı"
 msgid "Cannot upload to parts bucket without item ID"
 msgstr "Öğe kimliği olmadan parçalar klasörüne yüklenemez"
 
+msgid "Capacity"
+msgstr "Kapasite"
+
 msgid "Carbon"
 msgstr "Karbon"
 
@@ -5841,6 +5844,9 @@ msgstr "Yeteneği Verir"
 
 msgid "Group"
 msgstr "Grup"
+
+msgid "Group by"
+msgstr "Gruplandır"
 
 msgid "Group Members"
 msgstr "Üye Grupları"
@@ -12690,6 +12696,9 @@ msgstr "Zaman kartları devre dışı"
 
 msgid "Timecards are enabled"
 msgstr "Zaman kartları etkinleştirilmiş"
+
+msgid "Timeline"
+msgstr "Zaman Çizelgesi"
 
 msgid "Timezone"
 msgstr "Saat Dilim"

@@ -92,10 +92,8 @@ export function SpanBadgeAccessory({
 function eventTextClassName(
   event: Pick<SpanTitleProps, "isError" | "style" | "level">
 ) {
-  if (event.isError) {
-    return "text-red-500";
-  }
-
+  // isError deliberately does NOT tint the row text — the red bar and the
+  // triangle status icon already carry the conflict signal
   switch (event.level) {
     case "TRACE": {
       return textClassNameForVariant(event.style.variant);

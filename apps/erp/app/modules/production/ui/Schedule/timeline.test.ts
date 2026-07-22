@@ -662,3 +662,249 @@ describe("buildJobTimeline", () => {
     expect(result.events[0].data.isRoot).toBe(true);
   });
 });
+
+describe("buildJobTimeline groupBy workCenter", () => {
+  const wcOps = [
+    op({
+      id: "op-1",
+      description: "CNC Rout Arms",
+      order: 1,
+      workCenterId: "wc-cnc",
+      workCenterName: "CNC Router"
+    }),
+    op({
+      id: "op-2",
+      description: "CNC Rout Plate",
+      order: 3,
+      workCenterId: "wc-cnc",
+      workCenterName: "CNC Router"
+    }),
+    op({
+      id: "op-3",
+      description: "Battery Test",
+      order: 2,
+      workCenterId: "wc-rig",
+      workCenterName: "Battery Test Rig"
+    })
+  ];
+  const wcReservations = [
+    reservation({
+      id: "res-1",
+      operationId: "op-1",
+      startAt: "2026-07-10T08:00:00.000Z",
+      endAt: "2026-07-10T12:00:00.000Z"
+    }),
+    reservation({
+      id: "res-2",
+      operationId: "op-2",
+      startAt: "2026-07-11T08:00:00.000Z",
+      endAt: "2026-07-11T12:00:00.000Z"
+    }),
+    reservation({
+      id: "res-3",
+      operationId: "op-3",
+      startAt: "2026-07-10T10:00:00.000Z",
+      endAt: "2026-07-10T16:00:00.000Z"
+    })
+  ];
+
+  it("groups operations under their work centers, ordered by first activity", () => {
+    const result = buildJobTimeline({
+      job,
+      operations: wcOps,
+      reservations: wcReservations,
+      productionEvents: [],
+      groupBy: "workCenter"
+    });
+
+    const root = result.events.find((e) => e.id === "job-1")!;
+    // CNC starts 08:00, Rig starts 10:00 → CNC group first
+    expect(root.children).toEqual(["wc:wc-cnc", "wc:wc-rig"]);
+
+    const cnc = result.events.find((e) => e.id === "wc:wc-cnc")!;
+    expect(cnc.data.message).toBe("CNC Router");
+    expect(cnc.children).toEqual(["op-1", "op-2"]);
+    expect(result.events.find((e) => e.id === "op-3")!.parentId).toBe(
+      "wc:wc-rig"
+    );
+
+    // No assembly nodes in this grouping
+    expect(result.events.find((e) => e.id === "jmm-1")).toBeUndefined();
+  });
+
+  it("grows the work-center group to cover its operations", () => {
+    const result = buildJobTimeline({
+      job,
+      operations: wcOps,
+      reservations: wcReservations,
+      productionEvents: [],
+      groupBy: "workCenter"
+    });
+
+    // CNC covers op-1 (07-10 08:00) through op-2 (07-11 12:00)
+    const cnc = result.events.find((e) => e.id === "wc:wc-cnc")!;
+    expect(cnc.data.offset).toBe(0);
+    expect(cnc.data.duration).toBe(DAY + 4 * HOUR);
+
+    const detail = result.detailsById["wc:wc-cnc"];
+    expect(detail.kind).toBe("resource");
+    expect(detail.title).toBe("CNC Router");
+    expect(detail.start).toBe("2026-07-10T08:00:00.000Z");
+    expect(detail.end).toBe("2026-07-11T12:00:00.000Z");
+  });
+
+  it("bubbles conflicts to the work-center row with a rollup message", () => {
+    const result = buildJobTimeline({
+      job,
+      operations: [
+        wcOps[0],
+        { ...wcOps[1], hasConflict: true, conflictReason: "Queued" }
+      ],
+      reservations: [wcReservations[0], wcReservations[1]],
+      productionEvents: [],
+      groupBy: "workCenter"
+    });
+
+    const cnc = result.events.find((e) => e.id === "wc:wc-cnc")!;
+    expect(cnc.data.isError).toBe(true);
+    expect(result.detailsById["wc:wc-cnc"].conflictReason).toBe(
+      "1 operation at this work center has a scheduling conflict"
+    );
+  });
+
+  it("collects operations without a work center under Unassigned", () => {
+    const result = buildJobTimeline({
+      job,
+      operations: [
+        wcOps[0],
+        op({
+          id: "op-out",
+          description: "Anodize (Outside)",
+          workCenterId: null,
+          workCenterName: null
+        })
+      ],
+      reservations: [wcReservations[0]],
+      productionEvents: [],
+      groupBy: "workCenter"
+    });
+
+    const unassigned = result.events.find((e) => e.id === "wc:unassigned")!;
+    expect(unassigned.data.message).toBe("Unassigned");
+    expect(result.events.find((e) => e.id === "op-out")!.parentId).toBe(
+      "wc:unassigned"
+    );
+  });
+
+  it("keeps reservations and timecards as children of the operation", () => {
+    const result = buildJobTimeline({
+      job,
+      operations: [wcOps[0]],
+      reservations: [wcReservations[0]],
+      productionEvents: [
+        {
+          id: "pe-1",
+          operationId: "op-1",
+          type: "Labor",
+          employeeName: "Ana Weaver",
+          startTime: "2026-07-10T08:30:00.000Z",
+          endTime: "2026-07-10T09:30:00.000Z"
+        }
+      ],
+      groupBy: "workCenter"
+    });
+
+    const operation = result.events.find((e) => e.id === "op-1")!;
+    expect(operation.children).toEqual(["res-1", "pe-1"]);
+    // Depth-first order: group → op → children
+    const ids = result.events.map((e) => e.id);
+    expect(ids).toEqual(["job-1", "wc:wc-cnc", "op-1", "res-1", "pe-1"]);
+  });
+});
+
+describe("buildJobTimeline workCenter row labels", () => {
+  it("disambiguates same-named ops from different subassemblies", () => {
+    const result = buildJobTimeline({
+      job,
+      operations: [
+        op({
+          id: "op-d1",
+          description: "Drill",
+          workCenterId: "wc-drill",
+          workCenterName: "Drill Press",
+          makeMethodId: "jmm-1",
+          makeMethodItemReadableId: "ARM-01"
+        }),
+        op({
+          id: "op-d2",
+          description: "Drill",
+          workCenterId: "wc-drill",
+          workCenterName: "Drill Press",
+          makeMethodId: "jmm-2",
+          makeMethodItemReadableId: "PLATE-01"
+        })
+      ],
+      reservations: [
+        reservation({
+          id: "res-d1",
+          operationId: "op-d1",
+          startAt: "2026-07-10T08:00:00.000Z",
+          endAt: "2026-07-10T09:00:00.000Z"
+        }),
+        reservation({
+          id: "res-d2",
+          operationId: "op-d2",
+          startAt: "2026-07-10T09:00:00.000Z",
+          endAt: "2026-07-10T10:00:00.000Z"
+        })
+      ],
+      productionEvents: [],
+      groupBy: "workCenter"
+    });
+
+    const d1 = result.events.find((e) => e.id === "op-d1")!;
+    const d2 = result.events.find((e) => e.id === "op-d2")!;
+    expect(d1.data.message).toBe("Drill — ARM-01");
+    expect(d2.data.message).toBe("Drill — PLATE-01");
+    expect(result.detailsById["op-d1"].title).toBe("Drill — ARM-01");
+  });
+
+  it("keeps plain labels for single-method jobs and in assembly view", () => {
+    const single = buildJobTimeline({
+      job,
+      operations: [
+        op({ id: "op-d1", description: "Drill", workCenterId: "wc-drill" })
+      ],
+      reservations: [reservation({ id: "res-d1", operationId: "op-d1" })],
+      productionEvents: [],
+      groupBy: "workCenter"
+    });
+    expect(single.events.find((e) => e.id === "op-d1")!.data.message).toBe(
+      "Drill"
+    );
+
+    const assemblyView = buildJobTimeline({
+      job,
+      operations: [
+        op({
+          id: "op-d1",
+          description: "Drill",
+          makeMethodId: "jmm-1",
+          makeMethodItemReadableId: "ARM-01"
+        }),
+        op({
+          id: "op-d2",
+          description: "Drill",
+          makeMethodId: "jmm-2",
+          makeMethodItemReadableId: "PLATE-01"
+        })
+      ],
+      reservations: [reservation({ id: "res-d1", operationId: "op-d1" })],
+      productionEvents: [],
+      groupBy: "assembly"
+    });
+    expect(
+      assemblyView.events.find((e) => e.id === "op-d1")!.data.message
+    ).toBe("Drill");
+  });
+});

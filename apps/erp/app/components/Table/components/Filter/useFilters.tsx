@@ -136,6 +136,13 @@ export function useFilters() {
     }
   };
 
+  // Replace the key's filter with a single value in one update (radio
+  // semantics for exclusive filters)
+  const setFilter = (key: string, value: string) => {
+    const others = urlFiltersParams.filter((f) => f.split(":")[0] !== key);
+    setParams({ filter: others.concat(`${key}:eq:${value}`) });
+  };
+
   const clearFilters = () => {
     setParams({ filter: undefined });
   };
@@ -149,6 +156,7 @@ export function useFilters() {
     hasFilters,
     hasFilterKey,
     removeKey,
+    setFilter,
     toggleFilter,
     urlFiltersParams
   };

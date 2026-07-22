@@ -1997,6 +1997,9 @@ msgstr "Não é possível fazer upload — interação com fornecedor ainda não
 msgid "Cannot upload to parts bucket without item ID"
 msgstr "Não é possível fazer upload para o bucket de peças sem ID do item"
 
+msgid "Capacity"
+msgstr "Capacidade"
+
 msgid "Carbon"
 msgstr "Carbon"
 
@@ -5841,6 +5844,9 @@ msgstr "Concede Capacidade"
 
 msgid "Group"
 msgstr "Grupo"
+
+msgid "Group by"
+msgstr "Agrupar por"
 
 msgid "Group Members"
 msgstr "Membros do Grupo"
@@ -12690,6 +12696,9 @@ msgstr "Cartões de ponto estão desativados"
 
 msgid "Timecards are enabled"
 msgstr "Cartões de ponto estão ativados"
+
+msgid "Timeline"
+msgstr "Linha do tempo"
 
 msgid "Timezone"
 msgstr "Fuso Horário"

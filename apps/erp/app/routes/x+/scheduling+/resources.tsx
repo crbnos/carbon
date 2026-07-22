@@ -30,8 +30,8 @@ import {
 } from "~/utils/resizable-panels";
 
 export const handle: Handle = {
-  breadcrumb: msg`Production`,
-  to: path.to.production,
+  breadcrumb: msg`Capacity`,
+  to: path.to.scheduleResources,
   module: "production"
 };
 

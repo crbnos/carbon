@@ -40,6 +40,7 @@ const Filter = forwardRef<HTMLButtonElement, FilterProps>(
       hasFilter,
       hasFilters,
       hasFilterKey,
+      setFilter,
       toggleFilter
     } = useFilters();
 
@@ -232,7 +233,7 @@ const Filter = forwardRef<HTMLButtonElement, FilterProps>(
                 </CommandGroup>
               ) : (
                 <div className="max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
-                  <CommandGroup>
+                  <CommandGroup heading={translate(activeFilter.header)}>
                     {activeOptions.map((option) => {
                       const isChecked = hasFilter(
                         activeFilter.accessorKey,
@@ -246,11 +247,20 @@ const Filter = forwardRef<HTMLButtonElement, FilterProps>(
                           )}
                           key={option.value}
                           onSelect={() => {
-                            toggleFilter(
-                              activeFilter.accessorKey,
-                              option.value,
-                              activeFilter.filter.isArray
-                            );
+                            if (
+                              activeFilter.filter.type === "static" &&
+                              activeFilter.filter.isExclusive &&
+                              !isChecked
+                            ) {
+                              // Radio semantics: replace the previous option
+                              setFilter(activeFilter.accessorKey, option.value);
+                            } else {
+                              toggleFilter(
+                                activeFilter.accessorKey,
+                                option.value,
+                                activeFilter.filter.isArray
+                              );
+                            }
                             setInput("");
                           }}
                         >

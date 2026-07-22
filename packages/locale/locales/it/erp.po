@@ -1997,6 +1997,9 @@ msgstr "Impossibile caricare — interazione fornitore non ancora creata"
 msgid "Cannot upload to parts bucket without item ID"
 msgstr "Impossibile caricare nel bucket delle parti senza ID elemento"
 
+msgid "Capacity"
+msgstr "Capacità"
+
 msgid "Carbon"
 msgstr "Carbon"
 
@@ -5841,6 +5844,9 @@ msgstr "Concede Capacità"
 
 msgid "Group"
 msgstr "Gruppo"
+
+msgid "Group by"
+msgstr "Raggruppa per"
 
 msgid "Group Members"
 msgstr "Membri del Gruppo"
@@ -12690,6 +12696,9 @@ msgstr "I fogli di presenze sono disabilitati"
 
 msgid "Timecards are enabled"
 msgstr "I fogli di presenze sono abilitati"
+
+msgid "Timeline"
+msgstr "Cronologia"
 
 msgid "Timezone"
 msgstr "Fuso orario"

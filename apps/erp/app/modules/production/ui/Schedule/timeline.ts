@@ -31,6 +31,8 @@ export type TimelineOperation = {
   conflictReason: string | null;
   assigneeName: string | null;
   workCenterName: string | null;
+  /** Grouping key for the work-center view; name alone is not unique */
+  workCenterId?: string | null;
   makeMethodId: string | null;
   makeMethodParentMaterialId: string | null;
   /** The make method that owns parentMaterialId — links subassembly → parent */
@@ -140,14 +142,23 @@ function operationSpan(
   return { start: fallbackStart, end: fallbackStart, approximate: true };
 }
 
+export type TimelineGroupBy = "assembly" | "workCenter";
+
 export function buildJobTimeline(input: {
   job: TimelineJob;
   operations: TimelineOperation[];
   reservations: TimelineReservation[];
   productionEvents: TimelineProductionEvent[];
+  /**
+   * Row grouping: "assembly" nests operations under the BOM structure;
+   * "workCenter" groups them under the stations they run on (flat, in order
+   * of first activity — the job read as a walk across the floor).
+   */
+  groupBy?: TimelineGroupBy;
   now?: Date;
 }): JobTimeline {
   const { job, operations, reservations, productionEvents } = input;
+  const groupBy = input.groupBy ?? "assembly";
   const now = (input.now ?? new Date()).getTime();
 
   const reservationsByOperation = new Map<string, TimelineReservation[]>();
@@ -261,7 +272,7 @@ export function buildJobTimeline(input: {
   const makeMethodIds = new Set(
     operations.map((op) => op.makeMethodId).filter(Boolean)
   );
-  const useAssemblies = makeMethodIds.size > 1;
+  const useAssemblies = groupBy === "assembly" && makeMethodIds.size > 1;
 
   const anyConflict = operations.some((op) => !!op.hasConflict);
 
@@ -388,20 +399,60 @@ export function buildJobTimeline(input: {
     }
   }
 
-  // How many conflicted operations sit under each assembly node — feeds the
-  // assembly's side-panel entry so a bubbled-up red row explains itself
-  const conflictCountByAssembly = new Map<string, number>();
+  // Work-center grouping: one flat group per station, discovered in order of
+  // first activity so the tree reads chronologically down the floor
+  const workCenterNodeByKey = new Map<string, GanttEvent>();
+  const workCenterKey = (op: TimelineOperation) =>
+    `wc:${op.workCenterId ?? "unassigned"}`;
+  if (groupBy === "workCenter") {
+    for (const op of sortedOperations) {
+      const key = workCenterKey(op);
+      if (workCenterNodeByKey.has(key)) continue;
+      const node: GanttEvent = {
+        id: key,
+        parentId: job.id,
+        children: [],
+        hasChildren: false,
+        level: 1,
+        data: {
+          duration: 0,
+          offset: Number.MAX_SAFE_INTEGER,
+          message: op.workCenterId
+            ? (op.workCenterName ?? "Work Center")
+            : "Unassigned",
+          isRoot: false,
+          isError: false,
+          isPartial: false,
+          isCancelled: false,
+          level: "TRACE" as GanttEvent["data"]["level"],
+          style: { icon: "workCenter", variant: "primary" }
+        }
+      };
+      workCenterNodeByKey.set(key, node);
+      root.children.push(key);
+      root.hasChildren = true;
+      events.push(node);
+    }
+  }
 
-  // Rows within a group follow the ROUTING (method order), not who got a
-  // machine slot first — matches the BOM/method view; the bars' horizontal
-  // positions still show actual timing. Groups are per-parent, so a global
-  // sort by routing order gives each group its own ops correctly ordered.
+  // How many conflicted operations sit under each group node — feeds the
+  // group's side-panel entry so a bubbled-up red row explains itself
+  const conflictCountByGroup = new Map<string, number>();
+
+  // Rows within an assembly group follow the ROUTING (method order), not who
+  // got a machine slot first — matches the BOM/method view; the bars'
+  // horizontal positions still show actual timing. Groups are per-parent, so
+  // a global sort by routing order gives each group its own ops correctly
+  // ordered. Work-center groups instead read chronologically: within a
+  // station the queue order IS the story.
   const routedOperations = [...operations].sort((a, b) => {
     if (a.order !== b.order) return a.order - b.order;
     return spanByOperation.get(a.id)!.start - spanByOperation.get(b.id)!.start;
   });
+  const rowOperations =
+    groupBy === "workCenter" ? sortedOperations : routedOperations;
 
-  for (const op of routedOperations) {
+  for (const op of rowOperations) {
     const span = spanByOperation.get(op.id)!;
     // Date-only spans don't size the window — clamp their BARS into it so an
     // unplaced op pins to the nearest edge as a sliver instead of stretching
@@ -413,10 +464,12 @@ export function buildJobTimeline(input: {
       ? Math.min(Math.max(span.end, windowStart), windowEnd)
       : span.end;
     const parent =
-      (useAssemblies &&
-        op.makeMethodId &&
-        assemblyNodeByMakeMethod.get(op.makeMethodId)) ||
-      root;
+      groupBy === "workCenter"
+        ? (workCenterNodeByKey.get(workCenterKey(op)) ?? root)
+        : (useAssemblies &&
+            op.makeMethodId &&
+            assemblyNodeByMakeMethod.get(op.makeMethodId)) ||
+          root;
     const level = parent.level + 1;
     const isError = !!op.hasConflict;
 
@@ -431,6 +484,16 @@ export function buildJobTimeline(input: {
     const waitMs = earliestStartAt
       ? Math.max(span.start - Date.parse(earliestStartAt), 0)
       : 0;
+
+    // In the work-center view, same-named steps from different subassemblies
+    // sit adjacent under one station ("Drill", "Drill", "Drill") — carry the
+    // assembly item in the label, the context the BOM nesting used to give
+    const rowLabel =
+      groupBy === "workCenter" &&
+      makeMethodIds.size > 1 &&
+      op.makeMethodItemReadableId
+        ? `${op.description ?? op.id} — ${op.makeMethodItemReadableId}`
+        : (op.description ?? op.id);
 
     // Who is booked by name for the attended window(s) — in booking order,
     // deduped (a shift relay books the same op to two people back to back)
@@ -452,7 +515,7 @@ export function buildJobTimeline(input: {
       data: {
         duration: Math.max(renderEnd - renderStart, 0),
         offset: renderStart - windowStart,
-        message: op.description ?? op.id,
+        message: rowLabel,
         isRoot: false,
         isError,
         isPartial: false,
@@ -489,7 +552,7 @@ export function buildJobTimeline(input: {
     events.push(opEvent);
     detailsById[op.id] = {
       kind: "operation",
-      title: op.description ?? op.id,
+      title: rowLabel,
       start: new Date(span.start).toISOString(),
       end: new Date(span.end).toISOString(),
       durationMs: Math.max(span.end - span.start, 0),
@@ -529,14 +592,16 @@ export function buildJobTimeline(input: {
       }
       if (isError) {
         ancestor.data.isError = true;
-        conflictCountByAssembly.set(
+        conflictCountByGroup.set(
           ancestor.id,
-          (conflictCountByAssembly.get(ancestor.id) ?? 0) + 1
+          (conflictCountByGroup.get(ancestor.id) ?? 0) + 1
         );
       }
       ancestor =
         ancestor.parentId && ancestor.parentId !== job.id
-          ? (assemblyNodeByMakeMethod.get(ancestor.parentId) ?? null)
+          ? (assemblyNodeByMakeMethod.get(ancestor.parentId) ??
+            workCenterNodeByKey.get(ancestor.parentId) ??
+            null)
           : null;
     }
 
@@ -629,11 +694,11 @@ export function buildJobTimeline(input: {
     }
   }
 
-  // Assembly detail entries — written after the operation loop so they use
-  // the FINAL grown spans (an assembly covers all descendant operations)
+  // Group detail entries — written after the operation loop so they use the
+  // FINAL grown spans (a group covers all descendant operations)
   for (const node of assemblyNodeByMakeMethod.values()) {
     const hasSpan = node.data.offset !== Number.MAX_SAFE_INTEGER;
-    const conflictCount = conflictCountByAssembly.get(node.id) ?? 0;
+    const conflictCount = conflictCountByGroup.get(node.id) ?? 0;
     detailsById[node.id] = {
       kind: "assembly",
       title: node.data.message,
@@ -652,6 +717,31 @@ export function buildJobTimeline(input: {
           ? conflictCount === 1
             ? "1 operation in this assembly has a scheduling conflict"
             : `${conflictCount} operations in this assembly have scheduling conflicts`
+          : null
+    };
+  }
+  for (const node of workCenterNodeByKey.values()) {
+    const hasSpan = node.data.offset !== Number.MAX_SAFE_INTEGER;
+    const conflictCount = conflictCountByGroup.get(node.id) ?? 0;
+    detailsById[node.id] = {
+      kind: "resource",
+      title: node.data.message,
+      start: hasSpan
+        ? new Date(windowStart + node.data.offset).toISOString()
+        : null,
+      end: hasSpan
+        ? new Date(
+            windowStart + node.data.offset + node.data.duration
+          ).toISOString()
+        : null,
+      durationMs: hasSpan ? node.data.duration : 0,
+      approximate: false,
+      workCenterName: node.data.message,
+      conflictReason:
+        conflictCount > 0
+          ? conflictCount === 1
+            ? "1 operation at this work center has a scheduling conflict"
+            : `${conflictCount} operations at this work center have scheduling conflicts`
           : null
     };
   }

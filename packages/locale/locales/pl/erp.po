@@ -1997,6 +1997,9 @@ msgstr "Nie można przesłać — interakcja z dostawcą nie została jeszcze ut
 msgid "Cannot upload to parts bucket without item ID"
 msgstr "Nie można przesłać do zasobnika części bez identyfikatora elementu"
 
+msgid "Capacity"
+msgstr "Pojemność"
+
 msgid "Carbon"
 msgstr "Carbon"
 
@@ -5841,6 +5844,9 @@ msgstr "Przyznaje Umiejętność"
 
 msgid "Group"
 msgstr "Grupa"
+
+msgid "Group by"
+msgstr "Grupuj wg"
 
 msgid "Group Members"
 msgstr "Członkowie grupy"
@@ -12690,6 +12696,9 @@ msgstr "Karty czasu pracy są wyłączone"
 
 msgid "Timecards are enabled"
 msgstr "Karty czasu pracy są włączone"
+
+msgid "Timeline"
+msgstr "Oś czasu"
 
 msgid "Timezone"
 msgstr "Strefa czasowa"

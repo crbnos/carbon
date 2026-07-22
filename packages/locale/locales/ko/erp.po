@@ -1997,6 +1997,9 @@ msgstr "업로드할 수 없습니다 — 공급업체 상호작용이 아직 �
 msgid "Cannot upload to parts bucket without item ID"
 msgstr "품목 ID 없이는 품목 버킷에 업로드할 수 없습니다"
 
+msgid "Capacity"
+msgstr "용량"
+
 msgid "Carbon"
 msgstr "Carbon"
 
@@ -5841,6 +5844,9 @@ msgstr "능력 부여"
 
 msgid "Group"
 msgstr "그룹"
+
+msgid "Group by"
+msgstr "그룹별"
 
 msgid "Group Members"
 msgstr "그룹 구성원"
@@ -12690,6 +12696,9 @@ msgstr "근무기록이 비활성화됨"
 
 msgid "Timecards are enabled"
 msgstr "근무기록이 활성화됨"
+
+msgid "Timeline"
+msgstr "타임라인"
 
 msgid "Timezone"
 msgstr "시간대"
