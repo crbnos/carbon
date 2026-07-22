@@ -19,9 +19,9 @@ import { LuTriangleAlert } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { Hidden, Select, Submit, TextArea } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { inboundInspectionValidator } from "~/modules/quality/quality.models";
+import { inspectionValidator } from "~/modules/quality/quality.models";
 
-type InboundInspectionFormProps = {
+type InspectionFormProps = {
   inspectionId: string;
   itemReadableId: string;
   itemName: string;
@@ -36,7 +36,7 @@ type InboundInspectionFormProps = {
   onClose: () => void;
 };
 
-const InboundInspectionForm = ({
+const InspectionForm = ({
   inspectionId,
   itemReadableId,
   itemName,
@@ -49,7 +49,7 @@ const InboundInspectionForm = ({
   open = true,
   action,
   onClose
-}: InboundInspectionFormProps) => {
+}: InspectionFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
   const fetcher = useFetcher<{}>();
@@ -76,7 +76,7 @@ const InboundInspectionForm = ({
           <ValidatedForm
             method="post"
             action={action}
-            validator={inboundInspectionValidator}
+            validator={inspectionValidator}
             defaultValues={{
               id: inspectionId,
               status: undefined,
@@ -157,4 +157,4 @@ const InboundInspectionForm = ({
   );
 };
 
-export default InboundInspectionForm;
+export default InspectionForm;

@@ -23,6 +23,6 @@ export const handle: Handle = {
   module: "quality"
 };
 
-export default function InboundInspectionRoute() {
+export default function InspectionRoute() {
   return <Outlet />;
 }

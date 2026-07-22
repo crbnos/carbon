@@ -631,7 +631,7 @@ export const path = {
     deleteHoliday: (id: string) =>
       generatePath(`${x}/people/holidays/delete/${id}`),
     deleteInspectionDocument: (id: string) =>
-      generatePath(`${x}/inspection/${id}/delete`),
+      generatePath(`${x}/inspection-document/${id}/delete`),
     deleteInvestigationType: (id: string) =>
       generatePath(`${x}/quality/investigation-types/delete/${id}`),
     deleteIssue: (id: string) => generatePath(`${x}/issue/delete/${id}`),
@@ -1122,26 +1122,26 @@ export const path = {
     holiday: (id: string) => generatePath(`${x}/people/holidays/${id}`),
     holidays: `${x}/people/holidays`,
     import: (tableId: string) => generatePath(`${x}/shared/import/${tableId}`),
-    inboundInspection: (id: string) =>
-      generatePath(`${x}/inbound-inspection/${id}`),
-    inboundInspectionAccept: (id: string) =>
-      generatePath(`${x}/inbound-inspection/${id}/accept`),
-    inboundInspectionDocument: (id: string) =>
-      generatePath(`${x}/inbound-inspection/${id}/document`),
-    inboundInspectionMeasurement: (id: string) =>
-      generatePath(`${x}/inbound-inspection/${id}/measurement`),
-    inboundInspectionPartial: (id: string) =>
-      generatePath(`${x}/inbound-inspection/${id}/partial`),
-    inboundInspectionReject: (id: string) =>
-      generatePath(`${x}/inbound-inspection/${id}/reject`),
-    inboundInspectionSample: (id: string) =>
-      generatePath(`${x}/inbound-inspection/${id}/sample`),
-    inboundInspections: `${x}/quality/inbound-inspections`,
     incomeStatement: `${x}/accounting/income-statement`,
     incomeStatementLedger: (id: string) =>
       generatePath(`${x}/accounting/income-statement/${id}`),
-    inspectionDocument: (id: string) => generatePath(`${x}/inspection/${id}`),
+    inspection: (id: string) => generatePath(`${x}/inspection/${id}`),
+    inspectionAccept: (id: string) =>
+      generatePath(`${x}/inspection/${id}/accept`),
+    inspectionAssignedDocument: (id: string) =>
+      generatePath(`${x}/inspection/${id}/document`),
+    inspectionDocument: (id: string) =>
+      generatePath(`${x}/inspection-document/${id}`),
     inspectionDocuments: `${x}/production/inspection`,
+    inspectionMeasurement: (id: string) =>
+      generatePath(`${x}/inspection/${id}/measurement`),
+    inspectionPartial: (id: string) =>
+      generatePath(`${x}/inspection/${id}/partial`),
+    inspectionReject: (id: string) =>
+      generatePath(`${x}/inspection/${id}/reject`),
+    inspectionSample: (id: string) =>
+      generatePath(`${x}/inspection/${id}/sample`),
+    inspections: `${x}/quality/inspections`,
     integration: (id: string) =>
       generatePath(`${x}/settings/integrations/${id}`),
     integrationDeactivate: (id: string) =>
@@ -1917,7 +1917,7 @@ export const path = {
     salesRfqs: `${x}/sales/rfqs`,
     salesSettings: `${x}/settings/sales`,
     saveInspectionDocument: (id: string) =>
-      generatePath(`${x}/inspection/${id}/save`),
+      generatePath(`${x}/inspection-document/${id}/save`),
 
     saveViewOrder: `${x}/shared/view/order`,
 
@@ -2102,7 +2102,7 @@ export const path = {
       generatePath(`${x}/assembly/${id}/units/${unitId}`),
     updateChangeOrder: `${x}/items/change-order/update`,
     updateInspectionDocumentName: (id: string) =>
-      generatePath(`${x}/inspection/${id}/update-name`),
+      generatePath(`${x}/inspection-document/${id}/update-name`),
     updateIssueItem: `${x}/issue/item/update`,
     userAttribute: (id: string) => generatePath(`${x}/account/${id}/attribute`),
     users: `${x}/users`,

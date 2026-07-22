@@ -6363,6 +6363,9 @@ msgstr "Muayene Seviyesi"
 msgid "Inspection Status"
 msgstr "Kontrol Durumu"
 
+msgid "Inspections"
+msgstr ""
+
 msgid "Inspections, nonconformance, and CAPA"
 msgstr "Muayeneler, uygunsuzluk ve CAPA"
 

@@ -48,10 +48,10 @@ import { EmployeeAvatar } from "~/components";
 import { Confirm } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
 import type {
-  InboundInspectionFeature,
-  InboundInspectionMeasurement,
-  InboundInspectionRow,
-  InboundInspectionSample,
+  InspectionMeasurement,
+  InspectionRow,
+  InspectionSample,
+  InspectionSamplingPlan,
   InspectionTrackedEntity,
   IssueTypeListItem
 } from "~/modules/quality/types";
@@ -67,16 +67,16 @@ import ScanInspectionSample from "./ScanInspectionSample";
 
 const InspectionDrawingPane = lazy(() => import("./InspectionDrawingPane"));
 
-export type InboundInspectionViewProps = {
-  inspection: InboundInspectionRow;
-  receiptReadableId: string | null;
+export type InspectionViewProps = {
+  inspection: InspectionRow;
+  sourceDocumentReadableId: string | null;
   receiverId: string | null;
   itemName: string;
   itemTrackingType: string | null;
   supplierName: string | null;
-  samples: InboundInspectionSample[];
-  features: InboundInspectionFeature[];
-  measurements: InboundInspectionMeasurement[];
+  samples: InspectionSample[];
+  features: InspectionSamplingPlan[];
+  measurements: InspectionMeasurement[];
   balloons: {
     id: string;
     inspectionFeatureId: string;
@@ -96,9 +96,9 @@ export type InboundInspectionViewProps = {
 // ballooned drawing beside the features x samples measurement grid; lots with
 // no assigned document keep the manual pass/fail sample flow. Reusable as a
 // data-prop component (AssemblyView pattern) so MES can consume it later.
-const InboundInspectionView = ({
+const InspectionView = ({
   inspection,
-  receiptReadableId,
+  sourceDocumentReadableId,
   receiverId,
   itemName,
   itemTrackingType,
@@ -113,7 +113,7 @@ const InboundInspectionView = ({
   issueTypes,
   currentUserId,
   enforceFourEyes
-}: InboundInspectionViewProps) => {
+}: InspectionViewProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
   const canUpdate = permissions.can("update", "quality");
@@ -167,7 +167,7 @@ const InboundInspectionView = ({
       { featureId: string; status: string; value: number | null }
     >();
     for (const m of measurements) {
-      byKey.set(`${m.inboundInspectionSampleId}:${m.inspectionFeatureId}`, {
+      byKey.set(`${m.inspectionSampleId}:${m.inspectionFeatureId}`, {
         featureId: m.inspectionFeatureId,
         status: m.status,
         value: m.value == null ? null : Number(m.value)
@@ -357,7 +357,7 @@ const InboundInspectionView = ({
           <VStack spacing={0}>
             <HStack spacing={2} className="items-center">
               <h1 className="text-base font-semibold">
-                {inspection.inboundInspectionId}
+                {inspection.inspectionId}
               </h1>
               <Badge variant={statusBadgeVariant}>{inspection.status}</Badge>
             </HStack>
@@ -367,8 +367,10 @@ const InboundInspectionView = ({
           </VStack>
           <div className="grid grid-cols-2 gap-x-8 gap-y-1 text-sm md:grid-cols-4">
             <Kv
-              label={t`Receipt`}
-              value={receiptReadableId ?? ""}
+              label={
+                inspection.sourceDocument === "Receipt" ? t`Receipt` : t`Source`
+              }
+              value={sourceDocumentReadableId ?? ""}
               sub={supplierName ?? undefined}
             />
             <Kv
@@ -636,7 +638,7 @@ const InboundInspectionView = ({
 
       {acceptConfirmDisclosure.isOpen && (
         <Confirm
-          action={path.to.inboundInspectionAccept(inspection.id)}
+          action={path.to.inspectionAccept(inspection.id)}
           title={t`Accept lot?`}
           text={
             isSerial
@@ -651,7 +653,7 @@ const InboundInspectionView = ({
 
       {partialConfirmDisclosure.isOpen && (
         <Confirm
-          action={path.to.inboundInspectionPartial(inspection.id)}
+          action={path.to.inspectionPartial(inspection.id)}
           title={t`Mark lot as partial?`}
           text={
             isSerial
@@ -666,7 +668,7 @@ const InboundInspectionView = ({
 
       {rejectConfirmDisclosure.isOpen && (
         <RejectLotModal
-          action={path.to.inboundInspectionReject(inspection.id)}
+          action={path.to.inspectionReject(inspection.id)}
           issueTypes={issueTypes}
           summary={
             isSerial
@@ -772,7 +774,7 @@ function DocumentSwitchModal({
           </Button>
           <fetcher.Form
             method="post"
-            action={path.to.inboundInspectionDocument(inspectionId)}
+            action={path.to.inspectionAssignedDocument(inspectionId)}
             onSubmit={onClose}
           >
             <input
@@ -815,4 +817,4 @@ function Kv({
   );
 }
 
-export default InboundInspectionView;
+export default InspectionView;

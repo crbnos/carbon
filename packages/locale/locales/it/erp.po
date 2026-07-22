@@ -6363,6 +6363,9 @@ msgstr "Livello di Ispezione"
 msgid "Inspection Status"
 msgstr "Stato di Ispezione"
 
+msgid "Inspections"
+msgstr ""
+
 msgid "Inspections, nonconformance, and CAPA"
 msgstr "Ispezioni, non conformità e CAPA"
 

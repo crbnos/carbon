@@ -8,9 +8,9 @@ import { Table } from "~/components";
 import type { EditableTableCellComponentProps } from "~/components/Editable";
 import { EditableNumber } from "~/components/Editable";
 import type {
-  InboundInspectionFeature,
-  InboundInspectionMeasurement,
-  InboundInspectionSample
+  InspectionMeasurement,
+  InspectionSample,
+  InspectionSamplingPlan
 } from "~/modules/quality/types";
 import { path } from "~/utils/path";
 
@@ -43,9 +43,9 @@ type InspectionMeasurementGridProps = {
   inspectionId: string;
   isReadOnly: boolean;
   isSerial: boolean;
-  features: InboundInspectionFeature[];
-  samples: InboundInspectionSample[];
-  measurements: InboundInspectionMeasurement[];
+  features: InspectionSamplingPlan[];
+  samples: InspectionSample[];
+  measurements: InspectionMeasurement[];
   maxSampleSize: number;
   activeFeatureId: string | null;
   onActiveFeatureChange: (id: string | null) => void;
@@ -133,7 +133,7 @@ const InspectionMeasurementGrid = ({
       sampleId
         ? measurements.find(
             (m) =>
-              m.inboundInspectionSampleId === sampleId &&
+              m.inspectionSampleId === sampleId &&
               m.inspectionFeatureId === featureId
           )
         : undefined,
@@ -163,7 +163,7 @@ const InspectionMeasurementGrid = ({
       if (payload.passed !== undefined) formData.set("passed", payload.passed);
 
       const response = await fetch(
-        path.to.inboundInspectionMeasurement(inspectionId),
+        path.to.inspectionMeasurement(inspectionId),
         { method: "post", body: formData }
       );
       const body = (await response.json().catch(() => null)) as {

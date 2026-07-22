@@ -4,8 +4,8 @@ import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import invariant from "tiny-invariant";
-import { dispositionInboundInspection } from "~/modules/quality/quality.server";
-import { getParams, path } from "~/utils/path";
+import { dispositionInspection } from "~/modules/quality/quality.server";
+import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -16,22 +16,22 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { id } = params;
   invariant(id, "id is required");
 
-  const result = await dispositionInboundInspection({
+  const result = await dispositionInspection({
     id,
-    decision: "Accept",
+    decision: "Partial",
     companyId,
     dispositionedBy: userId
   });
 
   if (result.error) {
     throw redirect(
-      path.to.inboundInspection(id),
-      await flash(request, error(result.error, "Failed to accept lot"))
+      path.to.inspection(id),
+      await flash(request, error(result.error, "Failed to mark partial"))
     );
   }
 
   throw redirect(
-    `${path.to.inboundInspections}?${getParams(request)}`,
-    await flash(request, success("Lot accepted"))
+    path.to.inspection(id),
+    await flash(request, success("Lot marked partial"))
   );
 }

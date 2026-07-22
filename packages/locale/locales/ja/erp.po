@@ -6363,6 +6363,9 @@ msgstr "検査レベル"
 msgid "Inspection Status"
 msgstr "検査ステータス"
 
+msgid "Inspections"
+msgstr ""
+
 msgid "Inspections, nonconformance, and CAPA"
 msgstr "検査、不適合、および是正予防措置"
 

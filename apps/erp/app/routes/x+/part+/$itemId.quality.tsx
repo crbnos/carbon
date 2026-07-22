@@ -107,15 +107,13 @@ export default function PartQualityRoute() {
   const { itemId } = useParams();
   if (!itemId) throw new Error("itemId is required");
   return (
-    <div className="p-4">
-      <ItemQualityView
-        itemId={itemId}
-        actionPath={path.to.partQuality(itemId)}
-        standard={samplingStandard}
-        plan={plan ?? undefined}
-        documents={documents}
-        assignments={assignments}
-      />
-    </div>
+    <ItemQualityView
+      itemId={itemId}
+      actionPath={path.to.partQuality(itemId)}
+      standard={samplingStandard}
+      plan={plan ?? undefined}
+      documents={documents}
+      assignments={assignments}
+    />
   );
 }

@@ -32,7 +32,7 @@ import {
 } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { Hidden, Submit, TextArea } from "~/components/Form";
-import { inboundInspectionSampleValidator } from "~/modules/quality/quality.models";
+import { inspectionSampleValidator } from "~/modules/quality/quality.models";
 import type { InspectionTrackedEntity } from "~/modules/quality/types";
 import { path } from "~/utils/path";
 
@@ -140,8 +140,8 @@ export default function ScanInspectionSample({
           key={`${selected?.id ?? "none"}-${resetKey}`}
           fetcher={fetcher}
           method="post"
-          action={`${path.to.inboundInspection(inspectionId)}/sample`}
-          validator={inboundInspectionSampleValidator}
+          action={`${path.to.inspection(inspectionId)}/sample`}
+          validator={inspectionSampleValidator}
           defaultValues={{
             inspectionId,
             trackedEntityId: selected?.id ?? "",

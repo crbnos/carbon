@@ -5,8 +5,8 @@ import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import invariant from "tiny-invariant";
-import { inboundInspectionMeasurementValidator } from "~/modules/quality";
-import { upsertInboundInspectionMeasurement } from "~/modules/quality/quality.server";
+import { inspectionMeasurementValidator } from "~/modules/quality";
+import { upsertInspectionMeasurement } from "~/modules/quality/quality.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -18,9 +18,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   invariant(id, "id is required");
 
   const formData = await request.formData();
-  const validation = await validator(
-    inboundInspectionMeasurementValidator
-  ).validate(formData);
+  const validation = await validator(inspectionMeasurementValidator).validate(
+    formData
+  );
   if (validation.error) return validationError(validation.error);
 
   if (validation.data.inspectionId !== id) {
@@ -30,7 +30,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const result = await upsertInboundInspectionMeasurement({
+  const result = await upsertInspectionMeasurement({
     ...validation.data,
     companyId,
     userId

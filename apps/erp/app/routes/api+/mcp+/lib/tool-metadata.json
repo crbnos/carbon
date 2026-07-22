@@ -1,5 +1,5 @@
 {
-  "generated": "2026-07-22T04:26:40.976Z",
+  "generated": "2026-07-22T13:42:25.509Z",
   "totalTools": 1391,
   "modules": 15,
   "tools": [
@@ -29362,11 +29362,11 @@
       }
     },
     {
-      "name": "quality_getInboundInspections",
+      "name": "quality_getInspections",
       "module": "quality",
       "classification": "READ",
-      "description": "get inbound inspections",
-      "paramCount": 4,
+      "description": "get inspections",
+      "paramCount": 5,
       "serviceParams": [
         "client",
         "companyId",
@@ -29400,6 +29400,12 @@
                   "string",
                   "null"
                 ]
+              },
+              "source": {
+                "type": [
+                  "string",
+                  "null"
+                ]
               }
             }
           }
@@ -29407,10 +29413,10 @@
       }
     },
     {
-      "name": "quality_getInboundInspection",
+      "name": "quality_getInspection",
       "module": "quality",
       "classification": "READ",
-      "description": "get inbound inspection",
+      "description": "get inspection",
       "paramCount": 1,
       "serviceParams": [
         "client",
@@ -29432,10 +29438,10 @@
       }
     },
     {
-      "name": "quality_getInboundInspectionLotTrackedEntities",
+      "name": "quality_getInspectionTrackedEntities",
       "module": "quality",
       "classification": "READ",
-      "description": "get inbound inspection lot tracked entities",
+      "description": "get inspection tracked entities",
       "paramCount": 1,
       "serviceParams": [
         "client",
@@ -29458,14 +29464,14 @@
       }
     },
     {
-      "name": "quality_getInboundInspectionFeatures",
+      "name": "quality_getInspectionSamplingPlans",
       "module": "quality",
       "classification": "READ",
-      "description": "get inbound inspection features",
+      "description": "get inspection sampling plans",
       "paramCount": 1,
       "serviceParams": [
         "client",
-        "inboundInspectionId",
+        "inspectionId",
         "companyId"
       ],
       "injectAuth": [
@@ -29474,24 +29480,24 @@
       "schema": {
         "type": "object",
         "properties": {
-          "inboundInspectionId": {
+          "inspectionId": {
             "type": "string"
           }
         },
         "required": [
-          "inboundInspectionId"
+          "inspectionId"
         ]
       }
     },
     {
-      "name": "quality_getInboundInspectionMeasurements",
+      "name": "quality_getInspectionMeasurements",
       "module": "quality",
       "classification": "READ",
-      "description": "get inbound inspection measurements",
+      "description": "get inspection measurements",
       "paramCount": 1,
       "serviceParams": [
         "client",
-        "inboundInspectionId",
+        "inspectionId",
         "companyId"
       ],
       "injectAuth": [
@@ -29500,12 +29506,12 @@
       "schema": {
         "type": "object",
         "properties": {
-          "inboundInspectionId": {
+          "inspectionId": {
             "type": "string"
           }
         },
         "required": [
-          "inboundInspectionId"
+          "inspectionId"
         ]
       }
     },

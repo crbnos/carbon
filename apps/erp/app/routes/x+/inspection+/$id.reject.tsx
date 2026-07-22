@@ -11,18 +11,18 @@ import { redirect } from "react-router";
 import invariant from "tiny-invariant";
 import {
   deleteIssue,
-  getInboundInspection,
-  getInboundInspectionFeatures,
-  getInboundInspectionMeasurements,
+  getInspection,
+  getInspectionMeasurements,
+  getInspectionSamplingPlans,
   getIssueTypesList,
   insertIssue
 } from "~/modules/quality";
-import { dispositionInboundInspection } from "~/modules/quality/quality.server";
+import { dispositionInspection } from "~/modules/quality/quality.server";
 import { getCompanyIntegrations } from "~/modules/settings/settings.server";
 import { getUserDefaults } from "~/modules/users/users.server";
 import { path } from "~/utils/path";
 
-const logger = getLogger("erp", "inbound-inspections-id-reject");
+const logger = getLogger("erp", "inspections-id-reject");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -43,7 +43,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // 1. Cascade reject — mark every tracked entity in the lot as Rejected
   //    and flip the lot's status to Failed (ISO 9001:2015 §8.7).
-  const dispositionResult = await dispositionInboundInspection({
+  const dispositionResult = await dispositionInspection({
     id,
     decision: "Reject",
     companyId,
@@ -51,7 +51,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
   if (dispositionResult.error) {
     throw redirect(
-      path.to.inboundInspection(id),
+      path.to.inspection(id),
       await flash(
         request,
         error(dispositionResult.error, "Failed to reject lot")
@@ -62,7 +62,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // If the inspector opted out of an NCR, we're done — the lot is rejected.
   if (!createNcr) {
     throw redirect(
-      path.to.inboundInspection(id),
+      path.to.inspection(id),
       await flash(request, success("Lot rejected"))
     );
   }
@@ -72,14 +72,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const serviceRole = await getCarbonServiceRole();
 
   const [inspection, userDefaults, issueTypes] = await Promise.all([
-    getInboundInspection(client, id),
+    getInspection(client, id),
     getUserDefaults(client, userId, companyId),
     getIssueTypesList(client, companyId)
   ]);
 
   if (inspection.error || !inspection.data) {
     throw redirect(
-      path.to.inboundInspection(id),
+      path.to.inspection(id),
       await flash(
         request,
         error(inspection.error, "Lot rejected, but failed to load it for NCR")
@@ -95,7 +95,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (!issueType || !locationId) {
     throw redirect(
-      path.to.inboundInspection(id),
+      path.to.inspection(id),
       await flash(
         request,
         error(
@@ -107,16 +107,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const supplierName = insp.supplier?.name ?? "supplier";
-  const receiptReadableId = insp.receipt?.receiptId ?? "";
+  const sourceReadableId = insp.sourceDocumentReadableId ?? "";
   const itemReadableId =
     insp.item?.readableId ?? insp.itemReadableId ?? insp.itemId;
-  const inspectionReadableId = insp.inboundInspectionId ?? "";
+  const inspectionReadableId = insp.inspectionId ?? "";
 
   const issueTitle = [
     "Rejected lot",
     inspectionReadableId,
     itemReadableId && `— ${itemReadableId}`,
-    receiptReadableId && `on ${receiptReadableId}`
+    sourceReadableId && `on ${sourceReadableId}`
   ]
     .filter(Boolean)
     .join(" ");
@@ -124,8 +124,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // Document-driven lots: attach the failed characteristics (measured values
   // vs. spec) so MRB sees what failed and by how much without re-measuring.
   const [lotFeatures, lotMeasurements] = await Promise.all([
-    getInboundInspectionFeatures(serviceRole, id, companyId),
-    getInboundInspectionMeasurements(serviceRole, id, companyId)
+    getInspectionSamplingPlans(serviceRole, id, companyId),
+    getInspectionMeasurements(serviceRole, id, companyId)
   ]);
   const failedFeatureLines: string[] = [];
   for (const lotFeature of lotFeatures.data ?? []) {
@@ -178,7 +178,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (createResult.error || !createResult.data) {
     throw redirect(
-      path.to.inboundInspection(id),
+      path.to.inspection(id),
       await flash(
         request,
         error(createResult.error, "Lot rejected, but failed to create NCR")
@@ -217,35 +217,39 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // Link the source inspection to the NCR so the issue explorer can surface
   // the origin and deep-link back to the inspection lot.
-  await serviceRole.from("nonConformanceInboundInspection").insert({
+  await serviceRole.from("nonConformanceInspection").insert({
     nonConformanceId: ncrId,
-    inboundInspectionId: insp.id,
+    inspectionId: insp.id,
     companyId,
     createdBy: userId
   });
 
   // Also link the receipt line — gives the explorer the supplier / receipt
   // context through the existing "Receipt Lines" association branch.
-  if (insp.receiptLineId && insp.receiptId) {
+  if (
+    insp.sourceDocument === "Receipt" &&
+    insp.sourceDocumentLineId &&
+    insp.sourceDocumentId
+  ) {
     await serviceRole.from("nonConformanceReceiptLine").insert({
       nonConformanceId: ncrId,
-      receiptLineId: insp.receiptLineId,
-      receiptId: insp.receiptId,
-      receiptReadableId: insp.receipt?.receiptId ?? null,
+      receiptLineId: insp.sourceDocumentLineId,
+      receiptId: insp.sourceDocumentId,
+      receiptReadableId: insp.sourceDocumentReadableId ?? null,
       companyId,
       createdBy: userId
     });
   }
 
   // Link every tracked entity in the lot to the NCR.
-  const trackedEntityIds = ((insp.inboundInspectionSample as any[]) ?? [])
+  const trackedEntityIds = ((insp.inspectionSample as any[]) ?? [])
     .map((s) => s.trackedEntityId as string)
     .filter(Boolean);
   // Include un-sampled entities too (they were also Rejected by the cascade).
   const receiptLineEntities = await client
     .from("trackedEntity")
     .select("id")
-    .eq("attributes ->> Receipt Line", insp.receiptLineId)
+    .eq("attributes ->> Receipt Line", insp.sourceDocumentLineId ?? "")
     .eq("companyId", companyId);
   const allLotEntityIds = Array.from(
     new Set([
@@ -300,7 +304,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (tasks.error) {
     await deleteIssue(serviceRole, ncrId);
     throw redirect(
-      path.to.inboundInspection(id),
+      path.to.inspection(id),
       await flash(
         request,
         error(tasks.error, "Lot rejected, but failed to create NCR tasks")

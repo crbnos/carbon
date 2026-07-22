@@ -6363,6 +6363,9 @@ msgstr "检验水平"
 msgid "Inspection Status"
 msgstr "检验状态"
 
+msgid "Inspections"
+msgstr ""
+
 msgid "Inspections, nonconformance, and CAPA"
 msgstr "检验、不符合和CAPA"
 

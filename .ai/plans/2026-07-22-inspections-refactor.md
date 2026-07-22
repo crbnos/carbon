@@ -16,10 +16,10 @@ enum `inspectionStatus`).
 - [x] Task 2: Apply migration + regenerate types (validates rename against live data)
 - [x] Task 3: Seed data — `inspection` sequence with INS prefix
 - [x] Task 4: post-receipt edge fn — new names + source columns
-- [ ] Task 5: Quality module app-layer rename (models/service/server/types/barrel)
-- [ ] Task 6: Routes — editor → x+/inspection-document+, execution → x+/inspection+, list → quality+/inspections, redirects, path.ts
-- [ ] Task 7: UI — ui/Inspections rename, InspectionView, filterable Source column, nav label
-- [ ] Task 8: Issue associations — table/key renames ("inspections")
+- [x] Task 5: Quality module app-layer rename (models/service/server/types/barrel)
+- [x] Task 6: Routes — editor → x+/inspection-document+, execution → x+/inspection+, list → quality+/inspections, redirects, path.ts
+- [x] Task 7: UI — ui/Inspections rename, InspectionView, filterable Source column, nav label
+- [x] Task 8: Issue associations — table/key renames ("inspections")
 - [ ] Task 9: Docs sync + verification (typecheck, tests, browser smoke)
 
 ## Task summaries

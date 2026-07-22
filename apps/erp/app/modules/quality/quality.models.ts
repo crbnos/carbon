@@ -78,7 +78,7 @@ export const nonConformanceAssociationType = [
   "shipmentLines",
   "receiptLines",
   "trackedEntities",
-  "inboundInspections"
+  "inspections"
 ] as const;
 
 export const qualityDocumentStatus = ["Draft", "Active", "Archived"] as const;
@@ -172,14 +172,14 @@ export const issueAssociationValidator = z
   .refine(
     (data) => {
       // For types other than items, customer, supplier, trackedEntity, or
-      // inboundInspection, lineId is required
+      // inspection, lineId is required
       if (
         ![
           "items",
           "customers",
           "suppliers",
           "trackedEntities",
-          "inboundInspections"
+          "inspections"
         ].includes(data.type) &&
         !data.lineId
       ) {
@@ -428,7 +428,7 @@ export const riskRegisterValidator = z.object({
   type: z.enum(riskRegisterType)
 });
 
-export const inboundInspectionStatus = [
+export const inspectionStatusType = [
   "Pending",
   "In Progress",
   "Passed",
@@ -436,7 +436,7 @@ export const inboundInspectionStatus = [
   "Partial"
 ] as const;
 
-export const inboundInspectionSampleStatus = [
+export const inspectionSampleStatusType = [
   "Pending",
   "Passed",
   "Failed"
@@ -476,7 +476,7 @@ export const itemSamplingPlanValidator = z
     }
   });
 
-export const inboundInspectionValidator = z.object({
+export const inspectionValidator = z.object({
   id: z.string().min(1, { message: "Id is required" }),
   status: z.enum(["Passed", "Failed"], {
     errorMap: () => ({ message: "Status is required" })
@@ -484,7 +484,7 @@ export const inboundInspectionValidator = z.object({
   notes: zfd.text(z.string().optional())
 });
 
-export const inboundInspectionSampleValidator = z.object({
+export const inspectionSampleValidator = z.object({
   inspectionId: z.string().min(1, { message: "Inspection is required" }),
   // Optional: serial parts scan a discrete tracked entity; batch / inventory /
   // non-inventory parts record pass/fail without one.
@@ -497,13 +497,15 @@ export const inboundInspectionSampleValidator = z.object({
   notes: zfd.text(z.string().optional())
 });
 
-export const inboundInspectionDispositionValidator = z.object({
+export const inspectionDispositionValidator = z.object({
   id: z.string().min(1, { message: "Id is required" }),
   decision: z.enum(["Accept", "Reject", "Partial"], {
     errorMap: () => ({ message: "Decision is required" })
   }),
   notes: zfd.text(z.string().optional())
 });
+
+export const inspectionSourceDocuments = ["Receipt", "Job Operation"] as const;
 
 export const inspectionDocumentUsages = ["Receipt"] as const;
 
@@ -516,7 +518,7 @@ export const itemInspectionDocumentAssignmentValidator = z.object({
   inspectionDocumentId: zfd.text(z.string().optional())
 });
 
-export const inboundInspectionMeasurementValidator = z.object({
+export const inspectionMeasurementValidator = z.object({
   inspectionId: z.string().min(1, { message: "Inspection is required" }),
   // Absent = create an anonymous sample (non-serial grid columns).
   sampleId: zfd.text(z.string().optional()),

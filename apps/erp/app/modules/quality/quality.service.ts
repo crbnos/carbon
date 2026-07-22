@@ -134,9 +134,9 @@ export async function deleteIssueAssociation(
         .from("nonConformanceTrackedEntity")
         .delete()
         .eq("id", associationId);
-    case "inboundInspections":
+    case "inspections":
       return await (client as any)
-        .from("nonConformanceInboundInspection")
+        .from("nonConformanceInspection")
         .delete()
         .eq("id", associationId);
     default:
@@ -509,7 +509,7 @@ export async function getIssueAssociations(
     trackedEntities,
     customers,
     suppliers,
-    inboundInspections
+    inspections
   ] = await Promise.all([
     // Items
     (client as any)
@@ -691,14 +691,14 @@ export async function getIssueAssociations(
 
     // Inbound Inspections
     (client as any)
-      .from("nonConformanceInboundInspection")
+      .from("nonConformanceInspection")
       .select(
         `
         id,
-        inboundInspectionId,
-        inboundInspection:inboundInspection (
+        inspectionId,
+        inspection:inspection (
           id,
-          inboundInspectionId,
+          inspectionId,
           itemReadableId,
           lotSize,
           status,
@@ -803,17 +803,15 @@ export async function getIssueAssociations(
         documentLineId: "",
         documentReadableId: item.supplier.name
       })) || [],
-    inboundInspections: ((inboundInspections as any)?.data ?? []).map(
-      (link: any) => ({
-        id: link.id,
-        type: "inboundInspections",
-        documentId: link.inboundInspectionId ?? "",
-        documentLineId: "",
-        documentReadableId: link.inboundInspection?.inboundInspectionId ?? "",
-        quantity: link.inboundInspection?.lotSize ?? 0,
-        status: link.inboundInspection?.status ?? null
-      })
-    )
+    inspections: ((inspections as any)?.data ?? []).map((link: any) => ({
+      id: link.id,
+      type: "inspections",
+      documentId: link.inspectionId ?? "",
+      documentLineId: "",
+      documentReadableId: link.inspection?.inspectionId ?? "",
+      quantity: link.inspection?.lotSize ?? 0,
+      status: link.inspection?.status ?? null
+    }))
   };
 }
 
@@ -2268,31 +2266,39 @@ export async function upsertItemSamplingPlan(
   });
 }
 
-export async function getInboundInspections(
+export async function getInspections(
   client: SupabaseClient<Database>,
   companyId: string,
   args?: GenericQueryFilters & {
     search: string | null;
     status: string | null;
+    source: string | null;
   }
 ) {
+  // No receipt embed: the generic sourceDocumentId carries no FK, so the
+  // source document is denormalized onto the row (sourceDocumentReadableId).
   let query = (client as any)
-    .from("inboundInspection")
+    .from("inspection")
     .select(
-      "*, item(readableId, name), receipt(receiptId, supplierId), supplier(name), inboundInspectionSample(status)",
+      "*, item(readableId, name), supplier(name), inspectionSample(status)",
       { count: "exact" }
     )
     .eq("companyId", companyId);
 
   if (args?.search) {
     query = query.or(
-      `itemReadableId.ilike.%${args.search}%,notes.ilike.%${args.search}%`
+      `itemReadableId.ilike.%${args.search}%,sourceDocumentReadableId.ilike.%${args.search}%,notes.ilike.%${args.search}%`
     );
   }
 
   if (args?.status) {
     // @ts-ignore - status is a valid enum value
     query = query.eq("status", args.status);
+  }
+
+  if (args?.source) {
+    // @ts-ignore - source is a valid enum value
+    query = query.eq("sourceDocument", args.source);
   }
 
   if (args) {
@@ -2304,20 +2310,22 @@ export async function getInboundInspections(
   return query;
 }
 
-export async function getInboundInspection(
+export async function getInspection(
   client: SupabaseClient<Database>,
   id: string
 ) {
   return (client as any)
-    .from("inboundInspection")
+    .from("inspection")
     .select(
-      "*, item(readableId, name, type, itemTrackingType), receipt(receiptId, supplierId, createdBy), supplier(name), inboundInspectionSample(*, trackedEntity(id, readableId, attributes, status, sourceDocumentReadableId))"
+      "*, item(readableId, name, type, itemTrackingType), supplier(name), inspectionSample(*, trackedEntity(id, readableId, attributes, status, sourceDocumentReadableId))"
     )
     .eq("id", id)
     .single();
 }
 
-export async function getInboundInspectionLotTrackedEntities(
+// Receipt-sourced lots only: the received tracked entities are linked to the
+// receipt line through their attributes.
+export async function getInspectionTrackedEntities(
   client: SupabaseClient<Database>,
   receiptLineId: string,
   companyId: string
@@ -2329,31 +2337,31 @@ export async function getInboundInspectionLotTrackedEntities(
     .eq("companyId", companyId);
 }
 
-export async function getInboundInspectionFeatures(
+export async function getInspectionSamplingPlans(
   client: SupabaseClient<Database>,
-  inboundInspectionId: string,
+  inspectionId: string,
   companyId: string
 ) {
   // Embed by target table name, never alias:fkColumn — composite-FK embeds
   // break with the alias form.
   return client
-    .from("inboundInspectionFeature")
+    .from("inspectionSamplingPlan")
     .select(
       "*, inspectionFeature(id, label, description, pageNumber, type, nominalValue, tolerancePlus, toleranceMinus, unit)"
     )
-    .eq("inboundInspectionId", inboundInspectionId)
+    .eq("inspectionId", inspectionId)
     .eq("companyId", companyId);
 }
 
-export async function getInboundInspectionMeasurements(
+export async function getInspectionMeasurements(
   client: SupabaseClient<Database>,
-  inboundInspectionId: string,
+  inspectionId: string,
   companyId: string
 ) {
   return client
-    .from("inboundInspectionMeasurement")
+    .from("inspectionMeasurement")
     .select("*")
-    .eq("inboundInspectionId", inboundInspectionId)
+    .eq("inspectionId", inspectionId)
     .eq("companyId", companyId);
 }
 

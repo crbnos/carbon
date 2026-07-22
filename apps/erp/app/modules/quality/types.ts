@@ -4,10 +4,10 @@ import type {
   getGaugeCalibrationRecords,
   getGauges,
   getGaugeTypes,
-  getInboundInspection,
-  getInboundInspectionFeatures,
-  getInboundInspectionMeasurements,
-  getInboundInspections,
+  getInspection,
+  getInspectionMeasurements,
+  getInspectionSamplingPlans,
+  getInspections,
   getIssueActionTasks,
   getIssueApprovalTasks,
   getIssueAssociations,
@@ -135,47 +135,46 @@ export type Risk = NonNullable<
   Awaited<ReturnType<typeof getRisks>>["data"]
 >[number];
 
-export type InboundInspection = NonNullable<
-  Awaited<ReturnType<typeof getInboundInspections>>["data"]
+export type Inspection = NonNullable<
+  Awaited<ReturnType<typeof getInspections>>["data"]
 >[number];
 
-export type InboundInspectionDetail = NonNullable<
-  Awaited<ReturnType<typeof getInboundInspection>>["data"]
+export type InspectionDetail = NonNullable<
+  Awaited<ReturnType<typeof getInspection>>["data"]
 >;
 
-export type InboundInspectionStatus =
-  Database["public"]["Enums"]["inboundInspectionStatus"];
+export type InspectionStatus =
+  Database["public"]["Enums"]["inspectionStatusType"];
 
-export type InboundInspectionSampleStatus =
-  Database["public"]["Enums"]["inboundInspectionSampleStatus"];
+export type InspectionSampleStatus =
+  Database["public"]["Enums"]["inspectionSampleStatusType"];
 
-export type InboundInspectionRow =
-  Database["public"]["Tables"]["inboundInspection"]["Row"];
+export type InspectionRow = Database["public"]["Tables"]["inspection"]["Row"];
 
-export type InboundInspectionSampleRow =
-  Database["public"]["Tables"]["inboundInspectionSample"]["Row"];
+export type InspectionSampleRow =
+  Database["public"]["Tables"]["inspectionSample"]["Row"];
 
 export type InspectionTrackedEntity = Pick<
   Database["public"]["Tables"]["trackedEntity"]["Row"],
   "id" | "readableId" | "attributes" | "status" | "sourceDocumentReadableId"
 >;
 
-export type InboundInspectionSample = InboundInspectionSampleRow & {
+export type InspectionSample = InspectionSampleRow & {
   trackedEntity: InspectionTrackedEntity | null;
 };
 
 export type ItemInspectionDocumentAssignment =
   Database["public"]["Tables"]["itemInspectionDocumentAssignment"]["Row"];
 
-export type InboundInspectionMeasurementRow =
-  Database["public"]["Tables"]["inboundInspectionMeasurement"]["Row"];
+export type InspectionMeasurementRow =
+  Database["public"]["Tables"]["inspectionMeasurement"]["Row"];
 
-export type InboundInspectionFeature = NonNullable<
-  Awaited<ReturnType<typeof getInboundInspectionFeatures>>["data"]
+export type InspectionSamplingPlan = NonNullable<
+  Awaited<ReturnType<typeof getInspectionSamplingPlans>>["data"]
 >[number];
 
-export type InboundInspectionMeasurement = NonNullable<
-  Awaited<ReturnType<typeof getInboundInspectionMeasurements>>["data"]
+export type InspectionMeasurement = NonNullable<
+  Awaited<ReturnType<typeof getInspectionMeasurements>>["data"]
 >[number];
 
 export type IssueTypeListItem = NonNullable<
