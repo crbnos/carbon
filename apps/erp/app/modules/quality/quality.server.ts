@@ -875,3 +875,71 @@ export async function reconcileInboundInspectionFeatures(
     );
   }
 }
+
+// -------------------------------------------------------------
+// 5. changeInboundInspectionDocument
+// -------------------------------------------------------------
+// Swaps (or clears) the document assigned to an open lot. Only allowed while
+// the lot is non-terminal and no measurements have been recorded — recorded
+// readings belong to the old document's features. The per-lot plan rows are
+// wiped; the next loader pass reconciles rows for the new document.
+
+export async function changeInboundInspectionDocument(args: {
+  inboundInspectionId: string;
+  inspectionDocumentId: string | null;
+  companyId: string;
+  userId: string;
+}): Promise<Result<{ id: string }>> {
+  const db = getDatabaseClient();
+  const nowIso = new Date().toISOString();
+
+  try {
+    const result = await db.transaction().execute(async (trx) => {
+      const inspection = await trx
+        .selectFrom("inboundInspection")
+        .select(["id", "status"])
+        .where("id", "=", args.inboundInspectionId)
+        .where("companyId", "=", args.companyId)
+        .executeTakeFirst();
+      if (!inspection) throw new Error("Inspection not found");
+      if (inspection.status === "Passed" || inspection.status === "Failed") {
+        throw new Error("Inspection is closed");
+      }
+
+      const measurement = await trx
+        .selectFrom("inboundInspectionMeasurement")
+        .select(["id"])
+        .where("inboundInspectionId", "=", args.inboundInspectionId)
+        .limit(1)
+        .executeTakeFirst();
+      if (measurement) {
+        throw new Error(
+          "Cannot change document after measurements are recorded"
+        );
+      }
+
+      await trx
+        .updateTable("inboundInspection")
+        .set({
+          inspectionDocumentId: args.inspectionDocumentId,
+          updatedBy: args.userId,
+          updatedAt: nowIso
+        })
+        .where("id", "=", args.inboundInspectionId)
+        .execute();
+
+      await trx
+        .deleteFrom("inboundInspectionFeature")
+        .where("inboundInspectionId", "=", args.inboundInspectionId)
+        .execute();
+
+      return { id: inspection.id };
+    });
+
+    return { data: result, error: null };
+  } catch (err) {
+    return errResult(
+      err instanceof Error ? err.message : "Failed to change document"
+    );
+  }
+}

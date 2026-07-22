@@ -12,7 +12,7 @@
 - [x] Task 5: post-receipt — attach document + per-feature plan rows
 - [x] Task 6: quality.service reads + assignment upsert
 - [x] Task 7: quality.server — measurement upsert, derived status, reconcile, disposition gating
-- [ ] Task 8: Route tree x+/inbound-inspection+ + path.ts
+- [x] Task 8: Route tree x+/inbound-inspection+ + path.ts
 - [ ] Task 9: InspectionDrawingPane (read-only PDF + balloons)
 - [ ] Task 10: InspectionMeasurementGrid (features × samples)
 - [ ] Task 11: InboundInspectionView wiring + fallback + drawer retirement

@@ -1123,7 +1123,19 @@ export const path = {
     holidays: `${x}/people/holidays`,
     import: (tableId: string) => generatePath(`${x}/shared/import/${tableId}`),
     inboundInspection: (id: string) =>
-      generatePath(`${x}/quality/inbound-inspections/${id}`),
+      generatePath(`${x}/inbound-inspection/${id}`),
+    inboundInspectionAccept: (id: string) =>
+      generatePath(`${x}/inbound-inspection/${id}/accept`),
+    inboundInspectionDocument: (id: string) =>
+      generatePath(`${x}/inbound-inspection/${id}/document`),
+    inboundInspectionMeasurement: (id: string) =>
+      generatePath(`${x}/inbound-inspection/${id}/measurement`),
+    inboundInspectionPartial: (id: string) =>
+      generatePath(`${x}/inbound-inspection/${id}/partial`),
+    inboundInspectionReject: (id: string) =>
+      generatePath(`${x}/inbound-inspection/${id}/reject`),
+    inboundInspectionSample: (id: string) =>
+      generatePath(`${x}/inbound-inspection/${id}/sample`),
     inboundInspections: `${x}/quality/inbound-inspections`,
     incomeStatement: `${x}/accounting/income-statement`,
     incomeStatementLedger: (id: string) =>
