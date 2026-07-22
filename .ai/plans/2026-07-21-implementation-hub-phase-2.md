@@ -173,3 +173,25 @@ Waves are built **straight through** (Chase's call), committing per completed ch
 2. No accounting-system connection named in Load Your Data — step-by-step data-production instructions per source instead.
 3. Build straight through, no pauses between waves.
 4. Trophy notifications (email CC info@carbon.ms + Slack #sales, env-configurable) at days 3 and 10 only; day 5 celebrates in-app only.
+
+## Implementation status (2026-07-22, branch `claude/implementation-hub-phase-2-h037r9`)
+
+### Built and verified (typecheck + unit tests green)
+
+- **Wave 1 — complete.** Template v2 (7 gates, all tiers, `TEMPLATE_VERSION=2`, lazy service-role reset in the get-started layout loader), 17-question intake (`content/intake.ts`) with voice (`api+/intake.transcribe` → transcription edge fn, transcripts persisted to the `intakeTranscript` collection for sales review) and AI clarifier (`api+/ai+/intake.clarify`), pure `tailorPlan`/`diffIntake`/`intakeRows` logic with the package's first vitest suites, payoff screen, tailored Setup Map with receipts + Decisions Log, First Win AI ladder (`first-win.tsx` + `.server.ts`: rich upload → placeholder shell → text draft; draft process/work center seeding; idempotent via `firstWin.itemId`).
+- **Wave 2 — complete.** Load Your Data (per-source recipes, no vendor names, momentum counts, spot-check), opening-stock importer on `inventoryCount` (count sheets → AI extraction from CSV/XLSX/photo → propose-then-apply → post; `topUpOpeningStockLines` adds zero-baseline lines for greenfield factories with no ledger history), Prove It Works pilot trace, Make the Switch (T-minus plan, freeze-plan signature via fieldValues, push-the-date dialog, go/no-go huddle, "We're live" sets `live.liveAt`).
+- **Wave 3 — engine + digests complete; importers partially complete.** Streak engine (`implementationUsageFunction` hourly cron: timezone-aware business days, ≥2-of-7 signal areas, never-un-qualify, `reduceStreak` with 2 freezes, milestones 3/5/10 guarded by checkState, email+Slack on 3/10 only, activation at 10 stamps `live.activatedAt` + `gate:live`), live scoreboard with health checks + relapse → fix-it, Monday digest + quiet-detection crons (`HubDigestEmail`/`HubNudgeEmail`), open-PO/open-SO AI importers (`open-orders.tsx` + `.server.ts`, propose-then-apply into Draft orders, linked from Make the Switch).
+- **Wave 4 — complete.** Locked previews (`lockedPreviewFor` on registry; team/how-we-work/requirements render dimmed with booking CTA for self-serve), Guided moment cards (`GuidedMomentCard` + `useGuidedCta` stamping `lock.<source>` fieldValues + PostHog), internal fleet view (`fleet.tsx`, service-role, isInternalEmail-gated).
+
+### Deliberately deferred (with reasons)
+
+- **Price-list AI importer** — the pricing data set in Load Your Data already deep-links to the existing sales price-list screen (`SETUP_SCREEN_PATHS["price-lists"]` → `path.to.salesPriceList`) with recipe instructions; a dedicated AI importer would duplicate that surface. Revisit if fleet data shows pricing as a stall point.
+- **Bulk operator creation** — mass-creating user accounts touches per-seat billing (Stripe) and auth provisioning, an Ask-First area. The crew page links to the existing People screens; needs Chase's call on seat handling before automating.
+- **Browser verification (/auth + /test), Inngest dev-server smoke of the three crons, and `/translate` LLM fill of the 13 locale catalogs** — this container has no local DB/Docker stack; compensating rigor was unit tests on all pure logic + scoped typechecks across onboarding/erp/jobs/documents. Run these in a full dev environment before release.
+
+### Notes for release
+
+- Zero SQL migrations — all new state lives in `implementationRow` collections (`intake`, `intakeTranscript`, `usageDay`, `decisions`, `crew`, `fixit`) and `implementationFieldValue` keys; nothing to apply, generated DB types untouched.
+- First Win, the intake clarifier, and the AI importers require `OPENAI_API_KEY`; voice requires the `transcription` edge function.
+- Trophy/team notifications: `CARBON_TEAM_EMAIL` (default info@carbon.ms) and `CARBON_TEAM_SLACK_CHANNEL` (default #sales) env-configurable.
+- Existing enrolled hubs reset lazily on first load after deploy (templateVersion < 2 → wipe check/field/row state, keep the hub row).
