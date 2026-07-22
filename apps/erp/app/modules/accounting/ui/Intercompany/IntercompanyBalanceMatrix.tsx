@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@carbon/react";
+import { Trans } from "@lingui/react/macro";
 import { memo, useMemo } from "react";
 
 type BalanceEntry = {
@@ -52,7 +53,9 @@ const IntercompanyBalanceMatrix = memo(
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Intercompany Balances</CardTitle>
+          <CardTitle>
+            <Trans>Intercompany Balances</Trans>
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -60,7 +63,7 @@ const IntercompanyBalanceMatrix = memo(
               <thead>
                 <tr className="border-b">
                   <th className="text-left p-2 font-medium text-muted-foreground">
-                    From / To
+                    <Trans>From / To</Trans>
                   </th>
                   {companies.map((c) => (
                     <th

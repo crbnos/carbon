@@ -1,4 +1,5 @@
 import { IconButton, Input, NumberField, NumberInput } from "@carbon/react";
+import { useLingui } from "@lingui/react/macro";
 import { LuTrash } from "react-icons/lu";
 import { AccountControlled } from "~/components/Form";
 import DimensionSelector from "./DimensionSelector";
@@ -31,6 +32,7 @@ const JournalLineRow = ({
   availableDimensions,
   autoSaveDimensions = false
 }: JournalLineRowProps) => {
+  const { t } = useLingui();
   const handleAccountChange = (accountId: string) => {
     onChange({ ...line, accountId });
   };
@@ -70,12 +72,12 @@ const JournalLineRow = ({
           <AccountControlled
             value={line.accountId}
             onChange={handleAccountChange}
-            placeholder="Select account"
+            placeholder={t`Select account`}
             isReadOnly={isDisabled}
           />
 
           <Input
-            placeholder="Line description (optional)"
+            placeholder={t`Line description (optional)`}
             value={line.description}
             onChange={(e) => onChange({ ...line, description: e.target.value })}
             isReadOnly={isDisabled}
@@ -133,7 +135,7 @@ const JournalLineRow = ({
         <div className="flex h-9 items-center justify-center">
           {!isDisabled && (
             <IconButton
-              aria-label="Delete line"
+              aria-label={t`Delete line`}
               icon={<LuTrash />}
               variant="ghost"
               onClick={onDelete}

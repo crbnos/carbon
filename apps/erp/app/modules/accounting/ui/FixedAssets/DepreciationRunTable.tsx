@@ -1,5 +1,6 @@
 import { MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
+import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { ReactNode } from "react";
 import { memo, useCallback, useMemo, useState } from "react";
@@ -20,6 +21,7 @@ type DepreciationRunTableProps = {
 
 const DepreciationRunTable = memo(
   ({ data, count, primaryAction }: DepreciationRunTableProps) => {
+    const { t } = useLingui();
     const navigate = useNavigate();
     const permissions = usePermissions();
     const [selectedRun, setSelectedRun] =
@@ -30,7 +32,7 @@ const DepreciationRunTable = memo(
       () => [
         {
           accessorKey: "depreciationRunId",
-          header: "Run ID",
+          header: t`Run ID`,
           cell: ({ row }) => (
             <Hyperlink to={path.to.depreciationRun(row.original.id)}>
               {row.original.depreciationRunId}
@@ -42,7 +44,7 @@ const DepreciationRunTable = memo(
         },
         {
           accessorKey: "periodEnd",
-          header: "Period End",
+          header: t`Period End`,
           cell: ({ row }) => formatDate(row.original.periodEnd),
           meta: {
             icon: <LuCalendar />
@@ -50,7 +52,7 @@ const DepreciationRunTable = memo(
         },
         {
           accessorKey: "status",
-          header: "Status",
+          header: t`Status`,
           cell: ({ row }) => (
             <DepreciationRunStatus status={row.original.status} />
           ),
@@ -60,7 +62,7 @@ const DepreciationRunTable = memo(
         },
         {
           accessorKey: "postedAt",
-          header: "Posted At",
+          header: t`Posted At`,
           cell: ({ row }) =>
             row.original.postedAt ? formatDate(row.original.postedAt) : "—",
           meta: {
@@ -68,7 +70,7 @@ const DepreciationRunTable = memo(
           }
         }
       ],
-      []
+      [t]
     );
 
     const renderContextMenu = useCallback(
@@ -79,7 +81,7 @@ const DepreciationRunTable = memo(
             onClick={() => navigate(path.to.depreciationRun(row.id))}
           >
             <MenuIcon icon={<LuEye />} />
-            View Run
+            <Trans>View Run</Trans>
           </MenuItem>
           {row.status === "Draft" && (
             <MenuItem
@@ -91,7 +93,7 @@ const DepreciationRunTable = memo(
               }}
             >
               <MenuIcon icon={<LuTrash />} />
-              Delete
+              <Trans>Delete</Trans>
             </MenuItem>
           )}
         </>
@@ -107,14 +109,14 @@ const DepreciationRunTable = memo(
           count={count}
           primaryAction={primaryAction}
           renderContextMenu={renderContextMenu}
-          title="Depreciation"
+          title={t`Depreciation`}
         />
         {selectedRun && (
           <ConfirmDelete
             action={path.to.deleteDepreciationRun(selectedRun.id)}
             isOpen={deleteModal.isOpen}
             name={selectedRun.depreciationRunId}
-            text={`Are you sure you want to delete ${selectedRun.depreciationRunId}? This cannot be undone.`}
+            text={t`Are you sure you want to delete ${selectedRun.depreciationRunId}? This cannot be undone.`}
             onCancel={() => {
               deleteModal.onClose();
               setSelectedRun(null);

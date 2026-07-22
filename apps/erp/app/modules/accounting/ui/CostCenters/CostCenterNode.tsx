@@ -4,6 +4,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger
 } from "@carbon/react";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { Handle, type NodeProps, Position } from "@xyflow/react";
 import { memo } from "react";
 import {
@@ -25,6 +26,7 @@ interface CostCenterNodeData extends Record<string, unknown> {
 function CostCenterNodeComponent({
   data
 }: NodeProps & { data: CostCenterNodeData }) {
+  const { t } = useLingui();
   const { costCenter, onEdit, onDelete, onAddChild } = data;
 
   return (
@@ -58,7 +60,7 @@ function CostCenterNodeComponent({
           <DropdownMenuTrigger asChild>
             <button
               className="ml-auto shrink-0 rounded-md p-1 opacity-0 transition-opacity hover:bg-accent group-hover:opacity-100 focus:opacity-100"
-              aria-label="Actions"
+              aria-label={t`Actions`}
             >
               <LuEllipsisVertical className="size-3.5 text-muted-foreground" />
             </button>
@@ -66,18 +68,18 @@ function CostCenterNodeComponent({
           <DropdownMenuContent align="end" className="w-44">
             <DropdownMenuItem onClick={() => onEdit(costCenter.id!)}>
               <LuPencil className="mr-2 size-4" />
-              Edit
+              <Trans>Edit</Trans>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onAddChild(costCenter.id!)}>
               <LuPlus className="mr-2 size-4" />
-              Add cost center
+              <Trans>Add cost center</Trans>
             </DropdownMenuItem>
             <DropdownMenuItem
               className="text-destructive focus:text-destructive"
               onClick={() => onDelete(costCenter.id!)}
             >
               <LuTrash2 className="mr-2 size-4" />
-              Delete
+              <Trans>Delete</Trans>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

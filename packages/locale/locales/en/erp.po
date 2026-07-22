@@ -15,6 +15,12 @@ msgstr ""
 msgid " A supplier is a business or person who sells you parts or services."
 msgstr " A supplier is a business or person who sells you parts or services."
 
+msgid ", {residual}% residual"
+msgstr ", {residual}% residual"
+
+msgid ", {years}yr"
+msgstr ", {years}yr"
+
 #. placeholder {0}: fieldDef?.label ?? condition.field
 msgid "\"{0}\" isn't available on the selected surface(s). Pick another field."
 msgstr "\"{0}\" isn't available on the selected surface(s). Pick another field."
@@ -137,6 +143,9 @@ msgstr "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
+
+msgid "{years}yr"
+msgstr "{years}yr"
 
 msgid "/month/user"
 msgstr "/month/user"
@@ -596,6 +605,9 @@ msgstr "Add a row"
 msgid "Add a step"
 msgstr "Add a step"
 
+msgid "Add Account"
+msgstr "Add Account"
+
 msgid "Add Actions"
 msgstr "Add Actions"
 
@@ -625,6 +637,9 @@ msgstr "Add condition"
 
 msgid "Add Contractor"
 msgstr "Add Contractor"
+
+msgid "Add cost center"
+msgstr "Add cost center"
 
 msgid "Add Entry"
 msgstr "Add Entry"
@@ -791,6 +806,9 @@ msgstr "All Audit Logs"
 
 msgid "All changes to auditable entities are being recorded."
 msgstr "All changes to auditable entities are being recorded."
+
+msgid "All Companies"
+msgstr "All Companies"
 
 msgid "All Customers"
 msgstr "All Customers"
@@ -1116,6 +1134,7 @@ msgstr "Are you sure you want to deactivate this user?"
 msgid "Are you sure you want to delete {0} from this operation? This cannot be undone."
 msgstr "Are you sure you want to delete {0} from this operation? This cannot be undone."
 
+#. placeholder {0}: selectedEntry.journalEntryId
 #. placeholder {0}: selectedGroup.name
 msgid "Are you sure you want to delete {0}?"
 msgstr "Are you sure you want to delete {0}?"
@@ -1148,6 +1167,10 @@ msgstr "Are you sure you want to delete the account: {0}{1}? This cannot be undo
 #. placeholder {0}: apiKey.name
 msgid "Are you sure you want to delete the API key: {0}? This cannot be undone."
 msgstr "Are you sure you want to delete the API key: {0}? This cannot be undone."
+
+#. placeholder {0}: selectedClass.name
+msgid "Are you sure you want to delete the asset class: {0}? This cannot be undone."
+msgstr "Are you sure you want to delete the asset class: {0}? This cannot be undone."
 
 #. placeholder {0}: requiredAction.name
 msgid "Are you sure you want to delete the change order action: {0}? This cannot be undone."
@@ -1496,6 +1519,9 @@ msgstr "Asset Cost on Disposal"
 msgid "Asset Cost on Disposal (default)"
 msgstr "Asset Cost on Disposal (default)"
 
+msgid "Asset ID"
+msgstr "Asset ID"
+
 msgid "Assets"
 msgstr "Assets"
 
@@ -1727,6 +1753,9 @@ msgstr "Batch tracking"
 msgid "Batch Tracking"
 msgstr "Batch Tracking"
 
+msgid "Beginning"
+msgstr "Beginning"
+
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
 msgstr "Being phased out — successor: <0>{0}</0>"
@@ -1800,6 +1829,9 @@ msgstr "Book a call to discuss guided implementation"
 
 msgid "Book a call with Carbon"
 msgstr "Book a call with Carbon"
+
+msgid "Book Depreciation"
+msgstr "Book Depreciation"
 
 msgid "Breadcrumb"
 msgstr "Breadcrumb"
@@ -2829,6 +2861,9 @@ msgstr "Cost center"
 msgid "Cost Center"
 msgstr "Cost Center"
 
+msgid "Cost Center Name"
+msgstr "Cost Center Name"
+
 msgid "cost centers"
 msgstr "cost centers"
 
@@ -3020,6 +3055,9 @@ msgstr "Created change order type"
 msgid "Created consumable"
 msgstr "Created consumable"
 
+msgid "Created cost center"
+msgstr "Created cost center"
+
 msgid "Created customer portal"
 msgstr "Created customer portal"
 
@@ -3130,6 +3168,10 @@ msgstr "Creating part..."
 msgid "Credit"
 msgstr "Credit"
 
+#. placeholder {0}: parentCurrency ?? "Translated"
+msgid "Credit ({0})"
+msgstr "Credit ({0})"
+
 msgid "Credit / Debit Memos"
 msgstr "Credit / Debit Memos"
 
@@ -3147,6 +3189,9 @@ msgstr "Credit accounts used when manufacturing costs are absorbed into WIP"
 
 msgid "Credit Memo"
 msgstr "Credit Memo"
+
+msgid "Credits"
+msgstr "Credits"
 
 msgid "Credits & Debits"
 msgstr "Credits & Debits"
@@ -3488,11 +3533,18 @@ msgstr "Deadline Type"
 msgid "Debit"
 msgstr "Debit"
 
+#. placeholder {0}: parentCurrency ?? "Translated"
+msgid "Debit ({0})"
+msgstr "Debit ({0})"
+
 msgid "Debit Account"
 msgstr "Debit Account"
 
 msgid "Debit Memo"
 msgstr "Debit Memo"
+
+msgid "Debits"
+msgstr "Debits"
 
 msgid "Decide what an operator sees if they try to issue a batch or serial that's already expired."
 msgstr "Decide what an operator sees if they try to issue a batch or serial that's already expired."
@@ -3644,6 +3696,12 @@ msgstr "Delete Action"
 msgid "Delete API Key"
 msgstr "Delete API Key"
 
+msgid "Delete Asset"
+msgstr "Delete Asset"
+
+msgid "Delete Asset Class"
+msgstr "Delete Asset Class"
+
 msgid "Delete Assignment"
 msgstr "Delete Assignment"
 
@@ -3686,6 +3744,9 @@ msgstr "Delete Customer Type"
 msgid "Delete Department"
 msgstr "Delete Department"
 
+msgid "Delete Dimension"
+msgstr "Delete Dimension"
+
 msgid "Delete Dispatch"
 msgstr "Delete Dispatch"
 
@@ -3712,6 +3773,12 @@ msgstr "Delete Issue"
 
 msgid "Delete Item Group"
 msgstr "Delete Item Group"
+
+msgid "Delete Journal Entry"
+msgstr "Delete Journal Entry"
+
+msgid "Delete line"
+msgstr "Delete line"
 
 msgid "Delete Line"
 msgstr "Delete Line"
@@ -4090,6 +4157,9 @@ msgstr "Dispose"
 msgid "Dispose Asset"
 msgstr "Dispose Asset"
 
+msgid "Disposed"
+msgstr "Disposed"
+
 msgid "Disposition"
 msgstr "Disposition"
 
@@ -4308,6 +4378,9 @@ msgstr "Edit API Key"
 msgid "Edit Approval Rule"
 msgstr "Edit Approval Rule"
 
+msgid "Edit Asset"
+msgstr "Edit Asset"
+
 msgid "Edit Asset Class"
 msgstr "Edit Asset Class"
 
@@ -4340,6 +4413,9 @@ msgstr "Edit Contact"
 
 msgid "Edit Contractor"
 msgstr "Edit Contractor"
+
+msgid "Edit Cost Center"
+msgstr "Edit Cost Center"
 
 msgid "Edit Count"
 msgstr "Edit Count"
@@ -4403,6 +4479,9 @@ msgstr "Edit Inspection Document"
 
 msgid "Edit Item Group"
 msgstr "Edit Item Group"
+
+msgid "Edit Journal Entry"
+msgstr "Edit Journal Entry"
 
 msgid "Edit Kanban"
 msgstr "Edit Kanban"
@@ -4596,6 +4675,9 @@ msgstr "Edit Webhook"
 msgid "Edit Work Center"
 msgstr "Edit Work Center"
 
+msgid "Eliminated"
+msgstr "Eliminated"
+
 msgid "Email"
 msgstr "Email"
 
@@ -4700,6 +4782,13 @@ msgstr "End of Last Quarter"
 
 msgid "End Time"
 msgstr "End Time"
+
+msgid "Ending"
+msgstr "Ending"
+
+#. placeholder {0}: parentCurrency ?? "Translated"
+msgid "Ending ({0})"
+msgstr "Ending ({0})"
 
 msgid "Enforce — edits are blocked"
 msgstr "Enforce — edits are blocked"
@@ -5069,6 +5158,10 @@ msgid "Failed to create consumable: {0}"
 msgstr "Failed to create consumable: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create cost center: {0}"
+msgstr "Failed to create cost center: {0}"
+
+#. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create customer portal: {0}"
 msgstr "Failed to create customer portal: {0}"
 
@@ -5264,6 +5357,10 @@ msgstr "Failed to load supplier part details"
 
 msgid "Failed to load tracked entities"
 msgstr "Failed to load tracked entities"
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to move account: {0}"
+msgstr "Failed to move account: {0}"
 
 msgid "Failed to remove image: {errorMessage}"
 msgstr "Failed to remove image: {errorMessage}"
@@ -5573,6 +5670,9 @@ msgstr "Friday"
 msgid "From {0}"
 msgstr "From {0}"
 
+msgid "From / To"
+msgstr "From / To"
+
 msgid "From customer"
 msgstr "From customer"
 
@@ -5587,6 +5687,9 @@ msgstr "From Storage Unit"
 
 msgid "Fulfillment Location"
 msgstr "Fulfillment Location"
+
+msgid "Fully Depreciated"
+msgstr "Fully Depreciated"
 
 msgid "Fully trained for"
 msgstr "Fully trained for"
@@ -6255,6 +6358,9 @@ msgstr "Infrastructure"
 msgid "Inherit From Materials"
 msgstr "Inherit From Materials"
 
+msgid "Inherited"
+msgstr "Inherited"
+
 msgid "Inherited from parent"
 msgstr "Inherited from parent"
 
@@ -6335,6 +6441,12 @@ msgstr "Integrations not named here"
 
 msgid "Intercompany"
 msgstr "Intercompany"
+
+msgid "Intercompany Balances"
+msgstr "Intercompany Balances"
+
+msgid "Intercompany Transactions"
+msgstr "Intercompany Transactions"
 
 msgid "Intercompany transactions involving this company that are still Unmatched should be matched and eliminated, so consolidated results don't double-count activity between entities."
 msgstr "Intercompany transactions involving this company that are still Unmatched should be matched and eliminated, so consolidated results don't double-count activity between entities."
@@ -6849,6 +6961,9 @@ msgstr "Light Mode"
 msgid "Likelihood"
 msgstr "Likelihood"
 
+msgid "Line description (optional)"
+msgstr "Line description (optional)"
+
 msgid "Line Item Comparison"
 msgstr "Line Item Comparison"
 
@@ -6931,6 +7046,9 @@ msgstr "Loading..."
 
 msgid "Loading…"
 msgstr "Loading…"
+
+msgid "Local"
+msgstr "Local"
 
 msgid "location"
 msgstr "location"
@@ -7046,6 +7164,9 @@ msgstr "Machines, cells, stations"
 
 msgid "MACRS"
 msgstr "MACRS"
+
+msgid "MACRS {cls}-Year"
+msgstr "MACRS {cls}-Year"
 
 msgid "MACRS Convention"
 msgstr "MACRS Convention"
@@ -7248,6 +7369,9 @@ msgstr "Match any (OR)"
 
 msgid "Match none"
 msgstr "Match none"
+
+msgid "Matched"
+msgstr "Matched"
 
 msgid "matches"
 msgstr "matches"
@@ -7531,6 +7655,9 @@ msgstr "Most things get caught and resolved here. Name it plainly."
 msgid "Move"
 msgstr "Move"
 
+msgid "Move {accountName}"
+msgstr "Move {accountName}"
+
 msgid "Move entities"
 msgstr "Move entities"
 
@@ -7546,6 +7673,9 @@ msgstr "Move some of the quantity into a new disposition row so MRB can decide e
 msgid "Move to"
 msgstr "Move to"
 
+msgid "Move to Group"
+msgstr "Move to Group"
+
 msgid "Move to Trash"
 msgstr "Move to Trash"
 
@@ -7553,6 +7683,9 @@ msgstr "Move to Trash"
 #. placeholder {1}: targetBucket === "parts" ? "Parts" : "Opportunity"
 msgid "Moved {0} to {1} bucket"
 msgstr "Moved {0} to {1} bucket"
+
+msgid "Moved account"
+msgstr "Moved account"
 
 msgid "Movements"
 msgstr "Movements"
@@ -7611,6 +7744,9 @@ msgstr "Negative Adjustment"
 msgid "Net book value"
 msgstr "Net book value"
 
+msgid "Net Book Value"
+msgstr "Net Book Value"
+
 msgid "Net Change"
 msgstr "Net Change"
 
@@ -7658,6 +7794,9 @@ msgstr "New Consumable"
 
 msgid "New Contractor"
 msgstr "New Contractor"
+
+msgid "New Cost Center"
+msgstr "New Cost Center"
 
 msgid "New Credit / Debit Memo"
 msgstr "New Credit / Debit Memo"
@@ -8726,6 +8865,9 @@ msgstr "Params"
 msgid "Parent cost center"
 msgstr "Parent cost center"
 
+msgid "Parent Cost Center"
+msgstr "Parent Cost Center"
+
 msgid "Parent Department"
 msgstr "Parent Department"
 
@@ -8887,6 +9029,9 @@ msgstr "Perfect for low-cost evaluation"
 
 msgid "Period"
 msgstr "Period"
+
+msgid "Period End"
+msgstr "Period End"
 
 msgid "Periodic depreciation expense for fixed assets"
 msgstr "Periodic depreciation expense for fixed assets"
@@ -9683,6 +9828,9 @@ msgstr "raise it early and raise it plainly. A problem named in week 2 is a smal
 msgid "Rate Limit"
 msgstr "Rate Limit"
 
+msgid "Ratio"
+msgstr "Ratio"
+
 msgid "Raw Materials"
 msgstr "Raw Materials"
 
@@ -9967,6 +10115,9 @@ msgstr "Remove"
 msgid "Remove {0}"
 msgstr "Remove {0}"
 
+msgid "Remove {label}"
+msgstr "Remove {label}"
+
 msgid "Remove condition"
 msgstr "Remove condition"
 
@@ -10221,6 +10372,9 @@ msgstr "Reverse Charge Sales Tax (default)"
 msgid "Reverse the related journal entries"
 msgstr "Reverse the related journal entries"
 
+msgid "Reversed"
+msgstr "Reversed"
+
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "Review each item's changes, then confirm — releasing can't be undone."
 
@@ -10356,6 +10510,9 @@ msgstr "Run hands-on sessions and sign off your team"
 
 msgid "Run hands-on sessions with your champions"
 msgstr "Run hands-on sessions with your champions"
+
+msgid "Run ID"
+msgstr "Run ID"
 
 msgid "Run month-end close and standard reconciliations"
 msgstr "Run month-end close and standard reconciliations"
@@ -10683,6 +10840,9 @@ msgstr "Select a default approver"
 msgid "Select a new owner"
 msgstr "Select a new owner"
 
+msgid "Select a new parent group for this account."
+msgstr "Select a new parent group for this account."
+
 msgid "Select a plan"
 msgstr "Select a plan"
 
@@ -10713,6 +10873,9 @@ msgstr "Select a substance first to see available options"
 
 msgid "Select a team"
 msgstr "Select a team"
+
+msgid "Select account"
+msgstr "Select account"
 
 msgid "Select all"
 msgstr "Select all"
@@ -13206,6 +13369,9 @@ msgstr "Unlock"
 msgid "Unmapped Extracted Lines"
 msgstr "Unmapped Extracted Lines"
 
+msgid "Unmatched"
+msgstr "Unmatched"
+
 msgid "Unpick"
 msgstr "Unpick"
 
@@ -13537,6 +13703,9 @@ msgstr "View Active Quotes"
 msgid "View All"
 msgstr "View All"
 
+msgid "View Asset"
+msgstr "View Asset"
+
 msgid "View Assigned Jobs"
 msgstr "View Assigned Jobs"
 
@@ -13581,6 +13750,9 @@ msgstr "View Issue"
 
 msgid "View Item Master"
 msgstr "View Item Master"
+
+msgid "View Journal Entry"
+msgstr "View Journal Entry"
 
 msgid "View Lists"
 msgstr "View Lists"
@@ -13656,6 +13828,9 @@ msgstr "View Receipt"
 
 msgid "View Receivables"
 msgstr "View Receivables"
+
+msgid "View Run"
+msgstr "View Run"
 
 msgid "View Scheduled"
 msgstr "View Scheduled"
