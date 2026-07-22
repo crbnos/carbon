@@ -105,6 +105,12 @@ const SupplierProcessForm = ({
             <ModalDrawerBody>
               <Hidden name="id" />
               <Hidden name="type" value={type} />
+              {isEditing && (
+                <Hidden
+                  name="previousProcessId"
+                  value={initialValues.processId}
+                />
+              )}
               {supplierId && <Hidden name="supplierId" value={supplierId} />}
               <VStack spacing={4}>
                 {supplierId === undefined && (

@@ -74,6 +74,20 @@ export async function clientAction({
     return validationError(validation.error);
   }
 
+  // The edit may move a supplier process from one process to another. Invalidate
+  // the original process's cached list too, otherwise it keeps the stale entry.
+  const previousProcessId = formData.get("previousProcessId");
+  if (
+    typeof previousProcessId === "string" &&
+    previousProcessId &&
+    previousProcessId !== validation.data.processId
+  ) {
+    window.clientCache?.setQueryData(
+      supplierProcessesQuery(previousProcessId).queryKey,
+      null
+    );
+  }
+
   if (validation.data.processId) {
     window.clientCache?.setQueryData(
       supplierProcessesQuery(validation.data.processId).queryKey,
