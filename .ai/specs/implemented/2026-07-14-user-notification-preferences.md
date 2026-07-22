@@ -31,7 +31,7 @@ Every optional notification already flows through the `notify` Inngest function 
 | Channels covered | `email`, `slack` only | The only outbound channels that exist (`NotificationDestination`). No push channel in Carbon. |
 | Table shape | Surrogate xid `id` PK + `UNIQUE(userId, companyId, channel, topic)` | Follows `userModulePreference` (`20260512174538_menu-customization.sql`) exactly — the canonical per-(user, company) preference table. Composite `("id","companyId")` PK is the convention for *business* entities; user-scoped preference tables follow the `userModulePreference` precedent. |
 | Company-scoped (not user-global) | `companyId` column, per-company preferences | Slack integration, plan gating, and notification rows are all per-company; `user.flags` JSONB is user-global and therefore the wrong home. |
-| RLS | Self-scoped: all four policies `"userId" = auth.uid()::text` | Same as `userModulePreference`. Users manage only their own rows; no module permission needed. The notify job reads with service role. |
+| RLS | Self-scoped + company-scoped: all four policies require `"userId" = auth.uid()::text` AND membership in the target company (`userToCompany`) | Users manage only their own rows, and only for companies they belong to; no module permission needed. The notify job reads with service role. |
 | Enforcement point | `notify.ts`, immediately after recipient resolution, before email/Slack fan-outs | Single chokepoint covers all ~25 producers (routes, crons, edge function `trigger`). Terminal senders and transactional email untouched. |
 | Explicit `payload.destinations` vs prefs | User preferences always win for email/Slack | The point of the feature; a caller opting a notification *into* a channel does not override a user's opt-out. |
 | Settings surface | ERP only, `/x/account/notifications` | User-resolved. Preferences still govern MES-triggered notifications since enforcement is in the shared job. MES has no account-settings surface today. |
@@ -71,14 +71,16 @@ CREATE INDEX "notificationPreference_userId_companyId_idx"
 
 ALTER TABLE "notificationPreference" ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "notificationPreference_SELECT" ON "notificationPreference"
-  FOR SELECT USING ("userId" = auth.uid()::text);
-CREATE POLICY "notificationPreference_INSERT" ON "notificationPreference"
-  FOR INSERT WITH CHECK ("userId" = auth.uid()::text);
-CREATE POLICY "notificationPreference_UPDATE" ON "notificationPreference"
-  FOR UPDATE USING ("userId" = auth.uid()::text);
-CREATE POLICY "notificationPreference_DELETE" ON "notificationPreference"
-  FOR DELETE USING ("userId" = auth.uid()::text);
+-- Every policy scopes by owner AND membership in the target company
+-- (see the migration for the full USING/WITH CHECK bodies):
+--   "userId" = auth.uid()::text
+--   AND "companyId" IN (
+--     SELECT "companyId" FROM "userToCompany" WHERE "userId" = auth.uid()::text
+--   )
+CREATE POLICY "SELECT" ON "notificationPreference" FOR SELECT USING (...);
+CREATE POLICY "INSERT" ON "notificationPreference" FOR INSERT WITH CHECK (...);
+CREATE POLICY "UPDATE" ON "notificationPreference" FOR UPDATE USING (...) WITH CHECK (...);
+CREATE POLICY "DELETE" ON "notificationPreference" FOR DELETE USING (...);
 ```
 
 Notes:
@@ -98,7 +100,7 @@ Notes:
 
 New step after recipient resolution (`resolve-recipients`, `:254-273`) and before the email (`:457`) and Slack (`:571`) fan-outs:
 
-```
+```text
 step "filter-recipients-by-preference":
   prefs = client.from("notificationPreference")
     .select("userId, channel, enabled")

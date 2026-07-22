@@ -129,6 +129,16 @@ export default function AccountNotifications() {
     return row ? row.enabled : true;
   };
 
+  // A cell with a submission in flight is disabled: overlapping upserts for
+  // the same (topic, channel) would race and last-write-wins in the database.
+  const isPending = (topic: NotificationTopic, channel: "email" | "slack") =>
+    fetchers.some(
+      (fetcher) =>
+        fetcher.state !== "idle" &&
+        fetcher.formData?.get("topic") === topic &&
+        fetcher.formData?.get("channel") === channel
+    );
+
   const toggle = (
     topic: NotificationTopic,
     channel: "email" | "slack",
@@ -193,6 +203,7 @@ export default function AccountNotifications() {
                   <div className="flex justify-center">
                     <Switch
                       checked={isEnabled(topic, "email")}
+                      disabled={isPending(topic, "email")}
                       onCheckedChange={(checked) =>
                         toggle(topic, "email", checked)
                       }
@@ -205,6 +216,7 @@ export default function AccountNotifications() {
                     <div className="flex justify-center">
                       <Switch
                         checked={isEnabled(topic, "slack")}
+                        disabled={isPending(topic, "slack")}
                         onCheckedChange={(checked) =>
                           toggle(topic, "slack", checked)
                         }

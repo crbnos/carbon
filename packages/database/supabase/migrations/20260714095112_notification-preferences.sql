@@ -20,10 +20,15 @@ CREATE TABLE IF NOT EXISTS "notificationPreference" (
 
 ALTER TABLE "notificationPreference" ENABLE ROW LEVEL SECURITY;
 
+-- Every policy scopes by owner AND membership in the target company.
 CREATE POLICY "SELECT" ON "notificationPreference"
-  FOR SELECT USING ("userId" = auth.uid()::text);
+  FOR SELECT USING (
+    "userId" = auth.uid()::text
+    AND "companyId" IN (
+      SELECT "companyId" FROM "userToCompany" WHERE "userId" = auth.uid()::text
+    )
+  );
 
--- Writes also require membership in the target company.
 CREATE POLICY "INSERT" ON "notificationPreference"
   FOR INSERT WITH CHECK (
     "userId" = auth.uid()::text
@@ -42,7 +47,12 @@ CREATE POLICY "UPDATE" ON "notificationPreference"
   );
 
 CREATE POLICY "DELETE" ON "notificationPreference"
-  FOR DELETE USING ("userId" = auth.uid()::text);
+  FOR DELETE USING (
+    "userId" = auth.uid()::text
+    AND "companyId" IN (
+      SELECT "companyId" FROM "userToCompany" WHERE "userId" = auth.uid()::text
+    )
+  );
 
 CREATE INDEX IF NOT EXISTS "notificationPreference_userId_companyId_idx"
   ON "notificationPreference" ("userId", "companyId");
