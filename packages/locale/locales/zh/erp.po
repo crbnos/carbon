@@ -6255,15 +6255,6 @@ msgstr "未激活"
 msgid "Inactive actions will not appear in selection lists"
 msgstr "不活跃的操作将不会出现在选择列表中"
 
-msgid "Inbound Inspection"
-msgstr "入站检验"
-
-msgid "Inbound Inspections"
-msgstr "入站检验"
-
-msgid "Inbound Inspections: Require Different Inspector"
-msgstr "入库检验：需要不同的检验员"
-
 msgid "Inbox"
 msgstr "收件箱"
 
@@ -6371,6 +6362,9 @@ msgstr "检验、不符合和CAPA"
 
 msgid "Inspections, Nonconformance, CAPA"
 msgstr "检验、不符合、纠正预防措施"
+
+msgid "Inspections: Require Different Inspector"
+msgstr ""
 
 msgid "Inspector"
 msgstr "检查员"

@@ -6255,15 +6255,6 @@ msgstr "Inactif"
 msgid "Inactive actions will not appear in selection lists"
 msgstr "Les actions inactives n'apparaîtront pas dans les listes de sélection"
 
-msgid "Inbound Inspection"
-msgstr "Inspection entrante"
-
-msgid "Inbound Inspections"
-msgstr "Inspections entrantes"
-
-msgid "Inbound Inspections: Require Different Inspector"
-msgstr "Inspections entrantes : Exiger un inspecteur différent"
-
 msgid "Inbox"
 msgstr "Boîte de réception"
 
@@ -6371,6 +6362,9 @@ msgstr "Inspections, non-conformité et CAPA"
 
 msgid "Inspections, Nonconformance, CAPA"
 msgstr "Inspections, Non-conformité, CAPA"
+
+msgid "Inspections: Require Different Inspector"
+msgstr ""
 
 msgid "Inspector"
 msgstr "Inspecteur"

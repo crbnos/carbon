@@ -6,7 +6,7 @@ import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const meta: MetaFunction = () => {
-  return [{ title: "Carbon | Inbound Inspection" }];
+  return [{ title: "Carbon | Inspection" }];
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {

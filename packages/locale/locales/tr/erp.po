@@ -6255,15 +6255,6 @@ msgstr "Pasif"
 msgid "Inactive actions will not appear in selection lists"
 msgstr "Etkin olmayan eylemler seçim listelerinde görünmeyecektir"
 
-msgid "Inbound Inspection"
-msgstr "Gelen Muayene"
-
-msgid "Inbound Inspections"
-msgstr "Gelen Muayeneler"
-
-msgid "Inbound Inspections: Require Different Inspector"
-msgstr "Gelen Muayeneler: Farklı Denetçi Gerektirir"
-
 msgid "Inbox"
 msgstr "Gelen Kutusu"
 
@@ -6371,6 +6362,9 @@ msgstr "Muayeneler, uygunsuzluk ve CAPA"
 
 msgid "Inspections, Nonconformance, CAPA"
 msgstr "Muayeneler, Uygunsuzluk, CAPA"
+
+msgid "Inspections: Require Different Inspector"
+msgstr ""
 
 msgid "Inspector"
 msgstr "Denetçi"

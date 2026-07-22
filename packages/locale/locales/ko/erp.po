@@ -6255,15 +6255,6 @@ msgstr "비활성"
 msgid "Inactive actions will not appear in selection lists"
 msgstr "비활성 조치는 선택 목록에 표시되지 않습니다"
 
-msgid "Inbound Inspection"
-msgstr "입고 검사"
-
-msgid "Inbound Inspections"
-msgstr "입고 검사"
-
-msgid "Inbound Inspections: Require Different Inspector"
-msgstr "입고 검사: 다른 검사자 필요"
-
 msgid "Inbox"
 msgstr "받은함"
 
@@ -6371,6 +6362,9 @@ msgstr "검사, 부적합, CAPA"
 
 msgid "Inspections, Nonconformance, CAPA"
 msgstr "검사, 부적합, CAPA"
+
+msgid "Inspections: Require Different Inspector"
+msgstr ""
 
 msgid "Inspector"
 msgstr "검사자"

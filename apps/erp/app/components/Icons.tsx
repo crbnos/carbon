@@ -391,7 +391,7 @@ export const OperationTypeIcon = ({
     // Assembly mirrors the Assembly Instructions nav icon
     case "Assembly":
       return <LuStepForward className={cn("text-emerald-500", className)} />;
-    // Inspection mirrors the Inbound Inspections nav icon
+    // Inspection mirrors the Inspections nav icon
     case "Inspection":
       return <LuClipboardCheck className={cn("text-amber-500", className)} />;
     // Outside Processing is subcontracted to a supplier (creates a PO)

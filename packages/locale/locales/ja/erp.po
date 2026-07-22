@@ -6255,15 +6255,6 @@ msgstr "非アクティブ"
 msgid "Inactive actions will not appear in selection lists"
 msgstr "非アクティブなアクションは選択リストに表示されません"
 
-msgid "Inbound Inspection"
-msgstr "受け入れ検査"
-
-msgid "Inbound Inspections"
-msgstr "受け入れ検査"
-
-msgid "Inbound Inspections: Require Different Inspector"
-msgstr "受入検査：異なる検査官が必要"
-
 msgid "Inbox"
 msgstr "受信トレイ"
 
@@ -6371,6 +6362,9 @@ msgstr "検査、不適合、および是正予防措置"
 
 msgid "Inspections, Nonconformance, CAPA"
 msgstr "検査、不適合、CAPA"
+
+msgid "Inspections: Require Different Inspector"
+msgstr ""
 
 msgid "Inspector"
 msgstr "検査官"

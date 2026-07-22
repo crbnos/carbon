@@ -941,7 +941,7 @@ function NewInspectionAssociation() {
   return (
     <Combobox
       name="id"
-      label={t`Inbound Inspection`}
+      label={t`Inspection`}
       options={inspections}
       isLoading={inspectionsAreLoading}
     />

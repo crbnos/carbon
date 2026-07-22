@@ -302,9 +302,7 @@ export default function QualitySettingsRoute() {
             <HStack className="justify-between items-center">
               <div>
                 <CardTitle>
-                  <Trans>
-                    Inbound Inspections: Require Different Inspector
-                  </Trans>
+                  <Trans>Inspections: Require Different Inspector</Trans>
                 </CardTitle>
                 <CardDescription>
                   <Trans>

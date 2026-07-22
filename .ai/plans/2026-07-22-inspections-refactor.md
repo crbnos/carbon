@@ -20,7 +20,7 @@ enum `inspectionStatus`).
 - [x] Task 6: Routes — editor → x+/inspection-document+, execution → x+/inspection+, list → quality+/inspections, redirects, path.ts
 - [x] Task 7: UI — ui/Inspections rename, InspectionView, filterable Source column, nav label
 - [x] Task 8: Issue associations — table/key renames ("inspections")
-- [ ] Task 9: Docs sync + verification (typecheck, tests, browser smoke)
+- [x] Task 9: Docs sync + verification (typecheck, tests, browser smoke)
 
 ## Task summaries
 

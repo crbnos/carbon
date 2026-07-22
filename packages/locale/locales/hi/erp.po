@@ -6255,15 +6255,6 @@ msgstr "निष्क्रिय"
 msgid "Inactive actions will not appear in selection lists"
 msgstr "निष्क्रिय क्रियाएं चयन सूचियों में दिखाई नहीं देंगी"
 
-msgid "Inbound Inspection"
-msgstr "इनबाउंड निरीक्षण"
-
-msgid "Inbound Inspections"
-msgstr "इनबाउंड निरीक्षण"
-
-msgid "Inbound Inspections: Require Different Inspector"
-msgstr "इनबाउंड निरीक्षण: विभिन्न निरीक्षक की आवश्यकता"
-
 msgid "Inbox"
 msgstr "इनबॉक्स"
 
@@ -6371,6 +6362,9 @@ msgstr "निरीक्षण, असंगति, और CAPA"
 
 msgid "Inspections, Nonconformance, CAPA"
 msgstr "निरीक्षण, असंगति, CAPA"
+
+msgid "Inspections: Require Different Inspector"
+msgstr ""
 
 msgid "Inspector"
 msgstr "निरीक्षक"

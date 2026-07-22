@@ -173,8 +173,8 @@ export default function IssueRoute() {
                         },
                         {
                           key: "inspections",
-                          name: t`Inbound Inspection`,
-                          pluralName: t`Inbound Inspections`,
+                          name: t`Inspection`,
+                          pluralName: t`Inspections`,
                           module: "quality",
                           children:
                             (resolvedAssociations as any).inspections ?? []
