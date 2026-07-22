@@ -84,7 +84,7 @@ export const useSupplierProcesses = (args: { processId?: string }) => {
   });
 
   const supplierProcesses = useMemo(
-    () => (fetcher.data?.data ? fetcher.data?.data : []),
+    () => fetcher.data?.data ?? [],
     [fetcher.data]
   );
 

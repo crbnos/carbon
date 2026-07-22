@@ -20,7 +20,7 @@ Format: `Context → Problem → Rule → Applies to`
 3. `clientAction` in mutation routes (invalidates React Query cache after mutations)
 4. Use `invalidateQueries` from `@tanstack/react-query` in `clientAction`
 
-Do NOT use `useQuery` directly for this pattern — it breaks the clientLoader integration. The `useFetcher` approach ensures proper hydration and cache invalidation.
+Do NOT use `useQuery` directly for this pattern — it breaks the clientLoader integration. The `useFetcher` approach ensures proper hydration and cache invalidation. **Never use `useQuery` inside a hook that integrates with route caching** (e.g. `useSupplierProcesses`) — a `useQuery` there reads `cachedApiQuery`/`fetch()` and never re-runs when a `clientAction` invalidates the key, so the picker shows stale data after an edit. Use `useFetcher` + `useMount(() => fetcher.load(path))` + `useMemo(() => fetcher.data?.data ?? [])`, backed by the route's `clientLoader` read-through cache and `clientAction` invalidation (invalidating BOTH the new and original `processId` on edit).
 
 **Applies to:** `apps/erp/app/components/Form/SupplierProcess.tsx`, `apps/erp/app/routes/api+/purchasing.supplier-processes.$processId.ts`, any dropdown/picker that loads data from API routes with React Query caching.
 
