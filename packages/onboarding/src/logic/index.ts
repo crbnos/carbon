@@ -5,6 +5,7 @@ export * from "./intakeRows";
 export * from "./keys";
 export * from "./labels";
 export * from "./overlay";
+export * from "./streak";
 export * from "./tailor";
 export * from "./timeline";
 export * from "./visibility";
