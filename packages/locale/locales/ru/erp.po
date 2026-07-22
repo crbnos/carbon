@@ -51,6 +51,10 @@ msgstr ""
 msgid "{0, plural, one {This part is on 1 open change order} other {This part is on # open change orders}}"
 msgstr "{0, plural, one {Эта деталь находится в 1 открытом приказе об изменении} other {Эта деталь находится в # открытых приказах об изменении}}"
 
+#. placeholder {0}: outcome.commentLines
+msgid "{0} comment lines"
+msgstr ""
+
 #. placeholder {0}: applyData.applied
 msgid "{0} counted quantities written to the count"
 msgstr ""
@@ -72,8 +76,24 @@ msgstr "{0} успешно удален"
 msgid "{0} draft journal entries"
 msgstr "{0} черновых записей в журнале"
 
+#. placeholder {0}: outcomes.filter((o) => o.orderId).length
+msgid "{0} draft purchase orders created"
+msgstr ""
+
+#. placeholder {0}: outcomes.filter((o) => o.orderId).length
+msgid "{0} draft sales orders created"
+msgstr ""
+
+#. placeholder {0}: outcome.linesFailed
+msgid "{0} failed"
+msgstr ""
+
 #. placeholder {0}: countEntry.count
 msgid "{0} in Carbon"
+msgstr ""
+
+#. placeholder {0}: outcome.linesCreated
+msgid "{0} lines"
 msgstr ""
 
 #. placeholder {0}: mappings.length
@@ -84,6 +104,14 @@ msgstr "{0} строк для сопоставления"
 msgid "{0} lines were skipped — the count may have moved on from Draft."
 msgstr ""
 
+#. placeholder {0}: problemLines.length
+msgid "{0} lines without a matching item — kept as comment lines"
+msgstr ""
+
+#. placeholder {0}: problemLines.length
+msgid "{0} lines without a matching item — left off the drafts"
+msgstr ""
+
 #. placeholder {0}: proposal.tracked.length
 msgid "{0} lot / serial tracked rows — enter these on the count screen"
 msgstr ""
@@ -92,12 +120,24 @@ msgstr ""
 msgid "{0} orders"
 msgstr "{0} заказов"
 
+#. placeholder {0}: unmatchedParties.length
+msgid "{0} orders we can't create — customer not found"
+msgstr ""
+
+#. placeholder {0}: unmatchedParties.length
+msgid "{0} orders we can't create — supplier not found"
+msgstr ""
+
 #. placeholder {0}: selectedProcesses.length
 msgid "{0} Processes"
 msgstr "{0} Процессов"
 
 #. placeholder {0}: proposal.unmatched.length
 msgid "{0} rows we couldn't match"
+msgstr ""
+
+#. placeholder {0}: outcome.linesSkipped
+msgid "{0} skipped"
 msgstr ""
 
 #. placeholder {0}: counts.hidden
@@ -174,6 +214,9 @@ msgstr "{uncounted, plural, one {# непосчитанная строка} othe
 
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {# строка отличается от ожидаемого количества} other {# строк отличаются от ожидаемого количества}}"
+
+msgid "* some lines had no price in the source — the total covers only the priced lines."
+msgstr ""
 
 msgid "/month/user"
 msgstr "/месяц/пользователь"
@@ -976,8 +1019,17 @@ msgstr "Позволяет подтвердить и продолжить"
 msgid "Alpha"
 msgstr "Альфа"
 
+msgid "Already in Carbon: {draftCount} draft and {openCount} in-flight customer orders."
+msgstr ""
+
+msgid "Already in Carbon: {draftCount} draft and {openCount} in-flight purchase orders."
+msgstr ""
+
 msgid "Always"
 msgstr "Всегда"
+
+msgid "ambiguous"
+msgstr ""
 
 msgid "Amount"
 msgstr "Сумма"
@@ -3176,6 +3228,14 @@ msgstr "Создать"
 msgid "Create {0}"
 msgstr "Создать {0}"
 
+#. placeholder {0}: readyOrders.length
+msgid "Create {0} draft purchase orders"
+msgstr ""
+
+#. placeholder {0}: readyOrders.length
+msgid "Create {0} draft sales orders"
+msgstr ""
+
 #. placeholder {0}: unmatchedValues.length
 msgid "Create {0} values"
 msgstr "Создать {0} значений"
@@ -3389,8 +3449,17 @@ msgstr "Рабочий центр создан"
 msgid "Creates the 12 monthly periods for a fiscal year. Periods that already exist are kept."
 msgstr "Создает 12 ежемесячных периодов для финансового года. Уже существующие периоды сохраняются."
 
+msgid "Creating drafts…"
+msgstr ""
+
 msgid "Creating part..."
 msgstr "Создание детали..."
+
+msgid "creating the draft failed — try again"
+msgstr ""
+
+msgid "Creating the drafts failed — try again."
+msgstr ""
 
 msgid "Credit"
 msgstr "Кредит"
@@ -5223,6 +5292,9 @@ msgstr "Каждая требуемая задача должна быть за�
 msgid "Every row was imported successfully."
 msgstr "Каждая строка была успешно импортирована."
 
+msgid "Every value below came from your file or paste — we never invent references, dates, quantities, or prices. Totals are shown only where the source had prices."
+msgstr ""
+
 msgid "Everything applies to you — nothing needed hiding."
 msgstr ""
 
@@ -5230,6 +5302,12 @@ msgid "Everything from Starter"
 msgstr "Всё из Starter"
 
 msgid "Everything here follows from your answers. Change an answer on the How You Run page and these come back."
+msgstr ""
+
+msgid "Everything you still owe customers — so you can ship and invoice from Carbon on day one. Orders due in the next 30 days first."
+msgstr ""
+
+msgid "Everything you're still waiting to receive from suppliers — so day-one material arrivals have a purchase order to receive against. Prioritize by expected receipt date."
 msgstr ""
 
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
@@ -5277,6 +5355,9 @@ msgstr "Развернуть Setup"
 
 msgid "Expand subtree"
 msgstr "Развернуть поддерево"
+
+msgid "Expected"
+msgstr ""
 
 msgid "Expected future demand for an item, bucketed by period, populated by the planning run alongside actual demand."
 msgstr "Ожидаемый будущий спрос на товар, сгруппированный по периодам, заполняемый при запуске планирования наряду с фактическим спросом."
@@ -7246,6 +7327,10 @@ msgstr "Дата последней калибровки"
 msgid "Last Fiscal Year"
 msgstr "Прошлый финансовый год"
 
+#. placeholder {0}: new Date(lastImportedAt).toLocaleDateString()
+msgid "Last imported {0} — importing again creates additional drafts, it never edits existing orders."
+msgstr ""
+
 msgid "Last Month"
 msgstr "Прошлый месяц"
 
@@ -7845,6 +7930,12 @@ msgstr "Не совпадает ни одно"
 
 msgid "matches"
 msgstr "совпадает"
+
+msgid "matches more than one item; use the full ID with revision"
+msgstr ""
+
+msgid "matches more than one record — fix the name in the source and read it again"
+msgstr ""
 
 msgid "Matching Pairs"
 msgstr "Парные соответствия"
@@ -8658,6 +8749,9 @@ msgstr "Преобразование не требуется"
 msgid "No cost history found"
 msgstr "История стоимости не найдена"
 
+msgid "no customer with this name in Carbon. We never create customers for you — add them first, then read the file again."
+msgstr ""
+
 msgid "No Data"
 msgstr "Нет данных"
 
@@ -8749,6 +8843,9 @@ msgid "No logo uploaded"
 msgstr "Логотип не загружен"
 
 msgid "No lot or serial tracking"
+msgstr ""
+
+msgid "no match"
 msgstr ""
 
 msgid "No matches"
@@ -8864,6 +8961,9 @@ msgstr "Нет запасов"
 
 msgid "No stockout projected in the next 48 weeks"
 msgstr "Отсутствие дефицита запасов не прогнозируется в течение следующих 48 недель"
+
+msgid "no supplier with this name in Carbon. We never create suppliers for you — add them first, then read the file again."
+msgstr ""
 
 msgid "No suppliers yet"
 msgstr "Поставщиков еще нет"
@@ -9185,6 +9285,12 @@ msgstr "Открытые заказы"
 
 msgid "Open menu"
 msgstr "Открыть меню"
+
+msgid "Open orders"
+msgstr ""
+
+msgid "Open orders — paste them, we draft them"
+msgstr ""
 
 msgid "Open Purchase Invoices"
 msgstr "Открытые счета-фактуры"
@@ -9587,6 +9693,15 @@ msgstr "Пройти"
 
 msgid "Passed"
 msgstr "Пройдено"
+
+msgid "Paste it. We read it. You approve the drafts."
+msgstr ""
+
+msgid "Paste your open order list — a CSV export, a report, or plain notes (\"SO-2210, Vandelay, 12 × pump housing, ships Aug 5...\")"
+msgstr ""
+
+msgid "Paste your open PO list — a CSV export, a report, or plain notes (\"PO-1042, Acme Steel, 40 × 1018 bar, due Aug 12...\")"
+msgstr ""
 
 msgid "Path"
 msgstr "Путь"
@@ -10551,6 +10666,9 @@ msgstr "Повторный ввод данных между расчётом, ц
 msgid "Reactivate"
 msgstr "Переактивировать"
 
+msgid "Read it"
+msgstr ""
+
 msgid "Read this through — what Carbon will and won't do for your setup. When it looks right, mark it agreed below."
 msgstr "Прочитайте это внимательно — что Carbon будет и не будет делать для вашей настройки. Когда это будет выглядеть правильно, отметьте согласие ниже."
 
@@ -10564,6 +10682,9 @@ msgid "Reading your count…"
 msgstr ""
 
 msgid "Reading your file…"
+msgstr ""
+
+msgid "Reading…"
 msgstr ""
 
 msgid "Ready for Quote"
@@ -11137,6 +11258,11 @@ msgstr "Налог на продажи с обратным взиманием (�
 msgid "Reverse the related journal entries"
 msgstr "Отменить связанные записи в журнале"
 
+#. placeholder {0}: proposal.orders.length
+#. placeholder {1}: readyOrders.length
+msgid "Review — we found {0} orders, {1} ready to create"
+msgstr ""
+
 msgid "Review & post the count"
 msgstr ""
 
@@ -11426,6 +11552,9 @@ msgstr "Номер заказа продажи"
 
 msgid "Sales Orders"
 msgstr "Заказы на продажу"
+
+msgid "Sales orders need a location and your factory has none yet — set one up in <0>Locations</0> first, then come back."
+msgstr ""
 
 msgid "Sales Person"
 msgstr "Менеджер по продажам"
@@ -13191,6 +13320,9 @@ msgstr "Клиент, которому доставляются товары, е
 msgid "The customer this portal link is provisioned for; only contacts on this customer can sign in through the link."
 msgstr "Клиент, для которого этот ссылка портала предоставлена; только контакты на этом клиенте могут войти через ссылку."
 
+msgid "the customer wasn't found in Carbon, so no draft was created"
+msgstr ""
+
 msgid "The customer's own reference for this document — typically their RFQ or PO number on their system; surfaced on the printable output and carried forward into any document this one converts into."
 msgstr "Собственная ссылка клиента для этого документа — обычно его номер RFQ или PO в его системе; отображается в печатном выводе и переносится в любой документ, в который он преобразуется."
 
@@ -13509,6 +13641,9 @@ msgstr ""
 msgid "The ones that cause expensive rework when they're made silently and wrong. About two minutes each — every one has a recommended default."
 msgstr ""
 
+msgid "The open POs you're waiting to receive and the customer orders you still owe: paste or upload your old system's list, review the match, and get draft orders to approve."
+msgstr ""
+
 msgid "The operations and steps your parts move through"
 msgstr "Операции и этапы, через которые проходят ваши детали"
 
@@ -13568,6 +13703,9 @@ msgstr "Процедура, которой следуют техники при 
 
 msgid "The processes this work center can run; appears in process-pickers when scheduling operations, and limits which jobs can route through this work center."
 msgstr "Процессы, которые может выполнять этот рабочий центр; отображается в селекторах процессов при планировании операций и ограничивает, какие задания могут маршрутизироваться через этот рабочий центр."
+
+msgid "The purchase orders you're still waiting to receive and the customer orders you still owe need to exist in Carbon on day one. Paste or upload whatever your old system exports — we read it, match it against your suppliers, customers, and items, and create draft orders for your review. Drafts only: nothing is sent, released, or received from here."
+msgstr ""
 
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "Точки разрыва количества, по которым эта строка оценивается; каждый столбец имеет собственную цену за единицу для переговоров между покупателем и поставщиком и для преобразования в нижние документы."
@@ -13702,6 +13840,9 @@ msgstr "Поставщик, который планирование предла
 msgid "The supplier record this portal account links to; only contacts already on that supplier can be selected as the account holder below."
 msgstr "Запись поставщика, к которой привязана эта учетная запись портала; только контакты, уже связанные с этим поставщиком, можно выбрать в качестве владельца учетной записи ниже."
 
+msgid "the supplier wasn't found in Carbon, so no draft was created"
+msgstr ""
+
 msgid "The supplier's own quote / proposal number; recorded for traceability on the PO that converts from this quote."
 msgstr "Собственный номер котировки/предложения поставщика; записан для отслеживаемости на ПО, которое преобразуется из этого предложения."
 
@@ -13828,6 +13969,12 @@ msgstr "В этой работе есть внешние операции, ко�
 msgid "There's nothing outstanding to apply these credits to."
 msgstr "Нечего применять эти кредиты."
 
+msgid "These are drafts — open each one, check customer, dates, quantities, and prices, and take it from there yourself. Prioritize the ones due to ship soonest."
+msgstr ""
+
+msgid "These are drafts — open each one, check supplier, dates, quantities, and prices, and take it from there yourself. Prioritize the ones with the earliest expected receipt dates."
+msgstr ""
+
 msgid "These counted quantities will be written onto the count's lines. Nothing posts — you still review and post the count yourself."
 msgstr ""
 
@@ -13896,6 +14043,9 @@ msgstr ""
 
 msgid "This item is built via a configurator and resolves its components per-order; jobs created for it inherit the configurator's resolved BOM."
 msgstr "Этот элемент строится через конфигуратор и разрешает его компоненты в зависимости от заказа; задания, созданные для него, наследуют разрешенный BOM конфигуратора."
+
+msgid "this item type can't go on a sales order line"
+msgstr ""
 
 msgid "This item's bill of materials has no inputs with shelf-life enabled, so no expiry will be calculated from the BOM."
 msgstr "У этого товара в спецификации материалов нет входов с включенной политикой срока хранения, поэтому срок годности не будет рассчитан на основе спецификации."
@@ -14575,6 +14725,9 @@ msgstr "Обновитесь, чтобы разблокировать истор
 msgid "Upload"
 msgstr "Загрузить"
 
+msgid "Upload a file instead"
+msgstr ""
+
 msgid "Upload a PDF first"
 msgstr "Сначала загрузите PDF"
 
@@ -15051,6 +15204,9 @@ msgstr ""
 msgid "We couldn't read that file. Try a clearer photo or export the sheet as CSV — we never guess at numbers."
 msgstr ""
 
+msgid "We couldn't read that. Try a CSV/XLSX export or cleaner pasted text — we never guess at orders. Up to 40 orders per read; import in batches if you have more."
+msgstr ""
+
 msgid "We draft a product you make all the time — item, bill of materials, routing, and cost — and you correct it."
 msgstr ""
 
@@ -15058,6 +15214,9 @@ msgid "We inspect, nothing certified"
 msgstr ""
 
 msgid "We need at minimum a name per customer. Contacts, emails, phone numbers, and payment terms all help but nothing is required."
+msgstr ""
+
+msgid "We never create items for you — import your items first, then read the file again, or fix the drafts on their own screens."
 msgstr ""
 
 msgid "We quote custom work"
@@ -15437,6 +15596,9 @@ msgstr "Блокирует ли эта работа производство (В
 
 msgid "Whether to Add the selected permissions on top of what each user already has, or Update by replacing each user's permission set wholesale with the selection below."
 msgstr "Если выбранные разрешения Добавляются к тому, что каждый пользователь уже имеет, или Обновляются путем замены набора разрешений каждого пользователя на выбранные ниже."
+
+msgid "Which location fulfills these orders?"
+msgstr ""
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "Какое производственное событие запускает часы срока хранения — например, заполнение, уплотнение или окончательный контроль качества."

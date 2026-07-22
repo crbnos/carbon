@@ -1105,6 +1105,7 @@ export const path = {
     getStartedIntake: `${x}/get-started/intake`,
     getStartedIntakeState: `${x}/get-started/intake/state`,
     getStartedOpeningStock: `${x}/get-started/opening-stock`,
+    getStartedOpenOrders: `${x}/get-started/open-orders`,
     getStartedPage: (slug: string) => generatePath(`${x}/get-started/${slug}`),
     getStartedState: `${x}/get-started/state`,
     group: (id: string) => generatePath(`${x}/users/groups/${id}`),

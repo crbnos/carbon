@@ -51,6 +51,10 @@ msgstr ""
 msgid "{0, plural, one {This part is on 1 open change order} other {This part is on # open change orders}}"
 msgstr "{0, plural, one {このパーツは1件のオープンな変更指示に含まれています} other {このパーツは#件のオープンな変更指示に含まれています}}"
 
+#. placeholder {0}: outcome.commentLines
+msgid "{0} comment lines"
+msgstr ""
+
 #. placeholder {0}: applyData.applied
 msgid "{0} counted quantities written to the count"
 msgstr ""
@@ -72,8 +76,24 @@ msgstr "{0}が正常に削除されました"
 msgid "{0} draft journal entries"
 msgstr "{0}件の下書き仕訳"
 
+#. placeholder {0}: outcomes.filter((o) => o.orderId).length
+msgid "{0} draft purchase orders created"
+msgstr ""
+
+#. placeholder {0}: outcomes.filter((o) => o.orderId).length
+msgid "{0} draft sales orders created"
+msgstr ""
+
+#. placeholder {0}: outcome.linesFailed
+msgid "{0} failed"
+msgstr ""
+
 #. placeholder {0}: countEntry.count
 msgid "{0} in Carbon"
+msgstr ""
+
+#. placeholder {0}: outcome.linesCreated
+msgid "{0} lines"
 msgstr ""
 
 #. placeholder {0}: mappings.length
@@ -84,6 +104,14 @@ msgstr "{0}件のラインをマップします"
 msgid "{0} lines were skipped — the count may have moved on from Draft."
 msgstr ""
 
+#. placeholder {0}: problemLines.length
+msgid "{0} lines without a matching item — kept as comment lines"
+msgstr ""
+
+#. placeholder {0}: problemLines.length
+msgid "{0} lines without a matching item — left off the drafts"
+msgstr ""
+
 #. placeholder {0}: proposal.tracked.length
 msgid "{0} lot / serial tracked rows — enter these on the count screen"
 msgstr ""
@@ -92,12 +120,24 @@ msgstr ""
 msgid "{0} orders"
 msgstr "{0}件の注文"
 
+#. placeholder {0}: unmatchedParties.length
+msgid "{0} orders we can't create — customer not found"
+msgstr ""
+
+#. placeholder {0}: unmatchedParties.length
+msgid "{0} orders we can't create — supplier not found"
+msgstr ""
+
 #. placeholder {0}: selectedProcesses.length
 msgid "{0} Processes"
 msgstr "{0}個のプロセス"
 
 #. placeholder {0}: proposal.unmatched.length
 msgid "{0} rows we couldn't match"
+msgstr ""
+
+#. placeholder {0}: outcome.linesSkipped
+msgid "{0} skipped"
 msgstr ""
 
 #. placeholder {0}: counts.hidden
@@ -174,6 +214,9 @@ msgstr "{uncounted, plural, one {# 未計数行} other {# 未計数行}}"
 
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {# 行が予想数量と異なります} other {# 行が予想数量と異なります}}"
+
+msgid "* some lines had no price in the source — the total covers only the priced lines."
+msgstr ""
 
 msgid "/month/user"
 msgstr "/月/ユーザー"
@@ -976,8 +1019,17 @@ msgstr "確認して続行できます"
 msgid "Alpha"
 msgstr "アルファ"
 
+msgid "Already in Carbon: {draftCount} draft and {openCount} in-flight customer orders."
+msgstr ""
+
+msgid "Already in Carbon: {draftCount} draft and {openCount} in-flight purchase orders."
+msgstr ""
+
 msgid "Always"
 msgstr "常に"
+
+msgid "ambiguous"
+msgstr ""
 
 msgid "Amount"
 msgstr "金額"
@@ -3176,6 +3228,14 @@ msgstr "作成"
 msgid "Create {0}"
 msgstr "{0}を作成"
 
+#. placeholder {0}: readyOrders.length
+msgid "Create {0} draft purchase orders"
+msgstr ""
+
+#. placeholder {0}: readyOrders.length
+msgid "Create {0} draft sales orders"
+msgstr ""
+
 #. placeholder {0}: unmatchedValues.length
 msgid "Create {0} values"
 msgstr "{0}個の値を作成"
@@ -3389,8 +3449,17 @@ msgstr "ワークセンターを作成しました"
 msgid "Creates the 12 monthly periods for a fiscal year. Periods that already exist are kept."
 msgstr "会計年度の12ヶ月間の期間を作成します。既に存在する期間は保持されます。"
 
+msgid "Creating drafts…"
+msgstr ""
+
 msgid "Creating part..."
 msgstr "パーツを作成中..."
+
+msgid "creating the draft failed — try again"
+msgstr ""
+
+msgid "Creating the drafts failed — try again."
+msgstr ""
 
 msgid "Credit"
 msgstr "クレジット"
@@ -5223,6 +5292,9 @@ msgstr "期間を閉じる前に、すべての必須タスクが完了または
 msgid "Every row was imported successfully."
 msgstr "すべての行が正常にインポートされました。"
 
+msgid "Every value below came from your file or paste — we never invent references, dates, quantities, or prices. Totals are shown only where the source had prices."
+msgstr ""
+
 msgid "Everything applies to you — nothing needed hiding."
 msgstr ""
 
@@ -5230,6 +5302,12 @@ msgid "Everything from Starter"
 msgstr "スターターのすべての機能"
 
 msgid "Everything here follows from your answers. Change an answer on the How You Run page and these come back."
+msgstr ""
+
+msgid "Everything you still owe customers — so you can ship and invoice from Carbon on day one. Orders due in the next 30 days first."
+msgstr ""
+
+msgid "Everything you're still waiting to receive from suppliers — so day-one material arrivals have a purchase order to receive against. Prioritize by expected receipt date."
 msgstr ""
 
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
@@ -5277,6 +5355,9 @@ msgstr "段取りを展開"
 
 msgid "Expand subtree"
 msgstr "サブツリーを展開"
+
+msgid "Expected"
+msgstr ""
 
 msgid "Expected future demand for an item, bucketed by period, populated by the planning run alongside actual demand."
 msgstr "アイテムの予想される将来の需要、期間ごとに分類され、実際の需要とともに計画実行によって入力されます。"
@@ -7246,6 +7327,10 @@ msgstr "最後のキャリブレーション日"
 msgid "Last Fiscal Year"
 msgstr "前年度"
 
+#. placeholder {0}: new Date(lastImportedAt).toLocaleDateString()
+msgid "Last imported {0} — importing again creates additional drafts, it never edits existing orders."
+msgstr ""
+
 msgid "Last Month"
 msgstr "先月"
 
@@ -7845,6 +7930,12 @@ msgstr "いずれにも一致しない"
 
 msgid "matches"
 msgstr "一致する"
+
+msgid "matches more than one item; use the full ID with revision"
+msgstr ""
+
+msgid "matches more than one record — fix the name in the source and read it again"
+msgstr ""
 
 msgid "Matching Pairs"
 msgstr "マッチングペア"
@@ -8658,6 +8749,9 @@ msgstr "変換は不要です"
 msgid "No cost history found"
 msgstr "コスト履歴が見つかりません"
 
+msgid "no customer with this name in Carbon. We never create customers for you — add them first, then read the file again."
+msgstr ""
+
 msgid "No Data"
 msgstr "データなし"
 
@@ -8749,6 +8843,9 @@ msgid "No logo uploaded"
 msgstr "ロゴがアップロードされていません"
 
 msgid "No lot or serial tracking"
+msgstr ""
+
+msgid "no match"
 msgstr ""
 
 msgid "No matches"
@@ -8864,6 +8961,9 @@ msgstr "在庫なし"
 
 msgid "No stockout projected in the next 48 weeks"
 msgstr "今後48週間の在庫切れは予測されていません"
+
+msgid "no supplier with this name in Carbon. We never create suppliers for you — add them first, then read the file again."
+msgstr ""
 
 msgid "No suppliers yet"
 msgstr "まだサプライヤーがありません"
@@ -9185,6 +9285,12 @@ msgstr "未処理ジョブ"
 
 msgid "Open menu"
 msgstr "メニューを開く"
+
+msgid "Open orders"
+msgstr ""
+
+msgid "Open orders — paste them, we draft them"
+msgstr ""
 
 msgid "Open Purchase Invoices"
 msgstr "未払い購買請求書"
@@ -9587,6 +9693,15 @@ msgstr "合格"
 
 msgid "Passed"
 msgstr "完了"
+
+msgid "Paste it. We read it. You approve the drafts."
+msgstr ""
+
+msgid "Paste your open order list — a CSV export, a report, or plain notes (\"SO-2210, Vandelay, 12 × pump housing, ships Aug 5...\")"
+msgstr ""
+
+msgid "Paste your open PO list — a CSV export, a report, or plain notes (\"PO-1042, Acme Steel, 40 × 1018 bar, due Aug 12...\")"
+msgstr ""
 
 msgid "Path"
 msgstr "パス"
@@ -10551,6 +10666,9 @@ msgstr "見積、現場、財務間での再入力"
 msgid "Reactivate"
 msgstr "再度有効化"
 
+msgid "Read it"
+msgstr ""
+
 msgid "Read this through — what Carbon will and won't do for your setup. When it looks right, mark it agreed below."
 msgstr "これを読んでください — Carbonがあなたのセットアップで何ができて何ができないかを確認してください。問題なければ、下記で同意済みとしてマークしてください。"
 
@@ -10564,6 +10682,9 @@ msgid "Reading your count…"
 msgstr ""
 
 msgid "Reading your file…"
+msgstr ""
+
+msgid "Reading…"
 msgstr ""
 
 msgid "Ready for Quote"
@@ -11137,6 +11258,11 @@ msgstr "逆請求売上税 (既定)"
 msgid "Reverse the related journal entries"
 msgstr "関連する仕訳エントリを取り消す"
 
+#. placeholder {0}: proposal.orders.length
+#. placeholder {1}: readyOrders.length
+msgid "Review — we found {0} orders, {1} ready to create"
+msgstr ""
+
 msgid "Review & post the count"
 msgstr ""
 
@@ -11426,6 +11552,9 @@ msgstr "販売注文番号"
 
 msgid "Sales Orders"
 msgstr "販売注文"
+
+msgid "Sales orders need a location and your factory has none yet — set one up in <0>Locations</0> first, then come back."
+msgstr ""
 
 msgid "Sales Person"
 msgstr "営業担当者"
@@ -13191,6 +13320,9 @@ msgstr "商品が配送される顧客（請求される顧客と異なる場合
 msgid "The customer this portal link is provisioned for; only contacts on this customer can sign in through the link."
 msgstr "このポータルリンクがプロビジョニングされているカスタマー。このカスタマー上の連絡先のみがリンク経由でサインインできます。"
 
+msgid "the customer wasn't found in Carbon, so no draft was created"
+msgstr ""
+
 msgid "The customer's own reference for this document — typically their RFQ or PO number on their system; surfaced on the printable output and carried forward into any document this one converts into."
 msgstr "このドキュメントの顧客独自の参照 - 通常、そのシステム上のRFQまたはPO番号。印刷可能な出力に表示され、このドキュメントが変換されるドキュメントに転送されます。"
 
@@ -13509,6 +13641,9 @@ msgstr ""
 msgid "The ones that cause expensive rework when they're made silently and wrong. About two minutes each — every one has a recommended default."
 msgstr ""
 
+msgid "The open POs you're waiting to receive and the customer orders you still owe: paste or upload your old system's list, review the match, and get draft orders to approve."
+msgstr ""
+
 msgid "The operations and steps your parts move through"
 msgstr "部品が通過する操作とステップ"
 
@@ -13568,6 +13703,9 @@ msgstr "このメンテナンスが実行されるときにテクニシャンが
 
 msgid "The processes this work center can run; appears in process-pickers when scheduling operations, and limits which jobs can route through this work center."
 msgstr "このワークセンターが実行できるプロセス。オペレーションをスケジュールするときのプロセスピッカーに表示され、このワークセンターを通じてルーティングできるジョブを制限します。"
+
+msgid "The purchase orders you're still waiting to receive and the customer orders you still owe need to exist in Carbon on day one. Paste or upload whatever your old system exports — we read it, match it against your suppliers, customers, and items, and create draft orders for your review. Drafts only: nothing is sent, released, or received from here."
+msgstr ""
 
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "この行が価格設定される数量ブレークポイント。各列は、買い手-サプライヤー交渉とダウンストリーム文書への変換のための独自の単価を行います。"
@@ -13702,6 +13840,9 @@ msgstr "このアイテムを購入する必要がある場合、計画が最初
 msgid "The supplier record this portal account links to; only contacts already on that supplier can be selected as the account holder below."
 msgstr "このポータルアカウントがリンクされているサプライヤーレコード。そのサプライヤー上にすでにある連絡先のみが、以下のアカウント所有者として選択できます。"
 
+msgid "the supplier wasn't found in Carbon, so no draft was created"
+msgstr ""
+
 msgid "The supplier's own quote / proposal number; recorded for traceability on the PO that converts from this quote."
 msgstr "サプライヤーの独自の引用/提案番号。このクォートから変換されるPOのトレーサビリティのために記録されます。"
 
@@ -13828,6 +13969,12 @@ msgstr "このジョブに関連付けられた外部オペレーションには
 msgid "There's nothing outstanding to apply these credits to."
 msgstr "これらのクレジットを適用する未処理項目がありません。"
 
+msgid "These are drafts — open each one, check customer, dates, quantities, and prices, and take it from there yourself. Prioritize the ones due to ship soonest."
+msgstr ""
+
+msgid "These are drafts — open each one, check supplier, dates, quantities, and prices, and take it from there yourself. Prioritize the ones with the earliest expected receipt dates."
+msgstr ""
+
 msgid "These counted quantities will be written onto the count's lines. Nothing posts — you still review and post the count yourself."
 msgstr ""
 
@@ -13896,6 +14043,9 @@ msgstr ""
 
 msgid "This item is built via a configurator and resolves its components per-order; jobs created for it inherit the configurator's resolved BOM."
 msgstr "このアイテムはコンフィグレータを使用して構築され、注文ごとにコンポーネントを解決します。このために作成されたジョブは、コンフィグレータの解決されたBOMを継承します。"
+
+msgid "this item type can't go on a sales order line"
+msgstr ""
 
 msgid "This item's bill of materials has no inputs with shelf-life enabled, so no expiry will be calculated from the BOM."
 msgstr "このアイテムの部品表には、棚卸し有効期限が有効になっている入力がないため、BOMから有効期限は計算されません。"
@@ -14575,6 +14725,9 @@ msgstr "監査履歴のロックを解除するにはアップグレードして
 msgid "Upload"
 msgstr "アップロード"
 
+msgid "Upload a file instead"
+msgstr ""
+
 msgid "Upload a PDF first"
 msgstr "まずPDFをアップロードしてください"
 
@@ -15051,6 +15204,9 @@ msgstr ""
 msgid "We couldn't read that file. Try a clearer photo or export the sheet as CSV — we never guess at numbers."
 msgstr ""
 
+msgid "We couldn't read that. Try a CSV/XLSX export or cleaner pasted text — we never guess at orders. Up to 40 orders per read; import in batches if you have more."
+msgstr ""
+
 msgid "We draft a product you make all the time — item, bill of materials, routing, and cost — and you correct it."
 msgstr ""
 
@@ -15058,6 +15214,9 @@ msgid "We inspect, nothing certified"
 msgstr ""
 
 msgid "We need at minimum a name per customer. Contacts, emails, phone numbers, and payment terms all help but nothing is required."
+msgstr ""
+
+msgid "We never create items for you — import your items first, then read the file again, or fix the drafts on their own screens."
 msgstr ""
 
 msgid "We quote custom work"
@@ -15437,6 +15596,9 @@ msgstr "この作業が生産をブロックするか(ダウン)、それを低�
 
 msgid "Whether to Add the selected permissions on top of what each user already has, or Update by replacing each user's permission set wholesale with the selection below."
 msgstr "選択されたアクセス許可が各ユーザーが既に持っているものに追加されるか、または以下の選択で各ユーザーのアクセス許可セットを置き換えることで更新されるか。"
+
+msgid "Which location fulfills these orders?"
+msgstr ""
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "どの製造イベントが保存期間時計を開始するか — たとえば、塗りつぶし、シール、または最終QC。"

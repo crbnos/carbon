@@ -51,6 +51,10 @@ msgstr "(no line with this part number on the count)"
 msgid "{0, plural, one {This part is on 1 open change order} other {This part is on # open change orders}}"
 msgstr "{0, plural, one {This part is on 1 open change order} other {This part is on # open change orders}}"
 
+#. placeholder {0}: outcome.commentLines
+msgid "{0} comment lines"
+msgstr "{0} comment lines"
+
 #. placeholder {0}: applyData.applied
 msgid "{0} counted quantities written to the count"
 msgstr "{0} counted quantities written to the count"
@@ -72,9 +76,25 @@ msgstr "{0} deleted successfully"
 msgid "{0} draft journal entries"
 msgstr "{0} draft journal entries"
 
+#. placeholder {0}: outcomes.filter((o) => o.orderId).length
+msgid "{0} draft purchase orders created"
+msgstr "{0} draft purchase orders created"
+
+#. placeholder {0}: outcomes.filter((o) => o.orderId).length
+msgid "{0} draft sales orders created"
+msgstr "{0} draft sales orders created"
+
+#. placeholder {0}: outcome.linesFailed
+msgid "{0} failed"
+msgstr "{0} failed"
+
 #. placeholder {0}: countEntry.count
 msgid "{0} in Carbon"
 msgstr "{0} in Carbon"
+
+#. placeholder {0}: outcome.linesCreated
+msgid "{0} lines"
+msgstr "{0} lines"
 
 #. placeholder {0}: mappings.length
 msgid "{0} lines to map"
@@ -84,6 +104,14 @@ msgstr "{0} lines to map"
 msgid "{0} lines were skipped — the count may have moved on from Draft."
 msgstr "{0} lines were skipped — the count may have moved on from Draft."
 
+#. placeholder {0}: problemLines.length
+msgid "{0} lines without a matching item — kept as comment lines"
+msgstr "{0} lines without a matching item — kept as comment lines"
+
+#. placeholder {0}: problemLines.length
+msgid "{0} lines without a matching item — left off the drafts"
+msgstr "{0} lines without a matching item — left off the drafts"
+
 #. placeholder {0}: proposal.tracked.length
 msgid "{0} lot / serial tracked rows — enter these on the count screen"
 msgstr "{0} lot / serial tracked rows — enter these on the count screen"
@@ -92,6 +120,14 @@ msgstr "{0} lot / serial tracked rows — enter these on the count screen"
 msgid "{0} orders"
 msgstr "{0} orders"
 
+#. placeholder {0}: unmatchedParties.length
+msgid "{0} orders we can't create — customer not found"
+msgstr "{0} orders we can't create — customer not found"
+
+#. placeholder {0}: unmatchedParties.length
+msgid "{0} orders we can't create — supplier not found"
+msgstr "{0} orders we can't create — supplier not found"
+
 #. placeholder {0}: selectedProcesses.length
 msgid "{0} Processes"
 msgstr "{0} Processes"
@@ -99,6 +135,10 @@ msgstr "{0} Processes"
 #. placeholder {0}: proposal.unmatched.length
 msgid "{0} rows we couldn't match"
 msgstr "{0} rows we couldn't match"
+
+#. placeholder {0}: outcome.linesSkipped
+msgid "{0} skipped"
+msgstr "{0} skipped"
 
 #. placeholder {0}: counts.hidden
 msgid "{0} steps hidden"
@@ -174,6 +214,9 @@ msgstr "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
+
+msgid "* some lines had no price in the source — the total covers only the priced lines."
+msgstr "* some lines had no price in the source — the total covers only the priced lines."
 
 msgid "/month/user"
 msgstr "/month/user"
@@ -976,8 +1019,17 @@ msgstr "Allows acknowledge & continue"
 msgid "Alpha"
 msgstr "Alpha"
 
+msgid "Already in Carbon: {draftCount} draft and {openCount} in-flight customer orders."
+msgstr "Already in Carbon: {draftCount} draft and {openCount} in-flight customer orders."
+
+msgid "Already in Carbon: {draftCount} draft and {openCount} in-flight purchase orders."
+msgstr "Already in Carbon: {draftCount} draft and {openCount} in-flight purchase orders."
+
 msgid "Always"
 msgstr "Always"
+
+msgid "ambiguous"
+msgstr "ambiguous"
 
 msgid "Amount"
 msgstr "Amount"
@@ -3176,6 +3228,14 @@ msgstr "Create"
 msgid "Create {0}"
 msgstr "Create {0}"
 
+#. placeholder {0}: readyOrders.length
+msgid "Create {0} draft purchase orders"
+msgstr "Create {0} draft purchase orders"
+
+#. placeholder {0}: readyOrders.length
+msgid "Create {0} draft sales orders"
+msgstr "Create {0} draft sales orders"
+
 #. placeholder {0}: unmatchedValues.length
 msgid "Create {0} values"
 msgstr "Create {0} values"
@@ -3389,8 +3449,17 @@ msgstr "Created work center"
 msgid "Creates the 12 monthly periods for a fiscal year. Periods that already exist are kept."
 msgstr "Creates the 12 monthly periods for a fiscal year. Periods that already exist are kept."
 
+msgid "Creating drafts…"
+msgstr "Creating drafts…"
+
 msgid "Creating part..."
 msgstr "Creating part..."
+
+msgid "creating the draft failed — try again"
+msgstr "creating the draft failed — try again"
+
+msgid "Creating the drafts failed — try again."
+msgstr "Creating the drafts failed — try again."
 
 msgid "Credit"
 msgstr "Credit"
@@ -5223,6 +5292,9 @@ msgstr "Every required task must be Done or Skipped before the period can be clo
 msgid "Every row was imported successfully."
 msgstr "Every row was imported successfully."
 
+msgid "Every value below came from your file or paste — we never invent references, dates, quantities, or prices. Totals are shown only where the source had prices."
+msgstr "Every value below came from your file or paste — we never invent references, dates, quantities, or prices. Totals are shown only where the source had prices."
+
 msgid "Everything applies to you — nothing needed hiding."
 msgstr "Everything applies to you — nothing needed hiding."
 
@@ -5231,6 +5303,12 @@ msgstr "Everything from Starter"
 
 msgid "Everything here follows from your answers. Change an answer on the How You Run page and these come back."
 msgstr "Everything here follows from your answers. Change an answer on the How You Run page and these come back."
+
+msgid "Everything you still owe customers — so you can ship and invoice from Carbon on day one. Orders due in the next 30 days first."
+msgstr "Everything you still owe customers — so you can ship and invoice from Carbon on day one. Orders due in the next 30 days first."
+
+msgid "Everything you're still waiting to receive from suppliers — so day-one material arrivals have a purchase order to receive against. Prioritize by expected receipt date."
+msgstr "Everything you're still waiting to receive from suppliers — so day-one material arrivals have a purchase order to receive against. Prioritize by expected receipt date."
 
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
@@ -5277,6 +5355,9 @@ msgstr "Expand Setup"
 
 msgid "Expand subtree"
 msgstr "Expand subtree"
+
+msgid "Expected"
+msgstr "Expected"
 
 msgid "Expected future demand for an item, bucketed by period, populated by the planning run alongside actual demand."
 msgstr "Expected future demand for an item, bucketed by period, populated by the planning run alongside actual demand."
@@ -7246,6 +7327,10 @@ msgstr "Last Calibration Date"
 msgid "Last Fiscal Year"
 msgstr "Last Fiscal Year"
 
+#. placeholder {0}: new Date(lastImportedAt).toLocaleDateString()
+msgid "Last imported {0} — importing again creates additional drafts, it never edits existing orders."
+msgstr "Last imported {0} — importing again creates additional drafts, it never edits existing orders."
+
 msgid "Last Month"
 msgstr "Last Month"
 
@@ -7845,6 +7930,12 @@ msgstr "Match none"
 
 msgid "matches"
 msgstr "matches"
+
+msgid "matches more than one item; use the full ID with revision"
+msgstr "matches more than one item; use the full ID with revision"
+
+msgid "matches more than one record — fix the name in the source and read it again"
+msgstr "matches more than one record — fix the name in the source and read it again"
 
 msgid "Matching Pairs"
 msgstr "Matching Pairs"
@@ -8658,6 +8749,9 @@ msgstr "No conversion is required"
 msgid "No cost history found"
 msgstr "No cost history found"
 
+msgid "no customer with this name in Carbon. We never create customers for you — add them first, then read the file again."
+msgstr "no customer with this name in Carbon. We never create customers for you — add them first, then read the file again."
+
 msgid "No Data"
 msgstr "No Data"
 
@@ -8750,6 +8844,9 @@ msgstr "No logo uploaded"
 
 msgid "No lot or serial tracking"
 msgstr "No lot or serial tracking"
+
+msgid "no match"
+msgstr "no match"
 
 msgid "No matches"
 msgstr "No matches"
@@ -8864,6 +8961,9 @@ msgstr "No stock"
 
 msgid "No stockout projected in the next 48 weeks"
 msgstr "No stockout projected in the next 48 weeks"
+
+msgid "no supplier with this name in Carbon. We never create suppliers for you — add them first, then read the file again."
+msgstr "no supplier with this name in Carbon. We never create suppliers for you — add them first, then read the file again."
 
 msgid "No suppliers yet"
 msgstr "No suppliers yet"
@@ -9185,6 +9285,12 @@ msgstr "Open jobs"
 
 msgid "Open menu"
 msgstr "Open menu"
+
+msgid "Open orders"
+msgstr "Open orders"
+
+msgid "Open orders — paste them, we draft them"
+msgstr "Open orders — paste them, we draft them"
 
 msgid "Open Purchase Invoices"
 msgstr "Open Purchase Invoices"
@@ -9587,6 +9693,15 @@ msgstr "Pass"
 
 msgid "Passed"
 msgstr "Passed"
+
+msgid "Paste it. We read it. You approve the drafts."
+msgstr "Paste it. We read it. You approve the drafts."
+
+msgid "Paste your open order list — a CSV export, a report, or plain notes (\"SO-2210, Vandelay, 12 × pump housing, ships Aug 5...\")"
+msgstr "Paste your open order list — a CSV export, a report, or plain notes (\"SO-2210, Vandelay, 12 × pump housing, ships Aug 5...\")"
+
+msgid "Paste your open PO list — a CSV export, a report, or plain notes (\"PO-1042, Acme Steel, 40 × 1018 bar, due Aug 12...\")"
+msgstr "Paste your open PO list — a CSV export, a report, or plain notes (\"PO-1042, Acme Steel, 40 × 1018 bar, due Aug 12...\")"
 
 msgid "Path"
 msgstr "Path"
@@ -10551,6 +10666,9 @@ msgstr "Re-keying between quoting, the floor, and finance"
 msgid "Reactivate"
 msgstr "Reactivate"
 
+msgid "Read it"
+msgstr "Read it"
+
 msgid "Read this through — what Carbon will and won't do for your setup. When it looks right, mark it agreed below."
 msgstr "Read this through — what Carbon will and won't do for your setup. When it looks right, mark it agreed below."
 
@@ -10565,6 +10683,9 @@ msgstr "Reading your count…"
 
 msgid "Reading your file…"
 msgstr "Reading your file…"
+
+msgid "Reading…"
+msgstr "Reading…"
 
 msgid "Ready for Quote"
 msgstr "Ready for Quote"
@@ -11137,6 +11258,11 @@ msgstr "Reverse Charge Sales Tax (default)"
 msgid "Reverse the related journal entries"
 msgstr "Reverse the related journal entries"
 
+#. placeholder {0}: proposal.orders.length
+#. placeholder {1}: readyOrders.length
+msgid "Review — we found {0} orders, {1} ready to create"
+msgstr "Review — we found {0} orders, {1} ready to create"
+
 msgid "Review & post the count"
 msgstr "Review & post the count"
 
@@ -11426,6 +11552,9 @@ msgstr "Sales Order Number"
 
 msgid "Sales Orders"
 msgstr "Sales Orders"
+
+msgid "Sales orders need a location and your factory has none yet — set one up in <0>Locations</0> first, then come back."
+msgstr "Sales orders need a location and your factory has none yet — set one up in <0>Locations</0> first, then come back."
 
 msgid "Sales Person"
 msgstr "Sales Person"
@@ -13191,6 +13320,9 @@ msgstr "The customer that goods are delivered to, when different from the custom
 msgid "The customer this portal link is provisioned for; only contacts on this customer can sign in through the link."
 msgstr "The customer this portal link is provisioned for; only contacts on this customer can sign in through the link."
 
+msgid "the customer wasn't found in Carbon, so no draft was created"
+msgstr "the customer wasn't found in Carbon, so no draft was created"
+
 msgid "The customer's own reference for this document — typically their RFQ or PO number on their system; surfaced on the printable output and carried forward into any document this one converts into."
 msgstr "The customer's own reference for this document — typically their RFQ or PO number on their system; surfaced on the printable output and carried forward into any document this one converts into."
 
@@ -13509,6 +13641,9 @@ msgstr "The one you make all the time — explicitly not the weird one."
 msgid "The ones that cause expensive rework when they're made silently and wrong. About two minutes each — every one has a recommended default."
 msgstr "The ones that cause expensive rework when they're made silently and wrong. About two minutes each — every one has a recommended default."
 
+msgid "The open POs you're waiting to receive and the customer orders you still owe: paste or upload your old system's list, review the match, and get draft orders to approve."
+msgstr "The open POs you're waiting to receive and the customer orders you still owe: paste or upload your old system's list, review the match, and get draft orders to approve."
+
 msgid "The operations and steps your parts move through"
 msgstr "The operations and steps your parts move through"
 
@@ -13568,6 +13703,9 @@ msgstr "The procedure technicians follow when this maintenance is performed; rep
 
 msgid "The processes this work center can run; appears in process-pickers when scheduling operations, and limits which jobs can route through this work center."
 msgstr "The processes this work center can run; appears in process-pickers when scheduling operations, and limits which jobs can route through this work center."
+
+msgid "The purchase orders you're still waiting to receive and the customer orders you still owe need to exist in Carbon on day one. Paste or upload whatever your old system exports — we read it, match it against your suppliers, customers, and items, and create draft orders for your review. Drafts only: nothing is sent, released, or received from here."
+msgstr "The purchase orders you're still waiting to receive and the customer orders you still owe need to exist in Carbon on day one. Paste or upload whatever your old system exports — we read it, match it against your suppliers, customers, and items, and create draft orders for your review. Drafts only: nothing is sent, released, or received from here."
 
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
@@ -13702,6 +13840,9 @@ msgstr "The supplier planning suggests first when this item needs to be bought; 
 msgid "The supplier record this portal account links to; only contacts already on that supplier can be selected as the account holder below."
 msgstr "The supplier record this portal account links to; only contacts already on that supplier can be selected as the account holder below."
 
+msgid "the supplier wasn't found in Carbon, so no draft was created"
+msgstr "the supplier wasn't found in Carbon, so no draft was created"
+
 msgid "The supplier's own quote / proposal number; recorded for traceability on the PO that converts from this quote."
 msgstr "The supplier's own quote / proposal number; recorded for traceability on the PO that converts from this quote."
 
@@ -13828,6 +13969,12 @@ msgstr "There are outside operations associated with this job that have no suppl
 msgid "There's nothing outstanding to apply these credits to."
 msgstr "There's nothing outstanding to apply these credits to."
 
+msgid "These are drafts — open each one, check customer, dates, quantities, and prices, and take it from there yourself. Prioritize the ones due to ship soonest."
+msgstr "These are drafts — open each one, check customer, dates, quantities, and prices, and take it from there yourself. Prioritize the ones due to ship soonest."
+
+msgid "These are drafts — open each one, check supplier, dates, quantities, and prices, and take it from there yourself. Prioritize the ones with the earliest expected receipt dates."
+msgstr "These are drafts — open each one, check supplier, dates, quantities, and prices, and take it from there yourself. Prioritize the ones with the earliest expected receipt dates."
+
 msgid "These counted quantities will be written onto the count's lines. Nothing posts — you still review and post the count yourself."
 msgstr "These counted quantities will be written onto the count's lines. Nothing posts — you still review and post the count yourself."
 
@@ -13896,6 +14043,9 @@ msgstr "This is what every order will look like."
 
 msgid "This item is built via a configurator and resolves its components per-order; jobs created for it inherit the configurator's resolved BOM."
 msgstr "This item is built via a configurator and resolves its components per-order; jobs created for it inherit the configurator's resolved BOM."
+
+msgid "this item type can't go on a sales order line"
+msgstr "this item type can't go on a sales order line"
 
 msgid "This item's bill of materials has no inputs with shelf-life enabled, so no expiry will be calculated from the BOM."
 msgstr "This item's bill of materials has no inputs with shelf-life enabled, so no expiry will be calculated from the BOM."
@@ -14575,6 +14725,9 @@ msgstr "Upgrade to unlock audit history"
 msgid "Upload"
 msgstr "Upload"
 
+msgid "Upload a file instead"
+msgstr "Upload a file instead"
+
 msgid "Upload a PDF first"
 msgstr "Upload a PDF first"
 
@@ -15051,6 +15204,9 @@ msgstr "We couldn't reach the AI drafter, so we set up a simple shell instead �
 msgid "We couldn't read that file. Try a clearer photo or export the sheet as CSV — we never guess at numbers."
 msgstr "We couldn't read that file. Try a clearer photo or export the sheet as CSV — we never guess at numbers."
 
+msgid "We couldn't read that. Try a CSV/XLSX export or cleaner pasted text — we never guess at orders. Up to 40 orders per read; import in batches if you have more."
+msgstr "We couldn't read that. Try a CSV/XLSX export or cleaner pasted text — we never guess at orders. Up to 40 orders per read; import in batches if you have more."
+
 msgid "We draft a product you make all the time — item, bill of materials, routing, and cost — and you correct it."
 msgstr "We draft a product you make all the time — item, bill of materials, routing, and cost — and you correct it."
 
@@ -15059,6 +15215,9 @@ msgstr "We inspect, nothing certified"
 
 msgid "We need at minimum a name per customer. Contacts, emails, phone numbers, and payment terms all help but nothing is required."
 msgstr "We need at minimum a name per customer. Contacts, emails, phone numbers, and payment terms all help but nothing is required."
+
+msgid "We never create items for you — import your items first, then read the file again, or fix the drafts on their own screens."
+msgstr "We never create items for you — import your items first, then read the file again, or fix the drafts on their own screens."
 
 msgid "We quote custom work"
 msgstr "We quote custom work"
@@ -15437,6 +15596,9 @@ msgstr "Whether this work blocks production (Down), degrades it (Impact), is on 
 
 msgid "Whether to Add the selected permissions on top of what each user already has, or Update by replacing each user's permission set wholesale with the selection below."
 msgstr "Whether to Add the selected permissions on top of what each user already has, or Update by replacing each user's permission set wholesale with the selection below."
+
+msgid "Which location fulfills these orders?"
+msgstr "Which location fulfills these orders?"
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."

@@ -51,6 +51,10 @@ msgstr ""
 msgid "{0, plural, one {This part is on 1 open change order} other {This part is on # open change orders}}"
 msgstr "{0, plural, one {이 부품은 1개의 미처리 변경주문에 있습니다} other {이 부품은 #개의 미처리 변경주문에 있습니다}}"
 
+#. placeholder {0}: outcome.commentLines
+msgid "{0} comment lines"
+msgstr ""
+
 #. placeholder {0}: applyData.applied
 msgid "{0} counted quantities written to the count"
 msgstr ""
@@ -72,8 +76,24 @@ msgstr "{0}이(가) 삭제되었습니다"
 msgid "{0} draft journal entries"
 msgstr "{0}건의 임시 분개"
 
+#. placeholder {0}: outcomes.filter((o) => o.orderId).length
+msgid "{0} draft purchase orders created"
+msgstr ""
+
+#. placeholder {0}: outcomes.filter((o) => o.orderId).length
+msgid "{0} draft sales orders created"
+msgstr ""
+
+#. placeholder {0}: outcome.linesFailed
+msgid "{0} failed"
+msgstr ""
+
 #. placeholder {0}: countEntry.count
 msgid "{0} in Carbon"
+msgstr ""
+
+#. placeholder {0}: outcome.linesCreated
+msgid "{0} lines"
 msgstr ""
 
 #. placeholder {0}: mappings.length
@@ -84,6 +104,14 @@ msgstr "매핑할 라인 {0}개"
 msgid "{0} lines were skipped — the count may have moved on from Draft."
 msgstr ""
 
+#. placeholder {0}: problemLines.length
+msgid "{0} lines without a matching item — kept as comment lines"
+msgstr ""
+
+#. placeholder {0}: problemLines.length
+msgid "{0} lines without a matching item — left off the drafts"
+msgstr ""
+
 #. placeholder {0}: proposal.tracked.length
 msgid "{0} lot / serial tracked rows — enter these on the count screen"
 msgstr ""
@@ -92,12 +120,24 @@ msgstr ""
 msgid "{0} orders"
 msgstr "주문 {0}건"
 
+#. placeholder {0}: unmatchedParties.length
+msgid "{0} orders we can't create — customer not found"
+msgstr ""
+
+#. placeholder {0}: unmatchedParties.length
+msgid "{0} orders we can't create — supplier not found"
+msgstr ""
+
 #. placeholder {0}: selectedProcesses.length
 msgid "{0} Processes"
 msgstr "공정 {0}개"
 
 #. placeholder {0}: proposal.unmatched.length
 msgid "{0} rows we couldn't match"
+msgstr ""
+
+#. placeholder {0}: outcome.linesSkipped
+msgid "{0} skipped"
 msgstr ""
 
 #. placeholder {0}: counts.hidden
@@ -174,6 +214,9 @@ msgstr "미실사 라인 {uncounted}개"
 
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "예상 수량과 다른 라인 {variances}개"
+
+msgid "* some lines had no price in the source — the total covers only the priced lines."
+msgstr ""
 
 msgid "/month/user"
 msgstr "/월/사용자"
@@ -976,8 +1019,17 @@ msgstr "확인 후 계속 진행 허용"
 msgid "Alpha"
 msgstr "알파"
 
+msgid "Already in Carbon: {draftCount} draft and {openCount} in-flight customer orders."
+msgstr ""
+
+msgid "Already in Carbon: {draftCount} draft and {openCount} in-flight purchase orders."
+msgstr ""
+
 msgid "Always"
 msgstr "항상"
+
+msgid "ambiguous"
+msgstr ""
 
 msgid "Amount"
 msgstr "금액"
@@ -3176,6 +3228,14 @@ msgstr "생성"
 msgid "Create {0}"
 msgstr "{0} 생성"
 
+#. placeholder {0}: readyOrders.length
+msgid "Create {0} draft purchase orders"
+msgstr ""
+
+#. placeholder {0}: readyOrders.length
+msgid "Create {0} draft sales orders"
+msgstr ""
+
 #. placeholder {0}: unmatchedValues.length
 msgid "Create {0} values"
 msgstr "{0} 값 생성"
@@ -3389,8 +3449,17 @@ msgstr "작업장 생성됨"
 msgid "Creates the 12 monthly periods for a fiscal year. Periods that already exist are kept."
 msgstr "회계연도의 12개월 기간을 생성합니다. 이미 존재하는 기간은 유지됩니다."
 
+msgid "Creating drafts…"
+msgstr ""
+
 msgid "Creating part..."
 msgstr "품목 생성 중..."
+
+msgid "creating the draft failed — try again"
+msgstr ""
+
+msgid "Creating the drafts failed — try again."
+msgstr ""
 
 msgid "Credit"
 msgstr "대변"
@@ -5223,6 +5292,9 @@ msgstr "기간을 종료하기 전에 모든 필수 작업을 완료하거나 �
 msgid "Every row was imported successfully."
 msgstr "모든 행이 성공적으로 가져와졌습니다."
 
+msgid "Every value below came from your file or paste — we never invent references, dates, quantities, or prices. Totals are shown only where the source had prices."
+msgstr ""
+
 msgid "Everything applies to you — nothing needed hiding."
 msgstr ""
 
@@ -5230,6 +5302,12 @@ msgid "Everything from Starter"
 msgstr "스타터의 모든 기능 포함"
 
 msgid "Everything here follows from your answers. Change an answer on the How You Run page and these come back."
+msgstr ""
+
+msgid "Everything you still owe customers — so you can ship and invoice from Carbon on day one. Orders due in the next 30 days first."
+msgstr ""
+
+msgid "Everything you're still waiting to receive from suppliers — so day-one material arrivals have a purchase order to receive against. Prioritize by expected receipt date."
 msgstr ""
 
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
@@ -5277,6 +5355,9 @@ msgstr "셋업 펼치기"
 
 msgid "Expand subtree"
 msgstr "하위 트리 펼치기"
+
+msgid "Expected"
+msgstr ""
 
 msgid "Expected future demand for an item, bucketed by period, populated by the planning run alongside actual demand."
 msgstr "품목에 대한 예상 미래 수요로, 기간별로 구분되며 계획 실행 시 실제 수요와 함께 채워집니다."
@@ -7246,6 +7327,10 @@ msgstr "마지막 교정일"
 msgid "Last Fiscal Year"
 msgstr "지난 회계연도"
 
+#. placeholder {0}: new Date(lastImportedAt).toLocaleDateString()
+msgid "Last imported {0} — importing again creates additional drafts, it never edits existing orders."
+msgstr ""
+
 msgid "Last Month"
 msgstr "지난달"
 
@@ -7845,6 +7930,12 @@ msgstr "일치 안 함"
 
 msgid "matches"
 msgstr "일치"
+
+msgid "matches more than one item; use the full ID with revision"
+msgstr ""
+
+msgid "matches more than one record — fix the name in the source and read it again"
+msgstr ""
 
 msgid "Matching Pairs"
 msgstr "일치하는 쌍"
@@ -8658,6 +8749,9 @@ msgstr "변환이 필요하지 않습니다"
 msgid "No cost history found"
 msgstr "원가 이력이 없습니다"
 
+msgid "no customer with this name in Carbon. We never create customers for you — add them first, then read the file again."
+msgstr ""
+
 msgid "No Data"
 msgstr "데이터 없음"
 
@@ -8749,6 +8843,9 @@ msgid "No logo uploaded"
 msgstr "업로드된 로고가 없습니다"
 
 msgid "No lot or serial tracking"
+msgstr ""
+
+msgid "no match"
 msgstr ""
 
 msgid "No matches"
@@ -8864,6 +8961,9 @@ msgstr "재고 없음"
 
 msgid "No stockout projected in the next 48 weeks"
 msgstr "향후 48주간 재고 소진이 예상되지 않습니다"
+
+msgid "no supplier with this name in Carbon. We never create suppliers for you — add them first, then read the file again."
+msgstr ""
 
 msgid "No suppliers yet"
 msgstr "아직 공급업체가 없습니다"
@@ -9185,6 +9285,12 @@ msgstr "미결 작업"
 
 msgid "Open menu"
 msgstr "메뉴 열기"
+
+msgid "Open orders"
+msgstr ""
+
+msgid "Open orders — paste them, we draft them"
+msgstr ""
 
 msgid "Open Purchase Invoices"
 msgstr "미결 구매 인보이스"
@@ -9587,6 +9693,15 @@ msgstr "합격"
 
 msgid "Passed"
 msgstr "합격됨"
+
+msgid "Paste it. We read it. You approve the drafts."
+msgstr ""
+
+msgid "Paste your open order list — a CSV export, a report, or plain notes (\"SO-2210, Vandelay, 12 × pump housing, ships Aug 5...\")"
+msgstr ""
+
+msgid "Paste your open PO list — a CSV export, a report, or plain notes (\"PO-1042, Acme Steel, 40 × 1018 bar, due Aug 12...\")"
+msgstr ""
 
 msgid "Path"
 msgstr "경로"
@@ -10551,6 +10666,9 @@ msgstr "견적, 현장, 재무 간 데이터 재입력"
 msgid "Reactivate"
 msgstr "재활성화"
 
+msgid "Read it"
+msgstr ""
+
 msgid "Read this through — what Carbon will and won't do for your setup. When it looks right, mark it agreed below."
 msgstr "Carbon이 귀사의 설정에서 무엇을 하고 무엇을 하지 않을지 내용을 확인하세요. 내용이 맞다면 아래에서 동의로 표시하세요."
 
@@ -10564,6 +10682,9 @@ msgid "Reading your count…"
 msgstr ""
 
 msgid "Reading your file…"
+msgstr ""
+
+msgid "Reading…"
 msgstr ""
 
 msgid "Ready for Quote"
@@ -11137,6 +11258,11 @@ msgstr "매입자 납부 판매세(기본값)"
 msgid "Reverse the related journal entries"
 msgstr "관련 분개 취소"
 
+#. placeholder {0}: proposal.orders.length
+#. placeholder {1}: readyOrders.length
+msgid "Review — we found {0} orders, {1} ready to create"
+msgstr ""
+
 msgid "Review & post the count"
 msgstr ""
 
@@ -11426,6 +11552,9 @@ msgstr "판매주문 번호"
 
 msgid "Sales Orders"
 msgstr "판매주문"
+
+msgid "Sales orders need a location and your factory has none yet — set one up in <0>Locations</0> first, then come back."
+msgstr ""
 
 msgid "Sales Person"
 msgstr "영업 담당자"
@@ -13191,6 +13320,9 @@ msgstr "청구 대상 고객과 다를 경우, 재화가 실제로 배송되는 
 msgid "The customer this portal link is provisioned for; only contacts on this customer can sign in through the link."
 msgstr "이 포털 링크가 발급된 대상 고객으로, 해당 고객의 담당자만 이 링크로 로그인할 수 있습니다."
 
+msgid "the customer wasn't found in Carbon, so no draft was created"
+msgstr ""
+
 msgid "The customer's own reference for this document — typically their RFQ or PO number on their system; surfaced on the printable output and carried forward into any document this one converts into."
 msgstr "이 문서에 대한 고객 자체 참조 번호로, 일반적으로 고객 시스템상의 RFQ 또는 구매주문 번호입니다. 인쇄 출력물에 표시되며, 이 문서가 전환되는 모든 후속 문서에도 이어집니다."
 
@@ -13509,6 +13641,9 @@ msgstr ""
 msgid "The ones that cause expensive rework when they're made silently and wrong. About two minutes each — every one has a recommended default."
 msgstr ""
 
+msgid "The open POs you're waiting to receive and the customer orders you still owe: paste or upload your old system's list, review the match, and get draft orders to approve."
+msgstr ""
+
 msgid "The operations and steps your parts move through"
 msgstr "품목이 거쳐가는 공정작업과 단계"
 
@@ -13568,6 +13703,9 @@ msgstr "이 유지보수를 수행할 때 기술자가 따르는 절차입니다
 
 msgid "The processes this work center can run; appears in process-pickers when scheduling operations, and limits which jobs can route through this work center."
 msgstr "이 작업장에서 수행할 수 있는 공정입니다. 공정작업을 예약할 때 공정 선택 목록에 표시되며, 이 작업장을 경유할 수 있는 작업을 제한합니다."
+
+msgid "The purchase orders you're still waiting to receive and the customer orders you still owe need to exist in Carbon on day one. Paste or upload whatever your old system exports — we read it, match it against your suppliers, customers, and items, and create draft orders for your review. Drafts only: nothing is sent, released, or received from here."
+msgstr ""
 
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "이 라인의 가격이 책정되는 수량 구간입니다. 각 열은 구매자-공급업체 협상 및 후속 문서 전환을 위한 자체 단가를 갖습니다."
@@ -13702,6 +13840,9 @@ msgstr "이 품목을 구매해야 할 때 계획에서 우선 제안하는 공�
 msgid "The supplier record this portal account links to; only contacts already on that supplier can be selected as the account holder below."
 msgstr "이 포털 계정이 연결되는 공급업체 레코드입니다. 아래에서 계정 소유자로 선택할 수 있는 것은 해당 공급업체에 이미 등록된 담당자뿐입니다."
 
+msgid "the supplier wasn't found in Carbon, so no draft was created"
+msgstr ""
+
 msgid "The supplier's own quote / proposal number; recorded for traceability on the PO that converts from this quote."
 msgstr "공급업체 자체의 견적/제안 번호입니다. 이 견적에서 전환된 PO에 이력추적을 위해 기록됩니다."
 
@@ -13828,6 +13969,12 @@ msgstr "이 작업에는 공급업체가 지정되지 않은 외주 공정작업
 msgid "There's nothing outstanding to apply these credits to."
 msgstr "이 크레딧을 적용할 미결제 항목이 없습니다."
 
+msgid "These are drafts — open each one, check customer, dates, quantities, and prices, and take it from there yourself. Prioritize the ones due to ship soonest."
+msgstr ""
+
+msgid "These are drafts — open each one, check supplier, dates, quantities, and prices, and take it from there yourself. Prioritize the ones with the earliest expected receipt dates."
+msgstr ""
+
 msgid "These counted quantities will be written onto the count's lines. Nothing posts — you still review and post the count yourself."
 msgstr ""
 
@@ -13896,6 +14043,9 @@ msgstr ""
 
 msgid "This item is built via a configurator and resolves its components per-order; jobs created for it inherit the configurator's resolved BOM."
 msgstr "이 품목은 컨피규레이터를 통해 제작되며 구성품을 주문별로 결정합니다. 이를 위해 생성된 작업은 컨피규레이터가 결정한 BOM을 상속받습니다."
+
+msgid "this item type can't go on a sales order line"
+msgstr ""
 
 msgid "This item's bill of materials has no inputs with shelf-life enabled, so no expiry will be calculated from the BOM."
 msgstr "이 품목의 자재명세서(BOM)에는 유효기한이 설정된 투입 자재가 없으므로, BOM으로부터 만료일이 계산되지 않습니다."
@@ -14575,6 +14725,9 @@ msgstr "감사 기록을 사용하려면 업그레이드하세요"
 msgid "Upload"
 msgstr "업로드"
 
+msgid "Upload a file instead"
+msgstr ""
+
 msgid "Upload a PDF first"
 msgstr "먼저 PDF를 업로드하세요"
 
@@ -15051,6 +15204,9 @@ msgstr ""
 msgid "We couldn't read that file. Try a clearer photo or export the sheet as CSV — we never guess at numbers."
 msgstr ""
 
+msgid "We couldn't read that. Try a CSV/XLSX export or cleaner pasted text — we never guess at orders. Up to 40 orders per read; import in batches if you have more."
+msgstr ""
+
 msgid "We draft a product you make all the time — item, bill of materials, routing, and cost — and you correct it."
 msgstr ""
 
@@ -15058,6 +15214,9 @@ msgid "We inspect, nothing certified"
 msgstr ""
 
 msgid "We need at minimum a name per customer. Contacts, emails, phone numbers, and payment terms all help but nothing is required."
+msgstr ""
+
+msgid "We never create items for you — import your items first, then read the file again, or fix the drafts on their own screens."
 msgstr ""
 
 msgid "We quote custom work"
@@ -15437,6 +15596,9 @@ msgstr "이 작업이 생산을 중단시키는지(가동중단), 저하시키�
 
 msgid "Whether to Add the selected permissions on top of what each user already has, or Update by replacing each user's permission set wholesale with the selection below."
 msgstr "선택한 권한을 각 사용자가 이미 가진 권한에 추가할지(추가), 아래 선택 항목으로 각 사용자의 권한 세트를 완전히 교체할지(업데이트) 여부입니다."
+
+msgid "Which location fulfills these orders?"
+msgstr ""
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "유효기간 계산이 시작되는 제조 이벤트 — 예를 들어 충전, 밀봉, 또는 최종 품질검사."
