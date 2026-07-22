@@ -14,11 +14,18 @@ export const REGISTRY: PageDef[] = [
     order: 0
   },
   {
+    slug: "how-you-run",
+    navLabel: msg`How You Run`,
+    title: msg`Tell Us How You Run`,
+    group: "get-started",
+    order: 1
+  },
+  {
     slug: "team",
     navLabel: msg`Your Project Team`,
     title: msg`Your Project Team`,
     group: "get-started",
-    order: 1,
+    order: 2,
     tiers: ["guided", "enterprise"]
   },
   {
@@ -26,7 +33,7 @@ export const REGISTRY: PageDef[] = [
     navLabel: msg`How We Work`,
     title: msg`How We Work Together`,
     group: "get-started",
-    order: 2,
+    order: 3,
     tiers: ["guided", "enterprise"]
   },
   {
@@ -34,7 +41,7 @@ export const REGISTRY: PageDef[] = [
     navLabel: msg`Scope Summary`,
     title: msg`Scope Summary`,
     group: "align",
-    order: 3,
+    order: 4,
     // Paid-tier only — self-serve has no commercial scope/acceptance agreement.
     tiers: ["guided", "enterprise"]
   },
@@ -43,7 +50,7 @@ export const REGISTRY: PageDef[] = [
     navLabel: msg`Roles`,
     title: msg`Roles and Responsibilities`,
     group: "align",
-    order: 4,
+    order: 5,
     // Paid-tier only — self-serve has no Carbon team, so there are no shared
     // roles/responsibilities to divide.
     tiers: ["guided", "enterprise"]
@@ -53,7 +60,7 @@ export const REGISTRY: PageDef[] = [
     navLabel: msg`Value Snapshot`,
     title: msg`Value Snapshot`,
     group: "align",
-    order: 5,
+    order: 6,
     optional: true
   },
   {
@@ -61,7 +68,7 @@ export const REGISTRY: PageDef[] = [
     navLabel: msg`Plan`,
     title: msg`Project Plan`,
     group: "plan",
-    order: 6,
+    order: 7,
     key: true
   },
   {
@@ -69,7 +76,7 @@ export const REGISTRY: PageDef[] = [
     navLabel: msg`Requirements`,
     title: msg`Requirements and Process Map`,
     group: "plan",
-    order: 7,
+    order: 8,
     // Paid-tier only — self-serve customers configure directly rather than going
     // through a formal requirements/process-mapping exercise.
     tiers: ["guided", "enterprise"]
@@ -79,37 +86,56 @@ export const REGISTRY: PageDef[] = [
     navLabel: msg`Setup Map`,
     title: msg`Setup Map`,
     group: "configure",
-    order: 8
+    order: 9
   },
   {
-    slug: "data",
-    navLabel: msg`Data Migration`,
-    title: msg`Data Migration Map`,
+    slug: "load-data",
+    navLabel: msg`Load Your Data`,
+    title: msg`Load Your Data`,
     group: "configure",
-    order: 9,
-    // Paid-tier only — self-serve customers bring no data to migrate.
-    tiers: ["guided", "enterprise"]
+    order: 10
+  },
+  {
+    slug: "pilot",
+    navLabel: msg`Prove It Works`,
+    title: msg`Prove It Works`,
+    group: "launch",
+    order: 11
+  },
+  {
+    slug: "crew",
+    navLabel: msg`Ready Your Team`,
+    title: msg`Ready Your Team`,
+    group: "launch",
+    order: 12
   },
   {
     slug: "training",
     navLabel: msg`Training Plan`,
     title: msg`Training Plan`,
     group: "launch",
-    order: 10
+    order: 13
   },
   {
-    slug: "go-live",
-    navLabel: msg`Go-Live`,
-    title: msg`Go-Live and Acceptance`,
+    slug: "switch",
+    navLabel: msg`Make the Switch`,
+    title: msg`Make the Switch`,
     group: "launch",
-    order: 11
+    order: 14
+  },
+  {
+    slug: "live",
+    navLabel: msg`Live on Carbon`,
+    title: msg`Live on Carbon`,
+    group: "launch",
+    order: 15
   },
   {
     slug: "controls",
     navLabel: msg`Setup & Controls`,
     title: msg`Setup & Controls`,
     group: "carbon-only",
-    order: 12,
+    order: 16,
     carbonOnly: true
   }
 ];

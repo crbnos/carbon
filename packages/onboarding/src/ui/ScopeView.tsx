@@ -10,7 +10,7 @@ import {
   scopeDoneForTier,
   scopeOutForTier
 } from "../content/scope";
-import { filterByModule, gateKey } from "../logic";
+import { checkKey, filterByModule } from "../logic";
 import { MODULE_NAME, MODULES } from "../types";
 import { EditableField } from "./EditableField";
 import { PageHeader, Panel } from "./primitives";
@@ -30,9 +30,12 @@ export function ScopeView() {
   const tier = useTier();
   const exclusions = useExclusions();
   const fields = useFieldMap();
-  const { setGate } = useHubActions();
+  const { setCheck } = useHubActions();
 
-  const agreed = map.get(gateKey("discovery")) === "done";
+  // Scope agreement is its own record now — the old Discovery gate retired when
+  // the spine moved to the seven-phase journey.
+  const agreedKey = checkKey("scope", "agreed");
+  const agreed = map.get(agreedKey) === "1";
   const inScope = filterByModule(
     SCOPE_IN.filter((i) => !i.tiers || i.tiers.includes(tier)),
     exclusions.modules
@@ -137,7 +140,7 @@ export function ScopeView() {
             <Button
               variant="secondary"
               size="sm"
-              onClick={() => setGate(gateKey("discovery"), "todo")}
+              onClick={() => setCheck(agreedKey, "check", "0")}
             >
               <Trans>Undo</Trans>
             </Button>
@@ -155,7 +158,7 @@ export function ScopeView() {
                 </Trans>
               </p>
             </div>
-            <Button onClick={() => setGate(gateKey("discovery"), "done")}>
+            <Button onClick={() => setCheck(agreedKey, "check", "1")}>
               <Trans>Mark scope as agreed</Trans>
             </Button>
           </div>

@@ -3,7 +3,7 @@ import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
-import { OPTIONAL_SECTIONS, REGISTRY, SPINE } from "../content";
+import { GO_LIVE_STEP_KEY, OPTIONAL_SECTIONS, REGISTRY, SPINE } from "../content";
 import {
   gateDateKey,
   PLAN_START_KEY,
@@ -21,7 +21,7 @@ import {
   useTier
 } from "./state";
 
-const GOLIVE_DATE_KEY = gateDateKey("gate:golive");
+const GOLIVE_DATE_KEY = gateDateKey(GO_LIVE_STEP_KEY);
 
 const TIERS: {
   value: Tier;

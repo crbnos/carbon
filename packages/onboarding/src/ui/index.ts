@@ -1,7 +1,5 @@
-export { DataMigrationView } from "./DataMigrationView";
 export { EditableField } from "./EditableField";
 export { GanttChart } from "./GanttChart";
-export { GoLiveView } from "./GoLiveView";
 export { HowWeWorkView } from "./HowWeWorkView";
 export { OnboardingHub } from "./OnboardingHub";
 export { OnboardingHubSummary } from "./OnboardingHubSummary";

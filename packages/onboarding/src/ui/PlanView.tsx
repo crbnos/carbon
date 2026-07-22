@@ -25,7 +25,7 @@ import {
 } from "react-icons/lu";
 import { PAGE_COPY } from "../content";
 import { BOARD_TASKS, boardTasksForScope } from "../content/board";
-import { SPINE } from "../content/spine";
+import { GO_LIVE_STEP_KEY, SPINE } from "../content/spine";
 import {
   boardTasksForTier,
   effectiveGateStatus,
@@ -84,7 +84,7 @@ export function PlanView({
   // in Setup & Controls). Display only; null until a project start/go-live is set.
   const timeline = resolveTimeline(steps, fields, i18n);
   const goLiveDate =
-    timeline.bars.find((b) => b.key === "gate:golive")?.gateDate ?? null;
+    timeline.bars.find((b) => b.key === GO_LIVE_STEP_KEY)?.gateDate ?? null;
 
   return (
     <div className="w-full max-w-3xl mx-auto flex flex-col gap-6">

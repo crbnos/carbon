@@ -20,8 +20,11 @@ import {
   LuHandshake,
   LuLayoutDashboard,
   LuListChecks,
+  LuMessagesSquare,
+  LuPlay,
   LuRocket,
   LuSettings,
+  LuTrophy,
   LuUsers
 } from "react-icons/lu";
 import { useCustomerPreview } from "~/hooks/useCustomerPreview";
@@ -31,6 +34,7 @@ import { path } from "~/utils/path";
 
 const ICON: Record<string, ReactNode> = {
   start: <LuRocket />,
+  "how-you-run": <LuMessagesSquare />,
   team: <LuUsers />,
   "how-we-work": <LuHandshake />,
   scope: <LuFileText />,
@@ -39,10 +43,13 @@ const ICON: Record<string, ReactNode> = {
   plan: <LuListChecks />,
   board: <LuClipboardList />,
   setup: <LuClipboardCheck />,
-  data: <LuDatabase />,
+  "load-data": <LuDatabase />,
   requirements: <LuFileText />,
-  "go-live": <LuFlagTriangleRight />,
+  pilot: <LuPlay />,
+  crew: <LuUsers />,
   training: <LuGraduationCap />,
+  switch: <LuFlagTriangleRight />,
+  live: <LuTrophy />,
   controls: <LuSettings />
 };
 

@@ -26,6 +26,7 @@ import { createStore } from "zustand/vanilla";
 import {
   EMPTY_EXCLUSIONS,
   fieldMap,
+  NO_SIGNALS,
   type Signals,
   stateMap
 } from "../../logic";
@@ -125,14 +126,6 @@ export interface HubState extends HubData, HubFlags {
 
 export type HubStore = ReturnType<typeof createHubStore>;
 
-const EMPTY_SIGNALS: Signals = {
-  hasItems: false,
-  hasMakeMethod: false,
-  hasJob: false,
-  hasSalesOrder: false,
-  hasTrackedEntity: false
-};
-
 export const HUB_INITIAL: HubData & HubFlags = {
   tier: "self_serve",
   status: "tailoring",
@@ -142,7 +135,7 @@ export const HUB_INITIAL: HubData & HubFlags = {
   fieldValues: [],
   rows: [],
   contacts: {},
-  signals: EMPTY_SIGNALS,
+  signals: NO_SIGNALS,
   isInternal: false,
   previewing: false,
   canEdit: false

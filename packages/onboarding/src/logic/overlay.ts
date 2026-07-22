@@ -31,6 +31,22 @@ export function spineForTier(spine: StepDef[], tier: Tier): StepDef[] {
 // persisted). Manual overrides in checkState always win.
 export type Signals = Record<DetectSignal, boolean>;
 
+// All-false signals, for surfaces rendering before the server probes resolve.
+// Single source of truth so adding a DetectSignal can't miss a consumer.
+export const NO_SIGNALS: Signals = {
+  hasItems: false,
+  hasMakeMethod: false,
+  hasJob: false,
+  hasSalesOrder: false,
+  hasTrackedEntity: false,
+  hasCustomers: false,
+  hasSuppliers: false,
+  hasWorkCenter: false,
+  hasBomLines: false,
+  hasShipment: false,
+  hasProductionEvent: false
+};
+
 export function stateMap(rows: CheckStateRow[]): Map<string, string> {
   return new Map(rows.map((r) => [r.itemKey, r.value]));
 }

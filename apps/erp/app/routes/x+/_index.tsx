@@ -5,6 +5,7 @@ import {
   type HubStatus,
   labelForTier,
   nextAction,
+  NO_SIGNALS,
   type Signals,
   SPINE,
   spineForTier,
@@ -55,14 +56,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
   return null;
 }
-
-const NO_SIGNALS: Signals = {
-  hasItems: false,
-  hasMakeMethod: false,
-  hasJob: false,
-  hasSalesOrder: false,
-  hasTrackedEntity: false
-};
 
 function useImplementationSummary() {
   const { i18n } = useLingui();

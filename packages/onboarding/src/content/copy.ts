@@ -25,19 +25,35 @@ export const PAGE_COPY = {
   },
   setup: {
     title: msg`Setup Map`,
-    lead: msg`The master data to set up when first configuring Carbon, grouped by module. Mark each one configured as you go.`
+    lead: msg`The master data to set up when first configuring Carbon, grouped by module. Mark each one configured as you go — anything hidden says why.`
   },
-  data: {
-    title: msg`Data Migration Map`,
-    lead: msg`Your job here: check a real sample of each row, then mark it validated. Foundation data loads first, then master records, then open transactions at cutover.`
+  "how-you-run": {
+    title: msg`Tell Us How You Run`,
+    lead: msg`Your answers, and the plan they built. Change an answer any time — we'll show you exactly what changes before anything moves.`
+  },
+  "load-data": {
+    title: msg`Load Your Data`,
+    lead: msg`Bring your lists in without retyping them. Don't clean your files first — that's our job. Open transactions load at switch week, so they're current.`
+  },
+  pilot: {
+    title: msg`Prove It Works`,
+    lead: msg`Run one real order through Carbon, start to finish. Every document it creates checks itself off below as it appears.`
+  },
+  crew: {
+    title: msg`Ready Your Team`,
+    lead: msg`One champion per area, doing real tasks on your real data — and the first floor station running jobs before you switch.`
+  },
+  switch: {
+    title: msg`Make the Switch`,
+    lead: msg`Leave the old system without falling: open orders in, stock counted, the freeze plan signed, and four plain questions before the call.`
+  },
+  live: {
+    title: msg`Live on Carbon`,
+    lead: msg`Ten straight business days of real usage and you're activated. The definition is written here in plain words — no hidden judgment.`
   },
   requirements: {
     title: msg`Requirements & Process Map`,
     lead: msg`Walk each area with your champion and toggle anything out of scope. Codes read Module.Area.Number (ACC.GL.01 = Accounting, General Ledger, item 1).`
-  },
-  "go-live": {
-    title: msg`Go-Live & Acceptance`,
-    lead: msg`On cutover day, work the checklist below in order. Acceptance tests come from your in-scope requirements. Support details are at the bottom.`
   },
   value: {
     title: msg`Value Snapshot`,

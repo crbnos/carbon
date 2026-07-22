@@ -1,7 +1,9 @@
 // Code-owned template content. A hub row pins its lineage via templateKey +
 // templateVersion; bump TEMPLATE_VERSION when the structure changes materially.
+// v2: the seven-phase all-tier journey (Tell Us How You Run → Live on Carbon).
+// Hubs with an older version are reset by the get-started layout loader.
 export const TEMPLATE_KEY = "standard";
-export const TEMPLATE_VERSION = 1;
+export const TEMPLATE_VERSION = 2;
 
 export * from "./board";
 export * from "./collections";

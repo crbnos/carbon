@@ -17,15 +17,24 @@ import { useUser } from "~/hooks";
 import { path } from "~/utils/path";
 import { trainingConfig } from "~/utils/training";
 
-// Each nested product step opens where you do it. "Set up your data" lands on
-// the Setup Map — the configuration checklist that deep-links each ERP screen —
-// rather than jumping straight into one screen.
+// Each nested product step opens where you do it. Checklist-shaped steps land
+// on their hub page (which deep-links each ERP screen) rather than jumping
+// straight into one screen.
 const PRODUCT_PATH: Record<string, string> = {
-  "prod:configure-data": path.to.getStartedPage("setup"),
-  "prod:configure-bom": path.to.parts,
-  "prod:configure-builtins": path.to.production,
-  "prod:purchase-make": path.to.jobs,
-  "prod:serialize-sell": path.to.salesOrders
+  "prod:intake-answers": path.to.getStartedIntake,
+  "prod:intake-first-win": path.to.getStartedFirstWin,
+  "prod:intake-commit": path.to.getStartedIntake,
+  "prod:basics-setup": path.to.getStartedPage("setup"),
+  "prod:basics-resources": path.to.workCenters,
+  "prod:load-customers": path.to.customers,
+  "prod:load-suppliers": path.to.suppliers,
+  "prod:load-items": path.to.parts,
+  "prod:load-boms": path.to.parts,
+  "prod:pilot-order": path.to.salesOrders,
+  "prod:pilot-job": path.to.jobs,
+  "prod:pilot-ship": path.to.shipments,
+  "prod:crew-champions": path.to.getStartedPage("crew"),
+  "prod:crew-floor": path.to.getStartedPage("crew")
 };
 
 // Hub state comes from <HubProvider> in the layout. This route only injects the

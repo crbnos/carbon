@@ -59,15 +59,44 @@ export async function detectImplementationSignals(
   companyId: string
 ): Promise<Signals> {
   const probe = (
-    table: "item" | "makeMethod" | "job" | "salesOrder" | "trackedEntity"
+    table:
+      | "item"
+      | "makeMethod"
+      | "job"
+      | "salesOrder"
+      | "trackedEntity"
+      | "customer"
+      | "supplier"
+      | "workCenter"
+      | "methodMaterial"
+      | "shipment"
+      | "productionEvent"
   ) => client.from(table).select("id").eq("companyId", companyId).limit(1);
 
-  const [items, methods, jobs, orders, tracked] = await Promise.all([
+  const [
+    items,
+    methods,
+    jobs,
+    orders,
+    tracked,
+    customers,
+    suppliers,
+    workCenters,
+    bomLines,
+    shipments,
+    productionEvents
+  ] = await Promise.all([
     probe("item"),
     probe("makeMethod"),
     probe("job"),
     probe("salesOrder"),
-    probe("trackedEntity")
+    probe("trackedEntity"),
+    probe("customer"),
+    probe("supplier"),
+    probe("workCenter"),
+    probe("methodMaterial"),
+    probe("shipment"),
+    probe("productionEvent")
   ]);
 
   return {
@@ -75,7 +104,13 @@ export async function detectImplementationSignals(
     hasMakeMethod: !!methods.data?.length,
     hasJob: !!jobs.data?.length,
     hasSalesOrder: !!orders.data?.length,
-    hasTrackedEntity: !!tracked.data?.length
+    hasTrackedEntity: !!tracked.data?.length,
+    hasCustomers: !!customers.data?.length,
+    hasSuppliers: !!suppliers.data?.length,
+    hasWorkCenter: !!workCenters.data?.length,
+    hasBomLines: !!bomLines.data?.length,
+    hasShipment: !!shipments.data?.length,
+    hasProductionEvent: !!productionEvents.data?.length
   };
 }
 

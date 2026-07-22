@@ -3,7 +3,7 @@ import { isModuleExcluded } from "../logic/visibility";
 import type { BoardTask, Mod } from "../types";
 import { SETUP_GROUPS } from "./setup";
 
-// Configure's checklist is one task per Setup Map module group (Settings,
+// Set Up the Basics' checklist is one task per Setup Map module group (Settings,
 // Resources, People, ...) rather than a hand-picked bundle of rows — the two
 // pages were listing different things for the same work, which read as
 // disconnected. Generated from SETUP_GROUPS so the two can't drift apart in
@@ -21,16 +21,16 @@ const CONFIGURE_GROUP_KEYS: Record<number, string> = {
   9: "setup-production"
 };
 
-// Stable key for a Setup Map group, shared by the Configure task (its `key`) and
+// Stable key for a Setup Map group, shared by the Basics task (its `key`) and
 // the Setup Map section's DOM anchor so the Plan → Setup Map deep link lines up.
 export const setupGroupKey = (n: number): string =>
   CONFIGURE_GROUP_KEYS[n] ?? `setup-group-${n}`;
 
-const CONFIGURE_GROUP_TASKS: BoardTask[] = SETUP_GROUPS.map((group) => ({
+const SETUP_GROUP_TASKS: BoardTask[] = SETUP_GROUPS.map((group) => ({
   key: setupGroupKey(group.n),
   label: group.title,
-  stepKey: "gate:configure",
-  owner: "carbon",
+  stepKey: "gate:basics",
+  owner: "you",
   setupKeys: group.rows.map((row) => row.key),
   docsUrl: group.docsUrl,
   academyUrl: group.academyUrl,
@@ -62,36 +62,46 @@ export function boardTasksForScope(
   });
 }
 
-// Starter Project Board tasks, grouped under the six spine steps. Keys match the
-// prototype's boardKeys. Each task's status lives in implementationCheckState
-// (kind "task", itemKey = taskKey(key)); the Plan page derives its checklist
-// from the same rows. A task with `setupKeys` instead derives its status from
-// those Setup Map rows' "configured" flags (see logic/board.ts taskStatus) —
-// it has no manual tick of its own.
+// Starter Project Plan tasks, grouped under the seven spine phases. Each task's
+// status lives in implementationCheckState (kind "task", itemKey = taskKey(key));
+// the Plan page derives its checklist from the same rows. A task with
+// `setupKeys` instead derives its status from those Setup Map rows' "configured"
+// flags (see logic/board.ts taskStatus) — it has no manual tick of its own.
+// Several tasks are completed programmatically by their flow (the intake wizard,
+// the First Win, the freeze-plan form) writing the same task check state.
 export const BOARD_TASKS: BoardTask[] = [
+  // 1 · Tell Us How You Run
   {
-    key: "kickoff",
-    label: msg`Agree who owns what and set a working rhythm`,
-    stepKey: "gate:discovery",
-    owner: "shared"
+    key: "intake-answers",
+    label: msg`Answer the questions — about ten minutes`,
+    stepKey: "gate:intake",
+    owner: "you"
   },
   {
-    key: "process-mapped",
-    label: msg`Walk your current process, systems, and data`,
-    stepKey: "gate:discovery",
-    owner: "shared"
+    key: "intake-first-win",
+    label: msg`See your first part in Carbon`,
+    stepKey: "gate:intake",
+    owner: "you"
   },
   {
-    key: "scope-signed",
-    label: msg`Confirm and sign the scope`,
-    stepKey: "gate:discovery",
-    owner: "shared"
+    key: "intake-commit",
+    label: msg`Confirm your go-live date and owner`,
+    stepKey: "gate:intake",
+    owner: "you"
   },
-  ...CONFIGURE_GROUP_TASKS,
+  // 2 · Set Up the Basics
+  {
+    key: "decisions",
+    label: msg`Make the five decisions that are expensive to change later`,
+    stepKey: "gate:basics",
+    owner: "you",
+    hint: msg`Part numbering, costing, where the books live, lot and serial policy, purchase approvals.`
+  },
+  ...SETUP_GROUP_TASKS,
   {
     key: "integrations",
     label: msg`Build any net-new integrations or customizations`,
-    stepKey: "gate:configure",
+    stepKey: "gate:basics",
     owner: "carbon",
     // Paid-tier only — self-serve uses standard cloud Carbon, no custom build
     // (mirrors the gated prod:configure-netnew spine step).
@@ -100,57 +110,121 @@ export const BOARD_TASKS: BoardTask[] = [
   {
     key: "hosting",
     label: msg`Stand up hosting (cloud or self-hosted)`,
-    stepKey: "gate:configure",
+    stepKey: "gate:basics",
     owner: "carbon",
     // Paid-tier only — self-serve is managed cloud, nothing to stand up
     // (mirrors the gated prod:configure-hosting spine step).
     tiers: ["guided", "enterprise"]
   },
+  // 3 · Load Your Data
   {
-    key: "data-loaded",
-    label: msg`Pull, map, and load your data`,
-    stepKey: "gate:migrate",
-    owner: "carbon",
-    // Paid-tier only — self-serve has no data-migration gate (see spine).
-    tiers: ["guided", "enterprise"]
-  },
-  {
-    key: "data-validated",
-    label: msg`Validate a sample and approve the migrated data`,
-    stepKey: "gate:migrate",
-    owner: "you",
-    tiers: ["guided", "enterprise"]
-  },
-  {
-    key: "training-materials",
-    label: msg`Build role-based training materials`,
-    stepKey: "gate:train",
-    owner: "carbon"
-  },
-  {
-    key: "champions-trained",
-    label: msg`Run hands-on sessions and sign off your team`,
-    stepKey: "gate:train",
+    key: "load-customers",
+    label: msg`Customers and their contacts`,
+    stepKey: "gate:load-data",
     owner: "you"
   },
   {
-    key: "acceptance-passed",
-    label: msg`Run the acceptance checklist to a pass`,
-    stepKey: "gate:acceptance",
-    owner: "shared",
-    // Paid-tier only — self-serve has no formal acceptance gate (see spine).
+    key: "load-suppliers",
+    label: msg`Suppliers and their contacts`,
+    stepKey: "gate:load-data",
+    owner: "you"
+  },
+  {
+    key: "load-items",
+    label: msg`Items — active in the last year first`,
+    stepKey: "gate:load-data",
+    owner: "you"
+  },
+  {
+    key: "load-boms",
+    label: msg`BOMs and routings — what you ship this quarter first`,
+    stepKey: "gate:load-data",
+    owner: "you"
+  },
+  {
+    key: "load-spot-check",
+    label: msg`Spot-check five records of each and mark them loaded`,
+    stepKey: "gate:load-data",
+    owner: "you"
+  },
+  // 4 · Prove It Works
+  {
+    key: "pilot-pick",
+    label: msg`Pick one real, recently completed order`,
+    stepKey: "gate:pilot",
+    owner: "you",
+    hint: msg`The one you make all the time — explicitly not the weird one.`
+  },
+  {
+    key: "pilot-run",
+    label: msg`Run it end to end and watch the trace fill in`,
+    stepKey: "gate:pilot",
+    owner: "you"
+  },
+  {
+    key: "pilot-lap-two",
+    label: msg`Lap two: now your gnarliest one`,
+    stepKey: "gate:pilot",
+    owner: "you",
+    hint: msg`Recommended for standard and complex factories; skippable for simple ones.`
+  },
+  // 5 · Ready Your Team
+  {
+    key: "crew-champions",
+    label: msg`Name a champion for each area`,
+    stepKey: "gate:crew",
+    owner: "you"
+  },
+  {
+    key: "crew-signoff",
+    label: msg`Champions do real tasks in their area and sign off`,
+    stepKey: "gate:crew",
+    owner: "you"
+  },
+  {
+    key: "crew-floor-pilot",
+    label: msg`Three jobs through the pilot floor station`,
+    stepKey: "gate:crew",
+    owner: "you"
+  },
+  {
+    key: "training-materials",
+    label: msg`Run live role-by-role training sessions`,
+    stepKey: "gate:crew",
+    owner: "carbon",
+    // Paid-tier only — self-serve trains through the in-app courses and champions.
     tiers: ["guided", "enterprise"]
+  },
+  // 6 · Make the Switch
+  {
+    key: "switch-tminus",
+    label: msg`Work the T-minus plan: open orders in, stock counted`,
+    stepKey: "gate:switch",
+    owner: "you"
+  },
+  {
+    key: "freeze-plan",
+    label: msg`Sign the old-system freeze plan`,
+    stepKey: "gate:switch",
+    owner: "you"
   },
   {
     key: "cutover",
-    label: msg`Cut over to Carbon and freeze the old system`,
-    stepKey: "gate:golive",
+    label: msg`Switch day: work the checklist and make the call`,
+    stepKey: "gate:switch",
     owner: "shared"
+  },
+  // 7 · Live on Carbon
+  {
+    key: "live-streak",
+    label: msg`Ten straight business days of real usage`,
+    stepKey: "gate:live",
+    owner: "you"
   },
   {
     key: "hypercare",
     label: msg`Hypercare: intense support for the first weeks`,
-    stepKey: "gate:golive",
+    stepKey: "gate:live",
     owner: "shared",
     // Paid-tier only — self-serve has no Carbon team for post-launch hypercare.
     tiers: ["guided", "enterprise"]

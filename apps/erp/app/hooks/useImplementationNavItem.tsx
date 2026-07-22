@@ -3,6 +3,7 @@ import {
   gatesDone,
   type HubStatus,
   labelForTier,
+  NO_SIGNALS,
   type Signals,
   SPINE,
   spineForTier,
@@ -14,14 +15,6 @@ import { useLingui } from "@lingui/react/macro";
 import { LuRocket } from "react-icons/lu";
 import type { Authenticated, NavItem } from "~/types";
 import { path } from "~/utils/path";
-
-const NO_SIGNALS = {
-  hasItems: false,
-  hasMakeMethod: false,
-  hasJob: false,
-  hasSalesOrder: false,
-  hasTrackedEntity: false
-};
 
 type AppLayoutData = {
   implementationHub: { tier: Tier; status: HubStatus } | null;

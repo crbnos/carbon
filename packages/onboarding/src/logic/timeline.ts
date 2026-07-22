@@ -1,5 +1,6 @@
 import type { I18n } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
+import { GO_LIVE_STEP_KEY } from "../content/spine";
 import type { StepDef } from "../types";
 
 // Resolves the Plan Gantt's geometry from per-company config. The template gives
@@ -106,8 +107,8 @@ export function resolveTimeline(
   // timeline (start = go-live − the go-live step's end week).
   let start = parseDate(fields.get(PLAN_START_KEY));
   if (!start) {
-    const golive = geo.find((s) => s.key === "gate:golive");
-    const goliveDate = parseDate(fields.get(gateDateKey("gate:golive")));
+    const golive = geo.find((s) => s.key === GO_LIVE_STEP_KEY);
+    const goliveDate = parseDate(fields.get(gateDateKey(GO_LIVE_STEP_KEY)));
     if (golive?.gantt && goliveDate) {
       start = addWeeks(
         goliveDate,

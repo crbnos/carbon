@@ -64,7 +64,13 @@ export type DetectSignal =
   | "hasMakeMethod"
   | "hasJob"
   | "hasSalesOrder"
-  | "hasTrackedEntity";
+  | "hasTrackedEntity"
+  | "hasCustomers"
+  | "hasSuppliers"
+  | "hasWorkCenter"
+  | "hasBomLines"
+  | "hasShipment"
+  | "hasProductionEvent";
 export type Detect = DetectSignal | null;
 
 // A product "do-this-in-Carbon" action nested inside a services step.
