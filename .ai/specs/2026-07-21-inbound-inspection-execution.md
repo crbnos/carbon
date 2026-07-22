@@ -359,6 +359,15 @@ new migration forking the newest RPC definition).
 
 ## Changelog
 
+- 2026-07-22: Generalized to source documents (user directive): the lot family
+  is renamed to `inspection`/`inspectionSample`/`inspectionSamplingPlan`/
+  `inspectionMeasurement`/`inspectionHistory` with `sourceDocument` (enum:
+  Receipt, Job Operation) + `sourceDocumentId`/`sourceDocumentLineId`/
+  `sourceDocumentReadableId` replacing `receiptId`/`receiptLineId`; the
+  submodule is renamed **Inspections** (list `/x/quality/inspections`,
+  execution `/x/inspection/{id}`, document editor moved to
+  `/x/inspection-document/{id}`); new-company sequence prefix INS (existing
+  companies keep II). Plan: .ai/plans/2026-07-22-inspections-refactor.md.
 - 2026-07-21: Created after research
   (`.ai/research/inbound-inspection-execution.md`) and grill interview; all
   six open questions resolved with Brad before writing.

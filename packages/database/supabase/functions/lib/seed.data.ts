@@ -248,9 +248,11 @@ export const sequences = [
     step: 1
   },
   {
-    table: "inboundInspection",
-    name: "Inbound Inspection",
-    prefix: "II",
+    // Existing companies keep their re-keyed II sequence (20260722132135);
+    // only new companies seed the INS prefix.
+    table: "inspection",
+    name: "Inspection",
+    prefix: "INS",
     suffix: null,
     next: 0,
     size: 6,

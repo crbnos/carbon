@@ -15789,7 +15789,40 @@ export type Database = {
           },
         ]
       }
-      inboundInspection: {
+      industry: {
+        Row: {
+          active: boolean
+          createdAt: string
+          description: string | null
+          iconName: string | null
+          id: string
+          name: string
+          sortOrder: number
+          updatedAt: string | null
+        }
+        Insert: {
+          active?: boolean
+          createdAt?: string
+          description?: string | null
+          iconName?: string | null
+          id: string
+          name: string
+          sortOrder?: number
+          updatedAt?: string | null
+        }
+        Update: {
+          active?: boolean
+          createdAt?: string
+          description?: string | null
+          iconName?: string | null
+          id?: string
+          name?: string
+          sortOrder?: number
+          updatedAt?: string | null
+        }
+        Relationships: []
+      }
+      inspection: {
         Row: {
           acceptanceNumber: number
           aql: number | null
@@ -15800,21 +15833,23 @@ export type Database = {
           dispositionedAt: string | null
           dispositionedBy: string | null
           id: string
-          inboundInspectionId: string
           inspectionDocumentId: string | null
+          inspectionId: string
           inspectionLevel: Database["public"]["Enums"]["inspectionLevel"] | null
           itemId: string
           itemReadableId: string | null
           lotSize: number
           notes: string | null
-          receiptId: string
-          receiptLineId: string
           rejectionNumber: number
           sampleSize: number
           samplingPlanType: Database["public"]["Enums"]["samplingPlanType"]
           samplingStandard: Database["public"]["Enums"]["samplingStandard"]
           severity: Database["public"]["Enums"]["inspectionSeverity"] | null
-          status: Database["public"]["Enums"]["inboundInspectionStatus"]
+          sourceDocument: Database["public"]["Enums"]["inspectionSourceDocument"]
+          sourceDocumentId: string
+          sourceDocumentLineId: string | null
+          sourceDocumentReadableId: string | null
+          status: Database["public"]["Enums"]["inspectionStatusType"]
           supplierId: string | null
           updatedAt: string | null
           updatedBy: string | null
@@ -15829,8 +15864,8 @@ export type Database = {
           dispositionedAt?: string | null
           dispositionedBy?: string | null
           id?: string
-          inboundInspectionId: string
           inspectionDocumentId?: string | null
+          inspectionId: string
           inspectionLevel?:
             | Database["public"]["Enums"]["inspectionLevel"]
             | null
@@ -15838,14 +15873,16 @@ export type Database = {
           itemReadableId?: string | null
           lotSize: number
           notes?: string | null
-          receiptId: string
-          receiptLineId: string
           rejectionNumber: number
           sampleSize: number
           samplingPlanType: Database["public"]["Enums"]["samplingPlanType"]
           samplingStandard: Database["public"]["Enums"]["samplingStandard"]
           severity?: Database["public"]["Enums"]["inspectionSeverity"] | null
-          status?: Database["public"]["Enums"]["inboundInspectionStatus"]
+          sourceDocument: Database["public"]["Enums"]["inspectionSourceDocument"]
+          sourceDocumentId: string
+          sourceDocumentLineId?: string | null
+          sourceDocumentReadableId?: string | null
+          status?: Database["public"]["Enums"]["inspectionStatusType"]
           supplierId?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -15860,8 +15897,8 @@ export type Database = {
           dispositionedAt?: string | null
           dispositionedBy?: string | null
           id?: string
-          inboundInspectionId?: string
           inspectionDocumentId?: string | null
+          inspectionId?: string
           inspectionLevel?:
             | Database["public"]["Enums"]["inspectionLevel"]
             | null
@@ -15869,14 +15906,16 @@ export type Database = {
           itemReadableId?: string | null
           lotSize?: number
           notes?: string | null
-          receiptId?: string
-          receiptLineId?: string
           rejectionNumber?: number
           sampleSize?: number
           samplingPlanType?: Database["public"]["Enums"]["samplingPlanType"]
           samplingStandard?: Database["public"]["Enums"]["samplingStandard"]
           severity?: Database["public"]["Enums"]["inspectionSeverity"] | null
-          status?: Database["public"]["Enums"]["inboundInspectionStatus"]
+          sourceDocument?: Database["public"]["Enums"]["inspectionSourceDocument"]
+          sourceDocumentId?: string
+          sourceDocumentLineId?: string | null
+          sourceDocumentReadableId?: string | null
+          status?: Database["public"]["Enums"]["inspectionStatusType"]
           supplierId?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -16037,34 +16076,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "inboundInspection_receiptId_fkey"
-            columns: ["receiptId"]
-            isOneToOne: false
-            referencedRelation: "receipt"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspection_receiptId_fkey"
-            columns: ["receiptId"]
-            isOneToOne: false
-            referencedRelation: "receipts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspection_receiptLineId_fkey"
-            columns: ["receiptLineId"]
-            isOneToOne: true
-            referencedRelation: "receiptLine"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspection_receiptLineId_fkey"
-            columns: ["receiptLineId"]
-            isOneToOne: true
-            referencedRelation: "receiptLines"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "inboundInspection_supplierId_fkey"
             columns: ["supplierId", "companyId"]
             isOneToOne: false
@@ -16121,826 +16132,6 @@ export type Database = {
             referencedColumns: ["userId"]
           },
         ]
-      }
-      inboundInspectionFeature: {
-        Row: {
-          acceptanceNumber: number
-          codeLetter: string | null
-          companyId: string
-          createdAt: string
-          createdBy: string
-          id: string
-          inboundInspectionId: string
-          inspectionFeatureId: string
-          rejectionNumber: number
-          sampleSize: number
-          updatedAt: string | null
-          updatedBy: string | null
-        }
-        Insert: {
-          acceptanceNumber: number
-          codeLetter?: string | null
-          companyId: string
-          createdAt?: string
-          createdBy: string
-          id?: string
-          inboundInspectionId: string
-          inspectionFeatureId: string
-          rejectionNumber: number
-          sampleSize: number
-          updatedAt?: string | null
-          updatedBy?: string | null
-        }
-        Update: {
-          acceptanceNumber?: number
-          codeLetter?: string | null
-          companyId?: string
-          createdAt?: string
-          createdBy?: string
-          id?: string
-          inboundInspectionId?: string
-          inspectionFeatureId?: string
-          rejectionNumber?: number
-          sampleSize?: number
-          updatedAt?: string | null
-          updatedBy?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "inboundInspectionFeature_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionFeature_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "company"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionFeature_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "customFieldTables"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "inboundInspectionFeature_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "integrations"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "inboundInspectionFeature_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionFeature_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionFeature_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionFeature_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionFeature_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "inboundInspectionFeature_inboundInspectionId_fkey"
-            columns: ["inboundInspectionId"]
-            isOneToOne: false
-            referencedRelation: "inboundInspection"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionFeature_inspectionFeatureId_fkey"
-            columns: ["inspectionFeatureId"]
-            isOneToOne: false
-            referencedRelation: "inspectionFeature"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionFeature_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionFeature_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionFeature_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionFeature_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionFeature_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-        ]
-      }
-      inboundInspectionHistory: {
-        Row: {
-          aql: number | null
-          companyId: string
-          createdAt: string
-          createdBy: string
-          defectsFound: number
-          id: string
-          inboundInspectionId: string
-          inspectionLevel: Database["public"]["Enums"]["inspectionLevel"] | null
-          itemId: string
-          lotSize: number
-          outcome: string
-          sampleSize: number
-          samplingStandard: Database["public"]["Enums"]["samplingStandard"]
-          severity: Database["public"]["Enums"]["inspectionSeverity"]
-          supplierId: string | null
-          updatedBy: string | null
-        }
-        Insert: {
-          aql?: number | null
-          companyId: string
-          createdAt?: string
-          createdBy: string
-          defectsFound: number
-          id?: string
-          inboundInspectionId: string
-          inspectionLevel?:
-            | Database["public"]["Enums"]["inspectionLevel"]
-            | null
-          itemId: string
-          lotSize: number
-          outcome: string
-          sampleSize: number
-          samplingStandard: Database["public"]["Enums"]["samplingStandard"]
-          severity: Database["public"]["Enums"]["inspectionSeverity"]
-          supplierId?: string | null
-          updatedBy?: string | null
-        }
-        Update: {
-          aql?: number | null
-          companyId?: string
-          createdAt?: string
-          createdBy?: string
-          defectsFound?: number
-          id?: string
-          inboundInspectionId?: string
-          inspectionLevel?:
-            | Database["public"]["Enums"]["inspectionLevel"]
-            | null
-          itemId?: string
-          lotSize?: number
-          outcome?: string
-          sampleSize?: number
-          samplingStandard?: Database["public"]["Enums"]["samplingStandard"]
-          severity?: Database["public"]["Enums"]["inspectionSeverity"]
-          supplierId?: string | null
-          updatedBy?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "inboundInspectionHistory_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionHistory_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "company"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionHistory_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "customFieldTables"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "inboundInspectionHistory_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "integrations"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "inboundInspectionHistory_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionHistory_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionHistory_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionHistory_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionHistory_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "inboundInspectionHistory_inboundInspectionId_fkey"
-            columns: ["inboundInspectionId"]
-            isOneToOne: false
-            referencedRelation: "inboundInspection"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionHistory_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "consumables"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionHistory_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "item"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionHistory_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "materials"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionHistory_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "parts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionHistory_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "services"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionHistory_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "tools"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionHistory_supplierId_fkey"
-            columns: ["supplierId", "companyId"]
-            isOneToOne: false
-            referencedRelation: "purchaseOrderSuppliers"
-            referencedColumns: ["id", "companyId"]
-          },
-          {
-            foreignKeyName: "inboundInspectionHistory_supplierId_fkey"
-            columns: ["supplierId", "companyId"]
-            isOneToOne: false
-            referencedRelation: "supplier"
-            referencedColumns: ["id", "companyId"]
-          },
-          {
-            foreignKeyName: "inboundInspectionHistory_supplierId_fkey"
-            columns: ["supplierId", "companyId"]
-            isOneToOne: false
-            referencedRelation: "suppliers"
-            referencedColumns: ["id", "companyId"]
-          },
-          {
-            foreignKeyName: "inboundInspectionHistory_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionHistory_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionHistory_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionHistory_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionHistory_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-        ]
-      }
-      inboundInspectionMeasurement: {
-        Row: {
-          companyId: string
-          createdAt: string
-          createdBy: string
-          id: string
-          inboundInspectionId: string
-          inboundInspectionSampleId: string
-          inspectedAt: string | null
-          inspectedBy: string | null
-          inspectionFeatureId: string
-          notes: string | null
-          status: Database["public"]["Enums"]["inboundInspectionSampleStatus"]
-          updatedAt: string | null
-          updatedBy: string | null
-          value: number | null
-        }
-        Insert: {
-          companyId: string
-          createdAt?: string
-          createdBy: string
-          id?: string
-          inboundInspectionId: string
-          inboundInspectionSampleId: string
-          inspectedAt?: string | null
-          inspectedBy?: string | null
-          inspectionFeatureId: string
-          notes?: string | null
-          status?: Database["public"]["Enums"]["inboundInspectionSampleStatus"]
-          updatedAt?: string | null
-          updatedBy?: string | null
-          value?: number | null
-        }
-        Update: {
-          companyId?: string
-          createdAt?: string
-          createdBy?: string
-          id?: string
-          inboundInspectionId?: string
-          inboundInspectionSampleId?: string
-          inspectedAt?: string | null
-          inspectedBy?: string | null
-          inspectionFeatureId?: string
-          notes?: string | null
-          status?: Database["public"]["Enums"]["inboundInspectionSampleStatus"]
-          updatedAt?: string | null
-          updatedBy?: string | null
-          value?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "inboundInspectionMeasurement_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionMeasurement_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "company"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionMeasurement_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "customFieldTables"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "inboundInspectionMeasurement_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "integrations"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "inboundInspectionMeasurement_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionMeasurement_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionMeasurement_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionMeasurement_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionMeasurement_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "inboundInspectionMeasurement_inboundInspectionId_fkey"
-            columns: ["inboundInspectionId"]
-            isOneToOne: false
-            referencedRelation: "inboundInspection"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionMeasurement_inspectedBy_fkey"
-            columns: ["inspectedBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionMeasurement_inspectedBy_fkey"
-            columns: ["inspectedBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionMeasurement_inspectedBy_fkey"
-            columns: ["inspectedBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionMeasurement_inspectedBy_fkey"
-            columns: ["inspectedBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionMeasurement_inspectedBy_fkey"
-            columns: ["inspectedBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "inboundInspectionMeasurement_inspectionFeatureId_fkey"
-            columns: ["inspectionFeatureId"]
-            isOneToOne: false
-            referencedRelation: "inspectionFeature"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionMeasurement_sampleId_fkey"
-            columns: ["inboundInspectionSampleId"]
-            isOneToOne: false
-            referencedRelation: "inboundInspectionSample"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionMeasurement_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionMeasurement_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionMeasurement_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionMeasurement_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionMeasurement_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-        ]
-      }
-      inboundInspectionSample: {
-        Row: {
-          companyId: string
-          createdAt: string
-          createdBy: string
-          id: string
-          inboundInspectionId: string
-          inspectedAt: string | null
-          inspectedBy: string | null
-          notes: string | null
-          status: Database["public"]["Enums"]["inboundInspectionSampleStatus"]
-          trackedEntityId: string | null
-          updatedAt: string | null
-          updatedBy: string | null
-        }
-        Insert: {
-          companyId: string
-          createdAt?: string
-          createdBy: string
-          id?: string
-          inboundInspectionId: string
-          inspectedAt?: string | null
-          inspectedBy?: string | null
-          notes?: string | null
-          status?: Database["public"]["Enums"]["inboundInspectionSampleStatus"]
-          trackedEntityId?: string | null
-          updatedAt?: string | null
-          updatedBy?: string | null
-        }
-        Update: {
-          companyId?: string
-          createdAt?: string
-          createdBy?: string
-          id?: string
-          inboundInspectionId?: string
-          inspectedAt?: string | null
-          inspectedBy?: string | null
-          notes?: string | null
-          status?: Database["public"]["Enums"]["inboundInspectionSampleStatus"]
-          trackedEntityId?: string | null
-          updatedAt?: string | null
-          updatedBy?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "inboundInspectionSample_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionSample_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "company"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionSample_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "customFieldTables"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "inboundInspectionSample_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "integrations"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "inboundInspectionSample_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionSample_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionSample_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionSample_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionSample_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "inboundInspectionSample_inboundInspectionId_fkey"
-            columns: ["inboundInspectionId"]
-            isOneToOne: false
-            referencedRelation: "inboundInspection"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionSample_inspectedBy_fkey"
-            columns: ["inspectedBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionSample_inspectedBy_fkey"
-            columns: ["inspectedBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionSample_inspectedBy_fkey"
-            columns: ["inspectedBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionSample_inspectedBy_fkey"
-            columns: ["inspectedBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionSample_inspectedBy_fkey"
-            columns: ["inspectedBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "inboundInspectionSample_trackedEntityId_fkey"
-            columns: ["trackedEntityId"]
-            isOneToOne: false
-            referencedRelation: "trackedEntity"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionSample_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionSample_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionSample_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionSample_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inboundInspectionSample_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-        ]
-      }
-      industry: {
-        Row: {
-          active: boolean
-          createdAt: string
-          description: string | null
-          iconName: string | null
-          id: string
-          name: string
-          sortOrder: number
-          updatedAt: string | null
-        }
-        Insert: {
-          active?: boolean
-          createdAt?: string
-          description?: string | null
-          iconName?: string | null
-          id: string
-          name: string
-          sortOrder?: number
-          updatedAt?: string | null
-        }
-        Update: {
-          active?: boolean
-          createdAt?: string
-          description?: string | null
-          iconName?: string | null
-          id?: string
-          name?: string
-          sortOrder?: number
-          updatedAt?: string | null
-        }
-        Relationships: []
       }
       inspectionDocument: {
         Row: {
@@ -17368,6 +16559,793 @@ export type Database = {
           },
           {
             foreignKeyName: "inspectionFeature_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
+      inspectionHistory: {
+        Row: {
+          aql: number | null
+          companyId: string
+          createdAt: string
+          createdBy: string
+          defectsFound: number
+          id: string
+          inspectionId: string
+          inspectionLevel: Database["public"]["Enums"]["inspectionLevel"] | null
+          itemId: string
+          lotSize: number
+          outcome: string
+          sampleSize: number
+          samplingStandard: Database["public"]["Enums"]["samplingStandard"]
+          severity: Database["public"]["Enums"]["inspectionSeverity"]
+          supplierId: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          aql?: number | null
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          defectsFound: number
+          id?: string
+          inspectionId: string
+          inspectionLevel?:
+            | Database["public"]["Enums"]["inspectionLevel"]
+            | null
+          itemId: string
+          lotSize: number
+          outcome: string
+          sampleSize: number
+          samplingStandard: Database["public"]["Enums"]["samplingStandard"]
+          severity: Database["public"]["Enums"]["inspectionSeverity"]
+          supplierId?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          aql?: number | null
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          defectsFound?: number
+          id?: string
+          inspectionId?: string
+          inspectionLevel?:
+            | Database["public"]["Enums"]["inspectionLevel"]
+            | null
+          itemId?: string
+          lotSize?: number
+          outcome?: string
+          sampleSize?: number
+          samplingStandard?: Database["public"]["Enums"]["samplingStandard"]
+          severity?: Database["public"]["Enums"]["inspectionSeverity"]
+          supplierId?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inboundInspectionHistory_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionHistory_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionHistory_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "inboundInspectionHistory_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "inboundInspectionHistory_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionHistory_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionHistory_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionHistory_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionHistory_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "inboundInspectionHistory_inboundInspectionId_fkey"
+            columns: ["inspectionId"]
+            isOneToOne: false
+            referencedRelation: "inspection"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionHistory_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionHistory_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionHistory_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionHistory_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionHistory_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionHistory_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionHistory_supplierId_fkey"
+            columns: ["supplierId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrderSuppliers"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "inboundInspectionHistory_supplierId_fkey"
+            columns: ["supplierId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "supplier"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "inboundInspectionHistory_supplierId_fkey"
+            columns: ["supplierId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "inboundInspectionHistory_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionHistory_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionHistory_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionHistory_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionHistory_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
+      inspectionMeasurement: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          id: string
+          inspectedAt: string | null
+          inspectedBy: string | null
+          inspectionFeatureId: string
+          inspectionId: string
+          inspectionSampleId: string
+          notes: string | null
+          status: Database["public"]["Enums"]["inspectionSampleStatusType"]
+          updatedAt: string | null
+          updatedBy: string | null
+          value: number | null
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          id?: string
+          inspectedAt?: string | null
+          inspectedBy?: string | null
+          inspectionFeatureId: string
+          inspectionId: string
+          inspectionSampleId: string
+          notes?: string | null
+          status?: Database["public"]["Enums"]["inspectionSampleStatusType"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+          value?: number | null
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          id?: string
+          inspectedAt?: string | null
+          inspectedBy?: string | null
+          inspectionFeatureId?: string
+          inspectionId?: string
+          inspectionSampleId?: string
+          notes?: string | null
+          status?: Database["public"]["Enums"]["inspectionSampleStatusType"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+          value?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inboundInspectionMeasurement_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionMeasurement_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionMeasurement_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "inboundInspectionMeasurement_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "inboundInspectionMeasurement_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionMeasurement_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionMeasurement_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionMeasurement_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionMeasurement_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "inboundInspectionMeasurement_inboundInspectionId_fkey"
+            columns: ["inspectionId"]
+            isOneToOne: false
+            referencedRelation: "inspection"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionMeasurement_inspectedBy_fkey"
+            columns: ["inspectedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionMeasurement_inspectedBy_fkey"
+            columns: ["inspectedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionMeasurement_inspectedBy_fkey"
+            columns: ["inspectedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionMeasurement_inspectedBy_fkey"
+            columns: ["inspectedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionMeasurement_inspectedBy_fkey"
+            columns: ["inspectedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "inboundInspectionMeasurement_inspectionFeatureId_fkey"
+            columns: ["inspectionFeatureId"]
+            isOneToOne: false
+            referencedRelation: "inspectionFeature"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionMeasurement_sampleId_fkey"
+            columns: ["inspectionSampleId"]
+            isOneToOne: false
+            referencedRelation: "inspectionSample"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionMeasurement_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionMeasurement_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionMeasurement_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionMeasurement_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionMeasurement_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
+      inspectionSample: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          id: string
+          inspectedAt: string | null
+          inspectedBy: string | null
+          inspectionId: string
+          notes: string | null
+          status: Database["public"]["Enums"]["inspectionSampleStatusType"]
+          trackedEntityId: string | null
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          id?: string
+          inspectedAt?: string | null
+          inspectedBy?: string | null
+          inspectionId: string
+          notes?: string | null
+          status?: Database["public"]["Enums"]["inspectionSampleStatusType"]
+          trackedEntityId?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          id?: string
+          inspectedAt?: string | null
+          inspectedBy?: string | null
+          inspectionId?: string
+          notes?: string | null
+          status?: Database["public"]["Enums"]["inspectionSampleStatusType"]
+          trackedEntityId?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inboundInspectionSample_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionSample_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionSample_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "inboundInspectionSample_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "inboundInspectionSample_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionSample_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionSample_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionSample_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionSample_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "inboundInspectionSample_inboundInspectionId_fkey"
+            columns: ["inspectionId"]
+            isOneToOne: false
+            referencedRelation: "inspection"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionSample_inspectedBy_fkey"
+            columns: ["inspectedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionSample_inspectedBy_fkey"
+            columns: ["inspectedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionSample_inspectedBy_fkey"
+            columns: ["inspectedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionSample_inspectedBy_fkey"
+            columns: ["inspectedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionSample_inspectedBy_fkey"
+            columns: ["inspectedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "inboundInspectionSample_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
+            referencedRelation: "trackedEntity"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionSample_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionSample_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionSample_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionSample_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionSample_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
+      inspectionSamplingPlan: {
+        Row: {
+          acceptanceNumber: number
+          codeLetter: string | null
+          companyId: string
+          createdAt: string
+          createdBy: string
+          id: string
+          inspectionFeatureId: string
+          inspectionId: string
+          rejectionNumber: number
+          sampleSize: number
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          acceptanceNumber: number
+          codeLetter?: string | null
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          id?: string
+          inspectionFeatureId: string
+          inspectionId: string
+          rejectionNumber: number
+          sampleSize: number
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          acceptanceNumber?: number
+          codeLetter?: string | null
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          id?: string
+          inspectionFeatureId?: string
+          inspectionId?: string
+          rejectionNumber?: number
+          sampleSize?: number
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inboundInspectionFeature_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionFeature_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionFeature_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "inboundInspectionFeature_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "inboundInspectionFeature_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionFeature_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionFeature_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionFeature_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionFeature_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "inboundInspectionFeature_inboundInspectionId_fkey"
+            columns: ["inspectionId"]
+            isOneToOne: false
+            referencedRelation: "inspection"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionFeature_inspectionFeatureId_fkey"
+            columns: ["inspectionFeatureId"]
+            isOneToOne: false
+            referencedRelation: "inspectionFeature"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionFeature_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionFeature_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionFeature_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionFeature_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inboundInspectionFeature_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "userDefaults"
@@ -29879,13 +29857,13 @@ export type Database = {
           },
         ]
       }
-      nonConformanceInboundInspection: {
+      nonConformanceInspection: {
         Row: {
           companyId: string
           createdAt: string
           createdBy: string
           id: string
-          inboundInspectionId: string
+          inspectionId: string
           nonConformanceId: string
           updatedBy: string | null
         }
@@ -29894,7 +29872,7 @@ export type Database = {
           createdAt?: string
           createdBy: string
           id?: string
-          inboundInspectionId: string
+          inspectionId: string
           nonConformanceId: string
           updatedBy?: string | null
         }
@@ -29903,7 +29881,7 @@ export type Database = {
           createdAt?: string
           createdBy?: string
           id?: string
-          inboundInspectionId?: string
+          inspectionId?: string
           nonConformanceId?: string
           updatedBy?: string | null
         }
@@ -29973,9 +29951,9 @@ export type Database = {
           },
           {
             foreignKeyName: "nonConformanceInboundInspection_inboundInspectionId_fkey"
-            columns: ["inboundInspectionId"]
+            columns: ["inspectionId"]
             isOneToOne: false
-            referencedRelation: "inboundInspection"
+            referencedRelation: "inspection"
             referencedColumns: ["id"]
           },
           {
@@ -75634,13 +75612,6 @@ export type Database = {
         | "complete"
         | "archived"
       implementationTier: "self_serve" | "guided" | "enterprise"
-      inboundInspectionSampleStatus: "Pending" | "Passed" | "Failed"
-      inboundInspectionStatus:
-        | "Pending"
-        | "In Progress"
-        | "Passed"
-        | "Failed"
-        | "Partial"
       incoterm:
         | "EXW"
         | "FCA"
@@ -75655,8 +75626,16 @@ export type Database = {
         | "DDP"
       inspectionDocumentUsage: "Receipt"
       inspectionLevel: "I" | "II" | "III" | "S1" | "S2" | "S3" | "S4"
+      inspectionSampleStatusType: "Pending" | "Passed" | "Failed"
       inspectionSeverity: "Normal" | "Tightened" | "Reduced"
+      inspectionSourceDocument: "Receipt" | "Job Operation"
       inspectionStatus: "Pass" | "Fail"
+      inspectionStatusType:
+        | "Pending"
+        | "In Progress"
+        | "Passed"
+        | "Failed"
+        | "Partial"
       inventoryCountStatus: "Draft" | "Pending" | "Posted"
       itemCostingMethod: "Standard" | "Average" | "LIFO" | "FIFO"
       itemLedgerDocumentType:
@@ -76996,14 +76975,6 @@ export const Constants = {
         "archived",
       ],
       implementationTier: ["self_serve", "guided", "enterprise"],
-      inboundInspectionSampleStatus: ["Pending", "Passed", "Failed"],
-      inboundInspectionStatus: [
-        "Pending",
-        "In Progress",
-        "Passed",
-        "Failed",
-        "Partial",
-      ],
       incoterm: [
         "EXW",
         "FCA",
@@ -77019,8 +76990,17 @@ export const Constants = {
       ],
       inspectionDocumentUsage: ["Receipt"],
       inspectionLevel: ["I", "II", "III", "S1", "S2", "S3", "S4"],
+      inspectionSampleStatusType: ["Pending", "Passed", "Failed"],
       inspectionSeverity: ["Normal", "Tightened", "Reduced"],
+      inspectionSourceDocument: ["Receipt", "Job Operation"],
       inspectionStatus: ["Pass", "Fail"],
+      inspectionStatusType: [
+        "Pending",
+        "In Progress",
+        "Passed",
+        "Failed",
+        "Partial",
+      ],
       inventoryCountStatus: ["Draft", "Pending", "Posted"],
       itemCostingMethod: ["Standard", "Average", "LIFO", "FIFO"],
       itemLedgerDocumentType: [

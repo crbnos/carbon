@@ -2292,204 +2292,6 @@ export default {
         tags: ["assemblyInstructionStepSlide"]
       }
     },
-    "/inboundInspectionFeature": {
-      get: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionFeature.id"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionFeature.inboundInspectionId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionFeature.inspectionFeatureId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionFeature.sampleSize"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionFeature.acceptanceNumber"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionFeature.rejectionNumber"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionFeature.codeLetter"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionFeature.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionFeature.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionFeature.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionFeature.updatedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionFeature.updatedAt"
-          },
-          {
-            $ref: "#/parameters/select"
-          },
-          {
-            $ref: "#/parameters/order"
-          },
-          {
-            $ref: "#/parameters/range"
-          },
-          {
-            $ref: "#/parameters/rangeUnit"
-          },
-          {
-            $ref: "#/parameters/offset"
-          },
-          {
-            $ref: "#/parameters/limit"
-          },
-          {
-            $ref: "#/parameters/preferCount"
-          }
-        ],
-        responses: {
-          "200": {
-            description: "OK",
-            schema: {
-              items: {
-                $ref: "#/definitions/inboundInspectionFeature"
-              },
-              type: "array"
-            }
-          },
-          "206": {
-            description: "Partial Content"
-          }
-        },
-        tags: ["inboundInspectionFeature"]
-      },
-      post: {
-        parameters: [
-          {
-            $ref: "#/parameters/body.inboundInspectionFeature"
-          },
-          {
-            $ref: "#/parameters/select"
-          },
-          {
-            $ref: "#/parameters/preferPost"
-          }
-        ],
-        responses: {
-          "201": {
-            description: "Created"
-          }
-        },
-        tags: ["inboundInspectionFeature"]
-      },
-      delete: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionFeature.id"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionFeature.inboundInspectionId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionFeature.inspectionFeatureId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionFeature.sampleSize"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionFeature.acceptanceNumber"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionFeature.rejectionNumber"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionFeature.codeLetter"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionFeature.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionFeature.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionFeature.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionFeature.updatedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionFeature.updatedAt"
-          },
-          {
-            $ref: "#/parameters/preferReturn"
-          }
-        ],
-        responses: {
-          "204": {
-            description: "No Content"
-          }
-        },
-        tags: ["inboundInspectionFeature"]
-      },
-      patch: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionFeature.id"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionFeature.inboundInspectionId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionFeature.inspectionFeatureId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionFeature.sampleSize"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionFeature.acceptanceNumber"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionFeature.rejectionNumber"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionFeature.codeLetter"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionFeature.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionFeature.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionFeature.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionFeature.updatedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionFeature.updatedAt"
-          },
-          {
-            $ref: "#/parameters/body.inboundInspectionFeature"
-          },
-          {
-            $ref: "#/parameters/preferReturn"
-          }
-        ],
-        responses: {
-          "204": {
-            description: "No Content"
-          }
-        },
-        tags: ["inboundInspectionFeature"]
-      }
-    },
     "/changeOrderType": {
       get: {
         parameters: [
@@ -3382,6 +3184,240 @@ export default {
           }
         },
         tags: ["quoteShipment"]
+      }
+    },
+    "/inspectionHistory": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.inspectionHistory.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionHistory.inspectionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionHistory.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionHistory.supplierId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionHistory.samplingStandard"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionHistory.severity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionHistory.inspectionLevel"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionHistory.aql"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionHistory.lotSize"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionHistory.sampleSize"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionHistory.defectsFound"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionHistory.outcome"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionHistory.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionHistory.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionHistory.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionHistory.updatedBy"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/inspectionHistory"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["inspectionHistory"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.inspectionHistory"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["inspectionHistory"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.inspectionHistory.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionHistory.inspectionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionHistory.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionHistory.supplierId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionHistory.samplingStandard"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionHistory.severity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionHistory.inspectionLevel"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionHistory.aql"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionHistory.lotSize"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionHistory.sampleSize"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionHistory.defectsFound"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionHistory.outcome"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionHistory.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionHistory.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionHistory.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionHistory.updatedBy"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["inspectionHistory"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.inspectionHistory.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionHistory.inspectionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionHistory.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionHistory.supplierId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionHistory.samplingStandard"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionHistory.severity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionHistory.inspectionLevel"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionHistory.aql"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionHistory.lotSize"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionHistory.sampleSize"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionHistory.defectsFound"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionHistory.outcome"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionHistory.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionHistory.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionHistory.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionHistory.updatedBy"
+          },
+          {
+            $ref: "#/parameters/body.inspectionHistory"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["inspectionHistory"]
       }
     },
     "/customerLocation": {
@@ -7152,222 +7188,6 @@ export default {
         tags: ["changeOrders"]
       }
     },
-    "/inboundInspectionMeasurement": {
-      get: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.id"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.inboundInspectionId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.inboundInspectionSampleId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.inspectionFeatureId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.value"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.status"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.notes"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.inspectedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.inspectedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.updatedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.updatedAt"
-          },
-          {
-            $ref: "#/parameters/select"
-          },
-          {
-            $ref: "#/parameters/order"
-          },
-          {
-            $ref: "#/parameters/range"
-          },
-          {
-            $ref: "#/parameters/rangeUnit"
-          },
-          {
-            $ref: "#/parameters/offset"
-          },
-          {
-            $ref: "#/parameters/limit"
-          },
-          {
-            $ref: "#/parameters/preferCount"
-          }
-        ],
-        responses: {
-          "200": {
-            description: "OK",
-            schema: {
-              items: {
-                $ref: "#/definitions/inboundInspectionMeasurement"
-              },
-              type: "array"
-            }
-          },
-          "206": {
-            description: "Partial Content"
-          }
-        },
-        tags: ["inboundInspectionMeasurement"]
-      },
-      post: {
-        parameters: [
-          {
-            $ref: "#/parameters/body.inboundInspectionMeasurement"
-          },
-          {
-            $ref: "#/parameters/select"
-          },
-          {
-            $ref: "#/parameters/preferPost"
-          }
-        ],
-        responses: {
-          "201": {
-            description: "Created"
-          }
-        },
-        tags: ["inboundInspectionMeasurement"]
-      },
-      delete: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.id"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.inboundInspectionId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.inboundInspectionSampleId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.inspectionFeatureId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.value"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.status"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.notes"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.inspectedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.inspectedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.updatedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.updatedAt"
-          },
-          {
-            $ref: "#/parameters/preferReturn"
-          }
-        ],
-        responses: {
-          "204": {
-            description: "No Content"
-          }
-        },
-        tags: ["inboundInspectionMeasurement"]
-      },
-      patch: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.id"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.inboundInspectionId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.inboundInspectionSampleId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.inspectionFeatureId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.value"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.status"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.notes"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.inspectedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.inspectedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.updatedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.updatedAt"
-          },
-          {
-            $ref: "#/parameters/body.inboundInspectionMeasurement"
-          },
-          {
-            $ref: "#/parameters/preferReturn"
-          }
-        ],
-        responses: {
-          "204": {
-            description: "No Content"
-          }
-        },
-        tags: ["inboundInspectionMeasurement"]
-      }
-    },
     "/dimension": {
       get: {
         parameters: [
@@ -9895,6 +9715,204 @@ export default {
           }
         },
         tags: ["methodMaterialStep"]
+      }
+    },
+    "/inspectionSample": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.inspectionSample.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSample.inspectionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSample.trackedEntityId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSample.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSample.notes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSample.inspectedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSample.inspectedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSample.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSample.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSample.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSample.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSample.updatedBy"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/inspectionSample"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["inspectionSample"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.inspectionSample"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["inspectionSample"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.inspectionSample.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSample.inspectionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSample.trackedEntityId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSample.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSample.notes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSample.inspectedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSample.inspectedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSample.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSample.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSample.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSample.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSample.updatedBy"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["inspectionSample"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.inspectionSample.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSample.inspectionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSample.trackedEntityId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSample.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSample.notes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSample.inspectedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSample.inspectedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSample.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSample.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSample.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSample.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSample.updatedBy"
+          },
+          {
+            $ref: "#/parameters/body.inspectionSample"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["inspectionSample"]
       }
     },
     "/nonConformanceActionTask": {
@@ -27471,240 +27489,6 @@ export default {
         tags: ["openJobMaterialLines"]
       }
     },
-    "/inboundInspectionHistory": {
-      get: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionHistory.id"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionHistory.inboundInspectionId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionHistory.itemId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionHistory.supplierId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionHistory.samplingStandard"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionHistory.severity"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionHistory.inspectionLevel"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionHistory.aql"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionHistory.lotSize"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionHistory.sampleSize"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionHistory.defectsFound"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionHistory.outcome"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionHistory.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionHistory.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionHistory.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionHistory.updatedBy"
-          },
-          {
-            $ref: "#/parameters/select"
-          },
-          {
-            $ref: "#/parameters/order"
-          },
-          {
-            $ref: "#/parameters/range"
-          },
-          {
-            $ref: "#/parameters/rangeUnit"
-          },
-          {
-            $ref: "#/parameters/offset"
-          },
-          {
-            $ref: "#/parameters/limit"
-          },
-          {
-            $ref: "#/parameters/preferCount"
-          }
-        ],
-        responses: {
-          "200": {
-            description: "OK",
-            schema: {
-              items: {
-                $ref: "#/definitions/inboundInspectionHistory"
-              },
-              type: "array"
-            }
-          },
-          "206": {
-            description: "Partial Content"
-          }
-        },
-        tags: ["inboundInspectionHistory"]
-      },
-      post: {
-        parameters: [
-          {
-            $ref: "#/parameters/body.inboundInspectionHistory"
-          },
-          {
-            $ref: "#/parameters/select"
-          },
-          {
-            $ref: "#/parameters/preferPost"
-          }
-        ],
-        responses: {
-          "201": {
-            description: "Created"
-          }
-        },
-        tags: ["inboundInspectionHistory"]
-      },
-      delete: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionHistory.id"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionHistory.inboundInspectionId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionHistory.itemId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionHistory.supplierId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionHistory.samplingStandard"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionHistory.severity"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionHistory.inspectionLevel"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionHistory.aql"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionHistory.lotSize"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionHistory.sampleSize"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionHistory.defectsFound"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionHistory.outcome"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionHistory.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionHistory.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionHistory.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionHistory.updatedBy"
-          },
-          {
-            $ref: "#/parameters/preferReturn"
-          }
-        ],
-        responses: {
-          "204": {
-            description: "No Content"
-          }
-        },
-        tags: ["inboundInspectionHistory"]
-      },
-      patch: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionHistory.id"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionHistory.inboundInspectionId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionHistory.itemId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionHistory.supplierId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionHistory.samplingStandard"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionHistory.severity"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionHistory.inspectionLevel"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionHistory.aql"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionHistory.lotSize"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionHistory.sampleSize"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionHistory.defectsFound"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionHistory.outcome"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionHistory.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionHistory.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionHistory.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionHistory.updatedBy"
-          },
-          {
-            $ref: "#/parameters/body.inboundInspectionHistory"
-          },
-          {
-            $ref: "#/parameters/preferReturn"
-          }
-        ],
-        responses: {
-          "204": {
-            description: "No Content"
-          }
-        },
-        tags: ["inboundInspectionHistory"]
-      }
-    },
     "/externalIntegrationMapping": {
       get: {
         parameters: [
@@ -34429,204 +34213,6 @@ export default {
           }
         },
         tags: ["salesOrderFavorite"]
-      }
-    },
-    "/inboundInspectionSample": {
-      get: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionSample.id"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionSample.inboundInspectionId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionSample.trackedEntityId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionSample.status"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionSample.notes"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionSample.inspectedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionSample.inspectedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionSample.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionSample.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionSample.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionSample.updatedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionSample.updatedBy"
-          },
-          {
-            $ref: "#/parameters/select"
-          },
-          {
-            $ref: "#/parameters/order"
-          },
-          {
-            $ref: "#/parameters/range"
-          },
-          {
-            $ref: "#/parameters/rangeUnit"
-          },
-          {
-            $ref: "#/parameters/offset"
-          },
-          {
-            $ref: "#/parameters/limit"
-          },
-          {
-            $ref: "#/parameters/preferCount"
-          }
-        ],
-        responses: {
-          "200": {
-            description: "OK",
-            schema: {
-              items: {
-                $ref: "#/definitions/inboundInspectionSample"
-              },
-              type: "array"
-            }
-          },
-          "206": {
-            description: "Partial Content"
-          }
-        },
-        tags: ["inboundInspectionSample"]
-      },
-      post: {
-        parameters: [
-          {
-            $ref: "#/parameters/body.inboundInspectionSample"
-          },
-          {
-            $ref: "#/parameters/select"
-          },
-          {
-            $ref: "#/parameters/preferPost"
-          }
-        ],
-        responses: {
-          "201": {
-            description: "Created"
-          }
-        },
-        tags: ["inboundInspectionSample"]
-      },
-      delete: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionSample.id"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionSample.inboundInspectionId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionSample.trackedEntityId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionSample.status"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionSample.notes"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionSample.inspectedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionSample.inspectedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionSample.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionSample.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionSample.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionSample.updatedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionSample.updatedBy"
-          },
-          {
-            $ref: "#/parameters/preferReturn"
-          }
-        ],
-        responses: {
-          "204": {
-            description: "No Content"
-          }
-        },
-        tags: ["inboundInspectionSample"]
-      },
-      patch: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionSample.id"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionSample.inboundInspectionId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionSample.trackedEntityId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionSample.status"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionSample.notes"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionSample.inspectedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionSample.inspectedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionSample.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionSample.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionSample.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionSample.updatedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspectionSample.updatedBy"
-          },
-          {
-            $ref: "#/parameters/body.inboundInspectionSample"
-          },
-          {
-            $ref: "#/parameters/preferReturn"
-          }
-        ],
-        responses: {
-          "204": {
-            description: "No Content"
-          }
-        },
-        tags: ["inboundInspectionSample"]
       }
     },
     "/exchangeRateHistory": {
@@ -46801,339 +46387,6 @@ export default {
           }
         },
         tags: ["fixture"]
-      }
-    },
-    "/inboundInspection": {
-      get: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.id"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.inboundInspectionId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.receiptLineId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.receiptId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.itemId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.itemReadableId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.supplierId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.lotSize"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.samplingStandard"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.samplingPlanType"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.sampleSize"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.acceptanceNumber"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.rejectionNumber"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.aql"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.inspectionLevel"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.severity"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.codeLetter"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.status"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.notes"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.dispositionedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.dispositionedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.updatedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.updatedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.inspectionDocumentId"
-          },
-          {
-            $ref: "#/parameters/select"
-          },
-          {
-            $ref: "#/parameters/order"
-          },
-          {
-            $ref: "#/parameters/range"
-          },
-          {
-            $ref: "#/parameters/rangeUnit"
-          },
-          {
-            $ref: "#/parameters/offset"
-          },
-          {
-            $ref: "#/parameters/limit"
-          },
-          {
-            $ref: "#/parameters/preferCount"
-          }
-        ],
-        responses: {
-          "200": {
-            description: "OK",
-            schema: {
-              items: {
-                $ref: "#/definitions/inboundInspection"
-              },
-              type: "array"
-            }
-          },
-          "206": {
-            description: "Partial Content"
-          }
-        },
-        tags: ["inboundInspection"]
-      },
-      post: {
-        parameters: [
-          {
-            $ref: "#/parameters/body.inboundInspection"
-          },
-          {
-            $ref: "#/parameters/select"
-          },
-          {
-            $ref: "#/parameters/preferPost"
-          }
-        ],
-        responses: {
-          "201": {
-            description: "Created"
-          }
-        },
-        tags: ["inboundInspection"]
-      },
-      delete: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.id"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.inboundInspectionId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.receiptLineId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.receiptId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.itemId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.itemReadableId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.supplierId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.lotSize"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.samplingStandard"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.samplingPlanType"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.sampleSize"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.acceptanceNumber"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.rejectionNumber"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.aql"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.inspectionLevel"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.severity"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.codeLetter"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.status"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.notes"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.dispositionedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.dispositionedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.updatedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.updatedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.inspectionDocumentId"
-          },
-          {
-            $ref: "#/parameters/preferReturn"
-          }
-        ],
-        responses: {
-          "204": {
-            description: "No Content"
-          }
-        },
-        tags: ["inboundInspection"]
-      },
-      patch: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.id"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.inboundInspectionId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.receiptLineId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.receiptId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.itemId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.itemReadableId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.supplierId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.lotSize"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.samplingStandard"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.samplingPlanType"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.sampleSize"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.acceptanceNumber"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.rejectionNumber"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.aql"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.inspectionLevel"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.severity"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.codeLetter"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.status"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.notes"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.dispositionedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.dispositionedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.updatedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.updatedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inboundInspection.inspectionDocumentId"
-          },
-          {
-            $ref: "#/parameters/body.inboundInspection"
-          },
-          {
-            $ref: "#/parameters/preferReturn"
-          }
-        ],
-        responses: {
-          "204": {
-            description: "No Content"
-          }
-        },
-        tags: ["inboundInspection"]
       }
     },
     "/userPermission": {
@@ -62997,6 +62250,357 @@ export default {
         tags: ["nonConformancePurchaseOrderLine"]
       }
     },
+    "/inspection": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.inspection.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.inspectionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.itemReadableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.supplierId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.lotSize"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.samplingStandard"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.samplingPlanType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.sampleSize"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.acceptanceNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.rejectionNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.aql"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.inspectionLevel"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.severity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.codeLetter"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.notes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.dispositionedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.dispositionedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.inspectionDocumentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.sourceDocument"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.sourceDocumentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.sourceDocumentLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.sourceDocumentReadableId"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/inspection"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["inspection"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.inspection"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["inspection"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.inspection.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.inspectionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.itemReadableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.supplierId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.lotSize"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.samplingStandard"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.samplingPlanType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.sampleSize"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.acceptanceNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.rejectionNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.aql"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.inspectionLevel"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.severity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.codeLetter"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.notes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.dispositionedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.dispositionedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.inspectionDocumentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.sourceDocument"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.sourceDocumentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.sourceDocumentLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.sourceDocumentReadableId"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["inspection"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.inspection.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.inspectionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.itemReadableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.supplierId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.lotSize"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.samplingStandard"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.samplingPlanType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.sampleSize"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.acceptanceNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.rejectionNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.aql"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.inspectionLevel"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.severity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.codeLetter"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.notes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.dispositionedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.dispositionedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.inspectionDocumentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.sourceDocument"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.sourceDocumentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.sourceDocumentLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.sourceDocumentReadableId"
+          },
+          {
+            $ref: "#/parameters/body.inspection"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["inspection"]
+      }
+    },
     "/processes": {
       get: {
         parameters: [
@@ -65989,6 +65593,222 @@ export default {
           }
         },
         tags: ["implementationRow"]
+      }
+    },
+    "/inspectionMeasurement": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.inspectionMeasurement.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionMeasurement.inspectionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionMeasurement.inspectionSampleId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionMeasurement.inspectionFeatureId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionMeasurement.value"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionMeasurement.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionMeasurement.notes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionMeasurement.inspectedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionMeasurement.inspectedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionMeasurement.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionMeasurement.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionMeasurement.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionMeasurement.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionMeasurement.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/inspectionMeasurement"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["inspectionMeasurement"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.inspectionMeasurement"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["inspectionMeasurement"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.inspectionMeasurement.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionMeasurement.inspectionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionMeasurement.inspectionSampleId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionMeasurement.inspectionFeatureId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionMeasurement.value"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionMeasurement.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionMeasurement.notes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionMeasurement.inspectedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionMeasurement.inspectedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionMeasurement.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionMeasurement.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionMeasurement.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionMeasurement.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionMeasurement.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["inspectionMeasurement"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.inspectionMeasurement.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionMeasurement.inspectionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionMeasurement.inspectionSampleId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionMeasurement.inspectionFeatureId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionMeasurement.value"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionMeasurement.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionMeasurement.notes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionMeasurement.inspectedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionMeasurement.inspectedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionMeasurement.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionMeasurement.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionMeasurement.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionMeasurement.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionMeasurement.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.inspectionMeasurement"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["inspectionMeasurement"]
       }
     },
     "/externalLink": {
@@ -69301,6 +69121,204 @@ export default {
           }
         },
         tags: ["gaugeCalibrationRecord"]
+      }
+    },
+    "/inspectionSamplingPlan": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.inspectionSamplingPlan.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSamplingPlan.inspectionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSamplingPlan.inspectionFeatureId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSamplingPlan.sampleSize"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSamplingPlan.acceptanceNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSamplingPlan.rejectionNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSamplingPlan.codeLetter"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSamplingPlan.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSamplingPlan.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSamplingPlan.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSamplingPlan.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSamplingPlan.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/inspectionSamplingPlan"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["inspectionSamplingPlan"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.inspectionSamplingPlan"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["inspectionSamplingPlan"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.inspectionSamplingPlan.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSamplingPlan.inspectionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSamplingPlan.inspectionFeatureId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSamplingPlan.sampleSize"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSamplingPlan.acceptanceNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSamplingPlan.rejectionNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSamplingPlan.codeLetter"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSamplingPlan.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSamplingPlan.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSamplingPlan.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSamplingPlan.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSamplingPlan.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["inspectionSamplingPlan"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.inspectionSamplingPlan.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSamplingPlan.inspectionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSamplingPlan.inspectionFeatureId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSamplingPlan.sampleSize"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSamplingPlan.acceptanceNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSamplingPlan.rejectionNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSamplingPlan.codeLetter"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSamplingPlan.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSamplingPlan.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSamplingPlan.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSamplingPlan.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSamplingPlan.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.inspectionSamplingPlan"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["inspectionSamplingPlan"]
       }
     },
     "/customerTax": {
@@ -73843,159 +73861,6 @@ export default {
           }
         },
         tags: ["supplier"]
-      }
-    },
-    "/nonConformanceInboundInspection": {
-      get: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.nonConformanceInboundInspection.id"
-          },
-          {
-            $ref: "#/parameters/rowFilter.nonConformanceInboundInspection.nonConformanceId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.nonConformanceInboundInspection.inboundInspectionId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.nonConformanceInboundInspection.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.nonConformanceInboundInspection.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.nonConformanceInboundInspection.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.nonConformanceInboundInspection.updatedBy"
-          },
-          {
-            $ref: "#/parameters/select"
-          },
-          {
-            $ref: "#/parameters/order"
-          },
-          {
-            $ref: "#/parameters/range"
-          },
-          {
-            $ref: "#/parameters/rangeUnit"
-          },
-          {
-            $ref: "#/parameters/offset"
-          },
-          {
-            $ref: "#/parameters/limit"
-          },
-          {
-            $ref: "#/parameters/preferCount"
-          }
-        ],
-        responses: {
-          "200": {
-            description: "OK",
-            schema: {
-              items: {
-                $ref: "#/definitions/nonConformanceInboundInspection"
-              },
-              type: "array"
-            }
-          },
-          "206": {
-            description: "Partial Content"
-          }
-        },
-        tags: ["nonConformanceInboundInspection"]
-      },
-      post: {
-        parameters: [
-          {
-            $ref: "#/parameters/body.nonConformanceInboundInspection"
-          },
-          {
-            $ref: "#/parameters/select"
-          },
-          {
-            $ref: "#/parameters/preferPost"
-          }
-        ],
-        responses: {
-          "201": {
-            description: "Created"
-          }
-        },
-        tags: ["nonConformanceInboundInspection"]
-      },
-      delete: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.nonConformanceInboundInspection.id"
-          },
-          {
-            $ref: "#/parameters/rowFilter.nonConformanceInboundInspection.nonConformanceId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.nonConformanceInboundInspection.inboundInspectionId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.nonConformanceInboundInspection.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.nonConformanceInboundInspection.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.nonConformanceInboundInspection.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.nonConformanceInboundInspection.updatedBy"
-          },
-          {
-            $ref: "#/parameters/preferReturn"
-          }
-        ],
-        responses: {
-          "204": {
-            description: "No Content"
-          }
-        },
-        tags: ["nonConformanceInboundInspection"]
-      },
-      patch: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.nonConformanceInboundInspection.id"
-          },
-          {
-            $ref: "#/parameters/rowFilter.nonConformanceInboundInspection.nonConformanceId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.nonConformanceInboundInspection.inboundInspectionId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.nonConformanceInboundInspection.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.nonConformanceInboundInspection.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.nonConformanceInboundInspection.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.nonConformanceInboundInspection.updatedBy"
-          },
-          {
-            $ref: "#/parameters/body.nonConformanceInboundInspection"
-          },
-          {
-            $ref: "#/parameters/preferReturn"
-          }
-        ],
-        responses: {
-          "204": {
-            description: "No Content"
-          }
-        },
-        tags: ["nonConformanceInboundInspection"]
       }
     },
     "/timeCardEntry": {
@@ -79579,6 +79444,159 @@ export default {
           }
         },
         tags: ["supplierProcess"]
+      }
+    },
+    "/nonConformanceInspection": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceInspection.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceInspection.nonConformanceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceInspection.inspectionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceInspection.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceInspection.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceInspection.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceInspection.updatedBy"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/nonConformanceInspection"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["nonConformanceInspection"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.nonConformanceInspection"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["nonConformanceInspection"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceInspection.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceInspection.nonConformanceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceInspection.inspectionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceInspection.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceInspection.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceInspection.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceInspection.updatedBy"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["nonConformanceInspection"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceInspection.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceInspection.nonConformanceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceInspection.inspectionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceInspection.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceInspection.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceInspection.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceInspection.updatedBy"
+          },
+          {
+            $ref: "#/parameters/body.nonConformanceInspection"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["nonConformanceInspection"]
       }
     },
     "/maintenanceScheduleItem": {
@@ -94667,83 +94685,6 @@ export default {
       },
       type: "object"
     },
-    inboundInspectionFeature: {
-      required: [
-        "id",
-        "inboundInspectionId",
-        "inspectionFeatureId",
-        "sampleSize",
-        "acceptanceNumber",
-        "rejectionNumber",
-        "companyId",
-        "createdBy",
-        "createdAt"
-      ],
-      properties: {
-        id: {
-          default: "public.id('iif'::text)",
-          description: "Note:\nThis is a Primary Key.<pk/>",
-          format: "text",
-          type: "string"
-        },
-        inboundInspectionId: {
-          description:
-            "Note:\nThis is a Foreign Key to `inboundInspection.id`.<fk table='inboundInspection' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        inspectionFeatureId: {
-          description:
-            "Note:\nThis is a Foreign Key to `inspectionFeature.id`.<fk table='inspectionFeature' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        sampleSize: {
-          format: "integer",
-          type: "integer"
-        },
-        acceptanceNumber: {
-          format: "integer",
-          type: "integer"
-        },
-        rejectionNumber: {
-          format: "integer",
-          type: "integer"
-        },
-        codeLetter: {
-          format: "text",
-          type: "string"
-        },
-        companyId: {
-          description:
-            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        createdBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        createdAt: {
-          default: "now()",
-          format: "timestamp with time zone",
-          type: "string"
-        },
-        updatedBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        updatedAt: {
-          format: "timestamp with time zone",
-          type: "string"
-        }
-      },
-      type: "object"
-    },
     changeOrderType: {
       required: ["id", "name", "companyId", "createdAt", "createdBy"],
       properties: {
@@ -95062,6 +95003,105 @@ export default {
           type: "string"
         },
         incotermLocation: {
+          format: "text",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
+    inspectionHistory: {
+      required: [
+        "id",
+        "inspectionId",
+        "itemId",
+        "samplingStandard",
+        "severity",
+        "lotSize",
+        "sampleSize",
+        "defectsFound",
+        "outcome",
+        "companyId",
+        "createdAt",
+        "createdBy"
+      ],
+      properties: {
+        id: {
+          default: "public.id()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        inspectionId: {
+          description:
+            "Note:\nThis is a Foreign Key to `inspection.id`.<fk table='inspection' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        itemId: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        supplierId: {
+          format: "text",
+          type: "string"
+        },
+        samplingStandard: {
+          enum: ["ANSI_Z1_4", "ISO_2859_1"],
+          format: 'public."samplingStandard"',
+          type: "string"
+        },
+        severity: {
+          enum: ["Normal", "Tightened", "Reduced"],
+          format: 'public."inspectionSeverity"',
+          type: "string"
+        },
+        inspectionLevel: {
+          enum: ["I", "II", "III", "S1", "S2", "S3", "S4"],
+          format: 'public."inspectionLevel"',
+          type: "string"
+        },
+        aql: {
+          format: "numeric",
+          type: "number"
+        },
+        lotSize: {
+          format: "numeric",
+          type: "number"
+        },
+        sampleSize: {
+          format: "integer",
+          type: "integer"
+        },
+        defectsFound: {
+          format: "integer",
+          type: "integer"
+        },
+        outcome: {
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
           type: "string"
         }
@@ -96747,96 +96787,6 @@ export default {
       },
       type: "object"
     },
-    inboundInspectionMeasurement: {
-      required: [
-        "id",
-        "inboundInspectionId",
-        "inboundInspectionSampleId",
-        "inspectionFeatureId",
-        "status",
-        "companyId",
-        "createdBy",
-        "createdAt"
-      ],
-      properties: {
-        id: {
-          default: "public.id('iim'::text)",
-          description: "Note:\nThis is a Primary Key.<pk/>",
-          format: "text",
-          type: "string"
-        },
-        inboundInspectionId: {
-          description:
-            "Note:\nThis is a Foreign Key to `inboundInspection.id`.<fk table='inboundInspection' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        inboundInspectionSampleId: {
-          description:
-            "Note:\nThis is a Foreign Key to `inboundInspectionSample.id`.<fk table='inboundInspectionSample' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        inspectionFeatureId: {
-          description:
-            "Note:\nThis is a Foreign Key to `inspectionFeature.id`.<fk table='inspectionFeature' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        value: {
-          format: "numeric",
-          type: "number"
-        },
-        status: {
-          default: "Pending",
-          enum: ["Pending", "Passed", "Failed"],
-          format: 'public."inboundInspectionSampleStatus"',
-          type: "string"
-        },
-        notes: {
-          format: "text",
-          type: "string"
-        },
-        inspectedBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        inspectedAt: {
-          format: "timestamp with time zone",
-          type: "string"
-        },
-        companyId: {
-          description:
-            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        createdBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        createdAt: {
-          default: "now()",
-          format: "timestamp with time zone",
-          type: "string"
-        },
-        updatedBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        updatedAt: {
-          format: "timestamp with time zone",
-          type: "string"
-        }
-      },
-      type: "object"
-    },
     dimension: {
       required: [
         "id",
@@ -97989,6 +97939,84 @@ export default {
         methodOperationStepId: {
           description:
             "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `methodOperationStep.id`.<fk table='methodOperationStep' column='id'/>",
+          format: "text",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
+    inspectionSample: {
+      required: [
+        "id",
+        "inspectionId",
+        "status",
+        "companyId",
+        "createdAt",
+        "createdBy"
+      ],
+      properties: {
+        id: {
+          default: "public.id()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        inspectionId: {
+          description:
+            "Note:\nThis is a Foreign Key to `inspection.id`.<fk table='inspection' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        trackedEntityId: {
+          description:
+            "Note:\nThis is a Foreign Key to `trackedEntity.id`.<fk table='trackedEntity' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        status: {
+          default: "Pending",
+          enum: ["Pending", "Passed", "Failed"],
+          format: 'public."inspectionSampleStatusType"',
+          type: "string"
+        },
+        notes: {
+          format: "text",
+          type: "string"
+        },
+        inspectedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        inspectedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
           type: "string"
         }
@@ -106667,105 +106695,6 @@ export default {
       },
       type: "object"
     },
-    inboundInspectionHistory: {
-      required: [
-        "id",
-        "inboundInspectionId",
-        "itemId",
-        "samplingStandard",
-        "severity",
-        "lotSize",
-        "sampleSize",
-        "defectsFound",
-        "outcome",
-        "companyId",
-        "createdAt",
-        "createdBy"
-      ],
-      properties: {
-        id: {
-          default: "public.id()",
-          description: "Note:\nThis is a Primary Key.<pk/>",
-          format: "text",
-          type: "string"
-        },
-        inboundInspectionId: {
-          description:
-            "Note:\nThis is a Foreign Key to `inboundInspection.id`.<fk table='inboundInspection' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        itemId: {
-          description:
-            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        supplierId: {
-          format: "text",
-          type: "string"
-        },
-        samplingStandard: {
-          enum: ["ANSI_Z1_4", "ISO_2859_1"],
-          format: 'public."samplingStandard"',
-          type: "string"
-        },
-        severity: {
-          enum: ["Normal", "Tightened", "Reduced"],
-          format: 'public."inspectionSeverity"',
-          type: "string"
-        },
-        inspectionLevel: {
-          enum: ["I", "II", "III", "S1", "S2", "S3", "S4"],
-          format: 'public."inspectionLevel"',
-          type: "string"
-        },
-        aql: {
-          format: "numeric",
-          type: "number"
-        },
-        lotSize: {
-          format: "numeric",
-          type: "number"
-        },
-        sampleSize: {
-          format: "integer",
-          type: "integer"
-        },
-        defectsFound: {
-          format: "integer",
-          type: "integer"
-        },
-        outcome: {
-          format: "text",
-          type: "string"
-        },
-        companyId: {
-          description:
-            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        createdAt: {
-          default: "now()",
-          format: "timestamp with time zone",
-          type: "string"
-        },
-        createdBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        updatedBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string"
-        }
-      },
-      type: "object"
-    },
     externalIntegrationMapping: {
       required: [
         "id",
@@ -109720,84 +109649,6 @@ export default {
         userId: {
           description:
             "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string"
-        }
-      },
-      type: "object"
-    },
-    inboundInspectionSample: {
-      required: [
-        "id",
-        "inboundInspectionId",
-        "status",
-        "companyId",
-        "createdAt",
-        "createdBy"
-      ],
-      properties: {
-        id: {
-          default: "public.id()",
-          description: "Note:\nThis is a Primary Key.<pk/>",
-          format: "text",
-          type: "string"
-        },
-        inboundInspectionId: {
-          description:
-            "Note:\nThis is a Foreign Key to `inboundInspection.id`.<fk table='inboundInspection' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        trackedEntityId: {
-          description:
-            "Note:\nThis is a Foreign Key to `trackedEntity.id`.<fk table='trackedEntity' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        status: {
-          default: "Pending",
-          enum: ["Pending", "Passed", "Failed"],
-          format: 'public."inboundInspectionSampleStatus"',
-          type: "string"
-        },
-        notes: {
-          format: "text",
-          type: "string"
-        },
-        inspectedBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        inspectedAt: {
-          format: "timestamp with time zone",
-          type: "string"
-        },
-        companyId: {
-          description:
-            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        createdAt: {
-          default: "now()",
-          format: "timestamp with time zone",
-          type: "string"
-        },
-        createdBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        updatedAt: {
-          format: "timestamp with time zone",
-          type: "string"
-        },
-        updatedBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
           type: "string"
         }
@@ -115752,161 +115603,6 @@ export default {
             type: "string"
           },
           type: "array"
-        }
-      },
-      type: "object"
-    },
-    inboundInspection: {
-      required: [
-        "id",
-        "inboundInspectionId",
-        "receiptLineId",
-        "receiptId",
-        "itemId",
-        "lotSize",
-        "samplingStandard",
-        "samplingPlanType",
-        "sampleSize",
-        "acceptanceNumber",
-        "rejectionNumber",
-        "status",
-        "companyId",
-        "createdAt",
-        "createdBy"
-      ],
-      properties: {
-        id: {
-          default: "public.id()",
-          description: "Note:\nThis is a Primary Key.<pk/>",
-          format: "text",
-          type: "string"
-        },
-        inboundInspectionId: {
-          format: "text",
-          type: "string"
-        },
-        receiptLineId: {
-          description:
-            "Note:\nThis is a Foreign Key to `receiptLine.id`.<fk table='receiptLine' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        receiptId: {
-          description:
-            "Note:\nThis is a Foreign Key to `receipt.id`.<fk table='receipt' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        itemId: {
-          description:
-            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        itemReadableId: {
-          format: "text",
-          type: "string"
-        },
-        supplierId: {
-          format: "text",
-          type: "string"
-        },
-        lotSize: {
-          format: "numeric",
-          type: "number"
-        },
-        samplingStandard: {
-          enum: ["ANSI_Z1_4", "ISO_2859_1"],
-          format: 'public."samplingStandard"',
-          type: "string"
-        },
-        samplingPlanType: {
-          enum: ["All", "First", "Percentage", "AQL"],
-          format: 'public."samplingPlanType"',
-          type: "string"
-        },
-        sampleSize: {
-          format: "integer",
-          type: "integer"
-        },
-        acceptanceNumber: {
-          format: "integer",
-          type: "integer"
-        },
-        rejectionNumber: {
-          format: "integer",
-          type: "integer"
-        },
-        aql: {
-          format: "numeric",
-          type: "number"
-        },
-        inspectionLevel: {
-          enum: ["I", "II", "III", "S1", "S2", "S3", "S4"],
-          format: 'public."inspectionLevel"',
-          type: "string"
-        },
-        severity: {
-          enum: ["Normal", "Tightened", "Reduced"],
-          format: 'public."inspectionSeverity"',
-          type: "string"
-        },
-        codeLetter: {
-          format: "text",
-          type: "string"
-        },
-        status: {
-          default: "Pending",
-          enum: ["Pending", "In Progress", "Passed", "Failed", "Partial"],
-          format: 'public."inboundInspectionStatus"',
-          type: "string"
-        },
-        notes: {
-          format: "text",
-          type: "string"
-        },
-        dispositionedBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        dispositionedAt: {
-          format: "timestamp with time zone",
-          type: "string"
-        },
-        companyId: {
-          description:
-            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        createdAt: {
-          default: "now()",
-          format: "timestamp with time zone",
-          type: "string"
-        },
-        createdBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        updatedAt: {
-          format: "timestamp with time zone",
-          type: "string"
-        },
-        updatedBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        inspectionDocumentId: {
-          description:
-            "Note:\nThis is a Foreign Key to `inspectionDocument.id`.<fk table='inspectionDocument' column='id'/>",
-          format: "text",
-          type: "string"
         }
       },
       type: "object"
@@ -123312,6 +123008,166 @@ export default {
       },
       type: "object"
     },
+    inspection: {
+      required: [
+        "id",
+        "inspectionId",
+        "itemId",
+        "lotSize",
+        "samplingStandard",
+        "samplingPlanType",
+        "sampleSize",
+        "acceptanceNumber",
+        "rejectionNumber",
+        "status",
+        "companyId",
+        "createdAt",
+        "createdBy",
+        "sourceDocument",
+        "sourceDocumentId"
+      ],
+      properties: {
+        id: {
+          default: "public.id()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        inspectionId: {
+          format: "text",
+          type: "string"
+        },
+        itemId: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        itemReadableId: {
+          format: "text",
+          type: "string"
+        },
+        supplierId: {
+          format: "text",
+          type: "string"
+        },
+        lotSize: {
+          format: "numeric",
+          type: "number"
+        },
+        samplingStandard: {
+          enum: ["ANSI_Z1_4", "ISO_2859_1"],
+          format: 'public."samplingStandard"',
+          type: "string"
+        },
+        samplingPlanType: {
+          enum: ["All", "First", "Percentage", "AQL"],
+          format: 'public."samplingPlanType"',
+          type: "string"
+        },
+        sampleSize: {
+          format: "integer",
+          type: "integer"
+        },
+        acceptanceNumber: {
+          format: "integer",
+          type: "integer"
+        },
+        rejectionNumber: {
+          format: "integer",
+          type: "integer"
+        },
+        aql: {
+          format: "numeric",
+          type: "number"
+        },
+        inspectionLevel: {
+          enum: ["I", "II", "III", "S1", "S2", "S3", "S4"],
+          format: 'public."inspectionLevel"',
+          type: "string"
+        },
+        severity: {
+          enum: ["Normal", "Tightened", "Reduced"],
+          format: 'public."inspectionSeverity"',
+          type: "string"
+        },
+        codeLetter: {
+          format: "text",
+          type: "string"
+        },
+        status: {
+          default: "Pending",
+          enum: ["Pending", "In Progress", "Passed", "Failed", "Partial"],
+          format: 'public."inspectionStatusType"',
+          type: "string"
+        },
+        notes: {
+          format: "text",
+          type: "string"
+        },
+        dispositionedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        dispositionedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        inspectionDocumentId: {
+          description:
+            "Note:\nThis is a Foreign Key to `inspectionDocument.id`.<fk table='inspectionDocument' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        sourceDocument: {
+          enum: ["Receipt", "Job Operation"],
+          format: 'public."inspectionSourceDocument"',
+          type: "string"
+        },
+        sourceDocumentId: {
+          format: "text",
+          type: "string"
+        },
+        sourceDocumentLineId: {
+          format: "text",
+          type: "string"
+        },
+        sourceDocumentReadableId: {
+          format: "text",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     processes: {
       properties: {
         id: {
@@ -124760,6 +124616,96 @@ export default {
           default: 0,
           format: "double precision",
           type: "number"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
+    inspectionMeasurement: {
+      required: [
+        "id",
+        "inspectionId",
+        "inspectionSampleId",
+        "inspectionFeatureId",
+        "status",
+        "companyId",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('iim'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        inspectionId: {
+          description:
+            "Note:\nThis is a Foreign Key to `inspection.id`.<fk table='inspection' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        inspectionSampleId: {
+          description:
+            "Note:\nThis is a Foreign Key to `inspectionSample.id`.<fk table='inspectionSample' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        inspectionFeatureId: {
+          description:
+            "Note:\nThis is a Foreign Key to `inspectionFeature.id`.<fk table='inspectionFeature' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        value: {
+          format: "numeric",
+          type: "number"
+        },
+        status: {
+          default: "Pending",
+          enum: ["Pending", "Passed", "Failed"],
+          format: 'public."inspectionSampleStatusType"',
+          type: "string"
+        },
+        notes: {
+          format: "text",
+          type: "string"
+        },
+        inspectedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        inspectedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
         },
         createdBy: {
           description:
@@ -126284,6 +126230,83 @@ export default {
         },
         calibrationAttempts: {
           format: "jsonb"
+        }
+      },
+      type: "object"
+    },
+    inspectionSamplingPlan: {
+      required: [
+        "id",
+        "inspectionId",
+        "inspectionFeatureId",
+        "sampleSize",
+        "acceptanceNumber",
+        "rejectionNumber",
+        "companyId",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('iif'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        inspectionId: {
+          description:
+            "Note:\nThis is a Foreign Key to `inspection.id`.<fk table='inspection' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        inspectionFeatureId: {
+          description:
+            "Note:\nThis is a Foreign Key to `inspectionFeature.id`.<fk table='inspectionFeature' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        sampleSize: {
+          format: "integer",
+          type: "integer"
+        },
+        acceptanceNumber: {
+          format: "integer",
+          type: "integer"
+        },
+        rejectionNumber: {
+          format: "integer",
+          type: "integer"
+        },
+        codeLetter: {
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
         }
       },
       type: "object"
@@ -128638,60 +128661,6 @@ export default {
         },
         readableId: {
           default: "",
-          format: "text",
-          type: "string"
-        }
-      },
-      type: "object"
-    },
-    nonConformanceInboundInspection: {
-      required: [
-        "id",
-        "nonConformanceId",
-        "inboundInspectionId",
-        "companyId",
-        "createdAt",
-        "createdBy"
-      ],
-      properties: {
-        id: {
-          default: "public.id()",
-          description: "Note:\nThis is a Primary Key.<pk/>",
-          format: "text",
-          type: "string"
-        },
-        nonConformanceId: {
-          description:
-            "Note:\nThis is a Foreign Key to `nonConformance.id`.<fk table='nonConformance' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        inboundInspectionId: {
-          description:
-            "Note:\nThis is a Foreign Key to `inboundInspection.id`.<fk table='inboundInspection' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        companyId: {
-          description:
-            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        createdAt: {
-          default: "now()",
-          format: "timestamp with time zone",
-          type: "string"
-        },
-        createdBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        updatedBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
           type: "string"
         }
@@ -131550,6 +131519,60 @@ export default {
             type: "string"
           },
           type: "array"
+        }
+      },
+      type: "object"
+    },
+    nonConformanceInspection: {
+      required: [
+        "id",
+        "nonConformanceId",
+        "inspectionId",
+        "companyId",
+        "createdAt",
+        "createdBy"
+      ],
+      properties: {
+        id: {
+          default: "public.id()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        nonConformanceId: {
+          description:
+            "Note:\nThis is a Foreign Key to `nonConformance.id`.<fk table='nonConformance' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        inspectionId: {
+          description:
+            "Note:\nThis is a Foreign Key to `inspection.id`.<fk table='inspection' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -134612,87 +134635,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "body.inboundInspectionFeature": {
-      name: "inboundInspectionFeature",
-      description: "inboundInspectionFeature",
-      required: false,
-      in: "body",
-      schema: {
-        $ref: "#/definitions/inboundInspectionFeature"
-      }
-    },
-    "rowFilter.inboundInspectionFeature.id": {
-      name: "id",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspectionFeature.inboundInspectionId": {
-      name: "inboundInspectionId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspectionFeature.inspectionFeatureId": {
-      name: "inspectionFeatureId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspectionFeature.sampleSize": {
-      name: "sampleSize",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspectionFeature.acceptanceNumber": {
-      name: "acceptanceNumber",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspectionFeature.rejectionNumber": {
-      name: "rejectionNumber",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspectionFeature.codeLetter": {
-      name: "codeLetter",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspectionFeature.companyId": {
-      name: "companyId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspectionFeature.createdBy": {
-      name: "createdBy",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspectionFeature.createdAt": {
-      name: "createdAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspectionFeature.updatedBy": {
-      name: "updatedBy",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspectionFeature.updatedAt": {
-      name: "updatedAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "body.changeOrderType": {
       name: "changeOrderType",
       description: "changeOrderType",
@@ -135031,6 +134973,111 @@ export default {
     },
     "rowFilter.quoteShipment.incotermLocation": {
       name: "incotermLocation",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.inspectionHistory": {
+      name: "inspectionHistory",
+      description: "inspectionHistory",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/inspectionHistory"
+      }
+    },
+    "rowFilter.inspectionHistory.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionHistory.inspectionId": {
+      name: "inspectionId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionHistory.itemId": {
+      name: "itemId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionHistory.supplierId": {
+      name: "supplierId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionHistory.samplingStandard": {
+      name: "samplingStandard",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionHistory.severity": {
+      name: "severity",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionHistory.inspectionLevel": {
+      name: "inspectionLevel",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionHistory.aql": {
+      name: "aql",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionHistory.lotSize": {
+      name: "lotSize",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionHistory.sampleSize": {
+      name: "sampleSize",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionHistory.defectsFound": {
+      name: "defectsFound",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionHistory.outcome": {
+      name: "outcome",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionHistory.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionHistory.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionHistory.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionHistory.updatedBy": {
+      name: "updatedBy",
       required: false,
       in: "query",
       type: "string"
@@ -136961,99 +137008,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "body.inboundInspectionMeasurement": {
-      name: "inboundInspectionMeasurement",
-      description: "inboundInspectionMeasurement",
-      required: false,
-      in: "body",
-      schema: {
-        $ref: "#/definitions/inboundInspectionMeasurement"
-      }
-    },
-    "rowFilter.inboundInspectionMeasurement.id": {
-      name: "id",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspectionMeasurement.inboundInspectionId": {
-      name: "inboundInspectionId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspectionMeasurement.inboundInspectionSampleId": {
-      name: "inboundInspectionSampleId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspectionMeasurement.inspectionFeatureId": {
-      name: "inspectionFeatureId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspectionMeasurement.value": {
-      name: "value",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspectionMeasurement.status": {
-      name: "status",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspectionMeasurement.notes": {
-      name: "notes",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspectionMeasurement.inspectedBy": {
-      name: "inspectedBy",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspectionMeasurement.inspectedAt": {
-      name: "inspectedAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspectionMeasurement.companyId": {
-      name: "companyId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspectionMeasurement.createdBy": {
-      name: "createdBy",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspectionMeasurement.createdAt": {
-      name: "createdAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspectionMeasurement.updatedBy": {
-      name: "updatedBy",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspectionMeasurement.updatedAt": {
-      name: "updatedAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "body.dimension": {
       name: "dimension",
       description: "dimension",
@@ -138310,6 +138264,87 @@ export default {
     },
     "rowFilter.methodMaterialStep.methodOperationStepId": {
       name: "methodOperationStepId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.inspectionSample": {
+      name: "inspectionSample",
+      description: "inspectionSample",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/inspectionSample"
+      }
+    },
+    "rowFilter.inspectionSample.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionSample.inspectionId": {
+      name: "inspectionId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionSample.trackedEntityId": {
+      name: "trackedEntityId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionSample.status": {
+      name: "status",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionSample.notes": {
+      name: "notes",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionSample.inspectedBy": {
+      name: "inspectedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionSample.inspectedAt": {
+      name: "inspectedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionSample.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionSample.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionSample.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionSample.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionSample.updatedBy": {
+      name: "updatedBy",
       required: false,
       in: "query",
       type: "string"
@@ -148078,111 +148113,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "body.inboundInspectionHistory": {
-      name: "inboundInspectionHistory",
-      description: "inboundInspectionHistory",
-      required: false,
-      in: "body",
-      schema: {
-        $ref: "#/definitions/inboundInspectionHistory"
-      }
-    },
-    "rowFilter.inboundInspectionHistory.id": {
-      name: "id",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspectionHistory.inboundInspectionId": {
-      name: "inboundInspectionId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspectionHistory.itemId": {
-      name: "itemId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspectionHistory.supplierId": {
-      name: "supplierId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspectionHistory.samplingStandard": {
-      name: "samplingStandard",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspectionHistory.severity": {
-      name: "severity",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspectionHistory.inspectionLevel": {
-      name: "inspectionLevel",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspectionHistory.aql": {
-      name: "aql",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspectionHistory.lotSize": {
-      name: "lotSize",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspectionHistory.sampleSize": {
-      name: "sampleSize",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspectionHistory.defectsFound": {
-      name: "defectsFound",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspectionHistory.outcome": {
-      name: "outcome",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspectionHistory.companyId": {
-      name: "companyId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspectionHistory.createdAt": {
-      name: "createdAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspectionHistory.createdBy": {
-      name: "createdBy",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspectionHistory.updatedBy": {
-      name: "updatedBy",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "body.externalIntegrationMapping": {
       name: "externalIntegrationMapping",
       description: "externalIntegrationMapping",
@@ -151459,87 +151389,6 @@ export default {
     },
     "rowFilter.salesOrderFavorite.userId": {
       name: "userId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "body.inboundInspectionSample": {
-      name: "inboundInspectionSample",
-      description: "inboundInspectionSample",
-      required: false,
-      in: "body",
-      schema: {
-        $ref: "#/definitions/inboundInspectionSample"
-      }
-    },
-    "rowFilter.inboundInspectionSample.id": {
-      name: "id",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspectionSample.inboundInspectionId": {
-      name: "inboundInspectionId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspectionSample.trackedEntityId": {
-      name: "trackedEntityId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspectionSample.status": {
-      name: "status",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspectionSample.notes": {
-      name: "notes",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspectionSample.inspectedBy": {
-      name: "inspectedBy",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspectionSample.inspectedAt": {
-      name: "inspectedAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspectionSample.companyId": {
-      name: "companyId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspectionSample.createdAt": {
-      name: "createdAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspectionSample.createdBy": {
-      name: "createdBy",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspectionSample.updatedAt": {
-      name: "updatedAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspectionSample.updatedBy": {
-      name: "updatedBy",
       required: false,
       in: "query",
       type: "string"
@@ -158109,177 +157958,6 @@ export default {
     },
     "rowFilter.fixture.tags": {
       name: "tags",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "body.inboundInspection": {
-      name: "inboundInspection",
-      description: "inboundInspection",
-      required: false,
-      in: "body",
-      schema: {
-        $ref: "#/definitions/inboundInspection"
-      }
-    },
-    "rowFilter.inboundInspection.id": {
-      name: "id",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspection.inboundInspectionId": {
-      name: "inboundInspectionId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspection.receiptLineId": {
-      name: "receiptLineId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspection.receiptId": {
-      name: "receiptId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspection.itemId": {
-      name: "itemId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspection.itemReadableId": {
-      name: "itemReadableId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspection.supplierId": {
-      name: "supplierId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspection.lotSize": {
-      name: "lotSize",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspection.samplingStandard": {
-      name: "samplingStandard",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspection.samplingPlanType": {
-      name: "samplingPlanType",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspection.sampleSize": {
-      name: "sampleSize",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspection.acceptanceNumber": {
-      name: "acceptanceNumber",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspection.rejectionNumber": {
-      name: "rejectionNumber",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspection.aql": {
-      name: "aql",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspection.inspectionLevel": {
-      name: "inspectionLevel",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspection.severity": {
-      name: "severity",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspection.codeLetter": {
-      name: "codeLetter",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspection.status": {
-      name: "status",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspection.notes": {
-      name: "notes",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspection.dispositionedBy": {
-      name: "dispositionedBy",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspection.dispositionedAt": {
-      name: "dispositionedAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspection.companyId": {
-      name: "companyId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspection.createdAt": {
-      name: "createdAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspection.createdBy": {
-      name: "createdBy",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspection.updatedAt": {
-      name: "updatedAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspection.updatedBy": {
-      name: "updatedBy",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inboundInspection.inspectionDocumentId": {
-      name: "inspectionDocumentId",
       required: false,
       in: "query",
       type: "string"
@@ -166500,6 +166178,189 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.inspection": {
+      name: "inspection",
+      description: "inspection",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/inspection"
+      }
+    },
+    "rowFilter.inspection.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspection.inspectionId": {
+      name: "inspectionId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspection.itemId": {
+      name: "itemId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspection.itemReadableId": {
+      name: "itemReadableId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspection.supplierId": {
+      name: "supplierId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspection.lotSize": {
+      name: "lotSize",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspection.samplingStandard": {
+      name: "samplingStandard",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspection.samplingPlanType": {
+      name: "samplingPlanType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspection.sampleSize": {
+      name: "sampleSize",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspection.acceptanceNumber": {
+      name: "acceptanceNumber",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspection.rejectionNumber": {
+      name: "rejectionNumber",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspection.aql": {
+      name: "aql",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspection.inspectionLevel": {
+      name: "inspectionLevel",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspection.severity": {
+      name: "severity",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspection.codeLetter": {
+      name: "codeLetter",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspection.status": {
+      name: "status",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspection.notes": {
+      name: "notes",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspection.dispositionedBy": {
+      name: "dispositionedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspection.dispositionedAt": {
+      name: "dispositionedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspection.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspection.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspection.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspection.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspection.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspection.inspectionDocumentId": {
+      name: "inspectionDocumentId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspection.sourceDocument": {
+      name: "sourceDocument",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspection.sourceDocumentId": {
+      name: "sourceDocumentId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspection.sourceDocumentLineId": {
+      name: "sourceDocumentLineId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspection.sourceDocumentReadableId": {
+      name: "sourceDocumentReadableId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.processes": {
       name: "processes",
       description: "processes",
@@ -168228,6 +168089,99 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.inspectionMeasurement": {
+      name: "inspectionMeasurement",
+      description: "inspectionMeasurement",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/inspectionMeasurement"
+      }
+    },
+    "rowFilter.inspectionMeasurement.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionMeasurement.inspectionId": {
+      name: "inspectionId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionMeasurement.inspectionSampleId": {
+      name: "inspectionSampleId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionMeasurement.inspectionFeatureId": {
+      name: "inspectionFeatureId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionMeasurement.value": {
+      name: "value",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionMeasurement.status": {
+      name: "status",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionMeasurement.notes": {
+      name: "notes",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionMeasurement.inspectedBy": {
+      name: "inspectedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionMeasurement.inspectedAt": {
+      name: "inspectedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionMeasurement.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionMeasurement.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionMeasurement.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionMeasurement.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionMeasurement.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.externalLink": {
       name: "externalLink",
       description: "externalLink",
@@ -169823,6 +169777,87 @@ export default {
     },
     "rowFilter.gaugeCalibrationRecord.calibrationAttempts": {
       name: "calibrationAttempts",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.inspectionSamplingPlan": {
+      name: "inspectionSamplingPlan",
+      description: "inspectionSamplingPlan",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/inspectionSamplingPlan"
+      }
+    },
+    "rowFilter.inspectionSamplingPlan.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionSamplingPlan.inspectionId": {
+      name: "inspectionId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionSamplingPlan.inspectionFeatureId": {
+      name: "inspectionFeatureId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionSamplingPlan.sampleSize": {
+      name: "sampleSize",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionSamplingPlan.acceptanceNumber": {
+      name: "acceptanceNumber",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionSamplingPlan.rejectionNumber": {
+      name: "rejectionNumber",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionSamplingPlan.codeLetter": {
+      name: "codeLetter",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionSamplingPlan.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionSamplingPlan.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionSamplingPlan.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionSamplingPlan.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionSamplingPlan.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"
@@ -172526,57 +172561,6 @@ export default {
     },
     "rowFilter.supplier.readableId": {
       name: "readableId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "body.nonConformanceInboundInspection": {
-      name: "nonConformanceInboundInspection",
-      description: "nonConformanceInboundInspection",
-      required: false,
-      in: "body",
-      schema: {
-        $ref: "#/definitions/nonConformanceInboundInspection"
-      }
-    },
-    "rowFilter.nonConformanceInboundInspection.id": {
-      name: "id",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.nonConformanceInboundInspection.nonConformanceId": {
-      name: "nonConformanceId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.nonConformanceInboundInspection.inboundInspectionId": {
-      name: "inboundInspectionId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.nonConformanceInboundInspection.companyId": {
-      name: "companyId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.nonConformanceInboundInspection.createdAt": {
-      name: "createdAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.nonConformanceInboundInspection.createdBy": {
-      name: "createdBy",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.nonConformanceInboundInspection.updatedBy": {
-      name: "updatedBy",
       required: false,
       in: "query",
       type: "string"
@@ -175748,6 +175732,57 @@ export default {
     },
     "rowFilter.supplierProcess.tags": {
       name: "tags",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.nonConformanceInspection": {
+      name: "nonConformanceInspection",
+      description: "nonConformanceInspection",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/nonConformanceInspection"
+      }
+    },
+    "rowFilter.nonConformanceInspection.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.nonConformanceInspection.nonConformanceId": {
+      name: "nonConformanceId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.nonConformanceInspection.inspectionId": {
+      name: "inspectionId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.nonConformanceInspection.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.nonConformanceInspection.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.nonConformanceInspection.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.nonConformanceInspection.updatedBy": {
+      name: "updatedBy",
       required: false,
       in: "query",
       type: "string"

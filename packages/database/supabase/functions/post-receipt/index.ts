@@ -694,10 +694,10 @@ serve(async (req: Request) => {
         // with requiresInspection = true. Compute the sampling plan snapshot
         // from the company's chosen standard and the item's plan (or default
         // to "Inspect All" if no plan is configured).
-        const inboundInspectionInserts: Array<Record<string, any>> = [];
+        const inspectionInserts: Array<Record<string, any>> = [];
         // Per-feature resolved plans, keyed by receiptLineId until the lot ids
         // exist (they are joined after the insert returns ids).
-        type InboundInspectionFeatureInsert = {
+        type InspectionSamplingPlanInsert = {
           inspectionFeatureId: string;
           sampleSize: number;
           acceptanceNumber: number;
@@ -706,9 +706,9 @@ serve(async (req: Request) => {
           companyId: string;
           createdBy: string;
         };
-        const inboundInspectionFeatureInsertsByReceiptLineId = new Map<
+        const samplingPlanInsertsByReceiptLineId = new Map<
           string,
-          Array<InboundInspectionFeatureInsert>
+          Array<InspectionSamplingPlanInsert>
         >();
         for (const receiptLine of receiptLines.data ?? []) {
           const item = items.data?.find((i) => i.id === receiptLine.itemId);
@@ -752,7 +752,7 @@ serve(async (req: Request) => {
             ),
           }));
           if (featurePlans.length > 0) {
-            inboundInspectionFeatureInsertsByReceiptLineId.set(
+            samplingPlanInsertsByReceiptLineId.set(
               receiptLine.id,
               featurePlans.map((p) => ({
                 inspectionFeatureId: p.inspectionFeatureId,
@@ -766,9 +766,11 @@ serve(async (req: Request) => {
             );
           }
 
-          inboundInspectionInserts.push({
-            receiptLineId: receiptLine.id,
-            receiptId,
+          inspectionInserts.push({
+            sourceDocument: "Receipt",
+            sourceDocumentId: receiptId,
+            sourceDocumentLineId: receiptLine.id,
+            sourceDocumentReadableId: receipt.data.receiptId ?? null,
             itemId: receiptLine.itemId,
             itemReadableId: receiptLine.itemReadableId,
             supplierId: purchaseOrder.data.supplierId ?? null,
@@ -1898,40 +1900,41 @@ serve(async (req: Request) => {
             }
           }
 
-          if (inboundInspectionInserts.length > 0) {
-            for (const row of inboundInspectionInserts) {
-              row.inboundInspectionId = await getNextSequence(
+          if (inspectionInserts.length > 0) {
+            for (const row of inspectionInserts) {
+              row.inspectionId = await getNextSequence(
                 trx,
-                "inboundInspection",
+                "inspection",
                 companyId
               );
             }
             const insertedInspections = await trx
-              .insertInto("inboundInspection")
-              .values(inboundInspectionInserts)
-              .returning(["id", "receiptLineId"])
+              .insertInto("inspection")
+              .values(inspectionInserts)
+              .returning(["id", "sourceDocumentLineId"])
               .execute();
 
-            const inspectionFeatureInserts: Array<
-              InboundInspectionFeatureInsert & { inboundInspectionId: string }
+            const samplingPlanInserts: Array<
+              InspectionSamplingPlanInsert & { inspectionId: string }
             > = [];
             for (const inspection of insertedInspections) {
-              const featureRows =
-                inboundInspectionFeatureInsertsByReceiptLineId.get(
-                  inspection.receiptLineId
-                );
+              const featureRows = inspection.sourceDocumentLineId
+                ? samplingPlanInsertsByReceiptLineId.get(
+                    inspection.sourceDocumentLineId
+                  )
+                : undefined;
               if (!featureRows) continue;
               for (const featureRow of featureRows) {
-                inspectionFeatureInserts.push({
+                samplingPlanInserts.push({
                   ...featureRow,
-                  inboundInspectionId: inspection.id,
+                  inspectionId: inspection.id,
                 });
               }
             }
-            if (inspectionFeatureInserts.length > 0) {
+            if (samplingPlanInserts.length > 0) {
               await trx
-                .insertInto("inboundInspectionFeature")
-                .values(inspectionFeatureInserts)
+                .insertInto("inspectionSamplingPlan")
+                .values(samplingPlanInserts)
                 .execute();
             }
           }
