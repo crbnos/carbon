@@ -2,6 +2,7 @@
 paths:
   - "apps/erp/app/modules/quality/ui/InboundInspections/**"
   - "apps/erp/app/modules/quality/quality.{server,service,models}.ts"
+  - "apps/erp/app/routes/x+/inbound-inspection+/**"
   - "packages/database/supabase/migrations/*inbound-inspection*.sql"
   - "packages/database/supabase/functions/post-receipt/index.ts"
 ---
@@ -9,8 +10,19 @@ paths:
 # Inbound Inspection System
 
 Receiving-side quality gate. When a receipt is posted, a **lot-level** inspection is
-created for each received line whose item has `requiresInspection = true`. Inspectors
-record per-sample pass/fail, then disposition the lot Accept / Reject / Partial.
+created for each received line whose item has `requiresInspection = true`. Two
+execution flows (spec `.ai/specs/2026-07-21-inbound-inspection-execution.md`):
+
+- **Document-driven** (item has a Receipt-usage `inspectionDocument` assignment):
+  full-screen split view at `/x/inbound-inspection/{id}` — ballooned PDF beside a
+  features × samples measurement grid. Readings auto-valuate against live
+  tolerances; sample status is **derived** (strict, no override); per-feature
+  AQL sampling (feature rule → `itemSamplingPlan` → All).
+- **Fallback** (no assigned document): manual per-sample Pass/Fail, lot-level
+  sampling — the original flow, now inside the same full-screen route.
+
+Disposition (Accept / Reject / Partial) is always a human decision; Reject can
+auto-create an NCR whose description includes the failed characteristics.
 
 ## Data model (newest migration wins)
 
@@ -41,22 +53,46 @@ Phase-1 shape (it was per-tracked-entity with `trackedEntityId`/`inspectedBy` co
 - `nonConformanceInboundInspection` (`20260421091238`) — links an auto-created NCR back to
   the inspection (unique `(nonConformanceId, inboundInspectionId)`).
 
+Execution-layer tables (`20260722040401_inbound-inspection-execution.sql`):
+
+- `inboundInspection.inspectionDocumentId` — **live** reference to the assigned
+  `inspectionDocument` (ON DELETE SET NULL); no feature snapshot.
+- `itemInspectionDocumentAssignment` — PK `(itemId, usage)`; `usage` enum
+  `inspectionDocumentUsage` (v1: only `'Receipt'`; FAI/Production are additive
+  enum values later). Edited on the item Quality tab (`ItemQualityView`).
+- `inspectionFeature` gained six nullable per-feature sampling columns
+  (`samplingPlanType/SampleSize/Percentage/Aql/InspectionLevel/Severity`);
+  NULL = inherit `itemSamplingPlan`. Persisted through the
+  `save_inspection_document_atomic` fork in the same migration (newest def).
+- `inboundInspectionFeature` — per-lot per-feature **resolved** plan
+  (`sampleSize`, `acceptanceNumber`, `rejectionNumber`, `codeLetter`), unique
+  `(inboundInspectionId, inspectionFeatureId)`. Created at receipt; lazily
+  reconciled by the `$id` loader for features added to the live document later.
+- `inboundInspectionMeasurement` — one reading per `(sampleId, featureId)`
+  (unique): `value NUMERIC` (NULL for attribute features), `status`
+  (`inboundInspectionSampleStatus` — the valuation at entry; tolerance edits
+  never rewrite recorded statuses), `notes`, `inspectedBy/At`.
+
 RLS on all tables: standard SELECT/INSERT/UPDATE/DELETE gated by `quality_view/create/update/delete`.
 
 ## Receipt → inspection flow (`post-receipt/index.ts`, Supabase edge fn)
 
-`packages/database/supabase/functions/post-receipt/index.ts` (inserts ~line 630):
-1. Loads items (`id, itemTrackingType, requiresInspection`), company `samplingStandard`, and
-   `itemSamplingPlan` rows for the receipt.
+`packages/database/supabase/functions/post-receipt/index.ts` (inserts ~line 700):
+1. Loads items (`id, itemTrackingType, requiresInspection`), company `samplingStandard`,
+   `itemSamplingPlan` rows, Receipt-usage `itemInspectionDocumentAssignment` rows, and the
+   assigned documents' `inspectionFeature` rows.
 2. Per receipt line whose item `requiresInspection` and `receivedQuantity > 0`: resolves the
-   plan via `resolveSamplingPlan(plan, lotSize, standard)` from
+   lot plan via `resolveSamplingPlan(plan, lotSize, standard)` from
    `packages/database/supabase/functions/shared/sampling-engine.ts` (ANSI Z1.4 / ISO 2859-1
    tables; returns `{ sampleSize, acceptance, rejection, codeLetter }`). No configured plan →
-   defaults to `type: "All"`, level `II`, `Normal`. Pushes an `inboundInspection` insert (with
-   `inboundInspectionId` from `getNextSequence`).
+   defaults to `type: "All"`, level `II`, `Normal`. When a document is assigned, also resolves
+   **each feature** via `resolveFeatureSamplingPlan(feature, itemPlan, lotSize, standard)`
+   (feature rule → item plan → All), stamps `inspectionDocumentId` on the lot, sets the
+   lot-level `sampleSize` to the max across features, and (after the insert `.returning`s the
+   lot ids) batch-inserts the `inboundInspectionFeature` rows.
 3. **Tracked entities for inspection-required items are set to `"On Hold"` at receipt** (not
    Available); everything else flips to `Available`. They are released individually by sample
-   inspection or en masse by lot disposition.
+   inspection / derived measurement status or en masse by lot disposition.
 
 ## Tracking types
 
@@ -71,28 +107,58 @@ status to flip, so a Reject posts a compensating ledger entry instead (see dispo
 - **Items toggle**: `apps/erp/app/modules/items/ui/{Parts,Materials,Tools,Consumables}/*Properties.tsx`
   render the `requiresInspection` checkbox only when `replenishmentSystem?.includes("Buy")` (i.e.
   purchased items) — **gated by Buy replenishment, NOT by tracking type**.
-- **Sampling plan editor**: `apps/erp/app/modules/quality/ui/SamplingPlan/SamplingPlanForm.tsx`,
-  mounted on `routes/x+/{part,material,tool,consumable}+/$itemId.quality.tsx`.
-- **Inspection detail drawer**: `.../ui/InboundInspections/InboundInspectionLotView.tsx` — progress,
-  samples table, Accept/Reject/Partial. Branches on `isSerial = itemTrackingType === "Serial"`.
-  Reject modal has an "Open an NCR" checkbox (`createNcr`, defaults on).
+- **Item Quality tab**: `.../ui/SamplingPlan/ItemQualityView.tsx` (documents card + usage-slot
+  assignments card + `SamplingPlanForm`), mounted on
+  `routes/x+/{part,material,tool,consumable}+/$itemId.quality.tsx` (actions branch on
+  `intent=assignment`).
+- **Execution view**: `.../ui/InboundInspections/InboundInspectionView.tsx` — full-screen,
+  data-prop reusable (AssemblyView pattern, for later MES reuse). Document flow renders
+  `InspectionDrawingPane.tsx` (lazy react-pdf + Konva balloons, click ↔ row sync) beside
+  `InspectionMeasurementGrid.tsx` (shared Table inline editing, per-cell quiet POSTs, capture-phase
+  Enter/Tab nav, attribute P/F toggle cells, cells beyond a feature's n disabled). Fallback flow =
+  the old samples table. `RejectLotModal.tsx` (extracted) previews failed characteristics.
 - **Sample modal**: `.../ui/InboundInspections/ScanInspectionSample.tsx` — `isSerial` prop; serial
-  shows Scan/Select tabs (entity required), non-serial shows just Notes + Pass/Fail.
-- **Routes** `apps/erp/app/routes/x+/quality+/`: `inbound-inspections.tsx` (list),
-  `.$id.tsx` (loader passes `itemTrackingType`), `.$id.sample.tsx`, `.$id.{accept,reject,partial}.tsx`.
+  shows Scan/Select tabs (entity required). `mode="identify"` (document flow) registers a Pending
+  sample column; `mode="record"` (fallback) keeps Pass/Fail.
+- **Routes**: list stays `x+/quality+/inbound-inspections.tsx`; the old
+  `inbound-inspections.$id.tsx` is a redirect stub to the full-screen tree
+  `x+/inbound-inspection+/` (`_layout.tsx` module `quality`; `$id.tsx` loader reconciles features +
+  loads document/balloons via service role; actions: `$id.measurement.tsx` (per-cell),
+  `$id.sample.tsx`, `$id.document.tsx` (swap, only unmeasured non-terminal lots),
+  `$id.{accept,reject,partial}.tsx`). Path helpers: `path.to.inboundInspection*`.
 - **Server** `quality.server.ts`:
-  - `upsertInboundInspectionSample` — flips entity status + writes `trackedActivity` input/output
-    only when `trackedEntityId` is present; anonymous (null) samples are always inserts (no dedupe).
-  - `dispositionInboundInspection` — Accept releases un-sampled entities to Available; Reject flips
-    all lot entities to Rejected (and for a non-tracked Inventory item posts an `itemLedger`
-    `Inbound Inspection` negative adjustment, doc-type added `20260619142853`); Partial leaves
-    entities; always writes `inboundInspectionHistory`.
-  - NCR auto-creation lives in the **reject route** (`.$id.reject.tsx`), optional via `createNcr`,
-    linking through `nonConformanceInboundInspection`.
-- **Service** `quality.service.ts`: `getInboundInspections` (list), `getInboundInspection` (selects
-  `item(... itemTrackingType)`), `getInboundInspectionLotTrackedEntities`.
+  - `upsertInboundInspectionSample` — entity flip + `trackedActivity` via the shared
+    `applySampleEntityStatus` helper; skipped for `Pending` (identify-only) samples.
+  - `valuateMeasurement` (exported, unit-tested) — numeric in `[nominal − |tol−|, nominal + |tol+|]`;
+    unparseable nominal / non-Measurement types valuate as attributes.
+  - `upsertInboundInspectionMeasurement` — creates anonymous samples on demand, upserts the
+    reading, **derives** the sample status from its required measurements (feature required for
+    column i iff `sampleSize >= i`), applies entity transitions (revert → On Hold, no activity),
+    recomputes non-terminal lot status.
+  - `reconcileInboundInspectionFeatures` — lazy per-lot plan rows for features added post-receipt.
+  - `changeInboundInspectionDocument` — swap/clear guarded to unmeasured non-terminal lots; wipes
+    plan rows for re-resolution.
+  - `dispositionInboundInspection` — per-feature gating when the lot has features (Accept: every
+    feature `recorded >= n && failed <= Ac`; Reject: some feature `failed >= Re` or a failed
+    sample); Accept releases un-sampled entities to Available; Reject flips all lot entities to
+    Rejected (and for a non-tracked Inventory item posts an `itemLedger` `Inbound Inspection`
+    negative adjustment); Partial leaves entities; always writes `inboundInspectionHistory`.
+  - NCR auto-creation lives in the **reject route** (`x+/inbound-inspection+/$id.reject.tsx`),
+    optional via `createNcr`, linking through `nonConformanceInboundInspection`; the description
+    includes a "Failed characteristics" block built from the lot's measurements.
+- **Service** `quality.service.ts`: `getInboundInspections` (list), `getInboundInspection`,
+  `getInboundInspectionLotTrackedEntities`, `getInboundInspectionFeatures` (embeds
+  `inspectionFeature(...)` by table name), `getInboundInspectionMeasurements`,
+  `getItemInspectionDocumentAssignments` / `upsertItemInspectionDocumentAssignment` (empty
+  documentId deletes the slot).
 - **Validators** `quality.models.ts`: `inboundInspectionSampleValidator` (`trackedEntityId`
-  optional), `itemSamplingPlanValidator`, `inboundInspectionDispositionValidator`.
+  optional; status includes `Pending`), `itemSamplingPlanValidator`,
+  `inboundInspectionDispositionValidator`, `inboundInspectionMeasurementValidator`
+  (`value` xor `passed`), `itemInspectionDocumentAssignmentValidator`,
+  `inspectionDocumentUsages` const.
+- **Sampling engines** (kept in sync manually): `resolveSamplingPlan` +
+  `resolveFeatureSamplingPlan` in both `apps/erp/app/modules/quality/samplingStandards.ts` and
+  `packages/database/supabase/functions/shared/sampling-engine.ts`.
 
 ## Gotchas
 
@@ -102,6 +168,13 @@ status to flip, so a Reject posts a compensating ledger entry instead (see dispo
 - **Inspection-required tracked entities post `On Hold`, not Available.** They are not on-hand
   until released by sampling/disposition.
 - **`trackedEntityId` is nullable** on samples; serial uniqueness is enforced by a *partial* index.
-- **Don't confuse with inspection *documents*.** `inspectionDocument`/`inspectionFeature`/`balloon`
-  + `save_inspection_document_atomic` (`20260526142837`, `20260526153412`) are the first-article /
-  ballooned-drawing feature — a separate system from this receiving lot flow.
+- **Inspection *documents* are authored in the production module** (`inspectionDocument`/
+  `inspectionFeature`/`balloon` + `save_inspection_document_atomic`, newest def
+  `20260722040401`) and are now *consumed* by this flow via the item's Receipt-usage
+  assignment. The lot references the document **live** — measurement rows store the
+  valuation at entry, so later tolerance edits never rewrite recorded results.
+- **Sample status is derived on document-driven lots** — do not add manual sample
+  pass/fail UI there; deviations resolve at disposition via MRB/NCR (spec decision).
+- **Per-cell measurement saves are quiet** (plain `fetch`, no revalidation) — the grid and
+  the view mirror statuses locally from the action's returned
+  `{sampleId, measurementStatus, sampleStatus}`.

@@ -6,8 +6,8 @@ Non-conformances (issues/NCRs), corrective/preventive actions (CAPAs), gauge man
 
 - **Issue (NCR)** — non-conformance record. Statuses: Registered → In Progress → Closed. `isIssueLocked(status)` returns true for Closed. Has 10+ association types (items, customers, suppliers, job operations, PO/SO lines, shipment/receipt lines, tracked entities, inbound inspections).
 - **Issue Workflow** — configurable multi-step workflow with action tasks (`nonConformanceActionTask`) and approval tasks (`nonConformanceApprovalTask`). Required actions have `systemType` (Containment, Corrective, Preventive, Verification, Communication) — system actions are protected by trigger.
-- **Inspection Document** — PDF-based drawing with balloon annotations linking to inspection features (dimensions with nominal/tolerance values). Used for FAI and in-process inspection. MUST use `saveInspectionDocumentAtomic` RPC for atomic saves.
-- **Inbound Inspection** — lot-level inspection triggered on receipt for items with `requiresInspection = true`. Uses AQL-based sampling plans (ANSI Z1.4 / ISO 2859-1). Tracked entities post as `On Hold` until disposition.
+- **Inspection Document** — PDF-based drawing with balloon annotations linking to inspection features (dimensions with nominal/tolerance values, optional per-feature sampling rules). Used for FAI, in-process inspection, and — via the item's Receipt-usage assignment — inbound inspection. MUST use `saveInspectionDocumentAtomic` RPC for atomic saves.
+- **Inbound Inspection** — lot-level inspection triggered on receipt for items with `requiresInspection = true`. Uses AQL-based sampling plans (ANSI Z1.4 / ISO 2859-1), resolved **per characteristic** when a Receipt-usage inspection document is assigned (feature rule → item plan → All). Executed full-screen at `/x/inbound-inspection/{id}`: document-driven lots record measurements in a features × samples grid beside the ballooned drawing (sample status is derived, no override); lots without a document keep manual per-sample Pass/Fail. Tracked entities post as `On Hold` until released by measurement/sample results or disposition. See `.claude/rules/inbound-inspection-system.md`.
 - **Gauge** — measurement instrument with calibration tracking. Statuses: Active/Inactive. Roles: Master/Standard.
 - **Disposition** — per-item outcome on an NCR. Values include Pending, Return to Supplier, Rework, Scrap, Use As Is (subset active in UI).
 - **Risk Register** — risks and opportunities tracked by source (Customer, Supplier, Item, Job, etc.). Severity and likelihood are independent 1–5 ratings with no computed score.
@@ -49,7 +49,9 @@ pnpm --filter @carbon/erp test
 | `nonConformanceItem` | Issue-to-item junction with `disposition` |
 | `nonConformanceCustomer` / `...Supplier` / `...JobOperation` / `...PurchaseOrderLine` / `...ReceiptLine` / `...ShipmentLine` / `...TrackedEntity` / `...InboundInspection` | Association tables (10+ types) |
 | `inspectionDocument` | PDF drawing with balloon overlay |
-| `inboundInspection` / `inboundInspectionSample` | Lot-level receipt inspection with sampling |
+| `inboundInspection` / `inboundInspectionSample` | Lot-level receipt inspection with sampling; lot carries a live `inspectionDocumentId` |
+| `inboundInspectionFeature` / `inboundInspectionMeasurement` | Per-lot resolved feature plans (n/Ac/Re) and per sample × feature readings |
+| `itemInspectionDocumentAssignment` | Item × usage slot → inspection document (v1 usage: `Receipt`) |
 | `itemSamplingPlan` | AQL sampling plan per item |
 | `gauge` / `gaugeCalibrationRecord` / `gaugeType` | Measurement instrument tracking |
 | `qualityDocument` / `qualityDocumentStep` | Versioned SOPs with ordered steps |
@@ -63,6 +65,9 @@ pnpm --filter @carbon/erp test
 - `updateIssueStatus` / `updateIssueTaskStatus` — status transitions
 - `getInspectionDocument` / `getBalloons` / `getInspectionFeatures` / `getInspectionPlan` — drawing inspection
 - `getInboundInspection` / `getInboundInspections` / `getInboundInspectionLotTrackedEntities` — receipt inspections
+- `getInboundInspectionFeatures` / `getInboundInspectionMeasurements` — per-lot feature plans and grid readings
+- `getItemInspectionDocumentAssignments` / `upsertItemInspectionDocumentAssignment` — Receipt-usage document assignment
+- `upsertInboundInspectionMeasurement` / `reconcileInboundInspectionFeatures` / `changeInboundInspectionDocument` / `valuateMeasurement` (quality.server.ts) — measurement recording, lazy plan resolution, document swap, pure valuation
 - `getGauge` / `getGauges` / `getGaugeCalibrationRecords` — gauge management
 - `getRisk` / `getRisks` / `upsertRisk` / `updateRiskStatus` — risk register
 - `getQualityDocument` / `getQualityDocumentSteps` — versioned SOPs
