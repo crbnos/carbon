@@ -1,20 +1,30 @@
 ---
 paths:
-  - "apps/erp/app/modules/quality/ui/InboundInspections/**"
+  - "apps/erp/app/modules/quality/ui/Inspections/**"
   - "apps/erp/app/modules/quality/quality.{server,service,models}.ts"
-  - "apps/erp/app/routes/x+/inbound-inspection+/**"
-  - "packages/database/supabase/migrations/*inbound-inspection*.sql"
+  - "apps/erp/app/routes/x+/inspection+/**"
+  - "packages/database/supabase/migrations/*inspection*.sql"
   - "packages/database/supabase/functions/post-receipt/index.ts"
 ---
 
-# Inbound Inspection System
+# Inspection System
 
-Receiving-side quality gate. When a receipt is posted, a **lot-level** inspection is
-created for each received line whose item has `requiresInspection = true`. Two
+Generic quality-inspection execution keyed by `sourceDocument` /
+`sourceDocumentId` / `sourceDocumentLineId` / `sourceDocumentReadableId`
+(enum `inspectionSourceDocument`: 'Receipt' now, 'Job Operation' next; no FKs
+on the generic ids, unique per `(sourceDocument, sourceDocumentLineId)`).
+Renamed from the receipt-only "Inbound Inspections" in `20260722132135_inspections-refactor.sql`
+(tables `inspection`/`inspectionSample`/`inspectionSamplingPlan`/
+`inspectionMeasurement`/`inspectionHistory`/`nonConformanceInspection`;
+readable id column `inspectionId`, sequence key `inspection` — existing
+companies keep their II prefix, new companies seed INS).
+
+Receipt flow: when a receipt is posted, a **lot-level** inspection is created
+for each received line whose item has `requiresInspection = true`. Two
 execution flows (spec `.ai/specs/2026-07-21-inbound-inspection-execution.md`):
 
 - **Document-driven** (item has a Receipt-usage `inspectionDocument` assignment):
-  full-screen split view at `/x/inbound-inspection/{id}` — ballooned PDF beside a
+  full-screen split view at `/x/inspection/{id}` — ballooned PDF beside a
   features × samples measurement grid. Readings auto-valuate against live
   tolerances; sample status is **derived** (strict, no override); per-feature
   AQL sampling (feature rule → `itemSamplingPlan` → All).
@@ -24,12 +34,13 @@ execution flows (spec `.ai/specs/2026-07-21-inbound-inspection-execution.md`):
 Disposition (Accept / Reject / Partial) is always a human decision; Reject can
 auto-create an NCR whose description includes the failed characteristics.
 
-## Data model (newest migration wins)
+## Data model (newest migration wins: `20260722132135_inspections-refactor.sql`)
 
-The shipped schema is the **Phase 2 rebuild** in `20260419163058_inbound-inspection-sampling.sql`,
-which `DROP ... CASCADE`s the original Phase-1 `inboundInspection` table from
-`20260419094132_inbound-inspections.sql` and recreates it lot-based. Don't trust the
-Phase-1 shape (it was per-tracked-entity with `trackedEntityId`/`inspectedBy` columns).
+Lineage: Phase-1 `20260419094132_inbound-inspections.sql` (dropped) → Phase-2
+lot rebuild `20260419163058_inbound-inspection-sampling.sql` → execution layer
+`20260722040401_inbound-inspection-execution.sql` → the rename/source refactor
+`20260722132135`. Old constraint/index NAMES still carry `inboundInspection`
+strings (cosmetic).
 
 - `item.requiresInspection` BOOLEAN (default false) — added `20260419094132`.
 - `companySettings.samplingStandard` enum `samplingStandard` (`ANSI_Z1_4` | `ISO_2859_1`,
@@ -37,25 +48,25 @@ Phase-1 shape (it was per-tracked-entity with `trackedEntityId`/`inspectedBy` co
 - `itemSamplingPlan` (PK = **`itemId`** only, not composite) — per-item plan, created lazily:
   `type` (`samplingPlanType`: All/First/Percentage/AQL), `sampleSize`, `percentage`,
   `aql`, `inspectionLevel` (I/II/III/S1–S4), `severity` (Normal/Tightened/Reduced).
-- `inboundInspection` (lot level, PK = `id`) — `inboundInspectionId` (human id, `II` seq,
+- `inspection` (lot level, PK = `id`) — `inspectionId` (human id, `II` seq,
   unique per company), `receiptLineId` (**unique** — one lot per receipt line), `receiptId`,
   `itemId`, `itemReadableId`, `supplierId`, `lotSize`, snapshot of the resolved plan
   (`samplingStandard`, `samplingPlanType`, `sampleSize`, `acceptanceNumber`,
   `rejectionNumber`, `aql`, `inspectionLevel`, `severity`, `codeLetter`),
-  `status` (`inboundInspectionStatus`: Pending/In Progress/Passed/Failed/Partial),
+  `status` (`inspectionStatusType`: Pending/In Progress/Passed/Failed/Partial),
   `dispositionedBy`/`dispositionedAt`. **No `itemTrackingType` column** — joined from `item`.
-- `inboundInspectionSample` — one row per recorded result: `inboundInspectionId`,
+- `inspectionSample` — one row per recorded result: `inspectionId`,
   `trackedEntityId` (**nullable** since `20260612151947`), `status`
-  (`inboundInspectionSampleStatus`: Pending/Passed/Failed), `inspectedBy`/`inspectedAt`.
-  A **partial** unique index `inboundInspectionSample_trackedEntityId_key WHERE trackedEntityId
+  (`inspectionSampleStatusType`: Pending/Passed/Failed), `inspectedBy`/`inspectedAt`.
+  A **partial** unique index `inspectionSample_trackedEntityId_key WHERE trackedEntityId
   IS NOT NULL` keeps a serial entity sampleable once while allowing many anonymous samples.
-- `inboundInspectionHistory` — one row per disposition (skeleton for future plan auto-switching).
-- `nonConformanceInboundInspection` (`20260421091238`) — links an auto-created NCR back to
-  the inspection (unique `(nonConformanceId, inboundInspectionId)`).
+- `inspectionHistory` — one row per disposition (skeleton for future plan auto-switching).
+- `nonConformanceInspection` (`20260421091238`) — links an auto-created NCR back to
+  the inspection (unique `(nonConformanceId, inspectionId)`).
 
 Execution-layer tables (`20260722040401_inbound-inspection-execution.sql`):
 
-- `inboundInspection.inspectionDocumentId` — **live** reference to the assigned
+- `inspection.inspectionDocumentId` — **live** reference to the assigned
   `inspectionDocument` (ON DELETE SET NULL); no feature snapshot.
 - `itemInspectionDocumentAssignment` — PK `(itemId, usage)`; `usage` enum
   `inspectionDocumentUsage` (v1: only `'Receipt'`; FAI/Production are additive
@@ -64,13 +75,13 @@ Execution-layer tables (`20260722040401_inbound-inspection-execution.sql`):
   (`samplingPlanType/SampleSize/Percentage/Aql/InspectionLevel/Severity`);
   NULL = inherit `itemSamplingPlan`. Persisted through the
   `save_inspection_document_atomic` fork in the same migration (newest def).
-- `inboundInspectionFeature` — per-lot per-feature **resolved** plan
+- `inspectionSamplingPlan` — per-lot per-feature **resolved** plan
   (`sampleSize`, `acceptanceNumber`, `rejectionNumber`, `codeLetter`), unique
-  `(inboundInspectionId, inspectionFeatureId)`. Created at receipt; lazily
+  `(inspectionId, inspectionFeatureId)`. Created at receipt; lazily
   reconciled by the `$id` loader for features added to the live document later.
-- `inboundInspectionMeasurement` — one reading per `(sampleId, featureId)`
+- `inspectionMeasurement` — one reading per `(sampleId, featureId)`
   (unique): `value NUMERIC` (NULL for attribute features), `status`
-  (`inboundInspectionSampleStatus` — the valuation at entry; tolerance edits
+  (`inspectionSampleStatusType` — the valuation at entry; tolerance edits
   never rewrite recorded statuses), `notes`, `inspectedBy/At`.
 
 RLS on all tables: standard SELECT/INSERT/UPDATE/DELETE gated by `quality_view/create/update/delete`.
@@ -89,7 +100,7 @@ RLS on all tables: standard SELECT/INSERT/UPDATE/DELETE gated by `quality_view/c
    **each feature** via `resolveFeatureSamplingPlan(feature, itemPlan, lotSize, standard)`
    (feature rule → item plan → All), stamps `inspectionDocumentId` on the lot, sets the
    lot-level `sampleSize` to the max across features, and (after the insert `.returning`s the
-   lot ids) batch-inserts the `inboundInspectionFeature` rows.
+   lot ids) batch-inserts the `inspectionSamplingPlan` rows.
 3. **Tracked entities for inspection-required items are set to `"On Hold"` at receipt** (not
    Available); everything else flips to `Available`. They are released individually by sample
    inspection / derived measurement status or en masse by lot disposition.
@@ -111,49 +122,49 @@ status to flip, so a Reject posts a compensating ledger entry instead (see dispo
   assignments card + `SamplingPlanForm`), mounted on
   `routes/x+/{part,material,tool,consumable}+/$itemId.quality.tsx` (actions branch on
   `intent=assignment`).
-- **Execution view**: `.../ui/InboundInspections/InboundInspectionView.tsx` — full-screen,
+- **Execution view**: `.../ui/Inspections/InspectionView.tsx` — full-screen,
   data-prop reusable (AssemblyView pattern, for later MES reuse). Document flow renders
   `InspectionDrawingPane.tsx` (lazy react-pdf + Konva balloons, click ↔ row sync) beside
   `InspectionMeasurementGrid.tsx` (shared Table inline editing, per-cell quiet POSTs, capture-phase
   Enter/Tab nav, attribute P/F toggle cells, cells beyond a feature's n disabled). Fallback flow =
   the old samples table. `RejectLotModal.tsx` (extracted) previews failed characteristics.
-- **Sample modal**: `.../ui/InboundInspections/ScanInspectionSample.tsx` — `isSerial` prop; serial
+- **Sample modal**: `.../ui/Inspections/ScanInspectionSample.tsx` — `isSerial` prop; serial
   shows Scan/Select tabs (entity required). `mode="identify"` (document flow) registers a Pending
   sample column; `mode="record"` (fallback) keeps Pass/Fail.
-- **Routes**: list stays `x+/quality+/inbound-inspections.tsx`; the old
-  `inbound-inspections.$id.tsx` is a redirect stub to the full-screen tree
-  `x+/inbound-inspection+/` (`_layout.tsx` module `quality`; `$id.tsx` loader reconciles features +
+- **Routes**: list stays `x+/quality+/inspections.tsx`; the old
+  `inspections.$id.tsx` is a redirect stub to the full-screen tree
+  `x+/inspection+/` (`_layout.tsx` module `quality`; `$id.tsx` loader reconciles features +
   loads document/balloons via service role; actions: `$id.measurement.tsx` (per-cell),
   `$id.sample.tsx`, `$id.document.tsx` (swap, only unmeasured non-terminal lots),
-  `$id.{accept,reject,partial}.tsx`). Path helpers: `path.to.inboundInspection*`.
+  `$id.{accept,reject,partial}.tsx`). Path helpers: `path.to.inspection*`.
 - **Server** `quality.server.ts`:
-  - `upsertInboundInspectionSample` — entity flip + `trackedActivity` via the shared
+  - `upsertInspectionSample` — entity flip + `trackedActivity` via the shared
     `applySampleEntityStatus` helper; skipped for `Pending` (identify-only) samples.
   - `valuateMeasurement` (exported, unit-tested) — numeric in `[nominal − |tol−|, nominal + |tol+|]`;
     unparseable nominal / non-Measurement types valuate as attributes.
-  - `upsertInboundInspectionMeasurement` — creates anonymous samples on demand, upserts the
+  - `upsertInspectionMeasurement` — creates anonymous samples on demand, upserts the
     reading, **derives** the sample status from its required measurements (feature required for
     column i iff `sampleSize >= i`), applies entity transitions (revert → On Hold, no activity),
     recomputes non-terminal lot status.
-  - `reconcileInboundInspectionFeatures` — lazy per-lot plan rows for features added post-receipt.
-  - `changeInboundInspectionDocument` — swap/clear guarded to unmeasured non-terminal lots; wipes
+  - `reconcileInspectionSamplingPlans` — lazy per-lot plan rows for features added post-receipt.
+  - `changeInspectionDocument` — swap/clear guarded to unmeasured non-terminal lots; wipes
     plan rows for re-resolution.
-  - `dispositionInboundInspection` — per-feature gating when the lot has features (Accept: every
+  - `dispositionInspection` — per-feature gating when the lot has features (Accept: every
     feature `recorded >= n && failed <= Ac`; Reject: some feature `failed >= Re` or a failed
     sample); Accept releases un-sampled entities to Available; Reject flips all lot entities to
     Rejected (and for a non-tracked Inventory item posts an `itemLedger` `Inbound Inspection`
-    negative adjustment); Partial leaves entities; always writes `inboundInspectionHistory`.
-  - NCR auto-creation lives in the **reject route** (`x+/inbound-inspection+/$id.reject.tsx`),
-    optional via `createNcr`, linking through `nonConformanceInboundInspection`; the description
+    negative adjustment); Partial leaves entities; always writes `inspectionHistory`.
+  - NCR auto-creation lives in the **reject route** (`x+/inspection+/$id.reject.tsx`),
+    optional via `createNcr`, linking through `nonConformanceInspection`; the description
     includes a "Failed characteristics" block built from the lot's measurements.
-- **Service** `quality.service.ts`: `getInboundInspections` (list), `getInboundInspection`,
-  `getInboundInspectionLotTrackedEntities`, `getInboundInspectionFeatures` (embeds
-  `inspectionFeature(...)` by table name), `getInboundInspectionMeasurements`,
+- **Service** `quality.service.ts`: `getInspections` (list), `getInspection`,
+  `getInspectionTrackedEntities`, `getInspectionSamplingPlans` (embeds
+  `inspectionFeature(...)` by table name), `getInspectionMeasurements`,
   `getItemInspectionDocumentAssignments` / `upsertItemInspectionDocumentAssignment` (empty
   documentId deletes the slot).
-- **Validators** `quality.models.ts`: `inboundInspectionSampleValidator` (`trackedEntityId`
+- **Validators** `quality.models.ts`: `inspectionSampleValidator` (`trackedEntityId`
   optional; status includes `Pending`), `itemSamplingPlanValidator`,
-  `inboundInspectionDispositionValidator`, `inboundInspectionMeasurementValidator`
+  `inspectionDispositionValidator`, `inspectionMeasurementValidator`
   (`value` xor `passed`), `itemInspectionDocumentAssignmentValidator`,
   `inspectionDocumentUsages` const.
 - **Sampling engines** (kept in sync manually): `resolveSamplingPlan` +
@@ -162,7 +173,7 @@ status to flip, so a Reject posts a compensating ledger entry instead (see dispo
 
 ## Gotchas
 
-- **Lot-based, not entity-based.** The Phase-1 per-entity `inboundInspection` was dropped; read
+- **Lot-based, not entity-based.** The Phase-1 per-entity `inspection` was dropped; read
   the `20260419163058` migration (and newer) for the real shape. `receiptLineId` is unique — one
   inspection lot per received line.
 - **Inspection-required tracked entities post `On Hold`, not Available.** They are not on-hand

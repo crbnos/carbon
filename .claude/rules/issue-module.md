@@ -117,7 +117,7 @@ Reviewers managed in `ReviewersList.tsx` (`nonConformanceReviewerValidator` = ju
   `externalLink`), `nonConformanceJobOperation`, `nonConformancePurchaseOrderLine`,
   `nonConformanceSalesOrderLine`, `nonConformanceShipmentLine`,
   `nonConformanceReceiptLine`, `nonConformanceTrackedEntity`,
-  `nonConformanceInboundInspection` (`20260421091238`).
+  `nonConformanceInspection` (created `20260421091238` as nonConformanceInboundInspection; renamed `20260722132135`).
 
 ## `issues` view
 

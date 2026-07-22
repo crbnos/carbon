@@ -82,7 +82,7 @@ slip PDF; receipt may invoke `update-purchased-prices` when `updateLeadTimesOnRe
   (entry types `Positive/Negative Adjmt.` by sign), GR/IR + inventory `journalLine`s when
   `accountingEnabled`, advances PO line `quantityReceived`/`receivedComplete` and PO `status`,
   flips tracked entities to `Available` (**`On Hold` if the item `requiresInspection`**), and
-  creates one `inboundInspection` lot per inspected line (see `inbound-inspection-system.md`).
+  creates one `inspection` lot per inspected line (see `inspection-system.md`).
 - **post-shipment** handles `Sales Order`, `Purchase Order`, `Outbound Transfer`. SO path: COGS
   `journalLine`s via `calculateCOGS` + `costLedger`, negative `itemLedger`, advances SO line
   `quantitySent`/`sentComplete` and SO `status`, updates `job.quantityShipped`/status for Job
