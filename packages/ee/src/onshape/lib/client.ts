@@ -40,6 +40,10 @@ export interface OnshapeCompany {
 export type OnshapeModelTranslationFormat = "GLTF";
 export type OnshapeDrawingTranslationFormat = "PDF";
 
+// Tessellation presets Onshape accepts for mesh exports (mirrors the UI's
+// resolution picker). Mesh translations fail without one.
+export type OnshapeMeshResolution = "coarse" | "medium" | "fine";
+
 // Async translation job (GLTF / PDF export). requestState transitions
 // ACTIVE -> DONE | FAILED. When storeInDocument=false the result is fetched via
 // resultExternalDataIds; when true, via resultElementIds (a blob element).
@@ -356,6 +360,7 @@ export class OnshapeClient {
       formatName?: OnshapeModelTranslationFormat;
       storeInDocument?: boolean;
       configuration?: string;
+      resolution?: OnshapeMeshResolution;
       // FLAGGED: single-part export support unverified. Omit to export the whole
       // Part Studio; the reliable documented path is a whole-Part-Studio translation.
       partIds?: string;
@@ -367,6 +372,10 @@ export class OnshapeClient {
       {
         formatName: options.formatName ?? "GLTF",
         storeInDocument: options.storeInDocument ?? false,
+        // Mesh exports (GLTF) REQUIRE tessellation detail — without it Onshape
+        // fails the translation with "Invalid GLTF detail parameters were
+        // specified" (verified live). "medium" mirrors the Onshape UI default.
+        resolution: options.resolution ?? "medium",
         ...(options.configuration
           ? { configuration: options.configuration }
           : {}),
@@ -383,6 +392,7 @@ export class OnshapeClient {
       formatName?: OnshapeModelTranslationFormat;
       storeInDocument?: boolean;
       configuration?: string;
+      resolution?: OnshapeMeshResolution;
     } = {}
   ): Promise<OnshapeTranslation> {
     return this.request<OnshapeTranslation>(
@@ -391,6 +401,8 @@ export class OnshapeClient {
       {
         formatName: options.formatName ?? "GLTF",
         storeInDocument: options.storeInDocument ?? false,
+        // Same requirement as the Part Studio path — see comment there.
+        resolution: options.resolution ?? "medium",
         ...(options.configuration
           ? { configuration: options.configuration }
           : {})
