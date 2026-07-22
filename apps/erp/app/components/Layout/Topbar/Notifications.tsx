@@ -25,6 +25,7 @@ import {
   LuCirclePlay,
   LuClipboardCheck,
   LuDollarSign,
+  LuGitPullRequestArrow,
   LuGraduationCap,
   LuHammer,
   LuInbox,
@@ -205,6 +206,16 @@ function GenericNotification({
               ? path.to.qualityDocument(id)
               : path.to.purchaseOrderDetails(id)
           }
+          {...props}
+        />
+      );
+    case NotificationEvent.ChangeOrderStarted:
+    case NotificationEvent.ChangeOrderImplementation:
+    case NotificationEvent.ChangeOrderDone:
+      return (
+        <Notification
+          icon={<LuGitPullRequestArrow />}
+          to={path.to.changeOrderDetails(id)}
           {...props}
         />
       );
