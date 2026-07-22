@@ -535,6 +535,10 @@ serve(async (req: Request) => {
       });
     }
 
+    if (receipt.data?.status === "Voided") {
+      throw new Error("Cannot post a voided receipt");
+    }
+
     switch (receipt.data?.sourceDocument) {
       case "Purchase Order": {
         if (!receipt.data.sourceDocumentId)

@@ -1,17 +1,16 @@
 import { getCarbon } from "@carbon/auth";
 import { getOrRefreshAuthSession } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
-import { Button, Spinner } from "@carbon/react";
+import { Spinner } from "@carbon/react";
 import { useEffect } from "react";
-import {
-  LuChevronLeft,
-  LuChevronRight,
-  LuCircleCheck,
-  LuCirclePlay,
-  LuFlag
-} from "react-icons/lu";
+import { LuCircleCheck, LuFlag } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, Link, useFetcher, useParams } from "react-router";
+import { Breadcrumb } from "~/components/Breadcrumb";
+import { ChapterCard } from "~/components/ChapterCard";
+import { GlossaryText } from "~/components/GlossaryText";
+import { LearnShell } from "~/components/LearnShell";
+import { LessonThumb } from "~/components/LessonThumb";
 import Share from "~/components/Share";
 import { useProgress } from "~/hooks";
 import { path } from "~/utils/path";
@@ -24,7 +23,7 @@ import {
 
 const log = getLogger("academy");
 
-export const loader = async ({ request, params }: LoaderFunctionArgs) => {
+export const loader = async ({ params }: LoaderFunctionArgs) => {
   const { id: lessonId } = params;
 
   if (!lessonId) {
@@ -84,6 +83,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
 
   return { success: true };
 };
+
 export default function LessonRoute() {
   const { lessonCompletions, challengeAttempts } = useProgress();
   const { id } = useParams();
@@ -104,7 +104,6 @@ export default function LessonRoute() {
   const previousLesson = getPreviousLesson(id);
   const hasChallenge = topic.challenge && topic.challenge.length > 0;
 
-  // Filter data for current course/topic
   const completedLessons = lessonCompletions
     .filter((completion) => completion.courseId === course.id)
     .map((completion) => completion.lessonId);
@@ -125,7 +124,7 @@ export default function LessonRoute() {
   const isChallengeAttempted = hasChallenge && attemptsByTopic[topic.id];
   const challengeAttemptCount = attemptsByTopic[topic.id] ?? 0;
 
-  const onComplete = async (lessonId: string) => {
+  const onComplete = () => {
     fetcher.submit(null, {
       method: "POST",
       action: path.to.lesson(id)
@@ -154,7 +153,7 @@ export default function LessonRoute() {
         }
 
         if (data.event === "ended" && data.context === "player.js") {
-          onComplete(id);
+          onComplete();
         }
       } catch (error) {
         log.error("Error parsing message data", { error });
@@ -169,181 +168,132 @@ export default function LessonRoute() {
   }, [id]);
 
   return (
-    <div className="w-full px-4 max-w-5xl mx-auto mt-4 pb-24 flex flex-col gap-8">
-      <div className="flex items-center gap-2">
-        <Button
-          variant="primary"
-          leftIcon={<LuChevronLeft />}
-          className="mr-2"
-          asChild
-        >
-          <Link to={path.to.course(module.id, course.id)}>Back to course</Link>
-        </Button>
+    <LearnShell activeCourseId={course.id}>
+      <div className="grid grid-cols-1 gap-10 xl:grid-cols-[minmax(0,1fr)_300px]">
+        <div className="min-w-0">
+          <Breadcrumb
+            items={[
+              { label: "Courses", href: path.to.root },
+              {
+                label: course.name,
+                href: path.to.course(module.id, course.id)
+              },
+              { label: topic.name }
+            ]}
+          />
 
-        <Button
-          variant="link"
-          className="text-sm text-muted-foreground"
-          asChild
-        >
-          <Link to={path.to.course(module.id, course.id)}>{course.name}</Link>
-        </Button>
-
-        <span className="text-muted-foreground text-sm">/</span>
-
-        <span className="text-muted-foreground text-sm font-bold">
-          {topic.name}
-        </span>
-      </div>
-
-      <div className="flex flex-col w-full">
-        <div className="w-full aspect-video bg-black rounded-t-lg overflow-hidden">
-          <div
-            style={{
-              position: "relative",
-              paddingBottom: "56.25%",
-              height: "0"
-            }}
-          >
-            <div className="absolute inset-0 flex items-center justify-center">
-              <Spinner className="h-8 w-8" />
-            </div>
-            <iframe
-              key={id}
-              id="loom-embed"
-              title={lesson.name}
-              src={`https://www.loom.com/embed/${
-                lesson.loomUrl.split(/(?:share|embed)\//)[1]?.split("?")[0]
-              }?hideEmbedTopBar=true`}
-              allowFullScreen
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <span
+              className="inline-flex items-center justify-center whitespace-nowrap rounded-full px-2 py-1 font-mono text-ed-12 font-medium leading-4 uppercase tracking-[0.06em] text-ed-ink/72"
               style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                width: "100%",
-                height: "100%"
+                background:
+                  "linear-gradient(180deg, rgba(251, 251, 248, 0.50) 0%, rgba(251, 251, 248, 0.00) 100%)",
+                boxShadow:
+                  "0 0 0 1px #FFF inset, 0 0 0 1px rgba(0, 0, 0, 0.12), 0 2px 2px 0 rgba(0, 0, 0, 0.02)"
               }}
+            >
+              Lesson — {topic.name}
+            </span>
+            <span className="inline-flex items-center gap-[5px] font-mono text-ed-12 leading-4 text-ed-ink/42">
+              <ClockIcon />
+              {formatDuration(lesson.duration)}
+            </span>
+          </div>
+
+          <h1 className="mt-[18px] text-ed-32 font-normal leading-[112%] text-ink md:text-ed-40">
+            {lesson.name}
+          </h1>
+
+          <div className="mt-6 overflow-hidden rounded-xl border border-ed-hairline bg-black shadow-[inset_0_1px_0_#fff]">
+            <div
+              style={{
+                position: "relative",
+                paddingBottom: "56.25%",
+                height: "0"
+              }}
+            >
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Spinner className="h-8 w-8 text-white/70" />
+              </div>
+              <iframe
+                key={id}
+                id="loom-embed"
+                title={lesson.name}
+                src={`https://www.loom.com/embed/${
+                  lesson.loomUrl.split(/(?:share|embed)\//)[1]?.split("?")[0]
+                }?hideEmbedTopBar=true`}
+                allowFullScreen
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: "100%",
+                  height: "100%"
+                }}
+              />
+            </div>
+          </div>
+
+          <div className="mt-3 flex items-center justify-end">
+            <Share
+              text={typeof window !== "undefined" ? window.location.href : ""}
             />
           </div>
-        </div>
-        <div
-          className="dark w-full h-12 rounded-b-lg flex items-center justify-end gap-2 px-3"
-          style={{
-            backgroundColor: module.background
-          }}
-        >
-          <Share
-            text={typeof window !== "undefined" ? window.location.href : ""}
-          />
-        </div>
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-[1fr_360px] gap-6">
-        <div className="flex flex-col w-full">
-          <div
-            className="border rounded-lg rounded-b-none p-4"
-            style={{
-              backgroundColor: module?.background,
-              color: module?.foreground
-            }}
-          >
-            <div className="flex flex-col gap-4">
-              <div className="flex items-start gap-4">
-                <div
-                  className="flex-shrink-0 size-12 text-2xl p-3 rounded-lg bg-black/20"
-                  style={{
-                    color: module?.foreground
-                  }}
-                >
-                  {course.icon}
-                </div>
-                <div className="flex flex-col">
-                  <h1 className="uppercase text-[10px] font-display font-bold">
-                    Lesson
-                  </h1>
-                  <h2 className="text-2xl font-display tracking-tight">
-                    {lesson.name}
-                  </h2>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="flex flex-col gap-4 border rounded-b-lg border-t-0 px-6 py-4">
-            <h4 className="text-lg font-display font-bold">Description</h4>
-            <p className="text-base text-muted-foreground">
-              {lesson.description}
+          <div className="guide-prose mt-8 max-w-2xl">
+            <h2 className="text-ed-16 font-demi text-ed-ink">
+              About this lesson
+            </h2>
+            <p className="mt-2">
+              <GlossaryText>{lesson.description}</GlossaryText>
             </p>
           </div>
         </div>
 
-        {/* Right Sidebar */}
-        <div className="flex flex-col gap-4">
-          {/* Navigation Buttons */}
-          <div className="flex gap-2">
-            <Button
-              variant="secondary"
-              leftIcon={<LuChevronLeft className="size-4" />}
-              disabled={!previousLesson}
-              asChild={!!previousLesson}
-              className={!previousLesson ? "opacity-50 cursor-not-allowed" : ""}
-            >
-              {previousLesson ? (
-                <Link to={path.to.lesson(previousLesson.id)}>
-                  Previous Lesson
-                </Link>
-              ) : (
-                <span>Previous Lesson</span>
+        {/* Right rail */}
+        <div className="flex flex-col gap-6 xl:sticky xl:top-24 xl:self-start">
+          {(previousLesson || nextLesson) && (
+            <div className="flex flex-col gap-3">
+              {previousLesson && (
+                <ChapterCard
+                  dir="prev"
+                  title={previousLesson.name}
+                  to={path.to.lesson(previousLesson.id)}
+                />
               )}
-            </Button>
-
-            <Button
-              variant={!nextLesson ? "secondary" : "primary"}
-              rightIcon={<LuChevronRight className="size-4" />}
-              disabled={!nextLesson}
-              asChild={!!nextLesson}
-              className={!nextLesson ? "opacity-50 cursor-not-allowed" : ""}
-            >
-              {nextLesson ? (
-                <Link to={path.to.lesson(nextLesson.id)}>Next Lesson</Link>
-              ) : (
-                <span>Next Lesson</span>
+              {nextLesson && (
+                <ChapterCard
+                  dir="next"
+                  title={nextLesson.name}
+                  to={path.to.lesson(nextLesson.id)}
+                />
               )}
-            </Button>
-          </div>
+            </div>
+          )}
 
-          {/* Lesson List */}
-          <div className="border rounded-lg p-4">
-            <h3 className="text-sm font-display font-bold text-muted-foreground mb-3">
+          <div>
+            <p className="mb-2 px-1 font-mono text-ed-11 font-semibold uppercase tracking-[0.08em] text-ed-ink/50">
               Lessons in this topic
-            </h3>
-            <div className="flex flex-col gap-1">
+            </p>
+            <div className="flex flex-col gap-0.5">
               {topic.lessons.map((topicLesson) => {
                 const isCompleted = completedLessons.includes(topicLesson.id);
-
+                const isCurrent = topicLesson.id === lesson.id;
                 return (
                   <Link
                     key={topicLesson.id}
                     to={path.to.lesson(topicLesson.id)}
-                    className={`flex items-center justify-between gap-2 w-full rounded-md py-2 px-3 text-sm transition-colors ${
-                      topicLesson.id === lesson.id
-                        ? "bg-accent text-accent-foreground"
-                        : "hover:bg-accent"
+                    className={`flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-ed-15 no-underline transition-colors ${
+                      isCurrent
+                        ? "bg-ed-accent-fill font-demi text-ed-blue-text"
+                        : "font-book text-ed-ink-78 hover:bg-ed-ink/[0.04]"
                     }`}
                   >
-                    <div className="flex items-center gap-2">
-                      {isCompleted ? (
-                        <LuCircleCheck className="size-4 flex-shrink-0 text-emerald-500" />
-                      ) : (
-                        <LuCirclePlay className="size-4 flex-shrink-0 text-muted-foreground" />
-                      )}
-                      <span
-                        className={
-                          topicLesson.id === lesson.id ? "font-medium" : ""
-                        }
-                      >
-                        {topicLesson.name}
-                      </span>
-                    </div>
-                    <span className="text-muted-foreground text-xs">
+                    <span className="flex min-w-0 items-center gap-2.5">
+                      <LessonThumb completed={isCompleted} className="w-12" />
+                      <span className="truncate">{topicLesson.name}</span>
+                    </span>
+                    <span className="shrink-0 font-mono text-ed-11 text-ed-ink/40">
                       {formatDuration(topicLesson.duration)}
                     </span>
                   </Link>
@@ -351,34 +301,65 @@ export default function LessonRoute() {
               })}
             </div>
           </div>
+
           {hasChallenge ? (
             isChallengeCompleted ? (
-              <Button
-                variant="primary"
-                leftIcon={
-                  <LuCircleCheck className="size-4 flex-shrink-0 text-emerald-500" />
-                }
-              >
-                Topic Challenge Completed
-              </Button>
+              <div className="callout-box inline-flex items-center gap-2 px-4 py-2.5 text-ed-14 font-book text-ed-ink-78">
+                <LuCircleCheck className="size-4 shrink-0 text-ed-green-strong" />
+                Challenge completed
+              </div>
             ) : (
-              <Button
-                variant="secondary"
-                leftIcon={<LuFlag className="size-4" />}
-                asChild
+              <Link
+                to={path.to.challenge(topic.id)}
+                className="group relative inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 no-underline"
               >
-                <Link to={path.to.challenge(topic.id)}>
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0 rounded-lg cta-btn-dark"
+                />
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0 rounded-lg btn-dark-hover opacity-0 transition-opacity duration-200 ease-out group-hover:opacity-100"
+                />
+                <span className="text-on-dark relative z-10 inline-flex items-center gap-2 text-ed-14 font-book tracking-[0.15px]">
+                  <LuFlag className="size-3.5" />
                   {isChallengeAttempted
-                    ? `Retake Topic Challenge (${challengeAttemptCount} attempt${
-                        challengeAttemptCount === 1 ? "" : "s"
-                      })`
-                    : "Take Topic Challenge"}
-                </Link>
-              </Button>
+                    ? `Retake challenge (${challengeAttemptCount})`
+                    : "Take topic challenge"}
+                </span>
+              </Link>
             )
           ) : null}
         </div>
       </div>
-    </div>
+    </LearnShell>
+  );
+}
+
+function ClockIcon() {
+  return (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 14 14"
+      fill="none"
+      aria-hidden="true"
+      className="shrink-0"
+    >
+      <circle
+        cx="7"
+        cy="7"
+        r="5.25"
+        stroke="rgba(38,35,35,0.42)"
+        strokeWidth="1.2"
+      />
+      <path
+        d="M7 4.2V7l1.9 1.15"
+        stroke="rgba(38,35,35,0.42)"
+        strokeWidth="1.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }

@@ -1,5 +1,5 @@
-// Method (BOM/BOP) importer — backs the `bom` and `operations` CSV imports.
-// One row-type-multiplexed engine (ADR-0002): a single file carries
+// Method (BOM/BOP) importer — backs the `bom`, `operations`, and `partWithMethod`
+// CSV imports. One row-type-multiplexed engine (ADR-0002): a single file carries
 // PART/BOM/BOP/STEP/TOOL/PARAM rows, each non-PART row naming its parent part
 // explicitly. Atomic per parent part and create-only / fill-if-empty (ADR-0001).
 //
@@ -109,7 +109,7 @@ function normalizeRowType(
 export async function importMethods(
   db: Kysely<DB>,
   args: {
-    table: "bom" | "operations";
+    table: "bom" | "operations" | "partWithMethod";
     mappedRecords: Rec[];
     companyId: string;
     userId: string;

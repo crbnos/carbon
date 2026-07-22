@@ -1,0 +1,80 @@
+/* Editorial warm-paper palette — ported from the docs app (docs/app/global.css).
+ * Single source of truth for the hand-built editorial components ported into
+ * academy (SiteHeader, CourseSidebar, ChapterCard, Breadcrumb, reader layout).
+ * Defining them in @theme generates utilities (text-ed-ink, bg-ed-paper,
+ * border-ed-hairline, …) and exposes them as CSS vars for inline styles.
+ * Light-only surface by design — matches the docs Guide/Reference. */
+
+/* Expose --brand (set in tailwind.css :root) as Tailwind color utilities. */
+@theme inline {
+  --color-brand: hsl(var(--brand));
+}
+
+@theme {
+  --color-ed-ink: #262323;
+  --color-ed-ink-78: rgba(38, 35, 35, 0.78);
+  --color-ed-ink-66: rgba(38, 35, 35, 0.66);
+  --color-ed-ink-60: rgba(38, 35, 35, 0.6);
+  --color-ed-ink-45: rgba(38, 35, 35, 0.45);
+  --color-ed-hairline: #e7e7e3;
+  --color-ed-paper: #fbfbf8;
+  --color-ed-svg-line: #d8d7d2;
+  --color-ed-brand: #00b0ff;
+  --color-ed-brand-ink: #1e84b0;
+  --color-ed-accent-fill: #eaf8ff;
+  --color-ed-amber-fill: #fff2d8;
+  --color-ed-amber-stroke: #e6cfa3;
+  --color-ed-amber-text: #9c7136;
+  --color-ed-header: #f1f1ec; /* table header strip */
+  --color-ed-inset: #f6f6f1; /* expanded row panel */
+  --color-ed-row-hover: rgba(38, 35, 35, 0.025); /* row hover */
+
+  /* Warm-gray ramp + status + dark-surface + link families. Light-only. */
+  --color-ed-warm-100: #f5f5f2;
+  --color-ed-warm-150: #ecece7;
+  --color-ed-warm-300: #e3e3df;
+  --color-ed-warm-400: #dadad5;
+  --color-ed-warm-500: #d2d2cc;
+  --color-ed-text-faint: #c9c9c5;
+  --color-ed-text-muted: #9a9a96;
+  --color-ed-graphite: #4b4b4a;
+  --color-ed-dark-bg: #1b1b1a;
+  --color-ed-dark-surface: #262624;
+  --color-ed-dark-line: #2a2a28;
+  --color-ed-dark-line-2: #3a3a38;
+  --color-ed-dark-line-3: #4a4a47;
+  --color-ed-green-bg: #e4f8da;
+  --color-ed-green-border: #a8db91;
+  --color-ed-green-text: #4f9140;
+  --color-ed-green-strong: #3f9142;
+  --color-ed-red-bg: #fce8e6;
+  --color-ed-red-border: #f2c0bc;
+  --color-ed-red: #b3261e;
+  --color-ed-red-bright: #e5484d;
+  --color-ed-blue-bg: #dff5ff;
+  --color-ed-blue-bg-strong: #b2e7ff;
+  --color-ed-blue-border: #a9daf3;
+  --color-ed-blue-text: #0c6e96;
+  --color-ed-blue-mid: #3583a8;
+  --color-ed-blue-deep: #17729b;
+  --color-ed-brown: #a76451;
+
+  /* Editorial DM Sans weights between Tailwind's normal(400)/medium(500)/semibold(600). */
+  --font-weight-book: 460;
+  --font-weight-demi: 530;
+  --font-weight-semi: 560;
+
+  /* Editorial size ramp (font-size only — pairs with explicit leading-*). Named by px. */
+  --text-ed-10: 0.625rem;
+  --text-ed-11: 0.6875rem;
+  --text-ed-12: 0.75rem;
+  --text-ed-13: 0.8125rem;
+  --text-ed-14: 0.875rem;
+  --text-ed-15: 0.9375rem;
+  --text-ed-16: 1rem;
+  --text-ed-18: 1.125rem;
+  --text-ed-20: 1.25rem;
+  --text-ed-24: 1.5rem;
+  --text-ed-32: 2rem;
+  --text-ed-40: 2.5rem;
+}

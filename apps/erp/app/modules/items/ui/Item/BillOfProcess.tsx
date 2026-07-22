@@ -1979,7 +1979,7 @@ function AttributesForm({
       )}
 
       {steps.length > 0 && (
-        <div className="border bg-card rounded-lg">
+        <div className="border rounded-lg">
           <Reorder.Group
             axis="y"
             values={sortOrder}
@@ -2003,9 +2003,11 @@ function AttributesForm({
                       typeOptions={typeOptions}
                       isDisabled={isDisabled}
                       dragControls={dragControls}
-                      className={
-                        index === sortOrder.length - 1 ? "border-none" : ""
-                      }
+                      className={cn(
+                        index === 0 && "rounded-t-lg",
+                        index === sortOrder.length - 1 &&
+                          "rounded-b-lg border-none"
+                      )}
                       configurable={configurable}
                       rulesByField={rulesByField}
                       onConfigure={onConfigure}
@@ -2154,7 +2156,7 @@ function AttributesListItem({
       rulesByField.has(getFieldKey(`attribute:${id}:maxValue`, operationId)));
 
   return (
-    <div className={cn("border-b p-6", className)}>
+    <div className={cn("border-b p-6 bg-card", className)}>
       {disclosure.isOpen ? (
         <ValidatedForm
           action={path.to.methodOperationStep(id)}
@@ -2843,7 +2845,10 @@ function ToolsForm({
                 key={t.id}
                 tool={t}
                 operationId={operationId}
-                className={index === tools.length - 1 ? "border-none" : ""}
+                className={cn(
+                  index === 0 && "rounded-t-lg",
+                  index === tools.length - 1 && "rounded-b-lg border-none"
+                )}
                 isDisabled={isDisabled}
               />
             ))}

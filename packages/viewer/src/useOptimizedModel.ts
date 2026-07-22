@@ -78,6 +78,7 @@ async function postModelAction(action: string, modelUploadId: string) {
  */
 export function useOptimizedModel({
   modelPath,
+  modelUploadId: explicitModelUploadId = null,
   companyId,
   /** A just-dropped local File (ERP upload flow) — counts toward the raw tier. */
   file = null,
@@ -86,13 +87,21 @@ export function useOptimizedModel({
   paths = DEFAULT_PATHS
 }: {
   modelPath: string | null;
+  /**
+   * The authoritative `modelUpload.id`, when the caller has it (MES has it as
+   * `operation.itemModelId ?? job.modelId`). Preferred over deriving the id from
+   * `modelPath`: legacy rows whose stored path isn't `${company}/models/${id}.ext`
+   * derive a phantom id, which 404s the artifacts/reoptimise lookups and hides an
+   * already-optimised model. Falls back to path derivation when not supplied.
+   */
+  modelUploadId?: string | null;
   companyId: string;
   file?: File | null;
   enabled?: boolean;
   paths?: typeof DEFAULT_PATHS;
 }) {
   const queryClient = useQueryClient();
-  const modelUploadId = modelIdFromPath(modelPath);
+  const modelUploadId = explicitModelUploadId ?? modelIdFromPath(modelPath);
   const gracePolls = useRef(0);
 
   const query = useQuery<ModelArtifacts>({
@@ -105,7 +114,12 @@ export function useOptimizedModel({
     },
     staleTime: 0,
     gcTime: 5 * 60 * 1000,
+    // A missing model (unknown id → artifacts 404) settles as an error with no
+    // data; don't poll it forever. Auto-fire is already gated on `artifacts`
+    // being present, so an errored query never triggers an optimise.
+    retry: 1,
     refetchInterval: (q) => {
+      if (q.state.status === "error") return false;
       const d = q.state.data;
       if (!d) return POLL_MS;
       if (d.optimizedModelPath || d.glbPath) return false;
