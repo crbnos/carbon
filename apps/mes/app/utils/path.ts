@@ -21,6 +21,8 @@ export const path = {
       failureModes: `${api}/failure-modes`,
       modelArtifacts: (modelUploadId: string) =>
         generatePath(`${api}/model/artifacts/${modelUploadId}`),
+      modelOptimizeCancel: `${api}/model/optimize-cancel`,
+      modelReoptimize: `${api}/model/reoptimize`,
       pickedAllocation: (jobMaterialId: string) =>
         generatePath(`${api}/picked-allocation?jobMaterialId=${jobMaterialId}`),
       qualityIssueTypes: `${api}/quality-issue-types`,

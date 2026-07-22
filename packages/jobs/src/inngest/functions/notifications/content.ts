@@ -120,6 +120,20 @@ type EventContentOptions = {
   userId?: string;
 };
 
+function changeOrderStageDescription(
+  type: NotificationEvent,
+  readableId: string
+): string {
+  switch (type) {
+    case NotificationEvent.ChangeOrderStarted:
+      return `Change order ${readableId} has started`;
+    case NotificationEvent.ChangeOrderImplementation:
+      return `Change order ${readableId} has moved to implementation`;
+    default:
+      return `Change order ${readableId} is complete`;
+  }
+}
+
 async function buildEventContent(
   client: ReturnType<typeof getCarbonServiceRole>,
   type: NotificationEvent,
@@ -1071,7 +1085,9 @@ async function buildEventContent(
         }
 
         return {
-          description: `Quality document "${qd.data.name ?? "Untitled"}" ${docPhrase}`,
+          description: `Quality document "${
+            qd.data.name ?? "Untitled"
+          }" ${docPhrase}`,
           details: buildDetails([
             {
               label: "Version",
@@ -1091,36 +1107,56 @@ async function buildEventContent(
       };
     }
 
-    case NotificationEvent.ChangeOrderSubmittedForReview:
-    case NotificationEvent.ChangeOrderApproved:
-    case NotificationEvent.ChangeOrderRejected:
-    case NotificationEvent.ChangeOrderReleased: {
-      const changeOrder = await client
+    case NotificationEvent.ChangeOrderStarted:
+    case NotificationEvent.ChangeOrderImplementation:
+    case NotificationEvent.ChangeOrderDone: {
+      // Company-scope both lookups: readable ids (ECO-…) repeat across tenants.
+      const companyId = opts?.companyId;
+      if (!companyId) {
+        throw new Error(
+          `companyId is required to resolve change order ${documentId}`
+        );
+      }
+
+      // documentId may be the row id (co_…) or the readable id (ECO-…) — try both.
+      const rowLookup = await client
         .from("changeOrder")
         .select("changeOrderId, status")
         .eq("id", documentId)
-        .single();
-
-      if (changeOrder.error || !changeOrder.data) {
-        console.error("Failed to get changeOrder", changeOrder.error);
-        throw changeOrder.error;
+        .eq("companyId", companyId)
+        .maybeSingle();
+      if (rowLookup.error) {
+        console.error("Failed to get changeOrder", rowLookup.error);
+        throw rowLookup.error;
       }
 
-      const readableId = changeOrder.data.changeOrderId;
-      const description =
-        type === NotificationEvent.ChangeOrderSubmittedForReview
-          ? `Change order ${readableId} is ready for your review`
-          : type === NotificationEvent.ChangeOrderApproved
-            ? `Change order ${readableId} was approved`
-            : type === NotificationEvent.ChangeOrderRejected
-              ? `Change order ${readableId} was rejected`
-              : `Change order ${readableId} was released`;
+      let changeOrderData = rowLookup.data;
+      if (!changeOrderData) {
+        const readableIdLookup = await client
+          .from("changeOrder")
+          .select("changeOrderId, status")
+          .eq("changeOrderId", documentId)
+          .eq("companyId", companyId)
+          .maybeSingle();
+        if (readableIdLookup.error) {
+          console.error("Failed to get changeOrder", readableIdLookup.error);
+          throw readableIdLookup.error;
+        }
+        changeOrderData = readableIdLookup.data;
+      }
+
+      if (!changeOrderData) {
+        throw new Error(`Change order not found for documentId ${documentId}`);
+      }
+
+      const readableId = changeOrderData.changeOrderId;
+      const description = changeOrderStageDescription(type, readableId);
 
       return {
         description,
         reference: readableId ?? undefined,
         details: buildDetails([
-          { label: "Status", value: changeOrder.data?.status }
+          { label: "Status", value: changeOrderData?.status }
         ])
       };
     }

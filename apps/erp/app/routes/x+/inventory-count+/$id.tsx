@@ -55,6 +55,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
+  // True blind counting: the system quantity (and the variance it can be
+  // derived from) must not reach the client until the count is Posted. That
+  // includes filtering on them — a crafted ?filter=systemQuantity:gt:0 would
+  // reveal which lines have stock — so drop those filters while blind.
+  const isBlindEntry =
+    inventoryCount.data.isBlind && inventoryCount.data.status !== "Posted";
+  const allowedFilters = isBlindEntry
+    ? filters?.filter((f) => !["systemQuantity", "variance"].includes(f.column))
+    : filters;
+
   const [
     lines,
     summary,
@@ -70,7 +80,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       limit,
       offset,
       sorts,
-      filters
+      filters: allowedFilters
     }),
     getInventoryCountLineSummary(client, id, companyId),
     // Adjustments this count has posted (empty for a never-posted Draft).
@@ -88,14 +98,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     )
   ]);
 
-  // True blind counting: the system quantity (and the variance it can be derived
-  // from) must not reach the client until the count is Posted, so the counter
-  // never sees the expected figure while it can still influence the result.
   // Hiding the columns client-side isn't enough — the values would ship in the
   // loader payload and CSV export. Strip them server-side through Draft AND
   // Pending; they are revealed only once Posted.
-  const isBlindEntry =
-    inventoryCount.data.isBlind && inventoryCount.data.status !== "Posted";
   const lineData = (lines.data ?? []).map((line) =>
     isBlindEntry
       ? // Withhold System Qty (and the variance it can be derived from). Use null,

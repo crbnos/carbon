@@ -8,10 +8,10 @@ import { data } from "react-router";
 // best-effort cancels the assembler job, which drops the compute result and
 // fires the completion callback so the waiting Inngest run wakes and fails
 // non-retriably instead of later overwriting the row with a success.
+// Employee-level like reoptimize — cancelling your own preview generation
+// is part of viewing, not part editing.
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    update: "parts"
-  });
+  const { client, companyId } = await requirePermissions(request, {});
 
   const formData = await request.formData();
   const modelUploadId = formData.get("modelUploadId") as string | null;

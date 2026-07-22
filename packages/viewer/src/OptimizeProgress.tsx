@@ -1,8 +1,6 @@
 import { BarProgress, Button, cn } from "@carbon/react";
 import { useEffect, useState } from "react";
 import { LuCheck, LuLoaderCircle } from "react-icons/lu";
-import { useFetcher } from "react-router";
-import { path } from "~/utils/path";
 
 const STEPS = [
   "Reading the CAD file",
@@ -22,21 +20,21 @@ function formatElapsed(seconds: number) {
 }
 
 /**
- * Staged checklist for a running model optimise (same visual language as
- * ModelConvertProgress). Shown while the eager optimise runs and no preview
- * tier can render. Cancel stamps the row Failed and cancels the assembler job.
+ * Staged checklist for a running model optimise — presentational; the host
+ * wires Cancel to its own optimise-cancel route (ERP CadModel, MES model tab).
  */
-export function ModelOptimizeProgress({
-  modelUploadId,
+export function OptimizeProgress({
   queued = false,
+  onCancel,
+  cancelling = false,
   className
 }: {
-  modelUploadId: string;
   /** Job accepted but not picked up yet — first step reads as waiting. */
   queued?: boolean;
+  onCancel?: () => void;
+  cancelling?: boolean;
   className?: string;
 }) {
-  const cancelFetcher = useFetcher<{ success: boolean }>();
   const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
@@ -100,21 +98,17 @@ export function ModelOptimizeProgress({
         <p className="text-xs tabular-nums text-muted-foreground">
           {formatElapsed(elapsed)}
         </p>
-        <cancelFetcher.Form
-          method="post"
-          action={path.to.api.modelOptimizeCancel}
-        >
-          <input type="hidden" name="modelUploadId" value={modelUploadId} />
+        {onCancel && (
           <Button
-            type="submit"
             size="sm"
             variant="ghost"
-            isLoading={cancelFetcher.state !== "idle"}
-            isDisabled={cancelFetcher.state !== "idle"}
+            onClick={onCancel}
+            isLoading={cancelling}
+            isDisabled={cancelling}
           >
             Cancel
           </Button>
-        </cancelFetcher.Form>
+        )}
       </div>
     </div>
   );

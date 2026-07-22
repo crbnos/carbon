@@ -1472,7 +1472,7 @@ serve(async (req: Request) => {
                 requiresSerialTracking:
                   child.data.itemTrackingType === "Serial",
                 unitOfMeasureCode: child.data.unitOfMeasureCode,
-                unitCost: child.data.unitCost,
+                unitCost: child.data.unitCost ?? 0,
                 itemScrapPercentage,
                 storageUnitId: await getStorageUnitId(
                   trx,
@@ -4796,7 +4796,7 @@ serve(async (req: Request) => {
                   quantity: child.data.quantity,
                   storageUnitId: child.data.storageUnitId,
                   unitOfMeasureCode: child.data.unitOfMeasureCode,
-                  unitCost: child.data.unitCost, // TODO: get unit cost
+                  unitCost: child.data.unitCost ?? 0, // TODO: get real unit cost
                   companyId,
                   createdBy: userId,
                   customFields: {},
@@ -5283,7 +5283,7 @@ serve(async (req: Request) => {
                           ],
                     quantity: child.data.quantity,
                     storageUnitId: child.data.storageUnitId,
-                    unitCost: child.data.unitCost, // TODO: get unit cost
+                    unitCost: child.data.unitCost ?? 0, // TODO: get real unit cost
                     unitOfMeasureCode: child.data.unitOfMeasureCode,
                     companyId,
                     createdBy: userId,

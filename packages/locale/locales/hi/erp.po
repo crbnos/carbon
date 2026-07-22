@@ -15,6 +15,12 @@ msgstr ""
 msgid " A supplier is a business or person who sells you parts or services."
 msgstr "एक आपूर्तिकर्ता एक व्यवसाय या व्यक्ति है जो आपको पार्ट्स या सेवाएं बेचता है।"
 
+msgid ", {residual}% residual"
+msgstr ", {residual}% अवशेष"
+
+msgid ", {years}yr"
+msgstr ", {years}वर्ष"
+
 #. placeholder {0}: fieldDef?.label ?? condition.field
 msgid "\"{0}\" isn't available on the selected surface(s). Pick another field."
 msgstr "\"{0}\" चयनित सतह(सतहों) पर उपलब्ध नहीं है। कोई अन्य फ़ील्ड चुनें।"
@@ -137,6 +143,9 @@ msgstr "{uncounted, plural, one {# अनगिनती लाइन} other {# 
 
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {# लाइन अपेक्षित मात्रा से भिन्न है} other {# लाइनें अपेक्षित मात्रा से भिन्न हैं}}"
+
+msgid "{years}yr"
+msgstr "{years}वर्ष"
 
 msgid "/month/user"
 msgstr "/माह/उपयोगकर्ता"
@@ -596,6 +605,9 @@ msgstr "एक पंक्ति जोड़ें"
 msgid "Add a step"
 msgstr "एक चरण जोड़ें"
 
+msgid "Add Account"
+msgstr "खाता जोड़ें"
+
 msgid "Add Actions"
 msgstr "कार्य जोड़ें"
 
@@ -625,6 +637,9 @@ msgstr "शर्त जोड़ें"
 
 msgid "Add Contractor"
 msgstr "ठेकेदार जोड़ें"
+
+msgid "Add cost center"
+msgstr "लागत केंद्र जोड़ें"
 
 msgid "Add Entry"
 msgstr "प्रविष्टि जोड़ें"
@@ -791,6 +806,9 @@ msgstr "सभी ऑडिट लॉग"
 
 msgid "All changes to auditable entities are being recorded."
 msgstr "सभी ऑडिट योग्य संस्थाओं में किए गए परिवर्तन रिकॉर्ड किए जा रहे हैं।"
+
+msgid "All Companies"
+msgstr "सभी कंपनियां"
 
 msgid "All Customers"
 msgstr "सभी ग्राहक"
@@ -1119,6 +1137,7 @@ msgstr "क्या आप सुनिश्चित हैं कि आप 
 msgid "Are you sure you want to delete {0} from this operation? This cannot be undone."
 msgstr "क्या आप सुनिश्चित हैं कि आप इस ऑपरेशन से {0} को हटाना चाहते हैं? यह पूर्ववत नहीं किया जा सकता।"
 
+#. placeholder {0}: selectedEntry.journalEntryId
 #. placeholder {0}: selectedGroup.name
 msgid "Are you sure you want to delete {0}?"
 msgstr "क्या आप {0} को हटाना सुनिश्चित हैं?"
@@ -1151,6 +1170,10 @@ msgstr "क्या आप सुनिश्चित हैं कि आप 
 #. placeholder {0}: apiKey.name
 msgid "Are you sure you want to delete the API key: {0}? This cannot be undone."
 msgstr "क्या आप सुनिश्चित हैं कि आप API कुंजी को हटाना चाहते हैं: {0}? यह पूर्ववत नहीं किया जा सकता।"
+
+#. placeholder {0}: selectedClass.name
+msgid "Are you sure you want to delete the asset class: {0}? This cannot be undone."
+msgstr "क्या आप निश्चित हैं कि आप परिसंपत्ति वर्ग हटाना चाहते हैं: {0}? यह पूर्ववत नहीं किया जा सकता।"
 
 #. placeholder {0}: requiredAction.name
 msgid "Are you sure you want to delete the change order action: {0}? This cannot be undone."
@@ -1499,6 +1522,9 @@ msgstr "निपटान पर संपत्ति लागत"
 msgid "Asset Cost on Disposal (default)"
 msgstr "निपटान पर संपत्ति लागत (डिफ़ॉल्ट)"
 
+msgid "Asset ID"
+msgstr "परिसंपत्ति ID"
+
 msgid "Assets"
 msgstr "संपत्तियां"
 
@@ -1730,6 +1756,9 @@ msgstr "बैच ट्रैकिंग"
 msgid "Batch Tracking"
 msgstr "बैच ट्रैकिंग"
 
+msgid "Beginning"
+msgstr "आरंभ"
+
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
 msgstr "चरणबद्ध रूप से बंद किया जा रहा है — उत्तराधिकारी: <0>{0}</0>"
@@ -1803,6 +1832,9 @@ msgstr "गाइडेड कार्यान्वयन पर चर्च
 
 msgid "Book a call with Carbon"
 msgstr "Carbon के साथ कॉल बुक करें"
+
+msgid "Book Depreciation"
+msgstr "पुस्तक मूल्यह्रास"
 
 msgid "Breadcrumb"
 msgstr "ब्रेडक्रम्ब"
@@ -2832,6 +2864,9 @@ msgstr "लागत केंद्र"
 msgid "Cost Center"
 msgstr "लागत केंद्र"
 
+msgid "Cost Center Name"
+msgstr "लागत केंद्र का नाम"
+
 msgid "cost centers"
 msgstr "लागत केंद्र"
 
@@ -3023,6 +3058,9 @@ msgstr "बनाया गया परिवर्तन आदेश प्�
 msgid "Created consumable"
 msgstr "उपभोग्य बनाया गया"
 
+msgid "Created cost center"
+msgstr "लागत केंद्र बनाया गया"
+
 msgid "Created customer portal"
 msgstr "ग्राहक पोर्टल बनाया गया"
 
@@ -3133,6 +3171,10 @@ msgstr "भाग बनाया जा रहा है..."
 msgid "Credit"
 msgstr "क्रेडिट"
 
+#. placeholder {0}: parentCurrency ?? "Translated"
+msgid "Credit ({0})"
+msgstr "जमा ({0})"
+
 msgid "Credit / Debit Memos"
 msgstr "क्रेडिट / डेबिट मेमो"
 
@@ -3150,6 +3192,9 @@ msgstr "जब विनिर्माण लागत को WIP में अ
 
 msgid "Credit Memo"
 msgstr "क्रेडिट मेमो"
+
+msgid "Credits"
+msgstr "जमा"
 
 msgid "Credits & Debits"
 msgstr "क्रेडिट और डेबिट"
@@ -3491,11 +3536,18 @@ msgstr "समय सीमा प्रकार"
 msgid "Debit"
 msgstr "डेबिट"
 
+#. placeholder {0}: parentCurrency ?? "Translated"
+msgid "Debit ({0})"
+msgstr "नामे ({0})"
+
 msgid "Debit Account"
 msgstr "डेबिट खाता"
 
 msgid "Debit Memo"
 msgstr "डेबिट मेमो"
+
+msgid "Debits"
+msgstr "नामे"
 
 msgid "Decide what an operator sees if they try to issue a batch or serial that's already expired."
 msgstr "तय करें कि यदि कोई ऑपरेटर एक बैच या सीरियल जारी करने का प्रयास करता है जो पहले से ही समाप्त हो गया है तो वह क्या देखता है।"
@@ -3647,6 +3699,12 @@ msgstr "कार्रवाई हटाएं"
 msgid "Delete API Key"
 msgstr "API Key हटाएं"
 
+msgid "Delete Asset"
+msgstr "परिसंपत्ति हटाएं"
+
+msgid "Delete Asset Class"
+msgstr "परिसंपत्ति वर्ग हटाएं"
+
 msgid "Delete Assignment"
 msgstr "असाइनमेंट हटाएं"
 
@@ -3689,6 +3747,9 @@ msgstr "ग्राहक प्रकार हटाएं"
 msgid "Delete Department"
 msgstr "विभाग हटाएं"
 
+msgid "Delete Dimension"
+msgstr "आयाम हटाएं"
+
 msgid "Delete Dispatch"
 msgstr "डिस्पैच हटाएं"
 
@@ -3715,6 +3776,12 @@ msgstr "समस्या हटाएं"
 
 msgid "Delete Item Group"
 msgstr "आइटम समूह हटाएं"
+
+msgid "Delete Journal Entry"
+msgstr "पत्रिका प्रविष्टि हटाएं"
+
+msgid "Delete line"
+msgstr "पंक्ति हटाएं"
 
 msgid "Delete Line"
 msgstr "लाइन हटाएं"
@@ -4093,6 +4160,9 @@ msgstr "निपटान करना"
 msgid "Dispose Asset"
 msgstr "संपत्ति निपटान"
 
+msgid "Disposed"
+msgstr "निपटारा किया गया"
+
 msgid "Disposition"
 msgstr "निपटान"
 
@@ -4311,6 +4381,9 @@ msgstr "API Key संपादित करें"
 msgid "Edit Approval Rule"
 msgstr "अनुमोदन नियम संपादित करें"
 
+msgid "Edit Asset"
+msgstr "परिसंपत्ति संपादित करें"
+
 msgid "Edit Asset Class"
 msgstr "संपत्ति वर्ग संपादित करें"
 
@@ -4343,6 +4416,9 @@ msgstr "संपर्क संपादित करें"
 
 msgid "Edit Contractor"
 msgstr "ठेकेदार संपादित करें"
+
+msgid "Edit Cost Center"
+msgstr "लागत केंद्र संपादित करें"
 
 msgid "Edit Count"
 msgstr "गणना संपादित करें"
@@ -4406,6 +4482,9 @@ msgstr "निरीक्षण दस्तावेज़ संपादि�
 
 msgid "Edit Item Group"
 msgstr "आइटम ग्रुप संपादित करें"
+
+msgid "Edit Journal Entry"
+msgstr "पत्रिका प्रविष्टि संपादित करें"
 
 msgid "Edit Kanban"
 msgstr "कनबन संपादित करें"
@@ -4599,6 +4678,9 @@ msgstr "वेबहुक संपादित करें"
 msgid "Edit Work Center"
 msgstr "कार्य केंद्र संपादित करें"
 
+msgid "Eliminated"
+msgstr "समाप्त किया गया"
+
 msgid "email"
 msgstr "ईमेल"
 
@@ -4709,6 +4791,13 @@ msgstr "पिछली तिमाही का अंत"
 
 msgid "End Time"
 msgstr "समाप्ति समय"
+
+msgid "Ending"
+msgstr "समाप्त"
+
+#. placeholder {0}: parentCurrency ?? "Translated"
+msgid "Ending ({0})"
+msgstr "समाप्त ({0})"
 
 msgid "Enforce — edits are blocked"
 msgstr "लागू करें — संपादन अवरुद्ध हैं"
@@ -5078,6 +5167,10 @@ msgid "Failed to create consumable: {0}"
 msgstr "उपभोग्य बनाने में विफल: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create cost center: {0}"
+msgstr "लागत केंद्र बनाने में विफल: {0}"
+
+#. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create customer portal: {0}"
 msgstr "ग्राहक पोर्टल बनाने में विफल: {0}"
 
@@ -5273,6 +5366,10 @@ msgstr "आपूर्तिकर्ता भाग विवरण लोड
 
 msgid "Failed to load tracked entities"
 msgstr "ट्रैक किए गए इकाइयों को लोड करने में विफल"
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to move account: {0}"
+msgstr "खाता स्थानांतरित करने में विफल: {0}"
 
 msgid "Failed to remove image: {errorMessage}"
 msgstr "छवि हटाने में विफल: {errorMessage}"
@@ -5582,6 +5679,9 @@ msgstr "शुक्रवार"
 msgid "From {0}"
 msgstr "{0} से"
 
+msgid "From / To"
+msgstr "से / को"
+
 msgid "From customer"
 msgstr "ग्राहक से"
 
@@ -5596,6 +5696,9 @@ msgstr "स्टोरेज यूनिट से"
 
 msgid "Fulfillment Location"
 msgstr "पूरा करने का स्थान"
+
+msgid "Fully Depreciated"
+msgstr "पूरी तरह से मूल्यह्रास"
 
 msgid "Fully trained for"
 msgstr "पूरी तरह प्रशिक्षित"
@@ -6198,6 +6301,9 @@ msgstr "चयनित अवधि में"
 msgid "In stock"
 msgstr "स्टॉक में"
 
+msgid "In stock only"
+msgstr "केवल स्टॉक में"
+
 msgid "In the loop together"
 msgstr "एक साथ लूप में"
 
@@ -6269,6 +6375,9 @@ msgstr "बुनियादी ढांचा"
 
 msgid "Inherit From Materials"
 msgstr "सामग्री से विरासत में प्राप्त करें"
+
+msgid "Inherited"
+msgstr "विरासत में मिला"
 
 msgid "Inherited from parent"
 msgstr "माता-पिता से विरासत में मिला"
@@ -6350,6 +6459,12 @@ msgstr "यहाँ नाम न किए गए इंटीग्रेश�
 
 msgid "Intercompany"
 msgstr "अंतरकंपनी"
+
+msgid "Intercompany Balances"
+msgstr "अंतरकंपनी शेष"
+
+msgid "Intercompany Transactions"
+msgstr "अंतरकंपनी लेनदेन"
 
 msgid "Intercompany transactions involving this company that are still Unmatched should be matched and eliminated, so consolidated results don't double-count activity between entities."
 msgstr "इस कंपनी के साथ जुड़े अंतरकंपनी लेनदेन जो अभी भी बेजोड़ हैं, को मेल खाया और समाप्त किया जाना चाहिए, ताकि समेकित परिणाम संस्थाओं के बीच गतिविधि को दोहरी गिनती न करें।"
@@ -6864,6 +6979,9 @@ msgstr "लाइट मोड"
 msgid "Likelihood"
 msgstr "संभावना"
 
+msgid "Line description (optional)"
+msgstr "पंक्ति विवरण (वैकल्पिक)"
+
 msgid "Line Item Comparison"
 msgstr "लाइन आइटम तुलना"
 
@@ -6946,6 +7064,9 @@ msgstr "लोड हो रहा है..."
 
 msgid "Loading…"
 msgstr "लोड हो रहा है…"
+
+msgid "Local"
+msgstr "स्थानीय"
 
 msgid "location"
 msgstr "स्थान"
@@ -7061,6 +7182,9 @@ msgstr "मशीनें, सेल, स्टेशन"
 
 msgid "MACRS"
 msgstr "MACRS"
+
+msgid "MACRS {cls}-Year"
+msgstr "MACRS {cls}-वर्ष"
 
 msgid "MACRS Convention"
 msgstr "MACRS अभिसम्मति"
@@ -7263,6 +7387,9 @@ msgstr "किसी भी को मिलाएं (OR)"
 
 msgid "Match none"
 msgstr "कोई भी मेल न खाएं"
+
+msgid "Matched"
+msgstr "मेल खाया"
 
 msgid "matches"
 msgstr "मेल खाता है"
@@ -7546,6 +7673,9 @@ msgstr "अधिकांश चीजें यहां पकड़ी ज�
 msgid "Move"
 msgstr "स्थानांतरित करें"
 
+msgid "Move {accountName}"
+msgstr "{accountName} को स्थानांतरित करें"
+
 msgid "Move entities"
 msgstr "संस्थाओं को स्थानांतरित करें"
 
@@ -7561,6 +7691,9 @@ msgstr "मात्रा का कुछ हिस्सा एक नई ड
 msgid "Move to"
 msgstr "को स्थानांतरित करें"
 
+msgid "Move to Group"
+msgstr "समूह में ले जाएँ"
+
 msgid "Move to Trash"
 msgstr "ट्रैश में स्थानांतरित करें"
 
@@ -7568,6 +7701,9 @@ msgstr "ट्रैश में स्थानांतरित करें
 #. placeholder {1}: targetBucket === "parts" ? "Parts" : "Opportunity"
 msgid "Moved {0} to {1} bucket"
 msgstr "{0} को {1} बकेट में स्थानांतरित किया गया"
+
+msgid "Moved account"
+msgstr "खाता स्थानांतरित किया गया"
 
 msgid "Movements"
 msgstr "मूवमेंट्स"
@@ -7626,6 +7762,9 @@ msgstr "नकारात्मक समायोजन"
 msgid "Net book value"
 msgstr "शुद्ध पुस्तक मूल्य"
 
+msgid "Net Book Value"
+msgstr "नेट बुक वैल्यू"
+
 msgid "Net Change"
 msgstr "शुद्ध परिवर्तन"
 
@@ -7673,6 +7812,9 @@ msgstr "नया उपभोग्य"
 
 msgid "New Contractor"
 msgstr "नया ठेकेदार"
+
+msgid "New Cost Center"
+msgstr "नया लागत केंद्र"
 
 msgid "New Credit / Debit Memo"
 msgstr "नया क्रेडिट / डेबिट मेमो"
@@ -8741,6 +8883,9 @@ msgstr "पैरामीटर"
 msgid "Parent cost center"
 msgstr "भाग"
 
+msgid "Parent Cost Center"
+msgstr "पैरेंट लागत केंद्र"
+
 msgid "Parent Department"
 msgstr "मूल विभाग"
 
@@ -8902,6 +9047,9 @@ msgstr "कम लागत मूल्यांकन के लिए बि�
 
 msgid "Period"
 msgstr "अवधि"
+
+msgid "Period End"
+msgstr "अवधि का अंत"
 
 msgid "Periodic depreciation expense for fixed assets"
 msgstr "पिकिंग ट्रैक किए गए इकाइयों को सबसे पहले समाप्ति के क्रम में प्रदान करती है, इसलिए सबसे जल्दी समाप्त होने वाला स्टॉक डिफ़ॉल्ट रूप से पहले छोड़ा जाता है।"
@@ -9698,6 +9846,9 @@ msgstr "इसे जल्दी उठाएं और स्पष्ट र�
 msgid "Rate Limit"
 msgstr "दर सीमा"
 
+msgid "Ratio"
+msgstr "अनुपात"
+
 msgid "Raw Materials"
 msgstr "कच्चा माल"
 
@@ -9982,6 +10133,9 @@ msgstr "हटाएं"
 msgid "Remove {0}"
 msgstr "{0} को हटाएं"
 
+msgid "Remove {label}"
+msgstr "हटाएँ {label}"
+
 msgid "Remove condition"
 msgstr "शर्त हटाएं"
 
@@ -10236,6 +10390,9 @@ msgstr "रिवर्स चार्ज बिक्रय कर (डिफ�
 msgid "Reverse the related journal entries"
 msgstr "संबंधित जर्नल प्रविष्टियों को उलट दें"
 
+msgid "Reversed"
+msgstr "उलट दिया गया"
+
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "प्रत्येक आइटम के परिवर्तनों की समीक्षा करें, फिर पुष्टि करें — जारी करना वापस नहीं किया जा सकता।"
 
@@ -10371,6 +10528,9 @@ msgstr "अपनी टीम के साथ व्यावहारिक �
 
 msgid "Run hands-on sessions with your champions"
 msgstr "अपने चैंपियन के साथ व्यावहारिक सत्र चलाएं"
+
+msgid "Run ID"
+msgstr "रन आईडी"
 
 msgid "Run month-end close and standard reconciliations"
 msgstr "महीने के अंत का बंद करना और मानक समन्वय चलाएं"
@@ -10698,6 +10858,9 @@ msgstr "एक डिफ़ॉल्ट अनुमोदक चुनें"
 msgid "Select a new owner"
 msgstr "एक नया मालिक चुनें"
 
+msgid "Select a new parent group for this account."
+msgstr "इस खाते के लिए एक नया पैरेंट समूह चुनें।"
+
 msgid "Select a plan"
 msgstr "एक योजना चुनें"
 
@@ -10728,6 +10891,9 @@ msgstr "उपलब्ध विकल्प देखने के लिए �
 
 msgid "Select a team"
 msgstr "एक टीम चुनें"
+
+msgid "Select account"
+msgstr "खाता चुनें"
 
 msgid "Select all"
 msgstr "सभी का चयन करें"
@@ -13227,6 +13393,9 @@ msgstr "अनलॉक करें"
 msgid "Unmapped Extracted Lines"
 msgstr "अनमैप किए गए निकाली गई लाइनें"
 
+msgid "Unmatched"
+msgstr "बेमेल"
+
 msgid "Unpick"
 msgstr "अनपिक करें"
 
@@ -13513,6 +13682,9 @@ msgstr "भौतिक इन्वेंटरी गणना समायो
 msgid "Variance in outside processing costs"
 msgstr "बाहरी प्रसंस्करण लागत में विचरण"
 
+msgid "Variance only"
+msgstr "केवल भिन्नता"
+
 msgid "VAT Number"
 msgstr "VAT संख्या"
 
@@ -13554,6 +13726,9 @@ msgstr "सक्रिय उद्धरण देखें"
 
 msgid "View All"
 msgstr "सभी देखें"
+
+msgid "View Asset"
+msgstr "संपत्ति देखें"
 
 msgid "View Assigned Jobs"
 msgstr "असाइन किए गए जॉब्स देखें"
@@ -13599,6 +13774,9 @@ msgstr "समस्या देखें"
 
 msgid "View Item Master"
 msgstr "आइटम मास्टर देखें"
+
+msgid "View Journal Entry"
+msgstr "जर्नल प्रविष्टि देखें"
 
 msgid "View Lists"
 msgstr "सूचियाँ देखें"
@@ -13674,6 +13852,9 @@ msgstr "रसीद देखें"
 
 msgid "View Receivables"
 msgstr "प्राप्य देखें"
+
+msgid "View Run"
+msgstr "रन देखें"
 
 msgid "View Scheduled"
 msgstr "निर्धारित देखें"

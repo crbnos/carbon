@@ -19,10 +19,9 @@ import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId, companyId, companyGroupId } =
-    await requirePermissions(request, {
-      update: "parts"
-    });
+  const { client, userId, companyId } = await requirePermissions(request, {
+    update: "parts"
+  });
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
@@ -81,10 +80,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // (Start / Implementation / Done). Best-effort; never blocks the redirect.
   if (changeOrderBroadcastStages.includes(toStatus)) {
     await notifyChangeOrderTransition({
+      client,
       event: changeOrderStageEvent[toStatus],
       changeOrderId: id,
       companyId,
-      companyGroupId,
       userId
     });
   }

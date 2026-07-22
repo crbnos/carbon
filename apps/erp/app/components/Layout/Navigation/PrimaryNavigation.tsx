@@ -230,9 +230,12 @@ const NavigationIconLink = forwardRef<
       ref={ref}
       to={link.to}
       {...props}
+      {...(link.external
+        ? { target: "_blank", rel: "noopener noreferrer" }
+        : {})}
       onClick={onClick}
       className={cn(classes, props.className)}
-      prefetch="intent"
+      prefetch={link.external ? "none" : "intent"}
     >
       <link.icon className={cn(...iconClasses)} />
 

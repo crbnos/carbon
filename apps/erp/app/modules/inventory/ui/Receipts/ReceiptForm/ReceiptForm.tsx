@@ -207,10 +207,15 @@ const ReceiptForm = ({
                   </Link>
                 </Button>
                 <Button
-                  variant={canPost && !isPosted ? "primary" : "secondary"}
+                  variant={
+                    canPost && !isPosted && !isVoided ? "primary" : "secondary"
+                  }
                   onClick={postModal.onOpen}
                   isDisabled={
-                    !canPost || isPosted || !permissions.is("employee")
+                    !canPost ||
+                    isPosted ||
+                    isVoided ||
+                    !permissions.is("employee")
                   }
                   leftIcon={<LuCheckCheck />}
                 >

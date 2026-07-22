@@ -57,6 +57,8 @@ import {
   MODEL_RAW_KEEP_MAX_BYTES
 } from "@carbon/utils";
 import { ModelPreview } from "@carbon/viewer/model-preview";
+import { OptimizeProgress } from "@carbon/viewer/optimize-progress";
+import { useOptimizedModel } from "@carbon/viewer/use-optimized-model";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestSingleResponse } from "@supabase/supabase-js";
 import { Suspense, useEffect, useMemo, useState } from "react";
@@ -140,7 +142,6 @@ import {
 } from "./components/Step";
 import { TableSkeleton } from "./components/TableSkeleton";
 import { useFiles } from "./hooks/useFiles";
-import { useModelArtifacts } from "./hooks/useModelArtifacts";
 import { useOperation } from "./hooks/useOperation";
 
 const log = getLogger("mes", "job-operation");
@@ -323,7 +324,20 @@ export const JobOperation = ({
       : null;
 
   const modelPath = operation.itemModelPath ?? job.modelPath ?? null;
-  const { artifacts, pending: modelPending } = useModelArtifacts(modelPath);
+  // Prefer the authoritative id (mirrors the modelPath precedence) over deriving
+  // it from the path — legacy paths whose basename isn't the id would otherwise
+  // resolve a phantom id and 404 the artifacts/reoptimise lookups.
+  const modelUploadId = operation.itemModelId ?? job.modelId ?? null;
+  const {
+    artifacts,
+    awaitingModel: modelPending,
+    showOptimizeProgress,
+    optimizeQueued,
+    retry: onModelRetry,
+    retryLabel: modelRetryLabel,
+    cancel: onModelCancel,
+    actionBusy: modelActionBusy
+  } = useOptimizedModel({ modelPath, modelUploadId, companyId });
 
   const fetcher = useFetcher<Result>();
 
@@ -1753,7 +1767,7 @@ export const JobOperation = ({
           </ScrollArea>
         </TabsContent>
         <TabsContent value="model">
-          <div className="w-full h-[calc(100dvh-var(--header-height)*2)] p-0">
+          <div className="relative w-full h-[calc(100dvh-var(--header-height)*2)] p-0">
             {modelPath ? (
               <ModelPreview
                 key={modelPath}
@@ -1782,12 +1796,24 @@ export const JobOperation = ({
                 }
                 mode={mode}
                 className="rounded-none"
+                onRetry={onModelRetry}
+                retryLabel={modelRetryLabel}
               />
             ) : (
               <div className="flex h-full w-full items-center justify-center">
                 <p className="text-sm text-muted-foreground">
-                  3D preview unavailable
+                  No 3D model attached
                 </p>
+              </div>
+            )}
+            {showOptimizeProgress && (
+              <div className="absolute inset-0 z-30 flex items-center justify-center bg-background/95 p-6">
+                <OptimizeProgress
+                  key={`${modelPath}:${artifacts?.optimizeStatus}`}
+                  queued={optimizeQueued}
+                  onCancel={onModelCancel}
+                  cancelling={modelActionBusy}
+                />
               </div>
             )}
           </div>

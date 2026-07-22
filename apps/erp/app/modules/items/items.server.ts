@@ -194,23 +194,41 @@ export const changeOrderStageEvent: Record<string, NotificationEvent> = {
   Done: NotificationEvent.ChangeOrderDone
 };
 
-// notifyChangeOrderTransition — broadcasts a stage transition to the whole
-// company team (PRD §3.1 "Broadcast to team"). The recipient is the company
-// employee group; the `notify` job expands it via the users_for_groups RPC.
-// Best-effort: never throws into the caller's redirect path.
+// Broadcasts a CO stage to the whole team (best-effort). Recipient is the seeded
+// "All Employees" group — NOT companyGroupId, which is the currency/subsidiary
+// grouping and has no user members.
 export async function notifyChangeOrderTransition(args: {
+  client: SupabaseClient<Database>;
   event: NotificationEvent;
   changeOrderId: string;
   companyId: string;
-  companyGroupId: string;
   userId: string;
 }): Promise<void> {
   try {
+    const employeeGroup = await args.client
+      .from("group")
+      .select("id")
+      .eq("companyId", args.companyId)
+      .eq("isEmployeeTypeGroup", true)
+      .eq("name", "All Employees")
+      .single();
+
+    if (employeeGroup.error || !employeeGroup.data) {
+      logger.error(
+        "Failed to resolve All Employees group for CO notification",
+        {
+          error: employeeGroup.error,
+          companyId: args.companyId
+        }
+      );
+      return;
+    }
+
     await trigger("notify", {
       event: args.event,
       companyId: args.companyId,
       documentId: args.changeOrderId,
-      recipient: { type: "group", groupIds: [args.companyGroupId] },
+      recipient: { type: "group", groupIds: [employeeGroup.data.id] },
       from: args.userId
     });
   } catch (e) {

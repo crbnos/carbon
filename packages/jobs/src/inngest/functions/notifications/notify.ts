@@ -62,19 +62,15 @@ const defaultDestinations: Partial<
     NotificationDestination.Email,
     NotificationDestination.Slack
   ],
-  [NotificationEvent.ChangeOrderApproved]: [
+  [NotificationEvent.ChangeOrderStarted]: [
     NotificationDestination.Email,
     NotificationDestination.Slack
   ],
-  [NotificationEvent.ChangeOrderRejected]: [
+  [NotificationEvent.ChangeOrderImplementation]: [
     NotificationDestination.Email,
     NotificationDestination.Slack
   ],
-  [NotificationEvent.ChangeOrderReleased]: [
-    NotificationDestination.Email,
-    NotificationDestination.Slack
-  ],
-  [NotificationEvent.ChangeOrderSubmittedForReview]: [
+  [NotificationEvent.ChangeOrderDone]: [
     NotificationDestination.Email,
     NotificationDestination.Slack
   ],

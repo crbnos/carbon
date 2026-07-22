@@ -321,7 +321,8 @@ export type Events = {
     };
   };
 
-  // Event queue processing (PGMQ consumer)
+  // Wake event for the PGMQ drainer (event-queue). Pushed by the database via
+  // the event-wake edge function whenever events are enqueued or pending.
   "carbon/event-queue.process": {
     data: Record<string, never>;
   };

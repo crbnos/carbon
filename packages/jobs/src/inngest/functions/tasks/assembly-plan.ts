@@ -5,10 +5,8 @@ import { inngest } from "../../client";
 import {
   assemblerEnabled,
   internalizeStorageUrl,
-  POLL_GAP,
-  pollAssemblerJobOnce,
   resolveModelSourceBucket,
-  submitAssemblerJob
+  runAssemblerJob
 } from "./assembler-client";
 import { loadPlanUnits } from "./plan-units";
 import { updateAssemblyStepMotionsFromPlan } from "./update-step-motions";
@@ -22,15 +20,13 @@ const MAX_PLAN_WAIT_MS = 40 * 60 * 1000;
  * Runs the assembler service motion planner over a converted model: computes a
  * collision-free insertion motion per part plus an assembly sequence, stored as
  * plan.json next to the model artifacts. See
- * .ai/specs/2026-07-04-animated-work-instructions-contracts.md (POST /v1/plan,
- * GET /v1/jobs/{id}).
+ * .ai/specs/2026-07-04-assembler-deployment.md (POST /v1/plan, callback).
  *
- * One durable function owns the whole lifecycle: create job → long-poll
- * GET /v1/jobs/{id} until the service finishes → flip the job row. Each poll
- * carries a freshly minted signed upload URL (X-Carbon-Upload-Urls {plan}); the
- * service PUTs plan.json to it (late-mint offload) and stores only a
- * {result, stats} pointer in its Redis-backed store, so a restart still answers
- * the poll (no 404-on-restart loss).
+ * Event-driven like optimize/convert (`runAssemblerJob`): submit with
+ * submit-time signed upload URLs + a callback URL, park on waitForEvent until
+ * the service's completion callback fires, one late-mint fallback poll on
+ * timeout. The service PUTs plan.json to the upload URL itself and reports a
+ * { planPath } pointer; this run just flips the job row.
  */
 export const assemblyPlanFunction = inngest.createFunction(
   {
@@ -150,28 +146,10 @@ export const assemblyPlanFunction = inngest.createFunction(
       };
     });
 
-    // Where plan.json lands. The service PUTs it here itself (offload) via a
-    // signed upload URL minted fresh on each poll (below); this run just records
-    // the pointer the service reports back.
+    // Where plan.json lands. The service PUTs it here itself (offload) via the
+    // submit-time signed upload URL; this run just records the pointer the
+    // service reports back.
     const planPath = `${companyId}/models/${modelUploadId}/${job.id}/plan.json`;
-
-    const failJob = async (label: string, error: string) => {
-      await step.run(label, async () => {
-        const client = getCarbonServiceRole();
-        await client
-          .from("assemblyPlanJob")
-          .update({
-            status: "Failed",
-            error,
-            updatedAt: new Date().toISOString()
-          })
-          .eq("id", job.id)
-          .eq("companyId", companyId)
-          .eq("status", "Processing");
-      });
-      logger.warn("plan failed", { jobId: job.id, error });
-      return { jobId: job.id, status: "Failed" as const, error };
-    };
 
     // Re-motion mode (order-preserving): take the existing step order as the
     // fixed assembly sequence and let the planner only recompute each step's
@@ -204,38 +182,36 @@ export const assemblyPlanFunction = inngest.createFunction(
             })
           );
 
-    // Create the plan job. The service starts it in the background and returns
-    // 202; we then long-poll GET /v1/jobs/{id}. A fresh signed source URL is
-    // minted here so retries don't reuse an expired one. Idempotent on job.id.
-    await step.run("submit", async () => {
-      const client = getCarbonServiceRole();
-
-      // Legacy (pre-assembler) raws live in `private`, current ones in
-      // `temp-staging`.
-      const sourceBucket = await resolveModelSourceBucket(
-        client,
-        job.modelPath
-      );
-      const source = await client.storage
-        .from(sourceBucket)
-        .createSignedUrl(job.modelPath, SIGNED_URL_EXPIRY);
-      if (source.error) {
-        throw new Error(`Failed to sign source URL: ${source.error.message}`);
-      }
-
-      await submitAssemblerJob({
-        action: "plan",
-        jobId: job.id,
-        logger,
-        body: {
+    // Submit with submit-time upload URLs + callback, then park on the
+    // completion event (one late-mint fallback poll on timeout). A failure or
+    // cancel throws — retries then onFailure flip the job row to Failed.
+    const plan = await runAssemblerJob(step, {
+      idPrefix: "plan",
+      action: "plan",
+      jobId: job.id,
+      maxWaitMs: MAX_PLAN_WAIT_MS,
+      logger,
+      buildBody: async () => {
+        const client = getCarbonServiceRole();
+        // Legacy (pre-assembler) raws live in `private`, current ones in
+        // `temp-staging`.
+        const sourceBucket = await resolveModelSourceBucket(
+          client,
+          job.modelPath
+        );
+        const source = await client.storage
+          .from(sourceBucket)
+          .createSignedUrl(job.modelPath, SIGNED_URL_EXPIRY);
+        if (source.error) {
+          throw new Error(`Failed to sign source URL: ${source.error.message}`);
+        }
+        return {
           source: {
             url: internalizeStorageUrl(source.data.signedUrl),
             format: "step"
           },
-          // No upload URL here — it's minted fresh on each poll (late-mint) so
-          // the token is only seconds old when the service PUTs plan.json. The
-          // service reads planPath (completion pointer) and modelUploadId (to
-          // scope its content-hash result cache) out of meta.
+          // The service reads planPath (completion pointer) and modelUploadId
+          // (to scope its content-hash result cache) out of meta.
           meta: {
             companyId,
             userId,
@@ -249,67 +225,27 @@ export const assemblyPlanFunction = inngest.createFunction(
             : units.length > 0
               ? { options: { units } }
               : {})
-        }
-      });
-      logger.info("plan submitted to assembler service", { jobId: job.id });
+        };
+      },
+      mintUploadUrls: async () => {
+        const client = getCarbonServiceRole();
+        const upload = await client.storage
+          .from("private")
+          .createSignedUploadUrl(planPath, { upsert: true });
+        const urls: Record<string, string> = {};
+        if (upload.data)
+          urls.plan = internalizeStorageUrl(upload.data.signedUrl);
+        return urls;
+      }
     });
 
-    // Long-poll GET /v1/jobs/{id}?wait until the service finishes. Each request
-    // holds open server-side until the plan lands (or ~25s elapses), so
-    // completion is near-immediate and each is a checkpointed step (a worker
-    // restart resumes the loop). The service offloaded plan.json to storage, so
-    // the result carries only a { planPath } pointer — not the plan body.
-    let resolvedPlanPath: string | null = null;
-    let inlinePlan: AssemblyPlan | null = null;
-    let stats: Json = null;
-    let finished = false;
-    const planStartedAt = await step.run("plan-poll-start", () => Date.now());
-    let i = 0;
-    while (Date.now() - planStartedAt < MAX_PLAN_WAIT_MS) {
-      const poll = await step.run(`poll-${i}`, () =>
-        pollAssemblerJobOnce({
-          jobId: job.id,
-          // Mint a fresh upload URL for THIS poll (late-mint). The service holds
-          // the finished plan until a poll carries a URL, then PUTs plan.json
-          // with this seconds-old token.
-          mintUploadUrls: async () => {
-            const client = getCarbonServiceRole();
-            const upload = await client.storage
-              .from("private")
-              .createSignedUploadUrl(planPath, { upsert: true });
-            const urls: Record<string, string> = {};
-            if (upload.data)
-              urls.plan = internalizeStorageUrl(upload.data.signedUrl);
-            return urls;
-          }
-        })
-      );
-
-      if (poll.status === "done") {
-        const result = (poll.result ?? {}) as {
-          planPath?: string;
-          plan?: AssemblyPlan | null;
-        };
-        resolvedPlanPath = result.planPath ?? planPath;
-        inlinePlan = result.plan ?? null;
-        stats = poll.stats;
-        finished = true;
-        break;
-      }
-      if (poll.status === "error") {
-        return failJob("mark-failed", poll.error);
-      }
-      await step.sleep(`gap-${i}`, POLL_GAP);
-      i++;
-    }
-
-    if (!finished) {
-      return failJob(
-        "mark-failed",
-        "Planner did not finish in the expected time"
-      );
-    }
-    const donePlanPath = resolvedPlanPath ?? planPath;
+    const planResult = (plan.result ?? {}) as {
+      planPath?: string;
+      plan?: AssemblyPlan | null;
+    };
+    const donePlanPath = planResult.planPath ?? planPath;
+    const inlinePlan = planResult.plan ?? null;
+    const stats: Json = plan.stats;
 
     // Persist: flip the row to the pointer the service reported. A legacy
     // response returned the plan inline instead of offloading — upload it here in

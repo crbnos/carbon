@@ -23,146 +23,19 @@ import {
   MODEL_RAW_KEEP_MAX_BYTES,
   supportedModelTypes
 } from "@carbon/utils";
-import { ModelPreview, WASM_RAW_ENABLED } from "@carbon/viewer/model-preview";
+import { ModelPreview } from "@carbon/viewer/model-preview";
+import { OptimizeProgress } from "@carbon/viewer/optimize-progress";
+import { useOptimizedModel } from "@carbon/viewer/use-optimized-model";
 import { nanoid } from "nanoid";
-import { useEffect, useId, useRef, useState } from "react";
+import { useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { LuCloudUpload, LuZap } from "react-icons/lu";
 import { useFetcher, useRevalidator } from "react-router";
 import { useModelUpload, useUser } from "~/hooks";
 import { getPrivateUrl, getRawModelUrl, path } from "~/utils/path";
-import { ModelOptimizeProgress } from "./ModelOptimizeProgress";
 import { ModelUploadProgress } from "./ModelUploadProgress";
 
 const SIZE_LIMIT = getFileSizeLimit("CAD_MODEL_UPLOAD");
-
-type ModelArtifacts = {
-  optimizedModelPath: string | null;
-  lodPath: string | null;
-  glbPath: string | null;
-  thumbnailPath: string | null;
-  /** Raw upload (non-`.zst`) for the viewer's WASM fallback tier, with its
-   *  resolved bucket (temp-staging for current uploads, private for old rows). */
-  rawPath: string | null;
-  rawBucket: string;
-  optimizeStatus:
-    | "Idle"
-    | "Queued"
-    | "Processing"
-    | "Success"
-    | "Failed"
-    | null;
-  /** As-uploaded raw bytes (originalSize; older rows fall back to the stored
-   *  size) — the loader resolves this so the reduction badge never compares
-   *  against the compacted `.zst`. */
-  size: number | null;
-  /** Optimized GLB bytes — surfaced next to `size` to show the reduction. */
-  optimizedSize: number | null;
-};
-
-/**
- * modelUpload.id is the model's filename (`${company}/models/${id}.ext`), so the
- * id — and thus its artifact paths — is recoverable from `modelPath` alone.
- */
-function modelIdFromPath(modelPath: string | null): string | null {
-  if (!modelPath) return null;
-  let base = modelPath.split("/").pop() ?? "";
-  // Retained raws are compacted in place (`${id}.step` → `${id}.step.zst`); peel
-  // the `.zst` wrapper before the source extension so the id resolves either way.
-  if (base.toLowerCase().endsWith(".zst")) base = base.slice(0, -4);
-  return base.replace(/\.[^.]+$/, "") || null;
-}
-
-/**
- * Resolves a model's assembler artifact paths (optimised / LOD / assembly GLB /
- * thumbnail) via the `model.artifacts` API loader — keyed by the id derived from
- * `modelPath`, so no summary loader has to carry these columns. While optimise is
- * in flight it polls so the compact GLB swaps into the viewer without a reload;
- * it stops once an interactive artifact lands, optimise fails, or after a bounded
- * window (non-mesh uploads stay `Idle` and are only briefly checked).
- */
-function useModelArtifacts(modelPath: string | null): {
-  artifacts: ModelArtifacts | undefined;
-  /** True while a server GLB might still arrive (fetch unresolved / optimise in
-   *  flight). */
-  pending: boolean;
-  /** Restart polling (after a re-optimise is fired) even if it had settled. */
-  retry: () => void;
-} {
-  const uid = useId();
-  const modelUploadId = modelIdFromPath(modelPath);
-  // Scope the fetcher per model id: a delete or swap gives a DIFFERENT fetcher
-  // whose `data` is undefined until its own load resolves — so a previous
-  // model's artifacts can never leak into the new one's viewer (the old model
-  // flashing before the spinner). The `none:<uid>` key keeps model-less
-  // instances from colliding on a shared fetcher.
-  const fetcher = useFetcher<ModelArtifacts>({
-    key: `model-artifacts:${modelUploadId ?? `none:${uid}`}`
-  });
-  const load = fetcher.load;
-  const dataRef = useRef<ModelArtifacts | undefined>(undefined);
-  dataRef.current = fetcher.data;
-  const [pending, setPending] = useState(true);
-  const [reloadKey, setReloadKey] = useState(0);
-
-  // `pending` must mean "a GLB is genuinely on its way", not "still checking":
-  // the viewer renders it as an optimise-in-progress spinner, so a settled
-  // model must not wear it for a grace window. Settle on the first response
-  // unless the status is actually in flight; the background polling below
-  // still catches a later transition (fresh upload flipping to Processing)
-  // and re-raises pending then.
-  useEffect(() => {
-    const data = fetcher.data;
-    if (!data) return;
-    const inFlight =
-      data.optimizeStatus === "Queued" || data.optimizeStatus === "Processing";
-    setPending(inFlight && !(data.optimizedModelPath || data.glbPath));
-  }, [fetcher.data]);
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: reloadKey re-runs the effect on retry without being read inside it
-  useEffect(() => {
-    if (!modelUploadId) {
-      setPending(false);
-      return;
-    }
-    setPending(true);
-    const url = path.to.api.modelArtifacts(modelUploadId);
-    load(url);
-
-    let attempts = 0;
-    const timer = setInterval(() => {
-      const data = dataRef.current;
-      const hasInteractive = Boolean(data?.optimizedModelPath || data?.glbPath);
-      if (hasInteractive || data?.optimizeStatus === "Failed") {
-        clearInterval(timer);
-        setPending(false);
-        return;
-      }
-      const inFlight =
-        data?.optimizeStatus === "Queued" ||
-        data?.optimizeStatus === "Processing";
-      // `Idle`/undefined is the brief window before the job starts (or a non-mesh
-      // upload that never optimises) — keep polling quietly for a grace period
-      // (pending is driven by the data effect above, not this loop).
-      const cap = inFlight ? 60 : 8; // ~3min in flight vs ~24s settling
-      attempts += 1;
-      if (attempts > cap) {
-        clearInterval(timer);
-        setPending(false);
-        return;
-      }
-      load(url);
-    }, 3000);
-
-    return () => clearInterval(timer);
-  }, [modelUploadId, load, reloadKey]);
-
-  return {
-    artifacts: fetcher.data,
-    pending,
-    retry: () => setReloadKey((k) => k + 1)
-  };
-}
 
 type CadModelProps = {
   modelPath: string | null;
@@ -201,49 +74,18 @@ const CadModel = ({
   const [isDeleting, setIsDeleting] = useState(false);
   const deleteModal = useDisclosure();
 
-  const { artifacts, pending, retry } = useModelArtifacts(modelPath);
-  const reoptimizeFetcher = useFetcher<{ success: boolean }>();
-  // A server GLB may still be on its way while a fresh file uploads or the
-  // optimise job runs. Raws <= MODEL_RAW_KEEP_MAX_BYTES render in-browser (WASM
-  // tier) in the meantime; bigger ones show a staged optimise progress overlay
-  // until the GLB lands, then "preview unavailable" if it never does.
-  const awaitingModel = pending || Boolean(file);
-
-  const hasInteractive = Boolean(
-    artifacts?.optimizedModelPath || artifacts?.glbPath
-  );
-  const rawRenderable =
-    WASM_RAW_ENABLED &&
-    Boolean(
-      (artifacts?.rawPath &&
-        (artifacts.size ?? 0) <= MODEL_RAW_KEEP_MAX_BYTES) ||
-        (file && file.size <= MODEL_RAW_KEEP_MAX_BYTES)
-    );
-  // Staged progress overlay: an optimise is running and nothing else can
-  // render (no artifact yet, raw too big / absent). When the raw tier renders,
-  // the optimise runs silently behind it and the GLB swaps in on success.
-  const optimizeInFlight =
-    artifacts?.optimizeStatus === "Queued" ||
-    artifacts?.optimizeStatus === "Processing";
-  // Bridges the click -> job-visible gap: the row status takes a couple of
-  // polls to flip after Load Preview / Retry, and without this the overlay
-  // wouldn't appear until then. Cleared on handover (or a 15s safety timeout
-  // if the trigger silently failed).
-  const [optimisticOptimize, setOptimisticOptimize] = useState(false);
-  useEffect(() => {
-    if (!optimisticOptimize) return;
-    if (optimizeInFlight || hasInteractive) {
-      setOptimisticOptimize(false);
-      return;
-    }
-    const timeout = setTimeout(() => setOptimisticOptimize(false), 15000);
-    return () => clearTimeout(timeout);
-  }, [optimisticOptimize, optimizeInFlight, hasInteractive]);
-  const showOptimizeProgress =
-    (optimizeInFlight || optimisticOptimize) &&
-    !hasInteractive &&
-    !rawRenderable &&
-    upload === null;
+  const {
+    artifacts,
+    awaitingModel,
+    showOptimizeProgress: optimizeProgressActive,
+    optimizeQueued,
+    retry: onRetry,
+    retryLabel,
+    cancel: onCancelWait,
+    actionBusy
+  } = useOptimizedModel({ modelPath, companyId, file });
+  // Never on top of the upload progress overlay.
+  const showOptimizeProgress = optimizeProgressActive && upload === null;
 
   const onDelete = async () => {
     if (!carbon) {
@@ -303,31 +145,6 @@ const CadModel = ({
       metadata?.salesOrderLineId ||
       metadata?.jobId
     );
-
-  // Re-fire the optimise for an existing model (raw still in temp-staging) and
-  // restart artifact polling so the GLB swaps in without a reload.
-  const onRetry = () => {
-    const modelUploadId = modelIdFromPath(modelPath);
-    if (isReadOnly || !modelUploadId) return;
-    setOptimisticOptimize(true);
-    reoptimizeFetcher.submit(
-      { modelUploadId },
-      { method: "post", action: path.to.api.modelReoptimize }
-    );
-    retry();
-  };
-
-  // Cancel the in-flight optimise when the user dismisses the preparing
-  // spinner: stamps the row Failed and cancels the assembler job, so the
-  // waiting Inngest run fails fast instead of leaving a stuck Processing row.
-  const onCancelWait = () => {
-    const modelUploadId = modelIdFromPath(modelPath);
-    if (!modelUploadId) return;
-    reoptimizeFetcher.submit(
-      { modelUploadId },
-      { method: "post", action: path.to.api.modelOptimizeCancel }
-    );
-  };
 
   const onFileChange = async (file: File | null) => {
     const modelId = nanoid();
@@ -431,12 +248,8 @@ const CadModel = ({
                 }
                 mode={mode}
                 className={viewerClassName}
-                onRetry={!isReadOnly && modelPath ? onRetry : undefined}
-                retryLabel={
-                  artifacts?.optimizeStatus === "Failed"
-                    ? "Retry"
-                    : "Load Preview"
-                }
+                onRetry={modelPath ? onRetry : undefined}
+                retryLabel={retryLabel}
                 onCancelWait={modelPath ? onCancelWait : undefined}
                 onDelete={canDelete ? deleteModal.onOpen : undefined}
               />
@@ -452,10 +265,11 @@ const CadModel = ({
               )}
               {showOptimizeProgress && modelPath && (
                 <div className="absolute inset-0 z-30 flex items-center justify-center rounded-lg bg-background/95 p-6">
-                  <ModelOptimizeProgress
+                  <OptimizeProgress
                     key={`${modelPath}:${artifacts?.optimizeStatus}`}
-                    modelUploadId={modelIdFromPath(modelPath) ?? ""}
-                    queued={artifacts?.optimizeStatus !== "Processing"}
+                    queued={optimizeQueued}
+                    onCancel={onCancelWait}
+                    cancelling={actionBusy}
                   />
                 </div>
               )}
