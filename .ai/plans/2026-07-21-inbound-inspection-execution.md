@@ -13,7 +13,7 @@
 - [x] Task 6: quality.service reads + assignment upsert
 - [x] Task 7: quality.server — measurement upsert, derived status, reconcile, disposition gating
 - [x] Task 8: Route tree x+/inbound-inspection+ + path.ts
-- [ ] Task 9: InspectionDrawingPane (read-only PDF + balloons)
+- [x] Task 9: InspectionDrawingPane (read-only PDF + balloons)
 - [ ] Task 10: InspectionMeasurementGrid (features × samples)
 - [ ] Task 11: InboundInspectionView wiring + fallback + drawer retirement
 - [ ] Task 12: Item Quality tab — documents card + assignments card (4 routes)
