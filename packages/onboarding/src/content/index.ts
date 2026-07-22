@@ -10,6 +10,7 @@ export * from "./collections";
 export * from "./copy";
 export * from "./golive";
 export * from "./howwework";
+export * from "./intake";
 export * from "./registry";
 export * from "./requirements";
 export * from "./roles";

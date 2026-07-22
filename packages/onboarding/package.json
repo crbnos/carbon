@@ -26,10 +26,12 @@
   },
   "devDependencies": {
     "@carbon/config": "workspace:*",
+    "@lingui/vite-plugin": "catalog:",
     "@types/react": "catalog:",
     "rimraf": "catalog:",
     "tsup": "catalog:",
     "typescript": "catalog:",
+    "vite-plugin-babel-macros": "catalog:",
     "vitest": "catalog:"
   },
   "scripts": {
