@@ -8,9 +8,7 @@ export enum NotificationEvent {
   ApprovalApproved = "approval-approved",
   ApprovalRejected = "approval-rejected",
   ApprovalRequested = "approval-requested",
-  // Stage-broadcast events (Change Orders module) — fired to the company team
-  // on entry to Start / Implementation / Done. These are the only change-order
-  // notifications; CO v1 has no approval flow.
+  // Change-order stage broadcasts (the only CO events; no approval flow in v1).
   ChangeOrderStarted = "change-order-started",
   ChangeOrderImplementation = "change-order-implementation",
   ChangeOrderDone = "change-order-done",

@@ -194,15 +194,9 @@ export const changeOrderStageEvent: Record<string, NotificationEvent> = {
   Done: NotificationEvent.ChangeOrderDone
 };
 
-// notifyChangeOrderTransition — broadcasts a stage transition to the whole
-// company team (PRD §3.1 "Broadcast to team"). Best-effort: never throws into
-// the caller's redirect path.
-//
-// Recipient is the seeded "All Employees" group (isEmployeeTypeGroup), which the
-// notify job's users_for_groups RPC recursively expands to every employee.
-// Do NOT use the auth context's `companyGroupId` — that is the company-GROUPING
-// id (parent/subsidiary + shared currencies, from seed-company), NOT an employee
-// membership group, so it expands to zero recipients.
+// Broadcasts a CO stage to the whole team (best-effort). Recipient is the seeded
+// "All Employees" group — NOT companyGroupId, which is the currency/subsidiary
+// grouping and has no user members.
 export async function notifyChangeOrderTransition(args: {
   client: SupabaseClient<Database>;
   event: NotificationEvent;

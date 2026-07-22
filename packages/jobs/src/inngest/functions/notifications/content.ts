@@ -110,8 +110,6 @@ type EventContentOptions = {
   userId?: string;
 };
 
-// Notification copy for the change-order stage broadcasts (Start / Implementation
-// / Done). Kept as a switch so a new broadcast stage is a single added case.
 function changeOrderStageDescription(
   type: NotificationEvent,
   readableId: string
@@ -1073,31 +1071,43 @@ async function buildEventContent(
     case NotificationEvent.ChangeOrderStarted:
     case NotificationEvent.ChangeOrderImplementation:
     case NotificationEvent.ChangeOrderDone: {
+      // Company-scope both lookups: readable ids (ECO-…) repeat across tenants.
+      const companyId = opts?.companyId;
+      if (!companyId) {
+        throw new Error(
+          `companyId is required to resolve change order ${documentId}`
+        );
+      }
+
+      // documentId may be the row id (co_…) or the readable id (ECO-…) — try both.
       const rowLookup = await client
         .from("changeOrder")
         .select("changeOrderId, status")
         .eq("id", documentId)
+        .eq("companyId", companyId)
         .maybeSingle();
+      if (rowLookup.error) {
+        console.error("Failed to get changeOrder", rowLookup.error);
+        throw rowLookup.error;
+      }
 
       let changeOrderData = rowLookup.data;
-      if (!changeOrderData && !rowLookup.error) {
+      if (!changeOrderData) {
         const readableIdLookup = await client
           .from("changeOrder")
           .select("changeOrderId, status")
           .eq("changeOrderId", documentId)
+          .eq("companyId", companyId)
           .maybeSingle();
-
         if (readableIdLookup.error) {
           console.error("Failed to get changeOrder", readableIdLookup.error);
           throw readableIdLookup.error;
         }
-
         changeOrderData = readableIdLookup.data;
       }
 
-      if (rowLookup.error || !changeOrderData) {
-        console.error("Failed to get changeOrder", rowLookup.error);
-        throw rowLookup.error;
+      if (!changeOrderData) {
+        throw new Error(`Change order not found for documentId ${documentId}`);
       }
 
       const readableId = changeOrderData.changeOrderId;
