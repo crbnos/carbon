@@ -20,6 +20,7 @@ import {
 import {
   detectImplementationSignals,
   getImplementationCheckStates,
+  getImplementationCounts,
   getImplementationFieldValues,
   getImplementationHub,
   getImplementationRows,
@@ -130,6 +131,23 @@ const SETUP_SCREEN_PATHS: Record<string, string> = {
 const resolveScreenUrl = (appKey: string): string | undefined =>
   SETUP_SCREEN_PATHS[appKey];
 
+// Deep link to one record's detail screen (the Load Your Data spot-check).
+const resolveRecordUrl = (
+  entity: "customer" | "supplier" | "item",
+  id: string
+): string | undefined => {
+  switch (entity) {
+    case "customer":
+      return path.to.customer(id);
+    case "supplier":
+      return path.to.supplier(id);
+    case "item":
+      return path.to.part(id);
+    default:
+      return undefined;
+  }
+};
+
 // Resolve a training video key (on a nested product step) to a watch URL, via
 // the ERP trainingConfig — prefers the Academy course, falls back to the video.
 const resolveVideoUrl = (videoKey: string): string | undefined => {
@@ -169,11 +187,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }
   }
 
-  const [checkStates, fieldValues, rows, signals] = await Promise.all([
+  const [checkStates, fieldValues, rows, signals, counts] = await Promise.all([
     getImplementationCheckStates(client, companyId),
     getImplementationFieldValues(client, companyId),
     getImplementationRows(client, companyId),
-    detectImplementationSignals(client, companyId)
+    detectImplementationSignals(client, companyId),
+    getImplementationCounts(client, companyId)
   ]);
 
   // Phase 1 is the front door: until the intake is completed, the wizard is
@@ -196,7 +215,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     checkStates: checkStates.data ?? [],
     fieldValues: fieldValues.data ?? [],
     rows: rows.data ?? [],
-    signals
+    signals,
+    counts
   };
 }
 
@@ -292,7 +312,8 @@ export default function GetStartedLayout() {
       checkStates: loaderData.checkStates,
       fieldValues: loaderData.fieldValues,
       rows: loaderData.rows as unknown as ImplementationRowData[],
-      signals: loaderData.signals
+      signals: loaderData.signals,
+      counts: loaderData.counts
     }),
     [loaderData, accountingEnabled, tailoredModules]
   );
@@ -331,6 +352,7 @@ export default function GetStartedLayout() {
                 dispatch={dispatch}
                 resolveScreenUrl={resolveScreenUrl}
                 resolveVideoUrl={resolveVideoUrl}
+                resolveRecordUrl={resolveRecordUrl}
               >
                 <Outlet />
               </HubProvider>

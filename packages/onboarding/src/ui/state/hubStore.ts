@@ -34,6 +34,7 @@ import type {
   CheckStateRow,
   FieldValueRow,
   HubContacts,
+  HubCounts,
   HubExclusions,
   HubStatus,
   ImplementationRowData,
@@ -79,7 +80,17 @@ export interface HubData {
   rows: ImplementationRowData[];
   contacts: HubContacts;
   signals: Signals;
+  // Live master-data counts + spot-check samples (Load Your Data's momentum
+  // receipts). Null on surfaces that don't load them.
+  counts: HubCounts | null;
 }
+
+// Deep link to one record's detail screen ("open these five — do they look
+// right?"). Injected by the route layer like resolveScreenUrl.
+export type ResolveRecordUrl = (
+  entity: "customer" | "supplier" | "item",
+  id: string
+) => string | undefined;
 
 // Viewer context. `canEdit` is UX-only (show/hide controls); the server action is
 // the real authority on who may write — never trust this for security.
@@ -114,13 +125,16 @@ export interface HubState extends HubData, HubFlags {
   // Resolve a training video key to a watch URL (academy or video), via the ERP
   // trainingConfig the route injects. Same shape as resolveScreenUrl.
   resolveVideoUrl: ResolveScreenUrl;
+  // Resolve one record's detail screen (spot-check deep links).
+  resolveRecordUrl: ResolveRecordUrl;
   // Provider-only: re-hydrate the whole store from the latest loader snapshot.
   setData: (
     data: HubData,
     flags: HubFlags,
     serverDispatch: (m: HubMutation) => void,
     resolveScreenUrl: ResolveScreenUrl,
-    resolveVideoUrl: ResolveScreenUrl
+    resolveVideoUrl: ResolveScreenUrl,
+    resolveRecordUrl: ResolveRecordUrl
   ) => void;
 }
 
@@ -136,6 +150,7 @@ export const HUB_INITIAL: HubData & HubFlags = {
   rows: [],
   contacts: {},
   signals: NO_SIGNALS,
+  counts: null,
   isInternal: false,
   previewing: false,
   canEdit: false
@@ -180,12 +195,14 @@ export function createHubStore(initial: Partial<HubData & HubFlags> = {}) {
     serverDispatch: () => undefined,
     resolveScreenUrl: () => undefined,
     resolveVideoUrl: () => undefined,
+    resolveRecordUrl: () => undefined,
     setData: (
       data,
       flags,
       serverDispatch,
       resolveScreenUrl,
-      resolveVideoUrl
+      resolveVideoUrl,
+      resolveRecordUrl
     ) => {
       // Reconcile per key: drop an override only once the loader actually reports
       // the value we wrote (row absence = effective "todo"). This holds the
@@ -211,7 +228,8 @@ export function createHubStore(initial: Partial<HubData & HubFlags> = {}) {
         ),
         serverDispatch,
         resolveScreenUrl,
-        resolveVideoUrl
+        resolveVideoUrl,
+        resolveRecordUrl
       });
     }
   }));

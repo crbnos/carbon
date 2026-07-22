@@ -19,6 +19,7 @@ import {
 import type { IntakeRowPayload } from "./models";
 import type {
   HubContacts,
+  HubCounts,
   HubExclusions,
   HubStatus,
   ImplementationRowData,
@@ -83,6 +84,10 @@ export async function detectImplementationSignals(
       | "methodMaterial"
       | "shipment"
       | "productionEvent"
+      | "quote"
+      | "purchaseOrder"
+      | "receipt"
+      | "salesInvoice"
   ) => client.from(table).select("id").eq("companyId", companyId).limit(1);
 
   const [
@@ -96,7 +101,11 @@ export async function detectImplementationSignals(
     workCenters,
     bomLines,
     shipments,
-    productionEvents
+    productionEvents,
+    quotes,
+    purchaseOrders,
+    receipts,
+    invoices
   ] = await Promise.all([
     probe("item"),
     probe("makeMethod"),
@@ -108,7 +117,11 @@ export async function detectImplementationSignals(
     probe("workCenter"),
     probe("methodMaterial"),
     probe("shipment"),
-    probe("productionEvent")
+    probe("productionEvent"),
+    probe("quote"),
+    probe("purchaseOrder"),
+    probe("receipt"),
+    probe("salesInvoice")
   ]);
 
   return {
@@ -122,7 +135,54 @@ export async function detectImplementationSignals(
     hasWorkCenter: !!workCenters.data?.length,
     hasBomLines: !!bomLines.data?.length,
     hasShipment: !!shipments.data?.length,
-    hasProductionEvent: !!productionEvents.data?.length
+    hasProductionEvent: !!productionEvents.data?.length,
+    hasQuote: !!quotes.data?.length,
+    hasPurchaseOrder: !!purchaseOrders.data?.length,
+    hasReceipt: !!receipts.data?.length,
+    hasInvoice: !!invoices.data?.length
+  };
+}
+
+// Live counts + a shuffled five-record sample per master-data set — the
+// momentum receipts and the spot-check deal on Load Your Data. Samples come
+// from the first fifty records shuffled (cheap and plenty random for a
+// "do these look right?" check).
+export async function getImplementationCounts(
+  client: Client,
+  companyId: string
+): Promise<HubCounts> {
+  const withSample = async (table: "customer" | "supplier" | "item") => {
+    const result = await client
+      .from(table)
+      .select("id, name", { count: "exact" })
+      .eq("companyId", companyId)
+      .limit(50);
+    const rows = result.data ?? [];
+    for (let i = rows.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [rows[i], rows[j]] = [rows[j]!, rows[i]!];
+    }
+    return {
+      count: result.count ?? rows.length,
+      sample: rows.slice(0, 5).map((r) => ({ id: r.id, name: r.name ?? r.id }))
+    };
+  };
+
+  const [customers, suppliers, items, bomLines] = await Promise.all([
+    withSample("customer"),
+    withSample("supplier"),
+    withSample("item"),
+    client
+      .from("methodMaterial")
+      .select("id", { count: "exact", head: true })
+      .eq("companyId", companyId)
+  ]);
+
+  return {
+    customers,
+    suppliers,
+    items,
+    bomLines: { count: bomLines.count ?? 0 }
   };
 }
 

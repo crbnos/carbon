@@ -44,7 +44,11 @@ export const NO_SIGNALS: Signals = {
   hasWorkCenter: false,
   hasBomLines: false,
   hasShipment: false,
-  hasProductionEvent: false
+  hasProductionEvent: false,
+  hasQuote: false,
+  hasPurchaseOrder: false,
+  hasReceipt: false,
+  hasInvoice: false
 };
 
 export function stateMap(rows: CheckStateRow[]): Map<string, string> {

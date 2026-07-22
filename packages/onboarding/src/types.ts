@@ -70,7 +70,11 @@ export type DetectSignal =
   | "hasWorkCenter"
   | "hasBomLines"
   | "hasShipment"
-  | "hasProductionEvent";
+  | "hasProductionEvent"
+  | "hasQuote"
+  | "hasPurchaseOrder"
+  | "hasReceipt"
+  | "hasInvoice";
 export type Detect = DetectSignal | null;
 
 // A product "do-this-in-Carbon" action nested inside a services step.
@@ -160,6 +164,21 @@ export interface HubContacts {
   // The owner's email — where the digest and milestone notifications go.
   ownerEmail?: string;
   champion?: string;
+}
+
+// Live record counts + a small sample per data set — the momentum receipts on
+// Load Your Data ("612 customers in Carbon") and the spot-check deal. Computed
+// server-side (see server.ts getImplementationCounts), never persisted.
+export interface HubCountEntry {
+  count: number;
+  sample: { id: string; name: string }[];
+}
+
+export interface HubCounts {
+  customers: HubCountEntry;
+  suppliers: HubCountEntry;
+  items: HubCountEntry;
+  bomLines: { count: number };
 }
 
 // Minimal shape of a persisted toggle row — kept here so the pure logic does

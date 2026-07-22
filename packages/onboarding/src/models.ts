@@ -106,6 +106,29 @@ export type IntakeTranscriptRowPayload = z.infer<
   typeof intakeTranscriptRowValidator
 >;
 
+// Field keys customers may write themselves through the /state action. Every
+// other fill-in stays Carbon-staff-only (FieldDef.ownership's server-side
+// teeth). Grouped by surface: the freeze plan, the pilot picker, the
+// push-the-date dialog, and the Live page's relapse answers.
+const CUSTOMER_FIELD_PREFIXES = [
+  "freeze.",
+  "pilot.",
+  "firstWin.",
+  "switch.",
+  "live.relapse"
+];
+const CUSTOMER_FIELD_KEYS = new Set([
+  "plan.gate:switch.gateDate", // the go-live date — moved via the dialog that asks why
+  "live.liveAt" // set once by the switch gate's "we're live" moment
+]);
+
+export function isCustomerEditableField(fieldKey: string): boolean {
+  return (
+    CUSTOMER_FIELD_KEYS.has(fieldKey) ||
+    CUSTOMER_FIELD_PREFIXES.some((prefix) => fieldKey.startsWith(prefix))
+  );
+}
+
 // The /x/get-started/intake action payload, discriminated by intent.
 export const intakeActionValidator = z.discriminatedUnion("intent", [
   z.object({

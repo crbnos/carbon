@@ -31,11 +31,13 @@ import {
   type HubFlags,
   type HubState,
   type HubStore,
+  type ResolveRecordUrl,
   type ResolveScreenUrl
 } from "./hubStore";
 import type { HubMutation } from "./mutations";
 
 const noScreenUrl: ResolveScreenUrl = () => undefined;
+const noRecordUrl: ResolveRecordUrl = () => undefined;
 
 const HubContext = createContext<HubStore | null>(null);
 
@@ -45,6 +47,7 @@ export function HubProvider({
   dispatch,
   resolveScreenUrl = noScreenUrl,
   resolveVideoUrl = noScreenUrl,
+  resolveRecordUrl = noRecordUrl,
   children
 }: {
   data: HubData;
@@ -52,6 +55,7 @@ export function HubProvider({
   dispatch: (m: HubMutation) => void;
   resolveScreenUrl?: ResolveScreenUrl;
   resolveVideoUrl?: ResolveScreenUrl;
+  resolveRecordUrl?: ResolveRecordUrl;
   children: ReactNode;
 }) {
   const storeRef = useRef<HubStore | null>(null);
@@ -59,7 +63,14 @@ export function HubProvider({
     storeRef.current = createHubStore({ ...data, ...flags });
     storeRef.current
       .getState()
-      .setData(data, flags, dispatch, resolveScreenUrl, resolveVideoUrl);
+      .setData(
+        data,
+        flags,
+        dispatch,
+        resolveScreenUrl,
+        resolveVideoUrl,
+        resolveRecordUrl
+      );
   }
 
   // Re-hydrate from the loader whenever it revalidates (e.g. after a mutation or
@@ -67,8 +78,22 @@ export function HubProvider({
   useEffect(() => {
     storeRef.current
       ?.getState()
-      .setData(data, flags, dispatch, resolveScreenUrl, resolveVideoUrl);
-  }, [data, flags, dispatch, resolveScreenUrl, resolveVideoUrl]);
+      .setData(
+        data,
+        flags,
+        dispatch,
+        resolveScreenUrl,
+        resolveVideoUrl,
+        resolveRecordUrl
+      );
+  }, [
+    data,
+    flags,
+    dispatch,
+    resolveScreenUrl,
+    resolveVideoUrl,
+    resolveRecordUrl
+  ]);
 
   return (
     <HubContext.Provider value={storeRef.current}>
@@ -110,6 +135,10 @@ export const useFieldMap = () => useHub((s) => s.fieldMap);
 export const useResolveScreenUrl = () => useHub((s) => s.resolveScreenUrl);
 // Resolve a training video key to a watch URL (or undefined).
 export const useResolveVideoUrl = () => useHub((s) => s.resolveVideoUrl);
+// Resolve one record's detail screen (spot-check deep links).
+export const useResolveRecordUrl = () => useHub((s) => s.resolveRecordUrl);
+// Live master-data counts + samples (null where the loader didn't provide them).
+export const useCounts = () => useHub((s) => s.counts);
 
 // Custom rows for one collection. Selects the stable `rows` ref and filters in a
 // memo so the selector never returns a fresh array (which would thrash useStore).

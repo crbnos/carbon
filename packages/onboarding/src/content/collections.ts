@@ -73,6 +73,16 @@ export const COLLECTIONS = {
     emptyText: msg`No champions named yet. One per area — one person can wear several hats.`,
     customerAdd: true,
     newPayload: () => ({ area: "", name: "", email: "", status: "invited" })
+  },
+  // Fix-it tasks born from the Live page's relapse question ("something
+  // happened outside Carbon" → a task with a play, not a shrug).
+  fixit: {
+    collection: "fixit",
+    addLabel: msg`Add a fix`,
+    emptyText: msg`Nothing to fix — everything's happening in Carbon.`,
+    flag: { active: msg`Fixed`, inactive: msg`Open` },
+    customerAdd: true,
+    newPayload: () => ({ label: "" })
   }
 } satisfies Record<string, CollectionDef>;
 

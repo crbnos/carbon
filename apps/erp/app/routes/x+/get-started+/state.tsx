@@ -2,7 +2,11 @@ import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { COLLECTIONS, stateActionValidator } from "@carbon/onboarding";
+import {
+  COLLECTIONS,
+  isCustomerEditableField,
+  stateActionValidator
+} from "@carbon/onboarding";
 import {
   deleteImplementationRow,
   insertImplementationRow,
@@ -66,9 +70,10 @@ export async function action({ request }: ActionFunctionArgs) {
       break;
     }
     case "setField": {
-      // All fill-in fields are currently Carbon-owned. When customer-owned
-      // fields are added, gate per the field's ownership instead of isInternal.
-      if (!isInternal) {
+      // Most fill-in fields are Carbon-owned; the customer-owned surfaces
+      // (freeze plan, pilot picker, push-the-date, relapse answers) opt in
+      // through isCustomerEditableField.
+      if (!isInternal && !isCustomerEditableField(a.fieldKey)) {
         return data(
           { success: false },
           await flash(
