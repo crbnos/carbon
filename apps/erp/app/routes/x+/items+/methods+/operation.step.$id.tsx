@@ -8,11 +8,12 @@ import {
   assertMethodOperationIsDraft,
   upsertMethodOperationStep
 } from "~/modules/items";
+import { checkRevisionLock } from "~/modules/items/items.server";
 import { operationStepValidator } from "~/modules/shared";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "parts"
   });
 
@@ -29,6 +30,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const { id: _id, ...d } = validation.data;
+
+  // Release-lock gate: enforce -> block; warn -> proceed + flash; off -> no-op.
+  const lock = await checkRevisionLock(client, {
+    kind: "operation",
+    id: validation.data.operationId,
+    companyId
+  });
+  if (!lock.ok) {
+    return { success: false, message: lock.message };
+  }
 
   await assertMethodOperationIsDraft(client, validation.data.operationId);
 
@@ -67,6 +78,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   return data(
     { id: methodOperationStepId },
-    await flash(request, success("Method operation step updated"))
+    await flash(
+      request,
+      success(lock.warn ? lock.message : "Method operation step updated")
+    )
   );
 }

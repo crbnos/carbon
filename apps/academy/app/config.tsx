@@ -19,8 +19,6 @@ type Config = Module[];
 type Module = {
   name: string;
   id: string;
-  background: string;
-  foreground: string;
   courses: Course[];
 };
 
@@ -59,8 +57,6 @@ type Lesson = {
 export const modules: Config = [
   {
     name: "Carbon Overview",
-    background: "#6041d0",
-    foreground: "#fff",
     id: "carbon-overview",
     courses: [
       {
@@ -215,8 +211,6 @@ export const modules: Config = [
   },
   {
     name: "Getting Started",
-    background: "#4AA99D",
-    foreground: "#fff",
     id: "getting-started",
     courses: [
       {
@@ -353,8 +347,6 @@ export const modules: Config = [
   },
   {
     name: "Parts and Materials",
-    background: "#488FB9",
-    foreground: "#fff",
     id: "parts-materials",
     courses: [
       {
@@ -531,6 +523,15 @@ export const modules: Config = [
                 description:
                   "Learn how to use Carbon's product configurator to create complex, configurable products.",
                 duration: 328
+              },
+              {
+                id: "engineering-change-orders",
+                loomUrl:
+                  "https://www.loom.com/share/0aa0ab77ef014a52a3c617ff0939d4a2",
+                name: "Engineering Change Orders",
+                description:
+                  "Learn how to use engineering change orders to manage and track changes to items, methods, and bills in a controlled, auditable way.",
+                duration: 260
               }
             ],
             supplemental: []
@@ -625,8 +626,6 @@ export const modules: Config = [
   },
   {
     name: "Selling",
-    background: "#3c5ec0",
-    foreground: "#fff",
     id: "selling",
     courses: [
       {
@@ -805,8 +804,6 @@ export const modules: Config = [
   },
   {
     name: "Manufacturing",
-    background: "#EFB655",
-    foreground: "#000000cc",
     id: "manufacturing",
     courses: [
       {
@@ -1032,8 +1029,6 @@ export const modules: Config = [
   },
   {
     name: "Buying",
-    background: "#EF8729",
-    foreground: "#fff",
     id: "buying",
     courses: [
       {
@@ -1238,8 +1233,6 @@ export const modules: Config = [
   },
   {
     name: "Quality",
-    background: "#DD6444",
-    foreground: "#fff",
     id: "quality",
     courses: [
       {
@@ -1305,8 +1298,6 @@ export const modules: Config = [
   },
   {
     name: "Developing",
-    background: "#10d131",
-    foreground: "#000000cc",
     id: "developing",
     courses: [
       {

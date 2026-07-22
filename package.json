@@ -44,6 +44,7 @@
     "db:migrate:new": "pnpm --filter @carbon/database db:migrate:new",
     "db:seed": "turbo run db:seed --no-cache",
     "db:seed:dev": "pnpm --filter @carbon/database db:seed:dev --",
+    "db:seed:change-orders": "pnpm --filter @carbon/database seed:change-orders --",
     "db:types": "tsx scripts/generate-db-types.ts",
     "deploy": "turbo run deploy",
     "dev": "crbn up --no-portless",

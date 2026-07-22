@@ -1,41 +1,56 @@
-@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Fira+Code:wght@300..700&display=swap");
 @import "tailwindcss";
-@import "non.geist";
-@import "non.geist/mono";
 @import "../../../../packages/config/tailwind/theme.css";
+@import "./editorial-tokens.css";
+@import "./editorial.css";
+
+/* Swap the site typeface to DM Sans / Fira Code (matches the docs editorial surface).
+ * Overrides theme.css's Geist font utilities site-wide. */
+@theme {
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Fira Code", ui-monospace, monospace;
+}
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --active: 240 5.9% 10%;
-    --active-foreground: 0 0% 98%;
-    --primary: 210 42% 9%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 219 93% 56%;
-    --secondary-foreground: 219 88% 98%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 37.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
+    /* Warm paper editorial palette — matches the docs Guide (#F5F5F2 paper, #262323 ink).
+     * @carbon/react components (dropdowns, toasts, auth forms) read these tokens, so they
+     * pick up the warm surface automatically. Light-only. */
+    --background: 60 11% 95%;
+    --foreground: 0 4% 14%;
+    --card: 60 33% 98%;
+    --card-foreground: 0 4% 14%;
+    --popover: 60 20% 99%;
+    --popover-foreground: 0 4% 14%;
+    --active: 60 8% 90%;
+    --active-foreground: 0 4% 14%;
+    --primary: 0 4% 14%;
+    --primary-foreground: 60 11% 96%;
+    --secondary: 60 9% 93%;
+    --secondary-foreground: 0 4% 14%;
+    --muted: 60 9% 93%;
+    --muted-foreground: 24 4% 44%;
+    --accent: 60 8% 90%;
+    --accent-foreground: 0 4% 14%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 240 10% 3.9%;
+    --border: 60 8% 90%;
+    --input: 60 8% 90%;
+    --ring: 0 4% 30%;
+    --success: 142 60% 40%;
+    --success-foreground: 0 0% 98%;
     --radius: 0.5rem;
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 60 33% 98%;
+    --sidebar-foreground: 0 4% 26%;
+    --sidebar-primary: 0 4% 14%;
+    --sidebar-primary-foreground: 60 11% 96%;
+    --sidebar-accent: 60 8% 90%;
+    --sidebar-accent-foreground: 0 4% 14%;
+    --sidebar-border: 60 8% 90%;
+    --sidebar-ring: 199 100% 50%;
+
+    /* Editorial highlight accent — the docs #00B0FF blue. */
+    --brand: 199 100% 50%;
 
     --base-shadow-color: rgb(0 0 0 / 0.05);
 
@@ -56,63 +71,6 @@
       inset 0px 1px 0px #fff, inset 0px 1px 2px 1px #fff,
       inset 0px 1px 2px rgb(0 0 0 / 0.06);
   }
-
-  .dark {
-    --background: 220 14.3% 6.1%;
-    --foreground: 0 0% 98%;
-    --card: 220 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 220 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 220 5.9% 10%;
-    --active: 0 0% 98%;
-    --active-foreground: 220 5.9% 10%;
-    --secondary: 163 93% 56%;
-    --secondary-foreground: 163 88% 11%;
-    --muted: 0 0% 13.6%;
-    --muted-foreground: 0 0% 65%;
-    --accent: 0 0% 7.6%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 220 3.7% 15.9%;
-    --input: 220 3.7% 15.9%;
-    --ring: 220 4.9% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-
-    --button-drop-shadow: rgb(0 0 0 / 0.4);
-    --danger-drop-shadow: rgb(127 29 29 / 0.8);
-    --button-shadow: 0px -1px 0px 0px rgb(255 255 255 / 0.04),
-      0px 0px 0px 1px rgb(255 255 255 / 0.12), 0px 0px 1px 0px rgb(0 0 0 / 0.04),
-      0px 2px 2px 0px rgb(0 0 0 / 0.04), 0px 4px 2px 0px rgb(0 0 0 / 0.04),
-      0px 6px 3px 0px rgb(0 0 0 / 0.04);
-    --popover-shadow: 0px 0px 4px rgba(0, 0, 0, 0.08),
-      0px 0px 10px rgba(0, 0, 0, 0.12), 0px 0px 24px rgba(0, 0, 0, 0.16),
-      0px 0px 80px rgba(0, 0, 0, 0.2);
-    --button-base-shadow: 0px 0px 0px 0.5px rgb(0 0 0 / 0.4),
-      0px 1px 1px -1px rgb(0 0 0 / 0.12), 0px 2px 2px -1px rgb(0 0 0 / 0.12),
-      inset 0px 0.5px 0px rgb(255 255 255 / 0.06),
-      inset 0px 0px 1px 0px rgb(255 255 255 / 0.16),
-      inset 0px -6px 12px -4px rgb(0 0 0 / 0.16);
-    --button-primary-shadow: 0px 1px 1px -1px rgb(0 0 0 / 0.08),
-      0px 2px 2px -1px rgb(0 0 0 / 0.08), 0px 0px 0px 1px rgb(0 0 0 / 0.06),
-      inset 0px 1px 0px #fff, inset 0px 0px 2px 1px #fff,
-      inset 0px 1px 2px rgb(0 0 0 / 0.06),
-      inset 0px -4px 8px -4px rgb(0 0 0 / 0.06);
-  }
 }
 
 @layer base {
@@ -124,13 +82,19 @@
     font-feature-settings: "rlig" 1, "calt" 1;
     font-synthesis-weight: none;
     text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Site-wide keyboard focus ring in the brand accent (matches docs). */
+  :focus-visible {
+    outline: 2px solid hsl(var(--brand));
+    outline-offset: 2px;
+  }
+  :focus:not(:focus-visible) {
+    outline: none;
   }
 }
 
 .font-display {
   font-family: "DM Sans", sans-serif;
-}
-
-a.active {
-  font-weight: 600;
 }

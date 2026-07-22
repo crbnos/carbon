@@ -1,6 +1,7 @@
 import type { ComboboxProps } from "@carbon/form";
 import { CreatableCombobox } from "@carbon/form";
 import { useDisclosure, useMount } from "@carbon/react";
+import { useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFetcher } from "react-router";
 import type {
@@ -30,6 +31,7 @@ const MaterialDimensionPreview = (
 };
 
 const MaterialDimension = (props: MaterialDimensionSelectProps) => {
+  const { t } = useLingui();
   const materialDimensionsLoader =
     useFetcher<Awaited<ReturnType<typeof getMaterialDimensionList>>>();
 
@@ -85,6 +87,12 @@ const MaterialDimension = (props: MaterialDimensionSelectProps) => {
         options={options}
         {...props}
         disabled={props.disabled || !props.formId}
+        helperText={
+          props.helperText ??
+          (!props.inline && !props.formId
+            ? t`Select a shape first to see available options`
+            : undefined)
+        }
         inline={props?.inline ? MaterialDimensionPreview : undefined}
         isOptional={props?.isOptional ?? true}
         label={props?.label ?? "Dimensions"}

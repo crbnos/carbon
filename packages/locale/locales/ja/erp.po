@@ -38,6 +38,10 @@ msgstr "「{taskName}」は完了しました — セットアップマップの
 msgid "(excluded for this customer)"
 msgstr "(このお客様では除外されています)"
 
+#. placeholder {0}: open.length
+msgid "{0, plural, one {This part is on 1 open change order} other {This part is on # open change orders}}"
+msgstr "{0, plural, one {このパーツは1件のオープンな変更指示に含まれています} other {このパーツは#件のオープンな変更指示に含まれています}}"
+
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
 msgstr "{0}件の残高のある顧客"
@@ -224,6 +228,9 @@ msgstr "90日"
 
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "Carbon実行のデータ移行 — あなたが自分のデータをロードします"
+
+msgid "A change order tracks a controlled engineering or manufacturing change through review and implementation."
+msgstr "変更指示は、レビューと実装を通じて管理されたエンジニアリングまたは製造上の変更を追跡します。"
 
 msgid "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 msgstr "受け取ったが請求されていない商品の価値を保有するクリアリング勘定。仕入先請求書がそれを結済します。"
@@ -519,6 +526,9 @@ msgstr "取得原価"
 msgid "Acquisition Date"
 msgstr "取得日"
 
+msgid "Action"
+msgstr "アクション"
+
 msgid "Action Status"
 msgstr "アクション状態"
 
@@ -612,6 +622,9 @@ msgstr "アクションを追加"
 msgid "Add Adjustment"
 msgstr "調整を追加"
 
+msgid "Add Affected Item"
+msgstr "影響を受けるアイテムを追加"
+
 msgid "Add any notes about your decision..."
 msgstr "あなたの決定についてのメモを追加してください..."
 
@@ -693,9 +706,6 @@ msgstr "質問を追加"
 msgid "Add Receipt"
 msgstr "領収書を追加"
 
-msgid "Add Required Actions"
-msgstr "必須アクションを追加"
-
 msgid "Add Requirement"
 msgstr "要件を追加"
 
@@ -742,6 +752,9 @@ msgstr "アドオン"
 msgid "Add-On Cost"
 msgstr "アドオンコスト"
 
+msgid "Added"
+msgstr "追加済み"
+
 msgid "Added for this customer"
 msgstr "このカスタマー向けに追加"
 
@@ -760,8 +773,14 @@ msgstr "住所2行目"
 msgid "Adjustment Type"
 msgstr "調整タイプ"
 
+msgid "Advance to {nextStatus}"
+msgstr "{nextStatus}に進む"
+
 msgid "Advanced"
 msgstr "詳細"
+
+msgid "Affected item not found."
+msgstr "影響を受けるアイテムが見つかりません。"
 
 msgid "After"
 msgstr "後"
@@ -868,6 +887,9 @@ msgstr "費用ではなく減価償却する資本化されたアイテムの会
 
 msgid "An asset's acquisition cost minus accumulated depreciation — what it's still worth on the books, and the figure it's disposed at."
 msgstr "資産の取得原価から累計減価償却費を差し引いたもの—帳簿上の現在の価値と処分される金額。"
+
+msgid "An engineering change: the affected items whose methods are revised on a draft and released together, superseding the versions they replace."
+msgstr "エンジニアリング変更：ドラフト上で方法が改訂され、一緒にリリースされる影響を受けるアイテム。それらが置き換える版に取って代わります。"
 
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "統合またはカスタム変更 — 実際にカスタムである小さなスライス。"
@@ -1059,6 +1081,10 @@ msgstr "プロセス「{name}」を有効化してもよろしいですか？ド
 msgid "Are you sure you want to activate this gauge?."
 msgstr "このゲージを有効化してもよろしいですか？"
 
+#. placeholder {0}: routeData?.changeOrder?.changeOrderId ?? ""
+msgid "Are you sure you want to cancel {0}? It will be closed and read-only until you reopen it."
+msgstr "{0}をキャンセルしてもよろしいですか？閉じられて、再度開くまで読み取り専用になります。"
+
 #. placeholder {0}: routeData?.rfqSummary ?.rfqId!
 msgid "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
 msgstr "{0}をキャンセルしてもよろしいですか？これにより、関連するすべてのサプライヤー見積もりもキャンセルされます。"
@@ -1151,6 +1177,14 @@ msgstr "本当にアカウント {0}{1} を削除してもよろしいですか�
 #. placeholder {0}: apiKey.name
 msgid "Are you sure you want to delete the API key: {0}? This cannot be undone."
 msgstr "API キー: {0} を削除してもよろしいですか？この操作は取り消せません。"
+
+#. placeholder {0}: requiredAction.name
+msgid "Are you sure you want to delete the change order action: {0}? This cannot be undone."
+msgstr "変更オーダーアクション「{0}」を削除してもよろしいですか？この操作は取り消せません。"
+
+#. placeholder {0}: changeOrderType.name
+msgid "Are you sure you want to delete the change order category: {0}? This cannot be undone."
+msgstr "変更指示カテゴリ「{0}」を削除してもよろしいですか？この操作は取り消せません。"
 
 msgid "Are you sure you want to delete the contractor: {name}? This cannot be undone."
 msgstr "本当に契約者 {name} を削除してもよろしいですか？この操作は取り消せません。"
@@ -1309,6 +1343,9 @@ msgstr "本当にウェブフック: {0} を削除してもよろしいですか
 
 msgid "Are you sure you want to delete this approval rule? This cannot be undone."
 msgstr "このアプリケーション承認ルールを削除してもよろしいですか？この操作は取り消せません。"
+
+msgid "Are you sure you want to delete this change order?"
+msgstr "この変更指示を削除してもよろしいですか？"
 
 msgid "Are you sure you want to delete this gauge?"
 msgstr "このゲージを削除してもよろしいですか？"
@@ -1931,6 +1968,12 @@ msgstr "このファイルをダウンロードできません"
 msgid "Cancel"
 msgstr "キャンセル"
 
+msgid "Cancel change order"
+msgstr "変更指示をキャンセル"
+
+msgid "Cancel Change Order"
+msgstr "変更指示をキャンセル"
+
 msgid "Cancel Job"
 msgstr "ジョブをキャンセル"
 
@@ -2096,11 +2139,29 @@ msgstr "チャンピオン"
 msgid "Change"
 msgstr "変更"
 
+msgid "Change order"
+msgstr "変更オーダー"
+
+msgid "Change Order"
+msgstr "変更指示"
+
+msgid "Change Order Actions"
+msgstr "変更オーダーアクション"
+
+msgid "Change Order Types"
+msgstr "変更指示タイプ"
+
+msgid "Change Orders"
+msgstr "変更指示"
+
 msgid "Change status"
 msgstr "ステータスを変更"
 
 msgid "Change the item type (e.g. Part, Material, Tool, etc.)"
 msgstr "アイテムタイプを変更します（例：部品、材料、工具など）"
+
+msgid "Change type"
+msgstr "種類を変更"
 
 msgid "Change Type"
 msgstr "タイプを変更"
@@ -2116,6 +2177,9 @@ msgstr "これを変更すると、既存のメソッドが上書きされます
 
 msgid "Changing this will update the part ID"
 msgstr "これを変更するとパーツIDが更新されます"
+
+msgid "Changing type resets this item's draft edits."
+msgstr "種類を変更すると、このアイテムのドラフト編集がリセットされます。"
 
 msgid "Chart of accounts"
 msgstr "勘定科目表"
@@ -2455,6 +2519,9 @@ msgstr "確認"
 msgid "Confirm {0}"
 msgstr "{0}を確認"
 
+msgid "Confirm & release"
+msgstr "確認してリリース"
+
 msgid "Confirm and sign the scope"
 msgstr "スコープを確認して署名する"
 
@@ -2596,6 +2663,9 @@ msgstr "コントローラー、会計士"
 msgid "Controls how planning handles a discontinued item: Consume First exhausts on-hand before switching to the successor, Prefer New redirects new demand to the successor immediately, Stock Only keeps only a minimum service reserve, and No Stock drops the item from planning entirely."
 msgstr "計画が廃止品目をどのように処理するかを制御します。「Consume First」は在庫を使い切ってから後継品に切り替え、「Prefer New」は新規需要をすぐに後継品にリダイレクト、「Stock Only」は最小限のサービス在庫のみを保持、「No Stock」は品目を計画から完全に削除します。"
 
+msgid "Controls whether the bill of material and bill of process of a released (Production) revision can be edited outside a change order."
+msgstr "リリース(本番)リビジョンのBOM(部品表)およびBOP(工程表)を変更指示の外で編集できるかどうかを制御します。"
+
 msgid "Convention"
 msgstr "慣例"
 
@@ -2676,6 +2746,9 @@ msgstr "ジョブ番号をコピー"
 
 msgid "Copy link"
 msgstr "リンクをコピー"
+
+msgid "Copy link to change order"
+msgstr "変更指示へのリンクをコピー"
 
 msgid "Copy link to consumable"
 msgstr "消耗品へのリンクをコピー"
@@ -2895,6 +2968,9 @@ msgstr "{0}個の値を作成"
 msgid "Create & Snapshot"
 msgstr "作成とスナップショット"
 
+msgid "Create a change order for the new revision and open it"
+msgstr "新しいリビジョンの変更オーダーを作成して開く"
+
 msgid "Create a new kanban card for scan-based replenishment."
 msgstr "スキャンベースの補充用に新しいかんばんカードを作成します。"
 
@@ -2921,6 +2997,9 @@ msgstr "購買注文を作成して承認する"
 
 msgid "Create audit trail entries"
 msgstr "監査証跡エントリを作成"
+
+msgid "Create Change Order"
+msgstr "変更指示を作成"
 
 msgid "Create Issue"
 msgstr "問題を作成"
@@ -2978,6 +3057,12 @@ msgstr "作成日時"
 
 msgid "Created By"
 msgstr "作成者"
+
+msgid "Created change order action"
+msgstr "変更オーダーアクションを作成"
+
+msgid "Created change order type"
+msgstr "変更指示タイプを作成"
 
 msgid "Created consumable"
 msgstr "消耗品を作成しました"
@@ -3507,6 +3592,12 @@ msgstr "あなたの基本通貨での取引のためのデフォルト現金勘
 msgid "Default CC Recipients"
 msgstr "デフォルトCC受信者"
 
+msgid "Default GL account credited when a fixed-asset disposal results in a gain."
+msgstr "固定資産の処分により利益が発生した場合に貸方に計上される既定の一般勘定科目。"
+
+msgid "Default GL account debited when a fixed-asset disposal results in a loss."
+msgstr "固定資産の処分により損失が発生した場合に借方に計上される既定の一般勘定科目。"
+
 msgid "Default GL account used for cash transactions when no specific bank account is selected."
 msgstr "特定の銀行口座が選択されていない場合、現金取引に使用されるデフォルトGLアカウント。"
 
@@ -3591,6 +3682,12 @@ msgstr "{periodLabel}を削除"
 msgid "Delete {storageUnitName}"
 msgstr "{storageUnitName}を削除"
 
+msgid "Delete action"
+msgstr "アクションを削除"
+
+msgid "Delete Action"
+msgstr "アクションを削除"
+
 msgid "Delete API Key"
 msgstr "APIキーを削除"
 
@@ -3605,6 +3702,9 @@ msgstr "属性を削除"
 
 msgid "Delete Category"
 msgstr "カテゴリを削除"
+
+msgid "Delete Change Order"
+msgstr "変更指示を削除"
 
 msgid "Delete Consumable"
 msgstr "消耗品を削除"
@@ -3835,6 +3935,9 @@ msgstr "転送を削除"
 msgid "Delete Transfer Line"
 msgstr "転送ラインを削除"
 
+msgid "Delete Type"
+msgstr "タイプを削除"
+
 msgid "Delete Unit of Measure"
 msgstr "測定単位を削除"
 
@@ -3925,6 +4028,9 @@ msgstr "説明"
 msgid "Description (optional)"
 msgstr "説明（オプション）"
 
+msgid "Description of Change"
+msgstr "変更の説明"
+
 msgid "Description of Issue"
 msgstr "問題の説明"
 
@@ -3969,6 +4075,9 @@ msgstr "無効"
 
 msgid "Discard"
 msgstr "破棄"
+
+msgid "Discontinuation date"
+msgstr "廃止日"
 
 msgid "Discontinuation Date"
 msgstr "廃止日"
@@ -4018,9 +4127,6 @@ msgstr "表示設定"
 
 msgid "Disposal"
 msgstr "処分"
-
-msgid "Disposal Account"
-msgstr "処分勘定"
 
 msgid "Disposal Date"
 msgstr "処分日"
@@ -4247,6 +4353,9 @@ msgstr "能力を編集"
 msgid "Edit Account"
 msgstr "アカウントを編集"
 
+msgid "Edit Action"
+msgstr "アクションを編集"
+
 msgid "Edit API Key"
 msgstr "APIキーを編集"
 
@@ -4267,6 +4376,15 @@ msgstr "属性カテゴリを編集"
 
 msgid "Edit Category"
 msgstr "カテゴリを編集"
+
+msgid "Edit Change Order"
+msgstr "変更指示を編集"
+
+msgid "Edit Change Order Action"
+msgstr "変更オーダーアクションを編集"
+
+msgid "Edit Change Order Type"
+msgstr "変更指示タイプを編集"
 
 msgid "Edit column visibility"
 msgstr "列の表示/非表示を編集"
@@ -4520,6 +4638,9 @@ msgstr "転送を編集"
 msgid "Edit Transfer Line"
 msgstr "転送ラインを編集"
 
+msgid "Edit Type"
+msgstr "タイプを編集"
+
 msgid "Edit Unit of Measure"
 msgstr "計測単位を編集"
 
@@ -4640,6 +4761,9 @@ msgstr "終了時刻"
 msgid "Ends"
 msgstr "終了"
 
+msgid "Enforce — edits are blocked"
+msgstr "強制 - 編集はブロックされます"
+
 msgid "Enforce per-item validation and guidelines across receipts, shipments, transfers, and adjustments."
 msgstr "領収書、出荷、転送、および調整全体にわたって、品目ごとの検証とガイドラインを実施します。"
 
@@ -4666,6 +4790,10 @@ msgstr "この会社を実装ハブに登録する"
 
 msgid "Enter a batch number before setting the expiration date"
 msgstr "有効期限を設定する前にバッチ番号を入力してください"
+
+#. placeholder {0}: target.maxQuantity - 1
+msgid "Enter a quantity between 1 and {0}."
+msgstr "1～{0}の数量を入力してください。"
 
 msgid "Enter and approve vendor bills against a PO (three-way match)"
 msgstr "ベンダー請求書をPOに対して入力および承認する（3者間照合）"
@@ -5544,14 +5672,17 @@ msgstr "履行場所"
 msgid "FX G/L"
 msgstr "FX G/L"
 
-msgid "Gains and Losses"
-msgstr "利益と損失（デフォルト）"
+msgid "Gain on Disposal"
+msgstr "処分益"
 
-msgid "Gains and Losses (default)"
-msgstr "固定資産の処分で認識された利益または損失"
+msgid "Gain on Disposal (default)"
+msgstr "処分益（既定）"
 
-msgid "Gains or losses recognized on disposal of fixed assets"
-msgstr "ゲージ"
+msgid "Gain on Disposal Account"
+msgstr "処分益勘定科目"
+
+msgid "Gains recognized on disposal of fixed assets"
+msgstr "固定資産の処分により認識された利益"
 
 msgid "gauge"
 msgstr "ゲージ"
@@ -5650,79 +5781,73 @@ msgid "GL Account"
 msgstr "GLアカウント"
 
 msgid "GL account capturing cost differences on outside-processing operations."
-msgstr "適用された製造間接費と実際の製造間接費の差異をキャプチャするGLアカウント。"
+msgstr "外注加工作業のコスト差異を捕捉するGLアカウント。"
 
 msgid "GL account capturing differences between applied and actual manufacturing overhead."
-msgstr "BOM予想と実際に消費された材料の差異をキャプチャするGLアカウント。"
+msgstr "適用された製造間接費と実際の製造間接費の差異をキャプチャするGLアカウント。"
 
 msgid "GL account capturing differences between BOM-expected and actual material consumed."
-msgstr "ルーティング予想と実際の労働/機械時間の差異をキャプチャするGLアカウント。"
+msgstr "BOM予想と実際に消費された材料の差異をキャプチャするGLアカウント。"
 
 msgid "GL account capturing differences between routing-expected and actual labor/machine time."
-msgstr "実際のロットサイズが計画と異なる場合の固定費用差異をキャプチャするGLアカウント。"
+msgstr "ルーティング予想と実際の労働/機械時間の差異をキャプチャするGLアカウント。"
 
 msgid "GL account capturing fixed-cost differences when actual lot size differs from planned."
-msgstr "資産の処分時に元の費用を削除するために貸方記入されるGLアカウント。"
+msgstr "実際のロットサイズが計画と異なる場合の固定費用差異をキャプチャするGLアカウント。"
 
 msgid "GL account credited to remove the asset's original cost when it is disposed."
-msgstr "仕入先請求書が転記されたときに貸方記入されるGLアカウント（AP残高）。"
+msgstr "資産の処分時に元の費用を削除するために貸方記入されるGLアカウント。"
 
 msgid "GL account credited when a supplier invoice is posted (AP balance)."
-msgstr "労働またはマシンコストが生産ジョブに吸収されるときに貸方記入されるGLアカウント。"
+msgstr "仕入先請求書が転記されたときに貸方記入されるGLアカウント（AP残高）。"
 
 msgid "GL account credited when labor or machine cost is absorbed into a production job."
-msgstr "資産の処分時に累積減価償却費をクリアするためにデビットされるGLアカウント。"
+msgstr "労働またはマシンコストが生産ジョブに吸収されるときに貸方記入されるGLアカウント。"
 
 msgid "GL account credited when manufacturing overhead is absorbed into a production job."
 msgstr "製造間接費が生産ジョブに吸収される場合にクレジットされるGLアカウント。"
 
 msgid "GL account debited to clear accumulated depreciation when an asset is disposed."
-msgstr "顧客請求書が転記されるときにデビットされるGLアカウント。顧客が支払うときにクリアされます。"
+msgstr "資産の処分時に累積減価償却費をクリアするためにデビットされるGLアカウント。"
 
 msgid "GL account debited when a customer invoice posts; cleared when the customer pays."
-msgstr "固定資産を取得する際にデビットされるGLアカウント（購入または資本化費用）。"
+msgstr "顧客請求書が転記されるときにデビットされるGLアカウント。顧客が支払うときにクリアされます。"
 
 msgid "GL account debited when a fixed asset is acquired (purchase or capitalized cost)."
-msgstr "このクラスの資産が取得されるときにデビットされるGLアカウント。"
-
-msgid "GL account debited when an asset in this class is acquired."
-msgstr "銀行手数料および同様の手数料のGLアカウント。"
+msgstr "固定資産を取得する際にデビットされるGLアカウント（購入または資本化費用）。"
 
 msgid "GL account for bank service charges and similar fees."
-msgstr "利息収入または利息支出のGLアカウント。"
+msgstr "銀行手数料および類似の費用のためのGLアカウント。"
 
 msgid "GL account for interest income or expense."
-msgstr "仕入先に支払った購入税のGLアカウント（または回収可能）。"
+msgstr "利息収入または利息支出のGLアカウント。"
 
 msgid "GL account for purchase tax paid to suppliers (or reclaimable)."
-msgstr "買い手が自己評価するリバースチャージルールの下で発生する税金のGLアカウント。"
+msgstr "仕入先に支払った購入税のGLアカウント（または回収可能）。"
 
 msgid "GL account for tax accrued under reverse-charge rules where the buyer self-assesses."
-msgstr "税務タイミングの差異のGLアカウント（加速償却対帳簿価額償却など）。"
+msgstr "買い手が自己評価するリバースチャージルールの下で発生する税金のGLアカウント。"
 
 msgid "GL account for tax timing differences (e.g. accelerated tax depreciation vs. book depreciation)."
-msgstr "資産が償却されるときに記入されるGLアカウント（処分収益なしでコストが削除された）。"
-
-msgid "GL account hit when an asset is written off (cost removed without disposal proceeds)."
-msgstr "資産の帳簿価額が減少したときに記入されるGLアカウント（減損）。"
-
-msgid "GL account hit when an asset's book value is reduced (impairment)."
-msgstr "物理的なカウントがシステムインベントリと異なる場合に記入されるGLアカウント。"
+msgstr "税務タイミングの差異のGLアカウント（加速償却対帳簿価額償却など）。"
 
 msgid "GL account hit when physical counts differ from system inventory."
-msgstr "このグループ間取引のための源会社のGLアカウント。"
+msgstr "実地棚卸数量がシステム在庫と異なる場合に影響を受けるGLアカウント。"
 
 msgid "GL account in the source company to debit for this intercompany transaction."
-msgstr "このグループ間取引のための対象会社のGLアカウント。"
+msgstr "この会社間取引において、発生元会社で借方（デビット）に計上するGLアカウント。"
 
 msgid "GL account in the target company to credit for this intercompany transaction."
-msgstr "転記時にセント未満の端数差異を吸収するGLアカウント。"
+msgstr "この会社間取引において、対象会社で貸方（クレジット）に計上するGLアカウント。"
 
 msgid "GL account that absorbs sub-cent rounding differences on posting."
 msgstr "転記時にセント未満の端数差異を吸収するGLアカウント。"
 
 msgid "GL account that captures the difference between standard cost and actual purchase cost."
 msgstr "標準原価と実際の購入原価の差を捕捉するGLアカウント。"
+
+msgid "GL account that carries an asset's original acquisition cost — debited when acquired and credited at full gross cost when it is disposed or sold."
+msgstr "資産の当初取得原価を計上する総勘定元帳（GL）勘定科目 — 取得時に借方記入され、処分または売却時に総額（グロス）で貸方記入される。"
 
 msgid "GL account that holds the value of jobs in production until they post to finished goods."
 msgstr "生産中のジョブの価値を保有し、完成品にポストされるまでのGLアカウント。"
@@ -5742,14 +5867,8 @@ msgstr "顧客に与えられた早期支払割引が記録されるGLアカウ�
 msgid "GL account where early-payment discounts taken from suppliers are recorded."
 msgstr "サプライヤーから得られた早期支払割引が記録されるGLアカウント。"
 
-msgid "GL account where gain or loss is booked on fixed-asset disposal."
-msgstr "固定資産の処分時に利益または損失が記録されるGLアカウント。"
-
-msgid "GL account where gain or loss is booked when an asset in this class is disposed."
-msgstr "このクラスの資産が処分されるときに利益または損失が記録されるGLアカウント。"
-
-msgid "GL contra-asset account credited when depreciation posts for assets in this class."
-msgstr "このクラスの資産に対して減価償却が転記される場合に貸方記入されるGL反対資産勘定。"
+msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
+msgstr "各期に減価償却が計上されるたびに貸方記入され、資産の売却または除却時に全額借方記入される、減価償却累計額に相当するGLの資産控除（コントラアセット）勘定科目。"
 
 msgid "GL contra-asset account that accumulates depreciation booked against fixed assets."
 msgstr "固定資産に対して記録された減価償却を累積するGL反対資産勘定。"
@@ -5762,6 +5881,9 @@ msgstr "会計年度末にネット収入が閉じられるGL株主資本勘定�
 
 msgid "GL expense account debited each period when depreciation posts."
 msgstr "減価償却が転記される各期間に借方記入されるGL支出勘定。"
+
+msgid "GL expense account debited when an asset's carrying value is reduced by impairment, i.e. when its recoverable amount falls below net book value."
+msgstr "資産の帳簿価額が減損により減少した場合、すなわち回収可能価額が正味簿価（NBV）を下回った場合に借方記入されるGL費用勘定科目。"
 
 msgid "GL expense account for non-inventory purchases (supplies, services)."
 msgstr "非インベントリ購入（用品、サービス）のためのGL支出勘定。"
@@ -6091,6 +6213,9 @@ msgstr "II（通常デフォルト）"
 msgid "III (tightened)"
 msgstr "III（厳しい）"
 
+msgid "Impact"
+msgstr "影響"
+
 msgid "Imperial"
 msgstr "インペリアル"
 
@@ -6144,6 +6269,9 @@ msgstr "選択された期間内"
 
 msgid "In stock"
 msgstr "在庫あり"
+
+msgid "In stock only"
+msgstr "在庫のみ"
 
 msgid "In the loop together"
 msgstr "一緒にループの中にいる"
@@ -6641,6 +6769,9 @@ msgstr "現在の設定を保持"
 msgid "Keep existing pricing, only add new items"
 msgstr "既存の価格を保持し、新しい項目のみを追加"
 
+msgid "Keep Open"
+msgstr "開いたままにする"
+
 msgid "Key"
 msgstr "キー"
 
@@ -6751,6 +6882,9 @@ msgstr "関連するすべての領収書はそのままにしておく"
 msgid "Leave blank for built-in"
 msgstr "組み込みの場合は空白のままにしてください"
 
+msgid "Leave blank to use the next revision automatically"
+msgstr "空白のままにして、次のリビジョンを自動的に使用します"
+
 msgid "Leave empty for exact match"
 msgstr "正確な一致のために空のままにしてください"
 
@@ -6845,6 +6979,9 @@ msgstr "Linear イシューをリンク"
 #. placeholder {1}: r.quantity
 msgid "Linked entity quantity ({0}) does not match row quantity ({1})."
 msgstr "リンクされたエンティティの数量({0})が行の数量({1})と一致しません。"
+
+msgid "Linked Issue"
+msgstr "リンク済み問題"
 
 msgid "Linked PO"
 msgstr "リンク済みPO"
@@ -6945,6 +7082,18 @@ msgstr "長い説明"
 
 msgid "Looks empty here"
 msgstr "ここは空のようです"
+
+msgid "Loss on Disposal"
+msgstr "処分損"
+
+msgid "Loss on Disposal (default)"
+msgstr "処分損（既定）"
+
+msgid "Loss on Disposal Account"
+msgstr "処分損勘定科目"
+
+msgid "Losses recognized on disposal of fixed assets"
+msgstr "固定資産の処分により認識された損失"
 
 msgid "Lost"
 msgstr "失った"
@@ -7436,6 +7585,9 @@ msgstr "ジョブからモデルが削除されました"
 msgid "Model removed from line"
 msgstr "モデルがラインから削除されました"
 
+msgid "Modified"
+msgstr "修正済み"
+
 msgid "Module"
 msgstr "モジュール"
 
@@ -7587,6 +7739,15 @@ msgstr "新しい属性"
 
 msgid "New Attribute Category"
 msgstr "新しい属性カテゴリ"
+
+msgid "New Change Order"
+msgstr "新しい変更指示"
+
+msgid "New Change Order Action"
+msgstr "新しい変更オーダーアクション"
+
+msgid "New Change Order Type"
+msgstr "新しい変更指示タイプ"
 
 msgid "New Consumable"
 msgstr "新しい消耗品"
@@ -7902,6 +8063,12 @@ msgstr "アクティブな見積がありません"
 msgid "No addresses found"
 msgstr "住所が見つかりません"
 
+msgid "No affected items to assess."
+msgstr "評価する影響を受けるアイテムがありません。"
+
+msgid "No affected items."
+msgstr "影響を受けるアイテムがありません。"
+
 msgid "No applications. Payment will be on-account."
 msgstr "申請がありません。支払いはオンアカウントになります。"
 
@@ -7930,6 +8097,9 @@ msgstr "表示する容量予約はありません。ジョブをスケジュー
 msgid "No changes recorded"
 msgstr "変更が記録されていません"
 
+msgid "No changes yet."
+msgstr "まだ変更がありません。"
+
 msgid "No comments yet. Be the first to add a comment."
 msgstr "まだコメントがありません。最初のコメントを追加してください。"
 
@@ -7957,11 +8127,17 @@ msgstr "休暇の予定がありません"
 msgid "No default attachments yet."
 msgstr "まだデフォルト添付ファイルがありません。"
 
+msgid "No draft make method for this item yet."
+msgstr "このアイテムのドラフト製造方法はまだありません。"
+
 msgid "No draft versions available"
 msgstr "ドラフト版は利用できません"
 
 msgid "No due date"
 msgstr "期限なし"
+
+msgid "No editable properties for this item."
+msgstr "このアイテムの編集可能なプロパティはありません。"
 
 msgid "No employees assigned yet. Add groups to see status."
 msgstr "まだ従業員が割り当てられていません。グループを追加してステータスを確認してください。"
@@ -7986,6 +8162,9 @@ msgstr "フィールドが見つかりません。"
 
 msgid "No files"
 msgstr "ファイルなし"
+
+msgid "No files for this item."
+msgstr "このアイテムのファイルはありません。"
 
 msgid "No files uploaded"
 msgstr "ファイルがアップロードされていません"
@@ -8022,6 +8201,9 @@ msgstr "一致するものがありません"
 
 msgid "No matches for \"{query}\". Try a different search term."
 msgstr "\"{query}\"に一致するものがありません。別の検索用語を試してください。"
+
+msgid "No matches. Type to create one."
+msgstr "一致するものがありません。作成するには入力してください。"
 
 msgid "No new notifications"
 msgstr "新しい通知はありません"
@@ -8167,6 +8349,12 @@ msgstr "非在庫"
 msgid "Non-Inventory Tracking"
 msgstr "非在庫追跡"
 
+msgid "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
+msgstr "このクラスの資産が帳簿価額を下回る価格で売却またはスクラップにされた場合に借方に計上される営業外費用勘定科目。"
+
+msgid "Non-operating income account credited when an asset in this class is sold for more than its net book value."
+msgstr "このクラスの資産が帳簿価額を上回る価格で売却された場合に貸方に計上される営業外収益勘定科目。"
+
 msgid "Non-Taxable Add-On Cost"
 msgstr "非課税アドオンコスト"
 
@@ -8184,6 +8372,9 @@ msgstr "テーブルではなく、総勘定元帳残高：ジョブ材料が発
 
 msgid "Not enough jobs to cover quantity"
 msgstr "数量をカバーするのに十分なジョブがありません"
+
+msgid "Not referenced anywhere yet."
+msgstr "どこでも参照されていません。"
 
 msgid "Not Required"
 msgstr "不要"
@@ -8238,6 +8429,9 @@ msgstr "OEM (オリジナル機器メーカー)"
 
 msgid "of"
 msgstr "の"
+
+msgid "Off — released revisions stay editable"
+msgstr "オフ - リリースされたリビジョンは編集可能なままです"
 
 msgid "OK"
 msgstr "OK"
@@ -8329,6 +8523,9 @@ msgstr "申し訳ございません。アクセスしようとしているリン
 msgid "Open"
 msgstr "開く"
 
+msgid "Open a change order"
+msgstr "変更オーダーを開く"
+
 msgid "Open Actions"
 msgstr "オープンアクション"
 
@@ -8343,6 +8540,9 @@ msgstr "未払い売掛金"
 
 msgid "Open Audit Log"
 msgstr "監査ログを開く"
+
+msgid "Open change orders affecting this part"
+msgstr "この部品に影響を与える開いている変更指示"
 
 msgid "Open Date"
 msgstr "開始日"
@@ -8609,6 +8809,9 @@ msgstr "見積方法をソース方法で上書きします"
 msgid "Overwrite the target manufacturing method with the quote method"
 msgstr "見積方法でターゲット製造方法を上書きします"
 
+msgid "Owner"
+msgstr "所有者"
+
 msgid "Owner (cost center)"
 msgstr "親コストセンター"
 
@@ -8672,6 +8875,12 @@ msgstr "部品ID"
 
 msgid "Part is configured for manufacturing"
 msgstr "部品は製造用に構成されています"
+
+msgid "Part Number"
+msgstr "部品番号"
+
+msgid "Part Supersession"
+msgstr "パーツの廃止予定"
 
 msgid "Partial"
 msgstr "部分的"
@@ -9645,6 +9854,9 @@ msgstr "理由"
 msgid "Reason Account"
 msgstr "理由アカウント"
 
+msgid "Reason for Change"
+msgstr "変更の理由"
+
 msgid "Reason for declining (Optional)"
 msgstr "辞退する理由（オプション）"
 
@@ -9718,6 +9930,9 @@ msgstr "支払いを受け取る · {0} 件の請求書"
 
 msgid "Receive to Inventory"
 msgstr "在庫に受け取る"
+
+msgid "Received"
+msgstr "受信済み"
 
 #. placeholder {0}: status?.received
 #. placeholder {1}: status?.ordered
@@ -9847,11 +10062,26 @@ msgstr "相対的なタイムライン · 日付は確認待ちです"
 msgid "Release"
 msgstr "リリース"
 
+msgid "Release change order"
+msgstr "変更オーダーをリリース"
+
+msgid "Release control"
+msgstr "リリース管理"
+
+msgid "Release Control"
+msgstr "リリース管理"
+
 msgid "Release Job"
 msgstr "ジョブをリリース"
 
 msgid "Released"
 msgstr "リリース済み"
+
+msgid "Released revision"
+msgstr "リリースされたリビジョン"
+
+msgid "Released revision is locked"
+msgstr "リリースされたリビジョンはロックされています"
 
 msgid "Remaining"
 msgstr "残高"
@@ -9901,6 +10131,9 @@ msgstr "列でソートを削除"
 
 msgid "Remove this storage type from all referencing storage units and delete it. This cannot be undone."
 msgstr "このストレージタイプをすべての参照ストレージユニットから削除し、削除します。これは元に戻すことはできません。"
+
+msgid "Removed"
+msgstr "削除済み"
 
 msgid "Rendering label preview..."
 msgstr "ラベルプレビューをレンダリング中..."
@@ -10087,14 +10320,17 @@ msgstr "結果"
 msgid "Results per page"
 msgstr "ページあたりの結果数"
 
+msgid "Resume Receiving"
+msgstr "受信を再開"
+
 msgid "Retained Earnings"
 msgstr "利益剰余金"
 
 msgid "Retained Earnings (default)"
 msgstr "利益剰余金 (既定)"
 
-msgid "Retiring an asset by write-off instead of sale, booking the remaining net book value as a loss — status becomes Disposed."
-msgstr "売却ではなく償却によってアセットをリタイアし、残りの純簿価額を損失として記録する — ステータスは「処分」になります。"
+msgid "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
+msgstr "除却または売却により資産を稼働から除外し、正味簿価に対する損益を計上したうえで、そのステータスを「処分済み」に設定すること。"
 
 msgid "Retry"
 msgstr "再試行"
@@ -10123,6 +10359,9 @@ msgstr "逆請求売上税 (既定)"
 msgid "Reverse the related journal entries"
 msgstr "関連する仕訳エントリを取り消す"
 
+msgid "Review each item's changes, then confirm — releasing can't be undone."
+msgstr "各アイテムの変更をレビューしてから確認してください。リリースは取り消せません。"
+
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "当期の貸借対照表と損益計算書を確認し、数字が正しいことを確認してください。これは手動による認可です。確認後、完了とマークしてください。"
 
@@ -10135,6 +10374,9 @@ msgstr "リビジョン"
 #. placeholder {0}: revision.revision
 msgid "Revision {0}"
 msgstr "リビジョン {0}"
+
+msgid "Revisions"
+msgstr "リビジョン"
 
 msgid "Revoke"
 msgstr "取り消す"
@@ -10606,6 +10848,15 @@ msgstr "見積行を選択"
 
 msgid "Select a reason for why the quote was not created."
 msgstr "見積が作成されなかった理由を選択してください。"
+
+msgid "Select a shape first to see available options"
+msgstr "形状を先に選択すると、利用可能なオプションが表示されます。"
+
+msgid "Select a substance and shape first to see available options"
+msgstr "物質と形状を先に選択すると、利用可能なオプションが表示されます。"
+
+msgid "Select a substance first to see available options"
+msgstr "物質を先に選択すると、利用可能なオプションが表示されます。"
 
 msgid "Select a team"
 msgstr "チームを選択"
@@ -11273,6 +11524,9 @@ msgstr "開始"
 msgid "Start {0} Day Free Trial"
 msgstr "{0}日間の無料トライアルを開始"
 
+msgid "Start counting"
+msgstr "カウントを開始"
+
 msgid "Start Date"
 msgstr "開始日"
 
@@ -11383,6 +11637,9 @@ msgstr "在庫切れ"
 msgid "Stop raising purchase orders after this date"
 msgstr "この日付以降、発注を停止します"
 
+msgid "Stop Receiving"
+msgstr "受信を停止"
+
 msgid "Storage client not available"
 msgstr "ストレージクライアントが利用できません"
 
@@ -11490,6 +11747,9 @@ msgstr "見積書を正常にコピーしました"
 
 msgid "Successfully created a new revision"
 msgstr "新しいリビジョンが正常に作成されました"
+
+msgid "Successor effectivity"
+msgstr "後継の有効性"
 
 msgid "Successor Effectivity Date"
 msgstr "後継品有効日"
@@ -11836,6 +12096,9 @@ msgstr "テンプレートID"
 
 msgid "Templates"
 msgstr "テンプレート"
+
+msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for its net book value on invoicing, netting to zero over the sale cycle."
+msgstr "出荷時に資産の正味簿価を借方記入し、請求時に正味簿価を貸方記入する、販売サイクル全体を通じて残高がゼロになる一時的な処分清算勘定科目。"
 
 msgid "Terms and Privacy"
 msgstr "利用規約とプライバシー"
@@ -12333,6 +12596,16 @@ msgstr "追跡されたエンティティの記録された系統 - どの入力
 msgid "The reference data everything else hangs off. Loads first."
 msgstr "参照データはすべての基盤となります。最初に読み込まれます。"
 
+#. placeholder {0}: line.quantityToReceive
+#. placeholder {1}: line.purchaseUnitOfMeasureCode ?? ""
+msgid "The remaining {0} {1} will be expected again and counted as incoming supply."
+msgstr "残りの{0}{1}は再び期待され、入荷供給としてカウントされます"
+
+#. placeholder {0}: line.quantityToReceive
+#. placeholder {1}: line.purchaseUnitOfMeasureCode ?? ""
+msgid "The remaining {0} {1} will no longer be expected. On-order supply and MRP will stop counting it. The ordered quantity and pricing are unchanged."
+msgstr "残りの{0}{1}は期待されなくなります。発注済み供給とMRPはそれをカウント対象から外します。注文数量と価格は変更されません。"
+
 msgid "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
 msgstr "ジョブがクローズ時に残した残留WIP。生産差異勘定に削除されます—Carbonがジョブのために記録する唯一の差異。"
 
@@ -12552,6 +12825,9 @@ msgstr "この情報はドキュメントヘッダーで使用されます"
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "この情報はすべてのユーザーに表示されるため、共有する内容に注意してください。"
 
+msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
+msgstr "これは購入アイテムです。BoM/BoP はありません。属性と文書のみ変更できます。"
+
 msgid "This is a unique identifier for the webhook"
 msgstr "これはウェブフックの一意の識別子です"
 
@@ -12609,6 +12885,12 @@ msgstr "この期間には転記された仕訳がなく、永久に削除でき
 msgid "This Quarter"
 msgstr "今四半期"
 
+msgid "This revision is released (Production). Changes should normally flow through a change order."
+msgstr "このリビジョンは本番環境にリリースされています。変更は通常、変更注文を通じて行われるべきです。"
+
+msgid "This revision is released (Production). Open a change order to modify it."
+msgstr "このリビジョンは本番環境にリリースされています。これを変更するには、変更注文を開いてください。"
+
 msgid "This sales order has associated jobs. Choose what to do with them."
 msgstr "この販売注文には関連するジョブがあります。それらをどうするかを選択してください。"
 
@@ -12650,6 +12932,9 @@ msgstr "これにより、他のリビジョンのすべてのメソッドマテ
 
 msgid "This will replace all method materials of other sizes with this size."
 msgstr "これにより、他のサイズのすべてのメソッドマテリアルがこのサイズに置き換わります。"
+
+msgid "This will set the current version of the make method to Active, making it read-only."
+msgstr "これにより、製造方法の現在のバージョンがアクティブに設定され、読み取り専用になります。"
 
 msgid "This will write off the remaining book value of the asset."
 msgstr "これはアセットの残りの帳簿価額を償却します。"
@@ -13376,6 +13661,9 @@ msgstr "物理的在庫数カウント調整からの差異"
 msgid "Variance in outside processing costs"
 msgstr "外部処理コストの差異"
 
+msgid "Variance only"
+msgstr "差異のみ"
+
 msgid "VAT Number"
 msgstr "VAT番号"
 
@@ -13628,6 +13916,9 @@ msgstr "倉庫、オペレーション"
 msgid "Warn"
 msgstr "警告"
 
+msgid "Warn — edits succeed with a warning"
+msgstr "警告 — 編集は警告付きで成功します"
+
 msgid "Warn but allow"
 msgstr "警告するが許可する"
 
@@ -13764,6 +14055,9 @@ msgstr "{translatedTerm}とは何ですか?"
 
 msgid "What it is"
 msgstr "それが何であるか"
+
+msgid "What kind of change this is: Version updates how the part is made, Revision edits its details and documents, and New Part replaces it with a new part number."
+msgstr "このような変更の種類：バージョンはパーツの製造方法を更新し、リビジョンはその詳細と文書を編集し、新しいパーツは新しいパーツ番号で置き換えます。"
 
 msgid "What kind of output this entry records — Production (good units), Scrap (unrecoverable), or Rework (sent back for correction); reveals Scrap Reason when Scrap."
 msgstr "このエントリが記録する出力のタイプ — 生産(良好ユニット)、スクラップ(回復不可)、または再作業(修正のために返送)。スクラップの場合、スクラップの理由を表示します。"
@@ -13923,6 +14217,9 @@ msgstr "このアイテムの新しいストックが受取時にデフォルト
 
 msgid "Where stock lives and how it ships."
 msgstr "在庫がどこに保管され、どのように出荷されるか。"
+
+msgid "Where the affected items are used across the system. Informational — nothing here blocks releasing."
+msgstr "影響を受けるアイテムがシステム全体でどこで使用されているか。情報提供 - ここに何もリリースをブロックしません。"
 
 msgid "Where this entry originated (manual entry, posting from sales/purchasing, recurring template, etc.)."
 msgstr "このエントリーの出所(手動入力、販売/購買からのポスティング、反復テンプレートなど)。"
@@ -14210,6 +14507,9 @@ msgstr "あなたは{hoursElapsed}時間クロックインしています。ク�
 
 msgid "Your books and how money flows."
 msgstr "あなたの帳簿とお金の流れ。"
+
+msgid "Your changes go into a new draft version released with this change order."
+msgstr "変更は、このチェンジオーダーとともにリリースされる新しいドラフトバージョンに入ります。"
 
 msgid "Your Console PIN"
 msgstr "あなたのコンソールPIN"

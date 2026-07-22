@@ -38,6 +38,10 @@ msgstr "\"{taskName}\" पूरा हो गया — इसके सभी 
 msgid "(excluded for this customer)"
 msgstr "(इस ग्राहक के लिए बाहर रखा गया)"
 
+#. placeholder {0}: open.length
+msgid "{0, plural, one {This part is on 1 open change order} other {This part is on # open change orders}}"
+msgstr "{0, plural, one {यह भाग 1 खुले परिवर्तन आदेश पर है} other {यह भाग # खुले परिवर्तन आदेशों पर है}}"
+
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
 msgstr "{0} ग्राहकों के साथ शेष"
@@ -224,6 +228,9 @@ msgstr "90 दिन"
 
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "एक कार्बन-चलाया गया डेटा माइग्रेशन — आप अपना डेटा लोड करते हैं"
+
+msgid "A change order tracks a controlled engineering or manufacturing change through review and implementation."
+msgstr "एक परिवर्तन आदेश समीक्षा और कार्यान्वयन के माध्यम से नियंत्रित इंजीनियरिंग या विनिर्माण परिवर्तन को ट्रैक करता है।"
 
 msgid "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 msgstr "एक क्लीयरिंग खाता जो प्राप्त किए गए लेकिन अभी तक चालान नहीं किए गए सामान का मूल्य रखता है; आपूर्तिकर्ता चालान इसे साफ करता है।"
@@ -519,6 +526,9 @@ msgstr "अधिग्रहण लागत"
 msgid "Acquisition Date"
 msgstr "अधिग्रहण तारीख"
 
+msgid "Action"
+msgstr "कार्रवाई"
+
 msgid "Action Status"
 msgstr "कार्रवाई स्थिति"
 
@@ -612,6 +622,9 @@ msgstr "कार्य जोड़ें"
 msgid "Add Adjustment"
 msgstr "समायोजन जोड़ें"
 
+msgid "Add Affected Item"
+msgstr "प्रभावित आइटम जोड़ें"
+
 msgid "Add any notes about your decision..."
 msgstr "अपने निर्णय के बारे में कोई भी नोट्स जोड़ें..."
 
@@ -693,9 +706,6 @@ msgstr "प्रश्न जोड़ें"
 msgid "Add Receipt"
 msgstr "रसीद जोड़ें"
 
-msgid "Add Required Actions"
-msgstr "आवश्यक कार्य जोड़ें"
-
 msgid "Add Requirement"
 msgstr "आवश्यकता जोड़ें"
 
@@ -742,6 +752,9 @@ msgstr "ऐड-ऑन"
 msgid "Add-On Cost"
 msgstr "ऐड-ऑन लागत"
 
+msgid "Added"
+msgstr "जोड़ा गया"
+
 msgid "Added for this customer"
 msgstr "इस ग्राहक के लिए जोड़ा गया"
 
@@ -760,8 +773,14 @@ msgstr "पता लाइन 2"
 msgid "Adjustment Type"
 msgstr "समायोजन प्रकार"
 
+msgid "Advance to {nextStatus}"
+msgstr "{nextStatus} को आगे बढ़ाएं"
+
 msgid "Advanced"
 msgstr "उन्नत"
+
+msgid "Affected item not found."
+msgstr "प्रभावित आइटम नहीं मिला।"
 
 msgid "After"
 msgstr "के बाद"
@@ -868,6 +887,9 @@ msgstr "एक पूंजीकृत वस्तु के लिए एक 
 
 msgid "An asset's acquisition cost minus accumulated depreciation — what it's still worth on the books, and the figure it's disposed at."
 msgstr "एक संपत्ति की अधिग्रहण लागत माइनस संचयी मूल्यह्रास — यह किताबों पर अभी भी क्या मूल्य है और राशि जिस पर इसे निपटाया जाता है।"
+
+msgid "An engineering change: the affected items whose methods are revised on a draft and released together, superseding the versions they replace."
+msgstr "एक इंजीनियरिंग परिवर्तन: प्रभावित आइटम जिनकी विधियों को ड्राफ्ट पर संशोधित किया गया है और एक साथ जारी किया गया है, जो वे संस्करणों को प्रतिस्थापित करते हैं।"
 
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "एक एकीकरण या एक कस्टम परिवर्तन — वह छोटा हिस्सा जो वास्तव में कस्टम है।"
@@ -1059,6 +1081,10 @@ msgstr "क्या आप सुनिश्चित हैं कि आप 
 msgid "Are you sure you want to activate this gauge?."
 msgstr "क्या आप सुनिश्चित हैं कि आप इस गेज को सक्रिय करना चाहते हैं?"
 
+#. placeholder {0}: routeData?.changeOrder?.changeOrderId ?? ""
+msgid "Are you sure you want to cancel {0}? It will be closed and read-only until you reopen it."
+msgstr "क्या आप सुनिश्चित हैं कि आप {0} को रद्द करना चाहते हैं? यह बंद हो जाएगा और जब तक आप इसे फिर से नहीं खोलते तब तक यह केवल पढ़ने के लिए होगा।"
+
 #. placeholder {0}: routeData?.rfqSummary ?.rfqId!
 msgid "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
 msgstr "क्या आप सुनिश्चित हैं कि आप {0} को रद्द करना चाहते हैं? यह सभी संबंधित आपूर्तिकर्ता उद्धरणों को भी रद्द कर देगा।"
@@ -1151,6 +1177,14 @@ msgstr "क्या आप सुनिश्चित हैं कि आप 
 #. placeholder {0}: apiKey.name
 msgid "Are you sure you want to delete the API key: {0}? This cannot be undone."
 msgstr "क्या आप सुनिश्चित हैं कि आप API कुंजी को हटाना चाहते हैं: {0}? यह पूर्ववत नहीं किया जा सकता।"
+
+#. placeholder {0}: requiredAction.name
+msgid "Are you sure you want to delete the change order action: {0}? This cannot be undone."
+msgstr "क्या आप वाकई परिवर्तन आदेश कार्रवाई को हटाना चाहते हैं: {0}? यह पूर्ववत नहीं किया जा सकता।"
+
+#. placeholder {0}: changeOrderType.name
+msgid "Are you sure you want to delete the change order category: {0}? This cannot be undone."
+msgstr "क्या आप परिवर्तन आदेश श्रेणी को हटाना चाहते हैं: {0}? यह पूर्ववत नहीं किया जा सकता।"
 
 msgid "Are you sure you want to delete the contractor: {name}? This cannot be undone."
 msgstr "क्या आप सुनिश्चित हैं कि आप ठेकेदार को हटाना चाहते हैं: {name}? यह पूर्ववत नहीं किया जा सकता।"
@@ -1309,6 +1343,9 @@ msgstr "क्या आप सुनिश्चित हैं कि आप 
 
 msgid "Are you sure you want to delete this approval rule? This cannot be undone."
 msgstr "क्या आप सुनिश्चित हैं कि आप इस अनुमोदन नियम को हटाना चाहते हैं? यह पूर्ववत नहीं किया जा सकता।"
+
+msgid "Are you sure you want to delete this change order?"
+msgstr "क्या आप इस परिवर्तन आदेश को हटाना चाहते हैं?"
 
 msgid "Are you sure you want to delete this gauge?"
 msgstr "क्या आप सुनिश्चित हैं कि आप इस गेज को हटाना चाहते हैं?"
@@ -1931,6 +1968,12 @@ msgstr "इस फ़ाइल को डाउनलोड नहीं कर 
 msgid "Cancel"
 msgstr "रद्द करें"
 
+msgid "Cancel change order"
+msgstr "परिवर्तन आदेश रद्द करें"
+
+msgid "Cancel Change Order"
+msgstr "परिवर्तन आदेश रद्द करें"
+
 msgid "Cancel Job"
 msgstr "नौकरी रद्द करें"
 
@@ -2096,11 +2139,29 @@ msgstr "चैंपियन"
 msgid "Change"
 msgstr "बदलें"
 
+msgid "Change order"
+msgstr "परिवर्तन आदेश"
+
+msgid "Change Order"
+msgstr "परिवर्तन आदेश"
+
+msgid "Change Order Actions"
+msgstr "परिवर्तन आदेश कार्रवाई"
+
+msgid "Change Order Types"
+msgstr "परिवर्तन आदेश प्रकार"
+
+msgid "Change Orders"
+msgstr "परिवर्तन आदेश"
+
 msgid "Change status"
 msgstr "स्थिति बदलें"
 
 msgid "Change the item type (e.g. Part, Material, Tool, etc.)"
 msgstr "आइटम प्रकार बदलें (जैसे भाग, सामग्री, उपकरण, आदि)"
+
+msgid "Change type"
+msgstr "प्रकार परिवर्तित करें"
 
 msgid "Change Type"
 msgstr "प्रकार बदलें"
@@ -2116,6 +2177,9 @@ msgstr "इसे बदलने से मौजूदा विधि अध�
 
 msgid "Changing this will update the part ID"
 msgstr "इसे बदलने से पार्ट ID अपडेट हो जाएगा"
+
+msgid "Changing type resets this item's draft edits."
+msgstr "प्रकार बदलने से इस आइटम के ड्राफ्ट संपादन रीसेट हो जाते हैं।"
 
 msgid "Chart of accounts"
 msgstr "खातों की चार्ट"
@@ -2455,6 +2519,9 @@ msgstr "पुष्टि करें"
 msgid "Confirm {0}"
 msgstr "की पुष्टि करें {0}"
 
+msgid "Confirm & release"
+msgstr "पुष्टि करें और जारी करें"
+
 msgid "Confirm and sign the scope"
 msgstr "स्कोप की पुष्टि करें और हस्ताक्षर करें"
 
@@ -2596,6 +2663,9 @@ msgstr "नियंत्रक, लेखाकार"
 msgid "Controls how planning handles a discontinued item: Consume First exhausts on-hand before switching to the successor, Prefer New redirects new demand to the successor immediately, Stock Only keeps only a minimum service reserve, and No Stock drops the item from planning entirely."
 msgstr "नियंत्रित करता है कि योजना एक बंद की गई वस्तु को कैसे संभालती है: पहले उपभोग करें हाथ पर स्टॉक को समाप्त करता है फिर उत्तराधिकारी पर स्विच करता है, नई को प्राथमिकता दें नई मांग को तुरंत उत्तराधिकारी को पुनर्निर्देशित करता है, केवल स्टॉक केवल न्यूनतम सेवा रिजर्व रखता है, और कोई स्टॉक नहीं वस्तु को योजना से पूरी तरह हटा देता है।"
 
+msgid "Controls whether the bill of material and bill of process of a released (Production) revision can be edited outside a change order."
+msgstr "नियंत्रित करता है कि क्या जारी (उत्पादन) संशोधन के सामग्री बिल और प्रक्रिया बिल को परिवर्तन आदेश के बाहर संपादित किया जा सकता है।"
+
 msgid "Convention"
 msgstr "अभिसम्मति"
 
@@ -2676,6 +2746,9 @@ msgstr "जॉब नंबर कॉपी करें"
 
 msgid "Copy link"
 msgstr "लिंक कॉपी करें"
+
+msgid "Copy link to change order"
+msgstr "परिवर्तन आदेश के लिए लिंक कॉपी करें"
 
 msgid "Copy link to consumable"
 msgstr "उपभोग्य के लिए लिंक कॉपी करें"
@@ -2895,6 +2968,9 @@ msgstr "{0} मान बनाएं"
 msgid "Create & Snapshot"
 msgstr "बनाएं और स्नैपशॉट लें"
 
+msgid "Create a change order for the new revision and open it"
+msgstr "नए संशोधन के लिए एक परिवर्तन आदेश बनाएं और इसे खोलें"
+
 msgid "Create a new kanban card for scan-based replenishment."
 msgstr "स्कैन-आधारित पुनःपूर्ति के लिए एक नया कानबन कार्ड बनाएं।"
 
@@ -2921,6 +2997,9 @@ msgstr "क्रय आदेश बनाएं और मंजूरी द�
 
 msgid "Create audit trail entries"
 msgstr "ऑडिट ट्रेल प्रविष्टियां बनाएं"
+
+msgid "Create Change Order"
+msgstr "परिवर्तन आदेश बनाएं"
 
 msgid "Create Issue"
 msgstr "समस्या बनाएं"
@@ -2978,6 +3057,12 @@ msgstr "बनाया गया"
 
 msgid "Created By"
 msgstr "द्वारा बनाया गया"
+
+msgid "Created change order action"
+msgstr "बनाई गई परिवर्तन आदेश कार्रवाई"
+
+msgid "Created change order type"
+msgstr "बनाया गया परिवर्तन आदेश प्रकार"
 
 msgid "Created consumable"
 msgstr "उपभोग्य बनाया गया"
@@ -3507,6 +3592,12 @@ msgstr "आपकी आधार मुद्रा में लेनदे�
 msgid "Default CC Recipients"
 msgstr "डिफ़ॉल्ट CC प्राप्तकर्ता"
 
+msgid "Default GL account credited when a fixed-asset disposal results in a gain."
+msgstr "डिफ़ॉल्ट GL खाता जिसमें एक स्थिर-संपत्ति के निपटान के परिणामस्वरूप लाभ में क्रेडिट किया जाता है।"
+
+msgid "Default GL account debited when a fixed-asset disposal results in a loss."
+msgstr "डिफ़ॉल्ट GL खाता जिसमें एक स्थिर-संपत्ति के निपटान के परिणामस्वरूप हानि में डेबिट किया जाता है।"
+
 msgid "Default GL account used for cash transactions when no specific bank account is selected."
 msgstr "जब कोई विशिष्ट बैंक खाता नहीं चुना जाता है तो नकद लेनदेन के लिए उपयोग किया जाने वाला डिफ़ॉल्ट GL खाता।"
 
@@ -3591,6 +3682,12 @@ msgstr "{periodLabel} हटाएँ"
 msgid "Delete {storageUnitName}"
 msgstr "Delete {storageUnitName} को हटाएं"
 
+msgid "Delete action"
+msgstr "क्रिया हटाएं"
+
+msgid "Delete Action"
+msgstr "कार्रवाई हटाएं"
+
 msgid "Delete API Key"
 msgstr "API Key हटाएं"
 
@@ -3605,6 +3702,9 @@ msgstr "विशेषता हटाएं"
 
 msgid "Delete Category"
 msgstr "श्रेणी हटाएं"
+
+msgid "Delete Change Order"
+msgstr "परिवर्तन आदेश हटाएं"
 
 msgid "Delete Consumable"
 msgstr "उपभोग्य हटाएं"
@@ -3835,6 +3935,9 @@ msgstr "स्थानांतरण हटाएं"
 msgid "Delete Transfer Line"
 msgstr "स्थानांतरण लाइन हटाएं"
 
+msgid "Delete Type"
+msgstr "प्रकार हटाएं"
+
 msgid "Delete Unit of Measure"
 msgstr "माप की इकाई हटाएं"
 
@@ -3925,6 +4028,9 @@ msgstr "विवरण"
 msgid "Description (optional)"
 msgstr "विवरण (वैकल्पिक)"
 
+msgid "Description of Change"
+msgstr "परिवर्तन का विवरण"
+
 msgid "Description of Issue"
 msgstr "समस्या का विवरण"
 
@@ -3969,6 +4075,9 @@ msgstr "अक्षम"
 
 msgid "Discard"
 msgstr "त्यागें"
+
+msgid "Discontinuation date"
+msgstr "बंद करने की तारीख"
 
 msgid "Discontinuation Date"
 msgstr "बंद करने की तारीख"
@@ -4018,9 +4127,6 @@ msgstr "प्रदर्शन सेटिंग्स"
 
 msgid "Disposal"
 msgstr "निपटान"
-
-msgid "Disposal Account"
-msgstr "निपटान खाता"
 
 msgid "Disposal Date"
 msgstr "निपटान की तारीख"
@@ -4247,6 +4353,9 @@ msgstr "क्षमता संपादित करें"
 msgid "Edit Account"
 msgstr "खाता संपादित करें"
 
+msgid "Edit Action"
+msgstr "कार्रवाई संपादित करें"
+
 msgid "Edit API Key"
 msgstr "API Key संपादित करें"
 
@@ -4267,6 +4376,15 @@ msgstr "विशेषता श्रेणी संपादित करे
 
 msgid "Edit Category"
 msgstr "श्रेणी संपादित करें"
+
+msgid "Edit Change Order"
+msgstr "परिवर्तन आदेश संपादित करें"
+
+msgid "Edit Change Order Action"
+msgstr "परिवर्तन आदेश कार्रवाई संपादित करें"
+
+msgid "Edit Change Order Type"
+msgstr "परिवर्तन आदेश प्रकार संपादित करें"
 
 msgid "Edit column visibility"
 msgstr "कॉलम दृश्यता संपादित करें"
@@ -4520,6 +4638,9 @@ msgstr "ट्रांसफर संपादित करें"
 msgid "Edit Transfer Line"
 msgstr "स्थानांतरण लाइन संपादित करें"
 
+msgid "Edit Type"
+msgstr "प्रकार संपादित करें"
+
 msgid "Edit Unit of Measure"
 msgstr "माप की इकाई संपादित करें"
 
@@ -4640,6 +4761,9 @@ msgstr "समाप्ति समय"
 msgid "Ends"
 msgstr "समाप्त होता है"
 
+msgid "Enforce — edits are blocked"
+msgstr "लागू करें — संपादन अवरुद्ध हैं"
+
 msgid "Enforce per-item validation and guidelines across receipts, shipments, transfers, and adjustments."
 msgstr "रसीदों, शिपमेंट, ट्रांसफर और समायोजन में प्रति-आइटम सत्यापन और दिशानिर्देश लागू करें।"
 
@@ -4666,6 +4790,10 @@ msgstr "इस कंपनी को कार्यान्वयन हब �
 
 msgid "Enter a batch number before setting the expiration date"
 msgstr "समाप्ति तारीख सेट करने से पहले एक बैच नंबर दर्ज करें"
+
+#. placeholder {0}: target.maxQuantity - 1
+msgid "Enter a quantity between 1 and {0}."
+msgstr "1 और {0} के बीच मात्रा दर्ज करें।"
 
 msgid "Enter and approve vendor bills against a PO (three-way match)"
 msgstr "विक्रेता बिलों को PO के विरुद्ध दर्ज करें और अनुमोदित करें (तीन-तरफा मिलान)"
@@ -5544,14 +5672,17 @@ msgstr "पूरा करने का स्थान"
 msgid "FX G/L"
 msgstr "FX G/L"
 
-msgid "Gains and Losses"
-msgstr "लाभ और हानि (डिफ़ॉल्ट)"
+msgid "Gain on Disposal"
+msgstr "निपटान पर लाभ"
 
-msgid "Gains and Losses (default)"
-msgstr "स्थिर संपत्ति के निपटान पर मान्यता प्राप्त लाभ या हानि"
+msgid "Gain on Disposal (default)"
+msgstr "निपटान पर लाभ (डिफ़ॉल्ट)"
 
-msgid "Gains or losses recognized on disposal of fixed assets"
-msgstr "गेज"
+msgid "Gain on Disposal Account"
+msgstr "निपटान पर लाभ खाता"
+
+msgid "Gains recognized on disposal of fixed assets"
+msgstr "स्थिर संपत्तियों के निपटान पर मान्यता प्राप्त लाभ"
 
 msgid "gauge"
 msgstr "गेज"
@@ -5650,79 +5781,73 @@ msgid "GL Account"
 msgstr "जीएल खाता"
 
 msgid "GL account capturing cost differences on outside-processing operations."
-msgstr "GL खाता लागू और वास्तविक विनिर्माण ओवरहेड के बीच अंतर को कैप्चर करता है।"
+msgstr "GL खाता जो बाह्य-प्रसंस्करण (आउटसोर्स प्रोसेसिंग) संचालन पर लागत अंतर को कैप्चर करता है।"
 
 msgid "GL account capturing differences between applied and actual manufacturing overhead."
-msgstr "GL खाता BOM-अपेक्षित और वास्तविक सामग्री खपत के बीच अंतर को कैप्चर करता है।"
+msgstr "GL खाता लागू और वास्तविक विनिर्माण ओवरहेड के बीच अंतर को कैप्चर करता है।"
 
 msgid "GL account capturing differences between BOM-expected and actual material consumed."
-msgstr "GL खाता रूटिंग-अपेक्षित और वास्तविक श्रम/मशीन समय के बीच अंतर को कैप्चर करता है।"
+msgstr "GL खाता BOM-अपेक्षित और वास्तविक सामग्री खपत के बीच अंतर को कैप्चर करता है।"
 
 msgid "GL account capturing differences between routing-expected and actual labor/machine time."
-msgstr "GL खाता निश्चित-लागत अंतर को कैप्चर करता है जब वास्तविक लॉट आकार योजना से अलग होता है।"
+msgstr "GL खाता रूटिंग-अपेक्षित और वास्तविक श्रम/मशीन समय के बीच अंतर को कैप्चर करता है।"
 
 msgid "GL account capturing fixed-cost differences when actual lot size differs from planned."
-msgstr "GL खाता इसके निपटान के समय संपत्ति की मूल लागत को हटाने के लिए जमा किया जाता है।"
+msgstr "GL खाता निश्चित-लागत अंतर को कैप्चर करता है जब वास्तविक लॉट आकार योजना से अलग होता है।"
 
 msgid "GL account credited to remove the asset's original cost when it is disposed."
-msgstr "GL खाता जब एक आपूर्तिकर्ता चालान पोस्ट किया जाता है तो जमा किया जाता है (AP बैलेंस)।"
+msgstr "GL खाता इसके निपटान के समय संपत्ति की मूल लागत को हटाने के लिए जमा किया जाता है।"
 
 msgid "GL account credited when a supplier invoice is posted (AP balance)."
-msgstr "GL खाता जब श्रम या मशीन लागत एक उत्पादन कार्य में अवशोषित की जाती है तो जमा किया जाता है।"
+msgstr "GL खाता जब एक आपूर्तिकर्ता चालान पोस्ट किया जाता है तो जमा किया जाता है (AP बैलेंस)।"
 
 msgid "GL account credited when labor or machine cost is absorbed into a production job."
-msgstr "GL खाता जब एक संपत्ति का निपटान किया जाता है तो जमा किए गए मूल्यह्रास को साफ करने के लिए डेबिट किया जाता है।"
+msgstr "GL खाता जब श्रम या मशीन लागत एक उत्पादन कार्य में अवशोषित की जाती है तो जमा किया जाता है।"
 
 msgid "GL account credited when manufacturing overhead is absorbed into a production job."
 msgstr "जब विनिर्माण ओवरहेड को एक उत्पादन कार्य में अवशोषित किया जाता है तो GL खाता क्रेडिट किया जाता है।"
 
 msgid "GL account debited to clear accumulated depreciation when an asset is disposed."
-msgstr "GL खाता जब ग्राहक चालान पोस्ट किया जाता है तो डेबिट किया जाता है; जब ग्राहक भुगतान करता है तो साफ किया जाता है।"
+msgstr "GL खाता जब एक संपत्ति का निपटान किया जाता है तो जमा किए गए मूल्यह्रास को साफ करने के लिए डेबिट किया जाता है।"
 
 msgid "GL account debited when a customer invoice posts; cleared when the customer pays."
-msgstr "GL खाता जब एक स्थिर संपत्ति प्राप्त की जाती है तो डेबिट किया जाता है (खरीद या पूंजीकृत लागत)।"
+msgstr "GL खाता जब ग्राहक चालान पोस्ट किया जाता है तो डेबिट किया जाता है; जब ग्राहक भुगतान करता है तो साफ किया जाता है।"
 
 msgid "GL account debited when a fixed asset is acquired (purchase or capitalized cost)."
-msgstr "GL खाता जब इस वर्ग में एक संपत्ति प्राप्त की जाती है तो डेबिट किया जाता है।"
-
-msgid "GL account debited when an asset in this class is acquired."
-msgstr "बैंक सेवा शुल्क और समान शुल्क के लिए GL खाता।"
+msgstr "GL खाता जब एक स्थिर संपत्ति प्राप्त की जाती है तो डेबिट किया जाता है (खरीद या पूंजीकृत लागत)।"
 
 msgid "GL account for bank service charges and similar fees."
-msgstr "ब्याज आय या व्यय के लिए GL खाता।"
+msgstr "बैंक सेवा शुल्क और समान शुल्कों के लिए GL खाता।"
 
 msgid "GL account for interest income or expense."
-msgstr "आपूर्तिकर्ताओं को भुगतान किया गया खरीद कर के लिए GL खाता (या वसूली योग्य)।"
+msgstr "ब्याज आय या व्यय के लिए GL खाता।"
 
 msgid "GL account for purchase tax paid to suppliers (or reclaimable)."
-msgstr "GL खाता रिवर्स चार्ज नियमों के तहत अर्जित कर के लिए जहां खरीदार स्व-मूल्यांकन करता है।"
+msgstr "आपूर्तिकर्ताओं को भुगतान किया गया खरीद कर के लिए GL खाता (या वसूली योग्य)।"
 
 msgid "GL account for tax accrued under reverse-charge rules where the buyer self-assesses."
-msgstr "कर समय अंतर के लिए GL खाता (जैसे त्वरित कर मूल्यह्रास बनाम पुस्तक मूल्यह्रास)।"
+msgstr "GL खाता रिवर्स चार्ज नियमों के तहत अर्जित कर के लिए जहां खरीदार स्व-मूल्यांकन करता है।"
 
 msgid "GL account for tax timing differences (e.g. accelerated tax depreciation vs. book depreciation)."
-msgstr "GL खाता जब एक संपत्ति को बंद किया जाता है (निपटान की आय के बिना लागत हटाई जाती है)।"
-
-msgid "GL account hit when an asset is written off (cost removed without disposal proceeds)."
-msgstr "GL खाता जब एक संपत्ति की पुस्तक मूल्य को कम किया जाता है (हानि)।"
-
-msgid "GL account hit when an asset's book value is reduced (impairment)."
-msgstr "GL खाता जब भौतिक गणना सिस्टम इन्वेंटरी से अलग होती है।"
+msgstr "कर समय अंतर के लिए GL खाता (जैसे त्वरित कर मूल्यह्रास बनाम पुस्तक मूल्यह्रास)।"
 
 msgid "GL account hit when physical counts differ from system inventory."
-msgstr "इस अंतरकंपनी लेनदेन के लिए डेबिट करने के लिए स्रोत कंपनी में GL खाता।"
+msgstr "GL खाता जो प्रभावित होता है जब भौतिक गणना प्रणाली की इन्वेंटरी से भिन्न होती है।"
 
 msgid "GL account in the source company to debit for this intercompany transaction."
-msgstr "इस अंतरकंपनी लेनदेन के लिए क्रेडिट करने के लिए लक्ष्य कंपनी में GL खाता।"
+msgstr "इस अंतरकंपनी लेनदेन के लिए डेबिट करने के लिए स्रोत कंपनी में GL खाता।"
 
 msgid "GL account in the target company to credit for this intercompany transaction."
-msgstr "GL खाता जो पोस्टिंग पर उप-सेंट राउंडिंग अंतर को अवशोषित करता है।"
+msgstr "इस अंतरकंपनी लेनदेन के लिए क्रेडिट करने के लिए लक्ष्य कंपनी में GL खाता।"
 
 msgid "GL account that absorbs sub-cent rounding differences on posting."
 msgstr "GL खाता जो पोस्टिंग पर उप-सेंट राउंडिंग अंतर को अवशोषित करता है।"
 
 msgid "GL account that captures the difference between standard cost and actual purchase cost."
 msgstr "GL खाता जो मानक लागत और वास्तविक क्रय लागत के बीच अंतर को कैप्चर करता है।"
+
+msgid "GL account that carries an asset's original acquisition cost — debited when acquired and credited at full gross cost when it is disposed or sold."
+msgstr "GL खाता जो संपत्ति की मूल अधिग्रहण लागत वहन करता है — अधिग्रहण पर डेबिट किया जाता है और निपटान या बिक्री होने पर पूर्ण सकल लागत पर क्रेडिट किया जाता है।"
 
 msgid "GL account that holds the value of jobs in production until they post to finished goods."
 msgstr "GL खाता जो उत्पादन में कार्यों का मान रखता है जब तक वे तैयार माल को पोस्ट नहीं करते।"
@@ -5742,14 +5867,8 @@ msgstr "GL खाता जहां ग्राहकों को दी ग�
 msgid "GL account where early-payment discounts taken from suppliers are recorded."
 msgstr "GL खाता जहां आपूर्तिकर्ताओं से ली गई जल्दी भुगतान छूट दर्ज की जाती है।"
 
-msgid "GL account where gain or loss is booked on fixed-asset disposal."
-msgstr "GL खाता जहां निश्चित संपत्ति के निपटान पर लाभ या हानि दर्ज की जाती है।"
-
-msgid "GL account where gain or loss is booked when an asset in this class is disposed."
-msgstr "GL खाता जहां इस वर्ग में किसी संपत्ति के निपटान पर लाभ या हानि दर्ज की जाती है।"
-
-msgid "GL contra-asset account credited when depreciation posts for assets in this class."
-msgstr "GL विरोधी-संपत्ति खाता जब इस वर्ग की संपत्तियों के लिए मूल्यह्रास पोस्ट किया जाता है तो क्रेडिट किया जाता है।"
+msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
+msgstr "GL विरोधी-संपत्ति खाता जो हर अवधि में मूल्यह्रास पोस्ट होने पर क्रेडिट किया जाता है और संपत्ति बेची या स्क्रैप किए जाने पर पूर्ण रूप से डेबिट किया जाता है।"
 
 msgid "GL contra-asset account that accumulates depreciation booked against fixed assets."
 msgstr "GL विरोधी-संपत्ति खाता जो निश्चित संपत्तियों के खिलाफ बुक किए गए मूल्यह्रास को जमा करता है।"
@@ -5762,6 +5881,9 @@ msgstr "GL इक्विटी खाता जहां वित्तीय
 
 msgid "GL expense account debited each period when depreciation posts."
 msgstr "GL व्यय खाता जब मूल्यह्रास पोस्ट किया जाता है तो हर अवधि में डेबिट किया जाता है।"
+
+msgid "GL expense account debited when an asset's carrying value is reduced by impairment, i.e. when its recoverable amount falls below net book value."
+msgstr "GL व्यय खाता जो तब डेबिट किया जाता है जब हानि (इम्पेयरमेंट) के कारण संपत्ति का वहन मूल्य घटाया जाता है, अर्थात जब इसकी वसूली योग्य राशि निवल बही मूल्य (नेट बुक वैल्यू) से कम हो जाती है।"
 
 msgid "GL expense account for non-inventory purchases (supplies, services)."
 msgstr "गैर-इन्वेंटरी खरीद के लिए GL व्यय खाता (आपूर्ति, सेवाएं)।"
@@ -6091,6 +6213,9 @@ msgstr "II (सामान्य डिफ़ॉल्ट)"
 msgid "III (tightened)"
 msgstr "III (कसा हुआ)"
 
+msgid "Impact"
+msgstr "प्रभाव"
+
 msgid "Imperial"
 msgstr "इंपीरियल"
 
@@ -6144,6 +6269,9 @@ msgstr "चयनित अवधि में"
 
 msgid "In stock"
 msgstr "स्टॉक में"
+
+msgid "In stock only"
+msgstr "केवल स्टॉक में"
 
 msgid "In the loop together"
 msgstr "एक साथ लूप में"
@@ -6641,6 +6769,9 @@ msgstr "वर्तमान रखें"
 msgid "Keep existing pricing, only add new items"
 msgstr "मौजूदा मूल्य निर्धारण रखें, केवल नई वस्तुएं जोड़ें"
 
+msgid "Keep Open"
+msgstr "खुला रखें"
+
 msgid "Key"
 msgstr "कुंजी"
 
@@ -6751,6 +6882,9 @@ msgstr "किसी भी संबंधित रसीदों को अ�
 msgid "Leave blank for built-in"
 msgstr "बिल्ट-इन के लिए खाली छोड़ें"
 
+msgid "Leave blank to use the next revision automatically"
+msgstr "अगले संशोधन को स्वचालित रूप से उपयोग करने के लिए खाली छोड़ें"
+
 msgid "Leave empty for exact match"
 msgstr "सटीक मिलान के लिए खाली छोड़ें"
 
@@ -6845,6 +6979,9 @@ msgstr "Linear समस्या को लिंक करें"
 #. placeholder {1}: r.quantity
 msgid "Linked entity quantity ({0}) does not match row quantity ({1})."
 msgstr "लिंक किया गया इकाई मात्रा ({0}) पंक्ति मात्रा ({1}) से मेल नहीं खाती।"
+
+msgid "Linked Issue"
+msgstr "जुड़ी समस्या"
 
 msgid "Linked PO"
 msgstr "लिंक्ड PO"
@@ -6945,6 +7082,18 @@ msgstr "लंबा विवरण"
 
 msgid "Looks empty here"
 msgstr "यहाँ खाली लगता है"
+
+msgid "Loss on Disposal"
+msgstr "निपटान पर हानि"
+
+msgid "Loss on Disposal (default)"
+msgstr "निपटान पर हानि (डिफ़ॉल्ट)"
+
+msgid "Loss on Disposal Account"
+msgstr "निपटान पर हानि खाता"
+
+msgid "Losses recognized on disposal of fixed assets"
+msgstr "स्थिर संपत्तियों के निपटान पर मान्यता प्राप्त हानि"
 
 msgid "Lost"
 msgstr "खो गया"
@@ -7436,6 +7585,9 @@ msgstr "जॉब से मॉडल हटाया गया"
 msgid "Model removed from line"
 msgstr "मॉडल लाइन से हटाया गया"
 
+msgid "Modified"
+msgstr "संशोधित"
+
 msgid "Module"
 msgstr "मॉड्यूल"
 
@@ -7587,6 +7739,15 @@ msgstr "नई विशेषता"
 
 msgid "New Attribute Category"
 msgstr "नई विशेषता श्रेणी"
+
+msgid "New Change Order"
+msgstr "नया परिवर्तन आदेश"
+
+msgid "New Change Order Action"
+msgstr "नई परिवर्तन आदेश कार्रवाई"
+
+msgid "New Change Order Type"
+msgstr "नया परिवर्तन आदेश प्रकार"
 
 msgid "New Consumable"
 msgstr "नया उपभोग्य"
@@ -7902,6 +8063,12 @@ msgstr "कोई सक्रिय उद्धरण नहीं"
 msgid "No addresses found"
 msgstr "कोई पता नहीं मिला"
 
+msgid "No affected items to assess."
+msgstr "मूल्यांकन के लिए कोई प्रभावित आइटम नहीं।"
+
+msgid "No affected items."
+msgstr "कोई प्रभावित आइटम नहीं।"
+
 msgid "No applications. Payment will be on-account."
 msgstr "कोई आवेदन नहीं। भुगतान खाते पर होगा।"
 
@@ -7930,6 +8097,9 @@ msgstr "कोई क्षमता आरक्षण नहीं है ज�
 msgid "No changes recorded"
 msgstr "कोई परिवर्तन दर्ज नहीं किया गया"
 
+msgid "No changes yet."
+msgstr "अभी तक कोई परिवर्तन नहीं।"
+
 msgid "No comments yet. Be the first to add a comment."
 msgstr "अभी तक कोई टिप्पणी नहीं है। टिप्पणी जोड़ने वाले पहले व्यक्ति बनें।"
 
@@ -7957,11 +8127,17 @@ msgstr "कोई दिन बंद निर्धारित नहीं �
 msgid "No default attachments yet."
 msgstr "अभी तक कोई डिफ़ॉल्ट अटैचमेंट नहीं है।"
 
+msgid "No draft make method for this item yet."
+msgstr "इस आइटम के लिए अभी तक कोई ड्राफ्ट विधि नहीं।"
+
 msgid "No draft versions available"
 msgstr "कोई ड्राफ्ट संस्करण उपलब्ध नहीं है"
 
 msgid "No due date"
 msgstr "कोई नियत तारीख नहीं"
+
+msgid "No editable properties for this item."
+msgstr "इस आइटम के लिए कोई संपादन योग्य गुण नहीं।"
 
 msgid "No employees assigned yet. Add groups to see status."
 msgstr "अभी तक कोई कर्मचारी असाइन नहीं किया गया है। स्थिति देखने के लिए समूह जोड़ें।"
@@ -7986,6 +8162,9 @@ msgstr "कोई फ़ील्ड नहीं मिला।"
 
 msgid "No files"
 msgstr "कोई फ़ाइलें नहीं"
+
+msgid "No files for this item."
+msgstr "इस आइटम के लिए कोई फ़ाइल नहीं।"
 
 msgid "No files uploaded"
 msgstr "कोई फ़ाइल अपलोड नहीं की गई"
@@ -8022,6 +8201,9 @@ msgstr "कोई मेल नहीं"
 
 msgid "No matches for \"{query}\". Try a different search term."
 msgstr "\"{query}\" के लिए कोई मिलान नहीं। एक अलग खोज शब्द आजमाएं।"
+
+msgid "No matches. Type to create one."
+msgstr "कोई मेल नहीं। एक बनाने के लिए टाइप करें।"
 
 msgid "No new notifications"
 msgstr "कोई नई सूचनाएं नहीं"
@@ -8167,6 +8349,12 @@ msgstr "गैर-इन्वेंटरी"
 msgid "Non-Inventory Tracking"
 msgstr "गैर-इन्वेंटरी ट्रैकिंग"
 
+msgid "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
+msgstr "गैर-परिचालन व्यय खाता जिसमें इस वर्ग की एक संपत्ति को इसके शुद्ध पुस्तक मूल्य से कम पर बेचा या स्क्रैप किया जाता है तो डेबिट किया जाता है।"
+
+msgid "Non-operating income account credited when an asset in this class is sold for more than its net book value."
+msgstr "गैर-परिचालन आय खाता जिसमें इस वर्ग की एक संपत्ति को इसके शुद्ध पुस्तक मूल्य से अधिक पर बेचा जाता है तो क्रेडिट किया जाता है।"
+
 msgid "Non-Taxable Add-On Cost"
 msgstr "गैर-कर योग्य ऐड-ऑन लागत"
 
@@ -8184,6 +8372,9 @@ msgstr "एक तालिका नहीं बल्कि एक साम�
 
 msgid "Not enough jobs to cover quantity"
 msgstr "पर्याप्त नौकरियां नहीं हैं मात्रा को कवर करने के लिए"
+
+msgid "Not referenced anywhere yet."
+msgstr "अभी तक कहीं भी संदर्भित नहीं।"
 
 msgid "Not Required"
 msgstr "आवश्यक नहीं"
@@ -8238,6 +8429,9 @@ msgstr "OEM (मूल उपकरण निर्माता)"
 
 msgid "of"
 msgstr "का"
+
+msgid "Off — released revisions stay editable"
+msgstr "बंद — जारी किए गए संशोधन संपादन योग्य रहते हैं"
 
 msgid "OK"
 msgstr "ठीक है"
@@ -8329,6 +8523,9 @@ msgstr "अरे! आप जिस लिंक को एक्सेस क�
 msgid "Open"
 msgstr "खोलें"
 
+msgid "Open a change order"
+msgstr "एक परिवर्तन आदेश खोलें"
+
 msgid "Open Actions"
 msgstr "खुली कार्रवाइयाँ"
 
@@ -8343,6 +8540,9 @@ msgstr "खुला AR"
 
 msgid "Open Audit Log"
 msgstr "ऑडिट लॉग खोलें"
+
+msgid "Open change orders affecting this part"
+msgstr "इस हिस्से को प्रभावित करने वाले खुले परिवर्तन आदेश"
 
 msgid "Open Date"
 msgstr "खुली तारीख"
@@ -8609,6 +8809,9 @@ msgstr "उद्धरण विधि को स्रोत विधि स�
 msgid "Overwrite the target manufacturing method with the quote method"
 msgstr "उद्धरण विधि के साथ लक्ष्य विनिर्माण विधि को अधिलेखित करें"
 
+msgid "Owner"
+msgstr "मालिक"
+
 msgid "Owner (cost center)"
 msgstr "मूल लागत केंद्र"
 
@@ -8672,6 +8875,12 @@ msgstr "पार्ट आईडी"
 
 msgid "Part is configured for manufacturing"
 msgstr "भाग विनिर्माण के लिए कॉन्फ़िगर किया गया है"
+
+msgid "Part Number"
+msgstr "भाग संख्या"
+
+msgid "Part Supersession"
+msgstr "भाग प्रतिस्थापन"
 
 msgid "Partial"
 msgstr "आंशिक"
@@ -9645,6 +9854,9 @@ msgstr "कारण"
 msgid "Reason Account"
 msgstr "कारण खाता"
 
+msgid "Reason for Change"
+msgstr "परिवर्तन का कारण"
+
 msgid "Reason for declining (Optional)"
 msgstr "अस्वीकार करने का कारण (वैकल्पिक)"
 
@@ -9718,6 +9930,9 @@ msgstr "भुगतान प्राप्त करें · {0} चाल�
 
 msgid "Receive to Inventory"
 msgstr "इन्वेंटरी में प्राप्त करें"
+
+msgid "Received"
+msgstr "प्राप्त"
 
 #. placeholder {0}: status?.received
 #. placeholder {1}: status?.ordered
@@ -9847,11 +10062,26 @@ msgstr "सापेक्ष समयरेखा · तारीखें प
 msgid "Release"
 msgstr "रिलीज़"
 
+msgid "Release change order"
+msgstr "परिवर्तन आदेश जारी करें"
+
+msgid "Release control"
+msgstr "जारी करने का नियंत्रण"
+
+msgid "Release Control"
+msgstr "जारी करने का नियंत्रण"
+
 msgid "Release Job"
 msgstr "जॉब रिलीज़ करें"
 
 msgid "Released"
 msgstr "जारी किया गया"
+
+msgid "Released revision"
+msgstr "जारी किया गया संशोधन"
+
+msgid "Released revision is locked"
+msgstr "जारी किया गया संशोधन लॉक किया गया है"
 
 msgid "Remaining"
 msgstr "शेष"
@@ -9901,6 +10131,9 @@ msgstr "कॉलम द्वारा सॉर्ट हटाएं"
 
 msgid "Remove this storage type from all referencing storage units and delete it. This cannot be undone."
 msgstr "इस स्टोरेज प्रकार को सभी संदर्भित स्टोरेज इकाइयों से हटाएं और इसे हटाएं। यह पूर्ववत नहीं किया जा सकता।"
+
+msgid "Removed"
+msgstr "हटाया गया"
 
 msgid "Rendering label preview..."
 msgstr "लेबल पूर्वावलोकन प्रस्तुत किया जा रहा है..."
@@ -10087,14 +10320,17 @@ msgstr "परिणाम"
 msgid "Results per page"
 msgstr "प्रति पृष्ठ परिणाम"
 
+msgid "Resume Receiving"
+msgstr "प्राप्ति को फिर से शुरू करें"
+
 msgid "Retained Earnings"
 msgstr "संचित मुनाफा"
 
 msgid "Retained Earnings (default)"
 msgstr "संचित मुनाफा (डिफ़ॉल्ट)"
 
-msgid "Retiring an asset by write-off instead of sale, booking the remaining net book value as a loss — status becomes Disposed."
-msgstr "किसी परिसंपत्ति को बिक्रय के बजाय लिखने-बंद करके सेवानिवृत्त करना, शेष नेट बुक वैल्यू को हानि के रूप में दर्ज करना — स्थिति का मतलब है कि निपटारा किया गया।"
+msgid "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
+msgstr "स्क्रैपिंग या बिक्री द्वारा किसी संपत्ति को सेवा से सेवानिवृत्त करना, जिसमें निवल बही मूल्य (नेट बुक वैल्यू) के विरुद्ध कोई भी लाभ या हानि दर्ज की जाती है और इसकी स्थिति 'निपटान किया गया' (Disposed) पर सेट कर दी जाती है।"
 
 msgid "Retry"
 msgstr "पुनः प्रयास करें"
@@ -10123,6 +10359,9 @@ msgstr "रिवर्स चार्ज बिक्रय कर (डिफ�
 msgid "Reverse the related journal entries"
 msgstr "संबंधित जर्नल प्रविष्टियों को उलट दें"
 
+msgid "Review each item's changes, then confirm — releasing can't be undone."
+msgstr "प्रत्येक आइटम के परिवर्तनों की समीक्षा करें, फिर पुष्टि करें — जारी करना वापस नहीं किया जा सकता।"
+
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "अवधि की बैलेंस शीट और आय विवरण की समीक्षा करें और पुष्टि करें कि आंकड़े सही लगते हैं। यह एक मैनुअल साइन-ऑफ है — एक बार समीक्षा करने के बाद इसे पूर्ण चिह्नित करें।"
 
@@ -10135,6 +10374,9 @@ msgstr "संस्करण"
 #. placeholder {0}: revision.revision
 msgid "Revision {0}"
 msgstr "संस्करण {0}"
+
+msgid "Revisions"
+msgstr "संशोधन"
 
 msgid "Revoke"
 msgstr "रद्द करें"
@@ -10606,6 +10848,15 @@ msgstr "एक उद्धरण लाइन चुनें"
 
 msgid "Select a reason for why the quote was not created."
 msgstr "उद्धरण क्यों नहीं बनाया गया इसका कारण चुनें।"
+
+msgid "Select a shape first to see available options"
+msgstr "उपलब्ध विकल्प देखने के लिए पहले एक आकार चुनें"
+
+msgid "Select a substance and shape first to see available options"
+msgstr "उपलब्ध विकल्प देखने के लिए पहले एक पदार्थ और आकार चुनें"
+
+msgid "Select a substance first to see available options"
+msgstr "उपलब्ध विकल्प देखने के लिए पहले एक पदार्थ चुनें"
 
 msgid "Select a team"
 msgstr "एक टीम चुनें"
@@ -11273,6 +11524,9 @@ msgstr "शुरू करें"
 msgid "Start {0} Day Free Trial"
 msgstr "{0} दिन की निःशुल्क परीक्षण शुरू करें"
 
+msgid "Start counting"
+msgstr "गिनती शुरू करें"
+
 msgid "Start Date"
 msgstr "शुरुआत तारीख"
 
@@ -11383,6 +11637,9 @@ msgstr "स्टॉक समाप्त"
 msgid "Stop raising purchase orders after this date"
 msgstr "इस तारीख के बाद क्रय आदेश जारी करना बंद करें"
 
+msgid "Stop Receiving"
+msgstr "प्राप्ति को रोकें"
+
 msgid "Storage client not available"
 msgstr "स्टोरेज क्लाइंट उपलब्ध नहीं है"
 
@@ -11490,6 +11747,9 @@ msgstr "सफलतापूर्वक उद्धरण की प्रत
 
 msgid "Successfully created a new revision"
 msgstr "सफलतापूर्वक एक नया संशोधन बनाया गया"
+
+msgid "Successor effectivity"
+msgstr "उत्तराधिकारी प्रभावशीलता"
 
 msgid "Successor Effectivity Date"
 msgstr "उत्तराधिकारी प्रभावी तारीख"
@@ -11836,6 +12096,9 @@ msgstr "टेम्पलेट आईडी"
 
 msgid "Templates"
 msgstr "टेम्पलेट्स"
+
+msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for its net book value on invoicing, netting to zero over the sale cycle."
+msgstr "अस्थायी निपटान-समाशोधन (क्लियरिंग) खाता जो शिपमेंट पर संपत्ति के निवल बही मूल्य के लिए डेबिट किया जाता है और चालान पर निवल बही मूल्य के लिए क्रेडिट किया जाता है, जो बिक्री चक्र के दौरान शून्य हो जाता है।"
 
 msgid "Terms and Privacy"
 msgstr "शर्तें और गोपनीयता"
@@ -12333,6 +12596,16 @@ msgstr "ट्रैक किए गए इकाइयों का रिक�
 msgid "The reference data everything else hangs off. Loads first."
 msgstr "संदर्भ डेटा जिस पर सब कुछ निर्भर करता है। पहले लोड होता है।"
 
+#. placeholder {0}: line.quantityToReceive
+#. placeholder {1}: line.purchaseUnitOfMeasureCode ?? ""
+msgid "The remaining {0} {1} will be expected again and counted as incoming supply."
+msgstr "शेष {0} {1} फिर से अपेक्षित होगा और आने वाली आपूर्ति के रूप में गिना जाएगा।"
+
+#. placeholder {0}: line.quantityToReceive
+#. placeholder {1}: line.purchaseUnitOfMeasureCode ?? ""
+msgid "The remaining {0} {1} will no longer be expected. On-order supply and MRP will stop counting it. The ordered quantity and pricing are unchanged."
+msgstr "शेष {0} {1} अब अपेक्षित नहीं होगा। ऑन-ऑर्डर आपूर्ति और MRP इसे गिनना बंद कर देंगे। ऑर्डर की गई मात्रा और मूल्य निर्धारण अपरिवर्तित हैं।"
+
 msgid "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
 msgstr "अवशिष्ट WIP जो एक काम को बंद करने पर छोड़ गया है, उत्पादन विचरण खाते में स्वेप किया गया - एक काम के लिए कार्बन पुस्तकें का एकमात्र विचरण।"
 
@@ -12552,6 +12825,9 @@ msgstr "यह जानकारी दस्तावेज़ शीर्ष
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "यह जानकारी सभी उपयोगकर्ताओं को दिखाई देगी, इसलिए सावधान रहें कि आप क्या साझा करते हैं।"
 
+msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
+msgstr "यह एक खरीदा गया आइटम है — इसके पास कोई BoM/BoP नहीं है; केवल इसकी विशेषताओं और दस्तावेजों को बदला जा सकता है।"
+
 msgid "This is a unique identifier for the webhook"
 msgstr "यह वेबहुक के लिए एक अद्वितीय पहचानकर्ता है"
 
@@ -12609,6 +12885,12 @@ msgstr "इस अवधि में कोई जर्नल प्रवि�
 msgid "This Quarter"
 msgstr "इस त्रैमासिक"
 
+msgid "This revision is released (Production). Changes should normally flow through a change order."
+msgstr "यह संशोधन जारी है (Production)। परिवर्तन सामान्यतः एक चेंज ऑर्डर के माध्यम से होने चाहिए।"
+
+msgid "This revision is released (Production). Open a change order to modify it."
+msgstr "यह संशोधन जारी है (Production)। इसे संशोधित करने के लिए एक चेंज ऑर्डर खोलें।"
+
 msgid "This sales order has associated jobs. Choose what to do with them."
 msgstr "इस बिक्रय आदेश के संबंधित कार्य हैं। उनके साथ क्या करना है यह चुनें।"
 
@@ -12650,6 +12932,9 @@ msgstr "यह अन्य संशोधनों की सभी विध�
 
 msgid "This will replace all method materials of other sizes with this size."
 msgstr "यह अन्य आकारों की सभी विधि सामग्रियों को इस आकार से बदल देगा।"
+
+msgid "This will set the current version of the make method to Active, making it read-only."
+msgstr "यह make विधि के वर्तमान संस्करण को सक्रिय के रूप में सेट करेगा, जिससे यह केवल-पढ़ने योग्य हो जाएगा।"
 
 msgid "This will write off the remaining book value of the asset."
 msgstr "यह संपत्ति के शेष बही मूल्य को लिख देगा।"
@@ -13376,6 +13661,9 @@ msgstr "भौतिक इन्वेंटरी गणना समायो
 msgid "Variance in outside processing costs"
 msgstr "बाहरी प्रसंस्करण लागत में विचरण"
 
+msgid "Variance only"
+msgstr "केवल भिन्नता"
+
 msgid "VAT Number"
 msgstr "VAT संख्या"
 
@@ -13628,6 +13916,9 @@ msgstr "गोदाम, संचालन"
 msgid "Warn"
 msgstr "चेतावनी"
 
+msgid "Warn — edits succeed with a warning"
+msgstr "चेतावनी — संपादन एक चेतावनी के साथ सफल होता है"
+
 msgid "Warn but allow"
 msgstr "चेतावनी दें लेकिन अनुमति दें"
 
@@ -13764,6 +14055,9 @@ msgstr "{translatedTerm} क्या है?"
 
 msgid "What it is"
 msgstr "यह क्या है"
+
+msgid "What kind of change this is: Version updates how the part is made, Revision edits its details and documents, and New Part replaces it with a new part number."
+msgstr "यह किस प्रकार का परिवर्तन है: संस्करण अपडेट करता है कि भाग कैसे बनाया जाता है, संशोधन इसके विवरण और दस्तावेज़ों को संपादित करता है, और नया भाग इसे एक नए भाग संख्या से बदल देता है।"
 
 msgid "What kind of output this entry records — Production (good units), Scrap (unrecoverable), or Rework (sent back for correction); reveals Scrap Reason when Scrap."
 msgstr "यह प्रविष्टि किस प्रकार का आउटपुट रिकॉर्ड करती है — उत्पादन (अच्छी इकाइयाँ), स्क्रैप (अपूरणीय) या पुनः कार्य (सुधार के लिए वापस भेजा गया); जब स्क्रैप हो तो स्क्रैप कारण प्रकट करता है।"
@@ -13923,6 +14217,9 @@ msgstr "जहां इस आइटम की नई स्टॉक डिफ
 
 msgid "Where stock lives and how it ships."
 msgstr "स्टॉक कहाँ रहता है और यह कैसे भेजा जाता है।"
+
+msgid "Where the affected items are used across the system. Informational — nothing here blocks releasing."
+msgstr "जहां प्रभावित आइटम पूरे सिस्टम में उपयोग किए जाते हैं। सूचनात्मक — यहां कुछ भी जारी करने में बाधा नहीं डालता।"
 
 msgid "Where this entry originated (manual entry, posting from sales/purchasing, recurring template, etc.)."
 msgstr "यह प्रविष्टि कहाँ से उत्पन्न हुई (मैनुअल प्रविष्टि, बिक्रय/खरीद से पोस्टिंग, पुनरावर्ती टेम्पलेट, आदि)।"
@@ -14210,6 +14507,9 @@ msgstr "आप {hoursElapsed} घंटे के लिए क्लॉक इ�
 
 msgid "Your books and how money flows."
 msgstr "आपकी किताबें और पैसा कैसे बहता है।"
+
+msgid "Your changes go into a new draft version released with this change order."
+msgstr "आपके परिवर्तन इस परिवर्तन आदेश के साथ जारी एक नए ड्राफ्ट संस्करण में जाते हैं।"
 
 msgid "Your Console PIN"
 msgstr "आपका कंसोल PIN"

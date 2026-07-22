@@ -46,7 +46,7 @@ import { Button, Card, HStack, VStack, IconButton, cn } from "@carbon/react";
 
 ## Cross-References
 
-- `.ai/rules/conventions-ui.md` — full UI conventions, polish principles, review checklist
+- `.claude/rules/conventions-ui.md` — full UI conventions, polish principles, review checklist
 - `@carbon/tiptap` — editor extensions used by `Editor/` and `RichText/`
 - `@carbon/glossary` — term definitions used by `LabelWithHelp`
 - `@carbon/form` — form field components (import from `~/components/Form` in apps, not directly)

@@ -1,5 +1,10 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { SUPABASE_ANON_KEY, SUPABASE_URL, VERCEL_URL } from "@carbon/env";
+import {
+  NODE_ENV,
+  SUPABASE_ANON_KEY,
+  SUPABASE_URL,
+  VERCEL_URL
+} from "@carbon/env";
 import { inngest } from "../../client";
 
 export const modelThumbnailFunction = inngest.createFunction(
@@ -8,8 +13,7 @@ export const modelThumbnailFunction = inngest.createFunction(
   async ({ event, step, logger }) => {
     const { modelId, companyId } = event.data;
 
-    const isLocal =
-      VERCEL_URL === undefined || VERCEL_URL.includes("localhost");
+    const isLocal = NODE_ENV !== "production";
 
     const getModelUrl = (id: string) => {
       if (isLocal) return `http://localhost:3000/file/model/${id}`;

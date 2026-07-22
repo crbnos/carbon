@@ -526,10 +526,6 @@ export const issueWorkflowValidator = z.object({
     .optional()
 });
 
-export const itemQuantityValidator = z.object({
-  quantity: zfd.numeric(z.number().min(0))
-});
-
 const entityAssignmentItem = z.object({
   trackedEntityId: z.string().min(1, { message: "Tracked entity is required" }),
   quantity: z

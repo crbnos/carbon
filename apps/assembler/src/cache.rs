@@ -13,7 +13,7 @@ use std::sync::{Arc, Mutex};
 /// LRU (below) AND the Redis job/result-pointer store (`store.rs`). Bump on ANY
 /// converter OR planner behavior change so every stale entry, in every cache,
 /// auto-misses. This is the "content-hash key + CODE_VERSION" auto-invalidation.
-pub const CODE_VERSION: u32 = 1;
+pub const CODE_VERSION: u32 = 2;
 
 pub struct CachedConvert {
     pub glb: Bytes,

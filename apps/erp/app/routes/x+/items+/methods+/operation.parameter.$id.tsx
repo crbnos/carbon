@@ -5,6 +5,7 @@ import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { upsertMethodOperationParameter } from "~/modules/items";
+import { checkRevisionLock } from "~/modules/items/items.server";
 import { operationParameterValidator } from "~/modules/shared";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -28,6 +29,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const { id: _id, ...d } = validation.data;
+
+  // Release-lock gate: enforce -> block; warn -> proceed + flash; off -> no-op.
+  const lock = await checkRevisionLock(client, {
+    kind: "parameter",
+    id,
+    companyId
+  });
+  if (!lock.ok) {
+    return data({ id: null }, await flash(request, error(null, lock.message)));
+  }
 
   const update = await upsertMethodOperationParameter(client, {
     id,
@@ -63,6 +74,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   return data(
     { id: methodOperationParameterId },
-    await flash(request, success("Method operation parameter updated"))
+    await flash(
+      request,
+      success(lock.warn ? lock.message : "Method operation parameter updated")
+    )
   );
 }

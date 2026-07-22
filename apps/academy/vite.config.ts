@@ -46,10 +46,9 @@ export default defineConfig(({ isSsrBuild }) => ({
   resolve: {
     tsconfigPaths: true,
     alias: {
-      "@carbon/utils": path.resolve(
-        __dirname,
-        "../../packages/utils/src/index.ts"
-      ),
+      // Directory (not index.ts) so subpath imports like
+      // `@carbon/utils/favicon` resolve to `src/favicon.ts`.
+      "@carbon/utils": path.resolve(__dirname, "../../packages/utils/src"),
       "@carbon/form": path.resolve(
         __dirname,
         "../../packages/form/src/index.tsx"

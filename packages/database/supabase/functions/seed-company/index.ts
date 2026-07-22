@@ -11,6 +11,8 @@ import {
   failureModes,
   fiscalYearSettings,
   fixedAssetClasses,
+  changeOrderRequiredActions,
+  changeOrderTypes,
   gaugeTypes,
   groupCompanyTemplate,
   groups,
@@ -292,6 +294,24 @@ serve(async (req: Request) => {
         )
         .execute();
 
+      // change-order default types (the changeOrderType lookup). New on this
+      // branch and not yet in the cloud-generated Kysely types, so the insert
+      // goes through a cast (mirrors changeOrderRequiredAction below).
+      await (trx as any)
+        .insertInto("changeOrderType")
+        .values(changeOrderTypes.map((ct) => ({ ...ct, companyId })))
+        .execute();
+
+      // change-order default actions (system template rows). New on this branch
+      // and not yet in the cloud-generated Kysely types, so the insert goes
+      // through a cast (mirrors periodCloseTaskDefinition below).
+      await (trx as any)
+        .insertInto("changeOrderRequiredAction")
+        .values(
+          changeOrderRequiredActions.map((ca) => ({ ...ca, companyId }))
+        )
+        .execute();
+
       await trx
         .insertInto("sequence")
         .values(sequences.map((s) => ({ ...s, companyId })))
@@ -382,6 +402,7 @@ serve(async (req: Request) => {
         supplierWriteOffAccount: "salesAccount",
         realizedExchangeGainAccount: "salesAccount",
         realizedExchangeLossAccount: "interestAccount",
+        assetGainOnDisposalAccount: "assetLossOnDisposalAccount",
         supplierPrepaymentAccount: "receivablesAccount",
         rawMaterialsAccount: "workInProgressAccount",
         finishedGoodsAccount: "rawMaterialsAccount",
@@ -423,7 +444,8 @@ serve(async (req: Request) => {
               accountIdByKey[fac.depreciationExpenseAccount]!,
             writeOffAccountId: accountIdByKey[fac.writeOffAccount]!,
             writeDownAccountId: accountIdByKey[fac.writeDownAccount]!,
-            disposalAccountId: accountIdByKey[fac.disposalAccount]!,
+            gainOnDisposalAccountId: accountIdByKey[fac.gainOnDisposalAccount]!,
+            lossOnDisposalAccountId: accountIdByKey[fac.lossOnDisposalAccount]!,
             companyId,
             createdBy: userId,
           }))

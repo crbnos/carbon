@@ -1,6 +1,7 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { pluckUnique } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
@@ -9,8 +10,15 @@ import {
   getInventoryCountLineSummary,
   getInventoryCountLines,
   getInventoryCountMovements,
+  getStorageTypesList,
+  getStorageUnitsListForLocation,
   InventoryCountDetails
 } from "~/modules/inventory";
+import {
+  getMaterialFormsList,
+  getMaterialSubstancesList
+} from "~/modules/items";
+import { getTagsList } from "~/modules/shared";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -47,27 +55,52 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const [lines, summary, movements] = await Promise.all([
+  // True blind counting: the system quantity (and the variance it can be
+  // derived from) must not reach the client until the count is Posted. That
+  // includes filtering on them — a crafted ?filter=systemQuantity:gt:0 would
+  // reveal which lines have stock — so drop those filters while blind.
+  const isBlindEntry =
+    inventoryCount.data.isBlind && inventoryCount.data.status !== "Posted";
+  const allowedFilters = isBlindEntry
+    ? filters?.filter((f) => !["systemQuantity", "variance"].includes(f.column))
+    : filters;
+
+  const [
+    lines,
+    summary,
+    movements,
+    forms,
+    substances,
+    tags,
+    storageTypes,
+    storageUnits
+  ] = await Promise.all([
     getInventoryCountLines(client, id, companyId, {
       search,
       limit,
       offset,
       sorts,
-      filters
+      filters: allowedFilters
     }),
     getInventoryCountLineSummary(client, id, companyId),
     // Adjustments this count has posted (empty for a never-posted Draft).
-    getInventoryCountMovements(client, companyId, id)
+    getInventoryCountMovements(client, companyId, id),
+    // Option lists for the count-line column filters (same set the quantities
+    // screen loads).
+    getMaterialFormsList(client, companyId),
+    getMaterialSubstancesList(client, companyId),
+    getTagsList(client, companyId),
+    getStorageTypesList(client, companyId),
+    getStorageUnitsListForLocation(
+      client,
+      companyId,
+      inventoryCount.data.locationId
+    )
   ]);
 
-  // True blind counting: the system quantity (and the variance it can be derived
-  // from) must not reach the client until the count is Posted, so the counter
-  // never sees the expected figure while it can still influence the result.
   // Hiding the columns client-side isn't enough — the values would ship in the
   // loader payload and CSV export. Strip them server-side through Draft AND
   // Pending; they are revealed only once Posted.
-  const isBlindEntry =
-    inventoryCount.data.isBlind && inventoryCount.data.status !== "Posted";
   const lineData = (lines.data ?? []).map((line) =>
     isBlindEntry
       ? // Withhold System Qty (and the variance it can be derived from). Use null,
@@ -82,13 +115,28 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     lines: lineData,
     count: lines.count ?? 0,
     summary,
-    movements: movements.data ?? []
+    movements: movements.data ?? [],
+    forms: forms.data ?? [],
+    substances: substances.data ?? [],
+    tags: pluckUnique(tags.data, (tag) => tag.name),
+    storageTypes: storageTypes.data ?? [],
+    storageUnits: storageUnits.data ?? []
   };
 }
 
 export default function InventoryCountDetailRoute() {
-  const { inventoryCount, lines, count, summary, movements } =
-    useLoaderData<typeof loader>();
+  const {
+    inventoryCount,
+    lines,
+    count,
+    summary,
+    movements,
+    forms,
+    substances,
+    tags,
+    storageTypes,
+    storageUnits
+  } = useLoaderData<typeof loader>();
 
   return (
     <>
@@ -99,6 +147,11 @@ export default function InventoryCountDetailRoute() {
           count={count}
           summary={summary}
           movements={movements}
+          forms={forms}
+          substances={substances}
+          tags={tags}
+          storageTypes={storageTypes}
+          storageUnits={storageUnits}
         />
       </div>
       <Outlet />

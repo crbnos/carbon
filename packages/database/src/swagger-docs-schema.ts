@@ -496,9 +496,6 @@ export default {
             $ref: "#/parameters/rowFilter.service.id"
           },
           {
-            $ref: "#/parameters/rowFilter.service.itemId"
-          },
-          {
             $ref: "#/parameters/rowFilter.service.serviceType"
           },
           {
@@ -597,9 +594,6 @@ export default {
             $ref: "#/parameters/rowFilter.service.id"
           },
           {
-            $ref: "#/parameters/rowFilter.service.itemId"
-          },
-          {
             $ref: "#/parameters/rowFilter.service.serviceType"
           },
           {
@@ -650,9 +644,6 @@ export default {
         parameters: [
           {
             $ref: "#/parameters/rowFilter.service.id"
-          },
-          {
-            $ref: "#/parameters/rowFilter.service.itemId"
           },
           {
             $ref: "#/parameters/rowFilter.service.serviceType"
@@ -1519,10 +1510,10 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLine.tags"
           },
           {
-            $ref: "#/parameters/rowFilter.quoteLine.unitPricePrecision"
+            $ref: "#/parameters/rowFilter.quoteLine.externalNotes"
           },
           {
-            $ref: "#/parameters/rowFilter.quoteLine.externalNotes"
+            $ref: "#/parameters/rowFilter.quoteLine.unitPricePrecision"
           },
           {
             $ref: "#/parameters/rowFilter.quoteLine.configuration"
@@ -1671,10 +1662,10 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLine.tags"
           },
           {
-            $ref: "#/parameters/rowFilter.quoteLine.unitPricePrecision"
+            $ref: "#/parameters/rowFilter.quoteLine.externalNotes"
           },
           {
-            $ref: "#/parameters/rowFilter.quoteLine.externalNotes"
+            $ref: "#/parameters/rowFilter.quoteLine.unitPricePrecision"
           },
           {
             $ref: "#/parameters/rowFilter.quoteLine.configuration"
@@ -1777,10 +1768,10 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLine.tags"
           },
           {
-            $ref: "#/parameters/rowFilter.quoteLine.unitPricePrecision"
+            $ref: "#/parameters/rowFilter.quoteLine.externalNotes"
           },
           {
-            $ref: "#/parameters/rowFilter.quoteLine.externalNotes"
+            $ref: "#/parameters/rowFilter.quoteLine.unitPricePrecision"
           },
           {
             $ref: "#/parameters/rowFilter.quoteLine.configuration"
@@ -7527,6 +7518,114 @@ export default {
         tags: ["journal"]
       }
     },
+    "/v_readable_id": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.v_readable_id.readableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.v_readable_id.companyId"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/v_readable_id"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["v_readable_id"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.v_readable_id"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["v_readable_id"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.v_readable_id.readableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.v_readable_id.companyId"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["v_readable_id"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.v_readable_id.readableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.v_readable_id.companyId"
+          },
+          {
+            $ref: "#/parameters/body.v_readable_id"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["v_readable_id"]
+      }
+    },
     "/tableView": {
       get: {
         parameters: [
@@ -8641,6 +8740,168 @@ export default {
           }
         },
         tags: ["auditLogArchive"]
+      }
+    },
+    "/schedulingPolicy": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.schedulingPolicy.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.schedulingPolicy.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.schedulingPolicy.workCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.schedulingPolicy.dispatchRule"
+          },
+          {
+            $ref: "#/parameters/rowFilter.schedulingPolicy.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.schedulingPolicy.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.schedulingPolicy.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.schedulingPolicy.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/schedulingPolicy"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["schedulingPolicy"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.schedulingPolicy"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["schedulingPolicy"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.schedulingPolicy.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.schedulingPolicy.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.schedulingPolicy.workCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.schedulingPolicy.dispatchRule"
+          },
+          {
+            $ref: "#/parameters/rowFilter.schedulingPolicy.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.schedulingPolicy.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.schedulingPolicy.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.schedulingPolicy.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["schedulingPolicy"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.schedulingPolicy.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.schedulingPolicy.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.schedulingPolicy.workCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.schedulingPolicy.dispatchRule"
+          },
+          {
+            $ref: "#/parameters/rowFilter.schedulingPolicy.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.schedulingPolicy.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.schedulingPolicy.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.schedulingPolicy.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.schedulingPolicy"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["schedulingPolicy"]
       }
     },
     "/nonConformanceActionTask": {
@@ -12577,12 +12838,6 @@ export default {
             $ref: "#/parameters/rowFilter.methodMaterial.sourcingType"
           },
           {
-            $ref: "#/parameters/rowFilter.methodMaterial.effectiveFrom"
-          },
-          {
-            $ref: "#/parameters/rowFilter.methodMaterial.effectiveTo"
-          },
-          {
             $ref: "#/parameters/select"
           },
           {
@@ -12708,12 +12963,6 @@ export default {
             $ref: "#/parameters/rowFilter.methodMaterial.sourcingType"
           },
           {
-            $ref: "#/parameters/rowFilter.methodMaterial.effectiveFrom"
-          },
-          {
-            $ref: "#/parameters/rowFilter.methodMaterial.effectiveTo"
-          },
-          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -12791,12 +13040,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.methodMaterial.sourcingType"
-          },
-          {
-            $ref: "#/parameters/rowFilter.methodMaterial.effectiveFrom"
-          },
-          {
-            $ref: "#/parameters/rowFilter.methodMaterial.effectiveTo"
           },
           {
             $ref: "#/parameters/body.methodMaterial"
@@ -20773,6 +21016,9 @@ export default {
             $ref: "#/parameters/rowFilter.companies.auditLogEnabled"
           },
           {
+            $ref: "#/parameters/rowFilter.companies.vatNumber"
+          },
+          {
             $ref: "#/parameters/rowFilter.companies.companyGroupId"
           },
           {
@@ -20783,9 +21029,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companies.active"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companies.vatNumber"
           },
           {
             $ref: "#/parameters/rowFilter.companies.eori"
@@ -20893,6 +21136,9 @@ export default {
             $ref: "#/parameters/rowFilter.process.active"
           },
           {
+            $ref: "#/parameters/rowFilter.process.requiresAbility"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -20991,6 +21237,9 @@ export default {
             $ref: "#/parameters/rowFilter.process.active"
           },
           {
+            $ref: "#/parameters/rowFilter.process.requiresAbility"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -21041,6 +21290,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.process.active"
+          },
+          {
+            $ref: "#/parameters/rowFilter.process.requiresAbility"
           },
           {
             $ref: "#/parameters/body.process"
@@ -23818,6 +24070,9 @@ export default {
             $ref: "#/parameters/rowFilter.employeeAbility.companyId"
           },
           {
+            $ref: "#/parameters/rowFilter.employeeAbility.expiresAt"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -23901,6 +24156,9 @@ export default {
             $ref: "#/parameters/rowFilter.employeeAbility.companyId"
           },
           {
+            $ref: "#/parameters/rowFilter.employeeAbility.expiresAt"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -23936,6 +24194,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.employeeAbility.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.employeeAbility.expiresAt"
           },
           {
             $ref: "#/parameters/body.employeeAbility"
@@ -28698,6 +28959,72 @@ export default {
         tags: ["intercompanyTransaction"]
       }
     },
+    "/itemLedgerSnapshot": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.itemLedgerSnapshot.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemLedgerSnapshot.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemLedgerSnapshot.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemLedgerSnapshot.quantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemLedgerSnapshot.consumed30"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemLedgerSnapshot.consumed90"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemLedgerSnapshot.storageUnitIds"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemLedgerSnapshot.snapshotCutoff"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/itemLedgerSnapshot"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["itemLedgerSnapshot"]
+      }
+    },
     "/job": {
       get: {
         parameters: [
@@ -28814,6 +29141,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.job.priority"
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.scheduleOutdatedReason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.scheduleOutdatedAt"
           },
           {
             $ref: "#/parameters/select"
@@ -28989,6 +29322,12 @@ export default {
             $ref: "#/parameters/rowFilter.job.priority"
           },
           {
+            $ref: "#/parameters/rowFilter.job.scheduleOutdatedReason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.scheduleOutdatedAt"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -29114,6 +29453,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.job.priority"
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.scheduleOutdatedReason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.scheduleOutdatedAt"
           },
           {
             $ref: "#/parameters/body.job"
@@ -29317,6 +29662,69 @@ export default {
           }
         },
         tags: ["supplierPartPrice"]
+      }
+    },
+    "/jobOperationQueueTime": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.jobOperationQueueTime.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationQueueTime.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationQueueTime.jobId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationQueueTime.workCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationQueueTime.readyAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationQueueTime.firstEventAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationQueueTime.queueHours"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/jobOperationQueueTime"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["jobOperationQueueTime"]
       }
     },
     "/contact": {
@@ -33529,13 +33937,13 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.taxAmount"
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseOrderLine.accountId"
-          },
-          {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.requiredDate"
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.receivedDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLine.accountId"
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.costCenterId"
@@ -33741,13 +34149,13 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.taxAmount"
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseOrderLine.accountId"
-          },
-          {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.requiredDate"
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.receivedDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLine.accountId"
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.costCenterId"
@@ -33907,13 +34315,13 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.taxAmount"
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseOrderLine.accountId"
-          },
-          {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.requiredDate"
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.receivedDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLine.accountId"
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.costCenterId"
@@ -37579,6 +37987,9 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperation.assemblyInstructionId"
           },
           {
+            $ref: "#/parameters/rowFilter.jobOperation.readyAt"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -37776,6 +38187,9 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperation.assemblyInstructionId"
           },
           {
+            $ref: "#/parameters/rowFilter.jobOperation.readyAt"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -37925,6 +38339,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.jobOperation.assemblyInstructionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperation.readyAt"
           },
           {
             $ref: "#/parameters/body.jobOperation"
@@ -41992,13 +42409,13 @@ export default {
             $ref: "#/parameters/rowFilter.salesInvoiceLines.updatedBy"
           },
           {
-            $ref: "#/parameters/rowFilter.salesInvoiceLines.accountId"
-          },
-          {
             $ref: "#/parameters/rowFilter.salesInvoiceLines.nonTaxableAddOnCost"
           },
           {
             $ref: "#/parameters/rowFilter.salesInvoiceLines.convertedNonTaxableAddOnCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLines.accountId"
           },
           {
             $ref: "#/parameters/rowFilter.salesInvoiceLines.sortOrder"
@@ -50938,9 +51355,6 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLines.sentDate"
           },
           {
-            $ref: "#/parameters/rowFilter.salesOrderLines.accountId"
-          },
-          {
             $ref: "#/parameters/rowFilter.salesOrderLines.nonTaxableAddOnCost"
           },
           {
@@ -50951,6 +51365,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLines.priceTrace"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLines.accountId"
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLines.sortOrder"
@@ -52264,6 +52681,186 @@ export default {
           }
         },
         tags: ["salesRfq"]
+      }
+    },
+    "/accountingPeriodBalance": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.accountingPeriodBalance.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingPeriodBalance.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingPeriodBalance.accountingPeriodId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingPeriodBalance.accountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingPeriodBalance.endingBalance"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingPeriodBalance.endingBalanceDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingPeriodBalance.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingPeriodBalance.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingPeriodBalance.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingPeriodBalance.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/accountingPeriodBalance"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["accountingPeriodBalance"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.accountingPeriodBalance"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["accountingPeriodBalance"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.accountingPeriodBalance.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingPeriodBalance.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingPeriodBalance.accountingPeriodId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingPeriodBalance.accountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingPeriodBalance.endingBalance"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingPeriodBalance.endingBalanceDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingPeriodBalance.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingPeriodBalance.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingPeriodBalance.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingPeriodBalance.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["accountingPeriodBalance"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.accountingPeriodBalance.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingPeriodBalance.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingPeriodBalance.accountingPeriodId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingPeriodBalance.accountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingPeriodBalance.endingBalance"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingPeriodBalance.endingBalanceDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingPeriodBalance.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingPeriodBalance.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingPeriodBalance.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingPeriodBalance.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.accountingPeriodBalance"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["accountingPeriodBalance"]
       }
     },
     "/parts": {
@@ -53986,9 +54583,6 @@ export default {
             $ref: "#/parameters/rowFilter.journalLines.intercompanyPartnerId"
           },
           {
-            $ref: "#/parameters/rowFilter.journalLines.createdBy"
-          },
-          {
             $ref: "#/parameters/rowFilter.journalLines.postingDate"
           },
           {
@@ -55429,6 +56023,12 @@ export default {
             $ref: "#/parameters/rowFilter.ability.updatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.ability.processId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ability.recertifyEveryDays"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -55518,6 +56118,12 @@ export default {
             $ref: "#/parameters/rowFilter.ability.updatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.ability.processId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ability.recertifyEveryDays"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -55559,6 +56165,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.ability.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ability.processId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ability.recertifyEveryDays"
           },
           {
             $ref: "#/parameters/body.ability"
@@ -56344,10 +56956,10 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLines.tags"
           },
           {
-            $ref: "#/parameters/rowFilter.quoteLines.unitPricePrecision"
+            $ref: "#/parameters/rowFilter.quoteLines.externalNotes"
           },
           {
-            $ref: "#/parameters/rowFilter.quoteLines.externalNotes"
+            $ref: "#/parameters/rowFilter.quoteLines.unitPricePrecision"
           },
           {
             $ref: "#/parameters/rowFilter.quoteLines.configuration"
@@ -56956,6 +57568,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLinePrice.companyId"
           },
           {
+            $ref: "#/parameters/rowFilter.quoteLinePrice.priceSource"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -57075,6 +57690,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLinePrice.companyId"
           },
           {
+            $ref: "#/parameters/rowFilter.quoteLinePrice.priceSource"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -57146,6 +57764,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteLinePrice.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrice.priceSource"
           },
           {
             $ref: "#/parameters/body.quoteLinePrice"
@@ -59383,6 +60004,9 @@ export default {
             $ref: "#/parameters/rowFilter.processes.active"
           },
           {
+            $ref: "#/parameters/rowFilter.processes.requiresAbility"
+          },
+          {
             $ref: "#/parameters/rowFilter.processes.workCenters"
           },
           {
@@ -60328,9 +60952,6 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLine.sentDate"
           },
           {
-            $ref: "#/parameters/rowFilter.salesOrderLine.accountId"
-          },
-          {
             $ref: "#/parameters/rowFilter.salesOrderLine.nonTaxableAddOnCost"
           },
           {
@@ -60341,6 +60962,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLine.priceTrace"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.accountId"
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLine.sortOrder"
@@ -60522,9 +61146,6 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLine.sentDate"
           },
           {
-            $ref: "#/parameters/rowFilter.salesOrderLine.accountId"
-          },
-          {
             $ref: "#/parameters/rowFilter.salesOrderLine.nonTaxableAddOnCost"
           },
           {
@@ -60535,6 +61156,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLine.priceTrace"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.accountId"
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLine.sortOrder"
@@ -60670,9 +61294,6 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLine.sentDate"
           },
           {
-            $ref: "#/parameters/rowFilter.salesOrderLine.accountId"
-          },
-          {
             $ref: "#/parameters/rowFilter.salesOrderLine.nonTaxableAddOnCost"
           },
           {
@@ -60683,6 +61304,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLine.priceTrace"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.accountId"
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLine.sortOrder"
@@ -60883,6 +61507,9 @@ export default {
             $ref: "#/parameters/rowFilter.company.auditLogEnabled"
           },
           {
+            $ref: "#/parameters/rowFilter.company.vatNumber"
+          },
+          {
             $ref: "#/parameters/rowFilter.company.companyGroupId"
           },
           {
@@ -60893,9 +61520,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.company.active"
-          },
-          {
-            $ref: "#/parameters/rowFilter.company.vatNumber"
           },
           {
             $ref: "#/parameters/rowFilter.company.eori"
@@ -61044,6 +61668,9 @@ export default {
             $ref: "#/parameters/rowFilter.company.auditLogEnabled"
           },
           {
+            $ref: "#/parameters/rowFilter.company.vatNumber"
+          },
+          {
             $ref: "#/parameters/rowFilter.company.companyGroupId"
           },
           {
@@ -61054,9 +61681,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.company.active"
-          },
-          {
-            $ref: "#/parameters/rowFilter.company.vatNumber"
           },
           {
             $ref: "#/parameters/rowFilter.company.eori"
@@ -61159,6 +61783,9 @@ export default {
             $ref: "#/parameters/rowFilter.company.auditLogEnabled"
           },
           {
+            $ref: "#/parameters/rowFilter.company.vatNumber"
+          },
+          {
             $ref: "#/parameters/rowFilter.company.companyGroupId"
           },
           {
@@ -61169,9 +61796,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.company.active"
-          },
-          {
-            $ref: "#/parameters/rowFilter.company.vatNumber"
           },
           {
             $ref: "#/parameters/rowFilter.company.eori"
@@ -66034,13 +66658,13 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderLines.taxAmount"
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseOrderLines.accountId"
-          },
-          {
             $ref: "#/parameters/rowFilter.purchaseOrderLines.requiredDate"
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLines.receivedDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLines.accountId"
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLines.costCenterId"
@@ -72226,10 +72850,10 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLinePrices.tags"
           },
           {
-            $ref: "#/parameters/rowFilter.quoteLinePrices.unitPricePrecision"
+            $ref: "#/parameters/rowFilter.quoteLinePrices.externalNotes"
           },
           {
-            $ref: "#/parameters/rowFilter.quoteLinePrices.externalNotes"
+            $ref: "#/parameters/rowFilter.quoteLinePrices.unitPricePrecision"
           },
           {
             $ref: "#/parameters/rowFilter.quoteLinePrices.configuration"
@@ -74230,6 +74854,9 @@ export default {
             $ref: "#/parameters/rowFilter.training.updatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.training.grantsAbilityId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -74340,6 +74967,9 @@ export default {
             $ref: "#/parameters/rowFilter.training.updatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.training.grantsAbilityId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -74402,6 +75032,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.training.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.training.grantsAbilityId"
           },
           {
             $ref: "#/parameters/body.training"
@@ -77455,13 +78088,13 @@ export default {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.updatedBy"
           },
           {
-            $ref: "#/parameters/rowFilter.salesInvoiceLine.accountId"
-          },
-          {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.nonTaxableAddOnCost"
           },
           {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.convertedNonTaxableAddOnCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.accountId"
           },
           {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.sortOrder"
@@ -77625,13 +78258,13 @@ export default {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.updatedBy"
           },
           {
-            $ref: "#/parameters/rowFilter.salesInvoiceLine.accountId"
-          },
-          {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.nonTaxableAddOnCost"
           },
           {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.convertedNonTaxableAddOnCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.accountId"
           },
           {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.sortOrder"
@@ -77749,13 +78382,13 @@ export default {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.updatedBy"
           },
           {
-            $ref: "#/parameters/rowFilter.salesInvoiceLine.accountId"
-          },
-          {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.nonTaxableAddOnCost"
           },
           {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.convertedNonTaxableAddOnCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.accountId"
           },
           {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.sortOrder"
@@ -78031,6 +78664,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.defaultCustomerCc"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.quoteLineCategoryMarkups"
+          },
+          {
             $ref: "#/parameters/rowFilter.companySettings.accountsPayableEmail"
           },
           {
@@ -78043,19 +78679,13 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.accountsReceivableAddress"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.quoteLineCategoryMarkups"
-          },
-          {
             $ref: "#/parameters/rowFilter.companySettings.qualityIssueTarget"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.consoleEnabled"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.timeCardEnabled"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.printing"
+            $ref: "#/parameters/rowFilter.companySettings.consoleEnabled"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.updateLeadTimesOnReceipt"
@@ -78083,6 +78713,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.showCustomerReadableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.printing"
           },
           {
             $ref: "#/parameters/select"
@@ -78213,6 +78846,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.defaultCustomerCc"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.quoteLineCategoryMarkups"
+          },
+          {
             $ref: "#/parameters/rowFilter.companySettings.accountsPayableEmail"
           },
           {
@@ -78225,19 +78861,13 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.accountsReceivableAddress"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.quoteLineCategoryMarkups"
-          },
-          {
             $ref: "#/parameters/rowFilter.companySettings.qualityIssueTarget"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.consoleEnabled"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.timeCardEnabled"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.printing"
+            $ref: "#/parameters/rowFilter.companySettings.consoleEnabled"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.updateLeadTimesOnReceipt"
@@ -78265,6 +78895,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.showCustomerReadableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.printing"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -78349,6 +78982,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.defaultCustomerCc"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.quoteLineCategoryMarkups"
+          },
+          {
             $ref: "#/parameters/rowFilter.companySettings.accountsPayableEmail"
           },
           {
@@ -78361,19 +78997,13 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.accountsReceivableAddress"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.quoteLineCategoryMarkups"
-          },
-          {
             $ref: "#/parameters/rowFilter.companySettings.qualityIssueTarget"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.consoleEnabled"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.timeCardEnabled"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.printing"
+            $ref: "#/parameters/rowFilter.companySettings.consoleEnabled"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.updateLeadTimesOnReceipt"
@@ -78401,6 +79031,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.showCustomerReadableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.printing"
           },
           {
             $ref: "#/parameters/body.companySettings"
@@ -78613,6 +79246,240 @@ export default {
           }
         },
         tags: ["part"]
+      }
+    },
+    "/capacityReservation": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.resourceKind"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.resourceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.operationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.jobId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.startAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.endAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.scenarioId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.earliestStartAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.scheduleNote"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.workHours"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/capacityReservation"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["capacityReservation"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.capacityReservation"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["capacityReservation"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.resourceKind"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.resourceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.operationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.jobId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.startAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.endAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.scenarioId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.earliestStartAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.scheduleNote"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.workHours"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["capacityReservation"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.resourceKind"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.resourceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.operationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.jobId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.startAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.endAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.scenarioId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.earliestStartAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.scheduleNote"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.workHours"
+          },
+          {
+            $ref: "#/parameters/body.capacityReservation"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["capacityReservation"]
       }
     },
     "/approvalRule": {
@@ -80882,6 +81749,10 @@ export default {
                   format: "text",
                   type: "string"
                 },
+                item_id: {
+                  format: "text",
+                  type: "string"
+                },
                 location_id: {
                   format: "text",
                   type: "string"
@@ -81441,6 +82312,45 @@ export default {
           }
         },
         tags: ["(rpc) get_companies_with_permission"]
+      }
+    },
+    "/rpc/get_inventory_tie_out": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                as_of_date: {
+                  format: "date",
+                  type: "string"
+                },
+                company_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["company_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_inventory_tie_out"]
       }
     },
     "/rpc/get_companies_with_employee_role": {
@@ -82431,6 +83341,8 @@ export default {
             name: "args",
             required: true,
             schema: {
+              description:
+                "Deprecated: superseded by get_inventory_valuation (method-faithful costs, status breakdown, as-of-date). Kept for API compatibility.",
               properties: {
                 company_id: {
                   format: "text",
@@ -82455,6 +83367,8 @@ export default {
             description: "OK"
           }
         },
+        summary:
+          "Deprecated: superseded by get_inventory_valuation (method-faithful costs, status breakdown, as-of-date). Kept for API compatibility.",
         tags: ["(rpc) get_inventory_value_by_location"]
       }
     },
@@ -83043,6 +83957,74 @@ export default {
           }
         },
         tags: ["(rpc) check_api_key_rate_limit"]
+      }
+    },
+    "/rpc/get_user_select_group_members": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "p_company_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_group_id",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_user_select_group_members"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_group_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_company_id", "p_group_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_user_select_group_members"]
       }
     },
     "/rpc/get_effective_work_center_id": {
@@ -83904,6 +84886,107 @@ export default {
           }
         },
         tags: ["(rpc) get_active_job_count"]
+      }
+    },
+    "/rpc/get_user_select_groups": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "p_company_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_type",
+            required: false,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_search",
+            required: false,
+            type: "string"
+          },
+          {
+            format: "integer",
+            in: "query",
+            name: "p_limit",
+            required: false,
+            type: "integer"
+          },
+          {
+            format: "integer",
+            in: "query",
+            name: "p_offset",
+            required: false,
+            type: "integer"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_user_select_groups"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_limit: {
+                  format: "integer",
+                  type: "integer"
+                },
+                p_offset: {
+                  format: "integer",
+                  type: "integer"
+                },
+                p_search: {
+                  format: "text",
+                  type: "string"
+                },
+                p_type: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_company_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_user_select_groups"]
       }
     },
     "/rpc/delete_event_system_subscriptions_by_name": {
@@ -86794,6 +87877,41 @@ export default {
         tags: ["(rpc) get_job_method"]
       }
     },
+    "/rpc/get_service_details": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                item_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["item_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_service_details"]
+      }
+    },
     "/rpc/increment_webhook_success": {
       post: {
         parameters: [
@@ -87223,6 +88341,49 @@ export default {
         tags: ["(rpc) has_role"]
       }
     },
+    "/rpc/snapshotAccountingPeriodBalances": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_period_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_user_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_company_id", "p_period_id", "p_user_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) snapshotAccountingPeriodBalances"]
+      }
+    },
     "/rpc/get_ar_open_by_customer": {
       post: {
         parameters: [
@@ -87430,6 +88591,49 @@ export default {
           }
         },
         tags: ["(rpc) delete_event_system_subscription"]
+      }
+    },
+    "/rpc/get_inventory_valuation": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                as_of_date: {
+                  format: "date",
+                  type: "string"
+                },
+                company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                location_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["company_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_inventory_valuation"]
       }
     },
     "/rpc/sync_update_user_identity_group": {
@@ -89146,6 +90350,53 @@ export default {
         tags: ["(rpc) get_opportunity_with_related_records"]
       }
     },
+    "/rpc/getConsolidationRates": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_group_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_period_end: {
+                  format: "date",
+                  type: "string"
+                },
+                p_period_start: {
+                  format: "date",
+                  type: "string"
+                }
+              },
+              required: ["p_company_group_id", "p_company_id", "p_period_end"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) getConsolidationRates"]
+      }
+    },
     "/rpc/sync_insert_job_material_make_method": {
       post: {
         parameters: [
@@ -89661,13 +90912,8 @@ export default {
           format: "text",
           type: "string"
         },
-        itemId: {
-          description:
-            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
-          format: "text",
-          type: "string"
-        },
         serviceType: {
+          default: "External",
           enum: ["Internal", "External"],
           format: 'public."serviceType"',
           type: "string"
@@ -90283,13 +91529,13 @@ export default {
           },
           type: "array"
         },
+        externalNotes: {
+          format: "jsonb"
+        },
         unitPricePrecision: {
           default: 2,
           format: "integer",
           type: "integer"
-        },
-        externalNotes: {
-          format: "jsonb"
         },
         configuration: {
           format: "jsonb"
@@ -92881,6 +94127,19 @@ export default {
       },
       type: "object"
     },
+    v_readable_id: {
+      properties: {
+        readableId: {
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          format: "text",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     tableView: {
       required: [
         "id",
@@ -93283,6 +94542,57 @@ export default {
         },
         createdAt: {
           default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
+    schedulingPolicy: {
+      required: ["id", "companyId", "dispatchRule", "createdBy", "createdAt"],
+      properties: {
+        id: {
+          default: "public.id('spol'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        workCenterId: {
+          description:
+            "Note:\nThis is a Foreign Key to `workCenter.id`.<fk table='workCenter' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        dispatchRule: {
+          default: "EDD",
+          enum: ["FIFO", "EDD", "SPT", "WSPT", "CR", "MinSlack"],
+          format: 'public."schedulingDispatchRule"',
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
           format: "timestamp with time zone",
           type: "string"
         }
@@ -94405,7 +95715,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -94454,7 +95764,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -95274,14 +96584,6 @@ export default {
           default: "Specified",
           enum: ["Specified", "Drop Ship", "Ship from Inventory"],
           format: 'public."sourcingType"',
-          type: "string"
-        },
-        effectiveFrom: {
-          format: "date",
-          type: "string"
-        },
-        effectiveTo: {
-          format: "date",
           type: "string"
         }
       },
@@ -99220,6 +100522,10 @@ export default {
           format: "boolean",
           type: "boolean"
         },
+        vatNumber: {
+          format: "text",
+          type: "string"
+        },
         companyGroupId: {
           description:
             "Note:\nThis is a Foreign Key to `companyGroup.id`.<fk table='companyGroup' column='id'/>",
@@ -99239,10 +100545,6 @@ export default {
         active: {
           format: "boolean",
           type: "boolean"
-        },
-        vatNumber: {
-          format: "text",
-          type: "string"
         },
         eori: {
           format: "text",
@@ -99296,7 +100598,8 @@ export default {
         "createdAt",
         "processType",
         "completeAllOnScan",
-        "active"
+        "active",
+        "requiresAbility"
       ],
       properties: {
         id: {
@@ -99376,6 +100679,11 @@ export default {
         },
         active: {
           default: true,
+          format: "boolean",
+          type: "boolean"
+        },
+        requiresAbility: {
+          default: false,
           format: "boolean",
           type: "boolean"
         }
@@ -100651,6 +101959,10 @@ export default {
           description:
             "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
           format: "text",
+          type: "string"
+        },
+        expiresAt: {
+          format: "date",
           type: "string"
         }
       },
@@ -102954,7 +104266,9 @@ export default {
             "Production Event",
             "Job Close",
             "Payment",
-            "Memo"
+            "Memo",
+            "Inventory Adjustment",
+            "Inventory Count"
           ],
           format: 'public."journalLineDocumentType"',
           type: "string"
@@ -102980,6 +104294,50 @@ export default {
           type: "string"
         },
         updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
+    itemLedgerSnapshot: {
+      properties: {
+        itemId: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        locationId: {
+          format: "text",
+          type: "string"
+        },
+        quantity: {
+          format: "numeric",
+          type: "number"
+        },
+        consumed30: {
+          format: "numeric",
+          type: "number"
+        },
+        consumed90: {
+          format: "numeric",
+          type: "number"
+        },
+        storageUnitIds: {
+          format: "text[]",
+          items: {
+            type: "string"
+          },
+          type: "array"
+        },
+        snapshotCutoff: {
           format: "timestamp with time zone",
           type: "string"
         }
@@ -103201,6 +104559,16 @@ export default {
           default: 1,
           format: "double precision",
           type: "number"
+        },
+        scheduleOutdatedReason: {
+          description:
+            'Why the stored schedule may be stale (e.g. "Qualification changed: Solder"). Null = schedule current.',
+          format: "text",
+          type: "string"
+        },
+        scheduleOutdatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
         }
       },
       type: "object"
@@ -103271,6 +104639,46 @@ export default {
         },
         leadTime: {
           default: 0,
+          format: "numeric",
+          type: "number"
+        }
+      },
+      type: "object"
+    },
+    jobOperationQueueTime: {
+      properties: {
+        id: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        jobId: {
+          description:
+            "Note:\nThis is a Foreign Key to `job.id`.<fk table='job' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        workCenterId: {
+          description:
+            "Note:\nThis is a Foreign Key to `workCenter.id`.<fk table='workCenter' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        readyAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        firstEventAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        queueHours: {
           format: "numeric",
           type: "number"
         }
@@ -105245,18 +106653,18 @@ export default {
           format: "numeric",
           type: "number"
         },
-        accountId: {
-          description:
-            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
-          format: "text",
-          type: "string"
-        },
         requiredDate: {
           format: "date",
           type: "string"
         },
         receivedDate: {
           format: "date",
+          type: "string"
+        },
+        accountId: {
+          description:
+            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
+          format: "text",
           type: "string"
         },
         costCenterId: {
@@ -107427,6 +108835,10 @@ export default {
             "Note:\nThis is a Foreign Key to `assemblyInstruction.id`.<fk table='assemblyInstruction' column='id'/>",
           format: "text",
           type: "string"
+        },
+        readyAt: {
+          format: "timestamp with time zone",
+          type: "string"
         }
       },
       type: "object"
@@ -109326,12 +110738,6 @@ export default {
           format: "text",
           type: "string"
         },
-        accountId: {
-          description:
-            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
-          format: "text",
-          type: "string"
-        },
         nonTaxableAddOnCost: {
           format: "numeric",
           type: "number"
@@ -109339,6 +110745,12 @@ export default {
         convertedNonTaxableAddOnCost: {
           format: "numeric",
           type: "number"
+        },
+        accountId: {
+          description:
+            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
+          format: "text",
+          type: "string"
         },
         sortOrder: {
           format: "double precision",
@@ -113253,12 +114665,6 @@ export default {
           format: "date",
           type: "string"
         },
-        accountId: {
-          description:
-            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
-          format: "text",
-          type: "string"
-        },
         nonTaxableAddOnCost: {
           format: "numeric",
           type: "number"
@@ -113275,6 +114681,12 @@ export default {
         },
         priceTrace: {
           format: "jsonb"
+        },
+        accountId: {
+          description:
+            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
+          format: "text",
+          type: "string"
         },
         sortOrder: {
           format: "double precision",
@@ -113908,6 +115320,75 @@ export default {
           description:
             "Note:\nThis is a Foreign Key to `customerContact.id`.<fk table='customerContact' column='id'/>",
           format: "text",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
+    accountingPeriodBalance: {
+      required: [
+        "id",
+        "companyId",
+        "accountingPeriodId",
+        "accountId",
+        "endingBalance",
+        "endingBalanceDate",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('apb'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        accountingPeriodId: {
+          description:
+            "Note:\nThis is a Foreign Key to `accountingPeriod.id`.<fk table='accountingPeriod' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        accountId: {
+          description:
+            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        endingBalance: {
+          default: 0,
+          format: "numeric",
+          type: "number"
+        },
+        endingBalanceDate: {
+          format: "date",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
           type: "string"
         }
       },
@@ -114854,7 +116335,9 @@ export default {
             "Production Event",
             "Job Close",
             "Payment",
-            "Memo"
+            "Memo",
+            "Inventory Adjustment",
+            "Inventory Count"
           ],
           format: 'public."journalLineDocumentType"',
           type: "string"
@@ -114918,12 +116401,6 @@ export default {
         intercompanyPartnerId: {
           description:
             "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        createdBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -115027,7 +116504,9 @@ export default {
             "Production Event",
             "Job Close",
             "Payment",
-            "Memo"
+            "Memo",
+            "Inventory Adjustment",
+            "Inventory Count"
           ],
           format: 'public."journalLineDocumentType"',
           type: "string"
@@ -115646,6 +117125,16 @@ export default {
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
           type: "string"
+        },
+        processId: {
+          description:
+            "Note:\nThis is a Foreign Key to `process.id`.<fk table='process' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        recertifyEveryDays: {
+          format: "integer",
+          type: "integer"
         }
       },
       type: "object"
@@ -116077,12 +117566,12 @@ export default {
           },
           type: "array"
         },
+        externalNotes: {
+          format: "jsonb"
+        },
         unitPricePrecision: {
           format: "integer",
           type: "integer"
-        },
-        externalNotes: {
-          format: "jsonb"
         },
         configuration: {
           format: "jsonb"
@@ -116446,7 +117935,8 @@ export default {
         "createdBy",
         "unitPrice",
         "shippingCost",
-        "companyId"
+        "companyId",
+        "priceSource"
       ],
       properties: {
         quoteId: {
@@ -116541,6 +118031,11 @@ export default {
           format: "jsonb"
         },
         companyId: {
+          format: "text",
+          type: "string"
+        },
+        priceSource: {
+          default: "system",
           format: "text",
           type: "string"
         }
@@ -117599,6 +119094,10 @@ export default {
           format: "boolean",
           type: "boolean"
         },
+        requiresAbility: {
+          format: "boolean",
+          type: "boolean"
+        },
         workCenters: {
           format: "text[]",
           items: {
@@ -118312,12 +119811,6 @@ export default {
           format: "date",
           type: "string"
         },
-        accountId: {
-          description:
-            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
-          format: "text",
-          type: "string"
-        },
         nonTaxableAddOnCost: {
           default: 0,
           format: "numeric",
@@ -118335,6 +119828,12 @@ export default {
         },
         priceTrace: {
           format: "jsonb"
+        },
+        accountId: {
+          description:
+            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
+          format: "text",
+          type: "string"
         },
         sortOrder: {
           default: 1,
@@ -118477,6 +119976,10 @@ export default {
           format: "boolean",
           type: "boolean"
         },
+        vatNumber: {
+          format: "text",
+          type: "string"
+        },
         companyGroupId: {
           description:
             "Note:\nThis is a Foreign Key to `companyGroup.id`.<fk table='companyGroup' column='id'/>",
@@ -118498,10 +120001,6 @@ export default {
           default: true,
           format: "boolean",
           type: "boolean"
-        },
-        vatNumber: {
-          format: "text",
-          type: "string"
         },
         eori: {
           format: "text",
@@ -120814,18 +122313,18 @@ export default {
           format: "numeric",
           type: "number"
         },
-        accountId: {
-          description:
-            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
-          format: "text",
-          type: "string"
-        },
         requiredDate: {
           format: "date",
           type: "string"
         },
         receivedDate: {
           format: "date",
+          type: "string"
+        },
+        accountId: {
+          description:
+            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
+          format: "text",
           type: "string"
         },
         costCenterId: {
@@ -124201,12 +125700,12 @@ export default {
           },
           type: "array"
         },
+        externalNotes: {
+          format: "jsonb"
+        },
         unitPricePrecision: {
           format: "integer",
           type: "integer"
-        },
-        externalNotes: {
-          format: "jsonb"
         },
         configuration: {
           format: "jsonb"
@@ -125101,6 +126600,12 @@ export default {
         updatedBy: {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        grantsAbilityId: {
+          description:
+            "Note:\nThis is a Foreign Key to `ability.id`.<fk table='ability' column='id'/>",
           format: "text",
           type: "string"
         }
@@ -126554,12 +128059,6 @@ export default {
           format: "text",
           type: "string"
         },
-        accountId: {
-          description:
-            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
-          format: "text",
-          type: "string"
-        },
         nonTaxableAddOnCost: {
           default: 0,
           format: "numeric",
@@ -126568,6 +128067,12 @@ export default {
         convertedNonTaxableAddOnCost: {
           format: "numeric",
           type: "number"
+        },
+        accountId: {
+          description:
+            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
+          format: "text",
+          type: "string"
         },
         sortOrder: {
           default: 1,
@@ -126667,8 +128172,8 @@ export default {
         "maintenanceGenerateInAdvance",
         "maintenanceAdvanceDays",
         "qualityIssueTarget",
-        "consoleEnabled",
         "timeCardEnabled",
+        "consoleEnabled",
         "updateLeadTimesOnReceipt",
         "enforceInspectionFourEyes",
         "samplingStandard",
@@ -126821,6 +128326,9 @@ export default {
           },
           type: "array"
         },
+        quoteLineCategoryMarkups: {
+          format: "jsonb"
+        },
         accountsPayableEmail: {
           format: "text",
           type: "string"
@@ -126839,26 +128347,20 @@ export default {
           format: "boolean",
           type: "boolean"
         },
-        quoteLineCategoryMarkups: {
-          format: "jsonb"
-        },
         qualityIssueTarget: {
           default: 20,
           format: "integer",
           type: "integer"
-        },
-        consoleEnabled: {
-          default: false,
-          format: "boolean",
-          type: "boolean"
         },
         timeCardEnabled: {
           default: false,
           format: "boolean",
           type: "boolean"
         },
-        printing: {
-          format: "jsonb"
+        consoleEnabled: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
         },
         updateLeadTimesOnReceipt: {
           default: false,
@@ -126902,6 +128404,9 @@ export default {
           default: false,
           format: "boolean",
           type: "boolean"
+        },
+        printing: {
+          format: "jsonb"
         }
       },
       type: "object"
@@ -126970,6 +128475,107 @@ export default {
             type: "string"
           },
           type: "array"
+        }
+      },
+      type: "object"
+    },
+    capacityReservation: {
+      required: [
+        "id",
+        "companyId",
+        "resourceKind",
+        "resourceId",
+        "operationId",
+        "jobId",
+        "startAt",
+        "endAt",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('cres'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        resourceKind: {
+          enum: ["WorkCenter", "OperatorPool", "Employee"],
+          format: 'public."capacityResourceKind"',
+          type: "string"
+        },
+        resourceId: {
+          format: "text",
+          type: "string"
+        },
+        operationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `jobOperation.id`.<fk table='jobOperation' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        jobId: {
+          description:
+            "Note:\nThis is a Foreign Key to `job.id`.<fk table='job' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        startAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        endAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        scenarioId: {
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        earliestStartAt: {
+          description:
+            "When the operation could have started at the earliest; startAt - earliestStartAt is time spent waiting. Null when unknown (legacy rows).",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        scheduleNote: {
+          description:
+            'Human-readable reason for the placement timing (English, engine-generated), e.g. "Waited 14h for the work center - queued behind J000010 (2 ops)". Null when the operation started as early as it could.',
+          format: "text",
+          type: "string"
+        },
+        workHours: {
+          description:
+            "Actual work content (hours) inside this reservation; endAt - startAt minus off-shift pauses. Null on legacy rows and manual pins.",
+          format: "numeric",
+          type: "number"
         }
       },
       type: "object"
@@ -127820,12 +129426,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.service.itemId": {
-      name: "itemId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.service.serviceType": {
       name: "serviceType",
       required: false,
@@ -128543,14 +130143,14 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.quoteLine.unitPricePrecision": {
-      name: "unitPricePrecision",
+    "rowFilter.quoteLine.externalNotes": {
+      name: "externalNotes",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.quoteLine.externalNotes": {
-      name: "externalNotes",
+    "rowFilter.quoteLine.unitPricePrecision": {
+      name: "unitPricePrecision",
       required: false,
       in: "query",
       type: "string"
@@ -131465,6 +133065,27 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.v_readable_id": {
+      name: "v_readable_id",
+      description: "v_readable_id",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/v_readable_id"
+      }
+    },
+    "rowFilter.v_readable_id.readableId": {
+      name: "readableId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.v_readable_id.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.tableView": {
       name: "tableView",
       description: "tableView",
@@ -131899,6 +133520,63 @@ export default {
     },
     "rowFilter.auditLogArchive.createdAt": {
       name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.schedulingPolicy": {
+      name: "schedulingPolicy",
+      description: "schedulingPolicy",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/schedulingPolicy"
+      }
+    },
+    "rowFilter.schedulingPolicy.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.schedulingPolicy.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.schedulingPolicy.workCenterId": {
+      name: "workCenterId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.schedulingPolicy.dispatchRule": {
+      name: "dispatchRule",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.schedulingPolicy.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.schedulingPolicy.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.schedulingPolicy.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.schedulingPolicy.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"
@@ -134152,18 +135830,6 @@ export default {
     },
     "rowFilter.methodMaterial.sourcingType": {
       name: "sourcingType",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.methodMaterial.effectiveFrom": {
-      name: "effectiveFrom",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.methodMaterial.effectiveTo": {
-      name: "effectiveTo",
       required: false,
       in: "query",
       type: "string"
@@ -138614,6 +140280,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.companies.vatNumber": {
+      name: "vatNumber",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.companies.companyGroupId": {
       name: "companyGroupId",
       required: false,
@@ -138634,12 +140306,6 @@ export default {
     },
     "rowFilter.companies.active": {
       name: "active",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.companies.vatNumber": {
-      name: "vatNumber",
       required: false,
       in: "query",
       type: "string"
@@ -138775,6 +140441,12 @@ export default {
     },
     "rowFilter.process.active": {
       name: "active",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.process.requiresAbility": {
+      name: "requiresAbility",
       required: false,
       in: "query",
       type: "string"
@@ -140170,6 +141842,12 @@ export default {
     },
     "rowFilter.employeeAbility.companyId": {
       name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.employeeAbility.expiresAt": {
+      name: "expiresAt",
       required: false,
       in: "query",
       type: "string"
@@ -142816,6 +144494,63 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.itemLedgerSnapshot": {
+      name: "itemLedgerSnapshot",
+      description: "itemLedgerSnapshot",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/itemLedgerSnapshot"
+      }
+    },
+    "rowFilter.itemLedgerSnapshot.itemId": {
+      name: "itemId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemLedgerSnapshot.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemLedgerSnapshot.locationId": {
+      name: "locationId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemLedgerSnapshot.quantity": {
+      name: "quantity",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemLedgerSnapshot.consumed30": {
+      name: "consumed30",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemLedgerSnapshot.consumed90": {
+      name: "consumed90",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemLedgerSnapshot.storageUnitIds": {
+      name: "storageUnitIds",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemLedgerSnapshot.snapshotCutoff": {
+      name: "snapshotCutoff",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.job": {
       name: "job",
       description: "job",
@@ -143053,6 +144788,20 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.job.scheduleOutdatedReason": {
+      name: "scheduleOutdatedReason",
+      description:
+        'Why the stored schedule may be stale (e.g. "Qualification changed: Solder"). Null = schedule current.',
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.job.scheduleOutdatedAt": {
+      name: "scheduleOutdatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.supplierPartPrice": {
       name: "supplierPartPrice",
       description: "supplierPartPrice",
@@ -143124,6 +144873,57 @@ export default {
     },
     "rowFilter.supplierPartPrice.leadTime": {
       name: "leadTime",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.jobOperationQueueTime": {
+      name: "jobOperationQueueTime",
+      description: "jobOperationQueueTime",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/jobOperationQueueTime"
+      }
+    },
+    "rowFilter.jobOperationQueueTime.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobOperationQueueTime.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobOperationQueueTime.jobId": {
+      name: "jobId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobOperationQueueTime.workCenterId": {
+      name: "workCenterId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobOperationQueueTime.readyAt": {
+      name: "readyAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobOperationQueueTime.firstEventAt": {
+      name: "firstEventAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobOperationQueueTime.queueHours": {
+      name: "queueHours",
       required: false,
       in: "query",
       type: "string"
@@ -145319,12 +147119,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.purchaseOrderLine.accountId": {
-      name: "accountId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.purchaseOrderLine.requiredDate": {
       name: "requiredDate",
       required: false,
@@ -145333,6 +147127,12 @@ export default {
     },
     "rowFilter.purchaseOrderLine.receivedDate": {
       name: "receivedDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderLine.accountId": {
+      name: "accountId",
       required: false,
       in: "query",
       type: "string"
@@ -147559,6 +149359,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.jobOperation.readyAt": {
+      name: "readyAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.userAttributeCategory": {
       name: "userAttributeCategory",
       description: "userAttributeCategory",
@@ -149716,12 +151522,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.salesInvoiceLines.accountId": {
-      name: "accountId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.salesInvoiceLines.nonTaxableAddOnCost": {
       name: "nonTaxableAddOnCost",
       required: false,
@@ -149730,6 +151530,12 @@ export default {
     },
     "rowFilter.salesInvoiceLines.convertedNonTaxableAddOnCost": {
       name: "convertedNonTaxableAddOnCost",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesInvoiceLines.accountId": {
+      name: "accountId",
       required: false,
       in: "query",
       type: "string"
@@ -154112,12 +155918,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.salesOrderLines.accountId": {
-      name: "accountId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.salesOrderLines.nonTaxableAddOnCost": {
       name: "nonTaxableAddOnCost",
       required: false,
@@ -154138,6 +155938,12 @@ export default {
     },
     "rowFilter.salesOrderLines.priceTrace": {
       name: "priceTrace",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrderLines.accountId": {
+      name: "accountId",
       required: false,
       in: "query",
       type: "string"
@@ -154894,6 +156700,75 @@ export default {
     },
     "rowFilter.salesRfq.customerEngineeringContactId": {
       name: "customerEngineeringContactId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.accountingPeriodBalance": {
+      name: "accountingPeriodBalance",
+      description: "accountingPeriodBalance",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/accountingPeriodBalance"
+      }
+    },
+    "rowFilter.accountingPeriodBalance.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingPeriodBalance.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingPeriodBalance.accountingPeriodId": {
+      name: "accountingPeriodId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingPeriodBalance.accountId": {
+      name: "accountId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingPeriodBalance.endingBalance": {
+      name: "endingBalance",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingPeriodBalance.endingBalanceDate": {
+      name: "endingBalanceDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingPeriodBalance.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingPeriodBalance.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingPeriodBalance.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingPeriodBalance.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"
@@ -156071,12 +157946,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.journalLines.createdBy": {
-      name: "createdBy",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.journalLines.postingDate": {
       name: "postingDate",
       required: false,
@@ -156883,6 +158752,18 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.ability.processId": {
+      name: "processId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ability.recertifyEveryDays": {
+      name: "recertifyEveryDays",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.dimensionValues": {
       name: "dimensionValues",
       description: "dimensionValues",
@@ -157354,14 +159235,14 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.quoteLines.unitPricePrecision": {
-      name: "unitPricePrecision",
+    "rowFilter.quoteLines.externalNotes": {
+      name: "externalNotes",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.quoteLines.externalNotes": {
-      name: "externalNotes",
+    "rowFilter.quoteLines.unitPricePrecision": {
+      name: "unitPricePrecision",
       required: false,
       in: "query",
       type: "string"
@@ -157914,6 +159795,12 @@ export default {
     },
     "rowFilter.quoteLinePrice.companyId": {
       name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.quoteLinePrice.priceSource": {
+      name: "priceSource",
       required: false,
       in: "query",
       type: "string"
@@ -159006,6 +160893,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.processes.requiresAbility": {
+      name: "requiresAbility",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.processes.workCenters": {
       name: "workCenters",
       required: false,
@@ -159810,12 +161703,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.salesOrderLine.accountId": {
-      name: "accountId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.salesOrderLine.nonTaxableAddOnCost": {
       name: "nonTaxableAddOnCost",
       required: false,
@@ -159836,6 +161723,12 @@ export default {
     },
     "rowFilter.salesOrderLine.priceTrace": {
       name: "priceTrace",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrderLine.accountId": {
+      name: "accountId",
       required: false,
       in: "query",
       type: "string"
@@ -160014,6 +161907,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.company.vatNumber": {
+      name: "vatNumber",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.company.companyGroupId": {
       name: "companyGroupId",
       required: false,
@@ -160034,12 +161933,6 @@ export default {
     },
     "rowFilter.company.active": {
       name: "active",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.company.vatNumber": {
-      name: "vatNumber",
       required: false,
       in: "query",
       type: "string"
@@ -162636,12 +164529,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.purchaseOrderLines.accountId": {
-      name: "accountId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.purchaseOrderLines.requiredDate": {
       name: "requiredDate",
       required: false,
@@ -162650,6 +164537,12 @@ export default {
     },
     "rowFilter.purchaseOrderLines.receivedDate": {
       name: "receivedDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderLines.accountId": {
+      name: "accountId",
       required: false,
       in: "query",
       type: "string"
@@ -166473,14 +168366,14 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.quoteLinePrices.unitPricePrecision": {
-      name: "unitPricePrecision",
+    "rowFilter.quoteLinePrices.externalNotes": {
+      name: "externalNotes",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.quoteLinePrices.externalNotes": {
-      name: "externalNotes",
+    "rowFilter.quoteLinePrices.unitPricePrecision": {
+      name: "unitPricePrecision",
       required: false,
       in: "query",
       type: "string"
@@ -167459,6 +169352,12 @@ export default {
     },
     "rowFilter.training.updatedBy": {
       name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.training.grantsAbilityId": {
+      name: "grantsAbilityId",
       required: false,
       in: "query",
       type: "string"
@@ -169041,12 +170940,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.salesInvoiceLine.accountId": {
-      name: "accountId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.salesInvoiceLine.nonTaxableAddOnCost": {
       name: "nonTaxableAddOnCost",
       required: false,
@@ -169055,6 +170948,12 @@ export default {
     },
     "rowFilter.salesInvoiceLine.convertedNonTaxableAddOnCost": {
       name: "convertedNonTaxableAddOnCost",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesInvoiceLine.accountId": {
+      name: "accountId",
       required: false,
       in: "query",
       type: "string"
@@ -169284,6 +171183,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.companySettings.quoteLineCategoryMarkups": {
+      name: "quoteLineCategoryMarkups",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.companySettings.accountsPayableEmail": {
       name: "accountsPayableEmail",
       required: false,
@@ -169308,20 +171213,8 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.companySettings.quoteLineCategoryMarkups": {
-      name: "quoteLineCategoryMarkups",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.companySettings.qualityIssueTarget": {
       name: "qualityIssueTarget",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.companySettings.consoleEnabled": {
-      name: "consoleEnabled",
       required: false,
       in: "query",
       type: "string"
@@ -169332,8 +171225,8 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.companySettings.printing": {
-      name: "printing",
+    "rowFilter.companySettings.consoleEnabled": {
+      name: "consoleEnabled",
       required: false,
       in: "query",
       type: "string"
@@ -169388,6 +171281,12 @@ export default {
     },
     "rowFilter.companySettings.showCustomerReadableId": {
       name: "showCustomerReadableId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.printing": {
+      name: "printing",
       required: false,
       in: "query",
       type: "string"
@@ -169469,6 +171368,117 @@ export default {
     },
     "rowFilter.part.tags": {
       name: "tags",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.capacityReservation": {
+      name: "capacityReservation",
+      description: "capacityReservation",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/capacityReservation"
+      }
+    },
+    "rowFilter.capacityReservation.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.capacityReservation.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.capacityReservation.resourceKind": {
+      name: "resourceKind",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.capacityReservation.resourceId": {
+      name: "resourceId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.capacityReservation.operationId": {
+      name: "operationId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.capacityReservation.jobId": {
+      name: "jobId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.capacityReservation.startAt": {
+      name: "startAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.capacityReservation.endAt": {
+      name: "endAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.capacityReservation.scenarioId": {
+      name: "scenarioId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.capacityReservation.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.capacityReservation.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.capacityReservation.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.capacityReservation.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.capacityReservation.earliestStartAt": {
+      name: "earliestStartAt",
+      description:
+        "When the operation could have started at the earliest; startAt - earliestStartAt is time spent waiting. Null when unknown (legacy rows).",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.capacityReservation.scheduleNote": {
+      name: "scheduleNote",
+      description:
+        'Human-readable reason for the placement timing (English, engine-generated), e.g. "Waited 14h for the work center - queued behind J000010 (2 ops)". Null when the operation started as early as it could.',
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.capacityReservation.workHours": {
+      name: "workHours",
+      description:
+        "Actual work content (hours) inside this reservation; endAt - startAt minus off-shift pauses. Null on legacy rows and manual pins.",
       required: false,
       in: "query",
       type: "string"

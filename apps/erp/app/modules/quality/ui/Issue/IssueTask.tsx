@@ -11,43 +11,26 @@ import {
   CommandItem,
   cn,
   DatePicker,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuIcon,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuTrigger,
-  generateHTML,
-  HStack,
-  IconButton,
   Popover,
   PopoverContent,
   PopoverTrigger,
   toast,
-  useDebounce,
-  useDisclosure
+  useDebounce
 } from "@carbon/react";
-import { Editor } from "@carbon/react/Editor";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { DragControls } from "framer-motion";
 import { nanoid } from "nanoid";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  LuCalendar,
-  LuChevronRight,
-  LuCircleCheck,
-  LuCirclePlay,
-  LuCog,
-  LuContainer,
-  LuGripVertical,
-  LuLoaderCircle
-} from "react-icons/lu";
+import { LuCalendar, LuCog, LuContainer } from "react-icons/lu";
 import { RxCheck } from "react-icons/rx";
 import { useFetchers, useParams, useSubmit } from "react-router";
-import { Assignee } from "~/components";
+import {
+  ActionTaskCard,
+  type ActionTaskStatus
+} from "~/components/ActionTasks/ActionTaskCard";
+import { ActionTaskStatusButton } from "~/components/ActionTasks/ActionTaskStatusButton";
 import { useProcesses } from "~/components/Form/Process";
-import { IssueTaskStatusIcon } from "~/components/Icons";
 import SupplierAvatar from "~/components/SupplierAvatar";
 import {
   useDateFormatter,
@@ -63,7 +46,6 @@ import type {
   IssueItem,
   IssueReviewer
 } from "~/modules/quality";
-import { nonConformanceTaskStatus } from "~/modules/quality";
 import { useSuppliers } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
 import { JiraIssueDialog } from "./Jira/IssueDialog";
@@ -71,33 +53,9 @@ import { LinearIssueDialog } from "./Linear/IssueDialog";
 
 const logger = getLogger("erp", "issuetask");
 
-export function TaskProgress({
-  tasks,
-  className
-}: {
-  tasks: { status: IssueActionTask["status"] }[];
-  className?: string;
-}) {
-  const completedOrSkippedTasks = tasks.filter(
-    (task) => task.status === "Completed" || task.status === "Skipped"
-  ).length;
-  const progressPercentage = (completedOrSkippedTasks / tasks.length) * 100;
-
-  return (
-    <div
-      className={cn(
-        "flex flex-col items-end gap-2 py-3 pr-14 w-[120px]",
-        className
-      )}
-    >
-      <BarProgress
-        gradient
-        progress={progressPercentage}
-        value={`${completedOrSkippedTasks}/${tasks.length}`}
-      />
-    </div>
-  );
-}
+// TaskProgress moved to the shared ActionTasks folder (SSOT with Change Orders);
+// re-exported here so existing `~/modules/quality/ui/Issue` importers keep working.
+export { ActionTaskProgress as TaskProgress } from "~/components/ActionTasks/ActionTaskProgress";
 
 export function ItemProgress({ items }: { items: IssueItem[] }) {
   const completedOrSkippedItems = items.filter(
@@ -115,29 +73,6 @@ export function ItemProgress({ items }: { items: IssueItem[] }) {
     </div>
   );
 }
-
-export const statusActions = {
-  Completed: {
-    action: "Reopen",
-    icon: <LuLoaderCircle />,
-    status: "Pending"
-  },
-  Pending: {
-    action: "Start",
-    icon: <LuCirclePlay />,
-    status: "In Progress"
-  },
-  Skipped: {
-    action: "Reopen",
-    icon: <LuLoaderCircle />,
-    status: "Pending"
-  },
-  "In Progress": {
-    action: "Complete",
-    icon: <LuCircleCheck />,
-    status: "Completed"
-  }
-} as const;
 
 function SupplierAssignment({
   task,
@@ -283,20 +218,18 @@ export function TaskItem({
 }) {
   useRealtime("nonConformanceActionTask", `id=eq.${task.id}`);
 
-  const { t } = useLingui();
   const integrations = useIntegrations();
   const permissions = usePermissions();
-  const disclosure = useDisclosure({
-    defaultIsOpen: true
-  });
 
-  const { currentStatus, onOperationStatusChange } = useTaskStatus({
+  const {
+    currentStatus,
+    onOperationStatusChange,
+    isDisabled: statusDisabled
+  } = useTaskStatus({
     task,
     type,
     disabled: isDisabled
   });
-  const statusAction =
-    statusActions[currentStatus as keyof typeof statusActions];
 
   // Check if this action task has a linked Linear or Jira issue
   const hasLinearLink =
@@ -327,92 +260,57 @@ export function TaskItem({
   }
 
   return (
-    <div className="rounded-lg border w-full flex flex-col bg-card">
-      <div className="flex w-full justify-between px-4 py-2 items-center">
-        <div className="flex flex-col flex-1">
-          <span className="text-base font-semibold tracking-tight">
-            {taskTitle}
-          </span>
-        </div>
-        <div className="flex items-center gap-1">
-          {showDragHandle && !isDisabled && dragControls && (
-            <button
-              className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors p-1"
-              onPointerDown={(e) => dragControls.start(e)}
-            >
-              <LuGripVertical size={16} />
-            </button>
-          )}
+    <ActionTaskCard
+      title={taskTitle ?? ""}
+      status={currentStatus as ActionTaskStatus}
+      notes={content as JSONContent}
+      canEditNotes={permissions.can("update", "quality") && !isDisabled}
+      onNotesChange={(value) => {
+        setContent(value);
+        onUpdateContent(value);
 
+        // Auto-start issue when typing in task if issue status is "Registered"
+        if (
+          routeData?.nonConformance?.status === "Registered" &&
+          !hasStartedRef.current &&
+          value?.content?.some((node: any) => node.content?.length > 0)
+        ) {
+          hasStartedRef.current = true;
+          submit(
+            { status: "In Progress" },
+            {
+              method: "post",
+              action: path.to.issueStatus(id!),
+              navigate: false
+            }
+          );
+        }
+      }}
+      onUploadImage={onUploadImage}
+      onStatusChange={(next) => onOperationStatusChange(task.id!, next)}
+      assigneeTable={getTable(type)}
+      assigneeId={task.id!}
+      assignee={task.assignee ?? undefined}
+      isDisabled={statusDisabled}
+      showDragHandle={showDragHandle}
+      dragControls={dragControls}
+      statusBadge={
+        <IssueTaskStatus
+          task={task}
+          type="investigation"
+          isDisabled={isDisabled}
+        />
+      }
+      headerExtras={
+        <>
           {/* @ts-expect-error TS2322 */}
           {integrations.has("linear") && <LinearIssueDialog task={task} />}
           {/* @ts-expect-error TS2322 */}
           {integrations.has("jira") && <JiraIssueDialog task={task} />}
-
-          <IconButton
-            icon={<LuChevronRight />}
-            variant="ghost"
-            onClick={disclosure.onToggle}
-            aria-label={t`Open task details`}
-            className={cn(disclosure.isOpen && "rotate-90")}
-          />
-        </div>
-      </div>
-
-      {disclosure.isOpen && (
-        <div className="px-4 py-2 rounded">
-          {permissions.can("update", "quality") && !isDisabled ? (
-            <Editor
-              className="w-full min-h-[100px]"
-              initialValue={content}
-              onUpload={onUploadImage}
-              onChange={(value) => {
-                setContent(value);
-                onUpdateContent(value);
-
-                // Auto-start issue when typing in task if issue status is "Registered"
-                if (
-                  routeData?.nonConformance?.status === "Registered" &&
-                  !hasStartedRef.current &&
-                  value?.content?.some((node: any) => node.content?.length > 0)
-                ) {
-                  hasStartedRef.current = true;
-                  submit(
-                    { status: "In Progress" },
-                    {
-                      method: "post",
-                      action: path.to.issueStatus(id!),
-                      navigate: false
-                    }
-                  );
-                }
-              }}
-            />
-          ) : (
-            <div
-              className="prose dark:prose-invert"
-              dangerouslySetInnerHTML={{
-                __html: generateHTML(content as JSONContent)
-              }}
-            />
-          )}
-        </div>
-      )}
-
-      <div className="bg-muted/30 border-t px-4 py-2 flex justify-between w-full">
-        <HStack>
-          <IssueTaskStatus
-            task={task}
-            type="investigation"
-            isDisabled={isDisabled}
-          />
-          <Assignee
-            table={getTable(type)}
-            id={task.id}
-            size="sm"
-            value={task.assignee ?? undefined}
-            disabled={isDisabled}
-          />
+        </>
+      }
+      footerExtras={
+        <>
           {type === "action" && (
             <>
               <TaskDueDate
@@ -433,22 +331,9 @@ export function TaskItem({
               isDisabled={isDisabled}
             />
           )}
-        </HStack>
-        <HStack>
-          <Button
-            isDisabled={isDisabled}
-            leftIcon={statusAction.icon}
-            variant="secondary"
-            size="sm"
-            onClick={() => {
-              onOperationStatusChange(task.id!, statusAction.status);
-            }}
-          >
-            {statusAction.action}
-          </Button>
-        </HStack>
-      </div>
-    </div>
+        </>
+      }
+    />
   );
 }
 
@@ -632,8 +517,11 @@ export function IssueTaskStatus({
   onChange?: (status: IssueActionTask["status"]) => void;
   isDisabled?: boolean;
 }) {
-  const { t } = useLingui();
-  const { currentStatus, onOperationStatusChange } = useTaskStatus({
+  const {
+    currentStatus,
+    onOperationStatusChange,
+    isDisabled: statusDisabled
+  } = useTaskStatus({
     task,
     type,
     onChange,
@@ -641,40 +529,12 @@ export function IssueTaskStatus({
   });
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <IconButton
-          size="sm"
-          variant="ghost"
-          className={className}
-          aria-label={t`Change status`}
-          icon={<IssueTaskStatusIcon status={currentStatus} />}
-          isDisabled={isDisabled}
-        />
-      </DropdownMenuTrigger>
-      {!isDisabled && (
-        <DropdownMenuContent align="start">
-          <DropdownMenuRadioGroup
-            value={currentStatus}
-            onValueChange={(status) =>
-              onOperationStatusChange(
-                task.id!,
-                status as IssueActionTask["status"]
-              )
-            }
-          >
-            {nonConformanceTaskStatus.map((status) => (
-              <DropdownMenuRadioItem key={status} value={status}>
-                <DropdownMenuIcon
-                  icon={<IssueTaskStatusIcon status={status} />}
-                />
-                <span>{status}</span>
-              </DropdownMenuRadioItem>
-            ))}
-          </DropdownMenuRadioGroup>
-        </DropdownMenuContent>
-      )}
-    </DropdownMenu>
+    <ActionTaskStatusButton
+      status={currentStatus as ActionTaskStatus}
+      onChange={(next) => onOperationStatusChange(task.id!, next)}
+      isDisabled={statusDisabled}
+      className={className}
+    />
   );
 }
 

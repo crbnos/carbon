@@ -9,6 +9,7 @@ import {
 import { labelSizes } from "@carbon/utils";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
+import { plmReleaseControl } from "~/modules/items/items.models";
 import { DataType } from "~/modules/shared";
 
 export const modulesType = [
@@ -145,6 +146,10 @@ export const jobCompletedValidator = z.object({
 
 export const kanbanOutputValidator = z.object({
   kanbanOutput: z.enum(kanbanOutputTypes)
+});
+
+export const plmReleaseControlValidator = z.object({
+  plmReleaseControl: z.enum(plmReleaseControl)
 });
 
 export const purchasePriceUpdateTimingValidator = z.object({

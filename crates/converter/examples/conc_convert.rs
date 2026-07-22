@@ -20,7 +20,12 @@ fn hash_output(step_path: &str, text: &str) -> String {
     format!("{:x}", h.finalize())
 }
 
-fn run(path: &Arc<String>, text: &Arc<String>, threads: usize, iters: usize) -> (f64, HashSet<String>) {
+fn run(
+    path: &Arc<String>,
+    text: &Arc<String>,
+    threads: usize,
+    iters: usize,
+) -> (f64, HashSet<String>) {
     let hashes = Arc::new(Mutex::new(HashSet::new()));
     let start = Instant::now();
     let mut handles = Vec::new();
@@ -44,10 +49,16 @@ fn run(path: &Arc<String>, text: &Arc<String>, threads: usize, iters: usize) -> 
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
-    let path = Arc::new(args.get(1).cloned().expect("usage: conc_convert <file.step> [iters]"));
+    let path = Arc::new(
+        args.get(1)
+            .cloned()
+            .expect("usage: conc_convert <file.step> [iters]"),
+    );
     let iters: usize = args.get(2).and_then(|s| s.parse().ok()).unwrap_or(20);
     let text = Arc::new(std::fs::read_to_string(path.as_str()).expect("read step"));
-    let cores = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(8);
+    let cores = std::thread::available_parallelism()
+        .map(|n| n.get())
+        .unwrap_or(8);
 
     // Establish the golden hash single-threaded.
     let golden = hash_output(path.as_str(), text.as_str());

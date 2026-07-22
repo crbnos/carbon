@@ -300,6 +300,16 @@ export const auditConfig = {
       }
     },
 
+    changeOrder: {
+      label: "Change Order",
+      tables: {
+        changeOrder: { role: "root" },
+        changeOrderAffectedItem: { entityIdColumn: "changeOrderId" },
+        changeOrderSupersession: { entityIdColumn: "changeOrderId" },
+        changeOrderActionTask: { entityIdColumn: "changeOrderId" }
+      }
+    },
+
     gauge: {
       label: "Gauge",
       tables: {

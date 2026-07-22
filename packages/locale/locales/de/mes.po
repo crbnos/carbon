@@ -610,6 +610,9 @@ msgstr "Keine Auswirkung"
 msgid "No maintenance scheduled for today"
 msgstr "Keine Instandhaltung für heute geplant"
 
+msgid "No matches. Type to create one."
+msgstr "Keine Übereinstimmungen. Geben Sie etwas ein, um einen zu erstellen."
+
 msgid "No materials"
 msgstr "Keine Materialien"
 

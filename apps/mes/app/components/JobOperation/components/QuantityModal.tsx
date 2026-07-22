@@ -194,7 +194,7 @@ export function QuantityModal({
                       records.
                     </Trans>
                   </AlertDescription>
-                  <label className="flex items-center gap-2 mt-2 cursor-pointer">
+                  <label className="col-start-2 flex items-center gap-2 mt-2 cursor-pointer">
                     <Checkbox
                       isChecked={confirmedUnissued}
                       onCheckedChange={(checked) =>

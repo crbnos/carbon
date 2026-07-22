@@ -134,7 +134,7 @@ dead, no `outcome.json`):
 
 ## Related Files
 
-- **Conductor skill:** `.ai/skills/conductor/SKILL.md`
+- **Conductor skill:** `.claude/skills/conductor/SKILL.md`
 - **Harness:** `packages/harness/`
 - **Agent labels workflow:** `.github/scripts/setup-agent-labels.sh`
 - **Operating prompt:** lives on the OpenClaw box (not in this repo)

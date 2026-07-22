@@ -63,6 +63,11 @@ function resolve(
       return path.to.gauge(documentId);
     case NotificationEvent.NonConformanceAssignment:
       return path.to.issue(documentId);
+    case NotificationEvent.ChangeOrderApproved:
+    case NotificationEvent.ChangeOrderRejected:
+    case NotificationEvent.ChangeOrderReleased:
+    case NotificationEvent.ChangeOrderSubmittedForReview:
+      return path.to.changeOrderDetails(documentId);
     case NotificationEvent.RiskAssignment:
       return path.to.risk(documentId);
     case NotificationEvent.ProcedureAssignment:

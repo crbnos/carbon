@@ -1052,6 +1052,40 @@ async function buildEventContent(
       };
     }
 
+    case NotificationEvent.ChangeOrderSubmittedForReview:
+    case NotificationEvent.ChangeOrderApproved:
+    case NotificationEvent.ChangeOrderRejected:
+    case NotificationEvent.ChangeOrderReleased: {
+      const changeOrder = await client
+        .from("changeOrder")
+        .select("changeOrderId, status")
+        .eq("id", documentId)
+        .single();
+
+      if (changeOrder.error || !changeOrder.data) {
+        console.error("Failed to get changeOrder", changeOrder.error);
+        throw changeOrder.error;
+      }
+
+      const readableId = changeOrder.data.changeOrderId;
+      const description =
+        type === NotificationEvent.ChangeOrderSubmittedForReview
+          ? `Change order ${readableId} is ready for your review`
+          : type === NotificationEvent.ChangeOrderApproved
+            ? `Change order ${readableId} was approved`
+            : type === NotificationEvent.ChangeOrderRejected
+              ? `Change order ${readableId} was rejected`
+              : `Change order ${readableId} was released`;
+
+      return {
+        description,
+        reference: readableId ?? undefined,
+        details: buildDetails([
+          { label: "Status", value: changeOrder.data?.status }
+        ])
+      };
+    }
+
     default:
       return null;
   }

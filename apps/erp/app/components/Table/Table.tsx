@@ -72,6 +72,7 @@ import type {
   EditableTableCellComponent,
   Position
 } from "~/components/Editable";
+import { useUrlParams } from "~/hooks";
 import { useSavedViews } from "~/hooks/useSavedViews";
 import type { fieldMappings } from "~/modules/shared";
 import {
@@ -101,6 +102,9 @@ interface TableProps<T extends object> {
     label: string;
   }[];
   primaryAction?: ReactNode;
+  // Optional controls rendered in the toolbar row next to the search/filter
+  // (e.g. quick filter toggles that write their own `filter` URL params).
+  headerActions?: ReactNode;
   table?: string;
   title?: string;
   // Optional node rendered immediately after the title (e.g. a status badge).
@@ -251,6 +255,7 @@ const Table = <T extends object>({
   editableComponents,
   importCSV,
   primaryAction,
+  headerActions,
   table: tableName,
   title,
   titleBadge,
@@ -942,10 +947,21 @@ const Table = <T extends object>({
   };
 
   const navigation = useNavigation();
+  const [params] = useUrlParams();
   const { hasFilters, clearFilters } = useFilters();
   const isLoading = useSpinDelay(navigation.state === "loading", {
     delay: 300
   });
+
+  // Genuinely-empty table: no rows and nothing narrowing them
+  // (filters/sorts/search). Single source of truth — passed to TableHeader so
+  // the top toolbar and the bottom pagination footer hide together, leaving only
+  // the title bar + primary action.
+  const isTableEmpty =
+    data.length === 0 &&
+    !hasFilters &&
+    params.getAll("sort").filter(Boolean).length === 0 &&
+    !params.get("search")?.trim();
 
   return (
     <VStack
@@ -969,9 +985,11 @@ const Table = <T extends object>({
         data={data}
         editMode={editMode}
         filters={filters}
+        isEmpty={isTableEmpty}
         importCSV={importCSV}
         pagination={pagination}
         primaryAction={primaryAction}
+        headerActions={headerActions}
         renderActions={renderActions}
         selectedRows={selectedRows}
         setColumnOrder={setColumnOrder}
@@ -1313,7 +1331,7 @@ const Table = <T extends object>({
           )}
         </div>
       </div>
-      {withPagination && <Pagination {...pagination} />}
+      {withPagination && !isTableEmpty && <Pagination {...pagination} />}
     </VStack>
   );
 };

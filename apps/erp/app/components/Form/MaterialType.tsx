@@ -1,6 +1,7 @@
 import type { ComboboxProps } from "@carbon/form";
 import { CreatableCombobox } from "@carbon/form";
 import { useDisclosure, useMount } from "@carbon/react";
+import { useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFetcher } from "react-router";
 import type { getMaterialTypeList } from "~/modules/items";
@@ -34,6 +35,7 @@ const MaterialTypePreview = (
 };
 
 const MaterialType = (props: MaterialTypeSelectProps) => {
+  const { t } = useLingui();
   const newTypeModal = useDisclosure();
   const [created, setCreated] = useState<string>("");
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -62,6 +64,12 @@ const MaterialType = (props: MaterialTypeSelectProps) => {
         emptyMessage={emptyMessage}
         {...props}
         disabled={props.disabled || !props.substanceId || !props.formId}
+        helperText={
+          props.helperText ??
+          (!props.inline && (!props.substanceId || !props.formId)
+            ? t`Select a substance and shape first to see available options`
+            : undefined)
+        }
         inline={props?.inline ? MaterialTypePreview : undefined}
         isOptional={props?.isOptional ?? true}
         label={props?.label ?? "Type"}

@@ -1,6 +1,7 @@
 import type { ComboboxProps } from "@carbon/form";
 import { CreatableCombobox } from "@carbon/form";
 import { useDisclosure, useMount } from "@carbon/react";
+import { useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFetcher } from "react-router";
 import type {
@@ -30,6 +31,7 @@ const MaterialFinishPreview = (
 };
 
 const MaterialFinish = (props: MaterialFinishSelectProps) => {
+  const { t } = useLingui();
   const materialFinishesLoader =
     useFetcher<Awaited<ReturnType<typeof getMaterialFinishList>>>();
 
@@ -85,6 +87,12 @@ const MaterialFinish = (props: MaterialFinishSelectProps) => {
         options={options}
         {...props}
         disabled={props.disabled || !props.substanceId}
+        helperText={
+          props.helperText ??
+          (!props.inline && !props.substanceId
+            ? t`Select a substance first to see available options`
+            : undefined)
+        }
         inline={props?.inline ? MaterialFinishPreview : undefined}
         isOptional={props?.isOptional ?? true}
         label={props?.label ?? "Finish"}

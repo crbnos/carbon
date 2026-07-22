@@ -174,6 +174,23 @@ export const nonConformanceTypes = [
   { name: "Customer Complaint", createdBy: "system" }
 ] as const;
 
+// Change Order types (the changeOrderType lookup). Kept in sync with the
+// one-time seed in the change-orders migration so new companies get the same
+// default types the migration gave existing ones.
+export const changeOrderTypes = [
+  { name: "Design Improvement", createdBy: "system" },
+  { name: "Cost Reduction", createdBy: "system" },
+  { name: "Quality / Reliability Improvement", createdBy: "system" },
+  { name: "Supplier / Sourcing Change", createdBy: "system" },
+  { name: "Material or Component Change", createdBy: "system" },
+  { name: "Obsolescence / End-of-Life", createdBy: "system" },
+  { name: "Regulatory / Compliance", createdBy: "system" },
+  { name: "Safety", createdBy: "system" },
+  { name: "Manufacturing / Producibility", createdBy: "system" },
+  { name: "Customer Request", createdBy: "system" },
+  { name: "Documentation Error / Correction", createdBy: "system" }
+] as const;
+
 export const nonConformanceRequiredActions = [
   { name: "Corrective Action", systemType: "Corrective" as const, createdBy: "system" },
   { name: "Preventive Action", systemType: "Preventive" as const, createdBy: "system" },
@@ -187,6 +204,19 @@ export const nonConformanceRequiredActions = [
   { name: "Incoming Materials", createdBy: "system" },
   { name: "Process", createdBy: "system" },
   { name: "Documentation", createdBy: "system" }
+] as const;
+
+// Default change-order actions (the changeOrderRequiredAction templates). Kept in
+// sync with the one-time backfill in the change-order-required-actions migration so
+// new companies get the same defaults existing ones were backfilled with.
+export const changeOrderRequiredActions = [
+  { name: "Engineering Review", createdBy: "system" },
+  { name: "Update Drawings / CAD", createdBy: "system" },
+  { name: "Update BOM / Routing", createdBy: "system" },
+  { name: "Cost Impact Review", createdBy: "system" },
+  { name: "Quality Review", createdBy: "system" },
+  { name: "Inventory Disposition (rework / scrap / use-as-is)", createdBy: "system" },
+  { name: "Notify Affected Parties", createdBy: "system" }
 ] as const;
 
 export const sequences = [
@@ -248,6 +278,15 @@ export const sequences = [
     table: "nonConformance",
     name: "Issue",
     prefix: "NCR",
+    suffix: null,
+    next: 0,
+    size: 6,
+    step: 1
+  },
+  {
+    table: "changeOrder",
+    name: "Change Order",
+    prefix: "ECO-",
     suffix: null,
     next: 0,
     size: 6,
@@ -663,6 +702,7 @@ export const accounts = [
   { key: "4110", number: "4110", name: "Scrap Sales", isGroup: false, parentKey: "other-income", accountType: "Other Income", incomeBalance: "Income Statement", class: "Revenue", consolidatedRate: "Average", createdBy: "system" },
   { key: "4120", number: "4120", name: "Foreign Exchange Gains", isGroup: false, parentKey: "other-income", accountType: "Other Income", incomeBalance: "Income Statement", class: "Revenue", consolidatedRate: "Average", createdBy: "system" },
   { key: "4130", number: "4130", name: "Vendor Write-Off Income", isGroup: false, parentKey: "other-income", accountType: "Other Income", incomeBalance: "Income Statement", class: "Revenue", consolidatedRate: "Average", createdBy: "system" },
+  { key: "4140", number: "4140", name: "Gain on Disposal", isGroup: false, parentKey: "other-income", accountType: "Other Income", incomeBalance: "Income Statement", class: "Revenue", consolidatedRate: "Average", createdBy: "system" },
 
   // ─── 5000-5999: COST OF GOODS SOLD ───
   { key: "cogs", number: null, name: "Cost of Goods Sold", isGroup: true, parentKey: "income-statement", accountType: "Cost of Goods Sold", incomeBalance: "Income Statement", class: "Expense", consolidatedRate: "Average", createdBy: "system" },
@@ -701,7 +741,7 @@ export const accounts = [
   // Depreciation & Amortization
   { key: "depreciation", number: null, name: "Depreciation & Amortization", isGroup: true, parentKey: "operating-expenses", accountType: "Other Expense", incomeBalance: "Income Statement", class: "Expense", consolidatedRate: "Average", createdBy: "system" },
   { key: "6310", number: "6310", name: "Depreciation Expense", isGroup: false, parentKey: "depreciation", accountType: "Other Expense", incomeBalance: "Income Statement", class: "Expense", consolidatedRate: "Average", createdBy: "system" },
-  { key: "6320", number: "6320", name: "Gains and Losses on Disposal", isGroup: false, parentKey: "depreciation", accountType: "Other Expense", incomeBalance: "Income Statement", class: "Expense", consolidatedRate: "Average", createdBy: "system" },
+  { key: "6320", number: "6320", name: "Loss on Disposal", isGroup: false, parentKey: "depreciation", accountType: "Other Expense", incomeBalance: "Income Statement", class: "Expense", consolidatedRate: "Average", createdBy: "system" },
 
   // ─── 7000-7999: OTHER / NON-OPERATING EXPENSES ───
   { key: "other-expenses", number: null, name: "Other Expenses", isGroup: true, parentKey: "income-statement", accountType: "Other Expense", incomeBalance: "Income Statement", class: "Expense", consolidatedRate: "Average", createdBy: "system" },
@@ -732,7 +772,8 @@ export const accountDefaults = {
   indirectCostAccount: "5050",
   maintenanceAccount: "6010",
   assetDepreciationExpenseAccount: "6310",
-  assetGainsAndLossesAccount: "6320",
+  assetGainOnDisposalAccount: "4140",
+  assetLossOnDisposalAccount: "6320",
   serviceChargeAccount: "7040",
   interestAccount: "7010",
   supplierPaymentDiscountAccount: "7020",
@@ -778,7 +819,8 @@ export const fixedAssetClasses = [
     depreciationExpenseAccount: "6310",
     writeOffAccount: "6320",
     writeDownAccount: "6320",
-    disposalAccount: "6320",
+    gainOnDisposalAccount: "4140",
+    lossOnDisposalAccount: "6320",
   },
   {
     name: "Machinery & Equipment",
@@ -790,7 +832,8 @@ export const fixedAssetClasses = [
     depreciationExpenseAccount: "6310",
     writeOffAccount: "6320",
     writeDownAccount: "6320",
-    disposalAccount: "6320",
+    gainOnDisposalAccount: "4140",
+    lossOnDisposalAccount: "6320",
   },
   {
     name: "Vehicles",
@@ -802,7 +845,8 @@ export const fixedAssetClasses = [
     depreciationExpenseAccount: "6310",
     writeOffAccount: "6320",
     writeDownAccount: "6320",
-    disposalAccount: "6320",
+    gainOnDisposalAccount: "4140",
+    lossOnDisposalAccount: "6320",
   },
 ];
 

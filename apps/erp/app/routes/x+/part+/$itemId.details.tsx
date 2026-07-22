@@ -20,6 +20,7 @@ import type { ItemFile, MakeMethod, PartSummary } from "~/modules/items";
 import {
   getConfigurationParameters,
   getConfigurationRules,
+  getItemChangeOrderData,
   getItemManufacturing,
   getMakeMethodById,
   getMakeMethods,
@@ -30,6 +31,11 @@ import {
   upsertItemManufacturing,
   upsertPart
 } from "~/modules/items";
+import { getRevisionLock } from "~/modules/items/items.server";
+import {
+  ItemChangeOrders,
+  ItemOpenChangeOrderAlert
+} from "~/modules/items/ui/ChangeOrder";
 import {
   BillOfMaterial,
   BillOfProcess,
@@ -60,22 +66,45 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const requestedMethodId = url.searchParams.get("methodId");
 
-  const makeMethods = await getMakeMethods(client, itemId, companyId);
+  const [makeMethods, revisionLock, changeOrderData] = await Promise.all([
+    getMakeMethods(client, itemId, companyId),
+    getRevisionLock(client, { itemId, companyId }),
+    // Part → CO traceability (4b): CO history for this part + type labels.
+    getItemChangeOrderData(client, itemId, companyId)
+  ]);
+  const revisionStatus = revisionLock.revisionStatus;
+  const releaseControl = revisionLock.releaseControl;
 
+  // Include CO-owned draft methods so a revision/new-part item created by an open
+  // Change Order still shows its BOM/BOP on the item master. The draft is the same
+  // makeMethod the CO edits, so the two surfaces stay in sync. Active is still
+  // preferred below, so a Version CO's item keeps its live method as the default.
+  const selectable = makeMethods.data ?? [];
   const makeMethod = requestedMethodId
-    ? (makeMethods.data?.find((m) => m.id === requestedMethodId) ??
-      makeMethods.data?.find((m) => m.status === "Active") ??
-      makeMethods.data?.[0])
-    : (makeMethods.data?.find((m) => m.status === "Active") ??
-      makeMethods.data?.[0]);
+    ? (selectable.find((m) => m.id === requestedMethodId) ??
+      selectable.find((m) => m.status === "Active") ??
+      selectable[0])
+    : (selectable.find((m) => m.status === "Active") ?? selectable[0]);
 
   if (!makeMethod) {
-    return { methodData: null, tags: [] };
+    return {
+      methodData: null,
+      tags: [],
+      revisionStatus,
+      releaseControl,
+      ...changeOrderData
+    };
   }
 
   const fullMethod = await getMakeMethodById(client, makeMethod.id, companyId);
   if (fullMethod.error || !fullMethod.data) {
-    return { methodData: null, tags: [] };
+    return {
+      methodData: null,
+      tags: [],
+      revisionStatus,
+      releaseControl,
+      ...changeOrderData
+    };
   }
 
   const [methodMaterials, methodOperations, tags, partManufacturing] =
@@ -125,7 +154,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       partManufacturing: partManufacturing.data,
       ...configData
     },
-    tags: tags.data ?? []
+    tags: tags.data ?? [],
+    revisionStatus,
+    releaseControl,
+    ...changeOrderData
   };
 }
 
@@ -216,7 +248,14 @@ export default function PartDetailsRoute() {
   if (!itemId) throw new Error("Could not find itemId");
 
   const permissions = usePermissions();
-  const { methodData, tags } = useLoaderData<typeof loader>();
+  const {
+    methodData,
+    tags,
+    revisionStatus,
+    releaseControl,
+    changeOrders,
+    changeOrderTypes
+  } = useLoaderData<typeof loader>();
 
   const partData = useRouteData<{
     partSummary: PartSummary;
@@ -236,6 +275,9 @@ export default function PartDetailsRoute() {
 
   return (
     <VStack spacing={2} className="p-2">
+      {permissions.is("employee") && (
+        <ItemOpenChangeOrderAlert changeOrders={changeOrders ?? []} />
+      )}
       {permissions.is("employee") && methodData && (
         <>
           {["Make", "Buy and Make"].includes(
@@ -297,6 +339,8 @@ export default function PartDetailsRoute() {
                   methodData.configurationParametersAndGroups.parameters
                 }
                 replenishmentSystem={partData.partSummary?.replenishmentSystem}
+                revisionStatus={revisionStatus}
+                releaseControl={releaseControl}
               />
               <BillOfProcess
                 key={`bop:${itemId}`}
@@ -313,6 +357,8 @@ export default function PartDetailsRoute() {
                   methodData.configurationParametersAndGroups.parameters
                 }
                 tags={tags}
+                revisionStatus={revisionStatus}
+                releaseControl={releaseControl}
               />
             </>
           )}
@@ -345,6 +391,10 @@ export default function PartDetailsRoute() {
             title={t`CAD Model`}
           />
           <ItemRiskRegister itemId={itemId} />
+          <ItemChangeOrders
+            changeOrders={changeOrders ?? []}
+            types={changeOrderTypes ?? []}
+          />
         </>
       )}
     </VStack>
