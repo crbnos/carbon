@@ -39,7 +39,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  window.clientCache?.invalidateQueries({
+  // Remove (not just invalidate) the cached supplier processes. The consuming
+  // clientLoader reads via getQueryData and only refetches on a cache miss, so
+  // invalidateQueries alone leaves stale data (a deleted supplier) in the
+  // dropdown until a hard refresh. removeQueries forces a server refetch.
+  window.clientCache?.removeQueries({
     queryKey: ["supplierProcesses"]
   });
   return await serverAction();
