@@ -1,4 +1,9 @@
 import GetStartedEmail from "./GetStartedEmail";
+import {
+  HubDigestEmail,
+  HubNudgeEmail,
+  StreakMilestoneEmail
+} from "./HubJourneyEmails";
 import ImplementationHubEmail from "./ImplementationHubEmail";
 import InviteEmail from "./InviteEmail";
 import NotificationEmail from "./NotificationEmail";
@@ -18,6 +23,9 @@ export {
 
 export {
   GetStartedEmail,
+  HubDigestEmail,
+  HubNudgeEmail,
+  StreakMilestoneEmail,
   ImplementationHubEmail,
   InviteEmail,
   NotificationEmail,

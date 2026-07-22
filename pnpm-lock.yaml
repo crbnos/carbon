@@ -2466,6 +2466,9 @@ importers:
       '@carbon/notifications':
         specifier: workspace:*
         version: link:../notifications
+      '@carbon/onboarding':
+        specifier: workspace:*
+        version: link:../onboarding
       '@carbon/printing':
         specifier: workspace:*
         version: link:../printing

@@ -7,7 +7,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./server": "./src/server.ts",
-    "./ui": "./src/ui/index.ts"
+    "./ui": "./src/ui/index.ts",
+    "./engine": "./src/engine.ts"
   },
   "dependencies": {
     "@carbon/database": "workspace:*",

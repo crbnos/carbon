@@ -10,6 +10,7 @@
     "@carbon/lib": "workspace:*",
     "@carbon/logger": "workspace:*",
     "@carbon/notifications": "workspace:*",
+    "@carbon/onboarding": "workspace:*",
     "@carbon/printing": "workspace:*",
     "@carbon/stripe": "workspace:*",
     "@carbon/utils": "workspace:*",
