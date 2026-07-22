@@ -736,6 +736,54 @@ English by design, not i18n'd).
   produces the late-only `conflictReason`. `formatWaitDuration` renders
   "45m" / "14h" / "2d 3h" — coarse on purpose; it labels a Gantt bar.
 
+#### Complete conflict-class reference
+
+Everything that can land in `jobOperation.conflictReason` falls into three
+families. A conflict, strictly, is: **couldn't place the op, or placed it
+past the job's due date.** Flags are snapshots written at scheduling time —
+stale until the job's next run (the reactive stale-wave exists to refresh
+them when inputs change through the app; direct SQL edits fire no event).
+
+**A. Unplaceable** (selector/allocator; in escalating order of how far the
+search got):
+
+| Message | Meaning |
+|---|---|
+| `No qualified operator for <ability>` | Process requires the ability and ZERO people currently qualify (active ∧ trainingCompleted ∧ unexpired). No slot search happens (`work-center-selector.ts:396`). |
+| `No qualified operator availability before <date>` | Qualified people exist but none is free + on shift within the horizon. |
+| `No working time available at work center before <date>` | No open working window at the station within the horizon. |
+| `No work center capacity available before <date>` | Machine (capacity 1) reserved solid through the horizon. |
+| `No feasible capacity slot` | Selector fallback when no candidate produced a slot and nothing more specific was captured. |
+| `No process ID provided` / `No work centers found for process <id>` | Selection data errors — surfaced, never hard-fail. |
+
+**B. Placed but late** — all start `Finishes <date> but the job is due
+<date> — …`; the suffix is the cause attribution (binding constraint on the
+last failed probe):
+
+| Suffix | Cause kind | Actionable reading |
+|---|---|---|
+| `waited for the work center, <blockers>` | `machine-queue` | Named jobs held the machine — resequence or add capacity |
+| `waited for the work center, busy with earlier operations in this job` | `machine-own-job` | Own routing serializes on one station |
+| `waited for the work center to be available` | `machine-wait` | Machine busy, no attributable blockers |
+| `waited for a qualified operator, <blockers>` | `operator-queue` | Qualified people were on other jobs |
+| `waited for a qualified operator, busy with earlier operations in this job` | `own-job-queue` | Own earlier ops held the operators |
+| `waited for a qualified operator to be available` | `operator-wait` | Shift-gap waiting — nobody qualified on shift |
+| `starts late because it waits for "<op>" earlier in this job; its own work center was free` | `inherited-delay` | Critical path is upstream — fixing this station is a dead end |
+| `not enough time remains before the due date` | `no-runway` | Nothing waited; more work than calendar left |
+| `outside processing pushes it past the due date` | `outside-processing` | Subcontract turnaround alone overruns the date |
+
+**C. Backward-pass lateness** (`date-calculator.ts`, pass 1): `Operation
+must start on <date> but current date is <today>` — the backward walk from
+the due date lands in the past. Requires a real job due date (synthetic
+anchors never flag); a manually-pinned variant exists. Finite placement
+normally overwrites these with a family-B message.
+
+**Not conflicts** (same taxonomy, neutral surfaces): `scheduleNote` /
+wait-ghost text ("Waited 14h for the work center — queued behind …") appears
+on ON-TIME ops and explains timing; Gantt group-row roll-ups ("N operations
+at this work center have scheduling conflicts") are UI aggregation, not
+stored reasons.
+
 ---
 
 ## 5. MES eligibility gate
