@@ -2085,6 +2085,411 @@ export default {
         tags: ["employeeSummary"]
       }
     },
+    "/assemblyInstructionStepSlide": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepSlide.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepSlide.stepId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepSlide.imagePath"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepSlide.modelUploadId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepSlide.caption"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepSlide.sortOrder"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepSlide.size"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepSlide.annotations"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepSlide.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepSlide.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepSlide.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepSlide.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepSlide.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/assemblyInstructionStepSlide"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["assemblyInstructionStepSlide"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.assemblyInstructionStepSlide"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["assemblyInstructionStepSlide"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepSlide.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepSlide.stepId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepSlide.imagePath"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepSlide.modelUploadId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepSlide.caption"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepSlide.sortOrder"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepSlide.size"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepSlide.annotations"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepSlide.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepSlide.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepSlide.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepSlide.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepSlide.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["assemblyInstructionStepSlide"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepSlide.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepSlide.stepId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepSlide.imagePath"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepSlide.modelUploadId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepSlide.caption"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepSlide.sortOrder"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepSlide.size"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepSlide.annotations"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepSlide.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepSlide.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepSlide.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepSlide.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepSlide.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.assemblyInstructionStepSlide"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["assemblyInstructionStepSlide"]
+      }
+    },
+    "/inboundInspectionFeature": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionFeature.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionFeature.inboundInspectionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionFeature.inspectionFeatureId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionFeature.sampleSize"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionFeature.acceptanceNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionFeature.rejectionNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionFeature.codeLetter"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionFeature.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionFeature.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionFeature.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionFeature.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionFeature.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/inboundInspectionFeature"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["inboundInspectionFeature"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.inboundInspectionFeature"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["inboundInspectionFeature"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionFeature.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionFeature.inboundInspectionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionFeature.inspectionFeatureId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionFeature.sampleSize"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionFeature.acceptanceNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionFeature.rejectionNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionFeature.codeLetter"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionFeature.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionFeature.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionFeature.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionFeature.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionFeature.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["inboundInspectionFeature"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionFeature.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionFeature.inboundInspectionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionFeature.inspectionFeatureId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionFeature.sampleSize"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionFeature.acceptanceNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionFeature.rejectionNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionFeature.codeLetter"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionFeature.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionFeature.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionFeature.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionFeature.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionFeature.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.inboundInspectionFeature"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["inboundInspectionFeature"]
+      }
+    },
     "/changeOrderType": {
       get: {
         parameters: [
@@ -6114,177 +6519,6 @@ export default {
         tags: ["purchaseInvoicePriceChange"]
       }
     },
-    "/assemblyStandardNote": {
-      get: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.assemblyStandardNote.id"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyStandardNote.name"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyStandardNote.content"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyStandardNote.severity"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyStandardNote.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyStandardNote.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyStandardNote.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyStandardNote.updatedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyStandardNote.updatedAt"
-          },
-          {
-            $ref: "#/parameters/select"
-          },
-          {
-            $ref: "#/parameters/order"
-          },
-          {
-            $ref: "#/parameters/range"
-          },
-          {
-            $ref: "#/parameters/rangeUnit"
-          },
-          {
-            $ref: "#/parameters/offset"
-          },
-          {
-            $ref: "#/parameters/limit"
-          },
-          {
-            $ref: "#/parameters/preferCount"
-          }
-        ],
-        responses: {
-          "200": {
-            description: "OK",
-            schema: {
-              items: {
-                $ref: "#/definitions/assemblyStandardNote"
-              },
-              type: "array"
-            }
-          },
-          "206": {
-            description: "Partial Content"
-          }
-        },
-        tags: ["assemblyStandardNote"]
-      },
-      post: {
-        parameters: [
-          {
-            $ref: "#/parameters/body.assemblyStandardNote"
-          },
-          {
-            $ref: "#/parameters/select"
-          },
-          {
-            $ref: "#/parameters/preferPost"
-          }
-        ],
-        responses: {
-          "201": {
-            description: "Created"
-          }
-        },
-        tags: ["assemblyStandardNote"]
-      },
-      delete: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.assemblyStandardNote.id"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyStandardNote.name"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyStandardNote.content"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyStandardNote.severity"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyStandardNote.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyStandardNote.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyStandardNote.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyStandardNote.updatedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyStandardNote.updatedAt"
-          },
-          {
-            $ref: "#/parameters/preferReturn"
-          }
-        ],
-        responses: {
-          "204": {
-            description: "No Content"
-          }
-        },
-        tags: ["assemblyStandardNote"]
-      },
-      patch: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.assemblyStandardNote.id"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyStandardNote.name"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyStandardNote.content"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyStandardNote.severity"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyStandardNote.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyStandardNote.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyStandardNote.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyStandardNote.updatedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyStandardNote.updatedAt"
-          },
-          {
-            $ref: "#/parameters/body.assemblyStandardNote"
-          },
-          {
-            $ref: "#/parameters/preferReturn"
-          }
-        ],
-        responses: {
-          "204": {
-            description: "No Content"
-          }
-        },
-        tags: ["assemblyStandardNote"]
-      }
-    },
     "/makeMethod": {
       get: {
         parameters: [
@@ -6916,6 +7150,222 @@ export default {
           }
         },
         tags: ["changeOrders"]
+      }
+    },
+    "/inboundInspectionMeasurement": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.inboundInspectionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.inboundInspectionSampleId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.inspectionFeatureId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.value"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.notes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.inspectedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.inspectedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/inboundInspectionMeasurement"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["inboundInspectionMeasurement"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.inboundInspectionMeasurement"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["inboundInspectionMeasurement"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.inboundInspectionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.inboundInspectionSampleId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.inspectionFeatureId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.value"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.notes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.inspectedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.inspectedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["inboundInspectionMeasurement"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.inboundInspectionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.inboundInspectionSampleId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.inspectionFeatureId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.value"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.notes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.inspectedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.inspectedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspectionMeasurement.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.inboundInspectionMeasurement"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["inboundInspectionMeasurement"]
       }
     },
     "/dimension": {
@@ -15493,6 +15943,168 @@ export default {
           }
         },
         tags: ["openPurchaseOrderLines"]
+      }
+    },
+    "/itemInspectionDocumentAssignment": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.itemInspectionDocumentAssignment.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemInspectionDocumentAssignment.usage"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemInspectionDocumentAssignment.inspectionDocumentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemInspectionDocumentAssignment.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemInspectionDocumentAssignment.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemInspectionDocumentAssignment.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemInspectionDocumentAssignment.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemInspectionDocumentAssignment.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/itemInspectionDocumentAssignment"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["itemInspectionDocumentAssignment"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.itemInspectionDocumentAssignment"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["itemInspectionDocumentAssignment"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.itemInspectionDocumentAssignment.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemInspectionDocumentAssignment.usage"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemInspectionDocumentAssignment.inspectionDocumentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemInspectionDocumentAssignment.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemInspectionDocumentAssignment.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemInspectionDocumentAssignment.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemInspectionDocumentAssignment.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemInspectionDocumentAssignment.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["itemInspectionDocumentAssignment"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.itemInspectionDocumentAssignment.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemInspectionDocumentAssignment.usage"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemInspectionDocumentAssignment.inspectionDocumentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemInspectionDocumentAssignment.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemInspectionDocumentAssignment.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemInspectionDocumentAssignment.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemInspectionDocumentAssignment.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemInspectionDocumentAssignment.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.itemInspectionDocumentAssignment"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["itemInspectionDocumentAssignment"]
       }
     },
     "/fixedAssetClass": {
@@ -46273,6 +46885,9 @@ export default {
             $ref: "#/parameters/rowFilter.inboundInspection.updatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.inboundInspection.inspectionDocumentId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -46410,6 +47025,9 @@ export default {
             $ref: "#/parameters/rowFilter.inboundInspection.updatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.inboundInspection.inspectionDocumentId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -46499,6 +47117,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.inboundInspection.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inboundInspection.inspectionDocumentId"
           },
           {
             $ref: "#/parameters/body.inboundInspection"
@@ -48139,6 +48760,24 @@ export default {
             $ref: "#/parameters/rowFilter.inspectionFeature.type"
           },
           {
+            $ref: "#/parameters/rowFilter.inspectionFeature.samplingPlanType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionFeature.samplingSampleSize"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionFeature.samplingPercentage"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionFeature.samplingAql"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionFeature.samplingInspectionLevel"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionFeature.samplingSeverity"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -48243,6 +48882,24 @@ export default {
             $ref: "#/parameters/rowFilter.inspectionFeature.type"
           },
           {
+            $ref: "#/parameters/rowFilter.inspectionFeature.samplingPlanType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionFeature.samplingSampleSize"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionFeature.samplingPercentage"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionFeature.samplingAql"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionFeature.samplingInspectionLevel"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionFeature.samplingSeverity"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -48299,6 +48956,24 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.inspectionFeature.type"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionFeature.samplingPlanType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionFeature.samplingSampleSize"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionFeature.samplingPercentage"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionFeature.samplingAql"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionFeature.samplingInspectionLevel"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionFeature.samplingSeverity"
           },
           {
             $ref: "#/parameters/body.inspectionFeature"
@@ -53445,6 +54120,186 @@ export default {
         tags: ["trackedEntity"]
       }
     },
+    "/assemblyInstructionStepTool": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepTool.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepTool.stepId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepTool.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepTool.quantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepTool.sortOrder"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepTool.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepTool.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepTool.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepTool.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepTool.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/assemblyInstructionStepTool"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["assemblyInstructionStepTool"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.assemblyInstructionStepTool"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["assemblyInstructionStepTool"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepTool.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepTool.stepId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepTool.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepTool.quantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepTool.sortOrder"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepTool.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepTool.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepTool.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepTool.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepTool.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["assemblyInstructionStepTool"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepTool.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepTool.stepId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepTool.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepTool.quantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepTool.sortOrder"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepTool.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepTool.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepTool.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepTool.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStepTool.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.assemblyInstructionStepTool"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["assemblyInstructionStepTool"]
+      }
+    },
     "/companyPlan": {
       get: {
         parameters: [
@@ -54646,231 +55501,6 @@ export default {
           }
         },
         tags: ["parts"]
-      }
-    },
-    "/assemblyInstructionStepRequirement": {
-      get: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructionStepRequirement.id"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructionStepRequirement.stepId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructionStepRequirement.type"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructionStepRequirement.itemId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructionStepRequirement.name"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructionStepRequirement.text"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructionStepRequirement.severity"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructionStepRequirement.filePath"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructionStepRequirement.quantity"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructionStepRequirement.sortOrder"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructionStepRequirement.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructionStepRequirement.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructionStepRequirement.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructionStepRequirement.updatedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructionStepRequirement.updatedAt"
-          },
-          {
-            $ref: "#/parameters/select"
-          },
-          {
-            $ref: "#/parameters/order"
-          },
-          {
-            $ref: "#/parameters/range"
-          },
-          {
-            $ref: "#/parameters/rangeUnit"
-          },
-          {
-            $ref: "#/parameters/offset"
-          },
-          {
-            $ref: "#/parameters/limit"
-          },
-          {
-            $ref: "#/parameters/preferCount"
-          }
-        ],
-        responses: {
-          "200": {
-            description: "OK",
-            schema: {
-              items: {
-                $ref: "#/definitions/assemblyInstructionStepRequirement"
-              },
-              type: "array"
-            }
-          },
-          "206": {
-            description: "Partial Content"
-          }
-        },
-        tags: ["assemblyInstructionStepRequirement"]
-      },
-      post: {
-        parameters: [
-          {
-            $ref: "#/parameters/body.assemblyInstructionStepRequirement"
-          },
-          {
-            $ref: "#/parameters/select"
-          },
-          {
-            $ref: "#/parameters/preferPost"
-          }
-        ],
-        responses: {
-          "201": {
-            description: "Created"
-          }
-        },
-        tags: ["assemblyInstructionStepRequirement"]
-      },
-      delete: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructionStepRequirement.id"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructionStepRequirement.stepId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructionStepRequirement.type"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructionStepRequirement.itemId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructionStepRequirement.name"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructionStepRequirement.text"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructionStepRequirement.severity"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructionStepRequirement.filePath"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructionStepRequirement.quantity"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructionStepRequirement.sortOrder"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructionStepRequirement.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructionStepRequirement.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructionStepRequirement.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructionStepRequirement.updatedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructionStepRequirement.updatedAt"
-          },
-          {
-            $ref: "#/parameters/preferReturn"
-          }
-        ],
-        responses: {
-          "204": {
-            description: "No Content"
-          }
-        },
-        tags: ["assemblyInstructionStepRequirement"]
-      },
-      patch: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructionStepRequirement.id"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructionStepRequirement.stepId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructionStepRequirement.type"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructionStepRequirement.itemId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructionStepRequirement.name"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructionStepRequirement.text"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructionStepRequirement.severity"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructionStepRequirement.filePath"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructionStepRequirement.quantity"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructionStepRequirement.sortOrder"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructionStepRequirement.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructionStepRequirement.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructionStepRequirement.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructionStepRequirement.updatedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructionStepRequirement.updatedAt"
-          },
-          {
-            $ref: "#/parameters/body.assemblyInstructionStepRequirement"
-          },
-          {
-            $ref: "#/parameters/preferReturn"
-          }
-        ],
-        responses: {
-          "204": {
-            description: "No Content"
-          }
-        },
-        tags: ["assemblyInstructionStepRequirement"]
       }
     },
     "/currency": {
@@ -93956,6 +94586,164 @@ export default {
       },
       type: "object"
     },
+    assemblyInstructionStepSlide: {
+      required: [
+        "id",
+        "stepId",
+        "sortOrder",
+        "size",
+        "annotations",
+        "companyId",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        stepId: {
+          description:
+            "Note:\nThis is a Foreign Key to `assemblyInstructionStep.id`.<fk table='assemblyInstructionStep' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        imagePath: {
+          format: "text",
+          type: "string"
+        },
+        modelUploadId: {
+          description:
+            "Note:\nThis is a Foreign Key to `modelUpload.id`.<fk table='modelUpload' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        caption: {
+          format: "text",
+          type: "string"
+        },
+        sortOrder: {
+          default: 1,
+          format: "double precision",
+          type: "number"
+        },
+        size: {
+          default: "medium",
+          format: "text",
+          type: "string"
+        },
+        annotations: {
+          format: "jsonb"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
+    inboundInspectionFeature: {
+      required: [
+        "id",
+        "inboundInspectionId",
+        "inspectionFeatureId",
+        "sampleSize",
+        "acceptanceNumber",
+        "rejectionNumber",
+        "companyId",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('iif'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        inboundInspectionId: {
+          description:
+            "Note:\nThis is a Foreign Key to `inboundInspection.id`.<fk table='inboundInspection' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        inspectionFeatureId: {
+          description:
+            "Note:\nThis is a Foreign Key to `inspectionFeature.id`.<fk table='inspectionFeature' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        sampleSize: {
+          format: "integer",
+          type: "integer"
+        },
+        acceptanceNumber: {
+          format: "integer",
+          type: "integer"
+        },
+        rejectionNumber: {
+          format: "integer",
+          type: "integer"
+        },
+        codeLetter: {
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     changeOrderType: {
       required: ["id", "name", "companyId", "createdAt", "createdBy"],
       properties: {
@@ -95608,67 +96396,6 @@ export default {
       },
       type: "object"
     },
-    assemblyStandardNote: {
-      required: [
-        "id",
-        "name",
-        "content",
-        "severity",
-        "companyId",
-        "createdBy",
-        "createdAt"
-      ],
-      properties: {
-        id: {
-          default: "public.xid()",
-          description: "Note:\nThis is a Primary Key.<pk/>",
-          format: "text",
-          type: "string"
-        },
-        name: {
-          format: "text",
-          type: "string"
-        },
-        content: {
-          format: "text",
-          type: "string"
-        },
-        severity: {
-          default: "Info",
-          enum: ["Info", "Caution", "Warning"],
-          format: 'public."assemblyNoteSeverity"',
-          type: "string"
-        },
-        companyId: {
-          description:
-            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        createdBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        createdAt: {
-          default: "now()",
-          format: "timestamp with time zone",
-          type: "string"
-        },
-        updatedBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        updatedAt: {
-          format: "timestamp with time zone",
-          type: "string"
-        }
-      },
-      type: "object"
-    },
     makeMethod: {
       required: [
         "id",
@@ -96016,6 +96743,96 @@ export default {
         },
         affectedItems: {
           format: "jsonb"
+        }
+      },
+      type: "object"
+    },
+    inboundInspectionMeasurement: {
+      required: [
+        "id",
+        "inboundInspectionId",
+        "inboundInspectionSampleId",
+        "inspectionFeatureId",
+        "status",
+        "companyId",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('iim'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        inboundInspectionId: {
+          description:
+            "Note:\nThis is a Foreign Key to `inboundInspection.id`.<fk table='inboundInspection' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        inboundInspectionSampleId: {
+          description:
+            "Note:\nThis is a Foreign Key to `inboundInspectionSample.id`.<fk table='inboundInspectionSample' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        inspectionFeatureId: {
+          description:
+            "Note:\nThis is a Foreign Key to `inspectionFeature.id`.<fk table='inspectionFeature' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        value: {
+          format: "numeric",
+          type: "number"
+        },
+        status: {
+          default: "Pending",
+          enum: ["Pending", "Passed", "Failed"],
+          format: 'public."inboundInspectionSampleStatus"',
+          type: "string"
+        },
+        notes: {
+          format: "text",
+          type: "string"
+        },
+        inspectedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        inspectedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
         }
       },
       type: "object"
@@ -100146,6 +100963,64 @@ export default {
         leadTime: {
           format: "integer",
           type: "integer"
+        }
+      },
+      type: "object"
+    },
+    itemInspectionDocumentAssignment: {
+      required: [
+        "itemId",
+        "usage",
+        "inspectionDocumentId",
+        "companyId",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        itemId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        usage: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          enum: ["Receipt"],
+          format: 'public."inspectionDocumentUsage"',
+          type: "string"
+        },
+        inspectionDocumentId: {
+          description:
+            "Note:\nThis is a Foreign Key to `inspectionDocument.id`.<fk table='inspectionDocument' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
         }
       },
       type: "object"
@@ -115026,6 +115901,12 @@ export default {
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
           type: "string"
+        },
+        inspectionDocumentId: {
+          description:
+            "Note:\nThis is a Foreign Key to `inspectionDocument.id`.<fk table='inspectionDocument' column='id'/>",
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -115706,6 +116587,33 @@ export default {
             "Inspection"
           ],
           format: 'public."procedureStepType"',
+          type: "string"
+        },
+        samplingPlanType: {
+          enum: ["All", "First", "Percentage", "AQL"],
+          format: 'public."samplingPlanType"',
+          type: "string"
+        },
+        samplingSampleSize: {
+          format: "integer",
+          type: "integer"
+        },
+        samplingPercentage: {
+          format: "numeric",
+          type: "number"
+        },
+        samplingAql: {
+          format: "numeric",
+          type: "number"
+        },
+        samplingInspectionLevel: {
+          enum: ["I", "II", "III", "S1", "S2", "S3", "S4"],
+          format: 'public."inspectionLevel"',
+          type: "string"
+        },
+        samplingSeverity: {
+          enum: ["Normal", "Tightened", "Reduced"],
+          format: 'public."inspectionSeverity"',
           type: "string"
         }
       },
@@ -117949,6 +118857,76 @@ export default {
       },
       type: "object"
     },
+    assemblyInstructionStepTool: {
+      required: [
+        "id",
+        "stepId",
+        "itemId",
+        "quantity",
+        "sortOrder",
+        "companyId",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        stepId: {
+          description:
+            "Note:\nThis is a Foreign Key to `assemblyInstructionStep.id`.<fk table='assemblyInstructionStep' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        itemId: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        quantity: {
+          default: 1,
+          format: "integer",
+          type: "integer"
+        },
+        sortOrder: {
+          default: 1,
+          format: "double precision",
+          type: "number"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     companyPlan: {
       required: [
         "id",
@@ -118620,98 +119598,6 @@ export default {
         },
         mpn: {
           format: "text",
-          type: "string"
-        }
-      },
-      type: "object"
-    },
-    assemblyInstructionStepRequirement: {
-      required: [
-        "id",
-        "stepId",
-        "type",
-        "quantity",
-        "sortOrder",
-        "companyId",
-        "createdBy",
-        "createdAt"
-      ],
-      properties: {
-        id: {
-          default: "public.xid()",
-          description: "Note:\nThis is a Primary Key.<pk/>",
-          format: "text",
-          type: "string"
-        },
-        stepId: {
-          description:
-            "Note:\nThis is a Foreign Key to `assemblyInstructionStep.id`.<fk table='assemblyInstructionStep' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        type: {
-          enum: ["Tool", "Fixture", "Consumable", "Note", "Media"],
-          format: 'public."assemblyRequirementType"',
-          type: "string"
-        },
-        itemId: {
-          description:
-            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        name: {
-          format: "text",
-          type: "string"
-        },
-        text: {
-          format: "text",
-          type: "string"
-        },
-        severity: {
-          enum: ["Info", "Caution", "Warning"],
-          format: 'public."assemblyNoteSeverity"',
-          type: "string"
-        },
-        filePath: {
-          format: "text",
-          type: "string"
-        },
-        quantity: {
-          default: 1,
-          format: "integer",
-          type: "integer"
-        },
-        sortOrder: {
-          default: 1,
-          format: "double precision",
-          type: "number"
-        },
-        companyId: {
-          description:
-            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        createdBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        createdAt: {
-          default: "now()",
-          format: "timestamp with time zone",
-          type: "string"
-        },
-        updatedBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        updatedAt: {
-          format: "timestamp with time zone",
           type: "string"
         }
       },
@@ -133639,6 +134525,174 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.assemblyInstructionStepSlide": {
+      name: "assemblyInstructionStepSlide",
+      description: "assemblyInstructionStepSlide",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/assemblyInstructionStepSlide"
+      }
+    },
+    "rowFilter.assemblyInstructionStepSlide.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.assemblyInstructionStepSlide.stepId": {
+      name: "stepId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.assemblyInstructionStepSlide.imagePath": {
+      name: "imagePath",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.assemblyInstructionStepSlide.modelUploadId": {
+      name: "modelUploadId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.assemblyInstructionStepSlide.caption": {
+      name: "caption",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.assemblyInstructionStepSlide.sortOrder": {
+      name: "sortOrder",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.assemblyInstructionStepSlide.size": {
+      name: "size",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.assemblyInstructionStepSlide.annotations": {
+      name: "annotations",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.assemblyInstructionStepSlide.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.assemblyInstructionStepSlide.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.assemblyInstructionStepSlide.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.assemblyInstructionStepSlide.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.assemblyInstructionStepSlide.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.inboundInspectionFeature": {
+      name: "inboundInspectionFeature",
+      description: "inboundInspectionFeature",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/inboundInspectionFeature"
+      }
+    },
+    "rowFilter.inboundInspectionFeature.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inboundInspectionFeature.inboundInspectionId": {
+      name: "inboundInspectionId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inboundInspectionFeature.inspectionFeatureId": {
+      name: "inspectionFeatureId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inboundInspectionFeature.sampleSize": {
+      name: "sampleSize",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inboundInspectionFeature.acceptanceNumber": {
+      name: "acceptanceNumber",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inboundInspectionFeature.rejectionNumber": {
+      name: "rejectionNumber",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inboundInspectionFeature.codeLetter": {
+      name: "codeLetter",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inboundInspectionFeature.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inboundInspectionFeature.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inboundInspectionFeature.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inboundInspectionFeature.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inboundInspectionFeature.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.changeOrderType": {
       name: "changeOrderType",
       description: "changeOrderType",
@@ -135517,69 +136571,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "body.assemblyStandardNote": {
-      name: "assemblyStandardNote",
-      description: "assemblyStandardNote",
-      required: false,
-      in: "body",
-      schema: {
-        $ref: "#/definitions/assemblyStandardNote"
-      }
-    },
-    "rowFilter.assemblyStandardNote.id": {
-      name: "id",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.assemblyStandardNote.name": {
-      name: "name",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.assemblyStandardNote.content": {
-      name: "content",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.assemblyStandardNote.severity": {
-      name: "severity",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.assemblyStandardNote.companyId": {
-      name: "companyId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.assemblyStandardNote.createdBy": {
-      name: "createdBy",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.assemblyStandardNote.createdAt": {
-      name: "createdAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.assemblyStandardNote.updatedBy": {
-      name: "updatedBy",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.assemblyStandardNote.updatedAt": {
-      name: "updatedAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "body.makeMethod": {
       name: "makeMethod",
       description: "makeMethod",
@@ -135966,6 +136957,99 @@ export default {
     },
     "rowFilter.changeOrders.affectedItems": {
       name: "affectedItems",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.inboundInspectionMeasurement": {
+      name: "inboundInspectionMeasurement",
+      description: "inboundInspectionMeasurement",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/inboundInspectionMeasurement"
+      }
+    },
+    "rowFilter.inboundInspectionMeasurement.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inboundInspectionMeasurement.inboundInspectionId": {
+      name: "inboundInspectionId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inboundInspectionMeasurement.inboundInspectionSampleId": {
+      name: "inboundInspectionSampleId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inboundInspectionMeasurement.inspectionFeatureId": {
+      name: "inspectionFeatureId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inboundInspectionMeasurement.value": {
+      name: "value",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inboundInspectionMeasurement.status": {
+      name: "status",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inboundInspectionMeasurement.notes": {
+      name: "notes",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inboundInspectionMeasurement.inspectedBy": {
+      name: "inspectedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inboundInspectionMeasurement.inspectedAt": {
+      name: "inspectedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inboundInspectionMeasurement.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inboundInspectionMeasurement.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inboundInspectionMeasurement.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inboundInspectionMeasurement.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inboundInspectionMeasurement.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"
@@ -140598,6 +141682,63 @@ export default {
     },
     "rowFilter.openPurchaseOrderLines.leadTime": {
       name: "leadTime",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.itemInspectionDocumentAssignment": {
+      name: "itemInspectionDocumentAssignment",
+      description: "itemInspectionDocumentAssignment",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/itemInspectionDocumentAssignment"
+      }
+    },
+    "rowFilter.itemInspectionDocumentAssignment.itemId": {
+      name: "itemId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemInspectionDocumentAssignment.usage": {
+      name: "usage",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemInspectionDocumentAssignment.inspectionDocumentId": {
+      name: "inspectionDocumentId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemInspectionDocumentAssignment.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemInspectionDocumentAssignment.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemInspectionDocumentAssignment.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemInspectionDocumentAssignment.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemInspectionDocumentAssignment.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"
@@ -157137,6 +158278,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.inboundInspection.inspectionDocumentId": {
+      name: "inspectionDocumentId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.userPermission": {
       name: "userPermission",
       description: "userPermission",
@@ -157874,6 +159021,42 @@ export default {
     },
     "rowFilter.inspectionFeature.type": {
       name: "type",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionFeature.samplingPlanType": {
+      name: "samplingPlanType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionFeature.samplingSampleSize": {
+      name: "samplingSampleSize",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionFeature.samplingPercentage": {
+      name: "samplingPercentage",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionFeature.samplingAql": {
+      name: "samplingAql",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionFeature.samplingInspectionLevel": {
+      name: "samplingInspectionLevel",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionFeature.samplingSeverity": {
+      name: "samplingSeverity",
       required: false,
       in: "query",
       type: "string"
@@ -160354,6 +161537,75 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.assemblyInstructionStepTool": {
+      name: "assemblyInstructionStepTool",
+      description: "assemblyInstructionStepTool",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/assemblyInstructionStepTool"
+      }
+    },
+    "rowFilter.assemblyInstructionStepTool.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.assemblyInstructionStepTool.stepId": {
+      name: "stepId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.assemblyInstructionStepTool.itemId": {
+      name: "itemId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.assemblyInstructionStepTool.quantity": {
+      name: "quantity",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.assemblyInstructionStepTool.sortOrder": {
+      name: "sortOrder",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.assemblyInstructionStepTool.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.assemblyInstructionStepTool.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.assemblyInstructionStepTool.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.assemblyInstructionStepTool.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.assemblyInstructionStepTool.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.companyPlan": {
       name: "companyPlan",
       description: "companyPlan",
@@ -161154,105 +162406,6 @@ export default {
     },
     "rowFilter.parts.mpn": {
       name: "mpn",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "body.assemblyInstructionStepRequirement": {
-      name: "assemblyInstructionStepRequirement",
-      description: "assemblyInstructionStepRequirement",
-      required: false,
-      in: "body",
-      schema: {
-        $ref: "#/definitions/assemblyInstructionStepRequirement"
-      }
-    },
-    "rowFilter.assemblyInstructionStepRequirement.id": {
-      name: "id",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.assemblyInstructionStepRequirement.stepId": {
-      name: "stepId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.assemblyInstructionStepRequirement.type": {
-      name: "type",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.assemblyInstructionStepRequirement.itemId": {
-      name: "itemId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.assemblyInstructionStepRequirement.name": {
-      name: "name",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.assemblyInstructionStepRequirement.text": {
-      name: "text",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.assemblyInstructionStepRequirement.severity": {
-      name: "severity",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.assemblyInstructionStepRequirement.filePath": {
-      name: "filePath",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.assemblyInstructionStepRequirement.quantity": {
-      name: "quantity",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.assemblyInstructionStepRequirement.sortOrder": {
-      name: "sortOrder",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.assemblyInstructionStepRequirement.companyId": {
-      name: "companyId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.assemblyInstructionStepRequirement.createdBy": {
-      name: "createdBy",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.assemblyInstructionStepRequirement.createdAt": {
-      name: "createdAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.assemblyInstructionStepRequirement.updatedBy": {
-      name: "updatedBy",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.assemblyInstructionStepRequirement.updatedAt": {
-      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"

@@ -761,9 +761,6 @@ msgstr "Zurück"
 msgid "Preventive"
 msgstr "Vorbeugend"
 
-msgid "Previous"
-msgstr "Zurück"
-
 msgid "Print"
 msgstr "Drucken"
 
