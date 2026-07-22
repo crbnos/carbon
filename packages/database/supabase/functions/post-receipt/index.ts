@@ -20,6 +20,7 @@ import {
   resolveInventoryAccount,
 } from "../shared/get-posting-group.ts";
 import {
+  resolveFeatureSamplingPlan,
   resolveSamplingPlan,
   type SamplingStandard,
 } from "../shared/sampling-engine.ts";
@@ -141,6 +142,39 @@ serve(async (req: Request) => {
     const samplingPlansByItemId = new Map<string, any>(
       ((itemSamplingPlans.data as any[]) ?? []).map((p) => [p.itemId, p])
     );
+
+    // Receipt-usage inspection document assignments drive per-feature
+    // measurement plans on the created lots.
+    const inspectionDocumentAssignments = await (client as any)
+      .from("itemInspectionDocumentAssignment")
+      .select("itemId, inspectionDocumentId")
+      .eq("companyId", companyId)
+      .eq("usage", "Receipt")
+      .in("itemId", itemIds);
+    const assignmentByItemId = new Map<string, string>(
+      ((inspectionDocumentAssignments.data as any[]) ?? []).map((a) => [
+        a.itemId,
+        a.inspectionDocumentId,
+      ])
+    );
+    const assignedDocumentIds = [...new Set(assignmentByItemId.values())];
+    const inspectionFeaturesByDocumentId = new Map<string, any[]>();
+    if (assignedDocumentIds.length > 0) {
+      const inspectionFeatures = await (client as any)
+        .from("inspectionFeature")
+        .select(
+          "id, inspectionDocumentId, type, samplingPlanType, samplingSampleSize, samplingPercentage, samplingAql, samplingInspectionLevel, samplingSeverity"
+        )
+        .in("inspectionDocumentId", assignedDocumentIds)
+        .eq("companyId", companyId);
+      for (const feature of (inspectionFeatures.data as any[]) ?? []) {
+        const list =
+          inspectionFeaturesByDocumentId.get(feature.inspectionDocumentId) ??
+          [];
+        list.push(feature);
+        inspectionFeaturesByDocumentId.set(feature.inspectionDocumentId, list);
+      }
+    }
     
     if (type === "void") {
       if (receipt.data?.status !== "Posted") {
@@ -661,6 +695,21 @@ serve(async (req: Request) => {
         // from the company's chosen standard and the item's plan (or default
         // to "Inspect All" if no plan is configured).
         const inboundInspectionInserts: Array<Record<string, any>> = [];
+        // Per-feature resolved plans, keyed by receiptLineId until the lot ids
+        // exist (they are joined after the insert returns ids).
+        type InboundInspectionFeatureInsert = {
+          inspectionFeatureId: string;
+          sampleSize: number;
+          acceptanceNumber: number;
+          rejectionNumber: number;
+          codeLetter: string | null;
+          companyId: string;
+          createdBy: string;
+        };
+        const inboundInspectionFeatureInsertsByReceiptLineId = new Map<
+          string,
+          Array<InboundInspectionFeatureInsert>
+        >();
         for (const receiptLine of receiptLines.data ?? []) {
           const item = items.data?.find((i) => i.id === receiptLine.itemId);
           if (!item?.requiresInspection) continue;
@@ -688,6 +737,35 @@ serve(async (req: Request) => {
             samplingStandard
           );
 
+          const assignedDocumentId =
+            assignmentByItemId.get(receiptLine.itemId) ?? null;
+          const documentFeatures = assignedDocumentId
+            ? (inspectionFeaturesByDocumentId.get(assignedDocumentId) ?? [])
+            : [];
+          const featurePlans = documentFeatures.map((feature) => ({
+            inspectionFeatureId: feature.id,
+            resolved: resolveFeatureSamplingPlan(
+              feature,
+              samplingPlansByItemId.get(receiptLine.itemId!),
+              safeReceivedQuantity,
+              samplingStandard
+            ),
+          }));
+          if (featurePlans.length > 0) {
+            inboundInspectionFeatureInsertsByReceiptLineId.set(
+              receiptLine.id,
+              featurePlans.map((p) => ({
+                inspectionFeatureId: p.inspectionFeatureId,
+                sampleSize: p.resolved.sampleSize,
+                acceptanceNumber: p.resolved.acceptance,
+                rejectionNumber: p.resolved.rejection,
+                codeLetter: p.resolved.codeLetter,
+                companyId,
+                createdBy: userId,
+              }))
+            );
+          }
+
           inboundInspectionInserts.push({
             receiptLineId: receiptLine.id,
             receiptId,
@@ -697,13 +775,21 @@ serve(async (req: Request) => {
             lotSize: safeReceivedQuantity,
             samplingStandard,
             samplingPlanType: plan.type,
-            sampleSize: snapshot.sampleSize,
+            // With a document attached, the lot-level sample size is the max
+            // across the per-feature plans (SAP-style); Ac/Re remain the
+            // item-plan fallback numbers used by the no-document flow.
+            sampleSize:
+              featurePlans.length > 0
+                ? Math.max(...featurePlans.map((p) => p.resolved.sampleSize))
+                : snapshot.sampleSize,
             acceptanceNumber: snapshot.acceptance,
             rejectionNumber: snapshot.rejection,
             aql: plan.aql ?? null,
             inspectionLevel: plan.inspectionLevel ?? null,
             severity: plan.severity ?? null,
             codeLetter: snapshot.codeLetter,
+            inspectionDocumentId:
+              featurePlans.length > 0 ? assignedDocumentId : null,
             status: "Pending",
             companyId,
             createdBy: userId,
@@ -1820,10 +1906,34 @@ serve(async (req: Request) => {
                 companyId
               );
             }
-            await trx
+            const insertedInspections = await trx
               .insertInto("inboundInspection")
               .values(inboundInspectionInserts)
+              .returning(["id", "receiptLineId"])
               .execute();
+
+            const inspectionFeatureInserts: Array<
+              InboundInspectionFeatureInsert & { inboundInspectionId: string }
+            > = [];
+            for (const inspection of insertedInspections) {
+              const featureRows =
+                inboundInspectionFeatureInsertsByReceiptLineId.get(
+                  inspection.receiptLineId
+                );
+              if (!featureRows) continue;
+              for (const featureRow of featureRows) {
+                inspectionFeatureInserts.push({
+                  ...featureRow,
+                  inboundInspectionId: inspection.id,
+                });
+              }
+            }
+            if (inspectionFeatureInserts.length > 0) {
+              await trx
+                .insertInto("inboundInspectionFeature")
+                .values(inspectionFeatureInserts)
+                .execute();
+            }
           }
         });
         break;
