@@ -76,10 +76,9 @@ export async function clientAction({
   }
 
   if (validation.data.processId) {
-    window.clientCache?.setQueryData(
-      supplierProcessesQuery(validation.data.processId).queryKey,
-      null
-    );
+    window.clientCache?.invalidateQueries({
+      queryKey: supplierProcessesQuery(validation.data.processId).queryKey
+    });
   }
   return await serverAction();
 }

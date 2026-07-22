@@ -39,6 +39,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
+  // This route only knows the supplier process id, not its processId, so
+  // invalidate every cached supplierProcesses list. The dropdown reads through
+  // cachedApiQuery, which refetches invalidated keys on the next mount, so the
+  // deleted entry no longer appears without a hard refresh.
   window.clientCache?.invalidateQueries({
     queryKey: ["supplierProcesses"]
   });

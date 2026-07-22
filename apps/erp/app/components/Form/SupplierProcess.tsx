@@ -1,13 +1,17 @@
 import type { ComboboxProps } from "@carbon/form";
 import { CreatableCombobox } from "@carbon/form";
-import { useDisclosure, useMount } from "@carbon/react";
-import { useMemo, useRef } from "react";
-import { useFetcher } from "react-router";
+import { useDisclosure } from "@carbon/react";
+import { useEffect, useRef, useState } from "react";
 import type { getSupplierProcessesByProcess } from "~/modules/purchasing";
 import { SupplierProcessForm } from "~/modules/purchasing/ui/Supplier";
 import { useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
+import { cachedApiQuery, supplierProcessesQuery } from "~/utils/react-query";
 import { useEmptyState } from "./emptyStates";
+
+type SupplierProcessRow = NonNullable<
+  Awaited<ReturnType<typeof getSupplierProcessesByProcess>>["data"]
+>[number];
 
 type SupplierProcessSelectProps = Omit<ComboboxProps, "options"> & {
   processId?: string;
@@ -76,17 +80,36 @@ export default SupplierProcess;
 
 export const useSupplierProcesses = (args: { processId?: string }) => {
   const { processId } = args;
-  const fetcher =
-    useFetcher<Awaited<ReturnType<typeof getSupplierProcessesByProcess>>>();
+  const [supplierProcesses, setSupplierProcesses] = useState<
+    SupplierProcessRow[]
+  >([]);
 
-  useMount(() => {
-    fetcher.load(path.to.api.supplierProcesses(processId));
-  });
+  // Read through the shared client cache (window.clientCache) rather than a
+  // fetcher, so create/edit/delete clientActions that invalidate the
+  // supplierProcesses query key force a fresh fetch on the next mount instead
+  // of leaving a stale, deleted entry in the dropdown.
+  useEffect(() => {
+    if (!processId) {
+      setSupplierProcesses([]);
+      return;
+    }
 
-  const supplierProcesses = useMemo(
-    () => (fetcher.data?.data ? fetcher.data?.data : []),
-    [fetcher.data]
-  );
+    let active = true;
+    cachedApiQuery<Awaited<ReturnType<typeof getSupplierProcessesByProcess>>>(
+      supplierProcessesQuery(processId),
+      path.to.api.supplierProcesses(processId)
+    )
+      .then((result) => {
+        if (active) setSupplierProcesses(result.data ?? []);
+      })
+      .catch(() => {
+        if (active) setSupplierProcesses([]);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [processId]);
 
   return supplierProcesses;
 };

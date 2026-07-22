@@ -82,17 +82,15 @@ export async function clientAction({
     previousProcessId &&
     previousProcessId !== validation.data.processId
   ) {
-    window.clientCache?.setQueryData(
-      supplierProcessesQuery(previousProcessId).queryKey,
-      null
-    );
+    window.clientCache?.invalidateQueries({
+      queryKey: supplierProcessesQuery(previousProcessId).queryKey
+    });
   }
 
   if (validation.data.processId) {
-    window.clientCache?.setQueryData(
-      supplierProcessesQuery(validation.data.processId).queryKey,
-      null
-    );
+    window.clientCache?.invalidateQueries({
+      queryKey: supplierProcessesQuery(validation.data.processId).queryKey
+    });
   }
   return await serverAction();
 }
