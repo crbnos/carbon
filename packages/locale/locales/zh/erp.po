@@ -8320,6 +8320,9 @@ msgstr "未配置打印机"
 msgid "No printers configured. Click \"Add Printer\" to create one."
 msgstr "未配置打印机。点击\"添加打印机\"创建一个。"
 
+msgid "No process selected"
+msgstr ""
+
 msgid "No Quote"
 msgstr "无报价"
 
@@ -10867,6 +10870,9 @@ msgstr "选择计划"
 #. placeholder {0}: plans[0].stripeTrialPeriodDays
 msgid "Select a plan to get started. You won't be charged for the first {0} days. Switch or cancel anytime."
 msgstr "选择一个计划开始使用。前 {0} 天不会收费。随时可以切换或取消。"
+
+msgid "Select a process first to choose its supplier."
+msgstr ""
 
 msgid "Select a project"
 msgstr "选择一个项目"

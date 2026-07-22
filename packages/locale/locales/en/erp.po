@@ -8320,6 +8320,9 @@ msgstr "No printer configured"
 msgid "No printers configured. Click \"Add Printer\" to create one."
 msgstr "No printers configured. Click \"Add Printer\" to create one."
 
+msgid "No process selected"
+msgstr "No process selected"
+
 msgid "No Quote"
 msgstr "No Quote"
 
@@ -10867,6 +10870,9 @@ msgstr "Select a plan"
 #. placeholder {0}: plans[0].stripeTrialPeriodDays
 msgid "Select a plan to get started. You won't be charged for the first {0} days. Switch or cancel anytime."
 msgstr "Select a plan to get started. You won't be charged for the first {0} days. Switch or cancel anytime."
+
+msgid "Select a process first to choose its supplier."
+msgstr "Select a process first to choose its supplier."
 
 msgid "Select a project"
 msgstr "Select a project"

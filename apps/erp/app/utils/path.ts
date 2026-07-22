@@ -238,7 +238,7 @@ export const path = {
         generatePath(`${api}/purchasing/supplier-contacts/${id}`),
       supplierLocations: (id: string) =>
         generatePath(`${api}/purchasing/supplier-locations/${id}`),
-      supplierProcesses: (id?: string) =>
+      supplierProcesses: (id: string) =>
         generatePath(`${api}/purchasing/supplier-processes/${id}`),
       supplierTypes: `${api}/purchasing/supplier-types`,
       tags: (table?: string) =>

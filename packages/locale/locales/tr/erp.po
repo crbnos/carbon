@@ -8320,6 +8320,9 @@ msgstr "Yazıcı yapılandırılmadı"
 msgid "No printers configured. Click \"Add Printer\" to create one."
 msgstr "Yapılandırılmış yazıcı yok. Bir tane oluşturmak için \"Yazıcı Ekle\"'ye tıklayın."
 
+msgid "No process selected"
+msgstr ""
+
 msgid "No Quote"
 msgstr "Teklif Yok"
 
@@ -10867,6 +10870,9 @@ msgstr "Bir plan seçin"
 #. placeholder {0}: plans[0].stripeTrialPeriodDays
 msgid "Select a plan to get started. You won't be charged for the first {0} days. Switch or cancel anytime."
 msgstr "Başlamak için bir plan seçin. İlk {0} gün ücretlendirilmeyeceksiniz. İstediğiniz zaman değiştirin veya iptal edin."
+
+msgid "Select a process first to choose its supplier."
+msgstr ""
 
 msgid "Select a project"
 msgstr "Bir proje seçin"
