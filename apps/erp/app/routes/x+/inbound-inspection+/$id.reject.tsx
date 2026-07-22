@@ -12,6 +12,8 @@ import invariant from "tiny-invariant";
 import {
   deleteIssue,
   getInboundInspection,
+  getInboundInspectionFeatures,
+  getInboundInspectionMeasurements,
   getIssueTypesList,
   insertIssue
 } from "~/modules/quality";
@@ -119,9 +121,50 @@ export async function action({ request, params }: ActionFunctionArgs) {
     .filter(Boolean)
     .join(" ");
 
+  // Document-driven lots: attach the failed characteristics (measured values
+  // vs. spec) so MRB sees what failed and by how much without re-measuring.
+  const [lotFeatures, lotMeasurements] = await Promise.all([
+    getInboundInspectionFeatures(serviceRole, id, companyId),
+    getInboundInspectionMeasurements(serviceRole, id, companyId)
+  ]);
+  const failedFeatureLines: string[] = [];
+  for (const lotFeature of lotFeatures.data ?? []) {
+    const feature = lotFeature.inspectionFeature;
+    if (!feature) continue;
+    const featureMeasurements = (lotMeasurements.data ?? []).filter(
+      (m) => m.inspectionFeatureId === feature.id
+    );
+    const recorded = featureMeasurements.filter(
+      (m) => m.status !== "Pending"
+    ).length;
+    const failed = featureMeasurements.filter((m) => m.status === "Failed");
+    if (failed.length === 0) continue;
+    const failedValues = failed
+      .map((m) => (m.value == null ? "F" : String(m.value)))
+      .join(", ");
+    const spec = [
+      feature.nominalValue,
+      feature.tolerancePlus != null || feature.toleranceMinus != null
+        ? `+${feature.tolerancePlus ?? "0"}/−${feature.toleranceMinus ?? "0"}`
+        : null,
+      feature.unit
+    ]
+      .filter(Boolean)
+      .join(" ");
+    failedFeatureLines.push(
+      spec
+        ? `- ${feature.label}: nominal ${spec} — failed values: ${failedValues} (${failed.length}/${recorded} failed, n=${lotFeature.sampleSize}, Ac=${lotFeature.acceptanceNumber})`
+        : `- ${feature.label}: ${failed.length}/${recorded} failed (n=${lotFeature.sampleSize}, Ac=${lotFeature.acceptanceNumber})`
+    );
+  }
+  const failedFeaturesBlock =
+    failedFeatureLines.length > 0
+      ? `\n\nFailed characteristics:\n${failedFeatureLines.join("\n")}`
+      : "";
+
   const createResult = await insertIssue(serviceRole, {
     name: issueTitle,
-    description: `Auto-created from inbound inspection ${inspectionReadableId}. Lot size ${insp.lotSize}, sample ${insp.sampleSize}, Ac ${insp.acceptanceNumber} / Re ${insp.rejectionNumber}. Supplier: ${supplierName}.`,
+    description: `Auto-created from inbound inspection ${inspectionReadableId}. Lot size ${insp.lotSize}, sample ${insp.sampleSize}, Ac ${insp.acceptanceNumber} / Re ${insp.rejectionNumber}. Supplier: ${supplierName}.${failedFeaturesBlock}`,
     priority: "Medium",
     source: "Internal",
     locationId,

@@ -17,7 +17,7 @@
 - [x] Task 10: InspectionMeasurementGrid (features × samples)
 - [x] Task 11: InboundInspectionView wiring + fallback + drawer retirement
 - [x] Task 12: Item Quality tab — documents card + assignments card (4 routes)
-- [ ] Task 13: Reject NCR enrichment (failed-feature table)
+- [x] Task 13: Reject NCR enrichment (failed-feature table)
 - [ ] Task 14: Docs sync (rule + AGENTS.md)
 - [ ] Task 15: Browser verification (/test)
 
