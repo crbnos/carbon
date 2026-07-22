@@ -1052,6 +1052,9 @@ async function buildEventContent(
       };
     }
 
+    case NotificationEvent.ChangeOrderStarted:
+    case NotificationEvent.ChangeOrderImplementation:
+    case NotificationEvent.ChangeOrderDone:
     case NotificationEvent.ChangeOrderSubmittedForReview:
     case NotificationEvent.ChangeOrderApproved:
     case NotificationEvent.ChangeOrderRejected:
@@ -1069,13 +1072,19 @@ async function buildEventContent(
 
       const readableId = changeOrder.data.changeOrderId;
       const description =
-        type === NotificationEvent.ChangeOrderSubmittedForReview
-          ? `Change order ${readableId} is ready for your review`
-          : type === NotificationEvent.ChangeOrderApproved
-            ? `Change order ${readableId} was approved`
-            : type === NotificationEvent.ChangeOrderRejected
-              ? `Change order ${readableId} was rejected`
-              : `Change order ${readableId} was released`;
+        type === NotificationEvent.ChangeOrderStarted
+          ? `Change order ${readableId} has started`
+          : type === NotificationEvent.ChangeOrderImplementation
+            ? `Change order ${readableId} has moved to implementation`
+            : type === NotificationEvent.ChangeOrderDone
+              ? `Change order ${readableId} is complete`
+              : type === NotificationEvent.ChangeOrderSubmittedForReview
+                ? `Change order ${readableId} is ready for your review`
+                : type === NotificationEvent.ChangeOrderApproved
+                  ? `Change order ${readableId} was approved`
+                  : type === NotificationEvent.ChangeOrderRejected
+                    ? `Change order ${readableId} was rejected`
+                    : `Change order ${readableId} was released`;
 
       return {
         description,
