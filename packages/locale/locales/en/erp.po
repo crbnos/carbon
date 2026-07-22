@@ -8605,6 +8605,12 @@ msgstr "Open Dispatches"
 msgid "Open in Carbon"
 msgstr "Open in Carbon"
 
+msgid "Open in change order {ids}. Release it to create new versions or revisions."
+msgstr "Open in change order {ids}. Release it to create new versions or revisions."
+
+msgid "Open in change orders {ids}. Release them to create new versions or revisions."
+msgstr "Open in change orders {ids}. Release them to create new versions or revisions."
+
 msgid "Open in MES"
 msgstr "Open in MES"
 

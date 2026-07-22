@@ -1,3 +1,4 @@
+import { PreviewCard } from "@base-ui-components/react/preview-card";
 import {
   Badge,
   Copy,
@@ -8,9 +9,6 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
   HStack,
   IconButton,
   Input,
@@ -19,7 +17,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { Dispatch, ReactNode, SetStateAction } from "react";
+import type { ReactNode } from "react";
 import { createContext, useContext, useMemo, useRef, useState } from "react";
 import {
   LuBraces,
@@ -79,10 +77,6 @@ type BoMExplorerContextValue = {
   filterText: string;
   setFilterText: (text: string) => void;
   bomIdMap: Map<string, string>;
-  // Single shared "which node's preview is open" so only one hover card shows
-  // at a time (opening one row closes the others).
-  openNodeId: string | null;
-  setOpenNodeId: Dispatch<SetStateAction<string | null>>;
   getNodePath: (node: BoMNode) => string;
   getRootVersion: (node: BoMNode) => string | number | null | undefined;
   onNodeClick: (node: BoMNode) => void;
@@ -135,8 +129,6 @@ export function BoMExplorerProvider<T extends BoMExplorerNodeData>({
 
   const [filterTextInternal, setFilterTextInternal] = useState("");
   const filterText = filterTextProp ?? filterTextInternal;
-
-  const [openNodeId, setOpenNodeId] = useState<string | null>(null);
 
   const {
     nodes,
@@ -214,8 +206,6 @@ export function BoMExplorerProvider<T extends BoMExplorerNodeData>({
         filterText,
         setFilterText: setFilterTextInternal,
         bomIdMap,
-        openNodeId,
-        setOpenNodeId,
         getNodePath,
         getRootVersion,
         onNodeClick
@@ -408,8 +398,6 @@ type BoMExplorerRowProps = {
 export function BoMExplorerRow({ node, state, children }: BoMExplorerRowProps) {
   const {
     bomIdMap,
-    openNodeId,
-    setOpenNodeId,
     toggleExpandNode,
     expandAllBelowDepth,
     collapseAllBelowDepth,
@@ -417,110 +405,112 @@ export function BoMExplorerRow({ node, state, children }: BoMExplorerRowProps) {
     onNodeClick
   } = useBoMExplorer();
 
-  // Suppress the preview while the pointer is over the trailing badges, so
-  // their own tooltips are readable without the large preview card overlapping.
+  // Suppress the preview only while the pointer is over variant badge extras
+  // (e.g. the job order-status badge), so their own tooltips are readable
+  // without the large preview card overlapping. The rest of the row — qty and
+  // version badges included — is a normal hover target for the preview.
   const [isBadgeHovered, setIsBadgeHovered] = useState(false);
 
   const bomId = bomIdMap.get(node.id);
 
   return (
-    <HoverCard
-      // `open` must mirror openNodeId exactly — gating it on transient state
-      // (e.g. badge hover) makes Radix's close a no-op, onOpenChange never
-      // fires, and the card gets stuck open on a stale node.
-      open={openNodeId === node.id}
-      onOpenChange={(nextOpen) => {
-        // Opening this node becomes the single open node (closing any other);
-        // closing only clears if this node is still the open one.
-        setOpenNodeId((current) =>
-          nextOpen ? node.id : current === node.id ? null : current
-        );
-      }}
-      // Once a card is open, moving across rows swaps quickly (hover-group UX).
-      openDelay={openNodeId !== null ? 100 : 500}
-      closeDelay={150}
-    >
-      <HoverCardTrigger asChild>
-        <div
-          key={node.id}
-          className={cn(
-            "flex h-8 cursor-pointer items-center overflow-hidden rounded-sm pr-2 gap-1 group/node",
-            state.selected
-              ? "bg-muted hover:bg-accent"
-              : "bg-transparent hover:bg-accent",
-            node.data.isPickDescendant && "opacity-60"
-          )}
-          onClick={() => onNodeClick(node)}
-        >
-          <div className="flex h-8 items-center">
-            {Array.from({ length: node.level }).map((_, index) => (
-              <LevelLine key={index} isSelected={state.selected} />
-            ))}
-            <div
-              className={cn(
-                "flex h-8 w-4 items-center",
-                node.hasChildren && "hover:bg-accent"
-              )}
-              onClick={(e) => {
-                e.stopPropagation();
-                if (e.altKey) {
-                  if (state.expanded) {
-                    collapseAllBelowDepth(node.level);
-                  } else {
-                    expandAllBelowDepth(node.level);
-                  }
+    // Uncontrolled: Base UI owns hover open/close per row.
+    <PreviewCard.Root>
+      <PreviewCard.Trigger
+        delay={200}
+        closeDelay={100}
+        render={
+          <div
+            key={node.id}
+            className={cn(
+              "flex h-8 cursor-pointer items-center overflow-hidden rounded-sm pr-2 gap-1 group/node",
+              state.selected
+                ? "bg-muted hover:bg-accent"
+                : "bg-transparent hover:bg-accent",
+              node.data.isPickDescendant && "opacity-60"
+            )}
+            onClick={() => onNodeClick(node)}
+          />
+        }
+      >
+        <div className="flex h-8 items-center">
+          {Array.from({ length: node.level }).map((_, index) => (
+            <LevelLine key={index} isSelected={state.selected} />
+          ))}
+          <div
+            className={cn(
+              "flex h-8 w-4 items-center",
+              node.hasChildren && "hover:bg-accent"
+            )}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (e.altKey) {
+                if (state.expanded) {
+                  collapseAllBelowDepth(node.level);
                 } else {
-                  toggleExpandNode(node.id);
+                  expandAllBelowDepth(node.level);
                 }
-              }}
-            >
-              {node.hasChildren ? (
-                state.expanded ? (
-                  <LuChevronDown className="h-4 w-4 text-gray-400 flex-shrink-0 ml-1" />
-                ) : (
-                  <LuChevronRight className="h-4 w-4 text-gray-400 flex-shrink-0 ml-1" />
-                )
+              } else {
+                toggleExpandNode(node.id);
+              }
+            }}
+          >
+            {node.hasChildren ? (
+              state.expanded ? (
+                <LuChevronDown className="h-4 w-4 text-gray-400 flex-shrink-0 ml-1" />
               ) : (
-                <div className="h-8 w-4" />
-              )}
-            </div>
-          </div>
-
-          <div className="flex w-full min-w-0 items-center justify-between gap-2">
-            <div className="flex flex-1 min-w-0 items-center gap-2 overflow-hidden">
-              {bomId && (
-                <Badge variant="outline" className="flex-shrink-0">
-                  {bomId}
-                </Badge>
-              )}
-              <BoMNodeText node={node} />
-            </div>
-            <div
-              className="flex flex-shrink-0 items-center gap-1"
-              onPointerEnter={() => setIsBadgeHovered(true)}
-              onPointerLeave={() => setIsBadgeHovered(false)}
-            >
-              {node.data.isRoot ? (
-                <Badge variant="outline" className="whitespace-nowrap">
-                  V{getRootVersion(node)}
-                </Badge>
-              ) : (
-                <BoMNodeData node={node} />
-              )}
-              {children}
-            </div>
+                <LuChevronRight className="h-4 w-4 text-gray-400 flex-shrink-0 ml-1" />
+              )
+            ) : (
+              <div className="h-8 w-4" />
+            )}
           </div>
         </div>
-      </HoverCardTrigger>
-      {/* Visibility (not `open`) handles badge-hover suppression so the badge's
-          own tooltip is readable without desyncing Radix state. */}
-      <HoverCardContent
-        side="right"
-        className={cn(isBadgeHovered && "invisible")}
-      >
-        <BoMNodePreview node={node} />
-      </HoverCardContent>
-    </HoverCard>
+
+        <div className="flex w-full min-w-0 items-center justify-between gap-2">
+          <div className="flex flex-1 min-w-0 items-center gap-2 overflow-hidden">
+            {bomId && (
+              <Badge variant="outline" className="flex-shrink-0">
+                {bomId}
+              </Badge>
+            )}
+            <BoMNodeText node={node} />
+          </div>
+          <div className="flex flex-shrink-0 items-center gap-1">
+            {node.data.isRoot ? (
+              <Badge variant="outline" className="whitespace-nowrap">
+                V{getRootVersion(node)}
+              </Badge>
+            ) : (
+              <BoMNodeData node={node} />
+            )}
+            {children && (
+              <div
+                className="flex items-center gap-1"
+                onPointerEnter={() => setIsBadgeHovered(true)}
+                onPointerLeave={() => setIsBadgeHovered(false)}
+              >
+                {children}
+              </div>
+            )}
+          </div>
+        </div>
+      </PreviewCard.Trigger>
+      <PreviewCard.Portal>
+        <PreviewCard.Positioner side="right" sideOffset={4} className="z-[100]">
+          {/* Visibility (not `open`) handles badge-hover suppression so the
+              badge's own tooltip is readable without touching open state. */}
+          <PreviewCard.Popup
+            className={cn(
+              "w-64 rounded-md border border-border bg-popover p-4 text-popover-foreground shadow-md outline-none",
+              isBadgeHovered && "invisible"
+            )}
+          >
+            <BoMNodePreview node={node} />
+          </PreviewCard.Popup>
+        </PreviewCard.Positioner>
+      </PreviewCard.Portal>
+    </PreviewCard.Root>
   );
 }
 

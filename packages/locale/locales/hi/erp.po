@@ -8605,6 +8605,12 @@ msgstr "खुली डिस्पैच"
 msgid "Open in Carbon"
 msgstr "Carbon में खोलें"
 
+msgid "Open in change order {ids}. Release it to create new versions or revisions."
+msgstr ""
+
+msgid "Open in change orders {ids}. Release them to create new versions or revisions."
+msgstr ""
+
 msgid "Open in MES"
 msgstr "MES में खोलें"
 

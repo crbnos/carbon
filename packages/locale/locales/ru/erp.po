@@ -8605,6 +8605,12 @@ msgstr "Открытые наряды"
 msgid "Open in Carbon"
 msgstr "Открыть в Carbon"
 
+msgid "Open in change order {ids}. Release it to create new versions or revisions."
+msgstr ""
+
+msgid "Open in change orders {ids}. Release them to create new versions or revisions."
+msgstr ""
+
 msgid "Open in MES"
 msgstr "Открыть в MES"
 

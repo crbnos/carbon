@@ -8605,6 +8605,12 @@ msgstr "미결 작업지시"
 msgid "Open in Carbon"
 msgstr "Carbon에서 열기"
 
+msgid "Open in change order {ids}. Release it to create new versions or revisions."
+msgstr ""
+
+msgid "Open in change orders {ids}. Release them to create new versions or revisions."
+msgstr ""
+
 msgid "Open in MES"
 msgstr "MES에서 열기"
 
