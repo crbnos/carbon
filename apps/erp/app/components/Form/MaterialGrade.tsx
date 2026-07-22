@@ -56,7 +56,7 @@ const MaterialGrade = (props: MaterialGradeSelectProps) => {
     return (materialGradesLoader.data?.data ?? []).map((c) => ({
       value: c.id,
       label: c.name,
-      helper: c.companyId === null ? "Standard" : undefined
+      helper: c.companyId === null ? "Standard" : "Custom"
     }));
   }, [materialGradesLoader.data?.data]);
 

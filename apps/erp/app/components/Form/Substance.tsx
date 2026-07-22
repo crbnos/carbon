@@ -90,7 +90,7 @@ export const useSubstance = () => {
     return (materialSubstances.data?.data ?? []).map((c) => ({
       value: c.id,
       label: c.name,
-      helper: c.companyId === null ? "Standard" : undefined,
+      helper: c.companyId === null ? "Standard" : "Custom",
       code: c.code
     }));
   }, [materialSubstances.data?.data]);
