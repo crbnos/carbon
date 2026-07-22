@@ -8,6 +8,22 @@ Format: `Context → Problem → Rule → Applies to`
 
 ---
 
+## useFetcher + clientLoader is the correct pattern for API route data, NOT useQuery
+
+**Context:** Building dropdowns and pickers that load data from API routes with React Query caching.
+
+**Problem:** Using `useQuery` directly in components to fetch API route data creates a circular promise issue. The API route has a `clientLoader` that hydrates from the React Query cache, but `useQuery` bypasses this loader entirely — it fetches via `cachedApiQuery` which calls `fetch()` directly. This breaks the established pattern where `useFetcher.load()` → `clientLoader` → React Query cache → server. The `useQuery` approach also prevents proper cache invalidation because the component doesn't re-fetch when the cache is invalidated via `clientAction`.
+
+**Rule:** For data loaded from API routes that needs React Query caching, use the established pattern:
+1. `useFetcher` in the component (calls API route via `.load(path)`)
+2. `clientLoader` in the API route (hydrates from React Query cache, falls back to `serverLoader`)
+3. `clientAction` in mutation routes (invalidates React Query cache after mutations)
+4. Use `invalidateQueries` from `@tanstack/react-query` in `clientAction`
+
+Do NOT use `useQuery` directly for this pattern — it breaks the clientLoader integration. The `useFetcher` approach ensures proper hydration and cache invalidation.
+
+**Applies to:** `apps/erp/app/components/Form/SupplierProcess.tsx`, `apps/erp/app/routes/api+/purchasing.supplier-processes.$processId.ts`, any dropdown/picker that loads data from API routes with React Query caching.
+
 ## ioredis retryStrategy returning null kills auto-recovery
 
 **Context:** Making the Redis client (`@carbon/kv`) resilient to outages (issue #1076).
