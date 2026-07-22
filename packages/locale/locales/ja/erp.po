@@ -696,7 +696,7 @@ msgid "Add rule"
 msgstr "ルールを追加"
 
 msgid "Add Sample"
-msgstr ""
+msgstr "サンプルを追加"
 
 msgid "Add Selector"
 msgstr "セレクターを追加"
@@ -1467,7 +1467,7 @@ msgid "Assemblies"
 msgstr "アセンブリ"
 
 msgid "Assembly Instruction"
-msgstr ""
+msgstr "組立指示"
 
 msgid "Assembly Instructions"
 msgstr "組立指示"
@@ -1680,7 +1680,7 @@ msgid "Balloon"
 msgstr "バルーン"
 
 msgid "Ballooned drawings with inspection characteristics."
-msgstr ""
+msgstr "検査特性付きの吹き出し図面。"
 
 msgid "Bank - Cash"
 msgstr "銀行-現金"
@@ -2126,7 +2126,7 @@ msgid "Change"
 msgstr "変更"
 
 msgid "Change Inspection Document"
-msgstr ""
+msgstr "検査ドキュメントを変更"
 
 msgid "Change order"
 msgstr "変更オーダー"
@@ -2171,10 +2171,10 @@ msgid "Changing type resets this item's draft edits."
 msgstr "種類を変更すると、このアイテムのドラフト編集がリセットされます。"
 
 msgid "Characteristic"
-msgstr ""
+msgstr "特性"
 
 msgid "Characteristics"
-msgstr ""
+msgstr "特性"
 
 msgid "Chart of accounts"
 msgstr "勘定科目表"
@@ -5103,7 +5103,7 @@ msgid "Fail"
 msgstr "不合格"
 
 msgid "Failed characteristics"
-msgstr ""
+msgstr "失敗した特性"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create asset class: {0}"
@@ -5338,7 +5338,7 @@ msgid "Failed to save diagram"
 msgstr "図の保存に失敗しました"
 
 msgid "Failed to save measurement"
-msgstr ""
+msgstr "測定値の保存に失敗しました"
 
 msgid "Failed to save parts"
 msgstr "部品の保存に失敗しました"
@@ -6352,7 +6352,7 @@ msgid "Inspection Document"
 msgstr "検査ドキュメント"
 
 msgid "Inspection Document Assignments"
-msgstr ""
+msgstr "検査ドキュメント割り当て"
 
 msgid "Inspection Documents"
 msgstr "検査ドキュメント"
@@ -8143,7 +8143,7 @@ msgid "No image"
 msgstr "画像なし"
 
 msgid "No inspection documents"
-msgstr ""
+msgstr "検査ドキュメントなし"
 
 msgid "No issue types configured"
 msgstr "問題タイプが設定されていません"
@@ -10642,7 +10642,7 @@ msgid "Scan or select a tracked entity from this lot and record the inspection r
 msgstr "このロットから追跡対象エンティティをスキャンまたは選択し、検査結果を記録してください。"
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column. Its result is derived from the recorded measurements."
-msgstr ""
+msgstr "このロットから追跡対象エンティティをスキャンまたは選択して、サンプル列として追加します。その結果は記録された測定値から導出されます。"
 
 msgid "Scan the tracking ID for this line"
 msgstr "このラインのトラッキングIDをスキャンしてください"
@@ -10783,7 +10783,7 @@ msgid "Select a default approver"
 msgstr "デフォルト承認者を選択"
 
 msgid "Select a document"
-msgstr ""
+msgstr "ドキュメントを選択"
 
 msgid "Select a new owner"
 msgstr "新しい所有者を選択"
@@ -11428,7 +11428,7 @@ msgid "Spare Part Cost"
 msgstr "スペアパーツコスト"
 
 msgid "Spec"
-msgstr ""
+msgstr "仕様"
 
 msgid "Specific Customer"
 msgstr "特定の顧客"
@@ -11561,10 +11561,10 @@ msgid "Steps"
 msgstr "ステップ"
 
 msgid "Steps are inherited from the assembly instruction."
-msgstr ""
+msgstr "ステップは組立指示から継承されます。"
 
 msgid "Steps are inherited from the inspection document."
-msgstr ""
+msgstr "ステップは検査ドキュメントから継承されます。"
 
 msgid "Stock Transfer ID"
 msgstr "在庫移動ID"
@@ -12413,7 +12413,7 @@ msgid "The lot will still be rejected, but an NCR cannot be created until at lea
 msgstr "ロットは引き続き却下されますが、少なくとも1つの問題タイプが設定されるまでNCRを作成することはできません。"
 
 msgid "The lot's per-characteristic sampling plan will be re-resolved from the selected document."
-msgstr ""
+msgstr "ロットの特性ごとのサンプリング計画は、選択されたドキュメントから再度解決されます。"
 
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "このサプライヤーがこのプロセスに対して請求する最低額（数量に関係なく）。損益分岐点以下のジョブもこの金額以上の費用がかかります。"
@@ -14200,7 +14200,7 @@ msgid "Whether to Add the selected permissions on top of what each user already 
 msgstr "選択されたアクセス許可が各ユーザーが既に持っているものに追加されるか、または以下の選択で各ユーザーのアクセス許可セットを置き換えることで更新されるか。"
 
 msgid "Which document drives each inspection flow for this item."
-msgstr ""
+msgstr "このアイテムの各検査フローを駆動するドキュメント。"
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "どの製造イベントが保存期間時計を開始するか — たとえば、塗りつぶし、シール、または最終QC。"

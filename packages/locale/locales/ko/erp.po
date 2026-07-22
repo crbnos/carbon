@@ -696,7 +696,7 @@ msgid "Add rule"
 msgstr "규칙 추가"
 
 msgid "Add Sample"
-msgstr ""
+msgstr "샘플 추가"
 
 msgid "Add Selector"
 msgstr "선택자 추가"
@@ -1467,7 +1467,7 @@ msgid "Assemblies"
 msgstr "조립품"
 
 msgid "Assembly Instruction"
-msgstr ""
+msgstr "조립 지시사항"
 
 msgid "Assembly Instructions"
 msgstr "조립 지침"
@@ -1680,7 +1680,7 @@ msgid "Balloon"
 msgstr "말풍선"
 
 msgid "Ballooned drawings with inspection characteristics."
-msgstr ""
+msgstr "검사 특성이 있는 풍선 그림입니다."
 
 msgid "Bank - Cash"
 msgstr "은행 - 현금"
@@ -2126,7 +2126,7 @@ msgid "Change"
 msgstr "변경"
 
 msgid "Change Inspection Document"
-msgstr ""
+msgstr "검사 문서 변경"
 
 msgid "Change order"
 msgstr "변경 주문"
@@ -2171,10 +2171,10 @@ msgid "Changing type resets this item's draft edits."
 msgstr "유형을 변경하면 이 항목의 초안 편집이 재설정됩니다."
 
 msgid "Characteristic"
-msgstr ""
+msgstr "특성"
 
 msgid "Characteristics"
-msgstr ""
+msgstr "특성들"
 
 msgid "Chart of accounts"
 msgstr "계정과목표"
@@ -5103,7 +5103,7 @@ msgid "Fail"
 msgstr "실패"
 
 msgid "Failed characteristics"
-msgstr ""
+msgstr "실패한 특성들"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create asset class: {0}"
@@ -5338,7 +5338,7 @@ msgid "Failed to save diagram"
 msgstr "다이어그램을 저장하지 못했습니다"
 
 msgid "Failed to save measurement"
-msgstr ""
+msgstr "측정값 저장 실패"
 
 msgid "Failed to save parts"
 msgstr "부품 저장 실패"
@@ -6352,7 +6352,7 @@ msgid "Inspection Document"
 msgstr "검사 문서"
 
 msgid "Inspection Document Assignments"
-msgstr ""
+msgstr "검사 문서 할당"
 
 msgid "Inspection Documents"
 msgstr "검사 문서"
@@ -8143,7 +8143,7 @@ msgid "No image"
 msgstr "이미지 없음"
 
 msgid "No inspection documents"
-msgstr ""
+msgstr "검사 문서 없음"
 
 msgid "No issue types configured"
 msgstr "설정된 이슈 유형이 없습니다"
@@ -10642,7 +10642,7 @@ msgid "Scan or select a tracked entity from this lot and record the inspection r
 msgstr "이 로트에서 추적 개체를 스캔하거나 선택하고 검사 결과를 기록하세요."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column. Its result is derived from the recorded measurements."
-msgstr ""
+msgstr "이 로트에서 추적된 엔티티를 스캔하거나 선택하여 샘플 열로 추가합니다. 해당 결과는 기록된 측정값에서 도출됩니다."
 
 msgid "Scan the tracking ID for this line"
 msgstr "이 라인의 추적 ID를 스캔하세요"
@@ -10783,7 +10783,7 @@ msgid "Select a default approver"
 msgstr "기본 승인자 선택"
 
 msgid "Select a document"
-msgstr ""
+msgstr "문서 선택"
 
 msgid "Select a new owner"
 msgstr "새 소유자 선택"
@@ -11428,7 +11428,7 @@ msgid "Spare Part Cost"
 msgstr "예비 부품 비용"
 
 msgid "Spec"
-msgstr ""
+msgstr "사양"
 
 msgid "Specific Customer"
 msgstr "특정 고객"
@@ -11561,10 +11561,10 @@ msgid "Steps"
 msgstr "단계"
 
 msgid "Steps are inherited from the assembly instruction."
-msgstr ""
+msgstr "단계는 조립 지시사항에서 상속됩니다."
 
 msgid "Steps are inherited from the inspection document."
-msgstr ""
+msgstr "단계는 검사 문서에서 상속됩니다."
 
 msgid "Stock Transfer ID"
 msgstr "재고 이동 ID"
@@ -12413,7 +12413,7 @@ msgid "The lot will still be rejected, but an NCR cannot be created until at lea
 msgstr "로트는 그대로 반려되지만, 이슈 유형이 하나 이상 설정되기 전까지는 NCR을 생성할 수 없습니다."
 
 msgid "The lot's per-characteristic sampling plan will be re-resolved from the selected document."
-msgstr ""
+msgstr "로트의 특성별 샘플링 계획은 선택한 문서에서 다시 확인됩니다."
 
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "수량과 관계없이 이 공급업체가 이 공정에 청구하는 최소 금액입니다. 손익분기 수량 미만인 작업도 최소한 이 금액만큼 비용이 발생합니다."
@@ -14200,7 +14200,7 @@ msgid "Whether to Add the selected permissions on top of what each user already 
 msgstr "선택한 권한을 각 사용자가 이미 가진 권한에 추가할지(추가), 아래 선택 항목으로 각 사용자의 권한 세트를 완전히 교체할지(업데이트) 여부입니다."
 
 msgid "Which document drives each inspection flow for this item."
-msgstr ""
+msgstr "이 항목에 대한 각 검사 흐름을 운영하는 문서입니다."
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "유효기간 계산이 시작되는 제조 이벤트 — 예를 들어 충전, 밀봉, 또는 최종 품질검사."

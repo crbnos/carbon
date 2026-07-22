@@ -696,7 +696,7 @@ msgid "Add rule"
 msgstr "Dodaj regułę"
 
 msgid "Add Sample"
-msgstr ""
+msgstr "Dodaj próbkę"
 
 msgid "Add Selector"
 msgstr "Dodaj selektor"
@@ -1467,7 +1467,7 @@ msgid "Assemblies"
 msgstr "Zespoły"
 
 msgid "Assembly Instruction"
-msgstr ""
+msgstr "Instrukcja montażu"
 
 msgid "Assembly Instructions"
 msgstr "Instrukcje montażu"
@@ -1680,7 +1680,7 @@ msgid "Balloon"
 msgstr "Balon"
 
 msgid "Ballooned drawings with inspection characteristics."
-msgstr ""
+msgstr "Rysunki z wytłumaczeniami i charakterystykami kontroli."
 
 msgid "Bank - Cash"
 msgstr "Bank - Gotówka"
@@ -2126,7 +2126,7 @@ msgid "Change"
 msgstr "Zmień"
 
 msgid "Change Inspection Document"
-msgstr ""
+msgstr "Zmień dokument kontroli"
 
 msgid "Change order"
 msgstr "Zmiana zamówienia"
@@ -2171,10 +2171,10 @@ msgid "Changing type resets this item's draft edits."
 msgstr "Zmiana typu resetuje edycje wersji roboczej tego elementu."
 
 msgid "Characteristic"
-msgstr ""
+msgstr "Charakterystyka"
 
 msgid "Characteristics"
-msgstr ""
+msgstr "Charakterystyki"
 
 msgid "Chart of accounts"
 msgstr "Plan kont"
@@ -5103,7 +5103,7 @@ msgid "Fail"
 msgstr "Nie powiodło się"
 
 msgid "Failed characteristics"
-msgstr ""
+msgstr "Nieudane charakterystyki"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create asset class: {0}"
@@ -5338,7 +5338,7 @@ msgid "Failed to save diagram"
 msgstr "Nie udało się zapisać diagramu"
 
 msgid "Failed to save measurement"
-msgstr ""
+msgstr "Nie udało się zapisać pomiaru"
 
 msgid "Failed to save parts"
 msgstr "Nie udało się zapisać części"
@@ -6352,7 +6352,7 @@ msgid "Inspection Document"
 msgstr "Dokument Inspekcji"
 
 msgid "Inspection Document Assignments"
-msgstr ""
+msgstr "Przypisania dokumentu kontroli"
 
 msgid "Inspection Documents"
 msgstr "Dokumenty inspekcji"
@@ -8143,7 +8143,7 @@ msgid "No image"
 msgstr "Brak obrazu"
 
 msgid "No inspection documents"
-msgstr ""
+msgstr "Brak dokumentów kontroli"
 
 msgid "No issue types configured"
 msgstr "Brak skonfigurowanych typów problemów"
@@ -10642,7 +10642,7 @@ msgid "Scan or select a tracked entity from this lot and record the inspection r
 msgstr "Skanuj lub wybierz śledzony element z tej partii i zapisz wynik inspekcji."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column. Its result is derived from the recorded measurements."
-msgstr ""
+msgstr "Zeskanuj lub wybierz śledzony obiekt z tej partii, aby dodać go jako kolumnę próbki. Jego wynik pochodzi z zarejestrowanych pomiarów."
 
 msgid "Scan the tracking ID for this line"
 msgstr "Skanuj identyfikator śledzenia dla tej linii"
@@ -10783,7 +10783,7 @@ msgid "Select a default approver"
 msgstr "Wybierz domyślnego zatwierdzającego"
 
 msgid "Select a document"
-msgstr ""
+msgstr "Wybierz dokument"
 
 msgid "Select a new owner"
 msgstr "Wybierz nowego właściciela"
@@ -11428,7 +11428,7 @@ msgid "Spare Part Cost"
 msgstr "Koszt części zamiennych"
 
 msgid "Spec"
-msgstr ""
+msgstr "Specyfikacja"
 
 msgid "Specific Customer"
 msgstr "Konkretny klient"
@@ -11561,10 +11561,10 @@ msgid "Steps"
 msgstr "Kroki"
 
 msgid "Steps are inherited from the assembly instruction."
-msgstr ""
+msgstr "Kroki są dziedziczone z instrukcji montażu."
 
 msgid "Steps are inherited from the inspection document."
-msgstr ""
+msgstr "Kroki są dziedziczone z dokumentu kontroli."
 
 msgid "Stock Transfer ID"
 msgstr "Identyfikator Transferu Zapasów"
@@ -12413,7 +12413,7 @@ msgid "The lot will still be rejected, but an NCR cannot be created until at lea
 msgstr "Partia będzie nadal odrzucona, ale nie można utworzyć NCR, dopóki nie zostanie skonfigurowany co najmniej jeden typ problemu."
 
 msgid "The lot's per-characteristic sampling plan will be re-resolved from the selected document."
-msgstr ""
+msgstr "Plan próbkowania dla każdej charakterystyki partii zostanie ponownie rozwiązany na podstawie wybranego dokumentu."
 
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "Najniższa kwota, którą ten dostawca pobierze za ten proces, niezależnie od ilości; zadania poniżej wolumenu progu rentowności nadal kosztują co najmniej tę kwotę."
@@ -14200,7 +14200,7 @@ msgid "Whether to Add the selected permissions on top of what each user already 
 msgstr "Czy wybrane uprawnienia są Dodawane do tego, co każdy użytkownik już ma, czy Aktualizowane poprzez zastąpienie zestawu uprawnień każdego użytkownika poniższą selekcją."
 
 msgid "Which document drives each inspection flow for this item."
-msgstr ""
+msgstr "Który dokument kieruje każdym przepływem kontroli dla tego produktu."
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "Które zdarzenie produkcyjne uruchamia zegar czasu przechowywania — na przykład napełnianie, uszczelnianie lub ostateczną kontrolę jakości."

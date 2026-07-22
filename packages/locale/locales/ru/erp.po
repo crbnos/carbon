@@ -696,7 +696,7 @@ msgid "Add rule"
 msgstr "Добавить правило"
 
 msgid "Add Sample"
-msgstr ""
+msgstr "Добавить образец"
 
 msgid "Add Selector"
 msgstr "Добавить селектор"
@@ -1467,7 +1467,7 @@ msgid "Assemblies"
 msgstr "Сборки"
 
 msgid "Assembly Instruction"
-msgstr ""
+msgstr "Инструкция по сборке"
 
 msgid "Assembly Instructions"
 msgstr "Инструкции по сборке"
@@ -1680,7 +1680,7 @@ msgid "Balloon"
 msgstr "Выноска"
 
 msgid "Ballooned drawings with inspection characteristics."
-msgstr ""
+msgstr "Чертежи с выносками, содержащие характеристики проверки."
 
 msgid "Bank - Cash"
 msgstr "Банк - Денежные средства"
@@ -2126,7 +2126,7 @@ msgid "Change"
 msgstr "Изменить"
 
 msgid "Change Inspection Document"
-msgstr ""
+msgstr "Изменить документ контроля"
 
 msgid "Change order"
 msgstr "Приказ об изменении"
@@ -2171,10 +2171,10 @@ msgid "Changing type resets this item's draft edits."
 msgstr "Изменение типа сбрасывает черновые редактирования этого элемента."
 
 msgid "Characteristic"
-msgstr ""
+msgstr "Характеристика"
 
 msgid "Characteristics"
-msgstr ""
+msgstr "Характеристики"
 
 msgid "Chart of accounts"
 msgstr "План счетов"
@@ -5103,7 +5103,7 @@ msgid "Fail"
 msgstr "Не пройти"
 
 msgid "Failed characteristics"
-msgstr ""
+msgstr "Отказавшие характеристики"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create asset class: {0}"
@@ -5338,7 +5338,7 @@ msgid "Failed to save diagram"
 msgstr "Не удалось сохранить диаграмму"
 
 msgid "Failed to save measurement"
-msgstr ""
+msgstr "Не удалось сохранить измерение"
 
 msgid "Failed to save parts"
 msgstr "Ошибка при сохранении деталей"
@@ -6352,7 +6352,7 @@ msgid "Inspection Document"
 msgstr "Документ проверки"
 
 msgid "Inspection Document Assignments"
-msgstr ""
+msgstr "Назначения документов контроля"
 
 msgid "Inspection Documents"
 msgstr "Документы проверки"
@@ -8143,7 +8143,7 @@ msgid "No image"
 msgstr "Нет изображения"
 
 msgid "No inspection documents"
-msgstr ""
+msgstr "Нет документов контроля"
 
 msgid "No issue types configured"
 msgstr "Типы проблем не настроены"
@@ -10642,7 +10642,7 @@ msgid "Scan or select a tracked entity from this lot and record the inspection r
 msgstr "Отсканируйте или выберите отслеживаемый объект из этой партии и запишите результат проверки."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column. Its result is derived from the recorded measurements."
-msgstr ""
+msgstr "Отсканируйте или выберите отслеживаемый объект из этой партии, чтобы добавить его в качестве столбца образца. Его результат получается на основе записанных измерений."
 
 msgid "Scan the tracking ID for this line"
 msgstr "Отсканируйте идентификатор отслеживания для этой строки"
@@ -10783,7 +10783,7 @@ msgid "Select a default approver"
 msgstr "Выберите утверждающего по умолчанию"
 
 msgid "Select a document"
-msgstr ""
+msgstr "Выберите документ"
 
 msgid "Select a new owner"
 msgstr "Выберите нового владельца"
@@ -11428,7 +11428,7 @@ msgid "Spare Part Cost"
 msgstr "Стоимость запасных частей"
 
 msgid "Spec"
-msgstr ""
+msgstr "Тех. условия"
 
 msgid "Specific Customer"
 msgstr "Конкретный клиент"
@@ -11561,10 +11561,10 @@ msgid "Steps"
 msgstr "Шаги"
 
 msgid "Steps are inherited from the assembly instruction."
-msgstr ""
+msgstr "Этапы наследуются из инструкции по сборке."
 
 msgid "Steps are inherited from the inspection document."
-msgstr ""
+msgstr "Этапы наследуются из документа контроля."
 
 msgid "Stock Transfer ID"
 msgstr "ID передачи запасов"
@@ -12413,7 +12413,7 @@ msgid "The lot will still be rejected, but an NCR cannot be created until at lea
 msgstr "Партия все еще будет отклонена, но NCR не может быть создана до тех пор, пока не будет настроен хотя бы один тип проблемы."
 
 msgid "The lot's per-characteristic sampling plan will be re-resolved from the selected document."
-msgstr ""
+msgstr "План выборочного контроля по характеристикам для партии будет переопределен на основе выбранного документа."
 
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "Минимальная сумма, которую этот поставщик взимает за этот процесс, независимо от количества; работы ниже объема безубыточности все еще стоят как минимум эту сумму."
@@ -14200,7 +14200,7 @@ msgid "Whether to Add the selected permissions on top of what each user already 
 msgstr "Если выбранные разрешения Добавляются к тому, что каждый пользователь уже имеет, или Обновляются путем замены набора разрешений каждого пользователя на выбранные ниже."
 
 msgid "Which document drives each inspection flow for this item."
-msgstr ""
+msgstr "Какой документ определяет каждый процесс контроля для этого элемента."
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "Какое производственное событие запускает часы срока хранения — например, заполнение, уплотнение или окончательный контроль качества."

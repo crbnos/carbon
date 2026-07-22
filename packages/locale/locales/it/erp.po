@@ -696,7 +696,7 @@ msgid "Add rule"
 msgstr "Aggiungi regola"
 
 msgid "Add Sample"
-msgstr ""
+msgstr "Aggiungi Campione"
 
 msgid "Add Selector"
 msgstr "Aggiungi selettore"
@@ -1467,7 +1467,7 @@ msgid "Assemblies"
 msgstr "Assiemi"
 
 msgid "Assembly Instruction"
-msgstr ""
+msgstr "Istruzioni di Montaggio"
 
 msgid "Assembly Instructions"
 msgstr "Istruzioni di Montaggio"
@@ -1680,7 +1680,7 @@ msgid "Balloon"
 msgstr "Palloncino"
 
 msgid "Ballooned drawings with inspection characteristics."
-msgstr ""
+msgstr "Disegni con callout e caratteristiche di ispezione."
 
 msgid "Bank - Cash"
 msgstr "Banca - Contanti"
@@ -2126,7 +2126,7 @@ msgid "Change"
 msgstr "Cambia"
 
 msgid "Change Inspection Document"
-msgstr ""
+msgstr "Cambia Documento di Ispezione"
 
 msgid "Change order"
 msgstr "Ordine di modifica"
@@ -2171,10 +2171,10 @@ msgid "Changing type resets this item's draft edits."
 msgstr "Cambiare il tipo ripristina le modifiche in bozza di questo elemento."
 
 msgid "Characteristic"
-msgstr ""
+msgstr "Caratteristica"
 
 msgid "Characteristics"
-msgstr ""
+msgstr "Caratteristiche"
 
 msgid "Chart of accounts"
 msgstr "Piano dei conti"
@@ -5103,7 +5103,7 @@ msgid "Fail"
 msgstr "Non superato"
 
 msgid "Failed characteristics"
-msgstr ""
+msgstr "Caratteristiche Non Riuscite"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create asset class: {0}"
@@ -5338,7 +5338,7 @@ msgid "Failed to save diagram"
 msgstr "Impossibile salvare il diagramma"
 
 msgid "Failed to save measurement"
-msgstr ""
+msgstr "Impossibile salvare la misurazione"
 
 msgid "Failed to save parts"
 msgstr "Errore nel salvataggio delle parti"
@@ -6352,7 +6352,7 @@ msgid "Inspection Document"
 msgstr "Documento di Ispezione"
 
 msgid "Inspection Document Assignments"
-msgstr ""
+msgstr "Assegnazioni di Documenti di Ispezione"
 
 msgid "Inspection Documents"
 msgstr "Documenti di Ispezione"
@@ -8143,7 +8143,7 @@ msgid "No image"
 msgstr "Nessuna immagine"
 
 msgid "No inspection documents"
-msgstr ""
+msgstr "Nessun documento di ispezione"
 
 msgid "No issue types configured"
 msgstr "Nessun tipo di problema configurato"
@@ -10642,7 +10642,7 @@ msgid "Scan or select a tracked entity from this lot and record the inspection r
 msgstr "Scansiona o seleziona un'entità tracciata da questo lotto e registra il risultato dell'ispezione."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column. Its result is derived from the recorded measurements."
-msgstr ""
+msgstr "Scansiona o seleziona un'entità tracciata da questo lotto per aggiungerla come colonna campione. Il suo risultato è derivato dalle misurazioni registrate."
 
 msgid "Scan the tracking ID for this line"
 msgstr "Scansiona l'ID di tracciamento per questa riga"
@@ -10783,7 +10783,7 @@ msgid "Select a default approver"
 msgstr "Seleziona un approvatore predefinito"
 
 msgid "Select a document"
-msgstr ""
+msgstr "Seleziona un documento"
 
 msgid "Select a new owner"
 msgstr "Seleziona un nuovo proprietario"
@@ -11428,7 +11428,7 @@ msgid "Spare Part Cost"
 msgstr "Costo dei Ricambi"
 
 msgid "Spec"
-msgstr ""
+msgstr "Specifica"
 
 msgid "Specific Customer"
 msgstr "Cliente Specifico"
@@ -11561,10 +11561,10 @@ msgid "Steps"
 msgstr "Passaggi"
 
 msgid "Steps are inherited from the assembly instruction."
-msgstr ""
+msgstr "I passaggi vengono ereditati dalle istruzioni di montaggio."
 
 msgid "Steps are inherited from the inspection document."
-msgstr ""
+msgstr "I passaggi vengono ereditati dal documento di ispezione."
 
 msgid "Stock Transfer ID"
 msgstr "ID Trasferimento Magazzino"
@@ -12413,7 +12413,7 @@ msgid "The lot will still be rejected, but an NCR cannot be created until at lea
 msgstr "Il lotto sarà comunque rifiutato, ma non è possibile creare un NCR finché non è configurato almeno un tipo di problema."
 
 msgid "The lot's per-characteristic sampling plan will be re-resolved from the selected document."
-msgstr ""
+msgstr "Il piano di campionamento per caratteristica del lotto verrà nuovamente risolto dal documento selezionato."
 
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "L'importo minimo che questo fornitore addebiterà per questo processo, indipendentemente dalla quantità; i lavori al di sotto del volume di pareggio costano comunque almeno questo importo."
@@ -14200,7 +14200,7 @@ msgid "Whether to Add the selected permissions on top of what each user already 
 msgstr "Se le autorizzazioni selezionate vengono Aggiunte sopra ciò che ogni utente ha già, o Aggiornate sostituendo il set di autorizzazioni di ogni utente con la selezione di seguito."
 
 msgid "Which document drives each inspection flow for this item."
-msgstr ""
+msgstr "Quale documento gestisce ogni flusso di ispezione per questo articolo."
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "Quale evento di produzione avvia l'orologio della vita di magazzino — ad esempio, riempimento, sigillatura o QC finale."

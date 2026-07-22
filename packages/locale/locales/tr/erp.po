@@ -696,7 +696,7 @@ msgid "Add rule"
 msgstr "Kural ekle"
 
 msgid "Add Sample"
-msgstr ""
+msgstr "Örnek Ekle"
 
 msgid "Add Selector"
 msgstr "Seçici Ekle"
@@ -1467,7 +1467,7 @@ msgid "Assemblies"
 msgstr "Montajlar"
 
 msgid "Assembly Instruction"
-msgstr ""
+msgstr "Montaj Talimatı"
 
 msgid "Assembly Instructions"
 msgstr "Montaj Talimatları"
@@ -1680,7 +1680,7 @@ msgid "Balloon"
 msgstr "Balon"
 
 msgid "Ballooned drawings with inspection characteristics."
-msgstr ""
+msgstr "İnceleme özellikleriyle işaretleme yapılmış çizimler."
 
 msgid "Bank - Cash"
 msgstr "Banka - Nakit"
@@ -2126,7 +2126,7 @@ msgid "Change"
 msgstr "Değiştir"
 
 msgid "Change Inspection Document"
-msgstr ""
+msgstr "İnceleme Belgesini Değiştir"
 
 msgid "Change order"
 msgstr "Değişiklik emri"
@@ -2171,10 +2171,10 @@ msgid "Changing type resets this item's draft edits."
 msgstr "Türü değiştirmek bu öğenin taslak düzenlemelerini sıfırlar."
 
 msgid "Characteristic"
-msgstr ""
+msgstr "Özellik"
 
 msgid "Characteristics"
-msgstr ""
+msgstr "Özellikler"
 
 msgid "Chart of accounts"
 msgstr "Muhasebe planı"
@@ -5103,7 +5103,7 @@ msgid "Fail"
 msgstr "Başarısız"
 
 msgid "Failed characteristics"
-msgstr ""
+msgstr "Başarısız özellikler"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create asset class: {0}"
@@ -5338,7 +5338,7 @@ msgid "Failed to save diagram"
 msgstr "Şemayı kaydetme başarısız oldu"
 
 msgid "Failed to save measurement"
-msgstr ""
+msgstr "Ölçüm kaydedilemedi"
 
 msgid "Failed to save parts"
 msgstr "Parça kaydedilemedi"
@@ -6352,7 +6352,7 @@ msgid "Inspection Document"
 msgstr "Muayene Belgesi"
 
 msgid "Inspection Document Assignments"
-msgstr ""
+msgstr "İnceleme Belgesi Atamalar"
 
 msgid "Inspection Documents"
 msgstr "Muayene Belgeleri"
@@ -8143,7 +8143,7 @@ msgid "No image"
 msgstr "Resim yok"
 
 msgid "No inspection documents"
-msgstr ""
+msgstr "İnceleme belgesi yok"
 
 msgid "No issue types configured"
 msgstr "Hiçbir sorun türü yapılandırılmamış"
@@ -10642,7 +10642,7 @@ msgid "Scan or select a tracked entity from this lot and record the inspection r
 msgstr "Bu partiden izlenen bir varlığı tarayın veya seçin ve muayene sonucunu kaydedin."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column. Its result is derived from the recorded measurements."
-msgstr ""
+msgstr "Bu lottan takip edilen bir varlığı tarayın veya seçin, örnek sütun olarak eklemek için. Sonucu kaydedilen ölçümlerden türetilir."
 
 msgid "Scan the tracking ID for this line"
 msgstr "Bu satır için takip kimliğini tarayın"
@@ -10783,7 +10783,7 @@ msgid "Select a default approver"
 msgstr "Varsayılan onaylayıcı seçin"
 
 msgid "Select a document"
-msgstr ""
+msgstr "Belge seçin"
 
 msgid "Select a new owner"
 msgstr "Yeni bir sahip seç"
@@ -11428,7 +11428,7 @@ msgid "Spare Part Cost"
 msgstr "Yedek Parça Maliyeti"
 
 msgid "Spec"
-msgstr ""
+msgstr "Spesifikasyon"
 
 msgid "Specific Customer"
 msgstr "Belirli Müşteri"
@@ -11561,10 +11561,10 @@ msgid "Steps"
 msgstr "Adımlar"
 
 msgid "Steps are inherited from the assembly instruction."
-msgstr ""
+msgstr "Adımlar montaj talimatından devralınır."
 
 msgid "Steps are inherited from the inspection document."
-msgstr ""
+msgstr "Adımlar inceleme belgesinden devralınır."
 
 msgid "Stock Transfer ID"
 msgstr "Stok Transfer Kimliği"
@@ -12413,7 +12413,7 @@ msgid "The lot will still be rejected, but an NCR cannot be created until at lea
 msgstr "Lot yine de reddedilecek, ancak en az bir Hata Türü yapılandırılana kadar Bir Uygunluk Raporu (NCR) oluşturulamaz."
 
 msgid "The lot's per-characteristic sampling plan will be re-resolved from the selected document."
-msgstr ""
+msgstr "Lottun özellik başına örnekleme planı seçilen belgeden yeniden çözülecektir."
 
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "Bu tedarikçinin miktar ne olursa olsun bu işlem için tahsil edeceği minimum tutar; kâr-zarar noktası hacmi altındaki işler hala en az bu tutarına mal olur."
@@ -14200,7 +14200,7 @@ msgid "Whether to Add the selected permissions on top of what each user already 
 msgstr "Seçilen izinlerin her kullanıcının zaten sahip olduğu şeylerin üstüne Eklenip Eklenmediği veya her kullanıcının izin setinin aşağıda seçilen kişilerle değiştirilmesi suretiyle Güncelleştirilmesi."
 
 msgid "Which document drives each inspection flow for this item."
-msgstr ""
+msgstr "Bu öğe için her inceleme akışını hangi belge yönlendirir."
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "Hangi üretim olayı raf ömrü saatini başlatır — örneğin, doldurma, mühürleme veya nihai QC."

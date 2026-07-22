@@ -696,7 +696,7 @@ msgid "Add rule"
 msgstr "添加规则"
 
 msgid "Add Sample"
-msgstr ""
+msgstr "添加样品"
 
 msgid "Add Selector"
 msgstr "添加选择器"
@@ -1467,7 +1467,7 @@ msgid "Assemblies"
 msgstr "装配件"
 
 msgid "Assembly Instruction"
-msgstr ""
+msgstr "装配说明"
 
 msgid "Assembly Instructions"
 msgstr "装配说明"
@@ -1680,7 +1680,7 @@ msgid "Balloon"
 msgstr "气球"
 
 msgid "Ballooned drawings with inspection characteristics."
-msgstr ""
+msgstr "带有检验特性的注解图。"
 
 msgid "Bank - Cash"
 msgstr "银行-现金"
@@ -2126,7 +2126,7 @@ msgid "Change"
 msgstr "更改"
 
 msgid "Change Inspection Document"
-msgstr ""
+msgstr "更改检验文件"
 
 msgid "Change order"
 msgstr "变更单"
@@ -2171,10 +2171,10 @@ msgid "Changing type resets this item's draft edits."
 msgstr "更改类型将重置此项目的草稿编辑。"
 
 msgid "Characteristic"
-msgstr ""
+msgstr "特征"
 
 msgid "Characteristics"
-msgstr ""
+msgstr "特征"
 
 msgid "Chart of accounts"
 msgstr "会计科目表"
@@ -5103,7 +5103,7 @@ msgid "Fail"
 msgstr "失败"
 
 msgid "Failed characteristics"
-msgstr ""
+msgstr "失败的特征"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create asset class: {0}"
@@ -5338,7 +5338,7 @@ msgid "Failed to save diagram"
 msgstr "保存图表失败"
 
 msgid "Failed to save measurement"
-msgstr ""
+msgstr "保存测量值失败"
 
 msgid "Failed to save parts"
 msgstr "保存零件失败"
@@ -6352,7 +6352,7 @@ msgid "Inspection Document"
 msgstr "检验文件"
 
 msgid "Inspection Document Assignments"
-msgstr ""
+msgstr "检验文件分配"
 
 msgid "Inspection Documents"
 msgstr "检验文件"
@@ -8143,7 +8143,7 @@ msgid "No image"
 msgstr "没有图像"
 
 msgid "No inspection documents"
-msgstr ""
+msgstr "没有检验文件"
 
 msgid "No issue types configured"
 msgstr "未配置问题类型"
@@ -10642,7 +10642,7 @@ msgid "Scan or select a tracked entity from this lot and record the inspection r
 msgstr "扫描或从此批次中选择一个追踪实体并记录检验结果。"
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column. Its result is derived from the recorded measurements."
-msgstr ""
+msgstr "扫描或从此批次中选择跟踪实体以将其添加为样品列。其结果源自记录的测量值。"
 
 msgid "Scan the tracking ID for this line"
 msgstr "扫描此行的跟踪ID"
@@ -10783,7 +10783,7 @@ msgid "Select a default approver"
 msgstr "选择默认审批人"
 
 msgid "Select a document"
-msgstr ""
+msgstr "选择文件"
 
 msgid "Select a new owner"
 msgstr "选择新的所有者"
@@ -11428,7 +11428,7 @@ msgid "Spare Part Cost"
 msgstr "备件成本"
 
 msgid "Spec"
-msgstr ""
+msgstr "规范"
 
 msgid "Specific Customer"
 msgstr "特定客户"
@@ -11561,10 +11561,10 @@ msgid "Steps"
 msgstr "步骤"
 
 msgid "Steps are inherited from the assembly instruction."
-msgstr ""
+msgstr "步骤继承自装配说明。"
 
 msgid "Steps are inherited from the inspection document."
-msgstr ""
+msgstr "步骤继承自检验文件。"
 
 msgid "Stock Transfer ID"
 msgstr "库存转移ID"
@@ -12413,7 +12413,7 @@ msgid "The lot will still be rejected, but an NCR cannot be created until at lea
 msgstr "该批次仍将被拒收，但在至少配置一个问题类型之前，无法创建NCR。"
 
 msgid "The lot's per-characteristic sampling plan will be re-resolved from the selected document."
-msgstr ""
+msgstr "该批次的按特征抽样计划将从所选文件重新确定。"
 
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "此供应商无论数量如何为此流程收费的最低金额；低于损益平衡点的工作仍至少花费此金额。"
@@ -14200,7 +14200,7 @@ msgid "Whether to Add the selected permissions on top of what each user already 
 msgstr "是否将选定的权限添加到每个用户已有的权限之上,或通过将每个用户的权限集替换为下面的选择来更新。"
 
 msgid "Which document drives each inspection flow for this item."
-msgstr ""
+msgstr "哪份文件驱动此物料的每个检验流程。"
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "哪个制造事件启动保质期时钟 — 例如填充、密封或最终QC。"
