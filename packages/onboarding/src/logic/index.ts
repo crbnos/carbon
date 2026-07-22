@@ -1,6 +1,7 @@
 export * from "./board";
 export * from "./diffIntake";
 export * from "./guide";
+export * from "./intakeRows";
 export * from "./keys";
 export * from "./labels";
 export * from "./overlay";

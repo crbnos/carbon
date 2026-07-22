@@ -1,21 +1,31 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
+  currentAnswers,
   EMPTY_EXCLUSIONS,
+  gateDateKey,
   gatesDone,
+  GO_LIVE_STEP_KEY,
   type HubContacts,
   type HubExclusions,
   type ImplementationRowData,
+  type Mod,
+  parseIntakeRows,
   SPINE,
   spineForTier,
-  stateMap
+  stateMap,
+  tailorPlan,
+  TEMPLATE_VERSION
 } from "@carbon/onboarding";
 import {
   detectImplementationSignals,
   getImplementationCheckStates,
   getImplementationFieldValues,
   getImplementationHub,
-  getImplementationRows
+  getImplementationRows,
+  resetImplementationForTemplate
 } from "@carbon/onboarding/server";
+import { isInternalEmail } from "@carbon/utils";
 import {
   type HubData,
   type HubFlags,
@@ -133,13 +143,30 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {});
+  const { client, companyId, userId, email } = await requirePermissions(
+    request,
+    {}
+  );
 
-  const hub = await getImplementationHub(client, companyId);
+  let hub = await getImplementationHub(client, companyId);
   // Only enrolled companies have a hub row — others never reach this surface.
   // Enrollment is the gate (self-serve from the home page), not staff.
   if (!hub.data) {
     throw redirect(path.to.authenticatedRoot);
+  }
+
+  // Lazy template migration: a hub enrolled under an older template resets to
+  // the current seven-phase journey (Chase-approved for v1 → v2). Idempotent —
+  // it runs once, the version bump prevents a second pass.
+  if ((hub.data.templateVersion ?? 1) < TEMPLATE_VERSION) {
+    const reset = await resetImplementationForTemplate(getCarbonServiceRole(), {
+      companyId,
+      userId
+    });
+    if (!reset.error) {
+      hub = await getImplementationHub(client, companyId);
+      if (!hub.data) throw redirect(path.to.authenticatedRoot);
+    }
   }
 
   const [checkStates, fieldValues, rows, signals] = await Promise.all([
@@ -148,6 +175,21 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getImplementationRows(client, companyId),
     detectImplementationSignals(client, companyId)
   ]);
+
+  // Phase 1 is the front door: until the intake is completed, the wizard is
+  // the only destination for customers. Carbon staff can roam the untailored
+  // hub (they may be completing the intake on the customer's behalf).
+  const intake = parseIntakeRows(
+    (rows.data ?? []) as unknown as ImplementationRowData[]
+  );
+  const { pathname } = new URL(request.url);
+  if (
+    !intake.current &&
+    !isInternalEmail(email) &&
+    pathname !== path.to.getStartedIntake
+  ) {
+    throw redirect(path.to.getStartedIntake);
+  }
 
   return {
     hub: hub.data,
@@ -219,6 +261,18 @@ export default function GetStartedLayout() {
     [fetcher]
   );
 
+  // Modules the intake's answers rule out (books stay put → no accounting;
+  // informal quality → no QMS). Forced at render time like the app-forced
+  // accounting exclusion, so re-tuning the answers re-tailors every surface
+  // without ever writing into the stored, staff-editable exclusions.
+  const tailoredModules = useMemo<Mod[]>(() => {
+    const intake = parseIntakeRows(
+      loaderData.rows as unknown as ImplementationRowData[]
+    );
+    return tailorPlan(currentAnswers(intake), { accountingEnabled })
+      .excludeModules.map((exclusion) => exclusion.mod);
+  }, [loaderData.rows, accountingEnabled]);
+
   const hubData = useMemo<HubData>(
     () => ({
       tier: loaderData.hub.tier,
@@ -228,15 +282,19 @@ export default function GetStartedLayout() {
         EMPTY_EXCLUSIONS,
       // The Accounting module only appears in the hub when the company has
       // accounting enabled; forced here so it never persists into the stored
-      // (staff-editable) exclusions.
-      forcedModules: accountingEnabled ? [] : ["acc"],
+      // (staff-editable) exclusions. The intake's answer-driven exclusions
+      // compose the same way.
+      forcedModules: [
+        ...(accountingEnabled ? [] : (["acc"] as Mod[])),
+        ...tailoredModules
+      ],
       contacts: (loaderData.hub.contacts as unknown as HubContacts) ?? {},
       checkStates: loaderData.checkStates,
       fieldValues: loaderData.fieldValues,
       rows: loaderData.rows as unknown as ImplementationRowData[],
       signals: loaderData.signals
     }),
-    [loaderData, accountingEnabled]
+    [loaderData, accountingEnabled, tailoredModules]
   );
 
   const flags = useMemo<HubFlags>(
@@ -258,6 +316,14 @@ export default function GetStartedLayout() {
             {isInternal ? (
               <PreviewBar previewing={previewingAsCustomer} />
             ) : null}
+            <CountdownBar
+              goLiveDate={
+                loaderData.fieldValues.find(
+                  (f) => f.fieldKey === gateDateKey(GO_LIVE_STEP_KEY)
+                )?.value
+              }
+              status={loaderData.hub.status}
+            />
             <div className="p-8">
               <HubProvider
                 data={hubData}
@@ -273,6 +339,38 @@ export default function GetStartedLayout() {
         </div>
       </div>
     </CollapsibleSidebarProvider>
+  );
+}
+
+// The countdown — the go-live date lives in the hub header and moves only
+// through the push-the-date dialog (gentle friction against drift). Hidden
+// until a date exists and once the hub closes.
+function CountdownBar({
+  goLiveDate,
+  status
+}: {
+  goLiveDate: string | undefined;
+  status: string;
+}) {
+  if (!goLiveDate || status === "complete" || status === "archived") {
+    return null;
+  }
+  const target = new Date(`${goLiveDate}T12:00:00Z`);
+  if (Number.isNaN(target.getTime())) return null;
+  const days = Math.ceil((target.getTime() - Date.now()) / 86_400_000);
+
+  return (
+    <div className="sticky top-0 z-10 flex items-center justify-end px-8 py-2 pointer-events-none">
+      <span className="rounded-full border bg-card px-3 py-1 text-xs font-medium shadow-button-base tabular-nums">
+        {days > 0 ? (
+          <>
+            Live by {goLiveDate} · {days} {days === 1 ? "day" : "days"} to go
+          </>
+        ) : (
+          <>Switch week is here</>
+        )}
+      </span>
+    </div>
   );
 }
 

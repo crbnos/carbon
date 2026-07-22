@@ -157,6 +157,8 @@ export interface HubExclusions {
 export interface HubContacts {
   pocUserId?: string;
   owner?: string;
+  // The owner's email — where the digest and milestone notifications go.
+  ownerEmail?: string;
   champion?: string;
 }
 

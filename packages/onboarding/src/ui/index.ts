@@ -1,8 +1,11 @@
 export { EditableField } from "./EditableField";
 export { GanttChart } from "./GanttChart";
 export { HowWeWorkView } from "./HowWeWorkView";
+export { HowYouRunView } from "./HowYouRunView";
+export { IntakeWizard } from "./IntakeWizard";
 export { OnboardingHub } from "./OnboardingHub";
 export { OnboardingHubSummary } from "./OnboardingHubSummary";
+export { PayoffScreen } from "./PayoffScreen";
 export { PlaceholderPage } from "./PlaceholderPage";
 export { PlanView } from "./PlanView";
 export { ProgressPill } from "./ProgressPill";

@@ -41,8 +41,90 @@ export const exclusionsValidator = z.object({
 export const contactsValidator = z.object({
   pocUserId: z.string().optional(),
   owner: z.string().optional(),
+  ownerEmail: z.string().optional(),
   champion: z.string().optional()
 });
+
+// ---------------------------------------------------------------------------
+// Intake ("Tell Us How You Run") — answers + persisted row payloads.
+// Answers live as versioned snapshot rows in implementationRow (collection
+// "intake"); transcripts as rows in collection "intakeTranscript". Everything
+// optional: the wizard saves drafts as it goes and skip logic hides questions.
+// ---------------------------------------------------------------------------
+
+export const intakeAnswersValidator = z
+  .object({
+    product: z.string().max(500),
+    people: z.enum(["1-10", "11-30", "31-100", "100+"]),
+    sites: z.enum(["one", "2-3", "4+"]),
+    workIntake: z.array(z.enum(["quote", "catalog", "configured", "forecast"])),
+    customers: z.enum(["under-25", "25-250", "over-250"]),
+    fulfillment: z.enum(["mto", "mts", "both"]),
+    jobsPerMonth: z.enum(["under-20", "20-100", "over-100"]),
+    tracking: z.enum(["none", "lots", "serials", "both"]),
+    trackingRequired: z.boolean(),
+    quality: z.enum(["informal", "inspect", "iso", "regulated"]),
+    systems: z.array(
+      z.enum(["spreadsheets", "books-app", "legacy-erp", "homegrown", "paper"])
+    ),
+    legacyErpName: z.string().max(200),
+    books: z.enum(["keep", "move", "not-sure"]),
+    items: z.enum(["under-100", "100-1k", "1k-10k", "over-10k"]),
+    boms: z.enum(["spreadsheets", "cad", "old-erp", "heads"]),
+    ownerName: z.string().max(200),
+    ownerEmail: z.string().max(320),
+    goLiveDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    weeklyHours: z.enum(["few-hours", "half-day", "day-plus"]),
+    uploadPath: z.string().max(1000),
+    uploadName: z.string().max(500)
+  })
+  .partial();
+
+// An implementationRow payload in collection "intake" — one row per version;
+// the latest completed row is the current truth, a draft row is the wizard's
+// resumable in-progress state, and every completed row is a permanent snapshot.
+export const intakeRowValidator = z.object({
+  version: z.number().int().min(1),
+  status: z.enum(["draft", "completed"]),
+  answers: intakeAnswersValidator,
+  band: z.enum(["simple", "standard", "complex"]).optional(),
+  flags: z.array(z.string()).optional(),
+  completedAt: z.string().optional()
+});
+
+// An implementationRow payload in collection "intakeTranscript" — every voice
+// utterance and AI-clarifier exchange, persisted for Carbon's sales review.
+export const intakeTranscriptRowValidator = z.object({
+  intakeVersion: z.number().int().min(1),
+  questionKey: z.string().min(1),
+  source: z.enum(["voice", "clarifier"]),
+  transcript: z.string().min(1)
+});
+
+export type IntakeRowPayload = z.infer<typeof intakeRowValidator>;
+export type IntakeTranscriptRowPayload = z.infer<
+  typeof intakeTranscriptRowValidator
+>;
+
+// The /x/get-started/intake action payload, discriminated by intent.
+export const intakeActionValidator = z.discriminatedUnion("intent", [
+  z.object({
+    intent: z.literal("saveDraft"),
+    answers: z.string() // JSON-encoded IntakeAnswers
+  }),
+  z.object({
+    intent: z.literal("complete"),
+    answers: z.string() // JSON-encoded IntakeAnswers
+  }),
+  z.object({
+    intent: z.literal("addTranscript"),
+    questionKey: z.string().min(1),
+    source: z.enum(["voice", "clarifier"]),
+    transcript: z.string().min(1)
+  })
+]);
+
+export type IntakeAction = z.infer<typeof intakeActionValidator>;
 
 // The /x/get-started/state.toggle action payload, discriminated by intent.
 export const stateActionValidator = z.discriminatedUnion("intent", [

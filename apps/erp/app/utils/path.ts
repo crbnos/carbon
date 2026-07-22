@@ -86,6 +86,8 @@ export const path = {
         generatePath(
           `${api}/quality/inspection-document/${inspectionDocumentId}/balloon-analyze`
         ),
+      intakeClarify: `${api}/ai/intake/clarify`,
+      intakeTranscribe: `${api}/intake/transcribe`,
       item: (type: string) => generatePath(`${api}/item/${type}`),
       itemConfigurable: `${api}/items/configurable`,
       itemCostRecalculate: (itemId: string) =>

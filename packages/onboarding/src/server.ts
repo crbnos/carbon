@@ -5,11 +5,23 @@
 import type { Database } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { DEFAULT_EXCLUSIONS, TEMPLATE_KEY, TEMPLATE_VERSION } from "./content";
+import type { IntakeAnswers } from "./content/intake";
+import { GO_LIVE_STEP_KEY } from "./content/spine";
 import type { Signals } from "./logic";
+import {
+  complexityBand,
+  complexityFlags,
+  gateDateKey,
+  INTAKE_COLLECTION,
+  INTAKE_TRANSCRIPT_COLLECTION,
+  parseIntakeRows
+} from "./logic";
+import type { IntakeRowPayload } from "./models";
 import type {
   HubContacts,
   HubExclusions,
   HubStatus,
+  ImplementationRowData,
   StateKind,
   Tier
 } from "./types";
@@ -275,6 +287,7 @@ export function updateImplementationHub(
     contacts?: HubContacts;
     signedAt?: string | null;
     signedBy?: string | null;
+    templateVersion?: number;
     userId: string;
   }
 ) {
@@ -287,4 +300,221 @@ export function updateImplementationHub(
       updatedAt: new Date().toISOString()
     } as never)
     .eq("id", companyId);
+}
+
+// ---------------------------------------------------------------------------
+// Intake ("Tell Us How You Run") — versioned snapshot rows + transcripts.
+// ---------------------------------------------------------------------------
+
+export function getImplementationRowsByCollection(
+  client: Client,
+  companyId: string,
+  collection: string
+) {
+  return client
+    .from("implementationRow")
+    .select("id, collection, payload, sortOrder")
+    .eq("companyId", companyId)
+    .eq("collection", collection)
+    .order("sortOrder", { ascending: true });
+}
+
+// Save (or start) the wizard's resumable draft. Answers only ever accumulate
+// into the draft row — nothing existing is touched until completion.
+export async function saveIntakeDraft(
+  client: Client,
+  args: { companyId: string; userId: string; answers: IntakeAnswers }
+) {
+  const rows = await getImplementationRowsByCollection(
+    client,
+    args.companyId,
+    INTAKE_COLLECTION
+  );
+  if (rows.error) return { data: null, error: rows.error };
+
+  const state = parseIntakeRows(
+    (rows.data ?? []) as unknown as ImplementationRowData[]
+  );
+  const payload: IntakeRowPayload = {
+    version: state.draft?.payload.version ?? state.nextVersion,
+    status: "draft",
+    answers: args.answers
+  };
+
+  if (state.draft) {
+    return updateImplementationRow(client, {
+      id: state.draft.rowId,
+      companyId: args.companyId,
+      payload,
+      userId: args.userId
+    });
+  }
+  return insertImplementationRow(client, {
+    companyId: args.companyId,
+    collection: INTAKE_COLLECTION,
+    payload,
+    sortOrder: payload.version,
+    userId: args.userId
+  });
+}
+
+// Complete the intake: snapshot the answers as the new current version, mark
+// Phase 1's gate/steps done, seed the go-live date into the timeline, and
+// record the owner. Sequential idempotent writes — re-completing is safe.
+export async function completeIntake(
+  client: Client,
+  args: { companyId: string; userId: string; answers: IntakeAnswers }
+) {
+  const rows = await getImplementationRowsByCollection(
+    client,
+    args.companyId,
+    INTAKE_COLLECTION
+  );
+  if (rows.error) return { data: null, error: rows.error };
+  const state = parseIntakeRows(
+    (rows.data ?? []) as unknown as ImplementationRowData[]
+  );
+
+  const payload: IntakeRowPayload = {
+    version: state.draft?.payload.version ?? state.nextVersion,
+    status: "completed",
+    answers: args.answers,
+    band: complexityBand(args.answers),
+    flags: complexityFlags(args.answers).map((f) => f.key),
+    completedAt: new Date().toISOString()
+  };
+
+  const saved = state.draft
+    ? await updateImplementationRow(client, {
+        id: state.draft.rowId,
+        companyId: args.companyId,
+        payload,
+        userId: args.userId
+      })
+    : await insertImplementationRow(client, {
+        companyId: args.companyId,
+        collection: INTAKE_COLLECTION,
+        payload,
+        sortOrder: payload.version,
+        userId: args.userId
+      });
+  if (saved.error) return { data: null, error: saved.error };
+
+  // Phase 1's gate + the wizard-owned steps complete themselves — the product
+  // verifies its own work; there is nothing for the customer to tick.
+  const done: { itemKey: string; kind: StateKind }[] = [
+    { itemKey: "gate:intake", kind: "gate" },
+    { itemKey: "prod:intake-answers", kind: "productStep" },
+    { itemKey: "prod:intake-commit", kind: "productStep" },
+    { itemKey: "task:intake-answers", kind: "task" },
+    { itemKey: "task:intake-commit", kind: "task" }
+  ];
+  for (const item of done) {
+    const result = await upsertCheckState(client, {
+      companyId: args.companyId,
+      itemKey: item.itemKey,
+      kind: item.kind,
+      value: "done",
+      userId: args.userId
+    });
+    if (result.error) return { data: null, error: result.error };
+  }
+
+  // The go-live date anchors the countdown + timeline (the switch gate's date).
+  if (args.answers.goLiveDate) {
+    const result = await upsertFieldValue(client, {
+      companyId: args.companyId,
+      fieldKey: gateDateKey(GO_LIVE_STEP_KEY),
+      value: args.answers.goLiveDate,
+      userId: args.userId
+    });
+    if (result.error) return { data: null, error: result.error };
+  }
+
+  // Record the owner on the hub contacts (merged, not replaced).
+  if (args.answers.ownerName || args.answers.ownerEmail) {
+    const hub = await getImplementationHub(client, args.companyId);
+    if (hub.error) return { data: null, error: hub.error };
+    const contacts =
+      ((hub.data?.contacts as unknown as HubContacts) ?? {}) satisfies HubContacts;
+    const result = await updateImplementationHub(client, args.companyId, {
+      contacts: {
+        ...contacts,
+        owner: args.answers.ownerName ?? contacts.owner,
+        ownerEmail: args.answers.ownerEmail ?? contacts.ownerEmail
+      },
+      status: "active",
+      userId: args.userId
+    });
+    if (result.error) return { data: null, error: result.error };
+  }
+
+  return { data: { version: payload.version }, error: null };
+}
+
+// Persist a voice utterance or AI-clarifier exchange — Carbon's sales team
+// reads these later, so every one is kept.
+export async function insertIntakeTranscript(
+  client: Client,
+  args: {
+    companyId: string;
+    userId: string;
+    questionKey: string;
+    source: "voice" | "clarifier";
+    transcript: string;
+  }
+) {
+  const rows = await getImplementationRowsByCollection(
+    client,
+    args.companyId,
+    INTAKE_COLLECTION
+  );
+  const state = parseIntakeRows(
+    (rows.data ?? []) as unknown as ImplementationRowData[]
+  );
+  const intakeVersion =
+    state.draft?.payload.version ??
+    state.current?.payload.version ??
+    state.nextVersion;
+
+  return insertImplementationRow(client, {
+    companyId: args.companyId,
+    collection: INTAKE_TRANSCRIPT_COLLECTION,
+    payload: {
+      intakeVersion,
+      questionKey: args.questionKey,
+      source: args.source,
+      transcript: args.transcript
+    },
+    userId: args.userId
+  });
+}
+
+// Reset a hub enrolled under an older template to the current one: wipe the
+// per-company state layer and start the journey at Phase 1. Chase-approved for
+// the v1 → v2 move; runs lazily (and idempotently) from the layout loader with
+// the service-role client.
+export async function resetImplementationForTemplate(
+  serviceRole: Client,
+  args: { companyId: string; userId: string }
+) {
+  const tables = [
+    "implementationCheckState",
+    "implementationFieldValue",
+    "implementationRow"
+  ] as const;
+  for (const table of tables) {
+    const result = await serviceRole
+      .from(table)
+      .delete()
+      .eq("companyId", args.companyId);
+    if (result.error) return { data: null, error: result.error };
+  }
+  const updated = await updateImplementationHub(serviceRole, args.companyId, {
+    templateVersion: TEMPLATE_VERSION,
+    status: "tailoring",
+    userId: args.userId
+  });
+  if (updated.error) return { data: null, error: updated.error };
+  return { data: { reset: true }, error: null };
 }

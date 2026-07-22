@@ -11,6 +11,12 @@ import {
   useRef
 } from "react";
 import { useStore } from "zustand";
+import {
+  currentAnswers,
+  INTAKE_COLLECTION,
+  parseIntakeRows,
+  tailorPlan
+} from "../../logic";
 import type {
   GateValue,
   HubContacts,
@@ -112,6 +118,28 @@ export function useRows(collection: string) {
   return useMemo(
     () => rows.filter((r) => r.collection === collection),
     [rows, collection]
+  );
+}
+
+// The intake state (versioned answers + draft) parsed from its rows.
+export function useIntakeState() {
+  const rows = useRows(INTAKE_COLLECTION);
+  return useMemo(() => parseIntakeRows(rows), [rows]);
+}
+
+// The tailoring computed from the current answers — what the plan hides, defers,
+// and says. Authority order: the app's forced modules encode observed product
+// state (accounting disabled forces "acc" out), so accounting counts as enabled
+// exactly when the app did NOT force it out.
+export function useTailoring() {
+  const intake = useIntakeState();
+  const forcedModules = useHub((s) => s.forcedModules);
+  return useMemo(
+    () =>
+      tailorPlan(currentAnswers(intake), {
+        accountingEnabled: !forcedModules.includes("acc")
+      }),
+    [intake, forcedModules]
   );
 }
 

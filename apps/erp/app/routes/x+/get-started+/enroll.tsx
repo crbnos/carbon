@@ -112,5 +112,6 @@ export async function action({ request }: ActionFunctionArgs) {
     });
   }
 
-  throw redirect(path.to.getStarted);
+  // Phase 1 starts immediately: enrollment lands in "Tell Us How You Run".
+  throw redirect(path.to.getStartedIntake);
 }
