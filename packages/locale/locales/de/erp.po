@@ -2125,6 +2125,9 @@ msgstr "Fachleute"
 msgid "Change"
 msgstr "Ändern"
 
+msgid "Change Document"
+msgstr ""
+
 msgid "Change Inspection Document"
 msgstr "Inspektionsdokument ändern"
 
@@ -2308,6 +2311,9 @@ msgstr "Einklappen"
 
 msgid "Collapse all"
 msgstr "Alle einklappen"
+
+msgid "Collapse characteristics"
+msgstr ""
 
 msgid "Collapse Costs"
 msgstr "Kosten ausblenden"
@@ -2998,9 +3004,6 @@ msgstr "Änderungsanweisung erstellen"
 
 msgid "Create Issue"
 msgstr "Problem erstellen"
-
-msgid "Create Issue from Inspection"
-msgstr "Problem aus Inspektion erstellen"
 
 msgid "Create Jobs"
 msgstr "Aufträge erstellen"
@@ -4226,6 +4229,9 @@ msgstr "Zum Neuordnen ziehen"
 msgid "Drag to resize diagram and features"
 msgstr "Ziehen Sie, um das Diagramm und die Funktionen zu ändern"
 
+msgid "Drag to resize drawing and characteristics"
+msgstr ""
+
 msgid "Drag to zoom"
 msgstr "Zum Zoomen ziehen"
 
@@ -4972,6 +4978,9 @@ msgstr "Erweitern {0}"
 
 msgid "Expand all"
 msgstr "Alle erweitern"
+
+msgid "Expand characteristics"
+msgstr ""
 
 msgid "Expand Costs"
 msgstr "Kosten erweitern"

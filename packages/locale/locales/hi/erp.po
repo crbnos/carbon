@@ -2125,6 +2125,9 @@ msgstr "चैंपियन"
 msgid "Change"
 msgstr "बदलें"
 
+msgid "Change Document"
+msgstr ""
+
 msgid "Change Inspection Document"
 msgstr "निरीक्षण दस्तावेज़ बदलें"
 
@@ -2308,6 +2311,9 @@ msgstr "संक्षिप्त करें"
 
 msgid "Collapse all"
 msgstr "सभी को संक्षिप्त करें"
+
+msgid "Collapse characteristics"
+msgstr ""
 
 msgid "Collapse Costs"
 msgstr "लागत को संक्षिप्त करें"
@@ -2998,9 +3004,6 @@ msgstr "परिवर्तन आदेश बनाएं"
 
 msgid "Create Issue"
 msgstr "समस्या बनाएं"
-
-msgid "Create Issue from Inspection"
-msgstr "निरीक्षण से समस्या बनाएं"
 
 msgid "Create Jobs"
 msgstr "नौकरियां बनाएं"
@@ -4226,6 +4229,9 @@ msgstr "पुनः व्यवस्थित करने के लिए �
 msgid "Drag to resize diagram and features"
 msgstr "आरेख और सुविधाओं को पुनः आकार देने के लिए खींचें"
 
+msgid "Drag to resize drawing and characteristics"
+msgstr ""
+
 msgid "Drag to zoom"
 msgstr "ज़ूम करने के लिए ड्रैग करें"
 
@@ -4972,6 +4978,9 @@ msgstr "विस्तार करें {0}"
 
 msgid "Expand all"
 msgstr "सभी को विस्तृत करें"
+
+msgid "Expand characteristics"
+msgstr ""
 
 msgid "Expand Costs"
 msgstr "लागत विस्तृत करें"

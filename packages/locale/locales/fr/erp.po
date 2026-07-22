@@ -2125,6 +2125,9 @@ msgstr "Champions"
 msgid "Change"
 msgstr "Modifier"
 
+msgid "Change Document"
+msgstr ""
+
 msgid "Change Inspection Document"
 msgstr "Modifier le document d'inspection"
 
@@ -2308,6 +2311,9 @@ msgstr "Réduire"
 
 msgid "Collapse all"
 msgstr "Réduire tout"
+
+msgid "Collapse characteristics"
+msgstr ""
 
 msgid "Collapse Costs"
 msgstr "Réduire les coûts"
@@ -2998,9 +3004,6 @@ msgstr "Créer un ordre de modification"
 
 msgid "Create Issue"
 msgstr "Créer un problème"
-
-msgid "Create Issue from Inspection"
-msgstr "Créer un problème à partir de l'inspection"
 
 msgid "Create Jobs"
 msgstr "Créer des tâches"
@@ -4226,6 +4229,9 @@ msgstr "Glisser pour réorganiser"
 msgid "Drag to resize diagram and features"
 msgstr "Faites glisser pour redimensionner le diagramme et les fonctionnalités"
 
+msgid "Drag to resize drawing and characteristics"
+msgstr ""
+
 msgid "Drag to zoom"
 msgstr "Glisser pour zoomer"
 
@@ -4972,6 +4978,9 @@ msgstr "Développer {0}"
 
 msgid "Expand all"
 msgstr "Développer tout"
+
+msgid "Expand characteristics"
+msgstr ""
 
 msgid "Expand Costs"
 msgstr "Développer les coûts"

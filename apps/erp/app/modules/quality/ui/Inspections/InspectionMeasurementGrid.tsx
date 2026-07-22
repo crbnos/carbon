@@ -51,6 +51,9 @@ type InspectionMeasurementGridProps = {
   onActiveFeatureChange: (id: string | null) => void;
   onAddSample: () => void;
   onMeasurementSaved: (result: MeasurementSaveResult) => void;
+  // Rendered in the Table header (e.g. the collapse/expand toggle when the
+  // grid is the bottom panel of the execution view).
+  primaryAction?: React.ReactNode;
 };
 
 const sampleKey = (columnIndex: number) => `sample-${columnIndex}`;
@@ -77,7 +80,8 @@ const InspectionMeasurementGrid = ({
   activeFeatureId,
   onActiveFeatureChange,
   onAddSample,
-  onMeasurementSaved
+  onMeasurementSaved,
+  primaryAction
 }: InspectionMeasurementGridProps) => {
   const { t } = useLingui();
 
@@ -620,6 +624,7 @@ const InspectionMeasurementGrid = ({
           row.featureId === activeFeatureId ? "bg-accent/40" : undefined
         }
         title={t`Characteristics`}
+        primaryAction={primaryAction}
         withInlineEditing={!isReadOnly}
         forceEditMode={!isReadOnly}
       />

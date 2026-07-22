@@ -2125,6 +2125,9 @@ msgstr "Чемпионы"
 msgid "Change"
 msgstr "Изменить"
 
+msgid "Change Document"
+msgstr ""
+
 msgid "Change Inspection Document"
 msgstr "Изменить документ контроля"
 
@@ -2308,6 +2311,9 @@ msgstr "Свернуть"
 
 msgid "Collapse all"
 msgstr "Свернуть все"
+
+msgid "Collapse characteristics"
+msgstr ""
 
 msgid "Collapse Costs"
 msgstr "Свернуть затраты"
@@ -2998,9 +3004,6 @@ msgstr "Создать приказ об изменении"
 
 msgid "Create Issue"
 msgstr "Создать проблему"
-
-msgid "Create Issue from Inspection"
-msgstr "Создать проблему из проверки"
 
 msgid "Create Jobs"
 msgstr "Создать задания"
@@ -4226,6 +4229,9 @@ msgstr "Перетащите для переупорядочивания"
 msgid "Drag to resize diagram and features"
 msgstr "Перетащите, чтобы изменить размер диаграммы и функций"
 
+msgid "Drag to resize drawing and characteristics"
+msgstr ""
+
 msgid "Drag to zoom"
 msgstr "Перетащите для масштабирования"
 
@@ -4972,6 +4978,9 @@ msgstr "Развернуть {0}"
 
 msgid "Expand all"
 msgstr "Развернуть все"
+
+msgid "Expand characteristics"
+msgstr ""
 
 msgid "Expand Costs"
 msgstr "Развернуть затраты"

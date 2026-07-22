@@ -2125,6 +2125,9 @@ msgstr "Şampiyonlar"
 msgid "Change"
 msgstr "Değiştir"
 
+msgid "Change Document"
+msgstr ""
+
 msgid "Change Inspection Document"
 msgstr "İnceleme Belgesini Değiştir"
 
@@ -2308,6 +2311,9 @@ msgstr "Daralt"
 
 msgid "Collapse all"
 msgstr "Tümünü daralt"
+
+msgid "Collapse characteristics"
+msgstr ""
 
 msgid "Collapse Costs"
 msgstr "Maliyetleri Daralt"
@@ -2998,9 +3004,6 @@ msgstr "Değişiklik Emri Oluştur"
 
 msgid "Create Issue"
 msgstr "Sorun Oluştur"
-
-msgid "Create Issue from Inspection"
-msgstr "Muayeneeden Hata Oluştur"
 
 msgid "Create Jobs"
 msgstr "İş Oluştur"
@@ -4226,6 +4229,9 @@ msgstr "Yeniden sıralamak için sürükleyin"
 msgid "Drag to resize diagram and features"
 msgstr "Şemayı ve özellikleri yeniden boyutlandırmak için sürükleyin"
 
+msgid "Drag to resize drawing and characteristics"
+msgstr ""
+
 msgid "Drag to zoom"
 msgstr "Yakınlaştırmak için sürükleyin"
 
@@ -4972,6 +4978,9 @@ msgstr "Genişlet {0}"
 
 msgid "Expand all"
 msgstr "Tümünü genişlet"
+
+msgid "Expand characteristics"
+msgstr ""
 
 msgid "Expand Costs"
 msgstr "Maliyetleri Genişlet"

@@ -7,6 +7,7 @@ import {
   Button,
   ClientOnly,
   HStack,
+  IconButton,
   Modal,
   ModalBody,
   ModalContent,
@@ -14,9 +15,6 @@ import {
   ModalHeader,
   ModalOverlay,
   ModalTitle,
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
   Select,
   SelectContent,
   SelectItem,
@@ -33,9 +31,12 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState
 } from "react";
 import {
+  LuChevronDown,
+  LuChevronUp,
   LuCircleCheck,
   LuCircleX,
   LuFileText,
@@ -66,6 +67,26 @@ import RejectLotModal from "./RejectLotModal";
 import ScanInspectionSample from "./ScanInspectionSample";
 
 const InspectionDrawingPane = lazy(() => import("./InspectionDrawingPane"));
+
+// Vertical-stack sizing, mirrored from InspectionDocumentEditor: the PDF pane
+// keeps a pinned height while the characteristics grid is expanded; a draggable
+// splitter trades space between them.
+const STACK_SPLITTER_H = 8;
+const MIN_PDF_PANE_PX = 160;
+
+/** When the grid is expanded it keeps at least half the stack; PDF height is capped accordingly. */
+function clampPdfPaneHeight(
+  pdfPx: number,
+  stackH: number,
+  gridExpanded: boolean
+): number {
+  if (!gridExpanded || stackH <= STACK_SPLITTER_H + MIN_PDF_PANE_PX) {
+    return Math.max(MIN_PDF_PANE_PX, pdfPx);
+  }
+  const minGrid = stackH * 0.5;
+  const maxPdf = Math.max(MIN_PDF_PANE_PX, stackH - STACK_SPLITTER_H - minGrid);
+  return Math.min(maxPdf, Math.max(MIN_PDF_PANE_PX, pdfPx));
+}
 
 export type InspectionViewProps = {
   inspection: InspectionRow;
@@ -133,6 +154,74 @@ const InspectionView = ({
   const documentSwitchDisclosure = useDisclosure();
 
   const [activeFeatureId, setActiveFeatureId] = useState<string | null>(null);
+
+  // PDF-over-grid stack (InspectionDocumentEditor's layout model).
+  const [gridExpanded, setGridExpanded] = useState(true);
+  const [pdfPaneHeightPx, setPdfPaneHeightPx] = useState(360);
+  const [stackHeightPx, setStackHeightPx] = useState(0);
+  const [isResizingSplit, setIsResizingSplit] = useState(false);
+  const splitDragRef = useRef<{ startY: number; startPdfPx: number } | null>(
+    null
+  );
+  // Until the user drags the splitter, the PDF takes ~45% of the measured
+  // stack (capped by the grid's half-stack minimum) instead of a fixed pixel
+  // default — portrait drawings get a usable slice on tall viewports.
+  const hasUserResizedRef = useRef(false);
+  const stackRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!stackRef.current) return;
+    const el = stackRef.current;
+    const ro = new ResizeObserver(() => {
+      const h = el.clientHeight;
+      setStackHeightPx(h);
+      setPdfPaneHeightPx((prev) =>
+        clampPdfPaneHeight(
+          hasUserResizedRef.current ? prev : h * 0.45,
+          h,
+          gridExpanded
+        )
+      );
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [gridExpanded]);
+
+  useEffect(() => {
+    if (!isResizingSplit) return;
+    const onMove = (e: MouseEvent) => {
+      const start = splitDragRef.current;
+      if (!start) return;
+      const dy = e.clientY - start.startY;
+      setPdfPaneHeightPx(
+        clampPdfPaneHeight(start.startPdfPx + dy, stackHeightPx, gridExpanded)
+      );
+    };
+    const onUp = () => {
+      setIsResizingSplit(false);
+      splitDragRef.current = null;
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+  }, [isResizingSplit, stackHeightPx, gridExpanded]);
+
+  const onSplitResizeMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      if (!gridExpanded) return;
+      e.preventDefault();
+      hasUserResizedRef.current = true;
+      splitDragRef.current = {
+        startY: e.clientY,
+        startPdfPx: pdfPaneHeightPx
+      };
+      setIsResizingSplit(true);
+    },
+    [gridExpanded, pdfPaneHeightPx]
+  );
 
   // Per-cell saves are quiet (no revalidation), so measurement + derived
   // sample statuses are mirrored locally from the save responses and merged
@@ -349,74 +438,80 @@ const InspectionView = ({
         ? ("red" as const)
         : ("secondary" as const);
 
+  const planSummary =
+    inspection.samplingPlanType === "AQL"
+      ? `AQL ${inspection.aql ?? ""} · Lvl ${inspection.inspectionLevel ?? ""} · ${inspection.severity ?? ""}`
+      : inspection.samplingPlanType;
+
+  const metaLine = [
+    `${displayReadableId} · ${displayItemName}`,
+    [sourceDocumentReadableId, supplierName].filter(Boolean).join(" — "),
+    planSummary,
+    `${inspected} / ${inspection.sampleSize} · Ac ${inspection.acceptanceNumber} · Re ${inspection.rejectionNumber}${inspection.codeLetter ? ` · ${inspection.codeLetter}` : ""}`,
+    documentName ?? null
+  ]
+    .filter(Boolean)
+    .join("  ·  ");
+
   return (
     <div className="flex h-full flex-col overflow-hidden">
-      {/* ── Header ── */}
-      <div className="shrink-0 border-b border-border bg-card px-4 py-3">
-        <HStack className="w-full items-start justify-between">
-          <VStack spacing={0}>
-            <HStack spacing={2} className="items-center">
-              <h1 className="text-base font-semibold">
-                {inspection.inspectionId}
-              </h1>
-              <Badge variant={statusBadgeVariant}>{inspection.status}</Badge>
-            </HStack>
-            <span className="text-sm text-muted-foreground">
-              {displayReadableId} · {displayItemName}
-            </span>
-          </VStack>
-          <div className="grid grid-cols-2 gap-x-8 gap-y-1 text-sm md:grid-cols-4">
-            <Kv
-              label={
-                inspection.sourceDocument === "Receipt" ? t`Receipt` : t`Source`
-              }
-              value={sourceDocumentReadableId ?? ""}
-              sub={supplierName ?? undefined}
-            />
-            <Kv
-              label={t`Plan`}
-              value={
-                inspection.samplingPlanType === "AQL"
-                  ? `AQL ${inspection.aql ?? ""} · Lvl ${inspection.inspectionLevel ?? ""} · ${inspection.severity ?? ""}`
-                  : inspection.samplingPlanType
-              }
-              sub={
-                inspection.samplingStandard === "ANSI_Z1_4"
-                  ? "ANSI/ASQ Z1.4"
-                  : "ISO 2859-1"
-              }
-            />
-            <Kv
-              label={t`Sample`}
-              value={`${inspected} / ${inspection.sampleSize}`}
-              sub={`Ac ${inspection.acceptanceNumber} · Re ${inspection.rejectionNumber}${inspection.codeLetter ? ` · ${inspection.codeLetter}` : ""}`}
-            />
-            <Kv
-              label={t`Document`}
-              value={documentName ?? t`None`}
-              sub={
-                canUpdate && !lotClosed && !hasMeasurements
-                  ? undefined
-                  : undefined
-              }
-              action={
-                canUpdate && !lotClosed && !hasMeasurements ? (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-5 px-1 text-xs"
-                    leftIcon={<LuFileText />}
-                    onClick={documentSwitchDisclosure.onOpen}
-                  >
-                    <Trans>Change</Trans>
-                  </Button>
-                ) : undefined
-              }
-            />
-          </div>
+      {/* Header bar — mirrors InspectionDocumentEditor's header */}
+      <div className="flex min-h-[50px] flex-shrink-0 flex-wrap items-center justify-between gap-x-3 gap-y-2 overflow-x-auto border-b border-border bg-card px-4 py-2 scrollbar-hide dark:border-none dark:shadow-[inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1),0px_0px_4px_rgba(0,_0,_0,_0.08)]">
+        <div className="min-w-0 flex-1 pr-2">
+          <HStack spacing={2} className="items-center">
+            <h1 className="truncate text-base font-semibold">
+              {inspection.inspectionId}
+            </h1>
+            <Badge variant={statusBadgeVariant}>{inspection.status}</Badge>
+          </HStack>
+          <p className="truncate text-xs text-muted-foreground">{metaLine}</p>
+        </div>
+        <HStack spacing={2} className="flex-shrink-0 flex-wrap justify-end">
+          <Button
+            variant="secondary"
+            leftIcon={<LuShieldAlert />}
+            asChild
+            isDisabled={failedTrackedEntityIds.length === 0}
+          >
+            <a href={newIssueHref} target="_blank" rel="noreferrer">
+              <Trans>Create Issue</Trans>
+            </a>
+          </Button>
+          {canUpdate && !lotClosed && !hasMeasurements && (
+            <Button
+              variant="secondary"
+              leftIcon={<LuFileText />}
+              onClick={documentSwitchDisclosure.onOpen}
+            >
+              <Trans>Change Document</Trans>
+            </Button>
+          )}
+          <Button
+            variant="secondary"
+            onClick={partialConfirmDisclosure.onOpen}
+            isDisabled={!canUpdate || !canPartial}
+          >
+            <Trans>Partial</Trans>
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={rejectConfirmDisclosure.onOpen}
+            isDisabled={!canUpdate || !canReject}
+          >
+            <Trans>Reject Lot</Trans>
+          </Button>
+          <Button
+            onClick={acceptConfirmDisclosure.onOpen}
+            isDisabled={!canUpdate || !canAccept}
+          >
+            <Trans>Accept Lot</Trans>
+          </Button>
         </HStack>
-        {showFourEyesWarning && (
-          <Alert variant="warning" className="mt-3">
+      </div>
+
+      {showFourEyesWarning && (
+        <div className="shrink-0 px-4 pt-2">
+          <Alert variant="warning">
             <LuTriangleAlert className="size-4" />
             <AlertTitle>
               <Trans>You received this lot</Trans>
@@ -428,57 +523,125 @@ const InspectionView = ({
               </Trans>
             </AlertDescription>
           </Alert>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* ── Body ── */}
       {hasDocument ? (
-        <ResizablePanelGroup direction="horizontal" className="min-h-0 flex-1">
-          <ResizablePanel defaultSize={45} minSize={25}>
-            <ClientOnly
-              fallback={
-                <div className="flex h-full items-center justify-center">
-                  <Spinner />
-                </div>
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 pb-4 pt-2">
+          <div
+            ref={stackRef}
+            className="flex min-h-0 flex-1 flex-col gap-0 overflow-hidden"
+          >
+            {/* PDF viewer — pinned height while the grid is expanded */}
+            <div
+              className={`flex min-h-0 min-w-full flex-col overflow-hidden rounded-lg border bg-muted ${
+                gridExpanded ? "shrink-0" : "min-h-[220px] flex-1"
+              }`}
+              style={{
+                ...(gridExpanded ? { height: pdfPaneHeightPx } : undefined),
+                minWidth: "100%"
+              }}
+            >
+              <ClientOnly
+                fallback={
+                  <div className="flex h-full items-center justify-center">
+                    <Spinner />
+                  </div>
+                }
+              >
+                {() => (
+                  <Suspense
+                    fallback={
+                      <div className="flex h-full items-center justify-center">
+                        <Spinner />
+                      </div>
+                    }
+                  >
+                    <InspectionDrawingPane
+                      pdfUrl={pdfUrl!}
+                      balloons={drawingBalloons}
+                      activeFeatureId={activeFeatureId}
+                      onBalloonClick={setActiveFeatureId}
+                    />
+                  </Suspense>
+                )}
+              </ClientOnly>
+            </div>
+
+            {gridExpanded ? (
+              <div
+                role="separator"
+                aria-orientation="horizontal"
+                aria-label={t`Drag to resize drawing and characteristics`}
+                aria-valuenow={Math.round(pdfPaneHeightPx)}
+                className={`group flex h-2 shrink-0 cursor-row-resize touch-none items-center justify-center rounded-md px-2 hover:bg-muted/80 ${
+                  isResizingSplit ? "bg-muted" : ""
+                }`}
+                onMouseDown={onSplitResizeMouseDown}
+              >
+                <span className="h-1 w-14 shrink-0 rounded-full bg-muted-foreground/40 group-hover:bg-muted-foreground/65" />
+              </div>
+            ) : null}
+
+            {/* Characteristics grid — collapsible bottom panel */}
+            <div
+              className={
+                gridExpanded
+                  ? "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-lg bg-card"
+                  : "flex max-h-[14rem] min-w-0 shrink-0 flex-col overflow-hidden rounded-lg bg-card"
+              }
+              style={
+                gridExpanded && stackHeightPx > 0
+                  ? { minHeight: stackHeightPx * 0.5 }
+                  : undefined
               }
             >
-              {() => (
-                <Suspense
-                  fallback={
-                    <div className="flex h-full items-center justify-center">
-                      <Spinner />
-                    </div>
+              <div
+                className={
+                  gridExpanded
+                    ? "min-h-0 flex-1 overflow-auto"
+                    : "overflow-hidden"
+                }
+              >
+                <InspectionMeasurementGrid
+                  inspectionId={inspection.id}
+                  isReadOnly={!canUpdate || lotClosed}
+                  isSerial={isSerial}
+                  features={features}
+                  samples={samples}
+                  measurements={measurements}
+                  maxSampleSize={maxSampleSize}
+                  activeFeatureId={activeFeatureId}
+                  onActiveFeatureChange={setActiveFeatureId}
+                  onAddSample={scannerDisclosure.onOpen}
+                  onMeasurementSaved={onMeasurementSaved}
+                  primaryAction={
+                    <IconButton
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      aria-expanded={gridExpanded}
+                      aria-label={
+                        gridExpanded
+                          ? t`Collapse characteristics`
+                          : t`Expand characteristics`
+                      }
+                      icon={
+                        gridExpanded ? (
+                          <LuChevronDown className="h-4 w-4" />
+                        ) : (
+                          <LuChevronUp className="h-4 w-4" />
+                        )
+                      }
+                      onClick={() => setGridExpanded((v) => !v)}
+                    />
                   }
-                >
-                  <InspectionDrawingPane
-                    pdfUrl={pdfUrl!}
-                    balloons={drawingBalloons}
-                    activeFeatureId={activeFeatureId}
-                    onBalloonClick={setActiveFeatureId}
-                  />
-                </Suspense>
-              )}
-            </ClientOnly>
-          </ResizablePanel>
-          <ResizableHandle withHandle />
-          <ResizablePanel defaultSize={55} minSize={30}>
-            <div className="flex h-full min-h-0 flex-col overflow-auto p-2">
-              <InspectionMeasurementGrid
-                inspectionId={inspection.id}
-                isReadOnly={!canUpdate || lotClosed}
-                isSerial={isSerial}
-                features={features}
-                samples={samples}
-                measurements={measurements}
-                maxSampleSize={maxSampleSize}
-                activeFeatureId={activeFeatureId}
-                onActiveFeatureChange={setActiveFeatureId}
-                onAddSample={scannerDisclosure.onOpen}
-                onMeasurementSaved={onMeasurementSaved}
-              />
+                />
+              </div>
             </div>
-          </ResizablePanel>
-        </ResizablePanelGroup>
+          </div>
+        </div>
       ) : (
         <div className="min-h-0 flex-1 overflow-auto p-4">
           <VStack spacing={4} className="mx-auto w-full max-w-4xl">
@@ -583,44 +746,6 @@ const InspectionView = ({
           </VStack>
         </div>
       )}
-
-      {/* ── Footer ── */}
-      <div className="shrink-0 border-t border-border bg-card px-4 py-3">
-        <HStack spacing={2} className="w-full justify-between">
-          <Button
-            variant="secondary"
-            leftIcon={<LuShieldAlert />}
-            asChild
-            isDisabled={failedTrackedEntityIds.length === 0}
-          >
-            <a href={newIssueHref} target="_blank" rel="noreferrer">
-              <Trans>Create Issue from Inspection</Trans>
-            </a>
-          </Button>
-          <HStack spacing={2}>
-            <Button
-              variant="secondary"
-              onClick={partialConfirmDisclosure.onOpen}
-              isDisabled={!canUpdate || !canPartial}
-            >
-              <Trans>Partial</Trans>
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={rejectConfirmDisclosure.onOpen}
-              isDisabled={!canUpdate || !canReject}
-            >
-              <Trans>Reject Lot</Trans>
-            </Button>
-            <Button
-              onClick={acceptConfirmDisclosure.onOpen}
-              isDisabled={!canUpdate || !canAccept}
-            >
-              <Trans>Accept Lot</Trans>
-            </Button>
-          </HStack>
-        </HStack>
-      </div>
 
       {scannerDisclosure.isOpen && (
         <ScanInspectionSample
@@ -789,31 +914,6 @@ function DocumentSwitchModal({
         </ModalFooter>
       </ModalContent>
     </Modal>
-  );
-}
-
-function Kv({
-  label,
-  value,
-  sub,
-  action
-}: {
-  label: string;
-  value: string;
-  sub?: string;
-  action?: React.ReactNode;
-}) {
-  return (
-    <div className="flex flex-col gap-0">
-      <HStack spacing={1} className="items-center">
-        <span className="text-xs text-muted-foreground">{label}</span>
-        {action}
-      </HStack>
-      <span className="truncate text-sm font-medium">{value || "—"}</span>
-      {sub && (
-        <span className="truncate text-xs text-muted-foreground">{sub}</span>
-      )}
-    </div>
   );
 }
 

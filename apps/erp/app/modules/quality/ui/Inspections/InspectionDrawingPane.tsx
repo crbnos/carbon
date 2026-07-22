@@ -1,4 +1,4 @@
-import { Button, HStack, IconButton } from "@carbon/react";
+import { IconButton } from "@carbon/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { LuChevronLeft, LuChevronRight } from "react-icons/lu";
 import { Circle, Group, Layer, Stage, Text } from "react-konva";
@@ -87,32 +87,31 @@ const InspectionDrawingPane = ({
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
-      <HStack className="shrink-0 items-center justify-between border-b border-border px-2 py-1.5">
-        <span className="text-xs text-muted-foreground">Drawing</span>
-        {numPages > 1 && (
-          <HStack spacing={1} className="items-center">
-            <IconButton
-              aria-label="Previous page"
-              variant="ghost"
-              size="sm"
-              icon={<LuChevronLeft />}
-              isDisabled={page <= 1}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-            />
-            <span className="text-xs tabular-nums text-muted-foreground">
-              {page} / {numPages}
-            </span>
-            <IconButton
-              aria-label="Next page"
-              variant="ghost"
-              size="sm"
-              icon={<LuChevronRight />}
-              isDisabled={page >= numPages}
-              onClick={() => setPage((p) => Math.min(numPages, p + 1))}
-            />
-          </HStack>
-        )}
-      </HStack>
+      {numPages > 1 && (
+        <div className="flex shrink-0 items-center justify-center gap-3 border-b border-border bg-card px-3 py-2.5 shadow-sm">
+          <IconButton
+            type="button"
+            aria-label="Previous page"
+            variant="secondary"
+            size="sm"
+            icon={<LuChevronLeft className="h-4 w-4" />}
+            isDisabled={page <= 1}
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+          />
+          <span className="min-w-[8.5rem] select-none text-center text-sm font-medium tabular-nums text-foreground">
+            Page {page} of {numPages}
+          </span>
+          <IconButton
+            type="button"
+            aria-label="Next page"
+            variant="secondary"
+            size="sm"
+            icon={<LuChevronRight className="h-4 w-4" />}
+            isDisabled={page >= numPages}
+            onClick={() => setPage((p) => Math.min(numPages, p + 1))}
+          />
+        </div>
+      )}
       <div ref={containerRef} className="relative flex-1 overflow-auto">
         <div
           className="relative select-none"
@@ -201,10 +200,8 @@ const InspectionDrawingPane = ({
         </div>
       </div>
       {pdfUrl === "" && (
-        <div className="flex flex-1 items-center justify-center">
-          <Button variant="secondary" isDisabled>
-            No drawing available
-          </Button>
+        <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
+          No drawing available
         </div>
       )}
     </div>

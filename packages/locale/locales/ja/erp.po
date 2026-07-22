@@ -2125,6 +2125,9 @@ msgstr "チャンピオン"
 msgid "Change"
 msgstr "変更"
 
+msgid "Change Document"
+msgstr ""
+
 msgid "Change Inspection Document"
 msgstr "検査ドキュメントを変更"
 
@@ -2308,6 +2311,9 @@ msgstr "折りたたむ"
 
 msgid "Collapse all"
 msgstr "すべて折りたたむ"
+
+msgid "Collapse characteristics"
+msgstr ""
 
 msgid "Collapse Costs"
 msgstr "コストを折りたたむ"
@@ -2998,9 +3004,6 @@ msgstr "変更指示を作成"
 
 msgid "Create Issue"
 msgstr "問題を作成"
-
-msgid "Create Issue from Inspection"
-msgstr "検査から問題を作成"
 
 msgid "Create Jobs"
 msgstr "ジョブを作成"
@@ -4226,6 +4229,9 @@ msgstr "ドラッグして並べ替え"
 msgid "Drag to resize diagram and features"
 msgstr "図と機能をリサイズするにはドラッグしてください"
 
+msgid "Drag to resize drawing and characteristics"
+msgstr ""
+
 msgid "Drag to zoom"
 msgstr "ズームするにはドラッグしてください"
 
@@ -4972,6 +4978,9 @@ msgstr "展開 {0}"
 
 msgid "Expand all"
 msgstr "すべて展開"
+
+msgid "Expand characteristics"
+msgstr ""
 
 msgid "Expand Costs"
 msgstr "コストを展開"
