@@ -34,6 +34,7 @@ type SupplierProcessFormProps = {
   initialValues: z.infer<typeof supplierProcessValidator>;
   type?: "drawer" | "modal";
   open?: boolean;
+  originalProcessId?: string;
   onClose: () => void;
 };
 
@@ -41,6 +42,7 @@ const SupplierProcessForm = ({
   initialValues,
   type = "drawer",
   open = true,
+  originalProcessId,
   onClose
 }: SupplierProcessFormProps) => {
   const { t } = useLingui();
@@ -105,6 +107,9 @@ const SupplierProcessForm = ({
             <ModalDrawerBody>
               <Hidden name="id" />
               <Hidden name="type" value={type} />
+              {originalProcessId && (
+                <Hidden name="originalProcessId" value={originalProcessId} />
+              )}
               {supplierId && <Hidden name="supplierId" value={supplierId} />}
               <VStack spacing={4}>
                 {supplierId === undefined && (

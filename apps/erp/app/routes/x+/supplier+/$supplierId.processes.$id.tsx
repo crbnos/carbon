@@ -74,10 +74,18 @@ export async function clientAction({
     return validationError(validation.error);
   }
 
-  // Invalidate supplier processes cache for this process
-  if (validation.data.processId) {
+  const originalProcessId = formData.get("originalProcessId") as string | null;
+  const newProcessId = validation.data.processId;
+
+  // Invalidate supplier processes cache for both old and new process IDs
+  if (newProcessId) {
     window.clientCache?.invalidateQueries({
-      queryKey: supplierProcessesQuery(validation.data.processId).queryKey
+      queryKey: supplierProcessesQuery(newProcessId).queryKey
+    });
+  }
+  if (originalProcessId && originalProcessId !== newProcessId) {
+    window.clientCache?.invalidateQueries({
+      queryKey: supplierProcessesQuery(originalProcessId).queryKey
     });
   }
   return await serverAction();
@@ -107,6 +115,7 @@ export default function SupplierProcessRoute() {
   return (
     <SupplierProcessForm
       initialValues={initialValues}
+      originalProcessId={process.processId}
       onClose={() => navigate(-1)}
     />
   );
