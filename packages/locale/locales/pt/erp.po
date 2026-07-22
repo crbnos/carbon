@@ -695,6 +695,9 @@ msgstr "Adicionar Risco"
 msgid "Add rule"
 msgstr "Adicionar regra"
 
+msgid "Add Sample"
+msgstr ""
+
 msgid "Add Selector"
 msgstr "Adicionar Seletor"
 
@@ -2118,6 +2121,9 @@ msgstr "Campeões"
 
 msgid "Change"
 msgstr "Alterar"
+
+msgid "Change Inspection Document"
+msgstr ""
 
 msgid "Change order"
 msgstr "Ordem de mudança"
@@ -5092,6 +5098,9 @@ msgstr "Tags extras para segmentar seus relatórios GL"
 
 msgid "Fail"
 msgstr "Falhar"
+
+msgid "Failed characteristics"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create asset class: {0}"
@@ -10623,6 +10632,9 @@ msgstr "Digitalize ou pesquise..."
 msgid "Scan or select a tracked entity from this lot and record the inspection result."
 msgstr "Digitalize ou selecione uma entidade rastreada deste lote e registre o resultado da inspeção."
 
+msgid "Scan or select a tracked entity from this lot to add it as a sample column. Its result is derived from the recorded measurements."
+msgstr ""
+
 msgid "Scan the tracking ID for this line"
 msgstr "Digitalize o ID de rastreamento para esta linha"
 
@@ -10760,6 +10772,9 @@ msgstr "Selecione um responsável"
 
 msgid "Select a default approver"
 msgstr "Selecione um aprovador padrão"
+
+msgid "Select a document"
+msgstr ""
 
 msgid "Select a new owner"
 msgstr "Selecione um novo proprietário"
@@ -12387,6 +12402,9 @@ msgstr "O lote será marcado como Aprovado. {fails} falha(s) amostrada(s) são r
 
 msgid "The lot will still be rejected, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "O lote ainda será rejeitado, mas um NCR não pode ser criado até que pelo menos um Tipo de Problema seja configurado."
+
+msgid "The lot's per-characteristic sampling plan will be re-resolved from the selected document."
+msgstr ""
 
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "O valor mínimo que este fornecedor cobrará por esse processo, independentemente da quantidade; os trabalhos abaixo do volume de equilíbrio ainda custam pelo menos esse valor."

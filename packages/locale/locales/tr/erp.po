@@ -695,6 +695,9 @@ msgstr "Risk Ekle"
 msgid "Add rule"
 msgstr "Kural ekle"
 
+msgid "Add Sample"
+msgstr ""
+
 msgid "Add Selector"
 msgstr "Seçici Ekle"
 
@@ -2118,6 +2121,9 @@ msgstr "Şampiyonlar"
 
 msgid "Change"
 msgstr "Değiştir"
+
+msgid "Change Inspection Document"
+msgstr ""
 
 msgid "Change order"
 msgstr "Değişiklik emri"
@@ -5092,6 +5098,9 @@ msgstr "GL raporlamanızı dilimlemek için ekstra etiketler"
 
 msgid "Fail"
 msgstr "Başarısız"
+
+msgid "Failed characteristics"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create asset class: {0}"
@@ -10623,6 +10632,9 @@ msgstr "Tarama veya arayın..."
 msgid "Scan or select a tracked entity from this lot and record the inspection result."
 msgstr "Bu partiden izlenen bir varlığı tarayın veya seçin ve muayene sonucunu kaydedin."
 
+msgid "Scan or select a tracked entity from this lot to add it as a sample column. Its result is derived from the recorded measurements."
+msgstr ""
+
 msgid "Scan the tracking ID for this line"
 msgstr "Bu satır için takip kimliğini tarayın"
 
@@ -10760,6 +10772,9 @@ msgstr "Bir atanan seçin"
 
 msgid "Select a default approver"
 msgstr "Varsayılan onaylayıcı seçin"
+
+msgid "Select a document"
+msgstr ""
 
 msgid "Select a new owner"
 msgstr "Yeni bir sahip seç"
@@ -12387,6 +12402,9 @@ msgstr "Lot bu olarak işaretlenecektir. Kayıtlarınız için {fails} örnek ba
 
 msgid "The lot will still be rejected, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "Lot yine de reddedilecek, ancak en az bir Hata Türü yapılandırılana kadar Bir Uygunluk Raporu (NCR) oluşturulamaz."
+
+msgid "The lot's per-characteristic sampling plan will be re-resolved from the selected document."
+msgstr ""
 
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "Bu tedarikçinin miktar ne olursa olsun bu işlem için tahsil edeceği minimum tutar; kâr-zarar noktası hacmi altındaki işler hala en az bu tutarına mal olur."

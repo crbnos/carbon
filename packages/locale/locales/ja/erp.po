@@ -695,6 +695,9 @@ msgstr "リスクを追加"
 msgid "Add rule"
 msgstr "ルールを追加"
 
+msgid "Add Sample"
+msgstr ""
+
 msgid "Add Selector"
 msgstr "セレクターを追加"
 
@@ -2118,6 +2121,9 @@ msgstr "チャンピオン"
 
 msgid "Change"
 msgstr "変更"
+
+msgid "Change Inspection Document"
+msgstr ""
 
 msgid "Change order"
 msgstr "変更オーダー"
@@ -5092,6 +5098,9 @@ msgstr "GL レポートをスライスするための追加タグ"
 
 msgid "Fail"
 msgstr "不合格"
+
+msgid "Failed characteristics"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create asset class: {0}"
@@ -10623,6 +10632,9 @@ msgstr "スキャンまたは検索..."
 msgid "Scan or select a tracked entity from this lot and record the inspection result."
 msgstr "このロットから追跡対象エンティティをスキャンまたは選択し、検査結果を記録してください。"
 
+msgid "Scan or select a tracked entity from this lot to add it as a sample column. Its result is derived from the recorded measurements."
+msgstr ""
+
 msgid "Scan the tracking ID for this line"
 msgstr "このラインのトラッキングIDをスキャンしてください"
 
@@ -10760,6 +10772,9 @@ msgstr "担当者を選択"
 
 msgid "Select a default approver"
 msgstr "デフォルト承認者を選択"
+
+msgid "Select a document"
+msgstr ""
 
 msgid "Select a new owner"
 msgstr "新しい所有者を選択"
@@ -12387,6 +12402,9 @@ msgstr "ロットは合格とマークされます。{fails}件のサンプル�
 
 msgid "The lot will still be rejected, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "ロットは引き続き却下されますが、少なくとも1つの問題タイプが設定されるまでNCRを作成することはできません。"
+
+msgid "The lot's per-characteristic sampling plan will be re-resolved from the selected document."
+msgstr ""
 
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "このサプライヤーがこのプロセスに対して請求する最低額（数量に関係なく）。損益分岐点以下のジョブもこの金額以上の費用がかかります。"

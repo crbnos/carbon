@@ -695,6 +695,9 @@ msgstr "Risiko hinzufügen"
 msgid "Add rule"
 msgstr "Regel hinzufügen"
 
+msgid "Add Sample"
+msgstr ""
+
 msgid "Add Selector"
 msgstr "Selektor hinzufügen"
 
@@ -2118,6 +2121,9 @@ msgstr "Fachleute"
 
 msgid "Change"
 msgstr "Ändern"
+
+msgid "Change Inspection Document"
+msgstr ""
 
 msgid "Change order"
 msgstr "Änderungsauftrag"
@@ -5092,6 +5098,9 @@ msgstr "Zusätzliche Tags zum Aufteilen Ihrer GL-Berichte"
 
 msgid "Fail"
 msgstr "Fehlgeschlagen"
+
+msgid "Failed characteristics"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create asset class: {0}"
@@ -10623,6 +10632,9 @@ msgstr "Scannen oder suchen..."
 msgid "Scan or select a tracked entity from this lot and record the inspection result."
 msgstr "Scannen oder wählen Sie eine nachverfölgte Entität aus diesem Los aus und erfassen Sie das Inspektionsergebnis."
 
+msgid "Scan or select a tracked entity from this lot to add it as a sample column. Its result is derived from the recorded measurements."
+msgstr ""
+
 msgid "Scan the tracking ID for this line"
 msgstr "Scannen Sie die Tracking-ID für diese Zeile"
 
@@ -10760,6 +10772,9 @@ msgstr "Wählen Sie einen Bevollmächtigten"
 
 msgid "Select a default approver"
 msgstr "Wählen Sie einen Standard-Genehmiger"
+
+msgid "Select a document"
+msgstr ""
 
 msgid "Select a new owner"
 msgstr "Wählen Sie einen neuen Eigentümer"
@@ -12387,6 +12402,9 @@ msgstr "Das Los wird als Bestanden markiert. {fails} erfasste Fehler werden für
 
 msgid "The lot will still be rejected, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "Das Los wird immer noch abgelehnt, aber ein NCR kann nicht erstellt werden, bis mindestens ein Problemtyp konfiguriert ist."
+
+msgid "The lot's per-characteristic sampling plan will be re-resolved from the selected document."
+msgstr ""
 
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "Der niedrigste Betrag, den dieser Lieferant für diesen Prozess berechnet, unabhängig von der Menge; Aufträge unter dem Gewinnschwellen-Volumen kosten immer noch mindestens diesen Betrag."

@@ -695,6 +695,9 @@ msgstr "Dodaj ryzyko"
 msgid "Add rule"
 msgstr "Dodaj regułę"
 
+msgid "Add Sample"
+msgstr ""
+
 msgid "Add Selector"
 msgstr "Dodaj selektor"
 
@@ -2118,6 +2121,9 @@ msgstr "Mistrzowie"
 
 msgid "Change"
 msgstr "Zmień"
+
+msgid "Change Inspection Document"
+msgstr ""
 
 msgid "Change order"
 msgstr "Zmiana zamówienia"
@@ -5092,6 +5098,9 @@ msgstr "Dodatkowe tagi do dzielenia raportów GL"
 
 msgid "Fail"
 msgstr "Nie powiodło się"
+
+msgid "Failed characteristics"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create asset class: {0}"
@@ -10623,6 +10632,9 @@ msgstr "Skanuj lub wyszukaj..."
 msgid "Scan or select a tracked entity from this lot and record the inspection result."
 msgstr "Skanuj lub wybierz śledzony element z tej partii i zapisz wynik inspekcji."
 
+msgid "Scan or select a tracked entity from this lot to add it as a sample column. Its result is derived from the recorded measurements."
+msgstr ""
+
 msgid "Scan the tracking ID for this line"
 msgstr "Skanuj identyfikator śledzenia dla tej linii"
 
@@ -10760,6 +10772,9 @@ msgstr "Wybierz osobę przydzieloną"
 
 msgid "Select a default approver"
 msgstr "Wybierz domyślnego zatwierdzającego"
+
+msgid "Select a document"
+msgstr ""
 
 msgid "Select a new owner"
 msgstr "Wybierz nowego właściciela"
@@ -12387,6 +12402,9 @@ msgstr "Lot zostanie oznaczony jako Zaakceptowany. {fails} próbkowanych niepowo
 
 msgid "The lot will still be rejected, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "Partia będzie nadal odrzucona, ale nie można utworzyć NCR, dopóki nie zostanie skonfigurowany co najmniej jeden typ problemu."
+
+msgid "The lot's per-characteristic sampling plan will be re-resolved from the selected document."
+msgstr ""
 
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "Najniższa kwota, którą ten dostawca pobierze za ten proces, niezależnie od ilości; zadania poniżej wolumenu progu rentowności nadal kosztują co najmniej tę kwotę."

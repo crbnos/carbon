@@ -695,6 +695,9 @@ msgstr "जोखिम जोड़ें"
 msgid "Add rule"
 msgstr "नियम जोड़ें"
 
+msgid "Add Sample"
+msgstr ""
+
 msgid "Add Selector"
 msgstr "सिलेक्टर जोड़ें"
 
@@ -2118,6 +2121,9 @@ msgstr "चैंपियन"
 
 msgid "Change"
 msgstr "बदलें"
+
+msgid "Change Inspection Document"
+msgstr ""
 
 msgid "Change order"
 msgstr "परिवर्तन आदेश"
@@ -5092,6 +5098,9 @@ msgstr "आपकी GL रिपोर्टिंग को स्लाइस
 
 msgid "Fail"
 msgstr "विफल"
+
+msgid "Failed characteristics"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create asset class: {0}"
@@ -10623,6 +10632,9 @@ msgstr "स्कैन या खोजें..."
 msgid "Scan or select a tracked entity from this lot and record the inspection result."
 msgstr "इस लॉट से एक ट्रैक किए गए इकाई को स्कैन या चुनें और निरीक्षण परिणाम रिकॉर्ड करें।"
 
+msgid "Scan or select a tracked entity from this lot to add it as a sample column. Its result is derived from the recorded measurements."
+msgstr ""
+
 msgid "Scan the tracking ID for this line"
 msgstr "इस लाइन के लिए ट्रैकिंग आईडी स्कैन करें"
 
@@ -10760,6 +10772,9 @@ msgstr "एक असाइनी चुनें"
 
 msgid "Select a default approver"
 msgstr "एक डिफ़ॉल्ट अनुमोदक चुनें"
+
+msgid "Select a document"
+msgstr ""
 
 msgid "Select a new owner"
 msgstr "एक नया मालिक चुनें"
@@ -12387,6 +12402,9 @@ msgstr "लॉट को पास के रूप में चिह्नि
 
 msgid "The lot will still be rejected, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "लॉट अभी भी अस्वीकृत कर दिया जाएगा, लेकिन कम से कम एक Issue Type कॉन्फ़िगर होने तक NCR नहीं बनाया जा सकता।"
+
+msgid "The lot's per-characteristic sampling plan will be re-resolved from the selected document."
+msgstr ""
 
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "सबसे कम राशि जो यह आपूर्तिकर्ता इस प्रक्रिया के लिए चार्ज करेगा, मात्रा की परवाह किए बिना; संतुलन मात्रा के नीचे नौकरियां अभी भी कम से कम इतनी अधिक लागत करती हैं।"

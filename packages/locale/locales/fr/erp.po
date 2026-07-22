@@ -695,6 +695,9 @@ msgstr "Ajouter un risque"
 msgid "Add rule"
 msgstr "Ajouter une règle"
 
+msgid "Add Sample"
+msgstr ""
+
 msgid "Add Selector"
 msgstr "Ajouter un sélecteur"
 
@@ -2118,6 +2121,9 @@ msgstr "Champions"
 
 msgid "Change"
 msgstr "Modifier"
+
+msgid "Change Inspection Document"
+msgstr ""
 
 msgid "Change order"
 msgstr "Ordre de modification"
@@ -5092,6 +5098,9 @@ msgstr "Balises supplémentaires pour segmenter vos rapports GL"
 
 msgid "Fail"
 msgstr "Échouer"
+
+msgid "Failed characteristics"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create asset class: {0}"
@@ -10623,6 +10632,9 @@ msgstr "Scannez ou recherchez..."
 msgid "Scan or select a tracked entity from this lot and record the inspection result."
 msgstr "Scannez ou sélectionnez une entité suivie de ce lot et enregistrez le résultat de l'inspection."
 
+msgid "Scan or select a tracked entity from this lot to add it as a sample column. Its result is derived from the recorded measurements."
+msgstr ""
+
 msgid "Scan the tracking ID for this line"
 msgstr "Scannez l'ID de suivi pour cette ligne"
 
@@ -10760,6 +10772,9 @@ msgstr "Sélectionner un assigné"
 
 msgid "Select a default approver"
 msgstr "Sélectionner un approbateur par défaut"
+
+msgid "Select a document"
+msgstr ""
 
 msgid "Select a new owner"
 msgstr "Sélectionner un nouveau propriétaire"
@@ -12387,6 +12402,9 @@ msgstr "Le lot sera marqué comme Accepté. {fails} défaut(s) échantillonné(s
 
 msgid "The lot will still be rejected, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "Le lot sera toujours rejeté, mais un NCR ne peut pas être créé tant qu'au moins un type de problème n'est pas configuré."
+
+msgid "The lot's per-characteristic sampling plan will be re-resolved from the selected document."
+msgstr ""
 
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "Le montant minimum que ce fournisseur facturera pour ce processus, quel que soit la quantité; les travaux en dessous du volume de seuil de rentabilité coûtent toujours au moins ce montant."

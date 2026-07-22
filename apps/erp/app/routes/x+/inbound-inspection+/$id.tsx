@@ -5,7 +5,7 @@ import { flash } from "@carbon/auth/session.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { data, redirect, useLoaderData } from "react-router";
 import invariant from "tiny-invariant";
-import { getInspectionDocument } from "~/modules/production";
+import { getBalloons, getInspectionDocument } from "~/modules/production";
 import {
   getInboundInspection,
   getInboundInspectionFeatures,
@@ -22,6 +22,7 @@ import type {
   InspectionTrackedEntity,
   IssueTypeListItem
 } from "~/modules/quality/types";
+import InboundInspectionView from "~/modules/quality/ui/InboundInspections/InboundInspectionView";
 import { getCompanySettings } from "~/modules/settings";
 import { path } from "~/utils/path";
 
@@ -72,18 +73,28 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     await reconcileInboundInspectionFeatures(id, companyId);
   }
 
-  const [features, measurements, lotEntities, document] = await Promise.all([
-    getInboundInspectionFeatures(client, id, companyId),
-    getInboundInspectionMeasurements(client, id, companyId),
-    getInboundInspectionLotTrackedEntities(
-      client,
-      insp.receiptLineId,
-      companyId
-    ),
-    insp.inspectionDocumentId
-      ? getInspectionDocument(getCarbonServiceRole(), insp.inspectionDocumentId)
-      : Promise.resolve({ data: null, error: null })
-  ]);
+  const serviceRole = getCarbonServiceRole();
+  const [features, measurements, lotEntities, document, balloons] =
+    await Promise.all([
+      getInboundInspectionFeatures(client, id, companyId),
+      getInboundInspectionMeasurements(client, id, companyId),
+      getInboundInspectionLotTrackedEntities(
+        client,
+        insp.receiptLineId,
+        companyId
+      ),
+      insp.inspectionDocumentId
+        ? getInspectionDocument(serviceRole, insp.inspectionDocumentId)
+        : Promise.resolve({ data: null, error: null }),
+      insp.inspectionDocumentId
+        ? getBalloons(serviceRole, insp.inspectionDocumentId)
+        : Promise.resolve({ data: null, error: null })
+    ]);
+
+  const doc = document.data as {
+    name?: string | null;
+    content?: { pdfUrl?: string | null };
+  } | null;
 
   return data({
     inspection: insp,
@@ -95,7 +106,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     samples: insp.inboundInspectionSample ?? [],
     features: (features.data ?? []) as InboundInspectionFeature[],
     measurements: (measurements.data ?? []) as InboundInspectionMeasurement[],
-    document: document.data,
+    balloons: ((balloons.data ?? []) as any[]).map((b) => ({
+      id: b.id as string,
+      inspectionFeatureId: b.inspectionFeatureId as string,
+      pageNumber: Number(b.pageNumber ?? 1),
+      xCoordinate: Number(b.xCoordinate ?? 0),
+      yCoordinate: Number(b.yCoordinate ?? 0)
+    })),
+    documentName: doc?.name ?? null,
+    pdfUrl: doc?.content?.pdfUrl ?? null,
     lotEntities: (lotEntities.data ?? []) as InspectionTrackedEntity[],
     issueTypes: (issueTypes.data ?? []) as IssueTypeListItem[],
     enforceFourEyes:
@@ -107,11 +126,24 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export default function InboundInspectionExecutionRoute() {
   const loaderData = useLoaderData<typeof loader>();
 
-  // Placeholder shell — replaced by InboundInspectionView (Task 11 of the
-  // implementation plan).
   return (
-    <div className="p-4">
-      {loaderData.inspection.inboundInspectionId} — {loaderData.itemName}
-    </div>
+    <InboundInspectionView
+      inspection={loaderData.inspection as InboundInspectionRow}
+      receiptReadableId={loaderData.receiptReadableId}
+      receiverId={loaderData.receiverId}
+      itemName={loaderData.itemName}
+      itemTrackingType={loaderData.itemTrackingType}
+      supplierName={loaderData.supplierName}
+      samples={loaderData.samples as InboundInspectionSample[]}
+      features={loaderData.features as InboundInspectionFeature[]}
+      measurements={loaderData.measurements as InboundInspectionMeasurement[]}
+      balloons={loaderData.balloons}
+      documentName={loaderData.documentName}
+      pdfUrl={loaderData.pdfUrl}
+      lotEntities={loaderData.lotEntities as InspectionTrackedEntity[]}
+      issueTypes={loaderData.issueTypes as IssueTypeListItem[]}
+      currentUserId={loaderData.currentUserId}
+      enforceFourEyes={loaderData.enforceFourEyes}
+    />
   );
 }

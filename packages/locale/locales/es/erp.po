@@ -695,6 +695,9 @@ msgstr "Agregar Riesgo"
 msgid "Add rule"
 msgstr "Agregar regla"
 
+msgid "Add Sample"
+msgstr ""
+
 msgid "Add Selector"
 msgstr "Agregar selector"
 
@@ -2118,6 +2121,9 @@ msgstr "Campeones"
 
 msgid "Change"
 msgstr "Cambiar"
+
+msgid "Change Inspection Document"
+msgstr ""
 
 msgid "Change order"
 msgstr "Orden de cambio"
@@ -5092,6 +5098,9 @@ msgstr "Etiquetas adicionales para segmentar tu informe de GL"
 
 msgid "Fail"
 msgstr "Fallar"
+
+msgid "Failed characteristics"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create asset class: {0}"
@@ -10623,6 +10632,9 @@ msgstr "Escanear o buscar..."
 msgid "Scan or select a tracked entity from this lot and record the inspection result."
 msgstr "Escanea o selecciona una entidad rastreada de este lote y registra el resultado de la inspección."
 
+msgid "Scan or select a tracked entity from this lot to add it as a sample column. Its result is derived from the recorded measurements."
+msgstr ""
+
 msgid "Scan the tracking ID for this line"
 msgstr "Escanea el ID de seguimiento para esta línea"
 
@@ -10760,6 +10772,9 @@ msgstr "Seleccionar un asignado"
 
 msgid "Select a default approver"
 msgstr "Selecciona un aprobador predeterminado"
+
+msgid "Select a document"
+msgstr ""
 
 msgid "Select a new owner"
 msgstr "Selecciona un nuevo propietario"
@@ -12387,6 +12402,9 @@ msgstr "El lote será marcado como Aprobado. {fails} fallo(s) muestreado(s) se r
 
 msgid "The lot will still be rejected, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "El lote seguirá siendo rechazado, pero no se puede crear un NCR hasta que se configure al menos un tipo de problema."
+
+msgid "The lot's per-characteristic sampling plan will be re-resolved from the selected document."
+msgstr ""
 
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "La cantidad mínima que este proveedor cobrará por este proceso, independientemente de la cantidad; los trabajos por debajo del volumen de equilibrio aún cuestan al menos esta cantidad."

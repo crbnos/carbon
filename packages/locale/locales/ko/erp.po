@@ -695,6 +695,9 @@ msgstr "리스크 추가"
 msgid "Add rule"
 msgstr "규칙 추가"
 
+msgid "Add Sample"
+msgstr ""
+
 msgid "Add Selector"
 msgstr "선택자 추가"
 
@@ -2118,6 +2121,9 @@ msgstr "챔피언"
 
 msgid "Change"
 msgstr "변경"
+
+msgid "Change Inspection Document"
+msgstr ""
 
 msgid "Change order"
 msgstr "변경 주문"
@@ -5092,6 +5098,9 @@ msgstr "총계정원장 보고를 세분화하기 위한 추가 태그"
 
 msgid "Fail"
 msgstr "실패"
+
+msgid "Failed characteristics"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create asset class: {0}"
@@ -10623,6 +10632,9 @@ msgstr "스캔 또는 검색..."
 msgid "Scan or select a tracked entity from this lot and record the inspection result."
 msgstr "이 로트에서 추적 개체를 스캔하거나 선택하고 검사 결과를 기록하세요."
 
+msgid "Scan or select a tracked entity from this lot to add it as a sample column. Its result is derived from the recorded measurements."
+msgstr ""
+
 msgid "Scan the tracking ID for this line"
 msgstr "이 라인의 추적 ID를 스캔하세요"
 
@@ -10760,6 +10772,9 @@ msgstr "담당자 선택"
 
 msgid "Select a default approver"
 msgstr "기본 승인자 선택"
+
+msgid "Select a document"
+msgstr ""
 
 msgid "Select a new owner"
 msgstr "새 소유자 선택"
@@ -12387,6 +12402,9 @@ msgstr "로트가 합격으로 표시됩니다. 기록을 위해 샘플링 불�
 
 msgid "The lot will still be rejected, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "로트는 그대로 반려되지만, 이슈 유형이 하나 이상 설정되기 전까지는 NCR을 생성할 수 없습니다."
+
+msgid "The lot's per-characteristic sampling plan will be re-resolved from the selected document."
+msgstr ""
 
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "수량과 관계없이 이 공급업체가 이 공정에 청구하는 최소 금액입니다. 손익분기 수량 미만인 작업도 최소한 이 금액만큼 비용이 발생합니다."

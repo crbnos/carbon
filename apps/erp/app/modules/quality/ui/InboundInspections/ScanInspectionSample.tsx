@@ -45,6 +45,10 @@ type Props = {
   fails: number;
   acceptanceNumber: number;
   onClose: () => void;
+  // "record" (default) captures a pass/fail verdict; "identify" only registers
+  // the scanned entity as a Pending sample — its verdict is derived from the
+  // measurement grid when an inspection document drives the lot.
+  mode?: "record" | "identify";
 };
 
 export default function ScanInspectionSample({
@@ -55,7 +59,8 @@ export default function ScanInspectionSample({
   sampleSize,
   fails,
   acceptanceNumber,
-  onClose
+  onClose,
+  mode = "record"
 }: Props) {
   const { t } = useLingui();
   const fetcher = useFetcher<{ error?: unknown; success?: boolean }>();
@@ -97,6 +102,7 @@ export default function ScanInspectionSample({
   }, [fetcher.state, fetcher.data]);
 
   const isSubmitting = fetcher.state !== "idle";
+  const isIdentify = mode === "identify";
   // Serial parts require a scanned/selected tracked entity; other tracking
   // types record pass/fail without one.
   const canRecord = isSerial ? !!selected : true;
@@ -114,7 +120,13 @@ export default function ScanInspectionSample({
             <Trans>Inspect Item</Trans>
           </ModalTitle>
           <ModalDescription>
-            {isSerial ? (
+            {isIdentify ? (
+              <Trans>
+                Scan or select a tracked entity from this lot to add it as a
+                sample column. Its result is derived from the recorded
+                measurements.
+              </Trans>
+            ) : isSerial ? (
               <Trans>
                 Scan or select a tracked entity from this lot and record the
                 inspection result.
@@ -140,7 +152,10 @@ export default function ScanInspectionSample({
           <ModalBody>
             <Hidden name="inspectionId" value={inspectionId} />
             <Hidden name="trackedEntityId" value={selected?.id ?? ""} />
-            <Hidden name="status" value={pendingStatus} />
+            <Hidden
+              name="status"
+              value={isIdentify ? "Pending" : pendingStatus}
+            />
 
             <VStack spacing={4} className="w-full">
               <BarProgress
@@ -258,21 +273,32 @@ export default function ScanInspectionSample({
               <Button variant="secondary" onClick={onClose}>
                 <Trans>Close</Trans>
               </Button>
-              <Submit
-                variant="destructive"
-                leftIcon={<LuCircleX />}
-                isDisabled={!canRecord || isSubmitting}
-                onClick={() => setPendingStatus("Failed")}
-              >
-                <Trans>Fail</Trans>
-              </Submit>
-              <Submit
-                leftIcon={<LuCircleCheck />}
-                isDisabled={!canRecord || isSubmitting}
-                onClick={() => setPendingStatus("Passed")}
-              >
-                <Trans>Pass</Trans>
-              </Submit>
+              {isIdentify ? (
+                <Submit
+                  leftIcon={<LuCheck />}
+                  isDisabled={!canRecord || isSubmitting}
+                >
+                  <Trans>Add Sample</Trans>
+                </Submit>
+              ) : (
+                <>
+                  <Submit
+                    variant="destructive"
+                    leftIcon={<LuCircleX />}
+                    isDisabled={!canRecord || isSubmitting}
+                    onClick={() => setPendingStatus("Failed")}
+                  >
+                    <Trans>Fail</Trans>
+                  </Submit>
+                  <Submit
+                    leftIcon={<LuCircleCheck />}
+                    isDisabled={!canRecord || isSubmitting}
+                    onClick={() => setPendingStatus("Passed")}
+                  >
+                    <Trans>Pass</Trans>
+                  </Submit>
+                </>
+              )}
             </HStack>
           </ModalFooter>
         </ValidatedForm>

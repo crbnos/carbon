@@ -695,6 +695,9 @@ msgstr "Add Risk"
 msgid "Add rule"
 msgstr "Add rule"
 
+msgid "Add Sample"
+msgstr "Add Sample"
+
 msgid "Add Selector"
 msgstr "Add Selector"
 
@@ -2118,6 +2121,9 @@ msgstr "Champions"
 
 msgid "Change"
 msgstr "Change"
+
+msgid "Change Inspection Document"
+msgstr "Change Inspection Document"
 
 msgid "Change order"
 msgstr "Change order"
@@ -5092,6 +5098,9 @@ msgstr "Extra tags for slicing your GL reporting"
 
 msgid "Fail"
 msgstr "Fail"
+
+msgid "Failed characteristics"
+msgstr "Failed characteristics"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create asset class: {0}"
@@ -10623,6 +10632,9 @@ msgstr "Scan or search..."
 msgid "Scan or select a tracked entity from this lot and record the inspection result."
 msgstr "Scan or select a tracked entity from this lot and record the inspection result."
 
+msgid "Scan or select a tracked entity from this lot to add it as a sample column. Its result is derived from the recorded measurements."
+msgstr "Scan or select a tracked entity from this lot to add it as a sample column. Its result is derived from the recorded measurements."
+
 msgid "Scan the tracking ID for this line"
 msgstr "Scan the tracking ID for this line"
 
@@ -10760,6 +10772,9 @@ msgstr "Select a assignee"
 
 msgid "Select a default approver"
 msgstr "Select a default approver"
+
+msgid "Select a document"
+msgstr "Select a document"
 
 msgid "Select a new owner"
 msgstr "Select a new owner"
@@ -12387,6 +12402,9 @@ msgstr "The lot will be marked Passed. {fails} sampled failure(s) are recorded f
 
 msgid "The lot will still be rejected, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "The lot will still be rejected, but an NCR cannot be created until at least one Issue Type is configured."
+
+msgid "The lot's per-characteristic sampling plan will be re-resolved from the selected document."
+msgstr "The lot's per-characteristic sampling plan will be re-resolved from the selected document."
 
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."

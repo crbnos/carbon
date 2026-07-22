@@ -695,6 +695,9 @@ msgstr "添加风险"
 msgid "Add rule"
 msgstr "添加规则"
 
+msgid "Add Sample"
+msgstr ""
+
 msgid "Add Selector"
 msgstr "添加选择器"
 
@@ -2118,6 +2121,9 @@ msgstr "冠军"
 
 msgid "Change"
 msgstr "更改"
+
+msgid "Change Inspection Document"
+msgstr ""
 
 msgid "Change order"
 msgstr "变更单"
@@ -5092,6 +5098,9 @@ msgstr "用于切分总账报告的额外标签"
 
 msgid "Fail"
 msgstr "失败"
+
+msgid "Failed characteristics"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create asset class: {0}"
@@ -10623,6 +10632,9 @@ msgstr "扫描或搜索..."
 msgid "Scan or select a tracked entity from this lot and record the inspection result."
 msgstr "扫描或从此批次中选择一个追踪实体并记录检验结果。"
 
+msgid "Scan or select a tracked entity from this lot to add it as a sample column. Its result is derived from the recorded measurements."
+msgstr ""
+
 msgid "Scan the tracking ID for this line"
 msgstr "扫描此行的跟踪ID"
 
@@ -10760,6 +10772,9 @@ msgstr "选择受理人"
 
 msgid "Select a default approver"
 msgstr "选择默认审批人"
+
+msgid "Select a document"
+msgstr ""
 
 msgid "Select a new owner"
 msgstr "选择新的所有者"
@@ -12387,6 +12402,9 @@ msgstr "该批次将被标记为通过。{fails} 个抽样失败已记录在案�
 
 msgid "The lot will still be rejected, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "该批次仍将被拒收，但在至少配置一个问题类型之前，无法创建NCR。"
+
+msgid "The lot's per-characteristic sampling plan will be re-resolved from the selected document."
+msgstr ""
 
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "此供应商无论数量如何为此流程收费的最低金额；低于损益平衡点的工作仍至少花费此金额。"

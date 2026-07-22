@@ -695,6 +695,9 @@ msgstr "Aggiungi Rischio"
 msgid "Add rule"
 msgstr "Aggiungi regola"
 
+msgid "Add Sample"
+msgstr ""
+
 msgid "Add Selector"
 msgstr "Aggiungi selettore"
 
@@ -2118,6 +2121,9 @@ msgstr "Campioni"
 
 msgid "Change"
 msgstr "Cambia"
+
+msgid "Change Inspection Document"
+msgstr ""
 
 msgid "Change order"
 msgstr "Ordine di modifica"
@@ -5092,6 +5098,9 @@ msgstr "Tag aggiuntivi per suddividere i tuoi report GL"
 
 msgid "Fail"
 msgstr "Non superato"
+
+msgid "Failed characteristics"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create asset class: {0}"
@@ -10623,6 +10632,9 @@ msgstr "Scansiona o cerca..."
 msgid "Scan or select a tracked entity from this lot and record the inspection result."
 msgstr "Scansiona o seleziona un'entità tracciata da questo lotto e registra il risultato dell'ispezione."
 
+msgid "Scan or select a tracked entity from this lot to add it as a sample column. Its result is derived from the recorded measurements."
+msgstr ""
+
 msgid "Scan the tracking ID for this line"
 msgstr "Scansiona l'ID di tracciamento per questa riga"
 
@@ -10760,6 +10772,9 @@ msgstr "Seleziona un assegnatario"
 
 msgid "Select a default approver"
 msgstr "Seleziona un approvatore predefinito"
+
+msgid "Select a document"
+msgstr ""
 
 msgid "Select a new owner"
 msgstr "Seleziona un nuovo proprietario"
@@ -12387,6 +12402,9 @@ msgstr "Il lotto sarà contrassegnato come Superato. {fails} errore(i) campionat
 
 msgid "The lot will still be rejected, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "Il lotto sarà comunque rifiutato, ma non è possibile creare un NCR finché non è configurato almeno un tipo di problema."
+
+msgid "The lot's per-characteristic sampling plan will be re-resolved from the selected document."
+msgstr ""
 
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "L'importo minimo che questo fornitore addebiterà per questo processo, indipendentemente dalla quantità; i lavori al di sotto del volume di pareggio costano comunque almeno questo importo."
