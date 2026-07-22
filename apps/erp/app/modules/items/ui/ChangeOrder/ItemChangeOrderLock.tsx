@@ -9,12 +9,7 @@ import type { ChangeOrderForItem } from "../../items.service";
 
 const openStatusSet = new Set<string>(changeOrderOpenStatuses);
 
-// The item-master parent loaders (part/tool `$itemId.tsx`) expose
-// `openChangeOrders` for the item. Any child surface (revision switcher,
-// make-method tools) reads it from that shared route data so version/revision
-// creation stays disabled while a change order owns the item — without each
-// surface re-querying. Only Part/Tool can be affected by a CO today; other
-// item types have no `openChangeOrders` in their loader, so this returns [].
+// Reads `openChangeOrders` from the part/tool parent route data; other item types return [].
 export function useItemOpenChangeOrders(
   type: ItemType | string | undefined,
   itemId: string | undefined
@@ -33,10 +28,7 @@ export function useItemOpenChangeOrders(
   );
 }
 
-// Wraps a disabled control so hovering it explains why it is locked. Native
-// disabled buttons and `data-[disabled]` menu items don't fire hover events, so
-// the wrapper `<div>` (never disabled) is what the tooltip anchors to. When
-// `changeOrders` is empty it renders children untouched.
+// Tooltip wrapper for disabled controls (the div anchors hover since disabled elements don't fire it).
 export function ItemChangeOrderLock({
   changeOrders,
   className,

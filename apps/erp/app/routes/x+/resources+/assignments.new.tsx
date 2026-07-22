@@ -63,12 +63,10 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { trainingId, groupIds } = validation.data;
 
-  // One assignment per training: a second one would double every employee in
-  // the status views, so block it and point at the existing assignment.
+  // One assignment per training — duplicates double every employee in the status views
   const existing = await getTrainingAssignments(client, companyId, trainingId);
   if (existing.data && existing.data.length > 0) {
-    // 200 on purpose: a 4xx action response skips revalidation, so the flash
-    // toast would never surface.
+    // 200 on purpose: a 4xx response skips revalidation and the toast never shows
     return data(
       { error: "This training is already assigned" },
       await flash(

@@ -114,9 +114,7 @@ const MakeMethodTools = ({
     (type === "Part" || type === "Tool") && permissions.can("create", "parts");
   const itemLink = type && itemId ? getLinkToItemDetails(type, itemId) : null;
 
-  // A part/tool owned by an open change order is locked against manual version
-  // creation — the CO authors versions. Buttons stay visible but disabled, with
-  // a tooltip pointing at the change order(s).
+  // Version creation is locked while an open change order owns this item
   const openChangeOrders = useItemOpenChangeOrders(type, itemId);
   const isChangeOrderLocked = openChangeOrders.length > 0;
 

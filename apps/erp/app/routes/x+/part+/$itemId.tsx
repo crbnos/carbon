@@ -87,8 +87,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getTagsList(client, companyId, "part"),
     getItemSupersession(client, itemId, companyId),
     getItemSupersededBy(client, itemId, companyId),
-    // Open change orders owning this part — used to lock manual version/revision
-    // creation on the item master while a CO controls it.
+    // Locks manual version/revision creation while a CO owns this part
     findChangeOrdersForItem(client, {
       itemId,
       companyId,
