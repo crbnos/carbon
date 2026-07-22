@@ -2,6 +2,9 @@ import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 
 import { corsHeaders } from "../lib/headers.ts";
 import { sendInngestEvent } from "../lib/inngest.ts";
+import { getFunctionLogger } from "../lib/logging.ts";
+
+const logger = getFunctionLogger("event-wake");
 
 /**
  * Wake the Inngest event-queue drainer. Machine-called from Postgres via
@@ -24,7 +27,7 @@ serve(async (req: Request) => {
   } catch (err) {
     // A failed wake is harmless: the pg_cron sweeper re-fires while the
     // queue is non-empty.
-    console.error(`Error in event-wake:`, err);
+    logger.error("Error in event-wake", { error: (err as Error).message });
     return new Response(JSON.stringify({ error: (err as Error).message }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,

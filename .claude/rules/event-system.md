@@ -11,7 +11,7 @@ Carbon's async event-processing infra: Postgres triggers + PGMQ + **Inngest** (n
 
 ## Flow
 
-```
+```text
 DB write → AFTER STATEMENT trigger → dispatch_event_batch() → pgmq.send_batch('event_system')
                                           → util.wake_event_queue()  [pg_net POST, once per txn]
                                                   ↓

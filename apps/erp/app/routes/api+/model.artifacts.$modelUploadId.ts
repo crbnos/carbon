@@ -24,6 +24,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     .eq("companyId", companyId)
     .maybeSingle();
 
+  // A real query failure is a 5xx, not a 404 — don't mask a backend error as
+  // "no such model".
+  if (model.error) throw new Response("Internal error", { status: 500 });
   // No such model for this tenant → 404, don't fabricate an all-nulls body. An
   // all-nulls 200 is indistinguishable from "exists but not optimised", so the
   // viewer's reuse guard can't tell the two apart and would auto-fire an
