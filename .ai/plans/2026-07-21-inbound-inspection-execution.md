@@ -10,7 +10,7 @@
 - [x] Task 3: Per-feature sampling resolution in both engine copies + unit test
 - [x] Task 4: Zod validators + row/type extensions
 - [x] Task 5: post-receipt — attach document + per-feature plan rows
-- [ ] Task 6: quality.service reads + assignment upsert
+- [x] Task 6: quality.service reads + assignment upsert
 - [ ] Task 7: quality.server — measurement upsert, derived status, reconcile, disposition gating
 - [ ] Task 8: Route tree x+/inbound-inspection+ + path.ts
 - [ ] Task 9: InspectionDrawingPane (read-only PDF + balloons)

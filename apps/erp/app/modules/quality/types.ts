@@ -5,6 +5,8 @@ import type {
   getGauges,
   getGaugeTypes,
   getInboundInspection,
+  getInboundInspectionFeatures,
+  getInboundInspectionMeasurements,
   getInboundInspections,
   getIssueActionTasks,
   getIssueApprovalTasks,
@@ -167,6 +169,14 @@ export type ItemInspectionDocumentAssignment =
 
 export type InboundInspectionMeasurementRow =
   Database["public"]["Tables"]["inboundInspectionMeasurement"]["Row"];
+
+export type InboundInspectionFeature = NonNullable<
+  Awaited<ReturnType<typeof getInboundInspectionFeatures>>["data"]
+>[number];
+
+export type InboundInspectionMeasurement = NonNullable<
+  Awaited<ReturnType<typeof getInboundInspectionMeasurements>>["data"]
+>[number];
 
 export type IssueTypeListItem = NonNullable<
   Awaited<ReturnType<typeof getIssueTypesList>>["data"]

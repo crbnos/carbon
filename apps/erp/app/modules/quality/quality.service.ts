@@ -21,6 +21,7 @@ import type {
   issueTypeValidator,
   issueValidator,
   issueWorkflowValidator,
+  itemInspectionDocumentAssignmentValidator,
   itemSamplingPlanValidator,
   nonConformanceApprovalRequirement,
   nonConformanceReviewerValidator,
@@ -2326,4 +2327,90 @@ export async function getInboundInspectionLotTrackedEntities(
     .select("*")
     .eq("attributes ->> Receipt Line", receiptLineId)
     .eq("companyId", companyId);
+}
+
+export async function getInboundInspectionFeatures(
+  client: SupabaseClient<Database>,
+  inboundInspectionId: string,
+  companyId: string
+) {
+  // Embed by target table name, never alias:fkColumn — composite-FK embeds
+  // break with the alias form.
+  return client
+    .from("inboundInspectionFeature")
+    .select(
+      "*, inspectionFeature(id, label, description, pageNumber, type, nominalValue, tolerancePlus, toleranceMinus, unit)"
+    )
+    .eq("inboundInspectionId", inboundInspectionId)
+    .eq("companyId", companyId);
+}
+
+export async function getInboundInspectionMeasurements(
+  client: SupabaseClient<Database>,
+  inboundInspectionId: string,
+  companyId: string
+) {
+  return client
+    .from("inboundInspectionMeasurement")
+    .select("*")
+    .eq("inboundInspectionId", inboundInspectionId)
+    .eq("companyId", companyId);
+}
+
+export async function getItemInspectionDocumentAssignments(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string
+) {
+  return client
+    .from("itemInspectionDocumentAssignment")
+    .select("*")
+    .eq("itemId", itemId)
+    .eq("companyId", companyId);
+}
+
+export async function upsertItemInspectionDocumentAssignment(
+  client: SupabaseClient<Database>,
+  assignment: z.infer<typeof itemInspectionDocumentAssignmentValidator> & {
+    companyId: string;
+    userId: string;
+  }
+) {
+  if (!assignment.inspectionDocumentId) {
+    return client
+      .from("itemInspectionDocumentAssignment")
+      .delete()
+      .eq("itemId", assignment.itemId)
+      .eq("usage", assignment.usage)
+      .eq("companyId", assignment.companyId);
+  }
+
+  const existing = await client
+    .from("itemInspectionDocumentAssignment")
+    .select("itemId")
+    .eq("itemId", assignment.itemId)
+    .eq("usage", assignment.usage)
+    .eq("companyId", assignment.companyId)
+    .maybeSingle();
+
+  if (existing.data) {
+    return client
+      .from("itemInspectionDocumentAssignment")
+      .update({
+        inspectionDocumentId: assignment.inspectionDocumentId,
+        updatedBy: assignment.userId,
+        updatedAt: new Date().toISOString()
+      })
+      .eq("itemId", assignment.itemId)
+      .eq("usage", assignment.usage)
+      .eq("companyId", assignment.companyId);
+  }
+
+  return client.from("itemInspectionDocumentAssignment").insert({
+    itemId: assignment.itemId,
+    usage: assignment.usage,
+    inspectionDocumentId: assignment.inspectionDocumentId,
+    companyId: assignment.companyId,
+    createdBy: assignment.userId
+  });
 }
