@@ -3237,6 +3237,7 @@ export async function pullJobMaterialMakeMethod(
     .from("jobMaterialWithMakeMethodId")
     .select("jobMaterialMakeMethodId")
     .eq("id", args.jobMaterialId)
+    .eq("companyId", args.companyId)
     .single();
 
   if (

@@ -45,6 +45,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
     .eq("id", id)
     .eq("companyId", companyId)
     .single();
+  if (existingMaterial.error) {
+    return data(
+      { id: null },
+      await flash(
+        request,
+        error(existingMaterial.error, "Failed to load job material")
+      )
+    );
+  }
   const wasMakeToOrder = existingMaterial.data?.methodType === "Make to Order";
 
   const updateJobMaterial = await upsertJobMaterial(client, {
