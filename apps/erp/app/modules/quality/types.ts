@@ -162,6 +162,12 @@ export type InboundInspectionSample = InboundInspectionSampleRow & {
   trackedEntity: InspectionTrackedEntity | null;
 };
 
+export type ItemInspectionDocumentAssignment =
+  Database["public"]["Tables"]["itemInspectionDocumentAssignment"]["Row"];
+
+export type InboundInspectionMeasurementRow =
+  Database["public"]["Tables"]["inboundInspectionMeasurement"]["Row"];
+
 export type IssueTypeListItem = NonNullable<
   Awaited<ReturnType<typeof getIssueTypesList>>["data"]
 >[number];

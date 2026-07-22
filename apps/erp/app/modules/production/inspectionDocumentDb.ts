@@ -16,6 +16,14 @@ export type InspectionFeatureRow = {
   toleranceMinus: string | null;
   unit: string | null;
   type: ProcedureStepType;
+  samplingPlanType: Database["public"]["Enums"]["samplingPlanType"] | null;
+  samplingSampleSize: number | null;
+  samplingPercentage: number | null;
+  samplingAql: number | null;
+  samplingInspectionLevel:
+    | Database["public"]["Enums"]["inspectionLevel"]
+    | null;
+  samplingSeverity: Database["public"]["Enums"]["inspectionSeverity"] | null;
   createdBy: string;
   createdAt: string;
   updatedBy: string | null;

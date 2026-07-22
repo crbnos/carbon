@@ -3,6 +3,11 @@ import { textToTiptap } from "@carbon/utils";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import {
+  inspectionLevels,
+  inspectionSeverities,
+  samplingPlanTypes
+} from "../quality/samplingStandards";
+import {
   methodItemType,
   methodOperationOrders,
   methodType,
@@ -1635,6 +1640,15 @@ export const balloonUpdateItemsValidator = z.array(
 
 export const balloonDeleteIdsValidator = z.array(z.string().min(1));
 
+const inspectionFeatureSamplingFieldsValidator = {
+  samplingPlanType: z.enum(samplingPlanTypes).nullable().optional(),
+  samplingSampleSize: z.number().int().positive().nullable().optional(),
+  samplingPercentage: z.number().positive().max(100).nullable().optional(),
+  samplingAql: z.number().positive().nullable().optional(),
+  samplingInspectionLevel: z.enum(inspectionLevels).nullable().optional(),
+  samplingSeverity: z.enum(inspectionSeverities).nullable().optional()
+};
+
 export const inspectionSaveFeatureCreateItemValidator = z
   .object({
     tempId: z.string().min(1),
@@ -1645,7 +1659,8 @@ export const inspectionSaveFeatureCreateItemValidator = z
     tolerancePlus: z.string().nullable().optional(),
     toleranceMinus: z.string().nullable().optional(),
     unit: z.string().nullable().optional(),
-    type: z.enum(procedureStepType).optional()
+    type: z.enum(procedureStepType).optional(),
+    ...inspectionFeatureSamplingFieldsValidator
   })
   .strict();
 
@@ -1659,7 +1674,8 @@ export const inspectionSaveFeatureUpdateItemValidator = z
     tolerancePlus: z.string().nullable().optional(),
     toleranceMinus: z.string().nullable().optional(),
     unit: z.string().nullable().optional(),
-    type: z.enum(procedureStepType).optional()
+    type: z.enum(procedureStepType).optional(),
+    ...inspectionFeatureSamplingFieldsValidator
   })
   .strict();
 

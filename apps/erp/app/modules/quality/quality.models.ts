@@ -489,7 +489,9 @@ export const inboundInspectionSampleValidator = z.object({
   // Optional: serial parts scan a discrete tracked entity; batch / inventory /
   // non-inventory parts record pass/fail without one.
   trackedEntityId: zfd.text(z.string().optional()),
-  status: z.enum(["Passed", "Failed"], {
+  // "Pending" registers a sample without a verdict (identify-only scan when an
+  // inspection document drives per-feature measurements).
+  status: z.enum(["Pending", "Passed", "Failed"], {
     errorMap: () => ({ message: "Status is required" })
   }),
   notes: zfd.text(z.string().optional())
@@ -500,5 +502,28 @@ export const inboundInspectionDispositionValidator = z.object({
   decision: z.enum(["Accept", "Reject", "Partial"], {
     errorMap: () => ({ message: "Decision is required" })
   }),
+  notes: zfd.text(z.string().optional())
+});
+
+export const inspectionDocumentUsages = ["Receipt"] as const;
+
+export const itemInspectionDocumentAssignmentValidator = z.object({
+  itemId: z.string().min(1, { message: "Item is required" }),
+  usage: z.enum(inspectionDocumentUsages, {
+    errorMap: () => ({ message: "Usage is required" })
+  }),
+  // Empty clears the slot.
+  inspectionDocumentId: zfd.text(z.string().optional())
+});
+
+export const inboundInspectionMeasurementValidator = z.object({
+  inspectionId: z.string().min(1, { message: "Inspection is required" }),
+  // Absent = create an anonymous sample (non-serial grid columns).
+  sampleId: zfd.text(z.string().optional()),
+  inspectionFeatureId: z.string().min(1, { message: "Feature is required" }),
+  // Numeric string for Measurement features; empty clears the reading.
+  value: zfd.text(z.string().optional()),
+  // Attribute (non-numeric) features toggle pass/fail instead of a value.
+  passed: zfd.text(z.enum(["true", "false"]).optional()),
   notes: zfd.text(z.string().optional())
 });
