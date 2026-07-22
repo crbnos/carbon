@@ -6,17 +6,19 @@ Carbon's self-serve customers churn at the three points the current Implementati
 
 ### Decisions locked with Chase (these override the PDFs where they differ)
 
-1. **Seven phases**; Phase 1 = the intake itself, named **"Tell Us How You Run"**; always re-editable.
+1. **Seven phases for ALL tiers**; Phase 1 = the intake itself, named **"Tell Us How You Run"**; always re-editable. Designed for self-serve; Guided/Enterprise run the same 7-gate journey, with Carbon staff able to complete the intake on the customer's behalf (existing staff-edit machinery).
 2. **Activation** = sustained reliance (measured internally forever); the 10-day streak is the graduation ceremony. Scoreboard visible ONLY between cutover and activation; hub closes at activation; deferred-items menu lives in the closing celebration; relapse detection continues internal-only.
 3. **Streak = Duolingo mechanics**: streak + 2 auto-applied Streak Freezes + milestones (days 3/5/10) + cumulative "days on Carbon" that never goes backward. No shame copy; every quiet day names its fix.
-4. **Trophy emails** on days 3/5/10 via Resend, CC the Carbon team.
+4. **Trophy notifications (email to owner, CC info@carbon.ms, internal Slack #sales) fire on days 3 and 10 only**; day 5 is an in-app celebration with no notification. Addresses/channel env-configurable.
 5. **First Win** ask = "your bread-and-butter product — a product you make all the time"; graceful ladder (rich draft → labeled placeholder shell → draft from the "what do you make" answer).
 6. **Voice input**: microphone on the intake; transcripts persisted for Carbon's sales review (hard requirement).
 7. **Hybrid AI intake**: 17 structured questions are the backbone; AI clarifies ("not sure — talk it through"), interprets uploads, drives conversational re-tune with confirm-before-apply.
 8. **Re-runnable intake, zero data loss**: answers hide, never delete; re-tunes snapshotted; contradictions with confirmed decisions or observed product state raise a confirm card. Customer sees simplicity; versioning is internal.
 9. **"Factories" never "shops"**; ICP is larger OEMs → Standard/Complex bands are the mainline experience.
 10. **Stock-on-hand importer in Wave 2** (AI-first: count sheets → upload → AI transcribes → approve). Open-PO/open-SO importers AI-first in Wave 3.
-11. **Existing self-serve companies get reset** onto the new template (build the reset in).
+11. **Existing enrolled companies get reset** onto the new template (build the reset in). The old 6-gate spine is retired for every tier, so the reset applies to all enrolled hubs (self-serve today in practice; Chase is in contact with all of them).
+15. **No accounting-system connection is named anywhere in Load Your Data.** Every source (spreadsheets, named legacy ERP, QuickBooks, Xero, homegrown) gets step-by-step instructions for producing the exact data we need from them; imports run through the CSV/AI pipeline.
+16. **Build straight through** — all four waves without pausing for review between them.
 12. Locks preview Guided but commercial architecture is Chase's; all CTAs → existing Calendly booking flow (`SUPPORT_BOOKING_URL`). No readiness score in self-serve.
 13. Authority order: **observed product state > confirmed decision > intake answer**.
 14. Phases overlap; gates celebrate completion, never block.
@@ -39,9 +41,9 @@ Carbon's self-serve customers churn at the three points the current Implementati
 
 ## Architecture decisions
 
-### A. Template v2 — the 7-phase self-serve spine (`packages/onboarding/src/content/spine.ts`)
+### A. Template v2 — the 7-phase spine for ALL tiers (`packages/onboarding/src/content/spine.ts`)
 
-Add 7 new tier-scoped StepDefs (`tiers: ["self_serve"]`), stable keys never to be renamed:
+The SPINE becomes exactly these 7 StepDefs — no tier scoping on the steps themselves; stable keys never to be renamed:
 
 | # | key | Customer-facing title | Gate ("it ends when…") |
 |---|-----|----------------------|------------------------|
@@ -53,17 +55,18 @@ Add 7 new tier-scoped StepDefs (`tiers: ["self_serve"]`), stable keys never to b
 | 6 | `gate:switch` | Make the Switch | Switch-day checklist complete; freeze plan signed |
 | 7 | `gate:live` | Live on Carbon | 10 qualifying business days — Activated |
 
-The 3 currently-universal steps (`gate:configure`, `gate:train`, `gate:golive`) become `tiers: ["guided","enterprise"]` — **paid journey unchanged**. Bump `TEMPLATE_VERSION` to 2. `spineForTier`/`overlay`/`guide` need no structural change. New DetectSignals power auto-checks (see per-phase sections). Phase overlap = gates are independent; `nextAction` keeps pointing at the first incomplete gate but every phase page stays reachable.
+The old 6 gates (`gate:discovery`, `gate:configure`, `gate:migrate`, `gate:train`, `gate:acceptance`, `gate:golive`) are retired for every tier. Paid-tier-only work survives as tier-scoped **nested product steps** (net-new work + hosting nest under Set Up the Basics) and as the paid-only **pages** (Project Team, How We Work, Scope, Roles, Requirements), which stay in the registry. Tier differences now live in: page visibility, owner labels (`ownerForTier`), who fills the intake (staff-on-behalf for paid), and locks (self-serve-only surfaces). Bump `TEMPLATE_VERSION` to 2. `spineForTier`/`overlay`/`guide` need no structural change. New DetectSignals power auto-checks (see per-phase sections). Phase overlap = gates are independent; `nextAction` keeps pointing at the first incomplete gate but every phase page stays reachable. Content referencing old step keys (`board.ts` tasks' `stepKey`, `roles.ts`, gantt geometry) is remapped to the 7 new keys.
 
-**Reset of existing self-serve hubs** (Chase-approved): in the same migration — for `implementationHub` rows with `tier='self_serve'`: set `templateVersion=2, status='tailoring'`, delete their `implementationCheckState` + `implementationFieldValue` rows. Guided/enterprise rows untouched.
+**Reset of existing hubs** (Chase-approved, all tiers): **lazy code reset, no SQL** — when the get-started loader finds a hub with `templateVersion < 2`, it (service-role) deletes that company's `implementationCheckState`/`implementationFieldValue`/`implementationRow` state, sets `templateVersion=2, status='tailoring'`, and the company starts fresh at Phase 1. Idempotent, runs once per company.
 
-**New pages** (registry + copy + views + thin routes; existing paid pages untouched): `intake` (full-screen wizard, not a sidebar page), `load-data`, `pilot`, `crew`, `switch`, `live`. Setup Map + Training are shared but tailored. Sidebar groups get self-serve-appropriate labels.
+**New pages** (registry + copy + views + thin routes; existing paid pages untouched): `intake` (full-screen wizard, not a sidebar page), `load-data`, `pilot`, `crew`, `switch`, `live`. Setup Map + Training are shared but tailored. The retired `data` (paid Data Migration) page is replaced by `load-data` for all tiers; `go-live` page content folds into `switch` + `live`.
 
 ### B. Intake — data model + tailoring (Subsystem 1)
 
-- **New tables** (one migration):
-  - `implementationIntake` — id, companyId, `version` INT (UNIQUE(companyId, version)), `answers` JSONB, `band` TEXT, `flags` JSONB, `status` ('draft'|'completed'), `completedAt`, audit. Latest completed row = current truth; a re-tune creates a new draft version, completed on confirm. Snapshots are just rows — history for free, diffing = pure comparison of two answer sets.
-  - `implementationIntakeTranscript` — id, companyId, `intakeId`, `questionKey`, `source` ('voice'|'clarifier'), `transcript` TEXT, audit. **Sales-review requirement**: every voice utterance and clarifier exchange is persisted here.
+- **Storage: NO new tables.** The hub's sanctioned per-company state stores carry everything (EXTENDING.md's own extension recipe; RLS + realtime already configured; fully typed today):
+  - Intake versions → `implementationRow` collection **`intake`** — payload `{version, answers, band, flags, status: 'draft'|'completed', completedAt}`. One row per version; latest completed row = current truth; a re-tune creates a new draft version, completed on confirm. Snapshots are just rows — history for free, diffing = pure comparison of two answer sets.
+  - Transcripts → `implementationRow` collection **`intakeTranscript`** — payload `{intakeVersion, questionKey, source: 'voice'|'clarifier', transcript}`. **Sales-review requirement**: every voice utterance and clarifier exchange is persisted here.
+  - (If a dedicated-tables hardening migration is ever wanted, it's a clean later step — but rows are the package's designed extension mechanism, not a workaround.)
 - **Answer schema** in `packages/onboarding/src/content/intake.ts`: the 17 questions as typed content (key, ask, helper, options, skip logic, what-it-drives, flag conditions) + zod validator for the answers object. Copy uses "factory" language; Q-keys are stable (`q.product`, `q.people`, `q.sites`, `q.workIntake`, `q.customers`, `q.fulfillment`, `q.jobsPerMonth`, `q.tracking`, `q.quality`, `q.systems`, `q.books`, `q.items`, `q.boms`, `q.owner`, `q.goLiveDate`, `q.weeklyHours`, `q.upload`).
 - **Tailoring logic** = pure `packages/onboarding/src/logic/tailor.ts`: `tailorPlan(answers, signals) → { band, suggestedWeeks, weeklyEffort, hidden: {setupKeys, pages, dataKeys}[each with reason MessageDescriptor], flags, receipts }`. Computed at read time from the latest completed intake — never stored, so it can't drift. Visibility overlay: setup/data/page filtering composes intake-derived hiding with staff exclusions (staff exclusions win). **Authority order** enforced here: a hide rule is suppressed when observed signals contradict it (e.g. accounting enabled + configured ⇒ don't hide accounting; surface a confirm card instead).
 - **Re-tune diff** = pure `diffIntake(prev, next) → plain-language change list` ("2 steps added — you now track lots; date moved out a week"). Contradiction with a confirmed Decisions-Log entry or observed state → confirm card before the new version is marked completed.
@@ -84,15 +87,15 @@ The 3 currently-universal steps (`gate:configure`, `gate:train`, `gate:golive`) 
 
 ### D. Streak engine + scoreboard (Subsystem 2)
 
-- **New table** `implementationUsageDay` — id, companyId, `date` DATE (company-local), `signals` JSONB (per-area counts), `qualifying` BOOL, `freezeApplied` BOOL, audit; UNIQUE(companyId, date). **New columns on `implementationHub`**: `liveAt` (cutover), `activatedAt`, `streakCount`, `streakBest`, `daysOnCarbon`, `freezesRemaining` (default 2).
+- **Storage: NO new tables.** Usage days → `implementationRow` collection **`usageDay`** — payload `{date (company-local ISO), signals (per-area counts), qualifying, freezeApplied}`; uniqueness per (companyId, date) enforced by the single-writer cron's upsert-by-lookup. Streak state → `implementationFieldValue` keys **`live.liveAt`, `live.activatedAt`, `live.streak`, `live.streakBest`, `live.daysOnCarbon`, `live.freezesRemaining`** (single writer: the cron + gate transition).
 - **Hourly Inngest cron** (`packages/jobs/.../scheduled/implementation-usage.ts`): for each hub past cutover (`liveAt` set), when the company's local business day has just closed (timezone from primary `location.timezone`, fallback UTC — the `dispatch.ts` pattern), recompute the last two local days' usage rows (late-arriving data heals) and upsert by (companyId, date). Business day = Mon–Fri minus company `holiday` rows (existing table, same check `dispatch.ts` uses). Qualifying day = meaningful actions in ≥2 in-scope areas (thresholds scaled by `q.jobsPerMonth` band); signals from `job.completedDate`, PO status transitions, `shipment`/`receipt`/`salesInvoice.postingDate`, `productionEvent`, `quote`/`salesOrder` created. Late data can flip a day to qualifying on recompute but **never un-qualifies** a counted day (never-backward rule).
-- **Streak reducer** = pure function in `packages/onboarding/src/logic/streak.ts` (unit-tested): folds the company's full `implementationUsageDay` history from `liveAt` forward on every run (recompute-from-scratch, ≤ ~60 rows — no incremental drift) and writes the derived streak columns. Quiet business day → consume a freeze if available (freezeApplied, streak survives) else streak resets to 0 — but `daysOnCarbon` only climbs and milestones already reached stay celebrated. Milestones at 3/5/10 fire exactly once (guarded by checkState keys `check:live.milestone.{3,5,10}`): confetti in-app + **trophy email** (new `StreakMilestoneEmail` template; to owner, CC Carbon team address) + internal Slack ping. Day 10 → `activatedAt` set, biggest celebration, closing screen (journey-in-numbers + "what you set aside on purpose" menu from Later/deferred items), hub status → complete.
+- **Streak reducer** = pure function in `packages/onboarding/src/logic/streak.ts` (unit-tested): folds the company's full `usageDay` history from `live.liveAt` forward on every run (recompute-from-scratch, ≤ ~60 rows — no incremental drift) and writes the derived streak fieldValues. Quiet business day → consume a freeze if available (freezeApplied, streak survives) else streak resets to 0 — but `daysOnCarbon` only climbs and milestones already reached stay celebrated. Milestones at 3/5/10 fire exactly once (guarded by checkState keys `check:live.milestone.{3,5,10}`): all three celebrate in-app with confetti; **days 3 and 10 only** also send the trophy email (new `StreakMilestoneEmail` template; to owner, CC `CARBON_TEAM_EMAIL` env, default info@carbon.ms) + internal Slack ping (`CARBON_TEAM_SLACK_CHANNEL` env, default #sales). Day 10 → `live.activatedAt` set, biggest celebration, closing screen (journey-in-numbers + "what you set aside on purpose" menu from Later/deferred items), hub status → complete.
 - **Scoreboard UI** (`live` page + hub header between cutover and activation only): streak + freezes + days-on-Carbon + printed plain-words definition; "This week in your factory" counts (this vs last week); **daily health check** list computed in the loader (jobs idle 2+ days, negative stock, orders past promise not shipped, POs past due not received — each row deep-links via `path.to`); weekly relapse question (one click; a "yes" creates a fix-it task row).
 - **After activation**: cron keeps writing usage days (internal reliance tracking, feeds fleet view + future relapse outreach); no customer-facing surface.
 
 ### E. Load Your Data (Phase 3) + importers
 
-- Open the data page to self-serve as **"Load Your Data"** — checklist auto-built from intake in dependency order (customers → suppliers → items → BOMs/routings → pricing where applicable), each row: per-source recipe (content keyed by `q.systems`: spreadsheets / named legacy ERP / Xero pull via existing `accounting-backfill`; QuickBooks framed honestly as export-based until a QB sync exists), import launcher (deep link to the entity screen's existing Bulk Import), live momentum counts (new `getImplementationCounts` server fn), **spot-check flow** (deal 5 random imported records, links, "do they look right?" → mark loaded), import-with-judgment copy (active-only recommendation). Greyed switch-week rows visible from day one.
+- The **"Load Your Data"** page (all tiers) — checklist auto-built from intake in dependency order (customers → suppliers → items → BOMs/routings → pricing where applicable), each row: a per-source **step-by-step recipe** (content keyed by `q.systems`; per Chase, NO accounting connection is named anywhere — every source, including QuickBooks/Xero, gets plain instructions for exporting/producing exactly the data we need, then the CSV/AI import does the rest), import launcher (deep link to the entity screen's existing Bulk Import), live momentum counts (new `getImplementationCounts` server fn), **spot-check flow** (deal 5 random imported records, links, "do they look right?" → mark loaded), import-with-judgment copy (active-only recommendation). Greyed switch-week rows visible from day one.
 - **Stock-on-hand importer (Wave 2)**: AI-first surface built ON the existing inventory count: print count sheets (existing CSV export/blind count), then upload filled sheets/CSV/photos → `generateObject` parses to count lines → creates an `inventoryCount` for review → post books opening stock through the existing `post-inventory-count` machinery. Handles lots/serials via count-line attributes.
 - **Open-PO / open-SO importers (Wave 3)**: paste/upload/PDF → AI extraction → Draft purchase/sales orders for approval (existing order services); prioritized by expected receipt/due date. Price lists + bulk operators: same AI-first pattern, smaller scope.
 
@@ -125,11 +128,11 @@ Date confirmation with guidance (books moving → first of month; else any Monda
 
 ## Implementation waves (build order)
 
-Each wave ends: scoped typecheck + vitest + lingui extract/translate + browser verification (/auth + /test) + commit via check-and-commit. Migrations: `pnpm db:migrate:new`, apply, `pnpm run generate:types` BEFORE typechecking. All new customer copy via Lingui `msg`, "factory" vocabulary.
+Waves are built **straight through** (Chase's call), committing per completed chunk. Each wave ends: scoped typecheck + vitest + lingui extract + commit. **No SQL migrations anywhere** (row/fieldValue storage) — nothing to apply, types are already current. All new customer copy via Lingui `msg`, "factory" vocabulary. NOTE (environment): this container has no local DB/Docker, so browser verification and the Inngest dev loop are deferred to Chase's environment; the compensating rigor is unit tests on all pure logic + full scoped typechecks.
 
 ### Wave 1 — The funnel (intake, tailoring, First Win, Day One)
-1. **Migration 1**: `implementationIntake` + `implementationIntakeTranscript` + hub columns (`liveAt`, `activatedAt`, streak columns with defaults) + self-serve reset (templateVersion=2, status='tailoring', wipe checkState/fieldValue for self_serve hubs). Zod validators in `packages/onboarding/src/models.ts`.
-2. **Template v2**: new 7-phase spine + tier rescope of the old 3 universal steps; new registry pages (`intake`, `load-data`, `pilot`, `crew`, `switch`, `live`) + copy; `TEMPLATE_VERSION=2`; new board tasks per phase; labels/pages groups for self-serve.
+1. **State layer**: intake/transcript collections + streak fieldValue keys + zod validators in `packages/onboarding/src/models.ts`; lazy v1→v2 hub reset in the get-started loader (service-role, idempotent).
+2. **Template v2**: the 7-phase spine (all tiers) + retire old gates + remap board/roles/gantt content; new registry pages (`intake`, `load-data`, `pilot`, `crew`, `switch`, `live`) + copy; `TEMPLATE_VERSION=2`; new board tasks per phase.
 3. **Intake content + logic**: `content/intake.ts` (17 questions, flags, skip logic), `logic/tailor.ts` + `logic/diffIntake.ts` (pure, unit-tested — the package's first tests), server helpers (`getIntake`, `upsertIntakeDraft`, `completeIntake`, `insertTranscript`).
 4. **Wizard UI + payoff**: full-screen intake flow (voice via transcription edge fn; clarifier via new `api+/ai+/intake.clarify.tsx`; upload dropzone), payoff screen (receipts/clock/shape/flags-aside/one button), enrollment redirects into Phase 1, countdown header, re-tune entry ("Retune my plan") with diff + confirm cards.
 5. **Tailored Setup Map**: apply `tailorPlan` hiding + receipts to setup groups/rows + Required/Recommended/Later chips + time chips (new content fields), Later items auto-collect into the Phase-2 backlog list. Decisions Log cards (5 decisions, `implementationRow` collection `decisions`, "Decided by X on Y · change").
@@ -144,7 +147,7 @@ Each wave ends: scoped typecheck + vitest + lingui extract/translate + browser v
 5. **Scoreboard v1**: `live` page with this-week counts + manual streak display (engine lands in Wave 3) so switched factories see the finish line immediately.
 
 ### Wave 3 — Friction removers (engine, digests, importers)
-1. **Streak engine**: `implementationUsageDay` migration + cron + pure streak reducer (tests: freeze consumption, reset, milestone idempotency, timezone edges) + milestones + trophy emails (`StreakMilestoneEmail`, CC Carbon team) + internal Slack pings + activation close flow (journey-in-numbers + deferred menu + status complete) + post-activation internal tracking.
+1. **Streak engine**: `usageDay` rows + cron + pure streak reducer (tests: freeze consumption, reset, milestone idempotency, timezone edges) + milestones + trophy emails at days 3/10 only (`StreakMilestoneEmail`, CC Carbon team) + internal Slack pings + activation close flow (journey-in-numbers + deferred menu + status complete) + post-activation internal tracking.
 2. **Health checks**: loader queries (idle jobs, negative stock, past-promise orders, past-due POs) + deep links + relapse question → fix-it tasks.
 3. **Monday digest + quiet detection**: two Inngest crons + `HubDigestEmail`/`HubNudgeEmail` templates + last-activity computation + no-repeat guards.
 4. **Open-PO/open-SO AI importers** + price-list import + bulk operator creation (AI-first pattern from Wave 2).
@@ -160,14 +163,13 @@ Each wave ends: scoped typecheck + vitest + lingui extract/translate + browser v
 ## Verification
 
 - **Unit**: first-ever tests in `packages/onboarding` — `tailorPlan` (answers→hiding/receipts/band matrix), `diffIntake`, streak reducer (freeze/reset/milestone/timezone), trace derivation. `pnpm --filter @carbon/onboarding test`.
-- **Types**: `pnpm exec turbo run typecheck --filter=@carbon/onboarding --filter=erp --filter=@carbon/jobs` (+ database after migrations; `pnpm run generate:types` first).
-- **Browser (per wave)**: /auth + /test flows — W1: enroll → intake (incl. voice + skip + payoff receipts) → First Win → commitments → re-tune diff; W2: recipes → import → spot-check → pilot trace self-checking → freeze plan sign → liveAt; W3: simulate usage days → streak/freeze/milestone → activation close; W4: locked previews + fleet view.
-- **Jobs**: Inngest dev server locally for cron functions; DISABLE_RESEND for email dry-runs; email previews via `pnpm --filter @carbon/documents email:previews`.
-- **Never** rebuild the DB to test; migrations applied via `pnpm db:migrate` only.
+- **Types**: `pnpm exec turbo run typecheck --filter=@carbon/onboarding --filter=erp --filter=@carbon/jobs` (no migrations → no type regeneration needed).
+- **Browser (deferred to an environment with a running stack)**: /auth + /test flows — W1: enroll → intake (incl. voice + skip + payoff receipts) → First Win → commitments → re-tune diff; W2: recipes → import → spot-check → pilot trace self-checking → freeze plan sign → liveAt; W3: simulate usage days → streak/freeze/milestone → activation close; W4: locked previews + fleet view.
+- **Jobs**: Inngest dev server for cron functions; DISABLE_RESEND for email dry-runs; email previews via `pnpm --filter @carbon/documents email:previews`.
 
-## Open items confirmed with Chase before build
+## Decisions from Chase's final review (2026-07-22)
 
-1. Paid tiers (guided/enterprise) keep their current 6-gate journey unchanged — the 7-phase experience is self-serve-only for now.
-2. QuickBooks "pull through your connection" doesn't exist (only Xero does); QB factories get honest export-based recipes until a QB sync is prioritized separately.
-3. Build cadence: pause between waves for review vs. straight through.
-4. The Carbon-team CC address for trophy emails + internal Slack channel for pings.
+1. The 7-phase journey applies to ALL tiers; Carbon staff can complete the intake on a paid customer's behalf.
+2. No accounting-system connection named in Load Your Data — step-by-step data-production instructions per source instead.
+3. Build straight through, no pauses between waves.
+4. Trophy notifications (email CC info@carbon.ms + Slack #sales, env-configurable) at days 3 and 10 only; day 5 celebrates in-app only.
