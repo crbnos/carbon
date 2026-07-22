@@ -17,6 +17,11 @@ export interface CollectionDef {
   // (validated / configured / in-scope). Checkbox surfaces (golive) leave this
   // unset.
   flag?: { active: MessageDescriptor; inactive: MessageDescriptor };
+  // Whether customers may CREATE rows in this collection themselves (the
+  // Decisions Log, their crew). Staff-tailoring surfaces leave this off —
+  // adding template rows stays a Carbon-staff action. The /state server action
+  // enforces this; it is not just UX.
+  customerAdd?: boolean;
   // Default cells for a freshly added row. A function so each call is a fresh
   // object (no shared-reference surprises). These seed values are persisted to
   // the DB as user-editable row DATA, so they stay plain strings — NOT translated.
@@ -50,6 +55,24 @@ export const COLLECTIONS = {
     addLabel: msg`Add a step`,
     emptyText: msg`No extra cutover steps yet. Add anything specific to this customer.`,
     newPayload: () => ({ label: "New cutover step" })
+  },
+  // The Decisions Log — the five decisions that cause expensive rework when
+  // they're made silently and wrong. Customers record their own decisions.
+  decisions: {
+    collection: "decisions",
+    addLabel: msg`Record a decision`,
+    emptyText: msg`No decisions recorded yet.`,
+    customerAdd: true,
+    newPayload: () => ({ key: "", value: "", decidedBy: "", decidedAt: "" })
+  },
+  // Your Crew — the owner plus one champion per area (Phase 5). Customers
+  // build their own lineup.
+  crew: {
+    collection: "crew",
+    addLabel: msg`Add a champion`,
+    emptyText: msg`No champions named yet. One per area — one person can wear several hats.`,
+    customerAdd: true,
+    newPayload: () => ({ area: "", name: "", email: "", status: "invited" })
   }
 } satisfies Record<string, CollectionDef>;
 

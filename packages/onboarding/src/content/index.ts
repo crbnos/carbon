@@ -8,6 +8,7 @@ export const TEMPLATE_VERSION = 2;
 export * from "./board";
 export * from "./collections";
 export * from "./copy";
+export * from "./decisions";
 export * from "./golive";
 export * from "./howwework";
 export * from "./intake";

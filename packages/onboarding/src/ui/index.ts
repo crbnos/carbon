@@ -1,3 +1,4 @@
+export { DecisionsLog } from "./DecisionsLog";
 export { EditableField } from "./EditableField";
 export { GanttChart } from "./GanttChart";
 export { HowWeWorkView } from "./HowWeWorkView";

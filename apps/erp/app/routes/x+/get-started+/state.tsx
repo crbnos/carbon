@@ -2,7 +2,7 @@ import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { stateActionValidator } from "@carbon/onboarding";
+import { COLLECTIONS, stateActionValidator } from "@carbon/onboarding";
 import {
   deleteImplementationRow,
   insertImplementationRow,
@@ -90,9 +90,14 @@ export async function action({ request }: ActionFunctionArgs) {
       break;
     }
     case "addRow": {
-      // Adding/removing rows is a Carbon-staff tailoring action; updating a
+      // Adding/removing rows is a Carbon-staff tailoring action — except the
+      // collections customers own themselves (Decisions Log, their crew),
+      // which opt in via `customerAdd` in the collections registry. Updating a
       // row (e.g. a status toggle) stays open to any employee.
-      if (!isInternal) {
+      const collectionDef = (
+        COLLECTIONS as Record<string, { customerAdd?: boolean }>
+      )[a.collection];
+      if (!isInternal && !collectionDef?.customerAdd) {
         return data(
           { success: false },
           await flash(

@@ -1,9 +1,10 @@
-import { Button, IconButton } from "@carbon/react";
+import { Badge, Button, IconButton } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import {
   LuArrowUpRight,
   LuCheckCheck,
+  LuEyeOff,
   LuFileText,
   LuPlay,
   LuTrash
@@ -11,8 +12,17 @@ import {
 import { COLLECTIONS, PAGE_COPY } from "../content";
 import { setupGroupKey } from "../content/board";
 import { SETUP_GROUPS } from "../content/setup";
-import { filterByModule, flagKey, setupAnchorId } from "../logic";
+import {
+  chipForSetupRow,
+  filterByModule,
+  flagKey,
+  setupAnchorId,
+  type SetupChip,
+  type Tailoring
+} from "../logic";
 import type { CustomDataPayload, ImplementationRowData } from "../types";
+import { MODULE_NAME } from "../types";
+import { DecisionsLog } from "./DecisionsLog";
 import { ProgressPill } from "./ProgressPill";
 import {
   CustomRowSection,
@@ -28,8 +38,88 @@ import {
   useCheckMap,
   useExclusions,
   useHubActions,
-  useResolveScreenUrl
+  useResolveScreenUrl,
+  useTailoring
 } from "./state";
+
+// Required / Recommended / Later chip on every row. "Later" items collect
+// automatically into the after-you're-live backlog — deferral is a feature of
+// the plan, never a failure of the customer.
+function RowChip({ chip }: { chip: SetupChip }) {
+  if (chip === "required") {
+    return (
+      <Badge variant="destructive" className="shrink-0">
+        <Trans>Required</Trans>
+      </Badge>
+    );
+  }
+  if (chip === "later") {
+    return (
+      <Badge variant="outline" className="shrink-0 text-muted-foreground">
+        <Trans>Later</Trans>
+      </Badge>
+    );
+  }
+  return (
+    <Badge variant="secondary" className="shrink-0">
+      <Trans>Recommended</Trans>
+    </Badge>
+  );
+}
+
+// Everything the answers hid explains itself here in one line tied to those
+// answers. Nothing in the hub is ever mysteriously absent.
+function HiddenReceipts({ tailoring }: { tailoring: Tailoring }) {
+  const { i18n } = useLingui();
+  const hiddenRows = SETUP_GROUPS.flatMap((group) =>
+    group.rows.filter((row) => tailoring.hiddenSetup.has(row.key))
+  );
+  if (tailoring.excludeModules.length === 0 && hiddenRows.length === 0) {
+    return null;
+  }
+  return (
+    <Section
+      title={<Trans>Hidden from your plan — and why</Trans>}
+      subtitle={
+        <Trans>
+          Everything here follows from your answers. Change an answer on the How
+          You Run page and these come back.
+        </Trans>
+      }
+    >
+      <ul className="flex flex-col gap-2 px-5 py-4">
+        {tailoring.excludeModules.map((exclusion) => (
+          <li
+            key={exclusion.mod}
+            className="flex items-start gap-2 text-sm text-muted-foreground"
+          >
+            <LuEyeOff className="size-4 shrink-0 mt-0.5" />
+            <span>
+              <span className="font-medium text-foreground">
+                {i18n._(MODULE_NAME[exclusion.mod])}
+              </span>{" "}
+              — {i18n._(exclusion.reason)}
+            </span>
+          </li>
+        ))}
+        {hiddenRows.map((row) => (
+          <li
+            key={row.key}
+            className="flex items-start gap-2 text-sm text-muted-foreground"
+          >
+            <LuEyeOff className="size-4 shrink-0 mt-0.5" />
+            <span>
+              <span className="font-medium text-foreground">
+                {i18n._(row.object)}
+              </span>{" "}
+              — {i18n._(tailoring.hiddenSetup.get(row.key)!)}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </Section>
+  );
+}
 
 // Docs/Video badges for a whole module, shown on the group header — the same
 // two-button pattern the Plan page uses for its phase resources. Carbon's docs
@@ -63,16 +153,20 @@ const FLAG = DEF.flag!;
 
 const configuredKey = (id: string) => flagKey(`setup.${id}`);
 
-export function SetupMapView() {
+export function SetupMapView({ userName }: { userName?: string }) {
   const { t, i18n } = useLingui();
   const exclusions = useExclusions();
   const map = useCheckMap();
+  const tailoring = useTailoring();
   const { toggleFlag, toggleFlags } = useHubActions();
   const resolveScreenUrl = useResolveScreenUrl();
 
-  const visibleRows = SETUP_GROUPS.flatMap((g) =>
-    filterByModule(g.rows, exclusions.modules)
-  );
+  const rowsForGroup = (rows: (typeof SETUP_GROUPS)[number]["rows"]) =>
+    filterByModule(rows, exclusions.modules).filter(
+      (row) => !tailoring.hiddenSetup.has(row.key)
+    );
+
+  const visibleRows = SETUP_GROUPS.flatMap((g) => rowsForGroup(g.rows));
   const configured = visibleRows.filter(
     (r) => map.get(configuredKey(r.key)) === "1"
   ).length;
@@ -91,8 +185,10 @@ export function SetupMapView() {
         }
       />
 
+      {userName ? <DecisionsLog userName={userName} /> : null}
+
       {SETUP_GROUPS.map((group) => {
-        const rows = filterByModule(group.rows, exclusions.modules);
+        const rows = rowsForGroup(group.rows);
         if (rows.length === 0) return null;
         const allConfigured = rows.every(
           (r) => map.get(configuredKey(r.key)) === "1"
@@ -136,6 +232,8 @@ export function SetupMapView() {
               {rows.map((row) => {
                 const key = configuredKey(row.key);
                 const url = resolveScreenUrl(row.key);
+                const chip = chipForSetupRow(row.key, tailoring);
+                const laterReason = tailoring.laterSetup.get(row.key);
                 return (
                   <li
                     key={row.key}
@@ -160,9 +258,10 @@ export function SetupMapView() {
                         </div>
                       )}
                       <div className="text-xs text-muted-foreground">
-                        {i18n._(row.detail)}
+                        {laterReason ? i18n._(laterReason) : i18n._(row.detail)}
                       </div>
                     </div>
+                    <RowChip chip={chip} />
                     <StatusToggle
                       active={map.get(key) === "1"}
                       activeLabel={i18n._(FLAG.active)}
@@ -178,6 +277,8 @@ export function SetupMapView() {
           </Section>
         );
       })}
+
+      <HiddenReceipts tailoring={tailoring} />
 
       <CustomRowSection collection="setup">
         {(row) => <CustomSetupRow row={row} />}
