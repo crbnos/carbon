@@ -2161,6 +2161,12 @@ msgstr "Изменение этого обновит ID детали"
 msgid "Changing type resets this item's draft edits."
 msgstr "Изменение типа сбрасывает черновые редактирования этого элемента."
 
+msgid "Characteristic"
+msgstr ""
+
+msgid "Characteristics"
+msgstr ""
+
 msgid "Chart of accounts"
 msgstr "План счетов"
 
@@ -5318,6 +5324,9 @@ msgstr "Ошибка при сохранении правила конфигур
 
 msgid "Failed to save diagram"
 msgstr "Не удалось сохранить диаграмму"
+
+msgid "Failed to save measurement"
+msgstr ""
 
 msgid "Failed to save parts"
 msgstr "Ошибка при сохранении деталей"
@@ -11393,6 +11402,9 @@ msgstr "Потребление запасных частей"
 
 msgid "Spare Part Cost"
 msgstr "Стоимость запасных частей"
+
+msgid "Spec"
+msgstr ""
 
 msgid "Specific Customer"
 msgstr "Конкретный клиент"

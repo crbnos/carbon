@@ -2161,6 +2161,12 @@ msgstr "Changing this will update the part ID"
 msgid "Changing type resets this item's draft edits."
 msgstr "Changing type resets this item's draft edits."
 
+msgid "Characteristic"
+msgstr "Characteristic"
+
+msgid "Characteristics"
+msgstr "Characteristics"
+
 msgid "Chart of accounts"
 msgstr "Chart of accounts"
 
@@ -5318,6 +5324,9 @@ msgstr "Failed to save configuration rule"
 
 msgid "Failed to save diagram"
 msgstr "Failed to save diagram"
+
+msgid "Failed to save measurement"
+msgstr "Failed to save measurement"
 
 msgid "Failed to save parts"
 msgstr "Failed to save parts"
@@ -11393,6 +11402,9 @@ msgstr "Spare Part Consumption"
 
 msgid "Spare Part Cost"
 msgstr "Spare Part Cost"
+
+msgid "Spec"
+msgstr "Spec"
 
 msgid "Specific Customer"
 msgstr "Specific Customer"

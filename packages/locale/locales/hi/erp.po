@@ -2161,6 +2161,12 @@ msgstr "इसे बदलने से पार्ट ID अपडेट ह�
 msgid "Changing type resets this item's draft edits."
 msgstr "प्रकार बदलने से इस आइटम के ड्राफ्ट संपादन रीसेट हो जाते हैं।"
 
+msgid "Characteristic"
+msgstr ""
+
+msgid "Characteristics"
+msgstr ""
+
 msgid "Chart of accounts"
 msgstr "खातों की चार्ट"
 
@@ -5318,6 +5324,9 @@ msgstr "कॉन्फ़िगरेशन नियम सहेजने म
 
 msgid "Failed to save diagram"
 msgstr "आरेख सहेजने में विफल"
+
+msgid "Failed to save measurement"
+msgstr ""
 
 msgid "Failed to save parts"
 msgstr "पुर्जों को सहेजने में विफल"
@@ -11393,6 +11402,9 @@ msgstr "स्पेयर पार्ट खपत"
 
 msgid "Spare Part Cost"
 msgstr "स्पेयर पार्ट लागत"
+
+msgid "Spec"
+msgstr ""
 
 msgid "Specific Customer"
 msgstr "विशिष्ट ग्राहक"

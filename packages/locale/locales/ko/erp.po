@@ -2161,6 +2161,12 @@ msgstr "이를 변경하면 품목 ID가 업데이트됩니다"
 msgid "Changing type resets this item's draft edits."
 msgstr "유형을 변경하면 이 항목의 초안 편집이 재설정됩니다."
 
+msgid "Characteristic"
+msgstr ""
+
+msgid "Characteristics"
+msgstr ""
+
 msgid "Chart of accounts"
 msgstr "계정과목표"
 
@@ -5318,6 +5324,9 @@ msgstr "설정 규칙을 저장하지 못했습니다"
 
 msgid "Failed to save diagram"
 msgstr "다이어그램을 저장하지 못했습니다"
+
+msgid "Failed to save measurement"
+msgstr ""
 
 msgid "Failed to save parts"
 msgstr "부품 저장 실패"
@@ -11393,6 +11402,9 @@ msgstr "예비 부품 소모"
 
 msgid "Spare Part Cost"
 msgstr "예비 부품 비용"
+
+msgid "Spec"
+msgstr ""
 
 msgid "Specific Customer"
 msgstr "특정 고객"

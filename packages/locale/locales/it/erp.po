@@ -2161,6 +2161,12 @@ msgstr "Modificare questo aggiornerà l'ID della parte"
 msgid "Changing type resets this item's draft edits."
 msgstr "Cambiare il tipo ripristina le modifiche in bozza di questo elemento."
 
+msgid "Characteristic"
+msgstr ""
+
+msgid "Characteristics"
+msgstr ""
+
 msgid "Chart of accounts"
 msgstr "Piano dei conti"
 
@@ -5318,6 +5324,9 @@ msgstr "Impossibile salvare la regola di configurazione"
 
 msgid "Failed to save diagram"
 msgstr "Impossibile salvare il diagramma"
+
+msgid "Failed to save measurement"
+msgstr ""
 
 msgid "Failed to save parts"
 msgstr "Errore nel salvataggio delle parti"
@@ -11393,6 +11402,9 @@ msgstr "Consumo di Ricambi"
 
 msgid "Spare Part Cost"
 msgstr "Costo dei Ricambi"
+
+msgid "Spec"
+msgstr ""
 
 msgid "Specific Customer"
 msgstr "Cliente Specifico"

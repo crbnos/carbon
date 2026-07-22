@@ -2161,6 +2161,12 @@ msgstr "Cela modifiera l'ID de la pièce"
 msgid "Changing type resets this item's draft edits."
 msgstr "Modifier le type réinitialise les brouillons de cet article."
 
+msgid "Characteristic"
+msgstr ""
+
+msgid "Characteristics"
+msgstr ""
+
 msgid "Chart of accounts"
 msgstr "Plan comptable"
 
@@ -5318,6 +5324,9 @@ msgstr "Échec de l'enregistrement de la règle de configuration"
 
 msgid "Failed to save diagram"
 msgstr "Impossible d'enregistrer le diagramme"
+
+msgid "Failed to save measurement"
+msgstr ""
 
 msgid "Failed to save parts"
 msgstr "Échec de l'enregistrement des pièces"
@@ -11393,6 +11402,9 @@ msgstr "Consommation de pièces de rechange"
 
 msgid "Spare Part Cost"
 msgstr "Coût des pièces de rechange"
+
+msgid "Spec"
+msgstr ""
 
 msgid "Specific Customer"
 msgstr "Client spécifique"

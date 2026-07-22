@@ -2161,6 +2161,12 @@ msgstr "これを変更するとパーツIDが更新されます"
 msgid "Changing type resets this item's draft edits."
 msgstr "種類を変更すると、このアイテムのドラフト編集がリセットされます。"
 
+msgid "Characteristic"
+msgstr ""
+
+msgid "Characteristics"
+msgstr ""
+
 msgid "Chart of accounts"
 msgstr "勘定科目表"
 
@@ -5318,6 +5324,9 @@ msgstr "設定ルールの保存に失敗しました"
 
 msgid "Failed to save diagram"
 msgstr "図の保存に失敗しました"
+
+msgid "Failed to save measurement"
+msgstr ""
 
 msgid "Failed to save parts"
 msgstr "部品の保存に失敗しました"
@@ -11393,6 +11402,9 @@ msgstr "予備部品消費"
 
 msgid "Spare Part Cost"
 msgstr "スペアパーツコスト"
+
+msgid "Spec"
+msgstr ""
 
 msgid "Specific Customer"
 msgstr "特定の顧客"

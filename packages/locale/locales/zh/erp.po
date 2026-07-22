@@ -2161,6 +2161,12 @@ msgstr "更改此项将更新零件ID"
 msgid "Changing type resets this item's draft edits."
 msgstr "更改类型将重置此项目的草稿编辑。"
 
+msgid "Characteristic"
+msgstr ""
+
+msgid "Characteristics"
+msgstr ""
+
 msgid "Chart of accounts"
 msgstr "会计科目表"
 
@@ -5318,6 +5324,9 @@ msgstr "保存配置规则失败"
 
 msgid "Failed to save diagram"
 msgstr "保存图表失败"
+
+msgid "Failed to save measurement"
+msgstr ""
 
 msgid "Failed to save parts"
 msgstr "保存零件失败"
@@ -11393,6 +11402,9 @@ msgstr "备件消耗"
 
 msgid "Spare Part Cost"
 msgstr "备件成本"
+
+msgid "Spec"
+msgstr ""
 
 msgid "Specific Customer"
 msgstr "特定客户"

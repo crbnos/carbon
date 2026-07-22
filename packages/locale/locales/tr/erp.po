@@ -2161,6 +2161,12 @@ msgstr "Bunu değiştirmek parça kimliğini güncelleyecektir"
 msgid "Changing type resets this item's draft edits."
 msgstr "Türü değiştirmek bu öğenin taslak düzenlemelerini sıfırlar."
 
+msgid "Characteristic"
+msgstr ""
+
+msgid "Characteristics"
+msgstr ""
+
 msgid "Chart of accounts"
 msgstr "Muhasebe planı"
 
@@ -5318,6 +5324,9 @@ msgstr "Yapılandırma kuralını kaydetme başarısız oldu"
 
 msgid "Failed to save diagram"
 msgstr "Şemayı kaydetme başarısız oldu"
+
+msgid "Failed to save measurement"
+msgstr ""
 
 msgid "Failed to save parts"
 msgstr "Parça kaydedilemedi"
@@ -11393,6 +11402,9 @@ msgstr "Yedek Parça Tüketimi"
 
 msgid "Spare Part Cost"
 msgstr "Yedek Parça Maliyeti"
+
+msgid "Spec"
+msgstr ""
 
 msgid "Specific Customer"
 msgstr "Belirli Müşteri"

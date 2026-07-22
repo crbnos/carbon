@@ -2161,6 +2161,12 @@ msgstr "Zmiana tego zaktualizuje identyfikator części"
 msgid "Changing type resets this item's draft edits."
 msgstr "Zmiana typu resetuje edycje wersji roboczej tego elementu."
 
+msgid "Characteristic"
+msgstr ""
+
+msgid "Characteristics"
+msgstr ""
+
 msgid "Chart of accounts"
 msgstr "Plan kont"
 
@@ -5318,6 +5324,9 @@ msgstr "Nie udało się zapisać reguły konfiguracji"
 
 msgid "Failed to save diagram"
 msgstr "Nie udało się zapisać diagramu"
+
+msgid "Failed to save measurement"
+msgstr ""
 
 msgid "Failed to save parts"
 msgstr "Nie udało się zapisać części"
@@ -11393,6 +11402,9 @@ msgstr "Zużycie części zamiennych"
 
 msgid "Spare Part Cost"
 msgstr "Koszt części zamiennych"
+
+msgid "Spec"
+msgstr ""
 
 msgid "Specific Customer"
 msgstr "Konkretny klient"
