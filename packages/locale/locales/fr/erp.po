@@ -8584,6 +8584,12 @@ msgstr "Dépannages Ouverts"
 msgid "Open in Carbon"
 msgstr "Ouvrir dans Carbon"
 
+msgid "Open in change order {ids}. Release it to create new versions or revisions."
+msgstr ""
+
+msgid "Open in change orders {ids}. Release them to create new versions or revisions."
+msgstr ""
+
 msgid "Open in MES"
 msgstr "Ouvrir dans MES"
 

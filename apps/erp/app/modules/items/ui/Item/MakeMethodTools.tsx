@@ -61,7 +61,11 @@ import {
   makeMethodVersionValidator
 } from "../../items.models";
 import type { MakeMethod } from "../../types";
-import { CreateChangeOrderModal } from "../ChangeOrder";
+import {
+  CreateChangeOrderModal,
+  ItemChangeOrderLock,
+  useItemOpenChangeOrders
+} from "../ChangeOrder";
 import { getPathToMakeMethod } from "../Methods/utils";
 import { getLinkToItemDetails } from "./ItemForm";
 import MakeMethodVersionStatus from "./MakeMethodVersionStatus";
@@ -109,6 +113,12 @@ const MakeMethodTools = ({
   const canCreateChangeOrder =
     (type === "Part" || type === "Tool") && permissions.can("create", "parts");
   const itemLink = type && itemId ? getLinkToItemDetails(type, itemId) : null;
+
+  // A part/tool owned by an open change order is locked against manual version
+  // creation — the CO authors versions. Buttons stay visible but disabled, with
+  // a tooltip pointing at the change order(s).
+  const openChangeOrders = useItemOpenChangeOrders(type, itemId);
+  const isChangeOrderLocked = openChangeOrders.length > 0;
 
   const activeMethod =
     makeMethods.find((m) => m.id === activeMethodId) ?? makeMethods[0];
@@ -296,17 +306,22 @@ const MakeMethodTools = ({
                           </DropdownMenuSubTrigger>
                           <DropdownMenuPortal>
                             <DropdownMenuSubContent>
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  flushSync(() => {
-                                    setSelectedVersion(makeMethod);
-                                  });
-                                  newVersionModal.onOpen();
-                                }}
+                              <ItemChangeOrderLock
+                                changeOrders={openChangeOrders}
                               >
-                                <DropdownMenuIcon icon={<LuCopy />} />
-                                Copy Version
-                              </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  disabled={isChangeOrderLocked}
+                                  onClick={() => {
+                                    flushSync(() => {
+                                      setSelectedVersion(makeMethod);
+                                    });
+                                    newVersionModal.onOpen();
+                                  }}
+                                >
+                                  <DropdownMenuIcon icon={<LuCopy />} />
+                                  Duplicate Version
+                                </DropdownMenuItem>
+                              </ItemChangeOrderLock>
 
                               {/* <DropdownMenuItem
                                 destructive
@@ -319,18 +334,25 @@ const MakeMethodTools = ({
                                 Delete Version
                               </DropdownMenuItem> */}
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                disabled={makeMethod.status === "Active"}
-                                onClick={() => {
-                                  flushSync(() => {
-                                    setSelectedVersion(makeMethod);
-                                  });
-                                  activeMethodModal.onOpen();
-                                }}
+                              <ItemChangeOrderLock
+                                changeOrders={openChangeOrders}
                               >
-                                <DropdownMenuIcon icon={<LuStar />} />
-                                Set as Active Version
-                              </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  disabled={
+                                    makeMethod.status === "Active" ||
+                                    isChangeOrderLocked
+                                  }
+                                  onClick={() => {
+                                    flushSync(() => {
+                                      setSelectedVersion(makeMethod);
+                                    });
+                                    activeMethodModal.onOpen();
+                                  }}
+                                >
+                                  <DropdownMenuIcon icon={<LuStar />} />
+                                  Set as Active Version
+                                </DropdownMenuItem>
+                              </ItemChangeOrderLock>
                             </DropdownMenuSubContent>
                           </DropdownMenuPortal>
                         </DropdownMenuSub>
@@ -338,10 +360,15 @@ const MakeMethodTools = ({
                     })}
                   <DropdownMenuSeparator />
                   {permissions.can("create", "production") && (
-                    <DropdownMenuItem onClick={newVersionModal.onOpen}>
-                      <DropdownMenuIcon icon={<LuCirclePlus />} />
-                      New Version
-                    </DropdownMenuItem>
+                    <ItemChangeOrderLock changeOrders={openChangeOrders}>
+                      <DropdownMenuItem
+                        disabled={isChangeOrderLocked}
+                        onClick={newVersionModal.onOpen}
+                      >
+                        <DropdownMenuIcon icon={<LuCirclePlus />} />
+                        New Version
+                      </DropdownMenuItem>
+                    </ItemChangeOrderLock>
                   )}
                   {canCreateChangeOrder && (
                     <DropdownMenuItem onClick={changeOrderModal.onOpen}>
