@@ -12,13 +12,13 @@ Background job system built on Inngest. Handles event system processing (webhook
 ## Ask First
 
 - Adding new handler types to the event system — requires DB migration to widen the `handlerType` CHECK constraint.
-- Changing the event queue cron cadence (currently `* * * * *` / 1 min) — affects latency for all async event processing.
+- Changing the event queue's flow control (`concurrency: 1`) or the pg_cron sweeper cadence — affects latency and coalescing for all async event processing. The drainer is push-woken by `carbon/event-queue.process` (see `.claude/rules/event-system.md`), not cron-polled. Note: `debounce` is intentionally NOT used — the local Inngest dev server can't unmarshal debounce items; bursts are coalesced by the per-transaction wake instead.
 - Adding new Inngest function registrations — they must be exported and registered in the functions index.
 
 ## Never
 
 - Import Inngest internals or server-only job code in app bundles — use only the public exports from `@carbon/jobs` (`.` subpath: `trigger`, `batchTrigger`, schemas).
-- Use the event system for real-time / data-integrity needs — latency is up to ~1 min. Use sync interceptors instead.
+- Use the event system for real-time / data-integrity needs — it is async (typically ~3–5s, up to ~1 min if a push wake is lost). Use sync interceptors instead.
 - Bypass the PGMQ queue by writing directly to handler tables — always go through `dispatch_event_batch()` triggers.
 
 ## Validation Commands

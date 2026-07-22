@@ -212,6 +212,11 @@ entrypoint = "./functions/transcription/index.ts"
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/transcription/*.html" ]
 
+[functions.event-wake]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/event-wake/index.ts"
+
 [functions.embedding]
 enabled = true
 verify_jwt = true
