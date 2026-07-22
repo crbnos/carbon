@@ -103,3 +103,24 @@ Token maps centralized in: Roles, Board. The remaining views (Scope, Value,
 Plan, Go-Live, Training, Team, Controls, OnboardingHub) still take props from
 their routes — migrate them with the recipes above as they're next touched.
 ```
+
+## Phase-2 additions (the seven-phase journey)
+
+- **Intake**: questions live in `content/intake.ts`; answers persist as versioned
+  snapshot rows (collection `intake`, latest completed = truth). Tailoring is
+  computed at read time by `logic/tailor.ts` — never stored, so it can't drift.
+  Add a tailoring rule there WITH a receipt line, or mark the row Later instead.
+- **Customer-owned writes**: collections with `customerAdd` in
+  `content/collections.ts` let customers create rows; field keys matched by
+  `isCustomerEditableField` (models.ts) let customers `setField`. Both are
+  enforced in the `/state` action — the lists are the security boundary, add to
+  them deliberately.
+- **`@carbon/onboarding/engine`**: the macro-free subpath for `@carbon/jobs`.
+  Nothing in its import graph may touch Lingui (the jobs build has no macro
+  transform). Plain-English gate titles live there for transactional email.
+- **Locked previews**: give a paid-only page `lockedPreviewFor: ["self_serve"]`
+  in the registry and wrap its route in `<LockedPreview page={…}>` — the page
+  stays in the sidebar under a lock and renders dimmed with one booking CTA.
+- **Guided moments**: add copy to `GUIDED_MOMENTS` (content/support.ts) and
+  render `<GuidedMomentCard {...GUIDED_MOMENTS.x} />` — clicks stamp
+  `lock.<source>` fieldValues for attribution (read by the fleet view).
