@@ -2126,7 +2126,7 @@ msgid "Change"
 msgstr "Изменить"
 
 msgid "Change Document"
-msgstr ""
+msgstr "Изменить документ"
 
 msgid "Change Inspection Document"
 msgstr "Изменить документ контроля"
@@ -2313,7 +2313,7 @@ msgid "Collapse all"
 msgstr "Свернуть все"
 
 msgid "Collapse characteristics"
-msgstr ""
+msgstr "Свернуть характеристики"
 
 msgid "Collapse Costs"
 msgstr "Свернуть затраты"
@@ -4230,7 +4230,7 @@ msgid "Drag to resize diagram and features"
 msgstr "Перетащите, чтобы изменить размер диаграммы и функций"
 
 msgid "Drag to resize drawing and characteristics"
-msgstr ""
+msgstr "Перетащите для изменения размера чертежа и характеристик"
 
 msgid "Drag to zoom"
 msgstr "Перетащите для масштабирования"
@@ -4980,7 +4980,7 @@ msgid "Expand all"
 msgstr "Развернуть все"
 
 msgid "Expand characteristics"
-msgstr ""
+msgstr "Развернуть характеристики"
 
 msgid "Expand Costs"
 msgstr "Развернуть затраты"

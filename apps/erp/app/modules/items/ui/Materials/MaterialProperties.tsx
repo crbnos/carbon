@@ -725,7 +725,6 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
             onChange={(value) => {
               onUpdate("active", value ? "on" : "off");
             }}
-            bordered
           />
         </ValidatedForm>
         {routeData?.materialSummary?.replenishmentSystem?.includes("Buy") && (
@@ -746,7 +745,6 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
               onChange={(value) => {
                 onUpdate("requiresInspection", value ? "on" : "off");
               }}
-              bordered
             />
           </ValidatedForm>
         )}

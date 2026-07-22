@@ -2126,7 +2126,7 @@ msgid "Change"
 msgstr "Değiştir"
 
 msgid "Change Document"
-msgstr ""
+msgstr "Belgeyi Değiştir"
 
 msgid "Change Inspection Document"
 msgstr "İnceleme Belgesini Değiştir"
@@ -2313,7 +2313,7 @@ msgid "Collapse all"
 msgstr "Tümünü daralt"
 
 msgid "Collapse characteristics"
-msgstr ""
+msgstr "Özellikleri Daralt"
 
 msgid "Collapse Costs"
 msgstr "Maliyetleri Daralt"
@@ -4230,7 +4230,7 @@ msgid "Drag to resize diagram and features"
 msgstr "Şemayı ve özellikleri yeniden boyutlandırmak için sürükleyin"
 
 msgid "Drag to resize drawing and characteristics"
-msgstr ""
+msgstr "Çizim ve özellikleri yeniden boyutlandırmak için sürükleyin"
 
 msgid "Drag to zoom"
 msgstr "Yakınlaştırmak için sürükleyin"
@@ -4980,7 +4980,7 @@ msgid "Expand all"
 msgstr "Tümünü genişlet"
 
 msgid "Expand characteristics"
-msgstr ""
+msgstr "Özellikleri Genişlet"
 
 msgid "Expand Costs"
 msgstr "Maliyetleri Genişlet"

@@ -2126,7 +2126,7 @@ msgid "Change"
 msgstr "更改"
 
 msgid "Change Document"
-msgstr ""
+msgstr "变更文档"
 
 msgid "Change Inspection Document"
 msgstr "更改检验文件"
@@ -2313,7 +2313,7 @@ msgid "Collapse all"
 msgstr "全部折叠"
 
 msgid "Collapse characteristics"
-msgstr ""
+msgstr "收起特征"
 
 msgid "Collapse Costs"
 msgstr "折叠成本"
@@ -4230,7 +4230,7 @@ msgid "Drag to resize diagram and features"
 msgstr "拖动以调整图表和功能的大小"
 
 msgid "Drag to resize drawing and characteristics"
-msgstr ""
+msgstr "拖动调整绘图和特征的大小"
 
 msgid "Drag to zoom"
 msgstr "拖动以缩放"
@@ -4980,7 +4980,7 @@ msgid "Expand all"
 msgstr "全部展开"
 
 msgid "Expand characteristics"
-msgstr ""
+msgstr "展开特征"
 
 msgid "Expand Costs"
 msgstr "展开成本"

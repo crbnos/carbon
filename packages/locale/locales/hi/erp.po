@@ -2126,7 +2126,7 @@ msgid "Change"
 msgstr "बदलें"
 
 msgid "Change Document"
-msgstr ""
+msgstr "परिवर्तन दस्तावेज़"
 
 msgid "Change Inspection Document"
 msgstr "निरीक्षण दस्तावेज़ बदलें"
@@ -2313,7 +2313,7 @@ msgid "Collapse all"
 msgstr "सभी को संक्षिप्त करें"
 
 msgid "Collapse characteristics"
-msgstr ""
+msgstr "विशेषताओं को संक्षिप्त करें"
 
 msgid "Collapse Costs"
 msgstr "लागत को संक्षिप्त करें"
@@ -4230,7 +4230,7 @@ msgid "Drag to resize diagram and features"
 msgstr "आरेख और सुविधाओं को पुनः आकार देने के लिए खींचें"
 
 msgid "Drag to resize drawing and characteristics"
-msgstr ""
+msgstr "ड्राइंग और विशेषताओं को आकार बदलने के लिए खींचें"
 
 msgid "Drag to zoom"
 msgstr "ज़ूम करने के लिए ड्रैग करें"
@@ -4980,7 +4980,7 @@ msgid "Expand all"
 msgstr "सभी को विस्तृत करें"
 
 msgid "Expand characteristics"
-msgstr ""
+msgstr "विशेषताओं को विस्तारित करें"
 
 msgid "Expand Costs"
 msgstr "लागत विस्तृत करें"

@@ -2126,7 +2126,7 @@ msgid "Change"
 msgstr "변경"
 
 msgid "Change Document"
-msgstr ""
+msgstr "문서 변경"
 
 msgid "Change Inspection Document"
 msgstr "검사 문서 변경"
@@ -2313,7 +2313,7 @@ msgid "Collapse all"
 msgstr "모두 접기"
 
 msgid "Collapse characteristics"
-msgstr ""
+msgstr "특성 축소"
 
 msgid "Collapse Costs"
 msgstr "원가 접기"
@@ -4230,7 +4230,7 @@ msgid "Drag to resize diagram and features"
 msgstr "드래그하여 다이어그램과 피처 크기 조정"
 
 msgid "Drag to resize drawing and characteristics"
-msgstr ""
+msgstr "그리기 및 특성을 크기 조정하려면 끌기"
 
 msgid "Drag to zoom"
 msgstr "드래그하여 확대/축소"
@@ -4980,7 +4980,7 @@ msgid "Expand all"
 msgstr "모두 펼치기"
 
 msgid "Expand characteristics"
-msgstr ""
+msgstr "특성 확장"
 
 msgid "Expand Costs"
 msgstr "원가 펼치기"

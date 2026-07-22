@@ -2126,7 +2126,7 @@ msgid "Change"
 msgstr "変更"
 
 msgid "Change Document"
-msgstr ""
+msgstr "ドキュメント変更"
 
 msgid "Change Inspection Document"
 msgstr "検査ドキュメントを変更"
@@ -2313,7 +2313,7 @@ msgid "Collapse all"
 msgstr "すべて折りたたむ"
 
 msgid "Collapse characteristics"
-msgstr ""
+msgstr "特性を折りたたむ"
 
 msgid "Collapse Costs"
 msgstr "コストを折りたたむ"
@@ -4230,7 +4230,7 @@ msgid "Drag to resize diagram and features"
 msgstr "図と機能をリサイズするにはドラッグしてください"
 
 msgid "Drag to resize drawing and characteristics"
-msgstr ""
+msgstr "描画と特性をサイズ変更するにはドラッグしてください"
 
 msgid "Drag to zoom"
 msgstr "ズームするにはドラッグしてください"
@@ -4980,7 +4980,7 @@ msgid "Expand all"
 msgstr "すべて展開"
 
 msgid "Expand characteristics"
-msgstr ""
+msgstr "特性を展開"
 
 msgid "Expand Costs"
 msgstr "コストを展開"

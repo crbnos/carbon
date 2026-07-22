@@ -460,7 +460,6 @@ const ServiceProperties = ({ data }: ServicePropertiesProps) => {
           onChange={(value) => {
             onUpdate("active", value ? "on" : "off");
           }}
-          bordered
         />
       </ValidatedForm>
       {routeDataFromRoute?.supersession?.successor && (
