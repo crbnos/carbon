@@ -6355,7 +6355,7 @@ msgid "Inspection Status"
 msgstr "Inspektionsstatus"
 
 msgid "Inspections"
-msgstr ""
+msgstr "Inspektionen"
 
 msgid "Inspections, nonconformance, and CAPA"
 msgstr "Inspektionen, Nichtkonformität und CAPA"
@@ -6364,7 +6364,7 @@ msgid "Inspections, Nonconformance, CAPA"
 msgstr "Inspektionen, Nichtkonformität, CAPA"
 
 msgid "Inspections: Require Different Inspector"
-msgstr ""
+msgstr "Inspektionen: Unterschiedlichen Inspektor erforderlich"
 
 msgid "Inspector"
 msgstr "Inspekteur"

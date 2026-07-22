@@ -6355,7 +6355,7 @@ msgid "Inspection Status"
 msgstr "検査ステータス"
 
 msgid "Inspections"
-msgstr ""
+msgstr "検査"
 
 msgid "Inspections, nonconformance, and CAPA"
 msgstr "検査、不適合、および是正予防措置"
@@ -6364,7 +6364,7 @@ msgid "Inspections, Nonconformance, CAPA"
 msgstr "検査、不適合、CAPA"
 
 msgid "Inspections: Require Different Inspector"
-msgstr ""
+msgstr "検査：別の検査官が必要です"
 
 msgid "Inspector"
 msgstr "検査官"

@@ -6355,7 +6355,7 @@ msgid "Inspection Status"
 msgstr "निरीक्षण स्थिति"
 
 msgid "Inspections"
-msgstr ""
+msgstr "निरीक्षण"
 
 msgid "Inspections, nonconformance, and CAPA"
 msgstr "निरीक्षण, असंगति, और CAPA"
@@ -6364,7 +6364,7 @@ msgid "Inspections, Nonconformance, CAPA"
 msgstr "निरीक्षण, असंगति, CAPA"
 
 msgid "Inspections: Require Different Inspector"
-msgstr ""
+msgstr "निरीक्षण: विभिन्न निरीक्षक की आवश्यकता है"
 
 msgid "Inspector"
 msgstr "निरीक्षक"

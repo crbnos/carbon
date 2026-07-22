@@ -6355,7 +6355,7 @@ msgid "Inspection Status"
 msgstr "检验状态"
 
 msgid "Inspections"
-msgstr ""
+msgstr "检验"
 
 msgid "Inspections, nonconformance, and CAPA"
 msgstr "检验、不符合和CAPA"
@@ -6364,7 +6364,7 @@ msgid "Inspections, Nonconformance, CAPA"
 msgstr "检验、不符合、纠正预防措施"
 
 msgid "Inspections: Require Different Inspector"
-msgstr ""
+msgstr "检验：需要不同的检验员"
 
 msgid "Inspector"
 msgstr "检查员"
