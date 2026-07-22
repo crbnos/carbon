@@ -7745,7 +7745,7 @@ msgid "Net book value"
 msgstr "Чистая балансовая стоимость"
 
 msgid "Net Book Value"
-msgstr "Балансовая стоимость"
+msgstr "Чистая балансовая стоимость"
 
 msgid "Net Change"
 msgstr "Чистое изменение"
@@ -10373,7 +10373,7 @@ msgid "Reverse the related journal entries"
 msgstr "Отменить связанные записи в журнале"
 
 msgid "Reversed"
-msgstr "Отменено"
+msgstr "Сторнировано"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "Просмотрите изменения каждого элемента, затем подтвердите — выпуск нельзя отменить."

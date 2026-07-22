@@ -4158,7 +4158,7 @@ msgid "Dispose Asset"
 msgstr "Cedi Bene"
 
 msgid "Disposed"
-msgstr "Eliminato"
+msgstr "Dismesso"
 
 msgid "Disposition"
 msgstr "Disposizione"
