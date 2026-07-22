@@ -105,7 +105,12 @@ export function useOptimizedModel({
     },
     staleTime: 0,
     gcTime: 5 * 60 * 1000,
+    // A missing model (unknown id → artifacts 404) settles as an error with no
+    // data; don't poll it forever. Auto-fire is already gated on `artifacts`
+    // being present, so an errored query never triggers an optimise.
+    retry: 1,
     refetchInterval: (q) => {
+      if (q.state.status === "error") return false;
       const d = q.state.data;
       if (!d) return POLL_MS;
       if (d.optimizedModelPath || d.glbPath) return false;

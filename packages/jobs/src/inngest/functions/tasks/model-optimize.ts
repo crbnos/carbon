@@ -53,7 +53,7 @@ export const modelOptimizeFunction = inngest.createFunction(
       const client = getCarbonServiceRole();
       const upload = await client
         .from("modelUpload")
-        .select("id, modelPath")
+        .select("id, modelPath, optimizeStatus, optimizedModelPath")
         .eq("id", modelUploadId)
         .eq("companyId", companyId)
         .single();
@@ -61,6 +61,17 @@ export const modelOptimizeFunction = inngest.createFunction(
         throw new Error(
           `Model upload ${modelUploadId} not found or has no file`
         );
+      }
+      // Already optimised → reuse it, never redo. An optimise is deterministic,
+      // so a successful one is final; only a Failed row is worth re-firing
+      // (that's what the viewer's Retry does). Guards against any caller —
+      // client auto-fire, an errant retry — re-running the assembler on a model
+      // that already has its GLB.
+      if (
+        upload.data.optimizeStatus === "Success" &&
+        upload.data.optimizedModelPath
+      ) {
+        return { alreadyOptimized: true as const };
       }
       // Derive the source format from the stored file, not the caller — every
       // attach point (part/quote/rfq create, generic upload) then triggers with
@@ -79,8 +90,20 @@ export const modelOptimizeFunction = inngest.createFunction(
         client,
         upload.data.modelPath
       );
-      return { modelPath: upload.data.modelPath, format, sourceBucket };
+      return {
+        modelPath: upload.data.modelPath,
+        format,
+        sourceBucket,
+        alreadyOptimized: false as const
+      };
     });
+
+    if (model.alreadyOptimized) {
+      logger.info("model optimise skipped — already optimised", {
+        modelUploadId
+      });
+      return { modelUploadId, status: "AlreadyOptimized" as const };
+    }
 
     if (!model.format) {
       logger.info("model optimise skipped — not an optimisable mesh format", {
