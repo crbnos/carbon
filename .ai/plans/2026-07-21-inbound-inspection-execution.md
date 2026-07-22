@@ -7,7 +7,7 @@
 ## Progress
 - [x] Task 1: Create the migration (enum, tables, columns, RPC fork)
 - [x] Task 2: Apply migration + regenerate types
-- [ ] Task 3: Per-feature sampling resolution in both engine copies + unit test
+- [x] Task 3: Per-feature sampling resolution in both engine copies + unit test
 - [ ] Task 4: Zod validators + row/type extensions
 - [ ] Task 5: post-receipt — attach document + per-feature plan rows
 - [ ] Task 6: quality.service reads + assignment upsert
