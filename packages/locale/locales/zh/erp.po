@@ -1679,6 +1679,9 @@ msgstr "平衡"
 msgid "Balloon"
 msgstr "气球"
 
+msgid "Ballooned drawings with inspection characteristics."
+msgstr ""
+
 msgid "Bank - Cash"
 msgstr "银行-现金"
 
@@ -6348,6 +6351,9 @@ msgstr "检验"
 msgid "Inspection Document"
 msgstr "检验文件"
 
+msgid "Inspection Document Assignments"
+msgstr ""
+
 msgid "Inspection Documents"
 msgstr "检验文件"
 
@@ -8135,6 +8141,9 @@ msgstr "未分配任何组"
 
 msgid "No image"
 msgstr "没有图像"
+
+msgid "No inspection documents"
+msgstr ""
 
 msgid "No issue types configured"
 msgstr "未配置问题类型"
@@ -14189,6 +14198,9 @@ msgstr "此工作是否阻止生产(关闭)、降低生产(影响)、处于计�
 
 msgid "Whether to Add the selected permissions on top of what each user already has, or Update by replacing each user's permission set wholesale with the selection below."
 msgstr "是否将选定的权限添加到每个用户已有的权限之上,或通过将每个用户的权限集替换为下面的选择来更新。"
+
+msgid "Which document drives each inspection flow for this item."
+msgstr ""
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "哪个制造事件启动保质期时钟 — 例如填充、密封或最终QC。"

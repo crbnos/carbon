@@ -1679,6 +1679,9 @@ msgstr "Dengeli"
 msgid "Balloon"
 msgstr "Balon"
 
+msgid "Ballooned drawings with inspection characteristics."
+msgstr ""
+
 msgid "Bank - Cash"
 msgstr "Banka - Nakit"
 
@@ -6348,6 +6351,9 @@ msgstr "Kontrol"
 msgid "Inspection Document"
 msgstr "Muayene Belgesi"
 
+msgid "Inspection Document Assignments"
+msgstr ""
+
 msgid "Inspection Documents"
 msgstr "Muayene Belgeleri"
 
@@ -8135,6 +8141,9 @@ msgstr "Atanmış grup yok"
 
 msgid "No image"
 msgstr "Resim yok"
+
+msgid "No inspection documents"
+msgstr ""
 
 msgid "No issue types configured"
 msgstr "Hiçbir sorun türü yapılandırılmamış"
@@ -14189,6 +14198,9 @@ msgstr "Bu işin üretimi bloklayıp (Aşağı), onu bozultuyor (Etki), planlanm
 
 msgid "Whether to Add the selected permissions on top of what each user already has, or Update by replacing each user's permission set wholesale with the selection below."
 msgstr "Seçilen izinlerin her kullanıcının zaten sahip olduğu şeylerin üstüne Eklenip Eklenmediği veya her kullanıcının izin setinin aşağıda seçilen kişilerle değiştirilmesi suretiyle Güncelleştirilmesi."
+
+msgid "Which document drives each inspection flow for this item."
+msgstr ""
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "Hangi üretim olayı raf ömrü saatini başlatır — örneğin, doldurma, mühürleme veya nihai QC."

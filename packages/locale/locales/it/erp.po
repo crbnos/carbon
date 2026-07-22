@@ -1679,6 +1679,9 @@ msgstr "Equilibrato"
 msgid "Balloon"
 msgstr "Palloncino"
 
+msgid "Ballooned drawings with inspection characteristics."
+msgstr ""
+
 msgid "Bank - Cash"
 msgstr "Banca - Contanti"
 
@@ -6348,6 +6351,9 @@ msgstr "Ispezione"
 msgid "Inspection Document"
 msgstr "Documento di Ispezione"
 
+msgid "Inspection Document Assignments"
+msgstr ""
+
 msgid "Inspection Documents"
 msgstr "Documenti di Ispezione"
 
@@ -8135,6 +8141,9 @@ msgstr "Nessun gruppo assegnato"
 
 msgid "No image"
 msgstr "Nessuna immagine"
+
+msgid "No inspection documents"
+msgstr ""
 
 msgid "No issue types configured"
 msgstr "Nessun tipo di problema configurato"
@@ -14189,6 +14198,9 @@ msgstr "Se questo lavoro blocca la produzione (Inattivo), la degrada (Impatto), 
 
 msgid "Whether to Add the selected permissions on top of what each user already has, or Update by replacing each user's permission set wholesale with the selection below."
 msgstr "Se le autorizzazioni selezionate vengono Aggiunte sopra ciò che ogni utente ha già, o Aggiornate sostituendo il set di autorizzazioni di ogni utente con la selezione di seguito."
+
+msgid "Which document drives each inspection flow for this item."
+msgstr ""
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "Quale evento di produzione avvia l'orologio della vita di magazzino — ad esempio, riempimento, sigillatura o QC finale."

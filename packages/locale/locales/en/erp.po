@@ -1679,6 +1679,9 @@ msgstr "Balanced"
 msgid "Balloon"
 msgstr "Balloon"
 
+msgid "Ballooned drawings with inspection characteristics."
+msgstr "Ballooned drawings with inspection characteristics."
+
 msgid "Bank - Cash"
 msgstr "Bank - Cash"
 
@@ -6348,6 +6351,9 @@ msgstr "Inspection"
 msgid "Inspection Document"
 msgstr "Inspection Document"
 
+msgid "Inspection Document Assignments"
+msgstr "Inspection Document Assignments"
+
 msgid "Inspection Documents"
 msgstr "Inspection Documents"
 
@@ -8135,6 +8141,9 @@ msgstr "No groups assigned"
 
 msgid "No image"
 msgstr "No image"
+
+msgid "No inspection documents"
+msgstr "No inspection documents"
 
 msgid "No issue types configured"
 msgstr "No issue types configured"
@@ -14189,6 +14198,9 @@ msgstr "Whether this work blocks production (Down), degrades it (Impact), is on 
 
 msgid "Whether to Add the selected permissions on top of what each user already has, or Update by replacing each user's permission set wholesale with the selection below."
 msgstr "Whether to Add the selected permissions on top of what each user already has, or Update by replacing each user's permission set wholesale with the selection below."
+
+msgid "Which document drives each inspection flow for this item."
+msgstr "Which document drives each inspection flow for this item."
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."

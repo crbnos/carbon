@@ -1679,6 +1679,9 @@ msgstr "バランスが取れています"
 msgid "Balloon"
 msgstr "バルーン"
 
+msgid "Ballooned drawings with inspection characteristics."
+msgstr ""
+
 msgid "Bank - Cash"
 msgstr "銀行-現金"
 
@@ -6348,6 +6351,9 @@ msgstr "検査"
 msgid "Inspection Document"
 msgstr "検査ドキュメント"
 
+msgid "Inspection Document Assignments"
+msgstr ""
+
 msgid "Inspection Documents"
 msgstr "検査ドキュメント"
 
@@ -8135,6 +8141,9 @@ msgstr "グループが割り当てられていません"
 
 msgid "No image"
 msgstr "画像なし"
+
+msgid "No inspection documents"
+msgstr ""
 
 msgid "No issue types configured"
 msgstr "問題タイプが設定されていません"
@@ -14189,6 +14198,9 @@ msgstr "この作業が生産をブロックするか(ダウン)、それを低�
 
 msgid "Whether to Add the selected permissions on top of what each user already has, or Update by replacing each user's permission set wholesale with the selection below."
 msgstr "選択されたアクセス許可が各ユーザーが既に持っているものに追加されるか、または以下の選択で各ユーザーのアクセス許可セットを置き換えることで更新されるか。"
+
+msgid "Which document drives each inspection flow for this item."
+msgstr ""
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "どの製造イベントが保存期間時計を開始するか — たとえば、塗りつぶし、シール、または最終QC。"

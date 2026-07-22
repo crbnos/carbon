@@ -5,12 +5,17 @@ import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, redirect, useLoaderData, useParams } from "react-router";
 import invariant from "tiny-invariant";
+import { getInspectionDocumentsForItem } from "~/modules/production";
 import {
+  getItemInspectionDocumentAssignments,
   getItemSamplingPlan,
+  itemInspectionDocumentAssignmentValidator,
   itemSamplingPlanValidator,
+  upsertItemInspectionDocumentAssignment,
   upsertItemSamplingPlan
 } from "~/modules/quality";
-import SamplingPlanForm from "~/modules/quality/ui/SamplingPlan/SamplingPlanForm";
+import type { ItemInspectionDocumentAssignment } from "~/modules/quality/types";
+import ItemQualityView from "~/modules/quality/ui/SamplingPlan/ItemQualityView";
 import { getCompanySettings } from "~/modules/settings";
 import { path } from "~/utils/path";
 
@@ -21,13 +26,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { itemId } = params;
   invariant(itemId, "itemId is required");
 
-  const [plan, settings] = await Promise.all([
+  const [plan, settings, documents, assignments] = await Promise.all([
     getItemSamplingPlan(client, itemId, companyId),
-    getCompanySettings(client, companyId)
+    getCompanySettings(client, companyId),
+    getInspectionDocumentsForItem(client, itemId, companyId),
+    getItemInspectionDocumentAssignments(client, itemId, companyId)
   ]);
 
   return data({
     plan: plan.data,
+    documents: documents.data ?? [],
+    assignments: (assignments.data ?? []) as ItemInspectionDocumentAssignment[],
     samplingStandard:
       ((settings.data as any)?.samplingStandard as
         | "ANSI_Z1_4"
@@ -44,6 +53,31 @@ export async function action({ request, params }: ActionFunctionArgs) {
   invariant(itemId, "itemId is required");
 
   const formData = await request.formData();
+
+  if (formData.get("intent") === "assignment") {
+    const validation = await validator(
+      itemInspectionDocumentAssignmentValidator
+    ).validate(formData);
+    if (validation.error) return validationError(validation.error);
+
+    const result = await upsertItemInspectionDocumentAssignment(client, {
+      ...validation.data,
+      companyId,
+      userId
+    });
+    if (result.error) {
+      throw redirect(
+        path.to.partQuality(itemId),
+        await flash(request, error(result.error, "Failed to save assignment"))
+      );
+    }
+
+    throw redirect(
+      path.to.partQuality(itemId),
+      await flash(request, success("Inspection document assignment updated"))
+    );
+  }
+
   const validation = await validator(itemSamplingPlanValidator).validate(
     formData
   );
@@ -68,16 +102,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function PartQualityRoute() {
-  const { plan, samplingStandard } = useLoaderData<typeof loader>();
+  const { plan, documents, assignments, samplingStandard } =
+    useLoaderData<typeof loader>();
   const { itemId } = useParams();
   if (!itemId) throw new Error("itemId is required");
   return (
     <div className="p-4">
-      <SamplingPlanForm
-        action={path.to.partQuality(itemId)}
+      <ItemQualityView
         itemId={itemId}
+        actionPath={path.to.partQuality(itemId)}
         standard={samplingStandard}
-        initial={plan ?? undefined}
+        plan={plan ?? undefined}
+        documents={documents}
+        assignments={assignments}
       />
     </div>
   );

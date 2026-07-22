@@ -1679,6 +1679,9 @@ msgstr "संतुलित"
 msgid "Balloon"
 msgstr "गुब्बारा"
 
+msgid "Ballooned drawings with inspection characteristics."
+msgstr ""
+
 msgid "Bank - Cash"
 msgstr "बैंक - नकद"
 
@@ -6348,6 +6351,9 @@ msgstr "निरीक्षण"
 msgid "Inspection Document"
 msgstr "निरीक्षण दस्तावेज़"
 
+msgid "Inspection Document Assignments"
+msgstr ""
+
 msgid "Inspection Documents"
 msgstr "निरीक्षण दस्तावेज़"
 
@@ -8135,6 +8141,9 @@ msgstr "कोई समूह असाइन नहीं किया गय�
 
 msgid "No image"
 msgstr "कोई छवि नहीं"
+
+msgid "No inspection documents"
+msgstr ""
 
 msgid "No issue types configured"
 msgstr "कोई समस्या प्रकार कॉन्फ़िगर नहीं किया गया"
@@ -14189,6 +14198,9 @@ msgstr "यह कार्य उत्पादन को अवरुद्�
 
 msgid "Whether to Add the selected permissions on top of what each user already has, or Update by replacing each user's permission set wholesale with the selection below."
 msgstr "चाहे चयनित अनुमतियां जोड़ी जाएं कि प्रत्येक उपयोगकर्ता के पास पहले से क्या है, या अपडेट द्वारा नीचे दिए गए चयन के साथ प्रत्येक उपयोगकर्ता की अनुमति सेट को प्रतिस्थापित करें।"
+
+msgid "Which document drives each inspection flow for this item."
+msgstr ""
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "कौन सी विनिर्माण घटना शेल्फ-जीवन घड़ी शुरू करती है — उदाहरण के लिए, भरना, सील करना, या अंतिम क्यूसी।"

@@ -1679,6 +1679,9 @@ msgstr "Сбалансировано"
 msgid "Balloon"
 msgstr "Выноска"
 
+msgid "Ballooned drawings with inspection characteristics."
+msgstr ""
+
 msgid "Bank - Cash"
 msgstr "Банк - Денежные средства"
 
@@ -6348,6 +6351,9 @@ msgstr "Проверка"
 msgid "Inspection Document"
 msgstr "Документ проверки"
 
+msgid "Inspection Document Assignments"
+msgstr ""
+
 msgid "Inspection Documents"
 msgstr "Документы проверки"
 
@@ -8135,6 +8141,9 @@ msgstr "Нет назначенных групп"
 
 msgid "No image"
 msgstr "Нет изображения"
+
+msgid "No inspection documents"
+msgstr ""
 
 msgid "No issue types configured"
 msgstr "Типы проблем не настроены"
@@ -14189,6 +14198,9 @@ msgstr "Блокирует ли эта работа производство (В
 
 msgid "Whether to Add the selected permissions on top of what each user already has, or Update by replacing each user's permission set wholesale with the selection below."
 msgstr "Если выбранные разрешения Добавляются к тому, что каждый пользователь уже имеет, или Обновляются путем замены набора разрешений каждого пользователя на выбранные ниже."
+
+msgid "Which document drives each inspection flow for this item."
+msgstr ""
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "Какое производственное событие запускает часы срока хранения — например, заполнение, уплотнение или окончательный контроль качества."

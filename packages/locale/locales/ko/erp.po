@@ -1679,6 +1679,9 @@ msgstr "균형"
 msgid "Balloon"
 msgstr "말풍선"
 
+msgid "Ballooned drawings with inspection characteristics."
+msgstr ""
+
 msgid "Bank - Cash"
 msgstr "은행 - 현금"
 
@@ -6348,6 +6351,9 @@ msgstr "검사"
 msgid "Inspection Document"
 msgstr "검사 문서"
 
+msgid "Inspection Document Assignments"
+msgstr ""
+
 msgid "Inspection Documents"
 msgstr "검사 문서"
 
@@ -8135,6 +8141,9 @@ msgstr "배정된 그룹이 없습니다"
 
 msgid "No image"
 msgstr "이미지 없음"
+
+msgid "No inspection documents"
+msgstr ""
 
 msgid "No issue types configured"
 msgstr "설정된 이슈 유형이 없습니다"
@@ -14189,6 +14198,9 @@ msgstr "이 작업이 생산을 중단시키는지(가동중단), 저하시키�
 
 msgid "Whether to Add the selected permissions on top of what each user already has, or Update by replacing each user's permission set wholesale with the selection below."
 msgstr "선택한 권한을 각 사용자가 이미 가진 권한에 추가할지(추가), 아래 선택 항목으로 각 사용자의 권한 세트를 완전히 교체할지(업데이트) 여부입니다."
+
+msgid "Which document drives each inspection flow for this item."
+msgstr ""
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "유효기간 계산이 시작되는 제조 이벤트 — 예를 들어 충전, 밀봉, 또는 최종 품질검사."
