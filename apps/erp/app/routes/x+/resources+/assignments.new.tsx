@@ -9,6 +9,7 @@ import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, redirect, useLoaderData, useNavigate } from "react-router";
 import {
+  getTrainingAssignments,
   getTrainingsList,
   TrainingAssignmentForm,
   trainingAssignmentValidator,
@@ -61,6 +62,24 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const { trainingId, groupIds } = validation.data;
+
+  // One assignment per training: a second one would double every employee in
+  // the status views, so block it and point at the existing assignment.
+  const existing = await getTrainingAssignments(client, companyId, trainingId);
+  if (existing.data && existing.data.length > 0) {
+    // 200 on purpose: a 4xx action response skips revalidation, so the flash
+    // toast would never surface.
+    return data(
+      { error: "This training is already assigned" },
+      await flash(
+        request,
+        error(
+          null,
+          "This training is already assigned. Edit the existing assignment to add more groups or people."
+        )
+      )
+    );
+  }
 
   const result = await upsertTrainingAssignment(client, {
     trainingId,
