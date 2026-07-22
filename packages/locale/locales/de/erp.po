@@ -8321,7 +8321,7 @@ msgid "No printers configured. Click \"Add Printer\" to create one."
 msgstr "Keine Drucker konfiguriert. Klicken Sie auf „Drucker hinzufügen\", um einen zu erstellen."
 
 msgid "No process selected"
-msgstr ""
+msgstr "Kein Prozess ausgewählt"
 
 msgid "No Quote"
 msgstr "Kein Angebot"
@@ -10872,7 +10872,7 @@ msgid "Select a plan to get started. You won't be charged for the first {0} days
 msgstr "Wählen Sie einen Plan, um zu beginnen. Sie werden in den ersten {0} Tagen nicht belastet. Wechseln oder kündigen Sie jederzeit."
 
 msgid "Select a process first to choose its supplier."
-msgstr ""
+msgstr "Wählen Sie zunächst einen Prozess aus, um seinen Lieferanten auszuwählen."
 
 msgid "Select a project"
 msgstr "Projekt auswählen"

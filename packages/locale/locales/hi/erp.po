@@ -8321,7 +8321,7 @@ msgid "No printers configured. Click \"Add Printer\" to create one."
 msgstr "कोई प्रिंटर कॉन्फ़िगर नहीं किया गया है। एक बनाने के लिए \"प्रिंटर जोड़ें\" पर क्लिक करें।"
 
 msgid "No process selected"
-msgstr ""
+msgstr "कोई प्रक्रिया चयनित नहीं है"
 
 msgid "No Quote"
 msgstr "कोई उद्धरण नहीं"
@@ -10872,7 +10872,7 @@ msgid "Select a plan to get started. You won't be charged for the first {0} days
 msgstr "एक योजना चुनें शुरुआत करने के लिए। आपको पहले {0} दिनों के लिए चार्ज नहीं किया जाएगा। किसी भी समय स्विच या रद्द करें।"
 
 msgid "Select a process first to choose its supplier."
-msgstr ""
+msgstr "आपूर्तिकर्ता चुनने के लिए पहले एक प्रक्रिया चुनें।"
 
 msgid "Select a project"
 msgstr "एक प्रोजेक्ट चुनें"

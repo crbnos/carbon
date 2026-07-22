@@ -8321,7 +8321,7 @@ msgid "No printers configured. Click \"Add Printer\" to create one."
 msgstr "Принтеры не настроены. Нажмите «Добавить принтер» для создания."
 
 msgid "No process selected"
-msgstr ""
+msgstr "Процесс не выбран"
 
 msgid "No Quote"
 msgstr "Нет предложения"
@@ -10872,7 +10872,7 @@ msgid "Select a plan to get started. You won't be charged for the first {0} days
 msgstr "Выберите план для начала работы. Вам не будет выставлен счет за первые {0} дней. Переключайтесь или отменяйте в любое время."
 
 msgid "Select a process first to choose its supplier."
-msgstr ""
+msgstr "Сначала выберите процесс, чтобы выбрать его поставщика."
 
 msgid "Select a project"
 msgstr "Выберите проект"
