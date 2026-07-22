@@ -18,7 +18,10 @@ async function deploy(): Promise<void> {
   }
   console.log(`✅ 🏷️ Using image tag: ${imageTag}`);
 
-  const stage = process.env.STAGE ?? "prod";
+  // `||` not `??`: on push events the workflow's `inputs.stage` is empty, so
+  // STAGE arrives as "" — `??` would pass that through and sst would deploy a
+  // fresh empty-named stage (colliding on the account-global custom domain).
+  const stage = process.env.STAGE || "prod";
 
   const { data: workspaces, error } = await client
     .from("workspaces")

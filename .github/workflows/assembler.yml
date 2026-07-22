@@ -1,4 +1,4 @@
-name: Assembler Image
+name: Deploy Assembler
 
 # Isolated from deploy.yml so an assembler/crates change builds ONLY the
 # assembler image (and vice versa — erp/mes pushes never rebuild this).
@@ -8,7 +8,12 @@ name: Assembler Image
 # (same pattern as deploy.yml -> ci/src/deploy.ts) against the standalone
 # apps/assembler/sst.config.ts stack.
 #
-# Prereq: ECR repos carbon/assembler + carbon/occt exist (created out-of-band).
+# Auth: the assembler lives in the PROD account, NOT the govcloud account the
+# shared AWS_* secrets target — so this workflow uses dedicated ASSEMBLER_AWS_*
+# secrets. Their account must match each workspace row's aws_account_id (the
+# Lambda pulls the image same-account).
+#
+# Prereq: ECR repos carbon/assembler + carbon/occt exist in that account.
 
 on:
   push:
@@ -44,9 +49,9 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-access-key-id: ${{ secrets.ASSEMBLER_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.ASSEMBLER_AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.ASSEMBLER_AWS_REGION }}
 
       - name: Login to Amazon ECR
         id: login-ecr
@@ -68,13 +73,18 @@ jobs:
             echo "exists=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Build and push OCCT base
+      # Split build from push: the ~30 min OCCT compile is combined with `push`
+      # in a single buildkit solve, so a push failure aborts before the GHA
+      # cache flushes and the whole compile is lost on retry. `load: true`
+      # finishes the build (and the cache-to export) into the local daemon
+      # first; the separate `docker push` then can't cost the compile.
+      - name: Build OCCT base
         if: steps.occt-exists.outputs.exists != 'true'
         uses: docker/build-push-action@v5
         with:
           context: apps/assembler
           file: apps/assembler/occt.Dockerfile
-          push: true
+          load: true
           tags: ${{ steps.login-ecr.outputs.registry }}/carbon/occt:8.0.0-p1
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -83,6 +93,10 @@ jobs:
           # manifest into one, so both must stay off.
           provenance: false
           sbom: false
+
+      - name: Push OCCT base
+        if: steps.occt-exists.outputs.exists != 'true'
+        run: docker push ${{ steps.login-ecr.outputs.registry }}/carbon/occt:8.0.0-p1
 
   build:
     name: Build assembler image
@@ -105,13 +119,26 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-access-key-id: ${{ secrets.ASSEMBLER_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.ASSEMBLER_AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.ASSEMBLER_AWS_REGION }}
 
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
+
+      # Fail fast if the immutable OCCT base isn't in ECR — the assembler image
+      # links it via OCCT_IMAGE, so without it the build would die cryptically at
+      # `FROM`. The base is built on demand (dispatch with build_occt_base=true),
+      # not on every deploy.
+      - name: Require OCCT base image
+        run: |
+          aws ecr describe-images --repository-name carbon/occt \
+            --image-ids imageTag=8.0.0-p1 >/dev/null 2>&1 || {
+            echo "carbon/occt:8.0.0-p1 is not in ECR."
+            echo "Dispatch this workflow once with build_occt_base=true to build it."
+            exit 1
+          }
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -157,9 +184,11 @@ jobs:
   # api key, cert, domain) comes from the workspaces row — no per-value secrets.
   deploy:
     name: Deploy assembler
-    # A custom `if` replaces the implicit success() — keep the explicit result
-    # check so a failed image build never deploys.
-    if: ${{ needs.build.result == 'success' && (github.event_name == 'push' || inputs.deploy) }}
+    # `!cancelled()` is required: occt-base is skipped on a normal deploy, and
+    # that skip propagates down the needs-chain — without this guard GitHub
+    # skips deploy too (build escapes the same way). The explicit
+    # build.result check still blocks a deploy after a failed image build.
+    if: ${{ !cancelled() && needs.build.result == 'success' && (github.event_name == 'push' || inputs.deploy) }}
     needs: build
     runs-on: ubuntu-latest
     env:
@@ -172,9 +201,9 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-access-key-id: ${{ secrets.ASSEMBLER_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.ASSEMBLER_AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.ASSEMBLER_AWS_REGION }}
 
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4

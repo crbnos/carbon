@@ -6222,6 +6222,9 @@ msgstr "선택한 기간 내"
 msgid "In stock"
 msgstr "재고 있음"
 
+msgid "In stock only"
+msgstr "재고만"
+
 msgid "In the loop together"
 msgstr "함께 정보 공유하기"
 
@@ -13566,6 +13569,9 @@ msgstr "실사 재고 조정으로 인한 차이"
 
 msgid "Variance in outside processing costs"
 msgstr "외주 가공비 차이"
+
+msgid "Variance only"
+msgstr "편차만"
 
 msgid "VAT Number"
 msgstr "VAT 번호"

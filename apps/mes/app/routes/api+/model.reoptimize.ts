@@ -3,11 +3,10 @@ import { trigger } from "@carbon/jobs";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 
-// Re-fires the eager optimise for an already-uploaded model — the raw still lives
-// in `temp-staging`, so no re-upload is needed. Backs the viewer's "Retry" action
-// when a model settled with no GLB (optimise failed / was skipped).
-// Any authenticated employee may fire it: the preview auto-generates on
-// view (viewing is the intent), which must not require part-edit rights.
+// Fires the eager optimise for an already-uploaded model — backs the model
+// tab's "Load Preview" action (parity with the ERP api+/model.reoptimize
+// route). Operators can view models, so any authenticated employee may
+// generate the preview.
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {});
 
@@ -17,7 +16,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return data({ success: false }, { status: 400 });
   }
 
-  // Confirm the model belongs to this tenant (RLS-scoped read) before re-firing.
+  // Confirm the model belongs to this tenant (RLS-scoped read) before firing.
   const model = await client
     .from("modelUpload")
     .select("id")

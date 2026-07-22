@@ -12,17 +12,17 @@ import {
   OperatingSystemContextProvider,
   Toaster,
   TooltipProvider,
-  useMode,
-  useMount
+  useMode
 } from "@carbon/react";
 import { RootErrorBoundary } from "@carbon/react/ErrorBoundary";
 import type { Theme } from "@carbon/utils";
 import { getPreferenceHeaders, modeValidator, themes } from "@carbon/utils";
 import { faviconLinks } from "@carbon/utils/favicon";
 import { I18nProvider } from "@react-aria/i18n";
-import { QueryClient } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Analytics } from "@vercel/analytics/react";
 import type React from "react";
+import { useState } from "react";
 import type {
   ActionFunctionArgs,
   LinksFunction,
@@ -249,32 +249,44 @@ export default function App() {
   const appLanguage = resolveLanguage(prefs.locale);
   const mode = useMode();
 
-  useMount(() => {
-    if (!window.clientCache) {
-      window.clientCache = new QueryClient({
-        defaultOptions: {
-          queries: {
-            gcTime: Infinity,
-            refetchOnWindowFocus: false,
-            staleTime: Infinity
-          }
-        }
-      });
+  // One client for both consumers: the imperative `window.clientCache`
+  // read-through convention (clientLoader/cachedApiQuery) and hook-based
+  // useQuery (e.g. the viewer's useOptimizedModel) via the provider below.
+  // Created in a state initializer (not useMount) so the provider has it on
+  // first render; per-query options override the infinite defaults.
+  const [queryClient] = useState(() => {
+    if (typeof window !== "undefined" && window.clientCache) {
+      return window.clientCache;
     }
+    const client = new QueryClient({
+      defaultOptions: {
+        queries: {
+          gcTime: Infinity,
+          refetchOnWindowFocus: false,
+          staleTime: Infinity
+        }
+      }
+    });
+    if (typeof window !== "undefined") {
+      window.clientCache = client;
+    }
+    return client;
   });
 
   return (
-    <OperatingSystemContextProvider platform={prefs.platform}>
-      <LocaleProvider locale={appLanguage} catalog={linguiCatalog}>
-        <I18nProvider locale={prefs.locale}>
-          <TooltipProvider delayDuration={200}>
-            <Document mode={mode} theme={theme} lang={appLanguage} env={env}>
-              <Outlet />
-            </Document>
-          </TooltipProvider>
-        </I18nProvider>
-      </LocaleProvider>
-    </OperatingSystemContextProvider>
+    <QueryClientProvider client={queryClient}>
+      <OperatingSystemContextProvider platform={prefs.platform}>
+        <LocaleProvider locale={appLanguage} catalog={linguiCatalog}>
+          <I18nProvider locale={prefs.locale}>
+            <TooltipProvider delayDuration={200}>
+              <Document mode={mode} theme={theme} lang={appLanguage} env={env}>
+                <Outlet />
+              </Document>
+            </TooltipProvider>
+          </I18nProvider>
+        </LocaleProvider>
+      </OperatingSystemContextProvider>
+    </QueryClientProvider>
   );
 }
 

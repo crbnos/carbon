@@ -6222,6 +6222,9 @@ msgstr "в выбранном периоде"
 msgid "In stock"
 msgstr "В наличии"
 
+msgid "In stock only"
+msgstr "Только в наличии"
+
 msgid "In the loop together"
 msgstr "В курсе дела вместе"
 
@@ -13566,6 +13569,9 @@ msgstr "Расхождение от корректировок счета физ
 
 msgid "Variance in outside processing costs"
 msgstr "Расхождение в затратах на внешнюю обработку"
+
+msgid "Variance only"
+msgstr "Только отклонения"
 
 msgid "VAT Number"
 msgstr "Номер НДС"

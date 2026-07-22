@@ -6222,6 +6222,9 @@ msgstr "在选定的时间段内"
 msgid "In stock"
 msgstr "有库存"
 
+msgid "In stock only"
+msgstr "仅库存"
+
 msgid "In the loop together"
 msgstr "一起保持沟通"
 
@@ -13566,6 +13569,9 @@ msgstr "物理库存计数调整的差异"
 
 msgid "Variance in outside processing costs"
 msgstr "外部加工成本的差异"
+
+msgid "Variance only"
+msgstr "仅差异"
 
 msgid "VAT Number"
 msgstr "增值税号"

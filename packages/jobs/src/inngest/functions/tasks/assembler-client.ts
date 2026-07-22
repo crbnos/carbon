@@ -1,5 +1,5 @@
 import { createHmac } from "node:crypto";
-import type { Json } from "@carbon/database";
+import type { Database, Json } from "@carbon/database";
 import {
   ASSEMBLER_SERVICE_API_KEY,
   ASSEMBLER_SERVICE_URL,
@@ -9,6 +9,7 @@ import {
   SESSION_SECRET,
   SUPABASE_URL
 } from "@carbon/env";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { NonRetriableError } from "inngest";
 
 // Shared client for the assembler service's `/v1` action-RPC API. Submit
@@ -49,6 +50,23 @@ export function assemblerBaseUrl(): string {
     throw new Error("ASSEMBLER_SERVICE_URL is not configured");
   }
   return ASSEMBLER_SERVICE_URL;
+}
+
+/**
+ * Resolve which bucket a model's raw source lives in. Current uploads land in
+ * `temp-staging`; rows from before the assembler pipeline live in `private` —
+ * signing against the wrong bucket fails with "Object not found", so probe
+ * temp-staging and fall back (same resolution as the ERP model.artifacts route).
+ */
+export async function resolveModelSourceBucket(
+  client: SupabaseClient<Database>,
+  modelPath: string
+): Promise<"temp-staging" | "private"> {
+  const staged = await client.storage
+    .from("temp-staging")
+    .info(modelPath)
+    .catch(() => ({ data: null, error: true as const }));
+  return staged.error || !staged.data ? "private" : "temp-staging";
 }
 
 /**

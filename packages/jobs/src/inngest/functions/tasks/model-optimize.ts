@@ -5,6 +5,7 @@ import { inngest } from "../../client";
 import {
   assemblerEnabled,
   internalizeStorageUrl,
+  resolveModelSourceBucket,
   runAssemblerJob
 } from "./assembler-client";
 
@@ -23,8 +24,6 @@ export const modelOptimizeFunction = inngest.createFunction(
   {
     id: "model-optimize",
     retries: 2,
-    // The assembler is CPU-bound; keep per-company fan-out from starving tenants.
-    concurrency: [{ limit: 4 }, { key: "event.data.companyId", limit: 2 }],
     onFailure: async ({ event }) => {
       const { modelUploadId } = event.data.event.data;
       const client = getCarbonServiceRole();
@@ -74,7 +73,13 @@ export const modelOptimizeFunction = inngest.createFunction(
           .update({ optimizeStatus: "Processing", optimizeError: null })
           .eq("id", modelUploadId);
       }
-      return { modelPath: upload.data.modelPath, format };
+      // Legacy (pre-assembler) raws live in `private`, current ones in
+      // `temp-staging` — signing the wrong bucket 404s.
+      const sourceBucket = await resolveModelSourceBucket(
+        client,
+        upload.data.modelPath
+      );
+      return { modelPath: upload.data.modelPath, format, sourceBucket };
     });
 
     if (!model.format) {
@@ -102,10 +107,9 @@ export const modelOptimizeFunction = inngest.createFunction(
       logger,
       buildBody: async () => {
         const client = getCarbonServiceRole();
-        // Raw source lands in `temp-staging` (2.5 GB cap); optimised artifacts are
-        // written to `private` (50 MB served cap) below.
+        // Optimised artifacts are written to `private` (50 MB served cap) below.
         const source = await client.storage
-          .from("temp-staging")
+          .from(model.sourceBucket)
           .createSignedUrl(model.modelPath, SIGNED_URL_EXPIRY);
         if (source.error) {
           throw new Error(`Failed to sign source URL: ${source.error.message}`);
@@ -164,8 +168,11 @@ export const modelOptimizeFunction = inngest.createFunction(
     // change. Already-compacted (`.zst`) raws are skipped. Best-effort: a
     // compaction failure must not fail the already-succeeded optimise (the
     // scheduled big-raw TTL prune is the safety net).
+    // Only temp-staging sources compact: the flow writes the .zst there, deletes
+    // the fat original there, and the TTL prune covers strays there. Legacy
+    // `private` raws predate the pipeline — leave them where they are.
     const alreadyCompacted = model.modelPath.toLowerCase().endsWith(".zst");
-    if (!alreadyCompacted) {
+    if (!alreadyCompacted && model.sourceBucket === "temp-staging") {
       // Flat, mirroring the original raw (`${id}.step` → `${id}.step.zst`), so the
       // model id stays recoverable from the path (CadModel's `modelIdFromPath`)
       // and the download route resolves the underlying format from the extension.

@@ -6222,6 +6222,9 @@ msgstr "चयनित अवधि में"
 msgid "In stock"
 msgstr "स्टॉक में"
 
+msgid "In stock only"
+msgstr "केवल स्टॉक में"
+
 msgid "In the loop together"
 msgstr "एक साथ लूप में"
 
@@ -13566,6 +13569,9 @@ msgstr "भौतिक इन्वेंटरी गणना समायो
 
 msgid "Variance in outside processing costs"
 msgstr "बाहरी प्रसंस्करण लागत में विचरण"
+
+msgid "Variance only"
+msgstr "केवल भिन्नता"
 
 msgid "VAT Number"
 msgstr "VAT संख्या"
