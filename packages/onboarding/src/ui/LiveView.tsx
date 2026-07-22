@@ -26,7 +26,20 @@ interface UsageDayPayload {
   qualifying?: boolean;
 }
 
-export function LiveView() {
+// The daily five-minute health check — each line links to the screen that
+// fixes it. Computed by the route's loader (labels arrive localized).
+export interface HealthCheckItem {
+  key: string;
+  label: string;
+  count: number;
+  url: string;
+}
+
+export function LiveView({
+  healthChecks = []
+}: {
+  healthChecks?: HealthCheckItem[];
+}) {
   const { t, i18n } = useLingui();
   const map = useCheckMap();
   const fields = useFieldMap();
@@ -151,6 +164,30 @@ export function LiveView() {
           </Trans>
         </p>
       </Panel>
+
+      {/* The daily five-minute health check — a morning-coffee ritual for the
+          first two weeks, weekly after that */}
+      {healthChecks.some((item) => item.count > 0) ? (
+        <Panel title={<Trans>The five-minute health check</Trans>}>
+          <ul className="flex flex-col gap-2">
+            {healthChecks
+              .filter((item) => item.count > 0)
+              .map((item) => (
+                <li key={item.key}>
+                  <a
+                    href={item.url}
+                    className="flex items-center justify-between gap-4 text-sm hover:text-primary transition-colors"
+                  >
+                    <span>{item.label}</span>
+                    <Badge variant="destructive" className="tabular-nums">
+                      {item.count}
+                    </Badge>
+                  </a>
+                </li>
+              ))}
+          </ul>
+        </Panel>
+      ) : null}
 
       {/* The relapse question — silent regression gets caught while it's one
           order, not one department */}

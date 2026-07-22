@@ -12,8 +12,9 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { LuCalendarClock, LuCheck, LuFlag, LuSignature } from "react-icons/lu";
-import { CUTOVER_STEPS, PAGE_COPY } from "../content";
+import { CUTOVER_STEPS, GUIDED_MOMENTS, PAGE_COPY } from "../content";
 import { GO_LIVE_STEP_KEY } from "../content/spine";
+import { GuidedMomentCard } from "./GuidedMomentCard";
 import {
   FREEZE_FIELDS,
   HUDDLE_QUESTIONS,
@@ -215,6 +216,9 @@ export function SwitchView() {
           })}
         </ul>
       </Panel>
+
+      {/* Peak anxiety, the easiest yes on the list. */}
+      <GuidedMomentCard {...GUIDED_MOMENTS.switchWeek} />
 
       {/* Switch day */}
       <Section title={<Trans>Switch day — work it in order</Trans>}>

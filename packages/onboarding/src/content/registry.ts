@@ -26,7 +26,9 @@ export const REGISTRY: PageDef[] = [
     title: msg`Your Project Team`,
     group: "get-started",
     order: 2,
-    tiers: ["guided", "enterprise"]
+    tiers: ["guided", "enterprise"],
+    // Real substance, greyed out, sells — self-serve sees these as locked previews.
+    lockedPreviewFor: ["self_serve"]
   },
   {
     slug: "how-we-work",
@@ -34,7 +36,9 @@ export const REGISTRY: PageDef[] = [
     title: msg`How We Work Together`,
     group: "get-started",
     order: 3,
-    tiers: ["guided", "enterprise"]
+    tiers: ["guided", "enterprise"],
+    // Real substance, greyed out, sells — self-serve sees these as locked previews.
+    lockedPreviewFor: ["self_serve"]
   },
   {
     slug: "scope",
@@ -79,7 +83,9 @@ export const REGISTRY: PageDef[] = [
     order: 8,
     // Paid-tier only — self-serve customers configure directly rather than going
     // through a formal requirements/process-mapping exercise.
-    tiers: ["guided", "enterprise"]
+    tiers: ["guided", "enterprise"],
+    // Real substance, greyed out, sells — self-serve sees these as locked previews.
+    lockedPreviewFor: ["self_serve"]
   },
   {
     slug: "setup",
@@ -136,6 +142,14 @@ export const REGISTRY: PageDef[] = [
     title: msg`Setup & Controls`,
     group: "carbon-only",
     order: 16,
+    carbonOnly: true
+  },
+  {
+    slug: "fleet",
+    navLabel: msg`Fleet`,
+    title: msg`Implementation Fleet`,
+    group: "carbon-only",
+    order: 17,
     carbonOnly: true
   }
 ];

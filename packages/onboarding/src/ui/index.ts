@@ -1,12 +1,14 @@
 export { DecisionsLog } from "./DecisionsLog";
 export { EditableField } from "./EditableField";
 export { GanttChart } from "./GanttChart";
+export { GuidedMomentCard, useGuidedCta } from "./GuidedMomentCard";
 export { HowWeWorkView } from "./HowWeWorkView";
 export { HowYouRunView } from "./HowYouRunView";
 export { IntakeWizard } from "./IntakeWizard";
 export { CrewView } from "./CrewView";
-export { LiveView } from "./LiveView";
+export { type HealthCheckItem, LiveView } from "./LiveView";
 export { LoadDataView } from "./LoadDataView";
+export { LockedPreview } from "./LockedPreview";
 export { OnboardingHub } from "./OnboardingHub";
 export { OnboardingHubSummary } from "./OnboardingHubSummary";
 export { PayoffScreen } from "./PayoffScreen";

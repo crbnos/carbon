@@ -7,8 +7,9 @@ import {
   LuChevronRight,
   LuLock
 } from "react-icons/lu";
-import { PAGE_COPY } from "../content";
+import { GUIDED_MOMENTS, PAGE_COPY } from "../content";
 import type { DataSetDef } from "../content/recipes";
+import { GuidedMomentCard } from "./GuidedMomentCard";
 import {
   DATA_SETS,
   leadSource,
@@ -99,6 +100,9 @@ export function LoadDataView() {
           </div>
         }
       />
+
+      {/* The #1 stall point in the churn data; peak pain, peak relevance. */}
+      <GuidedMomentCard {...GUIDED_MOMENTS.loadData} />
 
       <Section>
         <SectionList>

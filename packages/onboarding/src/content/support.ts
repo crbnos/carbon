@@ -35,3 +35,37 @@ export const GUIDED_CONTACT = {
   detail: msg`Want our team alongside you? Expert eyes on your setup, data, and go-live.`,
   cta: msg`Book a call to discuss guided implementation`
 };
+
+// The Guided moment cards (blueprint §12) — each placed at its moment of
+// maximum relevance. The lock sells labor, expertise, and assurance — never
+// anything required to activate.
+export interface GuidedMoment {
+  source: string; // attribution tag, recorded on every click
+  heading: MessageDescriptor;
+  body: MessageDescriptor;
+  cta: MessageDescriptor;
+}
+
+export const GUIDED_MOMENTS: Record<
+  "loadData" | "crew" | "switchWeek",
+  GuidedMoment
+> = {
+  loadData: {
+    source: "load-data",
+    heading: msg`Have us do this part`,
+    body: msg`Send us your exports; we return your factory — loaded, checked, and explained. Data is where self-serve implementations stall most.`,
+    cta: msg`Book a call`
+  },
+  crew: {
+    source: "crew",
+    heading: msg`We'll train your team live`,
+    body: msg`Role-by-role sessions on your data, office and floor. Training is the easiest thing to buy and the hardest to fake.`,
+    cta: msg`Book a call`
+  },
+  switchWeek: {
+    source: "switch-week",
+    heading: msg`Switch-day on-call`,
+    body: msg`Our team stands by during your cutover. Near-zero drama, enormous perceived safety — because it's real safety.`,
+    cta: msg`Book a call`
+  }
+};

@@ -1,6 +1,7 @@
 import {
   EMPTY_EXCLUSIONS,
   type HubExclusions,
+  isPageLocked,
   isPageVisible,
   PAGE_GROUP_LABEL,
   PAGE_GROUP_ORDER,
@@ -20,6 +21,7 @@ import {
   LuHandshake,
   LuLayoutDashboard,
   LuListChecks,
+  LuLock,
   LuMessagesSquare,
   LuPlay,
   LuRocket,
@@ -50,7 +52,8 @@ const ICON: Record<string, ReactNode> = {
   training: <LuGraduationCap />,
   switch: <LuFlagTriangleRight />,
   live: <LuTrophy />,
-  controls: <LuSettings />
+  controls: <LuSettings />,
+  fleet: <LuLayoutDashboard />
 };
 
 // Grouped secondary sidebar for /x/get-started, built from the package's page
@@ -70,7 +73,13 @@ export function useImplementationSubmodules() {
   const groups: AuthenticatedRouteGroup[] = PAGE_GROUP_ORDER.map((group) => ({
     name: i18n._(PAGE_GROUP_LABEL[group]),
     routes: REGISTRY.filter((p) => p.group === group)
-      .filter((p) => isPageVisible(p, exclusions, effectiveInternal, tier))
+      .filter(
+        (p) =>
+          // Locked previews stay in the sidebar (with a lock icon) — real
+          // substance, greyed out, sells; invisible features can't.
+          isPageVisible(p, exclusions, effectiveInternal, tier) ||
+          (isPageLocked(p, tier) && !exclusions.pages.includes(p.slug))
+      )
       .sort((a, b) => a.order - b.order)
       .map((p) => ({
         name: i18n._(p.navLabel),
@@ -78,7 +87,7 @@ export function useImplementationSubmodules() {
           p.slug === "start"
             ? path.to.getStarted
             : path.to.getStartedPage(p.slug),
-        icon: ICON[p.slug]
+        icon: isPageLocked(p, tier) ? <LuLock /> : ICON[p.slug]
       }))
   })).filter((group) => group.routes.length > 0);
 

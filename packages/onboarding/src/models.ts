@@ -115,7 +115,9 @@ const CUSTOMER_FIELD_PREFIXES = [
   "pilot.",
   "firstWin.",
   "switch.",
-  "live.relapse"
+  "live.relapse",
+  // Guided-CTA click attribution (which surface originated a booking click).
+  "lock."
 ];
 const CUSTOMER_FIELD_KEYS = new Set([
   "plan.gate:switch.gateDate", // the go-live date — moved via the dialog that asks why

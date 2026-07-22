@@ -34,6 +34,14 @@ export function isPageVisible(
   return true;
 }
 
+// An out-of-tier page shown as a real-but-dimmed preview with one booking CTA.
+// Locks sell labor, expertise, and assurance — never anything required to
+// activate; a locked page is by definition out of the viewer's tier.
+export function isPageLocked(page: PageDef, tier?: Tier): boolean {
+  if (!tier || !page.tiers || page.tiers.includes(tier)) return false;
+  return page.lockedPreviewFor?.includes(tier) ?? false;
+}
+
 export function isSectionVisible(
   sectionKey: string,
   exclusions: HubExclusions

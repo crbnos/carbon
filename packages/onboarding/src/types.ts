@@ -133,6 +133,10 @@ export interface PageDef {
   // Tiers this page applies to. Omitted => all tiers. e.g. Data Migration is
   // paid-tier only and is hidden for self-serve.
   tiers?: Tier[];
+  // Tiers that see this out-of-tier page as a real-but-dimmed LOCKED preview
+  // instead of nothing. Invisible features can't create desire; real substance,
+  // greyed out, sells the plan honestly.
+  lockedPreviewFor?: Tier[];
   key?: boolean; // "most important" marker
   moduleTags?: Mod[];
   trainingKey?: string;

@@ -1,8 +1,9 @@
 import { Badge, Button, IconButton } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { LuCheck, LuPlus, LuTrash } from "react-icons/lu";
-import { PAGE_COPY } from "../content";
+import { GUIDED_MOMENTS, PAGE_COPY } from "../content";
 import type { CrewStatus } from "../content/crew";
+import { GuidedMomentCard } from "./GuidedMomentCard";
 import {
   CREW_AREAS,
   CREW_STATUS_LABEL,
@@ -198,6 +199,8 @@ export function CrewView() {
           })}
         </SectionList>
       </Section>
+
+      <GuidedMomentCard {...GUIDED_MOMENTS.crew} />
 
       {/* The floor rollout */}
       <Section
