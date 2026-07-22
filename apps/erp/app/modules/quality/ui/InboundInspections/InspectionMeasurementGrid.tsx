@@ -119,9 +119,15 @@ const InspectionMeasurementGrid = ({
     });
   }, [samples]);
 
-  // Measurement status per cell, seeded from the loader and patched by save
-  // responses (per-cell saves are quiet — no revalidation).
+  // Measurement status + value per cell, seeded from the loader and patched by
+  // save responses (per-cell saves are quiet — no revalidation). The value
+  // mirror matters because the rows memo rebuilds from loader data on every
+  // local-state change, which would otherwise discard the Table's in-place
+  // patch and blank the cell until a reload.
   const [statusByCell, setStatusByCell] = useState<Record<string, string>>({});
+  const [valueByCell, setValueByCell] = useState<Record<string, number | null>>(
+    {}
+  );
   const measurementFor = useCallback(
     (sampleId: string | undefined, featureId: string) =>
       sampleId
@@ -200,6 +206,10 @@ const InspectionMeasurementGrid = ({
         ...prev,
         [`${columnIndex}:${row.featureId}`]: result.measurementStatus
       }));
+      setValueByCell((prev) => ({
+        ...prev,
+        [`${columnIndex}:${row.featureId}`]: result.value
+      }));
       onMeasurementSaved(result);
       return result;
     },
@@ -255,12 +265,20 @@ const InspectionMeasurementGrid = ({
         rejectionNumber: lotFeature.rejectionNumber
       };
       for (let i = 0; i < columnCount; i++) {
+        const override = valueByCell[`${i}:${feature.id}`];
         const measurement = measurementFor(sampleIdByColumn[i], feature.id);
-        row[sampleKey(i)] = measurement?.value ?? null;
+        row[sampleKey(i)] =
+          override !== undefined ? override : (measurement?.value ?? null);
       }
       return row;
     });
-  }, [liveFeatures, columnCount, sampleIdByColumn, measurementFor]);
+  }, [
+    liveFeatures,
+    columnCount,
+    sampleIdByColumn,
+    valueByCell,
+    measurementFor
+  ]);
 
   // Pass/fail chip counts per feature (loader data + local overrides).
   const featureCounts = useCallback(
