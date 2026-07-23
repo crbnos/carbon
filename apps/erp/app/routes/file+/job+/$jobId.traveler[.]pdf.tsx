@@ -86,6 +86,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   // Opt-in company setting: whether the traveler renders a materials section.
   const companySettings = await getCompanySettings(serviceRole, companyId);
+  if (companySettings.error) {
+    // Don't fail the whole traveler over the opt-in lookup, but surface the
+    // failure so it isn't silently indistinguishable from "disabled".
+    logger.error("Failed to load company settings", {
+      error: companySettings.error
+    });
+  }
   const includeMaterials =
     (companySettings.data as { includeMaterialsOnTraveler?: boolean } | null)
       ?.includeMaterialsOnTraveler ?? false;
