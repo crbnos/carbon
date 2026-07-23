@@ -728,7 +728,9 @@ const PurchaseOrderLineForm = ({
                             style: "currency",
                             currency:
                               routeData?.purchaseOrder?.currencyCode ??
-                              company.baseCurrencyCode
+                              company.baseCurrencyCode,
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 5
                           }}
                           onChange={(value) =>
                             setItemData((d) => ({
@@ -838,7 +840,9 @@ const PurchaseOrderLineForm = ({
                               style: "currency",
                               currency:
                                 routeData?.purchaseOrder?.currencyCode ??
-                                company.baseCurrencyCode
+                                company.baseCurrencyCode,
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 5
                             }}
                             onChange={(value) =>
                               setItemData((d) => ({
@@ -855,7 +859,9 @@ const PurchaseOrderLineForm = ({
                               style: "currency",
                               currency:
                                 routeData?.purchaseOrder?.currencyCode ??
-                                company.baseCurrencyCode
+                                company.baseCurrencyCode,
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 5
                             }}
                             onChange={(value) => {
                               const subtotal =
@@ -1018,7 +1024,9 @@ const PurchaseOrderLineForm = ({
                               style: "currency",
                               currency:
                                 routeData?.purchaseOrder?.currencyCode ??
-                                company.baseCurrencyCode
+                                company.baseCurrencyCode,
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 5
                             }}
                             onChange={(value) =>
                               setIndirectData((d) => ({
@@ -1088,7 +1096,9 @@ const PurchaseOrderLineForm = ({
                                 style: "currency",
                                 currency:
                                   routeData?.purchaseOrder?.currencyCode ??
-                                  company.baseCurrencyCode
+                                  company.baseCurrencyCode,
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 5
                               }}
                               onChange={(value) =>
                                 setIndirectData((d) => ({
@@ -1105,7 +1115,9 @@ const PurchaseOrderLineForm = ({
                                 style: "currency",
                                 currency:
                                   routeData?.purchaseOrder?.currencyCode ??
-                                  company.baseCurrencyCode
+                                  company.baseCurrencyCode,
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 5
                               }}
                               onChange={(value) => {
                                 const subtotal =
